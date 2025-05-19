@@ -1,18 +1,26 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
-import TestSupabase from './services/test-supabase'
+import { Box } from '@mui/material';
+import TestSupabase from './services/test-supabase';
+import BottomBar from './components/BottomBar';
 
 function App() {
   return (
-    <>
-      <div>
+    <Box
+      sx={{
+        width: '100vw',
+        minHeight: '100vh',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'space-between',
+      }}
+    >
+      <Box sx={{ flexGrow: 1, textAlign: 'center', py: 4 }}>
         <h1>This is sellsi</h1>
         <TestSupabase />
-      </div>
-    </>
-  )
+      </Box>
+
+      <BottomBar />
+    </Box>
+  );
 }
 
-export default App
+export default App;
