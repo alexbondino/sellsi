@@ -1,6 +1,7 @@
 import { Box } from '@mui/material';
 import { ThemeProvider } from '@mui/material/styles';
 import theme from './styles/theme';
+import React, { useEffect, useState } from 'react';
 import CssBaseline from '@mui/material/CssBaseline';
 import TestSupabase from './services/test-supabase';
 import BottomBar from './components/BottomBar';
