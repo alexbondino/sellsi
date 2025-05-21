@@ -8,13 +8,12 @@ const BottomBar = () => {
   return (
     <Box
       sx={{
-        backgroundColor: '#2e2e2e',
-        color: '#fff',
+        backgroundColor: 'bars.main',
         width: '100vw',
         px: 0,
         py: 1,
         display: 'flex',
-        justifyContent: 'center', // 🧠 centramos el contenedor interno
+        justifyContent: 'center',
       }}
     >
       <Box
@@ -26,7 +25,7 @@ const BottomBar = () => {
           alignItems: 'center',
         }}
       >
-                {/* Logo + texto */}
+        {/* Logo */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <img src="/logo.svg" alt="SELLSI Logo" style={{ height: 28 }} />
           <Typography>
@@ -35,12 +34,15 @@ const BottomBar = () => {
         </Box>
 
         <Box sx={{ display: 'flex', gap: 1 }}>
+          {/* Redirección a Linkedin */}
           <IconButton href="#" color="inherit">
             <LinkedInIcon />
           </IconButton>
+          {/* Redirección a Instagram */}
           <IconButton href="#" color="inherit">
             <InstagramIcon />
           </IconButton>
+          {/* Redirección a Whatsapp */}
           <IconButton href="#" color="inherit">
             <WhatsAppIcon />
           </IconButton>
