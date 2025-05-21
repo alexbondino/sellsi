@@ -9,6 +9,7 @@ import TopBar from './components/TopBar';
 import Home from './pages/Home';
 
 function App() {
+  /* Eliminar eventualmente desde aqui */
   const [mensaje, setMensaje] = useState('');
   const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
@@ -27,7 +28,7 @@ function App() {
     fetchBackend();
   }, [backendUrl]);
 
-
+  /* Hasta aqui */
   return (
     <ThemeProvider theme={theme}>
       <TopBar />
@@ -41,12 +42,14 @@ function App() {
         }}
       >
         < Home />
+        {/* Eliminar eventualmente desde aqui */}
         <Box sx={{ flexGrow: 1, textAlign: 'center', py: 4 }}>
           <h1>This is sellsi</h1>
           <p>Respuesta del backend:</p>
           <pre>{mensaje}</pre>
           <TestSupabase />
         </Box>
+        {/* Hasta aqui */}
 
         <BottomBar />
       </Box>
