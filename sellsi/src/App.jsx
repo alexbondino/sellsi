@@ -12,6 +12,22 @@ function App() {
   const [mensaje, setMensaje] = useState('');
   const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
+  useEffect(() => {
+    const fetchBackend = async () => {
+      try {
+        const res = await fetch(`${backendUrl}/`); // o la ruta que tengas
+        const data = await res.json(); // o .text() si no es JSON
+        setMensaje(JSON.stringify(data)); // transforma a texto para mostrarlo
+      } catch (error) {
+        console.error('❌ Error al conectar con backend:', error);
+        setMensaje('No se pudo conectar con el backend.');
+      }
+    };
+
+    fetchBackend();
+  }, [backendUrl]);
+
+
   return (
     <ThemeProvider theme={theme}>
       <TopBar />
