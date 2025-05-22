@@ -3,6 +3,10 @@ import { Box, Button, TextField, Typography, Link, Paper, InputAdornment, IconBu
 import { Visibility, VisibilityOff } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
 import Dialog from '@mui/material/Dialog';
+import DialogTitle from '@mui/material/DialogTitle';
+import DialogContent from '@mui/material/DialogContent';
+import DialogActions from '@mui/material/DialogActions';
+import CloseIcon from '@mui/icons-material/Close';
 import Recuperar from './Recuperar';
 import CrearAcc from './crearacc';
 
@@ -88,7 +92,7 @@ const RegistroDialog = memo(({ open, onClose }) => (
   </Dialog>
 ));
 
-export default function Login() {
+export default function Login({ open, handleClose, handleOpenRegister }) {
   const theme = useTheme();
   const [state, dispatch] = useReducer(reducer, {
     correo: '',
@@ -142,122 +146,144 @@ export default function Login() {
   };
 
   return (
-    <Box
-      display="flex"
-      flexDirection="column"
-      alignItems="center"
-      justifyContent="center"
-      minHeight="100vh"
-      bgcolor={theme.palette.background.default}
-    >
-      {/* Logo dinámico */}
-      <img
-        src={theme.palette.mode === 'dark' ? '/logodarkmode.jpeg' : '/LOGO-removebg-preview.png'}
-        alt="SELLSI Logo"
-        style={{ width: LOGO_WIDTH, marginBottom: 10 }}
-      />
-      {/* Texto debajo del logo */}
-      <Typography
-        variant="h6"
-        align="center"
-        sx={{
-          mb: 2,
-          color: theme.palette.mode === 'dark' ? '#fff' : '#222',
-          fontWeight: 700,
-          fontSize: 24,
-          fontStyle: 'italic', // <-- agrega esto
-          textShadow: theme.palette.mode === 'dark'
-            ? '0 1px 4px rgba(0,0,0,0.7)'
-            : '0 1px 2px rgba(255,255,255,0.2)',
-        }}
-      >
-        Conecta. Vende. Crece
-
-      </Typography>
-      <Paper elevation={3} sx={{ p: 4, width: FORM_WIDTH, maxWidth: '90%' }}>
-        <form onSubmit={handleLogin}>
-          <Box display="flex" flexDirection="column" gap={2}>
-            <TextField
-              size="small"
-              variant="outlined"
-              fullWidth
-              label="Correo"
-              placeholder="Ingrese su correo electrónico"
-              value={correo}
-              onChange={(e) => dispatch({ type: 'SET_CORREO', payload: e.target.value })}
-              inputProps={{
-                lang: "es",
-              }}
-              error={!!errorCorreo}
-              helperText={errorCorreo}
-            />
-            <TextField
-              size="small"
-              type={showPassword ? "text" : "password"}
-              variant="outlined"
-              fullWidth
-              label="Contraseña"
-              placeholder="Ingrese su contraseña"
-              value={contrasena}
-              onChange={(e) => dispatch({ type: 'SET_CONTRASENA', payload: e.target.value })}
-              inputProps={{
-                lang: "es",
-              }}
-              error={!!errorContrasena}
-              helperText={errorContrasena}
-              InputProps={{
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <IconButton
-                      aria-label="toggle password visibility"
-                      onClick={() => dispatch({ type: 'TOGGLE_SHOW_PASSWORD' })}
-                      edge="end"
-                    >
-                      {showPassword ? <VisibilityOff /> : <Visibility />}
-                    </IconButton>
-                  </InputAdornment>
-                ),
-              }}
-            />
-            <Box display="flex" justifyContent="center" mb={2}>
-              <Button
-                type="submit"
-                variant="contained"
-                fullWidth
-                sx={{
-                  ...commonStyles.button,
-                  width: '30%', // Ancho del botón manteniendo el centro
-                  margin: '0 auto', // Esto ayuda a centrarlo
-                }}
-              >
-                Aceptar
-              </Button>
+    <Dialog open={open} onClose={handleClose} maxWidth="xs" fullWidth>
+      <DialogTitle>
+        Iniciar sesión
+        <IconButton
+          aria-label="close"
+          onClick={handleClose}
+          sx={{
+            position: 'absolute',
+            right: 8,
+            top: 8,
+            color: (theme) => theme.palette.grey[500],
+          }}
+        >
+          <CloseIcon />
+        </IconButton>
+      </DialogTitle>
+      <DialogContent>
+        <Box
+          display="flex"
+          flexDirection="column"
+          alignItems="center"
+          justifyContent="center"
+        >
+          {/* Logo dinámico */}
+          <img
+            src={theme.palette.mode === 'dark' ? '/logodarkmode.jpeg' : '/LOGO-removebg-preview.png'}
+            alt="SELLSI Logo"
+            style={{ width: LOGO_WIDTH, marginBottom: 10 }}
+          />
+          {/* Texto debajo del logo */}
+          <Typography
+            variant="h6"
+            align="center"
+            sx={{
+              mb: 2,
+              color: theme.palette.mode === 'dark' ? '#fff' : '#222',
+              fontWeight: 700,
+              fontSize: 24,
+              fontStyle: 'italic',
+              textShadow: theme.palette.mode === 'dark'
+                ? '0 1px 4px rgba(0,0,0,0.7)'
+                : '0 1px 2px rgba(255,255,255,0.2)',
+            }}
+          >
+            Conecta. Vende. Crece
+          </Typography>
+          <Paper elevation={3} sx={{ p: 4, width: FORM_WIDTH, maxWidth: '90%' }}>
+            <form onSubmit={handleLogin}>
+              <Box display="flex" flexDirection="column" gap={2}>
+                <TextField
+                  size="small"
+                  variant="outlined"
+                  fullWidth
+                  label="Correo"
+                  placeholder="Ingrese su correo electrónico"
+                  value={correo}
+                  onChange={(e) => dispatch({ type: 'SET_CORREO', payload: e.target.value })}
+                  inputProps={{
+                    lang: "es",
+                  }}
+                  error={!!errorCorreo}
+                  helperText={errorCorreo}
+                />
+                <TextField
+                  size="small"
+                  type={showPassword ? "text" : "password"}
+                  variant="outlined"
+                  fullWidth
+                  label="Contraseña"
+                  placeholder="Ingrese su contraseña"
+                  value={contrasena}
+                  onChange={(e) => dispatch({ type: 'SET_CONTRASENA', payload: e.target.value })}
+                  inputProps={{
+                    lang: "es",
+                  }}
+                  error={!!errorContrasena}
+                  helperText={errorContrasena}
+                  InputProps={{
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton
+                          aria-label="toggle password visibility"
+                          onClick={() => dispatch({ type: 'TOGGLE_SHOW_PASSWORD' })}
+                          edge="end"
+                        >
+                          {showPassword ? <VisibilityOff /> : <Visibility />}
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+                <Box display="flex" justifyContent="center" mb={2}>
+                  <Button
+                    type="submit"
+                    variant="contained"
+                    fullWidth
+                    sx={{
+                      ...commonStyles.button,
+                      width: '30%', // Ancho del botón manteniendo el centro
+                      margin: '0 auto', // Esto ayuda a centrarlo
+                    }}
+                  >
+                    Aceptar
+                  </Button>
+                </Box>
+              </Box>
+            </form>
+            <Box display="flex" flexDirection="column" alignItems="center" mt={1}>
+              <Typography variant="body2">
+                ¿Olvidaste tu contraseña?{' '}
+                <Link
+                  component="button"
+                  sx={commonStyles.link}
+                  onClick={() => dispatch({ type: 'OPEN_RECUPERAR' })}
+                >
+                  Recuperar Contraseña
+                </Link>
+              </Typography>
+              <Typography variant="body2">
+                ¿Eres nuevo?{' '}
+                <Link
+                  component="button"
+                  sx={commonStyles.link}
+                  onClick={() => {
+                    handleClose();
+                    handleOpenRegister();
+                  }}
+                >
+                  Regístrate
+                </Link>
+              </Typography>
             </Box>
-          </Box>
-        </form>
-        <Box display="flex" flexDirection="column" alignItems="center" mt={1}>
-          <Typography variant="body2">
-            ¿Olvidaste tu contraseña?{' '}
-            <Link
-              component="button"
-              sx={commonStyles.link}
-              onClick={() => dispatch({ type: 'OPEN_RECUPERAR' })}
-            >
-              Recuperar Contraseña
-            </Link>
-          </Typography>
-          <Typography variant="body2">
-            ¿Eres nuevo?{' '}
-            <Link
-              component="button"
-              sx={commonStyles.link}
-              onClick={() => dispatch({ type: 'OPEN_REGISTRO' })}
-            >
-              Regístrate
-            </Link>
-          </Typography>
+          </Paper>
         </Box>
-      </Paper>
+      </DialogContent>
+      <DialogActions>
+        {/* Puedes dejar vacío o agregar acciones si lo necesitas */}
+      </DialogActions>
       {/* Dialogo para recuperar contraseña */}
       <RecuperarDialog
         open={openRecuperar}
@@ -266,10 +292,7 @@ export default function Login() {
         setMostrarCodigo={(valor) => dispatch({ type: 'SET_MOSTRAR_CODIGO', payload: valor })}
       />
       {/* Dialogo para registro */}
-      <RegistroDialog
-        open={openRegistro}
-        onClose={() => dispatch({ type: 'CLOSE_REGISTRO' })}
-      />
-    </Box>
+      <RegistroDialog open={openRegistro} onClose={() => dispatch({ type: 'CLOSE_REGISTRO' })} />
+    </Dialog>
   );
 }

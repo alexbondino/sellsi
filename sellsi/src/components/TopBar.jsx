@@ -1,6 +1,29 @@
 import { Box, Button } from '@mui/material';
+import { useState } from 'react'; // Importar useState
+import Login from './login';
+import CrearAcc from './crearacc'; // <--- Agrega esto
 
 const TopBar = () => {
+    // Estado para controlar la apertura/cierre del modal
+    const [openLoginModal, setOpenLoginModal] = useState(false);
+    const [openRegisterModal, setOpenRegisterModal] = useState(false); // Estado para el modal de registro
+
+    // Función para abrir el modal de login
+    const handleOpenLogin = () => {
+        setOpenLoginModal(true);
+    };
+
+    // Función para cerrar el modal de login
+    const handleCloseLogin = () => {
+        setOpenLoginModal(false);
+    };
+
+    // Función para abrir el modal de registro
+    const handleOpenRegister = () => setOpenRegisterModal(true);
+
+    // Función para cerrar el modal de registro
+    const handleCloseRegister = () => setOpenRegisterModal(false);
+
     return (
         <Box
             sx={{
@@ -49,14 +72,34 @@ const TopBar = () => {
 
                 {/* Botones de login y register */}
                 <Box sx={{ display: 'flex', gap: 1 }}>
-                    <Button sx={{ backgroundColor: 'primary.main', color: 'text.white'}}>
+                    <Button 
+                        sx={{ backgroundColor: 'primary.main', color: 'text.white'}}
+                        onClick={handleOpenLogin} // Añadir evento onClick
+                    >
                         Iniciar sesión
                     </Button>
-                    <Button variant="outlined" sx={{ color: 'text.white', borderColor: 'primary.main' }}
-        >               Registrarse
+                    <Button
+                        variant="outlined"
+                        sx={{ color: 'text.white', borderColor: 'primary.main' }}
+                        onClick={handleOpenRegister} // <--- Agrega esto
+                    >
+                        Registrarse
                     </Button>
                 </Box>
             </Box>
+
+            {/* Modal de Login */}
+            <Login
+              open={openLoginModal}
+              handleClose={() => setOpenLoginModal(false)}
+              handleOpenRegister={() => {
+                setOpenLoginModal(false);
+                setOpenRegisterModal(true);
+              }}
+            />
+            {openRegisterModal && (
+              <CrearAcc open={openRegisterModal} onClose={() => setOpenRegisterModal(false)} />
+            )}
         </Box>
     );
 };

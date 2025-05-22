@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Box, Button, TextField, Typography, Paper } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
+import AccessTimeIcon from '@mui/icons-material/AccessTime';
 
 export default function Recuperar({ onClose, mostrarCodigo, setMostrarCodigo }) {
   const theme = useTheme();
@@ -8,6 +9,26 @@ export default function Recuperar({ onClose, mostrarCodigo, setMostrarCodigo }) 
   const [error, setError] = useState('');
   const [codigo, setCodigo] = useState(['', '', '', '', '']);
   const [mensaje, setMensaje] = useState('');
+  const [timer, setTimer] = useState(300); // 5 minutos en segundos
+  const timerRef = useRef();
+
+  // Cuando se muestra el modal de código, inicia el timer
+  useEffect(() => {
+    if (mostrarCodigo) {
+      setTimer(300);
+      timerRef.current = setInterval(() => {
+        setTimer((prev) => prev - 1);
+      }, 1000);
+    }
+    return () => clearInterval(timerRef.current);
+  }, [mostrarCodigo]);
+
+  // Si el timer llega a 0, lo detenemos
+  useEffect(() => {
+    if (timer === 0) {
+      clearInterval(timerRef.current);
+    }
+  }, [timer]);
 
   // Validación simple de correo: x@x.x
   const correoValido = /^[^@]+@[^@]+\.[^@]+$/;
@@ -160,7 +181,7 @@ export default function Recuperar({ onClose, mostrarCodigo, setMostrarCodigo }) 
           <Box display="flex" flexDirection="column" alignItems="center">
             <img src="/candado.png" alt="candado" style={{ width: 90, marginBottom: 16 }} />
             <Typography align="center" sx={{ mb: 2, mt: 1 }}>
-              Hemos enviado un código de verificación a tu correo.<br />
+              Hemos enviado un código de verificación a <strong>{correo}</strong>.<br />
               Introduce el código en las casillas inferiores.
             </Typography>
             <Box display="flex" justifyContent="center" mb={2}>
@@ -196,6 +217,45 @@ export default function Recuperar({ onClose, mostrarCodigo, setMostrarCodigo }) 
                 />
               ))}
             </Box>
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                mb: 2,
+              }}
+            >
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  background: timer > 0 ? '#e3f4fd' : '#fde3e3',
+                  color: timer > 0 ? '#1976d2' : '#d32f2f',
+                  borderRadius: '24px',
+                  px: 2,
+                  py: 1,
+                  fontWeight: 700,
+                  fontSize: 18,
+                  boxShadow: timer > 0 ? '0 2px 8px #b6e0fa55' : '0 2px 8px #fbbbbb55',
+                  gap: 1,
+                  minWidth: 170,
+                  justifyContent: 'center',
+                }}
+              >
+                <AccessTimeIcon sx={{ fontSize: 22, mr: 1, color: 'inherit' }} />
+                {timer > 0 ? (
+                  <>
+                    Tiempo restante:&nbsp;
+                    <span style={{ fontVariantNumeric: 'tabular-nums', letterSpacing: 1 }}>
+                      {Math.floor(timer / 60).toString().padStart(2, '0')}
+                      :{(timer % 60).toString().padStart(2, '0')}
+                    </span>
+                  </>
+                ) : (
+                  <>El código ha expirado</>
+                )}
+              </Box>
+            </Box>
             <Button
               variant="contained"
               disabled={!codigoCompleto}
@@ -223,7 +283,11 @@ export default function Recuperar({ onClose, mostrarCodigo, setMostrarCodigo }) 
             <Button
               variant="text"
               sx={{ color: '#1976d2', fontWeight: 700, mb: 2, fontSize: 16 }}
-              // onClick={handleReenviarCodigo} // Implementa si lo necesitas
+              onClick={() => {
+                setTimer(300);
+                setMensaje('El código fue reenviado a tu correo.');
+                // Aquí deberías llamar a tu función real de reenvío si tienes backend
+              }}
             >
               Reenviar Código
             </Button>
