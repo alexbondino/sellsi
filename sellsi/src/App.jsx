@@ -31,6 +31,8 @@ function App() {
   /* Hasta aqui */
   return (
     <ThemeProvider theme={theme}>
+      <CssBaseline />{' '}
+      {/* 💡 Aplica estilos base del theme, incluido color de texto */}
       <TopBar />
       <Box
         sx={{
@@ -41,7 +43,7 @@ function App() {
           justifyContent: 'space-between',
         }}
       >
-        < Home />
+        <Home />
         {/* Eliminar eventualmente desde aqui */}
         <Box sx={{ flexGrow: 1, textAlign: 'center', py: 4 }}>
           <h1>This is sellsi</h1>
