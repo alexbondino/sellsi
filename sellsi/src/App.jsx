@@ -1,12 +1,12 @@
-import { Box } from '@mui/material';
+import { Box, CssBaseline } from '@mui/material';
 import { ThemeProvider } from '@mui/material/styles';
 import theme from './styles/theme';
 import React, { useEffect, useState, useRef } from 'react';
-import CssBaseline from '@mui/material/CssBaseline';
 import TestSupabase from './services/test-supabase';
 import BottomBar from './components/BottomBar';
 import TopBar from './components/TopBar';
 import Home from './pages/Home';
+import GlobalStyles from '@mui/material/GlobalStyles';
 
 function App() {
   // Referencias para hacer scroll a las secciones
@@ -40,30 +40,40 @@ function App() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
+      <GlobalStyles
+        styles={{
+          html: { overflowX: 'hidden' },
+          body: { overflowX: 'hidden' },
+          '#root': { overflowX: 'hidden' },
+        }}
+      />
 
-      {/* TopBar con scroll handler */}
+      {/* Barra superior fija */}
       <TopBar onNavigate={handleScrollTo} />
 
       <Box
         sx={{
-          width: '100vw',
+          width: '100%',
           minHeight: '100vh',
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'space-between',
-          paddingTop: '64px', // espacio por barra fija
+          pt: '64px', // espacio para la TopBar fija
+          overflowX: 'hidden', // seguridad extra
         }}
       >
+        {/* Contenido principal */}
         <Home scrollTargets={scrollTargets} />
 
         {/* Zona de pruebas */}
         <Box sx={{ flexGrow: 1, textAlign: 'center', py: 4 }}>
-          <h1>This is sellsi</h1>
+          <h1>This is Sellsi</h1>
           <p>Respuesta del backend:</p>
           <pre>{mensaje}</pre>
           <TestSupabase />
         </Box>
 
+        {/* Footer */}
         <BottomBar />
       </Box>
     </ThemeProvider>
