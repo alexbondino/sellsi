@@ -13,7 +13,7 @@ const BottomBar = () => {
     <Box
       sx={{
         backgroundColor: theme.palette.bars.main,
-        width: '100%', // ✅ reemplazado '100vw' para evitar scroll lateral
+        width: '100vw', // ✅ reemplazado '100vw' para evitar scroll lateral
         px: 2,
         py: 2,
         display: 'flex',
