@@ -139,16 +139,100 @@ const Home = ({ scrollTargets }) => {
       {/* Sección: Contáctanos */}
       <Box
         ref={contactanosRef}
-        sx={{ px: 30, py: 6, backgroundColor: '#f9f9f9' }}
+        sx={{
+          px: 30,
+          py: 8,
+          backgroundColor: '#f9f9f9',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'left',
+        }}
       >
         <Typography variant="h4" fontWeight="bold" gutterBottom>
           Contáctanos
         </Typography>
-        <Typography variant="h6">
-          ¿Tienes dudas o deseas más información? Escríbenos a
-          contacto@sellsi.cl o completa el formulario de contacto en nuestro
-          sitio. Estaremos encantados de ayudarte.
+        <Typography
+          variant="h6"
+          sx={{ mb: 4, textAlign: 'left', maxWidth: 600 }}
+        >
+          Envía una consulta y nos pondremos en contacto contigo lo antes
+          posible.
         </Typography>
+
+        <Box
+          component="form"
+          noValidate
+          autoComplete="off"
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 2,
+            width: '100%',
+            maxWidth: 600,
+            backgroundColor: 'white',
+            p: 4,
+            borderRadius: 3,
+            boxShadow: 3,
+          }}
+        >
+          <Box sx={{ display: 'flex', gap: 2 }}>
+            <input
+              type="text"
+              placeholder="Nombre"
+              style={{
+                flex: 1,
+                padding: '12px',
+                border: '1px solid #ccc',
+                borderRadius: '8px',
+                fontSize: '1rem',
+                width: '100%',
+                backgroundColor: 'white',
+              }}
+            />
+            <input
+              type="email"
+              placeholder="E-mail"
+              style={{
+                flex: 1,
+                padding: '12px',
+                border: '1px solid #ccc',
+                borderRadius: '8px',
+                fontSize: '1rem',
+                width: '100%',
+                backgroundColor: 'white',
+              }}
+            />
+          </Box>
+
+          <textarea
+            placeholder="Mensaje"
+            rows={5}
+            style={{
+              padding: '12px',
+              border: '1px solid #ccc',
+              borderRadius: '8px',
+              fontSize: '1rem',
+              width: '100%',
+              resize: 'none',
+              backgroundColor: 'white',
+            }}
+          />
+
+          <Button
+            variant="contained"
+            color="primary"
+            sx={{
+              mt: 1,
+              borderRadius: '8px',
+              fontWeight: 'bold',
+              fontSize: '1rem',
+              textTransform: 'none',
+              py: 1.2,
+            }}
+          >
+            Enviar Consulta
+          </Button>
+        </Box>
       </Box>
     </Box>
   );
