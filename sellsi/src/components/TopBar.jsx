@@ -1,17 +1,37 @@
-import { Box, Button } from '@mui/material';
+import { useState } from 'react';
+import {
+  Box,
+  Button,
+  IconButton,
+  Menu,
+  MenuItem,
+  useMediaQuery,
+} from '@mui/material';
+import MenuIcon from '@mui/icons-material/Menu';
+import { useTheme } from '@mui/material/styles';
 
 const TopBar = ({ onNavigate }) => {
-  // Mapeo entre texto del botón y referencia usada en Home
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+
   const sectionsMap = {
     'Quiénes somos': 'quienesSomosRef',
     Servicios: 'serviciosRef',
     Contáctanos: 'contactanosRef',
-    // 'Trabaja con nosotros' está oculta, así que no la incluimos aún
+  };
+
+  const [menuAnchor, setMenuAnchor] = useState(null);
+  const openMenu = e => setMenuAnchor(e.currentTarget);
+  const closeMenu = () => setMenuAnchor(null);
+
+  const handleNavigate = ref => {
+    closeMenu();
+    onNavigate(ref);
   };
 
   return (
     <Box
-      sx={theme => ({
+      sx={{
         backgroundColor: theme.palette.bars.main,
         width: '100vw',
         px: 0,
@@ -21,7 +41,7 @@ const TopBar = ({ onNavigate }) => {
         position: 'fixed',
         top: 0,
         zIndex: 1100,
-      })}
+      }}
     >
       <Box
         sx={{
@@ -33,58 +53,84 @@ const TopBar = ({ onNavigate }) => {
           alignItems: 'center',
         }}
       >
-        {/* Logo + Menú */}
+        {/* Logo y navegación */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 4 }}>
           <img src="/logo.svg" alt="SELLSI Logo" style={{ height: 28 }} />
 
-          {/* Menú de navegación */}
-          <Box sx={{ display: 'flex', gap: 3 }}>
-            {Object.keys(sectionsMap).map((item, index) => (
-              <Button
-                key={index}
-                onClick={() => onNavigate(sectionsMap[item])}
-                color="inherit"
-                sx={theme => ({
-                  fontWeight: 'bold',
-                  color: theme.palette.common.white,
-                })}
-              >
-                {item}
-              </Button>
-            ))}
-          </Box>
+          {/* Navegación desktop */}
+          {!isMobile && (
+            <Box sx={{ display: 'flex', gap: 3 }}>
+              {Object.entries(sectionsMap).map(([label, ref]) => (
+                <Button
+                  key={ref}
+                  onClick={() => onNavigate(ref)}
+                  color="inherit"
+                  sx={{
+                    fontWeight: 'bold',
+                    color: theme.palette.common.white,
+                  }}
+                >
+                  {label}
+                </Button>
+              ))}
+            </Box>
+          )}
         </Box>
 
-        {/* Botones de login y register */}
-        <Box sx={{ display: 'flex', gap: 1 }}>
-          <Button
-            variant="contained"
-            sx={theme => ({
-              backgroundColor: theme.palette.primary.main,
-              color: theme.palette.common.white,
-              fontWeight: 'bold',
-              '&:hover': {
-                backgroundColor: theme.palette.primary.dark,
-              },
-            })}
-          >
-            Iniciar sesión
-          </Button>
-          <Button
-            variant="outlined"
-            sx={theme => ({
-              color: theme.palette.common.white,
-              borderColor: theme.palette.primary.main,
-              fontWeight: 'bold',
-              '&:hover': {
+        {/* Botones o menú hamburguesa */}
+        {isMobile ? (
+          <>
+            <IconButton
+              onClick={openMenu}
+              sx={{ color: theme.palette.common.white }}
+            >
+              <MenuIcon />
+            </IconButton>
+            <Menu
+              anchorEl={menuAnchor}
+              open={Boolean(menuAnchor)}
+              onClose={closeMenu}
+            >
+              {Object.entries(sectionsMap).map(([label, ref]) => (
+                <MenuItem key={ref} onClick={() => handleNavigate(ref)}>
+                  {label}
+                </MenuItem>
+              ))}
+              <MenuItem onClick={closeMenu}>Iniciar sesión</MenuItem>
+              <MenuItem onClick={closeMenu}>Registrarse</MenuItem>
+            </Menu>
+          </>
+        ) : (
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <Button
+              variant="contained"
+              sx={{
                 backgroundColor: theme.palette.primary.main,
+                color: theme.palette.common.white,
+                fontWeight: 'bold',
+                '&:hover': {
+                  backgroundColor: theme.palette.primary.dark,
+                },
+              }}
+            >
+              Iniciar sesión
+            </Button>
+            <Button
+              variant="outlined"
+              sx={{
+                color: theme.palette.common.white,
                 borderColor: theme.palette.primary.main,
-              },
-            })}
-          >
-            Registrarse
-          </Button>
-        </Box>
+                fontWeight: 'bold',
+                '&:hover': {
+                  backgroundColor: theme.palette.primary.main,
+                  borderColor: theme.palette.primary.main,
+                },
+              }}
+            >
+              Registrarse
+            </Button>
+          </Box>
+        )}
       </Box>
     </Box>
   );

@@ -1,17 +1,21 @@
 import React from 'react';
-import { Box, Typography, IconButton } from '@mui/material';
+import { Box, Typography, IconButton, useMediaQuery } from '@mui/material';
 import LinkedInIcon from '@mui/icons-material/LinkedIn';
 import InstagramIcon from '@mui/icons-material/Instagram';
 import WhatsAppIcon from '@mui/icons-material/WhatsApp';
+import { useTheme } from '@mui/material/styles';
 
 const BottomBar = () => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+
   return (
     <Box
       sx={{
-        backgroundColor: 'bars.main',
+        backgroundColor: theme.palette.bars.main,
         width: '100vw',
-        px: 0,
-        py: 1,
+        px: 2,
+        py: 2,
         display: 'flex',
         justifyContent: 'center',
       }}
@@ -19,23 +23,25 @@ const BottomBar = () => {
       <Box
         sx={{
           width: '100%',
-          px: 2,
+          maxWidth: '1200px',
           display: 'flex',
-          justifyContent: 'space-between',
+          flexDirection: { xs: 'column', sm: 'row' },
           alignItems: 'center',
-          color: '#fff', // <- Todo el texto e íconos heredan este color
+          justifyContent: 'space-between',
+          gap: 2,
+          color: '#fff',
         }}
       >
-        {/* Logo */}
+        {/* Logo y texto */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <img src="/logo.svg" alt="SELLSI Logo" style={{ height: 28 }} />
-          <Typography sx={{ color: '#fff' }}>
+          <Typography variant="body2" sx={{ color: '#fff', fontWeight: 500 }}>
             Marketplace que conecta
           </Typography>
         </Box>
 
+        {/* Íconos de redes sociales */}
         <Box sx={{ display: 'flex', gap: 1 }}>
-          {/* Redirección a redes */}
           <IconButton href="#" sx={{ color: '#fff' }}>
             <LinkedInIcon />
           </IconButton>
