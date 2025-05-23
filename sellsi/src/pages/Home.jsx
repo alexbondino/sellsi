@@ -1,7 +1,21 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { Box, Typography, Button } from '@mui/material';
 
-const Home = () => {
+const Home = ({ scrollTargets }) => {
+  // Referencias a secciones
+  const quienesSomosRef = useRef(null);
+  const serviciosRef = useRef(null);
+  const contactanosRef = useRef(null);
+
+  // Asignar referencias al objeto externo para usarlas desde App
+  if (scrollTargets) {
+    scrollTargets.current = {
+      quienesSomosRef,
+      serviciosRef,
+      contactanosRef,
+    };
+  }
+
   return (
     <Box>
       {/* Sección superior: fondo gris con texto a la izquierda */}
@@ -51,7 +65,7 @@ const Home = () => {
           </Box>
         </Box>
 
-        {/* Derecha: Imagen promocional */}
+        {/* Imagen derecha */}
         <Box
           sx={{
             flex: 1,
@@ -64,15 +78,10 @@ const Home = () => {
         </Box>
       </Box>
 
-      {/* Sección: Conoce a nuestros proveedores */}
+      {/* Sección: Conoce a nuestros proveedores (oculta por ahora) */}
       <Box
         hidden
-        sx={{
-          minHeight: '400px',
-          backgroundColor: '#ffffff',
-          px: 30,
-          py: 6,
-        }}
+        sx={{ minHeight: '400px', backgroundColor: '#ffffff', px: 30, py: 6 }}
       >
         <Typography variant="h4" fontWeight="bold" gutterBottom>
           Conoce a nuestros proveedores (TODO)
@@ -83,8 +92,11 @@ const Home = () => {
         </Typography>
       </Box>
 
-      {/* Sección: Quiénes somos */}
-      <Box sx={{ px: 30, py: 6, backgroundColor: '#ffffff' }}>
+      {/* Sección: ¿Quiénes somos? */}
+      <Box
+        ref={quienesSomosRef}
+        sx={{ px: 30, py: 6, backgroundColor: '#ffffff' }}
+      >
         <Typography variant="h4" fontWeight="bold" gutterBottom>
           ¿Quiénes somos?
         </Typography>
@@ -97,7 +109,10 @@ const Home = () => {
       </Box>
 
       {/* Sección: Servicios */}
-      <Box sx={{ px: 30, py: 6, backgroundColor: '#f9f9f9' }}>
+      <Box
+        ref={serviciosRef}
+        sx={{ px: 30, py: 6, backgroundColor: '#f9f9f9' }}
+      >
         <Typography variant="h4" fontWeight="bold" gutterBottom>
           Servicios
         </Typography>
@@ -108,7 +123,7 @@ const Home = () => {
         </Typography>
       </Box>
 
-      {/* Sección: Trabaja con nosotros */}
+      {/* Sección: Trabaja con nosotros (oculta por ahora) */}
       <Box hidden sx={{ px: 30, py: 6, backgroundColor: '#ffffff' }}>
         <Typography variant="h4" fontWeight="bold" gutterBottom>
           Trabaja con nosotros
@@ -122,7 +137,10 @@ const Home = () => {
       </Box>
 
       {/* Sección: Contáctanos */}
-      <Box sx={{ px: 30, py: 6, backgroundColor: '#f9f9f9' }}>
+      <Box
+        ref={contactanosRef}
+        sx={{ px: 30, py: 6, backgroundColor: '#f9f9f9' }}
+      >
         <Typography variant="h4" fontWeight="bold" gutterBottom>
           Contáctanos
         </Typography>
@@ -132,8 +150,6 @@ const Home = () => {
           sitio. Estaremos encantados de ayudarte.
         </Typography>
       </Box>
-
-      {/* Placeholder: Conoce a nuestros proveedores */}
     </Box>
   );
 };

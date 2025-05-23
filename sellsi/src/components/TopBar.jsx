@@ -1,6 +1,14 @@
 import { Box, Button } from '@mui/material';
 
-const TopBar = () => {
+const TopBar = ({ onNavigate }) => {
+  // Mapeo entre texto del botón y referencia usada en Home
+  const sectionsMap = {
+    'Quiénes somos': 'quienesSomosRef',
+    Servicios: 'serviciosRef',
+    Contáctanos: 'contactanosRef',
+    // 'Trabaja con nosotros' está oculta, así que no la incluimos aún
+  };
+
   return (
     <Box
       sx={theme => ({
@@ -31,18 +39,14 @@ const TopBar = () => {
 
           {/* Menú de navegación */}
           <Box sx={{ display: 'flex', gap: 3 }}>
-            {[
-              'Quiénes somos',
-              'Servicios',
-              'Trabaja con nosotros',
-              'Contáctanos',
-            ].map((item, index) => (
+            {Object.keys(sectionsMap).map((item, index) => (
               <Button
                 key={index}
+                onClick={() => onNavigate(sectionsMap[item])}
                 color="inherit"
                 sx={theme => ({
                   fontWeight: 'bold',
-                  color: theme.palette.common.white, // <-- texto blanco
+                  color: theme.palette.common.white,
                 })}
               >
                 {item}
@@ -57,7 +61,7 @@ const TopBar = () => {
             variant="contained"
             sx={theme => ({
               backgroundColor: theme.palette.primary.main,
-              color: theme.palette.common.white, // <-- texto blanco
+              color: theme.palette.common.white,
               fontWeight: 'bold',
               '&:hover': {
                 backgroundColor: theme.palette.primary.dark,
@@ -69,7 +73,7 @@ const TopBar = () => {
           <Button
             variant="outlined"
             sx={theme => ({
-              color: theme.palette.common.white, // <-- texto blanco
+              color: theme.palette.common.white,
               borderColor: theme.palette.primary.main,
               fontWeight: 'bold',
               '&:hover': {
