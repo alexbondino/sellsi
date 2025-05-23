@@ -1,26 +1,26 @@
+import React, { useEffect, useState, useRef } from 'react';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { Box, CssBaseline } from '@mui/material';
 import { ThemeProvider } from '@mui/material/styles';
-import theme from './styles/theme';
-import React, { useEffect, useState, useRef } from 'react';
-import TestSupabase from './services/test-supabase';
-import BottomBar from './components/BottomBar';
-import TopBar from './components/TopBar';
-import Home from './pages/Home';
 import GlobalStyles from '@mui/material/GlobalStyles';
 
+import theme from './styles/theme';
+import TopBar from './components/TopBar';
+import BottomBar from './components/BottomBar';
+import Home from './pages/Home';
+import ProviderHome from './pages/provider/ProviderHome';
+import TestSupabase from './services/test-supabase';
+
 function App() {
-  // Referencias para hacer scroll a las secciones
   const scrollTargets = useRef({});
+  const [mensaje, setMensaje] = useState('');
+  const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
   const handleScrollTo = sectionKey => {
     scrollTargets.current[sectionKey]?.current?.scrollIntoView({
       behavior: 'smooth',
     });
   };
-
-  // ⚙️ Para pruebas backend (eliminar si no lo usas luego)
-  const [mensaje, setMensaje] = useState('');
-  const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
   useEffect(() => {
     const fetchBackend = async () => {
@@ -43,39 +43,39 @@ function App() {
       <GlobalStyles
         styles={{
           html: { overflowX: 'hidden' },
-          body: { overflowX: 'hidden' },
+          body: { overflowX: 'hidden', margin: 0 },
           '#root': { overflowX: 'hidden' },
         }}
       />
+      <BrowserRouter>
+        <TopBar onNavigate={handleScrollTo} />
 
-      {/* Barra superior fija */}
-      <TopBar onNavigate={handleScrollTo} />
+        <Box
+          sx={{
+            width: '100%',
+            minHeight: '100vh',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
+            pt: '64px',
+            overflowX: 'hidden',
+          }}
+        >
+          <Routes>
+            <Route path="/" element={<Home scrollTargets={scrollTargets} />} />
+            <Route path="/supplier/home" element={<ProviderHome />} />
+          </Routes>
 
-      <Box
-        sx={{
-          width: '100%',
-          minHeight: '100vh',
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'space-between',
-          pt: '64px', // espacio para la TopBar fija
-          overflowX: 'hidden', // seguridad extra
-        }}
-      >
-        {/* Contenido principal */}
-        <Home scrollTargets={scrollTargets} />
+          <Box sx={{ flexGrow: 1, textAlign: 'center', py: 4 }}>
+            <h1>This is Sellsi</h1>
+            <p>Respuesta del backend:</p>
+            <pre>{mensaje}</pre>
+            <TestSupabase />
+          </Box>
 
-        {/* Zona de pruebas */}
-        <Box sx={{ flexGrow: 1, textAlign: 'center', py: 4 }}>
-          <h1>This is Sellsi</h1>
-          <p>Respuesta del backend:</p>
-          <pre>{mensaje}</pre>
-          <TestSupabase />
+          <BottomBar />
         </Box>
-
-        {/* Footer */}
-        <BottomBar />
-      </Box>
+      </BrowserRouter>
     </ThemeProvider>
   );
 }
