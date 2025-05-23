@@ -33,7 +33,7 @@ const TopBar = ({ onNavigate }) => {
     <Box
       sx={{
         backgroundColor: theme.palette.bars.main,
-        width: '100%', // ✅ reemplazamos '100vw'
+        width: '100vw',
         px: 0,
         py: 1,
         display: 'flex',
@@ -41,7 +41,7 @@ const TopBar = ({ onNavigate }) => {
         position: 'fixed',
         top: 0,
         zIndex: 1100,
-        overflowX: 'hidden', // ✅ prevención adicional
+        overflowX: 'hidden',
       }}
     >
       <Box
@@ -52,11 +52,18 @@ const TopBar = ({ onNavigate }) => {
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
+          overflowX: 'hidden',
         }}
       >
         {/* Logo y navegación */}
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-          <img src="/logo.svg" alt="SELLSI Logo" style={{ height: 28 }} />
+        <Box
+          sx={{ display: 'flex', alignItems: 'center', gap: 2, flexShrink: 0 }}
+        >
+          <img
+            src="/logo.svg"
+            alt="SELLSI Logo"
+            style={{ height: 28, maxWidth: '120px', flexShrink: 0 }}
+          />
 
           {!isMobile && (
             <Box sx={{ display: 'flex', gap: 3 }}>
@@ -82,9 +89,9 @@ const TopBar = ({ onNavigate }) => {
           <>
             <IconButton
               onClick={openMenu}
-              sx={{ color: theme.palette.common.white }}
+              sx={{ color: theme.palette.common.white, p: 1 }}
             >
-              <MenuIcon />
+              <MenuIcon fontSize="large" />
             </IconButton>
             <Menu
               anchorEl={menuAnchor}
@@ -100,7 +107,8 @@ const TopBar = ({ onNavigate }) => {
               }}
               PaperProps={{
                 sx: {
-                  maxWidth: '90vw', // ✅ evita que el menú se desborde
+                  maxWidth: '90vw',
+                  overflowX: 'hidden',
                 },
               }}
             >
