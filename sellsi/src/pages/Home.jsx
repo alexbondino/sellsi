@@ -2,12 +2,10 @@ import React, { useRef } from 'react';
 import { Box, Typography, Button } from '@mui/material';
 
 const Home = ({ scrollTargets }) => {
-  // Referencias a secciones
   const quienesSomosRef = useRef(null);
   const serviciosRef = useRef(null);
   const contactanosRef = useRef(null);
 
-  // Asignar referencias al objeto externo para usarlas desde App
   if (scrollTargets) {
     scrollTargets.current = {
       quienesSomosRef,
@@ -18,35 +16,49 @@ const Home = ({ scrollTargets }) => {
 
   return (
     <Box>
-      {/* Sección superior: fondo gris con texto a la izquierda */}
+      {/* Sección superior */}
       <Box
         sx={{
           display: 'flex',
+          flexDirection: { xs: 'column', md: 'row' },
           alignItems: 'center',
           justifyContent: 'space-between',
           minHeight: '65vh',
-          px: 30,
+          px: { xs: 2, sm: 4, md: 8, lg: 15, xl: 30 },
+          py: 6,
           backgroundColor: '#e6e6e6',
+          gap: { xs: 6, md: 0 },
         }}
       >
-        {/* Texto izquierda */}
-        <Box sx={{ flex: 1, maxWidth: '700px' }}>
+        <Box sx={{ flex: 1, maxWidth: { xs: '100%', md: 700 } }}>
           <Typography
             variant="h1"
             fontWeight="bold"
             gutterBottom
-            sx={{ lineHeight: 1.4 }}
+            sx={{
+              fontSize: { xs: '2rem', sm: '2.5rem', md: '3rem' },
+              lineHeight: 1.4,
+            }}
           >
             Somos Sellsi, el marketplace que conecta proveedores con vendedores
           </Typography>
 
-          <Typography variant="h6" gutterBottom>
+          <Typography
+            variant="h6"
+            gutterBottom
+            sx={{ fontSize: { xs: '1rem', md: '1.2rem' } }}
+          >
             Conectamos proveedores con vendedores de manera sencilla. Olvídate
             de ir a hablar con cada uno de ellos. Desarrollamos el ecosistema
             que necesitas para transar lo que necesites y cuando lo necesites.
           </Typography>
 
-          <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: { xs: 'center', md: 'flex-start' },
+            }}
+          >
             <Button
               variant="contained"
               sx={{
@@ -56,7 +68,7 @@ const Home = ({ scrollTargets }) => {
                 borderRadius: '8px',
                 px: 10,
                 py: 1,
-                fontSize: '1.4rem',
+                fontSize: '1.2rem',
                 textTransform: 'none',
               }}
             >
@@ -65,23 +77,32 @@ const Home = ({ scrollTargets }) => {
           </Box>
         </Box>
 
-        {/* Imagen derecha */}
         <Box
           sx={{
             flex: 1,
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'center',
+            width: '100%',
           }}
         >
-          <img src="/promotion.svg" alt="Promo Img" style={{ height: 600 }} />
+          <img
+            src="/promotion.svg"
+            alt="Promo"
+            style={{ width: '100%', maxWidth: 600 }}
+          />
         </Box>
       </Box>
 
-      {/* Sección: Conoce a nuestros proveedores (oculta por ahora) */}
+      {/* Proveedores */}
       <Box
         hidden
-        sx={{ minHeight: '400px', backgroundColor: '#ffffff', px: 30, py: 6 }}
+        sx={{
+          minHeight: '400px',
+          px: { xs: 2, sm: 4, md: 8, lg: 15, xl: 30 },
+          py: 6,
+          backgroundColor: '#ffffff',
+        }}
       >
         <Typography variant="h4" fontWeight="bold" gutterBottom>
           Conoce a nuestros proveedores (TODO)
@@ -92,55 +113,62 @@ const Home = ({ scrollTargets }) => {
         </Typography>
       </Box>
 
-      {/* Sección: ¿Quiénes somos? */}
+      {/* ¿Quiénes somos? */}
       <Box
         ref={quienesSomosRef}
-        sx={{ px: 30, py: 6, backgroundColor: '#ffffff' }}
+        sx={{
+          px: { xs: 2, sm: 4, md: 8, lg: 15, xl: 30 },
+          py: 6,
+          backgroundColor: '#ffffff',
+        }}
       >
         <Typography variant="h4" fontWeight="bold" gutterBottom>
           ¿Quiénes somos?
         </Typography>
         <Typography variant="h6">
-          En Sellsi, creemos en la eficiencia del comercio digital. Nuestra
-          misión es facilitar la conexión entre proveedores y vendedores,
-          optimizando el proceso de abastecimiento y generación de relaciones
-          comerciales duraderas.
+          En Sellsi, creemos en la eficiencia del comercio digital...
         </Typography>
       </Box>
 
-      {/* Sección: Servicios */}
+      {/* Servicios */}
       <Box
         ref={serviciosRef}
-        sx={{ px: 30, py: 6, backgroundColor: '#e6e6e6' }}
+        sx={{
+          px: { xs: 2, sm: 4, md: 8, lg: 15, xl: 30 },
+          py: 6,
+          backgroundColor: '#e6e6e6',
+        }}
       >
         <Typography variant="h4" fontWeight="bold" gutterBottom>
           Servicios
         </Typography>
         <Typography variant="h6">
-          Ofrecemos una plataforma intuitiva para descubrir productos, contactar
-          proveedores verificados, recibir métricas clave de rendimiento y
-          gestionar tus procesos de compra con total transparencia.
+          Ofrecemos una plataforma intuitiva para descubrir productos...
         </Typography>
       </Box>
 
-      {/* Sección: Trabaja con nosotros (oculta por ahora) */}
-      <Box hidden sx={{ px: 30, py: 6, backgroundColor: '#ffffff' }}>
+      {/* Trabaja con nosotros */}
+      <Box
+        hidden
+        sx={{
+          px: { xs: 2, sm: 4, md: 8, lg: 15, xl: 30 },
+          py: 6,
+          backgroundColor: '#ffffff',
+        }}
+      >
         <Typography variant="h4" fontWeight="bold" gutterBottom>
           Trabaja con nosotros
         </Typography>
         <Typography variant="h6">
-          ¿Te apasiona la tecnología y el comercio digital? Únete a nuestro
-          equipo y sé parte del cambio en la manera en que las empresas hacen
-          negocios. Estamos en constante búsqueda de talento que comparta
-          nuestra visión.
+          ¿Te apasiona la tecnología y el comercio digital?...
         </Typography>
       </Box>
 
-      {/* Sección: Contáctanos */}
+      {/* Contáctanos */}
       <Box
         ref={contactanosRef}
         sx={{
-          px: 30,
+          px: { xs: 2, sm: 4, md: 8, lg: 15, xl: 30 },
           py: 8,
           backgroundColor: '#ffffff',
           display: 'flex',
@@ -155,8 +183,7 @@ const Home = ({ scrollTargets }) => {
           variant="h6"
           sx={{ mb: 4, textAlign: 'left', maxWidth: 600 }}
         >
-          Envía una consulta y nos pondremos en contacto contigo lo antes
-          posible.
+          Envía una consulta y nos pondremos en contacto contigo...
         </Typography>
 
         <Box
@@ -175,7 +202,13 @@ const Home = ({ scrollTargets }) => {
             boxShadow: 3,
           }}
         >
-          <Box sx={{ display: 'flex', gap: 2 }}>
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: { xs: 'column', sm: 'row' },
+              gap: 2,
+            }}
+          >
             <input
               type="text"
               placeholder="Nombre"
