@@ -9,6 +9,7 @@ const supplierId = '00000000-0000-0000-0000-000000000001';
 const ProviderHome = () => {
   const [products, setProducts] = useState([]);
   const [sales, setSales] = useState([]);
+  const [productQty, setProductQty] = useState([]);
 
   useEffect(() => {
     const fetchClientes = async () => {
@@ -44,7 +45,25 @@ const ProviderHome = () => {
     fetchSales();
   }, []);
 
+  useEffect(() => {
+    const fetchProductQuanity = async () => {
+      const { data, error } = await supabase
+        .from('products')
+        .select('productqty')
+        .eq('supplierid', supplierId);
+
+      if (error) {
+        console.error('❌ Error al obtener clientes:', error);
+      } else {
+        setProductQty(data);
+      }
+    };
+
+    fetchProductQuanity();
+  }, []);
+
   const totalSales = sales.reduce((acc, item) => acc + Number(item.amount), 0);
+  const totalBreaks = productQty.filter(p => p.productqty === 0).length;
 
   return (
     <Box sx={{ p: 4, backgroundColor: '#f5f5f5', minHeight: '100vh' }}>
@@ -58,8 +77,14 @@ const ProviderHome = () => {
         </Grid>
         <Grid item xs={12} md={3}>
           <Paper sx={{ p: 2 }}>
-            <Typography>Ventas totales</Typography>
+            <Typography>Ventas este més</Typography>
             <Typography variant="h5">${totalSales.toLocaleString()}</Typography>
+          </Paper>
+        </Grid>
+        <Grid item xs={12} md={3}>
+          <Paper sx={{ p: 2 }}>
+            <Typography>Productos sin stock</Typography>
+            <Typography variant="h5">{totalBreaks}</Typography>
           </Paper>
         </Grid>
 
