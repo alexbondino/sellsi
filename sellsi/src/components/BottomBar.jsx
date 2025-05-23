@@ -23,27 +23,26 @@ const BottomBar = () => {
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
+          color: '#fff', // <- Todo el texto e íconos heredan este color
         }}
       >
         {/* Logo */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <img src="/logo.svg" alt="SELLSI Logo" style={{ height: 28 }} />
-          <Typography>
+          <Typography sx={{ color: '#fff' }}>
             Marketplace que conecta
           </Typography>
         </Box>
 
         <Box sx={{ display: 'flex', gap: 1 }}>
-          {/* Redirección a Linkedin */}
-          <IconButton href="#" color="inherit">
+          {/* Redirección a redes */}
+          <IconButton href="#" sx={{ color: '#fff' }}>
             <LinkedInIcon />
           </IconButton>
-          {/* Redirección a Instagram */}
-          <IconButton href="#" color="inherit">
+          <IconButton href="#" sx={{ color: '#fff' }}>
             <InstagramIcon />
           </IconButton>
-          {/* Redirección a Whatsapp */}
-          <IconButton href="#" color="inherit">
+          <IconButton href="#" sx={{ color: '#fff' }}>
             <WhatsAppIcon />
           </IconButton>
         </Box>

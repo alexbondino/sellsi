@@ -1,82 +1,274 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { Box, Typography, Button } from '@mui/material';
 
-const Home = () => {
+const Home = ({ scrollTargets }) => {
+  const quienesSomosRef = useRef(null);
+  const serviciosRef = useRef(null);
+  const contactanosRef = useRef(null);
+
+  if (scrollTargets) {
+    scrollTargets.current = {
+      quienesSomosRef,
+      serviciosRef,
+      contactanosRef,
+    };
+  }
+
   return (
     <Box>
-      {/* Sección superior: fondo gris con texto a la izquierda */}
+      {/* Sección superior */}
       <Box
         sx={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          minHeight: "65vh",
-          px: 8,
-          backgroundColor: "#e6e6e6", // reemplaza 'box_backgroud.primary' si no está definido en el theme
+          display: 'flex',
+          flexDirection: { xs: 'column', md: 'row' },
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          minHeight: '65vh',
+          px: { xs: 2, sm: 4, md: 8, lg: 15, xl: 30 },
+          py: 6,
+          backgroundColor: '#e6e6e6',
+          gap: { xs: 6, md: 0 },
         }}
       >
-        {/* Texto izquierda */}
-        <Box sx={{ flex: 1, maxWidth: "700px", pl: 6 }}>
-          <Typography variant="h1" fontWeight="bold" color='text.black' gutterBottom sx={{ lineHeight: 1.4 }}>
+        <Box sx={{ flex: 1, maxWidth: { xs: '100%', md: 700 } }}>
+          <Typography
+            variant="h1"
+            fontWeight="bold"
+            gutterBottom
+            sx={{
+              fontSize: { xs: '2rem', sm: '2.5rem', md: '3rem' },
+              lineHeight: 1.4,
+            }}
+          >
             Somos Sellsi, el marketplace que conecta proveedores con vendedores
           </Typography>
 
-          <Typography variant="h6" color='text.black' gutterBottom>
-            Conectamos proveedores con vendedores de manera sencilla. Olvídate de ir a hablar con cada uno de ellos. Desarrollamos el ecosistema que necesitas para transar lo que necesites y cuando lo necesites.
+          <Typography
+            variant="h6"
+            gutterBottom
+            sx={{ fontSize: { xs: '1rem', md: '1.2rem' } }}
+          >
+            Conectamos proveedores con vendedores de manera sencilla. Olvídate
+            de ir a hablar con cada uno de ellos. Desarrollamos el ecosistema
+            que necesitas para transar lo que necesites y cuando lo necesites.
           </Typography>
 
-          <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: { xs: 'center', md: 'flex-start' },
+            }}
+          >
             <Button
-                variant="contained"
-                sx={{
+              variant="contained"
+              sx={{
                 mt: 5,
                 backgroundColor: 'primary.main',
-                color: 'text.white',
                 fontWeight: 'bold',
                 borderRadius: '8px',
                 px: 10,
                 py: 1,
-                fontSize: '1.4rem',
+                fontSize: '1.2rem',
                 textTransform: 'none',
-                }}
+              }}
             >
-                Ir a marketplace
+              Ir a marketplace
             </Button>
-            </Box>
+          </Box>
         </Box>
 
-        {/* Derecha: Placeholder (opcional imagen futura) */}
         <Box
           sx={{
             flex: 1,
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            width: '100%',
           }}
         >
-          <img src="/promotion.svg" alt="Promo Img" style={{ height: 600 }} />
+          <img
+            src="/promotion.svg"
+            alt="Promo"
+            style={{ width: '100%', maxWidth: 600 }}
+          />
         </Box>
       </Box>
 
-      {/* Sección inferior: fondo blanco */}
+      {/* Proveedores */}
       <Box
+        hidden
         sx={{
-          minHeight: "400px",
-          backgroundColor: "#ffffff", // reemplaza con 'box_backgroud.secondary' si lo tienes definido
-          px: 8,
+          minHeight: '400px',
+          px: { xs: 2, sm: 4, md: 8, lg: 15, xl: 30 },
           py: 6,
+          backgroundColor: '#ffffff',
         }}
       >
-        <Typography variant="h4" fontWeight="bold" color='text.black' gutterBottom>
+        <Typography variant="h4" fontWeight="bold" gutterBottom>
           Conoce a nuestros proveedores (TODO)
         </Typography>
-        <Typography variant="body1">
-          Esta es una sección secundaria donde puedes colocar más contenido, testimonios, logos de empresas, etc.
+        <Typography variant="h6">
+          Esta sección mostrará próximamente los perfiles destacados de
+          proveedores registrados en nuestra plataforma.
         </Typography>
+      </Box>
+
+      {/* ¿Quiénes somos? */}
+      <Box
+        ref={quienesSomosRef}
+        sx={{
+          px: { xs: 2, sm: 4, md: 8, lg: 15, xl: 30 },
+          py: 6,
+          backgroundColor: '#ffffff',
+        }}
+      >
+        <Typography variant="h4" fontWeight="bold" gutterBottom>
+          ¿Quiénes somos?
+        </Typography>
+        <Typography variant="h6">
+          En Sellsi, creemos en la eficiencia del comercio digital...
+        </Typography>
+      </Box>
+
+      {/* Servicios */}
+      <Box
+        ref={serviciosRef}
+        sx={{
+          px: { xs: 2, sm: 4, md: 8, lg: 15, xl: 30 },
+          py: 6,
+          backgroundColor: '#e6e6e6',
+        }}
+      >
+        <Typography variant="h4" fontWeight="bold" gutterBottom>
+          Servicios
+        </Typography>
+        <Typography variant="h6">
+          Ofrecemos una plataforma intuitiva para descubrir productos...
+        </Typography>
+      </Box>
+
+      {/* Trabaja con nosotros */}
+      <Box
+        hidden
+        sx={{
+          px: { xs: 2, sm: 4, md: 8, lg: 15, xl: 30 },
+          py: 6,
+          backgroundColor: '#ffffff',
+        }}
+      >
+        <Typography variant="h4" fontWeight="bold" gutterBottom>
+          Trabaja con nosotros
+        </Typography>
+        <Typography variant="h6">
+          ¿Te apasiona la tecnología y el comercio digital?...
+        </Typography>
+      </Box>
+
+      {/* Contáctanos */}
+      <Box
+        ref={contactanosRef}
+        sx={{
+          px: { xs: 2, sm: 4, md: 8, lg: 15, xl: 30 },
+          py: 8,
+          backgroundColor: '#ffffff',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'left',
+        }}
+      >
+        <Typography variant="h4" fontWeight="bold" gutterBottom>
+          Contáctanos
+        </Typography>
+        <Typography
+          variant="h6"
+          sx={{ mb: 4, textAlign: 'left', maxWidth: 600 }}
+        >
+          Envía una consulta y nos pondremos en contacto contigo...
+        </Typography>
+
+        <Box
+          component="form"
+          noValidate
+          autoComplete="off"
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 2,
+            width: '100%',
+            maxWidth: 600,
+            backgroundColor: 'white',
+            p: 4,
+            borderRadius: 3,
+            boxShadow: 3,
+          }}
+        >
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: { xs: 'column', sm: 'row' },
+              gap: 2,
+            }}
+          >
+            <input
+              type="text"
+              placeholder="Nombre"
+              style={{
+                flex: 1,
+                padding: '12px',
+                border: '1px solid #ccc',
+                borderRadius: '8px',
+                fontSize: '1rem',
+                width: '100%',
+                backgroundColor: 'white',
+              }}
+            />
+            <input
+              type="email"
+              placeholder="E-mail"
+              style={{
+                flex: 1,
+                padding: '12px',
+                border: '1px solid #ccc',
+                borderRadius: '8px',
+                fontSize: '1rem',
+                width: '100%',
+                backgroundColor: 'white',
+              }}
+            />
+          </Box>
+
+          <textarea
+            placeholder="Mensaje"
+            rows={5}
+            style={{
+              padding: '12px',
+              border: '1px solid #ccc',
+              borderRadius: '8px',
+              fontSize: '1rem',
+              width: '100%',
+              resize: 'none',
+              backgroundColor: 'white',
+            }}
+          />
+
+          <Button
+            variant="contained"
+            color="primary"
+            sx={{
+              mt: 1,
+              borderRadius: '8px',
+              fontWeight: 'bold',
+              fontSize: '1rem',
+              textTransform: 'none',
+              py: 1.2,
+            }}
+          >
+            Enviar Consulta
+          </Button>
+        </Box>
       </Box>
     </Box>
   );
 };
 
 export default Home;
-
