@@ -15,7 +15,7 @@ const Home = ({ scrollTargets }) => {
   }
 
   return (
-    <Box>
+    <Box sx={{ width: '100%', overflowX: 'hidden' }}>
       {/* Sección superior */}
       <Box
         sx={{
@@ -94,75 +94,51 @@ const Home = ({ scrollTargets }) => {
         </Box>
       </Box>
 
-      {/* Proveedores */}
-      <Box
-        hidden
-        sx={{
-          minHeight: '400px',
-          px: { xs: 2, sm: 4, md: 8, lg: 15, xl: 30 },
-          py: 6,
-          backgroundColor: '#ffffff',
-        }}
-      >
-        <Typography variant="h4" fontWeight="bold" gutterBottom>
-          Conoce a nuestros proveedores (TODO)
-        </Typography>
-        <Typography variant="h6">
-          Esta sección mostrará próximamente los perfiles destacados de
-          proveedores registrados en nuestra plataforma.
-        </Typography>
-      </Box>
-
-      {/* ¿Quiénes somos? */}
-      <Box
-        ref={quienesSomosRef}
-        sx={{
-          px: { xs: 2, sm: 4, md: 8, lg: 15, xl: 30 },
-          py: 6,
-          backgroundColor: '#ffffff',
-        }}
-      >
-        <Typography variant="h4" fontWeight="bold" gutterBottom>
-          ¿Quiénes somos?
-        </Typography>
-        <Typography variant="h6">
-          En Sellsi, creemos en la eficiencia del comercio digital...
-        </Typography>
-      </Box>
-
-      {/* Servicios */}
-      <Box
-        ref={serviciosRef}
-        sx={{
-          px: { xs: 2, sm: 4, md: 8, lg: 15, xl: 30 },
-          py: 6,
-          backgroundColor: '#e6e6e6',
-        }}
-      >
-        <Typography variant="h4" fontWeight="bold" gutterBottom>
-          Servicios
-        </Typography>
-        <Typography variant="h6">
-          Ofrecemos una plataforma intuitiva para descubrir productos...
-        </Typography>
-      </Box>
-
-      {/* Trabaja con nosotros */}
-      <Box
-        hidden
-        sx={{
-          px: { xs: 2, sm: 4, md: 8, lg: 15, xl: 30 },
-          py: 6,
-          backgroundColor: '#ffffff',
-        }}
-      >
-        <Typography variant="h4" fontWeight="bold" gutterBottom>
-          Trabaja con nosotros
-        </Typography>
-        <Typography variant="h6">
-          ¿Te apasiona la tecnología y el comercio digital?...
-        </Typography>
-      </Box>
+      {/* Secciones scrollables */}
+      {[
+        {
+          ref: null,
+          hidden: true,
+          bg: '#ffffff',
+          title: 'Conoce a nuestros proveedores (TODO)',
+          text: 'Esta sección mostrará próximamente los perfiles destacados de proveedores registrados en nuestra plataforma.',
+        },
+        {
+          ref: quienesSomosRef,
+          bg: '#ffffff',
+          title: '¿Quiénes somos?',
+          text: 'En Sellsi, creemos en la eficiencia del comercio digital...',
+        },
+        {
+          ref: serviciosRef,
+          bg: '#e6e6e6',
+          title: 'Servicios',
+          text: 'Ofrecemos una plataforma intuitiva para descubrir productos...',
+        },
+        {
+          ref: null,
+          hidden: true,
+          bg: '#ffffff',
+          title: 'Trabaja con nosotros',
+          text: '¿Te apasiona la tecnología y el comercio digital?...',
+        },
+      ].map(({ ref, hidden, bg, title, text }, i) => (
+        <Box
+          key={i}
+          ref={ref}
+          hidden={hidden}
+          sx={{
+            px: { xs: 2, sm: 4, md: 8, lg: 15, xl: 30 },
+            py: 6,
+            backgroundColor: bg,
+          }}
+        >
+          <Typography variant="h4" fontWeight="bold" gutterBottom>
+            {title}
+          </Typography>
+          <Typography variant="h6">{text}</Typography>
+        </Box>
+      ))}
 
       {/* Contáctanos */}
       <Box
@@ -173,7 +149,7 @@ const Home = ({ scrollTargets }) => {
           backgroundColor: '#ffffff',
           display: 'flex',
           flexDirection: 'column',
-          alignItems: 'left',
+          alignItems: 'flex-start', // ✅ reemplazado 'left'
         }}
       >
         <Typography variant="h4" fontWeight="bold" gutterBottom>
