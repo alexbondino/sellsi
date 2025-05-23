@@ -111,7 +111,7 @@ const Home = ({ scrollTargets }) => {
       {/* Sección: Servicios */}
       <Box
         ref={serviciosRef}
-        sx={{ px: 30, py: 6, backgroundColor: '#f9f9f9' }}
+        sx={{ px: 30, py: 6, backgroundColor: '#e6e6e6' }}
       >
         <Typography variant="h4" fontWeight="bold" gutterBottom>
           Servicios
@@ -142,7 +142,7 @@ const Home = ({ scrollTargets }) => {
         sx={{
           px: 30,
           py: 8,
-          backgroundColor: '#f9f9f9',
+          backgroundColor: '#ffffff',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'left',
