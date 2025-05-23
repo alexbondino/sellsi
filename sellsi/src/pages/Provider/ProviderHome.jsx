@@ -175,14 +175,13 @@ const ProviderHome = () => {
 
         <Grid item xs={12} container justifyContent="center" sx={{ mt: 4 }}>
           <Button
-            variant="outlined"
+            variant="contained"
             size="large"
             startIcon={<AddIcon />}
             fullWidth
             sx={{
               py: 3,
-              backgroundColor: 'white',
-              borderRadius: 3,
+              borderRadius: 2,
               fontSize: 25,
             }} // Aumenta la altura del botón
           >
@@ -220,7 +219,7 @@ const ProviderHome = () => {
                   }}
                 >
                   <Typography fontWeight="bold">
-                    {req.quantity} x {req.productname || 'Producto'}
+                    {req.productqty ?? 'N/A'} · {req.productnm || 'Producto'}
                   </Typography>
                   <Box textAlign="right">
                     <Typography fontWeight="bold">
