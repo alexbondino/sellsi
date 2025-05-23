@@ -72,7 +72,7 @@ const ProviderHome = () => {
 
       const { data: productData, error: productError } = await supabase
         .from('products')
-        .select('productid')
+        .select('productid,productnm')
         .eq('supplierid', supplierId)
 
       if (productError) {
@@ -84,6 +84,7 @@ const ProviderHome = () => {
       }
 
       const productIds = productData.map((p) => p.productid)
+      const productNames = productData.map((p) => p.productnm)
 
       if (productIds.length === 0) {
         setWeeklyRequests([])
@@ -92,7 +93,7 @@ const ProviderHome = () => {
 
       const { data: requests, error: requestError } = await supabase
         .from('requests')
-        .select('*')
+        .select('*, products(productnm)')
         .in('productid', productIds)
         .gte('createddt', startOfWeek)
         .lte('createddt', endOfWeek)
@@ -219,7 +220,8 @@ const ProviderHome = () => {
                   }}
                 >
                   <Typography fontWeight="bold">
-                    {req.productqty ?? 'N/A'} · {req.productnm || 'Producto'}
+                    {req.productqty ?? 'N/A'} ·{' '}
+                    {req.products?.productnm || 'Producto'}
                   </Typography>
                   <Box textAlign="right">
                     <Typography fontWeight="bold">
