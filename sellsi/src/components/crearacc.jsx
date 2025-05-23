@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react'
 import {
   Box,
   Button,
@@ -10,38 +10,42 @@ import {
   Link,
   InputAdornment,
   IconButton,
-} from '@mui/material';
-import { Visibility, VisibilityOff } from '@mui/icons-material';
-import { useTheme } from '@mui/material/styles';
-import Dialog from '@mui/material/Dialog';
-import DialogTitle from '@mui/material/DialogTitle';
-import DialogContent from '@mui/material/DialogContent';
+} from '@mui/material'
+import { Visibility, VisibilityOff } from '@mui/icons-material'
+import { useTheme } from '@mui/material/styles'
+import Dialog from '@mui/material/Dialog'
+import DialogTitle from '@mui/material/DialogTitle'
+import DialogContent from '@mui/material/DialogContent'
+import AccessTimeIcon from '@mui/icons-material/AccessTime'
+import Fade from '@mui/material/Fade' // Asegúrate de importar Fade
 
 // Barra de progreso superior
 function BarraProgreso({ paso }) {
-  const theme = useTheme();
-  const gris = '#b0b0b0';
-  const celeste = '#41B6E6';
-  const textoColor = theme.palette.mode === 'dark' ? '#fff' : '#222';
+  const theme = useTheme()
+  const gris = '#b0b0b0'
+  const celeste = '#41B6E6'
+  const textoColor = theme.palette.mode === 'dark' ? '#fff' : '#222'
 
   const getCirculoEstilo = (index) => {
-    const circuloPaso = index + 1;
+    const circuloPaso = index + 1
     if (circuloPaso < paso) {
-      return { background: celeste };
+      return { background: celeste }
     } else if (circuloPaso === paso) {
-      if (paso === 4 && circuloPaso === 4) {
-        return { background: celeste };
-      } else {
-        return { background: `linear-gradient(to right, ${celeste} 50%, ${gris} 50%)` };
+      // Mitad celeste, mitad gris para el paso actual (excepto paso 5, que es todo celeste)
+      if (paso === 5) {
+        return { background: celeste }
+      }
+      return {
+        background: `linear-gradient(to right, ${celeste} 50%, ${gris} 50%)`,
       }
     } else {
-      return { background: gris };
+      return { background: gris }
     }
-  };
+  }
 
-  const barra1Color = paso > 1 ? celeste : gris;
-  const barra2Color = paso > 2 ? celeste : gris;
-  const barra3Color = paso > 3 ? celeste : gris;
+  const barra1Color = paso > 1 ? celeste : gris
+  const barra2Color = paso > 2 ? celeste : gris
+  const barra3Color = paso > 3 ? celeste : gris
 
   return (
     <Box
@@ -68,30 +72,36 @@ function BarraProgreso({ paso }) {
           display: 'flex',
         }}
       >
-        <Box sx={{
-          width: '33.3%',
-          height: '100%',
-          background: barra1Color,
-          borderRadius: 4,
-          transition: 'background 0.3s',
-          mr: '2px'
-        }} />
-        <Box sx={{
-          width: '33.3%',
-          height: '100%',
-          background: barra2Color,
-          borderRadius: 4,
-          transition: 'background 0.3s',
-          mx: '2px'
-        }} />
-        <Box sx={{
-          width: '33.3%',
-          height: '100%',
-          background: barra3Color,
-          borderRadius: 4,
-          transition: 'background 0.3s',
-          ml: '2px'
-        }} />
+        <Box
+          sx={{
+            width: '33.3%',
+            height: '100%',
+            background: barra1Color,
+            borderRadius: 4,
+            transition: 'background 0.3s',
+            mr: '2px',
+          }}
+        />
+        <Box
+          sx={{
+            width: '33.3%',
+            height: '100%',
+            background: barra2Color,
+            borderRadius: 4,
+            transition: 'background 0.3s',
+            mx: '2px',
+          }}
+        />
+        <Box
+          sx={{
+            width: '33.3%',
+            height: '100%',
+            background: barra3Color,
+            borderRadius: 4,
+            transition: 'background 0.3s',
+            ml: '2px',
+          }}
+        />
       </Box>
       {/* Círculos y textos */}
       <Box
@@ -109,7 +119,7 @@ function BarraProgreso({ paso }) {
           { text: 'Creación\nde Cuenta' },
           { text: 'Tipo de\nCuenta' },
           { text: 'Completar\nInformación' },
-          { text: 'Cuenta\nCreada' }
+          { text: 'Cuenta\nCreada' },
         ].map((item, index) => (
           <Box
             key={index}
@@ -133,7 +143,7 @@ function BarraProgreso({ paso }) {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                transition: 'background 0.3s'
+                transition: 'background 0.3s',
               }}
             />
             <Typography
@@ -146,9 +156,10 @@ function BarraProgreso({ paso }) {
                 position: 'relative',
                 zIndex: 5,
                 mt: 2,
-                backgroundColor: theme.palette.mode === 'dark' ? '#121212' : '#ffffff',
+                backgroundColor:
+                  theme.palette.mode === 'dark' ? '#121212' : '#ffffff',
                 px: 1,
-                borderRadius: 1
+                borderRadius: 1,
               }}
             >
               {item.text}
@@ -157,42 +168,85 @@ function BarraProgreso({ paso }) {
         ))}
       </Box>
     </Box>
-  );
+  )
 }
 
 export default function CrearAcc({ open, onClose }) {
-  const theme = useTheme();
-  const [paso, setPaso] = useState(1);
+  const theme = useTheme()
+  const [paso, setPaso] = useState(1)
+  const [codigoVerificacion, setCodigoVerificacion] = useState([
+    '',
+    '',
+    '',
+    '',
+    '',
+  ])
+  const [codigoEnviado, setCodigoEnviado] = useState(false) // para mostrar mensaje de reenvío si quieres
+  const [showCodigoEnviado, setShowCodigoEnviado] = useState(false)
+  const [fadeIn, setFadeIn] = useState(false)
+  const fadeTimeout = useRef()
 
   // Estado para crearcuen1
-  const [correo, setCorreo] = useState('');
-  const [contrasena, setContrasena] = useState('');
-  const [repiteContrasena, setRepiteContrasena] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [showRepeatPassword, setShowRepeatPassword] = useState(false);
-  const [aceptaTerminos, setAceptaTerminos] = useState(false);
-  const [aceptaComunicaciones, setAceptaComunicaciones] = useState(false);
-  const [tipoCuenta, setTipoCuenta] = useState('');
-  const [logoEmpresa, setLogoEmpresa] = useState(null);
-  const [logoError, setLogoError] = useState('');
+  const [correo, setCorreo] = useState('')
+  const [contrasena, setContrasena] = useState('')
+  const [repiteContrasena, setRepiteContrasena] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
+  const [showRepeatPassword, setShowRepeatPassword] = useState(false)
+  const [aceptaTerminos, setAceptaTerminos] = useState(false)
+  const [aceptaComunicaciones, setAceptaComunicaciones] = useState(false)
+  const [tipoCuenta, setTipoCuenta] = useState('')
+  const [logoEmpresa, setLogoEmpresa] = useState(null)
+  const [logoError, setLogoError] = useState('')
 
   // Key para forzar desmontaje/remontaje
-  const [dialogKey, setDialogKey] = useState(0);
+  const [dialogKey, setDialogKey] = useState(0)
+
+  // Timer para el código de verificación
+  const [timer, setTimer] = useState(300) // 5 minutos en segundos
+  const timerRef = useRef()
+
+  useEffect(() => {
+    if (paso === 4) {
+      setTimer(300)
+      timerRef.current = setInterval(() => {
+        setTimer((prev) => prev - 1)
+      }, 1000)
+    }
+    return () => clearInterval(timerRef.current)
+  }, [paso])
+
+  useEffect(() => {
+    if (timer === 0) {
+      clearInterval(timerRef.current)
+    }
+  }, [timer])
+
+  useEffect(() => {
+    if (showCodigoEnviado) {
+      setFadeIn(true)
+      // Oculta después de 15 segundos con fade out
+      fadeTimeout.current = setTimeout(() => {
+        setFadeIn(false)
+        setTimeout(() => setShowCodigoEnviado(false), 400) // 400ms para el fade
+      }, 15000)
+    }
+    return () => clearTimeout(fadeTimeout.current)
+  }, [showCodigoEnviado])
 
   const handleLogoChange = (e) => {
-    const file = e.target.files[0];
+    const file = e.target.files[0]
     if (file) {
       if (file.size > 300 * 1024) {
-        setLogoError('El tamaño del archivo excede los 300 KB.');
-        setLogoEmpresa(null);
-        return;
+        setLogoError('El tamaño del archivo excede los 300 KB.')
+        setLogoEmpresa(null)
+        return
       }
-      setLogoError('');
-      const reader = new FileReader();
-      reader.onload = (ev) => setLogoEmpresa(ev.target.result);
-      reader.readAsDataURL(file);
+      setLogoError('')
+      const reader = new FileReader()
+      reader.onload = (ev) => setLogoEmpresa(ev.target.result)
+      reader.readAsDataURL(file)
     }
-  };
+  }
 
   // Validaciones de contraseña
   const requisitos = [
@@ -200,48 +254,56 @@ export default function CrearAcc({ open, onClose }) {
     { label: 'Letras minúsculas (a-z)', valid: /[a-z]/.test(contrasena) },
     { label: 'Letras mayúsculas (A-Z)', valid: /[A-Z]/.test(contrasena) },
     { label: 'Números (0-9)', valid: /\d/.test(contrasena) },
-    { label: 'Caracteres especiales (ej: !@#$%^&*)', valid: /[!@#$%^&*]/.test(contrasena) },
-  ];
-  const requisitosValidos = [
-    requisitos[1].valid,
-    requisitos[2].valid,
-    requisitos[3].valid,
-    requisitos[4].valid,
-  ].filter(Boolean).length;
-  const cumpleMinimos = contrasena.length >= 8 && requisitosValidos >= 3;
+  ]
+  // Debe cumplir al menos 4 de 4
+  const requisitosValidos = requisitos.filter((r) => r.valid).length
+  const cumpleMinimos = requisitosValidos >= 4
 
   // Validación de correo electrónico
-  const correoValido = /^[^@]+@[^@]+\.[^@]+$/;
-  const correoEsValido = correoValido.test(correo);
+  const correoValido = /^[^@]+@[^@]+\.[^@]+$/
+  const correoEsValido = correoValido.test(correo)
 
   // Validación de repetición de contraseña
-  const contrasenasCoinciden = contrasena === repiteContrasena && repiteContrasena.length > 0;
+  const contrasenasCoinciden =
+    contrasena === repiteContrasena && repiteContrasena.length > 0
 
   const resetForm = () => {
-    setPaso(1);
-    setCorreo('');
-    setContrasena('');
-    setRepiteContrasena('');
-    setShowPassword(false);
-    setShowRepeatPassword(false);
-    setAceptaTerminos(false);
-    setAceptaComunicaciones(false);
-    setTipoCuenta('');
-    setLogoEmpresa(null);
-    setLogoError('');
-  };
+    setPaso(1)
+    setCorreo('')
+    setContrasena('')
+    setRepiteContrasena('')
+    setShowPassword(false)
+    setShowRepeatPassword(false)
+    setAceptaTerminos(false)
+    setAceptaComunicaciones(false)
+    setTipoCuenta('')
+    setLogoEmpresa(null)
+    setLogoError('')
+  }
 
   // Cuando el modal termina de cerrarse, resetea el form y cambia la key
   const handleExited = () => {
-    resetForm();
-    setDialogKey(k => k + 1);
-  };
+    resetForm()
+    setDialogKey((k) => k + 1)
+  }
+
+  // Cambia el handler de cierre para controlar el backdropClick:
+  const handleDialogClose = (event, reason) => {
+    // Solo permitir cerrar con backdropClick en paso 1
+    if (
+      (paso === 2 || paso === 3 || paso === 4 || paso === 5) &&
+      reason === 'backdropClick'
+    ) {
+      return
+    }
+    onClose(event, reason)
+  }
 
   return (
     <Dialog
-      key={dialogKey} // <-- Esto fuerza el desmontaje/remontaje
+      key={dialogKey}
       open={open}
-      onClose={onClose}
+      onClose={handleDialogClose} // <-- usa el nuevo handler
       onExited={handleExited}
       maxWidth="md"
       fullWidth
@@ -250,14 +312,13 @@ export default function CrearAcc({ open, onClose }) {
           width: '90vw',
           maxWidth: 1050,
           height: '90vh',
-          overflowX: 'hidden'
-        }
+          overflowX: 'hidden',
+        },
       }}
     >
-      <DialogTitle>
-        Crear cuenta
+      <DialogTitle sx={{ p: 0 }}>
         <Button
-          onClick={onClose} // Solo onClose
+          onClick={onClose}
           sx={{
             position: 'absolute',
             top: 8,
@@ -286,29 +347,32 @@ export default function CrearAcc({ open, onClose }) {
               flexDirection: 'column',
               alignItems: 'center',
               mb: 2,
-              mt: 13, // <--- Prueba con 10 o 12
+              mt: 0,
             }}
           >
             <img
-              src={theme.palette.mode === 'dark' ? '/logodarkmode.jpeg' : '/LOGO-removebg-preview.png'}
+              src="/LOGO-removebg-preview.png"
               alt="SELLSI Logo"
-              style={{ width: 200, marginBottom: 10 }}
+              style={{ width: 200, marginBottom: 10, margintop: 1 }}
             />
             <Typography
               variant="h6"
               align="center"
               sx={{
-                mb: 1,
+                mb: 10,
                 color: theme.palette.mode === 'dark' ? '#fff' : '#222',
                 fontWeight: 700,
                 fontSize: 20,
                 fontStyle: 'italic',
               }}
             >
-              Conecta. Vende. Crece
+              Conecta. Vende. Crece.
             </Typography>
             <form
-              onSubmit={e => { e.preventDefault(); setPaso(2); }}
+              onSubmit={(e) => {
+                e.preventDefault()
+                setPaso(2)
+              }}
               style={{ width: '100%' }}
             >
               <TextField
@@ -319,11 +383,15 @@ export default function CrearAcc({ open, onClose }) {
                 onChange={(e) => setCorreo(e.target.value)}
                 sx={{ mb: 2 }}
                 error={correo.length > 0 && !correoEsValido}
-                helperText={correo.length > 0 && !correoEsValido ? 'Correo inválido. Ejemplo: usuario@dominio.com' : ''}
+                helperText={
+                  correo.length > 0 && !correoEsValido
+                    ? 'Correo inválido. Ejemplo: usuario@dominio.com'
+                    : ''
+                }
               />
               <TextField
                 label="Contraseña"
-                type={showPassword ? "text" : "password"}
+                type={showPassword ? 'text' : 'password'}
                 variant="outlined"
                 fullWidth
                 value={contrasena}
@@ -354,7 +422,7 @@ export default function CrearAcc({ open, onClose }) {
               />
               <TextField
                 label="Repita su Contraseña"
-                type={showRepeatPassword ? "text" : "password"}
+                type={showRepeatPassword ? 'text' : 'password'}
                 variant="outlined"
                 fullWidth
                 value={repiteContrasena}
@@ -374,7 +442,11 @@ export default function CrearAcc({ open, onClose }) {
                         onClick={() => setShowRepeatPassword((show) => !show)}
                         edge="end"
                       >
-                        {showRepeatPassword ? <VisibilityOff /> : <Visibility />}
+                        {showRepeatPassword ? (
+                          <VisibilityOff />
+                        ) : (
+                          <Visibility />
+                        )}
                       </IconButton>
                     </InputAdornment>
                   ),
@@ -402,29 +474,17 @@ export default function CrearAcc({ open, onClose }) {
                 }}
               >
                 <Typography sx={{ fontWeight: 700, mb: 1 }}>
-                  Tu contraseña debe contener:
+                  Tu contraseña debe reunir las siguientes condiciones:
                 </Typography>
                 <ul style={{ margin: 0, paddingLeft: 20 }}>
-                  <li style={{ color: requisitos[0].valid ? 'green' : undefined }}>
-                    {requisitos[0].valid ? '✓' : '•'} Al menos 8 caracteres
-                  </li>
-                  <li>
-                    Al menos 3 de los siguientes:
-                    <ul>
-                      <li style={{ color: requisitos[1].valid ? 'green' : undefined }}>
-                        {requisitos[1].valid ? '✓' : '•'} Letras minúsculas (a-z)
-                      </li>
-                      <li style={{ color: requisitos[2].valid ? 'green' : undefined }}>
-                        {requisitos[2].valid ? '✓' : '•'} Letras mayúsculas (A-Z)
-                      </li>
-                      <li style={{ color: requisitos[3].valid ? 'green' : undefined }}>
-                        {requisitos[3].valid ? '✓' : '•'} Números (0-9)
-                      </li>
-                      <li style={{ color: requisitos[4].valid ? 'green' : undefined }}>
-                        {requisitos[4].valid ? '✓' : '•'} Caracteres especiales (ej: !@#$%^&*)
-                      </li>
-                    </ul>
-                  </li>
+                  {requisitos.map((req, idx) => (
+                    <li
+                      key={idx}
+                      style={{ color: req.valid ? 'green' : undefined }}
+                    >
+                      {req.valid ? '✓' : '•'} {req.label}
+                    </li>
+                  ))}
                 </ul>
               </Paper>
               <FormControlLabel
@@ -457,7 +517,7 @@ export default function CrearAcc({ open, onClose }) {
                     sx={{ color: '#41B6E6' }}
                   />
                 }
-                label="Acepto recibir avisos de ofertas y novedades de SELLSI."
+                label="Acepto recibir avisos de ofertas y novedades de Sellsi."
                 sx={{ mb: 2 }}
               />
               <Button
@@ -518,8 +578,17 @@ export default function CrearAcc({ open, onClose }) {
 
         {/* Paso 2: Selección de tipo de cuenta */}
         {paso === 2 && (
-          <Box display="flex" flexDirection="column" alignItems="center" justifyContent="center" minHeight={350}>
-            <Typography variant="h5" sx={{ mb: 3, fontWeight: 700, textAlign: 'center' }}>
+          <Box
+            display="flex"
+            flexDirection="column"
+            alignItems="center"
+            justifyContent="center"
+            minHeight={350}
+          >
+            <Typography
+              variant="h5"
+              sx={{ mb: 10, mt: 4, fontWeight: 700, textAlign: 'center' }}
+            >
               Elige el tipo de cuenta predeterminado
             </Typography>
             <Box
@@ -542,24 +611,36 @@ export default function CrearAcc({ open, onClose }) {
                   flexDirection: 'column',
                   justifyContent: 'space-between',
                   height: 352,
-                  border: tipoCuenta === 'proveedor'
-                    ? `2px solid #41B6E6`
-                    : `2px solid #eee`,
-                  background: tipoCuenta === 'proveedor'
-                    ? '#f0fbff'
-                    : '#fafbfc',
+                  border:
+                    tipoCuenta === 'proveedor'
+                      ? `2px solid #41B6E6`
+                      : `2px solid #eee`,
+                  background:
+                    tipoCuenta === 'proveedor' ? '#f0fbff' : '#fafbfc',
                   transition: 'border 0.2s, background 0.2s',
                 }}
               >
                 <Box flexGrow={1} width="100%">
-                  <Typography variant="h6" sx={{ fontWeight: 700, mb: 1, color: '#222' }}>
+                  <Typography
+                    variant="h6"
+                    sx={{ fontWeight: 700, mb: 1, color: '#222' }}
+                  >
                     Cuenta Proveedor
                   </Typography>
                   <Typography variant="body2" sx={{ color: '#888', mb: 2 }}>
                     Regístrate como proveedor para:
                   </Typography>
-                  <ul style={{ margin: 0, paddingLeft: 18, color: '#444', fontSize: 15 }}>
-                    <li>Crear el perfil de tu empresa y promocionar tus productos</li>
+                  <ul
+                    style={{
+                      margin: 0,
+                      paddingLeft: 18,
+                      color: '#444',
+                      fontSize: 15,
+                    }}
+                  >
+                    <li>
+                      Crear el perfil de tu empresa y promocionar tus productos
+                    </li>
                     <li>Recibir solicitudes de compradores</li>
                     <li>Acceder a una base de datos de compradores</li>
                     <li>Ofrecer productos a leads de compradores</li>
@@ -569,7 +650,8 @@ export default function CrearAcc({ open, onClose }) {
                 <Button
                   sx={{
                     width: '100%',
-                    backgroundColor: tipoCuenta === 'proveedor' ? '#41B6E6' : '#b0c4cc',
+                    backgroundColor:
+                      tipoCuenta === 'proveedor' ? '#41B6E6' : '#b0c4cc',
                     color: '#fff',
                     fontWeight: 700,
                     textTransform: 'none',
@@ -593,24 +675,36 @@ export default function CrearAcc({ open, onClose }) {
                   flexDirection: 'column',
                   justifyContent: 'space-between',
                   height: 352,
-                  border: tipoCuenta === 'comprador'
-                    ? `2px solid #41B6E6`
-                    : `2px solid #eee`,
-                  background: tipoCuenta === 'comprador'
-                    ? '#f0fbff'
-                    : '#fafbfc',
+                  border:
+                    tipoCuenta === 'comprador'
+                      ? `2px solid #41B6E6`
+                      : `2px solid #eee`,
+                  background:
+                    tipoCuenta === 'comprador' ? '#f0fbff' : '#fafbfc',
                   transition: 'border 0.2s, background 0.2s',
                 }}
               >
                 <Box flexGrow={1} width="100%">
-                  <Typography variant="h6" sx={{ fontWeight: 700, mb: 1, color: '#222' }}>
+                  <Typography
+                    variant="h6"
+                    sx={{ fontWeight: 700, mb: 1, color: '#222' }}
+                  >
                     Cuenta Comprador
                   </Typography>
                   <Typography variant="body2" sx={{ color: '#888', mb: 2 }}>
                     Regístrate como comprador para:
                   </Typography>
-                  <ul style={{ margin: 0, paddingLeft: 18, color: '#444', fontSize: 15 }}>
-                    <li>Buscar productos y solicitar cotizaciones a proveedores</li>
+                  <ul
+                    style={{
+                      margin: 0,
+                      paddingLeft: 18,
+                      color: '#444',
+                      fontSize: 15,
+                    }}
+                  >
+                    <li>
+                      Buscar productos y solicitar cotizaciones a proveedores
+                    </li>
                     <li>Crear solicitudes para que proveedores te contacten</li>
                     <li>Acceder a carga no reclamada</li>
                   </ul>
@@ -619,7 +713,8 @@ export default function CrearAcc({ open, onClose }) {
                   variant="contained"
                   sx={{
                     width: '100%',
-                    backgroundColor: tipoCuenta === 'comprador' ? '#41B6E6' : '#b0c4cc',
+                    backgroundColor:
+                      tipoCuenta === 'comprador' ? '#41B6E6' : '#b0c4cc',
                     color: '#fff',
                     fontWeight: 700,
                     textTransform: 'none',
@@ -633,29 +728,68 @@ export default function CrearAcc({ open, onClose }) {
               </Paper>
             </Box>
             {/* SEPARADOR GRANDE */}
-            <Box mt={10} display="flex" flexDirection="column" alignItems="center" width="100%">
-              <Typography sx={{ color: '#888', fontSize: 14, mb: 3, textAlign: 'center' }}>
-                *Podrás cambiar el tipo de cuenta más adelante desde la configuración de tu perfil.
-              </Typography>
-              <Button
-                variant="contained"
-                disabled={!tipoCuenta}
-                onClick={() => setPaso(3)}
-                sx={{
-                  width: 300,
-                  backgroundColor: tipoCuenta ? '#41B6E6' : '#b0c4cc',
-                  color: '#fff',
-                  fontWeight: 700,
-                  fontSize: 22,
-                  mb: 2,
-                  textTransform: 'none',
-                  boxShadow: '0 4px 10px 0 rgba(0,0,0,0.10)',
-                  height: 56,
-                  '&:hover': { backgroundColor: tipoCuenta ? '#2fa4d6' : '#b0c4cc' },
-                }}
+            <Box
+              mt={10}
+              display="flex"
+              flexDirection="column"
+              alignItems="center"
+              width="100%"
+            >
+              <Typography
+                sx={{ color: '#888', fontSize: 14, mb: 3, textAlign: 'center' }}
               >
-                Continuar
-              </Button>
+                *Podrás cambiar el tipo de cuenta más adelante desde la
+                configuración de tu perfil.
+              </Typography>
+              <Box
+                display="flex"
+                flexDirection="row"
+                justifyContent="center"
+                alignItems="center"
+                gap={8}
+                width="100%"
+                maxWidth={400}
+                mb={2}
+              >
+                {/* Botón Volver Atrás igual al del paso 3 */}
+                <Button
+                  variant="outlined"
+                  onClick={() => setPaso(1)}
+                  sx={{
+                    fontWeight: 700,
+                    fontSize: 20,
+                    px: 4,
+                    py: 1.5,
+                    minWidth: 180,
+                    borderColor: '#1976d2',
+                    color: '#1976d2',
+                    whiteSpace: 'nowrap',
+                    '&:hover': { borderColor: '#41B6E6', color: '#41B6E6' },
+                  }}
+                >
+                  Volver Atrás
+                </Button>
+                <Button
+                  variant="contained"
+                  disabled={!tipoCuenta}
+                  onClick={() => setPaso(3)}
+                  sx={{
+                    width: 200,
+                    backgroundColor: tipoCuenta ? '#41B6E6' : '#b0c4cc',
+                    color: '#fff',
+                    fontWeight: 700,
+                    fontSize: 22,
+                    textTransform: 'none',
+                    boxShadow: '0 4px 10px 0 rgba(0,0,0,0.10)',
+                    height: 56,
+                    '&:hover': {
+                      backgroundColor: tipoCuenta ? '#2fa4d6' : '#b0c4cc',
+                    },
+                  }}
+                >
+                  Continuar
+                </Button>
+              </Box>
               <Button
                 variant="text"
                 onClick={() => setPaso(3)}
@@ -664,7 +798,6 @@ export default function CrearAcc({ open, onClose }) {
                   fontWeight: 700,
                   fontSize: 18,
                   mt: 1,
-                  textTransform: 'uppercase',
                   letterSpacing: 1,
                 }}
               >
@@ -676,8 +809,17 @@ export default function CrearAcc({ open, onClose }) {
 
         {/* Paso 3: Formulario de datos */}
         {paso === 3 && (
-          <Box display="flex" flexDirection="column" alignItems="center" justifyContent="center" minHeight={350}>
-            <Typography variant="h5" sx={{ mb: 3, fontWeight: 700, textAlign: 'center' }}>
+          <Box
+            display="flex"
+            flexDirection="column"
+            alignItems="center"
+            justifyContent="center"
+            minHeight={350}
+          >
+            <Typography
+              variant="h5"
+              sx={{ mb: 10, mt: 4, fontWeight: 700, textAlign: 'center' }}
+            >
               {tipoCuenta === 'proveedor'
                 ? 'Completa los datos de tu empresa'
                 : 'Completa tus datos personales'}
@@ -688,7 +830,10 @@ export default function CrearAcc({ open, onClose }) {
                 width: '100%',
                 maxWidth: tipoCuenta === 'proveedor' ? 850 : 380,
                 display: 'flex',
-                flexDirection: tipoCuenta === 'proveedor' ? { xs: 'column', md: 'row' } : 'column',
+                flexDirection:
+                  tipoCuenta === 'proveedor'
+                    ? { xs: 'column', md: 'row' }
+                    : 'column',
                 gap: { xs: 2, md: 4 },
                 justifyContent: 'center',
                 alignItems: 'flex-start',
@@ -701,13 +846,13 @@ export default function CrearAcc({ open, onClose }) {
                 <>
                   {/* Formulario empresa */}
                   <Box sx={{ flex: 1, minWidth: 320 }}>
-                    <TextField
+                    {/* <TextField
                       label="Razón Social"
                       variant="outlined"
                       fullWidth
                       sx={{ mb: 2 }}
                       required
-                    />
+                    /> */}
                     <TextField
                       label="Nombre de Empresa"
                       variant="outlined"
@@ -716,7 +861,7 @@ export default function CrearAcc({ open, onClose }) {
                       required
                     />
                     <TextField
-                      label="RUT Empresa"
+                      label="RUT Empresa o Personal"
                       variant="outlined"
                       fullWidth
                       sx={{ mb: 2 }}
@@ -741,7 +886,9 @@ export default function CrearAcc({ open, onClose }) {
                       gap: 2,
                     }}
                   >
-                    <Typography sx={{ mb: 1, fontWeight: 500, textAlign: 'center' }}>
+                    <Typography
+                      sx={{ mb: 1, fontWeight: 500, textAlign: 'center' }}
+                    >
                       Sube la imagen con el logo de tu empresa
                     </Typography>
                     {/* Contenedor de la imagen */}
@@ -755,7 +902,8 @@ export default function CrearAcc({ open, onClose }) {
                         alignItems: 'center',
                         justifyContent: 'center',
                         mb: 1,
-                        bgcolor: theme => theme.palette.mode === 'dark' ? '#23272f' : '#f5f5f5',
+                        bgcolor: (theme) =>
+                          theme.palette.mode === 'dark' ? '#23272f' : '#f5f5f5',
                         overflow: 'hidden',
                         padding: 2, // Agregamos padding para imágenes pequeñas como imageicon.png
                       }}
@@ -768,7 +916,7 @@ export default function CrearAcc({ open, onClose }) {
                           maxHeight: '100%',
                           width: 'auto',
                           height: 'auto',
-                          objectFit: 'contain'
+                          objectFit: 'contain',
                         }}
                       />
                     </Box>
@@ -783,18 +931,32 @@ export default function CrearAcc({ open, onClose }) {
                         mb: 1,
                         px: 3,
                         py: 1,
-                        '&:hover': { borderColor: '#1976d2', color: '#1976d2' }
+                        '&:hover': { borderColor: '#1976d2', color: '#1976d2' },
                       }}
                     >
                       Cargar Imagen
-                      <input type="file" hidden accept="image/*" onChange={handleLogoChange} />
+                      <input
+                        type="file"
+                        hidden
+                        accept="image/*"
+                        onChange={handleLogoChange}
+                      />
                     </Button>
                     {logoError && (
-                      <Typography sx={{ color: 'red', fontSize: 14, mb: 1, textAlign: 'center' }}>
+                      <Typography
+                        sx={{
+                          color: 'red',
+                          fontSize: 14,
+                          mb: 1,
+                          textAlign: 'center',
+                        }}
+                      >
                         {logoError}
                       </Typography>
                     )}
-                    <Typography sx={{ fontSize: 13, color: '#888', textAlign: 'center' }}>
+                    <Typography
+                      sx={{ fontSize: 13, color: '#888', textAlign: 'center' }}
+                    >
                       Tamaño máximo del archivo: 300 KB.
                     </Typography>
                   </Box>
@@ -826,7 +988,14 @@ export default function CrearAcc({ open, onClose }) {
               )}
             </Box>
             {/* Botones centrados */}
-            <Box display="flex" width="100%" maxWidth={tipoCuenta === 'proveedor' ? 900 : 400} justifyContent="center" gap={4} mt={4}>
+            <Box
+              display="flex"
+              width="100%"
+              maxWidth={tipoCuenta === 'proveedor' ? 900 : 400}
+              justifyContent="center"
+              gap={8}
+              mt={8}
+            >
               <Button
                 variant="outlined"
                 onClick={() => setPaso(2)}
@@ -837,7 +1006,7 @@ export default function CrearAcc({ open, onClose }) {
                   py: tipoCuenta === 'comprador' ? 1.2 : 1.5,
                   borderColor: '#1976d2',
                   color: '#1976d2',
-                  '&:hover': { borderColor: '#41B6E6', color: '#41B6E6' }
+                  '&:hover': { borderColor: '#41B6E6', color: '#41B6E6' },
                 }}
               >
                 Volver Atrás
@@ -852,7 +1021,7 @@ export default function CrearAcc({ open, onClose }) {
                   py: tipoCuenta === 'comprador' ? 1.2 : 1.5,
                   backgroundColor: '#41B6E6',
                   color: '#fff',
-                  '&:hover': { backgroundColor: '#2fa4d6' }
+                  '&:hover': { backgroundColor: '#2fa4d6' },
                 }}
               >
                 Continuar
@@ -863,37 +1032,314 @@ export default function CrearAcc({ open, onClose }) {
 
         {/* Paso 4: Confirmación de cuenta creada */}
         {paso === 4 && (
-          <Box display="flex" flexDirection="column" alignItems="center" justifyContent="center" minHeight={350}>
-            <Box sx={{ mb: 4, textAlign: 'center' }}>
-              {/* Ícono de confirmación/éxito */}
+          <Box
+            display="flex"
+            flexDirection="column"
+            alignItems="center"
+            justifyContent="center"
+            minHeight={350}
+          >
+            <Typography
+              variant="h5"
+              sx={{ mb: 3, mt: 4, fontWeight: 700, textAlign: 'center' }}
+            >
+              Hemos enviado un código de verificación al correo:
+            </Typography>
+            <Typography
+              sx={{
+                mb: 3,
+                textAlign: 'center',
+                fontSize: 22,
+                fontWeight: 700,
+                color: '#0',
+              }}
+            >
+              <strong>{correo}</strong>
+            </Typography>
+            <Typography sx={{ mb: 3, textAlign: 'center' }}>
+              Ingresa el código de verificación que recibiste para activar tu
+              cuenta.
+            </Typography>
+            {/* Timer aquí */}
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                mb: 2,
+              }}
+            >
               <Box
                 sx={{
-                  width: 100,
-                  height: 100,
-                  borderRadius: '50%',
-                  backgroundColor: '#41B6E6',
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: 'center',
+                  background: timer > 0 ? '#e3f4fd' : '#fde3e3',
+                  color: timer > 0 ? '#1976d2' : '#d32f2f',
+                  borderRadius: '24px',
+                  px: 2,
+                  py: 1,
+                  fontWeight: 700,
+                  fontSize: 18,
                   margin: '0 auto',
-                  mb: 3
+                  boxShadow:
+                    timer > 0 ? '0 2px 8px #b6e0fa55' : '0 2px 8px #fbbbbb55',
+                  gap: 1,
+                  minWidth: 170,
+                  justifyContent: 'center',
                 }}
               >
-                <Typography sx={{ color: 'white', fontSize: 60 }}>✓</Typography>
+                <AccessTimeIcon
+                  sx={{ fontSize: 22, mr: 1, color: 'inherit' }}
+                />
+                {timer > 0 ? (
+                  <span
+                    style={{
+                      fontVariantNumeric: 'tabular-nums',
+                      letterSpacing: 1,
+                    }}
+                  >
+                    Tiempo restante:&nbsp;
+                    {Math.floor(timer / 60)
+                      .toString()
+                      .padStart(2, '0')}
+                    :{(timer % 60).toString().padStart(2, '0')}
+                  </span>
+                ) : (
+                  <>El código ha expirado</>
+                )}
               </Box>
-              <Typography variant="h5" sx={{ mb: 3, fontWeight: 700, textAlign: 'center' }}>
-                ¡Tu cuenta ha sido creada con éxito!
-              </Typography>
-              <Typography sx={{ textAlign: 'center', mb: 3 }}>
-                Hemos enviado un correo electrónico a <strong>{correo}</strong> con un enlace para verificar tu cuenta.
-              </Typography>
-              <Typography sx={{ textAlign: 'center', mb: 3 }}>
-                Por favor, revisa tu bandeja de entrada y sigue las instrucciones para activar tu cuenta.
-              </Typography>
+            </Box>
+            {/* Inputs de código */}
+            <Box display="flex" justifyContent="center" mb={2} mt={3}>
+              {codigoVerificacion.map((valor, idx) => (
+                <TextField
+                  key={idx}
+                  value={valor}
+                  id={`codigo-verif-input-${idx}`}
+                  onChange={(e) => {
+                    const val = e.target.value.replace(/[^0-9]/g, '')
+                    if (!val && valor === '') return
+                    const nuevoCodigo = [...codigoVerificacion]
+                    nuevoCodigo[idx] = val
+                    setCodigoVerificacion(nuevoCodigo)
+                    // Auto-focus al siguiente input si se ingresó un número
+                    if (val && idx < 4) {
+                      const next = document.getElementById(
+                        `codigo-verif-input-${idx + 1}`
+                      )
+                      if (next) next.focus()
+                    }
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Backspace') {
+                      if (codigoVerificacion[idx] === '') {
+                        if (idx > 0) {
+                          const nuevoCodigo = [...codigoVerificacion]
+                          nuevoCodigo[idx - 1] = ''
+                          setCodigoVerificacion(nuevoCodigo)
+                          const prev = document.getElementById(
+                            `codigo-verif-input-${idx - 1}`
+                          )
+                          if (prev) prev.focus()
+                          e.preventDefault()
+                        }
+                      }
+                    } else if (e.key === 'Delete') {
+                      if (codigoVerificacion[idx] !== '') {
+                        const nuevoCodigo = [...codigoVerificacion]
+                        nuevoCodigo[idx] = ''
+                        setCodigoVerificacion(nuevoCodigo)
+                        e.preventDefault()
+                      } else if (idx < 4) {
+                        const nuevoCodigo = [...codigoVerificacion]
+                        nuevoCodigo[idx + 1] = ''
+                        setCodigoVerificacion(nuevoCodigo)
+                        const next = document.getElementById(
+                          `codigo-verif-input-${idx + 1}`
+                        )
+                        if (next) next.focus()
+                        e.preventDefault()
+                      }
+                    } else if (e.key === 'ArrowLeft' && idx > 0) {
+                      const prev = document.getElementById(
+                        `codigo-verif-input-${idx - 1}`
+                      )
+                      if (prev) prev.focus()
+                      e.preventDefault()
+                    } else if (e.key === 'ArrowRight' && idx < 4) {
+                      const next = document.getElementById(
+                        `codigo-verif-input-${idx + 1}`
+                      )
+                      if (next) next.focus()
+                      e.preventDefault()
+                    }
+                  }}
+                  onPaste={(e) => {
+                    const paste = e.clipboardData
+                      .getData('Text')
+                      .replace(/[^0-9]/g, '')
+                    if (paste.length > 0) {
+                      const nuevoCodigo = [...codigoVerificacion]
+                      for (let i = 0; i < 5; i++) {
+                        nuevoCodigo[i] = paste[i] || ''
+                      }
+                      setCodigoVerificacion(nuevoCodigo)
+                      // Foco al último dígito pegado
+                      const lastIdx = Math.min(paste.length - 1, 4)
+                      setTimeout(() => {
+                        const last = document.getElementById(
+                          `codigo-verif-input-${lastIdx}`
+                        )
+                        if (last) last.focus()
+                      }, 0)
+                      e.preventDefault()
+                    }
+                  }}
+                  inputProps={{
+                    maxLength: 1,
+                    inputMode: 'numeric',
+                    pattern: '[0-9]*',
+                    style: {
+                      textAlign: 'center',
+                      fontSize: 32,
+                      color: theme.palette.text.primary,
+                      background: 'transparent',
+                      height: 56,
+                      lineHeight: '56px',
+                      padding: 0,
+                      margin: 0,
+                    },
+                  }}
+                  sx={{
+                    width: 56,
+                    height: 56,
+                    mx: 1,
+                    mt: 2,
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: '28px',
+                      bgcolor: theme.palette.background.default,
+                      borderColor:
+                        theme.palette.mode === 'dark' ? '#aaa' : '#888',
+                      height: 56,
+                      padding: 0,
+                    },
+                    '& input': {
+                      textAlign: 'center',
+                      fontSize: 32,
+                      height: 56,
+                      lineHeight: '56px',
+                      padding: 0,
+                      margin: 0,
+                      boxSizing: 'border-box',
+                      verticalAlign: 'middle',
+                      background: 'transparent',
+                    },
+                  }}
+                  variant="outlined"
+                />
+              ))}
             </Box>
             <Button
               variant="contained"
-              onClick={onClose} // Solo onClose
+              sx={{
+                backgroundColor: codigoVerificacion.every((c) => c.length === 1)
+                  ? '#41B6E6'
+                  : '#b0c4cc',
+                color: '#fff',
+                borderRadius: 2,
+                textTransform: 'none',
+                fontWeight: 700,
+                fontSize: 18,
+                width: 260,
+                height: 56,
+                mb: 6,
+                mt: 6,
+                boxShadow: 'none',
+                '&:hover': {
+                  backgroundColor: codigoVerificacion.every(
+                    (c) => c.length === 1
+                  )
+                    ? '#2fa4d6'
+                    : '#b0c4cc',
+                },
+              }}
+              disabled={!codigoVerificacion.every((c) => c.length === 1)}
+              onClick={() => setPaso(5)}
+            >
+              Verificar Código
+            </Button>
+            <Button
+              variant="text"
+              sx={{ color: '#1976d2', fontWeight: 700, mb: 3, fontSize: 16 }}
+              onClick={() => {
+                setShowCodigoEnviado(false)
+                setTimeout(() => setShowCodigoEnviado(true), 10)
+                setCodigoEnviado(true)
+                setTimer(300)
+                clearInterval(timerRef.current)
+                timerRef.current = setInterval(() => {
+                  setTimer((prev) => prev - 1)
+                }, 1000)
+              }}
+            >
+              Reenviar Código
+            </Button>
+            {/* Botón Volver atrás */}
+            <Button
+              variant="text"
+              onClick={() => setPaso(3)}
+              sx={{
+                color: '#888',
+                fontWeight: 600,
+                fontSize: 16,
+                textTransform: 'none',
+                '&:hover': { color: '#1976d2', background: 'transparent' },
+              }}
+            >
+              Volver atrás
+            </Button>
+            {showCodigoEnviado && (
+              <Fade in={fadeIn} timeout={800} unmountOnExit>
+                <Typography
+                  sx={{
+                    color: '#41B6E6',
+                    fontWeight: 500,
+                    mt: 2,
+                    transition: 'opacity 0.8s',
+                    opacity: fadeIn ? 1 : 0,
+                  }}
+                >
+                  El código ha sido reenviado a tu correo.
+                </Typography>
+              </Fade>
+            )}
+          </Box>
+        )}
+
+        {/* Paso 5: Cuenta creada con éxito */}
+        {paso === 5 && (
+          <Box
+            display="flex"
+            flexDirection="column"
+            alignItems="center"
+            justifyContent="center"
+            minHeight={350}
+          >
+            <Typography
+              variant="h5"
+              sx={{ mt: 15, fontWeight: 700, textAlign: 'center' }}
+            >
+              ¡Tu cuenta ha sido creada con éxito!
+            </Typography>
+            <Typography
+              sx={{ mt: 2, textAlign: 'center', fontSize: 18, color: '#555' }}
+            >
+              Ahora puedes disfrutar de todos los beneficios de ser parte de
+              SELLSI.
+            </Typography>
+            <Button
+              variant="contained"
+              onClick={onClose}
               sx={{
                 backgroundColor: '#41B6E6',
                 color: '#fff',
@@ -902,16 +1348,16 @@ export default function CrearAcc({ open, onClose }) {
                 px: 4,
                 py: 1.5,
                 width: 300,
-                mb: 2,
-                '&:hover': { backgroundColor: '#2fa4d6' }
+                mb: 24,
+                mt: 10,
+                '&:hover': { backgroundColor: '#2fa4d6' },
               }}
             >
-              Ir al inicio
+              Regresar al marketplace
             </Button>
           </Box>
         )}
       </DialogContent>
     </Dialog>
-  );
+  )
 }
-
