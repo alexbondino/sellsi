@@ -33,7 +33,7 @@ const TopBar = ({ onNavigate }) => {
     <Box
       sx={{
         backgroundColor: theme.palette.bars.main,
-        width: '100vw',
+        width: '100%', // ✅ reemplazamos '100vw'
         px: 0,
         py: 1,
         display: 'flex',
@@ -41,6 +41,7 @@ const TopBar = ({ onNavigate }) => {
         position: 'fixed',
         top: 0,
         zIndex: 1100,
+        overflowX: 'hidden', // ✅ prevención adicional
       }}
     >
       <Box
@@ -57,7 +58,6 @@ const TopBar = ({ onNavigate }) => {
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 4 }}>
           <img src="/logo.svg" alt="SELLSI Logo" style={{ height: 28 }} />
 
-          {/* Navegación desktop */}
           {!isMobile && (
             <Box sx={{ display: 'flex', gap: 3 }}>
               {Object.entries(sectionsMap).map(([label, ref]) => (
@@ -90,6 +90,19 @@ const TopBar = ({ onNavigate }) => {
               anchorEl={menuAnchor}
               open={Boolean(menuAnchor)}
               onClose={closeMenu}
+              anchorOrigin={{
+                vertical: 'bottom',
+                horizontal: 'right',
+              }}
+              transformOrigin={{
+                vertical: 'top',
+                horizontal: 'right',
+              }}
+              PaperProps={{
+                sx: {
+                  maxWidth: '90vw', // ✅ evita que el menú se desborde
+                },
+              }}
             >
               {Object.entries(sectionsMap).map(([label, ref]) => (
                 <MenuItem key={ref} onClick={() => handleNavigate(ref)}>
