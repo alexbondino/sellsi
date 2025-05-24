@@ -8,6 +8,8 @@ import BottomBar from './components/BottomBar'
 import TopBar from './components/TopBar'
 import Home from './pages/Home'
 import Marketplace from './components/marketplace'
+import MarketplaceGPT from './components/marketplace gpt'
+import Marketplace4 from './components/marketplace 4'
 
 function App() {
   return (
@@ -27,6 +29,8 @@ function App() {
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/marketplace" element={<Marketplace />} />
+            <Route path="/marketplace-gpt" element={<MarketplaceGPT />} />
+            <Route path="/marketplace-4" element={<Marketplace4 />} />
           </Routes>
           <Box sx={{ flexGrow: 1, textAlign: 'center', py: 4 }}>
             <h1>This is sellsi</h1>

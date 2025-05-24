@@ -1,9 +1,9 @@
 import React from 'react'
 import { Box, Typography, Button } from '@mui/material'
-import { useNavigate } from 'react-router-dom' // <--- AGREGA ESTO
+import { useNavigate } from 'react-router-dom'
 
 const Home = () => {
-  const navigate = useNavigate() // <--- AGREGA ESTO
+  const navigate = useNavigate()
 
   return (
     <Box>
@@ -15,7 +15,7 @@ const Home = () => {
           justifyContent: 'space-between',
           minHeight: '65vh',
           px: 8,
-          backgroundColor: '#e6e6e6', // reemplaza 'box_backgroud.primary' si no está definido en el theme
+          backgroundColor: '#e6e6e6',
         }}
       >
         {/* Texto izquierda */}
@@ -36,7 +36,7 @@ const Home = () => {
             que necesitas para transar lo que necesites y cuando lo necesites.
           </Typography>
 
-          <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+          <Box sx={{ display: 'flex', justifyContent: 'center', flexDirection: 'column', gap: 2 }}>
             <Button
               variant="contained"
               sx={{
@@ -50,10 +50,55 @@ const Home = () => {
                 fontSize: '1.4rem',
                 textTransform: 'none',
               }}
-              onClick={() => navigate('/marketplace')} // <--- AGREGA ESTO
+              onClick={() => navigate('/marketplace')}
             >
               Ir a marketplace
             </Button>
+            
+            {/* Nuevos botones para las versiones del marketplace */}
+            <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', mt: 2 }}>
+              <Button
+                variant="outlined"
+                sx={{
+                  borderColor: 'primary.main',
+                  color: 'primary.main',
+                  fontWeight: 'bold',
+                  borderRadius: '8px',
+                  px: 6,
+                  py: 1,
+                  fontSize: '1.1rem',
+                  textTransform: 'none',
+                  '&:hover': {
+                    backgroundColor: 'primary.main',
+                    color: 'white',
+                  }
+                }}
+                onClick={() => navigate('/marketplace-gpt')}
+              >
+                Marketplace GPT
+              </Button>
+              
+              <Button
+                variant="outlined"
+                sx={{
+                  borderColor: 'secondary.main',
+                  color: 'secondary.main',
+                  fontWeight: 'bold',
+                  borderRadius: '8px',
+                  px: 6,
+                  py: 1,
+                  fontSize: '1.1rem',
+                  textTransform: 'none',
+                  '&:hover': {
+                    backgroundColor: 'secondary.main',
+                    color: 'white',
+                  }
+                }}
+                onClick={() => navigate('/marketplace-4')}
+              >
+                Marketplace 4
+              </Button>
+            </Box>
           </Box>
         </Box>
 
@@ -74,7 +119,7 @@ const Home = () => {
       <Box
         sx={{
           minHeight: '400px',
-          backgroundColor: '#ffffff', // reemplaza con 'box_backgroud.secondary' si lo tienes definido
+          backgroundColor: '#ffffff',
           px: 8,
           py: 6,
         }}
