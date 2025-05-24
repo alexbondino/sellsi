@@ -1,176 +1,177 @@
-import React, { useEffect, useState } from 'react'
-import { Box, Typography, Button, Grid, Paper } from '@mui/material'
-import { supabase } from '../../services/supabase'
-import PaidIcon from '@mui/icons-material/Paid'
-import InventoryIcon from '@mui/icons-material/Inventory'
-import WarningIcon from '@mui/icons-material/Warning'
-import AddIcon from '@mui/icons-material/Add'
-import ListAltIcon from '@mui/icons-material/ListAlt'
+import React, { useEffect, useState } from 'react';
+import { Box, Typography, Button, Grid, Paper } from '@mui/material';
+import { supabase } from '../../services/supabase';
+import PaidIcon from '@mui/icons-material/Paid';
+import InventoryIcon from '@mui/icons-material/Inventory';
+import WarningIcon from '@mui/icons-material/Warning';
+import AddIcon from '@mui/icons-material/Add';
+import ListAltIcon from '@mui/icons-material/ListAlt';
+import DashboardCard from '../../components/Widget';
+import MonthlySalesChart from '../../components/BarChart';
 
-const supplierId = '00000000-0000-0000-0000-000000000001'
+const supplierId = '00000000-0000-0000-0000-000000000001';
+
+// 🕒 Función para calcular tiempo transcurrido
+const getTimeAgo = timestamp => {
+  const now = new Date();
+  const created = new Date(timestamp);
+  const diffMs = now - created;
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / (3600000 * 24));
+
+  if (diffMins < 1) return 'Menos de 1 minuto';
+  if (diffMins < 60)
+    return `Hace ${diffMins} minuto${diffMins !== 1 ? 's' : ''}`;
+  if (diffHours < 24)
+    return `Hace ${diffHours} hora${diffHours !== 1 ? 's' : ''}`;
+  return `Hace ${diffDays} día${diffDays !== 1 ? 's' : ''}`;
+};
 
 const ProviderHome = () => {
-  const [products, setProducts] = useState([])
-  const [sales, setSales] = useState([])
-  const [productQty, setProductQty] = useState([])
-  const [weeklyRequests, setWeeklyRequests] = useState([])
+  const [products, setProducts] = useState([]);
+  const [sales, setSales] = useState([]);
+  const [productStocks, setProductStocks] = useState([]);
+  const [weeklyRequests, setWeeklyRequests] = useState([]);
 
   const getStartOfWeek = () => {
-    const now = new Date()
-    const day = now.getDay()
-    const diff = now.getDate() - day + (day === 0 ? -6 : 1)
-    return new Date(now.setDate(diff)).toISOString().split('T')[0]
-  }
+    const now = new Date();
+    const day = now.getDay();
+    const diff = now.getDate() - day + (day === 0 ? -6 : 1);
+    return new Date(now.setDate(diff)).toISOString().split('T')[0];
+  };
 
   const getEndOfWeek = () => {
-    const now = new Date()
-    const day = now.getDay()
-    const diff = now.getDate() - day + 7
-    const endOfWeek = new Date(now.setDate(diff))
-    return endOfWeek.toISOString().split('T')[0]
-  }
+    const now = new Date();
+    const day = now.getDay();
+    const diff = now.getDate() - day + 7;
+    return new Date(now.setDate(diff)).toISOString().split('T')[0];
+  };
 
-  useEffect(() => {
-    const fetchProducts = async () => {
-      const { data, error } = await supabase
-        .from('products')
-        .select('*')
-        .eq('supplierid', supplierId)
+  const fetchProducts = async () => {
+    const { data, error } = await supabase
+      .from('products')
+      .select('*')
+      .eq('supplierid', supplierId);
 
-      if (error) {
-        console.error('❌ Error al obtener productos:', error)
-      } else {
-        setProducts(data)
-        setProductQty(data.map((p) => ({ productqty: p.productqty })))
-      }
+    if (error) {
+      console.error('❌ Error al obtener productos:', error);
+    } else {
+      setProducts(data);
+      setProductStocks(data.map(p => ({ productqty: p.productqty })));
+    }
+  };
+
+  const fetchSales = async () => {
+    const { data, error } = await supabase
+      .from('sales')
+      .select('amount, trx_date')
+      .eq('supplierid', supplierId);
+
+    if (error) {
+      console.error('❌ Error al obtener ventas:', error);
+    } else {
+      setSales(data);
+    }
+  };
+
+  const fetchRequests = async () => {
+    const start = getStartOfWeek();
+    const end = getEndOfWeek();
+
+    const { data: productData, error: productError } = await supabase
+      .from('products')
+      .select('productid,productnm')
+      .eq('supplierid', supplierId);
+
+    if (productError) {
+      console.error('❌ Error al obtener productos:', productError);
+      return;
     }
 
-    fetchProducts()
-  }, [])
+    const productIds = productData.map(p => p.productid);
 
-  useEffect(() => {
-    const fetchSales = async () => {
-      const { data, error } = await supabase
-        .from('sales')
-        .select('amount')
-        .eq('supplierid', supplierId)
-
-      if (error) {
-        console.error('❌ Error al obtener ventas:', error)
-      } else {
-        setSales(data)
-      }
+    if (productIds.length === 0) {
+      setWeeklyRequests([]);
+      return;
     }
 
-    fetchSales()
-  }, [])
+    const { data: requests, error: requestError } = await supabase
+      .from('requests')
+      .select('*, products(productnm), sellers(sellernm)')
+      .in('productid', productIds)
+      .gte('createddt', start)
+      .lte('createddt', end);
+
+    if (requestError) {
+      console.error('❌ Error al obtener solicitudes:', requestError);
+    } else {
+      setWeeklyRequests(requests);
+    }
+  };
 
   useEffect(() => {
-    const fetchRequests = async () => {
-      const startOfWeek = getStartOfWeek()
-      const endOfWeek = getEndOfWeek()
+    fetchProducts();
+    fetchSales();
+    fetchRequests();
+  }, []);
 
-      const { data: productData, error: productError } = await supabase
-        .from('products')
-        .select('productid,productnm')
-        .eq('supplierid', supplierId)
+  const totalSales = sales.reduce((acc, s) => acc + Number(s.amount), 0);
+  const productsOutOfStock = productStocks.filter(
+    p => p.productqty === 0
+  ).length;
 
-      if (productError) {
-        console.error(
-          '❌ Error al obtener productos del proveedor:',
-          productError
-        )
-        return
-      }
+  const groupedSales = sales.reduce((acc, sale) => {
+    const date = new Date(sale.trx_date); // Usa trx_date
+    const key =
+      date.toLocaleString('default', { month: 'short' }) +
+      ' ' +
+      date.getFullYear();
+    acc[key] = (acc[key] || 0) + Number(sale.amount);
+    return acc;
+  }, {});
 
-      const productIds = productData.map((p) => p.productid)
-      const productNames = productData.map((p) => p.productnm)
-
-      if (productIds.length === 0) {
-        setWeeklyRequests([])
-        return
-      }
-
-      const { data: requests, error: requestError } = await supabase
-        .from('requests')
-        .select('*, products(productnm)')
-        .in('productid', productIds)
-        .gte('createddt', startOfWeek)
-        .lte('createddt', endOfWeek)
-
-      if (requestError) {
-        console.error('❌ Error al obtener requests:', requestError)
-      } else {
-        setWeeklyRequests(requests)
-      }
-    }
-
-    fetchRequests()
-  }, [])
-
-  const totalSales = sales.reduce((acc, item) => acc + Number(item.amount), 0)
-  const totalBreaks = productQty.filter((p) => p.productqty === 0).length
-
-  const cardStyle = {
-    p: 2,
-    height: '270px',
-    width: '270px',
-    display: 'flex',
-    flexDirection: 'column',
-    justifyContent: 'center',
-    alignItems: 'center',
-    textAlign: 'center',
-  }
+  const monthlyData = Object.entries(groupedSales).map(([mes, total]) => ({
+    mes,
+    total,
+  }));
 
   return (
-    <Box
-      sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, p: 2 }}
-    >
-      {/* Columna izquierda */}
+    <Box sx={{ display: 'flex', flexDirection: 'row', p: 2 }}>
+      {/* Columna izquierda (Dashboard + gráfico) */}
       <Box sx={{ flex: 2, p: 2, backgroundColor: '#f5f5f5' }}>
         <Grid container spacing={3}>
-          <Grid item xs={12} sm={6} md={6}>
-            <Paper sx={cardStyle}>
-              <InventoryIcon sx={{ fontSize: 80, color: 'blue' }} />
-              <Typography variant="h6" sx={{ mt: 2 }}>
-                Productos activos
-              </Typography>
-              <Typography variant="h1" sx={{ mt: 0 }}>
-                {products.length}
-              </Typography>
-            </Paper>
+          <Grid item xs={12} sm={6}>
+            <DashboardCard
+              icon={<InventoryIcon />}
+              title="Productos activos"
+              value={products.length}
+              color="blue"
+            />
           </Grid>
-
-          <Grid item xs={12} sm={6} md={6}>
-            <Paper sx={cardStyle}>
-              <PaidIcon sx={{ fontSize: 80, color: 'green' }} />
-              <Typography variant="h6" sx={{ mt: 2 }}>
-                Ventas este mes
-              </Typography>
-              <Typography variant="h1">
-                ${totalSales.toLocaleString()}
-              </Typography>
-            </Paper>
+          <Grid item xs={12} sm={6}>
+            <DashboardCard
+              icon={<PaidIcon />}
+              title="Ventas este mes"
+              value={`$${totalSales.toLocaleString()}`}
+              color="green"
+            />
           </Grid>
-
-          <Grid item xs={12} sm={6} md={6}>
-            <Paper sx={cardStyle}>
-              <WarningIcon sx={{ fontSize: 80, color: 'red' }} />
-              <Typography variant="h6" sx={{ mt: 2 }}>
-                Productos sin stock
-              </Typography>
-              <Typography variant="h1">{totalBreaks}</Typography>
-            </Paper>
+          <Grid item xs={12} sm={6}>
+            <DashboardCard
+              icon={<WarningIcon />}
+              title="Productos sin stock"
+              value={productsOutOfStock}
+              color="red"
+            />
           </Grid>
-
-          <Grid item xs={12} sm={6} md={6}>
-            <Paper sx={cardStyle}>
-              <ListAltIcon sx={{ fontSize: 80, color: 'blue' }} />
-              <Typography variant="h6" sx={{ mt: 2 }}>
-                Solicitudes esta semana
-              </Typography>
-              <Typography variant="h1">{weeklyRequests.length}</Typography>
-            </Paper>
+          <Grid item xs={12} sm={6}>
+            <DashboardCard
+              icon={<ListAltIcon />}
+              title="Solicitudes esta semana"
+              value={weeklyRequests.length}
+              color="blue"
+            />
           </Grid>
         </Grid>
 
@@ -180,19 +181,25 @@ const ProviderHome = () => {
             size="large"
             startIcon={<AddIcon />}
             fullWidth
-            sx={{
-              py: 3,
-              borderRadius: 2,
-              fontSize: 25,
-            }} // Aumenta la altura del botón
+            sx={{ py: 3, borderRadius: 2, fontSize: 25 }}
           >
             Nuevo Producto
           </Button>
         </Grid>
+
+        {/* Gráfico de ventas mensuales */}
+        <MonthlySalesChart data={monthlyData} />
       </Box>
 
-      {/* Columna derecha */}
-      <Box sx={{ flex: 1, p: 2, backgroundColor: '#f5f5f5' }}>
+      {/* Columna derecha: Solicitudes recientes */}
+      <Box
+        sx={{
+          flexShrink: 0,
+          width: 350,
+          p: 2,
+          backgroundColor: '#f5f5f5',
+        }}
+      >
         <Paper sx={{ p: 2, height: '100%' }}>
           <Typography
             variant="h6"
@@ -225,10 +232,10 @@ const ProviderHome = () => {
                   </Typography>
                   <Box textAlign="right">
                     <Typography fontWeight="bold">
-                      {req.client || 'Cliente'}
+                      {req.sellers?.sellernm || 'Cliente'}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      Hace {req.minutesAgo || '5'} min
+                      {getTimeAgo(req.createddt)}
                     </Typography>
                   </Box>
                 </Box>
@@ -238,7 +245,7 @@ const ProviderHome = () => {
         </Paper>
       </Box>
     </Box>
-  )
-}
+  );
+};
 
-export default ProviderHome
+export default ProviderHome;
