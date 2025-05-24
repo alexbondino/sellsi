@@ -1,33 +1,56 @@
-import { Box, Button } from '@mui/material'
-import { useState } from 'react' // Importar useState
+import { useState } from 'react'
+import {
+  Box,
+  Button,
+  IconButton,
+  Menu,
+  MenuItem,
+  useMediaQuery,
+} from '@mui/material'
+import MenuIcon from '@mui/icons-material/Menu'
+import { useTheme } from '@mui/material/styles'
 import Login from './login'
-import CrearAcc from './crearacc' // <--- Agrega esto
+import CrearAcc from './crearacc'
 
-const TopBar = () => {
-  // Estado para controlar la apertura/cierre del modal
+const TopBar = ({ onNavigate }) => {
+  const theme = useTheme()
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'))
+
+  const [menuAnchor, setMenuAnchor] = useState(null)
   const [openLoginModal, setOpenLoginModal] = useState(false)
-  const [openRegisterModal, setOpenRegisterModal] = useState(false) // Estado para el modal de registro
+  const [openRegisterModal, setOpenRegisterModal] = useState(false)
 
-  // Función para abrir el modal de login
+  const openMenu = (e) => setMenuAnchor(e.currentTarget)
+  const closeMenu = () => setMenuAnchor(null)
+
   const handleOpenLogin = () => {
     setOpenLoginModal(true)
+    closeMenu() // cierra el menú si estás en móvil
   }
 
-  // Función para cerrar el modal de login
-  const handleCloseLogin = () => {
-    setOpenLoginModal(false)
+  const handleOpenRegister = () => {
+    setOpenRegisterModal(true)
+    closeMenu()
   }
 
-  // Función para abrir el modal de registro
-  const handleOpenRegister = () => setOpenRegisterModal(true)
-
-  // Función para cerrar el modal de registro
+  const handleCloseLogin = () => setOpenLoginModal(false)
   const handleCloseRegister = () => setOpenRegisterModal(false)
+
+  const sectionsMap = {
+    'Quiénes somos': 'quienesSomosRef',
+    Servicios: 'serviciosRef',
+    Contáctanos: 'contactanosRef',
+  }
+
+  const handleNavigate = (ref) => {
+    closeMenu()
+    onNavigate(ref)
+  }
 
   return (
     <Box
       sx={{
-        backgroundColor: 'bars.main',
+        backgroundColor: theme.palette.bars.main,
         width: '100vw',
         px: 0,
         py: 1,
@@ -36,6 +59,7 @@ const TopBar = () => {
         position: 'fixed',
         top: 0,
         zIndex: 1100,
+        overflowX: 'hidden',
       }}
     >
       <Box
@@ -48,59 +72,109 @@ const TopBar = () => {
           alignItems: 'center',
         }}
       >
-        {/* Logo + Menú */}
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-          <img src="/logo.svg" alt="SELLSI Logo" style={{ height: 28 }} />
+        {/* Logo y navegación */}
+        <Box
+          sx={{ display: 'flex', alignItems: 'center', gap: 2, flexShrink: 0 }}
+        >
+          <img
+            src="/logo.svg"
+            alt="SELLSI Logo"
+            style={{ height: 28, maxWidth: '120px', flexShrink: 0 }}
+          />
 
-          {/* Menú de navegación */}
-          <Box sx={{ display: 'flex', gap: 3 }}>
-            <Button color="inherit" sx={{ fontWeight: 'bold' }}>
-              Quiénes somos
+          {!isMobile && (
+            <Box sx={{ display: 'flex', gap: 3 }}>
+              {Object.entries(sectionsMap).map(([label, ref]) => (
+                <Button
+                  key={ref}
+                  onClick={() => handleNavigate(ref)}
+                  color="inherit"
+                  sx={{
+                    fontWeight: 'bold',
+                    color: theme.palette.common.white,
+                  }}
+                >
+                  {label}
+                </Button>
+              ))}
+            </Box>
+          )}
+        </Box>
+
+        {/* Botones o menú móvil */}
+        {isMobile ? (
+          <>
+            <IconButton
+              onClick={openMenu}
+              sx={{ color: theme.palette.common.white, p: 1 }}
+            >
+              <MenuIcon fontSize="large" />
+            </IconButton>
+            <Menu
+              anchorEl={menuAnchor}
+              open={Boolean(menuAnchor)}
+              onClose={closeMenu}
+              anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+              transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+              PaperProps={{ sx: { maxWidth: '90vw', overflowX: 'hidden' } }}
+            >
+              {Object.entries(sectionsMap).map(([label, ref]) => (
+                <MenuItem key={ref} onClick={() => handleNavigate(ref)}>
+                  {label}
+                </MenuItem>
+              ))}
+              <MenuItem onClick={handleOpenLogin}>Iniciar sesión</MenuItem>
+              <MenuItem onClick={handleOpenRegister}>Registrarse</MenuItem>
+            </Menu>
+          </>
+        ) : (
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <Button
+              variant="contained"
+              onClick={handleOpenLogin}
+              sx={{
+                backgroundColor: theme.palette.primary.main,
+                color: theme.palette.common.white,
+                fontWeight: 'bold',
+                '&:hover': {
+                  backgroundColor: theme.palette.primary.dark,
+                },
+              }}
+            >
+              Iniciar sesión
             </Button>
-            <Button color="inherit" sx={{ fontWeight: 'bold' }}>
-              Servicios
-            </Button>
-            <Button color="inherit" sx={{ fontWeight: 'bold' }}>
-              Trabaja con nosotros
-            </Button>
-            <Button color="inherit" sx={{ fontWeight: 'bold' }}>
-              Contáctanos
+            <Button
+              variant="outlined"
+              onClick={handleOpenRegister}
+              sx={{
+                color: theme.palette.common.white,
+                borderColor: theme.palette.primary.main,
+                fontWeight: 'bold',
+                '&:hover': {
+                  backgroundColor: theme.palette.primary.main,
+                  borderColor: theme.palette.primary.main,
+                },
+              }}
+            >
+              Registrarse
             </Button>
           </Box>
-        </Box>
-
-        {/* Botones de login y register */}
-        <Box sx={{ display: 'flex', gap: 1 }}>
-          <Button
-            sx={{ backgroundColor: 'primary.main', color: 'text.white' }}
-            onClick={handleOpenLogin} // Añadir evento onClick
-          >
-            Iniciar sesión
-          </Button>
-          <Button
-            variant="outlined"
-            sx={{ color: 'text.white', borderColor: 'primary.main' }}
-            onClick={handleOpenRegister} // <--- Agrega esto
-          >
-            Registrarse
-          </Button>
-        </Box>
+        )}
       </Box>
 
       {/* Modal de Login */}
       <Login
         open={openLoginModal}
-        handleClose={() => setOpenLoginModal(false)}
+        handleClose={handleCloseLogin}
         handleOpenRegister={() => {
-          setOpenLoginModal(false)
-          setOpenRegisterModal(true)
+          handleCloseLogin()
+          handleOpenRegister()
         }}
       />
+
+      {/* Modal de Registro */}
       {openRegisterModal && (
-        <CrearAcc
-          open={openRegisterModal}
-          onClose={() => setOpenRegisterModal(false)}
-        />
+        <CrearAcc open={openRegisterModal} onClose={handleCloseRegister} />
       )}
     </Box>
   )
