@@ -81,50 +81,6 @@ const Home = ({ scrollTargets }) => {
             >
               Ir a marketplace
             </Button>
-
-            <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center' }}>
-              <Button
-                variant="outlined"
-                sx={{
-                  borderColor: 'primary.main',
-                  color: 'primary.main',
-                  fontWeight: 'bold',
-                  borderRadius: '8px',
-                  px: 6,
-                  py: 1,
-                  fontSize: '1.1rem',
-                  textTransform: 'none',
-                  '&:hover': {
-                    backgroundColor: 'primary.main',
-                    color: 'white',
-                  },
-                }}
-                onClick={() => navigate('/marketplace-gpt')}
-              >
-                Marketplace GPT
-              </Button>
-
-              <Button
-                variant="outlined"
-                sx={{
-                  borderColor: 'secondary.main',
-                  color: 'secondary.main',
-                  fontWeight: 'bold',
-                  borderRadius: '8px',
-                  px: 6,
-                  py: 1,
-                  fontSize: '1.1rem',
-                  textTransform: 'none',
-                  '&:hover': {
-                    backgroundColor: 'secondary.main',
-                    color: 'white',
-                  },
-                }}
-                onClick={() => navigate('/marketplace-4')}
-              >
-                Marketplace 4
-              </Button>
-            </Box>
           </Box>
         </Box>
 

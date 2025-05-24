@@ -17,7 +17,7 @@ import DialogContent from '@mui/material/DialogContent'
 import DialogActions from '@mui/material/DialogActions'
 import CloseIcon from '@mui/icons-material/Close'
 import Recuperar from './Recuperar'
-import CrearAcc from './crearacc'
+import CrearAcc from './Crearacc.jsx'
 
 // Extraer estilos comunes
 const commonStyles = {
@@ -230,7 +230,7 @@ export default function Login({ open, handleClose, handleOpenRegister }) {
         >
           {/* Logo dinámico */}
           <img
-            src="/LOGO-removebg-preview.png"
+            src="/logo.svg"
             alt="SELLSI Logo"
             style={{
               width: LOGO_WIDTH,

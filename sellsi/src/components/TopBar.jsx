@@ -9,12 +9,14 @@ import {
 } from '@mui/material'
 import MenuIcon from '@mui/icons-material/Menu'
 import { useTheme } from '@mui/material/styles'
-import Login from './login'
-import CrearAcc from './crearacc'
+import { useNavigate } from 'react-router-dom' // ✅ AGREGAR import
+import Login from './login.jsx'
+import CrearAcc from './Crearacc.jsx'
 
 const TopBar = ({ onNavigate }) => {
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down('md'))
+  const navigate = useNavigate() // ✅ AGREGAR hook de navegación
 
   const [menuAnchor, setMenuAnchor] = useState(null)
   const [openLoginModal, setOpenLoginModal] = useState(false)
@@ -25,7 +27,7 @@ const TopBar = ({ onNavigate }) => {
 
   const handleOpenLogin = () => {
     setOpenLoginModal(true)
-    closeMenu() // cierra el menú si estás en móvil
+    closeMenu()
   }
 
   const handleOpenRegister = () => {
@@ -47,6 +49,11 @@ const TopBar = ({ onNavigate }) => {
     onNavigate(ref)
   }
 
+  // ✅ AGREGAR función para ir a Home
+  const handleGoHome = () => {
+    navigate('/')
+  }
+
   return (
     <Box
       sx={{
@@ -58,8 +65,9 @@ const TopBar = ({ onNavigate }) => {
         justifyContent: 'center',
         position: 'fixed',
         top: 0,
-        zIndex: 1100,
+        zIndex: 1100, // ✅ ASEGURAR que esté por encima
         overflowX: 'hidden',
+        height: { xs: 56, md: 64 }, // ✅ AGREGAR altura fija
       }}
     >
       <Box
@@ -76,11 +84,30 @@ const TopBar = ({ onNavigate }) => {
         <Box
           sx={{ display: 'flex', alignItems: 'center', gap: 2, flexShrink: 0 }}
         >
-          <img
-            src="/logo.svg"
-            alt="SELLSI Logo"
-            style={{ height: 28, maxWidth: '120px', flexShrink: 0 }}
-          />
+          {/* ✅ CONVERTIR logo en botón clickeable */}
+          <Box
+            component="button"
+            onClick={handleGoHome}
+            sx={{
+              background: 'none',
+              border: 'none',
+              padding: 0,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              '&:hover': {
+                opacity: 0.8,
+                transform: 'scale(1.05)',
+              },
+              transition: 'all 0.2s ease',
+            }}
+          >
+            <img
+              src="/logo.svg"
+              alt="SELLSI Logo"
+              style={{ height: 28, maxWidth: '120px', flexShrink: 0 }}
+            />
+          </Box>
 
           {!isMobile && (
             <Box sx={{ display: 'flex', gap: 3 }}>
@@ -118,6 +145,8 @@ const TopBar = ({ onNavigate }) => {
               transformOrigin={{ vertical: 'top', horizontal: 'right' }}
               PaperProps={{ sx: { maxWidth: '90vw', overflowX: 'hidden' } }}
             >
+              {/* ✅ AGREGAR opción "Inicio" en menú móvil */}
+              <MenuItem onClick={handleGoHome}>Inicio</MenuItem>
               {Object.entries(sectionsMap).map(([label, ref]) => (
                 <MenuItem key={ref} onClick={() => handleNavigate(ref)}>
                   {label}

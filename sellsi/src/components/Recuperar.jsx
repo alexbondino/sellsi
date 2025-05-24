@@ -18,6 +18,7 @@ import { useTheme } from '@mui/material/styles'
 import AccessTimeIcon from '@mui/icons-material/AccessTime'
 import { Visibility, VisibilityOff } from '@mui/icons-material'
 import Fade from '@mui/material/Fade'
+import LockOutlinedIcon from '@mui/icons-material/LockOutlined'
 
 const Recuperar = forwardRef(function Recuperar(props, ref) {
   const theme = useTheme()
@@ -266,11 +267,26 @@ const Recuperar = forwardRef(function Recuperar(props, ref) {
         {/* Paso 2: Código */}
         {paso === 'codigo' && (
           <Box display="flex" flexDirection="column" alignItems="center">
-            <img
-              src="/candado.png"
-              alt="candado"
-              style={{ width: 90, marginBottom: 16 }}
-            />
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: 90,
+                height: 90,
+                borderRadius: '50%',
+                bgcolor: '#f0f8ff',
+                border: '2px solid #e3f2fd',
+                mb: 2,
+              }}
+            >
+              <LockOutlinedIcon
+                sx={{
+                  fontSize: 50,
+                  color: '#1976d2',
+                }}
+              />
+            </Box>
             <Typography align="center" sx={{ mb: 2, mt: 1 }}>
               Hemos enviado un código de verificación al correo:{' '}
               <strong>{correo}</strong>.<br />
