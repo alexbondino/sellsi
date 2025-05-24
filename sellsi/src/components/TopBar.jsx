@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState } from 'react'
 import {
   Box,
   Button,
@@ -6,28 +6,46 @@ import {
   Menu,
   MenuItem,
   useMediaQuery,
-} from '@mui/material';
-import MenuIcon from '@mui/icons-material/Menu';
-import { useTheme } from '@mui/material/styles';
+} from '@mui/material'
+import MenuIcon from '@mui/icons-material/Menu'
+import { useTheme } from '@mui/material/styles'
+import Login from './login'
+import CrearAcc from './crearacc'
 
 const TopBar = ({ onNavigate }) => {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const theme = useTheme()
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'))
+
+  const [menuAnchor, setMenuAnchor] = useState(null)
+  const [openLoginModal, setOpenLoginModal] = useState(false)
+  const [openRegisterModal, setOpenRegisterModal] = useState(false)
+
+  const openMenu = (e) => setMenuAnchor(e.currentTarget)
+  const closeMenu = () => setMenuAnchor(null)
+
+  const handleOpenLogin = () => {
+    setOpenLoginModal(true)
+    closeMenu() // cierra el menú si estás en móvil
+  }
+
+  const handleOpenRegister = () => {
+    setOpenRegisterModal(true)
+    closeMenu()
+  }
+
+  const handleCloseLogin = () => setOpenLoginModal(false)
+  const handleCloseRegister = () => setOpenRegisterModal(false)
 
   const sectionsMap = {
     'Quiénes somos': 'quienesSomosRef',
     Servicios: 'serviciosRef',
     Contáctanos: 'contactanosRef',
-  };
+  }
 
-  const [menuAnchor, setMenuAnchor] = useState(null);
-  const openMenu = e => setMenuAnchor(e.currentTarget);
-  const closeMenu = () => setMenuAnchor(null);
-
-  const handleNavigate = ref => {
-    closeMenu();
-    onNavigate(ref);
-  };
+  const handleNavigate = (ref) => {
+    closeMenu()
+    onNavigate(ref)
+  }
 
   return (
     <Box
@@ -52,7 +70,6 @@ const TopBar = ({ onNavigate }) => {
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          overflowX: 'hidden',
         }}
       >
         {/* Logo y navegación */}
@@ -70,7 +87,7 @@ const TopBar = ({ onNavigate }) => {
               {Object.entries(sectionsMap).map(([label, ref]) => (
                 <Button
                   key={ref}
-                  onClick={() => onNavigate(ref)}
+                  onClick={() => handleNavigate(ref)}
                   color="inherit"
                   sx={{
                     fontWeight: 'bold',
@@ -84,7 +101,7 @@ const TopBar = ({ onNavigate }) => {
           )}
         </Box>
 
-        {/* Botones o menú hamburguesa */}
+        {/* Botones o menú móvil */}
         {isMobile ? (
           <>
             <IconButton
@@ -97,34 +114,24 @@ const TopBar = ({ onNavigate }) => {
               anchorEl={menuAnchor}
               open={Boolean(menuAnchor)}
               onClose={closeMenu}
-              anchorOrigin={{
-                vertical: 'bottom',
-                horizontal: 'right',
-              }}
-              transformOrigin={{
-                vertical: 'top',
-                horizontal: 'right',
-              }}
-              PaperProps={{
-                sx: {
-                  maxWidth: '90vw',
-                  overflowX: 'hidden',
-                },
-              }}
+              anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+              transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+              PaperProps={{ sx: { maxWidth: '90vw', overflowX: 'hidden' } }}
             >
               {Object.entries(sectionsMap).map(([label, ref]) => (
                 <MenuItem key={ref} onClick={() => handleNavigate(ref)}>
                   {label}
                 </MenuItem>
               ))}
-              <MenuItem onClick={closeMenu}>Iniciar sesión</MenuItem>
-              <MenuItem onClick={closeMenu}>Registrarse</MenuItem>
+              <MenuItem onClick={handleOpenLogin}>Iniciar sesión</MenuItem>
+              <MenuItem onClick={handleOpenRegister}>Registrarse</MenuItem>
             </Menu>
           </>
         ) : (
           <Box sx={{ display: 'flex', gap: 1 }}>
             <Button
               variant="contained"
+              onClick={handleOpenLogin}
               sx={{
                 backgroundColor: theme.palette.primary.main,
                 color: theme.palette.common.white,
@@ -138,6 +145,7 @@ const TopBar = ({ onNavigate }) => {
             </Button>
             <Button
               variant="outlined"
+              onClick={handleOpenRegister}
               sx={{
                 color: theme.palette.common.white,
                 borderColor: theme.palette.primary.main,
@@ -153,8 +161,23 @@ const TopBar = ({ onNavigate }) => {
           </Box>
         )}
       </Box>
-    </Box>
-  );
-};
 
-export default TopBar;
+      {/* Modal de Login */}
+      <Login
+        open={openLoginModal}
+        handleClose={handleCloseLogin}
+        handleOpenRegister={() => {
+          handleCloseLogin()
+          handleOpenRegister()
+        }}
+      />
+
+      {/* Modal de Registro */}
+      {openRegisterModal && (
+        <CrearAcc open={openRegisterModal} onClose={handleCloseRegister} />
+      )}
+    </Box>
+  )
+}
+
+export default TopBar
