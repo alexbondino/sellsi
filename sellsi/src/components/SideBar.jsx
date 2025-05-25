@@ -10,11 +10,11 @@ import {
 import { useLocation, useNavigate } from 'react-router-dom';
 
 const menuItems = [
-  { text: 'Inicio', path: '/provider' },
-  { text: 'Mis Productos', path: '/provider/products' },
-  { text: 'Mis Pedidos', path: '/provider/orders' },
-  { text: 'Mi Performance', path: '/provider/performance' },
-  { text: 'El Mercado', path: '/provider/market' },
+  { text: 'Inicio', path: '/supplier/home' },
+  { text: 'Mis Productos', path: '/supplier/myproducts' },
+  { text: 'Mis Pedidos', path: '/supplier/myorders' },
+  { text: 'Mi Performance', path: '/supplier/myperformance' },
+  { text: 'El Mercado', path: '/supplier/market' },
 ];
 
 const SidebarProvider = () => {
@@ -25,10 +25,10 @@ const SidebarProvider = () => {
     <Box
       sx={{
         position: 'fixed',
-        top: '64px', // solo topbar
+        top: '64px',
         left: 0,
         width: '250px',
-        height: 'calc(100vh)', // ya no restamos el bottombar
+        height: '100vh',
         backgroundColor: '#2b2b2d',
         color: 'white',
         display: 'flex',
@@ -38,25 +38,45 @@ const SidebarProvider = () => {
       }}
     >
       <List>
-        {menuItems.map(item => (
-          <ListItem disablePadding key={item.text}>
-            <ListItemButton
-              onClick={() => navigate(item.path)}
-              sx={{
-                backgroundColor:
-                  location.pathname === item.path ? '#a3a3a3' : 'transparent',
-                color: 'white',
-                '&:hover': {
-                  backgroundColor: '#757575',
-                },
-                px: 3,
-                py: 1.5,
-              }}
-            >
-              <ListItemText primary={item.text} sx={{ pl: 1 }} />
-            </ListItemButton>
-          </ListItem>
-        ))}
+        {menuItems.map(item => {
+          const isActive = location.pathname === item.path;
+
+          return (
+            <ListItem disablePadding key={item.text}>
+              <ListItemButton
+                onClick={() => {
+                  if (!isActive) navigate(item.path);
+                }}
+                disabled={isActive}
+                sx={{
+                  backgroundColor: isActive ? '#a3a3a3' : 'transparent',
+                  color: 'white',
+                  '&:hover': {
+                    backgroundColor: isActive ? '#a3a3a3' : '#757575',
+                  },
+                  px: 3,
+                  py: 1.5,
+                  cursor: isActive ? 'default' : 'pointer',
+                  '&.Mui-disabled': {
+                    opacity: 1, // evita que se vea apagado
+                    color: 'white', // fuerza color blanco incluso deshabilitado
+                  },
+                }}
+              >
+                <ListItemText
+                  primary={item.text}
+                  sx={{
+                    pl: 1,
+                    color: 'white',
+                    '& .MuiTypography-root': {
+                      color: 'white !important',
+                    },
+                  }}
+                />
+              </ListItemButton>
+            </ListItem>
+          );
+        })}
       </List>
     </Box>
   );
