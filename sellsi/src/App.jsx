@@ -47,14 +47,7 @@ function AppContent({ mensaje }) {
           <Route path="/marketplace" element={<Marketplace />} />
           <Route path="/login" element={<Login />} />
           <Route path="/crear-cuenta" element={<Register />} />
-          <Route
-            path="/supplier/home"
-            element={
-              <PrivateRoute>
-                <ProviderHome />
-              </PrivateRoute>
-            }
-          />
+          <Route path="/supplier/home" element={<ProviderHome />} />
         </Routes>
 
         {/* Zona de pruebas backend */}
