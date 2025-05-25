@@ -2,8 +2,13 @@ import React, { useEffect, useState, useRef } from 'react';
 import { Box, CssBaseline } from '@mui/material';
 import { ThemeProvider } from '@mui/material/styles';
 import GlobalStyles from '@mui/material/GlobalStyles';
-import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
-import PrivateRoute from './auth/PrivateRoute';
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  useLocation,
+  useNavigate,
+} from 'react-router-dom';
 
 import theme from './styles/theme';
 import TopBar from './components/TopBar';
@@ -15,9 +20,9 @@ import Marketplace from './pages/Marketplace';
 import Login from './components/Login';
 import Register from './components/Register';
 
-// ✅ COMPONENTE interno para acceder a location y renderizar rutas
 function AppContent({ mensaje }) {
   const location = useLocation();
+  const navigate = useNavigate();
   const scrollTargets = useRef({});
 
   const handleScrollTo = sectionKey => {
@@ -25,6 +30,13 @@ function AppContent({ mensaje }) {
       behavior: 'smooth',
     });
   };
+
+  useEffect(() => {
+    const isLoggedIn = !!localStorage.getItem('supplierid');
+    if (isLoggedIn && location.pathname === '/') {
+      navigate('/supplier/home', { replace: true });
+    }
+  }, [location.pathname, navigate]);
 
   const needsPadding = true;
 
@@ -50,7 +62,6 @@ function AppContent({ mensaje }) {
           <Route path="/supplier/home" element={<ProviderHome />} />
         </Routes>
 
-        {/* Zona de pruebas backend */}
         {process.env.NODE_ENV === 'development' &&
           location.pathname === '/' && (
             <Box sx={{ flexGrow: 1, textAlign: 'center', py: 4 }}>
