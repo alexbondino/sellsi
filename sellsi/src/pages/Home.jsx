@@ -1,17 +1,20 @@
-import React, { useRef } from 'react';
-import { Box, Typography, Button } from '@mui/material';
+import React, { useRef } from 'react'
+import { Box, Typography, Button } from '@mui/material'
+import { useNavigate } from 'react-router-dom'
 
 const Home = ({ scrollTargets }) => {
-  const quienesSomosRef = useRef(null);
-  const serviciosRef = useRef(null);
-  const contactanosRef = useRef(null);
+  const navigate = useNavigate()
+
+  const quienesSomosRef = useRef(null)
+  const serviciosRef = useRef(null)
+  const contactanosRef = useRef(null)
 
   if (scrollTargets) {
     scrollTargets.current = {
       quienesSomosRef,
       serviciosRef,
       contactanosRef,
-    };
+    }
   }
 
   return (
@@ -30,6 +33,7 @@ const Home = ({ scrollTargets }) => {
           gap: { xs: 6, md: 0 },
         }}
       >
+        {/* Texto izquierda */}
         <Box sx={{ flex: 1, maxWidth: { xs: '100%', md: 700 } }}>
           <Typography
             variant="h1"
@@ -56,13 +60,15 @@ const Home = ({ scrollTargets }) => {
           <Box
             sx={{
               display: 'flex',
-              justifyContent: { xs: 'center', md: 'flex-start' },
+              justifyContent: 'center',
+              flexDirection: 'column',
+              gap: 2,
+              mt: 5,
             }}
           >
             <Button
               variant="contained"
               sx={{
-                mt: 5,
                 backgroundColor: 'primary.main',
                 fontWeight: 'bold',
                 borderRadius: '8px',
@@ -71,6 +77,7 @@ const Home = ({ scrollTargets }) => {
                 fontSize: '1.2rem',
                 textTransform: 'none',
               }}
+              onClick={() => navigate('/marketplace')}
             >
               Ir a marketplace
             </Button>
@@ -149,7 +156,7 @@ const Home = ({ scrollTargets }) => {
           backgroundColor: '#ffffff',
           display: 'flex',
           flexDirection: 'column',
-          alignItems: 'flex-start', // ✅ reemplazado 'left'
+          alignItems: 'flex-start',
         }}
       >
         <Typography variant="h4" fontWeight="bold" gutterBottom>
@@ -244,7 +251,7 @@ const Home = ({ scrollTargets }) => {
         </Box>
       </Box>
     </Box>
-  );
-};
+  )
+}
 
-export default Home;
+export default Home
