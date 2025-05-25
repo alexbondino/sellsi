@@ -16,9 +16,10 @@ import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
 import CloseIcon from '@mui/icons-material/Close';
-import Recuperar from './Recuperar';
+import Recuperar from './Recuperar.jsx';
 import Register from './Register.jsx';
 
+// Extraer estilos comunes
 // Extraer estilos comunes
 const commonStyles = {
   button: {
