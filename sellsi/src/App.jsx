@@ -3,6 +3,7 @@ import { Box, CssBaseline } from '@mui/material';
 import { ThemeProvider } from '@mui/material/styles';
 import GlobalStyles from '@mui/material/GlobalStyles';
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
+import PrivateRoute from './auth/PrivateRoute';
 
 import theme from './styles/theme';
 import TopBar from './components/TopBar';
@@ -46,7 +47,14 @@ function AppContent({ mensaje }) {
           <Route path="/marketplace" element={<Marketplace />} />
           <Route path="/login" element={<Login />} />
           <Route path="/crear-cuenta" element={<Register />} />
-          <Route path="/supplier/home" element={<ProviderHome />} />
+          <Route
+            path="/supplier/home"
+            element={
+              <PrivateRoute>
+                <ProviderHome />
+              </PrivateRoute>
+            }
+          />
         </Routes>
 
         {/* Zona de pruebas backend */}

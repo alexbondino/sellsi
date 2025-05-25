@@ -9,9 +9,6 @@ import ListAltIcon from '@mui/icons-material/ListAlt';
 import DashboardCard from '../../components/Widget';
 import MonthlySalesChart from '../../components/BarChart';
 
-const supplierId = '00000000-0000-0000-0000-000000000001';
-
-// 🕒 Función para calcular tiempo transcurrido
 const getTimeAgo = timestamp => {
   const now = new Date();
   const created = new Date(timestamp);
@@ -33,6 +30,8 @@ const ProviderHome = () => {
   const [sales, setSales] = useState([]);
   const [productStocks, setProductStocks] = useState([]);
   const [weeklyRequests, setWeeklyRequests] = useState([]);
+
+  const supplierId = localStorage.getItem('supplierid');
 
   const getStartOfWeek = () => {
     const now = new Date();
@@ -111,6 +110,11 @@ const ProviderHome = () => {
   };
 
   useEffect(() => {
+    if (!supplierId) {
+      console.warn('Proveedor no autenticado. Redirigiendo...');
+      return;
+    }
+
     fetchProducts();
     fetchSales();
     fetchRequests();
@@ -122,7 +126,7 @@ const ProviderHome = () => {
   ).length;
 
   const groupedSales = sales.reduce((acc, sale) => {
-    const date = new Date(sale.trx_date); // Usa trx_date
+    const date = new Date(sale.trx_date);
     const key =
       date.toLocaleString('default', { month: 'short' }) +
       ' ' +
@@ -138,7 +142,7 @@ const ProviderHome = () => {
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'row', p: 2 }}>
-      {/* Columna izquierda (Dashboard + gráfico) */}
+      {/* Columna izquierda */}
       <Box sx={{ flex: 2, p: 2, backgroundColor: '#f5f5f5' }}>
         <Grid container spacing={3}>
           <Grid item xs={12} sm={6}>
@@ -187,19 +191,11 @@ const ProviderHome = () => {
           </Button>
         </Grid>
 
-        {/* Gráfico de ventas mensuales */}
         <MonthlySalesChart data={monthlyData} />
       </Box>
 
-      {/* Columna derecha: Solicitudes recientes */}
-      <Box
-        sx={{
-          flexShrink: 0,
-          width: 350,
-          p: 2,
-          backgroundColor: '#f5f5f5',
-        }}
-      >
+      {/* Columna derecha */}
+      <Box sx={{ flexShrink: 0, width: 350, p: 2, backgroundColor: '#f5f5f5' }}>
         <Paper sx={{ p: 2, height: '100%' }}>
           <Typography
             variant="h6"
