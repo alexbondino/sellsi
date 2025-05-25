@@ -11,7 +11,7 @@ import TopBar from './components/TopBar';
 import Home from './pages/Home';
 import Marketplace from './pages/Marketplace.jsx';
 import Login from './components/Login.jsx';
-import CrearAcc from './components/Register.jsx';
+import Register from './components/Register.jsx';
 
 // ✅ COMPONENTE interno para acceder a location
 function AppContent({ mensaje }) {
@@ -49,7 +49,7 @@ function AppContent({ mensaje }) {
           <Route path="/" element={<Home scrollTargets={scrollTargets} />} />
           <Route path="/marketplace" element={<Marketplace />} />
           <Route path="/login" element={<Login />} />
-          <Route path="/crear-cuenta" element={<CrearAcc />} />
+          <Route path="/crear-cuenta" element={<Register />} />
         </Routes>
 
         {/* Zona de pruebas backend - solo en desarrollo y solo en Home */}

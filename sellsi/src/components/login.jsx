@@ -16,8 +16,8 @@ import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
 import CloseIcon from '@mui/icons-material/Close';
-import Recuperar from './Recuperar.jsx';
-import CrearAcc from './Register.jsx';
+import Recuperar from './Recuperar';
+import Register from './Register.jsx';
 
 // Extraer estilos comunes
 const commonStyles = {
@@ -102,7 +102,7 @@ const RegistroDialog = memo(({ open, onClose }) => (
     }}
     maxWidth={false}
   >
-    <CrearAcc onClose={onClose} />
+    <Register onClose={onClose} />
   </Dialog>
 ));
 

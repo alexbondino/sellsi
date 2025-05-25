@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react'
+import React, { useState, useRef, useEffect } from 'react';
 import {
   Box,
   Button,
@@ -16,25 +16,25 @@ import {
   MenuItem,
   Select,
   FormControl,
-} from '@mui/material'
-import { Visibility, VisibilityOff } from '@mui/icons-material'
-import { useTheme } from '@mui/material/styles'
-import Dialog from '@mui/material/Dialog'
-import DialogTitle from '@mui/material/DialogTitle'
-import DialogContent from '@mui/material/DialogContent'
-import AccessTimeIcon from '@mui/icons-material/AccessTime'
-import Fade from '@mui/material/Fade'
-import { styled } from '@mui/material/styles'
+} from '@mui/material';
+import { Visibility, VisibilityOff } from '@mui/icons-material';
+import { useTheme } from '@mui/material/styles';
+import Dialog from '@mui/material/Dialog';
+import DialogTitle from '@mui/material/DialogTitle';
+import DialogContent from '@mui/material/DialogContent';
+import AccessTimeIcon from '@mui/icons-material/AccessTime';
+import Fade from '@mui/material/Fade';
+import { styled } from '@mui/material/styles';
 import StepConnector, {
   stepConnectorClasses,
-} from '@mui/material/StepConnector'
-import Check from '@mui/icons-material/Check'
-import AccountCircleIcon from '@mui/icons-material/AccountCircle'
-import BusinessIcon from '@mui/icons-material/Business'
-import PersonAddIcon from '@mui/icons-material/PersonAdd'
-import CheckCircleIcon from '@mui/icons-material/CheckCircle'
-import InsertPhotoIcon from '@mui/icons-material/InsertPhoto'
-import StorefrontIcon from '@mui/icons-material/Storefront' // ✅ NUEVO: Icono de marketplace
+} from '@mui/material/StepConnector';
+import Check from '@mui/icons-material/Check';
+import AccountCircleIcon from '@mui/icons-material/AccountCircle';
+import BusinessIcon from '@mui/icons-material/Business';
+import PersonAddIcon from '@mui/icons-material/PersonAdd';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import InsertPhotoIcon from '@mui/icons-material/InsertPhoto';
+import StorefrontIcon from '@mui/icons-material/Storefront'; // ✅ NUEVO: Icono de marketplace
 
 // Actualiza el array de países CON emojis
 const countries = [
@@ -51,7 +51,7 @@ const countries = [
   { code: 'BR', name: 'Brasil', phone: '+55', flag: '🇧🇷' },
   { code: 'US', name: 'Estados Unidos', phone: '+1', flag: '🇺🇸' },
   { code: 'ES', name: 'España', phone: '+34', flag: '🇪🇸' },
-]
+];
 
 // Conector colorido (estilo Colorlib)
 const ColorlibConnector = styled(StepConnector)(({ theme }) => ({
@@ -79,7 +79,7 @@ const ColorlibConnector = styled(StepConnector)(({ theme }) => ({
       backgroundColor: theme.palette.grey[800],
     }),
   },
-}))
+}));
 
 // Icono colorido (estilo Colorlib)
 const ColorlibStepIconRoot = styled('div')(({ theme }) => ({
@@ -112,17 +112,17 @@ const ColorlibStepIconRoot = styled('div')(({ theme }) => ({
       },
     },
   ],
-}))
+}));
 
 function ColorlibStepIcon(props) {
-  const { active, completed, className } = props
+  const { active, completed, className } = props;
 
   const icons = {
     1: <AccountCircleIcon />,
     2: <BusinessIcon />,
     3: <PersonAddIcon />,
     4: <CheckCircleIcon />,
-  }
+  };
 
   return (
     <ColorlibStepIconRoot
@@ -131,7 +131,7 @@ function ColorlibStepIcon(props) {
     >
       {icons[String(props.icon)]}
     </ColorlibStepIconRoot>
-  )
+  );
 }
 
 // Barra de progreso con estilo Colorlib
@@ -141,7 +141,7 @@ function BarraProgreso({ paso }) {
     'Tipo de Cuenta',
     'Completar Información',
     'Cuenta Creada',
-  ]
+  ];
 
   return (
     <Box sx={{ width: '100%', mb: 4, mt: 2 }}>
@@ -165,117 +165,117 @@ function BarraProgreso({ paso }) {
           },
         }}
       >
-        {steps.map((label) => (
+        {steps.map(label => (
           <Step key={label}>
             <StepLabel StepIconComponent={ColorlibStepIcon}>{label}</StepLabel>
           </Step>
         ))}
       </Stepper>
     </Box>
-  )
+  );
 }
 
-export default function CrearAcc({ open, onClose }) {
-  const theme = useTheme()
-  const [paso, setPaso] = useState(1)
+export default function Register({ open, onClose }) {
+  const theme = useTheme();
+  const [paso, setPaso] = useState(1);
   const [codigoVerificacion, setCodigoVerificacion] = useState([
     '',
     '',
     '',
     '',
     '',
-  ])
-  const [codigoEnviado, setCodigoEnviado] = useState(false)
-  const [showCodigoEnviado, setShowCodigoEnviado] = useState(false)
-  const [fadeIn, setFadeIn] = useState(false)
-  const fadeTimeout = useRef()
+  ]);
+  const [codigoEnviado, setCodigoEnviado] = useState(false);
+  const [showCodigoEnviado, setShowCodigoEnviado] = useState(false);
+  const [fadeIn, setFadeIn] = useState(false);
+  const fadeTimeout = useRef();
 
   // Estado para paso 1
-  const [correo, setCorreo] = useState('')
-  const [contrasena, setContrasena] = useState('')
-  const [repiteContrasena, setRepiteContrasena] = useState('')
-  const [showPassword, setShowPassword] = useState(false)
-  const [showRepeatPassword, setShowRepeatPassword] = useState(false)
-  const [aceptaTerminos, setAceptaTerminos] = useState(false)
-  const [aceptaComunicaciones, setAceptaComunicaciones] = useState(false)
+  const [correo, setCorreo] = useState('');
+  const [contrasena, setContrasena] = useState('');
+  const [repiteContrasena, setRepiteContrasena] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showRepeatPassword, setShowRepeatPassword] = useState(false);
+  const [aceptaTerminos, setAceptaTerminos] = useState(false);
+  const [aceptaComunicaciones, setAceptaComunicaciones] = useState(false);
 
   // Estado para paso 2
-  const [tipoCuenta, setTipoCuenta] = useState('')
+  const [tipoCuenta, setTipoCuenta] = useState('');
 
   // Estado para paso 3
-  const [nombreEmpresa, setNombreEmpresa] = useState('')
-  const [nombrePersonal, setNombrePersonal] = useState('')
-  const [telefonoContacto, setTelefonoContacto] = useState('')
-  const [codigoPais, setCodigoPais] = useState('CL')
-  const [logoEmpresa, setLogoEmpresa] = useState(null)
-  const [logoError, setLogoError] = useState('')
+  const [nombreEmpresa, setNombreEmpresa] = useState('');
+  const [nombrePersonal, setNombrePersonal] = useState('');
+  const [telefonoContacto, setTelefonoContacto] = useState('');
+  const [codigoPais, setCodigoPais] = useState('CL');
+  const [logoEmpresa, setLogoEmpresa] = useState(null);
+  const [logoError, setLogoError] = useState('');
 
   // Key para forzar desmontaje/remontaje
-  const [dialogKey, setDialogKey] = useState(0)
+  const [dialogKey, setDialogKey] = useState(0);
 
   // Timer para el código de verificación
-  const [timer, setTimer] = useState(300)
-  const timerRef = useRef()
+  const [timer, setTimer] = useState(300);
+  const timerRef = useRef();
 
   // Detectar navegación del browser para cerrar modal
   useEffect(() => {
     const handlePopState = () => {
       if (open) {
-        onClose()
+        onClose();
       }
-    }
+    };
 
     if (open) {
-      window.addEventListener('popstate', handlePopState)
-      window.history.pushState(null, '', window.location.href)
+      window.addEventListener('popstate', handlePopState);
+      window.history.pushState(null, '', window.location.href);
     }
 
     return () => {
-      window.removeEventListener('popstate', handlePopState)
-    }
-  }, [open, onClose])
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, [open, onClose]);
 
   useEffect(() => {
     if (paso === 4) {
-      setTimer(300)
+      setTimer(300);
       timerRef.current = setInterval(() => {
-        setTimer((prev) => prev - 1)
-      }, 1000)
+        setTimer(prev => prev - 1);
+      }, 1000);
     }
-    return () => clearInterval(timerRef.current)
-  }, [paso])
+    return () => clearInterval(timerRef.current);
+  }, [paso]);
 
   useEffect(() => {
     if (timer === 0) {
-      clearInterval(timerRef.current)
+      clearInterval(timerRef.current);
     }
-  }, [timer])
+  }, [timer]);
 
   useEffect(() => {
     if (showCodigoEnviado) {
-      setFadeIn(true)
+      setFadeIn(true);
       fadeTimeout.current = setTimeout(() => {
-        setFadeIn(false)
-        setTimeout(() => setShowCodigoEnviado(false), 400)
-      }, 15000)
+        setFadeIn(false);
+        setTimeout(() => setShowCodigoEnviado(false), 400);
+      }, 15000);
     }
-    return () => clearTimeout(fadeTimeout.current)
-  }, [showCodigoEnviado])
+    return () => clearTimeout(fadeTimeout.current);
+  }, [showCodigoEnviado]);
 
-  const handleLogoChange = (e) => {
-    const file = e.target.files[0]
+  const handleLogoChange = e => {
+    const file = e.target.files[0];
     if (file) {
       if (file.size > 300 * 1024) {
-        setLogoError('El tamaño del archivo excede los 300 KB.')
-        setLogoEmpresa(null)
-        return
+        setLogoError('El tamaño del archivo excede los 300 KB.');
+        setLogoEmpresa(null);
+        return;
       }
-      setLogoError('')
-      const reader = new FileReader()
-      reader.onload = (ev) => setLogoEmpresa(ev.target.result)
-      reader.readAsDataURL(file)
+      setLogoError('');
+      const reader = new FileReader();
+      reader.onload = ev => setLogoEmpresa(ev.target.result);
+      reader.readAsDataURL(file);
     }
-  }
+  };
 
   // Validaciones de contraseña
   const requisitos = [
@@ -283,64 +283,64 @@ export default function CrearAcc({ open, onClose }) {
     { label: 'Letras minúsculas (a-z)', valid: /[a-z]/.test(contrasena) },
     { label: 'Letras mayúsculas (A-Z)', valid: /[A-Z]/.test(contrasena) },
     { label: 'Números (0-9)', valid: /\d/.test(contrasena) },
-  ]
-  const requisitosValidos = requisitos.filter((r) => r.valid).length
-  const cumpleMinimos = requisitosValidos >= 4
+  ];
+  const requisitosValidos = requisitos.filter(r => r.valid).length;
+  const cumpleMinimos = requisitosValidos >= 4;
 
   // Validación de correo electrónico
-  const correoValido = /^[^@]+@[^@]+\.[^@]+$/
-  const correoEsValido = correoValido.test(correo)
+  const correoValido = /^[^@]+@[^@]+\.[^@]+$/;
+  const correoEsValido = correoValido.test(correo);
 
   // Validación de repetición de contraseña
   const contrasenasCoinciden =
-    contrasena === repiteContrasena && repiteContrasena.length > 0
+    contrasena === repiteContrasena && repiteContrasena.length > 0;
 
   const resetForm = () => {
-    setPaso(1)
-    setCorreo('')
-    setContrasena('')
-    setRepiteContrasena('')
-    setShowPassword(false)
-    setShowRepeatPassword(false)
-    setAceptaTerminos(false)
-    setAceptaComunicaciones(false)
-    setTipoCuenta('')
-    setNombreEmpresa('')
-    setNombrePersonal('')
-    setTelefonoContacto('')
-    setCodigoPais('CL')
-    setLogoEmpresa(null)
-    setLogoError('')
-    setCodigoVerificacion(['', '', '', '', ''])
-    setTimer(300)
-    clearInterval(timerRef.current)
-  }
+    setPaso(1);
+    setCorreo('');
+    setContrasena('');
+    setRepiteContrasena('');
+    setShowPassword(false);
+    setShowRepeatPassword(false);
+    setAceptaTerminos(false);
+    setAceptaComunicaciones(false);
+    setTipoCuenta('');
+    setNombreEmpresa('');
+    setNombrePersonal('');
+    setTelefonoContacto('');
+    setCodigoPais('CL');
+    setLogoEmpresa(null);
+    setLogoError('');
+    setCodigoVerificacion(['', '', '', '', '']);
+    setTimer(300);
+    clearInterval(timerRef.current);
+  };
 
   const resetPaso4 = () => {
-    setCodigoVerificacion(['', '', '', '', ''])
-    setTimer(300)
-    clearInterval(timerRef.current)
-  }
+    setCodigoVerificacion(['', '', '', '', '']);
+    setTimer(300);
+    clearInterval(timerRef.current);
+  };
 
   const handleExited = () => {
-    resetForm()
-    setDialogKey((k) => k + 1)
-  }
+    resetForm();
+    setDialogKey(k => k + 1);
+  };
 
   const handleDialogClose = (event, reason) => {
     if (
       (paso === 2 || paso === 3 || paso === 4 || paso === 5) &&
       reason === 'backdropClick'
     ) {
-      return
+      return;
     }
-    onClose(event, reason)
-  }
+    onClose(event, reason);
+  };
 
   const handleVolverPaso4 = () => {
-    resetPaso4()
-    setPaso(3)
-  }
+    resetPaso4();
+    setPaso(3);
+  };
 
   // Componente SelectorPais COMPLETAMENTE REESCRITO
   function SelectorPais({ value, onChange, disabled = false }) {
@@ -348,12 +348,12 @@ export default function CrearAcc({ open, onClose }) {
       <FormControl size="small" sx={{ minWidth: 120 }}>
         <Select
           value={value}
-          onChange={(e) => onChange(e.target.value)}
+          onChange={e => onChange(e.target.value)}
           disabled={disabled}
           displayEmpty
-          renderValue={(selected) => {
-            const country = countries.find((c) => c.code === selected)
-            if (!country) return ''
+          renderValue={selected => {
+            const country = countries.find(c => c.code === selected);
+            if (!country) return '';
             return (
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <span
@@ -367,7 +367,7 @@ export default function CrearAcc({ open, onClose }) {
                 </span>
                 <span>{country.phone}</span>
               </Box>
-            )
+            );
           }}
           sx={{
             '& .MuiSelect-select': {
@@ -377,7 +377,7 @@ export default function CrearAcc({ open, onClose }) {
             },
           }}
         >
-          {countries.map((country) => (
+          {countries.map(country => (
             <MenuItem
               key={country.code}
               value={country.code}
@@ -410,7 +410,7 @@ export default function CrearAcc({ open, onClose }) {
           ))}
         </Select>
       </FormControl>
-    )
+    );
   }
 
   return (
@@ -490,9 +490,9 @@ export default function CrearAcc({ open, onClose }) {
               Conecta. Vende. Crece.
             </Typography>
             <form
-              onSubmit={(e) => {
-                e.preventDefault()
-                setPaso(2)
+              onSubmit={e => {
+                e.preventDefault();
+                setPaso(2);
               }}
               style={{ width: '100%' }}
             >
@@ -501,7 +501,7 @@ export default function CrearAcc({ open, onClose }) {
                 variant="outlined"
                 fullWidth
                 value={correo}
-                onChange={(e) => setCorreo(e.target.value)}
+                onChange={e => setCorreo(e.target.value)}
                 sx={{ mb: 1.5 }}
                 size="small"
                 error={correo.length > 0 && !correoEsValido}
@@ -517,7 +517,7 @@ export default function CrearAcc({ open, onClose }) {
                 variant="outlined"
                 fullWidth
                 value={contrasena}
-                onChange={(e) => setContrasena(e.target.value)}
+                onChange={e => setContrasena(e.target.value)}
                 sx={{ mb: 1.5 }}
                 size="small"
                 InputProps={{
@@ -525,7 +525,7 @@ export default function CrearAcc({ open, onClose }) {
                     <InputAdornment position="end">
                       <IconButton
                         aria-label="toggle password visibility"
-                        onClick={() => setShowPassword((show) => !show)}
+                        onClick={() => setShowPassword(show => !show)}
                         edge="end"
                         size="small"
                         tabIndex={-1}
@@ -542,7 +542,7 @@ export default function CrearAcc({ open, onClose }) {
                 variant="outlined"
                 fullWidth
                 value={repiteContrasena}
-                onChange={(e) => setRepiteContrasena(e.target.value)}
+                onChange={e => setRepiteContrasena(e.target.value)}
                 sx={{ mb: 1.5 }}
                 size="small"
                 error={repiteContrasena.length > 0 && !contrasenasCoinciden}
@@ -556,7 +556,7 @@ export default function CrearAcc({ open, onClose }) {
                     <InputAdornment position="end">
                       <IconButton
                         aria-label="toggle repeat password visibility"
-                        onClick={() => setShowRepeatPassword((show) => !show)}
+                        onClick={() => setShowRepeatPassword(show => !show)}
                         edge="end"
                         size="small"
                         tabIndex={-1}
@@ -603,7 +603,7 @@ export default function CrearAcc({ open, onClose }) {
                 control={
                   <Checkbox
                     checked={aceptaTerminos}
-                    onChange={(e) => setAceptaTerminos(e.target.checked)}
+                    onChange={e => setAceptaTerminos(e.target.checked)}
                     sx={{ color: '#41B6E6' }}
                     size="small"
                   />
@@ -626,7 +626,7 @@ export default function CrearAcc({ open, onClose }) {
                 control={
                   <Checkbox
                     checked={aceptaComunicaciones}
-                    onChange={(e) => setAceptaComunicaciones(e.target.checked)}
+                    onChange={e => setAceptaComunicaciones(e.target.checked)}
                     sx={{ color: '#41B6E6' }}
                     size="small"
                   />
@@ -984,7 +984,7 @@ export default function CrearAcc({ open, onClose }) {
                       variant="outlined"
                       fullWidth
                       value={nombreEmpresa}
-                      onChange={(e) => setNombreEmpresa(e.target.value)}
+                      onChange={e => setNombreEmpresa(e.target.value)}
                       sx={{ mb: 1.5 }}
                       size="small"
                       required
@@ -998,7 +998,7 @@ export default function CrearAcc({ open, onClose }) {
                         fullWidth
                         label="Teléfono de contacto"
                         value={telefonoContacto}
-                        onChange={(e) => setTelefonoContacto(e.target.value)}
+                        onChange={e => setTelefonoContacto(e.target.value)}
                         placeholder="Ej: 912345678"
                         type="tel"
                       />
@@ -1035,7 +1035,7 @@ export default function CrearAcc({ open, onClose }) {
                         alignItems: 'center',
                         justifyContent: 'center',
                         mb: 0.5,
-                        bgcolor: (theme) =>
+                        bgcolor: theme =>
                           theme.palette.mode === 'dark' ? '#23272f' : '#f5f5f5',
                         overflow: 'hidden',
                         padding: 1.5,
@@ -1112,7 +1112,7 @@ export default function CrearAcc({ open, onClose }) {
                     variant="outlined"
                     fullWidth
                     value={nombrePersonal}
-                    onChange={(e) => setNombrePersonal(e.target.value)}
+                    onChange={e => setNombrePersonal(e.target.value)}
                     sx={{ mb: 1.5 }}
                     size="small"
                     required
@@ -1123,7 +1123,7 @@ export default function CrearAcc({ open, onClose }) {
                       fullWidth
                       label="Teléfono de contacto"
                       value={telefonoContacto}
-                      onChange={(e) => setTelefonoContacto(e.target.value)}
+                      onChange={e => setTelefonoContacto(e.target.value)}
                       placeholder="Ej: 912345678"
                       type="tel"
                     />
@@ -1263,81 +1263,81 @@ export default function CrearAcc({ open, onClose }) {
                   key={idx}
                   value={valor}
                   id={`codigo-verif-input-${idx}`}
-                  onChange={(e) => {
-                    const val = e.target.value.replace(/[^0-9]/g, '')
-                    if (!val && valor === '') return
-                    const nuevoCodigo = [...codigoVerificacion]
-                    nuevoCodigo[idx] = val
-                    setCodigoVerificacion(nuevoCodigo)
+                  onChange={e => {
+                    const val = e.target.value.replace(/[^0-9]/g, '');
+                    if (!val && valor === '') return;
+                    const nuevoCodigo = [...codigoVerificacion];
+                    nuevoCodigo[idx] = val;
+                    setCodigoVerificacion(nuevoCodigo);
                     if (val && idx < 4) {
                       const next = document.getElementById(
                         `codigo-verif-input-${idx + 1}`
-                      )
-                      if (next) next.focus()
+                      );
+                      if (next) next.focus();
                     }
                   }}
-                  onKeyDown={(e) => {
+                  onKeyDown={e => {
                     if (e.key === 'Backspace') {
                       if (codigoVerificacion[idx] === '') {
                         if (idx > 0) {
-                          const nuevoCodigo = [...codigoVerificacion]
-                          nuevoCodigo[idx - 1] = ''
-                          setCodigoVerificacion(nuevoCodigo)
+                          const nuevoCodigo = [...codigoVerificacion];
+                          nuevoCodigo[idx - 1] = '';
+                          setCodigoVerificacion(nuevoCodigo);
                           const prev = document.getElementById(
                             `codigo-verif-input-${idx - 1}`
-                          )
-                          if (prev) prev.focus()
-                          e.preventDefault()
+                          );
+                          if (prev) prev.focus();
+                          e.preventDefault();
                         }
                       }
                     } else if (e.key === 'Delete') {
                       if (codigoVerificacion[idx] !== '') {
-                        const nuevoCodigo = [...codigoVerificacion]
-                        nuevoCodigo[idx] = ''
-                        setCodigoVerificacion(nuevoCodigo)
-                        e.preventDefault()
+                        const nuevoCodigo = [...codigoVerificacion];
+                        nuevoCodigo[idx] = '';
+                        setCodigoVerificacion(nuevoCodigo);
+                        e.preventDefault();
                       } else if (idx < 4) {
-                        const nuevoCodigo = [...codigoVerificacion]
-                        nuevoCodigo[idx + 1] = ''
-                        setCodigoVerificacion(nuevoCodigo)
+                        const nuevoCodigo = [...codigoVerificacion];
+                        nuevoCodigo[idx + 1] = '';
+                        setCodigoVerificacion(nuevoCodigo);
                         const next = document.getElementById(
                           `codigo-verif-input-${idx + 1}`
-                        )
-                        if (next) next.focus()
-                        e.preventDefault()
+                        );
+                        if (next) next.focus();
+                        e.preventDefault();
                       }
                     } else if (e.key === 'ArrowLeft' && idx > 0) {
                       const prev = document.getElementById(
                         `codigo-verif-input-${idx - 1}`
-                      )
-                      if (prev) prev.focus()
-                      e.preventDefault()
+                      );
+                      if (prev) prev.focus();
+                      e.preventDefault();
                     } else if (e.key === 'ArrowRight' && idx < 4) {
                       const next = document.getElementById(
                         `codigo-verif-input-${idx + 1}`
-                      )
-                      if (next) next.focus()
-                      e.preventDefault()
+                      );
+                      if (next) next.focus();
+                      e.preventDefault();
                     }
                   }}
-                  onPaste={(e) => {
+                  onPaste={e => {
                     const paste = e.clipboardData
                       .getData('Text')
-                      .replace(/[^0-9]/g, '')
+                      .replace(/[^0-9]/g, '');
                     if (paste.length > 0) {
-                      const nuevoCodigo = [...codigoVerificacion]
+                      const nuevoCodigo = [...codigoVerificacion];
                       for (let i = 0; i < 5; i++) {
-                        nuevoCodigo[i] = paste[i] || ''
+                        nuevoCodigo[i] = paste[i] || '';
                       }
-                      setCodigoVerificacion(nuevoCodigo)
-                      const lastIdx = Math.min(paste.length - 1, 4)
+                      setCodigoVerificacion(nuevoCodigo);
+                      const lastIdx = Math.min(paste.length - 1, 4);
                       setTimeout(() => {
                         const last = document.getElementById(
                           `codigo-verif-input-${lastIdx}`
-                        )
-                        if (last) last.focus()
-                      }, 0)
-                      e.preventDefault()
+                        );
+                        if (last) last.focus();
+                      }, 0);
+                      e.preventDefault();
                     }
                   }}
                   inputProps={{
@@ -1389,14 +1389,14 @@ export default function CrearAcc({ open, onClose }) {
               variant="text"
               sx={{ color: '#1976d2', fontWeight: 700, mb: 2, fontSize: 14 }}
               onClick={() => {
-                setShowCodigoEnviado(false)
-                setTimeout(() => setShowCodigoEnviado(true), 10)
-                setCodigoEnviado(true)
-                setTimer(300)
-                clearInterval(timerRef.current)
+                setShowCodigoEnviado(false);
+                setTimeout(() => setShowCodigoEnviado(true), 10);
+                setCodigoEnviado(true);
+                setTimer(300);
+                clearInterval(timerRef.current);
                 timerRef.current = setInterval(() => {
-                  setTimer((prev) => prev - 1)
-                }, 1000)
+                  setTimer(prev => prev - 1);
+                }, 1000);
               }}
             >
               Reenviar Código
@@ -1405,7 +1405,7 @@ export default function CrearAcc({ open, onClose }) {
             <Button
               variant="contained"
               sx={{
-                backgroundColor: codigoVerificacion.every((c) => c.length === 1)
+                backgroundColor: codigoVerificacion.every(c => c.length === 1)
                   ? '#41B6E6'
                   : '#b0c4cc',
                 color: '#fff',
@@ -1419,14 +1419,12 @@ export default function CrearAcc({ open, onClose }) {
                 mt: 1,
                 boxShadow: 'none',
                 '&:hover': {
-                  backgroundColor: codigoVerificacion.every(
-                    (c) => c.length === 1
-                  )
+                  backgroundColor: codigoVerificacion.every(c => c.length === 1)
                     ? '#2fa4d6'
                     : '#b0c4cc',
                 },
               }}
-              disabled={!codigoVerificacion.every((c) => c.length === 1)}
+              disabled={!codigoVerificacion.every(c => c.length === 1)}
               onClick={() => setPaso(5)}
             >
               Verificar Código
@@ -1508,5 +1506,5 @@ export default function CrearAcc({ open, onClose }) {
         )}
       </DialogContent>
     </Dialog>
-  )
+  );
 }
