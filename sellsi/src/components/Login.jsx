@@ -16,11 +16,12 @@ import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
 import CloseIcon from '@mui/icons-material/Close';
+import { useNavigate } from 'react-router-dom';
+import { supabase } from '../services/supabase';
+
 import Recuperar from './Recuperar.jsx';
 import Register from './Register.jsx';
 
-// Extraer estilos comunes
-// Extraer estilos comunes
 const commonStyles = {
   button: {
     backgroundColor: '#41B6E6',
@@ -37,11 +38,9 @@ const commonStyles = {
   },
 };
 
-// Constantes para tamaños
 const LOGO_WIDTH = 300;
 const FORM_WIDTH = 400;
 
-// Reducer para manejar el estado
 const reducer = (state, action) => {
   switch (action.type) {
     case 'SET_CORREO':
@@ -69,7 +68,6 @@ const reducer = (state, action) => {
   }
 };
 
-// Componentes de diálogo memorizados
 const RecuperarDialog = memo(({ open, onClose, onVolverLogin }) => {
   const recuperarRef = React.useRef();
 
@@ -109,6 +107,7 @@ const RegistroDialog = memo(({ open, onClose }) => (
 
 export default function Login({ open, handleClose, handleOpenRegister }) {
   const theme = useTheme();
+  const navigate = useNavigate();
   const initialState = {
     correo: '',
     contrasena: '',
@@ -132,18 +131,16 @@ export default function Login({ open, handleClose, handleOpenRegister }) {
     openRegistro,
   } = state;
 
-  // Reiniciar campos y errores al cerrar el modal o abrir otro modal
   useEffect(() => {
     if (!open) {
       dispatch({ type: 'SET_CORREO', payload: '' });
       dispatch({ type: 'SET_CONTRASENA', payload: '' });
       dispatch({ type: 'SET_ERROR_CORREO', payload: '' });
       dispatch({ type: 'SET_ERROR_CONTRASENA', payload: '' });
-      dispatch({ type: 'TOGGLE_SHOW_PASSWORD' }); // Asegura que showPassword vuelva a false si estaba true
+      dispatch({ type: 'TOGGLE_SHOW_PASSWORD' });
     }
   }, [open]);
 
-  // También reinicia al abrir Recuperar o Registro
   useEffect(() => {
     if (openRecuperar || openRegistro) {
       dispatch({ type: 'SET_CORREO', payload: '' });
@@ -176,17 +173,37 @@ export default function Login({ open, handleClose, handleOpenRegister }) {
     return !errores.correo && !errores.contrasena;
   };
 
-  const handleLogin = e => {
+  const handleLogin = async e => {
     e.preventDefault();
-    if (validarFormulario()) {
-      // Lógica de autenticación aquí
+    if (!validarFormulario()) return;
+
+    const { data: proveedor, error } = await supabase
+      .from('suppliers')
+      .select('*')
+      .eq('email', correo)
+      .single();
+
+    if (error || !proveedor) {
+      dispatch({ type: 'SET_ERROR_CORREO', payload: 'Usuario no encontrado' });
+      return;
     }
+
+    if (contrasena !== proveedor.password_hash) {
+      dispatch({
+        type: 'SET_ERROR_CONTRASENA',
+        payload: 'Contraseña incorrecta',
+      });
+      return;
+    }
+
+    // ✅ Login exitoso
+    localStorage.setItem('supplierid', proveedor.supplierid);
+    handleClose(); // Cerrar modal
+    navigate('/supplier/home');
   };
 
   const handleVolverLogin = () => {
-    dispatch({ type: 'CLOSE_RECUPERAR' }); // Cierra Recuperar
-    // El modal de login ya está abierto porque nunca se cierra realmente,
-    // solo se superpone el de recuperar.
+    dispatch({ type: 'CLOSE_RECUPERAR' });
   };
 
   return (
@@ -197,7 +214,6 @@ export default function Login({ open, handleClose, handleOpenRegister }) {
       PaperProps={{
         sx: {
           mt: '-5vh',
-          height: '620x', // <-- Reduce la altura aquí (prueba 580px o ajusta a tu gusto)
           maxHeight: '90vh',
           display: 'flex',
           flexDirection: 'column',
@@ -229,7 +245,6 @@ export default function Login({ open, handleClose, handleOpenRegister }) {
           alignItems="center"
           justifyContent="center"
         >
-          {/* Logo dinámico */}
           <img
             src="/logo.svg"
             alt="SELLSI Logo"
@@ -239,7 +254,6 @@ export default function Login({ open, handleClose, handleOpenRegister }) {
               marginTop: 60,
             }}
           />
-          {/* Texto debajo del logo */}
           <Typography
             variant="h6"
             align="center"
@@ -264,7 +278,7 @@ export default function Login({ open, handleClose, handleOpenRegister }) {
               width: FORM_WIDTH,
               maxWidth: '90%',
               mt: 4,
-              mb: 4, // margen inferior reducido
+              mb: 4,
             }}
           >
             <form onSubmit={handleLogin}>
@@ -279,9 +293,7 @@ export default function Login({ open, handleClose, handleOpenRegister }) {
                   onChange={e =>
                     dispatch({ type: 'SET_CORREO', payload: e.target.value })
                   }
-                  inputProps={{
-                    lang: 'es',
-                  }}
+                  inputProps={{ lang: 'es' }}
                   error={!!errorCorreo}
                   helperText={errorCorreo}
                 />
@@ -299,9 +311,7 @@ export default function Login({ open, handleClose, handleOpenRegister }) {
                       payload: e.target.value,
                     })
                   }
-                  inputProps={{
-                    lang: 'es',
-                  }}
+                  inputProps={{ lang: 'es' }}
                   error={!!errorContrasena}
                   helperText={errorContrasena}
                   InputProps={{
@@ -327,8 +337,8 @@ export default function Login({ open, handleClose, handleOpenRegister }) {
                     fullWidth
                     sx={{
                       ...commonStyles.button,
-                      width: '30%', // Ancho del botón manteniendo el centro
-                      margin: '0 auto', // Esto ayuda a centrarlo
+                      width: '30%',
+                      margin: '0 auto',
                     }}
                   >
                     Aceptar
@@ -370,10 +380,7 @@ export default function Login({ open, handleClose, handleOpenRegister }) {
           </Paper>
         </Box>
       </DialogContent>
-      <DialogActions>
-        {/* Puedes dejar vacío o agregar acciones si lo necesitas */}
-      </DialogActions>
-      {/* Dialogo para recuperar contraseña */}
+      <DialogActions />
       <RecuperarDialog
         open={openRecuperar}
         onClose={() => dispatch({ type: 'CLOSE_RECUPERAR' })}
@@ -381,9 +388,8 @@ export default function Login({ open, handleClose, handleOpenRegister }) {
         setMostrarCodigo={valor =>
           dispatch({ type: 'SET_MOSTRAR_CODIGO', payload: valor })
         }
-        onVolverLogin={handleVolverLogin} // <-- AGREGA ESTA PROP
+        onVolverLogin={handleVolverLogin}
       />
-      {/* Dialogo para registro */}
       <RegistroDialog
         open={openRegistro}
         onClose={() => dispatch({ type: 'CLOSE_REGISTRO' })}

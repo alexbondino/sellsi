@@ -1,21 +1,22 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { Box, CssBaseline } from '@mui/material';
 import { ThemeProvider } from '@mui/material/styles';
-import theme from './styles/theme';
 import GlobalStyles from '@mui/material/GlobalStyles';
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
+import PrivateRoute from './auth/PrivateRoute';
 
-import TestSupabase from './services/test-supabase';
-import BottomBar from './components/BottomBar';
+import theme from './styles/theme';
 import TopBar from './components/TopBar';
+import BottomBar from './components/BottomBar';
 import Home from './pages/Home';
+import ProviderHome from './pages/provider/ProviderHome';
+import TestSupabase from './services/test-supabase';
 import Marketplace from './pages/Marketplace';
 import Login from './components/Login';
 import Register from './components/Register';
 
-// ✅ COMPONENTE interno para acceder a location
+// ✅ COMPONENTE interno para acceder a location y renderizar rutas
 function AppContent({ mensaje }) {
-  // ✅ RECIBIR mensaje como prop
   const location = useLocation();
   const scrollTargets = useRef({});
 
@@ -25,14 +26,11 @@ function AppContent({ mensaje }) {
     });
   };
 
-  // ✅ DETERMINAR si necesitamos padding-top
-  const needsPadding = location.pathname === '/'; // Solo Home necesita padding
+  const needsPadding = true;
 
   return (
     <>
-      {/* Barra superior con scroll dinámico */}
       <TopBar onNavigate={handleScrollTo} />
-
       <Box
         sx={{
           width: '100%',
@@ -40,30 +38,36 @@ function AppContent({ mensaje }) {
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'space-between',
-          pt: needsPadding ? '64px' : 0, // ✅ CONDICIONAL: padding solo para Home
+          pt: needsPadding ? '64px' : 0,
           overflowX: 'hidden',
         }}
       >
-        {/* Rutas con convención web estándar */}
         <Routes>
           <Route path="/" element={<Home scrollTargets={scrollTargets} />} />
           <Route path="/marketplace" element={<Marketplace />} />
           <Route path="/login" element={<Login />} />
           <Route path="/crear-cuenta" element={<Register />} />
+          <Route
+            path="/supplier/home"
+            element={
+              <PrivateRoute>
+                <ProviderHome />
+              </PrivateRoute>
+            }
+          />
         </Routes>
 
-        {/* Zona de pruebas backend - solo en desarrollo y solo en Home */}
+        {/* Zona de pruebas backend */}
         {process.env.NODE_ENV === 'development' &&
           location.pathname === '/' && (
             <Box sx={{ flexGrow: 1, textAlign: 'center', py: 4 }}>
               <h1>This is Sellsi</h1>
               <p>Respuesta del backend:</p>
-              <pre>{mensaje}</pre> {/* ✅ USAR la prop mensaje */}
+              <pre>{mensaje}</pre>
               <TestSupabase />
             </Box>
           )}
 
-        {/* BottomBar */}
         <BottomBar />
       </Box>
     </>
@@ -71,7 +75,6 @@ function AppContent({ mensaje }) {
 }
 
 function App() {
-  // ⚙️ Backend testing
   const [mensaje, setMensaje] = useState('');
   const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
@@ -97,12 +100,12 @@ function App() {
       <GlobalStyles
         styles={{
           html: { overflowX: 'hidden' },
-          body: { overflowX: 'hidden' },
+          body: { overflowX: 'hidden', margin: 0 },
           '#root': { overflowX: 'hidden' },
         }}
       />
       <BrowserRouter>
-        <AppContent mensaje={mensaje} /> {/* ✅ PASAR mensaje como prop */}
+        <AppContent mensaje={mensaje} />
       </BrowserRouter>
     </ThemeProvider>
   );
