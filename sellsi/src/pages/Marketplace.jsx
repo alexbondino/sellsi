@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -29,19 +29,17 @@ import {
   useMediaQuery, // ✅ AGREGAR para detectar mobile
   useTheme, // ✅ AGREGAR para breakpoints
   Fab, // ✅ AGREGAR para botón flotante
-} from '@mui/material'
-import FilterAltIcon from '@mui/icons-material/FilterAlt'
-import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown'
-import KeyboardArrowRightIcon from '@mui/icons-material/KeyboardArrowRight'
-import SearchIcon from '@mui/icons-material/Search'
-import FavoriteIcon from '@mui/icons-material/Favorite'
-import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder'
-import ArrowBackIcon from '@mui/icons-material/ArrowBack'
-import ShoppingCartIcon from '@mui/icons-material/ShoppingCart'
-import InfoIcon from '@mui/icons-material/Info'
-import CloseIcon from '@mui/icons-material/Close' // ✅ AGREGAR para cerrar modal
-import TopBar from '../components/TopBar'
-import BottomBar from '../components/BottomBar'
+} from '@mui/material';
+import FilterAltIcon from '@mui/icons-material/FilterAlt';
+import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
+import KeyboardArrowRightIcon from '@mui/icons-material/KeyboardArrowRight';
+import SearchIcon from '@mui/icons-material/Search';
+import FavoriteIcon from '@mui/icons-material/Favorite';
+import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
+import InfoIcon from '@mui/icons-material/Info';
+import CloseIcon from '@mui/icons-material/Close'; // ✅ AGREGAR para cerrar modal
 
 // Datos de productos (sin cambios)
 const productos = [
@@ -240,7 +238,7 @@ const productos = [
     ventas: 112,
     stock: 6,
   },
-]
+];
 
 const categorias = [
   'Tecnología',
@@ -264,11 +262,11 @@ const categorias = [
   'Más vendidos',
   'Industrias y Oficinas',
   'Tiendas oficiales',
-]
+];
 
 // Componente para tarjetas de producto
 function ProductoCard({ producto }) {
-  const [favorito, setFavorito] = useState(false)
+  const [favorito, setFavorito] = useState(false);
   const {
     nombre,
     imagen,
@@ -280,21 +278,21 @@ function ProductoCard({ producto }) {
     rating,
     ventas,
     stock,
-  } = producto
+  } = producto;
 
-  const toggleFavorito = () => setFavorito(!favorito)
+  const toggleFavorito = () => setFavorito(!favorito);
 
   // ✅ FUNCIÓN para obtener el mensaje del tooltip
-  const getTooltipMessage = (tipo) => {
+  const getTooltipMessage = tipo => {
     switch (tipo) {
       case 'directa':
-        return 'El productor vende directamente al cliente final, sin usar intermediarios como distribuidores o minoristas.'
+        return 'El productor vende directamente al cliente final, sin usar intermediarios como distribuidores o minoristas.';
       case 'indirecta':
-        return 'El producto se comercializa a través de intermediarios antes de llegar al cliente final.'
+        return 'El producto se comercializa a través de intermediarios antes de llegar al cliente final.';
       default:
-        return 'Información sobre el tipo de venta no disponible.'
+        return 'Información sobre el tipo de venta no disponible.';
     }
-  }
+  };
 
   return (
     <Card
@@ -563,21 +561,21 @@ function ProductoCard({ producto }) {
         </Button>
       </CardActions>
     </Card>
-  )
+  );
 }
 
 // Componente principal del Marketplace
 export default function Marketplace4() {
-  const theme = useTheme()
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'))
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
   // Estados existentes
-  const [seccionActiva, setSeccionActiva] = useState('todos')
-  const [categoriaSeleccionada, setCategoriaSeleccionada] = useState(['Todas'])
-  const [filtroVisible, setFiltroVisible] = useState(false)
-  const [anchorElCategorias, setAnchorElCategorias] = useState(null)
-  const [busqueda, setBusqueda] = useState('')
-  const [ordenamiento, setOrdenamiento] = useState('relevancia')
+  const [seccionActiva, setSeccionActiva] = useState('todos');
+  const [categoriaSeleccionada, setCategoriaSeleccionada] = useState(['Todas']);
+  const [filtroVisible, setFiltroVisible] = useState(false);
+  const [anchorElCategorias, setAnchorElCategorias] = useState(null);
+  const [busqueda, setBusqueda] = useState('');
+  const [ordenamiento, setOrdenamiento] = useState('relevancia');
   const [filtros, setFiltros] = useState({
     precioMin: '',
     precioMax: '',
@@ -586,25 +584,25 @@ export default function Marketplace4() {
     tiposVenta: [],
     soloConStock: false,
     ratingMin: 0,
-  })
-  const [precioRango, setPrecioRango] = useState([0, 1000000])
-  const [comisionRango, setComisionRango] = useState([0, 30])
-  const [scrollY, setScrollY] = useState(0)
-  const [prevScrollY, setPrevScrollY] = useState(0)
-  const [showSearchBar, setShowSearchBar] = useState(true)
-  const [isSearchBarSticky, setIsSearchBarSticky] = useState(false)
-  const [filtroModalOpen, setFiltroModalOpen] = useState(false)
-  const [showTopBarOnHover, setShowTopBarOnHover] = useState(false)
+  });
+  const [precioRango, setPrecioRango] = useState([0, 1000000]);
+  const [comisionRango, setComisionRango] = useState([0, 30]);
+  const [scrollY, setScrollY] = useState(0);
+  const [prevScrollY, setPrevScrollY] = useState(0);
+  const [showSearchBar, setShowSearchBar] = useState(true);
+  const [isSearchBarSticky, setIsSearchBarSticky] = useState(false);
+  const [filtroModalOpen, setFiltroModalOpen] = useState(false);
+  const [showTopBarOnHover, setShowTopBarOnHover] = useState(false);
 
   // ✅ FUNCIONES FALTANTES AGREGADAS
-  const handleTipoVentaChange = (tipo) => {
-    setFiltros((prev) => ({
+  const handleTipoVentaChange = tipo => {
+    setFiltros(prev => ({
       ...prev,
       tiposVenta: prev.tiposVenta.includes(tipo)
-        ? prev.tiposVenta.filter((t) => t !== tipo)
+        ? prev.tiposVenta.filter(t => t !== tipo)
         : [...prev.tiposVenta, tipo],
-    }))
-  }
+    }));
+  };
 
   const resetFiltros = () => {
     setFiltros({
@@ -615,193 +613,193 @@ export default function Marketplace4() {
       tiposVenta: [],
       soloConStock: false,
       ratingMin: 0,
-    })
-    setPrecioRango([0, 1000000])
-    setComisionRango([0, 30])
-    setCategoriaSeleccionada(['Todas'])
-    setBusqueda('')
-  }
+    });
+    setPrecioRango([0, 1000000]);
+    setComisionRango([0, 30]);
+    setCategoriaSeleccionada(['Todas']);
+    setBusqueda('');
+  };
 
   // ✅ HOOK de scroll effect
   useEffect(() => {
-    let ticking = false
-    let mouseThrottle = false
+    let ticking = false;
+    let mouseThrottle = false;
 
     const handleScroll = () => {
       if (!ticking) {
         requestAnimationFrame(() => {
-          const currentScrollY = window.scrollY
-          setScrollY(currentScrollY)
+          const currentScrollY = window.scrollY;
+          setScrollY(currentScrollY);
 
           if (isMobile) {
             if (currentScrollY > prevScrollY && currentScrollY > 100) {
-              setShowSearchBar(false)
+              setShowSearchBar(false);
             } else if (currentScrollY < prevScrollY) {
-              setShowSearchBar(true)
+              setShowSearchBar(true);
             }
           } else {
             if (currentScrollY > 150) {
-              setIsSearchBarSticky(true)
+              setIsSearchBarSticky(true);
             } else {
-              setIsSearchBarSticky(false)
-              setShowTopBarOnHover(false)
+              setIsSearchBarSticky(false);
+              setShowTopBarOnHover(false);
             }
           }
 
-          setPrevScrollY(currentScrollY)
-          ticking = false
-        })
-        ticking = true
+          setPrevScrollY(currentScrollY);
+          ticking = false;
+        });
+        ticking = true;
       }
-    }
+    };
 
-    const handleMouseMove = (e) => {
+    const handleMouseMove = e => {
       if (!mouseThrottle) {
         setTimeout(() => {
           if (!isMobile && isSearchBarSticky) {
             if (e.clientY < 100) {
-              setShowTopBarOnHover(true)
+              setShowTopBarOnHover(true);
             } else if (e.clientY > 150) {
-              setShowTopBarOnHover(false)
+              setShowTopBarOnHover(false);
             }
           }
-          mouseThrottle = false
-        }, 16)
-        mouseThrottle = true
+          mouseThrottle = false;
+        }, 16);
+        mouseThrottle = true;
       }
-    }
+    };
 
-    window.addEventListener('scroll', handleScroll, { passive: true })
-    window.addEventListener('mousemove', handleMouseMove, { passive: true })
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    window.addEventListener('mousemove', handleMouseMove, { passive: true });
 
     return () => {
-      window.removeEventListener('scroll', handleScroll)
-      window.removeEventListener('mousemove', handleMouseMove)
-    }
-  }, [prevScrollY, isMobile, isSearchBarSticky])
+      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('mousemove', handleMouseMove);
+    };
+  }, [prevScrollY, isMobile, isSearchBarSticky]);
 
   // ✅ DETERMINAR si mostrar barra de búsqueda
   const shouldShowSearchBar = isMobile
     ? showSearchBar
     : isSearchBarSticky
     ? showTopBarOnHover
-    : true
+    : true;
 
   // Manejadores existentes
-  const handleAbrirMenuCategorias = (event) => {
-    setAnchorElCategorias(event.currentTarget)
-  }
+  const handleAbrirMenuCategorias = event => {
+    setAnchorElCategorias(event.currentTarget);
+  };
 
   const handleCerrarMenuCategorias = () => {
-    setAnchorElCategorias(null)
-  }
+    setAnchorElCategorias(null);
+  };
 
-  const handleSeleccionarCategoria = (categoria) => {
+  const handleSeleccionarCategoria = categoria => {
     if (categoria === 'Todas') {
-      setCategoriaSeleccionada(['Todas'])
+      setCategoriaSeleccionada(['Todas']);
     } else {
-      setCategoriaSeleccionada((prev) => {
-        const sinTodas = prev.filter((c) => c !== 'Todas')
+      setCategoriaSeleccionada(prev => {
+        const sinTodas = prev.filter(c => c !== 'Todas');
 
         if (sinTodas.includes(categoria)) {
-          const nuevaSeleccion = sinTodas.filter((c) => c !== categoria)
-          return nuevaSeleccion.length === 0 ? ['Todas'] : nuevaSeleccion
+          const nuevaSeleccion = sinTodas.filter(c => c !== categoria);
+          return nuevaSeleccion.length === 0 ? ['Todas'] : nuevaSeleccion;
         } else {
-          return [...sinTodas, categoria]
+          return [...sinTodas, categoria];
         }
-      })
+      });
     }
-    handleCerrarMenuCategorias()
-  }
+    handleCerrarMenuCategorias();
+  };
 
-  const handleCambiarSeccion = (seccion) => {
-    setSeccionActiva(seccion)
-  }
+  const handleCambiarSeccion = seccion => {
+    setSeccionActiva(seccion);
+  };
 
   const handleToggleFiltro = () => {
     if (isMobile) {
-      setFiltroModalOpen(!filtroModalOpen)
+      setFiltroModalOpen(!filtroModalOpen);
     } else {
-      setFiltroVisible(!filtroVisible)
+      setFiltroVisible(!filtroVisible);
     }
-  }
+  };
 
   const handleCerrarFiltroModal = () => {
-    setFiltroModalOpen(false)
-  }
+    setFiltroModalOpen(false);
+  };
 
   // ✅ MANEJADORES CORREGIDOS para los sliders
   const handleChangePrecioRango = (event, newValue) => {
-    setPrecioRango(newValue)
-    setFiltros((prev) => ({
+    setPrecioRango(newValue);
+    setFiltros(prev => ({
       ...prev,
       precioMin: newValue[0],
       precioMax: newValue[1],
-    }))
-  }
+    }));
+  };
 
   const handleChangeComisionRango = (event, newValue) => {
-    setComisionRango(newValue)
-    setFiltros((prev) => ({
+    setComisionRango(newValue);
+    setFiltros(prev => ({
       ...prev,
       comisionMin: newValue[0],
       comisionMax: newValue[1],
-    }))
-  }
+    }));
+  };
 
   const handleChangeRatingMin = (event, newValue) => {
-    setFiltros((prev) => ({
+    setFiltros(prev => ({
       ...prev,
       ratingMin: newValue,
-    }))
-  }
+    }));
+  };
 
-  const handlePrecioMinChange = (e) => {
-    const value = e.target.value === '' ? '' : parseInt(e.target.value) || 0
-    setFiltros((prev) => ({ ...prev, precioMin: value }))
+  const handlePrecioMinChange = e => {
+    const value = e.target.value === '' ? '' : parseInt(e.target.value) || 0;
+    setFiltros(prev => ({ ...prev, precioMin: value }));
     if (value !== '') {
-      setPrecioRango([value, precioRango[1]])
+      setPrecioRango([value, precioRango[1]]);
     }
-  }
+  };
 
-  const handlePrecioMaxChange = (e) => {
+  const handlePrecioMaxChange = e => {
     const value =
-      e.target.value === '' ? '' : parseInt(e.target.value) || 1000000
-    setFiltros((prev) => ({ ...prev, precioMax: value }))
+      e.target.value === '' ? '' : parseInt(e.target.value) || 1000000;
+    setFiltros(prev => ({ ...prev, precioMax: value }));
     if (value !== '') {
-      setPrecioRango([precioRango[0], value])
+      setPrecioRango([precioRango[0], value]);
     }
-  }
+  };
 
-  const handleComisionMinChange = (e) => {
-    const value = e.target.value === '' ? '' : parseInt(e.target.value) || 0
-    setFiltros((prev) => ({ ...prev, comisionMin: value }))
+  const handleComisionMinChange = e => {
+    const value = e.target.value === '' ? '' : parseInt(e.target.value) || 0;
+    setFiltros(prev => ({ ...prev, comisionMin: value }));
     if (value !== '') {
-      setComisionRango([value, comisionRango[1]])
+      setComisionRango([value, comisionRango[1]]);
     }
-  }
+  };
 
-  const handleComisionMaxChange = (e) => {
-    const value = e.target.value === '' ? '' : parseInt(e.target.value) || 30
-    setFiltros((prev) => ({ ...prev, comisionMax: value }))
+  const handleComisionMaxChange = e => {
+    const value = e.target.value === '' ? '' : parseInt(e.target.value) || 30;
+    setFiltros(prev => ({ ...prev, comisionMax: value }));
     if (value !== '') {
-      setComisionRango([comisionRango[0], value])
+      setComisionRango([comisionRango[0], value]);
     }
-  }
+  };
 
   // Filtrar productos según criterios
-  let productosFiltrados = productos.filter((producto) => {
+  let productosFiltrados = productos.filter(producto => {
     // Filtrar por sección activa
-    if (seccionActiva === 'nuevos' && producto.tipo !== 'nuevo') return false
-    if (seccionActiva === 'ofertas' && producto.tipo !== 'oferta') return false
-    if (seccionActiva === 'topVentas' && producto.tipo !== 'top') return false
+    if (seccionActiva === 'nuevos' && producto.tipo !== 'nuevo') return false;
+    if (seccionActiva === 'ofertas' && producto.tipo !== 'oferta') return false;
+    if (seccionActiva === 'topVentas' && producto.tipo !== 'top') return false;
 
     // Filtrar por búsqueda
     if (
       busqueda &&
       !producto.nombre.toLowerCase().includes(busqueda.toLowerCase())
     )
-      return false
+      return false;
 
     // Filtrar por categoría
     if (
@@ -809,51 +807,51 @@ export default function Marketplace4() {
       !categoriaSeleccionada.includes('Todas') &&
       !categoriaSeleccionada.includes(producto.categoria)
     )
-      return false
+      return false;
 
     // Filtrar por precio
-    if (filtros.precioMin && producto.precio < filtros.precioMin) return false
-    if (filtros.precioMax && producto.precio > filtros.precioMax) return false
+    if (filtros.precioMin && producto.precio < filtros.precioMin) return false;
+    if (filtros.precioMax && producto.precio > filtros.precioMax) return false;
 
     // Filtrar por comisión
     if (filtros.comisionMin && producto.comision < filtros.comisionMin)
-      return false
+      return false;
     if (filtros.comisionMax && producto.comision > filtros.comisionMax)
-      return false
+      return false;
 
     // Filtrar por tipo de venta
     if (
       filtros.tiposVenta.length > 0 &&
       !filtros.tiposVenta.includes(producto.tipoVenta)
     )
-      return false
+      return false;
 
     // Filtrar por stock
-    if (filtros.soloConStock && producto.stock === 0) return false
+    if (filtros.soloConStock && producto.stock === 0) return false;
 
     // Filtrar por rating
-    if (filtros.ratingMin && producto.rating < filtros.ratingMin) return false
+    if (filtros.ratingMin && producto.rating < filtros.ratingMin) return false;
 
-    return true
-  })
+    return true;
+  });
 
   // Ordenar productos
   if (ordenamiento === 'menor-precio') {
     productosFiltrados = [...productosFiltrados].sort(
       (a, b) => a.precio - b.precio
-    )
+    );
   } else if (ordenamiento === 'mayor-precio') {
     productosFiltrados = [...productosFiltrados].sort(
       (a, b) => b.precio - a.precio
-    )
+    );
   } else if (ordenamiento === 'mayor-descuento') {
     productosFiltrados = [...productosFiltrados].sort(
       (a, b) => b.descuento - a.descuento
-    )
+    );
   } else if (ordenamiento === 'mas-vendidos') {
     productosFiltrados = [...productosFiltrados].sort(
       (a, b) => b.ventas - a.ventas
-    )
+    );
   }
   // ✅ COMPONENTE FiltrosContent CON ANCHO AUMENTADO 12% Y SLIDERS MEJORADOS
   const FiltrosContent = () => (
@@ -940,9 +938,7 @@ export default function Marketplace4() {
                 min={0}
                 max={1000000}
                 step={10000}
-                valueLabelFormat={(value) =>
-                  `$${value.toLocaleString('es-CL')}`
-                }
+                valueLabelFormat={value => `$${value.toLocaleString('es-CL')}`}
                 sx={{
                   mb: 1.28,
                   mx: 0.56, // ✅ AUMENTADO 12%: de 0.5 a 0.56
@@ -1125,7 +1121,7 @@ export default function Marketplace4() {
                 min={0}
                 max={30}
                 step={1}
-                valueLabelFormat={(value) => `${value}%`}
+                valueLabelFormat={value => `${value}%`}
                 sx={{
                   mb: 1.28,
                   mx: 0.56, // ✅ AUMENTADO 12%: de 0.5 a 0.56
@@ -1358,8 +1354,8 @@ export default function Marketplace4() {
                 control={
                   <Checkbox
                     checked={filtros.soloConStock}
-                    onChange={(e) =>
-                      setFiltros((prev) => ({
+                    onChange={e =>
+                      setFiltros(prev => ({
                         ...prev,
                         soloConStock: e.target.checked,
                       }))
@@ -1409,7 +1405,7 @@ export default function Marketplace4() {
                 : `${filtros.ratingMin}+ estrellas`}
             </Typography>
             <Box sx={{ display: 'flex', gap: 0.28 }}>
-              {[1, 2, 3, 4, 5].map((star) => (
+              {[1, 2, 3, 4, 5].map(star => (
                 <Box
                   key={star}
                   sx={{
@@ -1431,7 +1427,7 @@ export default function Marketplace4() {
             max={5}
             step={0.5}
             valueLabelDisplay="auto"
-            valueLabelFormat={(value) => `${value} ⭐`}
+            valueLabelFormat={value => `${value} ⭐`}
             marks={[
               { value: 0, label: '0' },
               { value: 1, label: '1' },
@@ -1554,8 +1550,8 @@ export default function Marketplace4() {
             )}
 
             {categoriaSeleccionada
-              .filter((cat) => cat !== 'Todas')
-              .map((cat) => (
+              .filter(cat => cat !== 'Todas')
+              .map(cat => (
                 <Chip
                   key={cat}
                   label={cat}
@@ -1574,12 +1570,12 @@ export default function Marketplace4() {
                   'es-CL'
                 )}`}
                 onDelete={() => {
-                  setFiltros((prev) => ({
+                  setFiltros(prev => ({
                     ...prev,
                     precioMin: '',
                     precioMax: '',
-                  }))
-                  setPrecioRango([0, 1000000])
+                  }));
+                  setPrecioRango([0, 1000000]);
                 }}
                 size="small"
                 variant="outlined"
@@ -1593,12 +1589,12 @@ export default function Marketplace4() {
                   filtros.comisionMax || 30
                 }%`}
                 onDelete={() => {
-                  setFiltros((prev) => ({
+                  setFiltros(prev => ({
                     ...prev,
                     comisionMin: '',
                     comisionMax: '',
-                  }))
-                  setComisionRango([0, 30])
+                  }));
+                  setComisionRango([0, 30]);
                 }}
                 size="small"
                 variant="outlined"
@@ -1606,7 +1602,7 @@ export default function Marketplace4() {
               />
             )}
 
-            {filtros.tiposVenta.map((tipo) => (
+            {filtros.tiposVenta.map(tipo => (
               <Chip
                 key={tipo}
                 label={tipo === 'directa' ? 'Directa' : 'Indirecta'}
@@ -1621,7 +1617,7 @@ export default function Marketplace4() {
               <Chip
                 label="Con stock"
                 onDelete={() =>
-                  setFiltros((prev) => ({
+                  setFiltros(prev => ({
                     ...prev,
                     soloConStock: false,
                   }))
@@ -1636,7 +1632,7 @@ export default function Marketplace4() {
               <Chip
                 label={`${filtros.ratingMin}+ ⭐`}
                 onDelete={() =>
-                  setFiltros((prev) => ({
+                  setFiltros(prev => ({
                     ...prev,
                     ratingMin: 0,
                   }))
@@ -1677,7 +1673,7 @@ export default function Marketplace4() {
         </Button>
       </Box>
     </Box>
-  )
+  );
 
   return (
     <Box sx={{ bgcolor: '#f8fafc', minHeight: '100vh' }}>
@@ -1712,7 +1708,7 @@ export default function Marketplace4() {
             <TextField
               placeholder="Buscar productos..."
               value={busqueda}
-              onChange={(e) => setBusqueda(e.target.value)}
+              onChange={e => setBusqueda(e.target.value)}
               sx={{
                 flexGrow: 1,
                 maxWidth: 600,
@@ -1734,7 +1730,7 @@ export default function Marketplace4() {
               <InputLabel>Ordenar por</InputLabel>
               <Select
                 value={ordenamiento}
-                onChange={(e) => setOrdenamiento(e.target.value)}
+                onChange={e => setOrdenamiento(e.target.value)}
                 label="Ordenar por"
               >
                 <MenuItem value="relevancia">Relevancia</MenuItem>
@@ -1768,7 +1764,7 @@ export default function Marketplace4() {
                   color="primary"
                   variant="dot"
                   invisible={
-                    !Object.values(filtros).some((v) =>
+                    !Object.values(filtros).some(v =>
                       Array.isArray(v)
                         ? v.length > 0
                         : v !== '' && v !== false && v !== 0
@@ -1811,7 +1807,7 @@ export default function Marketplace4() {
                 },
               }}
             >
-              {categorias.map((categoria) => (
+              {categorias.map(categoria => (
                 <MenuItem
                   key={categoria}
                   onClick={() => handleSeleccionarCategoria(categoria)}
@@ -1925,7 +1921,7 @@ export default function Marketplace4() {
             color="error"
             variant="dot"
             invisible={
-              !Object.values(filtros).some((v) =>
+              !Object.values(filtros).some(v =>
                 Array.isArray(v)
                   ? v.length > 0
                   : v !== '' && v !== false && v !== 0
@@ -2117,7 +2113,7 @@ export default function Marketplace4() {
                 },
               }}
             >
-              {productosFiltrados.map((producto) => (
+              {productosFiltrados.map(producto => (
                 <Grid
                   item
                   key={producto.id}
@@ -2146,10 +2142,6 @@ export default function Marketplace4() {
           )}
         </Box>
       </Box>
-
-      {/* TopBar y BottomBar */}
-      <TopBar />
-      <BottomBar />
     </Box>
-  )
+  );
 }
