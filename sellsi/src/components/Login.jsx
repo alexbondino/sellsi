@@ -1,4 +1,4 @@
-import React, { useState, memo, useReducer, useEffect } from 'react'
+import React, { useState, memo, useReducer, useEffect } from 'react';
 import {
   Box,
   Button,
@@ -8,17 +8,18 @@ import {
   Paper,
   InputAdornment,
   IconButton,
-} from '@mui/material'
-import { Visibility, VisibilityOff } from '@mui/icons-material'
-import { useTheme } from '@mui/material/styles'
-import Dialog from '@mui/material/Dialog'
-import DialogTitle from '@mui/material/DialogTitle'
-import DialogContent from '@mui/material/DialogContent'
-import DialogActions from '@mui/material/DialogActions'
-import CloseIcon from '@mui/icons-material/Close'
-import Recuperar from './Recuperar'
-import CrearAcc from './crearacc'
+} from '@mui/material';
+import { Visibility, VisibilityOff } from '@mui/icons-material';
+import { useTheme } from '@mui/material/styles';
+import Dialog from '@mui/material/Dialog';
+import DialogTitle from '@mui/material/DialogTitle';
+import DialogContent from '@mui/material/DialogContent';
+import DialogActions from '@mui/material/DialogActions';
+import CloseIcon from '@mui/icons-material/Close';
+import Recuperar from './Recuperar.jsx';
+import Register from './Register.jsx';
 
+// Extraer estilos comunes
 // Extraer estilos comunes
 const commonStyles = {
   button: {
@@ -34,43 +35,43 @@ const commonStyles = {
     color: '#41B6E6',
     cursor: 'pointer',
   },
-}
+};
 
 // Constantes para tamaños
-const LOGO_WIDTH = 300
-const FORM_WIDTH = 400
+const LOGO_WIDTH = 300;
+const FORM_WIDTH = 400;
 
 // Reducer para manejar el estado
 const reducer = (state, action) => {
   switch (action.type) {
     case 'SET_CORREO':
-      return { ...state, correo: action.payload }
+      return { ...state, correo: action.payload };
     case 'SET_CONTRASENA':
-      return { ...state, contrasena: action.payload }
+      return { ...state, contrasena: action.payload };
     case 'SET_ERROR_CORREO':
-      return { ...state, errorCorreo: action.payload }
+      return { ...state, errorCorreo: action.payload };
     case 'SET_ERROR_CONTRASENA':
-      return { ...state, errorContrasena: action.payload }
+      return { ...state, errorContrasena: action.payload };
     case 'TOGGLE_SHOW_PASSWORD':
-      return { ...state, showPassword: !state.showPassword }
+      return { ...state, showPassword: !state.showPassword };
     case 'OPEN_RECUPERAR':
-      return { ...state, openRecuperar: true }
+      return { ...state, openRecuperar: true };
     case 'CLOSE_RECUPERAR':
-      return { ...state, openRecuperar: false }
+      return { ...state, openRecuperar: false };
     case 'SET_MOSTRAR_CODIGO':
-      return { ...state, mostrarCodigo: action.payload }
+      return { ...state, mostrarCodigo: action.payload };
     case 'OPEN_REGISTRO':
-      return { ...state, openRegistro: true }
+      return { ...state, openRegistro: true };
     case 'CLOSE_REGISTRO':
-      return { ...state, openRegistro: false }
+      return { ...state, openRegistro: false };
     default:
-      return state
+      return state;
   }
-}
+};
 
 // Componentes de diálogo memorizados
 const RecuperarDialog = memo(({ open, onClose, onVolverLogin }) => {
-  const recuperarRef = React.useRef()
+  const recuperarRef = React.useRef();
 
   return (
     <Dialog
@@ -79,7 +80,7 @@ const RecuperarDialog = memo(({ open, onClose, onVolverLogin }) => {
       maxWidth={false}
       onExited={() => {
         if (recuperarRef.current) {
-          recuperarRef.current()
+          recuperarRef.current();
         }
       }}
     >
@@ -90,24 +91,24 @@ const RecuperarDialog = memo(({ open, onClose, onVolverLogin }) => {
         onVolverLogin={onVolverLogin}
       />
     </Dialog>
-  )
-})
+  );
+});
 
 const RegistroDialog = memo(({ open, onClose }) => (
   <Dialog
     open={open}
     onClose={(event, reason) => {
-      if (reason === 'backdropClick') return
-      onClose()
+      if (reason === 'backdropClick') return;
+      onClose();
     }}
     maxWidth={false}
   >
-    <CrearAcc onClose={onClose} />
+    <Register onClose={onClose} />
   </Dialog>
-))
+));
 
 export default function Login({ open, handleClose, handleOpenRegister }) {
-  const theme = useTheme()
+  const theme = useTheme();
   const initialState = {
     correo: '',
     contrasena: '',
@@ -117,8 +118,8 @@ export default function Login({ open, handleClose, handleOpenRegister }) {
     openRecuperar: false,
     mostrarCodigo: false,
     openRegistro: false,
-  }
-  const [state, dispatch] = useReducer(reducer, initialState)
+  };
+  const [state, dispatch] = useReducer(reducer, initialState);
 
   const {
     correo,
@@ -129,64 +130,64 @@ export default function Login({ open, handleClose, handleOpenRegister }) {
     openRecuperar,
     mostrarCodigo,
     openRegistro,
-  } = state
+  } = state;
 
   // Reiniciar campos y errores al cerrar el modal o abrir otro modal
   useEffect(() => {
     if (!open) {
-      dispatch({ type: 'SET_CORREO', payload: '' })
-      dispatch({ type: 'SET_CONTRASENA', payload: '' })
-      dispatch({ type: 'SET_ERROR_CORREO', payload: '' })
-      dispatch({ type: 'SET_ERROR_CONTRASENA', payload: '' })
-      dispatch({ type: 'TOGGLE_SHOW_PASSWORD' }) // Asegura que showPassword vuelva a false si estaba true
+      dispatch({ type: 'SET_CORREO', payload: '' });
+      dispatch({ type: 'SET_CONTRASENA', payload: '' });
+      dispatch({ type: 'SET_ERROR_CORREO', payload: '' });
+      dispatch({ type: 'SET_ERROR_CONTRASENA', payload: '' });
+      dispatch({ type: 'TOGGLE_SHOW_PASSWORD' }); // Asegura que showPassword vuelva a false si estaba true
     }
-  }, [open])
+  }, [open]);
 
   // También reinicia al abrir Recuperar o Registro
   useEffect(() => {
     if (openRecuperar || openRegistro) {
-      dispatch({ type: 'SET_CORREO', payload: '' })
-      dispatch({ type: 'SET_CONTRASENA', payload: '' })
-      dispatch({ type: 'SET_ERROR_CORREO', payload: '' })
-      dispatch({ type: 'SET_ERROR_CONTRASENA', payload: '' })
-      dispatch({ type: 'TOGGLE_SHOW_PASSWORD' })
+      dispatch({ type: 'SET_CORREO', payload: '' });
+      dispatch({ type: 'SET_CONTRASENA', payload: '' });
+      dispatch({ type: 'SET_ERROR_CORREO', payload: '' });
+      dispatch({ type: 'SET_ERROR_CONTRASENA', payload: '' });
+      dispatch({ type: 'TOGGLE_SHOW_PASSWORD' });
     }
-  }, [openRecuperar, openRegistro])
+  }, [openRecuperar, openRegistro]);
 
   const validarFormulario = () => {
     const errores = {
       correo: '',
       contrasena: '',
-    }
+    };
 
     if (!correo) {
-      errores.correo = 'Por favor, rellena este campo.'
+      errores.correo = 'Por favor, rellena este campo.';
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo)) {
-      errores.correo = 'Por favor, ingresa un correo válido.'
+      errores.correo = 'Por favor, ingresa un correo válido.';
     }
 
     if (!contrasena) {
-      errores.contrasena = 'Por favor, rellena este campo.'
+      errores.contrasena = 'Por favor, rellena este campo.';
     }
 
-    dispatch({ type: 'SET_ERROR_CORREO', payload: errores.correo })
-    dispatch({ type: 'SET_ERROR_CONTRASENA', payload: errores.contrasena })
+    dispatch({ type: 'SET_ERROR_CORREO', payload: errores.correo });
+    dispatch({ type: 'SET_ERROR_CONTRASENA', payload: errores.contrasena });
 
-    return !errores.correo && !errores.contrasena
-  }
+    return !errores.correo && !errores.contrasena;
+  };
 
-  const handleLogin = (e) => {
-    e.preventDefault()
+  const handleLogin = e => {
+    e.preventDefault();
     if (validarFormulario()) {
       // Lógica de autenticación aquí
     }
-  }
+  };
 
   const handleVolverLogin = () => {
-    dispatch({ type: 'CLOSE_RECUPERAR' }) // Cierra Recuperar
+    dispatch({ type: 'CLOSE_RECUPERAR' }); // Cierra Recuperar
     // El modal de login ya está abierto porque nunca se cierra realmente,
     // solo se superpone el de recuperar.
-  }
+  };
 
   return (
     <Dialog
@@ -230,7 +231,7 @@ export default function Login({ open, handleClose, handleOpenRegister }) {
         >
           {/* Logo dinámico */}
           <img
-            src="/LOGO-removebg-preview.png"
+            src="/logo.svg"
             alt="SELLSI Logo"
             style={{
               width: LOGO_WIDTH,
@@ -275,7 +276,7 @@ export default function Login({ open, handleClose, handleOpenRegister }) {
                   label="Correo"
                   placeholder="Ingrese su correo electrónico"
                   value={correo}
-                  onChange={(e) =>
+                  onChange={e =>
                     dispatch({ type: 'SET_CORREO', payload: e.target.value })
                   }
                   inputProps={{
@@ -292,7 +293,7 @@ export default function Login({ open, handleClose, handleOpenRegister }) {
                   label="Contraseña"
                   placeholder="Ingrese su contraseña"
                   value={contrasena}
-                  onChange={(e) =>
+                  onChange={e =>
                     dispatch({
                       type: 'SET_CONTRASENA',
                       payload: e.target.value,
@@ -358,8 +359,8 @@ export default function Login({ open, handleClose, handleOpenRegister }) {
                   component="button"
                   sx={commonStyles.link}
                   onClick={() => {
-                    handleClose()
-                    handleOpenRegister()
+                    handleClose();
+                    handleOpenRegister();
                   }}
                 >
                   Regístrate
@@ -377,7 +378,7 @@ export default function Login({ open, handleClose, handleOpenRegister }) {
         open={openRecuperar}
         onClose={() => dispatch({ type: 'CLOSE_RECUPERAR' })}
         mostrarCodigo={mostrarCodigo}
-        setMostrarCodigo={(valor) =>
+        setMostrarCodigo={valor =>
           dispatch({ type: 'SET_MOSTRAR_CODIGO', payload: valor })
         }
         onVolverLogin={handleVolverLogin} // <-- AGREGA ESTA PROP
@@ -388,5 +389,5 @@ export default function Login({ open, handleClose, handleOpenRegister }) {
         onClose={() => dispatch({ type: 'CLOSE_REGISTRO' })}
       />
     </Dialog>
-  )
+  );
 }

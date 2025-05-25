@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState } from 'react';
 import {
   Box,
   Button,
@@ -6,46 +6,53 @@ import {
   Menu,
   MenuItem,
   useMediaQuery,
-} from '@mui/material'
-import MenuIcon from '@mui/icons-material/Menu'
-import { useTheme } from '@mui/material/styles'
-import Login from './login'
-import CrearAcc from './crearacc'
+} from '@mui/material';
+import MenuIcon from '@mui/icons-material/Menu';
+import { useTheme } from '@mui/material/styles';
+import { useNavigate } from 'react-router-dom'; // ✅ AGREGAR import
+import Login from './Login.jsx';
+import CrearAcc from './Register.jsx';
 
 const TopBar = ({ onNavigate }) => {
-  const theme = useTheme()
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'))
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const navigate = useNavigate(); // ✅ AGREGAR hook de navegación
 
-  const [menuAnchor, setMenuAnchor] = useState(null)
-  const [openLoginModal, setOpenLoginModal] = useState(false)
-  const [openRegisterModal, setOpenRegisterModal] = useState(false)
+  const [menuAnchor, setMenuAnchor] = useState(null);
+  const [openLoginModal, setOpenLoginModal] = useState(false);
+  const [openRegisterModal, setOpenRegisterModal] = useState(false);
 
-  const openMenu = (e) => setMenuAnchor(e.currentTarget)
-  const closeMenu = () => setMenuAnchor(null)
+  const openMenu = e => setMenuAnchor(e.currentTarget);
+  const closeMenu = () => setMenuAnchor(null);
 
   const handleOpenLogin = () => {
-    setOpenLoginModal(true)
-    closeMenu() // cierra el menú si estás en móvil
-  }
+    setOpenLoginModal(true);
+    closeMenu();
+  };
 
   const handleOpenRegister = () => {
-    setOpenRegisterModal(true)
-    closeMenu()
-  }
+    setOpenRegisterModal(true);
+    closeMenu();
+  };
 
-  const handleCloseLogin = () => setOpenLoginModal(false)
-  const handleCloseRegister = () => setOpenRegisterModal(false)
+  const handleCloseLogin = () => setOpenLoginModal(false);
+  const handleCloseRegister = () => setOpenRegisterModal(false);
 
   const sectionsMap = {
     'Quiénes somos': 'quienesSomosRef',
     Servicios: 'serviciosRef',
     Contáctanos: 'contactanosRef',
-  }
+  };
 
-  const handleNavigate = (ref) => {
-    closeMenu()
-    onNavigate(ref)
-  }
+  const handleNavigate = ref => {
+    closeMenu();
+    onNavigate(ref);
+  };
+
+  // ✅ AGREGAR función para ir a Home
+  const handleGoHome = () => {
+    navigate('/');
+  };
 
   return (
     <Box
@@ -58,8 +65,9 @@ const TopBar = ({ onNavigate }) => {
         justifyContent: 'center',
         position: 'fixed',
         top: 0,
-        zIndex: 1100,
+        zIndex: 1100, // ✅ ASEGURAR que esté por encima
         overflowX: 'hidden',
+        height: { xs: 56, md: 64 }, // ✅ AGREGAR altura fija
       }}
     >
       <Box
@@ -76,11 +84,30 @@ const TopBar = ({ onNavigate }) => {
         <Box
           sx={{ display: 'flex', alignItems: 'center', gap: 2, flexShrink: 0 }}
         >
-          <img
-            src="/logo.svg"
-            alt="SELLSI Logo"
-            style={{ height: 28, maxWidth: '120px', flexShrink: 0 }}
-          />
+          {/* ✅ CONVERTIR logo en botón clickeable */}
+          <Box
+            component="button"
+            onClick={handleGoHome}
+            sx={{
+              background: 'none',
+              border: 'none',
+              padding: 0,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              '&:hover': {
+                opacity: 0.8,
+                transform: 'scale(1.05)',
+              },
+              transition: 'all 0.2s ease',
+            }}
+          >
+            <img
+              src="/logo.svg"
+              alt="SELLSI Logo"
+              style={{ height: 28, maxWidth: '120px', flexShrink: 0 }}
+            />
+          </Box>
 
           {!isMobile && (
             <Box sx={{ display: 'flex', gap: 3 }}>
@@ -118,6 +145,8 @@ const TopBar = ({ onNavigate }) => {
               transformOrigin={{ vertical: 'top', horizontal: 'right' }}
               PaperProps={{ sx: { maxWidth: '90vw', overflowX: 'hidden' } }}
             >
+              {/* ✅ AGREGAR opción "Inicio" en menú móvil */}
+              <MenuItem onClick={handleGoHome}>Inicio</MenuItem>
               {Object.entries(sectionsMap).map(([label, ref]) => (
                 <MenuItem key={ref} onClick={() => handleNavigate(ref)}>
                   {label}
@@ -167,8 +196,8 @@ const TopBar = ({ onNavigate }) => {
         open={openLoginModal}
         handleClose={handleCloseLogin}
         handleOpenRegister={() => {
-          handleCloseLogin()
-          handleOpenRegister()
+          handleCloseLogin();
+          handleOpenRegister();
         }}
       />
 
@@ -177,7 +206,7 @@ const TopBar = ({ onNavigate }) => {
         <CrearAcc open={openRegisterModal} onClose={handleCloseRegister} />
       )}
     </Box>
-  )
-}
+  );
+};
 
-export default TopBar
+export default TopBar;
