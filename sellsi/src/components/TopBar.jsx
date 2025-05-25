@@ -8,22 +8,35 @@ import {
   useMediaQuery,
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
+import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import { useTheme } from '@mui/material/styles';
-import { useNavigate } from 'react-router-dom'; // ✅ AGREGAR import
+import { useNavigate } from 'react-router-dom';
 import Login from './Login.jsx';
 import CrearAcc from './Register.jsx';
 
 const TopBar = ({ onNavigate }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  const navigate = useNavigate(); // ✅ AGREGAR hook de navegación
+  const navigate = useNavigate();
 
   const [menuAnchor, setMenuAnchor] = useState(null);
+  const [profileAnchor, setProfileAnchor] = useState(null);
   const [openLoginModal, setOpenLoginModal] = useState(false);
   const [openRegisterModal, setOpenRegisterModal] = useState(false);
 
+  const isLoggedIn = !!localStorage.getItem('supplierid');
+
   const openMenu = e => setMenuAnchor(e.currentTarget);
   const closeMenu = () => setMenuAnchor(null);
+
+  const openProfileMenu = e => setProfileAnchor(e.currentTarget);
+  const closeProfileMenu = () => setProfileAnchor(null);
+
+  const handleLogout = () => {
+    localStorage.removeItem('supplierid');
+    closeProfileMenu();
+    navigate('/');
+  };
 
   const handleOpenLogin = () => {
     setOpenLoginModal(true);
@@ -49,7 +62,6 @@ const TopBar = ({ onNavigate }) => {
     onNavigate(ref);
   };
 
-  // ✅ AGREGAR función para ir a Home
   const handleGoHome = () => {
     navigate('/');
   };
@@ -65,9 +77,9 @@ const TopBar = ({ onNavigate }) => {
         justifyContent: 'center',
         position: 'fixed',
         top: 0,
-        zIndex: 1100, // ✅ ASEGURAR que esté por encima
+        zIndex: 1100,
         overflowX: 'hidden',
-        height: { xs: 56, md: 64 }, // ✅ AGREGAR altura fija
+        height: { xs: 56, md: 64 },
       }}
     >
       <Box
@@ -81,10 +93,7 @@ const TopBar = ({ onNavigate }) => {
         }}
       >
         {/* Logo y navegación */}
-        <Box
-          sx={{ display: 'flex', alignItems: 'center', gap: 2, flexShrink: 0 }}
-        >
-          {/* ✅ CONVERTIR logo en botón clickeable */}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
           <Box
             component="button"
             onClick={handleGoHome}
@@ -109,7 +118,7 @@ const TopBar = ({ onNavigate }) => {
             />
           </Box>
 
-          {!isMobile && (
+          {!isMobile && !isLoggedIn && (
             <Box sx={{ display: 'flex', gap: 3 }}>
               {Object.entries(sectionsMap).map(([label, ref]) => (
                 <Button
@@ -128,7 +137,7 @@ const TopBar = ({ onNavigate }) => {
           )}
         </Box>
 
-        {/* Botones o menú móvil */}
+        {/* Botones o perfil */}
         {isMobile ? (
           <>
             <IconButton
@@ -145,15 +154,39 @@ const TopBar = ({ onNavigate }) => {
               transformOrigin={{ vertical: 'top', horizontal: 'right' }}
               PaperProps={{ sx: { maxWidth: '90vw', overflowX: 'hidden' } }}
             >
-              {/* ✅ AGREGAR opción "Inicio" en menú móvil */}
               <MenuItem onClick={handleGoHome}>Inicio</MenuItem>
-              {Object.entries(sectionsMap).map(([label, ref]) => (
-                <MenuItem key={ref} onClick={() => handleNavigate(ref)}>
-                  {label}
-                </MenuItem>
-              ))}
-              <MenuItem onClick={handleOpenLogin}>Iniciar sesión</MenuItem>
-              <MenuItem onClick={handleOpenRegister}>Registrarse</MenuItem>
+              {!isLoggedIn &&
+                Object.entries(sectionsMap).map(([label, ref]) => (
+                  <MenuItem key={ref} onClick={() => handleNavigate(ref)}>
+                    {label}
+                  </MenuItem>
+                ))}
+              {!isLoggedIn ? (
+                <>
+                  <MenuItem onClick={handleOpenLogin}>Iniciar sesión</MenuItem>
+                  <MenuItem onClick={handleOpenRegister}>Registrarse</MenuItem>
+                </>
+              ) : (
+                <MenuItem onClick={handleLogout}>Cerrar sesión</MenuItem>
+              )}
+            </Menu>
+          </>
+        ) : isLoggedIn ? (
+          <>
+            <IconButton
+              onClick={openProfileMenu}
+              sx={{ color: theme.palette.common.white }}
+            >
+              <AccountCircleIcon fontSize="large" />
+            </IconButton>
+            <Menu
+              anchorEl={profileAnchor}
+              open={Boolean(profileAnchor)}
+              onClose={closeProfileMenu}
+              anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+              transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+            >
+              <MenuItem onClick={handleLogout}>Cerrar sesión</MenuItem>
             </Menu>
           </>
         ) : (
