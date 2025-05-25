@@ -34,6 +34,7 @@ import BusinessIcon from '@mui/icons-material/Business'
 import PersonAddIcon from '@mui/icons-material/PersonAdd'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import InsertPhotoIcon from '@mui/icons-material/InsertPhoto'
+import StorefrontIcon from '@mui/icons-material/Storefront' // ✅ NUEVO: Icono de marketplace
 
 // Actualiza el array de países CON emojis
 const countries = [
@@ -1487,6 +1488,7 @@ export default function CrearAcc({ open, onClose }) {
             <Button
               variant="contained"
               onClick={onClose}
+              startIcon={<StorefrontIcon />} // ✅ NUEVO: Icono de marketplace
               sx={{
                 backgroundColor: '#41B6E6',
                 color: '#fff',
@@ -1500,7 +1502,7 @@ export default function CrearAcc({ open, onClose }) {
                 '&:hover': { backgroundColor: '#2fa4d6' },
               }}
             >
-              Regresar al marketplace
+              Ir a Marketplace {/* ✅ CAMBIO: Texto actualizado */}
             </Button>
           </Box>
         )}

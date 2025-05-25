@@ -589,8 +589,6 @@ export default function Marketplace4() {
   })
   const [precioRango, setPrecioRango] = useState([0, 1000000])
   const [comisionRango, setComisionRango] = useState([0, 30])
-
-  // ✅ ESTADOS mejorados para scroll behavior
   const [scrollY, setScrollY] = useState(0)
   const [prevScrollY, setPrevScrollY] = useState(0)
   const [showSearchBar, setShowSearchBar] = useState(true)
@@ -598,32 +596,55 @@ export default function Marketplace4() {
   const [filtroModalOpen, setFiltroModalOpen] = useState(false)
   const [showTopBarOnHover, setShowTopBarOnHover] = useState(false)
 
-  // ✅ HOOK mejorado con throttling para mejor performance
+  // ✅ FUNCIONES FALTANTES AGREGADAS
+  const handleTipoVentaChange = (tipo) => {
+    setFiltros((prev) => ({
+      ...prev,
+      tiposVenta: prev.tiposVenta.includes(tipo)
+        ? prev.tiposVenta.filter((t) => t !== tipo)
+        : [...prev.tiposVenta, tipo],
+    }))
+  }
+
+  const resetFiltros = () => {
+    setFiltros({
+      precioMin: '',
+      precioMax: '',
+      comisionMin: '',
+      comisionMax: '',
+      tiposVenta: [],
+      soloConStock: false,
+      ratingMin: 0,
+    })
+    setPrecioRango([0, 1000000])
+    setComisionRango([0, 30])
+    setCategoriaSeleccionada(['Todas'])
+    setBusqueda('')
+  }
+
+  // ✅ HOOK de scroll effect
   useEffect(() => {
-    let ticking = false // ✅ Throttling para scroll
-    let mouseThrottle = false // ✅ Throttling para mouse
+    let ticking = false
+    let mouseThrottle = false
 
     const handleScroll = () => {
       if (!ticking) {
         requestAnimationFrame(() => {
           const currentScrollY = window.scrollY
-
           setScrollY(currentScrollY)
 
           if (isMobile) {
-            // 📱 MOBILE: Scroll reactivo
             if (currentScrollY > prevScrollY && currentScrollY > 100) {
               setShowSearchBar(false)
             } else if (currentScrollY < prevScrollY) {
               setShowSearchBar(true)
             }
           } else {
-            // 🖥️ DESKTOP: Comportamiento de ocultación
             if (currentScrollY > 150) {
               setIsSearchBarSticky(true)
             } else {
               setIsSearchBarSticky(false)
-              setShowTopBarOnHover(false) // ✅ Reset hover cuando no es sticky
+              setShowTopBarOnHover(false)
             }
           }
 
@@ -634,26 +655,23 @@ export default function Marketplace4() {
       }
     }
 
-    // ✅ DETECTAR posición del mouse con throttling
     const handleMouseMove = (e) => {
       if (!mouseThrottle) {
         setTimeout(() => {
           if (!isMobile && isSearchBarSticky) {
-            // Mostrar TopBar cuando mouse esté en los primeros 100px
             if (e.clientY < 100) {
               setShowTopBarOnHover(true)
             } else if (e.clientY > 150) {
-              // ✅ Zona de histéresis
               setShowTopBarOnHover(false)
             }
           }
           mouseThrottle = false
-        }, 16) // ✅ ~60fps throttling
+        }, 16)
         mouseThrottle = true
       }
     }
 
-    window.addEventListener('scroll', handleScroll, { passive: true }) // ✅ Passive para mejor performance
+    window.addEventListener('scroll', handleScroll, { passive: true })
     window.addEventListener('mousemove', handleMouseMove, { passive: true })
 
     return () => {
@@ -700,7 +718,6 @@ export default function Marketplace4() {
     setSeccionActiva(seccion)
   }
 
-  // ✅ MEJORAR toggle de filtros
   const handleToggleFiltro = () => {
     if (isMobile) {
       setFiltroModalOpen(!filtroModalOpen)
@@ -709,60 +726,67 @@ export default function Marketplace4() {
     }
   }
 
-  // ✅ CERRAR modal de filtros en mobile
   const handleCerrarFiltroModal = () => {
     setFiltroModalOpen(false)
   }
 
+  // ✅ MANEJADORES CORREGIDOS para los sliders
   const handleChangePrecioRango = (event, newValue) => {
     setPrecioRango(newValue)
-    setFiltros({
-      ...filtros,
+    setFiltros((prev) => ({
+      ...prev,
       precioMin: newValue[0],
       precioMax: newValue[1],
-    })
+    }))
   }
 
   const handleChangeComisionRango = (event, newValue) => {
     setComisionRango(newValue)
-    setFiltros({
-      ...filtros,
+    setFiltros((prev) => ({
+      ...prev,
       comisionMin: newValue[0],
       comisionMax: newValue[1],
-    })
+    }))
   }
 
-  const handleTipoVentaChange = (tipo) => {
-    setFiltros((prevFiltros) => {
-      const tiposActuales = [...prevFiltros.tiposVenta]
-      if (tiposActuales.includes(tipo)) {
-        return {
-          ...prevFiltros,
-          tiposVenta: tiposActuales.filter((t) => t !== tipo),
-        }
-      } else {
-        return {
-          ...prevFiltros,
-          tiposVenta: [...tiposActuales, tipo],
-        }
-      }
-    })
+  const handleChangeRatingMin = (event, newValue) => {
+    setFiltros((prev) => ({
+      ...prev,
+      ratingMin: newValue,
+    }))
   }
 
-  const resetFiltros = () => {
-    setFiltros({
-      precioMin: '',
-      precioMax: '',
-      comisionMin: '',
-      comisionMax: '',
-      tiposVenta: [],
-      soloConStock: false,
-      ratingMin: 0,
-    })
-    setPrecioRango([0, 1000000])
-    setComisionRango([0, 30])
-    setCategoriaSeleccionada(['Todas'])
-    setBusqueda('')
+  const handlePrecioMinChange = (e) => {
+    const value = e.target.value === '' ? '' : parseInt(e.target.value) || 0
+    setFiltros((prev) => ({ ...prev, precioMin: value }))
+    if (value !== '') {
+      setPrecioRango([value, precioRango[1]])
+    }
+  }
+
+  const handlePrecioMaxChange = (e) => {
+    const value =
+      e.target.value === '' ? '' : parseInt(e.target.value) || 1000000
+    setFiltros((prev) => ({ ...prev, precioMax: value }))
+    if (value !== '') {
+      setPrecioRango([precioRango[0], value])
+    }
+  }
+
+  const handleComisionMinChange = (e) => {
+    const value = e.target.value === '' ? '' : parseInt(e.target.value) || 0
+    setFiltros((prev) => ({ ...prev, comisionMin: value }))
+    if (value !== '') {
+      setComisionRango([value, comisionRango[1]])
+    }
+  }
+
+  const handleComisionMaxChange = (e) => {
+    const value = e.target.value === '' ? '' : parseInt(e.target.value) || 30
+    setFiltros((prev) => ({ ...prev, comisionMax: value }))
+    if (value !== '') {
+      setComisionRango([comisionRango[0], value])
+    }
   }
 
   // Filtrar productos según criterios
@@ -831,15 +855,14 @@ export default function Marketplace4() {
       (a, b) => b.ventas - a.ventas
     )
   }
-  // ✅ COMPONENTE de contenido de filtros (tamaño reducido)
+  // ✅ COMPONENTE FiltrosContent CON ANCHO AUMENTADO 12% Y SLIDERS MEJORADOS
   const FiltrosContent = () => (
     <Box
       sx={{
-        p: 3,
+        p: 2.2,
         height: '100%',
-        overflowY: 'auto', // ✅ Scroll interno para el contenido de filtros
-        width: isMobile ? '100%' : 290, // ✅ REDUCIDO de 300 a 290 (3% menos)
-        // ✅ SCROLLBAR styling para mejor UX
+        overflowY: 'auto',
+        width: isMobile ? '100%' : 414, // ✅ AUMENTADO 12%: de 370 a 414
         '&::-webkit-scrollbar': {
           width: '6px',
         },
@@ -856,263 +879,559 @@ export default function Marketplace4() {
         },
       }}
     >
+      {/* Header sin cambios */}
       <Box
         sx={{
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          mb: 3,
+          mb: 1.6,
         }}
       >
-        <Typography variant="h6" fontWeight={600}>
-          Filtros
+        <Typography variant="h6" fontWeight={600} sx={{ fontSize: '1.12rem' }}>
+          🔍 Filtros
         </Typography>
         <Button
-          variant="text"
+          variant="outlined"
           size="small"
           onClick={resetFiltros}
-          sx={{ fontSize: 12 }}
+          sx={{
+            fontSize: 10.4,
+            minWidth: 76,
+            borderRadius: 2,
+            py: 0.44,
+          }}
         >
-          Limpiar todo
+          Limpiar
         </Button>
       </Box>
+      <Divider sx={{ mb: 1.6 }} />
 
-      <Divider sx={{ mb: 3 }} />
-
-      {/* Filtro por precio */}
-      <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
-        💰 Precio
-      </Typography>
-      <Box sx={{ px: 1, mb: 3 }}>
-        <Slider
-          value={precioRango}
-          onChange={handleChangePrecioRango}
-          valueLabelDisplay="auto"
-          min={0}
-          max={1000000}
-          step={10000}
-          valueLabelFormat={(value) => `$${value.toLocaleString('es-CL')}`}
-          sx={{ mb: 2 }}
-        />
-        <Box sx={{ display: 'flex', gap: 1, alignItems: 'stretch' }}>
-          <TextField
-            label="Mínimo"
-            variant="outlined"
-            size="small"
-            value={filtros.precioMin}
-            onChange={(e) => {
-              const value = parseInt(e.target.value) || ''
-              setFiltros((prev) => ({ ...prev, precioMin: value }))
-              if (value !== '') {
-                setPrecioRango([value, precioRango[1]])
-              }
-            }}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">$</InputAdornment>
-              ),
-            }}
-            sx={{
-              flex: 1,
-              '& .MuiOutlinedInput-root': {
-                height: '40px',
-              },
-            }}
-          />
-          <TextField
-            label="Máximo"
-            variant="outlined"
-            size="small"
-            value={filtros.precioMax}
-            onChange={(e) => {
-              const value = parseInt(e.target.value) || ''
-              setFiltros((prev) => ({ ...prev, precioMax: value }))
-              if (value !== '') {
-                setPrecioRango([precioRango[0], value])
-              }
-            }}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">$</InputAdornment>
-              ),
-            }}
-            sx={{
-              flex: 1,
-              '& .MuiOutlinedInput-root': {
-                height: '40px',
-              },
-            }}
-          />
-        </Box>
-      </Box>
-
-      {/* Filtro por comisión */}
-      <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
-        📈 Comisión
-      </Typography>
-      <Box sx={{ px: 1, mb: 3 }}>
-        <Slider
-          value={comisionRango}
-          onChange={handleChangeComisionRango}
-          valueLabelDisplay="auto"
-          min={0}
-          max={30}
-          step={1}
-          valueLabelFormat={(value) => `${value}%`}
-          sx={{ mb: 2 }}
-        />
-        <Box sx={{ display: 'flex', gap: 1, alignItems: 'stretch' }}>
-          <TextField
-            label="Mínimo"
-            variant="outlined"
-            size="small"
-            value={filtros.comisionMin}
-            onChange={(e) => {
-              const value = parseInt(e.target.value) || ''
-              setFiltros((prev) => ({ ...prev, comisionMin: value }))
-              if (value !== '') {
-                setComisionRango([value, comisionRango[1]])
-              }
-            }}
-            InputProps={{
-              endAdornment: <InputAdornment position="end">%</InputAdornment>,
-            }}
-            sx={{
-              flex: 1,
-              '& .MuiOutlinedInput-root': {
-                height: '40px',
-              },
-            }}
-          />
-          <TextField
-            label="Máximo"
-            variant="outlined"
-            size="small"
-            value={filtros.comisionMax}
-            onChange={(e) => {
-              const value = parseInt(e.target.value) || ''
-              setFiltros((prev) => ({ ...prev, comisionMax: value }))
-              if (value !== '') {
-                setComisionRango([comisionRango[0], value])
-              }
-            }}
-            InputProps={{
-              endAdornment: <InputAdornment position="end">%</InputAdornment>,
-            }}
-            sx={{
-              flex: 1,
-              '& .MuiOutlinedInput-root': {
-                height: '40px',
-              },
-            }}
-          />
-        </Box>
-      </Box>
-
-      {/* Filtro por tipo de venta */}
-      <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 1 }}>
-        🏪 Tipo de venta
-      </Typography>
-      <Box sx={{ display: 'flex', flexDirection: 'column', mb: 2 }}>
-        <FormControlLabel
-          control={
-            <Checkbox
-              checked={filtros.tiposVenta.includes('directa')}
-              onChange={() => handleTipoVentaChange('directa')}
-            />
-          }
-          label="Venta Directa"
-          sx={{
-            mb: 0.5,
-            '& .MuiFormControlLabel-label': {
-              fontSize: '0.875rem',
-            },
-          }}
-        />
-        <FormControlLabel
-          control={
-            <Checkbox
-              checked={filtros.tiposVenta.includes('indirecta')}
-              onChange={() => handleTipoVentaChange('indirecta')}
-            />
-          }
-          label="Venta Indirecta"
-          sx={{
-            mb: 0,
-            '& .MuiFormControlLabel-label': {
-              fontSize: '0.875rem',
-            },
-          }}
-        />
-      </Box>
-
-      {/* Filtros adicionales */}
-      <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 1 }}>
-        ⚡ Opciones adicionales
-      </Typography>
-      <FormControlLabel
-        control={
-          <Checkbox
-            checked={filtros.soloConStock}
-            onChange={(e) =>
-              setFiltros((prev) => ({
-                ...prev,
-                soloConStock: e.target.checked,
-              }))
-            }
-          />
-        }
-        label="Solo con stock"
-        sx={{ mb: 1 }}
-      />
-
-      {/* Rating mínimo */}
-      <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
-        ⭐ Valoración mínima
-      </Typography>
-      <Box sx={{ px: 1, mb: 3 }}>
-        {/* Indicador visual de estrellas */}
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-          <Typography variant="body2" color="text.secondary">
-            {filtros.ratingMin === 0
-              ? 'Sin filtro'
-              : `${filtros.ratingMin}+ estrellas`}
-          </Typography>
-          <Box sx={{ display: 'flex', gap: 0.5, ml: 1 }}>
-            {[1, 2, 3, 4, 5].map((star) => (
-              <Box
-                key={star}
+      {/* ✅ CAJA 1: FILTROS DE PRECIO Y COMISIÓN - ANCHO AUMENTADO 12% */}
+      <Box
+        sx={{
+          bgcolor: '#f8fafc',
+          borderRadius: 2,
+          border: '1px solid #e2e8f0',
+          p: 1.8, // ✅ AUMENTADO 12%: de 1.6 a 1.8
+          mb: 1.6,
+          width: '100%', // ✅ ASEGURAR ancho completo
+        }}
+      >
+        <Box sx={{ display: 'flex', gap: 2.24, mb: 0 }}>
+          {' '}
+          {/* ✅ AUMENTADO 12%: gap de 2 a 2.24 */}
+          {/* FILTRO DE PRECIO - COLUMNA IZQUIERDA */}
+          <Box sx={{ flex: 1 }}>
+            <Typography
+              variant="subtitle2"
+              fontWeight={600}
+              sx={{ mb: 0.84, fontSize: '0.86rem' }}
+            >
+              💰 Precio
+            </Typography>
+            <Box sx={{ px: 0.56 }}>
+              {' '}
+              {/* ✅ AUMENTADO 12%: de 0.5 a 0.56 */}
+              <Slider
+                value={precioRango}
+                onChange={handleChangePrecioRango}
+                valueLabelDisplay="auto"
+                min={0}
+                max={1000000}
+                step={10000}
+                valueLabelFormat={(value) =>
+                  `$${value.toLocaleString('es-CL')}`
+                }
                 sx={{
-                  fontSize: '18px',
-                  color: star <= filtros.ratingMin ? '#FFD700' : '#E0E0E0',
-                  transition: 'color 0.2s ease',
+                  mb: 1.28,
+                  mx: 0.56, // ✅ AUMENTADO 12%: de 0.5 a 0.56
+                  '& .MuiSlider-track': {
+                    height: 4, // ✅ MEJORADO: altura aumentada para mejor agarre
+                    border: 'none',
+                    backgroundColor: '#1976d2',
+                    borderRadius: 2,
+                    cursor: 'pointer', // ✅ NUEVO: cursor pointer
+                  },
+                  '& .MuiSlider-rail': {
+                    height: 4, // ✅ MEJORADO: altura aumentada
+                    backgroundColor: '#e0e0e0',
+                    borderRadius: 2,
+                    opacity: 1,
+                    cursor: 'pointer', // ✅ NUEVO: cursor pointer
+                  },
+                  '& .MuiSlider-thumb': {
+                    width: 18, // ✅ MEJORADO: thumb más grande para mejor agarre
+                    height: 18,
+                    backgroundColor: '#1976d2',
+                    border: '2px solid #fff',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.2)', // ✅ MEJORADO: sombra más visible
+                    cursor: 'grab', // ✅ NUEVO: cursor de agarre
+                    transition: 'all 0.15s cubic-bezier(0.4, 0, 0.2, 1)',
+                    '&:hover': {
+                      boxShadow: '0px 0px 0px 8px rgba(25, 118, 210, 0.16)', // ✅ MEJORADO: área de hover más grande
+                      transform: 'scale(1.15)', // ✅ MEJORADO: escala mayor
+                    },
+                    '&:active': {
+                      cursor: 'grabbing', // ✅ NUEVO: cursor mientras arrastra
+                      transform: 'scale(1.2)', // ✅ NUEVO: feedback visual al arrastrar
+                      boxShadow: '0px 0px 0px 10px rgba(25, 118, 210, 0.2)',
+                    },
+                    '&.Mui-focusVisible': {
+                      boxShadow: '0px 0px 0px 8px rgba(25, 118, 210, 0.16)',
+                    },
+                  },
+                  '& .MuiSlider-valueLabel': {
+                    backgroundColor: '#1976d2', // ✅ MEJORADO: label más visible
+                    fontSize: '0.75rem',
+                    fontWeight: 600,
+                    '&::before': {
+                      color: '#1976d2',
+                    },
+                  },
                 }}
-              >
-                ★
+              />
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.68 }}>
+                <TextField
+                  label="Mínimo"
+                  variant="outlined"
+                  size="small"
+                  value={filtros.precioMin}
+                  onChange={handlePrecioMinChange}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">$</InputAdornment>
+                    ),
+                  }}
+                  sx={{
+                    width: '100%',
+                    '& .MuiOutlinedInput-root': {
+                      height: '37.6px',
+                      fontSize: '0.8rem',
+                      paddingLeft: '8px',
+                    },
+                    '& .MuiInputLabel-root': {
+                      fontSize: '0.72rem',
+                      fontWeight: 500,
+                      color: '#64748b',
+                      transform: 'translate(14px, 10.4px) scale(1)',
+                      transformOrigin: 'top left',
+                      transition: 'all 0.2s ease-in-out',
+                      '&.Mui-focused': {
+                        transform: 'translate(14px, -9px) scale(0.75)',
+                        color: '#1976d2',
+                      },
+                      '&.MuiFormLabel-filled': {
+                        transform: 'translate(14px, -9px) scale(0.75)',
+                      },
+                    },
+                    '& .MuiOutlinedInput-notchedOutline': {
+                      borderColor: '#e2e8f0',
+                      borderWidth: '1px',
+                    },
+                    '& .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline':
+                      {
+                        borderColor: '#cbd5e1',
+                      },
+                    '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline':
+                      {
+                        borderColor: '#1976d2',
+                        borderWidth: '2px',
+                      },
+                    '& .MuiInputAdornment-root': {
+                      '& .MuiTypography-root': {
+                        fontSize: '0.72rem',
+                        color: '#64748b',
+                        fontWeight: 500,
+                      },
+                    },
+                  }}
+                />
+
+                <TextField
+                  label="Máximo"
+                  variant="outlined"
+                  size="small"
+                  value={filtros.precioMax}
+                  onChange={handlePrecioMaxChange}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">$</InputAdornment>
+                    ),
+                  }}
+                  sx={{
+                    width: '100%',
+                    '& .MuiOutlinedInput-root': {
+                      height: '37.6px',
+                      fontSize: '0.8rem',
+                      paddingLeft: '8px',
+                    },
+                    '& .MuiInputLabel-root': {
+                      fontSize: '0.72rem',
+                      fontWeight: 500,
+                      color: '#64748b',
+                      transform: 'translate(14px, 10.4px) scale(1)',
+                      transformOrigin: 'top left',
+                      transition: 'all 0.2s ease-in-out',
+                      '&.Mui-focused': {
+                        transform: 'translate(14px, -9px) scale(0.75)',
+                        color: '#1976d2',
+                      },
+                      '&.MuiFormLabel-filled': {
+                        transform: 'translate(14px, -9px) scale(0.75)',
+                      },
+                    },
+                    '& .MuiOutlinedInput-notchedOutline': {
+                      borderColor: '#e2e8f0',
+                      borderWidth: '1px',
+                    },
+                    '& .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline':
+                      {
+                        borderColor: '#cbd5e1',
+                      },
+                    '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline':
+                      {
+                        borderColor: '#1976d2',
+                        borderWidth: '2px',
+                      },
+                    '& .MuiInputAdornment-root': {
+                      '& .MuiTypography-root': {
+                        fontSize: '0.72rem',
+                        color: '#64748b',
+                        fontWeight: 500,
+                      },
+                    },
+                  }}
+                />
               </Box>
-            ))}
+            </Box>
+          </Box>
+          {/* FILTRO DE COMISIÓN - COLUMNA DERECHA */}
+          <Box sx={{ flex: 1 }}>
+            <Typography
+              variant="subtitle2"
+              fontWeight={600}
+              sx={{ mb: 0.84, fontSize: '0.86rem' }}
+            >
+              📈 Comisión
+            </Typography>
+            <Box sx={{ px: 0.56 }}>
+              {' '}
+              {/* ✅ AUMENTADO 12%: de 0.5 a 0.56 */}
+              <Slider
+                value={comisionRango}
+                onChange={handleChangeComisionRango}
+                valueLabelDisplay="auto"
+                min={0}
+                max={30}
+                step={1}
+                valueLabelFormat={(value) => `${value}%`}
+                sx={{
+                  mb: 1.28,
+                  mx: 0.56, // ✅ AUMENTADO 12%: de 0.5 a 0.56
+                  '& .MuiSlider-track': {
+                    height: 4, // ✅ MEJORADO: altura aumentada para mejor agarre
+                    border: 'none',
+                    backgroundColor: '#1976d2',
+                    borderRadius: 2,
+                    cursor: 'pointer', // ✅ NUEVO: cursor pointer
+                  },
+                  '& .MuiSlider-rail': {
+                    height: 4, // ✅ MEJORADO: altura aumentada
+                    backgroundColor: '#e0e0e0',
+                    borderRadius: 2,
+                    opacity: 1,
+                    cursor: 'pointer', // ✅ NUEVO: cursor pointer
+                  },
+                  '& .MuiSlider-thumb': {
+                    width: 18, // ✅ MEJORADO: thumb más grande para mejor agarre
+                    height: 18,
+                    backgroundColor: '#1976d2',
+                    border: '2px solid #fff',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.2)', // ✅ MEJORADO: sombra más visible
+                    cursor: 'grab', // ✅ NUEVO: cursor de agarre
+                    transition: 'all 0.15s cubic-bezier(0.4, 0, 0.2, 1)',
+                    '&:hover': {
+                      boxShadow: '0px 0px 0px 8px rgba(25, 118, 210, 0.16)', // ✅ MEJORADO: área de hover más grande
+                      transform: 'scale(1.15)', // ✅ MEJORADO: escala mayor
+                    },
+                    '&:active': {
+                      cursor: 'grabbing', // ✅ NUEVO: cursor mientras arrastra
+                      transform: 'scale(1.2)', // ✅ NUEVO: feedback visual al arrastrar
+                      boxShadow: '0px 0px 0px 10px rgba(25, 118, 210, 0.2)',
+                    },
+                    '&.Mui-focusVisible': {
+                      boxShadow: '0px 0px 0px 8px rgba(25, 118, 210, 0.16)',
+                    },
+                  },
+                  '& .MuiSlider-valueLabel': {
+                    backgroundColor: '#1976d2', // ✅ MEJORADO: label más visible
+                    fontSize: '0.75rem',
+                    fontWeight: 600,
+                    '&::before': {
+                      color: '#1976d2',
+                    },
+                  },
+                }}
+              />
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.68 }}>
+                <TextField
+                  label="Mínimo"
+                  variant="outlined"
+                  size="small"
+                  value={filtros.comisionMin}
+                  onChange={handleComisionMinChange}
+                  InputProps={{
+                    endAdornment: (
+                      <InputAdornment position="end">%</InputAdornment>
+                    ),
+                  }}
+                  sx={{
+                    width: '100%',
+                    '& .MuiOutlinedInput-root': {
+                      height: '37.6px',
+                      fontSize: '0.8rem',
+                      paddingRight: '8px',
+                    },
+                    '& .MuiInputLabel-root': {
+                      fontSize: '0.72rem',
+                      fontWeight: 500,
+                      color: '#64748b',
+                      transform: 'translate(14px, 10.4px) scale(1)',
+                      transformOrigin: 'top left',
+                      transition: 'all 0.2s ease-in-out',
+                      '&.Mui-focused': {
+                        transform: 'translate(14px, -9px) scale(0.75)',
+                        color: '#1976d2',
+                      },
+                      '&.MuiFormLabel-filled': {
+                        transform: 'translate(14px, -9px) scale(0.75)',
+                      },
+                    },
+                    '& .MuiOutlinedInput-notchedOutline': {
+                      borderColor: '#e2e8f0',
+                      borderWidth: '1px',
+                    },
+                    '& .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline':
+                      {
+                        borderColor: '#cbd5e1',
+                      },
+                    '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline':
+                      {
+                        borderColor: '#1976d2',
+                        borderWidth: '2px',
+                      },
+                    '& .MuiInputAdornment-root': {
+                      '& .MuiTypography-root': {
+                        fontSize: '0.72rem',
+                        color: '#64748b',
+                        fontWeight: 500,
+                      },
+                    },
+                  }}
+                />
+
+                <TextField
+                  label="Máximo"
+                  variant="outlined"
+                  size="small"
+                  value={filtros.comisionMax}
+                  onChange={handleComisionMaxChange}
+                  InputProps={{
+                    endAdornment: (
+                      <InputAdornment position="end">%</InputAdornment>
+                    ),
+                  }}
+                  sx={{
+                    width: '100%',
+                    '& .MuiOutlinedInput-root': {
+                      height: '37.6px',
+                      fontSize: '0.8rem',
+                      paddingRight: '8px',
+                    },
+                    '& .MuiInputLabel-root': {
+                      fontSize: '0.72rem',
+                      fontWeight: 500,
+                      color: '#64748b',
+                      transform: 'translate(14px, 10.4px) scale(1)',
+                      transformOrigin: 'top left',
+                      transition: 'all 0.2s ease-in-out',
+                      '&.Mui-focused': {
+                        transform: 'translate(14px, -9px) scale(0.75)',
+                        color: '#1976d2',
+                      },
+                      '&.MuiFormLabel-filled': {
+                        transform: 'translate(14px, -9px) scale(0.75)',
+                      },
+                    },
+                    '& .MuiOutlinedInput-notchedOutline': {
+                      borderColor: '#e2e8f0',
+                      borderWidth: '1px',
+                    },
+                    '& .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline':
+                      {
+                        borderColor: '#cbd5e1',
+                      },
+                    '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline':
+                      {
+                        borderColor: '#1976d2',
+                        borderWidth: '2px',
+                      },
+                    '& .MuiInputAdornment-root': {
+                      '& .MuiTypography-root': {
+                        fontSize: '0.72rem',
+                        color: '#64748b',
+                        fontWeight: 500,
+                      },
+                    },
+                  }}
+                />
+              </Box>
+            </Box>
           </Box>
         </Box>
 
-        {/* Slider mejorado */}
+        {/* CAJA 2: TIPO DE VENTA Y OPCIONES - ANCHO AUMENTADO 12% */}
         <Box
           sx={{
-            px: 2,
-            py: 1,
             bgcolor: '#f8fafc',
             borderRadius: 2,
             border: '1px solid #e2e8f0',
+            p: 1.8, // ✅ AUMENTADO 12%: de 1.6 a 1.8
+            mb: 1.6,
+            width: '100%', // ✅ ASEGURAR ancho completo
           }}
         >
+          <Box sx={{ display: 'flex', gap: 2.24 }}>
+            {' '}
+            {/* ✅ AUMENTADO 12%: gap de 2 a 2.24 */}
+            {/* TIPO DE VENTA - COLUMNA IZQUIERDA */}
+            <Box sx={{ flex: 1 }}>
+              <Typography
+                variant="subtitle2"
+                fontWeight={600}
+                sx={{ mb: 0.84, fontSize: '0.86rem' }}
+              >
+                🏪 Tipo de venta
+              </Typography>
+              <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={filtros.tiposVenta.includes('directa')}
+                      onChange={() => handleTipoVentaChange('directa')}
+                      size="small"
+                    />
+                  }
+                  label="Venta Directa"
+                  sx={{
+                    mb: 0.16,
+                    '& .MuiFormControlLabel-label': { fontSize: '0.72rem' },
+                  }}
+                />
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={filtros.tiposVenta.includes('indirecta')}
+                      onChange={() => handleTipoVentaChange('indirecta')}
+                      size="small"
+                    />
+                  }
+                  label="Venta Indirecta"
+                  sx={{
+                    mb: 0,
+                    '& .MuiFormControlLabel-label': { fontSize: '0.72rem' },
+                  }}
+                />
+              </Box>
+            </Box>
+            {/* OPCIONES ADICIONALES - COLUMNA DERECHA */}
+            <Box sx={{ flex: 1 }}>
+              <Typography
+                variant="subtitle2"
+                fontWeight={600}
+                sx={{ mb: 0.84, fontSize: '0.86rem' }}
+              >
+                ⚡ Opciones
+              </Typography>
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={filtros.soloConStock}
+                    onChange={(e) =>
+                      setFiltros((prev) => ({
+                        ...prev,
+                        soloConStock: e.target.checked,
+                      }))
+                    }
+                    size="small"
+                  />
+                }
+                label="Solo con stock"
+                sx={{
+                  mb: 0.4,
+                  '& .MuiFormControlLabel-label': { fontSize: '0.72rem' },
+                }}
+              />
+            </Box>
+          </Box>
+        </Box>
+
+        {/* ✅ CAJA 3: RATING MÍNIMO - ANCHO AUMENTADO 12% Y SLIDER MEJORADO */}
+        <Box
+          sx={{
+            bgcolor: '#f8fafc',
+            borderRadius: 2,
+            border: '1px solid #e2e8f0',
+            p: 1.8, // ✅ AUMENTADO 12%: de 1.6 a 1.8
+            mb: 1.6,
+            width: '100%', // ✅ ASEGURAR ancho completo
+          }}
+        >
+          <Typography
+            variant="subtitle2"
+            fontWeight={600}
+            sx={{ mb: 1.32, fontSize: '0.86rem' }}
+          >
+            ⭐ Valoración mínima
+          </Typography>
+
+          <Box
+            sx={{ display: 'flex', alignItems: 'center', gap: 1.32, mb: 1.32 }}
+          >
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              sx={{ minWidth: 100, fontSize: '0.72rem' }}
+            >
+              {filtros.ratingMin === 0
+                ? 'Sin filtro'
+                : `${filtros.ratingMin}+ estrellas`}
+            </Typography>
+            <Box sx={{ display: 'flex', gap: 0.28 }}>
+              {[1, 2, 3, 4, 5].map((star) => (
+                <Box
+                  key={star}
+                  sx={{
+                    fontSize: '13.2px',
+                    color: star <= filtros.ratingMin ? '#FFD700' : '#E0E0E0',
+                    transition: 'color 0.2s ease',
+                  }}
+                >
+                  ★
+                </Box>
+              ))}
+            </Box>
+          </Box>
+
           <Slider
             value={filtros.ratingMin}
-            onChange={(e, value) =>
-              setFiltros((prev) => ({ ...prev, ratingMin: value }))
-            }
+            onChange={handleChangeRatingMin}
             min={0}
             max={5}
             step={0.5}
-            valueLabelDisplay="off"
+            valueLabelDisplay="auto"
+            valueLabelFormat={(value) => `${value} ⭐`}
             marks={[
               { value: 0, label: '0' },
               { value: 1, label: '1' },
@@ -1123,79 +1442,236 @@ export default function Marketplace4() {
             ]}
             sx={{
               mb: 0,
-              height: 8,
+              height: 6, // ✅ MEJORADO: altura aumentada para mejor agarre
+              px: 1.12, // ✅ AUMENTADO 12%: de 1 a 1.12
               '& .MuiSlider-track': {
-                height: 6,
+                height: 4, // ✅ MEJORADO: altura aumentada
                 border: 'none',
                 background: 'linear-gradient(90deg, #FFD700 0%, #FFA500 100%)',
-                borderRadius: 3,
+                borderRadius: 2,
+                cursor: 'pointer', // ✅ NUEVO: cursor pointer
               },
               '& .MuiSlider-rail': {
-                height: 6,
+                height: 4, // ✅ MEJORADO: altura aumentada
                 opacity: 0.3,
                 backgroundColor: '#E0E0E0',
-                borderRadius: 3,
+                borderRadius: 2,
+                cursor: 'pointer', // ✅ NUEVO: cursor pointer
               },
               '& .MuiSlider-thumb': {
-                height: 24,
-                width: 24,
+                height: 20, // ✅ MEJORADO: thumb más grande para mejor agarre
+                width: 20,
                 backgroundColor: '#FFD700',
-                border: '3px solid #FFF',
-                boxShadow: '0 2px 8px rgba(255, 215, 0, 0.3)',
-                '&:focus, &:hover, &.Mui-active': {
-                  boxShadow: '0 4px 12px rgba(255, 215, 0, 0.4)',
-                  transform: 'scale(1.1)',
+                border: '3px solid #FFF', // ✅ MEJORADO: borde más grueso
+                boxShadow: '0 3px 10px rgba(255, 215, 0, 0.4)', // ✅ MEJORADO: sombra más visible
+                cursor: 'grab', // ✅ NUEVO: cursor de agarre
+                transition: 'all 0.15s cubic-bezier(0.4, 0, 0.2, 1)',
+                '&:hover': {
+                  boxShadow: '0 5px 15px rgba(255, 215, 0, 0.5)', // ✅ MEJORADO: sombra en hover
+                  transform: 'scale(1.15)', // ✅ MEJORADO: escala mayor
                 },
-                '&:before': {
-                  display: 'none',
+                '&:active': {
+                  cursor: 'grabbing', // ✅ NUEVO: cursor mientras arrastra
+                  transform: 'scale(1.25)', // ✅ NUEVO: feedback visual al arrastrar
+                  boxShadow: '0 6px 20px rgba(255, 215, 0, 0.6)',
+                },
+                '&.Mui-focusVisible': {
+                  boxShadow: '0 5px 15px rgba(255, 215, 0, 0.5)',
                 },
               },
               '& .MuiSlider-mark': {
                 backgroundColor: '#FFD700',
-                height: 4,
-                width: 4,
+                height: 2, // ✅ MEJORADO: marcas más visibles
+                width: 2,
                 borderRadius: '50%',
-                opacity: 0.7,
-                '&.MuiSlider-markActive': {
-                  backgroundColor: '#FFA500',
-                  opacity: 1,
-                },
+                opacity: 0.8, // ✅ MEJORADO: más opacas
               },
               '& .MuiSlider-markLabel': {
-                fontSize: '11px',
+                fontSize: '7.6px',
                 fontWeight: 500,
                 color: '#64748b',
-                top: 26,
-                '&.MuiSlider-markLabelActive': {
-                  color: '#1e293b',
+                top: 18, // ✅ AJUSTADO: posición con nueva altura
+              },
+              '& .MuiSlider-valueLabel': {
+                backgroundColor: '#FFD700', // ✅ MEJORADO: label más visible
+                fontSize: '0.75rem',
+                fontWeight: 600,
+                '&::before': {
+                  color: '#FFD700',
                 },
               },
             }}
           />
         </Box>
 
-        {/* Texto descriptivo */}
-        <Typography
-          variant="caption"
-          color="text.secondary"
+        {/* ✅ CAJA 4: FILTROS APLICADOS - MOVIDA FUERA DEL SLIDER */}
+        <Box
           sx={{
-            mt: 1,
-            display: 'block',
-            textAlign: 'center',
+            bgcolor: '#f8fafc',
+            borderRadius: 2,
+            border: '1px solid #e2e8f0',
+            p: 1.8,
+            mb: 1.6,
+            width: '100%',
           }}
         >
-          Desliza para filtrar por valoración mínima
-        </Typography>
-      </Box>
+          <Typography
+            variant="subtitle2"
+            fontWeight={600}
+            sx={{ mb: 1.32, fontSize: '0.86rem' }}
+          >
+            🏷️ Filtros aplicados
+          </Typography>
 
+          <Box
+            sx={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: 0.52,
+              maxHeight: '92px',
+              overflowY: 'auto',
+              '&::-webkit-scrollbar': { width: '3px' },
+              '&::-webkit-scrollbar-track': {
+                background: '#f1f1f1',
+                borderRadius: '10px',
+              },
+              '&::-webkit-scrollbar-thumb': {
+                background: '#c1c1c1',
+                borderRadius: '10px',
+                '&:hover': { background: '#a1a1a1' },
+              },
+            }}
+          >
+            {busqueda && (
+              <Chip
+                label={`"${busqueda}"`}
+                onDelete={() => setBusqueda('')}
+                size="small"
+                color="primary"
+                variant="outlined"
+                sx={{ fontSize: '0.624rem', height: 20.8 }} // ✅ AJUSTADO: reducido 20% (altura de 22 a 20.8, font de 0.65rem a 0.624rem)
+              />
+            )}
+
+            {categoriaSeleccionada
+              .filter((cat) => cat !== 'Todas')
+              .map((cat) => (
+                <Chip
+                  key={cat}
+                  label={cat}
+                  onDelete={() => handleSeleccionarCategoria(cat)}
+                  size="small"
+                  variant="outlined"
+                  sx={{ fontSize: '0.624rem', height: 20.8 }} // ✅ AJUSTADO
+                />
+              ))}
+
+            {(filtros.precioMin || filtros.precioMax) && (
+              <Chip
+                label={`$${(filtros.precioMin || 0).toLocaleString(
+                  'es-CL'
+                )} - $${(filtros.precioMax || 1000000).toLocaleString(
+                  'es-CL'
+                )}`}
+                onDelete={() => {
+                  setFiltros((prev) => ({
+                    ...prev,
+                    precioMin: '',
+                    precioMax: '',
+                  }))
+                  setPrecioRango([0, 1000000])
+                }}
+                size="small"
+                variant="outlined"
+                sx={{ fontSize: '0.624rem', height: 20.8 }} // ✅ AJUSTADO
+              />
+            )}
+
+            {(filtros.comisionMin || filtros.comisionMax) && (
+              <Chip
+                label={`${filtros.comisionMin || 0}% - ${
+                  filtros.comisionMax || 30
+                }%`}
+                onDelete={() => {
+                  setFiltros((prev) => ({
+                    ...prev,
+                    comisionMin: '',
+                    comisionMax: '',
+                  }))
+                  setComisionRango([0, 30])
+                }}
+                size="small"
+                variant="outlined"
+                sx={{ fontSize: '0.624rem', height: 20.8 }} // ✅ AJUSTADO
+              />
+            )}
+
+            {filtros.tiposVenta.map((tipo) => (
+              <Chip
+                key={tipo}
+                label={tipo === 'directa' ? 'Directa' : 'Indirecta'}
+                onDelete={() => handleTipoVentaChange(tipo)}
+                size="small"
+                variant="outlined"
+                sx={{ fontSize: '0.624rem', height: 20.8 }} // ✅ AJUSTADO
+              />
+            ))}
+
+            {filtros.soloConStock && (
+              <Chip
+                label="Con stock"
+                onDelete={() =>
+                  setFiltros((prev) => ({
+                    ...prev,
+                    soloConStock: false,
+                  }))
+                }
+                size="small"
+                variant="outlined"
+                sx={{ fontSize: '0.624rem', height: 20.8 }} // ✅ AJUSTADO
+              />
+            )}
+
+            {filtros.ratingMin > 0 && (
+              <Chip
+                label={`${filtros.ratingMin}+ ⭐`}
+                onDelete={() =>
+                  setFiltros((prev) => ({
+                    ...prev,
+                    ratingMin: 0,
+                  }))
+                }
+                size="small"
+                variant="outlined"
+                sx={{ fontSize: '0.624rem', height: 20.8 }} // ✅ AJUSTADO
+              />
+            )}
+          </Box>
+        </Box>
+
+        {/* Botón aplicar en versión móvil */}
+        <Box sx={{ display: { xs: 'block', md: 'none' }, mt: 1.6 }}>
+          <Button
+            variant="contained"
+            color="primary"
+            fullWidth
+            onClick={handleToggleFiltro}
+            sx={{ py: 1.04, fontWeight: 600, fontSize: '0.864rem' }}
+          >
+            Aplicar filtros
+          </Button>
+        </Box>
+      </Box>
       {/* Botón aplicar en versión móvil */}
-      <Box sx={{ display: { xs: 'block', md: 'none' }, mt: 4 }}>
+      <Box sx={{ display: { xs: 'block', md: 'none' }, mt: 1.6 }}>
+        {' '}
+        {/* ✅ AJUSTADO: reducido 20% (de 2 a 1.6) */}
         <Button
           variant="contained"
           color="primary"
           fullWidth
           onClick={handleToggleFiltro}
-          sx={{ py: 1.5, fontWeight: 600 }}
+          sx={{ py: 1.04, fontWeight: 600, fontSize: '0.864rem' }} // ✅ AJUSTADO: py reducido 20% (de 1.2 a 1.04), font de 0.9rem a 0.864rem
         >
           Aplicar filtros
         </Button>
@@ -1461,17 +1937,17 @@ export default function Marketplace4() {
         </Fab>
       )}
 
-      {/* ✅ PANEL DE FILTROS - TAMAÑO REDUCIDO 3% */}
+      {/* ✅ PANEL DE FILTROS CON NUEVO ANCHO AUMENTADO 12% */}
       {!isMobile && (
         <Box
           sx={{
             position: 'fixed',
-            left: filtroVisible ? 0 : -330, // ✅ REDUCIDO de -340 a -330 (3% menos)
+            left: filtroVisible ? 0 : -460, // ✅ AUMENTADO 12%: de -410 a -460
             top: shouldShowSearchBar ? 180 : 90,
-            width: 330, // ✅ REDUCIDO de 340 a 330 (3% menos)
+            width: 460, // ✅ AUMENTADO 12%: de 410 a 460
             maxHeight: shouldShowSearchBar
-              ? 'calc(100vh - 200px)'
-              : 'calc(100vh - 110px)',
+              ? 'calc(100vh - 180px)'
+              : 'calc(100vh - 90px)',
             zIndex: 60,
             transition: 'left 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
             overflowY: 'auto',
@@ -1479,7 +1955,7 @@ export default function Marketplace4() {
         >
           <Box
             sx={{
-              width: 310, // ✅ REDUCIDO de 320 a 310 (3% menos)
+              width: 437, // ✅ AUMENTADO 12%: de 390 a 437
               ml: 1,
               bgcolor: '#fff',
               borderRadius: 2,
@@ -1495,210 +1971,108 @@ export default function Marketplace4() {
         </Box>
       )}
 
-      {/* Modal de filtros en mobile igual... */}
-      {isMobile && (
-        <Drawer
-          anchor="bottom"
-          open={filtroModalOpen}
-          onClose={handleCerrarFiltroModal}
-          PaperProps={{
-            sx: {
-              maxHeight: '80vh',
-              borderTopLeftRadius: 16,
-              borderTopRightRadius: 16,
-            },
-          }}
-        >
-          <Box
-            sx={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              p: 2,
-              borderBottom: '1px solid #e2e8f0',
-            }}
-          >
-            <Typography variant="h6" fontWeight={600}>
-              Filtros
-            </Typography>
-            <IconButton onClick={handleCerrarFiltroModal}>
-              <CloseIcon />
-            </IconButton>
-          </Box>
-          <FiltrosContent />
-          <Box sx={{ p: 2 }}>
-            <Button
-              variant="contained"
-              fullWidth
-              onClick={handleCerrarFiltroModal}
-              sx={{ py: 1.5, fontWeight: 600 }}
-            >
-              Aplicar filtros
-            </Button>
-          </Box>
-        </Drawer>
-      )}
-
-      {/* ✅ CONTENIDO PRINCIPAL - MÁRGENES LATERALES AUMENTADOS 2% */}
-      <Box
-        sx={{
-          pt: { xs: 1, md: shouldShowSearchBar ? 18 : 8 },
-          px: { xs: 2.04, md: 6.12 }, // ✅ AUMENTADO 2%: de 2,6 a 2.04,6.12
-          pb: 3,
-          minHeight: '100vh',
-          mx: { xs: 1.02, md: 3.06 }, // ✅ AUMENTADO 2%: de 1,3 a 1.02,3.06
+      {/* Modal de filtros para móvil */}
+      <Drawer
+        anchor="bottom"
+        open={filtroModalOpen}
+        onClose={handleCerrarFiltroModal}
+        PaperProps={{
+          sx: {
+            maxHeight: '85vh',
+            borderTopLeftRadius: 16,
+            borderTopRightRadius: 16,
+          },
         }}
       >
-        {/* ✅ ÁREA DE PRODUCTOS - MÁRGENES AJUSTADOS */}
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            p: 2,
+            borderBottom: '1px solid #e2e8f0',
+          }}
+        >
+          <Typography variant="h6" fontWeight={600}>
+            Filtros
+          </Typography>
+          <IconButton onClick={handleCerrarFiltroModal}>
+            <CloseIcon />
+          </IconButton>
+        </Box>
+        <FiltrosContent />
+      </Drawer>
+
+      {/* Contenido principal */}
+      <Box
+        sx={{
+          pt: shouldShowSearchBar ? '220px' : '130px',
+          pl: !isMobile && filtroVisible ? '470px' : 0, // ✅ AUMENTADO 12%: de 420px a 470px
+          transition: 'padding-left 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+          minHeight: 'calc(100vh - 140px)',
+        }}
+      >
+        {/* ✅ TÍTULO MOVIDO HACIA LA DERECHA CUANDO FILTROS ABIERTOS */}
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            mb: 4,
+            marginLeft: { xs: '20px', md: '40px' }, // ✅ MANTENIDO: márgenes base
+            marginRight: { xs: '20px', md: '40px' },
+            transform:
+              !isMobile && filtroVisible ? 'translateX(20px)' : 'translateX(0)', // ✅ NUEVO: desplazamiento adicional
+            transition: 'transform 0.4s cubic-bezier(0.4, 0, 0.2, 1)', // ✅ NUEVO: transición suave
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            {seccionActiva !== 'todos' && (
+              <IconButton
+                onClick={() => handleCambiarSeccion('todos')}
+                sx={{
+                  bgcolor: '#f1f5f9',
+                  color: 'primary.main',
+                  '&:hover': {
+                    bgcolor: 'primary.main',
+                    color: 'white',
+                  },
+                  transition: 'all 0.2s ease',
+                }}
+                aria-label="Volver a todos los productos"
+              >
+                <ArrowBackIcon />
+              </IconButton>
+            )}
+
+            <Typography variant="h5" fontWeight={600} sx={{ color: '#1e293b' }}>
+              {seccionActiva === 'nuevos'
+                ? '✨ Nuevos Productos'
+                : seccionActiva === 'ofertas'
+                ? '🔥 Ofertas Destacadas'
+                : seccionActiva === 'topVentas'
+                ? '⭐ Top Ventas'
+                : '🛍️ Todos los Productos'}
+            </Typography>
+          </Box>
+
+          <Typography variant="body2" color="text.secondary">
+            {productosFiltrados.length} productos encontrados
+          </Typography>
+        </Box>
+
+        {/* ✅ ÁREA DE PRODUCTOS CON DESPLAZAMIENTO CUANDO FILTROS ABIERTOS */}
         <Box
           sx={{
             width: '100%',
-            px: { xs: 1.02, md: 3.06 }, // ✅ AUMENTADO 2%: de 1,3 a 1.02,2.06
-            mx: { xs: 0, md: 2.04 }, // ✅ AUMENTADO 2%: de 0,2 a 0,2.04
+            px: { xs: 1.02, md: 3.06 },
+            mx: { xs: 0, md: 2.04 },
+            transform:
+              !isMobile && filtroVisible ? 'translateX(20px)' : 'translateX(0)', // ✅ NUEVO: desplazamiento adicional
+            transition: 'transform 0.4s cubic-bezier(0.4, 0, 0.2, 1)', // ✅ NUEVO: transición suave
           }}
         >
-          {/* ✅ CHIPS DE FILTROS ACTIVOS - PRIMERO */}
-          {(categoriaSeleccionada.length > 0 ||
-            filtros.precioMin ||
-            filtros.precioMax ||
-            filtros.comisionMin ||
-            filtros.comisionMax ||
-            filtros.tiposVenta.length > 0 ||
-            filtros.soloConStock ||
-            filtros.ratingMin > 0 ||
-            busqueda) && (
-            <Paper
-              elevation={0}
-              sx={{
-                p: 2,
-                mb: 3,
-                display: 'flex',
-                flexWrap: 'wrap',
-                gap: 1,
-                alignItems: 'center',
-                bgcolor: '#f8fafc',
-                borderRadius: 2,
-                mx: { xs: 0, md: 1.02 },
-              }}
-            >
-              <Typography variant="body2" sx={{ mr: 1, fontWeight: 600 }}>
-                Filtros activos:
-              </Typography>
-
-              {busqueda && (
-                <Chip
-                  label={`Búsqueda: "${busqueda}"`}
-                  onDelete={() => setBusqueda('')}
-                  size="small"
-                  color="primary"
-                  variant="outlined"
-                />
-              )}
-
-              {categoriaSeleccionada
-                .filter((cat) => cat !== 'Todas')
-                .map((cat) => (
-                  <Chip
-                    key={cat}
-                    label={cat}
-                    onDelete={() => handleSeleccionarCategoria(cat)}
-                    size="small"
-                    variant="outlined"
-                  />
-                ))}
-
-              {(filtros.precioMin || filtros.precioMax) && (
-                <Chip
-                  label={`Precio: $${(filtros.precioMin || 0).toLocaleString(
-                    'es-CL'
-                  )} - $${(filtros.precioMax || 1000000).toLocaleString(
-                    'es-CL'
-                  )}`}
-                  onDelete={() => {
-                    setFiltros((prev) => ({
-                      ...prev,
-                      precioMin: '',
-                      precioMax: '',
-                    }))
-                    setPrecioRango([0, 1000000])
-                  }}
-                  size="small"
-                  variant="outlined"
-                />
-              )}
-
-              {filtros.tiposVenta.map((tipo) => (
-                <Chip
-                  key={tipo}
-                  label={`${tipo === 'directa' ? 'Directa' : 'Indirecta'}`}
-                  onDelete={() => handleTipoVentaChange(tipo)}
-                  size="small"
-                  variant="outlined"
-                />
-              ))}
-
-              <Button
-                variant="text"
-                size="small"
-                onClick={resetFiltros}
-                sx={{ ml: 'auto', fontSize: 12 }}
-              >
-                Limpiar todos
-              </Button>
-            </Paper>
-          )}
-
-          {/* ✅ TÍTULO DE SECCIÓN Y CONTADOR - SEGUNDO */}
-          <Box
-            sx={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              mb: 3,
-              marginLeft: { xs: '150px', md: '200px' }, // ✅ AUMENTADO MUCHO MÁS: de 80px/120px a 150px/200px
-              marginRight: { xs: '20px', md: '40px' }, // ✅ Mantener margen derecho
-            }}
-          >
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              {seccionActiva !== 'todos' && (
-                <IconButton
-                  onClick={() => handleCambiarSeccion('todos')}
-                  sx={{
-                    bgcolor: '#f1f5f9',
-                    color: 'primary.main',
-                    '&:hover': {
-                      bgcolor: 'primary.main',
-                      color: 'white',
-                    },
-                    transition: 'all 0.2s ease',
-                  }}
-                  aria-label="Volver a todos los productos"
-                >
-                  <ArrowBackIcon />
-                </IconButton>
-              )}
-
-              <Typography
-                variant="h5"
-                fontWeight={600}
-                sx={{ color: '#1e293b' }}
-              >
-                {seccionActiva === 'nuevos'
-                  ? '✨ Nuevos Productos'
-                  : seccionActiva === 'ofertas'
-                  ? '🔥 Ofertas Destacadas'
-                  : seccionActiva === 'topVentas'
-                  ? '⭐ Top Ventas'
-                  : '🛍️ Todos los Productos'}
-              </Typography>
-            </Box>
-
-            <Typography variant="body2" color="text.secondary">
-              {productosFiltrados.length} productos encontrados
-            </Typography>
-          </Box>
-
-          {/* ✅ GRID DE PRODUCTOS - TERCERO */}
+          {/* Grid de productos o mensaje de no encontrados */}
           {productosFiltrados.length === 0 ? (
             <Paper
               sx={{
@@ -1727,19 +2101,19 @@ export default function Marketplace4() {
           ) : (
             <Grid
               container
-              spacing={3}
+              spacing={1.6}
               sx={{
                 justifyContent: 'center',
-                px: { xs: 2.04, md: 4.08 },
-                py: 2,
-                mx: { xs: 0, md: 2.04 },
+                px: { xs: 1.84, md: 2.76 }, // ✅ AUMENTADO 15%: de 1.6/2.4 a 1.84/2.76
+                py: 1.6,
+                mx: { xs: 0, md: 1.38 }, // ✅ AUMENTADO 15%: de 1.2 a 1.38
                 '@media (min-width: 1200px)': {
-                  px: 6.12,
-                  mx: 4.08,
+                  px: 3.68, // ✅ AUMENTADO 15%: de 3.2 a 3.68
+                  mx: 2.3, // ✅ AUMENTADO 15%: de 2.0 a 2.3
                 },
                 '@media (min-width: 1536px)': {
-                  px: 8.16,
-                  mx: 6.12,
+                  px: 4.6, // ✅ AUMENTADO 15%: de 4.0 a 4.6
+                  mx: 2.76, // ✅ AUMENTADO 15%: de 2.4 a 2.76
                 },
               }}
             >
@@ -1751,17 +2125,17 @@ export default function Marketplace4() {
                   sm={6}
                   md={4}
                   sx={{
-                    px: { xs: 1.02, md: 2.04 },
-                    mb: { xs: 2, md: 3 },
+                    px: { xs: 0.8, md: 1.2 },
+                    mb: { xs: 1.2, md: 1.6 },
                     '@media (min-width: 1200px)': {
-                      flex: '0 0 18%',
-                      maxWidth: '18%',
-                      px: 3.06,
+                      flex: '0 0 16.9%', // ✅ REDUCIDO 12%: de 19.2% a 16.9% (19.2 × 0.88 = 16.896)
+                      maxWidth: '16.9%',
+                      px: 1.6,
                     },
                     '@media (min-width: 1536px)': {
-                      flex: '0 0 18%',
-                      maxWidth: '18%',
-                      px: 4.08,
+                      flex: '0 0 16.9%', // ✅ REDUCIDO 12%: de 19.2% a 16.9%
+                      maxWidth: '16.9%',
+                      px: 2.0,
                     },
                   }}
                 >
@@ -1773,7 +2147,7 @@ export default function Marketplace4() {
         </Box>
       </Box>
 
-      {/* TopBar and BottomBar components */}
+      {/* TopBar y BottomBar */}
       <TopBar />
       <BottomBar />
     </Box>
