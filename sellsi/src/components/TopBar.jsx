@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState } from 'react';
 import {
   Box,
   Button,
@@ -6,53 +6,53 @@ import {
   Menu,
   MenuItem,
   useMediaQuery,
-} from '@mui/material'
-import MenuIcon from '@mui/icons-material/Menu'
-import { useTheme } from '@mui/material/styles'
-import { useNavigate } from 'react-router-dom' // ✅ AGREGAR import
-import Login from './login.jsx'
-import CrearAcc from './Crearacc.jsx'
+} from '@mui/material';
+import MenuIcon from '@mui/icons-material/Menu';
+import { useTheme } from '@mui/material/styles';
+import { useNavigate } from 'react-router-dom'; // ✅ AGREGAR import
+import Login from './Login.jsx';
+import CrearAcc from './Register.jsx';
 
 const TopBar = ({ onNavigate }) => {
-  const theme = useTheme()
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'))
-  const navigate = useNavigate() // ✅ AGREGAR hook de navegación
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const navigate = useNavigate(); // ✅ AGREGAR hook de navegación
 
-  const [menuAnchor, setMenuAnchor] = useState(null)
-  const [openLoginModal, setOpenLoginModal] = useState(false)
-  const [openRegisterModal, setOpenRegisterModal] = useState(false)
+  const [menuAnchor, setMenuAnchor] = useState(null);
+  const [openLoginModal, setOpenLoginModal] = useState(false);
+  const [openRegisterModal, setOpenRegisterModal] = useState(false);
 
-  const openMenu = (e) => setMenuAnchor(e.currentTarget)
-  const closeMenu = () => setMenuAnchor(null)
+  const openMenu = e => setMenuAnchor(e.currentTarget);
+  const closeMenu = () => setMenuAnchor(null);
 
   const handleOpenLogin = () => {
-    setOpenLoginModal(true)
-    closeMenu()
-  }
+    setOpenLoginModal(true);
+    closeMenu();
+  };
 
   const handleOpenRegister = () => {
-    setOpenRegisterModal(true)
-    closeMenu()
-  }
+    setOpenRegisterModal(true);
+    closeMenu();
+  };
 
-  const handleCloseLogin = () => setOpenLoginModal(false)
-  const handleCloseRegister = () => setOpenRegisterModal(false)
+  const handleCloseLogin = () => setOpenLoginModal(false);
+  const handleCloseRegister = () => setOpenRegisterModal(false);
 
   const sectionsMap = {
     'Quiénes somos': 'quienesSomosRef',
     Servicios: 'serviciosRef',
     Contáctanos: 'contactanosRef',
-  }
+  };
 
-  const handleNavigate = (ref) => {
-    closeMenu()
-    onNavigate(ref)
-  }
+  const handleNavigate = ref => {
+    closeMenu();
+    onNavigate(ref);
+  };
 
   // ✅ AGREGAR función para ir a Home
   const handleGoHome = () => {
-    navigate('/')
-  }
+    navigate('/');
+  };
 
   return (
     <Box
@@ -196,8 +196,8 @@ const TopBar = ({ onNavigate }) => {
         open={openLoginModal}
         handleClose={handleCloseLogin}
         handleOpenRegister={() => {
-          handleCloseLogin()
-          handleOpenRegister()
+          handleCloseLogin();
+          handleOpenRegister();
         }}
       />
 
@@ -206,7 +206,7 @@ const TopBar = ({ onNavigate }) => {
         <CrearAcc open={openRegisterModal} onClose={handleCloseRegister} />
       )}
     </Box>
-  )
-}
+  );
+};
 
-export default TopBar
+export default TopBar;

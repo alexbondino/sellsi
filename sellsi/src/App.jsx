@@ -1,32 +1,32 @@
-import React, { useEffect, useState, useRef } from 'react'
-import { Box, CssBaseline } from '@mui/material'
-import { ThemeProvider } from '@mui/material/styles'
-import theme from './styles/theme'
-import GlobalStyles from '@mui/material/GlobalStyles'
-import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
+import React, { useEffect, useState, useRef } from 'react';
+import { Box, CssBaseline } from '@mui/material';
+import { ThemeProvider } from '@mui/material/styles';
+import theme from './styles/theme';
+import GlobalStyles from '@mui/material/GlobalStyles';
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 
-import TestSupabase from './services/test-supabase'
-import BottomBar from './components/BottomBar'
-import TopBar from './components/TopBar'
-import Home from './pages/Home'
-import Marketplace from './pages/Marketplace.jsx'
-import Login from './components/login.jsx'
-import CrearAcc from './components/Crearacc.jsx'
+import TestSupabase from './services/test-supabase';
+import BottomBar from './components/BottomBar';
+import TopBar from './components/TopBar';
+import Home from './pages/Home';
+import Marketplace from './pages/Marketplace.jsx';
+import Login from './components/Login.jsx';
+import CrearAcc from './components/Register.jsx';
 
 // ✅ COMPONENTE interno para acceder a location
 function AppContent({ mensaje }) {
   // ✅ RECIBIR mensaje como prop
-  const location = useLocation()
-  const scrollTargets = useRef({})
+  const location = useLocation();
+  const scrollTargets = useRef({});
 
-  const handleScrollTo = (sectionKey) => {
+  const handleScrollTo = sectionKey => {
     scrollTargets.current[sectionKey]?.current?.scrollIntoView({
       behavior: 'smooth',
-    })
-  }
+    });
+  };
 
   // ✅ DETERMINAR si necesitamos padding-top
-  const needsPadding = location.pathname === '/' // Solo Home necesita padding
+  const needsPadding = location.pathname === '/'; // Solo Home necesita padding
 
   return (
     <>
@@ -67,29 +67,29 @@ function AppContent({ mensaje }) {
         <BottomBar />
       </Box>
     </>
-  )
+  );
 }
 
 function App() {
   // ⚙️ Backend testing
-  const [mensaje, setMensaje] = useState('')
-  const backendUrl = import.meta.env.VITE_BACKEND_URL
+  const [mensaje, setMensaje] = useState('');
+  const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
   useEffect(() => {
     const fetchBackend = async () => {
       try {
-        const res = await fetch(`${backendUrl}/`)
-        const data = await res.json()
-        setMensaje(JSON.stringify(data))
-        console.log('✅ Backend conectado:', data)
+        const res = await fetch(`${backendUrl}/`);
+        const data = await res.json();
+        setMensaje(JSON.stringify(data));
+        console.log('✅ Backend conectado:', data);
       } catch (error) {
-        console.error('❌ Error al conectar con backend:', error)
-        setMensaje('No se pudo conectar con el backend.')
+        console.error('❌ Error al conectar con backend:', error);
+        setMensaje('No se pudo conectar con el backend.');
       }
-    }
+    };
 
-    fetchBackend()
-  }, [backendUrl])
+    fetchBackend();
+  }, [backendUrl]);
 
   return (
     <ThemeProvider theme={theme}>
@@ -105,7 +105,7 @@ function App() {
         <AppContent mensaje={mensaje} /> {/* ✅ PASAR mensaje como prop */}
       </BrowserRouter>
     </ThemeProvider>
-  )
+  );
 }
 
-export default App
+export default App;
