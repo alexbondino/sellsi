@@ -3,8 +3,8 @@ import { Paper, Typography } from '@mui/material';
 
 const cardStyle = {
   p: 2,
-  height: '270px',
-  width: '270px',
+  height: '235px',
+  width: '235px',
   display: 'flex',
   flexDirection: 'column',
   justifyContent: 'center',

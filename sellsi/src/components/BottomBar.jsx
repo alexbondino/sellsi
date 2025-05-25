@@ -1,13 +1,13 @@
-import React from 'react'
-import { Box, Typography, IconButton, useMediaQuery } from '@mui/material'
-import LinkedInIcon from '@mui/icons-material/LinkedIn'
-import InstagramIcon from '@mui/icons-material/Instagram'
-import WhatsAppIcon from '@mui/icons-material/WhatsApp'
-import { useTheme } from '@mui/material/styles'
+import React from 'react';
+import { Box, Typography, IconButton, useMediaQuery } from '@mui/material';
+import LinkedInIcon from '@mui/icons-material/LinkedIn';
+import InstagramIcon from '@mui/icons-material/Instagram';
+import WhatsAppIcon from '@mui/icons-material/WhatsApp';
+import { useTheme } from '@mui/material/styles';
 
 const BottomBar = () => {
-  const theme = useTheme()
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   return (
     <Box
@@ -19,6 +19,7 @@ const BottomBar = () => {
         display: 'flex',
         justifyContent: 'center',
         overflowX: 'hidden',
+        zIndex: 200,
       }}
     >
       <Box
@@ -55,7 +56,7 @@ const BottomBar = () => {
         </Box>
       </Box>
     </Box>
-  )
-}
+  );
+};
 
-export default BottomBar
+export default BottomBar;
