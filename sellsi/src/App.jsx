@@ -10,7 +10,7 @@ import BottomBar from './components/BottomBar';
 import TopBar from './components/TopBar';
 import Home from './pages/Home';
 import Marketplace from './pages/Marketplace';
-import Login from './components/humb';
+import Login from './components/Login';
 import Register from './components/Register';
 
 // ✅ COMPONENTE interno para acceder a location
