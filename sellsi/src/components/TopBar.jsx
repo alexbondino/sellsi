@@ -1,75 +1,93 @@
-import { useState } from 'react';
+import React, { useState, useEffect } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom' // ✅ AGREGAR useNavigate
 import {
-  Box,
+  AppBar,
+  Toolbar,
+  Typography,
   Button,
+  Box,
   IconButton,
   Menu,
   MenuItem,
+  useTheme,
   useMediaQuery,
-} from '@mui/material';
-import MenuIcon from '@mui/icons-material/Menu';
-import AccountCircleIcon from '@mui/icons-material/AccountCircle';
-import { useTheme } from '@mui/material/styles';
-import { useNavigate } from 'react-router-dom';
-import Login from './Login.jsx';
-import CrearAcc from './Register.jsx';
+} from '@mui/material'
+import MenuIcon from '@mui/icons-material/Menu'
+import AccountCircleIcon from '@mui/icons-material/AccountCircle'
 
-const TopBar = ({ onNavigate }) => {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  const navigate = useNavigate();
+// Importar componentes de diálogo
+import Login from './Login'
+import Register from './Register'
 
-  const [menuAnchor, setMenuAnchor] = useState(null);
-  const [profileAnchor, setProfileAnchor] = useState(null);
-  const [openLoginModal, setOpenLoginModal] = useState(false);
-  const [openRegisterModal, setOpenRegisterModal] = useState(false);
+export default function TopBar({ onNavigate }) {
+  const theme = useTheme()
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'))
+  const navigate = useNavigate() // ✅ AHORA FUNCIONA
+  const location = useLocation() // ✅ AGREGAR para detectar cambios de ruta
 
-  const isLoggedIn = !!localStorage.getItem('supplierid');
+  const [menuAnchor, setMenuAnchor] = useState(null)
+  const [profileAnchor, setProfileAnchor] = useState(null)
+  const [openLoginModal, setOpenLoginModal] = useState(false)
+  const [openRegisterModal, setOpenRegisterModal] = useState(false)
 
-  const openMenu = e => setMenuAnchor(e.currentTarget);
-  const closeMenu = () => setMenuAnchor(null);
+  const isLoggedIn = !!localStorage.getItem('supplierid')
 
-  const openProfileMenu = e => setProfileAnchor(e.currentTarget);
-  const closeProfileMenu = () => setProfileAnchor(null);
+  const openMenu = (e) => setMenuAnchor(e.currentTarget)
+  const closeMenu = () => setMenuAnchor(null)
+
+  const openProfileMenu = (e) => setProfileAnchor(e.currentTarget)
+  const closeProfileMenu = () => setProfileAnchor(null)
 
   const handleLogout = () => {
-    localStorage.removeItem('supplierid');
-    closeProfileMenu();
-    navigate('/');
-  };
+    localStorage.removeItem('supplierid')
+    closeProfileMenu()
+    navigate('/')
+  }
 
   const handleOpenLogin = () => {
-    setOpenLoginModal(true);
-    closeMenu();
-  };
+    setOpenLoginModal(true)
+    closeMenu()
+  }
 
   const handleOpenRegister = () => {
-    setOpenRegisterModal(true);
-    closeMenu();
-  };
+    setOpenRegisterModal(true)
+    closeMenu()
+  }
 
-  const handleCloseLogin = () => setOpenLoginModal(false);
-  const handleCloseRegister = () => setOpenRegisterModal(false);
+  const handleCloseLogin = () => setOpenLoginModal(false)
+  const handleCloseRegister = () => setOpenRegisterModal(false)
 
   const sectionsMap = {
     'Quiénes somos': 'quienesSomosRef',
     Servicios: 'serviciosRef',
     Contáctanos: 'contactanosRef',
-  };
+  }
 
-  const handleNavigate = ref => {
-    closeMenu();
-    onNavigate(ref);
-  };
+  const handleNavigate = (ref) => {
+    closeMenu()
+    onNavigate(ref)
+  }
 
   const handleGoHome = () => {
-    navigate('/');
-  };
+    navigate('/')
+  }
+
+  useEffect(() => {
+    const handleOpenLoginModal = () => {
+      setOpenLoginModal(true)
+    }
+
+    window.addEventListener('openLoginModal', handleOpenLoginModal)
+
+    return () => {
+      window.removeEventListener('openLoginModal', handleOpenLoginModal)
+    }
+  }, [])
 
   return (
     <Box
       sx={{
-        backgroundColor: theme.palette.bars.main,
+        backgroundColor: theme.palette.bars?.main || '#1976d2',
         width: '100vw',
         px: 0,
         py: 1,
@@ -127,7 +145,7 @@ const TopBar = ({ onNavigate }) => {
                   color="inherit"
                   sx={{
                     fontWeight: 'bold',
-                    color: theme.palette.common.white,
+                    color: 'white',
                   }}
                 >
                   {label}
@@ -140,10 +158,7 @@ const TopBar = ({ onNavigate }) => {
         {/* Botones o perfil */}
         {isMobile ? (
           <>
-            <IconButton
-              onClick={openMenu}
-              sx={{ color: theme.palette.common.white, p: 1 }}
-            >
+            <IconButton onClick={openMenu} sx={{ color: 'white', p: 1 }}>
               <MenuIcon fontSize="large" />
             </IconButton>
             <Menu
@@ -173,10 +188,7 @@ const TopBar = ({ onNavigate }) => {
           </>
         ) : isLoggedIn ? (
           <>
-            <IconButton
-              onClick={openProfileMenu}
-              sx={{ color: theme.palette.common.white }}
-            >
+            <IconButton onClick={openProfileMenu} sx={{ color: 'white' }}>
               <AccountCircleIcon fontSize="large" />
             </IconButton>
             <Menu
@@ -195,11 +207,11 @@ const TopBar = ({ onNavigate }) => {
               variant="contained"
               onClick={handleOpenLogin}
               sx={{
-                backgroundColor: theme.palette.primary.main,
-                color: theme.palette.common.white,
+                backgroundColor: '#1976d2',
+                color: 'white',
                 fontWeight: 'bold',
                 '&:hover': {
-                  backgroundColor: theme.palette.primary.dark,
+                  backgroundColor: '#1565c0',
                 },
               }}
             >
@@ -209,12 +221,12 @@ const TopBar = ({ onNavigate }) => {
               variant="outlined"
               onClick={handleOpenRegister}
               sx={{
-                color: theme.palette.common.white,
-                borderColor: theme.palette.primary.main,
+                color: 'white',
+                borderColor: 'white',
                 fontWeight: 'bold',
                 '&:hover': {
-                  backgroundColor: theme.palette.primary.main,
-                  borderColor: theme.palette.primary.main,
+                  backgroundColor: 'rgba(255,255,255,0.1)',
+                  borderColor: 'white',
                 },
               }}
             >
@@ -227,19 +239,17 @@ const TopBar = ({ onNavigate }) => {
       {/* Modal de Login */}
       <Login
         open={openLoginModal}
-        handleClose={handleCloseLogin}
-        handleOpenRegister={() => {
-          handleCloseLogin();
-          handleOpenRegister();
+        onClose={handleCloseLogin}
+        onOpenRegister={() => {
+          handleCloseLogin()
+          handleOpenRegister()
         }}
       />
 
       {/* Modal de Registro */}
       {openRegisterModal && (
-        <CrearAcc open={openRegisterModal} onClose={handleCloseRegister} />
+        <Register open={openRegisterModal} onClose={handleCloseRegister} />
       )}
     </Box>
-  );
-};
-
-export default TopBar;
+  )
+}

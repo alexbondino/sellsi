@@ -1,399 +1,287 @@
-import React, { useState, memo, useReducer, useEffect } from 'react';
+import React, { useEffect, memo, useState } from 'react'
+import { useLocation } from 'react-router-dom' // ✅ AGREGAR
 import {
+  Dialog,
+  DialogContent,
   Box,
-  Button,
-  TextField,
   Typography,
+  TextField,
   Link,
-  Paper,
   InputAdornment,
   IconButton,
-} from '@mui/material';
-import { Visibility, VisibilityOff } from '@mui/icons-material';
-import { useTheme } from '@mui/material/styles';
-import Dialog from '@mui/material/Dialog';
-import DialogTitle from '@mui/material/DialogTitle';
-import DialogContent from '@mui/material/DialogContent';
-import DialogActions from '@mui/material/DialogActions';
-import CloseIcon from '@mui/icons-material/Close';
-import { useNavigate } from 'react-router-dom';
-import { supabase } from '../services/supabase';
+  Paper,
+} from '@mui/material'
+import { Visibility, VisibilityOff } from '@mui/icons-material'
 
-import Recuperar from './Recuperar.jsx';
-import Register from './Register.jsx';
+import { CustomButton } from './shared'
+import { useLoginForm } from './shared/useLoginForm'
+import Recuperar from './Recuperar'
+import Register from './Register'
 
+// ✅ CONSTANTS
+const CONSTANTS = {
+  FORM_WIDTH: 400,
+}
+
+// ✅ COMMON STYLES
 const commonStyles = {
-  button: {
-    backgroundColor: '#41B6E6',
-    color: '#fff',
-    borderRadius: 2,
-    textTransform: 'none',
-    fontWeight: 400,
-    boxShadow: 'none',
-    '&:hover': { backgroundColor: '#2fa4d6' },
-  },
   link: {
-    color: '#41B6E6',
+    color: '#1976d2',
+    fontWeight: 600,
+    textDecoration: 'none',
     cursor: 'pointer',
+    '&:hover': {
+      textDecoration: 'underline',
+    },
   },
-};
+}
 
-const LOGO_WIDTH = 300;
-const FORM_WIDTH = 400;
-
-const reducer = (state, action) => {
-  switch (action.type) {
-    case 'SET_CORREO':
-      return { ...state, correo: action.payload };
-    case 'SET_CONTRASENA':
-      return { ...state, contrasena: action.payload };
-    case 'SET_ERROR_CORREO':
-      return { ...state, errorCorreo: action.payload };
-    case 'SET_ERROR_CONTRASENA':
-      return { ...state, errorContrasena: action.payload };
-    case 'TOGGLE_SHOW_PASSWORD':
-      return { ...state, showPassword: !state.showPassword };
-    case 'OPEN_RECUPERAR':
-      return { ...state, openRecuperar: true };
-    case 'CLOSE_RECUPERAR':
-      return { ...state, openRecuperar: false };
-    case 'SET_MOSTRAR_CODIGO':
-      return { ...state, mostrarCodigo: action.payload };
-    case 'OPEN_REGISTRO':
-      return { ...state, openRegistro: true };
-    case 'CLOSE_REGISTRO':
-      return { ...state, openRegistro: false };
-    default:
-      return state;
-  }
-};
-
-const RecuperarDialog = memo(({ open, onClose, onVolverLogin }) => {
-  const recuperarRef = React.useRef();
-
-  return (
-    <Dialog
-      open={open}
-      onClose={onClose}
-      maxWidth={false}
-      onExited={() => {
-        if (recuperarRef.current) {
-          recuperarRef.current();
-        }
+// ✅ LOGO COMPONENT
+const Logo = memo(() => (
+  <Box sx={{ textAlign: 'center', mb: 2 }}>
+    <img
+      src="/logo.svg"
+      alt="SELLSI Logo"
+      style={{ width: 160, marginBottom: 8 }}
+    />
+    <Typography
+      variant="h6"
+      sx={{
+        color: '#222',
+        fontWeight: 700,
+        fontSize: 18,
+        fontStyle: 'italic',
       }}
     >
-      <Recuperar
-        ref={recuperarRef}
-        open={open}
-        onClose={onClose}
-        onVolverLogin={onVolverLogin}
-      />
-    </Dialog>
-  );
-});
+      Conecta. Vende. Crece.
+    </Typography>
+  </Box>
+))
 
-const RegistroDialog = memo(({ open, onClose }) => (
-  <Dialog
-    open={open}
-    onClose={(event, reason) => {
-      if (reason === 'backdropClick') return;
-      onClose();
+// ✅ LOGIN FORM COMPONENT
+const LoginForm = memo(({ state, dispatch, onSubmit }) => (
+  <Paper
+    elevation={3}
+    sx={{
+      p: 3,
+      width: CONSTANTS.FORM_WIDTH,
+      maxWidth: '90%',
+      mt: 3,
+      mb: 3,
+      borderRadius: 2,
     }}
-    maxWidth={false}
   >
-    <Register onClose={onClose} />
-  </Dialog>
-));
+    <form onSubmit={onSubmit}>
+      <Box display="flex" flexDirection="column" gap={1.5}>
+        <TextField
+          size="small"
+          variant="outlined"
+          fullWidth
+          label="Correo"
+          placeholder="Ingrese su correo electrónico"
+          value={state.correo}
+          onChange={(e) =>
+            dispatch({ type: 'SET_CORREO', payload: e.target.value })
+          }
+          inputProps={{ lang: 'es' }}
+          error={!!state.errorCorreo}
+          helperText={state.errorCorreo}
+          sx={{ mb: 0.5 }}
+        />
+        <TextField
+          size="small"
+          type={state.showPassword ? 'text' : 'password'}
+          variant="outlined"
+          fullWidth
+          label="Contraseña"
+          placeholder="Ingrese su contraseña"
+          value={state.contrasena}
+          onChange={(e) =>
+            dispatch({ type: 'SET_CONTRASENA', payload: e.target.value })
+          }
+          inputProps={{ lang: 'es' }}
+          error={!!state.errorContrasena}
+          helperText={state.errorContrasena}
+          sx={{ mb: 1.5 }}
+          InputProps={{
+            endAdornment: (
+              <InputAdornment position="end">
+                <IconButton
+                  aria-label="toggle password visibility"
+                  onClick={() => dispatch({ type: 'TOGGLE_SHOW_PASSWORD' })}
+                  edge="end"
+                  size="small"
+                >
+                  {state.showPassword ? <VisibilityOff /> : <Visibility />}
+                </IconButton>
+              </InputAdornment>
+            ),
+          }}
+        />
+        <Box display="flex" justifyContent="center" mt={1}>
+          <CustomButton
+            type="submit"
+            sx={{
+              width: '40%',
+              minWidth: 120,
+              height: 40,
+              fontSize: 16,
+              fontWeight: 700,
+            }}
+          >
+            Aceptar
+          </CustomButton>
+        </Box>
+      </Box>
+    </form>
+  </Paper>
+))
 
-export default function Login({ open, handleClose, handleOpenRegister }) {
-  const theme = useTheme();
-  const navigate = useNavigate();
-  const initialState = {
-    correo: '',
-    contrasena: '',
-    errorCorreo: '',
-    errorContrasena: '',
-    showPassword: false,
-    openRecuperar: false,
-    mostrarCodigo: false,
-    openRegistro: false,
-  };
-  const [state, dispatch] = useReducer(reducer, initialState);
+// ✅ FOOTER LINKS COMPONENT
+const FooterLinks = memo(({ dispatch, onClose, onOpenRegister }) => (
+  <Box display="flex" flexDirection="column" alignItems="center" mt={2} gap={1}>
+    <Typography variant="body2" sx={{ textAlign: 'center' }}>
+      ¿Olvidaste tu contraseña?
+      <br />
+      <Link
+        component="button"
+        type="button"
+        sx={commonStyles.link}
+        onClick={() => dispatch({ type: 'OPEN_RECUPERAR' })}
+      >
+        Recuperar Contraseña
+      </Link>
+      <br />
+      ¿Eres nuevo?{' '}
+      <Link
+        component="button"
+        type="button"
+        sx={commonStyles.link}
+        onClick={() => {
+          onClose()
+          onOpenRegister()
+        }}
+      >
+        Regístrate
+      </Link>
+    </Typography>
+  </Box>
+))
 
-  const {
-    correo,
-    contrasena,
-    errorCorreo,
-    errorContrasena,
-    showPassword,
-    openRecuperar,
-    mostrarCodigo,
-    openRegistro,
-  } = state;
+// ✅ MAIN COMPONENT
+export default function Login({ open, onClose, onOpenRegister }) {
+  const { state, dispatch, handleLogin, resetForm } = useLoginForm()
+  const location = useLocation() // ✅ AGREGAR
 
   useEffect(() => {
     if (!open) {
-      dispatch({ type: 'SET_CORREO', payload: '' });
-      dispatch({ type: 'SET_CONTRASENA', payload: '' });
-      dispatch({ type: 'SET_ERROR_CORREO', payload: '' });
-      dispatch({ type: 'SET_ERROR_CONTRASENA', payload: '' });
-      dispatch({ type: 'TOGGLE_SHOW_PASSWORD' });
+      resetForm()
     }
-  }, [open]);
+  }, [open])
 
+  // ✅ CERRAR MODAL EN NAVEGACIÓN
   useEffect(() => {
-    if (openRecuperar || openRegistro) {
-      dispatch({ type: 'SET_CORREO', payload: '' });
-      dispatch({ type: 'SET_CONTRASENA', payload: '' });
-      dispatch({ type: 'SET_ERROR_CORREO', payload: '' });
-      dispatch({ type: 'SET_ERROR_CONTRASENA', payload: '' });
-      dispatch({ type: 'TOGGLE_SHOW_PASSWORD' });
-    }
-  }, [openRecuperar, openRegistro]);
-
-  const validarFormulario = () => {
-    const errores = {
-      correo: '',
-      contrasena: '',
-    };
-
-    if (!correo) {
-      errores.correo = 'Por favor, rellena este campo.';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo)) {
-      errores.correo = 'Por favor, ingresa un correo válido.';
+    const handleCloseAllModals = () => {
+      if (open) {
+        onClose()
+      }
     }
 
-    if (!contrasena) {
-      errores.contrasena = 'Por favor, rellena este campo.';
+    window.addEventListener('closeAllModals', handleCloseAllModals)
+
+    return () => {
+      window.removeEventListener('closeAllModals', handleCloseAllModals)
     }
+  }, [open, onClose])
 
-    dispatch({ type: 'SET_ERROR_CORREO', payload: errores.correo });
-    dispatch({ type: 'SET_ERROR_CONTRASENA', payload: errores.contrasena });
+  // ✅ CERRAR al cambiar de ruta
+  // useEffect(() => {
+  //   if (open) {
+  //     onClose()
+  //   }
+  // }, [location.pathname, open, onClose])
 
-    return !errores.correo && !errores.contrasena;
-  };
+  const handleSubmit = (e) => {
+    handleLogin(e, onClose)
+  }
 
-  const handleLogin = async e => {
-    e.preventDefault();
-    if (!validarFormulario()) return;
-
-    const { data: proveedor, error } = await supabase
-      .from('suppliers')
-      .select('*')
-      .eq('email', correo)
-      .single();
-
-    if (error || !proveedor) {
-      dispatch({ type: 'SET_ERROR_CORREO', payload: 'Usuario no encontrado' });
-      return;
-    }
-
-    if (contrasena !== proveedor.password_hash) {
-      dispatch({
-        type: 'SET_ERROR_CONTRASENA',
-        payload: 'Contraseña incorrecta',
-      });
-      return;
-    }
-
-    // ✅ Login exitoso
-    localStorage.setItem('supplierid', proveedor.supplierid);
-    handleClose(); // Cerrar modal
-    navigate('/supplier/home');
-  };
+  const handleRecuperarClose = () => {
+    dispatch({ type: 'CLOSE_RECUPERAR' })
+  }
 
   const handleVolverLogin = () => {
-    dispatch({ type: 'CLOSE_RECUPERAR' });
-  };
+    dispatch({ type: 'CLOSE_RECUPERAR' })
+  }
+
+  const handleRegistroClose = () => {
+    dispatch({ type: 'CLOSE_REGISTRO' })
+  }
 
   return (
-    <Dialog
-      open={open}
-      onClose={handleClose}
-      maxWidth={false}
-      PaperProps={{
-        sx: {
-          mt: '-5vh',
-          maxHeight: '90vh',
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'flex-start',
-        },
-      }}
-    >
-      <DialogTitle sx={{ p: 0 }}>
-        <Button
-          onClick={handleClose}
-          sx={{
-            position: 'absolute',
-            top: 8,
-            right: 8,
-            color: '#41B6E6',
-            fontWeight: 700,
-            fontSize: 16,
-            mb: 4,
-            textTransform: 'uppercase',
-          }}
-        >
-          CERRAR
-        </Button>
-      </DialogTitle>
-      <DialogContent>
-        <Box
-          display="flex"
-          flexDirection="column"
-          alignItems="center"
-          justifyContent="center"
-        >
-          <img
-            src="/logo.svg"
-            alt="SELLSI Logo"
-            style={{
-              width: LOGO_WIDTH,
-              marginBottom: 10,
-              marginTop: 60,
-            }}
-          />
-          <Typography
-            variant="h6"
-            align="center"
-            sx={{
-              mb: 2,
-              color: theme.palette.mode === 'dark' ? '#fff' : '#222',
-              fontWeight: 700,
-              fontSize: 24,
-              fontStyle: 'italic',
-              textShadow:
-                theme.palette.mode === 'dark'
-                  ? '0 1px 4px rgba(0,0,0,0.7)'
-                  : '0 1px 2px rgba(255,255,255,0.2)',
-            }}
+    <>
+      {/* ✅ DIALOG PRINCIPAL */}
+      <Dialog
+        open={open && !state.openRecuperar}
+        onClose={onClose}
+        maxWidth={false}
+        PaperProps={{
+          sx: {
+            borderRadius: 2,
+            maxHeight: '90vh',
+            overflow: 'hidden',
+          },
+        }}
+      >
+        <DialogContent sx={{ p: 0, overflow: 'hidden' }}>
+          <Box
+            display="flex"
+            flexDirection="column"
+            alignItems="center"
+            sx={{ p: 3 }}
           >
-            Conecta. Vende. Crece.
-          </Typography>
-          <Paper
-            elevation={3}
-            sx={{
-              p: 4,
-              width: FORM_WIDTH,
-              maxWidth: '90%',
-              mt: 4,
-              mb: 4,
-            }}
-          >
-            <form onSubmit={handleLogin}>
-              <Box display="flex" flexDirection="column" gap={2}>
-                <TextField
-                  size="small"
-                  variant="outlined"
-                  fullWidth
-                  label="Correo"
-                  placeholder="Ingrese su correo electrónico"
-                  value={correo}
-                  onChange={e =>
-                    dispatch({ type: 'SET_CORREO', payload: e.target.value })
-                  }
-                  inputProps={{ lang: 'es' }}
-                  error={!!errorCorreo}
-                  helperText={errorCorreo}
-                />
-                <TextField
-                  size="small"
-                  type={showPassword ? 'text' : 'password'}
-                  variant="outlined"
-                  fullWidth
-                  label="Contraseña"
-                  placeholder="Ingrese su contraseña"
-                  value={contrasena}
-                  onChange={e =>
-                    dispatch({
-                      type: 'SET_CONTRASENA',
-                      payload: e.target.value,
-                    })
-                  }
-                  inputProps={{ lang: 'es' }}
-                  error={!!errorContrasena}
-                  helperText={errorContrasena}
-                  InputProps={{
-                    endAdornment: (
-                      <InputAdornment position="end">
-                        <IconButton
-                          aria-label="toggle password visibility"
-                          onClick={() =>
-                            dispatch({ type: 'TOGGLE_SHOW_PASSWORD' })
-                          }
-                          edge="end"
-                        >
-                          {showPassword ? <VisibilityOff /> : <Visibility />}
-                        </IconButton>
-                      </InputAdornment>
-                    ),
-                  }}
-                />
-                <Box display="flex" justifyContent="center" mb={2}>
-                  <Button
-                    type="submit"
-                    variant="contained"
-                    fullWidth
-                    sx={{
-                      ...commonStyles.button,
-                      width: '30%',
-                      margin: '0 auto',
-                    }}
-                  >
-                    Aceptar
-                  </Button>
-                </Box>
-              </Box>
-            </form>
-            <Box
-              display="flex"
-              flexDirection="column"
-              alignItems="center"
-              mt={2}
-              gap={1}
-            >
-              <Typography variant="body2" sx={{ textAlign: 'center' }}>
-                ¿Olvidaste tu contraseña?{' '}
-                <Link
-                  component="button"
-                  sx={commonStyles.link}
-                  onClick={() => dispatch({ type: 'OPEN_RECUPERAR' })}
-                >
-                  Recuperar Contraseña
-                </Link>
-              </Typography>
-              <Typography variant="body2" sx={{ textAlign: 'center' }}>
-                ¿Eres nuevo?{' '}
-                <Link
-                  component="button"
-                  sx={commonStyles.link}
-                  onClick={() => {
-                    handleClose();
-                    handleOpenRegister();
-                  }}
-                >
-                  Regístrate
-                </Link>
-              </Typography>
-            </Box>
-          </Paper>
-        </Box>
-      </DialogContent>
-      <DialogActions />
-      <RecuperarDialog
-        open={openRecuperar}
-        onClose={() => dispatch({ type: 'CLOSE_RECUPERAR' })}
-        mostrarCodigo={mostrarCodigo}
-        setMostrarCodigo={valor =>
-          dispatch({ type: 'SET_MOSTRAR_CODIGO', payload: valor })
-        }
-        onVolverLogin={handleVolverLogin}
-      />
-      <RegistroDialog
-        open={openRegistro}
-        onClose={() => dispatch({ type: 'CLOSE_REGISTRO' })}
-      />
-    </Dialog>
-  );
+            <Logo />
+            <LoginForm
+              state={state}
+              dispatch={dispatch}
+              onSubmit={handleSubmit}
+            />
+            <FooterLinks
+              dispatch={dispatch}
+              onClose={onClose}
+              onOpenRegister={onOpenRegister}
+            />
+          </Box>
+        </DialogContent>
+      </Dialog>
+
+      {/* ✅ DIALOG RECUPERAR */}
+      <Dialog
+        open={state.openRecuperar}
+        onClose={handleRecuperarClose}
+        maxWidth={false}
+        PaperProps={{
+          sx: {
+            borderRadius: 2,
+            maxHeight: '90vh',
+            overflow: 'hidden',
+          },
+        }}
+      >
+        <Recuperar
+          onClose={handleRecuperarClose}
+          onVolverLogin={handleVolverLogin}
+        />
+      </Dialog>
+
+      {/* ✅ DIALOG REGISTRO */}
+      <Dialog
+        open={state.openRegistro}
+        onClose={handleRegistroClose}
+        maxWidth="md"
+        fullWidth
+      >
+        <Register open={state.openRegistro} onClose={handleRegistroClose} />
+      </Dialog>
+    </>
+  )
 }
