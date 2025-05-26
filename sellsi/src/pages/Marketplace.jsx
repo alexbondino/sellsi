@@ -1014,10 +1014,9 @@ export default function Marketplace4() {
                   value={filtros.precioMin}
                   onChange={handlePrecioMinChange}
                   InputProps={{
+                    // ✅ SIMPLE Y DIRECTO
                     startAdornment: (
-                      <InputAdornment position="start">
-                        <Box sx={{ pr: 0.5 }}>$</Box>
-                      </InputAdornment>
+                      <InputAdornment position="start">$ </InputAdornment>
                     ),
                   }}
                   sx={{
@@ -1072,10 +1071,9 @@ export default function Marketplace4() {
                   value={filtros.precioMax}
                   onChange={handlePrecioMaxChange}
                   InputProps={{
+                    // ✅ SIMPLE Y DIRECTO
                     startAdornment: (
-                      <InputAdornment position="start">
-                        <Box sx={{ pr: 0.5 }}>$</Box>
-                      </InputAdornment>
+                      <InputAdornment position="start">$ </InputAdornment>
                     ),
                   }}
                   sx={{
