@@ -77,13 +77,9 @@ const Step3Profile = ({
                 fullWidth
                 value={nombreEmpresa}
                 onChange={(e) => onFieldChange('nombreEmpresa', e.target.value)}
-                sx={{ mb: 1.5 }}
+                sx={{ mb: 1.5 }} // ✅ SOLO el margin, sin estilos de error
                 size="small"
                 required
-                error={!nombreEmpresa?.trim()} // ✅ AGREGAR error
-                helperText={
-                  !nombreEmpresa?.trim() ? 'Este campo es obligatorio' : ''
-                } // ✅ AGREGAR mensaje
               />
               <Box sx={{ display: 'flex', gap: 1, mb: 1.5 }}>
                 <CountrySelector
@@ -159,13 +155,9 @@ const Step3Profile = ({
               fullWidth
               value={nombrePersonal}
               onChange={(e) => onFieldChange('nombrePersonal', e.target.value)}
-              sx={{ mb: 1.5 }}
+              sx={{ mb: 1.5 }} // ✅ SOLO el margin, sin estilos de error
               size="small"
               required
-              error={!nombrePersonal?.trim()} // ✅ AGREGAR error
-              helperText={
-                !nombrePersonal?.trim() ? 'Este campo es obligatorio' : ''
-              } // ✅ AGREGAR mensaje
             />
             <Box sx={{ display: 'flex', gap: 1, mb: 1.5 }}>
               <CountrySelector
