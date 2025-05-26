@@ -1,4 +1,5 @@
-import React, { useState, memo, useReducer, useEffect } from 'react';
+// Login.jsx
+import React, { useReducer, useEffect, memo } from 'react';
 import {
   Box,
   Button,
@@ -8,14 +9,13 @@ import {
   Paper,
   InputAdornment,
   IconButton,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from '@mui/material';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
-import Dialog from '@mui/material/Dialog';
-import DialogTitle from '@mui/material/DialogTitle';
-import DialogContent from '@mui/material/DialogContent';
-import DialogActions from '@mui/material/DialogActions';
-import CloseIcon from '@mui/icons-material/Close';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../services/supabase';
 
@@ -70,17 +70,12 @@ const reducer = (state, action) => {
 
 const RecuperarDialog = memo(({ open, onClose, onVolverLogin }) => {
   const recuperarRef = React.useRef();
-
   return (
     <Dialog
       open={open}
       onClose={onClose}
       maxWidth={false}
-      onExited={() => {
-        if (recuperarRef.current) {
-          recuperarRef.current();
-        }
-      }}
+      onExited={() => recuperarRef.current?.()}
     >
       <Recuperar
         ref={recuperarRef}
@@ -95,10 +90,7 @@ const RecuperarDialog = memo(({ open, onClose, onVolverLogin }) => {
 const RegistroDialog = memo(({ open, onClose }) => (
   <Dialog
     open={open}
-    onClose={(event, reason) => {
-      if (reason === 'backdropClick') return;
-      onClose();
-    }}
+    onClose={(e, reason) => reason !== 'backdropClick' && onClose()}
     maxWidth={false}
   >
     <Register onClose={onClose} />
@@ -108,6 +100,7 @@ const RegistroDialog = memo(({ open, onClose }) => (
 export default function Login({ open, handleClose, handleOpenRegister }) {
   const theme = useTheme();
   const navigate = useNavigate();
+
   const initialState = {
     correo: '',
     contrasena: '',
@@ -118,8 +111,8 @@ export default function Login({ open, handleClose, handleOpenRegister }) {
     mostrarCodigo: false,
     openRegistro: false,
   };
-  const [state, dispatch] = useReducer(reducer, initialState);
 
+  const [state, dispatch] = useReducer(reducer, initialState);
   const {
     correo,
     contrasena,
@@ -132,44 +125,23 @@ export default function Login({ open, handleClose, handleOpenRegister }) {
   } = state;
 
   useEffect(() => {
-    if (!open) {
+    if (!open || openRecuperar || openRegistro) {
       dispatch({ type: 'SET_CORREO', payload: '' });
       dispatch({ type: 'SET_CONTRASENA', payload: '' });
       dispatch({ type: 'SET_ERROR_CORREO', payload: '' });
       dispatch({ type: 'SET_ERROR_CONTRASENA', payload: '' });
       dispatch({ type: 'TOGGLE_SHOW_PASSWORD' });
     }
-  }, [open]);
-
-  useEffect(() => {
-    if (openRecuperar || openRegistro) {
-      dispatch({ type: 'SET_CORREO', payload: '' });
-      dispatch({ type: 'SET_CONTRASENA', payload: '' });
-      dispatch({ type: 'SET_ERROR_CORREO', payload: '' });
-      dispatch({ type: 'SET_ERROR_CONTRASENA', payload: '' });
-      dispatch({ type: 'TOGGLE_SHOW_PASSWORD' });
-    }
-  }, [openRecuperar, openRegistro]);
+  }, [open, openRecuperar, openRegistro]);
 
   const validarFormulario = () => {
-    const errores = {
-      correo: '',
-      contrasena: '',
-    };
-
-    if (!correo) {
-      errores.correo = 'Por favor, rellena este campo.';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo)) {
-      errores.correo = 'Por favor, ingresa un correo válido.';
-    }
-
-    if (!contrasena) {
-      errores.contrasena = 'Por favor, rellena este campo.';
-    }
-
+    const errores = { correo: '', contrasena: '' };
+    if (!correo) errores.correo = 'Por favor, rellena este campo.';
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo))
+      errores.correo = 'Correo inválido.';
+    if (!contrasena) errores.contrasena = 'Por favor, rellena este campo.';
     dispatch({ type: 'SET_ERROR_CORREO', payload: errores.correo });
     dispatch({ type: 'SET_ERROR_CONTRASENA', payload: errores.contrasena });
-
     return !errores.correo && !errores.contrasena;
   };
 
@@ -177,34 +149,45 @@ export default function Login({ open, handleClose, handleOpenRegister }) {
     e.preventDefault();
     if (!validarFormulario()) return;
 
-    const { data: proveedor, error } = await supabase
-      .from('suppliers')
-      .select('*')
-      .eq('email', correo)
-      .single();
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: correo,
+      password: contrasena,
+    });
 
-    if (error || !proveedor) {
-      dispatch({ type: 'SET_ERROR_CORREO', payload: 'Usuario no encontrado' });
-      return;
-    }
-
-    if (contrasena !== proveedor.password_hash) {
+    if (error) {
       dispatch({
-        type: 'SET_ERROR_CONTRASENA',
-        payload: 'Contraseña incorrecta',
+        type: 'SET_ERROR_CORREO',
+        payload: 'Correo o contraseña incorrectos',
       });
       return;
     }
 
-    // ✅ Login exitoso
-    localStorage.setItem('supplierid', proveedor.supplierid);
-    handleClose(); // Cerrar modal
+    const { user } = data;
+    const { data: proveedor, error: proveedorError } = await supabase
+      .from('suppliers')
+      .select('supplierid')
+      .eq('email', user.email)
+      .single();
+
+    if (proveedorError || !proveedor) {
+      dispatch({
+        type: 'SET_ERROR_CORREO',
+        payload: 'Proveedor no encontrado',
+      });
+      return;
+    }
+
+    const supplierid = proveedor.supplierid;
+    console.log('✅ supplierid:', supplierid);
+
+    // ✅ GUARDAR EN LOCALSTORAGE
+    localStorage.setItem('supplierid', supplierid);
+
+    handleClose();
     navigate('/supplier/home');
   };
 
-  const handleVolverLogin = () => {
-    dispatch({ type: 'CLOSE_RECUPERAR' });
-  };
+  const handleVolverLogin = () => dispatch({ type: 'CLOSE_RECUPERAR' });
 
   return (
     <Dialog
@@ -248,11 +231,7 @@ export default function Login({ open, handleClose, handleOpenRegister }) {
           <img
             src="/logo.svg"
             alt="SELLSI Logo"
-            style={{
-              width: LOGO_WIDTH,
-              marginBottom: 10,
-              marginTop: 60,
-            }}
+            style={{ width: LOGO_WIDTH, marginBottom: 10, marginTop: 60 }}
           />
           <Typography
             variant="h6"
@@ -273,13 +252,7 @@ export default function Login({ open, handleClose, handleOpenRegister }) {
           </Typography>
           <Paper
             elevation={3}
-            sx={{
-              p: 4,
-              width: FORM_WIDTH,
-              maxWidth: '90%',
-              mt: 4,
-              mb: 4,
-            }}
+            sx={{ p: 4, width: FORM_WIDTH, maxWidth: '90%', mt: 4, mb: 4 }}
           >
             <form onSubmit={handleLogin}>
               <Box display="flex" flexDirection="column" gap={2}>
