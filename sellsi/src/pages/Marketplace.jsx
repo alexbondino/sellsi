@@ -21,10 +21,10 @@ import { useProductSorting } from '../hooks/marketplace/useProductSorting'
 import { useScrollBehavior } from '../hooks/marketplace/useScrollBehavior'
 
 // ✅ USAR COMPONENTES EXISTENTES
-import SearchBar from '../components/marketplace/SearchBar'
-import CategoryNavigation from '../components/marketplace/CategoryNavigation'
-import FilterPanel from '../components/marketplace/FilterPanel'
-import ProductCard from '../components/marketplace/ProductCard'
+import SearchBar from '../hooks/marketplace/SearchBar'
+import CategoryNavigation from '../hooks/marketplace/CategoryNavigation'
+import FilterPanel from '../hooks/marketplace/FilterPanel'
+import ProductCard from '../hooks/marketplace/ProductCard'
 
 const Marketplace = () => {
   const theme = useTheme()

@@ -3,7 +3,12 @@ import { Dialog, DialogTitle, DialogContent, Box } from '@mui/material'
 import { useTheme } from '@mui/material/styles'
 import { useLocation } from 'react-router-dom'
 
-import { ProgressStepper, CustomButton, Wizard, useWizard } from './shared'
+import {
+  ProgressStepper,
+  CustomButton,
+  Wizard,
+  useWizard,
+} from '../hooks/shared'
 import Step1Account from './register/Step1Account'
 import Step2AccountType from './register/Step2AccountType'
 import Step3Profile from './register/Step3Profile'

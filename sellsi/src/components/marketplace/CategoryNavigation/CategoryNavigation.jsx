@@ -4,7 +4,7 @@ import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown'
 import KeyboardArrowRightIcon from '@mui/icons-material/KeyboardArrowRight'
 import { CATEGORIAS } from '../../../data/marketplace/products'
 import { SECTIONS, SECTION_LABELS } from '../../../utils/marketplace/constants'
-import { categoryNavigationStyles as styles } from './CategoryNavigation.styles'
+import { categoryNavigationStyles as styles } from '../../../hooks/marketplace/CategoryNavigation/CategoryNavigation.styles'
 
 const CategoryNavigation = ({
   seccionActiva,

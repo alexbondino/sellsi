@@ -1,6 +1,6 @@
 import React from 'react'
 import { Grid, Box, Typography } from '@mui/material' // ✅ CAMBIAR: Grid2 → Grid
-import ProductCard from '../ProductCard'
+import ProductCard from '../ProductCard/ProductCard'
 
 const ProductGrid = ({
   productos = [],

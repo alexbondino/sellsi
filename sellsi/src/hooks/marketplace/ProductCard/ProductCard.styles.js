@@ -13,7 +13,7 @@ export const productCardStyles = {
       boxShadow: '0 8px 25px rgba(0,0,0,0.15)',
     },
   },
-  
+
   discountBadge: {
     position: 'absolute',
     top: 8,
@@ -26,7 +26,7 @@ export const productCardStyles = {
     fontWeight: 600,
     zIndex: 2,
   },
-  
+
   stockBadge: (inStock) => ({
     position: 'absolute',
     top: 8,
@@ -39,13 +39,13 @@ export const productCardStyles = {
     fontWeight: 500,
     zIndex: 2,
   }),
-  
+
   imageContainer: {
     position: 'relative',
     height: 200,
     overflow: 'hidden',
   },
-  
+
   image: {
     width: '100%',
     height: '100%',
@@ -55,11 +55,11 @@ export const productCardStyles = {
       transform: 'scale(1.05)',
     },
   },
-  
+
   content: {
     p: 2,
   },
-  
+
   title: {
     fontSize: '1rem',
     fontWeight: 600,
@@ -71,50 +71,50 @@ export const productCardStyles = {
     WebkitLineClamp: 2,
     WebkitBoxOrient: 'vertical',
   },
-  
+
   priceContainer: {
     display: 'flex',
     alignItems: 'center',
     gap: 1,
     mb: 1,
   },
-  
+
   currentPrice: {
     fontSize: '1.25rem',
     fontWeight: 700,
     color: '#1976d2',
   },
-  
+
   originalPrice: {
     fontSize: '0.9rem',
     color: '#94a3b8',
     textDecoration: 'line-through',
   },
-  
+
   infoRow: {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
     mb: 1,
   },
-  
+
   ratingContainer: {
     display: 'flex',
     alignItems: 'center',
     gap: 0.5,
   },
-  
+
   commission: {
     color: '#059669',
     fontSize: '0.875rem',
     fontWeight: 600,
   },
-  
+
   salesInfo: {
     color: '#64748b',
     fontSize: '0.75rem',
   },
-  
+
   actionButton: {
     mt: 1,
     borderRadius: 2,

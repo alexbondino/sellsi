@@ -13,8 +13,8 @@ import {
 } from '@mui/material'
 import { Visibility, VisibilityOff } from '@mui/icons-material'
 
-import { CustomButton } from './shared'
-import { useLoginForm } from './shared/useLoginForm'
+import { CustomButton } from '../hooks/shared'
+import { useLoginForm } from '../hooks/shared/useLoginForm'
 import Recuperar from './Recuperar'
 import Register from './Register'
 
