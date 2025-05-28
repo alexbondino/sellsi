@@ -1,5 +1,5 @@
-import React from 'react';
-import { Box, Typography } from '@mui/material';
+import React from 'react'
+import { Box, Typography } from '@mui/material'
 
 const PieChart = ({ requests }) => {
   return (
@@ -7,7 +7,7 @@ const PieChart = ({ requests }) => {
       <Typography variant="h6">[Gráfico de pastel]</Typography>
       <Typography variant="body2">Solicitudes: {requests.length}</Typography>
     </Box>
-  );
-};
+  )
+}
 
-export default PieChart;
+export default PieChart
