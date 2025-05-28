@@ -1,15 +1,15 @@
 // 📁 pages/ProviderHome.jsx
-import React from 'react';
-import { Box, Grid, Button } from '@mui/material';
-import AddIcon from '@mui/icons-material/Add';
-import { useSupplierDashboard } from '../../hooks/useSupplierDashboard';
-import DashboardSummary from '../../components/DashboardSummary';
-import RequestList from '../../components/RequestList';
-import MonthlySalesChart from '../../components/BarChart';
-import SidebarProvider from '../../components/SideBar';
+import React from 'react'
+import { Box, Grid, Button } from '@mui/material'
+import AddIcon from '@mui/icons-material/Add'
+import { useSupplierDashboard } from '../../hooks/useSupplierDashboard'
+import DashboardSummary from '../../components/DashboardSummary'
+import RequestList from '../../components/RequestList'
+import MonthlySalesChart from '../../components/BarChart'
+import SidebarProvider from '../../components/SideBar'
 
 const ProviderHome = () => {
-  const supplierId = localStorage.getItem('supplierid');
+  const supplierId = localStorage.getItem('supplierid')
   const {
     products,
     sales,
@@ -17,11 +17,11 @@ const ProviderHome = () => {
     weeklyRequests,
     monthlyData,
     totalSales,
-  } = useSupplierDashboard(supplierId);
+  } = useSupplierDashboard(supplierId)
 
   const productsOutOfStock = productStocks.filter(
-    p => p.productqty === 0
-  ).length;
+    (p) => p.productqty === 0
+  ).length
 
   return (
     <>
@@ -70,7 +70,7 @@ const ProviderHome = () => {
         </Box>
       </Box>
     </>
-  );
-};
+  )
+}
 
-export default ProviderHome;
+export default ProviderHome
