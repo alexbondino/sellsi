@@ -11,12 +11,11 @@ import {
   IconButton,
   Paper,
 } from '@mui/material'
-import { Visibility, VisibilityOff } from '@mui/icons-material'
+import { Visibility, VisibilityOff } from '@mui/icons-material' // Iconos para mostrar/ocultar contraseña
 
-import { CustomButton } from '../hooks/shared'
-import { useLoginForm } from '../hooks/shared/useLoginForm'
-import Recuperar from './Recuperar'
-import Register from './Register'
+import { CustomButton, useLoginForm } from '../hooks/shared' // Hook personalizado para el formulario de inicio de sesión
+import Recuperar from './Recover' //Componente de recuperación de contraseña
+import Register from './Register' // Componente de registro
 
 // ✅ CONSTANTS
 const CONSTANTS = {

@@ -1,6 +1,6 @@
-import React from 'react';
-import { Box, Typography } from '@mui/material';
-import { CustomButton } from '../shared';
+import React from 'react'
+import { Box, Typography } from '@mui/material'
+import { CustomButton } from '../../hooks/shared'
 
 const Step4Success = ({ onClose }) => {
   return (
@@ -11,7 +11,7 @@ const Step4Success = ({ onClose }) => {
       >
         ¡Su contraseña ha sido cambiada con éxito!
       </Typography>
-      
+
       <CustomButton
         onClick={onClose}
         sx={{
@@ -26,7 +26,7 @@ const Step4Success = ({ onClose }) => {
         Iniciar Sesión
       </CustomButton>
     </Box>
-  );
-};
+  )
+}
 
-export default Step4Success;
+export default Step4Success

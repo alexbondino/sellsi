@@ -21,7 +21,7 @@ import CommissionFilter from './components/CommissionFilter'
 import RatingFilter from './components/RatingFilter'
 import SaleTypeFilter from './components/SaleTypeFilter'
 import AppliedFiltersDisplay from './components/AppliedFiltersDisplay'
-import { filterPanelStyles as styles } from './FilterPanel.styles'
+import { filterPanelStyles as styles } from '../../../hooks/marketplace/FilterPanel/FilterPanel.styles'
 import { useProductFilters } from '../../../hooks/marketplace/useProductFilters'
 import {
   SALE_TYPES,

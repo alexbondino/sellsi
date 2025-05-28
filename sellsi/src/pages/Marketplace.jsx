@@ -12,19 +12,19 @@ import {
   Badge,
   Paper,
 } from '@mui/material'
-import FilterAltIcon from '@mui/icons-material/FilterAlt'
-import ArrowBackIcon from '@mui/icons-material/ArrowBack'
+import FilterAltIcon from '@mui/icons-material/FilterAlt' // Icono para filtros
+import ArrowBackIcon from '@mui/icons-material/ArrowBack' // Icono para volver a todos los productos
 
 // Hooks personalizados
-import { useMarketplaceState } from '../hooks/marketplace/useMarketplaceState'
-import { useProductSorting } from '../hooks/marketplace/useProductSorting'
-import { useScrollBehavior } from '../hooks/marketplace/useScrollBehavior'
+import { useMarketplaceState } from '../hooks/marketplace/useMarketplaceState' //Hooks para el estado del marketplace
+import { useProductSorting } from '../hooks/marketplace/useProductSorting' //Hooks para ordenamiento de productos
+import { useScrollBehavior } from '../hooks/marketplace/useScrollBehavior' //Hooks para comportamiento de scroll
 
 // ✅ USAR COMPONENTES EXISTENTES
-import SearchBar from '../hooks/marketplace/SearchBar'
-import CategoryNavigation from '../hooks/marketplace/CategoryNavigation'
-import FilterPanel from '../hooks/marketplace/FilterPanel'
-import ProductCard from '../hooks/marketplace/ProductCard'
+import SearchBar from '../hooks/marketplace/SearchBar' //Hooks para la barra de búsqueda
+import CategoryNavigation from '../hooks/marketplace/CategoryNavigation' //Hooks para la navegación de categorías
+import FilterPanel from '../hooks/marketplace/FilterPanel' //Hooks para el panel de filtros
+import ProductCard from '../hooks/marketplace/ProductCard' //Hooks para la tarjeta de producto
 
 const Marketplace = () => {
   const theme = useTheme()

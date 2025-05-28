@@ -9,11 +9,11 @@ import {
   Wizard,
   useWizard,
 } from '../hooks/shared'
-import Step1Account from './register/Step1Account'
-import Step2AccountType from './register/Step2AccountType'
-import Step3Profile from './register/Step3Profile'
-import Step4Verification from './register/Step4Verification'
-import { useBanner } from '../contexts/BannerContext'
+import Step1Account from './register/Step1Account' // Componente para el primer paso del registro
+import Step2AccountType from './register/Step2AccountType' // Componente para seleccionar tipo de cuenta
+import Step3Profile from './register/Step3Profile' // Componente para completar información del perfil
+import Step4Verification from './register/Step4Verification' // Componente para la verificación del registro
+import { useBanner } from '../contexts/BannerContext' // Contexto para mostrar banners de notificación
 
 export default function Register({ open, onClose }) {
   const theme = useTheme()

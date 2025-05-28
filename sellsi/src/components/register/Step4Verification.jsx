@@ -1,8 +1,8 @@
-import React from 'react';
-import { Box, Typography, Fade } from '@mui/material';
-import { Timer, VerificationCodeInput, CustomButton } from '../shared';
+import React from 'react'
+import { Box, Typography, Fade } from '@mui/material'
+import { Timer, VerificationCodeInput, CustomButton } from '../../hooks/shared'
 
-const Step4Verification = ({ 
+const Step4Verification = ({
   email,
   codigo,
   setCodigo,
@@ -11,9 +11,9 @@ const Step4Verification = ({
   onResendCode,
   onBack,
   showCodigoEnviado,
-  fadeIn
+  fadeIn,
 }) => {
-  const codigoCompleto = codigo.every(c => c.length === 1);
+  const codigoCompleto = codigo.every((c) => c.length === 1)
 
   return (
     <Box
@@ -35,7 +35,7 @@ const Step4Verification = ({
       >
         Hemos enviado un código de verificación al correo:
       </Typography>
-      
+
       <Typography
         sx={{
           mb: 2,
@@ -47,7 +47,7 @@ const Step4Verification = ({
       >
         <strong>{email}</strong>
       </Typography>
-      
+
       <Typography sx={{ mb: 2, textAlign: 'center', fontSize: 14 }}>
         Ingresa el código de verificación que recibiste para activar tu cuenta.
       </Typography>
@@ -97,7 +97,7 @@ const Step4Verification = ({
       >
         Volver atrás
       </CustomButton>
-      
+
       {showCodigoEnviado && (
         <Fade in={fadeIn} timeout={800} unmountOnExit>
           <Typography
@@ -115,7 +115,7 @@ const Step4Verification = ({
         </Fade>
       )}
     </Box>
-  );
-};
+  )
+}
 
-export default Step4Verification;
+export default Step4Verification

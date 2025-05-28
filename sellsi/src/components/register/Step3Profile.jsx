@@ -1,6 +1,6 @@
 import React from 'react'
 import { Box, TextField, Typography, Divider } from '@mui/material'
-import { CustomButton, LogoUploader, CountrySelector } from '../shared'
+import { CustomButton, LogoUploader, CountrySelector } from '../../hooks/shared'
 
 const Step3Profile = ({
   accountType,

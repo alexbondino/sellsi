@@ -1,9 +1,9 @@
-import React from 'react';
-import { Box, Typography, Fade } from '@mui/material';
-import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
-import { Timer, VerificationCodeInput, CustomButton } from '../shared';
+import React from 'react'
+import { Box, Typography, Fade } from '@mui/material'
+import LockOutlinedIcon from '@mui/icons-material/LockOutlined'
+import { Timer, VerificationCodeInput, CustomButton } from '../../hooks/shared'
 
-const Step2Code = ({ 
+const Step2Code = ({
   correo,
   codigo,
   setCodigo,
@@ -12,9 +12,9 @@ const Step2Code = ({
   onResendCode,
   onBack,
   showCodigoEnviado,
-  fadeIn
+  fadeIn,
 }) => {
-  const codigoCompleto = codigo.every((c) => c.length === 1);
+  const codigoCompleto = codigo.every((c) => c.length === 1)
 
   return (
     <Box display="flex" flexDirection="column" alignItems="center">
@@ -38,13 +38,13 @@ const Step2Code = ({
           }}
         />
       </Box>
-      
+
       <Typography align="center" sx={{ mb: 2, mt: 1 }}>
         Hemos enviado un código de verificación al correo:{' '}
         <strong>{correo}</strong>.<br />
         Introduce el código en las casillas inferiores.
       </Typography>
-      
+
       <Box sx={{ mb: 2 }}>
         <VerificationCodeInput
           codigo={codigo}
@@ -53,11 +53,11 @@ const Step2Code = ({
           size="large"
         />
       </Box>
-      
+
       <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
         <Timer timer={timer} size="large" />
       </Box>
-      
+
       <CustomButton
         disabled={!codigoCompleto}
         onClick={onVerify}
@@ -71,11 +71,11 @@ const Step2Code = ({
       >
         Verificar Código
       </CustomButton>
-      
+
       <Typography variant="body2" sx={{ mb: 1 }}>
         ¿No has recibido el código?
       </Typography>
-      
+
       <CustomButton
         variant="text"
         onClick={onResendCode}
@@ -83,7 +83,7 @@ const Step2Code = ({
       >
         Reenviar Código
       </CustomButton>
-      
+
       <CustomButton
         variant="secondary"
         onClick={onBack}
@@ -96,7 +96,7 @@ const Step2Code = ({
       >
         Volver atrás
       </CustomButton>
-      
+
       {showCodigoEnviado && (
         <Fade in={fadeIn} timeout={800} unmountOnExit>
           <Typography
@@ -114,7 +114,7 @@ const Step2Code = ({
         </Fade>
       )}
     </Box>
-  );
-};
+  )
+}
 
-export default Step2Code;
+export default Step2Code
