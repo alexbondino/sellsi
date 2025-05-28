@@ -1,13 +1,8 @@
 import React from 'react'
 import { Box, Typography, Paper, Button } from '@mui/material'
+import { CustomButton } from '../shared'
 
-const Step2AccountType = ({
-  selectedType,
-  onTypeSelect,
-  onNext,
-  onBack,
-}) => {
-  
+const Step2AccountType = ({ selectedType, onTypeSelect, onNext, onBack }) => {
   return (
     <Box
       display="flex"
@@ -19,7 +14,7 @@ const Step2AccountType = ({
       <Typography
         variant="h5"
         sx={{
-          mb: 4,
+          mb: 6,
           mt: 2,
           fontWeight: 700,
           textAlign: 'center',
@@ -200,48 +195,37 @@ const Step2AccountType = ({
         alignItems="center"
         width="100%"
       >
+        {' '}
         <Typography
-          sx={{ color: '#888', fontSize: 12, mb: 2, textAlign: 'center' }}
+          sx={{
+            color: '#888',
+            fontSize: 12,
+            mb: 3,
+            mt: 3,
+            textAlign: 'center',
+          }}
         >
           *Podrás cambiar el tipo de cuenta más adelante desde la configuración
           de tu perfil.
         </Typography>
-        <Box sx={{ width: '100%', maxWidth: 400 }}>
-          <Button
-            variant="contained"
+        <Box sx={{ width: '100%', maxWidth: 520 }}>
+          <CustomButton
+            type="submit"
             disabled={!selectedType}
             onClick={onNext}
-            sx={{
-              backgroundColor: selectedType ? '#41B6E6' : '#b0c4cc',
-              color: '#fff',
-              borderRadius: 2,
-              textTransform: 'none',
-              fontWeight: 700,
-              fontSize: 16,
-              width: '100%',
-              height: 42,
-              boxShadow: 'none',
-              mb: 0.5,
-              '&:hover': {
-                backgroundColor: selectedType ? '#2fa4d6' : '#b0c4cc',
-              },
-            }}
+            fullWidth
+            sx={{ mb: 0.5 }}
           >
             Continuar
-          </Button>
-          <Button
+          </CustomButton>
+          <CustomButton
             variant="text"
             onClick={onBack}
-            sx={{
-              color: '#1976d2',
-              fontWeight: 700,
-              fontSize: 14,
-              width: '100%',
-              mt: 0.5,
-            }}
+            fullWidth
+            sx={{ mt: 0.5 }}
           >
             Volver atrás
-          </Button>
+          </CustomButton>
         </Box>
       </Box>
     </Box>

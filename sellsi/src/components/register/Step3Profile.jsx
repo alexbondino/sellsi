@@ -41,7 +41,7 @@ const Step3Profile = ({
       <Typography
         variant="h5"
         sx={{
-          mb: 4,
+          mb: 8,
           mt: 2,
           fontWeight: 700,
           textAlign: 'center',
@@ -52,7 +52,6 @@ const Step3Profile = ({
           ? 'Completa los datos de tu empresa'
           : 'Completa tus datos personales'}
       </Typography>
-
       <Box
         component="form"
         sx={{
@@ -178,19 +177,12 @@ const Step3Profile = ({
             </Box>
           </>
         )}
-      </Box>
-
-      <Box sx={{ width: '100%', maxWidth: 400 }}>
+      </Box>{' '}
+      <Box sx={{ width: '100%', maxWidth: 520 }}>
         <CustomButton
           onClick={onNext}
           fullWidth
-          sx={{
-            mb: 0.5,
-            backgroundColor: isFormValid() ? undefined : '#b0c4cc', // ✅ DESHABILITAR visualmente
-            '&:hover': {
-              backgroundColor: isFormValid() ? undefined : '#b0c4cc',
-            },
-          }}
+          sx={{ mb: 0.5, mt: isProvider ? 15.5 : 24.5 }}
           disabled={!isFormValid()} // ✅ DESHABILITAR botón
         >
           Continuar

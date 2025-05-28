@@ -20,11 +20,14 @@ import Marketplace from './pages/Marketplace'
 import Login from './components/Login'
 import Register from './components/Register'
 import { testConnection } from './services/supabase'
+import { BannerProvider, useBanner } from './contexts/BannerContext'
+import { Banner } from './components/shared'
 
 function AppContent({ mensaje, supabaseStatus }) {
   const location = useLocation()
   const navigate = useNavigate()
   const scrollTargets = useRef({})
+  const { bannerState, hideBanner } = useBanner()
 
   const handleScrollTo = (refName) => {
     const element = scrollTargets.current[refName]?.current
@@ -67,10 +70,18 @@ function AppContent({ mensaje, supabaseStatus }) {
   const needsPadding = true
   const showTopBar = true // ✅ MOSTRAR SIEMPRE
   const showBottomBar = location.pathname !== '/supplier/home'
-
   return (
     <>
       {showTopBar && <TopBar onNavigate={handleScrollTo} />}
+
+      {/* Banner global */}
+      <Banner
+        message={bannerState.message}
+        severity={bannerState.severity}
+        duration={bannerState.duration}
+        show={bannerState.show}
+        onClose={hideBanner}
+      />
 
       <Box
         sx={{
@@ -149,7 +160,6 @@ function App() {
 
     fetchBackend()
   }, [backendUrl])
-
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
@@ -161,7 +171,9 @@ function App() {
         }}
       />
       <BrowserRouter>
-        <AppContent mensaje={mensaje} supabaseStatus={supabaseStatus} />
+        <BannerProvider>
+          <AppContent mensaje={mensaje} supabaseStatus={supabaseStatus} />
+        </BannerProvider>
       </BrowserRouter>
     </ThemeProvider>
   )

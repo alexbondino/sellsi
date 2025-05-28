@@ -67,9 +67,15 @@ export default function TopBar({ onNavigate }) {
     closeMenu()
     onNavigate(ref)
   }
-
   const handleGoHome = () => {
     navigate('/')
+    // Hacer scroll hacia arriba después de un pequeño delay para asegurar la navegación
+    setTimeout(() => {
+      window.scrollTo({
+        top: 0,
+        behavior: 'smooth',
+      })
+    }, 100)
   }
 
   useEffect(() => {
@@ -175,12 +181,16 @@ export default function TopBar({ onNavigate }) {
                   <MenuItem key={ref} onClick={() => handleNavigate(ref)}>
                     {label}
                   </MenuItem>
-                ))}
+                ))}{' '}
               {!isLoggedIn ? (
-                <>
-                  <MenuItem onClick={handleOpenLogin}>Iniciar sesión</MenuItem>
-                  <MenuItem onClick={handleOpenRegister}>Registrarse</MenuItem>
-                </>
+                [
+                  <MenuItem key="login" onClick={handleOpenLogin}>
+                    Iniciar sesión
+                  </MenuItem>,
+                  <MenuItem key="register" onClick={handleOpenRegister}>
+                    Registrarse
+                  </MenuItem>,
+                ]
               ) : (
                 <MenuItem onClick={handleLogout}>Cerrar sesión</MenuItem>
               )}

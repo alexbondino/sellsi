@@ -68,33 +68,55 @@ export const useLoginForm = () => {
 
     return !errores.correo && !errores.contrasena
   }
-
   const handleLogin = async (e, onClose) => {
     e.preventDefault()
     if (!validarFormulario()) return
 
-    const { data: proveedor, error } = await supabase
-      .from('suppliers')
-      .select('*')
-      .eq('email', state.correo)
-      .single()
-
-    if (error || !proveedor) {
-      dispatch({ type: 'SET_ERROR_CORREO', payload: 'Usuario no encontrado' })
-      return
-    }
-
-    if (state.contrasena !== proveedor.password_hash) {
-      dispatch({
-        type: 'SET_ERROR_CONTRASENA',
-        payload: 'Contraseña incorrecta',
+    try {
+      // ✅ AUTENTICACIÓN CON SUPABASE AUTH
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: state.correo,
+        password: state.contrasena,
       })
-      return
-    }
 
-    localStorage.setItem('supplierid', proveedor.supplierid)
-    onClose()
-    navigate('/supplier/home')
+      if (error) {
+        dispatch({
+          type: 'SET_ERROR_CORREO',
+          payload: 'Correo o contraseña incorrectos',
+        })
+        return
+      }
+
+      const { user } = data
+      const { data: proveedor, error: proveedorError } = await supabase
+        .from('suppliers')
+        .select('supplierid')
+        .eq('email', user.email)
+        .single()
+
+      if (proveedorError || !proveedor) {
+        dispatch({
+          type: 'SET_ERROR_CORREO',
+          payload: 'Proveedor no encontrado',
+        })
+        return
+      }
+
+      const supplierid = proveedor.supplierid
+      console.log('✅ supplierid:', supplierid)
+
+      // ✅ GUARDAR EN LOCALSTORAGE
+      localStorage.setItem('supplierid', supplierid)
+
+      onClose()
+      navigate('/supplier/home')
+    } catch (error) {
+      console.error('Error en login:', error)
+      dispatch({
+        type: 'SET_ERROR_CORREO',
+        payload: 'Error de conexión. Intenta de nuevo.',
+      })
+    }
   }
 
   const resetForm = () => {

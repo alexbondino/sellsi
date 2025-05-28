@@ -3,18 +3,18 @@ import { Dialog, DialogTitle, DialogContent, Box } from '@mui/material'
 import { useTheme } from '@mui/material/styles'
 import { useLocation } from 'react-router-dom'
 
-import { ProgressStepper, CustomButton } from './shared'
+import { ProgressStepper, CustomButton, Wizard, useWizard } from './shared'
 import Step1Account from './register/Step1Account'
 import Step2AccountType from './register/Step2AccountType'
 import Step3Profile from './register/Step3Profile'
 import Step4Verification from './register/Step4Verification'
-import Step5Success from './register/Step5Success'
+import { useBanner } from '../contexts/BannerContext'
 
 export default function Register({ open, onClose }) {
   const theme = useTheme()
+  const { showBanner } = useBanner()
 
-  // ✅ ESTADOS PRINCIPALES
-  const [paso, setPaso] = useState(1)
+  // ✅ ESTADOS PRINCIPALES - Formulario de registro
   const [formData, setFormData] = useState({
     correo: '',
     contrasena: '',
@@ -40,6 +40,24 @@ export default function Register({ open, onClose }) {
   const timerRef = useRef()
   const fadeTimeout = useRef()
 
+  // ✅ CONFIGURACIÓN DEL WIZARD - Solo 4 pasos ahora
+  const steps = [
+    'Creación de Cuenta',
+    'Tipo de Cuenta',
+    'Completar Información',
+    'Verificación',
+  ]
+
+  // Usar el hook de wizard para la navegación
+  const {
+    currentStep,
+    nextStep,
+    prevStep,
+    goToStep,
+    resetWizard,
+    isFirst,
+    isLast,
+  } = useWizard(steps, { initialStep: 0 })
   // ✅ CERRAR MODAL EN NAVEGACIÓN
   useEffect(() => {
     const handleCloseAllModals = () => {
@@ -56,16 +74,12 @@ export default function Register({ open, onClose }) {
   }, [open, onClose])
 
   // ✅ MÉTODOS
-  const siguientePaso = () => setPaso((prev) => prev + 1)
-  const anteriorPaso = () => setPaso((prev) => prev - 1)
-  const irAPaso = (numeroPaso) => setPaso(numeroPaso)
-
   const updateFormData = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
   }
 
   const resetForm = () => {
-    setPaso(1)
+    resetWizard() // Usar el método del wizard
     setFormData({
       correo: '',
       contrasena: '',
@@ -89,17 +103,17 @@ export default function Register({ open, onClose }) {
     clearInterval(timerRef.current)
     clearTimeout(fadeTimeout.current)
   }
-
   // ✅ EFFECTS
   useEffect(() => {
-    if (paso === 4) {
+    if (currentStep === 3) {
+      // paso 4 en el wizard (0-based)
       setTimer(300)
       timerRef.current = setInterval(() => {
         setTimer((prev) => prev - 1)
       }, 1000)
     }
     return () => clearInterval(timerRef.current)
-  }, [paso])
+  }, [currentStep])
 
   useEffect(() => {
     if (timer === 0) clearInterval(timerRef.current)
@@ -128,7 +142,6 @@ export default function Register({ open, onClose }) {
     reader.onload = (ev) => updateFormData('logoEmpresa', ev.target.result)
     reader.readAsDataURL(file)
   }
-
   const handleResendCode = () => {
     setShowCodigoEnviado(false)
     setTimeout(() => setShowCodigoEnviado(true), 10)
@@ -138,85 +151,44 @@ export default function Register({ open, onClose }) {
       setTimer((prev) => prev - 1)
     }, 1000)
   }
+  // ✅ NUEVA FUNCIÓN - Manejar verificación exitosa
+  const handleSuccessfulVerification = () => {
+    // Cerrar el modal
+    onClose()
 
+    // Mostrar banner de éxito usando el contexto
+    showBanner({
+      message: 'Registro completado correctamente. Bienvenido a Sellsi.',
+      severity: 'success',
+      duration: 6000,
+    })
+  }
   const handleDialogClose = (event, reason) => {
     if (
-      (paso === 2 || paso === 3 || paso === 4 || paso === 5) &&
+      (currentStep === 1 ||
+        currentStep === 2 ||
+        currentStep === 3 ||
+        currentStep === 4) &&
       reason === 'backdropClick'
     ) {
       return
     }
     onClose(event, reason)
   }
-
   const handleExited = () => {
     resetForm()
     setDialogKey((k) => k + 1)
   }
 
-  const steps = [
-    'Creación de Cuenta',
-    'Tipo de Cuenta',
-    'Completar Información',
-    'Verificación',
-    'Cuenta Creada',
-  ]
-
-  return (
-    <Dialog
-      key={dialogKey}
-      open={open}
-      onClose={handleDialogClose}
-      onExited={handleExited}
-      maxWidth="md"
-      fullWidth
-      PaperProps={{
-        sx: {
-          width: '90vw',
-          maxWidth: 1050,
-          height: '85vh',
-          maxHeight: '800px',
-          overflowX: 'hidden',
-        },
-      }}
-    >
-      <DialogTitle sx={{ p: 0, pb: 1 }}>
-        {/* ✅ BOTÓN CERRAR */}
-        <Box
-          component="button"
-          onClick={onClose}
-          sx={{
-            position: 'absolute',
-            top: 8,
-            right: 8,
-            fontSize: 16,
-            textTransform: 'uppercase',
-            minWidth: 'auto',
-            padding: '4px 8px',
-            backgroundColor: 'transparent',
-            border: 'none',
-            color: '#41B6E6',
-            fontWeight: 700,
-            cursor: 'pointer',
-            borderRadius: 1,
-            fontFamily: 'inherit',
-            '&:hover': {
-              backgroundColor: 'rgba(65, 182, 230, 0.08)',
-            },
-          }}
-        >
-          CERRAR
-        </Box>
-      </DialogTitle>
-
-      <DialogContent sx={{ overflowX: 'hidden', px: { xs: 2, sm: 3 }, pt: 1 }}>
-        <ProgressStepper activeStep={paso} steps={steps} />
-
-        {paso === 1 && (
+  // Función para renderizar cada paso del wizard
+  const renderStep = (stepIndex, stepData, wizardControls) => {
+    switch (stepIndex) {
+      case 0:
+        return (
           <Step1Account
             formData={formData}
             onFieldChange={updateFormData}
-            onNext={siguientePaso}
+            onNext={wizardControls.nextStep}
             onCancel={onClose}
             showPassword={showPassword}
             showRepeatPassword={showRepeatPassword}
@@ -225,45 +197,107 @@ export default function Register({ open, onClose }) {
               setShowRepeatPassword((prev) => !prev)
             }
           />
-        )}
-
-        {paso === 2 && (
+        )
+      case 1:
+        return (
           <Step2AccountType
             selectedType={formData.tipoCuenta}
             onTypeSelect={(type) => updateFormData('tipoCuenta', type)}
-            onNext={siguientePaso}
-            onBack={anteriorPaso}
+            onNext={wizardControls.nextStep}
+            onBack={wizardControls.prevStep}
           />
-        )}
-
-        {paso === 3 && (
+        )
+      case 2:
+        return (
           <Step3Profile
             accountType={formData.tipoCuenta}
             formData={formData}
             onFieldChange={updateFormData}
             onLogoChange={handleLogoChange}
             logoError={logoError}
-            onNext={siguientePaso}
-            onBack={anteriorPaso}
+            onNext={wizardControls.nextStep}
+            onBack={wizardControls.prevStep}
           />
-        )}
-
-        {paso === 4 && (
+        )
+      case 3:
+        return (
           <Step4Verification
             email={formData.correo}
             codigo={codigo}
             setCodigo={setCodigo}
             timer={timer}
-            onVerify={siguientePaso}
+            onVerify={handleSuccessfulVerification}
             onResendCode={handleResendCode}
-            onBack={() => irAPaso(3)}
+            onBack={() => wizardControls.goToStep(2)}
             showCodigoEnviado={showCodigoEnviado}
             fadeIn={fadeIn}
           />
-        )}
-
-        {paso === 5 && <Step5Success onClose={onClose} />}
-      </DialogContent>
-    </Dialog>
+        )
+      default:
+        return null
+    }
+  }
+  return (
+    <>
+      <Dialog
+        key={dialogKey}
+        open={open}
+        onClose={handleDialogClose}
+        onExited={handleExited}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{
+          sx: {
+            width: '90vw',
+            maxWidth: 1050,
+            height: '85vh',
+            maxHeight: '800px',
+            overflowX: 'hidden',
+          },
+        }}
+      >
+        <DialogTitle sx={{ p: 0, pb: 1 }}>
+          {/* ✅ BOTÓN CERRAR */}
+          <Box
+            component="button"
+            onClick={onClose}
+            sx={{
+              position: 'absolute',
+              top: 8,
+              right: 8,
+              fontSize: 16,
+              textTransform: 'uppercase',
+              minWidth: 'auto',
+              padding: '4px 8px',
+              backgroundColor: 'transparent',
+              border: 'none',
+              color: '#41B6E6',
+              fontWeight: 700,
+              cursor: 'pointer',
+              borderRadius: 1,
+              fontFamily: 'inherit',
+              '&:hover': {
+                backgroundColor: 'rgba(65, 182, 230, 0.08)',
+              },
+            }}
+          >
+            CERRAR
+          </Box>
+        </DialogTitle>
+        <DialogContent
+          sx={{ overflowX: 'hidden', px: { xs: 2, sm: 3 }, pt: 1 }}
+        >
+          <ProgressStepper activeStep={currentStep + 1} steps={steps} />
+          {/* Renderizar el paso actual directamente */}
+          <Box sx={{ mt: 2 }}>
+            {renderStep(currentStep, steps[currentStep], {
+              nextStep,
+              prevStep,
+              goToStep,
+            })}
+          </Box>{' '}
+        </DialogContent>
+      </Dialog>
+    </>
   )
 }
