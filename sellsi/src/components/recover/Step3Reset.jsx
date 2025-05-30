@@ -1,7 +1,13 @@
-import React from 'react';
-import { Box, TextField, Typography, InputAdornment, IconButton } from '@mui/material';
-import { Visibility, VisibilityOff } from '@mui/icons-material';
-import { PasswordRequirements, CustomButton } from '../shared';
+import React from 'react'
+import {
+  Box,
+  TextField,
+  Typography,
+  InputAdornment,
+  IconButton,
+} from '@mui/material'
+import { Visibility, VisibilityOff } from '@mui/icons-material'
+import { PasswordRequirements, CustomButton } from '../../hooks/shared'
 
 const Step3Reset = ({
   nuevaContrasena,
@@ -12,7 +18,7 @@ const Step3Reset = ({
   setShowPassword,
   showRepeatPassword,
   setShowRepeatPassword,
-  onSubmit
+  onSubmit,
 }) => {
   // Validaciones de contraseña
   const requisitos = [
@@ -20,21 +26,22 @@ const Step3Reset = ({
     { label: 'Letras minúsculas (a-z)', valid: /[a-z]/.test(nuevaContrasena) },
     { label: 'Letras mayúsculas (A-Z)', valid: /[A-Z]/.test(nuevaContrasena) },
     { label: 'Números (0-9)', valid: /\d/.test(nuevaContrasena) },
-  ];
-  
-  const cumpleMinimos = requisitos.filter((r) => r.valid).length >= 4;
-  const contrasenasCoinciden = nuevaContrasena === repiteContrasena && repiteContrasena.length > 0;
+  ]
+
+  const cumpleMinimos = requisitos.filter((r) => r.valid).length >= 4
+  const contrasenasCoinciden =
+    nuevaContrasena === repiteContrasena && repiteContrasena.length > 0
 
   return (
     <Box display="flex" flexDirection="column" alignItems="center">
       <Typography variant="h6" sx={{ fontWeight: 700, mb: 2 }}>
         Restablecer contraseña
       </Typography>
-      
+
       <Typography sx={{ mb: 2 }}>
         Ingrese su nueva contraseña y confírmela.
       </Typography>
-      
+
       <TextField
         label="Ingrese su nueva contraseña"
         type={showPassword ? 'text' : 'password'}
@@ -57,7 +64,7 @@ const Step3Reset = ({
           ),
         }}
       />
-      
+
       <TextField
         label="Confirme su contraseña nueva"
         type={showRepeatPassword ? 'text' : 'password'}
@@ -86,9 +93,9 @@ const Step3Reset = ({
           ),
         }}
       />
-      
+
       <PasswordRequirements password={nuevaContrasena} />
-      
+
       <CustomButton
         fullWidth
         disabled={!cumpleMinimos || !contrasenasCoinciden}
@@ -102,7 +109,7 @@ const Step3Reset = ({
         Cambiar contraseña
       </CustomButton>
     </Box>
-  );
-};
+  )
+}
 
-export default Step3Reset;
+export default Step3Reset

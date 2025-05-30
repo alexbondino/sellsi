@@ -21,7 +21,7 @@ import Login from './components/Login'
 import Register from './components/Register'
 import { testConnection } from './services/supabase'
 import { BannerProvider, useBanner } from './contexts/BannerContext'
-import { Banner } from './components/shared'
+import { Banner } from './hooks/shared'
 
 function AppContent({ mensaje, supabaseStatus }) {
   const location = useLocation()

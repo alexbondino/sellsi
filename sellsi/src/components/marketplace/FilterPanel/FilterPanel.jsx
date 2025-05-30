@@ -1,3 +1,16 @@
+// ✅ EDITAR AQUÍ PARA:
+// - Cambiar header "Filtros" y botón "Limpiar"
+// - Modificar el layout general del panel
+// - Ajustar diferencias entre versión desktop/móvil
+// - Cambiar animaciones de entrada/salida
+
+// 🔗 SUBCOMPONENTES:
+// - PriceFilter.jsx ───── Slider y campos de precio
+// - CommissionFilter.jsx ─ Slider y campos de comisión
+// - RatingFilter.jsx ──── Slider de estrellas
+// - SaleTypeFilter.jsx ── Checkboxes tipo venta
+// - AppliedFiltersDisplay.jsx ─ Chips filtros activos
+
 import React from 'react'
 import {
   Box,
@@ -6,8 +19,6 @@ import {
   IconButton,
   FormControlLabel,
   Checkbox,
-  useMediaQuery,
-  useTheme,
   Tooltip,
   Grid,
 } from '@mui/material'
@@ -21,7 +32,7 @@ import CommissionFilter from './components/CommissionFilter'
 import RatingFilter from './components/RatingFilter'
 import SaleTypeFilter from './components/SaleTypeFilter'
 import AppliedFiltersDisplay from './components/AppliedFiltersDisplay'
-import { filterPanelStyles as styles } from './FilterPanel.styles'
+import { filterPanelStyles as styles } from '../../../hooks/marketplace/FilterPanel/FilterPanel.styles'
 import { useProductFilters } from '../../../hooks/marketplace/useProductFilters'
 import {
   SALE_TYPES,
@@ -39,9 +50,6 @@ const FilterPanel = ({
   totalProductos,
   filtrosAbiertos = false, // ✅ AGREGAR esta prop con valor por defecto
 }) => {
-  const theme = useTheme()
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'))
-
   const {
     handlePrecioChange,
     handleComisionChange,
@@ -190,9 +198,8 @@ const FilterPanel = ({
       </Box>
     </>
   )
-
-  // Versión mobile
-  if (isMobile) {
+  // Mobile version
+  const MobileFilterPanel = () => {
     if (!isMobileOpen) return null
 
     return (
@@ -228,21 +235,55 @@ const FilterPanel = ({
         </Box>
       </Box>
     )
-  } // Versión desktop - ✅ CON ANIMACIÓN bidireccional
-  return (
+  }
+
+  // Desktop version
+  const DesktopFilterPanel = () => (
     <Box
       sx={{
         ...styles.desktop,
-        // ✅ CORREGIR: quitar visibility para permitir animación de salida
         transform: filtrosAbiertos ? 'translateX(0)' : 'translateX(-100%)',
         opacity: filtrosAbiertos ? 1 : 0,
-        // ✅ REMOVER: visibility: filtrosAbiertos ? 'visible' : 'hidden',
-        pointerEvents: filtrosAbiertos ? 'auto' : 'none', // ✅ AGREGAR: para evitar clicks cuando está oculto
+        pointerEvents: filtrosAbiertos ? 'auto' : 'none',
       }}
     >
       <FilterContent />
     </Box>
   )
+
+  return (
+    <>
+      {/* Mobile FilterPanel */}
+      <Box
+        sx={{
+          display: {
+            xs: 'block',
+            sm: 'block',
+            md: 'none',
+            lg: 'none',
+            xl: 'none',
+          },
+        }}
+      >
+        <MobileFilterPanel />
+      </Box>
+
+      {/* Desktop FilterPanel */}
+      <Box
+        sx={{
+          display: {
+            xs: 'none',
+            sm: 'none',
+            md: 'block',
+            lg: 'block',
+            xl: 'block',
+          },
+        }}
+      >
+        <DesktopFilterPanel />
+      </Box>
+    </>
+  )
 }
 
-export default FilterPanel
+export default React.memo(FilterPanel)

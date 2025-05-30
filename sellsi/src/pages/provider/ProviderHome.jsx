@@ -1,12 +1,13 @@
 // 📁 pages/ProviderHome.jsx
 import React from 'react'
-import { Box, Grid, Button } from '@mui/material'
+import { Box, Grid, Button, Container, ThemeProvider } from '@mui/material'
 import AddIcon from '@mui/icons-material/Add'
 import { useSupplierDashboard } from '../../hooks/useSupplierDashboard'
 import DashboardSummary from '../../components/DashboardSummary'
 import RequestList from '../../components/RequestList'
 import MonthlySalesChart from '../../components/BarChart'
 import SidebarProvider from '../../components/SideBar'
+import { dashboardTheme } from '../../styles/dashboardTheme'
 
 const ProviderHome = () => {
   const supplierId = localStorage.getItem('supplierid')
@@ -24,52 +25,66 @@ const ProviderHome = () => {
   ).length
 
   return (
-    <>
+    <ThemeProvider theme={dashboardTheme}>
       <SidebarProvider />
 
-      {/* Este Box es el contenido principal, desplazado a la derecha */}
+      {/* Contenido principal con el tema aplicado */}
       <Box
         sx={{
-          marginLeft: '250px', // debe coincidir con el ancho del sidebar
-          padding: 2,
-          backgroundColor: '#f5f5f5',
+          marginLeft: '250px',
+          backgroundColor: 'background.default',
           minHeight: '100vh',
+          p: 3,
         }}
       >
-        <Box sx={{ display: 'flex', flexDirection: 'row' }}>
-          {/* Columna izquierda */}
-          <Box sx={{ flex: 2, p: 2 }}>
-            <DashboardSummary
-              products={products}
-              totalSales={totalSales}
-              outOfStock={productsOutOfStock}
-              weeklyRequests={weeklyRequests}
-            />
+        <Container maxWidth="xl" disableGutters>
+          {' '}
+          <Grid container spacing={3}>
+            {/* Contenido principal (Dashboard + Chart + Button) - Ahora ocupa todo el ancho */}
+            <Grid item xs={12}>
+              <Box sx={{ mb: 4 }}>
+                <DashboardSummary
+                  products={products}
+                  totalSales={totalSales}
+                  outOfStock={productsOutOfStock}
+                  weeklyRequests={weeklyRequests}
+                />
+              </Box>
 
-            <Grid item xs={12} container justifyContent="center" sx={{ mt: 4 }}>
-              <Button
-                variant="contained"
-                size="large"
-                startIcon={<AddIcon />}
-                fullWidth
-                sx={{ py: 3, borderRadius: 2, fontSize: 25 }}
-              >
-                Nuevo Producto
-              </Button>
+              {/* Botón Nuevo Producto */}
+              <Box sx={{ mb: 4 }}>
+                <Button
+                  variant="contained"
+                  size="large"
+                  startIcon={<AddIcon />}
+                  fullWidth
+                  sx={{
+                    py: 2,
+                    borderRadius: 2,
+                    fontSize: '1.1rem',
+                    fontWeight: 600,
+                    textTransform: 'none',
+                    boxShadow: 'rgba(99, 102, 241, 0.16) 0px 4px 16px',
+                    '&:hover': {
+                      boxShadow: 'rgba(99, 102, 241, 0.24) 0px 6px 20px',
+                      transform: 'translateY(-1px)',
+                    },
+                    transition: 'all 0.2s ease-in-out',
+                  }}
+                >
+                  Nuevo Producto
+                </Button>
+              </Box>
+
+              {/* Gráfico de Ventas */}
+              <Box>
+                <MonthlySalesChart data={monthlyData} />
+              </Box>
             </Grid>
-
-            <Box sx={{ mt: 4 }}>
-              <MonthlySalesChart data={monthlyData} />
-            </Box>
-          </Box>
-
-          {/* Columna derecha */}
-          <Box sx={{ flexShrink: 0, width: 350, p: 2 }}>
-            <RequestList weeklyRequests={weeklyRequests} />
-          </Box>
-        </Box>
+          </Grid>
+        </Container>
       </Box>
-    </>
+    </ThemeProvider>
   )
 }
 

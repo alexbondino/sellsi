@@ -23,10 +23,8 @@ const PriceFilter = ({ filtros, onPrecioChange, styles }) => {
 
   return (
     <Box sx={styles.filterGroup}>
-      <Typography sx={styles.sectionTitle}>
-        💰 Precio
-      </Typography>
-      
+      <Typography sx={styles.sectionTitle}>💰 Precio</Typography>
+
       <Box sx={{ mb: 2 }}>
         <Slider
           value={sliderValue}
@@ -60,11 +58,15 @@ const PriceFilter = ({ filtros, onPrecioChange, styles }) => {
         />
       </Box>
 
-      <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+      <Typography
+        variant="caption"
+        color="text.secondary"
+        sx={{ mt: 1, display: 'block' }}
+      >
         Rango: {formatPrice(sliderValue[0])} - {formatPrice(sliderValue[1])}
       </Typography>
     </Box>
   )
 }
 
-export default PriceFilter
+export default React.memo(PriceFilter)

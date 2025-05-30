@@ -1,12 +1,12 @@
 import React from 'react'
 import { Box, Chip, Typography } from '@mui/material'
 
-const AppliedFiltersDisplay = ({ 
-  filtros, 
-  categoriaSeleccionada, 
+const AppliedFiltersDisplay = ({
+  filtros,
+  categoriaSeleccionada,
   busqueda,
   onRemoveFilter,
-  styles 
+  styles,
 }) => {
   const appliedFilters = []
 
@@ -15,7 +15,7 @@ const AppliedFiltersDisplay = ({
     appliedFilters.push({
       type: 'precio',
       label: `Precio min: $${filtros.precioMin.toLocaleString()}`,
-      onRemove: () => onRemoveFilter('precioMin')
+      onRemove: () => onRemoveFilter('precioMin'),
     })
   }
 
@@ -23,7 +23,7 @@ const AppliedFiltersDisplay = ({
     appliedFilters.push({
       type: 'precio',
       label: `Precio max: $${filtros.precioMax.toLocaleString()}`,
-      onRemove: () => onRemoveFilter('precioMax')
+      onRemove: () => onRemoveFilter('precioMax'),
     })
   }
 
@@ -32,7 +32,7 @@ const AppliedFiltersDisplay = ({
     appliedFilters.push({
       type: 'comision',
       label: `Comisión min: ${filtros.comisionMin}%`,
-      onRemove: () => onRemoveFilter('comisionMin')
+      onRemove: () => onRemoveFilter('comisionMin'),
     })
   }
 
@@ -40,7 +40,7 @@ const AppliedFiltersDisplay = ({
     appliedFilters.push({
       type: 'comision',
       label: `Comisión max: ${filtros.comisionMax}%`,
-      onRemove: () => onRemoveFilter('comisionMax')
+      onRemove: () => onRemoveFilter('comisionMax'),
     })
   }
 
@@ -49,16 +49,16 @@ const AppliedFiltersDisplay = ({
     appliedFilters.push({
       type: 'rating',
       label: `Rating: ${filtros.ratingMin}+ ⭐`,
-      onRemove: () => onRemoveFilter('ratingMin')
+      onRemove: () => onRemoveFilter('ratingMin'),
     })
   }
 
   // Tipos de venta
-  filtros.tiposVenta.forEach(tipo => {
+  filtros.tiposVenta.forEach((tipo) => {
     appliedFilters.push({
       type: 'tipoVenta',
       label: tipo === 'directa' ? 'Venta Directa' : 'Venta Indirecta',
-      onRemove: () => onRemoveFilter('tipoVenta', tipo)
+      onRemove: () => onRemoveFilter('tipoVenta', tipo),
     })
   })
 
@@ -67,7 +67,7 @@ const AppliedFiltersDisplay = ({
     appliedFilters.push({
       type: 'stock',
       label: 'Solo con stock',
-      onRemove: () => onRemoveFilter('soloConStock')
+      onRemove: () => onRemoveFilter('soloConStock'),
     })
   }
 
@@ -77,10 +77,8 @@ const AppliedFiltersDisplay = ({
 
   return (
     <Box sx={styles.filterGroup}>
-      <Typography sx={styles.sectionTitle}>
-        🏷️ Filtros aplicados
-      </Typography>
-      
+      <Typography sx={styles.sectionTitle}>🏷️ Filtros aplicados</Typography>
+
       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
         {appliedFilters.map((filter, index) => (
           <Chip
@@ -97,4 +95,4 @@ const AppliedFiltersDisplay = ({
   )
 }
 
-export default AppliedFiltersDisplay
+export default React.memo(AppliedFiltersDisplay)

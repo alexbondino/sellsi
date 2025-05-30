@@ -1,3 +1,9 @@
+// ✅ EDITAR AQUÍ PARA:
+// - Cambiar placeholder del input
+// - Modificar iconos o diseño del campo
+// - Ajustar dropdown de ordenamiento
+// - Cambiar estilos del botón de filtros
+
 import React from 'react'
 import {
   TextField,
@@ -9,8 +15,6 @@ import {
   Select,
   MenuItem,
   Badge,
-  useMediaQuery,
-  useTheme,
 } from '@mui/material'
 import SearchIcon from '@mui/icons-material/Search'
 import ClearIcon from '@mui/icons-material/Clear'
@@ -27,9 +31,7 @@ const SearchBar = ({
   hayFiltrosActivos,
   filtroVisible,
   filtroModalOpen,
-  isMobile,
 }) => {
-  const theme = useTheme()
   const handleClear = () => {
     setBusqueda('')
   }
@@ -136,4 +138,4 @@ const SearchBar = ({
   )
 }
 
-export default SearchBar
+export default React.memo(SearchBar)

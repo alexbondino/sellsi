@@ -1,6 +1,6 @@
 import React from 'react'
 import { Box, Typography, Paper, Button } from '@mui/material'
-import { CustomButton } from '../shared'
+import { CustomButton } from '../../hooks/shared'
 
 const Step2AccountType = ({ selectedType, onTypeSelect, onNext, onBack }) => {
   return (

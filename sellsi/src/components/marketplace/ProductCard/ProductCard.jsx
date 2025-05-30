@@ -1,3 +1,10 @@
+// ✅ EDITAR AQUÍ PARA:
+// - Cambiar diseño de la tarjeta
+// - Modificar información mostrada
+// - Ajustar botón "AGREGAR" (color, texto, funcionalidad)
+// - Cambiar iconos o tooltips
+// - Modificar badge de descuento o favoritos
+
 import React, { useState } from 'react'
 import {
   Card,
@@ -322,15 +329,20 @@ const ProductCard = ({ producto, onAddToCart, onViewDetails }) => {
             textTransform: 'none',
             fontWeight: 600,
             borderRadius: 2,
-            py: 0.8, // ✅ REDUCIR: de 1 a 0.8
-            fontSize: '0.9rem', // ✅ REDUCIR: de 1rem a 0.9rem
-            minHeight: 32, // ✅ REDUCIR: de 40 a 32
-            background: 'linear-gradient(135deg, #1976D2 0%, #1565C0 100%)',
-            boxShadow: '0 3px 10px rgba(25, 118, 210, 0.3)', // ✅ REDUCIR sombra
+            // ✅ AGREGAR BORDE - Usa 'border' en lugar de borderWidth/borderColor
+            py: 0.8,
+            fontSize: '0.9rem',
+            color: 'rgb(0, 0, 0)',
+            background:
+              'linear-gradient(135deg,rgb(188, 243, 247) 0%,rgb(181, 213, 250) 100%)',
+            boxShadow: '0 3px 10px rgba(25, 118, 210, 0.3)',
             '&:hover': {
-              background: 'linear-gradient(135deg, #1565C0 0%, #0D47A1 100%)',
+              background:
+                'linear-gradient(135deg,rgb(75, 246, 252) 0%,rgb(96, 243, 103) 100%)',
               boxShadow: '0 6px 20px rgba(25, 118, 210, 0.6)',
               transform: 'translateY(-2px)',
+              // ✅ OPCIONAL: Cambiar borde en hover
+              border: '2px solid #1976d2', // ← Borde azul en hover
             },
             '& .MuiButton-startIcon': {
               marginRight: 1,
@@ -344,4 +356,4 @@ const ProductCard = ({ producto, onAddToCart, onViewDetails }) => {
   )
 }
 
-export default ProductCard
+export default React.memo(ProductCard)

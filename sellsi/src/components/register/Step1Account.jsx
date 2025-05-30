@@ -11,7 +11,7 @@ import {
 } from '@mui/material'
 import { Visibility, VisibilityOff } from '@mui/icons-material'
 import { useTheme } from '@mui/material/styles'
-import { PasswordRequirements, CustomButton } from '../shared'
+import { PasswordRequirements, CustomButton } from '../../hooks/shared'
 
 const Step1Account = ({
   formData,

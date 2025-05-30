@@ -10,7 +10,6 @@ import {
   Menu,
   MenuItem,
   useTheme,
-  useMediaQuery,
 } from '@mui/material'
 import MenuIcon from '@mui/icons-material/Menu'
 import AccountCircleIcon from '@mui/icons-material/AccountCircle'
@@ -21,7 +20,6 @@ import Register from './Register'
 
 export default function TopBar({ onNavigate }) {
   const theme = useTheme()
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'))
   const navigate = useNavigate() // ✅ AHORA FUNCIONA
   const location = useLocation() // ✅ AGREGAR para detectar cambios de ruta
 
@@ -93,7 +91,7 @@ export default function TopBar({ onNavigate }) {
   return (
     <Box
       sx={{
-        backgroundColor: theme.palette.bars?.main || '#1976d2',
+        backgroundColor: '#000000', // Cambiado de theme.palette.bars?.main || '#1976d2' a negro
         width: '100vw',
         px: 0,
         py: 1,
@@ -140,11 +138,22 @@ export default function TopBar({ onNavigate }) {
               alt="SELLSI Logo"
               style={{ height: 28, maxWidth: '120px', flexShrink: 0 }}
             />
-          </Box>
-
-          {!isMobile && !isLoggedIn && (
-            <Box sx={{ display: 'flex', gap: 3 }}>
-              {Object.entries(sectionsMap).map(([label, ref]) => (
+          </Box>{' '}
+          {/* Navigation links - hidden on mobile */}
+          <Box
+            sx={{
+              display: {
+                xs: 'none',
+                sm: 'none',
+                md: 'flex',
+                lg: 'flex',
+                xl: 'flex',
+              },
+              gap: 3,
+            }}
+          >
+            {!isLoggedIn &&
+              Object.entries(sectionsMap).map(([label, ref]) => (
                 <Button
                   key={ref}
                   onClick={() => handleNavigate(ref)}
@@ -157,93 +166,113 @@ export default function TopBar({ onNavigate }) {
                   {label}
                 </Button>
               ))}
+          </Box>
+        </Box>{' '}
+        {/* Mobile menu button */}
+        <Box
+          sx={{
+            display: {
+              xs: 'block',
+              sm: 'block',
+              md: 'none',
+              lg: 'none',
+              xl: 'none',
+            },
+          }}
+        >
+          <IconButton onClick={openMenu} sx={{ color: 'white', p: 1 }}>
+            <MenuIcon fontSize="large" />
+          </IconButton>
+          <Menu
+            anchorEl={menuAnchor}
+            open={Boolean(menuAnchor)}
+            onClose={closeMenu}
+            anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+            transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+            PaperProps={{ sx: { maxWidth: '90vw', overflowX: 'hidden' } }}
+          >
+            <MenuItem onClick={handleGoHome}>Inicio</MenuItem>
+            {!isLoggedIn &&
+              Object.entries(sectionsMap).map(([label, ref]) => (
+                <MenuItem key={ref} onClick={() => handleNavigate(ref)}>
+                  {label}
+                </MenuItem>
+              ))}{' '}
+            {!isLoggedIn ? (
+              [
+                <MenuItem key="login" onClick={handleOpenLogin}>
+                  Iniciar sesión
+                </MenuItem>,
+                <MenuItem key="register" onClick={handleOpenRegister}>
+                  Registrarse
+                </MenuItem>,
+              ]
+            ) : (
+              <MenuItem onClick={handleLogout}>Cerrar sesión</MenuItem>
+            )}
+          </Menu>
+        </Box>
+        {/* Desktop auth buttons and profile menu */}
+        <Box
+          sx={{
+            display: {
+              xs: 'none',
+              sm: 'none',
+              md: 'block',
+              lg: 'block',
+              xl: 'block',
+            },
+          }}
+        >
+          {isLoggedIn ? (
+            <>
+              <IconButton onClick={openProfileMenu} sx={{ color: 'white' }}>
+                <AccountCircleIcon fontSize="large" />
+              </IconButton>
+              <Menu
+                anchorEl={profileAnchor}
+                open={Boolean(profileAnchor)}
+                onClose={closeProfileMenu}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+              >
+                <MenuItem onClick={handleLogout}>Cerrar sesión</MenuItem>
+              </Menu>
+            </>
+          ) : (
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              <Button
+                variant="contained"
+                onClick={handleOpenLogin}
+                sx={{
+                  backgroundColor: '#1976d2',
+                  color: 'white',
+                  fontWeight: 'bold',
+                  '&:hover': {
+                    backgroundColor: '#1565c0',
+                  },
+                }}
+              >
+                Iniciar sesión
+              </Button>
+              <Button
+                variant="outlined"
+                onClick={handleOpenRegister}
+                sx={{
+                  color: 'white',
+                  borderColor: 'white',
+                  fontWeight: 'bold',
+                  '&:hover': {
+                    backgroundColor: 'rgba(255,255,255,0.1)',
+                    borderColor: 'white',
+                  },
+                }}
+              >
+                Registrarse
+              </Button>
             </Box>
           )}
         </Box>
-
-        {/* Botones o perfil */}
-        {isMobile ? (
-          <>
-            <IconButton onClick={openMenu} sx={{ color: 'white', p: 1 }}>
-              <MenuIcon fontSize="large" />
-            </IconButton>
-            <Menu
-              anchorEl={menuAnchor}
-              open={Boolean(menuAnchor)}
-              onClose={closeMenu}
-              anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-              transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-              PaperProps={{ sx: { maxWidth: '90vw', overflowX: 'hidden' } }}
-            >
-              <MenuItem onClick={handleGoHome}>Inicio</MenuItem>
-              {!isLoggedIn &&
-                Object.entries(sectionsMap).map(([label, ref]) => (
-                  <MenuItem key={ref} onClick={() => handleNavigate(ref)}>
-                    {label}
-                  </MenuItem>
-                ))}{' '}
-              {!isLoggedIn ? (
-                [
-                  <MenuItem key="login" onClick={handleOpenLogin}>
-                    Iniciar sesión
-                  </MenuItem>,
-                  <MenuItem key="register" onClick={handleOpenRegister}>
-                    Registrarse
-                  </MenuItem>,
-                ]
-              ) : (
-                <MenuItem onClick={handleLogout}>Cerrar sesión</MenuItem>
-              )}
-            </Menu>
-          </>
-        ) : isLoggedIn ? (
-          <>
-            <IconButton onClick={openProfileMenu} sx={{ color: 'white' }}>
-              <AccountCircleIcon fontSize="large" />
-            </IconButton>
-            <Menu
-              anchorEl={profileAnchor}
-              open={Boolean(profileAnchor)}
-              onClose={closeProfileMenu}
-              anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-              transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-            >
-              <MenuItem onClick={handleLogout}>Cerrar sesión</MenuItem>
-            </Menu>
-          </>
-        ) : (
-          <Box sx={{ display: 'flex', gap: 1 }}>
-            <Button
-              variant="contained"
-              onClick={handleOpenLogin}
-              sx={{
-                backgroundColor: '#1976d2',
-                color: 'white',
-                fontWeight: 'bold',
-                '&:hover': {
-                  backgroundColor: '#1565c0',
-                },
-              }}
-            >
-              Iniciar sesión
-            </Button>
-            <Button
-              variant="outlined"
-              onClick={handleOpenRegister}
-              sx={{
-                color: 'white',
-                borderColor: 'white',
-                fontWeight: 'bold',
-                '&:hover': {
-                  backgroundColor: 'rgba(255,255,255,0.1)',
-                  borderColor: 'white',
-                },
-              }}
-            >
-              Registrarse
-            </Button>
-          </Box>
-        )}
       </Box>
 
       {/* Modal de Login */}

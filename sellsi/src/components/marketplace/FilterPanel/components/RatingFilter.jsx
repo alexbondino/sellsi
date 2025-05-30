@@ -97,4 +97,4 @@ const RatingFilter = ({ filtros, onRatingChange, styles }) => {
   )
 }
 
-export default RatingFilter
+export default React.memo(RatingFilter)

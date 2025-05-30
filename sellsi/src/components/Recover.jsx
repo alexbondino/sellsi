@@ -3,12 +3,11 @@ import { useLocation } from 'react-router-dom' // ✅ AGREGAR
 import { Box, Paper } from '@mui/material'
 import { useTheme } from '@mui/material/styles'
 
-import { CustomButton } from './shared'
-import { useRecuperarForm } from './shared/useRecuperarForm'
-import Step1Email from './recuperar/Step1Email'
-import Step2Code from './recuperar/Step2Code'
-import Step3Reset from './recuperar/Step3Reset'
-import Step4Success from './recuperar/Step4Success'
+import { CustomButton, useRecuperarForm } from '../hooks/shared'
+import Step1Email from './recover/Step1Email' // Componente para ingresar correo
+import Step2Code from './recover/Step2Code' // Componente para verificar código
+import Step3Reset from './recover/Step3Reset' // Componente para restablecer contraseña
+import Step4Success from './recover/Step4Success' // Componente de éxito
 
 const Recuperar = forwardRef(function Recuperar(props, ref) {
   const theme = useTheme()
