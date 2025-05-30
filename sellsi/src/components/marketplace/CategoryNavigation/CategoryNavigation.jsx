@@ -1,3 +1,9 @@
+// ✅ EDITAR AQUÍ PARA:
+// - Agregar/quitar categorías
+// - Cambiar diseño del menú dropdown
+// - Modificar chips de categorías seleccionadas
+// - Ajustar botones de secciones (Nuevos, Ofertas, etc.)
+
 import React from 'react'
 import { Box, Button, Menu, MenuItem, Chip, Typography } from '@mui/material'
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown'
@@ -96,4 +102,4 @@ const CategoryNavigation = ({
   )
 }
 
-export default CategoryNavigation
+export default React.memo(CategoryNavigation)

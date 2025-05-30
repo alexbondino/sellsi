@@ -27,8 +27,7 @@ const ServicesSection = ({ serviciosRef }) => {
       timeline: [
         {
           title: 'Publica',
-          description:
-            'Sube tus productos con fotos y descripciones detalladas',
+          description: 'Sube tus productos en el el sitio web',
           icon: <Inventory />,
           image: '/Landing Page/Proveedor/publica.webp',
         },
@@ -40,7 +39,7 @@ const ServicesSection = ({ serviciosRef }) => {
         },
         {
           title: 'Define tu precio',
-          description: 'Establece precios competitivos y condiciones de venta',
+          description: 'Establece precios y condiciones de venta',
           icon: <AttachMoney />,
           image: '/Landing Page/Proveedor/define.webp',
         },
@@ -123,16 +122,16 @@ const ServicesSection = ({ serviciosRef }) => {
     <Box
       ref={serviciosRef}
       sx={{
-        // SOLUCIÓN LAYOUT DESKTOP: Padding izquierdo reducido para servicios
-        px: { xs: 2, sm: 4, md: 2, lg: 4, xl: 8 }, // Padding izquierdo reducido en desktop
-        py: { xs: 6, md: 8 },
+        // SOLUCIÓN LAYOUT DESKTOP: Padding con todos los breakpoints
+        px: { xs: 2, sm: 4, md: 2, lg: 7, xl: 7 }, // ← xl copiado de lg
+        py: { xs: 6, sm: 7, md: 8, lg: 9, xl: 9 }, // ← xl copiado de lg
         backgroundColor: '#e6e6e6',
       }}
     >
       {/* Título y texto descriptivo */}
       <Box
         sx={{
-          px: { xs: 0, md: 4, lg: 8, xl: 15 }, // Padding reducido para títulos de servicios
+          px: { xs: 0, sm: 2, md: 4, lg: 8, xl: 8 }, // ← xl copiado de lg
         }}
       >
         <Typography
@@ -140,9 +139,15 @@ const ServicesSection = ({ serviciosRef }) => {
           fontWeight="bold"
           gutterBottom
           sx={{
-            fontSize: { xs: '2rem', md: '2.5rem' },
+            fontSize: {
+              xs: '2rem',
+              sm: '2.2rem',
+              md: '2.5rem',
+              lg: '2.7rem',
+              xl: '2.7rem', // ← xl copiado de lg
+            },
             textAlign: 'left',
-            mb: { xs: 2, md: 3 },
+            mb: { xs: 2, sm: 2.5, md: 3, lg: 3.5, xl: 3.5 }, // ← xl copiado de lg
             color: 'common.black',
           }}
         >
@@ -151,9 +156,15 @@ const ServicesSection = ({ serviciosRef }) => {
         <Typography
           variant="h6"
           sx={{
-            mb: { xs: 4, md: 6 },
+            mb: { xs: 4, sm: 5, md: 6, lg: 7, xl: 7 }, // ← xl copiado de lg
             textAlign: 'left',
-            fontSize: { xs: '1rem', md: '1.2rem' },
+            fontSize: {
+              xs: '1rem',
+              sm: '1.1rem',
+              md: '1.2rem',
+              lg: '1.3rem',
+              xl: '1.3rem', // ← xl copiado de lg
+            },
             maxWidth: '800px',
             mx: 0,
             lineHeight: 1.6,
@@ -169,8 +180,8 @@ const ServicesSection = ({ serviciosRef }) => {
       {/* Wizard con todo el contenido interactivo */}
       <Box
         sx={{
-          // PADDING WIZARD: Reducido para alineación con el contenido
-          px: { xs: 0, md: 6, lg: 12, xl: 20 },
+          // PADDING WIZARD: Todos los breakpoints
+          px: { xs: 0, sm: 3, md: 6, lg: 1, xl: 1 }, // ← xl copiado de lg
         }}
       >
         <Wizard
@@ -181,48 +192,84 @@ const ServicesSection = ({ serviciosRef }) => {
           fadeTransition={true}
           fadeTimeout={500}
           renderStep={(currentStep, currentService, { goToStep }) => {
-            // CONFIGURACIÓN DINÁMICA DE GAPS: Diferentes espacios entre círculos según el tipo de servicio
+            // CONFIGURACIÓN DINÁMICA DE GAPS: Actualizada con todos los breakpoints
             const getTimelineConfig = (serviceTitle) => {
               switch (serviceTitle) {
                 case 'Proveedor':
                   return {
-                    maxWidth: { xs: '100%', md: '2800px' }, // Gap más amplio para Proveedor
+                    maxWidth: {
+                      xs: '100%',
+                      sm: '100%',
+                      md: '2800px',
+                      lg: '2000px',
+                      xl: '2000px', // ← xl copiado de lg
+                    },
                     justifyContent: {
                       xs: 'flex-start',
+                      sm: 'flex-start',
                       md: 'center',
-                    }, // CENTRAR: Desktop centrado
-                    gap: { xs: 2, md: 26 }, // Gap extra entre círculos
-                    linePosition: '85px', // Posición específica de línea para Proveedor
+                      lg: 'center',
+                      xl: 'center', // ← xl copiado de lg
+                    },
+                    gap: { xs: 2, sm: 3, md: 26, lg: 10, xl: 10 }, // ← xl copiado de lg
+                    linePosition: '85px',
                   }
                 case 'Vendedor':
                   return {
-                    maxWidth: { xs: '100%', md: '2400px' }, // Gap medio para Vendedor
+                    maxWidth: {
+                      xs: '100%',
+                      sm: '100%',
+                      md: '2400px',
+                      lg: '1200px',
+                      xl: '1200px', // ← xl copiado de lg
+                    },
                     justifyContent: {
                       xs: 'flex-start',
+                      sm: 'flex-start',
                       md: 'center',
-                    }, // CENTRAR: Desktop centrado
-                    gap: { xs: 3, md: 38 },
-                    linePosition: '150px', // Posición específica de línea para Vendedor
+                      lg: 'center',
+                      xl: 'center', // ← xl copiado de lg
+                    },
+                    gap: { xs: 3, sm: 4, md: 38, lg: 8, xl: 8 }, // ← xl copiado de lg
+                    linePosition: '150px',
                   }
                 case 'Punto de Venta':
                   return {
-                    maxWidth: { xs: '100%', md: '2100px' }, // Gap más compacto para Punto de Venta
+                    maxWidth: {
+                      xs: '100%',
+                      sm: '100%',
+                      md: '2100px',
+                      lg: '1600px',
+                      xl: '1600px', // ← xl copiado de lg
+                    },
                     justifyContent: {
                       xs: 'flex-start',
+                      sm: 'flex-start',
                       md: 'center',
-                    }, // CENTRAR: Desktop centrado
-                    gap: { xs: 2, md: 26 },
-                    linePosition: '95px', // Posición específica para Punto de Venta
+                      lg: 'center',
+                      xl: 'center', // ← xl copiado de lg
+                    },
+                    gap: { xs: 2, sm: 3, md: 26, lg: 6, xl: 6 }, // ← xl copiado de lg
+                    linePosition: '95px',
                   }
                 default:
                   return {
-                    maxWidth: { xs: '100%', md: '3000px' },
+                    maxWidth: {
+                      xs: '100%',
+                      sm: '100%',
+                      md: '3000px',
+                      lg: '3000px',
+                      xl: '3000px', // ← xl copiado de lg
+                    },
                     justifyContent: {
                       xs: 'flex-start',
+                      sm: 'flex-start',
                       md: 'center',
-                    }, // CENTRAR: Desktop centrado
-                    gap: { xs: 2, md: 6 },
-                    linePosition: '85px', // Posición por defecto
+                      lg: 'center',
+                      xl: 'center', // ← xl copiado de lg
+                    },
+                    gap: { xs: 2, sm: 3, md: 6, lg: 6, xl: 6 }, // ← xl copiado de lg
+                    linePosition: '85px',
                   }
               }
             }
@@ -233,21 +280,32 @@ const ServicesSection = ({ serviciosRef }) => {
               <Box
                 sx={{
                   display: 'flex',
-                  gap: { xs: 3, md: 0 },
+                  gap: { xs: 3, sm: 3, md: 0, lg: 0, xl: 0 }, // ← xl copiado de lg
                   alignItems: 'flex-start',
-                  flexDirection: { xs: 'column', lg: 'column' }, // CENTRAR: Cambiar a column en desktop para centrado
-                  // CENTRAR: Remover márgenes negativos y centrar
-                  mx: { xs: 0, md: 0 },
+                  flexDirection: {
+                    xs: 'column',
+                    sm: 'column',
+                    md: 'column',
+                    lg: 'column',
+                    xl: 'column', // ← xl copiado de lg
+                  },
+                  mx: { xs: 0, sm: 0, md: 0, lg: 0, xl: 0 }, // ← xl copiado de lg
                   justifyContent: 'center',
                 }}
               >
                 {/* Imagen del servicio actual - Solo en mobile */}
                 <Box
                   sx={{
-                    display: { xs: 'flex', lg: 'none' }, // Solo mostrar en mobile
+                    display: {
+                      xs: 'flex',
+                      sm: 'flex',
+                      md: 'none',
+                      lg: 'none',
+                      xl: 'none', // ← xl copiado de lg
+                    },
                     width: '100%',
                     justifyContent: 'center',
-                    mb: 3,
+                    mb: { xs: 3, sm: 3 },
                   }}
                 >
                   <img
@@ -258,7 +316,7 @@ const ServicesSection = ({ serviciosRef }) => {
                       maxWidth: '300px',
                       height: 'auto',
                       borderRadius: '12px',
-                      boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
+                      boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
                     }}
                   />
                 </Box>
@@ -266,29 +324,48 @@ const ServicesSection = ({ serviciosRef }) => {
                 {/* Contenido del servicio */}
                 <Box
                   sx={{
-                    flex: { xs: 'none', lg: 1 }, // Volver a flex 1
+                    flex: { xs: 'none', sm: 'none', md: 1, lg: 1, xl: 1 }, // ← xl copiado de lg
                     width: '100%',
-                    // CENTRAR CONTENIDO: Centrar timeline y botones en desktop
                     display: 'flex',
                     flexDirection: 'column',
-                    alignItems: { xs: 'stretch', md: 'center' }, // CENTRAR: Alinear al centro en desktop
-                    justifyContent: 'center', // CENTRAR: Justificar al centro
-                    // Sin padding para permitir centrado completo
-                    pl: { xs: 0, md: 0 },
+                    alignItems: {
+                      xs: 'stretch',
+                      sm: 'stretch',
+                      md: 'center',
+                      lg: 'center',
+                      xl: 'center', // ← xl copiado de lg
+                    },
+                    justifyContent: 'center',
+                    pl: { xs: 0, sm: 0, md: 0, lg: 0, xl: 0 }, // ← xl copiado de lg
                   }}
                 >
                   {/* Botones de servicios */}
                   <Box
                     sx={{
                       display: 'flex',
-                      flexDirection: { xs: 'row', md: 'row' },
-                      gap: 2,
-                      mb: 4,
-                      overflowX: { xs: 'auto', md: 'visible' },
-                      pb: { xs: 2, md: 0 },
+                      flexDirection: {
+                        xs: 'row',
+                        sm: 'row',
+                        md: 'row',
+                        lg: 'row',
+                        xl: 'row', // ← xl copiado de lg
+                      },
+                      gap: { xs: 2, sm: 2, md: 2, lg: 15, xl: 15 }, // ← xl copiado de lg
+                      mb: { xs: 4, sm: 4, md: 4, lg: 12, xl: 12 }, // ← xl copiado de lg
+                      overflowX: {
+                        xs: 'auto',
+                        sm: 'auto',
+                        md: 'visible',
+                        lg: 'visible',
+                        xl: 'visible', // ← xl copiado de lg
+                      },
+                      pb: { xs: 2, sm: 2, md: 0, lg: 0, xl: 0 }, // ← xl copiado de lg
                       justifyContent: {
                         xs: 'flex-start',
-                        md: 'center', // CENTRAR: Alinear botones al centro en desktop
+                        sm: 'flex-start',
+                        md: 'center',
+                        lg: 'center',
+                        xl: 'center', // ← xl copiado de lg
                       },
                     }}
                   >
@@ -300,8 +377,7 @@ const ServicesSection = ({ serviciosRef }) => {
                         }
                         onClick={() => goToStep(index)}
                         sx={{
-                          // TAMAÑO BOTONES: Mobile reducido 10% (1.5->1.35), mismo tamaño para todos
-                          p: { xs: 1.35, md: 2 },
+                          p: { xs: 1.35, sm: 1.5, md: 2, lg: 2.2, xl: 2.2 }, // ← xl copiado de lg
                           justifyContent: 'center',
                           textAlign: 'center',
                           height: 'auto',
@@ -309,20 +385,34 @@ const ServicesSection = ({ serviciosRef }) => {
                           alignItems: 'center',
                           transition: 'all 0.3s ease',
                           backgroundColor:
-                            index === currentStep
-                              ? 'primary.main'
-                              : 'transparent',
-                          borderColor: 'primary.main', // ANCHO BOTONES: Mobile +20% (120->144), Desktop original (150)
-                          minWidth: { xs: 180, md: 250 },
-                          width: { xs: 180, md: 250 }, // Forzar mismo ancho
-                          maxWidth: { xs: 180, md: 250 }, // Prevenir expansión
+                            index === currentStep ? '#1976d2' : 'transparent',
+                          borderColor: '#000000',
+                          minWidth: {
+                            xs: 180,
+                            sm: 200,
+                            md: 250,
+                            lg: 270,
+                            xl: 270, // ← xl copiado de lg
+                          },
+                          width: {
+                            xs: 180,
+                            sm: 200,
+                            md: 250,
+                            lg: 270,
+                            xl: 270, // ← xl copiado de lg
+                          },
+                          maxWidth: {
+                            xs: 180,
+                            sm: 200,
+                            md: 250,
+                            lg: 270,
+                            xl: 270, // ← xl copiado de lg
+                          },
                           flexShrink: 0,
                           borderRadius: 2,
                           '&:hover': {
                             backgroundColor:
-                              index === currentStep
-                                ? 'primary.dark'
-                                : 'primary.light',
+                              index === currentStep ? '#b0ceea' : '#b0ceea',
                             borderColor: 'primary.main',
                             transform: 'translateY(-2px)',
                             boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
@@ -344,7 +434,10 @@ const ServicesSection = ({ serviciosRef }) => {
                             sx={{
                               fontSize: {
                                 xs: '0.9rem',
+                                sm: '1rem',
                                 md: '1.1rem',
+                                lg: '1.2rem',
+                                xl: '1.2rem', // ← xl copiado de lg
                               },
                             }}
                           >
@@ -361,7 +454,10 @@ const ServicesSection = ({ serviciosRef }) => {
                             textAlign: 'center',
                             fontSize: {
                               xs: '0.75rem',
+                              sm: '0.8rem',
                               md: '0.85rem',
+                              lg: '1rem',
+                              xl: '1rem', // ← xl copiado de lg
                             },
                           }}
                         >
@@ -375,11 +471,13 @@ const ServicesSection = ({ serviciosRef }) => {
                   <Box
                     sx={{
                       width: '100%',
-                      // CENTRAR TIMELINE: Centrar timeline en desktop
                       display: 'flex',
                       justifyContent: {
                         xs: 'flex-start',
+                        sm: 'flex-start',
                         md: 'center',
+                        lg: 'center',
+                        xl: 'center', // ← xl copiado de lg
                       },
                     }}
                   >
@@ -388,31 +486,47 @@ const ServicesSection = ({ serviciosRef }) => {
                         display: 'flex',
                         justifyContent: timelineConfig.justifyContent,
                         alignItems: 'flex-start',
-                        mb: 6,
+                        mb: { xs: 6, sm: 6, md: 6, lg: 6, xl: 6 }, // ← xl copiado de lg
                         position: 'relative',
-                        px: { xs: 1, md: 0 }, // ALINEACIÓN: Remover padding horizontal en desktop
-                        // ANCHO TIMELINE DINÁMICO: Configuración específica por servicio
+                        px: { xs: 1, sm: 1, md: 0, lg: 0, xl: 0 }, // ← xl copiado de lg
                         width: '100%',
-                        ...timelineConfig, // Aplicar configuración dinámica
+                        ...timelineConfig,
                       }}
                     >
                       {/* Línea conectora */}
                       <Box
                         sx={{
                           position: 'absolute',
-                          top: '37.5%',
+                          top: (() => {
+                            // Top específico según el servicio
+                            switch (currentService.title) {
+                              case 'Punto de Venta':
+                                return '27.5%' // ← Top específico para Punto de Venta
+                              case 'Proveedor':
+                                return '33.5%' // ← Top para Proveedor
+                              case 'Vendedor':
+                                return '33.5%' // ← Top para Vendedor
+                              default:
+                                return '33.5%' // ← Top por defecto
+                            }
+                          })(),
                           left: {
                             xs: '10%',
+                            sm: '10%',
                             md: timelineConfig.linePosition,
-                          }, // ALINEACIÓN DINÁMICA: Posición específica por servicio
+                            lg: timelineConfig.linePosition,
+                            xl: timelineConfig.linePosition, // ← xl copiado de lg
+                          },
                           right: {
                             xs: '10%',
+                            sm: '10%',
                             md: timelineConfig.linePosition,
-                          }, // ALINEACIÓN DINÁMICA: Posición específica por servicio
-                          // LÍNEA TIMELINE: Engrosada proporcionalmente para círculos más grandes
-                          height: { xs: 6, md: 12 },
+                            lg: timelineConfig.linePosition,
+                            xl: timelineConfig.linePosition, // ← xl copiado de lg
+                          },
+                          height: { xs: 6, sm: 8, md: 12, lg: 12, xl: 14 }, // ← xl copiado de lg
                           background:
-                            'linear-gradient(90deg, #667eea 0%, #764ba2 100%)',
+                            'linear-gradient(90deg,rgb(25, 210, 210) 0%, #1976d2 100%)',
                           borderRadius: 2,
                           zIndex: 1,
                           transform: 'translateY(-50%)',
@@ -430,7 +544,6 @@ const ServicesSection = ({ serviciosRef }) => {
                             flex: 1,
                             position: 'relative',
                             zIndex: 2,
-                            // ESPACIADO DINÁMICO: Aplicar gap específico por servicio
                             '&:not(:last-child)': {
                               marginRight: timelineConfig.gap,
                             },
@@ -439,34 +552,27 @@ const ServicesSection = ({ serviciosRef }) => {
                           {/* Imagen del paso */}
                           <Box
                             sx={{
-                              // CÍRCULOS TIMELINE CONFIGURABLES:
-                              // Mobile: Variables configurables para pruebas
-                              // Desktop: Tamaño fijo optimizado
                               width: {
-                                xs: 60, // MOBILE CONFIGURABLE: Cambiar este valor para ajustar tamaño
+                                xs: 60,
+                                sm: 80,
                                 md: 170,
+                                lg: 190,
+                                xl: 190, // ← xl copiado de lg
                               },
                               height: {
-                                xs: 60, // MOBILE CONFIGURABLE: Cambiar este valor para ajustar tamaño
+                                xs: 60,
+                                sm: 80,
                                 md: 170,
+                                lg: 190,
+                                xl: 190, // ← xl copiado de lg
                               },
                               borderRadius: '50%',
-                              // BORDE CÍRCULOS CONFIGURABLE:
-                              border: {
-                                xs: 3, // MOBILE CONFIGURABLE: Cambiar este valor para ajustar borde
-                                md: 7,
-                              },
-                              borderColor: 'primary.main',
+                              border: { xs: 3, sm: 4, md: 7, lg: 6, xl: 6 }, // ← xl copiado de lg
+                              borderColor: '#1976d2',
                               overflow: 'hidden',
-                              // MARGIN BOTTOM CONFIGURABLE:
-                              mb: {
-                                xs: 0, // MOBILE CONFIGURABLE: Cambiar este valor para ajustar espacio inferior
-                                md: 2,
-                              },
-                              mt: {
-                                xs: 2.8, // MOBILE CONFIGURABLE: Cambiar este valor para ajustar espacio inferior
-                              },
-                              boxShadow: '0 4px 16px rgba(0,0,0,0.2)',
+                              mb: { xs: 0, sm: 1, md: 2, lg: 2.5, xl: 2.5 }, // ← xl copiado de lg
+                              mt: { xs: 2.8, sm: 3, md: 0, lg: 0, xl: 0 }, // ← xl copiado de lg
+                              boxShadow: '0 0px 8px rgba(11, 47, 252, 0.9)',
                               backgroundColor: 'white',
                             }}
                           >
@@ -485,10 +591,12 @@ const ServicesSection = ({ serviciosRef }) => {
                           <Box
                             sx={{
                               textAlign: 'center',
-                              // ANCHO TEXTO TIMELINE CONFIGURABLE:
                               maxWidth: {
-                                xs: 100, // MOBILE CONFIGURABLE: Cambiar este valor para ajustar ancho del texto
+                                xs: 100,
+                                sm: 140,
                                 md: 240,
+                                lg: 260,
+                                xl: 260, // ← xl copiado de lg
                               },
                             }}
                           >
@@ -497,13 +605,18 @@ const ServicesSection = ({ serviciosRef }) => {
                               fontWeight="bold"
                               sx={{
                                 mb: {
-                                  xs: 0.5, // MOBILE CONFIGURABLE: Cambiar para ajustar espacio entre título y descripción
-                                  md: 1,
+                                  xs: 0.5,
+                                  sm: 0.7,
+                                  md: 1.2,
+                                  lg: 1.2,
+                                  xl: 1.2, // ← xl copiado de lg
                                 },
-                                // TAMAÑO TÍTULO TIMELINE CONFIGURABLE:
                                 fontSize: {
-                                  xs: '0.7rem', // MOBILE CONFIGURABLE: Cambiar este valor para ajustar tamaño de título
+                                  xs: '0.7rem',
+                                  sm: '0.85rem',
                                   md: '1.1rem',
+                                  lg: '1.6rem',
+                                  xl: '1.6rem', // ← xl copiado de lg
                                 },
                                 color: 'primary.main',
                               }}
@@ -514,14 +627,49 @@ const ServicesSection = ({ serviciosRef }) => {
                               variant="body2"
                               color="text.secondary"
                               sx={{
-                                lineHeight: {
-                                  xs: 1.1, // MOBILE CONFIGURABLE: Cambiar para ajustar espaciado entre líneas
-                                  md: 1.4,
-                                },
-                                // TAMAÑO DESCRIPCIÓN TIMELINE CONFIGURABLE:
+                                lineHeight: (() => {
+                                  //Correspon de a la altura del texto
+                                  switch (currentService.title) {
+                                    case 'Proveedor':
+                                      return {
+                                        xs: 1.0,
+                                        sm: 1.1,
+                                        md: 0,
+                                        lg: 1.5,
+                                        xl: 0, // ← xl copiado de lg
+                                      }
+                                    case 'Vendedor':
+                                      return {
+                                        xs: 1.1,
+                                        sm: 1.2,
+                                        md: 0,
+                                        lg: 1.5,
+                                        xl: 0, // ← xl copiado de lg
+                                      }
+                                    case 'Punto de Venta':
+                                      return {
+                                        xs: 1.2,
+                                        sm: 1.3,
+                                        md: 0,
+                                        lg: 1.5,
+                                        xl: 0, // ← xl copiado de lg
+                                      }
+                                    default:
+                                      return {
+                                        xs: 1.1,
+                                        sm: 1.2,
+                                        md: 1.4,
+                                        lg: 1.5,
+                                        xl: 0, // ← xl copiado de lg
+                                      }
+                                  }
+                                })(),
                                 fontSize: {
-                                  xs: '0.6rem', // MOBILE CONFIGURABLE: Cambiar este valor para ajustar tamaño de descripción
+                                  xs: '0.6rem',
+                                  sm: '0.75rem',
                                   md: '0.95rem',
+                                  lg: '1rem',
+                                  xl: '1.2rem', // ← xl copiado de lg
                                 },
                               }}
                             >

@@ -1,76 +1,196 @@
-import React from 'react';
-import { Box, Paper, Typography } from '@mui/material';
+import React from 'react'
+import {
+  Box,
+  Card,
+  CardContent,
+  Typography,
+  Avatar,
+  Chip,
+  Divider,
+  List,
+  ListItem,
+  ListItemAvatar,
+  ListItemText,
+  Stack,
+} from '@mui/material'
+import {
+  ShoppingCart as ShoppingCartIcon,
+  Person as PersonIcon,
+  Inventory as InventoryIcon,
+} from '@mui/icons-material'
 
-const getTimeAgo = timestamp => {
-  const now = new Date();
-  const created = new Date(timestamp);
+const getTimeAgo = (timestamp) => {
+  const now = new Date()
+  const created = new Date(timestamp)
 
-  console.log('🕓 now:', now.toISOString());
-  console.log('🕓 createddt:', created.toISOString());
+  console.log('🕓 now:', now.toISOString())
+  console.log('🕓 createddt:', created.toISOString())
 
-  if (isNaN(created)) return 'Fecha inválida';
+  if (isNaN(created)) return 'Fecha inválida'
 
-  const diffMs = now - created;
+  const diffMs = now - created
 
   // Si la fecha es futura, mostrar mensaje genérico
-  if (diffMs < 0) return 'Menos de 1 minuto';
+  if (diffMs < 0) return 'Menos de 1 minuto'
 
-  const diffMins = Math.floor(diffMs / 60000);
-  const diffHours = Math.floor(diffMs / 3600000);
-  const diffDays = Math.floor(diffMs / (3600000 * 24));
+  const diffMins = Math.floor(diffMs / 60000)
+  const diffHours = Math.floor(diffMs / 3600000)
+  const diffDays = Math.floor(diffMs / (3600000 * 24))
 
-  if (diffMins < 1) return 'Menos de 1 minuto';
+  if (diffMins < 1) return 'Menos de 1 minuto'
   if (diffMins < 60)
-    return `Hace ${diffMins} minuto${diffMins !== 1 ? 's' : ''}`;
+    return `Hace ${diffMins} minuto${diffMins !== 1 ? 's' : ''}`
   if (diffHours < 24)
-    return `Hace ${diffHours} hora${diffHours !== 1 ? 's' : ''}`;
-  return `Hace ${diffDays} día${diffDays !== 1 ? 's' : ''}`;
-};
+    return `Hace ${diffHours} hora${diffHours !== 1 ? 's' : ''}`
+  return `Hace ${diffDays} día${diffDays !== 1 ? 's' : ''}`
+}
 
-const RequestList = ({ weeklyRequests }) => (
-  <Paper sx={{ p: 2, height: '100%' }}>
-    <Typography
-      variant="h6"
-      sx={{ mb: 2, fontWeight: 'bold', textAlign: 'center' }}
-    >
-      Solicitudes Recientes
-    </Typography>
-    <Box sx={{ maxHeight: 400, overflowY: 'auto' }}>
-      {weeklyRequests.length === 0 ? (
-        <Typography variant="body2" align="center" color="text.secondary">
-          No hay solicitudes esta semana.
+const RequestList = ({ weeklyRequests = [] }) => {
+  // Asegurar que weeklyRequests sea un array
+  const requests = Array.isArray(weeklyRequests) ? weeklyRequests : []
+
+  return (
+    <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+      <CardContent sx={{ pb: 1 }}>
+        {' '}
+        <Typography
+          component="h2"
+          variant="h6"
+          sx={{
+            mb: 2,
+            fontWeight: 600,
+            color: 'text.primary',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1,
+            fontSize: '0.9rem',
+          }}
+        >
+          <ShoppingCartIcon sx={{ fontSize: 20 }} />
+          Solicitudes Recientes
         </Typography>
-      ) : (
-        weeklyRequests.map((req, index) => (
+        {requests.length === 0 ? (
           <Box
-            key={index}
             sx={{
               display: 'flex',
-              justifyContent: 'space-between',
+              flexDirection: 'column',
               alignItems: 'center',
-              borderTop: index === 0 ? '1px solid #ddd' : 'none',
-              borderBottom: '1px solid #ddd',
-              py: 1,
-              px: 1.5,
+              justifyContent: 'center',
+              py: 6,
+              px: 2,
             }}
           >
-            <Typography fontWeight="bold">
-              {req.productqty ?? 'N/A'} ·{' '}
-              {req.products?.productnm || 'Producto'}
+            <InventoryIcon
+              sx={{
+                fontSize: 48,
+                color: 'text.disabled',
+                mb: 2,
+              }}
+            />
+            <Typography
+              variant="body2"
+              align="center"
+              color="text.secondary"
+              sx={{ fontWeight: 500 }}
+            >
+              No hay solicitudes esta semana
             </Typography>
-            <Box textAlign="right">
-              <Typography fontWeight="bold">
-                {req.sellers?.sellernm || 'Cliente'}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                {getTimeAgo(req.createddt)}
-              </Typography>
-            </Box>
+            <Typography
+              variant="caption"
+              align="center"
+              color="text.disabled"
+              sx={{ mt: 0.5 }}
+            >
+              Las nuevas solicitudes aparecerán aquí
+            </Typography>
           </Box>
-        ))
-      )}
-    </Box>
-  </Paper>
-);
+        ) : (
+          <List sx={{ p: 0, maxHeight: 400, overflowY: 'auto' }}>
+            {requests.map((req, index) => (
+              <React.Fragment key={index}>
+                <ListItem
+                  sx={{
+                    px: 0,
+                    py: 1.5,
+                    '&:hover': {
+                      backgroundColor: 'action.hover',
+                      borderRadius: 1,
+                    },
+                    transition: 'background-color 0.2s ease',
+                  }}
+                >
+                  <ListItemAvatar>
+                    <Avatar
+                      sx={{
+                        bgcolor: 'primary.main',
+                        width: 40,
+                        height: 40,
+                      }}
+                    >
+                      <PersonIcon />
+                    </Avatar>
+                  </ListItemAvatar>
 
-export default RequestList;
+                  <ListItemText
+                    primary={
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 1,
+                          mb: 0.5,
+                        }}
+                      >
+                        <Typography
+                          variant="subtitle2"
+                          sx={{ fontWeight: 600, color: 'text.primary' }}
+                        >
+                          {req.sellers?.sellernm || 'Cliente'}
+                        </Typography>
+                        <Chip
+                          label={`${req.productqty ?? 'N/A'} und.`}
+                          size="small"
+                          color="primary"
+                          variant="outlined"
+                          sx={{ fontSize: '0.7rem', height: 20 }}
+                        />
+                      </Box>
+                    }
+                    secondary={
+                      <Stack spacing={0.5}>
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            color: 'text.secondary',
+                            fontWeight: 500,
+                          }}
+                        >
+                          {req.products?.productnm || 'Producto sin nombre'}
+                        </Typography>
+                        <Typography
+                          variant="caption"
+                          sx={{
+                            color: 'text.disabled',
+                            fontSize: '0.7rem',
+                          }}
+                        >
+                          {getTimeAgo(req.createddt)}
+                        </Typography>
+                      </Stack>
+                    }
+                  />
+                </ListItem>
+
+                {index < requests.length - 1 && (
+                  <Divider variant="inset" component="li" sx={{ ml: 7 }} />
+                )}
+              </React.Fragment>
+            ))}
+          </List>
+        )}
+      </CardContent>
+    </Card>
+  )
+}
+
+export default RequestList

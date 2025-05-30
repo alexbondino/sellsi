@@ -61,4 +61,4 @@ const SaleTypeFilter = ({ filtros, onTipoVentaChange, styles }) => {
   )
 }
 
-export default SaleTypeFilter
+export default React.memo(SaleTypeFilter)

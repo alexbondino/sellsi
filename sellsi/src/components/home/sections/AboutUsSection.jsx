@@ -7,19 +7,19 @@ const AboutUsSection = ({ quienesSomosRef }) => {
       ref={quienesSomosRef}
       sx={{
         px: { xs: 2, sm: 4, md: 8, lg: 15, xl: 30 },
-        py: { xs: 6, md: 8 },
+        py: { xs: 6, sm: 7, md: 8, lg: 8, xl: 8 },
         backgroundColor: '#ffffff',
       }}
     >
       <Box>
         {/* Mobile Layout: Logo first, then content flows vertically */}
         <Box sx={{ display: { xs: 'block', md: 'none' } }}>
-          {/* Logo for mobile - appears first */}
+          {/* Logo for mobile - appears first */}{' '}
           <Box
             sx={{
               display: 'flex',
               justifyContent: 'center',
-              mb: 3,
+              mb: { xs: 2.5, sm: 3, md: 3, lg: 3, xl: 3 },
             }}
           >
             <Box
@@ -27,34 +27,45 @@ const AboutUsSection = ({ quienesSomosRef }) => {
               src="/logo.svg"
               alt="Sellsi Logo"
               sx={{
-                height: { xs: 50, sm: 60 },
+                height: { xs: 50, sm: 55, md: 60, lg: 60, xl: 60 },
               }}
             />
           </Box>
-
           {/* All text content for mobile */}
           <Box sx={{ mb: 4 }}>
+            {' '}
             <Typography
               variant="h3"
               fontWeight="bold"
               gutterBottom
               sx={{
-                fontSize: { xs: '2rem' },
+                fontSize: {
+                  xs: '2rem',
+                  sm: '2.1rem',
+                  md: '2.2rem',
+                  lg: '2.2rem',
+                  xl: '2.2rem',
+                },
                 textAlign: 'left',
                 color: 'common.black',
-                mb: { xs: 2 },
+                mb: { xs: 2, sm: 2.5, md: 2.5, lg: 2.5, xl: 2.5 },
               }}
             >
               ¿Quiénes somos?
             </Typography>
-
             <Typography
               variant="body1"
               sx={{
-                fontSize: { xs: '1.2rem' },
-                lineHeight: 1.7,
+                fontSize: {
+                  xs: '1.1rem',
+                  sm: '1.15rem',
+                  md: '1.2rem',
+                  lg: '1.2rem',
+                  xl: '1.2rem',
+                },
+                lineHeight: { xs: 1.6, sm: 1.65, md: 1.7, lg: 1.7, xl: 1.7 },
                 color: 'text.secondary',
-                mb: 3,
+                mb: { xs: 2.5, sm: 3, md: 3, lg: 3, xl: 3 },
               }}
             >
               En Sellsi, creemos en un comercio más justo, ágil y accesible para
@@ -68,13 +79,18 @@ const AboutUsSection = ({ quienesSomosRef }) => {
               mientras los vendedores eligen qué ofrecer y ganan por cada venta
               concretada.
             </Typography>
-
             <Typography
               variant="h4"
               fontWeight="bold"
               sx={{
-                mb: 1.5,
-                fontSize: { xs: '2rem' },
+                mb: { xs: 1.2, sm: 1.3, md: 1.5, lg: 1.5, xl: 1.5 },
+                fontSize: {
+                  xs: '1.8rem',
+                  sm: '1.9rem',
+                  md: '2rem',
+                  lg: '2rem',
+                  xl: '2rem',
+                },
                 color: 'common.black',
               }}
             >
@@ -83,23 +99,34 @@ const AboutUsSection = ({ quienesSomosRef }) => {
             <Typography
               variant="body1"
               sx={{
-                fontSize: { xs: '1.2rem' },
-                lineHeight: 1.7,
+                fontSize: {
+                  xs: '1.1rem',
+                  sm: '1.15rem',
+                  md: '1.2rem',
+                  lg: '1.2rem',
+                  xl: '1.2rem',
+                },
+                lineHeight: { xs: 1.6, sm: 1.65, md: 1.7, lg: 1.7, xl: 1.7 },
                 color: 'text.secondary',
-                mb: 3,
+                mb: { xs: 2.5, sm: 3, md: 3, lg: 3, xl: 3 },
               }}
             >
               Impulsar la economía digital conectando proveedores y vendedores a
               través de una plataforma tecnológica simple, inclusiva y
               transparente.
-            </Typography>
-
+            </Typography>{' '}
             <Typography
               variant="h4"
               fontWeight="bold"
               sx={{
-                mb: 1.5,
-                fontSize: { xs: '2rem' },
+                mb: { xs: 1.2, sm: 1.3, md: 1.5, lg: 1.5, xl: 1.5 },
+                fontSize: {
+                  xs: '1.8rem',
+                  sm: '1.9rem',
+                  md: '2rem',
+                  lg: '2rem',
+                  xl: '2rem',
+                },
                 color: 'common.black',
               }}
             >
@@ -108,17 +135,22 @@ const AboutUsSection = ({ quienesSomosRef }) => {
             <Typography
               variant="body1"
               sx={{
-                fontSize: { xs: '1.2rem' },
-                lineHeight: 1.7,
+                fontSize: {
+                  xs: '1.1rem',
+                  sm: '1.15rem',
+                  md: '1.2rem',
+                  lg: '1.2rem',
+                  xl: '1.2rem',
+                },
+                lineHeight: { xs: 1.6, sm: 1.65, md: 1.7, lg: 1.7, xl: 1.7 },
                 color: 'text.secondary',
-                mb: 3,
+                mb: { xs: 2.5, sm: 3, md: 3, lg: 3, xl: 3 },
               }}
             >
               Ser el marketplace más ágil y confiable de LATAM para escalar
               ventas sin límites ni barreras.
             </Typography>
           </Box>
-
           {/* QuienesSomos.jpg image for mobile - appears after all text */}
           <Box
             sx={{

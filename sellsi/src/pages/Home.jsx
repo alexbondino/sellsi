@@ -45,20 +45,15 @@ const Home = ({ scrollTargets }) => {
         promoSlides={PROMO_SLIDES}
         statistics={statistics}
         formatNumber={formatNumber}
-      />
-
+      />{' '}
       {/* Sección Conoce a nuestros proveedores */}
-      <ProvidersSection />
-
+      <ProvidersSection statistics={statistics} />
       {/* Banner Component */}
       <Banner />
-
       {/* Sección ¿Quiénes somos? */}
       <AboutUsSection quienesSomosRef={quienesSomosRef} />
-
       {/* Sección Nuestros Servicios */}
       <ServicesSection serviciosRef={serviciosRef} services={services} />
-
       {/* Contáctanos */}
       <ContactSection contactanosRef={contactanosRef} />
     </Box>

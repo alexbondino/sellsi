@@ -1,45 +1,62 @@
 import React from 'react'
-import { Box } from '@mui/material'
+import { Card, CardContent } from '@mui/material'
 
 // Componente memoizado para logos de proveedores
 const ProviderLogo = React.memo(({ provider }) => (
-  <Box
+  <Card
+    elevation={2}
     sx={{
-      width: { xs: 240, sm: 200, md: 240 },
-      height: { xs: 160, sm: 130, md: 160 },
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: 'white',
-      borderRadius: 3,
-      padding: 3,
-      transition: 'all 0.3s ease',
-      boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
-      border: '1px solid rgba(0,0,0,0.04)',
+      width: { xs: 100, sm: 110, md: 120, lg: 140, xl: 160 },
+      height: { xs: 80, sm: 90, md: 100, lg: 120, xl: 130 },
+      borderRadius: { xs: 2, sm: 3, md: 4, lg: 4, xl: 4 },
+      overflow: 'hidden',
+      background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
+      border: '2px solid #f0f4f8',
+      transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+      cursor: 'pointer',
       '&:hover': {
-        transform: 'translateY(-8px)',
-        boxShadow: '0 12px 40px rgba(0,0,0,0.15)',
+        transform: {
+          xs: 'translateY(-4px) scale(1.02)',
+          sm: 'translateY(-6px) scale(1.02)',
+          md: 'translateY(-8px) scale(1.02)',
+          lg: 'translateY(-8px) scale(1.02)',
+          xl: 'translateY(-8px) scale(1.02)',
+        },
+        boxShadow: {
+          xs: '0 8px 20px rgba(0,0,0,0.08)',
+          sm: '0 12px 25px rgba(0,0,0,0.10)',
+          md: '0 16px 30px rgba(0,0,0,0.12)',
+          lg: '0 20px 40px rgba(0,0,0,0.12)',
+          xl: '0 20px 40px rgba(0,0,0,0.12)',
+        },
+        borderColor: '#e2e8f0',
+        background: 'linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%)',
       },
     }}
   >
-    <img
-      src={provider.src}
-      alt={provider.alt}
-      style={{
-        maxWidth: '100%',
-        maxHeight: '100%',
-        objectFit: 'contain',
-        filter: 'grayscale(1)',
-        transition: 'filter 0.3s ease',
+    <CardContent
+      sx={{
+        height: '100%',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        p: { xs: 1.5, sm: 2, md: 2.5, lg: 3, xl: 3 },
+        '&:last-child': { pb: { xs: 1.5, sm: 2, md: 2.5, lg: 3, xl: 3 } },
       }}
-      onMouseEnter={(e) => {
-        e.target.style.filter = 'grayscale(0)'
-      }}
-      onMouseLeave={(e) => {
-        e.target.style.filter = 'grayscale(1)'
-      }}
-    />
-  </Box>
+    >
+      <img
+        src={provider.src}
+        alt={provider.alt}
+        style={{
+          maxWidth: '120%',
+          maxHeight: '120%',
+          objectFit: 'contain',
+          filter: 'none', // Siempre colores activos
+          transition: 'transform 0.3s ease',
+        }}
+      />
+    </CardContent>
+  </Card>
 ))
 
 ProviderLogo.displayName = 'ProviderLogo'

@@ -15,10 +15,8 @@ const CommissionFilter = ({ filtros, onComisionChange, styles }) => {
 
   return (
     <Box sx={styles.filterGroup}>
-      <Typography sx={styles.sectionTitle}>
-        💼 Comisión (%)
-      </Typography>
-      
+      <Typography sx={styles.sectionTitle}>💼 Comisión (%)</Typography>
+
       <Box sx={{ mb: 2 }}>
         <Slider
           value={sliderValue}
@@ -51,11 +49,15 @@ const CommissionFilter = ({ filtros, onComisionChange, styles }) => {
         />
       </Box>
 
-      <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+      <Typography
+        variant="caption"
+        color="text.secondary"
+        sx={{ mt: 1, display: 'block' }}
+      >
         Rango: {sliderValue[0]}% - {sliderValue[1]}%
       </Typography>
     </Box>
   )
 }
 
-export default CommissionFilter
+export default React.memo(CommissionFilter)

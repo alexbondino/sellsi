@@ -7,7 +7,7 @@ const ContactSection = ({ contactanosRef }) => {
       ref={contactanosRef}
       sx={{
         px: { xs: 2, sm: 4, md: 8, lg: 15, xl: 30 },
-        py: { xs: 6, md: 10 },
+        py: { xs: 6, sm: 8, md: 10, lg: 10, xl: 10 },
         backgroundColor: '#ffffff',
         display: 'flex',
         flexDirection: 'column',
@@ -19,9 +19,15 @@ const ContactSection = ({ contactanosRef }) => {
         fontWeight="bold"
         gutterBottom
         sx={{
-          fontSize: { xs: '2rem', md: '2.5rem' },
+          fontSize: {
+            xs: '2rem',
+            sm: '2.2rem',
+            md: '2.5rem',
+            lg: '2.5rem',
+            xl: '2.5rem',
+          },
           textAlign: 'center',
-          mb: 3,
+          mb: { xs: 2, sm: 2.5, md: 3, lg: 3, xl: 3 },
         }}
       >
         Contáctanos
@@ -29,11 +35,18 @@ const ContactSection = ({ contactanosRef }) => {
       <Typography
         variant="h6"
         sx={{
-          mb: 6,
+          mb: { xs: 4, sm: 5, md: 6, lg: 6, xl: 6 },
           textAlign: 'center',
-          maxWidth: 600,
-          fontSize: { xs: '1rem', md: '1.2rem' },
+          maxWidth: { xs: 500, sm: 550, md: 600, lg: 600, xl: 600 },
+          fontSize: {
+            xs: '1rem',
+            sm: '1.1rem',
+            md: '1.2rem',
+            lg: '1.2rem',
+            xl: '1.2rem',
+          },
           color: 'text.secondary',
+          lineHeight: { xs: 1.5, sm: 1.6, md: 1.6, lg: 1.6, xl: 1.6 },
         }}
       >
         ¿Tienes alguna pregunta o quieres formar parte de nuestra comunidad?
@@ -47,12 +60,12 @@ const ContactSection = ({ contactanosRef }) => {
         sx={{
           display: 'flex',
           flexDirection: 'column',
-          gap: 3,
+          gap: { xs: 2.5, sm: 3, md: 3, lg: 3, xl: 3 },
           width: '100%',
-          maxWidth: 700,
+          maxWidth: { xs: 500, sm: 600, md: 700, lg: 700, xl: 700 },
           backgroundColor: 'white',
-          p: { xs: 3, md: 5 },
-          borderRadius: 4,
+          p: { xs: 3, sm: 4, md: 5, lg: 5, xl: 5 },
+          borderRadius: { xs: 3, sm: 3, md: 4, lg: 4, xl: 4 },
           boxShadow: '0 10px 40px rgba(0,0,0,0.1)',
           border: '1px solid #f0f0f0',
         }}
@@ -60,8 +73,14 @@ const ContactSection = ({ contactanosRef }) => {
         <Box
           sx={{
             display: 'flex',
-            flexDirection: { xs: 'column', sm: 'row' },
-            gap: 3,
+            flexDirection: {
+              xs: 'column',
+              sm: 'row',
+              md: 'row',
+              lg: 'row',
+              xl: 'row',
+            },
+            gap: { xs: 2.5, sm: 3, md: 3, lg: 3, xl: 3 },
           }}
         >
           <input
@@ -124,12 +143,19 @@ const ContactSection = ({ contactanosRef }) => {
           color="primary"
           size="large"
           sx={{
-            mt: 2,
+            mt: { xs: 1.5, sm: 2, md: 2, lg: 2, xl: 2 },
             borderRadius: '8px',
             fontWeight: 'bold',
-            fontSize: '1.1rem',
+            fontSize: {
+              xs: '1rem',
+              sm: '1.05rem',
+              md: '1.1rem',
+              lg: '1.1rem',
+              xl: '1.1rem',
+            },
             textTransform: 'none',
-            py: 2,
+            py: { xs: 1.8, sm: 2, md: 2, lg: 2, xl: 2 },
+            px: { xs: 3, sm: 4, md: 4, lg: 4, xl: 4 },
             transition: 'all 0.3s ease',
             '&:hover': {
               transform: 'translateY(-2px)',
@@ -137,7 +163,6 @@ const ContactSection = ({ contactanosRef }) => {
             },
           }}
         >
-          {' '}
           Enviar Mensaje
         </Button>
       </Box>

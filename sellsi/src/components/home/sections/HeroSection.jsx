@@ -20,41 +20,63 @@ const HeroSection = ({
   return (
     <Box
       sx={{
-        position: 'relative', // Para permitir imagen de fondo en mobile y posicionar controles
+        position: 'relative',
         display: 'flex',
-        flexDirection: { xs: 'column', lg: 'row' },
+        flexDirection: {
+          xs: 'column',
+          sm: 'column',
+          md: 'column',
+          lg: 'row',
+          xl: 'row',
+        },
         alignItems: 'center',
         justifyContent: 'space-between',
-        minHeight: { xs: 'auto', lg: '70vh' }, // CARRUSEL HEIGHT: Reducido de 80vh a 70vh para menos altura total
-        // CARRUSEL MARGINS: Controla el espacio superior e inferior del carrusel
-        paddingTop: { xs: 4, sm: 6, lg: 1 }, // MARGIN TOP: Reducido de 2.4 a 1 para desktop
-        paddingBottom: { xs: 4, sm: 6, lg: 1 }, // MARGIN BOTTOM: Reducido de 2.4 a 1 para desktop
-        backgroundColor: '#e6e6e6',
-        gap: { xs: 4, lg: 6 },
-        // px: { xs: 2, sm: 4, md: 8, lg: 15, xl: 30 }, // Mover padding al contenido interno
+        minHeight: {
+          xs: 'auto',
+          sm: 'auto',
+          md: 'auto',
+          lg: '40vh',
+          xl: '45vh',
+        },
+        paddingTop: { xs: 4, sm: 6, md: 2, lg: 1, xl: 1 },
+        paddingBottom: { xs: 4, sm: 6, md: 6, lg: 6, xl: 8 },
+        backgroundColor: '#000000',
+        gap: { xs: 4, sm: 4, md: 5, lg: 6, xl: 6 },
+        zIndex: 1,
       }}
     >
-      {/* Contenido interno con padding específico para mantener los elementos visualmente agrupados */}
       <Box
         sx={{
           display: 'flex',
-          flexDirection: { xs: 'column', lg: 'row' },
+          flexDirection: {
+            xs: 'column',
+            sm: 'column',
+            md: 'column',
+            lg: 'row',
+            xl: 'row',
+          },
           alignItems: 'center',
           justifyContent: 'space-between',
           width: '100%',
-          px: { xs: 2, sm: 4, md: 8, lg: 15, xl: 30 }, // Padding interno para el contenido
+          px: { xs: 2, sm: 4, md: 8, lg: 15, xl: 30 },
           position: 'relative',
         }}
       >
-        {/* Carrusel de fondo solo para mobile */}
+        {/* Imagen Mobile - Solo visible en mobile */}
         <Box
           sx={{
-            display: { xs: 'block', lg: 'none' },
+            display: {
+              xs: 'block',
+              sm: 'block',
+              md: 'block',
+              lg: 'none',
+              xl: 'none',
+            },
             position: 'absolute',
-            top: 220,
-            right: 40,
-            width: 380,
-            height: 580,
+            top: { xs: 180, sm: 200, md: 220 },
+            right: { xs: 20, sm: 30, md: 40 },
+            width: { xs: 300, sm: 350, md: 380 },
+            height: { xs: 480, sm: 530, md: 580 },
             zIndex: 1,
             pointerEvents: 'none',
           }}
@@ -70,27 +92,44 @@ const HeroSection = ({
             }}
           />
         </Box>
-        {/* Fin Carrusel de fondo solo para mobile */}
 
-        {/* Sección izquierda: Texto (y en desktop también botón y estadísticas) */}
+        {/* COLUMNA 1: Texto - Desktop */}
         <Box
           sx={{
             flex: 1,
-            maxWidth: { xs: '100%', lg: '100%' }, // Ajustado para ocupar más espacio si es necesario
-            position: 'relative',
-            zIndex: 2, // Asegura que el texto esté sobre la imagen de fondo en mobile
             display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'center', // Centra verticalmente el contenido
-            alignItems: { xs: 'center', lg: 'center' }, // Centra horizontalmente en mobile, alinea a la izquierda en desktop
+            justifyContent: {
+              xs: 'center',
+              sm: 'center',
+              md: 'center',
+              lg: 'flex-start',
+              xl: 'flex-start',
+            },
+            alignItems: 'center',
+            pr: { xs: 0, sm: 0, md: 0, lg: 0, xl: 0 },
+            zIndex: 2,
+            backgroundColor: {
+              xs: 'transparent',
+              sm: 'transparent',
+              md: 'transparent',
+              lg: 'transparent',
+              xl: 'transparent',
+            },
           }}
         >
-          {/* Contenedor de texto centrado */}
           <Box
             sx={{
-              width: '100%', // Ocupa todo el ancho disponible
-              maxWidth: { xs: '100%', lg: 600 }, // Limita el ancho máximo del texto en desktop
-              textAlign: { xs: 'center', lg: 'left' }, // Centra texto en mobile, alinea a la izquierda en desktop
+              width: '100%',
+              maxWidth: 'none',
+              textAlign: {
+                xs: 'center',
+                sm: 'center',
+                md: 'center',
+                lg: 'left',
+                xl: 'left',
+              },
+              px: { xs: 0, sm: 0, md: 0, lg: 3, xl: 4 },
+              ml: { xs: 0, sm: 0, md: 0, lg: 18, xl: 12 }, // Margen izquierdo agregado
             }}
           >
             <Typography
@@ -98,143 +137,118 @@ const HeroSection = ({
               fontWeight="bold"
               gutterBottom
               sx={{
-                fontSize: { xs: '2rem', sm: '3rem', md: '3.5rem' },
-                lineHeight: 1.4,
-                mb: 3,
+                fontSize: {
+                  xs: '2rem',
+                  sm: '3rem',
+                  md: '3.5rem',
+                  lg: '3rem',
+                  xl: '4.5rem',
+                },
+                lineHeight: { xs: 1.3, sm: 1.4, md: 1.4, lg: 1.4, xl: 1.4 },
+                mb: { xs: 2, sm: 3, md: 3, lg: 3, xl: 3 },
+                color: 'white',
               }}
             >
-              Somos Sellsi, el marketplace que conecta proveedores con
-              vendedores
+              Somos <span style={{ color: '#1565c0' }}>Sellsi</span>, el primer
+              marketplace B2B y B2C de Chile
             </Typography>
             <Typography
               variant="h6"
               gutterBottom
               sx={{
-                fontSize: { xs: '1rem', md: '1.5rem' },
-                mb: 1.6,
-                color: 'text.secondary',
+                fontSize: {
+                  xs: '1rem',
+                  sm: '1.2rem',
+                  md: '1.5rem',
+                  lg: '1.5rem',
+                  xl: '1.7rem',
+                },
+                mb: { xs: 1.4, sm: 1.6, md: 1.6, lg: 1.6, xl: 1.8 },
+                color: 'white',
+                lineHeight: { xs: 1.5, sm: 1.6, md: 1.6, lg: 1.6, xl: 1.6 },
               }}
             >
-              Conectamos proveedores con vendedores de manera sencilla. Olvídate
-              de ir a hablar con cada uno de ellos. Desarrollamos el ecosistema
-              que necesitas para transar lo que necesites y cuando lo necesites.
+              Únete a un ecosistema único en Chile que desarrollamos para ti.
             </Typography>
           </Box>
-
-          {/* Botón y Estadísticas - Solo visible en desktop */}
-          <Box
-            sx={{
-              display: { xs: 'none', lg: 'flex' },
-              flexDirection: 'row', // Cambiado a 'row' para alinear horizontalmente
-              alignItems: 'center', // Centra los elementos verticalmente
-              justifyContent: 'flex-start', // Alinear a la izquierda dentro del contenedor
-              gap: 4,
-              mt: 1.6,
-              width: '100%', // Ocupa todo el ancho disponible
-              maxWidth: 600, // Mismo maxWidth que el texto para alineación
-            }}
-          >
-            {/* Botón Ir a marketplace */}
-            <Button
-              variant="contained"
-              sx={{
-                backgroundColor: 'primary.main',
-                fontWeight: 'bold',
-                borderRadius: '8px',
-                px: 11,
-                py: 2.4,
-                fontSize: '1.58rem',
-                textTransform: 'none',
-                boxShadow: '0 4px 15px rgba(25, 118, 210, 0.3)',
-                flexShrink: 0, // Evita que el botón se encoja
-                '&:hover': {
-                  transform: 'translateY(-2px)',
-                  boxShadow: '0 6px 20px rgba(25, 118, 210, 0.4)',
-                },
-              }}
-              onClick={() => navigate('/marketplace')}
-            >
-              Ir a marketplace
-            </Button>
-
-            {/* Estadísticas horizontales */}
-            <Box
-              sx={{
-                display: 'flex',
-                flexDirection: 'row',
-                gap: 4,
-                alignItems: 'center',
-                justifyContent: 'flex-start', // Alinear a la izquierda
-                flex: 1, // Permite que las estadísticas ocupen el espacio restante
-              }}
-            >
-              {statistics.map((stat, index) => (
-                <StatisticCard key={index} stat={stat} isMobile={false} />
-              ))}
-            </Box>
-          </Box>
         </Box>
-        {/* Fin Sección izquierda */}
 
-        {/* Sección derecha: Carrusel de Promoción - Solo Desktop */}
+        {/* COLUMNA 2: Imagen - Solo Desktop */}
         <Box
           sx={{
-            flex: 1,
-            display: { xs: 'none', lg: 'flex' },
-            justifyContent: 'flex-start', // Alinea la imagen a la izquierda del contenedor
-            alignItems: 'center', // Centra la imagen verticalmente
-            width: '100%', // Ocupa el ancho disponible
-            maxWidth: '120%', // Permite que la imagen sea un poco más ancha que su contenedor si es necesario
-            mt: -23, // Ajuste para superponer con el texto
-            pl: 16, // Padding a la izquierda para separar del texto
-            position: 'relative',
+            flex: 0.7,
+            display: {
+              xs: 'none',
+              sm: 'none',
+              md: 'none',
+              lg: 'flex',
+              xl: 'flex',
+            },
+            justifyContent: 'flex-start',
+            alignItems: 'center',
+            pl: { lg: 0, xl: 0 },
           }}
         >
-          {/* Contenedor para la imagen */}
-          <Box sx={{ position: 'relative', width: '60%', maxWidth: '60%' }}>
+          <Box
+            sx={{
+              width: { lg: '70%', xl: '60%' },
+              maxWidth: { lg: 450, xl: 500 },
+              ml: { lg: 4, xl: 4 },
+            }}
+          >
             <img
               src={promoSlides[currentPromoSlide].src}
               alt={promoSlides[currentPromoSlide].alt}
               style={{
                 width: '100%',
                 height: 'auto',
-                maxHeight: '600px', // Limita la altura máxima de la imagen
-                objectFit: 'contain', // Asegura que la imagen se escale correctamente
-                transition: 'all 0.5s ease', // Transición suave para el cambio de slide
+                maxHeight: '600px',
+                objectFit: 'contain',
+                transition: 'all 0.5s ease',
               }}
             />
           </Box>
         </Box>
-        {/* Fin Sección derecha */}
 
-        {/* Botón y Estadísticas para Mobile - Sin interferencia de imagen */}
+        {/* Botón y Estadísticas para Mobile */}
         <Box
           sx={{
-            display: { xs: 'flex', lg: 'none' },
+            display: {
+              xs: 'flex',
+              sm: 'flex',
+              md: 'flex',
+              lg: 'none',
+              xl: 'none',
+            },
             flexDirection: 'column',
             alignItems: 'center',
-            gap: 2,
+            gap: { xs: 2, sm: 2.5, md: 3 },
             width: '100%',
-            mt: 14, // Margen superior para separar del texto
-            position: 'relative', // Para zIndex
-            zIndex: 2, // Por encima de la imagen de fondo
+            mt: { xs: 12, sm: 14, md: 16 },
+            position: 'relative',
+            zIndex: 2,
           }}
         >
-          {/* Botón Ir a marketplace para Mobile */}
           <Button
             variant="contained"
             sx={{
               backgroundColor: 'primary.main',
               fontWeight: 'bold',
               borderRadius: '8px',
-              px: 8.8,
-              py: 2.4,
-              fontSize: '1.43rem',
+              px: { xs: 6, sm: 8, md: 10, lg: 10, xl: 10 },
+              py: { xs: 2, sm: 2.4, md: 2.4, lg: 2.4, xl: 2.4 },
+              fontSize: {
+                xs: '1.2rem',
+                sm: '1.35rem',
+                md: '1.5rem',
+                lg: '1.5rem',
+                xl: '1.5rem',
+              },
               textTransform: 'none',
               boxShadow: '0 4px 15px rgba(25, 118, 210, 0.3)',
-              width: 'fit-content', // Ajusta el ancho al contenido
-              mt: 28, // Margen superior
-              ml: -28, // Ajuste de margen izquierdo
+              width: 'fit-content',
+              mt: { xs: 24, sm: 26, md: 28, lg: 28, xl: 28 },
+              ml: { xs: -24, sm: -26, md: -28, lg: -28, xl: -28 },
               mb: 1,
               '&:hover': {
                 transform: 'translateY(-2px)',
@@ -246,33 +260,31 @@ const HeroSection = ({
             Ir a marketplace
           </Button>
 
-          {/* Estadísticas para Mobile */}
           <Box
             sx={{
               display: 'flex',
               flexDirection: 'row',
-              gap: 2,
+              gap: { xs: 1.5, sm: 2, md: 2.5, lg: 2.5, xl: 2.5 },
               alignItems: 'center',
-              justifyContent: 'center', // Centra las estadísticas
+              justifyContent: 'center',
               width: '100%',
-              flexWrap: 'wrap', // Permite que los elementos se envuelvan si no caben
-              mb: 2, // Espacio reducido para colocar indicadores debajo
+              flexWrap: 'wrap',
+              mb: { xs: 1, sm: 2, md: 2, lg: 2, xl: 2 },
             }}
           >
             {statistics.map((stat, index) => (
-              <StatisticCard key={index} stat={stat} isMobile={true} />
+              <StatisticCard key={index} stat={stat} />
             ))}
           </Box>
 
-          {/* Indicadores del carrusel móvil - justo debajo de las estadísticas */}
           <Box
             sx={{
               display: 'flex',
-              gap: 1.5,
+              gap: { xs: 1, sm: 1.5, md: 1.5, lg: 1.5, xl: 1.5 },
               justifyContent: 'center',
               alignItems: 'center',
-              mt: 1,
-              mb: 4,
+              mt: { xs: 1, sm: 1, md: 1, lg: 1, xl: 1 },
+              mb: { xs: 3, sm: 4, md: 4, lg: 4, xl: 4 },
             }}
           >
             {promoSlides.map((_, index) => (
@@ -281,51 +293,43 @@ const HeroSection = ({
                 index={index}
                 isActive={index === currentPromoSlide}
                 onClick={() => setCurrentPromoSlide(index)}
-                variant="mobile"
               />
             ))}
           </Box>
         </Box>
-        {/* Fin Botón y Estadísticas para Mobile */}
       </Box>
-      {/* Fin Contenido Interno Wrapper */}{' '}
-      {/* === FLECHAS DE NAVEGACIÓN PARA MOBILE === */}
+
+      {/* === FLECHAS DE NAVEGACIÓN === */}
       <CarouselNavigationButton
         direction="prev"
         onClick={prevPromoSlide}
-        variant="mobile"
+        position={{ xs: '5%', sm: '5%', md: '5%', lg: '2%', xl: '2%' }}
       />
       <CarouselNavigationButton
         direction="next"
         onClick={nextPromoSlide}
-        variant="mobile"
-      />{' '}
-      {/* === CONTROLES DEL CARRUSEL PARA DESKTOP (HIJOS DEL HERO BOX PRINCIPAL EXTERNO) === */}
-      <CarouselNavigationButton
-        direction="prev"
-        onClick={prevPromoSlide}
-        variant="desktop"
-        position={{ xs: '1%', sm: '2%', md: '3%', lg: '2%' }}
+        position={{ xs: '5%', sm: '5%', md: '5%', lg: '2%', xl: '2%' }}
       />
-      <CarouselNavigationButton
-        direction="next"
-        onClick={nextPromoSlide}
-        variant="desktop"
-        position={{ xs: '1%', sm: '2%', md: '3%', lg: '2%' }}
-      />
+
       {/* Indicadores del Carrusel - Desktop */}
       <Box
         sx={{
-          display: { xs: 'none', lg: 'flex' }, // Solo visible en desktop
+          display: {
+            xs: 'none',
+            sm: 'none',
+            md: 'none',
+            lg: 'flex',
+            xl: 'flex',
+          },
           position: 'absolute',
-          bottom: { lg: 20 }, // Más abajo, debajo de las estadísticas
+          bottom: { xs: 20, sm: 20, md: 20, lg: 20, xl: 20 },
           left: '50%',
           transform: 'translateX(-50%)',
-          gap: 1.5,
-          zIndex: 5, // Asegura que esté sobre otros elementos del hero
-          padding: 1, // Pequeño padding para que no se peguen al borde si hay contenido debajo
-          borderRadius: '12px', // Bordes redondeados para el contenedor de indicadores
-          backgroundColor: 'rgba(0, 0, 0, 0.1)', // Fondo sutil para agruparlos visualmente
+          gap: { xs: 1.5, sm: 1.5, md: 1.5, lg: 1.5, xl: 1.5 },
+          zIndex: 5,
+          padding: { xs: 1, sm: 1, md: 1, lg: 1, xl: 1 },
+          borderRadius: '12px',
+          backgroundColor: 'rgb(0, 0, 0)',
         }}
       >
         {promoSlides.map((_, index) => (
@@ -334,7 +338,6 @@ const HeroSection = ({
             index={index}
             isActive={index === currentPromoSlide}
             onClick={() => setCurrentPromoSlide(index)}
-            variant="desktop"
           />
         ))}
       </Box>
