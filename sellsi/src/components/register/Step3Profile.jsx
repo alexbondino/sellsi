@@ -1,6 +1,10 @@
-import React from 'react'
-import { Box, TextField, Typography, Divider } from '@mui/material'
-import { CustomButton, LogoUploader, CountrySelector } from '../../hooks/shared'
+import React from 'react';
+import { Box, TextField, Typography } from '@mui/material';
+import {
+  CustomButton,
+  LogoUploader,
+  CountrySelector,
+} from '../../hooks/shared';
 
 const Step3Profile = ({
   accountType,
@@ -17,18 +21,29 @@ const Step3Profile = ({
     telefonoContacto,
     codigoPais,
     logoEmpresa,
-  } = formData
+  } = formData;
 
-  const isProvider = accountType === 'proveedor'
+  const isProvider = accountType === 'proveedor';
 
   // ✅ VALIDACIÓN de campos obligatorios
   const isFormValid = () => {
     if (isProvider) {
-      return nombreEmpresa && nombreEmpresa.trim().length > 0
+      return nombreEmpresa && nombreEmpresa.trim().length > 0;
     } else {
-      return nombrePersonal && nombrePersonal.trim().length > 0
+      return nombrePersonal && nombrePersonal.trim().length > 0;
     }
-  }
+  };
+
+  const handleContinue = () => {
+    const data = {
+      nombre: isProvider ? nombreEmpresa : nombrePersonal,
+      telefono: telefonoContacto,
+      pais: codigoPais,
+    };
+
+    localStorage.setItem('perfilUsuario', JSON.stringify(data));
+    onNext();
+  };
 
   return (
     <Box
@@ -71,26 +86,26 @@ const Step3Profile = ({
           <>
             <Box sx={{ flex: 1, minWidth: 320 }}>
               <TextField
-                label="Nombre de Empresa *" // ✅ AGREGAR asterisco
+                label="Nombre de Empresa *"
                 variant="outlined"
                 fullWidth
                 value={nombreEmpresa}
-                onChange={(e) => onFieldChange('nombreEmpresa', e.target.value)}
-                sx={{ mb: 1.5 }} // ✅ SOLO el margin, sin estilos de error
+                onChange={e => onFieldChange('nombreEmpresa', e.target.value)}
+                sx={{ mb: 1.5 }}
                 size="small"
                 required
               />
               <Box sx={{ display: 'flex', gap: 1, mb: 1.5 }}>
                 <CountrySelector
                   value={codigoPais}
-                  onChange={(e) => onFieldChange('codigoPais', e.target.value)}
+                  onChange={e => onFieldChange('codigoPais', e.target.value)}
                   countries={['Chile', 'Argentina', 'México']}
                 />
                 <TextField
                   fullWidth
                   label="Teléfono de contacto"
                   value={telefonoContacto}
-                  onChange={(e) =>
+                  onChange={e =>
                     onFieldChange('telefonoContacto', e.target.value)
                   }
                   placeholder="Ej: 912345678"
@@ -149,26 +164,26 @@ const Step3Profile = ({
         ) : (
           <>
             <TextField
-              label="Nombre y Apellido *" // ✅ AGREGAR asterisco
+              label="Nombre y Apellido *"
               variant="outlined"
               fullWidth
               value={nombrePersonal}
-              onChange={(e) => onFieldChange('nombrePersonal', e.target.value)}
-              sx={{ mb: 1.5 }} // ✅ SOLO el margin, sin estilos de error
+              onChange={e => onFieldChange('nombrePersonal', e.target.value)}
+              sx={{ mb: 1.5 }}
               size="small"
               required
             />
             <Box sx={{ display: 'flex', gap: 1, mb: 1.5 }}>
               <CountrySelector
                 value={codigoPais}
-                onChange={(e) => onFieldChange('codigoPais', e.target.value)}
+                onChange={e => onFieldChange('codigoPais', e.target.value)}
                 countries={['Chile', 'Argentina', 'México']}
               />
               <TextField
                 fullWidth
                 label="Teléfono de contacto"
                 value={telefonoContacto}
-                onChange={(e) =>
+                onChange={e =>
                   onFieldChange('telefonoContacto', e.target.value)
                 }
                 placeholder="Ej: 912345678"
@@ -177,13 +192,13 @@ const Step3Profile = ({
             </Box>
           </>
         )}
-      </Box>{' '}
+      </Box>
       <Box sx={{ width: '100%', maxWidth: 520 }}>
         <CustomButton
-          onClick={onNext}
+          onClick={handleContinue}
           fullWidth
           sx={{ mb: 0.5, mt: isProvider ? 15.5 : 24.5 }}
-          disabled={!isFormValid()} // ✅ DESHABILITAR botón
+          disabled={!isFormValid()}
         >
           Continuar
         </CustomButton>
@@ -198,7 +213,7 @@ const Step3Profile = ({
         </CustomButton>
       </Box>
     </Box>
-  )
-}
+  );
+};
 
-export default Step3Profile
+export default Step3Profile;
