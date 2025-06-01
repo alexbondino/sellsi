@@ -1,8 +1,18 @@
-import React from 'react'
-import { Box, Typography, Paper, Button } from '@mui/material'
-import { CustomButton } from '../../hooks/shared'
+import React from 'react';
+import { Box, Typography, Paper, Button } from '@mui/material';
+import { CustomButton } from '../../hooks/shared';
 
 const Step2AccountType = ({ selectedType, onTypeSelect, onNext, onBack }) => {
+  const handleTypeSelect = type => {
+    onTypeSelect(type);
+    localStorage.setItem('tipoCuenta', type);
+  };
+
+  const handleContinue = () => {
+    if (!selectedType) return;
+    onNext();
+  };
+
   return (
     <Box
       display="flex"
@@ -32,7 +42,6 @@ const Step2AccountType = ({ selectedType, onTypeSelect, onNext, onBack }) => {
         flexWrap="wrap"
         sx={{ px: { xs: 1, sm: 2 } }}
       >
-        {/* Cuenta Proveedor */}
         <Paper
           elevation={3}
           sx={{
@@ -78,18 +87,10 @@ const Step2AccountType = ({ selectedType, onTypeSelect, onNext, onBack }) => {
                 lineHeight: 1.3,
               }}
             >
-              <li style={{ marginBottom: '3px' }}>
-                Crear el perfil de tu empresa y promocionar tus productos
-              </li>
-              <li style={{ marginBottom: '3px' }}>
-                Recibir solicitudes de compradores
-              </li>
-              <li style={{ marginBottom: '3px' }}>
-                Acceder a una base de datos de compradores
-              </li>
-              <li style={{ marginBottom: '3px' }}>
-                Ofrecer productos a leads de compradores
-              </li>
+              <li>Crear el perfil de tu empresa y promocionar tus productos</li>
+              <li>Recibir solicitudes de compradores</li>
+              <li>Acceder a una base de datos de compradores</li>
+              <li>Ofrecer productos a leads de compradores</li>
               <li>Comerciar carga no reclamada</li>
             </ul>
           </Box>
@@ -106,13 +107,12 @@ const Step2AccountType = ({ selectedType, onTypeSelect, onNext, onBack }) => {
               fontSize: 14,
               '&:hover': { backgroundColor: '#2fa4d6' },
             }}
-            onClick={() => onTypeSelect('proveedor')}
+            onClick={() => handleTypeSelect('proveedor')}
           >
             Elegir
           </Button>
         </Paper>
 
-        {/* Cuenta Comprador */}
         <Paper
           elevation={3}
           sx={{
@@ -158,12 +158,8 @@ const Step2AccountType = ({ selectedType, onTypeSelect, onNext, onBack }) => {
                 lineHeight: 1.3,
               }}
             >
-              <li style={{ marginBottom: '3px' }}>
-                Buscar productos y solicitar cotizaciones a proveedores
-              </li>
-              <li style={{ marginBottom: '3px' }}>
-                Crear solicitudes para que proveedores te contacten
-              </li>
+              <li>Buscar productos y solicitar cotizaciones a proveedores</li>
+              <li>Crear solicitudes para que proveedores te contacten</li>
               <li>Acceder a carga no reclamada</li>
             </ul>
           </Box>
@@ -181,7 +177,7 @@ const Step2AccountType = ({ selectedType, onTypeSelect, onNext, onBack }) => {
               fontSize: 14,
               '&:hover': { backgroundColor: '#2fa4d6' },
             }}
-            onClick={() => onTypeSelect('comprador')}
+            onClick={() => handleTypeSelect('comprador')}
           >
             Elegir
           </Button>
@@ -195,7 +191,6 @@ const Step2AccountType = ({ selectedType, onTypeSelect, onNext, onBack }) => {
         alignItems="center"
         width="100%"
       >
-        {' '}
         <Typography
           sx={{
             color: '#888',
@@ -212,7 +207,7 @@ const Step2AccountType = ({ selectedType, onTypeSelect, onNext, onBack }) => {
           <CustomButton
             type="submit"
             disabled={!selectedType}
-            onClick={onNext}
+            onClick={handleContinue}
             fullWidth
             sx={{ mb: 0.5 }}
           >
@@ -229,7 +224,7 @@ const Step2AccountType = ({ selectedType, onTypeSelect, onNext, onBack }) => {
         </Box>
       </Box>
     </Box>
-  )
-}
+  );
+};
 
-export default Step2AccountType
+export default Step2AccountType;
