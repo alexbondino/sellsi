@@ -6,11 +6,11 @@ import { INITIAL_FILTERS } from '../../utils/marketplace/constants' // ✅ 2 niv
 export const useMarketplaceState = () => {
   const [seccionActiva, setSeccionActiva] = useState('todos')
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState(['Todas'])
-  const [filtroVisible, setFiltroVisible] = useState(true) // ✅ CAMBIAR a true por defecto
+  const [filtroVisible, setFiltroVisible] = useState(false) // ✅ CAMBIAR a false para permitir animaciones
   const [busqueda, setBusqueda] = useState('')
   const [filtros, setFiltros] = useState(INITIAL_FILTERS)
   const [precioRango, setPrecioRango] = useState([0, 1000000])
-  const [comisionRango, setComisionRango] = useState([0, 30])
+  // const [comisionRango, setComisionRango] = useState([0, 30]) // COMMENTED OUT: Commission functionality removed
   const [filtroModalOpen, setFiltroModalOpen] = useState(false)
   // ✅ USAR PRODUCTOS importados (no productos)
   const productosFiltrados = useMemo(() => {
@@ -34,54 +34,62 @@ export const useMarketplaceState = () => {
         !categoriaSeleccionada.includes('Todas') &&
         !categoriaSeleccionada.includes(producto.categoria)
       )
-        return false
-
-      // Filtrar por precio
+        return false // Filtrar por precio
       if (filtros.precioMin && producto.precio < filtros.precioMin) return false
       if (filtros.precioMax && producto.precio > filtros.precioMax) return false
 
+      // COMMENTED OUT: Commission functionality removed
       // Filtrar por comisión
-      if (filtros.comisionMin && producto.comision < filtros.comisionMin)
-        return false
-      if (filtros.comisionMax && producto.comision > filtros.comisionMax)
-        return false
+      // if (filtros.comisionMin && producto.comision < filtros.comisionMin)
+      //   return false
+      // if (filtros.comisionMax && producto.comision > filtros.comisionMax)
+      //   return false
 
+      // COMMENTED OUT: Sale Type functionality removed
       // Filtrar por tipo de venta
-      if (
-        filtros.tiposVenta.length > 0 &&
-        !filtros.tiposVenta.includes(producto.tipoVenta)
-      )
-        return false
+      // if (
+      //   filtros.tiposVenta.length > 0 &&
+      //   !filtros.tiposVenta.includes(producto.tipoVenta)
+      // )
+      //   return false
 
       // Filtrar por stock
-      if (filtros.soloConStock && producto.stock === 0) return false
-
-      // Filtrar por rating
+      if (filtros.soloConStock && producto.stock === 0) return false // Filtrar por rating
       if (filtros.ratingMin && producto.rating < filtros.ratingMin) return false
+
+      // ✅ NUEVO: Filtrar por negociable
+      if (filtros.negociable && filtros.negociable !== 'todos') {
+        if (filtros.negociable === 'si' && !producto.negociable) return false
+        if (filtros.negociable === 'no' && producto.negociable) return false
+      }
 
       return true
     })
   }, [seccionActiva, busqueda, categoriaSeleccionada, filtros])
-
   const hayFiltrosActivos = useMemo(() => {
-    return Object.values(filtros).some((v) =>
-      Array.isArray(v) ? v.length > 0 : v !== '' && v !== false && v !== 0
-    )
+    return Object.entries(filtros).some(([key, value]) => {
+      // ✅ EXCLUIR: "Todos los productos" no cuenta como filtro activo
+      if (key === 'negociable' && value === 'todos') return false
+
+      return Array.isArray(value)
+        ? value.length > 0
+        : value !== '' && value !== false && value !== 0
+    })
   }, [filtros])
 
-  const handleTipoVentaChange = (tipo) => {
-    setFiltros((prev) => ({
-      ...prev,
-      tiposVenta: prev.tiposVenta.includes(tipo)
-        ? prev.tiposVenta.filter((t) => t !== tipo)
-        : [...prev.tiposVenta, tipo],
-    }))
-  }
-
+  // COMMENTED OUT: Sale Type functionality removed
+  // const handleTipoVentaChange = (tipo) => {
+  //   setFiltros((prev) => ({
+  //     ...prev,
+  //     tiposVenta: prev.tiposVenta.includes(tipo)
+  //       ? prev.tiposVenta.filter((t) => t !== tipo)
+  //       : [...prev.tiposVenta, tipo],
+  //   }))
+  // }
   const resetFiltros = () => {
     setFiltros(INITIAL_FILTERS)
     setPrecioRango([0, 1000000])
-    setComisionRango([0, 30])
+    // setComisionRango([0, 30]) // COMMENTED OUT: Commission functionality removed
     setCategoriaSeleccionada(['Todas'])
     setBusqueda('')
   }
@@ -120,7 +128,7 @@ export const useMarketplaceState = () => {
     hayFiltrosActivos,
     totalProductos,
     precioRango,
-    comisionRango,
+    // comisionRango, // COMMENTED OUT: Commission functionality removed
     categorias: CATEGORIAS, // ✅ USAR CATEGORIAS importadas
 
     // Setters
@@ -130,12 +138,10 @@ export const useMarketplaceState = () => {
     setFiltroVisible,
     setFiltroModalOpen,
     setPrecioRango,
-    setComisionRango,
-
-    // Actions
+    // setComisionRango, // COMMENTED OUT: Commission functionality removed
     updateFiltros,
     resetFiltros,
     toggleCategoria,
-    handleTipoVentaChange,
+    // handleTipoVentaChange, // COMMENTED OUT: Sale Type functionality removed
   }
 }

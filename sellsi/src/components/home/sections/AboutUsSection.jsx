@@ -40,8 +40,8 @@ const AboutUsSection = ({ quienesSomosRef }) => {
               gutterBottom
               sx={{
                 fontSize: {
-                  xs: '2rem',
-                  sm: '2.1rem',
+                  xs: '1.55rem',
+                  sm: '1.8rem',
                   md: '2.2rem',
                   lg: '2.2rem',
                   xl: '2.2rem',
@@ -57,8 +57,8 @@ const AboutUsSection = ({ quienesSomosRef }) => {
               variant="body1"
               sx={{
                 fontSize: {
-                  xs: '1.1rem',
-                  sm: '1.15rem',
+                  xs: '0.95rem',
+                  sm: '1rem',
                   md: '1.2rem',
                   lg: '1.2rem',
                   xl: '1.2rem',
@@ -68,16 +68,12 @@ const AboutUsSection = ({ quienesSomosRef }) => {
                 mb: { xs: 2.5, sm: 3, md: 3, lg: 3, xl: 3 },
               }}
             >
-              En Sellsi, creemos en un comercio más justo, ágil y accesible para
-              todos. Somos la plataforma tecnológica que conecta a proveedores
-              con vendedores de forma simple, rápida y transparente.
-              <br />
-              <br />
-              Creamos un ecosistema donde los productos pueden llegar a nuevos
-              clientes sin intermediarios innecesarios ni fricciones. Aquí, los
-              proveedores definen el precio de venta y la comisión disponible,
-              mientras los vendedores eligen qué ofrecer y ganan por cada venta
-              concretada.
+              <span style={{ color: '#1565c0', fontWeight: 'bold' }}>
+                Sellsi
+              </span>{' '}
+              es la plataforma B2B / B2C donde empresas compradoras y
+              proveedoras se conectan, negocian y gestionan sus procesos de
+              compra y venta, ya sea mediante venta directa o intermediario.
             </Typography>
             <Typography
               variant="h4"
@@ -85,8 +81,8 @@ const AboutUsSection = ({ quienesSomosRef }) => {
               sx={{
                 mb: { xs: 1.2, sm: 1.3, md: 1.5, lg: 1.5, xl: 1.5 },
                 fontSize: {
-                  xs: '1.8rem',
-                  sm: '1.9rem',
+                  xs: '1.55rem',
+                  sm: '1.8rem',
                   md: '2rem',
                   lg: '2rem',
                   xl: '2rem',
@@ -95,13 +91,13 @@ const AboutUsSection = ({ quienesSomosRef }) => {
               }}
             >
               Nuestra Misión
-            </Typography>
+            </Typography>{' '}
             <Typography
               variant="body1"
               sx={{
                 fontSize: {
-                  xs: '1.1rem',
-                  sm: '1.15rem',
+                  xs: '0.95rem',
+                  sm: '1rem',
                   md: '1.2rem',
                   lg: '1.2rem',
                   xl: '1.2rem',
@@ -121,8 +117,8 @@ const AboutUsSection = ({ quienesSomosRef }) => {
               sx={{
                 mb: { xs: 1.2, sm: 1.3, md: 1.5, lg: 1.5, xl: 1.5 },
                 fontSize: {
-                  xs: '1.8rem',
-                  sm: '1.9rem',
+                  xs: '1.55rem',
+                  sm: '1.8rem',
                   md: '2rem',
                   lg: '2rem',
                   xl: '2rem',
@@ -136,8 +132,8 @@ const AboutUsSection = ({ quienesSomosRef }) => {
               variant="body1"
               sx={{
                 fontSize: {
-                  xs: '1.1rem',
-                  sm: '1.15rem',
+                  xs: '0.95rem',
+                  sm: '1rem',
                   md: '1.2rem',
                   lg: '1.2rem',
                   xl: '1.2rem',
@@ -165,7 +161,7 @@ const AboutUsSection = ({ quienesSomosRef }) => {
               alt="Equipo Sellsi trabajando"
               sx={{
                 width: '100%',
-                maxWidth: { xs: '90%', sm: '80%' },
+                maxWidth: { xs: '80%', sm: '80%', md: '80%' },
                 height: 'auto',
                 objectFit: 'cover',
                 borderRadius: '16px',
@@ -223,17 +219,12 @@ const AboutUsSection = ({ quienesSomosRef }) => {
                   mb: 3,
                 }}
               >
-                En Sellsi, creemos en un comercio más justo, ágil y accesible
-                para todos. Somos la plataforma tecnológica que conecta a
-                proveedores con vendedores de forma simple, rápida y
-                transparente.
-                <br />
-                <br />
-                Creamos un ecosistema donde los productos pueden llegar a nuevos
-                clientes sin intermediarios innecesarios ni fricciones. Aquí,
-                los proveedores definen el precio de venta y la comisión
-                disponible, mientras los vendedores eligen qué ofrecer y ganan
-                por cada venta concretada.
+                <span style={{ color: '#1565c0', fontWeight: 'bold' }}>
+                  Sellsi
+                </span>{' '}
+                es la plataforma B2B / B2C donde empresas compradoras y
+                proveedoras se conectan, negocian y gestionan sus procesos de
+                compra y venta, ya sea mediante venta directa o intermediario.
               </Typography>
 
               <Typography

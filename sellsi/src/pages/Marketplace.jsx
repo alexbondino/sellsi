@@ -7,6 +7,9 @@
 import React from 'react'
 import { Box } from '@mui/material'
 
+// TopBar específico para Marketplace
+import MarketplaceTopBar from '../components/MarketplaceTopBar.jsx'
+
 // Hook centralizado
 import useMarketplaceLogic from '../components/marketplace/useMarketplaceLogic.jsx'
 
@@ -21,17 +24,25 @@ const Marketplace = () => {
     useMarketplaceLogic()
 
   return (
-    <Box sx={{ bgcolor: '#f8fafc', minHeight: '100vh' }}>
-      {/* Sección de búsqueda y navegación */}
-      <SearchSection {...searchSectionProps} />
+    <Box>
+      {/* TopBar específico para Marketplace */}
+      <MarketplaceTopBar />
 
-      {/* Sección de filtros */}
-      <FilterSection {...filterSectionProps} />
+      {/* Contenido principal con margen para compensar TopBar fijo */}
+      <Box
+        sx={{ bgcolor: '#f8fafc', minHeight: '100vh', pt: { xs: 7, md: 8 } }}
+      >
+        {/* Sección de búsqueda y navegación */}
+        <SearchSection {...searchSectionProps} />
 
-      {/* Sección de productos */}
-      <ProductsSection {...productsSectionProps} />
+        {/* Sección de filtros */}
+        <FilterSection {...filterSectionProps} />
+
+        {/* Sección de productos */}
+        <ProductsSection {...productsSectionProps} />
+      </Box>
     </Box>
   )
 }
 
-export default React.memo(Marketplace)
+export default Marketplace

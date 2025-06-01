@@ -1,10 +1,16 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { Box, Typography, IconButton, Grid, Divider } from '@mui/material'
 import LinkedInIcon from '@mui/icons-material/LinkedIn'
 import InstagramIcon from '@mui/icons-material/Instagram'
 import WhatsAppIcon from '@mui/icons-material/WhatsApp'
+import ContactModal from './ContactModal'
 
 const BottomBar = () => {
+  const [openContactModal, setOpenContactModal] = useState(false)
+
+  const handleOpenContact = () => setOpenContactModal(true)
+  const handleCloseContact = () => setOpenContactModal(false)
+
   return (
     <Box
       sx={{
@@ -33,7 +39,11 @@ const BottomBar = () => {
               <Box
                 sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}
               >
-                <img src="/logo.svg" alt="SELLSI Logo" style={{ height: 40 }} />
+                <img
+                  src="/logodark.svg"
+                  alt="SELLSI Logo"
+                  style={{ height: 40 }}
+                />
               </Box>
               <Typography
                 variant="h6"
@@ -103,7 +113,7 @@ const BottomBar = () => {
                 }}
               >
                 Servicios
-              </Typography>
+              </Typography>{' '}
               <Typography
                 variant="body2"
                 sx={{
@@ -111,6 +121,7 @@ const BottomBar = () => {
                   cursor: 'pointer',
                   '&:hover': { color: '#fff' },
                 }}
+                onClick={handleOpenContact}
               >
                 Contáctanos
               </Typography>
@@ -159,7 +170,7 @@ const BottomBar = () => {
                   '&:hover': { color: '#fff' },
                 }}
               >
-                Para Vendedores
+                Para Intermediarios
               </Typography>
               <Typography
                 variant="body2"
@@ -169,7 +180,7 @@ const BottomBar = () => {
                   '&:hover': { color: '#fff' },
                 }}
               >
-                Puntos de Venta
+                Para Compradores
               </Typography>
             </Box>
           </Grid>
@@ -303,10 +314,13 @@ const BottomBar = () => {
               fontSize: '0.9rem',
             }}
           >
-            © 2025 SELLSI Todos los derechos reservados.
+            © 2025 SELLSI Todos los derechos reservados.{' '}
           </Typography>
         </Box>
       </Box>
+
+      {/* Modal de Contacto */}
+      <ContactModal open={openContactModal} onClose={handleCloseContact} />
     </Box>
   )
 }

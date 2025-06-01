@@ -161,11 +161,11 @@ export const PROVIDERS_DATA = [
     alt: 'La Roche',
   },
   {
-    src: '/Landing Page/Nuestros Proveedores/pcfactory.webp',
+    src: '/Landing Page/Nuestros Proveedores/inchalam.webp',
     alt: 'PC Factory',
   },
   {
-    src: '/Landing Page/Nuestros Proveedores/walmart.webp',
+    src: '/Landing Page/Nuestros Proveedores/scheiner.webp',
     alt: 'Walmart',
   },
 ]

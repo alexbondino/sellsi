@@ -73,10 +73,10 @@ const HeroSection = ({
               xl: 'none',
             },
             position: 'absolute',
-            top: { xs: 180, sm: 200, md: 220 },
-            right: { xs: 20, sm: 30, md: 40 },
-            width: { xs: 300, sm: 350, md: 380 },
-            height: { xs: 480, sm: 530, md: 580 },
+            top: { xs: 75, sm: 90, md: 220 },
+            right: { xs: 35, sm: 30, md: 40 },
+            width: { xs: 300, sm: 320, md: 380 },
+            height: { xs: 400, sm: 500, md: 580 },
             zIndex: 1,
             pointerEvents: 'none',
           }}
@@ -138,14 +138,15 @@ const HeroSection = ({
               gutterBottom
               sx={{
                 fontSize: {
-                  xs: '2rem',
-                  sm: '3rem',
+                  xs: '1.84rem',
+                  sm: '2rem',
                   md: '3.5rem',
                   lg: '3rem',
                   xl: '4.5rem',
                 },
                 lineHeight: { xs: 1.3, sm: 1.4, md: 1.4, lg: 1.4, xl: 1.4 },
                 mb: { xs: 2, sm: 3, md: 3, lg: 3, xl: 3 },
+                mt: { xs: -1, sm: 0, md: 0 },
                 color: 'white',
               }}
             >
@@ -157,8 +158,8 @@ const HeroSection = ({
               gutterBottom
               sx={{
                 fontSize: {
-                  xs: '1rem',
-                  sm: '1.2rem',
+                  xs: '0.97rem',
+                  sm: '1rem',
                   md: '1.5rem',
                   lg: '1.5rem',
                   xl: '1.7rem',
@@ -178,9 +179,9 @@ const HeroSection = ({
           sx={{
             flex: 0.7,
             display: {
-              xs: 'none',
-              sm: 'none',
-              md: 'none',
+              xs: 'none', // ✅ Ocultar en mobile
+              sm: 'none', // ✅ Ocultar en mobile
+              md: 'flex',
               lg: 'flex',
               xl: 'flex',
             },
@@ -235,8 +236,8 @@ const HeroSection = ({
               backgroundColor: 'primary.main',
               fontWeight: 'bold',
               borderRadius: '8px',
-              px: { xs: 6, sm: 8, md: 10, lg: 10, xl: 10 },
-              py: { xs: 2, sm: 2.4, md: 2.4, lg: 2.4, xl: 2.4 },
+              px: { xs: 3.68, sm: 4, md: 10, lg: 10, xl: 10 },
+              py: { xs: 1.38, sm: 1.5, md: 2.4, lg: 2.4, xl: 2.4 },
               fontSize: {
                 xs: '1.2rem',
                 sm: '1.35rem',
@@ -247,8 +248,8 @@ const HeroSection = ({
               textTransform: 'none',
               boxShadow: '0 4px 15px rgba(25, 118, 210, 0.3)',
               width: 'fit-content',
-              mt: { xs: 24, sm: 26, md: 28, lg: 28, xl: 28 },
-              ml: { xs: -24, sm: -26, md: -28, lg: -28, xl: -28 },
+              mt: { xs: 14, sm: 20, md: 28, lg: 28, xl: 28 },
+              ml: { xs: 0, sm: 0, md: -28, lg: -28, xl: -28 },
               mb: 1,
               '&:hover': {
                 transform: 'translateY(-2px)',
@@ -258,14 +259,13 @@ const HeroSection = ({
             onClick={() => navigate('/marketplace')}
           >
             Ir a marketplace
-          </Button>
-
+          </Button>{' '}
           <Box
             sx={{
               display: 'flex',
               flexDirection: 'row',
               gap: { xs: 1.5, sm: 2, md: 2.5, lg: 2.5, xl: 2.5 },
-              alignItems: 'center',
+              alignItems: 'flex-start', // ✅ Alineación superior para evitar desalineación
               justifyContent: 'center',
               width: '100%',
               flexWrap: 'wrap',
@@ -276,7 +276,6 @@ const HeroSection = ({
               <StatisticCard key={index} stat={stat} />
             ))}
           </Box>
-
           <Box
             sx={{
               display: 'flex',

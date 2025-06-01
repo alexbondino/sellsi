@@ -40,11 +40,11 @@ const SearchBar = ({
     <Box
       sx={{
         display: 'flex',
-        gap: 1,
+        gap: { xs: 0.5, sm: 0.5, md: 1 }, // ✅ Gap más pequeño en móviles
         alignItems: 'center',
         width: '100%',
-        flexDirection: { xs: 'column', md: 'row' },
-        py: 0.5, // ✅ Reducir padding vertical
+        flexDirection: 'row', // ✅ SIEMPRE en fila para xs/sm/md
+        py: 0.5,
       }}
     >
       {' '}
@@ -75,17 +75,23 @@ const SearchBar = ({
           ),
         }}
         sx={{
-          maxWidth: { xs: '100%', md: '240px' }, // ✅ Aún más pequeña
-          minWidth: { md: '500px' },
+          width: { xs: '30%', sm: '30%', md: '240px' }, // ✅ 40% en xs/sm, tamaño fijo en md+
+          minWidth: { xs: 'auto', sm: 'auto', md: '500px' }, // ✅ Sin minWidth en móviles
           '& .MuiOutlinedInput-root': {
             borderRadius: 1.5,
             backgroundColor: 'white',
             height: '36px', // ✅ Altura fija más pequeña
           },
         }}
-      />
-      {/* Selector de ordenamiento - Más compacto */}
-      <FormControl sx={{ minWidth: { xs: '100%', md: 140 } }} size="small">
+      />{' '}
+      {/* Selector de ordenamiento - Más compacto */}{' '}
+      <FormControl
+        sx={{
+          width: { xs: '47%', sm: '50%', md: 245 }, // ✅ AUMENTADO a 40% para compensar reducción del botón filtros
+          minWidth: 'auto', // ✅ Sin minWidth en móviles
+        }}
+        size="small"
+      >
         <Select
           value={ordenamiento}
           onChange={(e) => setOrdenamiento(e.target.value)}
@@ -112,27 +118,47 @@ const SearchBar = ({
             </MenuItem>
           ))}
         </Select>
-      </FormControl>
-      {/* Botón de filtros - Más compacto */}
+      </FormControl>{' '}
+      {/* Botón de filtros - Optimizado para móviles */}
       <Button
         size="small"
         variant={filtroVisible || filtroModalOpen ? 'contained' : 'outlined'}
-        startIcon={
-          <Badge color="error" variant="dot" invisible={!hayFiltrosActivos}>
-            <FilterAltIcon fontSize="small" />
-          </Badge>
-        }
         onClick={onToggleFilters}
         sx={{
           borderRadius: 1.5,
-          px: 2,
+          px: { xs: 0.5, sm: 0.5, md: 2 }, // ✅ Padding ultra-mínimo en móviles
           py: 0.5,
-          minWidth: { xs: '100%', md: 'auto' },
+          width: { xs: '20%', sm: '20%', md: 'auto' }, // ✅ REDUCIDO a 20% (65% menos)
+          minWidth: { xs: '36px', sm: '36px', md: 'auto' }, // ✅ Ancho mínimo igual a la altura
           fontWeight: 600,
           height: '36px', // ✅ Misma altura que search
+          fontSize: { xs: '0.75rem', sm: '0.85rem', md: '0.875rem' },
         }}
       >
-        Filtros
+        {/* Solo icono en xs y sm, texto completo en md+ */}
+        <Box
+          sx={{
+            display: { xs: 'none', sm: 'none', md: 'flex' },
+            alignItems: 'center',
+            gap: 1,
+          }}
+        >
+          <Badge color="error" variant="dot" invisible={!hayFiltrosActivos}>
+            <FilterAltIcon fontSize="small" />
+          </Badge>
+          Filtros
+        </Box>
+        {/* Solo icono en xs y sm */}
+        <Box
+          sx={{
+            display: { xs: 'flex', sm: 'flex', md: 'none' },
+            justifyContent: 'center',
+          }}
+        >
+          <Badge color="error" variant="dot" invisible={!hayFiltrosActivos}>
+            <FilterAltIcon fontSize="small" />
+          </Badge>
+        </Box>
       </Button>
     </Box>
   )

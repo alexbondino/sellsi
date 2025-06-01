@@ -8,11 +8,12 @@ export const PRODUCTOS = [
     descuento: 18,
     categoria: 'Tecnología',
     tipo: 'nuevo',
-    comision: 15,
+    // comision: 15, // COMMENTED OUT: Commission functionality removed
     tipoVenta: 'directa',
     rating: 4.8,
     ventas: 234,
     stock: 12,
+    negociable: true, // ✅ AGREGAR: Funcionalidad negociable
   },
   {
     id: 2,
@@ -23,11 +24,12 @@ export const PRODUCTOS = [
     descuento: 18,
     categoria: 'Electrodomésticos',
     tipo: 'nuevo',
-    comision: 18,
+    // comision: 18, // COMMENTED OUT: Commission functionality removed
     tipoVenta: 'directa',
     rating: 4.5,
     ventas: 89,
     stock: 8,
+    negociable: false, // ✅ AGREGAR: Funcionalidad negociable
   },
   {
     id: 3,
@@ -38,11 +40,12 @@ export const PRODUCTOS = [
     descuento: 25,
     categoria: 'Hogar y Muebles',
     tipo: 'nuevo',
-    comision: 20,
+    // comision: 20, // COMMENTED OUT: Commission functionality removed
     tipoVenta: 'directa',
     rating: 4.7,
     ventas: 156,
     stock: 5,
+    negociable: true, // ✅ AGREGAR: Funcionalidad negociable
   },
   {
     id: 4,
@@ -53,11 +56,12 @@ export const PRODUCTOS = [
     descuento: 17,
     categoria: 'Electrodomésticos',
     tipo: 'nuevo',
-    comision: 15,
+    // comision: 15, // COMMENTED OUT: Commission functionality removed
     tipoVenta: 'directa',
     rating: 4.6,
     ventas: 312,
     stock: 15,
+    negociable: false, // ✅ AGREGAR: Funcionalidad negociable
   },
   {
     id: 5,
@@ -68,11 +72,12 @@ export const PRODUCTOS = [
     descuento: 25,
     categoria: 'Electrodomésticos',
     tipo: 'oferta',
-    comision: 22,
+    // comision: 22, // COMMENTED OUT: Commission functionality removed
     tipoVenta: 'indirecta',
     rating: 4.3,
     ventas: 567,
     stock: 45,
+    negociable: true, // ✅ AGREGAR: Funcionalidad negociable
   },
   {
     id: 6,
@@ -83,11 +88,12 @@ export const PRODUCTOS = [
     descuento: 29,
     categoria: 'Hogar y Muebles',
     tipo: 'oferta',
-    comision: 18,
+    // comision: 18, // COMMENTED OUT: Commission functionality removed
     tipoVenta: 'directa',
     rating: 4.4,
     ventas: 178,
     stock: 22,
+    negociable: false, // ✅ AGREGAR: Funcionalidad negociable
   },
   {
     id: 7,
@@ -98,11 +104,12 @@ export const PRODUCTOS = [
     descuento: 25,
     categoria: 'Electrodomésticos',
     tipo: 'oferta',
-    comision: 16,
+    // comision: 16, // COMMENTED OUT: Commission functionality removed
     tipoVenta: 'directa',
     rating: 4.2,
     ventas: 93,
     stock: 18,
+    negociable: true, // ✅ AGREGAR: Funcionalidad negociable
   },
   {
     id: 8,
@@ -113,11 +120,12 @@ export const PRODUCTOS = [
     descuento: 22,
     categoria: 'Electrodomésticos',
     tipo: 'oferta',
-    comision: 20,
+    // comision: 20, // COMMENTED OUT: Commission functionality removed
     tipoVenta: 'todos',
     rating: 4.5,
     ventas: 145,
     stock: 11,
+    negociable: false, // ✅ AGREGAR: Funcionalidad negociable
   },
   {
     id: 9,
@@ -128,11 +136,12 @@ export const PRODUCTOS = [
     descuento: 33,
     categoria: 'Moda',
     tipo: 'top',
-    comision: 25,
+    // comision: 25, // COMMENTED OUT: Commission functionality removed
     tipoVenta: 'indirecta',
     rating: 4.1,
     ventas: 423,
     stock: 67,
+    negociable: true, // ✅ AGREGAR: Funcionalidad negociable
   },
   {
     id: 10,
@@ -143,11 +152,12 @@ export const PRODUCTOS = [
     descuento: 25,
     categoria: 'Hogar y Muebles',
     tipo: 'top',
-    comision: 18,
+    // comision: 18, // COMMENTED OUT: Commission functionality removed
     tipoVenta: 'directa',
     rating: 4.8,
     ventas: 289,
     stock: 9,
+    negociable: false, // ✅ AGREGAR: Funcionalidad negociable
   },
   {
     id: 11,
@@ -158,11 +168,12 @@ export const PRODUCTOS = [
     descuento: 20,
     categoria: 'Construcción',
     tipo: 'general',
-    comision: 15,
+    // comision: 15, // COMMENTED OUT: Commission functionality removed
     tipoVenta: 'directa',
     rating: 4.0,
     ventas: 78,
     stock: 14,
+    negociable: true, // ✅ AGREGAR: Funcionalidad negociable
   },
   {
     id: 12,
@@ -173,11 +184,12 @@ export const PRODUCTOS = [
     descuento: 20,
     categoria: 'Hogar y Muebles',
     tipo: 'top',
-    comision: 30,
+    // comision: 30, // COMMENTED OUT: Commission functionality removed
     tipoVenta: 'indirecta',
     rating: 4.3,
     ventas: 634,
     stock: 89,
+    negociable: false, // ✅ AGREGAR: Funcionalidad negociable
   },
   {
     id: 13,
@@ -188,11 +200,12 @@ export const PRODUCTOS = [
     descuento: 20,
     categoria: 'Deportes y Fitness',
     tipo: 'general',
-    comision: 12,
+    // comision: 12, // COMMENTED OUT: Commission functionality removed
     tipoVenta: 'directa',
     rating: 4.6,
     ventas: 112,
     stock: 6,
+    negociable: true, // ✅ AGREGAR: Funcionalidad negociable
   },
 ]
 

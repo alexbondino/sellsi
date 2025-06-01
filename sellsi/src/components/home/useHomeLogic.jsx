@@ -29,16 +29,14 @@ const useHomeLogic = (scrollTargets) => {
       estadisticasRef,
       contactanosRef,
     }
-  }
-
-  // ===== CARRUSELES =====
-  // Carrusel de promoción usando custom hook
+  } // ===== CARRUSELES =====
+  // Carrusel de promoción usando custom hook con autoplay cada 10 segundos
   const {
     currentSlide: currentPromoSlide,
     nextSlide: nextPromoSlide,
     prevSlide: prevPromoSlide,
     goToSlide: goToPromoSlide,
-  } = useCarousel(PROMO_SLIDES.length, 10000)
+  } = useCarousel(PROMO_SLIDES.length, 10000) // ✅ Cambiado a 10 segundos
 
   // Carrusel principal usando custom hook
   const { currentSlide, nextSlide, prevSlide, goToSlide } = useCarousel(

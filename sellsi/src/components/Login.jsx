@@ -105,13 +105,14 @@ const LoginForm = memo(({ state, dispatch, onSubmit }) => (
           InputProps={{
             endAdornment: (
               <InputAdornment position="end">
+                {' '}
                 <IconButton
                   aria-label="toggle password visibility"
                   onClick={() => dispatch({ type: 'TOGGLE_SHOW_PASSWORD' })}
                   edge="end"
                   size="small"
                 >
-                  {state.showPassword ? <VisibilityOff /> : <Visibility />}
+                  {state.showPassword ? <Visibility /> : <VisibilityOff />}
                 </IconButton>
               </InputAdornment>
             ),
@@ -218,16 +219,20 @@ export default function Login({ open, onClose, onOpenRegister }) {
 
   return (
     <>
+      {' '}
       {/* ✅ DIALOG PRINCIPAL */}
       <Dialog
         open={open && !state.openRecuperar}
         onClose={onClose}
         maxWidth={false}
+        disableScrollLock={true}
+        disableRestoreFocus={true}
         PaperProps={{
           sx: {
             borderRadius: 2,
             maxHeight: '90vh',
             overflow: 'hidden',
+            position: 'fixed',
           },
         }}
       >
@@ -251,18 +256,20 @@ export default function Login({ open, onClose, onOpenRegister }) {
             />
           </Box>
         </DialogContent>
-      </Dialog>
-
+      </Dialog>{' '}
       {/* ✅ DIALOG RECUPERAR */}
       <Dialog
         open={state.openRecuperar}
         onClose={handleRecuperarClose}
         maxWidth={false}
+        disableScrollLock={true}
+        disableRestoreFocus={true}
         PaperProps={{
           sx: {
             borderRadius: 2,
             maxHeight: '90vh',
             overflow: 'hidden',
+            position: 'fixed',
           },
         }}
       >
@@ -270,14 +277,20 @@ export default function Login({ open, onClose, onOpenRegister }) {
           onClose={handleRecuperarClose}
           onVolverLogin={handleVolverLogin}
         />
-      </Dialog>
-
+      </Dialog>{' '}
       {/* ✅ DIALOG REGISTRO */}
       <Dialog
         open={state.openRegistro}
         onClose={handleRegistroClose}
         maxWidth="md"
         fullWidth
+        disableScrollLock={true}
+        disableRestoreFocus={true}
+        PaperProps={{
+          sx: {
+            position: 'fixed',
+          },
+        }}
       >
         <Register open={state.openRegistro} onClose={handleRegistroClose} />
       </Dialog>

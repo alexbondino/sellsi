@@ -17,7 +17,7 @@ export const filterProductsBySection = (productos, seccionActiva) => {
 
 export const filterProductsBySearch = (productos, busqueda) => {
   if (!busqueda) return productos
-  
+
   return productos.filter((producto) =>
     producto.nombre.toLowerCase().includes(busqueda.toLowerCase())
   )
@@ -30,7 +30,7 @@ export const filterProductsByCategory = (productos, categoriaSeleccionada) => {
   ) {
     return productos
   }
-  
+
   return productos.filter((producto) =>
     categoriaSeleccionada.includes(producto.categoria)
   )
@@ -44,21 +44,25 @@ export const filterProductsByPrice = (productos, filtros) => {
   })
 }
 
-export const filterProductsByCommission = (productos, filtros) => {
-  return productos.filter((producto) => {
-    if (filtros.comisionMin && producto.comision < filtros.comisionMin) return false
-    if (filtros.comisionMax && producto.comision > filtros.comisionMax) return false
-    return true
-  })
-}
+// COMMENTED OUT: Commission functionality removed
+// export const filterProductsByCommission = (productos, filtros) => {
+//   return productos.filter((producto) => {
+//     if (filtros.comisionMin && producto.comision < filtros.comisionMin)
+//       return false
+//     if (filtros.comisionMax && producto.comision > filtros.comisionMax)
+//       return false
+//     return true
+//   })
+// }
 
-export const filterProductsBySaleType = (productos, filtros) => {
-  if (filtros.tiposVenta.length === 0) return productos
-  
-  return productos.filter((producto) =>
-    filtros.tiposVenta.includes(producto.tipoVenta)
-  )
-}
+// COMMENTED OUT: Sale Type functionality removed
+// export const filterProductsBySaleType = (productos, filtros) => {
+//   if (filtros.tiposVenta.length === 0) return productos
+//
+//   return productos.filter((producto) =>
+//     filtros.tiposVenta.includes(producto.tipoVenta)
+//   )
+// }
 
 export const filterProductsByStock = (productos, soloConStock) => {
   if (!soloConStock) return productos
@@ -70,18 +74,34 @@ export const filterProductsByRating = (productos, ratingMin) => {
   return productos.filter((producto) => producto.rating >= ratingMin)
 }
 
-export const applyAllFilters = (productos, filtros, busqueda, categoriaSeleccionada, seccionActiva) => {
-  let filtered = productos
+// ✅ NUEVO: Filtro por negociable
+export const filterProductsByNegotiable = (productos, negociable) => {
+  if (!negociable || negociable === 'todos') return productos
 
-  // Aplicar filtros en secuencia
+  return productos.filter((producto) => {
+    if (negociable === 'si') return producto.negociable === true
+    if (negociable === 'no') return producto.negociable === false
+    return true
+  })
+}
+
+export const applyAllFilters = (
+  productos,
+  filtros,
+  busqueda,
+  categoriaSeleccionada,
+  seccionActiva
+) => {
+  let filtered = productos // Aplicar filtros en secuencia
   filtered = filterProductsBySection(filtered, seccionActiva)
   filtered = filterProductsBySearch(filtered, busqueda)
   filtered = filterProductsByCategory(filtered, categoriaSeleccionada)
   filtered = filterProductsByPrice(filtered, filtros)
-  filtered = filterProductsByCommission(filtered, filtros)
-  filtered = filterProductsBySaleType(filtered, filtros)
+  // filtered = filterProductsByCommission(filtered, filtros) // COMMENTED OUT: Commission functionality removed
+  // filtered = filterProductsBySaleType(filtered, filtros) // COMMENTED OUT: Sale Type functionality removed
   filtered = filterProductsByStock(filtered, filtros.soloConStock)
   filtered = filterProductsByRating(filtered, filtros.ratingMin)
+  filtered = filterProductsByNegotiable(filtered, filtros.negociable) // ✅ AGREGAR: Filtro negociable
 
   return filtered
 }
