@@ -15,10 +15,12 @@ import TopBar from './components/TopBar'
 import BottomBar from './components/BottomBar'
 import Home from './pages/Home'
 import ProviderHome from './pages/provider/ProviderHome'
+import FichaTecnica from './pages/FichaTecnica'
 import TestSupabase from './services/test-supabase'
 import Marketplace from './pages/Marketplace'
 import Login from './components/Login'
 import Register from './components/Register'
+import ProductPageViewDemo from './components/marketplace/ProductPageView/ProductPageViewDemo'
 import { testConnection } from './services/supabase'
 import { BannerProvider, useBanner } from './contexts/BannerContext'
 import { Banner } from './hooks/shared'
@@ -95,14 +97,16 @@ function AppContent({ mensaje, supabaseStatus }) {
           bgcolor: 'background.default',
         }}
       >
+        {' '}
         <Routes>
           <Route path="/" element={<Home scrollTargets={scrollTargets} />} />
           <Route path="/marketplace" element={<Marketplace />} />
+          <Route path="/fichatecnica/:productSlug" element={<FichaTecnica />} />
+          <Route path="/demo" element={<ProductPageViewDemo />} />
           <Route path="/login" element={<Login />} />
           <Route path="/crear-cuenta" element={<Register />} />
           <Route path="/supplier/home" element={<ProviderHome />} />
         </Routes>
-
         {process.env.NODE_ENV === 'development' &&
           location.pathname === '/' && (
             <Box sx={{ flexGrow: 1, textAlign: 'center', py: 4 }}>
@@ -128,7 +132,6 @@ function AppContent({ mensaje, supabaseStatus }) {
               <TestSupabase />
             </Box>
           )}
-
         {showBottomBar && <BottomBar />}
       </Box>
     </>
@@ -162,12 +165,27 @@ function App() {
   }, [backendUrl])
   return (
     <ThemeProvider theme={theme}>
-      <CssBaseline />
+      <CssBaseline />{' '}
       <GlobalStyles
         styles={{
           html: { overflowX: 'hidden' },
-          body: { overflowX: 'hidden', margin: 0 },
-          '#root': { overflowX: 'hidden' },
+          body: {
+            overflowX: 'hidden',
+            margin: 0,
+            // ✅ SOLUCIÓN: Prevenir scroll automático cuando se abren popovers
+            scrollBehavior: 'smooth',
+          },
+          '#root': {
+            overflowX: 'hidden',
+            // ✅ SOLUCIÓN: Mantener posición estable del contenedor principal
+            position: 'relative',
+          },
+          // ✅ SOLUCIÓN: Estilos específicos para popovers para prevenir displacement
+          '.MuiPopover-root': {
+            '& .MuiBackdrop-root': {
+              backgroundColor: 'transparent', // Sin backdrop para evitar cambios visuales
+            },
+          },
         }}
       />
       <BrowserRouter>

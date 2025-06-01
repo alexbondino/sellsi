@@ -244,6 +244,7 @@ export default function Register({ open, onClose }) {
   }
   return (
     <>
+      {' '}
       <Dialog
         key={dialogKey}
         open={open}
@@ -251,6 +252,8 @@ export default function Register({ open, onClose }) {
         onExited={handleExited}
         maxWidth="md"
         fullWidth
+        disableScrollLock={true}
+        disableRestoreFocus={true}
         PaperProps={{
           sx: {
             width: '90vw',
@@ -258,6 +261,7 @@ export default function Register({ open, onClose }) {
             height: '85vh',
             maxHeight: '800px',
             overflowX: 'hidden',
+            position: 'fixed',
           },
         }}
       >

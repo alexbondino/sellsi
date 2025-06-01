@@ -4,10 +4,22 @@
 // - Modificar chips de categorías seleccionadas
 // - Ajustar botones de secciones (Nuevos, Ofertas, etc.)
 
-import React from 'react'
-import { Box, Button, Menu, MenuItem, Chip, Typography } from '@mui/material'
+import React, { useState } from 'react'
+import {
+  Box,
+  Button,
+  Menu,
+  MenuItem,
+  Chip,
+  Typography,
+  Grow,
+  useTheme,
+  useMediaQuery,
+} from '@mui/material'
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown'
 import KeyboardArrowRightIcon from '@mui/icons-material/KeyboardArrowRight'
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
+import ExpandLessIcon from '@mui/icons-material/ExpandLess'
 import { CATEGORIAS } from '../../../data/marketplace/products'
 import { SECTIONS, SECTION_LABELS } from '../../../utils/marketplace/constants'
 import { categoryNavigationStyles as styles } from '../../../hooks/marketplace/CategoryNavigation/CategoryNavigation.styles'
@@ -21,9 +33,25 @@ const CategoryNavigation = ({
   onOpenCategorias,
   onCloseCategorias,
 }) => {
+  const [sectionsExpanded, setSectionsExpanded] = useState(false)
+  const theme = useTheme()
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'))
+
   const handleCategoriaClick = (categoria) => {
     onCategoriaToggle(categoria)
     onCloseCategorias()
+  }
+
+  const handleSectionClick = (value) => {
+    onSeccionChange(value)
+    // Colapsar en móvil después de seleccionar
+    if (isMobile) {
+      setSectionsExpanded(false)
+    }
+  }
+
+  const toggleSectionsExpanded = () => {
+    setSectionsExpanded(!sectionsExpanded)
   }
 
   return (
@@ -36,7 +64,6 @@ const CategoryNavigation = ({
       >
         Categorías
       </Button>
-
       {/* Menu de categorías */}
       <Menu
         anchorEl={anchorElCategorias}
@@ -63,19 +90,74 @@ const CategoryNavigation = ({
             </MenuItem>
           )
         })}
-      </Menu>
-
+      </Menu>{' '}
       {/* Navegación de secciones */}
-      {Object.entries(SECTIONS).map(([key, value]) => (
-        <Button
-          key={value}
-          onClick={() => onSeccionChange(value)}
-          sx={styles.sectionButton(seccionActiva === value)}
-        >
-          {SECTION_LABELS[value]}
-        </Button>
-      ))}
+      {/* En desktop: mostrar todos los botones */}
+      {!isMobile && (
+        <>
+          {Object.entries(SECTIONS).map(([key, value]) => (
+            <Button
+              key={value}
+              onClick={() => handleSectionClick(value)}
+              sx={styles.sectionButton(seccionActiva === value)}
+            >
+              {SECTION_LABELS[value]}
+            </Button>
+          ))}
+        </>
+      )}
+      {/* En móvil: botón colapsible */}
+      {isMobile && (
+        <Box>
+          {/* Botón principal para expandir/colapsar */}
+          <Button
+            endIcon={sectionsExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+            onClick={toggleSectionsExpanded}
+            sx={{
+              ...styles.categoriesButton,
+              fontSize: '0.9rem',
+              px: 2,
+            }}
+          >
+            Secciones
+          </Button>
 
+          {/* Botones expandidos con animación */}
+          <Grow in={sectionsExpanded} timeout={300}>
+            <Box
+              sx={{
+                display: sectionsExpanded ? 'flex' : 'none',
+                flexDirection: 'column',
+                gap: 1,
+                mt: 1,
+                p: 1,
+                backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                borderRadius: 2,
+                boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                position: 'absolute',
+                zIndex: 1000,
+                minWidth: '200px',
+              }}
+            >
+              {Object.entries(SECTIONS).map(([key, value]) => (
+                <Button
+                  key={value}
+                  onClick={() => handleSectionClick(value)}
+                  sx={{
+                    ...styles.sectionButton(seccionActiva === value),
+                    justifyContent: 'flex-start',
+                    px: 2,
+                    py: 1.5,
+                    fontSize: '0.85rem',
+                  }}
+                >
+                  {SECTION_LABELS[value]}
+                </Button>
+              ))}
+            </Box>
+          </Grow>
+        </Box>
+      )}
       {/* Chips de categorías seleccionadas */}
       {categoriaSeleccionada
         .filter((cat) => cat !== 'Todas')
@@ -91,7 +173,6 @@ const CategoryNavigation = ({
             sx={styles.categoryChip}
           />
         ))}
-
       {categoriaSeleccionada.filter((cat) => cat !== 'Todas').length > 3 && (
         <Typography variant="caption" sx={styles.moreCategories}>
           +{categoriaSeleccionada.filter((cat) => cat !== 'Todas').length - 3}{' '}

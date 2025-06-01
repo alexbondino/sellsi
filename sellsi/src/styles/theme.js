@@ -24,7 +24,7 @@ const theme = createTheme({
   },
   typography: {
     fontFamily:
-      '"Proxima Nova", -apple-system, "Helvetica Neue", helvetica, roboto, arial, sans-serif',
+      'Lato, "Proxima Nova", -apple-system, "Helvetica Neue", helvetica, roboto, arial, sans-serif',
     h1: { fontWeight: 700, fontSize: '2.5rem' },
     h2: { fontWeight: 600, fontSize: '2rem' },
     h3: { fontWeight: 600, fontSize: '1.75rem' },

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { Box, IconButton, Fade } from '@mui/material'
 import { ChevronLeft, ChevronRight } from '@mui/icons-material'
 
@@ -37,38 +37,50 @@ const Wizard = ({
 }) => {
   const [currentStep, setCurrentStep] = useState(initialStep)
   const intervalRef = useRef()
-
   // Función para cambiar paso con validaciones
-  const changeStep = (newStep) => {
-    if (newStep >= 0 && newStep < steps.length) {
-      setCurrentStep(newStep)
-      onStepChange?.(newStep, steps[newStep])
-    }
-  }
+  const changeStep = useCallback(
+    (newStep) => {
+      if (newStep >= 0 && newStep < steps.length) {
+        setCurrentStep(newStep)
+        onStepChange?.(newStep, steps[newStep])
+      }
+    },
+    [steps.length, onStepChange]
+  )
 
   // Navegación
-  const nextStep = () => {
-    changeStep((currentStep + 1) % steps.length)
-  }
+  const nextStep = useCallback(() => {
+    setCurrentStep((prev) => {
+      const newStep = (prev + 1) % steps.length
+      onStepChange?.(newStep, steps[newStep])
+      return newStep
+    })
+  }, [steps.length, onStepChange])
 
-  const prevStep = () => {
-    changeStep((currentStep - 1 + steps.length) % steps.length)
-  }
+  const prevStep = useCallback(() => {
+    setCurrentStep((prev) => {
+      const newStep = (prev - 1 + steps.length) % steps.length
+      onStepChange?.(newStep, steps[newStep])
+      return newStep
+    })
+  }, [steps.length, onStepChange])
 
-  const goToStep = (stepIndex) => {
-    changeStep(stepIndex)
-  }
-
+  const goToStep = useCallback(
+    (stepIndex) => {
+      changeStep(stepIndex)
+    },
+    [changeStep]
+  )
   // Auto-avance
   useEffect(() => {
     if (autoAdvance && steps.length > 1) {
       intervalRef.current = setInterval(() => {
-        nextStep()
+        setCurrentStep((prev) => (prev + 1) % steps.length)
       }, autoAdvanceInterval)
 
       return () => clearInterval(intervalRef.current)
     }
-  }, [autoAdvance, autoAdvanceInterval, currentStep, steps.length])
+  }, [autoAdvance, autoAdvanceInterval, steps.length]) // ✅ REMOVIDO currentStep para evitar parpadeos
 
   // Limpiar interval al desmontar
   useEffect(() => {
@@ -78,9 +90,8 @@ const Wizard = ({
       }
     }
   }, [])
-
   // Renderizar contenido del paso actual
-  const renderCurrentStep = () => {
+  const renderCurrentStep = useCallback(() => {
     if (renderStep) {
       return renderStep(currentStep, steps[currentStep], {
         nextStep,
@@ -92,18 +103,18 @@ const Wizard = ({
       })
     }
     return steps[currentStep]
-  }
-
-  // Componente de contenido con transición
+  }, [currentStep, steps, renderStep, nextStep, prevStep, goToStep]) // Componente de contenido con transición
   const StepContent = ({ children }) => {
     if (fadeTransition) {
       return (
-        <Fade in={true} key={currentStep} timeout={fadeTimeout}>
-          <Box sx={{ width: '100%' }}>{children}</Box>
+        <Fade in={true} timeout={fadeTimeout}>
+          <Box sx={{ width: '100%' }} key={currentStep}>
+            {children}
+          </Box>
         </Fade>
       )
     }
-    return children
+    return <Box sx={{ width: '100%' }}>{children}</Box>
   }
 
   return (

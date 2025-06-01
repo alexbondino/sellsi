@@ -1,6 +1,6 @@
 export const filterPanelStyles = {
   desktop: {
-    width: 350, // ✅ CAMBIAR: de 280 a 380px
+    width: 350,
     bgcolor: 'white',
     borderRadius: 2,
     boxShadow: '0 8px 32px rgba(0,0,0,0.15)',
@@ -10,23 +10,32 @@ export const filterPanelStyles = {
     maxHeight: 'calc(100vh - 200px)',
     overflowY: 'auto',
     border: '1px solid #e2e8f0',
-    // ✅ RESTAURAR animación solo del panel
-    transition:
-      'transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease',
     zIndex: 1200,
     top: 180,
     left: 20,
+    // Estilos para scroll personalizado
+    '&::-webkit-scrollbar': {
+      width: 6,
+    },
+    '&::-webkit-scrollbar-track': {
+      background: '#f1f5f9',
+      borderRadius: 3,
+    },
+    '&::-webkit-scrollbar-thumb': {
+      background: '#cbd5e1',
+      borderRadius: 3,
+      '&:hover': {
+        background: '#94a3b8',
+      },
+    },
   },
-
   mobile: {
-    position: 'fixed',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
     bgcolor: 'white',
     zIndex: 1300,
     overflowY: 'auto',
+    borderTopLeftRadius: 16,
+    borderBottomLeftRadius: 16,
+    boxShadow: '-4px 0 20px rgba(0,0,0,0.15)',
   },
 
   mobileHeader: {
@@ -90,11 +99,15 @@ export const filterPanelStyles = {
       bgcolor: 'rgba(239, 68, 68, 0.04)',
     },
   },
-
   applyButton: {
     borderRadius: 2,
     fontWeight: 600,
     textTransform: 'none',
+    transition: 'all 0.2s ease-in-out',
+    '&:hover': {
+      transform: 'translateY(-1px)',
+      boxShadow: '0 4px 12px rgba(25, 118, 210, 0.3)',
+    },
   },
 
   input: {

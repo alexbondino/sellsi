@@ -6,8 +6,8 @@ const ProviderLogo = React.memo(({ provider }) => (
   <Card
     elevation={2}
     sx={{
-      width: { xs: 100, sm: 110, md: 120, lg: 140, xl: 160 },
-      height: { xs: 80, sm: 90, md: 100, lg: 120, xl: 130 },
+      width: { xs: 100, sm: 135, md: 120, lg: 140, xl: 160 },
+      height: { xs: 100, sm: 135, md: 100, lg: 120, xl: 130 },
       borderRadius: { xs: 2, sm: 3, md: 4, lg: 4, xl: 4 },
       overflow: 'hidden',
       background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',

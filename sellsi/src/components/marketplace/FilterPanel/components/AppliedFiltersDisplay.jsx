@@ -27,22 +27,23 @@ const AppliedFiltersDisplay = ({
     })
   }
 
+  // COMMENTED OUT: Commission functionality removed
   // Filtros de comisión
-  if (filtros.comisionMin) {
-    appliedFilters.push({
-      type: 'comision',
-      label: `Comisión min: ${filtros.comisionMin}%`,
-      onRemove: () => onRemoveFilter('comisionMin'),
-    })
-  }
+  // if (filtros.comisionMin) {
+  //   appliedFilters.push({
+  //     type: 'comision',
+  //     label: `Comisión min: ${filtros.comisionMin}%`,
+  //     onRemove: () => onRemoveFilter('comisionMin'),
+  //   })
+  // }
 
-  if (filtros.comisionMax) {
-    appliedFilters.push({
-      type: 'comision',
-      label: `Comisión max: ${filtros.comisionMax}%`,
-      onRemove: () => onRemoveFilter('comisionMax'),
-    })
-  }
+  // if (filtros.comisionMax) {
+  //   appliedFilters.push({
+  //     type: 'comision',
+  //     label: `Comisión max: ${filtros.comisionMax}%`,
+  //     onRemove: () => onRemoveFilter('comisionMax'),
+  //   })
+  // }
 
   // Rating
   if (filtros.ratingMin > 0) {
@@ -53,21 +54,32 @@ const AppliedFiltersDisplay = ({
     })
   }
 
+  // COMMENTED OUT: Sale Type functionality removed
   // Tipos de venta
-  filtros.tiposVenta.forEach((tipo) => {
-    appliedFilters.push({
-      type: 'tipoVenta',
-      label: tipo === 'directa' ? 'Venta Directa' : 'Venta Indirecta',
-      onRemove: () => onRemoveFilter('tipoVenta', tipo),
-    })
-  })
-
+  // filtros.tiposVenta.forEach((tipo) => {
+  //   appliedFilters.push({
+  //     type: 'tipoVenta',
+  //     label: tipo === 'directa' ? 'Venta Directa' : 'Venta Indirecta',
+  //     onRemove: () => onRemoveFilter('tipoVenta', tipo),
+  //   })
+  // })
   // Solo con stock
   if (filtros.soloConStock) {
     appliedFilters.push({
       type: 'stock',
       label: 'Solo con stock',
       onRemove: () => onRemoveFilter('soloConStock'),
+    })
+  }
+
+  // ✅ NUEVO: Filtro negociable
+  if (filtros.negociable && filtros.negociable !== 'todos') {
+    const label =
+      filtros.negociable === 'si' ? 'Solo negociables' : 'Solo no negociables'
+    appliedFilters.push({
+      type: 'negociable',
+      label: label,
+      onRemove: () => onRemoveFilter('negociable'),
     })
   }
 

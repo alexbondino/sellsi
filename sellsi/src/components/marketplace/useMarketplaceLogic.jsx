@@ -61,9 +61,9 @@ const useMarketplaceLogic = () => {
 
   // ===== ESTADOS LOCALES PARA UI =====
   const [anchorElCategorias, setAnchorElCategorias] = useState(null)
+
   // ===== HANDLERS =====
   const handleToggleFiltro = useCallback(() => {
-    // Always toggle the modal for mobile behavior, and visible state for desktop
     setFiltroModalOpen(!filtroModalOpen)
     setFiltroVisible(!filtroVisible)
   }, [filtroModalOpen, setFiltroModalOpen, filtroVisible, setFiltroVisible])

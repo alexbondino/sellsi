@@ -3,7 +3,6 @@ import { Box } from '@mui/material' // Importación de componentes y estilos de 
 import { Banner } from '../hooks/shared' // Componente de banner reutilizable
 // Importación de la lógica de la página de inicio
 import useHomeLogic from '../components/home/useHomeLogic.jsx' // Lógica de la página de inicio
-import ContactSection from '../components/home/sections/ContactSection.jsx' //Sección de contacto (Añadir a BottomBar )
 import HeroSection from '../components/home/sections/HeroSection.jsx' //Carrusel supererio (Somos Sellsi...)
 import ProvidersSection from '../components/home/sections/ProvidersSection.jsx' //Seccion de conocenos a nuestros proveedores
 import AboutUsSection from '../components/home/sections/AboutUsSection.jsx' //Sección ¿Quiénes somos?
@@ -50,12 +49,10 @@ const Home = ({ scrollTargets }) => {
       <ProvidersSection statistics={statistics} />
       {/* Banner Component */}
       <Banner />
-      {/* Sección ¿Quiénes somos? */}
+      {/* Sección ¿Quiénes somos? */}{' '}
       <AboutUsSection quienesSomosRef={quienesSomosRef} />
       {/* Sección Nuestros Servicios */}
       <ServicesSection serviciosRef={serviciosRef} services={services} />
-      {/* Contáctanos */}
-      <ContactSection contactanosRef={contactanosRef} />
     </Box>
   )
 }
