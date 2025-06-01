@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react';
 import {
   Box,
   TextField,
@@ -8,10 +8,11 @@ import {
   Link,
   InputAdornment,
   IconButton,
-} from '@mui/material'
-import { Visibility, VisibilityOff } from '@mui/icons-material'
-import { useTheme } from '@mui/material/styles'
-import { PasswordRequirements, CustomButton } from '../../hooks/shared'
+} from '@mui/material';
+import { Visibility, VisibilityOff } from '@mui/icons-material';
+import { useTheme } from '@mui/material/styles';
+import { PasswordRequirements, CustomButton } from '../../hooks/shared';
+import { supabase } from '../../services/supabase';
 
 const Step1Account = ({
   formData,
@@ -23,35 +24,54 @@ const Step1Account = ({
   onTogglePasswordVisibility,
   onToggleRepeatPasswordVisibility,
 }) => {
-  const theme = useTheme()
+  const theme = useTheme();
   const {
     correo,
     contrasena,
     confirmarContrasena,
     aceptaTerminos,
     aceptaComunicaciones,
-  } = formData
+  } = formData;
 
-  // Validaciones
-  const correoValido = /^[^@]+@[^@]+\.[^@]+$/.test(correo)
+  const [emailEnUso, setEmailEnUso] = useState(false);
+  const [checkingEmail, setCheckingEmail] = useState(false);
+
+  const correoValido = /^[^@]+@[^@]+\.[^@]+$/.test(correo);
   const contrasenasCoinciden =
-    contrasena === confirmarContrasena && confirmarContrasena.length > 0
+    contrasena === confirmarContrasena && confirmarContrasena.length > 0;
 
   const requisitos = [
     { label: 'Al menos 8 caracteres', valid: contrasena.length >= 8 },
     { label: 'Letras minúsculas (a-z)', valid: /[a-z]/.test(contrasena) },
     { label: 'Letras mayúsculas (A-Z)', valid: /[A-Z]/.test(contrasena) },
     { label: 'Números (0-9)', valid: /\d/.test(contrasena) },
-  ]
-  const cumpleMinimos = requisitos.filter((r) => r.valid).length >= 4
+  ];
+  const cumpleMinimos = requisitos.filter(r => r.valid).length >= 4;
 
   const canSubmit =
-    cumpleMinimos && aceptaTerminos && correoValido && contrasenasCoinciden
+    cumpleMinimos && aceptaTerminos && correoValido && contrasenasCoinciden;
 
-  const handleSubmit = (e) => {
-    e.preventDefault()
-    if (canSubmit) onNext()
-  }
+  const handleSubmit = async e => {
+    e.preventDefault();
+    if (!canSubmit || checkingEmail) return;
+
+    setCheckingEmail(true);
+
+    const { data, error } = await supabase
+      .from('users')
+      .select('email')
+      .eq('email', correo)
+      .single();
+
+    if (data) {
+      setEmailEnUso(true);
+    } else {
+      setEmailEnUso(false);
+      onNext();
+    }
+
+    setCheckingEmail(false);
+  };
 
   return (
     <Box
@@ -91,12 +111,17 @@ const Step1Account = ({
           variant="outlined"
           fullWidth
           value={correo}
-          onChange={(e) => onFieldChange('correo', e.target.value)}
+          onChange={e => {
+            onFieldChange('correo', e.target.value);
+            setEmailEnUso(false);
+          }}
           sx={{ mb: 1.5 }}
           size="small"
-          error={correo.length > 0 && !correoValido}
+          error={(correo.length > 0 && !correoValido) || emailEnUso}
           helperText={
-            correo.length > 0 && !correoValido
+            emailEnUso
+              ? 'Este correo ya está en uso. Intenta con otro.'
+              : correo.length > 0 && !correoValido
               ? 'Correo inválido. Ejemplo: usuario@dominio.com'
               : ''
           }
@@ -108,7 +133,7 @@ const Step1Account = ({
           variant="outlined"
           fullWidth
           value={contrasena}
-          onChange={(e) => onFieldChange('contrasena', e.target.value)}
+          onChange={e => onFieldChange('contrasena', e.target.value)}
           sx={{ mb: 1.5 }}
           size="small"
           InputProps={{
@@ -133,7 +158,7 @@ const Step1Account = ({
           variant="outlined"
           fullWidth
           value={confirmarContrasena}
-          onChange={(e) => onFieldChange('confirmarContrasena', e.target.value)}
+          onChange={e => onFieldChange('confirmarContrasena', e.target.value)}
           sx={{ mb: 1.5 }}
           size="small"
           error={confirmarContrasena.length > 0 && !contrasenasCoinciden}
@@ -164,9 +189,7 @@ const Step1Account = ({
           control={
             <Checkbox
               checked={aceptaTerminos}
-              onChange={(e) =>
-                onFieldChange('aceptaTerminos', e.target.checked)
-              }
+              onChange={e => onFieldChange('aceptaTerminos', e.target.checked)}
               sx={{ color: '#41B6E6' }}
               size="normal"
             />
@@ -185,7 +208,7 @@ const Step1Account = ({
           }
           sx={{
             mb: 0.5,
-            alignItems: 'flex-start', // ✅ ALINEAR checkbox al inicio
+            alignItems: 'flex-start',
             '& .MuiFormControlLabel-label': {
               lineHeight: 1.4,
             },
@@ -196,7 +219,7 @@ const Step1Account = ({
           control={
             <Checkbox
               checked={aceptaComunicaciones}
-              onChange={(e) =>
+              onChange={e =>
                 onFieldChange('aceptaComunicaciones', e.target.checked)
               }
               sx={{ color: '#41B6E6' }}
@@ -205,14 +228,12 @@ const Step1Account = ({
           }
           label={
             <span style={{ fontSize: 15 }}>
-              {' '}
-              {/* ✅ CAMBIAR de 13 a 15 */}
               Acepto recibir avisos de ofertas y novedades de Sellsi.
             </span>
           }
           sx={{
             mb: 1.5,
-            alignItems: 'flex-start', // ✅ ALINEAR checkbox al inicio
+            alignItems: 'flex-start',
             '& .MuiFormControlLabel-label': {
               lineHeight: 1.4,
             },
@@ -221,11 +242,11 @@ const Step1Account = ({
 
         <CustomButton
           type="submit"
-          disabled={!canSubmit}
+          disabled={!canSubmit || checkingEmail}
           fullWidth
           sx={{ mb: 0.5 }}
         >
-          Crear cuenta
+          {checkingEmail ? 'Verificando...' : 'Crear cuenta'}
         </CustomButton>
 
         <CustomButton
@@ -238,7 +259,7 @@ const Step1Account = ({
         </CustomButton>
       </form>
     </Box>
-  )
-}
+  );
+};
 
-export default Step1Account
+export default Step1Account;
