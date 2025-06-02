@@ -1,77 +1,76 @@
-import React, { useEffect, useState, useRef } from 'react'
-import { Box, CssBaseline } from '@mui/material'
-import { ThemeProvider } from '@mui/material/styles'
-import GlobalStyles from '@mui/material/GlobalStyles'
+import React, { useEffect, useState, useRef } from 'react';
+import { Box, CssBaseline } from '@mui/material';
+import { ThemeProvider } from '@mui/material/styles';
+import GlobalStyles from '@mui/material/GlobalStyles';
 import {
   BrowserRouter,
   Routes,
   Route,
   useLocation,
   useNavigate,
-} from 'react-router-dom'
+} from 'react-router-dom';
 
-import theme from './styles/theme'
-import TopBar from './components/TopBar'
-import BottomBar from './components/BottomBar'
-import Home from './pages/Home'
-import ProviderHome from './pages/provider/ProviderHome'
-import FichaTecnica from './pages/FichaTecnica'
-import TestSupabase from './services/test-supabase'
-import Marketplace from './pages/Marketplace'
-import Login from './components/Login'
-import Register from './components/Register'
-import ProductPageViewDemo from './components/marketplace/ProductPageView/ProductPageViewDemo'
-import { testConnection } from './services/supabase'
-import { BannerProvider, useBanner } from './contexts/BannerContext'
-import { Banner } from './hooks/shared'
+import theme from './styles/theme';
+import TopBar from './components/TopBar';
+import BottomBar from './components/BottomBar';
+import Home from './pages/Home';
+import ProviderHome from './pages/provider/ProviderHome';
+import FichaTecnica from './pages/FichaTecnica';
+import Marketplace from './pages/Marketplace';
+import Login from './components/Login';
+import Register from './components/Register';
+import ProductPageViewDemo from './components/marketplace/ProductPageView/ProductPageViewDemo';
+import { testConnection } from './services/supabase';
+import { BannerProvider, useBanner } from './contexts/BannerContext';
+import { Banner } from './hooks/shared';
 
 function AppContent({ mensaje, supabaseStatus }) {
-  const location = useLocation()
-  const navigate = useNavigate()
-  const scrollTargets = useRef({})
-  const { bannerState, hideBanner } = useBanner()
+  const location = useLocation();
+  const navigate = useNavigate();
+  const scrollTargets = useRef({});
+  const { bannerState, hideBanner } = useBanner();
 
-  const handleScrollTo = (refName) => {
-    const element = scrollTargets.current[refName]?.current
+  const handleScrollTo = refName => {
+    const element = scrollTargets.current[refName]?.current;
     if (element) {
-      const topBarHeight = 30 // ✅ Altura de la TopBar + margen
+      const topBarHeight = 30; // ✅ Altura de la TopBar + margen
       const elementPosition =
-        element.getBoundingClientRect().top + window.pageYOffset
-      const offsetPosition = elementPosition - topBarHeight
+        element.getBoundingClientRect().top + window.pageYOffset;
+      const offsetPosition = elementPosition - topBarHeight;
 
       window.scrollTo({
         top: offsetPosition,
         behavior: 'smooth',
-      })
+      });
     }
-  }
+  };
 
   useEffect(() => {
-    const isLoggedIn = !!localStorage.getItem('supplierid')
+    const isLoggedIn = !!localStorage.getItem('supplierid');
     if (isLoggedIn && location.pathname === '/') {
-      navigate('/supplier/home', { replace: true })
+      navigate('/supplier/home', { replace: true });
     }
-  }, [location.pathname, navigate])
+  }, [location.pathname, navigate]);
 
   // ✅ EFECTO PARA CERRAR MODALES EN NAVEGACIÓN DEL NAVEGADOR
   useEffect(() => {
     const handlePopstate = () => {
       // Cerrar cualquier modal abierto cuando se usa botón atrás/adelante
-      const event = new CustomEvent('closeAllModals')
-      window.dispatchEvent(event)
-    }
+      const event = new CustomEvent('closeAllModals');
+      window.dispatchEvent(event);
+    };
 
     // Escuchar eventos de navegación del navegador (botón atrás/adelante)
-    window.addEventListener('popstate', handlePopstate)
+    window.addEventListener('popstate', handlePopstate);
 
     return () => {
-      window.removeEventListener('popstate', handlePopstate)
-    }
-  }, [])
+      window.removeEventListener('popstate', handlePopstate);
+    };
+  }, []);
 
-  const needsPadding = true
-  const showTopBar = true // ✅ MOSTRAR SIEMPRE
-  const showBottomBar = location.pathname !== '/supplier/home'
+  const needsPadding = true;
+  const showTopBar = true; // ✅ MOSTRAR SIEMPRE
+  const showBottomBar = location.pathname !== '/supplier/home';
   return (
     <>
       {showTopBar && <TopBar onNavigate={handleScrollTo} />}
@@ -127,42 +126,39 @@ function AppContent({ mensaje, supabaseStatus }) {
                     : ' ❌ Error'}
                 </span>
               </p>
-
-              {/* ✅ COMPONENTE DE TEST: */}
-              <TestSupabase />
             </Box>
           )}
         {showBottomBar && <BottomBar />}
       </Box>
     </>
-  )
+  );
 }
 
 function App() {
-  const [mensaje, setMensaje] = useState('Cargando...')
-  const [supabaseStatus, setSupabaseStatus] = useState('testing')
-  const backendUrl = import.meta.env.VITE_BACKEND_URL
+  const [mensaje, setMensaje] = useState('Cargando...');
+  const [supabaseStatus, setSupabaseStatus] = useState('testing');
+  const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
   useEffect(() => {
     const fetchBackend = async () => {
       try {
-        const res = await fetch(`${backendUrl}/`)
-        const data = await res.json()
-        setMensaje(JSON.stringify(data))
-        console.log('✅ Backend conectado:', data)
+        const res = await fetch(`${backendUrl}/`);
+        const data = await res.json();
+        setMensaje(JSON.stringify(data));
+        console.log('✅ Backend conectado:', data);
 
         // Test Supabase connection
-        const supabaseResult = await testConnection()
-        setSupabaseStatus(supabaseResult.success ? 'connected' : 'error')
+        const supabaseResult = await testConnection();
+        setSupabaseStatus(supabaseResult.success ? 'connected' : 'error');
       } catch (error) {
-        console.error('❌ Error al conectar con backend:', error)
-        setMensaje('No se pudo conectar con el backend.')
-        setSupabaseStatus('error')
+        console.error('❌ Error al conectar con backend:', error);
+        setMensaje('No se pudo conectar con el backend.');
+        setSupabaseStatus('error');
       }
-    }
+    };
 
-    fetchBackend()
-  }, [backendUrl])
+    fetchBackend();
+  }, [backendUrl]);
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />{' '}
@@ -194,7 +190,7 @@ function App() {
         </BannerProvider>
       </BrowserRouter>
     </ThemeProvider>
-  )
+  );
 }
 
-export default App
+export default App;
