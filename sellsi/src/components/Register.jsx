@@ -1,25 +1,24 @@
-import React, { useState, useRef, useEffect } from 'react'
-import { Dialog, DialogTitle, DialogContent, Box } from '@mui/material'
-import { useTheme } from '@mui/material/styles'
-import { useLocation } from 'react-router-dom'
+import React, { useState, useRef, useEffect } from 'react';
+import { Dialog, DialogTitle, DialogContent, Box } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
+import { useLocation } from 'react-router-dom';
 
 import {
   ProgressStepper,
   CustomButton,
   Wizard,
   useWizard,
-} from '../hooks/shared'
-import Step1Account from './register/Step1Account' // Componente para el primer paso del registro
-import Step2AccountType from './register/Step2AccountType' // Componente para seleccionar tipo de cuenta
-import Step3Profile from './register/Step3Profile' // Componente para completar información del perfil
-import Step4Verification from './register/Step4Verification' // Componente para la verificación del registro
-import { useBanner } from '../contexts/BannerContext' // Contexto para mostrar banners de notificación
+} from '../hooks/shared';
+import Step1Account from './register/Step1Account';
+import Step2AccountType from './register/Step2AccountType';
+import Step3Profile from './register/Step3Profile';
+import Step4Verification from './register/Step4Verification';
+import { useBanner } from '../contexts/BannerContext';
 
 export default function Register({ open, onClose }) {
-  const theme = useTheme()
-  const { showBanner } = useBanner()
+  const theme = useTheme();
+  const { showBanner } = useBanner();
 
-  // ✅ ESTADOS PRINCIPALES - Formulario de registro
   const [formData, setFormData] = useState({
     correo: '',
     contrasena: '',
@@ -32,28 +31,26 @@ export default function Register({ open, onClose }) {
     telefonoContacto: '',
     codigoPais: 'Chile',
     logoEmpresa: null,
-  })
-  const [codigo, setCodigo] = useState(['', '', '', '', ''])
-  const [timer, setTimer] = useState(300)
-  const [showPassword, setShowPassword] = useState(false)
-  const [showRepeatPassword, setShowRepeatPassword] = useState(false)
-  const [logoError, setLogoError] = useState('')
-  const [showCodigoEnviado, setShowCodigoEnviado] = useState(false)
-  const [fadeIn, setFadeIn] = useState(false)
-  const [dialogKey, setDialogKey] = useState(0)
+  });
+  const [codigo, setCodigo] = useState(['', '', '', '', '']);
+  const [timer, setTimer] = useState(300);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showRepeatPassword, setShowRepeatPassword] = useState(false);
+  const [logoError, setLogoError] = useState('');
+  const [showCodigoEnviado, setShowCodigoEnviado] = useState(false);
+  const [fadeIn, setFadeIn] = useState(false);
+  const [dialogKey, setDialogKey] = useState(0);
 
-  const timerRef = useRef()
-  const fadeTimeout = useRef()
+  const timerRef = useRef();
+  const fadeTimeout = useRef();
 
-  // ✅ CONFIGURACIÓN DEL WIZARD - Solo 4 pasos ahora
   const steps = [
     'Creación de Cuenta',
     'Tipo de Cuenta',
     'Completar Información',
     'Verificación',
-  ]
+  ];
 
-  // Usar el hook de wizard para la navegación
   const {
     currentStep,
     nextStep,
@@ -62,29 +59,27 @@ export default function Register({ open, onClose }) {
     resetWizard,
     isFirst,
     isLast,
-  } = useWizard(steps, { initialStep: 0 })
-  // ✅ CERRAR MODAL EN NAVEGACIÓN
+  } = useWizard(steps, { initialStep: 0 });
+
   useEffect(() => {
     const handleCloseAllModals = () => {
       if (open) {
-        onClose()
+        onClose();
       }
-    }
+    };
 
-    window.addEventListener('closeAllModals', handleCloseAllModals)
-
+    window.addEventListener('closeAllModals', handleCloseAllModals);
     return () => {
-      window.removeEventListener('closeAllModals', handleCloseAllModals)
-    }
-  }, [open, onClose])
+      window.removeEventListener('closeAllModals', handleCloseAllModals);
+    };
+  }, [open, onClose]);
 
-  // ✅ MÉTODOS
   const updateFormData = (field, value) => {
-    setFormData((prev) => ({ ...prev, [field]: value }))
-  }
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
 
   const resetForm = () => {
-    resetWizard() // Usar el método del wizard
+    resetWizard();
     setFormData({
       correo: '',
       contrasena: '',
@@ -97,77 +92,74 @@ export default function Register({ open, onClose }) {
       telefonoContacto: '',
       codigoPais: 'Chile',
       logoEmpresa: null,
-    })
-    setCodigo(['', '', '', '', ''])
-    setTimer(300)
-    setShowPassword(false)
-    setShowRepeatPassword(false)
-    setLogoError('')
-    setShowCodigoEnviado(false)
-    setFadeIn(false)
-    clearInterval(timerRef.current)
-    clearTimeout(fadeTimeout.current)
-  }
-  // ✅ EFFECTS
-  useEffect(() => {
-    if (currentStep === 3) {
-      // paso 4 en el wizard (0-based)
-      setTimer(300)
-      timerRef.current = setInterval(() => {
-        setTimer((prev) => prev - 1)
-      }, 1000)
-    }
-    return () => clearInterval(timerRef.current)
-  }, [currentStep])
+    });
+    setCodigo(['', '', '', '', '']);
+    setTimer(300);
+    setShowPassword(false);
+    setShowRepeatPassword(false);
+    setLogoError('');
+    setShowCodigoEnviado(false);
+    setFadeIn(false);
+    clearInterval(timerRef.current);
+    clearTimeout(fadeTimeout.current);
+  };
 
   useEffect(() => {
-    if (timer === 0) clearInterval(timerRef.current)
-  }, [timer])
+    if (currentStep === 3) {
+      setTimer(300);
+      timerRef.current = setInterval(() => {
+        setTimer(prev => prev - 1);
+      }, 1000);
+    }
+    return () => clearInterval(timerRef.current);
+  }, [currentStep]);
+
+  useEffect(() => {
+    if (timer === 0) clearInterval(timerRef.current);
+  }, [timer]);
 
   useEffect(() => {
     if (showCodigoEnviado) {
-      setFadeIn(true)
+      setFadeIn(true);
       fadeTimeout.current = setTimeout(() => {
-        setFadeIn(false)
-        setTimeout(() => setShowCodigoEnviado(false), 400)
-      }, 15000)
+        setFadeIn(false);
+        setTimeout(() => setShowCodigoEnviado(false), 400);
+      }, 15000);
     }
-    return () => clearTimeout(fadeTimeout.current)
-  }, [showCodigoEnviado])
+    return () => clearTimeout(fadeTimeout.current);
+  }, [showCodigoEnviado]);
 
-  // ✅ HANDLERS
-  const handleLogoChange = (file) => {
+  const handleLogoChange = file => {
     if (file.size > 300 * 1024) {
-      setLogoError('El tamaño del archivo excede los 300 KB.')
-      updateFormData('logoEmpresa', null)
-      return
+      setLogoError('El tamaño del archivo excede los 300 KB.');
+      updateFormData('logoEmpresa', null);
+      return;
     }
-    setLogoError('')
-    const reader = new FileReader()
-    reader.onload = (ev) => updateFormData('logoEmpresa', ev.target.result)
-    reader.readAsDataURL(file)
-  }
-  const handleResendCode = () => {
-    setShowCodigoEnviado(false)
-    setTimeout(() => setShowCodigoEnviado(true), 10)
-    setTimer(300)
-    clearInterval(timerRef.current)
-    timerRef.current = setInterval(() => {
-      setTimer((prev) => prev - 1)
-    }, 1000)
-  }
-  // ✅ NUEVA FUNCIÓN - Manejar verificación exitosa
-  const handleSuccessfulVerification = () => {
-    // Cerrar el modal
-    onClose()
+    setLogoError('');
+    const reader = new FileReader();
+    reader.onload = ev => updateFormData('logoEmpresa', ev.target.result);
+    reader.readAsDataURL(file);
+  };
 
-    // Mostrar banner de éxito usando el contexto
+  const handleResendCode = () => {
+    setShowCodigoEnviado(false);
+    setTimeout(() => setShowCodigoEnviado(true), 10);
+    setTimer(300);
+    clearInterval(timerRef.current);
+    timerRef.current = setInterval(() => {
+      setTimer(prev => prev - 1);
+    }, 1000);
+  };
+
+  const handleSuccessfulVerification = () => {
+    onClose();
     showBanner({
       message: 'Registro completado correctamente. Bienvenido a Sellsi.',
       severity: 'success',
       duration: 6000,
-    })
-  }
+    });
+  };
+
   const handleDialogClose = (event, reason) => {
     if (
       (currentStep === 1 ||
@@ -176,16 +168,16 @@ export default function Register({ open, onClose }) {
         currentStep === 4) &&
       reason === 'backdropClick'
     ) {
-      return
+      return;
     }
-    onClose(event, reason)
-  }
-  const handleExited = () => {
-    resetForm()
-    setDialogKey((k) => k + 1)
-  }
+    onClose(event, reason);
+  };
 
-  // Función para renderizar cada paso del wizard
+  const handleExited = () => {
+    resetForm();
+    setDialogKey(k => k + 1);
+  };
+
   const renderStep = (stepIndex, stepData, wizardControls) => {
     switch (stepIndex) {
       case 0:
@@ -197,21 +189,21 @@ export default function Register({ open, onClose }) {
             onCancel={onClose}
             showPassword={showPassword}
             showRepeatPassword={showRepeatPassword}
-            onTogglePasswordVisibility={() => setShowPassword((prev) => !prev)}
+            onTogglePasswordVisibility={() => setShowPassword(prev => !prev)}
             onToggleRepeatPasswordVisibility={() =>
-              setShowRepeatPassword((prev) => !prev)
+              setShowRepeatPassword(prev => !prev)
             }
           />
-        )
+        );
       case 1:
         return (
           <Step2AccountType
             selectedType={formData.tipoCuenta}
-            onTypeSelect={(type) => updateFormData('tipoCuenta', type)}
+            onTypeSelect={type => updateFormData('tipoCuenta', type)}
             onNext={wizardControls.nextStep}
             onBack={wizardControls.prevStep}
           />
-        )
+        );
       case 2:
         return (
           <Step3Profile
@@ -223,7 +215,7 @@ export default function Register({ open, onClose }) {
             onNext={wizardControls.nextStep}
             onBack={wizardControls.prevStep}
           />
-        )
+        );
       case 3:
         return (
           <Step4Verification
@@ -237,19 +229,21 @@ export default function Register({ open, onClose }) {
             showCodigoEnviado={showCodigoEnviado}
             fadeIn={fadeIn}
           />
-        )
+        );
       default:
-        return null
+        return null;
     }
-  }
+  };
+
   return (
     <>
-      {' '}
       <Dialog
         key={dialogKey}
         open={open}
         onClose={handleDialogClose}
-        onExited={handleExited}
+        TransitionProps={{
+          onExited: handleExited,
+        }}
         maxWidth="md"
         fullWidth
         disableScrollLock={true}
@@ -266,7 +260,6 @@ export default function Register({ open, onClose }) {
         }}
       >
         <DialogTitle sx={{ p: 0, pb: 1 }}>
-          {/* ✅ BOTÓN CERRAR */}
           <Box
             component="button"
             onClick={onClose}
@@ -297,16 +290,15 @@ export default function Register({ open, onClose }) {
           sx={{ overflowX: 'hidden', px: { xs: 2, sm: 3 }, pt: 1 }}
         >
           <ProgressStepper activeStep={currentStep + 1} steps={steps} />
-          {/* Renderizar el paso actual directamente */}
           <Box sx={{ mt: 2 }}>
             {renderStep(currentStep, steps[currentStep], {
               nextStep,
               prevStep,
               goToStep,
             })}
-          </Box>{' '}
+          </Box>
         </DialogContent>
       </Dialog>
     </>
-  )
+  );
 }

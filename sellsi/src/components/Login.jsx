@@ -1,5 +1,5 @@
-import React, { useEffect, memo, useState } from 'react'
-import { useLocation } from 'react-router-dom' // ✅ AGREGAR
+import React, { useEffect, memo, useState } from 'react';
+import { useLocation } from 'react-router-dom'; // ✅ AGREGAR
 import {
   Dialog,
   DialogContent,
@@ -10,17 +10,17 @@ import {
   InputAdornment,
   IconButton,
   Paper,
-} from '@mui/material'
-import { Visibility, VisibilityOff } from '@mui/icons-material' // Iconos para mostrar/ocultar contraseña
+} from '@mui/material';
+import { Visibility, VisibilityOff } from '@mui/icons-material'; // Iconos para mostrar/ocultar contraseña
 
-import { CustomButton, useLoginForm } from '../hooks/shared' // Hook personalizado para el formulario de inicio de sesión
-import Recuperar from './Recover' //Componente de recuperación de contraseña
-import Register from './Register' // Componente de registro
+import { CustomButton, useLoginForm } from '../hooks/shared'; // Hook personalizado para el formulario de inicio de sesión
+import Recuperar from './Recover'; //Componente de recuperación de contraseña
+import Register from './Register'; // Componente de registro
 
 // ✅ CONSTANTS
 const CONSTANTS = {
   FORM_WIDTH: 400,
-}
+};
 
 // ✅ COMMON STYLES
 const commonStyles = {
@@ -33,7 +33,7 @@ const commonStyles = {
       textDecoration: 'underline',
     },
   },
-}
+};
 
 // ✅ LOGO COMPONENT
 const Logo = memo(() => (
@@ -55,7 +55,7 @@ const Logo = memo(() => (
       Conecta. Vende. Crece.
     </Typography>
   </Box>
-))
+));
 
 // ✅ LOGIN FORM COMPONENT
 const LoginForm = memo(({ state, dispatch, onSubmit }) => (
@@ -79,7 +79,7 @@ const LoginForm = memo(({ state, dispatch, onSubmit }) => (
           label="Correo"
           placeholder="Ingrese su correo electrónico"
           value={state.correo}
-          onChange={(e) =>
+          onChange={e =>
             dispatch({ type: 'SET_CORREO', payload: e.target.value })
           }
           inputProps={{ lang: 'es' }}
@@ -95,7 +95,7 @@ const LoginForm = memo(({ state, dispatch, onSubmit }) => (
           label="Contraseña"
           placeholder="Ingrese su contraseña"
           value={state.contrasena}
-          onChange={(e) =>
+          onChange={e =>
             dispatch({ type: 'SET_CONTRASENA', payload: e.target.value })
           }
           inputProps={{ lang: 'es' }}
@@ -135,7 +135,7 @@ const LoginForm = memo(({ state, dispatch, onSubmit }) => (
       </Box>
     </form>
   </Paper>
-))
+));
 
 // ✅ FOOTER LINKS COMPONENT
 const FooterLinks = memo(({ dispatch, onClose, onOpenRegister }) => (
@@ -158,41 +158,41 @@ const FooterLinks = memo(({ dispatch, onClose, onOpenRegister }) => (
         type="button"
         sx={commonStyles.link}
         onClick={() => {
-          onClose()
-          onOpenRegister()
+          onClose();
+          onOpenRegister();
         }}
       >
         Regístrate
       </Link>
     </Typography>
   </Box>
-))
+));
 
 // ✅ MAIN COMPONENT
 export default function Login({ open, onClose, onOpenRegister }) {
-  const { state, dispatch, handleLogin, resetForm } = useLoginForm()
-  const location = useLocation() // ✅ AGREGAR
+  const { state, dispatch, handleLogin, resetForm } = useLoginForm();
+  const location = useLocation(); // ✅ AGREGAR
 
   useEffect(() => {
     if (!open) {
-      resetForm()
+      resetForm();
     }
-  }, [open])
+  }, [open]);
 
   // ✅ CERRAR MODAL EN NAVEGACIÓN
   useEffect(() => {
     const handleCloseAllModals = () => {
       if (open) {
-        onClose()
+        onClose();
       }
-    }
+    };
 
-    window.addEventListener('closeAllModals', handleCloseAllModals)
+    window.addEventListener('closeAllModals', handleCloseAllModals);
 
     return () => {
-      window.removeEventListener('closeAllModals', handleCloseAllModals)
-    }
-  }, [open, onClose])
+      window.removeEventListener('closeAllModals', handleCloseAllModals);
+    };
+  }, [open, onClose]);
 
   // ✅ CERRAR al cambiar de ruta
   // useEffect(() => {
@@ -201,21 +201,21 @@ export default function Login({ open, onClose, onOpenRegister }) {
   //   }
   // }, [location.pathname, open, onClose])
 
-  const handleSubmit = (e) => {
-    handleLogin(e, onClose)
-  }
+  const handleSubmit = e => {
+    handleLogin(e, onClose);
+  };
 
   const handleRecuperarClose = () => {
-    dispatch({ type: 'CLOSE_RECUPERAR' })
-  }
+    dispatch({ type: 'CLOSE_RECUPERAR' });
+  };
 
   const handleVolverLogin = () => {
-    dispatch({ type: 'CLOSE_RECUPERAR' })
-  }
+    dispatch({ type: 'CLOSE_RECUPERAR' });
+  };
 
   const handleRegistroClose = () => {
-    dispatch({ type: 'CLOSE_REGISTRO' })
-  }
+    dispatch({ type: 'CLOSE_REGISTRO' });
+  };
 
   return (
     <>
@@ -295,5 +295,5 @@ export default function Login({ open, onClose, onOpenRegister }) {
         <Register open={state.openRegistro} onClose={handleRegistroClose} />
       </Dialog>
     </>
-  )
+  );
 }

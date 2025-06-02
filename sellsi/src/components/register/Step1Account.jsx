@@ -60,10 +60,15 @@ const Step1Account = ({
     const { data, error } = await supabase
       .from('users')
       .select('email')
-      .eq('email', correo)
-      .single();
+      .eq('email', correo);
 
-    if (data) {
+    if (error) {
+      console.error('Error al verificar el correo:', error);
+      setCheckingEmail(false);
+      return;
+    }
+
+    if (data.length > 0) {
       setEmailEnUso(true);
     } else {
       setEmailEnUso(false);
