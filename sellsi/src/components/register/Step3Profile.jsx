@@ -64,6 +64,20 @@ const Step3Profile = ({
   };
 
   const handleContinue = async () => {
+    const correo = formData.correo;
+    const contrasena = formData.contrasena;
+
+    // Crear cuenta en Supabase Auth
+    const { error: signUpError } = await supabase.auth.signUp({
+      email: correo,
+      password: contrasena,
+    });
+
+    if (signUpError) {
+      console.error('Error al crear cuenta:', signUpError);
+      return;
+    }
+
     const data = {
       nombre: isProvider ? nombreEmpresa : nombrePersonal,
       telefono: telefonoContacto,

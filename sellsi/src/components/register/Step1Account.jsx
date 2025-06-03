@@ -75,18 +75,6 @@ const Step1Account = ({
       return;
     }
 
-    // Crear cuenta en Supabase Auth
-    const { error: signUpError } = await supabase.auth.signUp({
-      email: correo,
-      password: contrasena,
-    });
-
-    if (signUpError) {
-      console.error('Error al crear cuenta:', signUpError);
-      setCheckingEmail(false);
-      return;
-    }
-
     setEmailEnUso(false);
     setCheckingEmail(false);
     onNext();
