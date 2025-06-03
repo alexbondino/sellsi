@@ -5,6 +5,38 @@ import {
   LogoUploader,
   CountrySelector,
 } from '../../hooks/shared';
+import { supabase } from '../../services/supabase';
+
+// 🔁 Función para enviar el correo
+const sendAuthEmail = async () => {
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser();
+
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  const email = user?.email;
+  const token = session?.access_token;
+
+  if (email && token) {
+    console.log('📧 Enviando correo a:', email); // 👈 Agregá esta línea
+
+    await fetch(
+      'https://pvtmkfckdaeiqrfjskrq.supabase.co/functions/v1/send-auth-email',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ email }),
+      }
+    );
+  }
+};
 
 const Step3Profile = ({
   accountType,
@@ -25,16 +57,13 @@ const Step3Profile = ({
 
   const isProvider = accountType === 'proveedor';
 
-  // ✅ VALIDACIÓN de campos obligatorios
   const isFormValid = () => {
-    if (isProvider) {
-      return nombreEmpresa && nombreEmpresa.trim().length > 0;
-    } else {
-      return nombrePersonal && nombrePersonal.trim().length > 0;
-    }
+    return isProvider
+      ? nombreEmpresa?.trim().length > 0
+      : nombrePersonal?.trim().length > 0;
   };
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
     const data = {
       nombre: isProvider ? nombreEmpresa : nombrePersonal,
       telefono: telefonoContacto,
@@ -42,6 +71,9 @@ const Step3Profile = ({
     };
 
     localStorage.setItem('perfilUsuario', JSON.stringify(data));
+
+    await sendAuthEmail(); // 📨 Enviar correo
+
     onNext();
   };
 
@@ -67,6 +99,7 @@ const Step3Profile = ({
           ? 'Completa los datos de tu empresa'
           : 'Completa tus datos personales'}
       </Typography>
+
       <Box
         component="form"
         sx={{
@@ -193,6 +226,7 @@ const Step3Profile = ({
           </>
         )}
       </Box>
+
       <Box sx={{ width: '100%', maxWidth: 520 }}>
         <CustomButton
           onClick={handleContinue}

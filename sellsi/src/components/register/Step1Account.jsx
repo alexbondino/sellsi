@@ -57,6 +57,7 @@ const Step1Account = ({
 
     setCheckingEmail(true);
 
+    // Verificar si el correo ya existe en la tabla 'users'
     const { data, error } = await supabase
       .from('users')
       .select('email')
@@ -70,12 +71,25 @@ const Step1Account = ({
 
     if (data.length > 0) {
       setEmailEnUso(true);
-    } else {
-      setEmailEnUso(false);
-      onNext();
+      setCheckingEmail(false);
+      return;
     }
 
+    // Crear cuenta en Supabase Auth
+    const { error: signUpError } = await supabase.auth.signUp({
+      email: correo,
+      password: contrasena,
+    });
+
+    if (signUpError) {
+      console.error('Error al crear cuenta:', signUpError);
+      setCheckingEmail(false);
+      return;
+    }
+
+    setEmailEnUso(false);
     setCheckingEmail(false);
+    onNext();
   };
 
   return (
