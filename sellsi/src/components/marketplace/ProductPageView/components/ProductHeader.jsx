@@ -1,13 +1,5 @@
 import React from 'react'
-import {
-  Box,
-  Typography,
-  Grid,
-  Rating,
-  Chip,
-  Card,
-  CardContent,
-} from '@mui/material'
+import { Box, Typography, Grid, Card, CardContent } from '@mui/material'
 import { LocalShipping, Security, Assignment } from '@mui/icons-material'
 
 import ProductImageGallery from './ProductImageGallery'
@@ -93,43 +85,11 @@ const ProductHeader = ({
               lineHeight: 1.2,
             }}
           >
+            {' '}
             {nombre}
-          </Typography>
-          {/* Rating y Ventas */}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Rating value={rating} readOnly precision={0.1} />
-              <Typography variant="body1" color="text.secondary">
-                ({rating})
-              </Typography>
-            </Box>
-            <Typography variant="body2" color="text.secondary">
-              {ventas} vendidos
-            </Typography>
-          </Box>
+          </Typography>{' '}
           {/* Precios */}
           <Box sx={{ mb: 3 }}>
-            {hasDiscount && (
-              <Box
-                sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}
-              >
-                <Typography
-                  variant="h6"
-                  sx={{
-                    textDecoration: 'line-through',
-                    color: 'text.secondary',
-                  }}
-                >
-                  ${precioOriginal.toLocaleString('es-CL')}
-                </Typography>
-                <Chip
-                  label={`-${descuento}%`}
-                  color="error"
-                  size="small"
-                  sx={{ fontWeight: 'bold' }}
-                />
-              </Box>
-            )}
             <Typography
               variant="h2"
               sx={{

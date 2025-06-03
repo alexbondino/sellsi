@@ -20,7 +20,6 @@ import TestSupabase from './services/test-supabase'
 import Marketplace from './pages/Marketplace'
 import Login from './components/Login'
 import Register from './components/Register'
-import ProductPageViewDemo from './components/marketplace/ProductPageView/ProductPageViewDemo'
 import { testConnection } from './services/supabase'
 import { BannerProvider, useBanner } from './contexts/BannerContext'
 import { Banner } from './hooks/shared'
@@ -102,7 +101,6 @@ function AppContent({ mensaje, supabaseStatus }) {
           <Route path="/" element={<Home scrollTargets={scrollTargets} />} />
           <Route path="/marketplace" element={<Marketplace />} />
           <Route path="/fichatecnica/:productSlug" element={<FichaTecnica />} />
-          <Route path="/demo" element={<ProductPageViewDemo />} />
           <Route path="/login" element={<Login />} />
           <Route path="/crear-cuenta" element={<Register />} />
           <Route path="/supplier/home" element={<ProviderHome />} />

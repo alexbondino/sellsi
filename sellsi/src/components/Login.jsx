@@ -111,6 +111,7 @@ const LoginForm = memo(({ state, dispatch, onSubmit }) => (
                   onClick={() => dispatch({ type: 'TOGGLE_SHOW_PASSWORD' })}
                   edge="end"
                   size="small"
+                  tabIndex={-1}
                 >
                   {state.showPassword ? <Visibility /> : <VisibilityOff />}
                 </IconButton>
@@ -140,6 +141,7 @@ const LoginForm = memo(({ state, dispatch, onSubmit }) => (
 // ✅ FOOTER LINKS COMPONENT
 const FooterLinks = memo(({ dispatch, onClose, onOpenRegister }) => (
   <Box display="flex" flexDirection="column" alignItems="center" mt={2} gap={1}>
+    {' '}
     <Typography variant="body2" sx={{ textAlign: 'center' }}>
       ¿Olvidaste tu contraseña?
       <br />
@@ -147,7 +149,10 @@ const FooterLinks = memo(({ dispatch, onClose, onOpenRegister }) => (
         component="button"
         type="button"
         sx={commonStyles.link}
-        onClick={() => dispatch({ type: 'OPEN_RECUPERAR' })}
+        onClick={() => {
+          dispatch({ type: 'RESET_FORM' })
+          dispatch({ type: 'OPEN_RECUPERAR' })
+        }}
       >
         Recuperar Contraseña
       </Link>
@@ -200,17 +205,20 @@ export default function Login({ open, onClose, onOpenRegister }) {
   //     onClose()
   //   }
   // }, [location.pathname, open, onClose])
-
   const handleSubmit = (e) => {
     handleLogin(e, onClose)
   }
 
   const handleRecuperarClose = () => {
+    // Al cerrar el modal de recuperar, también cerramos el modal principal
     dispatch({ type: 'CLOSE_RECUPERAR' })
+    onClose() // ✅ CERRAR COMPLETAMENTE EL MODAL PRINCIPAL
   }
 
   const handleVolverLogin = () => {
+    // ✅ AL VOLVER DESDE STEP4SUCCESS, CERRAR RECUPERAR Y ABRIR LOGIN
     dispatch({ type: 'CLOSE_RECUPERAR' })
+    // No cerrar el modal principal, mantenerlo abierto para mostrar el login
   }
 
   const handleRegistroClose = () => {

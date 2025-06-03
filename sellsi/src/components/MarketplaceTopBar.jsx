@@ -33,19 +33,40 @@ export default function MarketplaceTopBar() {
   const authButtons = {
     loginButton: {
       label: (
-        <React.Fragment>
-          <ShoppingCartIcon sx={{ mr: 1 }} />
-          Mi Carro
-        </React.Fragment>
+        <Tooltip title="Carrito" arrow>
+          <ShoppingCartIcon sx={{ margin: 0 }} />
+        </Tooltip>
       ),
       onClick: handleGoToCart,
-      // Estilos personalizados para el botón Mi Carro
+      // Estilos personalizados para el botón Mi Carro con efectos glassmorphism
       customStyles: {
-        minWidth: '180px', // Ancho mínimo del botón
-        minHeight: '40px', // Altura mínima del botón
-        width: 'auto', // Permite que se ajuste al contenido
-        // maxWidth: '200px', // Opcional: ancho máximo
-        // px: 3, // Opcional: padding horizontal
+        minWidth: '60px', // Ancho mínimo del botón para mantener simetría con el perfil
+        minHeight: '50px', // Altura mínima del botón
+        width: '60px', // Ancho fijo para mantener simetría con el botón de perfil
+        height: '50px', // Altura fija igual al botón de perfil
+        display: 'flex', // Para centrar el contenido
+        alignItems: 'center', // Centrar verticalmente
+        justifyContent: 'center', // Centrar horizontalmente
+        padding: 0, // Eliminar padding para centrado perfecto
+        borderRadius: '12px', // Esquinas redondeadas elegantes
+        border: '2px solid rgb(255, 255, 255)', // Borde azul semi-transparente
+        backgroundColor: 'rgba(255, 255, 255, 0.08)', // Fondo glassmorphism
+        backdropFilter: 'blur(12px)', // Efecto de desenfoque
+        boxShadow:
+          '0 0 0 1px rgba(25, 118, 210, 0.2), 0 4px 12px rgba(25, 118, 210, 0.15), 0 0 20px rgba(25, 118, 210, 0.1)', // Triple sombra con glow
+        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)', // Transición suave
+        '&:hover': {
+          border: '2px solid rgba(25, 118, 210, 0.7)', // Borde más intenso en hover
+          backgroundColor: 'rgba(255, 255, 255, 0.12)', // Fondo más visible en hover
+          boxShadow:
+            '0 0 0 2px rgba(25, 118, 210, 0.3), 0 6px 16px rgba(25, 118, 210, 0.25), 0 0 30px rgba(25, 118, 210, 0.2)', // Sombra más intensa en hover
+          transform: 'scale(1.05)', // Ligero aumento de tamaño en hover
+        },
+        '&:active': {
+          transform: 'scale(0.98)', // Ligera reducción al hacer clic
+          boxShadow:
+            '0 0 0 1px rgba(25, 118, 210, 0.4), 0 2px 8px rgba(25, 118, 210, 0.2)', // Sombra reducida al hacer clic
+        },
       },
     },
     registerButton: {
@@ -55,12 +76,30 @@ export default function MarketplaceTopBar() {
         </Tooltip>
       ),
       onClick: handleGoToProfile,
-      // Estilos personalizados para el botón de perfil
+      // Estilos personalizados para el botón de perfil con efectos glassmorphism
       customStyles: {
         minWidth: '50px', // Botón más compacto para el icono
         width: '50px',
-        height: '40px',
-        borderRadius: '8px',
+        height: '50px', // Altura igual al ancho para hacer un círculo perfecto
+        borderRadius: '50%', // Hace el marco completamente circular
+        border: '2px solid rgb(253, 253, 253)', // Borde azul semi-transparente
+        backgroundColor: 'rgba(255, 255, 255, 0.08)', // Fondo glassmorphism
+        backdropFilter: 'blur(12px)', // Efecto de desenfoque
+        boxShadow:
+          '0 0 0 1px rgba(25, 118, 210, 0.2), 0 4px 12px rgba(25, 118, 210, 0.15), 0 0 20px rgba(25, 118, 210, 0.1)', // Triple sombra con glow
+        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)', // Transición suave
+        '&:hover': {
+          border: '2px solid rgba(25, 118, 210, 0.7)', // Borde más intenso en hover
+          backgroundColor: 'rgba(255, 255, 255, 0.12)', // Fondo más visible en hover
+          boxShadow:
+            '0 0 0 2px rgba(25, 118, 210, 0.3), 0 6px 16px rgba(25, 118, 210, 0.25), 0 0 30px rgba(25, 118, 210, 0.2)', // Sombra más intensa en hover
+          transform: 'scale(1.05)', // Ligero aumento de tamaño en hover
+        },
+        '&:active': {
+          transform: 'scale(0.98)', // Ligera reducción al hacer clic
+          boxShadow:
+            '0 0 0 1px rgba(25, 118, 210, 0.4), 0 2px 8px rgba(25, 118, 210, 0.2)', // Sombra reducida al hacer clic
+        },
       },
     },
   }

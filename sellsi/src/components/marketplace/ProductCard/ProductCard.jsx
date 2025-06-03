@@ -49,7 +49,8 @@ const ProductCard = ({ producto, onAddToCart, onViewDetails }) => {
   //   }
   // }  // ✅ NUEVA función para manejar click en AGREGAR
   const handleAgregarClick = (event) => {
-    event.stopPropagation() // Solo prevenir propagación hacia ProductCard
+    event.stopPropagation() // Prevenir propagación hacia ProductCard
+    event.preventDefault() // Prevenir comportamiento por defecto
     console.log('handleAgregarClick ejecutado!', event?.currentTarget)
     setAnchorEl(event.currentTarget)
   }
@@ -105,12 +106,26 @@ const ProductCard = ({ producto, onAddToCart, onViewDetails }) => {
     negociable, // ✅ AGREGAR: Propiedad negociable
   } = producto
 
-  const toggleFavorito = () => setFavorito(!favorito)
-
-  // Función para navegar a la ficha técnica del producto
+  const toggleFavorito = () => setFavorito(!favorito) // Función para navegar a la ficha técnica del producto
   const handleProductClick = (e) => {
-    // Prevenir la navegación si se hizo clic en botones específicos
-    if (e.target.closest('button') || e.target.closest('.MuiIconButton-root')) {
+    // Verificar si el clic viene de un botón o elemento interactivo
+    const target = e.target
+    const clickedElement =
+      target.closest('button') ||
+      target.closest('.MuiIconButton-root') ||
+      target.closest('.MuiButton-root') ||
+      target.closest('[data-no-card-click]') ||
+      target.hasAttribute('data-no-card-click')
+
+    // También verificar si el elemento tiene clases de MUI que indican que es un botón
+    const isMuiButton =
+      target.classList.contains('MuiButton-root') ||
+      target.classList.contains('MuiIconButton-root') ||
+      target.closest('.MuiButton-root') ||
+      target.closest('.MuiIconButton-root')
+
+    if (clickedElement || isMuiButton) {
+      console.log('Click interceptado en botón, no navegando')
       return
     }
 
@@ -365,14 +380,23 @@ const ProductCard = ({ producto, onAddToCart, onViewDetails }) => {
             variant="contained"
             fullWidth
             disabled={!negociable}
-            onClick={
-              negociable
-                ? () => {
-                    // TODO: Abrir modal de negociación
-                    console.log('Abrir modal de negociación para:', nombre)
-                  }
-                : undefined
-            }
+            data-no-card-click="true"
+            onMouseDown={(e) => {
+              e.stopPropagation()
+              e.preventDefault()
+            }}
+            onClick={(e) => {
+              e.stopPropagation()
+              e.preventDefault()
+              if (negociable) {
+                // TODO: Abrir modal de negociación
+                console.log('Abrir modal de negociación para:', nombre)
+              }
+            }}
+            onTouchStart={(e) => {
+              e.stopPropagation()
+              e.preventDefault()
+            }}
             sx={{
               textTransform: 'none',
               fontWeight: 600,
@@ -384,6 +408,9 @@ const ProductCard = ({ producto, onAddToCart, onViewDetails }) => {
               backgroundColor: negociable
                 ? 'rgba(46, 125, 50, 0.05)'
                 : 'rgba(117, 117, 117, 0.05)',
+              pointerEvents: 'auto', // Asegurar que el botón capture eventos
+              position: 'relative',
+              zIndex: 10,
               '&:hover': negociable
                 ? {
                     backgroundColor: 'rgba(46, 125, 50, 0.1)',
@@ -404,6 +431,7 @@ const ProductCard = ({ producto, onAddToCart, onViewDetails }) => {
                 color: '#757575',
                 border: 'none',
                 backgroundColor: 'rgba(117, 117, 117, 0.05)',
+                pointerEvents: 'auto', // Mantener eventos incluso cuando está deshabilitado
               },
             }}
           >
@@ -411,14 +439,23 @@ const ProductCard = ({ producto, onAddToCart, onViewDetails }) => {
           </Button>
         </Box>
       </CardContent>{' '}
-      {/* Botón agregar - más pequeño */}
+      {/* Botón agregar - más pequeño */}{' '}
       <CardActions sx={{ p: 1.5, pt: 0.5 }}>
         <Button
           variant="contained"
           color="primary"
           fullWidth
+          data-no-card-click="true"
           startIcon={<ShoppingCartIcon sx={{ fontSize: 16 }} />}
+          onMouseDown={(e) => {
+            e.stopPropagation()
+            e.preventDefault()
+          }}
           onClick={handleAgregarClick}
+          onTouchStart={(e) => {
+            e.stopPropagation()
+            e.preventDefault()
+          }}
           sx={{
             textTransform: 'none',
             fontWeight: 600,
@@ -429,6 +466,9 @@ const ProductCard = ({ producto, onAddToCart, onViewDetails }) => {
             background:
               'linear-gradient(135deg,rgb(231, 254, 255) 0%,rgb(202, 223, 247) 100%)',
             boxShadow: '0 3px 10px rgba(25, 118, 210, 0.3)',
+            pointerEvents: 'auto',
+            position: 'relative',
+            zIndex: 10,
             '&:hover': {
               background:
                 'linear-gradient(135deg,rgb(209, 251, 254) 0%,rgb(189, 196, 247) 100%)',

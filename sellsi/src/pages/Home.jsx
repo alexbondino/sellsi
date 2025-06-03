@@ -48,8 +48,7 @@ const Home = ({ scrollTargets }) => {
       {/* Sección Conoce a nuestros proveedores */}
       <ProvidersSection statistics={statistics} />
       {/* Banner Component */}
-      <Banner />
-      {/* Sección ¿Quiénes somos? */}{' '}
+      <Banner /> {/* Sección ¿Quiénes somos? */}{' '}
       <AboutUsSection quienesSomosRef={quienesSomosRef} />
       {/* Sección Nuestros Servicios */}
       <ServicesSection serviciosRef={serviciosRef} services={services} />

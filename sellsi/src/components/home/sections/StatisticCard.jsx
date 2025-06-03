@@ -8,7 +8,7 @@ const StatisticCard = React.memo(({ stat }) => {
     alignItems: 'center', // ✅ Mantener centrado horizontalmente
     gap: { xs: 0.5, sm: 2, md: 2.5, lg: 2.5, xl: 2.5 },
     p: { xs: 0.3, sm: 1, md: 3, lg: 2.5, xl: 3 },
-    background: '#252440',
+    background: '#000000',
     borderRadius: { xs: 1.5, sm: 2, md: 2, lg: 2, xl: 2 },
     minWidth: { xs: 106, sm: 150, md: 200, lg: 250, xl: 220 },
     maxWidth: { xs: 106, sm: 150, md: 200, lg: 250, xl: 220 },

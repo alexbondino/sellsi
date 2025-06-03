@@ -151,7 +151,7 @@ const BottomBar = () => {
                 }}
               >
                 Marketplace
-              </Typography>
+              </Typography>{' '}
               <Typography
                 variant="body2"
                 sx={{
@@ -162,7 +162,7 @@ const BottomBar = () => {
               >
                 Para Proveedores
               </Typography>
-              <Typography
+              {/* <Typography
                 variant="body2"
                 sx={{
                   color: '#b0b0b0',
@@ -171,7 +171,7 @@ const BottomBar = () => {
                 }}
               >
                 Para Intermediarios
-              </Typography>
+              </Typography> */}
               <Typography
                 variant="body2"
                 sx={{

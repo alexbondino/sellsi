@@ -41,11 +41,11 @@ const Step3Profile = ({
       <Typography
         variant="h5"
         sx={{
-          mb: 8,
+          mb: { xs: 1, sm: 1, md: 6, lg: 8 },
           mt: 2,
           fontWeight: 700,
           textAlign: 'center',
-          fontSize: 22,
+          fontSize: { xs: 18, sm: 18, lg: 22 },
         }}
       >
         {isProvider
@@ -70,6 +70,7 @@ const Step3Profile = ({
         {isProvider ? (
           <>
             <Box sx={{ flex: 1, minWidth: 320 }}>
+              {' '}
               <TextField
                 label="Nombre de Empresa *" // ✅ AGREGAR asterisco
                 variant="outlined"
@@ -80,7 +81,7 @@ const Step3Profile = ({
                 size="small"
                 required
               />
-              <Box sx={{ display: 'flex', gap: 1, mb: 1.5 }}>
+              <Box sx={{ display: 'flex', gap: 1, mb: { xs: 0, mb: 1.5 } }}>
                 <CountrySelector
                   value={codigoPais}
                   onChange={(e) => onFieldChange('codigoPais', e.target.value)}
@@ -90,57 +91,79 @@ const Step3Profile = ({
                   fullWidth
                   label="Teléfono de contacto"
                   value={telefonoContacto}
-                  onChange={(e) =>
-                    onFieldChange('telefonoContacto', e.target.value)
-                  }
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/[^0-9]/g, '')
+                    onFieldChange('telefonoContacto', value)
+                  }}
                   placeholder="Ej: 912345678"
                   type="tel"
                 />
               </Box>
-            </Box>
-
+            </Box>{' '}
             <Box
               sx={{
                 flex: 1,
                 minWidth: 240,
                 display: 'flex',
                 flexDirection: 'column',
-                alignItems: 'center',
+                alignItems: { xs: 'center', sm: 'center', md: 'center' },
                 justifyContent: 'flex-start',
-                gap: 1.5,
+                gap: { xs: 0, mb: 1.5 },
+                width: { xs: '100%', sm: '100%' },
+                position: 'relative', // Enable absolute positioning for error
               }}
             >
               <Typography
                 sx={{
-                  mb: 0.5,
+                  mb: { xs: 0, mb: 0.5 },
                   fontWeight: 500,
                   textAlign: 'center',
                   fontSize: 14,
                 }}
               >
                 Sube la imagen con el logo de tu empresa
-              </Typography>
-
-              <LogoUploader
-                logoPreview={logoEmpresa}
-                onLogoSelect={onLogoChange}
-                size="large"
-              />
-
+              </Typography>{' '}
+              <Box
+                sx={{
+                  transform: {
+                    xs: 'scale(0.75)', // 25% más pequeño para xs
+                    sm: 'scale(0.90)', // 10% más pequeño para sm
+                    md: 'scale(1)', // tamaño normal para md+
+                  },
+                  transformOrigin: 'center',
+                }}
+              >
+                <LogoUploader
+                  logoPreview={logoEmpresa}
+                  onLogoSelect={onLogoChange}
+                  size="large"
+                  textVariant="responsive"
+                />
+              </Box>{' '}
               {logoError && (
                 <Typography
                   sx={{
                     color: 'red',
                     fontSize: 12,
                     textAlign: 'center',
+                    position: 'absolute',
+                    bottom: { xs: -20, sm: -20, md: -20 }, // Moved down by reducing bottom values
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    width: '100%',
+                    zIndex: 1,
                   }}
                 >
                   {logoError}
                 </Typography>
               )}
-
               <Typography
-                sx={{ fontSize: 11, color: '#888', textAlign: 'center' }}
+                sx={{
+                  fontSize: 11,
+                  color: '#888',
+                  textAlign: 'center',
+                  mt: { xs: -2, sm: 0, md: 0 }, // Reduced margin for xs/sm
+                }}
               >
                 Tamaño máximo del archivo: 300 KB.
               </Typography>
@@ -148,6 +171,7 @@ const Step3Profile = ({
           </>
         ) : (
           <>
+            {' '}
             <TextField
               label="Nombre y Apellido *" // ✅ AGREGAR asterisco
               variant="outlined"
@@ -168,10 +192,11 @@ const Step3Profile = ({
                 fullWidth
                 label="Teléfono de contacto"
                 value={telefonoContacto}
-                onChange={(e) =>
-                  onFieldChange('telefonoContacto', e.target.value)
-                }
-                placeholder="Ej: 912345678"
+                onChange={(e) => {
+                  const value = e.target.value.replace(/[^0-9]/g, '')
+                  onFieldChange('telefonoContacto', value)
+                }}
+                placeholder="Ej: 948069213"
                 type="tel"
               />
             </Box>
@@ -179,20 +204,26 @@ const Step3Profile = ({
         )}
       </Box>{' '}
       <Box sx={{ width: '100%', maxWidth: 520 }}>
+        {' '}
         <CustomButton
           onClick={onNext}
           fullWidth
-          sx={{ mb: 0.5, mt: isProvider ? 15.5 : 24.5 }}
-          disabled={!isFormValid()} // ✅ DESHABILITAR botón
+          sx={{
+            mb: 0.5,
+            height: { md: '32px', lg: '44px' },
+            mt: isProvider
+              ? { xs: 2.4, sm: 7.35, md: 11, lg: 19.3, xl: 19.4 }
+              : { xs: 23.15, sm: 30.05, md: 16.2, lg: 24.5, xl: 24.6 },
+          }}
+          disabled={!isFormValid()} // ✅ FIXED: Corrected function name
         >
           Continuar
         </CustomButton>
-
         <CustomButton
           variant="text"
           onClick={onBack}
           fullWidth
-          sx={{ mt: 0.5 }}
+          sx={{ mt: 0.5, height: { md: '32px', lg: '44px' } }}
         >
           Volver atrás
         </CustomButton>
