@@ -1,119 +1,113 @@
-import React, { useState, useEffect } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import React, { useState, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import {
-  AppBar,
-  Toolbar,
-  Typography,
   Button,
   Box,
   IconButton,
   Menu,
   MenuItem,
   useTheme,
-} from '@mui/material'
-import MenuIcon from '@mui/icons-material/Menu'
-import AccountCircleIcon from '@mui/icons-material/AccountCircle'
+} from '@mui/material';
+import MenuIcon from '@mui/icons-material/Menu';
+import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 
-// Importar componentes de diálogo
-import Login from '../Login'
-import Register from '../Register'
-import ContactModal from '../ContactModal'
+import { supabase } from '../../services/supabase';
 
-/**
- * BaseTopBar - Componente base para todas las variantes de TopBar
- * Maneja la lógica común y permite customización mediante props
- */
+import Login from '../Login';
+import Register from '../Register';
+import ContactModal from '../ContactModal';
+
 export default function BaseTopBar({
   navigationButtons = [],
   authButtons = {},
   onNavigate,
   showContactModal = true,
 }) {
-  const theme = useTheme()
-  const navigate = useNavigate()
-  const location = useLocation()
-  const [menuAnchor, setMenuAnchor] = useState(null)
-  const [profileAnchor, setProfileAnchor] = useState(null)
-  const [openLoginModal, setOpenLoginModal] = useState(false)
-  const [openRegisterModal, setOpenRegisterModal] = useState(false)
-  const [openContactModal, setOpenContactModal] = useState(false)
+  const theme = useTheme();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [menuAnchor, setMenuAnchor] = useState(null);
+  const [profileAnchor, setProfileAnchor] = useState(null);
+  const [openLoginModal, setOpenLoginModal] = useState(false);
+  const [openRegisterModal, setOpenRegisterModal] = useState(false);
+  const [openContactModal, setOpenContactModal] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
-  const isLoggedIn = !!localStorage.getItem('supplierid')
+  // Suscripción a cambios de sesión
+  useEffect(() => {
+    const getCurrentSession = async () => {
+      const { data } = await supabase.auth.getSession();
+      setIsLoggedIn(!!data.session);
+    };
 
-  // Menú móvil
-  const openMenu = (e) => setMenuAnchor(e.currentTarget)
-  const closeMenu = () => setMenuAnchor(null)
+    getCurrentSession();
 
-  // Menú de perfil
-  const openProfileMenu = (e) => setProfileAnchor(e.currentTarget)
-  const closeProfileMenu = () => setProfileAnchor(null)
+    const { data: listener } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        setIsLoggedIn(!!session);
+      }
+    );
 
-  // Cerrar sesión
-  const handleLogout = () => {
-    localStorage.removeItem('supplierid')
-    closeProfileMenu()
-    navigate('/')
-  }
+    return () => {
+      listener.subscription.unsubscribe();
+    };
+  }, []);
 
-  // Modales de autenticación
+  const openMenu = e => setMenuAnchor(e.currentTarget);
+  const closeMenu = () => setMenuAnchor(null);
+  const openProfileMenu = e => setProfileAnchor(e.currentTarget);
+  const closeProfileMenu = () => setProfileAnchor(null);
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    closeProfileMenu();
+    navigate('/');
+  };
+
   const handleOpenLogin = () => {
-    setOpenLoginModal(true)
-    closeMenu()
-  }
+    setOpenLoginModal(true);
+    closeMenu();
+  };
 
   const handleOpenRegister = () => {
-    setOpenRegisterModal(true)
-    closeMenu()
-  }
+    setOpenRegisterModal(true);
+    closeMenu();
+  };
 
-  const handleCloseLogin = () => setOpenLoginModal(false)
-  const handleCloseRegister = () => setOpenRegisterModal(false)
+  const handleCloseLogin = () => setOpenLoginModal(false);
+  const handleCloseRegister = () => setOpenRegisterModal(false);
 
-  // Modal de contacto
   const handleOpenContact = () => {
-    setOpenContactModal(true)
-    closeMenu()
-  }
-  const handleCloseContact = () => setOpenContactModal(false)
+    setOpenContactModal(true);
+    closeMenu();
+  };
+  const handleCloseContact = () => setOpenContactModal(false);
 
-  // Navegación
-  const handleNavigate = (ref) => {
-    closeMenu()
-
-    // Abrir modal de contacto
+  const handleNavigate = ref => {
+    closeMenu();
     if (ref === 'contactModal') {
-      handleOpenContact()
-      return
+      handleOpenContact();
+      return;
     }
-
-    // Navegación personalizada
     if (ref !== 'trabajaConNosotrosRef' && onNavigate) {
-      onNavigate(ref)
+      onNavigate(ref);
     }
-  }
+  };
 
-  // Ir al inicio
   const handleGoHome = () => {
-    navigate('/')
+    navigate('/');
     setTimeout(() => {
-      window.scrollTo({
-        top: 0,
-        behavior: 'smooth',
-      })
-    }, 100)
-  }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, 100);
+  };
 
-  // Listener para abrir modal de login desde otros componentes
   useEffect(() => {
-    const handleOpenLoginModal = () => {
-      setOpenLoginModal(true)
-    }
-
-    window.addEventListener('openLoginModal', handleOpenLoginModal)
+    const handleOpenLoginModal = () => setOpenLoginModal(true);
+    window.addEventListener('openLoginModal', handleOpenLoginModal);
     return () => {
-      window.removeEventListener('openLoginModal', handleOpenLoginModal)
-    }
-  }, [])
+      window.removeEventListener('openLoginModal', handleOpenLoginModal);
+    };
+  }, []);
 
   return (
     <Box
@@ -167,16 +161,9 @@ export default function BaseTopBar({
             />
           </Box>
 
-          {/* Navigation links - hidden on mobile */}
           <Box
             sx={{
-              display: {
-                xs: 'none',
-                sm: 'none',
-                md: 'flex',
-                lg: 'flex',
-                xl: 'flex',
-              },
+              display: { xs: 'none', md: 'flex' },
               gap: 3,
             }}
           >
@@ -186,23 +173,7 @@ export default function BaseTopBar({
                   key={ref}
                   onClick={() => handleNavigate(ref)}
                   color="inherit"
-                  sx={{
-                    fontWeight: 'bold',
-                    color: 'white',
-                    '&:hover': {
-                      backgroundColor: 'transparent',
-                    },
-                    '&:focus': {
-                      backgroundColor: 'transparent',
-                      outline: 'none',
-                    },
-                    '&:active': {
-                      backgroundColor: 'transparent',
-                    },
-                    '&.Mui-focusVisible': {
-                      backgroundColor: 'transparent',
-                    },
-                  }}
+                  sx={{ fontWeight: 'bold', color: 'white' }}
                 >
                   {label}
                 </Button>
@@ -210,18 +181,8 @@ export default function BaseTopBar({
           </Box>
         </Box>
 
-        {/* Mobile menu button */}
-        <Box
-          sx={{
-            display: {
-              xs: 'block',
-              sm: 'block',
-              md: 'none',
-              lg: 'none',
-              xl: 'none',
-            },
-          }}
-        >
+        {/* Menú móvil */}
+        <Box sx={{ display: { xs: 'block', md: 'none' } }}>
           <IconButton onClick={openMenu} sx={{ color: 'white', p: 1 }}>
             <MenuIcon fontSize="large" />
           </IconButton>
@@ -231,7 +192,6 @@ export default function BaseTopBar({
             onClose={closeMenu}
             anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
             transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-            PaperProps={{ sx: { maxWidth: '90vw', overflowX: 'hidden' } }}
           >
             <MenuItem onClick={handleGoHome}>Inicio</MenuItem>
             {!isLoggedIn &&
@@ -239,58 +199,20 @@ export default function BaseTopBar({
                 <MenuItem key={ref} onClick={() => handleNavigate(ref)}>
                   {label}
                 </MenuItem>
-              ))}{' '}
+              ))}
             {!isLoggedIn ? (
-              [
-                authButtons.loginButton ? (
-                  <MenuItem
-                    key="login"
-                    onClick={authButtons.loginButton.onClick || handleOpenLogin}
-                  >
-                    {typeof authButtons.loginButton.label === 'string'
-                      ? authButtons.loginButton.label
-                      : 'Mi Carro'}
-                  </MenuItem>
-                ) : (
-                  <MenuItem key="login" onClick={handleOpenLogin}>
-                    Iniciar sesión
-                  </MenuItem>
-                ),
-                authButtons.registerButton ? (
-                  <MenuItem
-                    key="register"
-                    onClick={
-                      authButtons.registerButton.onClick || handleOpenRegister
-                    }
-                  >
-                    {typeof authButtons.registerButton.label === 'string'
-                      ? authButtons.registerButton.label
-                      : 'Ir a mi perfil'}
-                  </MenuItem>
-                ) : (
-                  <MenuItem key="register" onClick={handleOpenRegister}>
-                    Registrarse
-                  </MenuItem>
-                ),
-              ]
+              <>
+                <MenuItem onClick={handleOpenLogin}>Iniciar sesión</MenuItem>
+                <MenuItem onClick={handleOpenRegister}>Registrarse</MenuItem>
+              </>
             ) : (
               <MenuItem onClick={handleLogout}>Cerrar sesión</MenuItem>
             )}
           </Menu>
         </Box>
 
-        {/* Desktop auth buttons and profile menu */}
-        <Box
-          sx={{
-            display: {
-              xs: 'none',
-              sm: 'none',
-              md: 'block',
-              lg: 'block',
-              xl: 'block',
-            },
-          }}
-        >
+        {/* Desktop auth */}
+        <Box sx={{ display: { xs: 'none', md: 'block' } }}>
           {isLoggedIn ? (
             <>
               <IconButton onClick={openProfileMenu} sx={{ color: 'white' }}>
@@ -300,109 +222,38 @@ export default function BaseTopBar({
                 anchorEl={profileAnchor}
                 open={Boolean(profileAnchor)}
                 onClose={closeProfileMenu}
-                anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-                transformOrigin={{ vertical: 'top', horizontal: 'right' }}
               >
                 <MenuItem onClick={handleLogout}>Cerrar sesión</MenuItem>
               </Menu>
             </>
           ) : (
             <Box sx={{ display: 'flex', gap: 1 }}>
-              {' '}
-              {authButtons.loginButton ? (
-                <Button
-                  variant="contained"
-                  onClick={authButtons.loginButton.onClick || handleOpenLogin}
-                  sx={{
-                    backgroundColor: '#1976d2',
-                    color: 'white',
-                    fontWeight: 'bold',
-                    '&:hover': {
-                      backgroundColor: '#1565c0',
-                    },
-                    // Aplicar estilos personalizados si existen
-                    ...authButtons.loginButton.customStyles,
-                  }}
-                >
-                  {authButtons.loginButton.label || 'Iniciar sesión'}
-                </Button>
-              ) : (
-                <Button
-                  variant="contained"
-                  onClick={handleOpenLogin}
-                  sx={{
-                    backgroundColor: '#1976d2',
-                    color: 'white',
-                    fontWeight: 'bold',
-                    '&:hover': {
-                      backgroundColor: '#1565c0',
-                    },
-                  }}
-                >
-                  Iniciar sesión
-                </Button>
-              )}{' '}
-              {authButtons.registerButton ? (
-                <Button
-                  variant="outlined"
-                  onClick={
-                    authButtons.registerButton.onClick || handleOpenRegister
-                  }
-                  sx={{
-                    color: 'white',
-                    borderColor: 'white',
-                    fontWeight: 'bold',
-                    '&:hover': {
-                      backgroundColor: 'rgba(255,255,255,0.1)',
-                      borderColor: 'white',
-                    },
-                    // Aplicar estilos personalizados si existen
-                    ...authButtons.registerButton.customStyles,
-                  }}
-                >
-                  {authButtons.registerButton.label || 'Registrarse'}
-                </Button>
-              ) : (
-                <Button
-                  variant="outlined"
-                  onClick={handleOpenRegister}
-                  sx={{
-                    color: 'white',
-                    borderColor: 'white',
-                    fontWeight: 'bold',
-                    '&:hover': {
-                      backgroundColor: 'rgba(255,255,255,0.1)',
-                      borderColor: 'white',
-                    },
-                  }}
-                >
-                  Registrarse
-                </Button>
-              )}
+              <Button variant="contained" onClick={handleOpenLogin}>
+                Iniciar sesión
+              </Button>
+              <Button variant="outlined" onClick={handleOpenRegister}>
+                Registrarse
+              </Button>
             </Box>
           )}
         </Box>
       </Box>
 
-      {/* Modal de Login */}
+      {/* Modales */}
       <Login
         open={openLoginModal}
         onClose={handleCloseLogin}
         onOpenRegister={() => {
-          handleCloseLogin()
-          handleOpenRegister()
+          handleCloseLogin();
+          handleOpenRegister();
         }}
       />
-
-      {/* Modal de Registro */}
       {openRegisterModal && (
         <Register open={openRegisterModal} onClose={handleCloseRegister} />
       )}
-
-      {/* Modal de Contacto */}
       {showContactModal && (
         <ContactModal open={openContactModal} onClose={handleCloseContact} />
       )}
     </Box>
-  )
+  );
 }
