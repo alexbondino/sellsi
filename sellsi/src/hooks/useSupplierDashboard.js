@@ -72,7 +72,20 @@ export const useSupplierDashboard = () => {
         if (productIds.length > 0) {
           const { data: requestsData, error: requestsError } = await supabase
             .from('requests')
-            .select('*, products(productnm), sellers(user_nm)')
+            .select(
+              `
+              *,
+              seller:users!requests_seller_id_fkey (
+                user_nm
+              ),
+              product:products (
+                productnm,
+                supplier:users!products_supplier_id_fkey (
+                  user_nm
+                )
+              )
+            `
+            )
             .in('productid', productIds)
             .gte('createddt', start)
             .lte('createddt', end);
