@@ -22,6 +22,7 @@ import Register from './components/Register';
 import ProductPageViewDemo from './components/marketplace/ProductPageView/ProductPageViewDemo';
 import { BannerProvider, useBanner } from './contexts/BannerContext';
 import { Banner } from './hooks/shared';
+import { supabase } from './services/supabase';
 
 // Contenido principal que depende de la ruta
 function AppContent({ mensaje }) {
@@ -46,10 +47,21 @@ function AppContent({ mensaje }) {
   };
 
   useEffect(() => {
-    const isLoggedIn = !!localStorage.getItem('supplierid');
-    if (isLoggedIn && location.pathname === '/') {
-      navigate('/supplier/home', { replace: true });
-    }
+    const checkSession = async () => {
+      const { data, error } = await supabase.auth.getSession();
+      if (error) {
+        console.error('❌ Error obteniendo la sesión:', error.message);
+        return;
+      }
+
+      const session = data.session;
+
+      if (session && location.pathname === '/') {
+        navigate('/supplier/home', { replace: true });
+      }
+    };
+
+    checkSession();
   }, [location.pathname, navigate]);
 
   useEffect(() => {
