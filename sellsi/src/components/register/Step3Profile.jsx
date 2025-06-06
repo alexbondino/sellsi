@@ -64,30 +64,75 @@ const Step3Profile = ({
   };
 
   const handleContinue = async () => {
-    const correo = formData.correo;
-    const contrasena = formData.contrasena;
+    const {
+      correo,
+      contrasena,
+      tipoCuenta,
+      nombreEmpresa,
+      nombrePersonal,
+      telefonoContacto,
+      codigoPais,
+    } = formData;
 
-    // Crear cuenta en Supabase Auth
-    const { error: signUpError } = await supabase.auth.signUp({
+    const isProvider = tipoCuenta === 'proveedor';
+    const nombre = isProvider ? nombreEmpresa : nombrePersonal;
+
+    // 1. Crear cuenta en Supabase Auth
+    const { data: signUpData, error: signUpError } = await supabase.auth.signUp(
+      {
+        email: correo,
+        password: contrasena,
+      }
+    );
+
+    if (signUpError || !signUpData?.user?.id) {
+      console.error('❌ Error al crear cuenta Auth:', signUpError);
+      return;
+    }
+
+    // 2. Autenticar inmediatamente al usuario
+    const { error: signInError } = await supabase.auth.signInWithPassword({
       email: correo,
       password: contrasena,
     });
 
-    if (signUpError) {
-      console.error('Error al crear cuenta:', signUpError);
+    if (signInError) {
+      console.error('❌ Error al autenticar después del signUp:', signInError);
       return;
     }
 
-    const data = {
-      nombre: isProvider ? nombreEmpresa : nombrePersonal,
-      telefono: telefonoContacto,
-      pais: codigoPais,
-    };
+    // 3. Obtener el usuario autenticado (para que auth.uid() funcione con RLS)
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
 
-    localStorage.setItem('perfilUsuario', JSON.stringify(data));
+    if (!user) {
+      console.error('❌ Usuario no autenticado aún:', userError);
+      return;
+    }
 
-    await sendAuthEmail(); // 📨 Enviar correo
+    console.log('✅ Usuario autenticado con ID:', user.id);
 
+    // 4. Insertar en tabla `users`
+    const { error: insertError } = await supabase.from('users').insert({
+      user_id: user.id, // Importante para RLS
+      email: correo,
+      user_nm: nombre,
+      main_supplier: isProvider,
+      phone_nbr: telefonoContacto,
+      country: codigoPais,
+    });
+
+    if (insertError) {
+      console.error('❌ Error al guardar en tabla users:', insertError);
+      return;
+    }
+
+    // 5. Enviar correo opcional
+    await sendAuthEmail();
+
+    // 6. Continuar
     onNext();
   };
 

@@ -29,9 +29,10 @@ export default function Register({ open, onClose }) {
     nombreEmpresa: '',
     nombrePersonal: '',
     telefonoContacto: '',
-    codigoPais: 'Chile',
+    codigoPais: '',
     logoEmpresa: null,
   });
+
   const [codigo, setCodigo] = useState(['', '', '', '', '']);
   const [timer, setTimer] = useState(300);
   const [showPassword, setShowPassword] = useState(false);
