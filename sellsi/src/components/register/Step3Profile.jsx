@@ -46,17 +46,16 @@ const Step3Profile = ({
     const isProvider = tipoCuenta === 'proveedor';
     const nombre = isProvider ? nombreEmpresa : nombrePersonal;
 
-    // Crear cuenta en Supabase Auth con metadatos
     const { data: signUpData, error: signUpError } = await supabase.auth.signUp(
       {
         email: correo,
         password: contrasena,
         options: {
-          emailRedirectTo: 'https://tusitio.com/bienvenido', // redirección tras confirmar
+          emailRedirectTo: 'https://tusitio.com/bienvenido',
           data: {
-            nombre,
+            full_name: nombre, // aparecerá como Display Name en Supabase
+            phone: telefonoContacto, // aparecerá como Phone
             proveedor: isProvider,
-            telefono: telefonoContacto,
             pais: codigoPais,
           },
         },
