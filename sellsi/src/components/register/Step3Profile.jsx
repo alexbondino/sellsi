@@ -77,11 +77,19 @@ const Step3Profile = ({
     const isProvider = tipoCuenta === 'proveedor';
     const nombre = isProvider ? nombreEmpresa : nombrePersonal;
 
-    // 1. Crear cuenta en Supabase Auth
+    // 1. Crear cuenta en Supabase Auth con metadatos
     const { data: signUpData, error: signUpError } = await supabase.auth.signUp(
       {
         email: correo,
         password: contrasena,
+        options: {
+          data: {
+            nombre,
+            proveedor: isProvider,
+            telefono: telefonoContacto,
+            pais: codigoPais,
+          },
+        },
       }
     );
 
@@ -90,49 +98,12 @@ const Step3Profile = ({
       return;
     }
 
-    // 2. Autenticar inmediatamente al usuario
-    const { error: signInError } = await supabase.auth.signInWithPassword({
-      email: correo,
-      password: contrasena,
-    });
+    console.log('✅ Usuario creado, esperando verificación por correo');
 
-    if (signInError) {
-      console.error('❌ Error al autenticar después del signUp:', signInError);
-      return;
-    }
-
-    // 3. Obtener el usuario autenticado (para que auth.uid() funcione con RLS)
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      console.error('❌ Usuario no autenticado aún:', userError);
-      return;
-    }
-
-    console.log('✅ Usuario autenticado con ID:', user.id);
-
-    // 4. Insertar en tabla `users`
-    const { error: insertError } = await supabase.from('users').insert({
-      user_id: user.id, // Importante para RLS
-      email: correo,
-      user_nm: nombre,
-      main_supplier: isProvider,
-      phone_nbr: telefonoContacto,
-      country: codigoPais,
-    });
-
-    if (insertError) {
-      console.error('❌ Error al guardar en tabla users:', insertError);
-      return;
-    }
-
-    // 5. Enviar correo opcional
+    // 2. Enviar correo opcional si quieres un adicional (ya se envía uno automáticamente si está configurado)
     await sendAuthEmail();
 
-    // 6. Continuar
+    // 3. Continuar
     onNext();
   };
 
