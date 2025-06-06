@@ -7,37 +7,6 @@ import {
 } from '../../hooks/shared';
 import { supabase } from '../../services/supabase';
 
-// 🔁 Función para enviar el correo
-const sendAuthEmail = async () => {
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser();
-
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-
-  const email = user?.email;
-  const token = session?.access_token;
-
-  if (email && token) {
-    console.log('📧 Enviando correo a:', email); // 👈 Agregá esta línea
-
-    await fetch(
-      'https://pvtmkfckdaeiqrfjskrq.supabase.co/functions/v1/send-auth-email',
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ email }),
-      }
-    );
-  }
-};
-
 const Step3Profile = ({
   accountType,
   formData,
@@ -77,12 +46,13 @@ const Step3Profile = ({
     const isProvider = tipoCuenta === 'proveedor';
     const nombre = isProvider ? nombreEmpresa : nombrePersonal;
 
-    // 1. Crear cuenta en Supabase Auth con metadatos
+    // Crear cuenta en Supabase Auth con metadatos
     const { data: signUpData, error: signUpError } = await supabase.auth.signUp(
       {
         email: correo,
         password: contrasena,
         options: {
+          emailRedirectTo: 'https://tusitio.com/bienvenido', // redirección tras confirmar
           data: {
             nombre,
             proveedor: isProvider,
@@ -99,11 +69,6 @@ const Step3Profile = ({
     }
 
     console.log('✅ Usuario creado, esperando verificación por correo');
-
-    // 2. Enviar correo opcional si quieres un adicional (ya se envía uno automáticamente si está configurado)
-    await sendAuthEmail();
-
-    // 3. Continuar
     onNext();
   };
 
