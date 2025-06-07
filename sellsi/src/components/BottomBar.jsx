@@ -39,10 +39,11 @@ const BottomBar = () => {
               <Box
                 sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}
               >
+                {' '}
                 <img
                   src="/logodark.svg"
                   alt="SELLSI Logo"
-                  style={{ height: 40 }}
+                  style={{ height: 180 }}
                 />
               </Box>
               <Typography
@@ -257,7 +258,9 @@ const BottomBar = () => {
             </Typography>
             <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
               <IconButton
-                href="#"
+                href="https://www.linkedin.com/company/sellsi/"
+                target="_blank"
+                rel="noopener noreferrer"
                 sx={{
                   color: '#b0b0b0',
                   '&:hover': {

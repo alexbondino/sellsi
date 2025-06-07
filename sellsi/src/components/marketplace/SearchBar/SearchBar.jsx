@@ -31,11 +31,17 @@ const SearchBar = ({
   hayFiltrosActivos,
   filtroVisible,
   filtroModalOpen,
+  searchBarMarginLeft = {
+    xs: 0,
+    sm: 0,
+    md: 2,
+    lg: 33.7,
+    xl: 41,
+  }, // Valores por defecto para Marketplace normal
 }) => {
   const handleClear = () => {
     setBusqueda('')
   }
-
   return (
     <Box
       sx={{
@@ -45,6 +51,8 @@ const SearchBar = ({
         width: '100%',
         flexDirection: 'row', // ✅ SIEMPRE en fila para xs/sm/md
         py: 0.5,
+        // ✅ Usar prop searchBarMarginLeft para permitir diferentes valores
+        marginLeft: searchBarMarginLeft,
       }}
     >
       {' '}

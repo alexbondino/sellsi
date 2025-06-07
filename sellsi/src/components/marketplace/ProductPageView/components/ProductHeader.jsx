@@ -1,9 +1,19 @@
 import React from 'react'
-import { Box, Typography, Grid, Card, CardContent } from '@mui/material'
+import {
+  Box,
+  Typography,
+  Grid,
+  Card,
+  CardContent,
+  Avatar,
+  Chip,
+} from '@mui/material'
 import { LocalShipping, Security, Assignment } from '@mui/icons-material'
 
 import ProductImageGallery from './ProductImageGallery'
 import PurchaseActions from './PurchaseActions'
+import PriceDisplay from '../../../shared/PriceDisplay'
+import StockIndicator from '../../../shared/StockIndicator'
 
 const ProductHeader = ({
   product,
@@ -14,16 +24,20 @@ const ProductHeader = ({
 }) => {
   const {
     nombre,
+    proveedor,
     imagen,
     precio,
-    precioOriginal,
-    descuento,
-    rating,
-    ventas,
+    /* COMMENTED OUT: Discount and rating variables */
+    // precioOriginal,
+    // descuento,
+    // rating,
+    // ventas,
     stock,
+    compraMinima,
     descripcion = 'Producto de alta calidad con excelentes características y garantía de satisfacción.',
   } = product
-  const hasDiscount = precioOriginal && precioOriginal > precio
+  /* COMMENTED OUT: Discount calculation */
+  // const hasDiscount = precioOriginal && precioOriginal > precio
   return (
     <Grid container spacing={12} sx={{ alignItems: 'flex-end' }}>
       {' '}
@@ -75,7 +89,7 @@ const ProductHeader = ({
             px: { xs: 2, sm: 2, md: -5 }, // Horizontal padding for better spacing
           }}
         >
-          {/* Nombre del Producto */}
+          {/* Nombre del Producto */}{' '}
           <Typography
             variant="h3"
             sx={{
@@ -86,21 +100,46 @@ const ProductHeader = ({
             }}
           >
             {' '}
-            {nombre}
-          </Typography>{' '}
-          {/* Precios */}
-          <Box sx={{ mb: 3 }}>
-            <Typography
-              variant="h2"
+            {nombre}{' '}
+          </Typography>
+          {/* Nombre del Proveedor */}
+          <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+            <Avatar
               sx={{
-                fontWeight: 700,
-                color: 'primary.main',
-                mb: 1,
+                width: 24,
+                height: 24,
+                mr: 1,
+                fontSize: '0.75rem',
               }}
             >
-              ${precio.toLocaleString('es-CL')}
-            </Typography>
-          </Box>
+              {proveedor?.charAt(0)}
+            </Avatar>
+            <Chip
+              label={proveedor}
+              size="small"
+              variant="outlined"
+              color="primary"
+            />{' '}
+          </Box>{' '}
+          {/* Compra mínima */}
+          <Typography
+            variant="body1"
+            sx={{
+              mb: 3,
+              fontSize: 16,
+              fontWeight: 500,
+              color: 'text.secondary',
+            }}
+          >
+            Compra mínima: {compraMinima} unidades
+          </Typography>{' '}
+          {/* Precios */}
+          <PriceDisplay
+            price={precio}
+            showRange={true}
+            variant="h2"
+            sx={{ mb: 3 }}
+          />
           {/* Descripción */}
           <Typography
             variant="body1"
@@ -108,19 +147,9 @@ const ProductHeader = ({
             sx={{ mb: 4, lineHeight: 1.6 }}
           >
             {descripcion}
-          </Typography>
+          </Typography>{' '}
           {/* Stock */}
-          <Box sx={{ mb: 4 }}>
-            <Typography
-              variant="body2"
-              color={stock < 10 ? 'error.main' : 'success.main'}
-              sx={{ fontWeight: 600 }}
-            >
-              {stock < 10
-                ? `¡Solo ${stock} disponibles!`
-                : `Stock disponible: ${stock} unidades`}
-            </Typography>
-          </Box>{' '}
+          <StockIndicator stock={stock} showUnits={true} sx={{ mb: 4 }} />{' '}
           {/* Botones de Compra */}
           <PurchaseActions
             onAddToCart={onAddToCart}

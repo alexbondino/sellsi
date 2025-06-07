@@ -1,9 +1,10 @@
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Tooltip } from '@mui/material'
+import { Tooltip, Badge } from '@mui/material'
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart'
 import PersonIcon from '@mui/icons-material/Person'
 import BaseTopBar from './shared/BaseTopBar'
+import useCartStore from '../stores/cartStore'
 
 /**
  * MarketplaceTopBar - Configuración específica para la página Marketplace
@@ -14,11 +15,14 @@ import BaseTopBar from './shared/BaseTopBar'
 export default function MarketplaceTopBar() {
   const navigate = useNavigate()
 
+  // Suscribirse a los items del carrito para que se actualice automáticamente
+  const items = useCartStore((state) => state.items)
+  const totalItems = items.length
+
   // Handlers específicos para Marketplace
   const handleGoToCart = () => {
     console.log('Navegando a Mi Carro')
-    // TODO: Implementar navegación al carrito
-    // navigate('/cart')
+    navigate('/buyer/cart')
   }
 
   const handleGoToProfile = () => {
@@ -34,7 +38,25 @@ export default function MarketplaceTopBar() {
     loginButton: {
       label: (
         <Tooltip title="Carrito" arrow>
-          <ShoppingCartIcon sx={{ margin: 0 }} />
+          <Badge
+            badgeContent={totalItems}
+            color="error"
+            sx={{
+              '& .MuiBadge-badge': {
+                right: -3,
+                top: 3,
+                fontSize: '0.75rem',
+                fontWeight: 'bold',
+                backgroundColor: '#f44336',
+                color: 'white',
+                minWidth: '18px',
+                height: '18px',
+                borderRadius: '9px',
+              },
+            }}
+          >
+            <ShoppingCartIcon sx={{ margin: 0 }} />
+          </Badge>
         </Tooltip>
       ),
       onClick: handleGoToCart,
@@ -103,13 +125,19 @@ export default function MarketplaceTopBar() {
       },
     },
   }
-
   return (
     <BaseTopBar
       navigationButtons={navigationButtons}
       authButtons={authButtons}
       onNavigate={null} // No hay navegación interna
       showContactModal={false} // No mostrar modal de contacto en Marketplace
+      logoMarginLeft={{
+        xs: 0,
+        sm: 0,
+        md: -8, // Más hacia la izquierda
+        lg: -28, // Más hacia la izquierda
+        xl: -65, // Más hacia la izquierda
+      }}
     />
   )
 }

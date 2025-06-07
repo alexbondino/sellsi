@@ -7,8 +7,8 @@
 import React from 'react'
 import { Box } from '@mui/material'
 
-// TopBar específico para Marketplace
-import MarketplaceTopBar from '../components/MarketplaceTopBar.jsx'
+// TopBar base (mismo que Home)
+import BaseTopBar from '../components/shared/BaseTopBar.jsx'
 
 // Hook centralizado
 import useMarketplaceLogic from '../components/marketplace/useMarketplaceLogic.jsx'
@@ -21,16 +21,69 @@ import ProductsSection from '../components/marketplace/sections/ProductsSection.
 const Marketplace = () => {
   // ===== USAR CUSTOM HOOK PARA TODA LA LÓGICA =====
   const { searchSectionProps, filterSectionProps, productsSectionProps } =
-    useMarketplaceLogic()
+    useMarketplaceLogic({
+      hasSidebar: false, // Indicar que NO hay sidebar
+      // ✅ Valores específicos para Marketplace (mover más a la izquierda)
+      searchBarMarginLeft: {
+        xs: 0,
+        sm: 0,
+        md: -5,
+        lg: 3,
+        xl: 3,
+      },
+      categoryMarginLeft: {
+        xs: 0,
+        sm: 0,
+        md: -5,
+        lg: 2,
+        xl: 2,
+      },
+      // ✅ Nuevo: Margen del título "🛍️ Todos los Productos"
+      titleMarginLeft: {
+        xs: 0,
+        sm: 0,
+        md: 0,
+        lg: 2,
+        xl: 3,
+      },
+    })
+  // Configuración de botones de navegación (sin botones para Marketplace)
+  const navigationButtons = []
+
+  // Configuración de botones de autenticación (usa defaults)
+  const authButtons = {}
+
+  // Función de navegación (placeholder)
+  const handleNavigate = (ref) => {
+    console.log('Navegando a:', ref)
+    // TODO: Implementar navegación si es necesario
+  }
 
   return (
     <Box>
-      {/* TopBar específico para Marketplace */}
-      <MarketplaceTopBar />
-
-      {/* Contenido principal con margen para compensar TopBar fijo */}
+      {' '}
+      {/* TopBar igual que Home */}
+      <BaseTopBar
+        navigationButtons={navigationButtons}
+        authButtons={authButtons}
+        onNavigate={handleNavigate}
+        showContactModal={true}
+        logoMarginLeft={{
+          xs: 0,
+          sm: 0,
+          md: -3,
+          lg: 1,
+          xl: -28,
+        }}
+      />
+      {/* Contenido principal con margen para compensar TopBar fijo (SIN sidebar) */}
       <Box
-        sx={{ bgcolor: '#f8fafc', minHeight: '100vh', pt: { xs: 7, md: 8 } }}
+        sx={{
+          bgcolor: '#f8fafc',
+          minHeight: '100vh',
+          pt: { xs: 7, md: 8 },
+          // Sin margen izquierdo porque no hay sidebar
+        }}
       >
         {/* Sección de búsqueda y navegación */}
         <SearchSection {...searchSectionProps} />

@@ -288,6 +288,12 @@ const COUNTRIES = [
   { code: 'PA', name: 'Panamá', flag: '🇵🇦', phoneCode: '+507' },
 ]
 
+// Función helper para obtener el código de teléfono de un país
+export const getPhoneCodeByCountryName = (countryName) => {
+  const country = COUNTRIES.find((c) => c.name === countryName)
+  return country ? country.phoneCode : '+56' // Default a Chile si no encuentra
+}
+
 const CountrySelector = ({
   value,
   onChange,

@@ -18,8 +18,13 @@ import ProviderHome from './pages/provider/ProviderHome'
 import FichaTecnica from './pages/FichaTecnica'
 import TestSupabase from './services/test-supabase'
 import Marketplace from './pages/Marketplace'
+import MarketplaceBuyer from './pages/MarketplaceBuyer'
+import BuyerOrders from './pages/buyer/BuyerOrders'
+import BuyerPerformance from './pages/buyer/BuyerPerformance'
+import BuyerCart from './pages/buyer/BuyerCart'
 import Login from './components/Login'
 import Register from './components/Register'
+import PrivateRoute from './auth/PrivateRoute'
 import { testConnection } from './services/supabase'
 import { BannerProvider, useBanner } from './contexts/BannerContext'
 import { Banner } from './hooks/shared'
@@ -44,11 +49,16 @@ function AppContent({ mensaje, supabaseStatus }) {
       })
     }
   }
-
   useEffect(() => {
-    const isLoggedIn = !!localStorage.getItem('supplierid')
-    if (isLoggedIn && location.pathname === '/') {
-      navigate('/supplier/home', { replace: true })
+    const supplierid = localStorage.getItem('supplierid')
+    const sellerid = localStorage.getItem('sellerid')
+    const accountType = localStorage.getItem('account_type') // Solo redirigir si está en la página de inicio y está autenticado
+    if (location.pathname === '/') {
+      if (supplierid && accountType === 'proveedor') {
+        navigate('/supplier/home', { replace: true })
+      } else if (sellerid && accountType === 'comprador') {
+        navigate('/buyer/marketplace', { replace: true })
+      }
     }
   }, [location.pathname, navigate])
 
@@ -99,11 +109,22 @@ function AppContent({ mensaje, supabaseStatus }) {
         {' '}
         <Routes>
           <Route path="/" element={<Home scrollTargets={scrollTargets} />} />
-          <Route path="/marketplace" element={<Marketplace />} />
+          <Route path="/marketplace" element={<Marketplace />} />{' '}
+          <Route path="/buyer/marketplace" element={<MarketplaceBuyer />} />
+          <Route path="/buyer/orders" element={<BuyerOrders />} />
+          <Route path="/buyer/performance" element={<BuyerPerformance />} />
+          <Route path="/buyer/cart" element={<BuyerCart />} />
           <Route path="/fichatecnica/:productSlug" element={<FichaTecnica />} />
           <Route path="/login" element={<Login />} />
           <Route path="/crear-cuenta" element={<Register />} />
-          <Route path="/supplier/home" element={<ProviderHome />} />
+          <Route
+            path="/supplier/home"
+            element={
+              <PrivateRoute requiredAccountType="proveedor">
+                <ProviderHome />
+              </PrivateRoute>
+            }
+          />
         </Routes>
         {process.env.NODE_ENV === 'development' &&
           location.pathname === '/' && (

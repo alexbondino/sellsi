@@ -17,7 +17,31 @@ import { useScrollBehavior } from '../../hooks/marketplace/useScrollBehavior'
  * Hook centralizado que consolida toda la lógica de Marketplace
  * Mantiene exactamente el mismo comportamiento que la implementación original
  */
-const useMarketplaceLogic = () => {
+const useMarketplaceLogic = (options = {}) => {
+  const {
+    hasSidebar = false,
+    searchBarMarginLeft = {
+      xs: 0,
+      sm: 0,
+      md: 2,
+      lg: 33.7,
+      xl: 41,
+    },
+    categoryMarginLeft = {
+      xs: 0,
+      sm: 0,
+      md: 3,
+      lg: 35.5,
+      xl: 40,
+    },
+    titleMarginLeft = {
+      xs: 0,
+      sm: 0,
+      md: 0,
+      lg: 0,
+      xl: 0,
+    },
+  } = options // Nueva opción para detectar si hay sidebar y márgenes personalizados
   const theme = useTheme()
 
   // ===== CONSOLIDAR HOOKS EXISTENTES =====
@@ -76,12 +100,11 @@ const useMarketplaceLogic = () => {
     setAnchorElCategorias(null)
   }, [])
 
-  // ===== PROPS ORGANIZADOS POR SECCIONES =====
-  // Props para SearchSection
+  // ===== PROPS ORGANIZADOS POR SECCIONES =====  // Props para SearchSection
   const searchSectionProps = useMemo(
     () => ({
       shouldShowSearchBar,
-      // SearchBar props
+      hasSidebar, // Nueva prop para indicar si hay sidebar      // SearchBar props
       searchBarProps: {
         busqueda,
         setBusqueda,
@@ -92,6 +115,7 @@ const useMarketplaceLogic = () => {
         hayFiltrosActivos,
         filtroVisible,
         filtroModalOpen,
+        searchBarMarginLeft, // ✅ Agregar prop personalizado
       },
       // CategoryNavigation props
       categoryNavigationProps: {
@@ -102,10 +126,14 @@ const useMarketplaceLogic = () => {
         onCategoriaToggle: toggleCategoria,
         onOpenCategorias: handleOpenCategorias,
         onCloseCategorias: handleCloseCategorias,
+        categoryMarginLeft, // ✅ Agregar prop personalizado
       },
     }),
     [
       shouldShowSearchBar,
+      hasSidebar, // Incluir hasSidebar en las dependencias
+      searchBarMarginLeft, // ✅ Agregar dependencia
+      categoryMarginLeft, // ✅ Agregar dependencia
       busqueda,
       setBusqueda,
       currentOrdenamiento,
@@ -180,6 +208,8 @@ const useMarketplaceLogic = () => {
       totalProductos,
       productosOrdenados,
       resetFiltros,
+      hasSidebar, // ✅ AGREGAR: Prop para detectar si hay sidebar
+      titleMarginLeft, // ✅ AGREGAR: Prop para margen del título
     }),
     [
       shouldShowSearchBar,
@@ -188,6 +218,8 @@ const useMarketplaceLogic = () => {
       totalProductos,
       productosOrdenados,
       resetFiltros,
+      hasSidebar, // ✅ AGREGAR: Dependencia para hasSidebar
+      titleMarginLeft, // ✅ AGREGAR: Dependencia para titleMarginLeft
     ]
   )
   // ===== RETORNAR TODO ORGANIZADO =====

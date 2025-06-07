@@ -1,5 +1,5 @@
-import React from 'react';
-import { Paper, Typography } from '@mui/material';
+import React from 'react'
+import { Paper, Typography } from '@mui/material'
 
 const cardStyle = {
   p: 2,
@@ -10,16 +10,14 @@ const cardStyle = {
   justifyContent: 'center',
   alignItems: 'center',
   textAlign: 'center',
-};
+}
 
 const DashboardCard = ({ icon, title, value, color }) => (
   <Paper sx={cardStyle}>
     {React.cloneElement(icon, { sx: { fontSize: 80, color } })}
-    <Typography variant="h6" sx={{ mt: 2 }}>
-      {title}
-    </Typography>
+    <Typography variant="h6">{title}</Typography>
     <Typography variant="h1">{value}</Typography>
   </Paper>
-);
+)
 
-export default DashboardCard;
+export default DashboardCard
