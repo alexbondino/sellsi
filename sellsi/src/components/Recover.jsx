@@ -1,6 +1,6 @@
 import React, { useImperativeHandle, forwardRef, useEffect } from 'react'
 import { useLocation } from 'react-router-dom' // ✅ AGREGAR
-import { Box, Paper } from '@mui/material'
+import { Box, Paper, Dialog, DialogContent } from '@mui/material'
 import { useTheme } from '@mui/material/styles'
 
 import { CustomButton, useRecuperarForm } from '../hooks/shared'
@@ -45,8 +45,8 @@ const Recuperar = forwardRef(function Recuperar(props, ref) {
   } = useRecuperarForm()
 
   useImperativeHandle(ref, () => resetAllStates)
-
   const handleCerrarTotal = () => {
+    resetAllStates() // ✅ RESETEAR ESTADOS ANTES DE CERRAR
     props.onClose()
   }
 
@@ -114,7 +114,6 @@ const Recuperar = forwardRef(function Recuperar(props, ref) {
             CERRAR
           </CustomButton>
         )}
-
         {/* Renderizado condicional de pasos */}
         {paso === 'correo' && (
           <Step1Email
@@ -126,7 +125,6 @@ const Recuperar = forwardRef(function Recuperar(props, ref) {
             onCancel={handleCerrarTotal}
           />
         )}
-
         {paso === 'codigo' && (
           <Step2Code
             correo={correo}
@@ -139,8 +137,7 @@ const Recuperar = forwardRef(function Recuperar(props, ref) {
             showCodigoEnviado={showCodigoEnviado}
             fadeIn={fadeIn}
           />
-        )}
-
+        )}{' '}
         {paso === 'restablecer' && (
           <Step3Reset
             nuevaContrasena={nuevaContrasena}
@@ -152,9 +149,9 @@ const Recuperar = forwardRef(function Recuperar(props, ref) {
             showRepeatPassword={showRepeatPassword}
             setShowRepeatPassword={setShowRepeatPassword}
             onSubmit={handleCambiarContrasena}
+            onBack={() => setPaso('codigo')}
           />
         )}
-
         {paso === 'exito' && <Step4Success onClose={props.onVolverLogin} />}
       </Paper>
     </Box>

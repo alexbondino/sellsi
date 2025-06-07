@@ -1,33 +1,16 @@
 import React from 'react'
 import { Box, Typography, Grid, Card, CardContent } from '@mui/material'
-import {
-  CheckCircle,
-  Close,
-  Receipt,
-  ShoppingCart,
-  Schedule,
-} from '@mui/icons-material'
+import { Receipt, ShoppingCart } from '@mui/icons-material'
 
 const SaleConditions = ({ product }) => {
   if (!product) return null
-
   // Generate random sale conditions
   const generateSaleConditions = () => {
-    const priceNegotiable = Math.random() > 0.5 ? 'Sí' : 'No'
     const documents = ['Boleta', 'Factura', 'Cualquiera']
     const document = documents[Math.floor(Math.random() * documents.length)]
     const minPurchase = Math.floor(Math.random() * 343) + 1
-    const paymentTerms = ['30 días', '60 días', 'Cualquiera']
-    const paymentTerm =
-      paymentTerms[Math.floor(Math.random() * paymentTerms.length)]
 
     return [
-      {
-        icon: priceNegotiable === 'Sí' ? <CheckCircle /> : <Close />,
-        title: 'Precio Negociable',
-        value: priceNegotiable,
-        color: priceNegotiable === 'Sí' ? 'success' : 'error',
-      },
       {
         icon: <Receipt />,
         title: 'Documento de Venta',
@@ -39,12 +22,6 @@ const SaleConditions = ({ product }) => {
         title: 'Compra Mínima',
         value: `${minPurchase} unidades`,
         color: 'info',
-      },
-      {
-        icon: <Schedule />,
-        title: 'Plazo de Pago',
-        value: paymentTerm,
-        color: 'secondary',
       },
     ]
   }
@@ -76,6 +53,7 @@ const SaleConditions = ({ product }) => {
       >
         {conditions.map((condition, index) => (
           <Grid item xs={12} sm={6} md={3} key={index} sx={{ display: 'flex' }}>
+            {' '}
             <Card
               elevation={1}
               sx={{
@@ -88,12 +66,6 @@ const SaleConditions = ({ product }) => {
                 margin: '0 auto',
                 border: `1px solid`,
                 borderColor: 'grey.200',
-                transition: 'all 0.3s ease',
-                '&:hover': {
-                  transform: 'translateY(-2px)',
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-                  borderColor: `${condition.color}.main`,
-                },
               }}
             >
               <CardContent

@@ -179,33 +179,5 @@ export const formatSalesDataForDisplay = (salesData) => {
       icono: '⭐',
       color: 'warning',
     },
-    {
-      titulo: 'Tiempo de Entrega',
-      valor: salesData.tiempoPromedioEntrega,
-      sufijo: 'días promedio',
-      icono: '🚚',
-      color: 'info',
-    },
-    {
-      titulo: 'Satisfacción',
-      valor: salesData.satisfaccionCliente,
-      sufijo: '% satisfecho',
-      icono: '😊',
-      color: 'success',
-    },
-    {
-      titulo: 'Devoluciones',
-      valor: salesData.devolucionesUltimos6Meses,
-      sufijo: 'últimos 6 meses',
-      icono: '↩️',
-      color: 'error',
-    },
-    {
-      titulo: 'Clientes Repetidores',
-      valor: salesData.clientesRepetidores,
-      sufijo: '% recompra',
-      icono: '🔄',
-      color: 'primary',
-    },
   ]
 }

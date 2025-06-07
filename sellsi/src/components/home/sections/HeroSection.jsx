@@ -16,6 +16,167 @@ const HeroSection = ({
   formatNumber,
 }) => {
   const navigate = useNavigate()
+  const currentSlide = promoSlides[currentPromoSlide]
+  // Renderizar contenido de imagen o texto según el tipo de slide
+  const renderImageContent = (isMobile = false) => {
+    if (currentSlide.type === 'multi-section') {
+      return (
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: '100%',
+            height: '100%',
+            textAlign: 'center',
+          }}
+        >
+          {' '}
+          <Typography
+            variant="h1"
+            fontWeight="bold"
+            sx={{
+              fontSize: {
+                xs: isMobile ? '1.84rem' : '2rem',
+                sm: isMobile ? '2rem' : '2.5rem',
+                md: isMobile ? '2.5rem' : '3.5rem',
+                lg: '3rem',
+                xl: '4.5rem',
+              },
+              color: 'white',
+              textShadow: '2px 2px 4px rgba(0,0,0,0.8)',
+              lineHeight: { xs: 1.3, sm: 1.4, md: 1.4, lg: 1.4, xl: 1.4 },
+            }}
+            dangerouslySetInnerHTML={{ __html: currentSlide.title }}
+          />
+        </Box>
+      )
+    }
+
+    // No mostrar imagen para slide 2 en mobile (xs, sm)
+    if (currentSlide.id === 2 && isMobile) {
+      return null
+    }
+
+    // Imagen estándar para slides 1 y 2
+    return (
+      <img
+        src={currentSlide.src}
+        alt={currentSlide.alt}
+        style={{
+          width: '100%',
+          height: isMobile ? '100%' : 'auto',
+          maxHeight: isMobile ? 'none' : '600px',
+          objectFit: 'contain',
+          transition: 'all 0.5s ease',
+        }}
+      />
+    )
+  }
+
+  // Renderizar contenido según el tipo de slide
+  const renderSlideContent = () => {
+    if (currentSlide.type === 'multi-section') {
+      return (
+        <>
+          {/* Secciones múltiples para slide 3 - Formato simple de texto */}
+          <Box
+            sx={{
+              width: '100%',
+              mt: { xs: 2, sm: 3, md: 3, lg: 3, xl: 3 },
+            }}
+          >
+            {' '}
+            {currentSlide.sections.map((section, index) => (
+              <Box
+                key={index}
+                sx={{ mb: { xs: 2, sm: 2.5, md: 3, lg: 3, xl: 3 } }}
+              >
+                <Typography
+                  variant="h1"
+                  fontWeight="bold"
+                  sx={{
+                    fontSize: {
+                      xs: '1.84rem',
+                      sm: '2rem',
+                      md: '3.5rem',
+                      lg: '3rem',
+                      xl: '4.5rem',
+                    },
+                    lineHeight: { xs: 1.3, sm: 1.4, md: 1.4, lg: 1.4, xl: 1.4 },
+                    mb: { xs: 1, sm: 1.5, md: 2, lg: 2, xl: 2 },
+                    color: '#1565c0',
+                  }}
+                >
+                  {section.title}
+                </Typography>
+                <Typography
+                  variant="h6"
+                  sx={{
+                    fontSize: {
+                      xs: '0.97rem',
+                      sm: '1rem',
+                      md: '1.5rem',
+                      lg: '1.5rem',
+                      xl: '1.7rem',
+                    },
+                    color: 'rgba(255, 255, 255, 0.9)',
+                    lineHeight: { xs: 1.5, sm: 1.6, md: 1.6, lg: 1.6, xl: 1.6 },
+                  }}
+                >
+                  {section.description}
+                </Typography>
+              </Box>
+            ))}
+          </Box>
+        </>
+      )
+    }
+
+    // Contenido estándar para slides 1 y 2
+    return (
+      <>
+        <Typography
+          variant="h1"
+          fontWeight="bold"
+          gutterBottom
+          sx={{
+            fontSize: {
+              xs: '1.84rem',
+              sm: '2rem',
+              md: '3.5rem',
+              lg: '3rem',
+              xl: '4.5rem',
+            },
+            lineHeight: { xs: 1.3, sm: 1.4, md: 1.4, lg: 1.4, xl: 1.4 },
+            mb: { xs: 2, sm: 3, md: 3, lg: 3, xl: 3 },
+            mt: { xs: -1, sm: 0, md: 0 },
+            color: 'white',
+          }}
+          dangerouslySetInnerHTML={{ __html: currentSlide.title }}
+        />{' '}
+        {currentSlide.subtitle && (
+          <Typography
+            variant="h6"
+            gutterBottom
+            sx={{
+              fontSize: {
+                xs: '0.97rem',
+                sm: '1rem',
+                md: '1.5rem',
+                lg: '1.5rem',
+                xl: '1.7rem',
+              },
+              mb: { xs: 1.4, sm: 1.6, md: 1.6, lg: 1.6, xl: 1.8 },
+              color: 'white',
+              lineHeight: { xs: 1.5, sm: 1.6, md: 1.6, lg: 1.6, xl: 1.6 },
+            }}
+            dangerouslySetInnerHTML={{ __html: currentSlide.subtitle }}
+          />
+        )}
+      </>
+    )
+  }
 
   return (
     <Box
@@ -62,7 +223,7 @@ const HeroSection = ({
           position: 'relative',
         }}
       >
-        {/* Imagen Mobile - Solo visible en mobile */}
+        {/* Imagen Mobile - Solo visible en mobile */}{' '}
         <Box
           sx={{
             display: {
@@ -81,18 +242,8 @@ const HeroSection = ({
             pointerEvents: 'none',
           }}
         >
-          <img
-            src={promoSlides[currentPromoSlide].src}
-            alt={promoSlides[currentPromoSlide].alt}
-            style={{
-              width: '100%',
-              height: '100%',
-              objectFit: 'contain',
-              transition: 'all 0.5s ease',
-            }}
-          />
+          {renderImageContent(true)}
         </Box>
-
         {/* COLUMNA 1: Texto - Desktop */}
         <Box
           sx={{
@@ -117,6 +268,7 @@ const HeroSection = ({
             },
           }}
         >
+          {' '}
           <Box
             sx={{
               width: '100%',
@@ -132,52 +284,13 @@ const HeroSection = ({
               ml: { xs: 0, sm: 0, md: 0, lg: 18, xl: 12 }, // Margen izquierdo agregado
             }}
           >
-            <Typography
-              variant="h1"
-              fontWeight="bold"
-              gutterBottom
-              sx={{
-                fontSize: {
-                  xs: '1.84rem',
-                  sm: '2rem',
-                  md: '3.5rem',
-                  lg: '3rem',
-                  xl: '4.5rem',
-                },
-                lineHeight: { xs: 1.3, sm: 1.4, md: 1.4, lg: 1.4, xl: 1.4 },
-                mb: { xs: 2, sm: 3, md: 3, lg: 3, xl: 3 },
-                mt: { xs: -1, sm: 0, md: 0 },
-                color: 'white',
-              }}
-            >
-              Somos <span style={{ color: '#1565c0' }}>Sellsi</span>, el primer
-              marketplace B2B y B2C de Chile
-            </Typography>
-            <Typography
-              variant="h6"
-              gutterBottom
-              sx={{
-                fontSize: {
-                  xs: '0.97rem',
-                  sm: '1rem',
-                  md: '1.5rem',
-                  lg: '1.5rem',
-                  xl: '1.7rem',
-                },
-                mb: { xs: 1.4, sm: 1.6, md: 1.6, lg: 1.6, xl: 1.8 },
-                color: 'white',
-                lineHeight: { xs: 1.5, sm: 1.6, md: 1.6, lg: 1.6, xl: 1.6 },
-              }}
-            >
-              Únete a un ecosistema único en Chile que desarrollamos para ti.
-            </Typography>
+            {renderSlideContent()}
           </Box>
-        </Box>
-
+        </Box>{' '}
         {/* COLUMNA 2: Imagen - Solo Desktop */}
         <Box
           sx={{
-            flex: 0.7,
+            flex: currentSlide.type === 'multi-section' ? 1.2 : 0.7,
             display: {
               xs: 'none', // ✅ Ocultar en mobile
               sm: 'none', // ✅ Ocultar en mobile
@@ -190,27 +303,23 @@ const HeroSection = ({
             pl: { lg: 0, xl: 0 },
           }}
         >
+          {' '}
           <Box
             sx={{
-              width: { lg: '70%', xl: '60%' },
-              maxWidth: { lg: 450, xl: 500 },
+              width:
+                currentSlide.type === 'multi-section'
+                  ? { md: '100%', lg: '90%', xl: '95%' }
+                  : { lg: '70%', xl: '60%' },
+              maxWidth:
+                currentSlide.type === 'multi-section'
+                  ? { md: 700, lg: 650, xl: 950 }
+                  : { lg: 450, xl: 500 },
               ml: { lg: 4, xl: 4 },
             }}
           >
-            <img
-              src={promoSlides[currentPromoSlide].src}
-              alt={promoSlides[currentPromoSlide].alt}
-              style={{
-                width: '100%',
-                height: 'auto',
-                maxHeight: '600px',
-                objectFit: 'contain',
-                transition: 'all 0.5s ease',
-              }}
-            />
+            {renderImageContent(false)}
           </Box>
         </Box>
-
         {/* Botón y Estadísticas para Mobile */}
         <Box
           sx={{

@@ -34,18 +34,18 @@ const FichaTecnica = () => {
         setProduct(foundProduct)
       } else {
         // Si no se encuentra el producto, redirigir al marketplace
-        navigate('/marketplace', { replace: true })
+        navigate('/buyer/marketplace', { replace: true })
       }
     }
     setLoading(false)
   }, [productSlug, navigate])
-
   const handleClose = () => {
-    navigate('/marketplace')
+    navigate('/buyer/marketplace')
   }
-
   const handleAddToCart = (product) => {
-    const isLoggedIn = !!localStorage.getItem('supplierid')
+    const supplierid = localStorage.getItem('supplierid')
+    const sellerid = localStorage.getItem('sellerid')
+    const isLoggedIn = !!(supplierid || sellerid)
 
     if (!isLoggedIn) {
       // Disparar evento para abrir Login modal
@@ -58,7 +58,9 @@ const FichaTecnica = () => {
   }
 
   const handleBuyNow = (product) => {
-    const isLoggedIn = !!localStorage.getItem('supplierid')
+    const supplierid = localStorage.getItem('supplierid')
+    const sellerid = localStorage.getItem('sellerid')
+    const isLoggedIn = !!(supplierid || sellerid)
 
     if (!isLoggedIn) {
       // Disparar evento para abrir Login modal
@@ -96,11 +98,11 @@ const FichaTecnica = () => {
           </Typography>
           <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
             El producto que buscas no existe o ha sido removido.
-          </Typography>
+          </Typography>{' '}
           <Button
             variant="contained"
             startIcon={<StorefrontOutlined />}
-            onClick={() => navigate('/marketplace')}
+            onClick={() => navigate('/buyer/marketplace')}
           >
             Volver al Marketplace
           </Button>
@@ -164,11 +166,11 @@ const FichaTecnica = () => {
             >
               <Home fontSize="small" />
               Inicio
-            </Link>
+            </Link>{' '}
             <Link
               underline="hover"
               color="inherit"
-              onClick={() => navigate('/marketplace')}
+              onClick={() => navigate('/buyer/marketplace')}
               sx={{
                 cursor: 'pointer',
                 display: 'flex',

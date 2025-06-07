@@ -57,36 +57,36 @@ const ServicesSection = ({ serviciosRef }) => {
         },
       ],
     },
-    {
-      title: 'Intermediario',
-      description: 'Vende productos de proveedores y gana comisión',
-      icon: <Person sx={{ fontSize: { xs: 16, sm: 20, md: 28 } }} />,
-      image: '/Landing Page/Vendedor.webp',
-      timeline: [
-        {
-          title: 'Elige productos',
-          description:
-            'Explora nuestro catálogo y selecciona lo que quieres vender',
-          icon: <ShoppingCart />,
-          image: '/Landing Page/Vendedor/elige.webp',
-        },
-        {
-          title: 'Vende como quieras',
-          description: 'Usa redes sociales, tienda física o marketplace',
-          icon: <TrendingUp />,
-          image: '/Landing Page/Vendedor/vendecomoquieras.webp',
-        },
-        {
-          title: 'Gana comisión',
-          description: 'Obtén ganancias por cada venta realizada',
-          icon: <AttachMoney />,
-          image: '/Landing Page/Vendedor/ganacomision.webp',
-        },
-      ],
-    },
+    // {
+    //   title: 'Intermediario',
+    //   description: 'Vende productos de proveedores y gana comisión',
+    //   icon: <Person sx={{ fontSize: { xs: 16, sm: 20, md: 28 } }} />,
+    //   image: '/Landing Page/Vendedor.webp',
+    //   timeline: [
+    //     {
+    //       title: 'Elige productos',
+    //       description:
+    //         'Explora nuestro catálogo y selecciona lo que quieres vender',
+    //       icon: <ShoppingCart />,
+    //       image: '/Landing Page/Vendedor/elige.webp',
+    //     },
+    //     {
+    //       title: 'Vende como quieras',
+    //       description: 'Usa redes sociales, tienda física o marketplace',
+    //       icon: <TrendingUp />,
+    //       image: '/Landing Page/Vendedor/vendecomoquieras.webp',
+    //     },
+    //     {
+    //       title: 'Gana comisión',
+    //       description: 'Obtén ganancias por cada venta realizada',
+    //       icon: <AttachMoney />,
+    //       image: '/Landing Page/Vendedor/ganacomision.webp',
+    //     },
+    //   ],
+    // },
     {
       title: 'Comprador',
-      description: 'Optimiza tu espacio comercial',
+      description: 'Gestiona tus compras de forma ágil',
       icon: <Groups sx={{ fontSize: { xs: 16, sm: 20, md: 28 } }} />,
       image: '/Landing Page/Punto de Venta.webp',
       timeline: [
@@ -147,11 +147,11 @@ const ServicesSection = ({ serviciosRef }) => {
       px: { xs: 0, sm: 0, md: 0, lg: 0, xl: 0 }, // ✅ ELIMINADO PADDING ADICIONAL
     },
     buttons: {
-      gap: { xs: 0.7, sm: 1, md: 2, lg: 4, xl: 12 }, // ✅ REDUCIDO GAP EN XS/SM PARA MÁS ANCHO
-      mb: { xs: 3, sm: 3, md: 6, lg: 8, xl: 8 },
-      minWidth: { xs: 110, sm: 120, md: 160, lg: 180, xl: 305 }, // ✅ AUMENTADO ANCHO EN XS/SM
-      maxWidth: { xs: 110, sm: 120, md: 160, lg: 180, xl: 305 }, // ✅ AUMENTADO ANCHO EN XS/SM
-      height: { xs: 115, sm: 120, md: 180, lg: 200, xl: 150 }, // ✅ Aumentado altura
+      gap: { xs: 3, sm: 3, md: 6, lg: 8, xl: 12 }, // ✅ Aumentado gap para mejor separación
+      mb: { xs: 3, sm: 3, md: 4, lg: 4, xl: 4 },
+      minWidth: { xs: 140, sm: 160, md: 230, lg: 240, xl: 305 }, // ✅ Botones más anchos en xs,sm,md,lg
+      maxWidth: { xs: 140, sm: 160, md: 230, lg: 240, xl: 305 }, // ✅ Botones más anchos en xs,sm,md,lg
+      height: { xs: 100, sm: 100, md: 120, lg: 150, xl: 150 }, // ✅ Aumentado altura
       p: { xs: 1, sm: 1.35, md: 2, lg: 2.2, xl: 2.2 },
       titleFontSize: {
         xs: '0.8rem',
@@ -194,7 +194,7 @@ const ServicesSection = ({ serviciosRef }) => {
       ref={serviciosRef}
       sx={{
         ...breakpoints.container,
-        backgroundColor: '#e6e6e6',
+        backgroundColor: '#000000',
       }}
     >
       {/* Título y texto descriptivo */}
@@ -208,7 +208,7 @@ const ServicesSection = ({ serviciosRef }) => {
             fontSize: breakpoints.title.fontSize,
             textAlign: 'left',
             mb: breakpoints.title.mb,
-            color: 'common.black',
+            color: 'common.white',
             ml: 0, // ✅ FUERZA margen izquierdo 0
             pl: 0, // ✅ FUERZA padding izquierdo 0
           }}
@@ -226,7 +226,7 @@ const ServicesSection = ({ serviciosRef }) => {
             ml: 0, // ✅ FUERZA margen izquierdo 0
             pl: 0, // ✅ FUERZA padding izquierdo 0
             lineHeight: 1.6,
-            color: 'text.secondary',
+            color: 'common.white',
           }}
         >
           Ofrecemos una plataforma intuitiva para descubrir productos, conectar
@@ -305,20 +305,36 @@ const ServicesSection = ({ serviciosRef }) => {
                               backgroundColor:
                                 index === currentStep
                                   ? '#1976d2'
-                                  : 'transparent',
-                              borderColor: '#000000',
+                                  : 'rgba(255, 255, 255, 0.05)', // Fondo semitransparente cuando no está activo                              borderColor: index === currentStep ? '#1976d2' : 'rgba(25, 118, 210, 0.3)',
+                              border:
+                                index === currentStep
+                                  ? '2.5px solid #1976d2'
+                                  : '1.5px solid rgba(25, 118, 210, 0.3)',
                               minWidth: breakpoints.buttons.minWidth, // ✅ Ancho controlado
                               maxWidth: breakpoints.buttons.maxWidth, // ✅ FUERZA EL ANCHO MÁXIMO
                               width: breakpoints.buttons.maxWidth, // ✅ FUERZA EL ANCHO EXACTO
                               borderRadius: 2,
                               display: 'flex', // ✅ Asegurar flex
                               overflow: 'hidden', // ✅ CORTA CONTENIDO QUE SE DESBORDE
+                              // Efecto glassmorphism para botones no activos
+                              backdropFilter:
+                                index === currentStep ? 'none' : 'blur(10px)',
+                              boxShadow:
+                                index === currentStep
+                                  ? '0 8px 32px rgba(25, 118, 210, 0.3)'
+                                  : '0 4px 20px rgba(255, 255, 255, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.2)',
                               '&:hover': {
                                 backgroundColor:
-                                  index === currentStep ? '#b0ceea' : '#b0ceea',
-                                borderColor: 'primary.main',
+                                  index === currentStep
+                                    ? '#1565c0'
+                                    : 'rgba(25, 118, 210, 0.15)', // Hover más azul y menos transparente
+                                borderColor: '#1976d2',
                                 transform: 'translateY(-2px)',
-                                boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                                boxShadow:
+                                  index === currentStep
+                                    ? '0 12px 40px rgba(25, 118, 210, 0.4)'
+                                    : '0 8px 32px rgba(25, 118, 210, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.3)',
+                                backdropFilter: 'blur(15px)',
                               },
                             }}
                           >
@@ -399,7 +415,7 @@ const ServicesSection = ({ serviciosRef }) => {
                                   color:
                                     index === currentStep
                                       ? 'white'
-                                      : 'text.secondary',
+                                      : 'common.white',
                                   textAlign: 'center',
                                   fontSize: breakpoints.buttons.descFontSize,
                                   flex: 1,
@@ -434,9 +450,52 @@ const ServicesSection = ({ serviciosRef }) => {
                             </Box>
                           </Button>
                         </Grid>
-                      ))}
+                      ))}{' '}
                     </Grid>
                   </Grid>{' '}
+                  {/* ✅ NUEVO: TEXTO DINÁMICO ENTRE BOTONES Y TIMELINE */}
+                  <Grid item xs={12} sx={{ width: '100%' }}>
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        px: 0,
+                        py: 0,
+                        mb: { xs: 2, sm: 3, md: 4, lg: 6 },
+                      }}
+                    >
+                      <Typography
+                        variant="body1"
+                        sx={{
+                          textAlign: 'center',
+                          color: 'common.white',
+                          fontSize: {
+                            xs: '0.9rem',
+                            sm: '1rem',
+                            md: '1.1rem',
+                            lg: '1.2rem',
+                            xl: '1.3rem',
+                          },
+                          lineHeight: {
+                            xs: 1.4,
+                            sm: 1.5,
+                            md: 1.6,
+                            lg: 1.6,
+                            xl: 1.6,
+                          },
+                          maxWidth: '1300px',
+                          mx: 'auto',
+                          fontWeight: 400,
+                          letterSpacing: '0.5px',
+                        }}
+                      >
+                        {currentService.title === 'Proveedor'
+                          ? 'Accede a un canal de ventas digital de bajo costo, gana visibilidad con nuevos públicos y deja que otros vendan por ti, sin perder control sobre tus precios ni tu stock.'
+                          : 'Descubre nuevos proveedores confiables y gestiona tus compras de forma más ágil, ahorrando tiempo en cotizaciones, validaciones y comunicación, todo desde una sola plataforma centralizada.'}
+                      </Typography>
+                    </Box>
+                  </Grid>
                   {/* ✅ FILA 2: TIMELINE HORIZONTAL - GRID PURO */}
                   <Grid item xs={12} sx={{ width: '100%' }}>
                     <Grid
@@ -571,19 +630,24 @@ const ServicesSection = ({ serviciosRef }) => {
                             flex: 1, // Asegura distribución uniforme
                           }}
                         >
-                          {/* Imagen del paso */}
+                          {/* Imagen del paso */}{' '}
                           <Box
                             sx={{
                               width: breakpoints.timeline.imageSize,
                               height: breakpoints.timeline.imageSize,
                               borderRadius: '50%',
-                              border: breakpoints.timeline.borderWidth,
-                              borderColor: '#1976d2',
+                              border: `double #1976d2`,
+                              borderWidth: breakpoints.timeline.borderWidth,
                               overflow: 'hidden',
                               mb: { xs: 0, sm: 1, md: 2, lg: 2.5 },
                               mt: { xs: 2.8, sm: 3, md: 0 },
-                              boxShadow: '0 0px 8px rgba(11, 47, 252, 0.9)',
                               backgroundColor: 'white',
+                              boxShadow: `0 0 0 2px rgba(25, 118, 210, 0.3), 0 0 15px rgba(25, 118, 210, 0.2)`,
+                              transition: 'all 0.3s ease',
+                              '&:hover': {
+                                boxShadow: `0 0 0 3px rgba(25, 118, 210, 0.5), 0 0 25px rgba(25, 118, 210, 0.4)`,
+                                transform: 'scale(1.05)',
+                              },
                             }}
                           >
                             <img
@@ -596,7 +660,6 @@ const ServicesSection = ({ serviciosRef }) => {
                               }}
                             />
                           </Box>
-
                           {/* Contenido del paso */}
                           <Box
                             sx={{
@@ -619,10 +682,10 @@ const ServicesSection = ({ serviciosRef }) => {
                               }}
                             >
                               {item.title}
-                            </Typography>
+                            </Typography>{' '}
                             <Typography
                               variant="body2"
-                              color="text.secondary"
+                              color="common.white"
                               sx={{
                                 lineHeight: {
                                   xs: 1.0,

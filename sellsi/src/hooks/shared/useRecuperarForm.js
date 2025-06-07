@@ -71,10 +71,41 @@ export const useRecuperarForm = () => {
     setFadeIn(false)
     clearInterval(timerRef.current)
   }
+  // Validación mejorada de correo electrónico
+  const validarCorreo = (email) => {
+    // Regex más completa para validación de email
+    const regexCompleto =
+      /^[a-zA-Z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-zA-Z0-9!#$%&'*+/=?^_`{|}~-]+)*@[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?)*$/
 
-  // Validación simple de correo
-  const correoValido = /^[^@]+@[^@]+\.[^@]+$/
+    // Verificaciones básicas
+    if (!email) return false
+    if (email.length > 254) return false // RFC 5321 límite
+    if (email.includes('..')) return false // No permitir puntos consecutivos
+    if (email.startsWith('.') || email.endsWith('.')) return false
+    if (email.includes('@.') || email.includes('.@')) return false
 
+    // Validar estructura general
+    const parts = email.split('@')
+    if (parts.length !== 2) return false
+
+    const [localPart, domain] = parts
+
+    // Validar parte local (antes del @)
+    if (localPart.length === 0 || localPart.length > 64) return false
+
+    // Validar dominio
+    if (domain.length === 0 || domain.length > 253) return false
+    if (domain.includes('..')) return false
+    if (!domain.includes('.')) return false
+
+    // Verificar que el dominio tenga al menos un punto y una extensión válida
+    const domainParts = domain.split('.')
+    if (domainParts.length < 2) return false
+    const lastPart = domainParts[domainParts.length - 1]
+    if (lastPart.length < 2) return false
+
+    return regexCompleto.test(email)
+  }
   // Handlers de pasos
   const handleBuscar = (e) => {
     e.preventDefault()
@@ -82,7 +113,7 @@ export const useRecuperarForm = () => {
       setError('Por favor, rellena este campo.')
       return
     }
-    if (!correoValido.test(correo)) {
+    if (!validarCorreo(correo)) {
       setError('Correo inválido. Ejemplo: usuario@dominio.com')
       return
     }

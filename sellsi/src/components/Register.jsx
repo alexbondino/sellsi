@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { Dialog, DialogTitle, DialogContent, Box } from '@mui/material'
 import { useTheme } from '@mui/material/styles'
-import { useLocation } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom' // 🔄 AGREGADO: useNavigate para redirección automática de proveedores
 
 import {
   ProgressStepper,
@@ -18,7 +18,7 @@ import { useBanner } from '../contexts/BannerContext' // Contexto para mostrar b
 export default function Register({ open, onClose }) {
   const theme = useTheme()
   const { showBanner } = useBanner()
-
+  const navigate = useNavigate() // 🔄 AGREGADO: Hook para navegación automática de proveedores
   // ✅ ESTADOS PRINCIPALES - Formulario de registro
   const [formData, setFormData] = useState({
     correo: '',
@@ -26,7 +26,7 @@ export default function Register({ open, onClose }) {
     confirmarContrasena: '',
     aceptaTerminos: false,
     aceptaComunicaciones: false,
-    tipoCuenta: '',
+    tipoCuenta: '', // 📍 PUNTO DE CONEXIÓN BACKEND: Este campo almacena 'proveedor' o 'comprador'
     nombreEmpresa: '',
     nombrePersonal: '',
     telefonoContacto: '',
@@ -52,8 +52,8 @@ export default function Register({ open, onClose }) {
     'Completar Información',
     'Verificación',
   ]
-
   // Usar el hook de wizard para la navegación
+  const wizardControls = useWizard(steps, { initialStep: 0 })
   const {
     currentStep,
     nextStep,
@@ -62,7 +62,16 @@ export default function Register({ open, onClose }) {
     resetWizard,
     isFirst,
     isLast,
-  } = useWizard(steps, { initialStep: 0 })
+  } = wizardControls
+
+  // Enhanced prevStep function that resets logo error when navigating back
+  const handlePrevStep = () => {
+    // Reset logo error when going back from Step3Profile (step 2)
+    if (currentStep === 2) {
+      setLogoError('')
+    }
+    prevStep()
+  }
   // ✅ CERRAR MODAL EN NAVEGACIÓN
   useEffect(() => {
     const handleCloseAllModals = () => {
@@ -155,8 +164,7 @@ export default function Register({ open, onClose }) {
     timerRef.current = setInterval(() => {
       setTimer((prev) => prev - 1)
     }, 1000)
-  }
-  // ✅ NUEVA FUNCIÓN - Manejar verificación exitosa
+  } // ✅ NUEVA FUNCIÓN - Manejar verificación exitosa
   const handleSuccessfulVerification = () => {
     // Cerrar el modal
     onClose()
@@ -167,6 +175,19 @@ export default function Register({ open, onClose }) {
       severity: 'success',
       duration: 6000,
     })
+
+    // 🔄 NUEVA LÓGICA: Redirección automática para cuentas de proveedor
+    // 📍 PUNTO DE CONEXIÓN BACKEND: Aquí es donde verificas el tipo de cuenta desde la respuesta del servidor
+    // En lugar de usar formData.tipoCuenta, podrías usar algo como: responseData.accountType o user.userType
+    if (formData.tipoCuenta === 'proveedor') {
+      // 🔄 AGREGADO: Redirección con delay para mostrar el banner de éxito
+      // 📍 PUNTO DE CONEXIÓN BACKEND: Aquí también podrías almacenar datos del usuario en localStorage
+      // Ejemplo: localStorage.setItem('userType', 'provider'); localStorage.setItem('supplierId', responseData.id);
+      setTimeout(() => {
+        navigate('/supplier/home') // 🔄 Redirige a dashboard de proveedor
+      }, 1000) // Esperar 1 segundo para que el usuario vea el banner
+    }
+    // 📍 NOTA: Las cuentas de comprador mantienen el comportamiento actual (solo banner, sin redirección)
   }
   const handleDialogClose = (event, reason) => {
     if (
@@ -209,7 +230,7 @@ export default function Register({ open, onClose }) {
             selectedType={formData.tipoCuenta}
             onTypeSelect={(type) => updateFormData('tipoCuenta', type)}
             onNext={wizardControls.nextStep}
-            onBack={wizardControls.prevStep}
+            onBack={handlePrevStep}
           />
         )
       case 2:
@@ -221,7 +242,7 @@ export default function Register({ open, onClose }) {
             onLogoChange={handleLogoChange}
             logoError={logoError}
             onNext={wizardControls.nextStep}
-            onBack={wizardControls.prevStep}
+            onBack={handlePrevStep}
           />
         )
       case 3:
@@ -233,7 +254,7 @@ export default function Register({ open, onClose }) {
             timer={timer}
             onVerify={handleSuccessfulVerification}
             onResendCode={handleResendCode}
-            onBack={() => wizardControls.goToStep(2)}
+            onBack={handlePrevStep}
             showCodigoEnviado={showCodigoEnviado}
             fadeIn={fadeIn}
           />
@@ -256,12 +277,33 @@ export default function Register({ open, onClose }) {
         disableRestoreFocus={true}
         PaperProps={{
           sx: {
-            width: '90vw',
-            maxWidth: 1050,
-            height: '85vh',
-            maxHeight: '800px',
+            width: {
+              xs: '95vw', // 95% del ancho en móviles muy pequeños
+              sm: '90vw', // 90% del ancho en móviles
+              md: '85vw', // 85% del ancho en tablets
+              lg: '90vw', // Mantener tamaño original en desktop
+            },
+            maxWidth: {
+              xs: '400px', // Máximo 400px en móviles muy pequeños
+              sm: '600px', // Máximo 600px en móviles
+              md: '800px', // Máximo 800px en tablets
+              lg: 1050, // Tamaño original en desktop
+            },
+            height: {
+              xs: '90vh', // 90% de altura en móviles muy pequeños
+              sm: '85vh', // 85% de altura en móviles
+              md: '100vh', // 80% de altura en tablets
+              lg: '85vh', // Altura original en desktop
+            },
+            maxHeight: {
+              xs: '600px', // Máximo 600px de altura en móviles muy pequeños
+              sm: '700px', // Máximo 700px de altura en móviles
+              md: '750px', // Máximo 750px de altura en tablets
+              lg: '800px', // Altura original en desktop
+            },
             overflowX: 'hidden',
             position: 'fixed',
+            margin: { xs: 1, sm: 2, md: 2, lg: 3 }, // Márgenes responsivos
           },
         }}
       >
@@ -292,13 +334,23 @@ export default function Register({ open, onClose }) {
           >
             CERRAR
           </Box>
-        </DialogTitle>
+        </DialogTitle>{' '}
         <DialogContent
-          sx={{ overflowX: 'hidden', px: { xs: 2, sm: 3 }, pt: 1 }}
+          sx={{
+            overflowX: 'hidden',
+            px: { xs: 1.5, sm: 2, md: 3 }, // Padding horizontal más pequeño en móviles
+            py: { xs: 1, sm: 1.5, md: 2 }, // Padding vertical más pequeño en móviles
+            pt: 1,
+          }}
         >
+          {' '}
           <ProgressStepper activeStep={currentStep + 1} steps={steps} />
           {/* Renderizar el paso actual directamente */}
-          <Box sx={{ mt: 2 }}>
+          <Box
+            sx={{
+              mt: { xs: 0, sm: 0, md: 1 }, // Margen superior más pequeño en móviles
+            }}
+          >
             {renderStep(currentStep, steps[currentStep], {
               nextStep,
               prevStep,
@@ -306,7 +358,39 @@ export default function Register({ open, onClose }) {
             })}
           </Box>{' '}
         </DialogContent>
-      </Dialog>
+      </Dialog>{' '}
     </>
   )
 }
+
+/*
+🔄 RESUMEN DE CAMBIOS PARA REDIRECCIÓN AUTOMÁTICA DE PROVEEDORES:
+
+📍 PUNTOS DE CONEXIÓN CON BACKEND:
+
+1. IMPORTS (Línea 4):
+   - Agregado useNavigate para redirección automática
+
+2. HOOK NAVEGACIÓN (Línea 21):
+   - const navigate = useNavigate() - Para redireccionar programáticamente
+
+3. CAMPO TIPO DE CUENTA (Línea 30):
+   - formData.tipoCuenta - Almacena 'proveedor' o 'comprador'
+   - BACKEND: Envía este valor al servidor durante el registro
+
+4. FUNCIÓN VERIFICACIÓN EXITOSA (Líneas 171-192):
+   - handleSuccessfulVerification() - Se ejecuta después de verificar código
+   - BACKEND: Aquí recibes la respuesta del servidor tras la verificación
+   - LÓGICA: Si tipoCuenta === 'proveedor' → redirige a /supplier/home
+   - BACKEND: Puedes almacenar datos del usuario en localStorage aquí
+
+FLUJO COMPLETO:
+1. Usuario selecciona tipo "proveedor" en Step2 → formData.tipoCuenta = 'proveedor'
+2. Usuario completa registro y verifica código en Step4
+3. handleSuccessfulVerification() se ejecuta
+4. Si es proveedor → Muestra banner + Redirige a dashboard proveedor
+5. Si es comprador → Solo muestra banner (comportamiento actual)
+
+RUTAS:
+- Dashboard Proveedor: /supplier/home → src/pages/provider/ProviderHome.jsx
+*/

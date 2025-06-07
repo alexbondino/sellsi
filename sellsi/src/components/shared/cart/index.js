@@ -1,0 +1,11 @@
+// Exportar todos los componentes compartidos del carrito
+export { default as CartHeader } from './CartHeader.jsx'
+export { default as ShippingProgressBar } from './ShippingProgressBar.jsx'
+export { default as CartItem } from './CartItem.jsx'
+export { default as OrderSummary } from './OrderSummary.jsx'
+export { default as DiscountSection } from './DiscountSection.jsx'
+export { default as ShippingOptions } from './ShippingOptions.jsx'
+export { default as PriceBreakdown } from './PriceBreakdown.jsx'
+export { default as SavingsCalculator } from './SavingsCalculator.jsx'
+export { default as WishlistSection } from './WishlistSection.jsx'
+export { default as EmptyCartState } from './EmptyCartState.jsx'

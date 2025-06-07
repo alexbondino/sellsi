@@ -66,16 +66,23 @@ const Step1Account = ({
         mt: 0,
       }}
     >
-      <img
+      {' '}
+      <Box
+        component="img"
         src="/logo.svg"
         alt="SELLSI Logo"
-        style={{ width: 160, marginBottom: 8 }}
+        sx={{
+          // xs: 20% más pequeño = 128px, sm: 5% más pequeño = 152px
+          width: { xs: 100, sm: 140, md: 110, lg: 160 },
+          // xs: 50% menos mb = 4px, sm: 20% menos mb = 6.4px
+          mb: { xs: 0, sm: 0, md: 0, lg: 1.2 },
+        }}
       />
       <Typography
         variant="h6"
         align="center"
         sx={{
-          mb: 4,
+          mb: { xs: 1, sm: 2, md: 2, lg: 4 },
           color: theme.palette.mode === 'dark' ? '#fff' : '#222',
           fontWeight: 700,
           fontSize: 18,
@@ -84,7 +91,6 @@ const Step1Account = ({
       >
         Conecta. Vende. Crece.
       </Typography>
-
       <form onSubmit={handleSubmit} style={{ width: '100%' }}>
         <TextField
           label="Correo electrónico"
@@ -92,7 +98,7 @@ const Step1Account = ({
           fullWidth
           value={correo}
           onChange={(e) => onFieldChange('correo', e.target.value)}
-          sx={{ mb: 1.5 }}
+          sx={{ mb: { xs: 1, sm: 1, md: 1, lg: 1.5 } }}
           size="small"
           error={correo.length > 0 && !correoValido}
           helperText={
@@ -101,7 +107,6 @@ const Step1Account = ({
               : ''
           }
         />
-
         <TextField
           label="Contraseña"
           type={showPassword ? 'text' : 'password'}
@@ -109,7 +114,7 @@ const Step1Account = ({
           fullWidth
           value={contrasena}
           onChange={(e) => onFieldChange('contrasena', e.target.value)}
-          sx={{ mb: 1.5 }}
+          sx={{ mb: { xs: 1, sm: 1, md: 1, lg: 1.5 } }}
           size="small"
           InputProps={{
             endAdornment: (
@@ -126,7 +131,6 @@ const Step1Account = ({
             ),
           }}
         />
-
         <TextField
           label="Repita su Contraseña"
           type={showRepeatPassword ? 'text' : 'password'}
@@ -134,7 +138,7 @@ const Step1Account = ({
           fullWidth
           value={confirmarContrasena}
           onChange={(e) => onFieldChange('confirmarContrasena', e.target.value)}
-          sx={{ mb: 1.5 }}
+          sx={{ mb: { xs: 1, sm: 1, md: 1, lg: 1.5 } }}
           size="small"
           error={confirmarContrasena.length > 0 && !contrasenasCoinciden}
           helperText={
@@ -157,9 +161,7 @@ const Step1Account = ({
             ),
           }}
         />
-
         <PasswordRequirements password={contrasena} size="normal" />
-
         <FormControlLabel
           control={
             <Checkbox
@@ -172,7 +174,10 @@ const Step1Account = ({
             />
           }
           label={
-            <span style={{ fontSize: 15 }}>
+            <Box
+              component="span"
+              sx={{ fontSize: { xs: 12, sm: 12, md: 12, lg: 15 } }}
+            >
               Acepto los{' '}
               <Link href="#" sx={{ color: '#1976d2', fontWeight: 700 }}>
                 Términos y Condiciones
@@ -181,7 +186,7 @@ const Step1Account = ({
               <Link href="#" sx={{ color: '#1976d2', fontWeight: 700 }}>
                 Política de Privacidad
               </Link>
-            </span>
+            </Box>
           }
           sx={{
             mb: 0.5,
@@ -191,7 +196,6 @@ const Step1Account = ({
             },
           }}
         />
-
         <FormControlLabel
           control={
             <Checkbox
@@ -204,35 +208,42 @@ const Step1Account = ({
             />
           }
           label={
-            <span style={{ fontSize: 15 }}>
+            <Box
+              component="span"
+              sx={{ fontSize: { xs: 12, sm: 12, md: 12, lg: 15 } }}
+            >
               {' '}
               {/* ✅ CAMBIAR de 13 a 15 */}
               Acepto recibir avisos de ofertas y novedades de Sellsi.
-            </span>
+            </Box>
           }
           sx={{
-            mb: 1.5,
+            mb: { xs: 1, sm: 5.3, md: 1, lg: 1.5 },
             alignItems: 'flex-start', // ✅ ALINEAR checkbox al inicio
             '& .MuiFormControlLabel-label': {
               lineHeight: 1.4,
             },
           }}
-        />
-
+        />{' '}
         <CustomButton
           type="submit"
           disabled={!canSubmit}
           fullWidth
-          sx={{ mb: 0.5 }}
+          sx={{
+            mb: 0.5,
+            height: { md: '32px', lg: '44px' }, // 5% menos altura para md (40px -> 38px)
+          }}
         >
           Crear cuenta
         </CustomButton>
-
         <CustomButton
           variant="text"
           onClick={onCancel}
           fullWidth
-          sx={{ mt: 0.5 }}
+          sx={{
+            mt: 0.5,
+            height: { md: '32px', lg: '44px' }, // 5% menos altura para md (40px -> 38px)
+          }}
         >
           Volver atrás
         </CustomButton>

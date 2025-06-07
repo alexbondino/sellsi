@@ -78,7 +78,7 @@ const Step4Verification = ({
         onClick={onVerify}
         sx={{
           width: 220,
-          height: 44,
+          height: { xs: '32px', sm: '32px', md: '44px', lg: '44px' },
           mb: 3,
           mt: 1,
         }}
@@ -93,6 +93,7 @@ const Step4Verification = ({
           color: '#888',
           fontSize: 14,
           '&:hover': { color: '#1976d2', background: 'transparent' },
+          height: { md: '32px' },
         }}
       >
         Volver atrás

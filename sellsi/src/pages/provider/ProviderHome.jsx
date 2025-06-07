@@ -7,6 +7,7 @@ import DashboardSummary from '../../components/DashboardSummary'
 import RequestList from '../../components/RequestList'
 import MonthlySalesChart from '../../components/BarChart'
 import SidebarProvider from '../../components/SideBar'
+import ProviderTopBar from '../../components/ProviderTopBar'
 import { dashboardTheme } from '../../styles/dashboardTheme'
 
 const ProviderHome = () => {
@@ -19,22 +20,23 @@ const ProviderHome = () => {
     monthlyData,
     totalSales,
   } = useSupplierDashboard(supplierId)
-
   const productsOutOfStock = productStocks.filter(
     (p) => p.productqty === 0
   ).length
 
   return (
     <ThemeProvider theme={dashboardTheme}>
-      <SidebarProvider />
-
-      {/* Contenido principal con el tema aplicado */}
+      {/* TopBar específico para Provider */}
+      <ProviderTopBar />
+      <SidebarProvider /> {/* Contenido principal con el tema aplicado */}
       <Box
         sx={{
           marginLeft: '250px',
           backgroundColor: 'background.default',
           minHeight: '100vh',
-          p: 3,
+          pt: { xs: 9, md: 10 }, // Padding-top para compensar la TopBar fija + contenido
+          px: 3, // Solo padding horizontal
+          pb: 3, // Solo padding bottom
         }}
       >
         <Container maxWidth="xl" disableGutters>

@@ -32,6 +32,13 @@ const CategoryNavigation = ({
   onCategoriaToggle,
   onOpenCategorias,
   onCloseCategorias,
+  categoryMarginLeft = {
+    xs: 0,
+    sm: 0,
+    md: 3,
+    lg: 35.5,
+    xl: 43,
+  }, // Valores por defecto para Marketplace normal
 }) => {
   const [sectionsExpanded, setSectionsExpanded] = useState(false)
   const theme = useTheme()
@@ -53,9 +60,13 @@ const CategoryNavigation = ({
   const toggleSectionsExpanded = () => {
     setSectionsExpanded(!sectionsExpanded)
   }
-
   return (
-    <Box sx={styles.container}>
+    <Box
+      sx={{
+        ...styles.container,
+        marginLeft: categoryMarginLeft, // ✅ Usar prop en lugar de valor fijo
+      }}
+    >
       {/* Botón de categorías */}
       <Button
         endIcon={<ArrowDropDownIcon />}

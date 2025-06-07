@@ -10,6 +10,7 @@ import {
   Menu,
   MenuItem,
   useTheme,
+  Avatar,
 } from '@mui/material'
 import MenuIcon from '@mui/icons-material/Menu'
 import AccountCircleIcon from '@mui/icons-material/AccountCircle'
@@ -18,6 +19,10 @@ import AccountCircleIcon from '@mui/icons-material/AccountCircle'
 import Login from '../Login'
 import Register from '../Register'
 import ContactModal from '../ContactModal'
+
+// Importar hook para logo del proveedor
+// ❌ Este import debería ser removido:
+// import { useSupplierLogo } from '../../hooks/shared/useSupplierLogo'
 
 /**
  * BaseTopBar - Componente base para todas las variantes de TopBar
@@ -28,6 +33,13 @@ export default function BaseTopBar({
   authButtons = {},
   onNavigate,
   showContactModal = true,
+  logoMarginLeft = {
+    xs: 0,
+    sm: -1,
+    md: -2,
+    lg: -3,
+    xl: -4,
+  },
 }) {
   const theme = useTheme()
   const navigate = useNavigate()
@@ -38,7 +50,13 @@ export default function BaseTopBar({
   const [openRegisterModal, setOpenRegisterModal] = useState(false)
   const [openContactModal, setOpenContactModal] = useState(false)
 
-  const isLoggedIn = !!localStorage.getItem('supplierid')
+  const supplierid = localStorage.getItem('supplierid')
+  const sellerid = localStorage.getItem('sellerid')
+  const isLoggedIn = !!(supplierid || sellerid)
+  const isProvider = !!supplierid
+  // Hook para obtener logo del proveedor
+  // ❌ ROLLBACK: Comentado temporalmente
+  // const { logoUrl: supplierLogo, loading: logoLoading } = useSupplierLogo()
 
   // Menú móvil
   const openMenu = (e) => setMenuAnchor(e.currentTarget)
@@ -51,6 +69,9 @@ export default function BaseTopBar({
   // Cerrar sesión
   const handleLogout = () => {
     localStorage.removeItem('supplierid')
+    localStorage.removeItem('sellerid')
+    localStorage.removeItem('account_type')
+    localStorage.removeItem('user_email')
     closeProfileMenu()
     navigate('/')
   }
@@ -75,7 +96,6 @@ export default function BaseTopBar({
     closeMenu()
   }
   const handleCloseContact = () => setOpenContactModal(false)
-
   // Navegación
   const handleNavigate = (ref) => {
     closeMenu()
@@ -86,8 +106,8 @@ export default function BaseTopBar({
       return
     }
 
-    // Navegación personalizada
-    if (ref !== 'trabajaConNosotrosRef' && onNavigate) {
+    // Navegación personalizada - SIEMPRE llamar a onNavigate si existe
+    if (onNavigate) {
       onNavigate(ref)
     }
   }
@@ -131,18 +151,33 @@ export default function BaseTopBar({
         height: { xs: 56, md: 64 },
       }}
     >
+      {' '}
       <Box
         sx={{
           width: '100%',
-          maxWidth: '1200px',
+          maxWidth: {
+            sm: '720px',
+            md: '960px',
+            lg: '1575px',
+            xl: '1700px',
+          },
           px: 2,
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
         }}
       >
-        {/* Logo y navegación */}
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+        {' '}
+        {/* Logo y navegación */}{' '}
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 2,
+            // ❌ REMOVER esta línea:
+            // marginLeft: logoMarginLeft,
+          }}
+        >
           <Box
             component="button"
             onClick={handleGoHome}
@@ -153,6 +188,24 @@ export default function BaseTopBar({
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
+              marginLeft: logoMarginLeft,
+              // ✅ AGREGAR estas líneas para eliminar el borde de focus:
+              outline: 'none',
+              '&:focus': {
+                outline: 'none',
+                border: 'none',
+                boxShadow: 'none',
+              },
+              '&:active': {
+                outline: 'none',
+                border: 'none',
+                boxShadow: 'none',
+              },
+              '&:focus-visible': {
+                outline: 'none',
+                border: 'none',
+                boxShadow: 'none',
+              },
               '&:hover': {
                 opacity: 0.8,
                 transform: 'scale(1.05)',
@@ -163,7 +216,7 @@ export default function BaseTopBar({
             <img
               src="/logodark.svg"
               alt="SELLSI Logo"
-              style={{ height: 28, maxWidth: '120px', flexShrink: 0 }}
+              style={{ height: 126, maxWidth: '540px', flexShrink: 0 }}
             />
           </Box>
 
@@ -209,7 +262,6 @@ export default function BaseTopBar({
               ))}
           </Box>
         </Box>
-
         {/* Mobile menu button */}
         <Box
           sx={{
@@ -278,7 +330,6 @@ export default function BaseTopBar({
             )}
           </Menu>
         </Box>
-
         {/* Desktop auth buttons and profile menu */}
         <Box
           sx={{
@@ -291,10 +342,38 @@ export default function BaseTopBar({
             },
           }}
         >
+          {' '}
           {isLoggedIn ? (
             <>
+              {' '}
               <IconButton onClick={openProfileMenu} sx={{ color: 'white' }}>
-                <AccountCircleIcon fontSize="large" />
+                {/* ❌ ROLLBACK: Comentado temporalmente - lógica de logo del proveedor
+                {isProvider && supplierLogo && !logoLoading ? (
+                  <Avatar
+                    src={supplierLogo}
+                    alt="Logo del proveedor"
+                    sx={{
+                      width: 32,
+                      height: 32,
+                      border: '2px solid white',
+                    }}
+                  />
+                ) : (
+                */}
+                {isProvider ? (
+                  <Avatar
+                    sx={{
+                      width: 32,
+                      height: 32,
+                      border: '2px solid white',
+                      bgcolor: 'primary.main',
+                    }}
+                  >
+                    P
+                  </Avatar>
+                ) : (
+                  <AccountCircleIcon fontSize="large" />
+                )}
               </IconButton>
               <Menu
                 anchorEl={profileAnchor}
@@ -307,7 +386,7 @@ export default function BaseTopBar({
               </Menu>
             </>
           ) : (
-            <Box sx={{ display: 'flex', gap: 1 }}>
+            <Box sx={{ display: 'flex', gap: 2.5 }}>
               {' '}
               {authButtons.loginButton ? (
                 <Button
@@ -383,7 +462,6 @@ export default function BaseTopBar({
           )}
         </Box>
       </Box>
-
       {/* Modal de Login */}
       <Login
         open={openLoginModal}
@@ -393,12 +471,10 @@ export default function BaseTopBar({
           handleOpenRegister()
         }}
       />
-
       {/* Modal de Registro */}
       {openRegisterModal && (
         <Register open={openRegisterModal} onClose={handleCloseRegister} />
       )}
-
       {/* Modal de Contacto */}
       {showContactModal && (
         <ContactModal open={openContactModal} onClose={handleCloseContact} />

@@ -5,6 +5,7 @@ import {
   Typography,
   InputAdornment,
   IconButton,
+  Button,
 } from '@mui/material'
 import { Visibility, VisibilityOff } from '@mui/icons-material'
 import { PasswordRequirements, CustomButton } from '../../hooks/shared'
@@ -19,6 +20,7 @@ const Step3Reset = ({
   showRepeatPassword,
   setShowRepeatPassword,
   onSubmit,
+  onBack,
 }) => {
   // Validaciones de contraseña
   const requisitos = [
@@ -31,17 +33,14 @@ const Step3Reset = ({
   const cumpleMinimos = requisitos.filter((r) => r.valid).length >= 4
   const contrasenasCoinciden =
     nuevaContrasena === repiteContrasena && repiteContrasena.length > 0
-
   return (
-    <Box display="flex" flexDirection="column" alignItems="center">
+    <Box display="flex" flexDirection="column" alignItems="flex-start">
       <Typography variant="h6" sx={{ fontWeight: 700, mb: 2 }}>
         Restablecer contraseña
       </Typography>
-
       <Typography sx={{ mb: 2 }}>
         Ingrese su nueva contraseña y confírmela.
       </Typography>
-
       <TextField
         label="Ingrese su nueva contraseña"
         type={showPassword ? 'text' : 'password'}
@@ -57,14 +56,14 @@ const Step3Reset = ({
                 aria-label="toggle password visibility"
                 onClick={() => setShowPassword((show) => !show)}
                 edge="end"
+                tabIndex={-1}
               >
-                {showPassword ? <VisibilityOff /> : <Visibility />}
+                {showPassword ? <Visibility /> : <VisibilityOff />}
               </IconButton>
             </InputAdornment>
           ),
         }}
       />
-
       <TextField
         label="Confirme su contraseña nueva"
         type={showRepeatPassword ? 'text' : 'password'}
@@ -86,16 +85,15 @@ const Step3Reset = ({
                 aria-label="toggle repeat password visibility"
                 onClick={() => setShowRepeatPassword((show) => !show)}
                 edge="end"
+                tabIndex={-1}
               >
-                {showRepeatPassword ? <VisibilityOff /> : <Visibility />}
+                {showRepeatPassword ? <Visibility /> : <VisibilityOff />}
               </IconButton>
             </InputAdornment>
           ),
         }}
       />
-
-      <PasswordRequirements password={nuevaContrasena} />
-
+      <PasswordRequirements password={nuevaContrasena} />{' '}
       <CustomButton
         fullWidth
         disabled={!cumpleMinimos || !contrasenasCoinciden}
@@ -108,6 +106,19 @@ const Step3Reset = ({
       >
         Cambiar contraseña
       </CustomButton>
+      <Button
+        variant="text"
+        onClick={onBack}
+        sx={{
+          color: '#1976d2',
+          fontWeight: 700,
+          fontSize: 14,
+          width: '100%',
+          mt: 0.5,
+        }}
+      >
+        Volver atrás
+      </Button>
     </Box>
   )
 }
