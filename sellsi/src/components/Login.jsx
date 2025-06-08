@@ -249,15 +249,6 @@ export default function Login({ open, onClose, onOpenRegister }) {
                 entrada.
               </Typography>
               <CustomButton
-                onClick={reenviarCorreo}
-                sx={{ mb: 2 }}
-                disabled={state.reenviarCooldown}
-              >
-                {state.correoReenviado
-                  ? 'Correo reenviado ✅'
-                  : 'Reenviar correo'}
-              </CustomButton>
-              <CustomButton
                 variant="outlined"
                 onClick={() => dispatch({ type: 'VOLVER_A_LOGIN' })}
               >
