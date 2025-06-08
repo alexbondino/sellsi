@@ -248,8 +248,14 @@ export default function Login({ open, onClose, onOpenRegister }) {
                 Hemos reenviado el correo de verificación. Revisa tu bandeja de
                 entrada.
               </Typography>
-              <CustomButton onClick={reenviarCorreo} sx={{ mb: 2 }}>
-                Reenviar correo
+              <CustomButton
+                onClick={reenviarCorreo}
+                sx={{ mb: 2 }}
+                disabled={state.reenviarCooldown}
+              >
+                {state.correoReenviado
+                  ? 'Correo reenviado ✅'
+                  : 'Reenviar correo'}
               </CustomButton>
               <CustomButton
                 variant="outlined"

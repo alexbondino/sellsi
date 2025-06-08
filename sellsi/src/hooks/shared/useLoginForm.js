@@ -11,6 +11,8 @@ const initialState = {
   openRecuperar: false,
   openRegistro: false,
   cuentaNoVerificada: false,
+  correoReenviado: false,
+  reenviarCooldown: false,
 };
 
 const reducer = (state, action) => {
@@ -21,6 +23,8 @@ const reducer = (state, action) => {
         correo: action.payload,
         errorCorreo: '',
         cuentaNoVerificada: false,
+        correoReenviado: false,
+        reenviarCooldown: false,
       };
     case 'SET_CONTRASENA':
       return { ...state, contrasena: action.payload, errorContrasena: '' };
@@ -39,7 +43,25 @@ const reducer = (state, action) => {
     case 'CLOSE_REGISTRO':
       return { ...state, openRegistro: false };
     case 'CUENTA_NO_VERIFICADA':
-      return { ...state, cuentaNoVerificada: true, errorCorreo: '' };
+      return {
+        ...state,
+        cuentaNoVerificada: true,
+        errorCorreo: '',
+        correoReenviado: false,
+        reenviarCooldown: false,
+      };
+    case 'CORREO_REENVIADO':
+      return {
+        ...state,
+        correoReenviado: true,
+        reenviarCooldown: true,
+      };
+    case 'RESET_COOLDOWN':
+      return {
+        ...state,
+        reenviarCooldown: false,
+        correoReenviado: false,
+      };
     case 'VOLVER_A_LOGIN':
       return {
         ...state,
@@ -48,6 +70,8 @@ const reducer = (state, action) => {
         contrasena: '',
         errorCorreo: '',
         errorContrasena: '',
+        correoReenviado: false,
+        reenviarCooldown: false,
       };
     case 'RESET_FORM':
       return {
@@ -58,6 +82,8 @@ const reducer = (state, action) => {
         errorContrasena: '',
         showPassword: false,
         cuentaNoVerificada: false,
+        correoReenviado: false,
+        reenviarCooldown: false,
       };
     default:
       return state;
@@ -99,7 +125,6 @@ export const useLoginForm = () => {
 
       const user = data?.user;
 
-      // ⚠️ Si hay error, evaluamos el mensaje
       if (error) {
         if (error.message === 'Email not confirmed') {
           dispatch({ type: 'CUENTA_NO_VERIFICADA' });
@@ -113,7 +138,6 @@ export const useLoginForm = () => {
           return;
         }
 
-        // Credenciales incorrectas u otro error
         dispatch({
           type: 'SET_ERROR_CORREO',
           payload: 'Correo o contraseña incorrectos',
@@ -121,7 +145,6 @@ export const useLoginForm = () => {
         return;
       }
 
-      // ⚠️ Si el usuario existe pero no confirmó el email
       if (!user.email_confirmed_at) {
         dispatch({ type: 'CUENTA_NO_VERIFICADA' });
 
@@ -129,7 +152,6 @@ export const useLoginForm = () => {
         return;
       }
 
-      // ✅ Buscar perfil
       const { data: perfil, error: perfilError } = await supabase
         .from('users')
         .select('*')
@@ -144,7 +166,6 @@ export const useLoginForm = () => {
         return;
       }
 
-      // ✅ Guardar e ir al home
       localStorage.setItem('user_id', user.id);
 
       onClose();
@@ -159,15 +180,36 @@ export const useLoginForm = () => {
   };
 
   const reenviarCorreo = async () => {
+    const { data: sessionData } = await supabase.auth.getSession();
+
+    if (!sessionData.session) {
+      dispatch({
+        type: 'SET_ERROR_CORREO',
+        payload: 'No hay sesión activa para reenviar el correo.',
+      });
+      return;
+    }
+
+    if (state.reenviarCooldown) return;
+
     const { error } = await supabase.auth.resend({
       type: 'signup',
       email: state.correo,
     });
 
     if (!error) {
-      alert('Correo de verificación reenviado.');
+      dispatch({ type: 'CORREO_REENVIADO' });
+      setTimeout(() => dispatch({ type: 'RESET_COOLDOWN' }), 30000);
+    } else if (error.status === 429) {
+      dispatch({
+        type: 'SET_ERROR_CORREO',
+        payload: 'Demasiados intentos. Espera un momento.',
+      });
     } else {
-      alert('No se pudo reenviar el correo.');
+      dispatch({
+        type: 'SET_ERROR_CORREO',
+        payload: 'No se pudo reenviar el correo.',
+      });
     }
   };
 
