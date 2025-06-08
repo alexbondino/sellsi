@@ -10,14 +10,20 @@ const initialState = {
   showPassword: false,
   openRecuperar: false,
   openRegistro: false,
+  cuentaNoVerificada: false,
 };
 
 const reducer = (state, action) => {
   switch (action.type) {
     case 'SET_CORREO':
-      return { ...state, correo: action.payload };
+      return {
+        ...state,
+        correo: action.payload,
+        errorCorreo: '',
+        cuentaNoVerificada: false,
+      };
     case 'SET_CONTRASENA':
-      return { ...state, contrasena: action.payload };
+      return { ...state, contrasena: action.payload, errorContrasena: '' };
     case 'SET_ERROR_CORREO':
       return { ...state, errorCorreo: action.payload };
     case 'SET_ERROR_CONTRASENA':
@@ -32,6 +38,17 @@ const reducer = (state, action) => {
       return { ...state, openRegistro: true };
     case 'CLOSE_REGISTRO':
       return { ...state, openRegistro: false };
+    case 'CUENTA_NO_VERIFICADA':
+      return { ...state, cuentaNoVerificada: true, errorCorreo: '' };
+    case 'VOLVER_A_LOGIN':
+      return {
+        ...state,
+        cuentaNoVerificada: false,
+        correo: '',
+        contrasena: '',
+        errorCorreo: '',
+        errorContrasena: '',
+      };
     case 'RESET_FORM':
       return {
         ...state,
@@ -40,6 +57,7 @@ const reducer = (state, action) => {
         errorCorreo: '',
         errorContrasena: '',
         showPassword: false,
+        cuentaNoVerificada: false,
       };
     default:
       return state;
@@ -68,18 +86,34 @@ export const useLoginForm = () => {
 
     return !errores.correo && !errores.contrasena;
   };
+
   const handleLogin = async (e, onClose) => {
     e.preventDefault();
     if (!validarFormulario()) return;
 
     try {
-      // ✅ AUTENTICACIÓN CON SUPABASE AUTH
       const { data, error } = await supabase.auth.signInWithPassword({
         email: state.correo,
         password: state.contrasena,
       });
 
+      const user = data?.user;
+
+      // ⚠️ Si hay error, evaluamos el mensaje
       if (error) {
+        if (error.message === 'Email not confirmed') {
+          dispatch({ type: 'CUENTA_NO_VERIFICADA' });
+
+          await supabase.auth.resend({
+            type: 'signup',
+            email: state.correo,
+          });
+
+          await supabase.auth.signOut();
+          return;
+        }
+
+        // Credenciales incorrectas u otro error
         dispatch({
           type: 'SET_ERROR_CORREO',
           payload: 'Correo o contraseña incorrectos',
@@ -87,9 +121,15 @@ export const useLoginForm = () => {
         return;
       }
 
-      const { user } = data;
+      // ⚠️ Si el usuario existe pero no confirmó el email
+      if (!user.email_confirmed_at) {
+        dispatch({ type: 'CUENTA_NO_VERIFICADA' });
 
-      // ✅ OBTENER PERFIL USANDO user.id (NO email)
+        await supabase.auth.signOut();
+        return;
+      }
+
+      // ✅ Buscar perfil
       const { data: perfil, error: perfilError } = await supabase
         .from('users')
         .select('*')
@@ -104,7 +144,7 @@ export const useLoginForm = () => {
         return;
       }
 
-      // ✅ GUARDAR EN LOCALSTORAGE
+      // ✅ Guardar e ir al home
       localStorage.setItem('user_id', user.id);
 
       onClose();
@@ -118,9 +158,28 @@ export const useLoginForm = () => {
     }
   };
 
+  const reenviarCorreo = async () => {
+    const { error } = await supabase.auth.resend({
+      type: 'signup',
+      email: state.correo,
+    });
+
+    if (!error) {
+      alert('Correo de verificación reenviado.');
+    } else {
+      alert('No se pudo reenviar el correo.');
+    }
+  };
+
   const resetForm = () => {
     dispatch({ type: 'RESET_FORM' });
   };
 
-  return { state, dispatch, handleLogin, resetForm };
+  return {
+    state,
+    dispatch,
+    handleLogin,
+    resetForm,
+    reenviarCorreo,
+  };
 };
