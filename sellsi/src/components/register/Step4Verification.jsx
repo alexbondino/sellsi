@@ -1,6 +1,6 @@
-import React from 'react';
-import { Box, Typography } from '@mui/material';
-import { CustomButton } from '../../hooks/shared';
+import React from 'react'
+import { Box, Typography } from '@mui/material'
+import { CustomButton } from '../../hooks/shared'
 
 const Step4Verification = ({ email, onBack }) => {
   return (
@@ -25,19 +25,17 @@ const Step4Verification = ({ email, onBack }) => {
       >
         ¡Cuenta creada con éxito!
       </Typography>
-
       <Typography sx={{ fontSize: 16, mb: 2 }}>
         Te hemos enviado un enlace de verificación al correo:
       </Typography>
-
       <Typography sx={{ fontWeight: 600, fontSize: 18, mb: 3, color: '#000' }}>
         {email}
       </Typography>
-
       <Typography sx={{ fontSize: 15, color: '#555', mb: 4 }}>
         Por favor revisa tu bandeja de entrada (o spam) y haz clic en el enlace
         para activar tu cuenta y comenzar a usar Sellsi.
-      </Typography>      <CustomButton
+      </Typography>{' '}
+      <CustomButton
         onClick={onBack}
         variant="text"
         sx={{
@@ -50,7 +48,7 @@ const Step4Verification = ({ email, onBack }) => {
         Volver atrás
       </CustomButton>
     </Box>
-  );
-};
+  )
+}
 
-export default Step4Verification;
+export default Step4Verification

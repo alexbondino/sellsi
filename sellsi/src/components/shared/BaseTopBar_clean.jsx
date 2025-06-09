@@ -38,7 +38,9 @@ export default function BaseTopBar({
   const [openLoginModal, setOpenLoginModal] = useState(false)
   const [openRegisterModal, setOpenRegisterModal] = useState(false)
   const [openContactModal, setOpenContactModal] = useState(false)
-  const [isLoggedIn, setIsLoggedIn] = useState(false) // Suscripción a cambios de sesión
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
+
+  // Suscripción a cambios de sesión
   useEffect(() => {
     const getCurrentSession = async () => {
       const { data } = await supabase.auth.getSession()
@@ -64,12 +66,6 @@ export default function BaseTopBar({
   const closeProfileMenu = () => setProfileAnchor(null)
 
   const handleLogout = async () => {
-    // Limpiar localStorage
-    localStorage.removeItem('user_id')
-    localStorage.removeItem('account_type')
-    localStorage.removeItem('supplierid')
-    localStorage.removeItem('sellerid')
-
     await supabase.auth.signOut()
     closeProfileMenu()
     navigate('/')
@@ -160,14 +156,13 @@ export default function BaseTopBar({
             ml: logoMarginLeft,
           }}
         >
-          {' '}
           <Box
             component="img"
             src="/logodark.svg"
             alt="Logo"
             onClick={handleGoHome}
             sx={{
-              height: { xs: 129, md: 160 },
+              height: { xs: 34, md: 42 },
               cursor: 'pointer',
               mr: { xs: 1, md: 2 },
             }}

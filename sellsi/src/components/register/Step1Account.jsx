@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from 'react'
 import {
   Box,
   TextField,
@@ -8,11 +8,11 @@ import {
   Link,
   InputAdornment,
   IconButton,
-} from '@mui/material';
-import { Visibility, VisibilityOff } from '@mui/icons-material';
-import { useTheme } from '@mui/material/styles';
-import { PasswordRequirements, CustomButton } from '../../hooks/shared';
-import { supabase } from '../../services/supabase';
+} from '@mui/material'
+import { Visibility, VisibilityOff } from '@mui/icons-material'
+import { useTheme } from '@mui/material/styles'
+import { PasswordRequirements, CustomButton } from '../../hooks/shared'
+import { supabase } from '../../services/supabase'
 
 const Step1Account = ({
   formData,
@@ -24,61 +24,61 @@ const Step1Account = ({
   onTogglePasswordVisibility,
   onToggleRepeatPasswordVisibility,
 }) => {
-  const theme = useTheme();
+  const theme = useTheme()
   const {
     correo,
     contrasena,
     confirmarContrasena,
     aceptaTerminos,
     aceptaComunicaciones,
-  } = formData;
+  } = formData
 
-  const [emailEnUso, setEmailEnUso] = useState(false);
-  const [checkingEmail, setCheckingEmail] = useState(false);
+  const [emailEnUso, setEmailEnUso] = useState(false)
+  const [checkingEmail, setCheckingEmail] = useState(false)
 
-  const correoValido = /^[^@]+@[^@]+\.[^@]+$/.test(correo);
+  const correoValido = /^[^@]+@[^@]+\.[^@]+$/.test(correo)
   const contrasenasCoinciden =
-    contrasena === confirmarContrasena && confirmarContrasena.length > 0;
+    contrasena === confirmarContrasena && confirmarContrasena.length > 0
 
   const requisitos = [
     { label: 'Al menos 8 caracteres', valid: contrasena.length >= 8 },
     { label: 'Letras minúsculas (a-z)', valid: /[a-z]/.test(contrasena) },
     { label: 'Letras mayúsculas (A-Z)', valid: /[A-Z]/.test(contrasena) },
     { label: 'Números (0-9)', valid: /\d/.test(contrasena) },
-  ];
-  const cumpleMinimos = requisitos.filter(r => r.valid).length >= 4;
+  ]
+  const cumpleMinimos = requisitos.filter((r) => r.valid).length >= 4
 
   const canSubmit =
-    cumpleMinimos && aceptaTerminos && correoValido && contrasenasCoinciden;
+    cumpleMinimos && aceptaTerminos && correoValido && contrasenasCoinciden
 
-  const handleSubmit = async e => {
-    e.preventDefault();
-    if (!canSubmit || checkingEmail) return;
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    if (!canSubmit || checkingEmail) return
 
-    setCheckingEmail(true);
+    setCheckingEmail(true)
 
     // Verificar si el correo ya existe en la tabla 'users'
     const { data, error } = await supabase
       .from('users')
       .select('email')
-      .eq('email', correo);
+      .eq('email', correo)
 
     if (error) {
-      console.error('Error al verificar el correo:', error);
-      setCheckingEmail(false);
-      return;
+      console.error('Error al verificar el correo:', error)
+      setCheckingEmail(false)
+      return
     }
 
     if (data.length > 0) {
-      setEmailEnUso(true);
-      setCheckingEmail(false);
-      return;
+      setEmailEnUso(true)
+      setCheckingEmail(false)
+      return
     }
 
-    setEmailEnUso(false);
-    setCheckingEmail(false);
-    onNext();
-  };
+    setEmailEnUso(false)
+    setCheckingEmail(false)
+    onNext()
+  }
 
   return (
     <Box
@@ -92,12 +92,15 @@ const Step1Account = ({
         mb: 1,
         mt: 0,
       }}
-    >      <img
+    >
+      {' '}
+      <img
         src="/logo.svg"
         alt="SELLSI Logo"
-        style={{ 
-          width: window.innerWidth < 600 ? 140 : window.innerWidth < 900 ? 110 : 160, 
-          marginBottom: window.innerWidth < 600 ? 4 : 8 
+        style={{
+          width:
+            window.innerWidth < 600 ? 140 : window.innerWidth < 900 ? 110 : 160,
+          marginBottom: window.innerWidth < 600 ? 4 : 8,
         }}
       />
       <Typography
@@ -113,15 +116,16 @@ const Step1Account = ({
       >
         Conecta. Vende. Crece.
       </Typography>
-
-      <form onSubmit={handleSubmit} style={{ width: '100%' }}>        <TextField
+      <form onSubmit={handleSubmit} style={{ width: '100%' }}>
+        {' '}
+        <TextField
           label="Correo electrónico"
           variant="outlined"
           fullWidth
           value={correo}
-          onChange={e => {
-            onFieldChange('correo', e.target.value);
-            setEmailEnUso(false);
+          onChange={(e) => {
+            onFieldChange('correo', e.target.value)
+            setEmailEnUso(false)
           }}
           sx={{ mb: { xs: 1, sm: 1, md: 1, lg: 1.5 } }}
           size="small"
@@ -133,13 +137,14 @@ const Step1Account = ({
               ? 'Correo inválido. Ejemplo: usuario@dominio.com'
               : ''
           }
-        />        <TextField
+        />{' '}
+        <TextField
           label="Contraseña"
           type={showPassword ? 'text' : 'password'}
           variant="outlined"
           fullWidth
           value={contrasena}
-          onChange={e => onFieldChange('contrasena', e.target.value)}
+          onChange={(e) => onFieldChange('contrasena', e.target.value)}
           sx={{ mb: { xs: 1, sm: 1, md: 1, lg: 1.5 } }}
           size="small"
           InputProps={{
@@ -156,13 +161,14 @@ const Step1Account = ({
               </InputAdornment>
             ),
           }}
-        />        <TextField
+        />{' '}
+        <TextField
           label="Repita su Contraseña"
           type={showRepeatPassword ? 'text' : 'password'}
           variant="outlined"
           fullWidth
           value={confirmarContrasena}
-          onChange={e => onFieldChange('confirmarContrasena', e.target.value)}
+          onChange={(e) => onFieldChange('confirmarContrasena', e.target.value)}
           sx={{ mb: { xs: 1, sm: 1, md: 1, lg: 1.5 } }}
           size="small"
           error={confirmarContrasena.length > 0 && !contrasenasCoinciden}
@@ -186,14 +192,14 @@ const Step1Account = ({
             ),
           }}
         />
-
         <PasswordRequirements password={contrasena} size="normal" />
-
         <FormControlLabel
           control={
             <Checkbox
               checked={aceptaTerminos}
-              onChange={e => onFieldChange('aceptaTerminos', e.target.checked)}
+              onChange={(e) =>
+                onFieldChange('aceptaTerminos', e.target.checked)
+              }
               sx={{ color: '#41B6E6' }}
               size="normal"
             />
@@ -218,12 +224,11 @@ const Step1Account = ({
             },
           }}
         />
-
         <FormControlLabel
           control={
             <Checkbox
               checked={aceptaComunicaciones}
-              onChange={e =>
+              onChange={(e) =>
                 onFieldChange('aceptaComunicaciones', e.target.checked)
               }
               sx={{ color: '#41B6E6' }}
@@ -243,7 +248,6 @@ const Step1Account = ({
             },
           }}
         />
-
         <CustomButton
           type="submit"
           disabled={!canSubmit || checkingEmail}
@@ -252,7 +256,6 @@ const Step1Account = ({
         >
           {checkingEmail ? 'Verificando...' : 'Crear cuenta'}
         </CustomButton>
-
         <CustomButton
           variant="text"
           onClick={onCancel}
@@ -263,7 +266,7 @@ const Step1Account = ({
         </CustomButton>
       </form>
     </Box>
-  );
-};
+  )
+}
 
-export default Step1Account;
+export default Step1Account

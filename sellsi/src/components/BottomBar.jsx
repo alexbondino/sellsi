@@ -39,11 +39,10 @@ const BottomBar = () => {
               <Box
                 sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}
               >
-                {' '}
-                <img
+                {' '}                <img
                   src="/logodark.svg"
                   alt="SELLSI Logo"
-                  style={{ height: 180 }}
+                  style={{ height: 684 }}
                 />
               </Box>
               <Typography

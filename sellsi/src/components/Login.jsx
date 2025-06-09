@@ -1,5 +1,5 @@
-import React, { useEffect, memo } from 'react';
-import { useLocation } from 'react-router-dom';
+import React, { useEffect, memo } from 'react'
+import { useLocation } from 'react-router-dom'
 import {
   Dialog,
   DialogContent,
@@ -10,18 +10,18 @@ import {
   InputAdornment,
   IconButton,
   Paper,
-} from '@mui/material';
-import { Visibility, VisibilityOff } from '@mui/icons-material';
+} from '@mui/material'
+import { Visibility, VisibilityOff } from '@mui/icons-material'
 
-import { CustomButton, useLoginForm } from '../hooks/shared';
-import Recuperar from './Recover';
-import Register from './Register';
-import { supabase } from '../services/supabase';
+import { CustomButton, useLoginForm } from '../hooks/shared'
+import Recuperar from './Recover'
+import Register from './Register'
+import { supabase } from '../services/supabase'
 
 // ✅ CONSTANTS
 const CONSTANTS = {
   FORM_WIDTH: 400,
-};
+}
 
 // ✅ COMMON STYLES
 const commonStyles = {
@@ -34,7 +34,7 @@ const commonStyles = {
       textDecoration: 'underline',
     },
   },
-};
+}
 
 // ✅ LOGO COMPONENT
 const Logo = memo(() => (
@@ -56,7 +56,7 @@ const Logo = memo(() => (
       Conecta. Vende. Crece.
     </Typography>
   </Box>
-));
+))
 
 // ✅ LOGIN FORM COMPONENT
 const LoginForm = memo(({ state, dispatch, onSubmit }) => (
@@ -80,7 +80,7 @@ const LoginForm = memo(({ state, dispatch, onSubmit }) => (
           label="Correo"
           placeholder="Ingrese su correo electrónico"
           value={state.correo}
-          onChange={e =>
+          onChange={(e) =>
             dispatch({ type: 'SET_CORREO', payload: e.target.value })
           }
           inputProps={{ lang: 'es' }}
@@ -96,7 +96,7 @@ const LoginForm = memo(({ state, dispatch, onSubmit }) => (
           label="Contraseña"
           placeholder="Ingrese su contraseña"
           value={state.contrasena}
-          onChange={e =>
+          onChange={(e) =>
             dispatch({ type: 'SET_CONTRASENA', payload: e.target.value })
           }
           inputProps={{ lang: 'es' }}
@@ -136,7 +136,7 @@ const LoginForm = memo(({ state, dispatch, onSubmit }) => (
       </Box>
     </form>
   </Paper>
-));
+))
 
 // ✅ FOOTER LINKS COMPONENT
 const FooterLinks = memo(({ dispatch, onClose, onOpenRegister }) => (
@@ -163,41 +163,41 @@ const FooterLinks = memo(({ dispatch, onClose, onOpenRegister }) => (
         type="button"
         sx={commonStyles.link}
         onClick={() => {
-          onClose();
-          onOpenRegister();
+          onClose()
+          onOpenRegister()
         }}
       >
         Regístrate
       </Link>
     </Typography>
   </Box>
-));
+))
 
 // ✅ MAIN COMPONENT
 export default function Login({ open, onClose, onOpenRegister }) {
   const { state, dispatch, handleLogin, resetForm, reenviarCorreo } =
-    useLoginForm();
-  const location = useLocation();
+    useLoginForm()
+  const location = useLocation()
 
   useEffect(() => {
     if (!open) {
-      resetForm();
+      resetForm()
     }
-  }, [open]);
+  }, [open])
 
   useEffect(() => {
     const handleCloseAllModals = () => {
       if (open) {
-        onClose();
+        onClose()
       }
-    };
+    }
 
-    window.addEventListener('closeAllModals', handleCloseAllModals);
+    window.addEventListener('closeAllModals', handleCloseAllModals)
 
     return () => {
-      window.removeEventListener('closeAllModals', handleCloseAllModals);
-    };
-  }, [open, onClose]);
+      window.removeEventListener('closeAllModals', handleCloseAllModals)
+    }
+  }, [open, onClose])
 
   // ✅ CERRAR al cambiar de ruta
   // useEffect(() => {
@@ -222,8 +222,8 @@ export default function Login({ open, onClose, onOpenRegister }) {
   }
 
   const handleRegistroClose = () => {
-    dispatch({ type: 'CLOSE_REGISTRO' });
-  };
+    dispatch({ type: 'CLOSE_REGISTRO' })
+  }
 
   return (
     <>
@@ -332,5 +332,5 @@ export default function Login({ open, onClose, onOpenRegister }) {
         <Register open={state.openRegistro} onClose={handleRegistroClose} />
       </Dialog>
     </>
-  );
+  )
 }

@@ -1,6 +1,6 @@
-import { useReducer } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { supabase } from '../../services/supabase';
+import { useReducer } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { supabase } from '../../services/supabase'
 
 const initialState = {
   correo: '',
@@ -13,7 +13,7 @@ const initialState = {
   cuentaNoVerificada: false,
   correoReenviado: false,
   reenviarCooldown: false,
-};
+}
 
 const reducer = (state, action) => {
   switch (action.type) {
@@ -25,23 +25,23 @@ const reducer = (state, action) => {
         cuentaNoVerificada: false,
         correoReenviado: false,
         reenviarCooldown: false,
-      };
+      }
     case 'SET_CONTRASENA':
-      return { ...state, contrasena: action.payload, errorContrasena: '' };
+      return { ...state, contrasena: action.payload, errorContrasena: '' }
     case 'SET_ERROR_CORREO':
-      return { ...state, errorCorreo: action.payload };
+      return { ...state, errorCorreo: action.payload }
     case 'SET_ERROR_CONTRASENA':
-      return { ...state, errorContrasena: action.payload };
+      return { ...state, errorContrasena: action.payload }
     case 'TOGGLE_SHOW_PASSWORD':
-      return { ...state, showPassword: !state.showPassword };
+      return { ...state, showPassword: !state.showPassword }
     case 'OPEN_RECUPERAR':
-      return { ...state, openRecuperar: true };
+      return { ...state, openRecuperar: true }
     case 'CLOSE_RECUPERAR':
-      return { ...state, openRecuperar: false };
+      return { ...state, openRecuperar: false }
     case 'OPEN_REGISTRO':
-      return { ...state, openRegistro: true };
+      return { ...state, openRegistro: true }
     case 'CLOSE_REGISTRO':
-      return { ...state, openRegistro: false };
+      return { ...state, openRegistro: false }
     case 'CUENTA_NO_VERIFICADA':
       return {
         ...state,
@@ -49,19 +49,19 @@ const reducer = (state, action) => {
         errorCorreo: '',
         correoReenviado: false,
         reenviarCooldown: false,
-      };
+      }
     case 'CORREO_REENVIADO':
       return {
         ...state,
         correoReenviado: true,
         reenviarCooldown: true,
-      };
+      }
     case 'RESET_COOLDOWN':
       return {
         ...state,
         reenviarCooldown: false,
         correoReenviado: false,
-      };
+      }
     case 'VOLVER_A_LOGIN':
       return {
         ...state,
@@ -72,7 +72,7 @@ const reducer = (state, action) => {
         errorContrasena: '',
         correoReenviado: false,
         reenviarCooldown: false,
-      };
+      }
     case 'RESET_FORM':
       return {
         ...state,
@@ -84,138 +84,145 @@ const reducer = (state, action) => {
         cuentaNoVerificada: false,
         correoReenviado: false,
         reenviarCooldown: false,
-      };
+      }
     default:
-      return state;
+      return state
   }
-};
+}
 
 export const useLoginForm = () => {
-  const navigate = useNavigate();
-  const [state, dispatch] = useReducer(reducer, initialState);
+  const navigate = useNavigate()
+  const [state, dispatch] = useReducer(reducer, initialState)
 
   const validarFormulario = () => {
-    const errores = { correo: '', contrasena: '' };
+    const errores = { correo: '', contrasena: '' }
 
     if (!state.correo) {
-      errores.correo = 'Por favor, rellena este campo.';
+      errores.correo = 'Por favor, rellena este campo.'
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(state.correo)) {
-      errores.correo = 'Por favor, ingresa un correo válido.';
+      errores.correo = 'Por favor, ingresa un correo válido.'
     }
 
     if (!state.contrasena) {
-      errores.contrasena = 'Por favor, rellena este campo.';
+      errores.contrasena = 'Por favor, rellena este campo.'
     }
 
-    dispatch({ type: 'SET_ERROR_CORREO', payload: errores.correo });
-    dispatch({ type: 'SET_ERROR_CONTRASENA', payload: errores.contrasena });
+    dispatch({ type: 'SET_ERROR_CORREO', payload: errores.correo })
+    dispatch({ type: 'SET_ERROR_CONTRASENA', payload: errores.contrasena })
 
-    return !errores.correo && !errores.contrasena;
-  };
+    return !errores.correo && !errores.contrasena
+  }
 
   const handleLogin = async (e, onClose) => {
-    e.preventDefault();
-    if (!validarFormulario()) return;
+    e.preventDefault()
+    if (!validarFormulario()) return
 
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
         email: state.correo,
         password: state.contrasena,
-      });
+      })
 
-      const user = data?.user;
+      const user = data?.user
 
       if (error) {
         if (error.message === 'Email not confirmed') {
-          dispatch({ type: 'CUENTA_NO_VERIFICADA' });
+          dispatch({ type: 'CUENTA_NO_VERIFICADA' })
 
           await supabase.auth.resend({
             type: 'signup',
             email: state.correo,
-          });
+          })
 
-          await supabase.auth.signOut();
-          return;
+          await supabase.auth.signOut()
+          return
         }
 
         dispatch({
           type: 'SET_ERROR_CORREO',
           payload: 'Correo o contraseña incorrectos',
-        });
-        return;
+        })
+        return
       }
 
       if (!user.email_confirmed_at) {
-        dispatch({ type: 'CUENTA_NO_VERIFICADA' });
+        dispatch({ type: 'CUENTA_NO_VERIFICADA' })
 
-        await supabase.auth.signOut();
-        return;
+        await supabase.auth.signOut()
+        return
       }
-
       const { data: perfil, error: perfilError } = await supabase
         .from('users')
         .select('*')
         .eq('user_id', user.id)
-        .single();
+        .single()
 
       if (perfilError || !perfil) {
         dispatch({
           type: 'SET_ERROR_CORREO',
           payload: 'Proveedor no encontrado',
-        });
-        return;
+        })
+        return
       }
 
-      localStorage.setItem('user_id', user.id);
+      localStorage.setItem('user_id', user.id)
 
-      onClose();
-      navigate('/supplier/home');
+      // Guardar account_type basado en main_supplier
+      if (perfil.main_supplier) {
+        localStorage.setItem('account_type', 'proveedor')
+      } else {
+        localStorage.setItem('account_type', 'comprador')
+      }
+
+      onClose()
+      navigate('/supplier/home')
+      navigate('/supplier/home')
     } catch (error) {
-      console.error('Error en login:', error);
+      console.error('Error en login:', error)
       dispatch({
         type: 'SET_ERROR_CORREO',
         payload: 'Error de conexión. Intenta de nuevo.',
-      });
+      })
     }
-  };
+  }
 
   const reenviarCorreo = async () => {
-    const { data: sessionData } = await supabase.auth.getSession();
+    const { data: sessionData } = await supabase.auth.getSession()
 
     if (!sessionData.session) {
       dispatch({
         type: 'SET_ERROR_CORREO',
         payload: 'No hay sesión activa para reenviar el correo.',
-      });
-      return;
+      })
+      return
     }
 
-    if (state.reenviarCooldown) return;
+    if (state.reenviarCooldown) return
 
     const { error } = await supabase.auth.resend({
       type: 'signup',
       email: state.correo,
-    });
+    })
 
     if (!error) {
-      dispatch({ type: 'CORREO_REENVIADO' });
-      setTimeout(() => dispatch({ type: 'RESET_COOLDOWN' }), 30000);
+      dispatch({ type: 'CORREO_REENVIADO' })
+      setTimeout(() => dispatch({ type: 'RESET_COOLDOWN' }), 30000)
     } else if (error.status === 429) {
       dispatch({
         type: 'SET_ERROR_CORREO',
         payload: 'Demasiados intentos. Espera un momento.',
-      });
+      })
     } else {
       dispatch({
         type: 'SET_ERROR_CORREO',
         payload: 'No se pudo reenviar el correo.',
-      });
+      })
     }
-  };
+  }
 
   const resetForm = () => {
-    dispatch({ type: 'RESET_FORM' });
-  };
+    dispatch({ type: 'RESET_FORM' })
+  }
 
   return {
     state,
@@ -223,5 +230,5 @@ export const useLoginForm = () => {
     handleLogin,
     resetForm,
     reenviarCorreo,
-  };
-};
+  }
+}

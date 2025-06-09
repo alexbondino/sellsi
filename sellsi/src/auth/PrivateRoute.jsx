@@ -7,6 +7,12 @@ import { Navigate } from 'react-router-dom'
  * @param {string} requiredAccountType - Tipo de cuenta requerido: 'proveedor', 'comprador', o 'any'
  * @param {string} redirectTo - Ruta a la que redirigir si no está autenticado (default: '/')
  */
+/**
+ * Ruta protegida que verifica autenticación y tipo de cuenta.
+ * @param {React.ReactNode} children - Componentes a renderizar si está autenticado
+ * @param {string} requiredAccountType - Tipo de cuenta requerido: 'proveedor', 'comprador', o 'any'
+ * @param {string} redirectTo - Ruta a la que redirigir si no está autenticado (default: '/')
+ */
 const PrivateRoute = ({
   children,
   requiredAccountType = 'any',
@@ -15,9 +21,10 @@ const PrivateRoute = ({
   // Verificar si existe autenticación
   const supplierid = localStorage.getItem('supplierid')
   const sellerid = localStorage.getItem('sellerid')
+  const user_id = localStorage.getItem('user_id')
   const accountType = localStorage.getItem('account_type')
 
-  const isAuthenticated = !!(supplierid || sellerid)
+  const isAuthenticated = !!(supplierid || sellerid || user_id)
 
   // Si no está autenticado, redirigir
   if (!isAuthenticated) {
