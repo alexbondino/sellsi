@@ -16,13 +16,19 @@ export default function TopBar({ onNavigate }) {
 
   // Configuración de botones de autenticación (usa defaults)
   const authButtons = {}
-
   return (
     <BaseTopBar
       navigationButtons={navigationButtons}
       authButtons={authButtons}
       onNavigate={onNavigate}
       showContactModal={true}
+      logoMarginLeft={{
+        xs: 0,
+        sm: 0,
+        md: -2,
+        lg: -20,
+        xl: -42,
+      }}
     />
   )
 }

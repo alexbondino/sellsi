@@ -23,6 +23,7 @@ const FilterSection = ({
   handleToggleFiltro,
   desktopFilterProps,
   mobileFilterProps,
+  filterPosition = 'left', // Nueva prop para controlar posición
 }) => {
   return (
     <>
@@ -48,9 +49,9 @@ const FilterSection = ({
         <Badge color="error" variant="dot" invisible={!hayFiltrosActivos}>
           <FilterAltIcon />
         </Badge>
-      </Fab>
+      </Fab>{' '}
       {/* FilterPanel unificado - maneja responsive internamente */}
-      <FilterPanel {...desktopFilterProps} />{' '}
+      <FilterPanel {...desktopFilterProps} filterPosition={filterPosition} />
     </>
   )
 }

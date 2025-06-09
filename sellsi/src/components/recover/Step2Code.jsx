@@ -1,5 +1,5 @@
 import React from 'react'
-import { Box, Typography, Fade } from '@mui/material'
+import { Box, Typography, Fade, Button } from '@mui/material'
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined'
 import { Timer, VerificationCodeInput, CustomButton } from '../../hooks/shared'
 
@@ -38,13 +38,11 @@ const Step2Code = ({
           }}
         />
       </Box>
-
       <Typography align="center" sx={{ mb: 2, mt: 1 }}>
         Hemos enviado un código de verificación al correo:{' '}
         <strong>{correo}</strong>.<br />
         Introduce el código en las casillas inferiores.
       </Typography>
-
       <Box sx={{ mb: 2 }}>
         <VerificationCodeInput
           codigo={codigo}
@@ -52,30 +50,25 @@ const Step2Code = ({
           length={5}
           size="large"
         />
-      </Box>
-
+      </Box>{' '}
       <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
         <Timer timer={timer} size="large" />
       </Box>
-
       <CustomButton
         disabled={!codigoCompleto}
         onClick={onVerify}
         sx={{
-          borderRadius: 8,
-          fontSize: 20,
-          width: 260,
-          height: 56,
-          mb: 2,
+          width: 220,
+          height: { xs: '32px', sm: '32px', md: '44px', lg: '44px' },
+          mb: 3,
+          mt: 1,
         }}
       >
         Verificar Código
       </CustomButton>
-
       <Typography variant="body2" sx={{ mb: 1 }}>
         ¿No has recibido el código?
-      </Typography>
-
+      </Typography>{' '}
       <CustomButton
         variant="text"
         onClick={onResendCode}
@@ -83,20 +76,19 @@ const Step2Code = ({
       >
         Reenviar Código
       </CustomButton>
-
-      <CustomButton
-        variant="secondary"
+      <Button
+        variant="text"
         onClick={onBack}
         sx={{
-          borderRadius: 8,
-          fontSize: 20,
-          width: 160,
-          height: 56,
+          color: '#1976d2',
+          fontWeight: 700,
+          fontSize: 14,
+          width: '100%',
+          mt: 0.5,
         }}
       >
         Volver atrás
-      </CustomButton>
-
+      </Button>
       {showCodigoEnviado && (
         <Fade in={fadeIn} timeout={800} unmountOnExit>
           <Typography

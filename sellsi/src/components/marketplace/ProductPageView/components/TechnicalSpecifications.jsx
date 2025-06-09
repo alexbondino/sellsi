@@ -1,20 +1,5 @@
-import React, { useState } from 'react'
-import {
-  Box,
-  Typography,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableRow,
-  Paper,
-  Card,
-  CardContent,
-  Tabs,
-  Tab,
-  Divider,
-  Chip,
-} from '@mui/material'
+import React from 'react'
+import { Box, Typography, Card, CardContent, Chip } from '@mui/material'
 import {
   Engineering,
   Settings,
@@ -22,18 +7,14 @@ import {
   Speed,
   Build,
   Category,
-  KeyboardArrowRight,
 } from '@mui/icons-material'
 import { generateTechnicalSpecifications } from '../../../../utils/marketplace/salesDataGenerator'
 
 const TechnicalSpecifications = ({ product }) => {
-  const [selectedTab, setSelectedTab] = useState(0)
-
   if (!product) return null
 
   // Generate technical specifications
   const especificaciones = generateTechnicalSpecifications(product)
-
   const getCategoryIcon = (categoria) => {
     const iconMap = {
       'Características Generales': <Category />,
@@ -44,10 +25,6 @@ const TechnicalSpecifications = ({ product }) => {
       Construcción: <Build />,
     }
     return iconMap[categoria] || <Engineering />
-  }
-
-  const handleTabChange = (event, newValue) => {
-    setSelectedTab(newValue)
   }
 
   return (
@@ -66,20 +43,17 @@ const TechnicalSpecifications = ({ product }) => {
             display: 'inline-flex',
             alignItems: 'center',
             gap: 1.5,
-            p: 2.5,
-            borderRadius: 3,
-            bgcolor: 'primary.main',
-            color: 'white',
             mb: 2,
-            boxShadow: '0 8px 32px rgba(25, 118, 210, 0.3)',
           }}
         >
-          <Engineering sx={{ fontSize: '1.5rem' }} />
-          <Typography variant="h5" sx={{ fontWeight: 600 }}>
+          <Engineering sx={{ fontSize: '1.5rem', color: 'primary.main' }} />
+          <Typography
+            variant="h5"
+            sx={{ fontWeight: 600, color: 'text.primary' }}
+          >
             Especificaciones Técnicas
           </Typography>
-        </Box>
-
+        </Box>{' '}
         <Typography
           variant="body2"
           sx={{
@@ -92,59 +66,22 @@ const TechnicalSpecifications = ({ product }) => {
           Información detallada sobre las características técnicas y
           especificaciones del producto
         </Typography>
-      </Box>{' '}
-      {/* Tabs Navigation */}
-      <Box sx={{ mb: 3 }}>
-        <Tabs
-          value={selectedTab}
-          onChange={handleTabChange}
-          variant="scrollable"
-          scrollButtons="auto"
-          sx={{
-            '& .MuiTabs-indicator': {
-              height: 2,
-              borderRadius: 1,
-            },
-            '& .MuiTab-root': {
-              textTransform: 'none',
-              fontWeight: 500,
-              fontSize: '0.9rem',
-              minHeight: 50,
-              px: 2.5,
-              '&.Mui-selected': {
-                color: 'primary.main',
-              },
-            },
-          }}
-        >
-          {especificaciones.map((categoria, index) => (
-            <Tab
-              key={index}
-              label={
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  {getCategoryIcon(categoria.categoria)}
-                  {categoria.categoria}
-                </Box>
-              }
-            />
-          ))}
-        </Tabs>
       </Box>
-      {/* Content */}
-      <Card
-        elevation={0}
-        sx={{
-          border: '1px solid',
-          borderColor: 'grey.200',
-          borderRadius: 3,
-          overflow: 'hidden',
-          background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)',
-        }}
-      >
-        <CardContent sx={{ p: 0 }}>
-          {especificaciones[selectedTab] && (
-            <>
-              {' '}
+      {/* All Specifications */}
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+        {especificaciones.map((categoria, categoriaIndex) => (
+          <Card
+            key={categoriaIndex}
+            elevation={0}
+            sx={{
+              border: '1px solid',
+              borderColor: 'grey.200',
+              borderRadius: 3,
+              overflow: 'hidden',
+              background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)',
+            }}
+          >
+            <CardContent sx={{ p: 0 }}>
               {/* Category Header */}
               <Box
                 sx={{
@@ -157,12 +94,12 @@ const TechnicalSpecifications = ({ product }) => {
                   gap: 1.5,
                 }}
               >
-                {getCategoryIcon(especificaciones[selectedTab].categoria)}
+                {getCategoryIcon(categoria.categoria)}
                 <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                  {especificaciones[selectedTab].categoria}
+                  {categoria.categoria}
                 </Typography>
                 <Chip
-                  label={`${especificaciones[selectedTab].especificaciones.length} especificaciones`}
+                  label={`${categoria.especificaciones.length} especificaciones`}
                   size="small"
                   sx={{
                     bgcolor: 'rgba(255, 255, 255, 0.2)',
@@ -170,7 +107,8 @@ const TechnicalSpecifications = ({ product }) => {
                     ml: 'auto',
                   }}
                 />
-              </Box>{' '}
+              </Box>
+
               {/* Specifications Grid */}
               <Box sx={{ p: 2.5 }}>
                 <Box
@@ -179,76 +117,61 @@ const TechnicalSpecifications = ({ product }) => {
                     gap: 1.5,
                   }}
                 >
-                  {especificaciones[selectedTab].especificaciones.map(
-                    (spec, specIndex) => (
-                      <Box
-                        key={specIndex}
-                        sx={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          p: 1.5,
-                          borderRadius: 1.5,
-                          border: '1px solid',
-                          borderColor: 'grey.100',
-                          bgcolor: specIndex % 2 === 0 ? 'grey.50' : 'white',
-                          transition: 'all 0.2s ease',
-                          '&:hover': {
-                            borderColor: 'primary.main',
-                            transform: 'translateX(3px)',
-                            boxShadow: '0 3px 10px rgba(25, 118, 210, 0.1)',
-                          },
-                        }}
-                      >
-                        <KeyboardArrowRight
+                  {categoria.especificaciones.map((spec, specIndex) => (
+                    <Box
+                      key={specIndex}
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        p: 1.5,
+                        borderRadius: 1.5,
+                        border: '1px solid',
+                        borderColor: 'grey.100',
+                        bgcolor: specIndex % 2 === 0 ? 'grey.50' : 'white',
+                      }}
+                    >
+                      <Box sx={{ flex: 1 }}>
+                        <Typography
+                          variant="body2"
                           sx={{
-                            color: 'primary.main',
-                            mr: 1.5,
-                            fontSize: '1rem',
-                          }}
-                        />
-                        <Box sx={{ flex: 1 }}>
-                          <Typography
-                            variant="body2"
-                            sx={{
-                              fontWeight: 600,
-                              color: 'text.primary',
-                            }}
-                          >
-                            {spec.nombre}
-                          </Typography>
-                        </Box>{' '}
-                        <Box
-                          sx={{
-                            textAlign: 'right',
-                            minWidth: '180px',
+                            fontWeight: 600,
+                            color: 'text.primary',
                           }}
                         >
-                          <Typography
-                            variant="body2"
-                            sx={{
-                              color: 'black',
-                              fontFamily: 'monospace',
-                              fontSize: '0.85rem',
-                              bgcolor: 'rgba(25, 118, 210, 0.05)',
-                              px: 1.5,
-                              py: 0.4,
-                              borderRadius: 1,
-                              border: '1px solid',
-                              borderColor: 'rgba(25, 118, 210, 0.1)',
-                            }}
-                          >
-                            {spec.valor}
-                          </Typography>
-                        </Box>
+                          {spec.nombre}
+                        </Typography>
                       </Box>
-                    )
-                  )}
+                      <Box
+                        sx={{
+                          textAlign: 'right',
+                          minWidth: '180px',
+                        }}
+                      >
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            color: 'black',
+                            fontFamily: 'monospace',
+                            fontSize: '0.85rem',
+                            bgcolor: 'rgba(25, 118, 210, 0.05)',
+                            px: 1.5,
+                            py: 0.4,
+                            borderRadius: 1,
+                            border: '1px solid',
+                            borderColor: 'rgba(25, 118, 210, 0.1)',
+                          }}
+                        >
+                          {spec.valor}
+                        </Typography>
+                      </Box>
+                    </Box>
+                  ))}
                 </Box>
               </Box>
-            </>
-          )}
-        </CardContent>
-      </Card>{' '}
+            </CardContent>
+          </Card>
+        ))}
+      </Box>
       {/* Footer Information */}
       <Box
         sx={{

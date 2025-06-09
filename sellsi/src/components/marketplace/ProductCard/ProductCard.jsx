@@ -19,6 +19,8 @@ import {
   Tooltip,
   Popover,
   TextField,
+  Avatar,
+  Chip,
 } from '@mui/material'
 import FavoriteIcon from '@mui/icons-material/Favorite'
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder'
@@ -49,7 +51,8 @@ const ProductCard = ({ producto, onAddToCart, onViewDetails }) => {
   //   }
   // }  // ✅ NUEVA función para manejar click en AGREGAR
   const handleAgregarClick = (event) => {
-    event.stopPropagation() // Solo prevenir propagación hacia ProductCard
+    event.stopPropagation() // Prevenir propagación hacia ProductCard
+    event.preventDefault() // Prevenir comportamiento por defecto
     console.log('handleAgregarClick ejecutado!', event?.currentTarget)
     setAnchorEl(event.currentTarget)
   }
@@ -81,7 +84,6 @@ const ProductCard = ({ producto, onAddToCart, onViewDetails }) => {
       setCantidad(cantidad - 1)
     }
   }
-
   // ✅ NUEVA función para confirmar agregado al carrito
   const handleConfirmarAgregar = () => {
     console.log(`Agregando ${cantidad} unidades de ${nombre} al carrito`)
@@ -93,6 +95,7 @@ const ProductCard = ({ producto, onAddToCart, onViewDetails }) => {
 
   const {
     nombre,
+    proveedor,
     imagen,
     precio,
     precioOriginal,
@@ -102,15 +105,30 @@ const ProductCard = ({ producto, onAddToCart, onViewDetails }) => {
     rating,
     ventas,
     stock,
+    compraMinima,
     negociable, // ✅ AGREGAR: Propiedad negociable
   } = producto
 
-  const toggleFavorito = () => setFavorito(!favorito)
-
-  // Función para navegar a la ficha técnica del producto
+  const toggleFavorito = () => setFavorito(!favorito) // Función para navegar a la ficha técnica del producto
   const handleProductClick = (e) => {
-    // Prevenir la navegación si se hizo clic en botones específicos
-    if (e.target.closest('button') || e.target.closest('.MuiIconButton-root')) {
+    // Verificar si el clic viene de un botón o elemento interactivo
+    const target = e.target
+    const clickedElement =
+      target.closest('button') ||
+      target.closest('.MuiIconButton-root') ||
+      target.closest('.MuiButton-root') ||
+      target.closest('[data-no-card-click]') ||
+      target.hasAttribute('data-no-card-click')
+
+    // También verificar si el elemento tiene clases de MUI que indican que es un botón
+    const isMuiButton =
+      target.classList.contains('MuiButton-root') ||
+      target.classList.contains('MuiIconButton-root') ||
+      target.closest('.MuiButton-root') ||
+      target.closest('.MuiIconButton-root')
+
+    if (clickedElement || isMuiButton) {
+      console.log('Click interceptado en botón, no navegando')
       return
     }
 
@@ -139,27 +157,28 @@ const ProductCard = ({ producto, onAddToCart, onViewDetails }) => {
         },
       }}
     >
-      {/* Badge de descuento - más pequeño */}
-      {descuento > 0 && (
+      {' '}
+      {/* COMMENTED OUT: Badge de descuento */}
+      {/* {descuento > 0 && (
         <Box
           sx={{
             position: 'absolute',
-            top: 8, // ✅ REDUCIR: de 12 a 8
-            left: 8, // ✅ REDUCIR: de 12 a 8
+            top: 8,
+            left: 8,
             bgcolor: '#FF5252',
             color: 'white',
             fontWeight: 'bold',
-            fontSize: 12, // ✅ REDUCIR: de 16 a 12
-            py: 0.5, // ✅ REDUCIR: de 1 a 0.5
-            px: 1.5, // ✅ REDUCIR: de 2 a 1.5
-            borderRadius: 1.5, // ✅ REDUCIR: de 2 a 1.5
+            fontSize: 12,
+            py: 0.5,
+            px: 1.5,
+            borderRadius: 1.5,
             zIndex: 2,
-            boxShadow: '0 2px 4px rgba(0,0,0,0.2)', // ✅ REDUCIR sombra
+            boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
           }}
         >
           -{descuento}%
         </Box>
-      )}
+      )} */}
       {/* Icono favorito - más pequeño */}
       <IconButton
         onClick={toggleFavorito}
@@ -199,7 +218,7 @@ const ProductCard = ({ producto, onAddToCart, onViewDetails }) => {
       <CardContent sx={{ flexGrow: 1, p: 2, pb: 1 }}>
         {' '}
         {/* ✅ REDUCIR: de 3 a 2 */}
-        {/* Nombre - más compacto */}
+        {/* Nombre - más compacto */}{' '}
         <Typography
           variant="h6"
           fontWeight={700}
@@ -215,23 +234,48 @@ const ProductCard = ({ producto, onAddToCart, onViewDetails }) => {
             color: '#1e293b',
           }}
         >
-          {nombre}
+          {nombre}{' '}
         </Typography>
-        {/* Rating y ventas - más compacto */}
+        {/* Nombre del Proveedor */}
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5 }}>
-          {' '}
-          {/* ✅ REDUCIR: de 2.5 a 1.5 */}
+          <Avatar
+            sx={{
+              width: 24,
+              height: 24,
+              mr: 1,
+              fontSize: '0.75rem',
+            }}
+          >
+            {proveedor?.charAt(0)}
+          </Avatar>
+          <Chip
+            label={proveedor}
+            size="small"
+            variant="outlined"
+            color="primary"
+          />{' '}
+        </Box>{' '}
+        {/* Compra mínima */}
+        <Typography
+          variant="body2"
+          sx={{
+            mb: 1.5,
+            fontSize: 12,
+            fontWeight: 500,
+            color: 'text.secondary',
+          }}
+        >
+          Compra mínima: {compraMinima} unidades
+        </Typography>
+        {/* COMMENTED OUT: Rating y ventas section */}
+        {/* <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', mr: 1.5 }}>
-            {' '}
-            {/* ✅ REDUCIR: de 2 a 1.5 */}
             <Box sx={{ fontSize: 16, color: '#FFD700' }}>
-              {' '}
-              {/* ✅ REDUCIR: de 24 a 16 */}
               {'★'.repeat(Math.floor(rating))}
             </Box>
             <Typography
               variant="body2"
-              sx={{ ml: 0.5, color: '#666', fontSize: 12, fontWeight: 600 }} // ✅ REDUCIR: de 17 a 12
+              sx={{ ml: 0.5, color: '#666', fontSize: 12, fontWeight: 600 }}
             >
               ({rating})
             </Typography>
@@ -239,37 +283,37 @@ const ProductCard = ({ producto, onAddToCart, onViewDetails }) => {
           <Typography
             variant="body2"
             color="text.secondary"
-            sx={{ fontSize: 11, fontWeight: 500 }} // ✅ REDUCIR: de 16 a 11
+            sx={{ fontSize: 11, fontWeight: 500 }}
           >
             {ventas} vendidos
           </Typography>
-        </Box>
+        </Box> */}{' '}
         {/* Precios - más compacto */}
         <Box sx={{ mb: 1.5 }}>
-          {' '}
-          {/* ✅ REDUCIR: de 2.5 a 1.5 */}
-          {precioOriginal > precio && (
+          {/* COMMENTED OUT: Discount pricing (original price with line-through) */}
+          {/* {precioOriginal > precio && (
             <Typography
               variant="body2"
               color="text.secondary"
               sx={{
                 textDecoration: 'line-through',
                 display: 'block',
-                fontSize: 14, // ✅ REDUCIR: de 18 a 14
+                fontSize: 14,
                 fontWeight: 500,
-                mb: 0.3, // ✅ REDUCIR: de 0.5 a 0.3
+                mb: 0.3,
               }}
             >
               ${precioOriginal.toLocaleString('es-CL')}
             </Typography>
-          )}
+          )} */}{' '}
           <Typography
             variant="h5"
             color="primary"
             fontWeight={700}
             sx={{ lineHeight: 1.1, fontSize: 22 }} // ✅ REDUCIR: de 30 a 22
           >
-            ${precio.toLocaleString('es-CL')}
+            ${Math.round(precio * 0.6).toLocaleString('es-CL')} - $
+            {precio.toLocaleString('es-CL')}
           </Typography>
         </Box>{' '}
         {/* Información adicional - más compacta */}{' '}
@@ -360,19 +404,28 @@ const ProductCard = ({ producto, onAddToCart, onViewDetails }) => {
           {stock < 10 ? `¡Solo ${stock} disponibles!` : `Stock: ${stock}`}
         </Typography>{' '}
         {/* ✅ NUEVO: Botón de negociación */}
-        <Box sx={{ mt: 1, mb: 0.5 }}>
+        <Box sx={{ mt: 2, mb: 0 }}>
           <Button
             variant="contained"
             fullWidth
             disabled={!negociable}
-            onClick={
-              negociable
-                ? () => {
-                    // TODO: Abrir modal de negociación
-                    console.log('Abrir modal de negociación para:', nombre)
-                  }
-                : undefined
-            }
+            data-no-card-click="true"
+            onMouseDown={(e) => {
+              e.stopPropagation()
+              e.preventDefault()
+            }}
+            onClick={(e) => {
+              e.stopPropagation()
+              e.preventDefault()
+              if (negociable) {
+                // TODO: Abrir modal de negociación
+                console.log('Abrir modal de negociación para:', nombre)
+              }
+            }}
+            onTouchStart={(e) => {
+              e.stopPropagation()
+              e.preventDefault()
+            }}
             sx={{
               textTransform: 'none',
               fontWeight: 600,
@@ -384,6 +437,9 @@ const ProductCard = ({ producto, onAddToCart, onViewDetails }) => {
               backgroundColor: negociable
                 ? 'rgba(46, 125, 50, 0.05)'
                 : 'rgba(117, 117, 117, 0.05)',
+              pointerEvents: 'auto', // Asegurar que el botón capture eventos
+              position: 'relative',
+              zIndex: 10,
               '&:hover': negociable
                 ? {
                     backgroundColor: 'rgba(46, 125, 50, 0.1)',
@@ -404,6 +460,7 @@ const ProductCard = ({ producto, onAddToCart, onViewDetails }) => {
                 color: '#757575',
                 border: 'none',
                 backgroundColor: 'rgba(117, 117, 117, 0.05)',
+                pointerEvents: 'auto', // Mantener eventos incluso cuando está deshabilitado
               },
             }}
           >
@@ -411,14 +468,23 @@ const ProductCard = ({ producto, onAddToCart, onViewDetails }) => {
           </Button>
         </Box>
       </CardContent>{' '}
-      {/* Botón agregar - más pequeño */}
+      {/* Botón agregar - más pequeño */}{' '}
       <CardActions sx={{ p: 1.5, pt: 0.5 }}>
         <Button
           variant="contained"
           color="primary"
           fullWidth
+          data-no-card-click="true"
           startIcon={<ShoppingCartIcon sx={{ fontSize: 16 }} />}
+          onMouseDown={(e) => {
+            e.stopPropagation()
+            e.preventDefault()
+          }}
           onClick={handleAgregarClick}
+          onTouchStart={(e) => {
+            e.stopPropagation()
+            e.preventDefault()
+          }}
           sx={{
             textTransform: 'none',
             fontWeight: 600,
@@ -429,6 +495,9 @@ const ProductCard = ({ producto, onAddToCart, onViewDetails }) => {
             background:
               'linear-gradient(135deg,rgb(231, 254, 255) 0%,rgb(202, 223, 247) 100%)',
             boxShadow: '0 3px 10px rgba(25, 118, 210, 0.3)',
+            pointerEvents: 'auto',
+            position: 'relative',
+            zIndex: 10,
             '&:hover': {
               background:
                 'linear-gradient(135deg,rgb(209, 251, 254) 0%,rgb(189, 196, 247) 100%)',

@@ -21,11 +21,13 @@ import {
   Phone as PhoneIcon,
   Send as SendIcon,
 } from '@mui/icons-material'
+import { useBanner } from '../contexts/BannerContext'
 
 const ContactModal = ({ open, onClose }) => {
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down('md'))
   const location = useLocation()
+  const { showBanner } = useBanner()
 
   // Estado del formulario
   const [formData, setFormData] = useState({
@@ -58,7 +60,6 @@ const ContactModal = ({ open, onClose }) => {
       setErrors((prev) => ({ ...prev, [field]: '' }))
     }
   }
-
   // Validación simple
   const validate = () => {
     const newErrors = {}
@@ -71,18 +72,38 @@ const ContactModal = ({ open, onClose }) => {
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
-
   // Envío
   const handleSubmit = async (e) => {
     e.preventDefault()
-    if (!validate()) return
+    if (!validate()) {
+      showBanner({
+        message: 'Por favor, completa todos los campos correctamente.',
+        severity: 'warning',
+      })
+      return
+    }
 
     setIsSubmitting(true)
     try {
+      // Simular envío (aquí iría la llamada real a la API)
       await new Promise((resolve) => setTimeout(resolve, 1500))
+
+      // Mostrar banner de éxito
+      showBanner({
+        message:
+          '¡Gracias! Tu mensaje ha sido enviado correctamente. Nos pondremos en contacto contigo lo antes posible.',
+        severity: 'success',
+      })
+
+      // Cerrar modal después del éxito
       handleClose()
     } catch (error) {
       console.error('Error:', error)
+      showBanner({
+        message:
+          'Hubo un error al enviar tu mensaje. Por favor, inténtalo nuevamente.',
+        severity: 'error',
+      })
     } finally {
       setIsSubmitting(false)
     }

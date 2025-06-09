@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Dialog, DialogTitle, DialogContent, Box } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 import {
   ProgressStepper,
@@ -18,6 +18,7 @@ import { useBanner } from '../contexts/BannerContext';
 export default function Register({ open, onClose }) {
   const theme = useTheme();
   const { showBanner } = useBanner();
+  const navigate = useNavigate(); // 🔄 AGREGADO: Hook para navegación automática de proveedores
 
   const [formData, setFormData] = useState({
     correo: '',
@@ -151,7 +152,6 @@ export default function Register({ open, onClose }) {
       setTimer(prev => prev - 1);
     }, 1000);
   };
-
   const handleSuccessfulVerification = () => {
     onClose();
     showBanner({
@@ -159,6 +159,19 @@ export default function Register({ open, onClose }) {
       severity: 'success',
       duration: 6000,
     });
+
+    // 🔄 NUEVA LÓGICA: Redirección automática para cuentas de proveedor
+    // 📍 PUNTO DE CONEXIÓN BACKEND: Aquí es donde verificas el tipo de cuenta desde la respuesta del servidor
+    // En lugar de usar formData.tipoCuenta, podrías usar algo como: responseData.accountType o user.userType
+    if (formData.tipoCuenta === 'proveedor') {
+      // 🔄 AGREGADO: Redirección con delay para mostrar el banner de éxito
+      // 📍 PUNTO DE CONEXIÓN BACKEND: Aquí también podrías almacenar datos del usuario en localStorage
+      // Ejemplo: localStorage.setItem('userType', 'provider'); localStorage.setItem('supplierId', responseData.id);
+      setTimeout(() => {
+        navigate('/supplier/home') // 🔄 Redirige a dashboard de proveedor
+      }, 1000) // Esperar 1 segundo para que el usuario vea el banner
+    }
+    // 📍 NOTA: Las cuentas de comprador mantienen el comportamiento actual (solo banner, sin redirección)
   };
 
   const handleDialogClose = (event, reason) => {

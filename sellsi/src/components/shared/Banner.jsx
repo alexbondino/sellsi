@@ -47,6 +47,7 @@ const Banner = ({
         justifyContent: 'center',
       }}
     >
+      {' '}
       <Slide direction="down" in={isVisible} timeout={300}>
         <Alert
           variant="filled"
@@ -58,17 +59,19 @@ const Banner = ({
             }, 300)
           }}
           sx={{
-            minWidth: 'fit-content',
-            maxWidth: '90vw', // Máximo 90% del ancho de la ventana
-            borderRadius: 2, // Bordes redondeados
-            fontSize: 16,
+            width: { xs: '90vw', sm: '90vw', md: 'fit-content' }, // Ancho fijo para móviles, ajustado al contenido en desktop
+            maxWidth: { xs: '95vw', sm: '90vw', md: 'none' }, // Respaldo por si width no funciona
+            borderRadius: { xs: 1, sm: 1.5, md: 2 }, // Bordes más suaves en móviles
+            fontSize: { xs: 14, sm: 15, md: 16 }, // Texto más pequeño en móviles
             fontWeight: 600,
-            px: 3, // Padding horizontal
-            py: 1.5, // Padding vertical
-            boxShadow: 3, // Sombra para destacar
+            px: { xs: 1, sm: 1, md: 3 }, // Menos padding horizontal en móviles
+            py: { xs: 1, sm: 1, md: 1.5 }, // Menos padding vertical en móviles
+            boxShadow: { xs: 2, sm: 2, md: 3 }, // Sombra más suave en móviles
             '& .MuiAlert-message': {
               textAlign: 'center',
-              whiteSpace: 'nowrap', // Evita que el texto se divida en múltiples líneas
+              whiteSpace: { xs: 'normal', sm: 'normal', md: 'nowrap' }, // Permitir salto de línea en móviles
+              wordBreak: { xs: 'break-word', sm: 'break-word', md: 'normal' }, // Romper palabras largas en móviles
+              lineHeight: { xs: 1.3, sm: 1.4, md: 1.5 }, // Ajustar altura de línea
             },
           }}
         >

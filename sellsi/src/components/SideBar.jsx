@@ -1,13 +1,13 @@
 // 📁 components/SidebarProvider.jsx
-import React from 'react';
+import React from 'react'
 import {
   Box,
   List,
   ListItem,
   ListItemButton,
   ListItemText,
-} from '@mui/material';
-import { useLocation, useNavigate } from 'react-router-dom';
+} from '@mui/material'
+import { useLocation, useNavigate } from 'react-router-dom'
 
 const menuItems = [
   { text: 'Inicio', path: '/supplier/home' },
@@ -15,11 +15,11 @@ const menuItems = [
   { text: 'Mis Pedidos', path: '/supplier/myorders' },
   { text: 'Mi Performance', path: '/supplier/myperformance' },
   { text: 'El Mercado', path: '/supplier/market' },
-];
+]
 
 const SidebarProvider = () => {
-  const location = useLocation();
-  const navigate = useNavigate();
+  const location = useLocation()
+  const navigate = useNavigate()
 
   return (
     <Box
@@ -29,7 +29,7 @@ const SidebarProvider = () => {
         left: 0,
         width: '250px',
         height: '100vh',
-        backgroundColor: '#2b2b2d',
+        backgroundColor: '#000000',
         color: 'white',
         display: 'flex',
         flexDirection: 'column',
@@ -38,14 +38,14 @@ const SidebarProvider = () => {
       }}
     >
       <List>
-        {menuItems.map(item => {
-          const isActive = location.pathname === item.path;
+        {menuItems.map((item) => {
+          const isActive = location.pathname === item.path
 
           return (
             <ListItem disablePadding key={item.text}>
               <ListItemButton
                 onClick={() => {
-                  if (!isActive) navigate(item.path);
+                  if (!isActive) navigate(item.path)
                 }}
                 disabled={isActive}
                 sx={{
@@ -75,11 +75,11 @@ const SidebarProvider = () => {
                 />
               </ListItemButton>
             </ListItem>
-          );
+          )
         })}
       </List>
     </Box>
-  );
-};
+  )
+}
 
-export default SidebarProvider;
+export default SidebarProvider

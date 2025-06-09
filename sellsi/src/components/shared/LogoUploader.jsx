@@ -1,5 +1,12 @@
 import React from 'react'
-import { Box, Typography, IconButton, Avatar } from '@mui/material'
+import {
+  Box,
+  Typography,
+  IconButton,
+  Avatar,
+  useTheme,
+  useMediaQuery,
+} from '@mui/material'
 import InsertPhotoIcon from '@mui/icons-material/InsertPhoto'
 
 const LogoUploader = ({
@@ -7,9 +14,20 @@ const LogoUploader = ({
   onLogoSelect,
   size = 'large',
   showText = true,
+  textVariant = 'default',
 }) => {
+  const theme = useTheme()
+  const isXsOrSm = useMediaQuery(theme.breakpoints.down('md'))
   const isLarge = size === 'large'
   const avatarSize = isLarge ? 120 : 80
+
+  const getUploadText = () => {
+    if (logoPreview) return 'Clic para cambiar logo'
+    if (textVariant === 'responsive') {
+      return isXsOrSm ? 'Adjuntar logo aqui' : 'Clic para subir logo'
+    }
+    return 'Clic para subir logo'
+  }
 
   const handleFileSelect = (event) => {
     const file = event.target.files[0]
@@ -69,7 +87,7 @@ const LogoUploader = ({
             )}
           </Avatar>
         </IconButton>
-      </label>
+      </label>{' '}
       {showText && (
         <Typography
           variant="body2"
@@ -77,9 +95,10 @@ const LogoUploader = ({
             textAlign: 'center',
             color: '#666',
             fontSize: isLarge ? 14 : 12,
+            mb: { xs: 0 }, // Reduced margin for xs/sm
           }}
         >
-          {logoPreview ? 'Clic para cambiar logo' : 'Clic para subir logo'}
+          {getUploadText()}
         </Typography>
       )}
     </Box>

@@ -17,9 +17,14 @@ import Home from './pages/Home';
 import ProviderHome from './pages/provider/ProviderHome';
 import FichaTecnica from './pages/FichaTecnica';
 import Marketplace from './pages/Marketplace';
+import MarketplaceBuyer from './pages/MarketplaceBuyer';
+import BuyerOrders from './pages/buyer/BuyerOrders';
+import BuyerPerformance from './pages/buyer/BuyerPerformance';
+import BuyerCart from './pages/buyer/BuyerCart';
 import Login from './components/Login';
 import Register from './components/Register';
 import ProductPageViewDemo from './components/marketplace/ProductPageView/ProductPageViewDemo';
+import PrivateRoute from './auth/PrivateRoute';
 import { BannerProvider, useBanner } from './contexts/BannerContext';
 import { Banner } from './hooks/shared';
 import { supabase } from './services/supabase';
@@ -37,9 +42,7 @@ function AppContent({ mensaje }) {
       const topBarHeight = 30;
       const elementPosition =
         element.getBoundingClientRect().top + window.pageYOffset;
-      const offsetPosition = elementPosition - topBarHeight;
-
-      window.scrollTo({
+      const offsetPosition = elementPosition - topBarHeight;      window.scrollTo({
         top: offsetPosition,
         behavior: 'smooth',
       });
@@ -55,9 +58,16 @@ function AppContent({ mensaje }) {
       }
 
       const session = data.session;
+      const accountType = localStorage.getItem('account_type');
 
       if (session && location.pathname === '/') {
-        navigate('/supplier/home', { replace: true });
+        if (accountType === 'proveedor') {
+          navigate('/supplier/home', { replace: true });
+        } else if (accountType === 'comprador') {
+          navigate('/buyer/marketplace', { replace: true });
+        } else {
+          navigate('/supplier/home', { replace: true });
+        }
       }
     };
 
@@ -106,12 +116,22 @@ function AppContent({ mensaje }) {
       >
         <Routes>
           <Route path="/" element={<Home scrollTargets={scrollTargets} />} />
-          <Route path="/marketplace" element={<Marketplace />} />
+          <Route path="/marketplace" element={<Marketplace />} />{' '}
+          <Route path="/buyer/marketplace" element={<MarketplaceBuyer />} />
+          <Route path="/buyer/orders" element={<BuyerOrders />} />
+          <Route path="/buyer/performance" element={<BuyerPerformance />} />
+          <Route path="/buyer/cart" element={<BuyerCart />} />
           <Route path="/fichatecnica/:productSlug" element={<FichaTecnica />} />
-          <Route path="/demo" element={<ProductPageViewDemo />} />
           <Route path="/login" element={<Login />} />
           <Route path="/crear-cuenta" element={<Register />} />
-          <Route path="/supplier/home" element={<ProviderHome />} />
+          <Route
+            path="/supplier/home"
+            element={
+              <PrivateRoute requiredAccountType="proveedor">
+                <ProviderHome />
+              </PrivateRoute>
+            }
+          />
         </Routes>
 
         {process.env.NODE_ENV === 'development' &&

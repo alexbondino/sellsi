@@ -32,7 +32,7 @@ import {
 } from '@mui/icons-material'
 
 import ProductImageGallery from './components/ProductImageGallery'
-import SalesCharacteristics from './components/SalesCharacteristics'
+// import SalesCharacteristics from './components/SalesCharacteristics'
 import SaleConditions from './components/SaleConditions'
 import TechnicalSpecifications from './components/TechnicalSpecifications'
 import PurchaseActions from './components/PurchaseActions'
@@ -136,9 +136,9 @@ const ProductPageView = ({
           onBuyNow={handleBuyNow}
         />{' '}
         {/* SECCIÓN INTERMEDIA - Características de Venta */}
-        <Box sx={{ mt: 6 }}>
+        {/* <Box sx={{ mt: 6 }}>
           <SalesCharacteristics product={product} />
-        </Box>
+        </Box> */}
         {/* SECCIÓN DE CONDICIONES DE VENTA */}
         <Box sx={{ mt: 6 }}>
           <SaleConditions product={product} />

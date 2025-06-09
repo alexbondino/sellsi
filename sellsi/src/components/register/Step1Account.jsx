@@ -92,17 +92,19 @@ const Step1Account = ({
         mb: 1,
         mt: 0,
       }}
-    >
-      <img
+    >      <img
         src="/logo.svg"
         alt="SELLSI Logo"
-        style={{ width: 160, marginBottom: 8 }}
+        style={{ 
+          width: window.innerWidth < 600 ? 140 : window.innerWidth < 900 ? 110 : 160, 
+          marginBottom: window.innerWidth < 600 ? 4 : 8 
+        }}
       />
       <Typography
         variant="h6"
         align="center"
         sx={{
-          mb: 4,
+          mb: { xs: 1, sm: 2, md: 2, lg: 4 },
           color: theme.palette.mode === 'dark' ? '#fff' : '#222',
           fontWeight: 700,
           fontSize: 18,
@@ -112,8 +114,7 @@ const Step1Account = ({
         Conecta. Vende. Crece.
       </Typography>
 
-      <form onSubmit={handleSubmit} style={{ width: '100%' }}>
-        <TextField
+      <form onSubmit={handleSubmit} style={{ width: '100%' }}>        <TextField
           label="Correo electrónico"
           variant="outlined"
           fullWidth
@@ -122,7 +123,7 @@ const Step1Account = ({
             onFieldChange('correo', e.target.value);
             setEmailEnUso(false);
           }}
-          sx={{ mb: 1.5 }}
+          sx={{ mb: { xs: 1, sm: 1, md: 1, lg: 1.5 } }}
           size="small"
           error={(correo.length > 0 && !correoValido) || emailEnUso}
           helperText={
@@ -132,16 +133,14 @@ const Step1Account = ({
               ? 'Correo inválido. Ejemplo: usuario@dominio.com'
               : ''
           }
-        />
-
-        <TextField
+        />        <TextField
           label="Contraseña"
           type={showPassword ? 'text' : 'password'}
           variant="outlined"
           fullWidth
           value={contrasena}
           onChange={e => onFieldChange('contrasena', e.target.value)}
-          sx={{ mb: 1.5 }}
+          sx={{ mb: { xs: 1, sm: 1, md: 1, lg: 1.5 } }}
           size="small"
           InputProps={{
             endAdornment: (
@@ -157,16 +156,14 @@ const Step1Account = ({
               </InputAdornment>
             ),
           }}
-        />
-
-        <TextField
+        />        <TextField
           label="Repita su Contraseña"
           type={showRepeatPassword ? 'text' : 'password'}
           variant="outlined"
           fullWidth
           value={confirmarContrasena}
           onChange={e => onFieldChange('confirmarContrasena', e.target.value)}
-          sx={{ mb: 1.5 }}
+          sx={{ mb: { xs: 1, sm: 1, md: 1, lg: 1.5 } }}
           size="small"
           error={confirmarContrasena.length > 0 && !contrasenasCoinciden}
           helperText={

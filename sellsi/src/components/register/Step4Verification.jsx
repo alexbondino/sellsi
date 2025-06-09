@@ -37,15 +37,14 @@ const Step4Verification = ({ email, onBack }) => {
       <Typography sx={{ fontSize: 15, color: '#555', mb: 4 }}>
         Por favor revisa tu bandeja de entrada (o spam) y haz clic en el enlace
         para activar tu cuenta y comenzar a usar Sellsi.
-      </Typography>
-
-      <CustomButton
+      </Typography>      <CustomButton
         onClick={onBack}
         variant="text"
         sx={{
           fontSize: 14,
           color: '#888',
           '&:hover': { color: '#1976d2', background: 'transparent' },
+          height: { md: '32px' },
         }}
       >
         Volver atrás

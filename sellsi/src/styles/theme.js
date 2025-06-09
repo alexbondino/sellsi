@@ -3,11 +3,11 @@ import { createTheme } from '@mui/material/styles'
 const theme = createTheme({
   breakpoints: {
     values: {
-      xs: 0, // 0 – 375px → Teléfonos muy pequeños (iPhone SE 375x667)
-      sm: 412, // 412 – 767px → Teléfonos grandes / (GALAXY A50 series 412*914)
-      md: 768, // 768 – 1079px → Tablets y laptops pequeñas (Ipad Mini 768x1024)
-      lg: 1080, // 1080 – 1439px → Laptops medianas y escritorios estándar (Full HD 1080x1920 MUY IMPORTANTE)
-      xl: 1920, // 1920px en adelante → Pantallas grandes y 4K (Full HD+ 1920x1080, 4K 2160x3840)
+      xs: 0, // 0 – 411px → Teléfonos muy pequeños (iPhone SE 375x667)
+      sm: 412, // 412 – 767px → Teléfonos grandes (GALAXY A50 series 412x914)
+      md: 768, // 768 – 1919px → Tablets y laptops pequeñas/medianas (incluye tu 1600x900)
+      lg: 1700, // 1920 – 2159px → Full HD 1080p (1920x1080)
+      xl: 2160, // 2160px en adelante → 1200p y resoluciones superiores (1920x1200, 4K, etc.)
     },
   },
   palette: {
