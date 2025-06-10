@@ -1,0 +1,59 @@
+import React from 'react';
+import { Box } from '@mui/material'; // Importación de componentes y estilos de Material UI
+import { Banner } from './hooks/index.js'; // Componente de banner reutilizable
+// Importación de la lógica de la página de inicio
+import useHomeLogic from './hooks/useHomeLogic.jsx'; // Lógica de la página de inicio
+import HeroSection from './HeroSection.jsx'; //Carrusel supererio (Somos Sellsi...)
+import ProvidersSection from './ProvidersSection.jsx'; //Seccion de conocenos a nuestros proveedores
+import AboutUsSection from './AboutUsSection.jsx'; //Sección ¿Quiénes somos?
+import ServicesSection from './ServicesSection.jsx'; //Sección Nuestros Servicios (Carrusel de servicios)
+
+const Home = ({ scrollTargets }) => {
+  // ===== USAR CUSTOM HOOK PARA TODA LA LÓGICA =====
+  const {
+    // Referencias para scroll
+    quienesSomosRef,
+    serviciosRef,
+    contactanosRef,
+
+    // Carrusel promocional
+    currentPromoSlide,
+    nextPromoSlide,
+    prevPromoSlide,
+    goToPromoSlide,
+
+    // Estadísticas y números
+    statistics,
+    formatNumber,
+
+    // Datos de servicios
+    services,
+
+    // Constantes
+    PROMO_SLIDES,
+  } = useHomeLogic(scrollTargets);
+
+  return (
+    <Box sx={{ width: '100%', overflowX: 'hidden' }}>
+      {/* Sección Hero con texto, botón, estadísticas y carrusel */}
+      <HeroSection
+        currentPromoSlide={currentPromoSlide}
+        nextPromoSlide={nextPromoSlide}
+        prevPromoSlide={prevPromoSlide}
+        setCurrentPromoSlide={goToPromoSlide}
+        promoSlides={PROMO_SLIDES}
+        statistics={statistics}
+        formatNumber={formatNumber}
+      />{' '}
+      {/* Sección Conoce a nuestros proveedores */}
+      <ProvidersSection statistics={statistics} />
+      {/* Banner Component */}
+      <Banner /> {/* Sección ¿Quiénes somos? */}{' '}
+      <AboutUsSection quienesSomosRef={quienesSomosRef} />
+      {/* Sección Nuestros Servicios */}
+      <ServicesSection serviciosRef={serviciosRef} services={services} />
+    </Box>
+  );
+};
+
+export default Home;
