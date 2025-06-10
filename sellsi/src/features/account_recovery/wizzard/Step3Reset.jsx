@@ -8,7 +8,7 @@ import {
   Button,
 } from '@mui/material';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
-import { PasswordRequirements, CustomButton } from '../../landing_page/hooks';
+import { PasswordRequirements, CustomButton } from '../..';
 
 const Step3Reset = ({
   nuevaContrasena,

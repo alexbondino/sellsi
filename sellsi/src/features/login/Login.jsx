@@ -13,7 +13,7 @@ import {
 } from '@mui/material';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
 
-import { CustomButton, useLoginForm } from '../../hooks/shared';
+import { CustomButton, useLoginForm } from '../landing_page/hooks';
 import Recuperar from '../account_recovery/Recover';
 import Register from '../register/Register';
 import { supabase } from '../../services/supabase';

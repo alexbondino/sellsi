@@ -1,6 +1,6 @@
 import React from 'react';
 import { Box, Typography } from '@mui/material';
-import { CustomButton } from '../../landing_page/hooks';
+import { CustomButton } from '../..';
 
 const Step4Success = ({ onClose }) => {
   return (

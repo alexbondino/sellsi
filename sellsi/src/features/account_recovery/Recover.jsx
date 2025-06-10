@@ -3,7 +3,7 @@ import { useLocation } from 'react-router-dom'; // ✅ AGREGAR
 import { Box, Paper, Dialog, DialogContent } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 
-import { CustomButton, useRecuperarForm } from '../../hooks/shared';
+import { CustomButton, useRecuperarForm } from '../landing_page/hooks';
 import Step1Email from './wizard/Step1Email'; // Componente para ingresar correo
 import Step2Code from './wizard/Step2Code'; // Componente para verificar código
 import Step3Reset from './wizard/Step3Reset'; // Componente para restablecer contraseña

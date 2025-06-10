@@ -15,17 +15,17 @@ import TopBar from './features/layout/TopBar';
 import BottomBar from './features/layout/BottomBar';
 import Home from './features/landing_page/Home';
 import ProviderHome from './features/supplier/home/ProviderHome';
-import FichaTecnica from './pages/FichaTecnica';
+import FichaTecnica from './features/marketplace/view_page/FichaTecnica';
 import Marketplace from './features/marketplace/Marketplace';
-import MarketplaceBuyer from './features/buyer/marketplace/MarketplaceBuyer';
-import BuyerOrders from './pages/buyer/BuyerOrders';
-import BuyerPerformance from './pages/buyer/BuyerPerformance';
-import BuyerCart from './pages/buyer/BuyerCart';
+import MarketplaceBuyer from './features/buyer/MarketplaceBuyer';
+import BuyerOrders from './features/buyer/BuyerOrders';
+import BuyerPerformance from './features/buyer/BuyerPerformance';
+import BuyerCart from './features/buyer/BuyerCart';
 import Login from './features/login/Login';
 import Register from './features/register/Register';
-import PrivateRoute from './auth/PrivateRoute';
-import { BannerProvider, useBanner } from './contexts/BannerContext';
-import { Banner } from './hooks/shared';
+import PrivateRoute from './features/auth/PrivateRoute';
+import { BannerProvider, useBanner } from './features/ui/BannerContext';
+import Banner from './features/ui/Banner';
 import { supabase } from './services/supabase';
 
 // Contenido principal que depende de la ruta

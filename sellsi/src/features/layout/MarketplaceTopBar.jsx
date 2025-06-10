@@ -4,7 +4,7 @@ import { Tooltip, Badge } from '@mui/material';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import PersonIcon from '@mui/icons-material/Person';
 import BaseTopBar from './BaseTopBar';
-import useCartStore from '../../stores/cartStore';
+import useCartStore from '../buyer/hooks/cartStore';
 
 /**
  * MarketplaceTopBar - Configuración específica para la página Marketplace

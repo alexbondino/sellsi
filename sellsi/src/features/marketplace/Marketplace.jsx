@@ -11,12 +11,12 @@ import { Box } from '@mui/material';
 import BaseTopBar from '../layout/BaseTopBar.jsx';
 
 // Hook centralizado
-import useMarketplaceLogic from '../../components/marketplace/useMarketplaceLogic.jsx';
+import useMarketplaceLogic from './useMarketplaceLogic.jsx';
 
 // Componentes de secciones
-import SearchSection from '../../components/marketplace/sections/SearchSection.jsx';
-import FilterSection from '../../components/marketplace/sections/FilterSection.jsx';
-import ProductsSection from '../../components/marketplace/sections/ProductsSection.jsx';
+import SearchSection from './sections/SearchSection.jsx';
+import FilterSection from './sections/FilterSection.jsx';
+import ProductsSection from './sections/ProductsSection.jsx';
 
 const Marketplace = () => {
   // ===== USAR CUSTOM HOOK PARA TODA LA LÓGICA =====

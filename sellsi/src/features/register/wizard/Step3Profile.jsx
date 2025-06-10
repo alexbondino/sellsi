@@ -4,7 +4,7 @@ import {
   CustomButton,
   LogoUploader,
   CountrySelector,
-} from '../../../hooks/shared';
+} from '../../landing_page/hooks';
 import { supabase } from '../../../services/supabase';
 
 const Step3Profile = ({

@@ -15,7 +15,7 @@ import { supabase } from '../../services/supabase';
 
 import Login from '../login/Login';
 import Register from '../register/Register';
-import ContactModal from '../../components/ContactModal';
+import ContactModal from '../ui/ContactModal';
 
 export default function BaseTopBar({
   navigationButtons = [],

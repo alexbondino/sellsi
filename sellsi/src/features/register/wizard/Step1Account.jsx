@@ -11,7 +11,7 @@ import {
 } from '@mui/material';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
-import { PasswordRequirements, CustomButton } from '../../../hooks/shared';
+import { PasswordRequirements, CustomButton } from '../../landing_page/hooks';
 import { supabase } from '../../../services/supabase';
 
 const Step1Account = ({

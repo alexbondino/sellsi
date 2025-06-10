@@ -8,12 +8,12 @@ import {
   CustomButton,
   Wizard,
   useWizard,
-} from '../../hooks/shared';
+} from '../landing_page/hooks';
 import Step1Account from './wizard/Step1Account';
 import Step2AccountType from './wizard/Step2AccountType';
 import Step3Profile from './wizard/Step3Profile';
 import Step4Verification from './wizard/Step4Verification';
-import { useBanner } from '../../contexts/BannerContext';
+import { useBanner } from '../ui/BannerContext';
 
 export default function Register({ open, onClose }) {
   const theme = useTheme();

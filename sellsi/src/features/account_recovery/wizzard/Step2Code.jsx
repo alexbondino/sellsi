@@ -1,11 +1,7 @@
 import React from 'react';
 import { Box, Typography, Fade, Button } from '@mui/material';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
-import {
-  Timer,
-  VerificationCodeInput,
-  CustomButton,
-} from '../../landing_page/hooks';
+import { Timer, VerificationCodeInput, CustomButton } from '../..';
 
 const Step2Code = ({
   correo,

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Box, Typography } from '@mui/material';
-import { CustomButton } from '../../../hooks/shared';
+import { CustomButton } from '../../landing_page/hooks';
 
 const Step4Verification = ({ email, onBack }) => {
   return (

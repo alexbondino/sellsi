@@ -3,7 +3,7 @@ import { Box, Typography, IconButton, Grid, Divider } from '@mui/material';
 import LinkedInIcon from '@mui/icons-material/LinkedIn';
 import InstagramIcon from '@mui/icons-material/Instagram';
 import WhatsAppIcon from '@mui/icons-material/WhatsApp';
-import ContactModal from '../../components/ContactModal';
+import ContactModal from '../ui/ContactModal';
 
 const BottomBar = () => {
   const [openContactModal, setOpenContactModal] = useState(false);
