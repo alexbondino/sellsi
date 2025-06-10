@@ -1,12 +1,12 @@
-import React from 'react'
-import { Box, Typography, Grid, Button } from '@mui/material'
-import { useNavigate } from 'react-router-dom'
-import ProviderLogo from './ProviderLogo'
-import StatisticCard from './StatisticCard'
-import { PROVIDERS_DATA } from '../../../data/home/constants.jsx'
+import React from 'react';
+import { Box, Typography, Grid, Button } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
+import ProviderLogo from './ProviderLogo';
+import StatisticCard from './StatisticCard';
+import { PROVIDERS_DATA } from '../../../features/landing_page/constants.jsx';
 
 const ProvidersSection = ({ statistics }) => {
-  const navigate = useNavigate()
+  const navigate = useNavigate();
 
   return (
     <Box
@@ -248,7 +248,7 @@ const ProvidersSection = ({ statistics }) => {
         </Box>
       </Box>
     </Box>
-  )
-}
+  );
+};
 
-export default ProvidersSection
+export default ProvidersSection;

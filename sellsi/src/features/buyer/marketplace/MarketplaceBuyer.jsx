@@ -8,18 +8,18 @@ import React from 'react';
 import { Box } from '@mui/material';
 
 // TopBar específico para Marketplace
-import MarketplaceTopBar from '../features/layout/MarketplaceTopBar.jsx';
+import MarketplaceTopBar from '../../layout/MarketplaceTopBar.jsx';
 
 // Sidebar específico para Buyer
-import SidebarBuyer from '../features/layout/SidebarBuyer.jsx';
+import SidebarBuyer from '../../layout/SidebarBuyer.jsx';
 
 // Hook centralizado
-import useMarketplaceLogic from '../components/marketplace/useMarketplaceLogic.jsx';
+import useMarketplaceLogic from '../../../components/marketplace/useMarketplaceLogic.jsx';
 
 // Componentes de secciones
-import SearchSection from '../components/marketplace/sections/SearchSection.jsx';
-import FilterSection from '../components/marketplace/sections/FilterSection.jsx';
-import ProductsSection from '../components/marketplace/sections/ProductsSection.jsx';
+import SearchSection from '../../../components/marketplace/sections/SearchSection.jsx';
+import FilterSection from '../../../components/marketplace/sections/FilterSection.jsx';
+import ProductsSection from '../../../components/marketplace/sections/ProductsSection.jsx';
 
 const MarketplaceBuyer = () => {
   // ===== USAR CUSTOM HOOK PARA TODA LA LÓGICA =====

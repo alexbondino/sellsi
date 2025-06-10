@@ -1,12 +1,12 @@
-import React from 'react'
-import { Box } from '@mui/material' // Importación de componentes y estilos de Material UI
-import { Banner } from '../hooks/shared' // Componente de banner reutilizable
+import React from 'react';
+import { Box } from '@mui/material'; // Importación de componentes y estilos de Material UI
+import { Banner } from '../../hooks/shared/index.js'; // Componente de banner reutilizable
 // Importación de la lógica de la página de inicio
-import useHomeLogic from '../components/home/useHomeLogic.jsx' // Lógica de la página de inicio
-import HeroSection from '../components/home/sections/HeroSection.jsx' //Carrusel supererio (Somos Sellsi...)
-import ProvidersSection from '../components/home/sections/ProvidersSection.jsx' //Seccion de conocenos a nuestros proveedores
-import AboutUsSection from '../components/home/sections/AboutUsSection.jsx' //Sección ¿Quiénes somos?
-import ServicesSection from '../components/home/sections/ServicesSection.jsx' //Sección Nuestros Servicios (Carrusel de servicios)
+import useHomeLogic from '../../components/home/useHomeLogic.jsx'; // Lógica de la página de inicio
+import HeroSection from '../../components/home/sections/HeroSection.jsx'; //Carrusel supererio (Somos Sellsi...)
+import ProvidersSection from '../../components/home/sections/ProvidersSection.jsx'; //Seccion de conocenos a nuestros proveedores
+import AboutUsSection from '../../components/home/sections/AboutUsSection.jsx'; //Sección ¿Quiénes somos?
+import ServicesSection from '../../components/home/sections/ServicesSection.jsx'; //Sección Nuestros Servicios (Carrusel de servicios)
 
 const Home = ({ scrollTargets }) => {
   // ===== USAR CUSTOM HOOK PARA TODA LA LÓGICA =====
@@ -31,7 +31,7 @@ const Home = ({ scrollTargets }) => {
 
     // Constantes
     PROMO_SLIDES,
-  } = useHomeLogic(scrollTargets)
+  } = useHomeLogic(scrollTargets);
 
   return (
     <Box sx={{ width: '100%', overflowX: 'hidden' }}>
@@ -53,7 +53,7 @@ const Home = ({ scrollTargets }) => {
       {/* Sección Nuestros Servicios */}
       <ServicesSection serviciosRef={serviciosRef} services={services} />
     </Box>
-  )
-}
+  );
+};
 
-export default Home
+export default Home;

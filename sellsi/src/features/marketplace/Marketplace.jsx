@@ -8,15 +8,15 @@ import React from 'react';
 import { Box } from '@mui/material';
 
 // TopBar base (mismo que Home)
-import BaseTopBar from '../features/layout/BaseTopBar.jsx';
+import BaseTopBar from '../layout/BaseTopBar.jsx';
 
 // Hook centralizado
-import useMarketplaceLogic from '../components/marketplace/useMarketplaceLogic.jsx';
+import useMarketplaceLogic from '../../components/marketplace/useMarketplaceLogic.jsx';
 
 // Componentes de secciones
-import SearchSection from '../components/marketplace/sections/SearchSection.jsx';
-import FilterSection from '../components/marketplace/sections/FilterSection.jsx';
-import ProductsSection from '../components/marketplace/sections/ProductsSection.jsx';
+import SearchSection from '../../components/marketplace/sections/SearchSection.jsx';
+import FilterSection from '../../components/marketplace/sections/FilterSection.jsx';
+import ProductsSection from '../../components/marketplace/sections/ProductsSection.jsx';
 
 const Marketplace = () => {
   // ===== USAR CUSTOM HOOK PARA TODA LA LÓGICA =====

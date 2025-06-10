@@ -11,9 +11,12 @@ import {
 } from '@mui/material';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 
-import { CustomButton, Timer, VerificationCodeInput } from '../hooks/shared';
-import { useBanner } from '../contexts/BannerContext';
-import { sendActivationCode, verifyActivationCode } from '../services/supabase'; // 🔥 NUEVA IMPORTACIÓN
+import { CustomButton, Timer, VerificationCodeInput } from '../../hooks/shared';
+import { useBanner } from '../../contexts/BannerContext';
+import {
+  sendActivationCode,
+  verifyActivationCode,
+} from '../../services/supabase'; // 🔥 NUEVA IMPORTACIÓN
 
 // ✅ CONSTANTS (mismo que Login.jsx)
 const CONSTANTS = {

@@ -13,11 +13,11 @@ import {
 import theme from './styles/theme';
 import TopBar from './features/layout/TopBar';
 import BottomBar from './features/layout/BottomBar';
-import Home from './pages/Home';
+import Home from './features/landing_page/Home';
 import ProviderHome from './features/supplier/home/ProviderHome';
 import FichaTecnica from './pages/FichaTecnica';
-import Marketplace from './pages/Marketplace';
-import MarketplaceBuyer from './pages/MarketplaceBuyer';
+import Marketplace from './features/marketplace/Marketplace';
+import MarketplaceBuyer from './features/buyer/marketplace/MarketplaceBuyer';
 import BuyerOrders from './pages/buyer/BuyerOrders';
 import BuyerPerformance from './pages/buyer/BuyerPerformance';
 import BuyerCart from './pages/buyer/BuyerCart';
