@@ -22,7 +22,7 @@ import BuyerOrders from './features/buyer/BuyerOrders';
 import BuyerPerformance from './features/buyer/BuyerPerformance';
 import BuyerCart from './features/buyer/BuyerCart';
 import { Login } from './features/login/';
-import Register from './features/register/Register';
+import { Register } from './features/register';
 import PrivateRoute from './features/auth/PrivateRoute';
 import { BannerProvider, useBanner } from './features/ui/BannerContext';
 import Banner from './features/ui/Banner';

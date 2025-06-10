@@ -9,10 +9,12 @@ import {
   Wizard,
   useWizard,
 } from '../landing_page/hooks';
-import Step1Account from './wizard/Step1Account';
-import Step2AccountType from './wizard/Step2AccountType';
-import Step3Profile from './wizard/Step3Profile';
-import Step4Verification from './wizard/Step4Verification';
+import {
+  Step1Account,
+  Step2AccountType,
+  Step3Profile,
+  Step4Verification,
+} from './wizard';
 import { useBanner } from '../ui/BannerContext';
 
 export default function Register({ open, onClose }) {
