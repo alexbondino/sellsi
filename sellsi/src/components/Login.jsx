@@ -1,5 +1,5 @@
-import React, { useEffect, memo, useState } from 'react'
-import { useLocation } from 'react-router-dom' // ✅ AGREGAR
+import React, { useEffect, memo } from 'react'
+import { useLocation } from 'react-router-dom'
 import {
   Dialog,
   DialogContent,
@@ -11,11 +11,12 @@ import {
   IconButton,
   Paper,
 } from '@mui/material'
-import { Visibility, VisibilityOff } from '@mui/icons-material' // Iconos para mostrar/ocultar contraseña
+import { Visibility, VisibilityOff } from '@mui/icons-material'
 
-import { CustomButton, useLoginForm } from '../hooks/shared' // Hook personalizado para el formulario de inicio de sesión
-import Recuperar from './Recover' //Componente de recuperación de contraseña
-import Register from './Register' // Componente de registro
+import { CustomButton, useLoginForm } from '../hooks/shared'
+import Recuperar from './Recover'
+import Register from './Register'
+import { supabase } from '../services/supabase'
 
 // ✅ CONSTANTS
 const CONSTANTS = {
@@ -105,7 +106,6 @@ const LoginForm = memo(({ state, dispatch, onSubmit }) => (
           InputProps={{
             endAdornment: (
               <InputAdornment position="end">
-                {' '}
                 <IconButton
                   aria-label="toggle password visibility"
                   onClick={() => dispatch({ type: 'TOGGLE_SHOW_PASSWORD' })}
@@ -175,8 +175,9 @@ const FooterLinks = memo(({ dispatch, onClose, onOpenRegister }) => (
 
 // ✅ MAIN COMPONENT
 export default function Login({ open, onClose, onOpenRegister }) {
-  const { state, dispatch, handleLogin, resetForm } = useLoginForm()
-  const location = useLocation() // ✅ AGREGAR
+  const { state, dispatch, handleLogin, resetForm, reenviarCorreo } =
+    useLoginForm()
+  const location = useLocation()
 
   useEffect(() => {
     if (!open) {
@@ -184,7 +185,6 @@ export default function Login({ open, onClose, onOpenRegister }) {
     }
   }, [open])
 
-  // ✅ CERRAR MODAL EN NAVEGACIÓN
   useEffect(() => {
     const handleCloseAllModals = () => {
       if (open) {
@@ -227,7 +227,6 @@ export default function Login({ open, onClose, onOpenRegister }) {
 
   return (
     <>
-      {' '}
       {/* ✅ DIALOG PRINCIPAL */}
       <Dialog
         open={open && !state.openRecuperar}
@@ -245,26 +244,55 @@ export default function Login({ open, onClose, onOpenRegister }) {
         }}
       >
         <DialogContent sx={{ p: 0, overflow: 'hidden' }}>
-          <Box
-            display="flex"
-            flexDirection="column"
-            alignItems="center"
-            sx={{ p: 3 }}
-          >
-            <Logo />
-            <LoginForm
-              state={state}
-              dispatch={dispatch}
-              onSubmit={handleSubmit}
-            />
-            <FooterLinks
-              dispatch={dispatch}
-              onClose={onClose}
-              onOpenRegister={onOpenRegister}
-            />
-          </Box>
+          {state.cuentaNoVerificada ? (
+            <Box
+              display="flex"
+              flexDirection="column"
+              alignItems="center"
+              p={4}
+            >
+              <Typography
+                variant="h6"
+                color="error"
+                gutterBottom
+                textAlign="center"
+              >
+                Esta cuenta no ha sido autenticada.
+              </Typography>
+              <Typography variant="body2" sx={{ mb: 2, textAlign: 'center' }}>
+                Hemos reenviado el correo de verificación. Revisa tu bandeja de
+                entrada.
+              </Typography>
+              <CustomButton
+                variant="outlined"
+                onClick={() => dispatch({ type: 'VOLVER_A_LOGIN' })}
+              >
+                Volver al inicio de sesión
+              </CustomButton>
+            </Box>
+          ) : (
+            <Box
+              display="flex"
+              flexDirection="column"
+              alignItems="center"
+              sx={{ p: 3 }}
+            >
+              <Logo />
+              <LoginForm
+                state={state}
+                dispatch={dispatch}
+                onSubmit={handleSubmit}
+              />
+              <FooterLinks
+                dispatch={dispatch}
+                onClose={onClose}
+                onOpenRegister={onOpenRegister}
+              />
+            </Box>
+          )}
         </DialogContent>
-      </Dialog>{' '}
+      </Dialog>
+
       {/* ✅ DIALOG RECUPERAR */}
       <Dialog
         open={state.openRecuperar}
@@ -285,7 +313,8 @@ export default function Login({ open, onClose, onOpenRegister }) {
           onClose={handleRecuperarClose}
           onVolverLogin={handleVolverLogin}
         />
-      </Dialog>{' '}
+      </Dialog>
+
       {/* ✅ DIALOG REGISTRO */}
       <Dialog
         open={state.openRegistro}

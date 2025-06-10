@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../services/supabase';
 
-export const useSupplierDashboard = supplierId => {
+export const useSupplierDashboard = () => {
   const [products, setProducts] = useState([]);
   const [sales, setSales] = useState([]);
   const [productStocks, setProductStocks] = useState([]);
   const [weeklyRequests, setWeeklyRequests] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   const getStartOfWeek = () => {
     const now = new Date();
@@ -22,59 +24,88 @@ export const useSupplierDashboard = supplierId => {
   };
 
   useEffect(() => {
-    if (!supplierId) return;
+    const fetchDashboardData = async () => {
+      setLoading(true);
+      setError(null);
 
-    const fetchProducts = async () => {
-      const { data, error } = await supabase
-        .from('products')
-        .select('*')
-        .eq('supplierid', supplierId);
+      const {
+        data: { session },
+        error: sessionError,
+      } = await supabase.auth.getSession();
 
-      if (!error) {
-        setProducts(data);
-        setProductStocks(data.map(p => ({ productqty: p.productqty })));
-      }
-    };
-
-    const fetchSales = async () => {
-      const { data, error } = await supabase
-        .from('sales')
-        .select('amount, trx_date')
-        .eq('supplierid', supplierId);
-
-      if (!error) setSales(data);
-    };
-
-    const fetchRequests = async () => {
-      const start = getStartOfWeek();
-      const end = getEndOfWeek();
-
-      const { data: productData } = await supabase
-        .from('products')
-        .select('productid')
-        .eq('supplierid', supplierId);
-
-      const productIds = productData.map(p => p.productid);
-
-      if (productIds.length === 0) {
-        setWeeklyRequests([]);
+      if (sessionError || !session) {
+        setError('No hay sesión activa');
+        setLoading(false);
         return;
       }
 
-      const { data: requests } = await supabase
-        .from('requests')
-        .select('*, products(productnm), sellers(sellernm)')
-        .in('productid', productIds)
-        .gte('createddt', start)
-        .lte('createddt', end);
+      const supplierId = session.user.id;
 
-      setWeeklyRequests(requests || []);
+      try {
+        // Productos del proveedor
+        const { data: productsData, error: productsError } = await supabase
+          .from('products')
+          .select('*')
+          .eq('supplier_id', supplierId);
+
+        if (productsError) throw productsError;
+
+        setProducts(productsData);
+        setProductStocks(productsData.map(p => ({ productqty: p.productqty })));
+
+        // Ventas del proveedor (tabla sales)
+        const { data: salesData, error: salesError } = await supabase
+          .from('sales')
+          .select('amount, trx_date')
+          .eq('user_id', supplierId);
+
+        if (salesError) throw salesError;
+
+        setSales(salesData);
+
+        // Solicitudes semanales
+        const start = getStartOfWeek();
+        const end = getEndOfWeek();
+
+        const productIds = productsData.map(p => p.productid);
+
+        if (productIds.length > 0) {
+          const { data: requestsData, error: requestsError } = await supabase
+            .from('requests')
+            .select(
+              `
+              *,
+              seller:users!requests_seller_id_fkey (
+                user_nm
+              ),
+              product:products (
+                productnm,
+                supplier:users!products_supplier_id_fkey (
+                  user_nm
+                )
+              )
+            `
+            )
+            .in('productid', productIds)
+            .gte('createddt', start)
+            .lte('createddt', end);
+
+          if (requestsError) throw requestsError;
+
+          setWeeklyRequests(requestsData || []);
+        } else {
+          setWeeklyRequests([]);
+        }
+      } catch (err) {
+        console.error('Error cargando dashboard:', err);
+        setError('Error al cargar datos');
+      } finally {
+        setLoading(false);
+      }
     };
 
-    fetchProducts();
-    fetchSales();
-    fetchRequests();
-  }, [supplierId]);
+    fetchDashboardData();
+  }, []);
 
   const totalSales = sales.reduce((acc, s) => acc + Number(s.amount), 0);
 
@@ -99,5 +130,7 @@ export const useSupplierDashboard = supplierId => {
     weeklyRequests,
     monthlyData,
     totalSales,
+    loading,
+    error,
   };
 };

@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import {
   Box,
   TextField,
@@ -12,6 +12,7 @@ import {
 import { Visibility, VisibilityOff } from '@mui/icons-material'
 import { useTheme } from '@mui/material/styles'
 import { PasswordRequirements, CustomButton } from '../../hooks/shared'
+import { supabase } from '../../services/supabase'
 
 const Step1Account = ({
   formData,
@@ -32,7 +33,9 @@ const Step1Account = ({
     aceptaComunicaciones,
   } = formData
 
-  // Validaciones
+  const [emailEnUso, setEmailEnUso] = useState(false)
+  const [checkingEmail, setCheckingEmail] = useState(false)
+
   const correoValido = /^[^@]+@[^@]+\.[^@]+$/.test(correo)
   const contrasenasCoinciden =
     contrasena === confirmarContrasena && confirmarContrasena.length > 0
@@ -48,9 +51,33 @@ const Step1Account = ({
   const canSubmit =
     cumpleMinimos && aceptaTerminos && correoValido && contrasenasCoinciden
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    if (canSubmit) onNext()
+    if (!canSubmit || checkingEmail) return
+
+    setCheckingEmail(true)
+
+    // Verificar si el correo ya existe en la tabla 'users'
+    const { data, error } = await supabase
+      .from('users')
+      .select('email')
+      .eq('email', correo)
+
+    if (error) {
+      console.error('Error al verificar el correo:', error)
+      setCheckingEmail(false)
+      return
+    }
+
+    if (data.length > 0) {
+      setEmailEnUso(true)
+      setCheckingEmail(false)
+      return
+    }
+
+    setEmailEnUso(false)
+    setCheckingEmail(false)
+    onNext()
   }
 
   return (
@@ -67,15 +94,13 @@ const Step1Account = ({
       }}
     >
       {' '}
-      <Box
-        component="img"
+      <img
         src="/logo.svg"
         alt="SELLSI Logo"
-        sx={{
-          // xs: 20% más pequeño = 128px, sm: 5% más pequeño = 152px
-          width: { xs: 100, sm: 140, md: 110, lg: 160 },
-          // xs: 50% menos mb = 4px, sm: 20% menos mb = 6.4px
-          mb: { xs: 0, sm: 0, md: 0, lg: 1.2 },
+        style={{
+          width:
+            window.innerWidth < 600 ? 140 : window.innerWidth < 900 ? 110 : 160,
+          marginBottom: window.innerWidth < 600 ? 4 : 8,
         }}
       />
       <Typography
@@ -92,21 +117,27 @@ const Step1Account = ({
         Conecta. Vende. Crece.
       </Typography>
       <form onSubmit={handleSubmit} style={{ width: '100%' }}>
+        {' '}
         <TextField
           label="Correo electrónico"
           variant="outlined"
           fullWidth
           value={correo}
-          onChange={(e) => onFieldChange('correo', e.target.value)}
+          onChange={(e) => {
+            onFieldChange('correo', e.target.value)
+            setEmailEnUso(false)
+          }}
           sx={{ mb: { xs: 1, sm: 1, md: 1, lg: 1.5 } }}
           size="small"
-          error={correo.length > 0 && !correoValido}
+          error={(correo.length > 0 && !correoValido) || emailEnUso}
           helperText={
-            correo.length > 0 && !correoValido
+            emailEnUso
+              ? 'Este correo ya está en uso. Intenta con otro.'
+              : correo.length > 0 && !correoValido
               ? 'Correo inválido. Ejemplo: usuario@dominio.com'
               : ''
           }
-        />
+        />{' '}
         <TextField
           label="Contraseña"
           type={showPassword ? 'text' : 'password'}
@@ -130,7 +161,7 @@ const Step1Account = ({
               </InputAdornment>
             ),
           }}
-        />
+        />{' '}
         <TextField
           label="Repita su Contraseña"
           type={showRepeatPassword ? 'text' : 'password'}
@@ -174,10 +205,7 @@ const Step1Account = ({
             />
           }
           label={
-            <Box
-              component="span"
-              sx={{ fontSize: { xs: 12, sm: 12, md: 12, lg: 15 } }}
-            >
+            <span style={{ fontSize: 15 }}>
               Acepto los{' '}
               <Link href="#" sx={{ color: '#1976d2', fontWeight: 700 }}>
                 Términos y Condiciones
@@ -186,11 +214,11 @@ const Step1Account = ({
               <Link href="#" sx={{ color: '#1976d2', fontWeight: 700 }}>
                 Política de Privacidad
               </Link>
-            </Box>
+            </span>
           }
           sx={{
             mb: 0.5,
-            alignItems: 'flex-start', // ✅ ALINEAR checkbox al inicio
+            alignItems: 'flex-start',
             '& .MuiFormControlLabel-label': {
               lineHeight: 1.4,
             },
@@ -208,42 +236,31 @@ const Step1Account = ({
             />
           }
           label={
-            <Box
-              component="span"
-              sx={{ fontSize: { xs: 12, sm: 12, md: 12, lg: 15 } }}
-            >
-              {' '}
-              {/* ✅ CAMBIAR de 13 a 15 */}
+            <span style={{ fontSize: 15 }}>
               Acepto recibir avisos de ofertas y novedades de Sellsi.
-            </Box>
+            </span>
           }
           sx={{
-            mb: { xs: 1, sm: 5.3, md: 1, lg: 1.5 },
-            alignItems: 'flex-start', // ✅ ALINEAR checkbox al inicio
+            mb: 1.5,
+            alignItems: 'flex-start',
             '& .MuiFormControlLabel-label': {
               lineHeight: 1.4,
             },
           }}
-        />{' '}
+        />
         <CustomButton
           type="submit"
-          disabled={!canSubmit}
+          disabled={!canSubmit || checkingEmail}
           fullWidth
-          sx={{
-            mb: 0.5,
-            height: { md: '32px', lg: '44px' }, // 5% menos altura para md (40px -> 38px)
-          }}
+          sx={{ mb: 0.5 }}
         >
-          Crear cuenta
+          {checkingEmail ? 'Verificando...' : 'Crear cuenta'}
         </CustomButton>
         <CustomButton
           variant="text"
           onClick={onCancel}
           fullWidth
-          sx={{
-            mt: 0.5,
-            height: { md: '32px', lg: '44px' }, // 5% menos altura para md (40px -> 38px)
-          }}
+          sx={{ mt: 0.5 }}
         >
           Volver atrás
         </CustomButton>
