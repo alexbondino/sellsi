@@ -151,20 +151,39 @@ export const useLoginForm = () => {
         await supabase.auth.signOut()
         return
       }
-      const { data: perfil, error: perfilError } = await supabase
+      let { data: perfil, error: perfilError } = await supabase
         .from('users')
         .select('*')
         .eq('user_id', user.id)
-        .single()
-
+        .single() // ✅ NUEVO: Si el perfil no existe, crear automáticamente
       if (perfilError || !perfil) {
-        dispatch({
-          type: 'SET_ERROR_CORREO',
-          payload: 'Proveedor no encontrado',
-        })
-        return
-      }
+        const { data: newPerfil, error: createError } = await supabase
+          .from('users')
+          .insert({
+            user_id: user.id,
+            email: user.email,
+            user_nm:
+              user.user_metadata?.full_name ||
+              user.email.split('@')[0] ||
+              'Usuario',
+            main_supplier: true, // Por defecto proveedor
+            phone_nbr: user.user_metadata?.phone || '',
+            country: user.user_metadata?.pais || 'No especificado',
+          })
+          .select()
+          .single()
 
+        if (createError) {
+          console.error('❌ Error creando perfil:', createError)
+          dispatch({
+            type: 'SET_ERROR_CORREO',
+            payload: 'Error al crear perfil de usuario',
+          })
+          return
+        }
+
+        perfil = newPerfil
+      }
       localStorage.setItem('user_id', user.id)
 
       // Guardar account_type basado en main_supplier
@@ -175,7 +194,6 @@ export const useLoginForm = () => {
       }
 
       onClose()
-      navigate('/supplier/home')
       navigate('/supplier/home')
     } catch (error) {
       console.error('Error en login:', error)

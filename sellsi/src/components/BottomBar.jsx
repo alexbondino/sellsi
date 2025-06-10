@@ -43,7 +43,7 @@ const BottomBar = () => {
                 <img
                   src="/logodark.svg"
                   alt="SELLSI Logo"
-                  style={{ height: 684 }}
+                  style={{ height: 168 }}
                 />
               </Box>
               <Typography
