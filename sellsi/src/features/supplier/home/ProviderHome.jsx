@@ -1,7 +1,7 @@
 import { Box, Grid, Button, Container, ThemeProvider } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 
-import { useSupplierDashboard, DashboardSummary } from './index';
+import { useSupplierDashboard, DashboardSummary } from '../index';
 import MonthlySalesChart from '../../ui/graphs/BarChart';
 import SidebarProvider from '../../layout/SideBar';
 import ProviderTopBar from '../../layout/ProviderTopBar';
