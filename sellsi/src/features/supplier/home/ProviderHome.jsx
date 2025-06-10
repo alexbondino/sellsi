@@ -2,7 +2,7 @@
 import React from 'react';
 import { Box, Grid, Button, Container, ThemeProvider } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
-import { useSupplierDashboard } from '../../../hooks/useSupplierDashboard';
+import { useSupplierDashboard } from '../hooks/useSupplierDashboard';
 import DashboardSummary from './DashboardSummary';
 import MonthlySalesChart from '../../ui/graphs/BarChart';
 import SidebarProvider from '../../layout/SideBar';

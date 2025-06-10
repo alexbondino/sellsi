@@ -10,5 +10,5 @@ export { default as Wizard, useWizard } from '../../features/ui/Wizard';
 export { default as Banner } from '../../features/ui/Banner';
 
 // Export hooks
-export { useRecuperarForm } from './useRecuperarForm';
-export { useLoginForm } from './useLoginForm';
+export { useRecuperarForm } from '../../features/account_recovery/hooks/useRecuperarForm';
+export { useLoginForm } from '../../features/login/hooks/useLoginForm';
