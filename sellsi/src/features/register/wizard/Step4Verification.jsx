@@ -1,6 +1,6 @@
-import React from 'react'
-import { Box, Typography } from '@mui/material'
-import { CustomButton } from '../../hooks/shared'
+import React from 'react';
+import { Box, Typography } from '@mui/material';
+import { CustomButton } from '../../../hooks/shared';
 
 const Step4Verification = ({ email, onBack }) => {
   return (
@@ -48,7 +48,7 @@ const Step4Verification = ({ email, onBack }) => {
         Volver atrás
       </CustomButton>
     </Box>
-  )
-}
+  );
+};
 
-export default Step4Verification
+export default Step4Verification;

@@ -1,7 +1,11 @@
-import React from 'react'
-import { Box, Typography, Fade, Button } from '@mui/material'
-import LockOutlinedIcon from '@mui/icons-material/LockOutlined'
-import { Timer, VerificationCodeInput, CustomButton } from '../../hooks/shared'
+import React from 'react';
+import { Box, Typography, Fade, Button } from '@mui/material';
+import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
+import {
+  Timer,
+  VerificationCodeInput,
+  CustomButton,
+} from '../../../hooks/shared';
 
 const Step2Code = ({
   correo,
@@ -14,7 +18,7 @@ const Step2Code = ({
   showCodigoEnviado,
   fadeIn,
 }) => {
-  const codigoCompleto = codigo.every((c) => c.length === 1)
+  const codigoCompleto = codigo.every(c => c.length === 1);
 
   return (
     <Box display="flex" flexDirection="column" alignItems="center">
@@ -106,7 +110,7 @@ const Step2Code = ({
         </Fade>
       )}
     </Box>
-  )
-}
+  );
+};
 
-export default Step2Code
+export default Step2Code;

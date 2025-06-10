@@ -1,17 +1,17 @@
-import React, { useImperativeHandle, forwardRef, useEffect } from 'react'
-import { useLocation } from 'react-router-dom' // ✅ AGREGAR
-import { Box, Paper, Dialog, DialogContent } from '@mui/material'
-import { useTheme } from '@mui/material/styles'
+import React, { useImperativeHandle, forwardRef, useEffect } from 'react';
+import { useLocation } from 'react-router-dom'; // ✅ AGREGAR
+import { Box, Paper, Dialog, DialogContent } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 
-import { CustomButton, useRecuperarForm } from '../hooks/shared'
-import Step1Email from './recover/Step1Email' // Componente para ingresar correo
-import Step2Code from './recover/Step2Code' // Componente para verificar código
-import Step3Reset from './recover/Step3Reset' // Componente para restablecer contraseña
-import Step4Success from './recover/Step4Success' // Componente de éxito
+import { CustomButton, useRecuperarForm } from '../../hooks/shared';
+import Step1Email from './wizard/Step1Email'; // Componente para ingresar correo
+import Step2Code from './wizard/Step2Code'; // Componente para verificar código
+import Step3Reset from './wizard/Step3Reset'; // Componente para restablecer contraseña
+import Step4Success from './wizard/Step4Success'; // Componente de éxito
 
 const Recuperar = forwardRef(function Recuperar(props, ref) {
-  const theme = useTheme()
-  const location = useLocation() // ✅ AGREGAR
+  const theme = useTheme();
+  const location = useLocation(); // ✅ AGREGAR
   const {
     // Estados
     paso,
@@ -42,28 +42,28 @@ const Recuperar = forwardRef(function Recuperar(props, ref) {
     handleVerificarCodigo,
     handleCambiarContrasena,
     handleResendCode,
-  } = useRecuperarForm()
+  } = useRecuperarForm();
 
-  useImperativeHandle(ref, () => resetAllStates)
+  useImperativeHandle(ref, () => resetAllStates);
   const handleCerrarTotal = () => {
-    resetAllStates() // ✅ RESETEAR ESTADOS ANTES DE CERRAR
-    props.onClose()
-  }
+    resetAllStates(); // ✅ RESETEAR ESTADOS ANTES DE CERRAR
+    props.onClose();
+  };
 
   // ✅ CERRAR MODAL EN NAVEGACIÓN
   useEffect(() => {
     const handleCloseAllModals = () => {
       if (props.onClose) {
-        props.onClose()
+        props.onClose();
       }
-    }
+    };
 
-    window.addEventListener('closeAllModals', handleCloseAllModals)
+    window.addEventListener('closeAllModals', handleCloseAllModals);
 
     return () => {
-      window.removeEventListener('closeAllModals', handleCloseAllModals)
-    }
-  }, [props.onClose])
+      window.removeEventListener('closeAllModals', handleCloseAllModals);
+    };
+  }, [props.onClose]);
 
   // ✅ CERRAR al cambiar de ruta
   // useEffect(() => {
@@ -155,7 +155,7 @@ const Recuperar = forwardRef(function Recuperar(props, ref) {
         {paso === 'exito' && <Step4Success onClose={props.onVolverLogin} />}
       </Paper>
     </Box>
-  )
-})
+  );
+});
 
-export default Recuperar
+export default Recuperar;

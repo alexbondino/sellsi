@@ -1,24 +1,24 @@
-import React, { useState, useRef, useEffect } from 'react'
-import { Dialog, DialogTitle, DialogContent, Box } from '@mui/material'
-import { useTheme } from '@mui/material/styles'
-import { useLocation, useNavigate } from 'react-router-dom'
+import React, { useState, useRef, useEffect } from 'react';
+import { Dialog, DialogTitle, DialogContent, Box } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 import {
   ProgressStepper,
   CustomButton,
   Wizard,
   useWizard,
-} from '../hooks/shared'
-import Step1Account from './register/Step1Account'
-import Step2AccountType from './register/Step2AccountType'
-import Step3Profile from './register/Step3Profile'
-import Step4Verification from './register/Step4Verification'
-import { useBanner } from '../contexts/BannerContext'
+} from '../../hooks/shared';
+import Step1Account from './wizard/Step1Account';
+import Step2AccountType from './wizard/Step2AccountType';
+import Step3Profile from './wizard/Step3Profile';
+import Step4Verification from './wizard/Step4Verification';
+import { useBanner } from '../../contexts/BannerContext';
 
 export default function Register({ open, onClose }) {
-  const theme = useTheme()
-  const { showBanner } = useBanner()
-  const navigate = useNavigate() // 🔄 AGREGADO: Hook para navegación automática de proveedores
+  const theme = useTheme();
+  const { showBanner } = useBanner();
+  const navigate = useNavigate(); // 🔄 AGREGADO: Hook para navegación automática de proveedores
 
   const [formData, setFormData] = useState({
     correo: '',
@@ -32,26 +32,26 @@ export default function Register({ open, onClose }) {
     telefonoContacto: '',
     codigoPais: '',
     logoEmpresa: null,
-  })
+  });
 
-  const [codigo, setCodigo] = useState(['', '', '', '', ''])
-  const [timer, setTimer] = useState(300)
-  const [showPassword, setShowPassword] = useState(false)
-  const [showRepeatPassword, setShowRepeatPassword] = useState(false)
-  const [logoError, setLogoError] = useState('')
-  const [showCodigoEnviado, setShowCodigoEnviado] = useState(false)
-  const [fadeIn, setFadeIn] = useState(false)
-  const [dialogKey, setDialogKey] = useState(0)
+  const [codigo, setCodigo] = useState(['', '', '', '', '']);
+  const [timer, setTimer] = useState(300);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showRepeatPassword, setShowRepeatPassword] = useState(false);
+  const [logoError, setLogoError] = useState('');
+  const [showCodigoEnviado, setShowCodigoEnviado] = useState(false);
+  const [fadeIn, setFadeIn] = useState(false);
+  const [dialogKey, setDialogKey] = useState(0);
 
-  const timerRef = useRef()
-  const fadeTimeout = useRef()
+  const timerRef = useRef();
+  const fadeTimeout = useRef();
 
   const steps = [
     'Creación de Cuenta',
     'Tipo de Cuenta',
     'Completar Información',
     'Verificación',
-  ]
+  ];
 
   const {
     currentStep,
@@ -61,27 +61,27 @@ export default function Register({ open, onClose }) {
     resetWizard,
     isFirst,
     isLast,
-  } = useWizard(steps, { initialStep: 0 })
+  } = useWizard(steps, { initialStep: 0 });
 
   useEffect(() => {
     const handleCloseAllModals = () => {
       if (open) {
-        onClose()
+        onClose();
       }
-    }
+    };
 
-    window.addEventListener('closeAllModals', handleCloseAllModals)
+    window.addEventListener('closeAllModals', handleCloseAllModals);
     return () => {
-      window.removeEventListener('closeAllModals', handleCloseAllModals)
-    }
-  }, [open, onClose])
+      window.removeEventListener('closeAllModals', handleCloseAllModals);
+    };
+  }, [open, onClose]);
 
   const updateFormData = (field, value) => {
-    setFormData((prev) => ({ ...prev, [field]: value }))
-  }
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
 
   const resetForm = () => {
-    resetWizard()
+    resetWizard();
     setFormData({
       correo: '',
       contrasena: '',
@@ -94,71 +94,71 @@ export default function Register({ open, onClose }) {
       telefonoContacto: '',
       codigoPais: 'Chile',
       logoEmpresa: null,
-    })
-    setCodigo(['', '', '', '', ''])
-    setTimer(300)
-    setShowPassword(false)
-    setShowRepeatPassword(false)
-    setLogoError('')
-    setShowCodigoEnviado(false)
-    setFadeIn(false)
-    clearInterval(timerRef.current)
-    clearTimeout(fadeTimeout.current)
-  }
+    });
+    setCodigo(['', '', '', '', '']);
+    setTimer(300);
+    setShowPassword(false);
+    setShowRepeatPassword(false);
+    setLogoError('');
+    setShowCodigoEnviado(false);
+    setFadeIn(false);
+    clearInterval(timerRef.current);
+    clearTimeout(fadeTimeout.current);
+  };
 
   useEffect(() => {
     if (currentStep === 3) {
-      setTimer(300)
+      setTimer(300);
       timerRef.current = setInterval(() => {
-        setTimer((prev) => prev - 1)
-      }, 1000)
+        setTimer(prev => prev - 1);
+      }, 1000);
     }
-    return () => clearInterval(timerRef.current)
-  }, [currentStep])
+    return () => clearInterval(timerRef.current);
+  }, [currentStep]);
 
   useEffect(() => {
-    if (timer === 0) clearInterval(timerRef.current)
-  }, [timer])
+    if (timer === 0) clearInterval(timerRef.current);
+  }, [timer]);
 
   useEffect(() => {
     if (showCodigoEnviado) {
-      setFadeIn(true)
+      setFadeIn(true);
       fadeTimeout.current = setTimeout(() => {
-        setFadeIn(false)
-        setTimeout(() => setShowCodigoEnviado(false), 400)
-      }, 15000)
+        setFadeIn(false);
+        setTimeout(() => setShowCodigoEnviado(false), 400);
+      }, 15000);
     }
-    return () => clearTimeout(fadeTimeout.current)
-  }, [showCodigoEnviado])
+    return () => clearTimeout(fadeTimeout.current);
+  }, [showCodigoEnviado]);
 
-  const handleLogoChange = (file) => {
+  const handleLogoChange = file => {
     if (file.size > 300 * 1024) {
-      setLogoError('El tamaño del archivo excede los 300 KB.')
-      updateFormData('logoEmpresa', null)
-      return
+      setLogoError('El tamaño del archivo excede los 300 KB.');
+      updateFormData('logoEmpresa', null);
+      return;
     }
-    setLogoError('')
-    const reader = new FileReader()
-    reader.onload = (ev) => updateFormData('logoEmpresa', ev.target.result)
-    reader.readAsDataURL(file)
-  }
+    setLogoError('');
+    const reader = new FileReader();
+    reader.onload = ev => updateFormData('logoEmpresa', ev.target.result);
+    reader.readAsDataURL(file);
+  };
 
   const handleResendCode = () => {
-    setShowCodigoEnviado(false)
-    setTimeout(() => setShowCodigoEnviado(true), 10)
-    setTimer(300)
-    clearInterval(timerRef.current)
+    setShowCodigoEnviado(false);
+    setTimeout(() => setShowCodigoEnviado(true), 10);
+    setTimer(300);
+    clearInterval(timerRef.current);
     timerRef.current = setInterval(() => {
-      setTimer((prev) => prev - 1)
-    }, 1000)
-  }
+      setTimer(prev => prev - 1);
+    }, 1000);
+  };
   const handleSuccessfulVerification = () => {
-    onClose()
+    onClose();
     showBanner({
       message: 'Registro completado correctamente. Bienvenido a Sellsi.',
       severity: 'success',
       duration: 6000,
-    })
+    });
 
     // 🔄 NUEVA LÓGICA: Redirección automática para cuentas de proveedor
     // 📍 PUNTO DE CONEXIÓN BACKEND: Aquí es donde verificas el tipo de cuenta desde la respuesta del servidor
@@ -168,11 +168,11 @@ export default function Register({ open, onClose }) {
       // 📍 PUNTO DE CONEXIÓN BACKEND: Aquí también podrías almacenar datos del usuario en localStorage
       // Ejemplo: localStorage.setItem('userType', 'provider'); localStorage.setItem('supplierId', responseData.id);
       setTimeout(() => {
-        navigate('/supplier/home') // 🔄 Redirige a dashboard de proveedor
-      }, 1000) // Esperar 1 segundo para que el usuario vea el banner
+        navigate('/supplier/home'); // 🔄 Redirige a dashboard de proveedor
+      }, 1000); // Esperar 1 segundo para que el usuario vea el banner
     }
     // 📍 NOTA: Las cuentas de comprador mantienen el comportamiento actual (solo banner, sin redirección)
-  }
+  };
 
   const handleDialogClose = (event, reason) => {
     if (
@@ -182,15 +182,15 @@ export default function Register({ open, onClose }) {
         currentStep === 4) &&
       reason === 'backdropClick'
     ) {
-      return
+      return;
     }
-    onClose(event, reason)
-  }
+    onClose(event, reason);
+  };
 
   const handleExited = () => {
-    resetForm()
-    setDialogKey((k) => k + 1)
-  }
+    resetForm();
+    setDialogKey(k => k + 1);
+  };
 
   const renderStep = (stepIndex, stepData, wizardControls) => {
     switch (stepIndex) {
@@ -203,21 +203,21 @@ export default function Register({ open, onClose }) {
             onCancel={onClose}
             showPassword={showPassword}
             showRepeatPassword={showRepeatPassword}
-            onTogglePasswordVisibility={() => setShowPassword((prev) => !prev)}
+            onTogglePasswordVisibility={() => setShowPassword(prev => !prev)}
             onToggleRepeatPasswordVisibility={() =>
-              setShowRepeatPassword((prev) => !prev)
+              setShowRepeatPassword(prev => !prev)
             }
           />
-        )
+        );
       case 1:
         return (
           <Step2AccountType
             selectedType={formData.tipoCuenta}
-            onTypeSelect={(type) => updateFormData('tipoCuenta', type)}
+            onTypeSelect={type => updateFormData('tipoCuenta', type)}
             onNext={wizardControls.nextStep}
             onBack={wizardControls.prevStep}
           />
-        )
+        );
       case 2:
         return (
           <Step3Profile
@@ -229,7 +229,7 @@ export default function Register({ open, onClose }) {
             onNext={wizardControls.nextStep}
             onBack={wizardControls.prevStep}
           />
-        )
+        );
       case 3:
         return (
           <Step4Verification
@@ -243,11 +243,11 @@ export default function Register({ open, onClose }) {
             showCodigoEnviado={showCodigoEnviado}
             fadeIn={fadeIn}
           />
-        )
+        );
       default:
-        return null
+        return null;
     }
-  }
+  };
 
   return (
     <>
@@ -314,5 +314,5 @@ export default function Register({ open, onClose }) {
         </DialogContent>
       </Dialog>
     </>
-  )
+  );
 }

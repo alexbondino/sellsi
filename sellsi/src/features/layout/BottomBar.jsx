@@ -1,15 +1,15 @@
-import React, { useState } from 'react'
-import { Box, Typography, IconButton, Grid, Divider } from '@mui/material'
-import LinkedInIcon from '@mui/icons-material/LinkedIn'
-import InstagramIcon from '@mui/icons-material/Instagram'
-import WhatsAppIcon from '@mui/icons-material/WhatsApp'
-import ContactModal from './ContactModal'
+import React, { useState } from 'react';
+import { Box, Typography, IconButton, Grid, Divider } from '@mui/material';
+import LinkedInIcon from '@mui/icons-material/LinkedIn';
+import InstagramIcon from '@mui/icons-material/Instagram';
+import WhatsAppIcon from '@mui/icons-material/WhatsApp';
+import ContactModal from '../../components/ContactModal';
 
 const BottomBar = () => {
-  const [openContactModal, setOpenContactModal] = useState(false)
+  const [openContactModal, setOpenContactModal] = useState(false);
 
-  const handleOpenContact = () => setOpenContactModal(true)
-  const handleCloseContact = () => setOpenContactModal(false)
+  const handleOpenContact = () => setOpenContactModal(true);
+  const handleCloseContact = () => setOpenContactModal(false);
 
   return (
     <Box
@@ -325,7 +325,7 @@ const BottomBar = () => {
       {/* Modal de Contacto */}
       <ContactModal open={openContactModal} onClose={handleCloseContact} />
     </Box>
-  )
-}
+  );
+};
 
-export default BottomBar
+export default BottomBar;

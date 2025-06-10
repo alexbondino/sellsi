@@ -4,8 +4,8 @@ import {
   CustomButton,
   LogoUploader,
   CountrySelector,
-} from '../../hooks/shared';
-import { supabase } from '../../services/supabase';
+} from '../../../hooks/shared';
+import { supabase } from '../../../services/supabase';
 
 const Step3Profile = ({
   accountType,

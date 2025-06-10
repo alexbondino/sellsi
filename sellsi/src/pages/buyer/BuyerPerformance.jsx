@@ -1,4 +1,4 @@
-import React from 'react'
+import React from 'react';
 import {
   Box,
   Typography,
@@ -6,9 +6,9 @@ import {
   Paper,
   Grid,
   LinearProgress,
-} from '@mui/material'
-import SidebarBuyer from '../../components/SidebarBuyer'
-import MarketplaceTopBar from '../../components/MarketplaceTopBar'
+} from '@mui/material';
+import SidebarBuyer from '../../features/layout/SidebarBuyer';
+import MarketplaceTopBar from '../../features/layout/MarketplaceTopBar';
 
 const BuyerPerformance = () => {
   // Mock data para performance (más tarde se conectará con Supabase)
@@ -24,7 +24,7 @@ const BuyerPerformance = () => {
       { name: 'Muebles', count: 4, percentage: 33.3 },
       { name: 'Hogar', count: 3, percentage: 25.0 },
     ],
-  }
+  };
 
   const StatCard = ({ title, value, subtitle, color = 'primary' }) => (
     <Paper
@@ -55,7 +55,7 @@ const BuyerPerformance = () => {
         </Typography>
       )}
     </Paper>
-  )
+  );
   return (
     <Box>
       {/* TopBar específico para Marketplace */}
@@ -206,7 +206,7 @@ const BuyerPerformance = () => {
         </Box>
       </Box>
     </Box>
-  )
-}
+  );
+};
 
-export default BuyerPerformance
+export default BuyerPerformance;

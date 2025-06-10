@@ -1,5 +1,5 @@
-import React from 'react'
-import BaseTopBar from './shared/BaseTopBar'
+import React from 'react';
+import BaseTopBar from './BaseTopBar';
 
 /**
  * TopBar - Configuración específica para la página Home
@@ -12,10 +12,10 @@ export default function TopBar({ onNavigate }) {
     { label: 'Servicios', ref: 'serviciosRef' },
     { label: 'Trabaja con Nosotros', ref: 'trabajaConNosotrosRef' },
     { label: 'Contáctanos', ref: 'contactModal' },
-  ]
+  ];
 
   // Configuración de botones de autenticación (usa defaults)
-  const authButtons = {}
+  const authButtons = {};
   return (
     <BaseTopBar
       navigationButtons={navigationButtons}
@@ -30,5 +30,5 @@ export default function TopBar({ onNavigate }) {
         xl: -42,
       }}
     />
-  )
+  );
 }

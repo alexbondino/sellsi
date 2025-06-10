@@ -1,6 +1,6 @@
-import React from 'react'
-import { Box, Typography, Paper, Button } from '@mui/material'
-import { CustomButton } from '../../hooks/shared'
+import React from 'react';
+import { Box, Typography, Paper, Button } from '@mui/material';
+import { CustomButton } from '../../../hooks/shared';
 
 const Step2AccountType = ({ selectedType, onTypeSelect, onNext, onBack }) => {
   return (
@@ -573,7 +573,7 @@ const Step2AccountType = ({ selectedType, onTypeSelect, onNext, onBack }) => {
         </Box>
       </Box>
     </Box>
-  )
-}
+  );
+};
 
-export default Step2AccountType
+export default Step2AccountType;

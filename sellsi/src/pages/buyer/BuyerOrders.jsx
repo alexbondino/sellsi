@@ -1,7 +1,7 @@
-import React from 'react'
-import { Box, Typography, Container, Paper, Chip } from '@mui/material'
-import SidebarBuyer from '../../components/SidebarBuyer'
-import MarketplaceTopBar from '../../components/MarketplaceTopBar'
+import React from 'react';
+import { Box, Typography, Container, Paper, Chip } from '@mui/material';
+import SidebarBuyer from '../../features/layout/SidebarBuyer';
+import MarketplaceTopBar from '../../features/layout/MarketplaceTopBar';
 
 const BuyerOrders = () => {
   // Mock data para pedidos (más tarde se conectará con Supabase)
@@ -30,20 +30,20 @@ const BuyerOrders = () => {
       total: '$45.500',
       products: 'Teclado Mecánico',
     },
-  ]
+  ];
 
-  const getStatusColor = (status) => {
+  const getStatusColor = status => {
     switch (status) {
       case 'Entregado':
-        return 'success'
+        return 'success';
       case 'En Tránsito':
-        return 'info'
+        return 'info';
       case 'Procesando':
-        return 'warning'
+        return 'warning';
       default:
-        return 'default'
+        return 'default';
     }
-  }
+  };
   return (
     <Box>
       {/* TopBar específico para Marketplace */}
@@ -71,7 +71,7 @@ const BuyerOrders = () => {
               Mis Pedidos
             </Typography>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-              {orders.map((order) => (
+              {orders.map(order => (
                 <Paper
                   key={order.id}
                   sx={{
@@ -142,7 +142,7 @@ const BuyerOrders = () => {
         </Box>
       </Box>
     </Box>
-  )
-}
+  );
+};
 
-export default BuyerOrders
+export default BuyerOrders;

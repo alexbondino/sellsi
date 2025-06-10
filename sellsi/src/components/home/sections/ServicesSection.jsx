@@ -1,5 +1,5 @@
-import React from 'react'
-import { Box, Typography, Button, Grid } from '@mui/material'
+import React from 'react';
+import { Box, Typography, Button, Grid } from '@mui/material';
 import {
   Store,
   Person,
@@ -13,8 +13,8 @@ import {
   ShoppingCart,
   AccountBalance,
   Receipt,
-} from '@mui/icons-material'
-import Wizard from '../../shared/Wizard'
+} from '@mui/icons-material';
+import Wizard from '../../../features/ui/Wizard';
 
 const ServicesSection = ({ serviciosRef }) => {
   // Datos de los servicios para el Wizard (extraído exactamente del original)
@@ -116,7 +116,7 @@ const ServicesSection = ({ serviciosRef }) => {
         },
       ],
     },
-  ] // ✅ CONFIGURACIÓN OPTIMIZADA DE BREAKPOINTS (SIN REDUNDANCIAS)
+  ]; // ✅ CONFIGURACIÓN OPTIMIZADA DE BREAKPOINTS (SIN REDUNDANCIAS)
   const breakpoints = {
     container: {
       px: { xs: 1, sm: 1, md: 8, lg: 15, xl: 30 }, // ✅ REDUCIDO PADDING LATERAL EN XS/SM PARA MÁS ANCHO
@@ -188,7 +188,7 @@ const ServicesSection = ({ serviciosRef }) => {
         xl: '1.2rem',
       },
     },
-  }
+  };
   return (
     <Box
       ref={serviciosRef}
@@ -710,7 +710,7 @@ const ServicesSection = ({ serviciosRef }) => {
         />
       </Box>
     </Box>
-  )
-}
+  );
+};
 
-export default ServicesSection
+export default ServicesSection;

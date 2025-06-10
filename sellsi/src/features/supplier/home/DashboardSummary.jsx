@@ -1,30 +1,30 @@
-import React from 'react'
-import { Box, Typography } from '@mui/material'
-import Grid from '@mui/material/Grid'
-import StatCard from './StatCard'
-import RequestList from './RequestList'
+import React from 'react';
+import { Box, Typography } from '@mui/material';
+import Grid from '@mui/material/Grid';
+import StatCard from '../../ui/StatCard';
+import RequestList from '../../ui/RequestList';
 import {
   Inventory as InventoryIcon,
   AttachMoney as AttachMoneyIcon,
   Warning as WarningIcon,
   Assignment as AssignmentIcon,
-} from '@mui/icons-material'
+} from '@mui/icons-material';
 
 // Función para generar datos de gráfico simulados basados en valores reales
 const generateChartData = (baseValue, trend) => {
-  const dataPoints = 30
-  const data = []
-  let currentValue = baseValue * 0.8 // Empezar un poco más bajo
+  const dataPoints = 30;
+  const data = [];
+  let currentValue = baseValue * 0.8; // Empezar un poco más bajo
 
   for (let i = 0; i < dataPoints; i++) {
-    const randomVariation = (Math.random() - 0.5) * 0.2 * baseValue
-    const trendFactor = trend === 'up' ? 1.02 : trend === 'down' ? 0.98 : 1.001
-    currentValue = Math.max(0, currentValue * trendFactor + randomVariation)
-    data.push(Math.round(currentValue))
+    const randomVariation = (Math.random() - 0.5) * 0.2 * baseValue;
+    const trendFactor = trend === 'up' ? 1.02 : trend === 'down' ? 0.98 : 1.001;
+    currentValue = Math.max(0, currentValue * trendFactor + randomVariation);
+    data.push(Math.round(currentValue));
   }
 
-  return data
-}
+  return data;
+};
 
 const DashboardSummary = ({
   products,
@@ -38,7 +38,7 @@ const DashboardSummary = ({
     sales: generateChartData(totalSales / 1000, 'up'), // Dividir por 1000 para mejor visualización
     outOfStock: generateChartData(outOfStock, 'down'),
     requests: generateChartData(weeklyRequests.length, 'neutral'),
-  }
+  };
   const dashboardData = [
     {
       title: 'Productos Activos',
@@ -72,7 +72,7 @@ const DashboardSummary = ({
       data: chartData.requests,
       icon: AssignmentIcon,
     },
-  ]
+  ];
 
   return (
     <Box sx={{ width: '100%' }}>
@@ -140,7 +140,7 @@ const DashboardSummary = ({
         </Box>
       </Box>
     </Box>
-  )
-}
+  );
+};
 
-export default DashboardSummary
+export default DashboardSummary;

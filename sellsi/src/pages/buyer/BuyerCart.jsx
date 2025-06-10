@@ -6,7 +6,7 @@ import React, {
   memo,
   lazy,
   Suspense,
-} from 'react'
+} from 'react';
 import {
   Box,
   Typography,
@@ -19,20 +19,20 @@ import {
   AccordionDetails,
   CircularProgress,
   Backdrop,
-} from '@mui/material'
+} from '@mui/material';
 import {
   ExpandMore as ExpandMoreIcon,
   ThumbUp as RecommendIcon,
-} from '@mui/icons-material'
-import { motion, AnimatePresence, useAnimation } from 'framer-motion'
-import { toast, Toaster } from 'react-hot-toast'
-import { useInView } from 'react-intersection-observer'
-import confetti from 'canvas-confetti'
-import debounce from 'lodash.debounce'
-import SidebarBuyer from '../../components/SidebarBuyer'
-import MarketplaceTopBar from '../../components/MarketplaceTopBar'
-import useCartStore from '../../stores/cartStore'
-import { SHIPPING_OPTIONS, DISCOUNT_CODES } from '../../stores/constants'
+} from '@mui/icons-material';
+import { motion, AnimatePresence, useAnimation } from 'framer-motion';
+import { toast, Toaster } from 'react-hot-toast';
+import { useInView } from 'react-intersection-observer';
+import confetti from 'canvas-confetti';
+import debounce from 'lodash.debounce';
+import SidebarBuyer from '../../features/layout/SidebarBuyer';
+import MarketplaceTopBar from '../../features/layout/MarketplaceTopBar';
+import useCartStore from '../../stores/cartStore';
+import { SHIPPING_OPTIONS, DISCOUNT_CODES } from '../../stores/constants';
 import {
   CartHeader,
   ShippingProgressBar,
@@ -41,7 +41,7 @@ import {
   SavingsCalculator,
   WishlistSection,
   EmptyCartState,
-} from '../../components/shared/cart'
+} from '../../components/shared/cart';
 
 // ============================================================================
 // ULTRA-PREMIUM BUYER CART COMPONENT - NIVEL 11/10
@@ -50,8 +50,8 @@ import {
 // Lazy loading components para optimización
 const RecommendedProducts = lazy(() =>
   import('../../components/RecommendedProducts')
-)
-const PriceComparison = lazy(() => import('../../components/PriceComparison'))
+);
+const PriceComparison = lazy(() => import('../../components/PriceComparison'));
 
 // ============================================================================
 // COMPONENTES AUXILIARES OPTIMIZADOS
@@ -68,7 +68,7 @@ const CustomToast = ({ message, type, duration = 3000 }) => {
       discount: '🎉',
       shipping: '🚚',
       wishlist: '❤️',
-    }
+    };
 
     toast(message, {
       icon: iconMap[type] || '📦',
@@ -79,11 +79,11 @@ const CustomToast = ({ message, type, duration = 3000 }) => {
         color: '#fff',
         fontWeight: '500',
       },
-    })
-  }, [message, type, duration])
+    });
+  }, [message, type, duration]);
 
-  return null
-}
+  return null;
+};
 
 // Componente de animación de confetti
 const ConfettiEffect = ({ trigger }) => {
@@ -95,7 +95,7 @@ const ConfettiEffect = ({ trigger }) => {
           spread: 70,
           origin: { y: 0.6 },
           colors: ['#FFD700', '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4'],
-        })
+        });
 
         // Segundo disparo después de 150ms
         setTimeout(() => {
@@ -105,8 +105,8 @@ const ConfettiEffect = ({ trigger }) => {
             spread: 55,
             origin: { x: 0 },
             colors: ['#FFD700', '#FF6B6B'],
-          })
-        }, 150)
+          });
+        }, 150);
 
         // Tercer disparo después de 300ms
         setTimeout(() => {
@@ -116,16 +116,16 @@ const ConfettiEffect = ({ trigger }) => {
             spread: 55,
             origin: { x: 1 },
             colors: ['#4ECDC4', '#45B7D1'],
-          })
-        }, 300)
-      }
+          });
+        }, 300);
+      };
 
-      celebrate()
+      celebrate();
     }
-  }, [trigger])
+  }, [trigger]);
 
-  return null
-}
+  return null;
+};
 
 // ============================================================================
 // COMPONENTE PRINCIPAL ULTRA-PREMIUM
@@ -169,60 +169,60 @@ const BuyerCart = () => {
     getUndoInfo,
     getRedoInfo,
     getHistoryInfo,
-  } = useCartStore()
+  } = useCartStore();
   // ===== ESTADOS LOCALES =====
-  const [showConfetti, setShowConfetti] = useState(false)
-  const [lastAction, setLastAction] = useState(null)
-  const [showRecommended, setShowRecommended] = useState(false)
-  const [showPriceAlert, setShowPriceAlert] = useState(false)
-  const [checkoutStep, setCheckoutStep] = useState(0)
-  const [showWishlist, setShowWishlist] = useState(false)
-  const [notifications, setNotifications] = useState([])
-  const [isCheckingOut, setIsCheckingOut] = useState(false)
-  const [deliveryDate, setDeliveryDate] = useState(null)
-  const [showSavingsCalculator, setShowSavingsCalculator] = useState(false)
-  const [hasShownDemoReset, setHasShownDemoReset] = useState(false)
+  const [showConfetti, setShowConfetti] = useState(false);
+  const [lastAction, setLastAction] = useState(null);
+  const [showRecommended, setShowRecommended] = useState(false);
+  const [showPriceAlert, setShowPriceAlert] = useState(false);
+  const [checkoutStep, setCheckoutStep] = useState(0);
+  const [showWishlist, setShowWishlist] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const [isCheckingOut, setIsCheckingOut] = useState(false);
+  const [deliveryDate, setDeliveryDate] = useState(null);
+  const [showSavingsCalculator, setShowSavingsCalculator] = useState(false);
+  const [hasShownDemoReset, setHasShownDemoReset] = useState(false);
 
   // Estado para manejar envíos por producto (inicializar con envío estándar)
   const [productShipping, setProductShipping] = useState(() => {
-    const initialShipping = {}
-    items.forEach((item) => {
-      initialShipping[item.id] = 'standard'
-    })
-    return initialShipping
-  })
+    const initialShipping = {};
+    items.forEach(item => {
+      initialShipping[item.id] = 'standard';
+    });
+    return initialShipping;
+  });
 
   // Estados para el sistema de selección múltiple
-  const [isSelectionMode, setIsSelectionMode] = useState(false)
-  const [selectedItems, setSelectedItems] = useState([])
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [selectedItems, setSelectedItems] = useState([]);
 
   // ===== ANIMACIONES =====
-  const controls = useAnimation()
-  const [ref, inView] = useInView({ threshold: 0.1 })
+  const controls = useAnimation();
+  const [ref, inView] = useInView({ threshold: 0.1 });
 
   // ===== EFECTO PARA SINCRONIZAR SHIPPING CON ITEMS DEL CARRITO =====
   useEffect(() => {
     // Sincronizar productShipping cuando se agreguen/quiten productos
-    setProductShipping((prev) => {
-      const newShipping = { ...prev }
+    setProductShipping(prev => {
+      const newShipping = { ...prev };
 
       // Agregar envío estándar para nuevos productos
-      items.forEach((item) => {
+      items.forEach(item => {
         if (!newShipping[item.id]) {
-          newShipping[item.id] = 'standard'
+          newShipping[item.id] = 'standard';
         }
-      })
+      });
 
       // Remover envíos de productos que ya no están en el carrito
-      Object.keys(newShipping).forEach((productId) => {
-        if (!items.find((item) => item.id === productId)) {
-          delete newShipping[productId]
+      Object.keys(newShipping).forEach(productId => {
+        if (!items.find(item => item.id === productId)) {
+          delete newShipping[productId];
         }
-      })
+      });
 
-      return newShipping
-    })
-  }, [items])
+      return newShipping;
+    });
+  }, [items]);
 
   // ===== EFECTOS =====
   useEffect(() => {
@@ -231,26 +231,26 @@ const BuyerCart = () => {
       // Si el carrito está vacío, reiniciarlo con productos de muestra
       if (items.length === 0) {
         setTimeout(() => {
-          autoResetIfEmpty()
-          setHasShownDemoReset(true)
-        }, 500) // Pequeño delay para mejor UX
+          autoResetIfEmpty();
+          setHasShownDemoReset(true);
+        }, 500); // Pequeño delay para mejor UX
       } else {
-        setHasShownDemoReset(true)
+        setHasShownDemoReset(true);
       }
     }
-  }, [items.length, autoResetIfEmpty, hasShownDemoReset])
+  }, [items.length, autoResetIfEmpty, hasShownDemoReset]);
   useEffect(() => {
     // Calcular fecha estimada de entrega basada en la opción más lenta
     if (items.length > 0) {
-      const today = new Date()
-      let maxDeliveryDays = 0
+      const today = new Date();
+      let maxDeliveryDays = 0;
 
       // Encontrar el envío más lento entre todos los productos
-      items.forEach((item) => {
-        const selectedShippingId = productShipping[item.id] || 'standard'
+      items.forEach(item => {
+        const selectedShippingId = productShipping[item.id] || 'standard';
         const shippingOption = SHIPPING_OPTIONS.find(
-          (opt) => opt.id === selectedShippingId
-        )
+          opt => opt.id === selectedShippingId
+        );
 
         if (shippingOption) {
           const deliveryDays =
@@ -260,45 +260,45 @@ const BuyerCart = () => {
               ? 2
               : shippingOption.id === 'pickup'
               ? 0
-              : 4
+              : 4;
 
-          maxDeliveryDays = Math.max(maxDeliveryDays, deliveryDays)
+          maxDeliveryDays = Math.max(maxDeliveryDays, deliveryDays);
         }
-      })
+      });
 
-      const estimatedDate = new Date(today)
-      estimatedDate.setDate(today.getDate() + maxDeliveryDays)
-      setDeliveryDate(estimatedDate)
+      const estimatedDate = new Date(today);
+      estimatedDate.setDate(today.getDate() + maxDeliveryDays);
+      setDeliveryDate(estimatedDate);
     }
-  }, [items, productShipping])
+  }, [items, productShipping]);
   useEffect(() => {
     if (inView) {
-      controls.start('visible')
+      controls.start('visible');
     }
-  }, [controls, inView])
+  }, [controls, inView]);
 
   // ===== EFECTO PARA DETECTAR REGRESO DESPUÉS DE CHECKOUT =====
   useEffect(() => {
     // Detectar si el usuario regresa a una página de carrito vacío
     // (probablemente después de un checkout exitoso)
     const handlePageFocus = () => {
-      const currentItems = useCartStore.getState().items
+      const currentItems = useCartStore.getState().items;
       if (currentItems.length === 0 && document.hasFocus()) {
         // Si el carrito está vacío y la página tiene foco,
         // es probable que el usuario haya regresado después de checkout
         setTimeout(() => {
-          autoResetIfEmpty()
-        }, 1000)
+          autoResetIfEmpty();
+        }, 1000);
       }
-    }
+    };
 
     // Escuchar cuando la página gana foco (usuario regresa)
-    window.addEventListener('focus', handlePageFocus)
+    window.addEventListener('focus', handlePageFocus);
 
     return () => {
-      window.removeEventListener('focus', handlePageFocus)
-    }
-  }, [autoResetIfEmpty])
+      window.removeEventListener('focus', handlePageFocus);
+    };
+  }, [autoResetIfEmpty]);
 
   // ===== ANIMACIONES FRAMER MOTION =====
   const containerVariants = {
@@ -309,7 +309,7 @@ const BuyerCart = () => {
         staggerChildren: 0.1,
       },
     },
-  }
+  };
 
   const itemVariants = {
     hidden: { y: 20, opacity: 0 },
@@ -327,7 +327,7 @@ const BuyerCart = () => {
       opacity: 0,
       transition: { duration: 0.3 },
     },
-  }
+  };
 
   const pulseVariants = {
     pulse: {
@@ -337,101 +337,101 @@ const BuyerCart = () => {
         ease: 'easeInOut',
       },
     },
-  }
+  };
   // ===== FUNCIONES OPTIMIZADAS =====
   // Función optimizada para actualización inmediata de cantidad
   const handleQuantityChange = useCallback(
     (id, quantity) => {
       // Actualizar inmediatamente para mejor UX
-      updateQuantity(id, quantity)
-      setLastAction({ type: 'quantity', id, quantity })
+      updateQuantity(id, quantity);
+      setLastAction({ type: 'quantity', id, quantity });
     },
     [updateQuantity]
-  )
+  );
 
   // Versión con debounce reducido solo para casos específicos
   const debouncedUpdateQuantity = useCallback(
     debounce((id, quantity) => {
-      updateQuantity(id, quantity)
-      setLastAction({ type: 'quantity', id, quantity })
+      updateQuantity(id, quantity);
+      setLastAction({ type: 'quantity', id, quantity });
     }, 100), // Reducido de 300ms a 100ms
     [updateQuantity]
-  )
+  );
 
   const handleRemoveWithAnimation = useCallback(
-    (id) => {
-      const item = items.find((item) => item.id === id)
+    id => {
+      const item = items.find(item => item.id === id);
       if (item) {
-        removeItem(id)
-        setLastAction({ type: 'remove', item })
+        removeItem(id);
+        setLastAction({ type: 'remove', item });
 
         toast.success(`${item.name} eliminado del carrito`, {
           icon: '🗑️',
           action: {
             label: 'Deshacer',
             onClick: () => {
-              addItem(item, item.quantity)
-              toast.success('Producto restaurado', { icon: '↩️' })
+              addItem(item, item.quantity);
+              toast.success('Producto restaurado', { icon: '↩️' });
             },
           },
-        })
+        });
       }
     },
     [items, removeItem, addItem]
-  )
+  );
   const handleAddToWishlist = useCallback(
-    (item) => {
+    item => {
       if (!isInWishlist(item.id)) {
-        addToWishlist(item)
-        setShowConfetti(true)
-        setTimeout(() => setShowConfetti(false), 1000)
+        addToWishlist(item);
+        setShowConfetti(true);
+        setTimeout(() => setShowConfetti(false), 1000);
       } else {
-        removeFromWishlist(item.id)
+        removeFromWishlist(item.id);
       }
     },
     [isInWishlist, addToWishlist, removeFromWishlist]
-  )
+  );
 
   // Manejar cambios de envío por producto
   const handleProductShippingChange = useCallback((productId, shippingId) => {
-    setProductShipping((prev) => ({
+    setProductShipping(prev => ({
       ...prev,
       [productId]: shippingId,
-    }))
-  }, [])
+    }));
+  }, []);
 
   const handleApplyCoupon = useCallback(() => {
     if (couponInput.trim()) {
-      const beforeTotal = getTotal()
-      applyCoupon(couponInput.trim())
+      const beforeTotal = getTotal();
+      applyCoupon(couponInput.trim());
 
       setTimeout(() => {
-        const afterTotal = getTotal()
+        const afterTotal = getTotal();
         if (afterTotal < beforeTotal) {
-          setShowConfetti(true)
-          setTimeout(() => setShowConfetti(false), 2000)
+          setShowConfetti(true);
+          setTimeout(() => setShowConfetti(false), 2000);
         }
-      }, 100)
+      }, 100);
     }
-  }, [couponInput, applyCoupon, getTotal])
+  }, [couponInput, applyCoupon, getTotal]);
   const handleCheckout = useCallback(async () => {
-    setIsCheckingOut(true)
+    setIsCheckingOut(true);
 
     try {
       // Simular proceso de checkout
-      await new Promise((resolve) => setTimeout(resolve, 2000))
+      await new Promise(resolve => setTimeout(resolve, 2000));
 
-      setShowConfetti(true)
+      setShowConfetti(true);
       toast.success('¡Compra realizada con éxito!', {
         icon: '🎉',
         duration: 5000,
-      })
+      });
 
       setTimeout(async () => {
-        setShowConfetti(false)
+        setShowConfetti(false);
 
         // Usar el checkout simulado del store que auto-reinicia el demo
-        const checkoutSuccess = await simulateCheckout()
+        const checkoutSuccess = await simulateCheckout();
 
         if (checkoutSuccess) {
           toast.success(
@@ -440,58 +440,58 @@ const BuyerCart = () => {
               icon: '⏰',
               duration: 4000,
             }
-          )
+          );
         }
-      }, 3000)
+      }, 3000);
     } catch (error) {
-      toast.error('Error en el proceso de compra', { icon: '❌' })
+      toast.error('Error en el proceso de compra', { icon: '❌' });
     } finally {
-      setIsCheckingOut(false)
+      setIsCheckingOut(false);
     }
-  }, [simulateCheckout])
+  }, [simulateCheckout]);
 
   // ===== FUNCIONES DE SELECCIÓN MÚLTIPLE =====
   const handleToggleSelectionMode = useCallback(() => {
-    setIsSelectionMode(!isSelectionMode)
+    setIsSelectionMode(!isSelectionMode);
     if (isSelectionMode) {
       // Al salir del modo selección, limpiar selecciones
-      setSelectedItems([])
+      setSelectedItems([]);
     }
-  }, [isSelectionMode])
+  }, [isSelectionMode]);
 
-  const handleToggleItemSelection = useCallback((itemId) => {
-    setSelectedItems((prev) => {
+  const handleToggleItemSelection = useCallback(itemId => {
+    setSelectedItems(prev => {
       if (prev.includes(itemId)) {
-        return prev.filter((id) => id !== itemId)
+        return prev.filter(id => id !== itemId);
       } else {
-        return [...prev, itemId]
+        return [...prev, itemId];
       }
-    })
-  }, [])
+    });
+  }, []);
 
   const handleSelectAll = useCallback(() => {
     if (selectedItems.length === items.length) {
       // Si ya están todos seleccionados, deseleccionar todo
-      setSelectedItems([])
+      setSelectedItems([]);
     } else {
       // Seleccionar todos los items
-      setSelectedItems(items.map((item) => item.id))
+      setSelectedItems(items.map(item => item.id));
     }
-  }, [selectedItems.length, items])
+  }, [selectedItems.length, items]);
 
   const handleDeleteSelected = useCallback(() => {
-    if (selectedItems.length === 0) return
+    if (selectedItems.length === 0) return;
 
     // Obtener los nombres de los productos seleccionados para el toast
-    const selectedItemsData = items.filter((item) =>
+    const selectedItemsData = items.filter(item =>
       selectedItems.includes(item.id)
-    )
-    const itemNames = selectedItemsData.map((item) => item.name).join(', ')
+    );
+    const itemNames = selectedItemsData.map(item => item.name).join(', ');
 
     // Eliminar todos los items seleccionados
-    selectedItems.forEach((itemId) => {
-      removeItem(itemId)
-    })
+    selectedItems.forEach(itemId => {
+      removeItem(itemId);
+    });
 
     // Mostrar toast de confirmación
     toast.success(
@@ -502,67 +502,67 @@ const BuyerCart = () => {
         icon: '🗑️',
         duration: 4000,
       }
-    )
+    );
 
     // Limpiar selección y salir del modo selección
-    setSelectedItems([])
-    setIsSelectionMode(false)
+    setSelectedItems([]);
+    setIsSelectionMode(false);
 
     // Efecto confetti para la eliminación múltiple
-    setShowConfetti(true)
-    setTimeout(() => setShowConfetti(false), 1500)
-  }, [selectedItems, items, removeItem])
+    setShowConfetti(true);
+    setTimeout(() => setShowConfetti(false), 1500);
+  }, [selectedItems, items, removeItem]);
 
   // Limpiar selecciones cuando cambie la lista de items
   useEffect(() => {
-    setSelectedItems((prev) =>
-      prev.filter((selectedId) => items.some((item) => item.id === selectedId))
-    )
-  }, [items])
+    setSelectedItems(prev =>
+      prev.filter(selectedId => items.some(item => item.id === selectedId))
+    );
+  }, [items]);
 
   // ===== CÁLCULOS MEMOIZADOS =====
-  const cartStats = useMemo(() => getStats(), [items, getStats])
-  const subtotal = useMemo(() => getSubtotal(), [items, getSubtotal])
-  const discount = useMemo(() => getDiscount(), [appliedCoupons, getDiscount])
+  const cartStats = useMemo(() => getStats(), [items, getStats]);
+  const subtotal = useMemo(() => getSubtotal(), [items, getSubtotal]);
+  const discount = useMemo(() => getDiscount(), [appliedCoupons, getDiscount]);
 
   // Calcular costo total de envío individual por producto
   const productShippingCost = useMemo(() => {
     return items.reduce((totalShipping, item) => {
-      const selectedShippingId = productShipping[item.id] || 'standard'
+      const selectedShippingId = productShipping[item.id] || 'standard';
       const shippingOption = SHIPPING_OPTIONS.find(
-        (opt) => opt.id === selectedShippingId
-      )
-      return totalShipping + (shippingOption ? shippingOption.price : 0)
-    }, 0)
-  }, [items, productShipping])
+        opt => opt.id === selectedShippingId
+      );
+      return totalShipping + (shippingOption ? shippingOption.price : 0);
+    }, 0);
+  }, [items, productShipping]);
 
   const shippingCost = useMemo(
     () => getShippingCost(),
     [selectedShipping, getShippingCost]
-  )
+  );
 
   // Total modificado para incluir envío individual por producto
   const total = useMemo(() => {
-    const baseTotal = subtotal - discount
-    return baseTotal + productShippingCost
-  }, [subtotal, discount, productShippingCost])
+    const baseTotal = subtotal - discount;
+    return baseTotal + productShippingCost;
+  }, [subtotal, discount, productShippingCost]);
 
-  const formatPrice = useCallback((price) => {
+  const formatPrice = useCallback(price => {
     return new Intl.NumberFormat('es-CL', {
       style: 'currency',
       currency: 'CLP',
       minimumFractionDigits: 0,
-    }).format(price)
-  }, [])
+    }).format(price);
+  }, []);
 
-  const formatDate = useCallback((date) => {
+  const formatDate = useCallback(date => {
     return new Intl.DateTimeFormat('es-CL', {
       weekday: 'long',
       year: 'numeric',
       month: 'long',
       day: 'numeric',
-    }).format(date)
-  }, [])
+    }).format(date);
+  }, []);
   // ===== RENDERIZADO DE ESTADO VACÍO =====
   if (items.length === 0 && !showWishlist) {
     return (
@@ -603,7 +603,7 @@ const BuyerCart = () => {
           </Box>
         </Box>
       </Box>
-    )
+    );
   }
   // ===== RENDERIZADO PRINCIPAL =====
   return (
@@ -776,8 +776,8 @@ const BuyerCart = () => {
         </Box>
       </Box>
     </Box>
-  )
-}
+  );
+};
 
 // ============================================================================
 // DATOS DE PRUEBA (Temporal - hasta conexión con Supabase)
@@ -823,6 +823,6 @@ const MOCK_CART_ITEMS = [
     category: 'Vinos y Bebidas',
     description: 'Vino de cosecha tardía premium, 6 botellas de 750ml cada una',
   },
-]
+];
 
-export default memo(BuyerCart)
+export default memo(BuyerCart);

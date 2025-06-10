@@ -1,10 +1,10 @@
-import React from 'react'
-import { useNavigate } from 'react-router-dom'
-import { Tooltip, Badge } from '@mui/material'
-import ShoppingCartIcon from '@mui/icons-material/ShoppingCart'
-import PersonIcon from '@mui/icons-material/Person'
-import BaseTopBar from './shared/BaseTopBar'
-import useCartStore from '../stores/cartStore'
+import React from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Tooltip, Badge } from '@mui/material';
+import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
+import PersonIcon from '@mui/icons-material/Person';
+import BaseTopBar from './BaseTopBar';
+import useCartStore from '../../stores/cartStore';
 
 /**
  * MarketplaceTopBar - Configuración específica para la página Marketplace
@@ -13,26 +13,26 @@ import useCartStore from '../stores/cartStore'
  * - "Registrarse" → Icono de perfil con tooltip "Ir a mi perfil"
  */
 export default function MarketplaceTopBar() {
-  const navigate = useNavigate()
+  const navigate = useNavigate();
 
   // Suscribirse a los items del carrito para que se actualice automáticamente
-  const items = useCartStore((state) => state.items)
-  const totalItems = items.length
+  const items = useCartStore(state => state.items);
+  const totalItems = items.length;
 
   // Handlers específicos para Marketplace
   const handleGoToCart = () => {
-    console.log('Navegando a Mi Carro')
-    navigate('/buyer/cart')
-  }
+    console.log('Navegando a Mi Carro');
+    navigate('/buyer/cart');
+  };
 
   const handleGoToProfile = () => {
-    console.log('Navegando a perfil')
+    console.log('Navegando a perfil');
     // TODO: Implementar navegación al perfil
     // navigate('/profile')
-  }
+  };
 
   // Sin botones de navegación para Marketplace
-  const navigationButtons = []
+  const navigationButtons = [];
   // Configuración custom para botones de autenticación
   const authButtons = {
     loginButton: {
@@ -124,7 +124,7 @@ export default function MarketplaceTopBar() {
         },
       },
     },
-  }
+  };
   return (
     <BaseTopBar
       navigationButtons={navigationButtons}
@@ -139,5 +139,5 @@ export default function MarketplaceTopBar() {
         xl: -65, // Más hacia la izquierda
       }}
     />
-  )
+  );
 }

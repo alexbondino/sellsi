@@ -1,17 +1,16 @@
 // 📁 pages/ProviderHome.jsx
-import React from 'react'
-import { Box, Grid, Button, Container, ThemeProvider } from '@mui/material'
-import AddIcon from '@mui/icons-material/Add'
-import { useSupplierDashboard } from '../../hooks/useSupplierDashboard'
-import DashboardSummary from '../../components/DashboardSummary'
-import RequestList from '../../components/RequestList'
-import MonthlySalesChart from '../../components/BarChart'
-import SidebarProvider from '../../components/SideBar'
-import ProviderTopBar from '../../components/ProviderTopBar'
-import { dashboardTheme } from '../../styles/dashboardTheme'
+import React from 'react';
+import { Box, Grid, Button, Container, ThemeProvider } from '@mui/material';
+import AddIcon from '@mui/icons-material/Add';
+import { useSupplierDashboard } from '../../../hooks/useSupplierDashboard';
+import DashboardSummary from './DashboardSummary';
+import MonthlySalesChart from '../../ui/graphs/BarChart';
+import SidebarProvider from '../../layout/SideBar';
+import ProviderTopBar from '../../layout/ProviderTopBar';
+import { dashboardTheme } from '../../../styles/dashboardTheme';
 
 const ProviderHome = () => {
-  const supplierId = localStorage.getItem('supplierid')
+  const supplierId = localStorage.getItem('supplierid');
   const {
     products,
     sales,
@@ -19,10 +18,10 @@ const ProviderHome = () => {
     weeklyRequests,
     monthlyData,
     totalSales,
-  } = useSupplierDashboard(supplierId)
+  } = useSupplierDashboard(supplierId);
   const productsOutOfStock = productStocks.filter(
-    (p) => p.productqty === 0
-  ).length
+    p => p.productqty === 0
+  ).length;
 
   return (
     <ThemeProvider theme={dashboardTheme}>
@@ -87,7 +86,7 @@ const ProviderHome = () => {
         </Container>
       </Box>
     </ThemeProvider>
-  )
-}
+  );
+};
 
-export default ProviderHome
+export default ProviderHome;

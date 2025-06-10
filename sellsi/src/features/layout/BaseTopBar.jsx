@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import React, { useState, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import {
   Button,
   Box,
@@ -7,15 +7,15 @@ import {
   Menu,
   MenuItem,
   useTheme,
-} from '@mui/material'
-import MenuIcon from '@mui/icons-material/Menu'
-import AccountCircleIcon from '@mui/icons-material/AccountCircle'
+} from '@mui/material';
+import MenuIcon from '@mui/icons-material/Menu';
+import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 
-import { supabase } from '../../services/supabase'
+import { supabase } from '../../services/supabase';
 
-import Login from '../Login'
-import Register from '../Register'
-import ContactModal from '../ContactModal'
+import Login from '../login/Login';
+import Register from '../register/Register';
+import ContactModal from '../../components/ContactModal';
 
 export default function BaseTopBar({
   navigationButtons = [],
@@ -30,95 +30,95 @@ export default function BaseTopBar({
     xl: -4,
   },
 }) {
-  const theme = useTheme()
-  const navigate = useNavigate()
-  const location = useLocation()
-  const [menuAnchor, setMenuAnchor] = useState(null)
-  const [profileAnchor, setProfileAnchor] = useState(null)
-  const [openLoginModal, setOpenLoginModal] = useState(false)
-  const [openRegisterModal, setOpenRegisterModal] = useState(false)
-  const [openContactModal, setOpenContactModal] = useState(false)
-  const [isLoggedIn, setIsLoggedIn] = useState(false) // Suscripción a cambios de sesión
+  const theme = useTheme();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [menuAnchor, setMenuAnchor] = useState(null);
+  const [profileAnchor, setProfileAnchor] = useState(null);
+  const [openLoginModal, setOpenLoginModal] = useState(false);
+  const [openRegisterModal, setOpenRegisterModal] = useState(false);
+  const [openContactModal, setOpenContactModal] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false); // Suscripción a cambios de sesión
   useEffect(() => {
     const getCurrentSession = async () => {
-      const { data } = await supabase.auth.getSession()
-      setIsLoggedIn(!!data.session)
-    }
+      const { data } = await supabase.auth.getSession();
+      setIsLoggedIn(!!data.session);
+    };
 
-    getCurrentSession()
+    getCurrentSession();
 
     const { data: listener } = supabase.auth.onAuthStateChange(
       (_event, session) => {
-        setIsLoggedIn(!!session)
+        setIsLoggedIn(!!session);
       }
-    )
+    );
 
     return () => {
-      listener.subscription.unsubscribe()
-    }
-  }, [])
+      listener.subscription.unsubscribe();
+    };
+  }, []);
 
-  const openMenu = (e) => setMenuAnchor(e.currentTarget)
-  const closeMenu = () => setMenuAnchor(null)
-  const openProfileMenu = (e) => setProfileAnchor(e.currentTarget)
-  const closeProfileMenu = () => setProfileAnchor(null)
+  const openMenu = e => setMenuAnchor(e.currentTarget);
+  const closeMenu = () => setMenuAnchor(null);
+  const openProfileMenu = e => setProfileAnchor(e.currentTarget);
+  const closeProfileMenu = () => setProfileAnchor(null);
 
   const handleLogout = async () => {
     // Limpiar localStorage
-    localStorage.removeItem('user_id')
-    localStorage.removeItem('account_type')
-    localStorage.removeItem('supplierid')
-    localStorage.removeItem('sellerid')
+    localStorage.removeItem('user_id');
+    localStorage.removeItem('account_type');
+    localStorage.removeItem('supplierid');
+    localStorage.removeItem('sellerid');
 
-    await supabase.auth.signOut()
-    closeProfileMenu()
-    navigate('/')
-  }
+    await supabase.auth.signOut();
+    closeProfileMenu();
+    navigate('/');
+  };
 
   const handleOpenLogin = () => {
-    setOpenLoginModal(true)
-    closeMenu()
-  }
+    setOpenLoginModal(true);
+    closeMenu();
+  };
 
   const handleOpenRegister = () => {
-    setOpenRegisterModal(true)
-    closeMenu()
-  }
+    setOpenRegisterModal(true);
+    closeMenu();
+  };
 
-  const handleCloseLogin = () => setOpenLoginModal(false)
-  const handleCloseRegister = () => setOpenRegisterModal(false)
+  const handleCloseLogin = () => setOpenLoginModal(false);
+  const handleCloseRegister = () => setOpenRegisterModal(false);
 
   const handleOpenContact = () => {
-    setOpenContactModal(true)
-    closeMenu()
-  }
-  const handleCloseContact = () => setOpenContactModal(false)
+    setOpenContactModal(true);
+    closeMenu();
+  };
+  const handleCloseContact = () => setOpenContactModal(false);
 
-  const handleNavigate = (ref) => {
-    closeMenu()
+  const handleNavigate = ref => {
+    closeMenu();
     if (ref === 'contactModal') {
-      handleOpenContact()
-      return
+      handleOpenContact();
+      return;
     }
     if (onNavigate) {
-      onNavigate(ref)
+      onNavigate(ref);
     }
-  }
+  };
 
   const handleGoHome = () => {
-    navigate('/')
+    navigate('/');
     setTimeout(() => {
-      window.scrollTo({ top: 0, behavior: 'smooth' })
-    }, 100)
-  }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, 100);
+  };
 
   useEffect(() => {
-    const handleOpenLoginModal = () => setOpenLoginModal(true)
-    window.addEventListener('openLoginModal', handleOpenLoginModal)
+    const handleOpenLoginModal = () => setOpenLoginModal(true);
+    window.addEventListener('openLoginModal', handleOpenLoginModal);
     return () => {
-      window.removeEventListener('openLoginModal', handleOpenLoginModal)
-    }
-  }, [])
+      window.removeEventListener('openLoginModal', handleOpenLoginModal);
+    };
+  }, []);
 
   return (
     <Box
@@ -307,5 +307,5 @@ export default function BaseTopBar({
         )}
       </Box>
     </Box>
-  )
+  );
 }

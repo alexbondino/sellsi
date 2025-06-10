@@ -1,4 +1,4 @@
-import React from 'react'
+import React from 'react';
 import {
   Box,
   TextField,
@@ -6,9 +6,9 @@ import {
   InputAdornment,
   IconButton,
   Button,
-} from '@mui/material'
-import { Visibility, VisibilityOff } from '@mui/icons-material'
-import { PasswordRequirements, CustomButton } from '../../hooks/shared'
+} from '@mui/material';
+import { Visibility, VisibilityOff } from '@mui/icons-material';
+import { PasswordRequirements, CustomButton } from '../../../hooks/shared';
 
 const Step3Reset = ({
   nuevaContrasena,
@@ -28,11 +28,11 @@ const Step3Reset = ({
     { label: 'Letras minúsculas (a-z)', valid: /[a-z]/.test(nuevaContrasena) },
     { label: 'Letras mayúsculas (A-Z)', valid: /[A-Z]/.test(nuevaContrasena) },
     { label: 'Números (0-9)', valid: /\d/.test(nuevaContrasena) },
-  ]
+  ];
 
-  const cumpleMinimos = requisitos.filter((r) => r.valid).length >= 4
+  const cumpleMinimos = requisitos.filter(r => r.valid).length >= 4;
   const contrasenasCoinciden =
-    nuevaContrasena === repiteContrasena && repiteContrasena.length > 0
+    nuevaContrasena === repiteContrasena && repiteContrasena.length > 0;
   return (
     <Box display="flex" flexDirection="column" alignItems="flex-start">
       <Typography variant="h6" sx={{ fontWeight: 700, mb: 2 }}>
@@ -47,14 +47,14 @@ const Step3Reset = ({
         variant="outlined"
         fullWidth
         value={nuevaContrasena}
-        onChange={(e) => setNuevaContrasena(e.target.value)}
+        onChange={e => setNuevaContrasena(e.target.value)}
         sx={{ mb: 2 }}
         InputProps={{
           endAdornment: (
             <InputAdornment position="end">
               <IconButton
                 aria-label="toggle password visibility"
-                onClick={() => setShowPassword((show) => !show)}
+                onClick={() => setShowPassword(show => !show)}
                 edge="end"
                 tabIndex={-1}
               >
@@ -70,7 +70,7 @@ const Step3Reset = ({
         variant="outlined"
         fullWidth
         value={repiteContrasena}
-        onChange={(e) => setRepiteContrasena(e.target.value)}
+        onChange={e => setRepiteContrasena(e.target.value)}
         sx={{ mb: 2 }}
         error={repiteContrasena.length > 0 && !contrasenasCoinciden}
         helperText={
@@ -83,7 +83,7 @@ const Step3Reset = ({
             <InputAdornment position="end">
               <IconButton
                 aria-label="toggle repeat password visibility"
-                onClick={() => setShowRepeatPassword((show) => !show)}
+                onClick={() => setShowRepeatPassword(show => !show)}
                 edge="end"
                 tabIndex={-1}
               >
@@ -120,7 +120,7 @@ const Step3Reset = ({
         Volver atrás
       </Button>
     </Box>
-  )
-}
+  );
+};
 
-export default Step3Reset
+export default Step3Reset;

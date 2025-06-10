@@ -4,19 +4,19 @@
 // - Agregar/quitar secciones
 // - Modificar estilos del contenedor principal
 
-import React from 'react'
-import { Box } from '@mui/material'
+import React from 'react';
+import { Box } from '@mui/material';
 
 // TopBar base (mismo que Home)
-import BaseTopBar from '../components/shared/BaseTopBar.jsx'
+import BaseTopBar from '../features/layout/BaseTopBar.jsx';
 
 // Hook centralizado
-import useMarketplaceLogic from '../components/marketplace/useMarketplaceLogic.jsx'
+import useMarketplaceLogic from '../components/marketplace/useMarketplaceLogic.jsx';
 
 // Componentes de secciones
-import SearchSection from '../components/marketplace/sections/SearchSection.jsx'
-import FilterSection from '../components/marketplace/sections/FilterSection.jsx'
-import ProductsSection from '../components/marketplace/sections/ProductsSection.jsx'
+import SearchSection from '../components/marketplace/sections/SearchSection.jsx';
+import FilterSection from '../components/marketplace/sections/FilterSection.jsx';
+import ProductsSection from '../components/marketplace/sections/ProductsSection.jsx';
 
 const Marketplace = () => {
   // ===== USAR CUSTOM HOOK PARA TODA LA LÓGICA =====
@@ -46,18 +46,18 @@ const Marketplace = () => {
         lg: 2,
         xl: 3,
       },
-    })
+    });
   // Configuración de botones de navegación (sin botones para Marketplace)
-  const navigationButtons = []
+  const navigationButtons = [];
 
   // Configuración de botones de autenticación (usa defaults)
-  const authButtons = {}
+  const authButtons = {};
 
   // Función de navegación (placeholder)
-  const handleNavigate = (ref) => {
-    console.log('Navegando a:', ref)
+  const handleNavigate = ref => {
+    console.log('Navegando a:', ref);
     // TODO: Implementar navegación si es necesario
-  }
+  };
 
   return (
     <Box>
@@ -95,7 +95,7 @@ const Marketplace = () => {
         <ProductsSection {...productsSectionProps} />
       </Box>
     </Box>
-  )
-}
+  );
+};
 
-export default Marketplace
+export default Marketplace;
