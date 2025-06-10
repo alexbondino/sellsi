@@ -1,12 +1,11 @@
 import { Box, Grid, Button, Container, ThemeProvider } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 
-import { useSupplierDashboard } from './hooks/useSupplierDashboard';
+import { useSupplierDashboard, DashboardSummary } from './index';
 import MonthlySalesChart from '../../ui/graphs/BarChart';
 import SidebarProvider from '../../layout/SideBar';
 import ProviderTopBar from '../../layout/ProviderTopBar';
 import { dashboardTheme } from '../../../styles/dashboardTheme';
-import DashboardSummary from './dashboard-summary';
 
 const ProviderHome = () => {
   const supplierId = localStorage.getItem('supplierid');
