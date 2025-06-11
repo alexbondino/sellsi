@@ -1,4 +1,4 @@
-import React from 'react';
+import React from 'react'
 import {
   Box,
   Typography,
@@ -6,12 +6,17 @@ import {
   Paper,
   Grid,
   LinearProgress,
-} from '@mui/material';
-import SidebarBuyer from '../layout/SidebarBuyer';
-import MarketplaceTopBar from '../layout/MarketplaceTopBar';
+} from '@mui/material'
+import SidebarBuyer from '../layout/SidebarBuyer'
+import MarketplaceTopBar from '../layout/MarketplaceTopBar'
+import StatCard from './components/StatCard'
 
 const BuyerPerformance = () => {
-  // Mock data para performance (más tarde se conectará con Supabase)
+  // ============================================================================
+  // MOCK DATA - DATOS DE PERFORMANCE DEMO
+  // ============================================================================
+  // TODO: Conectar con Supabase para calcular métricas reales del usuario
+  // Estos datos simulan las estadísticas de compra del usuario
   const performanceData = {
     totalPurchases: 12,
     totalSpent: '$890.400',
@@ -24,8 +29,18 @@ const BuyerPerformance = () => {
       { name: 'Muebles', count: 4, percentage: 33.3 },
       { name: 'Hogar', count: 3, percentage: 25.0 },
     ],
-  };
+  }
 
+  // ============================================================================
+  // COMPONENTE AUXILIAR - TARJETA DE ESTADÍSTICA
+  // ============================================================================
+  /**
+   * Componente reutilizable para mostrar estadísticas en formato card
+   * @param {string} title - Título de la estadística
+   * @param {string|number} value - Valor principal a mostrar
+   * @param {string} subtitle - Texto descriptivo opcional
+   * @param {string} color - Color del tema Material-UI para el valor
+   */
   const StatCard = ({ title, value, subtitle, color = 'primary' }) => (
     <Paper
       sx={{
@@ -55,7 +70,11 @@ const BuyerPerformance = () => {
         </Typography>
       )}
     </Paper>
-  );
+  )
+
+  // ============================================================================
+  // RENDERIZADO DEL COMPONENTE PRINCIPAL
+  // ============================================================================
   return (
     <Box>
       {/* TopBar específico para Marketplace */}
@@ -206,7 +225,7 @@ const BuyerPerformance = () => {
         </Box>
       </Box>
     </Box>
-  );
-};
+  )
+}
 
-export default BuyerPerformance;
+export default BuyerPerformance

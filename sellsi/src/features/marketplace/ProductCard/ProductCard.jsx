@@ -5,8 +5,8 @@
 // - Cambiar iconos o tooltips
 // - Modificar badge de descuento o favoritos
 
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   Card,
   CardMedia,
@@ -21,77 +21,66 @@ import {
   TextField,
   Avatar,
   Chip,
-} from '@mui/material';
-import FavoriteIcon from '@mui/icons-material/Favorite';
-import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
-import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
-import InfoIcon from '@mui/icons-material/Info';
-import AddIcon from '@mui/icons-material/Add';
-import RemoveIcon from '@mui/icons-material/Remove';
-import { generateProductUrl } from '../marketplace/productUrl';
+} from '@mui/material'
+import FavoriteIcon from '@mui/icons-material/Favorite'
+import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder'
+import ShoppingCartIcon from '@mui/icons-material/ShoppingCart'
+import InfoIcon from '@mui/icons-material/Info'
+import AddIcon from '@mui/icons-material/Add'
+import RemoveIcon from '@mui/icons-material/Remove'
+import { generateProductUrl } from '../marketplace/productUrl'
 
 const ProductCard = ({ producto, onAddToCart, onViewDetails }) => {
-  const [favorito, setFavorito] = useState(false);
-  const [anchorEl, setAnchorEl] = useState(null);
-  const [cantidad, setCantidad] = useState(1);
-  const navigate = useNavigate();
+  const [favorito, setFavorito] = useState(false)
+  const [anchorEl, setAnchorEl] = useState(null)
+  const [cantidad, setCantidad] = useState(1)
+  const navigate = useNavigate()
 
   if (!producto) {
-    return null;
+    return null
+  } // ✅ NUEVA función para manejar click en AGREGAR
+  const handleAgregarClick = (event) => {
+    event.stopPropagation() // Prevenir propagación hacia ProductCard
+    event.preventDefault() // Prevenir comportamiento por defecto
+    console.log('handleAgregarClick ejecutado!', event?.currentTarget)
+    setAnchorEl(event.currentTarget)
   }
-  // ✅ FUNCIÓN para obtener el mensaje del tooltip - COMMENTED OUT: Sale Type functionality removed
-  // const getTooltipMessage = (tipo) => {
-  //   switch (tipo) {
-  //     case 'directa':
-  //       return 'El productor vende directamente al cliente final, sin usar intermediarios como distribuidores o minoristas.'
-  //     case 'indirecta':
-  //       return 'El producto se comercializa a través de intermediarios antes de llegar al cliente final.'
-  //     default:
-  //       return 'Información sobre el tipo de venta no disponible.'
-  //   }
-  // }  // ✅ NUEVA función para manejar click en AGREGAR
-  const handleAgregarClick = event => {
-    event.stopPropagation(); // Prevenir propagación hacia ProductCard
-    event.preventDefault(); // Prevenir comportamiento por defecto
-    console.log('handleAgregarClick ejecutado!', event?.currentTarget);
-    setAnchorEl(event.currentTarget);
-  };
 
   // ✅ NUEVA función para cerrar el popover
   const handleClosePopover = () => {
-    setAnchorEl(null);
-    setCantidad(1); // Reset cantidad al cerrar
-  };
+    setAnchorEl(null)
+    setCantidad(1) // Reset cantidad al cerrar
+  }
 
   // ✅ NUEVA función para manejar cambio de cantidad
-  const handleCantidadChange = event => {
-    const value = parseInt(event.target.value) || 0;
+  const handleCantidadChange = (event) => {
+    const value = parseInt(event.target.value) || 0
     if (value >= 1 && value <= stock) {
-      setCantidad(value);
+      setCantidad(value)
     }
-  };
+  }
 
   // ✅ NUEVA función para incrementar cantidad
   const handleIncrement = () => {
     if (cantidad < stock) {
-      setCantidad(cantidad + 1);
+      setCantidad(cantidad + 1)
     }
-  };
+  }
 
   // ✅ NUEVA función para decrementar cantidad
   const handleDecrement = () => {
     if (cantidad > 1) {
-      setCantidad(cantidad - 1);
+      setCantidad(cantidad - 1)
     }
-  };
+  }
   // ✅ NUEVA función para confirmar agregado al carrito
   const handleConfirmarAgregar = () => {
-    console.log(`Agregando ${cantidad} unidades de ${nombre} al carrito`);
+    console.log(`Agregando ${cantidad} unidades de ${nombre} al carrito`)
     if (onAddToCart) {
-      onAddToCart({ ...producto, cantidadSeleccionada: cantidad });
+      onAddToCart({ ...producto, cantidadSeleccionada: cantidad })
     }
-    handleClosePopover();
-  };
+    handleClosePopover()
+  }
 
   const {
     nombre,
@@ -100,42 +89,51 @@ const ProductCard = ({ producto, onAddToCart, onViewDetails }) => {
     precio,
     precioOriginal,
     descuento,
-    // comision, // COMMENTED OUT: Commission functionality removed
-    // tipoVenta, // COMMENTED OUT: Sale Type functionality removed
     rating,
     ventas,
     stock,
     compraMinima,
     negociable, // ✅ AGREGAR: Propiedad negociable
-  } = producto;
+  } = producto
 
-  const toggleFavorito = () => setFavorito(!favorito); // Función para navegar a la ficha técnica del producto
-  const handleProductClick = e => {
+  const toggleFavorito = () => setFavorito(!favorito) // Función para navegar a la ficha técnica del producto
+  const handleProductClick = (e) => {
     // Verificar si el clic viene de un botón o elemento interactivo
-    const target = e.target;
+    const target = e.target
     const clickedElement =
       target.closest('button') ||
       target.closest('.MuiIconButton-root') ||
       target.closest('.MuiButton-root') ||
       target.closest('[data-no-card-click]') ||
-      target.hasAttribute('data-no-card-click');
+      target.hasAttribute('data-no-card-click')
 
     // También verificar si el elemento tiene clases de MUI que indican que es un botón
     const isMuiButton =
       target.classList.contains('MuiButton-root') ||
       target.classList.contains('MuiIconButton-root') ||
       target.closest('.MuiButton-root') ||
-      target.closest('.MuiIconButton-root');
+      target.closest('.MuiIconButton-root')
 
     if (clickedElement || isMuiButton) {
-      console.log('Click interceptado en botón, no navegando');
-      return;
+      console.log('Click interceptado en botón, no navegando')
+      return
     }
 
-    // Generar URL y navegar
-    const productUrl = generateProductUrl(producto);
-    navigate(productUrl);
-  };
+    // Determinar el origen actual para pasar al TechnicalSpecs
+    const currentPath = window.location.pathname
+    let fromPath = '/marketplace' // Default
+
+    // Detectar si estamos en MarketplaceBuyer
+    if (currentPath.includes('/buyer/')) {
+      fromPath = '/buyer/marketplace'
+    }
+
+    // Generar URL y navegar con estado
+    const productUrl = generateProductUrl(producto)
+    navigate(productUrl, {
+      state: { from: fromPath },
+    })
+  }
 
   return (
     <Card
@@ -158,27 +156,6 @@ const ProductCard = ({ producto, onAddToCart, onViewDetails }) => {
       }}
     >
       {' '}
-      {/* COMMENTED OUT: Badge de descuento */}
-      {/* {descuento > 0 && (
-        <Box
-          sx={{
-            position: 'absolute',
-            top: 8,
-            left: 8,
-            bgcolor: '#FF5252',
-            color: 'white',
-            fontWeight: 'bold',
-            fontSize: 12,
-            py: 0.5,
-            px: 1.5,
-            borderRadius: 1.5,
-            zIndex: 2,
-            boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
-          }}
-        >
-          -{descuento}%
-        </Box>
-      )} */}
       {/* Icono favorito - más pequeño */}
       <IconButton
         onClick={toggleFavorito}
@@ -255,7 +232,7 @@ const ProductCard = ({ producto, onAddToCart, onViewDetails }) => {
             color="primary"
           />{' '}
         </Box>{' '}
-        {/* Compra mínima */}
+        {/* Compra mínima */}{' '}
         <Typography
           variant="body2"
           sx={{
@@ -267,45 +244,8 @@ const ProductCard = ({ producto, onAddToCart, onViewDetails }) => {
         >
           Compra mínima: {compraMinima} unidades
         </Typography>
-        {/* COMMENTED OUT: Rating y ventas section */}
-        {/* <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', mr: 1.5 }}>
-            <Box sx={{ fontSize: 16, color: '#FFD700' }}>
-              {'★'.repeat(Math.floor(rating))}
-            </Box>
-            <Typography
-              variant="body2"
-              sx={{ ml: 0.5, color: '#666', fontSize: 12, fontWeight: 600 }}
-            >
-              ({rating})
-            </Typography>
-          </Box>
-          <Typography
-            variant="body2"
-            color="text.secondary"
-            sx={{ fontSize: 11, fontWeight: 500 }}
-          >
-            {ventas} vendidos
-          </Typography>
-        </Box> */}{' '}
-        {/* Precios - más compacto */}
+        {/* Precios - más compacto */}{' '}
         <Box sx={{ mb: 1.5 }}>
-          {/* COMMENTED OUT: Discount pricing (original price with line-through) */}
-          {/* {precioOriginal > precio && (
-            <Typography
-              variant="body2"
-              color="text.secondary"
-              sx={{
-                textDecoration: 'line-through',
-                display: 'block',
-                fontSize: 14,
-                fontWeight: 500,
-                mb: 0.3,
-              }}
-            >
-              ${precioOriginal.toLocaleString('es-CL')}
-            </Typography>
-          )} */}{' '}
           <Typography
             variant="h5"
             color="primary"
@@ -316,86 +256,7 @@ const ProductCard = ({ producto, onAddToCart, onViewDetails }) => {
             {precio.toLocaleString('es-CL')}
           </Typography>
         </Box>{' '}
-        {/* Información adicional - más compacta */}{' '}
-        {/* COMMENTED OUT: Commission functionality removed */}
-        {/* <Typography
-          variant="body2"
-          color="success.main"
-          sx={{ display: 'block', mb: 0.8, fontSize: 13, fontWeight: 600 }} // ✅ REDUCIR: de 17 a 13, mb de 1 a 0.8
-        >
-          {comision}% Comisión
-        </Typography> */}
-        {/* COMMENTED OUT: Sale Type functionality removed */}
-        {/* Tipo de venta - más compacto */}
-        {/* <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, mb: 0.8 }}>
-          <Typography
-            variant="body2"
-            sx={{
-              color: tipoVenta === 'directa' ? '#1976D2' : '#FF9800',
-              fontSize: 12,
-              fontWeight: 600,
-            }}
-          >
-            Venta{' '}
-            {tipoVenta === 'directa'
-              ? 'Directa'
-              : tipoVenta === 'indirecta'
-              ? 'Indirecta'
-              : 'Todos los tipos'}
-          </Typography>
-          <Tooltip
-            title={getTooltipMessage(tipoVenta)}
-            arrow
-            placement="top"
-            componentsProps={{
-              tooltip: {
-                sx: {
-                  bgcolor: '#1e293b',
-                  color: 'white',
-                  fontSize: '0.875rem',
-                  fontWeight: 500,
-                  p: 2,
-                  borderRadius: 2,
-                  maxWidth: 300,
-                  lineHeight: 1.4,
-                  boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
-                },
-              },
-              arrow: {
-                sx: {
-                  color: '#1e293b',
-                  '&::before': {
-                    boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
-                  },
-                },
-              },
-            }}
-            enterDelay={300}
-            leaveDelay={200}
-            enterTouchDelay={300}
-            leaveTouchDelay={3000}
-          >
-            <IconButton
-              size="small"
-              sx={{
-                width: 16,
-                height: 16,
-                p: 0,
-                color: tipoVenta === 'directa' ? '#1976D2' : '#FF9800',
-                '&:hover': {
-                  bgcolor:
-                    tipoVenta === 'directa'
-                      ? 'rgba(25, 118, 210, 0.1)'
-                      : 'rgba(255, 152, 0, 0.1)',
-                  transform: 'scale(1.1)',
-                },
-                transition: 'all 0.2s ease',
-              }}
-            >
-              <InfoIcon sx={{ fontSize: 12 }} />
-            </IconButton>
-          </Tooltip>
-        </Box> */}{' '}
+        {/* Información adicional - más compacta */}
         <Typography
           variant="body2"
           color={stock < 10 ? 'error.main' : 'text.secondary'}
@@ -410,21 +271,21 @@ const ProductCard = ({ producto, onAddToCart, onViewDetails }) => {
             fullWidth
             disabled={!negociable}
             data-no-card-click="true"
-            onMouseDown={e => {
-              e.stopPropagation();
-              e.preventDefault();
+            onMouseDown={(e) => {
+              e.stopPropagation()
+              e.preventDefault()
             }}
-            onClick={e => {
-              e.stopPropagation();
-              e.preventDefault();
+            onClick={(e) => {
+              e.stopPropagation()
+              e.preventDefault()
               if (negociable) {
                 // TODO: Abrir modal de negociación
-                console.log('Abrir modal de negociación para:', nombre);
+                console.log('Abrir modal de negociación para:', nombre)
               }
             }}
-            onTouchStart={e => {
-              e.stopPropagation();
-              e.preventDefault();
+            onTouchStart={(e) => {
+              e.stopPropagation()
+              e.preventDefault()
             }}
             sx={{
               textTransform: 'none',
@@ -476,14 +337,14 @@ const ProductCard = ({ producto, onAddToCart, onViewDetails }) => {
           fullWidth
           data-no-card-click="true"
           startIcon={<ShoppingCartIcon sx={{ fontSize: 16 }} />}
-          onMouseDown={e => {
-            e.stopPropagation();
-            e.preventDefault();
+          onMouseDown={(e) => {
+            e.stopPropagation()
+            e.preventDefault()
           }}
           onClick={handleAgregarClick}
-          onTouchStart={e => {
-            e.stopPropagation();
-            e.preventDefault();
+          onTouchStart={(e) => {
+            e.stopPropagation()
+            e.preventDefault()
           }}
           sx={{
             textTransform: 'none',
@@ -534,12 +395,12 @@ const ProductCard = ({ producto, onAddToCart, onViewDetails }) => {
           vertical: 'top',
           horizontal: 'center',
         }}
-        onClick={e => e.stopPropagation()} // Prevenir click en ProductCard
+        onClick={(e) => e.stopPropagation()} // Prevenir click en ProductCard
         disableScrollLock={true} // ✅ SOLUCIÓN: Prevenir bloqueo de scroll que causa desplazamiento
         disableRestoreFocus={true} // ✅ SOLUCIÓN: Evitar cambios de foco que afecten el layout
         disableAutoFocus={true} // ✅ SOLUCIÓN: Prevenir auto-focus que puede mover el modal
         PaperProps={{
-          onClick: e => e.stopPropagation(), // Prevenir click en ProductCard
+          onClick: (e) => e.stopPropagation(), // Prevenir click en ProductCard
           sx: {
             p: 2,
             borderRadius: 2,
@@ -565,10 +426,10 @@ const ProductCard = ({ producto, onAddToCart, onViewDetails }) => {
           </Typography>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
             <IconButton
-              onClick={e => {
-                e.preventDefault(); // ✅ SOLUCIÓN: Prevenir comportamiento por defecto
-                e.stopPropagation(); // ✅ SOLUCIÓN: Evitar propagación de eventos
-                handleDecrement();
+              onClick={(e) => {
+                e.preventDefault() // ✅ SOLUCIÓN: Prevenir comportamiento por defecto
+                e.stopPropagation() // ✅ SOLUCIÓN: Evitar propagación de eventos
+                handleDecrement()
               }}
               disabled={cantidad <= 1}
               size="small"
@@ -594,10 +455,10 @@ const ProductCard = ({ producto, onAddToCart, onViewDetails }) => {
               size="small"
             />
             <IconButton
-              onClick={e => {
-                e.preventDefault(); // ✅ SOLUCIÓN: Prevenir comportamiento por defecto
-                e.stopPropagation(); // ✅ SOLUCIÓN: Evitar propagación de eventos
-                handleIncrement();
+              onClick={(e) => {
+                e.preventDefault() // ✅ SOLUCIÓN: Prevenir comportamiento por defecto
+                e.stopPropagation() // ✅ SOLUCIÓN: Evitar propagación de eventos
+                handleIncrement()
               }}
               disabled={cantidad >= stock}
               size="small"
@@ -618,10 +479,10 @@ const ProductCard = ({ producto, onAddToCart, onViewDetails }) => {
           <Box sx={{ display: 'flex', gap: 1 }}>
             <Button
               variant="outlined"
-              onClick={e => {
-                e.preventDefault(); // ✅ SOLUCIÓN: Prevenir comportamiento por defecto
-                e.stopPropagation(); // ✅ SOLUCIÓN: Evitar propagación de eventos
-                handleClosePopover();
+              onClick={(e) => {
+                e.preventDefault() // ✅ SOLUCIÓN: Prevenir comportamiento por defecto
+                e.stopPropagation() // ✅ SOLUCIÓN: Evitar propagación de eventos
+                handleClosePopover()
               }}
               fullWidth
               sx={{
@@ -633,10 +494,10 @@ const ProductCard = ({ producto, onAddToCart, onViewDetails }) => {
             </Button>
             <Button
               variant="contained"
-              onClick={e => {
-                e.preventDefault(); // ✅ SOLUCIÓN: Prevenir comportamiento por defecto
-                e.stopPropagation(); // ✅ SOLUCIÓN: Evitar propagación de eventos
-                handleConfirmarAgregar();
+              onClick={(e) => {
+                e.preventDefault() // ✅ SOLUCIÓN: Prevenir comportamiento por defecto
+                e.stopPropagation() // ✅ SOLUCIÓN: Evitar propagación de eventos
+                handleConfirmarAgregar()
               }}
               fullWidth
               sx={{
@@ -650,7 +511,7 @@ const ProductCard = ({ producto, onAddToCart, onViewDetails }) => {
         </Box>
       </Popover>
     </Card>
-  );
-};
+  )
+}
 
-export default React.memo(ProductCard);
+export default React.memo(ProductCard)

@@ -1,3 +1,18 @@
+/**
+ * ============================================================================
+ * ⚠️  ARCHIVO OBSOLETO - NO USAR
+ * ============================================================================
+ *
+ * Este archivo ha sido reemplazado por el componente universal:
+ * /src/components/shared/QuantitySelector.jsx
+ *
+ * MIGRACIÓN: Verificar si este archivo se usa en algún lugar antes de eliminar
+ *
+ * TODO: Eliminar este archivo una vez confirmado que no rompe nada
+ *
+ * FECHA DE DEPRECACIÓN: 2024-12-23
+ */
+
 import React, { useState } from 'react'
 import {
   Box,

@@ -1,7 +1,26 @@
 import React from 'react'
 import { Box } from '@mui/material'
 
-// Componente memoizado para indicadores de carrusel
+/**
+ * ====================================================================================
+ * CAROUSEL INDICATOR - INDICADOR DE CARRUSEL
+ * ============================================================================
+ *
+ * Componente UI puro para mostrar indicadores de posición en carruseles
+ *
+ * @component
+ * @param {Object} props - Propiedades del componente
+ * @param {number} props.index - Índice del indicador
+ * @param {boolean} props.isActive - Si el indicador está activo/seleccionado
+ * @param {Function} props.onClick - Función callback al hacer clic
+ *
+ * CARACTERÍSTICAS:
+ * - Componente memoizado para rendimiento óptimo
+ * - Estilos responsivos para todos los breakpoints
+ * - Estados visuales diferenciados (activo/inactivo)
+ * - Transiciones suaves y efectos hover
+ * - Compatible con temas dark/light
+ */
 const CarouselIndicator = React.memo(({ index, isActive, onClick }) => {
   return (
     <Box

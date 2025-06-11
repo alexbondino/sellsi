@@ -26,6 +26,27 @@ import {
 } from '@mui/icons-material'
 import { motion } from 'framer-motion'
 
+/**
+ * ============================================================================
+ * COMPONENTE CARTHEADER - ENCABEZADO DEL CARRITO DE COMPRAS
+ * ============================================================================
+ *
+ * Componente que muestra las estadísticas del carrito y controles principales
+ * Incluye: estadísticas de productos, descuentos, acciones de deshacer/rehacer
+ *
+ * @param {Object} props - Propiedades del componente
+ * @param {Object} props.cartStats - Estadísticas del carrito (totalItems, totalValue, etc.)
+ * @param {Function} props.formatPrice - Función para formatear precios
+ * @param {number} props.discount - Descuento total aplicado
+ * @param {number} props.wishlistLength - Cantidad de items en wishlist
+ * @param {Function} props.onUndo - Función para deshacer última acción
+ * @param {Function} props.onRedo - Función para rehacer acción
+ * @param {Function} props.onClearCart - Función para limpiar carrito
+ * @param {Function} props.onResetDemo - Función para resetear carrito demo
+ * @param {Object} props.undoInfo - Información de estado de undo/redo
+ * @param {Object} props.redoInfo - Información de estado de redo
+ */
+
 const CartHeader = ({
   cartStats,
   formatPrice,

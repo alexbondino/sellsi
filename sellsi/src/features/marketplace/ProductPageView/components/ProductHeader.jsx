@@ -1,4 +1,4 @@
-import React from 'react';
+import React from 'react'
 import {
   Box,
   Typography,
@@ -7,13 +7,13 @@ import {
   CardContent,
   Avatar,
   Chip,
-} from '@mui/material';
-import { LocalShipping, Security, Assignment } from '@mui/icons-material';
+} from '@mui/material'
+import { LocalShipping, Security, Assignment } from '@mui/icons-material'
 
-import ProductImageGallery from './ProductImageGallery';
-import PurchaseActions from './PurchaseActions';
-import PriceDisplay from '../../PriceDisplay';
-import StockIndicator from '../../StockIndicator';
+import ProductImageGallery from './ProductImageGallery'
+import PurchaseActions from './PurchaseActions'
+import PriceDisplay from '../../PriceDisplay'
+import StockIndicator from '../../StockIndicator'
 
 const ProductHeader = ({
   product,
@@ -27,17 +27,11 @@ const ProductHeader = ({
     proveedor,
     imagen,
     precio,
-    /* COMMENTED OUT: Discount and rating variables */
-    // precioOriginal,
-    // descuento,
-    // rating,
-    // ventas,
     stock,
     compraMinima,
     descripcion = 'Producto de alta calidad con excelentes características y garantía de satisfacción.',
-  } = product;
-  /* COMMENTED OUT: Discount calculation */
-  // const hasDiscount = precioOriginal && precioOriginal > precio
+  } = product
+
   return (
     <Grid container spacing={12} sx={{ alignItems: 'flex-end' }}>
       {' '}
@@ -159,7 +153,7 @@ const ProductHeader = ({
         </Box>
       </Grid>
     </Grid>
-  );
-};
+  )
+}
 
-export default ProductHeader;
+export default ProductHeader

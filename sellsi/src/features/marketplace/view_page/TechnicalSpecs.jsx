@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import React from 'react'
 import {
   Box,
   Container,
@@ -9,68 +8,36 @@ import {
   Paper,
   Breadcrumbs,
   Link,
-} from '@mui/material';
-import { ArrowBack, Home, StorefrontOutlined } from '@mui/icons-material';
-import ProductPageView from '../ProductPageView/ProductPageView';
-import { PRODUCTOS } from '../products';
+} from '@mui/material'
+import { ArrowBack, Home, StorefrontOutlined } from '@mui/icons-material'
+import ProductPageView from '../ProductPageView/ProductPageView'
+import { useTechnicalSpecs } from './hooks/useTechincalSpecs'
 
-const FichaTecnica = () => {
-  const { productSlug } = useParams();
-  const navigate = useNavigate();
-  const [product, setProduct] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    // Extraer el ID del producto del slug
-    // El slug tiene formato: nombredelproducto-ID
-    if (productSlug) {
-      const slugParts = productSlug.split('-');
-      const productId = slugParts[slugParts.length - 1];
-
-      // Buscar el producto por ID
-      const foundProduct = PRODUCTOS.find(p => p.id.toString() === productId);
-
-      if (foundProduct) {
-        setProduct(foundProduct);
-      } else {
-        // Si no se encuentra el producto, redirigir al marketplace
-        navigate('/buyer/marketplace', { replace: true });
-      }
-    }
-    setLoading(false);
-  }, [productSlug, navigate]);
-  const handleClose = () => {
-    navigate('/buyer/marketplace');
-  };
-  const handleAddToCart = product => {
-    const supplierid = localStorage.getItem('supplierid');
-    const sellerid = localStorage.getItem('sellerid');
-    const isLoggedIn = !!(supplierid || sellerid);
-
-    if (!isLoggedIn) {
-      // Disparar evento para abrir Login modal
-      const event = new CustomEvent('openLoginModal');
-      window.dispatchEvent(event);
-    } else {
-      // Lógica para agregar al carrito (usuario logueado)
-      console.log('Producto agregado al carrito:', product.nombre);
-    }
-  };
-
-  const handleBuyNow = product => {
-    const supplierid = localStorage.getItem('supplierid');
-    const sellerid = localStorage.getItem('sellerid');
-    const isLoggedIn = !!(supplierid || sellerid);
-
-    if (!isLoggedIn) {
-      // Disparar evento para abrir Login modal
-      const event = new CustomEvent('openLoginModal');
-      window.dispatchEvent(event);
-    } else {
-      // Lógica para comprar ahora (usuario logueado)
-      console.log('Comprar ahora:', product.nombre);
-    }
-  };
+/**
+ * ============================================================================
+ * COMPONENTE TECHNICALSPECS - FICHA TÉCNICA DE PRODUCTO
+ * ============================================================================
+ *
+ * Componente UI puro para mostrar la ficha técnica de un producto
+ * Toda la lógica de negocio está separada en el hook useTechnicalSpecs
+ *
+ * NAVEGACIÓN INTELIGENTE:
+ * - Botón "Inicio": Navega a Home
+ * - Botón "Marketplace": Navega al marketplace de origen (Marketplace/MarketplaceBuyer)
+ * - Botón "Volver": Navega al marketplace de origen
+ */
+const TechnicalSpecs = () => {
+  const {
+    product,
+    loading,
+    originRoute,
+    isFromBuyer,
+    handleClose,
+    handleGoHome,
+    handleGoToMarketplace,
+    handleAddToCart,
+    handleBuyNow,
+  } = useTechnicalSpecs()
 
   if (loading) {
     return (
@@ -86,7 +53,7 @@ const FichaTecnica = () => {
           Cargando...
         </Typography>
       </Box>
-    );
+    )
   }
 
   if (!product) {
@@ -102,13 +69,13 @@ const FichaTecnica = () => {
           <Button
             variant="contained"
             startIcon={<StorefrontOutlined />}
-            onClick={() => navigate('/buyer/marketplace')}
+            onClick={handleGoToMarketplace}
           >
             Volver al Marketplace
           </Button>
         </Paper>
       </Container>
-    );
+    )
   }
 
   return (
@@ -153,10 +120,11 @@ const FichaTecnica = () => {
               color: 'text.secondary',
             }}
           >
+            {' '}
             <Link
               underline="hover"
               color="inherit"
-              onClick={() => navigate('/')}
+              onClick={handleGoHome}
               sx={{
                 cursor: 'pointer',
                 display: 'flex',
@@ -170,7 +138,7 @@ const FichaTecnica = () => {
             <Link
               underline="hover"
               color="inherit"
-              onClick={() => navigate('/buyer/marketplace')}
+              onClick={handleGoToMarketplace}
               sx={{
                 cursor: 'pointer',
                 display: 'flex',
@@ -200,7 +168,7 @@ const FichaTecnica = () => {
         />
       </Box>
     </Box>
-  );
-};
+  )
+}
 
-export default FichaTecnica;
+export default TechnicalSpecs

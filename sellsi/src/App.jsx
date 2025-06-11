@@ -1,92 +1,92 @@
-import React, { useEffect, useState, useRef } from 'react';
-import { Box, CssBaseline } from '@mui/material';
-import { ThemeProvider } from '@mui/material/styles';
-import GlobalStyles from '@mui/material/GlobalStyles';
+import React, { useEffect, useState, useRef } from 'react'
+import { Box, CssBaseline } from '@mui/material'
+import { ThemeProvider } from '@mui/material/styles'
+import GlobalStyles from '@mui/material/GlobalStyles'
 import {
   BrowserRouter,
   Routes,
   Route,
   useLocation,
   useNavigate,
-} from 'react-router-dom';
+} from 'react-router-dom'
 
-import theme from './styles/theme';
-import TopBar from './features/layout/TopBar';
-import BottomBar from './features/layout/BottomBar';
-import Home from './features/landing_page/Home';
-import ProviderHome from './features/supplier/home/ProviderHome';
-import FichaTecnica from './features/marketplace/view_page/FichaTecnica';
-import Marketplace from './features/marketplace/Marketplace';
-import MarketplaceBuyer from './features/buyer/MarketplaceBuyer';
-import BuyerOrders from './features/buyer/BuyerOrders';
-import BuyerPerformance from './features/buyer/BuyerPerformance';
-import BuyerCart from './features/buyer/BuyerCart';
-import Login from './features/login/Login';
-import Register from './features/register/Register';
-import PrivateRoute from './features/auth/PrivateRoute';
-import { BannerProvider, useBanner } from './features/ui/BannerContext';
-import Banner from './features/ui/Banner';
-import { supabase } from './services/supabase';
+import theme from './styles/theme'
+import TopBar from './features/layout/TopBar'
+import BottomBar from './features/layout/BottomBar'
+import Home from './features/landing_page/Home'
+import ProviderHome from './features/supplier/home/ProviderHome'
+import TechnicalSpecs from './features/marketplace/view_page/TechnicalSpecs'
+import Marketplace from './features/marketplace/Marketplace'
+import MarketplaceBuyer from './features/buyer/MarketplaceBuyer'
+import BuyerOrders from './features/buyer/BuyerOrders'
+import BuyerPerformance from './features/buyer/BuyerPerformance'
+import BuyerCart from './features/buyer/BuyerCart'
+import Login from './features/login/Login'
+import Register from './features/register/Register'
+import PrivateRoute from './features/auth/PrivateRoute'
+import { BannerProvider, useBanner } from './features/ui/BannerContext'
+import Banner from './features/ui/Banner'
+import { supabase } from '../../src/services/supabase'
 
 // Contenido principal que depende de la ruta
 function AppContent({ mensaje }) {
-  const location = useLocation();
-  const navigate = useNavigate();
-  const scrollTargets = useRef({});
-  const { bannerState, hideBanner } = useBanner();
-  const handleScrollTo = refName => {
-    const element = scrollTargets.current[refName]?.current;
+  const location = useLocation()
+  const navigate = useNavigate()
+  const scrollTargets = useRef({})
+  const { bannerState, hideBanner } = useBanner()
+  const handleScrollTo = (refName) => {
+    const element = scrollTargets.current[refName]?.current
     if (element) {
-      const topBarHeight = 30;
+      const topBarHeight = 30
       const elementPosition =
-        element.getBoundingClientRect().top + window.pageYOffset;
-      const offsetPosition = elementPosition - topBarHeight;
+        element.getBoundingClientRect().top + window.pageYOffset
+      const offsetPosition = elementPosition - topBarHeight
       window.scrollTo({
         top: offsetPosition,
         behavior: 'smooth',
-      });
+      })
     }
-  };
+  }
   useEffect(() => {
     const checkSession = async () => {
-      const { data, error } = await supabase.auth.getSession();
+      const { data, error } = await supabase.auth.getSession()
       if (error) {
-        console.error('❌ Error obteniendo la sesión:', error.message);
-        return;
+        console.error('❌ Error obteniendo la sesión:', error.message)
+        return
       }
 
-      const session = data.session;
-      const accountType = localStorage.getItem('account_type');
+      const session = data.session
+      const accountType = localStorage.getItem('account_type')
 
       if (session && location.pathname === '/') {
         if (accountType === 'proveedor') {
-          navigate('/supplier/home', { replace: true });
+          navigate('/supplier/home', { replace: true })
         } else if (accountType === 'comprador') {
-          navigate('/buyer/marketplace', { replace: true });
+          navigate('/buyer/marketplace', { replace: true })
         } else {
-          navigate('/supplier/home', { replace: true });
+          navigate('/supplier/home', { replace: true })
         }
       }
-    };
+    }
 
-    checkSession();
-  }, [location.pathname, navigate]);
+    checkSession()
+  }, [location.pathname, navigate])
 
   useEffect(() => {
     const handlePopstate = () => {
-      const event = new CustomEvent('closeAllModals');
-      window.dispatchEvent(event);
-    };
+      const event = new CustomEvent('closeAllModals')
+      window.dispatchEvent(event)
+    }
 
-    window.addEventListener('popstate', handlePopstate);
+    window.addEventListener('popstate', handlePopstate)
     return () => {
-      window.removeEventListener('popstate', handlePopstate);
-    };
-  }, []);
+      window.removeEventListener('popstate', handlePopstate)
+    }
+  }, [])
 
-  const needsPadding = true;
-  const showTopBar = true;
-  const showBottomBar = location.pathname !== '/supplier/home';
+  const needsPadding = true
+  const showTopBar = true
+  const showBottomBar = location.pathname !== '/supplier/home'
 
   return (
     <>
@@ -119,7 +119,10 @@ function AppContent({ mensaje }) {
           <Route path="/buyer/orders" element={<BuyerOrders />} />
           <Route path="/buyer/performance" element={<BuyerPerformance />} />
           <Route path="/buyer/cart" element={<BuyerCart />} />
-          <Route path="/fichatecnica/:productSlug" element={<FichaTecnica />} />
+          <Route
+            path="/technicalspecs/:productSlug"
+            element={<TechnicalSpecs />}
+          />
           <Route path="/login" element={<Login />} />
           <Route path="/crear-cuenta" element={<Register />} />
           <Route
@@ -144,28 +147,28 @@ function AppContent({ mensaje }) {
         {showBottomBar && <BottomBar />}
       </Box>
     </>
-  );
+  )
 }
 
 // Componente principal que monta el contenido y aplica estilos globales
 function App() {
-  const [mensaje, setMensaje] = useState('Cargando...');
-  const backendUrl = import.meta.env.VITE_BACKEND_URL;
+  const [mensaje, setMensaje] = useState('Cargando...')
+  const backendUrl = import.meta.env.VITE_BACKEND_URL
 
   useEffect(() => {
     const fetchBackend = async () => {
       try {
-        const res = await fetch(`${backendUrl}/`);
-        const data = await res.json();
-        setMensaje(JSON.stringify(data));
+        const res = await fetch(`${backendUrl}/`)
+        const data = await res.json()
+        setMensaje(JSON.stringify(data))
       } catch (error) {
-        console.error('❌ Error al conectar con backend:', error);
-        setMensaje('No se pudo conectar con el backend.');
+        console.error('❌ Error al conectar con backend:', error)
+        setMensaje('No se pudo conectar con el backend.')
       }
-    };
+    }
 
-    fetchBackend();
-  }, [backendUrl]);
+    fetchBackend()
+  }, [backendUrl])
 
   return (
     <ThemeProvider theme={theme}>
@@ -195,7 +198,7 @@ function App() {
         </BrowserRouter>
       </BannerProvider>
     </ThemeProvider>
-  );
+  )
 }
 
-export default App;
+export default App

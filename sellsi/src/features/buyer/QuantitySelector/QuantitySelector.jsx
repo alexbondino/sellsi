@@ -1,3 +1,46 @@
+/**
+ * ============================================================================
+ * ⚠️  ARCHIVO OBSOLETO - NO USAR
+ * ============================================================================
+ *
+ * Este archivo ha sido reemplazado por el componente universal:
+ * /src/components/shared/QuantitySelector.jsx
+ *
+ * MIGRACIÓN COMPLETADA:
+ * - ✅ CartItem.jsx ahora usa el componente universal
+ *
+ * TODO: Eliminar este archivo una vez confirmado que no rompe nada
+ *
+ * FECHA DE DEPRECACIÓN: 2024-12-23
+ */
+
+/**
+ * ============================================================================
+ * COMPONENTE QUANTITYSELECTOR - SELECTOR DE CANTIDAD PARA BUYER
+ * ============================================================================
+ *
+ * NOTA: POSIBLE DUPLICACIÓN
+ * Este componente existe también en /marketplace/product/QuantitySelector.jsx
+ *
+ * TODO: Revisar si:
+ * 1. Los dos componentes pueden unificarse en uno solo
+ * 2. Hay diferencias funcionales que justifiquen tener ambos
+ * 3. Se puede mover a /components/shared/ para reutilización
+ *
+ * Usado en: CartItem.jsx
+ *
+ * @param {number} value - Valor actual de cantidad
+ * @param {Function} onChange - Función callback cuando cambia la cantidad
+ * @param {number} min - Valor mínimo permitido
+ * @param {number} max - Valor máximo permitido
+ * @param {number} step - Incremento/decremento por paso
+ * @param {boolean} disabled - Si el selector está deshabilitado
+ * @param {boolean} showStockLimit - Si mostrar límite de stock
+ * @param {string} size - Tamaño del componente
+ * @param {string} orientation - Orientación (horizontal/vertical)
+ * @param {Object} sx - Estilos personalizados
+ */
+
 import React from 'react'
 import { Box, IconButton, TextField, Typography, Tooltip } from '@mui/material'
 import { Add as AddIcon, Remove as RemoveIcon } from '@mui/icons-material'

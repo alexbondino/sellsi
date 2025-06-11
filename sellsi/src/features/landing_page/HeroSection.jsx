@@ -6,6 +6,42 @@ import StatisticCard from './StatisticCard'
 import CarouselIndicator from './CarouselIndicator'
 import CarouselNavigationButton from './CarouselNavigationButton'
 
+/**
+ * ============================================================================
+ * HERO SECTION - SECCIÓN PRINCIPAL/HERO DE LANDING PAGE
+ * ============================================================================
+ *
+ * Componente UI principal de la landing page con carrusel promocional
+ *
+ * @component
+ * @param {Object} props - Propiedades del componente
+ * @param {number} props.currentPromoSlide - Índice del slide actual del carrusel
+ * @param {Function} props.nextPromoSlide - Función para avanzar al siguiente slide
+ * @param {Function} props.prevPromoSlide - Función para retroceder al slide anterior
+ * @param {Function} props.setCurrentPromoSlide - Función para ir a un slide específico
+ * @param {Array} props.promoSlides - Array de slides promocionales
+ * @param {Array} props.statistics - Array de estadísticas para mostrar
+ * @param {Function} props.formatNumber - Función para formatear números
+ *
+ * CARACTERÍSTICAS:
+ * - Carrusel promocional con navegación automática y manual
+ * - Contenido dinámico por slide (texto, imágenes, secciones múltiples)
+ * - Estadísticas animadas con count-up
+ * - Botón CTA principal para marketplace
+ * - Layout responsivo diferenciado mobile/desktop
+ * - Indicadores de posición y botones de navegación
+ * - Soporte para slides multi-sección
+ *
+ * LAYOUT:
+ * - Desktop: Dos columnas (contenido + imagen)
+ * - Mobile: Una columna con imagen superpuesta
+ * - Botón y estadísticas posicionados estratégicamente
+ *
+ * DEPENDENCIAS:
+ * - StatisticCard: Para mostrar métricas destacadas
+ * - CarouselIndicator: Para navegación por puntos
+ * - CarouselNavigationButton: Para botones prev/next
+ */
 const HeroSection = ({
   currentPromoSlide,
   nextPromoSlide,
@@ -37,9 +73,9 @@ const HeroSection = ({
             fontWeight="bold"
             sx={{
               fontSize: {
-                xs: isMobile ? '1.84rem' : '2rem',
-                sm: isMobile ? '2rem' : '2.5rem',
-                md: isMobile ? '2.5rem' : '3.5rem',
+                xs: '2rem', // Nunca se usa (slide 3 oculto en mobile)
+                sm: '2.5rem', // Nunca se usa (slide 3 oculto en mobile)
+                md: '3.5rem', // Tablet en adelante
                 lg: '3rem',
                 xl: '4.5rem',
               },
@@ -92,13 +128,14 @@ const HeroSection = ({
                 key={index}
                 sx={{ mb: { xs: 2, sm: 2.5, md: 3, lg: 3, xl: 3 } }}
               >
+                {' '}
                 <Typography
                   variant="h1"
                   fontWeight="bold"
                   sx={{
                     fontSize: {
-                      xs: '1.84rem',
-                      sm: '2rem',
+                      xs: '1.7rem', // Ajustado según petición para consistencia
+                      sm: '1.9rem', // Ajustado según petición para consistencia
                       md: '3.5rem',
                       lg: '3rem',
                       xl: '4.5rem',
@@ -109,13 +146,13 @@ const HeroSection = ({
                   }}
                 >
                   {section.title}
-                </Typography>
+                </Typography>{' '}
                 <Typography
                   variant="h6"
                   sx={{
                     fontSize: {
-                      xs: '0.97rem',
-                      sm: '1rem',
+                      xs: '0.9rem', // Ajustado según petición para consistencia
+                      sm: '0.95rem', // Ajustado según petición para consistencia
                       md: '1.5rem',
                       lg: '1.5rem',
                       xl: '1.7rem',
@@ -136,20 +173,21 @@ const HeroSection = ({
     // Contenido estándar para slides 1 y 2
     return (
       <>
+        {' '}
         <Typography
           variant="h1"
           fontWeight="bold"
           gutterBottom
           sx={{
             fontSize: {
-              xs: '1.84rem',
-              sm: '2rem',
+              xs: '1.7rem', // Ajustado según petición
+              sm: '1.9rem', // Ajustado según petición
               md: '3.5rem',
               lg: '3rem',
               xl: '4.5rem',
             },
             lineHeight: { xs: 1.3, sm: 1.4, md: 1.4, lg: 1.4, xl: 1.4 },
-            mb: { xs: 2, sm: 3, md: 3, lg: 3, xl: 3 },
+            mb: { xs: 1, sm: 1.5, md: 3, lg: 3, xl: 3 },
             mt: { xs: -1, sm: 0, md: 0 },
             color: 'white',
           }}
@@ -161,13 +199,13 @@ const HeroSection = ({
             gutterBottom
             sx={{
               fontSize: {
-                xs: '0.97rem',
-                sm: '1rem',
+                xs: '0.9rem', // Ajustado según petición
+                sm: '0.95rem', // Ajustado según petición
                 md: '1.5rem',
                 lg: '1.5rem',
                 xl: '1.7rem',
               },
-              mb: { xs: 1.4, sm: 1.6, md: 1.6, lg: 1.6, xl: 1.8 },
+              mb: { xs: 0, sm: 0, md: 1.6, lg: 1.6, xl: 1.8 },
               color: 'white',
               lineHeight: { xs: 1.5, sm: 1.6, md: 1.6, lg: 1.6, xl: 1.6 },
             }}
@@ -281,7 +319,13 @@ const HeroSection = ({
                 xl: 'left',
               },
               px: { xs: 0, sm: 0, md: 0, lg: 3, xl: 4 },
-              ml: { xs: 0, sm: 0, md: 0, lg: 18, xl: 12 }, // Margen izquierdo agregado
+              ml: {
+                xs: 0,
+                sm: 0,
+                md: 0,
+                lg: 0,
+                xl: 0,
+              },
             }}
           >
             {renderSlideContent()}
@@ -319,22 +363,35 @@ const HeroSection = ({
           >
             {renderImageContent(false)}
           </Box>
-        </Box>
+        </Box>{' '}
         {/* Botón y Estadísticas para Mobile */}
         <Box
           sx={{
             display: {
               xs: 'flex',
               sm: 'flex',
-              md: 'flex',
+              md: 'none',
               lg: 'none',
               xl: 'none',
             },
             flexDirection: 'column',
             alignItems: 'center',
             gap: { xs: 2, sm: 2.5, md: 3 },
-            width: '100%',
-            mt: { xs: 12, sm: 14, md: 16 },
+            width: '100%', // Margen superior dinámico según el slide actual
+            mt: {
+              xs:
+                currentSlide.id === 1
+                  ? 16 // Slide 1: "Somos Sellsi" - margen estándar
+                  : currentSlide.id === 2
+                  ? 8.3 // Slide 2: "Termina este 2025" - margen reducido
+                  : 10, // Slide 3: "Con Sellsi todos ganan" - margen intermedio
+              sm:
+                currentSlide.id === 1
+                  ? 17 // Slide 1: "Somos Sellsi" - margen estándar
+                  : currentSlide.id === 2
+                  ? 8.2 // Slide 2: "Termina este 2025" - margen reducido
+                  : 13.1, // Slide 3: "Con Sellsi todos ganan" - margen intermedio
+            },
             position: 'relative',
             zIndex: 2,
           }}
@@ -347,6 +404,7 @@ const HeroSection = ({
               borderRadius: '8px',
               px: { xs: 3.68, sm: 4, md: 10, lg: 10, xl: 10 },
               py: { xs: 1.38, sm: 1.5, md: 2.4, lg: 2.4, xl: 2.4 },
+
               fontSize: {
                 xs: '1.2rem',
                 sm: '1.35rem',
@@ -358,7 +416,6 @@ const HeroSection = ({
               boxShadow: '0 4px 15px rgba(25, 118, 210, 0.3)',
               width: 'fit-content',
               mt: { xs: 14, sm: 20, md: 28, lg: 28, xl: 28 },
-              ml: { xs: 0, sm: 0, md: -28, lg: -28, xl: -28 },
               mb: 1,
               '&:hover': {
                 transform: 'translateY(-2px)',

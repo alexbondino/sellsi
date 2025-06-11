@@ -9,7 +9,6 @@ export const PRODUCTOS = [
     descuento: 17,
     categoria: 'Supermercado',
     tipo: 'nuevo',
-    // comision: 15, // COMMENTED OUT: Commission functionality removed
     tipoVenta: 'directa',
     rating: 4.8,
     ventas: 234,
@@ -27,7 +26,6 @@ export const PRODUCTOS = [
     descuento: 17,
     categoria: 'Supermercado',
     tipo: 'nuevo',
-    // comision: 18, // COMMENTED OUT: Commission functionality removed
     tipoVenta: 'directa',
     rating: 4.5,
     ventas: 89,
@@ -45,7 +43,6 @@ export const PRODUCTOS = [
     descuento: 17,
     categoria: 'Supermercado',
     tipo: 'nuevo',
-    // comision: 20, // COMMENTED OUT: Commission functionality removed
     tipoVenta: 'directa',
     rating: 4.7,
     ventas: 156,
@@ -63,7 +60,6 @@ export const PRODUCTOS = [
     descuento: 17,
     categoria: 'Supermercado',
     tipo: 'nuevo',
-    // comision: 15, // COMMENTED OUT: Commission functionality removed
     tipoVenta: 'directa',
     rating: 4.6,
     ventas: 312,
@@ -81,7 +77,6 @@ export const PRODUCTOS = [
     descuento: 17,
     categoria: 'Supermercado',
     tipo: 'oferta',
-    // comision: 22, // COMMENTED OUT: Commission functionality removed
     tipoVenta: 'indirecta',
     rating: 4.3,
     ventas: 567,
@@ -99,7 +94,6 @@ export const PRODUCTOS = [
     descuento: 17,
     categoria: 'Supermercado',
     tipo: 'oferta',
-    // comision: 18, // COMMENTED OUT: Commission functionality removed
     tipoVenta: 'directa',
     rating: 4.4,
     ventas: 178,
@@ -117,7 +111,6 @@ export const PRODUCTOS = [
     descuento: 25,
     categoria: 'Electrodomésticos',
     tipo: 'oferta',
-    // comision: 16, // COMMENTED OUT: Commission functionality removed
     tipoVenta: 'directa',
     rating: 4.2,
     ventas: 93,
@@ -135,7 +128,6 @@ export const PRODUCTOS = [
     descuento: 22,
     categoria: 'Electrodomésticos',
     tipo: 'oferta',
-    // comision: 20, // COMMENTED OUT: Commission functionality removed
     tipoVenta: 'todos',
     rating: 4.5,
     ventas: 145,
@@ -153,7 +145,6 @@ export const PRODUCTOS = [
     descuento: 33,
     categoria: 'Moda',
     tipo: 'top',
-    // comision: 25, // COMMENTED OUT: Commission functionality removed
     tipoVenta: 'indirecta',
     rating: 4.1,
     ventas: 423,
@@ -171,7 +162,6 @@ export const PRODUCTOS = [
     descuento: 25,
     categoria: 'Hogar y Muebles',
     tipo: 'top',
-    // comision: 18, // COMMENTED OUT: Commission functionality removed
     tipoVenta: 'directa',
     rating: 4.8,
     ventas: 289,
@@ -189,7 +179,6 @@ export const PRODUCTOS = [
     descuento: 20,
     categoria: 'Construcción',
     tipo: 'general',
-    // comision: 15, // COMMENTED OUT: Commission functionality removed
     tipoVenta: 'directa',
     rating: 4.0,
     ventas: 78,
@@ -207,7 +196,6 @@ export const PRODUCTOS = [
     descuento: 20,
     categoria: 'Hogar y Muebles',
     tipo: 'top',
-    // comision: 30, // COMMENTED OUT: Commission functionality removed
     tipoVenta: 'indirecta',
     rating: 4.3,
     ventas: 634,
@@ -225,7 +213,6 @@ export const PRODUCTOS = [
     descuento: 17,
     categoria: 'Supermercado',
     tipo: 'general',
-    // comision: 12, // COMMENTED OUT: Commission functionality removed
     tipoVenta: 'directa',
     rating: 4.6,
     ventas: 112,

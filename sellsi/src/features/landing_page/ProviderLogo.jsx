@@ -1,7 +1,28 @@
 import React from 'react'
 import { Card, CardContent } from '@mui/material'
 
-// Componente memoizado para logos de proveedores
+/**
+ * ====================================================================================
+ * PROVIDER LOGO - LOGO DE PROVEEDOR
+ * ============================================================================
+ *
+ * Componente UI puro para mostrar logos de proveedores en grid de proveedores
+ *
+ * @component
+ * @param {Object} props - Propiedades del componente
+ * @param {Object} props.provider - Objeto con información del proveedor
+ * @param {string} props.provider.src - URL de la imagen del logo
+ * @param {string} props.provider.alt - Texto alternativo de la imagen
+ *
+ * CARACTERÍSTICAS:
+ * - Componente memoizado para rendimiento óptimo
+ * - Cards con diseño Material UI consistente
+ * - Efectos hover con animaciones suaves
+ * - Dimensiones responsivas por breakpoint
+ * - Gradientes y sombras elegantes
+ * - Optimización de imágenes automática
+ * - Estados interactivos (hover, active)
+ */
 const ProviderLogo = React.memo(({ provider }) => (
   <Card
     elevation={2}

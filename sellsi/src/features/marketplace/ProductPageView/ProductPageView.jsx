@@ -59,7 +59,6 @@ const ProductPageView = ({
     rating,
     ventas,
     stock,
-    // comision, // COMMENTED OUT: Commission functionality removed
     categoria,
     descripcion = 'Producto de alta calidad con excelentes características y garantía de satisfacción.',
   } = product

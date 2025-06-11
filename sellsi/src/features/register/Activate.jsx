@@ -1,4 +1,4 @@
-import React, { useState, memo } from 'react';
+import React, { useState, memo } from 'react'
 import {
   Dialog,
   DialogContent,
@@ -8,20 +8,20 @@ import {
   Alert,
   Button,
   Fade,
-} from '@mui/material';
-import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
+} from '@mui/material'
+import LockOutlinedIcon from '@mui/icons-material/LockOutlined'
 
-import { CustomButton, Timer, VerificationCodeInput } from '../../hooks/shared';
-import { useBanner } from '../../contexts/BannerContext';
+import { CustomButton, Timer, VerificationCodeInput } from '../../hooks/shared'
+import { useBanner } from '../../contexts/BannerContext'
 import {
   sendActivationCode,
   verifyActivationCode,
-} from '../../services/supabase'; // 🔥 NUEVA IMPORTACIÓN
+} from '../../../../src/services/supabase' // 🔥 NUEVA IMPORTACIÓN
 
 // ✅ CONSTANTS (mismo que Login.jsx)
 const CONSTANTS = {
   FORM_WIDTH: 400,
-};
+}
 
 // ✅ LOGO COMPONENT (mismo que Login.jsx)
 const Logo = memo(() => (
@@ -43,7 +43,7 @@ const Logo = memo(() => (
       Conecta. Vende. Crece.
     </Typography>
   </Box>
-));
+))
 
 // ✅ ACTIVATION FORM COMPONENT
 const ActivationForm = memo(({ email, onSubmit, error }) => (
@@ -119,7 +119,7 @@ const ActivationForm = memo(({ email, onSubmit, error }) => (
       </Box>
     </form>
   </Paper>
-));
+))
 
 // ✅ FOOTER COMPONENT
 const ActivationFooter = memo(({ onCancel }) => (
@@ -145,7 +145,7 @@ const ActivationFooter = memo(({ onCancel }) => (
       Cancelar
     </CustomButton>
   </Box>
-));
+))
 
 // ✅ STEP 2 CODE ACTIVATION COMPONENT (Réplica de Step2Code.jsx)
 const Step2CodeActivation = memo(
@@ -161,7 +161,7 @@ const Step2CodeActivation = memo(
     fadeIn,
     error,
   }) => {
-    const codigoCompleto = codigo.every(c => c.length === 1);
+    const codigoCompleto = codigo.every((c) => c.length === 1)
 
     return (
       <Paper
@@ -273,9 +273,9 @@ const Step2CodeActivation = memo(
           )}
         </Box>
       </Paper>
-    );
+    )
   }
-);
+)
 
 // ✅ MAIN COMPONENT
 export default function Activate({
@@ -284,111 +284,107 @@ export default function Activate({
   email = '',
   onActivationSuccess,
 }) {
-  const [step, setStep] = useState(1); // 1: Send Code, 2: Verify Code (sin Step 3)
-  const [codigo, setCodigo] = useState(['', '', '', '', '']);
-  const [error, setError] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [timer, setTimer] = useState(300); // 5 minutos
-  const [showCodigoEnviado, setShowCodigoEnviado] = useState(false);
-  const [fadeIn, setFadeIn] = useState(false);
+  const [step, setStep] = useState(1) // 1: Send Code, 2: Verify Code (sin Step 3)
+  const [codigo, setCodigo] = useState(['', '', '', '', ''])
+  const [error, setError] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
+  const [timer, setTimer] = useState(300) // 5 minutos
+  const [showCodigoEnviado, setShowCodigoEnviado] = useState(false)
+  const [fadeIn, setFadeIn] = useState(false)
 
-  const { showBanner } = useBanner(); // Hook del banner
+  const { showBanner } = useBanner() // Hook del banner
 
   // Reset al abrir/cerrar modal
   React.useEffect(() => {
     if (open) {
-      setStep(1);
-      setCodigo(['', '', '', '', '']);
-      setError('');
-      setIsLoading(false);
-      setTimer(300);
-      setShowCodigoEnviado(false);
-      setFadeIn(false);
+      setStep(1)
+      setCodigo(['', '', '', '', ''])
+      setError('')
+      setIsLoading(false)
+      setTimer(300)
+      setShowCodigoEnviado(false)
+      setFadeIn(false)
     }
-  }, [open]);
+  }, [open])
 
   // Timer countdown
   React.useEffect(() => {
     if (step === 2 && timer > 0) {
       const interval = setInterval(() => {
-        setTimer(prev => prev - 1);
-      }, 1000);
-      return () => clearInterval(interval);
+        setTimer((prev) => prev - 1)
+      }, 1000)
+      return () => clearInterval(interval)
     }
-  }, [step, timer]);
-  const handleSendCode = async e => {
-    e.preventDefault();
-    setIsLoading(true);
-    setError('');
+  }, [step, timer])
+  const handleSendCode = async (e) => {
+    e.preventDefault()
+    setIsLoading(true)
+    setError('')
 
     try {
-      console.log('Sending verification code to:', email);
+      console.log('Sending verification code to:', email)
 
       // 🔥 INTEGRACIÓN REAL: Enviar código de activación
-      const result = await sendActivationCode(email);
+      const result = await sendActivationCode(email)
 
       if (!result.success) {
-        setError(
-          result.error || 'Error al enviar el código. Intenta de nuevo.'
-        );
-        return;
+        setError(result.error || 'Error al enviar el código. Intenta de nuevo.')
+        return
       }
 
-      console.log('Code sent successfully');
+      console.log('Code sent successfully')
 
       // Mostrar código en desarrollo
       if (result.developmentCode) {
-        console.log('🔧 Development code:', result.developmentCode);
+        console.log('🔧 Development code:', result.developmentCode)
       }
 
-      setStep(2); // Pasar al paso de verificación
-      setTimer(300); // Resetear timer
+      setStep(2) // Pasar al paso de verificación
+      setTimer(300) // Resetear timer
     } catch (error) {
-      console.error('Error sending code:', error);
-      setError('Error al enviar el código. Intenta de nuevo.');
+      console.error('Error sending code:', error)
+      setError('Error al enviar el código. Intenta de nuevo.')
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   const handleVerifyCode = async () => {
-    const code = codigo.join('');
+    const code = codigo.join('')
 
     if (code.length !== 5) {
-      setError('El código debe tener 5 dígitos');
-      return;
+      setError('El código debe tener 5 dígitos')
+      return
     }
 
-    setIsLoading(true);
-    setError('');
+    setIsLoading(true)
+    setError('')
 
     try {
-      console.log('Verifying activation code:', code, 'for email:', email);
+      console.log('Verifying activation code:', code, 'for email:', email)
 
       // 🔥 INTEGRACIÓN REAL: Verificar código de activación
-      const result = await verifyActivationCode(email, code);
+      const result = await verifyActivationCode(email, code)
 
       if (!result.success) {
         setError(
           result.error || 'Código incorrecto o expirado. Intenta de nuevo.'
-        );
-        return;
+        )
+        return
       }
-      console.log('Account activated successfully');
+      console.log('Account activated successfully')
 
       // 🔥 NUEVA LÓGICA: Refrescar datos del usuario y verificar activación
-      let activationConfirmed = false;
+      let activationConfirmed = false
       if (onActivationSuccess) {
-        console.log(
-          '🔄 Refrescando datos del usuario después de activación...'
-        );
-        activationConfirmed = await onActivationSuccess();
+        console.log('🔄 Refrescando datos del usuario después de activación...')
+        activationConfirmed = await onActivationSuccess()
       }
 
       // Solo cerrar el modal si la activación fue confirmada
       if (activationConfirmed !== false) {
         // Cerrar el modal
-        handleSuccess();
+        handleSuccess()
 
         // Mostrar banner de éxito después de cerrar
         showBanner({
@@ -396,77 +392,77 @@ export default function Activate({
             '¡Tu cuenta ha sido activada con éxito! Ya puedes iniciar sesión.',
           severity: 'success',
           duration: 6000,
-        });
+        })
       } else {
         // Si la activación no se confirmó, mostrar error
-        setError('Error al confirmar la activación. Intenta de nuevo.');
+        setError('Error al confirmar la activación. Intenta de nuevo.')
       }
     } catch (error) {
-      console.error('Error verifying code:', error);
-      setError('Código incorrecto o expirado. Intenta de nuevo.');
+      console.error('Error verifying code:', error)
+      setError('Código incorrecto o expirado. Intenta de nuevo.')
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
   const handleResendCode = async () => {
-    setIsLoading(true);
-    setError('');
-    setShowCodigoEnviado(false);
+    setIsLoading(true)
+    setError('')
+    setShowCodigoEnviado(false)
 
     try {
-      console.log('Resending verification code to:', email);
+      console.log('Resending verification code to:', email)
 
       // 🔥 INTEGRACIÓN REAL: Reenviar código de activación
-      const result = await sendActivationCode(email);
+      const result = await sendActivationCode(email)
 
       if (!result.success) {
         setError(
           result.error || 'Error al reenviar el código. Intenta de nuevo.'
-        );
-        return;
+        )
+        return
       }
 
       // Mostrar código en desarrollo
       if (result.developmentCode) {
-        console.log('🔧 Development code:', result.developmentCode);
+        console.log('🔧 Development code:', result.developmentCode)
       }
 
-      setShowCodigoEnviado(true);
-      setFadeIn(true);
-      setTimer(300); // Resetear timer
+      setShowCodigoEnviado(true)
+      setFadeIn(true)
+      setTimer(300) // Resetear timer
 
       // Ocultar mensaje después de 3 segundos
       setTimeout(() => {
-        setFadeIn(false);
-        setTimeout(() => setShowCodigoEnviado(false), 400);
-      }, 3000);
+        setFadeIn(false)
+        setTimeout(() => setShowCodigoEnviado(false), 400)
+      }, 3000)
     } catch (error) {
-      console.error('Error resending code:', error);
-      setError('Error al reenviar el código. Intenta de nuevo.');
+      console.error('Error resending code:', error)
+      setError('Error al reenviar el código. Intenta de nuevo.')
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   const handleBack = () => {
-    setStep(1);
-    setCodigo(['', '', '', '', '']);
-    setError('');
-  };
+    setStep(1)
+    setCodigo(['', '', '', '', ''])
+    setError('')
+  }
 
   const handleCancel = () => {
-    setStep(1);
-    setCodigo(['', '', '', '', '']);
-    setError('');
-    onClose();
-  };
+    setStep(1)
+    setCodigo(['', '', '', '', ''])
+    setError('')
+    onClose()
+  }
 
   const handleSuccess = () => {
-    setStep(1);
-    setCodigo(['', '', '', '', '']);
-    setError('');
-    onClose();
-  };
+    setStep(1)
+    setCodigo(['', '', '', '', ''])
+    setError('')
+    onClose()
+  }
 
   return (
     <Dialog
@@ -519,5 +515,5 @@ export default function Activate({
         </Box>
       </DialogContent>
     </Dialog>
-  );
+  )
 }

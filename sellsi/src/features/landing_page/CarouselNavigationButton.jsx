@@ -2,7 +2,27 @@ import React from 'react'
 import { IconButton } from '@mui/material'
 import { ArrowForward, ArrowBack } from '@mui/icons-material'
 
-// Componente memoizado para botones de navegación de carrusel
+/**
+ * ====================================================================================
+ * CAROUSEL NAVIGATION BUTTON - BOTÓN DE NAVEGACIÓN DE CARRUSEL
+ * ============================================================================
+ *
+ * Componente UI puro para botones de navegación (anterior/siguiente) en carruseles
+ *
+ * @component
+ * @param {Object} props - Propiedades del componente
+ * @param {string} props.direction - Dirección del botón ('prev' | 'next')
+ * @param {Function} props.onClick - Función callback al hacer clic
+ * @param {Object} props.position - Posición personalizada del botón (opcional)
+ *
+ * CARACTERÍSTICAS:
+ * - Botones flotantes con posicionamiento absoluto
+ * - Iconos direccionales intuitivos (flechas)
+ * - Estilos responsivos y adaptativos
+ * - Efectos hover y transiciones suaves
+ * - Posicionamiento personalizable
+ * - Accesibilidad optimizada
+ */
 const CarouselNavigationButton = React.memo(
   ({ direction, onClick, position }) => {
     const Icon = direction === 'prev' ? ArrowBack : ArrowForward

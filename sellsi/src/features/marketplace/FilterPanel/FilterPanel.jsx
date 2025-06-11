@@ -6,12 +6,9 @@
 
 // 🔗 SUBCOMPONENTES:
 // - PriceFilter.jsx ───── Slider y campos de precio
-// - CommissionFilter.jsx ─ Slider y campos de comisión
-// - RatingFilter.jsx ──── Slider de estrellas
-// - SaleTypeFilter.jsx ── Checkboxes tipo venta
 // - AppliedFiltersDisplay.jsx ─ Chips filtros activos
 
-import React from 'react';
+import React from 'react'
 import {
   Box,
   Typography,
@@ -21,23 +18,16 @@ import {
   Checkbox,
   Tooltip,
   Grid,
-} from '@mui/material';
-import CloseIcon from '@mui/icons-material/Close';
-import ClearAllIcon from '@mui/icons-material/ClearAll'; // ✅ AGREGAR
-import FilterListIcon from '@mui/icons-material/FilterList';
-import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined'; // ✅ AGREGAR
+} from '@mui/material'
+import CloseIcon from '@mui/icons-material/Close'
+import ClearAllIcon from '@mui/icons-material/ClearAll' // ✅ AGREGAR
+import FilterListIcon from '@mui/icons-material/FilterList'
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined' // ✅ AGREGAR
 
-import PriceFilter from './components/PriceFilter';
-// import CommissionFilter from './components/CommissionFilter' // COMMENTED OUT: Commission functionality removed
-// import RatingFilter from './components/RatingFilter' // COMMENTED OUT: Rating functionality removed
-// import SaleTypeFilter from './components/SaleTypeFilter' // COMMENTED OUT: Sale Type functionality removed
-import AppliedFiltersDisplay from './components/AppliedFiltersDisplay';
-import { filterPanelStyles as styles } from '../hooks/FilterPanel/FilterPanel.styles';
-import { useProductFilters } from '../hooks/useProductFilters';
-// import {
-//   SALE_TYPES,
-//   SALE_TYPE_MESSAGES,
-// } from '../../../utils/marketplace/constants' // COMMENTED OUT: Sale Type functionality removed
+import PriceFilter from './components/PriceFilter'
+import AppliedFiltersDisplay from './components/AppliedFiltersDisplay'
+import { filterPanelStyles as styles } from '../hooks/FilterPanel/FilterPanel.styles'
+import { useProductFilters } from '../hooks/useProductFilters'
 
 const FilterPanel = ({
   filtros,
@@ -56,52 +46,29 @@ const FilterPanel = ({
     filtrosAbiertos,
     isMobileOpen,
     timestamp: new Date().toLocaleTimeString(),
-  });
-
-  const {
-    handlePrecioChange,
-    // handleComisionChange, // COMMENTED OUT: Commission functionality removed
-    // handleTipoVentaChange, // COMMENTED OUT: Sale Type functionality removed
-    handleStockChange,
-    // handleRatingChange, // COMMENTED OUT: Rating functionality removed
-  } = useProductFilters(filtros, updateFiltros);
-
+  })
+  const { handlePrecioChange, handleStockChange } = useProductFilters(
+    filtros,
+    updateFiltros
+  )
   const handleRemoveFilter = (filterType, value) => {
     switch (filterType) {
       case 'precioMin':
-        updateFiltros({ precioMin: '' });
-        break;
+        updateFiltros({ precioMin: '' })
+        break
       case 'precioMax':
-        updateFiltros({ precioMax: '' });
-        break;
-      // COMMENTED OUT: Commission functionality removed
-      // case 'comisionMin':
-      //   updateFiltros({ comisionMin: '' })
-      //   break
-      // case 'comisionMax':
-      //   updateFiltros({ comisionMax: '' })
-      //   break
-      // COMMENTED OUT: Rating functionality removed
-      // case 'ratingMin':
-      //   updateFiltros({ ratingMin: 0 })
-      //   break
-      // COMMENTED OUT: Sale Type functionality removed
-      // case 'tipoVenta':
-      //   const newTiposVenta = filtros.tiposVenta.filter(
-      //     (tipo) => tipo !== value
-      //   )
-      //   updateFiltros({ tiposVenta: newTiposVenta })
-      //   break
+        updateFiltros({ precioMax: '' })
+        break
       case 'soloConStock':
-        updateFiltros({ soloConStock: false });
-        break;
+        updateFiltros({ soloConStock: false })
+        break
       case 'negociable': // ✅ NUEVO: Resetear filtro negociable
-        updateFiltros({ negociable: 'todos' });
-        break;
+        updateFiltros({ negociable: 'todos' })
+        break
       default:
-        break;
+        break
     }
-  };
+  }
   const FilterContent = () => {
     return (
       <>
@@ -157,27 +124,11 @@ const FilterPanel = ({
             Limpiar
           </Button>
         </Box>
-
         <PriceFilter
           filtros={filtros}
           onPrecioChange={handlePrecioChange}
           styles={styles}
-        />
-
-        {/* COMMENTED OUT: Commission functionality removed */}
-        {/* <CommissionFilter
-          filtros={filtros}
-          onComisionChange={handleComisionChange}
-          styles={styles}
-        /> */}
-
-        {/* COMMENTED OUT: Rating functionality removed */}
-        {/* <RatingFilter
-          filtros={filtros}
-          onRatingChange={handleRatingChange}
-          styles={styles}
-        /> */}
-
+        />{' '}
         {/* ✅ NUEVO: Filtro de negociable */}
         <Box sx={styles.filterGroup}>
           <Typography sx={styles.sectionTitle}>🤝 Negociación</Typography>
@@ -187,9 +138,9 @@ const FilterPanel = ({
               control={
                 <Checkbox
                   checked={filtros.negociable === 'todos'}
-                  onChange={e => {
+                  onChange={(e) => {
                     if (e.target.checked) {
-                      updateFiltros({ negociable: 'todos' });
+                      updateFiltros({ negociable: 'todos' })
                     }
                   }}
                   size="small"
@@ -209,10 +160,10 @@ const FilterPanel = ({
               control={
                 <Checkbox
                   checked={filtros.negociable === 'si'}
-                  onChange={e => {
+                  onChange={(e) => {
                     updateFiltros({
                       negociable: e.target.checked ? 'si' : 'todos',
-                    });
+                    })
                   }}
                   size="small"
                 />
@@ -229,10 +180,10 @@ const FilterPanel = ({
               control={
                 <Checkbox
                   checked={filtros.negociable === 'no'}
-                  onChange={e => {
+                  onChange={(e) => {
                     updateFiltros({
                       negociable: e.target.checked ? 'no' : 'todos',
-                    });
+                    })
                   }}
                   size="small"
                 />
@@ -247,15 +198,7 @@ const FilterPanel = ({
               }}
             />
           </Box>
-        </Box>
-
-        {/* COMMENTED OUT: Sale Type functionality removed */}
-        {/* <SaleTypeFilter
-          filtros={filtros}
-          onTipoVentaChange={handleTipoVentaChange}
-          styles={styles}
-        /> */}
-
+        </Box>{' '}
         <Box sx={styles.filterGroup}>
           <Typography sx={styles.sectionTitle}>📦 Disponibilidad</Typography>
 
@@ -263,14 +206,13 @@ const FilterPanel = ({
             control={
               <Checkbox
                 checked={filtros.soloConStock}
-                onChange={e => handleStockChange(e.target.checked)}
+                onChange={(e) => handleStockChange(e.target.checked)}
                 size="small"
               />
             }
             label="Solo productos con stock"
           />
         </Box>
-
         {/* ✅ MOVER filtros activos al final */}
         <AppliedFiltersDisplay
           filtros={filtros}
@@ -279,7 +221,6 @@ const FilterPanel = ({
           onRemoveFilter={handleRemoveFilter}
           styles={styles}
         />
-
         {/* ✅ Conteo de productos al final */}
         <Box
           sx={{
@@ -295,8 +236,8 @@ const FilterPanel = ({
           </Typography>
         </Box>
       </>
-    );
-  };
+    )
+  }
 
   // Mobile version con animaciones suaves
   const MobileFilterPanel = () => {
@@ -371,8 +312,8 @@ const FilterPanel = ({
           </Box>
         </Box>
       </>
-    );
-  }; // Desktop version con animaciones suaves y posición fija
+    )
+  } // Desktop version con animaciones suaves y posición fija
   const DesktopFilterPanel = () => {
     // Configuración de posición basada en la prop filterPosition
     const positionConfig =
@@ -388,7 +329,7 @@ const FilterPanel = ({
             left: 20,
             right: 'auto',
             transform: filtrosAbiertos ? 'translateX(0)' : 'translateX(-100%)',
-          };
+          }
 
     return (
       <Box
@@ -421,8 +362,8 @@ const FilterPanel = ({
       >
         <FilterContent />
       </Box>
-    );
-  };
+    )
+  }
 
   return (
     <>
@@ -435,7 +376,7 @@ const FilterPanel = ({
         <DesktopFilterPanel />
       </Box>
     </>
-  );
-};
+  )
+}
 
-export default FilterPanel;
+export default FilterPanel

@@ -1,12 +1,41 @@
-import React from 'react';
-import { Box, Typography, Grid, Button } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
-import ProviderLogo from './ProviderLogo';
-import StatisticCard from './StatisticCard';
-import { PROVIDERS_DATA } from './constants.jsx';
+import React from 'react'
+import { Box, Typography, Grid, Button } from '@mui/material'
+import { useNavigate } from 'react-router-dom'
+import ProviderLogo from './ProviderLogo'
+import StatisticCard from './StatisticCard'
+import { PROVIDERS_DATA } from './constants.jsx'
 
+/**
+ * ============================================================================
+ * PROVIDERS SECTION - SECCIÓN "CONOCE A NUESTROS PROVEEDORES"
+ * ============================================================================
+ *
+ * Componente UI puro para mostrar la sección de proveedores destacados
+ *
+ * @component
+ * @param {Object} props - Propiedades del componente
+ * @param {Array} props.statistics - Array de estadísticas para mostrar
+ *
+ * CARACTERÍSTICAS:
+ * - Grid responsivo de logos de proveedores
+ * - Botón CTA principal para ir al marketplace
+ * - Estadísticas destacadas con datos dinámicos
+ * - Layout adaptativo mobile/desktop
+ * - Navegación programática con React Router
+ * - Componentes memoizados para performance
+ *
+ * LAYOUT:
+ * - Desktop: Botón y estadísticas flotantes arriba, grid abajo
+ * - Mobile: Solo grid de proveedores, elementos ocultos
+ * - Proveedores en grid responsivo con logos optimizados
+ *
+ * DEPENDENCIAS:
+ * - ProviderLogo: Componente para mostrar logos individuales
+ * - StatisticCard: Componente para mostrar estadísticas
+ * - PROVIDERS_DATA: Constantes con datos de proveedores
+ */
 const ProvidersSection = ({ statistics }) => {
-  const navigate = useNavigate();
+  const navigate = useNavigate()
 
   return (
     <Box
@@ -54,17 +83,17 @@ const ProvidersSection = ({ statistics }) => {
           display: {
             xs: 'none',
             sm: 'none',
-            md: 'none',
+            md: 'flex',
             lg: 'flex',
             xl: 'flex',
           },
           flexDirection: 'row',
           alignItems: 'center',
           justifyContent: 'flex-start',
-          gap: { xs: 2, sm: 4, md: 8, lg: 0, xl: 5 },
+          gap: { xs: 2, sm: 4, md: 8, lg: 25, xl: 33 },
           mb: { xs: 2, sm: 4, md: 8, lg: 12, xl: 10 },
           mt: { xs: 2, sm: 4, md: 8, lg: -18, xl: -20 },
-          ml: { xs: 0, sm: 0, md: 0, lg: 15.8, xl: 0 },
+          ml: { xs: 0, sm: 0, md: 0, lg: 0, xl: 0 },
           width: '100%',
           maxWidth: { xs: '100%', sm: '100%', md: '100%', lg: 600, xl: 700 },
           position: 'relative',
@@ -79,7 +108,7 @@ const ProvidersSection = ({ statistics }) => {
             borderRadius: '8px',
             px: { xs: 2, sm: 4, md: 8, lg: 11, xl: 12 },
             py: { xs: 2, sm: 4, md: 8, lg: 2.4, xl: 2.6 },
-            mr: { xs: 2, sm: 4, md: 8, lg: 16, xl: 10 },
+            ml: { xs: 2, sm: 4, md: 0, lg: 0, xl: 0 },
             fontSize: { lg: '1.58rem', xl: '1.7rem' },
             textTransform: 'none',
             boxShadow: '0 4px 15px rgba(25, 118, 210, 0.3)',
@@ -248,7 +277,7 @@ const ProvidersSection = ({ statistics }) => {
         </Box>
       </Box>
     </Box>
-  );
-};
+  )
+}
 
-export default ProvidersSection;
+export default ProvidersSection

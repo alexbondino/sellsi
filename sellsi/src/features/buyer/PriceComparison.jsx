@@ -1,3 +1,22 @@
+/**
+ * ============================================================================
+ * COMPONENTE PRICECOMPARISON - COMPARACIÓN DE PRECIOS
+ * ============================================================================
+ *
+ * ESTADO: POTENCIALMENTE OBSOLETO
+ *
+ * Este componente fue diseñado para mostrar comparación de precios entre
+ * diferentes proveedores. Actualmente se importa en BuyerCart.jsx pero no
+ * se utiliza en el renderizado.
+ *
+ * TODO: Revisar si este componente debe:
+ * 1. Implementarse en el carrito como funcionalidad adicional
+ * 2. Eliminarse si no se va a usar
+ * 3. Mover a una sección de comparación de productos independiente
+ *
+ * @param {string} productName - Nombre del producto a comparar
+ */
+
 import React from 'react'
 import {
   Box,

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from 'react'
 import {
   Paper,
   Grid,
@@ -16,7 +16,7 @@ import {
   MenuItem,
   Divider,
   Checkbox,
-} from '@mui/material';
+} from '@mui/material'
 import {
   Add as AddIcon,
   Remove as RemoveIcon,
@@ -27,12 +27,12 @@ import {
   LocalAtm as LocalAtmIcon,
   Warning as WarningIcon,
   LocalShipping as LocalShippingIcon,
-} from '@mui/icons-material';
-import { motion } from 'framer-motion';
-import PriceDisplay from '../../marketplace/PriceDisplay/PriceDisplay';
-import StockIndicator from '../../marketplace//StockIndicator/StockIndicator';
-import QuantitySelector from '../QuantitySelector';
-import { SHIPPING_OPTIONS } from '../../../features/marketplace/hooks/constants';
+} from '@mui/icons-material'
+import { motion } from 'framer-motion'
+import PriceDisplay from '../../marketplace/PriceDisplay/PriceDisplay'
+import StockIndicator from '../../marketplace//StockIndicator/StockIndicator'
+import { QuantitySelector } from '../../../components/shared' // ✅ Componente universal
+import { SHIPPING_OPTIONS } from '../../../features/marketplace/hooks/constants'
 
 /*
 ========== GUÍA DE IDENTIFICACIÓN DE ELEMENTOS DEL CARRITO ==========
@@ -75,8 +75,8 @@ const OptimizedImage = ({ src, alt, sx }) => {
         ...sx,
       }}
     />
-  );
-};
+  )
+}
 
 const CartItem = ({
   item,
@@ -92,23 +92,23 @@ const CartItem = ({
   isSelected,
   onToggleSelection,
 }) => {
-  const [selectedShipping, setSelectedShipping] = useState('standard');
+  const [selectedShipping, setSelectedShipping] = useState('standard')
 
   // Función para manejar el cambio de envío y calcular el precio
-  const handleShippingChange = shippingId => {
-    setSelectedShipping(shippingId);
+  const handleShippingChange = (shippingId) => {
+    setSelectedShipping(shippingId)
     if (onShippingChange) {
-      onShippingChange(item.id, shippingId);
+      onShippingChange(item.id, shippingId)
     }
-  };
+  }
 
   // Obtener el precio del envío seleccionado
   const getShippingPrice = () => {
     const selectedOption = SHIPPING_OPTIONS.find(
-      opt => opt.id === selectedShipping
-    );
-    return selectedOption ? selectedOption.price : 0;
-  };
+      (opt) => opt.id === selectedShipping
+    )
+    return selectedOption ? selectedOption.price : 0
+  }
   return (
     <motion.div
       variants={itemVariants}
@@ -340,7 +340,9 @@ const CartItem = ({
               >
                 <QuantitySelector
                   value={item.quantity}
-                  onChange={newQuantity => updateQuantity(item.id, newQuantity)}
+                  onChange={(newQuantity) =>
+                    updateQuantity(item.id, newQuantity)
+                  }
                   min={1}
                   max={item.maxStock}
                   showStockLimit={true}
@@ -479,7 +481,7 @@ const CartItem = ({
                 {' '}
                 <Select
                   value={selectedShipping}
-                  onChange={e => handleShippingChange(e.target.value)}
+                  onChange={(e) => handleShippingChange(e.target.value)}
                   variant="outlined"
                   MenuProps={{
                     PaperProps: {
@@ -520,7 +522,7 @@ const CartItem = ({
                     },
                   }}
                 >
-                  {SHIPPING_OPTIONS.map(option => (
+                  {SHIPPING_OPTIONS.map((option) => (
                     <MenuItem key={option.id} value={option.id}>
                       <Box
                         sx={{
@@ -557,11 +559,12 @@ const CartItem = ({
                   fontSize: '1rem', // Aumentado a 1rem para mejor visibilidad
                 }}
               >
-                {SHIPPING_OPTIONS.find(opt => opt.id === selectedShipping)
+                {SHIPPING_OPTIONS.find((opt) => opt.id === selectedShipping)
                   ?.price > 0
                   ? formatPrice(
-                      SHIPPING_OPTIONS.find(opt => opt.id === selectedShipping)
-                        ?.price
+                      SHIPPING_OPTIONS.find(
+                        (opt) => opt.id === selectedShipping
+                      )?.price
                     )
                   : 'Gratis'}
               </Typography>
@@ -570,7 +573,7 @@ const CartItem = ({
         </Grid>{' '}
       </Paper>
     </motion.div>
-  );
-};
+  )
+}
 
-export default CartItem;
+export default CartItem

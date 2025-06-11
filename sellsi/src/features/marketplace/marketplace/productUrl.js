@@ -34,13 +34,13 @@ export const generateProductSlug = (product) => {
 }
 
 /**
- * Generates a complete URL for product ficha tecnica
+ * Generates a complete URL for product Technical Specs
  * @param {Object} product - The product object
  * @returns {string} - Complete URL path
  */
 export const generateProductUrl = (product) => {
   const slug = generateProductSlug(product)
-  return `/fichatecnica/${slug}`
+  return `/technicalspecs/${slug}`
 }
 
 /**
