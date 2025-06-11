@@ -11,7 +11,7 @@ import {
 } from '@mui/material'
 import { ArrowBack, Home, StorefrontOutlined } from '@mui/icons-material'
 import ProductPageView from '../ProductPageView/ProductPageView'
-import { useTechnicalSpecs } from './hooks/useTechincalSpecs'
+import { useTechnicalSpecs } from './hooks/useTechnicalSpecs'
 
 /**
  * ============================================================================
