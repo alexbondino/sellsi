@@ -15,6 +15,8 @@ import TopBar from './features/layout/TopBar'
 import BottomBar from './features/layout/BottomBar'
 import Home from './features/landing_page/Home'
 import ProviderHome from './features/supplier/home/ProviderHome'
+import MyProducts from './features/supplier/pages/MyProducts'
+import AddProduct from './features/supplier/pages/AddProduct'
 import TechnicalSpecs from './features/marketplace/view_page/TechnicalSpecs'
 import Marketplace from './features/marketplace/Marketplace'
 import MarketplaceBuyer from './features/buyer/MarketplaceBuyer'
@@ -26,6 +28,7 @@ import Register from './features/register/Register'
 import PrivateRoute from './features/auth/PrivateRoute'
 import { BannerProvider, useBanner } from './features/ui/BannerContext'
 import Banner from './features/ui/Banner'
+import { Toaster } from 'react-hot-toast'
 import { supabase } from '../../src/services/supabase'
 
 // Contenido principal que depende de la ruta
@@ -124,12 +127,28 @@ function AppContent({ mensaje }) {
             element={<TechnicalSpecs />}
           />
           <Route path="/login" element={<Login />} />
-          <Route path="/crear-cuenta" element={<Register />} />
+          <Route path="/crear-cuenta" element={<Register />} />{' '}
           <Route
             path="/supplier/home"
             element={
               <PrivateRoute requiredAccountType="proveedor">
                 <ProviderHome />
+              </PrivateRoute>
+            }
+          />{' '}
+          <Route
+            path="/supplier/myproducts"
+            element={
+              <PrivateRoute requiredAccountType="proveedor">
+                <MyProducts />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/supplier/addproduct"
+            element={
+              <PrivateRoute requiredAccountType="proveedor">
+                <AddProduct />
               </PrivateRoute>
             }
           />
@@ -191,11 +210,32 @@ function App() {
             },
           },
         }}
-      />
+      />{' '}
       <BannerProvider>
         <BrowserRouter>
           <AppContent mensaje={mensaje} />
         </BrowserRouter>
+        <Toaster
+          position="top-right"
+          toastOptions={{
+            duration: 4000,
+            style: {
+              background: '#333',
+              color: '#fff',
+              borderRadius: '8px',
+            },
+            success: {
+              style: {
+                background: '#4caf50',
+              },
+            },
+            error: {
+              style: {
+                background: '#f44336',
+              },
+            },
+          }}
+        />
       </BannerProvider>
     </ThemeProvider>
   )
