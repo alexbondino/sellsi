@@ -1,9 +1,7 @@
-// 📁 pages/ProviderHome.jsx
-import React from 'react';
 import { Box, Grid, Button, Container, ThemeProvider } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
-import { useSupplierDashboard } from '../hooks/useSupplierDashboard';
-import DashboardSummary from './DashboardSummary';
+
+import { useSupplierDashboard, DashboardSummary } from '../index';
 import MonthlySalesChart from '../../ui/graphs/BarChart';
 import SidebarProvider from '../../layout/SideBar';
 import ProviderTopBar from '../../layout/ProviderTopBar';
@@ -11,6 +9,7 @@ import { dashboardTheme } from '../../../styles/dashboardTheme';
 
 const ProviderHome = () => {
   const supplierId = localStorage.getItem('supplierid');
+
   const {
     products,
     sales,
@@ -19,29 +18,27 @@ const ProviderHome = () => {
     monthlyData,
     totalSales,
   } = useSupplierDashboard(supplierId);
+
   const productsOutOfStock = productStocks.filter(
     p => p.productqty === 0
   ).length;
 
   return (
     <ThemeProvider theme={dashboardTheme}>
-      {/* TopBar específico para Provider */}
       <ProviderTopBar />
-      <SidebarProvider /> {/* Contenido principal con el tema aplicado */}
+      <SidebarProvider />
       <Box
         sx={{
           marginLeft: '250px',
           backgroundColor: 'background.default',
           minHeight: '100vh',
-          pt: { xs: 9, md: 10 }, // Padding-top para compensar la TopBar fija + contenido
-          px: 3, // Solo padding horizontal
-          pb: 3, // Solo padding bottom
+          pt: { xs: 9, md: 10 },
+          px: 3,
+          pb: 3,
         }}
       >
         <Container maxWidth="xl" disableGutters>
-          {' '}
           <Grid container spacing={3}>
-            {/* Contenido principal (Dashboard + Chart + Button) - Ahora ocupa todo el ancho */}
             <Grid item xs={12}>
               <Box sx={{ mb: 4 }}>
                 <DashboardSummary
@@ -52,7 +49,6 @@ const ProviderHome = () => {
                 />
               </Box>
 
-              {/* Botón Nuevo Producto */}
               <Box sx={{ mb: 4 }}>
                 <Button
                   variant="contained"
@@ -77,7 +73,6 @@ const ProviderHome = () => {
                 </Button>
               </Box>
 
-              {/* Gráfico de Ventas */}
               <Box>
                 <MonthlySalesChart data={monthlyData} />
               </Box>
