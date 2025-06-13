@@ -39,7 +39,7 @@ import SupplierProductCard from '../components/SupplierProductCard'
 import ConfirmationModal, { MODAL_TYPES } from '../../ui/ConfirmationModal'
 
 // Hooks y stores
-import useSupplierProductsStore from '../hooks/useSupplierProductsStore'
+import useSupplierProductsStore from '../home/hooks/useSupplierProductsStore'
 import { dashboardTheme } from '../../../styles/dashboardTheme'
 import { formatPrice } from '../../marketplace/utils/formatters'
 

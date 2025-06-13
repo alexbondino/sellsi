@@ -42,7 +42,7 @@ import ImageUploader from '../components/ImageUploader'
 import PDFUploader from '../components/PDFUploader'
 
 // Hooks y stores
-import useSupplierProductsStore from '../hooks/useSupplierProductsStore'
+import useSupplierProductsStore from '../home/hooks/useSupplierProductsStore'
 import { dashboardTheme } from '../../../styles/dashboardTheme'
 import { formatPrice } from '../../marketplace/utils/formatters'
 
