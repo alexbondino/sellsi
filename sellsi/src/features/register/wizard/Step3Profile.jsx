@@ -5,7 +5,7 @@ import {
   LogoUploader,
   CountrySelector,
 } from '../../landing_page/hooks'
-import { supabase } from '../../../../../src/services/supabase'
+import { supabase } from '../../../services/supabase'
 
 const Step3Profile = ({
   accountType,

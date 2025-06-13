@@ -11,7 +11,7 @@ import {
 import MenuIcon from '@mui/icons-material/Menu'
 import AccountCircleIcon from '@mui/icons-material/AccountCircle'
 
-import { supabase } from '../../../../src/services/supabase'
+import { supabase } from '../../services/supabase'
 
 import Login from '../login/Login'
 import Register from '../register/Register'
@@ -211,38 +211,47 @@ export default function BaseTopBar({
         </Box>{' '}
         {/* Botones de autenticación mantenidos a la derecha */}
         <Box sx={{ display: { xs: 'none', md: 'flex' }, gap: 2 }}>
-          {!isLoggedIn && (
-            <>
+          {authButtons.login ? (
+            <Button
+              onClick={authButtons.login.onClick}
+              sx={authButtons.login.customStyles}
+            >
+              {authButtons.login.label}
+            </Button>
+          ) : (
+            !isLoggedIn && (
               <Button
                 onClick={handleOpenLogin}
-                variant="contained" // Cambiar a contained para fondo azul
+                variant="contained"
                 sx={{
-                  backgroundColor: 'primary.main', // Fondo azul primary
+                  backgroundColor: 'primary.main',
                   color: 'white',
                   textTransform: 'none',
                   fontSize: { xs: 14, md: 16 },
                   fontWeight: 500,
-                  '&:hover': {
-                    backgroundColor: 'primary.dark', // Azul más oscuro al hover
-                  },
-                  // Remover efectos de focus/active que causan bordes
-                  '&:focus': {
-                    outline: 'none',
-                    boxShadow: 'none',
-                  },
-                  '&:active': {
-                    outline: 'none',
-                    boxShadow: 'none',
-                  },
-                  '&.Mui-focusVisible': {
-                    outline: 'none',
-                    boxShadow: 'none',
-                  },
                 }}
               >
-                {authButtons.login || 'Iniciar sesión'}
+                Iniciar sesión
               </Button>
-
+            )
+          )}
+          {authButtons.register ? (
+            typeof authButtons.register.label?.type === 'function' &&
+            authButtons.register.label.type.name === 'IconButton' ? (
+              React.cloneElement(authButtons.register.label, {
+                onClick: authButtons.register.onClick,
+                sx: authButtons.register.customStyles,
+              })
+            ) : (
+              <Button
+                onClick={authButtons.register.onClick}
+                sx={authButtons.register.customStyles}
+              >
+                {authButtons.register.label}
+              </Button>
+            )
+          ) : (
+            !isLoggedIn && (
               <Button
                 onClick={handleOpenRegister}
                 variant="outlined"
@@ -252,31 +261,13 @@ export default function BaseTopBar({
                   textTransform: 'none',
                   fontSize: { xs: 14, md: 16 },
                   fontWeight: 500,
-                  '&:hover': {
-                    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                    borderColor: 'white',
-                  },
-                  // Remover efectos de focus/active que causan bordes
-                  '&:focus': {
-                    outline: 'none',
-                    boxShadow: 'none',
-                  },
-                  '&:active': {
-                    outline: 'none',
-                    boxShadow: 'none',
-                  },
-                  '&.Mui-focusVisible': {
-                    outline: 'none',
-                    boxShadow: 'none',
-                  },
                 }}
               >
-                {authButtons.register || 'Registrarse'}
+                Registrarse
               </Button>
-            </>
+            )
           )}
-
-          {isLoggedIn && (
+          {!authButtons.register && isLoggedIn && (
             <IconButton
               onClick={openProfileMenu}
               sx={{
@@ -284,7 +275,6 @@ export default function BaseTopBar({
                 '&:hover': {
                   backgroundColor: 'rgba(255, 255, 255, 0.1)',
                 },
-                // Remover efectos de focus/active que causan bordes
                 '&:focus': {
                   outline: 'none',
                   boxShadow: 'none',
@@ -343,17 +333,14 @@ export default function BaseTopBar({
             </MenuItem>
           ))}
 
-          {!isLoggedIn && (
-            <>
-              <MenuItem onClick={handleOpenLogin}>
-                {authButtons.login || 'Iniciar sesión'}
-              </MenuItem>
-              <MenuItem onClick={handleOpenRegister}>
-                {authButtons.register || 'Registrarse'}
-              </MenuItem>
-            </>
-          )}
-
+          {!isLoggedIn && [
+            <MenuItem onClick={handleOpenLogin} key="login">
+              {authButtons.login || 'Iniciar sesión'}
+            </MenuItem>,
+            <MenuItem onClick={handleOpenRegister} key="register">
+              {authButtons.register || 'Registrarse'}
+            </MenuItem>,
+          ]}
           {isLoggedIn && (
             <MenuItem onClick={handleLogout}>Cerrar sesión</MenuItem>
           )}

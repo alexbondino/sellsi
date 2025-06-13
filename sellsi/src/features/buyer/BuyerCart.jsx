@@ -30,7 +30,6 @@ import { useInView } from 'react-intersection-observer'
 import confetti from 'canvas-confetti'
 import debounce from 'lodash.debounce'
 import SidebarBuyer from '../layout/SidebarBuyer'
-import MarketplaceTopBar from '../layout/MarketplaceTopBar'
 import useCartStore from './hooks/cartStore'
 import {
   SHIPPING_OPTIONS,
@@ -571,7 +570,6 @@ const BuyerCart = () => {
     return (
       <Box>
         <Toaster position="top-right" />
-        <MarketplaceTopBar />
         <Box sx={{ display: 'flex' }}>
           <SidebarBuyer />{' '}
           <Box
@@ -613,7 +611,6 @@ const BuyerCart = () => {
     <Box>
       <Toaster position="top-right" />
       <ConfettiEffect trigger={showConfetti} />
-      <MarketplaceTopBar />
 
       <Box sx={{ display: 'flex' }}>
         <SidebarBuyer />{' '}

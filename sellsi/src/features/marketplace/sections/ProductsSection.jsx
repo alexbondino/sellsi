@@ -10,11 +10,19 @@
 // - Grid de ProductCard
 // - Estado vacío con botón "Limpiar filtros"
 
-import React from 'react';
-import { Box, Typography, IconButton, Paper, Button } from '@mui/material';
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import ProductCard from '../ProductCard/ProductCard';
-import useCartStore from '../../../features/buyer/hooks/cartStore';
+import React from 'react'
+import {
+  Box,
+  Typography,
+  IconButton,
+  Paper,
+  Button,
+  CircularProgress,
+} from '@mui/material'
+import ArrowBackIcon from '@mui/icons-material/ArrowBack'
+import ProductCard from '../ProductCard/ProductCard'
+import useCartStore from '../../../features/buyer/hooks/cartStore'
+import LoadingOverlay from '../../ui/LoadingOverlay'
 
 /**
  * Componente que maneja la sección de productos, título y grid
@@ -29,14 +37,13 @@ const ProductsSection = ({
   resetFiltros,
   hasSidebar = false, // Nueva prop para detectar si hay sidebar
   titleMarginLeft = { xs: 0, sm: 0, md: 0, lg: 0, xl: 0 }, // Nueva prop para margen del título
+  loading,
+  error,
 }) => {
   // Hook para usar el store del carrito
-  const addItem = useCartStore(state => state.addItem);
-
+  const addItem = useCartStore((state) => state.addItem)
   // Función para manejar agregar al carrito
-  const handleAddToCart = producto => {
-    console.log('Producto agregado al carrito:', producto);
-
+  const handleAddToCart = (producto) => {
     // Convertir la estructura del producto al formato esperado por el store
     const productForCart = {
       id: producto.id,
@@ -50,12 +57,13 @@ const ProductsSection = ({
       discount: producto.descuento,
       rating: producto.rating,
       sales: producto.ventas,
-    };
+    }
 
     // Llamar la función addItem del store con la cantidad seleccionada
-    const quantity = producto.cantidadSeleccionada || 1;
-    addItem(productForCart, quantity);
-  };
+    const quantity = producto.cantidadSeleccionada || 1
+    addItem(productForCart, quantity)
+  }
+
   return (
     <Box
       sx={{
@@ -66,7 +74,6 @@ const ProductsSection = ({
         px: { xs: 1, md: 3 },
       }}
     >
-      {' '}
       <Box
         sx={{
           width: '100%',
@@ -129,13 +136,28 @@ const ProductsSection = ({
           </Typography>
         </Box>{' '}
         {/* ✅ ÁREA DE PRODUCTOS centrada con márgenes automáticos */}
-        <Box
-          sx={{
-            width: '100%',
-          }}
-        >
-          {/* Grid de productos o mensaje de no encontrados */}
-          {productosOrdenados.length === 0 ? (
+        <Box sx={{ width: '100%' }}>
+          {loading ? (
+            <LoadingOverlay message="Cargando productos..." height={300} />
+          ) : error ? (
+            <Paper
+              sx={{
+                p: 6,
+                textAlign: 'center',
+                bgcolor: '#fff',
+                borderRadius: 3,
+                border: '1px solid #e2e8f0',
+              }}
+            >
+              <Typography variant="h6" color="error" sx={{ mb: 2 }}>
+                Error al cargar productos
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                {' '}
+                {error}
+              </Typography>
+            </Paper>
+          ) : productosOrdenados.length === 0 ? (
             <Paper
               sx={{
                 p: 6,
@@ -150,12 +172,8 @@ const ProductsSection = ({
               </Typography>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
                 Intenta ajustar los filtros o realiza una búsqueda diferente
-              </Typography>
-              <Button
-                variant="outlined"
-                onClick={resetFiltros}
-                sx={{ borderRadius: 2, px: 3 }}
-              >
+              </Typography>{' '}
+              <Button variant="outlined" onClick={resetFiltros} sx={{ mt: 2 }}>
                 Limpiar filtros
               </Button>
             </Paper>
@@ -175,7 +193,7 @@ const ProductsSection = ({
                 justifyItems: 'center', // ✅ AGREGAR: Centrar cada producto
               }}
             >
-              {productosOrdenados.map(producto => (
+              {productosOrdenados.map((producto) => (
                 <Box
                   key={producto.id}
                   sx={{
@@ -187,21 +205,20 @@ const ProductsSection = ({
                   <ProductCard
                     producto={producto}
                     onAddToCart={handleAddToCart}
-                    onViewDetails={producto => {
-                      console.log('Ver detalles del producto:', producto);
+                    onViewDetails={(producto) => {
                       // Aquí puedes agregar la lógica para ver detalles
                     }}
                   />
                 </Box>
               ))}
             </Box>
-          )}{' '}
+          )}
         </Box>
       </Box>
     </Box>
-  );
-};
+  )
+}
 
-ProductsSection.displayName = 'ProductsSection';
+ProductsSection.displayName = 'ProductsSection'
 
-export default ProductsSection;
+export default ProductsSection

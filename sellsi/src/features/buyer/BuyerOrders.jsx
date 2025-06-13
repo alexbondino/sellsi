@@ -1,7 +1,6 @@
 import React from 'react'
 import { Box, Typography, Container, Paper, Chip } from '@mui/material'
 import SidebarBuyer from '../layout/SidebarBuyer'
-import MarketplaceTopBar from '../layout/MarketplaceTopBar'
 
 const BuyerOrders = () => {
   // ============================================================================
@@ -62,9 +61,6 @@ const BuyerOrders = () => {
   // ============================================================================
   return (
     <Box>
-      {/* TopBar específico para Marketplace */}
-      <MarketplaceTopBar />
-
       <Box sx={{ display: 'flex' }}>
         <SidebarBuyer />
 

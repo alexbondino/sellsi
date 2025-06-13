@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { supabase } from '../../../../../src/services/supabase'
+import { supabase } from '../../../services/supabase'
 
 export const useSupplierDashboard = () => {
   const [products, setProducts] = useState([])

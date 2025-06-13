@@ -8,7 +8,7 @@ import {
   LinearProgress,
 } from '@mui/material'
 import SidebarBuyer from '../layout/SidebarBuyer'
-import MarketplaceTopBar from '../layout/MarketplaceTopBar'
+// import MarketplaceTopBar from '../layout/MarketplaceTopBar' // Eliminado
 import StatCard from './components/StatCard'
 
 const BuyerPerformance = () => {
@@ -77,152 +77,148 @@ const BuyerPerformance = () => {
   // ============================================================================
   return (
     <Box>
-      {/* TopBar específico para Marketplace */}
-      <MarketplaceTopBar />
-
-      <Box sx={{ display: 'flex' }}>
-        <SidebarBuyer />
-
-        <Box
-          component="main"
-          sx={{
-            flexGrow: 1,
-            ml: '250px',
-            p: 3,
-            backgroundColor: '#f8fafc',
-            minHeight: '100vh',
-          }}
-        >
-          <Container maxWidth="lg">
-            <Typography
-              variant="h4"
-              component="h1"
-              sx={{ mb: 4, fontWeight: 'bold' }}
-            >
-              Mi Performance
+      {/* <MarketplaceTopBar /> */}{' '}
+      {/* Eliminado, ahora la topbar se maneja globalmente en App.jsx */}
+      <SidebarBuyer />
+      <Box
+        component="main"
+        sx={{
+          flexGrow: 1,
+          ml: '250px',
+          p: 3,
+          backgroundColor: '#f8fafc',
+          minHeight: '100vh',
+        }}
+      >
+        <Container maxWidth="lg">
+          <Typography
+            variant="h4"
+            component="h1"
+            sx={{ mb: 4, fontWeight: 'bold' }}
+          >
+            Mi Performance
+          </Typography>
+          {/* Estadísticas principales */}
+          <Grid container spacing={3} sx={{ mb: 4 }}>
+            <Grid item xs={12} sm={6} md={3}>
+              <StatCard
+                title="Total Compras"
+                value={performanceData.totalPurchases}
+                subtitle="Pedidos realizados"
+                color="primary"
+              />
+            </Grid>
+            <Grid item xs={12} sm={6} md={3}>
+              <StatCard
+                title="Gastado Total"
+                value={performanceData.totalSpent}
+                subtitle="En todas las compras"
+                color="success"
+              />
+            </Grid>
+            <Grid item xs={12} sm={6} md={3}>
+              <StatCard
+                title="Promedio por Pedido"
+                value={performanceData.averageOrderValue}
+                subtitle="Valor medio"
+                color="info"
+              />
+            </Grid>
+            <Grid item xs={12} sm={6} md={3}>
+              <StatCard
+                title="Tasa de Completado"
+                value={`${performanceData.completionRate}%`}
+                subtitle="Pedidos finalizados"
+                color="warning"
+              />
+            </Grid>
+          </Grid>
+          {/* Estado de pedidos */}
+          <Paper sx={{ p: 3, mb: 4, borderRadius: 2 }}>
+            <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 3 }}>
+              Estado de Pedidos
             </Typography>
-            {/* Estadísticas principales */}
-            <Grid container spacing={3} sx={{ mb: 4 }}>
-              <Grid item xs={12} sm={6} md={3}>
-                <StatCard
-                  title="Total Compras"
-                  value={performanceData.totalPurchases}
-                  subtitle="Pedidos realizados"
-                  color="primary"
-                />
-              </Grid>
-              <Grid item xs={12} sm={6} md={3}>
-                <StatCard
-                  title="Gastado Total"
-                  value={performanceData.totalSpent}
-                  subtitle="En todas las compras"
+            <Grid container spacing={3}>
+              <Grid item xs={12} sm={6}>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                  <Typography variant="body1" sx={{ flexGrow: 1 }}>
+                    Pedidos Completados
+                  </Typography>
+                  <Typography
+                    variant="h6"
+                    sx={{ fontWeight: 'bold', color: 'success.main' }}
+                  >
+                    {performanceData.completedOrders}
+                  </Typography>
+                </Box>
+                <LinearProgress
+                  variant="determinate"
+                  value={
+                    (performanceData.completedOrders /
+                      performanceData.totalPurchases) *
+                    100
+                  }
+                  sx={{ height: 8, borderRadius: 4 }}
                   color="success"
                 />
               </Grid>
-              <Grid item xs={12} sm={6} md={3}>
-                <StatCard
-                  title="Promedio por Pedido"
-                  value={performanceData.averageOrderValue}
-                  subtitle="Valor medio"
-                  color="info"
-                />
-              </Grid>
-              <Grid item xs={12} sm={6} md={3}>
-                <StatCard
-                  title="Tasa de Completado"
-                  value={`${performanceData.completionRate}%`}
-                  subtitle="Pedidos finalizados"
+              <Grid item xs={12} sm={6}>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                  <Typography variant="body1" sx={{ flexGrow: 1 }}>
+                    Pedidos Pendientes
+                  </Typography>
+                  <Typography
+                    variant="h6"
+                    sx={{ fontWeight: 'bold', color: 'warning.main' }}
+                  >
+                    {performanceData.pendingOrders}
+                  </Typography>
+                </Box>
+                <LinearProgress
+                  variant="determinate"
+                  value={
+                    (performanceData.pendingOrders /
+                      performanceData.totalPurchases) *
+                    100
+                  }
+                  sx={{ height: 8, borderRadius: 4 }}
                   color="warning"
                 />
               </Grid>
             </Grid>
-            {/* Estado de pedidos */}
-            <Paper sx={{ p: 3, mb: 4, borderRadius: 2 }}>
-              <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 3 }}>
-                Estado de Pedidos
-              </Typography>
-              <Grid container spacing={3}>
-                <Grid item xs={12} sm={6}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                    <Typography variant="body1" sx={{ flexGrow: 1 }}>
-                      Pedidos Completados
+          </Paper>
+          {/* Categorías favoritas */}
+          <Paper sx={{ p: 3, borderRadius: 2 }}>
+            <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 3 }}>
+              Categorías Favoritas
+            </Typography>
+            <Box>
+              {performanceData.topCategories.map((category, index) => (
+                <Box key={index} sx={{ mb: 3 }}>
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      mb: 1,
+                    }}
+                  >
+                    <Typography variant="body1" sx={{ fontWeight: 'medium' }}>
+                      {category.name}
                     </Typography>
-                    <Typography
-                      variant="h6"
-                      sx={{ fontWeight: 'bold', color: 'success.main' }}
-                    >
-                      {performanceData.completedOrders}
-                    </Typography>
-                  </Box>
-                  <LinearProgress
-                    variant="determinate"
-                    value={
-                      (performanceData.completedOrders /
-                        performanceData.totalPurchases) *
-                      100
-                    }
-                    sx={{ height: 8, borderRadius: 4 }}
-                    color="success"
-                  />
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                    <Typography variant="body1" sx={{ flexGrow: 1 }}>
-                      Pedidos Pendientes
-                    </Typography>
-                    <Typography
-                      variant="h6"
-                      sx={{ fontWeight: 'bold', color: 'warning.main' }}
-                    >
-                      {performanceData.pendingOrders}
+                    <Typography variant="body2" color="text.secondary">
+                      {category.count} compras ({category.percentage}%)
                     </Typography>
                   </Box>
                   <LinearProgress
                     variant="determinate"
-                    value={
-                      (performanceData.pendingOrders /
-                        performanceData.totalPurchases) *
-                      100
-                    }
-                    sx={{ height: 8, borderRadius: 4 }}
-                    color="warning"
+                    value={category.percentage}
+                    sx={{ height: 6, borderRadius: 3 }}
                   />
-                </Grid>
-              </Grid>
-            </Paper>
-            {/* Categorías favoritas */}
-            <Paper sx={{ p: 3, borderRadius: 2 }}>
-              <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 3 }}>
-                Categorías Favoritas
-              </Typography>
-              <Box>
-                {performanceData.topCategories.map((category, index) => (
-                  <Box key={index} sx={{ mb: 3 }}>
-                    <Box
-                      sx={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        mb: 1,
-                      }}
-                    >
-                      <Typography variant="body1" sx={{ fontWeight: 'medium' }}>
-                        {category.name}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        {category.count} compras ({category.percentage}%)
-                      </Typography>
-                    </Box>
-                    <LinearProgress
-                      variant="determinate"
-                      value={category.percentage}
-                      sx={{ height: 6, borderRadius: 3 }}
-                    />
-                  </Box>
-                ))}
-              </Box>
-            </Paper>{' '}
-          </Container>
-        </Box>
+                </Box>
+              ))}
+            </Box>
+          </Paper>{' '}
+        </Container>
       </Box>
     </Box>
   )

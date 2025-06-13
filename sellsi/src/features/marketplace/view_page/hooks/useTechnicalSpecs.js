@@ -1,6 +1,12 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { PRODUCTOS } from '../../products'
+import { createClient } from '@supabase/supabase-js'
+import { extractProductIdFromSlug } from '../../marketplace/productUrl'
+
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
 /**
  * Custom hook para manejar la lógica de negocio del componente TechnicalSpecs
@@ -88,31 +94,107 @@ export const useTechnicalSpecs = () => {
   const originRoute = getOriginRoute()
 
   useEffect(() => {
+    let isMounted = true
     // Guardar el origen para futura referencia
     saveOriginRoute(originRoute)
 
-    // Si viene del state, también guardarlo inmediatamente en localStorage
     if (location.state?.from) {
       localStorage.setItem('marketplace_origin', location.state.from)
     }
 
     // Extraer el ID del producto del slug
-    // El slug tiene formato: nombredelproducto-ID
-    if (productSlug) {
-      const slugParts = productSlug.split('-')
-      const productId = slugParts[slugParts.length - 1]
-
-      // Buscar el producto por ID
-      const foundProduct = PRODUCTOS.find((p) => p.id.toString() === productId)
-
-      if (foundProduct) {
-        setProduct(foundProduct)
+    const fetchProduct = async () => {
+      if (productSlug) {
+        const productId = extractProductIdFromSlug(productSlug)
+        // Buscar el producto por ID en los mocks
+        let foundProduct = PRODUCTOS.find((p) => p.id.toString() === productId)
+        if (foundProduct) {
+          if (isMounted) setProduct(foundProduct)
+          if (isMounted) setLoading(false)
+        } else {
+          // Buscar en Supabase (producto, priceTiers, imágenes, especificaciones)
+          const [
+            { data: product, error: prodError },
+            { data: tiers },
+            { data: images },
+            { data: specs },
+          ] = await Promise.all([
+            supabase
+              .from('products')
+              .select('*')
+              .eq('productid', productId)
+              .eq('is_active', true)
+              .single(),
+            supabase
+              .from('product_price_tiers')
+              .select('*')
+              .eq('product_id', productId),
+            supabase
+              .from('product_images')
+              .select('*')
+              .eq('product_id', productId),
+            supabase
+              .from('product_specifications')
+              .select('*')
+              .eq('product_id', productId),
+          ])
+          if (product) {
+            // Obtener nombre del proveedor
+            let proveedorNombre = product.supplier_id
+            const { data: userData } = await supabase
+              .from('users')
+              .select('user_nm')
+              .eq('user_id', product.supplier_id)
+              .single()
+            if (userData && userData.user_nm) {
+              proveedorNombre = userData.user_nm
+            }
+            foundProduct = {
+              id: product.productid,
+              nombre: product.productnm,
+              proveedor: proveedorNombre,
+              imagen: product.image_url,
+              precio: product.price,
+              precioOriginal: product.precioOriginal || null,
+              descuento: product.descuento || 0,
+              categoria: product.category,
+              tipo: product.product_type || 'nuevo',
+              tipoVenta: product.tipoVenta || 'directa',
+              rating: product.rating || 0,
+              ventas: product.ventas || 0,
+              stock: product.productqty,
+              compraMinima: product.minimum_purchase,
+              negociable: product.negociable,
+              descripcion: product.description,
+              priceTiers: tiers || [],
+              imagenes: images || [],
+              specifications: specs || [],
+              is_active: product.is_active,
+            }
+            if (isMounted) setProduct(foundProduct)
+            if (isMounted) setLoading(false)
+            console.log('🟢 Producto encontrado en Supabase:', foundProduct)
+          } else {
+            if (isMounted) setProduct(null)
+            if (isMounted) setLoading(false)
+            console.warn(
+              '🔴 Producto NO encontrado en Supabase:',
+              productId,
+              prodError
+            )
+            setTimeout(() => {
+              if (isMounted) navigate(originRoute, { replace: true })
+            }, 1200)
+          }
+        }
       } else {
-        // Si no se encuentra el producto, redirigir al origen
-        navigate(originRoute, { replace: true })
+        if (isMounted) setLoading(false)
       }
     }
-    setLoading(false)
+    fetchProduct()
+    return () => {
+      isMounted = false
+    }
   }, [productSlug, navigate, originRoute, location.state])
 
   // ============================================================================

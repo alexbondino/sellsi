@@ -1,5 +1,5 @@
 // uploadService.js - Servicio optimizado para uploads a Supabase Storage
-import { supabase } from '../../../src/services/supabase.js'
+import { supabase } from './supabase.js'
 
 /**
  * Servicio optimizado para subir archivos PDF a Supabase Storage

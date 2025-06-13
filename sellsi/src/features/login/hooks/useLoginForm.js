@@ -1,6 +1,6 @@
 import { useReducer } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { supabase } from '../../../../../src/services/supabase'
+import { supabase } from '../../../services/supabase'
 
 const initialState = {
   correo: '',
@@ -194,7 +194,11 @@ export const useLoginForm = () => {
       }
 
       onClose()
-      navigate('/supplier/home')
+      if (perfil.main_supplier) {
+        navigate('/supplier/home')
+      } else {
+        navigate('/buyer/marketplace')
+      }
     } catch (error) {
       console.error('Error en login:', error)
       dispatch({

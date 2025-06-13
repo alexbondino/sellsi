@@ -5,13 +5,13 @@
 // - Agregar nueva funcionalidad
 // - Cambiar props que se pasan a las secciones
 
-import { useState, useCallback, useMemo } from 'react';
-import { useTheme } from '@mui/material';
+import { useState, useCallback, useMemo } from 'react'
+import { useTheme } from '@mui/material'
 
 // Importar los hooks existentes
-import { useMarketplaceState } from './hooks/useMarketplaceState';
-import { useProductSorting } from './hooks/useProductSorting';
-import { useScrollBehavior } from './hooks/useScrollBehavior';
+import { useMarketplaceState } from './hooks/useMarketplaceState'
+import { useProductSorting } from './hooks/useProductSorting'
+import { useScrollBehavior } from './hooks/useScrollBehavior'
 
 /**
  * Hook centralizado que consolida toda la lógica de Marketplace
@@ -41,8 +41,8 @@ const useMarketplaceLogic = (options = {}) => {
       lg: 0,
       xl: 0,
     },
-  } = options; // Nueva opción para detectar si hay sidebar y márgenes personalizados
-  const theme = useTheme();
+  } = options // Nueva opción para detectar si hay sidebar y márgenes personalizados
+  const theme = useTheme()
 
   // ===== CONSOLIDAR HOOKS EXISTENTES =====
   // Estados del marketplace usando el hook personalizado
@@ -59,6 +59,8 @@ const useMarketplaceLogic = (options = {}) => {
     precioRango,
     comisionRango,
     categorias,
+    loading, // <-- AGREGADO
+    error, // <-- AGREGADO
     setSeccionActiva,
     setBusqueda,
     setCategoriaSeleccionada,
@@ -70,7 +72,7 @@ const useMarketplaceLogic = (options = {}) => {
     resetFiltros,
     toggleCategoria,
     handleTipoVentaChange,
-  } = useMarketplaceState();
+  } = useMarketplaceState()
 
   // Hook para opciones de ordenamiento
   const {
@@ -78,27 +80,27 @@ const useMarketplaceLogic = (options = {}) => {
     setOrdenamiento: setCurrentOrdenamiento,
     productosOrdenados,
     sortOptions: currentSortOptions,
-  } = useProductSorting(productosFiltrados);
+  } = useProductSorting(productosFiltrados)
 
   // Hook para comportamiento de scroll
-  const { shouldShowSearchBar } = useScrollBehavior();
+  const { shouldShowSearchBar } = useScrollBehavior()
 
   // ===== ESTADOS LOCALES PARA UI =====
-  const [anchorElCategorias, setAnchorElCategorias] = useState(null);
+  const [anchorElCategorias, setAnchorElCategorias] = useState(null)
 
   // ===== HANDLERS =====
   const handleToggleFiltro = useCallback(() => {
-    setFiltroModalOpen(!filtroModalOpen);
-    setFiltroVisible(!filtroVisible);
-  }, [filtroModalOpen, setFiltroModalOpen, filtroVisible, setFiltroVisible]);
+    setFiltroModalOpen(!filtroModalOpen)
+    setFiltroVisible(!filtroVisible)
+  }, [filtroModalOpen, setFiltroModalOpen, filtroVisible, setFiltroVisible])
 
-  const handleOpenCategorias = useCallback(event => {
-    setAnchorElCategorias(event.currentTarget);
-  }, []);
+  const handleOpenCategorias = useCallback((event) => {
+    setAnchorElCategorias(event.currentTarget)
+  }, [])
 
   const handleCloseCategorias = useCallback(() => {
-    setAnchorElCategorias(null);
-  }, []);
+    setAnchorElCategorias(null)
+  }, [])
 
   // ===== PROPS ORGANIZADOS POR SECCIONES =====  // Props para SearchSection
   const searchSectionProps = useMemo(
@@ -151,7 +153,7 @@ const useMarketplaceLogic = (options = {}) => {
       handleOpenCategorias,
       handleCloseCategorias,
     ]
-  );
+  )
   // Props para FilterSection
   const filterSectionProps = useMemo(
     () => ({
@@ -197,7 +199,7 @@ const useMarketplaceLogic = (options = {}) => {
       totalProductos,
       filtroVisible,
     ]
-  );
+  )
 
   // Props para ProductsSection
   const productsSectionProps = useMemo(
@@ -210,6 +212,8 @@ const useMarketplaceLogic = (options = {}) => {
       resetFiltros,
       hasSidebar, // ✅ AGREGAR: Prop para detectar si hay sidebar
       titleMarginLeft, // ✅ AGREGAR: Prop para margen del título
+      loading, // <-- Agregado
+      error, // <-- Agregado
     }),
     [
       shouldShowSearchBar,
@@ -220,8 +224,10 @@ const useMarketplaceLogic = (options = {}) => {
       resetFiltros,
       hasSidebar, // ✅ AGREGAR: Dependencia para hasSidebar
       titleMarginLeft, // ✅ AGREGAR: Dependencia para titleMarginLeft
+      loading, // <-- Agregado
+      error, // <-- Agregado
     ]
-  );
+  )
   // ===== RETORNAR TODO ORGANIZADO =====
   return {
     // Props por secciones
@@ -231,10 +237,10 @@ const useMarketplaceLogic = (options = {}) => {
 
     // Estados generales
     theme,
-  };
-};
+  }
+}
 
-export default useMarketplaceLogic;
+export default useMarketplaceLogic
 
 // ✅ EDITAR AQUÍ PARA:
 // - Cambiar lógica de estados

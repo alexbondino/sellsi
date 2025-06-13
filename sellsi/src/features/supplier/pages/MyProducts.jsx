@@ -66,7 +66,8 @@ const MyProducts = () => {
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
   const navigate = useNavigate()
-  const supplierId = localStorage.getItem('supplierid')
+  // Obtener el user_id real del usuario autenticado
+  const supplierId = localStorage.getItem('user_id')
 
   // Store state
   const {
@@ -102,13 +103,21 @@ const MyProducts = () => {
       loadProducts(supplierId)
     }
   }, [supplierId, loadProducts])
+
+  // Obtener productos mapeados para la UI
+  const uiProducts = useSupplierProductsStore.getState().getUiProducts()
+
   // Estadísticas calculadas
   const stats = {
-    total: products.length,
-    inStock: products.filter((p) => p.stock > 0).length,
-    outOfStock: products.filter((p) => p.stock === 0).length,
-    totalValue: products.reduce((sum, p) => sum + p.precio * p.stock, 0),
+    total: uiProducts.length,
+    inStock: uiProducts.filter((p) => p.stock > 0).length,
+    outOfStock: uiProducts.filter((p) => p.stock === 0).length,
+    totalValue: uiProducts.reduce(
+      (sum, p) => sum + (p.precio || 0) * (p.stock || 0),
+      0
+    ),
   }
+
   // Handlers
   const handleAddProduct = () => {
     navigate('/supplier/addproduct')
@@ -146,11 +155,9 @@ const MyProducts = () => {
       setDeleteModal((prev) => ({ ...prev, loading: false }))
     }
   }
-
   const handleViewStats = (product) => {
     // TODO: Implementar vista de estadísticas detalladas
     toast.success(`Próximamente: Estadísticas de ${product.nombre}`)
-    console.log('Ver estadísticas del producto:', product)
   }
   const handleSortChange = (event) => {
     const newSortBy = event.target.value
@@ -521,7 +528,7 @@ const MyProducts = () => {
             <Grid container spacing={3}>
               {loading ? (
                 renderProductSkeleton()
-              ) : filteredProducts.length === 0 ? (
+              ) : uiProducts.length === 0 ? (
                 <Grid item xs={12} sx={{ width: '100%' }}>
                   <Box
                     sx={{
@@ -571,7 +578,7 @@ const MyProducts = () => {
                   </Box>
                 </Grid>
               ) : (
-                filteredProducts.map((product) => (
+                uiProducts.map((product) => (
                   <Grid item xs={12} sm={6} md={4} lg={3} key={product.id}>
                     <SupplierProductCard
                       product={product}

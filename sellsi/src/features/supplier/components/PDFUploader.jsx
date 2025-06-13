@@ -97,7 +97,7 @@ const PDFUploader = ({
 
     // Agregar al estado inmediatamente para preview
     onDocumentsChange([...documents, ...newDocuments])
-    
+
     toast.success(`${validFiles.length} archivo(s) agregado(s)`)
   }
 
@@ -120,23 +120,25 @@ const PDFUploader = ({
   }
 
   const removeDocument = async (documentId) => {
-    const documentToRemove = documents.find(doc => doc.id === documentId)
-    
+    const documentToRemove = documents.find((doc) => doc.id === documentId)
+
     try {
       // Si el documento está en el servidor, eliminarlo
       if (documentToRemove.filePath && documentToRemove.status === 'uploaded') {
         setUploading(true)
-        const deleteResult = await UploadService.deletePDF(documentToRemove.filePath)
+        const deleteResult = await UploadService.deletePDF(
+          documentToRemove.filePath
+        )
         if (!deleteResult.success) {
           toast.error('Error al eliminar archivo del servidor')
           return
         }
       }
-      
+
       // Remover del estado local
-      const newDocuments = documents.filter(doc => doc.id !== documentId)
+      const newDocuments = documents.filter((doc) => doc.id !== documentId)
       onDocumentsChange(newDocuments)
-      
+
       toast.success('Archivo eliminado')
     } catch (error) {
       console.error('Error removing document:', error)
@@ -147,8 +149,8 @@ const PDFUploader = ({
   }
 
   const uploadDocuments = async () => {
-    const localDocuments = documents.filter(doc => doc.status === 'local')
-    
+    const localDocuments = documents.filter((doc) => doc.status === 'local')
+
     if (localDocuments.length === 0) {
       toast.info('No hay archivos nuevos para subir')
       return
@@ -162,60 +164,71 @@ const PDFUploader = ({
       const supplierId = 'supplier-' + Date.now()
 
       // Actualizar estado a "uploading"
-      const updatedDocs = documents.map(doc => 
-        localDocuments.find(local => local.id === doc.id) 
+      const updatedDocs = documents.map((doc) =>
+        localDocuments.find((local) => local.id === doc.id)
           ? { ...doc, status: 'uploading' }
           : doc
       )
       onDocumentsChange(updatedDocs)
 
       // Subir archivos usando el servicio optimizado
-      const filesToUpload = localDocuments.map(doc => doc.file)
-      const uploadResult = await UploadService.uploadMultiplePDFs(filesToUpload, productId, supplierId)
+      const filesToUpload = localDocuments.map((doc) => doc.file)
+      const uploadResult = await UploadService.uploadMultiplePDFs(
+        filesToUpload,
+        productId,
+        supplierId
+      )
 
       if (uploadResult.success && uploadResult.data.length > 0) {
         // Actualizar documentos con información del servidor
-        const finalDocs = documents.map(doc => {
-          const localDoc = localDocuments.find(local => local.id === doc.id)
+        const finalDocs = documents.map((doc) => {
+          const localDoc = localDocuments.find((local) => local.id === doc.id)
           if (localDoc) {
-            const uploadedData = uploadResult.data.find(uploaded => 
-              uploaded.fileName === localDoc.fileName
+            const uploadedData = uploadResult.data.find(
+              (uploaded) => uploaded.fileName === localDoc.fileName
             )
             if (uploadedData) {
               return {
                 ...doc,
                 ...uploadedData,
-                status: 'uploaded'
+                status: 'uploaded',
               }
             }
           }
           return doc
         })
-        
+
         onDocumentsChange(finalDocs)
-        toast.success(`${uploadResult.data.length} archivo(s) subido(s) al servidor`)
+        toast.success(
+          `${uploadResult.data.length} archivo(s) subido(s) al servidor`
+        )
       }
 
       if (uploadResult.errors && uploadResult.errors.length > 0) {
         // Marcar archivos con error
-        const finalDocs = documents.map(doc => {
-          const localDoc = localDocuments.find(local => local.id === doc.id)
-          if (localDoc && uploadResult.errors.some(error => error.includes(localDoc.fileName))) {
+        const finalDocs = documents.map((doc) => {
+          const localDoc = localDocuments.find((local) => local.id === doc.id)
+          if (
+            localDoc &&
+            uploadResult.errors.some((error) =>
+              error.includes(localDoc.fileName)
+            )
+          ) {
             return { ...doc, status: 'error' }
           }
           return doc
         })
         onDocumentsChange(finalDocs)
-        
-        uploadResult.errors.forEach(error => toast.error(error))
+
+        uploadResult.errors.forEach((error) => toast.error(error))
       }
     } catch (error) {
       console.error('Error uploading files:', error)
       toast.error('Error al subir archivos')
-      
+
       // Revertir estado a local en caso de error
-      const revertedDocs = documents.map(doc => 
-        localDocuments.find(local => local.id === doc.id) 
+      const revertedDocs = documents.map((doc) =>
+        localDocuments.find((local) => local.id === doc.id)
           ? { ...doc, status: 'error' }
           : doc
       )
@@ -244,7 +257,7 @@ const PDFUploader = ({
   }
 
   const canAddMore = documents.length < maxFiles
-  const hasLocalFiles = documents.some(doc => doc.status === 'local')
+  const hasLocalFiles = documents.some((doc) => doc.status === 'local')
 
   return (
     <Box>
@@ -296,7 +309,8 @@ const PDFUploader = ({
               Arrastra y suelta archivos PDF aquí o haz clic para seleccionar
             </Typography>
             <Typography variant="caption" color="text.secondary">
-              Solo archivos PDF • Máximo {formatFileSize(maxSize)} por archivo • Hasta {maxFiles} archivos
+              Solo archivos PDF • Máximo {formatFileSize(maxSize)} por archivo •
+              Hasta {maxFiles} archivos
             </Typography>
           </Box>
         </Paper>
@@ -325,7 +339,14 @@ const PDFUploader = ({
       {/* Preview de documentos */}
       {documents.length > 0 && (
         <Box sx={{ mb: 2 }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              mb: 2,
+            }}
+          >
             <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
               Documentos técnicos ({documents.length}/{maxFiles})
             </Typography>
@@ -378,28 +399,40 @@ const PDFUploader = ({
                         {document.fileName}
                       </Typography>
                     </Box>
-                    
-                    <Typography variant="caption" color="text.secondary" display="block">
+
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                      display="block"
+                    >
                       {formatFileSize(document.size)}
                     </Typography>
-                    
+
                     {/* Estado del archivo */}
                     <Box sx={{ mt: 1 }}>
                       {document.status === 'local' && (
                         <Chip label="Local" size="small" color="default" />
                       )}
                       {document.status === 'uploading' && (
-                        <Chip label="Subiendo..." size="small" color="primary" />
+                        <Chip
+                          label="Subiendo..."
+                          size="small"
+                          color="primary"
+                        />
                       )}
                       {document.status === 'uploaded' && (
-                        <Chip label="En servidor" size="small" color="success" />
+                        <Chip
+                          label="En servidor"
+                          size="small"
+                          color="success"
+                        />
                       )}
                       {document.status === 'error' && (
                         <Chip label="Error" size="small" color="error" />
                       )}
                     </Box>
                   </CardContent>
-                  
+
                   <CardActions sx={{ p: 1, pt: 0 }}>
                     <Box
                       className="action-buttons"
@@ -471,7 +504,8 @@ const PDFUploader = ({
             sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
           >
             <PdfIcon fontSize="small" />
-            Los documentos técnicos ayudan a los compradores a conocer mejor tu producto
+            Los documentos técnicos ayudan a los compradores a conocer mejor tu
+            producto
           </Typography>
         </Box>
       )}

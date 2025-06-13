@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react'
-import { Box, CssBaseline } from '@mui/material'
+import { Box, CssBaseline, CircularProgress } from '@mui/material'
 import { ThemeProvider } from '@mui/material/styles'
 import GlobalStyles from '@mui/material/GlobalStyles'
 import {
@@ -29,7 +29,8 @@ import PrivateRoute from './features/auth/PrivateRoute'
 import { BannerProvider, useBanner } from './features/ui/BannerContext'
 import Banner from './features/ui/Banner'
 import { Toaster } from 'react-hot-toast'
-import { supabase } from '../../src/services/supabase'
+import { supabase } from './services/supabase'
+import MarketplaceTopBar from './features/layout/MarketplaceTopBar'
 
 // Contenido principal que depende de la ruta
 function AppContent({ mensaje }) {
@@ -37,43 +38,80 @@ function AppContent({ mensaje }) {
   const navigate = useNavigate()
   const scrollTargets = useRef({})
   const { bannerState, hideBanner } = useBanner()
-  const handleScrollTo = (refName) => {
-    const element = scrollTargets.current[refName]?.current
-    if (element) {
-      const topBarHeight = 30
-      const elementPosition =
-        element.getBoundingClientRect().top + window.pageYOffset
-      const offsetPosition = elementPosition - topBarHeight
-      window.scrollTo({
-        top: offsetPosition,
-        behavior: 'smooth',
-      })
-    }
-  }
+  const [session, setSession] = useState(null)
+  const [isBuyer, setIsBuyer] = useState(null)
+  const [loadingUserType, setLoadingUserType] = useState(true)
+  const lastUserType = useRef(null)
+
+  // Escuchar cambios de sesión en tiempo real
   useEffect(() => {
-    const checkSession = async () => {
-      const { data, error } = await supabase.auth.getSession()
-      if (error) {
-        console.error('❌ Error obteniendo la sesión:', error.message)
+    let mounted = true
+    setLoadingUserType(true)
+    setIsBuyer(null) // Siempre reiniciar a null al iniciar la consulta
+    const getUserType = async (currentSession) => {
+      if (!currentSession || !currentSession.user) {
+        if (mounted) {
+          setIsBuyer(null)
+          setLoadingUserType(false)
+        }
         return
       }
+      const result = await supabase
+        .from('users')
+        .select('main_supplier')
+        .eq('user_id', currentSession.user.id)
+        .single()
+      const userData = result.data
+      const userError = result.error
+      if (userError) {
+        if (mounted) {
+          setIsBuyer(null)
+        }
+      } else {
+        if (mounted) {
+          if (userData && typeof userData.main_supplier === 'boolean') {
+            setIsBuyer(userData.main_supplier === false)
+          } else {
+            setIsBuyer(null)
+          }
+        }
+      }
+      if (mounted) setLoadingUserType(false)
+    }
 
-      const session = data.session
-      const accountType = localStorage.getItem('account_type')
+    // Obtener sesión inicial
+    supabase.auth.getSession().then(({ data }) => {
+      setSession(data.session)
+      getUserType(data.session)
+    })
 
-      if (session && location.pathname === '/') {
-        if (accountType === 'proveedor') {
-          navigate('/supplier/home', { replace: true })
-        } else if (accountType === 'comprador') {
+    // Suscribirse a cambios de sesión
+    const { data: listener } = supabase.auth.onAuthStateChange(
+      (_event, newSession) => {
+        setSession(newSession)
+        getUserType(newSession)
+      }
+    )
+
+    return () => {
+      mounted = false
+      listener.subscription.unsubscribe()
+    }
+  }, [])
+
+  // Redirección tras login: solo si la ruta es neutra y el tipo de usuario ya está determinado
+  useEffect(() => {
+    if (!loadingUserType && session && isBuyer !== null) {
+      const neutralRoutes = ['/', '/login', '/crear-cuenta', '/supplier/home']
+      if (neutralRoutes.includes(location.pathname)) {
+        if (isBuyer && location.pathname !== '/buyer/marketplace') {
           navigate('/buyer/marketplace', { replace: true })
-        } else {
+        } else if (!isBuyer && location.pathname !== '/supplier/home') {
           navigate('/supplier/home', { replace: true })
         }
       }
     }
-
-    checkSession()
-  }, [location.pathname, navigate])
+  }, [loadingUserType, session, location.pathname, navigate, isBuyer])
 
   useEffect(() => {
     const handlePopstate = () => {
@@ -87,13 +125,126 @@ function AppContent({ mensaje }) {
     }
   }, [])
 
+  const handleScrollTo = (refName) => {
+    const element = scrollTargets.current[refName]?.current
+    if (element) {
+      const topBarHeight = 30
+      const elementPosition =
+        element.getBoundingClientRect().top + window.pageYOffset
+      const offsetPosition = elementPosition - topBarHeight
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: 'smooth',
+      })
+    }
+  }
+
   const needsPadding = true
-  const showTopBar = true
+  const showTopBar = !isBuyer
   const showBottomBar = location.pathname !== '/supplier/home'
 
+  // Centralizar la lógica de tipo de usuario y barra
+  useEffect(() => {
+    let mounted = true
+    const isBuyerRoute = location.pathname.startsWith('/buyer')
+    const isSupplierRoute = location.pathname.startsWith('/supplier')
+    // Si el tipo de usuario no cambia y la sesión es la misma, no mostrar loading
+    if (
+      lastUserType.current !== null &&
+      ((isBuyerRoute && lastUserType.current === 'buyer') ||
+        (isSupplierRoute && lastUserType.current === 'supplier'))
+    ) {
+      setLoadingUserType(false)
+      return
+    }
+    setLoadingUserType(true)
+    const checkUserType = async () => {
+      if (!session || !session.user) {
+        if (mounted) {
+          setIsBuyer(null)
+          setLoadingUserType(false)
+          lastUserType.current = null
+        }
+        return
+      }
+      if (isSupplierRoute) {
+        // Si estamos en /supplier/home, consultar main_supplier para decidir
+        const { data: userData } = await supabase
+          .from('users')
+          .select('main_supplier')
+          .eq('user_id', session.user.id)
+          .single()
+        if (mounted) {
+          if (userData && userData.main_supplier === false) {
+            // Es buyer, no forzar supplier, dejar que la redirección lo saque
+            setIsBuyer(true)
+            setLoadingUserType(false)
+            lastUserType.current = 'buyer'
+          } else if (userData && userData.main_supplier === true) {
+            setIsBuyer(false)
+            setLoadingUserType(false)
+            lastUserType.current = 'supplier'
+          } else {
+            setIsBuyer(null)
+            setLoadingUserType(false)
+            lastUserType.current = null
+          }
+        }
+        return
+      }
+      if (isBuyerRoute) {
+        const { data: userData } = await supabase
+          .from('users')
+          .select('main_supplier')
+          .eq('user_id', session.user.id)
+          .single()
+        if (mounted) {
+          const isBuyerNow = userData && userData.main_supplier === false
+          setIsBuyer(isBuyerNow)
+          setLoadingUserType(false)
+          lastUserType.current = isBuyerNow ? 'buyer' : 'supplier'
+        }
+        return
+      }
+      if (mounted) {
+        setIsBuyer(null)
+        setLoadingUserType(false)
+        lastUserType.current = null
+      }
+    }
+    checkUserType()
+    return () => {
+      mounted = false
+    }
+  }, [session, location.pathname])
+
+  // Loading global: solo mientras loadingUserType es true
+  if (loadingUserType) {
+    return (
+      <Box
+        sx={{
+          width: '100vw',
+          height: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          bgcolor: 'background.default',
+          zIndex: 99999,
+        }}
+      >
+        <CircularProgress size={48} color="primary" />
+      </Box>
+    )
+  }
+
+  // Render de barras: MarketplaceTopBar solo para buyers logueados, TopBar para suppliers logueados o visitantes
   return (
     <>
-      {showTopBar && <TopBar onNavigate={handleScrollTo} />}
+      {/* Topbars */}
+      {session && isBuyer === true && <MarketplaceTopBar />}
+      {(!session || isBuyer === false) && (
+        <TopBar onNavigate={handleScrollTo} />
+      )}
 
       <Banner
         message={bannerState.message}
@@ -117,7 +268,7 @@ function AppContent({ mensaje }) {
       >
         <Routes>
           <Route path="/" element={<Home scrollTargets={scrollTargets} />} />
-          <Route path="/marketplace" element={<Marketplace />} />{' '}
+          <Route path="/marketplace" element={<Marketplace />} />
           <Route path="/buyer/marketplace" element={<MarketplaceBuyer />} />
           <Route path="/buyer/orders" element={<BuyerOrders />} />
           <Route path="/buyer/performance" element={<BuyerPerformance />} />
@@ -127,31 +278,36 @@ function AppContent({ mensaje }) {
             element={<TechnicalSpecs />}
           />
           <Route path="/login" element={<Login />} />
-          <Route path="/crear-cuenta" element={<Register />} />{' '}
-          <Route
-            path="/supplier/home"
-            element={
-              <PrivateRoute requiredAccountType="proveedor">
-                <ProviderHome />
-              </PrivateRoute>
-            }
-          />{' '}
-          <Route
-            path="/supplier/myproducts"
-            element={
-              <PrivateRoute requiredAccountType="proveedor">
-                <MyProducts />
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path="/supplier/addproduct"
-            element={
-              <PrivateRoute requiredAccountType="proveedor">
-                <AddProduct />
-              </PrivateRoute>
-            }
-          />
+          <Route path="/crear-cuenta" element={<Register />} />
+          {/* Solo renderizar rutas supplier si el usuario es supplier */}
+          {session && isBuyer === false && (
+            <>
+              <Route
+                path="/supplier/home"
+                element={
+                  <PrivateRoute requiredAccountType="proveedor">
+                    <ProviderHome />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/supplier/myproducts"
+                element={
+                  <PrivateRoute requiredAccountType="proveedor">
+                    <MyProducts />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/supplier/addproduct"
+                element={
+                  <PrivateRoute requiredAccountType="proveedor">
+                    <AddProduct />
+                  </PrivateRoute>
+                }
+              />
+            </>
+          )}
         </Routes>
 
         {process.env.NODE_ENV === 'development' &&
@@ -210,7 +366,7 @@ function App() {
             },
           },
         }}
-      />{' '}
+      />
       <BannerProvider>
         <BrowserRouter>
           <AppContent mensaje={mensaje} />

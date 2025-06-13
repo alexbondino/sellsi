@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { Navigate } from 'react-router-dom'
-import { supabase } from '../../../../src/services/supabase'
+import { supabase } from '../../services/supabase'
 import { Box, CircularProgress, Typography } from '@mui/material'
 
 /**
@@ -93,11 +93,19 @@ const PrivateRoute = ({
     requiredAccountType !== 'any' &&
     userAccountType !== requiredAccountType
   ) {
-    // Redirigir según el tipo de cuenta actual
-    if (userAccountType === 'proveedor') {
+    // Redirigir según el tipo de cuenta actual, solo si no está ya en la ruta correcta
+    if (
+      userAccountType === 'proveedor' &&
+      window.location.pathname !== '/supplier/home'
+    ) {
       return <Navigate to="/supplier/home" replace />
-    } else {
+    } else if (
+      userAccountType === 'comprador' &&
+      window.location.pathname !== '/buyer/marketplace'
+    ) {
       return <Navigate to="/buyer/marketplace" replace />
+    } else {
+      return children
     }
   }
 

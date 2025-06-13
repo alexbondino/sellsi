@@ -1,9 +1,11 @@
 import { useState, useMemo } from 'react'
 // ✅ CORREGIR RUTA: desde hooks/marketplace hacia data/marketplace
-import { PRODUCTOS, CATEGORIAS } from '../products' // ✅ 2 niveles hacia arriba
+import { CATEGORIAS } from '../products' // ✅ 2 niveles hacia arriba
 import { INITIAL_FILTERS } from '../marketplace/constants' // ✅ 2 niveles hacia arriba
+import { useProducts } from './useProducts'
 
 export const useMarketplaceState = () => {
+  const { products, loading, error } = useProducts()
   const [seccionActiva, setSeccionActiva] = useState('todos')
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState(['Todas'])
   const [filtroVisible, setFiltroVisible] = useState(false) // ✅ CAMBIAR a false para permitir animaciones
@@ -13,7 +15,8 @@ export const useMarketplaceState = () => {
   const [filtroModalOpen, setFiltroModalOpen] = useState(false)
   // ✅ USAR PRODUCTOS importados (no productos)
   const productosFiltrados = useMemo(() => {
-    return PRODUCTOS.filter((producto) => {
+    if (error) return []
+    return products.filter((producto) => {
       // Filtrar por sección activa
       if (seccionActiva === 'nuevos' && producto.tipo !== 'nuevo') return false
       if (seccionActiva === 'ofertas' && producto.tipo !== 'oferta')
@@ -23,7 +26,7 @@ export const useMarketplaceState = () => {
       // Filtrar por búsqueda
       if (
         busqueda &&
-        !producto.nombre.toLowerCase().includes(busqueda.toLowerCase())
+        !producto.nombre?.toLowerCase().includes(busqueda.toLowerCase())
       )
         return false
 
@@ -37,9 +40,7 @@ export const useMarketplaceState = () => {
       if (filtros.precioMin && producto.precio < filtros.precioMin) return false
       if (filtros.precioMax && producto.precio > filtros.precioMax) return false // Filtrar por stock
       if (filtros.soloConStock && producto.stock === 0) return false // Filtrar por rating
-      if (filtros.ratingMin && producto.rating < filtros.ratingMin) return false
-
-      // ✅ NUEVO: Filtrar por negociable
+      if (filtros.ratingMin && producto.rating < filtros.ratingMin) return false // ✅ NUEVO: Filtrar por negociable
       if (filtros.negociable && filtros.negociable !== 'todos') {
         if (filtros.negociable === 'si' && !producto.negociable) return false
         if (filtros.negociable === 'no' && producto.negociable) return false
@@ -47,7 +48,16 @@ export const useMarketplaceState = () => {
 
       return true
     })
-  }, [seccionActiva, busqueda, categoriaSeleccionada, filtros])
+  }, [
+    products,
+    seccionActiva,
+    busqueda,
+    categoriaSeleccionada,
+    filtros,
+    precioRango,
+    error,
+    loading,
+  ])
   const hayFiltrosActivos = useMemo(() => {
     return Object.entries(filtros).some(([key, value]) => {
       // ✅ EXCLUIR: "Todos los productos" no cuenta como filtro activo
@@ -85,7 +95,9 @@ export const useMarketplaceState = () => {
       })
     }
   }
-  const totalProductos = productosFiltrados.length
+  const totalProductos = Array.isArray(productosFiltrados)
+    ? productosFiltrados.length
+    : 0
 
   return {
     // Estados
@@ -100,6 +112,8 @@ export const useMarketplaceState = () => {
     totalProductos,
     precioRango,
     categorias: CATEGORIAS, // ✅ USAR CATEGORIAS importadas
+    loading, // <-- Agregado
+    error, // <-- Agregado
 
     // Setters
     setSeccionActiva,

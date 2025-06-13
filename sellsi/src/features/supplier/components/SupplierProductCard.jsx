@@ -25,6 +25,7 @@ import {
   Inventory as InventoryIcon,
 } from '@mui/icons-material'
 import { formatPrice } from '../../marketplace/utils/formatters'
+import { getProductImageUrl } from '../../../utils/getProductImageUrl'
 
 /**
  * SupplierProductCard - Tarjeta de producto para la vista del proveedor
@@ -59,6 +60,11 @@ const SupplierProductCard = ({
     tipo,
     updatedAt,
     negociable,
+    tramoMin,
+    tramoMax,
+    tramoPrecioMin,
+    tramoPrecioMax,
+    priceTiers = [],
   } = product
 
   const handleMenuOpen = (event) => {
@@ -110,7 +116,7 @@ const SupplierProductCard = ({
   return (
     <Card
       sx={{
-        height: '100%',
+        height: 420, // altura fija como en ProductCard pero con la medida actual del supplier
         display: 'flex',
         flexDirection: 'column',
         position: 'relative',
@@ -177,19 +183,27 @@ const SupplierProductCard = ({
             <MoreVertIcon />
           </IconButton>
         </Tooltip>
-      </Box>
+      </Box>{' '}
       {/* Imagen del producto */}
       <CardMedia
         component="img"
-        height={200}
-        image={imagen || '/placeholder-product.jpg'}
+        image={
+          getProductImageUrl(imagen, product) || '/placeholder-product.jpg'
+        }
         alt={nombre}
         sx={{
-          objectFit: 'cover',
-          transition: 'transform 0.3s ease',
-          '&:hover': {
-            transform: 'scale(1.05)',
-          },
+          height: '140px',
+          width: '140px',
+          maxWidth: '100%',
+          objectFit: 'contain',
+          bgcolor: '#fafafa',
+          p: 1,
+          display: 'block',
+          mx: 'auto',
+        }}
+        onError={(e) => {
+          e.target.onerror = null
+          e.target.src = '/placeholder-product.jpg'
         }}
       />
       {/* Contenido principal */}
@@ -226,28 +240,53 @@ const SupplierProductCard = ({
 
         {/* Precios */}
         <Box sx={{ mb: 2 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-            <Typography
-              variant="h6"
-              color="primary.main"
-              sx={{ fontWeight: 700, fontSize: '1.1rem' }}
-            >
-              {formatPrice(precio)}
-            </Typography>
-            {precioOriginal && precioOriginal > precio && (
+          {/* Mostrar tramos si existen */}
+          {priceTiers && priceTiers.length > 0 ? (
+            <Box>
               <Typography
                 variant="body2"
-                sx={{
-                  textDecoration: 'line-through',
-                  color: 'text.secondary',
-                  fontSize: '0.85rem',
-                }}
+                color="text.secondary"
+                sx={{ fontWeight: 500 }}
               >
-                {formatPrice(precioOriginal)}
+                Tramo: {tramoMin} - {tramoMax || '∞'} unidades
               </Typography>
-            )}
-          </Box>
-
+              <Typography
+                variant="h6"
+                color="primary.main"
+                sx={{ fontWeight: 700, fontSize: '1.1rem' }}
+              >
+                {tramoPrecioMin === tramoPrecioMax || !tramoPrecioMax
+                  ? formatPrice(tramoPrecioMin)
+                  : `${formatPrice(tramoPrecioMin)} - ${formatPrice(
+                      tramoPrecioMax
+                    )}`}
+              </Typography>
+            </Box>
+          ) : (
+            <Box
+              sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}
+            >
+              <Typography
+                variant="h6"
+                color="primary.main"
+                sx={{ fontWeight: 700, fontSize: '1.1rem' }}
+              >
+                {formatPrice(precio)}
+              </Typography>
+              {precioOriginal && precioOriginal > precio && (
+                <Typography
+                  variant="body2"
+                  sx={{
+                    textDecoration: 'line-through',
+                    color: 'text.secondary',
+                    fontSize: '0.85rem',
+                  }}
+                >
+                  {formatPrice(precioOriginal)}
+                </Typography>
+              )}
+            </Box>
+          )}
           {negociable && (
             <Chip
               label="Precio negociable"

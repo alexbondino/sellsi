@@ -1,10 +1,11 @@
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Tooltip, Badge } from '@mui/material';
-import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
-import PersonIcon from '@mui/icons-material/Person';
-import BaseTopBar from './BaseTopBar';
-import useCartStore from '../buyer/hooks/cartStore';
+import React, { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { Tooltip, Badge, Menu, MenuItem, IconButton } from '@mui/material'
+import ShoppingCartIcon from '@mui/icons-material/ShoppingCart'
+import PersonIcon from '@mui/icons-material/Person'
+import BaseTopBar from './BaseTopBar'
+import useCartStore from '../buyer/hooks/cartStore'
+import { supabase } from '../../services/supabase'
 
 /**
  * MarketplaceTopBar - Configuración específica para la página Marketplace
@@ -13,29 +14,70 @@ import useCartStore from '../buyer/hooks/cartStore';
  * - "Registrarse" → Icono de perfil con tooltip "Ir a mi perfil"
  */
 export default function MarketplaceTopBar() {
-  const navigate = useNavigate();
+  const navigate = useNavigate()
 
   // Suscribirse a los items del carrito para que se actualice automáticamente
-  const items = useCartStore(state => state.items);
-  const totalItems = items.length;
+  const items = useCartStore((state) => state.items)
+  const totalItems = items.length
 
-  // Handlers específicos para Marketplace
+  // Estado para el menú de perfil
+  const [profileAnchor, setProfileAnchor] = useState(null)
+  const openProfileMenu = (e) => setProfileAnchor(e.currentTarget)
+  const closeProfileMenu = () => setProfileAnchor(null)
+
+  // Handler de logout igual que en BaseTopBar
+  const handleLogout = async () => {
+    localStorage.removeItem('user_id')
+    localStorage.removeItem('account_type')
+    localStorage.removeItem('supplierid')
+    localStorage.removeItem('sellerid')
+    await supabase.auth.signOut()
+    closeProfileMenu()
+    navigate('/')
+  }
+
   const handleGoToCart = () => {
-    console.log('Navegando a Mi Carro');
-    navigate('/buyer/cart');
-  };
+    navigate('/buyer/cart')
+  }
 
-  const handleGoToProfile = () => {
-    console.log('Navegando a perfil');
-    // TODO: Implementar navegación al perfil
-    // navigate('/profile')
-  };
+  // El botón de perfil ahora abre el menú
+  const profileButton = (
+    <IconButton
+      onClick={openProfileMenu}
+      sx={{
+        minWidth: '50px',
+        width: '50px',
+        height: '50px',
+        borderRadius: '50%',
+        border: '2px solid rgb(253, 253, 253)',
+        backgroundColor: 'rgba(255, 255, 255, 0.08)',
+        backdropFilter: 'blur(12px)',
+        boxShadow:
+          '0 0 0 1px rgba(25, 118, 210, 0.2), 0 4px 12px rgba(25, 118, 210, 0.15), 0 0 20px rgba(25, 118, 210, 0.1)',
+        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+        '&:hover': {
+          border: '2px solid rgba(25, 118, 210, 0.7)',
+          backgroundColor: 'rgba(255, 255, 255, 0.12)',
+          boxShadow:
+            '0 0 0 2px rgba(25, 118, 210, 0.3), 0 6px 16px rgba(25, 118, 210, 0.25), 0 0 30px rgba(25, 118, 210, 0.2)',
+          transform: 'scale(1.05)',
+        },
+        '&:active': {
+          transform: 'scale(0.98)',
+          boxShadow:
+            '0 0 0 1px rgba(25, 118, 210, 0.4), 0 2px 8px rgba(25, 118, 210, 0.2)',
+        },
+      }}
+    >
+      <Tooltip title="Ir a mi perfil" arrow>
+        <PersonIcon fontSize="large" />
+      </Tooltip>
+    </IconButton>
+  )
 
-  // Sin botones de navegación para Marketplace
-  const navigationButtons = [];
-  // Configuración custom para botones de autenticación
+  const navigationButtons = []
   const authButtons = {
-    loginButton: {
+    login: {
       label: (
         <Tooltip title="Carrito" arrow>
           <Badge
@@ -60,7 +102,6 @@ export default function MarketplaceTopBar() {
         </Tooltip>
       ),
       onClick: handleGoToCart,
-      // Estilos personalizados para el botón Mi Carro con efectos glassmorphism
       customStyles: {
         minWidth: '60px', // Ancho mínimo del botón para mantener simetría con el perfil
         minHeight: '50px', // Altura mínima del botón
@@ -91,53 +132,51 @@ export default function MarketplaceTopBar() {
         },
       },
     },
-    registerButton: {
-      label: (
-        <Tooltip title="Ir a mi perfil" arrow>
-          <PersonIcon fontSize="large" />
-        </Tooltip>
-      ),
-      onClick: handleGoToProfile,
-      // Estilos personalizados para el botón de perfil con efectos glassmorphism
+    register: {
+      label: profileButton,
+      onClick: openProfileMenu,
       customStyles: {
-        minWidth: '50px', // Botón más compacto para el icono
+        minWidth: '50px',
         width: '50px',
-        height: '50px', // Altura igual al ancho para hacer un círculo perfecto
-        borderRadius: '50%', // Hace el marco completamente circular
-        border: '2px solid rgb(253, 253, 253)', // Borde azul semi-transparente
-        backgroundColor: 'rgba(255, 255, 255, 0.08)', // Fondo glassmorphism
-        backdropFilter: 'blur(12px)', // Efecto de desenfoque
-        boxShadow:
-          '0 0 0 1px rgba(25, 118, 210, 0.2), 0 4px 12px rgba(25, 118, 210, 0.15), 0 0 20px rgba(25, 118, 210, 0.1)', // Triple sombra con glow
-        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)', // Transición suave
-        '&:hover': {
-          border: '2px solid rgba(25, 118, 210, 0.7)', // Borde más intenso en hover
-          backgroundColor: 'rgba(255, 255, 255, 0.12)', // Fondo más visible en hover
-          boxShadow:
-            '0 0 0 2px rgba(25, 118, 210, 0.3), 0 6px 16px rgba(25, 118, 210, 0.25), 0 0 30px rgba(25, 118, 210, 0.2)', // Sombra más intensa en hover
-          transform: 'scale(1.05)', // Ligero aumento de tamaño en hover
-        },
-        '&:active': {
-          transform: 'scale(0.98)', // Ligera reducción al hacer clic
-          boxShadow:
-            '0 0 0 1px rgba(25, 118, 210, 0.4), 0 2px 8px rgba(25, 118, 210, 0.2)', // Sombra reducida al hacer clic
-        },
+        height: '50px',
+        borderRadius: '50%',
       },
     },
-  };
+  }
+
   return (
-    <BaseTopBar
-      navigationButtons={navigationButtons}
-      authButtons={authButtons}
-      onNavigate={null} // No hay navegación interna
-      showContactModal={false} // No mostrar modal de contacto en Marketplace
-      logoMarginLeft={{
-        xs: 0,
-        sm: 0,
-        md: -8, // Más hacia la izquierda
-        lg: -28, // Más hacia la izquierda
-        xl: -65, // Más hacia la izquierda
-      }}
-    />
-  );
+    <>
+      <BaseTopBar
+        navigationButtons={navigationButtons}
+        authButtons={authButtons}
+        onNavigate={null} // No hay navegación interna
+        showContactModal={false} // No mostrar modal de contacto en Marketplace
+        logoMarginLeft={{
+          xs: 0,
+          sm: 0,
+          md: -8, // Más hacia la izquierda
+          lg: -28, // Más hacia la izquierda
+          xl: -65, // Más hacia la izquierda
+        }}
+        sx={{
+          backgroundColor: 'red',
+          border: '6px solid yellow',
+          zIndex: 9999,
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100vw',
+          height: 80,
+        }}
+      />
+      <Menu
+        anchorEl={profileAnchor}
+        open={Boolean(profileAnchor)}
+        onClose={closeProfileMenu}
+        sx={{ '& .MuiPaper-root': { minWidth: 150 } }}
+      >
+        <MenuItem onClick={handleLogout}>Cerrar sesión</MenuItem>
+      </Menu>
+    </>
+  )
 }

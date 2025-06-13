@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import {
   Box,
   Typography,
@@ -7,13 +7,27 @@ import {
   CardContent,
   Avatar,
   Chip,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableRow,
+  Paper,
+  IconButton,
+  Tooltip,
+  CircularProgress,
 } from '@mui/material'
 import { LocalShipping, Security, Assignment } from '@mui/icons-material'
+import ContentCopyIcon from '@mui/icons-material/ContentCopy'
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline'
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined'
+import { getProductImageUrl } from '../../../../utils/getProductImageUrl'
 
 import ProductImageGallery from './ProductImageGallery'
 import PurchaseActions from './PurchaseActions'
 import PriceDisplay from '../../PriceDisplay'
 import StockIndicator from '../../StockIndicator'
+import { useProductPriceTiers } from '../../hooks/useProductPriceTiers'
 
 const ProductHeader = ({
   product,
@@ -26,15 +40,296 @@ const ProductHeader = ({
     nombre,
     proveedor,
     imagen,
+    imagenes = [],
     precio,
     stock,
     compraMinima,
     descripcion = 'Producto de alta calidad con excelentes características y garantía de satisfacción.',
   } = product
 
+  const {
+    tiers,
+    loading: loadingTiers,
+    error: errorTiers,
+  } = useProductPriceTiers(product.id)
+
+  const [copied, setCopied] = useState({ name: false, price: false })
+
+  // Función para copiar texto al portapapeles y mostrar feedback
+  const handleCopy = (type, value) => {
+    navigator.clipboard.writeText(value).then(() => {
+      setCopied((prev) => ({ ...prev, [type]: true }))
+      setTimeout(() => setCopied((prev) => ({ ...prev, [type]: false })), 1200)
+    })
+  }
+
+  // Lógica para mostrar precios y tramos
+  let priceContent
+  if (loadingTiers) {
+    priceContent = (
+      <Box
+        sx={{ display: 'flex', alignItems: 'center', gap: 1, minHeight: 24 }}
+      >
+        <CircularProgress color="primary" size={18} />
+      </Box>
+    )
+  } else if (errorTiers) {
+    priceContent = (
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 1,
+          mb: 2,
+        }}
+      >
+        <Typography variant="body2" color="error.main">
+          Error al cargar precios
+        </Typography>
+        <Tooltip title="Reintenta o revisa tu conexión" arrow>
+          <ContentCopyIcon color="disabled" fontSize="small" />
+        </Tooltip>
+      </Box>
+    )
+  } else if (tiers && tiers.length > 0) {
+    // Mostrar tabla de tramos
+    priceContent = (
+      <Box sx={{ mb: 3 }}>
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 1,
+            mb: 1,
+          }}
+        >
+          <Typography variant="h6" sx={{ color: 'primary.main' }}>
+            Precios por cantidad
+          </Typography>
+          <Tooltip
+            title="El precio varía según la cantidad que compres. Cada tramo indica el precio unitario para ese rango de unidades."
+            arrow
+          >
+            <InfoOutlinedIcon
+              color="action"
+              fontSize="small"
+              sx={{ cursor: 'pointer' }}
+            />
+          </Tooltip>
+        </Box>
+        <TableContainer
+          component={Paper}
+          sx={{ maxWidth: 400, mx: 'auto', mb: 2 }}
+        >
+          <Table size="small">
+            <TableBody>
+              {tiers.map((tier, idx) => (
+                <Tooltip
+                  key={idx}
+                  title={`Si compras entre ${tier.min_quantity} y ${
+                    tier.max_quantity
+                  } unidades, el precio unitario es $${tier.price.toLocaleString(
+                    'es-CL'
+                  )}`}
+                  arrow
+                  placement="top"
+                >
+                  <TableRow hover sx={{ cursor: 'help' }}>
+                    <TableCell align="center" sx={{ fontWeight: 600 }}>
+                      {tier.min_quantity} - {tier.max_quantity} uds
+                    </TableCell>
+                    <TableCell align="center" sx={{ position: 'relative' }}>
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: 0.5,
+                        }}
+                      >
+                        <Typography color="primary" fontWeight={700}>
+                          ${tier.price.toLocaleString('es-CL')}
+                        </Typography>
+                        <Tooltip
+                          title={`Copiar precio: $${tier.price.toLocaleString(
+                            'es-CL'
+                          )}`}
+                          arrow
+                        >
+                          <IconButton
+                            size="small"
+                            sx={{
+                              ml: 0.5,
+                              boxShadow: 'none',
+                              outline: 'none',
+                              bgcolor: 'transparent',
+                              '&:hover': {
+                                bgcolor: 'rgba(0,0,0,0.04)',
+                                boxShadow: 'none',
+                                outline: 'none',
+                              },
+                              '&:active': {
+                                boxShadow: 'none !important',
+                                outline: 'none !important',
+                                background: 'rgba(0,0,0,0.04) !important',
+                              },
+                              '&:focus': {
+                                boxShadow: 'none !important',
+                                outline: 'none !important',
+                                background: 'rgba(0,0,0,0.04) !important',
+                              },
+                              '&:focus-visible': {
+                                boxShadow: 'none !important',
+                                outline: 'none !important',
+                                background: 'rgba(0,0,0,0.04) !important',
+                              },
+                            }}
+                            onClick={() =>
+                              handleCopy(
+                                'price',
+                                tier.price.toLocaleString('es-CL')
+                              )
+                            }
+                          >
+                            <ContentCopyIcon fontSize="inherit" />
+                          </IconButton>
+                        </Tooltip>
+                        <Box
+                          sx={{
+                            width: 24,
+                            height: 24,
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                          }}
+                        >
+                          <CheckCircleOutlineIcon
+                            color="success"
+                            fontSize="small"
+                            sx={{
+                              visibility: copied.price ? 'visible' : 'hidden',
+                              transition: 'visibility 0.2s',
+                            }}
+                          />
+                        </Box>
+                      </Box>
+                    </TableCell>
+                  </TableRow>
+                </Tooltip>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </Box>
+    )
+  } else {
+    // Precio único (sin tramos)
+    priceContent = (
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 1,
+          mb: 3,
+        }}
+      >
+        <PriceDisplay
+          price={product.precio}
+          originalPrice={product.precioOriginal}
+          variant="h2"
+        />
+        <Tooltip title="Copiar precio" arrow>
+          <IconButton
+            size="small"
+            onClick={() =>
+              handleCopy('price', product.precio.toLocaleString('es-CL'))
+            }
+            sx={{
+              boxShadow: 'none',
+              outline: 'none',
+              bgcolor: 'transparent',
+              '&:hover': {
+                bgcolor: 'rgba(0,0,0,0.04)',
+                boxShadow: 'none',
+                outline: 'none',
+              },
+              '&:active': {
+                boxShadow: 'none !important',
+                outline: 'none !important',
+                background: 'rgba(0,0,0,0.04) !important',
+              },
+              '&:focus': {
+                boxShadow: 'none !important',
+                outline: 'none !important',
+                background: 'rgba(0,0,0,0.04) !important',
+              },
+              '&:focus-visible': {
+                boxShadow: 'none !important',
+                outline: 'none !important',
+                background: 'rgba(0,0,0,0.04) !important',
+              },
+            }}
+          >
+            <ContentCopyIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+        <Box
+          sx={{
+            width: 24,
+            height: 24,
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <CheckCircleOutlineIcon
+            color="success"
+            fontSize="small"
+            sx={{
+              visibility: copied.price ? 'visible' : 'hidden',
+              transition: 'visibility 0.2s',
+            }}
+          />
+        </Box>
+      </Box>
+    )
+  }
+
+  function resolveImageSrc(image) {
+    const SUPABASE_PUBLIC_URL =
+      'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v1/object/public/product-images/'
+    if (!image) return '/placeholder-product.jpg'
+    if (typeof image === 'string') {
+      if (image.startsWith(SUPABASE_PUBLIC_URL)) return image
+      if (image.startsWith('/')) return image
+      if (/^https?:\/\//.test(image)) return image
+      return getProductImageUrl(image)
+    }
+    if (typeof image === 'object' && image !== null) {
+      if (typeof image === 'string') {
+        try {
+          image = JSON.parse(image)
+        } catch (e) {
+          return '/placeholder-product.jpg'
+        }
+      }
+      if (
+        image.url &&
+        typeof image.url === 'string' &&
+        image.url.startsWith(SUPABASE_PUBLIC_URL)
+      ) {
+        return image.url
+      }
+      if (image.image_url) return getProductImageUrl(image.image_url)
+    }
+    return '/placeholder-product.jpg'
+  }
+
   return (
     <Grid container spacing={12} sx={{ alignItems: 'flex-end' }}>
-      {' '}
       {/* Imagen del Producto */}
       <Grid
         item
@@ -46,17 +341,16 @@ const ProductHeader = ({
       >
         <Box
           sx={{
-            display: 'flex', // Kept for alignItems to work effectively
-            alignItems: 'center', // To vertically center ProductImageGallery within this Box
-            // justifyContent: 'center', // This is now handled by the parent Grid item
-            // width: '100%', // Removed to allow the Box to be sized by its content (ProductImageGallery)
+            display: 'flex',
+            alignItems: 'center',
             minHeight: '600px',
-            ml: { xs: 0, sm: 2, md: 0, lg: 32, xl: 28 }, // Adjust margin for smaller screens
+            ml: { xs: 0, sm: 2, md: 0, lg: 32, xl: 28 },
             p: { xs: 1, sm: 2 },
           }}
         >
           <ProductImageGallery
-            mainImage={imagen}
+            images={imagenes.map(resolveImageSrc)}
+            mainImage={resolveImageSrc(imagen)}
             selectedIndex={selectedImageIndex}
             onImageSelect={onImageSelect}
             productName={nombre}
@@ -77,25 +371,84 @@ const ProductHeader = ({
             height: '100%',
             display: 'flex',
             flexDirection: 'column',
-            justifyContent: 'flex-start', // Keep original alignment for product info
-            alignItems: 'center', // This centers the block of text content
-            textAlign: 'center', // This centers the text itself if it wraps
-            px: { xs: 2, sm: 2, md: -5 }, // Horizontal padding for better spacing
+            justifyContent: 'flex-start',
+            alignItems: 'center',
+            textAlign: 'center',
+            px: { xs: 2, sm: 2, md: -5 },
           }}
         >
-          {/* Nombre del Producto */}{' '}
-          <Typography
-            variant="h3"
+          {/* Nombre del Producto */}
+          <Box
             sx={{
-              fontWeight: 700,
-              color: 'text.primary',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 1,
               mb: 2,
-              lineHeight: 1.2,
             }}
           >
-            {' '}
-            {nombre}{' '}
-          </Typography>
+            <Typography
+              variant="h3"
+              sx={{
+                fontWeight: 700,
+                color: 'text.primary',
+                lineHeight: 1.2,
+              }}
+            >
+              {nombre}
+            </Typography>
+            <Tooltip title="Copiar nombre del producto" arrow>
+              <IconButton
+                size="small"
+                onClick={() => handleCopy('name', nombre)}
+                sx={{
+                  boxShadow: 'none',
+                  outline: 'none',
+                  bgcolor: 'transparent',
+                  '&:hover': {
+                    bgcolor: 'rgba(0,0,0,0.04)',
+                    boxShadow: 'none',
+                    outline: 'none',
+                  },
+                  '&:active': {
+                    boxShadow: 'none !important',
+                    outline: 'none !important',
+                    background: 'rgba(0,0,0,0.04) !important',
+                  },
+                  '&:focus': {
+                    boxShadow: 'none !important',
+                    outline: 'none !important',
+                    background: 'rgba(0,0,0,0.04) !important',
+                  },
+                  '&:focus-visible': {
+                    boxShadow: 'none !important',
+                    outline: 'none !important',
+                    background: 'rgba(0,0,0,0.04) !important',
+                  },
+                }}
+              >
+                <ContentCopyIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+            <Box
+              sx={{
+                width: 24,
+                height: 24,
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <CheckCircleOutlineIcon
+                color="success"
+                fontSize="small"
+                sx={{
+                  visibility: copied.name ? 'visible' : 'hidden',
+                  transition: 'visibility 0.2s',
+                }}
+              />
+            </Box>
+          </Box>
           {/* Nombre del Proveedor */}
           <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
             <Avatar
@@ -127,13 +480,8 @@ const ProductHeader = ({
           >
             Compra mínima: {compraMinima} unidades
           </Typography>{' '}
-          {/* Precios */}
-          <PriceDisplay
-            price={precio}
-            showRange={true}
-            variant="h2"
-            sx={{ mb: 3 }}
-          />
+          {/* Precios y/o tramos */}
+          {priceContent}
           {/* Descripción */}
           <Typography
             variant="body1"
@@ -142,8 +490,26 @@ const ProductHeader = ({
           >
             {descripcion}
           </Typography>{' '}
-          {/* Stock */}
-          <StockIndicator stock={stock} showUnits={true} sx={{ mb: 4 }} />{' '}
+          {/* Stock mejorado */}
+          <Box sx={{ mb: 4 }}>
+            {stock === 0 ? (
+              <Typography
+                variant="h6"
+                color="error"
+                sx={{
+                  fontWeight: 700,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1,
+                }}
+              >
+                <Assignment sx={{ fontSize: 24, color: 'error.main' }} />
+                Producto agotado
+              </Typography>
+            ) : (
+              <StockIndicator stock={stock} showUnits={true} />
+            )}
+          </Box>
           {/* Botones de Compra */}
           <PurchaseActions
             onAddToCart={onAddToCart}

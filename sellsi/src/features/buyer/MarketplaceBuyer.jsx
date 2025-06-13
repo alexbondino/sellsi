@@ -4,22 +4,19 @@
 // - Agregar/quitar secciones
 // - Modificar estilos del contenedor principal
 
-import React from 'react';
-import { Box } from '@mui/material';
-
-// TopBar específico para Marketplace
-import MarketplaceTopBar from '../layout/MarketplaceTopBar.jsx';
+import React from 'react'
+import { Box } from '@mui/material'
 
 // Sidebar específico para Buyer
-import SidebarBuyer from '../layout/SidebarBuyer.jsx';
+import SidebarBuyer from '../layout/SidebarBuyer.jsx'
 
 // Hook centralizado
-import useMarketplaceLogic from '../marketplace/useMarketplaceLogic.jsx';
+import useMarketplaceLogic from '../marketplace/useMarketplaceLogic.jsx'
 
 // Componentes de secciones
-import SearchSection from '../marketplace/sections/SearchSection.jsx';
-import FilterSection from '../marketplace/sections/FilterSection.jsx';
-import ProductsSection from '../marketplace/sections/ProductsSection.jsx';
+import SearchSection from '../marketplace/sections/SearchSection.jsx'
+import FilterSection from '../marketplace/sections/FilterSection.jsx'
+import ProductsSection from '../marketplace/sections/ProductsSection.jsx'
 
 const MarketplaceBuyer = () => {
   // ===== USAR CUSTOM HOOK PARA TODA LA LÓGICA =====
@@ -49,12 +46,12 @@ const MarketplaceBuyer = () => {
         lg: 2, // Ajustado para MarketplaceBuyer
         xl: 3, // Ajustado para MarketplaceBuyer
       },
-    });
+    })
+  // Eliminar condicional, mostrar siempre MarketplaceTopBar
   return (
     <Box>
-      {/* TopBar específico para Marketplace */}
-      <MarketplaceTopBar />
-      {/* Sidebar específico para Buyer */}
+      {/* <MarketplaceTopBar /> */}{' '}
+      {/* Eliminado, ahora la topbar se maneja globalmente en App.jsx */}
       <SidebarBuyer />{' '}
       {/* Contenido principal con margen para compensar TopBar fijo y Sidebar */}
       <Box
@@ -72,7 +69,7 @@ const MarketplaceBuyer = () => {
         <ProductsSection {...productsSectionProps} />
       </Box>
     </Box>
-  );
-};
+  )
+}
 
-export default MarketplaceBuyer;
+export default MarketplaceBuyer

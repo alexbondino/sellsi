@@ -33,6 +33,7 @@ import {
 import { ThemeProvider } from '@mui/material/styles'
 import { toast } from 'react-hot-toast'
 import { useNavigate, useSearchParams } from 'react-router-dom'
+import { supabase } from '../../../services/supabase'
 
 // Components
 import SidebarProvider from '../../layout/SideBar'
@@ -71,7 +72,9 @@ const AddProduct = () => {
   const editProductId = searchParams.get('edit')
   const isEditMode = Boolean(editProductId)
   const productToEdit = isEditMode
-    ? products.find((p) => p.id.toString() === editProductId)
+    ? products
+        .filter(Boolean)
+        .find((p) => p.productid?.toString() === editProductId)
     : null
   // Estados del formulario
   const [formData, setFormData] = useState({
@@ -85,25 +88,76 @@ const AddProduct = () => {
     tramos: [{ cantidad: '', precio: '' }],
     imagenes: [],
     documentos: [],
+    specifications: [{ key: '', value: '' }], // NUEVO: especificaciones dinámicas
   })
   const [errors, setErrors] = useState({})
   const [touched, setTouched] = useState({})
   // Cargar datos del producto en modo de edición
   useEffect(() => {
-    if (isEditMode && productToEdit) {
-      setFormData({
-        nombre: productToEdit.nombre || '',
-        descripcion: productToEdit.descripcion || '',
-        categoria: productToEdit.categoria || '',
-        stock: productToEdit.stock?.toString() || '',
-        compraMinima: productToEdit.compraMinima?.toString() || '',
-        pricingType: productToEdit.pricingType || 'Por Unidad',
-        precioUnidad: productToEdit.precio?.toString() || '',
-        tramos: productToEdit.tramos || [{ cantidad: '', precio: '' }],
-        imagenes: productToEdit.imagenes || [],
-        documentos: productToEdit.documentos || [],
-      })
+    async function fetchImagesAndSetForm() {
+      if (isEditMode && productToEdit) {
+        // Obtener imágenes existentes del producto desde Supabase
+        let imagenes = []
+        try {
+          const { data: imgs, error: imgsError } = await supabase
+            .from('product_images')
+            .select('*')
+            .eq('product_id', productToEdit.productid)
+            .order('sort_order', { ascending: true })
+          if (!imgsError && imgs) {
+            imagenes = imgs.map((img, idx) => ({
+              id:
+                img.id ||
+                img.sort_order ||
+                img.image_url ||
+                `${Date.now()}_${idx}`,
+              url: img.image_url,
+              is_primary: img.is_primary,
+              sort_order: img.sort_order,
+              name: img.image_url.split('/').pop(),
+            }))
+          }
+        } catch (e) {
+          imagenes = []
+        }
+        // Mapear correctamente los campos del producto a los del formulario
+        setFormData({
+          nombre: productToEdit.nombre || productToEdit.productnm || '',
+          descripcion:
+            productToEdit.descripcion || productToEdit.description || '',
+          categoria: productToEdit.categoria || productToEdit.category || '',
+          stock:
+            productToEdit.stock?.toString() ||
+            productToEdit.productqty?.toString() ||
+            '',
+          compraMinima:
+            productToEdit.compraMinima?.toString() ||
+            productToEdit.minimum_purchase?.toString() ||
+            '',
+          pricingType:
+            productToEdit.pricingType ||
+            productToEdit.product_type ||
+            'Por Unidad',
+          precioUnidad:
+            productToEdit.precioUnidad?.toString() ||
+            productToEdit.price?.toString() ||
+            '',
+          tramos:
+            productToEdit.priceTiers && productToEdit.priceTiers.length > 0
+              ? productToEdit.priceTiers.map((t) => ({
+                  cantidad: t.min_quantity?.toString() || '',
+                  precio: t.price?.toString() || '',
+                }))
+              : [{ cantidad: '', precio: '' }],
+          imagenes: imagenes,
+          documentos: productToEdit.documentos || [],
+          specifications: productToEdit.specifications || [
+            { key: '', value: '' },
+          ],
+        })
+      }
     }
+    fetchImagesAndSetForm()
   }, [isEditMode, productToEdit])
 
   // Cálculos dinámicos
@@ -286,6 +340,26 @@ const AddProduct = () => {
       setErrors((prev) => ({ ...prev, documentos: '' }))
     }
   }
+
+  // Handler para especificaciones
+  const handleSpecificationChange = (index, field, value) => {
+    const newSpecs = [...formData.specifications]
+    newSpecs[index][field] = value
+    setFormData((prev) => ({ ...prev, specifications: newSpecs }))
+  }
+  const addSpecification = () => {
+    setFormData((prev) => ({
+      ...prev,
+      specifications: [...prev.specifications, { key: '', value: '' }],
+    }))
+  }
+  const removeSpecification = (index) => {
+    if (formData.specifications.length > 1) {
+      const newSpecs = formData.specifications.filter((_, i) => i !== index)
+      setFormData((prev) => ({ ...prev, specifications: newSpecs }))
+    }
+  }
+
   // Validación
   const validateForm = () => {
     const newErrors = {}
@@ -363,6 +437,12 @@ const AddProduct = () => {
       }
     }
 
+    // En validateForm, agregar validación básica de especificaciones
+    if (formData.specifications.some((s) => s.key && !s.value)) {
+      newErrors.specifications =
+        'Completa todos los valores de las especificaciones'
+    }
+
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
@@ -387,9 +467,14 @@ const AddProduct = () => {
     }
 
     try {
+      // Mapear los campos del formulario a los campos reales de la tabla products
       const productData = {
-        ...formData,
-        precio:
+        productnm: formData.nombre,
+        description: formData.descripcion,
+        category: formData.categoria,
+        productqty: parseInt(formData.stock),
+        minimum_purchase: parseInt(formData.compraMinima),
+        price:
           formData.pricingType === 'Por Unidad'
             ? parseFloat(formData.precioUnidad)
             : Math.min(
@@ -397,9 +482,32 @@ const AddProduct = () => {
                   .filter((t) => t.precio)
                   .map((t) => parseFloat(t.precio))
               ),
-        imagen: formData.imagenes[0], // Primera imagen como principal
-        negociable: formData.pricingType === 'Por Tramo',
-        tipo: formData.pricingType,
+        negotiable: formData.pricingType === 'Por Tramo',
+        product_type: formData.pricingType,
+        imagenes: (formData.imagenes || [])
+          .map((img) => {
+            // Si viene de ImageUploader como objeto con .file, usar el File
+            if (img && typeof img === 'object' && img.file instanceof File)
+              return img.file
+            // Si es File directo
+            if (img instanceof File) return img
+            // Si es string (URL), dejarla pasar
+            if (typeof img === 'string') return img
+            // Si es objeto con .url (de backend), usar la url
+            if (img && typeof img === 'object' && typeof img.url === 'string')
+              return img.url
+            return null
+          })
+          .filter(Boolean),
+        specifications: formData.specifications.filter((s) => s.key && s.value),
+        // Mapear tramos a priceTiers para el backend
+        priceTiers: (formData.tramos || [])
+          .filter((t) => t.cantidad && t.precio)
+          .map((t) => ({
+            cantidad: t.cantidad,
+            precio: t.precio,
+          })),
+        // Puedes agregar más campos si tu tabla los requiere
       }
 
       let result
@@ -813,7 +921,16 @@ const AddProduct = () => {
                     )}
                   </Box>
                   {/* FILA 6: Imágenes del Producto */}
-                  <Box className="full-width">
+                  <Box
+                    className="full-width"
+                    sx={{
+                      p: 0,
+                      m: 0,
+                      boxShadow: 'none',
+                      bgcolor: 'transparent',
+                      overflow: 'visible',
+                    }}
+                  >
                     <Typography
                       variant="h6"
                       gutterBottom
@@ -828,7 +945,82 @@ const AddProduct = () => {
                       error={errors.imagenes}
                     />
                   </Box>{' '}
-                  {/* FILA 7: Documentación Técnica */}
+                  {/* FILA 7: Especificaciones Técnicas */}
+                  <Box className="full-width">
+                    <Typography
+                      variant="h6"
+                      gutterBottom
+                      sx={{ fontWeight: 600, color: 'primary.main', mb: 2 }}
+                    >
+                      Especificaciones Técnicas
+                    </Typography>
+                    <Grid container spacing={2}>
+                      {formData.specifications.map((spec, index) => (
+                        <React.Fragment key={index}>
+                          <Grid item xs={5}>
+                            <TextField
+                              fullWidth
+                              label="Clave"
+                              placeholder="Ej: Color"
+                              value={spec.key}
+                              onChange={(e) =>
+                                handleSpecificationChange(
+                                  index,
+                                  'key',
+                                  e.target.value
+                                )
+                              }
+                              size="small"
+                            />
+                          </Grid>
+                          <Grid item xs={5}>
+                            <TextField
+                              fullWidth
+                              label="Valor"
+                              placeholder="Ej: Rojo"
+                              value={spec.value}
+                              onChange={(e) =>
+                                handleSpecificationChange(
+                                  index,
+                                  'value',
+                                  e.target.value
+                                )
+                              }
+                              size="small"
+                            />
+                          </Grid>
+                          <Grid item xs={2}>
+                            {formData.specifications.length > 1 && (
+                              <IconButton
+                                color="error"
+                                onClick={() => removeSpecification(index)}
+                              >
+                                <DeleteIcon fontSize="small" />
+                              </IconButton>
+                            )}
+                          </Grid>
+                        </React.Fragment>
+                      ))}
+                      <Grid item xs={12}>
+                        <Button
+                          variant="outlined"
+                          startIcon={<AddIcon />}
+                          onClick={addSpecification}
+                          sx={{ mt: 1 }}
+                        >
+                          Agregar Especificación
+                        </Button>
+                      </Grid>
+                      {errors.specifications && (
+                        <Grid item xs={12}>
+                          <Typography variant="caption" color="error">
+                            {errors.specifications}
+                          </Typography>
+                        </Grid>
+                      )}
+                    </Grid>
+                  </Box>
+                  {/* FILA 8: Documentación Técnica */}
                   <Box className="full-width">
                     <Typography
                       variant="h6"

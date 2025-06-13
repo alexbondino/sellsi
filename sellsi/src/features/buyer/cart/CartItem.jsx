@@ -33,6 +33,7 @@ import PriceDisplay from '../../marketplace/PriceDisplay/PriceDisplay'
 import StockIndicator from '../../marketplace//StockIndicator/StockIndicator'
 import { QuantitySelector } from '../../../components/shared' // ✅ Componente universal
 import { SHIPPING_OPTIONS } from '../../../features/marketplace/hooks/constants'
+import { getProductImageUrl } from '../../../utils/getProductImageUrl'
 
 /*
 ========== GUÍA DE IDENTIFICACIÓN DE ELEMENTOS DEL CARRITO ==========
@@ -78,6 +79,29 @@ const OptimizedImage = ({ src, alt, sx }) => {
   )
 }
 
+// Helper robusto para obtener la imagen primaria
+function resolveImageSrc(item) {
+  let image = item?.image || item?.imagen
+  if (!image) return '/placeholder-product.jpg'
+  // Si es string (url pública o path relativo)
+  if (typeof image === 'string') {
+    if (image.startsWith('blob:')) return '/placeholder-product.jpg'
+    return getProductImageUrl(image, item) // ✅ Pasar datos del item
+  }
+  // Si es objeto con url
+  if (typeof image === 'object' && image !== null) {
+    if (image.url && typeof image.url === 'string') {
+      if (image.url.startsWith('blob:')) return '/placeholder-product.jpg'
+      return getProductImageUrl(image.url, item) // ✅ Pasar datos del item
+    }
+    // Si es objeto con path relativo
+    if (image.path && typeof image.path === 'string') {
+      return getProductImageUrl(image.path, item) // ✅ Pasar datos del item
+    }
+  }
+  return '/placeholder-product.jpg'
+}
+
 const CartItem = ({
   item,
   formatPrice,
@@ -109,6 +133,7 @@ const CartItem = ({
     )
     return selectedOption ? selectedOption.price : 0
   }
+
   return (
     <motion.div
       variants={itemVariants}
@@ -219,14 +244,14 @@ const CartItem = ({
               }}
             >
               <OptimizedImage
-                src={item.image}
+                src={resolveImageSrc(item)}
                 alt={item.name}
                 sx={{
                   height: 140,
-                  width: '100%', // ← Ancho flexible
+                  width: '100%',
                   borderRadius: 2,
-                  objectFit: 'contain', // ← Cambio de 'cover' a 'contain'
-                  backgroundColor: '#f9f9f9', // ← Fondo para espacios vacíos
+                  objectFit: 'contain',
+                  backgroundColor: '#f9f9f9',
                 }}
               />
             </Box>
@@ -570,7 +595,7 @@ const CartItem = ({
               </Typography>
             </Box>
           </Grid>
-        </Grid>{' '}
+        </Grid>
       </Paper>
     </motion.div>
   )

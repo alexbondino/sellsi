@@ -4,19 +4,16 @@
 // - Agregar/quitar secciones
 // - Modificar estilos del contenedor principal
 
-import React from 'react';
-import { Box } from '@mui/material';
-
-// TopBar base (mismo que Home)
-import BaseTopBar from '../layout/BaseTopBar.jsx';
+import React from 'react'
+import { Box } from '@mui/material'
 
 // Hook centralizado
-import useMarketplaceLogic from './useMarketplaceLogic.jsx';
+import useMarketplaceLogic from './useMarketplaceLogic.jsx'
 
 // Componentes de secciones
-import SearchSection from './sections/SearchSection.jsx';
-import FilterSection from './sections/FilterSection.jsx';
-import ProductsSection from './sections/ProductsSection.jsx';
+import SearchSection from './sections/SearchSection.jsx'
+import FilterSection from './sections/FilterSection.jsx'
+import ProductsSection from './sections/ProductsSection.jsx'
 
 const Marketplace = () => {
   // ===== USAR CUSTOM HOOK PARA TODA LA LÓGICA =====
@@ -46,43 +43,28 @@ const Marketplace = () => {
         lg: 2,
         xl: 3,
       },
-    });
+    })
   // Configuración de botones de navegación (sin botones para Marketplace)
-  const navigationButtons = [];
+  const navigationButtons = []
 
   // Configuración de botones de autenticación (usa defaults)
-  const authButtons = {};
+  const authButtons = {}
 
   // Función de navegación (placeholder)
-  const handleNavigate = ref => {
-    console.log('Navegando a:', ref);
+  const handleNavigate = (ref) => {
+    console.log('Navegando a:', ref)
     // TODO: Implementar navegación si es necesario
-  };
+  }
 
   return (
     <Box>
-      {' '}
-      {/* TopBar igual que Home */}
-      <BaseTopBar
-        navigationButtons={navigationButtons}
-        authButtons={authButtons}
-        onNavigate={handleNavigate}
-        showContactModal={true}
-        logoMarginLeft={{
-          xs: 0,
-          sm: 0,
-          md: -3,
-          lg: 1,
-          xl: -28,
-        }}
-      />
+      {/* TopBar eliminada, ahora la maneja App.jsx globalmente */}
       {/* Contenido principal con margen para compensar TopBar fijo (SIN sidebar) */}
       <Box
         sx={{
           bgcolor: '#f8fafc',
           minHeight: '100vh',
           pt: { xs: 7, md: 8 },
-          // Sin margen izquierdo porque no hay sidebar
         }}
       >
         {/* Sección de búsqueda y navegación */}
@@ -95,7 +77,7 @@ const Marketplace = () => {
         <ProductsSection {...productsSectionProps} />
       </Box>
     </Box>
-  );
-};
+  )
+}
 
-export default Marketplace;
+export default Marketplace

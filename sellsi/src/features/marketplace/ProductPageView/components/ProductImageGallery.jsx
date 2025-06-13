@@ -1,19 +1,18 @@
 import React from 'react'
 import { Box, Card, CardMedia } from '@mui/material'
+import { getProductImageUrl } from '../../../../utils/getProductImageUrl'
 
 const ProductImageGallery = ({
-  mainImage,
+  images = [],
   selectedIndex = 0,
   onImageSelect,
   productName,
 }) => {
-  // Generate additional sample images (in a real app, these would come from the product data)
-  const sampleImages = [
-    mainImage,
-    mainImage, // For demo purposes, we're repeating the same image
-    mainImage,
-    mainImage,
-  ]
+  // Usar las imágenes reales del producto
+  const galleryImages =
+    images.length > 0
+      ? images.map(getProductImageUrl)
+      : ['/placeholder-product.jpg']
   return (
     <Box
       sx={{
@@ -43,7 +42,7 @@ const ProductImageGallery = ({
       >
         <CardMedia
           component="img"
-          image={sampleImages[selectedIndex]}
+          image={galleryImages[selectedIndex]}
           alt={productName}
           sx={{
             width: '100%',
@@ -68,7 +67,7 @@ const ProductImageGallery = ({
           mx: 'auto', // Center the thumbnails container
         }}
       >
-        {sampleImages.map((image, index) => (
+        {galleryImages.map((image, index) => (
           <Card
             key={index}
             elevation={selectedIndex === index ? 3 : 1}

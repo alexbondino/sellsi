@@ -171,24 +171,58 @@ const ImageUploader = ({
 
           <Grid container spacing={2}>
             {images.map((image, index) => (
-              <Grid item xs={6} sm={4} md={3} key={image.id}>
+              <Grid
+                item
+                xs={6}
+                sm={4}
+                md={3}
+                key={image.id}
+                sx={{ maxWidth: 160, minWidth: 140 }}
+              >
                 <Card
                   elevation={2}
                   sx={{
                     position: 'relative',
+                    width: '100%',
+                    minHeight: 140,
+                    maxHeight: 140,
+                    height: 140,
+                    maxWidth: 160,
+                    minWidth: 140,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    overflow: 'hidden',
                     '&:hover .delete-button': {
                       opacity: 1,
                     },
                   }}
                 >
-                  {' '}
-                  <CardMedia
-                    component="img"
-                    height="72"
-                    image={image.url}
-                    alt={`Producto ${index + 1}`}
-                    sx={{ objectFit: 'cover' }}
-                  />
+                  <Box
+                    sx={{
+                      width: '100%',
+                      height: '100%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <CardMedia
+                      component="img"
+                      image={image.url}
+                      alt={`Producto ${index + 1}`}
+                      sx={{
+                        objectFit: 'contain',
+                        width: '100%',
+                        height: '100%',
+                        background: '#f5f5f5',
+                        m: 0,
+                        p: 0,
+                        display: 'block',
+                      }}
+                    />
+                  </Box>
                   {/* Badge de imagen principal */}
                   {index === 0 && (
                     <Box

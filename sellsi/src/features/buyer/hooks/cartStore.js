@@ -102,6 +102,14 @@ const useCartStore = create(
 
         // Agregar producto al carrito
         addItem: (product, quantity = 1) => {
+          // Asegurarse de que la imagen principal esté presente
+          const image =
+            product.imagen || product.image || '/placeholder-product.jpg'
+          const item = {
+            ...product,
+            image,
+            quantity,
+          }
           const currentState = get()
           const existingItem = currentState.items.find(
             (item) => item.id === product.id

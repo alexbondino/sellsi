@@ -17,6 +17,7 @@ import {
   TableCell,
   TableContainer,
   TableRow,
+  CircularProgress,
 } from '@mui/material'
 import {
   ArrowBack,
@@ -37,6 +38,7 @@ import SaleConditions from './components/SaleConditions'
 import TechnicalSpecifications from './components/TechnicalSpecifications'
 import PurchaseActions from './components/PurchaseActions'
 import ProductHeader from './components/ProductHeader'
+import LoadingOverlay from '../../ui/LoadingOverlay'
 
 const ProductPageView = ({
   product,
@@ -48,7 +50,23 @@ const ProductPageView = ({
   const [selectedImageIndex, setSelectedImageIndex] = useState(0)
 
   if (!product) {
-    return null
+    return (
+      <Box
+        sx={{
+          width: '100%',
+          maxWidth: { sm: '720px', md: '960px', lg: '1280px', xl: '1700px' },
+          mx: 'auto',
+          pt: 8,
+          minHeight: 340,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <CircularProgress color="primary" size={48} />
+      </Box>
+    )
   }
   const {
     nombre,
@@ -76,8 +94,8 @@ const ProductPageView = ({
   }
   return (
     <Box
-      sx={{
-        ...(isPageView
+      sx={
+        isPageView
           ? {
               // Estilos para vista de página completa
               position: 'relative',
@@ -97,8 +115,8 @@ const ProductPageView = ({
               overflow: 'auto',
               transform: 'translateX(0)',
               transition: 'transform 0.3s ease-in-out',
-            }),
-      }}
+            }
+      }
     >
       {' '}
       {/* Header with back button - solo para modal */}

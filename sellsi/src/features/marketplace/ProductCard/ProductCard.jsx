@@ -29,6 +29,9 @@ import InfoIcon from '@mui/icons-material/Info'
 import AddIcon from '@mui/icons-material/Add'
 import RemoveIcon from '@mui/icons-material/Remove'
 import { generateProductUrl } from '../marketplace/productUrl'
+import PriceDisplay from '../PriceDisplay'
+import { useProductPriceTiers } from '../hooks/useProductPriceTiers'
+import { getProductImageUrl } from '../../../utils/getProductImageUrl'
 
 const ProductCard = ({ producto, onAddToCart, onViewDetails }) => {
   const [favorito, setFavorito] = useState(false)
@@ -38,11 +41,110 @@ const ProductCard = ({ producto, onAddToCart, onViewDetails }) => {
 
   if (!producto) {
     return null
-  } // ✅ NUEVA función para manejar click en AGREGAR
+  }
+
+  const {
+    nombre,
+    proveedor,
+    imagen,
+    precio,
+    precioOriginal,
+    descuento,
+    rating,
+    ventas,
+    stock,
+    compraMinima,
+    negociable, // ✅ AGREGAR: Propiedad negociable
+  } = producto
+
+  // Hook para obtener tramos de precios
+  const {
+    tiers,
+    loading: loadingTiers,
+    error: errorTiers,
+  } = useProductPriceTiers(producto.id)
+
+  // Lógica para mostrar precios
+  let priceContent
+  if (loadingTiers) {
+    priceContent = (
+      <Typography variant="body2" color="text.secondary">
+        Cargando precios...
+      </Typography>
+    )
+  } else if (errorTiers) {
+    priceContent = (
+      <Typography variant="body2" color="error.main">
+        Error al cargar precios
+      </Typography>
+    )
+  } else if (tiers && tiers.length > 0) {
+    // Mostrar rango de precios por tramos
+    const minPrice = Math.min(...tiers.map((t) => t.price))
+    const maxPrice = Math.max(...tiers.map((t) => t.price))
+    priceContent = (
+      <PriceDisplay
+        price={maxPrice}
+        minPrice={minPrice}
+        showRange={minPrice !== maxPrice}
+        variant="h5"
+        color="#1976d2"
+        sx={{ lineHeight: 1.1, fontSize: 22 }}
+      />
+    )
+  } else {
+    // Precio único (sin tramos)
+    priceContent = (
+      <PriceDisplay
+        price={precio}
+        originalPrice={precioOriginal}
+        variant="h5"
+        color="#1976d2"
+        sx={{ lineHeight: 1.1, fontSize: 22 }}
+      />
+    )
+  }
+
+  const toggleFavorito = () => setFavorito(!favorito) // Función para navegar a la ficha técnica del producto
+  const handleProductClick = (e) => {
+    // Verificar si el clic viene de un botón o elemento interactivo
+    const target = e.target
+    const clickedElement =
+      target.closest('button') ||
+      target.closest('.MuiIconButton-root') ||
+      target.closest('.MuiButton-root') ||
+      target.closest('[data-no-card-click]') ||
+      target.hasAttribute('data-no-card-click')
+
+    // También verificar si el elemento tiene clases de MUI que indican que es un botón    const isMuiButton =
+    target.classList.contains('MuiButton-root') ||
+      target.classList.contains('MuiIconButton-root') ||
+      target.closest('.MuiButton-root') ||
+      target.closest('.MuiIconButton-root')
+
+    if (clickedElement || isMuiButton) {
+      return
+    }
+
+    // Determinar el origen actual para pasar al TechnicalSpecs
+    const currentPath = window.location.pathname
+    let fromPath = '/marketplace' // Default
+
+    // Detectar si estamos en MarketplaceBuyer
+    if (currentPath.includes('/buyer/')) {
+      fromPath = '/buyer/marketplace'
+    }
+
+    // Generar URL y navegar con estado
+    const productUrl = generateProductUrl(producto)
+    navigate(productUrl, {
+      state: { from: fromPath },
+    })
+  }
+  // ✅ NUEVA función para manejar click en AGREGAR
   const handleAgregarClick = (event) => {
     event.stopPropagation() // Prevenir propagación hacia ProductCard
     event.preventDefault() // Prevenir comportamiento por defecto
-    console.log('handleAgregarClick ejecutado!', event?.currentTarget)
     setAnchorEl(event.currentTarget)
   }
 
@@ -72,67 +174,34 @@ const ProductCard = ({ producto, onAddToCart, onViewDetails }) => {
     if (cantidad > 1) {
       setCantidad(cantidad - 1)
     }
-  }
-  // ✅ NUEVA función para confirmar agregado al carrito
+  } // ✅ NUEVA función para confirmar agregado al carrito
   const handleConfirmarAgregar = () => {
-    console.log(`Agregando ${cantidad} unidades de ${nombre} al carrito`)
     if (onAddToCart) {
       onAddToCart({ ...producto, cantidadSeleccionada: cantidad })
     }
     handleClosePopover()
   }
-
-  const {
-    nombre,
-    proveedor,
-    imagen,
-    precio,
-    precioOriginal,
-    descuento,
-    rating,
-    ventas,
-    stock,
-    compraMinima,
-    negociable, // ✅ AGREGAR: Propiedad negociable
-  } = producto
-
-  const toggleFavorito = () => setFavorito(!favorito) // Función para navegar a la ficha técnica del producto
-  const handleProductClick = (e) => {
-    // Verificar si el clic viene de un botón o elemento interactivo
-    const target = e.target
-    const clickedElement =
-      target.closest('button') ||
-      target.closest('.MuiIconButton-root') ||
-      target.closest('.MuiButton-root') ||
-      target.closest('[data-no-card-click]') ||
-      target.hasAttribute('data-no-card-click')
-
-    // También verificar si el elemento tiene clases de MUI que indican que es un botón
-    const isMuiButton =
-      target.classList.contains('MuiButton-root') ||
-      target.classList.contains('MuiIconButton-root') ||
-      target.closest('.MuiButton-root') ||
-      target.closest('.MuiIconButton-root')
-
-    if (clickedElement || isMuiButton) {
-      console.log('Click interceptado en botón, no navegando')
-      return
+  function resolveImageSrc(producto) {
+    // Unifica lógica: soporta string, objeto, path relativo, url pública
+    let image = producto?.imagen || producto?.image
+    if (!image) return '/placeholder-product.jpg'
+    // Si es string (url pública o path relativo)
+    if (typeof image === 'string') {
+      if (image.startsWith('blob:')) return '/placeholder-product.jpg'
+      return getProductImageUrl(image, producto) // ✅ Pasar datos del producto
     }
-
-    // Determinar el origen actual para pasar al TechnicalSpecs
-    const currentPath = window.location.pathname
-    let fromPath = '/marketplace' // Default
-
-    // Detectar si estamos en MarketplaceBuyer
-    if (currentPath.includes('/buyer/')) {
-      fromPath = '/buyer/marketplace'
+    // Si es objeto con url
+    if (typeof image === 'object' && image !== null) {
+      if (image.url && typeof image.url === 'string') {
+        if (image.url.startsWith('blob:')) return '/placeholder-product.jpg'
+        return getProductImageUrl(image.url, producto) // ✅ Pasar datos del producto
+      }
+      // Si es objeto con path relativo
+      if (image.path && typeof image.path === 'string') {
+        return getProductImageUrl(image.path, producto) // ✅ Pasar datos del producto
+      }
     }
-
-    // Generar URL y navegar con estado
-    const productUrl = generateProductUrl(producto)
-    navigate(productUrl, {
-      state: { from: fromPath },
-    })
+    return '/placeholder-product.jpg'
   }
 
   return (
@@ -161,34 +230,70 @@ const ProductCard = ({ producto, onAddToCart, onViewDetails }) => {
         onClick={toggleFavorito}
         sx={{
           position: 'absolute',
-          top: 6, // ✅ REDUCIR: de 8 a 6
-          right: 6, // ✅ REDUCIR: de 8 a 6
+          top: 6,
+          right: 6,
           zIndex: 2,
           bgcolor: 'rgba(255,255,255,0.9)',
-          width: 32, // ✅ REDUCIR: de 44 a 32
-          height: 32, // ✅ REDUCIR: de 44 a 32
+          width: 32,
+          height: 32,
+          transition: 'background 0.2s, box-shadow 0.2s',
+          boxShadow: 'none',
+          outline: 'none',
           '&:hover': {
             bgcolor: 'rgba(255,255,255,1)',
-            transform: 'scale(1.05)', // ✅ REDUCIR: de 1.1 a 1.05
+            transform: 'scale(1.05)',
+            boxShadow: 'none',
+            outline: 'none',
+          },
+          '&:active': {
+            boxShadow: 'none !important',
+            outline: 'none !important',
+            background: 'rgba(255,255,255,1) !important',
+          },
+          '&:focus': {
+            boxShadow: 'none !important',
+            outline: 'none !important',
+            background: 'rgba(255,255,255,1) !important',
+          },
+          '&:focus-visible': {
+            boxShadow: 'none !important',
+            outline: 'none !important',
+            background: 'rgba(255,255,255,1) !important',
           },
         }}
         size="small"
+        aria-label={favorito ? 'Quitar de favoritos' : 'Agregar a favoritos'}
+        data-no-card-click="true"
       >
-        {favorito ? (
-          <FavoriteIcon sx={{ color: '#FF5252', fontSize: 20 }} /> // ✅ REDUCIR: de 28 a 20
-        ) : (
-          <FavoriteBorderIcon sx={{ color: '#666', fontSize: 20 }} /> // ✅ REDUCIR: de 28 a 20
-        )}
+        <Box
+          component="span"
+          sx={{
+            display: 'inline-flex',
+            transition: 'transform 0.25s cubic-bezier(0.4,1.3,0.6,1)',
+            transform: favorito ? 'scale(1.25)' : 'scale(1)',
+            filter: favorito ? 'drop-shadow(0 2px 6px #ff525299)' : 'none',
+          }}
+        >
+          {favorito ? (
+            <FavoriteIcon
+              sx={{ color: '#FF5252', fontSize: 20, transition: 'color 0.2s' }}
+            />
+          ) : (
+            <FavoriteBorderIcon
+              sx={{ color: '#666', fontSize: 20, transition: 'color 0.2s' }}
+            />
+          )}
+        </Box>
       </IconButton>
       {/* Imagen - más pequeña */}
       <CardMedia
         component="img"
-        height="160" // ✅ REDUCIR: de 220 a 160 (-60px, -27%)
-        image={imagen}
+        height="160"
+        image={resolveImageSrc(producto)}
         alt={nombre}
         sx={{
           objectFit: 'contain',
-          p: 1.5, // ✅ REDUCIR: de 2 a 1.5
+          p: 1.5,
           bgcolor: '#fafafa',
         }}
       />
@@ -245,17 +350,7 @@ const ProductCard = ({ producto, onAddToCart, onViewDetails }) => {
           Compra mínima: {compraMinima} unidades
         </Typography>
         {/* Precios - más compacto */}{' '}
-        <Box sx={{ mb: 1.5 }}>
-          <Typography
-            variant="h5"
-            color="primary"
-            fontWeight={700}
-            sx={{ lineHeight: 1.1, fontSize: 22 }} // ✅ REDUCIR: de 30 a 22
-          >
-            ${Math.round(precio * 0.6).toLocaleString('es-CL')} - $
-            {precio.toLocaleString('es-CL')}
-          </Typography>
-        </Box>{' '}
+        <Box sx={{ mb: 1.5 }}>{priceContent}</Box>{' '}
         {/* Información adicional - más compacta */}
         <Typography
           variant="body2"
@@ -280,7 +375,6 @@ const ProductCard = ({ producto, onAddToCart, onViewDetails }) => {
               e.preventDefault()
               if (negociable) {
                 // TODO: Abrir modal de negociación
-                console.log('Abrir modal de negociación para:', nombre)
               }
             }}
             onTouchStart={(e) => {

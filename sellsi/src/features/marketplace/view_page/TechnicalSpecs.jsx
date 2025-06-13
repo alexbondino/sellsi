@@ -8,6 +8,7 @@ import {
   Paper,
   Breadcrumbs,
   Link,
+  CircularProgress,
 } from '@mui/material'
 import { ArrowBack, Home, StorefrontOutlined } from '@mui/icons-material'
 import ProductPageView from '../ProductPageView/ProductPageView'
@@ -49,9 +50,7 @@ const TechnicalSpecs = () => {
           minHeight: '50vh',
         }}
       >
-        <Typography variant="h6" color="text.secondary">
-          Cargando...
-        </Typography>
+        <CircularProgress color="primary" size={48} />
       </Box>
     )
   }
