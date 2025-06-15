@@ -79,22 +79,6 @@ const OrderSummary = ({
       />
       {/* Botones de acción */}
       <Stack spacing={2}>
-        {/* Banner informativo durante checkout */}
-        {isCheckingOut && (
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
-          >
-            <Alert severity="info" sx={{ borderRadius: 2 }}>
-              <Typography variant="body2">
-                🎭 <strong>Modo Demo:</strong> Después de la compra, el carrito
-                se reiniciará automáticamente con productos de muestra
-              </Typography>
-            </Alert>
-          </motion.div>
-        )}
-
         <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
           <Button
             variant="contained"

@@ -165,9 +165,6 @@ const BuyerCart = () => {
     getStats,
     setCouponInput,
     setLoading,
-    resetDemoCart,
-    autoResetIfEmpty,
-    simulateCheckout,
     getUndoInfo,
     getRedoInfo,
     getHistoryInfo,
@@ -183,7 +180,6 @@ const BuyerCart = () => {
   const [isCheckingOut, setIsCheckingOut] = useState(false)
   const [deliveryDate, setDeliveryDate] = useState(null)
   const [showSavingsCalculator, setShowSavingsCalculator] = useState(false)
-  const [hasShownDemoReset, setHasShownDemoReset] = useState(false)
 
   // Estado para manejar envíos por producto (inicializar con envío estándar)
   const [productShipping, setProductShipping] = useState(() => {
@@ -227,20 +223,6 @@ const BuyerCart = () => {
   }, [items])
 
   // ===== EFECTOS =====
-  useEffect(() => {
-    // 🎭 EFECTO PARA DEMO: Reiniciar carrito si está vacío al cargar la página
-    if (!hasShownDemoReset) {
-      // Si el carrito está vacío, reiniciarlo con productos de muestra
-      if (items.length === 0) {
-        setTimeout(() => {
-          autoResetIfEmpty()
-          setHasShownDemoReset(true)
-        }, 500) // Pequeño delay para mejor UX
-      } else {
-        setHasShownDemoReset(true)
-      }
-    }
-  }, [items.length, autoResetIfEmpty, hasShownDemoReset])
   useEffect(() => {
     // Calcular fecha estimada de entrega basada en la opción más lenta
     if (items.length > 0) {
@@ -286,11 +268,8 @@ const BuyerCart = () => {
     const handlePageFocus = () => {
       const currentItems = useCartStore.getState().items
       if (currentItems.length === 0 && document.hasFocus()) {
-        // Si el carrito está vacío y la página tiene foco,
-        // es probable que el usuario haya regresado después de checkout
-        setTimeout(() => {
-          autoResetIfEmpty()
-        }, 1000)
+        // Solo mostrar notificación de bienvenida si el carrito está vacío
+        console.log('Usuario regresó con carrito vacío')
       }
     }
 
@@ -300,7 +279,7 @@ const BuyerCart = () => {
     return () => {
       window.removeEventListener('focus', handlePageFocus)
     }
-  }, [autoResetIfEmpty])
+  }, [])
 
   // ===== ANIMACIONES FRAMER MOTION =====
   const containerVariants = {
@@ -366,16 +345,10 @@ const BuyerCart = () => {
       if (item) {
         removeItem(id)
         setLastAction({ type: 'remove', item })
-
+        // Mostrar toast de confirmación
         toast.success(`${item.name} eliminado del carrito`, {
           icon: '🗑️',
-          action: {
-            label: 'Deshacer',
-            onClick: () => {
-              addItem(item, item.quantity)
-              toast.success('Producto restaurado', { icon: '↩️' })
-            },
-          },
+          style: { background: '#fffde7', color: '#795548' }, // fondo amarillo suave, texto marrón
         })
       }
     },
@@ -416,6 +389,7 @@ const BuyerCart = () => {
       }, 100)
     }
   }, [couponInput, applyCoupon, getTotal])
+
   const handleCheckout = useCallback(async () => {
     setIsCheckingOut(true)
 
@@ -429,28 +403,17 @@ const BuyerCart = () => {
         duration: 5000,
       })
 
-      setTimeout(async () => {
+      setTimeout(() => {
         setShowConfetti(false)
-
-        // Usar el checkout simulado del store que auto-reinicia el demo
-        const checkoutSuccess = await simulateCheckout()
-
-        if (checkoutSuccess) {
-          toast.success(
-            '🎭 El demo se reiniciará automáticamente en unos segundos...',
-            {
-              icon: '⏰',
-              duration: 4000,
-            }
-          )
-        }
+        // Clear the cart after successful checkout
+        clearCart()
       }, 3000)
     } catch (error) {
       toast.error('Error en el proceso de compra', { icon: '❌' })
     } finally {
       setIsCheckingOut(false)
     }
-  }, [simulateCheckout])
+  }, [clearCart])
 
   // ===== FUNCIONES DE SELECCIÓN MÚLTIPLE =====
   const handleToggleSelectionMode = useCallback(() => {
@@ -495,16 +458,7 @@ const BuyerCart = () => {
       removeItem(itemId)
     })
 
-    // Mostrar toast de confirmación
-    toast.success(
-      `${selectedItems.length} producto${
-        selectedItems.length > 1 ? 's' : ''
-      } eliminado${selectedItems.length > 1 ? 's' : ''} del carrito`,
-      {
-        icon: '🗑️',
-        duration: 4000,
-      }
-    )
+    // Se elimina el toast aquí para evitar duplicados, solo se muestra desde el store
 
     // Limpiar selección y salir del modo selección
     setSelectedItems([])
@@ -569,7 +523,10 @@ const BuyerCart = () => {
   if (items.length === 0 && !showWishlist) {
     return (
       <Box>
-        <Toaster position="top-right" />
+        <Toaster
+          position="top-right"
+          toastOptions={{ style: { marginTop: 72 } }}
+        />
         <Box sx={{ display: 'flex' }}>
           <SidebarBuyer />{' '}
           <Box
@@ -595,9 +552,9 @@ const BuyerCart = () => {
                 alignItems: 'center',
               }}
             >
+              {' '}
               <EmptyCartState
                 wishlist={wishlist}
-                resetDemoCart={resetDemoCart}
                 setShowWishlist={setShowWishlist}
               />
             </Box>
@@ -609,7 +566,10 @@ const BuyerCart = () => {
   // ===== RENDERIZADO PRINCIPAL =====
   return (
     <Box>
-      <Toaster position="top-right" />
+      <Toaster
+        position="top-right"
+        toastOptions={{ style: { marginTop: 72 } }}
+      />
       <ConfettiEffect trigger={showConfetti} />
 
       <Box sx={{ display: 'flex' }}>
@@ -653,7 +613,6 @@ const BuyerCart = () => {
                 onUndo={undo}
                 onRedo={redo}
                 onClearCart={clearCart}
-                onResetDemo={resetDemoCart}
                 onToggleWishlist={() => setShowWishlist(!showWishlist)}
                 showWishlist={showWishlist}
                 undoInfo={getUndoInfo()}
@@ -666,7 +625,7 @@ const BuyerCart = () => {
                 onSelectAll={handleSelectAll}
                 onDeleteSelected={handleDeleteSelected}
                 totalItems={items.length}
-              />{' '}
+              />
               {/* Barra de progreso hacia envío gratis */}
               <ShippingProgressBar
                 subtotal={subtotal}

@@ -71,6 +71,13 @@ export const SAMPLE_ITEMS = [
     discount: 20,
     rating: 4.8,
     reviews: 89,
+    // Estructura de price_tiers para cálculos dinámicos (invisible en UI)
+    price_tiers: [
+      { min_quantity: 1, price: 45990 },
+      { min_quantity: 3, price: 42990 },
+      { min_quantity: 6, price: 39990 },
+      { min_quantity: 12, price: 36990 },
+    ],
   },
   {
     id: 2,
@@ -83,6 +90,13 @@ export const SAMPLE_ITEMS = [
     discount: 15,
     rating: 4.6,
     reviews: 124,
+    // Estructura de price_tiers para cálculos dinámicos (invisible en UI)
+    price_tiers: [
+      { min_quantity: 1, price: 750000 },
+      { min_quantity: 2, price: 720000 },
+      { min_quantity: 4, price: 680000 },
+      { min_quantity: 6, price: 650000 },
+    ],
   },
   {
     id: 3,
@@ -95,5 +109,12 @@ export const SAMPLE_ITEMS = [
     discount: 0,
     rating: 4.3,
     reviews: 203,
+    // Estructura de price_tiers para cálculos dinámicos (invisible en UI)
+    price_tiers: [
+      { min_quantity: 1, price: 349990 },
+      { min_quantity: 2, price: 329990 },
+      { min_quantity: 5, price: 299990 },
+      { min_quantity: 10, price: 279990 },
+    ],
   },
 ]

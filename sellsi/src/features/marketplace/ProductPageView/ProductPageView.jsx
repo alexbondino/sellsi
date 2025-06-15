@@ -165,7 +165,13 @@ const ProductPageView = ({
       // Si recibimos un producto formateado del PurchaseActions, usar ese
       // Si no, formatear con los datos básicos del producto
       onAddToCart(cartProduct || product)
-      // No mostrar toast aquí porque el cartStore ya lo maneja
+      // Mostrar toast de confirmación aquí
+      toast.success(
+        `Agregado al carrito: ${(cartProduct || product).name || nombre}`,
+        {
+          icon: '✅',
+        }
+      )
     }
   }
   return (

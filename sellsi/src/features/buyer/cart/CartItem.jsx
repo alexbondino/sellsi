@@ -34,6 +34,10 @@ import StockIndicator from '../../marketplace//StockIndicator/StockIndicator'
 import { QuantitySelector } from '../../../components/shared' // ✅ Componente universal
 import { SHIPPING_OPTIONS } from '../../../features/marketplace/hooks/constants'
 import { getProductImageUrl } from '../../../utils/getProductImageUrl'
+import {
+  calculatePriceForQuantity,
+  formatProductForCart,
+} from '../../../utils/priceCalculation'
 
 /*
 ========== GUÍA DE IDENTIFICACIÓN DE ELEMENTOS DEL CARRITO ==========
@@ -117,6 +121,22 @@ const CartItem = ({
   onToggleSelection,
 }) => {
   const [selectedShipping, setSelectedShipping] = useState('standard')
+
+  // ===== CÁLCULO DE PRECIOS USANDO PRICE_TIERS =====
+  // Calcular precio dinámico basado en cantidad y price_tiers
+  const calculateDynamicPrice = () => {
+    if (item.price_tiers && item.price_tiers.length > 0) {
+      return calculatePriceForQuantity(
+        item.quantity,
+        item.price_tiers,
+        item.price
+      )
+    }
+    return item.price
+  }
+
+  const currentUnitPrice = calculateDynamicPrice()
+  const currentSubtotal = currentUnitPrice * item.quantity
 
   // Función para manejar el cambio de envío y calcular el precio
   const handleShippingChange = (shippingId) => {
@@ -313,9 +333,9 @@ const CartItem = ({
                   color="primary"
                 />
               </Box>{' '}
-              {/* Price */}
+              {/* Price - Usando precio dinámico basado en quantity y price_tiers */}
               <PriceDisplay
-                price={item.price}
+                price={currentUnitPrice}
                 variant="h6"
                 sx={{ mb: 6 }}
               />{' '}
@@ -395,8 +415,8 @@ const CartItem = ({
                   opacity: isSelectionMode ? 0.5 : 1,
                   transition: 'opacity 0.3s ease',
                 }}
-              />
-              {/* Subtotal del producto */}
+              />{' '}
+              {/* Subtotal del producto - Usando precio dinámico calculado */}
               <Typography
                 variant="h5"
                 sx={{
@@ -412,7 +432,7 @@ const CartItem = ({
                   transition: 'opacity 0.3s ease',
                 }}
               >
-                {formatPrice(item.price * item.quantity)}
+                {formatPrice(currentSubtotal)}
               </Typography>
               {/* Acciones */}
               <Stack

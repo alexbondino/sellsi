@@ -94,7 +94,6 @@ export const formatProductForCart = (product, quantity, tiers = []) => {
   // Mapeo de imagen
   const finalImage =
     product.imagen || product.image || '/placeholder-product.jpg'
-
   const cartItem = {
     // Campos originales del producto
     ...product,
@@ -111,6 +110,11 @@ export const formatProductForCart = (product, quantity, tiers = []) => {
       'Proveedor no especificado',
     maxStock: product.stock || product.maxStock || 50,
     quantity: quantity,
+
+    // ===== PRESERVAR PRICE_TIERS PARA CÁLCULOS FUTUROS =====
+    // Asegurar que price_tiers esté siempre disponible (invisible en UI)
+    price_tiers: product.price_tiers ||
+      tiers || [{ min_quantity: 1, price: basePrice }],
 
     // Información adicional de cálculo
     cantidadSeleccionada: quantity,
@@ -150,3 +154,54 @@ export const getDiscountInfo = (quantity, tiers = [], basePrice = 0) => {
 
   return null
 }
+
+/**
+ * ============================================================================
+ * UTILIDADES PARA ACCESO A PRICE_TIERS
+ * ============================================================================
+ */
+
+/**
+ * Obtiene los price_tiers de un producto (desde cualquier componente)
+ * @param {Object} product - Producto
+ * @returns {Array} Array de price_tiers
+ */
+export const getProductPriceTiers = (product) => {
+  return product?.price_tiers || []
+}
+
+/**
+ * Verifica si un producto tiene price_tiers configurados
+ * @param {Object} product - Producto
+ * @returns {boolean} True si tiene price_tiers
+ */
+export const hasProductPriceTiers = (product) => {
+  const tiers = getProductPriceTiers(product)
+  return tiers.length > 0
+}
+
+/**
+ * Obtiene el precio mínimo y máximo de un producto según sus tiers
+ * @param {Object} product - Producto
+ * @returns {Object} { minPrice, maxPrice }
+ */
+export const getProductPriceRange = (product) => {
+  const tiers = getProductPriceTiers(product)
+  const basePrice = product.price || product.precio || 0
+
+  if (tiers.length === 0) {
+    return { minPrice: basePrice, maxPrice: basePrice }
+  }
+
+  const prices = tiers.map((tier) => tier.price || 0)
+  return {
+    minPrice: Math.min(...prices, basePrice),
+    maxPrice: Math.max(...prices, basePrice),
+  }
+}
+
+/**
+ * ============================================================================
+ * UTILIDADES EXISTENTES PARA CÁLCULO DE PRECIOS POR TRAMOS
+ * ============================================================================
+ */

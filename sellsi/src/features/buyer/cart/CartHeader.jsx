@@ -18,7 +18,6 @@ import {
   Undo as UndoIcon,
   Redo as RedoIcon,
   Delete as DeleteIcon,
-  Refresh as RefreshIcon,
   Favorite as FavoriteIcon,
   CheckBoxOutlineBlank as CheckBoxOutlineBlankIcon,
   CheckBox as CheckBoxIcon,
@@ -36,13 +35,11 @@ import { motion } from 'framer-motion'
  *
  * @param {Object} props - Propiedades del componente
  * @param {Object} props.cartStats - Estadísticas del carrito (totalItems, totalValue, etc.)
- * @param {Function} props.formatPrice - Función para formatear precios
- * @param {number} props.discount - Descuento total aplicado
+ * @param {Function} props.formatPrice - Función para formatear precios * @param {number} props.discount - Descuento total aplicado
  * @param {number} props.wishlistLength - Cantidad de items en wishlist
  * @param {Function} props.onUndo - Función para deshacer última acción
  * @param {Function} props.onRedo - Función para rehacer acción
  * @param {Function} props.onClearCart - Función para limpiar carrito
- * @param {Function} props.onResetDemo - Función para resetear carrito demo
  * @param {Object} props.undoInfo - Información de estado de undo/redo
  * @param {Object} props.redoInfo - Información de estado de redo
  */
@@ -55,7 +52,6 @@ const CartHeader = ({
   onUndo,
   onRedo,
   onClearCart,
-  onResetDemo,
   onToggleWishlist,
   showWishlist,
   undoInfo,
@@ -72,14 +68,22 @@ const CartHeader = ({
   return (
     <Box sx={{ mb: 4, width: '100%' }}>
       {' '}
-      <Grid container spacing={3} alignItems="center" justifyContent="left">
+      <Grid
+        container
+        columns={12}
+        spacing={3}
+        alignItems="center"
+        justifyContent="left"
+      >
         {/* Grid Item 1: Title and Chips */}
         <Grid
-          item
-          sx={{
-            xs: { width: '100%' },
-            sm: { width: '66.666667%' },
-          }}
+          xs={12}
+          sm={8}
+          sx={
+            {
+              // ...otros estilos...
+            }
+          }
         >
           <Box sx={{ textAlign: { xs: 'center', md: 'left' } }}>
             {' '}
@@ -159,11 +163,11 @@ const CartHeader = ({
         </Grid>{' '}
         {/* Grid Item 2: Controls */}
         <Grid
-          item
+          xs={12}
+          sm={4}
           sx={{
-            xs: { width: '100%' },
-            sm: { width: '33.333333%' },
             ml: { md: 50 },
+            // ...otros estilos...
           }}
         >
           <Stack
@@ -371,23 +375,6 @@ const CartHeader = ({
                 </IconButton>
               </Tooltip>
             )}
-            <Tooltip title="🎭 Reiniciar Demo (Volver a mostrar productos)">
-              <IconButton
-                onClick={onResetDemo}
-                color="success"
-                sx={{
-                  background: 'linear-gradient(45deg, #4caf50, #8bc34a)',
-                  color: 'white',
-                  '&:hover': {
-                    background: 'linear-gradient(45deg, #45a049, #7cb342)',
-                    transform: 'scale(1.1)',
-                  },
-                  transition: 'all 0.2s ease',
-                }}
-              >
-                <RefreshIcon />
-              </IconButton>
-            </Tooltip>{' '}
             <Tooltip title="Favoritos (Próximamente disponible)">
               <span>
                 <IconButton

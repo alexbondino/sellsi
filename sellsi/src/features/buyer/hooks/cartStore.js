@@ -27,9 +27,7 @@
 
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
-import { toast } from 'react-hot-toast'
 import debounce from 'lodash.debounce'
-import { SAMPLE_ITEMS } from '../../marketplace/hooks/constants'
 
 // Importar módulos especializados
 import useCartHistory from './useCartHistory'
@@ -63,8 +61,8 @@ const useCartStore = create(
       const shippingStore = useShipping.getState()
 
       return {
-        // Estado principal del carrito (solo items y UI)
-        items: SAMPLE_ITEMS,
+        // Estado principal del carrito (vacío por defecto)
+        items: [],
         isLoading: false,
         error: null,
         notifications: [],
@@ -129,9 +127,7 @@ const useCartStore = create(
             set({
               items: [...currentState.items, newItem],
             })
-            toast.success(`Agregado al carrito: ${product.name}`, {
-              icon: '✅',
-            })
+            // Toast removido del store - se mostrará desde el componente
           }
 
           // Delegar al módulo de historial
@@ -186,7 +182,7 @@ const useCartStore = create(
             set({
               items: currentState.items.filter((item) => item.id !== id),
             })
-            toast.success(`${item.name} eliminado del carrito`, { icon: '🗑️' })
+            // Toast removido del store - se mostrará desde el componente
 
             // Delegar al módulo de historial
             setTimeout(() => {
@@ -256,20 +252,11 @@ const useCartStore = create(
         getWishlist: () => {
           return wishlistStore.wishlist
         },
-
         isInWishlist: (productId) => {
           return wishlistStore.isInWishlist(productId)
         },
 
-        // Mover de wishlist al carrito
-        moveToCart: (id) => {
-          const currentState = get()
-          const item = currentState.wishlist.find((item) => item.id === id)
-          if (item) {
-            get().addItem(item)
-            get().removeFromWishlist(id)
-          }
-        }, // Funciones de cupones (delegadas)
+        // Funciones de cupones (delegadas)
         applyCoupon: (code) => {
           const subtotal = get().getSubtotal()
           const result = couponsStore.applyCoupon(code, subtotal)
@@ -460,32 +447,7 @@ const useCartStore = create(
         // Establecer error
         setError: (error) => {
           set({ error })
-        },
-
-        // === FUNCIONES DE DEMO (REFACTORIZADAS) ===
-
-        // Reiniciar carrito para demo
-        resetDemoCart: () => {
-          set({
-            items: SAMPLE_ITEMS,
-            isLoading: false,
-            error: null,
-            notifications: [],
-          })
-
-          // Resetear módulos
-          wishlistStore.clearWishlist()
-          couponsStore.clearCoupons()
-          shippingStore.resetToStandard()
-          historyStore.clearHistory()
-
-          toast.success('¡Carrito de demo reiniciado!', {
-            icon: '🔄',
-            duration: 2000,
-          })
-        },
-
-        // === FUNCIONES DE PERSISTENCIA HÍBRIDA ===
+        }, // === FUNCIONES DE PERSISTENCIA HÍBRIDA ===
 
         // Guardar en localStorage
         saveToLocal: () => {

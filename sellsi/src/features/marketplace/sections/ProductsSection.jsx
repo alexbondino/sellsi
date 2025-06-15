@@ -20,6 +20,7 @@ import {
   CircularProgress,
 } from '@mui/material'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
+import { toast } from 'react-hot-toast'
 import ProductCard from '../ProductCard/ProductCard'
 import useCartStore from '../../../features/buyer/hooks/cartStore'
 import LoadingOverlay from '../../ui/LoadingOverlay'
@@ -61,6 +62,11 @@ const ProductsSection = ({
     // Llamar la función addItem del store con la cantidad seleccionada
     const quantity = producto.cantidadSeleccionada || 1
     addItem(productForCart, quantity)
+
+    // Mostrar toast de confirmación
+    toast.success(`Agregado al carrito: ${producto.nombre}`, {
+      icon: '✅',
+    })
   }
 
   return (

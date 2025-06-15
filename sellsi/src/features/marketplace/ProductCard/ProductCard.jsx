@@ -32,13 +32,17 @@ import { generateProductUrl } from '../marketplace/productUrl'
 import PriceDisplay from '../PriceDisplay'
 import { useProductPriceTiers } from '../hooks/useProductPriceTiers'
 import { getProductImageUrl } from '../../../utils/getProductImageUrl'
-import { formatProductForCart } from '../../../utils/priceCalculation'
+import {
+  formatProductForCart,
+  calculatePriceForQuantity,
+} from '../../../utils/priceCalculation'
 
 const ProductCard = ({ producto, onAddToCart, onViewDetails }) => {
   const [favorito, setFavorito] = useState(false)
   const [anchorEl, setAnchorEl] = useState(null)
   const [cantidad, setCantidad] = useState(1)
   const navigate = useNavigate()
+
   if (!producto) {
     return null
   }
@@ -60,7 +64,22 @@ const ProductCard = ({ producto, onAddToCart, onViewDetails }) => {
   const compraMinima = producto.compraMinima || producto.minPurchase || 1
   const negociable = producto.negociable || producto.negotiable || false
 
-  // Hook para obtener tramos de precios
+  // ===== CÁLCULO DE PRECIOS DINÁMICOS USANDO PRICE_TIERS =====
+  // Asegurar que price_tiers esté disponible en el producto (invisible en UI)
+  const price_tiers = producto.price_tiers || []
+
+  // Calcular precio dinámico basado en cantidad seleccionada
+  const calculateDynamicPrice = () => {
+    if (price_tiers.length > 0) {
+      return calculatePriceForQuantity(cantidad, price_tiers, precio)
+    }
+    return precio
+  }
+
+  const currentUnitPrice = calculateDynamicPrice()
+  const currentTotal = currentUnitPrice * cantidad
+
+  // Hook para obtener tramos de precios (mantener para compatibilidad)
   const {
     tiers,
     loading: loadingTiers,
@@ -108,7 +127,9 @@ const ProductCard = ({ producto, onAddToCart, onViewDetails }) => {
     )
   }
 
-  const toggleFavorito = () => setFavorito(!favorito) // Función para navegar a la ficha técnica del producto
+  const toggleFavorito = () => setFavorito(!favorito)
+
+  // Función para navegar a la ficha técnica del producto
   const handleProductClick = (e) => {
     // Verificar si el clic viene de un botón o elemento interactivo
     const target = e.target
@@ -177,12 +198,20 @@ const ProductCard = ({ producto, onAddToCart, onViewDetails }) => {
       setCantidad(cantidad - 1)
     }
   }
-
   // ✅ NUEVA función para confirmar agregado al carrito
   const handleConfirmarAgregar = () => {
     if (onAddToCart) {
-      // Usar formatProductForCart para calcular precios por tramos correctamente
-      const cartProduct = formatProductForCart(producto, cantidad, tiers)
+      // Crear producto para carrito preservando price_tiers (invisible pero disponible)
+      const cartProduct = {
+        ...formatProductForCart(producto, cantidad, tiers),
+        // Asegurar que price_tiers esté siempre disponible para cálculos futuros
+        price_tiers:
+          price_tiers.length > 0
+            ? price_tiers
+            : [{ min_quantity: 1, price: precio }],
+        // Usar precio dinámico calculado
+        price: currentUnitPrice,
+      }
 
       onAddToCart(cartProduct)
     }
