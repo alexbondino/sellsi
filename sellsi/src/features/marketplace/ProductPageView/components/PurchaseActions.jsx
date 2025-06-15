@@ -7,26 +7,54 @@ import {
   IconButton,
   Divider,
 } from '@mui/material'
-import { ShoppingCart, Add, Remove, FlashOn } from '@mui/icons-material'
+import { ShoppingCart, Add, Remove } from '@mui/icons-material'
+import { toast } from 'react-hot-toast'
+import { formatProductForCart } from '../../../../utils/priceCalculation'
 
-const PurchaseActions = ({ onAddToCart, onBuyNow, stock }) => {
-  const [quantity, setQuantity] = useState(1)
+const PurchaseActions = ({
+  onAddToCart,
+  stock,
+  product,
+  tiers = [],
+  isLoggedIn = false,
+}) => {
+  const minimumPurchase = product.minimum_purchase || product.compraMinima || 1
+  const [quantity, setQuantity] = useState(minimumPurchase)
+  // Permitir edición libre
+  const [inputValue, setInputValue] = useState(minimumPurchase.toString())
+  const canAdd =
+    !isNaN(parseInt(inputValue)) &&
+    parseInt(inputValue) >= minimumPurchase &&
+    isLoggedIn
 
   const handleQuantityChange = (newQuantity) => {
-    if (newQuantity >= 1 && newQuantity <= stock) {
+    setInputValue(newQuantity.toString())
+    if (!isNaN(newQuantity) && newQuantity >= minimumPurchase && newQuantity <= stock) {
       setQuantity(newQuantity)
     }
   }
-
   const handleAddToCart = () => {
-    if (onAddToCart) {
-      onAddToCart({ quantity })
-    }
-  }
+    if (onAddToCart && product) {
+      console.log(
+        '🛒 DEBUG ProductPageView - Producto antes de formatear:',
+        product
+      )
+      console.log(
+        '🛒 DEBUG ProductPageView - Campo imagen del producto:',
+        product.imagen
+      )
+      console.log(
+        '🛒 DEBUG ProductPageView - Campo image del producto:',
+        product.image
+      )
 
-  const handleBuyNow = () => {
-    if (onBuyNow) {
-      onBuyNow({ quantity })
+      const cartProduct = formatProductForCart(product, quantity, tiers)
+
+      console.log(
+        '🛒 DEBUG ProductPageView - Producto formateado para carrito:',
+        cartProduct
+      )
+      onAddToCart(cartProduct)
     }
   }
 
@@ -40,7 +68,7 @@ const PurchaseActions = ({ onAddToCart, onBuyNow, stock }) => {
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <IconButton
             onClick={() => handleQuantityChange(quantity - 1)}
-            disabled={quantity <= 1}
+            disabled={quantity <= minimumPurchase}
             size="small"
             sx={{
               border: '1px solid',
@@ -54,18 +82,30 @@ const PurchaseActions = ({ onAddToCart, onBuyNow, stock }) => {
           </IconButton>
 
           <TextField
-            value={quantity}
+            value={inputValue}
             onChange={(e) => {
-              const value = parseInt(e.target.value) || 1
-              handleQuantityChange(value)
+              setInputValue(e.target.value)
+              const value = parseInt(e.target.value)
+              if (!isNaN(value)) {
+                handleQuantityChange(value)
+              }
+            }}
+            onBlur={() => {
+              let value = parseInt(inputValue)
+              if (isNaN(value) || value < minimumPurchase) value = minimumPurchase
+              if (value > stock) value = stock
+              setInputValue(value.toString())
+              setQuantity(value)
             }}
             inputProps={{
-              min: 1,
+              min: minimumPurchase,
               max: stock,
               style: { textAlign: 'center', width: '60px' },
             }}
             size="small"
             variant="outlined"
+            error={parseInt(inputValue) < minimumPurchase}
+            helperText={parseInt(inputValue) < minimumPurchase ? `Mínimo ${minimumPurchase}` : ''}
           />
 
           <IconButton
@@ -88,54 +128,45 @@ const PurchaseActions = ({ onAddToCart, onBuyNow, stock }) => {
           </Typography>
         </Box>
       </Box>
-
-      <Divider sx={{ mb: 3 }} />
-
-      {/* Action Buttons */}
+      <Divider sx={{ mb: 3 }} /> {/* Action Buttons */}
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-        {/* Buy Now Button */}
+        {/* Add to Cart Button */}
         <Button
           variant="contained"
           size="large"
           fullWidth
-          startIcon={<FlashOn />}
-          onClick={handleBuyNow}
+          startIcon={<ShoppingCart />}
+          onClick={handleAddToCart}
+          disabled={!canAdd}
           sx={{
+            opacity: canAdd ? 1 : 0.5,
             py: 1.5,
             fontSize: '1.1rem',
             fontWeight: 700,
-            background: 'linear-gradient(135deg, #1976d2 0%, #42a5f5 100%)',
-            boxShadow: '0 4px 16px rgba(25, 118, 210, 0.3)',
+            background: canAdd
+              ? 'linear-gradient(135deg, #1976d2 0%, #42a5f5 100%)'
+              : 'rgba(0,0,0,0.12)',
+            color: canAdd ? 'white' : 'rgba(0,0,0,0.26)',
+            boxShadow: canAdd
+              ? '0 4px 16px rgba(25, 118, 210, 0.3)'
+              : 'none',
+            transition: 'opacity 0.2s',
             '&:hover': {
-              background: 'linear-gradient(135deg, #1565c0 0%, #1976d2 100%)',
-              boxShadow: '0 6px 20px rgba(25, 118, 210, 0.4)',
-              transform: 'translateY(-2px)',
+              background: canAdd
+                ? 'linear-gradient(135deg, #1565c0 0%, #1976d2 100%)'
+                : 'rgba(0,0,0,0.12)',
+              boxShadow: canAdd
+                ? '0 6px 20px rgba(25, 118, 210, 0.4)'
+                : 'none',
+              transform: canAdd ? 'translateY(-2px)' : 'none',
             },
           }}
         >
-          Comprar Ahora
-        </Button>
-
-        {/* Add to Cart Button */}
-        <Button
-          variant="outlined"
-          size="large"
-          fullWidth
-          startIcon={<ShoppingCart />}
-          onClick={handleAddToCart}
-          sx={{
-            py: 1.5,
-            fontSize: '1rem',
-            fontWeight: 600,
-            borderWidth: 2,
-            '&:hover': {
-              borderWidth: 2,
-              transform: 'translateY(-1px)',
-              boxShadow: '0 4px 12px rgba(25, 118, 210, 0.2)',
-            },
-          }}
-        >
-          Agregar al Carrito
+          {!isLoggedIn
+            ? 'Inicia sesión para agregar'
+            : parseInt(inputValue) < minimumPurchase
+            ? `Mín: ${minimumPurchase}`
+            : 'Agregar al Carrito'}
         </Button>
       </Box>
     </Box>

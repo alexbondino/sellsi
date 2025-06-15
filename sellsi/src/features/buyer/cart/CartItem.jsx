@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from 'react'
 import {
   Paper,
   Grid,
@@ -16,7 +16,7 @@ import {
   MenuItem,
   Divider,
   Checkbox,
-} from '@mui/material';
+} from '@mui/material'
 import {
   Add as AddIcon,
   Remove as RemoveIcon,
@@ -27,12 +27,17 @@ import {
   LocalAtm as LocalAtmIcon,
   Warning as WarningIcon,
   LocalShipping as LocalShippingIcon,
-} from '@mui/icons-material';
-import { motion } from 'framer-motion';
-import PriceDisplay from '../../marketplace/PriceDisplay/PriceDisplay';
-import StockIndicator from '../../marketplace//StockIndicator/StockIndicator';
-import QuantitySelector from '../QuantitySelector';
-import { SHIPPING_OPTIONS } from '../../../features/marketplace/hooks/constants';
+} from '@mui/icons-material'
+import { motion } from 'framer-motion'
+import PriceDisplay from '../../marketplace/PriceDisplay/PriceDisplay'
+import StockIndicator from '../../marketplace//StockIndicator/StockIndicator'
+import { QuantitySelector } from '../../../components/shared' // ✅ Componente universal
+import { SHIPPING_OPTIONS } from '../../../features/marketplace/hooks/constants'
+import { getProductImageUrl } from '../../../utils/getProductImageUrl'
+import {
+  calculatePriceForQuantity,
+  formatProductForCart,
+} from '../../../utils/priceCalculation'
 
 /*
 ========== GUÍA DE IDENTIFICACIÓN DE ELEMENTOS DEL CARRITO ==========
@@ -66,17 +71,38 @@ const OptimizedImage = ({ src, alt, sx }) => {
       src={src}
       alt={alt}
       sx={{
-        width: '100%',
-        height: '100%',
+        width: '100%',        height: '100%',
         objectFit: 'cover',
         borderRadius: 1,
-        transition: 'opacity 0.3s ease',
         backgroundColor: '#f5f5f5',
         ...sx,
       }}
     />
-  );
-};
+  )
+}
+
+// Helper robusto para obtener la imagen primaria
+function resolveImageSrc(item) {
+  let image = item?.image || item?.imagen
+  if (!image) return '/placeholder-product.jpg'
+  // Si es string (url pública o path relativo)
+  if (typeof image === 'string') {
+    if (image.startsWith('blob:')) return '/placeholder-product.jpg'
+    return getProductImageUrl(image, item) // ✅ Pasar datos del item
+  }
+  // Si es objeto con url
+  if (typeof image === 'object' && image !== null) {
+    if (image.url && typeof image.url === 'string') {
+      if (image.url.startsWith('blob:')) return '/placeholder-product.jpg'
+      return getProductImageUrl(image.url, item) // ✅ Pasar datos del item
+    }
+    // Si es objeto con path relativo
+    if (image.path && typeof image.path === 'string') {
+      return getProductImageUrl(image.path, item) // ✅ Pasar datos del item
+    }
+  }
+  return '/placeholder-product.jpg'
+}
 
 const CartItem = ({
   item,
@@ -92,23 +118,58 @@ const CartItem = ({
   isSelected,
   onToggleSelection,
 }) => {
-  const [selectedShipping, setSelectedShipping] = useState('standard');
-
-  // Función para manejar el cambio de envío y calcular el precio
-  const handleShippingChange = shippingId => {
-    setSelectedShipping(shippingId);
+  const [selectedShipping, setSelectedShipping] = useState('standard')
+  // ===== CÁLCULOS DE PRECIOS OPTIMIZADOS (USAR priceCalculations MEMOIZADO) =====
+  // Los precios se calculan en priceCalculations para evitar recálculos innecesarios
+  // Función optimizada para manejar el cambio de envío y calcular el precio
+  const handleShippingChange = React.useCallback((shippingId) => {
+    setSelectedShipping(shippingId)
     if (onShippingChange) {
-      onShippingChange(item.id, shippingId);
+      onShippingChange(item.id, shippingId)
     }
-  };
+  }, [item.id, onShippingChange])
 
-  // Obtener el precio del envío seleccionado
-  const getShippingPrice = () => {
-    const selectedOption = SHIPPING_OPTIONS.find(
-      opt => opt.id === selectedShipping
-    );
-    return selectedOption ? selectedOption.price : 0;
-  };
+  // Obtener el precio del envío seleccionado  // ===== OPTIMIZACIONES DE RENDIMIENTO =====
+  
+  // Memoizar datos del producto para evitar recálculos
+  const productData = React.useMemo(() => ({
+    name: item.name || item.nombre || 'Producto sin nombre',
+    supplier: item.supplier || item.proveedor || 'Proveedor no especificado',
+    image: item.image || item.imagen || '/placeholder-product.jpg',
+    price_tiers: item.price_tiers || [],
+    minimum_purchase: item.minimum_purchase || item.compraMinima || 1,
+    basePrice: item.originalPrice || item.precioOriginal || item.price || item.precio || 0,
+    maxStock: item.maxStock || item.stock || 50
+  }), [item])
+
+  // Memoizar cálculos de precio para evitar recálculos innecesarios
+  const priceCalculations = React.useMemo(() => {
+    const unitPrice = calculatePriceForQuantity(item.quantity, productData.price_tiers, productData.basePrice)
+    const subtotal = unitPrice * item.quantity
+    return { unitPrice, subtotal }
+  }, [item.quantity, productData.price_tiers, productData.basePrice])
+
+  // Memoizar opciones de envío
+  const shippingData = React.useMemo(() => {
+    const selectedOption = SHIPPING_OPTIONS.find(opt => opt.id === selectedShipping)
+    return {
+      price: selectedOption ? selectedOption.price : 0,
+      label: selectedOption ? selectedOption.label : 'Estándar'
+    }
+  }, [selectedShipping])
+
+  // Handler optimizado para cambio de cantidad
+  const handleQuantityChange = React.useCallback((newQuantity) => {
+    updateQuantity(item.id, newQuantity)
+  }, [item.id, productData.price_tiers, productData.basePrice, updateQuantity])
+  // Handler optimizado para agregar a wishlist
+  const handleWishlistClick = React.useCallback(() => {
+    handleAddToWishlist(item)
+  }, [item, handleAddToWishlist])  // Handler optimizado para eliminar item
+  const handleDeleteItem = React.useCallback(() => {
+    handleRemoveWithAnimation(item.id)
+  }, [item.id, handleRemoveWithAnimation])
+
   return (
     <motion.div
       variants={itemVariants}
@@ -129,9 +190,7 @@ const CartItem = ({
           boxShadow: '0 8px 24px rgba(0,0,0,0.08)',
           border:
             isSelectionMode && isSelected
-              ? '2px solid rgba(25, 118, 210, 0.6)'
-              : '1px solid rgba(102, 126, 234, 0.1)',
-          transition: 'all 0.3s ease',
+              ? '2px solid rgba(25, 118, 210, 0.6)'              : '1px solid rgba(102, 126, 234, 0.1)',
           width: '100%',
           maxWidth: '100%',
           overflow: 'hidden', // Prevenir overflow horizontal
@@ -151,9 +210,7 @@ const CartItem = ({
         {isSelectionMode && (
           <motion.div
             initial={{ opacity: 0, scale: 0 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0 }}
-            transition={{ duration: 0.2 }}
+            animate={{ opacity: 1, scale: 1 }}            exit={{ opacity: 0, scale: 0 }}
             style={{
               position: 'absolute',
               top: 16,
@@ -168,11 +225,9 @@ const CartItem = ({
                   : 'rgba(255, 255, 255, 0.9)',
                 borderRadius: '50%',
                 padding: '4px',
-                backdropFilter: 'blur(8px)',
-                border: isSelected
+                backdropFilter: 'blur(8px)',                border: isSelected
                   ? '2px solid rgba(25, 118, 210, 0.3)'
                   : '2px solid rgba(0, 0, 0, 0.1)',
-                transition: 'all 0.3s ease',
                 boxShadow: isSelected
                   ? '0 4px 12px rgba(25, 118, 210, 0.3)'
                   : '0 2px 8px rgba(0, 0, 0, 0.1)',
@@ -188,9 +243,7 @@ const CartItem = ({
                     color: '#1976d2',
                   },
                   '&:hover': {
-                    transform: 'scale(1.1)',
-                  },
-                  transition: 'all 0.2s ease',
+                    transform: 'scale(1.1)',                  },
                 }}
               />
             </Box>
@@ -219,14 +272,14 @@ const CartItem = ({
               }}
             >
               <OptimizedImage
-                src={item.image}
-                alt={item.name}
+                src={resolveImageSrc(item)}
+                alt={productData.name}
                 sx={{
                   height: 140,
-                  width: '100%', // ← Ancho flexible
+                  width: '100%',
                   borderRadius: 2,
-                  objectFit: 'contain', // ← Cambio de 'cover' a 'contain'
-                  backgroundColor: '#f9f9f9', // ← Fondo para espacios vacíos
+                  objectFit: 'contain',
+                  backgroundColor: '#f9f9f9',
                 }}
               />
             </Box>
@@ -259,7 +312,7 @@ const CartItem = ({
                   mb: 1,
                 }}
               >
-                {item.name}
+                {productData.name}
               </Typography>
               {/* ========== INFORMACIÓN DEL PROVEEDOR ========== */}
               {/* Box contenedor del avatar y chip del proveedor */}
@@ -288,9 +341,9 @@ const CartItem = ({
                   color="primary"
                 />
               </Box>{' '}
-              {/* Price */}
+              {/* Price - Usando precio dinámico basado en quantity y price_tiers */}
               <PriceDisplay
-                price={item.price}
+                price={priceCalculations.unitPrice}
                 variant="h6"
                 sx={{ mb: 6 }}
               />{' '}
@@ -331,17 +384,15 @@ const CartItem = ({
                 sx={{
                   display: 'flex !important',
                   justifyContent: 'flex-end !important',
-                  alignItems: 'center !important',
-                  width: '100%',
+                  alignItems: 'center !important',                  width: '100%',
                   marginLeft: 'auto !important',
                   opacity: isSelectionMode ? 0.5 : 1,
-                  transition: 'opacity 0.3s ease',
                 }}
               >
                 <QuantitySelector
                   value={item.quantity}
-                  onChange={newQuantity => updateQuantity(item.id, newQuantity)}
-                  min={1}
+                  onChange={handleQuantityChange}
+                  min={item.minimum_purchase || item.compraMinima || 1}
                   max={item.maxStock}
                   showStockLimit={true}
                   size="small"
@@ -362,14 +413,12 @@ const CartItem = ({
                 showUnits={true}
                 variant="caption"
                 sx={{
-                  textAlign: 'right !important',
-                  alignSelf: 'flex-end !important',
+                  textAlign: 'right !important',                  alignSelf: 'flex-end !important',
                   marginLeft: 'auto !important',
                   opacity: isSelectionMode ? 0.5 : 1,
-                  transition: 'opacity 0.3s ease',
                 }}
-              />
-              {/* Subtotal del producto */}
+              />{' '}
+              {/* Subtotal del producto - Usando precio dinámico calculado */}
               <Typography
                 variant="h5"
                 sx={{
@@ -379,13 +428,11 @@ const CartItem = ({
                   background: '#1976d2',
                   WebkitBackgroundClip: 'text',
                   WebkitTextFillColor: 'transparent',
-                  alignSelf: 'flex-end !important',
-                  marginLeft: 'auto !important',
+                  alignSelf: 'flex-end !important',                  marginLeft: 'auto !important',
                   opacity: isSelectionMode ? 0.5 : 1,
-                  transition: 'opacity 0.3s ease',
                 }}
               >
-                {formatPrice(item.price * item.quantity)}
+                {formatPrice(priceCalculations.subtotal)}
               </Typography>
               {/* Acciones */}
               <Stack
@@ -393,10 +440,8 @@ const CartItem = ({
                 spacing={1}
                 sx={{
                   justifyContent: 'flex-end !important',
-                  alignSelf: 'flex-end !important',
-                  marginLeft: 'auto !important',
+                  alignSelf: 'flex-end !important',                  marginLeft: 'auto !important',
                   opacity: isSelectionMode ? 0.3 : 1,
-                  transition: 'opacity 0.3s ease',
                 }}
               >
                 <Tooltip
@@ -407,11 +452,10 @@ const CartItem = ({
                       ? 'Quitar de favoritos'
                       : 'Agregar a favoritos'
                   }
-                >
-                  <motion.div whileTap={{ scale: 0.95 }}>
+                >                  <motion.div whileTap={{ scale: 0.95 }}>
                     <IconButton
                       size="small"
-                      onClick={() => handleAddToWishlist(item)}
+                      onClick={handleWishlistClick}
                       color="secondary"
                       disabled={isSelectionMode}
                     >
@@ -479,7 +523,7 @@ const CartItem = ({
                 {' '}
                 <Select
                   value={selectedShipping}
-                  onChange={e => handleShippingChange(e.target.value)}
+                  onChange={(e) => handleShippingChange(e.target.value)}
                   variant="outlined"
                   MenuProps={{
                     PaperProps: {
@@ -520,7 +564,7 @@ const CartItem = ({
                     },
                   }}
                 >
-                  {SHIPPING_OPTIONS.map(option => (
+                  {SHIPPING_OPTIONS.map((option) => (
                     <MenuItem key={option.id} value={option.id}>
                       <Box
                         sx={{
@@ -557,20 +601,21 @@ const CartItem = ({
                   fontSize: '1rem', // Aumentado a 1rem para mejor visibilidad
                 }}
               >
-                {SHIPPING_OPTIONS.find(opt => opt.id === selectedShipping)
+                {SHIPPING_OPTIONS.find((opt) => opt.id === selectedShipping)
                   ?.price > 0
                   ? formatPrice(
-                      SHIPPING_OPTIONS.find(opt => opt.id === selectedShipping)
-                        ?.price
+                      SHIPPING_OPTIONS.find(
+                        (opt) => opt.id === selectedShipping
+                      )?.price
                     )
                   : 'Gratis'}
               </Typography>
             </Box>
           </Grid>
-        </Grid>{' '}
+        </Grid>
       </Paper>
     </motion.div>
-  );
-};
+  )
+}
 
-export default CartItem;
+export default CartItem

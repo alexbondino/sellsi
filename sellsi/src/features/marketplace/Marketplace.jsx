@@ -4,24 +4,23 @@
 // - Agregar/quitar secciones
 // - Modificar estilos del contenedor principal
 
-import React from 'react';
-import { Box } from '@mui/material';
-
-// TopBar base (mismo que Home)
-import BaseTopBar from '../layout/BaseTopBar.jsx';
+import React from 'react'
+import { Box } from '@mui/material'
 
 // Hook centralizado
-import useMarketplaceLogic from './useMarketplaceLogic.jsx';
+import useMarketplaceLogic from './useMarketplaceLogic.jsx'
 
 // Componentes de secciones
-import SearchSection from './sections/SearchSection.jsx';
-import FilterSection from './sections/FilterSection.jsx';
-import ProductsSection from './sections/ProductsSection.jsx';
+import SearchSection from './sections/SearchSection.jsx'
+import FilterSection from './sections/FilterSection.jsx'
+import ProductsSection from './sections/ProductsSection.jsx'
 
-const Marketplace = () => {
+// ✅ MEJORA DE RENDIMIENTO: Memoización del componente principal
+const Marketplace = React.memo(() => {
   // ===== USAR CUSTOM HOOK PARA TODA LA LÓGICA =====
-  const { searchSectionProps, filterSectionProps, productsSectionProps } =
-    useMarketplaceLogic({
+  // ✅ MEJORA DE RENDIMIENTO: Memoización de configuración estática
+  const marketplaceConfig = React.useMemo(
+    () => ({
       hasSidebar: false, // Indicar que NO hay sidebar
       // ✅ Valores específicos para Marketplace (mover más a la izquierda)
       searchBarMarginLeft: {
@@ -46,45 +45,41 @@ const Marketplace = () => {
         lg: 2,
         xl: 3,
       },
-    });
+    }),
+    []
+  )
+
+  const { searchSectionProps, filterSectionProps, productsSectionProps } =
+    useMarketplaceLogic(marketplaceConfig)
+
+  // ✅ MEJORA DE RENDIMIENTO: Memoización de configuración estática
   // Configuración de botones de navegación (sin botones para Marketplace)
-  const navigationButtons = [];
+  const navigationButtons = React.useMemo(() => [], [])
 
   // Configuración de botones de autenticación (usa defaults)
-  const authButtons = {};
+  const authButtons = React.useMemo(() => ({}), [])
 
-  // Función de navegación (placeholder)
-  const handleNavigate = ref => {
-    console.log('Navegando a:', ref);
+  // ✅ MEJORA DE RENDIMIENTO: Memoización de handler de navegación
+  const handleNavigate = React.useCallback((ref) => {
+    // Eliminado log de desarrollo
     // TODO: Implementar navegación si es necesario
-  };
+  }, [])
+
+  // ✅ MEJORA DE RENDIMIENTO: Memoización de estilos del contenedor principal
+  const containerStyles = React.useMemo(
+    () => ({
+      bgcolor: '#f8fafc',
+      minHeight: '100vh',
+      pt: { xs: 7, md: 8 },
+    }),
+    []
+  )
 
   return (
     <Box>
-      {' '}
-      {/* TopBar igual que Home */}
-      <BaseTopBar
-        navigationButtons={navigationButtons}
-        authButtons={authButtons}
-        onNavigate={handleNavigate}
-        showContactModal={true}
-        logoMarginLeft={{
-          xs: 0,
-          sm: 0,
-          md: -3,
-          lg: 1,
-          xl: -28,
-        }}
-      />
+      {/* TopBar eliminada, ahora la maneja App.jsx globalmente */}
       {/* Contenido principal con margen para compensar TopBar fijo (SIN sidebar) */}
-      <Box
-        sx={{
-          bgcolor: '#f8fafc',
-          minHeight: '100vh',
-          pt: { xs: 7, md: 8 },
-          // Sin margen izquierdo porque no hay sidebar
-        }}
-      >
+      <Box sx={containerStyles}>
         {/* Sección de búsqueda y navegación */}
         <SearchSection {...searchSectionProps} />
 
@@ -95,7 +90,10 @@ const Marketplace = () => {
         <ProductsSection {...productsSectionProps} />
       </Box>
     </Box>
-  );
-};
+  )
+})
 
-export default Marketplace;
+// ✅ MEJORA DE RENDIMIENTO: DisplayName para debugging
+Marketplace.displayName = 'Marketplace'
+
+export default Marketplace

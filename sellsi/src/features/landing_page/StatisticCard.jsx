@@ -1,7 +1,29 @@
 import React from 'react'
 import { Box, Typography } from '@mui/material'
 
-// Componente memoizado para estadísticas individuales
+/**
+ * ============================================================================
+ * STATISTIC CARD - TARJETA DE ESTADÍSTICA
+ * ============================================================================
+ *
+ * Componente UI puro para mostrar estadísticas numéricas con iconos
+ *
+ * @component
+ * @param {Object} props - Propiedades del componente
+ * @param {Object} props.stat - Objeto con datos de la estadística
+ * @param {string|number} props.stat.number - Número a mostrar (puede ser animado)
+ * @param {string} props.stat.label - Etiqueta principal de la estadística
+ * @param {string} props.stat.description - Descripción adicional
+ * @param {ReactElement} props.stat.icon - Icono a mostrar
+ *
+ * CARACTERÍSTICAS:
+ * - Componente memoizado para rendimiento óptimo
+ * - Layout responsivo para todos los dispositivos
+ * - Soporte para números animados (count-up)
+ * - Estilos consistentes con el sistema de diseño
+ * - Efectos hover y transiciones suaves
+ * - Altura fija para alineación perfecta
+ */
 const StatisticCard = React.memo(({ stat }) => {
   const cardSx = {
     display: 'flex',

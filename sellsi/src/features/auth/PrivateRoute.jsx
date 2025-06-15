@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { Navigate } from 'react-router-dom';
-import { supabase } from '../../services/supabase';
-import { Box, CircularProgress, Typography } from '@mui/material';
+import React, { useState, useEffect } from 'react'
+import { Navigate } from 'react-router-dom'
+import { supabase } from '../../services/supabase'
+import { Box, CircularProgress, Typography } from '@mui/material'
 
 /**
  * Ruta protegida que verifica autenticación y tipo de cuenta.
@@ -14,9 +14,9 @@ const PrivateRoute = ({
   requiredAccountType = 'any',
   redirectTo = '/',
 }) => {
-  const [loading, setLoading] = useState(true);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [userAccountType, setUserAccountType] = useState(null);
+  const [loading, setLoading] = useState(true)
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [userAccountType, setUserAccountType] = useState(null)
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -24,12 +24,12 @@ const PrivateRoute = ({
         // Verificar sesión de Supabase
         const {
           data: { session },
-        } = await supabase.auth.getSession();
+        } = await supabase.auth.getSession()
 
         if (!session) {
-          setIsAuthenticated(false);
-          setLoading(false);
-          return;
+          setIsAuthenticated(false)
+          setLoading(false)
+          return
         }
 
         // Verificar si existe perfil en public.users
@@ -37,33 +37,33 @@ const PrivateRoute = ({
           .from('users')
           .select('main_supplier, user_nm')
           .eq('user_id', session.user.id)
-          .single();
+          .single()
 
         if (perfilError || !perfil) {
-          setIsAuthenticated(false);
-          setLoading(false);
-          return;
+          setIsAuthenticated(false)
+          setLoading(false)
+          return
         }
 
-        setIsAuthenticated(true);
-        setUserAccountType(perfil.main_supplier ? 'proveedor' : 'comprador');
+        setIsAuthenticated(true)
+        setUserAccountType(perfil.main_supplier ? 'proveedor' : 'comprador')
 
         // Actualizar localStorage para mantener compatibilidad
-        localStorage.setItem('user_id', session.user.id);
+        localStorage.setItem('user_id', session.user.id)
         localStorage.setItem(
           'account_type',
           perfil.main_supplier ? 'proveedor' : 'comprador'
-        );
+        )
       } catch (error) {
-        console.error('❌ Error verificando autenticación:', error);
-        setIsAuthenticated(false);
+        console.error('❌ Error verificando autenticación:', error)
+        setIsAuthenticated(false)
       } finally {
-        setLoading(false);
+        setLoading(false)
       }
-    };
+    }
 
-    checkAuth();
-  }, []);
+    checkAuth()
+  }, [])
 
   if (loading) {
     return (
@@ -82,10 +82,10 @@ const PrivateRoute = ({
           Verificando sesión...
         </Typography>
       </Box>
-    );
+    )
   }
   if (!isAuthenticated) {
-    return <Navigate to={redirectTo} replace />;
+    return <Navigate to={redirectTo} replace />
   }
 
   // Si se requiere un tipo de cuenta específico, verificarlo
@@ -93,15 +93,23 @@ const PrivateRoute = ({
     requiredAccountType !== 'any' &&
     userAccountType !== requiredAccountType
   ) {
-    // Redirigir según el tipo de cuenta actual
-    if (userAccountType === 'proveedor') {
-      return <Navigate to="/supplier/home" replace />;
+    // Redirigir según el tipo de cuenta actual, solo si no está ya en la ruta correcta
+    if (
+      userAccountType === 'proveedor' &&
+      window.location.pathname !== '/supplier/home'
+    ) {
+      return <Navigate to="/supplier/home" replace />
+    } else if (
+      userAccountType === 'comprador' &&
+      window.location.pathname !== '/buyer/marketplace'
+    ) {
+      return <Navigate to="/buyer/marketplace" replace />
     } else {
-      return <Navigate to="/buyer/marketplace" replace />;
+      return children
     }
   }
 
-  return children;
-};
+  return children
+}
 
-export default PrivateRoute;
+export default PrivateRoute

@@ -1,872 +1,564 @@
-import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
-import { toast } from 'react-hot-toast';
-import debounce from 'lodash.debounce';
-import {
-  DISCOUNT_CODES,
-  SHIPPING_OPTIONS,
-  SAMPLE_ITEMS,
-} from '../../marketplace/hooks/constants';
+/**
+ * ============================================================================
+ * CART STORE - GESTIÓN GLOBAL DEL CARRITO DE COMPRAS (REFACTORIZADO)
+ * ============================================================================
+ *
+ * Store centralizado refactorizado usando módulos independientes.
+ * Ahora delega funcionalidades específicas a hooks especializados.
+ *
+ * CARACTERÍSTICAS:
+ * - ✅ Persistencia automática en localStorage
+ * - ✅ Módulos independientes para mejor mantenibilidad
+ * - ✅ Cálculos automáticos de totales
+ * - ✅ Validación de stock
+ * - ✅ Integración con notificaciones
+ *
+ * MÓDULOS SEPARADOS:
+ * - 🔄 useCartHistory: Historial y undo/redo
+ * - 🔄 useWishlist: Lista de deseos
+ * - 🔄 useCoupons: Cupones de descuento
+ * - 🔄 useShipping: Opciones de envío
+ *
+ * TODO FUTURO:
+ * - 🔄 Sincronización con Supabase
+ * - 🔄 Carrito compartido entre dispositivos
+ * - 🔄 Carrito persistente por usuario
+ */
 
-// Helper function para describir acciones del historial
-const getActionDescription = (actionType, actionData) => {
-  switch (actionType) {
-    case 'addItem':
-      return `Agregado: ${actionData.productName || 'Producto'} (${
-        actionData.quantity || 1
-      })`;
-    case 'removeItem':
-      return `Eliminado: ${actionData.productName || 'Producto'}`;
-    case 'updateQuantity':
-      return `Cantidad cambiada: ${actionData.productName || 'Producto'} (${
-        actionData.oldQuantity || '?'
-      } → ${actionData.newQuantity || '?'})`;
-    case 'applyCoupon':
-      return `Cupón aplicado: ${actionData.couponCode || 'Desconocido'}`;
-    case 'removeCoupon':
-      return `Cupón removido: ${actionData.couponCode || 'Desconocido'}`;
-    case 'clearCart':
-      return `Carrito limpiado (${actionData.itemCount || 0} productos)`;
-    case 'setShipping':
-      return `Envío cambiado: ${actionData.shippingName || 'Desconocido'}`;
-    default:
-      return 'Acción en el carrito';
-  }
-};
+import { create } from 'zustand'
+import { persist, createJSONStorage } from 'zustand/middleware'
+import debounce from 'lodash.debounce'
+import { calculatePriceForQuantity } from '../../../utils/priceCalculation'
+
+// Importar módulos especializados
+import useCartHistory from './useCartHistory'
+import useWishlist from './useWishlist'
+import useCoupons from './useCoupons'
+import useShipping from './useShipping'
 
 // Auto-guardar debounced (para el enfoque híbrido futuro)
-const createDebouncedSave = getState => {
+const createDebouncedSave = (getState) => {
   return debounce(() => {
     try {
-      getState().saveToLocal();
+      getState().saveToLocal()
       // En el futuro, también llamar: getState().syncToBackend()
     } catch (error) {
-      console.error('❌ Error en auto-guardado:', error);
+      console.error('❌ Error en auto-guardado:', error)
     }
-  }, 1000); // Guardar después de 1 segundo de inactividad
-};
+  }, 50) // Guardar después de 50ms de inactividad (OPTIMIZADO)
+}
 
 // Creación del store utilizando Zustand
 const useCartStore = create(
   persist(
     (set, get) => {
       // Crear función de auto-guardado específica para esta instancia
-      const debouncedSave = createDebouncedSave(get);
+      const debouncedSave = createDebouncedSave(get)
+
+      // Instanciar módulos especializados
+      const historyStore = useCartHistory.getState()
+      const wishlistStore = useWishlist.getState()
+      const couponsStore = useCoupons.getState()
+      const shippingStore = useShipping.getState()
 
       return {
-        // Estado del carrito
-        items: SAMPLE_ITEMS,
-        wishlist: [],
-
-        // Estado de UI
+        // Estado principal del carrito (vacío por defecto)
+        items: [],
         isLoading: false,
         error: null,
-
-        // Sistema de descuentos
-        appliedCoupons: [],
-        couponInput: '',
-
-        // Opciones de envío
-        selectedShipping: 'standard',
-
-        // Historial para undo/redo
-        history: [],
-        historyIndex: -1,
-
-        // Notificaciones
         notifications: [],
 
-        // === ACCIONES DEL CARRITO ===
+        // Propiedades delegadas para retrocompatibilidad
+        get wishlist() {
+          return wishlistStore.wishlist
+        },
+        get appliedCoupons() {
+          return couponsStore.appliedCoupons
+        },
+        get couponInput() {
+          return couponsStore.couponInput
+        },
+        get selectedShipping() {
+          return shippingStore.selectedShipping
+        },
+
+        // === ACCIONES DEL CARRITO (REFACTORIZADAS) ===
 
         // Agregar producto al carrito
         addItem: (product, quantity = 1) => {
-          const currentState = get();
+          // Asegurarse de que la imagen principal esté presente
+          const image =
+            product.imagen || product.image || '/placeholder-product.jpg'
+
+          // ===== REFORZAR CAMPOS price_tiers Y minimum_purchase =====
+          const basePrice = product.precio || product.price || 0
+          // Usar price_tiers solo si es un array válido y no vacío
+          const price_tiers = (Array.isArray(product.price_tiers) && product.price_tiers.length > 0)
+            ? product.price_tiers
+            : (Array.isArray(product.priceTiers) && product.priceTiers.length > 0)
+              ? product.priceTiers
+              : [{ min_quantity: 1, price: basePrice }]
+          const minimum_purchase = product.minimum_purchase || product.compraMinima || 1
+
+          const item = {
+            ...product,
+            image,
+            quantity,
+            price_tiers,
+            minimum_purchase,
+          }
+          const currentState = get()
           const existingItem = currentState.items.find(
-            item => item.id === product.id
-          );
+            (item) => item.id === product.id
+          )
 
           if (existingItem) {
             if (existingItem.quantity + quantity <= product.maxStock) {
               set({
-                items: currentState.items.map(item =>
+                items: currentState.items.map((item) =>
                   item.id === product.id
                     ? { ...item, quantity: item.quantity + quantity }
                     : item
                 ),
-              });
-              toast.success(
-                `Agregado: ${product.name} (${
-                  existingItem.quantity + quantity
-                })`,
-                { icon: '🛒' }
-              );
+              })
             } else {
-              toast.error(`Stock insuficiente para ${product.name}`, {
-                icon: '⚠️',
-              });
             }
           } else {
             const newItem = {
-              ...product,
-              quantity,
+              ...item,
               addedAt: new Date().toISOString(),
-            };
+            }
             set({
               items: [...currentState.items, newItem],
-            });
-            toast.success(`Agregado al carrito: ${product.name}`, {
-              icon: '✅',
-            });
+            })
           }
 
-          // Guardar en historial con información detallada
-          setTimeout(
-            () =>
-              get().saveToHistory('addItem', {
-                productName: product.name,
-                quantity: quantity,
-                isExisting: !!existingItem,
-              }),
-            0
-          );
+          // Delegar al módulo de historial
+          setTimeout(() => {
+            historyStore.saveToHistory(get(), 'addItem', {
+              productName: product.name,
+              quantity: quantity,
+              isExisting: !!existingItem,
+            })
+          }, 0)
 
           // Auto-guardar cambios
-          debouncedSave();
+          debouncedSave()
         },
 
         // Actualizar cantidad con respuesta inmediata
         updateQuantity: (id, quantity) => {
-          const currentState = get();
-          const item = currentState.items.find(item => item.id === id);
-          if (item && quantity > 0 && quantity <= item.maxStock) {
-            const oldQuantity = item.quantity;
+          const currentState = get()
+          const item = currentState.items.find((item) => item.id === id)
+          if (!item) return
+          // Forzar mínimo de compra
+          const min = item.minimum_purchase || item.compraMinima || 1
+          let safeQuantity = quantity
+          if (quantity < min) {
+            safeQuantity = min
+          }
+          if (safeQuantity > item.maxStock) safeQuantity = item.maxStock
+          // LOG: Mostrar tramos y tramo aplicado
+          if (item.price_tiers && item.price_tiers.length > 0) {
+            const logTiers = item.price_tiers.map(t => `${t.min_quantity},${t.price}`).join('\n')
+            const tramo = item.price_tiers.find(t => safeQuantity >= t.min_quantity)
+            if (tramo) {
+            }
+          }
+          if (safeQuantity > 0 && safeQuantity <= item.maxStock) {
+            const oldQuantity = item.quantity
+            // Obtener price_tiers y precio base
+            const price_tiers = item.price_tiers || item.priceTiers || []
+            const basePrice = item.originalPrice || item.precioOriginal || item.price || item.precio || 0
+            // Calcular nuevo precio unitario
+            const newUnitPrice = calculatePriceForQuantity(safeQuantity, price_tiers, basePrice)
             set({
-              items: currentState.items.map(item =>
-                item.id === id ? { ...item, quantity } : item
+              items: currentState.items.map((cartItem) =>
+                cartItem.id === id
+                  ? {
+                      ...cartItem,
+                      quantity: safeQuantity,
+                      price: newUnitPrice,
+                      precioUnitario: newUnitPrice,
+                      precioTotal: newUnitPrice * safeQuantity,
+                      cantidadSeleccionada: safeQuantity,
+                    }
+                  : cartItem
               ),
-            });
+            })
 
-            // Guardar en historial con información detallada
-            setTimeout(
-              () =>
-                get().saveToHistory('updateQuantity', {
-                  productName: item.name,
-                  oldQuantity: oldQuantity,
-                  newQuantity: quantity,
-                }),
-              0
-            );
+            // Delegar al módulo de historial
+            setTimeout(() => {
+              historyStore.saveToHistory(get(), 'updateQuantity', {
+                productName: item.name,
+                oldQuantity: oldQuantity,
+                newQuantity: safeQuantity,
+                oldPrice: item.price,
+                newPrice: newUnitPrice,
+              })
+            }, 0)
 
             // Auto-guardar cambios
-            debouncedSave();
-          }
-        },
+            debouncedSave()
+          }        },
 
         // Versión con debounce para casos específicos donde se necesite
         updateQuantityDebounced: debounce((id, quantity) => {
-          get().updateQuantity(id, quantity);
-        }, 100),
+          get().updateQuantity(id, quantity)
+        }, 10), // OPTIMIZADO: 10ms en lugar de 100ms
 
         // Remover item
-        removeItem: id => {
-          const currentState = get();
-          const item = currentState.items.find(item => item.id === id);
+        removeItem: (id) => {
+          const currentState = get()
+          const item = currentState.items.find((item) => item.id === id)
           if (item) {
-            set({
-              items: currentState.items.filter(item => item.id !== id),
-            });
-            toast.success(`${item.name} eliminado del carrito`, { icon: '🗑️' });
-
-            // Guardar en historial con información detallada
-            setTimeout(
-              () =>
-                get().saveToHistory('removeItem', {
-                  productName: item.name,
-                  quantity: item.quantity,
-                }),
-              0
-            );
-
-            // Auto-guardar cambios
-            debouncedSave();
+            set({ items: currentState.items.filter((item) => item.id !== id) })
+          } else {
           }
+
+          // Delegar al módulo de historial
+          setTimeout(() => {
+            historyStore.saveToHistory(get(), 'removeItem', {
+              productName: item.name,
+              quantity: item.quantity,
+            })
+          }, 0)
+
+          // Auto-guardar cambios
+          debouncedSave()
         },
 
         // Limpiar carrito
         clearCart: () => {
-          const currentState = get();
-          const itemCount = currentState.items.length;
+          const currentState = get()
+          const itemCount = currentState.items.length
           set({
             items: [],
-            appliedCoupons: [],
-            couponInput: '',
-          });
-          toast.success('Carrito limpiado', { icon: '🧹' });
+          })
 
-          // Guardar en historial con información detallada
-          setTimeout(
-            () =>
-              get().saveToHistory('clearCart', {
-                itemCount: itemCount,
-              }),
-            0
-          );
+          // También limpiar los módulos relacionados
+          couponsStore.clearCoupons()
+
+          toast.success('Carrito limpiado', { icon: '🧹' })
+
+          // Delegar al módulo de historial
+          setTimeout(() => {
+            historyStore.saveToHistory(get(), 'clearCart', {
+              itemCount: itemCount,
+            })
+          }, 0)
+          toast.success('Carrito limpiado', { icon: '🧹' })
+
+          // Guardar en historial con información detallada          // Delegar al módulo de historial
+          setTimeout(() => {
+            historyStore.saveToHistory(get(), 'clearCart', {
+              itemCount: itemCount,
+            })
+          }, 0)
 
           // Auto-guardar cambios
-          debouncedSave();
+          debouncedSave()
         },
 
-        // === SISTEMA DE WISHLIST ===
+        // === DELEGACIÓN A MÓDULOS ESPECIALIZADOS ===
 
-        // Agregar a wishlist
-        addToWishlist: product => {
-          const currentState = get();
-          const exists = currentState.wishlist.find(
-            item => item.id === product.id
-          );
-          if (!exists) {
-            set({
-              wishlist: [...currentState.wishlist, product],
-            });
-            toast.success(`${product.name} agregado a favoritos`, {
-              icon: '❤️',
-            });
-          }
+        // Funciones de wishlist (delegadas)
+        addToWishlist: (product) => {
+          return wishlistStore.addToWishlist(product)
         },
 
-        // Remover de wishlist
-        removeFromWishlist: id => {
-          const currentState = get();
-          const item = currentState.wishlist.find(item => item.id === id);
+        removeFromWishlist: (id) => {
+          return wishlistStore.removeFromWishlist(id)
+        },
+
+        moveToCart: (id) => {
+          const item = wishlistStore.wishlist.find((item) => item.id === id)
           if (item) {
-            set({
-              wishlist: currentState.wishlist.filter(item => item.id !== id),
-            });
-            toast.success(`${item.name} removido de favoritos`, { icon: '💔' });
+            get().addItem(item)
+            wishlistStore.removeFromWishlist(id)
           }
         },
 
-        // Mover de wishlist al carrito
-        moveToCart: id => {
-          const currentState = get();
-          const item = currentState.wishlist.find(item => item.id === id);
-          if (item) {
-            get().addItem(item);
-            get().removeFromWishlist(id);
-          }
+        // Obtener wishlist
+        getWishlist: () => {
+          return wishlistStore.wishlist
+        },
+        isInWishlist: (productId) => {
+          return wishlistStore.isInWishlist(productId)
         },
 
-        // === SISTEMA DE CUPONES ===
-
-        // Aplicar cupón
-        applyCoupon: code => {
-          const currentState = get();
-          const coupon = DISCOUNT_CODES[code.toUpperCase()];
-          const subtotal = get().getSubtotal();
-
-          if (!coupon) {
-            toast.error('Código de descuento inválido', { icon: '❌' });
-            return;
-          }
-
-          if (subtotal < coupon.minAmount) {
-            toast.error(
-              `Compra mínima de $${coupon.minAmount.toLocaleString()} requerida`,
-              { icon: '⚠️' }
-            );
-            return;
-          }
-
-          const alreadyApplied = currentState.appliedCoupons.find(
-            c => c.code === code.toUpperCase()
-          );
-          if (alreadyApplied) {
-            toast.error('Cupón ya aplicado', { icon: '⚠️' });
-            return;
-          }
-
-          set({
-            appliedCoupons: [
-              ...currentState.appliedCoupons,
-              { ...coupon, code: code.toUpperCase() },
-            ],
-            couponInput: '',
-          });
-          toast.success(`Cupón ${code} aplicado correctamente`, { icon: '🎉' });
-
-          // Guardar en historial con información detallada
-          setTimeout(
-            () =>
-              get().saveToHistory('applyCoupon', {
+        // Funciones de cupones (delegadas)
+        applyCoupon: (code) => {
+          const subtotal = get().getSubtotal()
+          const result = couponsStore.applyCoupon(code, subtotal)
+          if (result) {
+            // Delegar al módulo de historial
+            setTimeout(() => {
+              historyStore.saveToHistory(get(), 'applyCoupon', {
                 couponCode: code.toUpperCase(),
-                discount: coupon.percentage
-                  ? `${coupon.percentage}%`
-                  : `$${coupon.amount}`,
-              }),
-            0
-          );
-        },
-
-        // Remover cupón
-        removeCoupon: code => {
-          const currentState = get();
-          const coupon = currentState.appliedCoupons.find(c => c.code === code);
-          set({
-            appliedCoupons: currentState.appliedCoupons.filter(
-              c => c.code !== code
-            ),
-          });
-          toast.success(`Cupón ${code} removido`, { icon: '🗑️' });
-
-          // Guardar en historial con información detallada
-          setTimeout(
-            () =>
-              get().saveToHistory('removeCoupon', {
-                couponCode: code,
-                discount: coupon
-                  ? coupon.percentage
-                    ? `${coupon.percentage}%`
-                    : `$${coupon.amount}`
-                  : 'Desconocido',
-              }),
-            0
-          );
-        },
-
-        // === SISTEMA DE ENVÍO ===
-
-        // Seleccionar opción de envío
-        setShippingOption: optionId => {
-          const currentShipping = get().selectedShipping;
-          const oldOption = SHIPPING_OPTIONS.find(
-            opt => opt.id === currentShipping
-          );
-          const newOption = SHIPPING_OPTIONS.find(opt => opt.id === optionId);
-
-          set({
-            selectedShipping: optionId,
-          });
-
-          if (newOption) {
-            toast.success(`Envío seleccionado: ${newOption.name}`, {
-              icon: '🚚',
-            });
-
-            // Guardar en historial con información detallada
-            setTimeout(
-              () =>
-                get().saveToHistory('setShipping', {
-                  oldShipping: oldOption?.name || 'Desconocido',
-                  shippingName: newOption.name,
-                }),
-              0
-            );
+                discount: result.discount,
+              })
+            }, 0)
           }
+          return result
         },
 
-        // === CÁLCULOS ===
+        removeCoupon: (code) => {
+          const result = couponsStore.removeCoupon(code)
+          if (result) {
+            // Delegar al módulo de historial
+            setTimeout(() => {
+              historyStore.saveToHistory(get(), 'removeCoupon', {
+                couponCode: code,
+                discount: result.discount,
+              })
+            }, 0)
+          }
+          return result
+        },
+
+        setCouponInput: (value) => {
+          return couponsStore.setCouponInput(value)
+        },
+
+        getAppliedCoupons: () => {
+          return couponsStore.appliedCoupons
+        },
+
+        getCouponInput: () => {
+          return couponsStore.couponInput
+        },
+
+        // Funciones de envío (delegadas)
+        setShippingOption: (optionId) => {
+          const result = shippingStore.setShippingOption(optionId)
+          if (result) {
+            // Delegar al módulo de historial
+            setTimeout(() => {
+              historyStore.saveToHistory(get(), 'setShipping', {
+                oldShipping: result.oldOption?.name || 'Desconocido',
+                shippingName: result.newOption.name,
+              })
+            }, 0)
+          }
+          return result
+        },
+
+        getSelectedShipping: () => {
+          return shippingStore.selectedShipping
+        }, // === FUNCIONES DE CÁLCULO (REFACTORIZADAS) ===
 
         // Obtener subtotal
         getSubtotal: () => {
           return get().items.reduce(
             (sum, item) => sum + item.price * item.quantity,
             0
-          );
+          )
         },
 
-        // Obtener descuento total
+        // Obtener descuento total (delega a módulo de cupones)
         getDiscount: () => {
-          const subtotal = get().getSubtotal();
-          const coupons = get().appliedCoupons;
-
-          return coupons.reduce((total, coupon) => {
-            if (coupon.percentage) {
-              return total + (subtotal * coupon.percentage) / 100;
-            }
-            return total;
-          }, 0);
+          const subtotal = get().getSubtotal()
+          return couponsStore.getDiscount(subtotal)
         },
 
-        // Obtener costo de envío
+        // Obtener costo de envío (delega a módulo de envío)
         getShippingCost: () => {
-          const selectedOption = SHIPPING_OPTIONS.find(
-            opt => opt.id === get().selectedShipping
-          );
-          if (!selectedOption) return 0;
-
-          // Verificar cupones de envío gratis
-          const freeShippingCoupon = get().appliedCoupons.find(
-            c => c.shipping === 0
-          );
-          if (freeShippingCoupon) return 0;
-
-          // Envío gratis por compras sobre $100.000
-          const subtotal = get().getSubtotal();
-          if (subtotal >= 100000) return 0;
-
-          return selectedOption.price;
+          const subtotal = get().getSubtotal()
+          const appliedCoupons = couponsStore.appliedCoupons
+          return shippingStore.getShippingCost(subtotal, appliedCoupons)
         },
 
         // Obtener total
         getTotal: () => {
-          const subtotal = get().getSubtotal();
-          const discount = get().getDiscount();
-          const shipping = get().getShippingCost();
-          return subtotal - discount + shipping;
+          const subtotal = get().getSubtotal()
+          const discount = get().getDiscount()
+          const shipping = get().getShippingCost()
+          return subtotal - discount + shipping
         },
 
-        // Obtener información de envío
+        // Obtener información de envío (delega a módulo de envío)
         getShippingInfo: () => {
-          return SHIPPING_OPTIONS.find(
-            opt => opt.id === get().selectedShipping
-          );
+          return shippingStore.getShippingInfo()
         },
 
-        // === HISTORIAL Y UNDO/REDO MEJORADO ===
+        // === FUNCIONES DE HISTORIAL (DELEGADAS) ===
 
-        // Guardar estado en historial con información detallada
-        saveToHistory: (actionType = 'unknown', actionData = {}) => {
-          const currentState = get();
-          const newHistory = currentState.history.slice(
-            0,
-            currentState.historyIndex + 1
-          );
-
-          // Crear snapshot con información detallada
-          const snapshot = {
-            items: [...currentState.items],
-            appliedCoupons: [...currentState.appliedCoupons],
-            timestamp: Date.now(),
-            action: {
-              type: actionType,
-              data: actionData,
-              description: getActionDescription(actionType, actionData),
-            },
-          };
-
-          newHistory.push(snapshot);
-
-          // Mantener solo los últimos 30 estados (aumentado de 20)
-          if (newHistory.length > 30) {
-            newHistory.shift();
-          }
-
-          set({
-            history: newHistory,
-            historyIndex: newHistory.length - 1,
-          });
+        // Todas las funciones de historial delegadas al módulo
+        saveToHistory: (actionType, actionData) => {
+          return historyStore.saveToHistory(get(), actionType, actionData)
         },
 
-        // Obtener información sobre la próxima acción a deshacer
         getUndoInfo: () => {
-          const currentState = get();
-          if (currentState.historyIndex > 0) {
-            const currentSnapshot =
-              currentState.history[currentState.historyIndex];
-            return {
-              canUndo: true,
-              action: currentSnapshot.action,
-              timestamp: currentSnapshot.timestamp,
-            };
-          }
-          return { canUndo: false };
+          return historyStore.getUndoInfo()
         },
 
-        // Obtener información sobre la próxima acción a rehacer
         getRedoInfo: () => {
-          const currentState = get();
-          if (currentState.historyIndex < currentState.history.length - 1) {
-            const nextSnapshot =
-              currentState.history[currentState.historyIndex + 1];
-            return {
-              canRedo: true,
-              action: nextSnapshot.action,
-              timestamp: nextSnapshot.timestamp,
-            };
-          }
-          return { canRedo: false };
+          return historyStore.getRedoInfo()
         },
 
-        // Obtener historial completo con información
         getHistoryInfo: () => {
-          const currentState = get();
-          return {
-            totalStates: currentState.history.length,
-            currentIndex: currentState.historyIndex,
-            canUndo: currentState.historyIndex > 0,
-            canRedo:
-              currentState.historyIndex < currentState.history.length - 1,
-            recentActions: currentState.history.slice(-10).map(snapshot => ({
-              description: snapshot.action?.description || 'Acción desconocida',
-              timestamp: snapshot.timestamp,
-              type: snapshot.action?.type || 'unknown',
-            })),
-          };
+          return historyStore.getHistoryInfo()
         },
 
-        // Deshacer acción
         undo: () => {
-          const currentState = get();
-          if (currentState.historyIndex > 0) {
-            const previousState =
-              currentState.history[currentState.historyIndex - 1];
+          return historyStore.undo((restoredState) => {
             set({
-              items: [...previousState.items],
-              appliedCoupons: [...previousState.appliedCoupons],
-              historyIndex: currentState.historyIndex - 1,
-            });
-            toast.success('Acción deshecha', { icon: '↩️' });
-          }
+              items: restoredState.items,
+              // Los módulos manejan su propio estado
+            })
+            // Sincronizar con módulos
+            couponsStore.restoreState(restoredState.appliedCoupons || [])
+            shippingStore.restoreState(
+              restoredState.selectedShipping || 'standard'
+            )
+          })
         },
 
-        // Rehacer acción
         redo: () => {
-          const currentState = get();
-          if (currentState.historyIndex < currentState.history.length - 1) {
-            const nextState =
-              currentState.history[currentState.historyIndex + 1];
+          return historyStore.redo((restoredState) => {
             set({
-              items: [...nextState.items],
-              appliedCoupons: [...nextState.appliedCoupons],
-              historyIndex: currentState.historyIndex + 1,
-            });
-            toast.success('Acción rehecha', { icon: '↪️' });
-          }
+              items: restoredState.items,
+              // Los módulos manejan su propio estado
+            })
+            // Sincronizar con módulos
+            couponsStore.restoreState(restoredState.appliedCoupons || [])
+            shippingStore.restoreState(
+              restoredState.selectedShipping || 'standard'
+            )
+          })
         },
 
         // === FUNCIONES DE UTILIDAD ===
 
         // Verificar si producto está en carrito
-        isInCart: productId => {
-          return get().items.some(item => item.id === productId);
+        isInCart: (productId) => {
+          return get().items.some((item) => item.id === productId)
         },
 
-        // Verificar si producto está en wishlist
-        isInWishlist: productId => {
-          return get().wishlist.some(item => item.id === productId);
-        },
-
-        // Obtener cantidad de items
+        // Verificar si producto está en wishlist (delega)
+        isInWishlist: (productId) => {
+          return wishlistStore.isInWishlist(productId)
+        }, // Obtener cantidad de items
         getItemCount: () => {
-          return get().items.reduce((count, item) => count + item.quantity, 0);
+          return get().items.reduce((count, item) => count + item.quantity, 0)
         },
 
         // Obtener estadísticas del carrito
         getStats: () => {
-          const items = get().items;
-          const totalItems = items.length;
+          const items = get().items
+          const totalItems = items.length
           const totalQuantity = items.reduce(
             (sum, item) => sum + item.quantity,
             0
-          );
-          const totalValue = get().getSubtotal();
-          const averagePrice = totalItems > 0 ? totalValue / totalQuantity : 0;
+          )
+          const totalValue = get().getSubtotal()
+          const averagePrice = totalItems > 0 ? totalValue / totalQuantity : 0
 
           return {
             totalItems,
             totalQuantity,
             totalValue,
             averagePrice,
-          };
+          }
         },
 
-        // === SETTERS DE UI ===
+        // === SETTERS DE UI (REFACTORIZADOS) ===
 
-        // Establecer input de cupón
-        setCouponInput: value =>
-          set({
-            couponInput: value,
-          }),
+        // Los setters de cupones ahora delegan al módulo
+        setCouponInput: (value) => {
+          return couponsStore.setCouponInput(value)
+        },
 
         // Establecer estado de carga
-        setLoading: loading =>
-          set({
-            isLoading: loading,
-          }),
+        setLoading: (loading) => {
+          set({ isLoading: loading })
+        },
 
         // Establecer error
-        setError: error =>
-          set({
-            error,
-          }),
+        setError: (error) => {
+          set({ error })
+        }, // === FUNCIONES DE PERSISTENCIA HÍBRIDA ===
 
-        // === FUNCIONES DE DEMO ===
-
-        // Reiniciar carrito para demo (volver a mostrar productos)
-        resetDemoCart: () => {
-          set({
-            items: SAMPLE_ITEMS,
-            wishlist: [],
-            appliedCoupons: [],
-            couponInput: '',
-            selectedShipping: 'standard',
-            history: [],
-            historyIndex: -1,
-            notifications: [],
-            isLoading: false,
-            error: null,
-          });
-          toast.success('¡Carrito de demo reiniciado!', {
-            icon: '🔄',
-            duration: 2000,
-          });
-        },
-
-        // === FUNCIONES DE PERSISTENCIA HÍBRIDA (PREPARACIÓN PARA BACKEND) ===
-
-        // Guardar en localStorage inmediatamente (frontend)
+        // Guardar en localStorage
         saveToLocal: () => {
           try {
-            const state = get();
+            const state = get()
             const cartData = {
               items: state.items,
-              wishlist: state.wishlist,
-              appliedCoupons: state.appliedCoupons,
-              selectedShipping: state.selectedShipping,
+              // Los módulos manejan su propia persistencia
               lastModified: Date.now(),
-              version: '2.0',
-            };
-            localStorage.setItem(
-              'sellsi-cart-backup',
-              JSON.stringify(cartData)
-            );
-            console.log('💾 Carrito guardado en localStorage');
+              version: '3.0', // Versión refactorizada
+            }
+            localStorage.setItem('sellsi-cart-main', JSON.stringify(cartData))
           } catch (error) {
-            console.error('❌ Error guardando en localStorage:', error);
+            console.error('❌ Error guardando en localStorage:', error)
           }
         },
 
-        // Cargar desde localStorage si existe
+        // Cargar desde localStorage
         loadFromLocal: () => {
           try {
-            const savedCart = localStorage.getItem('sellsi-cart-backup');
+            const savedCart = localStorage.getItem('sellsi-cart-main')
             if (savedCart) {
-              const cartData = JSON.parse(savedCart);
+              const cartData = JSON.parse(savedCart)
               set({
                 items: cartData.items || [],
-                wishlist: cartData.wishlist || [],
-                appliedCoupons: cartData.appliedCoupons || [],
-                selectedShipping: cartData.selectedShipping || 'standard',
-              });
-              console.log('📥 Carrito cargado desde localStorage');
-              return true;
+              })
+              return true
             }
           } catch (error) {
-            console.error('❌ Error cargando desde localStorage:', error);
+            console.error('❌ Error cargando desde localStorage:', error)
           }
-          return false;
+          return false
         },
 
-        // Preparación para sincronización con backend (futuro)
+        // Preparación para sincronización con backend
         syncToBackend: async () => {
-          // TODO: Implementar cuando el backend esté listo
           console.log(
             '🔄 Sincronización con backend (preparado para implementar)'
-          );
+          )
+          // Los módulos también deben sincronizar su estado
           try {
-            const state = get();
+            const state = get()
             const cartData = {
               items: state.items,
-              wishlist: state.wishlist,
-              appliedCoupons: state.appliedCoupons,
-              selectedShipping: state.selectedShipping,
+              // Obtener datos de módulos
+              wishlist: wishlistStore.wishlist,
+              coupons: couponsStore.appliedCoupons,
+              shipping: shippingStore.selectedShipping,
               lastModified: Date.now(),
-            };
-
-            // Placeholder para futura implementación
-            // const response = await fetch('/api/cart/sync', {
-            //   method: 'POST',
-            //   headers: { 'Content-Type': 'application/json' },
-            //   body: JSON.stringify(cartData)
-            // })
-
-            console.log('✅ Listo para sincronizar con backend:', cartData);
-            return true;
-          } catch (error) {
-            console.error('❌ Error en sincronización:', error);
-            return false;
-          }
-        },
-
-        // Mergear carrito local con carrito remoto (futuro)
-        mergeWithRemote: async remoteCart => {
-          // TODO: Implementar lógica de merge cuando el backend esté listo
-          console.log(
-            '🔄 Merge con carrito remoto (preparado para implementar)'
-          );
-          try {
-            const localCart = get().items;
-
-            // Lógica de merge (ejemplo):
-            // 1. Mantener items locales más recientes
-            // 2. Agregar items remotos que no existen localmente
-            // 3. Para items duplicados, usar la cantidad mayor
-
-            const mergedItems = [...localCart];
-
-            if (remoteCart && remoteCart.items) {
-              remoteCart.items.forEach(remoteItem => {
-                const localIndex = mergedItems.findIndex(
-                  item => item.id === remoteItem.id
-                );
-                if (localIndex === -1) {
-                  // Item no existe localmente, agregarlo
-                  mergedItems.push(remoteItem);
-                } else {
-                  // Item existe, usar la cantidad mayor
-                  if (remoteItem.quantity > mergedItems[localIndex].quantity) {
-                    mergedItems[localIndex].quantity = remoteItem.quantity;
-                  }
-                }
-              });
             }
-
-            set({ items: mergedItems });
-            console.log('✅ Merge completado');
-            return true;
+            console.log('✅ Listo para sincronizar con backend:', cartData)
+            return true
           } catch (error) {
-            console.error('❌ Error en merge:', error);
-            return false;
+            console.error('❌ Error en sincronización:', error)
+            return false
           }
         },
-
-        // === FUNCIONES DE DEMO EXISTENTES ===
-
-        // Auto-reiniciar carrito si está vacío (para demo)
-        autoResetIfEmpty: () => {
-          const currentState = get();
-          if (currentState.items.length === 0) {
-            // Agregar un pequeño delay para mejor UX
-            setTimeout(() => {
-              set({
-                items: SAMPLE_ITEMS,
-                wishlist: [],
-                appliedCoupons: [],
-                couponInput: '',
-                selectedShipping: 'standard',
-                history: [],
-                historyIndex: -1,
-                notifications: [],
-                isLoading: false,
-                error: null,
-              });
-              toast.success(
-                '¡Demo reiniciado! Productos de muestra restaurados',
-                {
-                  icon: '🎭',
-                  duration: 3000,
-                }
-              );
-            }, 1500);
-          }
-        },
-
-        // Checkout simulado con reinicio automático del demo
-        simulateCheckout: async () => {
-          const currentState = get();
-          if (currentState.items.length === 0) return false;
-
-          // Limpiar carrito (simular compra exitosa)
-          set({
-            items: [],
-            appliedCoupons: [],
-            couponInput: '',
-            selectedShipping: 'standard',
-            history: [],
-            historyIndex: -1,
-            notifications: [],
-            isLoading: false,
-            error: null,
-          });
-
-          // Auto-reiniciar después de un tiempo para mantener el demo funcional
-          setTimeout(() => {
-            const newState = get();
-            if (newState.items.length === 0) {
-              set({
-                items: SAMPLE_ITEMS,
-                wishlist: [],
-                appliedCoupons: [],
-                couponInput: '',
-                selectedShipping: 'standard',
-                history: [],
-                historyIndex: -1,
-                notifications: [],
-                isLoading: false,
-                error: null,
-              });
-              toast.success('Demo reiniciado automáticamente', {
-                icon: '🔄',
-                duration: 2000,
-              });
-            }
-          }, 5000); // Reiniciar después de 5 segundos          return true
-        },
-      };
+      }
     },
     {
-      name: 'sellsi-cart-v2', // Nombre mejorado para el localStorage
+      name: 'sellsi-cart-v3-refactored',
       storage: createJSONStorage(() => localStorage),
-      partialize: state => ({
-        // Persistir datos esenciales del carrito
+      partialize: (state) => ({
         items: state.items,
-        wishlist: state.wishlist,
-        appliedCoupons: state.appliedCoupons,
-        selectedShipping: state.selectedShipping,
-        // Metadatos para control de versión y sincronización
         lastModified: Date.now(),
-        version: '2.0',
-        deviceId:
-          typeof navigator !== 'undefined'
-            ? navigator.userAgent || 'unknown-device'
-            : 'server',
+        version: '3.0',
       }),
-      // Configuración de hidratación mejorada
-      onRehydrateStorage: state => {
-        console.log('🔄 Hidratando carrito desde localStorage...');
+      onRehydrateStorage: (state) => {
+        // Eliminado log de hidratación
         return (state, error) => {
           if (error) {
-            console.error('❌ Error al hidratar carrito:', error);
-            // En caso de error, usar valores por defecto
-            return {
-              items: [],
-              wishlist: [],
-              appliedCoupons: [],
-              selectedShipping: 'standard',
-              isLoading: false,
-              error: null,
-            };
+            // Eliminado log de error de hidratación
           } else {
-            console.log('✅ Carrito hidratado correctamente:', {
-              items: state?.items?.length || 0,
-              wishlist: state?.wishlist?.length || 0,
-              coupons: state?.appliedCoupons?.length || 0,
-            });
+            // Eliminado log de éxito de hidratación
           }
-        };
-      },
-      // Migración de versiones anteriores
-      migrate: (persistedState, version) => {
-        console.log('🔄 Migrando carrito desde versión:', version);
-
-        // Migrar de versiones anteriores
-        if (version < 2) {
-          return {
-            ...persistedState,
-            version: '2.0',
-            lastModified: Date.now(),
-            deviceId:
-              typeof navigator !== 'undefined'
-                ? navigator.userAgent || 'unknown-device'
-                : 'server',
-          };
         }
-
-        return persistedState;
       },
-      version: 2, // Versión actual del schema
+      version: 3,
     }
   )
-);
+)
 
-export default useCartStore;
+export default useCartStore

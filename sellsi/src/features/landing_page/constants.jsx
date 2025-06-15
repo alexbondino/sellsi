@@ -14,7 +14,36 @@ import {
   Receipt,
 } from '@mui/icons-material'
 
-// Constantes para las diapositivas promocionales
+/**
+ * ============================================================================
+ * LANDING PAGE CONSTANTS - CONSTANTES DE LA PÁGINA DE INICIO
+ * ============================================================================
+ *
+ * Archivo central para todas las constantes y configuraciones estáticas
+ * utilizadas en los componentes de la landing page
+ *
+ * CONTENIDO:
+ * - PROMO_SLIDES: Slides del carrusel principal
+ * - CAROUSEL_IMAGES: Imágenes del carrusel secundario
+ * - SERVICES_DATA: Datos de servicios con timelines
+ * - PROVIDERS_DATA: Logos de proveedores destacados
+ *
+ * CARACTERÍSTICAS:
+ * - Configuración centralizada y reutilizable
+ * - Soporte para contenido HTML inline
+ * - Iconos de Material UI integrados
+ * - Estructura extensible y mantenible
+ * - Separación de datos y lógica de presentación
+ */
+
+// ============================================================================
+// SLIDES PROMOCIONALES - CARRUSEL PRINCIPAL
+// ============================================================================
+
+/**
+ * Configuración de slides para el carrusel promocional principal
+ * Soporta dos tipos: 'standard' (título/subtítulo) y 'multi-section' (secciones múltiples)
+ */
 export const PROMO_SLIDES = [
   {
     id: 1,
@@ -50,10 +79,6 @@ export const PROMO_SLIDES = [
         description: 'Vende directamente sin intermediarios',
       },
       {
-        //title: '¿Intermediario?',
-        //description: 'Conecta proveedores con compradores',
-      },
-      {
         title: '¿Comprador?',
         description: 'Encuentra los mejores productos al mejor precio',
       },
@@ -61,7 +86,13 @@ export const PROMO_SLIDES = [
   },
 ]
 
-// Constantes para el carrusel de imágenes
+// ============================================================================
+// IMÁGENES DEL CARRUSEL SECUNDARIO
+// ============================================================================
+
+/**
+ * Imágenes y textos para el carrusel secundario de la página de inicio
+ */
 export const CAROUSEL_IMAGES = [
   {
     src: '/Landing Page/QuienesSomos.jpg',
@@ -85,7 +116,14 @@ export const CAROUSEL_IMAGES = [
   },
 ]
 
-// Constantes para los datos de servicios del Wizard
+// ============================================================================
+// DATOS DE SERVICIOS CON TIMELINES
+// ============================================================================
+
+/**
+ * Datos y estructura para los servicios ofrecidos en la landing page
+ * Incluye un timeline con pasos para cada tipo de usuario: Proveedor, Vendedor y Punto de Venta
+ */
 export const SERVICES_DATA = [
   {
     title: 'Proveedor',
@@ -186,7 +224,14 @@ export const SERVICES_DATA = [
   },
 ]
 
-// Constantes para los proveedores
+// ============================================================================
+// LOGOS DE PROVEEDORES DESTACADOS
+// ============================================================================
+
+/**
+ * Lista de proveedores destacados en la landing page
+ * Usado para mostrar confianza y variedad de productos
+ */
 export const PROVIDERS_DATA = [
   {
     src: '/Landing Page/Nuestros Proveedores/IKEA.webp',

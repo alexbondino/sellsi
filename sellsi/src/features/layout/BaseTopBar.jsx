@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import {
   Button,
   Box,
@@ -7,19 +7,19 @@ import {
   Menu,
   MenuItem,
   useTheme,
-} from '@mui/material';
-import MenuIcon from '@mui/icons-material/Menu';
-import AccountCircleIcon from '@mui/icons-material/AccountCircle';
+} from '@mui/material'
+import MenuIcon from '@mui/icons-material/Menu'
+import AccountCircleIcon from '@mui/icons-material/AccountCircle'
 
-import { supabase } from '../../services/supabase';
-
-import Login from '../login/Login';
-import Register from '../register/Register';
-import ContactModal from '../ui/ContactModal';
+import { supabase } from '../../services/supabase'
+import ContactModal from '../ui/ContactModal'
+import Login from '../login/Login'
+import Register from '../register/Register'
 
 export default function BaseTopBar({
   navigationButtons = [],
   authButtons = {},
+  customRightElement = null, // Nuevo prop para elementos especiales sin envolver
   onNavigate,
   showContactModal = true,
   logoMarginLeft = {
@@ -30,95 +30,95 @@ export default function BaseTopBar({
     xl: -4,
   },
 }) {
-  const theme = useTheme();
-  const navigate = useNavigate();
-  const location = useLocation();
-  const [menuAnchor, setMenuAnchor] = useState(null);
-  const [profileAnchor, setProfileAnchor] = useState(null);
-  const [openLoginModal, setOpenLoginModal] = useState(false);
-  const [openRegisterModal, setOpenRegisterModal] = useState(false);
-  const [openContactModal, setOpenContactModal] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false); // Suscripción a cambios de sesión
+  const theme = useTheme()
+  const navigate = useNavigate()
+  const location = useLocation()
+  const [menuAnchor, setMenuAnchor] = useState(null)
+  const [profileAnchor, setProfileAnchor] = useState(null)
+  const [openLoginModal, setOpenLoginModal] = useState(false)
+  const [openRegisterModal, setOpenRegisterModal] = useState(false)
+  const [openContactModal, setOpenContactModal] = useState(false)
+  const [isLoggedIn, setIsLoggedIn] = useState(false) // Suscripción a cambios de sesión
   useEffect(() => {
     const getCurrentSession = async () => {
-      const { data } = await supabase.auth.getSession();
-      setIsLoggedIn(!!data.session);
-    };
+      const { data } = await supabase.auth.getSession()
+      setIsLoggedIn(!!data.session)
+    }
 
-    getCurrentSession();
+    getCurrentSession()
 
     const { data: listener } = supabase.auth.onAuthStateChange(
       (_event, session) => {
-        setIsLoggedIn(!!session);
+        setIsLoggedIn(!!session)
       }
-    );
+    )
 
     return () => {
-      listener.subscription.unsubscribe();
-    };
-  }, []);
+      listener.subscription.unsubscribe()
+    }
+  }, [])
 
-  const openMenu = e => setMenuAnchor(e.currentTarget);
-  const closeMenu = () => setMenuAnchor(null);
-  const openProfileMenu = e => setProfileAnchor(e.currentTarget);
-  const closeProfileMenu = () => setProfileAnchor(null);
+  const openMenu = (e) => setMenuAnchor(e.currentTarget)
+  const closeMenu = () => setMenuAnchor(null)
+  const openProfileMenu = (e) => setProfileAnchor(e.currentTarget)
+  const closeProfileMenu = () => setProfileAnchor(null)
 
   const handleLogout = async () => {
     // Limpiar localStorage
-    localStorage.removeItem('user_id');
-    localStorage.removeItem('account_type');
-    localStorage.removeItem('supplierid');
-    localStorage.removeItem('sellerid');
+    localStorage.removeItem('user_id')
+    localStorage.removeItem('account_type')
+    localStorage.removeItem('supplierid')
+    localStorage.removeItem('sellerid')
 
-    await supabase.auth.signOut();
-    closeProfileMenu();
-    navigate('/');
-  };
+    await supabase.auth.signOut()
+    closeProfileMenu()
+    navigate('/')
+  }
 
   const handleOpenLogin = () => {
-    setOpenLoginModal(true);
-    closeMenu();
-  };
+    setOpenLoginModal(true)
+    closeMenu()
+  }
 
   const handleOpenRegister = () => {
-    setOpenRegisterModal(true);
-    closeMenu();
-  };
+    setOpenRegisterModal(true)
+    closeMenu()
+  }
 
-  const handleCloseLogin = () => setOpenLoginModal(false);
-  const handleCloseRegister = () => setOpenRegisterModal(false);
+  const handleCloseLogin = () => setOpenLoginModal(false)
+  const handleCloseRegister = () => setOpenRegisterModal(false)
 
   const handleOpenContact = () => {
-    setOpenContactModal(true);
-    closeMenu();
-  };
-  const handleCloseContact = () => setOpenContactModal(false);
+    setOpenContactModal(true)
+    closeMenu()
+  }
+  const handleCloseContact = () => setOpenContactModal(false)
 
-  const handleNavigate = ref => {
-    closeMenu();
+  const handleNavigate = (ref) => {
+    closeMenu()
     if (ref === 'contactModal') {
-      handleOpenContact();
-      return;
+      handleOpenContact()
+      return
     }
     if (onNavigate) {
-      onNavigate(ref);
+      onNavigate(ref)
     }
-  };
+  }
 
   const handleGoHome = () => {
-    navigate('/');
+    navigate('/')
     setTimeout(() => {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }, 100);
-  };
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    }, 100)
+  }
 
   useEffect(() => {
-    const handleOpenLoginModal = () => setOpenLoginModal(true);
-    window.addEventListener('openLoginModal', handleOpenLoginModal);
+    const handleOpenLoginModal = () => setOpenLoginModal(true)
+    window.addEventListener('openLoginModal', handleOpenLoginModal)
     return () => {
-      window.removeEventListener('openLoginModal', handleOpenLoginModal);
-    };
-  }, []);
+      window.removeEventListener('openLoginModal', handleOpenLoginModal)
+    }
+  }, [])
 
   return (
     <Box
@@ -145,6 +145,7 @@ export default function BaseTopBar({
             lg: '1575px',
           },
           px: { xs: 2, sm: 3, md: 4 },
+          ml: { xs: 0, sm: 0, md: 0, lg: 20.5, xl: 16 }, // Sin margen izquierdo en desktop
           display: 'flex',
           alignItems: 'center',
           justifyContent: {
@@ -153,11 +154,13 @@ export default function BaseTopBar({
           },
         }}
       >
+        {' '}
         <Box
           sx={{
             display: 'flex',
             alignItems: 'center',
             ml: logoMarginLeft,
+            gap: { md: 3, lg: 4 }, // Espacio entre logo y botones de navegación
           }}
         >
           {' '}
@@ -169,34 +172,15 @@ export default function BaseTopBar({
             sx={{
               height: { xs: 129, md: 160 },
               cursor: 'pointer',
-              mr: { xs: 1, md: 2 },
+              mr: { xs: 1, md: 0 }, // Sin margen derecho en desktop
             }}
           />
-        </Box>
-
-        <Box sx={{ display: { xs: 'none', md: 'flex' }, gap: 2 }}>
-          {navigationButtons.map(({ label, ref }) => (
-            <Button
-              key={label}
-              onClick={() => handleNavigate(ref)}
-              sx={{
-                color: 'white',
-                textTransform: 'none',
-                fontSize: { xs: 14, md: 16 },
-                fontWeight: 500,
-                '&:hover': {
-                  backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                },
-              }}
-            >
-              {label}
-            </Button>
-          ))}
-
-          {!isLoggedIn && (
-            <>
+          {/* Botones de navegación movidos al lado del logo */}
+          <Box sx={{ display: { xs: 'none', md: 'flex' }, gap: 2 }}>
+            {navigationButtons.map(({ label, ref }) => (
               <Button
-                onClick={handleOpenLogin}
+                key={label}
+                onClick={() => handleNavigate(ref)}
                 sx={{
                   color: 'white',
                   textTransform: 'none',
@@ -205,11 +189,64 @@ export default function BaseTopBar({
                   '&:hover': {
                     backgroundColor: 'rgba(255, 255, 255, 0.1)',
                   },
+                  // Remover efectos de focus/active que causan bordes
+                  '&:focus': {
+                    outline: 'none',
+                    boxShadow: 'none',
+                  },
+                  '&:active': {
+                    outline: 'none',
+                    boxShadow: 'none',
+                  },
+                  '&.Mui-focusVisible': {
+                    outline: 'none',
+                    boxShadow: 'none',
+                  },
                 }}
               >
-                {authButtons.login || 'Iniciar sesión'}
+                {label}
               </Button>
-
+            ))}
+          </Box>
+        </Box>{' '}
+        {/* Botones de autenticación mantenidos a la derecha */}
+        <Box sx={{ display: { xs: 'none', md: 'flex' }, gap: 2 }}>
+          {authButtons.login ? (
+            <Button
+              onClick={authButtons.login.onClick}
+              sx={authButtons.login.customStyles}
+            >
+              {authButtons.login.label}
+            </Button>
+          ) : (
+            !isLoggedIn && (
+              <Button
+                onClick={handleOpenLogin}
+                variant="contained"
+                sx={{
+                  backgroundColor: 'primary.main',
+                  color: 'white',
+                  textTransform: 'none',
+                  fontSize: { xs: 14, md: 16 },
+                  fontWeight: 500,
+                }}
+              >
+                Iniciar sesión
+              </Button>
+            )
+          )}{' '}
+          {/* Si hay un customRightElement, lo renderizamos directamente sin envolver */}
+          {customRightElement ? (
+            customRightElement
+          ) : authButtons.register ? (
+            <Button
+              onClick={authButtons.register.onClick}
+              sx={authButtons.register.customStyles}
+            >
+              {authButtons.register.label}
+            </Button>
+          ) : (
+            !isLoggedIn && (
               <Button
                 onClick={handleOpenRegister}
                 variant="outlined"
@@ -219,18 +256,13 @@ export default function BaseTopBar({
                   textTransform: 'none',
                   fontSize: { xs: 14, md: 16 },
                   fontWeight: 500,
-                  '&:hover': {
-                    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                    borderColor: 'white',
-                  },
                 }}
               >
-                {authButtons.register || 'Registrarse'}
+                Registrarse
               </Button>
-            </>
+            )
           )}
-
-          {isLoggedIn && (
+          {!customRightElement && !authButtons.register && isLoggedIn && (
             <IconButton
               onClick={openProfileMenu}
               sx={{
@@ -238,19 +270,47 @@ export default function BaseTopBar({
                 '&:hover': {
                   backgroundColor: 'rgba(255, 255, 255, 0.1)',
                 },
+                '&:focus': {
+                  outline: 'none',
+                  boxShadow: 'none',
+                },
+                '&:active': {
+                  outline: 'none',
+                  boxShadow: 'none',
+                },
+                '&.Mui-focusVisible': {
+                  outline: 'none',
+                  boxShadow: 'none',
+                },
               }}
             >
               <AccountCircleIcon />
             </IconButton>
           )}
-        </Box>
-
+        </Box>{' '}
         <Box sx={{ display: { xs: 'flex', md: 'none' } }}>
-          <IconButton onClick={openMenu} sx={{ color: 'white' }}>
+          <IconButton
+            onClick={openMenu}
+            sx={{
+              color: 'white',
+              // Remover efectos de focus/active que causan bordes
+              '&:focus': {
+                outline: 'none',
+                boxShadow: 'none',
+              },
+              '&:active': {
+                outline: 'none',
+                boxShadow: 'none',
+              },
+              '&.Mui-focusVisible': {
+                outline: 'none',
+                boxShadow: 'none',
+              },
+            }}
+          >
             <MenuIcon />
           </IconButton>
         </Box>
-
         <Menu
           anchorEl={menuAnchor}
           open={Boolean(menuAnchor)}
@@ -268,22 +328,18 @@ export default function BaseTopBar({
             </MenuItem>
           ))}
 
-          {!isLoggedIn && (
-            <>
-              <MenuItem onClick={handleOpenLogin}>
-                {authButtons.login || 'Iniciar sesión'}
-              </MenuItem>
-              <MenuItem onClick={handleOpenRegister}>
-                {authButtons.register || 'Registrarse'}
-              </MenuItem>
-            </>
-          )}
-
+          {!isLoggedIn && [
+            <MenuItem onClick={handleOpenLogin} key="login">
+              {authButtons.login || 'Iniciar sesión'}
+            </MenuItem>,
+            <MenuItem onClick={handleOpenRegister} key="register">
+              {authButtons.register || 'Registrarse'}
+            </MenuItem>,
+          ]}
           {isLoggedIn && (
             <MenuItem onClick={handleLogout}>Cerrar sesión</MenuItem>
           )}
         </Menu>
-
         <Menu
           anchorEl={profileAnchor}
           open={Boolean(profileAnchor)}
@@ -295,17 +351,19 @@ export default function BaseTopBar({
             },
           }}
         >
-          <MenuItem onClick={handleLogout}>Cerrar sesión</MenuItem>
-        </Menu>
-
-        <Login open={openLoginModal} onClose={handleCloseLogin} />
-
-        <Register open={openRegisterModal} onClose={handleCloseRegister} />
-
+          <MenuItem onClick={handleLogout}>Cerrar sesión</MenuItem>        </Menu>        
+        {/* AUTH MODALS */}
+        {openLoginModal && (
+          <Login open={openLoginModal} onClose={handleCloseLogin} />
+        )}
+        {openRegisterModal && (
+          <Register open={openRegisterModal} onClose={handleCloseRegister} />
+        )}
+        
         {showContactModal && (
           <ContactModal open={openContactModal} onClose={handleCloseContact} />
         )}
       </Box>
     </Box>
-  );
+  )
 }

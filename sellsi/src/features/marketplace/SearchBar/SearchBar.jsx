@@ -39,28 +39,66 @@ const SearchBar = ({
     xl: 41,
   }, // Valores por defecto para Marketplace normal
 }) => {
-  const handleClear = () => {
+  // ✅ MEJORA DE RENDIMIENTO: Memoización del handler de limpiar búsqueda
+  const handleClear = React.useCallback(() => {
     setBusqueda('')
-  }
+  }, [setBusqueda])
+
+  // ✅ MEJORA DE RENDIMIENTO: Memoización del handler de cambio de búsqueda
+  const handleSearchChange = React.useCallback((e) => {
+    setBusqueda(e.target.value)
+  }, [setBusqueda])
+
+  // ✅ MEJORA DE RENDIMIENTO: Memoización del handler de cambio de ordenamiento
+  const handleSortChange = React.useCallback((e) => {
+    setOrdenamiento(e.target.value)
+  }, [setOrdenamiento])
+
+  // ✅ MEJORA DE RENDIMIENTO: Memoización de estilos del contenedor principal
+  const containerStyles = React.useMemo(
+    () => ({
+      display: 'flex',
+      gap: { xs: 0.5, sm: 0.5, md: 1 }, // ✅ Gap más pequeño en móviles
+      alignItems: 'center',
+      width: '100%',
+      flexDirection: 'row', // ✅ SIEMPRE en fila para xs/sm/md
+      py: 0.5,
+      // ✅ Usar prop searchBarMarginLeft para permitir diferentes valores
+      marginLeft: searchBarMarginLeft,
+    }),
+    [searchBarMarginLeft]
+  )
+
+  // ✅ MEJORA DE RENDIMIENTO: Memoización de estilos del TextField
+  const textFieldStyles = React.useMemo(
+    () => ({
+      width: { xs: '30%', sm: '30%', md: '240px' }, // ✅ 40% en xs/sm, tamaño fijo en md+
+      minWidth: { xs: 'auto', sm: 'auto', md: '500px' }, // ✅ Sin minWidth en móviles
+      '& .MuiOutlinedInput-root': {
+        borderRadius: 1.5,
+        backgroundColor: 'white',
+        height: '36px', // ✅ Altura fija más pequeña
+      },
+    }),
+    []
+  )
+
+  // ✅ MEJORA DE RENDIMIENTO: Memoización de estilos del FormControl
+  const formControlStyles = React.useMemo(
+    () => ({
+      width: { xs: '47%', sm: '50%', md: 245 }, // ✅ AUMENTADO a 40% para compensar reducción del botón filtros
+      minWidth: 'auto', // ✅ Sin minWidth en móviles
+    }),
+    []
+  )
+
   return (
-    <Box
-      sx={{
-        display: 'flex',
-        gap: { xs: 0.5, sm: 0.5, md: 1 }, // ✅ Gap más pequeño en móviles
-        alignItems: 'center',
-        width: '100%',
-        flexDirection: 'row', // ✅ SIEMPRE en fila para xs/sm/md
-        py: 0.5,
-        // ✅ Usar prop searchBarMarginLeft para permitir diferentes valores
-        marginLeft: searchBarMarginLeft,
-      }}
-    >
-      {' '}
+    <Box sx={containerStyles}>
       {/* Barra de búsqueda - Más compacta */}
       <TextField
         size="small" // ✅ Hacer más pequeña
         value={busqueda}
-        onChange={(e) => setBusqueda(e.target.value)}
+        onChange={handleSearchChange}
         placeholder="Buscar productos..."
         variant="outlined"
         InputProps={{
@@ -82,27 +120,13 @@ const SearchBar = ({
             </InputAdornment>
           ),
         }}
-        sx={{
-          width: { xs: '30%', sm: '30%', md: '240px' }, // ✅ 40% en xs/sm, tamaño fijo en md+
-          minWidth: { xs: 'auto', sm: 'auto', md: '500px' }, // ✅ Sin minWidth en móviles
-          '& .MuiOutlinedInput-root': {
-            borderRadius: 1.5,
-            backgroundColor: 'white',
-            height: '36px', // ✅ Altura fija más pequeña
-          },
-        }}
-      />{' '}
-      {/* Selector de ordenamiento - Más compacto */}{' '}
-      <FormControl
-        sx={{
-          width: { xs: '47%', sm: '50%', md: 245 }, // ✅ AUMENTADO a 40% para compensar reducción del botón filtros
-          minWidth: 'auto', // ✅ Sin minWidth en móviles
-        }}
-        size="small"
-      >
+        sx={textFieldStyles}
+      />
+      {/* Selector de ordenamiento - Más compacto */}
+      <FormControl sx={formControlStyles}>
         <Select
           value={ordenamiento}
-          onChange={(e) => setOrdenamiento(e.target.value)}
+          onChange={handleSortChange}
           displayEmpty
           startAdornment={
             <InputAdornment position="start">

@@ -1,5 +1,5 @@
-import React from 'react';
-import { Box, Typography, Button, Grid } from '@mui/material';
+import React from 'react'
+import { Box, Typography, Button, Grid } from '@mui/material'
 import {
   Store,
   Person,
@@ -13,9 +13,40 @@ import {
   ShoppingCart,
   AccountBalance,
   Receipt,
-} from '@mui/icons-material';
-import Wizard from '../ui/Wizard';
+} from '@mui/icons-material'
+import Wizard from '../ui/Wizard'
 
+/**
+ * ============================================================================
+ * SERVICES SECTION - SECCIÓN "NUESTROS SERVICIOS"
+ * ============================================================================
+ *
+ * Componente UI para la sección de servicios con carrusel interactivo
+ *
+ * @component
+ * @param {Object} props - Propiedades del componente
+ * @param {React.RefObject} props.serviciosRef - Referencia para scroll navigation
+ *
+ * CARACTERÍSTICAS:
+ * - Carrusel de servicios con auto-advance
+ * - Botones de navegación por categoría de usuario
+ * - Timeline visual para cada servicio
+ * - Layout responsivo con breakpoints optimizados
+ * - Wizard interactivo con controles manuales
+ * - Diseño glassmorphism para botones
+ * - Grid system responsivo con Material UI
+ *
+ * SERVICIOS INCLUIDOS:
+ * 1. Proveedor: Para vendedores directos
+ * 2. Comprador: Para gestión de compras ágiles
+ *
+ * ARQUITECTURA:
+ * - UI puro sin lógica de negocio interna
+ * - Datos locales para demo/desarrollo
+ * - Componente Wizard reutilizable
+ * - Estilos responsive completamente configurados
+ * - Animaciones y transiciones suaves
+ */
 const ServicesSection = ({ serviciosRef }) => {
   // Datos de los servicios para el Wizard (extraído exactamente del original)
   const services = [
@@ -57,33 +88,6 @@ const ServicesSection = ({ serviciosRef }) => {
         },
       ],
     },
-    // {
-    //   title: 'Intermediario',
-    //   description: 'Vende productos de proveedores y gana comisión',
-    //   icon: <Person sx={{ fontSize: { xs: 16, sm: 20, md: 28 } }} />,
-    //   image: '/Landing Page/Vendedor.webp',
-    //   timeline: [
-    //     {
-    //       title: 'Elige productos',
-    //       description:
-    //         'Explora nuestro catálogo y selecciona lo que quieres vender',
-    //       icon: <ShoppingCart />,
-    //       image: '/Landing Page/Vendedor/elige.webp',
-    //     },
-    //     {
-    //       title: 'Vende como quieras',
-    //       description: 'Usa redes sociales, tienda física o marketplace',
-    //       icon: <TrendingUp />,
-    //       image: '/Landing Page/Vendedor/vendecomoquieras.webp',
-    //     },
-    //     {
-    //       title: 'Gana comisión',
-    //       description: 'Obtén ganancias por cada venta realizada',
-    //       icon: <AttachMoney />,
-    //       image: '/Landing Page/Vendedor/ganacomision.webp',
-    //     },
-    //   ],
-    // },
     {
       title: 'Comprador',
       description: 'Gestiona tus compras de forma ágil',
@@ -116,7 +120,7 @@ const ServicesSection = ({ serviciosRef }) => {
         },
       ],
     },
-  ]; // ✅ CONFIGURACIÓN OPTIMIZADA DE BREAKPOINTS (SIN REDUNDANCIAS)
+  ] // ✅ CONFIGURACIÓN OPTIMIZADA DE BREAKPOINTS (SIN REDUNDANCIAS)
   const breakpoints = {
     container: {
       px: { xs: 1, sm: 1, md: 8, lg: 15, xl: 30 }, // ✅ REDUCIDO PADDING LATERAL EN XS/SM PARA MÁS ANCHO
@@ -188,7 +192,7 @@ const ServicesSection = ({ serviciosRef }) => {
         xl: '1.2rem',
       },
     },
-  };
+  }
   return (
     <Box
       ref={serviciosRef}
@@ -272,8 +276,9 @@ const ServicesSection = ({ serviciosRef }) => {
                   justifyContent="center"
                   sx={{ width: '100%' }}
                 >
+                  {' '}
                   {/* ✅ FILA 1: BOTONES DE SERVICIOS - GRID PURO */}
-                  <Grid item xs={12} sx={{ width: '100%' }}>
+                  <Grid size={12} sx={{ width: '100%' }}>
                     <Grid
                       container
                       direction="row"
@@ -710,7 +715,7 @@ const ServicesSection = ({ serviciosRef }) => {
         />
       </Box>
     </Box>
-  );
-};
+  )
+}
 
-export default ServicesSection;
+export default ServicesSection

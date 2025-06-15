@@ -5,8 +5,8 @@
 // - Cambiar iconos o tooltips
 // - Modificar badge de descuento o favoritos
 
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   Card,
   CardMedia,
@@ -21,121 +21,263 @@ import {
   TextField,
   Avatar,
   Chip,
-} from '@mui/material';
-import FavoriteIcon from '@mui/icons-material/Favorite';
-import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
-import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
-import InfoIcon from '@mui/icons-material/Info';
-import AddIcon from '@mui/icons-material/Add';
-import RemoveIcon from '@mui/icons-material/Remove';
-import { generateProductUrl } from '../marketplace/productUrl';
+} from '@mui/material'
+import FavoriteIcon from '@mui/icons-material/Favorite'
+import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder'
+import ShoppingCartIcon from '@mui/icons-material/ShoppingCart'
+import InfoIcon from '@mui/icons-material/Info'
+import AddIcon from '@mui/icons-material/Add'
+import RemoveIcon from '@mui/icons-material/Remove'
+import { generateProductUrl } from '../marketplace/productUrl'
+import PriceDisplay from '../PriceDisplay'
+import { useProductPriceTiers } from '../hooks/useProductPriceTiers'
+import { getProductImageUrl } from '../../../utils/getProductImageUrl'
+import {
+  formatProductForCart,
+  calculatePriceForQuantity,
+} from '../../../utils/priceCalculation'
+import { LazyImage } from '../../../components/shared'
 
 const ProductCard = ({ producto, onAddToCart, onViewDetails }) => {
-  const [favorito, setFavorito] = useState(false);
-  const [anchorEl, setAnchorEl] = useState(null);
-  const [cantidad, setCantidad] = useState(1);
-  const navigate = useNavigate();
+  const [favorito, setFavorito] = useState(false)
+  const [anchorEl, setAnchorEl] = useState(null)
+  // Obtener compra mínima
+  const minimumPurchase = producto.minimum_purchase || producto.compraMinima || 1
+  const [cantidad, setCantidad] = useState(minimumPurchase)
+  // Permitir edición libre en el input
+  const [inputValue, setInputValue] = useState(cantidad.toString())
+  // Validación optimizada de cantidad (memoizada)
+  const canAdd = React.useMemo(() => {
+    const numValue = parseInt(inputValue)
+    return !isNaN(numValue) && numValue >= minimumPurchase
+  }, [inputValue, minimumPurchase])
+  const navigate = useNavigate()
 
   if (!producto) {
-    return null;
+    return null
   }
-  // ✅ FUNCIÓN para obtener el mensaje del tooltip - COMMENTED OUT: Sale Type functionality removed
-  // const getTooltipMessage = (tipo) => {
-  //   switch (tipo) {
-  //     case 'directa':
-  //       return 'El productor vende directamente al cliente final, sin usar intermediarios como distribuidores o minoristas.'
-  //     case 'indirecta':
-  //       return 'El producto se comercializa a través de intermediarios antes de llegar al cliente final.'
-  //     default:
-  //       return 'Información sobre el tipo de venta no disponible.'
-  //   }
-  // }  // ✅ NUEVA función para manejar click en AGREGAR
-  const handleAgregarClick = event => {
-    event.stopPropagation(); // Prevenir propagación hacia ProductCard
-    event.preventDefault(); // Prevenir comportamiento por defecto
-    console.log('handleAgregarClick ejecutado!', event?.currentTarget);
-    setAnchorEl(event.currentTarget);
-  };
 
-  // ✅ NUEVA función para cerrar el popover
-  const handleClosePopover = () => {
-    setAnchorEl(null);
-    setCantidad(1); // Reset cantidad al cerrar
-  };
+  // Mapeo robusto de campos para compatibilidad
+  const nombre = producto.nombre || producto.name || 'Producto sin nombre'
+  const proveedor =
+    producto.proveedor ||
+    producto.supplier ||
+    producto.provider ||
+    'Proveedor no especificado'
+  const imagen = producto.imagen || producto.image
+  const precio = producto.precio || producto.price || 0
+  const precioOriginal = producto.precioOriginal || producto.originalPrice
+  const descuento = producto.descuento || producto.discount
+  const rating = producto.rating || 0
+  const ventas = producto.ventas || producto.sales || 0
+  const stock = producto.stock || producto.maxStock || 50
+  const compraMinima = producto.compraMinima || producto.minPurchase || 1
+  const negociable = producto.negociable || producto.negotiable || false
 
-  // ✅ NUEVA función para manejar cambio de cantidad
-  const handleCantidadChange = event => {
-    const value = parseInt(event.target.value) || 0;
-    if (value >= 1 && value <= stock) {
-      setCantidad(value);
-    }
-  };
-
-  // ✅ NUEVA función para incrementar cantidad
-  const handleIncrement = () => {
-    if (cantidad < stock) {
-      setCantidad(cantidad + 1);
-    }
-  };
-
-  // ✅ NUEVA función para decrementar cantidad
-  const handleDecrement = () => {
-    if (cantidad > 1) {
-      setCantidad(cantidad - 1);
-    }
-  };
-  // ✅ NUEVA función para confirmar agregado al carrito
-  const handleConfirmarAgregar = () => {
-    console.log(`Agregando ${cantidad} unidades de ${nombre} al carrito`);
-    if (onAddToCart) {
-      onAddToCart({ ...producto, cantidadSeleccionada: cantidad });
-    }
-    handleClosePopover();
-  };
-
+  // Hook para obtener tramos de precios (mantener para compatibilidad)
   const {
-    nombre,
-    proveedor,
-    imagen,
-    precio,
-    precioOriginal,
-    descuento,
-    // comision, // COMMENTED OUT: Commission functionality removed
-    // tipoVenta, // COMMENTED OUT: Sale Type functionality removed
-    rating,
-    ventas,
-    stock,
-    compraMinima,
-    negociable, // ✅ AGREGAR: Propiedad negociable
-  } = producto;
+    tiers,
+    loading: loadingTiers,
+    error: errorTiers,
+  } = useProductPriceTiers(producto.id)
+  // ===== CÁLCULO DE PRECIOS DINÁMICOS USANDO PRICE_TIERS (OPTIMIZADO) =====
+  // Unificar la fuente de price_tiers: preferir la del producto, si no, la del hook
+  const price_tiers = React.useMemo(() => {
+    return (producto.price_tiers && producto.price_tiers.length > 0)
+      ? producto.price_tiers
+      : (tiers && tiers.length > 0 ? tiers : [])
+  }, [producto.price_tiers, tiers])
 
-  const toggleFavorito = () => setFavorito(!favorito); // Función para navegar a la ficha técnica del producto
-  const handleProductClick = e => {
+  // Calcular precio dinámico basado en cantidad seleccionada (memoizado)
+  const currentPrices = React.useMemo(() => {
+    if (price_tiers.length > 0) {
+      const unitPrice = calculatePriceForQuantity(cantidad, price_tiers, precio)
+      return {
+        unitPrice,
+        total: unitPrice * cantidad
+      }
+    }
+    return {
+      unitPrice: precio,
+      total: precio * cantidad
+    }
+  }, [cantidad, price_tiers, precio])
+
+  const { unitPrice: currentUnitPrice, total: currentTotal } = currentPrices
+
+  // Lógica para mostrar precios
+  let priceContent
+  if (loadingTiers) {
+    priceContent = (
+      <Typography variant="body2" color="text.secondary">
+        Cargando precios...
+      </Typography>
+    )
+  } else if (errorTiers) {
+    priceContent = (
+      <Typography variant="body2" color="error.main">
+        Error al cargar precios
+      </Typography>
+    )
+  } else if (tiers && tiers.length > 0) {
+    // Mostrar rango de precios por tramos
+    const minPrice = Math.min(...tiers.map((t) => t.price))
+    const maxPrice = Math.max(...tiers.map((t) => t.price))
+    priceContent = (
+      <PriceDisplay
+        price={maxPrice}
+        minPrice={minPrice}
+        showRange={minPrice !== maxPrice}
+        variant="h5"
+        color="#1976d2"
+        sx={{ lineHeight: 1.1, fontSize: 22 }}
+      />
+    )
+  } else {
+    // Precio único (sin tramos)
+    priceContent = (
+      <PriceDisplay
+        price={precio}
+        originalPrice={precioOriginal}
+        variant="h5"
+        color="#1976d2"
+        sx={{ lineHeight: 1.1, fontSize: 22 }}
+      />
+    )
+  }
+
+  const toggleFavorito = () => setFavorito(!favorito)
+
+  // Función para navegar a la ficha técnica del producto
+  const handleProductClick = (e) => {
     // Verificar si el clic viene de un botón o elemento interactivo
-    const target = e.target;
+    const target = e.target
     const clickedElement =
       target.closest('button') ||
       target.closest('.MuiIconButton-root') ||
       target.closest('.MuiButton-root') ||
       target.closest('[data-no-card-click]') ||
-      target.hasAttribute('data-no-card-click');
-
-    // También verificar si el elemento tiene clases de MUI que indican que es un botón
+      target.hasAttribute('data-no-card-click') // También verificar si el elemento tiene clases de MUI que indican que es un botón
     const isMuiButton =
       target.classList.contains('MuiButton-root') ||
       target.classList.contains('MuiIconButton-root') ||
       target.closest('.MuiButton-root') ||
-      target.closest('.MuiIconButton-root');
+      target.closest('.MuiIconButton-root')
 
     if (clickedElement || isMuiButton) {
-      console.log('Click interceptado en botón, no navegando');
-      return;
+      return
     }
 
-    // Generar URL y navegar
-    const productUrl = generateProductUrl(producto);
-    navigate(productUrl);
-  };
+    // Determinar el origen actual para pasar al TechnicalSpecs
+    const currentPath = window.location.pathname
+    let fromPath = '/marketplace' // Default
+
+    // Detectar si estamos en MarketplaceBuyer
+    if (currentPath.includes('/buyer/')) {
+      fromPath = '/buyer/marketplace'
+    }
+
+    // Generar URL y navegar con estado
+    const productUrl = generateProductUrl(producto)
+    navigate(productUrl, {
+      state: { from: fromPath },
+    })
+  }  // ✅ Función optimizada para cerrar el popover
+  const handleClosePopover = React.useCallback(() => {
+    setAnchorEl(null)
+    setCantidad(minimumPurchase) // Reset cantidad al cerrar
+    setInputValue(minimumPurchase.toString()) // Reset input también
+  }, [minimumPurchase])
+
+  // ✅ Función optimizada para manejar click en AGREGAR
+  const handleAgregarClick = React.useCallback((event) => {
+    event.stopPropagation() // Prevenir propagación hacia ProductCard
+    event.preventDefault() // Prevenir comportamiento por defecto
+    setAnchorEl(event.currentTarget)
+  }, [])
+  // LOG: Mostrar tramos al abrir el modal de cantidad (optimizado)
+  React.useEffect(() => {
+    if (anchorEl && price_tiers?.length > 0) {
+      // Eliminado log de tramos disponibles
+    }
+  }, [anchorEl]) // Removido price_tiers de dependencias para evitar re-renders
+
+  // ✅ Función optimizada para logging de tramos (solo cuando es necesario)
+  const logAppliedTier = React.useCallback((numValue) => {
+    if (price_tiers?.length > 0) {
+      const tramo = price_tiers.find(t => numValue >= t.min_quantity)
+      if (tramo) {
+        // Eliminado log de tramo aplicado
+      }
+    }
+  }, [price_tiers])
+
+  // ✅ Función optimizada para manejar cambio de cantidad
+  const handleCantidadChange = React.useCallback((event) => {
+    const value = event.target.value
+    setInputValue(value)
+    const numValue = parseInt(value)
+    if (!isNaN(numValue)) {
+      setCantidad(numValue)
+      // LOG solo en desarrollo
+    }
+  }, [logAppliedTier])
+
+  // ✅ Función optimizada para incrementar cantidad
+  const handleIncrement = React.useCallback(() => {
+    let numValue = parseInt(inputValue)
+    if (isNaN(numValue)) numValue = minimumPurchase
+    if (numValue < stock) {
+      numValue++
+      setInputValue(numValue.toString())
+      setCantidad(numValue)
+      // LOG solo en desarrollo
+    }
+  }, [inputValue, minimumPurchase, stock, logAppliedTier])
+
+  // ✅ Función optimizada para decrementar cantidad
+  const handleDecrement = React.useCallback(() => {
+    let numValue = parseInt(inputValue)
+    if (isNaN(numValue)) numValue = minimumPurchase
+    if (numValue > minimumPurchase) {
+      numValue--
+      setInputValue(numValue.toString())
+      setCantidad(numValue)
+      // LOG solo en desarrollo
+    }
+  }, [inputValue, minimumPurchase, logAppliedTier])  // ✅ Función optimizada para confirmar agregado al carrito
+  const handleConfirmarAgregar = React.useCallback(() => {
+    // LOG: Mostrar tramos y cantidad final solo en desarrollo
+    if (onAddToCart) {
+      // Crear producto para carrito preservando price_tiers y mínimo reales
+      const cartProduct = formatProductForCart(producto, cantidad, price_tiers)
+      onAddToCart(cartProduct)
+    }
+    handleClosePopover()
+  }, [price_tiers, cantidad, onAddToCart, producto, handleClosePopover])
+
+  function resolveImageSrc(producto) {
+    // Unifica lógica: soporta string, objeto, path relativo, url pública
+    let image = producto?.imagen || producto?.image
+    if (!image) return '/placeholder-product.jpg'
+    // Si es string (url pública o path relativo)
+    if (typeof image === 'string') {
+      if (image.startsWith('blob:')) return '/placeholder-product.jpg'
+      return getProductImageUrl(image, producto) // ✅ Pasar datos del producto
+    }
+    // Si es objeto con url
+    if (typeof image === 'object' && image !== null) {
+      if (image.url && typeof image.url === 'string') {
+        if (image.url.startsWith('blob:')) return '/placeholder-product.jpg'
+        return getProductImageUrl(image.url, producto) // ✅ Pasar datos del producto
+      }
+      // Si es objeto con path relativo
+      if (image.path && typeof image.path === 'string') {
+        return getProductImageUrl(image.path, producto) // ✅ Pasar datos del producto
+      }
+    }
+    return '/placeholder-product.jpg'
+  }
 
   return (
     <Card
@@ -158,61 +300,77 @@ const ProductCard = ({ producto, onAddToCart, onViewDetails }) => {
       }}
     >
       {' '}
-      {/* COMMENTED OUT: Badge de descuento */}
-      {/* {descuento > 0 && (
-        <Box
-          sx={{
-            position: 'absolute',
-            top: 8,
-            left: 8,
-            bgcolor: '#FF5252',
-            color: 'white',
-            fontWeight: 'bold',
-            fontSize: 12,
-            py: 0.5,
-            px: 1.5,
-            borderRadius: 1.5,
-            zIndex: 2,
-            boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
-          }}
-        >
-          -{descuento}%
-        </Box>
-      )} */}
       {/* Icono favorito - más pequeño */}
       <IconButton
         onClick={toggleFavorito}
         sx={{
           position: 'absolute',
-          top: 6, // ✅ REDUCIR: de 8 a 6
-          right: 6, // ✅ REDUCIR: de 8 a 6
+          top: 6,
+          right: 6,
           zIndex: 2,
           bgcolor: 'rgba(255,255,255,0.9)',
-          width: 32, // ✅ REDUCIR: de 44 a 32
-          height: 32, // ✅ REDUCIR: de 44 a 32
+          width: 32,
+          height: 32,
+          transition: 'background 0.2s, box-shadow 0.2s',
+          boxShadow: 'none',
+          outline: 'none',
           '&:hover': {
             bgcolor: 'rgba(255,255,255,1)',
-            transform: 'scale(1.05)', // ✅ REDUCIR: de 1.1 a 1.05
+            transform: 'scale(1.05)',
+            boxShadow: 'none',
+            outline: 'none',
+          },
+          '&:active': {
+            boxShadow: 'none !important',
+            outline: 'none !important',
+            background: 'rgba(255,255,255,1) !important',
+          },
+          '&:focus': {
+            boxShadow: 'none !important',
+            outline: 'none !important',
+            background: 'rgba(255,255,255,1) !important',
+          },
+          '&:focus-visible': {
+            boxShadow: 'none !important',
+            outline: 'none !important',
+            background: 'rgba(255,255,255,1) !important',
           },
         }}
         size="small"
+        aria-label={favorito ? 'Quitar de favoritos' : 'Agregar a favoritos'}
+        data-no-card-click="true"
       >
-        {favorito ? (
-          <FavoriteIcon sx={{ color: '#FF5252', fontSize: 20 }} /> // ✅ REDUCIR: de 28 a 20
-        ) : (
-          <FavoriteBorderIcon sx={{ color: '#666', fontSize: 20 }} /> // ✅ REDUCIR: de 28 a 20
-        )}
-      </IconButton>
-      {/* Imagen - más pequeña */}
-      <CardMedia
-        component="img"
-        height="160" // ✅ REDUCIR: de 220 a 160 (-60px, -27%)
-        image={imagen}
+        <Box
+          component="span"
+          sx={{
+            display: 'inline-flex',
+            transition: 'transform 0.25s cubic-bezier(0.4,1.3,0.6,1)',
+            transform: favorito ? 'scale(1.25)' : 'scale(1)',
+            filter: favorito ? 'drop-shadow(0 2px 6px #ff525299)' : 'none',
+          }}
+        >
+          {favorito ? (
+            <FavoriteIcon
+              sx={{ color: '#FF5252', fontSize: 20, transition: 'color 0.2s' }}
+            />
+          ) : (
+            <FavoriteBorderIcon
+              sx={{ color: '#666', fontSize: 20, transition: 'color 0.2s' }}
+            />
+          )}
+        </Box>      </IconButton>      {/* ✅ OPTIMIZACIÓN: Imagen con lazy loading para mejor performance */}
+      <LazyImage
+        src={resolveImageSrc(producto)}
         alt={nombre}
+        aspectRatio="160 / 160"
+        rootMargin="200px" // Cargar imagen cuando esté a 200px de ser visible
+        objectFit="contain" // ✅ Correctamente pasado como prop
         sx={{
-          objectFit: 'contain',
-          p: 1.5, // ✅ REDUCIR: de 2 a 1.5
+          p: 1.5,
           bgcolor: '#fafafa',
+        }}
+        onLoad={() => {
+          // Opcional: tracking de lazy loading
         }}
       />
       <CardContent sx={{ flexGrow: 1, p: 2, pb: 1 }}>
@@ -255,7 +413,7 @@ const ProductCard = ({ producto, onAddToCart, onViewDetails }) => {
             color="primary"
           />{' '}
         </Box>{' '}
-        {/* Compra mínima */}
+        {/* Compra mínima */}{' '}
         <Typography
           variant="body2"
           sx={{
@@ -267,135 +425,9 @@ const ProductCard = ({ producto, onAddToCart, onViewDetails }) => {
         >
           Compra mínima: {compraMinima} unidades
         </Typography>
-        {/* COMMENTED OUT: Rating y ventas section */}
-        {/* <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', mr: 1.5 }}>
-            <Box sx={{ fontSize: 16, color: '#FFD700' }}>
-              {'★'.repeat(Math.floor(rating))}
-            </Box>
-            <Typography
-              variant="body2"
-              sx={{ ml: 0.5, color: '#666', fontSize: 12, fontWeight: 600 }}
-            >
-              ({rating})
-            </Typography>
-          </Box>
-          <Typography
-            variant="body2"
-            color="text.secondary"
-            sx={{ fontSize: 11, fontWeight: 500 }}
-          >
-            {ventas} vendidos
-          </Typography>
-        </Box> */}{' '}
-        {/* Precios - más compacto */}
-        <Box sx={{ mb: 1.5 }}>
-          {/* COMMENTED OUT: Discount pricing (original price with line-through) */}
-          {/* {precioOriginal > precio && (
-            <Typography
-              variant="body2"
-              color="text.secondary"
-              sx={{
-                textDecoration: 'line-through',
-                display: 'block',
-                fontSize: 14,
-                fontWeight: 500,
-                mb: 0.3,
-              }}
-            >
-              ${precioOriginal.toLocaleString('es-CL')}
-            </Typography>
-          )} */}{' '}
-          <Typography
-            variant="h5"
-            color="primary"
-            fontWeight={700}
-            sx={{ lineHeight: 1.1, fontSize: 22 }} // ✅ REDUCIR: de 30 a 22
-          >
-            ${Math.round(precio * 0.6).toLocaleString('es-CL')} - $
-            {precio.toLocaleString('es-CL')}
-          </Typography>
-        </Box>{' '}
-        {/* Información adicional - más compacta */}{' '}
-        {/* COMMENTED OUT: Commission functionality removed */}
-        {/* <Typography
-          variant="body2"
-          color="success.main"
-          sx={{ display: 'block', mb: 0.8, fontSize: 13, fontWeight: 600 }} // ✅ REDUCIR: de 17 a 13, mb de 1 a 0.8
-        >
-          {comision}% Comisión
-        </Typography> */}
-        {/* COMMENTED OUT: Sale Type functionality removed */}
-        {/* Tipo de venta - más compacto */}
-        {/* <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, mb: 0.8 }}>
-          <Typography
-            variant="body2"
-            sx={{
-              color: tipoVenta === 'directa' ? '#1976D2' : '#FF9800',
-              fontSize: 12,
-              fontWeight: 600,
-            }}
-          >
-            Venta{' '}
-            {tipoVenta === 'directa'
-              ? 'Directa'
-              : tipoVenta === 'indirecta'
-              ? 'Indirecta'
-              : 'Todos los tipos'}
-          </Typography>
-          <Tooltip
-            title={getTooltipMessage(tipoVenta)}
-            arrow
-            placement="top"
-            componentsProps={{
-              tooltip: {
-                sx: {
-                  bgcolor: '#1e293b',
-                  color: 'white',
-                  fontSize: '0.875rem',
-                  fontWeight: 500,
-                  p: 2,
-                  borderRadius: 2,
-                  maxWidth: 300,
-                  lineHeight: 1.4,
-                  boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
-                },
-              },
-              arrow: {
-                sx: {
-                  color: '#1e293b',
-                  '&::before': {
-                    boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
-                  },
-                },
-              },
-            }}
-            enterDelay={300}
-            leaveDelay={200}
-            enterTouchDelay={300}
-            leaveTouchDelay={3000}
-          >
-            <IconButton
-              size="small"
-              sx={{
-                width: 16,
-                height: 16,
-                p: 0,
-                color: tipoVenta === 'directa' ? '#1976D2' : '#FF9800',
-                '&:hover': {
-                  bgcolor:
-                    tipoVenta === 'directa'
-                      ? 'rgba(25, 118, 210, 0.1)'
-                      : 'rgba(255, 152, 0, 0.1)',
-                  transform: 'scale(1.1)',
-                },
-                transition: 'all 0.2s ease',
-              }}
-            >
-              <InfoIcon sx={{ fontSize: 12 }} />
-            </IconButton>
-          </Tooltip>
-        </Box> */}{' '}
+        {/* Precios - más compacto */}{' '}
+        <Box sx={{ mb: 1.5 }}>{priceContent}</Box>{' '}
+        {/* Información adicional - más compacta */}
         <Typography
           variant="body2"
           color={stock < 10 ? 'error.main' : 'text.secondary'}
@@ -410,21 +442,20 @@ const ProductCard = ({ producto, onAddToCart, onViewDetails }) => {
             fullWidth
             disabled={!negociable}
             data-no-card-click="true"
-            onMouseDown={e => {
-              e.stopPropagation();
-              e.preventDefault();
+            onMouseDown={(e) => {
+              e.stopPropagation()
+              e.preventDefault()
             }}
-            onClick={e => {
-              e.stopPropagation();
-              e.preventDefault();
+            onClick={(e) => {
+              e.stopPropagation()
+              e.preventDefault()
               if (negociable) {
                 // TODO: Abrir modal de negociación
-                console.log('Abrir modal de negociación para:', nombre);
               }
             }}
-            onTouchStart={e => {
-              e.stopPropagation();
-              e.preventDefault();
+            onTouchStart={(e) => {
+              e.stopPropagation()
+              e.preventDefault()
             }}
             sx={{
               textTransform: 'none',
@@ -476,14 +507,14 @@ const ProductCard = ({ producto, onAddToCart, onViewDetails }) => {
           fullWidth
           data-no-card-click="true"
           startIcon={<ShoppingCartIcon sx={{ fontSize: 16 }} />}
-          onMouseDown={e => {
-            e.stopPropagation();
-            e.preventDefault();
+          onMouseDown={(e) => {
+            e.stopPropagation()
+            e.preventDefault()
           }}
           onClick={handleAgregarClick}
-          onTouchStart={e => {
-            e.stopPropagation();
-            e.preventDefault();
+          onTouchStart={(e) => {
+            e.stopPropagation()
+            e.preventDefault()
           }}
           sx={{
             textTransform: 'none',
@@ -534,12 +565,12 @@ const ProductCard = ({ producto, onAddToCart, onViewDetails }) => {
           vertical: 'top',
           horizontal: 'center',
         }}
-        onClick={e => e.stopPropagation()} // Prevenir click en ProductCard
+        onClick={(e) => e.stopPropagation()} // Prevenir click en ProductCard
         disableScrollLock={true} // ✅ SOLUCIÓN: Prevenir bloqueo de scroll que causa desplazamiento
         disableRestoreFocus={true} // ✅ SOLUCIÓN: Evitar cambios de foco que afecten el layout
         disableAutoFocus={true} // ✅ SOLUCIÓN: Prevenir auto-focus que puede mover el modal
         PaperProps={{
-          onClick: e => e.stopPropagation(), // Prevenir click en ProductCard
+          onClick: (e) => e.stopPropagation(), // Prevenir click en ProductCard
           sx: {
             p: 2,
             borderRadius: 2,
@@ -563,47 +594,53 @@ const ProductCard = ({ producto, onAddToCart, onViewDetails }) => {
           <Typography variant="h6" sx={{ mb: 2, textAlign: 'center' }}>
             Seleccionar Cantidad
           </Typography>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-            <IconButton
-              onClick={e => {
-                e.preventDefault(); // ✅ SOLUCIÓN: Prevenir comportamiento por defecto
-                e.stopPropagation(); // ✅ SOLUCIÓN: Evitar propagación de eventos
-                handleDecrement();
-              }}
-              disabled={cantidad <= 1}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>            <IconButton
+              onClick={React.useCallback((e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                handleDecrement()
+              }, [handleDecrement])}
+              disabled={parseInt(inputValue) <= minimumPurchase}
               size="small"
               sx={{
-                userSelect: 'none', // ✅ SOLUCIÓN: Prevenir selección
-                touchAction: 'manipulation', // ✅ SOLUCIÓN: Mejorar comportamiento táctil
+                userSelect: 'none',
+                touchAction: 'manipulation',
               }}
             >
               <RemoveIcon />
-            </IconButton>
-            <TextField
+            </IconButton><TextField
               type="number"
-              value={cantidad}
+              value={inputValue}
               onChange={handleCantidadChange}
-              inputProps={{ min: 1, max: stock }}
+              onBlur={React.useCallback(() => {
+                let numValue = parseInt(inputValue)
+                if (isNaN(numValue) || numValue < minimumPurchase) numValue = minimumPurchase
+                if (numValue > stock) numValue = stock
+                setInputValue(numValue.toString())
+                setCantidad(numValue)
+              }, [inputValue, minimumPurchase, stock])}
+              inputProps={{ min: minimumPurchase, max: producto.stock || 9999 }}
+              size="small"
+              error={parseInt(inputValue) < minimumPurchase}
+              helperText={parseInt(inputValue) < minimumPurchase ? `Mínimo ${minimumPurchase}` : ''}
               sx={{
-                width: 100, // Aumentado para soportar 4 dígitos
+                width: 100,
                 '& input': {
-                  textAlign: 'center', // Centrar el texto
-                  userSelect: 'text', // ✅ SOLUCIÓN: Permitir selección solo en el input
+                  textAlign: 'center',
+                  userSelect: 'text',
                 },
               }}
-              size="small"
-            />
-            <IconButton
-              onClick={e => {
-                e.preventDefault(); // ✅ SOLUCIÓN: Prevenir comportamiento por defecto
-                e.stopPropagation(); // ✅ SOLUCIÓN: Evitar propagación de eventos
-                handleIncrement();
-              }}
-              disabled={cantidad >= stock}
+            />            <IconButton
+              onClick={React.useCallback((e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                handleIncrement()
+              }, [handleIncrement])}
+              disabled={parseInt(inputValue) >= stock}
               size="small"
               sx={{
-                userSelect: 'none', // ✅ SOLUCIÓN: Prevenir selección
-                touchAction: 'manipulation', // ✅ SOLUCIÓN: Mejorar comportamiento táctil
+                userSelect: 'none',
+                touchAction: 'manipulation',
               }}
             >
               <AddIcon />
@@ -615,14 +652,13 @@ const ProductCard = ({ producto, onAddToCart, onViewDetails }) => {
           >
             Stock disponible: {stock}
           </Typography>{' '}
-          <Box sx={{ display: 'flex', gap: 1 }}>
-            <Button
+          <Box sx={{ display: 'flex', gap: 1 }}>            <Button
               variant="outlined"
-              onClick={e => {
-                e.preventDefault(); // ✅ SOLUCIÓN: Prevenir comportamiento por defecto
-                e.stopPropagation(); // ✅ SOLUCIÓN: Evitar propagación de eventos
-                handleClosePopover();
-              }}
+              onClick={React.useCallback((e) => {
+                e.preventDefault() // ✅ SOLUCIÓN: Prevenir comportamiento por defecto
+                e.stopPropagation() // ✅ SOLUCIÓN: Evitar propagación de eventos
+                handleClosePopover()
+              }, [handleClosePopover])}
               fullWidth
               sx={{
                 userSelect: 'none', // ✅ SOLUCIÓN: Prevenir selección
@@ -633,24 +669,27 @@ const ProductCard = ({ producto, onAddToCart, onViewDetails }) => {
             </Button>
             <Button
               variant="contained"
-              onClick={e => {
-                e.preventDefault(); // ✅ SOLUCIÓN: Prevenir comportamiento por defecto
-                e.stopPropagation(); // ✅ SOLUCIÓN: Evitar propagación de eventos
-                handleConfirmarAgregar();
-              }}
+              onClick={React.useCallback((e) => {
+                e.preventDefault() // ✅ SOLUCIÓN: Prevenir comportamiento por defecto
+                e.stopPropagation() // ✅ SOLUCIÓN: Evitar propagación de eventos
+                handleConfirmarAgregar()
+              }, [handleConfirmarAgregar])}
+              disabled={!canAdd}
               fullWidth
               sx={{
-                userSelect: 'none', // ✅ SOLUCIÓN: Prevenir selección
-                touchAction: 'manipulation', // ✅ SOLUCIÓN: Mejorar comportamiento táctil
+                opacity: canAdd ? 1 : 0.5,
+                userSelect: 'none',
+                touchAction: 'manipulation',
+                transition: 'opacity 0.2s',
               }}
             >
-              Agregar
+              {canAdd ? 'Agregar' : `Mín: ${minimumPurchase}`}
             </Button>
           </Box>
         </Box>
       </Popover>
     </Card>
-  );
-};
+  )
+}
 
-export default React.memo(ProductCard);
+export default React.memo(ProductCard)

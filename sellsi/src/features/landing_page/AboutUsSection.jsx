@@ -1,6 +1,30 @@
 import React from 'react'
 import { Box, Typography } from '@mui/material'
 
+/**
+ * ====================================================================================
+ * ABOUT US SECTION - SECCIÓN "QUIÉNES SOMOS"
+ * ============================================================================
+ *
+ * Componente UI puro para la sección "Quiénes Somos" de la landing page
+ *
+ * @component
+ * @param {Object} props - Propiedades del componente
+ * @param {React.RefObject} props.quienesSomosRef - Referencia para scroll navigation
+ *
+ * CARACTERÍSTICAS:
+ * - Layout responsivo diferenciado (mobile vs desktop)
+ * - Contenido informativo sobre la empresa (misión, visión)
+ * - Imágenes optimizadas y logo corporativo
+ * - Tipografía consistente con sistema de diseño
+ * - Espaciado y padding adaptativos
+ * - Estructura semántica accesible
+ *
+ * LAYOUT:
+ * - Mobile: Logo arriba, contenido abajo en columna
+ * - Desktop: Contenido en dos columnas lado a lado
+ * - Responsive breakpoints para todos los dispositivos
+ */
 const AboutUsSection = ({ quienesSomosRef }) => {
   return (
     <Box

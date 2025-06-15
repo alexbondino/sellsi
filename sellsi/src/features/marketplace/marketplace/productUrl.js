@@ -8,6 +8,14 @@
  * @returns {string} - URL-friendly slug
  */
 export const createProductSlug = (productName) => {
+  if (!productName || typeof productName !== 'string') {
+    console.warn(
+      'createProductSlug: productName is not a valid string:',
+      productName
+    )
+    return 'producto-sin-nombre'
+  }
+
   return productName
     .toLowerCase()
     .replace(/[áàäâ]/g, 'a')
@@ -29,36 +37,49 @@ export const createProductSlug = (productName) => {
  * @returns {string} - Complete slug for URL (name-id)
  */
 export const generateProductSlug = (product) => {
-  const nameSlug = createProductSlug(product.nombre)
-  return `${nameSlug}-${product.id}`
+  if (!product) {
+    console.warn('generateProductSlug: product is null or undefined')
+    return 'producto-sin-datos'
+  }
+
+  // Intentar varios campos posibles para el nombre
+  const productName =
+    product.nombre || product.name || product.productnm || 'Producto sin nombre'
+  const productId = product.id || product.productid || 'sin-id'
+
+  const nameSlug = createProductSlug(productName)
+  return `${nameSlug}-${productId}`
 }
 
 /**
- * Generates a complete URL for product ficha tecnica
+ * Generates a complete URL for product Technical Specs
  * @param {Object} product - The product object
  * @returns {string} - Complete URL path
  */
 export const generateProductUrl = (product) => {
   const slug = generateProductSlug(product)
-  return `/fichatecnica/${slug}`
+  return `/technicalspecs/${slug}`
 }
 
 /**
  * Extracts product ID from a product slug
  * @param {string} slug - The product slug (name-id)
- * @returns {string|null} - The product ID or null if invalid
+ * @returns {string|null} - The product ID (UUID) or null if invalid
  */
 export const extractProductIdFromSlug = (slug) => {
   if (!slug) return null
-
-  const parts = slug.split('-')
-  const lastPart = parts[parts.length - 1]
-
-  // Check if the last part is a valid number (ID)
-  if (/^\d+$/.test(lastPart)) {
-    return lastPart
+  // UUID v4 standard length is 36 characters
+  const uuidLength = 36
+  if (slug.length < uuidLength + 1) return null
+  const candidate = slug.slice(-uuidLength)
+  // Simple UUID v4 validation
+  if (
+    /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(
+      candidate
+    )
+  ) {
+    return candidate
   }
-
   return null
 }
 

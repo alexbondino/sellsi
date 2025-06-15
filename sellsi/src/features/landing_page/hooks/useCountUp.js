@@ -1,13 +1,13 @@
 import { useState, useEffect, useCallback } from 'react'
 
 /**
- * Custom hook para manejar animaciones count-up de números
+ * Custom hook para manejar animaciones count-up de números (ahora con requestAnimationFrame para mayor suavidad)
  * @param {Object} targets - Objeto con los números objetivo {key: value}
  * @param {number} duration - Duración de la animación en ms (default: 1500)
- * @param {number} delay - Delay antes de iniciar la animación en ms (default: 500)
+ * @param {number} delay - Delay antes de iniciar la animación en ms (default: 250)
  * @returns {Object} Números animados actuales
  */
-const useCountUp = (targets, duration = 1500, delay = 500) => {
+const useCountUp = (targets, duration = 1500, delay = 250) => {
   const [animatedNumbers, setAnimatedNumbers] = useState(() => {
     // Inicializar todos los valores en 0
     const initialState = {}
@@ -17,29 +17,23 @@ const useCountUp = (targets, duration = 1500, delay = 500) => {
     return initialState
   })
 
-  // Función de animación count-up optimizada
+  // Nueva función de animación usando requestAnimationFrame
   const animateCountUp = useCallback(
     (targetValue, key) => {
-      const steps = 60 // Número de pasos para la animación
-      const increment = targetValue / steps
+      let start = null
       let current = 0
-      let step = 0
-
-      const timer = setInterval(() => {
-        step++
-        current = Math.min(Math.floor(increment * step), targetValue)
-
-        setAnimatedNumbers((prev) => ({
-          ...prev,
-          [key]: current,
-        }))
-
-        if (step >= steps) {
-          clearInterval(timer)
+      const step = (timestamp) => {
+        if (!start) start = timestamp
+        const progress = Math.min((timestamp - start) / duration, 1)
+        current = Math.floor(progress * targetValue)
+        setAnimatedNumbers((prev) => ({ ...prev, [key]: current }))
+        if (progress < 1) {
+          window.requestAnimationFrame(step)
+        } else {
+          setAnimatedNumbers((prev) => ({ ...prev, [key]: targetValue }))
         }
-      }, duration / steps)
-
-      return timer
+      }
+      window.requestAnimationFrame(step)
     },
     [duration]
   )

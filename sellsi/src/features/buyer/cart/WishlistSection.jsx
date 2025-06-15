@@ -35,12 +35,10 @@ const WishlistSection = ({
 }) => {
   return (
     <AnimatePresence>
-      {showWishlist && wishlist.length > 0 && (
-        <motion.div
+      {showWishlist && wishlist.length > 0 && (        <motion.div
           initial={{ opacity: 0, height: 0 }}
           animate={{ opacity: 1, height: 'auto' }}
           exit={{ opacity: 0, height: 0 }}
-          transition={{ duration: 0.3 }}
         >
           <Box sx={{ mt: 4 }}>
             <Typography

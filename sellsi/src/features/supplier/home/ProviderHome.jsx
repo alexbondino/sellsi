@@ -1,15 +1,15 @@
-import { Box, Grid, Button, Container, ThemeProvider } from '@mui/material';
-import AddIcon from '@mui/icons-material/Add';
-
-import { useSupplierDashboard, DashboardSummary } from '../index';
-import MonthlySalesChart from '../../ui/graphs/BarChart';
-import SidebarProvider from '../../layout/SideBar';
-import ProviderTopBar from '../../layout/ProviderTopBar';
-import { dashboardTheme } from '../../../styles/dashboardTheme';
+// 📁 pages/ProviderHome.jsx
+import React from 'react'
+import { Box, Grid, Button, Container, ThemeProvider } from '@mui/material'
+import AddIcon from '@mui/icons-material/Add'
+import { useSupplierDashboard } from './hooks/useSupplierDashboard'
+import DashboardSummary from './dashboard-summary/DashboardSummary'
+import MonthlySalesChart from '../../ui/graphs/BarChart'
+import SidebarProvider from '../../layout/SideBar'
+import ProviderTopBar from '../../layout/ProviderTopBar'
+import { dashboardTheme } from '../../../styles/dashboardTheme'
 
 const ProviderHome = () => {
-  const supplierId = localStorage.getItem('supplierid');
-
   const {
     products,
     sales,
@@ -17,11 +17,13 @@ const ProviderHome = () => {
     weeklyRequests,
     monthlyData,
     totalSales,
-  } = useSupplierDashboard(supplierId);
+    loading,
+    error,
+  } = useSupplierDashboard()
 
   const productsOutOfStock = productStocks.filter(
-    p => p.productqty === 0
-  ).length;
+    (p) => p.productqty === 0
+  ).length
 
   return (
     <ThemeProvider theme={dashboardTheme}>
@@ -39,7 +41,7 @@ const ProviderHome = () => {
       >
         <Container maxWidth="xl" disableGutters>
           <Grid container spacing={3}>
-            <Grid item xs={12}>
+            <Grid size={12}>
               <Box sx={{ mb: 4 }}>
                 <DashboardSummary
                   products={products}
@@ -81,7 +83,7 @@ const ProviderHome = () => {
         </Container>
       </Box>
     </ThemeProvider>
-  );
-};
+  )
+}
 
-export default ProviderHome;
+export default ProviderHome

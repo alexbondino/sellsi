@@ -1,73 +1,75 @@
-import { useEffect, useState } from 'react';
-import { supabase } from '../../../../services/supabase';
+import { useEffect, useState } from 'react'
+import { supabase } from '../../../../services/supabase'
 
 export const useSupplierDashboard = () => {
-  const [products, setProducts] = useState([]);
-  const [sales, setSales] = useState([]);
-  const [productStocks, setProductStocks] = useState([]);
-  const [weeklyRequests, setWeeklyRequests] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [products, setProducts] = useState([])
+  const [sales, setSales] = useState([])
+  const [productStocks, setProductStocks] = useState([])
+  const [weeklyRequests, setWeeklyRequests] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
 
   const getStartOfWeek = () => {
-    const now = new Date();
-    const day = now.getDay();
-    const diff = now.getDate() - day + (day === 0 ? -6 : 1);
-    return new Date(now.setDate(diff)).toISOString().split('T')[0];
-  };
+    const now = new Date()
+    const day = now.getDay()
+    const diff = now.getDate() - day + (day === 0 ? -6 : 1)
+    return new Date(now.setDate(diff)).toISOString().split('T')[0]
+  }
 
   const getEndOfWeek = () => {
-    const now = new Date();
-    const day = now.getDay();
-    const diff = now.getDate() - day + 7;
-    return new Date(now.setDate(diff)).toISOString().split('T')[0];
-  };
+    const now = new Date()
+    const day = now.getDay()
+    const diff = now.getDate() - day + 7
+    return new Date(now.setDate(diff)).toISOString().split('T')[0]
+  }
 
   useEffect(() => {
     const fetchDashboardData = async () => {
-      setLoading(true);
-      setError(null);
+      setLoading(true)
+      setError(null)
 
       const {
         data: { session },
         error: sessionError,
-      } = await supabase.auth.getSession();
+      } = await supabase.auth.getSession()
 
       if (sessionError || !session) {
-        setError('No hay sesión activa');
-        setLoading(false);
-        return;
+        setError('No hay sesión activa')
+        setLoading(false)
+        return
       }
 
-      const supplierId = session.user.id;
+      const supplierId = session.user.id
 
       try {
         // Productos del proveedor
         const { data: productsData, error: productsError } = await supabase
           .from('products')
           .select('*')
-          .eq('supplier_id', supplierId);
+          .eq('supplier_id', supplierId)
 
-        if (productsError) throw productsError;
+        if (productsError) throw productsError
 
-        setProducts(productsData);
-        setProductStocks(productsData.map(p => ({ productqty: p.productqty })));
+        setProducts(productsData)
+        setProductStocks(
+          productsData.map((p) => ({ productqty: p.productqty }))
+        )
 
         // Ventas del proveedor (tabla sales)
         const { data: salesData, error: salesError } = await supabase
           .from('sales')
           .select('amount, trx_date')
-          .eq('user_id', supplierId);
+          .eq('user_id', supplierId)
 
-        if (salesError) throw salesError;
+        if (salesError) throw salesError
 
-        setSales(salesData);
+        setSales(salesData)
 
         // Solicitudes semanales
-        const start = getStartOfWeek();
-        const end = getEndOfWeek();
+        const start = getStartOfWeek()
+        const end = getEndOfWeek()
 
-        const productIds = productsData.map(p => p.productid);
+        const productIds = productsData.map((p) => p.productid)
 
         if (productIds.length > 0) {
           const { data: requestsData, error: requestsError } = await supabase
@@ -88,40 +90,40 @@ export const useSupplierDashboard = () => {
             )
             .in('productid', productIds)
             .gte('createddt', start)
-            .lte('createddt', end);
+            .lte('createddt', end)
 
-          if (requestsError) throw requestsError;
+          if (requestsError) throw requestsError
 
-          setWeeklyRequests(requestsData || []);
+          setWeeklyRequests(requestsData || [])
         } else {
-          setWeeklyRequests([]);
+          setWeeklyRequests([])
         }
       } catch (err) {
-        console.error('Error cargando dashboard:', err);
-        setError('Error al cargar datos');
+        console.error('Error cargando dashboard:', err)
+        setError('Error al cargar datos')
       } finally {
-        setLoading(false);
+        setLoading(false)
       }
-    };
+    }
 
-    fetchDashboardData();
-  }, []);
+    fetchDashboardData()
+  }, [])
 
-  const totalSales = sales.reduce((acc, s) => acc + Number(s.amount), 0);
+  const totalSales = sales.reduce((acc, s) => acc + Number(s.amount), 0)
 
   const groupedSales = sales.reduce((acc, sale) => {
-    const date = new Date(sale.trx_date);
+    const date = new Date(sale.trx_date)
     const key = `${date.toLocaleString('default', {
       month: 'short',
-    })} ${date.getFullYear()}`;
-    acc[key] = (acc[key] || 0) + Number(sale.amount);
-    return acc;
-  }, {});
+    })} ${date.getFullYear()}`
+    acc[key] = (acc[key] || 0) + Number(sale.amount)
+    return acc
+  }, {})
 
   const monthlyData = Object.entries(groupedSales).map(([mes, total]) => ({
     mes,
     total,
-  }));
+  }))
 
   return {
     products,
@@ -132,5 +134,5 @@ export const useSupplierDashboard = () => {
     totalSales,
     loading,
     error,
-  };
-};
+  }
+}

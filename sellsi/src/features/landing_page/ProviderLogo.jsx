@@ -1,7 +1,29 @@
 import React from 'react'
 import { Card, CardContent } from '@mui/material'
+import { LazyImage } from '../../components/shared'
 
-// Componente memoizado para logos de proveedores
+/**
+ * ====================================================================================
+ * PROVIDER LOGO - LOGO DE PROVEEDOR
+ * ============================================================================
+ *
+ * Componente UI puro para mostrar logos de proveedores en grid de proveedores
+ *
+ * @component
+ * @param {Object} props - Propiedades del componente
+ * @param {Object} props.provider - Objeto con información del proveedor
+ * @param {string} props.provider.src - URL de la imagen del logo
+ * @param {string} props.provider.alt - Texto alternativo de la imagen
+ *
+ * CARACTERÍSTICAS:
+ * - Componente memoizado para rendimiento óptimo
+ * - Cards con diseño Material UI consistente
+ * - Efectos hover con animaciones suaves
+ * - Dimensiones responsivas por breakpoint
+ * - Gradientes y sombras elegantes
+ * - Optimización de imágenes automática
+ * - Estados interactivos (hover, active)
+ */
 const ProviderLogo = React.memo(({ provider }) => (
   <Card
     elevation={2}
@@ -33,8 +55,7 @@ const ProviderLogo = React.memo(({ provider }) => (
         background: 'linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%)',
       },
     }}
-  >
-    <CardContent
+  >    <CardContent
       sx={{
         height: '100%',
         display: 'flex',
@@ -44,10 +65,13 @@ const ProviderLogo = React.memo(({ provider }) => (
         '&:last-child': { pb: { xs: 1.5, sm: 2, md: 2.5, lg: 3, xl: 3 } },
       }}
     >
-      <img
+      {/* ✅ OPTIMIZACIÓN: Logo con lazy loading */}
+      <LazyImage
         src={provider.src}
         alt={provider.alt}
-        style={{
+        aspectRatio="1"
+        rootMargin="300px" // Cargar con más anticipación para landing page
+        sx={{
           maxWidth: '120%',
           maxHeight: '120%',
           objectFit: 'contain',

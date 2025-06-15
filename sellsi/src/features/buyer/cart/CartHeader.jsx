@@ -2,7 +2,6 @@ import React from 'react'
 import {
   Box,
   Typography,
-  Grid,
   Chip,
   Stack,
   IconButton,
@@ -11,6 +10,7 @@ import {
   Button,
   Checkbox,
 } from '@mui/material'
+import Grid from '@mui/material/Grid'
 import {
   Inventory2 as InventoryIcon,
   MonetizationOn as MonetizationOnIcon,
@@ -18,13 +18,31 @@ import {
   Undo as UndoIcon,
   Redo as RedoIcon,
   Delete as DeleteIcon,
-  Refresh as RefreshIcon,
   Favorite as FavoriteIcon,
   CheckBoxOutlineBlank as CheckBoxOutlineBlankIcon,
   CheckBox as CheckBoxIcon,
   SelectAll as SelectAllIcon,
 } from '@mui/icons-material'
 import { motion } from 'framer-motion'
+
+/**
+ * ============================================================================
+ * COMPONENTE CARTHEADER - ENCABEZADO DEL CARRITO DE COMPRAS
+ * ============================================================================
+ *
+ * Componente que muestra las estadísticas del carrito y controles principales
+ * Incluye: estadísticas de productos, descuentos, acciones de deshacer/rehacer
+ *
+ * @param {Object} props - Propiedades del componente
+ * @param {Object} props.cartStats - Estadísticas del carrito (totalItems, totalValue, etc.)
+ * @param {Function} props.formatPrice - Función para formatear precios * @param {number} props.discount - Descuento total aplicado
+ * @param {number} props.wishlistLength - Cantidad de items en wishlist
+ * @param {Function} props.onUndo - Función para deshacer última acción
+ * @param {Function} props.onRedo - Función para rehacer acción
+ * @param {Function} props.onClearCart - Función para limpiar carrito
+ * @param {Object} props.undoInfo - Información de estado de undo/redo
+ * @param {Object} props.redoInfo - Información de estado de redo
+ */
 
 const CartHeader = ({
   cartStats,
@@ -34,7 +52,6 @@ const CartHeader = ({
   onUndo,
   onRedo,
   onClearCart,
-  onResetDemo,
   onToggleWishlist,
   showWishlist,
   undoInfo,
@@ -51,10 +68,23 @@ const CartHeader = ({
   return (
     <Box sx={{ mb: 4, width: '100%' }}>
       {' '}
-      <Grid container spacing={3} alignItems="center" justifyContent="left">
-        {' '}
+      <Grid
+        container
+        columns={12}
+        spacing={3}
+        alignItems="center"
+        justifyContent="left"
+      >
         {/* Grid Item 1: Title and Chips */}
-        <Grid item xs={12} sm={8}>
+        <Grid
+          xs={12}
+          sm={8}
+          sx={
+            {
+              // ...otros estilos...
+            }
+          }
+        >
           <Box sx={{ textAlign: { xs: 'center', md: 'left' } }}>
             {' '}
             <Typography
@@ -64,11 +94,9 @@ const CartHeader = ({
                 fontWeight: 'bold',
                 background: isSelectionMode
                   ? 'linear-gradient(45deg, #ff6b6b, #ee5a24)'
-                  : '#000000',
-                WebkitBackgroundClip: 'text',
+                  : '#000000',                WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
                 mb: 1,
-                transition: 'all 0.3s ease',
               }}
             >
               {isSelectionMode ? 'Seleccionar Items' : 'Mi Carrito'}
@@ -132,7 +160,14 @@ const CartHeader = ({
           </Box>{' '}
         </Grid>{' '}
         {/* Grid Item 2: Controls */}
-        <Grid item xs={12} sm={4} sx={{ ml: { md: 50 } }}>
+        <Grid
+          xs={12}
+          sm={4}
+          sx={{
+            ml: { md: 50 },
+            // ...otros estilos...
+          }}
+        >
           <Stack
             direction="row"
             spacing={1}
@@ -151,7 +186,7 @@ const CartHeader = ({
             >
               <span>
                 <Badge
-                  badgeContent={historyInfo?.currentIndex || 0}
+                  badgeContent={Number.isFinite(Number(historyInfo?.currentIndex)) ? Number(historyInfo.currentIndex) : 0}
                   color="primary"
                   invisible={!undoInfo?.canUndo}
                   sx={{
@@ -165,10 +200,8 @@ const CartHeader = ({
                   <IconButton
                     onClick={onUndo}
                     color="primary"
-                    disabled={!undoInfo?.canUndo}
-                    sx={{
+                    disabled={!undoInfo?.canUndo}                    sx={{
                       opacity: undoInfo?.canUndo ? 1 : 0.5,
-                      transition: 'all 0.2s ease',
                       '&:hover': {
                         transform: undoInfo?.canUndo ? 'scale(1.1)' : 'none',
                       },
@@ -191,8 +224,8 @@ const CartHeader = ({
               <span>
                 <Badge
                   badgeContent={
-                    historyInfo
-                      ? historyInfo.totalStates - historyInfo.currentIndex - 1
+                    historyInfo && Number.isFinite(Number(historyInfo.totalStates)) && Number.isFinite(Number(historyInfo.currentIndex))
+                      ? Math.max(0, Number(historyInfo.totalStates) - Number(historyInfo.currentIndex) - 1)
                       : 0
                   }
                   color="secondary"
@@ -208,10 +241,8 @@ const CartHeader = ({
                   <IconButton
                     onClick={onRedo}
                     color="primary"
-                    disabled={!redoInfo?.canRedo}
-                    sx={{
+                    disabled={!redoInfo?.canRedo}                    sx={{
                       opacity: redoInfo?.canRedo ? 1 : 0.5,
-                      transition: 'all 0.2s ease',
                       '&:hover': {
                         transform: redoInfo?.canRedo ? 'scale(1.1)' : 'none',
                       },
@@ -225,10 +256,8 @@ const CartHeader = ({
             {/* Sistema de selección múltiple */}
             {isSelectionMode ? (
               <motion.div
-                initial={{ opacity: 0, x: 50 }}
-                animate={{ opacity: 1, x: 0 }}
+                initial={{ opacity: 0, x: 50 }}                animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 50 }}
-                transition={{ duration: 0.3 }}
                 style={{ display: 'flex', gap: '8px', alignItems: 'center' }}
               >
                 {/* Botón para seleccionar todo */}
@@ -246,12 +275,10 @@ const CartHeader = ({
                       background:
                         selectedItems.length === totalItems
                           ? 'rgba(25, 118, 210, 0.1)'
-                          : 'transparent',
-                      '&:hover': {
+                          : 'transparent',                      '&:hover': {
                         background: 'rgba(25, 118, 210, 0.2)',
                         transform: 'scale(1.1)',
                       },
-                      transition: 'all 0.2s ease',
                     }}
                   >
                     {selectedItems.length === totalItems ? (
@@ -274,10 +301,8 @@ const CartHeader = ({
                     <IconButton
                       onClick={onDeleteSelected}
                       color="error"
-                      disabled={selectedItems.length === 0}
-                      sx={{
+                      disabled={selectedItems.length === 0}                      sx={{
                         opacity: selectedItems.length === 0 ? 0.5 : 1,
-                        transition: 'all 0.2s ease',
                         '&:hover': {
                           transform:
                             selectedItems.length > 0 ? 'scale(1.1)' : 'none',
@@ -308,13 +333,11 @@ const CartHeader = ({
                     minWidth: 'auto',
                     px: 2,
                     borderColor: 'grey.400',
-                    color: 'grey.600',
-                    '&:hover': {
+                    color: 'grey.600',                    '&:hover': {
                       transform: 'scale(1.05)',
                       borderColor: 'grey.600',
                       background: 'rgba(0, 0, 0, 0.04)',
                     },
-                    transition: 'all 0.2s ease',
                   }}
                 >
                   Cancelar
@@ -325,36 +348,17 @@ const CartHeader = ({
               <Tooltip title="Eliminar productos">
                 <IconButton
                   onClick={onToggleSelectionMode}
-                  color="error"
-                  sx={{
+                  color="error"                  sx={{
                     '&:hover': {
                       transform: 'scale(1.1)',
                       background: 'rgba(244, 67, 54, 0.1)',
                     },
-                    transition: 'all 0.2s ease',
                   }}
                 >
                   <DeleteIcon />
                 </IconButton>
               </Tooltip>
             )}
-            <Tooltip title="🎭 Reiniciar Demo (Volver a mostrar productos)">
-              <IconButton
-                onClick={onResetDemo}
-                color="success"
-                sx={{
-                  background: 'linear-gradient(45deg, #4caf50, #8bc34a)',
-                  color: 'white',
-                  '&:hover': {
-                    background: 'linear-gradient(45deg, #45a049, #7cb342)',
-                    transform: 'scale(1.1)',
-                  },
-                  transition: 'all 0.2s ease',
-                }}
-              >
-                <RefreshIcon />
-              </IconButton>
-            </Tooltip>{' '}
             <Tooltip title="Favoritos (Próximamente disponible)">
               <span>
                 <IconButton

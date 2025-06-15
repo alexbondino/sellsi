@@ -6,7 +6,7 @@ import React, {
   memo,
   lazy,
   Suspense,
-} from 'react';
+} from 'react'
 import {
   Box,
   Typography,
@@ -19,23 +19,22 @@ import {
   AccordionDetails,
   CircularProgress,
   Backdrop,
-} from '@mui/material';
+} from '@mui/material'
 import {
   ExpandMore as ExpandMoreIcon,
   ThumbUp as RecommendIcon,
-} from '@mui/icons-material';
-import { motion, AnimatePresence, useAnimation } from 'framer-motion';
-import { toast, Toaster } from 'react-hot-toast';
-import { useInView } from 'react-intersection-observer';
-import confetti from 'canvas-confetti';
-import debounce from 'lodash.debounce';
-import SidebarBuyer from '../layout/SidebarBuyer';
-import MarketplaceTopBar from '../layout/MarketplaceTopBar';
-import useCartStore from './hooks/cartStore';
+} from '@mui/icons-material'
+import { motion, AnimatePresence, useAnimation } from 'framer-motion'
+import { toast } from 'react-hot-toast'
+import { useInView } from 'react-intersection-observer'
+import confetti from 'canvas-confetti'
+import debounce from 'lodash.debounce'
+import SidebarBuyer from '../layout/SidebarBuyer'
+import useCartStore from './hooks/cartStore'
 import {
   SHIPPING_OPTIONS,
   DISCOUNT_CODES,
-} from '../marketplace/hooks/constants';
+} from '../marketplace/hooks/constants'
 import {
   CartHeader,
   ShippingProgressBar,
@@ -44,7 +43,7 @@ import {
   SavingsCalculator,
   WishlistSection,
   EmptyCartState,
-} from './cart';
+} from './cart'
 
 // ============================================================================
 // ULTRA-PREMIUM BUYER CART COMPONENT - NIVEL 11/10
@@ -53,8 +52,8 @@ import {
 // Lazy loading components para optimización
 const RecommendedProducts = lazy(() =>
   import('../marketplace/RecommendedProducts')
-);
-const PriceComparison = lazy(() => import('./PriceComparison'));
+)
+const PriceComparison = lazy(() => import('./PriceComparison'))
 
 // ============================================================================
 // COMPONENTES AUXILIARES OPTIMIZADOS
@@ -71,7 +70,7 @@ const CustomToast = ({ message, type, duration = 3000 }) => {
       discount: '🎉',
       shipping: '🚚',
       wishlist: '❤️',
-    };
+    }
 
     toast(message, {
       icon: iconMap[type] || '📦',
@@ -82,11 +81,11 @@ const CustomToast = ({ message, type, duration = 3000 }) => {
         color: '#fff',
         fontWeight: '500',
       },
-    });
-  }, [message, type, duration]);
+    })
+  }, [message, type, duration])
 
-  return null;
-};
+  return null
+}
 
 // Componente de animación de confetti
 const ConfettiEffect = ({ trigger }) => {
@@ -98,7 +97,7 @@ const ConfettiEffect = ({ trigger }) => {
           spread: 70,
           origin: { y: 0.6 },
           colors: ['#FFD700', '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4'],
-        });
+        })
 
         // Segundo disparo después de 150ms
         setTimeout(() => {
@@ -108,8 +107,8 @@ const ConfettiEffect = ({ trigger }) => {
             spread: 55,
             origin: { x: 0 },
             colors: ['#FFD700', '#FF6B6B'],
-          });
-        }, 150);
+          })
+        }, 150)
 
         // Tercer disparo después de 300ms
         setTimeout(() => {
@@ -119,141 +118,141 @@ const ConfettiEffect = ({ trigger }) => {
             spread: 55,
             origin: { x: 1 },
             colors: ['#4ECDC4', '#45B7D1'],
-          });
-        }, 300);
-      };
+          })
+        }, 300)
+      }
 
-      celebrate();
+      celebrate()
     }
-  }, [trigger]);
+  }, [trigger])
 
-  return null;
-};
+  return null
+}
 
 // ============================================================================
 // COMPONENTE PRINCIPAL ULTRA-PREMIUM
 // ============================================================================
 
-const BuyerCart = () => {
-  // ===== ZUSTAND STORE =====
-  const {
-    items,
-    wishlist,
-    isLoading,
-    appliedCoupons,
-    couponInput,
-    selectedShipping,
-    addItem,
-    updateQuantity,
-    removeItem,
-    clearCart,
-    addToWishlist,
-    removeFromWishlist,
-    moveToCart,
-    applyCoupon,
-    removeCoupon,
-    setShippingOption,
-    getSubtotal,
-    getDiscount,
-    getShippingCost,
-    getTotal,
-    getShippingInfo,
-    undo,
-    redo,
-    isInCart,
-    isInWishlist,
-    getItemCount,
-    getStats,
-    setCouponInput,
-    setLoading,
-    resetDemoCart,
-    autoResetIfEmpty,
-    simulateCheckout,
-    getUndoInfo,
-    getRedoInfo,
-    getHistoryInfo,
-  } = useCartStore();
-  // ===== ESTADOS LOCALES =====
-  const [showConfetti, setShowConfetti] = useState(false);
-  const [lastAction, setLastAction] = useState(null);
-  const [showRecommended, setShowRecommended] = useState(false);
-  const [showPriceAlert, setShowPriceAlert] = useState(false);
-  const [checkoutStep, setCheckoutStep] = useState(0);
-  const [showWishlist, setShowWishlist] = useState(false);
-  const [notifications, setNotifications] = useState([]);
-  const [isCheckingOut, setIsCheckingOut] = useState(false);
-  const [deliveryDate, setDeliveryDate] = useState(null);
-  const [showSavingsCalculator, setShowSavingsCalculator] = useState(false);
-  const [hasShownDemoReset, setHasShownDemoReset] = useState(false);
+const BuyerCart = () => {  // ===== ZUSTAND STORE (SELECTORES MEMOIZADOS) =====
+  const items = useCartStore((state) => state.items)
+  const wishlist = useCartStore((state) => state.wishlist)
+  const isLoading = useCartStore((state) => state.isLoading)
+  const appliedCoupons = useCartStore((state) => state.appliedCoupons)
+  const couponInput = useCartStore((state) => state.couponInput)
+  
+  // Acciones memoizadas del store
+  const updateQuantity = useCartStore((state) => state.updateQuantity)
+  const removeItem = useCartStore((state) => state.removeItem)
+  const clearCart = useCartStore((state) => state.clearCart)
+  const addToWishlist = useCartStore((state) => state.addToWishlist)
+  const removeFromWishlist = useCartStore((state) => state.removeFromWishlist)
+  const applyCoupon = useCartStore((state) => state.applyCoupon)
+  const removeCoupon = useCartStore((state) => state.removeCoupon)
+  const setCouponInput = useCartStore((state) => state.setCouponInput)
+  const getSubtotal = useCartStore((state) => state.getSubtotal)
+  const getDiscount = useCartStore((state) => state.getDiscount)
+  const getTotal = useCartStore((state) => state.getTotal)
+  const isInWishlist = useCartStore((state) => state.isInWishlist)
 
-  // Estado para manejar envíos por producto (inicializar con envío estándar)
+  // ===== ESTADOS LOCALES OPTIMIZADOS =====
+  const [showConfetti, setShowConfetti] = useState(false)
+  const [lastAction, setLastAction] = useState(null)
+  const [isCheckingOut, setIsCheckingOut] = useState(false)
+  const [deliveryDate, setDeliveryDate] = useState(null)
+  // Estados para el sistema de selección múltiple (memoizados)
+  const [isSelectionMode, setIsSelectionMode] = useState(false)
+  const [selectedItems, setSelectedItems] = useState([])
+  const [showWishlist, setShowWishlist] = useState(false)
+
+  // Estado para manejar envíos por producto (optimizado)
   const [productShipping, setProductShipping] = useState(() => {
-    const initialShipping = {};
-    items.forEach(item => {
-      initialShipping[item.id] = 'standard';
-    });
-    return initialShipping;
-  });
+    const initialShipping = {}
+    items.forEach((item) => {
+      initialShipping[item.id] = 'standard'
+    })
+    return initialShipping
+  })
+  // ===== CÁLCULOS MEMOIZADOS =====
+  const cartCalculations = useMemo(() => {
+    const subtotal = getSubtotal()
+    const discount = getDiscount()
+    const total = getTotal()
+    
+    return { subtotal, discount, total }
+  }, [items, appliedCoupons, getSubtotal, getDiscount, getTotal])
 
-  // Estados para el sistema de selección múltiple
-  const [isSelectionMode, setIsSelectionMode] = useState(false);
-  const [selectedItems, setSelectedItems] = useState([]);
+  const cartStats = useMemo(() => {
+    const stats = {
+      totalItems: items.length,
+      totalQuantity: items.reduce((sum, item) => sum + item.quantity, 0),
+      isEmpty: items.length === 0
+    }
+    
+    return stats
+  }, [items])
+
+  // Calcular costo total de envío individual por producto
+  const productShippingCost = useMemo(() => {
+    const totalShipping = items.reduce((totalShipping, item) => {
+      const selectedShippingId = productShipping[item.id] || 'standard'
+      const shippingOption = SHIPPING_OPTIONS.find(
+        (opt) => opt.id === selectedShippingId
+      )
+      return totalShipping + (shippingOption ? shippingOption.price : 0)
+    }, 0)
+    
+    return totalShipping
+  }, [items, productShipping])
+
+  // Total final incluyendo envío individual por producto
+  const finalTotal = useMemo(() => {
+    const baseTotal = cartCalculations.subtotal - cartCalculations.discount
+    const total = baseTotal + productShippingCost
+    
+    return total
+  }, [cartCalculations.subtotal, cartCalculations.discount, productShippingCost])
 
   // ===== ANIMACIONES =====
-  const controls = useAnimation();
-  const [ref, inView] = useInView({ threshold: 0.1 });
+  const controls = useAnimation()
+  const [ref, inView] = useInView({ threshold: 0.1 })
 
   // ===== EFECTO PARA SINCRONIZAR SHIPPING CON ITEMS DEL CARRITO =====
   useEffect(() => {
     // Sincronizar productShipping cuando se agreguen/quiten productos
-    setProductShipping(prev => {
-      const newShipping = { ...prev };
+    setProductShipping((prev) => {
+      const newShipping = { ...prev }
 
       // Agregar envío estándar para nuevos productos
-      items.forEach(item => {
+      items.forEach((item) => {
         if (!newShipping[item.id]) {
-          newShipping[item.id] = 'standard';
+          newShipping[item.id] = 'standard'
         }
-      });
+      })
 
       // Remover envíos de productos que ya no están en el carrito
-      Object.keys(newShipping).forEach(productId => {
-        if (!items.find(item => item.id === productId)) {
-          delete newShipping[productId];
+      Object.keys(newShipping).forEach((productId) => {
+        if (!items.find((item) => item.id === productId)) {
+          delete newShipping[productId]
         }
-      });
+      })
 
-      return newShipping;
-    });
-  }, [items]);
+      return newShipping
+    })
+  }, [items])
 
   // ===== EFECTOS =====
   useEffect(() => {
-    // 🎭 EFECTO PARA DEMO: Reiniciar carrito si está vacío al cargar la página
-    if (!hasShownDemoReset) {
-      // Si el carrito está vacío, reiniciarlo con productos de muestra
-      if (items.length === 0) {
-        setTimeout(() => {
-          autoResetIfEmpty();
-          setHasShownDemoReset(true);
-        }, 500); // Pequeño delay para mejor UX
-      } else {
-        setHasShownDemoReset(true);
-      }
-    }
-  }, [items.length, autoResetIfEmpty, hasShownDemoReset]);
-  useEffect(() => {
     // Calcular fecha estimada de entrega basada en la opción más lenta
     if (items.length > 0) {
-      const today = new Date();
-      let maxDeliveryDays = 0;
+      const today = new Date()
+      let maxDeliveryDays = 0
 
       // Encontrar el envío más lento entre todos los productos
-      items.forEach(item => {
-        const selectedShippingId = productShipping[item.id] || 'standard';
+      items.forEach((item) => {
+        const selectedShippingId = productShipping[item.id] || 'standard'
         const shippingOption = SHIPPING_OPTIONS.find(
-          opt => opt.id === selectedShippingId
-        );
+          (opt) => opt.id === selectedShippingId
+        )
 
         if (shippingOption) {
           const deliveryDays =
@@ -263,45 +262,41 @@ const BuyerCart = () => {
               ? 2
               : shippingOption.id === 'pickup'
               ? 0
-              : 4;
+              : 4
 
-          maxDeliveryDays = Math.max(maxDeliveryDays, deliveryDays);
+          maxDeliveryDays = Math.max(maxDeliveryDays, deliveryDays)
         }
-      });
+      })
 
-      const estimatedDate = new Date(today);
-      estimatedDate.setDate(today.getDate() + maxDeliveryDays);
-      setDeliveryDate(estimatedDate);
+      const estimatedDate = new Date(today)
+      estimatedDate.setDate(today.getDate() + maxDeliveryDays)
+      setDeliveryDate(estimatedDate)
     }
-  }, [items, productShipping]);
+  }, [items, productShipping])
   useEffect(() => {
     if (inView) {
-      controls.start('visible');
+      controls.start('visible')
     }
-  }, [controls, inView]);
+  }, [controls, inView])
 
   // ===== EFECTO PARA DETECTAR REGRESO DESPUÉS DE CHECKOUT =====
   useEffect(() => {
     // Detectar si el usuario regresa a una página de carrito vacío
     // (probablemente después de un checkout exitoso)
     const handlePageFocus = () => {
-      const currentItems = useCartStore.getState().items;
+      const currentItems = useCartStore.getState().items
       if (currentItems.length === 0 && document.hasFocus()) {
-        // Si el carrito está vacío y la página tiene foco,
-        // es probable que el usuario haya regresado después de checkout
-        setTimeout(() => {
-          autoResetIfEmpty();
-        }, 1000);
+        // Solo mostrar notificación de bienvenida si el carrito está vacío
       }
-    };
+    }
 
     // Escuchar cuando la página gana foco (usuario regresa)
-    window.addEventListener('focus', handlePageFocus);
+    window.addEventListener('focus', handlePageFocus)
 
     return () => {
-      window.removeEventListener('focus', handlePageFocus);
-    };
-  }, [autoResetIfEmpty]);
+      window.removeEventListener('focus', handlePageFocus)
+    }
+  }, [])
 
   // ===== ANIMACIONES FRAMER MOTION =====
   const containerVariants = {
@@ -312,7 +307,7 @@ const BuyerCart = () => {
         staggerChildren: 0.1,
       },
     },
-  };
+  }
 
   const itemVariants = {
     hidden: { y: 20, opacity: 0 },
@@ -330,7 +325,7 @@ const BuyerCart = () => {
       opacity: 0,
       transition: { duration: 0.3 },
     },
-  };
+  }
 
   const pulseVariants = {
     pulse: {
@@ -340,238 +335,220 @@ const BuyerCart = () => {
         ease: 'easeInOut',
       },
     },
-  };
-  // ===== FUNCIONES OPTIMIZADAS =====
+  }  // ===== FUNCIONES OPTIMIZADAS =====
   // Función optimizada para actualización inmediata de cantidad
   const handleQuantityChange = useCallback(
     (id, quantity) => {
       // Actualizar inmediatamente para mejor UX
-      updateQuantity(id, quantity);
-      setLastAction({ type: 'quantity', id, quantity });
+      updateQuantity(id, quantity)
+      setLastAction({ type: 'quantity', id, quantity })
     },
     [updateQuantity]
-  );
+  )
 
   // Versión con debounce reducido solo para casos específicos
   const debouncedUpdateQuantity = useCallback(
     debounce((id, quantity) => {
-      updateQuantity(id, quantity);
-      setLastAction({ type: 'quantity', id, quantity });
-    }, 100), // Reducido de 300ms a 100ms
+      updateQuantity(id, quantity)
+      setLastAction({ type: 'quantity', id, quantity })
+    }, 10), // OPTIMIZADO: 10ms para máxima velocidad
     [updateQuantity]
-  );
+  )
 
   const handleRemoveWithAnimation = useCallback(
-    id => {
-      const item = items.find(item => item.id === id);
+    (id) => {
+      const item = items.find((item) => item.id === id)
       if (item) {
-        removeItem(id);
-        setLastAction({ type: 'remove', item });
-
+        removeItem(id)
+        setLastAction({ type: 'remove', item })
+        // Mostrar toast de confirmación
         toast.success(`${item.name} eliminado del carrito`, {
           icon: '🗑️',
-          action: {
-            label: 'Deshacer',
-            onClick: () => {
-              addItem(item, item.quantity);
-              toast.success('Producto restaurado', { icon: '↩️' });
-            },
-          },
-        });
-      }
-    },
-    [items, removeItem, addItem]
-  );
+          style: { background: '#fffde7', color: '#795548' },
+        })
+      }    },
+    [items, removeItem]
+  )
+
   const handleAddToWishlist = useCallback(
-    item => {
+    (item) => {
       if (!isInWishlist(item.id)) {
-        addToWishlist(item);
-        setShowConfetti(true);
-        setTimeout(() => setShowConfetti(false), 1000);
+        addToWishlist(item)
+        setShowConfetti(true)
+        setTimeout(() => setShowConfetti(false), 200) // OPTIMIZADO: 200ms
       } else {
-        removeFromWishlist(item.id);
+        removeFromWishlist(item.id)
       }
     },
     [isInWishlist, addToWishlist, removeFromWishlist]
-  );
+  )
 
   // Manejar cambios de envío por producto
   const handleProductShippingChange = useCallback((productId, shippingId) => {
-    setProductShipping(prev => ({
+    setProductShipping((prev) => ({
       ...prev,
       [productId]: shippingId,
-    }));
-  }, []);
+    }))
+  }, [])
+  // ===== FUNCIONES PLACEHOLDER PARA HISTORIAL (OPTIMIZADAS) =====
+  // TODO: Implementar historial completo de acciones del carrito
+  const undo = useCallback(() => {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('↶ BuyerCart - Undo action')
+    }
+    // Implementar lógica de undo
+  }, [])
+
+  const redo = useCallback(() => {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('↷ BuyerCart - Redo action')
+    }
+    // Implementar lógica de redo
+  }, [])
+
+  const getUndoInfo = useCallback(() => ({
+    canUndo: false,
+    action: null
+  }), [])
+
+  const getRedoInfo = useCallback(() => ({
+    canRedo: false, 
+    action: null
+  }), [])
+
+  const getHistoryInfo = useCallback(() => ({
+    history: [],
+    currentIndex: 0
+  }), [])
+  const moveToCart = useCallback((item) => {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🛒 BuyerCart - Mover de wishlist a carrito:', item.name)
+    }
+    // Implementar lógica para mover de wishlist a carrito
+  }, [])
 
   const handleApplyCoupon = useCallback(() => {
     if (couponInput.trim()) {
-      const beforeTotal = getTotal();
-      applyCoupon(couponInput.trim());
+      const beforeTotal = getTotal()
+      applyCoupon(couponInput.trim())
 
       setTimeout(() => {
-        const afterTotal = getTotal();
+        const afterTotal = getTotal()
         if (afterTotal < beforeTotal) {
-          setShowConfetti(true);
-          setTimeout(() => setShowConfetti(false), 2000);
+          setShowConfetti(true)
+          setTimeout(() => setShowConfetti(false), 200) // OPTIMIZADO: 200ms
         }
-      }, 100);
+      }, 10) // OPTIMIZADO: 10ms en lugar de 100ms
     }
-  }, [couponInput, applyCoupon, getTotal]);
+  }, [couponInput, applyCoupon, getTotal])
+
   const handleCheckout = useCallback(async () => {
-    setIsCheckingOut(true);
+    setIsCheckingOut(true)
 
     try {
       // Simular proceso de checkout
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      await new Promise((resolve) => setTimeout(resolve, 100)) // OPTIMIZADO: 100ms
 
-      setShowConfetti(true);
+      setShowConfetti(true)
       toast.success('¡Compra realizada con éxito!', {
         icon: '🎉',
         duration: 5000,
-      });
+      })
 
-      setTimeout(async () => {
-        setShowConfetti(false);
-
-        // Usar el checkout simulado del store que auto-reinicia el demo
-        const checkoutSuccess = await simulateCheckout();
-
-        if (checkoutSuccess) {
-          toast.success(
-            '🎭 El demo se reiniciará automáticamente en unos segundos...',
-            {
-              icon: '⏰',
-              duration: 4000,
-            }
-          );
-        }
-      }, 3000);
+      setTimeout(() => {
+        setShowConfetti(false)
+        // Clear the cart after successful checkout
+        clearCart()
+      }, 500) // OPTIMIZADO: 500ms en lugar de 3000ms
     } catch (error) {
-      toast.error('Error en el proceso de compra', { icon: '❌' });
+      toast.error('Error en el proceso de compra', { icon: '❌' })
     } finally {
-      setIsCheckingOut(false);
+      setIsCheckingOut(false)
     }
-  }, [simulateCheckout]);
+  }, [clearCart])
 
   // ===== FUNCIONES DE SELECCIÓN MÚLTIPLE =====
   const handleToggleSelectionMode = useCallback(() => {
-    setIsSelectionMode(!isSelectionMode);
+    setIsSelectionMode(!isSelectionMode)
     if (isSelectionMode) {
       // Al salir del modo selección, limpiar selecciones
-      setSelectedItems([]);
+      setSelectedItems([])
     }
-  }, [isSelectionMode]);
+  }, [isSelectionMode])
 
-  const handleToggleItemSelection = useCallback(itemId => {
-    setSelectedItems(prev => {
+  const handleToggleItemSelection = useCallback((itemId) => {
+    setSelectedItems((prev) => {
       if (prev.includes(itemId)) {
-        return prev.filter(id => id !== itemId);
+        return prev.filter((id) => id !== itemId)
       } else {
-        return [...prev, itemId];
+        return [...prev, itemId]
       }
-    });
-  }, []);
+    })
+  }, [])
 
   const handleSelectAll = useCallback(() => {
     if (selectedItems.length === items.length) {
       // Si ya están todos seleccionados, deseleccionar todo
-      setSelectedItems([]);
+      setSelectedItems([])
     } else {
       // Seleccionar todos los items
-      setSelectedItems(items.map(item => item.id));
+      setSelectedItems(items.map((item) => item.id))
     }
-  }, [selectedItems.length, items]);
+  }, [selectedItems.length, items])
 
   const handleDeleteSelected = useCallback(() => {
-    if (selectedItems.length === 0) return;
+    if (selectedItems.length === 0) return
 
     // Obtener los nombres de los productos seleccionados para el toast
-    const selectedItemsData = items.filter(item =>
+    const selectedItemsData = items.filter((item) =>
       selectedItems.includes(item.id)
-    );
-    const itemNames = selectedItemsData.map(item => item.name).join(', ');
+    )
+    const itemNames = selectedItemsData.map((item) => item.name).join(', ')
 
     // Eliminar todos los items seleccionados
-    selectedItems.forEach(itemId => {
-      removeItem(itemId);
-    });
+    selectedItems.forEach((itemId) => {
+      removeItem(itemId)
+    })
 
-    // Mostrar toast de confirmación
-    toast.success(
-      `${selectedItems.length} producto${
-        selectedItems.length > 1 ? 's' : ''
-      } eliminado${selectedItems.length > 1 ? 's' : ''} del carrito`,
-      {
-        icon: '🗑️',
-        duration: 4000,
-      }
-    );
+    // Se elimina el toast aquí para evitar duplicados, solo se muestra desde el store
 
     // Limpiar selección y salir del modo selección
-    setSelectedItems([]);
-    setIsSelectionMode(false);
+    setSelectedItems([])
+    setIsSelectionMode(false)
 
     // Efecto confetti para la eliminación múltiple
-    setShowConfetti(true);
-    setTimeout(() => setShowConfetti(false), 1500);
-  }, [selectedItems, items, removeItem]);
+    setShowConfetti(true)
+    setTimeout(() => setShowConfetti(false), 300) // OPTIMIZADO: 300ms
+  }, [selectedItems, items, removeItem])
 
   // Limpiar selecciones cuando cambie la lista de items
   useEffect(() => {
-    setSelectedItems(prev =>
-      prev.filter(selectedId => items.some(item => item.id === selectedId))
-    );
-  }, [items]);
+    setSelectedItems((prev) =>
+      prev.filter((selectedId) => items.some((item) => item.id === selectedId))
+    )  }, [items])
 
-  // ===== CÁLCULOS MEMOIZADOS =====
-  const cartStats = useMemo(() => getStats(), [items, getStats]);
-  const subtotal = useMemo(() => getSubtotal(), [items, getSubtotal]);
-  const discount = useMemo(() => getDiscount(), [appliedCoupons, getDiscount]);
-
-  // Calcular costo total de envío individual por producto
-  const productShippingCost = useMemo(() => {
-    return items.reduce((totalShipping, item) => {
-      const selectedShippingId = productShipping[item.id] || 'standard';
-      const shippingOption = SHIPPING_OPTIONS.find(
-        opt => opt.id === selectedShippingId
-      );
-      return totalShipping + (shippingOption ? shippingOption.price : 0);
-    }, 0);
-  }, [items, productShipping]);
-
-  const shippingCost = useMemo(
-    () => getShippingCost(),
-    [selectedShipping, getShippingCost]
-  );
-
-  // Total modificado para incluir envío individual por producto
-  const total = useMemo(() => {
-    const baseTotal = subtotal - discount;
-    return baseTotal + productShippingCost;
-  }, [subtotal, discount, productShippingCost]);
-
-  const formatPrice = useCallback(price => {
+  // ===== FORMATEO Y UTILIDADES MEMOIZADAS =====
+  const formatPrice = useCallback((price) => {
     return new Intl.NumberFormat('es-CL', {
       style: 'currency',
       currency: 'CLP',
       minimumFractionDigits: 0,
-    }).format(price);
-  }, []);
+    }).format(price)
+  }, [])
 
-  const formatDate = useCallback(date => {
+  const formatDate = useCallback((date) => {
     return new Intl.DateTimeFormat('es-CL', {
       weekday: 'long',
       year: 'numeric',
       month: 'long',
       day: 'numeric',
-    }).format(date);
-  }, []);
+    }).format(date)
+  }, [])
   // ===== RENDERIZADO DE ESTADO VACÍO =====
   if (items.length === 0 && !showWishlist) {
     return (
       <Box>
-        <Toaster position="top-right" />
-        <MarketplaceTopBar />
+        {/* <Toaster position="top-right" toastOptions={{ style: { marginTop: 72 } }} /> */}
         <Box sx={{ display: 'flex' }}>
           <SidebarBuyer />{' '}
           <Box
@@ -597,24 +574,22 @@ const BuyerCart = () => {
                 alignItems: 'center',
               }}
             >
+              {' '}
               <EmptyCartState
                 wishlist={wishlist}
-                resetDemoCart={resetDemoCart}
                 setShowWishlist={setShowWishlist}
               />
             </Box>
           </Box>
         </Box>
       </Box>
-    );
+    )
   }
   // ===== RENDERIZADO PRINCIPAL =====
   return (
     <Box>
-      <Toaster position="top-right" />
+      {/* <Toaster position="top-right" toastOptions={{ style: { marginTop: 72 } }} /> */}
       <ConfettiEffect trigger={showConfetti} />
-      <MarketplaceTopBar />
-
       <Box sx={{ display: 'flex' }}>
         <SidebarBuyer />{' '}
         <Box
@@ -647,16 +622,14 @@ const BuyerCart = () => {
               initial="hidden"
               animate={controls}
             >
-              {/* Header con estadísticas */}{' '}
-              <CartHeader
+              {/* Header con estadísticas */}{' '}              <CartHeader
                 cartStats={cartStats}
                 formatPrice={formatPrice}
-                discount={discount}
+                discount={cartCalculations.discount}
                 wishlistLength={wishlist.length}
                 onUndo={undo}
                 onRedo={redo}
                 onClearCart={clearCart}
-                onResetDemo={resetDemoCart}
                 onToggleWishlist={() => setShowWishlist(!showWishlist)}
                 showWishlist={showWishlist}
                 undoInfo={getUndoInfo()}
@@ -669,17 +642,24 @@ const BuyerCart = () => {
                 onSelectAll={handleSelectAll}
                 onDeleteSelected={handleDeleteSelected}
                 totalItems={items.length}
-              />{' '}
-              {/* Barra de progreso hacia envío gratis */}
+              />{/* Barra de progreso hacia envío gratis */}
               <ShippingProgressBar
-                subtotal={subtotal}
+                subtotal={cartCalculations.subtotal}
                 formatPrice={formatPrice}
                 itemVariants={itemVariants}
               />{' '}
               <Grid container spacing={15}>
                 {' '}
                 {/* Lista de productos */}
-                <Grid item xs={12} md={7} lg={6.5} xl={5.3}>
+                <Grid
+                  item
+                  sx={{
+                    xs: 12,
+                    md: 7,
+                    lg: 6.5,
+                    xl: 5.3,
+                  }}
+                >
                   <AnimatePresence>
                     {' '}
                     {items.map((item, index) => (
@@ -725,19 +705,25 @@ const BuyerCart = () => {
                   </motion.div>{' '}
                 </Grid>{' '}
                 {/* Panel lateral - Resumen y opciones */}
-                <Grid item xs={12} lg={5.5} xl={6.7}>
+                <Grid
+                  item
+                  sx={{
+                    xs: 12,
+                    lg: 5.5,
+                    xl: 6.7,
+                  }}
+                >
                   <Box
                     sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}
                   >
                     {/* Resumen del pedido modularizado */}
                     <motion.div variants={itemVariants}>
-                      {' '}
-                      <OrderSummary
+                      {' '}                      <OrderSummary
                         // Data props
-                        subtotal={subtotal}
-                        discount={discount}
+                        subtotal={cartCalculations.subtotal}
+                        discount={cartCalculations.discount}
                         shippingCost={productShippingCost}
-                        total={total}
+                        total={finalTotal}
                         cartStats={cartStats}
                         deliveryDate={deliveryDate}
                         appliedCoupons={appliedCoupons}
@@ -754,12 +740,11 @@ const BuyerCart = () => {
                         onCheckout={handleCheckout}
                       />
                     </motion.div>{' '}
-                    {/* Calculadora de ahorros modularizada */}
-                    <motion.div variants={itemVariants}>
+                    {/* Calculadora de ahorros modularizada */}                    <motion.div variants={itemVariants}>
                       <SavingsCalculator
-                        subtotal={subtotal}
-                        discount={discount}
-                        total={total}
+                        subtotal={cartCalculations.subtotal}
+                        discount={cartCalculations.discount}
+                        total={finalTotal}
                         formatPrice={formatPrice}
                       />
                     </motion.div>
@@ -779,12 +764,14 @@ const BuyerCart = () => {
         </Box>
       </Box>
     </Box>
-  );
-};
+  )
+}
 
 // ============================================================================
-// DATOS DE PRUEBA (Temporal - hasta conexión con Supabase)
+// MOCK DATA - PRODUCTOS DEMO PARA EL CARRITO
 // ============================================================================
+// TODO: Esta data será reemplazada por productos reales de Supabase
+// Se usa para demostrar funcionalidad del carrito sin conexión a BD
 
 const MOCK_CART_ITEMS = [
   {
@@ -826,6 +813,6 @@ const MOCK_CART_ITEMS = [
     category: 'Vinos y Bebidas',
     description: 'Vino de cosecha tardía premium, 6 botellas de 750ml cada una',
   },
-];
+]
 
-export default memo(BuyerCart);
+export default memo(BuyerCart)

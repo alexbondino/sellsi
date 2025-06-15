@@ -44,29 +44,47 @@ const CategoryNavigation = ({
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
-  const handleCategoriaClick = categoria => {
-    onCategoriaToggle(categoria);
-    onCloseCategorias();
-  };
+  // ✅ MEJORA DE RENDIMIENTO: Memoización de handlers
+  const handleCategoriaClick = React.useCallback(
+    categoria => {
+      onCategoriaToggle(categoria);
+      onCloseCategorias();
+    },
+    [onCategoriaToggle, onCloseCategorias]
+  );
 
-  const handleSectionClick = value => {
-    onSeccionChange(value);
-    // Colapsar en móvil después de seleccionar
-    if (isMobile) {
-      setSectionsExpanded(false);
-    }
-  };
+  const handleSectionClick = React.useCallback(
+    value => {
+      onSeccionChange(value);
+      // Colapsar en móvil después de seleccionar
+      if (isMobile) {
+        setSectionsExpanded(false);
+      }
+    },
+    [onSeccionChange, isMobile]
+  );
 
-  const toggleSectionsExpanded = () => {
-    setSectionsExpanded(!sectionsExpanded);
-  };
+  const toggleSectionsExpanded = React.useCallback(
+    () => {
+      setSectionsExpanded(!sectionsExpanded);
+    },
+    [sectionsExpanded]
+  );
+
+  // ✅ MEJORA DE RENDIMIENTO: Memoización de estilos del contenedor principal
+  const containerStyles = React.useMemo(
+    () => ({
+      ...styles.container,
+      marginLeft: categoryMarginLeft, // ✅ Usar prop en lugar de valor fijo
+    }),
+    [categoryMarginLeft]
+  );
+
+  // ✅ MEJORA DE RENDIMIENTO: Memoización de la lista de categorías
+  const categoriesWithAll = React.useMemo(() => ['Todas', ...CATEGORIAS], []);
+
   return (
-    <Box
-      sx={{
-        ...styles.container,
-        marginLeft: categoryMarginLeft, // ✅ Usar prop en lugar de valor fijo
-      }}
-    >
+    <Box sx={containerStyles}>
       {/* Botón de categorías */}
       <Button
         endIcon={<ArrowDropDownIcon />}
@@ -82,7 +100,7 @@ const CategoryNavigation = ({
         onClose={onCloseCategorias}
         PaperProps={{ sx: styles.categoriesMenu }}
       >
-        {['Todas', ...CATEGORIAS].map(categoria => {
+        {categoriesWithAll.map(categoria => {
           const isSelected = categoriaSeleccionada.includes(categoria);
 
           return (

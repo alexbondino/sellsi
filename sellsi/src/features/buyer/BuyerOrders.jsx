@@ -1,10 +1,13 @@
-import React from 'react';
-import { Box, Typography, Container, Paper, Chip } from '@mui/material';
-import SidebarBuyer from '../layout/SidebarBuyer';
-import MarketplaceTopBar from '../layout/MarketplaceTopBar';
+import React from 'react'
+import { Box, Typography, Container, Paper, Chip } from '@mui/material'
+import SidebarBuyer from '../layout/SidebarBuyer'
 
 const BuyerOrders = () => {
-  // Mock data para pedidos (más tarde se conectará con Supabase)
+  // ============================================================================
+  // MOCK DATA - PEDIDOS DEMO
+  // ============================================================================
+  // TODO: Conectar con Supabase para obtener pedidos reales del usuario
+  // Esta data simula los pedidos históricos del comprador
   const orders = [
     {
       id: 1,
@@ -30,25 +33,34 @@ const BuyerOrders = () => {
       total: '$45.500',
       products: 'Teclado Mecánico',
     },
-  ];
+  ]
 
-  const getStatusColor = status => {
+  // ============================================================================
+  // FUNCIONES AUXILIARES
+  // ============================================================================
+  /**
+   * Obtiene el color del chip según el estado del pedido
+   * @param {string} status - Estado del pedido ('Entregado', 'En Tránsito', 'Procesando')
+   * @returns {string} Color del tema Material-UI
+   */
+  const getStatusColor = (status) => {
     switch (status) {
       case 'Entregado':
-        return 'success';
+        return 'success'
       case 'En Tránsito':
-        return 'info';
+        return 'info'
       case 'Procesando':
-        return 'warning';
+        return 'warning'
       default:
-        return 'default';
+        return 'default'
     }
-  };
+  }
+
+  // ============================================================================
+  // RENDERIZADO DEL COMPONENTE
+  // ============================================================================
   return (
     <Box>
-      {/* TopBar específico para Marketplace */}
-      <MarketplaceTopBar />
-
       <Box sx={{ display: 'flex' }}>
         <SidebarBuyer />
 
@@ -71,7 +83,7 @@ const BuyerOrders = () => {
               Mis Pedidos
             </Typography>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-              {orders.map(order => (
+              {orders.map((order) => (
                 <Paper
                   key={order.id}
                   sx={{
@@ -142,7 +154,7 @@ const BuyerOrders = () => {
         </Box>
       </Box>
     </Box>
-  );
-};
+  )
+}
 
-export default BuyerOrders;
+export default BuyerOrders
