@@ -32,30 +32,33 @@ import { generateProductUrl } from '../marketplace/productUrl'
 import PriceDisplay from '../PriceDisplay'
 import { useProductPriceTiers } from '../hooks/useProductPriceTiers'
 import { getProductImageUrl } from '../../../utils/getProductImageUrl'
+import { formatProductForCart } from '../../../utils/priceCalculation'
 
 const ProductCard = ({ producto, onAddToCart, onViewDetails }) => {
   const [favorito, setFavorito] = useState(false)
   const [anchorEl, setAnchorEl] = useState(null)
   const [cantidad, setCantidad] = useState(1)
   const navigate = useNavigate()
-
   if (!producto) {
     return null
   }
 
-  const {
-    nombre,
-    proveedor,
-    imagen,
-    precio,
-    precioOriginal,
-    descuento,
-    rating,
-    ventas,
-    stock,
-    compraMinima,
-    negociable, // ✅ AGREGAR: Propiedad negociable
-  } = producto
+  // Mapeo robusto de campos para compatibilidad
+  const nombre = producto.nombre || producto.name || 'Producto sin nombre'
+  const proveedor =
+    producto.proveedor ||
+    producto.supplier ||
+    producto.provider ||
+    'Proveedor no especificado'
+  const imagen = producto.imagen || producto.image
+  const precio = producto.precio || producto.price || 0
+  const precioOriginal = producto.precioOriginal || producto.originalPrice
+  const descuento = producto.descuento || producto.discount
+  const rating = producto.rating || 0
+  const ventas = producto.ventas || producto.sales || 0
+  const stock = producto.stock || producto.maxStock || 50
+  const compraMinima = producto.compraMinima || producto.minPurchase || 1
+  const negociable = producto.negociable || producto.negotiable || false
 
   // Hook para obtener tramos de precios
   const {
@@ -114,10 +117,9 @@ const ProductCard = ({ producto, onAddToCart, onViewDetails }) => {
       target.closest('.MuiIconButton-root') ||
       target.closest('.MuiButton-root') ||
       target.closest('[data-no-card-click]') ||
-      target.hasAttribute('data-no-card-click')
-
-    // También verificar si el elemento tiene clases de MUI que indican que es un botón    const isMuiButton =
-    target.classList.contains('MuiButton-root') ||
+      target.hasAttribute('data-no-card-click') // También verificar si el elemento tiene clases de MUI que indican que es un botón
+    const isMuiButton =
+      target.classList.contains('MuiButton-root') ||
       target.classList.contains('MuiIconButton-root') ||
       target.closest('.MuiButton-root') ||
       target.closest('.MuiIconButton-root')
@@ -174,13 +176,19 @@ const ProductCard = ({ producto, onAddToCart, onViewDetails }) => {
     if (cantidad > 1) {
       setCantidad(cantidad - 1)
     }
-  } // ✅ NUEVA función para confirmar agregado al carrito
+  }
+
+  // ✅ NUEVA función para confirmar agregado al carrito
   const handleConfirmarAgregar = () => {
     if (onAddToCart) {
-      onAddToCart({ ...producto, cantidadSeleccionada: cantidad })
+      // Usar formatProductForCart para calcular precios por tramos correctamente
+      const cartProduct = formatProductForCart(producto, cantidad, tiers)
+
+      onAddToCart(cartProduct)
     }
     handleClosePopover()
   }
+
   function resolveImageSrc(producto) {
     // Unifica lógica: soporta string, objeto, path relativo, url pública
     let image = producto?.imagen || producto?.image

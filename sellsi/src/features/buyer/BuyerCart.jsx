@@ -676,7 +676,15 @@ const BuyerCart = () => {
               <Grid container spacing={15}>
                 {' '}
                 {/* Lista de productos */}
-                <Grid item xs={12} md={7} lg={6.5} xl={5.3}>
+                <Grid
+                  item
+                  sx={{
+                    xs: 12,
+                    md: 7,
+                    lg: 6.5,
+                    xl: 5.3,
+                  }}
+                >
                   <AnimatePresence>
                     {' '}
                     {items.map((item, index) => (
@@ -722,7 +730,14 @@ const BuyerCart = () => {
                   </motion.div>{' '}
                 </Grid>{' '}
                 {/* Panel lateral - Resumen y opciones */}
-                <Grid item xs={12} lg={5.5} xl={6.7}>
+                <Grid
+                  item
+                  sx={{
+                    xs: 12,
+                    lg: 5.5,
+                    xl: 6.7,
+                  }}
+                >
                   <Box
                     sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}
                   >

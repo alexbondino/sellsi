@@ -1,12 +1,11 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { PRODUCTOS } from '../../products'
-import { createClient } from '@supabase/supabase-js'
+import { supabase } from '../../../../services/supabase'
 import { extractProductIdFromSlug } from '../../marketplace/productUrl'
-
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
-const supabase = createClient(supabaseUrl, supabaseAnonKey)
+import useCartStore from '../../../buyer/hooks/cartStore'
+import { formatProductForCart } from '../../../../utils/priceCalculation'
+import { toast } from 'react-hot-toast'
 
 /**
  * Custom hook para manejar la lógica de negocio del componente TechnicalSpecs
@@ -24,24 +23,24 @@ export const useTechnicalSpecs = () => {
   const [product, setProduct] = useState(null)
   const [loading, setLoading] = useState(true)
 
+  // Hook del carrito
+  const addItem = useCartStore((state) => state.addItem)
+
   // ============================================================================
   // LÓGICA DE NAVEGACIÓN INTELIGENTE
   // ============================================================================
   /**
    * Determina la ruta de origen del usuario
    * Prioridades: 1) URL state, 2) localStorage, 3) document.referrer, 4) default
-   */
-  const getOriginRoute = () => {
+   */ const getOriginRoute = () => {
     // 1. Verificar si viene del state de navegación (más confiable)
     if (location.state?.from) {
-      console.log('🔍 Origen detectado desde state:', location.state.from)
       return location.state.from
     }
 
     // 2. Verificar localStorage como respaldo
     const storedOrigin = localStorage.getItem('marketplace_origin')
     if (storedOrigin) {
-      console.log('🔍 Origen detectado desde localStorage:', storedOrigin)
       return storedOrigin
     }
 
@@ -55,16 +54,11 @@ export const useTechnicalSpecs = () => {
 
         // Si viene de /marketplace (Marketplace general)
         if (referrerPath === '/marketplace') {
-          console.log('🔍 Origen detectado desde referrer:', '/marketplace')
           return '/marketplace'
         }
 
         // Si viene de /buyer/marketplace (MarketplaceBuyer)
         if (referrerPath === '/buyer/marketplace') {
-          console.log(
-            '🔍 Origen detectado desde referrer:',
-            '/buyer/marketplace'
-          )
           return '/buyer/marketplace'
         }
       } catch (error) {
@@ -75,12 +69,10 @@ export const useTechnicalSpecs = () => {
     // 4. Verificar URL actual como último recurso
     const currentPath = window.location.pathname
     if (currentPath.includes('/buyer/')) {
-      console.log('🔍 Origen detectado desde URL actual:', '/buyer/marketplace')
       return '/buyer/marketplace'
     }
 
     // 5. Default: Marketplace general (cambio aquí)
-    console.log('🔍 Usando origen por defecto:', '/marketplace')
     return '/marketplace'
   }
 
@@ -148,12 +140,48 @@ export const useTechnicalSpecs = () => {
               .single()
             if (userData && userData.user_nm) {
               proveedorNombre = userData.user_nm
+            } // ✅ Obtener imagen primaria de product_images
+            let imagenPrincipal = product.image_url
+            console.log(
+              '🖼️ DEBUG ProductPageView - Imagen inicial:',
+              product.image_url
+            )
+            console.log(
+              '🖼️ DEBUG ProductPageView - Imágenes disponibles:',
+              images
+            )
+
+            if (images && Array.isArray(images) && images.length > 0) {
+              const principal = images.find((img) => img.is_primary)
+              if (principal) {
+                imagenPrincipal = principal.image_url
+                console.log(
+                  '🖼️ DEBUG ProductPageView - Imagen principal encontrada:',
+                  principal.image_url
+                )
+              } else {
+                imagenPrincipal = images[0].image_url
+                console.log(
+                  '🖼️ DEBUG ProductPageView - Usando primera imagen:',
+                  images[0].image_url
+                )
+              }
+            } else {
+              console.log(
+                '🖼️ DEBUG ProductPageView - No hay imágenes adicionales, usando image_url'
+              )
             }
+
+            console.log(
+              '🖼️ DEBUG ProductPageView - Imagen final:',
+              imagenPrincipal
+            )
+
             foundProduct = {
               id: product.productid,
               nombre: product.productnm,
               proveedor: proveedorNombre,
-              imagen: product.image_url,
+              imagen: imagenPrincipal,
               precio: product.price,
               precioOriginal: product.precioOriginal || null,
               descuento: product.descuento || 0,
@@ -217,41 +245,98 @@ export const useTechnicalSpecs = () => {
 
   /**
    * Navega al marketplace (inteligente según contexto)
-   */
-  const handleGoToMarketplace = () => {
+   */ const handleGoToMarketplace = () => {
     navigate(originRoute)
   }
-
-  const handleAddToCart = (product) => {
+  const handleAddToCart = (cartProduct) => {
+    // Verificar sesión (nueva lógica)
+    const userId = localStorage.getItem('user_id')
+    const accountType = localStorage.getItem('account_type') // Verificar también las claves antiguas por compatibilidad
     const supplierid = localStorage.getItem('supplierid')
     const sellerid = localStorage.getItem('sellerid')
-    const isLoggedIn = !!(supplierid || sellerid)
+
+    const isLoggedIn = !!(userId || supplierid || sellerid)
 
     if (!isLoggedIn) {
+      toast.error('Debes iniciar sesión para agregar productos al carrito', {
+        icon: '🔒',
+      })
       // Disparar evento para abrir Login modal
       const event = new CustomEvent('openLogin')
       window.dispatchEvent(event)
       return
     }
 
-    // TODO: Implementar lógica de agregar al carrito
-    console.log('Agregando al carrito:', product)
+    // Si recibimos un producto ya formateado (con tramos de precios calculados)
+    if (cartProduct && cartProduct.cantidadSeleccionada) {
+      // Formatear para el cartStore
+      const productForCart = {
+        id: cartProduct.id,
+        name: cartProduct.nombre || cartProduct.name,
+        price:
+          cartProduct.precioUnitario || cartProduct.precio || cartProduct.price,
+        image:
+          cartProduct.imagen || cartProduct.image || '/placeholder-product.jpg',
+        maxStock: cartProduct.stock || 50,
+        supplier:
+          cartProduct.proveedor || cartProduct.supplier || cartProduct.provider,
+        originalPrice: cartProduct.precioOriginal,
+        // Información adicional de tramos
+        tierPrice: cartProduct.precioUnitario,
+        appliedTier: cartProduct.tramoAplicado,
+        totalPrice: cartProduct.precioTotal,
+      }
+
+      addItem(productForCart, cartProduct.cantidadSeleccionada)
+      // No mostrar toast aquí porque el cartStore ya lo maneja
+    } else {
+      // Fallback para producto básico (sin tramos calculados)
+      const basicProduct = cartProduct || product
+      const productForCart = {
+        id: basicProduct.id,
+        name: basicProduct.nombre || basicProduct.name,
+        price: basicProduct.precio || basicProduct.price,
+        image:
+          basicProduct.imagen ||
+          basicProduct.image ||
+          '/placeholder-product.jpg',
+        maxStock: basicProduct.stock || 50,
+        supplier:
+          basicProduct.proveedor ||
+          basicProduct.supplier ||
+          basicProduct.provider,
+      }
+
+      addItem(productForCart, 1)
+      // No mostrar toast aquí porque el cartStore ya lo maneja
+    }
   }
+  const handleBuyNow = (cartProduct) => {
+    // Verificar sesión (nueva lógica)
+    const userId = localStorage.getItem('user_id')
+    const accountType = localStorage.getItem('account_type')
 
-  const handleBuyNow = (product) => {
+    // Verificar también las claves antiguas por compatibilidad
     const supplierid = localStorage.getItem('supplierid')
     const sellerid = localStorage.getItem('sellerid')
-    const isLoggedIn = !!(supplierid || sellerid)
+
+    const isLoggedIn = !!(userId || supplierid || sellerid)
 
     if (!isLoggedIn) {
+      toast.error('Debes iniciar sesión para comprar productos', {
+        icon: '🔒',
+      })
       // Disparar evento para abrir Login modal
       const event = new CustomEvent('openLogin')
       window.dispatchEvent(event)
       return
     }
 
-    // TODO: Implementar lógica de comprar ahora
-    console.log('Comprando ahora:', product)
+    // Primero agregar al carrito
+    handleAddToCart(cartProduct)
+
+    // TODO: Navegar a checkout o proceso de compra inmediata
+    console.log('Comprando ahora:', cartProduct || product)
   }
   // ============================================================================
   // RETORNO DEL HOOK

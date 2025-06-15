@@ -20,6 +20,7 @@ import ContactModal from '../ui/ContactModal'
 export default function BaseTopBar({
   navigationButtons = [],
   authButtons = {},
+  customRightElement = null, // Nuevo prop para elementos especiales sin envolver
   onNavigate,
   showContactModal = true,
   logoMarginLeft = {
@@ -234,22 +235,17 @@ export default function BaseTopBar({
                 Iniciar sesión
               </Button>
             )
-          )}
-          {authButtons.register ? (
-            typeof authButtons.register.label?.type === 'function' &&
-            authButtons.register.label.type.name === 'IconButton' ? (
-              React.cloneElement(authButtons.register.label, {
-                onClick: authButtons.register.onClick,
-                sx: authButtons.register.customStyles,
-              })
-            ) : (
-              <Button
-                onClick={authButtons.register.onClick}
-                sx={authButtons.register.customStyles}
-              >
-                {authButtons.register.label}
-              </Button>
-            )
+          )}{' '}
+          {/* Si hay un customRightElement, lo renderizamos directamente sin envolver */}
+          {customRightElement ? (
+            customRightElement
+          ) : authButtons.register ? (
+            <Button
+              onClick={authButtons.register.onClick}
+              sx={authButtons.register.customStyles}
+            >
+              {authButtons.register.label}
+            </Button>
           ) : (
             !isLoggedIn && (
               <Button
@@ -267,7 +263,7 @@ export default function BaseTopBar({
               </Button>
             )
           )}
-          {!authButtons.register && isLoggedIn && (
+          {!customRightElement && !authButtons.register && isLoggedIn && (
             <IconButton
               onClick={openProfileMenu}
               sx={{

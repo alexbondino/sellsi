@@ -41,7 +41,7 @@ const ProviderHome = () => {
       >
         <Container maxWidth="xl" disableGutters>
           <Grid container spacing={3}>
-            <Grid item xs={12}>
+            <Grid size={12}>
               <Box sx={{ mb: 4 }}>
                 <DashboardSummary
                   products={products}

@@ -51,8 +51,9 @@ const SaleConditions = ({ product }) => {
           alignItems: 'stretch',
         }}
       >
+        {' '}
         {conditions.map((condition, index) => (
-          <Grid item xs={12} sm={6} md={3} key={index} sx={{ display: 'flex' }}>
+          <Grid xs={12} sm={6} md={3} key={index} sx={{ display: 'flex' }}>
             {' '}
             <Card
               elevation={1}

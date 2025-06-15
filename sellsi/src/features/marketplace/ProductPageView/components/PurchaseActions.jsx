@@ -7,26 +7,45 @@ import {
   IconButton,
   Divider,
 } from '@mui/material'
-import { ShoppingCart, Add, Remove, FlashOn } from '@mui/icons-material'
+import { ShoppingCart, Add, Remove } from '@mui/icons-material'
+import { toast } from 'react-hot-toast'
+import { formatProductForCart } from '../../../../utils/priceCalculation'
 
-const PurchaseActions = ({ onAddToCart, onBuyNow, stock }) => {
+const PurchaseActions = ({
+  onAddToCart,
+  stock,
+  product,
+  tiers = [],
+  isLoggedIn = false,
+}) => {
   const [quantity, setQuantity] = useState(1)
-
   const handleQuantityChange = (newQuantity) => {
     if (newQuantity >= 1 && newQuantity <= stock) {
       setQuantity(newQuantity)
     }
   }
-
   const handleAddToCart = () => {
-    if (onAddToCart) {
-      onAddToCart({ quantity })
-    }
-  }
+    if (onAddToCart && product) {
+      console.log(
+        '🛒 DEBUG ProductPageView - Producto antes de formatear:',
+        product
+      )
+      console.log(
+        '🛒 DEBUG ProductPageView - Campo imagen del producto:',
+        product.imagen
+      )
+      console.log(
+        '🛒 DEBUG ProductPageView - Campo image del producto:',
+        product.image
+      )
 
-  const handleBuyNow = () => {
-    if (onBuyNow) {
-      onBuyNow({ quantity })
+      const cartProduct = formatProductForCart(product, quantity, tiers)
+
+      console.log(
+        '🛒 DEBUG ProductPageView - Producto formateado para carrito:',
+        cartProduct
+      )
+      onAddToCart(cartProduct)
     }
   }
 
@@ -88,54 +107,39 @@ const PurchaseActions = ({ onAddToCart, onBuyNow, stock }) => {
           </Typography>
         </Box>
       </Box>
-
-      <Divider sx={{ mb: 3 }} />
-
-      {/* Action Buttons */}
+      <Divider sx={{ mb: 3 }} /> {/* Action Buttons */}
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-        {/* Buy Now Button */}
+        {/* Add to Cart Button */}
         <Button
           variant="contained"
           size="large"
           fullWidth
-          startIcon={<FlashOn />}
-          onClick={handleBuyNow}
+          startIcon={<ShoppingCart />}
+          onClick={handleAddToCart}
+          disabled={!isLoggedIn}
           sx={{
             py: 1.5,
             fontSize: '1.1rem',
             fontWeight: 700,
-            background: 'linear-gradient(135deg, #1976d2 0%, #42a5f5 100%)',
-            boxShadow: '0 4px 16px rgba(25, 118, 210, 0.3)',
+            background: isLoggedIn
+              ? 'linear-gradient(135deg, #1976d2 0%, #42a5f5 100%)'
+              : 'rgba(0,0,0,0.12)',
+            color: isLoggedIn ? 'white' : 'rgba(0,0,0,0.26)',
+            boxShadow: isLoggedIn
+              ? '0 4px 16px rgba(25, 118, 210, 0.3)'
+              : 'none',
             '&:hover': {
-              background: 'linear-gradient(135deg, #1565c0 0%, #1976d2 100%)',
-              boxShadow: '0 6px 20px rgba(25, 118, 210, 0.4)',
-              transform: 'translateY(-2px)',
+              background: isLoggedIn
+                ? 'linear-gradient(135deg, #1565c0 0%, #1976d2 100%)'
+                : 'rgba(0,0,0,0.12)',
+              boxShadow: isLoggedIn
+                ? '0 6px 20px rgba(25, 118, 210, 0.4)'
+                : 'none',
+              transform: isLoggedIn ? 'translateY(-2px)' : 'none',
             },
           }}
         >
-          Comprar Ahora
-        </Button>
-
-        {/* Add to Cart Button */}
-        <Button
-          variant="outlined"
-          size="large"
-          fullWidth
-          startIcon={<ShoppingCart />}
-          onClick={handleAddToCart}
-          sx={{
-            py: 1.5,
-            fontSize: '1rem',
-            fontWeight: 600,
-            borderWidth: 2,
-            '&:hover': {
-              borderWidth: 2,
-              transform: 'translateY(-1px)',
-              boxShadow: '0 4px 12px rgba(25, 118, 210, 0.2)',
-            },
-          }}
-        >
-          Agregar al Carrito
+          {isLoggedIn ? 'Agregar al Carrito' : 'Inicia sesión para agregar'}
         </Button>
       </Box>
     </Box>

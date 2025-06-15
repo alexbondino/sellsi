@@ -8,6 +8,14 @@
  * @returns {string} - URL-friendly slug
  */
 export const createProductSlug = (productName) => {
+  if (!productName || typeof productName !== 'string') {
+    console.warn(
+      'createProductSlug: productName is not a valid string:',
+      productName
+    )
+    return 'producto-sin-nombre'
+  }
+
   return productName
     .toLowerCase()
     .replace(/[áàäâ]/g, 'a')
@@ -29,8 +37,18 @@ export const createProductSlug = (productName) => {
  * @returns {string} - Complete slug for URL (name-id)
  */
 export const generateProductSlug = (product) => {
-  const nameSlug = createProductSlug(product.nombre)
-  return `${nameSlug}-${product.id}`
+  if (!product) {
+    console.warn('generateProductSlug: product is null or undefined')
+    return 'producto-sin-datos'
+  }
+
+  // Intentar varios campos posibles para el nombre
+  const productName =
+    product.nombre || product.name || product.productnm || 'Producto sin nombre'
+  const productId = product.id || product.productid || 'sin-id'
+
+  const nameSlug = createProductSlug(productName)
+  return `${nameSlug}-${productId}`
 }
 
 /**

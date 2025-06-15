@@ -39,42 +39,40 @@ export default function MarketplaceTopBar() {
   const handleGoToCart = () => {
     navigate('/buyer/cart')
   }
-
   // El botón de perfil ahora abre el menú
   const profileButton = (
-    <IconButton
-      onClick={openProfileMenu}
-      sx={{
-        minWidth: '50px',
-        width: '50px',
-        height: '50px',
-        borderRadius: '50%',
-        border: '2px solid rgb(253, 253, 253)',
-        backgroundColor: 'rgba(255, 255, 255, 0.08)',
-        backdropFilter: 'blur(12px)',
-        boxShadow:
-          '0 0 0 1px rgba(25, 118, 210, 0.2), 0 4px 12px rgba(25, 118, 210, 0.15), 0 0 20px rgba(25, 118, 210, 0.1)',
-        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-        '&:hover': {
-          border: '2px solid rgba(25, 118, 210, 0.7)',
-          backgroundColor: 'rgba(255, 255, 255, 0.12)',
+    <Tooltip title="Ir a mi perfil" arrow>
+      <IconButton
+        onClick={openProfileMenu}
+        sx={{
+          minWidth: '50px',
+          width: '50px',
+          height: '50px',
+          borderRadius: '50%',
+          border: '2px solid rgb(253, 253, 253)',
+          backgroundColor: 'rgba(255, 255, 255, 0.08)',
+          backdropFilter: 'blur(12px)',
           boxShadow:
-            '0 0 0 2px rgba(25, 118, 210, 0.3), 0 6px 16px rgba(25, 118, 210, 0.25), 0 0 30px rgba(25, 118, 210, 0.2)',
-          transform: 'scale(1.05)',
-        },
-        '&:active': {
-          transform: 'scale(0.98)',
-          boxShadow:
-            '0 0 0 1px rgba(25, 118, 210, 0.4), 0 2px 8px rgba(25, 118, 210, 0.2)',
-        },
-      }}
-    >
-      <Tooltip title="Ir a mi perfil" arrow>
+            '0 0 0 1px rgba(25, 118, 210, 0.2), 0 4px 12px rgba(25, 118, 210, 0.15), 0 0 20px rgba(25, 118, 210, 0.1)',
+          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+          '&:hover': {
+            border: '2px solid rgba(25, 118, 210, 0.7)',
+            backgroundColor: 'rgba(255, 255, 255, 0.12)',
+            boxShadow:
+              '0 0 0 2px rgba(25, 118, 210, 0.3), 0 6px 16px rgba(25, 118, 210, 0.25), 0 0 30px rgba(25, 118, 210, 0.2)',
+            transform: 'scale(1.05)',
+          },
+          '&:active': {
+            transform: 'scale(0.98)',
+            boxShadow:
+              '0 0 0 1px rgba(25, 118, 210, 0.4), 0 2px 8px rgba(25, 118, 210, 0.2)',
+          },
+        }}
+      >
         <PersonIcon fontSize="large" />
-      </Tooltip>
-    </IconButton>
+      </IconButton>
+    </Tooltip>
   )
-
   const navigationButtons = []
   const authButtons = {
     login: {
@@ -132,23 +130,15 @@ export default function MarketplaceTopBar() {
         },
       },
     },
-    register: {
-      label: profileButton,
-      onClick: openProfileMenu,
-      customStyles: {
-        minWidth: '50px',
-        width: '50px',
-        height: '50px',
-        borderRadius: '50%',
-      },
-    },
   }
 
   return (
     <>
+      {' '}
       <BaseTopBar
         navigationButtons={navigationButtons}
         authButtons={authButtons}
+        customRightElement={profileButton} // Pasar el botón de perfil como elemento especial
         onNavigate={null} // No hay navegación interna
         showContactModal={false} // No mostrar modal de contacto en Marketplace
         logoMarginLeft={{

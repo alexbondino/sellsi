@@ -366,7 +366,7 @@ const PDFUploader = ({
 
           <Grid container spacing={2}>
             {documents.map((document) => (
-              <Grid item xs={12} sm={6} md={4} key={document.id}>
+              <Grid size={{ xs: 12, sm: 6, md: 4 }} key={document.id}>
                 <Card
                   elevation={2}
                   sx={{

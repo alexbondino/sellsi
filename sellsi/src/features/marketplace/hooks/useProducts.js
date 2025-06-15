@@ -1,11 +1,6 @@
 import { useState, useEffect } from 'react'
-import { createClient } from '@supabase/supabase-js'
+import { supabase } from '../../../services/supabase'
 import { PRODUCTOS } from '../products'
-
-// Configuración de Supabase (ajusta con tus claves reales)
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
-const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
 const USE_MOCKS = import.meta.env.VITE_USE_MOCKS === 'true'
 
@@ -80,11 +75,11 @@ export function useProducts() {
                   imagenPrincipal = p.product_images[0].image_url
                 }
               }
-
               return {
                 id: p.productid,
                 productid: p.productid, // ✅ Agregar productid explícito
-                supplier_id: p.supplier_id, // ✅ Agregar supplier_id explícito                nombre: p.productnm,
+                supplier_id: p.supplier_id, // ✅ Agregar supplier_id explícito
+                nombre: p.productnm,
                 proveedor: usersMap[p.supplier_id] || p.supplier_id,
                 imagen: imagenPrincipal,
                 precio: minPrice,

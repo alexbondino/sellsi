@@ -1,23 +1,14 @@
-import React, { useState } from 'react'
+import React from 'react'
 import {
   Card,
   CardMedia,
   CardContent,
-  CardActions,
   Typography,
   Box,
   Chip,
-  IconButton,
-  Menu,
-  MenuItem,
-  ListItemIcon,
-  ListItemText,
-  Tooltip,
-  Badge,
   alpha,
 } from '@mui/material'
 import {
-  MoreVert as MoreVertIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
   Visibility as VisibilityIcon,
@@ -26,6 +17,12 @@ import {
 } from '@mui/icons-material'
 import { formatPrice } from '../../marketplace/utils/formatters'
 import { getProductImageUrl } from '../../../utils/getProductImageUrl'
+import {
+  ActionMenu,
+  ProductBadges,
+  StatusChip,
+  STOCK_STATUS_CONFIG,
+} from '../../ui'
 
 /**
  * SupplierProductCard - Tarjeta de producto para la vista del proveedor
@@ -39,9 +36,6 @@ const SupplierProductCard = ({
   isDeleting = false,
   isUpdating = false,
 }) => {
-  const [anchorEl, setAnchorEl] = useState(null)
-  const open = Boolean(anchorEl)
-
   if (!product) {
     return null
   }
@@ -67,50 +61,52 @@ const SupplierProductCard = ({
     priceTiers = [],
   } = product
 
-  const handleMenuOpen = (event) => {
-    event.stopPropagation()
-    setAnchorEl(event.currentTarget)
-  }
+  // Configurar acciones del menú
+  const menuActions = [
+    {
+      icon: <EditIcon />,
+      label: 'Editar producto',
+      onClick: () => onEdit?.(product),
+      disabled: isUpdating,
+    },
+    {
+      icon: <VisibilityIcon />,
+      label: 'Ver estadísticas',
+      onClick: () => onViewStats?.(product),
+    },
+    {
+      icon: <DeleteIcon />,
+      label: 'Eliminar producto',
+      onClick: () => onDelete?.(product),
+      disabled: isDeleting,
+      color: 'error',
+    },
+  ]
 
-  const handleMenuClose = () => {
-    setAnchorEl(null)
-  }
+  // Configurar badges del producto
+  const productBadges = []
 
-  const handleEdit = () => {
-    handleMenuClose()
-    if (onEdit) {
-      onEdit(product)
-    }
-  }
-
-  const handleDelete = () => {
-    handleMenuClose()
-    if (onDelete) {
-      onDelete(product)
-    }
-  }
-
-  const handleViewStats = () => {
-    handleMenuClose()
-    if (onViewStats) {
-      onViewStats(product)
-    }
-  }
-
-  // Determinar estado del stock
-  const getStockStatus = () => {
-    if (stock === 0) return { label: 'Agotado', color: 'error' }
-    if (stock < 10) return { label: 'Stock bajo', color: 'warning' }
-    return { label: 'En stock', color: 'success' }
-  }
-
-  const stockStatus = getStockStatus()
-
-  // Determinar si es producto nuevo (menos de 7 días)
+  // Badge de producto nuevo
   const isNew = () => {
     if (!updatedAt) return false
     const daysDiff = (new Date() - new Date(updatedAt)) / (1000 * 60 * 60 * 24)
     return daysDiff < 7
+  }
+
+  if (isNew()) {
+    productBadges.push({
+      label: 'Nuevo',
+      color: 'primary',
+      condition: true,
+    })
+  }
+
+  if (descuento > 0) {
+    productBadges.push({
+      label: `-${descuento}%`,
+      color: 'error',
+      condition: true,
+    })
   }
 
   return (
@@ -135,54 +131,16 @@ const SupplierProductCard = ({
         },
       }}
     >
-      {/* Badges superpuestos */}
-      <Box sx={{ position: 'absolute', top: 8, left: 8, zIndex: 2 }}>
-        {isNew() && (
-          <Chip
-            label="Nuevo"
-            size="small"
-            color="primary"
-            sx={{
-              fontWeight: 600,
-              fontSize: '0.7rem',
-              height: 20,
-              mb: 0.5,
-              display: 'block',
-            }}
-          />
-        )}
-        {descuento > 0 && (
-          <Chip
-            label={`-${descuento}%`}
-            size="small"
-            color="error"
-            sx={{
-              fontWeight: 600,
-              fontSize: '0.7rem',
-              height: 20,
-            }}
-          />
-        )}
-      </Box>
+      {' '}
+      {/* Badges del producto */}
+      <ProductBadges badges={productBadges} position="top-left" />
       {/* Menú de acciones */}
       <Box sx={{ position: 'absolute', top: 8, right: 8, zIndex: 2 }}>
-        <Tooltip title="Más opciones">
-          <IconButton
-            onClick={handleMenuOpen}
-            disabled={isDeleting || isUpdating}
-            sx={{
-              bgcolor: 'rgba(255, 255, 255, 0.9)',
-              backdropFilter: 'blur(8px)',
-              '&:hover': {
-                bgcolor: 'rgba(255, 255, 255, 1)',
-                transform: 'scale(1.1)',
-              },
-              transition: 'all 0.2s ease',
-            }}
-          >
-            <MoreVertIcon />
-          </IconButton>
-        </Tooltip>
+        <ActionMenu
+          actions={menuActions}
+          disabled={isDeleting || isUpdating}
+          tooltip="Opciones del producto"
+        />
       </Box>{' '}
       {/* Imagen del producto */}
       <CardMedia
@@ -219,7 +177,6 @@ const SupplierProductCard = ({
             height: 20,
           }}
         />
-
         {/* Nombre del producto */}
         <Typography
           variant="h6"
@@ -237,7 +194,6 @@ const SupplierProductCard = ({
         >
           {nombre}
         </Typography>
-
         {/* Precios */}
         <Box sx={{ mb: 2 }}>
           {/* Mostrar tramos si existen */}
@@ -296,8 +252,7 @@ const SupplierProductCard = ({
               sx={{ fontSize: '0.7rem', height: 20 }}
             />
           )}
-        </Box>
-
+        </Box>{' '}
         {/* Estados y métricas */}
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
           {/* Stock */}
@@ -306,12 +261,26 @@ const SupplierProductCard = ({
             <Typography variant="body2" color="text.secondary">
               Stock:
             </Typography>
-            <Chip
-              label={`${stock} unidades`}
+            <StatusChip
+              value={stock}
+              statusConfig={[
+                {
+                  condition: (stock) => stock === 0,
+                  label: 'Agotado',
+                  color: 'error',
+                },
+                {
+                  condition: (stock) => stock > 0 && stock < 10,
+                  label: `${stock} unidades`,
+                  color: 'warning',
+                },
+                {
+                  condition: (stock) => stock >= 10,
+                  label: `${stock} unidades`,
+                  color: 'success',
+                },
+              ]}
               size="small"
-              color={stockStatus.color}
-              variant="filled"
-              sx={{ fontSize: '0.7rem', height: 18 }}
             />
           </Box>
 
@@ -329,58 +298,6 @@ const SupplierProductCard = ({
           </Typography>
         </Box>
       </CardContent>
-      {/* Menú contextual */}{' '}
-      <Menu
-        anchorEl={anchorEl}
-        open={open}
-        onClose={handleMenuClose}
-        disableScrollLock={true}
-        anchorOrigin={{
-          vertical: 'bottom',
-          horizontal: 'right',
-        }}
-        transformOrigin={{
-          vertical: 'top',
-          horizontal: 'right',
-        }}
-        PaperProps={{
-          elevation: 8,
-          sx: {
-            mt: 1,
-            borderRadius: 2,
-            minWidth: 180,
-          },
-        }}
-      >
-        <MenuItem onClick={handleViewStats}>
-          <ListItemIcon>
-            <VisibilityIcon fontSize="small" />
-          </ListItemIcon>
-          <ListItemText>Ver estadísticas</ListItemText>
-        </MenuItem>
-
-        <MenuItem onClick={handleEdit} disabled={isUpdating}>
-          <ListItemIcon>
-            <EditIcon fontSize="small" />
-          </ListItemIcon>
-          <ListItemText>
-            {isUpdating ? 'Actualizando...' : 'Editar producto'}
-          </ListItemText>
-        </MenuItem>
-
-        <MenuItem
-          onClick={handleDelete}
-          disabled={isDeleting}
-          sx={{ color: 'error.main' }}
-        >
-          <ListItemIcon>
-            <DeleteIcon fontSize="small" color="error" />
-          </ListItemIcon>
-          <ListItemText>
-            {isDeleting ? 'Eliminando...' : 'Eliminar producto'}
-          </ListItemText>
-        </MenuItem>
-      </Menu>
     </Card>
   )
 }

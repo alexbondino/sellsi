@@ -276,8 +276,9 @@ const ServicesSection = ({ serviciosRef }) => {
                   justifyContent="center"
                   sx={{ width: '100%' }}
                 >
+                  {' '}
                   {/* ✅ FILA 1: BOTONES DE SERVICIOS - GRID PURO */}
-                  <Grid item xs={12} sx={{ width: '100%' }}>
+                  <Grid size={12} sx={{ width: '100%' }}>
                     <Grid
                       container
                       direction="row"

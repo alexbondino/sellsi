@@ -1,15 +1,15 @@
-import React, { useState } from 'react';
-import { Box, Typography, IconButton, Grid, Divider } from '@mui/material';
-import LinkedInIcon from '@mui/icons-material/LinkedIn';
-import InstagramIcon from '@mui/icons-material/Instagram';
-import WhatsAppIcon from '@mui/icons-material/WhatsApp';
-import ContactModal from '../ui/ContactModal';
+import React, { useState } from 'react'
+import { Box, Typography, IconButton, Divider, Grid } from '@mui/material'
+import LinkedInIcon from '@mui/icons-material/LinkedIn'
+import InstagramIcon from '@mui/icons-material/Instagram'
+import WhatsAppIcon from '@mui/icons-material/WhatsApp'
+import ContactModal from '../ui/ContactModal'
 
 const BottomBar = () => {
-  const [openContactModal, setOpenContactModal] = useState(false);
+  const [openContactModal, setOpenContactModal] = useState(false)
 
-  const handleOpenContact = () => setOpenContactModal(true);
-  const handleCloseContact = () => setOpenContactModal(false);
+  const handleOpenContact = () => setOpenContactModal(true)
+  const handleCloseContact = () => setOpenContactModal(false)
 
   return (
     <Box
@@ -32,9 +32,10 @@ const BottomBar = () => {
           color: '#fff',
         }}
       >
+        {' '}
         <Grid container spacing={4}>
           {/* Logo y eslogan */}
-          <Grid item xs={12} md={4}>
+          <Grid sx={{ xs: 12, md: 4 }}>
             <Box sx={{ mb: 3 }}>
               <Box
                 sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}
@@ -68,11 +69,10 @@ const BottomBar = () => {
                 La plataforma que conecta proveedores con vendedores de manera
                 sencilla y eficiente.
               </Typography>
-            </Box>
-          </Grid>
-
+            </Box>{' '}
+          </Grid>{' '}
           {/* Navegación */}
-          <Grid item xs={12} sm={6} md={2}>
+          <Grid sx={{ xs: 12, sm: 6, md: 2 }}>
             <Typography
               variant="h6"
               sx={{
@@ -126,11 +126,10 @@ const BottomBar = () => {
               >
                 Contáctanos
               </Typography>
-            </Box>
-          </Grid>
-
+            </Box>{' '}
+          </Grid>{' '}
           {/* Servicios */}
-          <Grid item xs={12} sm={6} md={2}>
+          <Grid sx={{ xs: 12, sm: 6, md: 2 }}>
             <Typography
               variant="h6"
               sx={{
@@ -183,11 +182,10 @@ const BottomBar = () => {
               >
                 Para Compradores
               </Typography>
-            </Box>
-          </Grid>
-
+            </Box>{' '}
+          </Grid>{' '}
           {/* Soporte */}
-          <Grid item xs={12} sm={6} md={2}>
+          <Grid sx={{ xs: 12, sm: 6, md: 2 }}>
             <Typography
               variant="h6"
               sx={{
@@ -241,10 +239,9 @@ const BottomBar = () => {
                 Política de Privacidad
               </Typography>
             </Box>
-          </Grid>
-
-          {/* Redes Sociales */}
-          <Grid item xs={12} sm={6} md={2}>
+          </Grid>{' '}
+          {/* Redes Sociales */}{' '}
+          <Grid sx={{ xs: 12, sm: 6, md: 2 }}>
             <Typography
               variant="h6"
               sx={{
@@ -304,10 +301,8 @@ const BottomBar = () => {
             </Box>
           </Grid>
         </Grid>
-
         {/* Divider */}
         <Divider sx={{ my: 4, borderColor: '#333' }} />
-
         {/* Copyright */}
         <Box sx={{ textAlign: 'center' }}>
           <Typography
@@ -325,7 +320,7 @@ const BottomBar = () => {
       {/* Modal de Contacto */}
       <ContactModal open={openContactModal} onClose={handleCloseContact} />
     </Box>
-  );
-};
+  )
+}
 
-export default BottomBar;
+export default BottomBar

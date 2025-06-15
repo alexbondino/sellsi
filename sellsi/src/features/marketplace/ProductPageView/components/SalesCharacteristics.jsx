@@ -43,7 +43,7 @@ const SalesCharacteristics = ({ product }) => {
       >
         {' '}
         {formattedData.map((char, index) => (
-          <Grid item xs={12} sm={6} md={4} key={index} sx={{ display: 'flex' }}>
+          <Grid xs={12} sm={6} md={4} key={index} sx={{ display: 'flex' }}>
             <Card
               elevation={2}
               sx={{

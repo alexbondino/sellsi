@@ -14,6 +14,7 @@ import {
   TableRow,
   Paper,
   IconButton,
+  Button,
   Tooltip,
   CircularProgress,
 } from '@mui/material'
@@ -34,7 +35,7 @@ const ProductHeader = ({
   selectedImageIndex,
   onImageSelect,
   onAddToCart,
-  onBuyNow,
+  isLoggedIn,
 }) => {
   const {
     nombre,
@@ -46,21 +47,39 @@ const ProductHeader = ({
     compraMinima,
     descripcion = 'Producto de alta calidad con excelentes características y garantía de satisfacción.',
   } = product
-
   const {
     tiers,
     loading: loadingTiers,
     error: errorTiers,
   } = useProductPriceTiers(product.id)
 
-  const [copied, setCopied] = useState({ name: false, price: false })
+  // Usar tramos del producto si existen, sino usar los del hook
+  const finalTiers = product.priceTiers || tiers || []
 
+  const [copied, setCopied] = useState({ name: false, price: false })
   // Función para copiar texto al portapapeles y mostrar feedback
   const handleCopy = (type, value) => {
     navigator.clipboard.writeText(value).then(() => {
       setCopied((prev) => ({ ...prev, [type]: true }))
       setTimeout(() => setCopied((prev) => ({ ...prev, [type]: false })), 1200)
     })
+  }
+
+  // Función para generar el formato CSV de todos los tramos
+  const generateTiersCSV = (tiers) => {
+    const header = 'Cantidad mínima,Precio unitario'
+    const rows = tiers.map(
+      (tier) => `${tier.min_quantity},$${tier.price.toLocaleString('es-CL')}`
+    )
+    return [header, ...rows].join('\n')
+  }
+
+  // Función para copiar todos los tramos en formato CSV
+  const handleCopyAllTiers = () => {
+    if (tiers && tiers.length > 0) {
+      const csvContent = generateTiersCSV(tiers)
+      handleCopy('allTiers', csvContent)
+    }
   }
 
   // Lógica para mostrar precios y tramos
@@ -139,89 +158,50 @@ const ProductHeader = ({
                   <TableRow hover sx={{ cursor: 'help' }}>
                     <TableCell align="center" sx={{ fontWeight: 600 }}>
                       {tier.min_quantity} - {tier.max_quantity} uds
-                    </TableCell>
-                    <TableCell align="center" sx={{ position: 'relative' }}>
-                      <Box
-                        sx={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          gap: 0.5,
-                        }}
-                      >
-                        <Typography color="primary" fontWeight={700}>
-                          ${tier.price.toLocaleString('es-CL')}
-                        </Typography>
-                        <Tooltip
-                          title={`Copiar precio: $${tier.price.toLocaleString(
-                            'es-CL'
-                          )}`}
-                          arrow
-                        >
-                          <IconButton
-                            size="small"
-                            sx={{
-                              ml: 0.5,
-                              boxShadow: 'none',
-                              outline: 'none',
-                              bgcolor: 'transparent',
-                              '&:hover': {
-                                bgcolor: 'rgba(0,0,0,0.04)',
-                                boxShadow: 'none',
-                                outline: 'none',
-                              },
-                              '&:active': {
-                                boxShadow: 'none !important',
-                                outline: 'none !important',
-                                background: 'rgba(0,0,0,0.04) !important',
-                              },
-                              '&:focus': {
-                                boxShadow: 'none !important',
-                                outline: 'none !important',
-                                background: 'rgba(0,0,0,0.04) !important',
-                              },
-                              '&:focus-visible': {
-                                boxShadow: 'none !important',
-                                outline: 'none !important',
-                                background: 'rgba(0,0,0,0.04) !important',
-                              },
-                            }}
-                            onClick={() =>
-                              handleCopy(
-                                'price',
-                                tier.price.toLocaleString('es-CL')
-                              )
-                            }
-                          >
-                            <ContentCopyIcon fontSize="inherit" />
-                          </IconButton>
-                        </Tooltip>
-                        <Box
-                          sx={{
-                            width: 24,
-                            height: 24,
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                          }}
-                        >
-                          <CheckCircleOutlineIcon
-                            color="success"
-                            fontSize="small"
-                            sx={{
-                              visibility: copied.price ? 'visible' : 'hidden',
-                              transition: 'visibility 0.2s',
-                            }}
-                          />
-                        </Box>
-                      </Box>
+                    </TableCell>{' '}
+                    <TableCell align="center">
+                      <Typography color="primary" fontWeight={700}>
+                        ${tier.price.toLocaleString('es-CL')}
+                      </Typography>
                     </TableCell>
                   </TableRow>
                 </Tooltip>
-              ))}
+              ))}{' '}
             </TableBody>
           </Table>
         </TableContainer>
+
+        {/* Botón para copiar todos los tramos */}
+        <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
+          <Button
+            variant="outlined"
+            size="small"
+            startIcon={<ContentCopyIcon />}
+            onClick={handleCopyAllTiers}
+            sx={{
+              textTransform: 'none',
+              borderRadius: 2,
+              px: 2,
+              py: 0.5,
+              fontSize: '0.875rem',
+              transition: 'all 0.2s ease',
+              '&:hover': {
+                backgroundColor: 'primary.main',
+                color: 'white',
+                borderColor: 'primary.main',
+              },
+            }}
+          >
+            {copied.allTiers ? (
+              <>
+                <CheckCircleOutlineIcon fontSize="small" sx={{ mr: 0.5 }} />
+                ¡Copiado!
+              </>
+            ) : (
+              'Copiar todos los precios'
+            )}
+          </Button>
+        </Box>
       </Box>
     )
   } else {
@@ -327,24 +307,27 @@ const ProductHeader = ({
     }
     return '/placeholder-product.jpg'
   }
-
   return (
-    <Grid container spacing={12} sx={{ alignItems: 'flex-end' }}>
+    <Grid
+      container
+      spacing={8}
+      sx={{ alignItems: 'flex-end', maxWidth: '1400px', mx: 'auto' }}
+    >
       {/* Imagen del Producto */}
       <Grid
-        item
         xs={12}
         sm={6}
         md={6}
         lg={5}
         sx={{ display: 'flex', justifyContent: 'right' }}
       >
+        {' '}
         <Box
           sx={{
             display: 'flex',
             alignItems: 'center',
             minHeight: '600px',
-            ml: { xs: 0, sm: 2, md: 0, lg: 32, xl: 28 },
+            ml: { xs: 0, sm: 2, md: 0, lg: 16, xl: 20 }, // Reducir el margin left
             p: { xs: 1, sm: 2 },
           }}
         >
@@ -356,16 +339,17 @@ const ProductHeader = ({
             productName={nombre}
           />
         </Box>
-      </Grid>
+      </Grid>{' '}
       {/* Información del Producto */}
       <Grid
-        item
         xs={12}
         sm={6}
         md={6}
         lg={7}
+        xl={6}
         sx={{ display: 'flex', justifyContent: 'center' }}
       >
+        {' '}
         <Box
           sx={{
             height: '100%',
@@ -374,7 +358,8 @@ const ProductHeader = ({
             justifyContent: 'flex-start',
             alignItems: 'center',
             textAlign: 'center',
-            px: { xs: 2, sm: 2, md: -5 },
+            px: { xs: 2, sm: 2, md: 1 },
+            maxWidth: { lg: 450, xl: 500 }, // Reducir el ancho máximo
           }}
         >
           {/* Nombre del Producto */}
@@ -509,12 +494,14 @@ const ProductHeader = ({
             ) : (
               <StockIndicator stock={stock} showUnits={true} />
             )}
-          </Box>
-          {/* Botones de Compra */}
+          </Box>{' '}
+          {/* Botones de Compra */}{' '}
           <PurchaseActions
             onAddToCart={onAddToCart}
-            onBuyNow={onBuyNow}
             stock={stock}
+            product={product}
+            tiers={finalTiers}
+            isLoggedIn={isLoggedIn}
           />
         </Box>
       </Grid>

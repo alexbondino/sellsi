@@ -153,8 +153,7 @@ const TechnicalSpecs = () => {
             </Typography>
           </Breadcrumbs>
         </Container>
-      </Box>
-
+      </Box>{' '}
       {/* Product Page View */}
       <Box sx={{ pt: 0 }}>
         <ProductPageView
@@ -164,6 +163,7 @@ const TechnicalSpecs = () => {
           onBuyNow={handleBuyNow}
           isOpen={true}
           isPageView={true} // Flag para indicar que es una vista de página completa
+          loading={loading} // Pasar el estado de loading para activar skeletons
         />
       </Box>
     </Box>

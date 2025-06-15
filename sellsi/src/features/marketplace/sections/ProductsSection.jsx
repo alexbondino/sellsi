@@ -41,8 +41,7 @@ const ProductsSection = ({
   error,
 }) => {
   // Hook para usar el store del carrito
-  const addItem = useCartStore((state) => state.addItem)
-  // Función para manejar agregar al carrito
+  const addItem = useCartStore((state) => state.addItem) // Función para manejar agregar al carrito
   const handleAddToCart = (producto) => {
     // Convertir la estructura del producto al formato esperado por el store
     const productForCart = {
@@ -51,7 +50,7 @@ const ProductsSection = ({
       price: producto.precio,
       image: producto.imagen,
       maxStock: producto.stock || 50, // Usar stock disponible o valor por defecto
-      provider: producto.proveedor,
+      supplier: producto.proveedor || producto.supplier || producto.provider,
       // Añadir otros campos que pueda necesitar el store
       originalPrice: producto.precioOriginal,
       discount: producto.descuento,

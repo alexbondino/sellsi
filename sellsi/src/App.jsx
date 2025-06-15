@@ -276,38 +276,34 @@ function AppContent({ mensaje }) {
           <Route
             path="/technicalspecs/:productSlug"
             element={<TechnicalSpecs />}
-          />
+          />{' '}
           <Route path="/login" element={<Login />} />
           <Route path="/crear-cuenta" element={<Register />} />
-          {/* Solo renderizar rutas supplier si el usuario es supplier */}
-          {session && isBuyer === false && (
-            <>
-              <Route
-                path="/supplier/home"
-                element={
-                  <PrivateRoute requiredAccountType="proveedor">
-                    <ProviderHome />
-                  </PrivateRoute>
-                }
-              />
-              <Route
-                path="/supplier/myproducts"
-                element={
-                  <PrivateRoute requiredAccountType="proveedor">
-                    <MyProducts />
-                  </PrivateRoute>
-                }
-              />
-              <Route
-                path="/supplier/addproduct"
-                element={
-                  <PrivateRoute requiredAccountType="proveedor">
-                    <AddProduct />
-                  </PrivateRoute>
-                }
-              />
-            </>
-          )}
+          {/* Supplier routes - Always registered, PrivateRoute handles auth */}
+          <Route
+            path="/supplier/home"
+            element={
+              <PrivateRoute requiredAccountType="proveedor">
+                <ProviderHome />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/supplier/myproducts"
+            element={
+              <PrivateRoute requiredAccountType="proveedor">
+                <MyProducts />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/supplier/addproduct"
+            element={
+              <PrivateRoute requiredAccountType="proveedor">
+                <AddProduct />
+              </PrivateRoute>
+            }
+          />
         </Routes>
 
         {process.env.NODE_ENV === 'development' &&

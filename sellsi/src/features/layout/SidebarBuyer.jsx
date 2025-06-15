@@ -25,7 +25,7 @@ const SidebarBuyer = () => {
         position: 'fixed',
         top: '64px',
         left: 0,
-        width: '250px',
+        width: '210px',
         height: '100vh',
         backgroundColor: '#a3a3a3', // ✅ Cambiado de negro a gris
         color: 'black',
@@ -69,8 +69,8 @@ const SidebarBuyer = () => {
                   border: isActive
                     ? '2px solid rgba(0, 0, 0, 0.3)'
                     : '2px solid transparent',
-                  borderRadius: '8px',
-                  margin: '4px 12px',
+                  borderRadius: '4px',
+                  margin: '4px 4px',
                   width: '96%',
                   fontWeight: 'bold',
                   transition: 'all 0.3s ease',

@@ -2,7 +2,6 @@ import React from 'react'
 import {
   Box,
   Typography,
-  Grid,
   Chip,
   Stack,
   IconButton,
@@ -11,6 +10,7 @@ import {
   Button,
   Checkbox,
 } from '@mui/material'
+import Grid from '@mui/material/Grid'
 import {
   Inventory2 as InventoryIcon,
   MonetizationOn as MonetizationOnIcon,
@@ -73,9 +73,14 @@ const CartHeader = ({
     <Box sx={{ mb: 4, width: '100%' }}>
       {' '}
       <Grid container spacing={3} alignItems="center" justifyContent="left">
-        {' '}
         {/* Grid Item 1: Title and Chips */}
-        <Grid item xs={12} sm={8}>
+        <Grid
+          item
+          sx={{
+            xs: { width: '100%' },
+            sm: { width: '66.666667%' },
+          }}
+        >
           <Box sx={{ textAlign: { xs: 'center', md: 'left' } }}>
             {' '}
             <Typography
@@ -153,7 +158,14 @@ const CartHeader = ({
           </Box>{' '}
         </Grid>{' '}
         {/* Grid Item 2: Controls */}
-        <Grid item xs={12} sm={4} sx={{ ml: { md: 50 } }}>
+        <Grid
+          item
+          sx={{
+            xs: { width: '100%' },
+            sm: { width: '33.333333%' },
+            ml: { md: 50 },
+          }}
+        >
           <Stack
             direction="row"
             spacing={1}

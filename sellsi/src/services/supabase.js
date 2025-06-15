@@ -1,14 +1,6 @@
 // supabase.js
 import { createClient } from '@supabase/supabase-js'
 
-// Debug: Verificar que las variables de entorno se estén cargando
-console.log('🔍 Debugging environment variables:')
-console.log('VITE_SUPABASE_URL:', import.meta.env.VITE_SUPABASE_URL)
-console.log(
-  'VITE_SUPABASE_ANON_KEY exists:',
-  !!import.meta.env.VITE_SUPABASE_ANON_KEY
-)
-
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
 const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
@@ -31,8 +23,6 @@ export const supabase = createClient(supabaseUrl, supabaseKey)
 
 export const testAuth = async () => {
   try {
-    console.log('🔍 Testing Supabase auth...')
-
     // Test de autenticación - obtener usuario actual
     const {
       data: { user },
@@ -44,7 +34,6 @@ export const testAuth = async () => {
       return { success: false, error: error.message }
     }
 
-    console.log('✅ User:', user)
     return { success: true, user }
   } catch (error) {
     console.error('❌ Unexpected error:', error)
@@ -54,8 +43,6 @@ export const testAuth = async () => {
 
 export const testConnection = async () => {
   try {
-    console.log('🔍 Testing Supabase connection...')
-
     // Test simple de conexión
     const { data, error } = await supabase
       .from('users')

@@ -41,12 +41,6 @@ const FilterPanel = ({
   filtrosAbiertos = false,
   filterPosition = 'left', // Nueva prop para controlar posición
 }) => {
-  // Debug temporal
-  console.log('FilterPanel render:', {
-    filtrosAbiertos,
-    isMobileOpen,
-    timestamp: new Date().toLocaleTimeString(),
-  })
   const { handlePrecioChange, handleStockChange } = useProductFilters(
     filtros,
     updateFiltros

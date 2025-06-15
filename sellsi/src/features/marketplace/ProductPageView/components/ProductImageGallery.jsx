@@ -1,6 +1,8 @@
 import React from 'react'
 import { Box, Card, CardMedia } from '@mui/material'
 import { getProductImageUrl } from '../../../../utils/getProductImageUrl'
+import LazyImage from './LazyImage'
+import { useImagePreloader } from '../hooks/useLazyImage'
 
 const ProductImageGallery = ({
   images = [],
@@ -13,6 +15,9 @@ const ProductImageGallery = ({
     images.length > 0
       ? images.map(getProductImageUrl)
       : ['/placeholder-product.jpg']
+
+  // Precargar las primeras 3 imágenes para mejor UX
+  const { preloadedImages, isPreloading } = useImagePreloader(galleryImages)
   return (
     <Box
       sx={{
@@ -26,6 +31,7 @@ const ProductImageGallery = ({
         py: 2, // Vertical padding
       }}
     >
+      {' '}
       {/* Main Image */}
       <Card
         elevation={2}
@@ -33,8 +39,8 @@ const ProductImageGallery = ({
           mb: 2,
           overflow: 'hidden',
           borderRadius: 3,
-          width: '90%', // Reducir del 100% para crear espacio
-          maxWidth: 450, // Reducir ligeramente el máximo
+          width: 'fit-content', // Ajustar al contenido
+          maxWidth: 'none', // Sin límite máximo
           display: 'flex',
           justifyContent: 'center',
           mx: 'auto', // Margin auto horizontal para centrado adicional
@@ -45,11 +51,13 @@ const ProductImageGallery = ({
           image={galleryImages[selectedIndex]}
           alt={productName}
           sx={{
-            width: '100%',
-            height: { xs: 300, sm: 400, md: 500 },
+            width: 500, // Ancho fijo de 500px
+            height: 500, // Alto fijo de 500px
+            maxWidth: 500, // Evitar que se agrande
+            maxHeight: 500, // Evitar que se agrande
             objectFit: 'contain',
             bgcolor: '#fafafa',
-            p: 2,
+            p: 1.9, // Reducido de 2 a 1.9
           }}
         />
       </Card>{' '}
@@ -61,8 +69,9 @@ const ProductImageGallery = ({
           overflowX: 'auto',
           pb: 1,
           justifyContent: 'center',
-          width: '90%', // Matching main image width
-          maxWidth: 450, // Matching main image maxWidth
+          width: 480, // Ancho fijo de 480px
+          height: 95, // Altura fija de 95px
+          maxWidth: 480, // Máximo 480px
           alignItems: 'center',
           mx: 'auto', // Center the thumbnails container
         }}
@@ -72,8 +81,10 @@ const ProductImageGallery = ({
             key={index}
             elevation={selectedIndex === index ? 3 : 1}
             sx={{
-              minWidth: 80,
-              height: 80,
+              width: 80, // Aumentado de 73px a 80px
+              height: 80, // Aumentado de 73px a 80px
+              minWidth: 80, // Evitar que se encoja
+              maxWidth: 80, // Evitar que se agrande
               cursor: 'pointer',
               border: selectedIndex === index ? '2px solid' : '1px solid',
               borderColor:
@@ -97,7 +108,7 @@ const ProductImageGallery = ({
                 height: '100%',
                 objectFit: 'contain',
                 bgcolor: '#fafafa',
-                p: 0.5,
+                p: 0.475, // Reducido de 0.5 a 0.475 (5% menos)
               }}
             />
           </Card>
