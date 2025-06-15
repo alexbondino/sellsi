@@ -94,6 +94,10 @@ export const formatProductForCart = (product, quantity, tiers = []) => {
   // Mapeo de imagen
   const finalImage =
     product.imagen || product.image || '/placeholder-product.jpg'
+  
+  // Determinar price_tiers final
+  const finalPriceTiers = product.price_tiers || tiers || [{ min_quantity: 1, price: basePrice }]
+  
   const cartItem = {
     // Campos originales del producto
     ...product,
@@ -113,8 +117,10 @@ export const formatProductForCart = (product, quantity, tiers = []) => {
 
     // ===== PRESERVAR PRICE_TIERS PARA CÁLCULOS FUTUROS =====
     // Asegurar que price_tiers esté siempre disponible (invisible en UI)
-    price_tiers: product.price_tiers ||
-      tiers || [{ min_quantity: 1, price: basePrice }],
+    price_tiers: finalPriceTiers,
+
+    // ===== PRESERVAR MÍNIMO DE COMPRA PARA VALIDACIÓN EN CART =====
+    minimum_purchase: product.minimum_purchase || product.compraMinima || 1,
 
     // Información adicional de cálculo
     cantidadSeleccionada: quantity,
@@ -124,7 +130,6 @@ export const formatProductForCart = (product, quantity, tiers = []) => {
     tramoAplicado: appliedTier || null,
   }
 
-  console.log('   - Item final para carrito:', cartItem)
   return cartItem
 }
 

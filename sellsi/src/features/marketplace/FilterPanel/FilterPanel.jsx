@@ -29,7 +29,8 @@ import AppliedFiltersDisplay from './components/AppliedFiltersDisplay'
 import { filterPanelStyles as styles } from '../hooks/FilterPanel/FilterPanel.styles'
 import { useProductFilters } from '../hooks/useProductFilters'
 
-const FilterPanel = ({
+// ✅ MEJORA DE RENDIMIENTO: Memoización del componente principal
+const FilterPanel = React.memo(({
   filtros,
   categoriaSeleccionada,
   busqueda,
@@ -45,7 +46,9 @@ const FilterPanel = ({
     filtros,
     updateFiltros
   )
-  const handleRemoveFilter = (filterType, value) => {
+
+  // ✅ MEJORA DE RENDIMIENTO: Memoización del handler de remover filtros
+  const handleRemoveFilter = React.useCallback((filterType, value) => {
     switch (filterType) {
       case 'precioMin':
         updateFiltros({ precioMin: '' })
@@ -62,8 +65,10 @@ const FilterPanel = ({
       default:
         break
     }
-  }
-  const FilterContent = () => {
+  }, [updateFiltros])
+
+  // ✅ MEJORA DE RENDIMIENTO: Memoización del contenido principal
+  const FilterContent = React.useCallback(() => {
     return (
       <>
         {/* ✅ Header con diseño mejorado como en la captura */}
@@ -227,14 +232,13 @@ const FilterPanel = ({
         >
           <Typography variant="caption" color="text.secondary">
             {totalProductos} productos encontrados
-          </Typography>
-        </Box>
+          </Typography>        </Box>
       </>
     )
-  }
+  }, [updateFiltros, resetFiltros, filtros, handlePrecioChange, handleStockChange, handleRemoveFilter, totalProductos])
 
-  // Mobile version con animaciones suaves
-  const MobileFilterPanel = () => {
+  // ✅ MEJORA DE RENDIMIENTO: Memoización del panel móvil
+  const MobileFilterPanel = React.useCallback(() => {
     return (
       <>
         {/* Backdrop con fade in/out */}
@@ -302,13 +306,14 @@ const FilterPanel = ({
               sx={{ flex: 2, ...styles.applyButton }}
             >
               Ver {totalProductos} productos
-            </Button>
-          </Box>
+            </Button>          </Box>
         </Box>
       </>
     )
-  } // Desktop version con animaciones suaves y posición fija
-  const DesktopFilterPanel = () => {
+  }, [onMobileClose, isMobileOpen, FilterContent])
+
+  // ✅ MEJORA DE RENDIMIENTO: Memoización del panel desktop
+  const DesktopFilterPanel = React.useCallback(() => {
     // Configuración de posición basada en la prop filterPosition
     const positionConfig =
       filterPosition === 'right'
@@ -353,11 +358,10 @@ const FilterPanel = ({
             },
           },
         }}
-      >
-        <FilterContent />
+      >        <FilterContent />
       </Box>
     )
-  }
+  }, [filtrosAbiertos, filterPosition, FilterContent])
 
   return (
     <>
@@ -367,10 +371,12 @@ const FilterPanel = ({
       </Box>
       {/* Desktop FilterPanel - siempre montado para animaciones */}
       <Box sx={{ display: { xs: 'none', md: 'block' } }}>
-        <DesktopFilterPanel />
-      </Box>
+        <DesktopFilterPanel />      </Box>
     </>
   )
-}
+})
+
+// ✅ MEJORA DE RENDIMIENTO: DisplayName para debugging
+FilterPanel.displayName = 'FilterPanel'
 
 export default FilterPanel

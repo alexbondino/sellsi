@@ -15,10 +15,12 @@ import SearchSection from './sections/SearchSection.jsx'
 import FilterSection from './sections/FilterSection.jsx'
 import ProductsSection from './sections/ProductsSection.jsx'
 
-const Marketplace = () => {
+// ✅ MEJORA DE RENDIMIENTO: Memoización del componente principal
+const Marketplace = React.memo(() => {
   // ===== USAR CUSTOM HOOK PARA TODA LA LÓGICA =====
-  const { searchSectionProps, filterSectionProps, productsSectionProps } =
-    useMarketplaceLogic({
+  // ✅ MEJORA DE RENDIMIENTO: Memoización de configuración estática
+  const marketplaceConfig = React.useMemo(
+    () => ({
       hasSidebar: false, // Indicar que NO hay sidebar
       // ✅ Valores específicos para Marketplace (mover más a la izquierda)
       searchBarMarginLeft: {
@@ -43,30 +45,41 @@ const Marketplace = () => {
         lg: 2,
         xl: 3,
       },
-    })
+    }),
+    []
+  )
+
+  const { searchSectionProps, filterSectionProps, productsSectionProps } =
+    useMarketplaceLogic(marketplaceConfig)
+
+  // ✅ MEJORA DE RENDIMIENTO: Memoización de configuración estática
   // Configuración de botones de navegación (sin botones para Marketplace)
-  const navigationButtons = []
+  const navigationButtons = React.useMemo(() => [], [])
 
   // Configuración de botones de autenticación (usa defaults)
-  const authButtons = {}
+  const authButtons = React.useMemo(() => ({}), [])
 
-  // Función de navegación (placeholder)
-  const handleNavigate = (ref) => {
-    console.log('Navegando a:', ref)
+  // ✅ MEJORA DE RENDIMIENTO: Memoización de handler de navegación
+  const handleNavigate = React.useCallback((ref) => {
+    // Eliminado log de desarrollo
     // TODO: Implementar navegación si es necesario
-  }
+  }, [])
+
+  // ✅ MEJORA DE RENDIMIENTO: Memoización de estilos del contenedor principal
+  const containerStyles = React.useMemo(
+    () => ({
+      bgcolor: '#f8fafc',
+      minHeight: '100vh',
+      pt: { xs: 7, md: 8 },
+    }),
+    []
+  )
 
   return (
     <Box>
       {/* TopBar eliminada, ahora la maneja App.jsx globalmente */}
       {/* Contenido principal con margen para compensar TopBar fijo (SIN sidebar) */}
-      <Box
-        sx={{
-          bgcolor: '#f8fafc',
-          minHeight: '100vh',
-          pt: { xs: 7, md: 8 },
-        }}
-      >
+      <Box sx={containerStyles}>
         {/* Sección de búsqueda y navegación */}
         <SearchSection {...searchSectionProps} />
 
@@ -78,6 +91,9 @@ const Marketplace = () => {
       </Box>
     </Box>
   )
-}
+})
+
+// ✅ MEJORA DE RENDIMIENTO: DisplayName para debugging
+Marketplace.displayName = 'Marketplace'
 
 export default Marketplace

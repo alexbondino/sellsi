@@ -273,8 +273,8 @@ const MyProducts = () => {
 
                 <Box sx={{ p: 0 }}>
                   {' '}
-                  <Grid container>
-                    <Grid size={{ xs: 12, sm: 4 }}>
+                  <Grid container columns={12}>
+                    <Grid xs={12} sm={4}>
                       <Box
                         sx={{
                           p: 2,
@@ -309,7 +309,7 @@ const MyProducts = () => {
                         </Box>
                       </Box>
                     </Grid>{' '}
-                    <Grid size={{ xs: 12, sm: 4 }}>
+                    <Grid xs={12} sm={4}>
                       <Box
                         sx={{
                           p: 2,
@@ -351,7 +351,7 @@ const MyProducts = () => {
                         </Box>
                       </Box>
                     </Grid>{' '}
-                    <Grid size={{ xs: 12, sm: 4 }}>
+                    <Grid xs={12} sm={4}>
                       <Box sx={{ p: 2 }}>
                         <Box
                           sx={{
@@ -391,10 +391,10 @@ const MyProducts = () => {
           )}
           {/* Filtros y búsqueda */}
           <Paper sx={{ p: 3, mb: 3 }}>
-            <Grid container spacing={2} alignItems="center">
+            <Grid container columns={12} spacing={2} alignItems="center">
               {' '}
               {/* Búsqueda */}
-              <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+              <Grid xs={12} sm={6} md={4}>
                 <TextField
                   fullWidth
                   placeholder="Buscar productos..."
@@ -411,7 +411,7 @@ const MyProducts = () => {
                 />
               </Grid>{' '}
               {/* Filtro por categoría */}{' '}
-              <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+              <Grid xs={12} sm={6} md={3}>
                 <FormControl fullWidth>
                   <InputLabel>Categoría</InputLabel>{' '}
                   <Select
@@ -438,7 +438,7 @@ const MyProducts = () => {
                 </FormControl>
               </Grid>{' '}
               {/* Ordenamiento */}
-              <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+              <Grid xs={12} sm={6} md={3}>
                 <FormControl fullWidth>
                   <InputLabel>Ordenar por</InputLabel>{' '}
                   <Select
@@ -465,7 +465,7 @@ const MyProducts = () => {
                 </FormControl>
               </Grid>{' '}
               {/* Acciones */}
-              <Grid size={{ xs: 12, sm: 6, md: 2 }}>
+              <Grid xs={12} sm={6} md={2}>
                 <Stack direction="row" spacing={1}>
                   <Button
                     variant="outlined"
@@ -548,31 +548,23 @@ const MyProducts = () => {
                   searchTerm={searchTerm}
                   categoryFilter={categoryFilter}
                 />
-              </Grid>
-            ) : (
-              <>
-                {/* Product Grid with Animations */}
+              </Grid>            ) : (              <>
+                {/* Product Grid Traditional (sin virtualización por ahora) */}
                 <Grid container spacing={3}>
-                  {' '}
                   {displayedProducts.map((product, index) => (
                     <Grow
-                      in={shouldAnimate(index)}
-                      timeout={600}
-                      style={{
-                        transitionDelay: shouldAnimate(index)
-                          ? `${(index % 8) * 50}ms`
-                          : '0ms',
-                      }}
                       key={product.id}
+                      in={true}
+                      timeout={600}
+                      style={{ transitionDelay: `${(index % 8) * 50}ms` }}
                     >
-                      <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
+                      <Grid xs={12} sm={6} md={4} lg={3}>
                         <SupplierProductCard
                           product={product}
                           onEdit={handleEditProduct}
                           onDelete={handleDeleteProduct}
                           onViewStats={handleViewStats}
-                          isDeleting={operationStates.deleting[product.id]}
-                          isUpdating={operationStates.updating[product.id]}
+                          isDeleting={operationStates.deleting?.[product.id]}
                         />
                       </Grid>
                     </Grow>

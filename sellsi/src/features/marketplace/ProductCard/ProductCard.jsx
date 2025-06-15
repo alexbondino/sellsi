@@ -36,11 +36,21 @@ import {
   formatProductForCart,
   calculatePriceForQuantity,
 } from '../../../utils/priceCalculation'
+import { LazyImage } from '../../../components/shared'
 
 const ProductCard = ({ producto, onAddToCart, onViewDetails }) => {
   const [favorito, setFavorito] = useState(false)
   const [anchorEl, setAnchorEl] = useState(null)
-  const [cantidad, setCantidad] = useState(1)
+  // Obtener compra mínima
+  const minimumPurchase = producto.minimum_purchase || producto.compraMinima || 1
+  const [cantidad, setCantidad] = useState(minimumPurchase)
+  // Permitir edición libre en el input
+  const [inputValue, setInputValue] = useState(cantidad.toString())
+  // Validación optimizada de cantidad (memoizada)
+  const canAdd = React.useMemo(() => {
+    const numValue = parseInt(inputValue)
+    return !isNaN(numValue) && numValue >= minimumPurchase
+  }, [inputValue, minimumPurchase])
   const navigate = useNavigate()
 
   if (!producto) {
@@ -64,27 +74,36 @@ const ProductCard = ({ producto, onAddToCart, onViewDetails }) => {
   const compraMinima = producto.compraMinima || producto.minPurchase || 1
   const negociable = producto.negociable || producto.negotiable || false
 
-  // ===== CÁLCULO DE PRECIOS DINÁMICOS USANDO PRICE_TIERS =====
-  // Asegurar que price_tiers esté disponible en el producto (invisible en UI)
-  const price_tiers = producto.price_tiers || []
-
-  // Calcular precio dinámico basado en cantidad seleccionada
-  const calculateDynamicPrice = () => {
-    if (price_tiers.length > 0) {
-      return calculatePriceForQuantity(cantidad, price_tiers, precio)
-    }
-    return precio
-  }
-
-  const currentUnitPrice = calculateDynamicPrice()
-  const currentTotal = currentUnitPrice * cantidad
-
   // Hook para obtener tramos de precios (mantener para compatibilidad)
   const {
     tiers,
     loading: loadingTiers,
     error: errorTiers,
   } = useProductPriceTiers(producto.id)
+  // ===== CÁLCULO DE PRECIOS DINÁMICOS USANDO PRICE_TIERS (OPTIMIZADO) =====
+  // Unificar la fuente de price_tiers: preferir la del producto, si no, la del hook
+  const price_tiers = React.useMemo(() => {
+    return (producto.price_tiers && producto.price_tiers.length > 0)
+      ? producto.price_tiers
+      : (tiers && tiers.length > 0 ? tiers : [])
+  }, [producto.price_tiers, tiers])
+
+  // Calcular precio dinámico basado en cantidad seleccionada (memoizado)
+  const currentPrices = React.useMemo(() => {
+    if (price_tiers.length > 0) {
+      const unitPrice = calculatePriceForQuantity(cantidad, price_tiers, precio)
+      return {
+        unitPrice,
+        total: unitPrice * cantidad
+      }
+    }
+    return {
+      unitPrice: precio,
+      total: precio * cantidad
+    }
+  }, [cantidad, price_tiers, precio])
+
+  const { unitPrice: currentUnitPrice, total: currentTotal } = currentPrices
 
   // Lógica para mostrar precios
   let priceContent
@@ -163,60 +182,79 @@ const ProductCard = ({ producto, onAddToCart, onViewDetails }) => {
     navigate(productUrl, {
       state: { from: fromPath },
     })
-  }
-  // ✅ NUEVA función para manejar click en AGREGAR
-  const handleAgregarClick = (event) => {
+  }  // ✅ Función optimizada para cerrar el popover
+  const handleClosePopover = React.useCallback(() => {
+    setAnchorEl(null)
+    setCantidad(minimumPurchase) // Reset cantidad al cerrar
+    setInputValue(minimumPurchase.toString()) // Reset input también
+  }, [minimumPurchase])
+
+  // ✅ Función optimizada para manejar click en AGREGAR
+  const handleAgregarClick = React.useCallback((event) => {
     event.stopPropagation() // Prevenir propagación hacia ProductCard
     event.preventDefault() // Prevenir comportamiento por defecto
     setAnchorEl(event.currentTarget)
-  }
-
-  // ✅ NUEVA función para cerrar el popover
-  const handleClosePopover = () => {
-    setAnchorEl(null)
-    setCantidad(1) // Reset cantidad al cerrar
-  }
-
-  // ✅ NUEVA función para manejar cambio de cantidad
-  const handleCantidadChange = (event) => {
-    const value = parseInt(event.target.value) || 0
-    if (value >= 1 && value <= stock) {
-      setCantidad(value)
+  }, [])
+  // LOG: Mostrar tramos al abrir el modal de cantidad (optimizado)
+  React.useEffect(() => {
+    if (anchorEl && price_tiers?.length > 0) {
+      // Eliminado log de tramos disponibles
     }
-  }
+  }, [anchorEl]) // Removido price_tiers de dependencias para evitar re-renders
 
-  // ✅ NUEVA función para incrementar cantidad
-  const handleIncrement = () => {
-    if (cantidad < stock) {
-      setCantidad(cantidad + 1)
-    }
-  }
-
-  // ✅ NUEVA función para decrementar cantidad
-  const handleDecrement = () => {
-    if (cantidad > 1) {
-      setCantidad(cantidad - 1)
-    }
-  }
-  // ✅ NUEVA función para confirmar agregado al carrito
-  const handleConfirmarAgregar = () => {
-    if (onAddToCart) {
-      // Crear producto para carrito preservando price_tiers (invisible pero disponible)
-      const cartProduct = {
-        ...formatProductForCart(producto, cantidad, tiers),
-        // Asegurar que price_tiers esté siempre disponible para cálculos futuros
-        price_tiers:
-          price_tiers.length > 0
-            ? price_tiers
-            : [{ min_quantity: 1, price: precio }],
-        // Usar precio dinámico calculado
-        price: currentUnitPrice,
+  // ✅ Función optimizada para logging de tramos (solo cuando es necesario)
+  const logAppliedTier = React.useCallback((numValue) => {
+    if (price_tiers?.length > 0) {
+      const tramo = price_tiers.find(t => numValue >= t.min_quantity)
+      if (tramo) {
+        // Eliminado log de tramo aplicado
       }
+    }
+  }, [price_tiers])
 
+  // ✅ Función optimizada para manejar cambio de cantidad
+  const handleCantidadChange = React.useCallback((event) => {
+    const value = event.target.value
+    setInputValue(value)
+    const numValue = parseInt(value)
+    if (!isNaN(numValue)) {
+      setCantidad(numValue)
+      // LOG solo en desarrollo
+    }
+  }, [logAppliedTier])
+
+  // ✅ Función optimizada para incrementar cantidad
+  const handleIncrement = React.useCallback(() => {
+    let numValue = parseInt(inputValue)
+    if (isNaN(numValue)) numValue = minimumPurchase
+    if (numValue < stock) {
+      numValue++
+      setInputValue(numValue.toString())
+      setCantidad(numValue)
+      // LOG solo en desarrollo
+    }
+  }, [inputValue, minimumPurchase, stock, logAppliedTier])
+
+  // ✅ Función optimizada para decrementar cantidad
+  const handleDecrement = React.useCallback(() => {
+    let numValue = parseInt(inputValue)
+    if (isNaN(numValue)) numValue = minimumPurchase
+    if (numValue > minimumPurchase) {
+      numValue--
+      setInputValue(numValue.toString())
+      setCantidad(numValue)
+      // LOG solo en desarrollo
+    }
+  }, [inputValue, minimumPurchase, logAppliedTier])  // ✅ Función optimizada para confirmar agregado al carrito
+  const handleConfirmarAgregar = React.useCallback(() => {
+    // LOG: Mostrar tramos y cantidad final solo en desarrollo
+    if (onAddToCart) {
+      // Crear producto para carrito preservando price_tiers y mínimo reales
+      const cartProduct = formatProductForCart(producto, cantidad, price_tiers)
       onAddToCart(cartProduct)
     }
     handleClosePopover()
-  }
+  }, [price_tiers, cantidad, onAddToCart, producto, handleClosePopover])
 
   function resolveImageSrc(producto) {
     // Unifica lógica: soporta string, objeto, path relativo, url pública
@@ -320,18 +358,19 @@ const ProductCard = ({ producto, onAddToCart, onViewDetails }) => {
               sx={{ color: '#666', fontSize: 20, transition: 'color 0.2s' }}
             />
           )}
-        </Box>
-      </IconButton>
-      {/* Imagen - más pequeña */}
-      <CardMedia
-        component="img"
-        height="160"
-        image={resolveImageSrc(producto)}
+        </Box>      </IconButton>      {/* ✅ OPTIMIZACIÓN: Imagen con lazy loading para mejor performance */}
+      <LazyImage
+        src={resolveImageSrc(producto)}
         alt={nombre}
+        aspectRatio="160 / 160"
+        rootMargin="200px" // Cargar imagen cuando esté a 200px de ser visible
+        objectFit="contain" // ✅ Correctamente pasado como prop
         sx={{
-          objectFit: 'contain',
           p: 1.5,
           bgcolor: '#fafafa',
+        }}
+        onLoad={() => {
+          // Opcional: tracking de lazy loading
         }}
       />
       <CardContent sx={{ flexGrow: 1, p: 2, pb: 1 }}>
@@ -555,47 +594,53 @@ const ProductCard = ({ producto, onAddToCart, onViewDetails }) => {
           <Typography variant="h6" sx={{ mb: 2, textAlign: 'center' }}>
             Seleccionar Cantidad
           </Typography>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-            <IconButton
-              onClick={(e) => {
-                e.preventDefault() // ✅ SOLUCIÓN: Prevenir comportamiento por defecto
-                e.stopPropagation() // ✅ SOLUCIÓN: Evitar propagación de eventos
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>            <IconButton
+              onClick={React.useCallback((e) => {
+                e.preventDefault()
+                e.stopPropagation()
                 handleDecrement()
-              }}
-              disabled={cantidad <= 1}
+              }, [handleDecrement])}
+              disabled={parseInt(inputValue) <= minimumPurchase}
               size="small"
               sx={{
-                userSelect: 'none', // ✅ SOLUCIÓN: Prevenir selección
-                touchAction: 'manipulation', // ✅ SOLUCIÓN: Mejorar comportamiento táctil
+                userSelect: 'none',
+                touchAction: 'manipulation',
               }}
             >
               <RemoveIcon />
-            </IconButton>
-            <TextField
+            </IconButton><TextField
               type="number"
-              value={cantidad}
+              value={inputValue}
               onChange={handleCantidadChange}
-              inputProps={{ min: 1, max: stock }}
+              onBlur={React.useCallback(() => {
+                let numValue = parseInt(inputValue)
+                if (isNaN(numValue) || numValue < minimumPurchase) numValue = minimumPurchase
+                if (numValue > stock) numValue = stock
+                setInputValue(numValue.toString())
+                setCantidad(numValue)
+              }, [inputValue, minimumPurchase, stock])}
+              inputProps={{ min: minimumPurchase, max: producto.stock || 9999 }}
+              size="small"
+              error={parseInt(inputValue) < minimumPurchase}
+              helperText={parseInt(inputValue) < minimumPurchase ? `Mínimo ${minimumPurchase}` : ''}
               sx={{
-                width: 100, // Aumentado para soportar 4 dígitos
+                width: 100,
                 '& input': {
-                  textAlign: 'center', // Centrar el texto
-                  userSelect: 'text', // ✅ SOLUCIÓN: Permitir selección solo en el input
+                  textAlign: 'center',
+                  userSelect: 'text',
                 },
               }}
-              size="small"
-            />
-            <IconButton
-              onClick={(e) => {
-                e.preventDefault() // ✅ SOLUCIÓN: Prevenir comportamiento por defecto
-                e.stopPropagation() // ✅ SOLUCIÓN: Evitar propagación de eventos
+            />            <IconButton
+              onClick={React.useCallback((e) => {
+                e.preventDefault()
+                e.stopPropagation()
                 handleIncrement()
-              }}
-              disabled={cantidad >= stock}
+              }, [handleIncrement])}
+              disabled={parseInt(inputValue) >= stock}
               size="small"
               sx={{
-                userSelect: 'none', // ✅ SOLUCIÓN: Prevenir selección
-                touchAction: 'manipulation', // ✅ SOLUCIÓN: Mejorar comportamiento táctil
+                userSelect: 'none',
+                touchAction: 'manipulation',
               }}
             >
               <AddIcon />
@@ -607,14 +652,13 @@ const ProductCard = ({ producto, onAddToCart, onViewDetails }) => {
           >
             Stock disponible: {stock}
           </Typography>{' '}
-          <Box sx={{ display: 'flex', gap: 1 }}>
-            <Button
+          <Box sx={{ display: 'flex', gap: 1 }}>            <Button
               variant="outlined"
-              onClick={(e) => {
+              onClick={React.useCallback((e) => {
                 e.preventDefault() // ✅ SOLUCIÓN: Prevenir comportamiento por defecto
                 e.stopPropagation() // ✅ SOLUCIÓN: Evitar propagación de eventos
                 handleClosePopover()
-              }}
+              }, [handleClosePopover])}
               fullWidth
               sx={{
                 userSelect: 'none', // ✅ SOLUCIÓN: Prevenir selección
@@ -625,18 +669,21 @@ const ProductCard = ({ producto, onAddToCart, onViewDetails }) => {
             </Button>
             <Button
               variant="contained"
-              onClick={(e) => {
+              onClick={React.useCallback((e) => {
                 e.preventDefault() // ✅ SOLUCIÓN: Prevenir comportamiento por defecto
                 e.stopPropagation() // ✅ SOLUCIÓN: Evitar propagación de eventos
                 handleConfirmarAgregar()
-              }}
+              }, [handleConfirmarAgregar])}
+              disabled={!canAdd}
               fullWidth
               sx={{
-                userSelect: 'none', // ✅ SOLUCIÓN: Prevenir selección
-                touchAction: 'manipulation', // ✅ SOLUCIÓN: Mejorar comportamiento táctil
+                opacity: canAdd ? 1 : 0.5,
+                userSelect: 'none',
+                touchAction: 'manipulation',
+                transition: 'opacity 0.2s',
               }}
             >
-              Agregar
+              {canAdd ? 'Agregar' : `Mín: ${minimumPurchase}`}
             </Button>
           </Box>
         </Box>

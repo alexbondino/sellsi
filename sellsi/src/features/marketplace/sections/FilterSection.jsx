@@ -17,7 +17,8 @@ import FilterPanel from '../FilterPanel/FilterPanel'
  * Componente que maneja los filtros tanto para desktop como mobile
  * Mantiene exactamente el mismo diseño y comportamiento que la implementación original
  */
-const FilterSection = ({
+// ✅ MEJORA DE RENDIMIENTO: Memoización del componente
+const FilterSection = React.memo(({
   shouldShowSearchBar,
   hayFiltrosActivos,
   handleToggleFiltro,
@@ -25,35 +26,41 @@ const FilterSection = ({
   mobileFilterProps,
   filterPosition = 'left', // Nueva prop para controlar posición
 }) => {
+  // ✅ MEJORA DE RENDIMIENTO: Memoización de estilos del FAB
+  const fabStyles = React.useMemo(() => ({
+    position: 'fixed',
+    bottom: 80,
+    right: 20,
+    zIndex: 1000,
+    transition: 'all 0.3s ease',
+    display: {
+      xs: shouldShowSearchBar ? 'none' : 'flex',
+      sm: shouldShowSearchBar ? 'none' : 'flex',
+      md: 'none',
+      lg: 'none',
+      xl: 'none',
+    },
+  }), [shouldShowSearchBar])
+
   return (
     <>
       {/* Floating button for mobile - shown only when search bar is hidden */}
       <Fab
         color="primary"
         onClick={handleToggleFiltro}
-        sx={{
-          position: 'fixed',
-          bottom: 80,
-          right: 20,
-          zIndex: 1000,
-          transition: 'all 0.3s ease',
-          display: {
-            xs: shouldShowSearchBar ? 'none' : 'flex',
-            sm: shouldShowSearchBar ? 'none' : 'flex',
-            md: 'none',
-            lg: 'none',
-            xl: 'none',
-          },
-        }}
+        sx={fabStyles}
       >
         <Badge color="error" variant="dot" invisible={!hayFiltrosActivos}>
           <FilterAltIcon />
         </Badge>
-      </Fab>{' '}
+      </Fab>
       {/* FilterPanel unificado - maneja responsive internamente */}
       <FilterPanel {...desktopFilterProps} filterPosition={filterPosition} />
     </>
   )
-}
+})
+
+// ✅ MEJORA DE RENDIMIENTO: DisplayName para debugging
+FilterSection.displayName = 'FilterSection'
 
 export default FilterSection

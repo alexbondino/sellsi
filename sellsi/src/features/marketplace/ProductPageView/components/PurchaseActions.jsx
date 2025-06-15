@@ -18,9 +18,18 @@ const PurchaseActions = ({
   tiers = [],
   isLoggedIn = false,
 }) => {
-  const [quantity, setQuantity] = useState(1)
+  const minimumPurchase = product.minimum_purchase || product.compraMinima || 1
+  const [quantity, setQuantity] = useState(minimumPurchase)
+  // Permitir edición libre
+  const [inputValue, setInputValue] = useState(minimumPurchase.toString())
+  const canAdd =
+    !isNaN(parseInt(inputValue)) &&
+    parseInt(inputValue) >= minimumPurchase &&
+    isLoggedIn
+
   const handleQuantityChange = (newQuantity) => {
-    if (newQuantity >= 1 && newQuantity <= stock) {
+    setInputValue(newQuantity.toString())
+    if (!isNaN(newQuantity) && newQuantity >= minimumPurchase && newQuantity <= stock) {
       setQuantity(newQuantity)
     }
   }
@@ -59,7 +68,7 @@ const PurchaseActions = ({
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <IconButton
             onClick={() => handleQuantityChange(quantity - 1)}
-            disabled={quantity <= 1}
+            disabled={quantity <= minimumPurchase}
             size="small"
             sx={{
               border: '1px solid',
@@ -73,18 +82,30 @@ const PurchaseActions = ({
           </IconButton>
 
           <TextField
-            value={quantity}
+            value={inputValue}
             onChange={(e) => {
-              const value = parseInt(e.target.value) || 1
-              handleQuantityChange(value)
+              setInputValue(e.target.value)
+              const value = parseInt(e.target.value)
+              if (!isNaN(value)) {
+                handleQuantityChange(value)
+              }
+            }}
+            onBlur={() => {
+              let value = parseInt(inputValue)
+              if (isNaN(value) || value < minimumPurchase) value = minimumPurchase
+              if (value > stock) value = stock
+              setInputValue(value.toString())
+              setQuantity(value)
             }}
             inputProps={{
-              min: 1,
+              min: minimumPurchase,
               max: stock,
               style: { textAlign: 'center', width: '60px' },
             }}
             size="small"
             variant="outlined"
+            error={parseInt(inputValue) < minimumPurchase}
+            helperText={parseInt(inputValue) < minimumPurchase ? `Mínimo ${minimumPurchase}` : ''}
           />
 
           <IconButton
@@ -116,30 +137,36 @@ const PurchaseActions = ({
           fullWidth
           startIcon={<ShoppingCart />}
           onClick={handleAddToCart}
-          disabled={!isLoggedIn}
+          disabled={!canAdd}
           sx={{
+            opacity: canAdd ? 1 : 0.5,
             py: 1.5,
             fontSize: '1.1rem',
             fontWeight: 700,
-            background: isLoggedIn
+            background: canAdd
               ? 'linear-gradient(135deg, #1976d2 0%, #42a5f5 100%)'
               : 'rgba(0,0,0,0.12)',
-            color: isLoggedIn ? 'white' : 'rgba(0,0,0,0.26)',
-            boxShadow: isLoggedIn
+            color: canAdd ? 'white' : 'rgba(0,0,0,0.26)',
+            boxShadow: canAdd
               ? '0 4px 16px rgba(25, 118, 210, 0.3)'
               : 'none',
+            transition: 'opacity 0.2s',
             '&:hover': {
-              background: isLoggedIn
+              background: canAdd
                 ? 'linear-gradient(135deg, #1565c0 0%, #1976d2 100%)'
                 : 'rgba(0,0,0,0.12)',
-              boxShadow: isLoggedIn
+              boxShadow: canAdd
                 ? '0 6px 20px rgba(25, 118, 210, 0.4)'
                 : 'none',
-              transform: isLoggedIn ? 'translateY(-2px)' : 'none',
+              transform: canAdd ? 'translateY(-2px)' : 'none',
             },
           }}
         >
-          {isLoggedIn ? 'Agregar al Carrito' : 'Inicia sesión para agregar'}
+          {!isLoggedIn
+            ? 'Inicia sesión para agregar'
+            : parseInt(inputValue) < minimumPurchase
+            ? `Mín: ${minimumPurchase}`
+            : 'Agregar al Carrito'}
         </Button>
       </Box>
     </Box>

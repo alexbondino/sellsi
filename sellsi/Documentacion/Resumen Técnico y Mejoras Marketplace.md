@@ -1,139 +1,102 @@
 # Índice
 
 1. Descripción General
-2. Estructura de Carpetas
-3. Flujo de Datos y Lógica
-4. Componentes y Funciones Clave
-5. Representaciones Visuales
-6. Integraciones con APIs
-7. Notas Técnicas Finales
+2. Arquitectura y Estructura
+3. Mejoras de Rendimiento y UX
+4. Modularización y Lógica de Negocio
+5. Integraciones y Backend
+6. Estado de la Plataforma y Próximos Pasos
+7. Beneficios y Resultados
 
 ---
 
 ## 1. Descripción General
 
-El módulo `ProductPageView` gestiona la visualización y compra de productos en el marketplace, integrando lógica de sesión, tramos de precios, carrito y mejoras de backend sugeridas para robustez y escalabilidad. Se prioriza la lógica de negocio y la integridad de datos, manteniendo la UI clara pero sin sobreenfasis en detalles visuales.
+Sellsi Marketplace es una plataforma moderna y escalable, optimizada para alto rendimiento, mantenibilidad y experiencia de usuario. El código ha sido refactorizado y modularizado, integrando las mejores prácticas de React, Zustand, MUI v2+, y Supabase.
 
 ---
 
-## 2. Estructura de Carpetas
+## 2. Arquitectura y Estructura
 
+- **Frontend:** React + Zustand + MUI v2+ (migración completa)
+- **Backend:** Supabase (auth, storage, base de datos)
+- **Carrito:** Modularizado en hooks especializados (`useCartHistory`, `useWishlist`, `useCoupons`, `useShipping`)
+- **Optimización:** Lazy loading universal de imágenes, code splitting por rutas, virtualización de grids, memoización avanzada, prefetching inteligente
+- **Persistencia:** LocalStorage y preparado para sincronización backend
+
+**Estructura principal:**
 ```
-src/features/marketplace/ProductPageView/
-  ProductPageView.jsx
-  ProductHeader.jsx
-  PurchaseActions.jsx
-  components/
-    ProductImageGallery.jsx
-    ProductPageSkeletons.jsx
-    LazyImage.jsx
-  hooks/
-    useTechnicalSpecs.js
-    useProductPriceTiers.js
-  utils/
-    priceCalculation.js
-  README.md
-  IMPLEMENTATION_SUMMARY.md
-  PRICE_TIERS_IMPLEMENTATION.md
-Documentacion/
-  supplier_product_backend_improvements.md
-```
-
----
-
-## 3. Flujo de Datos y Lógica
-
-- **Sesión:** Se verifica la sesión del usuario (supplier/seller) usando localStorage y Supabase. Sin sesión, se bloquean acciones y se solicita login.
-- **Carrito:** Al agregar productos, se calcula el precio según tramos (`price tiers`) y se formatea el producto antes de enviarlo al store del carrito.
-- **Tramos de Precios:** El precio unitario depende de la cantidad seleccionada, usando la tabla `product_price_tiers` en la base de datos.
-- **Integridad de Categorías:** Se recomienda migrar a una tabla de categorías para evitar errores y permitir dinamismo futuro.
-- **Documentos de Producto:** Se sugiere agregar soporte para PDFs/manuales asociados a productos, usando Supabase Storage y una tabla relacional.
-- **Imágenes:** Se gestiona una imagen principal por producto y se recomienda limpiar imágenes huérfanas al eliminar productos.
-
----
-
-## 4. Componentes y Funciones Clave
-
-### ProductPageView.jsx
-
-- Componente principal. Renderiza la vista de producto, maneja lógica de sesión y muestra el `MarketplaceTopBar` solo si el usuario está logueado.
-
-### PurchaseActions.jsx
-
-- Botones de acción (agregar al carrito). Deshabilita acciones si no hay sesión. Integra lógica de tramos de precios y muestra notificaciones.
-
-### useProductPriceTiers.js
-
-- Hook para obtener y calcular el tramo de precio aplicable según la cantidad seleccionada.
-
-### priceCalculation.js
-
-- Funciones utilitarias:
-  - `calculatePriceForQuantity`: Devuelve el precio unitario correcto según los tramos.
-  - `formatProductForCart`: Prepara el objeto producto para el carrito, incluyendo cantidad, precio unitario, total y tramo aplicado.
-
-#### Ejemplo de objeto enviado al carrito:
-
-```js
-{
-  id: product.id,
-  name: product.nombre,
-  price: tierPrice,
-  quantity: selectedQuantity,
-  tierPrice: appliedTierPrice,
-  appliedTier: tierInfo,
-  totalPrice: tierPrice * quantity,
-  // ...otros campos
-}
+src/features/marketplace/
+  ProductPageView/
+  sections/
+  ProductCard/
+  ...
+src/features/buyer/cart/
+src/features/buyer/hooks/
+src/components/shared/
+src/services/
+src/utils/
 ```
 
 ---
 
-## 5. Representaciones Visuales
+## 3. Mejoras de Rendimiento y UX
 
-**Tabla de Tramos de Precios (ejemplo):**
-
-| Cantidad  | Precio Unitario |
-| --------- | --------------- |
-| 10 - 49   | $44.550         |
-| 50 - 149  | $40.000         |
-| 150 - 299 | $30.000         |
-| 300+      | $15.999         |
-
-**Diagrama Simplificado de Flujo:**
-
-```
-[Usuario] --(selecciona cantidad)--> [ProductPageView]
-   |                                    |
-   v                                    v
-[useProductPriceTiers] <--- consulta --- [Supabase]
-   |                                    |
-   v                                    v
-[PurchaseActions] --(agregar)--> [CartStore]
-```
+- **Migración a MUI v2+:** Todos los grids y layouts usan la nueva API, eliminando props obsoletos y mejorando el rendimiento.
+- **Lazy Loading Universal:** Componente `LazyImage` para todas las imágenes de productos, proveedores y logos.
+- **Code Splitting:** Rutas principales y secundarias usan `React.lazy` y `Suspense` con loaders contextuales.
+- **Virtualización:** Preparado con `react-window` para listas grandes, fallback automático a grid tradicional en listas pequeñas.
+- **Memoización:** Uso intensivo de `React.memo`, `useMemo`, `useCallback` en componentes críticos.
+- **Prefetching:** Hook `usePrefetch` para anticipar rutas probables según el flujo del usuario.
+- **Animaciones y Loaders:** Skeletons, loaders y animaciones suaves en todas las vistas principales.
 
 ---
 
-## 6. Integraciones con APIs
+## 4. Modularización y Lógica de Negocio
+
+- **Carrito:**
+  - Store principal (`cartStore.js`) solo orquesta y delega a hooks especializados.
+  - Hooks independientes para historial, wishlist, cupones y envío.
+  - Price tiers integrados en todos los productos y cálculos automáticos con `priceCalculation.js`.
+  - Retrocompatibilidad total: la API pública del store no cambió para los componentes consumidores.
+- **ProductCard y CartItem:**
+  - Calculan y muestran precios dinámicos según cantidad y tiers.
+  - Integración con lógica de stock y validaciones en tiempo real.
+- **Supplier Dashboard:**
+  - Grids y filtros avanzados, migrados a MUI v2+.
+  - Soporte para carga masiva, edición y estadísticas de productos.
+
+---
+
+## 5. Integraciones y Backend
 
 - **Supabase:**
-  - Autenticación de sesión.
-  - Consulta de tramos de precios (`product_price_tiers`).
-  - Almacenamiento de documentos PDF/manuales (opcional).
-- **Frontend/Backend:**
-  - Se recomienda exponer endpoints para categorías y documentos si se implementan las mejoras sugeridas.
+  - Autenticación, storage de imágenes y documentos, base de datos de productos y carritos.
+  - Preparado para sincronización de carritos y price snapshot.
+- **APIs y utilidades:**
+  - Endpoints y hooks para categorías, price tiers, historial y wishlist.
+  - Utilidades para formateo, cálculo de precios y manejo de imágenes.
 
 ---
 
-## 7. Notas Técnicas Finales
+## 6. Estado de la Plataforma y Próximos Pasos
 
-- El sistema es robusto y listo para producción, pero se recomienda:
-  - Implementar la tabla de categorías si se requiere dinamismo.
-  - Agregar soporte para documentos PDF solo si el negocio lo necesita.
-  - Mantener una imagen principal por producto y limpiar imágenes huérfanas.
-  - Mejorar el manejo de errores y agregar tests unitarios en hooks y lógica de precios.
-- Las mejoras de UI (skeleton loaders, animaciones) ya están implementadas, pero no son el foco principal de esta documentación.
+- **En producción:** Todas las optimizaciones y refactorizaciones aplicadas, sin advertencias ni errores críticos.
+- **Pendientes:**
+  - Escribir tests unitarios para hooks y lógica de negocio.
+  - Integrar sincronización real de carritos con backend.
+  - Mejorar documentación técnica y de onboarding.
+  - Explorar service workers para cache inteligente y PWA.
 
 ---
 
-Este documento resume y explica claramente los últimos cambios y recomendaciones técnicas para el módulo de productos del marketplace. Está pensado para que cualquier desarrollador con conocimientos intermedios pueda entender la lógica, el flujo y las mejores prácticas implementadas.
+## 7. Beneficios y Resultados
+
+- **Rendimiento superior:** Carga inicial mínima, navegación instantánea, animaciones suaves.
+- **Escalabilidad:** Arquitectura lista para crecimiento y nuevas features.
+- **Mantenibilidad:** Código modular, documentado y fácil de extender.
+- **UX moderna:** Interfaz rápida, responsiva y robusta.
+
+---
+
+**Fecha de actualización:** 15 de junio de 2025

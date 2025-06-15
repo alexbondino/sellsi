@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react'
+import React, { useEffect, useState, useRef, Suspense } from 'react'
 import { Box, CssBaseline, CircularProgress } from '@mui/material'
 import { ThemeProvider } from '@mui/material/styles'
 import GlobalStyles from '@mui/material/GlobalStyles'
@@ -13,24 +13,60 @@ import {
 import theme from './styles/theme'
 import TopBar from './features/layout/TopBar'
 import BottomBar from './features/layout/BottomBar'
-import Home from './features/landing_page/Home'
-import ProviderHome from './features/supplier/home/ProviderHome'
-import MyProducts from './features/supplier/pages/MyProducts'
-import AddProduct from './features/supplier/pages/AddProduct'
-import TechnicalSpecs from './features/marketplace/view_page/TechnicalSpecs'
-import Marketplace from './features/marketplace/Marketplace'
-import MarketplaceBuyer from './features/buyer/MarketplaceBuyer'
-import BuyerOrders from './features/buyer/BuyerOrders'
-import BuyerPerformance from './features/buyer/BuyerPerformance'
-import BuyerCart from './features/buyer/BuyerCart'
-import Login from './features/login/Login'
-import Register from './features/register/Register'
 import PrivateRoute from './features/auth/PrivateRoute'
 import { BannerProvider, useBanner } from './features/ui/BannerContext'
 import Banner from './features/ui/Banner'
 import { Toaster } from 'react-hot-toast'
 import { supabase } from './services/supabase'
 import MarketplaceTopBar from './features/layout/MarketplaceTopBar'
+import { usePrefetch } from './hooks/usePrefetch'
+
+// ============================================================================
+// 🚀 CODE SPLITTING: LAZY LOADING DE COMPONENTES POR RUTAS
+// ============================================================================
+
+// Landing Page (carga inmediata para primera impresión)
+import Home from './features/landing_page/Home'
+
+// 📦 RUTAS PRINCIPALES - LAZY LOADING
+const MarketplaceBuyer = React.lazy(() => import('./features/buyer/MarketplaceBuyer'))
+const Marketplace = React.lazy(() => import('./features/marketplace/Marketplace'))
+const BuyerCart = React.lazy(() => import('./features/buyer/BuyerCart'))
+
+// 📦 SUPPLIER DASHBOARD - LAZY LOADING
+const ProviderHome = React.lazy(() => import('./features/supplier/home/ProviderHome'))
+const MyProducts = React.lazy(() => import('./features/supplier/pages/MyProducts'))
+const AddProduct = React.lazy(() => import('./features/supplier/pages/AddProduct'))
+
+// 📦 RUTAS SECUNDARIAS - LAZY LOADING
+const BuyerOrders = React.lazy(() => import('./features/buyer/BuyerOrders'))
+const BuyerPerformance = React.lazy(() => import('./features/buyer/BuyerPerformance'))
+const TechnicalSpecs = React.lazy(() => import('./features/marketplace/view_page/TechnicalSpecs'))
+
+// 📦 AUTH - LAZY LOADING (raramente usados después del primer uso)
+const Login = React.lazy(() => import('./features/login/Login'))
+const Register = React.lazy(() => import('./features/register/Register'))
+
+// ============================================================================
+// 🎨 COMPONENTE DE LOADING UNIVERSAL PARA SUSPENSE
+// ============================================================================
+const SuspenseLoader = ({ message = "Cargando..." }) => (
+  <Box
+    sx={{
+      display: 'flex',
+      flexDirection: 'column',
+      justifyContent: 'center',
+      alignItems: 'center',
+      height: '50vh',
+      gap: 2,
+    }}
+  >
+    <CircularProgress size={40} />
+    <Box sx={{ color: 'text.secondary', fontSize: '0.875rem' }}>
+      {message}
+    </Box>
+  </Box>
+)
 
 // Contenido principal que depende de la ruta
 function AppContent({ mensaje }) {
@@ -42,6 +78,9 @@ function AppContent({ mensaje }) {
   const [isBuyer, setIsBuyer] = useState(null)
   const [loadingUserType, setLoadingUserType] = useState(true)
   const lastUserType = useRef(null)
+
+  // 🚀 PREFETCHING: Carga anticipada de rutas probables
+  const { prefetchRoute } = usePrefetch()
 
   // Escuchar cambios de sesión en tiempo real
   useEffect(() => {
@@ -98,6 +137,24 @@ function AppContent({ mensaje }) {
       listener.subscription.unsubscribe()
     }
   }, [])
+
+  // 🚀 PREFETCHING INTELIGENTE: Cargar rutas probables según tipo de usuario
+  useEffect(() => {
+    if (!loadingUserType && session && isBuyer !== null) {
+      // Prefetch después de 1.5s para no interferir con la carga inicial
+      setTimeout(() => {
+        if (isBuyer) {
+          // BUYER: Prefetch marketplace y carrito
+          prefetchRoute('/buyer/marketplace')
+          prefetchRoute('/buyer/cart')
+        } else {
+          // SUPPLIER: Prefetch dashboard y productos
+          prefetchRoute('/supplier/home')
+          prefetchRoute('/supplier/myproducts')
+        }
+      }, 1500)
+    }
+  }, [loadingUserType, session, isBuyer, prefetchRoute])
 
   // Redirección tras login: solo si la ruta es neutra y el tipo de usuario ya está determinado
   useEffect(() => {
@@ -265,26 +322,90 @@ function AppContent({ mensaje }) {
           overflowX: 'hidden',
           bgcolor: 'background.default',
         }}
-      >
-        <Routes>
+      >        <Routes>
+          {/* 🏠 Landing Page - Carga inmediata para primera impresión */}
           <Route path="/" element={<Home scrollTargets={scrollTargets} />} />
-          <Route path="/marketplace" element={<Marketplace />} />
-          <Route path="/buyer/marketplace" element={<MarketplaceBuyer />} />
-          <Route path="/buyer/orders" element={<BuyerOrders />} />
-          <Route path="/buyer/performance" element={<BuyerPerformance />} />
-          <Route path="/buyer/cart" element={<BuyerCart />} />
+          
+          {/* 🛒 MARKETPLACE - Lazy Loading */}
+          <Route 
+            path="/marketplace" 
+            element={
+              <Suspense fallback={<SuspenseLoader message="Cargando marketplace..." />}>
+                <Marketplace />
+              </Suspense>
+            } 
+          />
+          <Route 
+            path="/buyer/marketplace" 
+            element={
+              <Suspense fallback={<SuspenseLoader message="Cargando marketplace..." />}>
+                <MarketplaceBuyer />
+              </Suspense>
+            } 
+          />
+          
+          {/* 🛍️ BUYER ROUTES - Lazy Loading */}
+          <Route 
+            path="/buyer/orders" 
+            element={
+              <Suspense fallback={<SuspenseLoader message="Cargando pedidos..." />}>
+                <BuyerOrders />
+              </Suspense>
+            } 
+          />
+          <Route 
+            path="/buyer/performance" 
+            element={
+              <Suspense fallback={<SuspenseLoader message="Cargando performance..." />}>
+                <BuyerPerformance />
+              </Suspense>
+            } 
+          />
+          <Route 
+            path="/buyer/cart" 
+            element={
+              <Suspense fallback={<SuspenseLoader message="Cargando carrito..." />}>
+                <BuyerCart />
+              </Suspense>
+            } 
+          />
+          
+          {/* 📋 PRODUCT DETAILS - Lazy Loading */}
           <Route
             path="/technicalspecs/:productSlug"
-            element={<TechnicalSpecs />}
-          />{' '}
-          <Route path="/login" element={<Login />} />
-          <Route path="/crear-cuenta" element={<Register />} />
-          {/* Supplier routes - Always registered, PrivateRoute handles auth */}
+            element={
+              <Suspense fallback={<SuspenseLoader message="Cargando producto..." />}>
+                <TechnicalSpecs />
+              </Suspense>
+            }
+          />
+          
+          {/* 🔐 AUTH - Lazy Loading */}
+          <Route 
+            path="/login" 
+            element={
+              <Suspense fallback={<SuspenseLoader message="Cargando..." />}>
+                <Login />
+              </Suspense>
+            } 
+          />
+          <Route 
+            path="/crear-cuenta" 
+            element={
+              <Suspense fallback={<SuspenseLoader message="Cargando..." />}>
+                <Register />
+              </Suspense>
+            } 
+          />
+          
+          {/* 🏢 SUPPLIER ROUTES - Lazy Loading con Private Routes */}
           <Route
             path="/supplier/home"
             element={
               <PrivateRoute requiredAccountType="proveedor">
-                <ProviderHome />
+                <Suspense fallback={<SuspenseLoader message="Cargando dashboard..." />}>
+                  <ProviderHome />
+                </Suspense>
               </PrivateRoute>
             }
           />
@@ -292,7 +413,9 @@ function AppContent({ mensaje }) {
             path="/supplier/myproducts"
             element={
               <PrivateRoute requiredAccountType="proveedor">
-                <MyProducts />
+                <Suspense fallback={<SuspenseLoader message="Cargando productos..." />}>
+                  <MyProducts />
+                </Suspense>
               </PrivateRoute>
             }
           />
@@ -300,7 +423,9 @@ function AppContent({ mensaje }) {
             path="/supplier/addproduct"
             element={
               <PrivateRoute requiredAccountType="proveedor">
-                <AddProduct />
+                <Suspense fallback={<SuspenseLoader message="Cargando formulario..." />}>
+                  <AddProduct />
+                </Suspense>
               </PrivateRoute>
             }
           />

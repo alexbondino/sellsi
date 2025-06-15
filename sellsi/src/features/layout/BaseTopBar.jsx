@@ -12,10 +12,9 @@ import MenuIcon from '@mui/icons-material/Menu'
 import AccountCircleIcon from '@mui/icons-material/AccountCircle'
 
 import { supabase } from '../../services/supabase'
-
+import ContactModal from '../ui/ContactModal'
 import Login from '../login/Login'
 import Register from '../register/Register'
-import ContactModal from '../ui/ContactModal'
 
 export default function BaseTopBar({
   navigationButtons = [],
@@ -352,10 +351,15 @@ export default function BaseTopBar({
             },
           }}
         >
-          <MenuItem onClick={handleLogout}>Cerrar sesión</MenuItem>
-        </Menu>
-        <Login open={openLoginModal} onClose={handleCloseLogin} />
-        <Register open={openRegisterModal} onClose={handleCloseRegister} />
+          <MenuItem onClick={handleLogout}>Cerrar sesión</MenuItem>        </Menu>        
+        {/* AUTH MODALS */}
+        {openLoginModal && (
+          <Login open={openLoginModal} onClose={handleCloseLogin} />
+        )}
+        {openRegisterModal && (
+          <Register open={openRegisterModal} onClose={handleCloseRegister} />
+        )}
+        
         {showContactModal && (
           <ContactModal open={openContactModal} onClose={handleCloseContact} />
         )}

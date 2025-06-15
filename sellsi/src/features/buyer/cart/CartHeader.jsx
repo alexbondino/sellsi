@@ -94,11 +94,9 @@ const CartHeader = ({
                 fontWeight: 'bold',
                 background: isSelectionMode
                   ? 'linear-gradient(45deg, #ff6b6b, #ee5a24)'
-                  : '#000000',
-                WebkitBackgroundClip: 'text',
+                  : '#000000',                WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
                 mb: 1,
-                transition: 'all 0.3s ease',
               }}
             >
               {isSelectionMode ? 'Seleccionar Items' : 'Mi Carrito'}
@@ -188,7 +186,7 @@ const CartHeader = ({
             >
               <span>
                 <Badge
-                  badgeContent={historyInfo?.currentIndex || 0}
+                  badgeContent={Number.isFinite(Number(historyInfo?.currentIndex)) ? Number(historyInfo.currentIndex) : 0}
                   color="primary"
                   invisible={!undoInfo?.canUndo}
                   sx={{
@@ -202,10 +200,8 @@ const CartHeader = ({
                   <IconButton
                     onClick={onUndo}
                     color="primary"
-                    disabled={!undoInfo?.canUndo}
-                    sx={{
+                    disabled={!undoInfo?.canUndo}                    sx={{
                       opacity: undoInfo?.canUndo ? 1 : 0.5,
-                      transition: 'all 0.2s ease',
                       '&:hover': {
                         transform: undoInfo?.canUndo ? 'scale(1.1)' : 'none',
                       },
@@ -228,8 +224,8 @@ const CartHeader = ({
               <span>
                 <Badge
                   badgeContent={
-                    historyInfo
-                      ? historyInfo.totalStates - historyInfo.currentIndex - 1
+                    historyInfo && Number.isFinite(Number(historyInfo.totalStates)) && Number.isFinite(Number(historyInfo.currentIndex))
+                      ? Math.max(0, Number(historyInfo.totalStates) - Number(historyInfo.currentIndex) - 1)
                       : 0
                   }
                   color="secondary"
@@ -245,10 +241,8 @@ const CartHeader = ({
                   <IconButton
                     onClick={onRedo}
                     color="primary"
-                    disabled={!redoInfo?.canRedo}
-                    sx={{
+                    disabled={!redoInfo?.canRedo}                    sx={{
                       opacity: redoInfo?.canRedo ? 1 : 0.5,
-                      transition: 'all 0.2s ease',
                       '&:hover': {
                         transform: redoInfo?.canRedo ? 'scale(1.1)' : 'none',
                       },
@@ -262,10 +256,8 @@ const CartHeader = ({
             {/* Sistema de selección múltiple */}
             {isSelectionMode ? (
               <motion.div
-                initial={{ opacity: 0, x: 50 }}
-                animate={{ opacity: 1, x: 0 }}
+                initial={{ opacity: 0, x: 50 }}                animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 50 }}
-                transition={{ duration: 0.3 }}
                 style={{ display: 'flex', gap: '8px', alignItems: 'center' }}
               >
                 {/* Botón para seleccionar todo */}
@@ -283,12 +275,10 @@ const CartHeader = ({
                       background:
                         selectedItems.length === totalItems
                           ? 'rgba(25, 118, 210, 0.1)'
-                          : 'transparent',
-                      '&:hover': {
+                          : 'transparent',                      '&:hover': {
                         background: 'rgba(25, 118, 210, 0.2)',
                         transform: 'scale(1.1)',
                       },
-                      transition: 'all 0.2s ease',
                     }}
                   >
                     {selectedItems.length === totalItems ? (
@@ -311,10 +301,8 @@ const CartHeader = ({
                     <IconButton
                       onClick={onDeleteSelected}
                       color="error"
-                      disabled={selectedItems.length === 0}
-                      sx={{
+                      disabled={selectedItems.length === 0}                      sx={{
                         opacity: selectedItems.length === 0 ? 0.5 : 1,
-                        transition: 'all 0.2s ease',
                         '&:hover': {
                           transform:
                             selectedItems.length > 0 ? 'scale(1.1)' : 'none',
@@ -345,13 +333,11 @@ const CartHeader = ({
                     minWidth: 'auto',
                     px: 2,
                     borderColor: 'grey.400',
-                    color: 'grey.600',
-                    '&:hover': {
+                    color: 'grey.600',                    '&:hover': {
                       transform: 'scale(1.05)',
                       borderColor: 'grey.600',
                       background: 'rgba(0, 0, 0, 0.04)',
                     },
-                    transition: 'all 0.2s ease',
                   }}
                 >
                   Cancelar
@@ -362,13 +348,11 @@ const CartHeader = ({
               <Tooltip title="Eliminar productos">
                 <IconButton
                   onClick={onToggleSelectionMode}
-                  color="error"
-                  sx={{
+                  color="error"                  sx={{
                     '&:hover': {
                       transform: 'scale(1.1)',
                       background: 'rgba(244, 67, 54, 0.1)',
                     },
-                    transition: 'all 0.2s ease',
                   }}
                 >
                   <DeleteIcon />

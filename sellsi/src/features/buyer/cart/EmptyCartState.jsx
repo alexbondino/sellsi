@@ -37,11 +37,9 @@ const EmptyCartState = ({ wishlist, setShowWishlist }) => {
     <Container
       maxWidth="lg"
       sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}
-    >
-      <motion.div
+    >      <motion.div
         initial={{ opacity: 0, y: 50 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
         style={{
           width: '100%',
           display: 'flex',
@@ -73,15 +71,14 @@ const EmptyCartState = ({ wishlist, setShowWishlist }) => {
             boxShadow: '0 20px 40px rgba(0,0,0,0.1)',
           }}
         >
-          <motion.div
-            animate={{
+          <motion.div            animate={{
               scale: [1, 1.1, 1],
               rotate: [0, 10, -10, 0],
             }}
             transition={{
-              duration: 2,
+              duration: 0.5,
               repeat: Infinity,
-              repeatDelay: 3,
+              repeatDelay: 0.5, // reducido a la mitad
             }}
           >
             <ShoppingCartIcon
@@ -105,7 +102,7 @@ const EmptyCartState = ({ wishlist, setShowWishlist }) => {
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.3 }}
+              transition={{ delay: 0.15 }} // reducido a la mitad
             >
               <Card sx={{ mb: 4, borderRadius: 2 }}>
                 <CardContent>

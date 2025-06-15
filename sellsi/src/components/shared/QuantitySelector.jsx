@@ -65,46 +65,54 @@ const QuantitySelector = ({
   // ============================================================================
   // HANDLERS DE EVENTOS
   // ============================================================================
+  // ===== OPTIMIZACIONES DE RENDIMIENTO =====
+  
+  // Memoizar validaciones para evitar recálculos
+  const validations = React.useMemo(() => ({
+    isMinDisabled: value <= min,
+    isMaxDisabled: value >= max,
+    hasError: isNaN(parseInt(inputValue)) || parseInt(inputValue) < min,
+    isInputValid: !isNaN(parseInt(inputValue)) && parseInt(inputValue) >= min && parseInt(inputValue) <= max
+  }), [value, min, max, inputValue])
 
-  const handleIncrement = () => {
+  // Handlers optimizados con useCallback
+  const handleIncrement = React.useCallback(() => {
     const newValue = Math.min(value + step, max)
     if (newValue !== value) {
       onChange(newValue)
     }
-  }
+  }, [value, step, max, onChange])
 
-  const handleDecrement = () => {
+  const handleDecrement = React.useCallback(() => {
     const newValue = Math.max(value - step, min)
     if (newValue !== value) {
       onChange(newValue)
     }
-  }
+  }, [value, step, min, onChange])
 
-  const handleInputChange = (event) => {
+  const handleInputChange = React.useCallback((event) => {
     const inputVal = event.target.value
     setInputValue(inputVal)
-
-    // Validar solo si es un número válido
+    // Solo llamar onChange si es un número válido dentro de rango
     const numValue = parseInt(inputVal)
-    if (!isNaN(numValue) && numValue >= min && numValue <= max) {
+    if (!isNaN(numValue)) {
       onChange(numValue)
     }
-  }
+  }, [onChange])
 
-  const handleInputBlur = () => {
-    // Validar y corregir el valor al perder el foco
+  const handleInputBlur = React.useCallback(() => {
+    // Al perder foco, corregir a mínimo si está vacío o menor
     let numValue = parseInt(inputValue)
     if (isNaN(numValue) || numValue < min) {
       numValue = min
     } else if (numValue > max) {
       numValue = max
     }
-
     setInputValue(numValue.toString())
     if (numValue !== value) {
       onChange(numValue)
     }
-  }
+  }, [inputValue, min, max, value, onChange])
 
   // ============================================================================
   // CONFIGURACIÓN DE ESTILOS POR TAMAÑO
@@ -207,6 +215,8 @@ const QuantitySelector = ({
         },
         'aria-label': 'Cantidad',
       }}
+      error={parseInt(inputValue) < min}
+      helperText={parseInt(inputValue) < min ? `Mínimo ${min}` : ''}
       sx={{
         '& .MuiOutlinedInput-root': {
           '&:hover fieldset': {

@@ -28,6 +28,7 @@
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
 import debounce from 'lodash.debounce'
+import { calculatePriceForQuantity } from '../../../utils/priceCalculation'
 
 // Importar módulos especializados
 import useCartHistory from './useCartHistory'
@@ -44,7 +45,7 @@ const createDebouncedSave = (getState) => {
     } catch (error) {
       console.error('❌ Error en auto-guardado:', error)
     }
-  }, 1000) // Guardar después de 1 segundo de inactividad
+  }, 50) // Guardar después de 50ms de inactividad (OPTIMIZADO)
 }
 
 // Creación del store utilizando Zustand
@@ -88,10 +89,23 @@ const useCartStore = create(
           // Asegurarse de que la imagen principal esté presente
           const image =
             product.imagen || product.image || '/placeholder-product.jpg'
+
+          // ===== REFORZAR CAMPOS price_tiers Y minimum_purchase =====
+          const basePrice = product.precio || product.price || 0
+          // Usar price_tiers solo si es un array válido y no vacío
+          const price_tiers = (Array.isArray(product.price_tiers) && product.price_tiers.length > 0)
+            ? product.price_tiers
+            : (Array.isArray(product.priceTiers) && product.priceTiers.length > 0)
+              ? product.priceTiers
+              : [{ min_quantity: 1, price: basePrice }]
+          const minimum_purchase = product.minimum_purchase || product.compraMinima || 1
+
           const item = {
             ...product,
             image,
             quantity,
+            price_tiers,
+            minimum_purchase,
           }
           const currentState = get()
           const existingItem = currentState.items.find(
@@ -107,27 +121,16 @@ const useCartStore = create(
                     : item
                 ),
               })
-              toast.success(
-                `Agregado: ${product.name} (${
-                  existingItem.quantity + quantity
-                })`,
-                { icon: '🛒' }
-              )
             } else {
-              toast.error(`Stock insuficiente para ${product.name}`, {
-                icon: '⚠️',
-              })
             }
           } else {
             const newItem = {
-              ...product,
-              quantity,
+              ...item,
               addedAt: new Date().toISOString(),
             }
             set({
               items: [...currentState.items, newItem],
             })
-            // Toast removido del store - se mostrará desde el componente
           }
 
           // Delegar al módulo de historial
@@ -147,11 +150,40 @@ const useCartStore = create(
         updateQuantity: (id, quantity) => {
           const currentState = get()
           const item = currentState.items.find((item) => item.id === id)
-          if (item && quantity > 0 && quantity <= item.maxStock) {
+          if (!item) return
+          // Forzar mínimo de compra
+          const min = item.minimum_purchase || item.compraMinima || 1
+          let safeQuantity = quantity
+          if (quantity < min) {
+            safeQuantity = min
+          }
+          if (safeQuantity > item.maxStock) safeQuantity = item.maxStock
+          // LOG: Mostrar tramos y tramo aplicado
+          if (item.price_tiers && item.price_tiers.length > 0) {
+            const logTiers = item.price_tiers.map(t => `${t.min_quantity},${t.price}`).join('\n')
+            const tramo = item.price_tiers.find(t => safeQuantity >= t.min_quantity)
+            if (tramo) {
+            }
+          }
+          if (safeQuantity > 0 && safeQuantity <= item.maxStock) {
             const oldQuantity = item.quantity
+            // Obtener price_tiers y precio base
+            const price_tiers = item.price_tiers || item.priceTiers || []
+            const basePrice = item.originalPrice || item.precioOriginal || item.price || item.precio || 0
+            // Calcular nuevo precio unitario
+            const newUnitPrice = calculatePriceForQuantity(safeQuantity, price_tiers, basePrice)
             set({
-              items: currentState.items.map((item) =>
-                item.id === id ? { ...item, quantity } : item
+              items: currentState.items.map((cartItem) =>
+                cartItem.id === id
+                  ? {
+                      ...cartItem,
+                      quantity: safeQuantity,
+                      price: newUnitPrice,
+                      precioUnitario: newUnitPrice,
+                      precioTotal: newUnitPrice * safeQuantity,
+                      cantidadSeleccionada: safeQuantity,
+                    }
+                  : cartItem
               ),
             })
 
@@ -160,41 +192,40 @@ const useCartStore = create(
               historyStore.saveToHistory(get(), 'updateQuantity', {
                 productName: item.name,
                 oldQuantity: oldQuantity,
-                newQuantity: quantity,
+                newQuantity: safeQuantity,
+                oldPrice: item.price,
+                newPrice: newUnitPrice,
               })
             }, 0)
 
             // Auto-guardar cambios
             debouncedSave()
-          }
-        },
+          }        },
 
         // Versión con debounce para casos específicos donde se necesite
         updateQuantityDebounced: debounce((id, quantity) => {
           get().updateQuantity(id, quantity)
-        }, 100),
+        }, 10), // OPTIMIZADO: 10ms en lugar de 100ms
 
         // Remover item
         removeItem: (id) => {
           const currentState = get()
           const item = currentState.items.find((item) => item.id === id)
           if (item) {
-            set({
-              items: currentState.items.filter((item) => item.id !== id),
-            })
-            // Toast removido del store - se mostrará desde el componente
-
-            // Delegar al módulo de historial
-            setTimeout(() => {
-              historyStore.saveToHistory(get(), 'removeItem', {
-                productName: item.name,
-                quantity: item.quantity,
-              })
-            }, 0)
-
-            // Auto-guardar cambios
-            debouncedSave()
+            set({ items: currentState.items.filter((item) => item.id !== id) })
+          } else {
           }
+
+          // Delegar al módulo de historial
+          setTimeout(() => {
+            historyStore.saveToHistory(get(), 'removeItem', {
+              productName: item.name,
+              quantity: item.quantity,
+            })
+          }, 0)
+
+          // Auto-guardar cambios
+          debouncedSave()
         },
 
         // Limpiar carrito
@@ -460,7 +491,6 @@ const useCartStore = create(
               version: '3.0', // Versión refactorizada
             }
             localStorage.setItem('sellsi-cart-main', JSON.stringify(cartData))
-            console.log('💾 Carrito principal guardado en localStorage')
           } catch (error) {
             console.error('❌ Error guardando en localStorage:', error)
           }
@@ -475,7 +505,6 @@ const useCartStore = create(
               set({
                 items: cartData.items || [],
               })
-              console.log('📥 Carrito principal cargado desde localStorage')
               return true
             }
           } catch (error) {
@@ -518,12 +547,12 @@ const useCartStore = create(
         version: '3.0',
       }),
       onRehydrateStorage: (state) => {
-        console.log('🔄 Hidratando carrito refactorizado...')
+        // Eliminado log de hidratación
         return (state, error) => {
           if (error) {
-            console.error('❌ Error al hidratar carrito:', error)
+            // Eliminado log de error de hidratación
           } else {
-            console.log('✅ Carrito refactorizado hidratado correctamente')
+            // Eliminado log de éxito de hidratación
           }
         }
       },

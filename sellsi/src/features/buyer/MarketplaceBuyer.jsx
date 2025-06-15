@@ -18,10 +18,12 @@ import SearchSection from '../marketplace/sections/SearchSection.jsx'
 import FilterSection from '../marketplace/sections/FilterSection.jsx'
 import ProductsSection from '../marketplace/sections/ProductsSection.jsx'
 
-const MarketplaceBuyer = () => {
+// ✅ MEJORA DE RENDIMIENTO: Memoización del componente principal
+const MarketplaceBuyer = React.memo(() => {
   // ===== USAR CUSTOM HOOK PARA TODA LA LÓGICA =====
-  const { searchSectionProps, filterSectionProps, productsSectionProps } =
-    useMarketplaceLogic({
+  // ✅ MEJORA DE RENDIMIENTO: Memoización de configuración estática
+  const marketplaceConfig = React.useMemo(
+    () => ({
       hasSidebar: true, // Indicar que hay sidebar
       // ✅ Ajustar para que no haya gap - eliminar márgenes negativos
       searchBarMarginLeft: {
@@ -46,7 +48,23 @@ const MarketplaceBuyer = () => {
         lg: 0,
         xl: 0,
       },
-    })
+    }),
+    []
+  )
+
+  const { searchSectionProps, filterSectionProps, productsSectionProps } =
+    useMarketplaceLogic(marketplaceConfig)
+
+  // ✅ MEJORA DE RENDIMIENTO: Memoización de estilos del contenedor principal
+  const containerStyles = React.useMemo(
+    () => ({
+      bgcolor: '#f8fafc',
+      minHeight: '100vh',
+      pt: { xs: 7, md: 8 },
+      pl: '210px', // Exactamente el ancho del sidebar (210px) sin gap
+    }),
+    []
+  )
 
   return (
     <Box>
@@ -54,14 +72,7 @@ const MarketplaceBuyer = () => {
       {/* Eliminado, ahora la topbar se maneja globalmente en App.jsx */}
       <SidebarBuyer />{' '}
       {/* Contenido principal con margen para compensar TopBar fijo y Sidebar */}
-      <Box
-        sx={{
-          bgcolor: '#f8fafc',
-          minHeight: '100vh',
-          pt: { xs: 7, md: 8 },
-          pl: '210px', // Exactamente el ancho del sidebar (210px) sin gap
-        }}
-      >
+      <Box sx={containerStyles}>
         {/* Sección de búsqueda y navegación */}
         <SearchSection {...searchSectionProps} /> {/* Sección de filtros */}
         <FilterSection {...filterSectionProps} filterPosition="right" />
@@ -70,6 +81,9 @@ const MarketplaceBuyer = () => {
       </Box>
     </Box>
   )
-}
+})
+
+// ✅ MEJORA DE RENDIMIENTO: DisplayName para debugging
+MarketplaceBuyer.displayName = 'MarketplaceBuyer'
 
 export default MarketplaceBuyer

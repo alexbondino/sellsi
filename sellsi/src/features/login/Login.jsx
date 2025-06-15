@@ -313,24 +313,23 @@ export default function Login({ open, onClose, onOpenRegister }) {
           onClose={handleRecuperarClose}
           onVolverLogin={handleVolverLogin}
         />
-      </Dialog>
-
-      {/* ✅ DIALOG REGISTRO */}
-      <Dialog
-        open={state.openRegistro}
-        onClose={handleRegistroClose}
-        maxWidth="md"
-        fullWidth
-        disableScrollLock={true}
-        disableRestoreFocus={true}
-        PaperProps={{
-          sx: {
-            position: 'fixed',
-          },
-        }}
-      >
-        <Register open={state.openRegistro} onClose={handleRegistroClose} />
-      </Dialog>
+      </Dialog>      {/* ✅ DIALOG REGISTRO - LAZY LOADING */}
+      {state.openRegistro && (
+        <Dialog
+          open={state.openRegistro}
+          onClose={handleRegistroClose}
+          maxWidth="md"
+          fullWidth
+          disableScrollLock={true}
+          disableRestoreFocus={true}          PaperProps={{
+            sx: {
+              position: 'fixed',
+            },
+          }}
+        >
+          <Register open={state.openRegistro} onClose={handleRegistroClose} />
+        </Dialog>
+      )}
     </>
   )
 }

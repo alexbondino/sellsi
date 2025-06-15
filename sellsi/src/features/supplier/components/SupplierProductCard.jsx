@@ -23,6 +23,7 @@ import {
   StatusChip,
   STOCK_STATUS_CONFIG,
 } from '../../ui'
+import { LazyImage } from '../../../components/shared'
 
 /**
  * SupplierProductCard - Tarjeta de producto para la vista del proveedor
@@ -140,28 +141,19 @@ const SupplierProductCard = ({
           actions={menuActions}
           disabled={isDeleting || isUpdating}
           tooltip="Opciones del producto"
-        />
-      </Box>{' '}
-      {/* Imagen del producto */}
-      <CardMedia
-        component="img"
-        image={
-          getProductImageUrl(imagen, product) || '/placeholder-product.jpg'
-        }
+        />      </Box>{' '}
+      {/* ✅ OPTIMIZACIÓN: Imagen del producto con lazy loading */}      <LazyImage
+        src={getProductImageUrl(imagen, product) || '/placeholder-product.jpg'}
         alt={nombre}
+        aspectRatio="140 / 140"
+        rootMargin="150px"
+        objectFit="contain"
         sx={{
-          height: '140px',
-          width: '140px',
           maxWidth: '100%',
-          objectFit: 'contain',
           bgcolor: '#fafafa',
           p: 1,
           display: 'block',
           mx: 'auto',
-        }}
-        onError={(e) => {
-          e.target.onerror = null
-          e.target.src = '/placeholder-product.jpg'
         }}
       />
       {/* Contenido principal */}

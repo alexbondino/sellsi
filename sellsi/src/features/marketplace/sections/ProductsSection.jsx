@@ -29,7 +29,8 @@ import LoadingOverlay from '../../ui/LoadingOverlay'
  * Componente que maneja la sección de productos, título y grid
  * Mantiene exactamente el mismo diseño y comportamiento que la implementación original
  */
-const ProductsSection = ({
+// ✅ MEJORA DE RENDIMIENTO: Memoización del componente
+const ProductsSection = React.memo(({
   shouldShowSearchBar,
   seccionActiva,
   setSeccionActiva,
@@ -42,54 +43,104 @@ const ProductsSection = ({
   error,
 }) => {
   // Hook para usar el store del carrito
-  const addItem = useCartStore((state) => state.addItem) // Función para manejar agregar al carrito
-  const handleAddToCart = (producto) => {
-    // Convertir la estructura del producto al formato esperado por el store
-    const productForCart = {
-      id: producto.id,
-      name: producto.nombre,
-      price: producto.precio,
-      image: producto.imagen,
-      maxStock: producto.stock || 50, // Usar stock disponible o valor por defecto
-      supplier: producto.proveedor || producto.supplier || producto.provider,
-      // Añadir otros campos que pueda necesitar el store
-      originalPrice: producto.precioOriginal,
-      discount: producto.descuento,
-      rating: producto.rating,
-      sales: producto.ventas,
-    }
+  const addItem = useCartStore((state) => state.addItem)
 
-    // Llamar la función addItem del store con la cantidad seleccionada
-    const quantity = producto.cantidadSeleccionada || 1
-    addItem(productForCart, quantity)
+  // ✅ MEJORA DE RENDIMIENTO: Memoización del handler para agregar al carrito
+  const handleAddToCart = React.useCallback((producto) => {
+    // Si el producto ya viene formateado (con price_tiers), usarlo tal cual
+    if (producto.price_tiers || producto.cantidadSeleccionada) {
+      // Producto ya formateado desde ProductCard, usar directamente
+      addItem(producto, producto.cantidadSeleccionada || 1)
+    } else {
+      // Convertir la estructura del producto al formato esperado por el store
+      const productForCart = {
+        id: producto.id,
+        name: producto.nombre,
+        price: producto.precio,
+        image: producto.imagen,
+        maxStock: producto.stock || 50, // Usar stock disponible o valor por defecto
+        supplier: producto.proveedor || producto.supplier || producto.provider,
+        // Añadir otros campos que pueda necesitar el store
+        originalPrice: producto.precioOriginal,
+        discount: producto.descuento,
+        rating: producto.rating,
+        sales: producto.ventas,
+      }
+
+      // Llamar la función addItem del store con la cantidad seleccionada
+      const quantity = producto.cantidadSeleccionada || 1
+      addItem(productForCart, quantity)
+    }
 
     // Mostrar toast de confirmación
     toast.success(`Agregado al carrito: ${producto.nombre}`, {
       icon: '✅',
     })
-  }
+  }, [addItem])
+
+  // ✅ MEJORA DE RENDIMIENTO: Memoización de estilos del contenedor principal
+  const mainContainerStyles = React.useMemo(() => ({
+    pt: shouldShowSearchBar ? '180px' : '130px',
+    minHeight: 'calc(100vh - 140px)',
+    display: 'flex',
+    justifyContent: 'center',
+    px: { xs: 1, md: 3 },
+  }), [shouldShowSearchBar])
+
+  // ✅ MEJORA DE RENDIMIENTO: Memoización de estilos del contenedor interno
+  const innerContainerStyles = React.useMemo(() => ({
+    width: '100%',
+    maxWidth: {
+      sm: '720px',
+      md: '960px',
+      lg: '1280px',
+      xl: '1700px',
+    },
+  }), [])
+
+  // ✅ MEJORA DE RENDIMIENTO: Memoización de estilos del grid
+  const gridStyles = React.useMemo(() => ({
+    display: 'grid',
+    gridTemplateColumns: {
+      xs: 'repeat(2, 1fr)', // Móvil: 2 columnas
+      sm: 'repeat(2, 1fr)', // Tablet: 2 columnas
+      md: 'repeat(3, 1fr)', // Desktop: 3 columnas
+      lg: 'repeat(4, 1fr)', // Large: 4 columnas
+      xl: 'repeat(5, 1fr)', // XL: 5 columnas
+    },
+    gap: { xs: 1.5, sm: 1.5, md: 4, lg: 6, xl: 6 }, // ✅ REDUCIR gap responsive - md reducido
+    width: '100%',
+    justifyItems: 'center', // ✅ AGREGAR: Centrar cada producto
+  }), [])
+
+  // ✅ MEJORA DE RENDIMIENTO: Memoización de estilos de las tarjetas
+  const cardContainerStyles = React.useMemo(() => ({
+    width: '100%',
+    maxWidth: '240px', // ✅ AGREGAR: Ancho máximo de cada tarjeta
+  }), [])
+
+  // ✅ MEJORA DE RENDIMIENTO: Memoización del título de sección
+  const sectionTitle = React.useMemo(() => {
+    switch (seccionActiva) {
+      case 'nuevos':
+        return '✨ Nuevos Productos'
+      case 'ofertas':
+        return '🔥 Ofertas Destacadas'
+      case 'topVentas':
+        return '⭐ Top Ventas'
+      default:
+        return '🛍️ Todos los Productos'
+    }
+  }, [seccionActiva])
+
+  // ✅ MEJORA DE RENDIMIENTO: Memoización del handler de volver
+  const handleBackClick = React.useCallback(() => {
+    setSeccionActiva('todos')
+  }, [setSeccionActiva])
 
   return (
-    <Box
-      sx={{
-        pt: shouldShowSearchBar ? '180px' : '130px',
-        minHeight: 'calc(100vh - 140px)',
-        display: 'flex',
-        justifyContent: 'center',
-        px: { xs: 1, md: 3 },
-      }}
-    >
-      <Box
-        sx={{
-          width: '100%',
-          maxWidth: {
-            sm: '720px',
-            md: '960px',
-            lg: '1280px',
-            xl: '1700px',
-          },
-        }}
-      >
+    <Box sx={mainContainerStyles}>
+      <Box sx={innerContainerStyles}>
         {/* ✅ TÍTULO con márgenes reducidos e iguales */}
         <Box
           sx={{
@@ -99,7 +150,6 @@ const ProductsSection = ({
             mb: 4,
           }}
         >
-          {' '}
           <Box
             sx={{
               display: 'flex',
@@ -110,7 +160,7 @@ const ProductsSection = ({
           >
             {seccionActiva !== 'todos' && (
               <IconButton
-                onClick={() => setSeccionActiva('todos')}
+                onClick={handleBackClick}
                 sx={{
                   bgcolor: '#f1f5f9',
                   color: 'primary.main',
@@ -127,19 +177,14 @@ const ProductsSection = ({
             )}
 
             <Typography variant="h5" fontWeight={600} sx={{ color: '#1e293b' }}>
-              {seccionActiva === 'nuevos'
-                ? '✨ Nuevos Productos'
-                : seccionActiva === 'ofertas'
-                ? '🔥 Ofertas Destacadas'
-                : seccionActiva === 'topVentas'
-                ? '⭐ Top Ventas'
-                : '🛍️ Todos los Productos'}
+              {sectionTitle}
             </Typography>
           </Box>
           <Typography variant="body2" color="text.secondary">
             {totalProductos} productos encontrados
           </Typography>
-        </Box>{' '}
+        </Box>
+
         {/* ✅ ÁREA DE PRODUCTOS centrada con márgenes automáticos */}
         <Box sx={{ width: '100%' }}>
           {loading ? (
@@ -158,7 +203,6 @@ const ProductsSection = ({
                 Error al cargar productos
               </Typography>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-                {' '}
                 {error}
               </Typography>
             </Paper>
@@ -177,36 +221,14 @@ const ProductsSection = ({
               </Typography>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
                 Intenta ajustar los filtros o realiza una búsqueda diferente
-              </Typography>{' '}
+              </Typography>
               <Button variant="outlined" onClick={resetFiltros} sx={{ mt: 2 }}>
                 Limpiar filtros
               </Button>
-            </Paper>
-          ) : (
-            <Box
-              sx={{
-                display: 'grid',
-                gridTemplateColumns: {
-                  xs: 'repeat(2, 1fr)', // Móvil: 2 columnas
-                  sm: 'repeat(2, 1fr)', // Tablet: 2 columnas
-                  md: 'repeat(3, 1fr)', // Desktop: 3 columnas
-                  lg: 'repeat(4, 1fr)', // Large: 4 columnas
-                  xl: 'repeat(5, 1fr)', // XL: 5 columnas
-                },
-                gap: { xs: 1.5, sm: 1.5, md: 4, lg: 6, xl: 6 }, // ✅ REDUCIR gap responsive - md reducido
-                width: '100%',
-                justifyItems: 'center', // ✅ AGREGAR: Centrar cada producto
-              }}
-            >
+            </Paper>          ) : (
+            <Box sx={gridStyles}>
               {productosOrdenados.map((producto) => (
-                <Box
-                  key={producto.id}
-                  sx={{
-                    width: '100%',
-                    maxWidth: '240px', // ✅ AGREGAR: Ancho máximo de cada tarjeta
-                  }}
-                >
-                  {' '}
+                <Box key={producto.id} sx={cardContainerStyles}>
                   <ProductCard
                     producto={producto}
                     onAddToCart={handleAddToCart}
@@ -222,8 +244,9 @@ const ProductsSection = ({
       </Box>
     </Box>
   )
-}
+})
 
+// ✅ MEJORA DE RENDIMIENTO: DisplayName para debugging
 ProductsSection.displayName = 'ProductsSection'
 
 export default ProductsSection

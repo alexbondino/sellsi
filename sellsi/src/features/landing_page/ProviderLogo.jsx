@@ -1,5 +1,6 @@
 import React from 'react'
 import { Card, CardContent } from '@mui/material'
+import { LazyImage } from '../../components/shared'
 
 /**
  * ====================================================================================
@@ -54,8 +55,7 @@ const ProviderLogo = React.memo(({ provider }) => (
         background: 'linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%)',
       },
     }}
-  >
-    <CardContent
+  >    <CardContent
       sx={{
         height: '100%',
         display: 'flex',
@@ -65,10 +65,13 @@ const ProviderLogo = React.memo(({ provider }) => (
         '&:last-child': { pb: { xs: 1.5, sm: 2, md: 2.5, lg: 3, xl: 3 } },
       }}
     >
-      <img
+      {/* ✅ OPTIMIZACIÓN: Logo con lazy loading */}
+      <LazyImage
         src={provider.src}
         alt={provider.alt}
-        style={{
+        aspectRatio="1"
+        rootMargin="300px" // Cargar con más anticipación para landing page
+        sx={{
           maxWidth: '120%',
           maxHeight: '120%',
           objectFit: 'contain',
