@@ -18,7 +18,6 @@ import { BannerProvider, useBanner } from './features/ui/BannerContext';
 import Banner from './features/ui/Banner';
 import { Toaster } from 'react-hot-toast';
 import { supabase } from './services/supabase';
-import MarketplaceTopBar from './features/layout/MarketplaceTopBar';
 import { usePrefetch } from './hooks/usePrefetch';
 
 // ============================================================================
@@ -97,36 +96,39 @@ function AppContent({ mensaje }) {
   const scrollTargets = useRef({});
   const { bannerState, hideBanner } = useBanner();
   const [session, setSession] = useState(null);
-  const [isBuyer, setIsBuyer] = useState(null);
-  const [loadingUserType, setLoadingUserType] = useState(true);
+  const [userProfile, setUserProfile] = useState(null); // State to store logo_url, is_buyer, etc.
+  const [loadingUserStatus, setLoadingUserStatus] = useState(true); // Renamed for clarity
   const [needsOnboarding, setNeedsOnboarding] = useState(false);
   const { prefetchRoute } = usePrefetch();
 
   useEffect(() => {
     let mounted = true;
-    setLoadingUserType(true);
-    setIsBuyer(null);
+    setLoadingUserStatus(true);
+    setUserProfile(null); // Clear profile when starting check
     setNeedsOnboarding(false);
 
-    const checkUserStatus = async currentSession => {
+    const checkUserAndFetchProfile = async currentSession => {
       if (!currentSession || !currentSession.user) {
         if (mounted) {
-          setIsBuyer(null);
+          setUserProfile(null);
           setNeedsOnboarding(false);
-          setLoadingUserType(false);
+          setLoadingUserStatus(false);
         }
         return;
       }
 
       const { data: userData, error: userError } = await supabase
         .from('users')
-        .select('user_nm, main_supplier')
+        .select('user_nm, main_supplier, logo_url') // ✅ Ensure logo_url is selected here!
         .eq('user_id', currentSession.user.id)
         .single();
 
       if (userError && mounted) {
+        console.error('Error fetching user profile:', userError.message); // Log the error message
+        // If there's an error (e.g., user has no profile entry), assume they need onboarding
         setNeedsOnboarding(true);
-        setLoadingUserType(false);
+        setUserProfile(null); // Ensure profile is null
+        setLoadingUserStatus(false);
         return;
       }
 
@@ -136,45 +138,55 @@ function AppContent({ mensaje }) {
           userData.user_nm?.toLowerCase() === USER_NAME_STATUS.PENDING
         ) {
           setNeedsOnboarding(true);
-          setIsBuyer(null);
+          setUserProfile(null); // Profile is null if onboarding is needed
         } else {
           setNeedsOnboarding(false);
-          setIsBuyer(userData.main_supplier === false);
+          setUserProfile(userData); // ✅ Store the complete user data (including logo_url)
         }
-        setLoadingUserType(false);
+        setLoadingUserStatus(false);
       }
     };
 
+    // Initial session check and profile fetch
     supabase.auth.getSession().then(({ data }) => {
       if (mounted) {
         setSession(data.session);
-        checkUserStatus(data.session);
+        checkUserAndFetchProfile(data.session);
       }
     });
 
+    // Listen for auth state changes
     const { data: listener } = supabase.auth.onAuthStateChange(
       (_event, newSession) => {
         if (mounted) {
           setSession(newSession);
-          checkUserStatus(newSession);
+          checkUserAndFetchProfile(newSession); // Re-evaluate and re-fetch profile on session changes
         }
       }
     );
 
     return () => {
       mounted = false;
-      listener.subscription.unsubscribe();
+      if (listener?.subscription) {
+        listener.subscription.unsubscribe();
+      }
     };
-  }, []);
+  }, []); // Empty dependency array means this runs once on mount
 
+  // --- Derived states from userProfile ---
+  const isBuyer = userProfile ? userProfile.main_supplier === false : null; // ✅ Derived from userProfile
+  const logoUrl = userProfile ? userProfile.logo_url : null; // ✅ Derived from userProfile
+
+  // Redirect to onboarding if needed
   useEffect(() => {
     if (session && needsOnboarding && location.pathname !== '/onboarding') {
       navigate('/onboarding', { replace: true });
     }
   }, [session, needsOnboarding, location.pathname, navigate]);
 
+  // Redirect logged-in users from neutral routes
   useEffect(() => {
-    if (!loadingUserType && session && isBuyer !== null && !needsOnboarding) {
+    if (!loadingUserStatus && session && isBuyer !== null && !needsOnboarding) {
       const neutralRoutes = ['/', '/login', '/crear-cuenta', '/onboarding'];
       if (neutralRoutes.includes(location.pathname)) {
         if (isBuyer) {
@@ -185,7 +197,7 @@ function AppContent({ mensaje }) {
       }
     }
   }, [
-    loadingUserType,
+    loadingUserStatus,
     session,
     isBuyer,
     needsOnboarding,
@@ -193,8 +205,9 @@ function AppContent({ mensaje }) {
     navigate,
   ]);
 
+  // Prefetch routes for performance
   useEffect(() => {
-    if (!loadingUserType && session && isBuyer !== null) {
+    if (!loadingUserStatus && session && isBuyer !== null) {
       setTimeout(() => {
         if (isBuyer) {
           prefetchRoute('/buyer/marketplace');
@@ -205,8 +218,9 @@ function AppContent({ mensaje }) {
         }
       }, 1500);
     }
-  }, [loadingUserType, session, isBuyer, prefetchRoute]);
+  }, [loadingUserStatus, session, isBuyer, prefetchRoute]);
 
+  // Close modals on browser back/forward (popstate)
   useEffect(() => {
     const handlePopstate = () => {
       window.dispatchEvent(new CustomEvent('closeAllModals'));
@@ -218,7 +232,7 @@ function AppContent({ mensaje }) {
   const handleScrollTo = refName => {
     const element = scrollTargets.current[refName]?.current;
     if (element) {
-      const topBarHeight = 30;
+      const topBarHeight = 30; // Adjust if your actual top bar height is different
       const elementPosition =
         element.getBoundingClientRect().top + window.pageYOffset;
       const offsetPosition = elementPosition - topBarHeight;
@@ -226,7 +240,8 @@ function AppContent({ mensaje }) {
     }
   };
 
-  if (loadingUserType) {
+  if (loadingUserStatus) {
+    // Use the general loading state here
     return (
       <Box
         sx={{
@@ -247,10 +262,12 @@ function AppContent({ mensaje }) {
 
   return (
     <>
-      {session && isBuyer === true && <MarketplaceTopBar />}
-      {(!session || isBuyer !== true) && (
-        <TopBar onNavigate={handleScrollTo} session={session} />
-      )}
+      <TopBar
+        session={session}
+        isBuyer={isBuyer}
+        logoUrl={logoUrl} // ✅ Pass the derived logoUrl
+        onNavigate={handleScrollTo}
+      />
 
       <Banner
         message={bannerState.message}
@@ -267,7 +284,7 @@ function AppContent({ mensaje }) {
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'space-between',
-          pt: '64px',
+          pt: '64px', // Adjust padding top to account for fixed TopBar height
           overflowX: 'hidden',
           bgcolor: 'background.default',
         }}
@@ -333,6 +350,7 @@ function App() {
   const [mensaje, setMensaje] = useState('Cargando...');
   const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
+  // Basic backend health check (optional, can be removed if not needed)
   useEffect(() => {
     fetch(`${backendUrl}/`)
       .then(res => res.json())
