@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState } from 'react';
 import {
   Box,
   TextField,
@@ -8,11 +8,13 @@ import {
   Link,
   InputAdornment,
   IconButton,
-} from '@mui/material'
-import { Visibility, VisibilityOff } from '@mui/icons-material'
-import { useTheme } from '@mui/material/styles'
-import { PasswordRequirements, CustomButton } from '../../landing_page/hooks'
-import { supabase } from '../../../services/supabase'
+} from '@mui/material';
+import { Visibility, VisibilityOff } from '@mui/icons-material';
+import { useTheme } from '@mui/material/styles';
+import { PasswordRequirements, CustomButton } from '../../landing_page/hooks';
+import { supabase } from '../../../services/supabase';
+// Importa useBanner para mostrar mensajes de error/éxito si es necesario
+import { useBanner } from '../../ui/BannerContext';
 
 const Step1Account = ({
   formData,
@@ -24,61 +26,139 @@ const Step1Account = ({
   onTogglePasswordVisibility,
   onToggleRepeatPasswordVisibility,
 }) => {
-  const theme = useTheme()
+  const theme = useTheme();
+  const { showBanner } = useBanner(); // Hook para mostrar banners
   const {
     correo,
     contrasena,
     confirmarContrasena,
     aceptaTerminos,
     aceptaComunicaciones,
-  } = formData
+  } = formData;
 
-  const [emailEnUso, setEmailEnUso] = useState(false)
-  const [checkingEmail, setCheckingEmail] = useState(false)
+  const [emailEnUso, setEmailEnUso] = useState(false);
+  // Eliminamos checkingEmail y usamos 'loading' para abarcar ambos estados de espera.
+  const [loading, setLoading] = useState(false);
 
-  const correoValido = /^[^@]+@[^@]+\.[^@]+$/.test(correo)
+  const correoValido = /^[^@]+@[^@]+\.[^@]+$/.test(correo);
   const contrasenasCoinciden =
-    contrasena === confirmarContrasena && confirmarContrasena.length > 0
+    contrasena === confirmarContrasena && confirmarContrasena.length > 0;
 
   const requisitos = [
     { label: 'Al menos 8 caracteres', valid: contrasena.length >= 8 },
     { label: 'Letras minúsculas (a-z)', valid: /[a-z]/.test(contrasena) },
     { label: 'Letras mayúsculas (A-Z)', valid: /[A-Z]/.test(contrasena) },
     { label: 'Números (0-9)', valid: /\d/.test(contrasena) },
-  ]
-  const cumpleMinimos = requisitos.filter((r) => r.valid).length >= 4
+  ];
+  const cumpleMinimos = requisitos.filter(r => r.valid).length >= 4;
 
   const canSubmit =
-    cumpleMinimos && aceptaTerminos && correoValido && contrasenasCoinciden
+    cumpleMinimos && aceptaTerminos && correoValido && contrasenasCoinciden;
 
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-    if (!canSubmit || checkingEmail) return
+  const handleSubmit = async e => {
+    e.preventDefault();
+    // Bloquear si no es válido o ya está cargando
+    if (!canSubmit || loading) return;
 
-    setCheckingEmail(true)
+    setLoading(true); // Iniciar estado de carga
+    setEmailEnUso(false); // Reiniciar el mensaje de error de correo en uso
 
-    // Verificar si el correo ya existe en la tabla 'users'
-    const { data, error } = await supabase
-      .from('users')
-      .select('email')
-      .eq('email', correo)
+    try {
+      // Paso 1: Verificar si el correo ya existe en tu tabla 'users' personalizada (opcional pero útil)
+      // Esto proporciona un mensaje más específico si el correo ya está en uso en tu base de datos.
+      const { data: existingUsers, error: checkError } = await supabase
+        .from('users')
+        .select('email')
+        .eq('email', correo);
 
-    if (error) {
-      console.error('Error al verificar el correo:', error)
-      setCheckingEmail(false)
-      return
+      if (checkError) {
+        console.error(
+          'Error al verificar el correo en la DB:',
+          checkError.message
+        );
+        showBanner({
+          message:
+            'Error al verificar el correo. Por favor, inténtalo de nuevo.',
+          severity: 'error',
+        });
+        setLoading(false);
+        return;
+      }
+
+      if (existingUsers.length > 0) {
+        setEmailEnUso(true);
+        setLoading(false);
+        return;
+      }
+
+      // Paso 2: Crear la cuenta de usuario en Supabase Auth
+      // Esta es la llamada que activa el envío del correo de verificación.
+      const { data: signUpData, error: signUpError } =
+        await supabase.auth.signUp({
+          email: correo,
+          password: contrasena,
+          options: {
+            // Importante: Asegúrate de que esta URL esté en la lista blanca en Supabase
+            // (Authentication -> URL Configuration -> Redirect URLs)
+            emailRedirectTo: `${window.location.origin}/auth/callback`,
+            // NOTA: No pasamos 'data' aquí para full_name, phone, etc.,
+            // ya que esos campos se llenarán en pasos posteriores si el flujo lo requiere.
+          },
+        });
+
+      if (signUpError) {
+        console.error('❌ Error al crear cuenta Auth:', signUpError.message);
+        if (signUpError.message.includes('User already registered')) {
+          setEmailEnUso(true); // Específico para este error de Supabase Auth
+        } else {
+          // Mostrar un banner para otros errores de registro
+          showBanner({
+            message: `Error de registro: ${signUpError.message}.`,
+            severity: 'error',
+          });
+        }
+        setLoading(false);
+        return;
+      }
+
+      // Si signUpData.user es null, significa que el correo fue enviado y el usuario está pendiente de confirmación.
+      // Este es el comportamiento esperado para los flujos de verificación de correo.
+      if (!signUpData.user) {
+        console.log(
+          '✅ Correo de verificación enviado. Usuario en estado pendiente.'
+        );
+        showBanner({
+          message: `¡Gracias por registrarte! Hemos enviado un correo de verificación a ${correo}. Por favor, revisa tu bandeja de entrada (y spam).`,
+          severity: 'success',
+          duration: 8000,
+        });
+        setLoading(false);
+        onNext(); // Mover al siguiente paso (Step4Verification)
+        return;
+      }
+
+      // Si signUpData.user NO es null, significa que la auto-confirmación está habilitada en Supabase (menos común para email verification)
+      console.log(
+        '✅ Usuario creado y confirmado (o esperando verificación):',
+        signUpData.user
+      );
+      showBanner({
+        message: '¡Registro completado! Bienvenido a Sellsi.',
+        severity: 'success',
+        duration: 6000,
+      });
+      setLoading(false);
+      onNext(); // Mover al siguiente paso (Step4Verification)
+    } catch (error) {
+      console.error('Error inesperado durante el registro:', error);
+      showBanner({
+        message:
+          'Ocurrió un error inesperado durante el registro. Inténtalo de nuevo.',
+        severity: 'error',
+      });
+      setLoading(false);
     }
-
-    if (data.length > 0) {
-      setEmailEnUso(true)
-      setCheckingEmail(false)
-      return
-    }
-
-    setEmailEnUso(false)
-    setCheckingEmail(false)
-    onNext()
-  }
+  };
 
   return (
     <Box
@@ -123,9 +203,9 @@ const Step1Account = ({
           variant="outlined"
           fullWidth
           value={correo}
-          onChange={(e) => {
-            onFieldChange('correo', e.target.value)
-            setEmailEnUso(false)
+          onChange={e => {
+            onFieldChange('correo', e.target.value);
+            setEmailEnUso(false); // Clear error when typing
           }}
           sx={{ mb: { xs: 1, sm: 1, md: 1, lg: 1.5 } }}
           size="small"
@@ -144,7 +224,7 @@ const Step1Account = ({
           variant="outlined"
           fullWidth
           value={contrasena}
-          onChange={(e) => onFieldChange('contrasena', e.target.value)}
+          onChange={e => onFieldChange('contrasena', e.target.value)}
           sx={{ mb: { xs: 1, sm: 1, md: 1, lg: 1.5 } }}
           size="small"
           InputProps={{
@@ -168,7 +248,7 @@ const Step1Account = ({
           variant="outlined"
           fullWidth
           value={confirmarContrasena}
-          onChange={(e) => onFieldChange('confirmarContrasena', e.target.value)}
+          onChange={e => onFieldChange('confirmarContrasena', e.target.value)}
           sx={{ mb: { xs: 1, sm: 1, md: 1, lg: 1.5 } }}
           size="small"
           error={confirmarContrasena.length > 0 && !contrasenasCoinciden}
@@ -197,9 +277,7 @@ const Step1Account = ({
           control={
             <Checkbox
               checked={aceptaTerminos}
-              onChange={(e) =>
-                onFieldChange('aceptaTerminos', e.target.checked)
-              }
+              onChange={e => onFieldChange('aceptaTerminos', e.target.checked)}
               sx={{ color: '#41B6E6' }}
               size="normal"
             />
@@ -228,7 +306,7 @@ const Step1Account = ({
           control={
             <Checkbox
               checked={aceptaComunicaciones}
-              onChange={(e) =>
+              onChange={e =>
                 onFieldChange('aceptaComunicaciones', e.target.checked)
               }
               sx={{ color: '#41B6E6' }}
@@ -250,11 +328,11 @@ const Step1Account = ({
         />
         <CustomButton
           type="submit"
-          disabled={!canSubmit || checkingEmail}
+          disabled={!canSubmit || loading}
           fullWidth
           sx={{ mb: 0.5 }}
         >
-          {checkingEmail ? 'Verificando...' : 'Crear cuenta'}
+          {loading ? 'Creando cuenta...' : 'Crear cuenta'}
         </CustomButton>
         <CustomButton
           variant="text"
@@ -266,7 +344,7 @@ const Step1Account = ({
         </CustomButton>
       </form>
     </Box>
-  )
-}
+  );
+};
 
-export default Step1Account
+export default Step1Account;

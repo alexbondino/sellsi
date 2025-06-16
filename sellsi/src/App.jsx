@@ -1,56 +1,70 @@
-import React, { useEffect, useState, useRef, Suspense } from 'react'
-import { Box, CssBaseline, CircularProgress } from '@mui/material'
-import { ThemeProvider } from '@mui/material/styles'
-import GlobalStyles from '@mui/material/GlobalStyles'
+import React, { useEffect, useState, useRef, Suspense } from 'react';
+import { Box, CssBaseline, CircularProgress, Typography } from '@mui/material';
+import { ThemeProvider } from '@mui/material/styles';
+import GlobalStyles from '@mui/material/GlobalStyles';
 import {
   BrowserRouter,
   Routes,
   Route,
   useLocation,
   useNavigate,
-} from 'react-router-dom'
+} from 'react-router-dom';
 
-import theme from './styles/theme'
-import TopBar from './features/layout/TopBar'
-import BottomBar from './features/layout/BottomBar'
-import PrivateRoute from './features/auth/PrivateRoute'
-import { BannerProvider, useBanner } from './features/ui/BannerContext'
-import Banner from './features/ui/Banner'
-import { Toaster } from 'react-hot-toast'
-import { supabase } from './services/supabase'
-import MarketplaceTopBar from './features/layout/MarketplaceTopBar'
-import { usePrefetch } from './hooks/usePrefetch'
+import theme from './styles/theme';
+import TopBar from './features/layout/TopBar';
+import BottomBar from './features/layout/BottomBar';
+import PrivateRoute from './features/auth/PrivateRoute';
+import { BannerProvider, useBanner } from './features/ui/BannerContext';
+import Banner from './features/ui/Banner';
+import { Toaster } from 'react-hot-toast';
+import { supabase } from './services/supabase';
+import { usePrefetch } from './hooks/usePrefetch';
 
 // ============================================================================
 // 🚀 CODE SPLITTING: LAZY LOADING DE COMPONENTES POR RUTAS
 // ============================================================================
 
 // Landing Page (carga inmediata para primera impresión)
-import Home from './features/landing_page/Home'
+import Home from './features/landing_page/Home';
 
 // 📦 RUTAS PRINCIPALES - LAZY LOADING
-const MarketplaceBuyer = React.lazy(() => import('./features/buyer/MarketplaceBuyer'))
-const Marketplace = React.lazy(() => import('./features/marketplace/Marketplace'))
-const BuyerCart = React.lazy(() => import('./features/buyer/BuyerCart'))
+const MarketplaceBuyer = React.lazy(() =>
+  import('./features/buyer/MarketplaceBuyer')
+);
+const Marketplace = React.lazy(() =>
+  import('./features/marketplace/Marketplace')
+);
+const BuyerCart = React.lazy(() => import('./features/buyer/BuyerCart'));
 
 // 📦 SUPPLIER DASHBOARD - LAZY LOADING
-const ProviderHome = React.lazy(() => import('./features/supplier/home/ProviderHome'))
-const MyProducts = React.lazy(() => import('./features/supplier/pages/MyProducts'))
-const AddProduct = React.lazy(() => import('./features/supplier/pages/AddProduct'))
+const ProviderHome = React.lazy(() =>
+  import('./features/supplier/home/ProviderHome')
+);
+const MyProducts = React.lazy(() =>
+  import('./features/supplier/pages/MyProducts')
+);
+const AddProduct = React.lazy(() =>
+  import('./features/supplier/pages/AddProduct')
+);
 
 // 📦 RUTAS SECUNDARIAS - LAZY LOADING
-const BuyerOrders = React.lazy(() => import('./features/buyer/BuyerOrders'))
-const BuyerPerformance = React.lazy(() => import('./features/buyer/BuyerPerformance'))
-const TechnicalSpecs = React.lazy(() => import('./features/marketplace/view_page/TechnicalSpecs'))
+const BuyerOrders = React.lazy(() => import('./features/buyer/BuyerOrders'));
+const BuyerPerformance = React.lazy(() =>
+  import('./features/buyer/BuyerPerformance')
+);
+const TechnicalSpecs = React.lazy(() =>
+  import('./features/marketplace/view_page/TechnicalSpecs')
+);
 
-// 📦 AUTH - LAZY LOADING (raramente usados después del primer uso)
-const Login = React.lazy(() => import('./features/login/Login'))
-const Register = React.lazy(() => import('./features/register/Register'))
+// 📦 AUTH & ONBOARDING - LAZY LOADING
+const Login = React.lazy(() => import('./features/login/Login'));
+const Register = React.lazy(() => import('./features/register/Register'));
+const Onboarding = React.lazy(() => import('./features/onboarding/Onboarding'));
 
 // ============================================================================
 // 🎨 COMPONENTE DE LOADING UNIVERSAL PARA SUSPENSE
 // ============================================================================
-const SuspenseLoader = ({ message = "Cargando..." }) => (
+const SuspenseLoader = ({ message = 'Cargando...' }) => (
   <Box
     sx={{
       display: 'flex',
@@ -62,221 +76,172 @@ const SuspenseLoader = ({ message = "Cargando..." }) => (
     }}
   >
     <CircularProgress size={40} />
-    <Box sx={{ color: 'text.secondary', fontSize: '0.875rem' }}>
+    <Typography sx={{ color: 'text.secondary', fontSize: '0.875rem' }}>
       {message}
-    </Box>
+    </Typography>
   </Box>
-)
+);
 
-// Contenido principal que depende de la ruta
+// Constante para el estado pendiente del nombre de usuario
+const USER_NAME_STATUS = {
+  PENDING: 'pendiente',
+};
+
+// ============================================================================
+// 📍 COMPONENTE DE CONTENIDO PRINCIPAL
+// ============================================================================
 function AppContent({ mensaje }) {
-  const location = useLocation()
-  const navigate = useNavigate()
-  const scrollTargets = useRef({})
-  const { bannerState, hideBanner } = useBanner()
-  const [session, setSession] = useState(null)
-  const [isBuyer, setIsBuyer] = useState(null)
-  const [loadingUserType, setLoadingUserType] = useState(true)
-  const lastUserType = useRef(null)
+  const location = useLocation();
+  const navigate = useNavigate();
+  const scrollTargets = useRef({});
+  const { bannerState, hideBanner } = useBanner();
+  const [session, setSession] = useState(null);
+  const [userProfile, setUserProfile] = useState(null); // State to store logo_url, is_buyer, etc.
+  const [loadingUserStatus, setLoadingUserStatus] = useState(true); // Renamed for clarity
+  const [needsOnboarding, setNeedsOnboarding] = useState(false);
+  const { prefetchRoute } = usePrefetch();
 
-  // 🚀 PREFETCHING: Carga anticipada de rutas probables
-  const { prefetchRoute } = usePrefetch()
-
-  // Escuchar cambios de sesión en tiempo real
   useEffect(() => {
-    let mounted = true
-    setLoadingUserType(true)
-    setIsBuyer(null) // Siempre reiniciar a null al iniciar la consulta
-    const getUserType = async (currentSession) => {
+    let mounted = true;
+    setLoadingUserStatus(true);
+    setUserProfile(null); // Clear profile when starting check
+    setNeedsOnboarding(false);
+
+    const checkUserAndFetchProfile = async currentSession => {
       if (!currentSession || !currentSession.user) {
         if (mounted) {
-          setIsBuyer(null)
-          setLoadingUserType(false)
+          setUserProfile(null);
+          setNeedsOnboarding(false);
+          setLoadingUserStatus(false);
         }
-        return
+        return;
       }
-      const result = await supabase
+
+      const { data: userData, error: userError } = await supabase
         .from('users')
-        .select('main_supplier')
+        .select('user_nm, main_supplier, logo_url') // ✅ Ensure logo_url is selected here!
         .eq('user_id', currentSession.user.id)
-        .single()
-      const userData = result.data
-      const userError = result.error
-      if (userError) {
-        if (mounted) {
-          setIsBuyer(null)
-        }
-      } else {
-        if (mounted) {
-          if (userData && typeof userData.main_supplier === 'boolean') {
-            setIsBuyer(userData.main_supplier === false)
-          } else {
-            setIsBuyer(null)
-          }
-        }
+        .single();
+
+      if (userError && mounted) {
+        console.error('Error fetching user profile:', userError.message); // Log the error message
+        // If there's an error (e.g., user has no profile entry), assume they need onboarding
+        setNeedsOnboarding(true);
+        setUserProfile(null); // Ensure profile is null
+        setLoadingUserStatus(false);
+        return;
       }
-      if (mounted) setLoadingUserType(false)
-    }
 
-    // Obtener sesión inicial
+      if (mounted) {
+        if (
+          !userData ||
+          userData.user_nm?.toLowerCase() === USER_NAME_STATUS.PENDING
+        ) {
+          setNeedsOnboarding(true);
+          setUserProfile(null); // Profile is null if onboarding is needed
+        } else {
+          setNeedsOnboarding(false);
+          setUserProfile(userData); // ✅ Store the complete user data (including logo_url)
+        }
+        setLoadingUserStatus(false);
+      }
+    };
+
+    // Initial session check and profile fetch
     supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session)
-      getUserType(data.session)
-    })
+      if (mounted) {
+        setSession(data.session);
+        checkUserAndFetchProfile(data.session);
+      }
+    });
 
-    // Suscribirse a cambios de sesión
+    // Listen for auth state changes
     const { data: listener } = supabase.auth.onAuthStateChange(
       (_event, newSession) => {
-        setSession(newSession)
-        getUserType(newSession)
+        if (mounted) {
+          setSession(newSession);
+          checkUserAndFetchProfile(newSession); // Re-evaluate and re-fetch profile on session changes
+        }
       }
-    )
+    );
 
     return () => {
-      mounted = false
-      listener.subscription.unsubscribe()
-    }
-  }, [])
+      mounted = false;
+      if (listener?.subscription) {
+        listener.subscription.unsubscribe();
+      }
+    };
+  }, []); // Empty dependency array means this runs once on mount
 
-  // 🚀 PREFETCHING INTELIGENTE: Cargar rutas probables según tipo de usuario
+  // --- Derived states from userProfile ---
+  const isBuyer = userProfile ? userProfile.main_supplier === false : null; // ✅ Derived from userProfile
+  const logoUrl = userProfile ? userProfile.logo_url : null; // ✅ Derived from userProfile
+
+  // Redirect to onboarding if needed
   useEffect(() => {
-    if (!loadingUserType && session && isBuyer !== null) {
-      // Prefetch después de 1.5s para no interferir con la carga inicial
+    if (session && needsOnboarding && location.pathname !== '/onboarding') {
+      navigate('/onboarding', { replace: true });
+    }
+  }, [session, needsOnboarding, location.pathname, navigate]);
+
+  // Redirect logged-in users from neutral routes
+  useEffect(() => {
+    if (!loadingUserStatus && session && isBuyer !== null && !needsOnboarding) {
+      const neutralRoutes = ['/', '/login', '/crear-cuenta', '/onboarding'];
+      if (neutralRoutes.includes(location.pathname)) {
+        if (isBuyer) {
+          navigate('/buyer/marketplace', { replace: true });
+        } else {
+          navigate('/supplier/home', { replace: true });
+        }
+      }
+    }
+  }, [
+    loadingUserStatus,
+    session,
+    isBuyer,
+    needsOnboarding,
+    location.pathname,
+    navigate,
+  ]);
+
+  // Prefetch routes for performance
+  useEffect(() => {
+    if (!loadingUserStatus && session && isBuyer !== null) {
       setTimeout(() => {
         if (isBuyer) {
-          // BUYER: Prefetch marketplace y carrito
-          prefetchRoute('/buyer/marketplace')
-          prefetchRoute('/buyer/cart')
+          prefetchRoute('/buyer/marketplace');
+          prefetchRoute('/buyer/cart');
         } else {
-          // SUPPLIER: Prefetch dashboard y productos
-          prefetchRoute('/supplier/home')
-          prefetchRoute('/supplier/myproducts')
+          prefetchRoute('/supplier/home');
+          prefetchRoute('/supplier/myproducts');
         }
-      }, 1500)
+      }, 1500);
     }
-  }, [loadingUserType, session, isBuyer, prefetchRoute])
+  }, [loadingUserStatus, session, isBuyer, prefetchRoute]);
 
-  // Redirección tras login: solo si la ruta es neutra y el tipo de usuario ya está determinado
-  useEffect(() => {
-    if (!loadingUserType && session && isBuyer !== null) {
-      const neutralRoutes = ['/', '/login', '/crear-cuenta', '/supplier/home']
-      if (neutralRoutes.includes(location.pathname)) {
-        if (isBuyer && location.pathname !== '/buyer/marketplace') {
-          navigate('/buyer/marketplace', { replace: true })
-        } else if (!isBuyer && location.pathname !== '/supplier/home') {
-          navigate('/supplier/home', { replace: true })
-        }
-      }
-    }
-  }, [loadingUserType, session, location.pathname, navigate, isBuyer])
-
+  // Close modals on browser back/forward (popstate)
   useEffect(() => {
     const handlePopstate = () => {
-      const event = new CustomEvent('closeAllModals')
-      window.dispatchEvent(event)
-    }
+      window.dispatchEvent(new CustomEvent('closeAllModals'));
+    };
+    window.addEventListener('popstate', handlePopstate);
+    return () => window.removeEventListener('popstate', handlePopstate);
+  }, []);
 
-    window.addEventListener('popstate', handlePopstate)
-    return () => {
-      window.removeEventListener('popstate', handlePopstate)
-    }
-  }, [])
-
-  const handleScrollTo = (refName) => {
-    const element = scrollTargets.current[refName]?.current
+  const handleScrollTo = refName => {
+    const element = scrollTargets.current[refName]?.current;
     if (element) {
-      const topBarHeight = 30
+      const topBarHeight = 30; // Adjust if your actual top bar height is different
       const elementPosition =
-        element.getBoundingClientRect().top + window.pageYOffset
-      const offsetPosition = elementPosition - topBarHeight
-      window.scrollTo({
-        top: offsetPosition,
-        behavior: 'smooth',
-      })
+        element.getBoundingClientRect().top + window.pageYOffset;
+      const offsetPosition = elementPosition - topBarHeight;
+      window.scrollTo({ top: offsetPosition, behavior: 'smooth' });
     }
-  }
+  };
 
-  const needsPadding = true
-  const showTopBar = !isBuyer
-  const showBottomBar = location.pathname !== '/supplier/home'
-
-  // Centralizar la lógica de tipo de usuario y barra
-  useEffect(() => {
-    let mounted = true
-    const isBuyerRoute = location.pathname.startsWith('/buyer')
-    const isSupplierRoute = location.pathname.startsWith('/supplier')
-    // Si el tipo de usuario no cambia y la sesión es la misma, no mostrar loading
-    if (
-      lastUserType.current !== null &&
-      ((isBuyerRoute && lastUserType.current === 'buyer') ||
-        (isSupplierRoute && lastUserType.current === 'supplier'))
-    ) {
-      setLoadingUserType(false)
-      return
-    }
-    setLoadingUserType(true)
-    const checkUserType = async () => {
-      if (!session || !session.user) {
-        if (mounted) {
-          setIsBuyer(null)
-          setLoadingUserType(false)
-          lastUserType.current = null
-        }
-        return
-      }
-      if (isSupplierRoute) {
-        // Si estamos en /supplier/home, consultar main_supplier para decidir
-        const { data: userData } = await supabase
-          .from('users')
-          .select('main_supplier')
-          .eq('user_id', session.user.id)
-          .single()
-        if (mounted) {
-          if (userData && userData.main_supplier === false) {
-            // Es buyer, no forzar supplier, dejar que la redirección lo saque
-            setIsBuyer(true)
-            setLoadingUserType(false)
-            lastUserType.current = 'buyer'
-          } else if (userData && userData.main_supplier === true) {
-            setIsBuyer(false)
-            setLoadingUserType(false)
-            lastUserType.current = 'supplier'
-          } else {
-            setIsBuyer(null)
-            setLoadingUserType(false)
-            lastUserType.current = null
-          }
-        }
-        return
-      }
-      if (isBuyerRoute) {
-        const { data: userData } = await supabase
-          .from('users')
-          .select('main_supplier')
-          .eq('user_id', session.user.id)
-          .single()
-        if (mounted) {
-          const isBuyerNow = userData && userData.main_supplier === false
-          setIsBuyer(isBuyerNow)
-          setLoadingUserType(false)
-          lastUserType.current = isBuyerNow ? 'buyer' : 'supplier'
-        }
-        return
-      }
-      if (mounted) {
-        setIsBuyer(null)
-        setLoadingUserType(false)
-        lastUserType.current = null
-      }
-    }
-    checkUserType()
-    return () => {
-      mounted = false
-    }
-  }, [session, location.pathname])
-
-  // Loading global: solo mientras loadingUserType es true
-  if (loadingUserType) {
+  if (loadingUserStatus) {
+    // Use the general loading state here
     return (
       <Box
         sx={{
@@ -286,22 +251,23 @@ function AppContent({ mensaje }) {
           alignItems: 'center',
           justifyContent: 'center',
           bgcolor: 'background.default',
-          zIndex: 99999,
         }}
       >
         <CircularProgress size={48} color="primary" />
       </Box>
-    )
+    );
   }
 
-  // Render de barras: MarketplaceTopBar solo para buyers logueados, TopBar para suppliers logueados o visitantes
+  const showBottomBar = location.pathname !== '/supplier/home';
+
   return (
     <>
-      {/* Topbars */}
-      {session && isBuyer === true && <MarketplaceTopBar />}
-      {(!session || isBuyer === false) && (
-        <TopBar onNavigate={handleScrollTo} />
-      )}
+      <TopBar
+        session={session}
+        isBuyer={isBuyer}
+        logoUrl={logoUrl} // ✅ Pass the derived logoUrl
+        onNavigate={handleScrollTo}
+      />
 
       <Banner
         message={bannerState.message}
@@ -318,153 +284,82 @@ function AppContent({ mensaje }) {
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'space-between',
-          pt: needsPadding ? '64px' : 0,
+          pt: '64px', // Adjust padding top to account for fixed TopBar height
           overflowX: 'hidden',
           bgcolor: 'background.default',
         }}
-      >        <Routes>
-          {/* 🏠 Landing Page - Carga inmediata para primera impresión */}
-          <Route path="/" element={<Home scrollTargets={scrollTargets} />} />
-          
-          {/* 🛒 MARKETPLACE - Lazy Loading */}
-          <Route 
-            path="/marketplace" 
-            element={
-              <Suspense fallback={<SuspenseLoader message="Cargando marketplace..." />}>
-                <Marketplace />
-              </Suspense>
-            } 
-          />
-          <Route 
-            path="/buyer/marketplace" 
-            element={
-              <Suspense fallback={<SuspenseLoader message="Cargando marketplace..." />}>
-                <MarketplaceBuyer />
-              </Suspense>
-            } 
-          />
-          
-          {/* 🛍️ BUYER ROUTES - Lazy Loading */}
-          <Route 
-            path="/buyer/orders" 
-            element={
-              <Suspense fallback={<SuspenseLoader message="Cargando pedidos..." />}>
-                <BuyerOrders />
-              </Suspense>
-            } 
-          />
-          <Route 
-            path="/buyer/performance" 
-            element={
-              <Suspense fallback={<SuspenseLoader message="Cargando performance..." />}>
-                <BuyerPerformance />
-              </Suspense>
-            } 
-          />
-          <Route 
-            path="/buyer/cart" 
-            element={
-              <Suspense fallback={<SuspenseLoader message="Cargando carrito..." />}>
-                <BuyerCart />
-              </Suspense>
-            } 
-          />
-          
-          {/* 📋 PRODUCT DETAILS - Lazy Loading */}
-          <Route
-            path="/technicalspecs/:productSlug"
-            element={
-              <Suspense fallback={<SuspenseLoader message="Cargando producto..." />}>
-                <TechnicalSpecs />
-              </Suspense>
-            }
-          />
-          
-          {/* 🔐 AUTH - Lazy Loading */}
-          <Route 
-            path="/login" 
-            element={
-              <Suspense fallback={<SuspenseLoader message="Cargando..." />}>
-                <Login />
-              </Suspense>
-            } 
-          />
-          <Route 
-            path="/crear-cuenta" 
-            element={
-              <Suspense fallback={<SuspenseLoader message="Cargando..." />}>
-                <Register />
-              </Suspense>
-            } 
-          />
-          
-          {/* 🏢 SUPPLIER ROUTES - Lazy Loading con Private Routes */}
-          <Route
-            path="/supplier/home"
-            element={
-              <PrivateRoute requiredAccountType="proveedor">
-                <Suspense fallback={<SuspenseLoader message="Cargando dashboard..." />}>
+      >
+        <Suspense fallback={<SuspenseLoader />}>
+          <Routes>
+            <Route path="/" element={<Home scrollTargets={scrollTargets} />} />
+            <Route path="/marketplace" element={<Marketplace />} />
+            <Route path="/buyer/marketplace" element={<MarketplaceBuyer />} />
+            <Route path="/buyer/orders" element={<BuyerOrders />} />
+            <Route path="/buyer/performance" element={<BuyerPerformance />} />
+            <Route path="/buyer/cart" element={<BuyerCart />} />
+            <Route
+              path="/technicalspecs/:productSlug"
+              element={<TechnicalSpecs />}
+            />
+            <Route path="/login" element={<Login />} />
+            <Route path="/crear-cuenta" element={<Register />} />
+            <Route
+              path="/onboarding"
+              element={
+                <PrivateRoute>
+                  <Onboarding />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/supplier/home"
+              element={
+                <PrivateRoute requiredAccountType="proveedor">
                   <ProviderHome />
-                </Suspense>
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path="/supplier/myproducts"
-            element={
-              <PrivateRoute requiredAccountType="proveedor">
-                <Suspense fallback={<SuspenseLoader message="Cargando productos..." />}>
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/supplier/myproducts"
+              element={
+                <PrivateRoute requiredAccountType="proveedor">
                   <MyProducts />
-                </Suspense>
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path="/supplier/addproduct"
-            element={
-              <PrivateRoute requiredAccountType="proveedor">
-                <Suspense fallback={<SuspenseLoader message="Cargando formulario..." />}>
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/supplier/addproduct"
+              element={
+                <PrivateRoute requiredAccountType="proveedor">
                   <AddProduct />
-                </Suspense>
-              </PrivateRoute>
-            }
-          />
-        </Routes>
-
-        {process.env.NODE_ENV === 'development' &&
-          location.pathname === '/' && (
-            <Box sx={{ flexGrow: 1, textAlign: 'center', py: 4 }}>
-              <h1>This is Sellsi</h1>
-              <p>Respuesta del backend:</p>
-              <pre>{mensaje}</pre>
-            </Box>
-          )}
-
+                </PrivateRoute>
+              }
+            />
+          </Routes>
+        </Suspense>
         {showBottomBar && <BottomBar />}
       </Box>
     </>
-  )
+  );
 }
 
-// Componente principal que monta el contenido y aplica estilos globales
+// ============================================================================
+// 🚀 COMPONENTE RAÍZ DE LA APLICACIÓN
+// ============================================================================
 function App() {
-  const [mensaje, setMensaje] = useState('Cargando...')
-  const backendUrl = import.meta.env.VITE_BACKEND_URL
+  const [mensaje, setMensaje] = useState('Cargando...');
+  const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
+  // Basic backend health check (optional, can be removed if not needed)
   useEffect(() => {
-    const fetchBackend = async () => {
-      try {
-        const res = await fetch(`${backendUrl}/`)
-        const data = await res.json()
-        setMensaje(JSON.stringify(data))
-      } catch (error) {
-        console.error('❌ Error al conectar con backend:', error)
-        setMensaje('No se pudo conectar con el backend.')
-      }
-    }
-
-    fetchBackend()
-  }, [backendUrl])
+    fetch(`${backendUrl}/`)
+      .then(res => res.json())
+      .then(data => setMensaje(JSON.stringify(data)))
+      .catch(error => {
+        console.error('❌ Error al conectar con backend:', error);
+        setMensaje('No se pudo conectar con el backend.');
+      });
+  }, [backendUrl]);
 
   return (
     <ThemeProvider theme={theme}>
@@ -472,20 +367,8 @@ function App() {
       <GlobalStyles
         styles={{
           html: { overflowX: 'hidden' },
-          body: {
-            overflowX: 'hidden',
-            margin: 0,
-            scrollBehavior: 'smooth',
-          },
-          '#root': {
-            overflowX: 'hidden',
-            position: 'relative',
-          },
-          '.MuiPopover-root': {
-            '& .MuiBackdrop-root': {
-              backgroundColor: 'transparent',
-            },
-          },
+          body: { overflowX: 'hidden', margin: 0, scrollBehavior: 'smooth' },
+          '#root': { overflowX: 'hidden', position: 'relative' },
         }}
       />
       <BannerProvider>
@@ -496,26 +379,14 @@ function App() {
           position="top-right"
           toastOptions={{
             duration: 4000,
-            style: {
-              background: '#333',
-              color: '#fff',
-              borderRadius: '8px',
-            },
-            success: {
-              style: {
-                background: '#4caf50',
-              },
-            },
-            error: {
-              style: {
-                background: '#f44336',
-              },
-            },
+            style: { background: '#333', color: '#fff', borderRadius: '8px' },
+            success: { style: { background: '#4caf50' } },
+            error: { style: { background: '#f44336' } },
           }}
         />
       </BannerProvider>
     </ThemeProvider>
-  )
+  );
 }
 
-export default App
+export default App;

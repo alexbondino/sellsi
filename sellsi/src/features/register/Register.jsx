@@ -11,8 +11,8 @@ import {
 } from '../landing_page/hooks';
 import {
   Step1Account,
-  Step2AccountType,
-  Step3Profile,
+  // Step2AccountType, // Removed
+  // Step3Profile,     // Removed
   Step4Verification,
 } from './wizard';
 import { useBanner } from '../ui/BannerContext';
@@ -20,7 +20,7 @@ import { useBanner } from '../ui/BannerContext';
 export default function Register({ open, onClose }) {
   const theme = useTheme();
   const { showBanner } = useBanner();
-  const navigate = useNavigate(); // 🔄 AGREGADO: Hook para navegación automática de proveedores
+  const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
     correo: '',
@@ -28,19 +28,19 @@ export default function Register({ open, onClose }) {
     confirmarContrasena: '',
     aceptaTerminos: false,
     aceptaComunicaciones: false,
-    tipoCuenta: '',
-    nombreEmpresa: '',
-    nombrePersonal: '',
-    telefonoContacto: '',
-    codigoPais: '',
-    logoEmpresa: null,
+    // tipoCuenta: '',       // No longer needed for initial creation
+    // nombreEmpresa: '',    // No longer needed for initial creation
+    // nombrePersonal: '',   // No longer needed for initial creation
+    // telefonoContacto: '', // No longer needed for initial creation
+    // codigoPais: '',       // No longer needed for initial creation
+    // logoEmpresa: null,    // No longer needed for initial creation
   });
 
   const [codigo, setCodigo] = useState(['', '', '', '', '']);
   const [timer, setTimer] = useState(300);
   const [showPassword, setShowPassword] = useState(false);
   const [showRepeatPassword, setShowRepeatPassword] = useState(false);
-  const [logoError, setLogoError] = useState('');
+  // const [logoError, setLogoError] = useState(''); // No longer needed
   const [showCodigoEnviado, setShowCodigoEnviado] = useState(false);
   const [fadeIn, setFadeIn] = useState(false);
   const [dialogKey, setDialogKey] = useState(0);
@@ -48,17 +48,13 @@ export default function Register({ open, onClose }) {
   const timerRef = useRef();
   const fadeTimeout = useRef();
 
-  const steps = [
-    'Creación de Cuenta',
-    'Tipo de Cuenta',
-    'Completar Información',
-    'Verificación',
-  ];
+  // 🎯 MODIFICADO: Solo dos pasos para la creación de cuenta y verificación
+  const steps = ['Creación de Cuenta', 'Verificación'];
 
   const {
     currentStep,
     nextStep,
-    prevStep,
+    // prevStep, // Not directly used in the new flow for prev
     goToStep,
     resetWizard,
     isFirst,
@@ -90,18 +86,18 @@ export default function Register({ open, onClose }) {
       confirmarContrasena: '',
       aceptaTerminos: false,
       aceptaComunicaciones: false,
-      tipoCuenta: '',
-      nombreEmpresa: '',
-      nombrePersonal: '',
-      telefonoContacto: '',
-      codigoPais: 'Chile',
-      logoEmpresa: null,
+      // tipoCuenta: '', // Reset if it were still part of formData structure
+      // nombreEmpresa: '',
+      // nombrePersonal: '',
+      // telefonoContacto: '',
+      // codigoPais: 'Chile',
+      // logoEmpresa: null,
     });
     setCodigo(['', '', '', '', '']);
     setTimer(300);
     setShowPassword(false);
     setShowRepeatPassword(false);
-    setLogoError('');
+    // setLogoError(''); // No longer needed
     setShowCodigoEnviado(false);
     setFadeIn(false);
     clearInterval(timerRef.current);
@@ -109,7 +105,9 @@ export default function Register({ open, onClose }) {
   };
 
   useEffect(() => {
-    if (currentStep === 3) {
+    // 🎯 MODIFICADO: El paso de verificación ahora es el segundo paso (índice 1)
+    if (currentStep === 1) {
+      // Changed from 3 to 1
       setTimer(300);
       timerRef.current = setInterval(() => {
         setTimer(prev => prev - 1);
@@ -133,17 +131,7 @@ export default function Register({ open, onClose }) {
     return () => clearTimeout(fadeTimeout.current);
   }, [showCodigoEnviado]);
 
-  const handleLogoChange = file => {
-    if (file.size > 300 * 1024) {
-      setLogoError('El tamaño del archivo excede los 300 KB.');
-      updateFormData('logoEmpresa', null);
-      return;
-    }
-    setLogoError('');
-    const reader = new FileReader();
-    reader.onload = ev => updateFormData('logoEmpresa', ev.target.result);
-    reader.readAsDataURL(file);
-  };
+  // const handleLogoChange = file => { ... } // No longer needed for initial registration
 
   const handleResendCode = () => {
     setShowCodigoEnviado(false);
@@ -154,6 +142,7 @@ export default function Register({ open, onClose }) {
       setTimer(prev => prev - 1);
     }, 1000);
   };
+
   const handleSuccessfulVerification = () => {
     onClose();
     showBanner({
@@ -162,26 +151,25 @@ export default function Register({ open, onClose }) {
       duration: 6000,
     });
 
-    // 🔄 NUEVA LÓGICA: Redirección automática para cuentas de proveedor
-    // 📍 PUNTO DE CONEXIÓN BACKEND: Aquí es donde verificas el tipo de cuenta desde la respuesta del servidor
-    // En lugar de usar formData.tipoCuenta, podrías usar algo como: responseData.accountType o user.userType
+    // 🎯 NOTA: La redirección a '/supplier/home' basada en 'formData.tipoCuenta'
+    // ya no tendrá el tipo de cuenta definido en este flujo inicial,
+    // ya que la selección de tipo de cuenta se movió para después de la verificación.
+    // Necesitarías una forma diferente de determinar el tipo de usuario aquí,
+    // quizás después de que el usuario haya completado su perfil post-verificación.
+    // Por ahora, mantendremos la redirección condicional, pero ten en cuenta la implicación.
     if (formData.tipoCuenta === 'proveedor') {
-      // 🔄 AGREGADO: Redirección con delay para mostrar el banner de éxito
-      // 📍 PUNTO DE CONEXIÓN BACKEND: Aquí también podrías almacenar datos del usuario en localStorage
-      // Ejemplo: localStorage.setItem('userType', 'provider'); localStorage.setItem('supplierId', responseData.id);
+      // This will likely be undefined now
       setTimeout(() => {
-        navigate('/supplier/home'); // 🔄 Redirige a dashboard de proveedor
-      }, 1000); // Esperar 1 segundo para que el usuario vea el banner
+        navigate('/supplier/home');
+      }, 1000);
     }
-    // 📍 NOTA: Las cuentas de comprador mantienen el comportamiento actual (solo banner, sin redirección)
   };
 
   const handleDialogClose = (event, reason) => {
     if (
-      (currentStep === 1 ||
-        currentStep === 2 ||
-        currentStep === 3 ||
-        currentStep === 4) &&
+      // 🎯 MODIFICADO: Ajustar los pasos para evitar cerrar en backdropClick
+      (currentStep === 0 || // Now only step 0 and 1 are relevant
+        currentStep === 1) &&
       reason === 'backdropClick'
     ) {
       return;
@@ -201,7 +189,7 @@ export default function Register({ open, onClose }) {
           <Step1Account
             formData={formData}
             onFieldChange={updateFormData}
-            onNext={wizardControls.nextStep}
+            onNext={wizardControls.nextStep} // 🎯 Llamará a nextStep después de la creación y envío de correo
             onCancel={onClose}
             showPassword={showPassword}
             showRepeatPassword={showRepeatPassword}
@@ -211,28 +199,29 @@ export default function Register({ open, onClose }) {
             }
           />
         );
-      case 1:
-        return (
-          <Step2AccountType
-            selectedType={formData.tipoCuenta}
-            onTypeSelect={type => updateFormData('tipoCuenta', type)}
-            onNext={wizardControls.nextStep}
-            onBack={wizardControls.prevStep}
-          />
-        );
-      case 2:
-        return (
-          <Step3Profile
-            accountType={formData.tipoCuenta}
-            formData={formData}
-            onFieldChange={updateFormData}
-            onLogoChange={handleLogoChange}
-            logoError={logoError}
-            onNext={wizardControls.nextStep}
-            onBack={wizardControls.prevStep}
-          />
-        );
-      case 3:
+      // 🎯 ELIMINADOS: Step 1 and Step 2 from original structure
+      // case 1:
+      //   return (
+      //     <Step2AccountType
+      //       selectedType={formData.tipoCuenta}
+      //       onTypeSelect={type => updateFormData('tipoCuenta', type)}
+      //       onNext={wizardControls.nextStep}
+      //       onBack={wizardControls.prevStep}
+      //     />
+      //   );
+      // case 2:
+      //   return (
+      //     <Step3Profile
+      //       accountType={formData.tipoCuenta}
+      //       formData={formData}
+      //       onFieldChange={updateFormData}
+      //       onLogoChange={handleLogoChange}
+      //       logoError={logoError}
+      //       onNext={wizardControls.nextStep}
+      //       onBack={wizardControls.prevStep}
+      //     />
+      //   );
+      case 1: // 🎯 MODIFICADO: Step4Verification ahora es el paso 1 (segundo en la secuencia)
         return (
           <Step4Verification
             email={formData.correo}
@@ -241,7 +230,7 @@ export default function Register({ open, onClose }) {
             timer={timer}
             onVerify={handleSuccessfulVerification}
             onResendCode={handleResendCode}
-            onBack={() => wizardControls.goToStep(2)}
+            onBack={() => wizardControls.goToStep(0)} // Permite volver al primer paso
             showCodigoEnviado={showCodigoEnviado}
             fadeIn={fadeIn}
           />
@@ -309,7 +298,7 @@ export default function Register({ open, onClose }) {
           <Box sx={{ mt: 2 }}>
             {renderStep(currentStep, steps[currentStep], {
               nextStep,
-              prevStep,
+              // prevStep, // Not exposed to renderStep, goToStep is preferred for specific navigation
               goToStep,
             })}
           </Box>
