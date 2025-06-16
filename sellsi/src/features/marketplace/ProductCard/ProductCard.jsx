@@ -55,15 +55,9 @@ const ProductCard = ({ producto, onAddToCart, onViewDetails }) => {
 
   if (!producto) {
     return null
-  }
-
-  // Mapeo robusto de campos para compatibilidad
+  }  // Mapeo robusto de campos para compatibilidad
   const nombre = producto.nombre || producto.name || 'Producto sin nombre'
-  const proveedor =
-    producto.proveedor ||
-    producto.supplier ||
-    producto.provider ||
-    'Proveedor no especificado'
+  const proveedor = producto.proveedor || 'Proveedor no encontrado'
   const imagen = producto.imagen || producto.image
   const precio = producto.precio || producto.price || 0
   const precioOriginal = producto.precioOriginal || producto.originalPrice

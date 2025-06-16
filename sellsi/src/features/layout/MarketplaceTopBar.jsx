@@ -24,16 +24,26 @@ export default function MarketplaceTopBar() {
   const [profileAnchor, setProfileAnchor] = useState(null)
   const openProfileMenu = (e) => setProfileAnchor(e.currentTarget)
   const closeProfileMenu = () => setProfileAnchor(null)
-
   // Handler de logout igual que en BaseTopBar
   const handleLogout = async () => {
-    localStorage.removeItem('user_id')
-    localStorage.removeItem('account_type')
-    localStorage.removeItem('supplierid')
-    localStorage.removeItem('sellerid')
-    await supabase.auth.signOut()
-    closeProfileMenu()
-    navigate('/')
+    try {
+      localStorage.removeItem('user_id')
+      localStorage.removeItem('account_type')
+      localStorage.removeItem('supplierid')
+      localStorage.removeItem('sellerid')
+      
+      const { error } = await supabase.auth.signOut()
+      if (error) {
+        console.error('Error during logout:', error)
+      }
+      
+      closeProfileMenu()
+      navigate('/')
+    } catch (error) {
+      console.error('Logout error:', error)
+      closeProfileMenu()
+      navigate('/')
+    }
   }
 
   const handleGoToCart = () => {

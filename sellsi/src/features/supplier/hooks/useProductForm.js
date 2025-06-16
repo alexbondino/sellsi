@@ -126,16 +126,16 @@ export const useProductForm = (productId = null) => {
    */
   function mapFormToProduct(formData) {
     const productData = {
-      productnm: formData.nombre,
-      description: formData.descripcion,
+      productnm: formData.nombre,      description: formData.descripcion,
       category: formData.categoria,
       productqty: parseInt(formData.stock) || 0,
       minimum_purchase: parseInt(formData.compraMinima) || 1,
       negotiable: formData.negociable,
       is_active: formData.activo,
       imagenes: formData.imagenes,
-      documentos: formData.documentos,
-      specifications: formData.specifications.filter((s) => s.key && s.value),
+      // documentos: formData.documentos, // Columna no existe en la BD
+      // specifications: formData.specifications.filter((s) => s.key && s.value), // Se maneja en tabla separada
+      specifications: formData.specifications.filter((s) => s.key && s.value), // Para procesamiento interno
     }
 
     if (formData.pricingType === 'Por Unidad') {
@@ -277,17 +277,16 @@ export const useProductForm = (productId = null) => {
 
   /**
    * Enviar formulario
-   */
-  const submitForm = useCallback(async () => {
+   */  const submitForm = useCallback(async () => {
     if (!validateForm()) {
       return { success: false, errors: errors }
     }
 
     const productData = mapFormToProduct(formData)
+    console.log('📝 [SUBMIT FORM] - productData mapeado:', productData);
 
     let result
-    if (isEditMode) {
-      result = await updateProduct(productId, productData)
+    if (isEditMode) {      result = await updateProduct(productId, productData)
     } else {
       result = await createProduct(productData)
     }
@@ -355,8 +354,8 @@ export const useProductForm = (productId = null) => {
     validateForm,
 
     // Utilidades
-    hasErrors: Object.keys(errors).some((key) => errors[key]),
-    isValid: Object.keys(errors).length === 0,
+    hasErrors: Object.values(errors).some((v) => !!v),
+    isValid: Object.values(errors).every((v) => !v),
   }
 }
 

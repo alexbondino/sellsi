@@ -80,15 +80,16 @@ const useCartStore = create(
         },
         get selectedShipping() {
           return shippingStore.selectedShipping
-        },
-
-        // === ACCIONES DEL CARRITO (REFACTORIZADAS) ===
+        },        // === ACCIONES DEL CARRITO (REFACTORIZADAS) ===
 
         // Agregar producto al carrito
         addItem: (product, quantity = 1) => {
           // Asegurarse de que la imagen principal esté presente
           const image =
             product.imagen || product.image || '/placeholder-product.jpg'
+
+          // Asegurar que el nombre del proveedor esté presente (no el ID)
+          const supplier = product.proveedor || product.supplier || 'Proveedor no especificado'
 
           // ===== REFORZAR CAMPOS price_tiers Y minimum_purchase =====
           const basePrice = product.precio || product.price || 0
@@ -103,6 +104,7 @@ const useCartStore = create(
           const item = {
             ...product,
             image,
+            supplier, // ✅ Asegurar que se use el nombre, no el ID
             quantity,
             price_tiers,
             minimum_purchase,

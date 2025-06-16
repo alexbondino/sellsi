@@ -170,11 +170,10 @@ const ConfirmationModal = ({
               color: config.iconColor,
             }}
           />
-        </Box>
-
-        {/* Title */}
+        </Box>        {/* Title */}
         <Typography
           variant="h6"
+          component="span"
           fontWeight="600"
           sx={{
             fontSize: { xs: '1.1rem', sm: '1.25rem' },

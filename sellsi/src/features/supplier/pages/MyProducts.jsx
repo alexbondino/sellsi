@@ -272,9 +272,8 @@ const MyProducts = () => {
                 </Box>
 
                 <Box sx={{ p: 0 }}>
-                  {' '}
-                  <Grid container columns={12}>
-                    <Grid xs={12} sm={4}>
+                  {' '}                  <Grid container columns={12}>
+                    <Grid size={{ xs: 12, sm: 4 }}>
                       <Box
                         sx={{
                           p: 2,
@@ -301,15 +300,14 @@ const MyProducts = () => {
                               sx={{ fontWeight: 600, lineHeight: 1.2 }}
                             >
                               {stats.total}
-                            </Typography>
-                            <Typography variant="body2" color="text.secondary">
+                            </Typography>                            <Typography variant="body2" color="text.secondary">
                               Total de productos
                             </Typography>
                           </Box>
                         </Box>
                       </Box>
                     </Grid>{' '}
-                    <Grid xs={12} sm={4}>
+                    <Grid size={{ xs: 12, sm: 4 }}>
                       <Box
                         sx={{
                           p: 2,
@@ -343,15 +341,14 @@ const MyProducts = () => {
                               sx={{ fontWeight: 600, lineHeight: 1.2 }}
                             >
                               {stats.inStock}
-                            </Typography>
-                            <Typography variant="body2" color="text.secondary">
+                            </Typography>                            <Typography variant="body2" color="text.secondary">
                               Productos en stock
                             </Typography>
                           </Box>
                         </Box>
                       </Box>
                     </Grid>{' '}
-                    <Grid xs={12} sm={4}>
+                    <Grid size={{ xs: 12, sm: 4 }}>
                       <Box sx={{ p: 2 }}>
                         <Box
                           sx={{
@@ -390,11 +387,10 @@ const MyProducts = () => {
             </Alert>
           )}
           {/* Filtros y búsqueda */}
-          <Paper sx={{ p: 3, mb: 3 }}>
-            <Grid container columns={12} spacing={2} alignItems="center">
+          <Paper sx={{ p: 3, mb: 3 }}>            <Grid container columns={12} spacing={2} alignItems="center">
               {' '}
               {/* Búsqueda */}
-              <Grid xs={12} sm={6} md={4}>
+              <Grid size={{ xs: 12, sm: 6, md: 4 }}>
                 <TextField
                   fullWidth
                   placeholder="Buscar productos..."
@@ -408,10 +404,9 @@ const MyProducts = () => {
                     ),
                   }}
                   sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
-                />
-              </Grid>{' '}
+                />              </Grid>{' '}
               {/* Filtro por categoría */}{' '}
-              <Grid xs={12} sm={6} md={3}>
+              <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                 <FormControl fullWidth>
                   <InputLabel>Categoría</InputLabel>{' '}
                   <Select
@@ -436,9 +431,8 @@ const MyProducts = () => {
                     ))}
                   </Select>
                 </FormControl>
-              </Grid>{' '}
-              {/* Ordenamiento */}
-              <Grid xs={12} sm={6} md={3}>
+              </Grid>{' '}              {/* Ordenamiento */}
+              <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                 <FormControl fullWidth>
                   <InputLabel>Ordenar por</InputLabel>{' '}
                   <Select
@@ -462,10 +456,9 @@ const MyProducts = () => {
                       </MenuItem>
                     ))}
                   </Select>
-                </FormControl>
-              </Grid>{' '}
+                </FormControl>              </Grid>{' '}
               {/* Acciones */}
-              <Grid xs={12} sm={6} md={2}>
+              <Grid size={{ xs: 12, sm: 6, md: 2 }}>
                 <Stack direction="row" spacing={1}>
                   <Button
                     variant="outlined"
@@ -558,7 +551,7 @@ const MyProducts = () => {
                       timeout={600}
                       style={{ transitionDelay: `${(index % 8) * 50}ms` }}
                     >
-                      <Grid xs={12} sm={6} md={4} lg={3}>
+                      <Grid size={{ xs: 12, sm: 6, md: 4.5, lg: 3.5, xl: 2.8 }}>
                         <SupplierProductCard
                           product={product}
                           onEdit={handleEditProduct}

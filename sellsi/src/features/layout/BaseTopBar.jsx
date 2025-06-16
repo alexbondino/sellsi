@@ -62,17 +62,29 @@ export default function BaseTopBar({
   const closeMenu = () => setMenuAnchor(null)
   const openProfileMenu = (e) => setProfileAnchor(e.currentTarget)
   const closeProfileMenu = () => setProfileAnchor(null)
-
   const handleLogout = async () => {
-    // Limpiar localStorage
-    localStorage.removeItem('user_id')
-    localStorage.removeItem('account_type')
-    localStorage.removeItem('supplierid')
-    localStorage.removeItem('sellerid')
+    try {
+      // Limpiar localStorage primero
+      localStorage.removeItem('user_id')
+      localStorage.removeItem('account_type')
+      localStorage.removeItem('supplierid')
+      localStorage.removeItem('sellerid')
 
-    await supabase.auth.signOut()
-    closeProfileMenu()
-    navigate('/')
+      // Intentar sign out de Supabase
+      const { error } = await supabase.auth.signOut()
+      if (error) {
+        console.error('Error during logout:', error)
+        // Continuar con la navegación incluso si hay error
+      }
+
+      closeProfileMenu()
+      navigate('/')
+    } catch (error) {
+      console.error('Logout error:', error)
+      // En caso de cualquier error, seguir con la navegación
+      closeProfileMenu()
+      navigate('/')
+    }
   }
 
   const handleOpenLogin = () => {

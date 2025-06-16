@@ -34,6 +34,7 @@ import { ThemeProvider } from '@mui/material/styles'
 import { toast } from 'react-hot-toast'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '../../../services/supabase'
+import { UploadService } from '../../../services/uploadService'
 
 // Components
 import SidebarProvider from '../../layout/SideBar'
@@ -64,10 +65,8 @@ const PRICING_TYPES = {
 const AddProduct = () => {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
-  const theme = useTheme()
-  // Usar los nuevos hooks modularizados
-  const { createProduct, updateProduct, getProductById, loadProducts } =
-    useSupplierProducts()
+  const theme = useTheme()  // Usar los nuevos hooks modularizados
+  const { createProduct, loadProducts } = useSupplierProducts()
 
   // Detectar modo de edición
   const editProductId = searchParams.get('edit')
@@ -282,31 +281,40 @@ const AddProduct = () => {
     }
 
     // En validateForm, agregar validación básica de especificaciones
-    if (formData.specifications.some((s) => s.key && !s.value)) {
-      newErrors.specifications =
+    if (formData.specifications.some((s) => s.key && !s.value)) {      newErrors.specifications =
         'Completa todos los valores de las especificaciones'
     }
-
-    setErrors(newErrors)
+      setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
+
   const handleSubmit = async () => {
     try {
-      await submitForm()
-      toast.success(
-        isEditMode
-          ? 'Producto actualizado exitosamente'
-          : 'Producto agregado exitosamente'
-      )
-      navigate('/supplier/myproducts')
+      // Usar el submitForm del hook que maneja correctamente create/update
+      const result = await submitForm();
+      
+      if (!result.success) {
+        throw new Error(result.error || 'No se pudo procesar el producto');
+      }
+
+      console.log('✅ Producto procesado exitosamente');
+      toast.success(isEditMode ? 'Producto actualizado exitosamente' : 'Producto agregado exitosamente');
+      navigate('/supplier/myproducts');
     } catch (error) {
-      toast.error(error.message || 'Error inesperado al procesar el producto')
+      console.error('❌ Error en handleSubmit:', error);
+      toast.error(error.message || 'Error inesperado al procesar el producto');
     }
   }
 
   const handleBack = () => {
     navigate('/supplier/myproducts')
   }
+  useEffect(() => {
+    // Logs de debugging - comentados para producción
+    // console.log('isValid:', isValid)
+    // console.log('formData:', formData)
+    // console.log('errors:', errors)
+  }, [isValid, formData, errors])
 
   return (
     <ThemeProvider theme={dashboardTheme}>

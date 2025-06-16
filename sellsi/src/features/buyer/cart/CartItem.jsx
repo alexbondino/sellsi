@@ -130,7 +130,6 @@ const CartItem = ({
   }, [item.id, onShippingChange])
 
   // Obtener el precio del envío seleccionado  // ===== OPTIMIZACIONES DE RENDIMIENTO =====
-  
   // Memoizar datos del producto para evitar recálculos
   const productData = React.useMemo(() => ({
     name: item.name || item.nombre || 'Producto sin nombre',
@@ -328,14 +327,13 @@ const CartItem = ({
                     width: 24,
                     height: 24,
                     mr: 1,
-                    mb: 1,
                     fontSize: '0.75rem',
                   }}
                 >
-                  {item.supplier?.charAt(0)}
+                  {(item.proveedor || 'Proveedor no encontrado').charAt(0)}
                 </Avatar>
                 <Chip
-                  label={item.supplier}
+                  label={item.proveedor || 'Proveedor no encontrado'}
                   size="small"
                   variant="outlined"
                   color="primary"
