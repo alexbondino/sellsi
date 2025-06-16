@@ -28,14 +28,17 @@ const ProviderLogo = React.memo(({ provider }) => (
   <Card
     elevation={2}
     sx={{
-      width: { xs: 100, sm: 135, md: 120, lg: 140, xl: 160 },
-      height: { xs: 100, sm: 135, md: 100, lg: 120, xl: 130 },
+      width: { xs: 108, sm: 144, md: 162, lg: 180, xl: 198 }, // -10%
+      minHeight: { xs: 72, sm: 90, md: 99, lg: 108, xl: 117 }, // -10%
       borderRadius: { xs: 2, sm: 3, md: 4, lg: 4, xl: 4 },
       overflow: 'hidden',
       background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
       border: '2px solid #f0f4f8',
       transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
       cursor: 'pointer',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
       '&:hover': {
         transform: {
           xs: 'translateY(-4px) scale(1.02)',
@@ -55,28 +58,30 @@ const ProviderLogo = React.memo(({ provider }) => (
         background: 'linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%)',
       },
     }}
-  >    <CardContent
+  >
+    <CardContent
       sx={{
-        height: '100%',
+        width: '100%',
+        p: 2,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        p: { xs: 1.5, sm: 2, md: 2.5, lg: 3, xl: 3 },
-        '&:last-child': { pb: { xs: 1.5, sm: 2, md: 2.5, lg: 3, xl: 3 } },
       }}
     >
-      {/* ✅ OPTIMIZACIÓN: Logo con lazy loading */}
+      {/* Logo con lazy loading */}
       <LazyImage
         src={provider.src}
         alt={provider.alt}
-        aspectRatio="1"
         rootMargin="300px" // Cargar con más anticipación para landing page
         sx={{
-          maxWidth: '120%',
-          maxHeight: '120%',
+          width: '90%', // -10%
+          height: 'auto', // <-- Importante: auto para mantener proporción
+          maxWidth: '90%', // -10%
+          maxHeight: 90, // -10% de 100
           objectFit: 'contain',
           filter: 'none', // Siempre colores activos
           transition: 'transform 0.3s ease',
+          display: 'block',
         }}
       />
     </CardContent>

@@ -193,13 +193,9 @@ const ImageUploader = ({
             Archivos seleccionados ({images.length}/{maxImages})
           </Typography>
 
-          <Grid container spacing={2}>
-            {images.map((image, index) => (
+          <Grid container spacing={2}>            {images.map((image, index) => (
               <Grid
-                item
-                xs={6}
-                sm={4}
-                md={3}
+                size={{ xs: 6, sm: 4, md: 3 }}
                 key={image.id}
                 sx={{ maxWidth: 160, minWidth: 140 }}
               >

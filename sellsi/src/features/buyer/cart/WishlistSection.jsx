@@ -51,7 +51,7 @@ const WishlistSection = ({
 
             <Grid container spacing={2}>
               {wishlist.map((item) => (
-                <Grid item xs={12} sm={6} md={4} key={item.id}>
+                <Grid size={{ xs: 12, sm: 6, md: 4 }} key={item.id}>
                   <Card sx={{ borderRadius: 2 }}>
                     <CardMedia
                       component="img"

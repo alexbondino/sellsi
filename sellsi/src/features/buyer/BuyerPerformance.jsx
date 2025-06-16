@@ -98,9 +98,8 @@ const BuyerPerformance = () => {
           >
             Mi Performance
           </Typography>
-          {/* Estadísticas principales */}
-          <Grid container spacing={3} sx={{ mb: 4 }}>
-            <Grid item xs={12} sm={6} md={3}>
+          {/* Estadísticas principales */}          <Grid container spacing={3} sx={{ mb: 4 }}>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <StatCard
                 title="Total Compras"
                 value={performanceData.totalPurchases}
@@ -108,7 +107,7 @@ const BuyerPerformance = () => {
                 color="primary"
               />
             </Grid>
-            <Grid item xs={12} sm={6} md={3}>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <StatCard
                 title="Gastado Total"
                 value={performanceData.totalSpent}
@@ -116,7 +115,7 @@ const BuyerPerformance = () => {
                 color="success"
               />
             </Grid>
-            <Grid item xs={12} sm={6} md={3}>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <StatCard
                 title="Promedio por Pedido"
                 value={performanceData.averageOrderValue}
@@ -124,7 +123,7 @@ const BuyerPerformance = () => {
                 color="info"
               />
             </Grid>
-            <Grid item xs={12} sm={6} md={3}>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <StatCard
                 title="Tasa de Completado"
                 value={`${performanceData.completionRate}%`}

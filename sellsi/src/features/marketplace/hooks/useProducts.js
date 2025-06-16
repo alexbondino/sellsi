@@ -36,14 +36,17 @@ export function useProducts() {
             const { data: tiersData } = await supabase
               .from('product_price_tiers')
               .select('*')
-              .in('product_id', productIds)
-            // Traer nombres de proveedores
+              .in('product_id', productIds)            // Traer nombres de proveedores
             let usersMap = {}
             if (supplierIds.length > 0) {
-              const { data: usersData } = await supabase
+              const supplierIdsStr = supplierIds.map(id => String(id).trim())
+              const { data: usersData, error: usersError } = await supabase
                 .from('users')
                 .select('user_id, user_nm')
-                .in('user_id', supplierIds)
+                .in('user_id', supplierIdsStr)
+              if (usersError) {
+                console.error('Error al consultar users:', usersError)
+              }
               if (usersData) {
                 usersMap = Object.fromEntries(
                   usersData.map((u) => [u.user_id, u.user_nm])
@@ -51,36 +54,12 @@ export function useProducts() {
               }
             }
             mapped = data.map((p) => {
-              const priceTiers = (tiersData || []).filter(
-                (t) => t.product_id === p.productid
-              )
-              let minPrice = p.price,
-                maxPrice = p.price
-              if (priceTiers.length > 0) {
-                minPrice = Math.min(...priceTiers.map((t) => Number(t.price)))
-                maxPrice = Math.max(...priceTiers.map((t) => Number(t.price)))
-              }
-
-              // ✅ Obtener imagen primaria de product_images
-              let imagenPrincipal = p.image_url
-              if (
-                p.product_images &&
-                Array.isArray(p.product_images) &&
-                p.product_images.length > 0
-              ) {
-                const principal = p.product_images.find((img) => img.is_primary)
-                if (principal) {
-                  imagenPrincipal = principal.image_url
-                } else {
-                  imagenPrincipal = p.product_images[0].image_url
-                }
-              }
               return {
                 id: p.productid,
                 productid: p.productid, // ✅ Agregar productid explícito
                 supplier_id: p.supplier_id, // ✅ Agregar supplier_id explícito
                 nombre: p.productnm,
-                proveedor: usersMap[p.supplier_id] || p.supplier_id,
+                proveedor: usersMap[p.supplier_id] || "Proveedor no encontrado",
                 imagen: imagenPrincipal,
                 precio: minPrice,
                 precioOriginal: p.precioOriginal || null,
