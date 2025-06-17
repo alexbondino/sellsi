@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box,
   Container,
@@ -70,8 +70,7 @@ const AddProduct = () => {
   // Detectar modo de edición
   const editProductId = searchParams.get('edit');
   const isEditMode = Boolean(editProductId);
-  const supplierId = localStorage.getItem('user_id');
-  // Usar el hook de formulario especializado
+  const supplierId = localStorage.getItem('user_id');  // Usar el hook de formulario especializado
   const {
     formData,
     errors,
@@ -82,129 +81,13 @@ const AddProduct = () => {
     handleFieldBlur,
     submitForm,
     resetForm,
-  } = useProductForm(editProductId);
-  // Cargar productos al montar el componente
-  useEffect(() => {
-    if (supplierId) {
-      loadProducts(supplierId);
-    }
-  }, [supplierId, loadProducts]);
-
-  // Cálculos dinámicos
-  const [calculations, setCalculations] = useState({
-    ingresoPorVentas: 0,
-    tarifaServicio: 0,
-    total: 0,
-  });
-
-  // Efecto para calcular dinámicamente
-  useEffect(() => {
-    calculateEarnings();
-  }, [
-    formData.stock,
-    formData.precioUnidad,
-    formData.tramos,
-    formData.pricingType,
-  ]);
-
-  const calculateEarnings = () => {
-    let totalIncome = 0;
-    const serviceRate = 0.05; // 5% de tarifa
-
-    if (
-      formData.pricingType === 'Por Unidad' &&
-      formData.precioUnidad &&
-      formData.stock
-    ) {
-      totalIncome =
-        parseFloat(formData.precioUnidad) * parseInt(formData.stock);
-    } else if (
-      formData.pricingType === 'Por Tramo' &&
-      formData.tramos.length > 0
-    ) {
-      // Calcular basado en el tramo más alto (asumiendo venta completa del stock)
-      const highestTier = formData.tramos
-        .filter(t => t.cantidad && t.precio)
-        .sort((a, b) => parseInt(b.cantidad) - parseInt(a.cantidad))[0];
-
-      if (highestTier && formData.stock) {
-        const maxSales = Math.min(
-          parseInt(formData.stock),
-          parseInt(highestTier.cantidad)
-        );
-        totalIncome = parseFloat(highestTier.precio) * maxSales;
-      }
-    }
-
-    const serviceFee = totalIncome * serviceRate;
-    const finalTotal = totalIncome - serviceFee;
-
-    setCalculations({
-      ingresoPorVentas: totalIncome,
-      tarifaServicio: serviceFee,
-      total: finalTotal,
-    });
-  }; // Handlers
-  const handleInputChange = field => event => {
-    const value = event.target.value;
-    updateField(field, value);
-  };
-  const handlePricingTypeChange = (event, newValue) => {
-    if (newValue !== null) {
-      updateField('pricingType', newValue);
-      if (newValue === 'Por Tramo') {
-        updateField('precioUnidad', '');
-      } else {
-        updateField('tramos', [{ cantidad: '', precio: '' }]);
-      }
-    }
-  };
-
-  const handleTramoChange = (index, field, value) => {
-    const newTramos = [...formData.tramos];
-    newTramos[index] = { ...newTramos[index], [field]: value };
-    updateField('tramos', newTramos);
-  };
-  const addTramo = () => {
-    const newTramos = [...formData.tramos, { cantidad: '', precio: '' }];
-    updateField('tramos', newTramos);
-  };
-
-  const removeTramo = index => {
-    if (formData.tramos.length > 1) {
-      const newTramos = formData.tramos.filter((_, i) => i !== index);
-      updateField('tramos', newTramos);
-    }
-  };
-
-  const handleImagesChange = images => {
-    updateField('imagenes', images);
-  };
-
-  const handleDocumentsChange = documents => {
-    updateField('documentos', documents);
-  };
-  // Handler para especificaciones
-  const handleSpecificationChange = (index, field, value) => {
-    const newSpecs = [...formData.specifications];
-    newSpecs[index][field] = value;
-    updateField('specifications', newSpecs);
-  };
-
-  const addSpecification = () => {
-    const newSpecs = [...formData.specifications, { key: '', value: '' }];
-    updateField('specifications', newSpecs);
-  };
-
-  const removeSpecification = index => {
-    if (formData.specifications.length > 1) {
-      const newSpecs = formData.specifications.filter((_, i) => i !== index);
-      updateField('specifications', newSpecs);
-    }
-  };
+  } = useProductForm(editProductId);  // Estado local para errores de validación
+  const [localErrors, setLocalErrors] = useState({});
+  const [triedSubmit, setTriedSubmit] = useState(false);
+  const [imageError, setImageError] = useState('');
 
   // Validación
-  const validateForm = () => {
+  const validateForm = useCallback(() => {
     const newErrors = {};
 
     if (!formData.nombre.trim()) {
@@ -244,13 +127,15 @@ const AddProduct = () => {
     }
 
     if (formData.pricingType === 'Por Unidad') {
-      if (!formData.precioUnidad) {
+      if (!formData.precioUnidad || isNaN(Number(formData.precioUnidad))) {
         newErrors.precioUnidad = 'El precio es requerido';
-      }
-    } else {
-      const validTramos = formData.tramos.filter(t => t.cantidad && t.precio);
-      if (validTramos.length === 0) {
-        newErrors.tramos = 'Debe agregar al menos un tramo válido';
+      }    } else {
+      // Si es Por Tramos, NO agregar error de precioUnidad
+      const validTramos = formData.tramos.filter(
+        t => t.cantidad !== '' && t.precio !== '' && !isNaN(Number(t.cantidad)) && !isNaN(Number(t.precio))
+      );
+      if (validTramos.length < 2) {
+        newErrors.tramos = 'Debe agregar al menos dos tramos válidos (cantidad y precio definidos)';
       } else {
         // Validar que las cantidades de los tramos no excedan el stock
         const stockNumber = parseInt(formData.stock || 0);
@@ -262,9 +147,18 @@ const AddProduct = () => {
             'Las cantidades de los tramos no pueden ser mayores al stock disponible';
         }
       }
-    }
-    if (formData.imagenes.length === 0) {
+    }    if (formData.imagenes.length === 0) {
       newErrors.imagenes = 'Debe agregar al menos una imagen';
+    } else if (formData.imagenes.length > 5) {
+      newErrors.imagenes = 'Máximo 5 imágenes permitidas';
+    } else {
+      // Validar tamaño de cada imagen
+      const oversizedImages = formData.imagenes.filter(
+        img => img.file && img.file.size > 2 * 1024 * 1024
+      );
+      if (oversizedImages.length > 0) {
+        newErrors.imagenes = 'Algunas imágenes exceden el límite de 2MB';
+      }
     }
 
     // Validación opcional para documentos PDF
@@ -277,27 +171,268 @@ const AddProduct = () => {
       );
       if (validDocuments.length !== formData.documentos.length) {
         newErrors.documentos = 'Solo se permiten archivos PDF de máximo 5MB';
-      }
-    }
+      }    }
 
     // En validateForm, agregar validación básica de especificaciones
     if (formData.specifications.some(s => s.key && !s.value)) {
       newErrors.specifications =
         'Completa todos los valores de las especificaciones';
+    }    setLocalErrors(newErrors);
+    return newErrors; // <-- SIEMPRE retorna un objeto
+  }, [formData]); // Cerrar useCallback con dependencias
+
+  // Cargar productos al montar el componente
+  useEffect(() => {
+    if (supplierId) {
+      loadProducts(supplierId);
     }
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+  }, [supplierId, loadProducts]);
+
+  // Validación en tiempo real solo si el campo fue tocado o tras submit
+  useEffect(() => {
+    if (triedSubmit) validateForm();
+  }, [formData, triedSubmit, validateForm]);
+  // Cálculos dinámicos
+  const [calculations, setCalculations] = useState({
+    ingresoPorVentas: 0,
+    tarifaServicio: 0,
+    total: 0,
+    // Para rangos cuando es "Por Tramo"
+    isRange: false,
+    rangos: {
+      ingresoPorVentas: { min: 0, max: 0 },
+      tarifaServicio: { min: 0, max: 0 },
+      total: { min: 0, max: 0 }
+    }
+  });
+
+  // Efecto para calcular dinámicamente
+  useEffect(() => {
+    calculateEarnings();
+  }, [
+    formData.stock,
+    formData.precioUnidad,
+    formData.tramos,
+    formData.pricingType,
+  ]);
+  const calculateEarnings = () => {
+    const serviceRate = 0.05; // 5% de tarifa
+
+    if (
+      formData.pricingType === 'Por Unidad' &&
+      formData.precioUnidad &&
+      formData.stock
+    ) {
+      // Cálculo simple para precio por unidad
+      const totalIncome = parseFloat(formData.precioUnidad) * parseInt(formData.stock);
+      const serviceFee = totalIncome * serviceRate;
+      const finalTotal = totalIncome - serviceFee;
+
+      setCalculations({
+        ingresoPorVentas: totalIncome,
+        tarifaServicio: serviceFee,
+        total: finalTotal,
+        isRange: false,
+        rangos: {
+          ingresoPorVentas: { min: 0, max: 0 },
+          tarifaServicio: { min: 0, max: 0 },
+          total: { min: 0, max: 0 }
+        }
+      });
+    } else if (
+      formData.pricingType === 'Por Tramo' &&
+      formData.tramos.length > 0
+    ) {
+      // Cálculo de rangos para precios por tramo
+      const validTramos = formData.tramos.filter(
+        t => t.cantidad && t.precio && !isNaN(Number(t.cantidad)) && !isNaN(Number(t.precio))
+      );
+
+      if (validTramos.length > 0 && formData.stock) {
+        const stock = parseInt(formData.stock);
+        
+        // Calcular valor mínimo (peor escenario)
+        const minIncome = calculateMinimumIncome(validTramos, stock);
+        
+        // Calcular valor máximo (mejor escenario)
+        const maxIncome = calculateMaximumIncome(validTramos, stock);
+        
+        // Calcular tarifas de servicio
+        const minServiceFee = minIncome * serviceRate;
+        const maxServiceFee = maxIncome * serviceRate;
+        
+        // Calcular totales
+        const minTotal = minIncome - minServiceFee;
+        const maxTotal = maxIncome - maxServiceFee;
+
+        setCalculations({
+          ingresoPorVentas: 0, // No se usa en modo rango
+          tarifaServicio: 0,   // No se usa en modo rango
+          total: 0,            // No se usa en modo rango
+          isRange: true,
+          rangos: {
+            ingresoPorVentas: { min: minIncome, max: maxIncome },
+            tarifaServicio: { min: minServiceFee, max: maxServiceFee },
+            total: { min: minTotal, max: maxTotal }
+          }
+        });
+      } else {
+        // Sin tramos válidos, resetear
+        setCalculations({
+          ingresoPorVentas: 0,
+          tarifaServicio: 0,
+          total: 0,
+          isRange: false,
+          rangos: {
+            ingresoPorVentas: { min: 0, max: 0 },
+            tarifaServicio: { min: 0, max: 0 },
+            total: { min: 0, max: 0 }
+          }
+        });
+      }
+    } else {
+      // Sin datos válidos, resetear
+      setCalculations({
+        ingresoPorVentas: 0,
+        tarifaServicio: 0,
+        total: 0,
+        isRange: false,
+        rangos: {
+          ingresoPorVentas: { min: 0, max: 0 },
+          tarifaServicio: { min: 0, max: 0 },
+          total: { min: 0, max: 0 }
+        }
+      });
+    }
   };
 
-  const handleSubmit = async () => {
-    try {
-      // Usar el submitForm del hook que maneja correctamente create/update
-      const result = await submitForm();
+  // Función para calcular el valor mínimo (peor escenario)
+  const calculateMinimumIncome = (tramos, stock) => {
+    // Ordenar tramos de mayor a menor cantidad (más barato a más caro)
+    const sortedTramos = [...tramos].sort((a, b) => parseInt(b.cantidad) - parseInt(a.cantidad));
+    
+    let remainingStock = stock;
+    let totalIncome = 0;
+    
+    for (const tramo of sortedTramos) {
+      if (remainingStock <= 0) break;
+      
+      const tramoCantidad = parseInt(tramo.cantidad);
+      const tramoPrecio = parseFloat(tramo.precio);
+      
+      // Usar división entera
+      const tramosCompletos = Math.floor(remainingStock / tramoCantidad);
+      
+      if (tramosCompletos > 0) {
+        totalIncome += tramosCompletos * tramoPrecio;
+        remainingStock -= tramosCompletos * tramoCantidad;
+      }
+    }
+    
+    return totalIncome;
+  };
 
+  // Función para calcular el valor máximo (mejor escenario)
+  const calculateMaximumIncome = (tramos, stock) => {
+    // Encontrar el tramo con menor cantidad (más caro)
+    const smallestTramo = tramos.reduce((min, current) => 
+      parseInt(current.cantidad) < parseInt(min.cantidad) ? current : min
+    );
+    
+    const tramoCantidad = parseInt(smallestTramo.cantidad);
+    const tramoPrecio = parseFloat(smallestTramo.precio);
+    
+    // Usar división entera
+    const tramosCompletos = Math.floor(stock / tramoCantidad);
+    
+    return tramosCompletos * tramoPrecio;
+  };// Handlers
+  const handleInputChange = field => event => {
+    const value = event.target.value;
+    updateField(field, value);
+  };
+  const handlePricingTypeChange = (event, newValue) => {
+    if (newValue !== null) {
+      updateField('pricingType', newValue);
+      if (newValue === 'Por Tramo') {
+        updateField('precioUnidad', '');
+      } else {
+        updateField('tramos', [{ cantidad: '', precio: '' }]);
+      }
+    }
+  };
+
+  const handleTramoChange = (index, field, value) => {
+    const newTramos = [...formData.tramos];
+    newTramos[index] = { ...newTramos[index], [field]: value };
+    updateField('tramos', newTramos);
+  };
+  const addTramo = () => {
+    const newTramos = [...formData.tramos, { cantidad: '', precio: '' }];
+    updateField('tramos', newTramos);
+  };
+
+  const removeTramo = index => {
+    if (formData.tramos.length > 1) {
+      const newTramos = formData.tramos.filter((_, i) => i !== index);
+      updateField('tramos', newTramos);
+    }
+  };
+  const handleImagesChange = images => {
+    setImageError(''); // Limpiar errores previos al cambiar imágenes
+    updateField('imagenes', images);
+  };
+
+  const handleImageError = (errorMessage) => {
+    setImageError(errorMessage);
+  };
+
+  const handleDocumentsChange = documents => {
+    updateField('documentos', documents);
+  };
+  // Handler para especificaciones
+  const handleSpecificationChange = (index, field, value) => {
+    const newSpecs = [...formData.specifications];
+    newSpecs[index][field] = value;
+    updateField('specifications', newSpecs);
+  };
+
+  const addSpecification = () => {
+    const newSpecs = [...formData.specifications, { key: '', value: '' }];
+    updateField('specifications', newSpecs);
+  };
+
+  const removeSpecification = index => {
+    if (formData.specifications.length > 1) {
+      const newSpecs = formData.specifications.filter((_, i) => i !== index);
+      updateField('specifications', newSpecs);
+    }
+  };
+  // Handler para el submit
+  const handleSubmit = async e => {
+    e.preventDefault();
+    setTriedSubmit(true);
+    console.log('--- SUBMIT DEBUG ---');
+    console.log('formData:', JSON.stringify(formData, null, 2));
+    const errors = validateForm();
+    console.log('validateForm() errors:', errors);
+    if (errors && typeof errors === 'object' && Object.keys(errors).length > 0) {
+      console.log('❌ Validación fallida:', errors);
+      toast.error('Por favor, completa todos los campos requeridos');
+      return;
+    }
+    try {
+      const result = await submitForm();
+      console.log('submitForm() result:', result);
       if (!result.success) {
+        console.error('❌ Backend errors:', result.errors);
+        if (result.errors && typeof result.errors === 'object') {
+          Object.entries(result.errors).forEach(([key, value]) => {
+            if (value) toast.error(`${key}: ${value}`);
+          });
+        }
         throw new Error(result.error || 'No se pudo procesar el producto');
       }
-
       console.log('✅ Producto procesado exitosamente');
       toast.success(
         isEditMode
@@ -309,6 +444,7 @@ const AddProduct = () => {
       console.error('❌ Error en handleSubmit:', error);
       toast.error(error.message || 'Error inesperado al procesar el producto');
     }
+    console.log('--- END SUBMIT DEBUG ---');
   };
 
   const handleBack = () => {
@@ -389,7 +525,7 @@ const AddProduct = () => {
                     <Typography
                       variant="h6"
                       gutterBottom
-                      sx={{ fontWeight: 600, color: 'primary.main', mb: 2 }}
+                      sx={{ fontWeight: 600, color: 'black', mb: 2 }}
                     >
                       Información Básica
                     </Typography>{' '}
@@ -400,10 +536,9 @@ const AddProduct = () => {
                       value={formData.nombre}
                       onChange={handleInputChange('nombre')}
                       onBlur={() => handleFieldBlur('nombre')}
-                      error={!!errors.nombre}
+                      error={!!(touched.nombre || triedSubmit) && !!errors.nombre}
                       helperText={
-                        errors.nombre ||
-                        `${formData.nombre.length}/40 caracteres`
+                        (touched.nombre || triedSubmit) ? (errors.nombre || `${formData.nombre.length}/40 caracteres`) : ''
                       }
                       inputProps={{ maxLength: 40 }}
                     />
@@ -412,11 +547,11 @@ const AddProduct = () => {
                     <Typography
                       variant="h6"
                       gutterBottom
-                      sx={{ fontWeight: 600, color: 'primary.main', mb: 2 }}
+                      sx={{ fontWeight: 600, color: 'black', mb: 2 }}
                     >
                       Categoría
                     </Typography>
-                    <FormControl fullWidth error={!!errors.categoria}>
+                    <FormControl fullWidth error={!!(touched.categoria || triedSubmit) && !!errors.categoria}>
                       <InputLabel>Categoría:</InputLabel>
                       <Select
                         value={formData.categoria}
@@ -433,7 +568,7 @@ const AddProduct = () => {
                           </MenuItem>
                         ))}
                       </Select>
-                      {errors.categoria && (
+                      {(touched.categoria || triedSubmit) && errors.categoria && (
                         <Typography
                           variant="caption"
                           color="error"
@@ -456,10 +591,9 @@ const AddProduct = () => {
                       value={formData.descripcion}
                       onChange={handleInputChange('descripcion')}
                       onBlur={() => handleFieldBlur('descripcion')}
-                      error={!!errors.descripcion}
+                      error={!!(touched.descripcion || triedSubmit) && !!errors.descripcion}
                       helperText={
-                        errors.descripcion ||
-                        `${formData.descripcion.length}/600 caracteres`
+                        (touched.descripcion || triedSubmit) ? (errors.descripcion || `${formData.descripcion.length}/600 caracteres`) : ''
                       }
                       inputProps={{ maxLength: 600 }}
                     />
@@ -469,34 +603,32 @@ const AddProduct = () => {
                     <Typography
                       variant="h6"
                       gutterBottom
-                      sx={{ fontWeight: 600, color: 'primary.main', mb: 2 }}
+                      sx={{ fontWeight: 600, color: 'black', mb: 2 }}
                     >
                       Inventario y Disponibilidad
-                    </Typography>{' '}
-                    <TextField
+                    </Typography>{' '}                    <TextField
                       fullWidth
                       label="Stock Disponible:"
                       placeholder="Ingrese un número entre 1 y 15.000"
                       value={formData.stock}
                       onChange={handleInputChange('stock')}
                       onBlur={() => handleFieldBlur('stock')}
-                      error={!!errors.stock}
-                      helperText={errors.stock}
+                      error={!!(touched.stock || triedSubmit) && !!(errors.stock || localErrors.stock)}
+                      helperText={(touched.stock || triedSubmit) ? (errors.stock || localErrors.stock) : ''}
                       type="number"
                       inputProps={{ min: 1, max: 15000 }}
                     />
                   </Box>
                   <Box sx={{ mt: 6 }}>
-                    {' '}
-                    <TextField
+                    {' '}                    <TextField
                       fullWidth
                       label="Compra Mínima:"
                       placeholder="Seleccione un número entre 1 y 15.000"
                       value={formData.compraMinima}
                       onChange={handleInputChange('compraMinima')}
                       onBlur={() => handleFieldBlur('compraMinima')}
-                      error={!!errors.compraMinima}
-                      helperText={errors.compraMinima}
+                      error={!!(touched.compraMinima || triedSubmit) && !!(errors.compraMinima || localErrors.compraMinima)}
+                      helperText={(touched.compraMinima || triedSubmit) ? (errors.compraMinima || localErrors.compraMinima) : ''}
                       type="number"
                       inputProps={{ min: 1, max: 15000 }}
                     />
@@ -506,11 +638,10 @@ const AddProduct = () => {
                     <Typography
                       variant="h6"
                       gutterBottom
-                      sx={{ fontWeight: 600, color: 'primary.main', mb: 2 }}
+                      sx={{ fontWeight: 600, color: 'black', mb: 2 }}
                     >
                       Configuración de Precios
-                    </Typography>
-                    <TextField
+                    </Typography>                    <TextField
                       fullWidth
                       label="Precio de Venta:"
                       placeholder="Campo de entrada"
@@ -518,8 +649,8 @@ const AddProduct = () => {
                       onChange={handleInputChange('precioUnidad')}
                       onBlur={() => handleFieldBlur('precioUnidad')}
                       disabled={formData.pricingType === 'Por Tramo'}
-                      error={!!errors.precioUnidad}
-                      helperText={errors.precioUnidad}
+                      error={formData.pricingType === 'Por Unidad' && !!(touched.precioUnidad || triedSubmit) && !!(errors.precioUnidad || localErrors.precioUnidad)}
+                      helperText={formData.pricingType === 'Por Unidad' ? ((touched.precioUnidad || triedSubmit) ? (errors.precioUnidad || localErrors.precioUnidad) : '') : ''}
                       InputProps={{
                         startAdornment: (
                           <InputAdornment position="start">$</InputAdornment>
@@ -696,15 +827,14 @@ const AddProduct = () => {
                               </Stack>
                             </Paper>
                           )}
-                        </Box>
-                        {errors.tramos && (
+                        </Box>                        {localErrors.tramos && (
                           <Typography
                             variant="caption"
                             color="error"
                             display="block"
                             sx={{ mt: 1 }}
                           >
-                            {errors.tramos}
+                            {localErrors.tramos}
                           </Typography>
                         )}
                       </Box>
@@ -724,15 +854,15 @@ const AddProduct = () => {
                     <Typography
                       variant="h6"
                       gutterBottom
-                      sx={{ fontWeight: 600, color: 'primary.main', mb: 2 }}
+                      sx={{ fontWeight: 600, color: 'black', mb: 2 }}
                     >
                       Imágenes del Producto
-                    </Typography>
-                    <ImageUploader
+                    </Typography>                    <ImageUploader
                       images={formData.imagenes}
                       onImagesChange={handleImagesChange}
                       maxImages={5}
-                      error={errors.imagenes}
+                      onError={handleImageError}
+                      error={(touched.imagenes || triedSubmit) && (errors.imagenes || localErrors.imagenes || imageError)}
                     />
                   </Box>{' '}
                   {/* FILA 7: Especificaciones Técnicas */}
@@ -740,7 +870,7 @@ const AddProduct = () => {
                     <Typography
                       variant="h6"
                       gutterBottom
-                      sx={{ fontWeight: 600, color: 'primary.main', mb: 2 }}
+                      sx={{ fontWeight: 600, color: 'black', mb: 2 }}
                     >
                       Especificaciones Técnicas
                     </Typography>
@@ -815,7 +945,7 @@ const AddProduct = () => {
                     <Typography
                       variant="h6"
                       gutterBottom
-                      sx={{ fontWeight: 600, color: 'primary.main', mb: 2 }}
+                      sx={{ fontWeight: 600, color: 'black', mb: 2 }}
                     >
                       Documentación Técnica
                     </Typography>{' '}
@@ -840,9 +970,7 @@ const AddProduct = () => {
               <Paper sx={{ p: 3, position: 'sticky', top: 100 }}>
                 <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
                   Resultado Venta
-                </Typography>
-
-                <Box sx={{ mb: 3 }}>
+                </Typography>                <Box sx={{ mb: 3 }}>
                   <Box
                     sx={{
                       display: 'flex',
@@ -852,7 +980,10 @@ const AddProduct = () => {
                   >
                     <Typography variant="body2">Ingreso por Ventas</Typography>
                     <Typography variant="body2" fontWeight="600">
-                      {formatPrice(calculations.ingresoPorVentas)}
+                      {calculations.isRange ? 
+                        `${formatPrice(calculations.rangos.ingresoPorVentas.min)} - ${formatPrice(calculations.rangos.ingresoPorVentas.max)}` :
+                        formatPrice(calculations.ingresoPorVentas)
+                      }
                     </Typography>
                   </Box>
 
@@ -867,7 +998,10 @@ const AddProduct = () => {
                       Tarifa por Servicio (5%)
                     </Typography>
                     <Typography variant="body2" fontWeight="600">
-                      {formatPrice(calculations.tarifaServicio)}
+                      {calculations.isRange ? 
+                        `${formatPrice(calculations.rangos.tarifaServicio.min)} - ${formatPrice(calculations.rangos.tarifaServicio.max)}` :
+                        formatPrice(calculations.tarifaServicio)
+                      }
                     </Typography>
                   </Box>
 
@@ -888,13 +1022,18 @@ const AddProduct = () => {
                       fontWeight="600"
                       color="primary.main"
                     >
-                      {formatPrice(calculations.total)}
+                      {calculations.isRange ? 
+                        `${formatPrice(calculations.rangos.total.min)} - ${formatPrice(calculations.rangos.total.max)}` :
+                        formatPrice(calculations.total)
+                      }
                     </Typography>
                   </Box>
 
                   <Typography variant="caption" color="text.secondary">
-                    Este es el monto que recibirás en tu cuenta una vez se
-                    efectúe la venta
+                    {calculations.isRange ? 
+                      'Estos son los rangos de montos que podrás recibir según cómo se distribuyan las ventas entre los tramos de precio' :
+                      'Este es el monto que recibirás en tu cuenta una vez se efectúe la venta'
+                    }
                   </Typography>
                 </Box>
 

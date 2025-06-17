@@ -33,9 +33,8 @@ export function useProductPriceTiers(productId) {
       )
       setTiers(filtered)
       setLoading(false)
-    } else {
-      supabase
-        .from('product_price_tiers')
+    } else {      supabase
+        .from('product_quantity_ranges')
         .select('*')
         .eq('product_id', productId)
         .order('min_quantity', { ascending: true })

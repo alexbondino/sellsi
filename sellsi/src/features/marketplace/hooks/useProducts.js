@@ -31,12 +31,11 @@ export function useProducts() {
           if (data && data.length > 0) {
             // Obtener todos los productids y supplier_ids
             const productIds = data.map((p) => p.productid)
-            const supplierIds = [...new Set(data.map((p) => p.supplier_id))]
-            // Traer todos los tramos de precio de una vez
+            const supplierIds = [...new Set(data.map((p) => p.supplier_id))]            // Traer todos los tramos de precio de una vez
             const { data: tiersData } = await supabase
-              .from('product_price_tiers')
+              .from('product_quantity_ranges')
               .select('*')
-              .in('product_id', productIds)            // Traer nombres de proveedores
+              .in('product_id', productIds)// Traer nombres de proveedores
             let usersMap = {}
             if (supplierIds.length > 0) {
               const supplierIdsStr = supplierIds.map(id => String(id).trim())
@@ -52,12 +51,31 @@ export function useProducts() {
                   usersData.map((u) => [u.user_id, u.user_nm])
                 )
               }
-            }
-            mapped = data.map((p) => {
+            }            mapped = data.map((p) => {
+              // Obtener imagen principal
+              const imagenPrincipal = p.product_images && p.product_images.length > 0 
+                ? p.product_images[0].image_url 
+                : '/placeholder-product.jpg'
+              
+              // Obtener tramos de precio para este producto
+              const priceTiers = tiersData 
+                ? tiersData.filter(t => t.product_id === p.productid) 
+                : []
+              
+              // Calcular precio mínimo y máximo
+              let minPrice = p.price || 0
+              let maxPrice = p.price || 0
+              
+              if (priceTiers.length > 0) {
+                const precios = priceTiers.map(t => t.price)
+                minPrice = Math.min(...precios)
+                maxPrice = Math.max(...precios)
+              }
+
               return {
                 id: p.productid,
-                productid: p.productid, // ✅ Agregar productid explícito
-                supplier_id: p.supplier_id, // ✅ Agregar supplier_id explícito
+                productid: p.productid,
+                supplier_id: p.supplier_id,
                 nombre: p.productnm,
                 proveedor: usersMap[p.supplier_id] || "Proveedor no encontrado",
                 imagen: imagenPrincipal,
@@ -71,7 +89,7 @@ export function useProducts() {
                 ventas: p.ventas || 0,
                 stock: p.productqty,
                 compraMinima: p.minimum_purchase,
-                negociable: p.negociable,
+                negociable: p.negotiable,
                 priceTiers,
                 maxPrice,
                 minPrice,

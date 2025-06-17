@@ -68,6 +68,18 @@ export default function TopBar({ session, isBuyer, logoUrl, onNavigate }) {
     }
   };
 
+  // Custom ShoppingCart component to force styles
+  const CustomShoppingCartIcon = ({ sx, ...props }) => (
+    <ShoppingCartIcon 
+      {...props} 
+      sx={{ 
+        fontSize: '2.24rem', 
+        color: 'white !important',
+        ...sx 
+      }} 
+    />
+  );
+
   // --- LÓGICA DINÁMICA PARA RENDERIZAR CONTENIDO ---
   let desktopNavLinks = null;
   let desktopRightContent = null;
@@ -148,14 +160,16 @@ export default function TopBar({ session, isBuyer, logoUrl, onNavigate }) {
       >
         Registrarse
       </MenuItem>,
-    ];
-  } else if (isBuyer) {
+    ];  } else if (isBuyer) {
     desktopRightContent = (
       <>
         <Tooltip title="Carrito" arrow>
-          <IconButton onClick={() => navigate('/buyer/cart')} color="inherit">
+          <IconButton 
+            onClick={() => navigate('/buyer/cart')} 
+            sx={{ color: 'white', mr: 2.5 }}
+          >
             <Badge badgeContent={itemsInCart} color="error">
-              <ShoppingCartIcon />
+              <CustomShoppingCartIcon />
             </Badge>
           </IconButton>
         </Tooltip>
@@ -172,7 +186,7 @@ export default function TopBar({ session, isBuyer, logoUrl, onNavigate }) {
         }}
       >
         <Badge badgeContent={itemsInCart} color="error" sx={{ mr: 1.5 }}>
-          <ShoppingCartIcon />
+          <CustomShoppingCartIcon />
         </Badge>
         Mi Carrito
       </MenuItem>,
@@ -189,11 +203,36 @@ export default function TopBar({ session, isBuyer, logoUrl, onNavigate }) {
       <MenuItem key="logout" onClick={handleLogout}>
         Cerrar sesión
       </MenuItem>,
-    ];
-  } else {
-    desktopRightContent = profileMenuButton;
+    ];  } else {
+    desktopRightContent = (
+      <>
+        <Tooltip title="Carrito" arrow>
+          <IconButton 
+            onClick={() => navigate('/buyer/cart')} 
+            sx={{ color: 'white', mr: 2.5 }}
+          >
+            <Badge badgeContent={itemsInCart} color="error">
+              <CustomShoppingCartIcon />
+            </Badge>
+          </IconButton>
+        </Tooltip>
+        {profileMenuButton}
+      </>
+    );
 
     mobileMenuItems = [
+      <MenuItem
+        key="cart"
+        onClick={() => {
+          navigate('/buyer/cart');
+          handleCloseMobileMenu();
+        }}
+      >
+        <Badge badgeContent={itemsInCart} color="error" sx={{ mr: 1.5 }}>
+          <CustomShoppingCartIcon />
+        </Badge>
+        Mi Carrito
+      </MenuItem>,
       <MenuItem
         key="profile"
         onClick={() => {

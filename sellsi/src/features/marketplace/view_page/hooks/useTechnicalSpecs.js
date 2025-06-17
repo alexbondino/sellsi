@@ -116,9 +116,8 @@ export const useTechnicalSpecs = () => {
               .select('*')
               .eq('productid', productId)
               .eq('is_active', true)
-              .single(),
-            supabase
-              .from('product_price_tiers')
+              .single(),            supabase
+              .from('product_quantity_ranges')
               .select('*')
               .eq('product_id', productId),
             supabase

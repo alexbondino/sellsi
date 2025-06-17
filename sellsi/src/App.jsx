@@ -46,6 +46,9 @@ const MyProducts = React.lazy(() =>
 const AddProduct = React.lazy(() =>
   import('./features/supplier/pages/AddProduct')
 );
+const MyOrdersPage = React.lazy(() =>
+  import('./features/supplier/pages/MyOrdersPage')
+);
 
 // 📦 RUTAS SECUNDARIAS - LAZY LOADING
 const BuyerOrders = React.lazy(() => import('./features/buyer/BuyerOrders'));
@@ -332,6 +335,14 @@ function AppContent({ mensaje }) {
               element={
                 <PrivateRoute requiredAccountType="proveedor">
                   <AddProduct />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/supplier/myorders"
+              element={
+                <PrivateRoute requiredAccountType="proveedor">
+                  <MyOrdersPage />
                 </PrivateRoute>
               }
             />

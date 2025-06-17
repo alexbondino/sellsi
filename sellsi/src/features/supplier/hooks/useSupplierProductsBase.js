@@ -38,20 +38,17 @@ const useSupplierProductsBase = create((set, get) => ({
   loadProducts: async (supplierId) => {
     set({ loading: true, error: null })
 
-    try {
-      const { data: products, error: prodError } = await supabase
+    try {      const { data: products, error: prodError } = await supabase
         .from('products')
-        .select('*, product_images(*), product_price_tiers(*)')
+        .select('*, product_images(*), product_quantity_ranges(*)')
         .eq('supplier_id', supplierId)
         .order('updateddt', { ascending: false })
 
-      if (prodError) throw prodError
-
-      // Procesar productos para incluir tramos de precio
+      if (prodError) throw prodError      // Procesar productos para incluir tramos de precio
       const processedProducts =
         products?.map((product) => ({
           ...product,
-          priceTiers: product.product_price_tiers || [],
+          priceTiers: product.product_quantity_ranges || [],
           images: product.product_images || [],
         })) || []
 
@@ -160,13 +157,13 @@ const useSupplierProductsBase = create((set, get) => ({
 
   /**
    * Actualizar producto existente
-   */
-  updateProduct: async (productId, updates) => {
+   */  updateProduct: async (productId, updates) => {
     set((state) => ({
       operationStates: {
         ...state.operationStates,
         updating: { ...state.operationStates.updating, [productId]: true },
-      },      error: null,
+      },
+      error: null,
     }))
 
     try {
@@ -180,7 +177,7 @@ const useSupplierProductsBase = create((set, get) => ({
         .select()
         .single()
 
-      if (error) throw error      // Procesar especificaciones si se proporcionan
+      if (error) throw error// Procesar especificaciones si se proporcionan
       if (specifications) {
         await get().processProductSpecifications(productId, specifications)
       }
@@ -299,15 +296,13 @@ const useSupplierProductsBase = create((set, get) => ({
       }
     }
 
-    console.log(`� Análisis: ${newImages.length} nuevas, ${existingUrls.length} existentes`);
-
-    // 2. OBTENER imágenes actuales de la BD para comparar
+    console.log(`� Análisis: ${newImages.length} nuevas, ${existingUrls.length} existentes`);    // 2. OBTENER imágenes actuales de la BD para comparar
     const { data: currentImages } = await supabase
       .from('product_images')
       .select('image_url')
       .eq('product_id', productId);
 
-    const currentUrls = currentImages?.map(img => img.image_url) || [];    // 3. ELIMINAR imágenes que ya no están en la nueva lista
+    const currentUrls = currentImages?.map(img => img.image_url) || [];// 3. ELIMINAR imágenes que ya no están en la nueva lista
     const urlsToDelete = currentUrls.filter(url => !existingUrls.includes(url));
     console.log('🗑️ [PROCESS IMAGES] URLs actuales en BD:', currentUrls);
     console.log('🗑️ [PROCESS IMAGES] URLs a mantener:', existingUrls);
@@ -343,14 +338,10 @@ const useSupplierProductsBase = create((set, get) => ({
     // 6. REEMPLAZAR TODOS los registros en product_images
     if (allImageUrls.length > 0) {
       // Eliminar todos los registros actuales
-      await supabase.from('product_images').delete().eq('product_id', productId);
-
-      // Insertar todos los registros nuevos
-      const imagesToInsert = allImageUrls.map((url, index) => ({
+      await supabase.from('product_images').delete().eq('product_id', productId);      // Insertar todos los registros nuevos
+      const imagesToInsert = allImageUrls.map((url) => ({
         product_id: productId,
         image_url: url,
-        is_primary: index === 0,
-        sort_order: index + 1,
       }));
 
       console.log('💾 Registrando en product_images:', imagesToInsert);
@@ -363,20 +354,13 @@ const useSupplierProductsBase = create((set, get) => ({
       }
     }
   },
-
   /**
    * Procesar tramos de precio
    */
   processPriceTiers: async (productId, priceTiers) => {
     if (!priceTiers?.length) return
 
-    // Eliminar tramos existentes
-    await supabase
-      .from('product_price_tiers')
-      .delete()
-      .eq('product_id', productId)
-
-    // Insertar nuevos tramos
+    // Preparar tramos para insertar
     const tiersToInsert = priceTiers
       .filter((t) => t.cantidad && t.precio)
       .map((t) => ({
@@ -386,8 +370,15 @@ const useSupplierProductsBase = create((set, get) => ({
         price: Number(t.precio),
       }))
 
+    // Eliminar tramos existentes
+    await supabase
+      .from('product_quantity_ranges')
+      .delete()
+      .eq('product_id', productId)
+
+    // Insertar nuevos tramos
     if (tiersToInsert.length > 0) {
-      await supabase.from('product_price_tiers').insert(tiersToInsert)
+      await supabase.from('product_quantity_ranges').insert(tiersToInsert)
     }
   },
 
@@ -460,9 +451,7 @@ const useSupplierProductsBase = create((set, get) => ({
       console.log('🚨 [DELETE ALL] ATENCIÓN: Se está llamando deleteExistingImages');
       console.log('🚨 [DELETE ALL] Esto borrará TODAS las imágenes del producto:', productId);
       console.log('🚨 [DELETE ALL] Stack trace:', new Error().stack);
-      console.log('🗑️ Eliminando imágenes existentes del producto:', productId);
-      
-      // 1. Obtener imágenes existentes de la BD
+      console.log('🗑️ Eliminando imágenes existentes del producto:', productId);      // 1. Obtener imágenes existentes de la BD
       const { data: existingImages, error: fetchError } = await supabase
         .from('product_images')
         .select('image_url')

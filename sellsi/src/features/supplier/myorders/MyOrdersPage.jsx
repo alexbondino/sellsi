@@ -7,11 +7,10 @@ import {
   Container,
   TextField
 } from '@mui/material';
-import { useOrdersStore } from '../myorders/store/ordersStore';
-import OrdersFilter from '../myorders/components/OrdersFilter';
-import OrdersTable from '../myorders/components/OrdersTable';
-import OrderActionModal from '../myorders/modals/OrderActionModal';
-import { useBanner } from '../../ui/BannerContext';
+import { useOrdersStore } from './store/ordersStore';
+import OrdersFilter from './components/OrdersFilter';
+import OrdersTable from './components/OrdersTable';
+import OrderActionModal from './modals/OrderActionModal';
 
 const MyOrdersPage = () => {
   // Estado del store
@@ -25,9 +24,6 @@ const MyOrdersPage = () => {
     updateOrderStatus,
     getFilteredOrders
   } = useOrdersStore();
-
-  // Banner para mostrar mensajes de éxito/error
-  const { showBanner } = useBanner();
 
   // Estado local para modales
   const [modalState, setModalState] = useState({
@@ -61,86 +57,49 @@ const MyOrdersPage = () => {
       selectedOrder: null
     });
   };
+
   // Manejar envío de formulario del modal
   const handleModalSubmit = (formData) => {
     const { selectedOrder, type } = modalState;
     
-    try {
-      switch (type) {
-        case 'accept':
-          updateOrderStatus(selectedOrder.order_id, 'Aceptado', {
-            message: formData.message || ''
-          });
-          showBanner({
-            message: '✅ El pedido fue aceptado con éxito',
-            severity: 'success',
-            duration: 4000
-          });
-          break;
+    switch (type) {
+      case 'accept':
+        updateOrderStatus(selectedOrder.order_id, 'Aceptado', {
+          message: formData.message || ''
+        });
+        break;
         
-        case 'reject':
-          updateOrderStatus(selectedOrder.order_id, 'Rechazado', {
-            rejectionReason: formData.rejectionReason || ''
-          });
-          showBanner({
-            message: '❌ El pedido fue rechazado',
-            severity: 'warning',
-            duration: 4000
-          });
-          break;
+      case 'reject':
+        updateOrderStatus(selectedOrder.order_id, 'Rechazado', {
+          rejectionReason: formData.rejectionReason || ''
+        });
+        break;
         
-        case 'dispatch':
-          if (!formData.deliveryDate) {
-            showBanner({
-              message: '⚠️ La fecha de entrega es obligatoria',
-              severity: 'error',
-              duration: 5000
-            });
-            return;
-          }
-          updateOrderStatus(selectedOrder.order_id, 'En Ruta', {
-            estimated_delivery_date: formData.deliveryDate,
-            message: formData.message || ''
-          });
-          showBanner({
-            message: '🚚 El pedido fue despachado con éxito',
-            severity: 'success',
-            duration: 4000
-          });
-          break;
+      case 'dispatch':
+        if (!formData.deliveryDate) {
+          alert('La fecha de entrega es obligatoria');
+          return;
+        }
+        updateOrderStatus(selectedOrder.order_id, 'En Ruta', {
+          estimated_delivery_date: formData.deliveryDate,
+          message: formData.message || ''
+        });
+        break;
         
-        case 'deliver':
-          updateOrderStatus(selectedOrder.order_id, 'Entregado', {
-            deliveryDocuments: formData.deliveryDocuments || null,
-            message: formData.message || ''
-          });
-          showBanner({
-            message: '📦 La entrega fue confirmada con éxito',
-            severity: 'success',
-            duration: 4000
-          });
-          break;
-          
-        case 'chat':
-          // Aquí se podría abrir un chat o redirigir a otra página
-          console.log('Abrir chat para pedido:', selectedOrder.order_id);
-          showBanner({
-            message: '💬 Abriendo chat...',
-            severity: 'info',
-            duration: 3000
-          });
-          break;
-      }
-      
-      handleCloseModal();
-    } catch (error) {
-      showBanner({
-        message: '❌ Error al procesar la acción. Intenta nuevamente.',
-        severity: 'error',
-        duration: 5000
-      });
-      console.error('Error al procesar acción del modal:', error);
+      case 'deliver':
+        updateOrderStatus(selectedOrder.order_id, 'Entregado', {
+          deliveryDocuments: formData.deliveryDocuments || null,
+          message: formData.message || ''
+        });
+        break;
+        
+      case 'chat':
+        // Aquí se podría abrir un chat o redirigir a otra página
+        console.log('Abrir chat para pedido:', selectedOrder.order_id);
+        break;
     }
+    
+    handleCloseModal();
   };
 
   // Configuración del modal según el tipo de acción
@@ -153,7 +112,6 @@ const MyOrdersPage = () => {
         submitButtonText: 'Confirmar',
         submitButtonColor: 'primary',
         showWarningIcon: false,
-        iconType: 'check',
         children: (
           <TextField
             name="message"
@@ -170,7 +128,6 @@ const MyOrdersPage = () => {
         submitButtonText: 'Rechazar',
         submitButtonColor: 'error',
         showWarningIcon: true,
-        iconType: null,
         children: (
           <TextField
             name="rejectionReason"
@@ -187,7 +144,6 @@ const MyOrdersPage = () => {
         submitButtonText: 'Confirmar',
         submitButtonColor: 'primary',
         showWarningIcon: false,
-        iconType: 'truck',
         children: (
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             <TextField
@@ -216,7 +172,6 @@ const MyOrdersPage = () => {
         submitButtonText: 'Confirmar',
         submitButtonColor: 'primary',
         showWarningIcon: false,
-        iconType: 'briefcase',
         children: (
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             <TextField

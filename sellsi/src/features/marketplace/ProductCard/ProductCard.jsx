@@ -28,6 +28,7 @@ import ShoppingCartIcon from '@mui/icons-material/ShoppingCart'
 import InfoIcon from '@mui/icons-material/Info'
 import AddIcon from '@mui/icons-material/Add'
 import RemoveIcon from '@mui/icons-material/Remove'
+import { toast } from 'react-hot-toast'
 import { generateProductUrl } from '../marketplace/productUrl'
 import PriceDisplay from '../PriceDisplay'
 import { useProductPriceTiers } from '../hooks/useProductPriceTiers'
@@ -169,24 +170,43 @@ const ProductCard = ({ producto, onAddToCart, onViewDetails }) => {
     // Detectar si estamos en MarketplaceBuyer
     if (currentPath.includes('/buyer/')) {
       fromPath = '/buyer/marketplace'
-    }
-
-    // Generar URL y navegar con estado
+    }    // Generar URL y navegar con estado
     const productUrl = generateProductUrl(producto)
     navigate(productUrl, {
       state: { from: fromPath },
     })
-  }  // ✅ Función optimizada para cerrar el popover
+  }
+
+  // ✅ Función optimizada para cerrar el popover
   const handleClosePopover = React.useCallback(() => {
     setAnchorEl(null)
     setCantidad(minimumPurchase) // Reset cantidad al cerrar
     setInputValue(minimumPurchase.toString()) // Reset input también
   }, [minimumPurchase])
-
   // ✅ Función optimizada para manejar click en AGREGAR
   const handleAgregarClick = React.useCallback((event) => {
     event.stopPropagation() // Prevenir propagación hacia ProductCard
     event.preventDefault() // Prevenir comportamiento por defecto
+    
+    // Verificar si el usuario está logueado
+    const userId = localStorage.getItem('user_id')
+    const accountType = localStorage.getItem('account_type')
+    const supplierid = localStorage.getItem('supplierid')
+    const sellerid = localStorage.getItem('sellerid')
+
+    const isLoggedIn = !!(userId || supplierid || sellerid)
+
+    if (!isLoggedIn) {
+      // Si no está logueado, abrir modal de login
+      toast.error('Debes iniciar sesión para agregar productos al carrito', {
+        icon: '🔒',
+      })
+      const event = new CustomEvent('openLogin')
+      window.dispatchEvent(event)
+      return
+    }
+
+    // Si está logueado, abrir modal de cantidad
     setAnchorEl(event.currentTarget)
   }, [])
   // LOG: Mostrar tramos al abrir el modal de cantidad (optimizado)
@@ -494,22 +514,13 @@ const ProductCard = ({ producto, onAddToCart, onViewDetails }) => {
         </Box>
       </CardContent>{' '}
       {/* Botón agregar - más pequeño */}{' '}
-      <CardActions sx={{ p: 1.5, pt: 0.5 }}>
-        <Button
+      <CardActions sx={{ p: 1.5, pt: 0.5 }}>        <Button
           variant="contained"
           color="primary"
           fullWidth
           data-no-card-click="true"
           startIcon={<ShoppingCartIcon sx={{ fontSize: 16 }} />}
-          onMouseDown={(e) => {
-            e.stopPropagation()
-            e.preventDefault()
-          }}
           onClick={handleAgregarClick}
-          onTouchStart={(e) => {
-            e.stopPropagation()
-            e.preventDefault()
-          }}
           sx={{
             textTransform: 'none',
             fontWeight: 600,

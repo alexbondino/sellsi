@@ -24,7 +24,7 @@ const OrdersFilter = ({ statusFilter, setStatusFilter }) => {
   };
 
   return (
-    <Box sx={{ minWidth: 200, mb: 3 }}>
+    <Box sx={{ minWidth: 200, mb: 3, width: '10%' }}>
       <FormControl fullWidth>
         <InputLabel id="status-filter-label">Filtrar por estado</InputLabel>
         <Select

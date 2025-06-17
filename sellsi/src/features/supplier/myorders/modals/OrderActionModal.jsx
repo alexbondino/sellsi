@@ -12,7 +12,10 @@ import {
 } from '@mui/material';
 import {
   Close as CloseIcon,
-  WarningAmber as WarningAmberIcon
+  WarningAmber as WarningAmberIcon,
+  Check as CheckIcon,
+  LocalShipping as LocalShippingIcon,
+  Work as WorkIcon
 } from '@mui/icons-material';
 
 const OrderActionModal = ({
@@ -24,7 +27,8 @@ const OrderActionModal = ({
   submitButtonText = "Confirmar",
   submitButtonColor = "primary",
   children,
-  showWarningIcon = false
+  showWarningIcon = false,
+  iconType = null // 'check' | 'truck' | 'briefcase' | null
 }) => {
   // Formatear dirección
   const formatAddress = (address) => {
@@ -52,6 +56,14 @@ const OrderActionModal = ({
     onSubmit(data);
   };
 
+  // Icono dinámico según tipo de modal
+  const renderCustomIcon = () => {
+    if (iconType === 'check') return <CheckIcon color="success" />;
+    if (iconType === 'truck') return <LocalShippingIcon color="primary" />;
+    if (iconType === 'briefcase') return <WorkIcon color="secondary" />;
+    return null;
+  };
+
   if (!order) return null;
 
   return (
@@ -68,6 +80,7 @@ const OrderActionModal = ({
       {/* Encabezado */}
       <DialogTitle>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          {renderCustomIcon()}
           {showWarningIcon && (
             <WarningAmberIcon color="warning" />
           )}

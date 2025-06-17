@@ -30,6 +30,7 @@ const ProviderLogo = React.memo(({ provider }) => (
     sx={{
       width: { xs: 108, sm: 144, md: 162, lg: 180, xl: 198 }, // -10%
       minHeight: { xs: 72, sm: 90, md: 99, lg: 108, xl: 117 }, // -10%
+      maxHeight: 125.2, // Limitar altura máxima de la card
       borderRadius: { xs: 2, sm: 3, md: 4, lg: 4, xl: 4 },
       overflow: 'hidden',
       background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
@@ -62,25 +63,20 @@ const ProviderLogo = React.memo(({ provider }) => (
     <CardContent
       sx={{
         width: '100%',
-        p: 2,
+        height: '100%',
+        p: 2, // Padding para que el logo no ocupe el 100%
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
       }}
     >
-      {/* Logo con lazy loading */}
-      <LazyImage
+      <img
         src={provider.src}
         alt={provider.alt}
-        rootMargin="300px" // Cargar con más anticipación para landing page
-        sx={{
-          width: '90%', // -10%
-          height: 'auto', // <-- Importante: auto para mantener proporción
-          maxWidth: '90%', // -10%
-          maxHeight: 90, // -10% de 100
+        style={{
+          width: '100%',
+          height: '100%',
           objectFit: 'contain',
-          filter: 'none', // Siempre colores activos
-          transition: 'transform 0.3s ease',
           display: 'block',
         }}
       />
