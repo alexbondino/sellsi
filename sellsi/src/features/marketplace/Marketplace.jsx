@@ -4,7 +4,7 @@
 // - Agregar/quitar secciones
 // - Modificar estilos del contenedor principal
 
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import { Box } from '@mui/material'
 
 // Hook centralizado
@@ -15,8 +15,25 @@ import SearchSection from './sections/SearchSection.jsx'
 import FilterSection from './sections/FilterSection.jsx'
 import ProductsSection from './sections/ProductsSection.jsx'
 
+// Componente Login
+import { Login } from '../login'
+
 // ✅ MEJORA DE RENDIMIENTO: Memoización del componente principal
 const Marketplace = React.memo(() => {
+  // Estado para controlar el modal de login
+  const [openLogin, setOpenLogin] = useState(false)  // Listener para el evento 'openLogin' disparado desde ProductCard
+  useEffect(() => {
+    const handleOpenLogin = () => {
+      setOpenLogin(true)
+    }
+
+    window.addEventListener('openLogin', handleOpenLogin)
+    
+    return () => {
+      window.removeEventListener('openLogin', handleOpenLogin)
+    }
+  }, [])
+
   // ===== USAR CUSTOM HOOK PARA TODA LA LÓGICA =====
   // ✅ MEJORA DE RENDIMIENTO: Memoización de configuración estática
   const marketplaceConfig = React.useMemo(
@@ -74,7 +91,6 @@ const Marketplace = React.memo(() => {
     }),
     []
   )
-
   return (
     <Box>
       {/* TopBar eliminada, ahora la maneja App.jsx globalmente */}
@@ -88,7 +104,11 @@ const Marketplace = React.memo(() => {
 
         {/* Sección de productos */}
         <ProductsSection {...productsSectionProps} />
-      </Box>
+      </Box>      {/* Modal de Login */}
+      <Login 
+        open={openLogin} 
+        onClose={() => setOpenLogin(false)} 
+      />
     </Box>
   )
 })

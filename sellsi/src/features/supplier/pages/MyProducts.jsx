@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Container,
@@ -21,7 +21,7 @@ import {
   useTheme,
   useMediaQuery,
   Grow,
-} from '@mui/material'
+} from '@mui/material';
 import {
   Add as AddIcon,
   Search as SearchIcon,
@@ -30,21 +30,23 @@ import {
   Inventory as InventoryIcon,
   AttachMoney as AttachMoneyIcon,
   KeyboardArrowUp as KeyboardArrowUpIcon,
-} from '@mui/icons-material'
-import { ThemeProvider } from '@mui/material/styles'
-import { toast } from 'react-hot-toast'
+} from '@mui/icons-material';
+import { ThemeProvider } from '@mui/material/styles';
+import { toast } from 'react-hot-toast';
 
 // Components
-import SidebarProvider from '../../layout/SideBar'
-import ProviderTopBar from '../../layout/ProviderTopBar'
-import SupplierProductCard from '../components/SupplierProductCard'
-import ConfirmationModal, { MODAL_TYPES } from '../../ui/ConfirmationModal'
+import SidebarProvider from '../../layout/SideBar';
+import SupplierProductCard from '../components/SupplierProductCard';
+import ConfirmationModal, { MODAL_TYPES } from '../../ui/ConfirmationModal';
 
 // Hooks y stores
-import { useSupplierProducts } from '../hooks/useSupplierProducts'
-import { useLazyProducts, useProductAnimations } from '../hooks/useLazyProducts'
-import { dashboardTheme } from '../../../styles/dashboardTheme'
-import { formatPrice } from '../../marketplace/utils/formatters'
+import { useSupplierProducts } from '../hooks/useSupplierProducts';
+import {
+  useLazyProducts,
+  useProductAnimations,
+} from '../hooks/useLazyProducts';
+import { dashboardTheme } from '../../../styles/dashboardTheme';
+import { formatPrice } from '../../marketplace/utils/formatters';
 
 // Advanced Loading Components
 import {
@@ -52,7 +54,7 @@ import {
   LoadMoreState,
   ScrollProgress,
   EmptyProductsState,
-} from '../../ui/AdvancedLoading'
+} from '../../ui/AdvancedLoading';
 
 // Constantes
 const CATEGORIES = [
@@ -62,7 +64,7 @@ const CATEGORIES = [
   { value: 'Tecnología', label: 'Tecnología' },
   { value: 'Hogar', label: 'Hogar' },
   { value: 'Moda', label: 'Moda' },
-]
+];
 
 const SORT_OPTIONS = [
   { value: 'updatedAt', label: 'Más recientes' },
@@ -71,14 +73,14 @@ const SORT_OPTIONS = [
   { value: 'precio', label: 'Precio: menor a mayor' },
   { value: 'stock', label: 'Stock disponible' },
   { value: 'ventas', label: 'Más vendidos' },
-]
+];
 
 const MyProducts = () => {
-  const theme = useTheme()
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
-  const navigate = useNavigate()
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const navigate = useNavigate();
   // Obtener el user_id real del usuario autenticado
-  const supplierId = localStorage.getItem('user_id') // Store state usando el nuevo hook modularizado
+  const supplierId = localStorage.getItem('user_id'); // Store state usando el nuevo hook modularizado
   const {
     uiProducts,
     stats,
@@ -97,7 +99,7 @@ const MyProducts = () => {
     clearFilters,
     deleteProduct,
     clearError,
-  } = useSupplierProducts()
+  } = useSupplierProducts();
 
   // Advanced lazy loading hooks
   const {
@@ -110,91 +112,90 @@ const MyProducts = () => {
     loadMore,
     scrollToTop,
     progress,
-  } = useLazyProducts(uiProducts, 12)
+  } = useLazyProducts(uiProducts, 12);
 
   const { triggerAnimation, shouldAnimate } = useProductAnimations(
     displayedProducts.length
-  )
+  );
   // Local state
   const [deleteModal, setDeleteModal] = useState({
     open: false,
     product: null,
     loading: false,
-  })
-  const [showScrollTop, setShowScrollTop] = useState(false)
+  });
+  const [showScrollTop, setShowScrollTop] = useState(false);
 
   // Handle scroll for scroll-to-top button
   useEffect(() => {
     const handleScroll = () => {
-      setShowScrollTop(window.pageYOffset > 400)
-    }
+      setShowScrollTop(window.pageYOffset > 400);
+    };
 
-    window.addEventListener('scroll', handleScroll)
-    return () => window.removeEventListener('scroll', handleScroll)
-  }, []) // Cargar productos al montar el componente
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []); // Cargar productos al montar el componente
   useEffect(() => {
     if (supplierId) {
-      loadProducts(supplierId)
+      loadProducts(supplierId);
     }
-  }, [supplierId, loadProducts])
+  }, [supplierId, loadProducts]);
 
   // Trigger animations when new products are displayed
   useEffect(() => {
     if (displayedProducts.length > 0 && !loading) {
-      triggerAnimation(0)
+      triggerAnimation(0);
     }
-  }, [displayedProducts.length, loading, triggerAnimation])
+  }, [displayedProducts.length, loading, triggerAnimation]);
 
   // Handlers
   const handleAddProduct = () => {
-    navigate('/supplier/addproduct')
-  }
-  const handleEditProduct = (product) => {
+    navigate('/supplier/addproduct');
+  };
+  const handleEditProduct = product => {
     // Navegar a la página de edición con el ID del producto
-    navigate(`/supplier/addproduct?edit=${product.id}`)
-  }
+    navigate(`/supplier/addproduct?edit=${product.id}`);
+  };
 
-  const handleDeleteProduct = (product) => {
+  const handleDeleteProduct = product => {
     setDeleteModal({
       open: true,
       product,
       loading: false,
-    })
-  }
+    });
+  };
   const confirmDelete = async () => {
-    if (!deleteModal.product) return
+    if (!deleteModal.product) return;
 
-    setDeleteModal((prev) => ({ ...prev, loading: true }))
+    setDeleteModal(prev => ({ ...prev, loading: true }));
 
     try {
-      await deleteProduct(deleteModal.product.id)
-      toast.success(`${deleteModal.product.nombre} eliminado correctamente`)
-      setDeleteModal({ open: false, product: null, loading: false })
+      await deleteProduct(deleteModal.product.id);
+      toast.success(`${deleteModal.product.nombre} eliminado correctamente`);
+      setDeleteModal({ open: false, product: null, loading: false });
     } catch (error) {
-      toast.error(error.message || 'Error al eliminar el producto')
-      setDeleteModal((prev) => ({ ...prev, loading: false }))
+      toast.error(error.message || 'Error al eliminar el producto');
+      setDeleteModal(prev => ({ ...prev, loading: false }));
     }
-  }
+  };
 
-  const handleViewStats = (product) => {
+  const handleViewStats = product => {
     // TODO: Implementar vista de estadísticas detalladas
-    toast.success(`Próximamente: Estadísticas de ${product.nombre}`)
-  }
+    toast.success(`Próximamente: Estadísticas de ${product.nombre}`);
+  };
 
-  const handleSortChange = (event) => {
-    const newSortBy = event.target.value
-    setSorting(newSortBy, sortOrder)
-    scrollToTop() // Smooth scroll to top when sorting changes
-  }
+  const handleSortChange = event => {
+    const newSortBy = event.target.value;
+    setSorting(newSortBy, sortOrder);
+    scrollToTop(); // Smooth scroll to top when sorting changes
+  };
   const handleClearFilters = () => {
-    clearFilters()
-    scrollToTop() // Smooth scroll to top when clearing filters
-    toast.success('Filtros limpiados')
-  }
+    clearFilters();
+    scrollToTop(); // Smooth scroll to top when clearing filters
+    toast.success('Filtros limpiados');
+  };
 
   return (
     <ThemeProvider theme={dashboardTheme}>
-      <ProviderTopBar />
       <SidebarProvider />
 
       <Box
@@ -272,9 +273,8 @@ const MyProducts = () => {
                 </Box>
 
                 <Box sx={{ p: 0 }}>
-                  {' '}
-                  <Grid container columns={12}>
-                    <Grid xs={12} sm={4}>
+                  {' '}                  <Grid container columns={12}>
+                    <Grid size={{ xs: 12, sm: 4 }}>
                       <Box
                         sx={{
                           p: 2,
@@ -301,15 +301,14 @@ const MyProducts = () => {
                               sx={{ fontWeight: 600, lineHeight: 1.2 }}
                             >
                               {stats.total}
-                            </Typography>
-                            <Typography variant="body2" color="text.secondary">
+                            </Typography>                            <Typography variant="body2" color="text.secondary">
                               Total de productos
                             </Typography>
                           </Box>
                         </Box>
                       </Box>
                     </Grid>{' '}
-                    <Grid xs={12} sm={4}>
+                    <Grid size={{ xs: 12, sm: 4 }}>
                       <Box
                         sx={{
                           p: 2,
@@ -343,15 +342,14 @@ const MyProducts = () => {
                               sx={{ fontWeight: 600, lineHeight: 1.2 }}
                             >
                               {stats.inStock}
-                            </Typography>
-                            <Typography variant="body2" color="text.secondary">
+                            </Typography>                            <Typography variant="body2" color="text.secondary">
                               Productos en stock
                             </Typography>
                           </Box>
                         </Box>
                       </Box>
                     </Grid>{' '}
-                    <Grid xs={12} sm={4}>
+                    <Grid size={{ xs: 12, sm: 4 }}>
                       <Box sx={{ p: 2 }}>
                         <Box
                           sx={{
@@ -390,16 +388,15 @@ const MyProducts = () => {
             </Alert>
           )}
           {/* Filtros y búsqueda */}
-          <Paper sx={{ p: 3, mb: 3 }}>
-            <Grid container columns={12} spacing={2} alignItems="center">
+          <Paper sx={{ p: 3, mb: 3 }}>            <Grid container columns={12} spacing={2} alignItems="center">
               {' '}
               {/* Búsqueda */}
-              <Grid xs={12} sm={6} md={4}>
+              <Grid size={{ xs: 12, sm: 6, md: 4 }}>
                 <TextField
                   fullWidth
                   placeholder="Buscar productos..."
                   value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onChange={e => setSearchTerm(e.target.value)}
                   InputProps={{
                     startAdornment: (
                       <InputAdornment position="start">
@@ -408,15 +405,14 @@ const MyProducts = () => {
                     ),
                   }}
                   sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
-                />
-              </Grid>{' '}
+                />              </Grid>{' '}
               {/* Filtro por categoría */}{' '}
-              <Grid xs={12} sm={6} md={3}>
+              <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                 <FormControl fullWidth>
                   <InputLabel>Categoría</InputLabel>{' '}
                   <Select
                     value={categoryFilter}
-                    onChange={(e) => setCategoryFilter(e.target.value)}
+                    onChange={e => setCategoryFilter(e.target.value)}
                     label="Categoría"
                     sx={{
                       borderRadius: 2,
@@ -429,16 +425,15 @@ const MyProducts = () => {
                       disableScrollLock: true,
                     }}
                   >
-                    {CATEGORIES.map((category) => (
+                    {CATEGORIES.map(category => (
                       <MenuItem key={category.value} value={category.value}>
                         {category.label}
                       </MenuItem>
                     ))}
                   </Select>
                 </FormControl>
-              </Grid>{' '}
-              {/* Ordenamiento */}
-              <Grid xs={12} sm={6} md={3}>
+              </Grid>{' '}              {/* Ordenamiento */}
+              <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                 <FormControl fullWidth>
                   <InputLabel>Ordenar por</InputLabel>{' '}
                   <Select
@@ -456,16 +451,15 @@ const MyProducts = () => {
                       disableScrollLock: true,
                     }}
                   >
-                    {SORT_OPTIONS.map((option) => (
+                    {SORT_OPTIONS.map(option => (
                       <MenuItem key={option.value} value={option.value}>
                         {option.label}
                       </MenuItem>
                     ))}
                   </Select>
-                </FormControl>
-              </Grid>{' '}
+                </FormControl>              </Grid>{' '}
               {/* Acciones */}
-              <Grid xs={12} sm={6} md={2}>
+              <Grid size={{ xs: 12, sm: 6, md: 2 }}>
                 <Stack direction="row" spacing={1}>
                   <Button
                     variant="outlined"
@@ -493,7 +487,7 @@ const MyProducts = () => {
                 {categoryFilter !== 'all' && (
                   <Chip
                     label={`Categoría: ${
-                      CATEGORIES.find((c) => c.value === categoryFilter)?.label
+                      CATEGORIES.find(c => c.value === categoryFilter)?.label
                     }`}
                     onDelete={() => setCategoryFilter('all')}
                     size="small"
@@ -524,7 +518,7 @@ const MyProducts = () => {
 
               <Chip
                 label={`Orden: ${sortOrder === 'asc' ? '↑' : '↓'} ${
-                  SORT_OPTIONS.find((opt) => opt.value === sortBy)?.label ||
+                  SORT_OPTIONS.find(opt => opt.value === sortBy)?.label ||
                   'Fecha'
                 }`}
                 size="small"
@@ -548,7 +542,9 @@ const MyProducts = () => {
                   searchTerm={searchTerm}
                   categoryFilter={categoryFilter}
                 />
-              </Grid>            ) : (              <>
+              </Grid>
+            ) : (
+              <>
                 {/* Product Grid Traditional (sin virtualización por ahora) */}
                 <Grid container spacing={3}>
                   {displayedProducts.map((product, index) => (
@@ -558,7 +554,7 @@ const MyProducts = () => {
                       timeout={600}
                       style={{ transitionDelay: `${(index % 8) * 50}ms` }}
                     >
-                      <Grid xs={12} sm={6} md={4} lg={3}>
+                      <Grid size={{ xs: 12, sm: 6, md: 4.5, lg: 3.5, xl: 2.8 }}>
                         <SupplierProductCard
                           product={product}
                           onEdit={handleEditProduct}
@@ -648,7 +644,7 @@ const MyProducts = () => {
         loading={deleteModal.loading}
       />
     </ThemeProvider>
-  )
-}
+  );
+};
 
-export default MyProducts
+export default MyProducts;

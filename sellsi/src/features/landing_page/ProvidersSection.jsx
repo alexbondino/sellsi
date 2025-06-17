@@ -133,7 +133,7 @@ const ProvidersSection = ({ statistics }) => {
               lg: 'row',
               xl: 'row',
             },
-            gap: { xs: 2, sm: 3, md: 4, lg: 4, xl: 5 },
+            gap: { xs: 1, sm: 2, md: 3, lg: 4, xl: 5 }, // <--- Ajuste aquí
             alignItems: {
               xs: 'center',
               sm: 'center',
@@ -247,7 +247,7 @@ const ProvidersSection = ({ statistics }) => {
         >
           <Grid
             container
-            spacing={{ xs: 3, sm: 4, md: 5, lg: 4, xl: 6 }}
+            spacing={{ xs: 2, sm: 2.5, md: 3, lg: 3.5, xl: 4 }} // gap leve entre cards
             justifyContent={{
               xs: 'center',
               sm: 'center',
@@ -256,20 +256,8 @@ const ProvidersSection = ({ statistics }) => {
               xl: 'flex-start',
             }}
           >
-            {PROVIDERS_DATA.map((provider, index) => (
-              <Grid
-                item
-                xs={6}
-                sm={4}
-                md={3}
-                lg={4}
-                xl={3}
-                key={index}
-                sx={{
-                  display: 'flex',
-                  justifyContent: 'center',
-                }}
-              >
+            {PROVIDERS_DATA.map((provider, idx) => (
+              <Grid key={provider.alt} size={{ xs: 6, sm: 4, md: 3, lg: 2, xl: 2 }}> {/* <--- size más compacto */}
                 <ProviderLogo provider={provider} />
               </Grid>
             ))}

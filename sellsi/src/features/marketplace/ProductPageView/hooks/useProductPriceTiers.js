@@ -43,10 +43,9 @@ export function useProductPriceTiers(productId) {
         setTiers(filtered)
         setLoading(false)
       }
-    } else {
-      // Usar Supabase
+    } else {      // Usar Supabase
       supabase
-        .from('product_price_tiers')
+        .from('product_quantity_ranges')
         .select('*')
         .eq('product_id', productId)
         .order('min_quantity', { ascending: true })

@@ -41,7 +41,6 @@ import PurchaseActions from './components/PurchaseActions'
 import ProductHeader from './components/ProductHeader'
 import LoadingOverlay from '../../ui/LoadingOverlay'
 import { ProductPageSkeleton } from './components/ProductPageSkeletons'
-import MarketplaceTopBar from '../../layout/MarketplaceTopBar'
 
 const ProductPageView = ({
   product,
@@ -199,10 +198,7 @@ const ProductPageView = ({
               transition: 'transform 0.3s ease-in-out',
             }
       }
-    >
-      {/* MarketplaceTopBar - Solo si está logueado y es vista de página */}
-      {isPageView && isLoggedIn && <MarketplaceTopBar />}{' '}
-      {/* Header with back button - solo para modal */}
+    >      {/* Header with back button - solo para modal */}
       {!isPageView && (
         <Box
           sx={{

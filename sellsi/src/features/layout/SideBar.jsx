@@ -14,7 +14,7 @@ const menuItems = [
   { text: 'Mis Productos', path: '/supplier/myproducts' },
   { text: 'Mis Pedidos', path: '/supplier/myorders' },
   { text: 'Mi Performance', path: '/supplier/myperformance' },
-  { text: 'El Mercado', path: '/supplier/market' },
+  { text: 'Marketplace', path: '/buyer/marketplace' },
 ]
 
 const SidebarProvider = () => {

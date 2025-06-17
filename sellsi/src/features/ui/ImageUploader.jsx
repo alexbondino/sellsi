@@ -47,14 +47,24 @@ const ImageUploader = ({
   const fileInputRef = useRef(null)
   const [dragOver, setDragOver] = useState(false)
 
+  // Función para formatear tamaño de archivo
+  const formatFileSize = (bytes) => {
+    if (bytes === 0) return '0 Bytes'
+    const k = 1024
+    const sizes = ['Bytes', 'KB', 'MB', 'GB']
+    const i = Math.floor(Math.log(bytes) / Math.log(k))
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
+  }
+
   const handleFileSelect = (event) => {
     const files = Array.from(event.target.files)
     processFiles(files)
     // Reset input para permitir seleccionar el mismo archivo
     event.target.value = ''
   }
-
   const processFiles = (files) => {
+    const maxFileSize = 2 * 1024 * 1024; // 2MB en bytes
+    
     const imageFiles = files.filter((file) => {
       if (acceptedTypes === 'image/*') {
         return file.type.startsWith('image/')
@@ -69,9 +79,20 @@ const ImageUploader = ({
       return
     }
 
+    // Validar límite de imágenes
     if (images.length + imageFiles.length > maxImages) {
       const errorMsg = `Solo puedes subir máximo ${maxImages} imágenes`
       onError?.(errorMsg)
+      return
+    }
+
+    // Validar tamaño de archivos
+    const oversizedFiles = imageFiles.filter(file => file.size > maxFileSize)
+    if (oversizedFiles.length > 0) {
+      const fileNames = oversizedFiles.map(f => f.name).join(', ')
+      onError?.(
+        `Las siguientes imágenes exceden el límite de 2MB: ${fileNames}`
+      )
       return
     }
 
@@ -81,6 +102,7 @@ const ImageUploader = ({
       file,
       url: URL.createObjectURL(file),
       name: file.name,
+      size: file.size,
     }))
 
     onImagesChange([...images, ...newImages])
@@ -168,9 +190,8 @@ const ImageUploader = ({
             </Typography>
             <Typography variant="body2" color="text.secondary">
               {dropText}
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              Formatos soportados: {acceptedTypes} • Máximo {maxImages} archivos
+            </Typography>            <Typography variant="caption" color="text.secondary">
+              Formatos soportados: {acceptedTypes} • Máximo {maxImages} archivos • 2MB por imagen
             </Typography>
           </Box>
         </Paper>
@@ -193,13 +214,9 @@ const ImageUploader = ({
             Archivos seleccionados ({images.length}/{maxImages})
           </Typography>
 
-          <Grid container spacing={2}>
-            {images.map((image, index) => (
+          <Grid container spacing={2}>            {images.map((image, index) => (
               <Grid
-                item
-                xs={6}
-                sm={4}
-                md={3}
+                size={{ xs: 6, sm: 4, md: 3 }}
                 key={image.id}
                 sx={{ maxWidth: 160, minWidth: 140 }}
               >
@@ -287,9 +304,7 @@ const ImageUploader = ({
                     size="small"
                   >
                     <DeleteIcon fontSize="small" />
-                  </IconButton>
-
-                  <CardActions sx={{ p: 1 }}>
+                  </IconButton>                  <CardActions sx={{ p: 1, flexDirection: 'column', alignItems: 'flex-start' }}>
                     <Typography
                       variant="caption"
                       color="text.secondary"
@@ -298,10 +313,23 @@ const ImageUploader = ({
                         textOverflow: 'ellipsis',
                         whiteSpace: 'nowrap',
                         width: '100%',
+                        fontSize: '0.7rem',
                       }}
                     >
                       {image.name}
                     </Typography>
+                    {image.size && (
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        sx={{
+                          fontSize: '0.6rem',
+                          color: image.size > 2 * 1024 * 1024 ? 'error.main' : 'text.secondary',
+                        }}
+                      >
+                        {formatFileSize(image.size)}
+                      </Typography>
+                    )}
                   </CardActions>
                 </Card>
               </Grid>

@@ -61,9 +61,8 @@ const useSupplierProductsStore = create((set, get) => ({
       // Obtener todos los tramos de precio de estos productos
       const productIds = products.map((p) => p.productid)
       let priceTiers = []
-      if (productIds.length > 0) {
-        const { data: tiers, error: tierError } = await supabase
-          .from('product_price_tiers')
+      if (productIds.length > 0) {        const { data: tiers, error: tierError } = await supabase
+          .from('product_quantity_ranges')
           .select('*')
           .in('product_id', productIds)
         if (tierError) throw tierError
@@ -177,15 +176,15 @@ const useSupplierProductsStore = create((set, get) => ({
       ) {
         const tiersToInsert = productData.priceTiers
           .filter((t) => t.cantidad && t.precio)
-          .map((t) => ({
-            product_id: product.productid,
+          .map((t) => ({            product_id: product.productid,
             min_quantity: Number(t.cantidad),
             max_quantity: t.maxCantidad ? Number(t.maxCantidad) : null,
             price: Number(t.precio),
           }))
+
         if (tiersToInsert.length > 0) {
           const { error: tierError } = await supabase
-            .from('product_price_tiers')
+            .from('product_quantity_ranges')
             .insert(tiersToInsert)
           if (tierError) throw tierError
         }
@@ -337,11 +336,9 @@ const useSupplierProductsStore = create((set, get) => ({
       })
       if (orphanFiles.length > 0) {
         await supabase.storage.from('product-images').remove(orphanFiles)
-      }
-
-      // 6. Eliminar tramos antiguos
+      }      // 6. Eliminar tramos antiguos
       await supabase
-        .from('product_price_tiers')
+        .from('product_quantity_ranges')
         .delete()
         .eq('product_id', productid)
 
@@ -349,15 +346,15 @@ const useSupplierProductsStore = create((set, get) => ({
       if (priceTiers && Array.isArray(priceTiers) && priceTiers.length > 0) {
         const tiersToInsert = priceTiers
           .filter((t) => t.cantidad && t.precio)
-          .map((t) => ({
-            product_id: productid,
+          .map((t) => ({            product_id: productid,
             min_quantity: Number(t.cantidad),
             max_quantity: t.maxCantidad ? Number(t.maxCantidad) : null,
             price: Number(t.precio),
           }))
+        
         if (tiersToInsert.length > 0) {
           const { error: tierError } = await supabase
-            .from('product_price_tiers')
+            .from('product_quantity_ranges')
             .insert(tiersToInsert)
           if (tierError) throw tierError
         }

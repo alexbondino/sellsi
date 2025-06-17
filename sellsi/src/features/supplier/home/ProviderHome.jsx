@@ -1,13 +1,12 @@
 // 📁 pages/ProviderHome.jsx
-import React from 'react'
-import { Box, Grid, Button, Container, ThemeProvider } from '@mui/material'
-import AddIcon from '@mui/icons-material/Add'
-import { useSupplierDashboard } from './hooks/useSupplierDashboard'
-import DashboardSummary from './dashboard-summary/DashboardSummary'
-import MonthlySalesChart from '../../ui/graphs/BarChart'
-import SidebarProvider from '../../layout/SideBar'
-import ProviderTopBar from '../../layout/ProviderTopBar'
-import { dashboardTheme } from '../../../styles/dashboardTheme'
+import React from 'react';
+import { Box, Grid, Button, Container, ThemeProvider } from '@mui/material';
+import AddIcon from '@mui/icons-material/Add';
+import { useSupplierDashboard } from './hooks/useSupplierDashboard';
+import DashboardSummary from './dashboard-summary/DashboardSummary';
+import MonthlySalesChart from '../../ui/graphs/BarChart';
+import SidebarProvider from '../../layout/SideBar';
+import { dashboardTheme } from '../../../styles/dashboardTheme';
 
 const ProviderHome = () => {
   const {
@@ -19,15 +18,14 @@ const ProviderHome = () => {
     totalSales,
     loading,
     error,
-  } = useSupplierDashboard()
+  } = useSupplierDashboard();
 
   const productsOutOfStock = productStocks.filter(
-    (p) => p.productqty === 0
-  ).length
+    p => p.productqty === 0
+  ).length;
 
   return (
     <ThemeProvider theme={dashboardTheme}>
-      <ProviderTopBar />
       <SidebarProvider />
       <Box
         sx={{
@@ -83,7 +81,7 @@ const ProviderHome = () => {
         </Container>
       </Box>
     </ThemeProvider>
-  )
-}
+  );
+};
 
-export default ProviderHome
+export default ProviderHome;
