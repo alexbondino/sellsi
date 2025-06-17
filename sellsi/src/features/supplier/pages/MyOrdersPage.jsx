@@ -5,13 +5,16 @@ import {
   CircularProgress,
   Alert,
   Container,
-  TextField
+  TextField,
+  ThemeProvider
 } from '@mui/material';
 import { useOrdersStore } from '../myorders/store/ordersStore';
 import OrdersFilter from '../myorders/components/OrdersFilter';
 import OrdersTable from '../myorders/components/OrdersTable';
 import OrderActionModal from '../myorders/modals/OrderActionModal';
 import { useBanner } from '../../ui/BannerContext';
+import SidebarProvider from '../../layout/SideBar';
+import { dashboardTheme } from '../../../styles/dashboardTheme';
 
 const MyOrdersPage = () => {
   // Estado del store
@@ -246,57 +249,97 @@ const MyOrdersPage = () => {
     
     return configs[type] || {};
   };
-
   if (loading) {
     return (
-      <Container>
-        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
-          <CircularProgress />
+      <ThemeProvider theme={dashboardTheme}>
+        <SidebarProvider />
+        <Box
+          sx={{
+            marginLeft: '210px',
+            backgroundColor: 'background.default',
+            minHeight: '100vh',
+            pt: { xs: 9, md: 10 },
+            px: 3,
+            pb: 3,
+          }}
+        >
+          <Container>
+            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
+              <CircularProgress />
+            </Box>
+          </Container>
         </Box>
-      </Container>
+      </ThemeProvider>
     );
   }
 
   if (error) {
     return (
-      <Container>
-        <Alert severity="error" sx={{ mt: 2 }}>
-          {error}
-        </Alert>
-      </Container>
+      <ThemeProvider theme={dashboardTheme}>
+        <SidebarProvider />
+        <Box
+          sx={{
+            marginLeft: '210px',
+            backgroundColor: 'background.default',
+            minHeight: '100vh',
+            pt: { xs: 9, md: 10 },
+            px: 3,
+            pb: 3,
+          }}
+        >
+          <Container>
+            <Alert severity="error" sx={{ mt: 2 }}>
+              {error}
+            </Alert>
+          </Container>
+        </Box>
+      </ThemeProvider>
     );
   }
-
   const modalConfig = getModalConfig();
 
   return (
-    <Container maxWidth="xl" sx={{ py: 4 }}>
-      {/* Título */}
-      <Typography variant="h4" component="h1" gutterBottom>
-        Mis Pedidos
-      </Typography>
+    <ThemeProvider theme={dashboardTheme}>
+      <SidebarProvider />
+      <Box
+        sx={{
+          marginLeft: '210px',
+          backgroundColor: 'background.default',
+          minHeight: '100vh',
+          pt: { xs: 9, md: 10 },
+          px: 3,
+          pb: 3,
+        }}
+      >
+        <Container maxWidth="xl" disableGutters>
+          {/* Título */}
+          <Typography variant="h4" component="h1" gutterBottom>
+            Mis Pedidos
+          </Typography>
 
-      {/* Filtro */}
-      <OrdersFilter
-        statusFilter={statusFilter}
-        setStatusFilter={setStatusFilter}
-      />
+          {/* Filtro */}
+          <OrdersFilter
+            statusFilter={statusFilter}
+            setStatusFilter={setStatusFilter}
+          />
 
-      {/* Tabla de pedidos */}
-      <OrdersTable
-        orders={filteredOrders}
-        onActionClick={handleActionClick}
-      />
+          {/* Tabla de pedidos */}
+          <OrdersTable
+            orders={filteredOrders}
+            onActionClick={handleActionClick}
+          />
 
-      {/* Modal de acciones */}
-      <OrderActionModal
-        isOpen={modalState.isOpen}
-        onClose={handleCloseModal}
-        onSubmit={handleModalSubmit}
-        order={modalState.selectedOrder}
-        {...modalConfig}
-      />
-    </Container>
+          {/* Modal de acciones */}
+          <OrderActionModal
+            isOpen={modalState.isOpen}
+            onClose={handleCloseModal}
+            onSubmit={handleModalSubmit}
+            order={modalState.selectedOrder}
+            {...modalConfig}
+          />
+        </Container>
+      </Box>
+    </ThemeProvider>
   );
 };
 
