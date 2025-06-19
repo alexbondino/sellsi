@@ -1,3 +1,0 @@
-# Mejoras de Rendimiento
-
-...existing content...

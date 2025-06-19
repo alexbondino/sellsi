@@ -499,7 +499,7 @@ const MyProducts = () => {
             )}
           </Paper>{' '}
           {/* Grid de productos */}
-          <Box>
+          <Box sx={{ mb: 40 }}>
             <Box
               sx={{
                 display: 'flex',

@@ -1,3 +1,0 @@
-# Análisis Super Crítico del Código
-
-...existing content...

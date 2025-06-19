@@ -370,33 +370,7 @@ const ProductCard = React.memo(({ producto, onAddToCart, onViewDetails }) => {
       onClick={handleProductClick}
       sx={cardStyles}
     >
-      {/* Icono favorito - más pequeño */}
-      <IconButton
-        onClick={toggleFavorito}
-        sx={favoriteButtonStyles}
-        size="small"
-        aria-label={favorito ? 'Quitar de favoritos' : 'Agregar a favoritos'}
-        data-no-card-click="true"
-      >
-        <Box
-          component="span"
-          sx={{
-            display: 'inline-flex',
-            transition: 'transform 0.25s cubic-bezier(0.4,1.3,0.6,1)',
-            transform: favorito ? 'scale(1.25)' : 'scale(1)',
-            filter: favorito ? 'drop-shadow(0 2px 6px #ff525299)' : 'none',
-          }}
-        >
-          {favorito ? (
-            <FavoriteIcon
-              sx={{ color: '#FF5252', fontSize: 20, transition: 'color 0.2s' }}
-            />
-          ) : (
-            <FavoriteBorderIcon
-              sx={{ color: '#666', fontSize: 20, transition: 'color 0.2s' }}
-            />
-          )}
-        </Box>      </IconButton>      {/* ✅ OPTIMIZACIÓN: Imagen memoizada con lazy loading para mejor performance */}
+      {/* Icono favorito eliminado */}
       {memoizedImage}
       <CardContent sx={{ flexGrow: 1, p: 2, pb: 1 }}>
         {' '}

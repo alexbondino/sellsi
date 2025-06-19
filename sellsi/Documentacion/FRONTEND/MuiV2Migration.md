@@ -1,3 +1,0 @@
-# Migración a MUI v2
-
-...existing content...

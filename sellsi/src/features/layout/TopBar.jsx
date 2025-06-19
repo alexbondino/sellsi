@@ -165,7 +165,24 @@ export default function TopBar({ session, isBuyer, logoUrl, onNavigate }) {
         <Tooltip title="Carrito" arrow>
           <IconButton 
             onClick={() => navigate('/buyer/cart')} 
-            sx={{ color: 'white', mr: 2.5 }}
+            sx={{
+              color: 'white',
+              mr: 2.5,
+              boxShadow: 'none',
+              outline: 'none',
+              border: 'none',
+              transition: 'background 0.2s',
+              '&:focus': { outline: 'none', border: 'none', boxShadow: 'none' },
+              '&:active': { outline: 'none', border: 'none', boxShadow: 'none' },
+              '&:hover': {
+                background: (theme) => theme.palette.primary.main,
+                boxShadow: 'none',
+                outline: 'none',
+                border: 'none',
+              },
+            }}
+            disableFocusRipple
+            disableRipple
           >
             <Badge badgeContent={itemsInCart} color="error">
               <CustomShoppingCartIcon />
@@ -208,7 +225,24 @@ export default function TopBar({ session, isBuyer, logoUrl, onNavigate }) {
         <Tooltip title="Carrito" arrow>
           <IconButton 
             onClick={() => navigate('/buyer/cart')} 
-            sx={{ color: 'white', mr: 2.5 }}
+            sx={{
+              color: 'white',
+              mr: 2.5,
+              boxShadow: 'none',
+              outline: 'none',
+              border: 'none',
+              transition: 'background 0.2s',
+              '&:focus': { outline: 'none', border: 'none', boxShadow: 'none' },
+              '&:active': { outline: 'none', border: 'none', boxShadow: 'none' },
+              '&:hover': {
+                background: (theme) => theme.palette.primary.main,
+                boxShadow: 'none',
+                outline: 'none',
+                border: 'none',
+              },
+            }}
+            disableFocusRipple
+            disableRipple
           >
             <Badge badgeContent={itemsInCart} color="error">
               <CustomShoppingCartIcon />
