@@ -39,7 +39,8 @@ import {
 } from '../../../utils/priceCalculation'
 import { LazyImage } from '../../../components/shared'
 
-const ProductCard = ({ producto, onAddToCart, onViewDetails }) => {
+// ✅ MEJORA DE RENDIMIENTO: Memoización del componente
+const ProductCard = React.memo(({ producto, onAddToCart, onViewDetails }) => {
   const [favorito, setFavorito] = useState(false)
   const [anchorEl, setAnchorEl] = useState(null)
   // Obtener compra mínima
@@ -97,49 +98,91 @@ const ProductCard = ({ producto, onAddToCart, onViewDetails }) => {
       total: precio * cantidad
     }
   }, [cantidad, price_tiers, precio])
-
   const { unitPrice: currentUnitPrice, total: currentTotal } = currentPrices
 
-  // Lógica para mostrar precios
-  let priceContent
-  if (loadingTiers) {
-    priceContent = (
-      <Typography variant="body2" color="text.secondary">
-        Cargando precios...
-      </Typography>
-    )
-  } else if (errorTiers) {
-    priceContent = (
-      <Typography variant="body2" color="error.main">
-        Error al cargar precios
-      </Typography>
-    )
-  } else if (tiers && tiers.length > 0) {
-    // Mostrar rango de precios por tramos
-    const minPrice = Math.min(...tiers.map((t) => t.price))
-    const maxPrice = Math.max(...tiers.map((t) => t.price))
-    priceContent = (
-      <PriceDisplay
-        price={maxPrice}
-        minPrice={minPrice}
-        showRange={minPrice !== maxPrice}
-        variant="h5"
-        color="#1976d2"
-        sx={{ lineHeight: 1.1, fontSize: 22 }}
-      />
-    )
-  } else {
-    // Precio único (sin tramos)
-    priceContent = (
-      <PriceDisplay
-        price={precio}
-        originalPrice={precioOriginal}
-        variant="h5"
-        color="#1976d2"
-        sx={{ lineHeight: 1.1, fontSize: 22 }}
-      />
-    )
-  }
+  // ✅ MEJORA DE RENDIMIENTO: Memoización del contenido de precio para evitar re-renders
+  const memoizedPriceContent = React.useMemo(() => {
+    if (loadingTiers) {
+      return (
+        <Typography variant="body2" color="text.secondary">
+          Cargando precios...
+        </Typography>
+      )
+    } 
+    
+    if (errorTiers) {
+      return (
+        <Typography variant="body2" color="error.main">
+          Error al cargar precios
+        </Typography>
+      )
+    } 
+    
+    if (tiers && tiers.length > 0) {
+      // Mostrar rango de precios por tramos
+      const minPrice = Math.min(...tiers.map((t) => t.price))
+      const maxPrice = Math.max(...tiers.map((t) => t.price))
+      return (
+        <PriceDisplay
+          price={maxPrice}
+          minPrice={minPrice}
+          showRange={minPrice !== maxPrice}
+          variant="h5"
+          color="#1976d2"
+          sx={{ lineHeight: 1.1, fontSize: 22 }}
+        />
+      )
+    } else {
+      // Precio único (sin tramos)
+      return (
+        <PriceDisplay
+          price={precio}
+          originalPrice={precioOriginal}
+          variant="h5"
+          color="#1976d2"
+          sx={{ lineHeight: 1.1, fontSize: 22 }}
+        />
+      )
+    }  }, [loadingTiers, errorTiers, tiers, precio, precioOriginal])
+
+  // ✅ MEJORA DE RENDIMIENTO: Memoización de la función para resolver imagen
+  const resolvedImageSrc = React.useMemo(() => {
+    // Unifica lógica: soporta string, objeto, path relativo, url pública
+    let image = producto?.imagen || producto?.image
+    if (!image) return '/placeholder-product.jpg'
+    // Si es string (url pública o path relativo)
+    if (typeof image === 'string') {
+      if (image.startsWith('blob:')) return '/placeholder-product.jpg'
+      return getProductImageUrl(image, producto) // ✅ Pasar datos del producto
+    }
+    // Si es objeto con url
+    if (typeof image === 'object' && image !== null) {
+      if (image.url && typeof image.url === 'string') {
+        if (image.url.startsWith('blob:')) return '/placeholder-product.jpg'
+        return getProductImageUrl(image.url, producto) // ✅ Pasar datos del producto
+      }
+      // Si es objeto con path relativo
+      if (image.path && typeof image.path === 'string') {
+        return getProductImageUrl(image.path, producto) // ✅ Pasar datos del producto
+      }
+    }
+    return '/placeholder-product.jpg'
+  }, [producto])
+
+  // ✅ MEJORA DE RENDIMIENTO: Memoización del componente LazyImage
+  const memoizedImage = React.useMemo(() => (
+    <LazyImage
+      src={resolvedImageSrc}
+      alt={nombre}
+      aspectRatio="160 / 160"
+      rootMargin="200px"
+      objectFit="contain"
+      sx={{
+        p: 1.5,
+        bgcolor: '#fafafa',
+      }}
+    />
+  ), [resolvedImageSrc, nombre])
 
   const toggleFavorito = () => setFavorito(!favorito)
 
@@ -266,90 +309,71 @@ const ProductCard = ({ producto, onAddToCart, onViewDetails }) => {
       // Crear producto para carrito preservando price_tiers y mínimo reales
       const cartProduct = formatProductForCart(producto, cantidad, price_tiers)
       onAddToCart(cartProduct)
-    }
-    handleClosePopover()
+    }    handleClosePopover()
   }, [price_tiers, cantidad, onAddToCart, producto, handleClosePopover])
 
-  function resolveImageSrc(producto) {
-    // Unifica lógica: soporta string, objeto, path relativo, url pública
-    let image = producto?.imagen || producto?.image
-    if (!image) return '/placeholder-product.jpg'
-    // Si es string (url pública o path relativo)
-    if (typeof image === 'string') {
-      if (image.startsWith('blob:')) return '/placeholder-product.jpg'
-      return getProductImageUrl(image, producto) // ✅ Pasar datos del producto
-    }
-    // Si es objeto con url
-    if (typeof image === 'object' && image !== null) {
-      if (image.url && typeof image.url === 'string') {
-        if (image.url.startsWith('blob:')) return '/placeholder-product.jpg'
-        return getProductImageUrl(image.url, producto) // ✅ Pasar datos del producto
-      }
-      // Si es objeto con path relativo
-      if (image.path && typeof image.path === 'string') {
-        return getProductImageUrl(image.path, producto) // ✅ Pasar datos del producto
-      }
-    }
-    return '/placeholder-product.jpg'
-  }
+  // ✅ MEJORA DE RENDIMIENTO: Memoización de estilos del Card
+  const cardStyles = React.useMemo(() => ({
+    height: 450,
+    minWidth: { xs: 100, sm: 150, md: 180, lg: 280, xl: 300 },
+    display: 'flex',
+    flexDirection: 'column',
+    borderRadius: 2,
+    transition: 'all 0.3s ease',
+    position: 'relative',
+    overflow: 'hidden',
+    cursor: 'pointer',
+    '&:hover': {
+      boxShadow: '0 8px 16px rgba(0,0,0,0.12)',
+      transform: 'translateY(-4px)',
+    },
+  }), [])
+
+  // ✅ MEJORA DE RENDIMIENTO: Memoización de estilos del IconButton favorito
+  const favoriteButtonStyles = React.useMemo(() => ({
+    position: 'absolute',
+    top: 6,
+    right: 6,
+    zIndex: 2,
+    bgcolor: 'rgba(255,255,255,0.9)',
+    width: 32,
+    height: 32,
+    transition: 'background 0.2s, box-shadow 0.2s',
+    boxShadow: 'none',
+    outline: 'none',
+    '&:hover': {
+      bgcolor: 'rgba(255,255,255,1)',
+      transform: 'scale(1.05)',
+      boxShadow: 'none',
+      outline: 'none',
+    },
+    '&:active': {
+      boxShadow: 'none !important',
+      outline: 'none !important',
+      background: 'rgba(255,255,255,1) !important',
+    },
+    '&:focus': {
+      boxShadow: 'none !important',
+      outline: 'none !important',
+      background: 'rgba(255,255,255,1) !important',
+    },
+    '&:focus-visible': {
+      boxShadow: 'none !important',
+      outline: 'none !important',
+      background: 'rgba(255,255,255,1) !important',
+    },
+  }), [])
 
   return (
     <Card
       elevation={2}
       onClick={handleProductClick}
-      sx={{
-        height: 450, // ✅ REDUCIR: de 620 a 480 (-140px, -23%)
-        minWidth: { xs: 100, sm: 150, md: 180, lg: 280, xl: 300 }, // ✅ REDUCIR: de 400 a 360 (-40px, -10%)
-        display: 'flex',
-        flexDirection: 'column',
-        borderRadius: 2,
-        transition: 'all 0.3s ease',
-        position: 'relative',
-        overflow: 'hidden',
-        cursor: 'pointer',
-        '&:hover': {
-          boxShadow: '0 8px 16px rgba(0,0,0,0.12)', // ✅ REDUCIR sombra
-          transform: 'translateY(-4px)', // ✅ REDUCIR movimiento: -6px a -4px
-        },
-      }}
+      sx={cardStyles}
     >
-      {' '}
       {/* Icono favorito - más pequeño */}
       <IconButton
         onClick={toggleFavorito}
-        sx={{
-          position: 'absolute',
-          top: 6,
-          right: 6,
-          zIndex: 2,
-          bgcolor: 'rgba(255,255,255,0.9)',
-          width: 32,
-          height: 32,
-          transition: 'background 0.2s, box-shadow 0.2s',
-          boxShadow: 'none',
-          outline: 'none',
-          '&:hover': {
-            bgcolor: 'rgba(255,255,255,1)',
-            transform: 'scale(1.05)',
-            boxShadow: 'none',
-            outline: 'none',
-          },
-          '&:active': {
-            boxShadow: 'none !important',
-            outline: 'none !important',
-            background: 'rgba(255,255,255,1) !important',
-          },
-          '&:focus': {
-            boxShadow: 'none !important',
-            outline: 'none !important',
-            background: 'rgba(255,255,255,1) !important',
-          },
-          '&:focus-visible': {
-            boxShadow: 'none !important',
-            outline: 'none !important',
-            background: 'rgba(255,255,255,1) !important',
-          },
-        }}
+        sx={favoriteButtonStyles}
         size="small"
         aria-label={favorito ? 'Quitar de favoritos' : 'Agregar a favoritos'}
         data-no-card-click="true"
@@ -372,21 +396,8 @@ const ProductCard = ({ producto, onAddToCart, onViewDetails }) => {
               sx={{ color: '#666', fontSize: 20, transition: 'color 0.2s' }}
             />
           )}
-        </Box>      </IconButton>      {/* ✅ OPTIMIZACIÓN: Imagen con lazy loading para mejor performance */}
-      <LazyImage
-        src={resolveImageSrc(producto)}
-        alt={nombre}
-        aspectRatio="160 / 160"
-        rootMargin="200px" // Cargar imagen cuando esté a 200px de ser visible
-        objectFit="contain" // ✅ Correctamente pasado como prop
-        sx={{
-          p: 1.5,
-          bgcolor: '#fafafa',
-        }}
-        onLoad={() => {
-          // Opcional: tracking de lazy loading
-        }}
-      />
+        </Box>      </IconButton>      {/* ✅ OPTIMIZACIÓN: Imagen memoizada con lazy loading para mejor performance */}
+      {memoizedImage}
       <CardContent sx={{ flexGrow: 1, p: 2, pb: 1 }}>
         {' '}
         {/* ✅ REDUCIR: de 3 a 2 */}
@@ -440,7 +451,7 @@ const ProductCard = ({ producto, onAddToCart, onViewDetails }) => {
           Compra mínima: {compraMinima} unidades
         </Typography>
         {/* Precios - más compacto */}{' '}
-        <Box sx={{ mb: 1.5 }}>{priceContent}</Box>{' '}
+        <Box sx={{ mb: 1.5 }}>{memoizedPriceContent}</Box>{' '}
         {/* Información adicional - más compacta */}
         <Typography
           variant="body2"
@@ -690,11 +701,13 @@ const ProductCard = ({ producto, onAddToCart, onViewDetails }) => {
             >
               {canAdd ? 'Agregar' : `Mín: ${minimumPurchase}`}
             </Button>
-          </Box>
-        </Box>
+          </Box>        </Box>
       </Popover>
     </Card>
   )
-}
+})
 
-export default React.memo(ProductCard)
+// ✅ MEJORA DE RENDIMIENTO: DisplayName para debugging
+ProductCard.displayName = 'ProductCard'
+
+export default ProductCard

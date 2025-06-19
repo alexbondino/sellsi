@@ -1,10 +1,3 @@
-// ✅ EDITAR AQUÍ PARA:
-// - Cambiar lógica de estados
-// - Modificar handlers de eventos
-// - Ajustar comportamiento de filtros
-// - Agregar nueva funcionalidad
-// - Cambiar props que se pasan a las secciones
-
 import { useState, useCallback, useMemo } from 'react'
 import { useTheme } from '@mui/material'
 
@@ -15,37 +8,46 @@ import { useScrollBehavior } from './hooks/useScrollBehavior'
 
 /**
  * Hook centralizado que consolida toda la lógica de Marketplace
- * Mantiene exactamente el mismo comportamiento que la implementación original
+ * ✅ OPTIMIZADO: Reduce re-renders innecesarios
  */
 const useMarketplaceLogic = (options = {}) => {
-  const {
-    hasSidebar = false,
-    searchBarMarginLeft = {
+  // ✅ OPTIMIZACIÓN: Memoizar configuración estática
+  const memoizedOptions = useMemo(() => ({
+    hasSidebar: false,
+    searchBarMarginLeft: {
       xs: 0,
       sm: 0,
       md: 2,
       lg: 33.7,
       xl: 41,
     },
-    categoryMarginLeft = {
+    categoryMarginLeft: {
       xs: 0,
       sm: 0,
       md: 3,
       lg: 35.5,
       xl: 40,
     },
-    titleMarginLeft = {
+    titleMarginLeft: {
       xs: 0,
       sm: 0,
       md: 0,
       lg: 0,
       xl: 0,
     },
-  } = options // Nueva opción para detectar si hay sidebar y márgenes personalizados
+    ...options
+  }), [options])
+
+  const {
+    hasSidebar,
+    searchBarMarginLeft,
+    categoryMarginLeft,
+    titleMarginLeft,
+  } = memoizedOptions
+
   const theme = useTheme()
 
   // ===== CONSOLIDAR HOOKS EXISTENTES =====
-  // Estados del marketplace usando el hook personalizado
   const {
     seccionActiva,
     busqueda,
@@ -59,8 +61,8 @@ const useMarketplaceLogic = (options = {}) => {
     precioRango,
     comisionRango,
     categorias,
-    loading, // <-- AGREGADO
-    error, // <-- AGREGADO
+    loading,
+    error,
     setSeccionActiva,
     setBusqueda,
     setCategoriaSeleccionada,
@@ -81,18 +83,25 @@ const useMarketplaceLogic = (options = {}) => {
     productosOrdenados,
     sortOptions: currentSortOptions,
   } = useProductSorting(productosFiltrados)
-
-  // Hook para comportamiento de scroll
+  // Hook para comportamiento de scroll - SOLO para SearchSection
   const { shouldShowSearchBar } = useScrollBehavior()
 
   // ===== ESTADOS LOCALES PARA UI =====
   const [anchorElCategorias, setAnchorElCategorias] = useState(null)
 
-  // ===== HANDLERS =====
+  // ===== HANDLERS MEMOIZADOS =====
   const handleToggleFiltro = useCallback(() => {
-    setFiltroModalOpen(!filtroModalOpen)
-    setFiltroVisible(!filtroVisible)
-  }, [filtroModalOpen, setFiltroModalOpen, filtroVisible, setFiltroVisible])
+    setFiltroModalOpen((prev) => !prev);
+    setFiltroVisible((prev) => !prev);
+  }, [setFiltroModalOpen, setFiltroVisible]);
+
+  // ✅ OPTIMIZACIÓN: Memoizar todos los handlers que se pasan como props
+  const memoSetBusqueda = useCallback((v) => setBusqueda(v), [setBusqueda]);
+  const memoSetSeccionActiva = useCallback((v) => setSeccionActiva(v), [setSeccionActiva]);
+  const memoUpdateFiltros = useCallback((v) => updateFiltros(v), [updateFiltros]);
+  const memoResetFiltros = useCallback(() => resetFiltros(), [resetFiltros]);
+  const memoToggleCategoria = useCallback((v) => toggleCategoria(v), [toggleCategoria]);
+  const memoSetCurrentOrdenamiento = useCallback((v) => setCurrentOrdenamiento(v), [setCurrentOrdenamiento]);
 
   const handleOpenCategorias = useCallback((event) => {
     setAnchorElCategorias(event.currentTarget)
@@ -102,132 +111,88 @@ const useMarketplaceLogic = (options = {}) => {
     setAnchorElCategorias(null)
   }, [])
 
-  // ===== PROPS ORGANIZADOS POR SECCIONES =====  // Props para SearchSection
-  const searchSectionProps = useMemo(
+  // ===== PROPS ORGANIZADOS POR SECCIONES (MEMOIZADOS) =====
+  
+  // ✅ OPTIMIZACIÓN: Memoizar searchBarProps separadamente para mayor granularidad
+  const searchBarProps = useMemo(
     () => ({
-      shouldShowSearchBar,
-      hasSidebar, // Nueva prop para indicar si hay sidebar      // SearchBar props
-      searchBarProps: {
-        busqueda,
-        setBusqueda,
-        ordenamiento: currentOrdenamiento,
-        setOrdenamiento: setCurrentOrdenamiento,
-        sortOptions: currentSortOptions,
-        onToggleFilters: handleToggleFiltro,
-        hayFiltrosActivos,
-        filtroVisible,
-        filtroModalOpen,
-        searchBarMarginLeft, // ✅ Agregar prop personalizado
-      },
-      // CategoryNavigation props
-      categoryNavigationProps: {
-        seccionActiva,
-        categoriaSeleccionada,
-        anchorElCategorias,
-        onSeccionChange: setSeccionActiva,
-        onCategoriaToggle: toggleCategoria,
-        onOpenCategorias: handleOpenCategorias,
-        onCloseCategorias: handleCloseCategorias,
-        categoryMarginLeft, // ✅ Agregar prop personalizado
-      },
-    }),
-    [
-      shouldShowSearchBar,
-      hasSidebar, // Incluir hasSidebar en las dependencias
-      searchBarMarginLeft, // ✅ Agregar dependencia
-      categoryMarginLeft, // ✅ Agregar dependencia
       busqueda,
-      setBusqueda,
-      currentOrdenamiento,
-      setCurrentOrdenamiento,
-      currentSortOptions,
-      handleToggleFiltro,
+      setBusqueda: memoSetBusqueda,
+      ordenamiento: currentOrdenamiento,
+      setOrdenamiento: memoSetCurrentOrdenamiento,
+      sortOptions: currentSortOptions,
+      onToggleFilters: handleToggleFiltro,
       hayFiltrosActivos,
       filtroVisible,
       filtroModalOpen,
+      searchBarMarginLeft,
+    }),
+    [busqueda, memoSetBusqueda, currentOrdenamiento, memoSetCurrentOrdenamiento, currentSortOptions, handleToggleFiltro, hayFiltrosActivos, filtroVisible, filtroModalOpen, searchBarMarginLeft]
+  );
+
+  // ✅ OPTIMIZACIÓN: Memoizar categoryNavigationProps separadamente
+  const categoryNavigationProps = useMemo(
+    () => ({
       seccionActiva,
       categoriaSeleccionada,
-      anchorElCategorias,
-      setSeccionActiva,
-      toggleCategoria,
-      handleOpenCategorias,
-      handleCloseCategorias,
-    ]
-  )
-  // Props para FilterSection
-  const filterSectionProps = useMemo(
-    () => ({
-      shouldShowSearchBar,
-      hayFiltrosActivos,
-      handleToggleFiltro,
-      // FilterPanel props para desktop
-      desktopFilterProps: {
-        filtros,
-        categoriaSeleccionada,
-        busqueda,
-        updateFiltros,
-        resetFiltros,
-        isMobileOpen: filtroModalOpen,
-        onMobileClose: () => setFiltroModalOpen(false),
-        totalProductos,
-        filtrosAbiertos: filtroVisible,
-      },
-      // FilterPanel props para mobile
-      mobileFilterProps: {
-        filtros,
-        categoriaSeleccionada,
-        busqueda,
-        updateFiltros,
-        resetFiltros,
-        isMobileOpen: filtroModalOpen,
-        onMobileClose: () => setFiltroModalOpen(false),
-        totalProductos,
-        filtrosAbiertos: false,
-      },
+      onSeccionChange: memoSetSeccionActiva,
+      onCategoriaToggle: memoToggleCategoria,
+      categoryMarginLeft,
     }),
-    [
-      shouldShowSearchBar,
-      hayFiltrosActivos,
-      handleToggleFiltro,
+    [seccionActiva, categoriaSeleccionada, memoSetSeccionActiva, memoToggleCategoria, categoryMarginLeft]
+  );
+  // Props para SearchSection - SOLO SearchSection necesita shouldShowSearchBar
+  const searchSectionProps = useMemo(
+    () => ({
+      shouldShowSearchBar, // Solo para animaciones de SearchBar
+      hasSidebar,
+      searchBarProps,
+      categoryNavigationProps,
+    }),
+    [shouldShowSearchBar, hasSidebar, searchBarProps, categoryNavigationProps]
+  );
+
+  // ✅ DESACOPLADO: FilterSection ya no depende de shouldShowSearchBar
+  const desktopFilterProps = useMemo(
+    () => ({
       filtros,
       categoriaSeleccionada,
       busqueda,
-      updateFiltros,
-      resetFiltros,
-      filtroModalOpen,
-      setFiltroModalOpen,
+      updateFiltros: memoUpdateFiltros,
+      resetFiltros: memoResetFiltros,
       totalProductos,
-      filtroVisible,
-    ]
-  )
+      filtrosAbiertos: filtroVisible,
+    }),
+    [filtros, categoriaSeleccionada, busqueda, memoUpdateFiltros, memoResetFiltros, totalProductos, filtroVisible]
+  );
 
-  // Props para ProductsSection
+  const filterSectionProps = useMemo(
+    () => ({
+      // shouldShowSearchBar removido - ya no necesario
+      hayFiltrosActivos,
+      handleToggleFiltro,
+      desktopFilterProps,
+    }),
+    [hayFiltrosActivos, handleToggleFiltro, desktopFilterProps]
+  );
+
+  // ✅ DESACOPLADO: ProductsSection ya no depende de shouldShowSearchBar
   const productsSectionProps = useMemo(
     () => ({
-      shouldShowSearchBar,
+      // shouldShowSearchBar removido - layout estático ahora
       seccionActiva,
-      setSeccionActiva,
+      setSeccionActiva: memoSetSeccionActiva,
       totalProductos,
       productosOrdenados,
-      resetFiltros,
-      hasSidebar, // ✅ AGREGAR: Prop para detectar si hay sidebar
-      titleMarginLeft, // ✅ AGREGAR: Prop para margen del título
-      loading, // <-- Agregado
-      error, // <-- Agregado
+      resetFiltros: memoResetFiltros,
+      hasSidebar,
+      titleMarginLeft,
+      loading,
+      error,
     }),
-    [
-      shouldShowSearchBar,
-      seccionActiva,
-      setSeccionActiva,
-      totalProductos,
-      productosOrdenados,
-      resetFiltros,
-      hasSidebar, // ✅ AGREGAR: Dependencia para hasSidebar
-      titleMarginLeft, // ✅ AGREGAR: Dependencia para titleMarginLeft
-      loading, // <-- Agregado
-      error, // <-- Agregado
-    ]
+    [seccionActiva, memoSetSeccionActiva, totalProductos, productosOrdenados, memoResetFiltros, hasSidebar, titleMarginLeft, loading, error]
   )
+
   // ===== RETORNAR TODO ORGANIZADO =====
   return {
     // Props por secciones
@@ -236,8 +201,7 @@ const useMarketplaceLogic = (options = {}) => {
     productsSectionProps,
 
     // Estados generales
-    theme,
-  }
+    theme,  }
 }
 
 export default useMarketplaceLogic

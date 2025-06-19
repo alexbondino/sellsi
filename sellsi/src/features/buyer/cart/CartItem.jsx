@@ -31,7 +31,7 @@ import {
 import { motion } from 'framer-motion'
 import PriceDisplay from '../../marketplace/PriceDisplay/PriceDisplay'
 import StockIndicator from '../../marketplace//StockIndicator/StockIndicator'
-import { QuantitySelector } from '../../../components/shared' // ✅ Componente universal
+import { QuantitySelector, LazyImage } from '../../../components/shared' // ✅ Agregado LazyImage
 import { SHIPPING_OPTIONS } from '../../../features/marketplace/hooks/constants'
 import { getProductImageUrl } from '../../../utils/getProductImageUrl'
 import {
@@ -63,17 +63,17 @@ PROBLEMAS IDENTIFICADOS:
 - Ambos problemas afectan a los 3 items del carrito
 */
 
-// Componente de imagen optimizada con lazy loading (también se puede compartir)
+// ✅ OPTIMIZACIÓN: Usar LazyImage compartido en vez de componente local
 const OptimizedImage = ({ src, alt, sx }) => {
   return (
-    <Box
-      component="img"
+    <LazyImage
       src={src}
       alt={alt}
+      aspectRatio="1"
+      rootMargin="50px"
+      objectFit="cover"
+      borderRadius={1}
       sx={{
-        width: '100%',        height: '100%',
-        objectFit: 'cover',
-        borderRadius: 1,
         backgroundColor: '#f5f5f5',
         ...sx,
       }}
@@ -259,9 +259,8 @@ const CartItem = ({
           alignItems="flex-start"
           sx={{ overflow: 'hidden' }}
         >
-          {' '}
-          {/* Imagen optimizada */}{' '}
-          <Grid item xs={12} sm={2.4}>
+          {' '}          {/* Imagen optimizada */}{' '}
+          <Grid size={{ xs: 12, sm: 2.4 }}>
             <Box
               sx={{
                 position: 'relative',
@@ -282,9 +281,8 @@ const CartItem = ({
                 }}
               />
             </Box>
-          </Grid>{' '}
-          {/* Información del producto */}
-          <Grid item xs={12} sm={3.6} sx={{ pt: '0 !important' }}>
+          </Grid>{' '}          {/* Información del producto */}
+          <Grid size={{ xs: 12, sm: 3.6 }} sx={{ pt: '0 !important' }}>
             <Box
               sx={{
                 display: 'flex',
@@ -360,9 +358,8 @@ const CartItem = ({
                 />
               </Stack>
             </Box>{' '}
-          </Grid>{' '}
-          {/* Controles y acciones */}
-          <Grid item xs={12} sm={3.2} sx={{ marginLeft: 'auto !important' }}>
+          </Grid>{' '}          {/* Controles y acciones */}
+          <Grid size={{ xs: 12, sm: 3.2 }} sx={{ marginLeft: 'auto !important' }}>
             <Box
               sx={{
                 display: 'flex !important',
@@ -485,9 +482,8 @@ const CartItem = ({
                 </Tooltip>{' '}
               </Stack>
             </Box>
-          </Grid>{' '}
-          {/* Opciones de Envío */}
-          <Grid item xs={12} sm={2.8}>
+          </Grid>{' '}          {/* Opciones de Envío */}
+          <Grid size={{ xs: 12, sm: 2.8 }}>
             <Box
               sx={{
                 display: 'flex',

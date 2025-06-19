@@ -250,8 +250,7 @@ const ServicesSection = ({ serviciosRef }) => {
           showIndicators={false}
           fadeTransition={false}
           fadeTimeout={0}
-          renderStep={(currentStep, currentService, { goToStep }) => (
-            <Grid // GRID CONTENEDOR PADRE
+          renderStep={(currentStep, currentService, { goToStep }) => (            <Grid // GRID CONTENEDOR PADRE
               container
               spacing={0}
               justifyContent="center"
@@ -264,8 +263,7 @@ const ServicesSection = ({ serviciosRef }) => {
             >
               {/* ✅ COLUMNA ÚNICA: 12 COLUMNAS COMPLETAS - CENTRADA */}{' '}
               <Grid
-                item
-                xs={12}
+                size={12}
                 sx={{ display: 'flex', justifyContent: 'center' }}
               >
                 {/* ✅ GRID INTERNO PURO: 1 COLUMNA, 2 FILAS - FORZADO */}
@@ -290,9 +288,8 @@ const ServicesSection = ({ serviciosRef }) => {
                         pb: { xs: 1, sm: 0 },
                         width: '100%',
                       }}
-                    >
-                      {services.map((service, index) => (
-                        <Grid item key={index}>
+                    >                      {services.map((service, index) => (
+                        <Grid size="auto" key={index}>
                           {' '}
                           <Button
                             variant={
@@ -457,9 +454,8 @@ const ServicesSection = ({ serviciosRef }) => {
                         </Grid>
                       ))}{' '}
                     </Grid>
-                  </Grid>{' '}
-                  {/* ✅ NUEVO: TEXTO DINÁMICO ENTRE BOTONES Y TIMELINE */}
-                  <Grid item xs={12} sx={{ width: '100%' }}>
+                  </Grid>{' '}                  {/* ✅ NUEVO: TEXTO DINÁMICO ENTRE BOTONES Y TIMELINE */}
+                  <Grid size={12} sx={{ width: '100%' }}>
                     <Box
                       sx={{
                         display: 'flex',
@@ -500,9 +496,8 @@ const ServicesSection = ({ serviciosRef }) => {
                           : 'Descubre nuevos proveedores confiables y gestiona tus compras de forma más ágil, ahorrando tiempo en cotizaciones, validaciones y comunicación, todo desde una sola plataforma centralizada.'}
                       </Typography>
                     </Box>
-                  </Grid>
-                  {/* ✅ FILA 2: TIMELINE HORIZONTAL - GRID PURO */}
-                  <Grid item xs={12} sx={{ width: '100%' }}>
+                  </Grid>                  {/* ✅ FILA 2: TIMELINE HORIZONTAL - GRID PURO */}
+                  <Grid size={12} sx={{ width: '100%' }}>
                     <Grid
                       container
                       direction="row"
@@ -619,13 +614,11 @@ const ServicesSection = ({ serviciosRef }) => {
                           borderRadius: 2,
                           zIndex: 1,
                         }}
-                      />{' '}
-                      {/* Pasos del timeline - GRID PURO CON DISTRIBUCIÓN UNIFORME */}
+                      />{' '}                      {/* Pasos del timeline - GRID PURO CON DISTRIBUCIÓN UNIFORME */}
                       {currentService.timeline.map((item, index) => (
                         <Grid
-                          item
+                          size="grow"
                           key={index}
-                          xs={true} // Distribución equitativa automática
                           sx={{
                             display: 'flex',
                             flexDirection: 'column',

@@ -141,6 +141,11 @@ const SupplierProductCard = ({
           actions={menuActions}
           disabled={isDeleting || isUpdating}
           tooltip="Opciones del producto"
+          sx={{
+            border: '2px solid',
+            borderColor: 'primary.main',
+            borderRadius: '12px',
+          }}
         />      </Box>{' '}
       {/* ✅ OPTIMIZACIÓN: Imagen del producto con lazy loading */}      <LazyImage
         src={getProductImageUrl(imagen, product) || '/placeholder-product.jpg'}

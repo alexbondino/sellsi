@@ -18,6 +18,8 @@ import {
   Paper,
   Button,
   CircularProgress,
+  useTheme,
+  useMediaQuery,
 } from '@mui/material'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 import { toast } from 'react-hot-toast'
@@ -27,11 +29,11 @@ import LoadingOverlay from '../../ui/LoadingOverlay'
 
 /**
  * Componente que maneja la sección de productos, título y grid
- * Mantiene exactamente el mismo diseño y comportamiento que la implementación original
+ * ✅ DESACOPLADO: Layout estático independiente del estado de SearchBar
  */
 // ✅ MEJORA DE RENDIMIENTO: Memoización del componente
 const ProductsSection = React.memo(({
-  shouldShowSearchBar,
+  // shouldShowSearchBar removido - ya no necesario
   seccionActiva,
   setSeccionActiva,
   totalProductos,
@@ -42,6 +44,7 @@ const ProductsSection = React.memo(({
   loading,
   error,
 }) => {
+  // ✅ OPTIMIZACIÓN: Removed console.count for production performance
   // Hook para usar el store del carrito
   const addItem = useCartStore((state) => state.addItem)
 
@@ -77,15 +80,15 @@ const ProductsSection = React.memo(({
       icon: '✅',
     })
   }, [addItem])
-
-  // ✅ MEJORA DE RENDIMIENTO: Memoización de estilos del contenedor principal
+  // ✅ LAYOUT ESTÁTICO: Padding fijo para mejor performance
   const mainContainerStyles = React.useMemo(() => ({
-    pt: shouldShowSearchBar ? '180px' : '130px',
+    pt: '180px', // Padding fijo - compensa SearchBar fija
     minHeight: 'calc(100vh - 140px)',
     display: 'flex',
     justifyContent: 'center',
     px: { xs: 1, md: 3 },
-  }), [shouldShowSearchBar])
+    mb: { xs: 10, md: 50 }, // Margen inferior para separar del BottomBar/footer
+  }), []) // Sin dependencias - completamente estático
 
   // ✅ MEJORA DE RENDIMIENTO: Memoización de estilos del contenedor interno
   const innerContainerStyles = React.useMemo(() => ({
@@ -132,11 +135,257 @@ const ProductsSection = React.memo(({
         return '🛍️ Todos los Productos'
     }
   }, [seccionActiva])
-
-  // ✅ MEJORA DE RENDIMIENTO: Memoización del handler de volver
+  // ✅ MEJORA DE RENDIMIENTO: Memoización del handler de volver (solo dependencias necesarias)
   const handleBackClick = React.useCallback(() => {
     setSeccionActiva('todos')
-  }, [setSeccionActiva])
+  }, [setSeccionActiva])  // ✅ MEJORA DE RENDIMIENTO: Memoización del mapeo de productos para evitar re-renders innecesarios
+  // ✅ OPTIMIZACIÓN CRÍTICA: Solo recalcular cuando productosOrdenados realmente cambie
+  const memoizedProducts = React.useMemo(() => {
+    if (!Array.isArray(productosOrdenados) || productosOrdenados.length === 0) {
+      return []
+    }
+    
+    // ✅ OPTIMIZACIÓN: Evitar crear objetos nuevos si no es necesario
+    return productosOrdenados
+  }, [productosOrdenados])  // ✅ SISTEMA HÍBRIDO RESPONSIVO: Infinite Scroll + Paginación
+  const theme = useTheme()
+  const isXs = useMediaQuery(theme.breakpoints.only('xs'))
+  const isSm = useMediaQuery(theme.breakpoints.only('sm'))
+  const isMd = useMediaQuery(theme.breakpoints.only('md'))
+  const isLg = useMediaQuery(theme.breakpoints.only('lg'))
+  const isXl = useMediaQuery(theme.breakpoints.up('xl'))
+  // ✅ VALORES RESPONSIVOS CON CARGA PROGRESIVA: Adaptan según el tamaño de pantalla
+  const responsiveConfig = React.useMemo(() => {
+    if (isXs) {
+      return {
+        PRODUCTS_PER_PAGE: 60,    // Móvil: menos productos por página
+        INITIAL_PRODUCTS: 8,      // Móvil: grid 2x4
+        LOAD_MORE_BATCH: 6,       // ✅ PROGRESIVO: Cargar de a 4 (la mitad del inicial)
+        PRELOAD_TRIGGER: 6        // ✅ PROGRESIVO: Cuando llegue al producto 6, cargar 4 más
+      }
+    }
+    if (isSm) {
+      return {
+        PRODUCTS_PER_PAGE: 80,    // Tablet pequeña: grid 2xN
+        INITIAL_PRODUCTS: 12,     // Tablet: grid 2x6
+        LOAD_MORE_BATCH: 9,       // ✅ PROGRESIVO: Cargar de a 6
+        PRELOAD_TRIGGER: 9        // ✅ PROGRESIVO: Cuando llegue al producto 9, cargar 6 más
+      }
+    }
+    if (isMd) {
+      return {
+        PRODUCTS_PER_PAGE: 90,    // Desktop: grid 3xN
+        INITIAL_PRODUCTS: 15,     // Desktop: grid 3x5
+        LOAD_MORE_BATCH: 9,       // ✅ PROGRESIVO: Cargar de a 6 (2 filas de 3)
+        PRELOAD_TRIGGER: 9       // ✅ PROGRESIVO: Cuando llegue al producto 12, cargar 6 más
+      }
+    }
+    if (isLg) {
+      return {
+        PRODUCTS_PER_PAGE: 100,   // Large: grid 4xN
+        INITIAL_PRODUCTS: 20,     // Large: grid 4x5
+        LOAD_MORE_BATCH: 12,       // ✅ PROGRESIVO: Cargar de a 8 (2 filas de 4)
+        PRELOAD_TRIGGER: 12       // ✅ PROGRESIVO: Cuando llegue al producto 16, cargar 8 más
+      }
+    }
+    if (isXl) {
+      return {
+        PRODUCTS_PER_PAGE: 125,   // XL: grid 5xN, más productos
+        INITIAL_PRODUCTS: 25,     // XL: grid 5x5
+        LOAD_MORE_BATCH: 15,      // ✅ PROGRESIVO: Cargar de a 10 (2 filas de 5)
+        PRELOAD_TRIGGER: 15       // ✅ PROGRESIVO: Cuando llegue al producto 20, cargar 10 más
+      }
+    }
+    // Fallback
+    return {
+      PRODUCTS_PER_PAGE: 100,
+      INITIAL_PRODUCTS: 20,
+      LOAD_MORE_BATCH: 8,
+      PRELOAD_TRIGGER: 16
+    }
+  }, [isXs, isSm, isMd, isLg, isXl])
+
+  const { PRODUCTS_PER_PAGE, INITIAL_PRODUCTS, LOAD_MORE_BATCH, PRELOAD_TRIGGER } = responsiveConfig
+  
+  const [currentPage, setCurrentPage] = React.useState(1)
+  const [visibleProductsCount, setVisibleProductsCount] = React.useState(INITIAL_PRODUCTS)
+  const [isLoadingMore, setIsLoadingMore] = React.useState(false)
+  
+  // Calcular productos totales y páginas
+  const totalPages = Math.ceil(memoizedProducts.length / PRODUCTS_PER_PAGE)
+  const startIndex = (currentPage - 1) * PRODUCTS_PER_PAGE
+  const endIndex = startIndex + PRODUCTS_PER_PAGE
+  const currentPageProducts = memoizedProducts.slice(startIndex, endIndex)
+  
+  // Productos visibles en la página actual (con infinite scroll limitado)
+  const visibleProducts = React.useMemo(() => {
+    return currentPageProducts.slice(0, visibleProductsCount)
+  }, [currentPageProducts, visibleProductsCount])
+  
+  // Verificar si infinite scroll está activo (menos de 100 productos en página actual)
+  const isInfiniteScrollActive = currentPageProducts.length <= PRODUCTS_PER_PAGE && visibleProductsCount < currentPageProducts.length
+    const loadMoreProducts = React.useCallback(() => {
+    if (isLoadingMore || !isInfiniteScrollActive) return
+    
+    setIsLoadingMore(true)
+    setTimeout(() => {
+      setVisibleProductsCount(prev => Math.min(prev + LOAD_MORE_BATCH, currentPageProducts.length))
+      setIsLoadingMore(false)
+    }, 300)
+  }, [isLoadingMore, isInfiniteScrollActive, currentPageProducts.length, LOAD_MORE_BATCH])
+  // ✅ CARGA PROGRESIVA: Detectar posición del último producto visible y cargar anticipadamente
+  React.useEffect(() => {
+    if (!isInfiniteScrollActive) return
+
+    const handleScroll = () => {
+      // ✅ NUEVA LÓGICA: Detectar cuándo el usuario está cerca del producto trigger
+      const scrollTop = window.pageYOffset || document.documentElement.scrollTop
+      const windowHeight = window.innerHeight
+      const documentHeight = document.documentElement.scrollHeight
+      
+      // Calcular el porcentaje de scroll
+      const scrollPercent = scrollTop / (documentHeight - windowHeight)
+      
+      // Calcular qué producto aproximadamente está viendo el usuario
+      const aproximateProductIndex = Math.floor(scrollPercent * visibleProductsCount)
+      
+      // ✅ CARGA ANTICIPADA: Si está cerca del producto trigger, cargar más
+      const shouldPreload = aproximateProductIndex >= PRELOAD_TRIGGER - 2 // 2 productos antes del trigger
+      
+      // También mantener la lógica original como respaldo (200px del final)
+      const nearBottom = scrollTop + windowHeight >= documentHeight - 200
+      
+      if (shouldPreload || nearBottom) {
+        loadMoreProducts()
+      }
+    }
+
+    let scrollTimeout
+    const throttledScroll = () => {
+      if (scrollTimeout) return
+      scrollTimeout = setTimeout(() => {
+        handleScroll()
+        scrollTimeout = null
+      }, 150)
+    }
+
+    window.addEventListener('scroll', throttledScroll)
+    return () => {
+      window.removeEventListener('scroll', throttledScroll)
+      if (scrollTimeout) clearTimeout(scrollTimeout)
+    }
+  }, [loadMoreProducts, isInfiniteScrollActive, PRELOAD_TRIGGER, visibleProductsCount])
+  // Manejar cambio de página
+  const handlePageChange = React.useCallback((page) => {
+    setCurrentPage(page)
+    setVisibleProductsCount(INITIAL_PRODUCTS) // Reset a productos iniciales responsivos
+    setIsLoadingMore(false)
+    // Scroll suave al inicio de la sección de productos
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }, [INITIAL_PRODUCTS])
+  // Componente de paginación responsivo
+  const PaginationComponent = React.useMemo(() => {
+    if (totalPages <= 1) return null
+
+    // ✅ RESPONSIVO: Menos botones en móvil, más en desktop
+    const showPages = isXs ? 3 : isSm ? 4 : 5
+    
+    let startPage = Math.max(1, currentPage - Math.floor(showPages / 2))
+    let endPage = Math.min(totalPages, startPage + showPages - 1)
+    
+    if (endPage - startPage < showPages - 1) {
+      startPage = Math.max(1, endPage - showPages + 1)
+    }
+
+    return (
+      <Box sx={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        gap: { xs: 0.5, sm: 1 }, // ✅ RESPONSIVO: Gap más pequeño en móvil
+        py: 3,
+        flexWrap: 'wrap' // ✅ RESPONSIVO: Permitir wrap en pantallas muy pequeñas
+      }}>
+        {/* Botón Anterior */}
+        <Button
+          variant="outlined"
+          disabled={currentPage === 1}
+          onClick={() => handlePageChange(currentPage - 1)}
+          sx={{ 
+            minWidth: 'auto', 
+            px: { xs: 1, sm: 2 }, // ✅ RESPONSIVO: Padding más pequeño en móvil
+            fontSize: { xs: '0.75rem', sm: '0.875rem' } // ✅ RESPONSIVO: Texto más pequeño en móvil
+          }}
+        >
+          {isXs ? '‹' : '‹ Anterior'}
+        </Button>        {/* Números de página */}
+        {!isXs && startPage > 1 && (
+          <>
+            <Button
+              variant={1 === currentPage ? "contained" : "outlined"}
+              onClick={() => handlePageChange(1)}
+              sx={{ minWidth: { xs: 32, sm: 40 } }}
+            >
+              1
+            </Button>
+            {startPage > 2 && <Typography variant="body2">...</Typography>}
+          </>
+        )}
+
+        {Array.from({ length: endPage - startPage + 1 }, (_, i) => startPage + i).map(page => (
+          <Button
+            key={page}
+            variant={page === currentPage ? "contained" : "outlined"}
+            onClick={() => handlePageChange(page)}
+            sx={{ 
+              minWidth: { xs: 32, sm: 40 }, // ✅ RESPONSIVO: Botones más pequeños en móvil
+              fontSize: { xs: '0.75rem', sm: '0.875rem' }
+            }}
+          >
+            {page}
+          </Button>
+        ))}
+
+        {!isXs && endPage < totalPages && (
+          <>
+            {endPage < totalPages - 1 && <Typography variant="body2">...</Typography>}
+            <Button
+              variant={totalPages === currentPage ? "contained" : "outlined"}
+              onClick={() => handlePageChange(totalPages)}
+              sx={{ minWidth: { xs: 32, sm: 40 } }}
+            >
+              {totalPages}
+            </Button>
+          </>
+        )}
+
+        {/* Botón Siguiente */}
+        <Button
+          variant="outlined"
+          disabled={currentPage === totalPages}
+          onClick={() => handlePageChange(currentPage + 1)}
+          sx={{ 
+            minWidth: 'auto', 
+            px: { xs: 1, sm: 2 },
+            fontSize: { xs: '0.75rem', sm: '0.875rem' }
+          }}
+        >
+          {isXs ? '›' : 'Siguiente ›'}
+        </Button>
+
+        {/* Info de página - Solo en pantallas medianas y grandes */}
+        {!isXs && (
+          <Typography variant="body2" color="text.secondary" sx={{ ml: 2 }}>
+            Página {currentPage} de {totalPages}
+          </Typography>
+        )}
+      </Box>    )
+  }, [currentPage, totalPages, handlePageChange, isXs, isSm])
+
+  // ✅ RESPONSIVO: Actualizar productos visibles cuando cambia el breakpoint
+  React.useEffect(() => {
+    setVisibleProductsCount(INITIAL_PRODUCTS)
+  }, [INITIAL_PRODUCTS])
 
   return (
     <Box sx={mainContainerStyles}>
@@ -179,10 +428,16 @@ const ProductsSection = React.memo(({
             <Typography variant="h5" fontWeight={600} sx={{ color: '#1e293b' }}>
               {sectionTitle}
             </Typography>
+          </Box>          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+            <Typography variant="body2" color="text.secondary">
+              {totalProductos} productos encontrados
+            </Typography>
+            {totalPages > 1 && (
+              <Typography variant="body2" color="primary.main" sx={{ fontSize: '0.875rem' }}>
+                Mostrando {startIndex + 1}-{Math.min(endIndex, totalProductos)} | Página {currentPage} de {totalPages}
+              </Typography>
+            )}
           </Box>
-          <Typography variant="body2" color="text.secondary">
-            {totalProductos} productos encontrados
-          </Typography>
         </Box>
 
         {/* ✅ ÁREA DE PRODUCTOS centrada con márgenes automáticos */}
@@ -221,24 +476,71 @@ const ProductsSection = React.memo(({
               </Typography>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
                 Intenta ajustar los filtros o realiza una búsqueda diferente
-              </Typography>
-              <Button variant="outlined" onClick={resetFiltros} sx={{ mt: 2 }}>
+              </Typography>              <Button variant="outlined" onClick={resetFiltros} sx={{ mt: 2 }}>
                 Limpiar filtros
-              </Button>
-            </Paper>          ) : (
-            <Box sx={gridStyles}>
-              {productosOrdenados.map((producto) => (
-                <Box key={producto.id} sx={cardContainerStyles}>
-                  <ProductCard
-                    producto={producto}
-                    onAddToCart={handleAddToCart}
-                    onViewDetails={(producto) => {
-                      // Aquí puedes agregar la lógica para ver detalles
-                    }}
-                  />
+              </Button>            </Paper>          ) : (
+            <>
+              {/* ✅ PAGINACIÓN SUPERIOR */}
+              {PaginationComponent}
+              
+              <Box sx={gridStyles}>
+                {visibleProducts.map((producto) => (
+                  <Box key={`product-${producto.id || producto.productid}`} sx={cardContainerStyles}>
+                    <ProductCard
+                      producto={producto}
+                      onAddToCart={handleAddToCart}
+                      onViewDetails={(producto) => {
+                        // Aquí puedes agregar la lógica para ver detalles
+                      }}
+                    />
+                  </Box>
+                ))}
+              </Box>
+              
+              {/* ✅ INFINITE SCROLL: Solo activo dentro de cada página */}
+              {isInfiniteScrollActive && isLoadingMore && (
+                <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4, mb: 2 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                    <CircularProgress size={20} />
+                    <Typography variant="body2" color="text.secondary">
+                      Cargando más productos...
+                    </Typography>
+                  </Box>
                 </Box>
-              ))}
-            </Box>
+              )}
+              
+              {/* ✅ MENSAJE: Todos los productos de la página cargados */}
+              {!isInfiniteScrollActive && !isLoadingMore && visibleProductsCount >= currentPageProducts.length && currentPageProducts.length >= PRODUCTS_PER_PAGE && (
+                <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4, mb: 2 }}>
+                  <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+                    ✨ Has visto todos los productos de esta página. Usa la paginación para ver más.
+                  </Typography>
+                </Box>
+              )}
+
+              {/* 🔧 DEBUG INFO (puedes eliminar esto en producción) */}
+              {process.env.NODE_ENV === 'development' && (
+                <Box sx={{ 
+                  display: 'flex', 
+                  justifyContent: 'center', 
+                  mt: 2, 
+                  p: 2, 
+                  bgcolor: '#f8f9fa', 
+                  borderRadius: 1,
+                  border: '1px dashed #e9ecef'
+                }}>
+                  <Typography variant="caption" color="text.secondary">
+                    📊 Debug: Productos visibles: {visibleProductsCount} | 
+                    Trigger de carga: {PRELOAD_TRIGGER} | 
+                    Lote de carga: {LOAD_MORE_BATCH} | 
+                    Total en página: {currentPageProducts.length}
+                  </Typography>
+                </Box>
+              )}
+
+              {/* ✅ PAGINACIÓN INFERIOR */}
+              {PaginationComponent}
+            </>
           )}
         </Box>
       </Box>

@@ -15,18 +15,15 @@ import FilterPanel from '../FilterPanel/FilterPanel'
 
 /**
  * Componente que maneja los filtros tanto para desktop como mobile
- * Mantiene exactamente el mismo diseño y comportamiento que la implementación original
+ * ✅ DESACOPLADO: Ya no depende del estado de SearchBar para mostrar el FAB móvil
  */
 // ✅ MEJORA DE RENDIMIENTO: Memoización del componente
 const FilterSection = React.memo(({
-  shouldShowSearchBar,
+  // shouldShowSearchBar removido - ya no necesario
   hayFiltrosActivos,
-  handleToggleFiltro,
   desktopFilterProps,
-  mobileFilterProps,
   filterPosition = 'left', // Nueva prop para controlar posición
-}) => {
-  // ✅ MEJORA DE RENDIMIENTO: Memoización de estilos del FAB
+}) => {  // ✅ FAB SIEMPRE VISIBLE: Mejor UX independiente del estado de SearchBar
   const fabStyles = React.useMemo(() => ({
     position: 'fixed',
     bottom: 80,
@@ -34,20 +31,25 @@ const FilterSection = React.memo(({
     zIndex: 1000,
     transition: 'all 0.3s ease',
     display: {
-      xs: shouldShowSearchBar ? 'none' : 'flex',
-      sm: shouldShowSearchBar ? 'none' : 'flex',
-      md: 'none',
+      xs: 'flex', // Siempre visible en móvil
+      sm: 'flex', // Siempre visible en tablet
+      md: 'none', // Oculto en desktop (usa panel lateral)
       lg: 'none',
       xl: 'none',
     },
-  }), [shouldShowSearchBar])
+  }), []) // Sin dependencias - completamente estático
+
+  // Handler local para abrir el panel móvil
+  const [open, setOpen] = React.useState(false);
+  const handleOpenMobile = React.useCallback(() => setOpen(true), []);
+  const handleCloseMobile = React.useCallback(() => setOpen(false), []);
 
   return (
     <>
-      {/* Floating button for mobile - shown only when search bar is hidden */}
+      {/* Floating button for mobile - siempre disponible para mejor UX */}
       <Fab
         color="primary"
-        onClick={handleToggleFiltro}
+        onClick={handleOpenMobile}
         sx={fabStyles}
       >
         <Badge color="error" variant="dot" invisible={!hayFiltrosActivos}>
@@ -55,7 +57,12 @@ const FilterSection = React.memo(({
         </Badge>
       </Fab>
       {/* FilterPanel unificado - maneja responsive internamente */}
-      <FilterPanel {...desktopFilterProps} filterPosition={filterPosition} />
+      <FilterPanel
+        {...desktopFilterProps}
+        filterPosition={filterPosition}
+        isMobileOpen={open}
+        onMobileClose={handleCloseMobile}
+      />
     </>
   )
 })

@@ -137,17 +137,23 @@ const AddProduct = () => {
       if (validTramos.length < 2) {
         newErrors.tramos = 'Debe agregar al menos dos tramos válidos (cantidad y precio definidos)';
       } else {
-        // Validar que las cantidades de los tramos no excedan el stock
-        const stockNumber = parseInt(formData.stock || 0);
-        const invalidTramos = validTramos.filter(
-          tramo => parseInt(tramo.cantidad) > stockNumber
-        );
-        if (invalidTramos.length > 0) {
-          newErrors.tramos =
-            'Las cantidades de los tramos no pueden ser mayores al stock disponible';
+        // Validar que ningún precio de tramo supere los 8 dígitos
+        const tramosConPrecioAlto = validTramos.filter(t => parseFloat(t.precio) > 99999999);
+        if (tramosConPrecioAlto.length > 0) {
+          newErrors.tramos = 'Los precios de los tramos no pueden superar los 8 dígitos (99,999,999)';
+        } else {
+          // Validar que las cantidades de los tramos no excedan el stock
+          const stockNumber = parseInt(formData.stock || 0);
+          const invalidTramos = validTramos.filter(
+            tramo => parseInt(tramo.cantidad) > stockNumber
+          );
+          if (invalidTramos.length > 0) {
+            newErrors.tramos =
+              'Las cantidades de los tramos no pueden ser mayores al stock disponible';
+          }
         }
       }
-    }    if (formData.imagenes.length === 0) {
+    }if (formData.imagenes.length === 0) {
       newErrors.imagenes = 'Debe agregar al menos una imagen';
     } else if (formData.imagenes.length > 5) {
       newErrors.imagenes = 'Máximo 5 imágenes permitidas';
@@ -439,10 +445,15 @@ const AddProduct = () => {
           ? 'Producto actualizado exitosamente'
           : 'Producto agregado exitosamente'
       );
-      navigate('/supplier/myproducts');
-    } catch (error) {
+      navigate('/supplier/myproducts');    } catch (error) {
       console.error('❌ Error en handleSubmit:', error);
-      toast.error(error.message || 'Error inesperado al procesar el producto');
+      
+      // Manejar error específico de overflow numérico
+      if (error.message && error.message.includes('numeric field overflow')) {
+        toast.error('Error: Uno o más precios superan el límite permitido (máximo 8 dígitos). Por favor, reduce los valores.');
+      } else {
+        toast.error(error.message || 'Error inesperado al procesar el producto');
+      }
     }
     console.log('--- END SUBMIT DEBUG ---');
   };

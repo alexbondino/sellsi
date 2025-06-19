@@ -22,7 +22,6 @@ import Login from '../login/Login';
 import Register from '../register/Register';
 
 export default function TopBar({ session, isBuyer, logoUrl, onNavigate }) {
-  // ✅ Receives logoUrl as prop
   // --- HOOKS Y ESTADO ---
   const theme = useTheme();
   const navigate = useNavigate();

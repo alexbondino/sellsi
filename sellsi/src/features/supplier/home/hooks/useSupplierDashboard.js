@@ -72,29 +72,42 @@ export const useSupplierDashboard = () => {
         const productIds = productsData.map((p) => p.productid)
 
         if (productIds.length > 0) {
-          const { data: requestsData, error: requestsError } = await supabase
-            .from('requests')
-            .select(
-              `
+          // Simplify the query to avoid foreign key issues
+          // Get request_products for the supplier's products and then join manually
+          const { data: requestProductsData, error: requestProductsError } = await supabase
+            .from('request_products')
+            .select(`
               *,
-              seller:users!requests_seller_id_fkey (
-                user_nm
+              requests!inner (
+                request_id,
+                created_dt,
+                buyer_id,
+                label,
+                total_sale
               ),
-              product:products (
+              products!inner (
+                productid,
                 productnm,
-                supplier:users!products_supplier_id_fkey (
-                  user_nm
-                )
+                supplier_id
               )
-            `
-            )
-            .in('productid', productIds)
-            .gte('createddt', start)
-            .lte('createddt', end)
+            `)
+            .in('product_id', productIds)
 
-          if (requestsError) throw requestsError
+          if (requestProductsError) {
+            console.warn('Error loading weekly requests:', requestProductsError)
+            setWeeklyRequests([])
+          } else {
+            // Filter by date range and add user information if needed
+            const filteredRequests = (requestProductsData || []).filter(item => {
+              if (!item.requests?.created_dt) return false
+              const createdDate = new Date(item.requests.created_dt)
+              const startDate = new Date(start)
+              const endDate = new Date(end)
+              return createdDate >= startDate && createdDate <= endDate
+            })
 
-          setWeeklyRequests(requestsData || [])
+            setWeeklyRequests(filteredRequests)
+          }
         } else {
           setWeeklyRequests([])
         }

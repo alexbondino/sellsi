@@ -15,37 +15,44 @@ import CategoryNavigation from '../CategoryNavigation/CategoryNavigation'
 
 /**
  * Componente que encapsula la barra de búsqueda y navegación de categorías
- * Mantiene exactamente el mismo diseño y comportamiento que la implementación original
+ * ✅ OPTIMIZADO: Solo maneja su propia visibilidad sin afectar otros componentes
  */
-// ✅ MEJORA DE RENDIMIENTO: Memoización del componente
+// ✅ MEJORA DE RENDIMIENTO: Memoización del componente con comparación personalizada
 const SearchSection = React.memo(({
-  shouldShowSearchBar,
+  shouldShowSearchBar, // Solo afecta a este componente
   searchBarProps,
   categoryNavigationProps,
   hasSidebar = false, // Nueva prop para detectar si hay sidebar
 }) => {
-  // ✅ MEJORA DE RENDIMIENTO: Memoización de estilos del contenedor principal
+  // ✅ OPTIMIZACIÓN: Removed console.count for production performance
+    // ✅ MEJORA DE RENDIMIENTO: Memoización más granular de estilos del contenedor principal
   const mainContainerStyles = React.useMemo(() => ({
     mt: 0,
     py: 1,
     px: hasSidebar ? { xs: 0, md: 0 } : { xs: 1, md: 3 }, // Sin padding lateral cuando hay sidebar
     bgcolor: 'rgba(255, 255, 255, 0.95)',
     backdropFilter: 'blur(10px)',
-    boxShadow: shouldShowSearchBar ? '0 4px 20px rgba(0,0,0,0.15)' : 'none',
-    borderBottom: shouldShowSearchBar ? '1px solid #e2e8f0' : 'none',
     position: 'fixed',
-    top: shouldShowSearchBar ? 64 : -150,
+    top: 64, // Posición fija - no cambia
     left: hasSidebar ? '210px' : 0, // Cambiado de 250px a 210px para coincidir con el ancho real del sidebar
     right: 0,
     zIndex: 1000,
-    transition: 'all 0.3s ease-out',
-    transform: shouldShowSearchBar ? 'translateY(0)' : 'translateY(-10px)',
-    opacity: shouldShowSearchBar ? 1 : 0,
     display: 'flex',
     justifyContent: 'center',
-  }), [shouldShowSearchBar, hasSidebar])
+  }), [hasSidebar])
+  // ✅ ANIMACIÓN OPTIMIZADA: Solo transform y opacity para 60fps
+  const dynamicStyles = React.useMemo(() => ({
+    boxShadow: shouldShowSearchBar ? '0 4px 20px rgba(0,0,0,0.15)' : 'none',
+    borderBottom: shouldShowSearchBar ? '1px solid #e2e8f0' : 'none',
+    transform: shouldShowSearchBar 
+      ? 'translateY(0) translateZ(0)' 
+      : 'translateY(-100%) translateZ(0)', // Usar translateY en vez de top
+    opacity: shouldShowSearchBar ? 1 : 0,
+    transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease-out, box-shadow 0.3s ease-out',
+    willChange: 'transform, opacity', // Ayuda al navegador a optimizar
+  }), [shouldShowSearchBar])
 
-  // ✅ MEJORA DE RENDIMIENTO: Memoización de estilos del contenedor interno
+  // ✅ MEJORA DE RENDIMIENTO: Memoización de estilos del contenedor interno - Estáticos
   const innerContainerStyles = React.useMemo(() => ({
     width: '100%',
     maxWidth: {
@@ -57,8 +64,14 @@ const SearchSection = React.memo(({
     py: 1,
   }), [])
 
+  // ✅ OPTIMIZACIÓN: Combinar estilos finales solo cuando sea necesario
+  const finalContainerStyles = React.useMemo(() => ({
+    ...mainContainerStyles,
+    ...dynamicStyles,
+  }), [mainContainerStyles, dynamicStyles])
+
   return (
-    <Box sx={mainContainerStyles}>
+    <Box sx={finalContainerStyles}>
       <Box sx={innerContainerStyles}>
         {/* ✅ USAR SearchBar EXISTENTE */}
         <SearchBar {...searchBarProps} />
@@ -66,6 +79,18 @@ const SearchSection = React.memo(({
         <CategoryNavigation {...categoryNavigationProps} />
       </Box>
     </Box>
+  )
+}, (prevProps, nextProps) => {
+  // ✅ OPTIMIZACIÓN: Comparación personalizada más específica
+  return (
+    prevProps.shouldShowSearchBar === nextProps.shouldShowSearchBar &&
+    prevProps.hasSidebar === nextProps.hasSidebar &&
+    // Comparación profunda solo de las props que realmente pueden cambiar
+    prevProps.searchBarProps.busqueda === nextProps.searchBarProps.busqueda &&
+    prevProps.searchBarProps.ordenamiento === nextProps.searchBarProps.ordenamiento &&
+    prevProps.searchBarProps.hayFiltrosActivos === nextProps.searchBarProps.hayFiltrosActivos &&
+    prevProps.categoryNavigationProps.seccionActiva === nextProps.categoryNavigationProps.seccionActiva &&
+    prevProps.categoryNavigationProps.categoriaSeleccionada === nextProps.categoryNavigationProps.categoriaSeleccionada
   )
 })
 

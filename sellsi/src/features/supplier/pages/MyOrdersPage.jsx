@@ -15,6 +15,8 @@ import OrderActionModal from '../myorders/modals/OrderActionModal';
 import { useBanner } from '../../ui/BannerContext';
 import SidebarProvider from '../../layout/SideBar';
 import { dashboardTheme } from '../../../styles/dashboardTheme';
+// TODO: Importar hook para obtener usuario autenticado
+// import { useAuth } from '../../auth/hooks/useAuth';
 
 const MyOrdersPage = () => {
   // Estado del store
@@ -23,6 +25,7 @@ const MyOrdersPage = () => {
     loading,
     statusFilter,
     error,
+    initializeWithSupplier,
     fetchOrders,
     setStatusFilter,
     updateOrderStatus,
@@ -37,15 +40,26 @@ const MyOrdersPage = () => {
     isOpen: false,
     type: null,
     selectedOrder: null
-  });
+  });  // TODO: Obtener usuario autenticado y su ID
+  // const { user } = useAuth();
+  // const supplierId = user?.user_id;
+
+  // TEMPORAL: Obtener el supplier ID del localStorage como hacen otros componentes
+  // En producción, esto debe venir del usuario autenticado
+  const supplierId = localStorage.getItem('user_id');
 
   // Obtener pedidos filtrados
   const filteredOrders = getFilteredOrders();
 
-  // Cargar pedidos al montar el componente
+  // Inicializar store con supplier ID y cargar pedidos
   useEffect(() => {
-    fetchOrders();
-  }, [fetchOrders]);
+    if (supplierId) {
+      initializeWithSupplier(supplierId);
+    } else {
+      // Si no hay supplier ID, mostrar error
+      console.error('No se encontró el ID del proveedor en localStorage');
+    }
+  }, [supplierId, initializeWithSupplier]);
 
   // Manejar apertura de modales
   const handleActionClick = (order, actionType) => {
@@ -63,15 +77,16 @@ const MyOrdersPage = () => {
       type: null,
       selectedOrder: null
     });
-  };
-  // Manejar envío de formulario del modal
-  const handleModalSubmit = (formData) => {
+  };  // Manejar envío de formulario del modal
+  const handleModalSubmit = async (formData) => {
     const { selectedOrder, type } = modalState;
     
     try {
+      let result;
+      
       switch (type) {
         case 'accept':
-          updateOrderStatus(selectedOrder.order_id, 'Aceptado', {
+          result = await updateOrderStatus(selectedOrder.order_id, 'Aceptado', {
             message: formData.message || ''
           });
           showBanner({
@@ -82,7 +97,7 @@ const MyOrdersPage = () => {
           break;
         
         case 'reject':
-          updateOrderStatus(selectedOrder.order_id, 'Rechazado', {
+          result = await updateOrderStatus(selectedOrder.order_id, 'Rechazado', {
             rejectionReason: formData.rejectionReason || ''
           });
           showBanner({
@@ -101,7 +116,7 @@ const MyOrdersPage = () => {
             });
             return;
           }
-          updateOrderStatus(selectedOrder.order_id, 'En Ruta', {
+          result = await updateOrderStatus(selectedOrder.order_id, 'En Ruta', {
             estimated_delivery_date: formData.deliveryDate,
             message: formData.message || ''
           });
@@ -113,7 +128,7 @@ const MyOrdersPage = () => {
           break;
         
         case 'deliver':
-          updateOrderStatus(selectedOrder.order_id, 'Entregado', {
+          result = await updateOrderStatus(selectedOrder.order_id, 'Entregado', {
             deliveryDocuments: formData.deliveryDocuments || null,
             message: formData.message || ''
           });
@@ -138,7 +153,7 @@ const MyOrdersPage = () => {
       handleCloseModal();
     } catch (error) {
       showBanner({
-        message: '❌ Error al procesar la acción. Intenta nuevamente.',
+        message: `❌ ${error.message || 'Error al procesar la acción. Intenta nuevamente.'}`,
         severity: 'error',
         duration: 5000
       });

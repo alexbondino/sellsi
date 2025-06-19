@@ -136,9 +136,8 @@ const BuyerPerformance = () => {
           <Paper sx={{ p: 3, mb: 4, borderRadius: 2 }}>
             <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 3 }}>
               Estado de Pedidos
-            </Typography>
-            <Grid container spacing={3}>
-              <Grid item xs={12} sm={6}>
+            </Typography>            <Grid container spacing={3}>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                   <Typography variant="body1" sx={{ flexGrow: 1 }}>
                     Pedidos Completados
@@ -158,10 +157,9 @@ const BuyerPerformance = () => {
                     100
                   }
                   sx={{ height: 8, borderRadius: 4 }}
-                  color="success"
-                />
+                  color="success"                />
               </Grid>
-              <Grid item xs={12} sm={6}>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                   <Typography variant="body1" sx={{ flexGrow: 1 }}>
                     Pedidos Pendientes

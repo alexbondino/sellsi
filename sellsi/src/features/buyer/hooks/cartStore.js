@@ -29,6 +29,7 @@ import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
 import debounce from 'lodash.debounce'
 import { calculatePriceForQuantity } from '../../../utils/priceCalculation'
+import { cartService } from '../../../services/cartService'
 
 // Importar módulos especializados
 import useCartHistory from './useCartHistory'
@@ -53,9 +54,7 @@ const useCartStore = create(
   persist(
     (set, get) => {
       // Crear función de auto-guardado específica para esta instancia
-      const debouncedSave = createDebouncedSave(get)
-
-      // Instanciar módulos especializados
+      const debouncedSave = createDebouncedSave(get)      // Instanciar módulos especializados
       const historyStore = useCartHistory.getState()
       const wishlistStore = useWishlist.getState()
       const couponsStore = useCoupons.getState()
@@ -67,6 +66,12 @@ const useCartStore = create(
         isLoading: false,
         error: null,
         notifications: [],
+        
+        // === ESTADO PARA INTEGRACIÓN CON BACKEND ===
+        cartId: null,
+        userId: null,
+        isBackendSynced: false,
+        isSyncing: false,
 
         // Propiedades delegadas para retrocompatibilidad
         get wishlist() {
@@ -80,10 +85,15 @@ const useCartStore = create(
         },
         get selectedShipping() {
           return shippingStore.selectedShipping
-        },        // === ACCIONES DEL CARRITO (REFACTORIZADAS) ===
-
-        // Agregar producto al carrito
-        addItem: (product, quantity = 1) => {
+        },// === ACCIONES DEL CARRITO (REFACTORIZADAS) ===        // Agregar producto al carrito
+        addItem: async (product, quantity = 1) => {
+          const state = get()
+          
+          // DETECCIÓN AUTOMÁTICA: Si hay usuario autenticado, usar backend
+          if (state.userId && state.cartId && state.isBackendSynced) {
+            return await get().addItemWithBackend(product, quantity)
+          }
+          
           // Asegurarse de que la imagen principal esté presente
           const image =
             product.imagen || product.image || '/placeholder-product.jpg'
@@ -91,8 +101,7 @@ const useCartStore = create(
           // Asegurar que el nombre del proveedor esté presente (no el ID)
           const supplier = product.proveedor || product.supplier || 'Proveedor no especificado'
 
-          // ===== REFORZAR CAMPOS price_tiers Y minimum_purchase =====
-          const basePrice = product.precio || product.price || 0
+          // ===== REFORZAR CAMPOS price_tiers Y minimum_purchase =====          const basePrice = product.precio || product.price || 0
           // Usar price_tiers solo si es un array válido y no vacío
           const price_tiers = (Array.isArray(product.price_tiers) && product.price_tiers.length > 0)
             ? product.price_tiers
@@ -109,6 +118,7 @@ const useCartStore = create(
             price_tiers,
             minimum_purchase,
           }
+          
           const currentState = get()
           const existingItem = currentState.items.find(
             (item) => item.id === product.id
@@ -124,6 +134,7 @@ const useCartStore = create(
                 ),
               })
             } else {
+              console.warn('[cartStore] No hay suficiente stock')
             }
           } else {
             const newItem = {
@@ -146,10 +157,15 @@ const useCartStore = create(
 
           // Auto-guardar cambios
           debouncedSave()
-        },
-
-        // Actualizar cantidad con respuesta inmediata
-        updateQuantity: (id, quantity) => {
+        },        // Actualizar cantidad con respuesta inmediata
+        updateQuantity: async (id, quantity) => {
+          const state = get()
+          
+          // DETECCIÓN AUTOMÁTICA: Si hay usuario autenticado, usar backend
+          if (state.userId && state.cartId && state.isBackendSynced) {
+            return await get().updateQuantityWithBackend(id, quantity)
+          }
+          
           const currentState = get()
           const item = currentState.items.find((item) => item.id === id)
           if (!item) return
@@ -198,11 +214,10 @@ const useCartStore = create(
                 oldPrice: item.price,
                 newPrice: newUnitPrice,
               })
-            }, 0)
-
-            // Auto-guardar cambios
+            }, 0)            // Auto-guardar cambios
             debouncedSave()
-          }        },
+          }
+        },
 
         // Versión con debounce para casos específicos donde se necesite
         updateQuantityDebounced: debounce((id, quantity) => {
@@ -210,28 +225,43 @@ const useCartStore = create(
         }, 10), // OPTIMIZADO: 10ms en lugar de 100ms
 
         // Remover item
-        removeItem: (id) => {
+        removeItem: async (id) => {
+          const state = get()
+          
+          // DETECCIÓN AUTOMÁTICA: Si hay usuario autenticado, usar backend
+          if (state.userId && state.cartId && state.isBackendSynced) {
+            return await get().removeItemWithBackend(id)
+          }
+          
           const currentState = get()
           const item = currentState.items.find((item) => item.id === id)
           if (item) {
             set({ items: currentState.items.filter((item) => item.id !== id) })
           } else {
+            console.warn('[cartStore] Item no encontrado para remover:', id)
           }
 
           // Delegar al módulo de historial
           setTimeout(() => {
             historyStore.saveToHistory(get(), 'removeItem', {
-              productName: item.name,
-              quantity: item.quantity,
+              productName: item?.name || 'Producto desconocido',
+              quantity: item?.quantity || 0,
             })
           }, 0)
 
           // Auto-guardar cambios
           debouncedSave()
         },
-
+        
         // Limpiar carrito
-        clearCart: () => {
+        clearCart: async () => {
+          const state = get()
+          
+          // DETECCIÓN AUTOMÁTICA: Si hay usuario autenticado, usar backend
+          if (state.userId && state.cartId && state.isBackendSynced) {
+            return await get().clearCartWithBackend()
+          }
+          
           const currentState = get()
           const itemCount = currentState.items.length
           set({
@@ -244,14 +274,6 @@ const useCartStore = create(
           toast.success('Carrito limpiado', { icon: '🧹' })
 
           // Delegar al módulo de historial
-          setTimeout(() => {
-            historyStore.saveToHistory(get(), 'clearCart', {
-              itemCount: itemCount,
-            })
-          }, 0)
-          toast.success('Carrito limpiado', { icon: '🧹' })
-
-          // Guardar en historial con información detallada          // Delegar al módulo de historial
           setTimeout(() => {
             historyStore.saveToHistory(get(), 'clearCart', {
               itemCount: itemCount,
@@ -513,13 +535,8 @@ const useCartStore = create(
             console.error('❌ Error cargando desde localStorage:', error)
           }
           return false
-        },
-
-        // Preparación para sincronización con backend
+        },        // Preparación para sincronización con backend
         syncToBackend: async () => {
-          console.log(
-            '🔄 Sincronización con backend (preparado para implementar)'
-          )
           // Los módulos también deben sincronizar su estado
           try {
             const state = get()
@@ -531,12 +548,270 @@ const useCartStore = create(
               shipping: shippingStore.selectedShipping,
               lastModified: Date.now(),
             }
-            console.log('✅ Listo para sincronizar con backend:', cartData)
             return true
           } catch (error) {
             console.error('❌ Error en sincronización:', error)
             return false
           }
+        },
+
+        // === FUNCIONES DE INTEGRACIÓN CON BACKEND ===        // Inicializar carrito con usuario autenticado
+        initializeCartWithUser: async (userId) => {
+          try {            // ✅ Protección contra inicializaciones múltiples
+            const currentState = get()
+            if (currentState.isBackendSynced && currentState.userId === userId && currentState.cartId) {
+              return
+            }
+            
+            // ✅ Protección contra inicializaciones concurrentes
+            if (currentState.isSyncing) {
+              return
+            }
+            
+            set({ isLoading: true, error: null, isSyncing: true })
+
+            // Obtener carrito local antes de la migración
+            const localItems = get().items
+
+            // Obtener o crear carrito en backend
+            const backendCart = await cartService.getOrCreateActiveCart(userId)
+
+            // Si hay items locales, migrarlos al backend
+            if (localItems.length > 0) {
+              await cartService.migrateLocalCart(userId, localItems)
+              
+              // Obtener solo los items actualizados, no todo el carrito nuevamente
+              const updatedItems = await cartService.getCartItems(backendCart.cart_id)
+              
+              set({
+                items: updatedItems || [],
+                cartId: backendCart.cart_id,
+                userId: userId,
+                isBackendSynced: true,
+                isLoading: false,
+                isSyncing: false
+              })
+            } else {
+              // Solo cargar el carrito del backend
+              set({
+                items: backendCart.items || [],
+                cartId: backendCart.cart_id,
+                userId: userId,
+                isBackendSynced: true,
+                isLoading: false,
+                isSyncing: false
+              })
+            }
+            return true
+          } catch (error) {
+            console.error('[cartStore] ❌ Error inicializando carrito con usuario:', error)
+            set({ 
+              error: 'No se pudo cargar el carrito', 
+              isLoading: false, 
+              isSyncing: false 
+            })
+            return false
+          }
+        },        // Agregar item con sincronización backend
+        addItemWithBackend: async (product, quantity = 1) => {
+          const state = get()
+          
+          // Si no hay usuario autenticado, usar función local
+          if (!state.userId || !state.cartId) {
+            return get().addItem(product, quantity)
+          }
+
+          try {
+            set({ isSyncing: true })
+            
+            // Agregar al backend
+            const result = await cartService.addItemToCart(state.cartId, product, quantity)
+
+            // En lugar de recargar todo el carrito, solo obtener los items actualizados
+            // para evitar crear carritos duplicados
+            const updatedItems = await cartService.getCartItems(state.cartId)
+            
+            set({
+              items: updatedItems || [],
+              isSyncing: false
+            })
+
+            // Delegar al módulo de historial
+            setTimeout(() => {
+              historyStore.saveToHistory(get(), 'addItem', {
+                productName: product.productnm || product.name,
+                quantity: quantity,
+                isBackend: true
+              })
+            }, 0)
+
+            return true
+          } catch (error) {
+            console.error('[cartStore] ❌ Error agregando item al backend:', error)
+            set({ isSyncing: false })
+            // Fallback a función local
+            return get().addItem(product, quantity)
+          }
+        },        // Actualizar cantidad con sincronización backend
+        updateQuantityWithBackend: async (itemId, newQuantity) => {
+          const state = get()
+            // Si no hay usuario autenticado, usar función local
+          if (!state.userId || !state.cartId) {
+            return get().updateQuantity(itemId, newQuantity)
+          }
+
+          // ✅ Encontrar el product_id correcto del item
+          const item = state.items.find(item => 
+            item.id === itemId || 
+            item.productid === itemId || 
+            item.product_id === itemId ||
+            item.cart_items_id === itemId
+          )          
+          if (!item) {
+            console.error('[cartStore] ❌ Item no encontrado en carrito local:', itemId)
+            return false
+          }
+          
+          const productId = item.product_id || item.productid || item.id
+
+          try {
+            set({ isSyncing: true })
+
+            // Actualizar en backend
+            if (newQuantity <= 0) {
+              await cartService.removeItemFromCart(state.cartId, productId)
+            } else {
+              await cartService.updateItemQuantity(state.cartId, productId, newQuantity)
+            }
+
+            // Recargar carrito desde backend
+            const updatedCart = await cartService.getOrCreateActiveCart(state.userId)
+            set({
+              items: updatedCart.items || [],
+              isSyncing: false
+            })
+
+            return true} catch (error) {
+            console.error('[cartStore] ❌ Error actualizando cantidad en backend:', error)
+            set({ isSyncing: false })
+            // Fallback a función local
+            return get().updateQuantity(itemId, newQuantity)
+          }
+        },        // Remover item con sincronización backend
+        removeItemWithBackend: async (itemId) => {
+          const state = get()
+            // Si no hay usuario autenticado, usar función local
+          if (!state.userId || !state.cartId) {
+            return get().removeItem(itemId)
+          }
+
+          // ✅ Encontrar el product_id correcto del item
+          const item = state.items.find(item => 
+            item.id === itemId || 
+            item.productid === itemId || 
+            item.product_id === itemId ||
+            item.cart_items_id === itemId
+          )
+          
+          if (!item) {
+            console.error('[cartStore] ❌ Item no encontrado en carrito local:', itemId)
+            return false
+          }
+            const productId = item.product_id || item.productid || item.id
+
+          try {
+            set({ isSyncing: true })
+
+            // Remover del backend
+            await cartService.removeItemFromCart(state.cartId, productId)
+
+            // Recargar carrito desde backend
+            const updatedCart = await cartService.getOrCreateActiveCart(state.userId)
+            set({
+              items: updatedCart.items || [],
+              isSyncing: false
+            })
+
+            return true} catch (error) {
+            console.error('[cartStore] ❌ Error removiendo item del backend:', error)
+            set({ isSyncing: false })
+            // Fallback a función local
+            return get().removeItem(itemId)
+          }
+        },        // Limpiar carrito con sincronización backend
+        clearCartWithBackend: async () => {
+          const state = get()
+          
+          // Si no hay usuario autenticado, usar función local
+          if (!state.userId || !state.cartId) {
+            console.warn('[cartStore] No userId/cartId, usando clearCart local')
+            return get().clearCart()
+          }
+
+          try {
+            set({ isSyncing: true })
+
+            // Limpiar en backend
+            await cartService.clearCart(state.cartId)
+
+            // Actualizar estado local
+            set({
+              items: [],
+              isSyncing: false
+            })
+
+            return true
+          } catch (error) {
+            console.error('[cartStore] ❌ Error limpiando carrito en backend:', error)
+            set({ isSyncing: false })
+            // Fallback a función local
+            return get().clearCart()
+          }
+        },
+
+        // Proceso de checkout
+        checkout: async (checkoutData = {}) => {
+          const state = get()          
+          if (!state.userId || !state.cartId) {
+            throw new Error('Usuario no autenticado')
+          }
+
+          try {
+            set({ isLoading: true })
+
+            // Realizar checkout en backend
+            const order = await cartService.checkout(state.cartId, checkoutData)
+
+            // Crear nuevo carrito activo para futuras compras
+            const newCart = await cartService.getOrCreateActiveCart(state.userId)
+
+            // Actualizar estado local
+            set({
+              items: [],
+              cartId: newCart.cart_id,
+              isLoading: false
+            })
+
+            // Limpiar módulos relacionados
+            couponsStore.clearCoupons()
+
+            return order
+          } catch (error) {
+            console.error('[cartStore] ❌ Error en checkout:', error)
+            set({ isLoading: false, error: 'Error en el checkout' })
+            throw error
+          }
+        },
+
+        // Desconectar del backend (logout)
+        disconnectFromBackend: () => {
+          set({
+            cartId: null,
+            userId: null,
+            isBackendSynced: false,
+            isSyncing: false
+          })
+          // El carrito local se mantiene para migración futura
         },
       }
     },

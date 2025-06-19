@@ -74,7 +74,7 @@ export const usePrefetch = () => {
       
       importFunction()
         .then(() => {
-          console.log(`✅ Prefetched: ${routePath}`)
+          // [LOGS ELIMINADOS POR LIMPIEZA DE PRODUCCIÓN]
         })
         .catch((error) => {
           // Si falla, remover de prefetched para reintentarlo
