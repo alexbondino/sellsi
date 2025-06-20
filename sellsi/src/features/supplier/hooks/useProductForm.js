@@ -7,7 +7,7 @@
  * incluyendo validaciones, estado del formulario y operaciones.
  */
 
-import { useState, useCallback, useEffect } from 'react'
+import React, { useState, useCallback, useEffect } from 'react'
 import { useSupplierProducts } from './useSupplierProducts'
 
 // Valores iniciales del formulario
@@ -37,23 +37,25 @@ const validationRules = {
   descripcion: {
     required: true,
     minLength: 10,
-    maxLength: 500,
+    maxLength: 600, // Corregido a 600 para coincidir con el formulario y validación visual
   },
   categoria: {
     required: true,
-  },
-  stock: {
+  },  stock: {
     required: true,
     min: 0,
+    max: 99999999, // Máximo 8 dígitos
     type: 'number',
   },
   compraMinima: {
     required: true,
     min: 1,
+    max: 99999999, // Máximo 8 dígitos
     type: 'number',
-  },  precioUnidad: {
+  },precioUnidad: {
     required: false, // Será validado condicionalmente
     min: 0,
+    max: 99999999, // Máximo 8 dígitos
     type: 'number',
   },
 }
@@ -125,43 +127,46 @@ export const useProductForm = (productId = null) => {
    */
   function mapFormToProduct(formData) {
     console.log('🔄 [MAP FORM TO PRODUCT] - formData entrada:', formData)
-    
-    const productData = {
+      const productData = {
       productnm: formData.nombre,
       description: formData.descripcion,
       category: formData.categoria,
-      productqty: parseInt(formData.stock) || 0,
-      minimum_purchase: parseInt(formData.compraMinima) || 1,
+      productqty: Math.min(parseInt(formData.stock) || 0, 99999999), // Limitar a 8 dígitos
+      minimum_purchase: Math.min(parseInt(formData.compraMinima) || 1, 99999999), // Limitar a 8 dígitos
       negotiable: formData.negociable,
       is_active: formData.activo,
-      imagenes: formData.imagenes,
-      specifications: formData.specifications.filter((s) => s.key && s.value),
+      imagenes: formData.imagenes,      specifications: formData.specifications.filter((s) => s.key && s.value),
     }
 
     if (formData.pricingType === 'Por Unidad') {
-      productData.price = parseFloat(formData.precioUnidad) || 0
-      productData.product_type = 'unit'    } else {
+      productData.price = Math.min(parseFloat(formData.precioUnidad) || 0, 99999999) // Limitar a 8 dígitos
+      productData.product_type = 'unit'
+    } else {
       // Para productos por tramo, el precio base será 0 (la BD no permite null)
       productData.price = 0
       productData.product_type = 'tier'
       productData.priceTiers = formData.tramos
         .filter((t) => t.cantidad && t.precio)
         .map((t) => ({
-          cantidad: parseInt(t.cantidad),
-          precio: parseFloat(t.precio),
+          cantidad: Math.min(parseInt(t.cantidad), 99999999), // Limitar cantidad a 8 dígitos
+          precio: Math.min(parseFloat(t.precio), 99999999), // Limitar precio a 8 dígitos
         }))
     }
 
     console.log('📤 [MAP FORM TO PRODUCT] - productData salida:', productData)
     return productData
   }
+  /**
+   * ✅ MEJORA DE RENDIMIENTO: Memoización de reglas de validación
+   */
+  const memoizedValidationRules = React.useMemo(() => validationRules, [])
 
   /**
    * Validar un campo específico
    */
   const validateField = useCallback((fieldName, value) => {
     console.log(`🔍 [VALIDATE FIELD] - ${fieldName}:`, value, typeof value);
-    const rule = validationRules[fieldName]
+    const rule = memoizedValidationRules[fieldName]
     if (!rule) {
       console.log(`🔍 [VALIDATE FIELD] - ${fieldName}: no rule found`);
       return null
@@ -182,7 +187,9 @@ export const useProductForm = (productId = null) => {
     if (rule.maxLength && value.length > rule.maxLength) {
       console.log(`❌ [VALIDATE FIELD] - ${fieldName}: maxLength failed`);
       return `Máximo ${rule.maxLength} caracteres`
-    }    if (rule.type === 'number') {
+    }
+
+    if (rule.type === 'number') {
       // Solo validar tipo si el campo no está vacío o si es requerido
       if (value && value.toString().trim() !== '') {
         const numValue = parseFloat(value)
@@ -204,21 +211,18 @@ export const useProductForm = (productId = null) => {
 
     console.log(`✅ [VALIDATE FIELD] - ${fieldName}: validation passed`);
     return null
-  }, [])
-  /**
-   * Validar todo el formulario
+  }, [memoizedValidationRules])  /**
+   * ✅ MEJORA DE RENDIMIENTO: Validar todo el formulario con memoización
    */
   const validateForm = useCallback(() => {
     const newErrors = {}
 
-    Object.keys(validationRules).forEach((fieldName) => {
+    Object.keys(memoizedValidationRules).forEach((fieldName) => {
       const error = validateField(fieldName, formData[fieldName])
       if (error) {
         newErrors[fieldName] = error
       }
-    })
-
-    // Validaciones condicionales
+    })// Validaciones condicionales
     if (formData.pricingType === 'Por Unidad') {
       // Para productos por unidad, el precio es requerido
       if (!formData.precioUnidad || formData.precioUnidad.toString().trim() === '') {
@@ -227,6 +231,8 @@ export const useProductForm = (productId = null) => {
         const numValue = parseFloat(formData.precioUnidad)
         if (isNaN(numValue) || numValue < 0) {
           newErrors.precioUnidad = 'Debe ser un precio válido mayor o igual a 0'
+        } else if (numValue > 99999999) {
+          newErrors.precioUnidad = 'El precio no puede superar los 8 dígitos (99,999,999)'
         }
       }
     } else if (formData.pricingType === 'Por Tramo') {
@@ -234,16 +240,20 @@ export const useProductForm = (productId = null) => {
       const validTramos = formData.tramos.filter((t) => t.cantidad && t.precio)
       if (validTramos.length === 0) {
         newErrors.tramos = 'Debe definir al menos un tramo de precios'
+      } else {
+        // Validar que ningún precio de tramo supere los 8 dígitos
+        const tramosConPrecioAlto = validTramos.filter(t => parseFloat(t.precio) > 99999999)
+        if (tramosConPrecioAlto.length > 0) {
+          newErrors.tramos = 'Los precios de los tramos no pueden superar los 8 dígitos (99,999,999)'
+        }
       }
     }
 
     if (formData.imagenes.length === 0) {
       newErrors.imagenes = 'Debe subir al menos una imagen'
-    }
-
-    setErrors(newErrors)
+    }    setErrors(newErrors)
     return Object.keys(newErrors).length === 0
-  }, [formData, validateField])
+  }, [formData, validateField, memoizedValidationRules])
 
   /**
    * Actualizar campo del formulario

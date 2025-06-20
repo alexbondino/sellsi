@@ -1,6 +1,6 @@
-import { useState, useMemo } from 'react' // ✅ Asegurar que useState está importado
+import { useState, useMemo, useCallback } from 'react'
 
-// ✅ Definir las opciones de ordenamiento
+// ✅ OPTIMIZACIÓN: Memoizar opciones de ordenamiento estáticas
 const sortOptions = [
   { value: 'relevancia', label: 'Más relevantes' },
   { value: 'menor-precio', label: 'Precio: Menor a Mayor' },
@@ -11,15 +11,20 @@ const sortOptions = [
 ]
 
 export const useProductSorting = (productos = []) => {
-  const [ordenamiento, setOrdenamiento] = useState('relevancia') // ✅ Inicializar estado
+  const [ordenamiento, setOrdenamiento] = useState('relevancia')
 
+  // ✅ OPTIMIZACIÓN: Memoizar función de sorting que es costosa
   const productosOrdenados = useMemo(() => {
-    if (!Array.isArray(productos)) {
-      console.warn('useProductSorting: productos no es un array', productos)
+    if (!Array.isArray(productos) || productos.length === 0) {
       return []
     }
 
-    const productosArray = [...productos] // Crear una copia para no mutar el original
+    // ✅ OPTIMIZACIÓN: Solo crear copia si necesitamos ordenar
+    if (ordenamiento === 'relevancia') {
+      return productos // No necesitamos ordenar si es relevancia
+    }
+
+    const productosArray = [...productos] // Crear copia para ordenar
 
     switch (ordenamiento) {
       case 'menor-precio':
@@ -34,23 +39,22 @@ export const useProductSorting = (productos = []) => {
         return productosArray.sort((a, b) => (b.ventas || 0) - (a.ventas || 0))
       case 'mejor-rating':
         return productosArray.sort((a, b) => (b.rating || 0) - (a.rating || 0))
-      case 'relevancia':
       default:
-        // Podrías tener una lógica de relevancia aquí o simplemente devolver el array
         return productosArray
     }
   }, [productos, ordenamiento])
 
-  const getSortLabel = (sortValue) => {
+  // ✅ OPTIMIZACIÓN: Memoizar función getSortLabel
+  const getSortLabel = useCallback((sortValue) => {
     const option = sortOptions.find((opt) => opt.value === sortValue)
     return option ? option.label : 'Más relevantes'
-  }
+  }, [])
 
   return {
     ordenamiento,
     setOrdenamiento,
     productosOrdenados,
-    sortOptions, // ✅ Exportar las opciones
+    sortOptions,
     getSortLabel,
   }
 }

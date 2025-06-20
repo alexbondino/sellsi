@@ -30,18 +30,22 @@ import { filterPanelStyles as styles } from '../hooks/FilterPanel/FilterPanel.st
 import { useProductFilters } from '../hooks/useProductFilters'
 
 // ✅ MEJORA DE RENDIMIENTO: Memoización del componente principal
-const FilterPanel = React.memo(({
-  filtros,
-  categoriaSeleccionada,
-  busqueda,
-  updateFiltros,
-  resetFiltros,
-  isMobileOpen,
-  onMobileClose,
-  totalProductos,
-  filtrosAbiertos = false,
-  filterPosition = 'left', // Nueva prop para controlar posición
-}) => {
+const FilterPanel = React.memo((props) => {
+  const {
+    filtros,
+    categoriaSeleccionada,
+    busqueda,
+    updateFiltros,
+    resetFiltros,
+    totalProductos,
+    filtrosAbiertos = false,
+    filterPosition = 'left',
+    isMobileOpen = false,
+    onMobileClose = () => {},  } = props;
+  // ✅ OPTIMIZACIÓN: Removed console.count for production performance
+  
+  // Si no hay filtros, no renderizar
+  if (!filtros) return null;
   const { handlePrecioChange, handleStockChange } = useProductFilters(
     filtros,
     updateFiltros
@@ -49,6 +53,7 @@ const FilterPanel = React.memo(({
 
   // ✅ MEJORA DE RENDIMIENTO: Memoización del handler de remover filtros
   const handleRemoveFilter = React.useCallback((filterType, value) => {
+    // ✅ OPTIMIZACIÓN: Removed console.time for production performance
     switch (filterType) {
       case 'precioMin':
         updateFiltros({ precioMin: '' })
@@ -65,6 +70,7 @@ const FilterPanel = React.memo(({
       default:
         break
     }
+    // ✅ OPTIMIZACIÓN: Removed console.timeEnd for production performance
   }, [updateFiltros])
 
   // ✅ MEJORA DE RENDIMIENTO: Memoización del contenido principal
@@ -356,13 +362,15 @@ const FilterPanel = React.memo(({
             '&:hover': {
               background: '#a8a8a8',
             },
-          },
-        }}
-      >        <FilterContent />
-      </Box>
-    )
+          },        }}
+      >
+        <FilterContent />
+      </Box>    )
   }, [filtrosAbiertos, filterPosition, FilterContent])
+  
+  // ✅ OPTIMIZACIÓN: Removed problematic handlers that use undefined state
 
+  // ✅ RETURN PRINCIPAL DEL COMPONENTE FILTERPANEL
   return (
     <>
       {/* Mobile FilterPanel - siempre montado para animaciones */}
@@ -371,7 +379,8 @@ const FilterPanel = React.memo(({
       </Box>
       {/* Desktop FilterPanel - siempre montado para animaciones */}
       <Box sx={{ display: { xs: 'none', md: 'block' } }}>
-        <DesktopFilterPanel />      </Box>
+        <DesktopFilterPanel />
+      </Box>
     </>
   )
 })

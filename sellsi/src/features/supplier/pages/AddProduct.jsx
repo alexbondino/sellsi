@@ -22,6 +22,10 @@ import {
   Chip,
   Stack,
   useTheme,
+  Tooltip,
+  FormControlLabel,
+  Radio,
+  RadioGroup,
 } from '@mui/material';
 import {
   ArrowBack as ArrowBackIcon,
@@ -29,6 +33,7 @@ import {
   Delete as DeleteIcon,
   CloudUpload as CloudUploadIcon,
   Image as ImageIcon,
+  Info as InfoIcon, // <-- Importar InfoIcon
 } from '@mui/icons-material';
 import { ThemeProvider } from '@mui/material/styles';
 import { toast } from 'react-hot-toast';
@@ -39,6 +44,7 @@ import { UploadService } from '../../../services/uploadService';
 // Components
 import SidebarProvider from '../../layout/SideBar';
 import { ImageUploader, FileUploader } from '../../ui';
+import TramosSection from '../components/TramosSection'; // Importar el nuevo componente
 
 // Hooks y stores
 import { useSupplierProducts } from '../hooks/useSupplierProducts';
@@ -137,17 +143,23 @@ const AddProduct = () => {
       if (validTramos.length < 2) {
         newErrors.tramos = 'Debe agregar al menos dos tramos válidos (cantidad y precio definidos)';
       } else {
-        // Validar que las cantidades de los tramos no excedan el stock
-        const stockNumber = parseInt(formData.stock || 0);
-        const invalidTramos = validTramos.filter(
-          tramo => parseInt(tramo.cantidad) > stockNumber
-        );
-        if (invalidTramos.length > 0) {
-          newErrors.tramos =
-            'Las cantidades de los tramos no pueden ser mayores al stock disponible';
+        // Validar que ningún precio de tramo supere los 8 dígitos
+        const tramosConPrecioAlto = validTramos.filter(t => parseFloat(t.precio) > 99999999);
+        if (tramosConPrecioAlto.length > 0) {
+          newErrors.tramos = 'Los precios de los tramos no pueden superar los 8 dígitos (99,999,999)';
+        } else {
+          // Validar que las cantidades de los tramos no excedan el stock
+          const stockNumber = parseInt(formData.stock || 0);
+          const invalidTramos = validTramos.filter(
+            tramo => parseInt(tramo.cantidad) > stockNumber
+          );
+          if (invalidTramos.length > 0) {
+            newErrors.tramos =
+              'Las cantidades de los tramos no pueden ser mayores al stock disponible';
+          }
         }
       }
-    }    if (formData.imagenes.length === 0) {
+    }if (formData.imagenes.length === 0) {
       newErrors.imagenes = 'Debe agregar al menos una imagen';
     } else if (formData.imagenes.length > 5) {
       newErrors.imagenes = 'Máximo 5 imágenes permitidas';
@@ -216,7 +228,7 @@ const AddProduct = () => {
     formData.pricingType,
   ]);
   const calculateEarnings = () => {
-    const serviceRate = 0.05; // 5% de tarifa
+    const serviceRate = 0.02; // 5% de tarifa
 
     if (
       formData.pricingType === 'Por Unidad' &&
@@ -439,10 +451,15 @@ const AddProduct = () => {
           ? 'Producto actualizado exitosamente'
           : 'Producto agregado exitosamente'
       );
-      navigate('/supplier/myproducts');
-    } catch (error) {
+      navigate('/supplier/myproducts');    } catch (error) {
       console.error('❌ Error en handleSubmit:', error);
-      toast.error(error.message || 'Error inesperado al procesar el producto');
+      
+      // Manejar error específico de overflow numérico
+      if (error.message && error.message.includes('numeric field overflow')) {
+        toast.error('Error: Uno o más precios superan el límite permitido (máximo 8 dígitos). Por favor, reduce los valores.');
+      } else {
+        toast.error(error.message || 'Error inesperado al procesar el producto');
+      }
     }
     console.log('--- END SUBMIT DEBUG ---');
   };
@@ -463,7 +480,7 @@ const AddProduct = () => {
 
       <Box
         sx={{
-          marginLeft: '250px',
+          marginLeft: '210px',
           backgroundColor: 'background.default',
           minHeight: '100vh',
           pt: { xs: 9, md: 10 },
@@ -597,8 +614,7 @@ const AddProduct = () => {
                       }
                       inputProps={{ maxLength: 600 }}
                     />
-                  </Box>
-                  {/* FILA 3: Inventario y Disponibilidad (50%) | Compra Mínima (50%) */}
+                  </Box>                  {/* FILA 3: Inventario y Disponibilidad */}
                   <Box>
                     <Typography
                       variant="h6"
@@ -606,61 +622,248 @@ const AddProduct = () => {
                       sx={{ fontWeight: 600, color: 'black', mb: 2 }}
                     >
                       Inventario y Disponibilidad
-                    </Typography>{' '}                    <TextField
-                      fullWidth
-                      label="Stock Disponible:"
-                      placeholder="Ingrese un número entre 1 y 15.000"
-                      value={formData.stock}
-                      onChange={handleInputChange('stock')}
-                      onBlur={() => handleFieldBlur('stock')}
-                      error={!!(touched.stock || triedSubmit) && !!(errors.stock || localErrors.stock)}
-                      helperText={(touched.stock || triedSubmit) ? (errors.stock || localErrors.stock) : ''}
-                      type="number"
-                      inputProps={{ min: 1, max: 15000 }}
-                    />
-                  </Box>
-                  <Box sx={{ mt: 6 }}>
-                    {' '}                    <TextField
-                      fullWidth
-                      label="Compra Mínima:"
-                      placeholder="Seleccione un número entre 1 y 15.000"
-                      value={formData.compraMinima}
-                      onChange={handleInputChange('compraMinima')}
-                      onBlur={() => handleFieldBlur('compraMinima')}
-                      error={!!(touched.compraMinima || triedSubmit) && !!(errors.compraMinima || localErrors.compraMinima)}
-                      helperText={(touched.compraMinima || triedSubmit) ? (errors.compraMinima || localErrors.compraMinima) : ''}
-                      type="number"
-                      inputProps={{ min: 1, max: 15000 }}
-                    />
-                  </Box>{' '}
-                  {/* FILA 4: Configuración de Precios (50%) */}
+                    </Typography>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                      {/* Primera fila: Stock y Compra Mínima */}
+                      <Box sx={{ display: 'flex', gap: 2 }}>
+                        <TextField
+                          sx={{ width: '35%' }}
+                          label="Stock Disponible:"
+                          placeholder="Ingrese un número entre 1 y 15.000"
+                          value={formData.stock}
+                          onChange={handleInputChange('stock')}
+                          onBlur={() => handleFieldBlur('stock')}
+                          error={!!(touched.stock || triedSubmit) && !!(errors.stock || localErrors.stock)}
+                          helperText={(touched.stock || triedSubmit) ? (errors.stock || localErrors.stock) : ''}
+                          type="number"
+                          inputProps={{ min: 1, max: 15000 }}
+                        />
+                        <TextField
+                          sx={{ width: '35%' }}
+                          label="Compra Mínima:"
+                          placeholder="Seleccione un número entre 1 y 15.000"
+                          value={formData.compraMinima}
+                          onChange={handleInputChange('compraMinima')}
+                          onBlur={() => handleFieldBlur('compraMinima')}
+                          error={!!(touched.compraMinima || triedSubmit) && !!(errors.compraMinima || localErrors.compraMinima)}
+                          helperText={(touched.compraMinima || triedSubmit) ? (errors.compraMinima || localErrors.compraMinima) : ''}
+                          type="number"
+                          inputProps={{ min: 1, max: 15000 }}
+                        />
+                      </Box>
+                      {/* Segunda fila: Precio de Venta */}
+                      <Box>
+                        <TextField
+                          sx={{ width: '73.51%' }}
+                          label="Precio de Venta:"
+                          placeholder="Campo de entrada"
+                          value={formData.precioUnidad}
+                          onChange={handleInputChange('precioUnidad')}
+                          onBlur={() => handleFieldBlur('precioUnidad')}
+                          disabled={formData.pricingType === 'Por Tramo'}
+                          error={formData.pricingType === 'Por Unidad' && !!(touched.precioUnidad || triedSubmit) && !!(errors.precioUnidad || localErrors.precioUnidad)}
+                          helperText={formData.pricingType === 'Por Unidad' ? ((touched.precioUnidad || triedSubmit) ? (errors.precioUnidad || localErrors.precioUnidad) : '') : ''}
+                          InputProps={{
+                            startAdornment: (
+                              <InputAdornment position="start">$</InputAdornment>
+                            ),
+                          }}
+                          type="number"
+                        />
+                      </Box>
+                      {/* Tercera fila: Configuración de Precios y ToggleButtonGroup */}
+                      <Box>
+                        <Typography
+                          variant="h6"
+                          gutterBottom
+                          sx={{ fontWeight: 600, color: 'black', mb: 2 }}
+                        >
+                          Configuración de Precios
+                        </Typography>
+                        <Typography
+                          variant="subtitle1"
+                          gutterBottom
+                          sx={{ fontWeight: 600 }}
+                        >
+                          Precio a cobrar según:
+                        </Typography>
+                        <ToggleButtonGroup
+                          value={formData.pricingType}
+                          exclusive
+                          onChange={handlePricingTypeChange}
+                          sx={{ mb: 3 }}
+                        >
+                          <ToggleButton
+                            value="Por Unidad"
+                            sx={{ textTransform: 'none' }}
+                          >
+                            Por Unidad
+                          </ToggleButton>
+                          <ToggleButton
+                            value="Por Tramo"
+                            sx={{ textTransform: 'none' }}
+                          >
+                            Por Tramo
+                          </ToggleButton>
+                          <Tooltip
+                            title={
+                              <>
+                                <b>¿Qué son los tramos?</b><br />
+                                Permite asignar hasta 5 precios según la cantidad que te compren. Por ejemplo: si te compran entre 1 y 9 unidades, pagan $100 por unidad; si te compran 10 o más, pagan $90.
+                              </>
+                            }
+                            placement="right"
+                            arrow
+                          >
+                            <IconButton size="small" sx={{ ml: 1, boxShadow: 'none', outline: 'none', border: 'none', '&:focus': { outline: 'none', border: 'none', boxShadow: 'none' }, '&:active': { outline: 'none', border: 'none', boxShadow: 'none' } }} disableFocusRipple disableRipple>
+                              <InfoIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                        </ToggleButtonGroup>
+                      </Box>
+                    </Box></Box>
+                  {/* FILA 4: Región de Despacho */}
                   <Box>
                     <Typography
                       variant="h6"
                       gutterBottom
                       sx={{ fontWeight: 600, color: 'black', mb: 2 }}
                     >
-                      Configuración de Precios
-                    </Typography>                    <TextField
-                      fullWidth
-                      label="Precio de Venta:"
-                      placeholder="Campo de entrada"
-                      value={formData.precioUnidad}
-                      onChange={handleInputChange('precioUnidad')}
-                      onBlur={() => handleFieldBlur('precioUnidad')}
-                      disabled={formData.pricingType === 'Por Tramo'}
-                      error={formData.pricingType === 'Por Unidad' && !!(touched.precioUnidad || triedSubmit) && !!(errors.precioUnidad || localErrors.precioUnidad)}
-                      helperText={formData.pricingType === 'Por Unidad' ? ((touched.precioUnidad || triedSubmit) ? (errors.precioUnidad || localErrors.precioUnidad) : '') : ''}
-                      InputProps={{
-                        startAdornment: (
-                          <InputAdornment position="start">$</InputAdornment>
-                        ),
-                      }}
-                      type="number"
-                    />
+                      Región de Despacho
+                    </Typography>                    <FormControl component="fieldset">
+                      <RadioGroup
+                        value={formData.regionDespacho || ''}
+                        onChange={handleInputChange('regionDespacho')}
+                        sx={{ 
+                          display: 'flex', 
+                          flexDirection: 'row', 
+                          flexWrap: 'wrap',
+                          gap: 2
+                        }}
+                      >
+                        {/* Columna 1: 5 filas */}
+                        <Box sx={{ display: 'flex', flexDirection: 'column', width: '30%' }}>
+                          <FormControlLabel 
+                            value="todo-chile" 
+                            control={<Radio />} 
+                            label="Todo Chile" 
+                            sx={{ mb: 1 }}
+                          />
+                          <FormControlLabel 
+                            value="region-metropolitana" 
+                            control={<Radio />} 
+                            label="Región Metropolitana" 
+                            sx={{ mb: 1 }}
+                          />
+                          <FormControlLabel 
+                            value="i-region" 
+                            control={<Radio />} 
+                            label="I Región" 
+                            sx={{ mb: 1 }}
+                          />
+                          <FormControlLabel 
+                            value="ii-region" 
+                            control={<Radio />} 
+                            label="II Región" 
+                            sx={{ mb: 1 }}
+                          />
+                          <FormControlLabel 
+                            value="iii-region" 
+                            control={<Radio />} 
+                            label="III Región" 
+                            sx={{ mb: 1 }}
+                          />
+                        </Box>
+                        {/* Columna 2: 6 filas */}
+                        <Box sx={{ display: 'flex', flexDirection: 'column', width: '30%' }}>
+                          <FormControlLabel 
+                            value="iv-region" 
+                            control={<Radio />} 
+                            label="IV Región" 
+                            sx={{ mb: 1 }}
+                          />
+                          <FormControlLabel 
+                            value="v-region" 
+                            control={<Radio />} 
+                            label="V Región" 
+                            sx={{ mb: 1 }}
+                          />
+                          <FormControlLabel 
+                            value="vi-region" 
+                            control={<Radio />} 
+                            label="VI Región" 
+                            sx={{ mb: 1 }}
+                          />
+                          <FormControlLabel 
+                            value="vii-region" 
+                            control={<Radio />} 
+                            label="VII Región" 
+                            sx={{ mb: 1 }}
+                          />
+                          <FormControlLabel 
+                            value="viii-region" 
+                            control={<Radio />} 
+                            label="VIII Región" 
+                            sx={{ mb: 1 }}
+                          />
+                          <FormControlLabel 
+                            value="ix-region" 
+                            control={<Radio />} 
+                            label="IX Región" 
+                            sx={{ mb: 1 }}
+                          />
+                        </Box>
+                        {/* Columna 3: 6 filas */}
+                        <Box sx={{ display: 'flex', flexDirection: 'column', width: '30%' }}>
+                          <FormControlLabel 
+                            value="x-region" 
+                            control={<Radio />} 
+                            label="X Región" 
+                            sx={{ mb: 1 }}
+                          />
+                          <FormControlLabel 
+                            value="xi-region" 
+                            control={<Radio />} 
+                            label="XI Región" 
+                            sx={{ mb: 1 }}
+                          />
+                          <FormControlLabel 
+                            value="xii-region" 
+                            control={<Radio />} 
+                            label="XII Región" 
+                            sx={{ mb: 1 }}
+                          />
+                          <FormControlLabel 
+                            value="xiv-region" 
+                            control={<Radio />} 
+                            label="XIV Región" 
+                            sx={{ mb: 1 }}
+                          />
+                          <FormControlLabel 
+                            value="xv-region" 
+                            control={<Radio />} 
+                            label="XV Región" 
+                            sx={{ mb: 1 }}
+                          />
+                          <FormControlLabel 
+                            value="xvi-region" 
+                            control={<Radio />} 
+                            label="XVI Región" 
+                            sx={{ mb: 1 }}
+                          />
+                        </Box>
+                      </RadioGroup>
+                    </FormControl>
                   </Box>
-                  {/* FILA 5: Precio a cobrar según + Tramos */}
-                  <Box className="full-width">
+                  {/* FILA 5: Configuración de Precios */}
+                  {/* <Box>
+                    <Typography
+                      variant="h6"
+                      gutterBottom
+                      sx={{ fontWeight: 600, color: 'black', mb: 2 }}
+                    >
+                      Configuración de Precios
+                    </Typography>
                     <Typography
                       variant="subtitle1"
                       gutterBottom
@@ -686,160 +889,45 @@ const AddProduct = () => {
                       >
                         Por Tramo
                       </ToggleButton>
-                    </ToggleButtonGroup>
-
-                    {/* Tramos horizontales (si se selecciona Por Tramo) */}
-                    {formData.pricingType === 'Por Tramo' && (
-                      <Box>
-                        <Typography
-                          variant="subtitle2"
-                          gutterBottom
-                          sx={{ fontWeight: 600 }}
-                        >
-                          Configuración de Tramos de Precio:
-                        </Typography>
-                        <Typography
-                          variant="caption"
-                          color="text.secondary"
-                          display="block"
-                          sx={{ mb: 2 }}
-                        >
-                          Define diferentes precios según la cantidad comprada.{' '}
-                        </Typography>{' '}
-                        <Box
-                          sx={{
-                            display: 'flex',
-                            flexWrap: 'wrap',
-                            gap: 2,
-                            justifyContent: 'flex-start',
-                          }}
-                        >
-                          {formData.tramos.map((tramo, index) => (
-                            <Paper
-                              key={index}
-                              elevation={1}
-                              sx={{
-                                p: 2,
-                                border: '1px solid',
-                                borderColor: 'divider',
-                                borderRadius: 2,
-                                height: '100%',
-                                width: '180px',
-                                minHeight: '162px',
-                              }}
-                            >
-                              <Box
-                                sx={{
-                                  display: 'flex',
-                                  justifyContent: 'space-between',
-                                  alignItems: 'center',
-                                  mb: 1,
-                                }}
-                              >
-                                <Typography
-                                  variant="subtitle2"
-                                  fontWeight="600"
-                                >
-                                  Tramo {index + 1}
-                                </Typography>
-                                {formData.tramos.length > 1 && (
-                                  <IconButton
-                                    onClick={() => removeTramo(index)}
-                                    color="error"
-                                    size="small"
-                                  >
-                                    <DeleteIcon fontSize="small" />
-                                  </IconButton>
-                                )}
-                              </Box>
-                              <Stack spacing={2}>
-                                <TextField
-                                  fullWidth
-                                  label="Cantidad"
-                                  placeholder="Ej: 10"
-                                  value={tramo.cantidad}
-                                  onChange={e =>
-                                    handleTramoChange(
-                                      index,
-                                      'cantidad',
-                                      e.target.value
-                                    )
-                                  }
-                                  type="number"
-                                  size="small"
-                                />
-                                <TextField
-                                  fullWidth
-                                  label="Precio"
-                                  placeholder="Ej: 1500"
-                                  value={tramo.precio}
-                                  onChange={e =>
-                                    handleTramoChange(
-                                      index,
-                                      'precio',
-                                      e.target.value
-                                    )
-                                  }
-                                  type="number"
-                                  size="small"
-                                  InputProps={{
-                                    startAdornment: (
-                                      <InputAdornment position="start">
-                                        $
-                                      </InputAdornment>
-                                    ),
-                                  }}
-                                />{' '}
-                              </Stack>
-                            </Paper>
-                          ))}{' '}
-                          {/* Botón para agregar tramo */}
-                          {formData.tramos.length < 5 && (
-                            <Paper
-                              elevation={0}
-                              sx={{
-                                p: 2,
-                                border: '2px dashed',
-                                borderColor: 'primary.main',
-                                borderRadius: 2,
-                                height: '100%',
-                                width: '180px',
-                                minHeight: '162px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                cursor: 'pointer',
-                                '&:hover': {
-                                  bgcolor: 'primary.50',
-                                },
-                              }}
-                              onClick={addTramo}
-                            >
-                              <Stack alignItems="center" spacing={1}>
-                                <AddIcon color="primary" />
-                                <Typography
-                                  variant="body2"
-                                  color="primary"
-                                  fontWeight="600"
-                                >
-                                  Agregar Tramo
-                                </Typography>{' '}
-                              </Stack>
-                            </Paper>
-                          )}
-                        </Box>                        {localErrors.tramos && (
-                          <Typography
-                            variant="caption"
-                            color="error"
-                            display="block"
-                            sx={{ mt: 1 }}
-                          >
-                            {localErrors.tramos}
-                          </Typography>
-                        )}
-                      </Box>
-                    )}
-                  </Box>
+                      <Tooltip
+                        title={
+                          <>
+                            <b>¿Qué son los tramos?</b><br />
+                            Permite asignar hasta 5 precios según la cantidad que te compren. Por ejemplo: si te compran entre 1 y 9 unidades, pagan $100 por unidad; si te compran 10 o más, pagan $90.
+                          </>
+                        }
+                        placement="right"
+                        arrow
+                      >
+                        <IconButton size="small" sx={{ ml: 1, boxShadow: 'none', outline: 'none', border: 'none', '&:focus': { outline: 'none', border: 'none', boxShadow: 'none' }, '&:active': { outline: 'none', border: 'none', boxShadow: 'none' } }} disableFocusRipple disableRipple>
+                          <InfoIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    </ToggleButtonGroup>                  </Box> */}
+                  
+                  {/* FILA TRAMOS: Configuración de Tramos de Precio (condicional) */}
+                  {formData.pricingType === 'Por Tramo' && (
+                    <Box
+                      className="full-width"
+                      sx={{
+                        p: 0,
+                        m: 0,
+                        boxShadow: 'none',
+                        bgcolor: 'transparent',
+                        overflow: 'visible',
+                        mb: 3,
+                      }}
+                    >
+                      <TramosSection
+                        tramos={formData.tramos}
+                        onTramoChange={handleTramoChange}
+                        onAddTramo={addTramo}
+                        onRemoveTramo={removeTramo}
+                        errors={localErrors.tramos}
+                      />
+                    </Box>
+                  )}
+                  
                   {/* FILA 6: Imágenes del Producto */}
                   <Box
                     className="full-width"
@@ -926,7 +1014,7 @@ const AddProduct = () => {
                           variant="outlined"
                           startIcon={<AddIcon />}
                           onClick={addSpecification}
-                          sx={{ mt: 1 }}
+                          sx={{ mt: 1, textTransform: 'none' }}
                         >
                           Agregar Especificación
                         </Button>
@@ -995,7 +1083,7 @@ const AddProduct = () => {
                     }}
                   >
                     <Typography variant="body2">
-                      Tarifa por Servicio (5%)
+                      Tarifa por Servicio (2%)
                     </Typography>
                     <Typography variant="body2" fontWeight="600">
                       {calculations.isRange ? 
@@ -1027,12 +1115,11 @@ const AddProduct = () => {
                         formatPrice(calculations.total)
                       }
                     </Typography>
-                  </Box>
-
-                  <Typography variant="caption" color="text.secondary">
+                  </Box>                  <Typography variant="caption" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    <InfoIcon fontSize="small" color="primary" />
                     {calculations.isRange ? 
                       'Estos son los rangos de montos que podrás recibir según cómo se distribuyan las ventas entre los tramos de precio' :
-                      'Este es el monto que recibirás en tu cuenta una vez se efectúe la venta'
+                      'Este es el monto que recibirás en tu cuenta una vez concretada la venta. El valor no considera los costos de despacho.'
                     }
                   </Typography>
                 </Box>
@@ -1061,8 +1148,7 @@ const AddProduct = () => {
                       : 'Publicar Producto'}
                   </Button>
                 </Stack>
-              </Paper>
-            </Grid>
+              </Paper>            </Grid>
           </Grid>
         </Container>
       </Box>

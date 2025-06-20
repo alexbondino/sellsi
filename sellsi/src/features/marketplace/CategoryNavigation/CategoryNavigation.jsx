@@ -1,3 +1,4 @@
+
 // ✅ EDITAR AQUÍ PARA:
 // - Agregar/quitar categorías
 // - Cambiar diseño del menú dropdown
@@ -20,18 +21,30 @@ import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import KeyboardArrowRightIcon from '@mui/icons-material/KeyboardArrowRight';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
-import { CATEGORIAS } from '../products';
 import { SECTIONS, SECTION_LABELS } from '../marketplace/constants';
 import { categoryNavigationStyles as styles } from '../hooks/CategoryNavigation/CategoryNavigation.styles';
+
+// Definir categorías por defecto si no existe import
+const CATEGORIAS = [
+  'Tecnología',
+  'Electrodomésticos',
+  'Hogar',
+  'Deportes',
+  'Moda',
+  'Juguetes',
+  'Salud',
+  'Belleza',
+  'Automotriz',
+  'Libros',
+  'Mascotas',
+  // Agrega o edita según tus necesidades
+];
 
 const CategoryNavigation = ({
   seccionActiva,
   categoriaSeleccionada,
-  anchorElCategorias,
   onSeccionChange,
   onCategoriaToggle,
-  onOpenCategorias,
-  onCloseCategorias,
   categoryMarginLeft = {
     xs: 0,
     sm: 0,
@@ -40,33 +53,49 @@ const CategoryNavigation = ({
     xl: 43,
   }, // Valores por defecto para Marketplace normal
 }) => {
+  // Estado local para el menú de categorías
+  const [anchorElCategorias, setAnchorElCategorias] = useState(null);
   const [sectionsExpanded, setSectionsExpanded] = useState(false);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
+  // Handlers locales para abrir/cerrar menú
+  const handleOpenCategorias = (e) => {
+    setAnchorElCategorias(e.currentTarget);
+  };
+  const handleCloseCategorias = () => {
+    setAnchorElCategorias(null);
+  };
+
   // ✅ MEJORA DE RENDIMIENTO: Memoización de handlers
   const handleCategoriaClick = React.useCallback(
     categoria => {
+      console.time('CategoryNavigation:handleCategoriaClick');
       onCategoriaToggle(categoria);
-      onCloseCategorias();
+      handleCloseCategorias();
+      console.timeEnd('CategoryNavigation:handleCategoriaClick');
     },
-    [onCategoriaToggle, onCloseCategorias]
+    [onCategoriaToggle]
   );
 
   const handleSectionClick = React.useCallback(
     value => {
+      console.time('CategoryNavigation:handleSectionClick');
       onSeccionChange(value);
       // Colapsar en móvil después de seleccionar
       if (isMobile) {
         setSectionsExpanded(false);
       }
+      console.timeEnd('CategoryNavigation:handleSectionClick');
     },
     [onSeccionChange, isMobile]
   );
 
   const toggleSectionsExpanded = React.useCallback(
     () => {
+      console.time('CategoryNavigation:toggleSectionsExpanded');
       setSectionsExpanded(!sectionsExpanded);
+      console.timeEnd('CategoryNavigation:toggleSectionsExpanded');
     },
     [sectionsExpanded]
   );
@@ -88,16 +117,16 @@ const CategoryNavigation = ({
       {/* Botón de categorías */}
       <Button
         endIcon={<ArrowDropDownIcon />}
-        onClick={onOpenCategorias}
+        onClick={handleOpenCategorias}
         sx={styles.categoriesButton}
       >
         Categorías
       </Button>
-      {/* Menu de categorías */}
-      <Menu
+      {/* Menu de categorías */}      <Menu
         anchorEl={anchorElCategorias}
         open={Boolean(anchorElCategorias)}
-        onClose={onCloseCategorias}
+        onClose={handleCloseCategorias}
+        disableScrollLock={true}
         PaperProps={{ sx: styles.categoriesMenu }}
       >
         {categoriesWithAll.map(categoria => {

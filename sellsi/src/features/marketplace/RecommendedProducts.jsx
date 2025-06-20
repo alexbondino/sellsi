@@ -5,7 +5,6 @@ import {
   Grid,
   Card,
   CardContent,
-  CardMedia,
   Button,
   Chip,
   Rating,
@@ -15,40 +14,41 @@ import {
   ShoppingCart as ShoppingCartIcon,
   Favorite as FavoriteIcon,
 } from '@mui/icons-material'
+import { LazyImage } from '../../components/shared'
 
+// ✅ OPTIMIZACIÓN: Memoizar datos estáticos
 const RECOMMENDED_PRODUCTS = [
   {
-    id: 101,
-    name: 'Mouse Gaming RGB',
-    price: 29990,
-    image: '/Marketplace productos/silla.jpg',
-    supplier: 'PC Factory',
-    rating: 4.3,
-    reviews: 45,
-    discount: 20,
-  },
-  {
-    id: 102,
-    name: 'Teclado Mecánico',
-    price: 79990,
-    image: "/Marketplace productos/monitor4k240hz32''.jpg",
-    supplier: 'PC Factory',
-    rating: 4.7,
-    reviews: 78,
-    discount: 15,
-  },
-  {
-    id: 103,
-    name: 'Webcam HD 1080p',
-    price: 45990,
+    id: 1,
+    name: 'Smartphone Samsung Galaxy',
+    price: 599990,
+    rating: 4.5,
+    reviews: 234,
     image: '/Marketplace productos/notebookasustuf.jpg',
-    supplier: 'Tech Store',
-    rating: 4.4,
-    reviews: 23,
+    supplier: 'TechStore',
+  },
+  {
+    id: 2,
+    name: 'Auriculares Bluetooth',
+    price: 89990,
+    rating: 4.2,
+    reviews: 156,
+    image: '/Marketplace productos/monitor4k240hz32\'\'.jpg',
+    supplier: 'AudioMax',
+  },
+  {
+    id: 3,
+    name: 'Tablet iPad Air',
+    price: 899990,
+    rating: 4.8,
+    reviews: 89,
+    image: '/Marketplace productos/estanteria.jpg',
+    supplier: 'Apple Store',
   },
 ]
 
-const RecommendedProducts = () => {
+// ✅ OPTIMIZACIÓN: Memoizar componente completo
+const RecommendedProducts = React.memo(() => {
   const formatPrice = (price) => {
     return new Intl.NumberFormat('es-CL', {
       style: 'currency',
@@ -64,14 +64,18 @@ const RecommendedProducts = () => {
       </Typography>{' '}
       <Grid container spacing={2}>
         {RECOMMENDED_PRODUCTS.map((product) => (
-          <Grid size={{ xs: 12, sm: 6, md: 4 }} key={product.id}>
-            <Card sx={{ height: '100%', borderRadius: 2 }}>
-              <CardMedia
-                component="img"
-                height="140"
-                image={product.image}
-                alt={product.name}
-              />
+          <Grid size={{ xs: 12, sm: 6, md: 4 }} key={product.id}>            <Card sx={{ height: '100%', borderRadius: 2 }}>
+              {/* ✅ OPTIMIZACIÓN: Usar LazyImage en vez de CardMedia */}
+              <Box sx={{ height: 140, position: 'relative' }}>
+                <LazyImage
+                  src={product.image}
+                  alt={product.name}
+                  aspectRatio="1"
+                  rootMargin="100px"
+                  objectFit="cover"
+                  borderRadius={0}
+                />
+              </Box>
               <CardContent>
                 <Typography variant="h6" noWrap sx={{ mb: 1 }}>
                   {product.name}
@@ -123,8 +127,10 @@ const RecommendedProducts = () => {
           </Grid>
         ))}
       </Grid>
-    </Box>
-  )
-}
+    </Box>  )
+})
+
+// ✅ OPTIMIZACIÓN: DisplayName para debugging
+RecommendedProducts.displayName = 'RecommendedProducts'
 
 export default RecommendedProducts

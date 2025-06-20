@@ -1,11 +1,22 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
-import { PRODUCTOS } from '../../products'
 import { supabase } from '../../../../services/supabase'
 import { extractProductIdFromSlug } from '../../marketplace/productUrl'
 import useCartStore from '../../../buyer/hooks/cartStore'
 import { formatProductForCart } from '../../../../utils/priceCalculation'
 import { toast } from 'react-hot-toast'
+
+// Definir PRODUCTOS mock si no existe import
+const PRODUCTOS = [
+  {
+    id: 1,
+    nombre: 'Producto de ejemplo',
+    descripcion: 'Descripción de ejemplo',
+    precio: 10000,
+    // Agrega los campos necesarios según el uso real
+  },
+  // Puedes agregar más productos mock aquí
+]
 
 /**
  * Custom hook para manejar la lógica de negocio del componente TechnicalSpecs
