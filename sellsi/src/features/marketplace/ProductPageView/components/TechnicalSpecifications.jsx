@@ -81,29 +81,27 @@ const TechnicalSpecifications = ({ product }) => {
               background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)',
             }}
           >
-            <CardContent sx={{ p: 0 }}>
-              {/* Category Header */}
+            <CardContent sx={{ p: 0 }}>              {/* Category Header */}
               <Box
                 sx={{
                   p: 2.5,
-                  background:
-                    'linear-gradient(135deg, #1976d2 0%, #1565c0 100%)',
-                  color: 'white',
+                  background: '#a3a3a3',
+                  color: 'black',
                   display: 'flex',
                   alignItems: 'center',
                   gap: 1.5,
                 }}
               >
-                {getCategoryIcon(categoria.categoria)}
-                <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                {React.cloneElement(getCategoryIcon(categoria.categoria), { sx: { color: 'black' } })}
+                <Typography variant="h6" sx={{ fontWeight: 600, color: 'black' }}>
                   {categoria.categoria}
-                </Typography>
-                <Chip
+                </Typography>                <Chip
                   label={`${categoria.especificaciones.length} especificaciones`}
                   size="small"
                   sx={{
-                    bgcolor: 'rgba(255, 255, 255, 0.2)',
-                    color: 'white',
+                    bgcolor: 'white',
+                    color: 'black',
+                    fontWeight: 'bold',
                     ml: 'auto',
                   }}
                 />

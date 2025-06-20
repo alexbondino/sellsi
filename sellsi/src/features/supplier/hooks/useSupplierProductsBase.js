@@ -11,6 +11,7 @@
 
 import { create } from 'zustand'
 import { supabase } from '../../../services/supabase'
+import { updateProductSpecifications } from '../../../services/productSpecificationsService'
 import UploadService from '../../../services/uploadService'
 
 const useSupplierProductsBase = create((set, get) => ({
@@ -412,36 +413,8 @@ const useSupplierProductsBase = create((set, get) => ({
     if (!specifications?.length) {
       console.log('⚠️ No hay especificaciones para procesar');
       return;
-    }
-
-    try {
-      // Eliminar especificaciones existentes
-      await supabase
-        .from('product_specifications')
-        .delete()
-        .eq('product_id', productId);
-
-      // Insertar nuevas especificaciones
-      const specsToInsert = specifications.map(spec => ({
-        product_id: productId,
-        category: 'general', // Categoría por defecto
-        spec_name: spec.key,
-        spec_value: spec.value,
-      }));
-
-      console.log('💾 Insertando especificaciones:', specsToInsert);
-      const { error } = await supabase
-        .from('product_specifications')
-        .insert(specsToInsert);
-
-      if (error) {
-        console.error('❌ Error insertando especificaciones:', error);
-      } else {
-        console.log('✅ Especificaciones registradas en BD exitosamente');
-      }
-    } catch (error) {
-      console.error('❌ Error procesando especificaciones:', error);
-    }
+    }    // 🔧 Actualizar especificaciones del producto usando el servicio seguro
+    await updateProductSpecifications(productId, specifications);
   },
   /**
    * FUNCIÓN PELIGROSA: Eliminar TODAS las imágenes existentes del producto (bucket + BD)

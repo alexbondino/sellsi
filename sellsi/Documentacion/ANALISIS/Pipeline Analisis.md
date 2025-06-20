@@ -1,51 +1,41 @@
-# 🧪 Revisión Técnica IA – [Nombre de la Funcionalidad o Módulo]
+# 🔬 Pipeline de Análisis Técnico Paralelo – [Nombre de la Funcionalidad o Módulo]
+
+---
+⚠️ **IMPORTANTE:**  
+Todas las respuestas generadas por IA deben escribirse **únicamente en el archivo `.md` que el orquestador humano indique en el prompt**.  
+Las respuestas de cada IA deben agregarse **de forma acumulativa, sin sobrescribir ni eliminar contenido previo**.  
+
+Cada IA debe iniciar su respuesta con un encabezado claro indicando su nombre, por ejemplo:  
+`### GPT-4.1 – Iteración 1`  
+
+⚠️ **PRINCIPIO FUNDAMENTAL: ANÁLISIS INDEPENDIENTE**
+Para mitigar el sesgo de anclaje y obtener una visión multifacética, las IAs realizarán su primer análisis de forma aislada, sin tener acceso a las respuestas de las otras. Todas las respuestas se escribirán en este mismo archivo de forma acumulativa.
 
 ---
 
-## 🧠 Etapa 1: Documentación Técnica por GPT 4.1
+## 🧠 Etapa 1: Análisis Técnico Independiente
 
-🟢 **Instrucciones para GPT 4.1:**  
-Redacta una justificación técnica clara sobre el cambio o mejora. Incluye:  
-- Estado actual  
-- Problemas detectados  
-- Solución propuesta  
-- Justificación técnica  
-- Impacto estimado  
-- Beneficios para el usuario y el sistema  
+**Contexto para todas las IAs:** Se proporciona un módulo de código, una descripción funcional y/o un problema a resolver.
 
-✍️ Output:  
-<!-- Pega aquí lo generado por GPT 4.1 -->
-
+🟢 **Instrucciones para GPT-4.1:**
+Realiza un análisis técnico del código. Tu informe debe incluir:
+- **Análisis Funcional:** ¿Qué hace el código y cómo lo hace?
+- **Identificación de Riesgos:** Detecta posibles problemas, malas prácticas, o riesgos de seguridad y rendimiento.
+- **Propuesta de Mejora:** Si aplica, sugiere soluciones claras y justificadas.
+- **Impacto Estimado:** Describe el impacto de tus sugerencias.
+*Formato: Encabezado `### Análisis
 ---
 
-## 🔍 Etapa 2: Revisión Crítica por Claude Sonnet 4
+## 💡 Etapa 2: Síntesis y Plan de Acción
 
-🟡 **Instrucciones para Claude Sonnet 4:**  
-Evalúa el análisis anterior críticamente. Señala:  
-- Afirmaciones correctas ✅  
-- Afirmaciones exageradas ❌  
-- Omisiones importantes ⚠️  
-- Evaluación real del impacto  
-- Recomendación objetiva  
+**Contexto:** Se dispone de los tres análisis independientes de la Etapa 1.
 
-✍️ Output:  
-<!-- Pega aquí lo generado por Claude Sonnet 4 -->
+🤖 **Instrucciones para IA Sintetizadora (o Humano):**
+Revisa y consolida los tres análisis en un único informe final. Tu trabajo es:
+1.  **Identificar Consensos:** ¿En qué puntos clave coinciden las IAs?
+2.  **Analizar Divergencias:** ¿Dónde hay contradicciones o desacuerdos? Investiga la causa raíz (diferente interpretación, omisión, etc.).
+3.  **Combinar Fortalezas:** Integra las observaciones y soluciones únicas de cada IA en una propuesta unificada y robusta.
+4.  **Redactar Informe Final:** Crea un documento técnico consolidado que resuma el estado actual, los problemas detectados y un plan de acción claro y priorizado.
 
----
-
-## 🧪 Etapa 3: Validación del Código por Gemini 2.5 Pro
-
-🔵 **Instrucciones para Gemini 2.5 Pro:**  
-Analiza el código fuente real asociado a la funcionalidad. Verifica si:  
-- Lo documentado está implementado o no  
-- Las afirmaciones previas son válidas  
-- Ya existen soluciones equivalentes  
-- Hay errores u omisiones técnicas  
-
-Incluye:  
-- Evidencia del código  
-- Evaluación técnica real  
-- Recomendaciones finales  
-
-✍️ Output:  
-<!-- Pega aquí lo generado por Gemini 2.5 Pro -->
+✍️ **Output de Síntesis:**
+<!-- Escribir aquí el informe consolidado -->

@@ -10,7 +10,7 @@ import {
   Link,
   CircularProgress,
 } from '@mui/material'
-import { ArrowBack, Home, StorefrontOutlined } from '@mui/icons-material'
+import { ArrowBack, Home, StorefrontOutlined, Inventory2Outlined } from '@mui/icons-material'
 import ProductPageView from '../ProductPageView/ProductPageView'
 import { useTechnicalSpecs } from './hooks/useTechnicalSpecs'
 
@@ -27,12 +27,12 @@ import { useTechnicalSpecs } from './hooks/useTechnicalSpecs'
  * - Botón "Marketplace": Navega al marketplace de origen (Marketplace/MarketplaceBuyer)
  * - Botón "Volver": Navega al marketplace de origen
  */
-const TechnicalSpecs = () => {
-  const {
+const TechnicalSpecs = () => {  const {
     product,
     loading,
     originRoute,
     isFromBuyer,
+    fromMyProducts, // 🔍 Agregar el flag
     handleClose,
     handleGoHome,
     handleGoToMarketplace,
@@ -64,13 +64,12 @@ const TechnicalSpecs = () => {
           </Typography>
           <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
             El producto que buscas no existe o ha sido removido.
-          </Typography>{' '}
-          <Button
+          </Typography>{' '}          <Button
             variant="contained"
             startIcon={<StorefrontOutlined />}
             onClick={handleGoToMarketplace}
           >
-            Volver al Marketplace
+            {fromMyProducts ? 'Volver a Mis Productos' : 'Volver al Marketplace'}
           </Button>
         </Paper>
       </Container>
@@ -97,8 +96,7 @@ const TechnicalSpecs = () => {
               mb: 2,
             }}
           >
-            {/* Back button */}
-            <Button
+            {/* Back button */}            <Button
               startIcon={<ArrowBack />}
               onClick={handleClose}
               sx={{
@@ -108,7 +106,7 @@ const TechnicalSpecs = () => {
                 },
               }}
             >
-              Volver al Marketplace
+              {fromMyProducts ? 'Volver a Mis Productos' : 'Volver al Marketplace'}
             </Button>
           </Box>
 
@@ -133,8 +131,7 @@ const TechnicalSpecs = () => {
             >
               <Home fontSize="small" />
               Inicio
-            </Link>{' '}
-            <Link
+            </Link>{' '}            <Link
               underline="hover"
               color="inherit"
               onClick={handleGoToMarketplace}
@@ -145,8 +142,8 @@ const TechnicalSpecs = () => {
                 gap: 0.5,
               }}
             >
-              <StorefrontOutlined fontSize="small" />
-              Marketplace
+              {fromMyProducts ? <Inventory2Outlined fontSize="small" /> : <StorefrontOutlined fontSize="small" />}
+              {fromMyProducts ? 'Mis Productos' : 'Marketplace'}
             </Link>
             <Typography color="primary" sx={{ fontWeight: 600 }}>
               {product.nombre}

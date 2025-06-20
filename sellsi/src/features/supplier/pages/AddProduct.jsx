@@ -135,7 +135,10 @@ const AddProduct = () => {
     if (formData.pricingType === 'Por Unidad') {
       if (!formData.precioUnidad || isNaN(Number(formData.precioUnidad))) {
         newErrors.precioUnidad = 'El precio es requerido';
-      }    } else {
+      } else if (parseFloat(formData.precioUnidad) < 1) {
+        newErrors.precioUnidad = 'El precio mínimo es 1';
+      }
+    } else {
       // Si es Por Tramos, NO agregar error de precioUnidad
       const validTramos = formData.tramos.filter(
         t => t.cantidad !== '' && t.precio !== '' && !isNaN(Number(t.cantidad)) && !isNaN(Number(t.precio))
@@ -156,6 +159,12 @@ const AddProduct = () => {
           if (invalidTramos.length > 0) {
             newErrors.tramos =
               'Las cantidades de los tramos no pueden ser mayores al stock disponible';
+          } else {
+            // Validar que ningún precio de tramo sea menor a 1
+            const tramosConPrecioBajo = validTramos.filter(t => parseFloat(t.precio) < 1);
+            if (tramosConPrecioBajo.length > 0) {
+              newErrors.tramos = 'El precio mínimo por tramo es 1';
+            }
           }
         }
       }
@@ -229,7 +238,7 @@ const AddProduct = () => {
   ]);
   const calculateEarnings = () => {
     const serviceRate = 0.02; // 5% de tarifa
-
+    console.log('[DEBUG] calculateEarnings called:', { pricingType: formData.pricingType, precioUnidad: formData.precioUnidad, stock: formData.stock, tramos: formData.tramos });
     if (
       formData.pricingType === 'Por Unidad' &&
       formData.precioUnidad &&
@@ -364,6 +373,7 @@ const AddProduct = () => {
     updateField(field, value);
   };
   const handlePricingTypeChange = (event, newValue) => {
+    console.log('[DEBUG] handlePricingTypeChange:', { newValue, prevPricingType: formData.pricingType });
     if (newValue !== null) {
       updateField('pricingType', newValue);
       if (newValue === 'Por Tramo') {
@@ -372,6 +382,9 @@ const AddProduct = () => {
         updateField('tramos', [{ cantidad: '', precio: '' }]);
       }
     }
+    setTimeout(() => {
+      console.log('[DEBUG] formData after pricingType change:', formData);
+    }, 0);
   };
 
   const handleTramoChange = (index, field, value) => {
@@ -477,6 +490,13 @@ const AddProduct = () => {
   return (
     <ThemeProvider theme={dashboardTheme}>
       <SidebarProvider />
+      {/* DEBUG: Mostrar estado del formulario y errores */}
+      <Box sx={{ position: 'fixed', top: 0, right: 0, zIndex: 9999, bgcolor: 'white', p: 1, maxWidth: 400, maxHeight: 400, overflow: 'auto', fontSize: 12, border: '1px solid #ccc', borderRadius: 1 }}>
+        <b>DEBUG formData:</b>
+        <pre style={{ fontSize: 10, margin: 0 }}>{JSON.stringify(formData, null, 2)}</pre>
+        <b>DEBUG errors:</b>
+        <pre style={{ fontSize: 10, margin: 0 }}>{JSON.stringify(errors, null, 2)}</pre>
+      </Box>
 
       <Box
         sx={{
@@ -667,6 +687,7 @@ const AddProduct = () => {
                             startAdornment: (
                               <InputAdornment position="start">$</InputAdornment>
                             ),
+                            inputProps: { min: 1 }, // Cambiar mínimo a 1
                           }}
                           type="number"
                         />
@@ -681,9 +702,9 @@ const AddProduct = () => {
                           Configuración de Precios
                         </Typography>
                         <Typography
-                          variant="subtitle1"
+                          variant="subtitle2"
                           gutterBottom
-                          sx={{ fontWeight: 600 }}
+                          sx={{ fontWeight: 600 , mb: 2 }}
                         >
                           Precio a cobrar según:
                         </Typography>
@@ -750,25 +771,25 @@ const AddProduct = () => {
                             sx={{ mb: 1 }}
                           />
                           <FormControlLabel 
-                            value="region-metropolitana" 
+                            value="región-metropolitana" 
                             control={<Radio />} 
                             label="Región Metropolitana" 
                             sx={{ mb: 1 }}
                           />
                           <FormControlLabel 
-                            value="i-region" 
+                            value="i-región" 
                             control={<Radio />} 
                             label="I Región" 
                             sx={{ mb: 1 }}
                           />
                           <FormControlLabel 
-                            value="ii-region" 
+                            value="ii-región" 
                             control={<Radio />} 
                             label="II Región" 
                             sx={{ mb: 1 }}
                           />
                           <FormControlLabel 
-                            value="iii-region" 
+                            value="iii-región" 
                             control={<Radio />} 
                             label="III Región" 
                             sx={{ mb: 1 }}
@@ -777,37 +798,37 @@ const AddProduct = () => {
                         {/* Columna 2: 6 filas */}
                         <Box sx={{ display: 'flex', flexDirection: 'column', width: '30%' }}>
                           <FormControlLabel 
-                            value="iv-region" 
+                            value="iv-región" 
                             control={<Radio />} 
                             label="IV Región" 
                             sx={{ mb: 1 }}
                           />
                           <FormControlLabel 
-                            value="v-region" 
+                            value="v-región" 
                             control={<Radio />} 
                             label="V Región" 
                             sx={{ mb: 1 }}
                           />
                           <FormControlLabel 
-                            value="vi-region" 
+                            value="vi-región" 
                             control={<Radio />} 
                             label="VI Región" 
                             sx={{ mb: 1 }}
                           />
                           <FormControlLabel 
-                            value="vii-region" 
+                            value="vii-región" 
                             control={<Radio />} 
                             label="VII Región" 
                             sx={{ mb: 1 }}
                           />
                           <FormControlLabel 
-                            value="viii-region" 
+                            value="viii-región" 
                             control={<Radio />} 
                             label="VIII Región" 
                             sx={{ mb: 1 }}
                           />
                           <FormControlLabel 
-                            value="ix-region" 
+                            value="ix-región" 
                             control={<Radio />} 
                             label="IX Región" 
                             sx={{ mb: 1 }}
@@ -816,37 +837,37 @@ const AddProduct = () => {
                         {/* Columna 3: 6 filas */}
                         <Box sx={{ display: 'flex', flexDirection: 'column', width: '30%' }}>
                           <FormControlLabel 
-                            value="x-region" 
+                            value="x-región" 
                             control={<Radio />} 
                             label="X Región" 
                             sx={{ mb: 1 }}
                           />
                           <FormControlLabel 
-                            value="xi-region" 
+                            value="xi-región" 
                             control={<Radio />} 
                             label="XI Región" 
                             sx={{ mb: 1 }}
                           />
                           <FormControlLabel 
-                            value="xii-region" 
+                            value="xii-región" 
                             control={<Radio />} 
                             label="XII Región" 
                             sx={{ mb: 1 }}
                           />
                           <FormControlLabel 
-                            value="xiv-region" 
+                            value="xiv-región" 
                             control={<Radio />} 
                             label="XIV Región" 
                             sx={{ mb: 1 }}
                           />
                           <FormControlLabel 
-                            value="xv-region" 
+                            value="xv-región" 
                             control={<Radio />} 
                             label="XV Región" 
                             sx={{ mb: 1 }}
                           />
                           <FormControlLabel 
-                            value="xvi-region" 
+                            value="xvi-región" 
                             control={<Radio />} 
                             label="XVI Región" 
                             sx={{ mb: 1 }}

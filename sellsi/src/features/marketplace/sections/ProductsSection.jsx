@@ -26,6 +26,9 @@ import { toast } from 'react-hot-toast'
 import ProductCard from '../ProductCard/ProductCard'
 import useCartStore from '../../../features/buyer/hooks/cartStore'
 import LoadingOverlay from '../../ui/LoadingOverlay'
+import Fab from '@mui/material/Fab';
+import Grow from '@mui/material/Grow';
+import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 
 /**
  * Componente que maneja la sección de productos, título y grid
@@ -387,6 +390,19 @@ const ProductsSection = React.memo(({
     setVisibleProductsCount(INITIAL_PRODUCTS)
   }, [INITIAL_PRODUCTS])
 
+  // FAB Scroll to Top
+  const [showScrollTop, setShowScrollTop] = React.useState(false);
+  React.useEffect(() => {
+    const handleScroll = () => {
+      setShowScrollTop(window.pageYOffset > 400);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+  const scrollToTop = React.useCallback(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
+
   return (
     <Box sx={mainContainerStyles}>
       <Box sx={innerContainerStyles}>
@@ -544,6 +560,30 @@ const ProductsSection = React.memo(({
           )}
         </Box>
       </Box>
+      {/* FAB Scroll to Top */}
+      <Grow in={showScrollTop}>
+        <Fab
+          color="secondary"
+          onClick={scrollToTop}
+          sx={{
+            position: 'fixed',
+            bottom: 80,
+            right: 80,
+            zIndex: 999,
+            backgroundColor: 'background.paper',
+            color: 'primary.main',
+            border: '2px solid',
+            borderColor: 'primary.main',
+            '&:hover': {
+              backgroundColor: 'primary.main',
+              color: 'primary.contrastText',
+            },
+          }}
+          size="medium"
+        >
+          <KeyboardArrowUpIcon />
+        </Fab>
+      </Grow>
     </Box>
   )
 })

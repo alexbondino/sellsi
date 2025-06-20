@@ -120,6 +120,7 @@ const TramosSection = ({
                       $
                     </InputAdornment>
                   ),
+                  inputProps: { min: 1 }, // Prevenir valores menores a 1
                 }}
               />
             </Stack>

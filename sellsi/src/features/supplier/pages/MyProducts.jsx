@@ -47,6 +47,7 @@ import {
 } from '../hooks/useLazyProducts';
 import { dashboardTheme } from '../../../styles/dashboardTheme';
 import { formatPrice } from '../../marketplace/utils/formatters';
+import { generateProductUrl } from '../../marketplace/marketplace/productUrl';
 
 // Advanced Loading Components
 import {
@@ -192,6 +193,10 @@ const MyProducts = () => {
     clearFilters();
     scrollToTop(); // Smooth scroll to top when clearing filters
     toast.success('Filtros limpiados');
+  };
+  const handleProductCardClick = (product) => {
+    const url = generateProductUrl(product);
+    navigate(url, { state: { from: '/supplier/myproducts' } });
   };
 
   return (
@@ -561,6 +566,7 @@ const MyProducts = () => {
                           onDelete={handleDeleteProduct}
                           onViewStats={handleViewStats}
                           isDeleting={operationStates.deleting?.[product.id]}
+                          onProductClick={handleProductCardClick}
                         />
                       </Grid>
                     </Grow>

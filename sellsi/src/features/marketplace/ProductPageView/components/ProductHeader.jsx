@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useMemo, memo } from 'react'
 import {
   Box,
   Typography,
@@ -23,6 +23,10 @@ import ContentCopyIcon from '@mui/icons-material/ContentCopy'
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline'
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined'
 import { getProductImageUrl } from '../../../../utils/getProductImageUrl'
+import { Link as RouterLink, useNavigate } from 'react-router-dom';
+import StorefrontOutlinedIcon from '@mui/icons-material/StorefrontOutlined';
+import Inventory2OutlinedIcon from '@mui/icons-material/Inventory2Outlined';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 
 import ProductImageGallery from './ProductImageGallery'
 import PurchaseActions from './PurchaseActions'
@@ -30,13 +34,16 @@ import PriceDisplay from '../../PriceDisplay'
 import StockIndicator from '../../StockIndicator'
 import { useProductPriceTiers } from '../../hooks/useProductPriceTiers'
 
-const ProductHeader = ({
+const ProductHeader = React.memo(({
   product,
   selectedImageIndex,
   onImageSelect,
   onAddToCart,
   isLoggedIn,
+  fromMyProducts = false,
 }) => {
+  const navigate = useNavigate();
+
   const {
     nombre,
     proveedor,
@@ -126,10 +133,10 @@ const ProductHeader = ({
         >
           <Typography variant="h6" sx={{ color: 'primary.main' }}>
             Precios por cantidad
-          </Typography>
-          <Tooltip
+          </Typography>          <Tooltip
             title="El precio varía según la cantidad que compres. Cada tramo indica el precio unitario para ese rango de unidades."
             arrow
+            placement="right"
           >
             <InfoOutlinedIcon
               color="action"
@@ -137,36 +144,49 @@ const ProductHeader = ({
               sx={{ cursor: 'pointer' }}
             />
           </Tooltip>
-        </Box>
-        <TableContainer
+        </Box>        <TableContainer
           component={Paper}
           sx={{ maxWidth: 400, mx: 'auto', mb: 2 }}
         >
           <Table size="small">
             <TableBody>
-              {tiers.map((tier, idx) => (
-                <Tooltip
-                  key={idx}
-                  title={`Si compras entre ${tier.min_quantity} y ${
-                    tier.max_quantity
-                  } unidades, el precio unitario es $${tier.price.toLocaleString(
-                    'es-CL'
-                  )}`}
-                  arrow
-                  placement="top"
-                >
-                  <TableRow hover sx={{ cursor: 'help' }}>
-                    <TableCell align="center" sx={{ fontWeight: 600 }}>
-                      {tier.min_quantity} - {tier.max_quantity} uds
-                    </TableCell>{' '}
-                    <TableCell align="center">
-                      <Typography color="primary" fontWeight={700}>
-                        ${tier.price.toLocaleString('es-CL')}
-                      </Typography>
-                    </TableCell>
-                  </TableRow>
-                </Tooltip>
-              ))}{' '}
+              {tiers.map((tier, idx) => {
+                // Determinar el mensaje del tooltip basado en si es el último tramo
+                const isLastTier = idx === tiers.length - 1;
+                let tooltipMessage;
+                let rangeText;
+                
+                if (isLastTier) {
+                  // Para el último tramo: "Si tú compras X unidades o más"
+                  tooltipMessage = `Si compras ${tier.min_quantity} unidades o más, el precio unitario es $${tier.price.toLocaleString('es-CL')}`;
+                  rangeText = `${tier.min_quantity}+ uds`;
+                } else {
+                  // Para tramos intermedios: calcular el máximo basado en el siguiente tramo
+                  const nextTier = tiers[idx + 1];
+                  const maxQuantity = nextTier ? nextTier.min_quantity - 1 : tier.max_quantity;
+                  
+                  tooltipMessage = `Si tú compras entre ${tier.min_quantity} y ${maxQuantity} unidades, el precio unitario es de $${tier.price.toLocaleString('es-CL')}`;
+                  rangeText = `${tier.min_quantity} - ${maxQuantity} uds`;
+                }                return (
+                  <Tooltip
+                    key={idx}
+                    title={tooltipMessage}
+                    arrow
+                    placement="right"
+                  >
+                    <TableRow hover sx={{ cursor: 'help' }}>
+                      <TableCell align="center" sx={{ fontWeight: 600 }}>
+                        {rangeText}
+                      </TableCell>
+                      <TableCell align="center">
+                        <Typography color="primary" fontWeight={700}>
+                          ${tier.price.toLocaleString('es-CL')}
+                        </Typography>
+                      </TableCell>
+                    </TableRow>
+                  </Tooltip>
+                );
+              })}
             </TableBody>
           </Table>
         </TableContainer>
@@ -305,30 +325,22 @@ const ProductHeader = ({
       }
       if (image.image_url) return getProductImageUrl(image.image_url)
     }
-    return '/placeholder-product.jpg'
-  }
-  return (
+    return '/placeholder-product.jpg'  }  return (
+    // MUIV2 GRID - CONTENEDOR PRINCIPAL (MuiGrid-container)
     <Grid
       container
       spacing={8}
-      sx={{ alignItems: 'flex-end', maxWidth: '1400px', mx: 'auto' }}
-    >
-      {/* Imagen del Producto */}
+      sx={{ alignItems: 'flex-start', maxWidth: '1400px', mx: 'auto' }}
+    >      {/* Imagen del Producto */}
       <Grid
-        xs={12}
-        sm={6}
-        md={6}
-        lg={5}
-        sx={{ display: 'flex', justifyContent: 'right' }}
-      >
-        {' '}
-        <Box
+        size={{ xs: 12, sm: 6, md: 6, lg: 5 }}
+        sx={{ display: 'flex', justifyContent: 'right' }}      >        <Box
           sx={{
             display: 'flex',
-            alignItems: 'center',
+            alignItems: 'flex-start',
             minHeight: '600px',
             ml: { xs: 0, sm: 2, md: 0, lg: 16, xl: 20 }, // Reducir el margin left
-            p: { xs: 1, sm: 2 },
+            p: 0, // Sin padding para eliminar cualquier espacio
           }}
         >
           <ProductImageGallery
@@ -338,18 +350,12 @@ const ProductHeader = ({
             onImageSelect={onImageSelect}
             productName={nombre}
           />
-        </Box>
-      </Grid>{' '}
+        </Box>      </Grid>
       {/* Información del Producto */}
       <Grid
-        xs={12}
-        sm={6}
-        md={6}
-        lg={7}
-        xl={6}
+        size={{ xs: 12, sm: 6, md: 6, lg: 7, xl: 6 }}
         sx={{ display: 'flex', justifyContent: 'center' }}
       >
-        {' '}
         <Box
           sx={{
             height: '100%',
@@ -361,8 +367,7 @@ const ProductHeader = ({
             px: { xs: 2, sm: 2, md: 1 },
             maxWidth: { lg: 450, xl: 500 }, // Reducir el ancho máximo
           }}
-        >
-          {/* Nombre del Producto */}
+        >          {/* Nombre del Producto */}
           <Box
             sx={{
               display: 'flex',
@@ -502,11 +507,12 @@ const ProductHeader = ({
             product={product}
             tiers={finalTiers}
             isLoggedIn={isLoggedIn}
-          />
-        </Box>
+          />        </Box>
       </Grid>
     </Grid>
   )
-}
+})
+
+ProductHeader.displayName = 'ProductHeader'
 
 export default ProductHeader

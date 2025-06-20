@@ -348,6 +348,7 @@ export default function TopBar({ session, isBuyer, logoUrl, onNavigate }) {
         anchorEl={profileAnchor}
         open={Boolean(profileAnchor)}
         onClose={handleCloseProfileMenu}
+        disableScrollLock={true}
       >
         <MenuItem
           onClick={() => {

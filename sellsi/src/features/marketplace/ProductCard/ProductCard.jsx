@@ -21,6 +21,8 @@ import {
   TextField,
   Avatar,
   Chip,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material'
 import FavoriteIcon from '@mui/icons-material/Favorite'
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder'
@@ -54,6 +56,8 @@ const ProductCard = React.memo(({ producto, onAddToCart, onViewDetails }) => {
     return !isNaN(numValue) && numValue >= minimumPurchase
   }, [inputValue, minimumPurchase])
   const navigate = useNavigate()
+  const theme = useTheme();
+  const isXlUp = useMediaQuery(theme.breakpoints.up('xl'));
 
   if (!producto) {
     return null
@@ -581,7 +585,7 @@ const ProductCard = React.memo(({ producto, onAddToCart, onViewDetails }) => {
         <Box sx={{ userSelect: 'none' }}>
           {' '}
           {/* ✅ SOLUCIÓN: Prevenir selección de texto */}
-          <Typography variant="h6" sx={{ mb: 2, textAlign: 'center' }}>
+          <Typography variant={isXlUp ? 'h6' : 'subtitle1'} sx={{ mb: 2, textAlign: 'center' }}>
             Seleccionar Cantidad
           </Typography>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>            <IconButton
@@ -595,6 +599,17 @@ const ProductCard = React.memo(({ producto, onAddToCart, onViewDetails }) => {
               sx={{
                 userSelect: 'none',
                 touchAction: 'manipulation',
+                border: 'none', // Quitar borde
+                boxShadow: 'none',
+                outline: 'none',
+                '&:focus': {
+                  border: 'none',
+                  outline: 'none',
+                },
+                '&:active': {
+                  border: 'none',
+                  outline: 'none',
+                },
               }}
             >
               <RemoveIcon />
@@ -631,6 +646,17 @@ const ProductCard = React.memo(({ producto, onAddToCart, onViewDetails }) => {
               sx={{
                 userSelect: 'none',
                 touchAction: 'manipulation',
+                border: 'none', // Quitar borde
+                boxShadow: 'none',
+                outline: 'none',
+                '&:focus': {
+                  border: 'none',
+                  outline: 'none',
+                },
+                '&:active': {
+                  border: 'none',
+                  outline: 'none',
+                },
               }}
             >
               <AddIcon />
@@ -641,7 +667,15 @@ const ProductCard = React.memo(({ producto, onAddToCart, onViewDetails }) => {
             sx={{ mb: 2, textAlign: 'center', color: 'text.secondary' }}
           >
             Stock disponible: {stock}
-          </Typography>{' '}
+          </Typography>
+          {price_tiers.length > 0 && (
+            <Typography
+              variant="body2"
+              sx={{ mb: 2, textAlign: 'center', color: 'primary.main', fontWeight: 600 }}
+            >
+              Precio unidad: ${currentUnitPrice.toLocaleString('es-CL', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+            </Typography>
+          )}
           <Box sx={{ display: 'flex', gap: 1 }}>            <Button
               variant="outlined"
               onClick={React.useCallback((e) => {

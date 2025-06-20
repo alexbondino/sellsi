@@ -24,6 +24,8 @@ import {
   STOCK_STATUS_CONFIG,
 } from '../../ui'
 import { LazyImage } from '../../../components/shared'
+import { generateProductUrl } from '../../marketplace/marketplace/productUrl'
+import { useNavigate } from 'react-router-dom'
 
 /**
  * SupplierProductCard - Tarjeta de producto para la vista del proveedor
@@ -36,6 +38,7 @@ const SupplierProductCard = ({
   onViewStats,
   isDeleting = false,
   isUpdating = false,
+  onProductClick, // Nuevo prop opcional
 }) => {
   if (!product) {
     return null
@@ -110,6 +113,8 @@ const SupplierProductCard = ({
     })
   }
 
+  const navigate = useNavigate()
+
   return (
     <Card
       sx={{
@@ -131,6 +136,15 @@ const SupplierProductCard = ({
           borderColor: 'primary.main',
         },
       }}
+      onClick={() => {
+        if (onProductClick) {
+          onProductClick(product)
+        } else {
+          const url = generateProductUrl(product)
+          navigate(url, { state: { from: '/supplier/myproducts' } })
+        }
+      }}
+      style={{ cursor: 'pointer' }}
     >
       {' '}
       {/* Badges del producto */}
