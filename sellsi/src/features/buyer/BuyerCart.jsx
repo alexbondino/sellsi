@@ -661,10 +661,9 @@ const BuyerCart = () => {  // ===== ZUSTAND STORE (SELECTORES MEMOIZADOS) =====
                   }}
                 >
                   <AnimatePresence>
-                    {' '}
-                    {items.map((item, index) => (
+                    {' '}                    {items.map((item, index) => (
                       <CartItem
-                        key={item.id}
+                        key={item.id || item.product_id || item.cart_items_id || `item-${index}`}
                         item={item}
                         formatPrice={formatPrice}
                         updateQuantity={handleQuantityChange}

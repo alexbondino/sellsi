@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../../../services/supabase'
-import { PRODUCTOS } from '../products'
 
 const USE_MOCKS = import.meta.env.VITE_USE_MOCKS === 'true'
 
@@ -89,7 +88,7 @@ export function useProducts() {
                 ventas: p.ventas || 0,
                 stock: p.productqty,
                 compraMinima: p.minimum_purchase,
-                negociable: p.negotiable,
+                negociable: p.negociable,
                 priceTiers,
                 maxPrice,
                 minPrice,

@@ -1,6 +1,28 @@
 -- WARNING: This schema is for context only and is not meant to be run.
 -- Table order and constraints may not be valid for execution.
 
+CREATE TABLE public.cart_items (
+  cart_items_id uuid NOT NULL DEFAULT gen_random_uuid(),
+  cart_id uuid NOT NULL,
+  product_id uuid NOT NULL,
+  quantity integer NOT NULL CHECK (quantity > 0),
+  price_at_addition numeric,
+  price_tiers jsonb,
+  added_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT cart_items_pkey PRIMARY KEY (cart_items_id),
+  CONSTRAINT cart_items_cart_id_fkey FOREIGN KEY (cart_id) REFERENCES public.carts(cart_id),
+  CONSTRAINT cart_items_product_id_fkey FOREIGN KEY (product_id) REFERENCES public.products(productid)
+);
+CREATE TABLE public.carts (
+  cart_id uuid NOT NULL DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL,
+  status text NOT NULL DEFAULT 'active'::text,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT carts_pkey PRIMARY KEY (cart_id),
+  CONSTRAINT carts_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(user_id)
+);
 CREATE TABLE public.product_images (
   product_id uuid NOT NULL,
   image_url text,
@@ -36,16 +58,31 @@ CREATE TABLE public.products (
   CONSTRAINT products_pkey PRIMARY KEY (productid),
   CONSTRAINT products_supplier_id_fkey FOREIGN KEY (supplier_id) REFERENCES public.users(user_id)
 );
+CREATE TABLE public.request_products (
+  request_product_id uuid NOT NULL DEFAULT gen_random_uuid(),
+  request_id uuid,
+  product_id uuid,
+  quantity integer NOT NULL,
+  CONSTRAINT request_products_pkey PRIMARY KEY (request_product_id),
+  CONSTRAINT request_products_request_id_fkey FOREIGN KEY (request_id) REFERENCES public.requests(request_id),
+  CONSTRAINT request_products_product_id_fkey FOREIGN KEY (product_id) REFERENCES public.products(productid)
+);
 CREATE TABLE public.requests (
-  requestid uuid NOT NULL DEFAULT gen_random_uuid(),
-  seller_id uuid NOT NULL,
-  productid uuid NOT NULL,
-  productqty integer NOT NULL,
-  createddt timestamp with time zone DEFAULT now(),
-  updateddt timestamp with time zone DEFAULT now(),
-  CONSTRAINT requests_pkey PRIMARY KEY (requestid),
-  CONSTRAINT requests_productid_fkey FOREIGN KEY (productid) REFERENCES public.products(productid),
-  CONSTRAINT requests_seller_id_fkey FOREIGN KEY (seller_id) REFERENCES public.users(user_id)
+  request_id uuid NOT NULL DEFAULT gen_random_uuid(),
+  delivery_country text NOT NULL,
+  delivery_region text NOT NULL,
+  delivery_commune text NOT NULL,
+  delivery_direction text NOT NULL,
+  delivery_direction_number text NOT NULL,
+  delivery_direction_dept text NOT NULL,
+  request_dt date NOT NULL,
+  delivery_dt date,
+  total_sale numeric,
+  label text NOT NULL,
+  buyer_id uuid,
+  created_dt timestamp without time zone DEFAULT now(),
+  CONSTRAINT requests_pkey PRIMARY KEY (request_id),
+  CONSTRAINT requests_buyer_id_fkey FOREIGN KEY (buyer_id) REFERENCES public.users(user_id)
 );
 CREATE TABLE public.sales (
   trx_date timestamp with time zone DEFAULT now(),

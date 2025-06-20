@@ -21,6 +21,23 @@ import ClearIcon from '@mui/icons-material/Clear'
 import FilterAltIcon from '@mui/icons-material/FilterAlt'
 import SortIcon from '@mui/icons-material/Sort'
 
+// ✅ OPTIMIZACIÓN: Hook personalizado para debouncing
+const useDebounce = (value, delay) => {
+  const [debouncedValue, setDebouncedValue] = React.useState(value)
+
+  React.useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value)
+    }, delay)
+
+    return () => {
+      clearTimeout(handler)
+    }
+  }, [value, delay])
+
+  return debouncedValue
+}
+
 const SearchBar = ({
   busqueda,
   setBusqueda,
@@ -39,21 +56,40 @@ const SearchBar = ({
     xl: 41,
   }, // Valores por defecto para Marketplace normal
 }) => {
+  // ✅ OPTIMIZACIÓN: Estado local para el input con debouncing
+  const [localBusqueda, setLocalBusqueda] = React.useState(busqueda)
+  const debouncedBusqueda = useDebounce(localBusqueda, 300) // 300ms delay
+
+  // ✅ OPTIMIZACIÓN: Sincronizar el valor debounced con el estado global
+  React.useEffect(() => {
+    if (debouncedBusqueda !== busqueda) {
+      setBusqueda(debouncedBusqueda)
+    }
+  }, [debouncedBusqueda, setBusqueda, busqueda])
+
+  // ✅ OPTIMIZACIÓN: Sincronizar cambios externos
+  React.useEffect(() => {
+    if (busqueda !== localBusqueda) {
+      setLocalBusqueda(busqueda)
+    }
+  }, [busqueda])
+
   // ✅ MEJORA DE RENDIMIENTO: Memoización del handler de limpiar búsqueda
   const handleClear = React.useCallback(() => {
+    setLocalBusqueda('')
     setBusqueda('')
   }, [setBusqueda])
 
-  // ✅ MEJORA DE RENDIMIENTO: Memoización del handler de cambio de búsqueda
+  // ✅ MEJORA DE RENDIMIENTO: Handler optimizado para cambio de búsqueda
   const handleSearchChange = React.useCallback((e) => {
-    setBusqueda(e.target.value)
-  }, [setBusqueda])
+    const value = e.target.value
+    setLocalBusqueda(value)
+  }, [])
 
   // ✅ MEJORA DE RENDIMIENTO: Memoización del handler de cambio de ordenamiento
   const handleSortChange = React.useCallback((e) => {
     setOrdenamiento(e.target.value)
   }, [setOrdenamiento])
-
   // ✅ MEJORA DE RENDIMIENTO: Memoización de estilos del contenedor principal
   const containerStyles = React.useMemo(
     () => ({
@@ -69,7 +105,7 @@ const SearchBar = ({
     [searchBarMarginLeft]
   )
 
-  // ✅ MEJORA DE RENDIMIENTO: Memoización de estilos del TextField
+  // ✅ MEJORA DE RENDIMIENTO: Memoización de estilos del TextField - Estáticos
   const textFieldStyles = React.useMemo(
     () => ({
       width: { xs: '30%', sm: '30%', md: '240px' }, // ✅ 40% en xs/sm, tamaño fijo en md+
@@ -83,7 +119,7 @@ const SearchBar = ({
     []
   )
 
-  // ✅ MEJORA DE RENDIMIENTO: Memoización de estilos del FormControl
+  // ✅ MEJORA DE RENDIMIENTO: Memoización de estilos del FormControl - Estáticos
   const formControlStyles = React.useMemo(
     () => ({
       width: { xs: '47%', sm: '50%', md: 245 }, // ✅ AUMENTADO a 40% para compensar reducción del botón filtros
@@ -92,34 +128,90 @@ const SearchBar = ({
     []
   )
 
+  // ✅ OPTIMIZACIÓN: Memoización de estilos del botón - Estáticos
+  const buttonBaseStyles = React.useMemo(
+    () => ({
+      borderRadius: 1.5,
+      px: { xs: 0.5, sm: 0.5, md: 2 }, // ✅ Padding ultra-mínimo en móviles
+      py: 0.5,
+      width: { xs: '20%', sm: '20%', md: 'auto' }, // ✅ REDUCIDO a 20% (65% menos)
+      minWidth: { xs: '36px', sm: '36px', md: 'auto' }, // ✅ Ancho mínimo igual a la altura
+      fontWeight: 600,
+      height: '36px', // ✅ Misma altura que search
+      fontSize: { xs: '0.75rem', sm: '0.85rem', md: '0.875rem' },
+    }),
+    []
+  )
+
+  // ✅ OPTIMIZACIÓN: Estilos del botón que dependen del estado
+  const buttonVariantStyles = React.useMemo(
+    () => ({
+      variant: filtroVisible || filtroModalOpen ? 'contained' : 'outlined',
+    }),
+    [filtroVisible, filtroModalOpen]
+  )
+
+  // ✅ OPTIMIZACIÓN: Memoización de InputProps para evitar re-creación
+  const inputProps = React.useMemo(
+    () => ({
+      startAdornment: (
+        <InputAdornment position="start">
+          <SearchIcon color="action" fontSize="small" />
+        </InputAdornment>
+      ),
+      endAdornment: localBusqueda && (
+        <InputAdornment position="end">
+          <IconButton
+            onClick={handleClear}
+            edge="end"
+            size="small"
+            aria-label="limpiar búsqueda"
+          >
+            <ClearIcon fontSize="small" />
+          </IconButton>
+        </InputAdornment>
+      ),
+    }),
+    [localBusqueda, handleClear]
+  )
+
+  // ✅ OPTIMIZACIÓN: Memoización de MenuProps para Select
+  const selectMenuProps = React.useMemo(
+    () => ({
+      disableScrollLock: true,
+      PaperProps: {
+        style: {
+          maxHeight: 200, // Limitar altura del menú
+        },
+      },
+    }),
+    []
+  )
+
+  // ✅ OPTIMIZACIÓN: Memoización de estilos del Select - Estáticos
+  const selectStyles = React.useMemo(
+    () => ({
+      borderRadius: 1.5,
+      backgroundColor: 'white',
+      height: '36px',
+      '& .MuiSelect-select': {
+        pl: 0.5,
+        py: 0.5,
+        fontSize: '1rem', // ✅ AGREGAR: Texto más pequeño
+      },
+    }),
+    []
+  )
   return (
     <Box sx={containerStyles}>
       {/* Barra de búsqueda - Más compacta */}
       <TextField
         size="small" // ✅ Hacer más pequeña
-        value={busqueda}
+        value={localBusqueda}
         onChange={handleSearchChange}
         placeholder="Buscar productos..."
         variant="outlined"
-        InputProps={{
-          startAdornment: (
-            <InputAdornment position="start">
-              <SearchIcon color="action" fontSize="small" />
-            </InputAdornment>
-          ),
-          endAdornment: busqueda && (
-            <InputAdornment position="end">
-              <IconButton
-                onClick={handleClear}
-                edge="end"
-                size="small"
-                aria-label="limpiar búsqueda"
-              >
-                <ClearIcon fontSize="small" />
-              </IconButton>
-            </InputAdornment>
-          ),
-        }}
+        InputProps={inputProps}
         sx={textFieldStyles}
       />
       {/* Selector de ordenamiento - Más compacto */}
@@ -133,16 +225,8 @@ const SearchBar = ({
               <SortIcon color="action" fontSize="small" />
             </InputAdornment>
           }
-          sx={{
-            borderRadius: 1.5,
-            backgroundColor: 'white',
-            height: '36px',
-            '& .MuiSelect-select': {
-              pl: 0.5,
-              py: 0.5,
-              fontSize: '1rem', // ✅ AGREGAR: Texto más pequeño
-            },
-          }}
+          MenuProps={selectMenuProps}
+          sx={selectStyles}
         >
           {sortOptions.map((option) => (
             <MenuItem key={option.value} value={option.value}>
@@ -150,22 +234,13 @@ const SearchBar = ({
             </MenuItem>
           ))}
         </Select>
-      </FormControl>{' '}
+      </FormControl>
       {/* Botón de filtros - Optimizado para móviles */}
       <Button
         size="small"
-        variant={filtroVisible || filtroModalOpen ? 'contained' : 'outlined'}
+        variant={buttonVariantStyles.variant}
         onClick={onToggleFilters}
-        sx={{
-          borderRadius: 1.5,
-          px: { xs: 0.5, sm: 0.5, md: 2 }, // ✅ Padding ultra-mínimo en móviles
-          py: 0.5,
-          width: { xs: '20%', sm: '20%', md: 'auto' }, // ✅ REDUCIDO a 20% (65% menos)
-          minWidth: { xs: '36px', sm: '36px', md: 'auto' }, // ✅ Ancho mínimo igual a la altura
-          fontWeight: 600,
-          height: '36px', // ✅ Misma altura que search
-          fontSize: { xs: '0.75rem', sm: '0.85rem', md: '0.875rem' },
-        }}
+        sx={buttonBaseStyles}
       >
         {/* Solo icono en xs y sm, texto completo en md+ */}
         <Box

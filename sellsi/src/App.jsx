@@ -19,6 +19,7 @@ import Banner from './features/ui/Banner';
 import { Toaster } from 'react-hot-toast';
 import { supabase } from './services/supabase';
 import { usePrefetch } from './hooks/usePrefetch';
+import useCartStore from './features/buyer/hooks/cartStore';
 
 // ============================================================================
 // 🚀 CODE SPLITTING: LAZY LOADING DE COMPONENTES POR RUTAS
@@ -98,28 +99,25 @@ function AppContent({ mensaje }) {
   const navigate = useNavigate();
   const scrollTargets = useRef({});
   const { bannerState, hideBanner } = useBanner();
-  const [session, setSession] = useState(null);
-  const [userProfile, setUserProfile] = useState(null); // State to store logo_url, is_buyer, etc.
+  const [session, setSession] = useState(null);  const [userProfile, setUserProfile] = useState(null); // State to store logo_url, is_buyer, etc.
   const [loadingUserStatus, setLoadingUserStatus] = useState(true); // Renamed for clarity
+    // Hook del carrito para inicialización con usuario
+  const { initializeCartWithUser, isBackendSynced } = useCartStore();
   const [needsOnboarding, setNeedsOnboarding] = useState(false);
-  const { prefetchRoute } = usePrefetch();
-
-  useEffect(() => {
+  const { prefetchRoute } = usePrefetch();  useEffect(() => {
     let mounted = true;
     setLoadingUserStatus(true);
-    setUserProfile(null); // Clear profile when starting check
+    // ❌ REMOVIDO: setUserProfile(null); // No limpiar innecesariamente
     setNeedsOnboarding(false);
-
     const checkUserAndFetchProfile = async currentSession => {
       if (!currentSession || !currentSession.user) {
         if (mounted) {
-          setUserProfile(null);
+          setUserProfile(null); // Solo limpiar si NO hay sesión
           setNeedsOnboarding(false);
           setLoadingUserStatus(false);
         }
         return;
       }
-
       const { data: userData, error: userError } = await supabase
         .from('users')
         .select('user_nm, main_supplier, logo_url') // ✅ Ensure logo_url is selected here!
@@ -134,7 +132,6 @@ function AppContent({ mensaje }) {
         setLoadingUserStatus(false);
         return;
       }
-
       if (mounted) {
         if (
           !userData ||
@@ -145,12 +142,19 @@ function AppContent({ mensaje }) {
         } else {
           setNeedsOnboarding(false);
           setUserProfile(userData); // ✅ Store the complete user data (including logo_url)
+
+          // ✅ INICIALIZAR CARRITO CON USUARIO AUTENTICADO
+          if (currentSession?.user?.id && !isBackendSynced) {
+            try {
+              await initializeCartWithUser(currentSession.user.id);
+            } catch (error) {
+              console.error('[App] ❌ Error inicializando carrito:', error);
+            }
+          }
         }
         setLoadingUserStatus(false);
       }
-    };
-
-    // Initial session check and profile fetch
+    }; // Initial session check and profile fetch
     supabase.auth.getSession().then(({ data }) => {
       if (mounted) {
         setSession(data.session);
@@ -174,13 +178,9 @@ function AppContent({ mensaje }) {
         listener.subscription.unsubscribe();
       }
     };
-  }, []); // Empty dependency array means this runs once on mount
-
-  // --- Derived states from userProfile ---
+  }, []); // Empty dependency array means this runs once on mount  // --- Derived states from userProfile ---
   const isBuyer = userProfile ? userProfile.main_supplier === false : null; // ✅ Derived from userProfile
-  const logoUrl = userProfile ? userProfile.logo_url : null; // ✅ Derived from userProfile
-
-  // Redirect to onboarding if needed
+  const logoUrl = userProfile ? userProfile.logo_url : null; // ✅ Derived from userProfile  // Redirect to onboarding if needed
   useEffect(() => {
     if (session && needsOnboarding && location.pathname !== '/onboarding') {
       navigate('/onboarding', { replace: true });
@@ -242,6 +242,12 @@ function AppContent({ mensaje }) {
       window.scrollTo({ top: offsetPosition, behavior: 'smooth' });
     }
   };
+  // Inicializar el carrito cuando el usuario se autentica
+  useEffect(() => {
+    if (session) {
+      initializeCartWithUser(session.user.id);
+    }
+  }, [session, initializeCartWithUser]);
 
   if (loadingUserStatus) {
     // Use the general loading state here

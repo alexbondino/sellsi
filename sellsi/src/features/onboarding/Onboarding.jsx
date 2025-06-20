@@ -323,10 +323,9 @@ const Onboarding = () => {
             sx={{ fontWeight: 600, mb: 3, color: theme.palette.text.primary }}
           >
             Paso 1: Elige tu rol principal
-          </Typography>
-          <Grid container spacing={3} justifyContent="center">
+          </Typography>          <Grid container spacing={3} justifyContent="center">
             {/* Proveedor Card */}
-            <Grid item xs={12} sm={6}>
+            <Grid size={{ xs: 12, sm: 6 }}>
               <Card
                 variant="outlined"
                 sx={{
@@ -379,10 +378,8 @@ const Onboarding = () => {
                   </Typography>
                 </CardActionArea>
               </Card>
-            </Grid>
-
-            {/* Comprador Card */}
-            <Grid item xs={12} sm={6}>
+            </Grid>            {/* Comprador Card */}
+            <Grid size={{ xs: 12, sm: 6 }}>
               <Card
                 variant="outlined"
                 sx={{
@@ -481,9 +478,8 @@ const Onboarding = () => {
               },
               mx: 'auto', // Auto margins para centrar el Grid si tiene un maxWidth
             }}
-          >
-            {/* Columna Izquierda: Campos de Texto */}
-            <Grid item xs={12} md={7}>
+          >            {/* Columna Izquierda: Campos de Texto */}
+            <Grid size={{ xs: 12, md: 7 }}>
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
                 <TextField
                   label="Nombre de Empresa o Personal *"
@@ -522,10 +518,8 @@ const Onboarding = () => {
                   />
                 </Box>
               </Box>
-            </Grid>
-
-            {/* Columna Derecha: Uploader de Logo */}
-            <Grid item xs={12} md={5}>
+            </Grid>            {/* Columna Derecha: Uploader de Logo */}
+            <Grid size={{ xs: 12, md: 5 }}>
               <Paper
                 variant="outlined"
                 sx={{

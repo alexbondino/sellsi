@@ -5,7 +5,6 @@ import {
   Typography,
   Grid,
   Card,
-  CardMedia,
   CardContent,
   Button,
   IconButton,
@@ -16,6 +15,7 @@ import {
   ShoppingCart as ShoppingCartIcon,
   Delete as DeleteIcon,
 } from '@mui/icons-material'
+import { LazyImage } from '../../../components/shared'
 
 /**
  * Componente para mostrar la sección de wishlist/favoritos
@@ -51,14 +51,18 @@ const WishlistSection = ({
 
             <Grid container spacing={2}>
               {wishlist.map((item) => (
-                <Grid size={{ xs: 12, sm: 6, md: 4 }} key={item.id}>
-                  <Card sx={{ borderRadius: 2 }}>
-                    <CardMedia
-                      component="img"
-                      height="140"
-                      image={item.image}
-                      alt={item.name}
-                    />
+                <Grid size={{ xs: 12, sm: 6, md: 4 }} key={item.id}>                  <Card sx={{ borderRadius: 2 }}>
+                    {/* ✅ OPTIMIZACIÓN: Usar LazyImage en vez de CardMedia */}
+                    <Box sx={{ height: 140, position: 'relative' }}>
+                      <LazyImage
+                        src={item.image}
+                        alt={item.name}
+                        aspectRatio="1"
+                        rootMargin="100px"
+                        objectFit="cover"
+                        borderRadius={0}
+                      />
+                    </Box>
                     <CardContent>
                       <Typography variant="h6" noWrap>
                         {item.name}
