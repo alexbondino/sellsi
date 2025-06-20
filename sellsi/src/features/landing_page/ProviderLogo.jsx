@@ -1,6 +1,6 @@
 import React from 'react'
 import { Card, CardContent } from '@mui/material'
-import { LazyImage } from '../../components/shared'
+import { LazyImage } from '../layout'
 
 /**
  * ====================================================================================

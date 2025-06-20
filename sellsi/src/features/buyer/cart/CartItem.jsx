@@ -31,7 +31,7 @@ import {
 import { motion } from 'framer-motion'
 import PriceDisplay from '../../marketplace/PriceDisplay/PriceDisplay'
 import StockIndicator from '../../marketplace//StockIndicator/StockIndicator'
-import { QuantitySelector, LazyImage } from '../../../components/shared' // ✅ Agregado LazyImage
+import { QuantitySelector, LazyImage } from '../../features/layout'
 import { SHIPPING_OPTIONS } from '../../../features/marketplace/hooks/constants'
 import { getProductImageUrl } from '../../../utils/getProductImageUrl'
 import {

@@ -23,7 +23,7 @@ import {
   StatusChip,
   STOCK_STATUS_CONFIG,
 } from '../../ui'
-import { LazyImage } from '../../../components/shared'
+import { LazyImage } from '../../layout'
 import { generateProductUrl } from '../../marketplace/marketplace/productUrl'
 import { useNavigate } from 'react-router-dom'
 
@@ -161,20 +161,44 @@ const SupplierProductCard = ({
             borderRadius: '12px',
           }}
         />      </Box>{' '}
-      {/* ✅ OPTIMIZACIÓN: Imagen del producto con lazy loading */}      <LazyImage
-        src={getProductImageUrl(imagen, product) || '/placeholder-product.jpg'}
-        alt={nombre}
-        aspectRatio="140 / 140"
-        rootMargin="150px"
-        objectFit="contain"
+      {/* ✅ OPTIMIZACIÓN: Imagen del producto con lazy loading */}
+      <Box
         sx={{
+          width: {
+            xs: 100,
+            sm: 150,
+            md: 180,
+            lg: 280,
+            xl: 300,
+          },
+          height: {
+            xs: 75,
+            sm: 122.5,
+            md: 135,
+            lg: 210,
+            xl: 225,
+          },
           maxWidth: '100%',
+          maxHeight: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          margin: '0 auto',
           bgcolor: '#fafafa',
           p: 1,
-          display: 'block',
-          mx: 'auto',
         }}
-      />
+      >
+        <LazyImage
+          src={getProductImageUrl(imagen, product) || '/placeholder-product.jpg'}
+          alt={nombre}
+          sx={{
+            width: '100%',
+            height: '100%',
+            objectFit: 'contain',
+            display: 'block',
+          }}
+        />
+      </Box>
       {/* Contenido principal */}
       <CardContent sx={{ flexGrow: 1, p: 2 }}>
         {/* Categoría */}

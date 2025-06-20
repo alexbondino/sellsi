@@ -39,7 +39,7 @@ import {
   formatProductForCart,
   calculatePriceForQuantity,
 } from '../../../utils/priceCalculation'
-import { LazyImage } from '../../../components/shared'
+import { LazyImage } from '../../layout'
 
 // ✅ MEJORA DE RENDIMIENTO: Memoización del componente
 const ProductCard = React.memo(({ producto, onAddToCart, onViewDetails }) => {
@@ -375,7 +375,43 @@ const ProductCard = React.memo(({ producto, onAddToCart, onViewDetails }) => {
       sx={cardStyles}
     >
       {/* Icono favorito eliminado */}
-      {memoizedImage}
+      <Box
+        sx={{
+          width: {
+            xs: 100,
+            sm: 150,
+            md: 180,
+            lg: 280,
+            xl: 300,
+          },
+          height: {
+            xs: 75,
+            sm: 122.5,
+            md: 135,
+            lg: 210,
+            xl: 225,
+          },
+          maxWidth: '100%',
+          maxHeight: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          margin: '0 auto',
+          bgcolor: '#fafafa',
+          p: 1.5,
+        }}
+      >
+        <LazyImage
+          src={resolvedImageSrc}
+          alt={nombre}
+          sx={{
+            width: '100%',
+            height: '100%',
+            objectFit: 'contain',
+            display: 'block',
+          }}
+        />
+      </Box>
       <CardContent sx={{ flexGrow: 1, p: 2, pb: 1 }}>
         {' '}
         {/* ✅ REDUCIR: de 3 a 2 */}

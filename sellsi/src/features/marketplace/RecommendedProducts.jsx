@@ -14,7 +14,7 @@ import {
   ShoppingCart as ShoppingCartIcon,
   Favorite as FavoriteIcon,
 } from '@mui/icons-material'
-import { LazyImage } from '../../components/shared'
+import { LazyImage } from '../../features/layout'
 
 // ✅ OPTIMIZACIÓN: Memoizar datos estáticos
 const RECOMMENDED_PRODUCTS = [
