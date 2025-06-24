@@ -1,5 +1,5 @@
-import React from 'react'
-import { Box, Typography } from '@mui/material'
+import React from 'react';
+import { Box, Typography } from '@mui/material';
 
 /**
  * ====================================================================================
@@ -30,8 +30,8 @@ const AboutUsSection = ({ quienesSomosRef }) => {
     <Box
       ref={quienesSomosRef}
       sx={{
-        px: { xs: 2, sm: 4, md: 8, lg: 15, xl: 30 },
-        py: { xs: 6, sm: 7, md: 8, lg: 8, xl: 8 },
+        px: { xs: 2, sm: 4, md: 8, mac: 18, lg: 18, xl: 30 },
+        py: { xs: 6, sm: 7, md: 8, mac: 6, lg: 8, xl: 8 },
         backgroundColor: '#ffffff',
       }}
     >
@@ -345,7 +345,7 @@ const AboutUsSection = ({ quienesSomosRef }) => {
         </Box>
       </Box>
     </Box>
-  )
-}
+  );
+};
 
-export default AboutUsSection
+export default AboutUsSection;
