@@ -1,386 +1,98 @@
 import React from 'react';
-import { Box, Typography, Button } from '@mui/material';
+import { Box, Typography, Grid, Button } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
+import ProviderLogo from './ProviderLogo';
 import StatisticCard from './StatisticCard';
-import CarouselNavigationButton from './CarouselNavigationButton';
+import { PROVIDERS_DATA } from './constants.jsx';
 
-/**
- * ============================================================================
- * HERO SECTION - SECCIÓN PRINCIPAL/HERO DE LANDING PAGE
- * ============================================================================
- *
- * Componente UI principal de la landing page con carrusel promocional
- *
- * @component
- * @param {Object} props - Propiedades del componente
- * @param {number} props.currentPromoSlide - Índice del slide actual del carrusel
- * @param {Function} props.nextPromoSlide - Función para avanzar al siguiente slide
- * @param {Function} props.prevPromoSlide - Función para retroceder al slide anterior
- * @param {Function} props.setCurrentPromoSlide - Función para ir a un slide específico
- * @param {Array} props.promoSlides - Array de slides promocionales
- * @param {Array} props.statistics - Array de estadísticas para mostrar
- * @param {Function} props.formatNumber - Función para formatear números (no usada directamente aquí, pero se mantiene en la interfaz)
- *
- * CARACTERÍSTICAS:
- * - Carrusel promocional con navegación automática y manual
- * - Contenido dinámico por slide (texto, imágenes, secciones múltiples)
- * - Estadísticas animadas con count-up
- * - Botón CTA principal para marketplace
- * - Layout responsivo diferenciado mobile/desktop
- * - Indicadores de posición y botones de navegación
- * - Soporte para slides multi-sección
- *
- * LAYOUT:
- * - Desktop: Dos columnas (contenido + imagen)
- * - Mobile: Una columna con imagen superpuesta
- * - Botón y estadísticas posicionados estratégicamente
- *
- * DEPENDENCIAS:
- * - StatisticCard: Para mostrar métricas destacadas
- * - CarouselIndicator: Para navegación por puntos
- * - CarouselNavigationButton: Para botones prev/next
- */
-const HeroSection = ({
-  currentPromoSlide,
-  nextPromoSlide,
-  prevPromoSlide,
-  setCurrentPromoSlide,
-  promoSlides,
-  statistics,
-}) => {
+const ProvidersSection = ({ statistics }) => {
   const navigate = useNavigate();
-  const currentSlide = promoSlides[currentPromoSlide];
-
-  // Estilos comunes para los títulos de los slides
-  const titleStyles = {
-    fontSize: {
-      xs: '1.7rem',
-      sm: '1.9rem',
-      md: '3.5rem',
-      mac: '3.2rem',
-      lg: '3rem',
-      xl: '4.5rem',
-    },
-    lineHeight: {
-      xs: 1.3,
-      sm: 1.4,
-      md: 1.4,
-      mac: 1.4,
-      lg: 1.4,
-      xl: 1.4,
-    },
-  };
-
-  // Estilos comunes para los subtítulos/descripciones de los slides
-  const descriptionStyles = {
-    fontSize: {
-      xs: '0.9rem',
-      sm: '0.95rem',
-      md: '1.5rem',
-      mac: '1.5rem',
-      lg: '1.5rem',
-      xl: '1.7rem',
-    },
-    lineHeight: {
-      xs: 1.5,
-      sm: 1.6,
-      md: 1.6,
-      mac: 1.6,
-      lg: 1.6,
-      xl: 1.6,
-    },
-  };
-
-  /**
-   * Componente interno para renderizar el contenido de texto principal del slide.
-   * La altura de este Box será controlada por el flexbox padre.
-   */
-  const SlideTextContent = () => {
-    if (currentSlide.type === 'multi-section') {
-      return (
-        <Box
-          sx={{
-            width: '100%',
-            mt: { xs: 2, sm: 3, md: 3 },
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'flex-start',
-            textAlign: { xs: 'center', md: 'left' },
-          }}
-        >
-          {currentSlide.sections.map((section, index) => (
-            <Box key={index} sx={{ mb: { xs: 2, sm: 2.5, md: 3 } }}>
-              <Typography
-                variant="h1"
-                fontWeight="bold"
-                sx={{
-                  ...titleStyles,
-                  mb: { xs: 1, sm: 1.5, md: 2 },
-                  color: '#1565c0',
-                }}
-              >
-                {section.title}
-              </Typography>
-              <Typography
-                variant="h6"
-                sx={{ ...descriptionStyles, color: 'rgba(255, 255, 255, 0.9)' }}
-              >
-                {section.description}
-              </Typography>
-            </Box>
-          ))}
-        </Box>
-      );
-    }
-
-    return (
-      <>
-        <Typography
-          variant="h1"
-          fontWeight="bold"
-          gutterBottom
-          sx={{
-            ...titleStyles,
-            mb: { xs: 1, sm: 1.5, md: 3 },
-            mt: { xs: -1, sm: 0 },
-            color: 'white',
-          }}
-          dangerouslySetInnerHTML={{ __html: currentSlide.title }}
-        />
-        {currentSlide.subtitle && (
-          <Typography
-            variant="h6"
-            gutterBottom
-            sx={{
-              ...descriptionStyles,
-              mb: { xs: 0, sm: 0, md: 1.6 },
-              color: 'white',
-            }}
-            dangerouslySetInnerHTML={{ __html: currentSlide.subtitle }}
-          />
-        )}
-      </>
-    );
-  };
-
-  /**
-   * Componente interno para renderizar el contenido de imagen del slide.
-   * La altura de este Box será controlada por el flexbox padre.
-   */
-  const SlideImageContent = ({ isMobile = false }) => {
-    if (currentSlide.type === 'multi-section') {
-      return (
-        <Box
-          sx={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            width: '100%',
-            height: '100%',
-            textAlign: 'center',
-            px: { xs: 2, md: 0 },
-          }}
-        >
-          <Typography
-            variant="h1"
-            fontWeight="bold"
-            sx={{
-              ...titleStyles,
-              color: 'white',
-              textShadow: '2px 2px 4px rgba(0,0,0,0.8)',
-              wordBreak: 'break-word',
-              whiteSpace: 'normal',
-              px: { xs: 0, mac: 2, lg: 0 },
-            }}
-            dangerouslySetInnerHTML={{ __html: currentSlide.title }}
-          />
-        </Box>
-      );
-    }
-
-    // Condición específica para no mostrar la imagen del slide 2 en móvil
-    // Si quieres que el slide 2 tenga imagen en mobile, quita esta condición.
-    if (currentSlide.id === 2 && isMobile) {
-      return null;
-    }
-
-    return (
-      <img
-        src={currentSlide.src}
-        alt={currentSlide.alt}
-        style={{
-          width: '100%',
-          height: '100%', // Asegura que la imagen intente llenar la altura de su contenedor flex
-          maxHeight: isMobile ? 'none' : '550px', // Ajusta este valor según tus imágenes
-          objectFit: 'contain',
-          transition: 'all 0.5s ease',
-        }}
-      />
-    );
-  };
 
   return (
     <Box
       sx={{
+        backgroundColor: '#ffffff',
+        px: { xs: 2, sm: 4, md: 8, mac: 18, lg: 18, xl: 30 },
+        py: { xs: 6, sm: 7, md: 8, mac: 6, lg: 8, xl: 8 },
         position: 'relative',
-        display: 'flex',
-        flexDirection: {
-          xs: 'column',
-          md: 'column',
-          lg: 'row',
+        paddingTop: {
+          xs: 6,
+          sm: 7,
+          md: 8,
+          mac: 0,
+          lg: 20,
+          xl: 25,
         },
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        height: {
-          xs: '700px', // Altura fija para móviles
-          sm: '800px', // Altura fija para tablets pequeñas
-          md: '950px', // Altura fija para tablets grandes
-          mac: '650px',
-          lg: '700px',
-          xl: '750px',
+        '&::before': {
+          content: '""',
+          position: 'absolute',
+          top: {
+            xs: 0,
+            sm: 0,
+            md: 0,
+            mac: '-200px',
+            lg: '-200px',
+            xl: '-250px',
+          },
+          left: 0,
+          right: 0,
+          height: {
+            xs: 0,
+            sm: 0,
+            md: 0,
+            mac: '200px',
+            lg: '200px',
+            xl: '250px',
+          },
+          backgroundColor: '#f8f9fa',
+          zIndex: -1,
         },
-        paddingY: { xs: 4, sm: 6, md: 6, mac: 6, lg: 6, xl: 8 },
-        paddingTop: { md: 2, mac: 4, lg: 1, xl: 1 },
-        backgroundColor: '#000000',
-        gap: { xs: 4, sm: 4, md: 5, mac: 8, lg: 10, xl: 12 },
-        zIndex: 1,
-        transition: 'height 0.3s ease-in-out',
       }}
     >
-      <Box
-        sx={{
-          display: 'flex',
-          flexDirection: {
-            xs: 'column',
-            md: 'column',
-            lg: 'row',
-          },
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          width: '100%',
-          height: { xs: 'auto', lg: '100%' },
-          px: { xs: 2, sm: 4, md: 8, mac: 18, lg: 15, xl: 30 },
-          position: 'relative',
-        }}
-      >
-        {/* Imagen Mobile - Visible hasta sm (se oculta en md y superiores) */}
-        <Box
-          sx={{
-            display: {
-              xs: 'block',
-              sm: 'block',
-              md: 'none',
-            },
-            position: 'absolute',
-            top: { xs: 75, sm: 90 },
-            right: { xs: 35, sm: 30 },
-            width: { xs: 300, sm: 320 },
-            height: { xs: 400, sm: 500 },
-            zIndex: 1,
-            pointerEvents: 'none',
-          }}
-        >
-          <SlideImageContent isMobile={true} />
-        </Box>
-
-        {/* COLUMNA 1: Texto (Izquierda) */}
-        <Box
-          sx={{
-            flex: {
-              xs: 'none',
-              md: 1,
-            },
-            display: 'flex',
-            justifyContent: { xs: 'center', md: 'flex-start' },
-            alignItems: 'center',
-            pr: { mac: 4 },
-            zIndex: 2,
-            width: { xs: '100%', md: '100%', lg: 'auto' },
-            minWidth: { xs: 'auto', lg: '400px' },
-            height: { xs: 'auto', lg: '100%' },
-          }}
-        >
-          <Box
-            sx={{
-              width: '100%',
-              maxWidth: { mac: '500px', lg: '450px', xl: '550px' },
-              textAlign: { xs: 'center', md: 'left' },
-              px: { lg: 3, xl: 4 },
-              height: { xs: 'auto', lg: '100%' },
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'center',
-            }}
-          >
-            <SlideTextContent />
-          </Box>
-        </Box>
-
-        {/* COLUMNA 2: Imagen / Título de Multi-Section (Derecha) */}
-        <Box
-          sx={{
-            flex: {
-              xs: 'none',
-              md: 1,
-            },
-            display: {
-              xs: 'none',
-              md: 'flex',
-              mac: 'flex',
-            },
-            justifyContent: 'center',
-            alignItems: { xs: 'center', mac: 'flex-start' },
-            pl: { mac: 4 },
-            height: { xs: 'auto', lg: '100%' },
-            minHeight: {
-              md: '300px',
-              mac: '350px',
-              lg: '300px',
-              xl: '400px',
-            },
-            transition: 'height 0.3s ease-in-out',
-          }}
-        >
-          <Box
-            sx={{
-              width:
-                currentSlide.type === 'multi-section'
-                  ? { md: '100%', mac: '90%', lg: '95%', xl: '95%' }
-                  : { mac: '70%', lg: '80%', xl: '70%' },
-              maxWidth:
-                currentSlide.type === 'multi-section'
-                  ? { md: 700, mac: 800, lg: 900, xl: 1100 }
-                  : { mac: 450, lg: 500, xl: 550 },
-              ml: { lg: 4, xl: 4 },
-              height: { xs: 'auto', lg: '100%' },
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'center',
-              alignItems: 'center',
-            }}
-          >
-            <SlideImageContent />
-          </Box>
-        </Box>
-      </Box>
-
-      {/* Botón y Estadísticas para Mobile (hasta md) - REPOSICIONADO */}
+      {/* Botón y Estadísticas - Solo visible en desktop */}
       <Box
         sx={{
           display: {
-            xs: 'flex',
-            md: 'none', // Sigue oculto en md y superiores
+            xs: 'none',
+            sm: 'none',
+            md: 'flex',
+            mac: 'flex',
+            lg: 'flex',
+            xl: 'flex',
           },
-          flexDirection: 'column',
+          flexDirection: 'row',
           alignItems: 'center',
-          gap: { xs: 2, sm: 2.5 },
+          justifyContent: {
+            xs: 'center',
+            sm: 'center',
+            md: 'flex-start',
+            mac: 'flex-start', // Mantener alineación a la izquierda para Mac
+            lg: 'flex-start',
+            xl: 'flex-start',
+          },
+          gap: { xs: 2, sm: 4, md: 8, mac: 12, lg: 25, xl: 33 },
+          mb: { xs: 2, sm: 4, md: 8, mac: 10, lg: 12, xl: 10 },
+          mt: { xs: 2, sm: 4, md: 8, mac: 10, lg: -18, xl: -20 },
+          ml: { xs: 0, sm: 0, md: 0, mac: 0, lg: 0, xl: 0 },
           width: '100%',
-          position: 'absolute', // Posición absoluta
-          bottom: { xs: 40, sm: 40 }, // Posicionado desde abajo
-          left: '50%', // Centrado horizontalmente
-          transform: 'translateX(-50%)', // Centrado horizontalmente
-          zIndex: 2,
+          maxWidth: {
+            xs: '100%',
+            sm: '100%',
+            md: '100%',
+            mac: '100%', // Permitir que se estire a todo el ancho si es necesario
+            lg: 700,
+            xl: 800,
+          },
+          position: 'relative',
+          zIndex: 1,
+          mx: {
+            xs: 'auto',
+            sm: 'auto',
+            md: 'auto',
+            mac: '0', // Eliminar auto margin para Mac si se alinea a la izquierda
+            lg: '0',
+            xl: '0',
+          },
         }}
       >
         <Button
@@ -389,13 +101,20 @@ const HeroSection = ({
             backgroundColor: 'primary.main',
             fontWeight: 'bold',
             borderRadius: '8px',
-            px: { xs: 3.68, sm: 4, md: 10 },
-            py: { xs: 1.38, sm: 1.5, md: 2.4 },
-            fontSize: { xs: '1.2rem', sm: '1.35rem', md: '1.5rem' },
+            px: { xs: 2, sm: 4, md: 8, mac: 8, lg: 11, xl: 12 },
+            py: { xs: 2, sm: 4, md: 8, mac: 2.4, lg: 2.4, xl: 2.6 },
+            ml: { xs: 2, sm: 4, md: 0, mac: 0, lg: 0, xl: 0 },
+            fontSize: {
+              xs: '1rem',
+              sm: '1.2rem',
+              md: '1.3rem',
+              mac: '1.4rem',
+              lg: '1.58rem',
+              xl: '1.7rem',
+            },
             textTransform: 'none',
             boxShadow: '0 4px 15px rgba(25, 118, 210, 0.3)',
-            width: 'fit-content',
-            mb: 1, // Margen inferior para separar de las estadísticas
+            flexShrink: 0,
             '&:hover': {
               transform: 'translateY(-2px)',
               boxShadow: '0 6px 20px rgba(25, 118, 210, 0.4)',
@@ -405,106 +124,172 @@ const HeroSection = ({
         >
           Ir a marketplace
         </Button>
+
         <Box
           sx={{
             display: 'flex',
-            flexDirection: 'row',
-            gap: { xs: 1.5, sm: 2 },
-            alignItems: 'flex-start',
-            justifyContent: 'center',
-            width: '100%',
-            flexWrap: 'wrap',
-            mb: { xs: 1, sm: 2 },
-          }}
-        >
-          {statistics.map((stat, index) => (
-            <StatisticCard key={index} stat={stat} />
-          ))}
-        </Box>
-        <Box
-          sx={{
-            display: 'flex',
-            gap: { xs: 1, sm: 1.5 },
-            justifyContent: 'center',
+            flexDirection: {
+              xs: 'column',
+              sm: 'column',
+              md: 'row',
+              lg: 'row',
+              xl: 'row',
+            },
+            gap: { xs: 1, sm: 2, md: 3, mac: 4, lg: 4, xl: 5 },
             alignItems: 'center',
-            mt: 1,
+            justifyContent: {
+              xs: 'center',
+              sm: 'center',
+              md: 'flex-start',
+              mac: 'flex-start', // Mantener alineación a la izquierda para Mac
+              lg: 'flex-start',
+              xl: 'flex-start',
+            },
+            flex: 1,
           }}
         >
-          {/* Indicadores del carrusel para Mobile */}
-          {promoSlides.map((_, index) => (
-            <CarouselIndicator
-              key={index}
-              index={index}
-              isActive={index === currentPromoSlide}
-              onClick={() => setCurrentPromoSlide(index)}
-            />
+          {statistics?.map((stat, index) => (
+            <StatisticCard key={index} stat={stat} />
           ))}
         </Box>
       </Box>
 
-      {/* === FLECHAS DE NAVEGACIÓN === */}
-      <CarouselNavigationButton
-        direction="prev"
-        onClick={prevPromoSlide}
-        position={{
-          xs: '50%', // Centrar verticalmente en mobile
-          sm: '50%',
-          mac: '5%',
-          lg: '2%',
-        }}
-        sx={{
-          transform: {
-            xs: 'translateY(-50%)', // Centrado vertical para mobile
-            mac: 'none', // Desactiva la transformación en desktop
-          },
-        }}
-      />
-      <CarouselNavigationButton
-        direction="next"
-        onClick={nextPromoSlide}
-        position={{
-          xs: '50%', // Centrar verticalmente en mobile
-          sm: '50%',
-          mac: '5%',
-          lg: '2%',
-        }}
-        sx={{
-          transform: {
-            xs: 'translateY(-50%)', // Centrado vertical para mobile
-            mac: 'none', // Desactiva la transformación en desktop
-          },
-        }}
-      />
-
-      {/* Indicadores del Carrusel - Desktop (visible desde mac) */}
+      {/* Grid Flex: Título + Proveedores */}
       <Box
         sx={{
-          display: {
-            xs: 'none',
-            mac: 'flex',
+          display: 'flex',
+          flexDirection: {
+            xs: 'column',
+            sm: 'column',
+            md: 'column',
+            mac: 'row', // <-- CAMBIO CLAVE: Row para mac para que título y grid estén en la misma fila
+            lg: 'row',
+            xl: 'row',
           },
-          position: 'absolute',
-          bottom: 20,
-          left: '50%',
-          transform: 'translateX(-50%)',
-          gap: 1.5,
-          zIndex: 5,
-          padding: 1,
-          borderRadius: '12px',
-          backgroundColor: 'rgb(0, 0, 0)',
+          alignItems: {
+            xs: 'center',
+            sm: 'center',
+            md: 'flex-start',
+            mac: 'center', // <-- Centra verticalmente el título y el grid entre sí en mac
+            lg: 'flex-start',
+            xl: 'flex-start',
+          },
+          gap: { xs: 3, sm: 4, md: 5, mac: 4, lg: 2, xl: 8 },
+          width: '100%',
         }}
       >
-        {promoSlides.map((_, index) => (
-          <CarouselIndicator
-            key={index}
-            index={index}
-            isActive={index === currentPromoSlide}
-            onClick={() => setCurrentPromoSlide(index)}
-          />
-        ))}
+        {/* COLUMNA 1: Título */}
+        <Box
+          sx={{
+            flex: {
+              xs: 'none',
+              sm: 'none',
+              md: 'none',
+              mac: 0.7, // <-- CAMBIO: Ocupa 70% del espacio en mac
+              lg: 0.7,
+              xl: 1,
+            },
+            display: 'flex',
+            alignItems: {
+              xs: 'center',
+              sm: 'center',
+              md: 'center',
+              mac: 'center', // <-- Centrar verticalmente el texto del título en mac
+              lg: 'center',
+              xl: 'flex-start',
+            },
+            justifyContent: {
+              xs: 'center',
+              sm: 'center',
+              md: 'center',
+              mac: 'flex-start', // <-- CAMBIO: Alinear texto a la izquierda en mac
+              lg: 'flex-start',
+              xl: 'flex-start',
+            },
+          }}
+        >
+          <Typography
+            variant="h3"
+            fontWeight="bold"
+            sx={{
+              fontSize: {
+                xs: '1.5rem',
+                sm: '1.8rem',
+                md: '2.2rem',
+                mac: '2.5rem',
+                lg: '2.5rem',
+                xl: '2.5rem',
+              },
+              textAlign: {
+                xs: 'center',
+                sm: 'center',
+                md: 'center',
+                mac: 'left', // <-- CAMBIO: Alinear texto a la izquierda en mac
+                lg: 'left',
+                xl: 'left',
+              },
+              color: 'common.black',
+              mb: { xs: 3, sm: 4, md: 4, lg: 0, xl: 0 },
+            }}
+          >
+            Conoce a nuestros proveedores
+          </Typography>
+        </Box>
+
+        {/* COLUMNA 2: Grid de Proveedores */}
+        <Box
+          sx={{
+            flex: {
+              xs: 'none',
+              sm: 'none',
+              md: 'none',
+              mac: 2, // <-- CAMBIO: Ocupa el doble de espacio que el título en mac
+              lg: 2,
+              xl: 2,
+            },
+            width: '100%',
+            display: 'flex',
+            justifyContent: {
+              xs: 'center',
+              sm: 'center',
+              md: 'center',
+              mac: 'flex-start', // <-- CAMBIO: Alinear el grid a la izquierda de su columna en mac
+              lg: 'flex-start',
+              xl: 'flex-start',
+            },
+          }}
+        >
+          <Grid
+            container
+            spacing={{ xs: 2, sm: 2.5, md: 3, mac: 3.5, lg: 3.5, xl: 4 }}
+            justifyContent={{
+              xs: 'center',
+              sm: 'center',
+              md: 'center',
+              mac: 'flex-start', // <-- CAMBIO: Alinear los items del grid a la izquierda en mac
+              lg: 'flex-start',
+              xl: 'flex-start',
+            }}
+            alignItems="flex-start"
+          >
+            {PROVIDERS_DATA.map((provider, idx) => (
+              <Grid
+                key={provider.alt}
+                xs={6}
+                sm={4}
+                md={3}
+                mac={3} // Mantener 4 logos por fila en mac (12 / 3 = 4)
+                lg={2}
+                xl={2}
+              >
+                <ProviderLogo provider={provider} />
+              </Grid>
+            ))}
+          </Grid>
+        </Box>
       </Box>
     </Box>
   );
 };
 
-export default HeroSection;
+export default ProvidersSection;

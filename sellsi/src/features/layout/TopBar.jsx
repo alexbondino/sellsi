@@ -300,7 +300,7 @@ export default function TopBar({ session, isBuyer, logoUrl, onNavigate }) {
           sx={{
             width: '100%',
             maxWidth: '100%', // Or a fixed max width like '1575px' if you want a container
-            px: { xs: 2, md: 18 },
+            px: { xs: 2, md: 18, mac: 18, lg: 18 },
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between', // Keep this to push groups apart
