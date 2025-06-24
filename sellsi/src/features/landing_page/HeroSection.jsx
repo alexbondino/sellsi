@@ -234,9 +234,10 @@ const HeroSection = ({
         alignItems: 'center',
         justifyContent: 'space-between',
         height: {
-          xs: 'auto', // Auto para móviles y tabletas
-          md: 'auto',
-          mac: '650px', // Ajusta estos valores basados en tu contenido más alto
+          xs: '700px', // ALTURA FIJA PARA MÓVILES
+          sm: '800px', // ALTURA FIJA PARA TABLETS PEQUEÑAS
+          md: '950px', // ALTURA FIJA PARA TABLETS GRANDES
+          mac: '650px',
           lg: '700px',
           xl: '750px',
         },
@@ -262,6 +263,7 @@ const HeroSection = ({
           height: { xs: 'auto', lg: '100%' },
           px: { xs: 2, sm: 4, md: 8, mac: 18, lg: 15, xl: 30 },
           position: 'relative',
+          // NO COLOCAMOS EL BOTÓN Y ESTADÍSTICAS MÓVILES AQUÍ YA QUE LO VAMOS A MOVER
         }}
       >
         {/* Imagen Mobile - Visible hasta sm (se oculta en md y superiores) */}
@@ -269,12 +271,12 @@ const HeroSection = ({
           sx={{
             display: {
               xs: 'block',
-              sm: 'block', // Mantener visible en sm si lo necesitas
-              md: 'none', // <--- CAMBIO CLAVE AQUÍ: Ocultar desde md en adelante
+              sm: 'block',
+              md: 'none',
             },
             position: 'absolute',
-            top: { xs: 75, sm: 90 }, // Ajusta estos para sm si es necesario
-            right: { xs: 35, sm: 30 }, // Ajusta estos para sm si es necesario
+            top: { xs: 75, sm: 90 },
+            right: { xs: 35, sm: 30 },
             width: { xs: 300, sm: 320 },
             height: { xs: 400, sm: 500 },
             zIndex: 1,
@@ -289,7 +291,7 @@ const HeroSection = ({
           sx={{
             flex: {
               xs: 'none',
-              md: 1, // MD y superiores: crece equitativamente
+              md: 1,
             },
             display: 'flex',
             justifyContent: { xs: 'center', md: 'flex-start' },
@@ -326,12 +328,11 @@ const HeroSection = ({
             },
             display: {
               xs: 'none',
-              md: 'flex', // Se muestra desde md en adelante
+              md: 'flex',
               mac: 'flex',
             },
             justifyContent: 'center',
-            // ✨ CAMBIO AQUÍ: Alinea el contenido de esta columna al inicio (arriba) para Mac y superiores
-            alignItems: { xs: 'center', mac: 'flex-start' }, // Esto subirá la imagen/título
+            alignItems: { xs: 'center', mac: 'flex-start' },
             pl: { mac: 4 },
             height: { xs: 'auto', lg: '100%' },
             minHeight: {
@@ -364,105 +365,119 @@ const HeroSection = ({
             <SlideImageContent />
           </Box>
         </Box>
+      </Box>
 
-        {/* Botón y Estadísticas para Mobile (hasta md) */}
+      {/* Botón y Estadísticas para Mobile (hasta md) - REPOSICIONADO */}
+      <Box
+        sx={{
+          display: {
+            xs: 'flex',
+            md: 'none', // Sigue oculto en md y superiores
+          },
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: { xs: 2, sm: 2.5 },
+          width: '100%',
+          position: 'absolute', // <--- CAMBIO CLAVE: Posición absoluta
+          bottom: { xs: 40, sm: 40 }, // <--- CAMBIO CLAVE: Posicionado desde abajo
+          left: '50%', // Centrado horizontalmente
+          transform: 'translateX(-50%)', // Centrado horizontalmente
+          zIndex: 2,
+          // Eliminamos el 'mt' dinámico, ahora la posición es absoluta desde abajo
+          // mt: { xs: currentSlide.id === 1 ? 16 : currentSlide.id === 2 ? 8.3 : 10, sm: currentSlide.id === 1 ? 17 : currentSlide.id === 2 ? 8.2 : 13.1, },
+        }}
+      >
+        <Button
+          variant="contained"
+          sx={{
+            backgroundColor: 'primary.main',
+            fontWeight: 'bold',
+            borderRadius: '8px',
+            px: { xs: 3.68, sm: 4, md: 10 },
+            py: { xs: 1.38, sm: 1.5, md: 2.4 },
+            fontSize: { xs: '1.2rem', sm: '1.35rem', md: '1.5rem' },
+            textTransform: 'none',
+            boxShadow: '0 4px 15px rgba(25, 118, 210, 0.3)',
+            width: 'fit-content',
+            mb: 1, // Mantener un margen inferior para separar de las estadísticas
+            '&:hover': {
+              transform: 'translateY(-2px)',
+              boxShadow: '0 6px 20px rgba(25, 118, 210, 0.4)',
+            },
+          }}
+          onClick={() => navigate('/marketplace')}
+        >
+          Ir a marketplace
+        </Button>
         <Box
           sx={{
-            display: {
-              xs: 'flex',
-              md: 'none', // Se oculta en md y superiores
-            },
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap: { xs: 2, sm: 2.5 },
+            display: 'flex',
+            flexDirection: 'row',
+            gap: { xs: 1.5, sm: 2 },
+            alignItems: 'flex-start',
+            justifyContent: 'center',
             width: '100%',
-            mt: {
-              xs: currentSlide.id === 1 ? 16 : currentSlide.id === 2 ? 8.3 : 10,
-              sm:
-                currentSlide.id === 1 ? 17 : currentSlide.id === 2 ? 8.2 : 13.1,
-            },
-            position: 'relative',
-            zIndex: 2,
+            flexWrap: 'wrap',
+            mb: { xs: 1, sm: 2 },
           }}
         >
-          <Button
-            variant="contained"
-            sx={{
-              backgroundColor: 'primary.main',
-              fontWeight: 'bold',
-              borderRadius: '8px',
-              px: { xs: 3.68, sm: 4, md: 10 },
-              py: { xs: 1.38, sm: 1.5, md: 2.4 },
-              fontSize: { xs: '1.2rem', sm: '1.35rem', md: '1.5rem' },
-              textTransform: 'none',
-              boxShadow: '0 4px 15px rgba(25, 118, 210, 0.3)',
-              width: 'fit-content',
-              mt: { xs: 14, sm: 20 },
-              mb: 1,
-              '&:hover': {
-                transform: 'translateY(-2px)',
-                boxShadow: '0 6px 20px rgba(25, 118, 210, 0.4)',
-              },
-            }}
-            onClick={() => navigate('/marketplace')}
-          >
-            Ir a marketplace
-          </Button>
-          <Box
-            sx={{
-              display: 'flex',
-              flexDirection: 'row',
-              gap: { xs: 1.5, sm: 2 },
-              alignItems: 'flex-start',
-              justifyContent: 'center',
-              width: '100%',
-              flexWrap: 'wrap',
-              mb: { xs: 1, sm: 2 },
-            }}
-          >
-            {statistics.map((stat, index) => (
-              <StatisticCard key={index} stat={stat} />
-            ))}
-          </Box>
-          <Box
-            sx={{
-              display: 'flex',
-              gap: { xs: 1, sm: 1.5 },
-              justifyContent: 'center',
-              alignItems: 'center',
-              mt: 1,
-              mb: { xs: 3, sm: 4 },
-            }}
-          >
-            {promoSlides.map((_, index) => (
-              <CarouselIndicator
-                key={index}
-                index={index}
-                isActive={index === currentPromoSlide}
-                onClick={() => setCurrentPromoSlide(index)}
-              />
-            ))}
-          </Box>
+          {statistics.map((stat, index) => (
+            <StatisticCard key={index} stat={stat} />
+          ))}
+        </Box>
+        <Box
+          sx={{
+            display: 'flex',
+            gap: { xs: 1, sm: 1.5 },
+            justifyContent: 'center',
+            alignItems: 'center',
+            mt: 1,
+            // mb: { xs: 3, sm: 4 }, // Este margen ya no es necesario aquí si se posiciona desde bottom
+          }}
+        >
+          {promoSlides.map((_, index) => (
+            <CarouselIndicator
+              key={index}
+              index={index}
+              isActive={index === currentPromoSlide}
+              onClick={() => setCurrentPromoSlide(index)}
+            />
+          ))}
         </Box>
       </Box>
 
       {/* === FLECHAS DE NAVEGACIÓN === */}
+      {/* Ajusta su posición para Mobile si es necesario */}
       <CarouselNavigationButton
         direction="prev"
         onClick={prevPromoSlide}
         position={{
-          xs: '5%',
+          xs: '50%', // Cambia a un porcentaje para centrar verticalmente en mobile
+          sm: '50%',
           mac: '5%',
           lg: '2%',
+        }}
+        sx={{
+          transform: {
+            xs: 'translateY(-50%)', // Centrado vertical para mobile
+            mac: 'none', // Desactiva la transformación en desktop
+          },
         }}
       />
       <CarouselNavigationButton
         direction="next"
         onClick={nextPromoSlide}
         position={{
-          xs: '5%',
+          xs: '50%', // Cambia a un porcentaje para centrar verticalmente en mobile
+          sm: '50%',
           mac: '5%',
           lg: '2%',
+        }}
+        sx={{
+          transform: {
+            xs: 'translateY(-50%)', // Centrado vertical para mobile
+            mac: 'none', // Desactiva la transformación en desktop
+          },
         }}
       />
 
