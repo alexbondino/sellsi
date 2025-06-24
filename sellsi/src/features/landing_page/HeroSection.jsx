@@ -103,7 +103,6 @@ const HeroSection = ({
           sx={{
             width: '100%',
             mt: { xs: 2, sm: 3, md: 3 },
-            // Removed minHeight here to let flexbox control it fully
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'flex-start',
@@ -146,7 +145,6 @@ const HeroSection = ({
             mb: { xs: 1, sm: 1.5, md: 3 },
             mt: { xs: -1, sm: 0 },
             color: 'white',
-            // Removed minHeight here to let flexbox control it fully
           }}
           dangerouslySetInnerHTML={{ __html: currentSlide.title }}
         />
@@ -158,7 +156,6 @@ const HeroSection = ({
               ...descriptionStyles,
               mb: { xs: 0, sm: 0, md: 1.6 },
               color: 'white',
-              // Removed minHeight here to let flexbox control it fully
             }}
             dangerouslySetInnerHTML={{ __html: currentSlide.subtitle }}
           />
@@ -183,7 +180,6 @@ const HeroSection = ({
             width: '100%',
             height: '100%',
             textAlign: 'center',
-            // Removed minHeight here to let flexbox control it fully
             px: { xs: 2, md: 0 },
           }}
         >
@@ -204,6 +200,8 @@ const HeroSection = ({
       );
     }
 
+    // Condición específica para no mostrar la imagen del slide 2 en móvil
+    // Si quieres que el slide 2 tenga imagen en mobile, quita esta condición.
     if (currentSlide.id === 2 && isMobile) {
       return null;
     }
@@ -235,7 +233,6 @@ const HeroSection = ({
         },
         alignItems: 'center',
         justifyContent: 'space-between',
-        // ✨ CLAVE: ALTURA FIJA PARA DESKTOP
         height: {
           xs: 'auto', // Auto para móviles y tabletas
           md: 'auto',
@@ -246,12 +243,9 @@ const HeroSection = ({
         paddingY: { xs: 4, sm: 6, md: 6, mac: 6, lg: 6, xl: 8 },
         paddingTop: { md: 2, mac: 4, lg: 1, xl: 1 },
         backgroundColor: '#000000',
-        // ✨ Aseguramos un gap generoso
         gap: { xs: 4, sm: 4, md: 5, mac: 8, lg: 10, xl: 12 },
         zIndex: 1,
         transition: 'height 0.3s ease-in-out',
-        // ✨ Opcional: Si el contenido se desborda y quieres cortarlo
-        // overflow: 'hidden',
       }}
     >
       <Box
@@ -265,26 +259,24 @@ const HeroSection = ({
           alignItems: 'center',
           justifyContent: 'space-between',
           width: '100%',
-          // ✨ CRÍTICO: Este Box debe tomar el 100% de la altura de su padre (el carrusel principal)
           height: { xs: 'auto', lg: '100%' },
-          px: { xs: 2, sm: 4, md: 8, mac: 10, lg: 15, xl: 30 },
+          px: { xs: 2, sm: 4, md: 8, mac: 18, lg: 15, xl: 30 },
           position: 'relative',
         }}
       >
-        {/* Imagen Mobile - Visible hasta md */}
-        {/* Este Box está posicionado absolutamente y no debería afectar el flujo del layout principal en desktop */}
+        {/* Imagen Mobile - Visible hasta sm (se oculta en md y superiores) */}
         <Box
           sx={{
             display: {
               xs: 'block',
-              md: 'block',
-              lg: 'none',
+              sm: 'block', // Mantener visible en sm si lo necesitas
+              md: 'none', // <--- CAMBIO CLAVE AQUÍ: Ocultar desde md en adelante
             },
             position: 'absolute',
-            top: { xs: 75, sm: 90, md: 220 },
-            right: { xs: 35, sm: 30, md: 40 },
-            width: { xs: 300, sm: 320, md: 380 },
-            height: { xs: 400, sm: 500, md: 580 },
+            top: { xs: 75, sm: 90 }, // Ajusta estos para sm si es necesario
+            right: { xs: 35, sm: 30 }, // Ajusta estos para sm si es necesario
+            width: { xs: 300, sm: 320 },
+            height: { xs: 400, sm: 500 },
             zIndex: 1,
             pointerEvents: 'none',
           }}
@@ -295,42 +287,30 @@ const HeroSection = ({
         {/* COLUMNA 1: Texto (Izquierda) */}
         <Box
           sx={{
-            // ✨ SIMPLIFICACIÓN: Usar flex: 1 para distribución equitativa.
-            // Si necesitas proporciones específicas (e.g., 40/60), usar flex-basis
-            // pero asegúrate de que haya espacio suficiente.
             flex: {
-              xs: 'none', // No flexbox en móvil
+              xs: 'none',
               md: 1, // MD y superiores: crece equitativamente
             },
             display: 'flex',
-            // ✨ Alinea la columna a la izquierda en MD y superiores
             justifyContent: { xs: 'center', md: 'flex-start' },
             alignItems: 'center',
             pr: { mac: 4 },
             zIndex: 2,
             width: { xs: '100%', md: '100%', lg: 'auto' },
-            // minWidth es crucial para que no se colapse y fuerce el texto a envolverse
             minWidth: { xs: 'auto', lg: '400px' },
-            // ✨ CRÍTICO: La columna debe tomar el 100% de la altura de su padre (el contenedor de las dos columnas)
             height: { xs: 'auto', lg: '100%' },
-            // Opcional: si la columna de texto se desborda verticalmente
-            // overflowY: 'auto',
           }}
         >
           <Box
             sx={{
               width: '100%',
-              maxWidth: { mac: '500px', lg: '450px', xl: '550px' }, // Limita el ancho del contenido interno de la columna izquierda
+              maxWidth: { mac: '500px', lg: '450px', xl: '550px' },
               textAlign: { xs: 'center', md: 'left' },
               px: { lg: 3, xl: 4 },
-              // ✨ Asegura que el contenido interno se adapte a la altura de la columna
               height: { xs: 'auto', lg: '100%' },
               display: 'flex',
               flexDirection: 'column',
-              // ✨ Centra verticalmente el contenido dentro de esta Box si hay espacio
               justifyContent: 'center',
-              // Opcional: si el texto es demasiado largo para la altura fija
-              // overflowY: 'auto',
             }}
           >
             <SlideTextContent />
@@ -340,22 +320,20 @@ const HeroSection = ({
         {/* COLUMNA 2: Imagen / Título de Multi-Section (Derecha) */}
         <Box
           sx={{
-            // ✨ SIMPLIFICACIÓN: Usar flex: 1 para distribución equitativa.
-            // Opcionalmente, puedes volver a flex-basis con porcentajes si 1:1 no es lo que quieres.
             flex: {
               xs: 'none',
-              md: 1, // MD y superiores: crece equitativamente
+              md: 1,
             },
             display: {
               xs: 'none',
-              md: 'flex',
+              md: 'flex', // Se muestra desde md en adelante
+              mac: 'flex',
             },
-            justifyContent: 'center', // Centra el contenido (imagen o título multi-section) horizontalmente
-            alignItems: 'center', // Centra el contenido verticalmente
+            justifyContent: 'center',
+            // ✨ CAMBIO AQUÍ: Alinea el contenido de esta columna al inicio (arriba) para Mac y superiores
+            alignItems: { xs: 'center', mac: 'flex-start' }, // Esto subirá la imagen/título
             pl: { mac: 4 },
-            // ✨ CRÍTICO: La columna debe tomar el 100% de la altura de su padre
             height: { xs: 'auto', lg: '100%' },
-            // minHeight ya no es tan crítico si el padre tiene height fijo, pero se mantiene como precaución
             minHeight: {
               md: '300px',
               mac: '350px',
@@ -363,13 +341,10 @@ const HeroSection = ({
               xl: '400px',
             },
             transition: 'height 0.3s ease-in-out',
-            // Opcional: si la columna de imagen se desborda verticalmente
-            // overflowY: 'auto',
           }}
         >
           <Box
             sx={{
-              // ✨ Control más estricto del ancho del contenido de la columna derecha
               width:
                 currentSlide.type === 'multi-section'
                   ? { md: '100%', mac: '90%', lg: '95%', xl: '95%' }
@@ -379,12 +354,11 @@ const HeroSection = ({
                   ? { md: 700, mac: 800, lg: 900, xl: 1100 }
                   : { mac: 450, lg: 500, xl: 550 },
               ml: { lg: 4, xl: 4 },
-              // ✨ Asegura que el contenedor de la imagen también se ajuste a la altura
               height: { xs: 'auto', lg: '100%' },
               display: 'flex',
-              flexDirection: 'column', // Para centrar verticalmente el contenido
-              justifyContent: 'center', // Centra verticalmente la imagen/título
-              alignItems: 'center', // Centra horizontalmente la imagen/título
+              flexDirection: 'column',
+              justifyContent: 'center',
+              alignItems: 'center',
             }}
           >
             <SlideImageContent />
@@ -396,7 +370,7 @@ const HeroSection = ({
           sx={{
             display: {
               xs: 'flex',
-              md: 'none',
+              md: 'none', // Se oculta en md y superiores
             },
             flexDirection: 'column',
             alignItems: 'center',
