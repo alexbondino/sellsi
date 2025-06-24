@@ -17,29 +17,18 @@ const BottomBar = () => {
       <Box
         sx={{
           width: '100%',
-          display: 'flex',
-          justifyContent: 'center',
-          backgroundColor: 'transparent',
+          px: { xs: 2.25 },
         }}
       >
-        <Box
-          sx={{
-            width: '100%',
-            px: { xs: 2.25, md: 2.25 }, // 18px de padding lateral
-          }}
-        >
-          <Divider sx={{ borderColor: '#e0e0e0' }} />
-        </Box>
+        <Divider sx={{ borderColor: '#e0e0e0' }} />
       </Box>
 
       <Box
         sx={{
           backgroundColor: '#000000',
           width: '100%',
-          px: { md: 10, mac: 18, lg: 15 },
+          px: { xs: 2.25, mac: 18 },
           py: { xs: 4, md: 6 },
-          display: 'flex',
-          justifyContent: 'center',
           overflowX: 'hidden',
           zIndex: 200,
         }}
@@ -47,62 +36,60 @@ const BottomBar = () => {
         <Box
           sx={{
             width: '100%',
-            px: { xs: 2.25, md: 2.25 }, // 18px laterales
+            display: 'flex',
+            flexDirection: { xs: 'column', md: 'row' },
+            justifyContent: 'space-between',
+            alignItems: 'flex-start',
             color: '#fff',
           }}
         >
-          <Grid container spacing={4}>
-            {/* Logo y eslogan */}
-            <Grid sx={{ xs: 12, md: 4 }}>
-              <Box sx={{ mb: 3 }}>
-                <Box
-                  sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}
-                >
-                  <img
-                    src="/logodark.svg"
-                    alt="SELLSI Logo"
-                    style={{ height: 168 }}
-                  />
-                </Box>
-                <Typography
-                  variant="h6"
-                  sx={{
-                    fontWeight: 600,
-                    fontSize: '1.1rem',
-                    color: '#fff',
-                    mb: 2,
-                  }}
-                >
-                  Crece. Conecta. Vende.
-                </Typography>
-                <Typography
-                  variant="body2"
-                  sx={{
-                    color: '#b0b0b0',
-                    lineHeight: 1.6,
-                    maxWidth: 280,
-                  }}
-                >
-                  La plataforma que conecta proveedores con vendedores de manera
-                  sencilla y eficiente.
-                </Typography>
-              </Box>
-            </Grid>
+          {/* Logo y eslogan */}
+          <Box sx={{ mb: { xs: 4, md: 0 }, maxWidth: 400 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+              <img
+                src="/logodark.svg"
+                alt="SELLSI Logo"
+                style={{ height: 168 }}
+              />
+            </Box>
+            <Typography
+              variant="h6"
+              sx={{
+                fontWeight: 600,
+                fontSize: '1.1rem',
+                mb: 2,
+              }}
+            >
+              Crece. Conecta. Vende.
+            </Typography>
+            <Typography
+              variant="body2"
+              sx={{
+                color: '#b0b0b0',
+                lineHeight: 1.6,
+                maxWidth: 280,
+              }}
+            >
+              La plataforma que conecta proveedores con vendedores de manera
+              sencilla y eficiente.
+            </Typography>
+          </Box>
 
+          {/* Secciones alineadas a la derecha */}
+          <Grid
+            container
+            spacing={4}
+            sx={{
+              maxWidth: 800,
+              justifyContent: 'flex-end',
+            }}
+          >
             {/* Navegación */}
-            <Grid sx={{ xs: 12, sm: 6, md: 2 }}>
-              <Typography
-                variant="h6"
-                sx={{
-                  fontWeight: 600,
-                  mb: 2,
-                  fontSize: '1rem',
-                  color: '#fff',
-                }}
-              >
+            <Grid item xs={12} sm={6} md={3}>
+              <Typography variant="h6" sx={sectionTitleStyle}>
                 Navegación
               </Typography>
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+              <Box sx={columnStyle}>
                 <Typography variant="body2" sx={navItemStyle}>
                   Inicio
                 </Typography>
@@ -123,11 +110,11 @@ const BottomBar = () => {
             </Grid>
 
             {/* Servicios */}
-            <Grid sx={{ xs: 12, sm: 6, md: 2 }}>
+            <Grid item xs={12} sm={6} md={3}>
               <Typography variant="h6" sx={sectionTitleStyle}>
                 Servicios
               </Typography>
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+              <Box sx={columnStyle}>
                 <Typography variant="body2" sx={navItemStyle}>
                   Marketplace
                 </Typography>
@@ -141,11 +128,11 @@ const BottomBar = () => {
             </Grid>
 
             {/* Soporte */}
-            <Grid sx={{ xs: 12, sm: 6, md: 2 }}>
+            <Grid item xs={12} sm={6} md={3}>
               <Typography variant="h6" sx={sectionTitleStyle}>
                 Soporte
               </Typography>
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+              <Box sx={columnStyle}>
                 <Typography variant="body2" sx={navItemStyle}>
                   Centro de Ayuda
                 </Typography>
@@ -162,7 +149,7 @@ const BottomBar = () => {
             </Grid>
 
             {/* Redes Sociales */}
-            <Grid sx={{ xs: 12, sm: 6, md: 2 }}>
+            <Grid item xs={12} sm={6} md={3}>
               <Typography variant="h6" sx={sectionTitleStyle}>
                 Síguenos
               </Typography>
@@ -188,27 +175,26 @@ const BottomBar = () => {
               </Box>
             </Grid>
           </Grid>
-
-          <Divider sx={{ my: 4, borderColor: '#333' }} />
-
-          <Box sx={{ textAlign: 'center' }}>
-            <Typography
-              variant="body2"
-              sx={{ color: '#b0b0b0', fontSize: '0.9rem' }}
-            >
-              © 2025 SELLSI Todos los derechos reservados.
-            </Typography>
-          </Box>
         </Box>
 
-        {/* Modal de Contacto */}
+        <Divider sx={{ my: 4, borderColor: '#333' }} />
+
+        <Box sx={{ textAlign: 'center' }}>
+          <Typography
+            variant="body2"
+            sx={{ color: '#b0b0b0', fontSize: '0.9rem' }}
+          >
+            © 2025 SELLSI Todos los derechos reservados.
+          </Typography>
+        </Box>
+
         <ContactModal open={openContactModal} onClose={handleCloseContact} />
       </Box>
     </>
   );
 };
 
-// Reusable styles
+// Estilos reutilizables
 const navItemStyle = {
   color: '#b0b0b0',
   cursor: 'pointer',
@@ -222,7 +208,12 @@ const sectionTitleStyle = {
   color: '#fff',
 };
 
-// Reusable social icon component
+const columnStyle = {
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 1,
+};
+
 const SocialIcon = ({ href, icon, hoverColor, label }) => (
   <IconButton
     href={href}
