@@ -15,14 +15,13 @@ import {
 import MenuIcon from '@mui/icons-material/Menu';
 import PersonIcon from '@mui/icons-material/Person';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
-import { supabase } from '../../services/supabase'; // Still needed for logout
+import { supabase } from '../../services/supabase';
 import useCartStore from '../buyer/hooks/cartStore';
 import ContactModal from '../ui/ContactModal';
 import Login from '../login/Login';
 import Register from '../register/Register';
 
 export default function TopBar({ session, isBuyer, logoUrl, onNavigate }) {
-  // --- HOOKS Y ESTADO ---
   const theme = useTheme();
   const navigate = useNavigate();
   const itemsInCart = useCartStore(state => state.items).length;
@@ -36,7 +35,6 @@ export default function TopBar({ session, isBuyer, logoUrl, onNavigate }) {
 
   const isLoggedIn = !!session;
 
-  // --- MANEJADORES DE EVENTOS ---
   const handleOpenMobileMenu = e => setMobileMenuAnchor(e.currentTarget);
   const handleCloseMobileMenu = () => setMobileMenuAnchor(null);
   const handleOpenProfileMenu = e => setProfileAnchor(e.currentTarget);
@@ -60,19 +58,17 @@ export default function TopBar({ session, isBuyer, logoUrl, onNavigate }) {
     }
   };
 
-  // Custom ShoppingCart component to force styles
   const CustomShoppingCartIcon = ({ sx, ...props }) => (
     <ShoppingCartIcon
       {...props}
       sx={{
         fontSize: '2.24rem',
-        color: 'white !important', // Asegura que el color sea blanco
+        color: 'white !important',
         ...sx,
       }}
     />
   );
 
-  // --- LÓGICA DINÁMICA PARA RENDERIZAR CONTENIDO ---
   let desktopNavLinks = null;
   let desktopRightContent = null;
   let mobileMenuItems = [];
@@ -80,8 +76,6 @@ export default function TopBar({ session, isBuyer, logoUrl, onNavigate }) {
   const profileMenuButton = (
     <IconButton onClick={handleOpenProfileMenu} sx={{ color: 'white', p: 0 }}>
       <Avatar src={logoUrl}>
-        {' '}
-        {/* Uses logoUrl from props */}
         <PersonIcon />
       </Avatar>
     </IconButton>
@@ -219,6 +213,7 @@ export default function TopBar({ session, isBuyer, logoUrl, onNavigate }) {
       </MenuItem>,
     ];
   } else {
+    // For authenticated but not buyer (e.g., seller or admin)
     desktopRightContent = (
       <>
         <Tooltip title="Carrito" arrow>
@@ -297,31 +292,46 @@ export default function TopBar({ session, isBuyer, logoUrl, onNavigate }) {
           position: 'fixed',
           top: 0,
           zIndex: 1100,
-          height: 64, // Ensure this matches pt in AppContent Box
-          // AÑADIDO: Borde inferior blanco
+          height: 64,
           borderBottom: '1px solid white',
         }}
       >
-        <Box
+        <Box // This is the main content container within the fixed TopBar
           sx={{
             width: '100%',
-            maxWidth: '1575px',
-            px: { xs: 2, md: 4 },
+            maxWidth: '100%', // Or a fixed max width like '1575px' if you want a container
+            px: { xs: 2, md: 18 },
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'space-between',
+            justifyContent: 'space-between', // Keep this to push groups apart
           }}
         >
+          {/* NEW GROUP FOR LEFT ALIGNMENT: Logo + Nav Links */}
           <Box
-            component="img"
-            src="/logodark.svg"
-            alt="Sellsi Logo"
-            onClick={() => navigate('/')}
-            sx={{ height: { xs: 129, md: 160 }, cursor: 'pointer' }}
-          />
-          <Box sx={{ display: { xs: 'none', md: 'flex' }, gap: 2 }}>
-            {desktopNavLinks}
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 2, // Gap between logo and nav links
+            }}
+          >
+            <Box
+              component="img"
+              src="/logodark.svg"
+              alt="Sellsi Logo"
+              onClick={() => navigate('/')}
+              sx={{
+                height: { xs: 90, md: 110 },
+                cursor: 'pointer',
+                // Removed the problematic px from here
+              }}
+            />
+            {/* These links will now be aligned to the left within this new group */}
+            <Box sx={{ display: { xs: 'none', md: 'flex' }, gap: 2 }}>
+              {desktopNavLinks}
+            </Box>
           </Box>
+
+          {/* Existing Right-Side Content */}
           <Box
             sx={{
               display: { xs: 'none', md: 'flex' },
@@ -331,6 +341,8 @@ export default function TopBar({ session, isBuyer, logoUrl, onNavigate }) {
           >
             {desktopRightContent}
           </Box>
+
+          {/* Existing Mobile Menu Button */}
           <Box sx={{ display: { xs: 'flex', md: 'none' } }}>
             {isLoggedIn && !isBuyer && (
               <Box sx={{ mr: 1 }}>{profileMenuButton}</Box>
