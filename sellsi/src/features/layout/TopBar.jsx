@@ -30,18 +30,11 @@ export default function TopBar({ session, isBuyer, logoUrl, onNavigate }) {
   const [mobileMenuAnchor, setMobileMenuAnchor] = useState(null);
   const [profileAnchor, setProfileAnchor] = useState(null);
 
-  // logoUrl now comes from props, no need for internal state or useEffect here
-  // const [logoUrl, setLogoUrl] = useState(null); // REMOVED
-
   const [openLoginModal, setOpenLoginModal] = useState(false);
   const [openRegisterModal, setOpenRegisterModal] = useState(false);
   const [openContactModal, setOpenContactModal] = useState(false);
 
   const isLoggedIn = !!session;
-
-  // --- EFECTO PARA BUSCAR EL LOGO DEL USUARIO ---
-  // This useEffect is no longer needed here as logoUrl is passed as a prop
-  // useEffect(() => { ... }, [session, isBuyer]); // REMOVED
 
   // --- MANEJADORES DE EVENTOS ---
   const handleOpenMobileMenu = e => setMobileMenuAnchor(e.currentTarget);
@@ -69,13 +62,13 @@ export default function TopBar({ session, isBuyer, logoUrl, onNavigate }) {
 
   // Custom ShoppingCart component to force styles
   const CustomShoppingCartIcon = ({ sx, ...props }) => (
-    <ShoppingCartIcon 
-      {...props} 
-      sx={{ 
-        fontSize: '2.24rem', 
-        color: 'white !important',
-        ...sx 
-      }} 
+    <ShoppingCartIcon
+      {...props}
+      sx={{
+        fontSize: '2.24rem',
+        color: 'white !important', // Asegura que el color sea blanco
+        ...sx,
+      }}
     />
   );
 
@@ -159,12 +152,13 @@ export default function TopBar({ session, isBuyer, logoUrl, onNavigate }) {
       >
         Registrarse
       </MenuItem>,
-    ];  } else if (isBuyer) {
+    ];
+  } else if (isBuyer) {
     desktopRightContent = (
       <>
         <Tooltip title="Carrito" arrow>
-          <IconButton 
-            onClick={() => navigate('/buyer/cart')} 
+          <IconButton
+            onClick={() => navigate('/buyer/cart')}
             sx={{
               color: 'white',
               mr: 2.5,
@@ -173,9 +167,13 @@ export default function TopBar({ session, isBuyer, logoUrl, onNavigate }) {
               border: 'none',
               transition: 'background 0.2s',
               '&:focus': { outline: 'none', border: 'none', boxShadow: 'none' },
-              '&:active': { outline: 'none', border: 'none', boxShadow: 'none' },
+              '&:active': {
+                outline: 'none',
+                border: 'none',
+                boxShadow: 'none',
+              },
               '&:hover': {
-                background: (theme) => theme.palette.primary.main,
+                background: theme => theme.palette.primary.main,
                 boxShadow: 'none',
                 outline: 'none',
                 border: 'none',
@@ -219,12 +217,13 @@ export default function TopBar({ session, isBuyer, logoUrl, onNavigate }) {
       <MenuItem key="logout" onClick={handleLogout}>
         Cerrar sesión
       </MenuItem>,
-    ];  } else {
+    ];
+  } else {
     desktopRightContent = (
       <>
         <Tooltip title="Carrito" arrow>
-          <IconButton 
-            onClick={() => navigate('/buyer/cart')} 
+          <IconButton
+            onClick={() => navigate('/buyer/cart')}
             sx={{
               color: 'white',
               mr: 2.5,
@@ -233,9 +232,13 @@ export default function TopBar({ session, isBuyer, logoUrl, onNavigate }) {
               border: 'none',
               transition: 'background 0.2s',
               '&:focus': { outline: 'none', border: 'none', boxShadow: 'none' },
-              '&:active': { outline: 'none', border: 'none', boxShadow: 'none' },
+              '&:active': {
+                outline: 'none',
+                border: 'none',
+                boxShadow: 'none',
+              },
               '&:hover': {
-                background: (theme) => theme.palette.primary.main,
+                background: theme => theme.palette.primary.main,
                 boxShadow: 'none',
                 outline: 'none',
                 border: 'none',
@@ -295,6 +298,8 @@ export default function TopBar({ session, isBuyer, logoUrl, onNavigate }) {
           top: 0,
           zIndex: 1100,
           height: 64, // Ensure this matches pt in AppContent Box
+          // AÑADIDO: Borde inferior blanco
+          borderBottom: '1px solid white',
         }}
       >
         <Box
@@ -330,8 +335,8 @@ export default function TopBar({ session, isBuyer, logoUrl, onNavigate }) {
             {isLoggedIn && !isBuyer && (
               <Box sx={{ mr: 1 }}>{profileMenuButton}</Box>
             )}
-            <IconButton onClick={handleOpenMobileMenu} color="inherit">
-              <MenuIcon />
+            <IconButton onClick={handleOpenMobileMenu}>
+              <MenuIcon sx={{ color: 'white' }} />
             </IconButton>
           </Box>
         </Box>

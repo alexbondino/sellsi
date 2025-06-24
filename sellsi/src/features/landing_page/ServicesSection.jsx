@@ -124,7 +124,7 @@ const ServicesSection = ({ serviciosRef }) => {
   const breakpoints = {
     container: {
       px: { xs: 1, sm: 1, md: 8, mac: 18, lg: 15, xl: 30 }, // ✅ REDUCIDO PADDING LATERAL EN XS/SM PARA MÁS ANCHO
-      py: { xs: 6, sm: 7, md: 8, lg: 9, xl: 9 },
+      py: { xs: 6, sm: 7, md: 8, mac: 6, lg: 9, xl: 9 },
     },
     title: {
       px: { xs: 0, sm: 0, md: 0, lg: 0, xl: 0 }, // ✅ SIN PADDING - ALINEADO COMPLETAMENTE A LA IZQUIERDA

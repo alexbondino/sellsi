@@ -13,7 +13,7 @@ const ProvidersSection = ({ statistics }) => {
       sx={{
         backgroundColor: '#ffffff',
         px: { xs: 2, sm: 4, md: 8, mac: 18, lg: 15, xl: 30 },
-        py: { xs: 6, sm: 7, md: 8, mac: 10, lg: 8, xl: 8 },
+        py: { xs: 6, sm: 7, md: 8, mac: 6, lg: 8, xl: 8 },
         position: 'relative',
         paddingTop: {
           xs: 6,
