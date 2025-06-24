@@ -1,0 +1,10 @@
+/* src/styles/_breakpoints.css */
+:root {
+  --breakpoint-xs: 0px; /* Base para smartphones pequeños */
+  --breakpoint-sm: 640px; /* Smartphones grandes, tablets en vertical */
+  --breakpoint-md: 768px; /* Tablets, laptops muy pequeñas */
+  --breakpoint-lg: 1024px; /* Laptops, monitores comunes */
+  --breakpoint-xl: 1920px; /* Monitores Full HD (1080p) */
+  --breakpoint-xxl: 2560px; /* Monitores 2K / 1440p / MacBook Air M1 */
+  --breakpoint-4k: 3840px; /* Monitores 4K (UHD) */
+}

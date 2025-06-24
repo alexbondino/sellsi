@@ -1,6 +1,6 @@
-import React from 'react'
-import { Card, CardContent } from '@mui/material'
-import { LazyImage } from '../../components/shared'
+import React from 'react';
+import { Card, CardContent } from '@mui/material';
+import { LazyImage } from '../../components/shared';
 
 /**
  * ====================================================================================
@@ -82,8 +82,8 @@ const ProviderLogo = React.memo(({ provider }) => (
       />
     </CardContent>
   </Card>
-))
+));
 
-ProviderLogo.displayName = 'ProviderLogo'
+ProviderLogo.displayName = 'ProviderLogo';
 
-export default ProviderLogo
+export default ProviderLogo;
