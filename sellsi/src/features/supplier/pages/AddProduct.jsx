@@ -42,7 +42,7 @@ import { supabase } from '../../../services/supabase';
 import { UploadService } from '../../../services/uploadService';
 
 // Components
-import SidebarProvider from '../../layout/SideBar';
+import SideBarProvider from '../../layout/SideBar';
 import { ImageUploader, FileUploader } from '../../ui';
 import TramosSection from '../components/TramosSection'; // Importar el nuevo componente
 
@@ -76,7 +76,7 @@ const AddProduct = () => {
   // Detectar modo de edición
   const editProductId = searchParams.get('edit');
   const isEditMode = Boolean(editProductId);
-  const supplierId = localStorage.getItem('user_id');  // Usar el hook de formulario especializado
+  const supplierId = localStorage.getItem('user_id'); // Usar el hook de formulario especializado
   const {
     formData,
     errors,
@@ -87,7 +87,7 @@ const AddProduct = () => {
     handleFieldBlur,
     submitForm,
     resetForm,
-  } = useProductForm(editProductId);  // Estado local para errores de validación
+  } = useProductForm(editProductId); // Estado local para errores de validación
   const [localErrors, setLocalErrors] = useState({});
   const [triedSubmit, setTriedSubmit] = useState(false);
   const [imageError, setImageError] = useState('');
@@ -135,18 +135,27 @@ const AddProduct = () => {
     if (formData.pricingType === 'Por Unidad') {
       if (!formData.precioUnidad || isNaN(Number(formData.precioUnidad))) {
         newErrors.precioUnidad = 'El precio es requerido';
-      }    } else {
+      }
+    } else {
       // Si es Por Tramos, NO agregar error de precioUnidad
       const validTramos = formData.tramos.filter(
-        t => t.cantidad !== '' && t.precio !== '' && !isNaN(Number(t.cantidad)) && !isNaN(Number(t.precio))
+        t =>
+          t.cantidad !== '' &&
+          t.precio !== '' &&
+          !isNaN(Number(t.cantidad)) &&
+          !isNaN(Number(t.precio))
       );
       if (validTramos.length < 2) {
-        newErrors.tramos = 'Debe agregar al menos dos tramos válidos (cantidad y precio definidos)';
+        newErrors.tramos =
+          'Debe agregar al menos dos tramos válidos (cantidad y precio definidos)';
       } else {
         // Validar que ningún precio de tramo supere los 8 dígitos
-        const tramosConPrecioAlto = validTramos.filter(t => parseFloat(t.precio) > 99999999);
+        const tramosConPrecioAlto = validTramos.filter(
+          t => parseFloat(t.precio) > 99999999
+        );
         if (tramosConPrecioAlto.length > 0) {
-          newErrors.tramos = 'Los precios de los tramos no pueden superar los 8 dígitos (99,999,999)';
+          newErrors.tramos =
+            'Los precios de los tramos no pueden superar los 8 dígitos (99,999,999)';
         } else {
           // Validar que las cantidades de los tramos no excedan el stock
           const stockNumber = parseInt(formData.stock || 0);
@@ -159,7 +168,8 @@ const AddProduct = () => {
           }
         }
       }
-    }if (formData.imagenes.length === 0) {
+    }
+    if (formData.imagenes.length === 0) {
       newErrors.imagenes = 'Debe agregar al menos una imagen';
     } else if (formData.imagenes.length > 5) {
       newErrors.imagenes = 'Máximo 5 imágenes permitidas';
@@ -183,13 +193,15 @@ const AddProduct = () => {
       );
       if (validDocuments.length !== formData.documentos.length) {
         newErrors.documentos = 'Solo se permiten archivos PDF de máximo 5MB';
-      }    }
+      }
+    }
 
     // En validateForm, agregar validación básica de especificaciones
     if (formData.specifications.some(s => s.key && !s.value)) {
       newErrors.specifications =
         'Completa todos los valores de las especificaciones';
-    }    setLocalErrors(newErrors);
+    }
+    setLocalErrors(newErrors);
     return newErrors; // <-- SIEMPRE retorna un objeto
   }, [formData]); // Cerrar useCallback con dependencias
 
@@ -214,8 +226,8 @@ const AddProduct = () => {
     rangos: {
       ingresoPorVentas: { min: 0, max: 0 },
       tarifaServicio: { min: 0, max: 0 },
-      total: { min: 0, max: 0 }
-    }
+      total: { min: 0, max: 0 },
+    },
   });
 
   // Efecto para calcular dinámicamente
@@ -236,7 +248,8 @@ const AddProduct = () => {
       formData.stock
     ) {
       // Cálculo simple para precio por unidad
-      const totalIncome = parseFloat(formData.precioUnidad) * parseInt(formData.stock);
+      const totalIncome =
+        parseFloat(formData.precioUnidad) * parseInt(formData.stock);
       const serviceFee = totalIncome * serviceRate;
       const finalTotal = totalIncome - serviceFee;
 
@@ -248,8 +261,8 @@ const AddProduct = () => {
         rangos: {
           ingresoPorVentas: { min: 0, max: 0 },
           tarifaServicio: { min: 0, max: 0 },
-          total: { min: 0, max: 0 }
-        }
+          total: { min: 0, max: 0 },
+        },
       });
     } else if (
       formData.pricingType === 'Por Tramo' &&
@@ -257,36 +270,40 @@ const AddProduct = () => {
     ) {
       // Cálculo de rangos para precios por tramo
       const validTramos = formData.tramos.filter(
-        t => t.cantidad && t.precio && !isNaN(Number(t.cantidad)) && !isNaN(Number(t.precio))
+        t =>
+          t.cantidad &&
+          t.precio &&
+          !isNaN(Number(t.cantidad)) &&
+          !isNaN(Number(t.precio))
       );
 
       if (validTramos.length > 0 && formData.stock) {
         const stock = parseInt(formData.stock);
-        
+
         // Calcular valor mínimo (peor escenario)
         const minIncome = calculateMinimumIncome(validTramos, stock);
-        
+
         // Calcular valor máximo (mejor escenario)
         const maxIncome = calculateMaximumIncome(validTramos, stock);
-        
+
         // Calcular tarifas de servicio
         const minServiceFee = minIncome * serviceRate;
         const maxServiceFee = maxIncome * serviceRate;
-        
+
         // Calcular totales
         const minTotal = minIncome - minServiceFee;
         const maxTotal = maxIncome - maxServiceFee;
 
         setCalculations({
           ingresoPorVentas: 0, // No se usa en modo rango
-          tarifaServicio: 0,   // No se usa en modo rango
-          total: 0,            // No se usa en modo rango
+          tarifaServicio: 0, // No se usa en modo rango
+          total: 0, // No se usa en modo rango
           isRange: true,
           rangos: {
             ingresoPorVentas: { min: minIncome, max: maxIncome },
             tarifaServicio: { min: minServiceFee, max: maxServiceFee },
-            total: { min: minTotal, max: maxTotal }
-          }
+            total: { min: minTotal, max: maxTotal },
+          },
         });
       } else {
         // Sin tramos válidos, resetear
@@ -298,8 +315,8 @@ const AddProduct = () => {
           rangos: {
             ingresoPorVentas: { min: 0, max: 0 },
             tarifaServicio: { min: 0, max: 0 },
-            total: { min: 0, max: 0 }
-          }
+            total: { min: 0, max: 0 },
+          },
         });
       }
     } else {
@@ -312,8 +329,8 @@ const AddProduct = () => {
         rangos: {
           ingresoPorVentas: { min: 0, max: 0 },
           tarifaServicio: { min: 0, max: 0 },
-          total: { min: 0, max: 0 }
-        }
+          total: { min: 0, max: 0 },
+        },
       });
     }
   };
@@ -321,44 +338,46 @@ const AddProduct = () => {
   // Función para calcular el valor mínimo (peor escenario)
   const calculateMinimumIncome = (tramos, stock) => {
     // Ordenar tramos de mayor a menor cantidad (más barato a más caro)
-    const sortedTramos = [...tramos].sort((a, b) => parseInt(b.cantidad) - parseInt(a.cantidad));
-    
+    const sortedTramos = [...tramos].sort(
+      (a, b) => parseInt(b.cantidad) - parseInt(a.cantidad)
+    );
+
     let remainingStock = stock;
     let totalIncome = 0;
-    
+
     for (const tramo of sortedTramos) {
       if (remainingStock <= 0) break;
-      
+
       const tramoCantidad = parseInt(tramo.cantidad);
       const tramoPrecio = parseFloat(tramo.precio);
-      
+
       // Usar división entera
       const tramosCompletos = Math.floor(remainingStock / tramoCantidad);
-      
+
       if (tramosCompletos > 0) {
         totalIncome += tramosCompletos * tramoPrecio;
         remainingStock -= tramosCompletos * tramoCantidad;
       }
     }
-    
+
     return totalIncome;
   };
 
   // Función para calcular el valor máximo (mejor escenario)
   const calculateMaximumIncome = (tramos, stock) => {
     // Encontrar el tramo con menor cantidad (más caro)
-    const smallestTramo = tramos.reduce((min, current) => 
+    const smallestTramo = tramos.reduce((min, current) =>
       parseInt(current.cantidad) < parseInt(min.cantidad) ? current : min
     );
-    
+
     const tramoCantidad = parseInt(smallestTramo.cantidad);
     const tramoPrecio = parseFloat(smallestTramo.precio);
-    
+
     // Usar división entera
     const tramosCompletos = Math.floor(stock / tramoCantidad);
-    
+
     return tramosCompletos * tramoPrecio;
-  };// Handlers
+  }; // Handlers
   const handleInputChange = field => event => {
     const value = event.target.value;
     updateField(field, value);
@@ -395,7 +414,7 @@ const AddProduct = () => {
     updateField('imagenes', images);
   };
 
-  const handleImageError = (errorMessage) => {
+  const handleImageError = errorMessage => {
     setImageError(errorMessage);
   };
 
@@ -428,7 +447,11 @@ const AddProduct = () => {
     console.log('formData:', JSON.stringify(formData, null, 2));
     const errors = validateForm();
     console.log('validateForm() errors:', errors);
-    if (errors && typeof errors === 'object' && Object.keys(errors).length > 0) {
+    if (
+      errors &&
+      typeof errors === 'object' &&
+      Object.keys(errors).length > 0
+    ) {
       console.log('❌ Validación fallida:', errors);
       toast.error('Por favor, completa todos los campos requeridos');
       return;
@@ -451,14 +474,19 @@ const AddProduct = () => {
           ? 'Producto actualizado exitosamente'
           : 'Producto agregado exitosamente'
       );
-      navigate('/supplier/myproducts');    } catch (error) {
+      navigate('/supplier/myproducts');
+    } catch (error) {
       console.error('❌ Error en handleSubmit:', error);
-      
+
       // Manejar error específico de overflow numérico
       if (error.message && error.message.includes('numeric field overflow')) {
-        toast.error('Error: Uno o más precios superan el límite permitido (máximo 8 dígitos). Por favor, reduce los valores.');
+        toast.error(
+          'Error: Uno o más precios superan el límite permitido (máximo 8 dígitos). Por favor, reduce los valores.'
+        );
       } else {
-        toast.error(error.message || 'Error inesperado al procesar el producto');
+        toast.error(
+          error.message || 'Error inesperado al procesar el producto'
+        );
       }
     }
     console.log('--- END SUBMIT DEBUG ---');
@@ -476,7 +504,7 @@ const AddProduct = () => {
 
   return (
     <ThemeProvider theme={dashboardTheme}>
-      <SidebarProvider />
+      <SideBarProvider />
 
       <Box
         sx={{
@@ -553,9 +581,14 @@ const AddProduct = () => {
                       value={formData.nombre}
                       onChange={handleInputChange('nombre')}
                       onBlur={() => handleFieldBlur('nombre')}
-                      error={!!(touched.nombre || triedSubmit) && !!errors.nombre}
+                      error={
+                        !!(touched.nombre || triedSubmit) && !!errors.nombre
+                      }
                       helperText={
-                        (touched.nombre || triedSubmit) ? (errors.nombre || `${formData.nombre.length}/40 caracteres`) : ''
+                        touched.nombre || triedSubmit
+                          ? errors.nombre ||
+                            `${formData.nombre.length}/40 caracteres`
+                          : ''
                       }
                       inputProps={{ maxLength: 40 }}
                     />
@@ -568,7 +601,13 @@ const AddProduct = () => {
                     >
                       Categoría
                     </Typography>
-                    <FormControl fullWidth error={!!(touched.categoria || triedSubmit) && !!errors.categoria}>
+                    <FormControl
+                      fullWidth
+                      error={
+                        !!(touched.categoria || triedSubmit) &&
+                        !!errors.categoria
+                      }
+                    >
                       <InputLabel>Categoría:</InputLabel>
                       <Select
                         value={formData.categoria}
@@ -585,15 +624,16 @@ const AddProduct = () => {
                           </MenuItem>
                         ))}
                       </Select>
-                      {(touched.categoria || triedSubmit) && errors.categoria && (
-                        <Typography
-                          variant="caption"
-                          color="error"
-                          sx={{ mt: 0.5, ml: 1.5 }}
-                        >
-                          {errors.categoria}
-                        </Typography>
-                      )}
+                      {(touched.categoria || triedSubmit) &&
+                        errors.categoria && (
+                          <Typography
+                            variant="caption"
+                            color="error"
+                            sx={{ mt: 0.5, ml: 1.5 }}
+                          >
+                            {errors.categoria}
+                          </Typography>
+                        )}
                     </FormControl>
                   </Box>
                   {/* FILA 2: Descripción del Producto (100%) */}
@@ -608,13 +648,20 @@ const AddProduct = () => {
                       value={formData.descripcion}
                       onChange={handleInputChange('descripcion')}
                       onBlur={() => handleFieldBlur('descripcion')}
-                      error={!!(touched.descripcion || triedSubmit) && !!errors.descripcion}
+                      error={
+                        !!(touched.descripcion || triedSubmit) &&
+                        !!errors.descripcion
+                      }
                       helperText={
-                        (touched.descripcion || triedSubmit) ? (errors.descripcion || `${formData.descripcion.length}/600 caracteres`) : ''
+                        touched.descripcion || triedSubmit
+                          ? errors.descripcion ||
+                            `${formData.descripcion.length}/600 caracteres`
+                          : ''
                       }
                       inputProps={{ maxLength: 600 }}
                     />
-                  </Box>                  {/* FILA 3: Inventario y Disponibilidad */}
+                  </Box>{' '}
+                  {/* FILA 3: Inventario y Disponibilidad */}
                   <Box>
                     <Typography
                       variant="h6"
@@ -623,7 +670,9 @@ const AddProduct = () => {
                     >
                       Inventario y Disponibilidad
                     </Typography>
-                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    <Box
+                      sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}
+                    >
                       {/* Primera fila: Stock y Compra Mínima */}
                       <Box sx={{ display: 'flex', gap: 2 }}>
                         <TextField
@@ -633,8 +682,15 @@ const AddProduct = () => {
                           value={formData.stock}
                           onChange={handleInputChange('stock')}
                           onBlur={() => handleFieldBlur('stock')}
-                          error={!!(touched.stock || triedSubmit) && !!(errors.stock || localErrors.stock)}
-                          helperText={(touched.stock || triedSubmit) ? (errors.stock || localErrors.stock) : ''}
+                          error={
+                            !!(touched.stock || triedSubmit) &&
+                            !!(errors.stock || localErrors.stock)
+                          }
+                          helperText={
+                            touched.stock || triedSubmit
+                              ? errors.stock || localErrors.stock
+                              : ''
+                          }
                           type="number"
                           inputProps={{ min: 1, max: 15000 }}
                         />
@@ -645,8 +701,15 @@ const AddProduct = () => {
                           value={formData.compraMinima}
                           onChange={handleInputChange('compraMinima')}
                           onBlur={() => handleFieldBlur('compraMinima')}
-                          error={!!(touched.compraMinima || triedSubmit) && !!(errors.compraMinima || localErrors.compraMinima)}
-                          helperText={(touched.compraMinima || triedSubmit) ? (errors.compraMinima || localErrors.compraMinima) : ''}
+                          error={
+                            !!(touched.compraMinima || triedSubmit) &&
+                            !!(errors.compraMinima || localErrors.compraMinima)
+                          }
+                          helperText={
+                            touched.compraMinima || triedSubmit
+                              ? errors.compraMinima || localErrors.compraMinima
+                              : ''
+                          }
                           type="number"
                           inputProps={{ min: 1, max: 15000 }}
                         />
@@ -661,11 +724,24 @@ const AddProduct = () => {
                           onChange={handleInputChange('precioUnidad')}
                           onBlur={() => handleFieldBlur('precioUnidad')}
                           disabled={formData.pricingType === 'Por Tramo'}
-                          error={formData.pricingType === 'Por Unidad' && !!(touched.precioUnidad || triedSubmit) && !!(errors.precioUnidad || localErrors.precioUnidad)}
-                          helperText={formData.pricingType === 'Por Unidad' ? ((touched.precioUnidad || triedSubmit) ? (errors.precioUnidad || localErrors.precioUnidad) : '') : ''}
+                          error={
+                            formData.pricingType === 'Por Unidad' &&
+                            !!(touched.precioUnidad || triedSubmit) &&
+                            !!(errors.precioUnidad || localErrors.precioUnidad)
+                          }
+                          helperText={
+                            formData.pricingType === 'Por Unidad'
+                              ? touched.precioUnidad || triedSubmit
+                                ? errors.precioUnidad ||
+                                  localErrors.precioUnidad
+                                : ''
+                              : ''
+                          }
                           InputProps={{
                             startAdornment: (
-                              <InputAdornment position="start">$</InputAdornment>
+                              <InputAdornment position="start">
+                                $
+                              </InputAdornment>
                             ),
                           }}
                           type="number"
@@ -708,20 +784,45 @@ const AddProduct = () => {
                           <Tooltip
                             title={
                               <>
-                                <b>¿Qué son los tramos?</b><br />
-                                Permite asignar hasta 5 precios según la cantidad que te compren. Por ejemplo: si te compran entre 1 y 9 unidades, pagan $100 por unidad; si te compran 10 o más, pagan $90.
+                                <b>¿Qué son los tramos?</b>
+                                <br />
+                                Permite asignar hasta 5 precios según la
+                                cantidad que te compren. Por ejemplo: si te
+                                compran entre 1 y 9 unidades, pagan $100 por
+                                unidad; si te compran 10 o más, pagan $90.
                               </>
                             }
                             placement="right"
                             arrow
                           >
-                            <IconButton size="small" sx={{ ml: 1, boxShadow: 'none', outline: 'none', border: 'none', '&:focus': { outline: 'none', border: 'none', boxShadow: 'none' }, '&:active': { outline: 'none', border: 'none', boxShadow: 'none' } }} disableFocusRipple disableRipple>
+                            <IconButton
+                              size="small"
+                              sx={{
+                                ml: 1,
+                                boxShadow: 'none',
+                                outline: 'none',
+                                border: 'none',
+                                '&:focus': {
+                                  outline: 'none',
+                                  border: 'none',
+                                  boxShadow: 'none',
+                                },
+                                '&:active': {
+                                  outline: 'none',
+                                  border: 'none',
+                                  boxShadow: 'none',
+                                },
+                              }}
+                              disableFocusRipple
+                              disableRipple
+                            >
                               <InfoIcon fontSize="small" />
                             </IconButton>
                           </Tooltip>
                         </ToggleButtonGroup>
                       </Box>
-                    </Box></Box>
+                    </Box>
+                  </Box>
                   {/* FILA 4: Región de Despacho */}
                   <Box>
                     <Typography
@@ -730,125 +831,144 @@ const AddProduct = () => {
                       sx={{ fontWeight: 600, color: 'black', mb: 2 }}
                     >
                       Región de Despacho
-                    </Typography>                    <FormControl component="fieldset">
+                    </Typography>{' '}
+                    <FormControl component="fieldset">
                       <RadioGroup
                         value={formData.regionDespacho || ''}
                         onChange={handleInputChange('regionDespacho')}
-                        sx={{ 
-                          display: 'flex', 
-                          flexDirection: 'row', 
+                        sx={{
+                          display: 'flex',
+                          flexDirection: 'row',
                           flexWrap: 'wrap',
-                          gap: 2
+                          gap: 2,
                         }}
                       >
                         {/* Columna 1: 5 filas */}
-                        <Box sx={{ display: 'flex', flexDirection: 'column', width: '30%' }}>
-                          <FormControlLabel 
-                            value="todo-chile" 
-                            control={<Radio />} 
-                            label="Todo Chile" 
+                        <Box
+                          sx={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            width: '30%',
+                          }}
+                        >
+                          <FormControlLabel
+                            value="todo-chile"
+                            control={<Radio />}
+                            label="Todo Chile"
                             sx={{ mb: 1 }}
                           />
-                          <FormControlLabel 
-                            value="region-metropolitana" 
-                            control={<Radio />} 
-                            label="Región Metropolitana" 
+                          <FormControlLabel
+                            value="region-metropolitana"
+                            control={<Radio />}
+                            label="Región Metropolitana"
                             sx={{ mb: 1 }}
                           />
-                          <FormControlLabel 
-                            value="i-region" 
-                            control={<Radio />} 
-                            label="I Región" 
+                          <FormControlLabel
+                            value="i-region"
+                            control={<Radio />}
+                            label="I Región"
                             sx={{ mb: 1 }}
                           />
-                          <FormControlLabel 
-                            value="ii-region" 
-                            control={<Radio />} 
-                            label="II Región" 
+                          <FormControlLabel
+                            value="ii-region"
+                            control={<Radio />}
+                            label="II Región"
                             sx={{ mb: 1 }}
                           />
-                          <FormControlLabel 
-                            value="iii-region" 
-                            control={<Radio />} 
-                            label="III Región" 
+                          <FormControlLabel
+                            value="iii-region"
+                            control={<Radio />}
+                            label="III Región"
                             sx={{ mb: 1 }}
                           />
                         </Box>
                         {/* Columna 2: 6 filas */}
-                        <Box sx={{ display: 'flex', flexDirection: 'column', width: '30%' }}>
-                          <FormControlLabel 
-                            value="iv-region" 
-                            control={<Radio />} 
-                            label="IV Región" 
+                        <Box
+                          sx={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            width: '30%',
+                          }}
+                        >
+                          <FormControlLabel
+                            value="iv-region"
+                            control={<Radio />}
+                            label="IV Región"
                             sx={{ mb: 1 }}
                           />
-                          <FormControlLabel 
-                            value="v-region" 
-                            control={<Radio />} 
-                            label="V Región" 
+                          <FormControlLabel
+                            value="v-region"
+                            control={<Radio />}
+                            label="V Región"
                             sx={{ mb: 1 }}
                           />
-                          <FormControlLabel 
-                            value="vi-region" 
-                            control={<Radio />} 
-                            label="VI Región" 
+                          <FormControlLabel
+                            value="vi-region"
+                            control={<Radio />}
+                            label="VI Región"
                             sx={{ mb: 1 }}
                           />
-                          <FormControlLabel 
-                            value="vii-region" 
-                            control={<Radio />} 
-                            label="VII Región" 
+                          <FormControlLabel
+                            value="vii-region"
+                            control={<Radio />}
+                            label="VII Región"
                             sx={{ mb: 1 }}
                           />
-                          <FormControlLabel 
-                            value="viii-region" 
-                            control={<Radio />} 
-                            label="VIII Región" 
+                          <FormControlLabel
+                            value="viii-region"
+                            control={<Radio />}
+                            label="VIII Región"
                             sx={{ mb: 1 }}
                           />
-                          <FormControlLabel 
-                            value="ix-region" 
-                            control={<Radio />} 
-                            label="IX Región" 
+                          <FormControlLabel
+                            value="ix-region"
+                            control={<Radio />}
+                            label="IX Región"
                             sx={{ mb: 1 }}
                           />
                         </Box>
                         {/* Columna 3: 6 filas */}
-                        <Box sx={{ display: 'flex', flexDirection: 'column', width: '30%' }}>
-                          <FormControlLabel 
-                            value="x-region" 
-                            control={<Radio />} 
-                            label="X Región" 
+                        <Box
+                          sx={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            width: '30%',
+                          }}
+                        >
+                          <FormControlLabel
+                            value="x-region"
+                            control={<Radio />}
+                            label="X Región"
                             sx={{ mb: 1 }}
                           />
-                          <FormControlLabel 
-                            value="xi-region" 
-                            control={<Radio />} 
-                            label="XI Región" 
+                          <FormControlLabel
+                            value="xi-region"
+                            control={<Radio />}
+                            label="XI Región"
                             sx={{ mb: 1 }}
                           />
-                          <FormControlLabel 
-                            value="xii-region" 
-                            control={<Radio />} 
-                            label="XII Región" 
+                          <FormControlLabel
+                            value="xii-region"
+                            control={<Radio />}
+                            label="XII Región"
                             sx={{ mb: 1 }}
                           />
-                          <FormControlLabel 
-                            value="xiv-region" 
-                            control={<Radio />} 
-                            label="XIV Región" 
+                          <FormControlLabel
+                            value="xiv-region"
+                            control={<Radio />}
+                            label="XIV Región"
                             sx={{ mb: 1 }}
                           />
-                          <FormControlLabel 
-                            value="xv-region" 
-                            control={<Radio />} 
-                            label="XV Región" 
+                          <FormControlLabel
+                            value="xv-region"
+                            control={<Radio />}
+                            label="XV Región"
                             sx={{ mb: 1 }}
                           />
-                          <FormControlLabel 
-                            value="xvi-region" 
-                            control={<Radio />} 
-                            label="XVI Región" 
+                          <FormControlLabel
+                            value="xvi-region"
+                            control={<Radio />}
+                            label="XVI Región"
                             sx={{ mb: 1 }}
                           />
                         </Box>
@@ -904,7 +1024,6 @@ const AddProduct = () => {
                         </IconButton>
                       </Tooltip>
                     </ToggleButtonGroup>                  </Box> */}
-                  
                   {/* FILA TRAMOS: Configuración de Tramos de Precio (condicional) */}
                   {formData.pricingType === 'Por Tramo' && (
                     <Box
@@ -927,7 +1046,6 @@ const AddProduct = () => {
                       />
                     </Box>
                   )}
-                  
                   {/* FILA 6: Imágenes del Producto */}
                   <Box
                     className="full-width"
@@ -945,12 +1063,16 @@ const AddProduct = () => {
                       sx={{ fontWeight: 600, color: 'black', mb: 2 }}
                     >
                       Imágenes del Producto
-                    </Typography>                    <ImageUploader
+                    </Typography>{' '}
+                    <ImageUploader
                       images={formData.imagenes}
                       onImagesChange={handleImagesChange}
                       maxImages={5}
                       onError={handleImageError}
-                      error={(touched.imagenes || triedSubmit) && (errors.imagenes || localErrors.imagenes || imageError)}
+                      error={
+                        (touched.imagenes || triedSubmit) &&
+                        (errors.imagenes || localErrors.imagenes || imageError)
+                      }
                     />
                   </Box>{' '}
                   {/* FILA 7: Especificaciones Técnicas */}
@@ -1058,7 +1180,8 @@ const AddProduct = () => {
               <Paper sx={{ p: 3, position: 'sticky', top: 100 }}>
                 <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
                   Resultado Venta
-                </Typography>                <Box sx={{ mb: 3 }}>
+                </Typography>{' '}
+                <Box sx={{ mb: 3 }}>
                   <Box
                     sx={{
                       display: 'flex',
@@ -1068,13 +1191,15 @@ const AddProduct = () => {
                   >
                     <Typography variant="body2">Ingreso por Ventas</Typography>
                     <Typography variant="body2" fontWeight="600">
-                      {calculations.isRange ? 
-                        `${formatPrice(calculations.rangos.ingresoPorVentas.min)} - ${formatPrice(calculations.rangos.ingresoPorVentas.max)}` :
-                        formatPrice(calculations.ingresoPorVentas)
-                      }
+                      {calculations.isRange
+                        ? `${formatPrice(
+                            calculations.rangos.ingresoPorVentas.min
+                          )} - ${formatPrice(
+                            calculations.rangos.ingresoPorVentas.max
+                          )}`
+                        : formatPrice(calculations.ingresoPorVentas)}
                     </Typography>
                   </Box>
-
                   <Box
                     sx={{
                       display: 'flex',
@@ -1086,15 +1211,16 @@ const AddProduct = () => {
                       Tarifa por Servicio (2%)
                     </Typography>
                     <Typography variant="body2" fontWeight="600">
-                      {calculations.isRange ? 
-                        `${formatPrice(calculations.rangos.tarifaServicio.min)} - ${formatPrice(calculations.rangos.tarifaServicio.max)}` :
-                        formatPrice(calculations.tarifaServicio)
-                      }
+                      {calculations.isRange
+                        ? `${formatPrice(
+                            calculations.rangos.tarifaServicio.min
+                          )} - ${formatPrice(
+                            calculations.rangos.tarifaServicio.max
+                          )}`
+                        : formatPrice(calculations.tarifaServicio)}
                     </Typography>
                   </Box>
-
                   <Divider sx={{ my: 2 }} />
-
                   <Box
                     sx={{
                       display: 'flex',
@@ -1110,20 +1236,24 @@ const AddProduct = () => {
                       fontWeight="600"
                       color="primary.main"
                     >
-                      {calculations.isRange ? 
-                        `${formatPrice(calculations.rangos.total.min)} - ${formatPrice(calculations.rangos.total.max)}` :
-                        formatPrice(calculations.total)
-                      }
+                      {calculations.isRange
+                        ? `${formatPrice(
+                            calculations.rangos.total.min
+                          )} - ${formatPrice(calculations.rangos.total.max)}`
+                        : formatPrice(calculations.total)}
                     </Typography>
-                  </Box>                  <Typography variant="caption" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                  </Box>{' '}
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}
+                  >
                     <InfoIcon fontSize="small" color="primary" />
-                    {calculations.isRange ? 
-                      'Estos son los rangos de montos que podrás recibir según cómo se distribuyan las ventas entre los tramos de precio' :
-                      'Este es el monto que recibirás en tu cuenta una vez concretada la venta. El valor no considera los costos de despacho.'
-                    }
+                    {calculations.isRange
+                      ? 'Estos son los rangos de montos que podrás recibir según cómo se distribuyan las ventas entre los tramos de precio'
+                      : 'Este es el monto que recibirás en tu cuenta una vez concretada la venta. El valor no considera los costos de despacho.'}
                   </Typography>
                 </Box>
-
                 {/* Botones de acción */}
                 <Stack spacing={2}>
                   <Button
@@ -1148,7 +1278,8 @@ const AddProduct = () => {
                       : 'Publicar Producto'}
                   </Button>
                 </Stack>
-              </Paper>            </Grid>
+              </Paper>{' '}
+            </Grid>
           </Grid>
         </Container>
       </Box>

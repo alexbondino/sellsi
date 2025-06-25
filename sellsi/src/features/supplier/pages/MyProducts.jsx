@@ -35,7 +35,7 @@ import { ThemeProvider } from '@mui/material/styles';
 import { toast } from 'react-hot-toast';
 
 // Components
-import SidebarProvider from '../../layout/SideBar';
+import SideBarProvider from '../../layout/SideBar';
 import SupplierProductCard from '../components/SupplierProductCard';
 import ConfirmationModal, { MODAL_TYPES } from '../../ui/ConfirmationModal';
 
@@ -196,7 +196,7 @@ const MyProducts = () => {
 
   return (
     <ThemeProvider theme={dashboardTheme}>
-      <SidebarProvider />
+      <SideBarProvider />
 
       <Box
         sx={{
@@ -273,7 +273,8 @@ const MyProducts = () => {
                 </Box>
 
                 <Box sx={{ p: 0 }}>
-                  {' '}                  <Grid container columns={12}>
+                  {' '}
+                  <Grid container columns={12}>
                     <Grid size={{ xs: 12, sm: 4 }}>
                       <Box
                         sx={{
@@ -301,7 +302,8 @@ const MyProducts = () => {
                               sx={{ fontWeight: 600, lineHeight: 1.2 }}
                             >
                               {stats.total}
-                            </Typography>                            <Typography variant="body2" color="text.secondary">
+                            </Typography>{' '}
+                            <Typography variant="body2" color="text.secondary">
                               Total de productos
                             </Typography>
                           </Box>
@@ -342,7 +344,8 @@ const MyProducts = () => {
                               sx={{ fontWeight: 600, lineHeight: 1.2 }}
                             >
                               {stats.inStock}
-                            </Typography>                            <Typography variant="body2" color="text.secondary">
+                            </Typography>{' '}
+                            <Typography variant="body2" color="text.secondary">
                               Productos en stock
                             </Typography>
                           </Box>
@@ -388,7 +391,9 @@ const MyProducts = () => {
             </Alert>
           )}
           {/* Filtros y búsqueda */}
-          <Paper sx={{ p: 3, mb: 3 }}>            <Grid container columns={12} spacing={2} alignItems="center">
+          <Paper sx={{ p: 3, mb: 3 }}>
+            {' '}
+            <Grid container columns={12} spacing={2} alignItems="center">
               {' '}
               {/* Búsqueda */}
               <Grid size={{ xs: 12, sm: 6, md: 4 }}>
@@ -405,7 +410,8 @@ const MyProducts = () => {
                     ),
                   }}
                   sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
-                />              </Grid>{' '}
+                />{' '}
+              </Grid>{' '}
               {/* Filtro por categoría */}{' '}
               <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                 <FormControl fullWidth>
@@ -432,7 +438,8 @@ const MyProducts = () => {
                     ))}
                   </Select>
                 </FormControl>
-              </Grid>{' '}              {/* Ordenamiento */}
+              </Grid>{' '}
+              {/* Ordenamiento */}
               <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                 <FormControl fullWidth>
                   <InputLabel>Ordenar por</InputLabel>{' '}
@@ -457,7 +464,8 @@ const MyProducts = () => {
                       </MenuItem>
                     ))}
                   </Select>
-                </FormControl>              </Grid>{' '}
+                </FormControl>{' '}
+              </Grid>{' '}
               {/* Acciones */}
               <Grid size={{ xs: 12, sm: 6, md: 2 }}>
                 <Stack direction="row" spacing={1}>
@@ -471,7 +479,6 @@ const MyProducts = () => {
                 </Stack>
               </Grid>
             </Grid>
-
             {/* Filtros activos */}
             {(searchTerm || categoryFilter !== 'all') && (
               <Box sx={{ mt: 2, display: 'flex', gap: 1, flexWrap: 'wrap' }}>

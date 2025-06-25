@@ -1,4 +1,4 @@
-import React from 'react'
+import React from 'react';
 import {
   Box,
   Typography,
@@ -6,10 +6,9 @@ import {
   Paper,
   Grid,
   LinearProgress,
-} from '@mui/material'
-import SidebarBuyer from '../layout/SidebarBuyer'
+} from '@mui/material';
 // import MarketplaceTopBar from '../layout/MarketplaceTopBar' // Eliminado
-import StatCard from './components/StatCard'
+import StatCard from './components/StatCard';
 
 const BuyerPerformance = () => {
   // ============================================================================
@@ -29,7 +28,7 @@ const BuyerPerformance = () => {
       { name: 'Muebles', count: 4, percentage: 33.3 },
       { name: 'Hogar', count: 3, percentage: 25.0 },
     ],
-  }
+  };
 
   // ============================================================================
   // COMPONENTE AUXILIAR - TARJETA DE ESTADÍSTICA
@@ -70,7 +69,7 @@ const BuyerPerformance = () => {
         </Typography>
       )}
     </Paper>
-  )
+  );
 
   // ============================================================================
   // RENDERIZADO DEL COMPONENTE PRINCIPAL
@@ -79,7 +78,6 @@ const BuyerPerformance = () => {
     <Box>
       {/* <MarketplaceTopBar /> */}{' '}
       {/* Eliminado, ahora la topbar se maneja globalmente en App.jsx */}
-      <SidebarBuyer />
       <Box
         component="main"
         sx={{
@@ -98,7 +96,8 @@ const BuyerPerformance = () => {
           >
             Mi Performance
           </Typography>
-          {/* Estadísticas principales */}          <Grid container spacing={3} sx={{ mb: 4 }}>
+          {/* Estadísticas principales */}{' '}
+          <Grid container spacing={3} sx={{ mb: 4 }}>
             <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <StatCard
                 title="Total Compras"
@@ -136,7 +135,8 @@ const BuyerPerformance = () => {
           <Paper sx={{ p: 3, mb: 4, borderRadius: 2 }}>
             <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 3 }}>
               Estado de Pedidos
-            </Typography>            <Grid container spacing={3}>
+            </Typography>{' '}
+            <Grid container spacing={3}>
               <Grid size={{ xs: 12, sm: 6 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                   <Typography variant="body1" sx={{ flexGrow: 1 }}>
@@ -157,7 +157,8 @@ const BuyerPerformance = () => {
                     100
                   }
                   sx={{ height: 8, borderRadius: 4 }}
-                  color="success"                />
+                  color="success"
+                />
               </Grid>
               <Grid size={{ xs: 12, sm: 6 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
@@ -218,7 +219,7 @@ const BuyerPerformance = () => {
         </Container>
       </Box>
     </Box>
-  )
-}
+  );
+};
 
-export default BuyerPerformance
+export default BuyerPerformance;

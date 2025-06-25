@@ -1,6 +1,5 @@
-import React from 'react'
-import { Box, Typography, Container, Paper, Chip } from '@mui/material'
-import SidebarBuyer from '../layout/SidebarBuyer'
+import React from 'react';
+import { Box, Typography, Container, Paper, Chip } from '@mui/material';
 
 const BuyerOrders = () => {
   // ============================================================================
@@ -33,7 +32,7 @@ const BuyerOrders = () => {
       total: '$45.500',
       products: 'Teclado Mecánico',
     },
-  ]
+  ];
 
   // ============================================================================
   // FUNCIONES AUXILIARES
@@ -43,18 +42,18 @@ const BuyerOrders = () => {
    * @param {string} status - Estado del pedido ('Entregado', 'En Tránsito', 'Procesando')
    * @returns {string} Color del tema Material-UI
    */
-  const getStatusColor = (status) => {
+  const getStatusColor = status => {
     switch (status) {
       case 'Entregado':
-        return 'success'
+        return 'success';
       case 'En Tránsito':
-        return 'info'
+        return 'info';
       case 'Procesando':
-        return 'warning'
+        return 'warning';
       default:
-        return 'default'
+        return 'default';
     }
-  }
+  };
 
   // ============================================================================
   // RENDERIZADO DEL COMPONENTE
@@ -62,8 +61,6 @@ const BuyerOrders = () => {
   return (
     <Box>
       <Box sx={{ display: 'flex' }}>
-        <SidebarBuyer />
-
         <Box
           component="main"
           sx={{
@@ -83,7 +80,7 @@ const BuyerOrders = () => {
               Mis Pedidos
             </Typography>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-              {orders.map((order) => (
+              {orders.map(order => (
                 <Paper
                   key={order.id}
                   sx={{
@@ -154,7 +151,7 @@ const BuyerOrders = () => {
         </Box>
       </Box>
     </Box>
-  )
-}
+  );
+};
 
-export default BuyerOrders
+export default BuyerOrders;
