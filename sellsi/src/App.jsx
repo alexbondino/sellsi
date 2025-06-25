@@ -31,13 +31,15 @@ import SideBar from './features/layout/SideBar';
 import Home from './features/landing_page/Home';
 
 // 📦 RUTAS PRINCIPALES - LAZY LOADING
-const MarketplaceBuyer = React.lazy(() =>
-  import('./features/buyer/MarketplaceBuyer')
+const BuyerMarketplace = React.lazy(() =>
+  import('./features/buyer/marketplace/BuyerMarketplace')
 );
 const Marketplace = React.lazy(() =>
   import('./features/marketplace/Marketplace')
 );
-const BuyerCart = React.lazy(() => import('./features/buyer/BuyerCart'));
+const BuyerCart = React.lazy(() =>
+  import('./features/buyer/my-cart/BuyerCart')
+);
 
 // 📦 SUPPLIER DASHBOARD - LAZY LOADING
 const ProviderHome = React.lazy(() =>
@@ -54,9 +56,11 @@ const MyOrdersPage = React.lazy(() =>
 );
 
 // 📦 RUTAS SECUNDARIAS - LAZY LOADING
-const BuyerOrders = React.lazy(() => import('./features/buyer/BuyerOrders'));
+const BuyerRequests = React.lazy(() =>
+  import('./features/buyer/my-requests/BuyerRequests')
+);
 const BuyerPerformance = React.lazy(() =>
-  import('./features/buyer/BuyerPerformance')
+  import('./features/buyer/my-performance/BuyerPerformance')
 );
 const TechnicalSpecs = React.lazy(() =>
   import('./features/marketplace/view_page/TechnicalSpecs')
@@ -465,7 +469,7 @@ function AppContent({ mensaje }) {
                   path="/buyer/marketplace"
                   element={
                     <PrivateRoute>
-                      <MarketplaceBuyer />
+                      <BuyerMarketplace />
                     </PrivateRoute>
                   }
                 />
@@ -473,7 +477,7 @@ function AppContent({ mensaje }) {
                   path="/buyer/orders"
                   element={
                     <PrivateRoute>
-                      <BuyerOrders />
+                      <BuyerRequests />
                     </PrivateRoute>
                   }
                 />

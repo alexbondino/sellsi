@@ -10,19 +10,19 @@
  */
 
 // Componentes principales
-export { default as MarketplaceBuyer } from './MarketplaceBuyer.jsx'
-export { default as BuyerCart } from './BuyerCart.jsx'
-export { default as BuyerOrders } from './BuyerOrders.jsx'
-export { default as BuyerPerformance } from './BuyerPerformance.jsx'
+export { default as BuyerMarketplace } from './marketplace/BuyerMarketplace.jsx';
+export { default as BuyerCart } from './my-cart/BuyerCart.jsx';
+export { default as BuyerRequests } from './my-requests/BuyerRequests.jsx';
+export { default as BuyerPerformance } from './my-performance/BuyerPerformance.jsx';
 
 // Componentes auxiliares
-export { default as PriceComparison } from './PriceComparison.jsx'
+export { default as PriceComparison } from './PriceComparison.jsx';
 
 // Componentes reutilizables
-export { default as StatCard } from './components/StatCard.jsx'
+export { default as StatCard } from './components/StatCard.jsx';
 
 // Hooks
-export { default as useCartStore } from './hooks/cartStore.js'
+export { default as useCartStore } from './hooks/cartStore.js';
 
 // Exportar todos los componentes del carrito
-export * from './cart'
+export * from './cart';

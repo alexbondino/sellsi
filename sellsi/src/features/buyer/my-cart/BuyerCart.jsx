@@ -29,11 +29,11 @@ import { toast } from 'react-hot-toast';
 import { useInView } from 'react-intersection-observer';
 import confetti from 'canvas-confetti';
 import debounce from 'lodash.debounce';
-import useCartStore from './hooks/cartStore';
+import useCartStore from '../hooks/cartStore';
 import {
   SHIPPING_OPTIONS,
   DISCOUNT_CODES,
-} from '../marketplace/hooks/constants';
+} from '../../marketplace/hooks/constants';
 import {
   CartHeader,
   ShippingProgressBar,
@@ -42,7 +42,7 @@ import {
   SavingsCalculator,
   WishlistSection,
   EmptyCartState,
-} from './cart';
+} from '../cart';
 
 // ============================================================================
 // ULTRA-PREMIUM BUYER CART COMPONENT - NIVEL 11/10
@@ -50,9 +50,9 @@ import {
 
 // Lazy loading components para optimización
 const RecommendedProducts = lazy(() =>
-  import('../marketplace/RecommendedProducts')
+  import('../../marketplace/RecommendedProducts')
 );
-const PriceComparison = lazy(() => import('./PriceComparison'));
+const PriceComparison = lazy(() => import('../PriceComparison'));
 
 // ============================================================================
 // COMPONENTES AUXILIARES OPTIMIZADOS

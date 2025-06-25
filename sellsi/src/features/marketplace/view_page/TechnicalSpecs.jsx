@@ -1,4 +1,4 @@
-import React from 'react'
+import React from 'react';
 import {
   Box,
   Container,
@@ -9,10 +9,10 @@ import {
   Breadcrumbs,
   Link,
   CircularProgress,
-} from '@mui/material'
-import { ArrowBack, Home, StorefrontOutlined } from '@mui/icons-material'
-import ProductPageView from '../ProductPageView/ProductPageView'
-import { useTechnicalSpecs } from './hooks/useTechnicalSpecs'
+} from '@mui/material';
+import { ArrowBack, Home, StorefrontOutlined } from '@mui/icons-material';
+import ProductPageView from '../ProductPageView/ProductPageView';
+import { useTechnicalSpecs } from './hooks/useTechnicalSpecs';
 
 /**
  * ============================================================================
@@ -24,7 +24,7 @@ import { useTechnicalSpecs } from './hooks/useTechnicalSpecs'
  *
  * NAVEGACIÓN INTELIGENTE:
  * - Botón "Inicio": Navega a Home
- * - Botón "Marketplace": Navega al marketplace de origen (Marketplace/MarketplaceBuyer)
+ * - Botón "Marketplace": Navega al marketplace de origen (Marketplace/BuyerMarketplace)
  * - Botón "Volver": Navega al marketplace de origen
  */
 const TechnicalSpecs = () => {
@@ -38,7 +38,7 @@ const TechnicalSpecs = () => {
     handleGoToMarketplace,
     handleAddToCart,
     handleBuyNow,
-  } = useTechnicalSpecs()
+  } = useTechnicalSpecs();
 
   if (loading) {
     return (
@@ -52,7 +52,7 @@ const TechnicalSpecs = () => {
       >
         <CircularProgress color="primary" size={48} />
       </Box>
-    )
+    );
   }
 
   if (!product) {
@@ -74,7 +74,7 @@ const TechnicalSpecs = () => {
           </Button>
         </Paper>
       </Container>
-    )
+    );
   }
 
   return (
@@ -167,7 +167,7 @@ const TechnicalSpecs = () => {
         />
       </Box>
     </Box>
-  )
-}
+  );
+};
 
-export default TechnicalSpecs
+export default TechnicalSpecs;

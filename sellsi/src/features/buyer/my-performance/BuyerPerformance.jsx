@@ -8,7 +8,7 @@ import {
   LinearProgress,
 } from '@mui/material';
 // import MarketplaceTopBar from '../layout/MarketplaceTopBar' // Eliminado
-import StatCard from './components/StatCard';
+import StatCard from '../components/StatCard';
 
 const BuyerPerformance = () => {
   // ============================================================================

@@ -8,15 +8,15 @@ import React from 'react';
 import { Box } from '@mui/material';
 
 // Hook centralizado
-import useMarketplaceLogic from '../marketplace/useMarketplaceLogic.jsx';
+import useMarketplaceLogic from '../../marketplace/useMarketplaceLogic.jsx';
 
 // Componentes de secciones
-import SearchSection from '../marketplace/sections/SearchSection.jsx';
-import FilterSection from '../marketplace/sections/FilterSection.jsx';
-import ProductsSection from '../marketplace/sections/ProductsSection.jsx';
+import SearchSection from '../../marketplace/sections/SearchSection.jsx';
+import FilterSection from '../../marketplace/sections/FilterSection.jsx';
+import ProductsSection from '../../marketplace/sections/ProductsSection.jsx';
 
 // ✅ MEJORA DE RENDIMIENTO: Memoización del componente principal
-const MarketplaceBuyer = React.memo(() => {
+const BuyerMarketplace = React.memo(() => {
   // ===== USAR CUSTOM HOOK PARA TODA LA LÓGICA =====
   // ✅ MEJORA DE RENDIMIENTO: Memoización de configuración estática
   const marketplaceConfig = React.useMemo(
@@ -96,6 +96,6 @@ const MarketplaceBuyer = React.memo(() => {
 });
 
 // ✅ MEJORA DE RENDIMIENTO: DisplayName para debugging
-MarketplaceBuyer.displayName = 'MarketplaceBuyer';
+BuyerMarketplace.displayName = 'BuyerMarketplace';
 
-export default MarketplaceBuyer;
+export default BuyerMarketplace;

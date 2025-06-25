@@ -1,7 +1,7 @@
 import React from 'react';
 import { Box, Typography, Container, Paper, Chip } from '@mui/material';
 
-const BuyerOrders = () => {
+const BuyerRequests = () => {
   // ============================================================================
   // MOCK DATA - PEDIDOS DEMO
   // ============================================================================
@@ -154,4 +154,4 @@ const BuyerOrders = () => {
   );
 };
 
-export default BuyerOrders;
+export default BuyerRequests;

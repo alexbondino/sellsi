@@ -23,10 +23,12 @@ import { useLocation } from 'react-router-dom';
 // ============================================================================
 const ROUTE_COMPONENTS = {
   '/marketplace': () => import('../features/marketplace/Marketplace'),
-  '/buyer/marketplace': () => import('../features/buyer/MarketplaceBuyer'),
-  '/buyer/cart': () => import('../features/buyer/BuyerCart'),
-  '/buyer/orders': () => import('../features/buyer/BuyerOrders'),
-  '/buyer/performance': () => import('../features/buyer/BuyerPerformance'),
+  '/buyer/marketplace': () =>
+    import('../features/buyer/marketplace/BuyerMarketplace'),
+  '/buyer/cart': () => import('../features/buyer/my-cart/BuyerCart'),
+  '/buyer/orders': () => import('../features/buyer/my-requests/BuyerRequests'),
+  '/buyer/performance': () =>
+    import('../features/buyer/my-performance/BuyerPerformance'),
   '/supplier/home': () => import('../features/supplier/home/ProviderHome'),
   '/supplier/myproducts': () =>
     import('../features/supplier/my-products/MyProducts'),
