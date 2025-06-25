@@ -13,7 +13,7 @@ import {
 import theme from './styles/theme';
 import TopBar from './features/layout/TopBar';
 import BottomBar from './features/layout/BottomBar';
-import PrivateRoute from './features/auth/PrivateRoute';
+import PrivateRoute from './features/auth/PrivateRoute'; // <-- Tu componente PrivateRoute
 import { BannerProvider, useBanner } from './features/ui/BannerContext';
 import Banner from './features/ui/Banner';
 import { Toaster } from 'react-hot-toast';
@@ -111,26 +111,20 @@ function AppContent({ mensaje }) {
   const [currentAppRole, setCurrentAppRole] = useState('buyer'); // 'buyer' o 'supplier'
   const sidebarWidth = '210px';
 
-  // Define las rutas para cada rol
-  const buyerRoutes = [
+  // Define las rutas para cada rol (prefijos)
+  const buyerRoutesPrefixes = [
     '/buyer/marketplace',
     '/buyer/orders',
     '/buyer/performance',
     '/buyer/cart',
-    '/technicalspecs', // Asumiendo que esta es una ruta de comprador
+    '/technicalspecs',
   ];
-  const supplierRoutes = [
+  const supplierRoutesPrefixes = [
     '/supplier/home',
     '/supplier/myproducts',
     '/supplier/addproduct',
     '/supplier/myorders',
   ];
-
-  // Definición de los menuItems para cada rol
-  // (Estos se pasaron a Sidebar.jsx, pero los mantenemos aquí como referencia si es necesario
-  // o para la lógica de redirección, aunque ya se usan en Sidebar directamente)
-  // const buyerMenuItems = [ ... ];
-  // const providerMenuItems = [ ... ];
 
   useEffect(() => {
     let mounted = true;
@@ -143,7 +137,7 @@ function AppContent({ mensaje }) {
           setUserProfile(null);
           setNeedsOnboarding(false);
           setLoadingUserStatus(false);
-          setCurrentAppRole('buyer'); // Por defecto para no logueados
+          setCurrentAppRole('buyer');
         }
         return;
       }
@@ -172,7 +166,6 @@ function AppContent({ mensaje }) {
         } else {
           setNeedsOnboarding(false);
           setUserProfile(userData);
-          // Establece el rol inicial de la aplicación basado en userProfile.main_supplier
           setCurrentAppRole(userData.main_supplier ? 'supplier' : 'buyer');
 
           if (currentSession?.user?.id && !isBackendSynced) {
@@ -210,14 +203,11 @@ function AppContent({ mensaje }) {
     };
   }, []);
 
-  // --- Derived states from userProfile ---
   const isBuyer = currentAppRole === 'buyer';
   const logoUrl = userProfile ? userProfile.logo_url : null;
 
-  // Función para manejar el cambio de rol desde TopBar
   const handleRoleChangeFromTopBar = newRole => {
     setCurrentAppRole(newRole);
-    // Redirige al usuario al dashboard correspondiente cuando cambie el rol
     if (newRole === 'supplier') {
       navigate('/supplier/home');
     } else {
@@ -225,43 +215,42 @@ function AppContent({ mensaje }) {
     }
   };
 
-  // 🆕 Nuevo useEffect para sincronizar el currentAppRole con la ruta actual
   useEffect(() => {
-    if (session && !needsOnboarding) {
+    if (session && !needsOnboarding && !loadingUserStatus) {
       const currentPath = location.pathname;
-      let newRoleBasedOnPath = currentAppRole; // Mantiene el rol actual por defecto
+      let roleBasedOnPath = currentAppRole;
 
-      if (buyerRoutes.some(route => currentPath.startsWith(route))) {
-        newRoleBasedOnPath = 'buyer';
-      } else if (supplierRoutes.some(route => currentPath.startsWith(route))) {
-        newRoleBasedOnPath = 'supplier';
+      if (buyerRoutesPrefixes.some(prefix => currentPath.startsWith(prefix))) {
+        roleBasedOnPath = 'buyer';
+      } else if (
+        supplierRoutesPrefixes.some(prefix => currentPath.startsWith(prefix))
+      ) {
+        roleBasedOnPath = 'supplier';
       }
 
-      // Solo actualiza si el rol basado en la ruta es diferente del rol actual de la app
-      if (newRoleBasedOnPath !== currentAppRole) {
+      if (roleBasedOnPath !== currentAppRole) {
         console.log(
-          `[App] Sincronizando rol: Ruta ${currentPath} sugiere ${newRoleBasedOnPath}, actualizando de ${currentAppRole}`
+          `[App] Sincronizando rol: Ruta '${currentPath}' sugiere '${roleBasedOnPath}', actualizando de '${currentAppRole}'`
         );
-        setCurrentAppRole(newRoleBasedOnPath);
+        setCurrentAppRole(roleBasedOnPath);
       }
     }
   }, [
     location.pathname,
     session,
     needsOnboarding,
+    loadingUserStatus,
     currentAppRole,
-    buyerRoutes,
-    supplierRoutes,
-  ]); // currentAppRole como dependencia es crucial aquí
+    buyerRoutesPrefixes,
+    supplierRoutesPrefixes,
+  ]);
 
-  // Redirect to onboarding if needed
   useEffect(() => {
     if (session && needsOnboarding && location.pathname !== '/onboarding') {
       navigate('/onboarding', { replace: true });
     }
   }, [session, needsOnboarding, location.pathname, navigate]);
 
-  // Redirect logged-in users from neutral routes
   useEffect(() => {
     if (!loadingUserStatus && session && !needsOnboarding) {
       const neutralRoutes = ['/', '/login', '/crear-cuenta', '/onboarding'];
@@ -282,7 +271,6 @@ function AppContent({ mensaje }) {
     navigate,
   ]);
 
-  // Prefetch routes for performance
   useEffect(() => {
     if (!loadingUserStatus && session && currentAppRole) {
       setTimeout(() => {
@@ -297,7 +285,6 @@ function AppContent({ mensaje }) {
     }
   }, [loadingUserStatus, session, currentAppRole, prefetchRoute]);
 
-  // Close modals on browser back/forward (popstate)
   useEffect(() => {
     const handlePopstate = () => {
       window.dispatchEvent(new CustomEvent('closeAllModals'));
@@ -309,14 +296,14 @@ function AppContent({ mensaje }) {
   const handleScrollTo = refName => {
     const element = scrollTargets.current[refName]?.current;
     if (element) {
-      const topBarHeight = 30; // Adjust if your actual top bar height is different
+      const topBarHeight = 30;
       const elementPosition =
         element.getBoundingClientRect().top + window.pageYOffset;
       const offsetPosition = elementPosition - topBarHeight;
       window.scrollTo({ top: offsetPosition, behavior: 'smooth' });
     }
   };
-  // Inicializar el carrito cuando el usuario se autentica
+
   useEffect(() => {
     if (session) {
       initializeCartWithUser(session.user.id);
@@ -340,7 +327,6 @@ function AppContent({ mensaje }) {
     );
   }
 
-  // Determinar si la Sidebar debe mostrarse.
   const isDashboardRoute =
     session &&
     !needsOnboarding &&
@@ -354,7 +340,7 @@ function AppContent({ mensaje }) {
     <>
       <TopBar
         session={session}
-        isBuyer={isBuyer}
+        isBuyer={isBuyer} // isBuyer ahora es un derivado de currentAppRole
         logoUrl={logoUrl}
         onNavigate={handleScrollTo}
         onRoleChange={handleRoleChangeFromTopBar}
@@ -388,7 +374,6 @@ function AppContent({ mensaje }) {
           }}
         >
           {isDashboardRoute && (
-            // Pasamos el currentAppRole a la Sidebar para que sepa qué menú mostrar
             <Sidebar role={currentAppRole} width={sidebarWidth} />
           )}
 
@@ -411,20 +396,52 @@ function AppContent({ mensaje }) {
                   element={<Home scrollTargets={scrollTargets} />}
                 />
                 <Route path="/marketplace" element={<Marketplace />} />
+
+                {/* 🚀 RUTAS DE COMPRADOR PROTEGIDAS */}
                 <Route
                   path="/buyer/marketplace"
-                  element={<MarketplaceBuyer />}
+                  element={
+                    <PrivateRoute requiredAccountType="buyer">
+                      {' '}
+                      {/* Añadimos requiredAccountType */}
+                      <MarketplaceBuyer />
+                    </PrivateRoute>
+                  }
                 />
-                <Route path="/buyer/orders" element={<BuyerOrders />} />
+                <Route
+                  path="/buyer/orders"
+                  element={
+                    <PrivateRoute requiredAccountType="buyer">
+                      <BuyerOrders />
+                    </PrivateRoute>
+                  }
+                />
                 <Route
                   path="/buyer/performance"
-                  element={<BuyerPerformance />}
+                  element={
+                    <PrivateRoute requiredAccountType="buyer">
+                      <BuyerPerformance />
+                    </PrivateRoute>
+                  }
                 />
-                <Route path="/buyer/cart" element={<BuyerCart />} />
+                <Route
+                  path="/buyer/cart"
+                  element={
+                    <PrivateRoute requiredAccountType="buyer">
+                      <BuyerCart />
+                    </PrivateRoute>
+                  }
+                />
                 <Route
                   path="/technicalspecs/:productSlug"
-                  element={<TechnicalSpecs />}
+                  element={
+                    <PrivateRoute requiredAccountType="buyer">
+                      <TechnicalSpecs />
+                    </PrivateRoute>
+                  }
                 />
+                {/* FIN RUTAS DE COMPRADOR PROTEGIDAS */}
+
                 <Route path="/login" element={<Login />} />
                 <Route path="/crear-cuenta" element={<Register />} />
                 <Route
@@ -438,7 +455,9 @@ function AppContent({ mensaje }) {
                 <Route
                   path="/supplier/home"
                   element={
-                    <PrivateRoute requiredAccountType="proveedor">
+                    <PrivateRoute requiredAccountType="supplier">
+                      {' '}
+                      {/* Usamos "supplier" o "proveedor" aquí? */}
                       <ProviderHome />
                     </PrivateRoute>
                   }
@@ -446,7 +465,7 @@ function AppContent({ mensaje }) {
                 <Route
                   path="/supplier/myproducts"
                   element={
-                    <PrivateRoute requiredAccountType="proveedor">
+                    <PrivateRoute requiredAccountType="supplier">
                       <MyProducts />
                     </PrivateRoute>
                   }
@@ -454,7 +473,7 @@ function AppContent({ mensaje }) {
                 <Route
                   path="/supplier/addproduct"
                   element={
-                    <PrivateRoute requiredAccountType="proveedor">
+                    <PrivateRoute requiredAccountType="supplier">
                       <AddProduct />
                     </PrivateRoute>
                   }
@@ -462,7 +481,7 @@ function AppContent({ mensaje }) {
                 <Route
                   path="/supplier/myorders"
                   element={
-                    <PrivateRoute requiredAccountType="proveedor">
+                    <PrivateRoute requiredAccountType="supplier">
                       <MyOrdersPage />
                     </PrivateRoute>
                   }
@@ -484,7 +503,6 @@ function App() {
   const [mensaje, setMensaje] = useState('Cargando...');
   const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
-  // Basic backend health check (optional, can be removed if not needed)
   useEffect(() => {
     fetch(`${backendUrl}/`)
       .then(res => res.json())
