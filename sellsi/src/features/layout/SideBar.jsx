@@ -1,4 +1,4 @@
-// 📁 components/Sidebar.jsx
+// 📁 components/SideBar.jsx
 import React from 'react';
 import {
   Box,
@@ -26,13 +26,13 @@ const providerMenuItems = [
 ];
 
 /**
- * Componente de Sidebar unificado que muestra ítems de menú según el rol.
+ * Componente de SideBar unificado que muestra ítems de menú según el rol.
  * Incluye toda la lógica y estilos.
  * @param {object} props - Las props del componente.
  * @param {'buyer' | 'supplier' | null} props.role - El rol actual del usuario ('buyer' o 'supplier').
- * @param {string} [props.width='210px'] - Ancho opcional de la sidebar.
+ * @param {string} [props.width='210px'] - Ancho opcional de la SideBar.
  */
-const Sidebar = ({ role, width = '210px' }) => {
+const SideBar = ({ role, width = '210px' }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const theme = useTheme();
@@ -45,13 +45,13 @@ const Sidebar = ({ role, width = '210px' }) => {
     menuItemsToDisplay = providerMenuItems;
   } else {
     // Si el rol no está definido o es nulo (ej. no logueado), no se mostrarán ítems de menú.
-    // Esto es consistente con la lógica de App.jsx de no mostrar la sidebar si no hay sesión.
-    // console.warn(`Rol desconocido o nulo: ${role}. La Sidebar no mostrará elementos.`); // Puedes descomentar para depurar
+    // Esto es consistente con la lógica de App.jsx de no mostrar la SideBar si no hay sesión.
+    // console.warn(`Rol desconocido o nulo: ${role}. La SideBar no mostrará elementos.`); // Puedes descomentar para depurar
   }
 
-  // Si no hay elementos para mostrar, no renderizamos la sidebar
+  // Si no hay elementos para mostrar, no renderizamos la SideBar
   // La condición de display en el Box de App.jsx ya debería manejar esto,
-  // pero esta es una capa de seguridad para evitar renderizar una sidebar vacía.
+  // pero esta es una capa de seguridad para evitar renderizar una SideBar vacía.
   if (!role || menuItemsToDisplay.length === 0) {
     return null;
   }
@@ -153,4 +153,4 @@ const Sidebar = ({ role, width = '210px' }) => {
   );
 };
 
-export default Sidebar;
+export default SideBar;

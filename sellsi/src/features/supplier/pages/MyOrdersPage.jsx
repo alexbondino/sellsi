@@ -6,14 +6,14 @@ import {
   Alert,
   Container,
   TextField,
-  ThemeProvider
+  ThemeProvider,
 } from '@mui/material';
 import { useOrdersStore } from '../myorders/store/ordersStore';
 import OrdersFilter from '../myorders/components/OrdersFilter';
 import OrdersTable from '../myorders/components/OrdersTable';
 import OrderActionModal from '../myorders/modals/OrderActionModal';
 import { useBanner } from '../../ui/BannerContext';
-import SidebarProvider from '../../layout/SideBar';
+import SideBarProvider from '../../layout/SideBar';
 import { dashboardTheme } from '../../../styles/dashboardTheme';
 // TODO: Importar hook para obtener usuario autenticado
 // import { useAuth } from '../../auth/hooks/useAuth';
@@ -29,7 +29,7 @@ const MyOrdersPage = () => {
     fetchOrders,
     setStatusFilter,
     updateOrderStatus,
-    getFilteredOrders
+    getFilteredOrders,
   } = useOrdersStore();
 
   // Banner para mostrar mensajes de éxito/error
@@ -39,8 +39,8 @@ const MyOrdersPage = () => {
   const [modalState, setModalState] = useState({
     isOpen: false,
     type: null,
-    selectedOrder: null
-  });  // TODO: Obtener usuario autenticado y su ID
+    selectedOrder: null,
+  }); // TODO: Obtener usuario autenticado y su ID
   // const { user } = useAuth();
   // const supplierId = user?.user_id;
 
@@ -66,7 +66,7 @@ const MyOrdersPage = () => {
     setModalState({
       isOpen: true,
       type: actionType,
-      selectedOrder: order
+      selectedOrder: order,
     });
   };
 
@@ -75,87 +75,97 @@ const MyOrdersPage = () => {
     setModalState({
       isOpen: false,
       type: null,
-      selectedOrder: null
+      selectedOrder: null,
     });
-  };  // Manejar envío de formulario del modal
-  const handleModalSubmit = async (formData) => {
+  }; // Manejar envío de formulario del modal
+  const handleModalSubmit = async formData => {
     const { selectedOrder, type } = modalState;
-    
+
     try {
       let result;
-      
+
       switch (type) {
         case 'accept':
           result = await updateOrderStatus(selectedOrder.order_id, 'Aceptado', {
-            message: formData.message || ''
+            message: formData.message || '',
           });
           showBanner({
             message: '✅ El pedido fue aceptado con éxito',
             severity: 'success',
-            duration: 4000
+            duration: 4000,
           });
           break;
-        
+
         case 'reject':
-          result = await updateOrderStatus(selectedOrder.order_id, 'Rechazado', {
-            rejectionReason: formData.rejectionReason || ''
-          });
+          result = await updateOrderStatus(
+            selectedOrder.order_id,
+            'Rechazado',
+            {
+              rejectionReason: formData.rejectionReason || '',
+            }
+          );
           showBanner({
             message: '❌ El pedido fue rechazado',
             severity: 'warning',
-            duration: 4000
+            duration: 4000,
           });
           break;
-        
+
         case 'dispatch':
           if (!formData.deliveryDate) {
             showBanner({
               message: '⚠️ La fecha de entrega es obligatoria',
               severity: 'error',
-              duration: 5000
+              duration: 5000,
             });
             return;
           }
           result = await updateOrderStatus(selectedOrder.order_id, 'En Ruta', {
             estimated_delivery_date: formData.deliveryDate,
-            message: formData.message || ''
+            message: formData.message || '',
           });
           showBanner({
             message: '🚚 El pedido fue despachado con éxito',
             severity: 'success',
-            duration: 4000
+            duration: 4000,
           });
           break;
-        
+
         case 'deliver':
-          result = await updateOrderStatus(selectedOrder.order_id, 'Entregado', {
-            deliveryDocuments: formData.deliveryDocuments || null,
-            message: formData.message || ''
-          });
+          result = await updateOrderStatus(
+            selectedOrder.order_id,
+            'Entregado',
+            {
+              deliveryDocuments: formData.deliveryDocuments || null,
+              message: formData.message || '',
+            }
+          );
           showBanner({
             message: '📦 La entrega fue confirmada con éxito',
             severity: 'success',
-            duration: 4000
+            duration: 4000,
           });
           break;
-          
+
         case 'chat':
           // Aquí se podría abrir un chat o redirigir a otra página
           console.log('Abrir chat para pedido:', selectedOrder.order_id);
           showBanner({
             message: '💬 Abriendo chat...',
             severity: 'info',
-            duration: 3000
+            duration: 3000,
           });
           break;
       }
-      
+
       handleCloseModal();
     } catch (error) {
       showBanner({
-        message: `❌ ${error.message || 'Error al procesar la acción. Intenta nuevamente.'}`,
+        message: `❌ ${
+          error.message || 'Error al procesar la acción. Intenta nuevamente.'
+        }`,
         severity: 'error',
-        duration: 5000
+        duration: 5000,
       });
       console.error('Error al procesar acción del modal:', error);
     }
@@ -164,7 +174,7 @@ const MyOrdersPage = () => {
   // Configuración del modal según el tipo de acción
   const getModalConfig = () => {
     const { type } = modalState;
-    
+
     const configs = {
       accept: {
         title: 'Aceptar Pedido',
@@ -181,7 +191,7 @@ const MyOrdersPage = () => {
             fullWidth
             variant="outlined"
           />
-        )
+        ),
       },
       reject: {
         title: 'Rechazar Pedido',
@@ -198,7 +208,7 @@ const MyOrdersPage = () => {
             fullWidth
             variant="outlined"
           />
-        )
+        ),
       },
       dispatch: {
         title: 'Confirmar Despacho',
@@ -227,7 +237,7 @@ const MyOrdersPage = () => {
               variant="outlined"
             />
           </Box>
-        )
+        ),
       },
       deliver: {
         title: 'Confirmar Entrega',
@@ -246,7 +256,7 @@ const MyOrdersPage = () => {
                 shrink: true,
               }}
               inputProps={{
-                multiple: true
+                multiple: true,
               }}
             />
             <TextField
@@ -258,16 +268,16 @@ const MyOrdersPage = () => {
               variant="outlined"
             />
           </Box>
-        )
-      }
+        ),
+      },
     };
-    
+
     return configs[type] || {};
   };
   if (loading) {
     return (
       <ThemeProvider theme={dashboardTheme}>
-        <SidebarProvider />
+        <SideBarProvider />
         <Box
           sx={{
             marginLeft: '210px',
@@ -291,7 +301,7 @@ const MyOrdersPage = () => {
   if (error) {
     return (
       <ThemeProvider theme={dashboardTheme}>
-        <SidebarProvider />
+        <SideBarProvider />
         <Box
           sx={{
             marginLeft: '210px',
@@ -315,7 +325,7 @@ const MyOrdersPage = () => {
 
   return (
     <ThemeProvider theme={dashboardTheme}>
-      <SidebarProvider />
+      <SideBarProvider />
       <Box
         sx={{
           marginLeft: '210px',

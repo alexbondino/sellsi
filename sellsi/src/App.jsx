@@ -21,7 +21,7 @@ import { supabase } from './services/supabase';
 import { usePrefetch } from './hooks/usePrefetch';
 import useCartStore from './features/buyer/hooks/cartStore';
 
-import Sidebar from './features/layout/Sidebar';
+import SideBar from './features/layout/SideBar';
 
 // ============================================================================
 // 🚀 CODE SPLITTING: LAZY LOADING DE COMPONENTES POR RUTAS
@@ -109,9 +109,9 @@ function AppContent({ mensaje }) {
   const { prefetchRoute } = usePrefetch();
 
   const [currentAppRole, setCurrentAppRole] = useState('buyer'); // 'buyer' o 'supplier'
-  const sidebarWidth = '210px';
+  const SideBarWidth = '210px';
 
-  // Define las rutas para cada rol (for sidebar visibility and specific redirects)
+  // Define las rutas para cada rol (for SideBar visibility and specific redirects)
   const buyerRoutes = [
     '/buyer/marketplace',
     '/buyer/orders',
@@ -352,7 +352,7 @@ function AppContent({ mensaje }) {
     );
   }
 
-  // Determinar si la Sidebar debe mostrarse.
+  // Determinar si la SideBar debe mostrarse.
   const isDashboardRoute =
     session &&
     !needsOnboarding &&
@@ -399,8 +399,8 @@ function AppContent({ mensaje }) {
           }}
         >
           {isDashboardRoute && (
-            // Pasamos el currentAppRole a la Sidebar para que sepa qué menú mostrar
-            <Sidebar role={currentAppRole} width={sidebarWidth} />
+            // Pasamos el currentAppRole a la SideBar para que sepa qué menú mostrar
+            <SideBar role={currentAppRole} width={SideBarWidth} />
           )}
 
           <Box
@@ -408,9 +408,9 @@ function AppContent({ mensaje }) {
             sx={{
               flexGrow: 1,
               p: isDashboardRoute ? 3 : 0,
-              ml: isDashboardRoute ? { xs: 0, md: sidebarWidth } : 0,
+              ml: isDashboardRoute ? { xs: 0, md: SideBarWidth } : 0,
               width: isDashboardRoute
-                ? { xs: '100%', md: `calc(100% - ${sidebarWidth})` }
+                ? { xs: '100%', md: `calc(100% - ${SideBarWidth})` }
                 : '100%',
               overflowX: 'hidden',
             }}

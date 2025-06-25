@@ -21,7 +21,7 @@ const MarketplaceBuyer = React.memo(() => {
   // ✅ MEJORA DE RENDIMIENTO: Memoización de configuración estática
   const marketplaceConfig = React.useMemo(
     () => ({
-      hasSidebar: true, // Indicar que hay sidebar
+      hasSideBar: true, // Indicar que hay SideBar
       // ✅ Ajustar para que no haya gap - eliminar márgenes negativos
       searchBarMarginLeft: {
         xs: 0,
@@ -58,7 +58,7 @@ const MarketplaceBuyer = React.memo(() => {
       bgcolor: '#f8fafc',
       minHeight: '100vh',
       pt: { xs: 7, md: 8 },
-      pl: '210px', // Exactamente el ancho del sidebar (210px) sin gap
+      pl: '210px', // Exactamente el ancho del SideBar (210px) sin gap
     }),
     []
   );
@@ -66,7 +66,7 @@ const MarketplaceBuyer = React.memo(() => {
   return (
     <Box>
       {/* <MarketplaceTopBar /> */}{' '}
-      {/* Contenido principal con margen para compensar TopBar fijo y Sidebar */}
+      {/* Contenido principal con margen para compensar TopBar fijo y SideBar */}
       <Box sx={containerStyles}>
         {/* Sección de búsqueda y navegación */}
         <SearchSection {...searchSectionProps} /> {/* Sección de filtros */}
