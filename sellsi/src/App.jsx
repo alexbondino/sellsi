@@ -13,7 +13,7 @@ import {
 import theme from './styles/theme';
 import TopBar from './features/layout/TopBar';
 import BottomBar from './features/layout/BottomBar';
-import PrivateRoute from './features/auth/PrivateRoute'; // <-- Tu componente PrivateRoute
+import PrivateRoute from './features/auth/PrivateRoute'; // Ensure this is the simplified PrivateRoute
 import { BannerProvider, useBanner } from './features/ui/BannerContext';
 import Banner from './features/ui/Banner';
 import { Toaster } from 'react-hot-toast';
@@ -21,7 +21,7 @@ import { supabase } from './services/supabase';
 import { usePrefetch } from './hooks/usePrefetch';
 import useCartStore from './features/buyer/hooks/cartStore';
 
-import Sidebar from './features/layout/Sidebar'; // Asegúrate de que esta ruta sea correcta
+import Sidebar from './features/layout/Sidebar';
 
 // ============================================================================
 // 🚀 CODE SPLITTING: LAZY LOADING DE COMPONENTES POR RUTAS
@@ -111,19 +111,29 @@ function AppContent({ mensaje }) {
   const [currentAppRole, setCurrentAppRole] = useState('buyer'); // 'buyer' o 'supplier'
   const sidebarWidth = '210px';
 
-  // Define las rutas para cada rol (prefijos)
-  const buyerRoutesPrefixes = [
+  // Define las rutas para cada rol (for sidebar visibility and specific redirects)
+  const buyerRoutes = [
     '/buyer/marketplace',
     '/buyer/orders',
     '/buyer/performance',
     '/buyer/cart',
-    '/technicalspecs',
+    // Removed '/technicalspecs' from here as it's not strictly a 'dashboard' route,
+    // and can be accessed by anyone (logged in or not) based on its current placement in Routes.
+    // If it *should* be buyer-only, wrap it in PrivateRoute without a specific role.
   ];
-  const supplierRoutesPrefixes = [
+  const supplierRoutes = [
     '/supplier/home',
     '/supplier/myproducts',
     '/supplier/addproduct',
     '/supplier/myorders',
+  ];
+  const neutralRoutes = [
+    '/',
+    '/marketplace',
+    '/technicalspecs', // Keeping it here as a general, public/common route
+    '/login',
+    '/crear-cuenta',
+    '/onboarding',
   ];
 
   useEffect(() => {
@@ -137,7 +147,7 @@ function AppContent({ mensaje }) {
           setUserProfile(null);
           setNeedsOnboarding(false);
           setLoadingUserStatus(false);
-          setCurrentAppRole('buyer');
+          setCurrentAppRole('buyer'); // Por defecto para no logueados
         }
         return;
       }
@@ -166,6 +176,7 @@ function AppContent({ mensaje }) {
         } else {
           setNeedsOnboarding(false);
           setUserProfile(userData);
+          // Establece el rol inicial de la aplicación basado en userProfile.main_supplier
           setCurrentAppRole(userData.main_supplier ? 'supplier' : 'buyer');
 
           if (currentSession?.user?.id && !isBackendSynced) {
@@ -201,13 +212,16 @@ function AppContent({ mensaje }) {
         listener.subscription.unsubscribe();
       }
     };
-  }, []);
+  }, [initializeCartWithUser, isBackendSynced]);
 
+  // --- Derived states from userProfile ---
   const isBuyer = currentAppRole === 'buyer';
   const logoUrl = userProfile ? userProfile.logo_url : null;
 
+  // Función para manejar el cambio de rol desde TopBar
   const handleRoleChangeFromTopBar = newRole => {
     setCurrentAppRole(newRole);
+    // Redirige al usuario al dashboard correspondiente cuando cambie el rol
     if (newRole === 'supplier') {
       navigate('/supplier/home');
     } else {
@@ -215,76 +229,87 @@ function AppContent({ mensaje }) {
     }
   };
 
+  // 🆕 Simplified useEffect to synchronize the currentAppRole with the route
+  // Now, this mostly handles updating the visual `currentAppRole` state
+  // based on the URL, assuming PrivateRoute handles authentication only.
   useEffect(() => {
-    if (session && !needsOnboarding && !loadingUserStatus) {
+    if (session && !needsOnboarding && !loadingUserStatus && userProfile) {
       const currentPath = location.pathname;
-      let roleBasedOnPath = currentAppRole;
 
-      if (buyerRoutesPrefixes.some(prefix => currentPath.startsWith(prefix))) {
-        roleBasedOnPath = 'buyer';
-      } else if (
-        supplierRoutesPrefixes.some(prefix => currentPath.startsWith(prefix))
-      ) {
-        roleBasedOnPath = 'supplier';
+      if (supplierRoutes.some(route => currentPath.startsWith(route))) {
+        setCurrentAppRole('supplier');
+      } else if (buyerRoutes.some(route => currentPath.startsWith(route))) {
+        setCurrentAppRole('buyer');
+      } else {
+        // If on a neutral route, determine role based on profile (initial state)
+        // This ensures the correct default role is set if they land on a public route
+        // but are logged in.
+        setCurrentAppRole(userProfile.main_supplier ? 'supplier' : 'buyer');
       }
-
-      if (roleBasedOnPath !== currentAppRole) {
-        console.log(
-          `[App] Sincronizando rol: Ruta '${currentPath}' sugiere '${roleBasedOnPath}', actualizando de '${currentAppRole}'`
-        );
-        setCurrentAppRole(roleBasedOnPath);
-      }
+    } else if (!session) {
+      // If not logged in, always set role to buyer (default public view)
+      setCurrentAppRole('buyer');
     }
   }, [
     location.pathname,
     session,
     needsOnboarding,
     loadingUserStatus,
-    currentAppRole,
-    buyerRoutesPrefixes,
-    supplierRoutesPrefixes,
+    userProfile, // Crucial for initial role setting
+    buyerRoutes,
+    supplierRoutes,
   ]);
 
+  // Redirect to onboarding if needed
   useEffect(() => {
     if (session && needsOnboarding && location.pathname !== '/onboarding') {
       navigate('/onboarding', { replace: true });
     }
   }, [session, needsOnboarding, location.pathname, navigate]);
 
+  // Redirect logged-in users from neutral routes to their *preferred* dashboard
+  // based on their actual profile.
   useEffect(() => {
-    if (!loadingUserStatus && session && !needsOnboarding) {
-      const neutralRoutes = ['/', '/login', '/crear-cuenta', '/onboarding'];
+    if (!loadingUserStatus && session && !needsOnboarding && userProfile) {
       if (neutralRoutes.includes(location.pathname)) {
-        if (currentAppRole === 'buyer') {
-          navigate('/buyer/marketplace', { replace: true });
-        } else {
+        if (userProfile.main_supplier) {
+          // Check actual profile role
           navigate('/supplier/home', { replace: true });
+        } else {
+          navigate('/buyer/marketplace', { replace: true });
         }
       }
     }
   }, [
     loadingUserStatus,
     session,
-    currentAppRole,
     needsOnboarding,
     location.pathname,
     navigate,
+    userProfile, // Important dependency
+    neutralRoutes,
   ]);
 
+  // Prefetch routes for performance
   useEffect(() => {
     if (!loadingUserStatus && session && currentAppRole) {
       setTimeout(() => {
         if (currentAppRole === 'buyer') {
           prefetchRoute('/buyer/marketplace');
           prefetchRoute('/buyer/cart');
+          prefetchRoute('/buyer/orders');
+          prefetchRoute('/buyer/performance');
         } else {
           prefetchRoute('/supplier/home');
           prefetchRoute('/supplier/myproducts');
+          prefetchRoute('/supplier/addproduct');
+          prefetchRoute('/supplier/myorders');
         }
       }, 1500);
     }
   }, [loadingUserStatus, session, currentAppRole, prefetchRoute]);
 
+  // Close modals on browser back/forward (popstate)
   useEffect(() => {
     const handlePopstate = () => {
       window.dispatchEvent(new CustomEvent('closeAllModals'));
@@ -296,16 +321,16 @@ function AppContent({ mensaje }) {
   const handleScrollTo = refName => {
     const element = scrollTargets.current[refName]?.current;
     if (element) {
-      const topBarHeight = 30;
+      const topBarHeight = 30; // Adjust if your actual top bar height is different
       const elementPosition =
         element.getBoundingClientRect().top + window.pageYOffset;
       const offsetPosition = elementPosition - topBarHeight;
       window.scrollTo({ top: offsetPosition, behavior: 'smooth' });
     }
   };
-
+  // Inicializar el carrito cuando el usuario se autentica
   useEffect(() => {
-    if (session) {
+    if (session && session.user) {
       initializeCartWithUser(session.user.id);
     }
   }, [session, initializeCartWithUser]);
@@ -327,12 +352,12 @@ function AppContent({ mensaje }) {
     );
   }
 
+  // Determinar si la Sidebar debe mostrarse.
   const isDashboardRoute =
     session &&
     !needsOnboarding &&
-    !['/', '/marketplace', '/login', '/crear-cuenta', '/onboarding'].includes(
-      location.pathname
-    );
+    (buyerRoutes.some(route => location.pathname.startsWith(route)) ||
+      supplierRoutes.some(route => location.pathname.startsWith(route)));
 
   const showBottomBar = location.pathname !== '/supplier/home';
 
@@ -340,7 +365,7 @@ function AppContent({ mensaje }) {
     <>
       <TopBar
         session={session}
-        isBuyer={isBuyer} // isBuyer ahora es un derivado de currentAppRole
+        isBuyer={isBuyer}
         logoUrl={logoUrl}
         onNavigate={handleScrollTo}
         onRoleChange={handleRoleChangeFromTopBar}
@@ -374,6 +399,7 @@ function AppContent({ mensaje }) {
           }}
         >
           {isDashboardRoute && (
+            // Pasamos el currentAppRole a la Sidebar para que sepa qué menú mostrar
             <Sidebar role={currentAppRole} width={sidebarWidth} />
           )}
 
@@ -391,59 +417,21 @@ function AppContent({ mensaje }) {
           >
             <Suspense fallback={<SuspenseLoader />}>
               <Routes>
+                {/* Public / General Routes */}
                 <Route
                   path="/"
                   element={<Home scrollTargets={scrollTargets} />}
                 />
                 <Route path="/marketplace" element={<Marketplace />} />
-
-                {/* 🚀 RUTAS DE COMPRADOR PROTEGIDAS */}
-                <Route
-                  path="/buyer/marketplace"
-                  element={
-                    <PrivateRoute requiredAccountType="buyer">
-                      {' '}
-                      {/* Añadimos requiredAccountType */}
-                      <MarketplaceBuyer />
-                    </PrivateRoute>
-                  }
-                />
-                <Route
-                  path="/buyer/orders"
-                  element={
-                    <PrivateRoute requiredAccountType="buyer">
-                      <BuyerOrders />
-                    </PrivateRoute>
-                  }
-                />
-                <Route
-                  path="/buyer/performance"
-                  element={
-                    <PrivateRoute requiredAccountType="buyer">
-                      <BuyerPerformance />
-                    </PrivateRoute>
-                  }
-                />
-                <Route
-                  path="/buyer/cart"
-                  element={
-                    <PrivateRoute requiredAccountType="buyer">
-                      <BuyerCart />
-                    </PrivateRoute>
-                  }
-                />
+                {/* TechnicalSpecs can be accessed without login, if it's common content */}
                 <Route
                   path="/technicalspecs/:productSlug"
-                  element={
-                    <PrivateRoute requiredAccountType="buyer">
-                      <TechnicalSpecs />
-                    </PrivateRoute>
-                  }
+                  element={<TechnicalSpecs />}
                 />
-                {/* FIN RUTAS DE COMPRADOR PROTEGIDAS */}
-
                 <Route path="/login" element={<Login />} />
                 <Route path="/crear-cuenta" element={<Register />} />
+
+                {/* All these routes are now protected ONLY by authentication and onboarding */}
                 <Route
                   path="/onboarding"
                   element={
@@ -452,12 +440,49 @@ function AppContent({ mensaje }) {
                     </PrivateRoute>
                   }
                 />
+
+                {/* BUYER DASHBOARD ROUTES - Now protected by PrivateRoute */}
+                <Route
+                  path="/buyer/marketplace"
+                  element={
+                    <PrivateRoute>
+                      <MarketplaceBuyer />
+                    </PrivateRoute>
+                  }
+                />
+                <Route
+                  path="/buyer/orders"
+                  element={
+                    <PrivateRoute>
+                      <BuyerOrders />
+                    </PrivateRoute>
+                  }
+                />
+                <Route
+                  path="/buyer/performance"
+                  element={
+                    <PrivateRoute>
+                      <BuyerPerformance />
+                    </PrivateRoute>
+                  }
+                />
+                <Route
+                  path="/buyer/cart"
+                  element={
+                    <PrivateRoute>
+                      <BuyerCart />
+                    </PrivateRoute>
+                  }
+                />
+
+                {/* SUPPLIER DASHBOARD ROUTES - Already protected by PrivateRoute,
+                    just removing the role prop as per the new PrivateRoute logic */}
                 <Route
                   path="/supplier/home"
                   element={
-                    <PrivateRoute requiredAccountType="supplier">
+                    <PrivateRoute>
                       {' '}
-                      {/* Usamos "supplier" o "proveedor" aquí? */}
+                      {/* Removed requiredAccountType="proveedor" */}
                       <ProviderHome />
                     </PrivateRoute>
                   }
@@ -465,7 +490,9 @@ function AppContent({ mensaje }) {
                 <Route
                   path="/supplier/myproducts"
                   element={
-                    <PrivateRoute requiredAccountType="supplier">
+                    <PrivateRoute>
+                      {' '}
+                      {/* Removed requiredAccountType="proveedor" */}
                       <MyProducts />
                     </PrivateRoute>
                   }
@@ -473,7 +500,9 @@ function AppContent({ mensaje }) {
                 <Route
                   path="/supplier/addproduct"
                   element={
-                    <PrivateRoute requiredAccountType="supplier">
+                    <PrivateRoute>
+                      {' '}
+                      {/* Removed requiredAccountType="proveedor" */}
                       <AddProduct />
                     </PrivateRoute>
                   }
@@ -481,7 +510,9 @@ function AppContent({ mensaje }) {
                 <Route
                   path="/supplier/myorders"
                   element={
-                    <PrivateRoute requiredAccountType="supplier">
+                    <PrivateRoute>
+                      {' '}
+                      {/* Removed requiredAccountType="proveedor" */}
                       <MyOrdersPage />
                     </PrivateRoute>
                   }
@@ -503,6 +534,7 @@ function App() {
   const [mensaje, setMensaje] = useState('Cargando...');
   const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
+  // Basic backend health check (optional, can be removed if not needed)
   useEffect(() => {
     fetch(`${backendUrl}/`)
       .then(res => res.json())
