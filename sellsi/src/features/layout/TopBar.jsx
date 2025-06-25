@@ -113,7 +113,7 @@ export default function TopBar({
     <ShoppingCartIcon
       {...props}
       sx={{
-        fontSize: '2.24rem',
+        fontSize: '1.5rem',
         color: 'white !important',
         ...sx,
       }}
@@ -123,6 +123,7 @@ export default function TopBar({
   let desktopNavLinks = null;
   let desktopRightContent = null;
   let mobileMenuItems = [];
+  let paddingX = { xs: 2, md: 18, mac: 18, lg: 18 }; // Default padding for logged out
 
   const profileMenuButton = (
     <IconButton onClick={handleOpenProfileMenu} sx={{ color: 'white', p: 0 }}>
@@ -200,6 +201,7 @@ export default function TopBar({
     ];
   } else {
     // Si el usuario está logueado
+    paddingX = { xs: 2, md: 6, mac: 6, lg: 6 }; // Updated padding for logged in
     desktopRightContent = (
       <>
         {/* Usamos el componente Switch */}
@@ -309,7 +311,7 @@ export default function TopBar({
           sx={{
             width: '100%',
             maxWidth: '100%',
-            px: { xs: 2, md: 18, mac: 18, lg: 18 },
+            px: paddingX, // Use the dynamically set paddingX
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',

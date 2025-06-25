@@ -1,12 +1,20 @@
-import React from 'react'
-import { Box, Step, StepLabel, Stepper, StepConnector } from '@mui/material'
-import { styled } from '@mui/material/styles'
-import { stepConnectorClasses } from '@mui/material/StepConnector'
-import AccountCircleIcon from '@mui/icons-material/AccountCircle'
-import BusinessIcon from '@mui/icons-material/Business'
-import PersonAddIcon from '@mui/icons-material/PersonAdd'
-import CheckCircleIcon from '@mui/icons-material/CheckCircle'
-import VerifiedIcon from '@mui/icons-material/Verified'
+import React from 'react';
+import {
+  Box,
+  Step,
+  StepLabel,
+  Stepper as MuiStepper,
+  StepConnector,
+} from '@mui/material';
+import { styled } from '@mui/material/styles';
+import { stepConnectorClasses } from '@mui/material/StepConnector';
+import AccountCircleIcon from '@mui/icons-material/AccountCircle';
+import BusinessIcon from '@mui/icons-material/Business';
+import PersonAddIcon from '@mui/icons-material/PersonAdd';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import VerifiedIcon from '@mui/icons-material/Verified';
+
+/* Pasar a componente de wizzard */
 
 // ✅ CONECTOR COLORLIB CON RESPONSIVE
 const ColorlibConnector = styled(StepConnector)(({ theme }) => ({
@@ -49,7 +57,7 @@ const ColorlibConnector = styled(StepConnector)(({ theme }) => ({
       backgroundColor: theme.palette.grey[800],
     }),
   },
-}))
+}));
 
 // ✅ ICONO COLORLIB CON RESPONSIVE
 const ColorlibStepIconRoot = styled('div')(({ theme }) => ({
@@ -100,10 +108,10 @@ const ColorlibStepIconRoot = styled('div')(({ theme }) => ({
       },
     },
   ],
-}))
+}));
 
 function ColorlibStepIcon(props) {
-  const { active, completed, className } = props
+  const { active, completed, className } = props;
 
   const icons = {
     1: <AccountCircleIcon />,
@@ -111,7 +119,7 @@ function ColorlibStepIcon(props) {
     3: <PersonAddIcon />,
     4: <CheckCircleIcon />,
     5: <VerifiedIcon />,
-  }
+  };
 
   return (
     <ColorlibStepIconRoot
@@ -120,14 +128,14 @@ function ColorlibStepIcon(props) {
     >
       {icons[String(props.icon)]}
     </ColorlibStepIconRoot>
-  )
+  );
 }
 
 // ✅ COMPONENTE PRINCIPAL (exactamente como en el código original)
-const ProgressStepper = ({ activeStep, steps }) => {
+const Stepper = ({ activeStep, steps }) => {
   return (
     <Box sx={{ width: '100%', mb: { xs: 1, sm: 1, md: 3, lg: 4 }, mt: 2 }}>
-      <Stepper
+      <MuiStepper
         activeStep={activeStep - 1}
         alternativeLabel
         connector={<ColorlibConnector />}
@@ -152,9 +160,9 @@ const ProgressStepper = ({ activeStep, steps }) => {
             <StepLabel StepIconComponent={ColorlibStepIcon}>{label}</StepLabel>
           </Step>
         ))}
-      </Stepper>
+      </MuiStepper>
     </Box>
-  )
-}
+  );
+};
 
-export default ProgressStepper
+export default Stepper;

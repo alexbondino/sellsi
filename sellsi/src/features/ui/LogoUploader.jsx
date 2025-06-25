@@ -1,4 +1,4 @@
-import React from 'react'
+import React from 'react';
 import {
   Box,
   Typography,
@@ -6,9 +6,10 @@ import {
   Avatar,
   useTheme,
   useMediaQuery,
-} from '@mui/material'
-import InsertPhotoIcon from '@mui/icons-material/InsertPhoto'
+} from '@mui/material';
+import InsertPhotoIcon from '@mui/icons-material/InsertPhoto';
 
+/* Uploader del logo */
 const LogoUploader = ({
   logoPreview,
   onLogoSelect,
@@ -16,25 +17,25 @@ const LogoUploader = ({
   showText = true,
   textVariant = 'default',
 }) => {
-  const theme = useTheme()
-  const isXsOrSm = useMediaQuery(theme.breakpoints.down('md'))
-  const isLarge = size === 'large'
-  const avatarSize = isLarge ? 120 : 80
+  const theme = useTheme();
+  const isXsOrSm = useMediaQuery(theme.breakpoints.down('md'));
+  const isLarge = size === 'large';
+  const avatarSize = isLarge ? 120 : 80;
 
   const getUploadText = () => {
-    if (logoPreview) return 'Clic para cambiar logo'
+    if (logoPreview) return 'Clic para cambiar logo';
     if (textVariant === 'responsive') {
-      return isXsOrSm ? 'Adjuntar logo aqui' : 'Clic para subir logo'
+      return isXsOrSm ? 'Adjuntar logo aqui' : 'Clic para subir logo';
     }
-    return 'Clic para subir logo'
-  }
+    return 'Clic para subir logo';
+  };
 
-  const handleFileSelect = (event) => {
-    const file = event.target.files[0]
+  const handleFileSelect = event => {
+    const file = event.target.files[0];
     if (file) {
-      onLogoSelect(file)
+      onLogoSelect(file);
     }
-  }
+  };
 
   return (
     <Box
@@ -102,7 +103,7 @@ const LogoUploader = ({
         </Typography>
       )}
     </Box>
-  )
-}
+  );
+};
 
-export default LogoUploader
+export default LogoUploader;

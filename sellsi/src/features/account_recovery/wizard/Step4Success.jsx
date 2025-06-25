@@ -1,6 +1,6 @@
 import React from 'react';
 import { Box, Typography } from '@mui/material';
-import { CustomButton } from '../../landing_page/hooks';
+import { PrimaryButton } from '../../landing_page/hooks';
 
 const Step4Success = ({ onClose }) => {
   return (
@@ -12,7 +12,7 @@ const Step4Success = ({ onClose }) => {
         ¡Su contraseña ha sido cambiada con éxito!
       </Typography>
 
-      <CustomButton
+      <PrimaryButton
         onClick={onClose}
         sx={{
           fontSize: 20,
@@ -24,7 +24,7 @@ const Step4Success = ({ onClose }) => {
         }}
       >
         Iniciar Sesión
-      </CustomButton>
+      </PrimaryButton>
     </Box>
   );
 };

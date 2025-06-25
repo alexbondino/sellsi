@@ -19,6 +19,8 @@ import {
   Inventory as InventoryIcon,
 } from '@mui/icons-material';
 
+/* Cambiar nombre a algo más intuitivo, es el solicitudes recientes */
+
 const getTimeAgo = timestamp => {
   const now = new Date();
   const created = new Date(timestamp);

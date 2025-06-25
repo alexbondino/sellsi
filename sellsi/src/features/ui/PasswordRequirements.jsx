@@ -1,18 +1,20 @@
-import React from 'react'
-import { Box, Typography, useTheme } from '@mui/material'
-import CheckCircleIcon from '@mui/icons-material/CheckCircle'
-import CancelIcon from '@mui/icons-material/Cancel'
+import React from 'react';
+import { Box, Typography, useTheme } from '@mui/material';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import CancelIcon from '@mui/icons-material/Cancel';
+
+/* Requisitos de contraseña segura, mergear con el componente principal de password */
 
 const PasswordRequirements = ({ password, size = 'normal' }) => {
-  const theme = useTheme()
-  const isSmall = size === 'small'
+  const theme = useTheme();
+  const isSmall = size === 'small';
 
   const requisitos = [
     { label: 'Al menos 8 caracteres', valid: password.length >= 8 },
     { label: 'Letras minúsculas (a-z)', valid: /[a-z]/.test(password) },
     { label: 'Letras mayúsculas (A-Z)', valid: /[A-Z]/.test(password) },
     { label: 'Números (0-9)', valid: /\d/.test(password) },
-  ]
+  ];
 
   return (
     <Box sx={{ mb: isSmall ? 1 : 2 }}>
@@ -103,7 +105,7 @@ const PasswordRequirements = ({ password, size = 'normal' }) => {
         ))}
       </Box>
     </Box>
-  )
-}
+  );
+};
 
-export default PasswordRequirements
+export default PasswordRequirements;

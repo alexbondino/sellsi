@@ -20,10 +20,11 @@ import {
   CircularProgress,
   useTheme,
   useMediaQuery,
+  Grid, // Asegúrate de que Grid está importado de @mui/material
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { toast } from 'react-hot-toast';
-import ProductCard from '../ProductCard/ProductCard';
+import ProductCard from '../../ui/product-card/ProductCard'; // Asegúrate que esta es la ruta correcta al componente principal
 import useCartStore from '../../../features/buyer/hooks/cartStore';
 import LoadingOverlay from '../../ui/LoadingOverlay';
 
@@ -567,10 +568,12 @@ const ProductsSection = React.memo(
                       sx={cardContainerStyles}
                     >
                       <ProductCard
-                        producto={producto}
+                        product={producto} // Prop 'product'
+                        type="buyer" // <--- ¡AQUÍ LE DAMOS EL CONTEXTO DE COMPRADOR!
                         onAddToCart={handleAddToCart}
                         onViewDetails={producto => {
                           // Aquí puedes agregar la lógica para ver detalles
+                          console.log('Ver detalles de:', producto.nombre);
                         }}
                       />
                     </Box>

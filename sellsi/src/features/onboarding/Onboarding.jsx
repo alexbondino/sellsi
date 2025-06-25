@@ -21,7 +21,7 @@ import { supabase } from '../../services/supabase';
 import toast from 'react-hot-toast';
 
 // Asumimos que estos componentes existen en tu proyecto y están bien estilizados.
-import { CustomButton, CountrySelector } from '../ui';
+import { PrimaryButton, CountrySelector } from '../ui';
 
 // ==================================================================
 // COMPONENTE HELPER: Uploader de logos (estilo mejorado)
@@ -323,7 +323,8 @@ const Onboarding = () => {
             sx={{ fontWeight: 600, mb: 3, color: theme.palette.text.primary }}
           >
             Paso 1: Elige tu rol principal
-          </Typography>          <Grid container spacing={3} justifyContent="center">
+          </Typography>{' '}
+          <Grid container spacing={3} justifyContent="center">
             {/* Proveedor Card */}
             <Grid size={{ xs: 12, sm: 6 }}>
               <Card
@@ -378,7 +379,8 @@ const Onboarding = () => {
                   </Typography>
                 </CardActionArea>
               </Card>
-            </Grid>            {/* Comprador Card */}
+            </Grid>{' '}
+            {/* Comprador Card */}
             <Grid size={{ xs: 12, sm: 6 }}>
               <Card
                 variant="outlined"
@@ -478,7 +480,9 @@ const Onboarding = () => {
               },
               mx: 'auto', // Auto margins para centrar el Grid si tiene un maxWidth
             }}
-          >            {/* Columna Izquierda: Campos de Texto */}
+          >
+            {' '}
+            {/* Columna Izquierda: Campos de Texto */}
             <Grid size={{ xs: 12, md: 7 }}>
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
                 <TextField
@@ -518,7 +522,8 @@ const Onboarding = () => {
                   />
                 </Box>
               </Box>
-            </Grid>            {/* Columna Derecha: Uploader de Logo */}
+            </Grid>{' '}
+            {/* Columna Derecha: Uploader de Logo */}
             <Grid size={{ xs: 12, md: 5 }}>
               <Paper
                 variant="outlined"
@@ -565,7 +570,7 @@ const Onboarding = () => {
 
         {/* --- SECCIÓN 3: BOTÓN DE ACCIÓN FINAL --- */}
         <Box sx={{ mt: 6, display: 'flex', justifyContent: 'center' }}>
-          <CustomButton
+          <PrimaryButton
             onClick={handleFinishOnboarding}
             disabled={isLoading || !isFormValid} // 'disabled' prop ya controla el estado
             sx={{
@@ -604,7 +609,7 @@ const Onboarding = () => {
             ) : (
               'Guardar y Finalizar'
             )}
-          </CustomButton>
+          </PrimaryButton>
         </Box>
       </Paper>
     </Container>

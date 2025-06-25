@@ -1,9 +1,10 @@
 import React from 'react';
 import { Button } from '@mui/material';
 
-const CustomButton = ({ 
-  children, 
-  variant = 'primary', 
+const PrimaryButton = ({
+  /* Boton custom, cambiar nombre y estandarizar */
+  children,
+  variant = 'primary',
   size = 'medium',
   disabled = false,
   onClick,
@@ -11,7 +12,7 @@ const CustomButton = ({
   fullWidth = false,
   startIcon,
   sx = {},
-  ...props 
+  ...props
 }) => {
   const getVariantStyles = () => {
     switch (variant) {
@@ -77,4 +78,4 @@ const CustomButton = ({
   );
 };
 
-export default CustomButton;
+export default PrimaryButton;

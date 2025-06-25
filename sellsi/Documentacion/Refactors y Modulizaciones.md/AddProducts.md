@@ -10,11 +10,12 @@
   - **Mensaje dinámico de tramos**: Lógica compleja de renderizado condicional que podría separarse.
   - **Zonas críticas identificadas**: El hook `useProductForm` maneja estado global del formulario - NO modularizar esto.
 - ¿Es necesario modularizar? **Sí**, específicamente la sección de tramos (aprox. 150 líneas).
-- ¿Es necesario refactorizar? **Parcialmente**, solo extraer componente TramosSection sin alterar lógica interna.
+- ¿Es necesario refactorizar? **Parcialmente**, solo extraer componente PriceTiers sin alterar lógica interna.
 
 ## 🔧 Propuesta de Mejora
 
 ### Antes (Fragmento relevante)
+
 ```jsx
 // AddProduct.jsx líneas 714-850 aprox.
 {formData.pricingType === 'Por Tramo' && (
@@ -48,20 +49,29 @@
 ```
 
 ### Después (Fragmento modularizado)
+
 ```jsx
 // AddProduct.jsx - Simplificado
-{formData.pricingType === 'Por Tramo' && (
-  <TramosSection
-    tramos={formData.tramos}
-    onTramosChange={handleTramosChange}
-    onAddTramo={addTramo}
-    onRemoveTramo={removeTramo}
-    errors={localErrors.tramos}
-  />
-)}
+{
+  formData.pricingType === 'Por Tramo' && (
+    <PriceTiers
+      tramos={formData.tramos}
+      onTramosChange={handleTramosChange}
+      onAddTramo={addTramo}
+      onRemoveTramo={removeTramo}
+      errors={localErrors.tramos}
+    />
+  );
+}
 
-// src/features/supplier/components/TramosSection.jsx - Nuevo archivo
-export const TramosSection = ({ tramos, onTramosChange, onAddTramo, onRemoveTramo, errors }) => {
+// src/features/supplier/components/PriceTiers.jsx - Nuevo archivo
+export const PriceTiers = ({
+  tramos,
+  onTramosChange,
+  onAddTramo,
+  onRemoveTramo,
+  errors,
+}) => {
   return (
     <Box>
       <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 600 }}>
@@ -88,9 +98,9 @@ export const TramosSection = ({ tramos, onTramosChange, onAddTramo, onRemoveTram
 ## 🛠 Plan de Acción
 
 - Descripción de los pasos sugeridos:
-  1. Identificar y extraer toda la lógica y UI relacionada con los tramos de precio a un nuevo componente TramosSection.jsx.
+  1. Identificar y extraer toda la lógica y UI relacionada con los tramos de precio a un nuevo componente PriceTiers.jsx.
   2. Si la lógica de estado/validación es compleja, crear un hook useTramos.js para encapsularla.
-  3. Reemplazar la sección de tramos en AddProduct.jsx por <TramosSection ... /> pasando los props necesarios.
+  3. Reemplazar la sección de tramos en AddProduct.jsx por <PriceTiers ... /> pasando los props necesarios.
 - Qué partes se van a separar o reescribir:
   - **UI de tramos**: Cards, inputs de cantidad/precio, botón agregar, botón eliminar (líneas ~730-820).
   - **Mensaje dinámico**: Lógica condicional de "¿Cómo funcionan los tramos?" (líneas ~820-850).
@@ -106,6 +116,7 @@ export const TramosSection = ({ tramos, onTramosChange, onAddTramo, onRemoveTram
   - No hay errores en consola ni cambios de comportamiento inesperados.
 
 ## 🔍 Sugerencias de Prueba Posterior
+
 - Probar agregar, editar y eliminar tramos en el formulario.
 - Validar que el mensaje dinámico y la lógica de precios funcionan igual que antes.
 - Revisar que no haya efectos colaterales en el resto del formulario.
