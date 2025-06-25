@@ -4,19 +4,16 @@
 // - Agregar/quitar secciones
 // - Modificar estilos del contenedor principal
 
-import React from 'react'
-import { Box } from '@mui/material'
-
-// Sidebar específico para Buyer
-import SidebarBuyer from '../layout/SidebarBuyer.jsx'
+import React from 'react';
+import { Box } from '@mui/material';
 
 // Hook centralizado
-import useMarketplaceLogic from '../marketplace/useMarketplaceLogic.jsx'
+import useMarketplaceLogic from '../marketplace/useMarketplaceLogic.jsx';
 
 // Componentes de secciones
-import SearchSection from '../marketplace/sections/SearchSection.jsx'
-import FilterSection from '../marketplace/sections/FilterSection.jsx'
-import ProductsSection from '../marketplace/sections/ProductsSection.jsx'
+import SearchSection from '../marketplace/sections/SearchSection.jsx';
+import FilterSection from '../marketplace/sections/FilterSection.jsx';
+import ProductsSection from '../marketplace/sections/ProductsSection.jsx';
 
 // ✅ MEJORA DE RENDIMIENTO: Memoización del componente principal
 const MarketplaceBuyer = React.memo(() => {
@@ -50,10 +47,10 @@ const MarketplaceBuyer = React.memo(() => {
       },
     }),
     []
-  )
+  );
 
   const { searchSectionProps, filterSectionProps, productsSectionProps } =
-    useMarketplaceLogic(marketplaceConfig)
+    useMarketplaceLogic(marketplaceConfig);
 
   // ✅ MEJORA DE RENDIMIENTO: Memoización de estilos del contenedor principal
   const containerStyles = React.useMemo(
@@ -64,13 +61,11 @@ const MarketplaceBuyer = React.memo(() => {
       pl: '210px', // Exactamente el ancho del sidebar (210px) sin gap
     }),
     []
-  )
+  );
 
   return (
     <Box>
       {/* <MarketplaceTopBar /> */}{' '}
-      {/* Eliminado, ahora la topbar se maneja globalmente en App.jsx */}
-      <SidebarBuyer />{' '}
       {/* Contenido principal con margen para compensar TopBar fijo y Sidebar */}
       <Box sx={containerStyles}>
         {/* Sección de búsqueda y navegación */}
@@ -80,10 +75,10 @@ const MarketplaceBuyer = React.memo(() => {
         <ProductsSection {...productsSectionProps} />
       </Box>
     </Box>
-  )
-})
+  );
+});
 
 // ✅ MEJORA DE RENDIMIENTO: DisplayName para debugging
-MarketplaceBuyer.displayName = 'MarketplaceBuyer'
+MarketplaceBuyer.displayName = 'MarketplaceBuyer';
 
-export default MarketplaceBuyer
+export default MarketplaceBuyer;

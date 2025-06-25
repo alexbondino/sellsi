@@ -22,6 +22,11 @@ import { usePrefetch } from './hooks/usePrefetch';
 import useCartStore from './features/buyer/hooks/cartStore';
 
 // ============================================================================
+// Importar Sidebar unificado (ahora todo está en este archivo)
+import Sidebar from './features/layout/Sidebar'; // Asegúrate de que esta ruta sea correcta
+// ============================================================================
+
+// ============================================================================
 // 🚀 CODE SPLITTING: LAZY LOADING DE COMPONENTES POR RUTAS
 // ============================================================================
 
@@ -99,37 +104,43 @@ function AppContent({ mensaje }) {
   const navigate = useNavigate();
   const scrollTargets = useRef({});
   const { bannerState, hideBanner } = useBanner();
-  const [session, setSession] = useState(null);  const [userProfile, setUserProfile] = useState(null); // State to store logo_url, is_buyer, etc.
-  const [loadingUserStatus, setLoadingUserStatus] = useState(true); // Renamed for clarity
-    // Hook del carrito para inicialización con usuario
+  const [session, setSession] = useState(null);
+  const [userProfile, setUserProfile] = useState(null); // State to store logo_url, is_buyer, etc.
+  const [loadingUserStatus, setLoadingUserStatus] = useState(true);
   const { initializeCartWithUser, isBackendSynced } = useCartStore();
   const [needsOnboarding, setNeedsOnboarding] = useState(false);
-  const { prefetchRoute } = usePrefetch();  useEffect(() => {
+  const { prefetchRoute } = usePrefetch();
+
+  // Estado para el rol actual del usuario, manejado por el TopBar Switch
+  const [currentAppRole, setCurrentAppRole] = useState('buyer'); // 'buyer' o 'supplier'
+  const sidebarWidth = '210px'; // Define el ancho de la sidebar aquí
+
+  useEffect(() => {
     let mounted = true;
     setLoadingUserStatus(true);
-    // ❌ REMOVIDO: setUserProfile(null); // No limpiar innecesariamente
     setNeedsOnboarding(false);
     const checkUserAndFetchProfile = async currentSession => {
       if (!currentSession || !currentSession.user) {
         if (mounted) {
-          setUserProfile(null); // Solo limpiar si NO hay sesión
+          setUserProfile(null);
           setNeedsOnboarding(false);
           setLoadingUserStatus(false);
+          setCurrentAppRole('buyer'); // Si no hay sesión, por defecto el rol de la app es 'buyer'
         }
         return;
       }
       const { data: userData, error: userError } = await supabase
         .from('users')
-        .select('user_nm, main_supplier, logo_url') // ✅ Ensure logo_url is selected here!
+        .select('user_nm, main_supplier, logo_url')
         .eq('user_id', currentSession.user.id)
         .single();
 
       if (userError && mounted) {
-        console.error('Error fetching user profile:', userError.message); // Log the error message
-        // If there's an error (e.g., user has no profile entry), assume they need onboarding
+        console.error('Error fetching user profile:', userError.message);
         setNeedsOnboarding(true);
-        setUserProfile(null); // Ensure profile is null
+        setUserProfile(null);
         setLoadingUserStatus(false);
+        setCurrentAppRole('buyer'); // Si hay error en perfil, por defecto el rol de la app es 'buyer'
         return;
       }
       if (mounted) {
@@ -138,12 +149,15 @@ function AppContent({ mensaje }) {
           userData.user_nm?.toLowerCase() === USER_NAME_STATUS.PENDING
         ) {
           setNeedsOnboarding(true);
-          setUserProfile(null); // Profile is null if onboarding is needed
+          setUserProfile(null);
+          setCurrentAppRole('buyer'); // Si necesita onboarding, por defecto el rol de la app es 'buyer'
         } else {
           setNeedsOnboarding(false);
-          setUserProfile(userData); // ✅ Store the complete user data (including logo_url)
+          setUserProfile(userData);
 
-          // ✅ INICIALIZAR CARRITO CON USUARIO AUTENTICADO
+          // Establece el rol inicial de la aplicación basado en userProfile.main_supplier
+          setCurrentAppRole(userData.main_supplier ? 'supplier' : 'buyer');
+
           if (currentSession?.user?.id && !isBackendSynced) {
             try {
               await initializeCartWithUser(currentSession.user.id);
@@ -154,7 +168,7 @@ function AppContent({ mensaje }) {
         }
         setLoadingUserStatus(false);
       }
-    }; // Initial session check and profile fetch
+    };
     supabase.auth.getSession().then(({ data }) => {
       if (mounted) {
         setSession(data.session);
@@ -162,12 +176,11 @@ function AppContent({ mensaje }) {
       }
     });
 
-    // Listen for auth state changes
     const { data: listener } = supabase.auth.onAuthStateChange(
       (_event, newSession) => {
         if (mounted) {
           setSession(newSession);
-          checkUserAndFetchProfile(newSession); // Re-evaluate and re-fetch profile on session changes
+          checkUserAndFetchProfile(newSession);
         }
       }
     );
@@ -178,9 +191,24 @@ function AppContent({ mensaje }) {
         listener.subscription.unsubscribe();
       }
     };
-  }, []); // Empty dependency array means this runs once on mount  // --- Derived states from userProfile ---
-  const isBuyer = userProfile ? userProfile.main_supplier === false : null; // ✅ Derived from userProfile
-  const logoUrl = userProfile ? userProfile.logo_url : null; // ✅ Derived from userProfile  // Redirect to onboarding if needed
+  }, []);
+
+  // --- Derived states from userProfile ---
+  const isBuyer = currentAppRole === 'buyer'; // isBuyer ahora se basa en currentAppRole para consistencia con el switch
+  const logoUrl = userProfile ? userProfile.logo_url : null;
+
+  // Función para manejar el cambio de rol desde TopBar
+  const handleRoleChangeFromTopBar = newRole => {
+    setCurrentAppRole(newRole);
+    // Redirige al usuario al dashboard correspondiente cuando cambie el rol
+    if (newRole === 'supplier') {
+      navigate('/supplier/home');
+    } else {
+      navigate('/buyer/marketplace');
+    }
+  };
+
+  // Redirect to onboarding if needed
   useEffect(() => {
     if (session && needsOnboarding && location.pathname !== '/onboarding') {
       navigate('/onboarding', { replace: true });
@@ -189,10 +217,10 @@ function AppContent({ mensaje }) {
 
   // Redirect logged-in users from neutral routes
   useEffect(() => {
-    if (!loadingUserStatus && session && isBuyer !== null && !needsOnboarding) {
+    if (!loadingUserStatus && session && !needsOnboarding) {
       const neutralRoutes = ['/', '/login', '/crear-cuenta', '/onboarding'];
       if (neutralRoutes.includes(location.pathname)) {
-        if (isBuyer) {
+        if (currentAppRole === 'buyer') {
           navigate('/buyer/marketplace', { replace: true });
         } else {
           navigate('/supplier/home', { replace: true });
@@ -202,7 +230,7 @@ function AppContent({ mensaje }) {
   }, [
     loadingUserStatus,
     session,
-    isBuyer,
+    currentAppRole,
     needsOnboarding,
     location.pathname,
     navigate,
@@ -210,9 +238,9 @@ function AppContent({ mensaje }) {
 
   // Prefetch routes for performance
   useEffect(() => {
-    if (!loadingUserStatus && session && isBuyer !== null) {
+    if (!loadingUserStatus && session && currentAppRole) {
       setTimeout(() => {
-        if (isBuyer) {
+        if (currentAppRole === 'buyer') {
           prefetchRoute('/buyer/marketplace');
           prefetchRoute('/buyer/cart');
         } else {
@@ -221,7 +249,7 @@ function AppContent({ mensaje }) {
         }
       }, 1500);
     }
-  }, [loadingUserStatus, session, isBuyer, prefetchRoute]);
+  }, [loadingUserStatus, session, currentAppRole, prefetchRoute]);
 
   // Close modals on browser back/forward (popstate)
   useEffect(() => {
@@ -250,7 +278,6 @@ function AppContent({ mensaje }) {
   }, [session, initializeCartWithUser]);
 
   if (loadingUserStatus) {
-    // Use the general loading state here
     return (
       <Box
         sx={{
@@ -267,6 +294,14 @@ function AppContent({ mensaje }) {
     );
   }
 
+  // Determinar si la Sidebar debe mostrarse.
+  const isDashboardRoute =
+    session &&
+    !needsOnboarding &&
+    !['/', '/marketplace', '/login', '/crear-cuenta', '/onboarding'].includes(
+      location.pathname
+    );
+
   const showBottomBar = location.pathname !== '/supplier/home';
 
   return (
@@ -274,8 +309,9 @@ function AppContent({ mensaje }) {
       <TopBar
         session={session}
         isBuyer={isBuyer}
-        logoUrl={logoUrl} // ✅ Pass the derived logoUrl
+        logoUrl={logoUrl}
         onNavigate={handleScrollTo}
+        onRoleChange={handleRoleChangeFromTopBar}
       />
 
       <Banner
@@ -286,74 +322,115 @@ function AppContent({ mensaje }) {
         onClose={hideBanner}
       />
 
+      {/* Main content container */}
       <Box
         sx={{
           width: '100%',
           minHeight: '100vh',
-          display: 'flex',
-          flexDirection: 'column',
+          display: 'flex', // Habilita flexbox para el layout lateral
+          flexDirection: 'column', // Por defecto, se apilarán verticalmente
           justifyContent: 'space-between',
-          pt: '64px', // Adjust padding top to account for fixed TopBar height
+          pt: '64px', // Deja espacio para la TopBar
           overflowX: 'hidden',
           bgcolor: 'background.default',
         }}
       >
-        <Suspense fallback={<SuspenseLoader />}>
-          <Routes>
-            <Route path="/" element={<Home scrollTargets={scrollTargets} />} />
-            <Route path="/marketplace" element={<Marketplace />} />
-            <Route path="/buyer/marketplace" element={<MarketplaceBuyer />} />
-            <Route path="/buyer/orders" element={<BuyerOrders />} />
-            <Route path="/buyer/performance" element={<BuyerPerformance />} />
-            <Route path="/buyer/cart" element={<BuyerCart />} />
-            <Route
-              path="/technicalspecs/:productSlug"
-              element={<TechnicalSpecs />}
-            />
-            <Route path="/login" element={<Login />} />
-            <Route path="/crear-cuenta" element={<Register />} />
-            <Route
-              path="/onboarding"
-              element={
-                <PrivateRoute>
-                  <Onboarding />
-                </PrivateRoute>
-              }
-            />
-            <Route
-              path="/supplier/home"
-              element={
-                <PrivateRoute requiredAccountType="proveedor">
-                  <ProviderHome />
-                </PrivateRoute>
-              }
-            />
-            <Route
-              path="/supplier/myproducts"
-              element={
-                <PrivateRoute requiredAccountType="proveedor">
-                  <MyProducts />
-                </PrivateRoute>
-              }
-            />
-            <Route
-              path="/supplier/addproduct"
-              element={
-                <PrivateRoute requiredAccountType="proveedor">
-                  <AddProduct />
-                </PrivateRoute>
-              }
-            />
-            <Route
-              path="/supplier/myorders"
-              element={
-                <PrivateRoute requiredAccountType="proveedor">
-                  <MyOrdersPage />
-                </PrivateRoute>
-              }
-            />
-          </Routes>
-        </Suspense>
+        {/* Contenedor Flex para la Sidebar y el contenido de las Rutas */}
+        <Box
+          sx={{
+            display: 'flex', // Habilita flexbox para la Sidebar y el área de contenido
+            flexGrow: 1, // Permite que ocupe el espacio restante verticalmente
+            minHeight: `calc(100vh - 64px - ${showBottomBar ? '56px' : '0px'})`, // Ajusta altura si BottomBar existe
+          }}
+        >
+          {/* Renderiza la Sidebar condicionalmente */}
+          {isDashboardRoute && (
+            <Sidebar role={currentAppRole} width={sidebarWidth} />
+          )}
+
+          {/* Contenedor principal de las rutas */}
+          <Box
+            component="main"
+            sx={{
+              flexGrow: 1, // Permite que las rutas ocupen el espacio restante
+              p: isDashboardRoute ? 3 : 0, // Añade padding solo si hay sidebar
+              // Ajusta el margen izquierdo si la sidebar está visible
+              ml: isDashboardRoute ? { xs: 0, md: sidebarWidth } : 0,
+              width: isDashboardRoute
+                ? { xs: '100%', md: `calc(100% - ${sidebarWidth})` }
+                : '100%',
+              overflowX: 'hidden',
+            }}
+          >
+            <Suspense fallback={<SuspenseLoader />}>
+              <Routes>
+                {/* Todas tus rutas van aquí, sin importar si usan sidebar o no.
+                    El layout se maneja con los estilos condicionales del Box. */}
+                <Route
+                  path="/"
+                  element={<Home scrollTargets={scrollTargets} />}
+                />
+                <Route path="/marketplace" element={<Marketplace />} />
+                <Route
+                  path="/buyer/marketplace"
+                  element={<MarketplaceBuyer />}
+                />
+                <Route path="/buyer/orders" element={<BuyerOrders />} />
+                <Route
+                  path="/buyer/performance"
+                  element={<BuyerPerformance />}
+                />
+                <Route path="/buyer/cart" element={<BuyerCart />} />
+                <Route
+                  path="/technicalspecs/:productSlug"
+                  element={<TechnicalSpecs />}
+                />
+                <Route path="/login" element={<Login />} />
+                <Route path="/crear-cuenta" element={<Register />} />
+                <Route
+                  path="/onboarding"
+                  element={
+                    <PrivateRoute>
+                      <Onboarding />
+                    </PrivateRoute>
+                  }
+                />
+                <Route
+                  path="/supplier/home"
+                  element={
+                    <PrivateRoute requiredAccountType="proveedor">
+                      <ProviderHome />
+                    </PrivateRoute>
+                  }
+                />
+                <Route
+                  path="/supplier/myproducts"
+                  element={
+                    <PrivateRoute requiredAccountType="proveedor">
+                      <MyProducts />
+                    </PrivateRoute>
+                  }
+                />
+                <Route
+                  path="/supplier/addproduct"
+                  element={
+                    <PrivateRoute requiredAccountType="proveedor">
+                      <AddProduct />
+                    </PrivateRoute>
+                  }
+                />
+                <Route
+                  path="/supplier/myorders"
+                  element={
+                    <PrivateRoute requiredAccountType="proveedor">
+                      <MyOrdersPage />
+                    </PrivateRoute>
+                  }
+                />
+              </Routes>
+            </Suspense>
+          </Box>
+        </Box>
         {showBottomBar && <BottomBar />}
       </Box>
     </>

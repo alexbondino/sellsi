@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+// 📁 features/layout/TopBar.jsx
+import React, { useState, useEffect, useRef } from 'react'; // Importa useRef
 import { useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -21,7 +22,16 @@ import ContactModal from '../ui/ContactModal';
 import Login from '../login/Login';
 import Register from '../register/Register';
 
-export default function TopBar({ session, isBuyer, logoUrl, onNavigate }) {
+import ToggleButton from '@mui/material/ToggleButton';
+import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
+
+export default function TopBar({
+  session,
+  isBuyer, // Esta prop viene de App.jsx y refleja el rol del perfil
+  logoUrl,
+  onNavigate,
+  onRoleChange, // Esta función actualiza el rol en App.jsx
+}) {
   const theme = useTheme();
   const navigate = useNavigate();
   const itemsInCart = useCartStore(state => state.items).length;
@@ -32,6 +42,32 @@ export default function TopBar({ session, isBuyer, logoUrl, onNavigate }) {
   const [openLoginModal, setOpenLoginModal] = useState(false);
   const [openRegisterModal, setOpenRegisterModal] = useState(false);
   const [openContactModal, setOpenContactModal] = useState(false);
+
+  // Estado interno para el switch de la TopBar.
+  // Se inicializa con la prop `isBuyer`.
+  const [currentRole, setCurrentRole] = useState(
+    isBuyer ? 'buyer' : 'supplier'
+  );
+
+  // Usamos un ref para saber si ya hemos inicializado el rol.
+  const isInitialRoleSet = useRef(false);
+
+  // useEffect para establecer el rol del switch UNA VEZ al inicio o al cambiar la sesión.
+  // Es importante que este efecto se ejecute solo cuando el isBuyer de la sesión cambie,
+  // NO cada vez que el usuario interactúe con el switch.
+  useEffect(() => {
+    // Solo si la sesión o el estado `isBuyer` inicial cambia por fuera.
+    // Esto asegura que al cargar la página o al hacer login, el switch se ajuste al rol del usuario.
+    // Una vez que el usuario interactúa con el switch (manejado por handleRoleToggleChange),
+    // el estado `currentRole` de la TopBar toma precedencia hasta un nuevo login/recarga.
+    if (
+      !isInitialRoleSet.current ||
+      (session && currentRole !== (isBuyer ? 'buyer' : 'supplier'))
+    ) {
+      setCurrentRole(isBuyer ? 'buyer' : 'supplier');
+      isInitialRoleSet.current = true; // Marca que ya se configuró el rol inicial
+    }
+  }, [session, isBuyer]); // Dependencias: la sesión y la prop isBuyer
 
   const isLoggedIn = !!session;
 
@@ -55,6 +91,16 @@ export default function TopBar({ session, isBuyer, logoUrl, onNavigate }) {
     }
     if (onNavigate) {
       onNavigate(ref);
+    }
+  };
+
+  const handleRoleToggleChange = (event, newRole) => {
+    if (newRole !== null) {
+      setCurrentRole(newRole); // Actualiza el estado interno del switch
+      // Notifica al componente padre (App.jsx) sobre el cambio de rol
+      if (onRoleChange) {
+        onRoleChange(newRole);
+      }
     }
   };
 
@@ -147,75 +193,47 @@ export default function TopBar({ session, isBuyer, logoUrl, onNavigate }) {
         Registrarse
       </MenuItem>,
     ];
-  } else if (isBuyer) {
-    desktopRightContent = (
-      <>
-        <Tooltip title="Carrito" arrow>
-          <IconButton
-            onClick={() => navigate('/buyer/cart')}
-            sx={{
-              color: 'white',
-              mr: 2.5,
-              boxShadow: 'none',
-              outline: 'none',
-              border: 'none',
-              transition: 'background 0.2s',
-              '&:focus': { outline: 'none', border: 'none', boxShadow: 'none' },
-              '&:active': {
-                outline: 'none',
-                border: 'none',
-                boxShadow: 'none',
-              },
-              '&:hover': {
-                background: theme => theme.palette.primary.main,
-                boxShadow: 'none',
-                outline: 'none',
-                border: 'none',
-              },
-            }}
-            disableFocusRipple
-            disableRipple
-          >
-            <Badge badgeContent={itemsInCart} color="error">
-              <CustomShoppingCartIcon />
-            </Badge>
-          </IconButton>
-        </Tooltip>
-        {profileMenuButton}
-      </>
-    );
-
-    mobileMenuItems = [
-      <MenuItem
-        key="cart"
-        onClick={() => {
-          navigate('/buyer/cart');
-          handleCloseMobileMenu();
-        }}
-      >
-        <Badge badgeContent={itemsInCart} color="error" sx={{ mr: 1.5 }}>
-          <CustomShoppingCartIcon />
-        </Badge>
-        Mi Carrito
-      </MenuItem>,
-      <MenuItem
-        key="profile"
-        onClick={() => {
-          navigate('/profile');
-          handleCloseMobileMenu();
-        }}
-      >
-        Mi Perfil
-      </MenuItem>,
-      <Divider key="divider" />,
-      <MenuItem key="logout" onClick={handleLogout}>
-        Cerrar sesión
-      </MenuItem>,
-    ];
   } else {
-    // For authenticated but not buyer (e.g., seller or admin)
     desktopRightContent = (
       <>
+        {/* Toggle Button Group para Proveedor/Comprador */}
+        <ToggleButtonGroup
+          value={currentRole} // Usa el estado interno `currentRole`
+          exclusive
+          onChange={handleRoleToggleChange}
+          aria-label="Selección de rol"
+          sx={{
+            mr: 2,
+            height: '32px',
+            '& .MuiToggleButton-root': {
+              borderColor: 'white',
+              color: 'white',
+              minWidth: 'unset',
+              padding: '4px 12px',
+              fontSize: '0.8rem',
+              lineHeight: '1.5',
+              height: '32px',
+              '&.Mui-selected': {
+                backgroundColor: theme.palette.primary.main,
+                color: 'white',
+                '&:hover': {
+                  backgroundColor: theme.palette.primary.dark,
+                },
+              },
+              '&:hover': {
+                backgroundColor: 'rgba(255,255,255,0.1)',
+              },
+            },
+          }}
+        >
+          <ToggleButton value="buyer" aria-label="comprador">
+            Comprador
+          </ToggleButton>
+          <ToggleButton value="supplier" aria-label="proveedor">
+            Proveedor
+          </ToggleButton>
+        </ToggleButtonGroup>
+
         <Tooltip title="Carrito" arrow>
           <IconButton
             onClick={() => navigate('/buyer/cart')}
@@ -253,6 +271,42 @@ export default function TopBar({ session, isBuyer, logoUrl, onNavigate }) {
 
     mobileMenuItems = [
       <MenuItem
+        key="roleToggleMobile"
+        sx={{ display: 'flex', justifyContent: 'center', py: 1 }}
+      >
+        <ToggleButtonGroup
+          value={currentRole} // Usa el estado interno `currentRole`
+          exclusive
+          onChange={handleRoleToggleChange}
+          aria-label="Selección de rol móvil"
+          sx={{
+            width: '100%',
+            '& .MuiToggleButton-root': {
+              flexGrow: 1,
+              borderColor: theme.palette.divider,
+              color: theme.palette.text.primary,
+              padding: '6px 12px',
+              fontSize: '0.85rem',
+              minHeight: '36px',
+              '&.Mui-selected': {
+                backgroundColor: theme.palette.primary.main,
+                color: 'white',
+                '&:hover': {
+                  backgroundColor: theme.palette.primary.dark,
+                },
+              },
+              '&:hover': {
+                backgroundColor: theme.palette.action.hover,
+              },
+            },
+          }}
+        >
+          <ToggleButton value="buyer">Comprador</ToggleButton>
+          <ToggleButton value="supplier">Proveedor</ToggleButton>
+        </ToggleButtonGroup>
+      </MenuItem>,
+      <Divider key="dividerMobileRole" />,
+      <MenuItem
         key="cart"
         onClick={() => {
           navigate('/buyer/cart');
@@ -260,7 +314,9 @@ export default function TopBar({ session, isBuyer, logoUrl, onNavigate }) {
         }}
       >
         <Badge badgeContent={itemsInCart} color="error" sx={{ mr: 1.5 }}>
-          <CustomShoppingCartIcon />
+          <CustomShoppingCartIcon
+            sx={{ color: theme.palette.text.primary + ' !important' }}
+          />
         </Badge>
         Mi Carrito
       </MenuItem>,
@@ -296,22 +352,21 @@ export default function TopBar({ session, isBuyer, logoUrl, onNavigate }) {
           borderBottom: '1px solid white',
         }}
       >
-        <Box // This is the main content container within the fixed TopBar
+        <Box
           sx={{
             width: '100%',
-            maxWidth: '100%', // Or a fixed max width like '1575px' if you want a container
+            maxWidth: '100%',
             px: { xs: 2, md: 18, mac: 18, lg: 18 },
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'space-between', // Keep this to push groups apart
+            justifyContent: 'space-between',
           }}
         >
-          {/* NEW GROUP FOR LEFT ALIGNMENT: Logo + Nav Links */}
           <Box
             sx={{
               display: 'flex',
               alignItems: 'center',
-              gap: 2, // Gap between logo and nav links
+              gap: 2,
             }}
           >
             <Box
@@ -322,16 +377,13 @@ export default function TopBar({ session, isBuyer, logoUrl, onNavigate }) {
               sx={{
                 height: { xs: 90, md: 110 },
                 cursor: 'pointer',
-                // Removed the problematic px from here
               }}
             />
-            {/* These links will now be aligned to the left within this new group */}
             <Box sx={{ display: { xs: 'none', md: 'flex' }, gap: 2 }}>
               {desktopNavLinks}
             </Box>
           </Box>
 
-          {/* Existing Right-Side Content */}
           <Box
             sx={{
               display: { xs: 'none', md: 'flex' },
@@ -342,10 +394,46 @@ export default function TopBar({ session, isBuyer, logoUrl, onNavigate }) {
             {desktopRightContent}
           </Box>
 
-          {/* Existing Mobile Menu Button */}
           <Box sx={{ display: { xs: 'flex', md: 'none' } }}>
-            {isLoggedIn && !isBuyer && (
-              <Box sx={{ mr: 1 }}>{profileMenuButton}</Box>
+            {isLoggedIn && (
+              <>
+                <Tooltip title="Carrito" arrow>
+                  <IconButton
+                    onClick={() => navigate('/buyer/cart')}
+                    sx={{
+                      color: 'white',
+                      mr: 2.5,
+                      boxShadow: 'none',
+                      outline: 'none',
+                      border: 'none',
+                      transition: 'background 0.2s',
+                      '&:focus': {
+                        outline: 'none',
+                        border: 'none',
+                        boxShadow: 'none',
+                      },
+                      '&:active': {
+                        outline: 'none',
+                        border: 'none',
+                        boxShadow: 'none',
+                      },
+                      '&:hover': {
+                        background: theme => theme.palette.primary.main,
+                        boxShadow: 'none',
+                        outline: 'none',
+                        border: 'none',
+                      },
+                    }}
+                    disableFocusRipple
+                    disableRipple
+                  >
+                    <Badge badgeContent={itemsInCart} color="error">
+                      <CustomShoppingCartIcon />
+                    </Badge>
+                  </IconButton>
+                </Tooltip>
+                {profileMenuButton}
+              </>
             )}
             <IconButton onClick={handleOpenMobileMenu}>
               <MenuIcon sx={{ color: 'white' }} />
