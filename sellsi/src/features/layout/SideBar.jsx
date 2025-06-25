@@ -33,7 +33,6 @@ const providerMenuItems = [
  * @param {string} [props.width='375px'] - Ancho opcional de la SideBar. (¡Ancho predeterminado a 375px!)
  */
 const SideBar = ({ role, width = '375px' }) => {
-  // <--- Ancho predeterminado a 375px
   const location = useLocation();
   const navigate = useNavigate();
   const theme = useTheme();
@@ -76,7 +75,7 @@ const SideBar = ({ role, width = '375px' }) => {
         flexDirection: 'column',
         zIndex: theme.zIndex.appBar - 1,
         overflowY: 'hidden', // La barra lateral no se scrollea
-        borderRight: 'none',
+        borderRight: 'none', // Asegura que no haya borde derecho
 
         // Estilos para los ListItemButton generales (incluyendo hover, disabled/activo)
         '& .MuiListItemButton-root': {
@@ -90,7 +89,7 @@ const SideBar = ({ role, width = '375px' }) => {
           paddingBottom: '7px !important',
           minHeight: '36px !important',
           margin: '2px 8px', // Margin around each button
-          width: 'calc(100%)', // Adjust width for margin
+          width: 'calc(100% - 16px)', // Adjust width for 8px margin on each side
           opacity: 1,
           transition: 'all 0.2s ease',
 
