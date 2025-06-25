@@ -44,13 +44,13 @@ const ProviderHome = React.lazy(() =>
   import('./features/supplier/home/ProviderHome')
 );
 const MyProducts = React.lazy(() =>
-  import('./features/supplier/pages/MyProducts')
+  import('./features/supplier/my-products/MyProducts')
 );
 const AddProduct = React.lazy(() =>
-  import('./features/supplier/pages/AddProduct')
+  import('./features/supplier/my-products/AddProduct')
 );
 const MyOrdersPage = React.lazy(() =>
-  import('./features/supplier/pages/MyOrdersPage')
+  import('./features/supplier/my-orders/MyOrdersPage')
 );
 
 // 📦 RUTAS SECUNDARIAS - LAZY LOADING

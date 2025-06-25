@@ -15,8 +15,8 @@
  * - Prefetch por tipo de usuario (buyer vs supplier)
  */
 
-import { useEffect, useRef } from 'react'
-import { useLocation } from 'react-router-dom'
+import { useEffect, useRef } from 'react';
+import { useLocation } from 'react-router-dom';
 
 // ============================================================================
 // MAPEO DE RUTAS Y SUS COMPONENTES LAZY
@@ -28,11 +28,13 @@ const ROUTE_COMPONENTS = {
   '/buyer/orders': () => import('../features/buyer/BuyerOrders'),
   '/buyer/performance': () => import('../features/buyer/BuyerPerformance'),
   '/supplier/home': () => import('../features/supplier/home/ProviderHome'),
-  '/supplier/myproducts': () => import('../features/supplier/pages/MyProducts'),
-  '/supplier/addproduct': () => import('../features/supplier/pages/AddProduct'),
+  '/supplier/myproducts': () =>
+    import('../features/supplier/my-products/MyProducts'),
+  '/supplier/addproduct': () =>
+    import('../features/supplier/my-products/AddProduct'),
   '/login': () => import('../features/login/Login'),
   '/crear-cuenta': () => import('../features/register/Register'),
-}
+};
 
 // ============================================================================
 // RUTAS RELACIONADAS POR CONTEXTO
@@ -49,40 +51,40 @@ const RELATED_ROUTES = {
   '/supplier/addproduct': ['/supplier/myproducts', '/supplier/home'],
   '/login': ['/marketplace', '/buyer/marketplace'],
   '/crear-cuenta': ['/marketplace', '/buyer/marketplace'],
-}
+};
 
 /**
  * Hook principal para manejar prefetching
  */
 export const usePrefetch = () => {
-  const location = useLocation()
-  const prefetchedRoutes = useRef(new Set())
-  const prefetchTimers = useRef(new Map())
+  const location = useLocation();
+  const prefetchedRoutes = useRef(new Set());
+  const prefetchTimers = useRef(new Map());
 
   /**
    * Prefetch de un componente específico
    */
-  const prefetchRoute = (routePath) => {
+  const prefetchRoute = routePath => {
     if (prefetchedRoutes.current.has(routePath)) {
-      return // Ya está prefetched
+      return; // Ya está prefetched
     }
 
-    const importFunction = ROUTE_COMPONENTS[routePath]
+    const importFunction = ROUTE_COMPONENTS[routePath];
     if (importFunction) {
       // Marcar como prefetched antes de iniciar la importación
-      prefetchedRoutes.current.add(routePath)
-      
+      prefetchedRoutes.current.add(routePath);
+
       importFunction()
         .then(() => {
           // [LOGS ELIMINADOS POR LIMPIEZA DE PRODUCCIÓN]
         })
-        .catch((error) => {
+        .catch(error => {
           // Si falla, remover de prefetched para reintentarlo
-          prefetchedRoutes.current.delete(routePath)
-          console.warn(`❌ Failed to prefetch ${routePath}:`, error)
-        })
+          prefetchedRoutes.current.delete(routePath);
+          console.warn(`❌ Failed to prefetch ${routePath}:`, error);
+        });
     }
-  }
+  };
 
   /**
    * Prefetch con delay (para hover)
@@ -90,85 +92,85 @@ export const usePrefetch = () => {
   const prefetchWithDelay = (routePath, delay = 150) => {
     // Cancelar timer previo si existe
     if (prefetchTimers.current.has(routePath)) {
-      clearTimeout(prefetchTimers.current.get(routePath))
+      clearTimeout(prefetchTimers.current.get(routePath));
     }
 
     const timer = setTimeout(() => {
-      prefetchRoute(routePath)
-      prefetchTimers.current.delete(routePath)
-    }, delay)
+      prefetchRoute(routePath);
+      prefetchTimers.current.delete(routePath);
+    }, delay);
 
-    prefetchTimers.current.set(routePath, timer)
-  }
+    prefetchTimers.current.set(routePath, timer);
+  };
 
   /**
    * Cancelar prefetch pendiente
    */
-  const cancelPrefetch = (routePath) => {
+  const cancelPrefetch = routePath => {
     if (prefetchTimers.current.has(routePath)) {
-      clearTimeout(prefetchTimers.current.get(routePath))
-      prefetchTimers.current.delete(routePath)
+      clearTimeout(prefetchTimers.current.get(routePath));
+      prefetchTimers.current.delete(routePath);
     }
-  }
+  };
 
   /**
    * Prefetch de rutas relacionadas a la actual
    */
   const prefetchRelatedRoutes = () => {
-    const currentPath = location.pathname
-    const relatedRoutes = RELATED_ROUTES[currentPath] || []
-    
+    const currentPath = location.pathname;
+    const relatedRoutes = RELATED_ROUTES[currentPath] || [];
+
     // Delay para no interferir con la carga de la página actual
     setTimeout(() => {
       relatedRoutes.forEach(route => {
-        prefetchRoute(route)
-      })
-    }, 2000)
-  }
+        prefetchRoute(route);
+      });
+    }, 2000);
+  };
 
   // Prefetch automático de rutas relacionadas al cambiar de página
   useEffect(() => {
-    prefetchRelatedRoutes()
-  }, [location.pathname])
+    prefetchRelatedRoutes();
+  }, [location.pathname]);
 
   // Cleanup de timers al desmontar
   useEffect(() => {
     return () => {
-      prefetchTimers.current.forEach(timer => clearTimeout(timer))
-      prefetchTimers.current.clear()
-    }
-  }, [])
+      prefetchTimers.current.forEach(timer => clearTimeout(timer));
+      prefetchTimers.current.clear();
+    };
+  }, []);
 
   return {
     prefetchRoute,
     prefetchWithDelay,
     cancelPrefetch,
     prefetchedRoutes: prefetchedRoutes.current,
-  }
-}
+  };
+};
 
 /**
  * Hook para prefetching en hover de elementos
  */
-export const usePrefetchOnHover = (routePath) => {
-  const { prefetchWithDelay, cancelPrefetch } = usePrefetch()
+export const usePrefetchOnHover = routePath => {
+  const { prefetchWithDelay, cancelPrefetch } = usePrefetch();
 
   const handleMouseEnter = () => {
     if (routePath) {
-      prefetchWithDelay(routePath, 150)
+      prefetchWithDelay(routePath, 150);
     }
-  }
+  };
 
   const handleMouseLeave = () => {
     if (routePath) {
-      cancelPrefetch(routePath)
+      cancelPrefetch(routePath);
     }
-  }
+  };
 
   return {
     onMouseEnter: handleMouseEnter,
     onMouseLeave: handleMouseLeave,
-  }
-}
+  };
+};
 
-export default usePrefetch
+export default usePrefetch;

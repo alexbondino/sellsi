@@ -14,7 +14,7 @@ export {
 } from './AdvancedLoading';
 export { default as Banner } from './banner/Banner';
 export { BannerProvider, useBanner } from './banner/BannerContext';
-export { default as ConfirmationModal } from './ConfirmationModal';
+export { default as Modal } from './Modal';
 export { default as ContactModal } from './ContactModal';
 export { default as CountrySelector } from './CountrySelector';
 export { default as PrimaryButton } from './PrimaryButton';
