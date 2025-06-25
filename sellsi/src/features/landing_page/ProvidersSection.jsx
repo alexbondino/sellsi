@@ -1,58 +1,28 @@
-import React from 'react'
-import { Box, Typography, Grid, Button } from '@mui/material'
-import { useNavigate } from 'react-router-dom'
-import ProviderLogo from './ProviderLogo'
-import StatisticCard from './StatisticCard'
-import { PROVIDERS_DATA } from './constants.jsx'
+import React from 'react';
+import { Box, Typography, Grid, Button } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
+import ProviderLogo from './ProviderLogo';
+import StatisticCard from './StatisticCard';
+import { PROVIDERS_DATA } from './constants.jsx';
 
-/**
- * ============================================================================
- * PROVIDERS SECTION - SECCIÓN "CONOCE A NUESTROS PROVEEDORES"
- * ============================================================================
- *
- * Componente UI puro para mostrar la sección de proveedores destacados
- *
- * @component
- * @param {Object} props - Propiedades del componente
- * @param {Array} props.statistics - Array de estadísticas para mostrar
- *
- * CARACTERÍSTICAS:
- * - Grid responsivo de logos de proveedores
- * - Botón CTA principal para ir al marketplace
- * - Estadísticas destacadas con datos dinámicos
- * - Layout adaptativo mobile/desktop
- * - Navegación programática con React Router
- * - Componentes memoizados para performance
- *
- * LAYOUT:
- * - Desktop: Botón y estadísticas flotantes arriba, grid abajo
- * - Mobile: Solo grid de proveedores, elementos ocultos
- * - Proveedores en grid responsivo con logos optimizados
- *
- * DEPENDENCIAS:
- * - ProviderLogo: Componente para mostrar logos individuales
- * - StatisticCard: Componente para mostrar estadísticas
- * - PROVIDERS_DATA: Constantes con datos de proveedores
- */
 const ProvidersSection = ({ statistics }) => {
-  const navigate = useNavigate()
+  const navigate = useNavigate();
 
   return (
     <Box
       sx={{
         backgroundColor: '#ffffff',
-        px: { xs: 2, sm: 4, md: 8, lg: 15, xl: 30 },
-        py: { xs: 6, sm: 7, md: 8, lg: 8, xl: 8 },
+        px: { xs: 2, sm: 4, md: 8, mac: 18, lg: 18, xl: 30 },
+        py: { xs: 6, sm: 7, md: 8, mac: 6, lg: 8, xl: 8 },
         position: 'relative',
-        // ✅ PADDING EXTRA ARRIBA PARA DAR ESPACIO AL BOTÓN Y ESTADÍSTICAS
         paddingTop: {
           xs: 6,
           sm: 7,
           md: 8,
-          lg: 20, // Espacio extra para el botón y estadísticas
+          mac: 0,
+          lg: 20,
           xl: 25,
         },
-        // ✅ PSEUDO-ELEMENTO PARA EXTENDER EL FONDO GRIS HACIA ARRIBA
         '&::before': {
           content: '""',
           position: 'absolute',
@@ -60,8 +30,9 @@ const ProvidersSection = ({ statistics }) => {
             xs: 0,
             sm: 0,
             md: 0,
-            lg: '-200px', // Se extiende hacia arriba
-            xl: '-250px', // Se extiende hacia arriba
+            mac: '-200px',
+            lg: '-200px',
+            xl: '-250px',
           },
           left: 0,
           right: 0,
@@ -69,11 +40,12 @@ const ProvidersSection = ({ statistics }) => {
             xs: 0,
             sm: 0,
             md: 0,
-            lg: '200px', // Altura de la extensión del fondo gris
-            xl: '250px', // Altura de la extensión del fondo gris
+            mac: '200px',
+            lg: '200px',
+            xl: '250px',
           },
-          backgroundColor: '#f8f9fa', // Mismo color gris
-          zIndex: -1, // Z-index negativo para que esté DETRÁS del contenido
+          backgroundColor: '#f8f9fa',
+          zIndex: -1,
         },
       }}
     >
@@ -84,20 +56,43 @@ const ProvidersSection = ({ statistics }) => {
             xs: 'none',
             sm: 'none',
             md: 'flex',
+            mac: 'flex',
             lg: 'flex',
             xl: 'flex',
           },
           flexDirection: 'row',
           alignItems: 'center',
-          justifyContent: 'flex-start',
-          gap: { xs: 2, sm: 4, md: 8, lg: 25, xl: 33 },
-          mb: { xs: 2, sm: 4, md: 8, lg: 12, xl: 10 },
-          mt: { xs: 2, sm: 4, md: 8, lg: -18, xl: -20 },
-          ml: { xs: 0, sm: 0, md: 0, lg: 0, xl: 0 },
+          justifyContent: {
+            xs: 'center',
+            sm: 'center',
+            md: 'flex-start',
+            mac: 'flex-start', // Mantener alineación a la izquierda para Mac
+            lg: 'flex-start',
+            xl: 'flex-start',
+          },
+          gap: { xs: 2, sm: 4, md: 8, mac: 12, lg: 25, xl: 33 },
+          mb: { xs: 2, sm: 4, md: 8, mac: 10, lg: 12, xl: 10 },
+          mt: { xs: 2, sm: 4, md: 8, mac: 10, lg: -18, xl: -20 },
+          ml: { xs: 0, sm: 0, md: 0, mac: 0, lg: 0, xl: 0 },
           width: '100%',
-          maxWidth: { xs: '100%', sm: '100%', md: '100%', lg: 600, xl: 700 },
+          maxWidth: {
+            xs: '100%',
+            sm: '100%',
+            md: '100%',
+            mac: '100%', // Permitir que se estire a todo el ancho si es necesario
+            lg: 700,
+            xl: 800,
+          },
           position: 'relative',
           zIndex: 1,
+          mx: {
+            xs: 'auto',
+            sm: 'auto',
+            md: 'auto',
+            mac: '0', // Eliminar auto margin para Mac si se alinea a la izquierda
+            lg: '0',
+            xl: '0',
+          },
         }}
       >
         <Button
@@ -106,10 +101,17 @@ const ProvidersSection = ({ statistics }) => {
             backgroundColor: 'primary.main',
             fontWeight: 'bold',
             borderRadius: '8px',
-            px: { xs: 2, sm: 4, md: 8, lg: 11, xl: 12 },
-            py: { xs: 2, sm: 4, md: 8, lg: 2.4, xl: 2.6 },
-            ml: { xs: 2, sm: 4, md: 0, lg: 0, xl: 0 },
-            fontSize: { lg: '1.58rem', xl: '1.7rem' },
+            px: { xs: 2, sm: 4, md: 8, mac: 8, lg: 11, xl: 12 },
+            py: { xs: 2, sm: 4, md: 8, mac: 2.4, lg: 2.4, xl: 2.6 },
+            ml: { xs: 2, sm: 4, md: 0, mac: 0, lg: 0, xl: 0 },
+            fontSize: {
+              xs: '1rem',
+              sm: '1.2rem',
+              md: '1.3rem',
+              mac: '1.4rem',
+              lg: '1.58rem',
+              xl: '1.7rem',
+            },
             textTransform: 'none',
             boxShadow: '0 4px 15px rgba(25, 118, 210, 0.3)',
             flexShrink: 0,
@@ -133,18 +135,13 @@ const ProvidersSection = ({ statistics }) => {
               lg: 'row',
               xl: 'row',
             },
-            gap: { xs: 1, sm: 2, md: 3, lg: 4, xl: 5 }, // <--- Ajuste aquí
-            alignItems: {
-              xs: 'center',
-              sm: 'center',
-              md: 'center',
-              lg: 'center',
-              xl: 'center',
-            },
+            gap: { xs: 1, sm: 2, md: 3, mac: 4, lg: 4, xl: 5 },
+            alignItems: 'center',
             justifyContent: {
               xs: 'center',
               sm: 'center',
               md: 'flex-start',
+              mac: 'flex-start', // Mantener alineación a la izquierda para Mac
               lg: 'flex-start',
               xl: 'flex-start',
             },
@@ -165,6 +162,7 @@ const ProvidersSection = ({ statistics }) => {
             xs: 'column',
             sm: 'column',
             md: 'column',
+            mac: 'row', // <-- CAMBIO CLAVE: Row para mac para que título y grid estén en la misma fila
             lg: 'row',
             xl: 'row',
           },
@@ -172,10 +170,11 @@ const ProvidersSection = ({ statistics }) => {
             xs: 'center',
             sm: 'center',
             md: 'flex-start',
+            mac: 'center', // <-- Centra verticalmente el título y el grid entre sí en mac
             lg: 'flex-start',
             xl: 'flex-start',
           },
-          gap: { xs: 3, sm: 4, md: 5, lg: 2, xl: 8 },
+          gap: { xs: 3, sm: 4, md: 5, mac: 4, lg: 2, xl: 8 },
           width: '100%',
         }}
       >
@@ -186,6 +185,7 @@ const ProvidersSection = ({ statistics }) => {
               xs: 'none',
               sm: 'none',
               md: 'none',
+              mac: 0.7, // <-- CAMBIO: Ocupa 70% del espacio en mac
               lg: 0.7,
               xl: 1,
             },
@@ -194,6 +194,7 @@ const ProvidersSection = ({ statistics }) => {
               xs: 'center',
               sm: 'center',
               md: 'center',
+              mac: 'center', // <-- Centrar verticalmente el texto del título en mac
               lg: 'center',
               xl: 'flex-start',
             },
@@ -201,6 +202,7 @@ const ProvidersSection = ({ statistics }) => {
               xs: 'center',
               sm: 'center',
               md: 'center',
+              mac: 'flex-start', // <-- CAMBIO: Alinear texto a la izquierda en mac
               lg: 'flex-start',
               xl: 'flex-start',
             },
@@ -214,6 +216,7 @@ const ProvidersSection = ({ statistics }) => {
                 xs: '1.5rem',
                 sm: '1.8rem',
                 md: '2.2rem',
+                mac: '2.5rem',
                 lg: '2.5rem',
                 xl: '2.5rem',
               },
@@ -221,11 +224,12 @@ const ProvidersSection = ({ statistics }) => {
                 xs: 'center',
                 sm: 'center',
                 md: 'center',
+                mac: 'left', // <-- CAMBIO: Alinear texto a la izquierda en mac
                 lg: 'left',
                 xl: 'left',
               },
               color: 'common.black',
-              mb: { xs: 3, sm: 4, md: 4, lg: 0, xl: 0 }, // Sin margen bottom en desktop
+              mb: { xs: 3, sm: 4, md: 4, lg: 0, xl: 0 },
             }}
           >
             Conoce a nuestros proveedores
@@ -239,25 +243,45 @@ const ProvidersSection = ({ statistics }) => {
               xs: 'none',
               sm: 'none',
               md: 'none',
+              mac: 2, // <-- CAMBIO: Ocupa el doble de espacio que el título en mac
               lg: 2,
               xl: 2,
             },
             width: '100%',
+            display: 'flex',
+            justifyContent: {
+              xs: 'center',
+              sm: 'center',
+              md: 'center',
+              mac: 'flex-start', // <-- CAMBIO: Alinear el grid a la izquierda de su columna en mac
+              lg: 'flex-start',
+              xl: 'flex-start',
+            },
           }}
         >
           <Grid
             container
-            spacing={{ xs: 2, sm: 2.5, md: 3, lg: 3.5, xl: 4 }} // gap leve entre cards
+            spacing={{ xs: 2, sm: 2.5, md: 3, mac: 3.5, lg: 3.5, xl: 4 }}
             justifyContent={{
               xs: 'center',
               sm: 'center',
               md: 'center',
+              mac: 'flex-start', // <-- CAMBIO: Alinear los items del grid a la izquierda en mac
               lg: 'flex-start',
               xl: 'flex-start',
             }}
+            alignItems="flex-start"
           >
             {PROVIDERS_DATA.map((provider, idx) => (
-              <Grid key={provider.alt} size={{ xs: 6, sm: 4, md: 3, lg: 2, xl: 2 }}> {/* <--- size más compacto */}
+              <Grid
+                key={provider.alt}
+                xs={6}
+                sm={4}
+                md={3}
+                mac={3} // Mantener 4 logos por fila en mac (12 / 3 = 4)
+                lg={2}
+                xl={2}
+              >
                 <ProviderLogo provider={provider} />
               </Grid>
             ))}
@@ -265,7 +289,7 @@ const ProvidersSection = ({ statistics }) => {
         </Box>
       </Box>
     </Box>
-  )
-}
+  );
+};
 
-export default ProvidersSection
+export default ProvidersSection;

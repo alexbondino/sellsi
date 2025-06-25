@@ -5,7 +5,7 @@ import AddIcon from '@mui/icons-material/Add';
 import { useSupplierDashboard } from './hooks/useSupplierDashboard';
 import DashboardSummary from './dashboard-summary/DashboardSummary';
 import MonthlySalesChart from '../../ui/graphs/BarChart';
-import SidebarProvider from '../../layout/SideBar';
+import SideBarProvider from '../../layout/SideBar';
 import { dashboardTheme } from '../../../styles/dashboardTheme';
 
 const ProviderHome = () => {
@@ -26,7 +26,7 @@ const ProviderHome = () => {
 
   return (
     <ThemeProvider theme={dashboardTheme}>
-      <SidebarProvider />
+      <SideBarProvider />
       <Box
         sx={{
           marginLeft: '210px',

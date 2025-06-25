@@ -82,8 +82,8 @@ const ProviderLogo = React.memo(({ provider }) => (
       />
     </CardContent>
   </Card>
-))
+));
 
-ProviderLogo.displayName = 'ProviderLogo'
+ProviderLogo.displayName = 'ProviderLogo';
 
-export default ProviderLogo
+export default ProviderLogo;

@@ -135,11 +135,8 @@ const AddProduct = () => {
     if (formData.pricingType === 'Por Unidad') {
       if (!formData.precioUnidad || isNaN(Number(formData.precioUnidad))) {
         newErrors.precioUnidad = 'El precio es requerido';
-<<<<<<< HEAD
       } else if (parseFloat(formData.precioUnidad) < 1) {
         newErrors.precioUnidad = 'El precio mínimo es 1';
-=======
->>>>>>> origin/staging
       }
     } else {
       // Si es Por Tramos, NO agregar error de precioUnidad
@@ -519,18 +516,7 @@ const AddProduct = () => {
 
   return (
     <ThemeProvider theme={dashboardTheme}>
-<<<<<<< HEAD
-      <SidebarProvider />
-      {/* DEBUG: Mostrar estado del formulario y errores */}
-      <Box sx={{ position: 'fixed', top: 0, right: 0, zIndex: 9999, bgcolor: 'white', p: 1, maxWidth: 400, maxHeight: 400, overflow: 'auto', fontSize: 12, border: '1px solid #ccc', borderRadius: 1 }}>
-        <b>DEBUG formData:</b>
-        <pre style={{ fontSize: 10, margin: 0 }}>{JSON.stringify(formData, null, 2)}</pre>
-        <b>DEBUG errors:</b>
-        <pre style={{ fontSize: 10, margin: 0 }}>{JSON.stringify(errors, null, 2)}</pre>
-      </Box>
-=======
       <SideBarProvider />
->>>>>>> origin/staging
 
       <Box
         sx={{
@@ -884,30 +870,6 @@ const AddProduct = () => {
                             label="Todo Chile"
                             sx={{ mb: 1 }}
                           />
-<<<<<<< HEAD
-                          <FormControlLabel 
-                            value="región-metropolitana" 
-                            control={<Radio />} 
-                            label="Región Metropolitana" 
-                            sx={{ mb: 1 }}
-                          />
-                          <FormControlLabel 
-                            value="i-región" 
-                            control={<Radio />} 
-                            label="I Región" 
-                            sx={{ mb: 1 }}
-                          />
-                          <FormControlLabel 
-                            value="ii-región" 
-                            control={<Radio />} 
-                            label="II Región" 
-                            sx={{ mb: 1 }}
-                          />
-                          <FormControlLabel 
-                            value="iii-región" 
-                            control={<Radio />} 
-                            label="III Región" 
-=======
                           <FormControlLabel
                             value="region-metropolitana"
                             control={<Radio />}
@@ -930,48 +892,10 @@ const AddProduct = () => {
                             value="iii-region"
                             control={<Radio />}
                             label="III Región"
->>>>>>> origin/staging
                             sx={{ mb: 1 }}
                           />
                         </Box>
                         {/* Columna 2: 6 filas */}
-<<<<<<< HEAD
-                        <Box sx={{ display: 'flex', flexDirection: 'column', width: '30%' }}>
-                          <FormControlLabel 
-                            value="iv-región" 
-                            control={<Radio />} 
-                            label="IV Región" 
-                            sx={{ mb: 1 }}
-                          />
-                          <FormControlLabel 
-                            value="v-región" 
-                            control={<Radio />} 
-                            label="V Región" 
-                            sx={{ mb: 1 }}
-                          />
-                          <FormControlLabel 
-                            value="vi-región" 
-                            control={<Radio />} 
-                            label="VI Región" 
-                            sx={{ mb: 1 }}
-                          />
-                          <FormControlLabel 
-                            value="vii-región" 
-                            control={<Radio />} 
-                            label="VII Región" 
-                            sx={{ mb: 1 }}
-                          />
-                          <FormControlLabel 
-                            value="viii-región" 
-                            control={<Radio />} 
-                            label="VIII Región" 
-                            sx={{ mb: 1 }}
-                          />
-                          <FormControlLabel 
-                            value="ix-región" 
-                            control={<Radio />} 
-                            label="IX Región" 
-=======
                         <Box
                           sx={{
                             display: 'flex',
@@ -1013,48 +937,10 @@ const AddProduct = () => {
                             value="ix-region"
                             control={<Radio />}
                             label="IX Región"
->>>>>>> origin/staging
                             sx={{ mb: 1 }}
                           />
                         </Box>
                         {/* Columna 3: 6 filas */}
-<<<<<<< HEAD
-                        <Box sx={{ display: 'flex', flexDirection: 'column', width: '30%' }}>
-                          <FormControlLabel 
-                            value="x-región" 
-                            control={<Radio />} 
-                            label="X Región" 
-                            sx={{ mb: 1 }}
-                          />
-                          <FormControlLabel 
-                            value="xi-región" 
-                            control={<Radio />} 
-                            label="XI Región" 
-                            sx={{ mb: 1 }}
-                          />
-                          <FormControlLabel 
-                            value="xii-región" 
-                            control={<Radio />} 
-                            label="XII Región" 
-                            sx={{ mb: 1 }}
-                          />
-                          <FormControlLabel 
-                            value="xiv-región" 
-                            control={<Radio />} 
-                            label="XIV Región" 
-                            sx={{ mb: 1 }}
-                          />
-                          <FormControlLabel 
-                            value="xv-región" 
-                            control={<Radio />} 
-                            label="XV Región" 
-                            sx={{ mb: 1 }}
-                          />
-                          <FormControlLabel 
-                            value="xvi-región" 
-                            control={<Radio />} 
-                            label="XVI Región" 
-=======
                         <Box
                           sx={{
                             display: 'flex',
@@ -1096,7 +982,6 @@ const AddProduct = () => {
                             value="xvi-region"
                             control={<Radio />}
                             label="XVI Región"
->>>>>>> origin/staging
                             sx={{ mb: 1 }}
                           />
                         </Box>

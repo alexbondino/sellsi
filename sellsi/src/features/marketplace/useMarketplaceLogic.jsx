@@ -1,10 +1,10 @@
-import { useState, useCallback, useMemo } from 'react'
-import { useTheme } from '@mui/material'
+import { useState, useCallback, useMemo } from 'react';
+import { useTheme } from '@mui/material';
 
 // Importar los hooks existentes
-import { useMarketplaceState } from './hooks/useMarketplaceState'
-import { useProductSorting } from './hooks/useProductSorting'
-import { useScrollBehavior } from './hooks/useScrollBehavior'
+import { useMarketplaceState } from './hooks/useMarketplaceState';
+import { useProductSorting } from './hooks/useProductSorting';
+import { useScrollBehavior } from './hooks/useScrollBehavior';
 
 /**
  * Hook centralizado que consolida toda la lógica de Marketplace
@@ -12,40 +12,43 @@ import { useScrollBehavior } from './hooks/useScrollBehavior'
  */
 const useMarketplaceLogic = (options = {}) => {
   // ✅ OPTIMIZACIÓN: Memoizar configuración estática
-  const memoizedOptions = useMemo(() => ({
-    hasSidebar: false,
-    searchBarMarginLeft: {
-      xs: 0,
-      sm: 0,
-      md: 2,
-      lg: 33.7,
-      xl: 41,
-    },
-    categoryMarginLeft: {
-      xs: 0,
-      sm: 0,
-      md: 3,
-      lg: 35.5,
-      xl: 40,
-    },
-    titleMarginLeft: {
-      xs: 0,
-      sm: 0,
-      md: 0,
-      lg: 0,
-      xl: 0,
-    },
-    ...options
-  }), [options])
+  const memoizedOptions = useMemo(
+    () => ({
+      hasSideBar: false,
+      searchBarMarginLeft: {
+        xs: 0,
+        sm: 0,
+        md: 2,
+        lg: 33.7,
+        xl: 41,
+      },
+      categoryMarginLeft: {
+        xs: 0,
+        sm: 0,
+        md: 3,
+        lg: 35.5,
+        xl: 40,
+      },
+      titleMarginLeft: {
+        xs: 0,
+        sm: 0,
+        md: 0,
+        lg: 0,
+        xl: 0,
+      },
+      ...options,
+    }),
+    [options]
+  );
 
   const {
-    hasSidebar,
+    hasSideBar,
     searchBarMarginLeft,
     categoryMarginLeft,
     titleMarginLeft,
-  } = memoizedOptions
+  } = memoizedOptions;
 
-  const theme = useTheme()
+  const theme = useTheme();
 
   // ===== CONSOLIDAR HOOKS EXISTENTES =====
   const {
@@ -74,7 +77,7 @@ const useMarketplaceLogic = (options = {}) => {
     resetFiltros,
     toggleCategoria,
     handleTipoVentaChange,
-  } = useMarketplaceState()
+  } = useMarketplaceState();
 
   // Hook para opciones de ordenamiento
   const {
@@ -82,37 +85,46 @@ const useMarketplaceLogic = (options = {}) => {
     setOrdenamiento: setCurrentOrdenamiento,
     productosOrdenados,
     sortOptions: currentSortOptions,
-  } = useProductSorting(productosFiltrados)
+  } = useProductSorting(productosFiltrados);
   // Hook para comportamiento de scroll - SOLO para SearchSection
-  const { shouldShowSearchBar } = useScrollBehavior()
+  const { shouldShowSearchBar } = useScrollBehavior();
 
   // ===== ESTADOS LOCALES PARA UI =====
-  const [anchorElCategorias, setAnchorElCategorias] = useState(null)
+  const [anchorElCategorias, setAnchorElCategorias] = useState(null);
 
   // ===== HANDLERS MEMOIZADOS =====
   const handleToggleFiltro = useCallback(() => {
-    setFiltroModalOpen((prev) => !prev);
-    setFiltroVisible((prev) => !prev);
+    setFiltroModalOpen(prev => !prev);
+    setFiltroVisible(prev => !prev);
   }, [setFiltroModalOpen, setFiltroVisible]);
 
   // ✅ OPTIMIZACIÓN: Memoizar todos los handlers que se pasan como props
-  const memoSetBusqueda = useCallback((v) => setBusqueda(v), [setBusqueda]);
-  const memoSetSeccionActiva = useCallback((v) => setSeccionActiva(v), [setSeccionActiva]);
-  const memoUpdateFiltros = useCallback((v) => updateFiltros(v), [updateFiltros]);
+  const memoSetBusqueda = useCallback(v => setBusqueda(v), [setBusqueda]);
+  const memoSetSeccionActiva = useCallback(
+    v => setSeccionActiva(v),
+    [setSeccionActiva]
+  );
+  const memoUpdateFiltros = useCallback(v => updateFiltros(v), [updateFiltros]);
   const memoResetFiltros = useCallback(() => resetFiltros(), [resetFiltros]);
-  const memoToggleCategoria = useCallback((v) => toggleCategoria(v), [toggleCategoria]);
-  const memoSetCurrentOrdenamiento = useCallback((v) => setCurrentOrdenamiento(v), [setCurrentOrdenamiento]);
+  const memoToggleCategoria = useCallback(
+    v => toggleCategoria(v),
+    [toggleCategoria]
+  );
+  const memoSetCurrentOrdenamiento = useCallback(
+    v => setCurrentOrdenamiento(v),
+    [setCurrentOrdenamiento]
+  );
 
-  const handleOpenCategorias = useCallback((event) => {
-    setAnchorElCategorias(event.currentTarget)
-  }, [])
+  const handleOpenCategorias = useCallback(event => {
+    setAnchorElCategorias(event.currentTarget);
+  }, []);
 
   const handleCloseCategorias = useCallback(() => {
-    setAnchorElCategorias(null)
-  }, [])
+    setAnchorElCategorias(null);
+  }, []);
 
   // ===== PROPS ORGANIZADOS POR SECCIONES (MEMOIZADOS) =====
-  
+
   // ✅ OPTIMIZACIÓN: Memoizar searchBarProps separadamente para mayor granularidad
   const searchBarProps = useMemo(
     () => ({
@@ -127,7 +139,18 @@ const useMarketplaceLogic = (options = {}) => {
       filtroModalOpen,
       searchBarMarginLeft,
     }),
-    [busqueda, memoSetBusqueda, currentOrdenamiento, memoSetCurrentOrdenamiento, currentSortOptions, handleToggleFiltro, hayFiltrosActivos, filtroVisible, filtroModalOpen, searchBarMarginLeft]
+    [
+      busqueda,
+      memoSetBusqueda,
+      currentOrdenamiento,
+      memoSetCurrentOrdenamiento,
+      currentSortOptions,
+      handleToggleFiltro,
+      hayFiltrosActivos,
+      filtroVisible,
+      filtroModalOpen,
+      searchBarMarginLeft,
+    ]
   );
 
   // ✅ OPTIMIZACIÓN: Memoizar categoryNavigationProps separadamente
@@ -139,17 +162,23 @@ const useMarketplaceLogic = (options = {}) => {
       onCategoriaToggle: memoToggleCategoria,
       categoryMarginLeft,
     }),
-    [seccionActiva, categoriaSeleccionada, memoSetSeccionActiva, memoToggleCategoria, categoryMarginLeft]
+    [
+      seccionActiva,
+      categoriaSeleccionada,
+      memoSetSeccionActiva,
+      memoToggleCategoria,
+      categoryMarginLeft,
+    ]
   );
   // Props para SearchSection - SOLO SearchSection necesita shouldShowSearchBar
   const searchSectionProps = useMemo(
     () => ({
       shouldShowSearchBar, // Solo para animaciones de SearchBar
-      hasSidebar,
+      hasSideBar,
       searchBarProps,
       categoryNavigationProps,
     }),
-    [shouldShowSearchBar, hasSidebar, searchBarProps, categoryNavigationProps]
+    [shouldShowSearchBar, hasSideBar, searchBarProps, categoryNavigationProps]
   );
 
   // ✅ DESACOPLADO: FilterSection ya no depende de shouldShowSearchBar
@@ -163,7 +192,15 @@ const useMarketplaceLogic = (options = {}) => {
       totalProductos,
       filtrosAbiertos: filtroVisible,
     }),
-    [filtros, categoriaSeleccionada, busqueda, memoUpdateFiltros, memoResetFiltros, totalProductos, filtroVisible]
+    [
+      filtros,
+      categoriaSeleccionada,
+      busqueda,
+      memoUpdateFiltros,
+      memoResetFiltros,
+      totalProductos,
+      filtroVisible,
+    ]
   );
 
   const filterSectionProps = useMemo(
@@ -185,13 +222,23 @@ const useMarketplaceLogic = (options = {}) => {
       totalProductos,
       productosOrdenados,
       resetFiltros: memoResetFiltros,
-      hasSidebar,
+      hasSideBar,
       titleMarginLeft,
       loading,
       error,
     }),
-    [seccionActiva, memoSetSeccionActiva, totalProductos, productosOrdenados, memoResetFiltros, hasSidebar, titleMarginLeft, loading, error]
-  )
+    [
+      seccionActiva,
+      memoSetSeccionActiva,
+      totalProductos,
+      productosOrdenados,
+      memoResetFiltros,
+      hasSideBar,
+      titleMarginLeft,
+      loading,
+      error,
+    ]
+  );
 
   // ===== RETORNAR TODO ORGANIZADO =====
   return {
@@ -201,10 +248,11 @@ const useMarketplaceLogic = (options = {}) => {
     productsSectionProps,
 
     // Estados generales
-    theme,  }
-}
+    theme,
+  };
+};
 
-export default useMarketplaceLogic
+export default useMarketplaceLogic;
 
 // ✅ EDITAR AQUÍ PARA:
 // - Cambiar lógica de estados
