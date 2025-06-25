@@ -436,6 +436,23 @@ const ProductsSection = React.memo(
       setVisibleProductsCount(INITIAL_PRODUCTS);
     }, [INITIAL_PRODUCTS]);
 
+    // ✅ SCROLL TO TOP: Estado y función para el FAB
+    const [showScrollTop, setShowScrollTop] = React.useState(false);
+
+    const scrollToTop = React.useCallback(() => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, []);
+
+    // ✅ SCROLL TO TOP: Mostrar/ocultar FAB basado en scroll
+    React.useEffect(() => {
+      const handleScroll = () => {
+        setShowScrollTop(window.pageYOffset > 300);
+      };
+
+      window.addEventListener('scroll', handleScroll);
+      return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
+
     return (
       <Box sx={mainContainerStyles}>
         <Box sx={innerContainerStyles}>
@@ -646,32 +663,33 @@ const ProductsSection = React.memo(
             )}
           </Box>
         </Box>
+
+        {/* FAB Scroll to Top */}
+        <Grow in={showScrollTop}>
+          <Fab
+            color="secondary"
+            onClick={scrollToTop}
+            sx={{
+              position: 'fixed',
+              bottom: 80,
+              right: 80,
+              zIndex: 999,
+              backgroundColor: 'background.paper',
+              color: 'primary.main',
+              border: '2px solid',
+              borderColor: 'primary.main',
+              '&:hover': {
+                backgroundColor: 'primary.main',
+                color: 'primary.contrastText',
+              },
+            }}
+            size="medium"
+          >
+            <KeyboardArrowUpIcon />
+          </Fab>
+        </Grow>
       </Box>
-      {/* FAB Scroll to Top */}
-      <Grow in={showScrollTop}>
-        <Fab
-          color="secondary"
-          onClick={scrollToTop}
-          sx={{
-            position: 'fixed',
-            bottom: 80,
-            right: 80,
-            zIndex: 999,
-            backgroundColor: 'background.paper',
-            color: 'primary.main',
-            border: '2px solid',
-            borderColor: 'primary.main',
-            '&:hover': {
-              backgroundColor: 'primary.main',
-              color: 'primary.contrastText',
-            },
-          }}
-          size="medium"
-        >
-          <KeyboardArrowUpIcon />
-        </Fab>
-      </Grow>
-    </Box>
+    );
   }
 );
 

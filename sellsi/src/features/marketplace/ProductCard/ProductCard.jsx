@@ -317,9 +317,17 @@ const ProductCard = React.memo(({ producto, onAddToCart, onViewDetails }) => {
   }, [price_tiers, cantidad, onAddToCart, producto, handleClosePopover])
 
   // ✅ MEJORA DE RENDIMIENTO: Memoización de estilos del Card
+  // Puedes controlar el ancho de la Card aquí por breakpoint:
   const cardStyles = React.useMemo(() => ({
-    height: 450,
-    minWidth: { xs: 100, sm: 150, md: 180, lg: 280, xl: 300 },
+    width: {
+      xs: 170, // Cambia aquí para XS
+      sm: 190, // Cambia aquí para SM
+      md: 300, // Cambia aquí para MD
+      lg: 300, // Cambia aquí para LG
+      xl: 300, // Cambia aquí para XL
+    },
+    // El alto de la Card ahora es automático, solo limitado por el contenido
+    // height eliminado para evitar recortes
     display: 'flex',
     flexDirection: 'column',
     borderRadius: 2,
@@ -377,19 +385,14 @@ const ProductCard = React.memo(({ producto, onAddToCart, onViewDetails }) => {
       {/* Icono favorito eliminado */}
       <Box
         sx={{
-          width: {
-            xs: 100,
-            sm: 150,
-            md: 180,
-            lg: 280,
-            xl: 300,
-          },
+          width: '100%',
+          // Responsive height solo para el área de la imagen
           height: {
-            xs: 75,
-            sm: 122.5,
-            md: 135,
-            lg: 210,
-            xl: 225,
+            xs: 212.5,
+            sm: 237.5,
+            md: 180,
+            lg: 375,
+            xl: 375,
           },
           maxWidth: '100%',
           maxHeight: '100%',
@@ -475,6 +478,7 @@ const ProductCard = React.memo(({ producto, onAddToCart, onViewDetails }) => {
           {stock < 10 ? `¡Solo ${stock} disponibles!` : `Stock: ${stock}`}
         </Typography>{' '}
         {/* ✅ NUEVO: Botón de negociación */}
+        {/*
         <Box sx={{ mt: 2, mb: 0 }}>
           <Button
             variant="contained"
@@ -507,7 +511,7 @@ const ProductCard = React.memo(({ producto, onAddToCart, onViewDetails }) => {
               backgroundColor: negociable
                 ? 'rgba(46, 125, 50, 0.05)'
                 : 'rgba(117, 117, 117, 0.05)',
-              pointerEvents: 'auto', // Asegurar que el botón capture eventos
+              pointerEvents: 'auto',
               position: 'relative',
               zIndex: 10,
               '&:hover': negociable
@@ -530,13 +534,14 @@ const ProductCard = React.memo(({ producto, onAddToCart, onViewDetails }) => {
                 color: '#757575',
                 border: 'none',
                 backgroundColor: 'rgba(117, 117, 117, 0.05)',
-                pointerEvents: 'auto', // Mantener eventos incluso cuando está deshabilitado
+                pointerEvents: 'auto',
               },
             }}
           >
             {negociable ? 'Negociable' : 'No Negociable'}
           </Button>
         </Box>
+        */}
       </CardContent>{' '}
       {/* Botón agregar - más pequeño */}{' '}
       <CardActions sx={{ p: 1.5, pt: 0.5 }}>        <Button

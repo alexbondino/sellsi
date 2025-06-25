@@ -118,7 +118,7 @@ const SupplierProductCard = ({
   return (
     <Card
       sx={{
-        height: 420, // altura fija como en ProductCard pero con la medida actual del supplier
+        height: 650, // Cambiado a 650
         display: 'flex',
         flexDirection: 'column',
         position: 'relative',
@@ -146,7 +146,6 @@ const SupplierProductCard = ({
       }}
       style={{ cursor: 'pointer' }}
     >
-      {' '}
       {/* Badges del producto */}
       <ProductBadges badges={productBadges} position="top-left" />
       {/* Menú de acciones */}
@@ -165,18 +164,18 @@ const SupplierProductCard = ({
       <Box
         sx={{
           width: {
-            xs: 100,
-            sm: 150,
-            md: 180,
-            lg: 280,
-            xl: 300,
+            xs: 80,
+            sm: 100,
+            md: 120,
+            lg: 224,
+            xl: 280, // Cambiado a 280
           },
           height: {
-            xs: 75,
-            sm: 122.5,
-            md: 135,
-            lg: 210,
-            xl: 225,
+            xs: 100,
+            sm: 125,
+            md: 150,
+            lg: 280,
+            xl: 350, // Cambiado a 350
           },
           maxWidth: '100%',
           maxHeight: '100%',
