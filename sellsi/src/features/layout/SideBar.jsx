@@ -20,7 +20,7 @@ const buyerMenuItems = [
 const providerMenuItems = [
   { text: 'Inicio', path: '/supplier/home' },
   { text: 'Mis Productos', path: '/supplier/myproducts' },
-  { text: 'Mis Pedidos', path: '/supplier/myorders' },
+  { text: 'Mis Pedidos', path: '/supplier/my-orders' },
   { text: 'Mi Performance', path: '/supplier/myperformance' },
   { text: 'Marketplace', path: '/buyer/marketplace' }, // Proveedor también necesita acceso al marketplace
 ];

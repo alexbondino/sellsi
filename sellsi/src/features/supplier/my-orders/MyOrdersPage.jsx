@@ -5,7 +5,7 @@ import {
   CircularProgress,
   Alert,
   Container,
-  TextField
+  TextField,
 } from '@mui/material';
 import { useOrdersStore } from './store/ordersStore';
 import OrdersFilter from './components/OrdersFilter';
@@ -22,14 +22,14 @@ const MyOrdersPage = () => {
     fetchOrders,
     setStatusFilter,
     updateOrderStatus,
-    getFilteredOrders
+    getFilteredOrders,
   } = useOrdersStore();
 
   // Estado local para modales
   const [modalState, setModalState] = useState({
     isOpen: false,
     type: null,
-    selectedOrder: null
+    selectedOrder: null,
   });
 
   // Obtener pedidos filtrados
@@ -45,7 +45,7 @@ const MyOrdersPage = () => {
     setModalState({
       isOpen: true,
       type: actionType,
-      selectedOrder: order
+      selectedOrder: order,
     });
   };
 
@@ -54,27 +54,27 @@ const MyOrdersPage = () => {
     setModalState({
       isOpen: false,
       type: null,
-      selectedOrder: null
+      selectedOrder: null,
     });
   };
 
   // Manejar envío de formulario del modal
-  const handleModalSubmit = (formData) => {
+  const handleModalSubmit = formData => {
     const { selectedOrder, type } = modalState;
-    
+
     switch (type) {
       case 'accept':
         updateOrderStatus(selectedOrder.order_id, 'Aceptado', {
-          message: formData.message || ''
+          message: formData.message || '',
         });
         break;
-        
+
       case 'reject':
         updateOrderStatus(selectedOrder.order_id, 'Rechazado', {
-          rejectionReason: formData.rejectionReason || ''
+          rejectionReason: formData.rejectionReason || '',
         });
         break;
-        
+
       case 'dispatch':
         if (!formData.deliveryDate) {
           alert('La fecha de entrega es obligatoria');
@@ -82,30 +82,30 @@ const MyOrdersPage = () => {
         }
         updateOrderStatus(selectedOrder.order_id, 'En Ruta', {
           estimated_delivery_date: formData.deliveryDate,
-          message: formData.message || ''
+          message: formData.message || '',
         });
         break;
-        
+
       case 'deliver':
         updateOrderStatus(selectedOrder.order_id, 'Entregado', {
           deliveryDocuments: formData.deliveryDocuments || null,
-          message: formData.message || ''
+          message: formData.message || '',
         });
         break;
-        
+
       case 'chat':
         // Aquí se podría abrir un chat o redirigir a otra página
         console.log('Abrir chat para pedido:', selectedOrder.order_id);
         break;
     }
-    
+
     handleCloseModal();
   };
 
   // Configuración del modal según el tipo de acción
   const getModalConfig = () => {
     const { type } = modalState;
-    
+
     const configs = {
       accept: {
         title: 'Aceptar Pedido',
@@ -121,7 +121,7 @@ const MyOrdersPage = () => {
             fullWidth
             variant="outlined"
           />
-        )
+        ),
       },
       reject: {
         title: 'Rechazar Pedido',
@@ -137,7 +137,7 @@ const MyOrdersPage = () => {
             fullWidth
             variant="outlined"
           />
-        )
+        ),
       },
       dispatch: {
         title: 'Confirmar Despacho',
@@ -165,7 +165,7 @@ const MyOrdersPage = () => {
               variant="outlined"
             />
           </Box>
-        )
+        ),
       },
       deliver: {
         title: 'Confirmar Entrega',
@@ -183,7 +183,7 @@ const MyOrdersPage = () => {
                 shrink: true,
               }}
               inputProps={{
-                multiple: true
+                multiple: true,
               }}
             />
             <TextField
@@ -195,10 +195,10 @@ const MyOrdersPage = () => {
               variant="outlined"
             />
           </Box>
-        )
-      }
+        ),
+      },
     };
-    
+
     return configs[type] || {};
   };
 
@@ -238,10 +238,7 @@ const MyOrdersPage = () => {
       />
 
       {/* Tabla de pedidos */}
-      <OrdersTable
-        orders={filteredOrders}
-        onActionClick={handleActionClick}
-      />
+      <OrdersTable orders={filteredOrders} onActionClick={handleActionClick} />
 
       {/* Modal de acciones */}
       <OrderActionModal

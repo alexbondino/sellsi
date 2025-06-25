@@ -8,10 +8,10 @@ import {
   TextField,
   ThemeProvider,
 } from '@mui/material';
-import { useOrdersStore } from '../myorders/store/ordersStore';
-import OrdersFilter from '../myorders/components/OrdersFilter';
-import OrdersTable from '../myorders/components/OrdersTable';
-import OrderActionModal from '../myorders/modals/OrderActionModal';
+import { useOrdersStore } from '../my-orders/store/ordersStore';
+import OrdersFilter from '../my-orders/components/OrdersFilter';
+import OrdersTable from '../my-orders/components/OrdersTable';
+import OrderActionModal from '../my-orders/modals/OrderActionModal';
 import { useBanner } from '../../ui/banner/BannerContext';
 import SideBarProvider from '../../layout/SideBar';
 import { dashboardTheme } from '../../../styles/dashboardTheme';

@@ -123,7 +123,7 @@ function AppContent({ mensaje }) {
     '/supplier/home',
     '/supplier/myproducts',
     '/supplier/addproduct',
-    '/supplier/myorders',
+    '/supplier/my-orders',
   ]);
   const neutralRoutes = new Set([
     '/',
@@ -307,7 +307,7 @@ function AppContent({ mensaje }) {
           prefetchRoute('/supplier/home');
           prefetchRoute('/supplier/myproducts');
           prefetchRoute('/supplier/addproduct');
-          prefetchRoute('/supplier/myorders');
+          prefetchRoute('/supplier/my-orders');
         }
       }, 1500);
     }
@@ -520,7 +520,7 @@ function AppContent({ mensaje }) {
                   }
                 />
                 <Route
-                  path="/supplier/myorders"
+                  path="/supplier/my-orders"
                   element={
                     <PrivateRoute>
                       <MyOrdersPage />
