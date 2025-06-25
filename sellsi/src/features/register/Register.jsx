@@ -4,8 +4,8 @@ import { useTheme } from '@mui/material/styles';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 import {
-  ProgressStepper,
-  CustomButton,
+  Stepper,
+  PrimaryButton,
   Wizard,
   useWizard,
 } from '../landing_page/hooks';
@@ -294,7 +294,7 @@ export default function Register({ open, onClose }) {
         <DialogContent
           sx={{ overflowX: 'hidden', px: { xs: 2, sm: 3 }, pt: 1 }}
         >
-          <ProgressStepper activeStep={currentStep + 1} steps={steps} />
+          <Stepper activeStep={currentStep + 1} steps={steps} />
           <Box sx={{ mt: 2 }}>
             {renderStep(currentStep, steps[currentStep], {
               nextStep,

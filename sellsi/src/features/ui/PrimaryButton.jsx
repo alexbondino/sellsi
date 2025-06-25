@@ -1,7 +1,7 @@
 import React from 'react';
 import { Button } from '@mui/material';
 
-const CustomButton = ({
+const PrimaryButton = ({
   /* Boton custom, cambiar nombre y estandarizar */
   children,
   variant = 'primary',
@@ -78,4 +78,4 @@ const CustomButton = ({
   );
 };
 
-export default CustomButton;
+export default PrimaryButton;

@@ -11,7 +11,7 @@ import {
 } from '@mui/material';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
-import { PasswordRequirements, CustomButton } from '../../landing_page/hooks';
+import { PasswordRequirements, PrimaryButton } from '../../landing_page/hooks';
 import { supabase } from '../../../services/supabase';
 // Importa useBanner para mostrar mensajes de error/éxito si es necesario
 import { useBanner } from '../../ui/banner/BannerContext';
@@ -326,22 +326,22 @@ const Step1Account = ({
             },
           }}
         />
-        <CustomButton
+        <PrimaryButton
           type="submit"
           disabled={!canSubmit || loading}
           fullWidth
           sx={{ mb: 0.5 }}
         >
           {loading ? 'Creando cuenta...' : 'Crear cuenta'}
-        </CustomButton>
-        <CustomButton
+        </PrimaryButton>
+        <PrimaryButton
           variant="text"
           onClick={onCancel}
           fullWidth
           sx={{ mt: 0.5 }}
         >
           Volver atrás
-        </CustomButton>
+        </PrimaryButton>
       </form>
     </Box>
   );

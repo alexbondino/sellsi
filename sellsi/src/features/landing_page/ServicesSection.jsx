@@ -14,7 +14,7 @@ import {
   AccountBalance,
   Receipt,
 } from '@mui/icons-material';
-import Wizard from '../ui/Wizard';
+import Wizard from '../ui/wizard/Wizard';
 
 /**
  * ============================================================================

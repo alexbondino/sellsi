@@ -14,7 +14,7 @@ export { BannerProvider, useBanner } from './banner/BannerContext';
 export { default as ConfirmationModal } from './ConfirmationModal';
 export { default as ContactModal } from './ContactModal';
 export { default as CountrySelector } from './CountrySelector';
-export { default as CustomButton } from './CustomButton';
+export { default as PrimaryButton } from './PrimaryButton';
 export { default as FileUploader } from './FileUploader';
 export { default as ImageUploader } from './ImageUploader';
 export { default as LoadingOverlay } from './LoadingOverlay';
@@ -24,7 +24,7 @@ export {
   default as ProductBadges,
   createProductBadges,
 } from './product-card/ProductBadges';
-export { default as ProgressStepper } from './ProgressStepper';
+export { default as Stepper } from './wizard/Stepper';
 export { default as RequestList } from './RequestList';
 export { default as StatCard } from './StatCard';
 export {
@@ -39,7 +39,7 @@ export {
   PRODUCT_STATUS_CONFIG,
 } from './product-card/StatusChip';
 export { default as Widget } from './Widget';
-export { default as Wizard } from './Wizard';
+export { default as Wizard } from './wizard/Wizard';
 
 // Re-exportar hooks de UI si existen
 export * from './hooks';

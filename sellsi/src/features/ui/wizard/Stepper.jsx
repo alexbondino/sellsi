@@ -1,5 +1,11 @@
 import React from 'react';
-import { Box, Step, StepLabel, Stepper, StepConnector } from '@mui/material';
+import {
+  Box,
+  Step,
+  StepLabel,
+  Stepper as MuiStepper,
+  StepConnector,
+} from '@mui/material';
 import { styled } from '@mui/material/styles';
 import { stepConnectorClasses } from '@mui/material/StepConnector';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
@@ -126,10 +132,10 @@ function ColorlibStepIcon(props) {
 }
 
 // ✅ COMPONENTE PRINCIPAL (exactamente como en el código original)
-const ProgressStepper = ({ activeStep, steps }) => {
+const Stepper = ({ activeStep, steps }) => {
   return (
     <Box sx={{ width: '100%', mb: { xs: 1, sm: 1, md: 3, lg: 4 }, mt: 2 }}>
-      <Stepper
+      <MuiStepper
         activeStep={activeStep - 1}
         alternativeLabel
         connector={<ColorlibConnector />}
@@ -154,9 +160,9 @@ const ProgressStepper = ({ activeStep, steps }) => {
             <StepLabel StepIconComponent={ColorlibStepIcon}>{label}</StepLabel>
           </Step>
         ))}
-      </Stepper>
+      </MuiStepper>
     </Box>
   );
 };
 
-export default ProgressStepper;
+export default Stepper;
