@@ -15,7 +15,7 @@ import {
   // Step3Profile,     // Removed
   Step4Verification,
 } from './wizard';
-import { useBanner } from '../ui/BannerContext';
+import { useBanner } from '../ui/banner/BannerContext';
 
 export default function Register({ open, onClose }) {
   const theme = useTheme();

@@ -7,7 +7,7 @@ export { default as PasswordRequirements } from '../../ui/PasswordRequirements';
 export { default as LogoUploader } from '../../ui/LogoUploader';
 export { default as CountrySelector } from '../../ui/CountrySelector';
 export { default as Wizard, useWizard } from '../../ui/Wizard';
-export { default as Banner } from '../../ui/Banner';
+export { default as Banner } from '../../ui/banner/Banner';
 
 // Export hooks
 export { useRecuperarForm } from '../../account_recovery/hooks/useRecuperarForm';

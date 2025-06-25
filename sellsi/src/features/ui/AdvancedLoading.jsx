@@ -4,7 +4,12 @@
  * ============================================================================
  */
 
-import React from 'react'
+/*
+  Ruedita que gira cuando se está carga el marketplace de productos.
+  Cambiar el nombre a "Loading"
+*/
+
+import React from 'react';
 import {
   Box,
   Grid,
@@ -16,8 +21,8 @@ import {
   Grow,
   CircularProgress,
   Chip,
-} from '@mui/material'
-import { Inventory as InventoryIcon } from '@mui/icons-material'
+} from '@mui/material';
+import { Inventory as InventoryIcon } from '@mui/icons-material';
 
 /**
  * Skeleton loader mejorado para productos
@@ -71,7 +76,7 @@ export const ProductCardSkeleton = ({ index = 0 }) => (
       </Paper>
     </Grid>
   </Grow>
-)
+);
 
 /**
  * Grid de skeletons con animación staggered
@@ -82,7 +87,7 @@ export const ProductSkeletonGrid = ({ count = 8 }) => (
       <ProductCardSkeleton key={`skeleton-${index}`} index={index} />
     ))}
   </>
-)
+);
 
 /**
  * Loading state para carga inicial
@@ -113,7 +118,7 @@ export const InitialLoadingState = () => (
       </Grid>
     </Box>
   </Fade>
-)
+);
 
 /**
  * Loading state para infinite scroll
@@ -135,7 +140,7 @@ export const LoadMoreState = ({ show = true }) => (
       </Typography>
     </Box>
   </Fade>
-)
+);
 
 /**
  * Progress indicator para scroll
@@ -184,7 +189,7 @@ export const ScrollProgress = ({ progress, totalCount, displayedCount }) => (
       </Box>
     </Paper>
   </Fade>
-)
+);
 
 /**
  * Empty state mejorado con centrado horizontal
@@ -270,4 +275,4 @@ export const EmptyProductsState = ({ searchTerm, categoryFilter }) => (
       </Box>
     </Grid>
   </Grow>
-)
+);

@@ -1,5 +1,7 @@
-import React from 'react'
-import { Chip } from '@mui/material'
+import React from 'react';
+import { Chip } from '@mui/material';
+
+/* Mis pedidos, chip o label del producto, cambiar a nombre más intuitivo.¿ */
 
 /**
  * StatusChip - Componente UI reutilizable para mostrar estados con chips
@@ -22,13 +24,13 @@ const StatusChip = ({
   variant = 'filled',
 }) => {
   // Encontrar la configuración que coincida
-  const matchingStatus = statusConfig.find((config) => config.condition(value))
+  const matchingStatus = statusConfig.find(config => config.condition(value));
 
   const status = matchingStatus || {
     label: defaultLabel,
     color: defaultColor,
     variant: variant,
-  }
+  };
 
   return (
     <Chip
@@ -43,72 +45,72 @@ const StatusChip = ({
         ...sx,
       }}
     />
-  )
-}
+  );
+};
 
 // Configuraciones predefinidas comunes
 export const STOCK_STATUS_CONFIG = [
   {
-    condition: (stock) => stock === 0,
+    condition: stock => stock === 0,
     label: 'Agotado',
     color: 'error',
   },
   {
-    condition: (stock) => stock > 0 && stock < 10,
+    condition: stock => stock > 0 && stock < 10,
     label: 'Stock bajo',
     color: 'warning',
   },
   {
-    condition: (stock) => stock >= 10,
+    condition: stock => stock >= 10,
     label: 'En stock',
     color: 'success',
   },
-]
+];
 
 export const ORDER_STATUS_CONFIG = [
   {
-    condition: (status) => status === 'pending',
+    condition: status => status === 'pending',
     label: 'Pendiente',
     color: 'warning',
   },
   {
-    condition: (status) => status === 'processing',
+    condition: status => status === 'processing',
     label: 'Procesando',
     color: 'info',
   },
   {
-    condition: (status) => status === 'shipped',
+    condition: status => status === 'shipped',
     label: 'Enviado',
     color: 'primary',
   },
   {
-    condition: (status) => status === 'delivered',
+    condition: status => status === 'delivered',
     label: 'Entregado',
     color: 'success',
   },
   {
-    condition: (status) => status === 'cancelled',
+    condition: status => status === 'cancelled',
     label: 'Cancelado',
     color: 'error',
   },
-]
+];
 
 export const PRODUCT_STATUS_CONFIG = [
   {
-    condition: (status) => status === 'active',
+    condition: status => status === 'active',
     label: 'Activo',
     color: 'success',
   },
   {
-    condition: (status) => status === 'inactive',
+    condition: status => status === 'inactive',
     label: 'Inactivo',
     color: 'default',
   },
   {
-    condition: (status) => status === 'draft',
+    condition: status => status === 'draft',
     label: 'Borrador',
     color: 'warning',
   },
-]
+];
 
-export default StatusChip
+export default StatusChip;

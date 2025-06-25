@@ -14,8 +14,8 @@ import theme from './styles/theme'; // Asegúrate de que tu tema está correctam
 import TopBar from './features/layout/TopBar';
 import BottomBar from './features/layout/BottomBar';
 import PrivateRoute from './features/auth/PrivateRoute';
-import { BannerProvider, useBanner } from './features/ui/BannerContext';
-import Banner from './features/ui/Banner';
+import { BannerProvider, useBanner } from './features/ui/banner/BannerContext';
+import Banner from './features/ui/banner/Banner';
 import { Toaster } from 'react-hot-toast';
 import { supabase } from './services/supabase';
 import { usePrefetch } from './hooks/usePrefetch';

@@ -12,7 +12,7 @@ import { useOrdersStore } from '../myorders/store/ordersStore';
 import OrdersFilter from '../myorders/components/OrdersFilter';
 import OrdersTable from '../myorders/components/OrdersTable';
 import OrderActionModal from '../myorders/modals/OrderActionModal';
-import { useBanner } from '../../ui/BannerContext';
+import { useBanner } from '../../ui/banner/BannerContext';
 import SideBarProvider from '../../layout/SideBar';
 import { dashboardTheme } from '../../../styles/dashboardTheme';
 // TODO: Importar hook para obtener usuario autenticado

@@ -1,4 +1,5 @@
-import React, { useRef, useState } from 'react'
+import React, { useRef, useState } from 'react';
+/* Para subir pdf */
 import {
   Box,
   Paper,
@@ -13,7 +14,7 @@ import {
   Chip,
   alpha,
   useTheme,
-} from '@mui/material'
+} from '@mui/material';
 import {
   CloudUpload as CloudUploadIcon,
   Add as AddIcon,
@@ -22,7 +23,7 @@ import {
   InsertDriveFile as FileIcon,
   Image as ImageIcon,
   FileDownload as DownloadIcon,
-} from '@mui/icons-material'
+} from '@mui/icons-material';
 
 /**
  * FileUploader - Componente UI reutilizable para subir múltiples archivos
@@ -59,87 +60,89 @@ const FileUploader = ({
   showProgress = false,
   allowPreview = true,
 }) => {
-  const theme = useTheme()
-  const fileInputRef = useRef(null)
-  const [dragOver, setDragOver] = useState(false)
-  const [uploading, setUploading] = useState(false)
+  const theme = useTheme();
+  const fileInputRef = useRef(null);
+  const [dragOver, setDragOver] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
-  const formatFileSize = (bytes) => {
-    if (bytes === 0) return '0 Bytes'
-    const k = 1024
-    const sizes = ['Bytes', 'KB', 'MB', 'GB']
-    const i = Math.floor(Math.log(bytes) / Math.log(k))
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
-  }
+  const formatFileSize = bytes => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
 
-  const getFileIcon = (mimeType) => {
-    if (mimeType.includes('pdf')) return <PdfIcon color="error" />
-    if (mimeType.includes('image')) return <ImageIcon color="primary" />
-    return <FileIcon color="action" />
-  }
+  const getFileIcon = mimeType => {
+    if (mimeType.includes('pdf')) return <PdfIcon color="error" />;
+    if (mimeType.includes('image')) return <ImageIcon color="primary" />;
+    return <FileIcon color="action" />;
+  };
 
-  const getFileTypeColor = (mimeType) => {
-    if (mimeType.includes('pdf')) return 'error'
-    if (mimeType.includes('image')) return 'primary'
-    if (mimeType.includes('video')) return 'secondary'
-    if (mimeType.includes('audio')) return 'info'
-    return 'default'
-  }
+  const getFileTypeColor = mimeType => {
+    if (mimeType.includes('pdf')) return 'error';
+    if (mimeType.includes('image')) return 'primary';
+    if (mimeType.includes('video')) return 'secondary';
+    if (mimeType.includes('audio')) return 'info';
+    return 'default';
+  };
 
-  const handleFileSelect = (event) => {
-    const selectedFiles = Array.from(event.target.files)
-    processFiles(selectedFiles)
+  const handleFileSelect = event => {
+    const selectedFiles = Array.from(event.target.files);
+    processFiles(selectedFiles);
     // Reset input para permitir seleccionar el mismo archivo
-    event.target.value = ''
-  }
+    event.target.value = '';
+  };
 
-  const processFiles = (selectedFiles) => {
-    if (!selectedFiles || selectedFiles.length === 0) return
+  const processFiles = selectedFiles => {
+    if (!selectedFiles || selectedFiles.length === 0) return;
 
     // Validar límite de archivos
     if (files.length + selectedFiles.length > maxFiles) {
-      const errorMsg = `Máximo ${maxFiles} archivos permitidos`
-      onError?.(errorMsg)
-      return
+      const errorMsg = `Máximo ${maxFiles} archivos permitidos`;
+      onError?.(errorMsg);
+      return;
     }
 
     // Validar cada archivo
-    const validFiles = []
-    const errors = []
+    const validFiles = [];
+    const errors = [];
 
     for (const file of selectedFiles) {
       // Validar tipo si se especifica
       if (acceptedTypes !== '*/*') {
-        const isValidType = acceptedTypes.split(',').some((type) => {
-          const cleanType = type.trim()
+        const isValidType = acceptedTypes.split(',').some(type => {
+          const cleanType = type.trim();
           if (cleanType.startsWith('.')) {
-            return file.name.toLowerCase().endsWith(cleanType.toLowerCase())
+            return file.name.toLowerCase().endsWith(cleanType.toLowerCase());
           }
-          return file.type.includes(cleanType)
-        })
+          return file.type.includes(cleanType);
+        });
 
         if (!isValidType) {
-          errors.push(`${file.name}: Tipo de archivo no permitido`)
-          continue
+          errors.push(`${file.name}: Tipo de archivo no permitido`);
+          continue;
         }
       }
 
       // Validar tamaño
       if (file.size > maxSize) {
-        errors.push(`${file.name}: Debe ser menor a ${formatFileSize(maxSize)}`)
-        continue
+        errors.push(
+          `${file.name}: Debe ser menor a ${formatFileSize(maxSize)}`
+        );
+        continue;
       }
 
-      validFiles.push(file)
+      validFiles.push(file);
     }
 
     // Mostrar errores si los hay
-    errors.forEach((error) => onError?.(error))
+    errors.forEach(error => onError?.(error));
 
-    if (validFiles.length === 0) return
+    if (validFiles.length === 0) return;
 
     // Crear objetos de archivo para el estado local
-    const newFiles = validFiles.map((file) => ({
+    const newFiles = validFiles.map(file => ({
       id: Date.now() + Math.random(),
       file,
       fileName: file.name,
@@ -147,79 +150,79 @@ const FileUploader = ({
       type: file.type,
       status: 'local', // local, uploading, uploaded, error
       uploadedAt: new Date().toISOString(),
-    }))
+    }));
 
     // Agregar al estado inmediatamente para preview
-    onFilesChange([...files, ...newFiles])
-  }
+    onFilesChange([...files, ...newFiles]);
+  };
 
-  const handleDragOver = (event) => {
-    event.preventDefault()
-    setDragOver(true)
-  }
+  const handleDragOver = event => {
+    event.preventDefault();
+    setDragOver(true);
+  };
 
-  const handleDragLeave = (event) => {
-    event.preventDefault()
-    setDragOver(false)
-  }
+  const handleDragLeave = event => {
+    event.preventDefault();
+    setDragOver(false);
+  };
 
-  const handleDrop = (event) => {
-    event.preventDefault()
-    setDragOver(false)
+  const handleDrop = event => {
+    event.preventDefault();
+    setDragOver(false);
 
-    const droppedFiles = Array.from(event.dataTransfer.files)
-    processFiles(droppedFiles)
-  }
+    const droppedFiles = Array.from(event.dataTransfer.files);
+    processFiles(droppedFiles);
+  };
 
-  const removeFile = (fileId) => {
-    const newFiles = files.filter((file) => file.id !== fileId)
-    onFilesChange(newFiles)
-  }
+  const removeFile = fileId => {
+    const newFiles = files.filter(file => file.id !== fileId);
+    onFilesChange(newFiles);
+  };
 
   const handleUpload = async () => {
-    if (!onUpload) return
+    if (!onUpload) return;
 
-    const localFiles = files.filter((file) => file.status === 'local')
-    if (localFiles.length === 0) return
+    const localFiles = files.filter(file => file.status === 'local');
+    if (localFiles.length === 0) return;
 
-    setUploading(true)
+    setUploading(true);
 
     try {
-      await onUpload(localFiles)
+      await onUpload(localFiles);
     } catch (error) {
-      onError?.('Error al subir archivos')
+      onError?.('Error al subir archivos');
     } finally {
-      setUploading(false)
+      setUploading(false);
     }
-  }
+  };
 
-  const downloadFile = (file) => {
+  const downloadFile = file => {
     if (file.publicUrl) {
-      window.open(file.publicUrl, '_blank')
+      window.open(file.publicUrl, '_blank');
     } else if (file.file) {
       // Para archivos locales, crear URL temporal
-      const url = URL.createObjectURL(file.file)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = file.fileName
-      a.click()
-      URL.revokeObjectURL(url)
+      const url = URL.createObjectURL(file.file);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = file.fileName;
+      a.click();
+      URL.revokeObjectURL(url);
     }
-  }
+  };
 
   const openFileDialog = () => {
-    fileInputRef.current?.click()
-  }
+    fileInputRef.current?.click();
+  };
 
-  const canAddMore = files.length < maxFiles
-  const hasLocalFiles = files.some((file) => file.status === 'local')
+  const canAddMore = files.length < maxFiles;
+  const hasLocalFiles = files.some(file => file.status === 'local');
 
   // Generar texto de ayuda automático si no se proporciona
   const autoHelpText =
     helpText ||
     `${acceptedTypes} • Máximo ${formatFileSize(
       maxSize
-    )} por archivo • Hasta ${maxFiles} archivos`
+    )} por archivo • Hasta ${maxFiles} archivos`;
 
   return (
     <Box>
@@ -325,7 +328,7 @@ const FileUploader = ({
             )}
           </Box>{' '}
           <Grid container spacing={2}>
-            {files.map((file) => (
+            {files.map(file => (
               <Grid size={{ xs: 12, sm: 6, md: 4 }} key={file.id}>
                 <Card
                   elevation={2}
@@ -451,7 +454,7 @@ const FileUploader = ({
         </Typography>
       )}
     </Box>
-  )
-}
+  );
+};
 
-export default FileUploader
+export default FileUploader;

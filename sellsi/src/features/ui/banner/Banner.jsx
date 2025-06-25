@@ -1,10 +1,14 @@
-import React, { useState, useEffect } from 'react'
-import { Alert, Slide, Box } from '@mui/material'
+import React, { useState, useEffect } from 'react';
+import { Alert, Slide, Box } from '@mui/material';
 
 /**
  * Componente Banner reutilizable que muestra mensajes temporales
  * Se posiciona debajo del TopBar y desaparece automáticamente
  */
+
+/*
+  Fusionar con Banner Context
+*/
 const Banner = ({
   message,
   severity = 'success', // 'success', 'info', 'warning', 'error'
@@ -13,27 +17,27 @@ const Banner = ({
   onClose,
   position = 'top', // 'top' o 'bottom'
 }) => {
-  const [isVisible, setIsVisible] = useState(false)
+  const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
     if (show) {
-      setIsVisible(true)
+      setIsVisible(true);
 
       // Auto-cerrar después del tiempo especificado
       const timer = setTimeout(() => {
-        setIsVisible(false)
+        setIsVisible(false);
         setTimeout(() => {
-          onClose?.()
-        }, 300) // Esperar a que termine la animación
-      }, duration)
+          onClose?.();
+        }, 300); // Esperar a que termine la animación
+      }, duration);
 
-      return () => clearTimeout(timer)
+      return () => clearTimeout(timer);
     } else {
-      setIsVisible(false)
+      setIsVisible(false);
     }
-  }, [show, duration, onClose])
+  }, [show, duration, onClose]);
 
-  if (!show) return null
+  if (!show) return null;
   return (
     <Box
       sx={{
@@ -53,10 +57,10 @@ const Banner = ({
           variant="filled"
           severity={severity}
           onClose={() => {
-            setIsVisible(false)
+            setIsVisible(false);
             setTimeout(() => {
-              onClose?.()
-            }, 300)
+              onClose?.();
+            }, 300);
           }}
           sx={{
             width: { xs: '90vw', sm: '90vw', md: 'fit-content' }, // Ancho fijo para móviles, ajustado al contenido en desktop
@@ -79,7 +83,7 @@ const Banner = ({
         </Alert>
       </Slide>
     </Box>
-  )
-}
+  );
+};
 
-export default Banner
+export default Banner;

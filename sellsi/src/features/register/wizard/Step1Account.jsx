@@ -14,7 +14,7 @@ import { useTheme } from '@mui/material/styles';
 import { PasswordRequirements, CustomButton } from '../../landing_page/hooks';
 import { supabase } from '../../../services/supabase';
 // Importa useBanner para mostrar mensajes de error/éxito si es necesario
-import { useBanner } from '../../ui/BannerContext';
+import { useBanner } from '../../ui/banner/BannerContext';
 
 const Step1Account = ({
   formData,
