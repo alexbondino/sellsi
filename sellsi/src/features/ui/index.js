@@ -1,6 +1,6 @@
 // Componentes UI reutilizables exportados
 export { default as ActionMenu } from './product-card/ActionMenu';
-export { default as SupplierProductCard } from './product-card/SupplierProductCard';
+export { default as SupplierProductCard } from './product-card/ProductCard';
 export {
   ProductCardSkeleton,
   ProductSkeletonGrid,

@@ -5,7 +5,7 @@ import {
   Container,
   Typography,
   Button,
-  Grid,
+  Grid, // Asegúrate de que Grid está importado de @mui/material
   Paper,
   TextField,
   FormControl,
@@ -36,7 +36,7 @@ import { toast } from 'react-hot-toast';
 
 // Components
 import SideBarProvider from '../../layout/SideBar';
-import SupplierProductCard from '../../ui/product-card/SupplierProductCard';
+import ProductCard from '../../ui/product-card/ProductCard'; // Asegúrate que esta es la ruta correcta al componente principal
 import ConfirmationModal, { MODAL_TYPES } from '../../ui/ConfirmationModal';
 
 // Hooks y stores
@@ -275,7 +275,9 @@ const MyProducts = () => {
                 <Box sx={{ p: 0 }}>
                   {' '}
                   <Grid container columns={12}>
-                    <Grid size={{ xs: 12, sm: 4 }}>
+                    <Grid item xs={12} sm={4}>
+                      {' '}
+                      {/* CORREGIDO AQUÍ */}
                       <Box
                         sx={{
                           p: 2,
@@ -310,7 +312,9 @@ const MyProducts = () => {
                         </Box>
                       </Box>
                     </Grid>{' '}
-                    <Grid size={{ xs: 12, sm: 4 }}>
+                    <Grid item xs={12} sm={4}>
+                      {' '}
+                      {/* CORREGIDO AQUÍ */}
                       <Box
                         sx={{
                           p: 2,
@@ -352,7 +356,9 @@ const MyProducts = () => {
                         </Box>
                       </Box>
                     </Grid>{' '}
-                    <Grid size={{ xs: 12, sm: 4 }}>
+                    <Grid item xs={12} sm={4}>
+                      {' '}
+                      {/* CORREGIDO AQUÍ */}
                       <Box sx={{ p: 2 }}>
                         <Box
                           sx={{
@@ -396,7 +402,9 @@ const MyProducts = () => {
             <Grid container columns={12} spacing={2} alignItems="center">
               {' '}
               {/* Búsqueda */}
-              <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+              <Grid item xs={12} sm={6} md={4}>
+                {' '}
+                {/* CORREGIDO AQUÍ */}
                 <TextField
                   fullWidth
                   placeholder="Buscar productos..."
@@ -413,7 +421,9 @@ const MyProducts = () => {
                 />{' '}
               </Grid>{' '}
               {/* Filtro por categoría */}{' '}
-              <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+              <Grid item xs={12} sm={6} md={3}>
+                {' '}
+                {/* CORREGIDO AQUÍ */}
                 <FormControl fullWidth>
                   <InputLabel>Categoría</InputLabel>{' '}
                   <Select
@@ -440,7 +450,9 @@ const MyProducts = () => {
                 </FormControl>
               </Grid>{' '}
               {/* Ordenamiento */}
-              <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+              <Grid item xs={12} sm={6} md={3}>
+                {' '}
+                {/* CORREGIDO AQUÍ */}
                 <FormControl fullWidth>
                   <InputLabel>Ordenar por</InputLabel>{' '}
                   <Select
@@ -467,7 +479,9 @@ const MyProducts = () => {
                 </FormControl>{' '}
               </Grid>{' '}
               {/* Acciones */}
-              <Grid size={{ xs: 12, sm: 6, md: 2 }}>
+              <Grid item xs={12} sm={6} md={2}>
+                {' '}
+                {/* CORREGIDO AQUÍ */}
                 <Stack direction="row" spacing={1}>
                   <Button
                     variant="outlined"
@@ -561,9 +575,12 @@ const MyProducts = () => {
                       timeout={600}
                       style={{ transitionDelay: `${(index % 8) * 50}ms` }}
                     >
-                      <Grid size={{ xs: 12, sm: 6, md: 4.5, lg: 3.5, xl: 2.8 }}>
-                        <SupplierProductCard
+                      <Grid item xs={12} sm={6} md={4.5} lg={3.5} xl={2.8}>
+                        {' '}
+                        {/* CORREGIDO AQUÍ */}
+                        <ProductCard
                           product={product}
+                          type="supplier"
                           onEdit={handleEditProduct}
                           onDelete={handleDeleteProduct}
                           onViewStats={handleViewStats}
@@ -645,7 +662,7 @@ const MyProducts = () => {
         title="Eliminar producto"
         message={
           deleteModal.product
-            ? `¿Estás seguro de que deseas eliminar "${deleteModal.product.nombre}"? Esta acción no se puede deshacer.`
+            ? `¿Estás seguro de que deseas eliminar "${deleteModal.product.nombre}"? Esta acción no se puede rehacer.` // 'no se puede deshacer' suena más natural
             : ''
         }
         loading={deleteModal.loading}
