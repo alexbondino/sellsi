@@ -1,17 +1,17 @@
 import React from 'react';
 import {
-  Table,
+  Table as MuiTable,
   TableBody,
   TableCell,
   TableContainer,
   TableHead,
   TableRow,
   Paper,
-  Typography
+  Typography,
 } from '@mui/material';
-import OrderRow from './OrderRow';
+import Rows from './Rows';
 
-const OrdersTable = ({ orders, onActionClick }) => {
+const Table = ({ orders, onActionClick }) => {
   if (!orders || orders.length === 0) {
     return (
       <Paper sx={{ p: 4, textAlign: 'center' }}>
@@ -24,7 +24,7 @@ const OrdersTable = ({ orders, onActionClick }) => {
 
   return (
     <TableContainer component={Paper}>
-      <Table sx={{ minWidth: 650 }} aria-label="tabla de pedidos">
+      <MuiTable sx={{ minWidth: 650 }} aria-label="tabla de pedidos">
         <TableHead>
           <TableRow>
             <TableCell align="center" sx={{ width: '50px' }}>
@@ -41,17 +41,17 @@ const OrdersTable = ({ orders, onActionClick }) => {
           </TableRow>
         </TableHead>
         <TableBody>
-          {orders.map((order) => (
-            <OrderRow
+          {orders.map(order => (
+            <Rows
               key={order.order_id}
               order={order}
               onActionClick={onActionClick}
             />
           ))}
         </TableBody>
-      </Table>
+      </MuiTable>
     </TableContainer>
   );
 };
 
-export default OrdersTable;
+export default Table;

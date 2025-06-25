@@ -8,8 +8,8 @@ import {
   TextField,
 } from '@mui/material';
 import { useOrdersStore } from './store/ordersStore';
-import OrdersFilter from './components/OrdersFilter';
-import OrdersTable from './components/OrdersTable';
+import Filter from './components/Filter';
+import Table from './components/Table';
 import OrderActionModal from './modals/OrderActionModal';
 
 const MyOrdersPage = () => {
@@ -232,13 +232,10 @@ const MyOrdersPage = () => {
       </Typography>
 
       {/* Filtro */}
-      <OrdersFilter
-        statusFilter={statusFilter}
-        setStatusFilter={setStatusFilter}
-      />
+      <Filter statusFilter={statusFilter} setStatusFilter={setStatusFilter} />
 
       {/* Tabla de pedidos */}
-      <OrdersTable orders={filteredOrders} onActionClick={handleActionClick} />
+      <Table orders={filteredOrders} onActionClick={handleActionClick} />
 
       {/* Modal de acciones */}
       <OrderActionModal

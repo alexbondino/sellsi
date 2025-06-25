@@ -9,8 +9,8 @@ import {
   ThemeProvider,
 } from '@mui/material';
 import { useOrdersStore } from '../my-orders/store/ordersStore';
-import OrdersFilter from '../my-orders/components/OrdersFilter';
-import OrdersTable from '../my-orders/components/OrdersTable';
+import Filter from '../../ui/table/Filter';
+import Table from '../../ui/table/Table';
 import OrderActionModal from '../my-orders/modals/OrderActionModal';
 import { useBanner } from '../../ui/banner/BannerContext';
 import SideBarProvider from '../../layout/SideBar';
@@ -343,16 +343,13 @@ const MyOrdersPage = () => {
           </Typography>
 
           {/* Filtro */}
-          <OrdersFilter
+          <Filter
             statusFilter={statusFilter}
             setStatusFilter={setStatusFilter}
           />
 
           {/* Tabla de pedidos */}
-          <OrdersTable
-            orders={filteredOrders}
-            onActionClick={handleActionClick}
-          />
+          <Table orders={filteredOrders} onActionClick={handleActionClick} />
 
           {/* Modal de acciones */}
           <OrderActionModal

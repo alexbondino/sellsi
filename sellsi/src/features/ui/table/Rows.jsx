@@ -7,7 +7,7 @@ import {
   Tooltip,
   Collapse,
   Box,
-  Typography
+  Typography,
 } from '@mui/material';
 import {
   WarningAmber as WarningAmberIcon,
@@ -17,50 +17,50 @@ import {
   LocalShipping as LocalShippingIcon,
   AssignmentTurnedIn as AssignmentTurnedInIcon,
   ExpandMore as ExpandMoreIcon,
-  ExpandLess as ExpandLessIcon
+  ExpandLess as ExpandLessIcon,
 } from '@mui/icons-material';
 
-const OrderRow = ({ order, onActionClick }) => {
+const Rows = ({ order, onActionClick }) => {
   const [expandedProducts, setExpandedProducts] = useState(false);
 
   // Formatear dirección
-  const formatAddress = (address) => {
+  const formatAddress = address => {
     return `${address.street}, ${address.city}, ${address.region}`;
   };
 
   // Formatear fecha
-  const formatDate = (dateString) => {
+  const formatDate = dateString => {
     if (!dateString) return '';
     const date = new Date(dateString);
     return date.toLocaleDateString('es-CL');
   };
 
   // Formatear rango de fechas
-  const formatDateRange = (requestedDate) => {
+  const formatDateRange = requestedDate => {
     const startDate = formatDate(requestedDate.start);
     const endDate = formatDate(requestedDate.end);
     return `${startDate} - ${endDate}`;
   };
 
   // Formatear moneda
-  const formatCurrency = (amount) => {
+  const formatCurrency = amount => {
     return new Intl.NumberFormat('es-CL', {
       style: 'currency',
-      currency: 'CLP'
+      currency: 'CLP',
     }).format(amount);
   };
 
   // Obtener color del chip según estado
-  const getStatusChipProps = (status) => {
+  const getStatusChipProps = status => {
     const statusConfig = {
-      'Pendiente': { color: 'warning', label: 'Pendiente' },
-      'Aceptado': { color: 'info', label: 'Aceptado' },
+      Pendiente: { color: 'warning', label: 'Pendiente' },
+      Aceptado: { color: 'info', label: 'Aceptado' },
       'En Ruta': { color: 'secondary', label: 'En Ruta' },
-      'Entregado': { color: 'success', label: 'Entregado' },
-      'Pagado': { color: 'primary', label: 'Pagado' },
-      'Rechazado': { color: 'error', label: 'Rechazado' }
+      Entregado: { color: 'success', label: 'Entregado' },
+      Pagado: { color: 'primary', label: 'Pagado' },
+      Rechazado: { color: 'error', label: 'Rechazado' },
     };
-    
+
     return statusConfig[status] || { color: 'default', label: status };
   };
 
@@ -77,13 +77,13 @@ const OrderRow = ({ order, onActionClick }) => {
             {product.name} x {product.quantity}
           </Typography>
         ))}
-        
+
         {hasMoreProducts && !expandedProducts && (
           <Typography variant="body2" color="text.secondary">
             ...y {products.length - 2} más
           </Typography>
         )}
-        
+
         {hasMoreProducts && (
           <IconButton
             size="small"
@@ -99,7 +99,7 @@ const OrderRow = ({ order, onActionClick }) => {
   // Renderizar acciones según estado
   const renderActions = () => {
     const { status } = order;
-    
+
     const actions = [];
 
     switch (status) {
@@ -231,9 +231,7 @@ const OrderRow = ({ order, onActionClick }) => {
       </TableCell>
 
       {/* Columna Productos */}
-      <TableCell>
-        {renderProducts()}
-      </TableCell>
+      <TableCell>{renderProducts()}</TableCell>
 
       {/* Columna ID Venta */}
       <TableCell>
@@ -283,12 +281,10 @@ const OrderRow = ({ order, onActionClick }) => {
 
       {/* Columna Acciones */}
       <TableCell>
-        <Box sx={{ display: 'flex', gap: 0.5 }}>
-          {renderActions()}
-        </Box>
+        <Box sx={{ display: 'flex', gap: 0.5 }}>{renderActions()}</Box>
       </TableCell>
     </TableRow>
   );
 };
 
-export default OrderRow;
+export default Rows;

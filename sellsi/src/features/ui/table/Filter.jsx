@@ -1,13 +1,7 @@
 import React from 'react';
-import {
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  Box
-} from '@mui/material';
+import { FormControl, InputLabel, Select, MenuItem, Box } from '@mui/material';
 
-const OrdersFilter = ({ statusFilter, setStatusFilter }) => {
+const Filter = ({ statusFilter, setStatusFilter }) => {
   const filterOptions = [
     'Todos',
     'Pendiente',
@@ -16,10 +10,10 @@ const OrdersFilter = ({ statusFilter, setStatusFilter }) => {
     'Entregado',
     'Pagado',
     'Rechazado',
-    'Atrasado'
+    'Atrasado',
   ];
 
-  const handleFilterChange = (event) => {
+  const handleFilterChange = event => {
     setStatusFilter(event.target.value);
   };
 
@@ -34,7 +28,7 @@ const OrdersFilter = ({ statusFilter, setStatusFilter }) => {
           label="Filtrar por estado"
           onChange={handleFilterChange}
         >
-          {filterOptions.map((option) => (
+          {filterOptions.map(option => (
             <MenuItem key={option} value={option}>
               {option}
             </MenuItem>
@@ -45,4 +39,4 @@ const OrdersFilter = ({ statusFilter, setStatusFilter }) => {
   );
 };
 
-export default OrdersFilter;
+export default Filter;

@@ -1,5 +1,8 @@
 // Componentes UI reutilizables exportados
 export { default as ActionMenu } from './product-card/ActionMenu';
+export { default as Table } from './table/Table';
+export { default as Rows } from './table/Rows';
+export { default as Filter } from './table/Filter';
 export { default as SupplierProductCard } from './product-card/ProductCard';
 export {
   ProductCardSkeleton,
