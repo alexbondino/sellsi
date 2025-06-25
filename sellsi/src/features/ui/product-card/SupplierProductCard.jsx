@@ -1,4 +1,4 @@
-import React from 'react'
+import React from 'react';
 import {
   Card,
   CardMedia,
@@ -7,23 +7,20 @@ import {
   Box,
   Chip,
   alpha,
-} from '@mui/material'
+} from '@mui/material';
 import {
   Edit as EditIcon,
   Delete as DeleteIcon,
   Visibility as VisibilityIcon,
   TrendingUp as TrendingUpIcon,
   Inventory as InventoryIcon,
-} from '@mui/icons-material'
-import { formatPrice } from '../../marketplace/utils/formatters'
-import { getProductImageUrl } from '../../../utils/getProductImageUrl'
-import {
-  ActionMenu,
-  ProductBadges,
-  StatusChip,
-  STOCK_STATUS_CONFIG,
-} from '../../ui'
-import { LazyImage } from '../../../components/shared'
+} from '@mui/icons-material';
+import { formatPrice } from '../../marketplace/utils/formatters';
+import { getProductImageUrl } from '../../../utils/getProductImageUrl';
+import ActionMenu from './ActionMenu';
+import ProductBadges from './ProductBadges';
+import StatusChip from './StatusChip';
+import { LazyImage } from '../../../components/shared';
 
 /**
  * SupplierProductCard - Tarjeta de producto para la vista del proveedor
@@ -38,7 +35,7 @@ const SupplierProductCard = ({
   isUpdating = false,
 }) => {
   if (!product) {
-    return null
+    return null;
   }
 
   const {
@@ -60,7 +57,7 @@ const SupplierProductCard = ({
     tramoPrecioMin,
     tramoPrecioMax,
     priceTiers = [],
-  } = product
+  } = product;
 
   // Configurar acciones del menú
   const menuActions = [
@@ -82,24 +79,24 @@ const SupplierProductCard = ({
       disabled: isDeleting,
       color: 'error',
     },
-  ]
+  ];
 
   // Configurar badges del producto
-  const productBadges = []
+  const productBadges = [];
 
   // Badge de producto nuevo
   const isNew = () => {
-    if (!updatedAt) return false
-    const daysDiff = (new Date() - new Date(updatedAt)) / (1000 * 60 * 60 * 24)
-    return daysDiff < 7
-  }
+    if (!updatedAt) return false;
+    const daysDiff = (new Date() - new Date(updatedAt)) / (1000 * 60 * 60 * 24);
+    return daysDiff < 7;
+  };
 
   if (isNew()) {
     productBadges.push({
       label: 'Nuevo',
       color: 'primary',
       condition: true,
-    })
+    });
   }
 
   if (descuento > 0) {
@@ -107,7 +104,7 @@ const SupplierProductCard = ({
       label: `-${descuento}%`,
       color: 'error',
       condition: true,
-    })
+    });
   }
 
   return (
@@ -126,7 +123,7 @@ const SupplierProductCard = ({
         transform: isDeleting ? 'scale(0.95)' : 'scale(1)',
         '&:hover': {
           transform: isDeleting ? 'scale(0.95)' : 'translateY(-4px)',
-          boxShadow: (theme) =>
+          boxShadow: theme =>
             `0 8px 25px ${alpha(theme.palette.primary.main, 0.15)}`,
           borderColor: 'primary.main',
         },
@@ -146,8 +143,10 @@ const SupplierProductCard = ({
             borderColor: 'primary.main',
             borderRadius: '12px',
           }}
-        />      </Box>{' '}
-      {/* ✅ OPTIMIZACIÓN: Imagen del producto con lazy loading */}      <LazyImage
+        />{' '}
+      </Box>{' '}
+      {/* ✅ OPTIMIZACIÓN: Imagen del producto con lazy loading */}{' '}
+      <LazyImage
         src={getProductImageUrl(imagen, product) || '/placeholder-product.jpg'}
         alt={nombre}
         aspectRatio="140 / 140"
@@ -262,17 +261,17 @@ const SupplierProductCard = ({
               value={stock}
               statusConfig={[
                 {
-                  condition: (stock) => stock === 0,
+                  condition: stock => stock === 0,
                   label: 'Agotado',
                   color: 'error',
                 },
                 {
-                  condition: (stock) => stock > 0 && stock < 10,
+                  condition: stock => stock > 0 && stock < 10,
                   label: `${stock} unidades`,
                   color: 'warning',
                 },
                 {
-                  condition: (stock) => stock >= 10,
+                  condition: stock => stock >= 10,
                   label: `${stock} unidades`,
                   color: 'success',
                 },
@@ -296,7 +295,7 @@ const SupplierProductCard = ({
         </Box>
       </CardContent>
     </Card>
-  )
-}
+  );
+};
 
-export default SupplierProductCard
+export default SupplierProductCard;

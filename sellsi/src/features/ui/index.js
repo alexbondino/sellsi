@@ -1,5 +1,6 @@
 // Componentes UI reutilizables exportados
-export { default as ActionMenu } from './ActionMenu';
+export { default as ActionMenu } from './product-card/ActionMenu';
+export { default as SupplierProductCard } from './product-card/SupplierProductCard';
 export {
   ProductCardSkeleton,
   ProductSkeletonGrid,
@@ -19,7 +20,10 @@ export { default as ImageUploader } from './ImageUploader';
 export { default as LoadingOverlay } from './LoadingOverlay';
 export { default as LogoUploader } from './LogoUploader';
 export { default as PasswordRequirements } from './PasswordRequirements';
-export { default as ProductBadges, createProductBadges } from './ProductBadges';
+export {
+  default as ProductBadges,
+  createProductBadges,
+} from './product-card/ProductBadges';
 export { default as ProgressStepper } from './ProgressStepper';
 export { default as RequestList } from './RequestList';
 export { default as StatCard } from './StatCard';
@@ -33,7 +37,7 @@ export {
   STOCK_STATUS_CONFIG,
   ORDER_STATUS_CONFIG,
   PRODUCT_STATUS_CONFIG,
-} from './StatusChip';
+} from './product-card/StatusChip';
 export { default as Widget } from './Widget';
 export { default as Wizard } from './Wizard';
 

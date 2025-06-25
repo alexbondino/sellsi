@@ -36,7 +36,7 @@ import { toast } from 'react-hot-toast';
 
 // Components
 import SideBarProvider from '../../layout/SideBar';
-import SupplierProductCard from '../components/SupplierProductCard';
+import SupplierProductCard from '../../ui/product-card/SupplierProductCard';
 import ConfirmationModal, { MODAL_TYPES } from '../../ui/ConfirmationModal';
 
 // Hooks y stores
