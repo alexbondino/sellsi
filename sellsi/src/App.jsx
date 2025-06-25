@@ -21,10 +21,7 @@ import { supabase } from './services/supabase';
 import { usePrefetch } from './hooks/usePrefetch';
 import useCartStore from './features/buyer/hooks/cartStore';
 
-// ============================================================================
-// Importar Sidebar unificado (ahora todo está en este archivo)
 import Sidebar from './features/layout/Sidebar'; // Asegúrate de que esta ruta sea correcta
-// ============================================================================
 
 // ============================================================================
 // 🚀 CODE SPLITTING: LAZY LOADING DE COMPONENTES POR RUTAS
@@ -105,27 +102,48 @@ function AppContent({ mensaje }) {
   const scrollTargets = useRef({});
   const { bannerState, hideBanner } = useBanner();
   const [session, setSession] = useState(null);
-  const [userProfile, setUserProfile] = useState(null); // State to store logo_url, is_buyer, etc.
+  const [userProfile, setUserProfile] = useState(null);
   const [loadingUserStatus, setLoadingUserStatus] = useState(true);
   const { initializeCartWithUser, isBackendSynced } = useCartStore();
   const [needsOnboarding, setNeedsOnboarding] = useState(false);
   const { prefetchRoute } = usePrefetch();
 
-  // Estado para el rol actual del usuario, manejado por el TopBar Switch
   const [currentAppRole, setCurrentAppRole] = useState('buyer'); // 'buyer' o 'supplier'
-  const sidebarWidth = '210px'; // Define el ancho de la sidebar aquí
+  const sidebarWidth = '210px';
+
+  // Define las rutas para cada rol
+  const buyerRoutes = [
+    '/buyer/marketplace',
+    '/buyer/orders',
+    '/buyer/performance',
+    '/buyer/cart',
+    '/technicalspecs', // Asumiendo que esta es una ruta de comprador
+  ];
+  const supplierRoutes = [
+    '/supplier/home',
+    '/supplier/myproducts',
+    '/supplier/addproduct',
+    '/supplier/myorders',
+  ];
+
+  // Definición de los menuItems para cada rol
+  // (Estos se pasaron a Sidebar.jsx, pero los mantenemos aquí como referencia si es necesario
+  // o para la lógica de redirección, aunque ya se usan en Sidebar directamente)
+  // const buyerMenuItems = [ ... ];
+  // const providerMenuItems = [ ... ];
 
   useEffect(() => {
     let mounted = true;
     setLoadingUserStatus(true);
     setNeedsOnboarding(false);
+
     const checkUserAndFetchProfile = async currentSession => {
       if (!currentSession || !currentSession.user) {
         if (mounted) {
           setUserProfile(null);
           setNeedsOnboarding(false);
           setLoadingUserStatus(false);
-          setCurrentAppRole('buyer'); // Si no hay sesión, por defecto el rol de la app es 'buyer'
+          setCurrentAppRole('buyer'); // Por defecto para no logueados
         }
         return;
       }
@@ -140,7 +158,7 @@ function AppContent({ mensaje }) {
         setNeedsOnboarding(true);
         setUserProfile(null);
         setLoadingUserStatus(false);
-        setCurrentAppRole('buyer'); // Si hay error en perfil, por defecto el rol de la app es 'buyer'
+        setCurrentAppRole('buyer');
         return;
       }
       if (mounted) {
@@ -150,11 +168,10 @@ function AppContent({ mensaje }) {
         ) {
           setNeedsOnboarding(true);
           setUserProfile(null);
-          setCurrentAppRole('buyer'); // Si necesita onboarding, por defecto el rol de la app es 'buyer'
+          setCurrentAppRole('buyer');
         } else {
           setNeedsOnboarding(false);
           setUserProfile(userData);
-
           // Establece el rol inicial de la aplicación basado en userProfile.main_supplier
           setCurrentAppRole(userData.main_supplier ? 'supplier' : 'buyer');
 
@@ -194,7 +211,7 @@ function AppContent({ mensaje }) {
   }, []);
 
   // --- Derived states from userProfile ---
-  const isBuyer = currentAppRole === 'buyer'; // isBuyer ahora se basa en currentAppRole para consistencia con el switch
+  const isBuyer = currentAppRole === 'buyer';
   const logoUrl = userProfile ? userProfile.logo_url : null;
 
   // Función para manejar el cambio de rol desde TopBar
@@ -207,6 +224,35 @@ function AppContent({ mensaje }) {
       navigate('/buyer/marketplace');
     }
   };
+
+  // 🆕 Nuevo useEffect para sincronizar el currentAppRole con la ruta actual
+  useEffect(() => {
+    if (session && !needsOnboarding) {
+      const currentPath = location.pathname;
+      let newRoleBasedOnPath = currentAppRole; // Mantiene el rol actual por defecto
+
+      if (buyerRoutes.some(route => currentPath.startsWith(route))) {
+        newRoleBasedOnPath = 'buyer';
+      } else if (supplierRoutes.some(route => currentPath.startsWith(route))) {
+        newRoleBasedOnPath = 'supplier';
+      }
+
+      // Solo actualiza si el rol basado en la ruta es diferente del rol actual de la app
+      if (newRoleBasedOnPath !== currentAppRole) {
+        console.log(
+          `[App] Sincronizando rol: Ruta ${currentPath} sugiere ${newRoleBasedOnPath}, actualizando de ${currentAppRole}`
+        );
+        setCurrentAppRole(newRoleBasedOnPath);
+      }
+    }
+  }, [
+    location.pathname,
+    session,
+    needsOnboarding,
+    currentAppRole,
+    buyerRoutes,
+    supplierRoutes,
+  ]); // currentAppRole como dependencia es crucial aquí
 
   // Redirect to onboarding if needed
   useEffect(() => {
@@ -322,39 +368,35 @@ function AppContent({ mensaje }) {
         onClose={hideBanner}
       />
 
-      {/* Main content container */}
       <Box
         sx={{
           width: '100%',
           minHeight: '100vh',
-          display: 'flex', // Habilita flexbox para el layout lateral
-          flexDirection: 'column', // Por defecto, se apilarán verticalmente
+          display: 'flex',
+          flexDirection: 'column',
           justifyContent: 'space-between',
-          pt: '64px', // Deja espacio para la TopBar
+          pt: '64px',
           overflowX: 'hidden',
           bgcolor: 'background.default',
         }}
       >
-        {/* Contenedor Flex para la Sidebar y el contenido de las Rutas */}
         <Box
           sx={{
-            display: 'flex', // Habilita flexbox para la Sidebar y el área de contenido
-            flexGrow: 1, // Permite que ocupe el espacio restante verticalmente
-            minHeight: `calc(100vh - 64px - ${showBottomBar ? '56px' : '0px'})`, // Ajusta altura si BottomBar existe
+            display: 'flex',
+            flexGrow: 1,
+            minHeight: `calc(100vh - 64px - ${showBottomBar ? '56px' : '0px'})`,
           }}
         >
-          {/* Renderiza la Sidebar condicionalmente */}
           {isDashboardRoute && (
+            // Pasamos el currentAppRole a la Sidebar para que sepa qué menú mostrar
             <Sidebar role={currentAppRole} width={sidebarWidth} />
           )}
 
-          {/* Contenedor principal de las rutas */}
           <Box
             component="main"
             sx={{
-              flexGrow: 1, // Permite que las rutas ocupen el espacio restante
-              p: isDashboardRoute ? 3 : 0, // Añade padding solo si hay sidebar
-              // Ajusta el margen izquierdo si la sidebar está visible
+              flexGrow: 1,
+              p: isDashboardRoute ? 3 : 0,
               ml: isDashboardRoute ? { xs: 0, md: sidebarWidth } : 0,
               width: isDashboardRoute
                 ? { xs: '100%', md: `calc(100% - ${sidebarWidth})` }
@@ -364,8 +406,6 @@ function AppContent({ mensaje }) {
           >
             <Suspense fallback={<SuspenseLoader />}>
               <Routes>
-                {/* Todas tus rutas van aquí, sin importar si usan sidebar o no.
-                    El layout se maneja con los estilos condicionales del Box. */}
                 <Route
                   path="/"
                   element={<Home scrollTargets={scrollTargets} />}
