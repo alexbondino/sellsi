@@ -1,5 +1,5 @@
 // 📁 features/layout/TopBar.jsx
-import React, { useState, useEffect, useRef } from 'react'; // Importa useRef
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -22,8 +22,8 @@ import ContactModal from '../ui/ContactModal';
 import Login from '../login/Login';
 import Register from '../register/Register';
 
-import ToggleButton from '@mui/material/ToggleButton';
-import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
+// Importa el nuevo componente reutilizable y ahora verdaderamente controlado
+import Switch from '../ui/Switch'; // Ajusta la ruta si es diferente
 
 export default function TopBar({
   session,
@@ -43,31 +43,32 @@ export default function TopBar({
   const [openRegisterModal, setOpenRegisterModal] = useState(false);
   const [openContactModal, setOpenContactModal] = useState(false);
 
-  // Estado interno para el switch de la TopBar.
-  // Se inicializa con la prop `isBuyer`.
+  // El estado `currentRole` se mantiene en TopBar, ya que es quien controla
+  // el `Switch` y lo sincroniza con `isBuyer` del padre (App.jsx).
   const [currentRole, setCurrentRole] = useState(
     isBuyer ? 'buyer' : 'supplier'
   );
 
-  // Usamos un ref para saber si ya hemos inicializado el rol.
-  const isInitialRoleSet = useRef(false);
-
-  // useEffect para establecer el rol del switch UNA VEZ al inicio o al cambiar la sesión.
-  // Es importante que este efecto se ejecute solo cuando el isBuyer de la sesión cambie,
-  // NO cada vez que el usuario interactúe con el switch.
+  // Este useEffect es crucial para la sincronización con la prop `isBuyer`
+  // (que viene de Supabase en App.jsx) al inicio o tras un cambio de sesión.
   useEffect(() => {
-    // Solo si la sesión o el estado `isBuyer` inicial cambia por fuera.
-    // Esto asegura que al cargar la página o al hacer login, el switch se ajuste al rol del usuario.
-    // Una vez que el usuario interactúa con el switch (manejado por handleRoleToggleChange),
-    // el estado `currentRole` de la TopBar toma precedencia hasta un nuevo login/recarga.
-    if (
-      !isInitialRoleSet.current ||
-      (session && currentRole !== (isBuyer ? 'buyer' : 'supplier'))
-    ) {
-      setCurrentRole(isBuyer ? 'buyer' : 'supplier');
-      isInitialRoleSet.current = true; // Marca que ya se configuró el rol inicial
+    // Sincroniza el estado interno del switch con la prop `isBuyer`
+    // Solo si el usuario está logueado y la prop `isBuyer` es diferente del `currentRole` interno.
+    // O si la sesión cambia (ej. al hacer login/logout).
+    // Esto asegura que el switch refleje el rol inicial cargado desde Supabase.
+    if (session) {
+      // Solo si hay una sesión, para evitar cambios en estado de no-logueado.
+      const newRoleFromProps = isBuyer ? 'buyer' : 'supplier';
+      if (currentRole !== newRoleFromProps) {
+        setCurrentRole(newRoleFromProps);
+      }
+    } else {
+      // Si no hay sesión, el switch podría volver a un estado por defecto o simplemente ocultarse
+      // (la lógica de `if (!isLoggedIn)` ya lo oculta/reemplaza).
+      // Aquí, podemos asegurar que el `currentRole` se restablezca si se cierra la sesión.
+      setCurrentRole('buyer'); // Por ejemplo, por defecto a comprador si no hay sesión
     }
-  }, [session, isBuyer]); // Dependencias: la sesión y la prop isBuyer
+  }, [session, isBuyer, currentRole]); // currentRole como dependencia es importante para la condición de no-coincidencia.
 
   const isLoggedIn = !!session;
 
@@ -80,6 +81,8 @@ export default function TopBar({
     await supabase.auth.signOut();
     handleCloseProfileMenu();
     handleCloseMobileMenu();
+    // Al hacer logout, el App.jsx manejará la redirección y el `session` pasará a null.
+    // El useEffect de TopBar entonces reseteará `currentRole` a 'buyer'.
     navigate('/');
   };
 
@@ -94,12 +97,14 @@ export default function TopBar({
     }
   };
 
+  // Este es el manejador de cambios del `Switch`.
+  // Recibe el `newRole` del `Switch` y lo pasa al padre `App.jsx`.
   const handleRoleToggleChange = (event, newRole) => {
+    // Recibe event, newRole de ToggleButtonGroup
     if (newRole !== null) {
-      setCurrentRole(newRole); // Actualiza el estado interno del switch
-      // Notifica al componente padre (App.jsx) sobre el cambio de rol
+      setCurrentRole(newRole); // Actualiza el estado interno de TopBar
       if (onRoleChange) {
-        onRoleChange(newRole);
+        onRoleChange(newRole); // Notifica a App.jsx
       }
     }
   };
@@ -194,45 +199,17 @@ export default function TopBar({
       </MenuItem>,
     ];
   } else {
+    // Si el usuario está logueado
     desktopRightContent = (
       <>
-        {/* Toggle Button Group para Proveedor/Comprador */}
-        <ToggleButtonGroup
-          value={currentRole} // Usa el estado interno `currentRole`
-          exclusive
-          onChange={handleRoleToggleChange}
-          aria-label="Selección de rol"
-          sx={{
-            mr: 2,
-            height: '32px',
-            '& .MuiToggleButton-root': {
-              borderColor: 'white',
-              color: 'white',
-              minWidth: 'unset',
-              padding: '4px 12px',
-              fontSize: '0.8rem',
-              lineHeight: '1.5',
-              height: '32px',
-              '&.Mui-selected': {
-                backgroundColor: theme.palette.primary.main,
-                color: 'white',
-                '&:hover': {
-                  backgroundColor: theme.palette.primary.dark,
-                },
-              },
-              '&:hover': {
-                backgroundColor: 'rgba(255,255,255,0.1)',
-              },
-            },
-          }}
-        >
-          <ToggleButton value="buyer" aria-label="comprador">
-            Comprador
-          </ToggleButton>
-          <ToggleButton value="supplier" aria-label="proveedor">
-            Proveedor
-          </ToggleButton>
-        </ToggleButtonGroup>
+        {/* Usamos el componente Switch */}
+        <Switch
+          value={currentRole} // Le pasamos el estado interno de TopBar como valor
+          onChange={handleRoleToggleChange} // Le pasamos el manejador de cambios
+          // Los estilos base del switch ya están en Switch,
+          // pero puedes agregarle más aquí si necesitas un ajuste específico para el desktop
+          sx={{ mr: 2 }}
+        />
 
         <Tooltip title="Carrito" arrow>
           <IconButton
@@ -274,36 +251,12 @@ export default function TopBar({
         key="roleToggleMobile"
         sx={{ display: 'flex', justifyContent: 'center', py: 1 }}
       >
-        <ToggleButtonGroup
-          value={currentRole} // Usa el estado interno `currentRole`
-          exclusive
-          onChange={handleRoleToggleChange}
-          aria-label="Selección de rol móvil"
-          sx={{
-            width: '100%',
-            '& .MuiToggleButton-root': {
-              flexGrow: 1,
-              borderColor: theme.palette.divider,
-              color: theme.palette.text.primary,
-              padding: '6px 12px',
-              fontSize: '0.85rem',
-              minHeight: '36px',
-              '&.Mui-selected': {
-                backgroundColor: theme.palette.primary.main,
-                color: 'white',
-                '&:hover': {
-                  backgroundColor: theme.palette.primary.dark,
-                },
-              },
-              '&:hover': {
-                backgroundColor: theme.palette.action.hover,
-              },
-            },
-          }}
-        >
-          <ToggleButton value="buyer">Comprador</ToggleButton>
-          <ToggleButton value="supplier">Proveedor</ToggleButton>
-        </ToggleButtonGroup>
+        {/* Usamos el componente Switch en el menú móvil también */}
+        <Switch
+          value={currentRole} // Le pasamos el estado interno de TopBar como valor
+          onChange={handleRoleToggleChange} // Le pasamos el manejador de cambios
+          sx={{ width: '100%', mr: 0 }} // Estilos específicos para el móvil, anula el mr del desktop
+        />
       </MenuItem>,
       <Divider key="dividerMobileRole" />,
       <MenuItem
