@@ -113,7 +113,7 @@ export default function TopBar({
     <ShoppingCartIcon
       {...props}
       sx={{
-        fontSize: '2.24rem',
+        fontSize: '1.5rem',
         color: 'white !important',
         ...sx,
       }}

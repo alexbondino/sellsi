@@ -30,12 +30,22 @@ const providerMenuItems = [
  * Incluye toda la lógica y estilos.
  * @param {object} props - Las props del componente.
  * @param {'buyer' | 'supplier' | null} props.role - El rol actual del usuario ('buyer' o 'supplier').
- * @param {string} [props.width='210px'] - Ancho opcional de la SideBar.
+ * @param {string} [props.width='375px'] - Ancho opcional de la SideBar. (¡Ancho predeterminado a 375px!)
  */
-const SideBar = ({ role, width = '210px' }) => {
+const SideBar = ({ role, width = '375px' }) => {
+  // <--- Ancho predeterminado a 375px
   const location = useLocation();
   const navigate = useNavigate();
   const theme = useTheme();
+
+  // Define el color exacto del fondo de la sidebar
+  const sidebarBackgroundColor = '#2C2C2C'; // Dark grey background
+  // Define un color de hover para los elementos no activos (un blanco transparente sobre el fondo)
+  const hoverBackgroundColor = 'rgba(255, 255, 255, 0.15)'; // White with 15% opacity for hover
+  // Define el color de fondo para el elemento activo (un tono ligeramente más claro o distinto que el fondo general)
+  const activeBackgroundColor = '#4d4d4d'; // A slightly lighter grey for the active item
+  // Define el color de hover para el elemento activo (aún más oscuro)
+  const activeHoverBackgroundColor = '#555555'; // A slightly darker grey for active item on hover
 
   let menuItemsToDisplay = [];
 
@@ -45,13 +55,9 @@ const SideBar = ({ role, width = '210px' }) => {
     menuItemsToDisplay = providerMenuItems;
   } else {
     // Si el rol no está definido o es nulo (ej. no logueado), no se mostrarán ítems de menú.
-    // Esto es consistente con la lógica de App.jsx de no mostrar la SideBar si no hay sesión.
-    // console.warn(`Rol desconocido o nulo: ${role}. La SideBar no mostrará elementos.`); // Puedes descomentar para depurar
   }
 
   // Si no hay elementos para mostrar, no renderizamos la SideBar
-  // La condición de display en el Box de App.jsx ya debería manejar esto,
-  // pero esta es una capa de seguridad para evitar renderizar una SideBar vacía.
   if (!role || menuItemsToDisplay.length === 0) {
     return null;
   }
@@ -59,23 +65,23 @@ const SideBar = ({ role, width = '210px' }) => {
   return (
     <Box
       sx={{
-        position: 'fixed',
+        position: 'fixed', // La barra lateral es fija
         top: '64px', // Comienza justo debajo de la TopBar
         left: 0,
-        width: width,
+        width: width, // <--- El ancho se toma de la prop, o del valor predeterminado si no se pasa.
         height: 'calc(100vh - 64px)', // Se extiende desde top:64px hasta el final de la ventana
-        backgroundColor: '#a3a3a3', // Color de fondo gris
-        color: 'black',
+        backgroundColor: sidebarBackgroundColor,
+        color: '#FFFFFF', // Main text color is WHITE!
         display: { xs: 'none', md: 'flex' }, // Ocultar en móviles, mostrar en desktop
         flexDirection: 'column',
-        zIndex: theme.zIndex.appBar - 1, // Justo debajo de la TopBar (appBar por defecto es 1100)
-        overflowY: 'auto',
-        borderRight: 'none', // Asegúrate de que no haya un borde visible por defecto
+        zIndex: theme.zIndex.appBar - 1,
+        overflowY: 'hidden', // La barra lateral no se scrollea
+        borderRight: 'none',
 
         // Estilos para los ListItemButton generales (incluyendo hover, disabled/activo)
         '& .MuiListItemButton-root': {
-          color: '#000 !important',
-          fontWeight: 'bold !important',
+          color: '#FFFFFF !important',
+          fontWeight: 'normal',
           fontSize: '1.15rem !important',
           borderRadius: '4px !important',
           paddingLeft: '6px !important',
@@ -83,34 +89,35 @@ const SideBar = ({ role, width = '210px' }) => {
           paddingTop: '7px !important',
           paddingBottom: '7px !important',
           minHeight: '36px !important',
-          margin: '2px 8px', // Margen alrededor de cada botón
-          width: 'calc(100% - 16px)', // Ajusta el ancho para el margen
-          opacity: 1, // Asegura que no haya opacidad por defecto en disabled
+          margin: '2px 8px', // Margin around each button
+          width: 'calc(100%)', // Adjust width for margin
+          opacity: 1,
           transition: 'all 0.2s ease',
 
           '&:hover': {
-            backgroundColor: 'rgba(0, 0, 0, 0.08)', // Color para hover (cuando no está activo)
-            color: '#000 !important',
+            backgroundColor: hoverBackgroundColor,
+            color: '#FFFFFF !important',
             transform: 'none',
           },
           // Estilos para el botón cuando está activo/deshabilitado (misma ruta)
           '&.Mui-disabled': {
-            backgroundColor: 'rgba(0, 0, 0, 0.12)',
-            color: '#000 !important',
-            opacity: 1, // Asegura que el texto sea completamente visible
-            cursor: 'default', // Cambia el cursor para indicar que no es clickeable
+            backgroundColor: activeBackgroundColor,
+            color: '#FFFFFF !important',
+            fontWeight: 'normal',
+            opacity: 1,
+            cursor: 'default',
           },
           // Combinación de activo y hover (mantiene el color activo)
           '&.Mui-disabled:hover': {
-            backgroundColor: 'rgba(0, 0, 0, 0.12)',
+            backgroundColor: activeHoverBackgroundColor,
           },
         },
         // Estilos para el texto dentro del ListItemText
         '& .MuiTypography-root': {
-          color: '#000 !important',
-          fontWeight: 'bold !important',
-          fontSize: '1.15rem !important',
-          letterSpacing: '0px', // Asegura no espaciado extra
+          color: '#FFFFFF !important',
+          fontWeight: 'normal',
+          fontSize: '1rem !important',
+          letterSpacing: '0px',
         },
       }}
     >
@@ -124,18 +131,14 @@ const SideBar = ({ role, width = '210px' }) => {
               disablePadding
               key={item.text}
               sx={{
-                // Ajusta el margen superior del primer item para dejar espacio visible desde la topbar
-                // Si la topbar es 64px y quieres un espacio adicional, usa un valor mayor.
-                // 80px es 64px + 16px de espacio, o puedes ajustarlo para que el primer ítem no esté tan abajo.
                 mt: isFirstItem ? '80px' : 0,
-                display: 'block', // Asegura que el ListItem ocupe todo el ancho disponible
+                display: 'block',
               }}
             >
               <ListItemButton
                 onClick={() => {
                   if (!isActive) {
                     navigate(item.path);
-                    // Scroll al inicio de la página después de navegar
                     setTimeout(() => {
                       window.scrollTo({ top: 0, behavior: 'smooth' });
                     }, 100);
