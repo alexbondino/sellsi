@@ -1,6 +1,6 @@
 import React from 'react';
 import { Box, Typography, Paper, Button } from '@mui/material';
-import { CustomButton } from '../../landing_page/hooks';
+import { PrimaryButton } from '../../landing_page/hooks';
 
 const Step2AccountType = ({ selectedType, onTypeSelect, onNext, onBack }) => {
   return (
@@ -553,7 +553,7 @@ const Step2AccountType = ({ selectedType, onTypeSelect, onNext, onBack }) => {
           de tu perfil.
         </Typography>
         <Box sx={{ width: '100%', maxWidth: 520 }}>
-          <CustomButton
+          <PrimaryButton
             type="submit"
             disabled={!selectedType}
             onClick={onNext}
@@ -561,15 +561,15 @@ const Step2AccountType = ({ selectedType, onTypeSelect, onNext, onBack }) => {
             sx={{ mb: 0.5, height: { md: '32px', lg: '44px' } }}
           >
             Continuar
-          </CustomButton>
-          <CustomButton
+          </PrimaryButton>
+          <PrimaryButton
             variant="text"
             onClick={onBack}
             fullWidth
             sx={{ mt: 0.5, height: { md: '32px', lg: '44px' } }}
           >
             Volver atrás
-          </CustomButton>
+          </PrimaryButton>
         </Box>
       </Box>
     </Box>

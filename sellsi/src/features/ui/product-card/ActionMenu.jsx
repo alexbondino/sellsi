@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState } from 'react';
 import {
   IconButton,
   Menu,
@@ -6,8 +6,14 @@ import {
   ListItemIcon,
   ListItemText,
   Tooltip,
-} from '@mui/material'
-import { MoreVert as MoreVertIcon } from '@mui/icons-material'
+} from '@mui/material';
+import { MoreVert as MoreVertIcon } from '@mui/icons-material';
+
+/*
+  Tres puntos de la card de productos. Pasar al componente Card de producto o productCard. 
+  Product Card es distintos a supplier product card. Estandarizar.
+
+*/
 
 /**
  * ActionMenu - Componente UI reutilizable para menús de acciones
@@ -26,26 +32,26 @@ const ActionMenu = ({
   tooltip = 'Más opciones',
   icon = <MoreVertIcon />,
 }) => {
-  const [anchorEl, setAnchorEl] = useState(null)
-  const open = Boolean(anchorEl)
+  const [anchorEl, setAnchorEl] = useState(null);
+  const open = Boolean(anchorEl);
 
-  const handleMenuOpen = (event) => {
-    event.stopPropagation()
-    setAnchorEl(event.currentTarget)
-  }
+  const handleMenuOpen = event => {
+    event.stopPropagation();
+    setAnchorEl(event.currentTarget);
+  };
 
   const handleMenuClose = () => {
-    setAnchorEl(null)
-  }
+    setAnchorEl(null);
+  };
 
-  const handleActionClick = (action) => {
-    handleMenuClose()
+  const handleActionClick = action => {
+    handleMenuClose();
     if (action.onClick && !action.disabled) {
-      action.onClick()
+      action.onClick();
     }
-  }
+  };
 
-  if (!actions.length) return null
+  if (!actions.length) return null;
 
   return (
     <>
@@ -72,7 +78,7 @@ const ActionMenu = ({
         anchorEl={anchorEl}
         open={open}
         onClose={handleMenuClose}
-        onClick={(e) => e.stopPropagation()}
+        onClick={e => e.stopPropagation()}
         transformOrigin={{ horizontal: 'right', vertical: 'top' }}
         anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
         PaperProps={{
@@ -106,7 +112,7 @@ const ActionMenu = ({
         ))}
       </Menu>
     </>
-  )
-}
+  );
+};
 
-export default ActionMenu
+export default ActionMenu;

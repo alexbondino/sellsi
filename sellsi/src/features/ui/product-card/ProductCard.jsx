@@ -1,0 +1,187 @@
+// src/components/ProductCard/ProductCard.jsx
+import React, { useState, useCallback, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Card, Box, alpha } from '@mui/material';
+
+// Common Utility Imports (adjust paths relative to this file)
+import { getProductImageUrl } from '../../../utils/getProductImageUrl'; // Adjust path
+import { LazyImage } from '../../../components/shared'; // Adjust path
+
+// Sub-components (updated names)
+import ProductCardBuyerContext from './ProductCardBuyerContext'; // Adjust path
+import ProductCardSupplierContext from './ProductCardSupplierContext'; // Adjust path
+
+/**
+ * ProductCard - Componente de tarjeta de producto universal
+ * Renders different views based on the 'type' prop ('supplier' or 'buyer').
+ *
+ * @param {object} props - Component props
+ * @param {object} props.product - The product data object.
+ * @param {'supplier' | 'buyer'} props.type - The type of card to render ('supplier' or 'buyer').
+ * @param {function} [props.onEdit] - Callback for edit action (supplier type).
+ * @param {function} [props.onDelete] - Callback for delete action (supplier type).
+ * @param {function} [props.onViewStats] - Callback for view stats action (supplier type).
+ * @param {boolean} [props.isDeleting=false] - Indicates if the product is being deleted (supplier type).
+ * @param {boolean} [props.isUpdating=false] - Indicates if the product is being updated (supplier type).
+ * @param {function} [props.onAddToCart] - Callback for add to cart action (buyer type).
+ */
+const ProductCard = React.memo(
+  ({
+    product,
+    type,
+    onEdit,
+    onDelete,
+    onViewStats,
+    isDeleting = false,
+    isUpdating = false,
+    onAddToCart,
+  }) => {
+    const navigate = useNavigate();
+
+    // --- Common Product Data Extraction ---
+    if (!product) {
+      // console.warn('ProductCard received no product data. Returning null.'); // Keep this for debugging
+      return null;
+    }
+
+    const { id, nombre, imagen } = product;
+
+    // --- Memoized common elements ---
+    const resolvedImageSrc = useMemo(() => {
+      let img = product?.imagen || product?.image;
+      if (!img) return '/placeholder-product.jpg';
+      if (typeof img === 'string') {
+        if (img.startsWith('blob:')) return '/placeholder-product.jpg';
+        return getProductImageUrl(img, product);
+      }
+      if (typeof img === 'object' && img !== null) {
+        if (img.url && typeof img.url === 'string') {
+          if (img.url.startsWith('blob:')) return '/placeholder-product.jpg';
+          return getProductImageUrl(img.url, product);
+        }
+        if (img.path && typeof img.path === 'string') {
+          return getProductImageUrl(img.path, product);
+        }
+      }
+      return '/placeholder-product.jpg';
+    }, [product]);
+
+    const memoizedImage = useMemo(
+      () => (
+        <LazyImage
+          src={resolvedImageSrc}
+          alt={nombre}
+          aspectRatio={type === 'supplier' ? '140 / 140' : '160 / 160'}
+          rootMargin="150px"
+          objectFit="contain"
+          sx={{
+            maxWidth: '100%',
+            bgcolor: '#fafafa',
+            p: type === 'supplier' ? 1 : 1.5,
+            display: 'block',
+            mx: 'auto',
+          }}
+        />
+      ),
+      [resolvedImageSrc, nombre, type]
+    );
+
+    // --- Common Card Styles (can be adjusted per type if needed) ---
+    const cardStyles = useMemo(
+      () => ({
+        height: type === 'supplier' ? 420 : 450, // Dynamic height based on type
+        minWidth: { xs: 100, sm: 150, md: 180, lg: 280, xl: 300 },
+        display: 'flex',
+        flexDirection: 'column',
+        position: 'relative',
+        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+        border: '1px solid',
+        borderColor: 'divider',
+        borderRadius: 2,
+        overflow: 'hidden',
+        opacity: isDeleting ? 0.5 : 1,
+        transform: isDeleting ? 'scale(0.95)' : 'scale(1)',
+        '&:hover': {
+          transform: isDeleting
+            ? 'scale(0.95)'
+            : type === 'supplier'
+            ? 'translateY(-4px)'
+            : 'translateY(-4px)',
+          boxShadow: theme =>
+            `0 8px 25px ${alpha(
+              type === 'supplier'
+                ? theme.palette.primary.main
+                : theme.palette.primary.main,
+              0.15
+            )}`,
+          borderColor: type === 'supplier' ? 'primary.main' : 'primary.main',
+        },
+      }),
+      [type, isDeleting]
+    );
+
+    // Function for buyer card navigation
+    const handleProductClick = useCallback(
+      e => {
+        // This logic only applies if the type is 'buyer' and
+        // the click didn't originate from an interactive element within the card.
+        if (type === 'buyer') {
+          const target = e.target;
+          const clickedElement =
+            target.closest('button') ||
+            target.closest('.MuiIconButton-root') ||
+            target.closest('.MuiButton-root') ||
+            target.closest('[data-no-card-click]') ||
+            target.hasAttribute('data-no-card-click');
+
+          if (clickedElement) {
+            return;
+          }
+
+          const currentPath = window.location.pathname;
+          let fromPath = '/marketplace';
+
+          if (currentPath.includes('/buyer/')) {
+            fromPath = '/buyer/marketplace';
+          }
+          const productUrl = generateProductUrl(product);
+          navigate(productUrl, {
+            state: { from: fromPath },
+          });
+        }
+      },
+      [navigate, product, type] // Dependency on type for conditional logic
+    );
+
+    return (
+      <Card
+        elevation={type === 'buyer' ? 2 : 0} // Supplier might not need elevation by default
+        onClick={handleProductClick} // Only active for buyer type, handled internally
+        sx={cardStyles}
+      >
+        {memoizedImage}
+        {type === 'supplier' && (
+          <ProductCardSupplierContext
+            product={product}
+            onEdit={onEdit}
+            onDelete={onDelete}
+            onViewStats={onViewStats}
+            isDeleting={isDeleting}
+            isUpdating={isUpdating}
+          />
+        )}
+        {type === 'buyer' && (
+          <ProductCardBuyerContext
+            product={product}
+            onAddToCart={onAddToCart}
+            handleProductClick={handleProductClick} // Pass down if buyer context needs to know about this
+          />
+        )}
+      </Card>
+    );
+  }
+);
+
+ProductCard.displayName = 'ProductCard';
+
+export default ProductCard;

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
+/* Home page, contactanos */
 import {
   Dialog,
   DialogContent,
@@ -21,7 +22,7 @@ import {
   Phone as PhoneIcon,
   Send as SendIcon,
 } from '@mui/icons-material';
-import { useBanner } from './BannerContext';
+import { useBanner } from './banner/BannerContext';
 
 const ContactModal = ({ open, onClose }) => {
   const theme = useTheme();

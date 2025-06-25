@@ -1,5 +1,5 @@
-import React from 'react'
-import { Box, Typography, Paper, CircularProgress } from '@mui/material'
+import React from 'react';
+import { Box, Typography, Paper, CircularProgress } from '@mui/material';
 
 /**
  * Componente reutilizable de overlay de carga para Sellsi
@@ -8,6 +8,7 @@ import { Box, Typography, Paper, CircularProgress } from '@mui/material'
  * - height: string|number (opcional, default: '100%')
  * - paperProps: object (opcional, para customizar el Paper)
  */
+/* Se usa cuando se carga una página completa, no un componente */
 const LoadingOverlay = ({
   message = 'Cargando...',
   height = '100%',
@@ -41,6 +42,6 @@ const LoadingOverlay = ({
       </Typography>
     </Box>
   </Paper>
-)
+);
 
-export default LoadingOverlay
+export default LoadingOverlay;

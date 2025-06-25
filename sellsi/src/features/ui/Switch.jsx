@@ -4,6 +4,8 @@ import { useTheme } from '@mui/material';
 import ToggleButton from '@mui/material/ToggleButton';
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 
+/* Pasar argumentos como proveedor y comprador en vez de hardcodearlos */
+
 /**
  * Componente de switch de rol reutilizable (Comprador/Proveedor).
  * Este es un componente "controlado", su valor y manejo de cambios

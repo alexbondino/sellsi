@@ -44,7 +44,7 @@ import { UploadService } from '../../../services/uploadService';
 // Components
 import SideBarProvider from '../../layout/SideBar';
 import { ImageUploader, FileUploader } from '../../ui';
-import TramosSection from '../components/TramosSection'; // Importar el nuevo componente
+import PriceTiers from '../../ui/PriceTiers'; // Importar el nuevo componente
 
 // Hooks y stores
 import { useSupplierProducts } from '../hooks/useSupplierProducts';
@@ -1050,7 +1050,7 @@ const AddProduct = () => {
                         mb: 3,
                       }}
                     >
-                      <TramosSection
+                      <PriceTiers
                         tramos={formData.tramos}
                         onTramoChange={handleTramoChange}
                         onAddTramo={addTramo}

@@ -1,5 +1,5 @@
-import React, { useEffect, memo } from 'react'
-import { useLocation } from 'react-router-dom'
+import React, { useEffect, memo } from 'react';
+import { useLocation } from 'react-router-dom';
 import {
   Dialog,
   DialogContent,
@@ -10,18 +10,18 @@ import {
   InputAdornment,
   IconButton,
   Paper,
-} from '@mui/material'
-import { Visibility, VisibilityOff } from '@mui/icons-material'
+} from '@mui/material';
+import { Visibility, VisibilityOff } from '@mui/icons-material';
 
-import { CustomButton, useLoginForm } from '../landing_page/hooks'
-import Recuperar from '../account_recovery/Recover'
-import Register from '../register/Register'
-import { supabase } from '../../services/supabase'
+import { PrimaryButton, useLoginForm } from '../landing_page/hooks';
+import Recuperar from '../account_recovery/Recover';
+import Register from '../register/Register';
+import { supabase } from '../../services/supabase';
 
 // ✅ CONSTANTS
 const CONSTANTS = {
   FORM_WIDTH: 400,
-}
+};
 
 // ✅ COMMON STYLES
 const commonStyles = {
@@ -34,7 +34,7 @@ const commonStyles = {
       textDecoration: 'underline',
     },
   },
-}
+};
 
 // ✅ LOGO COMPONENT
 const Logo = memo(() => (
@@ -56,7 +56,7 @@ const Logo = memo(() => (
       Conecta. Vende. Crece.
     </Typography>
   </Box>
-))
+));
 
 // ✅ LOGIN FORM COMPONENT
 const LoginForm = memo(({ state, dispatch, onSubmit }) => (
@@ -80,7 +80,7 @@ const LoginForm = memo(({ state, dispatch, onSubmit }) => (
           label="Correo"
           placeholder="Ingrese su correo electrónico"
           value={state.correo}
-          onChange={(e) =>
+          onChange={e =>
             dispatch({ type: 'SET_CORREO', payload: e.target.value })
           }
           inputProps={{ lang: 'es' }}
@@ -96,7 +96,7 @@ const LoginForm = memo(({ state, dispatch, onSubmit }) => (
           label="Contraseña"
           placeholder="Ingrese su contraseña"
           value={state.contrasena}
-          onChange={(e) =>
+          onChange={e =>
             dispatch({ type: 'SET_CONTRASENA', payload: e.target.value })
           }
           inputProps={{ lang: 'es' }}
@@ -120,7 +120,7 @@ const LoginForm = memo(({ state, dispatch, onSubmit }) => (
           }}
         />
         <Box display="flex" justifyContent="center" mt={1}>
-          <CustomButton
+          <PrimaryButton
             type="submit"
             sx={{
               width: '40%',
@@ -131,12 +131,12 @@ const LoginForm = memo(({ state, dispatch, onSubmit }) => (
             }}
           >
             Aceptar
-          </CustomButton>
+          </PrimaryButton>
         </Box>
       </Box>
     </form>
   </Paper>
-))
+));
 
 // ✅ FOOTER LINKS COMPONENT
 const FooterLinks = memo(({ dispatch, onClose, onOpenRegister }) => (
@@ -150,8 +150,8 @@ const FooterLinks = memo(({ dispatch, onClose, onOpenRegister }) => (
         type="button"
         sx={commonStyles.link}
         onClick={() => {
-          dispatch({ type: 'RESET_FORM' })
-          dispatch({ type: 'OPEN_RECUPERAR' })
+          dispatch({ type: 'RESET_FORM' });
+          dispatch({ type: 'OPEN_RECUPERAR' });
         }}
       >
         Recuperar Contraseña
@@ -163,41 +163,41 @@ const FooterLinks = memo(({ dispatch, onClose, onOpenRegister }) => (
         type="button"
         sx={commonStyles.link}
         onClick={() => {
-          onClose()
-          onOpenRegister()
+          onClose();
+          onOpenRegister();
         }}
       >
         Regístrate
       </Link>
     </Typography>
   </Box>
-))
+));
 
 // ✅ MAIN COMPONENT
 export default function Login({ open, onClose, onOpenRegister }) {
   const { state, dispatch, handleLogin, resetForm, reenviarCorreo } =
-    useLoginForm()
-  const location = useLocation()
+    useLoginForm();
+  const location = useLocation();
 
   useEffect(() => {
     if (!open) {
-      resetForm()
+      resetForm();
     }
-  }, [open])
+  }, [open]);
 
   useEffect(() => {
     const handleCloseAllModals = () => {
       if (open) {
-        onClose()
+        onClose();
       }
-    }
+    };
 
-    window.addEventListener('closeAllModals', handleCloseAllModals)
+    window.addEventListener('closeAllModals', handleCloseAllModals);
 
     return () => {
-      window.removeEventListener('closeAllModals', handleCloseAllModals)
-    }
-  }, [open, onClose])
+      window.removeEventListener('closeAllModals', handleCloseAllModals);
+    };
+  }, [open, onClose]);
 
   // ✅ CERRAR al cambiar de ruta
   // useEffect(() => {
@@ -205,25 +205,25 @@ export default function Login({ open, onClose, onOpenRegister }) {
   //     onClose()
   //   }
   // }, [location.pathname, open, onClose])
-  const handleSubmit = (e) => {
-    handleLogin(e, onClose)
-  }
+  const handleSubmit = e => {
+    handleLogin(e, onClose);
+  };
 
   const handleRecuperarClose = () => {
     // Al cerrar el modal de recuperar, también cerramos el modal principal
-    dispatch({ type: 'CLOSE_RECUPERAR' })
-    onClose() // ✅ CERRAR COMPLETAMENTE EL MODAL PRINCIPAL
-  }
+    dispatch({ type: 'CLOSE_RECUPERAR' });
+    onClose(); // ✅ CERRAR COMPLETAMENTE EL MODAL PRINCIPAL
+  };
 
   const handleVolverLogin = () => {
     // ✅ AL VOLVER DESDE STEP4SUCCESS, CERRAR RECUPERAR Y ABRIR LOGIN
-    dispatch({ type: 'CLOSE_RECUPERAR' })
+    dispatch({ type: 'CLOSE_RECUPERAR' });
     // No cerrar el modal principal, mantenerlo abierto para mostrar el login
-  }
+  };
 
   const handleRegistroClose = () => {
-    dispatch({ type: 'CLOSE_REGISTRO' })
-  }
+    dispatch({ type: 'CLOSE_REGISTRO' });
+  };
 
   return (
     <>
@@ -263,12 +263,12 @@ export default function Login({ open, onClose, onOpenRegister }) {
                 Hemos reenviado el correo de verificación. Revisa tu bandeja de
                 entrada.
               </Typography>
-              <CustomButton
+              <PrimaryButton
                 variant="outlined"
                 onClick={() => dispatch({ type: 'VOLVER_A_LOGIN' })}
               >
                 Volver al inicio de sesión
-              </CustomButton>
+              </PrimaryButton>
             </Box>
           ) : (
             <Box
@@ -292,7 +292,6 @@ export default function Login({ open, onClose, onOpenRegister }) {
           )}
         </DialogContent>
       </Dialog>
-
       {/* ✅ DIALOG RECUPERAR */}
       <Dialog
         open={state.openRecuperar}
@@ -313,7 +312,8 @@ export default function Login({ open, onClose, onOpenRegister }) {
           onClose={handleRecuperarClose}
           onVolverLogin={handleVolverLogin}
         />
-      </Dialog>      {/* ✅ DIALOG REGISTRO - LAZY LOADING */}
+      </Dialog>{' '}
+      {/* ✅ DIALOG REGISTRO - LAZY LOADING */}
       {state.openRegistro && (
         <Dialog
           open={state.openRegistro}
@@ -321,7 +321,8 @@ export default function Login({ open, onClose, onOpenRegister }) {
           maxWidth="md"
           fullWidth
           disableScrollLock={true}
-          disableRestoreFocus={true}          PaperProps={{
+          disableRestoreFocus={true}
+          PaperProps={{
             sx: {
               position: 'fixed',
             },
@@ -331,5 +332,5 @@ export default function Login({ open, onClose, onOpenRegister }) {
         </Dialog>
       )}
     </>
-  )
+  );
 }

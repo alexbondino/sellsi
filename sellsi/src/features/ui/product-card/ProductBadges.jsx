@@ -1,5 +1,5 @@
-import React from 'react'
-import { Box, Chip } from '@mui/material'
+import React from 'react';
+import { Box, Chip } from '@mui/material';
 
 /**
  * ProductBadges - Componente UI reutilizable para mostrar badges de productos
@@ -11,6 +11,8 @@ import { Box, Chip } from '@mui/material'
  * @param {string} direction - Dirección del stack ('column', 'row')
  * @param {number} spacing - Espaciado entre badges
  */
+
+/* Indicadores de stock, incluir dentro del componente principal "ProductCard" */
 const ProductBadges = ({
   badges = [],
   position = 'top-left',
@@ -19,9 +21,9 @@ const ProductBadges = ({
   spacing = 0.5,
 }) => {
   // Filtrar badges que cumplan su condición
-  const visibleBadges = badges.filter((badge) => badge.condition !== false)
+  const visibleBadges = badges.filter(badge => badge.condition !== false);
 
-  if (!visibleBadges.length) return null
+  if (!visibleBadges.length) return null;
 
   // Determinar posición
   const getPositionStyles = () => {
@@ -31,21 +33,21 @@ const ProductBadges = ({
       display: 'flex',
       flexDirection: direction,
       gap: spacing,
-    }
+    };
 
     switch (position) {
       case 'top-left':
-        return { ...baseStyles, top: 8, left: 8 }
+        return { ...baseStyles, top: 8, left: 8 };
       case 'top-right':
-        return { ...baseStyles, top: 8, right: 8 }
+        return { ...baseStyles, top: 8, right: 8 };
       case 'bottom-left':
-        return { ...baseStyles, bottom: 8, left: 8 }
+        return { ...baseStyles, bottom: 8, left: 8 };
       case 'bottom-right':
-        return { ...baseStyles, bottom: 8, right: 8 }
+        return { ...baseStyles, bottom: 8, right: 8 };
       default:
-        return { ...baseStyles, top: 8, left: 8 }
+        return { ...baseStyles, top: 8, left: 8 };
     }
-  }
+  };
 
   return (
     <Box sx={{ ...getPositionStyles(), ...sx }}>
@@ -65,26 +67,26 @@ const ProductBadges = ({
         />
       ))}
     </Box>
-  )
-}
+  );
+};
 
 // Helper para crear badges comunes
-export const createProductBadges = (product) => {
-  const badges = []
+export const createProductBadges = product => {
+  const badges = [];
 
   // Badge de producto nuevo
-  const isNew = (updatedAt) => {
-    if (!updatedAt) return false
-    const daysDiff = (new Date() - new Date(updatedAt)) / (1000 * 60 * 60 * 24)
-    return daysDiff < 7
-  }
+  const isNew = updatedAt => {
+    if (!updatedAt) return false;
+    const daysDiff = (new Date() - new Date(updatedAt)) / (1000 * 60 * 60 * 24);
+    return daysDiff < 7;
+  };
 
   if (isNew(product.updatedAt)) {
     badges.push({
       label: 'Nuevo',
       color: 'primary',
       condition: true,
-    })
+    });
   }
 
   // Badge de descuento
@@ -93,7 +95,7 @@ export const createProductBadges = (product) => {
       label: `-${product.descuento}%`,
       color: 'error',
       condition: true,
-    })
+    });
   }
 
   // Badge de stock bajo
@@ -102,7 +104,7 @@ export const createProductBadges = (product) => {
       label: 'Stock bajo',
       color: 'warning',
       condition: true,
-    })
+    });
   }
 
   // Badge de agotado
@@ -111,7 +113,7 @@ export const createProductBadges = (product) => {
       label: 'Agotado',
       color: 'error',
       condition: true,
-    })
+    });
   }
 
   // Badge de destacado
@@ -120,10 +122,10 @@ export const createProductBadges = (product) => {
       label: 'Destacado',
       color: 'secondary',
       condition: true,
-    })
+    });
   }
 
-  return badges
-}
+  return badges;
+};
 
-export default ProductBadges
+export default ProductBadges;

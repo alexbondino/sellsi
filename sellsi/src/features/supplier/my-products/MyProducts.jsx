@@ -16,7 +16,6 @@ import {
   Stack,
   InputAdornment,
   Alert,
-  Skeleton,
   Fab,
   useTheme,
   useMediaQuery,
@@ -25,7 +24,6 @@ import {
 import {
   Add as AddIcon,
   Search as SearchIcon,
-  FilterList as FilterListIcon,
   Clear as ClearIcon,
   Inventory as InventoryIcon,
   AttachMoney as AttachMoneyIcon,
@@ -36,8 +34,8 @@ import { toast } from 'react-hot-toast';
 
 // Components
 import SideBarProvider from '../../layout/SideBar';
-import SupplierProductCard from '../components/SupplierProductCard';
-import ConfirmationModal, { MODAL_TYPES } from '../../ui/ConfirmationModal';
+import ProductCard from '../../ui/product-card/ProductCard';
+import Modal, { MODAL_TYPES } from '../../ui/Modal'; // <--- Importación del nuevo componente Modal
 
 // Hooks y stores
 import { useSupplierProducts } from '../hooks/useSupplierProducts';
@@ -80,8 +78,10 @@ const MyProducts = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const navigate = useNavigate();
-  // Obtener el user_id real del usuario autenticado
-  const supplierId = localStorage.getItem('user_id'); // Store state usando el nuevo hook modularizado
+
+  // Obtener el user_id real del usuario autenticado (asumiendo que está en localStorage)
+  const supplierId = localStorage.getItem('user_id');
+
   const {
     uiProducts,
     stats,
@@ -92,7 +92,6 @@ const MyProducts = () => {
     loading,
     error,
     operationStates,
-    activeFiltersCount,
     loadProducts,
     setSearchTerm,
     setCategoryFilter,
@@ -110,23 +109,23 @@ const MyProducts = () => {
     loadingTriggerRef,
     totalCount,
     displayedCount,
-    loadMore,
     scrollToTop,
     progress,
   } = useLazyProducts(uiProducts, 12);
 
-  const { triggerAnimation, shouldAnimate } = useProductAnimations(
-    displayedProducts.length
-  );
-  // Local state
+  const { triggerAnimation } = useProductAnimations(displayedProducts.length);
+
+  // Estado local para el modal de eliminación
   const [deleteModal, setDeleteModal] = useState({
-    open: false,
+    isOpen: false, // <--- Cambiado de 'open' a 'isOpen'
     product: null,
     loading: false,
   });
+
+  // Estado para el botón de scroll to top
   const [showScrollTop, setShowScrollTop] = useState(false);
 
-  // Handle scroll for scroll-to-top button
+  // Manejar el scroll para el botón de ir arriba
   useEffect(() => {
     const handleScroll = () => {
       setShowScrollTop(window.pageYOffset > 400);
@@ -134,36 +133,39 @@ const MyProducts = () => {
 
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
-  }, []); // Cargar productos al montar el componente
+  }, []);
+
+  // Cargar productos al montar el componente o cuando cambia el supplierId
   useEffect(() => {
     if (supplierId) {
       loadProducts(supplierId);
     }
   }, [supplierId, loadProducts]);
 
-  // Trigger animations when new products are displayed
+  // Disparar animaciones cuando se muestran nuevos productos
   useEffect(() => {
     if (displayedProducts.length > 0 && !loading) {
       triggerAnimation(0);
     }
   }, [displayedProducts.length, loading, triggerAnimation]);
 
-  // Handlers
+  // --- Handlers ---
   const handleAddProduct = () => {
     navigate('/supplier/addproduct');
   };
+
   const handleEditProduct = product => {
-    // Navegar a la página de edición con el ID del producto
     navigate(`/supplier/addproduct?edit=${product.id}`);
   };
 
   const handleDeleteProduct = product => {
     setDeleteModal({
-      open: true,
+      isOpen: true, // <--- Cambiado de 'open' a 'isOpen'
       product,
       loading: false,
     });
   };
+
   const confirmDelete = async () => {
     if (!deleteModal.product) return;
 
@@ -172,7 +174,7 @@ const MyProducts = () => {
     try {
       await deleteProduct(deleteModal.product.id);
       toast.success(`${deleteModal.product.nombre} eliminado correctamente`);
-      setDeleteModal({ open: false, product: null, loading: false });
+      setDeleteModal({ isOpen: false, product: null, loading: false }); // <--- Cambiado de 'open' a 'isOpen'
     } catch (error) {
       toast.error(error.message || 'Error al eliminar el producto');
       setDeleteModal(prev => ({ ...prev, loading: false }));
@@ -180,18 +182,18 @@ const MyProducts = () => {
   };
 
   const handleViewStats = product => {
-    // TODO: Implementar vista de estadísticas detalladas
     toast.success(`Próximamente: Estadísticas de ${product.nombre}`);
   };
 
   const handleSortChange = event => {
     const newSortBy = event.target.value;
     setSorting(newSortBy, sortOrder);
-    scrollToTop(); // Smooth scroll to top when sorting changes
+    scrollToTop(); // Desplazamiento suave hacia arriba cuando cambia la ordenación
   };
+
   const handleClearFilters = () => {
     clearFilters();
-    scrollToTop(); // Smooth scroll to top when clearing filters
+    scrollToTop(); // Desplazamiento suave hacia arriba al limpiar filtros
     toast.success('Filtros limpiados');
   };
   const handleProductCardClick = (product) => {
@@ -255,7 +257,8 @@ const MyProducts = () => {
               >
                 Agregar Producto
               </Button>
-            </Box>{' '}
+            </Box>
+
             {/* Estadísticas del inventario */}
             <Box sx={{ mb: 3 }}>
               <Paper
@@ -278,9 +281,8 @@ const MyProducts = () => {
                 </Box>
 
                 <Box sx={{ p: 0 }}>
-                  {' '}
                   <Grid container columns={12}>
-                    <Grid size={{ xs: 12, sm: 4 }}>
+                    <Grid item xs={12} sm={4}>
                       <Box
                         sx={{
                           p: 2,
@@ -307,15 +309,15 @@ const MyProducts = () => {
                               sx={{ fontWeight: 600, lineHeight: 1.2 }}
                             >
                               {stats.total}
-                            </Typography>{' '}
+                            </Typography>
                             <Typography variant="body2" color="text.secondary">
                               Total de productos
                             </Typography>
                           </Box>
                         </Box>
                       </Box>
-                    </Grid>{' '}
-                    <Grid size={{ xs: 12, sm: 4 }}>
+                    </Grid>
+                    <Grid item xs={12} sm={4}>
                       <Box
                         sx={{
                           p: 2,
@@ -349,15 +351,15 @@ const MyProducts = () => {
                               sx={{ fontWeight: 600, lineHeight: 1.2 }}
                             >
                               {stats.inStock}
-                            </Typography>{' '}
+                            </Typography>
                             <Typography variant="body2" color="text.secondary">
                               Productos en stock
                             </Typography>
                           </Box>
                         </Box>
                       </Box>
-                    </Grid>{' '}
-                    <Grid size={{ xs: 12, sm: 4 }}>
+                    </Grid>
+                    <Grid item xs={12} sm={4}>
                       <Box sx={{ p: 2 }}>
                         <Box
                           sx={{
@@ -389,19 +391,19 @@ const MyProducts = () => {
               </Paper>
             </Box>
           </Box>
+
           {/* Error Alert */}
           {error && (
             <Alert severity="error" onClose={clearError} sx={{ mb: 3 }}>
               {error}
             </Alert>
           )}
+
           {/* Filtros y búsqueda */}
           <Paper sx={{ p: 3, mb: 3 }}>
-            {' '}
             <Grid container columns={12} spacing={2} alignItems="center">
-              {' '}
               {/* Búsqueda */}
-              <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+              <Grid item xs={12} sm={6} md={4}>
                 <TextField
                   fullWidth
                   placeholder="Buscar productos..."
@@ -415,12 +417,13 @@ const MyProducts = () => {
                     ),
                   }}
                   sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
-                />{' '}
-              </Grid>{' '}
-              {/* Filtro por categoría */}{' '}
-              <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                />
+              </Grid>
+
+              {/* Filtro por categoría */}
+              <Grid item xs={12} sm={6} md={3}>
                 <FormControl fullWidth>
-                  <InputLabel>Categoría</InputLabel>{' '}
+                  <InputLabel>Categoría</InputLabel>
                   <Select
                     value={categoryFilter}
                     onChange={e => setCategoryFilter(e.target.value)}
@@ -443,11 +446,12 @@ const MyProducts = () => {
                     ))}
                   </Select>
                 </FormControl>
-              </Grid>{' '}
+              </Grid>
+
               {/* Ordenamiento */}
-              <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+              <Grid item xs={12} sm={6} md={3}>
                 <FormControl fullWidth>
-                  <InputLabel>Ordenar por</InputLabel>{' '}
+                  <InputLabel>Ordenar por</InputLabel>
                   <Select
                     value={sortBy}
                     onChange={handleSortChange}
@@ -469,10 +473,11 @@ const MyProducts = () => {
                       </MenuItem>
                     ))}
                   </Select>
-                </FormControl>{' '}
-              </Grid>{' '}
+                </FormControl>
+              </Grid>
+
               {/* Acciones */}
-              <Grid size={{ xs: 12, sm: 6, md: 2 }}>
+              <Grid item xs={12} sm={6} md={2}>
                 <Stack direction="row" spacing={1}>
                   <Button
                     variant="outlined"
@@ -484,6 +489,7 @@ const MyProducts = () => {
                 </Stack>
               </Grid>
             </Grid>
+
             {/* Filtros activos */}
             {(searchTerm || categoryFilter !== 'all') && (
               <Box sx={{ mt: 2, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
@@ -509,7 +515,8 @@ const MyProducts = () => {
                 )}
               </Box>
             )}
-          </Paper>{' '}
+          </Paper>
+
           {/* Grid de productos */}
           <Box sx={{ mb: 40 }}>
             <Box
@@ -536,8 +543,9 @@ const MyProducts = () => {
                 size="small"
                 variant="outlined"
               />
-            </Box>{' '}
-            {/* Advanced Loading States */}{' '}
+            </Box>
+
+            {/* Advanced Loading States */}
             {loading ? (
               <InitialLoadingState />
             ) : uiProducts.length === 0 ? (
@@ -566,9 +574,10 @@ const MyProducts = () => {
                       timeout={600}
                       style={{ transitionDelay: `${(index % 8) * 50}ms` }}
                     >
-                      <Grid size={{ xs: 12, sm: 6, md: 4.5, lg: 3.5, xl: 2.8 }}>
-                        <SupplierProductCard
+                      <Grid item xs={12} sm={6} md={4.5} lg={3.5} xl={2.8}>
+                        <ProductCard
                           product={product}
+                          type="supplier"
                           onEdit={handleEditProduct}
                           onDelete={handleDeleteProduct}
                           onViewStats={handleViewStats}
@@ -597,7 +606,8 @@ const MyProducts = () => {
                 )}
               </>
             )}
-          </Box>{' '}
+          </Box>
+
           {/* FAB para móvil */}
           {isMobile && (
             <Fab
@@ -613,6 +623,7 @@ const MyProducts = () => {
               <AddIcon />
             </Fab>
           )}
+
           {/* Scroll to Top FAB */}
           <Grow in={showScrollTop}>
             <Fab
@@ -640,22 +651,22 @@ const MyProducts = () => {
         </Container>
       </Box>
 
-      {/* Modal de confirmación de eliminación */}
-      <ConfirmationModal
-        open={deleteModal.open}
-        onClose={() =>
-          setDeleteModal({ open: false, product: null, loading: false })
+      {/* Modal de confirmación de eliminación - Ahora usando el componente Modal unificado */}
+      <Modal
+        isOpen={deleteModal.isOpen} // Usamos 'isOpen' para el estado del modal
+        onClose={
+          () => setDeleteModal({ isOpen: false, product: null, loading: false }) // Actualizamos 'isOpen'
         }
-        onConfirm={confirmDelete}
+        onSubmit={confirmDelete} // Usamos 'onSubmit' para la acción de confirmar
         type={MODAL_TYPES.DELETE}
         title="Eliminar producto"
-        message={
-          deleteModal.product
-            ? `¿Estás seguro de que deseas eliminar "${deleteModal.product.nombre}"? Esta acción no se puede deshacer.`
-            : ''
-        }
         loading={deleteModal.loading}
-      />
+      >
+        {/* El mensaje ahora es children del componente Modal */}
+        {deleteModal.product
+          ? `¿Estás seguro de que deseas eliminar "${deleteModal.product.nombre}"? Esta acción no se puede deshacer.`
+          : ''}
+      </Modal>
     </ThemeProvider>
   );
 };

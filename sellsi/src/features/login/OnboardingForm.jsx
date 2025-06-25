@@ -9,7 +9,7 @@ import {
   Button,
 } from '@mui/material';
 import { useOnboardingForm } from '../../../hooks/useOnboardingForm';
-import { CustomButton, CountrySelector } from '../../landing_page/hooks'; // Ajusta la ruta si es necesario
+import { PrimaryButton, CountrySelector } from '../../landing_page/hooks'; // Ajusta la ruta si es necesario
 
 // Componente para los botones de selección de tipo de cuenta
 const AccountTypeSelector = ({ selectedType, onTypeSelect }) => (
@@ -144,14 +144,14 @@ const OnboardingForm = ({ open, user, onClose }) => {
             />
           </Box>
 
-          <CustomButton
+          <PrimaryButton
             type="submit"
             fullWidth
             disabled={!isFormValid() || loading}
             sx={{ maxWidth: 450, height: 48 }}
           >
             {loading ? 'Guardando...' : 'Finalizar y Guardar'}
-          </CustomButton>
+          </PrimaryButton>
         </Box>
       </DialogContent>
     </Dialog>
