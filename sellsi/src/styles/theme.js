@@ -32,6 +32,11 @@ const theme = createTheme({
     body1: { fontSize: '1rem' },
     button: { textTransform: 'none', fontWeight: 'bold' },
   },
+  zIndex: {
+    drawer: 1200, // z-index para la SideBar (cajón de navegación)
+    appBar: 1300, // z-index para barras superiores e inferiores
+    modal: 1400, // z-index para modales
+  },
 });
 
 export default theme;

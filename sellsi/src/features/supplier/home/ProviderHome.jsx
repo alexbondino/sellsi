@@ -31,7 +31,7 @@ const ProviderHome = () => {
           backgroundColor: 'background.default',
           minHeight: '100vh',
           pt: { xs: 9, md: 10 },
-          px: 3,
+          px: 0,
           pb: 3,
         }}
       >
