@@ -212,10 +212,18 @@ function AppContent({ mensaje }) {
     });
 
     const { data: listener } = supabase.auth.onAuthStateChange(
-      (_event, newSession) => {
+      (event, newSession) => {
         if (mounted) {
-          setSession(newSession);
-          checkUserAndFetchProfile(newSession);
+          // Evitar recargas innecesarias durante cambios de contraseña
+          // Solo recargar en eventos críticos como login/logout
+          if (event === 'SIGNED_IN' || event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED') {
+            setSession(newSession);
+            checkUserAndFetchProfile(newSession);
+          } else if (event === 'USER_UPDATED') {
+            // Para USER_UPDATED, solo actualizamos la sesión pero no recargamos el perfil completo
+            setSession(newSession);
+            console.log('🔄 [Auth] User updated, session refreshed without profile reload');
+          }
         }
       }
     );
@@ -646,7 +654,12 @@ function App() {
           position="top-right"
           toastOptions={{
             duration: 4000,
-            style: { background: '#333', color: '#fff', borderRadius: '8px' },
+            style: { 
+              background: '#333', 
+              color: '#fff', 
+              borderRadius: '8px',
+              marginTop: '60px' // Mover los toasts más abajo del TopBar
+            },
             success: { style: { background: '#4caf50' } },
             error: { style: { background: '#f44336' } },
           }}

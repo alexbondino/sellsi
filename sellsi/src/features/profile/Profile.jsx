@@ -772,9 +772,15 @@ const Profile = ({ userProfile, onUpdateProfile }) => {
       <ChangePasswordModal
         open={isPasswordModalOpen}
         onClose={() => setIsPasswordModalOpen(false)}
+        showBanner={showBanner}
         onPasswordChanged={() => {
           setIsPasswordModalOpen(false);
-          // Aquí podrías mostrar un mensaje de éxito
+          // Mostrar banner de éxito
+          showBanner({
+            message: '✅ Contraseña actualizada correctamente',
+            severity: 'success',
+            duration: 4000
+          });
         }}
       />
 

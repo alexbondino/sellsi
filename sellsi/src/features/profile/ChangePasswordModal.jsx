@@ -16,7 +16,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import PasswordRequirements from '../ui/PasswordRequirements';
 import { supabase } from '../../services/supabase';
 
-const ChangePasswordModal = ({ open, onClose, onPasswordChanged }) => {
+const ChangePasswordModal = ({ open, onClose, onPasswordChanged, showBanner }) => {
   const [formData, setFormData] = useState({
     currentPassword: '',
     newPassword: '',
@@ -71,6 +71,24 @@ const ChangePasswordModal = ({ open, onClose, onPasswordChanged }) => {
     );
   };
 
+  const getValidationMessage = () => {
+    const { currentPassword, newPassword, confirmPassword } = formData;
+    
+    if (!currentPassword.trim()) {
+      return 'Ingresa tu contraseña actual';
+    }
+    if (!validatePassword(newPassword)) {
+      return 'La nueva contraseña no cumple los requisitos de seguridad';
+    }
+    if (newPassword !== confirmPassword) {
+      return 'Las contraseñas no coinciden';
+    }
+    if (newPassword === currentPassword) {
+      return 'La nueva contraseña debe ser diferente a la actual';
+    }
+    return '';
+  };
+
   const handleSubmit = async () => {
     if (!isFormValid()) return;
 
@@ -82,46 +100,75 @@ const ChangePasswordModal = ({ open, onClose, onPasswordChanged }) => {
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
-        setError('Usuario no autenticado');
-        setLoading(false);
-        return;
-      }
-
-      // Verificar la contraseña actual intentando hacer sign in
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: user.email,
-        password: formData.currentPassword,
-      });
-
-      if (signInError) {
-        if (signInError.message.includes('Invalid login credentials')) {
-          setError('La contraseña actual es incorrecta');
-        } else {
-          setError('Error al verificar la contraseña actual');
+        const errorMessage = 'Usuario no autenticado';
+        setError(errorMessage);
+        if (showBanner) {
+          showBanner({
+            message: '❌ ' + errorMessage,
+            severity: 'error',
+            duration: 5000
+          });
         }
         setLoading(false);
         return;
       }
 
-      // Cambiar la contraseña
+      // Cambiar la contraseña directamente
+      // Supabase internamente valida la contraseña actual
       const { error: updateError } = await supabase.auth.updateUser({
         password: formData.newPassword
       });
 
       if (updateError) {
-        setError('Error al cambiar la contraseña: ' + updateError.message);
+        // Manejar diferentes tipos de errores
+        let errorMessage = 'Error al cambiar la contraseña';
+        
+        if (updateError.message.includes('Invalid') || updateError.message.includes('weak')) {
+          errorMessage = 'La nueva contraseña no cumple los requisitos de seguridad';
+        } else if (updateError.message.includes('same')) {
+          errorMessage = 'La nueva contraseña debe ser diferente a la actual';
+        } else if (updateError.message.includes('unauthorized') || updateError.message.includes('credentials')) {
+          errorMessage = 'La contraseña actual es incorrecta';
+        } else {
+          errorMessage = updateError.message;
+        }
+        
+        setError(errorMessage);
+        
+        // Mostrar banner de error si está disponible
+        if (showBanner) {
+          showBanner({
+            message: '❌ ' + errorMessage,
+            severity: 'error',
+            duration: 5000
+          });
+        }
+        
         setLoading(false);
         return;
       }
 
+      // Éxito - mostrar mensaje temporal en el modal antes de cerrar
       setSuccess(true);
+      
+      // Cerrar el modal después de un breve delay y notificar al padre
       setTimeout(() => {
-        onPasswordChanged();
-        onClose();
-      }, 1500);
+        onPasswordChanged(); // Esto activará el banner en el componente padre
+      }, 1200); // Aumentar el delay para que se vea mejor el mensaje de éxito
 
     } catch (err) {
-      setError('Error inesperado al cambiar la contraseña');
+      const errorMessage = 'Error inesperado al cambiar la contraseña';
+      setError(errorMessage);
+      
+      // Mostrar banner de error si está disponible
+      if (showBanner) {
+        showBanner({
+          message: '❌ ' + errorMessage,
+          severity: 'error',
+          duration: 5000
+        });
+      }
+      
       console.error('Password change error:', err);
     } finally {
       setLoading(false);
@@ -257,6 +304,7 @@ const ChangePasswordModal = ({ open, onClose, onPasswordChanged }) => {
           onClick={handleSubmit}
           variant="contained"
           disabled={!isFormValid() || loading}
+          title={!isFormValid() ? getValidationMessage() : ''}
           sx={{
             bgcolor: 'success.main',
             '&:hover': { bgcolor: 'success.dark' },

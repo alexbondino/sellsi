@@ -491,6 +491,22 @@ const ProductCardBuyerContext = React.memo(
             >
               Stock disponible: {stock}
             </Typography>
+            
+            {/* Mostrar precio por unidad si hay tramos de precios */}
+            {price_tiers && price_tiers.length > 0 && (
+              <Typography
+                variant="body2"
+                sx={{ 
+                  mb: 2, 
+                  textAlign: 'center', 
+                  color: 'primary.main',
+                  fontWeight: 600 
+                }}
+              >
+                Precio: ${currentPrices.unitPrice.toLocaleString('es-CL')} por und.
+              </Typography>
+            )}
+            
             <Box sx={{ display: 'flex', gap: 1 }}>
               <Button
                 variant="outlined"

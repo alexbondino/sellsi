@@ -30,6 +30,7 @@ import { persist, createJSONStorage } from 'zustand/middleware'
 import debounce from 'lodash.debounce'
 import { calculatePriceForQuantity } from '../../../utils/priceCalculation'
 import { cartService } from '../../../services/cartService'
+import { validateQuantity, sanitizeCartItems, isQuantityError, QUANTITY_LIMITS } from '../../../utils/quantityValidation'
 
 // Importar módulos especializados
 import useCartHistory from './useCartHistory'
@@ -89,9 +90,12 @@ const useCartStore = create(
         addItem: async (product, quantity = 1) => {
           const state = get()
           
+          // VALIDACIÓN: Asegurar que la cantidad esté en un rango seguro
+          const safeQuantity = validateCartQuantity(quantity);
+          
           // DETECCIÓN AUTOMÁTICA: Si hay usuario autenticado, usar backend
           if (state.userId && state.cartId && state.isBackendSynced) {
-            return await get().addItemWithBackend(product, quantity)
+            return await get().addItemWithBackend(product, safeQuantity)
           }
           
           // Asegurarse de que la imagen principal esté presente
@@ -114,7 +118,7 @@ const useCartStore = create(
             ...product,
             image,
             supplier, // ✅ Asegurar que se use el nombre, no el ID
-            quantity,
+            quantity: safeQuantity,
             price_tiers,
             minimum_purchase,
           }
@@ -125,11 +129,15 @@ const useCartStore = create(
           )
 
           if (existingItem) {
-            if (existingItem.quantity + quantity <= product.maxStock) {
+            // Validar la nueva cantidad total
+            const newTotalQuantity = validateCartQuantity(existingItem.quantity + safeQuantity);
+            const maxStock = Math.min(product.maxStock || 15000, 15000);
+            
+            if (newTotalQuantity <= maxStock) {
               set({
                 items: currentState.items.map((item) =>
                   item.id === product.id
-                    ? { ...item, quantity: item.quantity + quantity }
+                    ? { ...item, quantity: newTotalQuantity }
                     : item
                 ),
               })
@@ -161,21 +169,30 @@ const useCartStore = create(
         updateQuantity: async (id, quantity) => {
           const state = get()
           
+          // VALIDACIÓN: Asegurar que la cantidad esté en un rango seguro
+          const safeInputQuantity = validateCartQuantity(quantity);
+          
           // DETECCIÓN AUTOMÁTICA: Si hay usuario autenticado, usar backend
           if (state.userId && state.cartId && state.isBackendSynced) {
-            return await get().updateQuantityWithBackend(id, quantity)
+            return await get().updateQuantityWithBackend(id, safeInputQuantity)
           }
           
           const currentState = get()
           const item = currentState.items.find((item) => item.id === id)
           if (!item) return
-          // Forzar mínimo de compra
+          
+          // Forzar mínimo de compra y máximo de stock
           const min = item.minimum_purchase || item.compraMinima || 1
-          let safeQuantity = quantity
-          if (quantity < min) {
+          const maxStock = Math.min(item.maxStock || 15000, 15000); // Limitar también el stock máximo
+          
+          let safeQuantity = validateCartQuantity(safeInputQuantity, min, maxStock);
+          
+          if (safeQuantity < min) {
             safeQuantity = min
           }
-          if (safeQuantity > item.maxStock) safeQuantity = item.maxStock
+          if (safeQuantity > maxStock) {
+            safeQuantity = maxStock
+          }
           // LOG: Mostrar tramos y tramo aplicado
           if (item.price_tiers && item.price_tiers.length > 0) {
             const logTiers = item.price_tiers.map(t => `${t.min_quantity},${t.price}`).join('\n')
@@ -570,8 +587,14 @@ const useCartStore = create(
             
             set({ isLoading: true, error: null, isSyncing: true })
 
-            // Obtener carrito local antes de la migración
-            const localItems = get().items
+            // Obtener carrito local antes de la migración y limpiar datos corruptos
+            const rawLocalItems = get().items
+            const localItems = cleanLocalCartItems(rawLocalItems)
+            
+            // Informar si se limpiaron datos corruptos
+            if (rawLocalItems.length !== localItems.length) {
+              console.warn(`[cartStore] 🧹 Limpiados ${rawLocalItems.length - localItems.length} items corruptos del carrito local`);
+            }
 
             // Obtener o crear carrito en backend
             const backendCart = await cartService.getOrCreateActiveCart(userId)
@@ -605,6 +628,31 @@ const useCartStore = create(
             return true
           } catch (error) {
             console.error('[cartStore] ❌ Error inicializando carrito con usuario:', error)
+            
+            // Verificar si es un error relacionado con datos corruptos
+            const isCorruptedDataError = isQuantityError(error);
+            
+            if (isCorruptedDataError) {
+              console.warn('[cartStore] 🚨 Detectados datos corruptos, limpiando carrito...');
+              get().clearCorruptedCart();
+              // Intentar inicializar de nuevo con carrito limpio
+              try {
+                const backendCart = await cartService.getOrCreateActiveCart(userId);
+                set({
+                  items: backendCart.items || [],
+                  cartId: backendCart.cart_id,
+                  userId: userId,
+                  isBackendSynced: true,
+                  isLoading: false,
+                  isSyncing: false,
+                  error: null
+                });
+                return true;
+              } catch (retryError) {
+                console.error('[cartStore] ❌ Error en segundo intento:', retryError);
+              }
+            }
+            
             set({ 
               error: 'No se pudo cargar el carrito', 
               isLoading: false, 
@@ -813,6 +861,36 @@ const useCartStore = create(
           })
           // El carrito local se mantiene para migración futura
         },
+
+        // Función de utilidad para limpiar carrito corrupto
+        clearCorruptedCart: () => {
+          console.warn('[cartStore] 🧹 Limpiando carrito corrupto...');
+          
+          // Limpiar estado del store
+          set({
+            items: [],
+            totalItems: 0,
+            totalPrice: 0,
+            cartId: null,
+            userId: null,
+            isBackendSynced: false,
+            error: null,
+            isLoading: false,
+            isSyncing: false
+          });
+          
+          // Limpiar localStorage
+          try {
+            localStorage.removeItem('cart-storage');
+            localStorage.removeItem('cart-items');
+            localStorage.removeItem('carrito');
+            console.log('[cartStore] ✅ LocalStorage del carrito limpiado');
+          } catch (error) {
+            console.error('[cartStore] ❌ Error limpiando localStorage:', error);
+          }
+        },
+
+        // ============================================================================
       }
     },
     {
@@ -837,5 +915,35 @@ const useCartStore = create(
     }
   )
 )
+
+// ============================================================================
+// FUNCIÓN DE VALIDACIÓN DE CANTIDADES
+// ============================================================================
+
+/**
+ * Valida y limita cantidades para evitar overflow de base de datos
+ * @param {number} quantity - Cantidad a validar
+ * @param {number} min - Valor mínimo permitido (default: 1)
+ * @param {number} max - Valor máximo permitido (default: 15000)
+ * @returns {number} Cantidad validada y limitada
+ */
+const validateCartQuantity = (quantity, min = 1, max = QUANTITY_LIMITS.MAX) => {
+  return validateQuantity(quantity, min, max);
+};
+
+/**
+ * Limpia y valida items del carrito local para remover datos corruptos
+ * @param {Array} items - Items del carrito a validar
+ * @returns {Array} Items válidos
+ */
+const cleanLocalCartItems = (items) => {
+  const result = sanitizeCartItems(items);
+  
+  if (result.summary.removed > 0 || result.summary.corrected > 0) {
+    console.warn('[cartStore] 🧹 Limpieza de carrito:', result.summary);
+  }
+  
+  return result.validItems;
+};
 
 export default useCartStore

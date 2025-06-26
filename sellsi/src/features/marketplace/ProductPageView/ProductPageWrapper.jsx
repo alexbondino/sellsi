@@ -121,6 +121,17 @@ const ProductPageWrapper = () => {
   };
 
   const handleAddToCart = (cartProduct) => {
+    // Validar cantidad antes de agregar
+    if (cartProduct && cartProduct.quantity) {
+      const quantity = parseInt(cartProduct.quantity);
+      if (isNaN(quantity) || quantity <= 0 || quantity > 15000) {
+        console.error('Cantidad inválida detectada:', cartProduct.quantity);
+        return;
+      }
+      // Asegurar que la cantidad esté en un rango seguro
+      cartProduct.quantity = Math.max(1, Math.min(quantity, 15000));
+    }
+    
     // Aquí podrías implementar la lógica del carrito
     console.log('Add to cart:', cartProduct);
   };
