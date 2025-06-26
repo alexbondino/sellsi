@@ -53,6 +53,14 @@ const MyOrdersPage = React.lazy(() =>
   import('./features/supplier/my-orders/MyOrdersPage')
 );
 
+// 📦 PROFILE PAGES - LAZY LOADING
+const SupplierProfile = React.lazy(() =>
+  import('./features/supplier/SupplierProfile')
+);
+const BuyerProfile = React.lazy(() =>
+  import('./features/buyer/BuyerProfile')
+);
+
 // 📦 RUTAS SECUNDARIAS - LAZY LOADING
 const BuyerOrders = React.lazy(() => import('./features/buyer/BuyerOrders'));
 const BuyerPerformance = React.lazy(() =>
@@ -60,6 +68,9 @@ const BuyerPerformance = React.lazy(() =>
 );
 const TechnicalSpecs = React.lazy(() =>
   import('./features/marketplace/view_page/TechnicalSpecs')
+);
+const ProductPageWrapper = React.lazy(() =>
+  import('./features/marketplace/ProductPageView/ProductPageWrapper')
 );
 
 // 📦 AUTH & ONBOARDING - LAZY LOADING
@@ -121,12 +132,14 @@ function AppContent({ mensaje }) {
     '/buyer/orders',
     '/buyer/performance',
     '/buyer/cart',
+    '/buyer/profile',
   ]);
   const supplierDashboardRoutes = new Set([
     '/supplier/home',
     '/supplier/myproducts',
     '/supplier/addproduct',
     '/supplier/my-orders',
+    '/supplier/profile',
   ]);
   const neutralRoutes = new Set([
     '/',
@@ -341,6 +354,29 @@ function AppContent({ mensaje }) {
       initializeCartWithUser(session.user.id);
     }
   }, [session, initializeCartWithUser]);
+  // Función para refrescar el perfil del usuario (para usar después de actualizaciones)
+  const refreshUserProfile = async () => {
+    if (!session?.user?.id) return;
+    
+    try {
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('user_nm, main_supplier, logo_url')
+        .eq('user_id', session.user.id)
+        .single();
+
+      if (userError) {
+        console.error('❌ [APP] Error refreshing user profile:', userError.message);
+        return;
+      }
+
+      if (userData) {
+        setUserProfile(userData);
+      }
+    } catch (error) {
+      console.error('❌ [APP] Error refreshing user profile:', error);
+    }
+  };
 
   if (loadingUserStatus) {
     return (
@@ -445,6 +481,8 @@ function AppContent({ mensaje }) {
                   element={<Home scrollTargets={scrollTargets} />}
                 />
                 <Route path="/marketplace" element={<Marketplace />} />
+                <Route path="/marketplace/product/:id" element={<ProductPageWrapper />} />
+                <Route path="/marketplace/product/:id/:slug" element={<ProductPageWrapper />} />
                 {/* TechnicalSpecs puede ser accedido sin iniciar sesión, si es contenido común */}
                 <Route
                   path="/technicalspecs/:productSlug"
@@ -530,6 +568,22 @@ function AppContent({ mensaje }) {
                   element={
                     <PrivateRoute>
                       <MyOrdersPage />
+                    </PrivateRoute>
+                  }
+                />
+                <Route
+                  path="/supplier/profile"
+                  element={
+                    <PrivateRoute>
+                      <SupplierProfile onProfileUpdated={refreshUserProfile} />
+                    </PrivateRoute>
+                  }
+                />
+                <Route
+                  path="/buyer/profile"
+                  element={
+                    <PrivateRoute>
+                      <BuyerProfile onProfileUpdated={refreshUserProfile} />
                     </PrivateRoute>
                   }
                 />

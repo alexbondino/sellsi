@@ -4,7 +4,38 @@
  * ============================================================================
  *
  * Store base para operaciones CRUD de productos del proveedor.
- *    console.log(`📊 Análisis: ${newImages.length} nuevas, ${existingUrls.length} existentes`);Se enf    console.log(`🔍 [PROCESS IMAGES] Análisis: ${newImages.length} nuevas, ${existingUrls.length} existentes`);
+ *    console.log(`    // 4. PROCESAR URLs existentes (mantener con sus thumbnails actuales)
+    for (const url of existingUrls) {
+      const existingImage = currentImages?.find(img => img.image_url === url);
+      finalImageData.push({
+        image_url: url,
+        thumbnail_url: existingImage?.thumbnail_url || null
+      });
+    }
+
+    // 5. SUBIR nuevas imágenes CON THUMBNAILS
+    if (newImages.length > 0) {
+      console.log(`� [PROCESS IMAGES] Subiendo ${newImages.length} imágenes nuevas con thumbnails...`);
+      
+      const files = newImages.map(img => img.file || img);
+      const uploadResult = await UploadService.uploadMultipleImagesWithThumbnails(files, productId, supplierId);
+      
+      if (uploadResult.success && uploadResult.data) {
+        for (const imageData of uploadResult.data) {
+          finalImageData.push({
+            image_url: imageData.publicUrl,
+            thumbnail_url: imageData.thumbnailUrl || null
+          });
+          console.log(`✅ Nueva imagen procesada: ${imageData.publicUrl} ${imageData.thumbnailUrl ? '(con thumbnail)' : '(sin thumbnail)'}`);
+        }
+      }
+      
+      if (uploadResult.errors) {
+        console.warn('⚠️ [PROCESS IMAGES] Algunos uploads fallaron:', uploadResult.errors);
+      }
+    }
+
+    console.log('📋 Datos finales para registrar:', finalImageData);mages.length} nuevas, ${existingUrls.length} existentes`);Se enf    console.log(`🔍 [PROCESS IMAGES] Análisis: ${newImages.length} nuevas, ${existingUrls.length} existentes`);
     console.log('🔍 [PROCESS IMAGES] newImages:', newImages);
     console.log('🔍 [PROCESS IMAGES] existingUrls:', existingUrls);ca únicamente en la gestión de datos sin lógica de UI.
  */
@@ -339,7 +370,9 @@ const useSupplierProductsBase = create((set, get) => ({
     // 6. REEMPLAZAR TODOS los registros en product_images
     if (allImageUrls.length > 0) {
       // Eliminar todos los registros actuales
-      await supabase.from('product_images').delete().eq('product_id', productId);      // Insertar todos los registros nuevos
+      await supabase.from('product_images').delete().eq('product_id', productId);
+
+      // Insertar todos los registros nuevos
       const imagesToInsert = allImageUrls.map((url) => ({
         product_id: productId,
         image_url: url,

@@ -81,6 +81,32 @@ const ProductPageView = ({
     }
   }, [])
 
+  // Mover useCallback ANTES de cualquier return condicional para seguir las reglas de los Hooks
+  const handleAddToCart = useCallback((cartProduct) => {
+    // Verificar sesión antes de permitir agregar al carrito
+    if (!isLoggedIn) {
+      toast.error('Debes iniciar sesión para agregar productos al carrito', {
+        icon: '🔒',
+      })
+      // Disparar evento para abrir Login modal
+      const event = new CustomEvent('openLogin')
+      window.dispatchEvent(event)
+      return
+    }
+    if (onAddToCart) {
+      // Si recibimos un producto formateado del PurchaseActions, usar ese
+      // Si no, formatear con los datos básicos del producto
+      onAddToCart(cartProduct || product)
+      // Mostrar toast de confirmación aquí
+      toast.success(
+        `Agregado al carrito: ${(cartProduct || product)?.name || product?.nombre}`,
+        {
+          icon: '✅',
+        }
+      )
+    }
+  }, [isLoggedIn, onAddToCart, product])
+
   if (!product || loading) {
     return (
       <Box
@@ -151,30 +177,7 @@ const ProductPageView = ({
     categoria,
     descripcion = 'Producto de alta calidad con excelentes características y garantía de satisfacción.',
   } = product
-  const handleAddToCart = useCallback((cartProduct) => {
-    // Verificar sesión antes de permitir agregar al carrito
-    if (!isLoggedIn) {
-      toast.error('Debes iniciar sesión para agregar productos al carrito', {
-        icon: '🔒',
-      })
-      // Disparar evento para abrir Login modal
-      const event = new CustomEvent('openLogin')
-      window.dispatchEvent(event)
-      return
-    }
-    if (onAddToCart) {
-      // Si recibimos un producto formateado del PurchaseActions, usar ese
-      // Si no, formatear con los datos básicos del producto
-      onAddToCart(cartProduct || product)
-      // Mostrar toast de confirmación aquí
-      toast.success(
-        `Agregado al carrito: ${(cartProduct || product).name || nombre}`,
-        {
-          icon: '✅',
-        }
-      )
-    }
-  }, [isLoggedIn, onAddToCart, product, nombre])
+  
   return (
     <Box
       sx={

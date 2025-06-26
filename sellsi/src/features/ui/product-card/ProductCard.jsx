@@ -113,6 +113,7 @@ const ProductCard = React.memo(
         overflow: 'hidden',
         opacity: isDeleting ? 0.5 : 1,
         transform: isDeleting ? 'scale(0.95)' : 'scale(1)',
+        cursor: 'pointer', // Agregar cursor pointer para indicar que es clickeable
         '&:hover': {
           transform: isDeleting
             ? 'scale(0.95)'
@@ -127,42 +128,55 @@ const ProductCard = React.memo(
               0.15
             )}`,
           borderColor: type === 'supplier' ? 'primary.main' : 'primary.main',
+          cursor: 'pointer', // Mantener cursor pointer en hover
         },
       }),
       [type, isDeleting]
     );
 
-    // Function for buyer card navigation
+    // Function to generate product URL
+    const generateProductUrl = useCallback((product) => {
+      const productId = product.id || product.product_id;
+      const productName = (product.nombre || product.name || '').toLowerCase()
+        .replace(/[^a-z0-9]/g, '-')
+        .replace(/-+/g, '-')
+        .replace(/^-|-$/g, '');
+      
+      return `/marketplace/product/${productId}${productName ? `/${productName}` : ''}`;
+    }, []);
+
+    // Function for card navigation (works for both buyer and supplier types)
     const handleProductClick = useCallback(
       e => {
-        // This logic only applies if the type is 'buyer' and
-        // the click didn't originate from an interactive element within the card.
-        if (type === 'buyer') {
-          const target = e.target;
-          const clickedElement =
-            target.closest('button') ||
-            target.closest('.MuiIconButton-root') ||
-            target.closest('.MuiButton-root') ||
-            target.closest('[data-no-card-click]') ||
-            target.hasAttribute('data-no-card-click');
+        // This logic applies to both 'buyer' and 'supplier' types
+        // but prevent navigation if click originated from an interactive element
+        const target = e.target;
+        const clickedElement =
+          target.closest('button') ||
+          target.closest('.MuiIconButton-root') ||
+          target.closest('.MuiButton-root') ||
+          target.closest('[data-no-card-click]') ||
+          target.hasAttribute('data-no-card-click');
 
-          if (clickedElement) {
-            return;
-          }
-
-          const currentPath = window.location.pathname;
-          let fromPath = '/marketplace';
-
-          if (currentPath.includes('/buyer/')) {
-            fromPath = '/buyer/marketplace';
-          }
-          const productUrl = generateProductUrl(product);
-          navigate(productUrl, {
-            state: { from: fromPath },
-          });
+        if (clickedElement) {
+          return;
         }
+
+        const currentPath = window.location.pathname;
+        let fromPath = '/marketplace';
+
+        if (currentPath.includes('/buyer/')) {
+          fromPath = '/buyer/marketplace';
+        } else if (currentPath.includes('/supplier/')) {
+          fromPath = '/supplier/myproducts';
+        }
+
+        const productUrl = generateProductUrl(product);
+        navigate(productUrl, {
+          state: { from: fromPath },
+        });
       },
-      [navigate, product, type] // Dependency on type for conditional logic
+      [navigate, product, generateProductUrl] // Updated dependencies
     );
 
     return (

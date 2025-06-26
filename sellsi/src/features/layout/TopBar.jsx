@@ -278,7 +278,8 @@ export default function TopBar({
       <MenuItem
         key="profile"
         onClick={() => {
-          navigate('/profile');
+          const profileRoute = isBuyer ? '/buyer/profile' : '/supplier/profile';
+          navigate(profileRoute);
           handleCloseMobileMenu();
         }}
       >
@@ -412,7 +413,8 @@ export default function TopBar({
       >
         <MenuItem
           onClick={() => {
-            navigate('/profile');
+            const profileRoute = isBuyer ? '/buyer/profile' : '/supplier/profile';
+            navigate(profileRoute);
             handleCloseProfileMenu();
           }}
         >

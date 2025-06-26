@@ -17,6 +17,7 @@ import {
 } from '@mui/icons-material'
 import { formatPrice } from '../../marketplace/utils/formatters'
 import { getProductImageUrl } from '../../../utils/getProductImageUrl'
+import { getMainProductThumbnailUrl } from '../../../services/productImageService'
 import {
   ActionMenu,
   ProductBadges,
@@ -188,7 +189,7 @@ const SupplierProductCard = ({
         }}
       >
         <LazyImage
-          src={getProductImageUrl(imagen, product) || '/placeholder-product.jpg'}
+          src={getMainProductThumbnailUrl(product) || getProductImageUrl(imagen, product) || '/placeholder-product.jpg'}
           alt={nombre}
           sx={{
             width: '100%',
