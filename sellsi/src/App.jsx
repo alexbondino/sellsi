@@ -67,6 +67,9 @@ const Login = React.lazy(() => import('./features/login/Login'));
 const Register = React.lazy(() => import('./features/register/Register'));
 const Onboarding = React.lazy(() => import('./features/onboarding/Onboarding'));
 
+// 📦 ERROR PAGES - LAZY LOADING
+const NotFound = React.lazy(() => import('./features/ui/NotFound'));
+
 // ============================================================================
 // 🎨 COMPONENTE DE LOADING UNIVERSAL PARA SUSPENSE
 // ============================================================================
@@ -450,6 +453,9 @@ function AppContent({ mensaje }) {
                 <Route path="/login" element={<Login />} />
                 <Route path="/crear-cuenta" element={<Register />} />
 
+                {/* Ruta para testing de 404 (solo desarrollo) */}
+                <Route path="/404" element={<NotFound />} />
+
                 {/* Todas estas rutas están ahora protegidas SÓLO por autenticación y onboarding */}
                 <Route
                   path="/onboarding"
@@ -528,26 +534,7 @@ function AppContent({ mensaje }) {
                   }
                 />
                 {/* Ruta de fallback para rutas no encontradas */}
-                <Route
-                  path="*"
-                  element={
-                    <Box
-                      sx={{
-                        p: 3,
-                        textAlign: 'center',
-                        mt: '50px',
-                        color: 'text.secondary',
-                      }}
-                    >
-                      <Typography variant="h5">
-                        404 - Página no encontrada
-                      </Typography>
-                      <Typography>
-                        Revisa la URL o regresa a una página válida.
-                      </Typography>
-                    </Box>
-                  }
-                />
+                <Route path="*" element={<NotFound />} />
               </Routes>
             </Suspense>
           </Box>
