@@ -38,6 +38,7 @@ import {
   calculatePriceForQuantity,
   formatProductForCart,
 } from '../../../utils/priceCalculation'
+import Modal, { MODAL_TYPES } from '../../ui/Modal'
 
 /*
 ========== GUÍA DE IDENTIFICACIÓN DE ELEMENTOS DEL CARRITO ==========
@@ -119,6 +120,7 @@ const CartItem = ({
   onToggleSelection,
 }) => {
   const [selectedShipping, setSelectedShipping] = useState('standard')
+  const [openDeleteModal, setOpenDeleteModal] = useState(false)
   // ===== CÁLCULOS DE PRECIOS OPTIMIZADOS (USAR priceCalculations MEMOIZADO) =====
   // Los precios se calculan en priceCalculations para evitar recálculos innecesarios
   // Función optimizada para manejar el cambio de envío y calcular el precio
@@ -443,43 +445,35 @@ const CartItem = ({
                   title={
                     isSelectionMode
                       ? 'Usa el modo selección para eliminar'
-                      : isInWishlist(item.id)
-                      ? 'Quitar de favoritos'
-                      : 'Agregar a favoritos'
-                  }
-                >                  <motion.div whileTap={{ scale: 0.95 }}>
-                    <IconButton
-                      size="small"
-                      onClick={handleWishlistClick}
-                      color="secondary"
-                      disabled={isSelectionMode}
-                    >
-                      {isInWishlist(item.id) ? (
-                        <FavoriteIcon />
-                      ) : (
-                        <FavoriteBorderIcon />
-                      )}
-                    </IconButton>
-                  </motion.div>
-                </Tooltip>
-                <Tooltip
-                  title={
-                    isSelectionMode
-                      ? 'Usa el modo selección para eliminar'
                       : 'Eliminar del carrito'
                   }
                 >
                   <motion.div whileTap={{ scale: 0.95 }}>
                     <IconButton
                       size="small"
-                      onClick={() => handleRemoveWithAnimation(item.id)}
-                      color="error"
+                      onClick={() => setOpenDeleteModal(true)}
+                      color="default"
                       disabled={isSelectionMode}
                     >
-                      <DeleteIcon />
+                      <DeleteIcon sx={{ color: 'grey.600' }} />
                     </IconButton>
                   </motion.div>
-                </Tooltip>{' '}
+                </Tooltip>
+                <Modal
+                  isOpen={openDeleteModal}
+                  onClose={() => setOpenDeleteModal(false)}
+                  onSubmit={() => {
+                    handleRemoveWithAnimation(item.id);
+                    setOpenDeleteModal(false);
+                  }}
+                  type={MODAL_TYPES.DELETE}
+                  title="¿Eliminar producto del carrito?"
+                  submitButtonText="Eliminar"
+                  cancelButtonText="Cancelar"
+                  showCancelButton
+                >
+                  ¿Estás seguro que deseas eliminar este producto del carrito?
+                </Modal>
               </Stack>
             </Box>
           </Grid>{' '}          {/* Opciones de Envío */}

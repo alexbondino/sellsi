@@ -294,23 +294,9 @@ const Modal = ({
             <IconButton
               onClick={onClose}
               sx={{
-                ml: 'auto',
-                right: [
-                  MODAL_TYPES.INFO,
-                  MODAL_TYPES.SUCCESS,
-                  MODAL_TYPES.WARNING,
-                  MODAL_TYPES.DELETE,
-                ].includes(type)
-                  ? 8
-                  : 0,
-                top: [
-                  MODAL_TYPES.INFO,
-                  MODAL_TYPES.SUCCESS,
-                  MODAL_TYPES.WARNING,
-                  MODAL_TYPES.DELETE,
-                ].includes(type)
-                  ? 8
-                  : 0,
+                position: 'absolute',
+                top: 8,
+                right: 8,
                 color: 'grey.500',
               }}
             >

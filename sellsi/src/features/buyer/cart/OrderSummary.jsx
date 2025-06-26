@@ -52,7 +52,7 @@ const OrderSummary = ({
         sx={{
           fontWeight: 'bold',
           mb: 3,
-          background: 'linear-gradient(45deg, #667eea, #764ba2)',
+          background: '#1565c0',
           WebkitBackgroundClip: 'text',
           WebkitTextFillColor: 'transparent',
         }}
@@ -96,15 +96,20 @@ const OrderSummary = ({
             sx={{
               py: 1.5,
               borderRadius: 3,
-              background: 'linear-gradient(45deg, #667eea, #764ba2)',
+              background: 'linear-gradient(135deg,rgb(231, 254, 255) 0%,rgb(202, 223, 247) 100%)',
               boxShadow: '0 8px 16px rgba(102, 126, 234, 0.3)',
+              color: '#000000', // Color negro para el texto
               '&:hover': {
-                background: 'linear-gradient(45deg, #5a6fd8, #6a4190)',
+                background: 'linear-gradient(135deg,rgb(209, 251, 254) 0%,rgb(189, 196, 247) 100%)',
                 boxShadow: '0 12px 20px rgba(102, 126, 234, 0.4)',
+                color: '#000000', // Mantener negro en hover
+              },
+              '&:disabled': {
+                color: '#000000', // Mantener negro cuando está deshabilitado
               },
             }}
           >
-            {isCheckingOut ? 'Procesando...' : `Continuar al pago`}
+            {isCheckingOut ? 'Procesando...' : 'Continuar al pago'}
           </Button>
         </motion.div>
       </Stack>

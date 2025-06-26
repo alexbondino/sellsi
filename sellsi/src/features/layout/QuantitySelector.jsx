@@ -8,6 +8,7 @@ import {
   Tooltip,
 } from '@mui/material'
 import { Add as AddIcon, Remove as RemoveIcon } from '@mui/icons-material'
+import QuantityInputModal from './QuantityInputModal'
 
 /**
  * ============================================================================
@@ -56,6 +57,9 @@ const QuantitySelector = ({
 }) => {
   // Estado local para el input (permite validación en tiempo real)
   const [inputValue, setInputValue] = useState(value.toString())
+  
+  // Estado para controlar el modal de input directo
+  const [showInputModal, setShowInputModal] = useState(false)
 
   // Sincronizar estado local cuando cambia la prop
   useEffect(() => {
@@ -113,6 +117,19 @@ const QuantitySelector = ({
       onChange(numValue)
     }
   }, [inputValue, min, max, value, onChange])
+
+  // Handler para abrir el modal de input directo
+  const handleInputClick = React.useCallback(() => {
+    if (!disabled) {
+      setShowInputModal(true)
+    }
+  }, [disabled])
+
+  // Handler para confirmar el valor del modal
+  const handleModalConfirm = React.useCallback((newValue) => {
+    onChange(newValue)
+    setInputValue(newValue.toString())
+  }, [onChange])
 
   // ============================================================================
   // CONFIGURACIÓN DE ESTILOS POR TAMAÑO
@@ -202,26 +219,33 @@ const QuantitySelector = ({
       value={inputValue}
       onChange={handleInputChange}
       onBlur={handleInputBlur}
+      onClick={handleInputClick}
       disabled={disabled}
       size={size === 'large' ? 'medium' : 'small'}
       inputProps={{
         min: min,
         max: max,
         step: step,
+        readOnly: true, // Hacer el input de solo lectura para forzar uso del modal
         style: {
           textAlign: 'center',
           width: config.inputWidth,
           padding: size === 'small' ? '4px' : '8px',
+          cursor: disabled ? 'default' : 'pointer',
         },
-        'aria-label': 'Cantidad',
+        'aria-label': 'Cantidad - Click para editar',
       }}
       error={parseInt(inputValue) < min}
       helperText={parseInt(inputValue) < min ? `Mínimo ${min}` : ''}
       sx={{
         '& .MuiOutlinedInput-root': {
           '&:hover fieldset': {
-            borderColor: 'primary.main',
+            borderColor: disabled ? 'grey.300' : 'primary.main',
           },
+          cursor: disabled ? 'default' : 'pointer',
+        },
+        '& .MuiInputBase-input': {
+          cursor: disabled ? 'default' : 'pointer',
         },
       }}
     />
@@ -233,12 +257,55 @@ const QuantitySelector = ({
 
   if (orientation === 'vertical') {
     return (
+      <>
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: config.spacing,
+            ...sx,
+          }}
+        >
+          {label && (
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+              {label}
+            </Typography>
+          )}
+
+          <IncrementButton />
+          <QuantityInput />
+          <DecrementButton />
+
+          {showStockLimit && (
+            <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
+              {stockText || `${max} disponibles`}
+            </Typography>
+          )}
+        </Box>
+
+        {/* Modal para input directo de cantidad */}
+        <QuantityInputModal
+          open={showInputModal}
+          onClose={() => setShowInputModal(false)}
+          onConfirm={handleModalConfirm}
+          currentValue={value}
+          min={min}
+          max={max}
+          title="Ingrese la cantidad"
+        />
+      </>
+    )
+  }
+
+  // Orientación horizontal (default)
+  return (
+    <>
       <Box
         sx={{
           display: 'flex',
           flexDirection: 'column',
-          alignItems: 'center',
-          gap: config.spacing,
+          alignItems: 'flex-start',
           ...sx,
         }}
       >
@@ -248,9 +315,11 @@ const QuantitySelector = ({
           </Typography>
         )}
 
-        <IncrementButton />
-        <QuantityInput />
-        <DecrementButton />
+        <Stack direction="row" spacing={config.spacing} alignItems="center">
+          <DecrementButton />
+          <QuantityInput />
+          <IncrementButton />
+        </Stack>
 
         {showStockLimit && (
           <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
@@ -258,37 +327,18 @@ const QuantitySelector = ({
           </Typography>
         )}
       </Box>
-    )
-  }
 
-  // Orientación horizontal (default)
-  return (
-    <Box
-      sx={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'flex-start',
-        ...sx,
-      }}
-    >
-      {label && (
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-          {label}
-        </Typography>
-      )}
-
-      <Stack direction="row" spacing={config.spacing} alignItems="center">
-        <DecrementButton />
-        <QuantityInput />
-        <IncrementButton />
-      </Stack>
-
-      {showStockLimit && (
-        <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
-          {stockText || `${max} disponibles`}
-        </Typography>
-      )}
-    </Box>
+      {/* Modal para input directo de cantidad */}
+      <QuantityInputModal
+        open={showInputModal}
+        onClose={() => setShowInputModal(false)}
+        onConfirm={handleModalConfirm}
+        currentValue={value}
+        min={min}
+        max={max}
+        title="Ingrese la cantidad"
+      />
+    </>
   )
 }
 

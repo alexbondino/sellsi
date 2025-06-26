@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import {
   Box,
   Typography,
@@ -18,12 +18,13 @@ import {
   Undo as UndoIcon,
   Redo as RedoIcon,
   Delete as DeleteIcon,
-  Favorite as FavoriteIcon,
   CheckBoxOutlineBlank as CheckBoxOutlineBlankIcon,
   CheckBox as CheckBoxIcon,
   SelectAll as SelectAllIcon,
+  ShoppingCart as ShoppingCartIcon,
 } from '@mui/icons-material'
 import { motion } from 'framer-motion'
+import Modal, { MODAL_TYPES } from '../../ui/Modal' // Asegúrate de importar tu componente Modal correctamente
 
 /**
  * ============================================================================
@@ -36,7 +37,6 @@ import { motion } from 'framer-motion'
  * @param {Object} props - Propiedades del componente
  * @param {Object} props.cartStats - Estadísticas del carrito (totalItems, totalValue, etc.)
  * @param {Function} props.formatPrice - Función para formatear precios * @param {number} props.discount - Descuento total aplicado
- * @param {number} props.wishlistLength - Cantidad de items en wishlist
  * @param {Function} props.onUndo - Función para deshacer última acción
  * @param {Function} props.onRedo - Función para rehacer acción
  * @param {Function} props.onClearCart - Función para limpiar carrito
@@ -48,12 +48,9 @@ const CartHeader = ({
   cartStats,
   formatPrice,
   discount,
-  wishlistLength,
   onUndo,
   onRedo,
   onClearCart,
-  onToggleWishlist,
-  showWishlist,
   undoInfo,
   redoInfo,
   historyInfo,
@@ -65,6 +62,8 @@ const CartHeader = ({
   onDeleteSelected,
   totalItems,
 }) => {
+  const [openDeleteModal, setOpenDeleteModal] = useState(false)
+
   return (
     <Box sx={{ mb: 4, width: '100%' }}>
       {' '}
@@ -85,7 +84,7 @@ const CartHeader = ({
             }
           }
         >
-          <Box sx={{ textAlign: { xs: 'center', md: 'left' } }}>
+          <Box sx={{ textAlign: { xs: 'center', md: 'left' }, position: 'relative' }}>
             {' '}
             <Typography
               variant="h3"
@@ -94,11 +93,18 @@ const CartHeader = ({
                 fontWeight: 'bold',
                 background: isSelectionMode
                   ? 'linear-gradient(45deg, #ff6b6b, #ee5a24)'
-                  : '#000000',                WebkitBackgroundClip: 'text',
+                  : '#000000',
+                WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
                 mb: 1,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1,
               }}
             >
+              {!isSelectionMode && (
+                <ShoppingCartIcon sx={{ fontSize: 40, color: '#1976d2', mr: 1 }} />
+              )}
               {isSelectionMode ? 'Seleccionar Items' : 'Mi Carrito'}
             </Typography>{' '}
             <Box
@@ -106,7 +112,7 @@ const CartHeader = ({
                 display: 'flex',
                 gap: 2,
                 flexWrap: 'wrap',
-                justifyContent: { xs: 'center', md: 'flex-start' },
+                position: 'relative',
               }}
             >
               {isSelectionMode ? (
@@ -120,12 +126,18 @@ const CartHeader = ({
                   />
                   {selectedItems.length > 0 && (
                     <Chip
-                      icon={<DeleteIcon />}
+                      icon={<DeleteIcon sx={{ color: 'grey.600' }} />}
                       label={`Eliminar ${selectedItems.length}`}
-                      color="error"
+                      color="default"
                       variant="outlined"
-                      clickable
-                      onClick={onDeleteSelected}
+                      sx={{
+                        position: 'absolute',
+                        top: 0,
+                        right: -60, // Ajusta este valor si necesitas más separación
+                        zIndex: 2,
+                        backgroundColor: 'background.paper',
+                        boxShadow: 2,
+                      }}
                     />
                   )}
                 </>
@@ -138,22 +150,14 @@ const CartHeader = ({
                     color="primary"
                     variant="filled"
                   />
+                  {/*
                   <Chip
                     icon={<MonetizationOnIcon />}
                     label={formatPrice(cartStats.totalValue)}
                     color="success"
                     variant="filled"
                   />
-                  <Chip
-                    icon={<TrendingUpIcon />}
-                    label={`${
-                      discount > 0
-                        ? 'Ahorrando ' + formatPrice(discount)
-                        : 'Sin descuentos'
-                    }`}
-                    color={discount > 0 ? 'warning' : 'default'}
-                    variant="filled"
-                  />
+                  */}
                 </>
               )}
             </Box>
@@ -299,16 +303,17 @@ const CartHeader = ({
                 >
                   <span>
                     <IconButton
-                      onClick={onDeleteSelected}
-                      color="error"
-                      disabled={selectedItems.length === 0}                      sx={{
+                      onClick={() => selectedItems.length > 0 && setOpenDeleteModal(true)}
+                      color="default"
+                      disabled={selectedItems.length === 0}
+                      sx={{
                         opacity: selectedItems.length === 0 ? 0.5 : 1,
                         '&:hover': {
                           transform:
                             selectedItems.length > 0 ? 'scale(1.1)' : 'none',
                           background:
                             selectedItems.length > 0
-                              ? 'rgba(244, 67, 54, 0.1)'
+                              ? 'rgba(158, 158, 158, 0.1)'
                               : 'transparent',
                         },
                       }}
@@ -318,7 +323,7 @@ const CartHeader = ({
                         color="error"
                         invisible={selectedItems.length === 0}
                       >
-                        <DeleteIcon />
+                        <DeleteIcon sx={{ color: 'grey.600' }} />
                       </Badge>
                     </IconButton>
                   </span>
@@ -346,46 +351,37 @@ const CartHeader = ({
             ) : (
               /* Botón normal de eliminar que activa modo selección */
               <Tooltip title="Eliminar productos">
-                <IconButton
-                  onClick={onToggleSelectionMode}
-                  color="error"                  sx={{
-                    '&:hover': {
-                      transform: 'scale(1.1)',
-                      background: 'rgba(244, 67, 54, 0.1)',
-                    },
-                  }}
-                >
-                  <DeleteIcon />
-                </IconButton>
+                <span>
+                  <IconButton
+                    onClick={onToggleSelectionMode}
+                    color="default"
+                    sx={{
+                      '&:hover': {
+                        transform: 'scale(1.1)',
+                        background: 'rgba(158, 158, 158, 0.1)',
+                      },
+                    }}
+                  >
+                    <DeleteIcon sx={{ color: 'grey.600' }} />
+                  </IconButton>
+                </span>
               </Tooltip>
             )}
-            <Tooltip title="Favoritos (Próximamente disponible)">
-              <span>
-                <IconButton
-                  onClick={() => {
-                    // Funcionalidad deshabilitada temporalmente
-                    console.log(
-                      'Funcionalidad de favoritos deshabilitada temporalmente'
-                    )
-                  }}
-                  color="secondary"
-                  disabled={true}
-                  sx={{
-                    opacity: 0.5,
-                    '&:hover': {
-                      opacity: 0.7,
-                    },
-                  }}
-                >
-                  <Badge badgeContent={0} color="error">
-                    <FavoriteIcon />
-                  </Badge>
-                </IconButton>
-              </span>{' '}
-            </Tooltip>
           </Stack>{' '}
         </Grid>
       </Grid>
+      <Modal
+        isOpen={openDeleteModal}
+        onClose={() => setOpenDeleteModal(false)}
+        onSubmit={onDeleteSelected}
+        type={MODAL_TYPES.DELETE}
+        title="¿Eliminar productos seleccionados?"
+        submitButtonText="Eliminar"
+        cancelButtonText="Cancelar"
+        showCancelButton
+      >
+        ¿Estás seguro que deseas eliminar los productos seleccionados del carrito?
+      </Modal>
     </Box>
   )
 }

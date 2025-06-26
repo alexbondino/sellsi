@@ -609,9 +609,8 @@ const BuyerCart = () => {
           component="main"
           sx={{
             flexGrow: 1,
-            ml: '250px',
             p: 3,
-            background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
+            background: '##ffffff',
             minHeight: '100vh',
             display: 'flex',
             justifyContent: 'center',
@@ -658,13 +657,12 @@ const BuyerCart = () => {
                 totalItems={items.length}
               />
               {/* Barra de progreso hacia envío gratis */}
-              <ShippingProgressBar
+              {/* <ShippingProgressBar
                 subtotal={cartCalculations.subtotal}
                 formatPrice={formatPrice}
                 itemVariants={itemVariants}
-              />{' '}
+              /> */}
               <Grid container spacing={15}>
-                {' '}
                 {/* Lista de productos */}
                 <Grid
                   item
@@ -676,7 +674,6 @@ const BuyerCart = () => {
                   }}
                 >
                   <AnimatePresence>
-                    {' '}
                     {items.map((item, index) => (
                       <CartItem
                         key={
@@ -722,8 +719,8 @@ const BuyerCart = () => {
                         </Suspense>
                       </AccordionDetails>
                     </Accordion>
-                  </motion.div>{' '}
-                </Grid>{' '}
+                  </motion.div>
+                </Grid>
                 {/* Panel lateral - Resumen y opciones */}
                 <Grid
                   item
@@ -736,32 +733,33 @@ const BuyerCart = () => {
                   <Box
                     sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}
                   >
-                    {/* Resumen del pedido modularizado */}
+                    {/* Resumen del pedido modularizado (sin códigos de descuento) */}
                     <motion.div variants={itemVariants}>
-                      {' '}
                       <OrderSummary
-                        // Data props
                         subtotal={cartCalculations.subtotal}
-                        discount={cartCalculations.discount}
+                        discount={0} // Ocultamos descuento por código
                         shippingCost={productShippingCost}
-                        total={finalTotal}
+                        total={cartCalculations.subtotal + productShippingCost}
                         cartStats={cartStats}
                         deliveryDate={deliveryDate}
-                        appliedCoupons={appliedCoupons}
-                        couponInput={couponInput}
+                        appliedCoupons={[]} // Ocultamos cupones
+                        couponInput={''} // Ocultamos input de cupones
                         isCheckingOut={isCheckingOut}
                         // Options
-                        availableCodes={DISCOUNT_CODES}
+                        availableCodes={[]} // Ocultamos lista de códigos
                         // Functions
                         formatPrice={formatPrice}
                         formatDate={formatDate}
-                        setCouponInput={setCouponInput}
-                        onApplyCoupon={handleApplyCoupon}
-                        onRemoveCoupon={removeCoupon}
+                        setCouponInput={() => {}} // No-op
+                        onApplyCoupon={() => {}} // No-op
+                        onRemoveCoupon={() => {}} // No-op
                         onCheckout={handleCheckout}
+                        // Puedes agregar una prop extra en OrderSummary para ocultar el input de cupones si existe
+                        hideCouponInput={true}
                       />
-                    </motion.div>{' '}
-                    {/* Calculadora de ahorros modularizada */}{' '}
+                    </motion.div>
+                    {/* Calculadora de ahorros modularizada */}
+                    {/*
                     <motion.div variants={itemVariants}>
                       <SavingsCalculator
                         subtotal={cartCalculations.subtotal}
@@ -770,9 +768,10 @@ const BuyerCart = () => {
                         formatPrice={formatPrice}
                       />
                     </motion.div>
+                    */}
                   </Box>
                 </Grid>
-              </Grid>{' '}
+              </Grid>
               {/* Wishlist modularizada */}
               <WishlistSection
                 showWishlist={showWishlist}
