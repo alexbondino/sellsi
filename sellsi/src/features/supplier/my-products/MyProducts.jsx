@@ -202,7 +202,6 @@ const MyProducts = () => {
 
       <Box
         sx={{
-          marginLeft: '210px',
           backgroundColor: 'background.default',
           minHeight: '100vh',
           pt: { xs: 9, md: 10 },

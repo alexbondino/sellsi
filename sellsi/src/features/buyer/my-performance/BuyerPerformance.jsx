@@ -82,7 +82,6 @@ const BuyerPerformance = () => {
         component="main"
         sx={{
           flexGrow: 1,
-          ml: '250px',
           p: 3,
           backgroundColor: '#f8fafc',
           minHeight: '100vh',

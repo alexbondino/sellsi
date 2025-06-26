@@ -569,7 +569,6 @@ const BuyerCart = () => {
             component="main"
             sx={{
               flexGrow: 1,
-              ml: '250px',
               p: 3,
               backgroundColor:
                 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
@@ -609,7 +608,6 @@ const BuyerCart = () => {
           component="main"
           sx={{
             flexGrow: 1,
-            ml: '250px',
             p: 3,
             background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
             minHeight: '100vh',

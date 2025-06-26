@@ -311,7 +311,6 @@ const MyOrdersPage = () => {
         <SideBarProvider />
         <Box
           sx={{
-            marginLeft: '210px', // Ajusta el margen para la barra lateral
             backgroundColor: 'background.default',
             minHeight: '100vh',
             pt: { xs: 9, md: 10 },
@@ -335,7 +334,6 @@ const MyOrdersPage = () => {
         <SideBarProvider />
         <Box
           sx={{
-            marginLeft: '210px',
             backgroundColor: 'background.default',
             minHeight: '100vh',
             pt: { xs: 9, md: 10 },
@@ -365,7 +363,6 @@ const MyOrdersPage = () => {
       <SideBarProvider />
       <Box
         sx={{
-          marginLeft: '210px', // Ajusta el margen para la barra lateral
           backgroundColor: 'background.default',
           minHeight: '100vh',
           pt: { xs: 9, md: 10 }, // Padding top para espacio con el header

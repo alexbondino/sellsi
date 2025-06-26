@@ -374,7 +374,7 @@ function AppContent({ mensaje }) {
       ));
 
   // La BottomBar se muestra en todas las rutas excepto en '/supplier/home'
-  const showBottomBar = location.pathname !== '/supplier/home';
+  const showBottomBar = location.pathname;
   const topBarHeight = '64px'; // Consistente con la altura de TopBar
 
   return (
