@@ -113,7 +113,7 @@ function AppContent({ mensaje }) {
   const { prefetchRoute } = usePrefetch();
 
   const [currentAppRole, setCurrentAppRole] = useState('buyer'); // 'buyer' o 'supplier'
-  const SideBarWidth = '210px'; // Define aquí el ancho de tu SideBar
+  const SideBarWidth = '250px'; // Define aquí el ancho de tu SideBar
 
   // Define las rutas para cada rol (para visibilidad de SideBar y redirecciones específicas)
   // Usamos un Set para búsquedas más eficientes.
