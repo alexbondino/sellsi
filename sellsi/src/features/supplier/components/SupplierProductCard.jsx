@@ -277,7 +277,7 @@ const SupplierProductCard = ({
               )}
             </Box>
           )}
-          {negociable && (
+          {/* {negociable && (
             <Chip
               label="Precio negociable"
               size="small"
@@ -285,7 +285,7 @@ const SupplierProductCard = ({
               variant="outlined"
               sx={{ fontSize: '0.7rem', height: 20 }}
             />
-          )}
+          )} */}
         </Box>{' '}
         {/* Estados y métricas */}
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>

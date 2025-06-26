@@ -71,13 +71,19 @@ const ProductCard = React.memo(
         <LazyImage
           src={resolvedImageSrc}
           alt={nombre}
-          aspectRatio={type === 'supplier' ? '140 / 140' : '160 / 160'}
+          // aspectRatio eliminado para que height y width funcionen sin restricciones
           rootMargin="150px"
           objectFit="contain"
           sx={{
             maxWidth: '100%',
+            height: type === 'supplier' ? 
+              { xs: 218, sm: 235, md: 275, lg: 350, xl: 400 } :
+              { xs: 218, sm: 235, md: 275, lg: 350, xl: 400 },
             bgcolor: '#fafafa',
-            p: type === 'supplier' ? 1 : 1.5,
+            // 🎯 PADDING RESPONSIVE
+            p: type === 'supplier' ? 
+              { xs: 0.5, sm: 0.8, md: 1, lg: 1.2 } : 
+              { xs: 1, sm: 1.2, md: 1.5, lg: 1.8 },
             display: 'block',
             mx: 'auto',
           }}
@@ -89,8 +95,14 @@ const ProductCard = React.memo(
     // --- Common Card Styles (can be adjusted per type if needed) ---
     const cardStyles = useMemo(
       () => ({
-        height: type === 'supplier' ? 420 : 450, // Dynamic height based on type
-        minWidth: { xs: 100, sm: 150, md: 180, lg: 280, xl: 300 },
+        // 🎯 ALTURA RESPONSIVE DE LA TARJETA
+        height: type === 'supplier' ? 
+          { xs: 525, sm: 545, md: 550, lg: 620, xl: 660 } : 
+          { xs: 525, sm: 545, md: 550, lg: 620, xl: 660 },
+        // 🎯 ANCHO RESPONSIVE ÚNICO DE LA TARJETA
+        width: type === 'supplier'
+          ? { xs: 175, sm: 190, md: 220, lg: 300, xl: 320 }
+          : { xs: 175, sm: 190, md: 220, lg: 300, xl: 320 },
         display: 'flex',
         flexDirection: 'column',
         position: 'relative',

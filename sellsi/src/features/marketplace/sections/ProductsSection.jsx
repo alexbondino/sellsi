@@ -123,11 +123,11 @@ const ProductsSection = React.memo(
         gridTemplateColumns: {
           xs: 'repeat(2, 1fr)', // Móvil: 2 columnas
           sm: 'repeat(2, 1fr)', // Tablet: 2 columnas
-          md: 'repeat(3, 1fr)', // Desktop: 3 columnas
+          md: 'repeat(4, 1fr)', // Desktop: 3 columnas
           lg: 'repeat(4, 1fr)', // Large: 4 columnas
           xl: 'repeat(5, 1fr)', // XL: 5 columnas
         },
-        gap: { xs: 1.5, sm: 1.5, md: 4, lg: 6, xl: 6 }, // ✅ REDUCIR gap responsive - md reducido
+        gap: { xs: 1, sm: 1.5, md: 2, lg: 6, xl: 6 }, // ✅ REDUCIR gap responsive - md reducido
         width: '100%',
         justifyItems: 'center', // ✅ AGREGAR: Centrar cada producto
       }),

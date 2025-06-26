@@ -1,0 +1,1 @@
+export { default as LazyImage } from '../../features/layout/LazyImage';

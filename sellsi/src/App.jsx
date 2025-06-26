@@ -567,8 +567,10 @@ function App() {
 
   // Basic backend health check (optional, can be removed if not needed)
   useEffect(() => {
+    // ✅ COMENTADO: Backend health check para evitar errores CORS
     // Si tu backend no está listo, esto puede ser un problema.
     // Considera remover o mejorar esta verificación en producción.
+    /*
     if (backendUrl) {
       fetch(`${backendUrl}/`)
         .then(res => res.json())
@@ -578,9 +580,12 @@ function App() {
           setMensaje('No se pudo conectar con el backend.');
         });
     } else {
-      setMensaje('URL del backend no definida.');
+    */
+    if (true) {
+      setMensaje('Backend health check deshabilitado - usando Supabase');
     }
-  }, [backendUrl]);
+    // }
+  }, []);  // Removed backendUrl dependency
 
   return (
     <ThemeProvider theme={theme}>

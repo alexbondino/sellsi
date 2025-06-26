@@ -268,6 +268,7 @@ const ProductCardBuyerContext = React.memo(
           >
             {stock < 10 ? `¡Solo ${stock} disponibles!` : `Stock: ${stock}`}
           </Typography>
+          {/*
           <Box sx={{ mt: 2, mb: 0 }}>
             <Button
               variant="contained"
@@ -331,6 +332,7 @@ const ProductCardBuyerContext = React.memo(
               {negociable ? 'Negociable' : 'No Negociable'}
             </Button>
           </Box>
+          */}
         </CardContent>
         <CardActions sx={{ p: 1.5, pt: 0.5 }}>
           <Button
