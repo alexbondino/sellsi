@@ -327,8 +327,6 @@ export default function TopBar({
 
   return (
     <>
-      {/* Log para ver si el modal debería estar abierto */}
-      {console.log('TopBar render, openContactModal:', openContactModal)}
       <Box
         sx={{
           backgroundColor: '#000000',

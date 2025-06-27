@@ -416,27 +416,35 @@ class CartService {  /**
       // Obtener o crear carrito activo
       const cart = await this.getOrCreateActiveCart(userId);
 
+      // Obtener items actuales del backend para comparar cantidades
+      const backendItems = (cart.items || []).reduce((acc, item) => {
+        acc[item.product_id || item.id] = item;
+        return acc;
+      }, {});
+
       // Filtrar y validar items del carrito local usando utilidad centralizada
       const sanitizationResult = sanitizeCartItems(localCartItems);
-      const { validItems, summary } = sanitizationResult;
+      const { validItems } = sanitizationResult;
 
-      // Agregar items válidos del carrito local
       for (const item of validItems) {
+        const backendItem = backendItems[item.product_id || item.id];
+        const localQty = item.quantity;
+        const backendQty = backendItem ? backendItem.quantity : 0;
+        // Tomar la mayor cantidad entre local y backend
+        const finalQty = Math.max(localQty, backendQty);
         try {
-          await this.addItemToCart(cart.cart_id, item, item.quantity);
+          await this.updateItemQuantity(cart.cart_id, item.product_id || item.id, finalQty);
         } catch (error) {
           console.error(`[CartService] ❌ Error migrando item ${item.id || item.name}:`, error);
-          
           // Si es un error de cantidad, intentar con cantidad mínima
           if (isQuantityError(error)) {
             try {
-              console.warn(`[CartService] � Reintentando con cantidad mínima para item ${item.id}`);
-              await this.addItemToCart(cart.cart_id, item, 1);
+              console.warn(`[CartService] 🚨 Reintentando con cantidad mínima para item ${item.id}`);
+              await this.updateItemQuantity(cart.cart_id, item.product_id || item.id, 1);
             } catch (retryError) {
               console.error(`[CartService] ❌ Falló reintento para item ${item.id}:`, retryError);
             }
           }
-          // Continuar con los otros items aunque uno falle
         }
       }
 
