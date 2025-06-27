@@ -52,7 +52,6 @@ import {
 const RecommendedProducts = lazy(() =>
   import('../marketplace/RecommendedProducts')
 );
-const PriceComparison = lazy(() => import('./PriceComparison'));
 
 // ============================================================================
 // COMPONENTES AUXILIARES OPTIMIZADOS

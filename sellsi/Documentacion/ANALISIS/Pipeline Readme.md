@@ -40,4 +40,8 @@ Incluir:
    - Cómo importar y usar uno o más componentes importantes del módulo.  
    - Incluye snippets simples y explicativos.
 
+10. **Fecha de creación del README**  
+   - Agrega la fecha de creación del archivo README.md al inicio del documento, en formato `dd/mm/yyyy`, cada vez que generes o actualices un README con esta plantilla.
+
 Escribe todo esto en Markdown bien estructurado y legible, con encabezados `##`, tablas si es necesario, y un lenguaje claro, directo y profesional. Evita jergas innecesarias o explicaciones redundantes. El objetivo es que otro developer entienda el 90% del código leyendo solo este archivo.
+Si las explicaciones se extienden mas de lo normal no importa, prefiero que haya "sobre texto explicartivo a que falte"

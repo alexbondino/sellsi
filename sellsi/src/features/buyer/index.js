@@ -15,9 +15,6 @@ export { default as BuyerCart } from './BuyerCart.jsx'
 export { default as BuyerOrders } from './BuyerOrders.jsx'
 export { default as BuyerPerformance } from './BuyerPerformance.jsx'
 
-// Componentes auxiliares
-export { default as PriceComparison } from './PriceComparison.jsx'
-
 // Componentes reutilizables
 export { default as StatCard } from './components/StatCard.jsx'
 
