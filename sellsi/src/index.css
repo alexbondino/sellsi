@@ -55,4 +55,41 @@ button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
 }
 
-/* ✅ ELIMINADO: Media query problemática */
+/* ===== Scrollbar global con gradiente ===== */
+html::-webkit-scrollbar, body::-webkit-scrollbar, #root::-webkit-scrollbar, *::-webkit-scrollbar {
+  width: 12px;
+}
+@keyframes shimmer {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 100% 50%;
+  }
+}
+html::-webkit-scrollbar-thumb, body::-webkit-scrollbar-thumb, #root::-webkit-scrollbar-thumb, *::-webkit-scrollbar-thumb {
+  background: linear-gradient(120deg, #000 40%, #1565c0 60%, #00eaff 100%);
+  background-size: 200% 200%;
+  border-radius: 8px;
+  box-shadow: 0 0 12px 2px #1565c0, 0 0 24px 4px #00eaff;
+  border: 2px solid #1565c0;
+  transition: box-shadow 0.3s, border 0.3s;
+  animation: shimmer 2.5s linear infinite;
+  cursor: pointer;
+}
+html::-webkit-scrollbar-thumb:hover, body::-webkit-scrollbar-thumb:hover, #root::-webkit-scrollbar-thumb:hover, *::-webkit-scrollbar-thumb:hover {
+  box-shadow: 0 0 32px 12px #00eaff, 0 0 48px 16px #1565c0;
+  border: 2.5px solid #00eaff;
+  background: linear-gradient(120deg, #1565c0 20%, #00eaff 80%, #000 100%);
+  background-size: 200% 200%;
+  animation: shimmer 1.2s linear infinite;
+  cursor: pointer;
+}
+html::-webkit-scrollbar-track, body::-webkit-scrollbar-track, #root::-webkit-scrollbar-track, *::-webkit-scrollbar-track {
+  background: #000;
+}
+
+html, body, #root, * {
+  scrollbar-color: #1565c0 #000;
+  scrollbar-width: thin;
+}

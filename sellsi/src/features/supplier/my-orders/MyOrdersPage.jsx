@@ -14,7 +14,7 @@ import Table from '../../ui/table/Table'; // Asegúrate que esta ruta sea correc
 import Modal, { MODAL_TYPES } from '../../ui/Modal'; // Componente Modal genérico y sus tipos
 import { useBanner } from '../../ui/banner/BannerContext'; // Contexto para mostrar banners
 import SideBarProvider from '../../layout/SideBar'; // Proveedor para la barra lateral
-import { dashboardTheme } from '../../../styles/dashboardTheme'; // Tema de Material-UI para el dashboard
+import { dashboardThemeCore } from '../../../styles/dashboardThemeCore'; // Tema de Material-UI para el dashboard
 
 // TODO: Importar hook para obtener usuario autenticado
 // import { useAuth } from '../../auth/hooks/useAuth';
@@ -307,11 +307,11 @@ const MyOrdersPage = () => {
   // Muestra un indicador de carga si los pedidos están cargando y aún no hay datos
   if (loading && !orders.length) {
     return (
-      <ThemeProvider theme={dashboardTheme}>
+      <ThemeProvider theme={dashboardThemeCore}>
         <SideBarProvider />
         <Box
           sx={{
-            marginLeft: '210px', // Ajusta el margen para la barra lateral
+            // marginLeft: '210px', // Eliminado para ocupar todo el ancho
             backgroundColor: 'background.default',
             minHeight: '100vh',
             pt: { xs: 9, md: 10 },
@@ -331,11 +331,11 @@ const MyOrdersPage = () => {
   // Muestra un mensaje de error si ocurre un problema al cargar los pedidos
   if (error) {
     return (
-      <ThemeProvider theme={dashboardTheme}>
+      <ThemeProvider theme={dashboardThemeCore}>
         <SideBarProvider />
         <Box
           sx={{
-            marginLeft: '210px',
+            // marginLeft: '210px', // Eliminado para ocupar todo el ancho
             backgroundColor: 'background.default',
             minHeight: '100vh',
             pt: { xs: 9, md: 10 },
@@ -361,11 +361,11 @@ const MyOrdersPage = () => {
 
   // --- Renderizado Principal de la Página ---
   return (
-    <ThemeProvider theme={dashboardTheme}>
+    <ThemeProvider theme={dashboardThemeCore}>
       <SideBarProvider />
       <Box
         sx={{
-          marginLeft: '210px', // Ajusta el margen para la barra lateral
+          // marginLeft: '210px', // Eliminado para ocupar todo el ancho
           backgroundColor: 'background.default',
           minHeight: '100vh',
           pt: { xs: 9, md: 10 }, // Padding top para espacio con el header

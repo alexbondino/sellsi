@@ -101,7 +101,7 @@ const ProductCard = React.memo(
           { xs: 525, sm: 545, md: 550, lg: 620, xl: 660 },
         // 🎯 ANCHO RESPONSIVE ÚNICO DE LA TARJETA
         width: type === 'supplier'
-          ? { xs: 175, sm: 190, md: 220, lg: 300, xl: 320 }
+          ? { xs: 175, sm: 190, md: 220, lg: 300, xl: 360 }
           : { xs: 175, sm: 190, md: 220, lg: 300, xl: 320 },
         display: 'flex',
         flexDirection: 'column',

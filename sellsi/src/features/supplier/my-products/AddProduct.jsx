@@ -49,7 +49,7 @@ import PriceTiers from '../../ui/PriceTiers'; // Importar el nuevo componente
 // Hooks y stores
 import { useSupplierProducts } from '../hooks/useSupplierProducts';
 import { useProductForm } from '../hooks/useProductForm';
-import { dashboardTheme } from '../../../styles/dashboardTheme';
+import { dashboardThemeCore } from '../../../styles/dashboardThemeCore';
 import { formatPrice } from '../../marketplace/utils/formatters';
 
 // Constantes
@@ -515,12 +515,12 @@ const AddProduct = () => {
   }, [isValid, formData, errors]);
 
   return (
-    <ThemeProvider theme={dashboardTheme}>
+    <ThemeProvider theme={dashboardThemeCore}>
       <SideBarProvider />
 
       <Box
         sx={{
-          marginLeft: '210px',
+          // marginLeft: '210px', // Eliminado para ocupar todo el ancho
           backgroundColor: 'background.default',
           minHeight: '100vh',
           pt: { xs: 9, md: 10 },
@@ -871,25 +871,25 @@ const AddProduct = () => {
                             sx={{ mb: 1 }}
                           />
                           <FormControlLabel
-                            value="region-metropolitana"
+                            value="región-metropolitana"
                             control={<Radio />}
                             label="Región Metropolitana"
                             sx={{ mb: 1 }}
                           />
                           <FormControlLabel
-                            value="i-region"
+                            value="i-región"
                             control={<Radio />}
                             label="I Región"
                             sx={{ mb: 1 }}
                           />
                           <FormControlLabel
-                            value="ii-region"
+                            value="ii-región"
                             control={<Radio />}
                             label="II Región"
                             sx={{ mb: 1 }}
                           />
                           <FormControlLabel
-                            value="iii-region"
+                            value="iii-región"
                             control={<Radio />}
                             label="III Región"
                             sx={{ mb: 1 }}
@@ -904,37 +904,37 @@ const AddProduct = () => {
                           }}
                         >
                           <FormControlLabel
-                            value="iv-region"
+                            value="iv-región"
                             control={<Radio />}
                             label="IV Región"
                             sx={{ mb: 1 }}
                           />
                           <FormControlLabel
-                            value="v-region"
+                            value="v-región"
                             control={<Radio />}
                             label="V Región"
                             sx={{ mb: 1 }}
                           />
                           <FormControlLabel
-                            value="vi-region"
+                            value="vi-región"
                             control={<Radio />}
                             label="VI Región"
                             sx={{ mb: 1 }}
                           />
                           <FormControlLabel
-                            value="vii-region"
+                            value="vii-región"
                             control={<Radio />}
                             label="VII Región"
                             sx={{ mb: 1 }}
                           />
                           <FormControlLabel
-                            value="viii-region"
+                            value="viii-región"
                             control={<Radio />}
                             label="VIII Región"
                             sx={{ mb: 1 }}
                           />
                           <FormControlLabel
-                            value="ix-region"
+                            value="ix-región"
                             control={<Radio />}
                             label="IX Región"
                             sx={{ mb: 1 }}
@@ -949,37 +949,37 @@ const AddProduct = () => {
                           }}
                         >
                           <FormControlLabel
-                            value="x-region"
+                            value="x-región"
                             control={<Radio />}
                             label="X Región"
                             sx={{ mb: 1 }}
                           />
                           <FormControlLabel
-                            value="xi-region"
+                            value="xi-región"
                             control={<Radio />}
                             label="XI Región"
                             sx={{ mb: 1 }}
                           />
                           <FormControlLabel
-                            value="xii-region"
+                            value="xii-región"
                             control={<Radio />}
                             label="XII Región"
                             sx={{ mb: 1 }}
                           />
                           <FormControlLabel
-                            value="xiv-region"
+                            value="xiv-región"
                             control={<Radio />}
                             label="XIV Región"
                             sx={{ mb: 1 }}
                           />
                           <FormControlLabel
-                            value="xv-region"
+                            value="xv-región"
                             control={<Radio />}
                             label="XV Región"
                             sx={{ mb: 1 }}
                           />
                           <FormControlLabel
-                            value="xvi-region"
+                            value="xvi-región"
                             control={<Radio />}
                             label="XVI Región"
                             sx={{ mb: 1 }}

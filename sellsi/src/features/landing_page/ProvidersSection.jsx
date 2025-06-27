@@ -13,12 +13,12 @@ const ProvidersSection = ({ statistics }) => {
       sx={{
         backgroundColor: '#ffffff',
         px: { xs: 2, sm: 4, md: 8, mac: 18, lg: 18, xl: 30 },
-        py: { xs: 6, sm: 7, md: 8, mac: 6, lg: 8, xl: 8 },
+        py: { xs: 6, sm: 7, md: 8, mac: 0, lg: 8, xl: 8 },
         position: 'relative',
         paddingTop: {
           xs: 6,
           sm: 7,
-          md: 8,
+          md: 0,
           mac: 0,
           lg: 20,
           xl: 25,
@@ -66,13 +66,13 @@ const ProvidersSection = ({ statistics }) => {
             xs: 'center',
             sm: 'center',
             md: 'flex-start',
-            mac: 'flex-start', // Mantener alineación a la izquierda para Mac
+            mac: 'flex-start',
             lg: 'flex-start',
             xl: 'flex-start',
           },
           gap: { xs: 2, sm: 4, md: 8, mac: 12, lg: 25, xl: 33 },
           mb: { xs: 2, sm: 4, md: 8, mac: 10, lg: 12, xl: 10 },
-          mt: { xs: 2, sm: 4, md: 8, mac: 10, lg: -18, xl: -20 },
+          mt: { xs: 2, sm: 4, md: 8, mac: 6, lg: -18, xl: -20 }, // Cambiar mac a 0
           ml: { xs: 0, sm: 0, md: 0, mac: 0, lg: 0, xl: 0 },
           width: '100%',
           maxWidth: {
@@ -95,6 +95,12 @@ const ProvidersSection = ({ statistics }) => {
           },
         }}
       >
+        {/* DEBUG: Mostrar si statistics está vacío o no */}
+        {(!statistics || statistics.length === 0) && (
+          <Typography color="error" sx={{ mr: 2 }}>
+            [DEBUG] statistics vacío o no definido
+          </Typography>
+        )}
         <Button
           variant="contained"
           sx={{
@@ -124,7 +130,6 @@ const ProvidersSection = ({ statistics }) => {
         >
           Ir a marketplace
         </Button>
-
         <Box
           sx={{
             display: 'flex',
@@ -141,7 +146,7 @@ const ProvidersSection = ({ statistics }) => {
               xs: 'center',
               sm: 'center',
               md: 'flex-start',
-              mac: 'flex-start', // Mantener alineación a la izquierda para Mac
+              mac: 'flex-start',
               lg: 'flex-start',
               xl: 'flex-start',
             },
