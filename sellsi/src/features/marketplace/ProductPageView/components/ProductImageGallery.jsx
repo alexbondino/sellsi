@@ -2,7 +2,6 @@ import React, { useState } from 'react'
 import { Box, Card, CardMedia, useTheme, useMediaQuery } from '@mui/material'
 import { ZoomIn } from '@mui/icons-material'
 import { getProductImageUrl } from '../../../../utils/getProductImageUrl'
-import LazyImage from './LazyImage'
 import { useImagePreloader } from '../hooks/useLazyImage'
 
 const ProductImageGallery = ({

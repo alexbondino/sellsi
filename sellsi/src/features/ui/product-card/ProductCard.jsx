@@ -5,7 +5,7 @@ import { Card, Box, alpha } from '@mui/material';
 
 // Common Utility Imports (adjust paths relative to this file)
 import { getProductImageUrl } from '../../../utils/getProductImageUrl'; // Adjust path
-import { LazyImage } from '../../../components/shared'; // Adjust path
+import { LazyImage } from '../../layout'; // Importar desde layout
 
 // Sub-components (updated names)
 import ProductCardBuyerContext from './ProductCardBuyerContext'; // Adjust path

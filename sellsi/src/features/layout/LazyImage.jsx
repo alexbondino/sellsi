@@ -4,7 +4,7 @@
  * ============================================================================
  *
  * Componente optimizado para lazy loading de imágenes en todo el marketplace.
- * Basado en el componente exitoso de ProductPageView pero más generalizado.
+ * Combina funcionalidades de ambas versiones (layout + ProductPageView).
  *
  * CARACTERÍSTICAS:
  * - ✅ Intersection Observer para performance
@@ -12,10 +12,12 @@
  * - ✅ Manejo de errores robusto
  * - ✅ Preload anticipado configurable
  * - ✅ Optimización para diferentes densidades de pantalla
+ * - ✅ Soporte para progressive loading
+ * - ✅ Compatible con ambos estilos de API
  */
 
 import React, { useState, useRef, useEffect } from 'react'
-import { Box, Skeleton, Paper } from '@mui/material'
+import { Box, Skeleton, CardMedia, Fade } from '@mui/material'
 import { Image as ImageIcon } from '@mui/icons-material'
 
 /**
@@ -54,8 +56,10 @@ const useLazyLoading = (rootMargin = '50px') => {
 
 /**
  * Componente LazyImage universal
+ * Combina funcionalidades de ambas versiones (layout + ProductPageView)
  */
 const LazyImage = ({
+  // Props originales del layout
   src,
   alt = '',
   placeholder = null,
@@ -70,6 +74,14 @@ const LazyImage = ({
   onError = () => {},
   className = '',
   sx = {},
+  
+  // Props adicionales del ProductPageView (para compatibilidad total)
+  width,
+  height,
+  bgcolor = '#fafafa',
+  padding = 0,
+  enableProgressiveLoading = true,
+  
   ...props
 }) => {
   const [elementRef, isVisible] = useLazyLoading(rootMargin)
@@ -98,7 +110,7 @@ const LazyImage = ({
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        bgcolor: 'grey.100',
+        bgcolor: bgcolor || 'grey.100',
         borderRadius,
       }}
     >
@@ -107,7 +119,11 @@ const LazyImage = ({
           variant={skeletonVariant}
           width="100%"
           height="100%"
-          sx={{ borderRadius }}
+          sx={{ 
+            borderRadius,
+            bgcolor: 'grey.100',
+            animation: 'wave 1.6s ease-in-out 0.5s infinite',
+          }}
         />
       ) : (
         <ImageIcon sx={{ fontSize: 48, color: 'grey.400' }} />
@@ -143,10 +159,16 @@ const LazyImage = ({
       className={className}
       sx={{
         position: 'relative',
-        width: '100%',
-        aspectRatio,
+        // Soporte para ambos estilos de dimensionamiento
+        width: width || '100%',
+        height: height || 'auto',
+        aspectRatio: !height ? aspectRatio : undefined,
         overflow: 'hidden',
         borderRadius,
+        bgcolor,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
         ...sx,
       }}
       {...props}
@@ -173,6 +195,7 @@ const LazyImage = ({
             height: '100%',
             objectFit,
             borderRadius,
+            p: padding,
             opacity: imageLoaded ? 1 : 0,
             transition: 'opacity 0.3s ease-in-out',
           }}
