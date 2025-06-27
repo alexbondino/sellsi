@@ -420,8 +420,6 @@ class CartService {  /**
       const sanitizationResult = sanitizeCartItems(localCartItems);
       const { validItems, summary } = sanitizationResult;
 
-      console.log(`[CartService] 📦 Resultado de sanitización:`, summary);
-
       // Agregar items válidos del carrito local
       for (const item of validItems) {
         try {

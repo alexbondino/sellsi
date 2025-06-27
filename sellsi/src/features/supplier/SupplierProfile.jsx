@@ -129,8 +129,6 @@ const SupplierProfile = ({ onProfileUpdated }) => {
         updatedt: new Date().toISOString(), // Usar updatedt en lugar de updated_at
       };
 
-      console.log('🔄 Updating profile data:', updateData); // Debug log
-
       const { error } = await supabase
         .from('users') // Cambiar de 'profiles' a 'users'
         .update(updateData)

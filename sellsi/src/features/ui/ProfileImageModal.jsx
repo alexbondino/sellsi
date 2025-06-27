@@ -166,20 +166,26 @@ const ProfileImageModal = ({
       onClose={handleCancel}
       maxWidth="sm"
       fullWidth
+      disableScrollLock={true}
       PaperProps={{
         sx: {
           borderRadius: 2,
         },
       }}
     >
-      <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <DialogTitle sx={{ 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'space-between',
+        overflow: 'visible'
+      }}>
         Cambiar imagen de perfil
         <IconButton onClick={handleCancel} size="small">
           <CloseIcon />
         </IconButton>
       </DialogTitle>
 
-      <DialogContent sx={{ pt: 2 }}>
+      <DialogContent sx={{ pt: 2, overflow: 'visible' }}>
         {/* Preview de imagen actual */}
         <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
           <Avatar
