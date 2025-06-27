@@ -10,16 +10,18 @@ import {
   useNavigate,
 } from 'react-router-dom';
 
-import theme from './styles/theme';
+import theme from './styles/theme'; // Asegúrate de que tu tema está correctamente configurado
 import TopBar from './features/layout/TopBar';
 import BottomBar from './features/layout/BottomBar';
 import PrivateRoute from './features/auth/PrivateRoute';
-import { BannerProvider, useBanner } from './features/ui/BannerContext';
-import Banner from './features/ui/Banner';
+import { BannerProvider, useBanner } from './features/ui/banner/BannerContext';
+import Banner from './features/ui/banner/Banner';
 import { Toaster } from 'react-hot-toast';
 import { supabase } from './services/supabase';
 import { usePrefetch } from './hooks/usePrefetch';
 import useCartStore from './features/buyer/hooks/cartStore';
+
+import SideBar from './features/layout/SideBar';
 
 // ============================================================================
 // 🚀 CODE SPLITTING: LAZY LOADING DE COMPONENTES POR RUTAS
@@ -42,13 +44,21 @@ const ProviderHome = React.lazy(() =>
   import('./features/supplier/home/ProviderHome')
 );
 const MyProducts = React.lazy(() =>
-  import('./features/supplier/pages/MyProducts')
+  import('./features/supplier/my-products/MyProducts')
 );
 const AddProduct = React.lazy(() =>
-  import('./features/supplier/pages/AddProduct')
+  import('./features/supplier/my-products/AddProduct')
 );
 const MyOrdersPage = React.lazy(() =>
-  import('./features/supplier/pages/MyOrdersPage')
+  import('./features/supplier/my-orders/MyOrdersPage')
+);
+
+// 📦 PROFILE PAGES - LAZY LOADING
+const SupplierProfile = React.lazy(() =>
+  import('./features/supplier/SupplierProfile')
+);
+const BuyerProfile = React.lazy(() =>
+  import('./features/buyer/BuyerProfile')
 );
 
 // 📦 RUTAS SECUNDARIAS - LAZY LOADING
@@ -59,11 +69,17 @@ const BuyerPerformance = React.lazy(() =>
 const TechnicalSpecs = React.lazy(() =>
   import('./features/marketplace/view_page/TechnicalSpecs')
 );
+const ProductPageWrapper = React.lazy(() =>
+  import('./features/marketplace/ProductPageView/ProductPageWrapper')
+);
 
 // 📦 AUTH & ONBOARDING - LAZY LOADING
 const Login = React.lazy(() => import('./features/login/Login'));
 const Register = React.lazy(() => import('./features/register/Register'));
 const Onboarding = React.lazy(() => import('./features/onboarding/Onboarding'));
+
+// 📦 ERROR PAGES - LAZY LOADING
+const NotFound = React.lazy(() => import('./features/ui/NotFound'));
 
 // ============================================================================
 // 🎨 COMPONENTE DE LOADING UNIVERSAL PARA SUSPENSE
@@ -99,37 +115,68 @@ function AppContent({ mensaje }) {
   const navigate = useNavigate();
   const scrollTargets = useRef({});
   const { bannerState, hideBanner } = useBanner();
-  const [session, setSession] = useState(null);  const [userProfile, setUserProfile] = useState(null); // State to store logo_url, is_buyer, etc.
-  const [loadingUserStatus, setLoadingUserStatus] = useState(true); // Renamed for clarity
-    // Hook del carrito para inicialización con usuario
+  const [session, setSession] = useState(null);
+  const [userProfile, setUserProfile] = useState(null);
+  const [loadingUserStatus, setLoadingUserStatus] = useState(true);
   const { initializeCartWithUser, isBackendSynced } = useCartStore();
   const [needsOnboarding, setNeedsOnboarding] = useState(false);
-  const { prefetchRoute } = usePrefetch();  useEffect(() => {
+  const { prefetchRoute } = usePrefetch();
+
+  const [currentAppRole, setCurrentAppRole] = useState('buyer'); // 'buyer' o 'supplier'
+  const SideBarWidth = '210px'; // Define aquí el ancho de tu SideBar
+
+  // Define las rutas para cada rol (para visibilidad de SideBar y redirecciones específicas)
+  // Usamos un Set para búsquedas más eficientes.
+  const buyerDashboardRoutes = new Set([
+    '/buyer/marketplace',
+    '/buyer/orders',
+    '/buyer/performance',
+    '/buyer/cart',
+    '/buyer/profile',
+  ]);
+  const supplierDashboardRoutes = new Set([
+    '/supplier/home',
+    '/supplier/myproducts',
+    '/supplier/addproduct',
+    '/supplier/my-orders',
+    '/supplier/profile',
+  ]);
+  const neutralRoutes = new Set([
+    '/',
+    '/marketplace',
+    '/technicalspecs',
+    '/login',
+    '/crear-cuenta',
+    '/onboarding',
+  ]);
+
+  useEffect(() => {
     let mounted = true;
     setLoadingUserStatus(true);
-    // ❌ REMOVIDO: setUserProfile(null); // No limpiar innecesariamente
     setNeedsOnboarding(false);
+
     const checkUserAndFetchProfile = async currentSession => {
       if (!currentSession || !currentSession.user) {
         if (mounted) {
-          setUserProfile(null); // Solo limpiar si NO hay sesión
+          setUserProfile(null);
           setNeedsOnboarding(false);
           setLoadingUserStatus(false);
+          setCurrentAppRole('buyer'); // Por defecto para no logueados
         }
         return;
       }
       const { data: userData, error: userError } = await supabase
         .from('users')
-        .select('user_nm, main_supplier, logo_url') // ✅ Ensure logo_url is selected here!
+        .select('user_nm, main_supplier, logo_url')
         .eq('user_id', currentSession.user.id)
         .single();
 
       if (userError && mounted) {
-        console.error('Error fetching user profile:', userError.message); // Log the error message
-        // If there's an error (e.g., user has no profile entry), assume they need onboarding
-        setNeedsOnboarding(true);
-        setUserProfile(null); // Ensure profile is null
+        console.error('Error fetching user profile:', userError.message);
+        setNeedsOnboarding(true); // Podría ser un error, o que el perfil no existe y necesita onboarding
+        setUserProfile(null);
         setLoadingUserStatus(false);
+        setCurrentAppRole('buyer');
         return;
       }
       if (mounted) {
@@ -138,12 +185,14 @@ function AppContent({ mensaje }) {
           userData.user_nm?.toLowerCase() === USER_NAME_STATUS.PENDING
         ) {
           setNeedsOnboarding(true);
-          setUserProfile(null); // Profile is null if onboarding is needed
+          setUserProfile(null);
+          setCurrentAppRole('buyer'); // Asegura que si necesitan onboarding, el rol inicial no interfiera
         } else {
           setNeedsOnboarding(false);
-          setUserProfile(userData); // ✅ Store the complete user data (including logo_url)
+          setUserProfile(userData);
+          // Establece el rol inicial de la aplicación basado en userProfile.main_supplier
+          setCurrentAppRole(userData.main_supplier ? 'supplier' : 'buyer');
 
-          // ✅ INICIALIZAR CARRITO CON USUARIO AUTENTICADO
           if (currentSession?.user?.id && !isBackendSynced) {
             try {
               await initializeCartWithUser(currentSession.user.id);
@@ -154,7 +203,7 @@ function AppContent({ mensaje }) {
         }
         setLoadingUserStatus(false);
       }
-    }; // Initial session check and profile fetch
+    };
     supabase.auth.getSession().then(({ data }) => {
       if (mounted) {
         setSession(data.session);
@@ -162,12 +211,19 @@ function AppContent({ mensaje }) {
       }
     });
 
-    // Listen for auth state changes
     const { data: listener } = supabase.auth.onAuthStateChange(
-      (_event, newSession) => {
+      (event, newSession) => {
         if (mounted) {
-          setSession(newSession);
-          checkUserAndFetchProfile(newSession); // Re-evaluate and re-fetch profile on session changes
+          // Evitar recargas innecesarias durante cambios de contraseña
+          // Solo recargar en eventos críticos como login/logout
+          if (event === 'SIGNED_IN' || event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED') {
+            setSession(newSession);
+            checkUserAndFetchProfile(newSession);
+          } else if (event === 'USER_UPDATED') {
+            // Para USER_UPDATED, solo actualizamos la sesión pero no recargamos el perfil completo
+            setSession(newSession);
+            console.log('🔄 [Auth] User updated, session refreshed without profile reload');
+          }
         }
       }
     );
@@ -178,52 +234,110 @@ function AppContent({ mensaje }) {
         listener.subscription.unsubscribe();
       }
     };
-  }, []); // Empty dependency array means this runs once on mount  // --- Derived states from userProfile ---
-  const isBuyer = userProfile ? userProfile.main_supplier === false : null; // ✅ Derived from userProfile
-  const logoUrl = userProfile ? userProfile.logo_url : null; // ✅ Derived from userProfile  // Redirect to onboarding if needed
+  }, [initializeCartWithUser, isBackendSynced]);
+
+  // --- Estados derivados del perfil de usuario ---
+  const isBuyer = currentAppRole === 'buyer';
+  const logoUrl = userProfile ? userProfile.logo_url : null;
+
+  // Función para manejar el cambio de rol desde TopBar
+  const handleRoleChangeFromTopBar = newRole => {
+    setCurrentAppRole(newRole);
+    // Redirige al usuario al dashboard correspondiente cuando cambie el rol
+    if (newRole === 'supplier') {
+      navigate('/supplier/home');
+    } else {
+      navigate('/buyer/marketplace');
+    }
+  };
+
+  // Sincroniza el currentAppRole con la ruta actual
+  useEffect(() => {
+    if (session && !needsOnboarding && !loadingUserStatus && userProfile) {
+      const currentPath = location.pathname;
+
+      if (
+        Array.from(supplierDashboardRoutes).some(route =>
+          currentPath.startsWith(route)
+        )
+      ) {
+        setCurrentAppRole('supplier');
+      } else if (
+        Array.from(buyerDashboardRoutes).some(route =>
+          currentPath.startsWith(route)
+        )
+      ) {
+        setCurrentAppRole('buyer');
+      } else {
+        // Si está en una ruta neutral, determina el rol basado en el perfil (estado inicial)
+        // Esto asegura que el rol predeterminado correcto se establezca si aterrizan en una ruta pública
+        // pero han iniciado sesión.
+        setCurrentAppRole(userProfile.main_supplier ? 'supplier' : 'buyer');
+      }
+    } else if (!session) {
+      // Si no ha iniciado sesión, siempre establece el rol a comprador (vista pública predeterminada)
+      setCurrentAppRole('buyer');
+    }
+  }, [
+    location.pathname,
+    session,
+    needsOnboarding,
+    loadingUserStatus,
+    userProfile, // Crucial para la configuración inicial del rol
+    buyerDashboardRoutes,
+    supplierDashboardRoutes,
+  ]);
+
+  // Redirigir a onboarding si es necesario
   useEffect(() => {
     if (session && needsOnboarding && location.pathname !== '/onboarding') {
       navigate('/onboarding', { replace: true });
     }
   }, [session, needsOnboarding, location.pathname, navigate]);
 
-  // Redirect logged-in users from neutral routes
+  // Redirigir a usuarios logueados de rutas neutrales a su dashboard preferido
+  // basado en su perfil real.
   useEffect(() => {
-    if (!loadingUserStatus && session && isBuyer !== null && !needsOnboarding) {
-      const neutralRoutes = ['/', '/login', '/crear-cuenta', '/onboarding'];
-      if (neutralRoutes.includes(location.pathname)) {
-        if (isBuyer) {
-          navigate('/buyer/marketplace', { replace: true });
-        } else {
+    if (!loadingUserStatus && session && !needsOnboarding && userProfile) {
+      if (neutralRoutes.has(location.pathname)) {
+        if (userProfile.main_supplier) {
+          // Verifica el rol real del perfil
           navigate('/supplier/home', { replace: true });
+        } else {
+          navigate('/buyer/marketplace', { replace: true });
         }
       }
     }
   }, [
     loadingUserStatus,
     session,
-    isBuyer,
     needsOnboarding,
     location.pathname,
     navigate,
+    userProfile, // Dependencia importante
+    neutralRoutes,
   ]);
 
-  // Prefetch routes for performance
+  // Prefetch de rutas para rendimiento
   useEffect(() => {
-    if (!loadingUserStatus && session && isBuyer !== null) {
+    if (!loadingUserStatus && session && currentAppRole) {
       setTimeout(() => {
-        if (isBuyer) {
+        if (currentAppRole === 'buyer') {
           prefetchRoute('/buyer/marketplace');
           prefetchRoute('/buyer/cart');
+          prefetchRoute('/buyer/orders');
+          prefetchRoute('/buyer/performance');
         } else {
           prefetchRoute('/supplier/home');
           prefetchRoute('/supplier/myproducts');
+          prefetchRoute('/supplier/addproduct');
+          prefetchRoute('/supplier/my-orders');
         }
       }, 1500);
     }
-  }, [loadingUserStatus, session, isBuyer, prefetchRoute]);
+  }, [loadingUserStatus, session, currentAppRole, prefetchRoute]);
 
-  // Close modals on browser back/forward (popstate)
+  // Cierra modales al retroceder/avanzar en el navegador (popstate)
   useEffect(() => {
     const handlePopstate = () => {
       window.dispatchEvent(new CustomEvent('closeAllModals'));
@@ -235,7 +349,7 @@ function AppContent({ mensaje }) {
   const handleScrollTo = refName => {
     const element = scrollTargets.current[refName]?.current;
     if (element) {
-      const topBarHeight = 30; // Adjust if your actual top bar height is different
+      const topBarHeight = 64; // Altura de tu TopBar
       const elementPosition =
         element.getBoundingClientRect().top + window.pageYOffset;
       const offsetPosition = elementPosition - topBarHeight;
@@ -244,13 +358,35 @@ function AppContent({ mensaje }) {
   };
   // Inicializar el carrito cuando el usuario se autentica
   useEffect(() => {
-    if (session) {
+    if (session && session.user) {
       initializeCartWithUser(session.user.id);
     }
   }, [session, initializeCartWithUser]);
+  // Función para refrescar el perfil del usuario (para usar después de actualizaciones)
+  const refreshUserProfile = async () => {
+    if (!session?.user?.id) return;
+    
+    try {
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('user_nm, main_supplier, logo_url')
+        .eq('user_id', session.user.id)
+        .single();
+
+      if (userError) {
+        console.error('❌ [APP] Error refreshing user profile:', userError.message);
+        return;
+      }
+
+      if (userData) {
+        setUserProfile(userData);
+      }
+    } catch (error) {
+      console.error('❌ [APP] Error refreshing user profile:', error);
+    }
+  };
 
   if (loadingUserStatus) {
-    // Use the general loading state here
     return (
       <Box
         sx={{
@@ -267,15 +403,31 @@ function AppContent({ mensaje }) {
     );
   }
 
+  // Determinar si la SideBar debe mostrarse.
+  // La SideBar se muestra si hay una sesión, no se necesita onboarding,
+  // y la ruta actual es una ruta de dashboard (ya sea de comprador o proveedor).
+  const isDashboardRoute =
+    session &&
+    !needsOnboarding &&
+    (Array.from(buyerDashboardRoutes).some(route =>
+      location.pathname.startsWith(route)
+    ) ||
+      Array.from(supplierDashboardRoutes).some(route =>
+        location.pathname.startsWith(route)
+      ));
+
+  // La BottomBar se muestra en todas las rutas excepto en '/supplier/home'
   const showBottomBar = location.pathname !== '/supplier/home';
+  const topBarHeight = '64px'; // Consistente con la altura de TopBar
 
   return (
     <>
       <TopBar
         session={session}
         isBuyer={isBuyer}
-        logoUrl={logoUrl} // ✅ Pass the derived logoUrl
+        logoUrl={logoUrl}
         onNavigate={handleScrollTo}
+        onRoleChange={handleRoleChangeFromTopBar}
       />
 
       <Banner
@@ -293,67 +445,162 @@ function AppContent({ mensaje }) {
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'space-between',
-          pt: '64px', // Adjust padding top to account for fixed TopBar height
-          overflowX: 'hidden',
+          // pt: '64px', // Eliminado de aquí, se gestiona en el `Box` principal que contiene SideBar y Main
+          overflowX: 'hidden', // Evita el scroll horizontal en el layout general
           bgcolor: 'background.default',
         }}
       >
-        <Suspense fallback={<SuspenseLoader />}>
-          <Routes>
-            <Route path="/" element={<Home scrollTargets={scrollTargets} />} />
-            <Route path="/marketplace" element={<Marketplace />} />
-            <Route path="/buyer/marketplace" element={<MarketplaceBuyer />} />
-            <Route path="/buyer/orders" element={<BuyerOrders />} />
-            <Route path="/buyer/performance" element={<BuyerPerformance />} />
-            <Route path="/buyer/cart" element={<BuyerCart />} />
-            <Route
-              path="/technicalspecs/:productSlug"
-              element={<TechnicalSpecs />}
-            />
-            <Route path="/login" element={<Login />} />
-            <Route path="/crear-cuenta" element={<Register />} />
-            <Route
-              path="/onboarding"
-              element={
-                <PrivateRoute>
-                  <Onboarding />
-                </PrivateRoute>
-              }
-            />
-            <Route
-              path="/supplier/home"
-              element={
-                <PrivateRoute requiredAccountType="proveedor">
-                  <ProviderHome />
-                </PrivateRoute>
-              }
-            />
-            <Route
-              path="/supplier/myproducts"
-              element={
-                <PrivateRoute requiredAccountType="proveedor">
-                  <MyProducts />
-                </PrivateRoute>
-              }
-            />
-            <Route
-              path="/supplier/addproduct"
-              element={
-                <PrivateRoute requiredAccountType="proveedor">
-                  <AddProduct />
-                </PrivateRoute>
-              }
-            />
-            <Route
-              path="/supplier/myorders"
-              element={
-                <PrivateRoute requiredAccountType="proveedor">
-                  <MyOrdersPage />
-                </PrivateRoute>
-              }
-            />
-          </Routes>
-        </Suspense>
+        {/* Contenedor principal para SideBar y Contenido (Main) */}
+        <Box
+          sx={{
+            display: 'flex',
+            flexGrow: 1,
+            mt: topBarHeight, // El contenido principal comienza debajo de la TopBar
+            minHeight: `calc(100vh - ${topBarHeight} - ${
+              showBottomBar ? '56px' : '0px'
+            })`,
+          }}
+        >
+          {isDashboardRoute && (
+            // Pasamos el currentAppRole a la SideBar para que sepa qué menú mostrar
+            <SideBar role={currentAppRole} width={SideBarWidth} />
+          )}
+
+          <Box
+            component="main"
+            sx={{
+              flexGrow: 1,
+              p: isDashboardRoute ? 3 : 0, // Añade padding solo si es una ruta de dashboard
+              // La clave está aquí: `ml` es el margen izquierdo
+              // Aplica `SideBarWidth` solo si la `SideBar` está visible (isDashboardRoute) y en desktop
+              ml: isDashboardRoute ? { xs: 0, md: SideBarWidth } : 0,
+              // Ajusta el ancho para ocupar el espacio restante
+              width: isDashboardRoute
+                ? { xs: '100%', md: `calc(100% - ${SideBarWidth})` }
+                : '100%',
+              overflowX: 'hidden', // Evita el scroll horizontal dentro del main content
+            }}
+          >
+            <Suspense fallback={<SuspenseLoader />}>
+              <Routes>
+                {/* Rutas Públicas / Generales */}
+                <Route
+                  path="/"
+                  element={<Home scrollTargets={scrollTargets} />}
+                />
+                <Route path="/marketplace" element={<Marketplace />} />
+                <Route path="/marketplace/product/:id" element={<ProductPageWrapper />} />
+                <Route path="/marketplace/product/:id/:slug" element={<ProductPageWrapper />} />
+                {/* TechnicalSpecs puede ser accedido sin iniciar sesión, si es contenido común */}
+                <Route
+                  path="/technicalspecs/:productSlug"
+                  element={<TechnicalSpecs />}
+                />
+                <Route path="/login" element={<Login />} />
+                <Route path="/crear-cuenta" element={<Register />} />
+
+                {/* Ruta para testing de 404 (solo desarrollo) */}
+                <Route path="/404" element={<NotFound />} />
+
+                {/* Todas estas rutas están ahora protegidas SÓLO por autenticación y onboarding */}
+                <Route
+                  path="/onboarding"
+                  element={
+                    <PrivateRoute>
+                      <Onboarding />
+                    </PrivateRoute>
+                  }
+                />
+
+                {/* RUTAS DEL DASHBOARD DEL COMPRADOR - Ahora protegidas por PrivateRoute */}
+                <Route
+                  path="/buyer/marketplace"
+                  element={
+                    <PrivateRoute>
+                      <MarketplaceBuyer />
+                    </PrivateRoute>
+                  }
+                />
+                <Route
+                  path="/buyer/orders"
+                  element={
+                    <PrivateRoute>
+                      <BuyerOrders />
+                    </PrivateRoute>
+                  }
+                />
+                <Route
+                  path="/buyer/performance"
+                  element={
+                    <PrivateRoute>
+                      <BuyerPerformance />
+                    </PrivateRoute>
+                  }
+                />
+                <Route
+                  path="/buyer/cart"
+                  element={
+                    <PrivateRoute>
+                      <BuyerCart />
+                    </PrivateRoute>
+                  }
+                />
+
+                {/* RUTAS DEL DASHBOARD DEL PROVEEDOR - Ya protegidas por PrivateRoute */}
+                <Route
+                  path="/supplier/home"
+                  element={
+                    <PrivateRoute>
+                      <ProviderHome />
+                    </PrivateRoute>
+                  }
+                />
+                <Route
+                  path="/supplier/myproducts"
+                  element={
+                    <PrivateRoute>
+                      <MyProducts />
+                    </PrivateRoute>
+                  }
+                />
+                <Route
+                  path="/supplier/addproduct"
+                  element={
+                    <PrivateRoute>
+                      <AddProduct />
+                    </PrivateRoute>
+                  }
+                />
+                <Route
+                  path="/supplier/my-orders"
+                  element={
+                    <PrivateRoute>
+                      <MyOrdersPage />
+                    </PrivateRoute>
+                  }
+                />
+                <Route
+                  path="/supplier/profile"
+                  element={
+                    <PrivateRoute>
+                      <SupplierProfile onProfileUpdated={refreshUserProfile} />
+                    </PrivateRoute>
+                  }
+                />
+                <Route
+                  path="/buyer/profile"
+                  element={
+                    <PrivateRoute>
+                      <BuyerProfile onProfileUpdated={refreshUserProfile} />
+                    </PrivateRoute>
+                  }
+                />
+                {/* Ruta de fallback para rutas no encontradas */}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </Suspense>
+          </Box>
+        </Box>
         {showBottomBar && <BottomBar />}
       </Box>
     </>
@@ -369,14 +616,25 @@ function App() {
 
   // Basic backend health check (optional, can be removed if not needed)
   useEffect(() => {
-    fetch(`${backendUrl}/`)
-      .then(res => res.json())
-      .then(data => setMensaje(JSON.stringify(data)))
-      .catch(error => {
-        console.error('❌ Error al conectar con backend:', error);
-        setMensaje('No se pudo conectar con el backend.');
-      });
-  }, [backendUrl]);
+    // ✅ COMENTADO: Backend health check para evitar errores CORS
+    // Si tu backend no está listo, esto puede ser un problema.
+    // Considera remover o mejorar esta verificación en producción.
+    /*
+    if (backendUrl) {
+      fetch(`${backendUrl}/`)
+        .then(res => res.json())
+        .then(data => setMensaje(JSON.stringify(data)))
+        .catch(error => {
+          console.error('❌ Error al conectar con backend:', error);
+          setMensaje('No se pudo conectar con el backend.');
+        });
+    } else {
+    */
+    if (true) {
+      setMensaje('Backend health check deshabilitado - usando Supabase');
+    }
+    // }
+  }, []);  // Removed backendUrl dependency
 
   return (
     <ThemeProvider theme={theme}>
@@ -396,7 +654,12 @@ function App() {
           position="top-right"
           toastOptions={{
             duration: 4000,
-            style: { background: '#333', color: '#fff', borderRadius: '8px' },
+            style: { 
+              background: '#333', 
+              color: '#fff', 
+              borderRadius: '8px',
+              marginTop: '60px' // Mover los toasts más abajo del TopBar
+            },
             success: { style: { background: '#4caf50' } },
             error: { style: { background: '#f44336' } },
           }}

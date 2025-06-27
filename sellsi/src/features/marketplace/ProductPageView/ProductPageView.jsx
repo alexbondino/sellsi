@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import {
   Box,
   Container,
@@ -32,6 +32,7 @@ import {
   Description,
 } from '@mui/icons-material'
 import { toast } from 'react-hot-toast'
+import { useLocation } from 'react-router-dom'
 
 import ProductImageGallery from './components/ProductImageGallery'
 // import SalesCharacteristics from './components/SalesCharacteristics'
@@ -50,6 +51,8 @@ const ProductPageView = ({
   loading = false,
 }) => {
   const [selectedImageIndex, setSelectedImageIndex] = useState(0)
+  const location = useLocation()
+  const fromMyProducts = location.state?.from === '/supplier/myproducts'
 
   // Check user session
   const [isLoggedIn, setIsLoggedIn] = useState(false)
@@ -77,6 +80,32 @@ const ProductPageView = ({
       window.removeEventListener('storage', handleStorageChange)
     }
   }, [])
+
+  // Mover useCallback ANTES de cualquier return condicional para seguir las reglas de los Hooks
+  const handleAddToCart = useCallback((cartProduct) => {
+    // Verificar sesión antes de permitir agregar al carrito
+    if (!isLoggedIn) {
+      toast.error('Debes iniciar sesión para agregar productos al carrito', {
+        icon: '🔒',
+      })
+      // Disparar evento para abrir Login modal
+      const event = new CustomEvent('openLogin')
+      window.dispatchEvent(event)
+      return
+    }
+    if (onAddToCart) {
+      // Si recibimos un producto formateado del PurchaseActions, usar ese
+      // Si no, formatear con los datos básicos del producto
+      onAddToCart(cartProduct || product)
+      // Mostrar toast de confirmación aquí
+      toast.success(
+        `Agregado al carrito: ${(cartProduct || product)?.name || product?.nombre}`,
+        {
+          icon: '✅',
+        }
+      )
+    }
+  }, [isLoggedIn, onAddToCart, product])
 
   if (!product || loading) {
     return (
@@ -148,31 +177,7 @@ const ProductPageView = ({
     categoria,
     descripcion = 'Producto de alta calidad con excelentes características y garantía de satisfacción.',
   } = product
-
-  const handleAddToCart = (cartProduct) => {
-    // Verificar sesión antes de permitir agregar al carrito
-    if (!isLoggedIn) {
-      toast.error('Debes iniciar sesión para agregar productos al carrito', {
-        icon: '🔒',
-      })
-      // Disparar evento para abrir Login modal
-      const event = new CustomEvent('openLogin')
-      window.dispatchEvent(event)
-      return
-    }
-    if (onAddToCart) {
-      // Si recibimos un producto formateado del PurchaseActions, usar ese
-      // Si no, formatear con los datos básicos del producto
-      onAddToCart(cartProduct || product)
-      // Mostrar toast de confirmación aquí
-      toast.success(
-        `Agregado al carrito: ${(cartProduct || product).name || nombre}`,
-        {
-          icon: '✅',
-        }
-      )
-    }
-  }
+  
   return (
     <Box
       sx={
@@ -198,7 +203,8 @@ const ProductPageView = ({
               transition: 'transform 0.3s ease-in-out',
             }
       }
-    >      {/* Header with back button - solo para modal */}
+    >
+      {/* Header with back button - solo para modal */}
       {!isPageView && (
         <Box
           sx={{
@@ -238,6 +244,7 @@ const ProductPageView = ({
           onImageSelect={setSelectedImageIndex}
           onAddToCart={handleAddToCart}
           isLoggedIn={isLoggedIn}
+          fromMyProducts={fromMyProducts}
         />{' '}
         {/* SECCIÓN INTERMEDIA - Características de Venta */}
         {/* <Box sx={{ mt: 6 }}>

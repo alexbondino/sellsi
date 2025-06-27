@@ -1,6 +1,6 @@
-import React from 'react'
-import { IconButton } from '@mui/material'
-import { ArrowForward, ArrowBack } from '@mui/icons-material'
+import React from 'react';
+import { IconButton } from '@mui/material';
+import { ArrowForward, ArrowBack } from '@mui/icons-material';
 
 /**
  * ====================================================================================
@@ -25,7 +25,7 @@ import { ArrowForward, ArrowBack } from '@mui/icons-material'
  */
 const CarouselNavigationButton = React.memo(
   ({ direction, onClick, position }) => {
-    const Icon = direction === 'prev' ? ArrowBack : ArrowForward
+    const Icon = direction === 'prev' ? ArrowBack : ArrowForward;
 
     return (
       <IconButton
@@ -49,6 +49,7 @@ const CarouselNavigationButton = React.memo(
             xs: '45%',
             sm: '45%',
             md: '45%',
+            mac: '50%',
             lg: '50%',
             xl: '50%',
           },
@@ -98,10 +99,10 @@ const CarouselNavigationButton = React.memo(
           }}
         />
       </IconButton>
-    )
+    );
   }
-)
+);
 
-CarouselNavigationButton.displayName = 'CarouselNavigationButton'
+CarouselNavigationButton.displayName = 'CarouselNavigationButton';
 
-export default CarouselNavigationButton
+export default CarouselNavigationButton;

@@ -8,7 +8,7 @@ import {
   Button,
 } from '@mui/material';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
-import { PasswordRequirements, CustomButton } from '../..';
+import { PasswordRequirements, PrimaryButton } from '../..';
 
 const Step3Reset = ({
   nuevaContrasena,
@@ -94,7 +94,7 @@ const Step3Reset = ({
         }}
       />
       <PasswordRequirements password={nuevaContrasena} />{' '}
-      <CustomButton
+      <PrimaryButton
         fullWidth
         disabled={!cumpleMinimos || !contrasenasCoinciden}
         onClick={onSubmit}
@@ -105,7 +105,7 @@ const Step3Reset = ({
         }}
       >
         Cambiar contraseña
-      </CustomButton>
+      </PrimaryButton>
       <Button
         variant="text"
         onClick={onBack}

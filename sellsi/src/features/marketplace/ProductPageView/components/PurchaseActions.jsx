@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, memo } from 'react'
 import {
   Box,
   Button,
@@ -173,4 +173,4 @@ const PurchaseActions = ({
   )
 }
 
-export default PurchaseActions
+export default memo(PurchaseActions)

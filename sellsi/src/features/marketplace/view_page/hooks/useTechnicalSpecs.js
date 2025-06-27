@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { supabase } from '../../../../services/supabase'
+import { getProductSpecifications } from '../../../../services/productSpecificationsService'
 import { extractProductIdFromSlug } from '../../marketplace/productUrl'
 import useCartStore from '../../../buyer/hooks/cartStore'
 import { formatProductForCart } from '../../../../utils/priceCalculation'
@@ -33,6 +34,8 @@ export const useTechnicalSpecs = () => {
   const location = useLocation()
   const [product, setProduct] = useState(null)
   const [loading, setLoading] = useState(true)
+  // 🔍 DETECTAR ORIGEN: Agregar detección de fromMyProducts
+  const fromMyProducts = location.state?.from === '/supplier/myproducts'
 
   // Hook del carrito
   const addItem = useCartStore((state) => state.addItem)
@@ -114,13 +117,12 @@ export const useTechnicalSpecs = () => {
         if (foundProduct) {
           if (isMounted) setProduct(foundProduct)
           if (isMounted) setLoading(false)
-        } else {
-          // Buscar en Supabase (producto, priceTiers, imágenes, especificaciones)
+        } else {          // Buscar en Supabase (producto, priceTiers, imágenes, especificaciones)
           const [
             { data: product, error: prodError },
             { data: tiers },
             { data: images },
-            { data: specs },
+            specs,
           ] = await Promise.all([
             supabase
               .from('products')
@@ -134,11 +136,8 @@ export const useTechnicalSpecs = () => {
             supabase
               .from('product_images')
               .select('*')
-              .eq('product_id', productId),
-            supabase
-              .from('product_specifications')
-              .select('*')
-              .eq('product_id', productId),
+              .eq('product_id', productId),            // Usar el servicio seguro para especificaciones
+            getProductSpecifications(productId),
           ])
           if (product) {
             // Obtener nombre del proveedor
@@ -150,42 +149,17 @@ export const useTechnicalSpecs = () => {
               .single()
             if (userData && userData.user_nm) {
               proveedorNombre = userData.user_nm
-            } // ✅ Obtener imagen primaria de product_images
+            }            // ✅ Obtener imagen primaria de product_images
             let imagenPrincipal = product.image_url
-            console.log(
-              '🖼️ DEBUG ProductPageView - Imagen inicial:',
-              product.image_url
-            )
-            console.log(
-              '🖼️ DEBUG ProductPageView - Imágenes disponibles:',
-              images
-            )
 
             if (images && Array.isArray(images) && images.length > 0) {
               const principal = images.find((img) => img.is_primary)
               if (principal) {
                 imagenPrincipal = principal.image_url
-                console.log(
-                  '🖼️ DEBUG ProductPageView - Imagen principal encontrada:',
-                  principal.image_url
-                )
               } else {
                 imagenPrincipal = images[0].image_url
-                console.log(
-                  '🖼️ DEBUG ProductPageView - Usando primera imagen:',
-                  images[0].image_url
-                )
               }
-            } else {
-              console.log(
-                '🖼️ DEBUG ProductPageView - No hay imágenes adicionales, usando image_url'
-              )
             }
-
-            console.log(
-              '🖼️ DEBUG ProductPageView - Imagen final:',
-              imagenPrincipal
-            )
 
             foundProduct = {
               id: product.productid,
@@ -199,8 +173,7 @@ export const useTechnicalSpecs = () => {
               tipo: product.product_type || 'nuevo',
               tipoVenta: product.tipoVenta || 'directa',
               rating: product.rating || 0,
-              ventas: product.ventas || 0,
-              stock: product.productqty,
+              ventas: product.ventas || 0,              stock: product.productqty,
               compraMinima: product.minimum_purchase,
               negociable: product.negociable,
               descripcion: product.description,
@@ -210,16 +183,9 @@ export const useTechnicalSpecs = () => {
               is_active: product.is_active,
             }
             if (isMounted) setProduct(foundProduct)
-            if (isMounted) setLoading(false)
-            console.log('🟢 Producto encontrado en Supabase:', foundProduct)
-          } else {
+            if (isMounted) setLoading(false)          } else {
             if (isMounted) setProduct(null)
             if (isMounted) setLoading(false)
-            console.warn(
-              '🔴 Producto NO encontrado en Supabase:',
-              productId,
-              prodError
-            )
             setTimeout(() => {
               if (isMounted) navigate(originRoute, { replace: true })
             }, 1200)
@@ -342,16 +308,13 @@ export const useTechnicalSpecs = () => {
       return
     }
 
-    // Primero agregar al carrito
-    handleAddToCart(cartProduct)
+    // Primero agregar al carrito    handleAddToCart(cartProduct)
 
     // TODO: Navegar a checkout o proceso de compra inmediata
-    console.log('Comprando ahora:', cartProduct || product)
   }
   // ============================================================================
   // RETORNO DEL HOOK
   // ============================================================================
-
   return {
     // Estado del producto
     product,
@@ -361,6 +324,7 @@ export const useTechnicalSpecs = () => {
     originRoute,
     isFromBuyer: originRoute.includes('/buyer/'),
     isFromMarketplace: originRoute === '/marketplace',
+    fromMyProducts, // 🔍 Agregar el flag
 
     // Handlers de navegación
     handleClose,

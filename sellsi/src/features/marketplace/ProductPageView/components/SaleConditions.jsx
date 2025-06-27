@@ -1,11 +1,12 @@
-import React from 'react'
+import React, { useMemo } from 'react'
 import { Box, Typography, Grid, Card, CardContent } from '@mui/material'
 import { Receipt, ShoppingCart } from '@mui/icons-material'
 
-const SaleConditions = ({ product }) => {
+const SaleConditions = React.memo(({ product }) => {
   if (!product) return null
-  // Generate random sale conditions
-  const generateSaleConditions = () => {
+  
+  // Memoize sale conditions to avoid regenerating on each render
+  const conditions = useMemo(() => {
     const documents = ['Boleta', 'Factura', 'Cualquiera']
     const document = documents[Math.floor(Math.random() * documents.length)]
     const minPurchase = Math.floor(Math.random() * 343) + 1
@@ -24,9 +25,7 @@ const SaleConditions = ({ product }) => {
         color: 'info',
       },
     ]
-  }
-
-  const conditions = generateSaleConditions()
+  }, [product?.id]) // Only regenerate if product ID changes
 
   return (
     <Box sx={{ mt: 6, mb: 6 }}>
@@ -48,13 +47,10 @@ const SaleConditions = ({ product }) => {
         sx={{
           display: 'flex',
           justifyContent: 'center',
-          alignItems: 'stretch',
-        }}
+          alignItems: 'stretch',        }}
       >
-        {' '}
         {conditions.map((condition, index) => (
-          <Grid xs={12} sm={6} md={3} key={index} sx={{ display: 'flex' }}>
-            {' '}
+          <Grid size={{xs: 12, sm: 6, md: 3}} key={index} sx={{ display: 'flex' }}>
             <Card
               elevation={1}
               sx={{
@@ -114,8 +110,7 @@ const SaleConditions = ({ product }) => {
                       lineHeight: 1.2,
                     }}
                   >
-                    {condition.value}
-                  </Typography>
+                    {condition.value}                  </Typography>
                 </Box>
               </CardContent>
             </Card>
@@ -124,6 +119,8 @@ const SaleConditions = ({ product }) => {
       </Grid>
     </Box>
   )
-}
+})
+
+SaleConditions.displayName = 'SaleConditions'
 
 export default SaleConditions

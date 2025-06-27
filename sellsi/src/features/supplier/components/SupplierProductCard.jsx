@@ -17,13 +17,16 @@ import {
 } from '@mui/icons-material'
 import { formatPrice } from '../../marketplace/utils/formatters'
 import { getProductImageUrl } from '../../../utils/getProductImageUrl'
+import { getMainProductThumbnailUrl } from '../../../services/productImageService'
 import {
   ActionMenu,
   ProductBadges,
   StatusChip,
   STOCK_STATUS_CONFIG,
 } from '../../ui'
-import { LazyImage } from '../../../components/shared'
+import { LazyImage } from '../../layout'
+import { generateProductUrl } from '../../marketplace/marketplace/productUrl'
+import { useNavigate } from 'react-router-dom'
 
 /**
  * SupplierProductCard - Tarjeta de producto para la vista del proveedor
@@ -36,6 +39,7 @@ const SupplierProductCard = ({
   onViewStats,
   isDeleting = false,
   isUpdating = false,
+  onProductClick, // Nuevo prop opcional
 }) => {
   if (!product) {
     return null
@@ -110,10 +114,12 @@ const SupplierProductCard = ({
     })
   }
 
+  const navigate = useNavigate()
+
   return (
     <Card
       sx={{
-        height: 420, // altura fija como en ProductCard pero con la medida actual del supplier
+        height: 650, // Cambiado a 650
         display: 'flex',
         flexDirection: 'column',
         position: 'relative',
@@ -131,8 +137,16 @@ const SupplierProductCard = ({
           borderColor: 'primary.main',
         },
       }}
+      onClick={() => {
+        if (onProductClick) {
+          onProductClick(product)
+        } else {
+          const url = generateProductUrl(product)
+          navigate(url, { state: { from: '/supplier/myproducts' } })
+        }
+      }}
+      style={{ cursor: 'pointer' }}
     >
-      {' '}
       {/* Badges del producto */}
       <ProductBadges badges={productBadges} position="top-left" />
       {/* Menú de acciones */}
@@ -147,20 +161,44 @@ const SupplierProductCard = ({
             borderRadius: '12px',
           }}
         />      </Box>{' '}
-      {/* ✅ OPTIMIZACIÓN: Imagen del producto con lazy loading */}      <LazyImage
-        src={getProductImageUrl(imagen, product) || '/placeholder-product.jpg'}
-        alt={nombre}
-        aspectRatio="140 / 140"
-        rootMargin="150px"
-        objectFit="contain"
+      {/* ✅ OPTIMIZACIÓN: Imagen del producto con lazy loading */}
+      <Box
         sx={{
+          width: {
+            xs: 80,
+            sm: 100,
+            md: 120,
+            lg: 224,
+            xl: 280, // Cambiado a 280
+          },
+          height: {
+            xs: 100,
+            sm: 125,
+            md: 150,
+            lg: 280,
+            xl: 350, // Cambiado a 350
+          },
           maxWidth: '100%',
+          maxHeight: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          margin: '0 auto',
           bgcolor: '#fafafa',
           p: 1,
-          display: 'block',
-          mx: 'auto',
         }}
-      />
+      >
+        <LazyImage
+          src={getMainProductThumbnailUrl(product) || getProductImageUrl(imagen, product) || '/placeholder-product.jpg'}
+          alt={nombre}
+          sx={{
+            width: '100%',
+            height: '100%',
+            objectFit: 'contain',
+            display: 'block',
+          }}
+        />
+      </Box>
       {/* Contenido principal */}
       <CardContent sx={{ flexGrow: 1, p: 2 }}>
         {/* Categoría */}
@@ -240,7 +278,7 @@ const SupplierProductCard = ({
               )}
             </Box>
           )}
-          {negociable && (
+          {/* {negociable && (
             <Chip
               label="Precio negociable"
               size="small"
@@ -248,7 +286,7 @@ const SupplierProductCard = ({
               variant="outlined"
               sx={{ fontSize: '0.7rem', height: 20 }}
             />
-          )}
+          )} */}
         </Box>{' '}
         {/* Estados y métricas */}
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>

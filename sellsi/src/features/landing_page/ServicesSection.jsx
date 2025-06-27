@@ -1,5 +1,5 @@
-import React from 'react'
-import { Box, Typography, Button, Grid } from '@mui/material'
+import React from 'react';
+import { Box, Typography, Button, Grid } from '@mui/material';
 import {
   Store,
   Person,
@@ -13,8 +13,8 @@ import {
   ShoppingCart,
   AccountBalance,
   Receipt,
-} from '@mui/icons-material'
-import Wizard from '../ui/Wizard'
+} from '@mui/icons-material';
+import Wizard from '../ui/wizard/Wizard';
 
 /**
  * ============================================================================
@@ -120,11 +120,11 @@ const ServicesSection = ({ serviciosRef }) => {
         },
       ],
     },
-  ] // ✅ CONFIGURACIÓN OPTIMIZADA DE BREAKPOINTS (SIN REDUNDANCIAS)
+  ]; // ✅ CONFIGURACIÓN OPTIMIZADA DE BREAKPOINTS (SIN REDUNDANCIAS)
   const breakpoints = {
     container: {
-      px: { xs: 1, sm: 1, md: 8, lg: 15, xl: 30 }, // ✅ REDUCIDO PADDING LATERAL EN XS/SM PARA MÁS ANCHO
-      py: { xs: 6, sm: 7, md: 8, lg: 9, xl: 9 },
+      px: { xs: 1, sm: 1, md: 8, mac: 18, lg: 18, xl: 30 }, // ✅ REDUCIDO PADDING LATERAL EN XS/SM PARA MÁS ANCHO
+      py: { xs: 6, sm: 7, md: 8, mac: 6, lg: 9, xl: 9 },
     },
     title: {
       px: { xs: 0, sm: 0, md: 0, lg: 0, xl: 0 }, // ✅ SIN PADDING - ALINEADO COMPLETAMENTE A LA IZQUIERDA
@@ -192,7 +192,7 @@ const ServicesSection = ({ serviciosRef }) => {
         xl: '1.2rem',
       },
     },
-  }
+  };
   return (
     <Box
       ref={serviciosRef}
@@ -250,7 +250,8 @@ const ServicesSection = ({ serviciosRef }) => {
           showIndicators={false}
           fadeTransition={false}
           fadeTimeout={0}
-          renderStep={(currentStep, currentService, { goToStep }) => (            <Grid // GRID CONTENEDOR PADRE
+          renderStep={(currentStep, currentService, { goToStep }) => (
+            <Grid // GRID CONTENEDOR PADRE
               container
               spacing={0}
               justifyContent="center"
@@ -288,7 +289,9 @@ const ServicesSection = ({ serviciosRef }) => {
                         pb: { xs: 1, sm: 0 },
                         width: '100%',
                       }}
-                    >                      {services.map((service, index) => (
+                    >
+                      {' '}
+                      {services.map((service, index) => (
                         <Grid size="auto" key={index}>
                           {' '}
                           <Button
@@ -454,7 +457,8 @@ const ServicesSection = ({ serviciosRef }) => {
                         </Grid>
                       ))}{' '}
                     </Grid>
-                  </Grid>{' '}                  {/* ✅ NUEVO: TEXTO DINÁMICO ENTRE BOTONES Y TIMELINE */}
+                  </Grid>{' '}
+                  {/* ✅ NUEVO: TEXTO DINÁMICO ENTRE BOTONES Y TIMELINE */}
                   <Grid size={12} sx={{ width: '100%' }}>
                     <Box
                       sx={{
@@ -496,7 +500,8 @@ const ServicesSection = ({ serviciosRef }) => {
                           : 'Descubre nuevos proveedores confiables y gestiona tus compras de forma más ágil, ahorrando tiempo en cotizaciones, validaciones y comunicación, todo desde una sola plataforma centralizada.'}
                       </Typography>
                     </Box>
-                  </Grid>                  {/* ✅ FILA 2: TIMELINE HORIZONTAL - GRID PURO */}
+                  </Grid>{' '}
+                  {/* ✅ FILA 2: TIMELINE HORIZONTAL - GRID PURO */}
                   <Grid size={12} sx={{ width: '100%' }}>
                     <Grid
                       container
@@ -614,7 +619,8 @@ const ServicesSection = ({ serviciosRef }) => {
                           borderRadius: 2,
                           zIndex: 1,
                         }}
-                      />{' '}                      {/* Pasos del timeline - GRID PURO CON DISTRIBUCIÓN UNIFORME */}
+                      />{' '}
+                      {/* Pasos del timeline - GRID PURO CON DISTRIBUCIÓN UNIFORME */}
                       {currentService.timeline.map((item, index) => (
                         <Grid
                           size="grow"
@@ -708,7 +714,7 @@ const ServicesSection = ({ serviciosRef }) => {
         />
       </Box>
     </Box>
-  )
-}
+  );
+};
 
-export default ServicesSection
+export default ServicesSection;

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Box, Typography } from '@mui/material';
-import { CustomButton } from '../../landing_page/hooks';
+import { PrimaryButton } from '../../landing_page/hooks';
 
 const Step4Verification = ({ email, onBack }) => {
   return (
@@ -35,7 +35,7 @@ const Step4Verification = ({ email, onBack }) => {
         Por favor revisa tu bandeja de entrada (o spam) y haz clic en el enlace
         para activar tu cuenta y comenzar a usar Sellsi.
       </Typography>{' '}
-      <CustomButton
+      <PrimaryButton
         onClick={onBack}
         variant="text"
         sx={{
@@ -46,7 +46,7 @@ const Step4Verification = ({ email, onBack }) => {
         }}
       >
         Volver atrás
-      </CustomButton>
+      </PrimaryButton>
     </Box>
   );
 };

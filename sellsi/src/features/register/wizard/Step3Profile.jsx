@@ -1,11 +1,11 @@
-import React from 'react'
-import { Box, TextField, Typography } from '@mui/material'
+import React from 'react';
+import { Box, TextField, Typography } from '@mui/material';
 import {
-  CustomButton,
+  PrimaryButton,
   LogoUploader,
   CountrySelector,
-} from '../../landing_page/hooks'
-import { supabase } from '../../../services/supabase'
+} from '../../landing_page/hooks';
+import { supabase } from '../../../services/supabase';
 
 const Step3Profile = ({
   accountType,
@@ -22,15 +22,15 @@ const Step3Profile = ({
     telefonoContacto,
     codigoPais,
     logoEmpresa,
-  } = formData
+  } = formData;
 
-  const isProvider = accountType === 'proveedor'
+  const isProvider = accountType === 'proveedor';
 
   const isFormValid = () => {
     return isProvider
       ? nombreEmpresa?.trim().length > 0
-      : nombrePersonal?.trim().length > 0
-  }
+      : nombrePersonal?.trim().length > 0;
+  };
 
   const handleContinue = async () => {
     const {
@@ -41,10 +41,10 @@ const Step3Profile = ({
       nombrePersonal,
       telefonoContacto,
       codigoPais,
-    } = formData
+    } = formData;
 
-    const isProvider = tipoCuenta === 'proveedor'
-    const nombre = isProvider ? nombreEmpresa : nombrePersonal
+    const isProvider = tipoCuenta === 'proveedor';
+    const nombre = isProvider ? nombreEmpresa : nombrePersonal;
 
     const { data: signUpData, error: signUpError } = await supabase.auth.signUp(
       {
@@ -60,16 +60,16 @@ const Step3Profile = ({
           },
         },
       }
-    )
+    );
 
     if (signUpError || !signUpData?.user?.id) {
-      console.error('❌ Error al crear cuenta Auth:', signUpError)
-      return
+      console.error('❌ Error al crear cuenta Auth:', signUpError);
+      return;
     }
 
-    console.log('✅ Usuario creado, esperando verificación por correo')
-    onNext()
-  }
+    console.log('✅ Usuario creado, esperando verificación por correo');
+    onNext();
+  };
 
   return (
     <Box
@@ -117,7 +117,7 @@ const Step3Profile = ({
                 variant="outlined"
                 fullWidth
                 value={nombreEmpresa}
-                onChange={(e) => onFieldChange('nombreEmpresa', e.target.value)}
+                onChange={e => onFieldChange('nombreEmpresa', e.target.value)}
                 sx={{ mb: 1.5 }}
                 size="small"
                 required
@@ -125,14 +125,14 @@ const Step3Profile = ({
               <Box sx={{ display: 'flex', gap: 1, mb: 1.5 }}>
                 <CountrySelector
                   value={codigoPais}
-                  onChange={(e) => onFieldChange('codigoPais', e.target.value)}
+                  onChange={e => onFieldChange('codigoPais', e.target.value)}
                   countries={['Chile', 'Argentina', 'México']}
                 />
                 <TextField
                   fullWidth
                   label="Teléfono de contacto"
                   value={telefonoContacto}
-                  onChange={(e) =>
+                  onChange={e =>
                     onFieldChange('telefonoContacto', e.target.value)
                   }
                   placeholder="Ej: 912345678"
@@ -195,7 +195,7 @@ const Step3Profile = ({
               variant="outlined"
               fullWidth
               value={nombrePersonal}
-              onChange={(e) => onFieldChange('nombrePersonal', e.target.value)}
+              onChange={e => onFieldChange('nombrePersonal', e.target.value)}
               sx={{ mb: 1.5 }}
               size="small"
               required
@@ -203,14 +203,14 @@ const Step3Profile = ({
             <Box sx={{ display: 'flex', gap: 1, mb: 1.5 }}>
               <CountrySelector
                 value={codigoPais}
-                onChange={(e) => onFieldChange('codigoPais', e.target.value)}
+                onChange={e => onFieldChange('codigoPais', e.target.value)}
                 countries={['Chile', 'Argentina', 'México']}
               />
               <TextField
                 fullWidth
                 label="Teléfono de contacto"
                 value={telefonoContacto}
-                onChange={(e) =>
+                onChange={e =>
                   onFieldChange('telefonoContacto', e.target.value)
                 }
                 placeholder="Ej: 912345678"
@@ -222,26 +222,26 @@ const Step3Profile = ({
       </Box>
 
       <Box sx={{ width: '100%', maxWidth: 520 }}>
-        <CustomButton
+        <PrimaryButton
           onClick={handleContinue}
           fullWidth
           sx={{ mb: 0.5, mt: isProvider ? 15.5 : 24.5 }}
           disabled={!isFormValid()}
         >
           Continuar
-        </CustomButton>
+        </PrimaryButton>
 
-        <CustomButton
+        <PrimaryButton
           variant="text"
           onClick={onBack}
           fullWidth
           sx={{ mt: 0.5 }}
         >
           Volver atrás
-        </CustomButton>
+        </PrimaryButton>
       </Box>
     </Box>
-  )
-}
+  );
+};
 
-export default Step3Profile
+export default Step3Profile;

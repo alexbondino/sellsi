@@ -83,14 +83,14 @@ const PriceBreakdown = ({
           mb: 3,
         }}
       >
-        <Typography variant="h5" fontWeight="bold">
+        <Typography variant="h5" fontWeight="bold" sx={{ mr: 2 }}>
           Total:
         </Typography>
         <Typography
           variant="h4"
           fontWeight="bold"
           sx={{
-            background: 'linear-gradient(45deg, #4caf50, #8bc34a)',
+            background: '#1565c0',
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
           }}

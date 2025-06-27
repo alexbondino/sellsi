@@ -4,13 +4,45 @@
  * ============================================================================
  *
  * Store base para operaciones CRUD de productos del proveedor.
- *    console.log(`📊 Análisis: ${newImages.length} nuevas, ${existingUrls.length} existentes`);Se enf    console.log(`🔍 [PROCESS IMAGES] Análisis: ${newImages.length} nuevas, ${existingUrls.length} existentes`);
+ *    console.log(`    // 4. PROCESAR URLs existentes (mantener con sus thumbnails actuales)
+    for (const url of existingUrls) {
+      const existingImage = currentImages?.find(img => img.image_url === url);
+      finalImageData.push({
+        image_url: url,
+        thumbnail_url: existingImage?.thumbnail_url || null
+      });
+    }
+
+    // 5. SUBIR nuevas imágenes CON THUMBNAILS
+    if (newImages.length > 0) {
+      console.log(`� [PROCESS IMAGES] Subiendo ${newImages.length} imágenes nuevas con thumbnails...`);
+      
+      const files = newImages.map(img => img.file || img);
+      const uploadResult = await UploadService.uploadMultipleImagesWithThumbnails(files, productId, supplierId);
+      
+      if (uploadResult.success && uploadResult.data) {
+        for (const imageData of uploadResult.data) {
+          finalImageData.push({
+            image_url: imageData.publicUrl,
+            thumbnail_url: imageData.thumbnailUrl || null
+          });
+          console.log(`✅ Nueva imagen procesada: ${imageData.publicUrl} ${imageData.thumbnailUrl ? '(con thumbnail)' : '(sin thumbnail)'}`);
+        }
+      }
+      
+      if (uploadResult.errors) {
+        console.warn('⚠️ [PROCESS IMAGES] Algunos uploads fallaron:', uploadResult.errors);
+      }
+    }
+
+    console.log('📋 Datos finales para registrar:', finalImageData);mages.length} nuevas, ${existingUrls.length} existentes`);Se enf    console.log(`🔍 [PROCESS IMAGES] Análisis: ${newImages.length} nuevas, ${existingUrls.length} existentes`);
     console.log('🔍 [PROCESS IMAGES] newImages:', newImages);
     console.log('🔍 [PROCESS IMAGES] existingUrls:', existingUrls);ca únicamente en la gestión de datos sin lógica de UI.
  */
 
 import { create } from 'zustand'
 import { supabase } from '../../../services/supabase'
+import { updateProductSpecifications } from '../../../services/productSpecificationsService'
 import UploadService from '../../../services/uploadService'
 
 const useSupplierProductsBase = create((set, get) => ({
@@ -338,7 +370,9 @@ const useSupplierProductsBase = create((set, get) => ({
     // 6. REEMPLAZAR TODOS los registros en product_images
     if (allImageUrls.length > 0) {
       // Eliminar todos los registros actuales
-      await supabase.from('product_images').delete().eq('product_id', productId);      // Insertar todos los registros nuevos
+      await supabase.from('product_images').delete().eq('product_id', productId);
+
+      // Insertar todos los registros nuevos
       const imagesToInsert = allImageUrls.map((url) => ({
         product_id: productId,
         image_url: url,
@@ -412,36 +446,8 @@ const useSupplierProductsBase = create((set, get) => ({
     if (!specifications?.length) {
       console.log('⚠️ No hay especificaciones para procesar');
       return;
-    }
-
-    try {
-      // Eliminar especificaciones existentes
-      await supabase
-        .from('product_specifications')
-        .delete()
-        .eq('product_id', productId);
-
-      // Insertar nuevas especificaciones
-      const specsToInsert = specifications.map(spec => ({
-        product_id: productId,
-        category: 'general', // Categoría por defecto
-        spec_name: spec.key,
-        spec_value: spec.value,
-      }));
-
-      console.log('💾 Insertando especificaciones:', specsToInsert);
-      const { error } = await supabase
-        .from('product_specifications')
-        .insert(specsToInsert);
-
-      if (error) {
-        console.error('❌ Error insertando especificaciones:', error);
-      } else {
-        console.log('✅ Especificaciones registradas en BD exitosamente');
-      }
-    } catch (error) {
-      console.error('❌ Error procesando especificaciones:', error);
-    }
+    }    // 🔧 Actualizar especificaciones del producto usando el servicio seguro
+    await updateProductSpecifications(productId, specifications);
   },
   /**
    * FUNCIÓN PELIGROSA: Eliminar TODAS las imágenes existentes del producto (bucket + BD)

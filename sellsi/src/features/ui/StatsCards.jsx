@@ -1,5 +1,7 @@
-import React from 'react'
-import { Box, Grid } from '@mui/material'
+import React from 'react';
+import { Box, Grid } from '@mui/material';
+
+/* Pendiente de revisión Klaus */
 
 /**
  * StatsCards - Componente UI reutilizable para mostrar tarjetas de estadísticas
@@ -21,7 +23,7 @@ const StatsCards = ({
   sx = {},
   responsive = true,
 }) => {
-  if (!cards.length) return null
+  if (!cards.length) return null;
 
   // Layout en Grid
   if (layout === 'grid') {
@@ -44,7 +46,7 @@ const StatsCards = ({
           </Grid>
         ))}
       </Grid>
-    )
+    );
   }
 
   // Layout en Flex (default)
@@ -73,7 +75,7 @@ const StatsCards = ({
           : {
               flex: `1 1 calc(${100 / cards.length}% - 4px)`,
               minWidth: '150px',
-            }
+            };
 
         return (
           <Box key={card.id || index} sx={flexStyles}>
@@ -83,11 +85,11 @@ const StatsCards = ({
               <DefaultStatCard {...card} />
             )}
           </Box>
-        )
+        );
       })}
     </Box>
-  )
-}
+  );
+};
 
 // Componente de tarjeta por defecto simple
 const DefaultStatCard = ({
@@ -162,12 +164,12 @@ const DefaultStatCard = ({
         </Box>
       )}
     </Box>
-  )
-}
+  );
+};
 
 // Helper para crear configuraciones de tarjetas comunes
-export const createSupplierStatsCards = (data) => {
-  const { products, totalSales, outOfStock, weeklyRequests } = data
+export const createSupplierStatsCards = data => {
+  const { products, totalSales, outOfStock, weeklyRequests } = data;
 
   return [
     {
@@ -202,11 +204,11 @@ export const createSupplierStatsCards = (data) => {
       trend: 'neutral',
       color: 'info',
     },
-  ]
-}
+  ];
+};
 
-export const createBuyerStatsCards = (data) => {
-  const { totalOrders, totalSpent, savedItems, activeOrders } = data
+export const createBuyerStatsCards = data => {
+  const { totalOrders, totalSpent, savedItems, activeOrders } = data;
 
   return [
     {
@@ -241,7 +243,7 @@ export const createBuyerStatsCards = (data) => {
       trend: 'neutral',
       color: 'warning',
     },
-  ]
-}
+  ];
+};
 
-export default StatsCards
+export default StatsCards;

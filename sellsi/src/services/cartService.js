@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { validateQuantity, sanitizeCartItems, isQuantityError } from '../utils/quantityValidation';
 
 /**
  * CartService - Servicio para manejar todas las operaciones del carrito con Supabase
@@ -194,6 +195,9 @@ class CartService {  /**
         throw new Error('Product ID not found in product object');
       }
       
+      // Validar cantidad antes de procesar
+      const safeQuantity = this.validateQuantity(quantity);
+      
       // Verificar si el producto ya existe en el carrito
       const { data: existingItem, error: searchError } = await supabase
         .from('cart_items')
@@ -210,9 +214,9 @@ class CartService {  /**
       let result;
 
       if (existingItem) {
-        // Actualizar cantidad existente
-        const newQuantity = existingItem.quantity + quantity;
-        result = await this.updateItemQuantity(cartId, productId, newQuantity);
+        // Validar la nueva cantidad total
+        const newTotalQuantity = this.validateQuantity(existingItem.quantity + safeQuantity);
+        result = await this.updateItemQuantity(cartId, productId, newTotalQuantity);
       } else {
         // Insertar nuevo item
         const { data, error } = await supabase
@@ -220,7 +224,7 @@ class CartService {  /**
           .insert({
             cart_id: cartId,
             product_id: productId,
-            quantity,
+            quantity: safeQuantity,
             price_at_addition: product.price,
             price_tiers: product.price_tiers || null
           })
@@ -247,6 +251,15 @@ class CartService {  /**
   }
 
   /**
+   * Valida que una cantidad esté dentro de límites seguros
+   * @param {number} quantity - Cantidad a validar
+   * @returns {number} Cantidad validada y limitada
+   */
+  validateQuantity(quantity) {
+    return validateQuantity(quantity);
+  }
+
+  /**
    * Actualiza la cantidad de un item en el carrito
    * @param {string} cartId - ID del carrito
    * @param {string} productId - ID del producto
@@ -255,14 +268,17 @@ class CartService {  /**
    */
   async updateItemQuantity(cartId, productId, newQuantity) {
     try {
-      if (newQuantity <= 0) {
+      // Validar cantidad antes de procesar
+      const safeQuantity = this.validateQuantity(newQuantity);
+      
+      if (safeQuantity <= 0) {
         return await this.removeItemFromCart(cartId, productId);
       }
 
       const { data, error } = await supabase
         .from('cart_items')
         .update({
-          quantity: newQuantity,
+          quantity: safeQuantity,
           updated_at: new Date().toISOString()
         })
         .eq('cart_id', cartId)
@@ -386,7 +402,7 @@ class CartService {  /**
   }
 
   /**
-   * Migra un carrito local al backend tras login
+   * Migra un carrito local al backend tras login con validaciones mejoradas
    * @param {string} userId - ID del usuario
    * @param {Array} localCartItems - Items del carrito local
    * @returns {Object} Carrito migrado
@@ -400,9 +416,28 @@ class CartService {  /**
       // Obtener o crear carrito activo
       const cart = await this.getOrCreateActiveCart(userId);
 
-      // Agregar items del carrito local
-      for (const item of localCartItems) {
-        await this.addItemToCart(cart.cart_id, item, item.quantity);
+      // Filtrar y validar items del carrito local usando utilidad centralizada
+      const sanitizationResult = sanitizeCartItems(localCartItems);
+      const { validItems, summary } = sanitizationResult;
+
+      // Agregar items válidos del carrito local
+      for (const item of validItems) {
+        try {
+          await this.addItemToCart(cart.cart_id, item, item.quantity);
+        } catch (error) {
+          console.error(`[CartService] ❌ Error migrando item ${item.id || item.name}:`, error);
+          
+          // Si es un error de cantidad, intentar con cantidad mínima
+          if (isQuantityError(error)) {
+            try {
+              console.warn(`[CartService] � Reintentando con cantidad mínima para item ${item.id}`);
+              await this.addItemToCart(cart.cart_id, item, 1);
+            } catch (retryError) {
+              console.error(`[CartService] ❌ Falló reintento para item ${item.id}:`, retryError);
+            }
+          }
+          // Continuar con los otros items aunque uno falle
+        }
       }
 
       // Retornar carrito actualizado

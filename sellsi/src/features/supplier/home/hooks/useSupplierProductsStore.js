@@ -21,6 +21,7 @@
 
 import { create } from 'zustand'
 import { supabase } from '../../../../services/supabase'
+import { insertProductSpecifications } from '../../../../services/productSpecificationsService'
 import UploadService from '../../../../services/uploadService'
 
 // Adaptar a la tabla y campos reales de products
@@ -188,27 +189,17 @@ const useSupplierProductsStore = create((set, get) => ({
             .insert(tiersToInsert)
           if (tierError) throw tierError
         }
-      }
-      // 5. Insertar especificaciones si existen (clave-valor)
+      }      // 5. Insertar especificaciones si existen (clave-valor) usando servicio seguro
       if (
         productData.specifications &&
         Array.isArray(productData.specifications) &&
         productData.specifications.length > 0
       ) {
-        const specsToInsert = productData.specifications
-          .filter((s) => s.key && s.value)
-          .map((s) => ({
-            product_id: product.productid,
-            category: productData.category || '',
-            spec_name: s.key,
-            spec_value: s.value,
-          }))
-        if (specsToInsert.length > 0) {
-          const { error: specError } = await supabase
-            .from('product_specifications')
-            .insert(specsToInsert)
-          if (specError) throw specError
-        }
+        await insertProductSpecifications(
+          product.productid, 
+          productData.specifications, 
+          productData.category || 'general'
+        );
       }
       const { products } = get()
       const updatedProducts = [product, ...products]

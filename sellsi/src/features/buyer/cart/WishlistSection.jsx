@@ -15,7 +15,7 @@ import {
   ShoppingCart as ShoppingCartIcon,
   Delete as DeleteIcon,
 } from '@mui/icons-material'
-import { LazyImage } from '../../../components/shared'
+import { LazyImage } from '../../layout'
 
 /**
  * Componente para mostrar la sección de wishlist/favoritos

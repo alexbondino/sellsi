@@ -55,13 +55,13 @@ const ImageUploader = ({
     const i = Math.floor(Math.log(bytes) / Math.log(k))
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
   }
-
   const handleFileSelect = (event) => {
     const files = Array.from(event.target.files)
     processFiles(files)
     // Reset input para permitir seleccionar el mismo archivo
     event.target.value = ''
   }
+  
   const processFiles = (files) => {
     const maxFileSize = 2 * 1024 * 1024; // 2MB en bytes
     
@@ -79,20 +79,20 @@ const ImageUploader = ({
       return
     }
 
-    // Validar límite de imágenes
-    if (images.length + imageFiles.length > maxImages) {
-      const errorMsg = `Solo puedes subir máximo ${maxImages} imágenes`
-      onError?.(errorMsg)
-      return
-    }
-
-    // Validar tamaño de archivos
+    // Validar tamaño de archivos PRIMERO (antes de validar límite de imágenes)
     const oversizedFiles = imageFiles.filter(file => file.size > maxFileSize)
     if (oversizedFiles.length > 0) {
       const fileNames = oversizedFiles.map(f => f.name).join(', ')
       onError?.(
         `Las siguientes imágenes exceden el límite de 2MB: ${fileNames}`
       )
+      return
+    }
+
+    // Validar límite de imágenes
+    if (images.length + imageFiles.length > maxImages) {
+      const errorMsg = `Solo puedes subir máximo ${maxImages} imágenes`
+      onError?.(errorMsg)
       return
     }
 

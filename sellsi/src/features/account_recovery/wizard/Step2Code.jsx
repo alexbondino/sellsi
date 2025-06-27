@@ -4,7 +4,7 @@ import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import {
   Timer,
   VerificationCodeInput,
-  CustomButton,
+  PrimaryButton,
 } from '../../landing_page/hooks';
 
 const Step2Code = ({
@@ -58,7 +58,7 @@ const Step2Code = ({
       <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
         <Timer timer={timer} size="large" />
       </Box>
-      <CustomButton
+      <PrimaryButton
         disabled={!codigoCompleto}
         onClick={onVerify}
         sx={{
@@ -69,17 +69,17 @@ const Step2Code = ({
         }}
       >
         Verificar Código
-      </CustomButton>
+      </PrimaryButton>
       <Typography variant="body2" sx={{ mb: 1 }}>
         ¿No has recibido el código?
       </Typography>{' '}
-      <CustomButton
+      <PrimaryButton
         variant="text"
         onClick={onResendCode}
         sx={{ fontWeight: 700, mb: 2, fontSize: 16 }}
       >
         Reenviar Código
-      </CustomButton>
+      </PrimaryButton>
       <Button
         variant="text"
         onClick={onBack}

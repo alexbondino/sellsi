@@ -1,69 +1,77 @@
-# 🧪 Pipeline Genérico de Refactorización y Modularización Controlada por IA
+⚠️ IMPORTANTE:
+**Todas tus respuestas deben escribirse exclusivamente en el archivo `.md` que yo te indicaré en el prompt/chat.**  
+Nunca sobrescribas ni elimines contenido anterior si ya hay información en el archivo. Siempre agrega de forma acumulativa.  
+Comienza cada ejecución con un título con la fecha y hora (si aplica) o encabezado lógico.
 
 ---
 
-## 🧠 Etapa Única: Revisión Exhaustiva para Refactorizar o Modularizar (solo si es necesario)
+## 🔍 Estructura esperada del archivo `.md` generado
 
-🔧 **Objetivo de esta etapa:**
+### 🩺 Diagnóstico del Estado Actual
 
-Refactoriza o modulariza el código **solo si es estrictamente necesario y beneficioso**, y **sin alterar el funcionamiento actual**. La prioridad es **mantener la funcionalidad exacta** y la **integridad lógica** del código original.
+Analiza todos los archivos del módulo e incluye:
 
----
+1. **Funcionamiento Actual**
+   - ¿El código parece funcionar correctamente según imports, estructura, convenciones?
+   - ¿Qué indicios sugieren que está o no funcionando bien?
 
-### 🔍 Instrucciones para la IA:
+2. **Problemas Detectados**
+   - Problemas de legibilidad, duplicación (DRY), cohesión/acoplamiento, nombres ambiguos, etc.
+   - Cita ejemplos o líneas concretas.
 
-Debes seguir este **protocolo de análisis** antes de tocar el código:
-
-#### 1. Análisis Previo
-- 📌 ¿El código funciona actualmente? ¿Hay pruebas o indicios de ello?
-- 🧠 ¿El código actual tiene problemas claros de legibilidad, mantenibilidad o reutilización?
-- ⚠️ ¿Alguna parte es peligrosa de refactorizar por estar acoplada a otras? Identifícalo y márcalo como "zona crítica".
-- 📈 ¿Existe un beneficio real, medible o justificado en refactorizar o modularizar?
-
-#### 2. Criterios de Acción
-- ✅ **Sí debes refactorizar o modularizar si:**
-  - El cambio mejora la claridad sin alterar la lógica
-  - El código tiene repeticiones claras o estructuras que lo hacen inmantenible
-  - Puedes encapsular funciones sin perder contexto
-
-- ❌ **No debes refactorizar o modularizar si:**
-  - Hay riesgo de romper dependencias o flujos lógicos no evidentes
-  - La mejora es solo estilística sin valor técnico
-  - No puedes probar que el resultado se comporta igual que el original
-
-#### 3. Si decides actuar, asegúrate de:
-- 💡 Mostrar antes y después del cambio, en secciones separadas.
-- 🧪 Justificar con argumentos técnicos cada decisión tomada (por qué modularizaste, por qué refactorizaste).
-- 🔁 Asegurar que la **funcionalidad sea exactamente la misma** (usa pseudotests o explicaciones si no hay tests disponibles).
-- 🛠 No eliminar comentarios ni estructuras sin dejar nota de por qué.
-- 🔍 Incluir posibles riesgos o sugerencias de prueba posteriores.
+3. **Zonas Críticas**
+   - Partes riesgosas de modificar por lógica sensible, efectos secundarios, dependencias ocultas.
 
 ---
 
-### ✍️ Output Esperado
+### 🧠 Justificación Técnica
 
-El resultado debe estar estructurado así:
+- **¿Modularizar?** (Sí/No) Justifica con casos concretos.
+- **¿Refactorizar?** (Sí/No) Justifica con beneficios claros.
+- **¿Qué ganancia técnica se obtiene?** (Ej: reutilización, separación de responsabilidades, testabilidad, etc.)
 
-```markdown
-## ✅ Evaluación Inicial
+---
 
-- ¿Funciona el código? Sí/No
-- Problemas encontrados:
-  - ...
-- ¿Es necesario modularizar? Sí/No
-- ¿Es necesario refactorizar? Sí/No
+### ✅ Decisión Final
 
-## 🛠 Plan de Acción (si corresponde)
+- **Refactorización:** Sí / No  
+- **Modularización:** Sí / No  
+- **Nivel de riesgo estimado:** Bajo / Medio / Alto  
+- **Resumen de por qué se decide actuar o no actuar.**
 
-<!-- Solo si alguna respuesta es "Sí" -->
+---
 
-- Descripción de los pasos sugeridos
-- Qué partes se van a separar o reescribir
-- Cómo se garantizará que la lógica no se rompa
-- Criterios de validación antes/después
+### 🛠️ Plan de Acción Detallado
 
-## 🔧 Propuesta de Mejora
+#### 🔄 Refactorización
+1. ¿Qué función, componente o hook se debe mejorar?
+2. ¿Qué se debe renombrar, dividir, reestructurar?
 
-### Antes (Fragmento relevante)
-```[lenguaje]
-[...]
+#### 🧩 Modularización
+1. ¿Qué lógica o componentes deben separarse?
+2. ¿Nuevos archivos sugeridos? ¿Qué deben contener?
+3. ¿Qué cambia en imports y estructura?
+
+---
+
+### 🧪 Validación de Cambios
+
+Define cómo verificar que la funcionalidad no se rompe:
+
+- **Criterios de equivalencia funcional:**  
+  Ej: “El componente X debe producir el mismo output dado el mismo input”.
+
+- **Tests existentes:**  
+  Si hay tests, ¿qué partes del código están cubiertas?
+
+---
+
+### 🔧 Propuesta de Implementación
+
+Para cada archivo afectado, incluye bloques de antes y después del código relevante.
+
+#### 📄 Archivo: `ruta/al/archivo_modificado.js`
+
+**Antes**
+```js
+// ... código original ...
