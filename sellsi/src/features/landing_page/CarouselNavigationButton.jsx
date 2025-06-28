@@ -29,75 +29,38 @@ const CarouselNavigationButton = React.memo(
 
     return (
       <IconButton
-        onClick={onClick}
-        sx={{
-          backgroundColor: 'rgba(0, 0, 0, 0.3)',
-          color: 'white',
-          zIndex: 5,
-          position: 'absolute',
-          transform: 'translateY(-50%)',
-          // Display logic: mobile on xs-md, desktop on lg-xl
-          display: {
-            xs: 'inline-flex',
-            sm: 'inline-flex',
-            md: 'inline-flex',
-            lg: 'inline-flex',
-            xl: 'inline-flex',
-          },
-          // Position logic
-          top: {
-            xs: '45%',
-            sm: '45%',
-            md: '45%',
-            mac: '50%',
-            lg: '50%',
-            xl: '50%',
-          },
-          [direction === 'prev' ? 'left' : 'right']: {
-            xs: '5%',
-            sm: '5%',
-            md: '5%',
-            lg: position || '2%',
-            xl: position || '2%',
-          },
-          // Size logic
-          width: {
-            xs: 40,
-            sm: 40,
-            md: 40,
-            lg: 48,
-            xl: 48,
-          },
-          height: {
-            xs: 40,
-            sm: 40,
-            md: 40,
-            lg: 48,
-            xl: 48,
-          },
-          '&:hover': {
-            backgroundColor: {
-              xs: 'rgba(0, 0, 0, 0.7)',
-              sm: 'rgba(0, 0, 0, 0.7)',
-              md: 'rgba(0, 0, 0, 0.7)',
-              lg: 'rgba(0, 0, 0, 0.6)',
-              xl: 'rgba(0, 0, 0, 0.6)',
-            },
-          },
+        aria-label={direction === 'prev' ? 'Anterior' : 'Siguiente'}
+        onClick={e => {
+          e.preventDefault();
+          e.stopPropagation();
+          if (e.currentTarget && typeof e.currentTarget.blur === 'function') {
+            e.currentTarget.blur();
+          }
+          onClick && onClick(e);
         }}
+        onMouseDown={e => e.preventDefault()}
+        tabIndex={-1}
+        sx={{
+          background: 'rgba(0,0,0,0.3)',
+          color: 'white',
+          position: 'absolute',
+          top: '50%',
+          [direction === 'prev' ? 'left' : 'right']: '5%',
+          zIndex: 5,
+          width: 48,
+          height: 48,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          transform: 'translateY(-50%)',
+          '&:hover': {
+            background: 'rgba(0,0,0,0.5)',
+          },
+          ...position,
+        }}
+        size="large"
       >
-        {' '}
-        <Icon
-          sx={{
-            fontSize: {
-              xs: '24px',
-              sm: '24px',
-              md: '24px',
-              lg: '32px',
-              xl: '32px',
-            },
-          }}
-        />
+        <Icon fontSize="inherit" />
       </IconButton>
     );
   }
@@ -106,3 +69,4 @@ const CarouselNavigationButton = React.memo(
 CarouselNavigationButton.displayName = 'CarouselNavigationButton';
 
 export default CarouselNavigationButton;
+

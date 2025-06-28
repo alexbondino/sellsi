@@ -28,8 +28,8 @@ const ProviderLogo = React.memo(({ provider }) => (
   <Card
     elevation={2}
     sx={{
-      width: { xs: 108, sm: 144, md: 162, lg: 180, xl: 198 }, // -10%
-      minHeight: { xs: 72, sm: 90, md: 99, lg: 108, xl: 117 }, // -10%
+      width: { xs: 108, sm: 144, md: 162, lg: 180, xl: 180 }, // -10%
+      minHeight: { xs: 72, sm: 90, md: 99, lg: 108, xl: 108 }, // -10%
       maxHeight: 125.2, // Limitar altura máxima de la card
       borderRadius: { xs: 2, sm: 3, md: 4, lg: 4, xl: 4 },
       overflow: 'hidden',

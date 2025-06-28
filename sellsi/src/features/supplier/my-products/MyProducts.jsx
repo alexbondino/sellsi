@@ -43,7 +43,7 @@ import {
   useLazyProducts,
   useProductAnimations,
 } from '../hooks/useLazyProducts';
-import { dashboardTheme } from '../../../styles/dashboardTheme';
+import { dashboardThemeCore } from '../../../styles/dashboardThemeCore';
 import { formatPrice } from '../../marketplace/utils/formatters';
 import { generateProductUrl } from '../../marketplace/marketplace/productUrl';
 
@@ -202,12 +202,12 @@ const MyProducts = () => {
   };
 
   return (
-    <ThemeProvider theme={dashboardTheme}>
+    <ThemeProvider theme={dashboardThemeCore}>
       <SideBarProvider />
 
       <Box
         sx={{
-          marginLeft: '210px',
+          // marginLeft: '210px', // Eliminado para ocupar todo el ancho
           backgroundColor: 'background.default',
           minHeight: '100vh',
           pt: { xs: 9, md: 10 },
@@ -566,7 +566,20 @@ const MyProducts = () => {
             ) : (
               <>
                 {/* Product Grid Traditional (sin virtualización por ahora) */}
-                <Grid container spacing={3}>
+                <Box
+                  sx={{
+                    display: 'grid',
+                    gridTemplateColumns: {
+                      xs: '1fr',
+                      sm: '1fr 1fr',
+                      md: '1fr 1fr 1fr',
+                      lg: '1fr 1fr 1fr 1fr',
+                      xl: '1fr 1fr 1fr 1fr',
+                    },
+                    gap: { xs: 2, sm: 3, md: 4, lg: 2 },
+                    width: '100%',
+                  }}
+                >
                   {displayedProducts.map((product, index) => (
                     <Grow
                       key={product.id}
@@ -574,7 +587,7 @@ const MyProducts = () => {
                       timeout={600}
                       style={{ transitionDelay: `${(index % 8) * 50}ms` }}
                     >
-                      <Grid item xs={12} sm={6} md={4.5} lg={3.5} xl={2.8}>
+                      <Box>
                         <ProductCard
                           product={product}
                           type="supplier"
@@ -584,10 +597,10 @@ const MyProducts = () => {
                           isDeleting={operationStates.deleting?.[product.id]}
                           onProductClick={handleProductCardClick}
                         />
-                      </Grid>
+                      </Box>
                     </Grow>
                   ))}
-                </Grid>
+                </Box>
 
                 {/* Infinite Scroll Loading Trigger */}
                 {hasMore && (

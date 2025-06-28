@@ -28,12 +28,11 @@ const StatisticCard = React.memo(({ stat }) => {
   const cardSx = {
     display: 'flex',
     alignItems: 'center', // ✅ Mantener centrado horizontalmente
-    gap: { xs: 0.5, sm: 2, md: 2.5, lg: 2.5, xl: 2.5 },
-    p: { xs: 0.3, sm: 1, md: 3, lg: 2.5, xl: 3 },
+    gap: { xs: 0.5, sm: 0.5, md: 2.5, lg: 2.5, xl: 2.5 },
+    p: { xs: 0.3, sm: 0.3, md: 3, lg: 2.5, xl: 3 },
     background: '#000000',
-    borderRadius: { xs: 1.5, sm: 2, md: 2, lg: 2, xl: 2 },
-    minWidth: { xs: 106, sm: 150, md: 200, lg: 250, xl: 220 },
-    maxWidth: { xs: 106, sm: 150, md: 200, lg: 250, xl: 220 },
+    borderRadius: { xs: 2, sm: 2, md: 2, lg: 2, xl: 2 },
+    width: { xs: 106, sm: 120, md: 200, lg: 250, xl: 220 },
     // ✅ Altura fija para asegurar alineación perfecta en mobile
     height: { xs: 80, sm: 85, md: 90, lg: 120, xl: 100 },
     boxShadow: '0 4px 15px rgba(0,0,0,0.2)',
@@ -47,13 +46,13 @@ const StatisticCard = React.memo(({ stat }) => {
   }
 
   const iconSx = {
-    fontSize: { xs: 18, sm: 26, md: 28, lg: 32, xl: 32 },
+    fontSize: { xs: 18, sm: 22, md: 28, lg: 32, xl: 32 },
   }
 
   const labelSx = {
     fontSize: {
       xs: '0.75rem',
-      sm: '0.9rem',
+      sm: '0.8rem',
       md: '1rem',
       lg: '1.1rem',
       xl: '1.15rem',

@@ -1,45 +1,17 @@
 import React from 'react';
-import { Box, Typography, Button } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
+import { Box, Typography, useTheme } from '@mui/material';
+import PrimaryButton from '../ui/PrimaryButton';
 import StatisticCard from './StatisticCard';
 import CarouselIndicator from './CarouselIndicator';
 import CarouselNavigationButton from './CarouselNavigationButton';
 
 /**
- * ============================================================================
- * HERO SECTION - SECCIÓN PRINCIPAL/HERO DE LANDING PAGE
- * ============================================================================
+ * HERO SECTION PROFESIONAL - Nueva versión basada en documentación HeroActual.md
  *
- * Componente UI principal de la landing page con carrusel promocional
- *
- * @component
- * @param {Object} props - Propiedades del componente
- * @param {number} props.currentPromoSlide - Índice del slide actual del carrusel
- * @param {Function} props.nextPromoSlide - Función para avanzar al siguiente slide
- * @param {Function} props.prevPromoSlide - Función para retroceder al slide anterior
- * @param {Function} props.setCurrentPromoSlide - Función para ir a un slide específico
- * @param {Array} props.promoSlides - Array de slides promocionales
- * @param {Array} props.statistics - Array de estadísticas para mostrar
- * @param {Function} props.formatNumber - Función para formatear números (no usada directamente aquí, pero se mantiene en la interfaz)
- *
- * CARACTERÍSTICAS:
- * - Carrusel promocional con navegación automática y manual
- * - Contenido dinámico por slide (texto, imágenes, secciones múltiples)
- * - Estadísticas animadas con count-up
- * - Botón CTA principal para marketplace
- * - Layout responsivo diferenciado mobile/desktop
- * - Indicadores de posición y botones de navegación
- * - Soporte para slides multi-sección
- *
- * LAYOUT:
- * - Desktop: Dos columnas (contenido + imagen)
- * - Mobile: Una columna con imagen superpuesta
- * - Botón y estadísticas posicionados estratégicamente
- *
- * DEPENDENCIAS:
- * - StatisticCard: Para mostrar métricas destacadas
- * - CarouselIndicator: Para navegación por puntos
- * - CarouselNavigationButton: Para botones prev/next
+ * Props:
+ * - currentPromoSlide, nextPromoSlide, prevPromoSlide, setCurrentPromoSlide
+ * - promoSlides: array de slides (ver constants.jsx)
+ * - statistics: array de métricas (ver useHomeLogic)
  */
 const HeroSection = ({
   currentPromoSlide,
@@ -49,114 +21,67 @@ const HeroSection = ({
   promoSlides,
   statistics,
 }) => {
-  const navigate = useNavigate();
+  const theme = useTheme();
   const currentSlide = promoSlides[currentPromoSlide];
 
-  // Estilos comunes para los títulos de los slides
+  // --- Estilos de tipografía ---
   const titleStyles = {
+    fontWeight: 800,
     fontSize: {
-      xs: '1.7rem',
-      sm: '1.9rem',
-      md: '3.5rem',
-      mac: '3.2rem',
-      lg: '3rem',
-      xl: '4.5rem',
+      xs: '2rem',
+      sm: '2.3rem',
+      md: '2.5rem',
+      lg: '3.2rem',
+      xl: '4rem',
     },
-    lineHeight: {
-      xs: 1.3,
-      sm: 1.4,
-      md: 1.4,
-      mac: 1.4,
-      lg: 1.4,
-      xl: 1.4,
-    },
+    lineHeight: 1.15,
+    color: currentSlide.type === 'multi-section' ? '#1565c0' : '#fff',
+    letterSpacing: '-1px',
+    mb: { xs: 0, sm: 2, md: 2.5 },
+    textShadow: '0 2px 8px rgba(0,0,0,0.18)',
   };
-
-  // Estilos comunes para los subtítulos/descripciones de los slides
-  const descriptionStyles = {
+  const subtitleStyles = {
     fontSize: {
-      xs: '0.9rem',
-      sm: '0.95rem',
-      md: '1.5rem',
-      mac: '1.5rem',
+      xs: '1rem',
+      sm: '1.1rem',
+      md: '1.2rem',
       lg: '1.5rem',
       xl: '1.7rem',
     },
-    lineHeight: {
-      xs: 1.5,
-      sm: 1.6,
-      md: 1.6,
-      mac: 1.6,
-      lg: 1.6,
-      xl: 1.6,
-    },
+    color: 'rgba(255,255,255,0.92)',
+    lineHeight: 1.5,
+    mb: { xs: 0, sm: 1, md: 2 },
+    fontWeight: 400,
   };
 
-  /**
-   * Componente interno para renderizar el contenido de texto principal del slide.
-   * La altura de este Box será controlada por el flexbox padre.
-   */
-  const SlideTextContent = () => {
-    if (currentSlide.type === 'multi-section') {
+  // --- Renderizado de texto del slide ---
+  const SlideText = () => {
+    if (currentSlide.type === 'multi-section' && currentSlide.sections) {
       return (
-        <Box
-          sx={{
-            width: '100%',
-            mt: { xs: 2, sm: 3, md: 3 },
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'flex-start',
-            textAlign: { xs: 'center', md: 'left' },
-          }}
-        >
-          {currentSlide.sections.map((section, index) => (
-            <Box key={index} sx={{ mb: { xs: 2, sm: 2.5, md: 3 } }}>
-              <Typography
-                variant="h1"
-                fontWeight="bold"
-                sx={{
-                  ...titleStyles,
-                  mb: { xs: 1, sm: 1.5, md: 2 },
-                  color: '#1565c0',
-                }}
-              >
-                {section.title}
-              </Typography>
-              <Typography
-                variant="h6"
-                sx={{ ...descriptionStyles, color: 'rgba(255, 255, 255, 0.9)' }}
-              >
-                {section.description}
-              </Typography>
+        <Box sx={{ textAlign: 'center' }}>
+          {currentSlide.sections.map((section, idx) => (
+            <Box key={idx} mb={2.5}>
+              <Typography sx={titleStyles}>{section.title}</Typography>
+              <Typography sx={subtitleStyles}>{section.description}</Typography>
             </Box>
           ))}
+          {/* Mostrar el título solo en mobile, debajo de las secciones */}
+          <Typography
+            sx={{ ...titleStyles, display: { xs: 'block', md: 'none' }, color: '#fff', mt: 2 }}
+            dangerouslySetInnerHTML={{ __html: currentSlide.title }}
+          />
         </Box>
       );
     }
-
     return (
       <>
         <Typography
-          variant="h1"
-          fontWeight="bold"
-          gutterBottom
-          sx={{
-            ...titleStyles,
-            mb: { xs: 1, sm: 1.5, md: 3 },
-            mt: { xs: -1, sm: 0 },
-            color: 'white',
-          }}
+          sx={titleStyles}
           dangerouslySetInnerHTML={{ __html: currentSlide.title }}
         />
         {currentSlide.subtitle && (
           <Typography
-            variant="h6"
-            gutterBottom
-            sx={{
-              ...descriptionStyles,
-              mb: { xs: 0, sm: 0, md: 1.6 },
-              color: 'white',
-            }}
+            sx={subtitleStyles}
             dangerouslySetInnerHTML={{ __html: currentSlide.subtitle }}
           />
         )}
@@ -164,349 +89,249 @@ const HeroSection = ({
     );
   };
 
-  /**
-   * Componente interno para renderizar el contenido de imagen del slide.
-   * La altura de este Box será controlada por el flexbox padre.
-   */
-  const SlideImageContent = ({ isMobile = false }) => {
-    if (currentSlide.type === 'multi-section') {
-      return (
+  // --- Renderizado de imagen del slide ---
+  const SlideImage = ({ isMobile }) => {
+    if (currentSlide.type === 'multi-section') return null;
+    if (currentSlide.id === 2 && isMobile) return null;
+    // Reservar espacio fijo para la imagen, sin depender de carga
+    return (
+      <Box
+        sx={{
+          width: { xs: 200, sm:300, md: 400, lg: 480 },
+          height: { xs: 200, sm:300,  md: 500, lg: 600 },
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
         <Box
+          component="img"
+          src={currentSlide.src}
+          alt={currentSlide.alt}
           sx={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
             width: '100%',
             height: '100%',
-            textAlign: 'center',
-            px: { xs: 2, md: 0 },
+            objectFit: 'contain',
+            borderRadius: 3,
+            boxShadow: '0 8px 32px rgba(0,0,0,0.18)',
+            transition: 'all 0.5s',
+            display: 'block',
           }}
-        >
-          <Typography
-            variant="h1"
-            fontWeight="bold"
-            sx={{
-              ...titleStyles,
-              color: 'white',
-              textShadow: '2px 2px 4px rgba(0,0,0,0.8)',
-              wordBreak: 'break-word',
-              whiteSpace: 'normal',
-              px: { xs: 0, mac: 2, lg: 0 },
-            }}
-            dangerouslySetInnerHTML={{ __html: currentSlide.title }}
-          />
-        </Box>
-      );
-    }
-
-    // Condición específica para no mostrar la imagen del slide 2 en móvil
-    // Si quieres que el slide 2 tenga imagen en mobile, quita esta condición.
-    if (currentSlide.id === 2 && isMobile) {
-      return null;
-    }
-
-    return (
-      <img
-        src={currentSlide.src}
-        alt={currentSlide.alt}
-        style={{
-          width: '100%',
-          height: '100%', // Asegura que la imagen intente llenar la altura de su contenedor flex
-          maxHeight: isMobile ? 'none' : '550px', // Ajusta este valor según tus imágenes
-          objectFit: 'contain',
-          transition: 'all 0.5s ease',
-        }}
-      />
+        />
+      </Box>
     );
   };
 
+  React.useEffect(() => {
+    // Eliminado log de layout para producción
+  }, []);
+
+  // ===================== BOX PADRE =====================
   return (
     <Box
       sx={{
+        width: '100vw',
+        height: '100vh',
+        maxHeight: {
+          xs: '100vh',
+          sm: '100vh',
+          md: 550,
+          lg: 500,
+          xl: 650,
+        },
+        py: 0,
+        px: 0,
         position: 'relative',
-        display: 'flex',
-        flexDirection: {
-          xs: 'column',
-          md: 'column',
-          lg: 'row',
-        },
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        height: {
-          xs: '700px', // ALTURA FIJA PARA MÓVILES
-          sm: '800px', // ALTURA FIJA PARA TABLETS PEQUEÑAS
-          md: '950px', // ALTURA FIJA PARA TABLETS GRANDES
-          mac: '650px',
-          lg: '700px',
-          xl: '750px',
-        },
-        paddingY: { xs: 4, sm: 6, md: 6, mac: 6, lg: 6, xl: 8 },
-        paddingTop: { md: 2, mac: 4, lg: 1, xl: 1 },
-        backgroundColor: '#000000',
-        gap: { xs: 4, sm: 4, md: 5, mac: 8, lg: 10, xl: 12 },
+        overflow: 'hidden',
+        background: 'linear-gradient(120deg, #000 80%, #1565c0 120%)', // Degrade negro a azul
         zIndex: 1,
-        transition: 'height 0.3s ease-in-out',
+        boxSizing: 'border-box',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'flex-start',
+        alignItems: 'center',
       }}
     >
-      <Box
-        sx={{
-          display: 'flex',
-          flexDirection: {
-            xs: 'column',
-            md: 'column',
-            lg: 'row',
-          },
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          width: '100%',
-          height: { xs: 'auto', lg: '100%' },
-          px: { xs: 2, sm: 4, md: 8, mac: 18, lg: 15, xl: 30 },
-          position: 'relative',
-          // NO COLOCAMOS EL BOTÓN Y ESTADÍSTICAS MÓVILES AQUÍ YA QUE LO VAMOS A MOVER
-        }}
-      >
-        {/* Imagen Mobile - Visible hasta sm (se oculta en md y superiores) */}
-        <Box
-          sx={{
-            display: {
-              xs: 'block',
-              sm: 'block',
-              md: 'none',
-            },
-            position: 'absolute',
-            top: { xs: 75, sm: 90 },
-            right: { xs: 35, sm: 30 },
-            width: { xs: 300, sm: 320 },
-            height: { xs: 400, sm: 500 },
-            zIndex: 1,
-            pointerEvents: 'none',
-          }}
-        >
-          <SlideImageContent isMobile={true} />
-        </Box>
-
-        {/* COLUMNA 1: Texto (Izquierda) */}
-        <Box
-          sx={{
-            flex: {
-              xs: 'none',
-              md: 1,
-            },
-            display: 'flex',
-            justifyContent: { xs: 'center', md: 'flex-start' },
-            alignItems: 'center',
-            pr: { mac: 4 },
-            zIndex: 2,
-            width: { xs: '100%', md: '100%', lg: 'auto' },
-            minWidth: { xs: 'auto', lg: '400px' },
-            height: { xs: 'auto', lg: '100%' },
-          }}
-        >
-          <Box
-            sx={{
-              width: '100%',
-              maxWidth: { mac: '500px', lg: '450px', xl: '550px' },
-              textAlign: { xs: 'center', md: 'left' },
-              px: { lg: 3, xl: 4 },
-              height: { xs: 'auto', lg: '100%' },
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'center',
-            }}
-          >
-            <SlideTextContent />
-          </Box>
-        </Box>
-
-        {/* COLUMNA 2: Imagen / Título de Multi-Section (Derecha) */}
-        <Box
-          sx={{
-            flex: {
-              xs: 'none',
-              md: 1,
-            },
-            display: {
-              xs: 'none',
-              md: 'flex',
-              mac: 'flex',
-            },
-            justifyContent: 'center',
-            alignItems: { xs: 'center', mac: 'flex-start' },
-            pl: { mac: 4 },
-            height: { xs: 'auto', lg: '100%' },
-            minHeight: {
-              md: '300px',
-              mac: '350px',
-              lg: '300px',
-              xl: '400px',
-            },
-            transition: 'height 0.3s ease-in-out',
-          }}
-        >
-          <Box
-            sx={{
-              width:
-                currentSlide.type === 'multi-section'
-                  ? { md: '100%', mac: '90%', lg: '95%', xl: '95%' }
-                  : { mac: '70%', lg: '80%', xl: '70%' },
-              maxWidth:
-                currentSlide.type === 'multi-section'
-                  ? { md: 700, mac: 800, lg: 900, xl: 1100 }
-                  : { mac: 450, lg: 500, xl: 550 },
-              ml: { lg: 4, xl: 4 },
-              height: { xs: 'auto', lg: '100%' },
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'center',
-              alignItems: 'center',
-            }}
-          >
-            <SlideImageContent />
-          </Box>
-        </Box>
-      </Box>
-
-      {/* Botón y Estadísticas para Mobile (hasta md) - REPOSICIONADO */}
-      <Box
-        sx={{
-          display: {
-            xs: 'flex',
-            md: 'none', // Sigue oculto en md y superiores
-          },
-          flexDirection: 'column',
-          alignItems: 'center',
-          gap: { xs: 2, sm: 2.5 },
-          width: '100%',
-          position: 'absolute', // <--- CAMBIO CLAVE: Posición absoluta
-          bottom: { xs: 40, sm: 40 }, // <--- CAMBIO CLAVE: Posicionado desde abajo
-          left: '50%', // Centrado horizontalmente
-          transform: 'translateX(-50%)', // Centrado horizontalmente
-          zIndex: 2,
-          // Eliminamos el 'mt' dinámico, ahora la posición es absoluta desde abajo
-          // mt: { xs: currentSlide.id === 1 ? 16 : currentSlide.id === 2 ? 8.3 : 10, sm: currentSlide.id === 1 ? 17 : currentSlide.id === 2 ? 8.2 : 13.1, },
-        }}
-      >
-        <Button
-          variant="contained"
-          sx={{
-            backgroundColor: 'primary.main',
-            fontWeight: 'bold',
-            borderRadius: '8px',
-            px: { xs: 3.68, sm: 4, md: 10 },
-            py: { xs: 1.38, sm: 1.5, md: 2.4 },
-            fontSize: { xs: '1.2rem', sm: '1.35rem', md: '1.5rem' },
-            textTransform: 'none',
-            boxShadow: '0 4px 15px rgba(25, 118, 210, 0.3)',
-            width: 'fit-content',
-            mb: 1, // Mantener un margen inferior para separar de las estadísticas
-            '&:hover': {
-              transform: 'translateY(-2px)',
-              boxShadow: '0 6px 20px rgba(25, 118, 210, 0.4)',
-            },
-          }}
-          onClick={() => navigate('/marketplace')}
-        >
-          Ir a marketplace
-        </Button>
-        <Box
-          sx={{
-            display: 'flex',
-            flexDirection: 'row',
-            gap: { xs: 1.5, sm: 2 },
-            alignItems: 'flex-start',
-            justifyContent: 'center',
-            width: '100%',
-            flexWrap: 'wrap',
-            mb: { xs: 1, sm: 2 },
-          }}
-        >
-          {statistics.map((stat, index) => (
-            <StatisticCard key={index} stat={stat} />
-          ))}
-        </Box>
-        <Box
-          sx={{
-            display: 'flex',
-            gap: { xs: 1, sm: 1.5 },
-            justifyContent: 'center',
-            alignItems: 'center',
-            mt: 1,
-            // mb: { xs: 3, sm: 4 }, // Este margen ya no es necesario aquí si se posiciona desde bottom
-          }}
-        >
-          {promoSlides.map((_, index) => (
-            <CarouselIndicator
-              key={index}
-              index={index}
-              isActive={index === currentPromoSlide}
-              onClick={() => setCurrentPromoSlide(index)}
-            />
-          ))}
-        </Box>
-      </Box>
-
-      {/* === FLECHAS DE NAVEGACIÓN === */}
-      {/* Ajusta su posición para Mobile si es necesario */}
+      {/* Botones de navegación en los extremos, dentro del BoxPadre */}
       <CarouselNavigationButton
         direction="prev"
         onClick={prevPromoSlide}
         position={{
-          xs: '50%', // Cambia a un porcentaje para centrar verticalmente en mobile
-          sm: '50%',
-          mac: '5%',
-          lg: '2%',
-        }}
-        sx={{
-          transform: {
-            xs: 'translateY(-50%)', // Centrado vertical para mobile
-            mac: 'none', // Desactiva la transformación en desktop
-          },
+          position: 'absolute',
+          left: '2vw',
+          top: '50%',
+          transform: 'translateY(-50%)',
+          zIndex: 1000,
         }}
       />
       <CarouselNavigationButton
         direction="next"
         onClick={nextPromoSlide}
         position={{
-          xs: '50%', // Cambia a un porcentaje para centrar verticalmente en mobile
-          sm: '50%',
-          mac: '5%',
-          lg: '2%',
-        }}
-        sx={{
-          transform: {
-            xs: 'translateY(-50%)', // Centrado vertical para mobile
-            mac: 'none', // Desactiva la transformación en desktop
-          },
+          position: 'absolute',
+          right: '2vw',
+          top: '50%',
+          transform: 'translateY(-50%)',
+          zIndex: 1000,
         }}
       />
-
-      {/* Indicadores del Carrusel - Desktop (visible desde mac) */}
+      {/* HeroSectionBox centrado y con fondo negro, ocupa 95% de la altura */}
       <Box
+        id="herosection-root"
         sx={{
-          display: {
-            xs: 'none',
-            mac: 'flex',
+          width: { xs: '100%', md: '80%' },
+          margin: '0 auto',
+          // borderRadius: 6, // Quitar bordes
+          position: 'relative',
+          display: 'flex',
+          flexDirection: {
+            xs: 'column', // Siempre columna en mobile para todas las slides
+            lg: 'row',
           },
-          position: 'absolute',
-          bottom: 20,
-          left: '50%',
-          transform: 'translateX(-50%)',
-          gap: 1.5,
-          zIndex: 5,
-          padding: 1,
-          borderRadius: '12px',
-          backgroundColor: 'rgb(0, 0, 0)',
+          alignItems: 'center',
+          justifyContent: 'center',
+          height: '95%',
+          minHeight: 0,
+          py: { xs: 4, sm: 6, md: 8, lg: 8, xl: 10 },
+          px: { xs: 2, sm: 4, md: 8, lg: 16, xl: 28 },
+          background: 'transparent', // Fondo transparente para heredar el degrade
+          overflow: 'hidden',
+          zIndex: 2,
+          boxSizing: 'border-box',
         }}
       >
-        {promoSlides.map((_, index) => (
-          <CarouselIndicator
-            key={index}
-            index={index}
-            isActive={index === currentPromoSlide}
-            onClick={() => setCurrentPromoSlide(index)}
-          />
-        ))}
+        {/* TEXTO ARRIBA, IMAGEN AL MEDIO, SIEMPRE EN MOBILE */}
+        <Box sx={{ width: '100%', mb: 2, zIndex: 2, display: { xs: 'block', md: 'none' } }}>
+          <SlideText />
+        </Box>
+        <Box sx={{ width: '100%', display: { xs: 'flex', md: 'none' }, justifyContent: 'center', alignItems: 'center', mb: 2, zIndex: 2 }}>
+          <SlideImage isMobile />
+        </Box>
+        {/* Box sticky para stats+botón en mobile */}
+        <Box
+          sx={{
+            display: { xs: 'flex', sm: 'flex', md: 'none' },
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'flex-end', // Alinear abajo
+            flex: 1, // Ocupar todo el alto disponible
+            width: '100%',
+            gap: 1.5,
+            py: 1,
+            background: 'rgba(0,0,0,0.85)',
+            position: { xs: 'relative', sm: 'relative', md: 'sticky' },
+            bottom: { xs: 'unset', sm: 'unset', md: 0 },
+            zIndex: 20,
+            boxShadow: '0 -2px 12px rgba(0,0,0,0.08)',
+          }}
+        >
+          <PrimaryButton
+            size="large"
+            onClick={() => window.location.assign('/marketplace')}
+            sx={{
+              px: 4,
+              py: 1,
+              fontSize: '1.1rem',
+              borderRadius: 2,
+              boxShadow: '0 4px 15px rgba(25, 118, 210, 0.3)',
+              backgroundColor: 'primary.main',
+              color: '#fff',
+              width: '90%',
+              maxWidth: 340,
+              mb: 1,
+              '&:hover': {
+                backgroundColor: 'primary.dark',
+              },
+            }}
+          >
+            Ir a marketplace
+          </PrimaryButton>
+          <Box sx={{ display: 'flex', gap: 1, width: '100%', justifyContent: 'center', flexWrap: 'nowrap', overflowX: 'auto' }}>
+            {statistics.map((stat, i) => (
+              <StatisticCard key={i} stat={stat} />
+            ))}
+          </Box>
+        </Box>
+        {/* Desktop layout: texto e imagen en columnas */}
+        {(
+          <>
+            <Box
+              sx={{
+                flex: 1,
+                zIndex: 2,
+                minWidth: 0,
+                maxWidth: { xs: '100%', lg: '50%' },
+                textAlign: { xs: 'center', lg: 'left' },
+                py: { xs: 2, lg: 0 },
+                display: { xs: 'none', md: 'flex' },
+                flexDirection: 'column',
+                justifyContent: 'center',
+                height: { md: '100%', lg: '100%' },
+                maxHeight: { xs: 'calc(100dvh - 180px)', sm: 'calc(100dvh - 180px)', md: 'none' },
+                overflowY: { xs: 'auto', sm: 'auto', md: 'visible' },
+              }}
+            >
+              <SlideText />
+            </Box>
+            <Box
+              sx={{
+                flex: 1,
+                display: { xs: 'none', md: 'flex' },
+                alignItems: 'center',
+                justifyContent: 'center',
+                minWidth: 0,
+                maxWidth: { xs: '100%', lg: '50%' },
+                minHeight: 320,
+                zIndex: 2,
+                height: { md: '100%', lg: '100%' },
+              }}
+            >
+              {currentSlide.type === 'multi-section' ? (
+                <Typography
+                  sx={{ ...titleStyles, color: '#fff', textAlign: 'center', width: '100%' }}
+                  dangerouslySetInnerHTML={{ __html: currentSlide.title }}
+                />
+              ) : (
+                <SlideImage />
+              )}
+            </Box>
+          </>
+        )}
+      </Box>
+      {/* Box externo para CarouselIndicator, ocupa 5% de la altura */}
+      <Box
+        sx={{
+          width: { xs: '100%', md: '80%' },
+          margin: '0 auto',
+          height: '5%',
+          minHeight: 40,
+          maxHeight: 60,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          background: 'transparent',
+          zIndex: 10,
+        }}
+      >
+        <Box
+          sx={{
+            display: { xs: 'none', md: 'flex' },
+            gap: 1.5,
+            background: 'rgba(0,0,0,0.7)',
+            borderRadius: 2,
+            px: 2,
+            py: 1,
+          }}
+        >
+          {promoSlides.map((_, idx) => (
+            <CarouselIndicator
+              key={idx}
+              index={idx}
+              isActive={idx === currentPromoSlide}
+              onClick={() => setCurrentPromoSlide(idx)}
+            />
+          ))}
+        </Box>
       </Box>
     </Box>
   );

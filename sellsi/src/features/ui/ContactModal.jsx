@@ -40,12 +40,20 @@ const ContactModal = ({ open, onClose }) => {
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Cerrar modal al navegar
+  // Guardar pathname inicial al abrir el modal
+  const [initialPath, setInitialPath] = useState(null);
   useEffect(() => {
     if (open) {
+      setInitialPath(location.pathname);
+    }
+  }, [open, location.pathname]);
+
+  // Cerrar modal solo si el pathname cambia respecto al inicial
+  useEffect(() => {
+    if (open && initialPath && location.pathname !== initialPath) {
       onClose();
     }
-  }, [location]);
+  }, [location.pathname, open, initialPath, onClose]);
 
   // Reset formulario al cerrar
   const handleClose = () => {

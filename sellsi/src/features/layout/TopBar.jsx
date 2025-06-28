@@ -88,13 +88,17 @@ export default function TopBar({
 
   const handleNavigate = ref => {
     handleCloseMobileMenu();
-    if (ref === 'contactModal') {
-      setOpenContactModal(true);
-      return;
-    }
-    if (onNavigate) {
-      onNavigate(ref);
-    }
+    setTimeout(() => {
+      console.log('handleNavigate called with ref:', ref);
+      if (ref === 'contactModal') {
+        setOpenContactModal(true);
+        console.log('setOpenContactModal(true) called');
+        return;
+      }
+      if (onNavigate) {
+        onNavigate(ref);
+      }
+    }, 0);
   };
 
   // Este es el manejador de cambios del `Switch`.
@@ -138,14 +142,26 @@ export default function TopBar({
       { label: 'Quiénes somos', ref: 'quienesSomosRef' },
       { label: 'Servicios', ref: 'serviciosRef' },
       { label: 'Trabaja con Nosotros', ref: 'trabajaConNosotrosRef' },
-      { label: 'Contáctanos', ref: 'contactanosRef' },
+      { label: 'Contáctanos', ref: 'contactModal' }, // Cambiado a contactModal para abrir el modal
     ];
 
     desktopNavLinks = publicNavButtons.map(({ label, ref }) => (
       <Button
         key={label}
         onClick={() => handleNavigate(ref)}
-        sx={{ color: 'white', textTransform: 'none', fontSize: 16 }}
+        sx={{
+          color: 'white',
+          textTransform: 'none',
+          fontSize: 16,
+          outline: 'none',
+          boxShadow: 'none',
+          border: 'none',
+          '&:focus': { outline: 'none', boxShadow: 'none', border: 'none' },
+          '&:active': { outline: 'none', boxShadow: 'none', border: 'none' },
+          '&:hover': { outline: 'none', boxShadow: 'none', border: 'none' },
+        }}
+        disableFocusRipple
+        disableRipple
       >
         {label}
       </Button>
@@ -157,13 +173,34 @@ export default function TopBar({
           onClick={() => setOpenLoginModal(true)}
           variant="contained"
           color="primary"
+          sx={{
+            outline: 'none',
+            boxShadow: 'none',
+            border: 'none',
+            '&:focus': { outline: 'none', boxShadow: 'none', border: 'none' },
+            '&:active': { outline: 'none', boxShadow: 'none', border: 'none' },
+            '&:hover': { outline: 'none', boxShadow: 'none', border: 'none' },
+          }}
+          disableFocusRipple
+          disableRipple
         >
           Iniciar sesión
         </Button>
         <Button
           onClick={() => setOpenRegisterModal(true)}
           variant="outlined"
-          sx={{ color: 'white', borderColor: 'white' }}
+          sx={{
+            color: 'white',
+            borderColor: 'white',
+            outline: 'none',
+            boxShadow: 'none',
+            border: 'none',
+            '&:focus': { outline: 'none', boxShadow: 'none', border: 'none' },
+            '&:active': { outline: 'none', boxShadow: 'none', border: 'none' },
+            '&:hover': { outline: 'none', boxShadow: 'none', border: 'none' },
+          }}
+          disableFocusRipple
+          disableRipple
         >
           Registrarse
         </Button>
@@ -177,9 +214,6 @@ export default function TopBar({
         </MenuItem>
       )),
       <Divider key="divider1" />,
-      <MenuItem key="contact" onClick={() => handleNavigate('contactModal')}>
-        Contáctanos
-      </MenuItem>,
       <MenuItem
         key="login"
         onClick={() => {
@@ -442,7 +476,10 @@ export default function TopBar({
       {openContactModal && (
         <ContactModal
           open={openContactModal}
-          onClose={() => setOpenContactModal(false)}
+          onClose={() => {
+            setOpenContactModal(false);
+            console.log('ContactModal cerrado');
+          }}
         />
       )}
     </>

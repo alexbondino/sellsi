@@ -1,12 +1,29 @@
 // 📁 pages/ProviderHome.jsx
-import React from 'react';
-import { Box, Grid, Button, Container, ThemeProvider } from '@mui/material';
+import React, { Suspense } from 'react';
+import { Box, Grid, Button, Container, ThemeProvider, CircularProgress, Skeleton } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import { useSupplierDashboard } from './hooks/useSupplierDashboard';
-import DashboardSummary from './dashboard-summary/DashboardSummary';
-import MonthlySalesChart from '../../ui/graphs/BarChart';
 import SideBarProvider from '../../layout/SideBar';
-import { dashboardTheme } from '../../../styles/dashboardTheme';
+import { dashboardThemeCore } from '../../../styles/dashboardThemeCore';
+
+// Lazy imports para reducir el bundle inicial
+const DashboardSummary = React.lazy(() => import('./dashboard-summary/DashboardSummary'));
+const MonthlySalesChart = React.lazy(() => import('../../ui/graphs/BarChart'));
+
+// Loading fallbacks optimizados
+const DashboardSummaryFallback = () => (
+  <Grid container spacing={2}>
+    {[1, 2, 3, 4].map((item) => (
+      <Grid key={item} size={{ xs: 12, sm: 6, md: 3 }}>
+        <Skeleton variant="rectangular" height={120} sx={{ borderRadius: 2 }} />
+      </Grid>
+    ))}
+  </Grid>
+);
+
+const ChartFallback = () => (
+  <Skeleton variant="rectangular" height={400} sx={{ borderRadius: 2 }} />
+);
 
 const ProviderHome = () => {
   const {
@@ -25,11 +42,10 @@ const ProviderHome = () => {
   ).length;
 
   return (
-    <ThemeProvider theme={dashboardTheme}>
+    <ThemeProvider theme={dashboardThemeCore}>
       <SideBarProvider />
       <Box
         sx={{
-          marginLeft: '210px',
           backgroundColor: 'background.default',
           minHeight: '100vh',
           pt: { xs: 9, md: 10 },
@@ -41,12 +57,14 @@ const ProviderHome = () => {
           <Grid container spacing={3}>
             <Grid size={12}>
               <Box sx={{ mb: 4 }}>
-                <DashboardSummary
-                  products={products}
-                  totalSales={totalSales}
-                  outOfStock={productsOutOfStock}
-                  weeklyRequests={weeklyRequests}
-                />
+                <Suspense fallback={<DashboardSummaryFallback />}>
+                  <DashboardSummary
+                    products={products}
+                    totalSales={totalSales}
+                    outOfStock={productsOutOfStock}
+                    weeklyRequests={weeklyRequests}
+                  />
+                </Suspense>
               </Box>
 
               <Box sx={{ mb: 4 }}>
@@ -74,7 +92,9 @@ const ProviderHome = () => {
               </Box>
 
               <Box>
-                <MonthlySalesChart data={monthlyData} />
+                <Suspense fallback={<ChartFallback />}>
+                  <MonthlySalesChart data={monthlyData} />
+                </Suspense>
               </Box>
             </Grid>
           </Grid>
