@@ -9,12 +9,7 @@ import {
   Wizard,
   useWizard,
 } from '../landing_page/hooks';
-import {
-  Step1Account,
-  // Step2AccountType, // Removed
-  // Step3Profile,     // Removed
-  Step4Verification,
-} from './wizard';
+import { Step1Account, Step4Verification } from './wizard';
 import { useBanner } from '../ui/banner/BannerContext';
 
 export default function Register({ open, onClose }) {
@@ -199,28 +194,7 @@ export default function Register({ open, onClose }) {
             }
           />
         );
-      // 🎯 ELIMINADOS: Step 1 and Step 2 from original structure
-      // case 1:
-      //   return (
-      //     <Step2AccountType
-      //       selectedType={formData.tipoCuenta}
-      //       onTypeSelect={type => updateFormData('tipoCuenta', type)}
-      //       onNext={wizardControls.nextStep}
-      //       onBack={wizardControls.prevStep}
-      //     />
-      //   );
-      // case 2:
-      //   return (
-      //     <Step3Profile
-      //       accountType={formData.tipoCuenta}
-      //       formData={formData}
-      //       onFieldChange={updateFormData}
-      //       onLogoChange={handleLogoChange}
-      //       logoError={logoError}
-      //       onNext={wizardControls.nextStep}
-      //       onBack={wizardControls.prevStep}
-      //     />
-      //   );
+
       case 1: // 🎯 MODIFICADO: Step4Verification ahora es el paso 1 (segundo en la secuencia)
         return (
           <Step4Verification
