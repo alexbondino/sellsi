@@ -129,10 +129,29 @@ export default function TopBar({
   let mobileMenuItems = [];
   let paddingX = { xs: 2, md: 18, mac: 18, lg: 18 }; // Default padding for logged out
 
+  // Avatar con fade-in
+  const [avatarLoaded, setAvatarLoaded] = useState(false);
+  useEffect(() => {
+    setAvatarLoaded(false); // Resetear cuando cambia el logo
+  }, [logoUrl]);
+
   const profileMenuButton = (
     <IconButton onClick={handleOpenProfileMenu} sx={{ color: 'white', p: 0 }}>
-      <Avatar src={logoUrl}>
-        <PersonIcon />
+      <Avatar
+        src={logoUrl && typeof logoUrl === 'string' && logoUrl.trim() !== '' ? logoUrl : undefined}
+        key={logoUrl || 'default-avatar'}
+        sx={{
+          transition: 'opacity 0.5s',
+          opacity: avatarLoaded ? 1 : 0,
+          background: '#e0e0e0',
+        }}
+        imgProps={{
+          onLoad: () => setAvatarLoaded(true),
+          onError: () => setAvatarLoaded(true),
+          style: { transition: 'opacity 0.5s', opacity: avatarLoaded ? 1 : 0 }
+        }}
+      >
+        <PersonIcon sx={{ opacity: avatarLoaded ? 0 : 1, transition: 'opacity 0.3s' }} />
       </Avatar>
     </IconButton>
   );
