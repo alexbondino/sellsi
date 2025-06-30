@@ -11,7 +11,7 @@
 import React from 'react';
 import { Box } from '@mui/material';
 import SearchBar from '../SearchBar/SearchBar';
-import CategoryNavigation from '../CategoryNavigation/CategoryNavigation';
+import CategoryNavigation from '../../layout/NavBar';
 
 /**
  * Componente que encapsula la barra de búsqueda y navegación de categorías

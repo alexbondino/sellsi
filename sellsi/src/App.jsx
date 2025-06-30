@@ -57,9 +57,7 @@ const MyOrdersPage = React.lazy(() =>
 const SupplierProfile = React.lazy(() =>
   import('./features/supplier/SupplierProfile')
 );
-const BuyerProfile = React.lazy(() =>
-  import('./features/buyer/BuyerProfile')
-);
+const BuyerProfile = React.lazy(() => import('./features/buyer/BuyerProfile'));
 
 // 📦 RUTAS SECUNDARIAS - LAZY LOADING
 const BuyerOrders = React.lazy(() => import('./features/buyer/BuyerOrders'));
@@ -188,7 +186,10 @@ function AppContent({ mensaje }) {
         return;
       }
       if (mounted) {
-        if (!userData || userData.user_nm?.toLowerCase() === USER_NAME_STATUS.PENDING) {
+        if (
+          !userData ||
+          userData.user_nm?.toLowerCase() === USER_NAME_STATUS.PENDING
+        ) {
           setNeedsOnboarding(true);
           setUserProfile(null);
           setCurrentAppRole('buyer');
@@ -285,10 +286,7 @@ function AppContent({ mensaje }) {
         newRole = userProfile.main_supplier ? 'supplier' : 'buyer';
       }
       // Solo actualiza si realmente cambia el rol y la ruta no es neutral
-      if (
-        newRole !== currentAppRole &&
-        !neutralRoutes.has(currentPath)
-      ) {
+      if (newRole !== currentAppRole && !neutralRoutes.has(currentPath)) {
         setCurrentAppRole(newRole);
       }
     } else if (!session && currentAppRole !== 'buyer') {
@@ -376,7 +374,7 @@ function AppContent({ mensaje }) {
   // Función para refrescar el perfil del usuario (para usar después de actualizaciones)
   const refreshUserProfile = async () => {
     if (!session?.user?.id) return;
-    
+
     try {
       const { data: userData, error: userError } = await supabase
         .from('users')
@@ -385,7 +383,10 @@ function AppContent({ mensaje }) {
         .single();
 
       if (userError) {
-        console.error('❌ [APP] Error refreshing user profile:', userError.message);
+        console.error(
+          '❌ [APP] Error refreshing user profile:',
+          userError.message
+        );
         return;
       }
 
@@ -440,7 +441,9 @@ function AppContent({ mensaje }) {
   return (
     <>
       <TopBar
-        key={`${session?.user?.id || 'no-session'}-${logoUrl || 'default-topbar'}`}
+        key={`${session?.user?.id || 'no-session'}-${
+          logoUrl || 'default-topbar'
+        }`}
         session={session}
         isBuyer={isBuyer}
         logoUrl={logoUrl ? `${logoUrl}?cb=${logoCacheBuster}` : null}
@@ -507,8 +510,14 @@ function AppContent({ mensaje }) {
                   element={<Home scrollTargets={scrollTargets} />}
                 />
                 <Route path="/marketplace" element={<Marketplace />} />
-                <Route path="/marketplace/product/:id" element={<ProductPageWrapper />} />
-                <Route path="/marketplace/product/:id/:slug" element={<ProductPageWrapper />} />
+                <Route
+                  path="/marketplace/product/:id"
+                  element={<ProductPageWrapper />}
+                />
+                <Route
+                  path="/marketplace/product/:id/:slug"
+                  element={<ProductPageWrapper />}
+                />
                 {/* TechnicalSpecs puede ser accedido sin iniciar sesión, si es contenido común */}
                 <Route
                   path="/technicalspecs/:productSlug"
@@ -696,7 +705,7 @@ function App() {
       setMensaje('Backend health check deshabilitado - usando Supabase');
     }
     // }
-  }, []);  // Removed backendUrl dependency
+  }, []); // Removed backendUrl dependency
 
   return (
     <ThemeProvider theme={theme}>
@@ -716,11 +725,11 @@ function App() {
           position="top-right"
           toastOptions={{
             duration: 4000,
-            style: { 
-              background: '#333', 
-              color: '#fff', 
+            style: {
+              background: '#333',
+              color: '#fff',
               borderRadius: '8px',
-              marginTop: '60px' // Mover los toasts más abajo del TopBar
+              marginTop: '60px', // Mover los toasts más abajo del TopBar
             },
             success: { style: { background: '#4caf50' } },
             error: { style: { background: '#f44336' } },

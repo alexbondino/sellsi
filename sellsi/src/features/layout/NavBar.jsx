@@ -1,4 +1,3 @@
-
 // ✅ EDITAR AQUÍ PARA:
 // - Agregar/quitar categorías
 // - Cambiar diseño del menú dropdown
@@ -21,8 +20,8 @@ import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import KeyboardArrowRightIcon from '@mui/icons-material/KeyboardArrowRight';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
-import { SECTIONS, SECTION_LABELS } from '../marketplace/constants';
-import { categoryNavigationStyles as styles } from '../hooks/CategoryNavigation/CategoryNavigation.styles';
+import { SECTIONS, SECTION_LABELS } from '../marketplace/marketplace/constants';
+import { categoryNavigationStyles as styles } from '../marketplace/hooks/CategoryNavigation/CategoryNavigation.styles';
 
 // Definir categorías por defecto si no existe import
 const CATEGORIAS = [
@@ -60,7 +59,7 @@ const CategoryNavigation = ({
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
   // Handlers locales para abrir/cerrar menú
-  const handleOpenCategorias = (e) => {
+  const handleOpenCategorias = e => {
     setAnchorElCategorias(e.currentTarget);
   };
   const handleCloseCategorias = () => {
@@ -91,14 +90,11 @@ const CategoryNavigation = ({
     [onSeccionChange, isMobile]
   );
 
-  const toggleSectionsExpanded = React.useCallback(
-    () => {
-      console.time('CategoryNavigation:toggleSectionsExpanded');
-      setSectionsExpanded(!sectionsExpanded);
-      console.timeEnd('CategoryNavigation:toggleSectionsExpanded');
-    },
-    [sectionsExpanded]
-  );
+  const toggleSectionsExpanded = React.useCallback(() => {
+    console.time('CategoryNavigation:toggleSectionsExpanded');
+    setSectionsExpanded(!sectionsExpanded);
+    console.timeEnd('CategoryNavigation:toggleSectionsExpanded');
+  }, [sectionsExpanded]);
 
   // ✅ MEJORA DE RENDIMIENTO: Memoización de estilos del contenedor principal
   const containerStyles = React.useMemo(
@@ -122,7 +118,8 @@ const CategoryNavigation = ({
       >
         Categorías
       </Button>
-      {/* Menu de categorías */}      <Menu
+      {/* Menu de categorías */}{' '}
+      <Menu
         anchorEl={anchorElCategorias}
         open={Boolean(anchorElCategorias)}
         onClose={handleCloseCategorias}
