@@ -248,10 +248,15 @@ function AppContent({ mensaje }) {
 
   // Redirección forzada a home tras logout SOLO si ya terminó la validación
   useEffect(() => {
-    if (!loadingUserStatus && !session && location.pathname !== '/') {
+    // Solo redirige a '/' si la ruta actual no es pública (neutralRoutes)
+    if (
+      !loadingUserStatus &&
+      !session &&
+      !neutralRoutes.has(location.pathname)
+    ) {
       navigate('/', { replace: true });
     }
-  }, [session, location.pathname, navigate, loadingUserStatus]);
+  }, [session, location.pathname, navigate, loadingUserStatus, neutralRoutes]);
 
   // Función para manejar el cambio de rol desde TopBar
   const handleRoleChangeFromTopBar = newRole => {
