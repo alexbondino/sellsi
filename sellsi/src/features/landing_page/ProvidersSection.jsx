@@ -11,8 +11,7 @@ const ProvidersSection = ({ statistics }) => {
   return (
     <Box
       sx={{
-        backgroundColor: '#ffffff',
-        px: { xs: 2, sm: 4, md: 8, mac: 18, lg: 18, xl: 30 },
+        backgroundColor: 'transparent',
         py: { xs: 6, sm: 7, md: 8, mac: 0, lg: 8, xl: 8 },
         position: 'relative',
         paddingTop: {

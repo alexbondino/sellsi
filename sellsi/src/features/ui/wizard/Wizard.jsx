@@ -34,8 +34,14 @@ const Wizard = ({
 
   // Props adicionales
   className = '',
+
+  // Paso actual controlado externamente
+  currentStep: controlledStep, // <-- Añadido para modo controlado
 }) => {
-  const [currentStep, setCurrentStep] = useState(initialStep)
+  const isControlled = controlledStep !== undefined;
+  const [internalStep, setInternalStep] = useState(initialStep);
+  const currentStep = isControlled ? controlledStep : internalStep;
+  const setCurrentStep = isControlled ? (step) => onStepChange?.(step, steps[step]) : setInternalStep;
   const intervalRef = useRef()
   // Función para cambiar paso con validaciones
   const changeStep = useCallback(

@@ -33,7 +33,7 @@ const ProviderLogo = React.memo(({ provider }) => (
       maxHeight: 125.2, // Limitar altura máxima de la card
       borderRadius: { xs: 2, sm: 3, md: 4, lg: 4, xl: 4 },
       overflow: 'hidden',
-      background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
+      background: 'transparent', // Fondo completamente transparente
       border: '2px solid #f0f4f8',
       transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
       cursor: 'pointer',
@@ -56,7 +56,7 @@ const ProviderLogo = React.memo(({ provider }) => (
           xl: '0 20px 40px rgba(0,0,0,0.12)',
         },
         borderColor: '#e2e8f0',
-        background: 'linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%)',
+        background: 'transparent', // Fondo transparente también en hover
       },
     }}
   >
@@ -68,6 +68,7 @@ const ProviderLogo = React.memo(({ provider }) => (
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
+        position: 'relative', // Necesario para overlay
       }}
     >
       <img
@@ -78,6 +79,22 @@ const ProviderLogo = React.memo(({ provider }) => (
           height: '100%',
           objectFit: 'contain',
           display: 'block',
+          zIndex: 1,
+          position: 'relative',
+        }}
+      />
+      {/* Overlay de color sutil */}
+      <div
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          background: 'rgba(120, 120, 120, 0.18)', // Gris sutil
+          pointerEvents: 'none',
+          zIndex: 2,
+          borderRadius: 'inherit',
         }}
       />
     </CardContent>

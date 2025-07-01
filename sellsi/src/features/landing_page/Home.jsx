@@ -76,12 +76,31 @@ const Home = ({ scrollTargets }) => {
         promoSlides={PROMO_SLIDES}
         statistics={statistics}
         formatNumber={formatNumber}
-      />{' '}
-      {/* Sección Conoce a nuestros proveedores */}
-      <ProvidersSection statistics={statistics} />
-      {/* Banner Component */}
-      <Banner /> {/* Sección ¿Quiénes somos? */}{' '}
-      <AboutUsSection quienesSomosRef={quienesSomosRef} />
+      />
+      {/* Fondo global para el resto de la landing excepto Hero y Services */}
+      <Box
+        sx={{
+          width: '100%',
+          minHeight: 'min(120vh, 1800px)',
+          background: `url('/Landing Page/BackgroundHome.svg') center top / cover no-repeat, linear-gradient(135deg, #f7f8fa 0%, #e3e6ec 100%)`,
+          position: 'relative',
+          zIndex: 0,
+          overflow: 'hidden',
+        }}
+      >
+        {/* Sección Conoce a nuestros proveedores */}
+        <Box sx={{ px: { md: 8, mac: 18, lg: 18, xl: 30 } }}>
+          <ProvidersSection statistics={statistics} />
+        </Box>
+        {/* Banner Component */}
+        <Box sx={{ px: { md: 8, mac: 18, lg: 18, xl: 30 } }}>
+          <Banner />
+        </Box>
+        {/* Sección ¿Quiénes somos? */}
+        <Box sx={{ px: { md: 8, mac: 18, lg: 18, xl: 30 } }}>
+          <AboutUsSection quienesSomosRef={quienesSomosRef} />
+        </Box>
+      </Box>
       {/* Sección Nuestros Servicios */}
       <ServicesSection serviciosRef={serviciosRef} services={services} />
     </Box>
