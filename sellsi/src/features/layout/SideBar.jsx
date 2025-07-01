@@ -73,7 +73,7 @@ const SideBar = ({ role, width = '375px' }) => {
         color: '#FFFFFF', // Main text color is WHITE!
         display: { xs: 'none', md: 'flex' }, // Ocultar en móviles, mostrar en desktop
         flexDirection: 'column',
-        zIndex: theme.zIndex.appBar - 1,
+        zIndex: 100, // Asegura que la BottomBar (zIndex: 200) esté por encima
         overflowY: 'hidden', // La barra lateral no se scrollea
         borderRight: 'none', // Asegura que no haya borde derecho
 

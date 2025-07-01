@@ -88,16 +88,21 @@ const NotFound = React.lazy(() => import('./features/ui/NotFound'));
 const SuspenseLoader = ({ message = 'Cargando...' }) => (
   <Box
     sx={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      width: '100vw',
+      height: '100vh',
       display: 'flex',
       flexDirection: 'column',
-      justifyContent: 'center',
       alignItems: 'center',
-      height: '50vh',
-      gap: 2,
+      justifyContent: 'center',
+      bgcolor: 'background.default',
+      zIndex: 1500,
     }}
   >
     <CircularProgress size={40} />
-    <Typography sx={{ color: 'text.secondary', fontSize: '0.875rem' }}>
+    <Typography sx={{ mt: 3, color: 'text.secondary', fontWeight: 500 }}>
       {message}
     </Typography>
   </Box>
@@ -122,9 +127,11 @@ function AppContent({ mensaje }) {
   const { initializeCartWithUser, isBackendSynced } = useCartStore();
   const [needsOnboarding, setNeedsOnboarding] = useState(false);
   const { prefetchRoute } = usePrefetch();
-
   const [currentAppRole, setCurrentAppRole] = useState('buyer'); // 'buyer' o 'supplier'
   const SideBarWidth = '210px'; // Define aquí el ancho de tu SideBar
+
+  // Persistente entre renders
+  const lastSessionIdRef = useRef(null);
 
   // Define las rutas para cada rol (para visibilidad de SideBar y redirecciones específicas)
   // Usamos un Set para búsquedas más eficientes.
@@ -162,10 +169,12 @@ function AppContent({ mensaje }) {
           setUserProfile(null);
           setNeedsOnboarding(false);
           setLoadingUserStatus(false);
-          setCurrentAppRole('buyer'); // Por defecto para no logueados
+          setCurrentAppRole('buyer');
         }
         return;
       }
+      // Siempre forzar la obtención del perfil tras SIGNED_IN
+      lastSessionIdRef.current = currentSession.user.id;
       const { data: userData, error: userError } = await supabase
         .from('users')
         .select('user_nm, main_supplier, logo_url')
@@ -173,34 +182,21 @@ function AppContent({ mensaje }) {
         .single();
 
       if (userError && mounted) {
-        console.error('Error fetching user profile:', userError.message);
-        setNeedsOnboarding(true); // Podría ser un error, o que el perfil no existe y necesita onboarding
+        setNeedsOnboarding(true);
         setUserProfile(null);
         setLoadingUserStatus(false);
         setCurrentAppRole('buyer');
         return;
       }
       if (mounted) {
-        if (
-          !userData ||
-          userData.user_nm?.toLowerCase() === USER_NAME_STATUS.PENDING
-        ) {
+        if (!userData || userData.user_nm?.toLowerCase() === USER_NAME_STATUS.PENDING) {
           setNeedsOnboarding(true);
           setUserProfile(null);
-          setCurrentAppRole('buyer'); // Asegura que si necesitan onboarding, el rol inicial no interfiera
+          setCurrentAppRole('buyer');
         } else {
           setNeedsOnboarding(false);
           setUserProfile(userData);
-          // Establece el rol inicial de la aplicación basado en userProfile.main_supplier
           setCurrentAppRole(userData.main_supplier ? 'supplier' : 'buyer');
-
-          if (currentSession?.user?.id && !isBackendSynced) {
-            try {
-              await initializeCartWithUser(currentSession.user.id);
-            } catch (error) {
-              console.error('[App] ❌ Error inicializando carrito:', error);
-            }
-          }
         }
         setLoadingUserStatus(false);
       }
@@ -215,15 +211,15 @@ function AppContent({ mensaje }) {
     const { data: listener } = supabase.auth.onAuthStateChange(
       (event, newSession) => {
         if (mounted) {
-          // Evitar recargas innecesarias durante cambios de contraseña
-          // Solo recargar en eventos críticos como login/logout
-          if (event === 'SIGNED_IN' || event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED') {
+          if (event === 'SIGNED_IN') {
+            setSession(newSession);
+            // Forzar obtención del perfil incluso si el usuario ya estaba en sesión
+            checkUserAndFetchProfile(newSession);
+          } else if (event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED') {
             setSession(newSession);
             checkUserAndFetchProfile(newSession);
           } else if (event === 'USER_UPDATED') {
-            // Para USER_UPDATED, solo actualizamos la sesión pero no recargamos el perfil completo
             setSession(newSession);
-            console.log('🔄 [Auth] User updated, session refreshed without profile reload');
           }
         }
       }
@@ -235,11 +231,33 @@ function AppContent({ mensaje }) {
         listener.subscription.unsubscribe();
       }
     };
-  }, [initializeCartWithUser, isBackendSynced]);
+  }, []); // SOLO al montar
 
   // --- Estados derivados del perfil de usuario ---
   const isBuyer = currentAppRole === 'buyer';
   const logoUrl = userProfile ? userProfile.logo_url : null;
+
+  // Solo actualiza el cache buster cuando cambia el logoUrl
+  const [logoCacheBuster, setLogoCacheBuster] = useState(Date.now());
+  useEffect(() => {
+    setLogoCacheBuster(Date.now());
+  }, [logoUrl]);
+
+  useEffect(() => {
+    // LOGS ELIMINADOS
+  }, [userProfile, logoUrl]);
+
+  // Redirección forzada a home tras logout SOLO si ya terminó la validación
+  useEffect(() => {
+    // Solo redirige a '/' si la ruta actual no es pública (neutralRoutes)
+    if (
+      !loadingUserStatus &&
+      !session &&
+      !neutralRoutes.has(location.pathname)
+    ) {
+      navigate('/', { replace: true });
+    }
+  }, [session, location.pathname, navigate, loadingUserStatus, neutralRoutes]);
 
   // Función para manejar el cambio de rol desde TopBar
   const handleRoleChangeFromTopBar = newRole => {
@@ -256,27 +274,30 @@ function AppContent({ mensaje }) {
   useEffect(() => {
     if (session && !needsOnboarding && !loadingUserStatus && userProfile) {
       const currentPath = location.pathname;
-
+      let newRole = currentAppRole;
       if (
         Array.from(supplierDashboardRoutes).some(route =>
           currentPath.startsWith(route)
         )
       ) {
-        setCurrentAppRole('supplier');
+        newRole = 'supplier';
       } else if (
         Array.from(buyerDashboardRoutes).some(route =>
           currentPath.startsWith(route)
         )
       ) {
-        setCurrentAppRole('buyer');
+        newRole = 'buyer';
       } else {
-        // Si está en una ruta neutral, determina el rol basado en el perfil (estado inicial)
-        // Esto asegura que el rol predeterminado correcto se establezca si aterrizan en una ruta pública
-        // pero han iniciado sesión.
-        setCurrentAppRole(userProfile.main_supplier ? 'supplier' : 'buyer');
+        newRole = userProfile.main_supplier ? 'supplier' : 'buyer';
       }
-    } else if (!session) {
-      // Si no ha iniciado sesión, siempre establece el rol a comprador (vista pública predeterminada)
+      // Solo actualiza si realmente cambia el rol y la ruta no es neutral
+      if (
+        newRole !== currentAppRole &&
+        !neutralRoutes.has(currentPath)
+      ) {
+        setCurrentAppRole(newRole);
+      }
+    } else if (!session && currentAppRole !== 'buyer') {
       setCurrentAppRole('buyer');
     }
   }, [
@@ -287,25 +308,20 @@ function AppContent({ mensaje }) {
     userProfile, // Crucial para la configuración inicial del rol
     buyerDashboardRoutes,
     supplierDashboardRoutes,
+    currentAppRole,
+    neutralRoutes,
   ]);
-
-  // Redirigir a onboarding si es necesario
-  useEffect(() => {
-    if (session && needsOnboarding && location.pathname !== '/onboarding') {
-      navigate('/onboarding', { replace: true });
-    }
-  }, [session, needsOnboarding, location.pathname, navigate]);
 
   // Redirigir a usuarios logueados de rutas neutrales a su dashboard preferido
   // basado en su perfil real.
   useEffect(() => {
     if (!loadingUserStatus && session && !needsOnboarding && userProfile) {
       if (neutralRoutes.has(location.pathname)) {
-        if (userProfile.main_supplier) {
-          // Verifica el rol real del perfil
-          navigate('/supplier/home', { replace: true });
-        } else {
-          navigate('/buyer/marketplace', { replace: true });
+        const target = userProfile.main_supplier
+          ? '/supplier/home'
+          : '/buyer/marketplace';
+        if (location.pathname !== target) {
+          navigate(target, { replace: true });
         }
       }
     }
@@ -387,16 +403,22 @@ function AppContent({ mensaje }) {
     }
   };
 
+  // Loader global centrado
   if (loadingUserStatus) {
     return (
       <Box
         sx={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
           width: '100vw',
           height: '100vh',
           display: 'flex',
+          flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
           bgcolor: 'background.default',
+          zIndex: 2000,
         }}
       >
         <CircularProgress size={48} color="primary" />
@@ -424,9 +446,10 @@ function AppContent({ mensaje }) {
   return (
     <>
       <TopBar
+        key={`${session?.user?.id || 'no-session'}-${logoUrl || 'default-topbar'}`}
         session={session}
         isBuyer={isBuyer}
-        logoUrl={logoUrl}
+        logoUrl={logoUrl ? `${logoUrl}?cb=${logoCacheBuster}` : null}
         onNavigate={handleScrollTo}
         onRoleChange={handleRoleChangeFromTopBar}
       />
@@ -511,7 +534,11 @@ function AppContent({ mensaje }) {
                 <Route
                   path="/onboarding"
                   element={
-                    <PrivateRoute>
+                    <PrivateRoute
+                      isAuthenticated={!!session}
+                      needsOnboarding={needsOnboarding}
+                      loading={loadingUserStatus}
+                    >
                       <Onboarding />
                     </PrivateRoute>
                   }
@@ -521,7 +548,11 @@ function AppContent({ mensaje }) {
                 <Route
                   path="/buyer/marketplace"
                   element={
-                    <PrivateRoute>
+                    <PrivateRoute
+                      isAuthenticated={!!session}
+                      needsOnboarding={needsOnboarding}
+                      loading={loadingUserStatus}
+                    >
                       <MarketplaceBuyer />
                     </PrivateRoute>
                   }
@@ -529,7 +560,11 @@ function AppContent({ mensaje }) {
                 <Route
                   path="/buyer/orders"
                   element={
-                    <PrivateRoute>
+                    <PrivateRoute
+                      isAuthenticated={!!session}
+                      needsOnboarding={needsOnboarding}
+                      loading={loadingUserStatus}
+                    >
                       <BuyerOrders />
                     </PrivateRoute>
                   }
@@ -537,7 +572,11 @@ function AppContent({ mensaje }) {
                 <Route
                   path="/buyer/performance"
                   element={
-                    <PrivateRoute>
+                    <PrivateRoute
+                      isAuthenticated={!!session}
+                      needsOnboarding={needsOnboarding}
+                      loading={loadingUserStatus}
+                    >
                       <BuyerPerformance />
                     </PrivateRoute>
                   }
@@ -545,7 +584,11 @@ function AppContent({ mensaje }) {
                 <Route
                   path="/buyer/cart"
                   element={
-                    <PrivateRoute>
+                    <PrivateRoute
+                      isAuthenticated={!!session}
+                      needsOnboarding={needsOnboarding}
+                      loading={loadingUserStatus}
+                    >
                       <BuyerCart />
                     </PrivateRoute>
                   }
@@ -555,7 +598,11 @@ function AppContent({ mensaje }) {
                 <Route
                   path="/supplier/home"
                   element={
-                    <PrivateRoute>
+                    <PrivateRoute
+                      isAuthenticated={!!session}
+                      needsOnboarding={needsOnboarding}
+                      loading={loadingUserStatus}
+                    >
                       <ProviderHome />
                     </PrivateRoute>
                   }
@@ -563,7 +610,11 @@ function AppContent({ mensaje }) {
                 <Route
                   path="/supplier/myproducts"
                   element={
-                    <PrivateRoute>
+                    <PrivateRoute
+                      isAuthenticated={!!session}
+                      needsOnboarding={needsOnboarding}
+                      loading={loadingUserStatus}
+                    >
                       <MyProducts />
                     </PrivateRoute>
                   }
@@ -571,7 +622,11 @@ function AppContent({ mensaje }) {
                 <Route
                   path="/supplier/addproduct"
                   element={
-                    <PrivateRoute>
+                    <PrivateRoute
+                      isAuthenticated={!!session}
+                      needsOnboarding={needsOnboarding}
+                      loading={loadingUserStatus}
+                    >
                       <AddProduct />
                     </PrivateRoute>
                   }
@@ -579,7 +634,11 @@ function AppContent({ mensaje }) {
                 <Route
                   path="/supplier/my-orders"
                   element={
-                    <PrivateRoute>
+                    <PrivateRoute
+                      isAuthenticated={!!session}
+                      needsOnboarding={needsOnboarding}
+                      loading={loadingUserStatus}
+                    >
                       <MyOrdersPage />
                     </PrivateRoute>
                   }
@@ -587,7 +646,11 @@ function AppContent({ mensaje }) {
                 <Route
                   path="/supplier/profile"
                   element={
-                    <PrivateRoute>
+                    <PrivateRoute
+                      isAuthenticated={!!session}
+                      needsOnboarding={needsOnboarding}
+                      loading={loadingUserStatus}
+                    >
                       <SupplierProfile onProfileUpdated={refreshUserProfile} />
                     </PrivateRoute>
                   }
@@ -595,7 +658,11 @@ function AppContent({ mensaje }) {
                 <Route
                   path="/buyer/profile"
                   element={
-                    <PrivateRoute>
+                    <PrivateRoute
+                      isAuthenticated={!!session}
+                      needsOnboarding={needsOnboarding}
+                      loading={loadingUserStatus}
+                    >
                       <BuyerProfile onProfileUpdated={refreshUserProfile} />
                     </PrivateRoute>
                   }

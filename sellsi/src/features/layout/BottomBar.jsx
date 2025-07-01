@@ -41,160 +41,140 @@ const BottomBar = () => {
           }}
         >
           {/* Contenido principal en 2 columnas */}
+          {/* Box principal: Logo + eslogan + secciones */}
           <Box
             sx={{
               display: 'flex',
               flexDirection: { xs: 'column', md: 'row' },
+              alignItems: { xs: 'center', md: 'flex-start' },
               gap: { xs: 4, md: 6 },
               mb: 4,
+              justifyContent: { xs: 'center', md: 'flex-start' },
             }}
           >
-            {/* Columna 1: Logo y eslogan */}
-            <Box sx={{ flex: 1, maxWidth: { xs: '100%', md: 350 }, px: 0 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 0 }}>
+            {/* Logo y eslogan en columna */}
+            <Box sx={{ flex: '0 0 auto', maxWidth: { xs: '100%', md: 180 }, px: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minWidth: 120 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 0, height: 60, overflow: 'hidden' }}>
                 <img
                   src="/logodark.svg"
                   alt="SELLSI Logo"
-                  style={{ height: 140, maxWidth: '100%' }}
+                  style={{ height: 150, maxWidth: '100%' }}
                 />
               </Box>
               <Typography
                 variant="h6"
-                sx={{
-                  fontWeight: 600,
-                  fontSize: '1.1rem',
-                  mb: 2,
-                  textAlign: 'center',
-                }}
+                sx={{ fontWeight: 600, fontSize: '1.1rem', mt: 1, textAlign: 'center', display: { xs: 'block', md: 'block' } }}
               >
                 Crece. Conecta. Vende.
               </Typography>
-              <Typography
-                variant="body2"
-                sx={{
-                  color: '#b0b0b0',
-                  lineHeight: 1.6,
-                  maxWidth: 280,
-                  textAlign: 'justify',
-                  mx: 'auto',
-                  width: '100%',
-                  display: 'block',
-                }}
-              >
-                La plataforma que conecta proveedores con vendedores de manera
-                sencilla y eficiente.
-              </Typography>
             </Box>
 
-            {/* Columna 2: Secciones de navegación en 2x2 */}
-            <Box sx={{ flex: 1, px: 0, maxWidth: 350 }}>
-              <Box
-                sx={{
-                  display: 'grid',
-                  gridTemplateColumns: '1fr 1fr',
-                  gap: 1.5, // Reducido de 2 a 1.5
-                  maxWidth: 350, // Reducido de 400 a 350
-                  '@media (max-width: 600px)': {
-                    gridTemplateColumns: '1fr',
-                  },
-                }}
-              >
-                {/* Navegación */}
-                <Box sx={{ maxWidth: 160 }}>
-                  <Typography variant="h6" sx={sectionTitleStyle}>
-                    Navegación
+            {/* Secciones a la derecha del logo */}
+            <Box
+              sx={{
+                display: 'flex',
+                flexDirection: { xs: 'column', md: 'row' },
+                gap: { xs: 2, md: 4 },
+                justifyContent: 'flex-start',
+                alignItems: { xs: 'center', md: 'flex-start' },
+                flex: 1,
+              }}
+            >
+              {/* Navegación */}
+              <Box sx={{ minWidth: 120 }}>
+                <Typography variant="h6" sx={sectionTitleStyle}>
+                  Navegación
+                </Typography>
+                <Box sx={columnStyle}>
+                  <Typography variant="body2" sx={navItemStyle}>
+                    Inicio
                   </Typography>
-                  <Box sx={columnStyle}>
-                    <Typography variant="body2" sx={navItemStyle}>
-                      Inicio
-                    </Typography>
-                    <Typography variant="body2" sx={navItemStyle}>
-                      Quiénes Somos
-                    </Typography>
-                    <Typography variant="body2" sx={navItemStyle}>
-                      Servicios
-                    </Typography>
-                    <Typography
-                      variant="body2"
-                      sx={navItemStyle}
-                      onClick={handleOpenContact}
-                    >
-                      Contáctanos
-                    </Typography>
-                  </Box>
-                </Box>
-
-                {/* Servicios */}
-                <Box sx={{ maxWidth: 160 }}>
-                  <Typography variant="h6" sx={sectionTitleStyle}>
+                  <Typography variant="body2" sx={navItemStyle}>
+                    Quiénes Somos
+                  </Typography>
+                  <Typography variant="body2" sx={navItemStyle}>
                     Servicios
                   </Typography>
-                  <Box sx={columnStyle}>
-                    <Typography variant="body2" sx={navItemStyle}>
-                      Marketplace
-                    </Typography>
-                    <Typography variant="body2" sx={navItemStyle}>
-                      Para Proveedores
-                    </Typography>
-                    <Typography variant="body2" sx={navItemStyle}>
-                      Para Compradores
-                    </Typography>
-                  </Box>
-                </Box>
-
-                {/* Soporte */}
-                <Box sx={{ maxWidth: 160 }}>
-                  <Typography variant="h6" sx={sectionTitleStyle}>
-                    Soporte
+                  <Typography
+                    variant="body2"
+                    sx={navItemStyle}
+                    onClick={handleOpenContact}
+                  >
+                    Contáctanos
                   </Typography>
-                  <Box sx={columnStyle}>
-                    <Typography variant="body2" sx={navItemStyle}>
-                      Centro de Ayuda
-                    </Typography>
-                    <Typography variant="body2" sx={navItemStyle}>
-                      Preguntas Frecuentes
-                    </Typography>
-                    <Typography variant="body2" sx={navItemStyle}>
-                      Términos y Condiciones
-                    </Typography>
-                    <Typography variant="body2" sx={navItemStyle}>
-                      Política de Privacidad
-                    </Typography>
-                  </Box>
                 </Box>
+              </Box>
 
-                {/* Redes Sociales */}
-                <Box sx={{ maxWidth: 160 }}>
-                  <Typography variant="h6" sx={sectionTitleStyle}>
-                    Síguenos
+              {/* Servicios */}
+              <Box sx={{ minWidth: 130 }}>
+                <Typography variant="h6" sx={sectionTitleStyle}>
+                  Servicios
+                </Typography>
+                <Box sx={columnStyle}>
+                  <Typography variant="body2" sx={navItemStyle}>
+                    Marketplace
                   </Typography>
-                  <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                    <SocialIcon
-                      href="https://www.linkedin.com/company/sellsi/"
-                      icon={<LinkedInIcon />}
-                      hoverColor="#0077b5"
-                      label="LinkedIn"
-                    />
-                    <SocialIcon
-                      href="#"
-                      icon={<InstagramIcon />}
-                      hoverColor="#e4405f"
-                      label="Instagram"
-                    />
-                    <SocialIcon
-                      href="#"
-                      icon={<WhatsAppIcon />}
-                      hoverColor="#25d366"
-                      label="WhatsApp"
-                    />
-                  </Box>
+                  <Typography variant="body2" sx={navItemStyle}>
+                    Para Proveedores
+                  </Typography>
+                  <Typography variant="body2" sx={navItemStyle}>
+                    Para Compradores
+                  </Typography>
+                </Box>
+              </Box>
+
+              {/* Soporte */}
+              <Box sx={{ minWidth: 160 }}>
+                <Typography variant="h6" sx={sectionTitleStyle}>
+                  Soporte
+                </Typography>
+                <Box sx={columnStyle}>
+                  <Typography variant="body2" sx={navItemStyle}>
+                    Centro de Ayuda
+                  </Typography>
+                  <Typography variant="body2" sx={navItemStyle}>
+                    Preguntas Frecuentes
+                  </Typography>
+                  <Typography variant="body2" sx={navItemStyle}>
+                    Términos y Condiciones
+                  </Typography>
+                  <Typography variant="body2" sx={navItemStyle}>
+                    Política de Privacidad
+                  </Typography>
+                </Box>
+              </Box>
+
+              {/* Redes Sociales */}
+              <Box sx={{ minWidth: 120 }}>
+                <Typography variant="h6" sx={sectionTitleStyle}>
+                  Síguenos
+                </Typography>
+                <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', minWidth: { xs: 0, md: '110px' }, width: { md: '110px', lg: '120px', xl: '140px' } }}>
+                  <SocialIcon
+                    href="https://www.linkedin.com/company/sellsi/"
+                    icon={<LinkedInIcon />}
+                    hoverColor="#0077b5"
+                    label="LinkedIn"
+                  />
+                  <SocialIcon
+                    href="#"
+                    icon={<InstagramIcon />}
+                    hoverColor="#e4405f"
+                    label="Instagram"
+                  />
+                  <SocialIcon
+                    href="#"
+                    icon={<WhatsAppIcon />}
+                    hoverColor="#25d366"
+                    label="WhatsApp"
+                  />
                 </Box>
               </Box>
             </Box>
           </Box>
 
           {/* Fila 2: Copyright */}
-          <Divider sx={{ my: 3, borderColor: '#333' }} />
+          <Divider sx={{ my: 0, borderColor: '#333' }} />
           <Box sx={{ textAlign: 'center' }}>
             <Typography
               variant="body2"

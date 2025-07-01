@@ -13,35 +13,37 @@ const LoadingOverlay = ({
   message = 'Cargando...',
   height = '100%',
   paperProps = {},
-}) => (
-  <Paper
-    sx={{
-      p: 6,
-      textAlign: 'center',
-      bgcolor: '#fff',
-      borderRadius: 3,
-      border: '1px solid #e2e8f0',
-      minHeight: height,
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-    }}
-    {...paperProps}
-  >
-    <Box
+}) => {
+  return (
+    <Paper
       sx={{
+        p: 6,
+        textAlign: 'center',
+        bgcolor: '#fff',
+        borderRadius: 3,
+        border: '1px solid #e2e8f0',
+        minHeight: height,
         display: 'flex',
-        flexDirection: 'column',
         alignItems: 'center',
-        gap: 2,
+        justifyContent: 'center',
       }}
+      {...paperProps}
     >
-      <CircularProgress color="primary" size={48} />
-      <Typography variant="h6" color="text.secondary" sx={{ mt: 2 }}>
-        {message}
-      </Typography>
-    </Box>
-  </Paper>
-);
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: 2,
+        }}
+      >
+        <CircularProgress color="primary" size={48} />
+        <Typography variant="h6" color="text.secondary" sx={{ mt: 2 }}>
+          {message}
+        </Typography>
+      </Box>
+    </Paper>
+  );
+};
 
 export default LoadingOverlay;
