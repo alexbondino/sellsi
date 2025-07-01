@@ -19,11 +19,17 @@ import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 export default function Switch({ value, onChange, sx }) {
   const theme = useTheme();
 
+  const handleChange = (event, newValue) => {
+    if (onChange) {
+      onChange(event, newValue);
+    }
+  };
+
   return (
     <ToggleButtonGroup
       value={value} // El valor es controlado por el padre
       exclusive // Solo una opción puede estar seleccionada
-      onChange={onChange} // El cambio es manejado por el padre
+      onChange={handleChange} // El cambio es manejado por el padre
       aria-label="Selección de rol"
       sx={{
         mr: 2, // Margen derecho por defecto, el padre puede sobrescribirlo

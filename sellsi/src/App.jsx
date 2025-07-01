@@ -131,6 +131,8 @@ function AppContent({ mensaje }) {
   const [needsOnboarding, setNeedsOnboarding] = useState(false);
   const { prefetchRoute } = usePrefetch();
   const [currentAppRole, setCurrentAppRole] = useState('buyer'); // 'buyer' o 'supplier'
+  const [isRoleSwitching, setIsRoleSwitching] = useState(false); // Flag para evitar glitch
+
   const SideBarWidth = '210px'; // Define aquí el ancho de tu SideBar
 
   // Persistente entre renders
@@ -266,7 +268,7 @@ function AppContent({ mensaje }) {
   // Función para manejar el cambio de rol desde TopBar
   const handleRoleChangeFromTopBar = newRole => {
     setCurrentAppRole(newRole);
-    // Redirige al usuario al dashboard correspondiente cuando cambie el rol
+    setIsRoleSwitching(true); // Activar flag
     if (newRole === 'supplier') {
       navigate('/supplier/home');
     } else {
@@ -276,6 +278,17 @@ function AppContent({ mensaje }) {
 
   // Sincroniza el currentAppRole con la ruta actual
   useEffect(() => {
+    if (isRoleSwitching) {
+      // Si estamos en transición de rol, no forzar sincronización
+      // Limpiar flag si la ruta ya corresponde al rol
+      if (
+        (currentAppRole === 'supplier' && location.pathname.startsWith('/supplier')) ||
+        (currentAppRole === 'buyer' && location.pathname.startsWith('/buyer'))
+      ) {
+        setIsRoleSwitching(false);
+      }
+      return;
+    }
     if (session && !needsOnboarding && !loadingUserStatus && userProfile) {
       const currentPath = location.pathname;
       let newRole = currentAppRole;
@@ -294,7 +307,6 @@ function AppContent({ mensaje }) {
       } else {
         newRole = userProfile.main_supplier ? 'supplier' : 'buyer';
       }
-      // Solo actualiza si realmente cambia el rol y la ruta no es neutral
       if (
         newRole !== currentAppRole &&
         !neutralRoutes.has(currentPath)
@@ -309,11 +321,12 @@ function AppContent({ mensaje }) {
     session,
     needsOnboarding,
     loadingUserStatus,
-    userProfile, // Crucial para la configuración inicial del rol
+    userProfile,
     buyerDashboardRoutes,
     supplierDashboardRoutes,
     currentAppRole,
     neutralRoutes,
+    isRoleSwitching,
   ]);
 
   // Redirigir a usuarios logueados de rutas neutrales a su dashboard preferido
@@ -743,9 +756,9 @@ function App() {
           position="top-right"
           toastOptions={{
             duration: 4000,
-            style: { 
-              background: '#333', 
-              color: '#fff', 
+            style: {
+              background: '#333',
+              color: '#fff',
               borderRadius: '8px',
               marginTop: '60px' // Mover los toasts más abajo del TopBar
             },

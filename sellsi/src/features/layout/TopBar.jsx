@@ -52,21 +52,13 @@ export default function TopBar({
   // Este useEffect es crucial para la sincronización con la prop `isBuyer`
   // (que viene de Supabase en App.jsx) al inicio o tras un cambio de sesión.
   useEffect(() => {
-    // Sincroniza el estado interno del switch con la prop `isBuyer`
-    // Solo si el usuario está logueado y la prop `isBuyer` es diferente del `currentRole` interno.
-    // O si la sesión cambia (ej. al hacer login/logout).
-    // Esto asegura que el switch refleje el rol inicial cargado desde Supabase.
     if (session) {
-      // Solo si hay una sesión, para evitar cambios en estado de no-logueado.
       const newRoleFromProps = isBuyer ? 'buyer' : 'supplier';
       if (currentRole !== newRoleFromProps) {
         setCurrentRole(newRoleFromProps);
       }
     } else {
-      // Si no hay sesión, el switch podría volver a un estado por defecto o simplemente ocultarse
-      // (la lógica de `if (!isLoggedIn)` ya lo oculta/reemplaza).
-      // Aquí, podemos asegurar que el `currentRole` se restablezca si se cierra la sesión.
-      setCurrentRole('buyer'); // Por ejemplo, por defecto a comprador si no hay sesión
+      setCurrentRole('buyer');
     }
   }, [session, isBuyer, currentRole]); // currentRole como dependencia es importante para la condición de no-coincidencia.
 
@@ -104,11 +96,10 @@ export default function TopBar({
   // Este es el manejador de cambios del `Switch`.
   // Recibe el `newRole` del `Switch` y lo pasa al padre `App.jsx`.
   const handleRoleToggleChange = (event, newRole) => {
-    // Recibe event, newRole de ToggleButtonGroup
     if (newRole !== null) {
-      setCurrentRole(newRole); // Actualiza el estado interno de TopBar
+      setCurrentRole(newRole);
       if (onRoleChange) {
-        onRoleChange(newRole); // Notifica a App.jsx
+        onRoleChange(newRole);
       }
     }
   };
