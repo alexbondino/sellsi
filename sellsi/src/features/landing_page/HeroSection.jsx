@@ -61,7 +61,11 @@ const HeroSection = ({
         <Box sx={{ textAlign: 'center' }}>
           {currentSlide.sections.map((section, idx) => (
             <Box key={idx} mb={2.5}>
-              <Typography sx={titleStyles}>{section.title}</Typography>
+              <Typography
+                sx={{ ...titleStyles, color: '#fff !important' }}
+                component="span"
+                dangerouslySetInnerHTML={{ __html: section.title }}
+              />
               <Typography sx={subtitleStyles}>{section.description}</Typography>
             </Box>
           ))}

@@ -53,6 +53,9 @@ const AddProduct = React.lazy(() =>
 const MyOrdersPage = React.lazy(() =>
   import('./features/supplier/my-orders/MyOrdersPage')
 );
+const MarketplaceSupplier = React.lazy(() =>
+  import('./features/supplier/MarketplaceSupplier.jsx')
+);
 
 // 📦 PROFILE PAGES - LAZY LOADING
 const SupplierProfile = React.lazy(() =>
@@ -148,6 +151,7 @@ function AppContent({ mensaje }) {
     '/supplier/addproduct',
     '/supplier/my-orders',
     '/supplier/profile',
+    '/supplier/marketplace', // <--- ¡Agregado para que el rol supplier se mantenga!
   ]);
   const neutralRoutes = new Set([
     '/',
@@ -652,6 +656,19 @@ function AppContent({ mensaje }) {
                       loading={loadingUserStatus}
                     >
                       <SupplierProfile onProfileUpdated={refreshUserProfile} />
+                    </PrivateRoute>
+                  }
+                />
+                {/* Marketplace para el proveedor: igual que el del comprador pero con SideBar de proveedor */}
+                <Route
+                  path="/supplier/marketplace"
+                  element={
+                    <PrivateRoute
+                      isAuthenticated={!!session}
+                      needsOnboarding={needsOnboarding}
+                      loading={loadingUserStatus}
+                    >
+                      <MarketplaceSupplier />
                     </PrivateRoute>
                   }
                 />

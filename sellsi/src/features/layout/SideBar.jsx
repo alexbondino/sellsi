@@ -22,7 +22,7 @@ const providerMenuItems = [
   { text: 'Mis Productos', path: '/supplier/myproducts' },
   { text: 'Mis Pedidos', path: '/supplier/my-orders' },
   { text: 'Mi Performance', path: '/supplier/myperformance' },
-  { text: 'Marketplace', path: '/buyer/marketplace' }, // Proveedor también necesita acceso al marketplace
+  { text: 'Marketplace', path: '/supplier/marketplace' }, // Cambiado a la nueva ruta
 ];
 
 /**

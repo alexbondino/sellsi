@@ -271,7 +271,7 @@ const AboutUsSection = ({ quienesSomosRef }) => {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              height: 300,
+              height: 250,
               mb: 0, // sin margen inferior
               p: 0, // sin padding
             }}
@@ -284,7 +284,7 @@ const AboutUsSection = ({ quienesSomosRef }) => {
                 height: 300,
                 width: 450,
                 objectFit: 'contain',
-                m: 0,
+                mb: 6,
               }}
             />
           </Box>
@@ -294,7 +294,7 @@ const AboutUsSection = ({ quienesSomosRef }) => {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              height: 300,
+              height: 250,
               mt: 0, // sin margen superior
               p: 0, // sin padding
             }}
@@ -307,7 +307,7 @@ const AboutUsSection = ({ quienesSomosRef }) => {
                 width: 450,
                 height: 300,
                 objectFit: 'contain',
-                m: 0,
+                mt: 4,
               }}
             />
           </Box>
