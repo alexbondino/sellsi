@@ -4,14 +4,25 @@
  */
 
 /**
- * Valida formato de RUT chileno
- * @param {string} rut - RUT en formato XX.XXX.XXX-X
+ * Limpia el RUT: elimina puntos y lo deja en formato XXXXXXXX-X
+ * @param {string} rut
+ * @returns {string}
+ */
+export const cleanRut = (rut) => {
+  if (!rut) return '';
+  return rut.replace(/[.]/g, '').toUpperCase();
+};
+
+/**
+ * Valida formato de RUT chileno (sin puntos, solo guion)
+ * @param {string} rut - RUT en formato XXXXXXXX-X o XXXXXXXXX-X
  * @returns {boolean} - true si es válido o vacío, false si formato incorrecto
  */
 export const validateRut = (rut) => {
   if (!rut) return true;
-  const rutPattern = /^\d{1,2}\.\d{3}\.\d{3}-[\dkK]$/;
-  return rutPattern.test(rut);
+  // Acepta 7 a 9 dígitos antes del guion (personas y empresas)
+  const rutPattern = /^\d{7,9}-[\dkK]$/;
+  return rutPattern.test(cleanRut(rut));
 };
 
 /**
