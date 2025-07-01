@@ -22,6 +22,7 @@ import { usePrefetch } from './hooks/usePrefetch';
 import useCartStore from './features/buyer/hooks/cartStore';
 
 import SideBar from './features/layout/SideBar';
+import { AdminLogin, AdminPanelTable } from './features/admin_panel';
 
 // ============================================================================
 // 🚀 CODE SPLITTING: LAZY LOADING DE COMPONENTES POR RUTAS
@@ -498,6 +499,10 @@ function AppContent({ mensaje }) {
                 />
                 <Route path="/login" element={<Login />} />
                 <Route path="/crear-cuenta" element={<Register />} />
+
+                {/* RUTAS ADMINISTRATIVAS - ACCESO VISUAL PARA TESTING */}
+                <Route path="/admin-login" element={<AdminLogin />} />
+                <Route path="/admin-panel/dashboard" element={<AdminPanelTable />} />
 
                 {/* Ruta para testing de 404 (solo desarrollo) */}
                 <Route path="/404" element={<NotFound />} />

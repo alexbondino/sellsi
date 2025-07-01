@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Box, CircularProgress, Typography } from '@mui/material';
 import Profile from '../profile/Profile';
 import { supabase } from '../../services/supabase';
+import { getUserProfile, updateUserProfile, uploadProfileImage } from '../../services/profileService';
 
 const SupplierProfile = ({ onProfileUpdated }) => {
   const [userProfile, setUserProfile] = useState(null);
@@ -19,12 +20,9 @@ const SupplierProfile = ({ onProfileUpdated }) => {
         throw new Error('Usuario no autenticado');
       }
 
-      const { data, error } = await supabase
-        .from('users') // Cambiar de 'profiles' a 'users'
-        .select('*')
-        .eq('user_id', user.id) // Cambiar de 'id' a 'user_id'
-        .single();
-
+      // Usar el nuevo servicio para obtener el perfil completo
+      const { data, error } = await getUserProfile(user.id);
+      
       if (error) {
         throw error;
       }
@@ -39,7 +37,7 @@ const SupplierProfile = ({ onProfileUpdated }) => {
         user_nm: data.user_nm, // AGREGAR: También pasar user_nm directamente
         role: data.main_supplier ? 'supplier' : 'buyer', // boolean → string
         country: data.country, // Campo ya existe
-        // Campos que vienen después de la migración
+        // Campos que vienen de las tablas relacionadas
         rut: data.rut,
         shipping_region: data.shipping_region,
         shipping_comuna: data.shipping_comuna,
@@ -79,62 +77,21 @@ const SupplierProfile = ({ onProfileUpdated }) => {
 
       // MANEJAR SUBIDA DE IMAGEN DE PERFIL
       if (profileData.profileImage) {
-        const fileExt = profileData.profileImage.name.split('.').pop();
-        const timestamp = Date.now();
-        const staticFilePath = `${user.id}/logo_${timestamp}.${fileExt}`; // Path único para evitar conflictos
-
-        const { error: uploadError } = await supabase.storage
-          .from('user-logos')
-          .upload(staticFilePath, profileData.profileImage.file);
-
-        if (uploadError) {
-          throw new Error(`Error al subir la imagen: ${uploadError.message}`);
+        const { url, error } = await uploadProfileImage(user.id, profileData.profileImage.file);
+        
+        if (error) {
+          throw new Error(`Error al subir la imagen: ${error.message}`);
         }
-
-        const { data: urlData } = supabase.storage
-          .from('user-logos')
-          .getPublicUrl(staticFilePath);
-        logoPublicUrl = urlData.publicUrl;
+        
+        logoPublicUrl = url;
+        // Agregar la nueva URL al profileData para la actualización
+        profileData.logo_url = logoPublicUrl;
       }
 
-      // Mapear campos de Frontend a BD según ProfileBack.md
-      const updateData = {
-        // SOLO campos existentes por ahora
-        phone_nbr: profileData.phone, // phone → phone_nbr
-        user_nm: profileData.user_nm || profileData.full_name, // Priorizar user_nm para edición de nombre
-        main_supplier: profileData.role === 'supplier', // string → boolean
-        country: profileData.country,
-        logo_url: logoPublicUrl, // AGREGAR: Actualizar URL de la imagen
-        
-        // TEMPORAL: Comentar campos que requieren migración hasta que se ejecute
-        // rut: profileData.rut,
-        // shipping_region: profileData.shippingRegion,
-        // shipping_comuna: profileData.shippingComuna,
-        // shipping_address: profileData.shippingAddress,
-        // shipping_number: profileData.shippingNumber,
-        // shipping_dept: profileData.shippingDept,
-        // account_holder: profileData.accountHolder,
-        // account_type: profileData.accountType,
-        // bank: profileData.bank,
-        // account_number: profileData.accountNumber,
-        // transfer_rut: profileData.transferRut,
-        // confirmation_email: profileData.confirmationEmail,
-        // business_name: profileData.businessName,
-        // billing_rut: profileData.billingRut,
-        // business_line: profileData.businessLine,
-        // billing_address: profileData.billingAddress,
-        // billing_region: profileData.billingRegion,
-        // billing_comuna: profileData.billingComuna,
-        
-        updatedt: new Date().toISOString(), // Usar updatedt en lugar de updated_at
-      };
-
-      const { error } = await supabase
-        .from('users') // Cambiar de 'profiles' a 'users'
-        .update(updateData)
-        .eq('user_id', user.id); // Cambiar de 'id' a 'user_id'
-
-      if (error) {
+      // Usar el nuevo servicio para actualizar el perfil
+      const { success, error } = await updateUserProfile(user.id, profileData);
+      
+      if (!success) {
         throw error;
       }
 

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Box, CircularProgress, Typography } from '@mui/material';
 import Profile from '../profile/Profile';
 import { supabase } from '../../services/supabase';
+import { getUserProfile, updateUserProfile, uploadProfileImage } from '../../services/profileService';
 
 const BuyerProfile = ({ onProfileUpdated }) => {
   const [userProfile, setUserProfile] = useState(null);
@@ -19,12 +20,9 @@ const BuyerProfile = ({ onProfileUpdated }) => {
         throw new Error('Usuario no autenticado');
       }
 
-      const { data, error } = await supabase
-        .from('users') // Cambiar de 'profiles' a 'users'
-        .select('*')
-        .eq('user_id', user.id) // Cambiar de 'id' a 'user_id'
-        .single();
-
+      // Usar el nuevo servicio para obtener el perfil completo
+      const { data, error } = await getUserProfile(user.id);
+      
       if (error) {
         throw error;
       }
@@ -39,7 +37,7 @@ const BuyerProfile = ({ onProfileUpdated }) => {
         user_nm: data.user_nm, // AGREGAR: También pasar user_nm directamente
         role: data.main_supplier ? 'supplier' : 'buyer', // boolean → string
         country: data.country, // Campo ya existe
-        // Campos que vienen después de la migración
+        // Campos que vienen de las tablas relacionadas
         rut: data.rut,
         shipping_region: data.shipping_region,
         shipping_comuna: data.shipping_comuna,
@@ -75,81 +73,25 @@ const BuyerProfile = ({ onProfileUpdated }) => {
         throw new Error('Usuario no autenticado');
       }
 
-      // Mapear campos de Frontend a BD según ProfileBack.md
-      const updateData = {
-        // SOLO campos existentes por ahora
-        phone_nbr: profileData.phone, // phone → phone_nbr
-        user_nm: profileData.user_nm || profileData.full_name, // Priorizar user_nm para edición de nombre
-        main_supplier: profileData.role === 'supplier', // string → boolean
-        country: profileData.country,
+      let logoPublicUrl = userProfile?.logo_url; // Mantener URL actual por defecto
+
+      // MANEJAR SUBIDA DE IMAGEN DE PERFIL
+      if (profileData.profileImage) {
+        const { url, error } = await uploadProfileImage(user.id, profileData.profileImage.file);
         
-        // TEMPORAL: Comentar campos que requieren migración hasta que se ejecute
-        // rut: profileData.rut,
-        // shipping_region: profileData.shippingRegion,
-        // shipping_comuna: profileData.shippingComuna,
-        // shipping_address: profileData.shippingAddress,
-        // shipping_number: profileData.shippingNumber,
-        // shipping_dept: profileData.shippingDept,
-        // account_holder: profileData.accountHolder,
-        // account_type: profileData.accountType,
-        // bank: profileData.bank,
-        // account_number: profileData.accountNumber,
-        // transfer_rut: profileData.transferRut,
-        // confirmation_email: profileData.confirmationEmail,
-        // business_name: profileData.businessName,
-        // billing_rut: profileData.billingRut,
-        // business_line: profileData.businessLine,
-        // billing_address: profileData.billingAddress,
-        // billing_region: profileData.billingRegion,
-        // billing_comuna: profileData.billingComuna,
-        
-        updatedt: new Date().toISOString(), // Usar updatedt en lugar de updated_at
-      };
-
-      // 📸 Manejar subida de imagen de perfil si se proporciona
-      if (profileData.profileImage && profileData.profileImage.file) {
-        console.log('📸 [BUYER PROFILE] Uploading profile image...');
-        
-        try {
-          // Crear nombre único para el archivo
-          const fileExt = profileData.profileImage.file.name.split('.').pop();
-          const fileName = `${user.id}/logo.${fileExt}`;
-          
-          // Subir imagen a Supabase Storage
-          const { data: uploadData, error: uploadError } = await supabase.storage
-            .from('user-logos')
-            .upload(fileName, profileData.profileImage.file, {
-              upsert: true,
-              contentType: profileData.profileImage.file.type,
-            });
-
-          if (uploadError) {
-            console.error('❌ [BUYER PROFILE] Error uploading image:', uploadError);
-            throw uploadError;
-          }
-
-          // Obtener URL pública de la imagen
-          const { data: { publicUrl } } = supabase.storage
-            .from('user-logos')
-            .getPublicUrl(fileName);
-
-          updateData.logo_url = publicUrl;
-          console.log('✅ [BUYER PROFILE] Image uploaded successfully:', publicUrl);
-          
-        } catch (imageError) {
-          console.error('❌ [BUYER PROFILE] Error processing profile image:', imageError);
-          // No hacer throw aquí - continuar con la actualización sin imagen
+        if (error) {
+          throw new Error(`Error al subir la imagen: ${error.message}`);
         }
+        
+        logoPublicUrl = url;
+        // Agregar la nueva URL al profileData para la actualización
+        profileData.logo_url = logoPublicUrl;
       }
 
-      console.log('🔄 Updating profile data:', updateData); // Debug log
-
-      const { error } = await supabase
-        .from('users') // Cambiar de 'profiles' a 'users'
-        .update(updateData)
-        .eq('user_id', user.id); // Cambiar de 'id' a 'user_id'
-
-      if (error) {
+      // Usar el nuevo servicio para actualizar el perfil
+      const { success, error } = await updateUserProfile(user.id, profileData);
+      
+      if (!success) {
         throw error;
       }
 
@@ -161,7 +103,6 @@ const BuyerProfile = ({ onProfileUpdated }) => {
         await onProfileUpdated();
       }
     } catch (error) {
-      console.error('Error updating profile:', error);
       throw error;
     }
   };
