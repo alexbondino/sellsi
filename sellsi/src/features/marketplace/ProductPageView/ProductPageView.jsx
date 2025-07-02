@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react'
+// Si tienes un contexto de vista, importa aquí:
+// import { useViewType } from '../../context/ViewTypeContext'
 import {
   Box,
   Container,
@@ -51,12 +53,13 @@ const ProductPageView = ({
   isPageView = false,
   loading = false,
   isLoggedIn = false,
+  fromMyProducts = false,
+  isFromSupplierMarketplace = false,
+  isSupplier = false,
 }) => {
-  // DEBUG: Log isLoggedIn prop on every render
-  // ...log eliminado...
+  // ...logs eliminados...
   const [selectedImageIndex, setSelectedImageIndex] = useState(0)
   const location = useLocation()
-  const fromMyProducts = location.state?.from === '/supplier/myproducts'
 
   // Mover useCallback ANTES de cualquier return condicional para seguir las reglas de los Hooks
   const handleAddToCart = useCallback((cartProduct) => {
@@ -238,10 +241,8 @@ const ProductPageView = ({
         <Box sx={{ mt: 6 }}>
           <SaleConditions product={product} />
         </Box>
-        {/* SECCIÓN DE ACCIONES DE COMPRA */}
-        <Box sx={{ mt: 6 }}>
-          <PurchaseActions product={product} isLoggedIn={isLoggedIn} onAddToCart={handleAddToCart} />
-        </Box>
+        {/* SECCIÓN DE ACCIONES DE COMPRA solo para compradores */}
+        {/* Eliminado: PurchaseActions duplicado. Ahora solo se renderiza dentro de ProductHeader. */}
         {/* SECCIÓN INFERIOR - Especificaciones Técnicas */}
         <Box sx={{ mt: 6, mb: 4 }}>
           <TechnicalSpecifications product={product} />

@@ -500,14 +500,18 @@ const ProductHeader = React.memo(({
               <StockIndicator stock={stock} showUnits={true} />
             )}
           </Box>{' '}
-          {/* Botones de Compra */}{' '}
-          <PurchaseActions
-            onAddToCart={onAddToCart}
-            stock={stock}
-            product={product}
-            tiers={finalTiers}
-            isLoggedIn={isLoggedIn}
-          />        </Box>
+          {/* Botones de Compra */}
+          {/* Solo mostrar acciones de compra si NO es supplier, ni supplier marketplace, ni mis productos */}
+          {!(product.fromMyProducts || product.isFromSupplierMarketplace || product.isSupplier) && (
+            <PurchaseActions
+              onAddToCart={onAddToCart}
+              stock={stock}
+              product={product}
+              tiers={finalTiers}
+              isLoggedIn={isLoggedIn}
+            />
+          )}
+        </Box>
       </Grid>
     </Grid>
   )

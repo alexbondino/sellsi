@@ -169,12 +169,15 @@ const ProductCard = React.memo(
           return;
         }
 
+
         const currentPath = window.location.pathname;
         let fromPath = '/marketplace';
 
         if (currentPath.includes('/buyer/')) {
           fromPath = '/buyer/marketplace';
-        } else if (currentPath.includes('/supplier/')) {
+        } else if (currentPath === '/supplier/marketplace') {
+          fromPath = '/supplier/marketplace';
+        } else if (currentPath === '/supplier/myproducts') {
           fromPath = '/supplier/myproducts';
         }
 

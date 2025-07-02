@@ -96,8 +96,10 @@ const ProductsSection = React.memo(
         minHeight: 'calc(100vh - 140px)',
         display: 'flex',
         justifyContent: 'center',
-        px: { xs: 1, md: 3 },
+        px: { xs: 2, md: 3, lg: 4 }, // Aumenta padding horizontal para alinear con BuyerOrders
         mb: { xs: 10, md: 50 }, // Margen inferior para separar del BottomBar/footer
+        boxSizing: 'border-box',
+        width: '100%',
       }),
       []
     ); // Sin dependencias - completamente estático

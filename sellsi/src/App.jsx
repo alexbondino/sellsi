@@ -132,7 +132,20 @@ function AppContent({ mensaje }) {
   const { initializeCartWithUser, isBackendSynced } = useCartStore();
   const [needsOnboarding, setNeedsOnboarding] = useState(false);
   const { prefetchRoute } = usePrefetch();
-  const [currentAppRole, setCurrentAppRole] = useState('buyer'); // 'buyer' o 'supplier'
+  // --- Persistencia de currentAppRole en localStorage ---
+  // Inicializa desde localStorage si hay sesión activa
+  const getInitialAppRole = () => {
+    try {
+      const storedRole = localStorage.getItem('currentAppRole');
+      if (storedRole === 'supplier' || storedRole === 'buyer') {
+        return storedRole;
+      }
+    } catch (e) {}
+    return 'buyer';
+  };
+  const [currentAppRole, setCurrentAppRole] = useState(getInitialAppRole()); // 'buyer' o 'supplier'
+  // Sincroniza el tipo de vista global para ProductPageWrapper
+  window.currentAppRole = currentAppRole;
   const [isRoleSwitching, setIsRoleSwitching] = useState(false); // Flag para evitar glitch
 
   const SideBarWidth = '210px'; // Define aquí el ancho original de tu SideBar
@@ -174,7 +187,7 @@ function AppContent({ mensaje }) {
     '/onboarding',
   ]);
 
-  useEffect(() => {
+useEffect(() => {
     let mounted = true;
     setLoadingUserStatus(true);
     setNeedsOnboarding(false);
@@ -186,6 +199,8 @@ function AppContent({ mensaje }) {
           setNeedsOnboarding(false);
           setLoadingUserStatus(false);
           setCurrentAppRole('buyer');
+          // Limpiar localStorage al cerrar sesión
+          try { localStorage.removeItem('currentAppRole'); } catch (e) {}
         }
         return;
       }
@@ -202,6 +217,7 @@ function AppContent({ mensaje }) {
         setUserProfile(null);
         setLoadingUserStatus(false);
         setCurrentAppRole('buyer');
+        try { localStorage.removeItem('currentAppRole'); } catch (e) {}
         return;
       }
       if (mounted) {
@@ -209,10 +225,20 @@ function AppContent({ mensaje }) {
           setNeedsOnboarding(true);
           setUserProfile(null);
           setCurrentAppRole('buyer');
+          try { localStorage.removeItem('currentAppRole'); } catch (e) {}
         } else {
           setNeedsOnboarding(false);
           setUserProfile(userData);
-          setCurrentAppRole(userData.main_supplier ? 'supplier' : 'buyer');
+          const backendRole = userData.main_supplier ? 'supplier' : 'buyer';
+          // Si hay un valor en localStorage y sesión activa, úsalo, si no, usa el backend
+          let roleToSet = backendRole;
+          try {
+            const storedRole = localStorage.getItem('currentAppRole');
+            if (storedRole === 'supplier' || storedRole === 'buyer') {
+              roleToSet = storedRole;
+            }
+          } catch (e) {}
+          setCurrentAppRole(roleToSet);
         }
         setLoadingUserStatus(false);
       }
@@ -239,6 +265,8 @@ function AppContent({ mensaje }) {
             localStorage.removeItem('sellerid');
             localStorage.removeItem('access_token');
             localStorage.removeItem('auth_token');
+            // Limpiar el tipo de vista temporal
+            try { localStorage.removeItem('currentAppRole'); } catch (e) {}
             setSession(newSession);
             checkUserAndFetchProfile(newSession);
           } else if (event === 'USER_UPDATED') {
@@ -292,6 +320,12 @@ function AppContent({ mensaje }) {
   // Función para manejar el cambio de rol desde TopBar
   const handleRoleChangeFromTopBar = newRole => {
     setCurrentAppRole(newRole);
+    // Persistir en localStorage mientras haya sesión
+    try {
+      if (session && session.user) {
+        localStorage.setItem('currentAppRole', newRole);
+      }
+    } catch (e) {}
     setIsRoleSwitching(true); // Activar flag
     if (newRole === 'supplier') {
       navigate('/supplier/home');
@@ -313,6 +347,23 @@ function AppContent({ mensaje }) {
       }
       return;
     }
+    // --- NUEVO: Si hay override temporal (localStorage), no sobrescribir el rol ---
+    let overrideRole = null;
+    try {
+      const storedRole = localStorage.getItem('currentAppRole');
+      if (storedRole === 'supplier' || storedRole === 'buyer') {
+        overrideRole = storedRole;
+      }
+    } catch (e) {}
+
+    if (overrideRole) {
+      if (currentAppRole !== overrideRole) {
+        setCurrentAppRole(overrideRole);
+      }
+      // No forzar cambio de rol si hay override temporal
+      return;
+    }
+
     if (session && !needsOnboarding && !loadingUserStatus && userProfile) {
       const currentPath = location.pathname;
       let newRole = currentAppRole;
@@ -539,16 +590,15 @@ function AppContent({ mensaje }) {
             component="main"
             sx={{
               flexGrow: 1,
-              p: isDashboardRoute ? 3 : 0, // Añade padding solo si es una ruta de dashboard
-              // La clave está aquí: `ml` es el margen izquierdo
-              // Aplica `currentSideBarWidth` solo si la `SideBar` está visible (isDashboardRoute) y en desktop
-              ml: isDashboardRoute ? { xs: 0, md: currentSideBarWidth } : 0,
-              // Ajusta el ancho para ocupar el espacio restante
+              pl: isDashboardRoute ? 3 : 0,
+              pr: isDashboardRoute ? 3 : 0,
+              pt: isDashboardRoute ? 3 : 0,
+              pb: isDashboardRoute ? 3 : 0,
               width: isDashboardRoute
                 ? { xs: '100%', md: `calc(100% - ${currentSideBarWidth})` }
                 : '100%',
-              overflowX: 'hidden', // Evita el scroll horizontal dentro del main content
-              transition: 'margin-left 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94), width 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)', // Animación suave para el contenido principal
+              overflowX: 'hidden',
+              transition: 'margin-left 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94), width 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
             }}
           >
             <Suspense fallback={<SuspenseLoader />}>

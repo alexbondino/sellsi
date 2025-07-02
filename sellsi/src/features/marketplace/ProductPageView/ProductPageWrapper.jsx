@@ -19,6 +19,15 @@ import ProductPageView from './ProductPageView';
 import { supabase } from '../../../services/supabase';
 
 const ProductPageWrapper = ({ isLoggedIn }) => {
+  // Obtener el tipo de vista desde App.jsx vía window o prop global
+  // window.currentAppRole debe ser seteado en App.jsx (temporal/hack) o pásalo por contexto/prop
+  let isSupplier = false;
+  if (window.currentAppRole) {
+    isSupplier = window.currentAppRole === 'supplier';
+  } else if (typeof currentAppRole !== 'undefined') {
+    isSupplier = currentAppRole === 'supplier';
+  }
+  // ...logs eliminados...
   const { id } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
@@ -27,8 +36,12 @@ const ProductPageWrapper = ({ isLoggedIn }) => {
   const [error, setError] = useState(null);
 
   // Detectar de dónde viene el usuario
-  const fromMyProducts = location.state?.from === '/supplier/myproducts';
-  const isFromBuyer = location.state?.from === '/buyer/marketplace';
+  const fromValue = location.state?.from;
+  const fromMyProducts = fromValue === '/supplier/myproducts';
+  const isFromBuyer = fromValue === '/buyer/marketplace';
+  const isFromSupplierMarketplace = !fromMyProducts && fromValue === '/supplier/marketplace';
+
+  // ...existing code...
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -81,8 +94,11 @@ const ProductPageWrapper = ({ isLoggedIn }) => {
             imagenes: data.product_images || [],
             rating: 4.5, // Default rating
             ventas: Math.floor(Math.random() * 100), // Mock ventas
+            // Flags para controlar visibilidad de acciones de compra
+            fromMyProducts,
+            isFromSupplierMarketplace,
+            isSupplier,
           };
-          
           setProduct(product);
         }
       } catch (err) {
@@ -99,6 +115,8 @@ const ProductPageWrapper = ({ isLoggedIn }) => {
   const handleClose = () => {
     if (fromMyProducts) {
       navigate('/supplier/myproducts');
+    } else if (isFromSupplierMarketplace) {
+      navigate('/supplier/marketplace');
     } else if (isFromBuyer) {
       navigate('/buyer/marketplace');
     } else {
@@ -113,6 +131,8 @@ const ProductPageWrapper = ({ isLoggedIn }) => {
   const handleGoToMarketplace = () => {
     if (fromMyProducts) {
       navigate('/supplier/myproducts');
+    } else if (isFromSupplierMarketplace) {
+      navigate('/supplier/marketplace');
     } else if (isFromBuyer) {
       navigate('/buyer/marketplace');
     } else {
@@ -151,7 +171,11 @@ const ProductPageWrapper = ({ isLoggedIn }) => {
             startIcon={<StorefrontOutlined />}
             onClick={handleGoToMarketplace}
           >
-            {fromMyProducts ? 'Volver a Mis Productos' : 'Volver al Marketplace'}
+            {fromMyProducts
+              ? 'Volver a Mis Productos'
+              : isFromSupplierMarketplace
+                ? 'Volver a Marketplace'
+                : 'Volver al Marketplace'}
           </Button>
         </Paper>
       </Container>
@@ -189,7 +213,11 @@ const ProductPageWrapper = ({ isLoggedIn }) => {
                 },
               }}
             >
-              {fromMyProducts ? 'Volver a Mis Productos' : 'Volver al Marketplace'}
+              {fromMyProducts
+                ? 'Volver a Mis Productos'
+                : isFromSupplierMarketplace
+                  ? 'Volver a Marketplace'
+                  : 'Volver al Marketplace'}
             </Button>
           </Box>
 
@@ -225,8 +253,14 @@ const ProductPageWrapper = ({ isLoggedIn }) => {
                 gap: 0.5,
               }}
             >
-              {fromMyProducts ? <Inventory2Outlined fontSize="small" /> : <StorefrontOutlined fontSize="small" />}
-              {fromMyProducts ? 'Mis Productos' : 'Marketplace'}
+              {fromMyProducts
+                ? <Inventory2Outlined fontSize="small" />
+                : <StorefrontOutlined fontSize="small" />}
+              {fromMyProducts
+                ? 'Mis Productos'
+                : isFromSupplierMarketplace
+                  ? 'Marketplace'
+                  : 'Marketplace'}
             </Link>
             {product && (
               <Typography color="primary" sx={{ fontWeight: 600 }}>
@@ -246,6 +280,9 @@ const ProductPageWrapper = ({ isLoggedIn }) => {
           isPageView={true}
           loading={loading}
           isLoggedIn={isLoggedIn}
+          fromMyProducts={fromMyProducts}
+          isFromSupplierMarketplace={isFromSupplierMarketplace}
+          isSupplier={isSupplier}
         />
       </Box>
     </Box>
