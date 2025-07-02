@@ -70,21 +70,48 @@ export default function TopBar({
   const handleCloseProfileMenu = () => setProfileAnchor(null);
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
+    // Verificar si el usuario está realmente logueado desde el prop session
+    if (!session) {
+      handleCloseProfileMenu();
+      handleCloseMobileMenu();
+      navigate('/');
+      return;
+    }
+
+    // Verificar también desde Supabase directamente
+    try {
+      const { data } = await supabase.auth.getSession();
+      if (!data?.session) {
+        handleCloseProfileMenu();
+        handleCloseMobileMenu();
+        navigate('/');
+        return;
+      }
+    } catch (sessionError) {
+      handleCloseProfileMenu();
+      handleCloseMobileMenu();
+      navigate('/');
+      return;
+    }
+
+    // Solo intentar logout si hay sesión válida
+    try {
+      await supabase.auth.signOut();
+    } catch (err) {
+      // Silenciar error
+    }
     handleCloseProfileMenu();
     handleCloseMobileMenu();
-    // Al hacer logout, el App.jsx manejará la redirección y el `session` pasará a null.
-    // El useEffect de TopBar entonces reseteará `currentRole` a 'buyer'.
     navigate('/');
   };
 
   const handleNavigate = ref => {
     handleCloseMobileMenu();
     setTimeout(() => {
-      console.log('handleNavigate called with ref:', ref);
+      // ...log eliminado...
       if (ref === 'contactModal') {
         setOpenContactModal(true);
-        console.log('setOpenContactModal(true) called');
+        // ...log eliminado...
         return;
       }
       if (onNavigate) {
@@ -488,7 +515,7 @@ export default function TopBar({
           open={openContactModal}
           onClose={() => {
             setOpenContactModal(false);
-            console.log('ContactModal cerrado');
+            // ...log eliminado...
           }}
         />
       )}

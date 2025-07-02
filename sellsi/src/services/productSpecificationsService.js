@@ -14,7 +14,7 @@ import { supabase } from './supabase'
  */
 export const getProductSpecifications = async (productId) => {
   try {
-    console.debug(`� Obteniendo especificación desde tabla products para producto: ${productId}`)
+    // Debug log removed
     
     const { data, error } = await supabase
       .from('products')
@@ -23,14 +23,14 @@ export const getProductSpecifications = async (productId) => {
       .single()
 
     if (error) {
-      console.warn(`⚠️ Error obteniendo especificación para producto ${productId}:`, error.message)
+      // Debug log removed
       return []
     }
 
     // Si no hay especificación o son valores por defecto, retornar array vacío
     if (!data || !data.spec_name || !data.spec_value || 
         data.spec_name === 'N/A' || data.spec_value === 'N/A') {
-      console.debug(`📋 Producto ${productId} no tiene especificaciones válidas`)
+      // Debug log removed
       return []
     }
 

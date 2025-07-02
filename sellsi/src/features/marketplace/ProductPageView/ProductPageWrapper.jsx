@@ -18,7 +18,7 @@ import {
 import ProductPageView from './ProductPageView';
 import { supabase } from '../../../services/supabase';
 
-const ProductPageWrapper = () => {
+const ProductPageWrapper = ({ isLoggedIn }) => {
   const { id } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
@@ -133,7 +133,7 @@ const ProductPageWrapper = () => {
     }
     
     // Aquí podrías implementar la lógica del carrito
-    console.log('Add to cart:', cartProduct);
+    // ...log eliminado...
   };
 
   if (error) {
@@ -245,6 +245,7 @@ const ProductPageWrapper = () => {
           onAddToCart={handleAddToCart}
           isPageView={true}
           loading={loading}
+          isLoggedIn={isLoggedIn}
         />
       </Box>
     </Box>

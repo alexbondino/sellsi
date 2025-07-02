@@ -36,6 +36,13 @@ export const useTechnicalSpecs = () => {
   const [loading, setLoading] = useState(true)
   // 🔍 DETECTAR ORIGEN: Agregar detección de fromMyProducts
   const fromMyProducts = location.state?.from === '/supplier/myproducts'
+  // Log de sesión/localStorage relevante
+  const userId = localStorage.getItem('user_id')
+  const accountType = localStorage.getItem('account_type')
+  const supplierid = localStorage.getItem('supplierid')
+  const sellerid = localStorage.getItem('sellerid')
+  const isLoggedIn = !!(userId || supplierid || sellerid)
+  // Debug log removed
 
   // Hook del carrito
   const addItem = useCartStore((state) => state.addItem)
@@ -76,7 +83,7 @@ export const useTechnicalSpecs = () => {
           return '/buyer/marketplace'
         }
       } catch (error) {
-        console.warn('Error parsing referrer URL:', error)
+        // Debug log removed
       }
     }
 
@@ -98,6 +105,7 @@ export const useTechnicalSpecs = () => {
   }
   // Determinar ruta de origen
   const originRoute = getOriginRoute()
+  // Debug log removed
 
   useEffect(() => {
     let isMounted = true
@@ -108,90 +116,111 @@ export const useTechnicalSpecs = () => {
       localStorage.setItem('marketplace_origin', location.state.from)
     }
 
+    // Log siempre al inicio del useEffect
+    // Debug log removed
+
     // Extraer el ID del producto del slug
     const fetchProduct = async () => {
-      if (productSlug) {
-        const productId = extractProductIdFromSlug(productSlug)
-        // Buscar el producto por ID en los mocks
-        let foundProduct = PRODUCTOS.find((p) => p.id.toString() === productId)
-        if (foundProduct) {
+      // Debug log removed
+      if (!productSlug) {
+        // Debug log removed
+        if (isMounted) setLoading(false)
+        return
+      }
+      const productId = extractProductIdFromSlug(productSlug)
+      // Debug log removed
+      // Buscar el producto por ID en los mocks
+      let foundProduct = PRODUCTOS.find((p) => p.id.toString() === productId)
+      if (foundProduct) {
+        // Debug log removed
+        if (isMounted) setProduct(foundProduct)
+        if (isMounted) setLoading(false)
+        return
+      }
+      // Buscar en Supabase (producto, priceTiers, imágenes, especificaciones)
+      try {
+        const [
+          { data: product, error: prodError },
+          { data: tiers },
+          { data: images },
+          specs,
+        ] = await Promise.all([
+          supabase
+            .from('products')
+            .select('*')
+            .eq('productid', productId)
+            .eq('is_active', true)
+            .single(),
+          supabase
+            .from('product_quantity_ranges')
+            .select('*')
+            .eq('product_id', productId),
+          supabase
+            .from('product_images')
+            .select('*')
+            .eq('product_id', productId),
+          getProductSpecifications(productId),
+        ])
+        // Debug log removed
+        if (product) {
+          // Obtener nombre del proveedor
+          let proveedorNombre = product.supplier_id
+          const { data: userData } = await supabase
+            .from('users')
+            .select('user_nm')
+            .eq('user_id', product.supplier_id)
+            .single()
+          if (userData && userData.user_nm) {
+            proveedorNombre = userData.user_nm
+          }
+          // ✅ Obtener imagen primaria de product_images
+          let imagenPrincipal = product.image_url
+
+          if (images && Array.isArray(images) && images.length > 0) {
+            const principal = images.find((img) => img.is_primary)
+            if (principal) {
+              imagenPrincipal = principal.image_url
+            } else {
+              imagenPrincipal = images[0].image_url
+            }
+          }
+
+          foundProduct = {
+            id: product.productid,
+            nombre: product.productnm,
+            proveedor: proveedorNombre,
+            imagen: imagenPrincipal,
+            precio: product.price,
+            precioOriginal: product.precioOriginal || null,
+            descuento: product.descuento || 0,
+            categoria: product.category,
+            tipo: product.product_type || 'nuevo',
+            tipoVenta: product.tipoVenta || 'directa',
+            rating: product.rating || 0,
+            ventas: product.ventas || 0,
+            stock: product.productqty,
+            compraMinima: product.minimum_purchase,
+            negociable: product.negociable,
+            descripcion: product.description,
+            priceTiers: tiers || [],
+            imagenes: images || [],
+            specifications: specs || [],
+            is_active: product.is_active,
+          }
+          // Debug log removed
           if (isMounted) setProduct(foundProduct)
           if (isMounted) setLoading(false)
-        } else {          // Buscar en Supabase (producto, priceTiers, imágenes, especificaciones)
-          const [
-            { data: product, error: prodError },
-            { data: tiers },
-            { data: images },
-            specs,
-          ] = await Promise.all([
-            supabase
-              .from('products')
-              .select('*')
-              .eq('productid', productId)
-              .eq('is_active', true)
-              .single(),            supabase
-              .from('product_quantity_ranges')
-              .select('*')
-              .eq('product_id', productId),
-            supabase
-              .from('product_images')
-              .select('*')
-              .eq('product_id', productId),            // Usar el servicio seguro para especificaciones
-            getProductSpecifications(productId),
-          ])
-          if (product) {
-            // Obtener nombre del proveedor
-            let proveedorNombre = product.supplier_id
-            const { data: userData } = await supabase
-              .from('users')
-              .select('user_nm')
-              .eq('user_id', product.supplier_id)
-              .single()
-            if (userData && userData.user_nm) {
-              proveedorNombre = userData.user_nm
-            }            // ✅ Obtener imagen primaria de product_images
-            let imagenPrincipal = product.image_url
-
-            if (images && Array.isArray(images) && images.length > 0) {
-              const principal = images.find((img) => img.is_primary)
-              if (principal) {
-                imagenPrincipal = principal.image_url
-              } else {
-                imagenPrincipal = images[0].image_url
-              }
-            }
-
-            foundProduct = {
-              id: product.productid,
-              nombre: product.productnm,
-              proveedor: proveedorNombre,
-              imagen: imagenPrincipal,
-              precio: product.price,
-              precioOriginal: product.precioOriginal || null,
-              descuento: product.descuento || 0,
-              categoria: product.category,
-              tipo: product.product_type || 'nuevo',
-              tipoVenta: product.tipoVenta || 'directa',
-              rating: product.rating || 0,
-              ventas: product.ventas || 0,              stock: product.productqty,
-              compraMinima: product.minimum_purchase,
-              negociable: product.negociable,
-              descripcion: product.description,
-              priceTiers: tiers || [],
-              imagenes: images || [],
-              specifications: specs || [],
-              is_active: product.is_active,
-            }
-            if (isMounted) setProduct(foundProduct)
-            if (isMounted) setLoading(false)          } else {
-            if (isMounted) setProduct(null)
-            if (isMounted) setLoading(false)
-            setTimeout(() => {
-              if (isMounted) navigate(originRoute, { replace: true })
-            }, 1200)
-          }
+        } else {
+          // Debug log removed
+          if (isMounted) setProduct(null)
+          if (isMounted) setLoading(false)
+          setTimeout(() => {
+            if (isMounted) navigate(originRoute, { replace: true })
+          }, 1200)
         }
-      } else {
+      } catch (err) {
+        // Debug log removed
+        if (isMounted) setProduct(null)
         if (isMounted) setLoading(false)
       }
     }

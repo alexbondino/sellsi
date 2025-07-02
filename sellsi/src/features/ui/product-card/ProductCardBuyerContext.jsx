@@ -284,7 +284,7 @@ const ProductCardBuyerContext = React.memo(
                 e.preventDefault();
                 if (negociable) {
                   // TODO: Abrir modal de negociación
-                  console.log('Open negotiation modal for:', product.nombre);
+                  // ...log eliminado...
                 }
               }}
               onTouchStart={e => {

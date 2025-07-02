@@ -249,7 +249,7 @@ const AddProduct = () => {
   ]);
   const calculateEarnings = () => {
     const serviceRate = 0.02; // 5% de tarifa
-    console.log('[DEBUG] calculateEarnings called:', { pricingType: formData.pricingType, precioUnidad: formData.precioUnidad, stock: formData.stock, tramos: formData.tramos });
+    // ...log eliminado...
     if (
       formData.pricingType === 'Por Unidad' &&
       formData.precioUnidad &&
@@ -391,7 +391,7 @@ const AddProduct = () => {
     updateField(field, value);
   };
   const handlePricingTypeChange = (event, newValue) => {
-    console.log('[DEBUG] handlePricingTypeChange:', { newValue, prevPricingType: formData.pricingType });
+    // ...log eliminado...
     if (newValue !== null) {
       updateField('pricingType', newValue);
       if (newValue === 'Por Tramo') {
@@ -401,7 +401,7 @@ const AddProduct = () => {
       }
     }
     setTimeout(() => {
-      console.log('[DEBUG] formData after pricingType change:', formData);
+      // ...log eliminado...
     }, 0);
   };
 
@@ -455,22 +455,22 @@ const AddProduct = () => {
   const handleSubmit = async e => {
     e.preventDefault();
     setTriedSubmit(true);
-    console.log('--- SUBMIT DEBUG ---');
-    console.log('formData:', JSON.stringify(formData, null, 2));
+    // ...log eliminado...
+    // ...log eliminado...
     const errors = validateForm();
-    console.log('validateForm() errors:', errors);
+    // ...log eliminado...
     if (
       errors &&
       typeof errors === 'object' &&
       Object.keys(errors).length > 0
     ) {
-      console.log('❌ Validación fallida:', errors);
+      // ...log eliminado...
       toast.error('Por favor, completa todos los campos requeridos');
       return;
     }
     try {
       const result = await submitForm();
-      console.log('submitForm() result:', result);
+      // ...log eliminado...
       if (!result.success) {
         console.error('❌ Backend errors:', result.errors);
         if (result.errors && typeof result.errors === 'object') {
@@ -480,7 +480,7 @@ const AddProduct = () => {
         }
         throw new Error(result.error || 'No se pudo procesar el producto');
       }
-      console.log('✅ Producto procesado exitosamente');
+      // ...log eliminado...
       toast.success(
         isEditMode
           ? 'Producto actualizado exitosamente'
@@ -501,7 +501,7 @@ const AddProduct = () => {
         );
       }
     }
-    console.log('--- END SUBMIT DEBUG ---');
+    // ...log eliminado...
   };
 
   const handleBack = () => {
@@ -509,9 +509,9 @@ const AddProduct = () => {
   };
   useEffect(() => {
     // Logs de debugging - comentados para producción
-    // console.log('isValid:', isValid)
-    // console.log('formData:', formData)
-    // console.log('errors:', errors)
+    // ...log eliminado...
+    // ...log eliminado...
+    // ...log eliminado...
   }, [isValid, formData, errors]);
 
   return (

@@ -26,6 +26,8 @@ const PurchaseActions = ({
     !isNaN(parseInt(inputValue)) &&
     parseInt(inputValue) >= minimumPurchase &&
     isLoggedIn
+  // DEBUG: Verificar estado de sesión y lógica de habilitación del botón
+  // ...log eliminado...
 
   const handleQuantityChange = (newQuantity) => {
     setInputValue(newQuantity.toString())
@@ -34,26 +36,17 @@ const PurchaseActions = ({
     }
   }
   const handleAddToCart = () => {
+    // ...log eliminado...
+    if (!isLoggedIn) {
+      toast.error('Debes iniciar sesión para agregar productos al carrito', {
+        icon: '🔒',
+      })
+      const event = new CustomEvent('openLogin')
+      window.dispatchEvent(event)
+      return
+    }
     if (onAddToCart && product) {
-      console.log(
-        '🛒 DEBUG ProductPageView - Producto antes de formatear:',
-        product
-      )
-      console.log(
-        '🛒 DEBUG ProductPageView - Campo imagen del producto:',
-        product.imagen
-      )
-      console.log(
-        '🛒 DEBUG ProductPageView - Campo image del producto:',
-        product.image
-      )
-
       const cartProduct = formatProductForCart(product, quantity, tiers)
-
-      console.log(
-        '🛒 DEBUG ProductPageView - Producto formateado para carrito:',
-        cartProduct
-      )
       onAddToCart(cartProduct)
     }
   }
@@ -146,7 +139,11 @@ const PurchaseActions = ({
             background: canAdd
               ? 'linear-gradient(135deg, #1976d2 0%, #42a5f5 100%)'
               : 'rgba(0,0,0,0.12)',
-            color: canAdd ? 'white' : 'rgba(0,0,0,0.26)',
+            color: !isLoggedIn
+              ? '#111 !important' // Negro forzado para el texto cuando no está logueado
+              : canAdd
+                ? 'white'
+                : 'rgba(0,0,0,0.26)',
             boxShadow: canAdd
               ? '0 4px 16px rgba(25, 118, 210, 0.3)'
               : 'none',

@@ -43,46 +43,24 @@ import ProductHeader from './components/ProductHeader'
 import LoadingOverlay from '../../ui/LoadingOverlay'
 import { ProductPageSkeleton } from './components/ProductPageSkeletons'
 
+
 const ProductPageView = ({
   product,
   onClose,
   onAddToCart,
   isPageView = false,
   loading = false,
+  isLoggedIn = false,
 }) => {
+  // DEBUG: Log isLoggedIn prop on every render
+  // ...log eliminado...
   const [selectedImageIndex, setSelectedImageIndex] = useState(0)
   const location = useLocation()
   const fromMyProducts = location.state?.from === '/supplier/myproducts'
 
-  // Check user session
-  const [isLoggedIn, setIsLoggedIn] = useState(false)
-  useEffect(() => {
-    const checkSession = () => {
-      // Verificar localStorage (nueva lógica)
-      const userId = localStorage.getItem('user_id')
-      const accountType = localStorage.getItem('account_type') // Verificar también las claves antiguas por compatibilidad
-      const supplierid = localStorage.getItem('supplierid')
-      const sellerid = localStorage.getItem('sellerid')
-
-      const hasSession = !!(userId || supplierid || sellerid)
-      setIsLoggedIn(hasSession)
-    }
-
-    checkSession()
-
-    // Listen for storage changes (login/logout events)
-    const handleStorageChange = () => {
-      checkSession()
-    }
-
-    window.addEventListener('storage', handleStorageChange)
-    return () => {
-      window.removeEventListener('storage', handleStorageChange)
-    }
-  }, [])
-
   // Mover useCallback ANTES de cualquier return condicional para seguir las reglas de los Hooks
   const handleAddToCart = useCallback((cartProduct) => {
+    // Debug log removed
     // Verificar sesión antes de permitir agregar al carrito
     if (!isLoggedIn) {
       toast.error('Debes iniciar sesión para agregar productos al carrito', {
@@ -104,10 +82,14 @@ const ProductPageView = ({
           icon: '✅',
         }
       )
+      // Debug log removed
     }
   }, [isLoggedIn, onAddToCart, product])
 
+  // DEBUG: Log product and loading state
   if (!product || loading) {
+    // ...log eliminado...
+    // Debug log removed
     return (
       <Box
         sx={
@@ -177,7 +159,8 @@ const ProductPageView = ({
     categoria,
     descripcion = 'Producto de alta calidad con excelentes características y garantía de satisfacción.',
   } = product
-  
+  // Debug log removed
+
   return (
     <Box
       sx={
@@ -237,7 +220,7 @@ const ProductPageView = ({
           pt: isPageView && isLoggedIn ? { xs: 12, md: 14 } : 4,
         }}
       >
-        {/* SECCIÓN SUPERIOR - Información Principal */}{' '}
+        {/* SECCIÓN SUPERIOR - Información Principal */}
         <ProductHeader
           product={product}
           selectedImageIndex={selectedImageIndex}
@@ -245,7 +228,8 @@ const ProductPageView = ({
           onAddToCart={handleAddToCart}
           isLoggedIn={isLoggedIn}
           fromMyProducts={fromMyProducts}
-        />{' '}
+        />
+        {/* DEBUG removido */}
         {/* SECCIÓN INTERMEDIA - Características de Venta */}
         {/* <Box sx={{ mt: 6 }}>
           <SalesCharacteristics product={product} />
@@ -253,6 +237,10 @@ const ProductPageView = ({
         {/* SECCIÓN DE CONDICIONES DE VENTA */}
         <Box sx={{ mt: 6 }}>
           <SaleConditions product={product} />
+        </Box>
+        {/* SECCIÓN DE ACCIONES DE COMPRA */}
+        <Box sx={{ mt: 6 }}>
+          <PurchaseActions product={product} isLoggedIn={isLoggedIn} onAddToCart={handleAddToCart} />
         </Box>
         {/* SECCIÓN INFERIOR - Especificaciones Técnicas */}
         <Box sx={{ mt: 6, mb: 4 }}>

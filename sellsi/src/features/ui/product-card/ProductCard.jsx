@@ -135,13 +135,20 @@ const ProductCard = React.memo(
     );
 
     // Function to generate product URL
+    // Genera la URL pública o privada según el contexto
     const generateProductUrl = useCallback((product) => {
       const productId = product.id || product.product_id;
       const productName = (product.nombre || product.name || '').toLowerCase()
         .replace(/[^a-z0-9]/g, '-')
         .replace(/-+/g, '-')
         .replace(/^-|-$/g, '');
-      
+      const productSlug = `${productId}${productName ? `-${productName}` : ''}`;
+      const currentPath = window.location.pathname;
+      // Si estamos en el marketplace público, usar la ruta pública
+      if (currentPath === '/marketplace' || currentPath === '/') {
+        return `/technicalspecs/${productSlug}`;
+      }
+      // Si estamos en dashboard buyer/supplier, usar la ruta privada
       return `/marketplace/product/${productId}${productName ? `/${productName}` : ''}`;
     }, []);
 

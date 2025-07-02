@@ -208,8 +208,8 @@ const ProductsSection = React.memo(
         return {
           PRODUCTS_PER_PAGE: 100, // Large: grid 4xN
           INITIAL_PRODUCTS: 20, // Large: grid 4x5
-          LOAD_MORE_BATCH: 12, // ✅ PROGRESIVO: Cargar de a 8 (2 filas de 4)
-          PRELOAD_TRIGGER: 12, // ✅ PROGRESIVO: Cuando llegue al producto 16, cargar 8 más
+          LOAD_MORE_BATCH: 12, // ✅ PROGRESIVO: Cargar de a 12
+          PRELOAD_TRIGGER: 12, // ✅ PROGRESIVO: Cuando llegue al producto 12, cargar 12 más
         };
       }
       if (isXl) {
@@ -588,7 +588,7 @@ const ProductsSection = React.memo(
                         onAddToCart={handleAddToCart}
                         onViewDetails={producto => {
                           // Aquí puedes agregar la lógica para ver detalles
-                          console.log('Ver detalles de:', producto.nombre);
+                          // ...log eliminado...
                         }}
                       />
                     </Box>

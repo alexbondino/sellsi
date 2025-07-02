@@ -125,6 +125,8 @@ function AppContent({ mensaje }) {
   const scrollTargets = useRef({});
   const { bannerState, hideBanner } = useBanner();
   const [session, setSession] = useState(null);
+  // DEBUG: Log session and !!session on every render
+  // ...log eliminado...
   const [userProfile, setUserProfile] = useState(null);
   const [loadingUserStatus, setLoadingUserStatus] = useState(true);
   const { initializeCartWithUser, isBackendSynced } = useCartStore();
@@ -133,7 +135,15 @@ function AppContent({ mensaje }) {
   const [currentAppRole, setCurrentAppRole] = useState('buyer'); // 'buyer' o 'supplier'
   const [isRoleSwitching, setIsRoleSwitching] = useState(false); // Flag para evitar glitch
 
-  const SideBarWidth = '210px'; // Define aquí el ancho de tu SideBar
+  const SideBarWidth = '210px'; // Define aquí el ancho original de tu SideBar
+  const [currentSideBarWidth, setCurrentSideBarWidth] = useState(SideBarWidth);
+  const [sideBarCollapsed, setSideBarCollapsed] = useState(false);
+
+  // Handler para cuando cambia el ancho de la sidebar
+  const handleSideBarWidthChange = (newWidth, isCollapsed) => {
+    setCurrentSideBarWidth(newWidth);
+    setSideBarCollapsed(isCollapsed);
+  };
 
   // Persistente entre renders
   const lastSessionIdRef = useRef(null);
@@ -222,6 +232,13 @@ function AppContent({ mensaje }) {
             // Forzar obtención del perfil incluso si el usuario ya estaba en sesión
             checkUserAndFetchProfile(newSession);
           } else if (event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED') {
+            // Limpiar localStorage de toda la sesión
+            localStorage.removeItem('user_id');
+            localStorage.removeItem('account_type');
+            localStorage.removeItem('supplierid');
+            localStorage.removeItem('sellerid');
+            localStorage.removeItem('access_token');
+            localStorage.removeItem('auth_token');
             setSession(newSession);
             checkUserAndFetchProfile(newSession);
           } else if (event === 'USER_UPDATED') {
@@ -255,15 +272,22 @@ function AppContent({ mensaje }) {
 
   // Redirección forzada a home tras logout SOLO si ya terminó la validación
   useEffect(() => {
-    // Solo redirige a '/' si la ruta actual no es pública (neutralRoutes)
+    // Solo redirige a '/' si la ruta actual no es pública (incluye rutas que empiezan con /technicalspecs)
     if (
       !loadingUserStatus &&
       !session &&
-      !neutralRoutes.has(location.pathname)
+      !(
+        location.pathname === '/' ||
+        location.pathname === '/marketplace' ||
+        location.pathname === '/login' ||
+        location.pathname === '/crear-cuenta' ||
+        location.pathname === '/onboarding' ||
+        location.pathname.startsWith('/technicalspecs')
+      )
     ) {
       navigate('/', { replace: true });
     }
-  }, [session, location.pathname, navigate, loadingUserStatus, neutralRoutes]);
+  }, [session, location.pathname, navigate, loadingUserStatus]);
 
   // Función para manejar el cambio de rol desde TopBar
   const handleRoleChangeFromTopBar = newRole => {
@@ -419,9 +443,9 @@ function AppContent({ mensaje }) {
       console.error('❌ [APP] Error refreshing user profile:', error);
     }
   };
-
-  // Loader global centrado
-  if (loadingUserStatus) {
+  // Loader global centrado SOLO para rutas privadas
+  const isPublicRoute = location.pathname.startsWith('/technicalspecs') || location.pathname === '/' || location.pathname.startsWith('/marketplace') || location.pathname === '/login' || location.pathname === '/crear-cuenta';
+  if (loadingUserStatus && !isPublicRoute) {
     return (
       <Box
         sx={{
@@ -504,7 +528,11 @@ function AppContent({ mensaje }) {
         >
           {isDashboardRoute && (
             // Pasamos el currentAppRole a la SideBar para que sepa qué menú mostrar
-            <SideBar role={currentAppRole} width={SideBarWidth} />
+            <SideBar 
+              role={currentAppRole} 
+              width={SideBarWidth} 
+              onWidthChange={handleSideBarWidthChange}
+            />
           )}
 
           <Box
@@ -513,13 +541,14 @@ function AppContent({ mensaje }) {
               flexGrow: 1,
               p: isDashboardRoute ? 3 : 0, // Añade padding solo si es una ruta de dashboard
               // La clave está aquí: `ml` es el margen izquierdo
-              // Aplica `SideBarWidth` solo si la `SideBar` está visible (isDashboardRoute) y en desktop
-              ml: isDashboardRoute ? { xs: 0, md: SideBarWidth } : 0,
+              // Aplica `currentSideBarWidth` solo si la `SideBar` está visible (isDashboardRoute) y en desktop
+              ml: isDashboardRoute ? { xs: 0, md: currentSideBarWidth } : 0,
               // Ajusta el ancho para ocupar el espacio restante
               width: isDashboardRoute
-                ? { xs: '100%', md: `calc(100% - ${SideBarWidth})` }
+                ? { xs: '100%', md: `calc(100% - ${currentSideBarWidth})` }
                 : '100%',
               overflowX: 'hidden', // Evita el scroll horizontal dentro del main content
+              transition: 'margin-left 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94), width 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)', // Animación suave para el contenido principal
             }}
           >
             <Suspense fallback={<SuspenseLoader />}>
@@ -530,12 +559,12 @@ function AppContent({ mensaje }) {
                   element={<Home scrollTargets={scrollTargets} />}
                 />
                 <Route path="/marketplace" element={<Marketplace />} />
-                <Route path="/marketplace/product/:id" element={<ProductPageWrapper />} />
-                <Route path="/marketplace/product/:id/:slug" element={<ProductPageWrapper />} />
+                <Route path="/marketplace/product/:id" element={<ProductPageWrapper isLoggedIn={!!session} />} />
+                <Route path="/marketplace/product/:id/:slug" element={<ProductPageWrapper isLoggedIn={!!session} />} />
                 {/* TechnicalSpecs puede ser accedido sin iniciar sesión, si es contenido común */}
                 <Route
                   path="/technicalspecs/:productSlug"
-                  element={<TechnicalSpecs />}
+                  element={<TechnicalSpecs isLoggedIn={!!session} />}
                 />
                 <Route path="/login" element={<Login />} />
                 <Route path="/crear-cuenta" element={<Register />} />

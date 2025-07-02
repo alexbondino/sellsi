@@ -568,7 +568,7 @@ const BuyerCart = () => {
             component="main"
             sx={{
               flexGrow: 1,
-              ml: '250px',
+              ml: 0,
               p: 3,
               backgroundColor:
                 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
@@ -581,7 +581,6 @@ const BuyerCart = () => {
             <Box
               sx={{
                 width: '100%',
-                maxWidth: '1200px',
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',

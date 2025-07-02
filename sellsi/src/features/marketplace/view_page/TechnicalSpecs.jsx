@@ -27,7 +27,11 @@ import { useTechnicalSpecs } from './hooks/useTechnicalSpecs'
  * - Botón "Marketplace": Navega al marketplace de origen (Marketplace/MarketplaceBuyer)
  * - Botón "Volver": Navega al marketplace de origen
  */
-const TechnicalSpecs = () => {  const {
+const TechnicalSpecs = ({ isLoggedIn = false }) => {
+  // DEBUG: Log isLoggedIn prop on every render
+  // ...log eliminado...
+  // Debug log removed
+  const {
     product,
     loading,
     originRoute,
@@ -39,6 +43,7 @@ const TechnicalSpecs = () => {  const {
     handleAddToCart,
     handleBuyNow,
   } = useTechnicalSpecs()
+  // Debug log removed
 
   if (loading) {
     return (
@@ -161,6 +166,7 @@ const TechnicalSpecs = () => {  const {
           isOpen={true}
           isPageView={true} // Flag para indicar que es una vista de página completa
           loading={loading} // Pasar el estado de loading para activar skeletons
+          isLoggedIn={isLoggedIn}
         />
       </Box>
     </Box>

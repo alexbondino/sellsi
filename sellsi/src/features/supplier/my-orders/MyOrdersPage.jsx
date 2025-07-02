@@ -141,7 +141,7 @@ const MyOrdersPage = () => {
           break;
 
         case 'chat':
-          console.log('Abriendo chat para pedido:', selectedOrder.order_id);
+          // ...log eliminado...
           messageToUser =
             '💬 Abriendo chat... (funcionalidad pendiente de implementación).';
           // Para el chat, cerramos el modal y solo mostramos el banner de información
