@@ -23,9 +23,6 @@ import {
   Stack,
   useTheme,
   Tooltip,
-  FormControlLabel,
-  Radio,
-  RadioGroup,
 } from '@mui/material';
 import {
   ArrowBack as ArrowBackIcon,
@@ -43,7 +40,7 @@ import { UploadService } from '../../../services/uploadService';
 
 // Components
 import SideBarProvider from '../../layout/SideBar';
-import { ImageUploader, FileUploader } from '../../ui';
+import { ImageUploader, FileUploader, SelectChip } from '../../ui';
 import PriceTiers from '../../ui/PriceTiers'; // Importar el nuevo componente
 
 // Hooks y stores
@@ -66,6 +63,26 @@ const PRICING_TYPES = {
   UNIT: 'Por Unidad',
   TIER: 'Por Tramo',
 };
+
+const REGIONS = [
+  { value: 'todo-chile', label: 'Todo Chile' },
+  { value: 'región-metropolitana', label: 'Región Metropolitana' },
+  { value: 'i-región', label: 'I Región (Tarapacá)' },
+  { value: 'ii-región', label: 'II Región (Antofagasta)' },
+  { value: 'iii-región', label: 'III Región (Atacama)' },
+  { value: 'iv-región', label: 'IV Región (Coquimbo)' },
+  { value: 'v-región', label: 'V Región (Valparaíso)' },
+  { value: 'vi-región', label: 'VI Región (O\'Higgins)' },
+  { value: 'vii-región', label: 'VII Región (Maule)' },
+  { value: 'viii-región', label: 'VIII Región (Biobío)' },
+  { value: 'ix-región', label: 'IX Región (Araucanía)' },
+  { value: 'x-región', label: 'X Región (Los Lagos)' },
+  { value: 'xi-región', label: 'XI Región (Aysén)' },
+  { value: 'xii-región', label: 'XII Región (Magallanes)' },
+  { value: 'xiv-región', label: 'XIV Región (Los Ríos)' },
+  { value: 'xv-región', label: 'XV Región (Arica y Parinacota)' },
+  { value: 'xvi-región', label: 'XVI Región (Ñuble)' },
+];
 
 const AddProduct = () => {
   const navigate = useNavigate();
@@ -389,6 +406,10 @@ const AddProduct = () => {
   const handleInputChange = field => event => {
     const value = event.target.value;
     updateField(field, value);
+  };
+
+  const handleRegionChange = (selectedRegions) => {
+    updateField('regionDespacho', selectedRegions);
   };
   const handlePricingTypeChange = (event, newValue) => {
     // ...log eliminado...
@@ -844,149 +865,16 @@ const AddProduct = () => {
                       sx={{ fontWeight: 600, color: 'black', mb: 2 }}
                     >
                       Región de Despacho
-                    </Typography>{' '}
-                    <FormControl component="fieldset">
-                      <RadioGroup
-                        value={formData.regionDespacho || ''}
-                        onChange={handleInputChange('regionDespacho')}
-                        sx={{
-                          display: 'flex',
-                          flexDirection: 'row',
-                          flexWrap: 'wrap',
-                          gap: 2,
-                        }}
-                      >
-                        {/* Columna 1: 5 filas */}
-                        <Box
-                          sx={{
-                            display: 'flex',
-                            flexDirection: 'column',
-                            width: '30%',
-                          }}
-                        >
-                          <FormControlLabel
-                            value="todo-chile"
-                            control={<Radio />}
-                            label="Todo Chile"
-                            sx={{ mb: 1 }}
-                          />
-                          <FormControlLabel
-                            value="región-metropolitana"
-                            control={<Radio />}
-                            label="Región Metropolitana"
-                            sx={{ mb: 1 }}
-                          />
-                          <FormControlLabel
-                            value="i-región"
-                            control={<Radio />}
-                            label="I Región"
-                            sx={{ mb: 1 }}
-                          />
-                          <FormControlLabel
-                            value="ii-región"
-                            control={<Radio />}
-                            label="II Región"
-                            sx={{ mb: 1 }}
-                          />
-                          <FormControlLabel
-                            value="iii-región"
-                            control={<Radio />}
-                            label="III Región"
-                            sx={{ mb: 1 }}
-                          />
-                        </Box>
-                        {/* Columna 2: 6 filas */}
-                        <Box
-                          sx={{
-                            display: 'flex',
-                            flexDirection: 'column',
-                            width: '30%',
-                          }}
-                        >
-                          <FormControlLabel
-                            value="iv-región"
-                            control={<Radio />}
-                            label="IV Región"
-                            sx={{ mb: 1 }}
-                          />
-                          <FormControlLabel
-                            value="v-región"
-                            control={<Radio />}
-                            label="V Región"
-                            sx={{ mb: 1 }}
-                          />
-                          <FormControlLabel
-                            value="vi-región"
-                            control={<Radio />}
-                            label="VI Región"
-                            sx={{ mb: 1 }}
-                          />
-                          <FormControlLabel
-                            value="vii-región"
-                            control={<Radio />}
-                            label="VII Región"
-                            sx={{ mb: 1 }}
-                          />
-                          <FormControlLabel
-                            value="viii-región"
-                            control={<Radio />}
-                            label="VIII Región"
-                            sx={{ mb: 1 }}
-                          />
-                          <FormControlLabel
-                            value="ix-región"
-                            control={<Radio />}
-                            label="IX Región"
-                            sx={{ mb: 1 }}
-                          />
-                        </Box>
-                        {/* Columna 3: 6 filas */}
-                        <Box
-                          sx={{
-                            display: 'flex',
-                            flexDirection: 'column',
-                            width: '30%',
-                          }}
-                        >
-                          <FormControlLabel
-                            value="x-región"
-                            control={<Radio />}
-                            label="X Región"
-                            sx={{ mb: 1 }}
-                          />
-                          <FormControlLabel
-                            value="xi-región"
-                            control={<Radio />}
-                            label="XI Región"
-                            sx={{ mb: 1 }}
-                          />
-                          <FormControlLabel
-                            value="xii-región"
-                            control={<Radio />}
-                            label="XII Región"
-                            sx={{ mb: 1 }}
-                          />
-                          <FormControlLabel
-                            value="xiv-región"
-                            control={<Radio />}
-                            label="XIV Región"
-                            sx={{ mb: 1 }}
-                          />
-                          <FormControlLabel
-                            value="xv-región"
-                            control={<Radio />}
-                            label="XV Región"
-                            sx={{ mb: 1 }}
-                          />
-                          <FormControlLabel
-                            value="xvi-región"
-                            control={<Radio />}
-                            label="XVI Región"
-                            sx={{ mb: 1 }}
-                          />
-                        </Box>
-                      </RadioGroup>
-                    </FormControl>
+                    </Typography>
+                    <SelectChip
+                      label="Selecciona las regiones de despacho"
+                      options={REGIONS}
+                      value={Array.isArray(formData.regionDespacho) ? formData.regionDespacho : formData.regionDespacho ? [formData.regionDespacho] : []}
+                      onChange={handleRegionChange}
+                      selectAllOption={{ value: 'todo-chile', label: 'Todo Chile' }}
+                      width="100%"
+                      sx={{ mb: 2 }}
+                    />
                   </Box>
                   {/* FILA 5: Configuración de Precios */}
                   {/* <Box>

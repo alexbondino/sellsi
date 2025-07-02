@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Box, Typography, Button, Grid } from '@mui/material';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { Box, Typography, Button, Grid, Fade } from '@mui/material';
 import {
   Store,
   Person,
@@ -48,42 +48,54 @@ import Wizard from '../ui/wizard/Wizard';
  * - Animaciones y transiciones suaves
  */
 const ServicesSection = ({ serviciosRef }) => {
-  // Datos de los servicios para el Wizard (extraído exactamente del original)
-  const services = [
+  // Memoizar iconos para evitar recreación en cada render
+  const proveedorIcon = useMemo(() => <Store sx={{ fontSize: { xs: 16, sm: 20, md: 28 } }} />, []);
+  const compradorIcon = useMemo(() => <Groups sx={{ fontSize: { xs: 16, sm: 20, md: 28 } }} />, []);
+  const inventoryIcon = useMemo(() => <Inventory />, []);
+  const visibilityIcon = useMemo(() => <Visibility />, []);
+  const moneyIcon = useMemo(() => <AttachMoney />, []);
+  const shippingIcon = useMemo(() => <LocalShipping />, []);
+  const checkIcon = useMemo(() => <CheckCircle />, []);
+  const storeIcon = useMemo(() => <Store />, []);
+  const receiptIcon = useMemo(() => <Receipt />, []);
+  const balanceIcon = useMemo(() => <AccountBalance />, []);
+
+  // Memoizar datos de los servicios para el Wizard para evitar recreación en cada render
+  const services = useMemo(() => [
     {
       title: 'Proveedor',
       description: 'Vende tus productos de forma directa',
-      icon: <Store sx={{ fontSize: { xs: 16, sm: 20, md: 28 } }} />,
+      icon: proveedorIcon,
       image: '/Landing Page/Proveedor.webp',
       timeline: [
         {
           title: 'Publica',
           description: 'Sube tus productos en el el sitio web',
-          icon: <Inventory />,
+          icon: inventoryIcon,
           image: '/Landing Page/Proveedor/publica.webp',
         },
         {
           title: 'Hazte visible',
           description: 'Tu catálogo será visible para miles de vendedores',
-          icon: <Visibility />,
+          icon: visibilityIcon,
           image: '/Landing Page/Proveedor/visible.webp',
         },
         {
           title: 'Define tu precio',
           description: 'Establece precios y condiciones de venta',
-          icon: <AttachMoney />,
+          icon: moneyIcon,
           image: '/Landing Page/Proveedor/define.webp',
         },
         {
           title: 'Despacho',
           description: 'Coordina la entrega directa a tus clientes',
-          icon: <LocalShipping />,
+          icon: shippingIcon,
           image: '/Landing Page/Proveedor/despacho.webp',
         },
         {
           title: 'Venta exitosa',
           description: 'Recibe el pago y construye tu reputación',
-          icon: <CheckCircle />,
+          icon: checkIcon,
           image: '/Landing Page/Proveedor/venta.webp',
         },
       ],
@@ -91,43 +103,45 @@ const ServicesSection = ({ serviciosRef }) => {
     {
       title: 'Comprador',
       description: 'Gestiona tus compras de forma ágil',
-      icon: <Groups sx={{ fontSize: { xs: 16, sm: 20, md: 28 } }} />,
+      icon: compradorIcon,
       image: '/Landing Page/Punto de Venta.webp',
       timeline: [
         {
           title: 'Vende tu espacio',
           description: 'Ofrece tu local como punto de retiro',
-          icon: <Store />,
+          icon: storeIcon,
           image: '/Landing Page/PuntoDeVenta/vendeespacio.webp',
         },
         {
           title: 'Suma productos',
           description: 'Amplía tu oferta con productos de otros proveedores',
-          icon: <Inventory />,
+          icon: inventoryIcon,
           image: '/Landing Page/PuntoDeVenta/sumaproductos.webp',
         },
         {
           title: 'Simple y transparente',
           description: 'Proceso fácil de gestionar y comisiones claras',
-          icon: <Receipt />,
+          icon: receiptIcon,
           image: '/Landing Page/PuntoDeVenta/simpletransparente.webp',
         },
         {
           title: 'Acuerdo económico',
           description: 'Genera ingresos adicionales con tu espacio',
-          icon: <AccountBalance />,
+          icon: balanceIcon,
           image: '/Landing Page/PuntoDeVenta/acuerdodinero.webp',
         },
       ],
     },
-  ]; // ✅ CONFIGURACIÓN OPTIMIZADA DE BREAKPOINTS (SIN REDUNDANCIAS)
-  const breakpoints = {
+  ], [proveedorIcon, compradorIcon, inventoryIcon, visibilityIcon, moneyIcon, shippingIcon, checkIcon, storeIcon, receiptIcon, balanceIcon]); // Incluir todos los iconos como dependencias
+
+  // Memoizar configuración de breakpoints para evitar recreación en cada render
+  const breakpoints = useMemo(() => ({
     container: {
-      px: { xs: 1, sm: 1, md: 8, mac: 18, lg: 18, xl: 30 }, // ✅ REDUCIDO PADDING LATERAL EN XS/SM PARA MÁS ANCHO
+      px: { xs: 1, sm: 1, md: 8, mac: 18, lg: 18, xl: 30 },
       py: { xs: 6, sm: 7, md: 8, mac: 6, lg: 9, xl: 9 },
     },
     title: {
-      px: { xs: 0, sm: 0, md: 0, lg: 0, xl: 0 }, // ✅ SIN PADDING - ALINEADO COMPLETAMENTE A LA IZQUIERDA
+      px: { xs: 0, sm: 0, md: 0, lg: 0, xl: 0 },
       fontSize: {
         xs: '1.55rem',
         sm: '1.8rem',
@@ -148,14 +162,14 @@ const ServicesSection = ({ serviciosRef }) => {
       },
     },
     wizard: {
-      px: { xs: 0, sm: 0, md: 0, lg: 0, xl: 0 }, // ✅ ELIMINADO PADDING ADICIONAL
+      px: { xs: 0, sm: 0, md: 0, lg: 0, xl: 0 },
     },
     buttons: {
-      gap: { xs: 3, sm: 3, md: 6, lg: 8, xl: 12 }, // ✅ Aumentado gap para mejor separación
+      gap: { xs: 3, sm: 3, md: 6, lg: 8, xl: 12 },
       mb: { xs: 3, sm: 3, md: 4, lg: 4, xl: 4 },
-      minWidth: { xs: 140, sm: 160, md: 230, lg: 240, xl: 305 }, // ✅ Botones más anchos en xs,sm,md,lg
-      maxWidth: { xs: 140, sm: 160, md: 230, lg: 240, xl: 305 }, // ✅ Botones más anchos en xs,sm,md,lg
-      height: { xs: 100, sm: 100, md: 120, lg: 150, xl: 150 }, // ✅ Aumentado altura
+      minWidth: { xs: 140, sm: 160, md: 230, lg: 240, xl: 305 },
+      maxWidth: { xs: 140, sm: 160, md: 230, lg: 240, xl: 305 },
+      height: { xs: 100, sm: 100, md: 120, lg: 150, xl: 150 },
       p: { xs: 1, sm: 1.35, md: 2, lg: 2.2, xl: 2.2 },
       titleFontSize: {
         xs: '0.8rem',
@@ -192,9 +206,9 @@ const ServicesSection = ({ serviciosRef }) => {
         xl: '1.2rem',
       },
     },
-  };
+  }), []); // Sin dependencias ya que la configuración es estática
   const [currentStep, setCurrentStep] = useState(0);
-  const autoAdvanceInterval = 10000; // 8 segundos
+  const autoAdvanceInterval = 10000;
   const stepsLength = services.length;
   const autoAdvanceRef = useRef();
 
@@ -214,7 +228,7 @@ const ServicesSection = ({ serviciosRef }) => {
   }, [stepsLength]);
 
   // Reinicia el timer solo si el usuario cambia de step manualmente
-  const handleStepChange = (step) => {
+  const handleStepChange = useCallback((step) => {
     setCurrentStep(step);
     // Reinicia el timer SOLO si el cambio es manual
     if (autoAdvanceRef.current) {
@@ -223,7 +237,228 @@ const ServicesSection = ({ serviciosRef }) => {
         setCurrentStep((prev) => (prev + 1) % stepsLength);
       }, autoAdvanceInterval);
     }
-  };
+  }, [stepsLength]);
+
+  // Memoizar renderStep fuera del JSX para evitar renders infinitos
+  const renderStep = useCallback((currentStep, currentService) => {
+    return (
+      <Grid // GRID CONTENEDOR PADRE
+        container
+        spacing={0}
+        justifyContent="center"
+        alignItems="center"
+        sx={{
+          minWidth: '100%', // ✅ SIMPLIFICADO: USAR 100% EN TODOS LOS BREAKPOINTS
+          mx: 'auto', // ← CENTRADO HORIZONTAL
+          width: '100%',
+        }}
+      >
+        {/* ✅ COLUMNA ÚNICA: 12 COLUMNAS COMPLETAS - CENTRADA */}{' '}
+        <Grid
+          size={12}
+          sx={{ display: 'flex', justifyContent: 'center' }}
+        >
+          {/* ✅ GRID INTERNO PURO: 1 COLUMNA, 2 FILAS - FORZADO */}
+          <Grid
+            container
+            direction="column"
+            spacing={2}
+            justifyContent="center"
+            sx={{ width: '100%' }}
+          >
+            {' '}
+            {/* ✅ FILA 1: BOTONES DE SERVICIOS - GRID PURO */}
+            {/* Eliminado: los botones del carrusel aquí */}
+            {/* ✅ NUEVO: TEXTO DINÁMICO ENTRE BOTONES Y TIMELINE */}
+            <Grid size={12} sx={{ width: '100%' }}>
+              <Box
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  px: 0,
+                  py: 0,
+                  mb: { xs: 2, sm: 3, md: 4, lg: 6 },
+                }}
+              >
+                <Typography
+                  variant="body1"
+                  sx={{
+                    textAlign: 'center',
+                    color: 'common.white',
+                    fontSize: {
+                      xs: '0.9rem',
+                      sm: '1rem',
+                      md: '1.1rem',
+                      lg: '1.2rem',
+                      xl: '1.3rem',
+                    },
+                    lineHeight: {
+                      xs: 1.4,
+                      sm: 1.5,
+                      md: 1.6,
+                      lg: 1.6,
+                      xl: 1.6,
+                    },
+                    maxWidth: '1300px',
+                    mx: 'auto',
+                    fontWeight: 400,
+                    letterSpacing: '0.5px',
+                  }}
+                >
+                  {currentService.title === 'Proveedor'
+                    ? 'Accede a un canal de ventas digital de bajo costo, gana visibilidad con nuevos públicos y deja que otros vendan por ti, sin perder control sobre tus precios ni tu stock.'
+                    : 'Descubre nuevos proveedores confiables y gestiona tus compras de forma más ágil, ahorrando tiempo en cotizaciones, validaciones y comunicación, todo desde una sola plataforma centralizada.'}
+                </Typography>
+              </Box>
+            </Grid>{' '}
+            {/* ✅ FILA 2: TIMELINE HORIZONTAL - GRID PURO */}
+            <Grid size={12} sx={{ width: '100%' }}>
+              <Grid
+                container
+                direction="row"
+                spacing={breakpoints.timeline.gap}
+                justifyContent="center"
+                alignItems="flex-start"
+                sx={{
+                  position: 'relative',
+                  px: { xs: 1, sm: 1, md: 0 },
+                  width: '100%',
+                }}
+              >
+                {' '}
+                {/* Línea conectora - Fórmula universal para todos los servicios */}
+                <Box
+                  sx={{
+                    position: 'absolute',
+                    // Posición vertical: centro de las imágenes
+                    top: {
+                      xs: `calc(${breakpoints.timeline.imageSize.xs / 2}px + ${breakpoints.timeline.borderWidth.xs}px + 2.8 * 8px)`,
+                      sm: `calc(${breakpoints.timeline.imageSize.sm / 2}px + ${breakpoints.timeline.borderWidth.sm}px + 3 * 8px)`,
+                      md: `calc(${breakpoints.timeline.imageSize.md / 2}px + ${breakpoints.timeline.borderWidth.md}px)`,
+                      lg: `calc(${breakpoints.timeline.imageSize.lg / 2}px + ${breakpoints.timeline.borderWidth.lg}px)`,
+                      xl: `calc(${breakpoints.timeline.imageSize.xl / 2}px + ${breakpoints.timeline.borderWidth.xl}px)`,
+                    }, // Fórmula extendida: líneas ~13% más largas para conectar mejor los círculos
+                    left: {
+                      xs: `calc((100% / ${currentService.timeline.length}) * 0.37 + ${breakpoints.timeline.imageSize.xs / 2 + breakpoints.timeline.borderWidth.xs}px)`,
+                      sm: `calc((100% / ${currentService.timeline.length}) * 0.37 + ${breakpoints.timeline.imageSize.sm / 2 + breakpoints.timeline.borderWidth.sm}px)`,
+                      md: `calc((100% / ${currentService.timeline.length}) * 0.37 + ${breakpoints.timeline.imageSize.md / 2 + breakpoints.timeline.borderWidth.md}px)`,
+                      lg: `calc((100% / ${currentService.timeline.length}) * 0.37 + ${breakpoints.timeline.imageSize.lg / 2 + breakpoints.timeline.borderWidth.lg}px)`,
+                      xl: `calc((100% / ${currentService.timeline.length}) * 0.37 + ${breakpoints.timeline.imageSize.xl / 2 + breakpoints.timeline.borderWidth.xl}px)`,
+                    },
+                    // Fórmula extendida: líneas ~13% más largas para conectar mejor los círculos
+                    right: {
+                      xs: `calc((100% / ${currentService.timeline.length}) * 0.37 + ${breakpoints.timeline.imageSize.xs / 2 + breakpoints.timeline.borderWidth.xs}px)`,
+                      sm: `calc((100% / ${currentService.timeline.length}) * 0.37 + ${breakpoints.timeline.imageSize.sm / 2 + breakpoints.timeline.borderWidth.sm}px)`,
+                      md: `calc((100% / ${currentService.timeline.length}) * 0.37 + ${breakpoints.timeline.imageSize.md / 2 + breakpoints.timeline.borderWidth.md}px)`,
+                      lg: `calc((100% / ${currentService.timeline.length}) * 0.37 + ${breakpoints.timeline.imageSize.lg / 2 + breakpoints.timeline.borderWidth.lg}px)`,
+                      xl: `calc((100% / ${currentService.timeline.length}) * 0.37 + ${breakpoints.timeline.imageSize.xl / 2 + breakpoints.timeline.borderWidth.xl}px)`,
+                    },
+                    height: {
+                      xs: 4,
+                      sm: 6,
+                      md: 8,
+                      lg: 10,
+                      xl: 12,
+                    },
+                    background:
+                      'linear-gradient(90deg, #222 0%, #1976d2 100%)', // Más oscura al inicio
+                    borderRadius: 2,
+                    zIndex: 1,
+                  }}
+                />{' '}
+                {/* Pasos del timeline - GRID PURO CON DISTRIBUCIÓN UNIFORME */}
+                {currentService.timeline.map((item, index) => (
+                  <Grid
+                    size="grow"
+                    key={index}
+                    sx={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      position: 'relative',
+                      zIndex: 2,
+                      flex: 1, // Asegura distribución uniforme
+                    }}
+                  >
+                    {/* Imagen del paso */}{' '}
+                    <Box
+                      sx={{
+                        width: breakpoints.timeline.imageSize,
+                        height: breakpoints.timeline.imageSize,
+                        borderRadius: '50%',
+                        border: `double #1976d2`,
+                        borderWidth: breakpoints.timeline.borderWidth,
+                        overflow: 'hidden',
+                        mb: { xs: 0, sm: 1, md: 2, lg: 2.5 },
+                        mt: { xs: 2.8, sm: 3, md: 0 },
+                        backgroundColor: 'white',
+                        boxShadow: `0 0 0 2px rgba(25, 118, 210, 0.3), 0 0 15px rgba(25, 118, 210, 0.2)`,
+                        transition: 'all 0.3s ease',
+                        '&:hover': {
+                          boxShadow: `0 0 0 3px rgba(25, 118, 210, 0.5), 0 0 25px rgba(25, 118, 210, 0.4)`,
+                          transform: 'scale(1.05)',
+                        },
+                      }}
+                    >
+                      <img
+                        src={item.image}
+                        alt={item.title}
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'cover',
+                        }}
+                      />
+                    </Box>
+                    {/* Contenido del paso */}
+                    <Box
+                      sx={{
+                        textAlign: 'center',
+                        maxWidth: {
+                          xs: 100,
+                          sm: 140,
+                          md: 240,
+                          lg: 260,
+                        },
+                      }}
+                    >
+                      <Typography
+                        variant="h6"
+                        fontWeight="bold"
+                        sx={{
+                          mb: { xs: 0.5, sm: 0.7, md: 1.2, lg: 1.2 },
+                          fontSize: breakpoints.timeline.titleFontSize,
+                          color: 'primary.main',
+                        }}
+                      >
+                        {item.title}
+                      </Typography>{' '}
+                      <Typography
+                        variant="body2"
+                        color="common.white"
+                        sx={{
+                          lineHeight: {
+                            xs: 1.0,
+                            sm: 1.1,
+                            md: 1.3,
+                            lg: 1.5,
+                          },
+                          fontSize: breakpoints.timeline.descFontSize,
+                        }}
+                      >
+                        {item.description}
+                      </Typography>
+                    </Box>
+                  </Grid>
+                ))}
+              </Grid>
+            </Grid>
+          </Grid>
+        </Grid>
+      </Grid>
+    );
+  }, [breakpoints]);
 
   return (
     <Box
@@ -324,7 +559,7 @@ const ServicesSection = ({ serviciosRef }) => {
               <Button
                 key={index}
                 variant={currentStep === index ? 'contained' : 'outlined'}
-                onClick={() => setCurrentStep(index)}
+                onClick={() => handleStepChange(index)}
                 sx={{
                   p: {
                     ...breakpoints.buttons.p,
@@ -413,8 +648,9 @@ const ServicesSection = ({ serviciosRef }) => {
                     }}
                   >
                     {service.title}
-                  </Typography>
+        </Typography>
                 </Box>
+
                 <Typography
                   variant="body2"
                   sx={{
@@ -432,298 +668,11 @@ const ServicesSection = ({ serviciosRef }) => {
         </Box>
         {/* Wizard con todo el contenido interactivo */}
         <Box sx={breakpoints.wizard}>
-          <Wizard
-            steps={services}
-            showControls={false}
-            showIndicators={false}
-            fadeTransition={true}
-            fadeTimeout={350}
-            currentStep={currentStep}
-            onStepChange={handleStepChange}
-            renderStep={(currentStep, currentService) => {
-              return (
-                <Grid // GRID CONTENEDOR PADRE
-                  container
-                  spacing={0}
-                  justifyContent="center"
-                  alignItems="center"
-                  sx={{
-                    minWidth: '100%', // ✅ SIMPLIFICADO: USAR 100% EN TODOS LOS BREAKPOINTS
-                    mx: 'auto', // ← CENTRADO HORIZONTAL
-                    width: '100%',
-                  }}
-                >
-                  {/* ✅ COLUMNA ÚNICA: 12 COLUMNAS COMPLETAS - CENTRADA */}{' '}
-                  <Grid
-                    size={12}
-                    sx={{ display: 'flex', justifyContent: 'center' }}
-                  >
-                    {/* ✅ GRID INTERNO PURO: 1 COLUMNA, 2 FILAS - FORZADO */}
-                    <Grid
-                      container
-                      direction="column"
-                      spacing={2}
-                      justifyContent="center"
-                      sx={{ width: '100%' }}
-                    >
-                      {' '}
-                      {/* ✅ FILA 1: BOTONES DE SERVICIOS - GRID PURO */}
-                      {/* Eliminado: los botones del carrusel aquí */}
-                      {/* ✅ NUEVO: TEXTO DINÁMICO ENTRE BOTONES Y TIMELINE */}
-                      <Grid size={12} sx={{ width: '100%' }}>
-                        <Box
-                          sx={{
-                            display: 'flex',
-                            justifyContent: 'center',
-                            alignItems: 'center',
-                            px: 0,
-                            py: 0,
-                            mb: { xs: 2, sm: 3, md: 4, lg: 6 },
-                          }}
-                        >
-                          <Typography
-                            variant="body1"
-                            sx={{
-                              textAlign: 'center',
-                              color: 'common.white',
-                              fontSize: {
-                                xs: '0.9rem',
-                                sm: '1rem',
-                                md: '1.1rem',
-                                lg: '1.2rem',
-                                xl: '1.3rem',
-                              },
-                              lineHeight: {
-                                xs: 1.4,
-                                sm: 1.5,
-                                md: 1.6,
-                                lg: 1.6,
-                                xl: 1.6,
-                              },
-                              maxWidth: '1300px',
-                              mx: 'auto',
-                              fontWeight: 400,
-                              letterSpacing: '0.5px',
-                            }}
-                          >
-                            {currentService.title === 'Proveedor'
-                              ? 'Accede a un canal de ventas digital de bajo costo, gana visibilidad con nuevos públicos y deja que otros vendan por ti, sin perder control sobre tus precios ni tu stock.'
-                              : 'Descubre nuevos proveedores confiables y gestiona tus compras de forma más ágil, ahorrando tiempo en cotizaciones, validaciones y comunicación, todo desde una sola plataforma centralizada.'}
-                          </Typography>
-                        </Box>
-                      </Grid>{' '}
-                      {/* ✅ FILA 2: TIMELINE HORIZONTAL - GRID PURO */}
-                      <Grid size={12} sx={{ width: '100%' }}>
-                        <Grid
-                          container
-                          direction="row"
-                          spacing={breakpoints.timeline.gap}
-                          justifyContent="center"
-                          alignItems="flex-start"
-                          sx={{
-                            position: 'relative',
-                            px: { xs: 1, sm: 1, md: 0 },
-                            width: '100%',
-                          }}
-                        >
-                          {' '}
-                          {/* Línea conectora - Fórmula universal para todos los servicios */}
-                          <Box
-                            sx={{
-                              position: 'absolute',
-                              // Posición vertical: centro de las imágenes
-                              top: {
-                                xs: `calc(${
-                                  breakpoints.timeline.imageSize.xs / 2
-                                }px + ${
-                                  breakpoints.timeline.borderWidth.xs
-                                }px + 2.8 * 8px)`,
-                                sm: `calc(${
-                                  breakpoints.timeline.imageSize.sm / 2
-                                }px + ${
-                                  breakpoints.timeline.borderWidth.sm
-                                }px + 3 * 8px)`,
-                                md: `calc(${
-                                  breakpoints.timeline.imageSize.md / 2
-                                }px + ${breakpoints.timeline.borderWidth.md}px)`,
-                                lg: `calc(${
-                                  breakpoints.timeline.imageSize.lg / 2
-                                }px + ${breakpoints.timeline.borderWidth.lg}px)`,
-                                xl: `calc(${
-                                  breakpoints.timeline.imageSize.xl / 2
-                                }px + ${breakpoints.timeline.borderWidth.xl}px)`,
-                              }, // Fórmula extendida: líneas ~13% más largas para conectar mejor los círculos
-                              left: {
-                                xs: `calc((100% / ${
-                                  currentService.timeline.length
-                                }) * 0.37 + ${
-                                  breakpoints.timeline.imageSize.xs / 2 +
-                                  breakpoints.timeline.borderWidth.xs
-                                }px)`,
-                                sm: `calc((100% / ${
-                                  currentService.timeline.length
-                                }) * 0.37 + ${
-                                  breakpoints.timeline.imageSize.sm / 2 +
-                                  breakpoints.timeline.borderWidth.sm
-                                }px)`,
-                                md: `calc((100% / ${
-                                  currentService.timeline.length
-                                }) * 0.37 + ${
-                                  breakpoints.timeline.imageSize.md / 2 +
-                                  breakpoints.timeline.borderWidth.md
-                                }px)`,
-                                lg: `calc((100% / ${
-                                  currentService.timeline.length
-                                }) * 0.37 + ${
-                                  breakpoints.timeline.imageSize.lg / 2 +
-                                  breakpoints.timeline.borderWidth.lg
-                                }px)`,
-                                xl: `calc((100% / ${
-                                  currentService.timeline.length
-                                }) * 0.37 + ${
-                                  breakpoints.timeline.imageSize.xl / 2 +
-                                  breakpoints.timeline.borderWidth.xl
-                                }px)`,
-                              },
-                              // Fórmula extendida: líneas ~13% más largas para conectar mejor los círculos
-                              right: {
-                                xs: `calc((100% / ${
-                                  currentService.timeline.length
-                                }) * 0.37 + ${
-                                  breakpoints.timeline.imageSize.xs / 2 +
-                                  breakpoints.timeline.borderWidth.xs
-                                }px)`,
-                                sm: `calc((100% / ${
-                                  currentService.timeline.length
-                                }) * 0.37 + ${
-                                  breakpoints.timeline.imageSize.sm / 2 +
-                                  breakpoints.timeline.borderWidth.sm
-                                }px)`,
-                                md: `calc((100% / ${
-                                  currentService.timeline.length
-                                }) * 0.37 + ${
-                                  breakpoints.timeline.imageSize.md / 2 +
-                                  breakpoints.timeline.borderWidth.md
-                                }px)`,
-                                lg: `calc((100% / ${
-                                  currentService.timeline.length
-                                }) * 0.37 + ${
-                                  breakpoints.timeline.imageSize.lg / 2 +
-                                  breakpoints.timeline.borderWidth.lg
-                                }px)`,
-                                xl: `calc((100% / ${
-                                  currentService.timeline.length
-                                }) * 0.37 + ${
-                                  breakpoints.timeline.imageSize.xl / 2 +
-                                  breakpoints.timeline.borderWidth.xl
-                                }px)`,
-                              },
-                              height: {
-                                xs: 4,
-                                sm: 6,
-                                md: 8,
-                                lg: 10,
-                                xl: 12,
-                              },
-                              background:
-                                'linear-gradient(90deg, #222 0%, #1976d2 100%)', // Más oscura al inicio
-                              borderRadius: 2,
-                              zIndex: 1,
-                            }}
-                          />{' '}
-                          {/* Pasos del timeline - GRID PURO CON DISTRIBUCIÓN UNIFORME */}
-                          {currentService.timeline.map((item, index) => (
-                            <Grid
-                              size="grow"
-                              key={index}
-                              sx={{
-                                display: 'flex',
-                                flexDirection: 'column',
-                                alignItems: 'center',
-                                position: 'relative',
-                                zIndex: 2,
-                                flex: 1, // Asegura distribución uniforme
-                              }}
-                            >
-                              {/* Imagen del paso */}{' '}
-                              <Box
-                                sx={{
-                                  width: breakpoints.timeline.imageSize,
-                                  height: breakpoints.timeline.imageSize,
-                                  borderRadius: '50%',
-                                  border: `double #1976d2`,
-                                  borderWidth: breakpoints.timeline.borderWidth,
-                                  overflow: 'hidden',
-                                  mb: { xs: 0, sm: 1, md: 2, lg: 2.5 },
-                                  mt: { xs: 2.8, sm: 3, md: 0 },
-                                  backgroundColor: 'white',
-                                  boxShadow: `0 0 0 2px rgba(25, 118, 210, 0.3), 0 0 15px rgba(25, 118, 210, 0.2)`,
-                                  transition: 'all 0.3s ease',
-                                  '&:hover': {
-                                    boxShadow: `0 0 0 3px rgba(25, 118, 210, 0.5), 0 0 25px rgba(25, 118, 210, 0.4)`,
-                                    transform: 'scale(1.05)',
-                                  },
-                                }}
-                              >
-                                <img
-                                  src={item.image}
-                                  alt={item.title}
-                                  style={{
-                                    width: '100%',
-                                    height: '100%',
-                                    objectFit: 'cover',
-                                  }}
-                                />
-                              </Box>
-                              {/* Contenido del paso */}
-                              <Box
-                                sx={{
-                                  textAlign: 'center',
-                                  maxWidth: {
-                                    xs: 100,
-                                    sm: 140,
-                                    md: 240,
-                                    lg: 260,
-                                  },
-                                }}
-                              >
-                                <Typography
-                                  variant="h6"
-                                  fontWeight="bold"
-                                  sx={{
-                                    mb: { xs: 0.5, sm: 0.7, md: 1.2, lg: 1.2 },
-                                    fontSize: breakpoints.timeline.titleFontSize,
-                                    color: 'primary.main',
-                                  }}
-                                >
-                                  {item.title}
-                                </Typography>{' '}
-                                <Typography
-                                  variant="body2"
-                                  color="common.white"
-                                  sx={{
-                                    lineHeight: {
-                                      xs: 1.0,
-                                      sm: 1.1,
-                                      md: 1.3,
-                                      lg: 1.5,
-                                    },
-                                    fontSize: breakpoints.timeline.descFontSize,
-                                  }}
-                                >
-                                  {item.description}
-                                </Typography>
-                              </Box>
-                            </Grid>
-                          ))}
-                        </Grid>
-                      </Grid>
-                    </Grid>
-                  </Grid>
-                </Grid>
-              );
-            }}
-          />
+          <Fade in={true} timeout={350} key={currentStep}>
+            <Box sx={{ width: '100%' }}>
+              {renderStep(currentStep, services[currentStep])}
+            </Box>
+          </Fade>
         </Box>
       </Box>
     </Box>

@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import { Box } from '@mui/material' // Importación de componentes y estilos de Material UI
 import { Banner } from './hooks/index.js' // Componente de banner reutilizable
 // Importación de la lógica de la página de inicio
@@ -40,8 +40,12 @@ import ServicesSection from './ServicesSection.jsx' //Sección Nuestros Servicio
  * - State Management: Local state con hooks especializados
  * - Performance: Memoización y lazy loading donde corresponde
  */
+import { useLocation } from 'react-router-dom'
+
 const Home = ({ scrollTargets }) => {
   // ===== USAR CUSTOM HOOK PARA TODA LA LÓGICA =====
+
+  const location = useLocation();
   const {
     // Referencias para scroll
     quienesSomosRef,
@@ -63,10 +67,32 @@ const Home = ({ scrollTargets }) => {
 
     // Constantes
     PROMO_SLIDES,
-  } = useHomeLogic(scrollTargets)
+  } = useHomeLogic(scrollTargets);
+
+  // Scroll automático al anchor si hay scrollTo en la URL
+  // Ref para el top de la página
+  const topRef = React.useRef(null);
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const scrollTo = params.get('scrollTo');
+    if (scrollTo) {
+      const refMap = {
+        top: topRef,
+        quienesSomosRef,
+        serviciosRef,
+        trabajaConNosotrosRef: serviciosRef, // fallback, si tienes otro ref, cámbialo aquí
+      };
+      const targetRef = refMap[scrollTo];
+      if (targetRef && targetRef.current) {
+        setTimeout(() => {
+          targetRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 100); // Espera breve para asegurar render
+      }
+    }
+  }, [location.search, quienesSomosRef, serviciosRef]);
 
   return (
-    <Box sx={{ width: '100%', overflowX: 'hidden' }}>
+    <Box ref={topRef} sx={{ width: '100%', overflowX: 'hidden' }}>
       {/* Sección Hero con texto, botón, estadísticas y carrusel */}
       <HeroSection
         currentPromoSlide={currentPromoSlide}

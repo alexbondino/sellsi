@@ -108,10 +108,13 @@ export default function TopBar({
   const handleNavigate = ref => {
     handleCloseMobileMenu();
     setTimeout(() => {
-      // ...log eliminado...
       if (ref === 'contactModal') {
         setOpenContactModal(true);
-        // ...log eliminado...
+        return;
+      }
+      // Si es un anchor de la home, navega a / con scrollTo
+      if (ref === 'quienesSomosRef' || ref === 'serviciosRef' || ref === 'trabajaConNosotrosRef') {
+        navigate(`/?scrollTo=${ref}`);
         return;
       }
       if (onNavigate) {
@@ -397,15 +400,36 @@ export default function TopBar({
             }}
           >
             <Box
-              component="img"
-              src="/logodark.svg"
-              alt="Sellsi Logo"
-              onClick={() => navigate('/')}
               sx={{
-                height: { xs: 90, md: 110 },
+                height: 50, // igual que la barra superior
+                width: { xs: 90, md: 140 },
+                display: 'flex',
+                alignItems: 'center',
                 cursor: 'pointer',
+                p: 0,
+                m: 0,
+                lineHeight: 0,
               }}
-            />
+              onClick={() => navigate('/?scrollTo=top')}
+            >
+              <Box
+                component="img"
+                src="/logodark.svg"
+                alt="Sellsi Logo"
+                sx={{
+                  height: 140,
+                  width: 'auto',
+                  display: 'block',
+                  objectFit: 'contain',
+                  p: 0,
+                  m: 0,
+                  lineHeight: 0,
+                  userSelect: 'none',
+                  pointerEvents: 'none', // para que el click sea del contenedor, no de la imagen
+                }}
+                draggable={false}
+              />
+            </Box>
             <Box sx={{ display: { xs: 'none', md: 'flex' }, gap: 2 }}>
               {desktopNavLinks}
             </Box>
