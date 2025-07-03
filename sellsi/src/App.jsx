@@ -187,7 +187,7 @@ function AppContent({ mensaje }) {
     '/onboarding',
   ]);
 
-useEffect(() => {
+  useEffect(() => {
     let mounted = true;
     setLoadingUserStatus(true);
     setNeedsOnboarding(false);
@@ -201,11 +201,15 @@ useEffect(() => {
           setCurrentAppRole('buyer');
           // Limpiar localStorage al cerrar sesión
           try { localStorage.removeItem('currentAppRole'); } catch (e) {}
+          // Limpiar user_id global
+          try { localStorage.removeItem('user_id'); } catch (e) {}
         }
         return;
       }
       // Siempre forzar la obtención del perfil tras SIGNED_IN
       lastSessionIdRef.current = currentSession.user.id;
+      // Guardar user_id globalmente en localStorage
+      try { localStorage.setItem('user_id', currentSession.user.id); } catch (e) {}
       const { data: userData, error: userError } = await supabase
         .from('users')
         .select('user_nm, main_supplier, logo_url')
@@ -218,6 +222,8 @@ useEffect(() => {
         setLoadingUserStatus(false);
         setCurrentAppRole('buyer');
         try { localStorage.removeItem('currentAppRole'); } catch (e) {}
+        // Limpiar user_id global
+        try { localStorage.removeItem('user_id'); } catch (e) {}
         return;
       }
       if (mounted) {
@@ -226,6 +232,8 @@ useEffect(() => {
           setUserProfile(null);
           setCurrentAppRole('buyer');
           try { localStorage.removeItem('currentAppRole'); } catch (e) {}
+          // Limpiar user_id global
+          try { localStorage.removeItem('user_id'); } catch (e) {}
         } else {
           setNeedsOnboarding(false);
           setUserProfile(userData);
@@ -255,6 +263,10 @@ useEffect(() => {
         if (mounted) {
           if (event === 'SIGNED_IN') {
             setSession(newSession);
+            // Guardar user_id globalmente en localStorage
+            if (newSession?.user?.id) {
+              try { localStorage.setItem('user_id', newSession.user.id); } catch (e) {}
+            }
             // Forzar obtención del perfil incluso si el usuario ya estaba en sesión
             checkUserAndFetchProfile(newSession);
           } else if (event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED') {
@@ -271,6 +283,10 @@ useEffect(() => {
             checkUserAndFetchProfile(newSession);
           } else if (event === 'USER_UPDATED') {
             setSession(newSession);
+            // Guardar user_id globalmente en localStorage
+            if (newSession?.user?.id) {
+              try { localStorage.setItem('user_id', newSession.user.id); } catch (e) {}
+            }
           }
         }
       }
@@ -546,35 +562,30 @@ useEffect(() => {
         onRoleChange={handleRoleChangeFromTopBar}
       />
 
-      <Banner
-        message={bannerState.message}
-        severity={bannerState.severity}
-        duration={bannerState.duration}
-        show={bannerState.show}
-        onClose={hideBanner}
-      />
-
       <Box
         sx={{
-          width: '100%',
-          minHeight: '100vh',
           display: 'flex',
           flexDirection: 'column',
-          justifyContent: 'space-between',
-          // pt: '64px', // Eliminado de aquí, se gestiona en el `Box` principal que contiene SideBar y Main
-          overflowX: 'hidden', // Evita el scroll horizontal en el layout general
+          minHeight: '100vh',
+          overflowX: 'hidden',
           bgcolor: 'background.default',
         }}
       >
+        {/* Banner */}
+        <Banner
+          message={bannerState.message}
+          severity={bannerState.severity}
+          duration={bannerState.duration}
+          show={bannerState.show}
+          onClose={hideBanner}
+        />
+
         {/* Contenedor principal para SideBar y Contenido (Main) */}
         <Box
           sx={{
             display: 'flex',
-            flexGrow: 1,
-            mt: topBarHeight, // El contenido principal comienza debajo de la TopBar
-            minHeight: `calc(100vh - ${topBarHeight} - ${
-              showBottomBar ? '56px' : '0px'
-            })`,
+            flex: '1 0 auto', // Toma el espacio disponible
+            mt: topBarHeight,
           }}
         >
           {isDashboardRoute && (
@@ -598,6 +609,7 @@ useEffect(() => {
                 ? { xs: '100%', md: `calc(100% - ${currentSideBarWidth})` }
                 : '100%',
               overflowX: 'hidden',
+              ml: isDashboardRoute ? { md: 14, lg: 14, xl: 0 } : 0,
               transition: 'margin-left 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94), width 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
             }}
           >
@@ -634,6 +646,7 @@ useEffect(() => {
                       isAuthenticated={!!session}
                       needsOnboarding={needsOnboarding}
                       loading={loadingUserStatus}
+                      redirectTo="/"
                     >
                       <Onboarding />
                     </PrivateRoute>
@@ -648,6 +661,7 @@ useEffect(() => {
                       isAuthenticated={!!session}
                       needsOnboarding={needsOnboarding}
                       loading={loadingUserStatus}
+                      redirectTo="/"
                     >
                       <MarketplaceBuyer />
                     </PrivateRoute>
@@ -660,6 +674,7 @@ useEffect(() => {
                       isAuthenticated={!!session}
                       needsOnboarding={needsOnboarding}
                       loading={loadingUserStatus}
+                      redirectTo="/"
                     >
                       <BuyerOrders />
                     </PrivateRoute>
@@ -672,6 +687,7 @@ useEffect(() => {
                       isAuthenticated={!!session}
                       needsOnboarding={needsOnboarding}
                       loading={loadingUserStatus}
+                      redirectTo="/"
                     >
                       <BuyerPerformance />
                     </PrivateRoute>
@@ -684,6 +700,7 @@ useEffect(() => {
                       isAuthenticated={!!session}
                       needsOnboarding={needsOnboarding}
                       loading={loadingUserStatus}
+                      redirectTo="/"
                     >
                       <BuyerCart />
                     </PrivateRoute>
@@ -698,6 +715,7 @@ useEffect(() => {
                       isAuthenticated={!!session}
                       needsOnboarding={needsOnboarding}
                       loading={loadingUserStatus}
+                      redirectTo="/"
                     >
                       <ProviderHome />
                     </PrivateRoute>
@@ -710,6 +728,7 @@ useEffect(() => {
                       isAuthenticated={!!session}
                       needsOnboarding={needsOnboarding}
                       loading={loadingUserStatus}
+                      redirectTo="/"
                     >
                       <MyProducts />
                     </PrivateRoute>
@@ -722,6 +741,7 @@ useEffect(() => {
                       isAuthenticated={!!session}
                       needsOnboarding={needsOnboarding}
                       loading={loadingUserStatus}
+                      redirectTo="/"
                     >
                       <AddProduct />
                     </PrivateRoute>
@@ -734,6 +754,7 @@ useEffect(() => {
                       isAuthenticated={!!session}
                       needsOnboarding={needsOnboarding}
                       loading={loadingUserStatus}
+                      redirectTo="/"
                     >
                       <MyOrdersPage />
                     </PrivateRoute>
@@ -746,6 +767,7 @@ useEffect(() => {
                       isAuthenticated={!!session}
                       needsOnboarding={needsOnboarding}
                       loading={loadingUserStatus}
+                      redirectTo="/"
                     >
                       <SupplierProfile onProfileUpdated={refreshUserProfile} />
                     </PrivateRoute>
@@ -759,6 +781,7 @@ useEffect(() => {
                       isAuthenticated={!!session}
                       needsOnboarding={needsOnboarding}
                       loading={loadingUserStatus}
+                      redirectTo="/"
                     >
                       <MarketplaceSupplier />
                     </PrivateRoute>
@@ -771,6 +794,7 @@ useEffect(() => {
                       isAuthenticated={!!session}
                       needsOnboarding={needsOnboarding}
                       loading={loadingUserStatus}
+                      redirectTo="/"
                     >
                       <BuyerProfile onProfileUpdated={refreshUserProfile} />
                     </PrivateRoute>
@@ -782,7 +806,13 @@ useEffect(() => {
             </Suspense>
           </Box>
         </Box>
-        {showBottomBar && <BottomBar />}
+        
+        {/* BottomBar - Flex shrink: 0 para que mantenga su tamaño */}
+        {showBottomBar && (
+          <Box sx={{ flexShrink: 0 }}>
+            <BottomBar />
+          </Box>
+        )}
       </Box>
     </>
   );

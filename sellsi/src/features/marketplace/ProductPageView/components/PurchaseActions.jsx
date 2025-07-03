@@ -47,6 +47,7 @@ const PurchaseActions = ({
     }
     if (onAddToCart && product) {
       const cartProduct = formatProductForCart(product, quantity, tiers)
+      console.log('[PurchaseActions] Enviando al carrito:', cartProduct)
       onAddToCart(cartProduct)
     }
   }

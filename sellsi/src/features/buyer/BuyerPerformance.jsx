@@ -7,6 +7,9 @@ import {
   Grid,
   LinearProgress,
 } from '@mui/material';
+import { ThemeProvider } from '@mui/material/styles';
+import SideBarProvider from '../layout/SideBar';
+import { dashboardThemeCore } from '../../styles/dashboardThemeCore';
 // import MarketplaceTopBar from '../layout/MarketplaceTopBar' // Eliminado
 import StatCard from './components/StatCard';
 
@@ -75,25 +78,24 @@ const BuyerPerformance = () => {
   // RENDERIZADO DEL COMPONENTE PRINCIPAL
   // ============================================================================
   return (
-    <Box>
-      {/* <MarketplaceTopBar /> */}{' '}
-      {/* Eliminado, ahora la topbar se maneja globalmente en App.jsx */}
+    <ThemeProvider theme={dashboardThemeCore}>
+      <SideBarProvider />
+
       <Box
-        component="main"
         sx={{
-          flexGrow: 1,
-          ml: '250px',
-          p: 3,
-          backgroundColor: '#f8fafc',
+          backgroundColor: 'background.default',
           minHeight: '100vh',
+          pt: { xs: 9, md: 10 },
+          px: 3,
+          pb: 3,
         }}
       >
-        <Container maxWidth="lg">
-          <Typography
-            variant="h4"
-            component="h1"
-            sx={{ mb: 4, fontWeight: 'bold' }}
-          >
+      <Container maxWidth="xl" disableGutters>
+        <Typography
+          variant="h4"
+          component="h1"
+          sx={{ mb: 4, fontWeight: 'bold' }}
+        >
             Mi Performance
           </Typography>
           {/* Estadísticas principales */}{' '}
@@ -216,10 +218,10 @@ const BuyerPerformance = () => {
               ))}
             </Box>
           </Paper>{' '}
-        </Container>
-      </Box>
+      </Container>
     </Box>
+    </ThemeProvider>
   );
-};
+}
 
 export default BuyerPerformance;

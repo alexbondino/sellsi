@@ -168,7 +168,7 @@ const CartHeader = ({
           xs={12}
           sm={4}
           sx={{
-            ml: { md: 50 },
+            // ml eliminado para unificar layout con supplier, ahora lo maneja App.jsx
             // ...otros estilos...
           }}
         >

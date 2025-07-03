@@ -88,6 +88,7 @@ const useCartStore = create(
           return shippingStore.selectedShipping
         },// === ACCIONES DEL CARRITO (REFACTORIZADAS) ===        // Agregar producto al carrito
         addItem: async (product, quantity = 1) => {
+          console.log('[cartStore] addItem called', { product, quantity });
           const state = get()
           
           // VALIDACIÓN: Asegurar que la cantidad esté en un rango seguro
@@ -132,7 +133,7 @@ const useCartStore = create(
             // Validar la nueva cantidad total
             const newTotalQuantity = validateCartQuantity(existingItem.quantity + safeQuantity);
             const maxStock = Math.min(product.maxStock || 15000, 15000);
-            
+            console.log('[cartStore] existingItem found', { existingItem, newTotalQuantity, maxStock });
             if (newTotalQuantity <= maxStock) {
               set({
                 items: currentState.items.map((item) =>
@@ -141,6 +142,7 @@ const useCartStore = create(
                     : item
                 ),
               })
+              console.log('[cartStore] updated quantity for existing item', { id: product.id, quantity: newTotalQuantity });
             } else {
               console.warn('[cartStore] No hay suficiente stock')
             }
@@ -152,6 +154,7 @@ const useCartStore = create(
             set({
               items: [...currentState.items, newItem],
             })
+            console.log('[cartStore] added new item to cart', newItem);
           }
 
           // Delegar al módulo de historial
