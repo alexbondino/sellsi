@@ -23,6 +23,7 @@ import useCartStore from './features/buyer/hooks/cartStore';
 
 import SideBar from './features/layout/SideBar';
 import { AdminLogin, AdminPanelTable } from './features/admin_panel';
+import ScrollToTop from './features/ScrollToTop';
 
 // ============================================================================
 // 🚀 CODE SPLITTING: LAZY LOADING DE COMPONENTES POR RUTAS
@@ -859,6 +860,7 @@ function App() {
       />
       <BannerProvider>
         <BrowserRouter>
+          <ScrollToTop />
           <AppContent mensaje={mensaje} />
         </BrowserRouter>
         <Toaster

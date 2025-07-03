@@ -1,110 +1,95 @@
-# Utils (`src/utils`)
+# Utils
 
-> **Fecha de creación de este README:** 26/06/2025
+## 1. Resumen funcional del módulo
+El módulo `utils` centraliza utilidades y helpers reutilizables para la plataforma Sellsi. Incluye funciones para validaciones, manipulación de datos, herramientas de emergencia, helpers de perfil y lógica de negocio transversal.
 
-## Resumen funcional del módulo
+- **Problema que resuelve:** Evita duplicación de lógica y facilita la reutilización de funciones comunes en toda la app.
+- **Arquitectura:** Utilidades independientes, agrupadas por propósito (carrito, perfil, validaciones, helpers de datos).
+- **Patrones:** Single responsibility, helpers puros, separación de lógica de UI.
+- **Flujo de datos:** Funciones puras → Entrada de datos → Salida transformada o acción.
 
-La carpeta **utils** centraliza utilidades y helpers reutilizables para validación, formateo, cálculo y manipulación de datos en Sellsi. Incluye funciones para validación de formularios, cantidades, helpers de perfil, cálculo de precios por tramos, obtención de imágenes, datos geográficos y herramientas de emergencia para el carrito. Estas utilidades permiten mantener el código DRY, seguro y fácil de mantener en features y servicios.
+## 2. Listado de archivos
+| Archivo                | Tipo      | Descripción                                 | Responsabilidad principal                |
+|------------------------|-----------|---------------------------------------------|------------------------------------------|
+| cartEmergencyTools.js  | Utilidad  | Herramientas de emergencia para carrito     | Diagnóstico y reparación de carritos     |
+| chileData.js           | Utilidad  | Datos y helpers de regiones de Chile        | Listados y helpers geográficos           |
+| getProductImageUrl.js  | Utilidad  | Construcción de URLs de imágenes de producto| Generar rutas de imágenes                |
+| priceCalculation.js    | Utilidad  | Cálculo de precios y descuentos            | Lógica de precios y promociones          |
+| profileDiagnostic.js   | Utilidad  | Diagnóstico y helpers de perfil             | Validaciones y análisis de perfil         |
+| profileHelpers.js      | Utilidad  | Helpers para manipulación de datos de perfil| Lógica de datos personales y máscara     |
+| quantityValidation.js  | Utilidad  | Validación de cantidades y stock            | Validar cantidades y límites             |
+| validators.js          | Utilidad  | Validaciones generales (email, rut, etc.)   | Validar datos de entrada                 |
+| README.md              | Doc       | Documentación de las utilidades             | Explicar uso y API de cada helper        |
 
-## Listado de archivos principales
-
-| Archivo                  | Tipo      | Descripción breve                                                      |
-|--------------------------|-----------|-----------------------------------------------------------------------|
-| validators.js            | Utilidad  | Validación de RUT, email, contraseñas y confirmaciones.                |
-| quantityValidation.js    | Utilidad  | Validación y sanitización de cantidades para carrito y stock.           |
-| profileHelpers.js        | Helper    | Helpers para datos sensibles, iniciales y mapeo de perfil.              |
-| priceCalculation.js      | Utilidad  | Cálculo de precios por tramos y totales según cantidad.                 |
-| getProductImageUrl.js    | Utilidad  | Obtención segura de URLs de imágenes de productos desde Supabase.       |
-| chileData.js             | Datos     | Regiones, ciudades y comunas de Chile para formularios y filtros.       |
-| cartEmergencyTools.js    | Utilidad  | Herramientas de emergencia para limpiar y restaurar el carrito.         |
-
-## Relaciones internas del módulo
-
-- Los helpers y utilidades son independientes y pueden ser usados en cualquier feature, servicio o hook.
-- `quantityValidation.js` y `validators.js` son usados por servicios y formularios para asegurar datos válidos.
-- `profileHelpers.js` es clave en el módulo de perfil y onboarding.
-- `cartEmergencyTools.js` puede ser ejecutado desde consola para soporte avanzado.
-
-Árbol de relaciones simplificado:
-
+## 3. Relaciones internas del módulo
 ```
-validators.js
-quantityValidation.js
-profileHelpers.js
-priceCalculation.js
-getProductImageUrl.js
-chileData.js
 cartEmergencyTools.js
+├── clearAllCartData
+├── validateCurrentCart
+└── fixCorruptedQuantities
+profileHelpers.js
+├── maskSensitiveData
+└── helpers de datos personales
+...otros helpers independientes
 ```
+- Utilidades independientes, pueden ser usadas en cualquier feature.
+- No dependen entre sí salvo helpers de perfil.
 
-## API y funciones principales
-
-### validators.js
-- `validateRut(rut)`
-- `validateEmail(email)`
-- `validatePassword(password)`
-- `validatePasswordMatch(password, confirmPassword)`
-
-### quantityValidation.js
-- `validateQuantity(quantity, min, max)`
-- `isQuantityValid(quantity, min, max)`
-- `sanitizeCartItems(items)`
-- `isQuantityError(error)`
+## 4. API y props de las utilidades principales
+### cartEmergencyTools.js
+- `clearAllCartData()`: Limpia localStorage/sessionStorage y recarga la página.
+- `validateCurrentCart()`: Diagnostica items corruptos en el carrito.
+- `fixCorruptedQuantities()`: Repara cantidades inválidas en el carrito.
+- `help()`: Muestra ayuda en consola.
 
 ### profileHelpers.js
-- `maskSensitiveData(value, showLast)`
-- `getInitials(name)`
-- `mapUserProfileToFormData(userProfile)`
+- `maskSensitiveData(value, showLast)`: Enmascara datos sensibles.
+- ...otros helpers de perfil.
 
 ### priceCalculation.js
-- `calculatePriceForQuantity(quantity, tiers, basePrice)`
-- `calculateTotalPrice(quantity, tiers, basePrice)`
+- Funciones para calcular precios, descuentos y totales.
 
-### getProductImageUrl.js
-- `getProductImageUrl(image, productData)`
+### validators.js
+- Validaciones de email, rut, etc.
 
-### chileData.js
-- `regiones`, `ciudadesPorRegion`, ...
+**Notas:**
+- Las funciones pueden ser usadas directamente o expuestas globalmente para debugging.
 
-### cartEmergencyTools.js
-- `clearAllCartData()`
+## 5. Hooks personalizados
+No se exportan hooks, solo funciones puras y helpers.
 
-## Dependencias externas e internas
+## 6. Dependencias principales
+| Dependencia         | Versión   | Propósito                        | Impacto                  |
+|---------------------|-----------|----------------------------------|--------------------------|
+| -                   | -         | No tiene dependencias externas   | -                        |
 
-- **Externas:** Solo helpers de Supabase en `getProductImageUrl.js`.
-- **Internas:** Independientes, consumidos por features, servicios y hooks.
+## 7. Consideraciones técnicas
+### Limitaciones y advertencias
+- Las herramientas de emergencia deben usarse solo bajo supervisión técnica.
+- Algunas funciones asumen estructura específica de datos (ej. carrito).
+- No implementan logs persistentes ni reportes automáticos.
 
-## Consideraciones técnicas y advertencias
+### Deuda técnica relevante
+- [MEDIA] Modularizar helpers para testing y cobertura avanzada.
+- [MEDIA] Mejorar documentación de edge cases y advertencias.
 
-- Las utilidades de validación están pensadas para formularios y servicios críticos.
-- `cartEmergencyTools.js` debe usarse solo en casos de soporte o debugging avanzado.
-- Los helpers de perfil asumen estructura estándar de usuario y pueden requerir ajustes si la BD cambia.
+## 8. Puntos de extensión
+- Agregar helpers para nuevas entidades o lógica transversal.
+- Integrar utilidades con sistemas de logging o monitoreo.
 
-## Puntos de extensión o reutilización
-
-- Las utilidades pueden extenderse para nuevos tipos de validación, helpers de datos o cálculos avanzados.
-- Pueden integrarse en features, servicios, hooks o scripts de soporte.
-
-## Ejemplos de uso
-
-### Validar un RUT chileno
-
+## 9. Ejemplos de uso
+### Ejemplo básico
 ```js
-import { validateRut } from 'src/utils/validators';
+import { clearAllCartData, validateCurrentCart } from './cartEmergencyTools';
 
-if (!validateRut(rut)) {
-  alert('RUT inválido');
-}
+clearAllCartData();
+validateCurrentCart();
 ```
 
-### Calcular precio por cantidad y tramos
+## 10. Rendimiento y optimización
+- Funciones puras y sin dependencias para máxima eficiencia.
+- Áreas de mejora: modularización y cobertura de edge cases.
 
-```js
-import { calculatePriceForQuantity } from 'src/utils/priceCalculation';
-
-const unitPrice = calculatePriceForQuantity(20, product.priceTiers, product.basePrice);
-```
-
----
-
-Este README documenta la estructura, relaciones y funcionamiento de las utilidades y helpers de Sellsi. Consulta los comentarios en el código para detalles adicionales y advertencias sobre validaciones y helpers críticos.
+## 11. Actualización
+- Creado: `03/07/2025`
+- Última actualización: `03/07/2025`

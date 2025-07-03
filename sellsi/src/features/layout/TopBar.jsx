@@ -21,6 +21,7 @@ import useCartStore from '../buyer/hooks/cartStore';
 import ContactModal from '../ui/ContactModal';
 import Login from '../login/Login';
 import Register from '../register/Register';
+import { setSkipScrollToTopOnce } from '../ScrollToTop';
 
 // Importa el nuevo componente reutilizable y ahora verdaderamente controlado
 import Switch from '../ui/Switch'; // Ajusta la ruta si es diferente
@@ -114,6 +115,7 @@ export default function TopBar({
       }
       // Si es un anchor de la home, navega a / con scrollTo
       if (ref === 'quienesSomosRef' || ref === 'serviciosRef' || ref === 'trabajaConNosotrosRef') {
+        setSkipScrollToTopOnce();
         navigate(`/?scrollTo=${ref}`);
         return;
       }

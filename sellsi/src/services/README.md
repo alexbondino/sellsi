@@ -1,112 +1,98 @@
-# Servicios (`src/services`)
+# Services
 
-> **Fecha de creación de este README:** 26/06/2025
+## 1. Resumen funcional del módulo
+El módulo `services` centraliza la lógica de acceso a datos y comunicación con el backend en Sellsi. Proporciona funciones y objetos para interactuar con Supabase, gestionar productos, pedidos, perfiles, uploads y lógica administrativa, desacoplando la UI de la capa de datos.
 
-## Resumen funcional del módulo
+- **Problema que resuelve:** Abstrae la comunicación con APIs y bases de datos, facilitando el mantenimiento y la reutilización.
+- **Arquitectura:** Servicios independientes, cada uno con responsabilidad única y API clara.
+- **Patrones:** Service layer, separación de concerns, single responsibility.
+- **Flujo de datos:** Componentes/hooks → Servicios → Backend/Supabase → Respuesta → Componentes/hooks.
 
-La carpeta **services** centraliza los servicios de acceso a datos, lógica de negocio y utilidades de integración con Supabase en Sellsi. Incluye servicios para carrito, pedidos, especificaciones de producto, uploads y conexión con la base de datos. Estos servicios abstraen la comunicación con el backend, optimizan la gestión de recursos y estandarizan la lógica de negocio para features y hooks.
+## 2. Listado de archivos
+| Archivo                        | Tipo      | Descripción                                 | Responsabilidad principal                |
+|------------------------------- |-----------|---------------------------------------------|------------------------------------------|
+| adminPanelService.js           | Servicio  | Lógica de administración y panel de control | Acciones administrativas y métricas      |
+| cartService.js                 | Servicio  | Gestión de carrito de compras               | CRUD de carrito y lógica de usuario      |
+| orderService.js                | Servicio  | Gestión de pedidos y estados                | CRUD de pedidos, filtros y estadísticas  |
+| productSpecificationsService.js| Servicio  | Gestión de especificaciones de productos    | CRUD de specs y validaciones             |
+| profileService.js              | Servicio  | Gestión de datos de perfil de usuario       | CRUD de perfil y validaciones            |
+| supabase.js                    | Servicio  | Cliente Supabase y helpers de conexión      | Acceso a base de datos y storage         |
+| uploadService.js               | Servicio  | Lógica de subida de archivos e imágenes     | Upload y gestión de media                |
+| README.md                      | Doc       | Documentación de los servicios              | Explicar uso y API de cada servicio      |
 
-## Listado de archivos principales
-
-| Archivo                        | Tipo      | Descripción breve                                                      |
-|------------------------------- |----------|-----------------------------------------------------------------------|
-| cartService.js                 | Servicio | Operaciones de carrito: CRUD, migración, sincronización y checkout.    |
-| orderService.js                | Servicio | Gestión de pedidos: consulta, actualización de estado, estadísticas.   |
-| productSpecificationsService.js| Servicio | Manejo de especificaciones técnicas de productos.                      |
-| supabase.js                    | Utilidad  | Cliente y helpers para conexión y autenticación con Supabase.          |
-| uploadService.js               | Servicio | Subida y gestión de archivos e imágenes en Supabase Storage.           |
-
-## Relaciones internas del módulo
-
-- Todos los servicios utilizan el cliente `supabase` para queries y storage.
-- `cartService` y `orderService` gestionan el ciclo completo de compra y pedidos.
-- `productSpecificationsService` abstrae la lógica de ficha técnica y especificaciones.
-- `uploadService` centraliza la subida y gestión de archivos (PDF, imágenes).
-
-Árbol de relaciones simplificado:
-
+## 3. Relaciones internas del módulo
 ```
-cartService.js
-└─ supabase.js
-orderService.js
-└─ supabase.js
-productSpecificationsService.js
-└─ supabase.js
-uploadService.js
-└─ supabase.js
+Servicios independientes
+├── supabase.js (base de datos y storage)
+├── orderService.js (usa supabase.js)
+├── cartService.js (usa supabase.js)
+├── profileService.js (usa supabase.js)
+├── uploadService.js (usa supabase.js)
+└── adminPanelService.js, productSpecificationsService.js
 ```
+- Comunicación por funciones y promesas.
+- No hay dependencias circulares.
 
-## API y métodos principales
+## 4. Props y API de los servicios principales
+### adminPanelService
+- Funciones: métricas, gestión de usuarios, reportes.
 
 ### cartService
-- `getOrCreateActiveCart(userId)`
-- `getCartItems(cartId)`
-- `addItemToCart(cartId, product, quantity)`
-- `updateItemQuantity(cartId, productId, newQuantity)`
-- `removeItemFromCart(cartId, productId)`
-- `clearCart(cartId)`
-- `checkout(cartId, checkoutData)`
-- `migrateLocalCart(userId, localCartItems)`
+- Funciones: `addToCart`, `removeFromCart`, `getCart`, `clearCart`, etc.
 
 ### orderService
-- `getOrdersForSupplier(supplierId, filters)`
-- `updateOrderStatus(orderId, newStatus, additionalData)`
-- `getOrderStats(supplierId, period)`
-- `searchOrders(supplierId, searchText)`
+- Funciones: `getOrdersForSupplier`, `updateOrderStatus`, `getOrderStats`, `searchOrders`, etc.
 
 ### productSpecificationsService
-- `getProductSpecifications(productId)`
-- `updateProductSpecifications(productId, specifications)`
-- `insertProductSpecifications(productId, specifications, category)`
-- `deleteProductSpecifications(productId)`
+- Funciones: CRUD de especificaciones, validaciones.
 
-### uploadService
-- `uploadPDF(file, productId, supplierId)`
-- `uploadMultiplePDFs(files, productId, supplierId)`
-- `deletePDF(filePath)`
-- `uploadImage(file, productId, supplierId)`
-- `initializeBuckets()`
+### profileService
+- Funciones: `getProfile`, `updateProfile`, validaciones.
 
 ### supabase.js
-- `supabase` (cliente)
-- `testAuth()`
-- `testConnection()`
+- Exporta el cliente Supabase y helpers de conexión.
 
-## Dependencias externas e internas
+### uploadService
+- Funciones: `uploadImage`, `removeImage`, helpers de media.
 
-- **Externas:** supabase-js, utilidades de entorno (VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY).
-- **Internas:** Utilidades de validación y helpers de `src/utils`.
+**Notas:**
+- Cada servicio expone una API clara y desacoplada de la UI.
 
-## Consideraciones técnicas y advertencias
+## 5. Hooks personalizados
+No se exportan hooks, solo funciones y objetos de servicio.
 
-- Todos los servicios asumen una estructura de tablas y buckets específica en Supabase.
-- Los métodos de upload validan tamaño, tipo y nombre de archivos para evitar errores y conflictos.
-- El servicio de especificaciones está limitado a una especificación por producto (ver comentarios en el código).
-- Los servicios están preparados para ser usados como singletons y no deben duplicarse.
+## 6. Dependencias principales
+| Dependencia         | Versión   | Propósito                        | Impacto                  |
+|---------------------|-----------|----------------------------------|--------------------------|
+| supabase-js         | ^2.x      | Acceso a base de datos y storage | Core                     |
+| ...internas         | -         | Helpers y utilidades             | Lógica y seguridad       |
 
-## Puntos de extensión o reutilización
+## 7. Consideraciones técnicas
+### Limitaciones y advertencias
+- Los servicios asumen configuración previa de Supabase.
+- Manejo de errores y validaciones depende de cada función.
+- No implementan cache global ni reintentos automáticos.
 
-- Los servicios pueden ser extendidos para nuevas entidades, endpoints o buckets.
-- Pueden integrarse en hooks, features o flujos de onboarding para centralizar la lógica de negocio.
+### Deuda técnica relevante
+- [MEDIA] Mejorar manejo de errores y reporting.
+- [MEDIA] Modularizar helpers y validaciones comunes.
 
-## Ejemplos de uso
+## 8. Puntos de extensión
+- Agregar servicios para nuevas entidades o integraciones externas.
+- Exponer hooks para lógica reactiva avanzada.
 
-### Obtener o crear carrito activo
-
+## 9. Ejemplos de uso
+### Ejemplo básico
 ```js
-import { cartService } from 'src/services/cartService';
+import { orderService } from './orderService';
 
-const cart = await cartService.getOrCreateActiveCart(userId);
+const orders = await orderService.getOrdersForSupplier(supplierId);
 ```
 
-### Subir imagen de producto
+## 10. Rendimiento y optimización
+- Servicios optimizados para uso con promesas y async/await.
+- Áreas de mejora: cache local, reintentos y logging avanzado.
 
-```js
-import UploadService from 'src/services/uploadService';
-
-const result = await UploadService.uploadImage(file, productId, supplierId);
-```
-
----
-
-Este README documenta la estructura, relaciones y funcionamiento de los servicios de Sellsi. Consulta los comentarios en el código para detalles adicionales y advertencias sobre integración con Supabase.
+## 11. Actualización
+- Creado: `03/07/2025`
+- Última actualización: `03/07/2025`

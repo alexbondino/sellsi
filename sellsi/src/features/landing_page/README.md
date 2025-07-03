@@ -1,125 +1,122 @@
 # Landing Page Module (`src/features/landing_page`)
 
-> **Fecha de creación de este README:** 26/06/2025
+> **Fecha de creación de este README:** 03/07/2025
 
-## Resumen funcional del módulo
+## 1. Resumen funcional del módulo
 
-El módulo **Landing Page** centraliza la experiencia de bienvenida y presentación de Sellsi. Su objetivo es captar la atención de nuevos usuarios, comunicar la propuesta de valor, mostrar proveedores, servicios y estadísticas clave, y facilitar la navegación hacia el marketplace y otras áreas relevantes. Resuelve el problema de la dispersión de la comunicación inicial y la falta de un punto de entrada visualmente atractivo y funcional para la plataforma.
+Este módulo implementa la landing page principal de Sellsi, orquestando la presentación, navegación y animaciones de la página de inicio. Centraliza la composición de secciones clave, lógica de UI interactiva y componentes visuales reutilizables.
 
-## Listado de archivos principales
+- **Problema que resuelve:** Provee una experiencia de bienvenida atractiva, informativa y responsiva para nuevos usuarios y visitantes.
+- **Arquitectura:** Basada en componentes presentacionales puros, hooks personalizados para lógica de UI, y un barrel para exportaciones limpias.
+- **Función principal:** Mostrar la propuesta de valor, servicios, proveedores y estadísticas de Sellsi de forma visualmente atractiva y eficiente.
+- **Flujo de datos:**
+  - El componente `Home` orquesta la composición de secciones y consume hooks para lógica de navegación, animaciones y carruseles.
 
-| Archivo                      | Tipo         | Descripción breve                                                      |
-|----------------------------- |-------------|-----------------------------------------------------------------------|
-| Home.jsx                     | Componente  | Orquesta todas las secciones de la landing page.                      |
-| HeroSection.jsx              | Componente  | Sección principal con carrusel, CTA y estadísticas animadas.          |
-| ProvidersSection.jsx         | Componente  | Grid de proveedores destacados y métricas.                            |
-| AboutUsSection.jsx           | Componente  | Sección informativa sobre la empresa (misión, visión, valores).       |
-| ServicesSection.jsx          | Componente  | Carrusel interactivo de servicios ofrecidos.                          |
-| StatisticCard.jsx            | Componente  | Tarjeta visual para mostrar estadísticas numéricas.                   |
-| ProviderLogo.jsx             | Componente  | Muestra el logo de un proveedor en el grid.                           |
-| CarouselIndicator.jsx        | Componente  | Indicador visual de posición en carruseles.                           |
-| CarouselNavigationButton.jsx | Componente  | Botón de navegación para carruseles.                                  |
-| constants.jsx                | Helper      | Contiene datos estáticos, slides, servicios y proveedores.            |
-| index.js                     | Barrel      | Exporta todos los componentes y hooks del módulo.                     |
+## 2. Listado de archivos
+| Archivo                    | Tipo        | Descripción breve                                 | Responsabilidad principal                |
+|----------------------------|-------------|--------------------------------------------------|------------------------------------------|
+| Home.jsx                   | Componente  | Página principal, orquesta todas las secciones    | Composición y navegación principal       |
+| HeroSection.jsx            | Componente  | Carrusel superior con CTAs y estadísticas         | Presentación inicial y animaciones       |
+| ProvidersSection.jsx       | Componente  | Grid de proveedores destacados                   | Mostrar partners y logos                 |
+| AboutUsSection.jsx         | Componente  | Sección "Quiénes somos"                          | Información corporativa                  |
+| ServicesSection.jsx        | Componente  | Carrusel de servicios interactivo                | Mostrar servicios y beneficios           |
+| StatisticCard.jsx          | Componente  | Tarjeta de estadística numérica                   | Visualización de métricas                |
+| ProviderLogo.jsx           | Componente  | Logo de proveedor individual                      | Visualización de partners                |
+| CarouselIndicator.jsx      | Componente  | Indicador visual de slides                        | Navegación de carruseles                 |
+| CarouselNavigationButton.jsx| Componente | Botón de navegación para carruseles               | Control de slides                        |
+| constants.jsx              | Constantes  | Datos y configuraciones de la landing page        | Centralización de datos                  |
+| index.js                   | Barrel      | Exporta todos los componentes y hooks             | Organización y acceso centralizado       |
 
-## Relaciones internas del módulo
-
-- `Home.jsx` importa y orquesta todas las secciones principales.
-- Cada sección (Hero, Providers, AboutUs, Services) es un componente independiente, importado en `Home.jsx`.
-- `constants.jsx` centraliza los datos estáticos usados por varios componentes.
-- Componentes UI reutilizables (`StatisticCard`, `ProviderLogo`, `CarouselIndicator`, `CarouselNavigationButton`) son usados por las secciones según necesidad.
-- El barrel `index.js` exporta todo para facilitar imports externos.
-
-Árbol de relaciones simplificado:
+## 3. Relaciones internas del módulo
+- `Home.jsx` importa y compone todas las secciones principales.
+- Secciones como `HeroSection`, `ProvidersSection`, `AboutUsSection`, `ServicesSection` son componentes hijos directos de `Home`.
+- `StatisticCard`, `ProviderLogo`, `CarouselIndicator`, `CarouselNavigationButton` son componentes UI reutilizables.
+- Hooks de `./hooks` son consumidos por `Home` y secciones para lógica de UI.
 
 ```
-Home.jsx
-├─ HeroSection.jsx
-│   ├─ StatisticCard.jsx
-│   ├─ CarouselIndicator.jsx
-│   └─ CarouselNavigationButton.jsx
-├─ ProvidersSection.jsx
-│   ├─ ProviderLogo.jsx
-│   └─ StatisticCard.jsx
-├─ AboutUsSection.jsx
-├─ ServicesSection.jsx
-│   └─ Wizard (de ../ui/wizard)
-├─ constants.jsx
+Home
+├── HeroSection
+├── ProvidersSection
+├── AboutUsSection
+├── ServicesSection
+├── StatisticCard
+├── ProviderLogo
+├── CarouselIndicator
+├── CarouselNavigationButton
+└── (usa hooks de ./hooks/*)
 ```
 
-## Props de los componentes principales
+## 4. Props de los componentes
+### Home
+| Prop           | Tipo           | Requerido | Descripción                                 |
+|----------------|----------------|-----------|---------------------------------------------|
+| scrollTargets  | ref            | No        | Referencias para navegación por scroll       |
 
-| Componente           | Prop                | Tipo         | Requerida | Descripción                                      |
-|----------------------|---------------------|--------------|-----------|--------------------------------------------------|
-| Home                 | scrollTargets       | object       | No        | Referencias para navegación por scroll.           |
-| HeroSection          | currentPromoSlide   | number       | Sí        | Índice del slide actual del carrusel.             |
-|                      | nextPromoSlide      | function     | Sí        | Avanza al siguiente slide.                        |
-|                      | prevPromoSlide      | function     | Sí        | Retrocede al slide anterior.                      |
-|                      | setCurrentPromoSlide| function     | Sí        | Cambia a un slide específico.                     |
-|                      | promoSlides         | array        | Sí        | Slides promocionales a mostrar.                   |
-|                      | statistics          | array        | Sí        | Estadísticas a mostrar.                           |
-| ProvidersSection     | statistics          | array        | No        | Métricas para mostrar junto a proveedores.        |
-| AboutUsSection       | quienesSomosRef     | ref          | No        | Referencia para navegación por scroll.            |
-| ServicesSection      | serviciosRef        | ref          | No        | Referencia para navegación por scroll.            |
-| StatisticCard        | stat                | object       | Sí        | Objeto con número, label, descripción e icono.    |
-| ProviderLogo         | provider            | object       | Sí        | Objeto con src y alt del logo.                    |
-| CarouselIndicator    | index               | number       | Sí        | Índice del indicador.                             |
-|                      | isActive            | boolean      | Sí        | Si el indicador está activo.                      |
-|                      | onClick             | function     | Sí        | Callback al hacer clic.                           |
-| CarouselNavigationButton | direction        | string       | Sí        | 'prev' o 'next'.                                  |
-|                      | onClick             | function     | Sí        | Callback al hacer clic.                           |
-|                      | position            | object       | No        | Posición personalizada del botón.                 |
+### AboutUsSection
+| Prop           | Tipo           | Requerido | Descripción                                 |
+|----------------|----------------|-----------|---------------------------------------------|
+| quienesSomosRef| ref            | No        | Referencia para scroll navigation            |
 
-## Hooks personalizados
+### ServicesSection
+| Prop           | Tipo           | Requerido | Descripción                                 |
+|----------------|----------------|-----------|---------------------------------------------|
+| serviciosRef   | ref            | No        | Referencia para scroll navigation            |
 
-- **useHomeLogic**: Centraliza la lógica de navegación, scroll, estado de carruseles y estadísticas. Maneja referencias, callbacks y formateo de datos para la landing page. Expone funciones y estados para controlar la UI desde `Home.jsx`.
+### StatisticCard
+| Prop           | Tipo           | Requerido | Descripción                                 |
+|----------------|----------------|-----------|---------------------------------------------|
+| stat           | objeto         | Sí        | Objeto con datos de la estadística           |
 
-## Dependencias externas e internas
+### ProviderLogo
+| Prop           | Tipo           | Requerido | Descripción                                 |
+|----------------|----------------|-----------|---------------------------------------------|
+| src            | string         | Sí        | Ruta de la imagen del logo                   |
+| alt            | string         | Sí        | Texto alternativo para accesibilidad         |
 
-- **Externas**: React, Material-UI, React Router DOM (para navegación), íconos de Material-UI.
-- **Internas**: Helpers y datos de `constants.jsx`, componentes de UI y wizard de `../ui/wizard`.
-- **Contextos/Providers**: No utiliza contextos globales, pero puede recibir referencias externas para navegación.
-- **Importaciones externas**: Utiliza helpers y componentes de fuera de la carpeta para imágenes y wizard.
+### CarouselIndicator / CarouselNavigationButton
+| Prop           | Tipo           | Requerido | Descripción                                 |
+|----------------|----------------|-----------|---------------------------------------------|
+| active         | boolean        | Sí        | Si el slide está activo                      |
+| onClick        | función        | Sí        | Handler para cambiar de slide                |
 
-## Consideraciones técnicas y advertencias
+## 5. Hooks personalizados
+- Ver carpeta `./hooks` para lógica avanzada de carruseles, animaciones y home.
 
-- El módulo asume integración con Material-UI y React Router DOM.
-- Los datos de slides, servicios y proveedores están centralizados en `constants.jsx` para facilitar mantenimiento y escalabilidad.
-- El layout es completamente responsivo, pero cualquier cambio en breakpoints puede requerir ajustes en los estilos.
-- Algunos componentes (ej: Wizard) pueden depender de rutas relativas fuera de la carpeta.
-- Si se agregan nuevas secciones, mantener la arquitectura de separación UI/lógica.
+## 6. Dependencias principales
+| Dependencia         | Versión | Propósito                  | Impacto                |
+|---------------------|---------|----------------------------|------------------------|
+| `react`             | >=17    | Hooks y estado             | Lógica y efectos       |
+| `@mui/material`     | >=5     | Componentes UI             | Visualización          |
+| `@mui/icons-material`| >=5    | Iconos para UI             | Visualización          |
 
-## Puntos de extensión o reutilización
+## 7. Consideraciones técnicas
+- Arquitectura desacoplada: lógica en hooks, UI en componentes puros.
+- Navegación y scroll gestionados por referencias y hooks.
+- Carruseles y animaciones optimizados para rendimiento.
 
-- Los componentes de UI (`StatisticCard`, `ProviderLogo`, `CarouselIndicator`, `CarouselNavigationButton`) están diseñados para ser reutilizables en otras páginas.
-- El hook `useHomeLogic` puede extenderse para manejar lógica adicional de la landing o integrarse con analytics.
-- El barrel `index.js` permite importar cualquier componente o hook del módulo de forma centralizada.
+## 8. Puntos de extensión
+- Componentes y hooks pueden ser reutilizados en otras páginas o módulos.
+- Fácil de extender con nuevas secciones o animaciones.
 
-## Ejemplos de uso
+## 9. Ejemplos de uso
 
-### Importar y usar la landing page principal
-
+### Usar la landing page principal
 ```jsx
-import { Home } from 'src/features/landing_page';
-
+import { Home } from './landing_page';
 <Home />
 ```
 
-### Usar una sección específica
-
+### Usar una sección individual
 ```jsx
-import { HeroSection } from 'src/features/landing_page';
-
-<HeroSection
-  currentPromoSlide={0}
-  nextPromoSlide={() => {}}
-  prevPromoSlide={() => {}}
-  setCurrentPromoSlide={() => {}}
-  promoSlides={[]}
-  statistics={[]}
-/>
+import { AboutUsSection } from './landing_page';
+<AboutUsSection />
 ```
 
----
+## 10. Rendimiento y optimización
+- Memoización de componentes y hooks.
+- Lazy loading de imágenes y secciones pesadas.
+- Animaciones optimizadas con requestAnimationFrame.
 
-Este README documenta la estructura, relaciones y funcionamiento del módulo Landing Page. Consulta los comentarios en el código para detalles adicionales y mantén la coherencia en la arquitectura al extender el módulo.
+## 11. Actualización
+- Creado: `03/07/2025`
+- Última actualización: `03/07/2025`
