@@ -120,7 +120,7 @@ const ProductCardBuyerContext = React.memo(
             showRange={minPrice !== maxPrice}
             variant="h5"
             color="#1976d2"
-            sx={{ lineHeight: 1.1, fontSize: 22 }}
+            sx={{ lineHeight: 1.1, fontSize: { xs: 16, sm: 18, md: 22 } }}
           />
         );
       } else {
@@ -131,7 +131,7 @@ const ProductCardBuyerContext = React.memo(
             originalPrice={precioOriginal}
             variant="h5"
             color="#1976d2"
-            sx={{ lineHeight: 1.1, fontSize: 22 }}
+            sx={{ lineHeight: 1.1, fontSize: { xs: 16, sm: 18, md: 22 } }}
           />
         );
       }
@@ -214,60 +214,95 @@ const ProductCardBuyerContext = React.memo(
     return (
       <>
         <CardContent sx={{ flexGrow: 1, p: 2, pb: 1 }}>
-          <Typography
-            variant="h6"
-            fontWeight={700}
+          {/* Responsive: stack all key info with uniform gap and full height usage on mobile */}
+          <Box
             sx={{
-              mb: 0.5,
-              height: 48,
-              overflow: 'hidden',
-              display: '-webkit-box',
-              WebkitLineClamp: 2,
-              WebkitBoxOrient: 'vertical',
-              fontSize: 18,
-              lineHeight: 1.2,
-              color: '#1e293b',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: { xs: 'space-between', sm: 'space-between', md: 'flex-start' },
+              alignItems: 'stretch',
+              flexGrow: 1,
+              gap: { xs: 1, sm: 1, md: 0.5 },
+              minHeight: { xs: 180, sm: 180, md: 'auto' },
+              mb: { xs: 0.5, sm: 0.5, md: 1.5 },
             }}
           >
-            {nombre}
-          </Typography>
-          <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5 }}>
-            <Avatar
+            <Typography
+              variant="h6"
+              fontWeight={700}
               sx={{
-                width: 24,
-                height: 24,
-                mr: 1,
-                fontSize: '0.75rem',
+                maxHeight: 48,
+                overflow: 'hidden',
+                display: '-webkit-box',
+                WebkitLineClamp: 2,
+                WebkitBoxOrient: 'vertical',
+                fontSize: 18,
+                lineHeight: 1.2,
+                color: '#1e293b',
               }}
             >
-              {proveedor?.charAt(0)}
-            </Avatar>
-            <Chip
-              label={proveedor}
-              size="small"
-              variant="outlined"
-              color="primary"
-            />
+              {nombre}
+            </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              {/* Avatar solo visible en md+ */}
+              <Avatar
+                sx={{
+                  width: 24,
+                  height: 24,
+                  mr: 1,
+                  fontSize: '0.75rem',
+                  display: { xs: 'none', sm: 'none', md: 'flex' },
+                }}
+              >
+                {proveedor?.charAt(0)}
+              </Avatar>
+              <Chip
+                label={proveedor}
+                size="small"
+                variant="outlined"
+                color="primary"
+                sx={{
+                  fontSize: { xs: '0.65rem', sm: '0.7rem', md: '0.8rem' },
+                  height: { xs: 20, sm: 22, md: 24 },
+                  px: { xs: 0.5, sm: 1, md: 1.5 },
+                  borderRadius: 1.5,
+                  maxWidth: { xs: 250, sm: 250, md: 140 },
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                }}
+              />
+            </Box>
+            <Typography
+              variant="body2"
+              sx={{
+                fontSize: 12,
+                fontWeight: 500,
+                color: 'text.secondary',
+                display: { xs: 'block', sm: 'block', md: 'none' },
+              }}
+            >
+              Compra mínima: {minimumPurchase} uds.
+            </Typography>
+            <Typography
+              variant="body2"
+              sx={{
+                fontSize: 12,
+                fontWeight: 500,
+                color: 'text.secondary',
+                display: { xs: 'none', sm: 'none', md: 'block' },
+              }}
+            >
+              Compra mínima: {minimumPurchase} unidades
+            </Typography>
+            <Box>{memoizedPriceContent}</Box>
+            <Typography
+              variant="body2"
+              color={stock < 10 ? 'error.main' : 'text.secondary'}
+              sx={{ fontSize: 12, fontWeight: 600 }}
+            >
+              {stock < 10 ? `¡Solo ${stock} disponibles!` : `Stock: ${stock}`}
+            </Typography>
           </Box>
-          <Typography
-            variant="body2"
-            sx={{
-              mb: 1.5,
-              fontSize: 12,
-              fontWeight: 500,
-              color: 'text.secondary',
-            }}
-          >
-            Compra mínima: {minimumPurchase} unidades
-          </Typography>
-          <Box sx={{ mb: 1.5 }}>{memoizedPriceContent}</Box>
-          <Typography
-            variant="body2"
-            color={stock < 10 ? 'error.main' : 'text.secondary'}
-            sx={{ fontSize: 12, fontWeight: 600 }}
-          >
-            {stock < 10 ? `¡Solo ${stock} disponibles!` : `Stock: ${stock}`}
-          </Typography>
           {/*
           <Box sx={{ mt: 2, mb: 0 }}>
             <Button

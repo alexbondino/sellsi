@@ -105,12 +105,32 @@ const FilterPanel = React.memo((props) => {
               Filtros
             </Typography>
           </Box>
+          {/* Sustituir Limpiar por X solo en mobile (xs/sm) */}
+          <Box sx={{ display: { xs: 'flex', sm: 'flex', md: 'none' } }}>
+            <IconButton
+              onClick={onMobileClose}
+              size="small"
+              aria-label="Cerrar filtros"
+              sx={{
+                color: '#1976D2',
+                border: '1px solid #e0e0e0',
+                borderRadius: 2,
+                ml: 1,
+                transition: 'all 0.2s',
+                '&:hover': { bgcolor: 'rgba(25, 118, 210, 0.08)' },
+              }}
+            >
+              <CloseIcon sx={{ fontSize: 20 }} />
+            </IconButton>
+          </Box>
+          {/* Limpiar solo visible en md+ */}
           <Button
             onClick={resetFiltros}
             size="small"
             startIcon={<ClearAllIcon sx={{ fontSize: 18 }} />}
             sx={{
-              color: '#1976D2', // ✅ CAMBIAR: de '#ef4444' a azul
+              display: { xs: 'none', sm: 'none', md: 'flex' },
+              color: '#1976D2',
               textTransform: 'none',
               fontWeight: 600,
               fontSize: '0.875rem',
@@ -120,7 +140,7 @@ const FilterPanel = React.memo((props) => {
               borderRadius: 1.5,
               transition: 'all 0.2s ease-in-out',
               '&:hover': {
-                bgcolor: 'rgba(25, 118, 210, 0.08)', // ✅ CAMBIAR: hover azul claro
+                bgcolor: 'rgba(25, 118, 210, 0.08)',
                 transform: 'translateY(-1px)',
                 boxShadow: '0 2px 8px rgba(25, 118, 210, 0.2)',
               },
@@ -284,17 +304,7 @@ const FilterPanel = React.memo((props) => {
             willChange: 'transform, opacity, filter',
           }}
         >
-          {/* Header móvil */}
-          <Box sx={styles.mobileHeader}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <FilterListIcon color="primary" />
-              <Typography sx={styles.title}>Filtros</Typography>
-            </Box>
-            <IconButton onClick={onMobileClose}>
-              <CloseIcon />
-            </IconButton>
-          </Box>
-          {/* Contenido móvil */}
+          {/* Contenido móvil sin header */}
           <Box sx={styles.mobileContent}>
             <FilterContent />
           </Box>
@@ -317,7 +327,8 @@ const FilterPanel = React.memo((props) => {
               sx={{ flex: 2, ...styles.applyButton }}
             >
               Ver {totalProductos} productos
-            </Button>          </Box>
+            </Button>
+          </Box>
         </Box>
       </>
     )

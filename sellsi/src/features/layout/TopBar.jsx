@@ -361,13 +361,13 @@ export default function TopBar({
           backgroundColor: '#000000',
           width: '100vw',
           px: 0,
-          py: 1,
+          py: { xs: 0, sm: 0, md: 1 }, // Sin padding vertical en mobile
           display: 'flex',
           justifyContent: 'center',
           position: 'fixed',
           top: 0,
           zIndex: 1100,
-          height: 64,
+          height: { xs: 45, md: 64 }, // Altura reducida en mobile
           borderBottom: '1px solid white',
         }}
       >
@@ -390,14 +390,16 @@ export default function TopBar({
           >
             <Box
               sx={{
-                height: 50, // igual que la barra superior
-                width: { xs: 90, md: 140 },
+                height: { xs: 38, sm: 38, md: 50 },
+                width: { xs: 90, sm: 90, md: 140 }, // Mobile: fill width
+                maxWidth: { xs: 90 , sm: 90, md: 140 },
                 display: 'flex',
                 alignItems: 'center',
                 cursor: 'pointer',
                 p: 0,
                 m: 0,
                 lineHeight: 0,
+                overflow: 'hidden',
               }}
               onClick={() => navigate('/?scrollTo=top')}
             >
@@ -406,15 +408,16 @@ export default function TopBar({
                 src="/logodark.svg"
                 alt="Sellsi Logo"
                 sx={{
-                  height: 140,
-                  width: 'auto',
+                  height: { xs: 380, sm: 380, md: 450 },
+                  width: { xs: 90, sm: 90, md: 140 }, // Mobile: fill width
+                  maxWidth: { xs: 90, sm: 90, md: 140 },
                   display: 'block',
-                  objectFit: 'contain',
+                  objectFit: { xs: 'contain', sm: 'contain', md: 'contain' },
                   p: 0,
                   m: 0,
                   lineHeight: 0,
                   userSelect: 'none',
-                  pointerEvents: 'none', // para que el click sea del contenedor, no de la imagen
+                  pointerEvents: 'none',
                 }}
                 draggable={false}
               />

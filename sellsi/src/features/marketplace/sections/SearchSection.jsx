@@ -30,12 +30,12 @@ const SearchSection = React.memo(
     const mainContainerStyles = React.useMemo(
       () => ({
         mt: 0,
-        py: 1,
+        py: { xs: 0, sm: 0, md: 1 }, // Padding vertical 0 en mobile, 1 en md+
         px: 0, // Sin padding lateral
         bgcolor: 'rgba(255, 255, 255, 0.95)',
         backdropFilter: 'blur(10px)',
         position: 'fixed',
-        top: 64, // Posición fija - no cambia
+        top: { xs: 45, md: 64 }, // Match TopBar height: 45 en mobile, 64 en desktop
         left: hasSideBar ? '0px' : 0, // Cambiado de 250px a 210px para coincidir con el ancho real del SideBar
         right: 0,
         zIndex: 1,
@@ -70,7 +70,7 @@ const SearchSection = React.memo(
           lg: '1280px',
           xl: '1700px',
         },
-        py: 1,
+        py: { xs: 0.5, md: 1 }, // Padding vertical 0 en mobile, 1 en md+
       }),
       []
     );

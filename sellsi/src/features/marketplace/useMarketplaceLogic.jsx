@@ -91,12 +91,31 @@ const useMarketplaceLogic = (options = {}) => {
 
   // ===== ESTADOS LOCALES PARA UI =====
   const [anchorElCategorias, setAnchorElCategorias] = useState(null);
+  // ✅ NUEVO: Estado para manejar el modal móvil de filtros
+  const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
 
   // ===== HANDLERS MEMOIZADOS =====
   const handleToggleFiltro = useCallback(() => {
+    // Para desktop: toggle del panel lateral
     setFiltroModalOpen(prev => !prev);
     setFiltroVisible(prev => !prev);
   }, [setFiltroModalOpen, setFiltroVisible]);
+
+  // ✅ NUEVO: Handler para móvil
+  const handleMobileFilterClose = useCallback(() => {
+    setIsMobileFilterOpen(false);
+  }, []);
+
+  // ✅ NUEVO: Handler unificado que detecta el dispositivo
+  const handleUnifiedToggleFilters = useCallback(() => {
+    // Para móvil (xs, sm): abrir modal
+    if (window.innerWidth < 900) { // md breakpoint
+      setIsMobileFilterOpen(true);
+    } else {
+      // Para desktop: usar el handler original
+      handleToggleFiltro();
+    }
+  }, [handleToggleFiltro]);
 
   // ✅ OPTIMIZACIÓN: Memoizar todos los handlers que se pasan como props
   const memoSetBusqueda = useCallback(v => setBusqueda(v), [setBusqueda]);
@@ -133,11 +152,14 @@ const useMarketplaceLogic = (options = {}) => {
       ordenamiento: currentOrdenamiento,
       setOrdenamiento: memoSetCurrentOrdenamiento,
       sortOptions: currentSortOptions,
-      onToggleFilters: handleToggleFiltro,
+      onToggleFilters: handleUnifiedToggleFilters, // ✅ CAMBIADO: Usar handler unificado
       hayFiltrosActivos,
       filtroVisible,
       filtroModalOpen,
       searchBarMarginLeft,
+      // ✅ NUEVO: Props para el modal móvil
+      isMobileFilterOpen,
+      onMobileFilterClose: handleMobileFilterClose,
     }),
     [
       busqueda,
@@ -145,11 +167,13 @@ const useMarketplaceLogic = (options = {}) => {
       currentOrdenamiento,
       memoSetCurrentOrdenamiento,
       currentSortOptions,
-      handleToggleFiltro,
+      handleUnifiedToggleFilters, // ✅ CAMBIADO
       hayFiltrosActivos,
       filtroVisible,
       filtroModalOpen,
       searchBarMarginLeft,
+      isMobileFilterOpen,
+      handleMobileFilterClose,
     ]
   );
 
@@ -205,12 +229,14 @@ const useMarketplaceLogic = (options = {}) => {
 
   const filterSectionProps = useMemo(
     () => ({
-      // shouldShowSearchBar removido - ya no necesario
       hayFiltrosActivos,
       handleToggleFiltro,
       desktopFilterProps,
+      // ✅ NUEVO: Props para el modal móvil
+      isMobileOpen: isMobileFilterOpen,
+      onMobileClose: handleMobileFilterClose,
     }),
-    [hayFiltrosActivos, handleToggleFiltro, desktopFilterProps]
+    [hayFiltrosActivos, handleToggleFiltro, desktopFilterProps, isMobileFilterOpen, handleMobileFilterClose]
   );
 
   // ✅ DESACOPLADO: ProductsSection ya no depende de shouldShowSearchBar

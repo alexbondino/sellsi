@@ -97,8 +97,8 @@ const ProductCard = React.memo(
       () => ({
         // 🎯 ALTURA RESPONSIVE DE LA TARJETA
         height: type === 'supplier' ? 
-          { xs: 285, sm: 309, md: 357.5, lg: 487.5, xl: 520 } : 
-          { xs: 285, sm: 309, md: 357.5, lg: 487.5, xl: 520 },
+          { xs: 380, sm: 400, md: 357.5, lg: 487.5, xl: 520 } : 
+          { xs: 380, sm: 400, md: 357.5, lg: 487.5, xl: 520 },
         // 🎯 ANCHO RESPONSIVE ÚNICO DE LA TARJETA
         width: type === 'supplier'
           ? { xs: 175, sm: 190, md: 220, lg: 300, xl: 360 }

@@ -29,6 +29,10 @@ export const filterPanelStyles = {
     borderTopLeftRadius: 16,
     borderBottomLeftRadius: 16,
     boxShadow: '-4px 0 20px rgba(0,0,0,0.15)',
+    // Tamaño más pequeño en mobile
+    width: '95vw',
+    maxWidth: 320,
+    minWidth: 0,
     // Eliminar zIndex, transform y transition aquí
   },
 
@@ -59,14 +63,14 @@ export const filterPanelStyles = {
   },
 
   title: {
-    fontSize: '1.25rem',
+    fontSize: { xs: '1.05rem', sm: '1.1rem', md: '1.25rem' },
     fontWeight: 700,
     color: '#1e293b',
     mb: 3,
   },
 
   sectionTitle: {
-    fontSize: '1rem',
+    fontSize: { xs: '0.95rem', sm: '1rem', md: '1.05rem' },
     fontWeight: 600,
     color: '#334155',
     mb: 2,
