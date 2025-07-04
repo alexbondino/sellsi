@@ -31,14 +31,14 @@ const SearchSection = React.memo(
       () => ({
         mt: 0,
         py: 1,
-        px: hasSideBar ? { xs: 0, md: 0 } : { xs: 1, md: 3 }, // Sin padding lateral cuando hay SideBar
+        px: 0, // Sin padding lateral
         bgcolor: 'rgba(255, 255, 255, 0.95)',
         backdropFilter: 'blur(10px)',
         position: 'fixed',
         top: 64, // Posición fija - no cambia
-        left: hasSideBar ? '210px' : 0, // Cambiado de 250px a 210px para coincidir con el ancho real del SideBar
+        left: hasSideBar ? '0px' : 0, // Cambiado de 250px a 210px para coincidir con el ancho real del SideBar
         right: 0,
-        zIndex: 1000,
+        zIndex: 1,
         display: 'flex',
         justifyContent: 'center',
       }),

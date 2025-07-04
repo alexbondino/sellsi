@@ -13,6 +13,7 @@ import {
 import theme from './styles/theme'; // Asegúrate de que tu tema está correctamente configurado
 import TopBar from './features/layout/TopBar';
 import BottomBar from './features/layout/BottomBar';
+import MobileBar from './features/layout/MobileBar';
 import PrivateRoute from './features/auth/PrivateRoute';
 import { BannerProvider, useBanner } from './features/ui/banner/BannerContext';
 import Banner from './features/ui/banner/Banner';
@@ -605,7 +606,7 @@ function AppContent({ mensaje }) {
               pl: isDashboardRoute ? 3 : 0,
               pr: isDashboardRoute ? 3 : 0,
               pt: isDashboardRoute ? 3 : 0,
-              pb: isDashboardRoute ? 3 : 0,
+              pb: isDashboardRoute ? { xs: session ? 10 : 3, md: 3 } : { xs: session ? 10 : 0, md: 0 }, // Padding extra en mobile cuando hay sesión para el MobileBar
               width: isDashboardRoute
                 ? { xs: '100%', md: `calc(100% - ${currentSideBarWidth})` }
                 : '100%',
@@ -814,6 +815,14 @@ function AppContent({ mensaje }) {
             <BottomBar />
           </Box>
         )}
+
+        {/* MobileBar - Solo se muestra en móviles cuando hay sesión */}
+        <MobileBar 
+          role={currentAppRole} 
+          session={session}
+          isBuyer={isBuyer}
+          logoUrl={logoUrl ? `${logoUrl}?cb=${logoCacheBuster}` : null}
+        />
       </Box>
     </>
   );

@@ -107,7 +107,7 @@ const ServicesSection = ({ serviciosRef }) => {
       image: '/Landing Page/Punto de Venta.webp',
       timeline: [
         {
-          title: 'Vende tu espacio',
+          title: 'Explora fácilmente',
           description: 'Ofrece tu local como punto de retiro',
           icon: storeIcon,
           image: '/Landing Page/PuntoDeVenta/vendeespacio.webp',
@@ -475,20 +475,21 @@ const ServicesSection = ({ serviciosRef }) => {
         flexDirection: 'column',
         justifyContent: 'flex-start',
         alignItems: 'left',
+        px: { xs: 2.5, sm: 3, md: 8, mac: 18, lg: 18, xl: 30 }, // Padding lateral igual que en Home
       }}
     >
-      {/* Contenedor interno para padding lateral solo en desktop */}
-      <Box sx={{ px: { md: 8, mac: 18, lg: 18, xl: 30 }, width: '100%' }}>
+      {/* Contenedor interno sin padding lateral */}
+      <Box sx={{ width: '100%' }}>
         {/* Título y texto descriptivo */}
         <Box
           sx={{
             py: { xs: 6, sm: 7, md: 8, mac: 6, lg: 8, xl: 8 },
             ...breakpoints.title,
-            textAlign: 'left',
-            alignItems: 'stretch',
+            textAlign: { xs: 'center', md: 'left' },
+            alignItems: { xs: 'center', md: 'stretch' },
             display: 'flex',
             flexDirection: { xs: 'column', md: 'row' },
-            justifyContent: 'flex-start',
+            justifyContent: { xs: 'center', md: 'flex-start' },
             gap: { xs: 3, md: 4 },
             width: '100%',
             maxWidth: 'none',
@@ -504,7 +505,8 @@ const ServicesSection = ({ serviciosRef }) => {
               flexDirection: 'column',
               justifyContent: 'center',
               width: '100%',
-              maxWidth: '480px',
+              maxWidth: { xs: '100%', md: '480px' },
+              alignItems: { xs: 'center', md: 'flex-start' },
             }}
           >
             <Typography
@@ -513,11 +515,12 @@ const ServicesSection = ({ serviciosRef }) => {
               gutterBottom
               sx={{
                 fontSize: breakpoints.title.fontSize,
-                textAlign: 'left',
+                textAlign: { xs: 'center', md: 'left' },
                 mb: breakpoints.title.mb,
                 color: 'common.white',
                 ml: 0,
                 pl: 0,
+                width: { xs: '100%', md: 'auto' },
               }}
             >
               Nuestros Servicios
@@ -526,9 +529,9 @@ const ServicesSection = ({ serviciosRef }) => {
               variant="h6"
               sx={{
                 mb: breakpoints.description.mb,
-                textAlign: 'left',
+                textAlign: { xs: 'center', md: 'left' },
                 fontSize: breakpoints.description.fontSize,
-                maxWidth: '480px',
+                maxWidth: { xs: '100%', md: '480px' },
                 mx: 0,
                 ml: 0,
                 pl: 0,
@@ -538,7 +541,7 @@ const ServicesSection = ({ serviciosRef }) => {
             >
               Ofrecemos una plataforma intuitiva para descubrir productos,
               conectar con proveedores confiables y gestionar tus ventas de manera
-              eficiente. Conoce nuestros tres pilares fundamentales:
+              eficiente. Conoce nuestros dos pilares fundamentales:
             </Typography>
           </Box>
           {/* Botones a la derecha en desktop, debajo en mobile */}
@@ -548,11 +551,12 @@ const ServicesSection = ({ serviciosRef }) => {
               flexDirection: 'row',
               gap: { xs: 2, md: 3 },
               alignItems: 'center',
-              justifyContent: { xs: 'flex-start', md: 'flex-end' },
+              justifyContent: { xs: 'center', md: 'flex-end' },
               mt: { xs: 2, md: 0 },
               mb: { xs: 2, md: 0 },
               minWidth: { xs: 'unset', md: 350 },
               ml: { xs: 0, md: 4 },
+              width: { xs: '100%', md: 'auto' },
             }}
           >
             {services.map((service, index) => (
@@ -610,7 +614,7 @@ const ServicesSection = ({ serviciosRef }) => {
                 <Box
                   sx={{
                     display: 'flex',
-                    flexDirection: 'column', // <-- SIEMPRE columna para icono arriba del título
+                    flexDirection: 'column',
                     alignItems: 'center',
                     gap: {
                       xs: 0.3,
@@ -648,7 +652,7 @@ const ServicesSection = ({ serviciosRef }) => {
                     }}
                   >
                     {service.title}
-        </Typography>
+                  </Typography>
                 </Box>
 
                 <Typography

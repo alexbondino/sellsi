@@ -141,7 +141,7 @@ export default function TopBar({
       {...props}
       sx={{
         fontSize: '1.5rem',
-        color: 'white !important',
+        color: '#fff !important',
         ...sx,
       }}
     />
@@ -159,7 +159,7 @@ export default function TopBar({
   }, [logoUrl]);
 
   const profileMenuButton = (
-    <IconButton onClick={handleOpenProfileMenu} sx={{ color: 'white', p: 0 }}>
+    <IconButton onClick={handleOpenProfileMenu} sx={{ color: 'white', p: 0, display: { xs: 'none', md: 'inline-flex' } }}>
       <Avatar
         src={logoUrl && typeof logoUrl === 'string' && logoUrl.trim() !== '' ? logoUrl : undefined}
         key={logoUrl || 'default-avatar'}
@@ -337,20 +337,7 @@ export default function TopBar({
         />
       </MenuItem>,
       <Divider key="dividerMobileRole" />,
-      <MenuItem
-        key="cart"
-        onClick={() => {
-          navigate('/buyer/cart');
-          handleCloseMobileMenu();
-        }}
-      >
-        <Badge badgeContent={itemsInCart} color="error" sx={{ mr: 1.5 }}>
-          <CustomShoppingCartIcon
-            sx={{ color: theme.palette.text.primary + ' !important' }}
-          />
-        </Badge>
-        Mi Carrito
-      </MenuItem>,
+      // Eliminado el botón de carrito en mobileMenuItems
       <MenuItem
         key="profile"
         onClick={() => {
@@ -450,41 +437,7 @@ export default function TopBar({
           <Box sx={{ display: { xs: 'flex', md: 'none' } }}>
             {isLoggedIn && (
               <>
-                <Tooltip title="Carrito" arrow>
-                  <IconButton
-                    onClick={() => navigate('/buyer/cart')}
-                    sx={{
-                      color: 'white',
-                      mr: 2.5,
-                      boxShadow: 'none',
-                      outline: 'none',
-                      border: 'none',
-                      transition: 'background 0.2s',
-                      '&:focus': {
-                        outline: 'none',
-                        border: 'none',
-                        boxShadow: 'none',
-                      },
-                      '&:active': {
-                        outline: 'none',
-                        border: 'none',
-                        boxShadow: 'none',
-                      },
-                      '&:hover': {
-                        background: theme => theme.palette.primary.main,
-                        boxShadow: 'none',
-                        outline: 'none',
-                        border: 'none',
-                      },
-                    }}
-                    disableFocusRipple
-                    disableRipple
-                  >
-                    <Badge badgeContent={itemsInCart} color="error">
-                      <CustomShoppingCartIcon />
-                    </Badge>
-                  </IconButton>
-                </Tooltip>
+                {/* Carrito eliminado en xs/sm, solo se muestra el profileMenuButton */}
                 {profileMenuButton}
               </>
             )}
@@ -499,6 +452,38 @@ export default function TopBar({
         anchorEl={mobileMenuAnchor}
         open={Boolean(mobileMenuAnchor)}
         onClose={handleCloseMobileMenu}
+        PaperProps={{
+          sx: {
+            backgroundColor: '#2C2C2C',
+            color: '#FFFFFF',
+            '& .MuiMenuItem-root': {
+              color: '#FFFFFF',
+              '&:hover': {
+                backgroundColor: 'rgba(255, 255, 255, 0.1)',
+              },
+            },
+            '& .MuiSvgIcon-root': {
+              color: '#FFFFFF',
+            },
+            '& .MuiToggleButton-root': {
+              color: '#FFFFFF',
+              borderColor: 'rgba(255, 255, 255, 0.3)',
+              '&.Mui-selected': {
+                backgroundColor: (theme) => theme.palette.primary.main,
+                color: '#FFFFFF',
+              },
+              '&.Mui-selected:hover': {
+                backgroundColor: (theme) => theme.palette.primary.dark,
+              },
+              '&:hover': {
+                backgroundColor: 'rgba(255, 255, 255, 0.05)',
+              },
+            },
+            '& .MuiDivider-root': {
+              borderColor: 'rgba(255, 255, 255, 0.1)',
+            },
+          },
+        }}
       >
         {mobileMenuItems}
       </Menu>
@@ -507,6 +492,21 @@ export default function TopBar({
         open={Boolean(profileAnchor)}
         onClose={handleCloseProfileMenu}
         disableScrollLock={true}
+        PaperProps={{
+          sx: {
+            backgroundColor: '#2C2C2C',
+            color: '#FFFFFF',
+            '& .MuiMenuItem-root': {
+              color: '#FFFFFF',
+              '&:hover': {
+                backgroundColor: 'rgba(255, 255, 255, 0.1)',
+              },
+            },
+            '& .MuiSvgIcon-root': {
+              color: '#FFFFFF',
+            },
+          },
+        }}
       >
         <MenuItem
           onClick={() => {

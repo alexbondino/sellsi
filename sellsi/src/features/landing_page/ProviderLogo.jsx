@@ -28,12 +28,11 @@ const ProviderLogo = React.memo(({ provider }) => (
   <Card
     elevation={2}
     sx={{
-      width: { xs: 108, sm: 144, md: 162, lg: 180, xl: 180 }, // -10%
-      minHeight: { xs: 72, sm: 90, md: 99, lg: 108, xl: 108 }, // -10%
-      maxHeight: 125.2, // Limitar altura máxima de la card
+      width: { xs: 144, sm: 144, md: 162, lg: 180, xl: 180 },
+      height: { xs: 144, sm: 144, md: 162, lg: 180, xl: 180 }, // Altura igual al ancho para todas las cards
       borderRadius: { xs: 2, sm: 3, md: 4, lg: 4, xl: 4 },
       overflow: 'hidden',
-      background: 'transparent', // Fondo completamente transparente
+      background: 'transparent',
       border: '2px solid #f0f4f8',
       transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
       cursor: 'pointer',
@@ -56,7 +55,7 @@ const ProviderLogo = React.memo(({ provider }) => (
           xl: '0 20px 40px rgba(0,0,0,0.12)',
         },
         borderColor: '#e2e8f0',
-        background: 'transparent', // Fondo transparente también en hover
+        background: 'transparent',
       },
     }}
   >
@@ -64,7 +63,7 @@ const ProviderLogo = React.memo(({ provider }) => (
       sx={{
         width: '100%',
         height: '100%',
-        p: 2, // Padding para que el logo no ocupe el 100%
+        p: 1, // Padding para que el logo no ocupe el 100%
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -77,7 +76,7 @@ const ProviderLogo = React.memo(({ provider }) => (
         style={{
           width: '100%',
           height: '100%',
-          objectFit: 'contain',
+          objectFit: 'contain', // Fuerza a que la imagen llene todo el espacio de la card
           display: 'block',
           zIndex: 1,
           position: 'relative',

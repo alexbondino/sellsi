@@ -279,7 +279,7 @@ const ProvidersSection = ({ statistics }) => {
             {PROVIDERS_DATA.map((provider, idx) => (
               <Grid
                 key={provider.alt}
-                xs={6}
+                xs={4}
                 sm={4}
                 md={3}
                 mac={3} // Mantener 4 logos por fila en mac (12 / 3 = 4)

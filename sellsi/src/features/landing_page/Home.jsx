@@ -112,18 +112,19 @@ const Home = ({ scrollTargets }) => {
           position: 'relative',
           zIndex: 0,
           overflow: 'hidden',
+          px: { xs: 2.5, sm: 3, md: 8, mac: 18, lg: 18, xl: 30 }, // Padding lateral global para todas las secciones
         }}
       >
         {/* Sección Conoce a nuestros proveedores */}
-        <Box sx={{ px: { md: 8, mac: 18, lg: 18, xl: 30 } }}>
+        <Box>
           <ProvidersSection statistics={statistics} />
         </Box>
         {/* Banner Component */}
-        <Box sx={{ px: { md: 8, mac: 18, lg: 18, xl: 30 } }}>
+        <Box>
           <Banner />
         </Box>
         {/* Sección ¿Quiénes somos? */}
-        <Box sx={{ px: { md: 8, mac: 18, lg: 18, xl: 30 } }}>
+        <Box>
           <AboutUsSection quienesSomosRef={quienesSomosRef} />
         </Box>
       </Box>

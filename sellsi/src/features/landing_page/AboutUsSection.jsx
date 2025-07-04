@@ -30,7 +30,6 @@ const AboutUsSection = ({ quienesSomosRef }) => {
     <Box
       ref={quienesSomosRef}
       sx={{
-        // Eliminado px lateral, solo padding vertical y estilos base
         py: { xs: 6, sm: 7, md: 8, mac: 6, lg: 8, xl: 8 },
         backgroundColor: 'transparent',
         position: 'relative',
@@ -39,29 +38,9 @@ const AboutUsSection = ({ quienesSomosRef }) => {
     >
       {/* Mobile Layout: Logo first, then content flows vertically */}
       <Box sx={{ display: { xs: 'block', md: 'none' } }}>
-        {/* Logo for mobile - appears first */}{' '}
-        <Box
-          sx={{
-            display: 'flex',
-            justifyContent: 'center',
-            mb: { xs: 2.5, sm: 3, md: 3, lg: 3, xl: 0 },
-          }}
-        >
-          <Box
-            component="img"
-            src="/Landing Page/imagenuno.png"
-            alt="Sellsi Logo"
-            sx={{
-              height: { xs: 345, sm: 345, md: 345, lg: 345, xl: 345 },
-              width: { xs: 345, sm: 345, md: 345, lg: 345, xl: 345 },
-              objectFit: 'contain',
-              mb: { xs: 0, md: 9 },
-            }}
-          />
-        </Box>
+        {/* Logo para mobile eliminado para evitar duplicado, ahora solo aparece entre los textos */}
         {/* All text content for mobile */}
         <Box sx={{ mb: 4 }}>
-          {' '}
           <Typography
             variant="h3"
             fontWeight="bold"
@@ -92,7 +71,7 @@ const AboutUsSection = ({ quienesSomosRef }) => {
                 xl: '1.2rem',
               },
               lineHeight: { xs: 1.6, sm: 1.65, md: 1.7, lg: 1.7, xl: 1.7 },
-              color: '#111', // Cambiado a negro
+              color: '#111',
               mb: { xs: 2.5, sm: 3, md: 3, lg: 3, xl: 3 },
             }}
           >
@@ -101,6 +80,17 @@ const AboutUsSection = ({ quienesSomosRef }) => {
             </span>{' '}
             es la plataforma donde empresas conectan, negocian y gestionan sus procesos de compra / venta, ya sea mediante venta directa o intermediario.
           </Typography>
+
+          {/* Imagen entre los dos bloques de texto en mobile */}
+          <Box sx={{ display: 'flex', justifyContent: 'center', my: { xs: 2, sm: 2.5 } }}>
+            <Box
+              component="img"
+              src="/Landing Page/imagenuno.png"
+              alt="Sellsi Logo"
+              sx={{ height: { xs: 180, sm: 200 }, width: { xs: 180, sm: 200 }, objectFit: 'contain' }}
+            />
+          </Box>
+
           <Typography
             variant="h4"
             fontWeight="bold"
@@ -123,7 +113,7 @@ const AboutUsSection = ({ quienesSomosRef }) => {
             sx={{
               fontSize: { md: '1.5rem' },
               lineHeight: 1.7,
-              color: '#111', // Cambiado a negro
+              color: '#111',
               mb: 2,
               mt: 0,
             }}
@@ -135,14 +125,14 @@ const AboutUsSection = ({ quienesSomosRef }) => {
             sx={{
               fontSize: { md: '1.2rem' },
               lineHeight: 1.7,
-              color: '#111', // Cambiado a negro
+              color: '#111',
               mb: 3,
             }}
           >
             Desarrollamos el primer marketplace mayorista de Chile, ofreciendo un canal de ventas adicional a los proveedores que participan con nosotros. Los compradores podrán optar por una gran variedad de productos con descuentos por tramos, cotizaciones en línea y negociación de precios directamente con los proveedores.
           </Typography>
         </Box>
-        {/* QuienesSomos.jpg image for mobile - appears after all text */}
+        {/* imagenuno.png debe ir debajo de los cuadros de texto en mobile, imagendos.png NO debe estar en mobile */}
         <Box
           sx={{
             display: 'flex',
@@ -150,19 +140,20 @@ const AboutUsSection = ({ quienesSomosRef }) => {
             mt: 2,
           }}
         >
+          {/* imagenuno.png debajo de los textos en mobile (repetido para énfasis visual, si no se desea, se puede eliminar) */}
+          {/*
           <Box
             component="img"
-            src="/Landing Page/imagendos.png"
-            alt="Equipo Sellsi trabajando"
+            src="/Landing Page/imagenuno.png"
+            alt="Sellsi Logo"
             sx={{
-              width: { xs: 345, sm: 345, md: 345, lg: 345, xl: 345 },
-              height: { xs: 345, sm: 345, md: 345, lg: 345, xl: 345 },
+              height: { xs: 200, sm: 220 },
+              width: { xs: 200, sm: 220 },
               objectFit: 'contain',
-              borderRadius: '16px',
-              boxShadow: '0 10px 30px rgba(0,0,0,0.1)',
               mb: 0,
             }}
           />
+          */}
         </Box>
       </Box>
 

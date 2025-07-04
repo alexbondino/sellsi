@@ -16,8 +16,8 @@ import { useBanner } from '../../ui/banner/BannerContext'; // Contexto para most
 import SideBarProvider from '../../layout/SideBar'; // Proveedor para la barra lateral
 import { dashboardThemeCore } from '../../../styles/dashboardThemeCore'; // Tema de Material-UI para el dashboard
 
-
-
+// TODO: Importar hook para obtener usuario autenticado
+// import { useAuth } from '../../auth/hooks/useAuth';
 
 const MyOrdersPage = () => {
   // Estado y acciones del store de Zustand
@@ -33,7 +33,8 @@ const MyOrdersPage = () => {
     getFilteredOrders,
   } = useOrdersStore();
 
-
+  // Hook para mostrar notificaciones tipo banner
+  const { showBanner } = useBanner();
 
   // Estado local para controlar la visibilidad y el tipo de modal
   const [modalState, setModalState] = useState({
@@ -46,8 +47,9 @@ const MyOrdersPage = () => {
   // const { user } = useAuth();
   // const supplierId = user?.user_id;
 
-
-
+  // TEMPORAL: Obtener el supplier ID del localStorage
+  // Esto debe ser reemplazado por la lógica de autenticación real
+  const supplierId = localStorage.getItem('user_id');
 
   // Obtener los pedidos filtrados utilizando un selector del store
   const filteredOrders = getFilteredOrders();
@@ -57,16 +59,14 @@ const MyOrdersPage = () => {
     if (supplierId) {
       initializeWithSupplier(supplierId);
     } else {
-      // Si no hay supplier ID tras intentar recuperar de Supabase, redirigir al login
-      const timeout = setTimeout(() => {
-        showBanner({
-          message: 'Tu sesión ha expirado. Por favor, inicia sesión nuevamente.',
-          severity: 'error',
-          duration: 5000,
-        });
-        window.location.href = '/login';
-      }, 2000);
-      return () => clearTimeout(timeout);
+      // Si no hay supplier ID, mostrar un error al usuario
+      console.error('No se encontró el ID del proveedor en localStorage');
+      showBanner({
+        message:
+          'Error: No se pudo cargar el ID del proveedor. Intenta recargar la página.',
+        severity: 'error',
+        duration: 5000,
+      });
     }
   }, [supplierId, initializeWithSupplier, showBanner]);
 
@@ -141,7 +141,7 @@ const MyOrdersPage = () => {
           break;
 
         case 'chat':
-          // ...log eliminado...
+          console.log('Abriendo chat para pedido:', selectedOrder.order_id);
           messageToUser =
             '💬 Abriendo chat... (funcionalidad pendiente de implementación).';
           // Para el chat, cerramos el modal y solo mostramos el banner de información
