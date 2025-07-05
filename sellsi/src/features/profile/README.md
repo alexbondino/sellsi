@@ -1,114 +1,125 @@
-# Profile Module (`src/features/profile`)
+# Profile
 
-> **Fecha de creación de este README:** 26/06/2025
+## 1. Resumen funcional del módulo
+El módulo `profile` gestiona la visualización, edición y protección de los datos sensibles del perfil de usuario en Sellsi. Permite mostrar y ocultar información confidencial (como números de cuenta y RUT), aplicar máscaras de seguridad y controlar la edición de campos clave. Su objetivo es brindar una experiencia segura y flexible para la gestión de datos personales y bancarios.
 
-## Resumen funcional del módulo
+- **Problema que resuelve:** Protege la exposición de datos sensibles y facilita la edición segura del perfil.
+- **Arquitectura:** Componentes de perfil y hooks personalizados para control granular de visibilidad y edición.
+- **Patrones:** State lifting, hooks reutilizables, separación de lógica y presentación.
+- **Flujo de datos:** Inputs → Estado local/hooks → Validación/máscara → Renderizado seguro.
 
-El módulo **Profile** centraliza la gestión, visualización y edición de la información de perfil de usuario en Sellsi. Permite a los usuarios (proveedores y compradores) consultar, actualizar y proteger sus datos personales, empresariales, bancarios y de envío, así como cambiar su contraseña y gestionar la imagen de perfil. Resuelve la necesidad de un perfil robusto, seguro y flexible, integrando validaciones, campos sensibles y experiencia de usuario profesional.
+## 2. Listado de archivos
+| Archivo                | Tipo      | Descripción                                 | Responsabilidad principal                |
+|------------------------|-----------|---------------------------------------------|------------------------------------------|
+| hooks/useSensitiveFields.js | Hook  | Manejo de visibilidad y máscara de campos   | Controlar visibilidad de datos sensibles |
+| (utils/profileHelpers.js)   | Utilidad | Función de enmascarado de datos            | Lógica de máscara de datos               |
+| ...otros componentes        | Componente | Visualización y edición de perfil         | Renderizado y edición de datos           |
 
-## Listado de archivos principales
-
-| Archivo                  | Tipo         | Descripción breve                                                      |
-|------------------------- |-------------|-----------------------------------------------------------------------|
-| Profile.jsx              | Componente  | Vista principal del perfil, edición modular y validación avanzada.    |
-| ProfileSwitch.jsx        | Componente  | Selector visual para roles o tipos de cuenta.                         |
-| ChangePasswordModal.jsx  | Componente  | Modal para cambio seguro de contraseña.                               |
-| hooks/useProfileForm.js  | Hook        | Maneja el estado y cambios del formulario de perfil.                  |
-| hooks/useProfileImage.js | Hook        | Lógica de imagen de perfil, preview y limpieza de blobs.              |
-| hooks/useSensitiveFields.js | Hook     | Controla visibilidad y enmascarado de campos sensibles.               |
-
-## Relaciones internas del módulo
-
-- `Profile.jsx` importa y orquesta los hooks y componentes auxiliares para edición, imagen, contraseña y campos sensibles.
-- `ProfileSwitch.jsx` es usado para cambiar roles o tipos de cuenta en formularios.
-- `ChangePasswordModal.jsx` es invocado desde la vista principal para actualizar la contraseña.
-- Los hooks de `hooks/` gestionan el estado del formulario, imagen y campos sensibles, y son consumidos por `Profile.jsx`.
-
-Árbol de relaciones simplificado:
-
+## 3. Relaciones internas del módulo
 ```
-Profile.jsx
-├─ hooks/
-│   ├─ useProfileForm.js
-│   ├─ useProfileImage.js
-│   └─ useSensitiveFields.js
-├─ ChangePasswordModal.jsx
-├─ ProfileSwitch.jsx
-└─ ... (secciones y utilidades internas)
+PerfilUsuario (componente principal)
+├── useSensitiveFields (hook)
+│   └── maskSensitiveData (utilidad)
+└── ...otros componentes de edición/visualización
 ```
+- Comunicación por hooks y props.
+- Renderizado condicional según visibilidad de campos.
 
-## Props de los componentes principales
+## 4. Props de los componentes
+### useSensitiveFields
+No recibe props externas (es un hook personalizado).
 
-| Componente           | Prop                | Tipo         | Requerida | Descripción                                      |
-|----------------------|---------------------|--------------|-----------|--------------------------------------------------|
-| Profile              | userProfile         | object       | Sí        | Objeto con los datos del usuario.                |
-|                      | onUpdateProfile     | function     | No        | Callback al actualizar el perfil.                |
-| ProfileSwitch        | value               | string       | Sí        | Valor seleccionado (rol o tipo de cuenta).       |
-|                      | onChange            | function     | Sí        | Callback al cambiar selección.                   |
-|                      | type                | string       | Sí        | Tipo de switch ('role', 'accountType', etc.).    |
-|                      | sx                  | object       | No        | Estilos personalizados.                          |
-| ChangePasswordModal  | open                | boolean      | Sí        | Si el modal está abierto.                        |
-|                      | onClose             | function     | Sí        | Callback para cerrar el modal.                   |
-|                      | onPasswordChanged   | function     | No        | Callback tras cambiar la contraseña.             |
-|                      | showBanner          | function     | No        | Muestra banners de feedback.                     |
+#### API expuesta:
+- `showSensitiveData`: Estado de visibilidad de cada campo.
+- `toggleSensitiveData(field)`: Alterna visibilidad de un campo.
+- `getSensitiveFieldValue(field, value, showLast)`: Devuelve valor enmascarado o completo.
+- `isFieldVisible(field)`: Indica si el campo está visible.
+- `hideAllFields()`: Oculta todos los campos.
+- `showField(field)`: Muestra un campo específico.
+- `hideField(field)`: Oculta un campo específico.
 
-## Hooks personalizados
+**Notas:**
+- Los componentes de perfil consumen este hook para proteger datos sensibles.
 
-### useProfileForm.js
-Centraliza el estado del formulario de perfil, detecta cambios, permite actualizar campos individuales o múltiples, y resetea el formulario tras guardar o cancelar. Expone `formData`, `hasChanges`, `updateField`, `updateFields`, `resetForm`, `updateInitialData`.
+## 5. Hooks personalizados
+### `useSensitiveFields()`
+**Propósito:** Controlar la visibilidad y enmascarado de campos sensibles (cuentas, RUT, etc.) en el perfil.
 
-### useProfileImage.js
-Gestiona la lógica de imagen de perfil: cambio, preview, limpieza de blobs y cancelación de cambios. Expone `pendingImage`, `handleImageChange`, `getDisplayImageUrl`, `clearPendingImage`, `cancelImageChanges`.
+**Estados y efectos principales:**
+- `showSensitiveData`: Estado booleano por campo.
+- Efectos: No tiene efectos secundarios globales.
 
-### useSensitiveFields.js
-Controla la visibilidad y enmascarado de campos sensibles (ej: cuenta bancaria, RUT). Permite alternar visibilidad, obtener valores enmascarados y ocultar/motrar campos específicos.
+**API que expone:**
+- Ver tabla anterior.
 
-## Dependencias externas e internas
-
-- **Externas**: React, Material-UI, íconos de Material-UI, Supabase.
-- **Internas**: Helpers de `utils/profileHelpers`, componentes de UI y hooks personalizados.
-- **Contextos/Providers**: Utiliza contextos para banners y feedback visual.
-- **Importaciones externas**: Utiliza helpers y componentes de fuera de la carpeta para integración total.
-
-## Consideraciones técnicas y advertencias
-
-- El módulo asume integración con Material-UI y Supabase.
-- Los hooks están optimizados para performance y desacoplados para facilitar testing y extensión.
-- El manejo de campos sensibles y blobs de imagen está pensado para seguridad y limpieza de recursos.
-- Si se modifica la estructura de usuario, revisar los mapeos y validaciones en hooks y helpers.
-- El cambio de contraseña utiliza validaciones estrictas y feedback visual.
-
-## Puntos de extensión o reutilización
-
-- Los hooks y componentes pueden ser reutilizados en formularios de registro, onboarding o edición avanzada.
-- El barrel (si se agrega) permite importar cualquier componente o hook del módulo de forma centralizada.
-
-## Ejemplos de uso
-
-### Importar y usar el perfil principal
-
+**Ejemplo de uso básico:**
 ```jsx
-import Profile from 'src/features/profile/Profile';
+const {
+  showSensitiveData,
+  toggleSensitiveData,
+  getSensitiveFieldValue,
+  isFieldVisible,
+  hideAllFields,
+  showField,
+  hideField
+} = useSensitiveFields();
 
-<Profile userProfile={usuario} onUpdateProfile={handleUpdate} />
+// En un componente:
+<TextField
+  value={getSensitiveFieldValue('accountNumber', user.accountNumber)}
+  type={isFieldVisible('accountNumber') ? 'text' : 'password'}
+/>
+<Button onClick={() => toggleSensitiveData('accountNumber')}>Ver/Ocultar</Button>
 ```
 
-### Usar el switch de roles o tipo de cuenta
+## 6. Dependencias principales
+| Dependencia         | Versión   | Propósito                        | Impacto                  |
+|---------------------|-----------|----------------------------------|--------------------------|
+| react               | ^18.x     | Renderizado y estado             | Core                     |
+| ...otras internas   | -         | Utilidades de máscara y helpers  | Seguridad y UX           |
 
+## 7. Consideraciones técnicas
+### Limitaciones y advertencias
+- Solo controla visibilidad local; no cifra datos en backend.
+- Depende de la consistencia de nombres de campos sensibles.
+- No implementa logs de acceso a datos sensibles.
+
+### Deuda técnica relevante
+- [MEDIA] Mejorar para soportar campos sensibles dinámicos.
+- [MEDIA] Integrar logs de visualización para auditoría.
+
+## 8. Puntos de extensión
+- Permite agregar más campos sensibles fácilmente.
+- Puede integrarse con sistemas de auditoría o doble autenticación.
+
+## 9. Ejemplos de uso
+### Ejemplo básico
 ```jsx
-import ProfileSwitch from 'src/features/profile/ProfileSwitch';
+import { useSensitiveFields } from './hooks/useSensitiveFields';
 
-<ProfileSwitch value="buyer" onChange={handleChange} type="role" />
+function ProfileFields({ user }) {
+  const { getSensitiveFieldValue, toggleSensitiveData, isFieldVisible } = useSensitiveFields();
+
+  return (
+    <div>
+      <input
+        value={getSensitiveFieldValue('accountNumber', user.accountNumber)}
+        type={isFieldVisible('accountNumber') ? 'text' : 'password'}
+        readOnly
+      />
+      <button onClick={() => toggleSensitiveData('accountNumber')}>
+        {isFieldVisible('accountNumber') ? 'Ocultar' : 'Ver'}
+      </button>
+    </div>
+  );
+}
 ```
 
-### Usar el modal de cambio de contraseña
+## 10. Rendimiento y optimización
+- Estado local optimizado por campo.
+- Sin efectos secundarios globales.
+- Áreas de mejora: soporte para campos dinámicos y memoización avanzada.
 
-```jsx
-import ChangePasswordModal from 'src/features/profile/ChangePasswordModal';
-
-<ChangePasswordModal open={open} onClose={handleClose} />
-```
-
----
-
-Este README documenta la estructura, relaciones y funcionamiento del módulo Profile. Consulta los comentarios en el código y la documentación interna para detalles adicionales. Si tienes dudas, revisa los hooks y helpers, ya que son el corazón de la lógica de perfil en Sellsi.
+## 11. Actualización
+- Creado: `03/07/2025`
+- Última actualización: `03/07/2025`

@@ -1,6 +1,26 @@
 -- WARNING: This schema is for context only and is not meant to be run.
 -- Table order and constraints may not be valid for execution.
 
+CREATE TABLE public.bank_info (
+  user_id uuid,
+  account_holder character varying,
+  bank character varying,
+  account_number character varying,
+  transfer_rut character varying,
+  confirmation_email text,
+  account_type character varying DEFAULT 'corriente'::character varying,
+  CONSTRAINT bank_info_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(user_id)
+);
+CREATE TABLE public.billing_info (
+  user_id uuid,
+  business_name character varying,
+  billing_rut character varying,
+  business_line character varying,
+  billing_address text,
+  billing_region text,
+  billing_commune text,
+  CONSTRAINT billing_info_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(user_id)
+);
 CREATE TABLE public.cart_items (
   cart_id uuid NOT NULL,
   product_id uuid NOT NULL,
@@ -11,8 +31,8 @@ CREATE TABLE public.cart_items (
   added_at timestamp with time zone DEFAULT now(),
   updated_at timestamp with time zone DEFAULT now(),
   CONSTRAINT cart_items_pkey PRIMARY KEY (cart_items_id),
-  CONSTRAINT cart_items_cart_id_fkey FOREIGN KEY (cart_id) REFERENCES public.carts(cart_id),
-  CONSTRAINT cart_items_product_id_fkey FOREIGN KEY (product_id) REFERENCES public.products(productid)
+  CONSTRAINT cart_items_product_id_fkey FOREIGN KEY (product_id) REFERENCES public.products(productid),
+  CONSTRAINT cart_items_cart_id_fkey FOREIGN KEY (cart_id) REFERENCES public.carts(cart_id)
 );
 CREATE TABLE public.carts (
   user_id uuid NOT NULL,
@@ -26,7 +46,6 @@ CREATE TABLE public.carts (
 CREATE TABLE public.product_images (
   product_id uuid NOT NULL,
   image_url text,
-  thumbnail_url text,
   CONSTRAINT product_images_product_id_fkey FOREIGN KEY (product_id) REFERENCES public.products(productid)
 );
 CREATE TABLE public.product_quantity_ranges (
@@ -65,8 +84,8 @@ CREATE TABLE public.request_products (
   quantity integer NOT NULL,
   request_product_id uuid NOT NULL DEFAULT gen_random_uuid(),
   CONSTRAINT request_products_pkey PRIMARY KEY (request_product_id),
-  CONSTRAINT request_products_request_id_fkey FOREIGN KEY (request_id) REFERENCES public.requests(request_id),
-  CONSTRAINT request_products_product_id_fkey FOREIGN KEY (product_id) REFERENCES public.products(productid)
+  CONSTRAINT request_products_product_id_fkey FOREIGN KEY (product_id) REFERENCES public.products(productid),
+  CONSTRAINT request_products_request_id_fkey FOREIGN KEY (request_id) REFERENCES public.requests(request_id)
 );
 CREATE TABLE public.requests (
   delivery_country text NOT NULL,
@@ -93,7 +112,17 @@ CREATE TABLE public.sales (
   CONSTRAINT sales_pkey PRIMARY KEY (trx_id),
   CONSTRAINT sales_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(user_id)
 );
+CREATE TABLE public.shipping_info (
+  user_id uuid,
+  shipping_region text,
+  shipping_commune text,
+  shipping_address text,
+  shipping_number text,
+  shipping_dept text,
+  CONSTRAINT shipping_info_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(user_id)
+);
 CREATE TABLE public.users (
+  rut character varying,
   user_id uuid NOT NULL,
   email text NOT NULL UNIQUE,
   user_nm character varying NOT NULL,
@@ -106,4 +135,3 @@ CREATE TABLE public.users (
   CONSTRAINT users_pkey PRIMARY KEY (user_id),
   CONSTRAINT users_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
 );
-

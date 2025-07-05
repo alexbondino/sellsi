@@ -1,5 +1,8 @@
 import React from 'react';
 import { Box, Typography, Container, Paper, Chip } from '@mui/material';
+import { ThemeProvider } from '@mui/material/styles';
+import SideBarProvider from '../layout/SideBar';
+import { dashboardThemeCore } from '../../styles/dashboardThemeCore';
 
 const BuyerOrders = () => {
   // ============================================================================
@@ -59,99 +62,98 @@ const BuyerOrders = () => {
   // RENDERIZADO DEL COMPONENTE
   // ============================================================================
   return (
-    <Box>
-      <Box sx={{ display: 'flex' }}>
-        <Box
-          component="main"
-          sx={{
-            flexGrow: 1,
-            ml: '250px',
-            p: 3,
-            backgroundColor: '#f8fafc',
-            minHeight: '100vh',
-          }}
+    <ThemeProvider theme={dashboardThemeCore}>
+      <SideBarProvider />
+
+      <Box
+        sx={{
+          backgroundColor: 'background.default',
+          minHeight: '100vh',
+          pt: { xs: 9, md: 10 },
+          px: 3,
+          pb: 3,
+        }}
+      >
+      <Container maxWidth="xl" disableGutters>
+        <Typography
+          variant="h4"
+          component="h1"
+          sx={{ mb: 4, fontWeight: 'bold' }}
         >
-          <Container maxWidth="lg">
-            <Typography
-              variant="h4"
-              component="h1"
-              sx={{ mb: 4, fontWeight: 'bold' }}
+          Mis Pedidos
+        </Typography>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          {orders.map(order => (
+            <Paper
+              key={order.id}
+              sx={{
+                p: 3,
+                borderRadius: 2,
+                boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                transition: 'transform 0.2s ease',
+                '&:hover': {
+                  transform: 'translateY(-2px)',
+                  boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
+                },
+              }}
             >
-              Mis Pedidos
-            </Typography>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-              {orders.map(order => (
-                <Paper
-                  key={order.id}
-                  sx={{
-                    p: 3,
-                    borderRadius: 2,
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-                    transition: 'transform 0.2s ease',
-                    '&:hover': {
-                      transform: 'translateY(-2px)',
-                      boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
-                    },
-                  }}
-                >
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'flex-start',
-                      mb: 2,
-                    }}
-                  >
-                    <Box>
-                      <Typography
-                        variant="h6"
-                        sx={{ fontWeight: 'bold', mb: 1 }}
-                      >
-                        Pedido {order.orderNumber}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        Fecha: {order.date}
-                      </Typography>
-                    </Box>
-                    <Chip
-                      label={order.status}
-                      color={getStatusColor(order.status)}
-                      variant="filled"
-                    />
-                  </Box>
-
-                  <Typography variant="body1" sx={{ mb: 1 }}>
-                    <strong>Productos:</strong> {order.products}
-                  </Typography>
-
+              <Box
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'flex-start',
+                  mb: 2,
+                }}
+              >
+                <Box>
                   <Typography
                     variant="h6"
-                    sx={{ fontWeight: 'bold', color: 'primary.main' }}
+                    sx={{ fontWeight: 'bold', mb: 1 }}
                   >
-                    Total: {order.total}
+                    Pedido {order.orderNumber}
                   </Typography>
-                </Paper>
-              ))}
-            </Box>
-            {orders.length === 0 && (
-              <Paper sx={{ p: 4, textAlign: 'center' }}>
-                <Typography variant="h6" color="text.secondary">
-                  No tienes pedidos aún
-                </Typography>
-                <Typography
-                  variant="body2"
-                  color="text.secondary"
-                  sx={{ mt: 1 }}
-                >
-                  ¡Explora nuestro marketplace y haz tu primer pedido!
-                </Typography>
-              </Paper>
-            )}{' '}
-          </Container>
+                  <Typography variant="body2" color="text.secondary">
+                    Fecha: {order.date}
+                  </Typography>
+                </Box>
+                <Chip
+                  label={order.status}
+                  color={getStatusColor(order.status)}
+                  variant="filled"
+                />
+              </Box>
+
+              <Typography variant="body1" sx={{ mb: 1 }}>
+                <strong>Productos:</strong> {order.products}
+              </Typography>
+
+              <Typography
+                variant="h6"
+                sx={{ fontWeight: 'bold', color: 'primary.main' }}
+              >
+                Total: {order.total}
+              </Typography>
+            </Paper>
+          ))}
         </Box>
-      </Box>
+        {orders.length === 0 && (
+          <Paper sx={{ p: 4, textAlign: 'center' }}>
+            <Typography variant="h6" color="text.secondary">
+              No tienes pedidos aún
+            </Typography>
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              sx={{ mt: 1 }}
+            >
+              ¡Explora nuestro marketplace y haz tu primer pedido!
+            </Typography>
+          </Paper>
+        )}
+      </Container>
     </Box>
+    </ThemeProvider>
   );
-};
+}
 
 export default BuyerOrders;

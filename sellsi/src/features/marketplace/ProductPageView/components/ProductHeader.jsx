@@ -325,13 +325,15 @@ const ProductHeader = React.memo(({
       }
       if (image.image_url) return getProductImageUrl(image.image_url)
     }
-    return '/placeholder-product.jpg'  }  return (
+    return '/placeholder-product.jpg'
+  }
+  return (
     // MUIV2 GRID - CONTENEDOR PRINCIPAL (MuiGrid-container)
     <Grid
       container
       spacing={8}
-      sx={{ alignItems: 'flex-start', maxWidth: '1400px', mx: 'auto' }}
-    >      {/* Imagen del Producto */}
+      sx={{ alignItems: 'flex-start', width: '100%', maxWidth: '100%', mx: 0 }}
+    >
       <Grid
         size={{ xs: 12, sm: 6, md: 6, lg: 5 }}
         sx={{ display: 'flex', justifyContent: 'right' }}      >        <Box
@@ -500,14 +502,18 @@ const ProductHeader = React.memo(({
               <StockIndicator stock={stock} showUnits={true} />
             )}
           </Box>{' '}
-          {/* Botones de Compra */}{' '}
-          <PurchaseActions
-            onAddToCart={onAddToCart}
-            stock={stock}
-            product={product}
-            tiers={finalTiers}
-            isLoggedIn={isLoggedIn}
-          />        </Box>
+          {/* Botones de Compra */}
+          {/* Solo mostrar acciones de compra si NO es supplier, ni supplier marketplace, ni mis productos */}
+          {!(product.fromMyProducts || product.isFromSupplierMarketplace || product.isSupplier) && (
+            <PurchaseActions
+              onAddToCart={onAddToCart}
+              stock={stock}
+              product={product}
+              tiers={finalTiers}
+              isLoggedIn={isLoggedIn}
+            />
+          )}
+        </Box>
       </Grid>
     </Grid>
   )

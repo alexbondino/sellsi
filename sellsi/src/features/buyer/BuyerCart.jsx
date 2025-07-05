@@ -29,6 +29,9 @@ import { toast } from 'react-hot-toast';
 import { useInView } from 'react-intersection-observer';
 import confetti from 'canvas-confetti';
 import debounce from 'lodash.debounce';
+import { ThemeProvider } from '@mui/material/styles';
+import SideBarProvider from '../layout/SideBar';
+import { dashboardThemeCore } from '../../styles/dashboardThemeCore';
 import useCartStore from './hooks/cartStore';
 import {
   SHIPPING_OPTIONS,
@@ -568,7 +571,7 @@ const BuyerCart = () => {
             component="main"
             sx={{
               flexGrow: 1,
-              ml: '250px',
+              ml: 0,
               p: 3,
               backgroundColor:
                 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
@@ -581,7 +584,6 @@ const BuyerCart = () => {
             <Box
               sx={{
                 width: '100%',
-                maxWidth: '1200px',
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
@@ -600,32 +602,21 @@ const BuyerCart = () => {
   }
   // ===== RENDERIZADO PRINCIPAL =====
   return (
-    <Box>
+    <ThemeProvider theme={dashboardThemeCore}>
+      <SideBarProvider />
+
+      <Box
+        sx={{
+          backgroundColor: 'background.default',
+          minHeight: '100vh',
+          pt: { xs: 9, md: 10 },
+          px: 3,
+          pb: 3,
+        }}
+      >
       {/* <Toaster position="top-right" toastOptions={{ style: { marginTop: 72 } }} /> */}
       <ConfettiEffect trigger={showConfetti} />
-      <Box sx={{ display: 'flex' }}>
-        <Box
-          component="main"
-          sx={{
-            flexGrow: 1,
-            p: 3,
-            background: '##ffffff',
-            minHeight: '100vh',
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'flex-start',
-          }}
-        >
-          <Container
-            maxWidth="xl"
-            sx={{
-              width: '100%',
-              maxWidth: '1400px',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-            }}
-          >
+      <Container maxWidth="xl" disableGutters>
             {/* Header con estadísticas */}{' '}
             <motion.div
               ref={ref}
@@ -780,10 +771,9 @@ const BuyerCart = () => {
                 removeFromWishlist={removeFromWishlist}
               />
             </motion.div>
-          </Container>
-        </Box>
+        </Container>
       </Box>
-    </Box>
+    </ThemeProvider>
   );
 };
 

@@ -77,13 +77,13 @@ const ProductCard = React.memo(
           sx={{
             maxWidth: '100%',
             height: type === 'supplier' ? 
-              { xs: 218, sm: 235, md: 275, lg: 350, xl: 400 } :
-              { xs: 218, sm: 235, md: 275, lg: 350, xl: 400 },
+              { xs: 142, sm: 154, md: 187.5, lg: 243.75, xl: 260 } :
+              { xs: 142, sm: 154, md: 187.5, lg: 243.75, xl: 260 },
             bgcolor: '#fafafa',
             // 🎯 PADDING RESPONSIVE
             p: type === 'supplier' ? 
-              { xs: 0.5, sm: 0.8, md: 1, lg: 1.2 } : 
-              { xs: 1, sm: 1.2, md: 1.5, lg: 1.8 },
+              { xs: 0.5, sm: 0.8, md: 1, lg: 0 } : 
+              { xs: 1, sm: 1.2, md: 1.5, lg: 0},
             display: 'block',
             mx: 'auto',
           }}
@@ -97,8 +97,8 @@ const ProductCard = React.memo(
       () => ({
         // 🎯 ALTURA RESPONSIVE DE LA TARJETA
         height: type === 'supplier' ? 
-          { xs: 525, sm: 545, md: 550, lg: 620, xl: 660 } : 
-          { xs: 525, sm: 545, md: 550, lg: 620, xl: 660 },
+          { xs: 380, sm: 400, md: 357.5, lg: 487.5, xl: 520 } : 
+          { xs: 380, sm: 400, md: 357.5, lg: 487.5, xl: 520 },
         // 🎯 ANCHO RESPONSIVE ÚNICO DE LA TARJETA
         width: type === 'supplier'
           ? { xs: 175, sm: 190, md: 220, lg: 300, xl: 360 }
@@ -135,13 +135,20 @@ const ProductCard = React.memo(
     );
 
     // Function to generate product URL
+    // Genera la URL pública o privada según el contexto
     const generateProductUrl = useCallback((product) => {
       const productId = product.id || product.product_id;
       const productName = (product.nombre || product.name || '').toLowerCase()
         .replace(/[^a-z0-9]/g, '-')
         .replace(/-+/g, '-')
         .replace(/^-|-$/g, '');
-      
+      const productSlug = `${productId}${productName ? `-${productName}` : ''}`;
+      const currentPath = window.location.pathname;
+      // Si estamos en el marketplace público, usar la ruta pública
+      if (currentPath === '/marketplace' || currentPath === '/') {
+        return `/technicalspecs/${productSlug}`;
+      }
+      // Si estamos en dashboard buyer/supplier, usar la ruta privada
       return `/marketplace/product/${productId}${productName ? `/${productName}` : ''}`;
     }, []);
 
@@ -162,12 +169,15 @@ const ProductCard = React.memo(
           return;
         }
 
+
         const currentPath = window.location.pathname;
         let fromPath = '/marketplace';
 
         if (currentPath.includes('/buyer/')) {
           fromPath = '/buyer/marketplace';
-        } else if (currentPath.includes('/supplier/')) {
+        } else if (currentPath === '/supplier/marketplace') {
+          fromPath = '/supplier/marketplace';
+        } else if (currentPath === '/supplier/myproducts') {
           fromPath = '/supplier/myproducts';
         }
 

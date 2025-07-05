@@ -5,15 +5,9 @@ export const filterPanelStyles = {
     borderRadius: 2,
     boxShadow: '0 8px 32px rgba(0,0,0,0.15)',
     p: 3,
-    position: 'fixed',
-    height: 'fit-content',
-    maxHeight: 'calc(100vh - 200px)',
-    overflowY: 'auto',
     border: '1px solid #e2e8f0',
-    zIndex: 1200,
-    top: 180,
-    left: 20,
-    // Estilos para scroll personalizado
+    // Eliminar position, top, left, zIndex, maxHeight, overflowY, transform y transition aquí
+    // para que los estilos inline del componente tengan prioridad
     '&::-webkit-scrollbar': {
       width: 6,
     },
@@ -31,11 +25,15 @@ export const filterPanelStyles = {
   },
   mobile: {
     bgcolor: 'white',
-    zIndex: 1300,
     overflowY: 'auto',
     borderTopLeftRadius: 16,
     borderBottomLeftRadius: 16,
     boxShadow: '-4px 0 20px rgba(0,0,0,0.15)',
+    // Tamaño más pequeño en mobile
+    width: '95vw',
+    maxWidth: 320,
+    minWidth: 0,
+    // Eliminar zIndex, transform y transition aquí
   },
 
   mobileHeader: {
@@ -65,14 +63,14 @@ export const filterPanelStyles = {
   },
 
   title: {
-    fontSize: '1.25rem',
+    fontSize: { xs: '1.05rem', sm: '1.1rem', md: '1.25rem' },
     fontWeight: 700,
     color: '#1e293b',
     mb: 3,
   },
 
   sectionTitle: {
-    fontSize: '1rem',
+    fontSize: { xs: '0.95rem', sm: '1rem', md: '1.05rem' },
     fontWeight: 600,
     color: '#334155',
     mb: 2,

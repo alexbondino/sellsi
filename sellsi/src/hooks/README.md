@@ -1,99 +1,110 @@
-# Custom Hooks (`src/hooks`)
+# Hooks
 
-> **Fecha de creación de este README:** 26/06/2025
+## 1. Resumen funcional del módulo
+El módulo `hooks` centraliza hooks personalizados reutilizables para la plataforma Sellsi. Proporciona lógica compartida para optimizar la carga de imágenes, prefetch de datos y otras utilidades, promoviendo DRY y eficiencia en los componentes.
 
-## Resumen funcional del módulo
+- **Problema que resuelve:** Evita duplicación de lógica y facilita la reutilización de patrones comunes en la UI.
+- **Arquitectura:** Hooks independientes, cada uno con responsabilidad única y documentación interna.
+- **Patrones:** Custom hooks, separación de lógica de UI, composición funcional.
+- **Flujo de datos:** Props/argumentos → Estado/Efectos internos → Valores y funciones expuestas.
 
-La carpeta **hooks** centraliza hooks personalizados reutilizables en Sellsi, orientados a optimizar la experiencia de usuario, el rendimiento y la gestión avanzada de recursos. Incluye hooks para lazy loading de imágenes y prefetching inteligente de rutas. Estos hooks resuelven necesidades de carga progresiva, anticipación de navegación y optimización de renders en aplicaciones React complejas.
+## 2. Listado de archivos
+| Archivo           | Tipo   | Descripción                                 | Responsabilidad principal                |
+|-------------------|--------|---------------------------------------------|------------------------------------------|
+| useLazyImage.js   | Hook   | Carga diferida de imágenes (lazy loading)   | Optimizar performance y UX en imágenes   |
+| usePrefetch.js    | Hook   | Prefetch de datos para navegación anticipada| Mejorar velocidad percibida y UX         |
+| README.md         | Doc    | Documentación de los hooks                  | Explicar uso y API de cada hook          |
 
-## Listado de archivos principales
-
-| Archivo         | Tipo    | Descripción breve                                                |
-|-----------------|---------|-----------------------------------------------------------------|
-| useLazyImage.js | Hook    | Lazy loading avanzado y preloading de imágenes con placeholders. |
-| usePrefetch.js  | Hook    | Prefetching inteligente de rutas y componentes React.            |
-
-## Relaciones internas del módulo
-
-- Los hooks son independientes y pueden usarse en cualquier componente o feature.
-- `useLazyImage` y `useImagePreloader` pueden combinarse para optimizar la carga de imágenes críticas y progresivas.
-- `usePrefetch` y `usePrefetchOnHover` pueden integrarse en botones, links o menús para anticipar la navegación y mejorar la UX.
-
-Árbol de relaciones simplificado:
-
+## 3. Relaciones internas del módulo
 ```
-useLazyImage.js
-├─ useLazyImage
-└─ useImagePreloader
-usePrefetch.js
-├─ usePrefetch
-└─ usePrefetchOnHover
+useLazyImage
+usePrefetch
 ```
+- Hooks independientes, pueden ser usados en cualquier componente.
+- No dependen entre sí.
 
-## Props y API de los hooks principales
-
+## 4. Props y API de los hooks
 ### useLazyImage
-- **Parámetros:**
-  - `src` (string): URL de la imagen a cargar.
-  - `options` (object):
-    - `placeholder` (string): Imagen placeholder.
-    - `threshold` (number): Umbral de visibilidad para IntersectionObserver.
-    - `rootMargin` (string): Margen para el observer.
-    - `enableProgressiveLoading` (bool): Carga progresiva (default: true).
-- **Retorna:** `{ imageSrc, isLoaded, isLoading, error, imgRef }`
+- `src` (string): URL de la imagen a cargar.
+- `placeholder` (string, opcional): Imagen de placeholder.
+- `rootMargin` (string, opcional): Margen para Intersection Observer.
 
-### useImagePreloader
-- **Parámetros:**
-  - `images` (array): URLs de imágenes a precargar.
-- **Retorna:** `{ preloadedImages, isPreloading }`
+**API expuesta:**
+- `imageSrc`: URL de la imagen cargada (placeholder o real).
+- `isLoaded`: Booleano, indica si la imagen real ya se cargó.
+- `imgRef`: Ref para asociar al elemento `<img />`.
 
 ### usePrefetch
-- **Retorna:** `{ prefetchRoute, prefetchWithDelay, cancelPrefetch, prefetchedRoutes }`
+- `url` (string): URL o endpoint a prefetch.
+- `options` (object, opcional): Opciones de fetch.
 
-### usePrefetchOnHover
-- **Parámetros:**
-  - `routePath` (string): Ruta a prefetch.
-- **Retorna:** `{ onMouseEnter, onMouseLeave }`
+**API expuesta:**
+- `prefetch`: Función para disparar el prefetch manualmente.
+- `isPrefetched`: Booleano, indica si ya se realizó el prefetch.
+- `data`: Datos obtenidos (si aplica).
 
-## Dependencias externas e internas
+## 5. Hooks personalizados
+### `useLazyImage(src, placeholder, rootMargin)`
+**Propósito:** Cargar imágenes solo cuando entran en viewport, mejorando performance y UX.
 
-- **Externas:** React, react-router-dom (para usePrefetch).
-- **Internas:** Independientes, pueden usarse en cualquier feature o componente.
+**Estados y efectos principales:**
+- `imageSrc`, `isLoaded`, `imgRef`.
+- Efecto: Intersection Observer para disparar carga.
 
-## Consideraciones técnicas y advertencias
-
-- `useLazyImage` utiliza IntersectionObserver, asegúrate de que el navegador lo soporte.
-- `usePrefetch` está optimizado para rutas y componentes lazy definidos en el mapeo interno.
-
-## Puntos de extensión o reutilización
-
-- Los hooks pueden ser extendidos para nuevos patrones de carga, animaciones o estrategias de prefetch.
-- Pueden integrarse en features, componentes UI o flujos de onboarding para mejorar la UX y el rendimiento.
-
-## Ejemplos de uso
-
-### Lazy loading de imagen con placeholder
-
+**Ejemplo de uso básico:**
 ```jsx
-import { useLazyImage } from 'src/hooks/useLazyImage';
-
-const { imageSrc, isLoaded, imgRef } = useLazyImage(product.imageUrl);
+const { imageSrc, isLoaded, imgRef } = useLazyImage(product.imgUrl, '/placeholder.png');
 
 <img ref={imgRef} src={imageSrc} alt="Producto" />
 ```
 
-### Prefetch de ruta en hover
+### `usePrefetch(url, options)`
+**Propósito:** Prefetch de datos para navegación anticipada o carga progresiva.
 
+**Estados y efectos principales:**
+- `isPrefetched`, `data`.
+- Efecto: Fetch anticipado bajo demanda.
+
+**Ejemplo de uso básico:**
 ```jsx
-import { usePrefetchOnHover } from 'src/hooks/usePrefetch';
+const { prefetch, isPrefetched, data } = usePrefetch('/api/productos');
 
-const { onMouseEnter, onMouseLeave } = usePrefetchOnHover('/marketplace');
-
-<button onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave}>
-  Ir al Marketplace
-</button>
+<button onMouseEnter={prefetch}>Ver productos</button>
 ```
 
----
+## 6. Dependencias principales
+| Dependencia         | Versión   | Propósito                        | Impacto                  |
+|---------------------|-----------|----------------------------------|--------------------------|
+| react               | ^18.x     | Renderizado y hooks              | Core                     |
 
-Este README documenta la estructura, relaciones y funcionamiento de los hooks personalizados de Sellsi. Consulta los comentarios en el código para detalles adicionales y patrones avanzados de uso.
+## 7. Consideraciones técnicas
+### Limitaciones y advertencias
+- Los hooks asumen entorno React 18+.
+- `useLazyImage` requiere soporte de Intersection Observer.
+- Prefetch no implementa cache persistente por defecto.
+
+### Deuda técnica relevante
+- [MEDIA] Permitir configuración avanzada de observer y cache.
+- [MEDIA] Mejorar cobertura de tests y ejemplos.
+
+## 8. Puntos de extensión
+- Agregar hooks para otras utilidades comunes (debounce, throttle, etc.).
+- Integrar con sistemas de cache global o SWR.
+
+## 9. Ejemplos de uso
+### Ejemplo básico
+```jsx
+import { useLazyImage, usePrefetch } from './hooks';
+
+const { imageSrc, imgRef } = useLazyImage(url);
+const { prefetch } = usePrefetch('/api/data');
+```
+
+## 10. Rendimiento y optimización
+- Lazy loading y prefetch para mejorar performance y UX.
+- Hooks optimizados para evitar renders innecesarios.
+- Áreas de mejora: cache persistente y configuración avanzada.
+
+## 11. Actualización
+- Creado: `03/07/2025`
+- Última actualización: `03/07/2025`

@@ -197,7 +197,7 @@ export const SERVICES_DATA = [
     image: '/Landing Page/Punto de Venta.webp',
     timeline: [
       {
-        title: 'Vende tu espacio',
+        title: 'Explora fácilmente',
         description: 'Ofrece tu local como punto de retiro',
         icon: <Store />,
         image: '/Landing Page/PuntoDeVenta/vendeespacio.webp',

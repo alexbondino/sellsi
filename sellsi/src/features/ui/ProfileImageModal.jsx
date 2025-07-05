@@ -114,7 +114,7 @@ const ProfileImageModal = ({
   const handleRemoveImage = () => {
     if (selectedImage?.url) {
       URL.revokeObjectURL(selectedImage.url);
-      console.log('📸 [PROFILE IMAGE MODAL] Removed selected image, revoked blob URL');
+      // ...log eliminado...
     }
     setSelectedImage(null);
     setError('');
@@ -146,7 +146,7 @@ const ProfileImageModal = ({
     // Solo revocar la URL cuando se cancela explícitamente
     if (selectedImage?.url) {
       URL.revokeObjectURL(selectedImage.url);
-      console.log('📸 [PROFILE IMAGE MODAL] Cancelled, revoked blob URL');
+      // ...log eliminado...
     }
     setSelectedImage(null);
     setError('');

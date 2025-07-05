@@ -13,6 +13,7 @@ import {
 import theme from './styles/theme'; // Asegúrate de que tu tema está correctamente configurado
 import TopBar from './features/layout/TopBar';
 import BottomBar from './features/layout/BottomBar';
+import MobileBar from './features/layout/MobileBar';
 import PrivateRoute from './features/auth/PrivateRoute';
 import { BannerProvider, useBanner } from './features/ui/banner/BannerContext';
 import Banner from './features/ui/banner/Banner';
@@ -22,6 +23,8 @@ import { usePrefetch } from './hooks/usePrefetch';
 import useCartStore from './features/buyer/hooks/cartStore';
 
 import SideBar from './features/layout/SideBar';
+import { AdminLogin, AdminPanelTable } from './features/admin_panel';
+import ScrollToTop from './features/ScrollToTop';
 
 // ============================================================================
 // 🚀 CODE SPLITTING: LAZY LOADING DE COMPONENTES POR RUTAS
@@ -51,6 +54,9 @@ const AddProduct = React.lazy(() =>
 );
 const MyOrdersPage = React.lazy(() =>
   import('./features/supplier/my-orders/MyOrdersPage')
+);
+const MarketplaceSupplier = React.lazy(() =>
+  import('./features/supplier/MarketplaceSupplier.jsx')
 );
 
 // 📦 PROFILE PAGES - LAZY LOADING
@@ -87,16 +93,21 @@ const NotFound = React.lazy(() => import('./features/ui/NotFound'));
 const SuspenseLoader = ({ message = 'Cargando...' }) => (
   <Box
     sx={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      width: '100vw',
+      height: '100vh',
       display: 'flex',
       flexDirection: 'column',
-      justifyContent: 'center',
       alignItems: 'center',
-      height: '50vh',
-      gap: 2,
+      justifyContent: 'center',
+      bgcolor: 'background.default',
+      zIndex: 1500,
     }}
   >
     <CircularProgress size={40} />
-    <Typography sx={{ color: 'text.secondary', fontSize: '0.875rem' }}>
+    <Typography sx={{ mt: 3, color: 'text.secondary', fontWeight: 500 }}>
       {message}
     </Typography>
   </Box>
@@ -116,14 +127,41 @@ function AppContent({ mensaje }) {
   const scrollTargets = useRef({});
   const { bannerState, hideBanner } = useBanner();
   const [session, setSession] = useState(null);
+  // DEBUG: Log session and !!session on every render
+  // ...log eliminado...
   const [userProfile, setUserProfile] = useState(null);
   const [loadingUserStatus, setLoadingUserStatus] = useState(true);
   const { initializeCartWithUser, isBackendSynced } = useCartStore();
   const [needsOnboarding, setNeedsOnboarding] = useState(false);
   const { prefetchRoute } = usePrefetch();
+  // --- Persistencia de currentAppRole en localStorage ---
+  // Inicializa desde localStorage si hay sesión activa
+  const getInitialAppRole = () => {
+    try {
+      const storedRole = localStorage.getItem('currentAppRole');
+      if (storedRole === 'supplier' || storedRole === 'buyer') {
+        return storedRole;
+      }
+    } catch (e) {}
+    return 'buyer';
+  };
+  const [currentAppRole, setCurrentAppRole] = useState(getInitialAppRole()); // 'buyer' o 'supplier'
+  // Sincroniza el tipo de vista global para ProductPageWrapper
+  window.currentAppRole = currentAppRole;
+  const [isRoleSwitching, setIsRoleSwitching] = useState(false); // Flag para evitar glitch
 
-  const [currentAppRole, setCurrentAppRole] = useState('buyer'); // 'buyer' o 'supplier'
-  const SideBarWidth = '210px'; // Define aquí el ancho de tu SideBar
+  const SideBarWidth = '210px'; // Define aquí el ancho original de tu SideBar
+  const [currentSideBarWidth, setCurrentSideBarWidth] = useState(SideBarWidth);
+  const [sideBarCollapsed, setSideBarCollapsed] = useState(false);
+
+  // Handler para cuando cambia el ancho de la sidebar
+  const handleSideBarWidthChange = (newWidth, isCollapsed) => {
+    setCurrentSideBarWidth(newWidth);
+    setSideBarCollapsed(isCollapsed);
+  };
+
+  // Persistente entre renders
+  const lastSessionIdRef = useRef(null);
 
   // Define las rutas para cada rol (para visibilidad de SideBar y redirecciones específicas)
   // Usamos un Set para búsquedas más eficientes.
@@ -140,6 +178,7 @@ function AppContent({ mensaje }) {
     '/supplier/addproduct',
     '/supplier/my-orders',
     '/supplier/profile',
+    '/supplier/marketplace', // <--- ¡Agregado para que el rol supplier se mantenga!
   ]);
   const neutralRoutes = new Set([
     '/',
@@ -161,10 +200,18 @@ function AppContent({ mensaje }) {
           setUserProfile(null);
           setNeedsOnboarding(false);
           setLoadingUserStatus(false);
-          setCurrentAppRole('buyer'); // Por defecto para no logueados
+          setCurrentAppRole('buyer');
+          // Limpiar localStorage al cerrar sesión
+          try { localStorage.removeItem('currentAppRole'); } catch (e) {}
+          // Limpiar user_id global
+          try { localStorage.removeItem('user_id'); } catch (e) {}
         }
         return;
       }
+      // Siempre forzar la obtención del perfil tras SIGNED_IN
+      lastSessionIdRef.current = currentSession.user.id;
+      // Guardar user_id globalmente en localStorage
+      try { localStorage.setItem('user_id', currentSession.user.id); } catch (e) {}
       const { data: userData, error: userError } = await supabase
         .from('users')
         .select('user_nm, main_supplier, logo_url')
@@ -172,34 +219,36 @@ function AppContent({ mensaje }) {
         .single();
 
       if (userError && mounted) {
-        console.error('Error fetching user profile:', userError.message);
-        setNeedsOnboarding(true); // Podría ser un error, o que el perfil no existe y necesita onboarding
+        setNeedsOnboarding(true);
         setUserProfile(null);
         setLoadingUserStatus(false);
         setCurrentAppRole('buyer');
+        try { localStorage.removeItem('currentAppRole'); } catch (e) {}
+        // Limpiar user_id global
+        try { localStorage.removeItem('user_id'); } catch (e) {}
         return;
       }
       if (mounted) {
-        if (
-          !userData ||
-          userData.user_nm?.toLowerCase() === USER_NAME_STATUS.PENDING
-        ) {
+        if (!userData || userData.user_nm?.toLowerCase() === USER_NAME_STATUS.PENDING) {
           setNeedsOnboarding(true);
           setUserProfile(null);
-          setCurrentAppRole('buyer'); // Asegura que si necesitan onboarding, el rol inicial no interfiera
+          setCurrentAppRole('buyer');
+          try { localStorage.removeItem('currentAppRole'); } catch (e) {}
+          // Limpiar user_id global
+          try { localStorage.removeItem('user_id'); } catch (e) {}
         } else {
           setNeedsOnboarding(false);
           setUserProfile(userData);
-          // Establece el rol inicial de la aplicación basado en userProfile.main_supplier
-          setCurrentAppRole(userData.main_supplier ? 'supplier' : 'buyer');
-
-          if (currentSession?.user?.id && !isBackendSynced) {
-            try {
-              await initializeCartWithUser(currentSession.user.id);
-            } catch (error) {
-              console.error('[App] ❌ Error inicializando carrito:', error);
+          const backendRole = userData.main_supplier ? 'supplier' : 'buyer';
+          // Si hay un valor en localStorage y sesión activa, úsalo, si no, usa el backend
+          let roleToSet = backendRole;
+          try {
+            const storedRole = localStorage.getItem('currentAppRole');
+            if (storedRole === 'supplier' || storedRole === 'buyer') {
+              roleToSet = storedRole;
             }
-          }
+          } catch (e) {}
+          setCurrentAppRole(roleToSet);
         }
         setLoadingUserStatus(false);
       }
@@ -214,15 +263,32 @@ function AppContent({ mensaje }) {
     const { data: listener } = supabase.auth.onAuthStateChange(
       (event, newSession) => {
         if (mounted) {
-          // Evitar recargas innecesarias durante cambios de contraseña
-          // Solo recargar en eventos críticos como login/logout
-          if (event === 'SIGNED_IN' || event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED') {
+          if (event === 'SIGNED_IN') {
+            setSession(newSession);
+            // Guardar user_id globalmente en localStorage
+            if (newSession?.user?.id) {
+              try { localStorage.setItem('user_id', newSession.user.id); } catch (e) {}
+            }
+            // Forzar obtención del perfil incluso si el usuario ya estaba en sesión
+            checkUserAndFetchProfile(newSession);
+          } else if (event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED') {
+            // Limpiar localStorage de toda la sesión
+            localStorage.removeItem('user_id');
+            localStorage.removeItem('account_type');
+            localStorage.removeItem('supplierid');
+            localStorage.removeItem('sellerid');
+            localStorage.removeItem('access_token');
+            localStorage.removeItem('auth_token');
+            // Limpiar el tipo de vista temporal
+            try { localStorage.removeItem('currentAppRole'); } catch (e) {}
             setSession(newSession);
             checkUserAndFetchProfile(newSession);
           } else if (event === 'USER_UPDATED') {
-            // Para USER_UPDATED, solo actualizamos la sesión pero no recargamos el perfil completo
             setSession(newSession);
-            console.log('🔄 [Auth] User updated, session refreshed without profile reload');
+            // Guardar user_id globalmente en localStorage
+            if (newSession?.user?.id) {
+              try { localStorage.setItem('user_id', newSession.user.id); } catch (e) {}
+            }
           }
         }
       }
@@ -234,16 +300,51 @@ function AppContent({ mensaje }) {
         listener.subscription.unsubscribe();
       }
     };
-  }, [initializeCartWithUser, isBackendSynced]);
+  }, []); // SOLO al montar
 
   // --- Estados derivados del perfil de usuario ---
   const isBuyer = currentAppRole === 'buyer';
   const logoUrl = userProfile ? userProfile.logo_url : null;
 
+  // Solo actualiza el cache buster cuando cambia el logoUrl
+  const [logoCacheBuster, setLogoCacheBuster] = useState(Date.now());
+  useEffect(() => {
+    setLogoCacheBuster(Date.now());
+  }, [logoUrl]);
+
+  useEffect(() => {
+    // LOGS ELIMINADOS
+  }, [userProfile, logoUrl]);
+
+  // Redirección forzada a home tras logout SOLO si ya terminó la validación
+  useEffect(() => {
+    // Solo redirige a '/' si la ruta actual no es pública (incluye rutas que empiezan con /technicalspecs)
+    if (
+      !loadingUserStatus &&
+      !session &&
+      !(
+        location.pathname === '/' ||
+        location.pathname === '/marketplace' ||
+        location.pathname === '/login' ||
+        location.pathname === '/crear-cuenta' ||
+        location.pathname === '/onboarding' ||
+        location.pathname.startsWith('/technicalspecs')
+      )
+    ) {
+      navigate('/', { replace: true });
+    }
+  }, [session, location.pathname, navigate, loadingUserStatus]);
+
   // Función para manejar el cambio de rol desde TopBar
   const handleRoleChangeFromTopBar = newRole => {
     setCurrentAppRole(newRole);
-    // Redirige al usuario al dashboard correspondiente cuando cambie el rol
+    // Persistir en localStorage mientras haya sesión
+    try {
+      if (session && session.user) {
+        localStorage.setItem('currentAppRole', newRole);
+      }
+    } catch (e) {}
+    setIsRoleSwitching(true); // Activar flag
     if (newRole === 'supplier') {
       navigate('/supplier/home');
     } else {
@@ -253,29 +354,59 @@ function AppContent({ mensaje }) {
 
   // Sincroniza el currentAppRole con la ruta actual
   useEffect(() => {
+    if (isRoleSwitching) {
+      // Si estamos en transición de rol, no forzar sincronización
+      // Limpiar flag si la ruta ya corresponde al rol
+      if (
+        (currentAppRole === 'supplier' && location.pathname.startsWith('/supplier')) ||
+        (currentAppRole === 'buyer' && location.pathname.startsWith('/buyer'))
+      ) {
+        setIsRoleSwitching(false);
+      }
+      return;
+    }
+    // --- NUEVO: Si hay override temporal (localStorage), no sobrescribir el rol ---
+    let overrideRole = null;
+    try {
+      const storedRole = localStorage.getItem('currentAppRole');
+      if (storedRole === 'supplier' || storedRole === 'buyer') {
+        overrideRole = storedRole;
+      }
+    } catch (e) {}
+
+    if (overrideRole) {
+      if (currentAppRole !== overrideRole) {
+        setCurrentAppRole(overrideRole);
+      }
+      // No forzar cambio de rol si hay override temporal
+      return;
+    }
+
     if (session && !needsOnboarding && !loadingUserStatus && userProfile) {
       const currentPath = location.pathname;
-
+      let newRole = currentAppRole;
       if (
         Array.from(supplierDashboardRoutes).some(route =>
           currentPath.startsWith(route)
         )
       ) {
-        setCurrentAppRole('supplier');
+        newRole = 'supplier';
       } else if (
         Array.from(buyerDashboardRoutes).some(route =>
           currentPath.startsWith(route)
         )
       ) {
-        setCurrentAppRole('buyer');
+        newRole = 'buyer';
       } else {
-        // Si está en una ruta neutral, determina el rol basado en el perfil (estado inicial)
-        // Esto asegura que el rol predeterminado correcto se establezca si aterrizan en una ruta pública
-        // pero han iniciado sesión.
-        setCurrentAppRole(userProfile.main_supplier ? 'supplier' : 'buyer');
+        newRole = userProfile.main_supplier ? 'supplier' : 'buyer';
       }
-    } else if (!session) {
-      // Si no ha iniciado sesión, siempre establece el rol a comprador (vista pública predeterminada)
+      if (
+        newRole !== currentAppRole &&
+        !neutralRoutes.has(currentPath)
+      ) {
+        setCurrentAppRole(newRole);
+      }
+    } else if (!session && currentAppRole !== 'buyer') {
       setCurrentAppRole('buyer');
     }
   }, [
@@ -283,28 +414,24 @@ function AppContent({ mensaje }) {
     session,
     needsOnboarding,
     loadingUserStatus,
-    userProfile, // Crucial para la configuración inicial del rol
+    userProfile,
     buyerDashboardRoutes,
     supplierDashboardRoutes,
+    currentAppRole,
+    neutralRoutes,
+    isRoleSwitching,
   ]);
-
-  // Redirigir a onboarding si es necesario
-  useEffect(() => {
-    if (session && needsOnboarding && location.pathname !== '/onboarding') {
-      navigate('/onboarding', { replace: true });
-    }
-  }, [session, needsOnboarding, location.pathname, navigate]);
 
   // Redirigir a usuarios logueados de rutas neutrales a su dashboard preferido
   // basado en su perfil real.
   useEffect(() => {
     if (!loadingUserStatus && session && !needsOnboarding && userProfile) {
       if (neutralRoutes.has(location.pathname)) {
-        if (userProfile.main_supplier) {
-          // Verifica el rol real del perfil
-          navigate('/supplier/home', { replace: true });
-        } else {
-          navigate('/buyer/marketplace', { replace: true });
+        const target = userProfile.main_supplier
+          ? '/supplier/home'
+          : '/buyer/marketplace';
+        if (location.pathname !== target) {
+          navigate(target, { replace: true });
         }
       }
     }
@@ -385,17 +512,23 @@ function AppContent({ mensaje }) {
       console.error('❌ [APP] Error refreshing user profile:', error);
     }
   };
-
-  if (loadingUserStatus) {
+  // Loader global centrado SOLO para rutas privadas
+  const isPublicRoute = location.pathname.startsWith('/technicalspecs') || location.pathname === '/' || location.pathname.startsWith('/marketplace') || location.pathname === '/login' || location.pathname === '/crear-cuenta';
+  if (loadingUserStatus && !isPublicRoute) {
     return (
       <Box
         sx={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
           width: '100vw',
           height: '100vh',
           display: 'flex',
+          flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
           bgcolor: 'background.default',
+          zIndex: 2000,
         }}
       >
         <CircularProgress size={48} color="primary" />
@@ -423,62 +556,63 @@ function AppContent({ mensaje }) {
   return (
     <>
       <TopBar
+        key={`${session?.user?.id || 'no-session'}-${logoUrl || 'default-topbar'}`}
         session={session}
         isBuyer={isBuyer}
-        logoUrl={logoUrl}
+        logoUrl={logoUrl ? `${logoUrl}?cb=${logoCacheBuster}` : null}
         onNavigate={handleScrollTo}
         onRoleChange={handleRoleChangeFromTopBar}
       />
 
-      <Banner
-        message={bannerState.message}
-        severity={bannerState.severity}
-        duration={bannerState.duration}
-        show={bannerState.show}
-        onClose={hideBanner}
-      />
-
       <Box
         sx={{
-          width: '100%',
-          minHeight: '100vh',
           display: 'flex',
           flexDirection: 'column',
-          justifyContent: 'space-between',
-          // pt: '64px', // Eliminado de aquí, se gestiona en el `Box` principal que contiene SideBar y Main
-          overflowX: 'hidden', // Evita el scroll horizontal en el layout general
+          minHeight: '100vh',
+          overflowX: 'hidden',
           bgcolor: 'background.default',
         }}
       >
+        {/* Banner */}
+        <Banner
+          message={bannerState.message}
+          severity={bannerState.severity}
+          duration={bannerState.duration}
+          show={bannerState.show}
+          onClose={hideBanner}
+        />
+
         {/* Contenedor principal para SideBar y Contenido (Main) */}
         <Box
           sx={{
             display: 'flex',
-            flexGrow: 1,
-            mt: topBarHeight, // El contenido principal comienza debajo de la TopBar
-            minHeight: `calc(100vh - ${topBarHeight} - ${
-              showBottomBar ? '56px' : '0px'
-            })`,
+            flex: '1 0 auto', // Toma el espacio disponible
+            mt: topBarHeight,
           }}
         >
           {isDashboardRoute && (
             // Pasamos el currentAppRole a la SideBar para que sepa qué menú mostrar
-            <SideBar role={currentAppRole} width={SideBarWidth} />
+            <SideBar 
+              role={currentAppRole} 
+              width={SideBarWidth} 
+              onWidthChange={handleSideBarWidthChange}
+            />
           )}
 
           <Box
             component="main"
             sx={{
               flexGrow: 1,
-              p: isDashboardRoute ? 3 : 0, // Añade padding solo si es una ruta de dashboard
-              // La clave está aquí: `ml` es el margen izquierdo
-              // Aplica `SideBarWidth` solo si la `SideBar` está visible (isDashboardRoute) y en desktop
-              ml: isDashboardRoute ? { xs: 0, md: SideBarWidth } : 0,
-              // Ajusta el ancho para ocupar el espacio restante
+              pl: isDashboardRoute ? 3 : 0,
+              pr: isDashboardRoute ? 3 : 0,
+              pt: isDashboardRoute ? 3 : 0,
+              pb: isDashboardRoute ? { xs: session ? 10 : 3, md: 3 } : { xs: session ? 10 : 0, md: 0 }, // Padding extra en mobile cuando hay sesión para el MobileBar
               width: isDashboardRoute
-                ? { xs: '100%', md: `calc(100% - ${SideBarWidth})` }
+                ? { xs: '100%', md: `calc(100% - ${currentSideBarWidth})` }
                 : '100%',
-              overflowX: 'hidden', // Evita el scroll horizontal dentro del main content
+              overflowX: 'hidden',
+              ml: isDashboardRoute ? { md: 14, lg: 14, xl: 0 } : 0,
+              transition: 'margin-left 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94), width 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
             }}
           >
             <Suspense fallback={<SuspenseLoader />}>
@@ -489,15 +623,19 @@ function AppContent({ mensaje }) {
                   element={<Home scrollTargets={scrollTargets} />}
                 />
                 <Route path="/marketplace" element={<Marketplace />} />
-                <Route path="/marketplace/product/:id" element={<ProductPageWrapper />} />
-                <Route path="/marketplace/product/:id/:slug" element={<ProductPageWrapper />} />
+                <Route path="/marketplace/product/:id" element={<ProductPageWrapper isLoggedIn={!!session} />} />
+                <Route path="/marketplace/product/:id/:slug" element={<ProductPageWrapper isLoggedIn={!!session} />} />
                 {/* TechnicalSpecs puede ser accedido sin iniciar sesión, si es contenido común */}
                 <Route
                   path="/technicalspecs/:productSlug"
-                  element={<TechnicalSpecs />}
+                  element={<TechnicalSpecs isLoggedIn={!!session} />}
                 />
                 <Route path="/login" element={<Login />} />
                 <Route path="/crear-cuenta" element={<Register />} />
+
+                {/* RUTAS ADMINISTRATIVAS - ACCESO VISUAL PARA TESTING */}
+                <Route path="/admin-login" element={<AdminLogin />} />
+                <Route path="/admin-panel/dashboard" element={<AdminPanelTable />} />
 
                 {/* Ruta para testing de 404 (solo desarrollo) */}
                 <Route path="/404" element={<NotFound />} />
@@ -506,7 +644,12 @@ function AppContent({ mensaje }) {
                 <Route
                   path="/onboarding"
                   element={
-                    <PrivateRoute>
+                    <PrivateRoute
+                      isAuthenticated={!!session}
+                      needsOnboarding={needsOnboarding}
+                      loading={loadingUserStatus}
+                      redirectTo="/"
+                    >
                       <Onboarding />
                     </PrivateRoute>
                   }
@@ -516,7 +659,12 @@ function AppContent({ mensaje }) {
                 <Route
                   path="/buyer/marketplace"
                   element={
-                    <PrivateRoute>
+                    <PrivateRoute
+                      isAuthenticated={!!session}
+                      needsOnboarding={needsOnboarding}
+                      loading={loadingUserStatus}
+                      redirectTo="/"
+                    >
                       <MarketplaceBuyer />
                     </PrivateRoute>
                   }
@@ -524,7 +672,12 @@ function AppContent({ mensaje }) {
                 <Route
                   path="/buyer/orders"
                   element={
-                    <PrivateRoute>
+                    <PrivateRoute
+                      isAuthenticated={!!session}
+                      needsOnboarding={needsOnboarding}
+                      loading={loadingUserStatus}
+                      redirectTo="/"
+                    >
                       <BuyerOrders />
                     </PrivateRoute>
                   }
@@ -532,7 +685,12 @@ function AppContent({ mensaje }) {
                 <Route
                   path="/buyer/performance"
                   element={
-                    <PrivateRoute>
+                    <PrivateRoute
+                      isAuthenticated={!!session}
+                      needsOnboarding={needsOnboarding}
+                      loading={loadingUserStatus}
+                      redirectTo="/"
+                    >
                       <BuyerPerformance />
                     </PrivateRoute>
                   }
@@ -540,7 +698,12 @@ function AppContent({ mensaje }) {
                 <Route
                   path="/buyer/cart"
                   element={
-                    <PrivateRoute>
+                    <PrivateRoute
+                      isAuthenticated={!!session}
+                      needsOnboarding={needsOnboarding}
+                      loading={loadingUserStatus}
+                      redirectTo="/"
+                    >
                       <BuyerCart />
                     </PrivateRoute>
                   }
@@ -550,7 +713,12 @@ function AppContent({ mensaje }) {
                 <Route
                   path="/supplier/home"
                   element={
-                    <PrivateRoute>
+                    <PrivateRoute
+                      isAuthenticated={!!session}
+                      needsOnboarding={needsOnboarding}
+                      loading={loadingUserStatus}
+                      redirectTo="/"
+                    >
                       <ProviderHome />
                     </PrivateRoute>
                   }
@@ -558,7 +726,12 @@ function AppContent({ mensaje }) {
                 <Route
                   path="/supplier/myproducts"
                   element={
-                    <PrivateRoute>
+                    <PrivateRoute
+                      isAuthenticated={!!session}
+                      needsOnboarding={needsOnboarding}
+                      loading={loadingUserStatus}
+                      redirectTo="/"
+                    >
                       <MyProducts />
                     </PrivateRoute>
                   }
@@ -566,7 +739,12 @@ function AppContent({ mensaje }) {
                 <Route
                   path="/supplier/addproduct"
                   element={
-                    <PrivateRoute>
+                    <PrivateRoute
+                      isAuthenticated={!!session}
+                      needsOnboarding={needsOnboarding}
+                      loading={loadingUserStatus}
+                      redirectTo="/"
+                    >
                       <AddProduct />
                     </PrivateRoute>
                   }
@@ -574,7 +752,12 @@ function AppContent({ mensaje }) {
                 <Route
                   path="/supplier/my-orders"
                   element={
-                    <PrivateRoute>
+                    <PrivateRoute
+                      isAuthenticated={!!session}
+                      needsOnboarding={needsOnboarding}
+                      loading={loadingUserStatus}
+                      redirectTo="/"
+                    >
                       <MyOrdersPage />
                     </PrivateRoute>
                   }
@@ -582,15 +765,39 @@ function AppContent({ mensaje }) {
                 <Route
                   path="/supplier/profile"
                   element={
-                    <PrivateRoute>
+                    <PrivateRoute
+                      isAuthenticated={!!session}
+                      needsOnboarding={needsOnboarding}
+                      loading={loadingUserStatus}
+                      redirectTo="/"
+                    >
                       <SupplierProfile onProfileUpdated={refreshUserProfile} />
+                    </PrivateRoute>
+                  }
+                />
+                {/* Marketplace para el proveedor: igual que el del comprador pero con SideBar de proveedor */}
+                <Route
+                  path="/supplier/marketplace"
+                  element={
+                    <PrivateRoute
+                      isAuthenticated={!!session}
+                      needsOnboarding={needsOnboarding}
+                      loading={loadingUserStatus}
+                      redirectTo="/"
+                    >
+                      <MarketplaceSupplier />
                     </PrivateRoute>
                   }
                 />
                 <Route
                   path="/buyer/profile"
                   element={
-                    <PrivateRoute>
+                    <PrivateRoute
+                      isAuthenticated={!!session}
+                      needsOnboarding={needsOnboarding}
+                      loading={loadingUserStatus}
+                      redirectTo="/"
+                    >
                       <BuyerProfile onProfileUpdated={refreshUserProfile} />
                     </PrivateRoute>
                   }
@@ -601,7 +808,21 @@ function AppContent({ mensaje }) {
             </Suspense>
           </Box>
         </Box>
-        {showBottomBar && <BottomBar />}
+        
+        {/* BottomBar - Flex shrink: 0 para que mantenga su tamaño */}
+        {showBottomBar && (
+          <Box sx={{ flexShrink: 0 }}>
+            <BottomBar />
+          </Box>
+        )}
+
+        {/* MobileBar - Solo se muestra en móviles cuando hay sesión */}
+        <MobileBar 
+          role={currentAppRole} 
+          session={session}
+          isBuyer={isBuyer}
+          logoUrl={logoUrl ? `${logoUrl}?cb=${logoCacheBuster}` : null}
+        />
       </Box>
     </>
   );
@@ -648,15 +869,16 @@ function App() {
       />
       <BannerProvider>
         <BrowserRouter>
+          <ScrollToTop />
           <AppContent mensaje={mensaje} />
         </BrowserRouter>
         <Toaster
           position="top-right"
           toastOptions={{
             duration: 4000,
-            style: { 
-              background: '#333', 
-              color: '#fff', 
+            style: {
+              background: '#333',
+              color: '#fff',
               borderRadius: '8px',
               marginTop: '60px' // Mover los toasts más abajo del TopBar
             },

@@ -33,6 +33,7 @@ const PriceDisplay = ({
             fontWeight: 700,
             color: color,
             mb: 1,
+            fontSize: sx.fontSize || undefined,
           }}
         >
           {formatPrice(calculatedMinPrice)} - {formatPrice(price)}
@@ -52,6 +53,7 @@ const PriceDisplay = ({
             sx={{
               fontWeight: 700,
               color: hasDiscount ? 'success.main' : color,
+              fontSize: sx.fontSize || undefined,
             }}
           >
             {formatPrice(price)}

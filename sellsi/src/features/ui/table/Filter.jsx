@@ -27,6 +27,19 @@ const Filter = ({ statusFilter, setStatusFilter }) => {
           value={statusFilter}
           label="Filtrar por estado"
           onChange={handleFilterChange}
+          // Evita que el dropdown provoque scroll al abrirse o al hacer click
+          MenuProps={{
+            disableScrollLock: true,
+            PaperProps: {
+              onMouseDown: e => {
+                // Previene el scroll inesperado al hacer click
+                e.stopPropagation();
+              },
+              onTouchStart: e => {
+                e.stopPropagation();
+              },
+            },
+          }}
         >
           {filterOptions.map(option => (
             <MenuItem key={option} value={option}>

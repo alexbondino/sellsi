@@ -105,12 +105,32 @@ const FilterPanel = React.memo((props) => {
               Filtros
             </Typography>
           </Box>
+          {/* Sustituir Limpiar por X solo en mobile (xs/sm) */}
+          <Box sx={{ display: { xs: 'flex', sm: 'flex', md: 'none' } }}>
+            <IconButton
+              onClick={onMobileClose}
+              size="small"
+              aria-label="Cerrar filtros"
+              sx={{
+                color: '#1976D2',
+                border: '1px solid #e0e0e0',
+                borderRadius: 2,
+                ml: 1,
+                transition: 'all 0.2s',
+                '&:hover': { bgcolor: 'rgba(25, 118, 210, 0.08)' },
+              }}
+            >
+              <CloseIcon sx={{ fontSize: 20 }} />
+            </IconButton>
+          </Box>
+          {/* Limpiar solo visible en md+ */}
           <Button
             onClick={resetFiltros}
             size="small"
             startIcon={<ClearAllIcon sx={{ fontSize: 18 }} />}
             sx={{
-              color: '#1976D2', // ✅ CAMBIAR: de '#ef4444' a azul
+              display: { xs: 'none', sm: 'none', md: 'flex' },
+              color: '#1976D2',
               textTransform: 'none',
               fontWeight: 600,
               fontSize: '0.875rem',
@@ -120,7 +140,7 @@ const FilterPanel = React.memo((props) => {
               borderRadius: 1.5,
               transition: 'all 0.2s ease-in-out',
               '&:hover': {
-                bgcolor: 'rgba(25, 118, 210, 0.08)', // ✅ CAMBIAR: hover azul claro
+                bgcolor: 'rgba(25, 118, 210, 0.08)',
                 transform: 'translateY(-1px)',
                 boxShadow: '0 2px 8px rgba(25, 118, 210, 0.2)',
               },
@@ -274,22 +294,17 @@ const FilterPanel = React.memo((props) => {
             width: '85%',
             maxWidth: 400,
             zIndex: 1300,
-            transform: isMobileOpen ? 'translateX(0%)' : 'translateX(100%)',
-            transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-            boxShadow: isMobileOpen ? '0 0 20px rgba(0,0,0,0.3)' : 'none',
+            transform: isMobileOpen ? 'translateX(0%)' : 'translateX(120%)',
+            opacity: isMobileOpen ? 1 : 0,
+            filter: isMobileOpen ? 'blur(0px)' : 'blur(2px)',
+            transition: 'transform 0.6s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.5s cubic-bezier(0.22, 1, 0.36, 1), filter 0.5s cubic-bezier(0.22, 1, 0.36, 1)',
+            boxShadow: isMobileOpen ? '0 8px 32px 0 rgba(31, 38, 135, 0.37)' : 'none',
+            background: '#fff',
+            backdropFilter: isMobileOpen ? 'blur(0.5px)' : 'blur(2px)',
+            willChange: 'transform, opacity, filter',
           }}
         >
-          {/* Header móvil */}
-          <Box sx={styles.mobileHeader}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <FilterListIcon color="primary" />
-              <Typography sx={styles.title}>Filtros</Typography>
-            </Box>
-            <IconButton onClick={onMobileClose}>
-              <CloseIcon />
-            </IconButton>
-          </Box>
-          {/* Contenido móvil */}
+          {/* Contenido móvil sin header */}
           <Box sx={styles.mobileContent}>
             <FilterContent />
           </Box>
@@ -312,7 +327,8 @@ const FilterPanel = React.memo((props) => {
               sx={{ flex: 2, ...styles.applyButton }}
             >
               Ver {totalProductos} productos
-            </Button>          </Box>
+            </Button>
+          </Box>
         </Box>
       </>
     )
@@ -343,12 +359,16 @@ const FilterPanel = React.memo((props) => {
           ...positionConfig,
           zIndex: 1200,
           opacity: filtrosAbiertos ? 1 : 0,
-          visibility: filtrosAbiertos ? 'visible' : 'hidden',
-          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+          filter: filtrosAbiertos ? 'blur(0px)' : 'blur(2px)',
+          transition: 'transform 0.6s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.5s cubic-bezier(0.22, 1, 0.36, 1), filter 0.5s cubic-bezier(0.22, 1, 0.36, 1)',
           position: 'fixed',
           top: 180,
           maxHeight: 'calc(100vh - 200px)',
           overflowY: 'auto',
+          boxShadow: filtrosAbiertos ? '0 8px 32px 0 rgba(31, 38, 135, 0.37)' : 'none',
+          background: '#fff',
+          backdropFilter: filtrosAbiertos ? 'blur(0.5px)' : 'blur(2px)',
+          willChange: 'transform, opacity, filter',
           '&::-webkit-scrollbar': {
             width: 6,
           },

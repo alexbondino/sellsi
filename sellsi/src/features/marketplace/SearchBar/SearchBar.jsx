@@ -48,6 +48,9 @@ const SearchBar = ({
   hayFiltrosActivos,
   filtroVisible,
   filtroModalOpen,
+  // ✅ NUEVAS PROPS: Para manejar estado móvil del FilterPanel
+  isMobileFilterOpen = false,
+  onMobileFilterClose = () => {},
   searchBarMarginLeft = {
     xs: 0,
     sm: 0,
@@ -90,6 +93,11 @@ const SearchBar = ({
   const handleSortChange = React.useCallback((e) => {
     setOrdenamiento(e.target.value)
   }, [setOrdenamiento])
+
+  // ✅ NUEVO: Handler para manejar filtros móviles
+  const handleToggleFilters = React.useCallback(() => {
+    onToggleFilters() // Llama la función original para desktop
+  }, [onToggleFilters])
   // ✅ MEJORA DE RENDIMIENTO: Memoización de estilos del contenedor principal
   const containerStyles = React.useMemo(
     () => ({
@@ -98,7 +106,7 @@ const SearchBar = ({
       alignItems: 'center',
       width: '100%',
       flexDirection: 'row', // ✅ SIEMPRE en fila para xs/sm/md
-      py: 0.5,
+      py: { xs: 0, md: 0.5 }, // 🔽 Padding vertical superior reducido en mobile
       // ✅ Usar prop searchBarMarginLeft para permitir diferentes valores
       marginLeft: searchBarMarginLeft,
     }),
@@ -239,7 +247,7 @@ const SearchBar = ({
       <Button
         size="small"
         variant={buttonVariantStyles.variant}
-        onClick={onToggleFilters}
+        onClick={handleToggleFilters}
         sx={buttonBaseStyles}
       >
         {/* Solo icono en xs y sm, texto completo en md+ */}

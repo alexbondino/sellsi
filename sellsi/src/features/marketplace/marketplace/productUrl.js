@@ -67,20 +67,16 @@ export const generateProductUrl = (product) => {
  * @returns {string|null} - The product ID (UUID) or null if invalid
  */
 export const extractProductIdFromSlug = (slug) => {
-  if (!slug) return null
+  if (!slug) return null;
   // UUID v4 standard length is 36 characters
-  const uuidLength = 36
-  if (slug.length < uuidLength + 1) return null
-  const candidate = slug.slice(-uuidLength)
+  const uuidLength = 36;
+  if (slug.length < uuidLength) return null;
+  const candidate = slug.slice(0, uuidLength);
   // Simple UUID v4 validation
-  if (
-    /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(
-      candidate
-    )
-  ) {
-    return candidate
+  if (/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(candidate)) {
+    return candidate;
   }
-  return null
+  return null;
 }
 
 /**

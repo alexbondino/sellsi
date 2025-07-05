@@ -27,7 +27,11 @@ import { useTechnicalSpecs } from './hooks/useTechnicalSpecs'
  * - Botón "Marketplace": Navega al marketplace de origen (Marketplace/MarketplaceBuyer)
  * - Botón "Volver": Navega al marketplace de origen
  */
-const TechnicalSpecs = () => {  const {
+const TechnicalSpecs = ({ isLoggedIn = false }) => {
+  // DEBUG: Log isLoggedIn prop on every render
+  // ...log eliminado...
+  // Debug log removed
+  const {
     product,
     loading,
     originRoute,
@@ -39,132 +43,57 @@ const TechnicalSpecs = () => {  const {
     handleAddToCart,
     handleBuyNow,
   } = useTechnicalSpecs()
-
-  if (loading) {
-    return (
-      <Box
-        sx={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          minHeight: '50vh',
-        }}
-      >
-        <CircularProgress color="primary" size={48} />
-      </Box>
-    )
-  }
-
-  if (!product) {
-    return (
-      <Container maxWidth="md" sx={{ py: 4 }}>
-        <Paper elevation={2} sx={{ p: 4, textAlign: 'center' }}>
-          <Typography variant="h5" color="error" gutterBottom>
-            Producto no encontrado
-          </Typography>
-          <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
-            El producto que buscas no existe o ha sido removido.
-          </Typography>{' '}          <Button
-            variant="contained"
-            startIcon={<StorefrontOutlined />}
-            onClick={handleGoToMarketplace}
-          >
-            {fromMyProducts ? 'Volver a Mis Productos' : 'Volver al Marketplace'}
-          </Button>
-        </Paper>
-      </Container>
-    )
-  }
-
+  // Solo renderizar el layout principal de ProductPageView, sin header/breadcrumbs externos
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: 'grey.50' }}>
-      {/* Header with navigation */}
-      <Box
-        sx={{
-          bgcolor: 'white',
-          borderBottom: '1px solid',
-          borderColor: 'grey.200',
-          py: 2,
-        }}
-      >
-        <Container maxWidth="xl">
+      <Box sx={{ pt: 0 }}>
+        {loading ? (
           <Box
             sx={{
               display: 'flex',
+              justifyContent: 'center',
               alignItems: 'center',
-              justifyContent: 'space-between',
-              mb: 2,
+              minHeight: '50vh',
             }}
           >
-            {/* Back button */}            <Button
-              startIcon={<ArrowBack />}
-              onClick={handleClose}
-              sx={{
-                color: 'text.secondary',
-                '&:hover': {
-                  bgcolor: 'grey.100',
-                },
-              }}
-            >
-              {fromMyProducts ? 'Volver a Mis Productos' : 'Volver al Marketplace'}
-            </Button>
+            <CircularProgress color="primary" size={48} />
           </Box>
-
-          {/* Breadcrumbs */}
-          <Breadcrumbs
-            sx={{
-              fontSize: '0.875rem',
-              color: 'text.secondary',
-            }}
-          >
-            {' '}
-            <Link
-              underline="hover"
-              color="inherit"
-              onClick={handleGoHome}
-              sx={{
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 0.5,
-              }}
-            >
-              <Home fontSize="small" />
-              Inicio
-            </Link>{' '}            <Link
-              underline="hover"
-              color="inherit"
-              onClick={handleGoToMarketplace}
-              sx={{
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 0.5,
-              }}
-            >
-              {fromMyProducts ? <Inventory2Outlined fontSize="small" /> : <StorefrontOutlined fontSize="small" />}
-              {fromMyProducts ? 'Mis Productos' : 'Marketplace'}
-            </Link>
-            <Typography color="primary" sx={{ fontWeight: 600 }}>
-              {product.nombre}
-            </Typography>
-          </Breadcrumbs>
-        </Container>
-      </Box>{' '}
-      {/* Product Page View */}
-      <Box sx={{ pt: 0 }}>
-        <ProductPageView
-          product={product}
-          onClose={handleClose}
-          onAddToCart={handleAddToCart}
-          onBuyNow={handleBuyNow}
-          isOpen={true}
-          isPageView={true} // Flag para indicar que es una vista de página completa
-          loading={loading} // Pasar el estado de loading para activar skeletons
-        />
+        ) : !product ? (
+          <Container maxWidth="md" sx={{ py: 4 }}>
+            <Paper elevation={2} sx={{ p: 4, textAlign: 'center' }}>
+              <Typography variant="h5" color="error" gutterBottom>
+                Producto no encontrado
+              </Typography>
+              <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
+                El producto que buscas no existe o ha sido removido.
+              </Typography>
+              <Button
+                variant="contained"
+                startIcon={<StorefrontOutlined />}
+                onClick={handleGoToMarketplace}
+              >
+                {fromMyProducts ? 'Volver a Mis Productos' : 'Volver al Marketplace'}
+              </Button>
+            </Paper>
+          </Container>
+        ) : (
+          <ProductPageView
+            product={product}
+            onClose={handleClose}
+            onAddToCart={handleAddToCart}
+            onBuyNow={handleBuyNow}
+            isOpen={true}
+            isPageView={true}
+            loading={loading}
+            isLoggedIn={isLoggedIn}
+            onGoHome={handleGoHome}
+            onGoToMarketplace={handleGoToMarketplace}
+            fromMyProducts={fromMyProducts}
+          />
+        )}
       </Box>
     </Box>
-  )
+  );
 }
 
 export default TechnicalSpecs

@@ -92,26 +92,31 @@ const ProductsSection = React.memo(
     // ✅ LAYOUT ESTÁTICO: Padding fijo para mejor performance
     const mainContainerStyles = React.useMemo(
       () => ({
-        pt: '180px', // Padding fijo - compensa SearchBar fija
-        minHeight: 'calc(100vh - 140px)',
+        pt:  { xs: 1, md:'180px'},
+        minHeight: 'calc(100vh - s140px)',
         display: 'flex',
         justifyContent: 'center',
-        px: { xs: 1, md: 3 },
-        mb: { xs: 10, md: 50 }, // Margen inferior para separar del BottomBar/footer
+        alignItems: { xs: 'center', sm: 'center', md: 'flex-start', lg: 'flex-start', xl: 'flex-start' }, // Centrado vertical solo en xs/sm
+        px: { xs: 0, sm: 0, md: 3, lg: 4 }, // Sin padding horizontal en mobile
+        mb: { xs: 0, md: 50 },
+        boxSizing: 'border-box',
+        width: '100%',
       }),
       []
-    ); // Sin dependencias - completamente estático
+    );
 
     // ✅ MEJORA DE RENDIMIENTO: Memoización de estilos del contenedor interno
     const innerContainerStyles = React.useMemo(
       () => ({
-        width: '100%',
+        width: { xs: '96vw', sm: '96vw', md: '100%', lg: '100%', xl: '100%' },
         maxWidth: {
-          sm: '720px',
+          xs: '440px', // Más ancho en mobile
+          sm: '600px', // Más ancho en sm
           md: '960px',
           lg: '1280px',
           xl: '1700px',
         },
+        mx: { xs: 'auto', sm: 'auto', md: 0 },
       }),
       []
     );
@@ -127,7 +132,7 @@ const ProductsSection = React.memo(
           lg: 'repeat(4, 1fr)', // Large: 4 columnas
           xl: 'repeat(5, 1fr)', // XL: 5 columnas
         },
-        gap: { xs: 1, sm: 1.5, md: 2, lg: 6, xl: 6 }, // ✅ REDUCIR gap responsive - md reducido
+        gap: { xs: 1, sm: 1, md: 2, lg: 6, xl: 6 }, // ✅ REDUCIR gap responsive - md reducido
         width: '100%',
         justifyItems: 'center', // ✅ AGREGAR: Centrar cada producto
       }),
@@ -208,8 +213,8 @@ const ProductsSection = React.memo(
         return {
           PRODUCTS_PER_PAGE: 100, // Large: grid 4xN
           INITIAL_PRODUCTS: 20, // Large: grid 4x5
-          LOAD_MORE_BATCH: 12, // ✅ PROGRESIVO: Cargar de a 8 (2 filas de 4)
-          PRELOAD_TRIGGER: 12, // ✅ PROGRESIVO: Cuando llegue al producto 16, cargar 8 más
+          LOAD_MORE_BATCH: 12, // ✅ PROGRESIVO: Cargar de a 12
+          PRELOAD_TRIGGER: 12, // ✅ PROGRESIVO: Cuando llegue al producto 12, cargar 12 más
         };
       }
       if (isXl) {
@@ -463,7 +468,7 @@ const ProductsSection = React.memo(
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
-              mb: 4,
+              mb: {xs: 2, md:4},
             }}
           >
             <Box
@@ -472,6 +477,9 @@ const ProductsSection = React.memo(
                 alignItems: 'center',
                 gap: 2,
                 ml: titleMarginLeft,
+                width: { xs: '100%', sm: '100%' },
+                flex: 1,
+                minWidth: 0,
               }}
             >
               {seccionActiva !== 'todos' && (
@@ -495,20 +503,44 @@ const ProductsSection = React.memo(
               <Typography
                 variant="h5"
                 fontWeight={600}
-                sx={{ color: '#1e293b' }}
+                noWrap
+                sx={{
+                  color: '#1e293b',
+                  fontSize: { xs: '1.25rem', sm: '1.3rem', md: '2rem' },
+                  lineHeight: 1.2,
+                  whiteSpace: { xs: 'normal', sm: 'nowrap', md: 'nowrap' },
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  width: '100%',
+                  maxWidth: '100%',
+                }}
               >
                 {sectionTitle}
               </Typography>
             </Box>{' '}
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-              <Typography variant="body2" color="text.secondary">
+            <Box
+              sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 1,
+                minWidth: { xs: 'auto', sm: 'auto', md: 180 },
+                maxWidth: { xs: '120px', sm: '140px', md: 'none' }, // sm más angosto
+                alignItems: { xs: 'flex-end', sm: 'flex-end', md: 'flex-end' },
+                flexShrink: 0,
+              }}
+            >
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                sx={{ fontSize: { xs: '0.85rem', sm: '0.9rem', md: '1rem' }, textAlign: { xs: 'right', sm: 'right', md: 'left' } }}
+              >
                 {totalProductos} productos encontrados
               </Typography>
               {totalPages > 1 && (
                 <Typography
                   variant="body2"
                   color="primary.main"
-                  sx={{ fontSize: '0.875rem' }}
+                  sx={{ fontSize: { xs: '0.75rem', sm: '0.8rem', md: '0.875rem' }, textAlign: { xs: 'right', sm: 'right', md: 'left' } }}
                 >
                   Mostrando {startIndex + 1}-
                   {Math.min(endIndex, totalProductos)} | Página {currentPage} de{' '}
@@ -588,7 +620,7 @@ const ProductsSection = React.memo(
                         onAddToCart={handleAddToCart}
                         onViewDetails={producto => {
                           // Aquí puedes agregar la lógica para ver detalles
-                          console.log('Ver detalles de:', producto.nombre);
+                          // ...log eliminado...
                         }}
                       />
                     </Box>
@@ -674,8 +706,8 @@ const ProductsSection = React.memo(
             onClick={scrollToTop}
             sx={{
               position: 'fixed',
-              bottom: 80,
-              right: 80,
+              bottom: { xs: 100, md: 80 },
+              right: { xs: 10, md: 80 }, // Más a la derecha en mobile
               zIndex: 999,
               backgroundColor: 'background.paper',
               color: 'primary.main',

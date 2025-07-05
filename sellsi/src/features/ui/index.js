@@ -43,6 +43,7 @@ export {
 } from './product-card/StatusChip';
 export { default as Widget } from './Widget';
 export { default as Wizard } from './wizard/Wizard';
+export { default as SelectChip } from './SelectChip';
 
 // Re-exportar hooks de UI si existen
 export * from './hooks';

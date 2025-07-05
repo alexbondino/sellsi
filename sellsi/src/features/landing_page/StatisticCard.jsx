@@ -30,7 +30,13 @@ const StatisticCard = React.memo(({ stat }) => {
     alignItems: 'center', // ✅ Mantener centrado horizontalmente
     gap: { xs: 0.5, sm: 0.5, md: 2.5, lg: 2.5, xl: 2.5 },
     p: { xs: 0.3, sm: 0.3, md: 3, lg: 2.5, xl: 3 },
-    background: '#000000',
+    background: {
+      xs: 'transparent',
+      sm: 'transparent',
+      md: 'linear-gradient(120deg, #000 70%, #1565c0 120%)',
+      lg: 'linear-gradient(120deg, #000 70%, #1565c0 120%)',
+      xl: 'linear-gradient(120deg, #000 70%, #1565c0 120%)',
+    },
     borderRadius: { xs: 2, sm: 2, md: 2, lg: 2, xl: 2 },
     width: { xs: 106, sm: 120, md: 200, lg: 250, xl: 220 },
     // ✅ Altura fija para asegurar alineación perfecta en mobile

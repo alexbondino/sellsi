@@ -1,60 +1,71 @@
-# 🛒 Carrito de Compras (Cart) - Estado actual y backend
+# Problema de Duplicados en cart_items (cart_id, product_id)
 
-## 1. Estado actual
-- El store principal (`cartStore.js`) está modularizado y preparado para integración real con backend (Supabase).
-- Soporta sincronización con backend para usuarios autenticados: agregar, quitar, actualizar cantidad y limpiar carrito.
-- Persistencia automática en localStorage para usuarios no autenticados.
-- Modularización avanzada: historial, wishlist, cupones y envío delegados a hooks independientes.
-- Price tiers, cupones, historial, wishlist y selección de envío por producto ya integrados a nivel de frontend.
+## Descripción
+Actualmente, la tabla `cart_items` permite que existan múltiples filas con el mismo par `(cart_id, product_id)`, ya que la clave primaria es `cart_items_id` (UUID) y no existe una restricción UNIQUE sobre `(cart_id, product_id)`.
 
-## 2. Funciones implementadas
-- `addItem`, `removeItem`, `updateQuantity`, `clearCart`: Todas soportan integración con backend (vía `cartService`).
-- `checkout`: Implementado para enviar el carrito al backend y crear una orden real (si el endpoint existe).
-- `syncToBackend`, `initializeCartWithUser`: Migran el carrito local al backend y mantienen sincronización.
-- Delegación de historial, wishlist, cupones y envío a hooks especializados.
-- Métodos de utilidad: `isInCart`, `isInWishlist`, `getItemCount`, `getStats`, etc.
+## Consecuencias
+- Se pueden crear varias filas para el mismo producto en un mismo carrito.
+- Al actualizar la cantidad de un producto, pueden ocurrir errores como "multiple (or no) rows returned".
+- La lógica de negocio se complica: sumar cantidades, eliminar productos, mostrar el carrito, etc.
 
-## 3. Alcances
-- Soporta price tiers, cupones, historial, wishlist y selección de envío por producto.
-- Retrocompatibilidad total: los componentes consumidores no requieren cambios para la integración backend.
-- El backend esperado es Supabase, usando endpoints definidos en `cartService`.
-- Preparado para migración de carrito local a backend al autenticar usuario.
+## Evidencia del Problema
+En `cartService.js`, la función `updateItemQuantity()` usa `.single()` (línea 283):
+```javascript
+const { data, error } = await supabase
+  .from('cart_items')
+  .update({ quantity: safeQuantity })
+  .eq('cart_id', cartId)
+  .eq('product_id', productId)
+  .select()
+  .single(); // ← FALLA si hay duplicados
+```
 
-## 4. Limitaciones
-- Si el usuario no está autenticado, todo funciona solo en localStorage.
-- La lógica de compra (checkout) depende de la existencia del endpoint en el backend. Si no existe, se simula o lanza error.
-- No hay tests unitarios ni integración CI/CD aún.
-- Falta integración de edge cases avanzados (conflictos, errores de red, etc).
-- Sincronización de historial, wishlist, cupones y envío con backend aún pendiente (actualmente solo local).
+Este error se registra en `logs.md`:
+```
+Error: No se pudo actualizar la cantidad: JSON object requested, multiple (or no) rows returned
+```
 
-## 5. Pendientes
-- Endpoint real de checkout: si no existe, la orden no se crea realmente en backend.
-- Sincronización de historial, wishlist, cupones y envío con backend.
-- Mejorar manejo de errores y feedback al usuario en caso de fallos de red/backend.
-- Escribir tests unitarios y mocks para lógica de carrito.
-- Documentar endpoints y flujos de negocio para onboarding de nuevos devs.
+## Solución Recomendada
+Agregar una restricción UNIQUE sobre `(cart_id, product_id)` en la tabla `cart_items`.
 
-## 6. Ejemplo de flujo actual
-1. Usuario agrega producto al carrito (local o backend según autenticación).
-2. Puede aplicar cupones, cambiar cantidades, seleccionar envío, usar wishlist.
-3. Al hacer checkout:
-   - Si hay endpoint, se crea la orden en backend y se limpia el carrito.
-   - Si no, se muestra error o se simula la compra.
-4. El historial de acciones y wishlist solo se sincronizan localmente (por ahora).
+```sql
+ALTER TABLE public.cart_items
+ADD CONSTRAINT cart_items_cart_id_product_id_unique UNIQUE (cart_id, product_id);
+```
 
-## 7. Endpoints esperados (cartService)
-- `getOrCreateActiveCart(userId)`
-- `addItemToCart(cartId, product, quantity)`
-- `updateItemQuantity(cartId, productId, quantity)`
-- `removeItemFromCart(cartId, productId)`
-- `clearCart(cartId)`
-- `checkout(cartId, checkoutData)`
+Esto asegura que solo pueda existir una fila por producto en cada carrito. Si se intenta agregar un producto que ya existe, se debe actualizar la cantidad en vez de insertar una nueva fila.
 
-## 8. Notas técnicas
-- El store está preparado para migración futura a SSR/Next.js.
-- Modularización permite testeo y mantenimiento independiente de cada feature.
-- El código está listo para integración avanzada (cache invalidation, optimistic updates, etc).
+## Pasos para Implementar
+1. **Primero:** Limpiar duplicados existentes:
+```sql
+-- Identificar duplicados
+SELECT cart_id, product_id, COUNT(*) as duplicates 
+FROM cart_items 
+GROUP BY cart_id, product_id 
+HAVING COUNT(*) > 1;
 
----
+-- Eliminar duplicados manteniendo el más reciente
+DELETE FROM cart_items 
+WHERE cart_items_id NOT IN (
+  SELECT DISTINCT ON (cart_id, product_id) cart_items_id
+  FROM cart_items 
+  ORDER BY cart_id, product_id, updated_at DESC
+);
+```
 
-> Última actualización: 18/06/2025
+2. **Segundo:** Agregar la restricción UNIQUE:
+```sql
+ALTER TABLE public.cart_items
+ADD CONSTRAINT cart_items_cart_id_product_id_unique UNIQUE (cart_id, product_id);
+```
+
+## Alternativas si no puedes modificar el schema
+- Cambiar `.single()` por `.maybeSingle()` en `updateItemQuantity()` (parche temporal)
+- Antes de insertar, buscar si ya existe ese producto en el carrito y actualizar la cantidad si es así.
+- Limpiar duplicados existentes con un script o migración manual.
+
+## Beneficios
+- Integridad de datos.
+- Lógica más simple y robusta en frontend/backend.
+- Menos errores y mejor experiencia de usuario.
+- Eliminación del error "multiple rows returned" en actualizaciones.

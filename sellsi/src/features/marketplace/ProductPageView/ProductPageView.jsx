@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react'
+// Si tienes un contexto de vista, importa aquí:
+// import { useViewType } from '../../context/ViewTypeContext'
 import {
   Box,
   Container,
@@ -18,6 +20,9 @@ import {
   TableContainer,
   TableRow,
   CircularProgress,
+  Breadcrumbs,
+  Link,
+  ThemeProvider,
 } from '@mui/material'
 import {
   ArrowBack,
@@ -30,6 +35,9 @@ import {
   Schedule,
   Inventory,
   Description,
+  Home,
+  StorefrontOutlined,
+  Inventory2Outlined,
 } from '@mui/icons-material'
 import { toast } from 'react-hot-toast'
 import { useLocation } from 'react-router-dom'
@@ -42,6 +50,8 @@ import PurchaseActions from './components/PurchaseActions'
 import ProductHeader from './components/ProductHeader'
 import LoadingOverlay from '../../ui/LoadingOverlay'
 import { ProductPageSkeleton } from './components/ProductPageSkeletons'
+import { dashboardThemeCore } from '../../../styles/dashboardThemeCore'
+
 
 const ProductPageView = ({
   product,
@@ -49,40 +59,21 @@ const ProductPageView = ({
   onAddToCart,
   isPageView = false,
   loading = false,
+  isLoggedIn = false,
+  fromMyProducts = false,
+  isFromSupplierMarketplace = false,
+  isSupplier = false,
+  // Nuevos props para breadcrumbs
+  onGoHome,
+  onGoToMarketplace,
 }) => {
+  // ...logs eliminados...
   const [selectedImageIndex, setSelectedImageIndex] = useState(0)
   const location = useLocation()
-  const fromMyProducts = location.state?.from === '/supplier/myproducts'
-
-  // Check user session
-  const [isLoggedIn, setIsLoggedIn] = useState(false)
-  useEffect(() => {
-    const checkSession = () => {
-      // Verificar localStorage (nueva lógica)
-      const userId = localStorage.getItem('user_id')
-      const accountType = localStorage.getItem('account_type') // Verificar también las claves antiguas por compatibilidad
-      const supplierid = localStorage.getItem('supplierid')
-      const sellerid = localStorage.getItem('sellerid')
-
-      const hasSession = !!(userId || supplierid || sellerid)
-      setIsLoggedIn(hasSession)
-    }
-
-    checkSession()
-
-    // Listen for storage changes (login/logout events)
-    const handleStorageChange = () => {
-      checkSession()
-    }
-
-    window.addEventListener('storage', handleStorageChange)
-    return () => {
-      window.removeEventListener('storage', handleStorageChange)
-    }
-  }, [])
 
   // Mover useCallback ANTES de cualquier return condicional para seguir las reglas de los Hooks
   const handleAddToCart = useCallback((cartProduct) => {
+    // Debug log removed
     // Verificar sesión antes de permitir agregar al carrito
     if (!isLoggedIn) {
       toast.error('Debes iniciar sesión para agregar productos al carrito', {
@@ -104,65 +95,91 @@ const ProductPageView = ({
           icon: '✅',
         }
       )
+      // Debug log removed
     }
   }, [isLoggedIn, onAddToCart, product])
 
+  // DEBUG: Log product and loading state
   if (!product || loading) {
+    // ...log eliminado...
+    // Debug log removed
     return (
-      <Box
-        sx={
-          isPageView
-            ? {
-                // Estilos para vista de página completa
-                position: 'relative',
-                width: '100%',
-                minHeight: '100vh',
-                bgcolor: 'background.default',
-              }
-            : {
-                // Estilos para modal overlay
-                position: 'fixed',
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                bgcolor: 'background.default',
-                zIndex: 1400,
-                overflow: 'auto',
-                transform: 'translateX(0)',
-                transition: 'transform 0.3s ease-in-out',
-              }
-        }
-      >
-        {/* Header with back button - solo para modal */}
-        {!isPageView && (
+      <ThemeProvider theme={dashboardThemeCore}>
+        <Box
+          sx={{
+            backgroundColor: 'background.default',
+            pt: { xs: 2, md: 4 },
+            px: 3,
+            pb: 12,
+            width: '100%',
+          }}
+        >
           <Box
             sx={{
-              position: 'sticky',
-              top: 0,
-              bgcolor: 'white',
-              borderBottom: '1px solid #e0e0e0',
-              zIndex: 10,
-              py: 2,
+              backgroundColor: 'white',
+              maxWidth: '1450px',
+              mx: 'auto',
+              p: 3,
+              mb: 6,
+              border: '1.5px solid #e0e0e0',
+              boxShadow: 6,
+              borderRadius: 3,
             }}
           >
-            <Container maxWidth="xl">
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                <IconButton onClick={onClose} sx={{ color: 'primary.main' }}>
-                  <ArrowBack />
-                </IconButton>
-                <Typography variant="h6" color="text.primary">
-                  Detalles del Producto
+            <Box sx={{ mb: 4, boxShadow: 'none', border: 'none', outline: 'none', backgroundImage: 'none' }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+                <Button
+                  startIcon={<ArrowBack />}
+                  onClick={onClose}
+                  sx={{ textTransform: 'none' }}
+                >
+                  {fromMyProducts
+                    ? 'Volver a Mis Productos'
+                    : isFromSupplierMarketplace
+                      ? 'Volver a Marketplace'
+                      : 'Volver al Marketplace'}
+                </Button>
+                <Typography variant="h4" fontWeight="600" color="black">
                 </Typography>
               </Box>
+              <Breadcrumbs sx={{ fontSize: '0.875rem', color: 'text.secondary' }}>
+                <Link
+                  underline="hover"
+                  color="inherit"
+                  onClick={onGoHome}
+                  sx={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 0.5 }}
+                >
+                  <Home fontSize="small" />
+                  Inicio
+                </Link>
+                <Link
+                  underline="hover"
+                  color="inherit"
+                  onClick={onGoToMarketplace}
+                  sx={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 0.5 }}
+                >
+                  {fromMyProducts
+                    ? <Inventory2Outlined fontSize="small" />
+                    : <StorefrontOutlined fontSize="small" />}
+                  {fromMyProducts
+                    ? 'Mis Productos'
+                    : isFromSupplierMarketplace
+                      ? 'Marketplace'
+                      : 'Marketplace'}
+                </Link>
+                {product && (
+                  <Typography color="black" sx={{ fontWeight: 600 }}>
+                    {product.nombre}
+                  </Typography>
+                )}
+              </Breadcrumbs>
+            </Box>
+            <Container maxWidth="xl">
+              <ProductPageSkeleton />
             </Container>
           </Box>
-        )}
-
-        <Container maxWidth="xl">
-          <ProductPageSkeleton />
-        </Container>
-      </Box>
+        </Box>
+      </ThemeProvider>
     )
   }
   const {
@@ -177,89 +194,122 @@ const ProductPageView = ({
     categoria,
     descripcion = 'Producto de alta calidad con excelentes características y garantía de satisfacción.',
   } = product
-  
+  // Debug log removed
+
   return (
-    <Box
-      sx={
-        isPageView
-          ? {
-              // Estilos para vista de página completa
-              position: 'relative',
-              width: '100%',
-              minHeight: '100vh',
-              bgcolor: 'background.default',
-            }
-          : {
-              // Estilos para modal overlay
-              position: 'fixed',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              bgcolor: 'background.default',
-              zIndex: 1400,
-              overflow: 'auto',
-              transform: 'translateX(0)',
-              transition: 'transform 0.3s ease-in-out',
-            }
-      }
-    >
-      {/* Header with back button - solo para modal */}
-      {!isPageView && (
-        <Box
-          sx={{
-            position: 'sticky',
-            top: 0,
-            bgcolor: 'white',
-            borderBottom: '1px solid #e0e0e0',
-            zIndex: 10,
-            py: 2,
-          }}
-        >
-          <Container maxWidth="xl">
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              <IconButton onClick={onClose} sx={{ color: 'primary.main' }}>
-                <ArrowBack />
-              </IconButton>
-              <Typography variant="h6" color="text.primary">
-                Detalles del Producto
-              </Typography>
-            </Box>
-          </Container>
-        </Box>
-      )}
-      <Container
-        maxWidth="xl"
+    <ThemeProvider theme={dashboardThemeCore}>
+      <Box
         sx={{
-          py: 4,
-          px: { xs: 2, sm: 3, md: 4 },
-          // Añadir margen superior si se muestra el TopBar
-          pt: isPageView && isLoggedIn ? { xs: 12, md: 14 } : 4,
+          backgroundColor: 'background.default',
+          pt: { xs: 2, md: 4 },
+          px: 3,
+          pb: 12,
+          width: '100%',
         }}
       >
-        {/* SECCIÓN SUPERIOR - Información Principal */}{' '}
-        <ProductHeader
-          product={product}
-          selectedImageIndex={selectedImageIndex}
-          onImageSelect={setSelectedImageIndex}
-          onAddToCart={handleAddToCart}
-          isLoggedIn={isLoggedIn}
-          fromMyProducts={fromMyProducts}
-        />{' '}
-        {/* SECCIÓN INTERMEDIA - Características de Venta */}
-        {/* <Box sx={{ mt: 6 }}>
-          <SalesCharacteristics product={product} />
-        </Box> */}
-        {/* SECCIÓN DE CONDICIONES DE VENTA */}
-        <Box sx={{ mt: 6 }}>
-          <SaleConditions product={product} />
+        {/* Header y breadcrumbs ahora SIEMPRE dentro del Paper, arriba del contenido */}
+        <Box
+          sx={{
+            backgroundColor: 'white',
+            maxWidth: '1450px',
+            mx: 'auto',
+            p: 3,
+            mb: 6,
+            border: '1.5px solid #e0e0e0',
+            boxShadow: 6,
+            borderRadius: 3,
+          }}
+        >
+          <Box sx={{ mb: 4, boxShadow: 'none', border: 'none', outline: 'none', backgroundImage: 'none' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+              <Button
+                startIcon={<ArrowBack />}
+                onClick={onClose}
+                sx={{ textTransform: 'none' }}
+              >
+                {fromMyProducts
+                  ? 'Volver a Mis Productos'
+                  : isFromSupplierMarketplace
+                    ? 'Volver a Marketplace'
+                    : 'Volver al Marketplace'}
+              </Button>
+              <Typography variant="h4" fontWeight="600" color="black">
+              </Typography>
+            </Box>
+            <Breadcrumbs sx={{ fontSize: '0.875rem', color: 'text.secondary' }}>
+              <Link
+                underline="hover"
+                color="inherit"
+                onClick={onGoHome}
+                sx={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 0.5 }}
+              >
+                <Home fontSize="small" />
+                Inicio
+              </Link>
+              <Link
+                underline="hover"
+                color="inherit"
+                onClick={onGoToMarketplace}
+                sx={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 0.5 }}
+              >
+                {fromMyProducts
+                  ? <Inventory2Outlined fontSize="small" />
+                  : <StorefrontOutlined fontSize="small" />}
+                {fromMyProducts
+                  ? 'Mis Productos'
+                  : isFromSupplierMarketplace
+                    ? 'Marketplace'
+                    : 'Marketplace'}
+              </Link>
+              {product && (
+                <Typography color="black" sx={{ fontWeight: 600 }}>
+                  {product.nombre}
+                </Typography>
+              )}
+            </Breadcrumbs>
+          </Box>
+          <Grid container spacing={3} sx={{ boxShadow: 'none', border: 'none', outline: 'none', backgroundImage: 'none' }}>
+          {/* Columna principal */}
+          <Grid item xs={12} lg={8} sx={{ boxShadow: 'none', border: 'none', outline: 'none', backgroundImage: 'none' }}>
+            <Paper
+              sx={{
+                p: 0,
+                width: '100%',
+                minWidth: '100%',
+                maxWidth: '100%',
+                boxSizing: 'border-box',
+                boxShadow: 'none',
+                border: 'none',
+                outline: 'none',
+                backgroundImage: 'none',
+              }}
+              elevation={0}
+              square
+            >
+              {/* Galería e info principal */}
+              <ProductHeader
+                product={product}
+                selectedImageIndex={selectedImageIndex}
+                onImageSelect={setSelectedImageIndex}
+                onAddToCart={handleAddToCart}
+                isLoggedIn={isLoggedIn}
+                fromMyProducts={fromMyProducts}
+              />
+              {/* Condiciones de venta */}
+              <Box sx={{ mt: 6 }}>
+                <SaleConditions product={product} />
+              </Box>
+              {/* Especificaciones técnicas */}
+              <Box sx={{ mt: 6, mb: 4 }}>
+                <TechnicalSpecifications product={product} />
+              </Box>
+            </Paper>
+          </Grid>
+          {/* Aquí podrías agregar una columna lateral si la necesitas */}
+        </Grid>
         </Box>
-        {/* SECCIÓN INFERIOR - Especificaciones Técnicas */}
-        <Box sx={{ mt: 6, mb: 4 }}>
-          <TechnicalSpecifications product={product} />
-        </Box>
-      </Container>
     </Box>
+    </ThemeProvider>
   )
 }
 

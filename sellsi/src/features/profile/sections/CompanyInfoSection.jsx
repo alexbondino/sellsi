@@ -2,7 +2,7 @@ import React from 'react';
 import { Box, Typography, TextField, Button } from '@mui/material';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import ProfileSwitch from '../ProfileSwitch';
-import { validateRut } from '../../../utils/validators';
+import { validateRut, cleanRut } from '../../../utils/validators';
 
 /**
  * Sección de Información de Empresa del perfil
@@ -55,13 +55,13 @@ const CompanyInfoSection = ({
         <TextField
           label="RUT"
           value={formData.rut || ''}
-          onChange={(e) => onFieldChange('rut', e.target.value)}
+          onChange={(e) => onFieldChange('rut', cleanRut(e.target.value))}
           fullWidth
           variant="outlined"
           size="small"
-          placeholder="77.122.155-5"
+          placeholder="12345678-5"
           error={!validateRut(formData.rut)}
-          helperText={!validateRut(formData.rut) ? 'Formato de RUT inválido' : ''}
+          helperText={!validateRut(formData.rut) ? 'Formato de RUT inválido (solo números, guion y dígito verificador)' : ''}
         />
         
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>

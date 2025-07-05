@@ -7,7 +7,8 @@ import {
   Button, 
   Paper, 
   Breadcrumbs, 
-  Link 
+  Link,
+  CircularProgress
 } from '@mui/material';
 import { 
   ArrowBack, 
@@ -17,18 +18,33 @@ import {
 } from '@mui/icons-material';
 import ProductPageView from './ProductPageView';
 import { supabase } from '../../../services/supabase';
+import useCartStore from '../../buyer/hooks/cartStore';
 
-const ProductPageWrapper = () => {
+const ProductPageWrapper = ({ isLoggedIn }) => {
+  // Obtener el tipo de vista desde App.jsx vía window o prop global
+  // window.currentAppRole debe ser seteado en App.jsx (temporal/hack) o pásalo por contexto/prop
+  let isSupplier = false;
+  if (window.currentAppRole) {
+    isSupplier = window.currentAppRole === 'supplier';
+  } else if (typeof currentAppRole !== 'undefined') {
+    isSupplier = currentAppRole === 'supplier';
+  }
+  // ...logs eliminados...
   const { id } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const addToCart = useCartStore(state => state.addItem);
 
   // Detectar de dónde viene el usuario
-  const fromMyProducts = location.state?.from === '/supplier/myproducts';
-  const isFromBuyer = location.state?.from === '/buyer/marketplace';
+  const fromValue = location.state?.from;
+  const fromMyProducts = fromValue === '/supplier/myproducts';
+  const isFromBuyer = fromValue === '/buyer/marketplace';
+  const isFromSupplierMarketplace = !fromMyProducts && fromValue === '/supplier/marketplace';
+
+  // ...existing code...
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -81,8 +97,11 @@ const ProductPageWrapper = () => {
             imagenes: data.product_images || [],
             rating: 4.5, // Default rating
             ventas: Math.floor(Math.random() * 100), // Mock ventas
+            // Flags para controlar visibilidad de acciones de compra
+            fromMyProducts,
+            isFromSupplierMarketplace,
+            isSupplier,
           };
-          
           setProduct(product);
         }
       } catch (err) {
@@ -99,6 +118,8 @@ const ProductPageWrapper = () => {
   const handleClose = () => {
     if (fromMyProducts) {
       navigate('/supplier/myproducts');
+    } else if (isFromSupplierMarketplace) {
+      navigate('/supplier/marketplace');
     } else if (isFromBuyer) {
       navigate('/buyer/marketplace');
     } else {
@@ -113,6 +134,8 @@ const ProductPageWrapper = () => {
   const handleGoToMarketplace = () => {
     if (fromMyProducts) {
       navigate('/supplier/myproducts');
+    } else if (isFromSupplierMarketplace) {
+      navigate('/supplier/marketplace');
     } else if (isFromBuyer) {
       navigate('/buyer/marketplace');
     } else {
@@ -121,131 +144,85 @@ const ProductPageWrapper = () => {
   };
 
   const handleAddToCart = (cartProduct) => {
-    // Validar cantidad antes de agregar
-    if (cartProduct && cartProduct.quantity) {
-      const quantity = parseInt(cartProduct.quantity);
+    // Si no viene cantidad, agregar 1 por defecto
+    let productToAdd = { ...cartProduct };
+    if (!productToAdd.quantity) {
+      productToAdd.quantity = 1;
+      console.log('[Cart] No quantity provided, defaulting to 1');
+    } else {
+      const quantity = parseInt(productToAdd.quantity);
       if (isNaN(quantity) || quantity <= 0 || quantity > 15000) {
-        console.error('Cantidad inválida detectada:', cartProduct.quantity);
+        console.error('[Cart] Cantidad inválida detectada:', productToAdd.quantity);
         return;
       }
-      // Asegurar que la cantidad esté en un rango seguro
-      cartProduct.quantity = Math.max(1, Math.min(quantity, 15000));
+      productToAdd.quantity = Math.max(1, Math.min(quantity, 15000));
+      console.log('[Cart] Quantity validated:', productToAdd.quantity);
     }
-    
-    // Aquí podrías implementar la lógica del carrito
-    console.log('Add to cart:', cartProduct);
+    // Agregar al carrito real
+    if (addToCart && productToAdd) {
+      console.log('[Cart] Adding to cart:', productToAdd);
+      addToCart(productToAdd, productToAdd.quantity);
+    } else {
+      console.error('[Cart] addToCart function or productToAdd missing', { addToCart, productToAdd });
+    }
   };
-
-  if (error) {
-    return (
-      <Container maxWidth="md" sx={{ py: 4 }}>
-        <Paper elevation={2} sx={{ p: 4, textAlign: 'center' }}>
-          <Typography variant="h5" color="error" gutterBottom>
-            Producto no encontrado
-          </Typography>
-          <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
-            {error}
-          </Typography>
-          <Button
-            variant="contained"
-            startIcon={<StorefrontOutlined />}
-            onClick={handleGoToMarketplace}
-          >
-            {fromMyProducts ? 'Volver a Mis Productos' : 'Volver al Marketplace'}
-          </Button>
-        </Paper>
-      </Container>
-    );
-  }
 
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: 'grey.50' }}>
-      {/* Header with navigation */}
-      <Box
-        sx={{
-          bgcolor: 'white',
-          borderBottom: '1px solid',
-          borderColor: 'grey.200',
-          py: 2,
-        }}
-      >
-        <Container maxWidth="xl">
+      {/* Content area - Condicional según el estado (igual que TechnicalSpecs) */}
+      <Box sx={{ pt: 0 }}>
+        {loading ? (
+          // Loading state
           <Box
             sx={{
               display: 'flex',
+              justifyContent: 'center',
               alignItems: 'center',
-              justifyContent: 'space-between',
-              mb: 2,
+              minHeight: '50vh',
             }}
           >
-            {/* Back button */}
-            <Button
-              startIcon={<ArrowBack />}
-              onClick={handleClose}
-              sx={{
-                color: 'text.secondary',
-                '&:hover': {
-                  bgcolor: 'grey.100',
-                },
-              }}
-            >
-              {fromMyProducts ? 'Volver a Mis Productos' : 'Volver al Marketplace'}
-            </Button>
+            <CircularProgress color="primary" size={48} />
           </Box>
-
-          {/* Breadcrumbs */}
-          <Breadcrumbs
-            sx={{
-              fontSize: '0.875rem',
-              color: 'text.secondary',
-            }}
-          >
-            <Link
-              underline="hover"
-              color="inherit"
-              onClick={handleGoHome}
-              sx={{
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 0.5,
-              }}
-            >
-              <Home fontSize="small" />
-              Inicio
-            </Link>
-            <Link
-              underline="hover"
-              color="inherit"
-              onClick={handleGoToMarketplace}
-              sx={{
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 0.5,
-              }}
-            >
-              {fromMyProducts ? <Inventory2Outlined fontSize="small" /> : <StorefrontOutlined fontSize="small" />}
-              {fromMyProducts ? 'Mis Productos' : 'Marketplace'}
-            </Link>
-            {product && (
-              <Typography color="primary" sx={{ fontWeight: 600 }}>
-                {product.nombre}
+        ) : error || !product ? (
+          // Error state - Sin duplicar header ni breadcrumbs
+          <Container maxWidth="md" sx={{ py: 4 }}>
+            <Paper elevation={2} sx={{ p: 4, textAlign: 'center' }}>
+              <Typography variant="h5" color="error" gutterBottom>
+                {error || 'Producto no encontrado'}
               </Typography>
-            )}
-          </Breadcrumbs>
-        </Container>
-      </Box>
-
-      {/* Product Page View */}
-      <Box sx={{ pt: 0 }}>
-        <ProductPageView
-          product={product}
-          onClose={handleClose}
-          onAddToCart={handleAddToCart}
-          isPageView={true}
-          loading={loading}
-        />
+              <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
+                El producto que buscas no existe o ha sido removido.
+              </Typography>
+              <Button
+                variant="contained"
+                startIcon={<StorefrontOutlined />}
+                onClick={handleGoToMarketplace}
+              >
+                {fromMyProducts
+                  ? 'Volver a Mis Productos'
+                  : isFromSupplierMarketplace
+                    ? 'Volver a Marketplace'
+                    : 'Volver al Marketplace'}
+              </Button>
+            </Paper>
+          </Container>
+        ) : (
+          // Product view - Sin duplicar header ni breadcrumbs
+          <ProductPageView
+            product={product}
+            onClose={handleClose}
+            onAddToCart={handleAddToCart}
+            isPageView={true}
+            loading={loading}
+            isLoggedIn={isLoggedIn}
+            fromMyProducts={fromMyProducts}
+            isFromSupplierMarketplace={isFromSupplierMarketplace}
+            isSupplier={isSupplier}
+            // Pasar handlers para breadcrumbs
+            onGoHome={handleGoHome}
+            onGoToMarketplace={handleGoToMarketplace}
+          />
+        )}
       </Box>
     </Box>
   );

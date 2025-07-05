@@ -21,6 +21,7 @@ import useCartStore from '../buyer/hooks/cartStore';
 import ContactModal from '../ui/ContactModal';
 import Login from '../login/Login';
 import Register from '../register/Register';
+import { setSkipScrollToTopOnce } from '../ScrollToTop';
 
 // Importa el nuevo componente reutilizable y ahora verdaderamente controlado
 import Switch from '../ui/Switch'; // Ajusta la ruta si es diferente
@@ -52,21 +53,13 @@ export default function TopBar({
   // Este useEffect es crucial para la sincronización con la prop `isBuyer`
   // (que viene de Supabase en App.jsx) al inicio o tras un cambio de sesión.
   useEffect(() => {
-    // Sincroniza el estado interno del switch con la prop `isBuyer`
-    // Solo si el usuario está logueado y la prop `isBuyer` es diferente del `currentRole` interno.
-    // O si la sesión cambia (ej. al hacer login/logout).
-    // Esto asegura que el switch refleje el rol inicial cargado desde Supabase.
     if (session) {
-      // Solo si hay una sesión, para evitar cambios en estado de no-logueado.
       const newRoleFromProps = isBuyer ? 'buyer' : 'supplier';
       if (currentRole !== newRoleFromProps) {
         setCurrentRole(newRoleFromProps);
       }
     } else {
-      // Si no hay sesión, el switch podría volver a un estado por defecto o simplemente ocultarse
-      // (la lógica de `if (!isLoggedIn)` ya lo oculta/reemplaza).
-      // Aquí, podemos asegurar que el `currentRole` se restablezca si se cierra la sesión.
-      setCurrentRole('buyer'); // Por ejemplo, por defecto a comprador si no hay sesión
+      setCurrentRole('buyer');
     }
   }, [session, isBuyer, currentRole]); // currentRole como dependencia es importante para la condición de no-coincidencia.
 
@@ -78,21 +71,52 @@ export default function TopBar({
   const handleCloseProfileMenu = () => setProfileAnchor(null);
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
+    // Verificar si el usuario está realmente logueado desde el prop session
+    if (!session) {
+      handleCloseProfileMenu();
+      handleCloseMobileMenu();
+      navigate('/');
+      return;
+    }
+
+    // Verificar también desde Supabase directamente
+    try {
+      const { data } = await supabase.auth.getSession();
+      if (!data?.session) {
+        handleCloseProfileMenu();
+        handleCloseMobileMenu();
+        navigate('/');
+        return;
+      }
+    } catch (sessionError) {
+      handleCloseProfileMenu();
+      handleCloseMobileMenu();
+      navigate('/');
+      return;
+    }
+
+    // Solo intentar logout si hay sesión válida
+    try {
+      await supabase.auth.signOut();
+    } catch (err) {
+      // Silenciar error
+    }
     handleCloseProfileMenu();
     handleCloseMobileMenu();
-    // Al hacer logout, el App.jsx manejará la redirección y el `session` pasará a null.
-    // El useEffect de TopBar entonces reseteará `currentRole` a 'buyer'.
     navigate('/');
   };
 
   const handleNavigate = ref => {
     handleCloseMobileMenu();
     setTimeout(() => {
-      console.log('handleNavigate called with ref:', ref);
       if (ref === 'contactModal') {
         setOpenContactModal(true);
-        console.log('setOpenContactModal(true) called');
+        return;
+      }
+      // Si es un anchor de la home, navega a / con scrollTo
+      if (ref === 'quienesSomosRef' || ref === 'serviciosRef' || ref === 'trabajaConNosotrosRef') {
+        setSkipScrollToTopOnce();
+        navigate(`/?scrollTo=${ref}`);
         return;
       }
       if (onNavigate) {
@@ -104,11 +128,10 @@ export default function TopBar({
   // Este es el manejador de cambios del `Switch`.
   // Recibe el `newRole` del `Switch` y lo pasa al padre `App.jsx`.
   const handleRoleToggleChange = (event, newRole) => {
-    // Recibe event, newRole de ToggleButtonGroup
     if (newRole !== null) {
-      setCurrentRole(newRole); // Actualiza el estado interno de TopBar
+      setCurrentRole(newRole);
       if (onRoleChange) {
-        onRoleChange(newRole); // Notifica a App.jsx
+        onRoleChange(newRole);
       }
     }
   };
@@ -118,7 +141,7 @@ export default function TopBar({
       {...props}
       sx={{
         fontSize: '1.5rem',
-        color: 'white !important',
+        color: '#fff !important',
         ...sx,
       }}
     />
@@ -129,10 +152,29 @@ export default function TopBar({
   let mobileMenuItems = [];
   let paddingX = { xs: 2, md: 18, mac: 18, lg: 18 }; // Default padding for logged out
 
+  // Avatar con fade-in
+  const [avatarLoaded, setAvatarLoaded] = useState(false);
+  useEffect(() => {
+    setAvatarLoaded(false); // Resetear cuando cambia el logo
+  }, [logoUrl]);
+
   const profileMenuButton = (
-    <IconButton onClick={handleOpenProfileMenu} sx={{ color: 'white', p: 0 }}>
-      <Avatar src={logoUrl}>
-        <PersonIcon />
+    <IconButton onClick={handleOpenProfileMenu} sx={{ color: 'white', p: 0, display: { xs: 'none', md: 'inline-flex' } }}>
+      <Avatar
+        src={logoUrl && typeof logoUrl === 'string' && logoUrl.trim() !== '' ? logoUrl : undefined}
+        key={logoUrl || 'default-avatar'}
+        sx={{
+          transition: 'opacity 0.5s',
+          opacity: avatarLoaded ? 1 : 0,
+          background: '#e0e0e0',
+        }}
+        imgProps={{
+          onLoad: () => setAvatarLoaded(true),
+          onError: () => setAvatarLoaded(true),
+          style: { transition: 'opacity 0.5s', opacity: avatarLoaded ? 1 : 0 }
+        }}
+      >
+        <PersonIcon sx={{ opacity: avatarLoaded ? 0 : 1, transition: 'opacity 0.3s' }} />
       </Avatar>
     </IconButton>
   );
@@ -295,20 +337,7 @@ export default function TopBar({
         />
       </MenuItem>,
       <Divider key="dividerMobileRole" />,
-      <MenuItem
-        key="cart"
-        onClick={() => {
-          navigate('/buyer/cart');
-          handleCloseMobileMenu();
-        }}
-      >
-        <Badge badgeContent={itemsInCart} color="error" sx={{ mr: 1.5 }}>
-          <CustomShoppingCartIcon
-            sx={{ color: theme.palette.text.primary + ' !important' }}
-          />
-        </Badge>
-        Mi Carrito
-      </MenuItem>,
+      // Eliminado el botón de carrito en mobileMenuItems
       <MenuItem
         key="profile"
         onClick={() => {
@@ -332,13 +361,13 @@ export default function TopBar({
           backgroundColor: '#000000',
           width: '100vw',
           px: 0,
-          py: 1,
+          py: { xs: 0, sm: 0, md: 1 }, // Sin padding vertical en mobile
           display: 'flex',
           justifyContent: 'center',
           position: 'fixed',
           top: 0,
           zIndex: 1100,
-          height: 64,
+          height: { xs: 45, md: 64 }, // Altura reducida en mobile
           borderBottom: '1px solid white',
         }}
       >
@@ -360,15 +389,39 @@ export default function TopBar({
             }}
           >
             <Box
-              component="img"
-              src="/logodark.svg"
-              alt="Sellsi Logo"
-              onClick={() => navigate('/')}
               sx={{
-                height: { xs: 90, md: 110 },
+                height: { xs: 38, sm: 38, md: 50 },
+                width: { xs: 90, sm: 90, md: 140 }, // Mobile: fill width
+                maxWidth: { xs: 90 , sm: 90, md: 140 },
+                display: 'flex',
+                alignItems: 'center',
                 cursor: 'pointer',
+                p: 0,
+                m: 0,
+                lineHeight: 0,
+                overflow: 'hidden',
               }}
-            />
+              onClick={() => navigate('/?scrollTo=top')}
+            >
+              <Box
+                component="img"
+                src="/logodark.svg"
+                alt="Sellsi Logo"
+                sx={{
+                  height: { xs: 380, sm: 380, md: 450 },
+                  width: { xs: 90, sm: 90, md: 140 }, // Mobile: fill width
+                  maxWidth: { xs: 90, sm: 90, md: 140 },
+                  display: 'block',
+                  objectFit: { xs: 'contain', sm: 'contain', md: 'contain' },
+                  p: 0,
+                  m: 0,
+                  lineHeight: 0,
+                  userSelect: 'none',
+                  pointerEvents: 'none',
+                }}
+                draggable={false}
+              />
+            </Box>
             <Box sx={{ display: { xs: 'none', md: 'flex' }, gap: 2 }}>
               {desktopNavLinks}
             </Box>
@@ -387,41 +440,7 @@ export default function TopBar({
           <Box sx={{ display: { xs: 'flex', md: 'none' } }}>
             {isLoggedIn && (
               <>
-                <Tooltip title="Carrito" arrow>
-                  <IconButton
-                    onClick={() => navigate('/buyer/cart')}
-                    sx={{
-                      color: 'white',
-                      mr: 2.5,
-                      boxShadow: 'none',
-                      outline: 'none',
-                      border: 'none',
-                      transition: 'background 0.2s',
-                      '&:focus': {
-                        outline: 'none',
-                        border: 'none',
-                        boxShadow: 'none',
-                      },
-                      '&:active': {
-                        outline: 'none',
-                        border: 'none',
-                        boxShadow: 'none',
-                      },
-                      '&:hover': {
-                        background: theme => theme.palette.primary.main,
-                        boxShadow: 'none',
-                        outline: 'none',
-                        border: 'none',
-                      },
-                    }}
-                    disableFocusRipple
-                    disableRipple
-                  >
-                    <Badge badgeContent={itemsInCart} color="error">
-                      <CustomShoppingCartIcon />
-                    </Badge>
-                  </IconButton>
-                </Tooltip>
+                {/* Carrito eliminado en xs/sm, solo se muestra el profileMenuButton */}
                 {profileMenuButton}
               </>
             )}
@@ -436,6 +455,38 @@ export default function TopBar({
         anchorEl={mobileMenuAnchor}
         open={Boolean(mobileMenuAnchor)}
         onClose={handleCloseMobileMenu}
+        PaperProps={{
+          sx: {
+            backgroundColor: '#2C2C2C',
+            color: '#FFFFFF',
+            '& .MuiMenuItem-root': {
+              color: '#FFFFFF',
+              '&:hover': {
+                backgroundColor: 'rgba(255, 255, 255, 0.1)',
+              },
+            },
+            '& .MuiSvgIcon-root': {
+              color: '#FFFFFF',
+            },
+            '& .MuiToggleButton-root': {
+              color: '#FFFFFF',
+              borderColor: 'rgba(255, 255, 255, 0.3)',
+              '&.Mui-selected': {
+                backgroundColor: (theme) => theme.palette.primary.main,
+                color: '#FFFFFF',
+              },
+              '&.Mui-selected:hover': {
+                backgroundColor: (theme) => theme.palette.primary.dark,
+              },
+              '&:hover': {
+                backgroundColor: 'rgba(255, 255, 255, 0.05)',
+              },
+            },
+            '& .MuiDivider-root': {
+              borderColor: 'rgba(255, 255, 255, 0.1)',
+            },
+          },
+        }}
       >
         {mobileMenuItems}
       </Menu>
@@ -444,6 +495,21 @@ export default function TopBar({
         open={Boolean(profileAnchor)}
         onClose={handleCloseProfileMenu}
         disableScrollLock={true}
+        PaperProps={{
+          sx: {
+            backgroundColor: '#2C2C2C',
+            color: '#FFFFFF',
+            '& .MuiMenuItem-root': {
+              color: '#FFFFFF',
+              '&:hover': {
+                backgroundColor: 'rgba(255, 255, 255, 0.1)',
+              },
+            },
+            '& .MuiSvgIcon-root': {
+              color: '#FFFFFF',
+            },
+          },
+        }}
       >
         <MenuItem
           onClick={() => {
@@ -478,7 +544,7 @@ export default function TopBar({
           open={openContactModal}
           onClose={() => {
             setOpenContactModal(false);
-            console.log('ContactModal cerrado');
+            // ...log eliminado...
           }}
         />
       )}
