@@ -24,13 +24,16 @@ import {
 } from '@mui/icons-material';
 import { useBanner } from './banner/BannerContext';
 
+// ✅ 1. Definimos la URL de tu función de Supabase como una constante
+const supabaseFunctionUrl =
+  'https://pvtmkfckdaeiqrfjskrq.supabase.co/functions/v1/contact-form';
+
 const ContactModal = ({ open, onClose }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const location = useLocation();
   const { showBanner } = useBanner();
 
-  // Estado del formulario
   const [formData, setFormData] = useState({
     nombre: '',
     email: '',
@@ -39,37 +42,33 @@ const ContactModal = ({ open, onClose }) => {
 
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Guardar pathname inicial al abrir el modal
   const [initialPath, setInitialPath] = useState(null);
+
   useEffect(() => {
     if (open) {
       setInitialPath(location.pathname);
     }
   }, [open, location.pathname]);
 
-  // Cerrar modal solo si el pathname cambia respecto al inicial
   useEffect(() => {
     if (open && initialPath && location.pathname !== initialPath) {
       onClose();
     }
   }, [location.pathname, open, initialPath, onClose]);
 
-  // Reset formulario al cerrar
   const handleClose = () => {
     setFormData({ nombre: '', email: '', mensaje: '' });
     setErrors({});
     onClose();
   };
 
-  // Manejar cambios
   const handleChange = field => event => {
     setFormData(prev => ({ ...prev, [field]: event.target.value }));
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: '' }));
     }
   };
-  // Validación simple
+
   const validate = () => {
     const newErrors = {};
     if (!formData.nombre.trim()) newErrors.nombre = 'Nombre requerido';
@@ -81,7 +80,8 @@ const ContactModal = ({ open, onClose }) => {
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
-  // Envío
+
+  // ✅ 2. HEMOS ACTUALIZADO COMPLETAMENTE LA FUNCIÓN `handleSubmit`
   const handleSubmit = async e => {
     e.preventDefault();
     if (!validate()) {
@@ -93,27 +93,49 @@ const ContactModal = ({ open, onClose }) => {
     }
 
     setIsSubmitting(true);
-    try {
-      // Simular envío (aquí iría la llamada real a la API)
-      await new Promise(resolve => setTimeout(resolve, 1500));
 
-      // Mostrar banner de éxito
+    try {
+      // Hacemos la llamada real a la API de Supabase
+      const response = await fetch(supabaseFunctionUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        // Mapeamos los nombres del estado del formulario a los que espera la API
+        // (nombre -> name, mensaje -> message)
+        body: JSON.stringify({
+          name: formData.nombre,
+          email: formData.email,
+          message: formData.mensaje,
+        }),
+      });
+
+      // Si la respuesta NO es exitosa (ej: error 400, 500)
+      if (!response.ok) {
+        // Intentamos leer el error que nos envía el servidor para tener más detalles
+        const errorData = await response.json();
+        console.error('Error del servidor:', errorData);
+        // Lanzamos un error para que sea capturado por el bloque catch
+        throw new Error('La respuesta del servidor no fue exitosa.');
+      }
+
+      // Si todo fue bien, mostramos el banner de éxito
       showBanner({
         message:
-          '¡Gracias! Tu mensaje ha sido enviado correctamente. Nos pondremos en contacto contigo lo antes posible.',
+          '¡Gracias! Tu mensaje ha sido enviado. Nos pondremos en contacto contigo pronto.',
         severity: 'success',
       });
 
-      // Cerrar modal después del éxito
-      handleClose();
+      handleClose(); // Cerramos el modal
     } catch (error) {
-      console.error('Error:', error);
+      console.error('Error al enviar el formulario:', error);
       showBanner({
         message:
           'Hubo un error al enviar tu mensaje. Por favor, inténtalo nuevamente.',
         severity: 'error',
       });
     } finally {
+      // Esto se ejecuta siempre, tanto si hubo éxito como si hubo error
       setIsSubmitting(false);
     }
   };
@@ -122,7 +144,7 @@ const ContactModal = ({ open, onClose }) => {
     <Dialog
       open={open}
       onClose={handleClose}
-      maxWidth={false} // ✅ CORREGIDO: Desactiva maxWidth predefinido
+      maxWidth={false}
       fullWidth
       fullScreen={isMobile}
       TransitionComponent={Fade}
@@ -135,43 +157,34 @@ const ContactModal = ({ open, onClose }) => {
           overflow: 'hidden',
           background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)',
           position: 'fixed',
-          // ✅ SOLO PORCENTAJES - COMPLETAMENTE RESPONSIVE
           width: {
-            xs: '95%', // 95% del viewport en móvil
-            sm: '90%', // 90% del viewport en tablet pequeña
-            md: '80%', // 80% del viewport en tablet/laptop
-            lg: '30%', // 30% del viewport en desktop
-            xl: '20%', // 20% del viewport en pantallas grandes
+            xs: '95%',
+            sm: '90%',
+            md: '80%',
+            lg: '30%',
+            xl: '20%',
           },
-          // ✅ CONTROL DE ALTURA RESPONSIVE
           height: {
-            xs: '85%', // 70% de la altura del viewport en móvil
-            sm: '75%', // 75% de la altura del viewport en tablet pequeña
-            md: '85%', // 85% de la altura del viewport en tablet/laptop
-            lg: 'auto', // Altura automática en desktop
-            xl: 'auto', // Altura automática en pantallas grandes
+            xs: '85%',
+            sm: '75%',
+            md: '85%',
+            lg: 'auto',
+            xl: 'auto',
           },
-          // ✅ LÍMITES PARA EVITAR EXTREMOS
-          maxWidth: '90vw', // Nunca más del 90% del viewport de ancho
-          maxHeight: '90vh', // Nunca más del 90% del viewport de altura
-          minWidth: '300px', // Mínimo para que sea usable
-          minHeight: '400px', // Mínimo para que el contenido se vea bien
+          maxWidth: '90vw',
+          maxHeight: '90vh',
+          minWidth: '300px',
+          minHeight: '400px',
         },
       }}
     >
-      {/* Header minimalista */}
+      {/* El resto del componente permanece igual... */}
       <Box
         sx={{
           position: 'relative',
           background: 'linear-gradient(135deg, #1976d2 0%, #42a5f5 100%)',
           color: 'white',
-          py: {
-            xs: 0.5, // ✅ Reducido: 2 en lugar de 4 para móvil
-            sm: 1.5, // ✅ Reducido: 2.5 en lugar de 4 para small
-            md: 3, // ✅ Moderado: 3 para medium
-            lg: 4, // ✅ Normal: 4 para large+
-            xl: 4, // ✅ Normal: 4 para extra large
-          },
+          py: { xs: 0.5, sm: 1.5, md: 3, lg: 4, xl: 4 },
           px: 3,
           textAlign: 'center',
         }}
@@ -189,18 +202,17 @@ const ContactModal = ({ open, onClose }) => {
         >
           <CloseIcon />
         </IconButton>
-
         <Typography
           variant="h4"
           fontWeight="600"
           gutterBottom
           sx={{
             fontSize: {
-              xs: '1.5rem', // ✅ Más pequeño en móvil
-              sm: '1.75rem', // ✅ Ligeramente más grande en small
-              md: '2rem', // ✅ Tamaño medio en medium
-              lg: '2.125rem', // ✅ Tamaño normal en large+
-              xl: '2.125rem', // ✅ Tamaño normal en extra large
+              xs: '1.5rem',
+              sm: '1.75rem',
+              md: '2rem',
+              lg: '2.125rem',
+              xl: '2.125rem',
             },
           }}
         >
@@ -211,9 +223,9 @@ const ContactModal = ({ open, onClose }) => {
           sx={{
             opacity: 0.9,
             fontSize: {
-              xs: '0.875rem', // ✅ Más pequeño en móvil
-              sm: '0.9rem', // ✅ Ligeramente más grande en small
-              md: '1rem', // ✅ Tamaño normal en medium+
+              xs: '0.875rem',
+              sm: '0.9rem',
+              md: '1rem',
               lg: '1rem',
               xl: '1rem',
             },
@@ -224,7 +236,6 @@ const ContactModal = ({ open, onClose }) => {
       </Box>
 
       <DialogContent sx={{ p: 0 }}>
-        {/* Información de contacto compacta */}
         <Box
           sx={{
             bgcolor: alpha(theme.palette.primary.main, 0.03),
@@ -241,16 +252,14 @@ const ContactModal = ({ open, onClose }) => {
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <EmailIcon color="primary" />
               <Typography variant="body2" fontWeight="500">
-                contacto@sellsi.com
+                contacto@sellsi.cl {/* Corregí el dominio a .cl */}
               </Typography>
             </Box>
-
             <Divider
               orientation={isMobile ? 'horizontal' : 'vertical'}
               flexItem
               sx={{ display: isMobile ? 'none' : 'block' }}
             />
-
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <PhoneIcon color="primary" />
               <Typography variant="body2" fontWeight="500">
@@ -260,19 +269,10 @@ const ContactModal = ({ open, onClose }) => {
           </Stack>
         </Box>
 
-        {/* Formulario limpio */}
         <Box
           component="form"
           onSubmit={handleSubmit}
-          sx={{
-            p: {
-              xs: 1, // ✅ Reducido: 2 en lugar de 4 para móvil
-              sm: 3, // ✅ Moderado: 3 para small
-              md: 4, // ✅ Normal: 4 para medium+
-              lg: 4,
-              xl: 4,
-            },
-          }}
+          sx={{ p: { xs: 1, sm: 3, md: 4, lg: 4, xl: 4 } }}
         >
           <Stack spacing={3}>
             <TextField
@@ -293,7 +293,6 @@ const ContactModal = ({ open, onClose }) => {
                 },
               }}
             />
-
             <TextField
               fullWidth
               label="Email"
@@ -313,7 +312,6 @@ const ContactModal = ({ open, onClose }) => {
                 },
               }}
             />
-
             <TextField
               fullWidth
               label="Mensaje"
@@ -335,7 +333,6 @@ const ContactModal = ({ open, onClose }) => {
                 },
               }}
             />
-
             <Button
               type="submit"
               variant="contained"
@@ -357,10 +354,7 @@ const ContactModal = ({ open, onClose }) => {
                   boxShadow: '0 6px 20px rgba(25, 118, 210, 0.35)',
                   transform: 'translateY(-1px)',
                 },
-                '&:disabled': {
-                  background: '#e0e0e0',
-                  boxShadow: 'none',
-                },
+                '&:disabled': { background: '#e0e0e0', boxShadow: 'none' },
               }}
             >
               {isSubmitting ? 'Enviando...' : 'Enviar mensaje'}
