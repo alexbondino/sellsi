@@ -1,20 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Box, Typography, Button, Grid, Fade } from '@mui/material';
-import {
-  Store,
-  Person,
-  Inventory,
-  Visibility,
-  AttachMoney,
-  LocalShipping,
-  CheckCircle,
-  TrendingUp,
-  Groups,
-  ShoppingCart,
-  AccountBalance,
-  Receipt,
-} from '@mui/icons-material';
 import Wizard from '../ui/wizard/Wizard';
+import { SERVICES_DATA } from './constants.jsx';
 
 /**
  * ============================================================================
@@ -48,91 +35,8 @@ import Wizard from '../ui/wizard/Wizard';
  * - Animaciones y transiciones suaves
  */
 const ServicesSection = ({ serviciosRef }) => {
-  // Memoizar iconos para evitar recreación en cada render
-  const proveedorIcon = useMemo(() => <Store sx={{ fontSize: { xs: 16, sm: 20, md: 28 } }} />, []);
-  const compradorIcon = useMemo(() => <Groups sx={{ fontSize: { xs: 16, sm: 20, md: 28 } }} />, []);
-  const inventoryIcon = useMemo(() => <Inventory />, []);
-  const visibilityIcon = useMemo(() => <Visibility />, []);
-  const moneyIcon = useMemo(() => <AttachMoney />, []);
-  const shippingIcon = useMemo(() => <LocalShipping />, []);
-  const checkIcon = useMemo(() => <CheckCircle />, []);
-  const storeIcon = useMemo(() => <Store />, []);
-  const receiptIcon = useMemo(() => <Receipt />, []);
-  const balanceIcon = useMemo(() => <AccountBalance />, []);
-
-  // Memoizar datos de los servicios para el Wizard para evitar recreación en cada render
-  const services = useMemo(() => [
-    {
-      title: 'Proveedor',
-      description: 'Vende tus productos de forma directa',
-      icon: proveedorIcon,
-      image: '/Landing Page/Proveedor.webp',
-      timeline: [
-        {
-          title: 'Publica',
-          description: 'Sube tus productos en el el sitio web',
-          icon: inventoryIcon,
-          image: '/Landing Page/Proveedor/publica.webp',
-        },
-        {
-          title: 'Hazte visible',
-          description: 'Tu catálogo será visible para miles de vendedores',
-          icon: visibilityIcon,
-          image: '/Landing Page/Proveedor/visible.webp',
-        },
-        {
-          title: 'Define tu precio',
-          description: 'Establece precios y condiciones de venta',
-          icon: moneyIcon,
-          image: '/Landing Page/Proveedor/define.webp',
-        },
-        {
-          title: 'Despacho',
-          description: 'Coordina la entrega directa a tus clientes',
-          icon: shippingIcon,
-          image: '/Landing Page/Proveedor/despacho.webp',
-        },
-        {
-          title: 'Venta exitosa',
-          description: 'Recibe el pago y construye tu reputación',
-          icon: checkIcon,
-          image: '/Landing Page/Proveedor/venta.webp',
-        },
-      ],
-    },
-    {
-      title: 'Comprador',
-      description: 'Gestiona tus compras de forma ágil',
-      icon: compradorIcon,
-      image: '/Landing Page/Punto de Venta.webp',
-      timeline: [
-        {
-          title: 'Explora fácilmente',
-          description: 'Ofrece tu local como punto de retiro',
-          icon: storeIcon,
-          image: '/Landing Page/PuntoDeVenta/vendeespacio.webp',
-        },
-        {
-          title: 'Suma productos',
-          description: 'Amplía tu oferta con productos de otros proveedores',
-          icon: inventoryIcon,
-          image: '/Landing Page/PuntoDeVenta/sumaproductos.webp',
-        },
-        {
-          title: 'Simple y transparente',
-          description: 'Proceso fácil de gestionar y comisiones claras',
-          icon: receiptIcon,
-          image: '/Landing Page/PuntoDeVenta/simpletransparente.webp',
-        },
-        {
-          title: 'Acuerdo económico',
-          description: 'Genera ingresos adicionales con tu espacio',
-          icon: balanceIcon,
-          image: '/Landing Page/PuntoDeVenta/acuerdodinero.webp',
-        },
-      ],
-    },
-  ], [proveedorIcon, compradorIcon, inventoryIcon, visibilityIcon, moneyIcon, shippingIcon, checkIcon, storeIcon, receiptIcon, balanceIcon]); // Incluir todos los iconos como dependencias
+  // Usar los datos centralizados de constants.jsx
+  const services = SERVICES_DATA;
 
   // Memoizar configuración de breakpoints para evitar recreación en cada render
   const breakpoints = useMemo(() => ({

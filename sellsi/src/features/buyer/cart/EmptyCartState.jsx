@@ -49,15 +49,10 @@ const EmptyCartState = ({ wishlist, setShowWishlist }) => {
       >
         <Typography
           variant="h4"
-          component="h1"
-          sx={{
-            mb: 4,
-            fontWeight: 'bold',
-            background: '#1565c0',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            textAlign: 'center',
-          }}
+          fontWeight={600}
+          color="primary.main"
+          gutterBottom
+          sx={{ mb: 4, textAlign: 'center' }}
         >
           Mi Carrito
         </Typography>

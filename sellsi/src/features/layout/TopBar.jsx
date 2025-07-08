@@ -160,28 +160,32 @@ export default function TopBar({
 
   const profileMenuButton = (
     <IconButton onClick={handleOpenProfileMenu} sx={{ color: 'white', p: 0, display: { xs: 'none', md: 'inline-flex' } }}>
-      <Avatar
-        src={logoUrl && typeof logoUrl === 'string' && logoUrl.trim() !== '' ? logoUrl : undefined}
-        key={logoUrl || 'default-avatar'}
-        sx={{
-          transition: 'opacity 0.5s',
-          opacity: avatarLoaded ? 1 : 0,
-          background: '#e0e0e0',
-        }}
-        imgProps={{
-          onLoad: () => setAvatarLoaded(true),
-          onError: () => setAvatarLoaded(true),
-          style: { transition: 'opacity 0.5s', opacity: avatarLoaded ? 1 : 0 }
-        }}
-      >
-        <PersonIcon sx={{ opacity: avatarLoaded ? 0 : 1, transition: 'opacity 0.3s' }} />
-      </Avatar>
+      {logoUrl && typeof logoUrl === 'string' && logoUrl.trim() !== '' ? (
+        <Avatar
+          src={logoUrl}
+          key={logoUrl}
+          sx={{
+            transition: 'none !important',
+            opacity: avatarLoaded ? 1 : 0,
+            background: 'transparent !important',
+          }}
+          imgProps={{
+            onLoad: () => setAvatarLoaded(true),
+            onError: () => setAvatarLoaded(true),
+            style: { transition: 'opacity 0.5s', opacity: avatarLoaded ? 1 : 0 }
+          }}
+        />
+      ) : (
+        <Avatar sx={{ background: '#fff !important', color: '#111 !important' }}>
+          <PersonIcon sx={{ color: '#111 !important' }} />
+        </Avatar>
+      )}
     </IconButton>
   );
 
   if (!isLoggedIn) {
     const publicNavButtons = [
-      { label: 'Quiénes somos', ref: 'quienesSomosRef' },
+      { label: 'Quiénes Somos', ref: 'quienesSomosRef' },
       { label: 'Servicios', ref: 'serviciosRef' },
       { label: 'Trabaja con Nosotros', ref: 'trabajaConNosotrosRef' },
       { label: 'Contáctanos', ref: 'contactModal' }, // Cambiado a contactModal para abrir el modal
@@ -277,7 +281,7 @@ export default function TopBar({
     ];
   } else {
     // Si el usuario está logueado
-    paddingX = { xs: 2, md: 6, mac: 6, lg: 6 }; // Updated padding for logged in
+    paddingX = { xs: 2, md: 4, mac: 4, lg: 4 }; // Updated padding for logged in
     desktopRightContent = (
       <>
         {/* Usamos el componente Switch */}

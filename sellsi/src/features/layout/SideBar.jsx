@@ -26,14 +26,14 @@ import { useLocation, useNavigate } from 'react-router-dom';
 const buyerMenuItems = [
   { text: 'Marketplace', path: '/buyer/marketplace', icon: <MarketplaceIcon /> },
   { text: 'Mis Pedidos', path: '/buyer/orders', icon: <OrdersIcon /> },
-  { text: 'Mi Performance', path: '/buyer/performance', icon: <PerformanceIcon /> },
+  // { text: 'Mi Performance', path: '/buyer/performance', icon: <PerformanceIcon /> }, // Eliminado
 ];
 
 const providerMenuItems = [
   { text: 'Inicio', path: '/supplier/home', icon: <HomeIcon /> },
   { text: 'Mis Productos', path: '/supplier/myproducts', icon: <ProductsIcon /> },
   { text: 'Mis Pedidos', path: '/supplier/my-orders', icon: <OrdersIcon /> },
-  { text: 'Mi Performance', path: '/supplier/myperformance', icon: <PerformanceIcon /> },
+  // { text: 'Mi Performance', path: '/supplier/myperformance', icon: <PerformanceIcon /> }, // Eliminado
   { text: 'Marketplace', path: '/supplier/marketplace', icon: <MarketplaceIcon /> },
 ];
 
@@ -99,12 +99,12 @@ const SideBar = ({ role, width = '210px', onWidthChange }) => {
         top: '64px', // Comienza justo debajo de la TopBar
         left: 0,
         width: currentWidth, // Ancho dinámico basado en el estado de colapso
-        height: 'calc(100vh - 64px)', // Se extiende desde top:64px hasta el final de la ventana
+        height: '100vh', // Se extiende desde top:64px hasta el final de la ventana
         backgroundColor: sidebarBackgroundColor,
         color: '#FFFFFF', // Main text color is WHITE!
         display: { xs: 'none', md: 'flex' }, // Ocultar en móviles, mostrar en desktop
         flexDirection: 'column',
-        zIndex: 100, // Asegura que la BottomBar (zIndex: 200) esté por encima
+        zIndex: 900, // Forzar SideBar aún más abajo que la BottomBar (zIndex: 1301)
         overflowY: 'hidden', // La barra lateral no se scrollea
         overflowX: 'hidden', // Evita scroll horizontal durante animaciones
         borderRight: 'none', // Asegura que no haya borde derecho

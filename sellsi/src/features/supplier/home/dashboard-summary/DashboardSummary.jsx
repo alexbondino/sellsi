@@ -10,8 +10,14 @@ const DashboardSummary = ({
   weeklyRequests,
 }) => (
   <Box sx={{ width: '100%' }}>
-    <Typography component="h2" variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
-      Overview
+    <Typography
+      variant="h4"
+      fontWeight={600}
+      color="primary.main"
+      gutterBottom
+      sx={{ mb: 4 }}
+    >
+      Resumen
     </Typography>
     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, width: '100%' }}>
       <SummaryCards

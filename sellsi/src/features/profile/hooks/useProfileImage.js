@@ -7,6 +7,10 @@ import { useState, useEffect } from 'react';
 export const useProfileImage = (currentImageUrl) => {
   const [pendingImage, setPendingImage] = useState(null);
 
+  useEffect(() => {
+    console.log('[useProfileImage] pendingImage changed:', pendingImage);
+  }, [pendingImage]);
+
   // Cleanup de URLs de blob al desmontar o cambiar imagen
   useEffect(() => {
     return () => {
@@ -18,15 +22,21 @@ export const useProfileImage = (currentImageUrl) => {
 
   /**
    * Maneja el cambio de imagen desde el modal
-   * @param {object} imageData - Datos de la imagen (file, url, etc.)
+   * @param {object|null} imageData - Datos de la imagen (file, url, etc.) o null para eliminar
    */
   const handleImageChange = (imageData) => {
     // Limpiar imagen pendiente anterior si existe
     if (pendingImage?.url) {
       URL.revokeObjectURL(pendingImage.url);
     }
-    
-    setPendingImage(imageData);
+    if (imageData === null) {
+      // Marcar explícitamente para eliminar
+      console.log('[useProfileImage] handleImageChange: marcar para eliminar');
+      setPendingImage({ delete: true });
+    } else {
+      console.log('[useProfileImage] handleImageChange: nueva imagen seleccionada', imageData);
+      setPendingImage(imageData);
+    }
   };
 
   /**
@@ -34,6 +44,7 @@ export const useProfileImage = (currentImageUrl) => {
    * @returns {string|null} - URL de la imagen a mostrar
    */
   const getDisplayImageUrl = () => {
+    if (pendingImage?.delete) return null;
     if (pendingImage?.url) {
       return pendingImage.url; // Mostrar imagen preliminar
     }
@@ -47,6 +58,7 @@ export const useProfileImage = (currentImageUrl) => {
     if (pendingImage?.url) {
       URL.revokeObjectURL(pendingImage.url);
     }
+    console.log('[useProfileImage] clearPendingImage: limpiando imagen pendiente');
     setPendingImage(null);
   };
 

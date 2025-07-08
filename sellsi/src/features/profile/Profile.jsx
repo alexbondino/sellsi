@@ -10,6 +10,7 @@ import {
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import CameraAltIcon from '@mui/icons-material/CameraAlt';
+import PersonIcon from '@mui/icons-material/Person';
 import ChangePasswordModal from './ChangePasswordModal';
 import ProfileImageModal from '../ui/ProfileImageModal';
 import { useBanner } from '../ui/banner/BannerContext';
@@ -35,10 +36,15 @@ const Profile = ({ userProfile, onUpdateProfile }) => {
   const { formData, hasChanges, updateField, resetForm, updateInitialData } = useProfileForm(userProfile);
   const { 
     pendingImage, 
-    handleImageChange, 
+    handleImageChange: _handleImageChange, 
     getDisplayImageUrl,
     clearPendingImage 
   } = useProfileImage(userProfile?.logo_url);
+
+  // Wrapper to log when image change is triggered from modal
+  const handleImageChange = (imageData) => {
+    _handleImageChange(imageData);
+  } 
   const { 
     showSensitiveData, 
     toggleSensitiveData, 
@@ -61,6 +67,14 @@ const Profile = ({ userProfile, onUpdateProfile }) => {
     };
   }, [pendingImage]);
 
+  // Debug effect para monitorear cambios
+  useEffect(() => {
+    // Debug: Monitorear cambios de imagen y logo_url
+    // console.log('[Profile] userProfile.logo_url changed:', userProfile?.logo_url);
+    // console.log('[Profile] pendingImage changed:', pendingImage);
+    // console.log('[Profile] getDisplayImageUrl():', getDisplayImageUrl());
+  }, [userProfile?.logo_url, pendingImage]);
+
   // Handlers simplificados que usan los hooks
   const handleSwitchChange = (field) => (event, newValue) => {
     if (newValue !== null) {
@@ -78,32 +92,47 @@ const Profile = ({ userProfile, onUpdateProfile }) => {
     const hasFormChanges = hasChanges;
     const hasImageChanges = !!pendingImage;
     const hasPendingChanges = hasFormChanges || hasImageChanges;
-    
-    if (!hasPendingChanges) return;
-    
+
+    // console.log('[Profile] handleUpdate - hasFormChanges:', hasFormChanges);
+    // console.log('[Profile] handleUpdate - hasImageChanges:', hasImageChanges);
+    // console.log('[Profile] handleUpdate - pendingImage:', pendingImage);
+    // console.log('[Profile] handleUpdate - formData:', formData);
+
+    if (!hasPendingChanges) {
+      // console.log('[Profile] handleUpdate - No hay cambios pendientes, no se actualiza.');
+      return;
+    }
+
     setLoading(true);
     try {
       // Preparar datos para actualizar
       let dataToUpdate = { ...formData };
-      
+
       // Si hay imagen pendiente, incluirla en la actualización
       if (pendingImage) {
-        dataToUpdate.profileImage = pendingImage;
+        if (pendingImage.delete) {
+          // console.log('[Profile] handleUpdate - Eliminando imagen de perfil (logo_url=null)');
+          dataToUpdate.logo_url = null; // Eliminar imagen
+        } else {
+          // console.log('[Profile] handleUpdate - Subiendo nueva imagen de perfil:', pendingImage);
+          dataToUpdate.profileImage = pendingImage;
+        }
       }
-      
+
+      // console.log('[Profile] handleUpdate - Llamando a onUpdateProfile con:', dataToUpdate);
       await onUpdateProfile(dataToUpdate);
       updateInitialData(); // Actualizar datos iniciales en lugar de resetear
-      
+
       // Limpiar imagen pendiente después de guardar exitosamente
       clearPendingImage();
-      
+
       // Mostrar banner de éxito
       showBanner({
         message: '✅ Perfil actualizado correctamente',
         severity: 'success',
         duration: 4000
       });
-      
+
     } catch (error) {
       console.error('Error updating profile:', error);
       
@@ -165,17 +194,44 @@ const Profile = ({ userProfile, onUpdateProfile }) => {
   // Función para manejar el avatar con logo o iniciales
   const getAvatarProps = () => {
     const logoUrl = getDisplayImageUrl(); // Usar la función que incluye imagen preliminar
-    
+    // console.log('[Profile] getAvatarProps - logoUrl:', logoUrl);
+    // console.log('[Profile] getAvatarProps - getDisplayName():', getDisplayName());
     if (logoUrl) {
+      // console.log('[Profile] getAvatarProps - Using image URL');
       return {
         src: logoUrl,
-        sx: { bgcolor: '#f5f5f5' }
+        sx: { bgcolor: 'transparent' }
       };
     } else {
-      return {
-        children: getInitials(getDisplayName()), // Mostrar iniciales si no hay logo
-        sx: { bgcolor: 'primary.main', color: 'white' }
-      };
+      const initials = getInitials(getDisplayName());
+      // console.log('[Profile] getAvatarProps - initials:', initials);
+      if (initials && initials.trim()) {
+        // console.log('[Profile] getAvatarProps - Using initials');
+        return {
+          children: initials, // Mostrar iniciales si no hay logo
+          sx: { 
+            bgcolor: 'primary.main', 
+            color: 'white !important',
+            '& .MuiAvatar-fallback': { color: 'white !important' }
+          }
+        };
+      } else {
+        // console.log('[Profile] getAvatarProps - Using PersonIcon');
+        return {
+          children: <PersonIcon sx={{ 
+            color: 'white !important', 
+            transition: 'none !important',
+            '&:hover': { color: 'white !important' },
+            '&:focus': { color: 'white !important' },
+            '&:active': { color: 'white !important' }
+          }} />, // Mostrar icono de persona con color blanco
+          sx: { 
+            bgcolor: 'primary.main !important', 
+            color: 'white !important', 
+            transition: 'none !important' 
+          }
+        };
+      }
     }
   };
 

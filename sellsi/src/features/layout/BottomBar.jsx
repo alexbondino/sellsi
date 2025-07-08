@@ -42,7 +42,9 @@ const BottomBar = () => {
           px: { xs: 2.25, md: 8, lg: 0, xl: 0 },
           py: { xs: 2.5, md: 3 },
           overflowX: 'hidden',
-          zIndex: 200,
+          zIndex: 1301, // Debe ser mayor que la SideBar (por defecto 1200 en MUI Drawer)
+          position: 'sticky', // Ahora sticky
+          bottom: 0, // Se pega al fondo de la ventana
         }}
       >
         <Box

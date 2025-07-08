@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Box, CircularProgress, Typography } from '@mui/material';
 import Profile from '../profile/Profile';
 import { supabase } from '../../services/supabase';
-import { getUserProfile, updateUserProfile, uploadProfileImage } from '../../services/profileService';
+import { getUserProfile, updateUserProfile, uploadProfileImage, deleteAllUserImages, repairUserImageUrl, forceFixImageUrl } from '../../services/profileService';
 
 const SupplierProfile = ({ onProfileUpdated }) => {
   const [userProfile, setUserProfile] = useState(null);
@@ -58,6 +58,36 @@ const SupplierProfile = ({ onProfileUpdated }) => {
         billing_comuna: data.billing_comuna,
         logo_url: data.logo_url, // Para el avatar
       });
+
+      // REPARAR URL DE IMAGEN SI ES NECESARIO
+      if (data.logo_url) {
+        console.log('[SupplierProfile] Verificando URL de imagen:', data.logo_url);
+        // Test si la URL funciona
+        fetch(data.logo_url)
+          .then(response => {
+            if (!response.ok) {
+              console.log('[SupplierProfile] URL rota, iniciando reparación FORZADA...');
+              return forceFixImageUrl(user.id);
+            }
+            return { success: true, message: 'URL funciona correctamente' };
+          })
+          .then(repairResult => {
+            console.log('[SupplierProfile] Resultado de reparación FORZADA:', repairResult);
+            if (repairResult.success && repairResult.correctUrl) {
+              // Recargar perfil con URL corregida
+              fetchUserProfile();
+            }
+          })
+          .catch(error => {
+            console.log('[SupplierProfile] Error verificando URL, iniciando reparación...', error);
+            repairUserImageUrl(user.id).then(repairResult => {
+              console.log('[SupplierProfile] Resultado de reparación:', repairResult);
+              if (repairResult.success && repairResult.correctUrl) {
+                fetchUserProfile();
+              }
+            });
+          });
+      }
     } catch (error) {
       console.error('Error fetching user profile:', error);
     } finally {
@@ -75,8 +105,18 @@ const SupplierProfile = ({ onProfileUpdated }) => {
 
       let logoPublicUrl = userProfile?.logo_url; // Mantener URL actual por defecto
 
-      // MANEJAR SUBIDA DE IMAGEN DE PERFIL
-      if (profileData.profileImage) {
+      // MANEJAR ELIMINACIÓN DE IMAGEN DE PERFIL
+      if (profileData.profileImage === null || (profileData.profileImage && profileData.profileImage.delete)) {
+        // Eliminar todas las imágenes del usuario
+        const deleteResult = await deleteAllUserImages(user.id);
+        if (!deleteResult.success) {
+          console.warn('No se pudieron eliminar las imágenes previas:', deleteResult.error);
+        }
+        logoPublicUrl = null;
+        profileData.logo_url = null;
+      }
+      // MANEJAR SUBIDA DE NUEVA IMAGEN DE PERFIL
+      else if (profileData.profileImage && profileData.profileImage.file) {
         const { url, error } = await uploadProfileImage(user.id, profileData.profileImage.file);
         
         if (error) {

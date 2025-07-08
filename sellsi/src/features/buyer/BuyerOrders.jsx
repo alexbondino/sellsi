@@ -77,8 +77,10 @@ const BuyerOrders = () => {
       <Container maxWidth="xl" disableGutters>
         <Typography
           variant="h4"
-          component="h1"
-          sx={{ mb: 4, fontWeight: 'bold' }}
+          fontWeight={600}
+          color="primary.main"
+          gutterBottom
+          sx={{ mb: 4 }}
         >
           Mis Pedidos
         </Typography>

@@ -128,12 +128,12 @@ export const SERVICES_DATA = [
   {
     title: 'Proveedor',
     description: 'Vende tus productos de forma directa',
-    icon: <Store sx={{ fontSize: { xs: 20, md: 24 } }} />,
+    icon: <Store sx={{ fontSize: { xs: 16, sm: 20, md: 28 } }} />,
     image: '/Landing Page/Proveedor.webp',
     timeline: [
       {
         title: 'Publica',
-        description: 'Sube tus productos con fotos y descripciones detalladas',
+        description: 'Sube tus productos en el el sitio web',
         icon: <Inventory />,
         image: '/Landing Page/Proveedor/publica.webp',
       },
@@ -145,7 +145,7 @@ export const SERVICES_DATA = [
       },
       {
         title: 'Define tu precio',
-        description: 'Establece precios competitivos y condiciones de venta',
+        description: 'Establece precios y condiciones de venta',
         icon: <AttachMoney />,
         image: '/Landing Page/Proveedor/define.webp',
       },
@@ -164,41 +164,14 @@ export const SERVICES_DATA = [
     ],
   },
   {
-    title: 'Vendedor',
-    description: 'Encuentra productos para revender',
-    icon: <Person sx={{ fontSize: { xs: 20, md: 24 } }} />,
-    image: '/Landing Page/Vendedor.webp',
-    timeline: [
-      {
-        title: 'Elige productos',
-        description:
-          'Explora nuestro catálogo y selecciona lo que quieres vender',
-        icon: <ShoppingCart />,
-        image: '/Landing Page/Vendedor/elige.webp',
-      },
-      {
-        title: 'Vende como quieras',
-        description: 'Usa redes sociales, tienda física o marketplace',
-        icon: <TrendingUp />,
-        image: '/Landing Page/Vendedor/vendecomoquieras.webp',
-      },
-      {
-        title: 'Gana comisión',
-        description: 'Obtén ganancias por cada venta realizada',
-        icon: <AttachMoney />,
-        image: '/Landing Page/Vendedor/ganacomision.webp',
-      },
-    ],
-  },
-  {
-    title: 'Punto de Venta',
-    description: 'Optimiza tu espacio comercial',
-    icon: <Groups sx={{ fontSize: { xs: 20, md: 24 } }} />,
+    title: 'Comprador',
+    description: 'Gestiona tus compras de forma ágil',
+    icon: <Groups sx={{ fontSize: { xs: 16, sm: 20, md: 28 } }} />,
     image: '/Landing Page/Punto de Venta.webp',
     timeline: [
       {
         title: 'Explora fácilmente',
-        description: 'Ofrece tu local como punto de retiro',
+        description: 'Accede a un catálogo confiable, filtra por lo que necesitas',
         icon: <Store />,
         image: '/Landing Page/PuntoDeVenta/vendeespacio.webp',
       },
@@ -222,7 +195,7 @@ export const SERVICES_DATA = [
       },
     ],
   },
-]
+];
 
 // ============================================================================
 // LOGOS DE PROVEEDORES DESTACADOS

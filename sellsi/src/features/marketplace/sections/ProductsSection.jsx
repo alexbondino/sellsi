@@ -48,6 +48,7 @@ const ProductsSection = React.memo(
     titleMarginLeft = { xs: 0, sm: 0, md: 0, lg: 0, xl: 0 }, // Nueva prop para margen del título
     loading,
     error,
+    isSideBarCollapsed = false, // <-- NUEVO PROP
   }) => {
     // ✅ OPTIMIZACIÓN: Removed console.count for production performance
     // Hook para usar el store del carrito
@@ -461,7 +462,10 @@ const ProductsSection = React.memo(
 
     return (
       <Box sx={mainContainerStyles}>
-        <Box sx={innerContainerStyles}>
+        <Box sx={{
+          ...innerContainerStyles
+          // El shift animado ahora se maneja en el contenedor principal (App.jsx)
+        }}>
           {/* ✅ TÍTULO con márgenes reducidos e iguales */}
           <Box
             sx={{

@@ -538,16 +538,23 @@ function AppContent({ mensaje }) {
 
   // Determinar si la SideBar debe mostrarse.
   // La SideBar se muestra si hay una sesión, no se necesita onboarding,
-  // y la ruta actual es una ruta de dashboard (ya sea de comprador o proveedor).
+  // y la ruta actual es una ruta de dashboard (ya sea de comprador o proveedor),
+  // o si la ruta es una ficha técnica de producto.
+  const isProductPageRoute =
+    location.pathname.match(/^\/marketplace\/product\/[^/]+(\/[^/]+)?$/);
+
   const isDashboardRoute =
     session &&
     !needsOnboarding &&
-    (Array.from(buyerDashboardRoutes).some(route =>
-      location.pathname.startsWith(route)
-    ) ||
+    (
+      Array.from(buyerDashboardRoutes).some(route =>
+        location.pathname.startsWith(route)
+      ) ||
       Array.from(supplierDashboardRoutes).some(route =>
         location.pathname.startsWith(route)
-      ));
+      ) ||
+      isProductPageRoute
+    );
 
   // La BottomBar se muestra en todas las rutas excepto en '/supplier/home'
   const showBottomBar = location.pathname !== '/supplier/home';
@@ -601,19 +608,32 @@ function AppContent({ mensaje }) {
 
           <Box
             component="main"
-            sx={{
+            sx={theme => ({
               flexGrow: 1,
               pl: isDashboardRoute ? 3 : 0,
               pr: isDashboardRoute ? 3 : 0,
               pt: isDashboardRoute ? 3 : 0,
-              pb: isDashboardRoute ? { xs: session ? 10 : 3, md: 3 } : { xs: session ? 10 : 0, md: 0 }, // Padding extra en mobile cuando hay sesión para el MobileBar
+              pb: isDashboardRoute ? { xs: session ? 10 : 3, md: 3 } : { xs: session ? 10 : 0, md: 0 },
               width: isDashboardRoute
                 ? { xs: '100%', md: `calc(100% - ${currentSideBarWidth})` }
                 : '100%',
               overflowX: 'hidden',
               ml: isDashboardRoute ? { md: 14, lg: 14, xl: 0 } : 0,
-              transition: 'margin-left 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94), width 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
-            }}
+              // Animación robusta: solo en md y lg, nunca en xl
+              transition: [
+                theme.breakpoints.up('md') && theme.breakpoints.down('lg')
+                  ? 'transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94), margin-left 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94), width 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)'
+                  : 'margin-left 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94), width 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)'
+              ].join(','),
+              // Solo aplicar el shift animado en md y lg, nunca en xl
+              transform: {
+                xs: 'none',
+                sm: 'none',
+                md: isDashboardRoute && sideBarCollapsed ? 'translateX(-80px)' : 'none',
+                lg: isDashboardRoute && sideBarCollapsed ? 'translateX(-80px)' : 'none',
+                xl: 'none',
+              },
+            })}
           >
             <Suspense fallback={<SuspenseLoader />}>
               <Routes>

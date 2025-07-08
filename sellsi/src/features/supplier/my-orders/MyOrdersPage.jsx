@@ -375,7 +375,13 @@ const MyOrdersPage = () => {
       >
         <Container maxWidth="xl" disableGutters>
           {/* Título de la página */}
-          <Typography variant="h4" component="h1" gutterBottom>
+          <Typography
+            variant="h4"
+            fontWeight={600}
+            color="primary.main"
+            gutterBottom
+            sx={{ mb: 4 }}
+          >
             Mis Pedidos
           </Typography>
 
