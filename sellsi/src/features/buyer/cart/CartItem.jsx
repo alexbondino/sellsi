@@ -184,14 +184,15 @@ const CartItem = ({
       {/* ========== CONTENEDOR PRINCIPAL DEL ITEM DEL CARRITO ========== */}{' '}
       <Paper
         sx={{
-          p: 3,
+          p: 1.5,
           mb: 4,
-          borderRadius: 3,
+          borderRadius: 1,
           background: 'linear-gradient(135deg, #ffffff 0%, #f8f9ff 100%)',
           boxShadow: '0 8px 24px rgba(0,0,0,0.08)',
           border:
             isSelectionMode && isSelected
-              ? '2px solid rgba(25, 118, 210, 0.6)'              : '1px solid rgba(102, 126, 234, 0.1)',
+              ? '2px solid rgba(25, 118, 210, 0.6)'
+              : '1px solid rgba(102, 126, 234, 0.1)',
           width: '100%',
           maxWidth: '100%',
           overflow: 'hidden', // Prevenir overflow horizontal
@@ -202,7 +203,7 @@ const CartItem = ({
             border:
               isSelectionMode && isSelected
                 ? '2px solid rgba(25, 118, 210, 0.8)'
-                : '1px solid rgba(102, 126, 234, 0.2)',
+                : '1px solid rgba(2, 3, 5, 0.55)',
           },
         }}
       >
@@ -266,18 +267,16 @@ const CartItem = ({
             <Box
               sx={{
                 position: 'relative',
-                width: '100%', // ← Ancho flexible
-                minWidth: '115px', // ← Mínimo reducido
-                maxWidth: '115px', // ← Máximo mantenido
+                width: '160px',
               }}
             >
               <OptimizedImage
                 src={resolveImageSrc(item)}
                 alt={productData.name}
                 sx={{
-                  height: 140,
+                  height: 160,
                   width: '100%',
-                  borderRadius: 2,
+                  borderRadius: 1,
                   objectFit: 'contain',
                   backgroundColor: '#f9f9f9',
                 }}
@@ -340,49 +339,40 @@ const CartItem = ({
                 />
               </Box>{' '}
               {/* Price - Usando precio dinámico basado en quantity y price_tiers */}
-              <PriceDisplay
-                price={priceCalculations.unitPrice}
-                variant="h6"
-                sx={{ mb: 6 }}
-              />{' '}
-              {/* Feature badges */}
-              <Stack
-                direction="row"
-                spacing={1}
-                sx={{ flexWrap: 'wrap', gap: 0.5 }}
-              >
-                <Chip
-                  icon={<VerifiedIcon />}
-                  label="Verificado"
-                  size="small"
-                  color="success"
-                  variant="outlined"
+              <Box sx={{ mb: 2 }}>
+                <Typography variant="body2" sx={{ color: '#222', fontWeight: 500, mb: 0.5 }}>
+                  Precio Unitario:
+                </Typography>
+                <PriceDisplay
+                  price={priceCalculations.unitPrice}
+                  variant="h6"
+                  sx={{ color: '#222', fontWeight: 700 }}
                 />
-              </Stack>
+              </Box>
+              {/* Feature badges */}
+              {/* Stack de badges eliminado: Chip "Verificado" removido */}
             </Box>{' '}
           </Grid>{' '}          {/* Controles y acciones */}
           <Grid size={{ xs: 12, sm: 3.2 }} sx={{ marginLeft: 'auto !important' }}>
             <Box
               sx={{
-                display: 'flex !important',
-                flexDirection: 'column !important',
-                alignItems: 'flex-end !important',
-                justifyContent: 'flex-start !important',
-                textAlign: 'right !important',
-                gap: 2,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'flex-start',
+                gap: 1,
                 height: '100%',
                 width: '100%',
-                marginLeft: 'auto !important',
+                marginLeft: 'auto',
               }}
             >
-              {' '}
-              {/* Controles de cantidad con animaciones */}
+              {/* Controles de cantidad centrados */}
               <Box
                 sx={{
-                  display: 'flex !important',
-                  justifyContent: 'flex-end !important',
-                  alignItems: 'center !important',                  width: '100%',
-                  marginLeft: 'auto !important',
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  width: '100%',
                   opacity: isSelectionMode ? 0.5 : 1,
                 }}
               >
@@ -395,52 +385,84 @@ const CartItem = ({
                   size="small"
                   disabled={isSelectionMode}
                   sx={{
-                    alignSelf: 'flex-end !important',
-                    justifyContent: 'flex-end !important',
-                    marginLeft: 'auto !important',
-                    display: 'flex !important',
-                    flexDirection: 'row !important',
+                    alignSelf: 'center',
+                    justifyContent: 'center',
+                    display: 'flex',
+                    flexDirection: 'row',
+                  }}
+                  stockText={undefined}
+                />
+              </Box>
+              {/* Información de stock centrada */}
+              <Box sx={{ width: '100%', display: 'flex', justifyContent: 'center' }}>
+                <StockIndicator
+                  stock={item.maxStock - item.quantity}
+                  lowStockThreshold={Math.round(item.maxStock * 0.2)}
+                  showUnits={true}
+                  variant="caption"
+                  sx={{
+                    textAlign: 'center',
+                    alignSelf: 'center',
+                    opacity: isSelectionMode ? 0.5 : 1,
                   }}
                 />
-              </Box>{' '}
-              {/* Información de stock */}
-              <StockIndicator
-                stock={item.maxStock - item.quantity}
-                lowStockThreshold={Math.round(item.maxStock * 0.2)}
-                showUnits={true}
-                variant="caption"
+              </Box>
+              {/* Contenedor flex para Precio Total y monto alineados al centro */}
+              <Box
                 sx={{
-                  textAlign: 'right !important',                  alignSelf: 'flex-end !important',
-                  marginLeft: 'auto !important',
-                  opacity: isSelectionMode ? 0.5 : 1,
-                }}
-              />{' '}
-              {/* Subtotal del producto - Usando precio dinámico calculado */}
-              <Typography
-                variant="h5"
-                sx={{
-                  fontWeight: 'bold',
-                  textAlign: 'right !important',
-                  color: 'success.main',
-                  background: '#1976d2',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  alignSelf: 'flex-end !important',                  marginLeft: 'auto !important',
-                  opacity: isSelectionMode ? 0.5 : 1,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  width: '100%',
+                  gap: 0,
                 }}
               >
-                {formatPrice(priceCalculations.subtotal)}
-              </Typography>
-              {/* Acciones */}
-              <Stack
-                direction="row"
-                spacing={1}
-                sx={{
-                  justifyContent: 'flex-end !important',
-                  alignSelf: 'flex-end !important',                  marginLeft: 'auto !important',
-                  opacity: isSelectionMode ? 0.3 : 1,
-                }}
-              >
+                <Typography
+                  variant="body2"
+                  sx={{
+                    color: '#222',
+                    fontWeight: 500,
+                    mb: 0,
+                    textAlign: 'center',
+                  }}
+                >
+                  Precio Total:
+                </Typography>
+                <Typography
+                  variant="h5"
+                  sx={{
+                    fontWeight: 'bold',
+                    textAlign: 'center',
+                    color: 'success.main',
+                    background: '#1976d2',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    opacity: isSelectionMode ? 0.5 : 1,
+                  }}
+                >
+                  {formatPrice(priceCalculations.subtotal)}
+                </Typography>
+              </Box>
+            </Box>
+          </Grid>{' '}          {/* Opciones de Envío */}
+          <Grid size={{ xs: 12, sm: 2.8 }}>
+            <Box
+              sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'flex-start',
+                justifyContent: 'flex-start',
+                height: '100%',
+                pl: 1,
+                pr: 0,
+                borderLeft: '1px solid rgba(0,0,0,0.1)',
+                overflow: 'visible',
+                position: 'relative',
+                minWidth: 0,
+              }}
+            >
+              {/* Botón de eliminar en la esquina superior derecha */}
+              <Box sx={{ position: 'absolute', top: 8, right: 8, zIndex: 2 }}>
                 <Tooltip
                   title={
                     isSelectionMode
@@ -454,6 +476,7 @@ const CartItem = ({
                       onClick={() => setOpenDeleteModal(true)}
                       color="default"
                       disabled={isSelectionMode}
+                      sx={{ bgcolor: 'transparent', border: 'none', p: 0.5 }}
                     >
                       <DeleteIcon sx={{ color: 'grey.600' }} />
                     </IconButton>
@@ -471,28 +494,20 @@ const CartItem = ({
                   submitButtonText="Eliminar"
                   cancelButtonText="Cancelar"
                   showCancelButton
+                  sx={{
+                    '& .MuiDialogContent-root': {
+                      textAlign: 'center',
+                    },
+                    '& .MuiDialogActions-root': {
+                      justifyContent: 'center',
+                    },
+                  }}
                 >
-                  ¿Estás seguro que deseas eliminar este producto del carrito?
+                  <Box sx={{ textAlign: 'center' }}>
+                    ¿Estás seguro que deseas eliminar este producto del carrito?
+                  </Box>
                 </Modal>
-              </Stack>
-            </Box>
-          </Grid>{' '}          {/* Opciones de Envío */}
-          <Grid size={{ xs: 12, sm: 2.8 }}>
-            <Box
-              sx={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'flex-start',
-                justifyContent: 'flex-start',
-                height: '100%',
-                pl: 1,
-                pr: 0, // Reducido de 1 a 0.3 para dar más ancho
-                borderLeft: '1px solid rgba(0,0,0,0.1)',
-                overflow: 'visible',
-                position: 'relative',
-                minWidth: 0, // Permite que el contenido se contraiga
-              }}
-            >
+              </Box>
               <Typography
                 variant="subtitle2"
                 sx={{
@@ -506,97 +521,43 @@ const CartItem = ({
               >
                 <LocalShippingIcon sx={{ fontSize: 16 }} />
                 Despacho
-              </Typography>{' '}
-              <FormControl size="small">
-                {' '}
-                <Select
-                  value={selectedShipping}
-                  onChange={(e) => handleShippingChange(e.target.value)}
-                  variant="outlined"
-                  MenuProps={{
-                    PaperProps: {
-                      sx: {
-                        maxHeight: 200,
-                        width: 'auto',
-                        minWidth: '200px',
-                        '& .MuiMenuItem-root': {
-                          whiteSpace: 'normal',
-                          wordWrap: 'break-word',
-                        },
-                      },
-                    },
-                    anchorOrigin: {
-                      vertical: 'bottom',
-                      horizontal: 'left',
-                    },
-                    transformOrigin: {
-                      vertical: 'top',
-                      horizontal: 'left',
-                    },
-                    disableScrollLock: true,
-                  }}
-                  sx={{
-                    fontSize: '0.75rem',
-                    width: '140px', // Ancho fijo para evitar que se agrande
-                    minWidth: '140px', // Ancho mínimo fijo
-                    maxWidth: '140px', // Ancho máximo fijo
-                    '& .MuiSelect-select': {
-                      py: 0.5,
-                      fontSize: '0.75rem',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap',
-                    },
-                    '& .MuiOutlinedInput-root': {
-                      overflow: 'hidden',
-                    },
-                  }}
-                >
-                  {SHIPPING_OPTIONS.map((option) => (
-                    <MenuItem key={option.id} value={option.id}>
-                      <Box
-                        sx={{
-                          display: 'flex',
-                          flexDirection: 'column',
-                          width: '100%',
-                        }}
-                      >
-                        <Typography
-                          variant="caption"
-                          sx={{ fontWeight: 'bold' }}
-                        >
-                          {option.icon} {option.name}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          {option.price > 0
-                            ? formatPrice(option.price)
-                            : 'Gratis'}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          {option.days}
-                        </Typography>
-                      </Box>
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>{' '}
+              </Typography>
+              <Box sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'flex-start',
+                width: '140px',
+                minWidth: '140px',
+                maxWidth: '140px',
+                py: 1,
+                px: 0,
+                borderRadius: 1,
+                bgcolor: 'transparent',
+                border: 'none',
+              }}>
+                <Typography variant="caption" sx={{ fontWeight: 'bold', mb: 0.5 }}>
+                  🚚 Envío Estándar
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  {formatPrice(SHIPPING_OPTIONS.find(opt => opt.id === 'standard')?.price || 0)}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  {SHIPPING_OPTIONS.find(opt => opt.id === 'standard')?.days || '2-5 días hábiles'}
+                </Typography>
+              </Box>
               <Typography
                 variant="body1"
                 sx={{
                   mt: 1,
                   color: 'success.main',
                   fontWeight: 'bold',
-                  fontSize: '1rem', // Aumentado a 1rem para mejor visibilidad
+                  fontSize: '1rem',
                 }}
               >
-                {SHIPPING_OPTIONS.find((opt) => opt.id === selectedShipping)
-                  ?.price > 0
-                  ? formatPrice(
-                      SHIPPING_OPTIONS.find(
-                        (opt) => opt.id === selectedShipping
-                      )?.price
-                    )
-                  : 'Gratis'}
+                {(() => {
+                  const std = SHIPPING_OPTIONS.find(opt => opt.id === 'standard');
+                  return std && std.price > 0 ? formatPrice(std.price) : 'Gratis';
+                })()}
               </Typography>
             </Box>
           </Grid>

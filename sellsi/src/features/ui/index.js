@@ -44,6 +44,8 @@ export {
 export { default as Widget } from './Widget';
 export { default as Wizard } from './wizard/Wizard';
 export { default as SelectChip } from './SelectChip';
+export { default as ShippingRegionsModal } from './ShippingRegionsModal';
+export { default as ShippingRegionsDisplay } from './ShippingRegionsDisplay';
 
 // Re-exportar hooks de UI si existen
 export * from './hooks';

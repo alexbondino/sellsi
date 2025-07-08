@@ -87,7 +87,7 @@ const PriceBreakdown = ({
           Total:
         </Typography>
         <Typography
-          variant="h4"
+          variant="h5"
           fontWeight="bold"
           sx={{
             background: '#1565c0',

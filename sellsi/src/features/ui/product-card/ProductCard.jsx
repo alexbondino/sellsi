@@ -101,7 +101,7 @@ const ProductCard = React.memo(
           { xs: 380, sm: 400, md: 357.5, lg: 487.5, xl: 520 },
         // 🎯 ANCHO RESPONSIVE ÚNICO DE LA TARJETA
         width: type === 'supplier'
-          ? { xs: 175, sm: 190, md: 220, lg: 300, xl: 360 }
+          ? { xs: 175, sm: 190, md: 220, lg: 370, xl: 360 }
           : { xs: 175, sm: 190, md: 220, lg: 300, xl: 320 },
         display: 'flex',
         flexDirection: 'column',
@@ -148,7 +148,11 @@ const ProductCard = React.memo(
       if (currentPath === '/marketplace' || currentPath === '/') {
         return `/technicalspecs/${productSlug}`;
       }
-      // Si estamos en dashboard buyer/supplier, usar la ruta privada
+      // Si estamos en la lista de productos del supplier, mantener contexto supplier
+      if (currentPath === '/supplier/myproducts') {
+        return `/supplier/myproducts/product/${productSlug}`;
+      }
+      // Si estamos en dashboard buyer/supplier, usar la ruta privada por defecto
       return `/marketplace/product/${productId}${productName ? `/${productName}` : ''}`;
     }, []);
 

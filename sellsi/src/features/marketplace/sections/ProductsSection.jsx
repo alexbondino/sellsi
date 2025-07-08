@@ -45,7 +45,7 @@ const ProductsSection = React.memo(
     productosOrdenados,
     resetFiltros,
     hasSideBar = false, // Nueva prop para detectar si hay SideBar
-    titleMarginLeft = { xs: 0, sm: 0, md: 0, lg: 0, xl: 0 }, // Nueva prop para margen del título
+    titleMarginLeft,
     loading,
     error,
     isSideBarCollapsed = false, // <-- NUEVO PROP
@@ -93,13 +93,12 @@ const ProductsSection = React.memo(
     // ✅ LAYOUT ESTÁTICO: Padding fijo para mejor performance
     const mainContainerStyles = React.useMemo(
       () => ({
-        pt:  { xs: 1, md:'180px'},
-        minHeight: 'calc(100vh - s140px)',
+        pt:  { xs: 1, md:'60px'},
+        minHeight: '100vh',
         display: 'flex',
         justifyContent: 'center',
         alignItems: { xs: 'center', sm: 'center', md: 'flex-start', lg: 'flex-start', xl: 'flex-start' }, // Centrado vertical solo en xs/sm
         px: { xs: 0, sm: 0, md: 3, lg: 4 }, // Sin padding horizontal en mobile
-        mb: { xs: 0, md: 50 },
         boxSizing: 'border-box',
         width: '100%',
       }),
@@ -509,7 +508,7 @@ const ProductsSection = React.memo(
                 fontWeight={600}
                 noWrap
                 sx={{
-                  color: '#1e293b',
+                  color: seccionActiva === 'todos' ? 'primary.main' : '#1e293b',
                   fontSize: { xs: '1.25rem', sm: '1.3rem', md: '2rem' },
                   lineHeight: 1.2,
                   whiteSpace: { xs: 'normal', sm: 'nowrap', md: 'nowrap' },

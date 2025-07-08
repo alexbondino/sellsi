@@ -19,6 +19,7 @@ import {
 import ProductPageView from './ProductPageView';
 import { supabase } from '../../../services/supabase';
 import useCartStore from '../../buyer/hooks/cartStore';
+import { extractProductIdFromSlug } from '../../marketplace/marketplace/productUrl';
 
 const ProductPageWrapper = ({ isLoggedIn }) => {
   // Obtener el tipo de vista desde App.jsx vía window o prop global
@@ -30,7 +31,8 @@ const ProductPageWrapper = ({ isLoggedIn }) => {
     isSupplier = currentAppRole === 'supplier';
   }
   // ...logs eliminados...
-  const { id } = useParams();
+  // Soportar tanto /marketplace/product/:id como /supplier/myproducts/product/:productSlug
+  const { id, productSlug } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
   const [product, setProduct] = useState(null);
@@ -48,7 +50,12 @@ const ProductPageWrapper = ({ isLoggedIn }) => {
 
   useEffect(() => {
     const fetchProduct = async () => {
-      if (!id) {
+      // Soportar ambos casos: id directo o productSlug (formato: uuid-nombre)
+      let productId = id;
+      if (!productId && productSlug) {
+        productId = extractProductIdFromSlug(productSlug);
+      }
+      if (!productId) {
         setError('ID de producto no válido');
         setLoading(false);
         return;
@@ -56,7 +63,6 @@ const ProductPageWrapper = ({ isLoggedIn }) => {
 
       try {
         setLoading(true);
-        
         // Buscar el producto en Supabase
         const { data, error } = await supabase
           .from('products')
@@ -69,7 +75,7 @@ const ProductPageWrapper = ({ isLoggedIn }) => {
               logo_url
             )
           `)
-          .eq('productid', id)
+          .eq('productid', productId)
           .eq('is_active', true)
           .single();
 
@@ -113,7 +119,7 @@ const ProductPageWrapper = ({ isLoggedIn }) => {
     };
 
     fetchProduct();
-  }, [id]);
+  }, [id, productSlug]);
 
   const handleClose = () => {
     if (fromMyProducts) {

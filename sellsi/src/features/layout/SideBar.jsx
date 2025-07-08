@@ -187,7 +187,8 @@ const SideBar = ({ role, width = '210px', onWidthChange }) => {
         }}
       >
         <Tooltip 
-          title={isCollapsed ? "Expandir menú" : "Contraer menú"} 
+          key={isCollapsed ? 'collapsed' : 'expanded'}
+          title={isCollapsed ? "Expandir menú" : "Contraer menú"}
           placement="right"
           arrow
           componentsProps={{
@@ -234,18 +235,19 @@ const SideBar = ({ role, width = '210px', onWidthChange }) => {
                 height: '56px', // Altura fija para cada item
               }}
             >
-              <Tooltip 
-                title={isCollapsed ? item.text : ""} 
+              <Tooltip
+                key={isCollapsed ? `collapsed-${item.text}` : `expanded-${item.text}`}
+                title={isCollapsed ? item.text : ""}
                 placement="right"
                 arrow
                 disableHoverListener={!isCollapsed}
                 componentsProps={{
                   tooltip: {
                     sx: {
-                      fontSize: '1.2rem', // 15% más grande que el tamaño por defecto
-                      padding: '8px 12px', // Más padding para mejor legibilidad
-                      maxWidth: 'none', // Sin límite de ancho para textos largos
-                      whiteSpace: 'nowrap', // Evita que se corte el texto
+                      fontSize: '1.2rem',
+                      padding: '8px 12px',
+                      maxWidth: 'none',
+                      whiteSpace: 'nowrap',
                     }
                   }
                 }}

@@ -1,3 +1,4 @@
+import AssignmentIcon from '@mui/icons-material/Assignment';
 import React, { useEffect, useState } from 'react';
 import {
   Box,
@@ -376,15 +377,17 @@ const MyOrdersPage = () => {
       >
         <Container maxWidth="xl" disableGutters>
           {/* Título de la página */}
-          <Typography
-            variant="h4"
-            fontWeight={600}
-            color="primary.main"
-            gutterBottom
-            sx={{ mb: 4 }}
-          >
-            Mis Pedidos
-          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', mb: 4 }}>
+            <AssignmentIcon sx={{ color: 'primary.main', fontSize: 36, mr: 1 }} />
+            <Typography
+              variant="h4"
+              fontWeight={600}
+              color="primary.main"
+              gutterBottom
+            >
+              Mis Pedidos
+            </Typography>
+          </Box>
 
           {/* Componente para filtrar pedidos por estado */}
           <Filter

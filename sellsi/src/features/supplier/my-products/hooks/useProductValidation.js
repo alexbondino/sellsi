@@ -26,8 +26,8 @@ export const useProductValidation = () => {
     // Validación de la descripción
     if (!formData.descripcion.trim()) {
       newErrors.descripcion = 'La descripción es requerida';
-    } else if (formData.descripcion.length > 600) {
-      newErrors.descripcion = 'Máximo 600 caracteres';
+    } else if (formData.descripcion.length > 3000) {
+      newErrors.descripcion = 'Máximo 3000 caracteres';
     }
 
     // Validación de la categoría

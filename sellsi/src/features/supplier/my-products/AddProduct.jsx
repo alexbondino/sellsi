@@ -11,6 +11,7 @@ import {
 } from '@mui/material';
 import {
   ArrowBack as ArrowBackIcon,
+  Inventory2 as Inventory2Icon
 } from '@mui/icons-material';
 import { ThemeProvider } from '@mui/material/styles';
 import { toast } from 'react-hot-toast';
@@ -25,8 +26,6 @@ import {
   ProductBasicInfo,
   ProductInventory,
   ProductImages,
-  ProductSpecs,
-  ProductDocuments,
   ProductRegions,
   ProductResultsPanel,
 } from './components';
@@ -115,8 +114,8 @@ const AddProduct = () => {
     updateField(field, value);
   };
 
-  const handleRegionChange = (selectedRegions) => {
-    updateField('regionDespacho', selectedRegions);
+  const handleRegionChange = (shippingRegions) => {
+    updateField('shippingRegions', shippingRegions);
   };
 
   const handlePricingTypeChange = (event, newValue) => {
@@ -254,10 +253,14 @@ const AddProduct = () => {
               >
                 Volver
               </Button>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              {!isEditMode && (
+                <Inventory2Icon sx={{ color: 'primary.main', fontSize: 36 }} />
+              )}
               <Typography variant="h4" fontWeight="600" color="primary.main">
-                Mis Productos &gt;{' '}
                 {isEditMode ? 'Editar Producto' : 'Agregar Producto'}
               </Typography>
+            </Box>
             </Box>
           </Box>
 
@@ -313,11 +316,21 @@ const AddProduct = () => {
                     onPricingTypeChange={handlePricingTypeChange}
                   />
 
-                  {/* Región de Despacho */}
-                  <ProductRegions
-                    formData={formData}
-                    onRegionChange={handleRegionChange}
-                  />
+
+                  {/* Región de Despacho: ocupa toda la columna, alineada al inicio */}
+                  <Box
+                    sx={{
+                      gridRow: 3,
+                      gridColumn: 2,
+                      width: '100%',
+                      justifySelf: 'start',
+                    }}
+                  >
+                    <ProductRegions
+                      formData={formData}
+                      onRegionChange={handleRegionChange}
+                    />
+                  </Box>
 
                   {/* Configuración de Tramos de Precio (condicional) */}
                   {formData.pricingType === 'Por Tramo' && (
@@ -354,21 +367,7 @@ const AddProduct = () => {
                     onImageError={handleImageError}
                   />
 
-                  {/* Especificaciones Técnicas */}
-                  <ProductSpecs
-                    formData={formData}
-                    errors={errors}
-                    onSpecificationChange={handleSpecificationChange}
-                    onAddSpecification={addSpecification}
-                    onRemoveSpecification={removeSpecification}
-                  />
-
-                  {/* Documentación Técnica */}
-                  <ProductDocuments
-                    formData={formData}
-                    errors={errors}
-                    onDocumentsChange={handleDocumentsChange}
-                  />
+                  {/* Especificaciones Técnicas y Documentación Técnica deshabilitadas temporalmente */}
                 </Box>
               </Paper>
             </Grid>{' '}

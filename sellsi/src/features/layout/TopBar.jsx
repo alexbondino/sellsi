@@ -177,7 +177,7 @@ export default function TopBar({
         />
       ) : (
         <Avatar sx={{ background: '#fff !important', color: '#111 !important' }}>
-          <PersonIcon sx={{ color: '#111 !important' }} />
+          <PersonIcon sx={{ color: '#111 !important', fontSize: 32 }} />
         </Avatar>
       )}
     </IconButton>

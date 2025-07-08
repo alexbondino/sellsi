@@ -658,15 +658,21 @@ const BuyerCart = () => {
                 formatPrice={formatPrice}
                 itemVariants={itemVariants}
               /> */}
-            <Grid container spacing={15}>
+            <Grid container spacing={{ xs: 2, md: 2, lg: 6, xl: 6 }}>
               {/* Lista de productos */}
               <Grid
                 item
+                xs={12}
+                md={6}
+                lg={6}
+                xl={6}
                 sx={{
-                  xs: 12,
-                  md: 7,
-                  lg: 6.5,
-                  xl: 5.3,
+                  width: {
+                    xs: '100%',
+                    md: '68%',
+                    lg: '65%',
+                    xl: '65%',
+                  },
                 }}
               >
                 <AnimatePresence>
@@ -694,28 +700,30 @@ const BuyerCart = () => {
                   ))}
                 </AnimatePresence>
                 {/* Productos recomendados */}
-                <motion.div variants={itemVariants}>
-                  <Accordion sx={{ mt: 3, borderRadius: 2 }}>
-                    <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                        <RecommendIcon
-                          sx={{ mr: 1, color: 'primary.main' }}
-                        />
-                        <Typography variant="h6">
-                          Productos Recomendados para Ti
-                        </Typography>
-                      </Box>
-                    </AccordionSummary>
-                    <AccordionDetails>
-                      <Suspense fallback={<CircularProgress />}>
-                        {/* Aquí iría el componente de productos recomendados */}
-                        <Typography>
-                          Productos recomendados basados en tu carrito...
-                        </Typography>
-                      </Suspense>
-                    </AccordionDetails>
-                  </Accordion>
-                </motion.div>
+                {false && (
+                  <motion.div variants={itemVariants}>
+                    <Accordion sx={{ mt: 3, borderRadius: 2 }}>
+                      <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                          <RecommendIcon
+                            sx={{ mr: 1, color: 'primary.main' }}
+                          />
+                          <Typography variant="h6">
+                            Productos Recomendados para Ti
+                          </Typography>
+                        </Box>
+                      </AccordionSummary>
+                      <AccordionDetails>
+                        <Suspense fallback={<CircularProgress />}>
+                          {/* Aquí iría el componente de productos recomendados */}
+                          <Typography>
+                            Productos recomendados basados en tu carrito...
+                          </Typography>
+                        </Suspense>
+                      </AccordionDetails>
+                    </Accordion>
+                  </motion.div>
+                )}
               </Grid>
               {/* Panel lateral - Resumen y opciones */}
               <Grid

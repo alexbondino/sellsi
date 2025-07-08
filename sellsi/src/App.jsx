@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef, Suspense } from 'react';
 import { Box, CssBaseline, CircularProgress, Typography } from '@mui/material';
+import Loader from './components/Loader';
 import { ThemeProvider } from '@mui/material/styles';
 import GlobalStyles from '@mui/material/GlobalStyles';
 import {
@@ -9,6 +10,7 @@ import {
   useLocation,
   useNavigate,
 } from 'react-router-dom';
+import WhatsAppWidget from './components/WhatsAppWidget';
 
 import theme from './styles/theme'; // Asegúrate de que tu tema está correctamente configurado
 import TopBar from './features/layout/TopBar';
@@ -90,7 +92,7 @@ const NotFound = React.lazy(() => import('./features/ui/NotFound'));
 // ============================================================================
 // 🎨 COMPONENTE DE LOADING UNIVERSAL PARA SUSPENSE
 // ============================================================================
-const SuspenseLoader = ({ message = 'Cargando...' }) => (
+const SuspenseLoader = () => (
   <Box
     sx={{
       position: 'fixed',
@@ -99,17 +101,13 @@ const SuspenseLoader = ({ message = 'Cargando...' }) => (
       width: '100vw',
       height: '100vh',
       display: 'flex',
-      flexDirection: 'column',
       alignItems: 'center',
       justifyContent: 'center',
       bgcolor: 'background.default',
       zIndex: 1500,
     }}
   >
-    <CircularProgress size={40} />
-    <Typography sx={{ mt: 3, color: 'text.secondary', fontWeight: 500 }}>
-      {message}
-    </Typography>
+    <Loader />
   </Box>
 );
 
@@ -531,7 +529,7 @@ function AppContent({ mensaje }) {
           zIndex: 2000,
         }}
       >
-        <CircularProgress size={48} color="primary" />
+        <Loader />
       </Box>
     );
   }
@@ -822,6 +820,20 @@ function AppContent({ mensaje }) {
                     </PrivateRoute>
                   }
                 />
+                <Route
+                  path="/supplier/myproducts/product/:productSlug"
+                  element={
+                    <PrivateRoute
+                      isAuthenticated={!!session}
+                      needsOnboarding={needsOnboarding}
+                      loading={loadingUserStatus}
+                      redirectTo="/"
+                    >
+                      {/* Puedes reutilizar el mismo wrapper de ficha técnica o crear uno específico para supplier */}
+                      <ProductPageWrapper isLoggedIn={!!session} />
+                    </PrivateRoute>
+                  }
+                />
                 {/* Ruta de fallback para rutas no encontradas */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
@@ -911,4 +923,66 @@ function App() {
   );
 }
 
-export default App;
+
+// Botón flotante de WhatsApp solo para desktop
+
+// Botón flotante de WhatsApp solo para desktop y solo si hay sesión iniciada
+
+
+function WhatsAppFAB({ isLoggedIn }) {
+  // Componente deprecado - ahora se usa WhatsAppWidget
+  return null;
+}
+
+
+// Wrapper para obtener el estado de sesión desde AppContent
+function AppWithWhatsApp() {
+  // Usamos un truco: renderizamos AppContent para obtener el estado de sesión
+  // y pasamos la prop a WhatsAppFAB
+  const [isLoggedIn, setIsLoggedIn] = React.useState(false);
+  const [userProfile, setUserProfile] = React.useState(null);
+  
+  // Escuchamos cambios en localStorage para detectar login/logout
+  React.useEffect(() => {
+    function checkSession() {
+      // Si hay un user_id en localStorage, consideramos que hay sesión
+      setIsLoggedIn(!!localStorage.getItem('user_id'));
+    }
+    checkSession();
+    window.addEventListener('storage', checkSession);
+    return () => window.removeEventListener('storage', checkSession);
+  }, []);
+
+
+  // Obtener perfil completo del usuario para el widget
+  React.useEffect(() => {
+    const fetchProfile = async () => {
+      if (isLoggedIn) {
+        const userId = localStorage.getItem('user_id');
+        if (!userId) { setUserProfile(null); return; }
+        const { data, error } = await supabase
+          .from('users')
+          .select('user_id, user_nm')
+          .eq('user_id', userId)
+          .single();
+        if (error || !data) {
+          setUserProfile({ user_id: userId });
+        } else {
+          setUserProfile(data);
+        }
+      } else {
+        setUserProfile(null);
+      }
+    };
+    fetchProfile();
+  }, [isLoggedIn]);
+
+  return (
+    <>
+      <App />
+      <WhatsAppWidget isLoggedIn={isLoggedIn} userProfile={userProfile} />
+    </>
+  );
+}
+
+export default AppWithWhatsApp;
