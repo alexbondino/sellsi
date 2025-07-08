@@ -10,6 +10,7 @@
 
 import React from 'react';
 import { Box } from '@mui/material';
+import ReactDOM from 'react-dom';
 import SearchBar from '../SearchBar/SearchBar';
 import CategoryNavigation from '../CategoryNavigation/CategoryNavigation';
 
@@ -23,26 +24,27 @@ const SearchSection = React.memo(
     shouldShowSearchBar, // Solo afecta a este componente
     searchBarProps,
     categoryNavigationProps,
-    hasSideBar = false, // Nueva prop para detectar si hay SideBar
+    hasSideBar = false, // (No se usará para el layout, solo para lógica futura si se requiere)
   }) => {
     // ✅ OPTIMIZACIÓN: Removed console.count for production performance
     // ✅ MEJORA DE RENDIMIENTO: Memoización más granular de estilos del contenedor principal
     const mainContainerStyles = React.useMemo(
       () => ({
         mt: 0,
-        py: { xs: 0, sm: 0, md: 1 }, // Padding vertical 0 en mobile, 1 en md+
-        px: 0, // Sin padding lateral
+        py: { xs: 0, sm: 0, md: 1 },
+        px: 0,
         bgcolor: 'rgba(255, 255, 255, 0.95)',
         backdropFilter: 'blur(10px)',
         position: 'fixed',
-        top: { xs: 45, md: 64 }, // Match TopBar height: 45 en mobile, 64 en desktop
-        left: hasSideBar ? '0px' : 0, // Cambiado de 250px a 210px para coincidir con el ancho real del SideBar
+        top: { xs: 45, md: 64 },
+        left: 0, // SIEMPRE pegado a la izquierda
         right: 0,
+        width: { xs: '100vw', sm: '100vw', md: '100vw', lg: '100vw', xl: '100%' }, // 100vw en md/lg, 100% en xl
         zIndex: 1,
         display: 'flex',
         justifyContent: 'center',
       }),
-      [hasSideBar]
+      []
     );
     // ✅ ANIMACIÓN OPTIMIZADA: Solo transform y opacity para 60fps
     const dynamicStyles = React.useMemo(
@@ -84,7 +86,8 @@ const SearchSection = React.memo(
       [mainContainerStyles, dynamicStyles]
     );
 
-    return (
+    // Usar portal para que SearchSection siempre esté pegada al viewport y no se mueva con el layout
+    return ReactDOM.createPortal(
       <Box sx={finalContainerStyles}>
         <Box sx={innerContainerStyles}>
           {/* ✅ USAR SearchBar EXISTENTE */}
@@ -92,7 +95,8 @@ const SearchSection = React.memo(
           {/* ✅ USAR CategoryNavigation EXISTENTE */}
           <CategoryNavigation {...categoryNavigationProps} />
         </Box>
-      </Box>
+      </Box>,
+      typeof window !== 'undefined' ? document.body : null
     );
   },
   (prevProps, nextProps) => {
