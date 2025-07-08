@@ -70,6 +70,7 @@ const BuyerOrders = () => {
           backgroundColor: 'background.default',
           minHeight: '100vh',
           pt: { xs: 9, md: 10 },
+          ml: { xs: 0, md: 10, lg: 14, xl: 24 },
           px: 3,
           pb: 3,
         }}

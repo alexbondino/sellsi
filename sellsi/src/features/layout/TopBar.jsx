@@ -405,7 +405,19 @@ export default function TopBar({
                 lineHeight: 0,
                 overflow: 'hidden',
               }}
-              onClick={() => navigate('/?scrollTo=top')}
+              onClick={() => {
+                if (isLoggedIn) {
+                  if (currentRole === 'supplier') {
+                    navigate('/supplier/home');
+                  } else if (currentRole === 'buyer') {
+                    navigate('/buyer/marketplace');
+                  } else {
+                    navigate('/?scrollTo=top');
+                  }
+                } else {
+                  navigate('/?scrollTo=top');
+                }
+              }}
             >
               <Box
                 component="img"

@@ -371,6 +371,7 @@ const MyOrdersPage = () => {
           pt: { xs: 9, md: 10 }, // Padding top para espacio con el header
           px: 3, // Padding horizontal
           pb: 3, // Padding bottom
+          ml: { xs: 0, md: 10, lg: 14, xl: 24 },
         }}
       >
         <Container maxWidth="xl" disableGutters>

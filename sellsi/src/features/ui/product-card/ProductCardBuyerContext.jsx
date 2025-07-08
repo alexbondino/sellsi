@@ -442,7 +442,7 @@ const ProductCardBuyerContext = React.memo(
             color="primary"
             fullWidth
             data-no-card-click="true"
-            startIcon={<ShoppingCartIcon sx={{ fontSize: 16 }} />}
+            startIcon={<ShoppingCartIcon sx={{ fontSize: 16, color: 'white' }} />}
             onClick={handleAgregarClick}
             sx={{
               textTransform: 'none',
@@ -450,16 +450,14 @@ const ProductCardBuyerContext = React.memo(
               borderRadius: 2,
               py: 0.8,
               fontSize: '0.9rem',
-              color: 'rgb(0, 0, 0)',
-              background:
-                'linear-gradient(135deg,rgb(231, 254, 255) 0%,rgb(202, 223, 247) 100%)',
+              color: 'white',
+              backgroundColor: 'primary.main',
               boxShadow: '0 3px 10px rgba(25, 118, 210, 0.3)',
               pointerEvents: 'auto',
               position: 'relative',
               zIndex: 10,
               '&:hover': {
-                background:
-                  'linear-gradient(135deg,rgb(209, 251, 254) 0%,rgb(189, 196, 247) 100%)',
+                backgroundColor: 'primary.dark',
                 boxShadow: '0 6px 20px rgba(25, 118, 210, 0.6)',
                 transform: 'translateY(-2px)',
                 border: 'none',
@@ -474,6 +472,7 @@ const ProductCardBuyerContext = React.memo(
               },
               '& .MuiButton-startIcon': {
                 marginRight: 1,
+                color: 'white',
               },
             }}
           >

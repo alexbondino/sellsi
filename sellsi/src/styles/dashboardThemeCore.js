@@ -19,6 +19,16 @@ const gray = {
 
 // Theme minimalista para ProviderHome
 export const dashboardThemeCore = createTheme({
+  breakpoints: {
+    values: {
+      xs: 0,      // 0 – 411px
+      sm: 412,    // 412 – 767px
+      md: 768,    // 768 – 1699px
+      mac: 1280,  // (no estándar, pero puedes usarlo manualmente)
+      lg: 1700,   // 1700 – 2159px
+      xl: 2160,   // 2160px en adelante
+    },
+  },
   palette: {
     mode: 'light',
     primary: {

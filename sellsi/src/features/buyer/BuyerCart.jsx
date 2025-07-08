@@ -612,144 +612,150 @@ const BuyerCart = () => {
           pt: { xs: 9, md: 10 },
           px: 3,
           pb: 3,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          // Agrega margen izquierdo solo en desktop (md+)
+          ml: { xs: 0, md: 8, lg: 24, xl: 34 },
+          transition: 'margin-left 0.3s',
         }}
       >
-      {/* <Toaster position="top-right" toastOptions={{ style: { marginTop: 72 } }} /> */}
-      <ConfettiEffect trigger={showConfetti} />
-      <Container maxWidth="xl" disableGutters>
+        {/* <Toaster position="top-right" toastOptions={{ style: { marginTop: 72 } }} /> */}
+        <ConfettiEffect trigger={showConfetti} />
+        <Container maxWidth="xl" disableGutters sx={{ px: { xs: 0, md: 2 } }}>
+          {/* Header con estadísticas */}{' '}
+          <motion.div
+            ref={ref}
+            variants={containerVariants}
+            initial="hidden"
+            animate={controls}
+          >
             {/* Header con estadísticas */}{' '}
-            <motion.div
-              ref={ref}
-              variants={containerVariants}
-              initial="hidden"
-              animate={controls}
-            >
-              {/* Header con estadísticas */}{' '}
-              <CartHeader
-                cartStats={cartStats}
-                formatPrice={formatPrice}
-                discount={cartCalculations.discount}
-                wishlistLength={wishlist.length}
-                onUndo={undo}
-                onRedo={redo}
-                onClearCart={clearCart}
-                onToggleWishlist={() => setShowWishlist(!showWishlist)}
-                showWishlist={showWishlist}
-                undoInfo={getUndoInfo()}
-                redoInfo={getRedoInfo()}
-                historyInfo={getHistoryInfo()}
-                // Nuevas props para selección múltiple
-                isSelectionMode={isSelectionMode}
-                selectedItems={selectedItems}
-                onToggleSelectionMode={handleToggleSelectionMode}
-                onSelectAll={handleSelectAll}
-                onDeleteSelected={handleDeleteSelected}
-                totalItems={items.length}
-              />
-              {/* Barra de progreso hacia envío gratis */}
-              {/* <ShippingProgressBar
+            <CartHeader
+              cartStats={cartStats}
+              formatPrice={formatPrice}
+              discount={cartCalculations.discount}
+              wishlistLength={wishlist.length}
+              onUndo={undo}
+              onRedo={redo}
+              onClearCart={clearCart}
+              onToggleWishlist={() => setShowWishlist(!showWishlist)}
+              showWishlist={showWishlist}
+              undoInfo={getUndoInfo()}
+              redoInfo={getRedoInfo()}
+              historyInfo={getHistoryInfo()}
+              // Nuevas props para selección múltiple
+              isSelectionMode={isSelectionMode}
+              selectedItems={selectedItems}
+              onToggleSelectionMode={handleToggleSelectionMode}
+              onSelectAll={handleSelectAll}
+              onDeleteSelected={handleDeleteSelected}
+              totalItems={items.length}
+            />
+            {/* Barra de progreso hacia envío gratis */}
+            {/* <ShippingProgressBar
                 subtotal={cartCalculations.subtotal}
                 formatPrice={formatPrice}
                 itemVariants={itemVariants}
               /> */}
-              <Grid container spacing={15}>
-                {/* Lista de productos */}
-                <Grid
-                  item
-                  sx={{
-                    xs: 12,
-                    md: 7,
-                    lg: 6.5,
-                    xl: 5.3,
-                  }}
+            <Grid container spacing={15}>
+              {/* Lista de productos */}
+              <Grid
+                item
+                sx={{
+                  xs: 12,
+                  md: 7,
+                  lg: 6.5,
+                  xl: 5.3,
+                }}
+              >
+                <AnimatePresence>
+                  {items.map((item, index) => (
+                    <CartItem
+                      key={
+                        item.id ||
+                        item.product_id ||
+                        item.cart_items_id ||
+                        `item-${index}`
+                      }
+                      item={item}
+                      formatPrice={formatPrice}
+                      updateQuantity={handleQuantityChange}
+                      isInWishlist={isInWishlist}
+                      handleAddToWishlist={handleAddToWishlist}
+                      handleRemoveWithAnimation={handleRemoveWithAnimation}
+                      itemVariants={itemVariants}
+                      onShippingChange={handleProductShippingChange}
+                      // Nuevas props para selección múltiple
+                      isSelectionMode={isSelectionMode}
+                      isSelected={selectedItems.includes(item.id)}
+                      onToggleSelection={handleToggleItemSelection}
+                    />
+                  ))}
+                </AnimatePresence>
+                {/* Productos recomendados */}
+                <motion.div variants={itemVariants}>
+                  <Accordion sx={{ mt: 3, borderRadius: 2 }}>
+                    <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                        <RecommendIcon
+                          sx={{ mr: 1, color: 'primary.main' }}
+                        />
+                        <Typography variant="h6">
+                          Productos Recomendados para Ti
+                        </Typography>
+                      </Box>
+                    </AccordionSummary>
+                    <AccordionDetails>
+                      <Suspense fallback={<CircularProgress />}>
+                        {/* Aquí iría el componente de productos recomendados */}
+                        <Typography>
+                          Productos recomendados basados en tu carrito...
+                        </Typography>
+                      </Suspense>
+                    </AccordionDetails>
+                  </Accordion>
+                </motion.div>
+              </Grid>
+              {/* Panel lateral - Resumen y opciones */}
+              <Grid
+                item
+                sx={{
+                  xs: 12,
+                  lg: 5.5,
+                  xl: 6.7,
+                }}
+              >
+                <Box
+                  sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}
                 >
-                  <AnimatePresence>
-                    {items.map((item, index) => (
-                      <CartItem
-                        key={
-                          item.id ||
-                          item.product_id ||
-                          item.cart_items_id ||
-                          `item-${index}`
-                        }
-                        item={item}
-                        formatPrice={formatPrice}
-                        updateQuantity={handleQuantityChange}
-                        isInWishlist={isInWishlist}
-                        handleAddToWishlist={handleAddToWishlist}
-                        handleRemoveWithAnimation={handleRemoveWithAnimation}
-                        itemVariants={itemVariants}
-                        onShippingChange={handleProductShippingChange}
-                        // Nuevas props para selección múltiple
-                        isSelectionMode={isSelectionMode}
-                        isSelected={selectedItems.includes(item.id)}
-                        onToggleSelection={handleToggleItemSelection}
-                      />
-                    ))}
-                  </AnimatePresence>
-                  {/* Productos recomendados */}
+                  {/* Resumen del pedido modularizado (sin códigos de descuento) */}
                   <motion.div variants={itemVariants}>
-                    <Accordion sx={{ mt: 3, borderRadius: 2 }}>
-                      <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                          <RecommendIcon
-                            sx={{ mr: 1, color: 'primary.main' }}
-                          />
-                          <Typography variant="h6">
-                            Productos Recomendados para Ti
-                          </Typography>
-                        </Box>
-                      </AccordionSummary>
-                      <AccordionDetails>
-                        <Suspense fallback={<CircularProgress />}>
-                          {/* Aquí iría el componente de productos recomendados */}
-                          <Typography>
-                            Productos recomendados basados en tu carrito...
-                          </Typography>
-                        </Suspense>
-                      </AccordionDetails>
-                    </Accordion>
+                    <OrderSummary
+                      subtotal={cartCalculations.subtotal}
+                      discount={0} // Ocultamos descuento por código
+                      shippingCost={productShippingCost}
+                      total={cartCalculations.subtotal + productShippingCost}
+                      cartStats={cartStats}
+                      deliveryDate={deliveryDate}
+                      appliedCoupons={[]} // Ocultamos cupones
+                      couponInput={''} // Ocultamos input de cupones
+                      isCheckingOut={isCheckingOut}
+                      // Options
+                      availableCodes={[]} // Ocultamos lista de códigos
+                      // Functions
+                      formatPrice={formatPrice}
+                      formatDate={formatDate}
+                      setCouponInput={() => {}} // No-op
+                      onApplyCoupon={() => {}} // No-op
+                      onRemoveCoupon={() => {}} // No-op
+                      onCheckout={handleCheckout}
+                      // Puedes agregar una prop extra en OrderSummary para ocultar el input de cupones si existe
+                      hideCouponInput={true}
+                    />
                   </motion.div>
-                </Grid>
-                {/* Panel lateral - Resumen y opciones */}
-                <Grid
-                  item
-                  sx={{
-                    xs: 12,
-                    lg: 5.5,
-                    xl: 6.7,
-                  }}
-                >
-                  <Box
-                    sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}
-                  >
-                    {/* Resumen del pedido modularizado (sin códigos de descuento) */}
-                    <motion.div variants={itemVariants}>
-                      <OrderSummary
-                        subtotal={cartCalculations.subtotal}
-                        discount={0} // Ocultamos descuento por código
-                        shippingCost={productShippingCost}
-                        total={cartCalculations.subtotal + productShippingCost}
-                        cartStats={cartStats}
-                        deliveryDate={deliveryDate}
-                        appliedCoupons={[]} // Ocultamos cupones
-                        couponInput={''} // Ocultamos input de cupones
-                        isCheckingOut={isCheckingOut}
-                        // Options
-                        availableCodes={[]} // Ocultamos lista de códigos
-                        // Functions
-                        formatPrice={formatPrice}
-                        formatDate={formatDate}
-                        setCouponInput={() => {}} // No-op
-                        onApplyCoupon={() => {}} // No-op
-                        onRemoveCoupon={() => {}} // No-op
-                        onCheckout={handleCheckout}
-                        // Puedes agregar una prop extra en OrderSummary para ocultar el input de cupones si existe
-                        hideCouponInput={true}
-                      />
-                    </motion.div>
-                    {/* Calculadora de ahorros modularizada */}
-                    {/*
+                  {/* Calculadora de ahorros modularizada */}
+                  {/*
                     <motion.div variants={itemVariants}>
                       <SavingsCalculator
                         subtotal={cartCalculations.subtotal}
@@ -759,18 +765,18 @@ const BuyerCart = () => {
                       />
                     </motion.div>
                     */}
-                  </Box>
-                </Grid>
+                </Box>
               </Grid>
-              {/* Wishlist modularizada */}
-              <WishlistSection
-                showWishlist={showWishlist}
-                wishlist={wishlist}
-                formatPrice={formatPrice}
-                moveToCart={moveToCart}
-                removeFromWishlist={removeFromWishlist}
-              />
-            </motion.div>
+            </Grid>
+            {/* Wishlist modularizada */}
+            <WishlistSection
+              showWishlist={showWishlist}
+              wishlist={wishlist}
+              formatPrice={formatPrice}
+              moveToCart={moveToCart}
+              removeFromWishlist={removeFromWishlist}
+            />
+          </motion.div>
         </Container>
       </Box>
     </ThemeProvider>

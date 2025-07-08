@@ -88,24 +88,26 @@ const OrderSummary = ({
             disabled={isCheckingOut}
             startIcon={
               isCheckingOut ? (
-                <CircularProgress size={20} />
+                <CircularProgress size={20} sx={{ color: 'white' }} />
               ) : (
-                <CreditCardIcon />
+                <CreditCardIcon sx={{ color: 'white' }} />
               )
             }
             sx={{
               py: 1.5,
-              borderRadius: 3,
-              background: 'linear-gradient(135deg,rgb(231, 254, 255) 0%,rgb(202, 223, 247) 100%)',
+              borderRadius: 1,
+              backgroundColor: 'primary.main',
+              color: 'white',
               boxShadow: '0 8px 16px rgba(102, 126, 234, 0.3)',
-              color: '#000000', // Color negro para el texto
               '&:hover': {
-                background: 'linear-gradient(135deg,rgb(209, 251, 254) 0%,rgb(189, 196, 247) 100%)',
+                backgroundColor: 'primary.dark',
                 boxShadow: '0 12px 20px rgba(102, 126, 234, 0.4)',
-                color: '#000000', // Mantener negro en hover
+                color: 'white',
               },
               '&:disabled': {
-                color: '#000000', // Mantener negro cuando está deshabilitado
+                color: 'white',
+                backgroundColor: 'primary.main',
+                opacity: 0.7,
               },
             }}
           >

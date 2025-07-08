@@ -213,6 +213,7 @@ const MyProducts = () => {
           pt: { xs: 9, md: 10 },
           px: 3,
           pb: 3,
+          ml: { xs: 0, md: 10, lg: 14, xl: 24 },
         }}
       >
         <Container maxWidth="xl" disableGutters>
