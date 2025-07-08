@@ -12,7 +12,7 @@ import useMarketplaceLogic from './useMarketplaceLogic.jsx';
 
 // Componentes de secciones
 import SearchSection from './sections/SearchSection.jsx';
-import FilterSection from './sections/FilterSection.jsx';
+// import FilterSection from './sections/FilterSection.jsx'; // Botón de filtros comentado
 import ProductsSection from './sections/ProductsSection.jsx';
 
 // Componente Login
@@ -100,7 +100,7 @@ const Marketplace = React.memo(() => {
         <SearchSection {...searchSectionProps} />
 
         {/* Sección de filtros */}
-        <FilterSection {...filterSectionProps} />
+        {/* <FilterSection {...filterSectionProps} /> */} {/* Botón de filtros comentado */}
 
         {/* Sección de productos */}
         <ProductsSection {...productsSectionProps} />

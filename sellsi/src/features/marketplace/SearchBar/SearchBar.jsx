@@ -4,7 +4,7 @@
 // - Ajustar dropdown de ordenamiento
 // - Cambiar estilos del botón de filtros
 
-import React from 'react'
+import React, { useCallback } from 'react'
 import {
   TextField,
   InputAdornment,
@@ -68,20 +68,12 @@ const SearchBar = ({
     if (debouncedBusqueda !== busqueda) {
       setBusqueda(debouncedBusqueda)
     }
-  }, [debouncedBusqueda, setBusqueda, busqueda])
+  }, [debouncedBusqueda, setBusqueda])
 
-  // ✅ OPTIMIZACIÓN: Sincronizar cambios externos
+  // ✅ OPTIMIZACIÓN: Sincronizar cambios externos - SIMPLIFICADO
   React.useEffect(() => {
-    if (busqueda !== localBusqueda) {
-      setLocalBusqueda(busqueda)
-    }
-  }, [busqueda])
-
-  // ✅ MEJORA DE RENDIMIENTO: Memoización del handler de limpiar búsqueda
-  const handleClear = React.useCallback(() => {
-    setLocalBusqueda('')
-    setBusqueda('')
-  }, [setBusqueda])
+    setLocalBusqueda(busqueda);
+  }, [busqueda]);
 
   // ✅ MEJORA DE RENDIMIENTO: Handler optimizado para cambio de búsqueda
   const handleSearchChange = React.useCallback((e) => {
@@ -170,17 +162,21 @@ const SearchBar = ({
       endAdornment: localBusqueda && (
         <InputAdornment position="end">
           <IconButton
-            onClick={handleClear}
+            onClick={() => {
+              setLocalBusqueda('');
+              setBusqueda('');
+            }}
             edge="end"
             size="small"
             aria-label="limpiar búsqueda"
+            sx={{ mr: 0.5 }}
           >
             <ClearIcon fontSize="small" />
           </IconButton>
         </InputAdornment>
       ),
     }),
-    [localBusqueda, handleClear]
+    [localBusqueda, setBusqueda]
   )
 
   // ✅ OPTIMIZACIÓN: Memoización de MenuProps para Select

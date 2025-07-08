@@ -709,13 +709,14 @@ const ProductsSection = React.memo(
             onClick={scrollToTop}
             sx={{
               position: 'fixed',
-              bottom: { xs: 100, md: 80 },
-              right: { xs: 10, md: 80 }, // Más a la derecha en mobile
-              zIndex: 999,
+              bottom: { xs: 100, md: 40 },
+              right: { xs: 10, md: 120 },
+              zIndex: 1401, // Aumenta el zIndex para estar sobre la BottomBar y otros overlays
               backgroundColor: 'background.paper',
               color: 'primary.main',
               border: '2px solid',
               borderColor: 'primary.main',
+              boxShadow: '0 6px 24px rgba(25, 118, 210, 0.18)',
               '&:hover': {
                 backgroundColor: 'primary.main',
                 color: 'primary.contrastText',

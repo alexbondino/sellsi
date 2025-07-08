@@ -367,7 +367,7 @@ const CartHeader = ({
         onClose={() => setOpenDeleteModal(false)}
         onSubmit={onDeleteSelected}
         type={MODAL_TYPES.DELETE}
-        title="¿Eliminar productos seleccionados?"
+        title="Eliminar productos seleccionados"
         submitButtonText="Eliminar"
         cancelButtonText="Cancelar"
         showCancelButton

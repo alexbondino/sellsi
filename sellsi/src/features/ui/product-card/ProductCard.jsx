@@ -86,6 +86,7 @@ const ProductCard = React.memo(
               { xs: 1, sm: 1.2, md: 1.5, lg: 0},
             display: 'block',
             mx: 'auto',
+            border: theme => `1px solid ${theme.palette.primary.main}`,
           }}
         />
       ),

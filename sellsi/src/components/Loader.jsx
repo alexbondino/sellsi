@@ -1,6 +1,7 @@
 import React from 'react';
 import { Box, CircularProgress } from '@mui/material';
-import minilogo from '../../public/minilogo.svg';
+// Usar la ruta pública para el logo
+const minilogo = '/minilogo.svg';
 
 const Loader = ({ size = 80, logoSize = 48, thickness = 4.5, color = 'primary' }) => (
   <Box sx={{ position: 'relative', width: size, height: size, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>

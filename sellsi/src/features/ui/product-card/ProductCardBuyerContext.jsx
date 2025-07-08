@@ -273,7 +273,7 @@ const ProductCardBuyerContext = React.memo(
                   color: 'text.secondary',
                 }}
               >
-                Compra mínima: {minimumPurchase} uds.
+                Compra mínima: {minimumPurchase.toLocaleString('es-CL')} uds.
               </Typography>
             </Box>
             {/* PRICE DISPLAY */}
@@ -285,7 +285,7 @@ const ProductCardBuyerContext = React.memo(
                 color={stock < 10 ? 'error.main' : 'text.secondary'}
                 sx={{ fontSize: 12, fontWeight: 600 }}
               >
-                {stock < 10 ? `¡Solo ${stock} disponibles!` : `Stock: ${stock}`}
+                {stock < 10 ? `¡Solo ${stock.toLocaleString('es-CL')} disponibles!` : `Stock: ${stock.toLocaleString('es-CL')}`}
               </Typography>
             </Box>
           </Box>
@@ -343,7 +343,7 @@ const ProductCardBuyerContext = React.memo(
                   display: 'none',
                 }}
               >
-                Compra mínima: {minimumPurchase} uds.
+                Compra mínima: {minimumPurchase.toLocaleString('es-CL')} uds.
               </Typography>
               <Typography
                 variant="body2"
@@ -354,7 +354,7 @@ const ProductCardBuyerContext = React.memo(
                   display: 'block',
                 }}
               >
-                Compra mínima: {minimumPurchase} unidades
+                Compra mínima: {minimumPurchase.toLocaleString('es-CL')} unidades
               </Typography>
             </Box>
             {/* PRICE DISPLAY */}
@@ -366,7 +366,7 @@ const ProductCardBuyerContext = React.memo(
                 color={stock < 10 ? 'error.main' : 'text.secondary'}
                 sx={{ fontSize: 12, fontWeight: 600 }}
               >
-                {stock < 10 ? `¡Solo ${stock} disponibles!` : `Stock: ${stock}`}
+                {stock < 10 ? `¡Solo ${stock.toLocaleString('es-CL')} disponibles!` : `Stock: ${stock.toLocaleString('es-CL')}`}
               </Typography>
             </Box>
           </Box>
@@ -514,7 +514,19 @@ const ProductCardBuyerContext = React.memo(
           }}
         >
           <Box sx={{ userSelect: 'none' }}>
-            <Typography variant="h6" sx={{ mb: 2, textAlign: 'center' }}>
+            <Typography
+              variant="h6"
+              sx={{
+                mb: 2,
+                textAlign: 'center',
+                fontSize: {
+                  xs: '1rem', // móvil
+                  md: '1.1rem', // desktop mediano
+                  xl: '1.2rem', // pantallas grandes
+                },
+                fontWeight: 700,
+              }}
+            >
               Seleccionar Cantidad
             </Typography>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>

@@ -153,15 +153,19 @@ const CategoryNavigation = ({
       {/* En desktop: mostrar todos los botones */}
       {!isMobile && (
         <>
-          {Object.entries(SECTIONS).map(([key, value]) => (
-            <Button
-              key={value}
-              onClick={() => handleSectionClick(value)}
-              sx={styles.sectionButton(seccionActiva === value)}
-            >
-              {SECTION_LABELS[value]}
-            </Button>
-          ))}
+          {Object.entries(SECTIONS)
+            .filter(([key, value]) =>
+              !['OFERTAS', 'TOP_VENTAS'].includes(key)
+            )
+            .map(([key, value]) => (
+              <Button
+                key={value}
+                onClick={() => handleSectionClick(value)}
+                sx={styles.sectionButton(seccionActiva === value)}
+              >
+                {SECTION_LABELS[value]}
+              </Button>
+            ))}
         </>
       )}
       {/* En móvil: botón colapsible */}
@@ -197,21 +201,25 @@ const CategoryNavigation = ({
                 minWidth: '200px',
               }}
             >
-              {Object.entries(SECTIONS).map(([key, value]) => (
-                <Button
-                  key={value}
-                  onClick={() => handleSectionClick(value)}
-                  sx={{
-                    ...styles.sectionButton(seccionActiva === value),
-                    justifyContent: 'flex-start',
-                    px: 2,
-                    py: 1.5,
-                    fontSize: '0.85rem',
-                  }}
-                >
-                  {SECTION_LABELS[value]}
-                </Button>
-              ))}
+              {Object.entries(SECTIONS)
+                .filter(([key, value]) =>
+                  !['OFERTAS', 'TOP_VENTAS'].includes(key)
+                )
+                .map(([key, value]) => (
+                  <Button
+                    key={value}
+                    onClick={() => handleSectionClick(value)}
+                    sx={{
+                      ...styles.sectionButton(seccionActiva === value),
+                      justifyContent: 'flex-start',
+                      px: 2,
+                      py: 1.5,
+                      fontSize: '0.85rem',
+                    }}
+                  >
+                    {SECTION_LABELS[value]}
+                  </Button>
+                ))}
             </Box>
           </Grow>
         </Box>

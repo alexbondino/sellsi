@@ -335,12 +335,21 @@ const ShippingRegionsModal = ({
                       type="number"
                       placeholder="1"
                       value={config.maxDeliveryDays}
-                      onChange={(e) => handleFieldChange(config.region, 'maxDeliveryDays', e.target.value)}
+                      onChange={(e) => {
+                        // Permitir solo enteros mayores a 0
+                        const value = e.target.value;
+                        if (/^\d*$/.test(value)) {
+                          handleFieldChange(config.region, 'maxDeliveryDays', value.replace(/^0+/, ''));
+                        }
+                      }}
                       disabled={!config.enabled}
-                      error={config.enabled && (!config.maxDeliveryDays || isNaN(config.maxDeliveryDays) || parseInt(config.maxDeliveryDays) < 1)}
+                      error={config.enabled && (!config.maxDeliveryDays || isNaN(config.maxDeliveryDays) || parseInt(config.maxDeliveryDays) < 1 || !Number.isInteger(Number(config.maxDeliveryDays)))}
                       inputProps={{ 
                         min: 1,
-                        max: 365
+                        max: 365,
+                        step: 1,
+                        pattern: "[0-9]*",
+                        inputMode: "numeric"
                       }}
                       sx={{ minWidth: 80 }}
                     />

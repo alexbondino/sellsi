@@ -198,12 +198,7 @@ const CartItem = ({
           overflow: 'hidden', // Prevenir overflow horizontal
           position: 'relative',
           '&:hover': {
-            transform: 'translateY(-4px)',
-            boxShadow: '0 12px 32px rgba(0,0,0,0.12)',
-            border:
-              isSelectionMode && isSelected
-                ? '2px solid rgba(25, 118, 210, 0.8)'
-                : '1px solid rgba(2, 3, 5, 0.55)',
+            border: '1px solid rgba(2, 3, 5, 0.55)', // Solo el borde oscuro al hacer hover
           },
         }}
       >
@@ -490,7 +485,7 @@ const CartItem = ({
                     setOpenDeleteModal(false);
                   }}
                   type={MODAL_TYPES.DELETE}
-                  title="¿Eliminar producto del carrito?"
+                  title="Eliminar producto del carrito"
                   submitButtonText="Eliminar"
                   cancelButtonText="Cancelar"
                   showCancelButton

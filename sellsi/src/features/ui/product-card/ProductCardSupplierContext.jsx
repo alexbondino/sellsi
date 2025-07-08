@@ -208,6 +208,9 @@ const ProductCardSupplierContext = React.memo(
               <Typography variant="body2" color="text.secondary">
                 Stock:
               </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 700 }}>
+                {stock.toLocaleString('es-CL')}
+              </Typography>
               <StatusChip
                 value={stock}
                 statusConfig={[
@@ -218,12 +221,12 @@ const ProductCardSupplierContext = React.memo(
                   },
                   {
                     condition: stock => stock > 0 && stock < 10,
-                    label: `${stock} unidades`,
+                    label: `${stock.toLocaleString('es-CL')} unidades`,
                     color: 'warning',
                   },
                   {
                     condition: stock => stock >= 10,
-                    label: `${stock} unidades`,
+                    label: `${stock.toLocaleString('es-CL')} unidades`,
                     color: 'success',
                   },
                 ]}
