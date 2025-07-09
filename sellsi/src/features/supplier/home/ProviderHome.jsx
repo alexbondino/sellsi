@@ -1,6 +1,7 @@
 // 📁 pages/ProviderHome.jsx
 import React, { Suspense } from 'react';
 import { Box, Grid, Button, Container, ThemeProvider, CircularProgress, Skeleton } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
 import AddIcon from '@mui/icons-material/Add';
 import { useSupplierDashboard } from './hooks/useSupplierDashboard';
 import SideBarProvider from '../../layout/SideBar';
@@ -26,6 +27,7 @@ const ChartFallback = () => (
 );
 
 const ProviderHome = () => {
+  const navigate = useNavigate();
   const {
     products,
     sales,
@@ -87,6 +89,7 @@ const ProviderHome = () => {
                     },
                     transition: 'all 0.2s ease-in-out',
                   }}
+                  onClick={() => navigate('/supplier/addproduct', { state: { fromHome: true } })}
                 >
                   Nuevo Producto
                 </Button>

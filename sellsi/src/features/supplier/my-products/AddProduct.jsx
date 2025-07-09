@@ -15,7 +15,7 @@ import {
 } from '@mui/icons-material';
 import { ThemeProvider } from '@mui/material/styles';
 import { toast } from 'react-hot-toast';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 
 // Components
 import SideBarProvider from '../../layout/SideBar';
@@ -38,6 +38,7 @@ import { calculateEarnings } from './utils/productCalculations';
 import { dashboardThemeCore } from '../../../styles/dashboardThemeCore';
 
 const AddProduct = () => {
+  const location = useLocation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const theme = useTheme();
@@ -225,7 +226,12 @@ const AddProduct = () => {
   };
 
   const handleBack = () => {
-    navigate('/supplier/myproducts');
+    // Si venimos de /supplier/home, volver ahí; si no, a MyProducts
+    if (location.state && location.state.fromHome) {
+      navigate('/supplier/home');
+    } else {
+      navigate('/supplier/myproducts');
+    }
   };
   return (
     <ThemeProvider theme={dashboardThemeCore}>

@@ -130,7 +130,7 @@ const ProductCard = React.memo(
               0.15
             )}`,
           borderColor: type === 'supplier' ? 'primary.main' : 'primary.main',
-          cursor: 'pointer', // Mantener cursor pointer en hover
+          cursor: type === 'provider' ? 'default' : 'pointer', // No pointer en hover para provider
         },
       }),
       [type, isDeleting]

@@ -78,6 +78,9 @@ const BuyerPerformance = React.lazy(() =>
 const TechnicalSpecs = React.lazy(() =>
   import('./features/marketplace/view_page/TechnicalSpecs')
 );
+const ProviderCatalog = React.lazy(() =>
+  import('./features/marketplace/ProviderCatalog')
+);
 const ProductPageWrapper = React.lazy(() =>
   import('./features/marketplace/ProductPageView/ProductPageWrapper')
 );
@@ -170,6 +173,7 @@ function AppContent({ mensaje }) {
     '/buyer/performance',
     '/buyer/cart',
     '/buyer/profile',
+    '/catalog', // Catálogo del proveedor accesible desde buyer
   ]);
   const supplierDashboardRoutes = new Set([
     '/supplier/home',
@@ -178,6 +182,7 @@ function AppContent({ mensaje }) {
     '/supplier/my-orders',
     '/supplier/profile',
     '/supplier/marketplace', // <--- ¡Agregado para que el rol supplier se mantenga!
+    '/catalog', // Catálogo del proveedor accesible desde supplier
   ]);
   const neutralRoutes = new Set([
     '/',
@@ -739,6 +744,21 @@ function AppContent({ mensaje }) {
                       redirectTo="/"
                     >
                       <BuyerCart />
+                    </PrivateRoute>
+                  }
+                />
+
+                {/* RUTA DEL CATÁLOGO DEL PROVEEDOR - Protegida por PrivateRoute */}
+                <Route
+                  path="/catalog/:userNm/:userId"
+                  element={
+                    <PrivateRoute
+                      isAuthenticated={!!session}
+                      needsOnboarding={needsOnboarding}
+                      loading={loadingUserStatus}
+                      redirectTo="/"
+                    >
+                      <ProviderCatalog />
                     </PrivateRoute>
                   }
                 />

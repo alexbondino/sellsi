@@ -53,26 +53,32 @@ const TransferInfoSection = ({
         
         <TextField
           label="N° de Cuenta"
-          value={getSensitiveFieldValue('accountNumber', formData.accountNumber)}
+          value={formData.accountNumber || ''}
           onChange={(e) => onFieldChange('accountNumber', e.target.value)}
           fullWidth
           variant="outlined"
           size="small"
-          onFocus={() => toggleSensitiveData('accountNumber')}
-          onBlur={() => toggleSensitiveData('accountNumber')}
+
         />
         
         <TextField
           label="RUT"
-          value={getSensitiveFieldValue('transferRut', formData.transferRut)}
-          onChange={(e) => onFieldChange('transferRut', e.target.value)}
+          value={formData.transferRut || ''}
+          onChange={(e) => {
+            const raw = e.target.value.replace(/[^0-9kK]/g, '');
+            const formatted = raw.replace(/(\d{1,2})(\d{3})(\d{3})([\dkK])?$/, (match, p1, p2, p3, p4) => {
+              let rut = p1 + '.' + p2 + '.' + p3;
+              if (p4) rut += '-' + p4;
+              return rut;
+            });
+            onFieldChange('transferRut', formatted);
+          }}
           fullWidth
           variant="outlined"
           size="small"
           error={!validateRut(formData.transferRut)}
           helperText={!validateRut(formData.transferRut) ? 'Formato de RUT inválido' : ''}
-          onFocus={() => toggleSensitiveData('transferRut')}
-          onBlur={() => toggleSensitiveData('transferRut')}
+
         />
         
         <TextField

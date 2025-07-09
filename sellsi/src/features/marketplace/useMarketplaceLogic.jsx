@@ -1,5 +1,6 @@
 import { useState, useCallback, useMemo, useEffect } from 'react';
 import { useTheme } from '@mui/material';
+import { useLocation } from 'react-router-dom';
 
 // Importar los hooks existentes
 import { useMarketplaceState } from './hooks/useMarketplaceState';
@@ -53,6 +54,7 @@ const useMarketplaceLogic = (options = {}) => {
   } = memoizedOptions;
 
   const theme = useTheme();
+  const location = useLocation();
 
   // ===== CONSOLIDAR HOOKS EXISTENTES =====
   const {
@@ -98,7 +100,18 @@ const useMarketplaceLogic = (options = {}) => {
   // ✅ NUEVO: Estado para manejar el modal móvil de filtros
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
   // ✅ NUEVO: Estado para el switch de vistas (Vista 1: proveedores, Vista 2: productos)
-  const [isProviderView, setIsProviderView] = useState(false);
+  const [isProviderView, setIsProviderView] = useState(
+    location.state?.providerSwitchActive || false
+  );
+
+  // ✅ NUEVO: Effect para detectar navegación desde catálogo del proveedor
+  useEffect(() => {
+    if (location.state?.providerSwitchActive) {
+      setIsProviderView(true);
+      // Limpiar el estado para evitar que se mantenga en futuras navegaciones
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state?.providerSwitchActive]);
 
   // ===== HANDLERS MEMOIZADOS =====
   const handleToggleFiltro = useCallback(() => {
@@ -128,9 +141,11 @@ const useMarketplaceLogic = (options = {}) => {
     setIsProviderView(prev => {
       const newValue = !prev;
       console.log('🔄 useMarketplaceLogic: isProviderView toggled to:', newValue);
+      // Al cambiar la vista, resetea los filtros activos
+      resetFiltros();
       return newValue;
     });
-  }, []);
+  }, [resetFiltros]);
 
   // ✅ OPTIMIZACIÓN: Memoizar todos los handlers que se pasan como props
   const memoSetBusqueda = useCallback(v => setBusqueda(v), [setBusqueda]);

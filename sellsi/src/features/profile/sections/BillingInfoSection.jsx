@@ -54,15 +54,22 @@ const BillingInfoSection = ({
         
         <TextField
           label="RUT"
-          value={getSensitiveFieldValue ? getSensitiveFieldValue('billingRut', formData.billingRut) : (formData.billingRut || '')}
-          onChange={(e) => onFieldChange('billingRut', e.target.value)}
+          value={formData.billingRut || ''}
+          onChange={(e) => {
+            const raw = e.target.value.replace(/[^0-9kK]/g, '');
+            const formatted = raw.replace(/(\d{1,2})(\d{3})(\d{3})([\dkK])?$/, (match, p1, p2, p3, p4) => {
+              let rut = p1 + '.' + p2 + '.' + p3;
+              if (p4) rut += '-' + p4;
+              return rut;
+            });
+            onFieldChange('billingRut', formatted);
+          }}
           fullWidth
           variant="outlined"
           size="small"
           error={!validateRut(formData.billingRut)}
           helperText={!validateRut(formData.billingRut) ? 'Formato de RUT inválido' : ''}
-          onFocus={() => onFocusSensitive && onFocusSensitive('billingRut')}
-          onBlur={() => onBlurSensitive && onBlurSensitive('billingRut')}
+
         />
         
         <TextField

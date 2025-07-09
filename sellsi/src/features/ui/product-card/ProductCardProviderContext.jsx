@@ -1,5 +1,6 @@
 // src/components/ProductCard/ProductCardProviderContext.jsx
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   CardContent,
   CardActions,
@@ -20,6 +21,8 @@ import {
  */
 const ProductCardProviderContext = React.memo(
   ({ product }) => {
+    const navigate = useNavigate();
+    
     // Comentar log de debug para producción
     // console.log('🔍 ProductCardProviderContext - Real provider data:', {
     //   supplier_id: product.supplier_id,
@@ -175,8 +178,31 @@ const ProductCardProviderContext = React.memo(
             onClick={e => {
               e.stopPropagation();
               e.preventDefault();
-              // TODO: Implementar navegación al catálogo del proveedor
-              console.log('Revisar catálogo del proveedor:', providerName);
+              
+              // Determinar la ruta de origen para el estado de navegación
+              const currentPath = window.location.pathname;
+              let fromPath = '/marketplace';
+              
+              if (currentPath.includes('/buyer/')) {
+                fromPath = '/buyer/marketplace';
+              } else if (currentPath.includes('/supplier/')) {
+                fromPath = '/supplier/marketplace';
+              }
+              
+              // Navegar al catálogo del proveedor
+              // Formato: /catalog/:userNm/:userId
+              const userNmSlug = (user_nm || proveedor || `proveedor-${supplier_id}`)
+                .toLowerCase()
+                .replace(/[^a-z0-9]/g, '-')
+                .replace(/-+/g, '-')
+                .replace(/^-|-$/g, '');
+              
+              const catalogUrl = `/catalog/${userNmSlug}/${supplier_id}`;
+              
+              // Usar navigate de React Router con estado
+              navigate(catalogUrl, {
+                state: { from: fromPath }
+              });
             }}
             sx={{
               textTransform: 'none',

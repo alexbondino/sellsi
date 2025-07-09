@@ -86,6 +86,26 @@ const CompanyInfoSection = ({
             Esta será tu función primaria. Cuando inicies sesión, verás el panel según tu función.
           </Typography>
         </Box>
+        {/* Descripción proveedor solo si el rol es supplier */}
+        {formData.role === 'supplier' && (
+          <TextField
+            label="Descripción breve del proveedor"
+            variant="outlined"
+            fullWidth
+            multiline
+            rows={3}
+            value={formData.descripcionProveedor || ''}
+            onChange={e => {
+              const value = e.target.value;
+              if (value.length <= 200) {
+                onFieldChange('descripcionProveedor', value);
+              }
+            }}
+            placeholder="Una descripción resumida del tipo de productos que comercializas..."
+            helperText={`Una descripción resumida del tipo de productos que comercializas. Esta información ayudará a los compradores a identificar rápidamente tu oferta. (${(formData.descripcionProveedor || '').length}/200)`}
+            sx={{ mt: 2, '.MuiOutlinedInput-root': { borderRadius: 2 } }}
+          />
+        )}
       </Box>
     </Box>
   );
