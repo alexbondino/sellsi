@@ -15,6 +15,9 @@ import {
   Select,
   MenuItem,
   Badge,
+  Switch,
+  FormControlLabel,
+  Typography,
 } from '@mui/material'
 import SearchIcon from '@mui/icons-material/Search'
 import ClearIcon from '@mui/icons-material/Clear'
@@ -38,7 +41,8 @@ const useDebounce = (value, delay) => {
   return debouncedValue
 }
 
-const SearchBar = ({
+// ✅ OPTIMIZACIÓN: Memoización del componente SearchBar
+const SearchBar = React.memo(({
   busqueda,
   setBusqueda,
   ordenamiento,
@@ -59,10 +63,17 @@ const SearchBar = ({
     xl: 41,
   }, // Valores por defecto para Marketplace normal
   showFiltersButton = true,
+  // ✅ NUEVAS PROPS: Para el switch de vistas
+  isProviderView = false,
+  onToggleProviderView = () => {},
+  hasSideBar = false, // Para determinar si mostrar el switch
 }) => {
   // ✅ OPTIMIZACIÓN: Estado local para el input con debouncing
   const [localBusqueda, setLocalBusqueda] = React.useState(busqueda)
   const debouncedBusqueda = useDebounce(localBusqueda, 300) // 300ms delay
+
+  // ✅ OPTIMIZACIÓN: Estado local simplificado para el switch
+  const [localProviderView, setLocalProviderView] = React.useState(isProviderView);
 
   // ✅ OPTIMIZACIÓN: Sincronizar el valor debounced con el estado global
   React.useEffect(() => {
@@ -75,6 +86,13 @@ const SearchBar = ({
   React.useEffect(() => {
     setLocalBusqueda(busqueda);
   }, [busqueda]);
+
+  // ✅ OPTIMIZACIÓN: Sincronizar el estado local del switch con el prop externo SOLO cuando sea diferente
+  React.useEffect(() => {
+    if (localProviderView !== isProviderView) {
+      setLocalProviderView(isProviderView);
+    }
+  }, [isProviderView, localProviderView]);
 
   // ✅ MEJORA DE RENDIMIENTO: Handler optimizado para cambio de búsqueda
   const handleSearchChange = React.useCallback((e) => {
@@ -91,20 +109,38 @@ const SearchBar = ({
   const handleToggleFilters = React.useCallback(() => {
     onToggleFilters() // Llama la función original para desktop
   }, [onToggleFilters])
+
+  // ✅ OPTIMIZACIÓN: Handler para el switch de vistas - CON memoización optimizada
+  const handleToggleView = React.useCallback(() => {
+    console.log('🔄 SearchBar: handleToggleView called, current localProviderView:', localProviderView);
+    
+    // Actualizar estado local inmediatamente
+    const newValue = !localProviderView;
+    setLocalProviderView(newValue);
+    
+    // Llamar al handler externo
+    onToggleProviderView();
+  }, [localProviderView, onToggleProviderView]);
+
+  // ✅ DEBUG: Log para verificar que isProviderView se actualiza - MEMOIZADO
+  React.useEffect(() => {
+    console.log('🔄 SearchBar: isProviderView changed to:', isProviderView);
+  }, [isProviderView]);
+
+  // ✅ DEBUG: Log para verificar cambios en localProviderView - MEMOIZADO
+  React.useEffect(() => {
+    console.log('🔄 SearchBar: localProviderView changed to:', localProviderView);
+  }, [localProviderView]);
   // ✅ MEJORA DE RENDIMIENTO: Memoización de estilos del contenedor principal
-  const containerStyles = React.useMemo(
-    () => ({
-      display: 'flex',
-      gap: { xs: 0.5, sm: 0.5, md: 1 }, // ✅ Gap más pequeño en móviles
-      alignItems: 'center',
-      width: '100%',
-      flexDirection: 'row', // ✅ SIEMPRE en fila para xs/sm/md
-      py: { xs: 0, md: 0.5 }, // 🔽 Padding vertical superior reducido en mobile
-      // ✅ Usar prop searchBarMarginLeft para permitir diferentes valores
-      marginLeft: searchBarMarginLeft,
-    }),
-    [searchBarMarginLeft]
-  )
+  const containerStyles = {
+    display: 'flex',
+    gap: { xs: 0.5, sm: 0.5, md: 1 },
+    alignItems: 'center',
+    width: '100%',
+    flexDirection: 'row',
+    py: { xs: 0, md: 0.5 },
+    marginLeft: searchBarMarginLeft,
+  }
 
   // ✅ MEJORA DE RENDIMIENTO: Memoización de estilos del TextField - Estáticos
   const textFieldStyles = React.useMemo(
@@ -207,6 +243,13 @@ const SearchBar = ({
     }),
     []
   )
+
+  // ✅ LOG TEMPORAL: Para debuggear el switch - MEMOIZADO
+  const debugInfo = React.useMemo(() => {
+    console.log('🔍 SearchBar render - isProviderView:', isProviderView);
+    return isProviderView;
+  }, [isProviderView]);
+
   return (
     <Box sx={containerStyles}>
       {/* Barra de búsqueda - Más compacta */}
@@ -219,27 +262,77 @@ const SearchBar = ({
         InputProps={inputProps}
         sx={textFieldStyles}
       />
-      {/* Selector de ordenamiento - Más compacto */}
-      <FormControl sx={formControlStyles}>
-        <Select
-          value={ordenamiento}
-          onChange={handleSortChange}
-          displayEmpty
-          startAdornment={
-            <InputAdornment position="start">
-              <SortIcon color="action" fontSize="small" />
-            </InputAdornment>
-          }
-          MenuProps={selectMenuProps}
-          sx={selectStyles}
+      {/* Selector de ordenamiento - Más compacto - Oculto en vista de proveedores */}
+      {!localProviderView && (
+        <FormControl sx={formControlStyles}>
+          <Select
+            value={ordenamiento}
+            onChange={handleSortChange}
+            displayEmpty
+            startAdornment={
+              <InputAdornment position="start">
+                <SortIcon color="action" fontSize="small" />
+              </InputAdornment>
+            }
+            MenuProps={selectMenuProps}
+            sx={selectStyles}
+          >
+            {sortOptions.map((option) => (
+              <MenuItem key={option.value} value={option.value}>
+                {option.label}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+      )}
+      {/* Switch de vista Productos/Proveedores - Solo para marketplace con sidebar */}
+      {hasSideBar && (
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            flexShrink: 0,
+            ml: { xs: 0.5, md: 1 },
+            mr: { xs: 0.5, md: 1 },
+          }}
         >
-          {sortOptions.map((option) => (
-            <MenuItem key={option.value} value={option.value}>
-              {option.label}
-            </MenuItem>
-          ))}
-        </Select>
-      </FormControl>
+          <FormControlLabel
+            control={
+              <Switch
+                checked={localProviderView}
+                onChange={handleToggleView}
+                size="small"
+                color="primary"
+                onClick={() => console.log('🔍 Switch clicked!')}
+              />
+            }
+            label={
+              <Typography
+                variant="caption"
+                sx={{
+                  fontSize: { xs: '0.65rem', sm: '0.7rem', md: '0.75rem' },
+                  fontWeight: 500,
+                  color: 'text.secondary',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {localProviderView ? 'Proveedores' : 'Productos'}
+              </Typography>
+            }
+            labelPlacement="top"
+            sx={{
+              m: 0,
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: 0.25,
+              '& .MuiFormControlLabel-label': {
+                fontSize: { xs: '0.65rem', sm: '0.7rem', md: '0.75rem' },
+              },
+            }}
+          />
+        </Box>
+      )}
+
       {/* Botón de filtros - Optimizado para móviles */}
       {showFiltersButton !== false && (
         <Button
@@ -276,6 +369,9 @@ const SearchBar = ({
       )}
     </Box>
   )
-}
+});
 
-export default React.memo(SearchBar)
+// ✅ OPTIMIZACIÓN: DisplayName para debugging
+SearchBar.displayName = 'SearchBar';
+
+export default SearchBar

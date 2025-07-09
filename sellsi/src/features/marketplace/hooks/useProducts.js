@@ -40,14 +40,14 @@ export function useProducts() {
               const supplierIdsStr = supplierIds.map(id => String(id).trim())
               const { data: usersData, error: usersError } = await supabase
                 .from('users')
-                .select('user_id, user_nm')
+                .select('user_id, user_nm, logo_url') // ✅ AGREGAR logo_url
                 .in('user_id', supplierIdsStr)
               if (usersError) {
                 console.error('Error al consultar users:', usersError)
               }
               if (usersData) {
                 usersMap = Object.fromEntries(
-                  usersData.map((u) => [u.user_id, u.user_nm])
+                  usersData.map((u) => [u.user_id, { name: u.user_nm, logo_url: u.logo_url }]) // ✅ GUARDAR ambos campos
                 )
               }
             }            mapped = data.map((p) => {
@@ -76,7 +76,8 @@ export function useProducts() {
                 productid: p.productid,
                 supplier_id: p.supplier_id,
                 nombre: p.productnm,
-                proveedor: usersMap[p.supplier_id] || "Proveedor no encontrado",
+                proveedor: usersMap[p.supplier_id]?.name || "Proveedor no encontrado", // ✅ USAR .name
+                supplier_logo_url: usersMap[p.supplier_id]?.logo_url, // ✅ AGREGAR logo del proveedor
                 imagen: imagenPrincipal,
                 precio: minPrice,
                 precioOriginal: p.precioOriginal || null,

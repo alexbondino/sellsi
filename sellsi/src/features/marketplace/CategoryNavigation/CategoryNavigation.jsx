@@ -40,7 +40,7 @@ const CATEGORIAS = [
   // Agrega o edita según tus necesidades
 ];
 
-const CategoryNavigation = ({
+const CategoryNavigation = React.memo(({
   seccionActiva,
   categoriaSeleccionada,
   onSeccionChange,
@@ -52,11 +52,23 @@ const CategoryNavigation = ({
     lg: 35.5,
     xl: 43,
   }, // Valores por defecto para Marketplace normal
+  isProviderView = false, // ✅ NUEVO: Prop para ocultar elementos en vista de proveedores
 }) => {
   // Estado local para el menú de categorías
   const [anchorElCategorias, setAnchorElCategorias] = useState(null);
   const [sectionsExpanded, setSectionsExpanded] = useState(false);
   const theme = useTheme();
+
+  // ✅ DEBUG: Log para verificar que isProviderView llega correctamente - MEMOIZADO
+  const debugInfo = React.useMemo(() => {
+    console.log('🔍 CategoryNavigation render - isProviderView:', isProviderView);
+    return isProviderView;
+  }, [isProviderView]);
+  
+  // ✅ DEBUG: Log adicional con un useEffect - MEMOIZADO
+  React.useEffect(() => {
+    console.log('🔄 CategoryNavigation: isProviderView changed to:', isProviderView);
+  }, [isProviderView]);
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
   // Handlers locales para abrir/cerrar menú
@@ -114,93 +126,48 @@ const CategoryNavigation = ({
 
   return (
     <Box sx={containerStyles}>
-      {/* Botón de categorías */}
-      <Button
-        endIcon={<ArrowDropDownIcon />}
-        onClick={handleOpenCategorias}
-        sx={styles.categoriesButton}
-      >
-        Categorías
-      </Button>
-      {/* Menu de categorías */}      <Menu
-        anchorEl={anchorElCategorias}
-        open={Boolean(anchorElCategorias)}
-        onClose={handleCloseCategorias}
-        disableScrollLock={true}
-        PaperProps={{ sx: styles.categoriesMenu }}
-      >
-        {categoriesWithAll.map(categoria => {
-          const isSelected = categoriaSeleccionada.includes(categoria);
-
-          return (
-            <MenuItem
-              key={categoria}
-              onClick={() => handleCategoriaClick(categoria)}
-              sx={styles.menuItem(isSelected)}
-            >
-              {categoria}
-              {categoria === 'Tecnología' && (
-                <KeyboardArrowRightIcon fontSize="small" sx={{ ml: 'auto' }} />
-              )}
-              {categoria === 'Todas' && isSelected && (
-                <Box sx={styles.selectedIndicator} />
-              )}
-            </MenuItem>
-          );
-        })}
-      </Menu>{' '}
-      {/* Navegación de secciones */}
-      {/* En desktop: mostrar todos los botones */}
-      {!isMobile && (
+      {/* ✅ Ocultar todo el contenido en vista de proveedores */}
+      {!isProviderView && (
         <>
-          {Object.entries(SECTIONS)
-            .filter(([key, value]) =>
-              !['OFERTAS', 'TOP_VENTAS'].includes(key)
-            )
-            .map(([key, value]) => (
-              <Button
-                key={value}
-                onClick={() => handleSectionClick(value)}
-                sx={styles.sectionButton(seccionActiva === value)}
-              >
-                {SECTION_LABELS[value]}
-              </Button>
-            ))}
-        </>
-      )}
-      {/* En móvil: botón colapsible */}
-      {isMobile && (
-        <Box>
-          {/* Botón principal para expandir/colapsar */}
+          {/* Botón de categorías */}
           <Button
-            endIcon={sectionsExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
-            onClick={toggleSectionsExpanded}
-            sx={{
-              ...styles.categoriesButton,
-              fontSize: '0.9rem',
-              px: 2,
-            }}
+            endIcon={<ArrowDropDownIcon />}
+            onClick={handleOpenCategorias}
+            sx={styles.categoriesButton}
           >
-            Secciones
+            Categorías
           </Button>
+          {/* Menu de categorías */}      <Menu
+            anchorEl={anchorElCategorias}
+            open={Boolean(anchorElCategorias)}
+            onClose={handleCloseCategorias}
+            disableScrollLock={true}
+            PaperProps={{ sx: styles.categoriesMenu }}
+          >
+            {categoriesWithAll.map(categoria => {
+              const isSelected = categoriaSeleccionada.includes(categoria);
 
-          {/* Botones expandidos con animación */}
-          <Grow in={sectionsExpanded} timeout={300}>
-            <Box
-              sx={{
-                display: sectionsExpanded ? 'flex' : 'none',
-                flexDirection: 'column',
-                gap: 1,
-                mt: 1,
-                p: 1,
-                backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                borderRadius: 2,
-                boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-                position: 'absolute',
-                zIndex: 1000,
-                minWidth: '200px',
-              }}
-            >
+              return (
+                <MenuItem
+                  key={categoria}
+                  onClick={() => handleCategoriaClick(categoria)}
+                  sx={styles.menuItem(isSelected)}
+                >
+                  {categoria}
+                  {categoria === 'Tecnología' && (
+                    <KeyboardArrowRightIcon fontSize="small" sx={{ ml: 'auto' }} />
+                  )}
+                  {categoria === 'Todas' && isSelected && (
+                    <Box sx={styles.selectedIndicator} />
+                  )}
+                </MenuItem>
+              );
+            })}
+          </Menu>{' '}
+          {/* Navegación de secciones */}
+          {/* En desktop: mostrar todos los botones */}
+          {!isMobile && (
+            <>
               {Object.entries(SECTIONS)
                 .filter(([key, value]) =>
                   !['OFERTAS', 'TOP_VENTAS'].includes(key)
@@ -209,43 +176,96 @@ const CategoryNavigation = ({
                   <Button
                     key={value}
                     onClick={() => handleSectionClick(value)}
-                    sx={{
-                      ...styles.sectionButton(seccionActiva === value),
-                      justifyContent: 'flex-start',
-                      px: 2,
-                      py: 1.5,
-                      fontSize: '0.85rem',
-                    }}
+                    sx={styles.sectionButton(seccionActiva === value)}
                   >
                     {SECTION_LABELS[value]}
                   </Button>
                 ))}
+            </>
+          )}
+          {/* En móvil: botón colapsible */}
+          {isMobile && (
+            <Box>
+              {/* Botón principal para expandir/colapsar */}
+              <Button
+                endIcon={sectionsExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+                onClick={toggleSectionsExpanded}
+                sx={{
+                  ...styles.categoriesButton,
+                  fontSize: '0.9rem',
+                  px: 2,
+                }}
+              >
+                Secciones
+              </Button>
+
+              {/* Botones expandidos con animación */}
+              <Grow in={sectionsExpanded} timeout={300}>
+                <Box
+                  sx={{
+                    display: sectionsExpanded ? 'flex' : 'none',
+                    flexDirection: 'column',
+                    gap: 1,
+                    mt: 1,
+                    p: 1,
+                    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                    borderRadius: 2,
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                    position: 'absolute',
+                    zIndex: 1000,
+                    minWidth: '200px',
+                  }}
+                >
+                  {Object.entries(SECTIONS)
+                    .filter(([key, value]) =>
+                      !['OFERTAS', 'TOP_VENTAS'].includes(key)
+                    )
+                    .map(([key, value]) => (
+                      <Button
+                        key={value}
+                        onClick={() => handleSectionClick(value)}
+                        sx={{
+                          ...styles.sectionButton(seccionActiva === value),
+                          justifyContent: 'flex-start',
+                          px: 2,
+                          py: 1.5,
+                          fontSize: '0.85rem',
+                        }}
+                      >
+                        {SECTION_LABELS[value]}
+                      </Button>
+                    ))}
+                </Box>
+              </Grow>
             </Box>
-          </Grow>
-        </Box>
-      )}
-      {/* Chips de categorías seleccionadas */}
-      {categoriaSeleccionada
-        .filter(cat => cat !== 'Todas')
-        .slice(0, 3)
-        .map(cat => (
-          <Chip
-            key={cat}
-            label={cat}
-            onDelete={() => onCategoriaToggle(cat)}
-            size="small"
-            color="primary"
-            variant="outlined"
-            sx={styles.categoryChip}
-          />
-        ))}
-      {categoriaSeleccionada.filter(cat => cat !== 'Todas').length > 3 && (
-        <Typography variant="caption" sx={styles.moreCategories}>
-          +{categoriaSeleccionada.filter(cat => cat !== 'Todas').length - 3} más
-        </Typography>
+          )}
+          {/* Chips de categorías seleccionadas */}
+          {categoriaSeleccionada
+            .filter(cat => cat !== 'Todas')
+            .slice(0, 3)
+            .map(cat => (
+              <Chip
+                key={cat}
+                label={cat}
+                onDelete={() => onCategoriaToggle(cat)}
+                size="small"
+                color="primary"
+                variant="outlined"
+                sx={styles.categoryChip}
+              />
+            ))}
+          {categoriaSeleccionada.filter(cat => cat !== 'Todas').length > 3 && (
+            <Typography variant="caption" sx={styles.moreCategories}>
+              +{categoriaSeleccionada.filter(cat => cat !== 'Todas').length - 3} más
+            </Typography>
+          )}
+        </>
       )}
     </Box>
   );
-};
+});
 
-export default React.memo(CategoryNavigation);
+// ✅ OPTIMIZACIÓN: DisplayName para debugging
+CategoryNavigation.displayName = 'CategoryNavigation';
+
+export default CategoryNavigation;

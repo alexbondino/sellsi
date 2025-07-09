@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { useTheme } from '@mui/material';
 
 // Importar los hooks existentes
@@ -11,33 +11,37 @@ import { useScrollBehavior } from './hooks/useScrollBehavior';
  * ✅ OPTIMIZADO: Reduce re-renders innecesarios
  */
 const useMarketplaceLogic = (options = {}) => {
-  // ✅ OPTIMIZACIÓN: Memoizar configuración estática
+  // ✅ OPTIMIZACIÓN: Memoizar configuración estática con comparación profunda
   const memoizedOptions = useMemo(
-    () => ({
-      hasSideBar: false,
-      searchBarMarginLeft: {
-        xs: 0,
-        sm: 0,
-        md: 2,
-        lg: 33.7,
-        xl: 41,
-      },
-      categoryMarginLeft: {
-        xs: 0,
-        sm: 0,
-        md: 3,
-        lg: 35.5,
-        xl: 40,
-      },
-      titleMarginLeft: {
-        xs: 0,
-        sm: 0,
-        md: 0,
-        lg: 0,
-        xl: 0,
-      },
-      ...options,
-    }),
+    () => {
+      const defaultConfig = {
+        hasSideBar: false,
+        searchBarMarginLeft: {
+          xs: 0,
+          sm: 0,
+          md: 2,
+          lg: 33.7,
+          xl: 41,
+        },
+        categoryMarginLeft: {
+          xs: 0,
+          sm: 0,
+          md: 3,
+          lg: 35.5,
+          xl: 40,
+        },
+        titleMarginLeft: {
+          xs: 0,
+          sm: 0,
+          md: 0,
+          lg: 0,
+          xl: 0,
+        },
+      };
+      
+      // ✅ OPTIMIZACIÓN: Solo mergear si las opciones han cambiado
+      return Object.keys(options).length > 0 ? { ...defaultConfig, ...options } : defaultConfig;
+    },
     [options]
   );
 
@@ -93,6 +97,8 @@ const useMarketplaceLogic = (options = {}) => {
   const [anchorElCategorias, setAnchorElCategorias] = useState(null);
   // ✅ NUEVO: Estado para manejar el modal móvil de filtros
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
+  // ✅ NUEVO: Estado para el switch de vistas (Vista 1: proveedores, Vista 2: productos)
+  const [isProviderView, setIsProviderView] = useState(false);
 
   // ===== HANDLERS MEMOIZADOS =====
   const handleToggleFiltro = useCallback(() => {
@@ -116,6 +122,15 @@ const useMarketplaceLogic = (options = {}) => {
       handleToggleFiltro();
     }
   }, [handleToggleFiltro]);
+
+  // ✅ OPTIMIZACIÓN: Handler para el switch de vistas - memoizado estable
+  const handleToggleProviderView = useCallback(() => {
+    setIsProviderView(prev => {
+      const newValue = !prev;
+      console.log('🔄 useMarketplaceLogic: isProviderView toggled to:', newValue);
+      return newValue;
+    });
+  }, []);
 
   // ✅ OPTIMIZACIÓN: Memoizar todos los handlers que se pasan como props
   const memoSetBusqueda = useCallback(v => setBusqueda(v), [setBusqueda]);
@@ -160,6 +175,10 @@ const useMarketplaceLogic = (options = {}) => {
       // ✅ NUEVO: Props para el modal móvil
       isMobileFilterOpen,
       onMobileFilterClose: handleMobileFilterClose,
+      // ✅ NUEVO: Props para el switch de vistas
+      isProviderView,
+      onToggleProviderView: handleToggleProviderView,
+      hasSideBar, // Necesario para determinar si mostrar el switch
     }),
     [
       busqueda,
@@ -174,6 +193,9 @@ const useMarketplaceLogic = (options = {}) => {
       searchBarMarginLeft,
       isMobileFilterOpen,
       handleMobileFilterClose,
+      isProviderView,
+      handleToggleProviderView,
+      hasSideBar,
     ]
   );
 
@@ -185,6 +207,7 @@ const useMarketplaceLogic = (options = {}) => {
       onSeccionChange: memoSetSeccionActiva,
       onCategoriaToggle: memoToggleCategoria,
       categoryMarginLeft,
+      isProviderView, // Para ocultar elementos en Vista 1
     }),
     [
       seccionActiva,
@@ -192,6 +215,7 @@ const useMarketplaceLogic = (options = {}) => {
       memoSetSeccionActiva,
       memoToggleCategoria,
       categoryMarginLeft,
+      isProviderView,
     ]
   );
   // Props para SearchSection - SOLO SearchSection necesita shouldShowSearchBar
@@ -252,6 +276,7 @@ const useMarketplaceLogic = (options = {}) => {
       titleMarginLeft,
       loading,
       error,
+      isProviderView, // Para cambiar el comportamiento en Vista 1
     }),
     [
       seccionActiva,
@@ -263,6 +288,7 @@ const useMarketplaceLogic = (options = {}) => {
       titleMarginLeft,
       loading,
       error,
+      isProviderView,
     ]
   );
 

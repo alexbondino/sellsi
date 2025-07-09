@@ -19,13 +19,12 @@ import CategoryNavigation from '../CategoryNavigation/CategoryNavigation';
  * ✅ OPTIMIZADO: Solo maneja su propia visibilidad sin afectar otros componentes
  */
 // ✅ MEJORA DE RENDIMIENTO: Memoización del componente con comparación personalizada
-const SearchSection = React.memo(
-  ({
-    shouldShowSearchBar, // Solo afecta a este componente
-    searchBarProps,
-    categoryNavigationProps,
-    hasSideBar = false, // (No se usará para el layout, solo para lógica futura si se requiere)
-  }) => {
+const SearchSection = ({
+  shouldShowSearchBar, // Solo afecta a este componente
+  searchBarProps,
+  categoryNavigationProps,
+  hasSideBar = false, // (No se usará para el layout, solo para lógica futura si se requiere)
+}) => {
     // ✅ OPTIMIZACIÓN: Removed console.count for production performance
     // ✅ MEJORA DE RENDIMIENTO: Memoización más granular de estilos del contenedor principal
     const mainContainerStyles = React.useMemo(
@@ -98,25 +97,7 @@ const SearchSection = React.memo(
       </Box>,
       typeof window !== 'undefined' ? document.body : null
     );
-  },
-  (prevProps, nextProps) => {
-    // ✅ OPTIMIZACIÓN: Comparación personalizada más específica
-    return (
-      prevProps.shouldShowSearchBar === nextProps.shouldShowSearchBar &&
-      prevProps.hasSideBar === nextProps.hasSideBar &&
-      // Comparación profunda solo de las props que realmente pueden cambiar
-      prevProps.searchBarProps.busqueda === nextProps.searchBarProps.busqueda &&
-      prevProps.searchBarProps.ordenamiento ===
-        nextProps.searchBarProps.ordenamiento &&
-      prevProps.searchBarProps.hayFiltrosActivos ===
-        nextProps.searchBarProps.hayFiltrosActivos &&
-      prevProps.categoryNavigationProps.seccionActiva ===
-        nextProps.categoryNavigationProps.seccionActiva &&
-      prevProps.categoryNavigationProps.categoriaSeleccionada ===
-        nextProps.categoryNavigationProps.categoriaSeleccionada
-    );
-  }
-);
+};
 
 // ✅ MEJORA DE RENDIMIENTO: DisplayName para debugging
 SearchSection.displayName = 'SearchSection';

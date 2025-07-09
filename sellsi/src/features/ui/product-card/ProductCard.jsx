@@ -115,7 +115,7 @@ const ProductCard = React.memo(
         overflow: 'hidden',
         opacity: isDeleting ? 0.5 : 1,
         transform: isDeleting ? 'scale(0.95)' : 'scale(1)',
-        cursor: 'pointer', // Agregar cursor pointer para indicar que es clickeable
+        cursor: type === 'provider' ? 'default' : 'pointer', // Solo cursor pointer si no es provider
         '&:hover': {
           transform: isDeleting
             ? 'scale(0.95)'
@@ -165,6 +165,11 @@ const ProductCard = React.memo(
     // Function for card navigation (works for both buyer and supplier types)
     const handleProductClick = useCallback(
       e => {
+        // Si es tipo provider, no permitir navegación de la card
+        if (type === 'provider') {
+          return;
+        }
+        
         // This logic applies to both 'buyer' and 'supplier' types
         // but prevent navigation if click originated from an interactive element
         const target = e.target;
@@ -207,7 +212,8 @@ const ProductCard = React.memo(
         onClick={handleProductClick}
         sx={cardStyles}
       >
-        {memoizedImage}
+        {/* ✅ Solo mostrar imagen del producto para tipos 'supplier' y 'buyer', no para 'provider' */}
+        {type !== 'provider' && memoizedImage}
         {type === 'supplier' && (
           <ProductCardSupplierContext
             product={product}

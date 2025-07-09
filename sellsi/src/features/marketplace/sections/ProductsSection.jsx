@@ -25,6 +25,7 @@ import {
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { toast } from 'react-hot-toast';
 import ProductCard from '../../ui/product-card/ProductCard'; // Asegúrate que esta es la ruta correcta al componente principal
+import ProductCardProviderContext from '../../ui/product-card/ProductCardProviderContext'; // ✅ NUEVO: Para vista de proveedores
 import useCartStore from '../../../features/buyer/hooks/cartStore';
 import LoadingOverlay from '../../ui/LoadingOverlay';
 import Fab from '@mui/material/Fab';
@@ -49,6 +50,7 @@ const ProductsSection = React.memo(
     loading,
     error,
     isSideBarCollapsed = false, // <-- NUEVO PROP
+    isProviderView = false, // ✅ NUEVO: Para cambiar el comportamiento en vista de proveedores
   }) => {
     // ✅ OPTIMIZACIÓN: Removed console.count for production performance
     // Hook para usar el store del carrito
@@ -150,6 +152,10 @@ const ProductsSection = React.memo(
 
     // ✅ MEJORA DE RENDIMIENTO: Memoización del título de sección
     const sectionTitle = React.useMemo(() => {
+      if (isProviderView) {
+        return '🏢 Proveedores Disponibles';
+      }
+      
       switch (seccionActiva) {
         case 'nuevos':
           return '✨ Nuevos Productos';
@@ -160,7 +166,7 @@ const ProductsSection = React.memo(
         default:
           return '🛍️ Todos los Productos';
       }
-    }, [seccionActiva]);
+    }, [seccionActiva, isProviderView]);
     // ✅ MEJORA DE RENDIMIENTO: Memoización del handler de volver (solo dependencias necesarias)
     const handleBackClick = React.useCallback(() => {
       setSeccionActiva('todos');
@@ -174,9 +180,40 @@ const ProductsSection = React.memo(
         return [];
       }
 
+      // ✅ NUEVO: En vista de proveedores, crear tarjetas de proveedor únicas basadas en productos reales
+      if (isProviderView) {
+        // Agrupar productos por proveedor (supplier_id) para crear tarjetas únicas
+        const providersMap = new Map();
+        
+        productosOrdenados.forEach((producto) => {
+          const supplierId = producto.supplier_id;
+          if (!providersMap.has(supplierId)) {
+            providersMap.set(supplierId, {
+              ...producto,
+              main_supplier: true,
+              // ✅ USAR datos reales: usar 'proveedor' que viene del mapeo usersMap
+              user_nm: producto.proveedor || `Proveedor #${supplierId}`,
+              // ✅ USAR logo real del proveedor desde la BD o fallback
+              logo_url: producto.supplier_logo_url || `/LOGO-removebg-preview.png`,
+              provider_id: supplierId,
+              product_count: 1
+            });
+          } else {
+            // Incrementar contador de productos del proveedor
+            const existing = providersMap.get(supplierId);
+            existing.product_count += 1;
+          }
+        });
+        
+        const testProviders = Array.from(providersMap.values()).slice(0, 6);
+        console.log('🔍 Provider view activated. Real providers from products:', testProviders.length);
+        console.log('🔍 Providers with names:', testProviders.map(p => ({ id: p.supplier_id, name: p.user_nm, productCount: p.product_count })));
+        return testProviders;
+      }
+
       // ✅ OPTIMIZACIÓN: Evitar crear objetos nuevos si no es necesario
       return productosOrdenados;
-    }, [productosOrdenados]); // ✅ SISTEMA HÍBRIDO RESPONSIVO: Infinite Scroll + Paginación
+    }, [productosOrdenados, isProviderView]); // ✅ SISTEMA HÍBRIDO RESPONSIVO: Infinite Scroll + Paginación
     const theme = useTheme();
     const isXs = useMediaQuery(theme.breakpoints.only('xs'));
     const isSm = useMediaQuery(theme.breakpoints.only('sm'));
@@ -556,7 +593,7 @@ const ProductsSection = React.memo(
           {/* ✅ ÁREA DE PRODUCTOS centrada con márgenes automáticos */}
           <Box sx={{ width: '100%' }}>
             {loading ? (
-              <LoadingOverlay message="Cargando productos..." height={300} />
+              <LoadingOverlay message={isProviderView ? "Cargando proveedores..." : "Cargando productos..."} height={300} />
             ) : error ? (
               <Paper
                 sx={{
@@ -612,22 +649,41 @@ const ProductsSection = React.memo(
                 {PaginationComponent}
 
                 <Box sx={gridStyles}>
-                  {visibleProducts.map(producto => (
+                  {visibleProducts.map(producto => {
+                    // ✅ OPTIMIZACIÓN: Log solo una vez por render, no por cada producto
+                    if (producto === visibleProducts[0]) {
+                      console.log('🔍 ProductsSection rendering:', visibleProducts.length, 'products in isProviderView:', isProviderView);
+                    }
+                    
+                    return (
                     <Box
                       key={`product-${producto.id || producto.productid}`}
                       sx={cardContainerStyles}
                     >
-                      <ProductCard
-                        product={producto} // Prop 'product'
-                        type="buyer" // <--- ¡AQUÍ LE DAMOS EL CONTEXTO DE COMPRADOR!
-                        onAddToCart={handleAddToCart}
-                        onViewDetails={producto => {
-                          // Aquí puedes agregar la lógica para ver detalles
-                          // ...log eliminado...
-                        }}
-                      />
+                      {isProviderView ? (
+                        <ProductCard
+                          product={producto}
+                          type="provider" // ✅ Cambiar tipo a "provider" para mostrar ProductCardProviderContext
+                          onAddToCart={handleAddToCart}
+                          onViewDetails={producto => {
+                            // Aquí puedes agregar la lógica para ver detalles
+                            // ...log eliminado...
+                          }}
+                        />
+                      ) : (
+                        <ProductCard
+                          product={producto} // Prop 'product'
+                          type="buyer" // <--- ¡AQUÍ LE DAMOS EL CONTEXTO DE COMPRADOR!
+                          onAddToCart={handleAddToCart}
+                          onViewDetails={producto => {
+                            // Aquí puedes agregar la lógica para ver detalles
+                            // ...log eliminado...
+                          }}
+                        />
+                      )}
                     </Box>
-                  ))}
+                  );
+                  })}
                 </Box>
 
                 {/* ✅ INFINITE SCROLL: Solo activo dentro de cada página */}
