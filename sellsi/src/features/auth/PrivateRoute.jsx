@@ -1,5 +1,5 @@
 import React from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { Box, CircularProgress, Typography } from '@mui/material';
 
 /**
@@ -18,8 +18,11 @@ const PrivateRoute = ({
   loading,
   redirectTo = '/login',
 }) => {
+  const location = useLocation();
+  // console.log('[PrivateRoute]', { isAuthenticated, needsOnboarding, loading, redirectTo, pathname: location.pathname });
   // Loading visual centralizado
   if (loading) {
+    // console.log('[PrivateRoute] loading...');
     return (
       <Box
         sx={{
@@ -45,13 +48,20 @@ const PrivateRoute = ({
   }
 
   if (!isAuthenticated) {
+    // console.log('[PrivateRoute] not authenticated, redirecting');
     return <Navigate to={redirectTo} replace />;
   }
 
   if (needsOnboarding) {
+    if (location.pathname === '/onboarding') {
+      // console.log('[PrivateRoute] needs onboarding, already in /onboarding, rendering children');
+      return children;
+    }
+    // console.log('[PrivateRoute] needs onboarding, redirecting');
     return <Navigate to="/onboarding" replace />;
   }
 
+  // console.log('[PrivateRoute] rendering children');
   return children;
 };
 

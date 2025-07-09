@@ -76,14 +76,24 @@ const ProfileImageModal = ({
     const file = files[0];
     if (!file || !validateFile(file)) return;
 
+    // Limpiar imagen anterior si existe
+    if (selectedImage?.url) {
+      URL.revokeObjectURL(selectedImage.url);
+    }
+
     setError('');
     const imageUrl = URL.createObjectURL(file);
-    setSelectedImage({
-      file,
+    
+    // Crear un nuevo objeto cada vez para evitar referencias cruzadas
+    const newImageData = {
+      file: file, // Usar el archivo original directamente
       url: imageUrl,
       name: file.name,
       size: file.size,
-    });
+      timestamp: Date.now(), // Agregar timestamp para unicidad
+    };
+    
+    setSelectedImage(newImageData);
   };
 
   const handleFileChange = (event) => {
@@ -130,18 +140,26 @@ const ProfileImageModal = ({
   const isSaveEnabled = !!selectedImage || isDeletePending;
 
   const handleSave = () => {
-    // console.log('[ProfileImageModal] handleSave called. selectedImage:', selectedImage, 'isDeletePending:', isDeletePending);
     if (selectedImage) {
-      // console.log('[ProfileImageModal] Guardando nueva imagen:', selectedImage);
+      // Crear una copia del objeto para evitar mutaciones
+      const imageToSave = {
+        file: selectedImage.file,
+        url: selectedImage.url,
+        name: selectedImage.name,
+        size: selectedImage.size,
+        timestamp: selectedImage.timestamp
+      };
+      
       // Pasar la imagen al componente padre SIN revocar la URL
-      onImageChange(selectedImage);
+      onImageChange(imageToSave);
+      
+      // Limpiar estado local pero NO revocar URL (el padre se encarga)
       setSelectedImage(null);
       setError('');
       onClose();
       return;
     }
     if (isDeletePending) {
-      // console.log('[ProfileImageModal] Eliminando imagen de perfil actual');
       // Notificar al padre que debe eliminar la imagen
       onImageChange(null);
       setError('');
@@ -149,14 +167,12 @@ const ProfileImageModal = ({
       return;
     }
     // Even if nothing to save, log and call parent with null to be explicit
-    // console.log('[ProfileImageModal] Guardar: No hay cambios para guardar');
     onImageChange(null);
     onClose();
   };
 
   const handleClose = () => {
     // NO revocar automáticamente - el componente padre se encarga
-    // console.log('[ProfileImageModal] handleClose: Cerrando modal sin guardar cambios');
     setSelectedImage(null);
     setError('');
     onClose();
@@ -166,9 +182,7 @@ const ProfileImageModal = ({
     // Solo revocar la URL cuando se cancela explícitamente
     if (selectedImage?.url) {
       URL.revokeObjectURL(selectedImage.url);
-      // console.log('[ProfileImageModal] handleCancel: URL revocada para', selectedImage.url);
     }
-    // console.log('[ProfileImageModal] handleCancel: Cancelando y cerrando modal');
     setSelectedImage(null);
     setError('');
     onClose();
@@ -181,6 +195,19 @@ const ProfileImageModal = ({
   React.useEffect(() => {
     setLocalImageUrl(currentImageUrl);
   }, [currentImageUrl]);
+
+  // Limpiar estado cuando se abre el modal
+  React.useEffect(() => {
+    if (open) {
+      // Limpiar cualquier imagen seleccionada previa al abrir
+      if (selectedImage?.url) {
+        URL.revokeObjectURL(selectedImage.url);
+      }
+      setSelectedImage(null);
+      setError('');
+      setLocalImageUrl(currentImageUrl);
+    }
+  }, [open]);
 
   const previewImageUrl = selectedImage?.url || (localImageUrl ? localImageUrl : undefined);
 
@@ -246,7 +273,6 @@ const ProfileImageModal = ({
             <Tooltip title="Eliminar imagen actual">
               <IconButton
                 onClick={() => {
-                  // console.log('[ProfileImageModal] Marcando imagen para eliminar');
                   setSelectedImage(null);
                   setLocalImageUrl(undefined);
                 }}

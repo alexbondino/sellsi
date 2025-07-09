@@ -31,8 +31,8 @@ CREATE TABLE public.cart_items (
   added_at timestamp with time zone DEFAULT now(),
   updated_at timestamp with time zone DEFAULT now(),
   CONSTRAINT cart_items_pkey PRIMARY KEY (cart_items_id),
-  CONSTRAINT cart_items_product_id_fkey FOREIGN KEY (product_id) REFERENCES public.products(productid),
-  CONSTRAINT cart_items_cart_id_fkey FOREIGN KEY (cart_id) REFERENCES public.carts(cart_id)
+  CONSTRAINT cart_items_cart_id_fkey FOREIGN KEY (cart_id) REFERENCES public.carts(cart_id),
+  CONSTRAINT cart_items_product_id_fkey FOREIGN KEY (product_id) REFERENCES public.products(productid)
 );
 CREATE TABLE public.carts (
   user_id uuid NOT NULL,
@@ -42,6 +42,15 @@ CREATE TABLE public.carts (
   updated_at timestamp with time zone DEFAULT now(),
   CONSTRAINT carts_pkey PRIMARY KEY (cart_id),
   CONSTRAINT carts_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(user_id)
+);
+CREATE TABLE public.control_panel_users (
+  usuario text NOT NULL UNIQUE,
+  password_hash text NOT NULL,
+  last_login timestamp with time zone,
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  is_active boolean DEFAULT true,
+  created_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT control_panel_users_pkey PRIMARY KEY (id)
 );
 CREATE TABLE public.product_images (
   product_id uuid NOT NULL,
@@ -58,6 +67,9 @@ CREATE TABLE public.product_quantity_ranges (
   CONSTRAINT product_quantity_ranges_product_id_fkey FOREIGN KEY (product_id) REFERENCES public.products(productid)
 );
 CREATE TABLE public.products (
+  delivery_regions ARRAY DEFAULT ARRAY[]::text[],
+  delivery_prices ARRAY DEFAULT ARRAY[]::text[],
+  delivery_time_days integer NOT NULL DEFAULT 0,
   productnm text NOT NULL,
   supplier_id uuid,
   category character varying,

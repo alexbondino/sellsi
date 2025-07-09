@@ -10,20 +10,21 @@ import { LazyImage } from '../../layout'; // Importar desde layout
 // Sub-components (updated names)
 import ProductCardBuyerContext from './ProductCardBuyerContext'; // Adjust path
 import ProductCardSupplierContext from './ProductCardSupplierContext'; // Adjust path
+import ProductCardProviderContext from './ProductCardProviderContext'; // Adjust path
 
 /**
  * ProductCard - Componente de tarjeta de producto universal
- * Renders different views based on the 'type' prop ('supplier' or 'buyer').
+ * Renders different views based on the 'type' prop ('supplier', 'buyer', or 'provider').
  *
  * @param {object} props - Component props
  * @param {object} props.product - The product data object.
- * @param {'supplier' | 'buyer'} props.type - The type of card to render ('supplier' or 'buyer').
+ * @param {'supplier' | 'buyer' | 'provider'} props.type - The type of card to render.
  * @param {function} [props.onEdit] - Callback for edit action (supplier type).
  * @param {function} [props.onDelete] - Callback for delete action (supplier type).
  * @param {function} [props.onViewStats] - Callback for view stats action (supplier type).
  * @param {boolean} [props.isDeleting=false] - Indicates if the product is being deleted (supplier type).
  * @param {boolean} [props.isUpdating=false] - Indicates if the product is being updated (supplier type).
- * @param {function} [props.onAddToCart] - Callback for add to cart action (buyer type).
+ * @param {function} [props.onAddToCart] - Callback for add to cart action (buyer type only).
  */
 const ProductCard = React.memo(
   ({
@@ -103,7 +104,7 @@ const ProductCard = React.memo(
         // 🎯 ANCHO RESPONSIVE ÚNICO DE LA TARJETA
         width: type === 'supplier'
           ? { xs: 175, sm: 190, md: 220, lg: 370, xl: 360 }
-          : { xs: 175, sm: 190, md: 220, lg: 300, xl: 320 },
+          : { xs: 175, sm: 190, md: 220, lg: 300, xl: 320 }, // buyer y provider usan las mismas dimensiones
         display: 'flex',
         flexDirection: 'column',
         position: 'relative',
@@ -153,6 +154,10 @@ const ProductCard = React.memo(
       if (currentPath === '/supplier/myproducts') {
         return `/supplier/myproducts/product/${productSlug}`;
       }
+      // Si estamos en el contexto de provider, usar rutas de provider
+      if (currentPath.includes('/provider/')) {
+        return `/provider/marketplace/product/${productSlug}`;
+      }
       // Si estamos en dashboard buyer/supplier, usar la ruta privada por defecto
       return `/marketplace/product/${productId}${productName ? `/${productName}` : ''}`;
     }, []);
@@ -184,6 +189,8 @@ const ProductCard = React.memo(
           fromPath = '/supplier/marketplace';
         } else if (currentPath === '/supplier/myproducts') {
           fromPath = '/supplier/myproducts';
+        } else if (currentPath.includes('/provider/')) {
+          fromPath = '/provider/marketplace';
         }
 
         const productUrl = generateProductUrl(product);
@@ -196,8 +203,8 @@ const ProductCard = React.memo(
 
     return (
       <Card
-        elevation={type === 'buyer' ? 2 : 0} // Supplier might not need elevation by default
-        onClick={handleProductClick} // Only active for buyer type, handled internally
+        elevation={type === 'buyer' || type === 'provider' ? 2 : 0} // Buyer y Provider tienen elevation, Supplier no
+        onClick={handleProductClick}
         sx={cardStyles}
       >
         {memoizedImage}
@@ -216,6 +223,11 @@ const ProductCard = React.memo(
             product={product}
             onAddToCart={onAddToCart}
             handleProductClick={handleProductClick} // Pass down if buyer context needs to know about this
+          />
+        )}
+        {type === 'provider' && (
+          <ProductCardProviderContext
+            product={product}
           />
         )}
       </Card>

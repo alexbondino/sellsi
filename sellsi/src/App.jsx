@@ -1,3 +1,4 @@
+import AuthCallback from './features/auth/AuthCallback';
 import React, { useEffect, useState, useRef, Suspense } from 'react';
 import { Box, CssBaseline, CircularProgress, Typography } from '@mui/material';
 import Loader from './components/Loader';
@@ -443,6 +444,18 @@ function AppContent({ mensaje }) {
     neutralRoutes,
   ]);
 
+  // Redirigir automáticamente a onboarding si el usuario está autenticado, necesita onboarding y está en una ruta neutral
+  useEffect(() => {
+    if (
+      session &&
+      needsOnboarding &&
+      location.pathname !== '/onboarding' &&
+      (location.pathname === '/' || neutralRoutes.has(location.pathname))
+    ) {
+      navigate('/onboarding', { replace: true });
+    }
+  }, [session, needsOnboarding, location.pathname, navigate, neutralRoutes]);
+
   // Prefetch de rutas para rendimiento
   useEffect(() => {
     if (!loadingUserStatus && session && currentAppRole) {
@@ -554,8 +567,8 @@ function AppContent({ mensaje }) {
       isProductPageRoute
     );
 
-  // La BottomBar se muestra en todas las rutas excepto en '/supplier/home'
-  const showBottomBar = location.pathname !== '/supplier/home';
+  // La BottomBar se muestra en todas las rutas excepto en '/supplier/home' y '/onboarding'
+  const showBottomBar = location.pathname !== '/supplier/home' && location.pathname !== '/onboarding';
   const topBarHeight = '64px'; // Consistente con la altura de TopBar
 
   return (
@@ -657,6 +670,9 @@ function AppContent({ mensaje }) {
 
                 {/* Ruta para testing de 404 (solo desarrollo) */}
                 <Route path="/404" element={<NotFound />} />
+
+            {/* Ruta de callback de autenticación Supabase */}
+            <Route path="/auth/callback" element={<AuthCallback />} />
 
                 {/* Todas estas rutas están ahora protegidas SÓLO por autenticación y onboarding */}
                 <Route

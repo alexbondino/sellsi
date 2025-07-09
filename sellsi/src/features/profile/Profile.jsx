@@ -95,7 +95,6 @@ const Profile = ({ userProfile, onUpdateProfile }) => {
 
     // console.log('[Profile] handleUpdate - hasFormChanges:', hasFormChanges);
     // console.log('[Profile] handleUpdate - hasImageChanges:', hasImageChanges);
-    // console.log('[Profile] handleUpdate - pendingImage:', pendingImage);
     // console.log('[Profile] handleUpdate - formData:', formData);
 
     if (!hasPendingChanges) {
@@ -113,8 +112,9 @@ const Profile = ({ userProfile, onUpdateProfile }) => {
         if (pendingImage.delete) {
           // console.log('[Profile] handleUpdate - Eliminando imagen de perfil (logo_url=null)');
           dataToUpdate.logo_url = null; // Eliminar imagen
+          dataToUpdate.profileImage = null; // Asegurar que se pase null
         } else {
-          // console.log('[Profile] handleUpdate - Subiendo nueva imagen de perfil:', pendingImage);
+          // console.log('[Profile] handleUpdate - Subiendo nueva imagen de perfil');
           dataToUpdate.profileImage = pendingImage;
         }
       }

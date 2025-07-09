@@ -58,6 +58,7 @@ const SearchBar = ({
     lg: 33.7,
     xl: 41,
   }, // Valores por defecto para Marketplace normal
+  showFiltersButton = true,
 }) => {
   // ✅ OPTIMIZACIÓN: Estado local para el input con debouncing
   const [localBusqueda, setLocalBusqueda] = React.useState(busqueda)
@@ -240,37 +241,39 @@ const SearchBar = ({
         </Select>
       </FormControl>
       {/* Botón de filtros - Optimizado para móviles */}
-      <Button
-        size="small"
-        variant={buttonVariantStyles.variant}
-        onClick={handleToggleFilters}
-        sx={buttonBaseStyles}
-      >
-        {/* Solo icono en xs y sm, texto completo en md+ */}
-        <Box
-          sx={{
-            display: { xs: 'none', sm: 'none', md: 'flex' },
-            alignItems: 'center',
-            gap: 1,
-          }}
+      {showFiltersButton !== false && (
+        <Button
+          size="small"
+          variant={buttonVariantStyles.variant}
+          onClick={handleToggleFilters}
+          sx={buttonBaseStyles}
         >
-          <Badge color="error" variant="dot" invisible={!hayFiltrosActivos}>
-            <FilterAltIcon fontSize="small" />
-          </Badge>
-          Filtros
-        </Box>
-        {/* Solo icono en xs y sm */}
-        <Box
-          sx={{
-            display: { xs: 'flex', sm: 'flex', md: 'none' },
-            justifyContent: 'center',
-          }}
-        >
-          <Badge color="error" variant="dot" invisible={!hayFiltrosActivos}>
-            <FilterAltIcon fontSize="small" />
-          </Badge>
-        </Box>
-      </Button>
+          {/* Solo icono en xs y sm, texto completo en md+ */}
+          <Box
+            sx={{
+              display: { xs: 'none', sm: 'none', md: 'flex' },
+              alignItems: 'center',
+              gap: 1,
+            }}
+          >
+            <Badge color="error" variant="dot" invisible={!hayFiltrosActivos}>
+              <FilterAltIcon fontSize="small" />
+            </Badge>
+            Filtros
+          </Box>
+          {/* Solo icono en xs y sm */}
+          <Box
+            sx={{
+              display: { xs: 'flex', sm: 'flex', md: 'none' },
+              justifyContent: 'center',
+            }}
+          >
+            <Badge color="error" variant="dot" invisible={!hayFiltrosActivos}>
+              <FilterAltIcon fontSize="small" />
+            </Badge>
+          </Box>
+        </Button>
+      )}
     </Box>
   )
 }

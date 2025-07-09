@@ -13,11 +13,12 @@ import { supabase } from './supabase';
 export const getUserProfile = async (userId) => {
   try {
     // Query principal para obtener datos del usuario
+
     const { data: userData, error: userError } = await supabase
       .from('users')
       .select('*')
       .eq('user_id', userId)
-      .single();
+      .maybeSingle();
 
     if (userError) throw userError;
 
@@ -28,7 +29,7 @@ export const getUserProfile = async (userId) => {
         .from('bank_info')
         .select('*')
         .eq('user_id', userId)
-        .single();
+        .maybeSingle();
       
       // Solo asignar datos si no hay error y hay datos válidos
       if (!error && data) {
@@ -45,7 +46,7 @@ export const getUserProfile = async (userId) => {
         .from('shipping_info')
         .select('*')
         .eq('user_id', userId)
-        .single();
+        .maybeSingle();
       
       if (!error && data) {
         shippingData = data;
@@ -61,7 +62,7 @@ export const getUserProfile = async (userId) => {
         .from('billing_info')
         .select('*')
         .eq('user_id', userId)
-        .single();
+        .maybeSingle();
       
       if (!error && data) {
         billingData = data;
@@ -147,9 +148,10 @@ export const updateUserProfile = async (userId, profileData) => {
       };
 
       try {
+
         const { error: bankError } = await supabase
           .from('bank_info')
-          .upsert(bankData, { onConflict: 'user_id' });
+          .upsert(bankData, { onConflict: ['user_id'] });
 
         if (bankError) {
           console.warn('⚠️ Could not update bank_info (table may not exist):', bankError);
@@ -171,9 +173,10 @@ export const updateUserProfile = async (userId, profileData) => {
       };
 
       try {
+
         const { error: shippingError } = await supabase
           .from('shipping_info')
-          .upsert(shippingData, { onConflict: 'user_id' });
+          .upsert(shippingData, { onConflict: ['user_id'] });
 
         if (shippingError) {
           console.warn('⚠️ Could not update shipping_info (table may not exist):', shippingError);
@@ -196,9 +199,10 @@ export const updateUserProfile = async (userId, profileData) => {
       };
 
       try {
+
         const { error: billingError } = await supabase
           .from('billing_info')
-          .upsert(billingData, { onConflict: 'user_id' });
+          .upsert(billingData, { onConflict: ['user_id'] });
 
         if (billingError) {
           console.warn('⚠️ Could not update billing_info (table may not exist):', billingError);
@@ -208,6 +212,7 @@ export const updateUserProfile = async (userId, profileData) => {
       }
     }
 
+    console.log('[updateUserProfile] Perfil actualizado correctamente para user_id:', userId);
     return { success: true, error: null };
   } catch (error) {
     console.error('Error updating user profile:', error);
@@ -223,24 +228,20 @@ export const updateUserProfile = async (userId, profileData) => {
  */
 export const uploadProfileImage = async (userId, imageFile) => {
   try {
-    console.log('[uploadProfileImage] userId:', userId, 'imageFile:', imageFile);
-    
     // 1. Eliminar TODAS las imágenes previas del usuario
     const deleteResult = await deleteAllUserImages(userId);
     if (!deleteResult.success) {
       console.warn('[uploadProfileImage] No se pudieron eliminar archivos previos:', deleteResult.error);
-    } else {
-      console.log('[uploadProfileImage] Se eliminaron', deleteResult.deletedCount, 'archivos previos');
     }
 
-    // 2. Subir el nuevo archivo
+    // 2. Subir el nuevo archivo con timestamp para evitar cache
     const fileExt = imageFile.name.split('.').pop();
-    const filePath = `${userId}/logo.${fileExt}`;
+    const timestamp = Date.now();
+    const filePath = `${userId}/logo_${timestamp}.${fileExt}`;
+    
     const { error: uploadError } = await supabase.storage
       .from('user-logos')
       .upload(filePath, imageFile, { upsert: true });
-
-    console.log('[uploadProfileImage] upload result:', uploadError);
 
     if (uploadError) throw uploadError;
 
@@ -248,10 +249,8 @@ export const uploadProfileImage = async (userId, imageFile) => {
     const { data: urlData } = supabase.storage
       .from('user-logos')
       .getPublicUrl(filePath);
-    console.log('[uploadProfileImage] public URL data:', urlData);
 
     const publicUrl = urlData.publicUrl;
-    console.log('[uploadProfileImage] Intentando actualizar logo_url en users con:', publicUrl);
 
     // 4. Actualizar URL en la tabla users
     const { data: updateData, error: updateError } = await supabase
@@ -262,11 +261,6 @@ export const uploadProfileImage = async (userId, imageFile) => {
       })
       .eq('user_id', userId)
       .select(); // Añadir select para ver qué se actualizó
-
-    console.log('[uploadProfileImage] update users result:', updateError, 'userId:', userId, 'logo_url:', publicUrl);
-    console.log('[uploadProfileImage] updateData:', updateData);
-    console.log('[uploadProfileImage] Expected URL:', publicUrl);
-    console.log('[uploadProfileImage] File extension from original file:', imageFile.name);
 
     if (updateError) throw updateError;
 
@@ -279,9 +273,6 @@ export const uploadProfileImage = async (userId, imageFile) => {
     if (userReadError) {
       console.error('[uploadProfileImage] Error leyendo usuario después de update:', userReadError);
     } else {
-      console.log('[uploadProfileImage] logo_url en BD después de update:', userData?.logo_url);
-      console.log('[uploadProfileImage] ¿La URL en BD coincide con la esperada?', userData?.logo_url === publicUrl);
-      
       // Si no coincide, intentar actualizar de nuevo
       if (userData?.logo_url !== publicUrl) {
         console.warn('[uploadProfileImage] MISMATCH detectado. Intentando actualizar de nuevo...');
@@ -292,8 +283,6 @@ export const uploadProfileImage = async (userId, imageFile) => {
         
         if (retryError) {
           console.error('[uploadProfileImage] Error en retry update:', retryError);
-        } else {
-          console.log('[uploadProfileImage] Retry update exitoso');
         }
       }
     }
@@ -312,8 +301,6 @@ export const uploadProfileImage = async (userId, imageFile) => {
  */
 export const deleteAllUserImages = async (userId) => {
   try {
-    console.log('[deleteAllUserImages] Eliminando todas las imágenes para userId:', userId);
-    
     // 1. Listar todos los archivos del usuario
     const { data: listData, error: listError } = await supabase.storage
       .from('user-logos')
@@ -340,7 +327,6 @@ export const deleteAllUserImages = async (userId) => {
       return { success: false, error: removeError };
     }
     
-    console.log('[deleteAllUserImages] Archivos eliminados exitosamente:', filesToRemove);
     return { success: true, deletedCount: filesToRemove.length };
     
   } catch (error) {

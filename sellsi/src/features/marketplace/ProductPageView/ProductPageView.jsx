@@ -265,7 +265,7 @@ const ProductPageView = ({
             />
           </Box>
           {/* 3. Descripción del Producto (hijo 3) */}
-          <Box sx={{ width: '100%', mt: 6 }}>
+          <Box sx={{ width: '100%', mt: 6, mb:6 }}>
             <Paper
               elevation={2}
               sx={{

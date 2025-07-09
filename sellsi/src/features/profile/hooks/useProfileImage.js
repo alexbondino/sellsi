@@ -8,7 +8,7 @@ export const useProfileImage = (currentImageUrl) => {
   const [pendingImage, setPendingImage] = useState(null);
 
   useEffect(() => {
-    console.log('[useProfileImage] pendingImage changed:', pendingImage);
+    // Debug effect removido - ya no es necesario
   }, [pendingImage]);
 
   // Cleanup de URLs de blob al desmontar o cambiar imagen
@@ -29,13 +29,21 @@ export const useProfileImage = (currentImageUrl) => {
     if (pendingImage?.url) {
       URL.revokeObjectURL(pendingImage.url);
     }
+    
     if (imageData === null) {
       // Marcar explícitamente para eliminar
-      console.log('[useProfileImage] handleImageChange: marcar para eliminar');
       setPendingImage({ delete: true });
     } else {
-      console.log('[useProfileImage] handleImageChange: nueva imagen seleccionada', imageData);
-      setPendingImage(imageData);
+      // Crear una nueva referencia para evitar mutaciones
+      const newPendingImage = {
+        file: imageData.file,
+        url: imageData.url,
+        name: imageData.name,
+        size: imageData.size,
+        timestamp: imageData.timestamp || Date.now()
+      };
+      
+      setPendingImage(newPendingImage);
     }
   };
 
@@ -58,7 +66,6 @@ export const useProfileImage = (currentImageUrl) => {
     if (pendingImage?.url) {
       URL.revokeObjectURL(pendingImage.url);
     }
-    console.log('[useProfileImage] clearPendingImage: limpiando imagen pendiente');
     setPendingImage(null);
   };
 

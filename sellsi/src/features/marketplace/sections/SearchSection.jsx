@@ -91,7 +91,7 @@ const SearchSection = React.memo(
       <Box sx={finalContainerStyles}>
         <Box sx={innerContainerStyles}>
           {/* ✅ USAR SearchBar EXISTENTE */}
-          <SearchBar {...searchBarProps} />
+          <SearchBar {...searchBarProps} showFiltersButton={false} />
           {/* ✅ USAR CategoryNavigation EXISTENTE */}
           <CategoryNavigation {...categoryNavigationProps} />
         </Box>
