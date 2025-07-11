@@ -211,8 +211,8 @@ export const PROVIDERS_DATA = [
     alt: 'IKEA',
   },
   {
-    src: '/Landing Page/Nuestros Proveedores/johnsons.webp',
-    alt: "Johnson's",
+    src: '/Landing Page/Nuestros Proveedores/clickbar.webp',
+    alt: "Click Bar",
   },
   {
     src: '/Landing Page/Nuestros Proveedores/laroche.webp',

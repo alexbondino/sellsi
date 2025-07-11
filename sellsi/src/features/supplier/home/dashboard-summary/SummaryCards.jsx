@@ -9,9 +9,9 @@ import {
 } from '@mui/icons-material';
 import { generateChartData } from './utils';
 
-const SummaryCards = ({ products, totalSales, outOfStock, weeklyRequests }) => {
+const SummaryCards = ({ products, totalSales, outOfStock, weeklyRequests, productsActive }) => {
   const chartData = {
-    products: generateChartData(products.length, 'up'),
+    products: generateChartData(productsActive ?? products.length, 'up'),
     sales: generateChartData(totalSales / 1000, 'up'),
     outOfStock: generateChartData(outOfStock, 'down'),
     requests: generateChartData(weeklyRequests.length, 'neutral'),
@@ -20,7 +20,7 @@ const SummaryCards = ({ products, totalSales, outOfStock, weeklyRequests }) => {
   const dashboardData = [
     {
       title: 'Productos Activos',
-      value: products.length.toLocaleString(),
+      value: (productsActive ?? products.length).toLocaleString(),
       interval: 'Últimos 30 días',
       trend: 'up',
       data: chartData.products,

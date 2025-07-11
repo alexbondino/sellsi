@@ -65,7 +65,6 @@ const ConfirmarPagoModal = ({ open, solicitud, onClose, onSuccess }) => {
   // ========================================
   
   const [formData, setFormData] = useState({
-    observaciones: '',
     notificarComprador: true
   });
   const [comprobantes, setComprobantes] = useState([]);
@@ -127,7 +126,6 @@ const ConfirmarPagoModal = ({ open, solicitud, onClose, onSuccess }) => {
     try {
       // Confirmar el pago
       const datos = {
-        observaciones: formData.observaciones,
         comprobantes_urls: comprobantes.map(c => c.url),
         fecha_confirmacion: new Date().toISOString()
       };
@@ -143,8 +141,7 @@ const ConfirmarPagoModal = ({ open, solicitud, onClose, onSuccess }) => {
             {
               ticket: solicitud.ticket,
               proveedor: solicitud.proveedor,
-              monto: solicitud.venta,
-              observaciones: formData.observaciones
+              monto: solicitud.venta
             }
           );
         }
@@ -169,7 +166,6 @@ const ConfirmarPagoModal = ({ open, solicitud, onClose, onSuccess }) => {
 
   const handleClose = () => {
     setFormData({
-      observaciones: '',
       notificarComprador: true
     });
     setComprobantes([]);
@@ -263,17 +259,6 @@ const ConfirmarPagoModal = ({ open, solicitud, onClose, onSuccess }) => {
 
   const renderFormulario = () => (
     <Box>
-      <TextField
-        fullWidth
-        multiline
-        rows={4}
-        label="Observaciones (Opcional)"
-        value={formData.observaciones}
-        onChange={(e) => handleInputChange('observaciones', e.target.value)}
-        placeholder="Agrega observaciones sobre la confirmación del pago..."
-        sx={{ mb: 2 }}
-      />
-      
       <Box sx={{ display: 'flex', alignItems: 'center' }}>
         <input
           type="checkbox"

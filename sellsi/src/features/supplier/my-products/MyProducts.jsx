@@ -355,10 +355,10 @@ const MyProducts = () => {
                               variant="h6"
                               sx={{ fontWeight: 600, lineHeight: 1.2 }}
                             >
-                              {stats.inStock}
+                              {stats.active}
                             </Typography>
                             <Typography variant="body2" color="text.secondary">
-                              Productos en stock
+                              Productos activos
                             </Typography>
                           </Box>
                         </Box>

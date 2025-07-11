@@ -39,8 +39,14 @@ const ProviderHome = () => {
     error,
   } = useSupplierDashboard();
 
-  const productsOutOfStock = productStocks.filter(
-    p => p.productqty === 0
+  // Ahora cuenta productos inactivos (is_active === false)
+  const productsOutOfStock = products.filter(
+    p => p.is_active === false
+  ).length;
+
+  // Ahora cuenta productos activos (is_active === true)
+  const productsActive = products.filter(
+    p => p.is_active === true
   ).length;
 
   return (
@@ -66,6 +72,7 @@ const ProviderHome = () => {
                     totalSales={totalSales}
                     outOfStock={productsOutOfStock}
                     weeklyRequests={weeklyRequests}
+                    productsActive={productsActive}
                   />
                 </Suspense>
               </Box>

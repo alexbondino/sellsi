@@ -537,3 +537,410 @@ export const enviarNotificacion = async (compradorEmail, tipoNotificacion, datos
     return { success: false, error: 'Error interno del servidor' }
   }
 }
+
+// ========================================
+// 👥 GESTIÓN DE USUARIOS
+// ========================================
+
+/**
+ * Obtener lista de usuarios con filtros
+ * @param {object} filtros - Filtros a aplicar (estado, tipo, búsqueda)
+ * @returns {Promise<{success: boolean, data?: array, error?: string}>}
+ */
+export const getUsers = async (filtros = {}) => {
+  try {
+    let query = supabase
+      .from('users')
+      .select(`
+        user_id,
+        user_nm,
+        email,
+        phone_nbr,
+        country,
+        logo_url,
+        main_supplier,
+        createdt,
+        updatedt
+      `);
+
+    // Aplicar filtros
+    if (filtros.userType === 'suppliers') {
+      query = query.eq('main_supplier', true);
+    } else if (filtros.userType === 'buyers') {
+      query = query.eq('main_supplier', false);
+    }
+
+    if (filtros.search) {
+      query = query.or(`user_nm.ilike.%${filtros.search}%,email.ilike.%${filtros.search}%`);
+    }
+
+    const { data, error } = await query.order('createdt', { ascending: false });
+
+    if (error) {
+      console.error('Error obteniendo usuarios:', error);
+      return { success: false, error: 'Error al cargar usuarios' };
+    }
+
+    // Obtener conteo de productos activos para cada usuario
+    const processedData = [];
+    for (const user of data || []) {
+      // Obtener productos del usuario que están marcados como activos en BD
+      const { data: userProducts } = await supabase
+        .from('products')
+        .select('productqty, minimum_purchase, is_active')
+        .eq('supplier_id', user.user_id)
+        .eq('is_active', true);
+
+      // Aplicar filtro de productos realmente activos (stock >= compra mínima)
+      const activeProductsCount = (userProducts || []).filter(product => {
+        const stock = product.productqty || 0;
+        const minimumPurchase = product.minimum_purchase || 1;
+        return stock >= minimumPurchase;
+      }).length;
+
+      processedData.push({
+        ...user,
+        active_products_count: activeProductsCount,
+        // TODO: Agregar campo banned cuando se actualice la BD
+        banned: false // Temporalmente false hasta implementar campo en BD
+      });
+    }
+
+    return { success: true, data: processedData };
+  } catch (error) {
+    console.error('Error en getUsers:', error);
+    return { success: false, error: 'Error interno del servidor' };
+  }
+};
+
+/**
+ * Obtener estadísticas de usuarios
+ * @returns {Promise<{success: boolean, stats?: object, error?: string}>}
+ */
+export const getUserStats = async () => {
+  try {
+    // Obtener conteos básicos
+    const [usersResult, suppliersResult] = await Promise.all([
+      supabase.from('users').select('user_id, main_supplier', { count: 'exact', head: true }),
+      supabase.from('users').select('user_id', { count: 'exact', head: true }).eq('main_supplier', true)
+    ]);
+
+    const totalUsers = usersResult.count || 0;
+    const suppliers = suppliersResult.count || 0;
+
+    // TODO: Calcular usuarios baneados cuando se implemente el campo
+    const bannedUsers = 0;
+    const activeUsers = totalUsers - bannedUsers;
+
+    const stats = {
+      totalUsers,
+      activeUsers,
+      bannedUsers,
+      suppliers,
+      buyers: totalUsers - suppliers
+    };
+
+    return { success: true, stats };
+  } catch (error) {
+    console.error('Error en getUserStats:', error);
+    return { success: false, error: 'Error interno del servidor' };
+  }
+};
+
+/**
+ * Banear un usuario
+ * @param {string} userId - ID del usuario a banear
+ * @param {string} reason - Razón del baneo
+ * @returns {Promise<{success: boolean, error?: string}>}
+ */
+export const banUser = async (userId, reason) => {
+  try {
+    // TODO: Implementar cuando se agregue el campo 'banned' a la tabla users
+    // También necesitaremos una tabla de audit para logs de bans
+    
+    /*
+    const { error: updateError } = await supabase
+      .from('users')
+      .update({ 
+        banned: true,
+        ban_reason: reason,
+        banned_at: new Date().toISOString(),
+        banned_by: 'admin' // TODO: Usar ID del admin actual
+      })
+      .eq('user_id', userId);
+
+    if (updateError) {
+      console.error('Error baneando usuario:', updateError);
+      return { success: false, error: 'Error al banear usuario' };
+    }
+
+    // Crear registro de auditoría
+    const { error: auditError } = await supabase
+      .from('user_ban_audit')
+      .insert({
+        user_id: userId,
+        action: 'ban',
+        reason: reason,
+        admin_id: 'admin', // TODO: Usar ID del admin actual
+        created_at: new Date().toISOString()
+      });
+
+    if (auditError) {
+      console.warn('Error creando log de auditoría:', auditError);
+    }
+    */
+
+    // Por ahora solo simulamos la respuesta
+    console.log('Simulando ban de usuario:', { userId, reason });
+    
+    return { success: true };
+  } catch (error) {
+    console.error('Error en banUser:', error);
+    return { success: false, error: 'Error interno del servidor' };
+  }
+};
+
+/**
+ * Desbanear un usuario
+ * @param {string} userId - ID del usuario a desbanear
+ * @param {string} reason - Razón del desbaneo
+ * @returns {Promise<{success: boolean, error?: string}>}
+ */
+export const unbanUser = async (userId, reason) => {
+  try {
+    // TODO: Implementar cuando se agregue el campo 'banned' a la tabla users
+    
+    /*
+    const { error: updateError } = await supabase
+      .from('users')
+      .update({ 
+        banned: false,
+        ban_reason: null,
+        banned_at: null,
+        banned_by: null,
+        unbanned_at: new Date().toISOString(),
+        unbanned_by: 'admin' // TODO: Usar ID del admin actual
+      })
+      .eq('user_id', userId);
+
+    if (updateError) {
+      console.error('Error desbaneando usuario:', updateError);
+      return { success: false, error: 'Error al desbanear usuario' };
+    }
+
+    // Crear registro de auditoría
+    const { error: auditError } = await supabase
+      .from('user_ban_audit')
+      .insert({
+        user_id: userId,
+        action: 'unban',
+        reason: reason,
+        admin_id: 'admin', // TODO: Usar ID del admin actual
+        created_at: new Date().toISOString()
+      });
+
+    if (auditError) {
+      console.warn('Error creando log de auditoría:', auditError);
+    }
+    */
+
+    // Por ahora solo simulamos la respuesta
+    console.log('Simulando unban de usuario:', { userId, reason });
+    
+    return { success: true };
+  } catch (error) {
+    console.error('Error en unbanUser:', error);
+    return { success: false, error: 'Error interno del servidor' };
+  }
+};
+
+/**
+ * Obtener historial de bans de un usuario
+ * @param {string} userId - ID del usuario
+ * @returns {Promise<{success: boolean, data?: array, error?: string}>}
+ */
+export const getUserBanHistory = async (userId) => {
+  try {
+    // TODO: Implementar cuando se cree la tabla user_ban_audit
+    
+    /*
+    const { data, error } = await supabase
+      .from('user_ban_audit')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error obteniendo historial de bans:', error);
+      return { success: false, error: 'Error al cargar historial' };
+    }
+
+    return { success: true, data: data || [] };
+    */
+
+    // Por ahora retornamos array vacío
+    return { success: true, data: [] };
+  } catch (error) {
+    console.error('Error en getUserBanHistory:', error);
+    return { success: false, error: 'Error interno del servidor' };
+  }
+};
+
+// ========================================
+// 🛒 GESTIÓN DE PRODUCTOS MARKETPLACE
+// ========================================
+
+/**
+ * Obtener productos del marketplace disponibles
+ * @returns {Promise<{success: boolean, data?: Array, error?: string}>}
+ */
+export const getMarketplaceProducts = async () => {
+  try {
+    // Obtener productos básicos con nombres de campo correctos
+    const { data: products, error: productsError } = await supabase
+      .from('products')
+      .select(`
+        productid,
+        productnm,
+        price,
+        productqty,
+        minimum_purchase,
+        is_active,
+        supplier_id,
+        createddt
+      `)
+      .eq('is_active', true)
+      .order('createddt', { ascending: false });
+
+    if (productsError) {
+      console.error('Error obteniendo productos:', productsError);
+      return { success: false, error: 'Error al cargar productos' };
+    }
+
+    if (!products || products.length === 0) {
+      return { success: true, data: [] };
+    }
+
+    // Filtrar productos que cumplen la condición: stock >= compra_minima
+    const availableProducts = products.filter(product => {
+      const stock = product.productqty || 0;
+      const minPurchase = product.minimum_purchase || 1;
+      return stock >= minPurchase;
+    });
+
+    // Obtener información de los proveedores
+    const supplierIds = [...new Set(availableProducts.map(p => p.supplier_id))];
+    
+    let suppliersData = {};
+    if (supplierIds.length > 0) {
+      const { data: suppliers, error: suppliersError } = await supabase
+        .from('users')
+        .select('user_id, user_nm, email')
+        .in('user_id', supplierIds);
+
+      if (!suppliersError && suppliers) {
+        suppliersData = suppliers.reduce((acc, supplier) => {
+          acc[supplier.user_id] = supplier;
+          return acc;
+        }, {});
+      }
+    }
+
+    // Formatear datos para el componente
+    const formattedData = availableProducts.map(product => ({
+      product_id: product.productid,
+      product_name: product.productnm || 'Producto sin nombre',
+      price: product.price || 0,
+      stock: product.productqty || 0,
+      min_purchase: product.minimum_purchase || 1,
+      supplier_name: suppliersData[product.supplier_id]?.user_nm || 'Proveedor no encontrado',
+      user_id: product.supplier_id || 'N/A'
+    }));
+
+    return { success: true, data: formattedData };
+  } catch (error) {
+    console.error('Error en getMarketplaceProducts:', error);
+    return { success: false, error: 'Error interno del servidor' };
+  }
+};
+
+/**
+ * Eliminar un producto del marketplace
+ * @param {string} productId - ID del producto a eliminar
+ * @returns {Promise<{success: boolean, error?: string}>}
+ */
+export const deleteProduct = async (productId) => {
+  try {
+    const { error } = await supabase
+      .from('products')
+      .update({ is_active: false })
+      .eq('productid', productId);
+
+    if (error) {
+      console.error('Error eliminando producto:', error);
+      return { success: false, error: 'Error al eliminar producto' };
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error('Error en deleteProduct:', error);
+    return { success: false, error: 'Error interno del servidor' };
+  }
+};
+
+/**
+ * Obtener estadísticas de productos del marketplace
+ * @returns {Promise<{success: boolean, stats?: object, error?: string}>}
+ */
+export const getProductStats = async () => {
+  try {
+    // Consultar todos los productos activos con nombres de campo correctos
+    const { data: allProducts, error: allError } = await supabase
+      .from('products')
+      .select('productid, productqty, minimum_purchase, is_active, supplier_id')
+      .eq('is_active', true);
+
+    if (allError) {
+      console.error('Error obteniendo estadísticas de productos:', allError);
+      return { success: false, error: 'Error al cargar estadísticas' };
+    }
+
+    const products = allProducts || [];
+
+    // Calcular estadísticas
+    const totalProducts = products.length;
+    
+    // Productos realmente activos: stock >= compra_minima (nueva lógica de productos activos)
+    const availableProducts = products.filter(p => {
+      const stock = p.productqty || 0;
+      const minPurchase = p.minimum_purchase || 1;
+      return stock >= minPurchase;
+    }).length;
+    
+    // Productos con stock bajo (stock < compra_minima)
+    const lowStockProducts = products.filter(p => {
+      const stock = p.productqty || 0;
+      const minPurchase = p.minimum_purchase || 1;
+      return stock < minPurchase && stock > 0;
+    }).length;
+    
+    // Productos sin stock
+    const outOfStockProducts = products.filter(p => (p.productqty || 0) === 0).length;
+    
+    // Proveedores activos únicos
+    const activeSuppliers = new Set(products.map(p => p.supplier_id).filter(id => id)).size;
+
+    const stats = {
+      totalProducts,
+      availableProducts,
+      lowStockProducts,
+      outOfStockProducts,
+      activeSuppliers
+    };
+
+    return { success: true, stats };
+  } catch (error) {
+    console.error('Error en getProductStats:', error);
+    return { success: false, error: 'Error interno del servidor' };
+  }
+};

@@ -17,6 +17,9 @@ export { BannerProvider, useBanner } from './banner/BannerContext';
 export { default as Modal } from './Modal';
 export { default as ContactModal } from './ContactModal';
 export { default as CountrySelector } from './CountrySelector';
+export { default as SecurityBadge } from './SecurityBadge'
+export { default as CheckoutProgressStepper } from './CheckoutProgressStepper'
+export { default as PaymentMethodCard } from './PaymentMethodCard'
 export { default as PrimaryButton } from './PrimaryButton';
 export { default as FileUploader } from './FileUploader';
 export { default as ImageUploader } from './ImageUploader';

@@ -9,6 +9,7 @@ import {
 } from '@mui/material'
 import { CreditCard as CreditCardIcon } from '@mui/icons-material'
 import { motion } from 'framer-motion'
+import { useNavigate } from 'react-router-dom'
 import DiscountSection from './DiscountSection'
 import PriceBreakdown from './PriceBreakdown'
 
@@ -35,6 +36,18 @@ const OrderSummary = ({
   onRemoveCoupon,
   onCheckout,
 }) => {
+  const navigate = useNavigate()
+
+  // Handler para navegar al checkout
+  const handleCheckout = () => {
+    // Validar que haya productos
+    if (!cartStats || cartStats.isEmpty) {
+      return
+    }
+    
+    // Navegar al método de pago
+    navigate('/buyer/paymentmethod')
+  }
   return (
     <Paper
       sx={{
@@ -84,8 +97,8 @@ const OrderSummary = ({
             variant="contained"
             fullWidth
             size="large"
-            onClick={onCheckout}
-            disabled={isCheckingOut}
+            onClick={handleCheckout}
+            disabled={isCheckingOut || !cartStats || cartStats.isEmpty}
             startIcon={
               isCheckingOut ? (
                 <CircularProgress size={20} sx={{ color: 'white' }} />

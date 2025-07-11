@@ -26,7 +26,7 @@ import { usePrefetch } from './hooks/usePrefetch';
 import useCartStore from './features/buyer/hooks/cartStore';
 
 import SideBar from './features/layout/SideBar';
-import { AdminLogin, AdminPanelTable } from './features/admin_panel';
+import { AdminLogin, AdminDashboard } from './features/admin_panel';
 import ScrollToTop from './features/ScrollToTop';
 
 // ============================================================================
@@ -44,6 +44,7 @@ const Marketplace = React.lazy(() =>
   import('./features/marketplace/Marketplace')
 );
 const BuyerCart = React.lazy(() => import('./features/buyer/BuyerCart'));
+const PaymentMethod = React.lazy(() => import('./features/checkout/PaymentMethod'));
 
 // 📦 SUPPLIER DASHBOARD - LAZY LOADING
 const ProviderHome = React.lazy(() =>
@@ -572,20 +573,33 @@ function AppContent({ mensaje }) {
       isProductPageRoute
     );
 
-  // La BottomBar se muestra en todas las rutas excepto en '/supplier/home' y '/onboarding'
-  const showBottomBar = location.pathname !== '/supplier/home' && location.pathname !== '/onboarding';
+  // Ocultar TopBar y BottomBar en rutas administrativas
+  const isAdminRoute = location.pathname.startsWith('/admin-login') || 
+                       location.pathname.startsWith('/admin-panel');
+
+  // La BottomBar se muestra en todas las rutas excepto en '/supplier/home', '/onboarding' y rutas admin
+  const showBottomBar = !isAdminRoute && 
+                        location.pathname !== '/supplier/home' && 
+                        location.pathname !== '/onboarding';
+  
+  // TopBar se oculta solo en rutas admin
+  const showTopBar = !isAdminRoute;
+  
   const topBarHeight = '64px'; // Consistente con la altura de TopBar
 
   return (
     <>
-      <TopBar
-        key={`${session?.user?.id || 'no-session'}-${logoUrl || 'default-topbar'}`}
-        session={session}
-        isBuyer={isBuyer}
-        logoUrl={logoUrl ? `${logoUrl}?cb=${logoCacheBuster}` : null}
-        onNavigate={handleScrollTo}
-        onRoleChange={handleRoleChangeFromTopBar}
-      />
+      {/* TopBar - Solo se muestra si no es una ruta admin */}
+      {showTopBar && (
+        <TopBar
+          key={`${session?.user?.id || 'no-session'}-${logoUrl || 'default-topbar'}`}
+          session={session}
+          isBuyer={isBuyer}
+          logoUrl={logoUrl ? `${logoUrl}?cb=${logoCacheBuster}` : null}
+          onNavigate={handleScrollTo}
+          onRoleChange={handleRoleChangeFromTopBar}
+        />
+      )}
 
       <Box
         sx={{
@@ -610,7 +624,7 @@ function AppContent({ mensaje }) {
           sx={{
             display: 'flex',
             flex: '1 0 auto', // Toma el espacio disponible
-            mt: topBarHeight,
+            mt: showTopBar ? topBarHeight : 0, // Solo aplicar margen si TopBar está visible
           }}
         >
           {isDashboardRoute && (
@@ -671,7 +685,7 @@ function AppContent({ mensaje }) {
 
                 {/* RUTAS ADMINISTRATIVAS - ACCESO VISUAL PARA TESTING */}
                 <Route path="/admin-login" element={<AdminLogin />} />
-                <Route path="/admin-panel/dashboard" element={<AdminPanelTable />} />
+                <Route path="/admin-panel/dashboard" element={<AdminDashboard />} />
 
                 {/* Ruta para testing de 404 (solo desarrollo) */}
                 <Route path="/404" element={<NotFound />} />
@@ -744,6 +758,21 @@ function AppContent({ mensaje }) {
                       redirectTo="/"
                     >
                       <BuyerCart />
+                    </PrivateRoute>
+                  }
+                />
+
+                {/* RUTA DEL CHECKOUT - MÉTODO DE PAGO */}
+                <Route
+                  path="/buyer/paymentmethod"
+                  element={
+                    <PrivateRoute
+                      isAuthenticated={!!session}
+                      needsOnboarding={needsOnboarding}
+                      loading={loadingUserStatus}
+                      redirectTo="/"
+                    >
+                      <PaymentMethod />
                     </PrivateRoute>
                   }
                 />
@@ -891,6 +920,13 @@ function AppContent({ mensaje }) {
           isBuyer={isBuyer}
           logoUrl={logoUrl ? `${logoUrl}?cb=${logoCacheBuster}` : null}
         />
+
+        {/* WhatsApp Widget - Con acceso al contexto del Router */}
+        <WhatsAppWidget 
+          isLoggedIn={!!session} 
+          userProfile={userProfile}
+          currentPath={location.pathname}
+        />
       </Box>
     </>
   );
@@ -971,54 +1007,9 @@ function WhatsAppFAB({ isLoggedIn }) {
 }
 
 
-// Wrapper para obtener el estado de sesión desde AppContent
+// Wrapper simplificado - la gestión del WhatsApp widget ahora está dentro de AppContent
 function AppWithWhatsApp() {
-  // Usamos un truco: renderizamos AppContent para obtener el estado de sesión
-  // y pasamos la prop a WhatsAppFAB
-  const [isLoggedIn, setIsLoggedIn] = React.useState(false);
-  const [userProfile, setUserProfile] = React.useState(null);
-  
-  // Escuchamos cambios en localStorage para detectar login/logout
-  React.useEffect(() => {
-    function checkSession() {
-      // Si hay un user_id en localStorage, consideramos que hay sesión
-      setIsLoggedIn(!!localStorage.getItem('user_id'));
-    }
-    checkSession();
-    window.addEventListener('storage', checkSession);
-    return () => window.removeEventListener('storage', checkSession);
-  }, []);
-
-
-  // Obtener perfil completo del usuario para el widget
-  React.useEffect(() => {
-    const fetchProfile = async () => {
-      if (isLoggedIn) {
-        const userId = localStorage.getItem('user_id');
-        if (!userId) { setUserProfile(null); return; }
-        const { data, error } = await supabase
-          .from('users')
-          .select('user_id, user_nm')
-          .eq('user_id', userId)
-          .single();
-        if (error || !data) {
-          setUserProfile({ user_id: userId });
-        } else {
-          setUserProfile(data);
-        }
-      } else {
-        setUserProfile(null);
-      }
-    };
-    fetchProfile();
-  }, [isLoggedIn]);
-
-  return (
-    <>
-      <App />
-      <WhatsAppWidget isLoggedIn={isLoggedIn} userProfile={userProfile} />
-    </>
-  );
+  return <App />;
 }
 
 export default AppWithWhatsApp;

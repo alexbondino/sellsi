@@ -2,13 +2,14 @@ import React from 'react';
 import { Box, Typography } from '@mui/material';
 import AssessmentIcon from '@mui/icons-material/Assessment';
 import SummaryCards from './SummaryCards';
-import RequestListWrapper from './RequestListWrapper';
+// import RequestListWrapper from './RequestListWrapper';
 
 const DashboardSummary = ({
   products,
   totalSales,
   outOfStock,
   weeklyRequests,
+  productsActive,
 }) => (
   <Box sx={{ width: '100%' }}>
     <Box sx={{ display: 'flex', alignItems: 'center', mb: 4 }}>
@@ -28,8 +29,9 @@ const DashboardSummary = ({
         totalSales={totalSales}
         outOfStock={outOfStock}
         weeklyRequests={weeklyRequests}
+        productsActive={productsActive}
       />
-      <RequestListWrapper weeklyRequests={weeklyRequests} />
+      {/* <RequestListWrapper weeklyRequests={weeklyRequests} /> */}
     </Box>
   </Box>
 );

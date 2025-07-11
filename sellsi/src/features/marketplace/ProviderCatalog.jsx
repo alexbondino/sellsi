@@ -37,6 +37,7 @@ import { supabase } from '../../services/supabase';
 import ProductCard from '../ui/product-card/ProductCard';
 import useCartStore from '../buyer/hooks/cartStore';
 import { toast } from 'react-hot-toast';
+import { filterActiveProducts } from '../../utils/productActiveStatus';
 
 /**
  * ProviderCatalog - Catálogo de productos de un proveedor específico
@@ -142,25 +143,30 @@ const ProviderCatalog = () => {
             stock: product.productqty, // Mapear productqty a stock
             categoria: product.category, // Ya está correcto
             minimum_purchase: product.minimum_purchase || 1,
+            compraMinima: product.minimum_purchase || 1, // Para compatibilidad
             negociable: product.negotiable || false,
             proveedor: providerData.user_nm,
             priceTiers: priceTiers,
             product_price_tiers: priceTiers, // Para compatibilidad
             supplier_id: product.supplier_id, // Para getProductImageUrl
             productid: product.productid, // Para getProductImageUrl
+            is_active: product.is_active, // ✅ AGREGAR estado activo de BD
           };
         });
 
+        // ✅ APLICAR FILTRO DE PRODUCTOS ACTIVOS: solo mostrar productos con stock >= compra mínima
+        const activeProducts = filterActiveProducts(formattedProducts);
+
         setProvider({
           ...providerData,
-          productCount: formattedProducts.length,
+          productCount: activeProducts.length, // ✅ USAR solo productos activos para el conteo
         });
-        setProducts(formattedProducts);
+        setProducts(activeProducts);
 
         // Extraer categorías únicas para el filtro
-        const categories = [...new Set(formattedProducts.map(p => p.categoria).filter(Boolean))];
+        const categories = [...new Set(activeProducts.map(p => p.categoria).filter(Boolean))];
         setAvailableCategories(categories);
-        setFilteredProducts(formattedProducts);
+        setFilteredProducts(activeProducts);
 
       } catch (err) {
         console.error('Error en fetchProviderAndProducts:', err);
@@ -449,7 +455,7 @@ const ProviderCatalog = () => {
                 </Typography>
                 
                 <Typography variant="h6" color="primary.main" sx={{ fontWeight: 600 }}>
-                  Este proveedor actualmente tiene {provider?.productCount || 0} productos publicados
+                  Este proveedor actualmente tiene {provider?.productCount || 0} productos activos publicados
                 </Typography>
               </Box>
             </Box>

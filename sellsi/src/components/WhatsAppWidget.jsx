@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Box, Paper, Typography, Button, TextField, IconButton, Fade, Slide } from '@mui/material';
 import { Close as CloseIcon, WhatsApp as WhatsAppIcon, Send as SendIcon } from '@mui/icons-material';
 
-const WhatsAppWidget = ({ isLoggedIn, userProfile }) => {
+const WhatsAppWidget = ({ isLoggedIn, userProfile, currentPath }) => {
   const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 1024);
   const [hover, setHover] = useState(false);
   const [open, setOpen] = useState(false);
@@ -15,7 +15,11 @@ const WhatsAppWidget = ({ isLoggedIn, userProfile }) => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  if (!isLoggedIn || !isDesktop) return null;
+  // Don't show WhatsApp widget on admin routes
+  const isAdminRoute = currentPath?.startsWith('/admin-login') || 
+                      currentPath?.startsWith('/admin-panel');
+
+  if (!isLoggedIn || !isDesktop || isAdminRoute) return null;
 
   const handleSend = () => {
     if (!customMsg.trim() || !selectedOption) return;

@@ -155,7 +155,7 @@ const ProductCardProviderContext = React.memo(
             }}
           >
             {product_count && product_count > 1 
-              ? `Proveedor especializado con ${product_count} productos disponibles. ${mockDescription}`
+              ? `Proveedor especializado con ${product_count} productos activos disponibles. ${mockDescription}`
               : mockDescription
             }
           </Typography>

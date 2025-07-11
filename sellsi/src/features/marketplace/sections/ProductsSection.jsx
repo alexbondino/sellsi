@@ -24,6 +24,7 @@ import {
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { toast } from 'react-hot-toast';
+import { isProductActive, getActiveProductCountByProvider } from '../../../utils/productActiveStatus';
 import ProductCard from '../../ui/product-card/ProductCard'; // Asegúrate que esta es la ruta correcta al componente principal
 import ProductCardProviderContext from '../../ui/product-card/ProductCardProviderContext'; // ✅ NUEVO: Para vista de proveedores
 import useCartStore from '../../../features/buyer/hooks/cartStore';
@@ -182,10 +183,13 @@ const ProductsSection = React.memo(
 
       // ✅ NUEVO: En vista de proveedores, crear tarjetas de proveedor únicas basadas en productos reales
       if (isProviderView) {
-        // Agrupar productos por proveedor (supplier_id) para crear tarjetas únicas
+        // Primero, filtrar solo productos activos
+        const activeProducts = productosOrdenados.filter(isProductActive);
+        
+        // Agrupar productos activos por proveedor (supplier_id) para crear tarjetas únicas
         const providersMap = new Map();
         
-        productosOrdenados.forEach((producto) => {
+        activeProducts.forEach((producto) => {
           const supplierId = producto.supplier_id;
           if (!providersMap.has(supplierId)) {
             providersMap.set(supplierId, {
@@ -199,15 +203,15 @@ const ProductsSection = React.memo(
               product_count: 1
             });
           } else {
-            // Incrementar contador de productos del proveedor
+            // Incrementar contador de productos activos del proveedor
             const existing = providersMap.get(supplierId);
             existing.product_count += 1;
           }
         });
         
         const testProviders = Array.from(providersMap.values()).slice(0, 6);
-        console.log('🔍 Provider view activated. Real providers from products:', testProviders.length);
-        console.log('🔍 Providers with names:', testProviders.map(p => ({ id: p.supplier_id, name: p.user_nm, productCount: p.product_count })));
+        console.log('🔍 Provider view activated. Real providers from active products:', testProviders.length);
+        console.log('🔍 Providers with names:', testProviders.map(p => ({ id: p.supplier_id, name: p.user_nm, activeProductCount: p.product_count })));
         return testProviders;
       }
 
