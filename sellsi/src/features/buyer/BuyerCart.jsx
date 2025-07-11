@@ -27,7 +27,7 @@ import {
 import { motion, AnimatePresence, useAnimation } from 'framer-motion';
 import { toast } from 'react-hot-toast';
 import { useInView } from 'react-intersection-observer';
-import confetti from 'canvas-confetti';
+// import confetti from 'canvas-confetti';
 import debounce from 'lodash.debounce';
 import { ThemeProvider } from '@mui/material/styles';
 import SideBarProvider from '../layout/SideBar';
@@ -88,47 +88,7 @@ const CustomToast = ({ message, type, duration = 3000 }) => {
   return null;
 };
 
-// Componente de animación de confetti
-const ConfettiEffect = ({ trigger }) => {
-  useEffect(() => {
-    if (trigger) {
-      const celebrate = () => {
-        confetti({
-          particleCount: 100,
-          spread: 70,
-          origin: { y: 0.6 },
-          colors: ['#FFD700', '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4'],
-        });
 
-        // Segundo disparo después de 150ms
-        setTimeout(() => {
-          confetti({
-            particleCount: 50,
-            angle: 60,
-            spread: 55,
-            origin: { x: 0 },
-            colors: ['#FFD700', '#FF6B6B'],
-          });
-        }, 150);
-
-        // Tercer disparo después de 300ms
-        setTimeout(() => {
-          confetti({
-            particleCount: 50,
-            angle: 120,
-            spread: 55,
-            origin: { x: 1 },
-            colors: ['#4ECDC4', '#45B7D1'],
-          });
-        }, 300);
-      };
-
-      celebrate();
-    }
-  }, [trigger]);
-
-  return null;
-};
 
 // ============================================================================
 // COMPONENTE PRINCIPAL ULTRA-PREMIUM
@@ -157,7 +117,7 @@ const BuyerCart = () => {
   const isInWishlist = useCartStore(state => state.isInWishlist);
 
   // ===== ESTADOS LOCALES OPTIMIZADOS =====
-  const [showConfetti, setShowConfetti] = useState(false);
+  // const [showConfetti, setShowConfetti] = useState(false);
   const [lastAction, setLastAction] = useState(null);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [deliveryDate, setDeliveryDate] = useState(null);
@@ -381,8 +341,7 @@ const BuyerCart = () => {
     item => {
       if (!isInWishlist(item.id)) {
         addToWishlist(item);
-        setShowConfetti(true);
-        setTimeout(() => setShowConfetti(false), 200); // OPTIMIZADO: 200ms
+        // Confetti eliminado
       } else {
         removeFromWishlist(item.id);
       }
@@ -447,14 +406,7 @@ const BuyerCart = () => {
     if (couponInput.trim()) {
       const beforeTotal = getTotal();
       applyCoupon(couponInput.trim());
-
-      setTimeout(() => {
-        const afterTotal = getTotal();
-        if (afterTotal < beforeTotal) {
-          setShowConfetti(true);
-          setTimeout(() => setShowConfetti(false), 200); // OPTIMIZADO: 200ms
-        }
-      }, 10); // OPTIMIZADO: 10ms en lugar de 100ms
+      // Confetti eliminado
     }
   }, [couponInput, applyCoupon, getTotal]);
 
@@ -465,17 +417,13 @@ const BuyerCart = () => {
       // Simular proceso de checkout
       await new Promise(resolve => setTimeout(resolve, 100)); // OPTIMIZADO: 100ms
 
-      setShowConfetti(true);
       toast.success('¡Compra realizada con éxito!', {
         icon: '🎉',
         duration: 5000,
       });
 
-      setTimeout(() => {
-        setShowConfetti(false);
-        // Clear the cart after successful checkout
-        clearCart();
-      }, 500); // OPTIMIZADO: 500ms en lugar de 3000ms
+      // Clear the cart after successful checkout
+      clearCart();
     } catch (error) {
       toast.error('Error en el proceso de compra', { icon: '❌' });
     } finally {
@@ -526,15 +474,10 @@ const BuyerCart = () => {
       removeItem(itemId);
     });
 
-    // Se elimina el toast aquí para evitar duplicados, solo se muestra desde el store
-
     // Limpiar selección y salir del modo selección
     setSelectedItems([]);
     setIsSelectionMode(false);
-
-    // Efecto confetti para la eliminación múltiple
-    setShowConfetti(true);
-    setTimeout(() => setShowConfetti(false), 300); // OPTIMIZADO: 300ms
+    // Confetti eliminado
   }, [selectedItems, items, removeItem]);
 
   // Limpiar selecciones cuando cambie la lista de items
@@ -621,7 +564,7 @@ const BuyerCart = () => {
         }}
       >
         {/* <Toaster position="top-right" toastOptions={{ style: { marginTop: 72 } }} /> */}
-        <ConfettiEffect trigger={showConfetti} />
+        {/* ConfettiEffect eliminado */}
         <Container maxWidth="xl" disableGutters sx={{ px: { xs: 0, md: 2 } }}>
           {/* Header con estadísticas */}{' '}
           <motion.div

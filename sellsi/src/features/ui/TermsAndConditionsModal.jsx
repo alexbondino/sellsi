@@ -27,13 +27,13 @@ El presente documento (en adelante, los "Términos") establece las condiciones q
 
 **1.1. Definiciones**
 
-• **Plataforma:** El sitio web y las herramientas tecnológicas proporcionadas por Sellsi para facilitar transacciones B2B.
+**Plataforma:** El sitio web y las herramientas tecnológicas proporcionadas por Sellsi para facilitar transacciones B2B.
 
-• **Usuario:** Término que engloba a Proveedores y Compradores.
+**Usuario:** Término que engloba a Proveedores y Compradores.
 
-• **Proveedor:** Toda persona natural o jurídica que, utilizando la Plataforma, publica, ofrece y vende sus productos o servicios.
+**Proveedor:** Toda persona natural o jurídica que, utilizando la Plataforma, publica, ofrece y vende sus productos o servicios.
 
-• **Comprador:** Toda persona natural o jurídica que utiliza la Plataforma para explorar, cotizar y adquirir productos o servicios de un Proveedor.
+**Comprador:** Toda persona natural o jurídica que utiliza la Plataforma para explorar, cotizar y adquirir productos o servicios de un Proveedor.
 
 **1.2. Acerca de Sellsi y Nuestro Rol**
 
@@ -138,7 +138,7 @@ Para cualquier duda, reclamo o solicitud, puede contactarnos a través de contac
       const trimmedLine = line.trim();
       
       if (!trimmedLine) {
-        return <Box key={index} sx={{ height: '16px' }} />;
+        return <Box key={index} sx={{ height: '8px' }} />;
       }
       
       // Títulos principales (con **)
@@ -151,8 +151,8 @@ Para cualquier duda, reclamo o solicitud, puede contactarnos a través de contac
             sx={{
               fontWeight: 700,
               color: '#1565C0',
-              mb: 2,
-              mt: index === 0 ? 0 : 3,
+              mb: 1.5,
+              mt: index === 0 ? 0 : 2,
               fontSize: { xs: '1.1rem', md: '1.25rem' },
             }}
           >
@@ -161,14 +161,46 @@ Para cualquier duda, reclamo o solicitud, puede contactarnos a través de contac
         );
       }
       
-      // Elementos de lista (con •)
-      if (trimmedLine.startsWith('•')) {
-        const bulletText = trimmedLine.slice(1).trim();
+      // Definiciones (con **término:**)
+      if (trimmedLine.startsWith('**') && trimmedLine.includes(':**')) {
+        const parts = trimmedLine.split(':**');
+        const term = parts[0].slice(2); // Remove **
+        const definition = parts[1].trim();
         return (
           <Box key={index} sx={{ display: 'flex', mb: 1.5, alignItems: 'flex-start' }}>
             <Typography
               sx={{
-                color: '#41B6E6',
+                color: '#000',
+                fontWeight: 700,
+                fontSize: { xs: '0.95rem', md: '1rem' },
+                minWidth: '120px',
+                flexShrink: 0,
+              }}
+            >
+              {term}:
+            </Typography>
+            <Typography
+              sx={{
+                fontSize: { xs: '0.95rem', md: '1rem' },
+                lineHeight: 1.6,
+                color: '#333',
+                flex: 1,
+              }}
+            >
+              {definition}
+            </Typography>
+          </Box>
+        );
+      }
+      
+      // Elementos de lista (con •)
+      if (trimmedLine.startsWith('•')) {
+        const bulletText = trimmedLine.slice(1).trim();
+        return (
+          <Box key={index} sx={{ display: 'flex', mb: 1, alignItems: 'flex-start' }}>
+            <Typography
+              sx={{
+                color: '#000',
                 fontWeight: 'bold',
                 mr: 1,
                 mt: 0.2,
@@ -229,7 +261,7 @@ Para cualquier duda, reclamo o solicitud, puede contactarnos a través de contac
           sx={{
             fontSize: { xs: '0.95rem', md: '1rem' },
             lineHeight: 1.7,
-            mb: 1.5,
+            mb: 1,
             color: '#333',
             textAlign: 'justify',
           }}

@@ -183,7 +183,7 @@ Esta Política de Privacidad complementa nuestros Términos y Condiciones y form
       const trimmedLine = line.trim();
       
       if (!trimmedLine) {
-        return <Box key={index} sx={{ height: '16px' }} />;
+        return <Box key={index} sx={{ height: '8px' }} />;
       }
       
       // Títulos principales (con **)
@@ -196,8 +196,8 @@ Esta Política de Privacidad complementa nuestros Términos y Condiciones y form
             sx={{
               fontWeight: 700,
               color: '#1565C0',
-              mb: 2,
-              mt: index === 0 ? 0 : 3,
+              mb: 1.5,
+              mt: index === 0 ? 0 : 2,
               fontSize: { xs: '1.1rem', md: '1.25rem' },
             }}
           >
@@ -206,15 +206,48 @@ Esta Política de Privacidad complementa nuestros Términos y Condiciones y form
         );
       }
       
+      // Definiciones y campos con formato (con **término:**)
+      if (trimmedLine.startsWith('**') && trimmedLine.includes(':**')) {
+        const parts = trimmedLine.split(':**');
+        const term = parts[0].slice(2); // Remove **
+        const definition = parts[1].trim();
+        return (
+          <Box key={index} sx={{ display: 'flex', mb: 1.5, alignItems: 'flex-start' }}>
+            <Typography
+              sx={{
+                color: '#000',
+                fontWeight: 700,
+                mr: 2,
+                fontSize: { xs: '0.95rem', md: '1rem' },
+                minWidth: '200px',
+                flexShrink: 0,
+              }}
+            >
+              {term}:
+            </Typography>
+            <Typography
+              sx={{
+                fontSize: { xs: '0.95rem', md: '1rem' },
+                lineHeight: 1.6,
+                color: '#333',
+                flex: 1,
+              }}
+            >
+              {definition}
+            </Typography>
+          </Box>
+        );
+      }
+      
       // Numeración jerárquica (1.1.1, 1.2.1, etc.)
       if (/^\d+\.\d+\.\d+\./.test(trimmedLine)) {
         const [number, ...textParts] = trimmedLine.split(' ');
         const text = textParts.join(' ');
         return (
-          <Box key={index} sx={{ display: 'flex', mb: 1.5, alignItems: 'flex-start', ml: 4 }}>
+          <Box key={index} sx={{ display: 'flex', mb: 1, alignItems: 'flex-start', ml: 4 }}>
             <Typography
               sx={{
-                color: '#41B6E6',
+                color: '#000',
                 fontWeight: 700,
                 mr: 1,
                 mt: 0.2,
@@ -243,10 +276,10 @@ Esta Política de Privacidad complementa nuestros Términos y Condiciones y form
         const [number, ...textParts] = trimmedLine.split(' ');
         const text = textParts.join(' ');
         return (
-          <Box key={index} sx={{ display: 'flex', mb: 1.5, alignItems: 'flex-start', ml: 2 }}>
+          <Box key={index} sx={{ display: 'flex', mb: 1, alignItems: 'flex-start', ml: 2 }}>
             <Typography
               sx={{
-                color: '#41B6E6',
+                color: '#000',
                 fontWeight: 700,
                 mr: 1,
                 mt: 0.2,
@@ -278,7 +311,7 @@ Esta Política de Privacidad complementa nuestros Términos y Condiciones y form
             fontSize: { xs: '0.95rem', md: '1rem' },
             lineHeight: 1.6,
             color: '#444',
-            mb: 1.5,
+            mb: 1,
           }}
         >
           {trimmedLine}

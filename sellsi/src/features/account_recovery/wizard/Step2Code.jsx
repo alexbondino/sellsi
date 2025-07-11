@@ -82,9 +82,9 @@ const Step2Code = ({
       </PrimaryButton>
       <Button
         variant="text"
+        color="primary"
         onClick={onBack}
         sx={{
-          color: '#1976d2',
           fontWeight: 700,
           fontSize: 14,
           width: '100%',

@@ -694,7 +694,7 @@ const ProviderCatalog = () => {
                     item 
                     xs={6}    // 2 columnas en mobile (12/6 = 2)
                     md={3}    // 4 columnas en medium y large (12/3 = 4)
-                    xl={2.4}  // 5 columnas en extra large (12/2.4 = 5)
+                    xl={3}  // 5 columnas en extra large (12/2.4 = 5)
                     key={product.id}
                     sx={{
                       display: 'flex',
@@ -702,7 +702,7 @@ const ProviderCatalog = () => {
                       maxWidth: {
                         xs: '100%',
                         md: '300px', // Ancho máximo en md/lg para mejor proporción
-                        xl: '280px', // Ancho máximo en xl para 5 columnas
+                        xl: '320px', // Ancho máximo en xl para 5 columnas
                       },
                     }}
                   >

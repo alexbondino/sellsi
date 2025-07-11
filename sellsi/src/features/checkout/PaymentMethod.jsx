@@ -77,8 +77,8 @@ const PaymentMethod = () => {
         sx={{
           backgroundColor: 'background.default',
           minHeight: '100vh',
-          pt: { xs: 9, md: 10 },
-          pb: 3
+          pt: { xs: 1, md: 2 },
+          pb: 10
         }}
       >
         <PaymentMethodSelector />

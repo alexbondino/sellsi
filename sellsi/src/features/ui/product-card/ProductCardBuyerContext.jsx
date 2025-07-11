@@ -225,7 +225,7 @@ const ProductCardBuyerContext = React.memo(
                 display: '-webkit-box',
                 WebkitLineClamp: 2,
                 WebkitBoxOrient: 'vertical',
-                fontSize: { xs: 14, md: 22 },
+                fontSize: { xs: 14, md: 17.5 },
                 lineHeight: 1.2,
                 color: '#1e293b',
               }}

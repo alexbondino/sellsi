@@ -52,20 +52,23 @@ const ProviderLogo = React.memo(({ provider }) => (
       sx={{
         width: '100%',
         height: '100%',
-        p: 1, // Padding para que el logo no ocupe el 100%
+        p: 0, // Sin padding para centrado perfecto
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         position: 'relative', // Necesario para overlay
+        '&:last-child': {
+          paddingBottom: 0, // Eliminar padding bottom por defecto de CardContent
+        },
       }}
     >
       <img
         src={provider.src}
         alt={provider.alt}
         style={{
-          width: '100%',
-          height: '100%',
-          objectFit: 'contain', // Fuerza a que la imagen llene todo el espacio de la card
+          width: '85%', // Reducir ligeramente para mejor presentación
+          height: '85%', // Reducir ligeramente para mejor presentación
+          objectFit: 'contain', // Mantener aspecto de la imagen
           display: 'block',
           zIndex: 1,
           position: 'relative',

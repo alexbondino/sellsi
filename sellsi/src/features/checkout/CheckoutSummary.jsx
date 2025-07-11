@@ -249,40 +249,6 @@ const CheckoutSummary = ({
           </Typography>
         </Stack>
 
-        {/* Método de pago seleccionado */}
-        {selectedMethod && (
-          <Box>
-            <Typography variant="subtitle2" fontWeight="bold" sx={{ mb: 1 }}>
-              Método de Pago
-            </Typography>
-            <Box
-              sx={{
-                p: 2,
-                bgcolor: 'background.paper',
-                borderRadius: 2,
-                border: '1px solid rgba(25, 118, 210, 0.3)'
-              }}
-            >
-              <Stack direction="row" alignItems="center" spacing={2}>
-                <Box
-                  component="img"
-                  src={selectedMethod.icon}
-                  alt={selectedMethod.name}
-                  sx={{ width: 32, height: 32, objectFit: 'contain' }}
-                />
-                <Box sx={{ flex: 1 }}>
-                  <Typography variant="body2" fontWeight="medium">
-                    {selectedMethod.name}
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    {selectedMethod.description}
-                  </Typography>
-                </Box>
-                <SecurityIcon color="success" fontSize="small" />
-              </Stack>
-            </Box>
-          </Box>
-        )}
 
         {/* Información de envío */}
         <Box sx={{ p: 2, bgcolor: 'info.50', borderRadius: 2 }}>

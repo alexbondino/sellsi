@@ -207,7 +207,7 @@ export const SERVICES_DATA = [
  */
 export const PROVIDERS_DATA = [
   {
-    src: '/Landing Page/Nuestros Proveedores/IKEA.webp',
+    src: '/Landing Page/Nuestros Proveedores/aurorawines.png',
     alt: 'IKEA',
   },
   {
@@ -215,7 +215,7 @@ export const PROVIDERS_DATA = [
     alt: "Click Bar",
   },
   {
-    src: '/Landing Page/Nuestros Proveedores/laroche.webp',
+    src: '/Landing Page/Nuestros Proveedores/piscomesias.png',
     alt: 'La Roche',
   },
   {

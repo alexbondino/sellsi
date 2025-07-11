@@ -210,7 +210,7 @@ const PaymentMethodSelector = () => {
               <ArrowBackIcon />
             </IconButton>
             <Typography variant="h4" fontWeight="bold">
-              Método de Pago
+              <span style={{ color: '#1976d2' }}>Método de Pago</span>
             </Typography>
           </Stack>
           
