@@ -49,6 +49,8 @@ export { default as Wizard } from './wizard/Wizard';
 export { default as SelectChip } from './SelectChip';
 export { default as ShippingRegionsModal } from './ShippingRegionsModal';
 export { default as ShippingRegionsDisplay } from './ShippingRegionsDisplay';
+export { default as TermsAndConditionsModal } from './TermsAndConditionsModal';
+export { default as PrivacyPolicyModal } from './PrivacyPolicyModal';
 
 // Re-exportar hooks de UI si existen
 export * from './hooks';

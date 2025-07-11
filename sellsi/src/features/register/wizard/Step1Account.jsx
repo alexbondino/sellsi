@@ -15,6 +15,8 @@ import { PasswordRequirements, PrimaryButton } from '../../landing_page/hooks';
 import { supabase } from '../../../services/supabase';
 // Importa useBanner para mostrar mensajes de error/éxito si es necesario
 import { useBanner } from '../../ui/banner/BannerContext';
+import { TermsAndConditionsModal, PrivacyPolicyModal } from '../../ui';
+import { useTermsModal } from '../hooks/useTermsModal';
 
 const Step1Account = ({
   formData,
@@ -28,6 +30,7 @@ const Step1Account = ({
 }) => {
   const theme = useTheme();
   const { showBanner } = useBanner(); // Hook para mostrar banners
+  const { isTermsModalOpen, openTermsModal, closeTermsModal, isPrivacyModalOpen, openPrivacyModal, closePrivacyModal } = useTermsModal();
   const {
     correo,
     contrasena,
@@ -285,11 +288,49 @@ const Step1Account = ({
           label={
             <span style={{ fontSize: 15 }}>
               Acepto los{' '}
-              <Link href="#" sx={{ color: '#1976d2', fontWeight: 700 }}>
+              <Link 
+                component="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  openTermsModal();
+                }}
+                sx={{ 
+                  color: '#1976d2', 
+                  fontWeight: 700,
+                  textDecoration: 'underline',
+                  cursor: 'pointer',
+                  background: 'none',
+                  border: 'none',
+                  padding: 0,
+                  font: 'inherit',
+                  '&:hover': {
+                    color: '#41B6E6',
+                  }
+                }}
+              >
                 Términos y Condiciones
               </Link>{' '}
               y la{' '}
-              <Link href="#" sx={{ color: '#1976d2', fontWeight: 700 }}>
+              <Link 
+                component="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  openPrivacyModal();
+                }}
+                sx={{ 
+                  color: '#1976d2', 
+                  fontWeight: 700,
+                  textDecoration: 'underline',
+                  cursor: 'pointer',
+                  background: 'none',
+                  border: 'none',
+                  padding: 0,
+                  font: 'inherit',
+                  '&:hover': {
+                    color: '#41B6E6',
+                  }
+                }}
+              >
                 Política de Privacidad
               </Link>
             </span>
@@ -343,6 +384,18 @@ const Step1Account = ({
           Volver atrás
         </PrimaryButton>
       </form>
+
+      {/* Modal de Términos y Condiciones */}
+      <TermsAndConditionsModal 
+        open={isTermsModalOpen} 
+        onClose={closeTermsModal} 
+      />
+      
+      {/* Modal de Política de Privacidad */}
+      <PrivacyPolicyModal
+        open={isPrivacyModalOpen}
+        onClose={closePrivacyModal}
+      />
     </Box>
   );
 };
