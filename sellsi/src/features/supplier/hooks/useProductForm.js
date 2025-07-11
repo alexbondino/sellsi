@@ -25,6 +25,7 @@ const initialFormData = {
   specifications: [{ key: '', value: '' }],
   negociable: false,
   activo: true,
+  shippingRegions: [], // Array de regiones de despacho con configuración
 }
 
 // Reglas de validación
@@ -119,6 +120,7 @@ export const useProductForm = (productId = null) => {
       specifications: product.specifications || [{ key: '', value: '' }],
       negociable: product.negociable || false,
       activo: product.activo !== false,
+      shippingRegions: product.shippingRegions || [], // Regiones de despacho configuradas
     }
   }
 
@@ -127,7 +129,8 @@ export const useProductForm = (productId = null) => {
    */
   function mapFormToProduct(formData) {
     console.log('🔄 [MAP FORM TO PRODUCT] - formData entrada:', formData)
-      const productData = {
+    
+    const productData = {
       productnm: formData.nombre,
       description: formData.descripcion,
       category: formData.categoria,
@@ -135,7 +138,9 @@ export const useProductForm = (productId = null) => {
       minimum_purchase: Math.min(parseInt(formData.compraMinima) || 1, 99999999), // Limitar a 8 dígitos
       negotiable: formData.negociable,
       is_active: formData.activo,
-      imagenes: formData.imagenes,      specifications: formData.specifications.filter((s) => s.key && s.value),
+      imagenes: formData.imagenes,
+      specifications: formData.specifications.filter((s) => s.key && s.value),
+      shippingRegions: formData.shippingRegions || [], // Regiones de despacho configuradas
     }
 
     if (formData.pricingType === 'Por Unidad') {

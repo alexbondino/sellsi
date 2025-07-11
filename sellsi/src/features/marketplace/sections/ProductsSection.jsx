@@ -24,7 +24,9 @@ import {
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { toast } from 'react-hot-toast';
+import { isProductActive, getActiveProductCountByProvider } from '../../../utils/productActiveStatus';
 import ProductCard from '../../ui/product-card/ProductCard'; // Asegúrate que esta es la ruta correcta al componente principal
+import ProductCardProviderContext from '../../ui/product-card/ProductCardProviderContext'; // ✅ NUEVO: Para vista de proveedores
 import useCartStore from '../../../features/buyer/hooks/cartStore';
 import LoadingOverlay from '../../ui/LoadingOverlay';
 import Fab from '@mui/material/Fab';
@@ -45,9 +47,11 @@ const ProductsSection = React.memo(
     productosOrdenados,
     resetFiltros,
     hasSideBar = false, // Nueva prop para detectar si hay SideBar
-    titleMarginLeft = { xs: 0, sm: 0, md: 0, lg: 0, xl: 0 }, // Nueva prop para margen del título
+    titleMarginLeft,
     loading,
     error,
+    isSideBarCollapsed = false, // <-- NUEVO PROP
+    isProviderView = false, // ✅ NUEVO: Para cambiar el comportamiento en vista de proveedores
   }) => {
     // ✅ OPTIMIZACIÓN: Removed console.count for production performance
     // Hook para usar el store del carrito
@@ -92,13 +96,12 @@ const ProductsSection = React.memo(
     // ✅ LAYOUT ESTÁTICO: Padding fijo para mejor performance
     const mainContainerStyles = React.useMemo(
       () => ({
-        pt:  { xs: 1, md:'180px'},
-        minHeight: 'calc(100vh - s140px)',
+        pt:  { xs: 1, md:'60px'},
+        minHeight: '100vh',
         display: 'flex',
         justifyContent: 'center',
         alignItems: { xs: 'center', sm: 'center', md: 'flex-start', lg: 'flex-start', xl: 'flex-start' }, // Centrado vertical solo en xs/sm
         px: { xs: 0, sm: 0, md: 3, lg: 4 }, // Sin padding horizontal en mobile
-        mb: { xs: 0, md: 50 },
         boxSizing: 'border-box',
         width: '100%',
       }),
@@ -150,6 +153,10 @@ const ProductsSection = React.memo(
 
     // ✅ MEJORA DE RENDIMIENTO: Memoización del título de sección
     const sectionTitle = React.useMemo(() => {
+      if (isProviderView) {
+        return '🏢 Proveedores Disponibles';
+      }
+      
       switch (seccionActiva) {
         case 'nuevos':
           return '✨ Nuevos Productos';
@@ -160,7 +167,7 @@ const ProductsSection = React.memo(
         default:
           return '🛍️ Todos los Productos';
       }
-    }, [seccionActiva]);
+    }, [seccionActiva, isProviderView]);
     // ✅ MEJORA DE RENDIMIENTO: Memoización del handler de volver (solo dependencias necesarias)
     const handleBackClick = React.useCallback(() => {
       setSeccionActiva('todos');
@@ -174,9 +181,43 @@ const ProductsSection = React.memo(
         return [];
       }
 
+      // ✅ NUEVO: En vista de proveedores, crear tarjetas de proveedor únicas basadas en productos reales
+      if (isProviderView) {
+        // Primero, filtrar solo productos activos
+        const activeProducts = productosOrdenados.filter(isProductActive);
+        
+        // Agrupar productos activos por proveedor (supplier_id) para crear tarjetas únicas
+        const providersMap = new Map();
+        
+        activeProducts.forEach((producto) => {
+          const supplierId = producto.supplier_id;
+          if (!providersMap.has(supplierId)) {
+            providersMap.set(supplierId, {
+              ...producto,
+              main_supplier: true,
+              // ✅ USAR datos reales: usar 'proveedor' que viene del mapeo usersMap
+              user_nm: producto.proveedor || `Proveedor #${supplierId}`,
+              // ✅ USAR logo real del proveedor desde la BD o fallback
+              logo_url: producto.supplier_logo_url || `/LOGO-removebg-preview.png`,
+              provider_id: supplierId,
+              product_count: 1
+            });
+          } else {
+            // Incrementar contador de productos activos del proveedor
+            const existing = providersMap.get(supplierId);
+            existing.product_count += 1;
+          }
+        });
+        
+        const testProviders = Array.from(providersMap.values()).slice(0, 6);
+        console.log('🔍 Provider view activated. Real providers from active products:', testProviders.length);
+        console.log('🔍 Providers with names:', testProviders.map(p => ({ id: p.supplier_id, name: p.user_nm, activeProductCount: p.product_count })));
+        return testProviders;
+      }
+
       // ✅ OPTIMIZACIÓN: Evitar crear objetos nuevos si no es necesario
       return productosOrdenados;
-    }, [productosOrdenados]); // ✅ SISTEMA HÍBRIDO RESPONSIVO: Infinite Scroll + Paginación
+    }, [productosOrdenados, isProviderView]); // ✅ SISTEMA HÍBRIDO RESPONSIVO: Infinite Scroll + Paginación
     const theme = useTheme();
     const isXs = useMediaQuery(theme.breakpoints.only('xs'));
     const isSm = useMediaQuery(theme.breakpoints.only('sm'));
@@ -461,7 +502,10 @@ const ProductsSection = React.memo(
 
     return (
       <Box sx={mainContainerStyles}>
-        <Box sx={innerContainerStyles}>
+        <Box sx={{
+          ...innerContainerStyles
+          // El shift animado ahora se maneja en el contenedor principal (App.jsx)
+        }}>
           {/* ✅ TÍTULO con márgenes reducidos e iguales */}
           <Box
             sx={{
@@ -505,7 +549,7 @@ const ProductsSection = React.memo(
                 fontWeight={600}
                 noWrap
                 sx={{
-                  color: '#1e293b',
+                  color: seccionActiva === 'todos' ? 'primary.main' : '#1e293b',
                   fontSize: { xs: '1.25rem', sm: '1.3rem', md: '2rem' },
                   lineHeight: 1.2,
                   whiteSpace: { xs: 'normal', sm: 'nowrap', md: 'nowrap' },
@@ -553,7 +597,7 @@ const ProductsSection = React.memo(
           {/* ✅ ÁREA DE PRODUCTOS centrada con márgenes automáticos */}
           <Box sx={{ width: '100%' }}>
             {loading ? (
-              <LoadingOverlay message="Cargando productos..." height={300} />
+              <LoadingOverlay message={isProviderView ? "Cargando proveedores..." : "Cargando productos..."} height={300} />
             ) : error ? (
               <Paper
                 sx={{
@@ -609,22 +653,41 @@ const ProductsSection = React.memo(
                 {PaginationComponent}
 
                 <Box sx={gridStyles}>
-                  {visibleProducts.map(producto => (
+                  {visibleProducts.map(producto => {
+                    // ✅ OPTIMIZACIÓN: Log solo una vez por render, no por cada producto
+                    if (producto === visibleProducts[0]) {
+                      console.log('🔍 ProductsSection rendering:', visibleProducts.length, 'products in isProviderView:', isProviderView);
+                    }
+                    
+                    return (
                     <Box
                       key={`product-${producto.id || producto.productid}`}
                       sx={cardContainerStyles}
                     >
-                      <ProductCard
-                        product={producto} // Prop 'product'
-                        type="buyer" // <--- ¡AQUÍ LE DAMOS EL CONTEXTO DE COMPRADOR!
-                        onAddToCart={handleAddToCart}
-                        onViewDetails={producto => {
-                          // Aquí puedes agregar la lógica para ver detalles
-                          // ...log eliminado...
-                        }}
-                      />
+                      {isProviderView ? (
+                        <ProductCard
+                          product={producto}
+                          type="provider" // ✅ Cambiar tipo a "provider" para mostrar ProductCardProviderContext
+                          onAddToCart={handleAddToCart}
+                          onViewDetails={producto => {
+                            // Aquí puedes agregar la lógica para ver detalles
+                            // ...log eliminado...
+                          }}
+                        />
+                      ) : (
+                        <ProductCard
+                          product={producto} // Prop 'product'
+                          type="buyer" // <--- ¡AQUÍ LE DAMOS EL CONTEXTO DE COMPRADOR!
+                          onAddToCart={handleAddToCart}
+                          onViewDetails={producto => {
+                            // Aquí puedes agregar la lógica para ver detalles
+                            // ...log eliminado...
+                          }}
+                        />
+                      )}
                     </Box>
-                  ))}
+                  );
+                  })}
                 </Box>
 
                 {/* ✅ INFINITE SCROLL: Solo activo dentro de cada página */}
@@ -706,13 +769,14 @@ const ProductsSection = React.memo(
             onClick={scrollToTop}
             sx={{
               position: 'fixed',
-              bottom: { xs: 100, md: 80 },
-              right: { xs: 10, md: 80 }, // Más a la derecha en mobile
-              zIndex: 999,
+              bottom: { xs: 100, md: 40 },
+              right: { xs: 10, md: 120 },
+              zIndex: 1401, // Aumenta el zIndex para estar sobre la BottomBar y otros overlays
               backgroundColor: 'background.paper',
               color: 'primary.main',
               border: '2px solid',
               borderColor: 'primary.main',
+              boxShadow: '0 6px 24px rgba(25, 118, 210, 0.18)',
               '&:hover': {
                 backgroundColor: 'primary.main',
                 color: 'primary.contrastText',

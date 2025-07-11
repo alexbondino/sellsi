@@ -10,6 +10,7 @@
 import { useMemo } from 'react'
 import useSupplierProductsBase from './useSupplierProductsBase'
 import useSupplierProductFilters from './useSupplierProductFilters'
+import { isProductActive } from '../../../utils/productActiveStatus'
 
 /**
  * Hook principal para gestión de productos del proveedor
@@ -74,7 +75,8 @@ export const useSupplierProducts = () => {
   // Estadísticas (calculadas)
   const stats = useMemo(() => {
     const total = products.length
-    const active = products.filter((p) => p.is_active).length
+    // ✅ USAR NUEVA LÓGICA: productos realmente activos (stock >= compra mínima)
+    const active = products.filter(isProductActive).length
     const inStock = products.filter((p) => (p.productqty || 0) > 0).length
     const lowStock = products.filter((p) => {
       const stock = p.productqty || 0

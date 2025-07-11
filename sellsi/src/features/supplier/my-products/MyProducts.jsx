@@ -28,6 +28,7 @@ import {
   Inventory as InventoryIcon,
   AttachMoney as AttachMoneyIcon,
   KeyboardArrowUp as KeyboardArrowUpIcon,
+  Storefront as StorefrontIcon
 } from '@mui/icons-material';
 import { ThemeProvider } from '@mui/material/styles';
 import { toast } from 'react-hot-toast';
@@ -213,6 +214,7 @@ const MyProducts = () => {
           pt: { xs: 9, md: 10 },
           px: 3,
           pb: 3,
+          ml: { xs: 0, md: 10, lg: 14, xl: 24 },
         }}
       >
         <Container maxWidth="xl" disableGutters>
@@ -229,14 +231,17 @@ const MyProducts = () => {
               }}
             >
               <Box>
-                <Typography
-                  variant="h4"
-                  fontWeight="600"
-                  color="primary.main"
-                  gutterBottom
-                >
-                  Mis Productos
-                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                  <StorefrontIcon sx={{ color: 'primary.main', fontSize: 36, mr: 1 }} />
+                  <Typography
+                    variant="h4"
+                    fontWeight="600"
+                    color="primary.main"
+                    gutterBottom
+                  >
+                    Mis Productos
+                  </Typography>
+                </Box>
                 <Typography variant="body1" color="text.secondary">
                   Gestiona tu catálogo de productos de manera eficiente
                 </Typography>
@@ -350,10 +355,10 @@ const MyProducts = () => {
                               variant="h6"
                               sx={{ fontWeight: 600, lineHeight: 1.2 }}
                             >
-                              {stats.inStock}
+                              {stats.active}
                             </Typography>
                             <Typography variant="body2" color="text.secondary">
-                              Productos en stock
+                              Productos activos
                             </Typography>
                           </Box>
                         </Box>
@@ -574,7 +579,7 @@ const MyProducts = () => {
                       sm: '1fr 1fr',
                       md: '1fr 1fr 1fr',
                       lg: '1fr 1fr 1fr 1fr',
-                      xl: '1fr 1fr 1fr 1fr',
+                      xl: '1fr 1fr 1fr 1fr 1fr',
                     },
                     gap: { xs: 2, sm: 3, md: 4, lg: 2 },
                     width: '100%',

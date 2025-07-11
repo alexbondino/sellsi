@@ -30,6 +30,7 @@ export const calculatePriceForQuantity = (
     const bMin = b.min_quantity || b.cantidad_minima || 0
     return bMin - aMin // Descendente
   })
+  
   // Buscar el primer tramo cuya cantidad mínima sea menor o igual a la cantidad solicitada
   for (const tier of sortedTiers) {
     const minQty = tier.min_quantity || tier.cantidad_minima || 0

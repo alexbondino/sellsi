@@ -68,6 +68,14 @@ const useCartStore = create(
         error: null,
         notifications: [],
         
+        // Cache para optimización de cálculos
+        _subtotalCache: null,
+        
+        // Función auxiliar para limpiar cache
+        _clearSubtotalCache: () => {
+          set(state => ({ ...state, _subtotalCache: null }))
+        },
+        
         // === ESTADO PARA INTEGRACIÓN CON BACKEND ===
         cartId: null,
         userId: null,
@@ -88,7 +96,6 @@ const useCartStore = create(
           return shippingStore.selectedShipping
         },// === ACCIONES DEL CARRITO (REFACTORIZADAS) ===        // Agregar producto al carrito
         addItem: async (product, quantity = 1) => {
-          console.log('[cartStore] addItem called', { product, quantity });
           const state = get()
           
           // VALIDACIÓN: Asegurar que la cantidad esté en un rango seguro
@@ -133,7 +140,6 @@ const useCartStore = create(
             // Validar la nueva cantidad total
             const newTotalQuantity = validateCartQuantity(existingItem.quantity + safeQuantity);
             const maxStock = Math.min(product.maxStock || 15000, 15000);
-            console.log('[cartStore] existingItem found', { existingItem, newTotalQuantity, maxStock });
             if (newTotalQuantity <= maxStock) {
               set({
                 items: currentState.items.map((item) =>
@@ -141,8 +147,8 @@ const useCartStore = create(
                     ? { ...item, quantity: newTotalQuantity }
                     : item
                 ),
+                _subtotalCache: null // Limpiar cache
               })
-              console.log('[cartStore] updated quantity for existing item', { id: product.id, quantity: newTotalQuantity });
             } else {
               console.warn('[cartStore] No hay suficiente stock')
             }
@@ -153,8 +159,8 @@ const useCartStore = create(
             }
             set({
               items: [...currentState.items, newItem],
+              _subtotalCache: null // Limpiar cache
             })
-            console.log('[cartStore] added new item to cart', newItem);
           }
 
           // Delegar al módulo de historial
@@ -223,6 +229,7 @@ const useCartStore = create(
                     }
                   : cartItem
               ),
+              _subtotalCache: null // Limpiar cache
             })
 
             // Delegar al módulo de historial
@@ -256,7 +263,10 @@ const useCartStore = create(
           const currentState = get()
           const item = currentState.items.find((item) => item.id === id)
           if (item) {
-            set({ items: currentState.items.filter((item) => item.id !== id) })
+            set({ 
+              items: currentState.items.filter((item) => item.id !== id),
+              _subtotalCache: null // Limpiar cache
+            })
           } else {
             console.warn('[cartStore] Item no encontrado para remover:', id)
           }
@@ -286,6 +296,7 @@ const useCartStore = create(
           const itemCount = currentState.items.length
           set({
             items: [],
+            _subtotalCache: null // Limpiar cache
           })
 
           // También limpiar los módulos relacionados
@@ -392,12 +403,39 @@ const useCartStore = create(
           return shippingStore.selectedShipping
         }, // === FUNCIONES DE CÁLCULO (REFACTORIZADAS) ===
 
-        // Obtener subtotal
+        // Obtener subtotal (memoizado para optimización)
         getSubtotal: () => {
-          return get().items.reduce(
-            (sum, item) => sum + item.price * item.quantity,
-            0
-          )
+          const state = get()
+          
+          // Usar un simple hash para evitar recálculos innecesarios
+          const itemsHash = state.items.map(item => `${item.id}-${item.quantity}-${item.price}`).join('|')
+          
+          // Si no hay cache o cambió algo, recalcular
+          if (!state._subtotalCache || state._subtotalCache.hash !== itemsHash) {
+            const result = state.items.reduce((sum, item) => {
+              // Para productos con precio por tramos, usar el precio calculado
+              if (item.price_tiers && item.price_tiers.length > 0) {
+                const price_tiers = item.price_tiers || []
+                const basePrice = item.originalPrice || item.precioOriginal || item.price || item.precio || 0
+                const calculatedPrice = calculatePriceForQuantity(item.quantity, price_tiers, basePrice)
+                return sum + calculatedPrice * item.quantity
+              }
+              
+              // Para productos sin precio por tramos, usar el precio normal
+              return sum + item.price * item.quantity
+            }, 0)
+            
+            // Guardar en cache
+            set(prevState => ({
+              ...prevState,
+              _subtotalCache: { hash: itemsHash, value: result }
+            }))
+            
+            return result
+          }
+          
+          // Devolver valor cacheado
+          return state._subtotalCache.value
         },
 
         // Obtener descuento total (delega a módulo de cupones)
@@ -879,7 +917,8 @@ const useCartStore = create(
             isBackendSynced: false,
             error: null,
             isLoading: false,
-            isSyncing: false
+            isSyncing: false,
+            _subtotalCache: null // Limpiar cache
           });
           
           // Limpiar localStorage

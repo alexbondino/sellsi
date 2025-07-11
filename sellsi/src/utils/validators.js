@@ -64,3 +64,25 @@ export const validatePassword = (password) => {
 export const validatePasswordMatch = (password, confirmPassword) => {
   return password === confirmPassword;
 };
+
+/**
+ * Formatea el RUT chileno con puntos y guion: 12.345.678-5 o 76.543.210-K
+ * @param {string} rut
+ * @returns {string}
+ */
+export const formatRut = (rut) => {
+  if (!rut) return '';
+  // Limpiar caracteres no válidos
+  let clean = rut.replace(/[^\dkK]/gi, '').toUpperCase();
+  // Separar cuerpo y dígito verificador
+  let body = clean.slice(0, -1);
+  let dv = clean.slice(-1);
+  // Agregar puntos cada 3 dígitos desde la derecha
+  let formatted = '';
+  while (body.length > 3) {
+    formatted = '.' + body.slice(-3) + formatted;
+    body = body.slice(0, -3);
+  }
+  formatted = body + formatted + '-' + dv;
+  return formatted;
+};

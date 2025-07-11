@@ -5,9 +5,9 @@ const sortOptions = [
   { value: 'relevancia', label: 'Más relevantes' },
   { value: 'menor-precio', label: 'Precio: Menor a Mayor' },
   { value: 'mayor-precio', label: 'Precio: Mayor a Menor' },
-  { value: 'mayor-descuento', label: 'Mayor Descuento' },
-  { value: 'mas-vendidos', label: 'Más Vendidos' },
-  { value: 'mejor-rating', label: 'Mejor Rating' },
+  // { value: 'mayor-descuento', label: 'Mayor Descuento' },
+  // { value: 'mas-vendidos', label: 'Más Vendidos' },
+  // { value: 'mejor-rating', label: 'Mejor Rating' },
 ]
 
 export const useProductSorting = (productos = []) => {

@@ -64,6 +64,8 @@ const ProductHeader = React.memo(({
   const finalTiers = product.priceTiers || tiers || []
 
   const [copied, setCopied] = useState({ name: false, price: false })
+  // Estado para la cantidad seleccionada
+  const [selectedQuantity, setSelectedQuantity] = useState(0)
   // Función para copiar texto al portapapeles y mostrar feedback
   const handleCopy = (type, value) => {
     navigator.clipboard.writeText(value).then(() => {
@@ -239,7 +241,16 @@ const ProductHeader = React.memo(({
         <PriceDisplay
           price={product.precio}
           originalPrice={product.precioOriginal}
-          variant="h2"
+          variant="h4"
+          sx={{
+            fontWeight: 700,
+            color: 'primary.main',
+            fontSize: { xs: '1.1rem', sm: '1.3rem', md: '1.5rem', lg: '1.7rem', xl: '2rem' },
+            lineHeight: 1.2,
+            '& .MuiTypography-root': {
+              color: 'primary.main',
+            },
+          }}
         />
         <Tooltip title="Copiar precio" arrow>
           <IconButton
@@ -329,22 +340,10 @@ const ProductHeader = React.memo(({
   }
   return (
     // MUIV2 GRID - CONTENEDOR PRINCIPAL (MuiGrid-container)
-    <Grid
-      container
-      spacing={8}
-      sx={{ alignItems: 'flex-start', width: '100%', maxWidth: '100%', mx: 0 }}
-    >
-      <Grid
-        size={{ xs: 12, sm: 6, md: 6, lg: 5 }}
-        sx={{ display: 'flex', justifyContent: 'right' }}      >        <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'flex-start',
-            minHeight: '600px',
-            ml: { xs: 0, sm: 2, md: 0, lg: 16, xl: 20 }, // Reducir el margin left
-            p: 0, // Sin padding para eliminar cualquier espacio
-          }}
-        >
+    <Box sx={{ width: '100%', maxWidth: '100%' }}>
+      <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, width: '100%' }}>
+        {/* Galería de imágenes */}
+        <Box sx={{ flex: 1, minWidth: 0, display: 'flex', justifyContent: { xs: 'center', md: 'right' } }}>
           <ProductImageGallery
             images={imagenes.map(resolveImageSrc)}
             mainImage={resolveImageSrc(imagen)}
@@ -352,39 +351,34 @@ const ProductHeader = React.memo(({
             onImageSelect={onImageSelect}
             productName={nombre}
           />
-        </Box>      </Grid>
-      {/* Información del Producto */}
-      <Grid
-        size={{ xs: 12, sm: 6, md: 6, lg: 7, xl: 6 }}
-        sx={{ display: 'flex', justifyContent: 'center' }}
-      >
+        </Box>
+        {/* Información del Producto */}
         <Box
           sx={{
-            height: '100%',
+            flex: 1,
+            minWidth: 0,
             display: 'flex',
             flexDirection: 'column',
-            justifyContent: 'flex-start',
-            alignItems: 'center',
-            textAlign: 'center',
+            alignItems: 'flex-start',
+            textAlign: 'left',
             px: { xs: 2, sm: 2, md: 1 },
-            maxWidth: { lg: 450, xl: 500 }, // Reducir el ancho máximo
+            width: { xs: '100%', sm: '90%', md: '80%', lg: '75%', xl: '80%' },
+            maxWidth: 580,
+            mx: { xs: 'auto', md: 0 },
           }}
-        >          {/* Nombre del Producto */}
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 1,
-              mb: 2,
-            }}
-          >
+        >
+          {/* Nombre del Producto */}
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', gap: 1, mb: 2, width: '100%' }}>
             <Typography
-              variant="h3"
+              variant="h4"
               sx={{
                 fontWeight: 700,
-                color: 'text.primary',
+                color: 'primary.main',
                 lineHeight: 1.2,
+                px: { xs: 2, sm: 2, md: 0 },
+                py: { xs: 2, md: 1 },
+                fontSize: { xs: '1.1rem', sm: '1.3rem', md: '1.5rem', lg: '1.7rem', xl: '2rem' },
+                wordBreak: 'break-word',
               }}
             >
               {nombre}
@@ -474,14 +468,6 @@ const ProductHeader = React.memo(({
           </Typography>{' '}
           {/* Precios y/o tramos */}
           {priceContent}
-          {/* Descripción */}
-          <Typography
-            variant="body1"
-            color="text.secondary"
-            sx={{ mb: 4, lineHeight: 1.6 }}
-          >
-            {descripcion}
-          </Typography>{' '}
           {/* Stock mejorado */}
           <Box sx={{ mb: 4 }}>
             {stock === 0 ? (
@@ -499,7 +485,7 @@ const ProductHeader = React.memo(({
                 Producto agotado
               </Typography>
             ) : (
-              <StockIndicator stock={stock} showUnits={true} />
+              <StockIndicator stock={stock - (typeof selectedQuantity === 'number' ? selectedQuantity : 0)} showUnits={true} />
             )}
           </Box>{' '}
           {/* Botones de Compra */}
@@ -511,11 +497,12 @@ const ProductHeader = React.memo(({
               product={product}
               tiers={finalTiers}
               isLoggedIn={isLoggedIn}
+              onQuantityChange={setSelectedQuantity}
             />
           )}
         </Box>
-      </Grid>
-    </Grid>
+      </Box>
+    </Box>
   )
 })
 

@@ -94,11 +94,9 @@ const Step1Email = ({
         <Button
           type="submit"
           variant="contained"
+          color="primary"
           disabled={!correo || !validarCorreo(correo)}
           sx={{
-            backgroundColor:
-              !correo || !validarCorreo(correo) ? '#b0c4cc' : '#41B6E6',
-            color: '#fff',
             borderRadius: 2,
             textTransform: 'none',
             fontWeight: 700,
@@ -107,19 +105,15 @@ const Step1Email = ({
             height: 42,
             boxShadow: 'none',
             mb: 0.5,
-            '&:hover': {
-              backgroundColor:
-                !correo || !validarCorreo(correo) ? '#b0c4cc' : '#2fa4d6',
-            },
           }}
         >
           Enviar Código
         </Button>
         <Button
           variant="text"
+          color="primary"
           onClick={onCancel}
           sx={{
-            color: '#1976d2',
             fontWeight: 700,
             fontSize: 14,
             width: '100%',

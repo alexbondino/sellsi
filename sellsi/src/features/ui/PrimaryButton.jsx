@@ -1,6 +1,8 @@
 import React from 'react';
 import { Button } from '@mui/material';
 
+import { useTheme } from '@mui/material/styles';
+
 const PrimaryButton = ({
   /* Boton custom, cambiar nombre y estandarizar */
   children,
@@ -14,14 +16,15 @@ const PrimaryButton = ({
   sx = {},
   ...props
 }) => {
+  const theme = useTheme();
   const getVariantStyles = () => {
     switch (variant) {
       case 'primary':
         return {
-          backgroundColor: disabled ? '#b0c4cc' : '#41B6E6',
+          backgroundColor: disabled ? theme.palette.action.disabled : theme.palette.primary.main,
           color: '#fff',
           '&:hover': {
-            backgroundColor: disabled ? '#b0c4cc' : '#2fa4d6',
+            backgroundColor: disabled ? theme.palette.action.disabled : theme.palette.primary.dark,
           },
         };
       case 'secondary':
@@ -32,7 +35,7 @@ const PrimaryButton = ({
         };
       case 'text':
         return {
-          color: '#1976d2',
+          color: theme.palette.primary.main,
           backgroundColor: 'transparent',
           '&:hover': { backgroundColor: 'rgba(25, 118, 210, 0.08)' },
         };

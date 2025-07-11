@@ -1,6 +1,7 @@
 // 📁 pages/ProviderHome.jsx
 import React, { Suspense } from 'react';
 import { Box, Grid, Button, Container, ThemeProvider, CircularProgress, Skeleton } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
 import AddIcon from '@mui/icons-material/Add';
 import { useSupplierDashboard } from './hooks/useSupplierDashboard';
 import SideBarProvider from '../../layout/SideBar';
@@ -26,6 +27,7 @@ const ChartFallback = () => (
 );
 
 const ProviderHome = () => {
+  const navigate = useNavigate();
   const {
     products,
     sales,
@@ -37,8 +39,14 @@ const ProviderHome = () => {
     error,
   } = useSupplierDashboard();
 
-  const productsOutOfStock = productStocks.filter(
-    p => p.productqty === 0
+  // Ahora cuenta productos inactivos (is_active === false)
+  const productsOutOfStock = products.filter(
+    p => p.is_active === false
+  ).length;
+
+  // Ahora cuenta productos activos (is_active === true)
+  const productsActive = products.filter(
+    p => p.is_active === true
   ).length;
 
   return (
@@ -51,6 +59,7 @@ const ProviderHome = () => {
           pt: { xs: 9, md: 10 },
           px: 3,
           pb: 3,
+          ml: { xs: 0, md: 10, lg: 14, xl: 24 },
         }}
       >
         <Container maxWidth="xl" disableGutters>
@@ -63,6 +72,7 @@ const ProviderHome = () => {
                     totalSales={totalSales}
                     outOfStock={productsOutOfStock}
                     weeklyRequests={weeklyRequests}
+                    productsActive={productsActive}
                   />
                 </Suspense>
               </Box>
@@ -86,6 +96,7 @@ const ProviderHome = () => {
                     },
                     transition: 'all 0.2s ease-in-out',
                   }}
+                  onClick={() => navigate('/supplier/addproduct', { state: { fromHome: true } })}
                 >
                   Nuevo Producto
                 </Button>

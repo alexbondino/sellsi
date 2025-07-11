@@ -16,7 +16,7 @@ import {
   Home as HomeIcon,
   Inventory as ProductsIcon,
   ShoppingCart as CartIcon,
-  Person as ProfileIcon,
+  Person as PersonIcon,
 } from '@mui/icons-material';
 import { useLocation, useNavigate } from 'react-router-dom';
 import useCartStore from '../buyer/hooks/cartStore';
@@ -25,14 +25,14 @@ import useCartStore from '../buyer/hooks/cartStore';
 const buyerMenuItems = [
   { text: 'Marketplace', path: '/buyer/marketplace', icon: <MarketplaceIcon /> },
   { text: 'Mis Pedidos', path: '/buyer/orders', icon: <OrdersIcon /> },
-  { text: 'Mi Performance', path: '/buyer/performance', icon: <PerformanceIcon /> },
+  // { text: 'Mi Performance', path: '/buyer/performance', icon: <PerformanceIcon /> }, // Eliminado
 ];
 
 const providerMenuItems = [
   { text: 'Inicio', path: '/supplier/home', icon: <HomeIcon /> },
   { text: 'Mis Productos', path: '/supplier/myproducts', icon: <ProductsIcon /> },
   { text: 'Mis Pedidos', path: '/supplier/my-orders', icon: <OrdersIcon /> },
-  { text: 'Mi Performance', path: '/supplier/myperformance', icon: <PerformanceIcon /> },
+  // { text: 'Mi Performance', path: '/supplier/myperformance', icon: <PerformanceIcon /> }, // Eliminado
   { text: 'Marketplace', path: '/supplier/marketplace', icon: <MarketplaceIcon /> },
 ];
 
@@ -83,14 +83,19 @@ const MobileBar = ({ role, session, isBuyer, logoUrl }) => {
   extraItems.push({
     text: 'Mi Perfil',
     path: profilePath,
-    icon: logoUrl ? (
+    icon: (
       <Avatar
-        src={logoUrl}
-        alt="Avatar"
-        sx={{ width: 24, height: 24, bgcolor: 'primary.main', color: '#fff', fontSize: 18 }}
-      />
-    ) : (
-      <ProfileIcon />
+        src={logoUrl && typeof logoUrl === 'string' && logoUrl.trim() !== '' ? logoUrl : undefined}
+        sx={{
+          width: 24,
+          height: 24,
+          background: logoUrl && typeof logoUrl === 'string' && logoUrl.trim() !== '' ? 'transparent !important' : '#fff !important',
+          color: '#111 !important',
+          transition: 'none !important',
+        }}
+      >
+        <PersonIcon sx={{ color: '#111 !important', transition: 'none !important' }} />
+      </Avatar>
     ),
   });
 

@@ -1,5 +1,6 @@
 import React from 'react';
 import { Box, Typography, Container, Paper, Chip } from '@mui/material';
+import AssignmentIcon from '@mui/icons-material/Assignment';
 import { ThemeProvider } from '@mui/material/styles';
 import SideBarProvider from '../layout/SideBar';
 import { dashboardThemeCore } from '../../styles/dashboardThemeCore';
@@ -70,18 +71,23 @@ const BuyerOrders = () => {
           backgroundColor: 'background.default',
           minHeight: '100vh',
           pt: { xs: 9, md: 10 },
+          ml: { xs: 0, md: 10, lg: 14, xl: 24 },
           px: 3,
           pb: 3,
         }}
       >
       <Container maxWidth="xl" disableGutters>
-        <Typography
-          variant="h4"
-          component="h1"
-          sx={{ mb: 4, fontWeight: 'bold' }}
-        >
-          Mis Pedidos
-        </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', mb: 4 }}>
+          <AssignmentIcon sx={{ color: 'primary.main', fontSize: 36, mr: 1 }} />
+          <Typography
+            variant="h4"
+            fontWeight={600}
+            color="primary.main"
+            gutterBottom
+          >
+            Mis Pedidos
+          </Typography>
+        </Box>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
           {orders.map(order => (
             <Paper

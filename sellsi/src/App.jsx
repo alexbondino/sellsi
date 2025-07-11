@@ -1,5 +1,7 @@
+import AuthCallback from './features/auth/AuthCallback';
 import React, { useEffect, useState, useRef, Suspense } from 'react';
 import { Box, CssBaseline, CircularProgress, Typography } from '@mui/material';
+import Loader from './components/Loader';
 import { ThemeProvider } from '@mui/material/styles';
 import GlobalStyles from '@mui/material/GlobalStyles';
 import {
@@ -9,6 +11,7 @@ import {
   useLocation,
   useNavigate,
 } from 'react-router-dom';
+import WhatsAppWidget from './components/WhatsAppWidget';
 
 import theme from './styles/theme'; // Asegúrate de que tu tema está correctamente configurado
 import TopBar from './features/layout/TopBar';
@@ -23,7 +26,7 @@ import { usePrefetch } from './hooks/usePrefetch';
 import useCartStore from './features/buyer/hooks/cartStore';
 
 import SideBar from './features/layout/SideBar';
-import { AdminLogin, AdminPanelTable } from './features/admin_panel';
+import { AdminLogin, AdminDashboard } from './features/admin_panel';
 import ScrollToTop from './features/ScrollToTop';
 
 // ============================================================================
@@ -41,6 +44,7 @@ const Marketplace = React.lazy(() =>
   import('./features/marketplace/Marketplace')
 );
 const BuyerCart = React.lazy(() => import('./features/buyer/BuyerCart'));
+const PaymentMethod = React.lazy(() => import('./features/checkout/PaymentMethod'));
 
 // 📦 SUPPLIER DASHBOARD - LAZY LOADING
 const ProviderHome = React.lazy(() =>
@@ -75,6 +79,9 @@ const BuyerPerformance = React.lazy(() =>
 const TechnicalSpecs = React.lazy(() =>
   import('./features/marketplace/view_page/TechnicalSpecs')
 );
+const ProviderCatalog = React.lazy(() =>
+  import('./features/marketplace/ProviderCatalog')
+);
 const ProductPageWrapper = React.lazy(() =>
   import('./features/marketplace/ProductPageView/ProductPageWrapper')
 );
@@ -90,7 +97,7 @@ const NotFound = React.lazy(() => import('./features/ui/NotFound'));
 // ============================================================================
 // 🎨 COMPONENTE DE LOADING UNIVERSAL PARA SUSPENSE
 // ============================================================================
-const SuspenseLoader = ({ message = 'Cargando...' }) => (
+const SuspenseLoader = () => (
   <Box
     sx={{
       position: 'fixed',
@@ -99,17 +106,13 @@ const SuspenseLoader = ({ message = 'Cargando...' }) => (
       width: '100vw',
       height: '100vh',
       display: 'flex',
-      flexDirection: 'column',
       alignItems: 'center',
       justifyContent: 'center',
       bgcolor: 'background.default',
       zIndex: 1500,
     }}
   >
-    <CircularProgress size={40} />
-    <Typography sx={{ mt: 3, color: 'text.secondary', fontWeight: 500 }}>
-      {message}
-    </Typography>
+    <Loader />
   </Box>
 );
 
@@ -171,6 +174,7 @@ function AppContent({ mensaje }) {
     '/buyer/performance',
     '/buyer/cart',
     '/buyer/profile',
+    '/catalog', // Catálogo del proveedor accesible desde buyer
   ]);
   const supplierDashboardRoutes = new Set([
     '/supplier/home',
@@ -179,6 +183,7 @@ function AppContent({ mensaje }) {
     '/supplier/my-orders',
     '/supplier/profile',
     '/supplier/marketplace', // <--- ¡Agregado para que el rol supplier se mantenga!
+    '/catalog', // Catálogo del proveedor accesible desde supplier
   ]);
   const neutralRoutes = new Set([
     '/',
@@ -445,6 +450,18 @@ function AppContent({ mensaje }) {
     neutralRoutes,
   ]);
 
+  // Redirigir automáticamente a onboarding si el usuario está autenticado, necesita onboarding y está en una ruta neutral
+  useEffect(() => {
+    if (
+      session &&
+      needsOnboarding &&
+      location.pathname !== '/onboarding' &&
+      (location.pathname === '/' || neutralRoutes.has(location.pathname))
+    ) {
+      navigate('/onboarding', { replace: true });
+    }
+  }, [session, needsOnboarding, location.pathname, navigate, neutralRoutes]);
+
   // Prefetch de rutas para rendimiento
   useEffect(() => {
     if (!loadingUserStatus && session && currentAppRole) {
@@ -531,38 +548,58 @@ function AppContent({ mensaje }) {
           zIndex: 2000,
         }}
       >
-        <CircularProgress size={48} color="primary" />
+        <Loader />
       </Box>
     );
   }
 
   // Determinar si la SideBar debe mostrarse.
   // La SideBar se muestra si hay una sesión, no se necesita onboarding,
-  // y la ruta actual es una ruta de dashboard (ya sea de comprador o proveedor).
+  // y la ruta actual es una ruta de dashboard (ya sea de comprador o proveedor),
+  // o si la ruta es una ficha técnica de producto.
+  const isProductPageRoute =
+    location.pathname.match(/^\/marketplace\/product\/[^/]+(\/[^/]+)?$/);
+
   const isDashboardRoute =
     session &&
     !needsOnboarding &&
-    (Array.from(buyerDashboardRoutes).some(route =>
-      location.pathname.startsWith(route)
-    ) ||
+    (
+      Array.from(buyerDashboardRoutes).some(route =>
+        location.pathname.startsWith(route)
+      ) ||
       Array.from(supplierDashboardRoutes).some(route =>
         location.pathname.startsWith(route)
-      ));
+      ) ||
+      isProductPageRoute
+    );
 
-  // La BottomBar se muestra en todas las rutas excepto en '/supplier/home'
-  const showBottomBar = location.pathname !== '/supplier/home';
+  // Ocultar TopBar y BottomBar en rutas administrativas
+  const isAdminRoute = location.pathname.startsWith('/admin-login') || 
+                       location.pathname.startsWith('/admin-panel');
+
+  // La BottomBar se muestra en todas las rutas excepto en '/supplier/home', '/onboarding' y rutas admin
+  const showBottomBar = !isAdminRoute && 
+                        location.pathname !== '/supplier/home' && 
+                        location.pathname !== '/onboarding';
+  
+  // TopBar se oculta solo en rutas admin
+  const showTopBar = !isAdminRoute;
+  
   const topBarHeight = '64px'; // Consistente con la altura de TopBar
 
   return (
     <>
-      <TopBar
-        key={`${session?.user?.id || 'no-session'}-${logoUrl || 'default-topbar'}`}
-        session={session}
-        isBuyer={isBuyer}
-        logoUrl={logoUrl ? `${logoUrl}?cb=${logoCacheBuster}` : null}
-        onNavigate={handleScrollTo}
-        onRoleChange={handleRoleChangeFromTopBar}
-      />
+      {/* TopBar - Solo se muestra si no es una ruta admin */}
+      {showTopBar && (
+        <TopBar
+          key={`${session?.user?.id || 'no-session'}-${logoUrl || 'default-topbar'}`}
+          session={session}
+          isBuyer={isBuyer}
+          logoUrl={logoUrl ? `${logoUrl}?cb=${logoCacheBuster}` : null}
+          onNavigate={handleScrollTo}
+          onRoleChange={handleRoleChangeFromTopBar}
+        />
+      )}
 
       <Box
         sx={{
@@ -587,7 +624,7 @@ function AppContent({ mensaje }) {
           sx={{
             display: 'flex',
             flex: '1 0 auto', // Toma el espacio disponible
-            mt: topBarHeight,
+            mt: showTopBar ? topBarHeight : 0, // Solo aplicar margen si TopBar está visible
           }}
         >
           {isDashboardRoute && (
@@ -601,19 +638,32 @@ function AppContent({ mensaje }) {
 
           <Box
             component="main"
-            sx={{
+            sx={theme => ({
               flexGrow: 1,
               pl: isDashboardRoute ? 3 : 0,
               pr: isDashboardRoute ? 3 : 0,
               pt: isDashboardRoute ? 3 : 0,
-              pb: isDashboardRoute ? { xs: session ? 10 : 3, md: 3 } : { xs: session ? 10 : 0, md: 0 }, // Padding extra en mobile cuando hay sesión para el MobileBar
+              pb: isDashboardRoute ? { xs: session ? 10 : 3, md: 3 } : { xs: session ? 10 : 0, md: 0 },
               width: isDashboardRoute
                 ? { xs: '100%', md: `calc(100% - ${currentSideBarWidth})` }
                 : '100%',
               overflowX: 'hidden',
               ml: isDashboardRoute ? { md: 14, lg: 14, xl: 0 } : 0,
-              transition: 'margin-left 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94), width 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
-            }}
+              // Animación robusta: solo en md y lg, nunca en xl
+              transition: [
+                theme.breakpoints.up('md') && theme.breakpoints.down('lg')
+                  ? 'transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94), margin-left 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94), width 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)'
+                  : 'margin-left 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94), width 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)'
+              ].join(','),
+              // Solo aplicar el shift animado en md y lg, nunca en xl
+              transform: {
+                xs: 'none',
+                sm: 'none',
+                md: isDashboardRoute && sideBarCollapsed ? 'translateX(-80px)' : 'none',
+                lg: isDashboardRoute && sideBarCollapsed ? 'translateX(-80px)' : 'none',
+                xl: 'none',
+              },
+            })}
           >
             <Suspense fallback={<SuspenseLoader />}>
               <Routes>
@@ -635,10 +685,13 @@ function AppContent({ mensaje }) {
 
                 {/* RUTAS ADMINISTRATIVAS - ACCESO VISUAL PARA TESTING */}
                 <Route path="/admin-login" element={<AdminLogin />} />
-                <Route path="/admin-panel/dashboard" element={<AdminPanelTable />} />
+                <Route path="/admin-panel/dashboard" element={<AdminDashboard />} />
 
                 {/* Ruta para testing de 404 (solo desarrollo) */}
                 <Route path="/404" element={<NotFound />} />
+
+            {/* Ruta de callback de autenticación Supabase */}
+            <Route path="/auth/callback" element={<AuthCallback />} />
 
                 {/* Todas estas rutas están ahora protegidas SÓLO por autenticación y onboarding */}
                 <Route
@@ -705,6 +758,36 @@ function AppContent({ mensaje }) {
                       redirectTo="/"
                     >
                       <BuyerCart />
+                    </PrivateRoute>
+                  }
+                />
+
+                {/* RUTA DEL CHECKOUT - MÉTODO DE PAGO */}
+                <Route
+                  path="/buyer/paymentmethod"
+                  element={
+                    <PrivateRoute
+                      isAuthenticated={!!session}
+                      needsOnboarding={needsOnboarding}
+                      loading={loadingUserStatus}
+                      redirectTo="/"
+                    >
+                      <PaymentMethod />
+                    </PrivateRoute>
+                  }
+                />
+
+                {/* RUTA DEL CATÁLOGO DEL PROVEEDOR - Protegida por PrivateRoute */}
+                <Route
+                  path="/catalog/:userNm/:userId"
+                  element={
+                    <PrivateRoute
+                      isAuthenticated={!!session}
+                      needsOnboarding={needsOnboarding}
+                      loading={loadingUserStatus}
+                      redirectTo="/"
+                    >
+                      <ProviderCatalog />
                     </PrivateRoute>
                   }
                 />
@@ -802,6 +885,20 @@ function AppContent({ mensaje }) {
                     </PrivateRoute>
                   }
                 />
+                <Route
+                  path="/supplier/myproducts/product/:productSlug"
+                  element={
+                    <PrivateRoute
+                      isAuthenticated={!!session}
+                      needsOnboarding={needsOnboarding}
+                      loading={loadingUserStatus}
+                      redirectTo="/"
+                    >
+                      {/* Puedes reutilizar el mismo wrapper de ficha técnica o crear uno específico para supplier */}
+                      <ProductPageWrapper isLoggedIn={!!session} />
+                    </PrivateRoute>
+                  }
+                />
                 {/* Ruta de fallback para rutas no encontradas */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
@@ -822,6 +919,13 @@ function AppContent({ mensaje }) {
           session={session}
           isBuyer={isBuyer}
           logoUrl={logoUrl ? `${logoUrl}?cb=${logoCacheBuster}` : null}
+        />
+
+        {/* WhatsApp Widget - Con acceso al contexto del Router */}
+        <WhatsAppWidget 
+          isLoggedIn={!!session} 
+          userProfile={userProfile}
+          currentPath={location.pathname}
         />
       </Box>
     </>
@@ -891,4 +995,21 @@ function App() {
   );
 }
 
-export default App;
+
+// Botón flotante de WhatsApp solo para desktop
+
+// Botón flotante de WhatsApp solo para desktop y solo si hay sesión iniciada
+
+
+function WhatsAppFAB({ isLoggedIn }) {
+  // Componente deprecado - ahora se usa WhatsAppWidget
+  return null;
+}
+
+
+// Wrapper simplificado - la gestión del WhatsApp widget ahora está dentro de AppContent
+function AppWithWhatsApp() {
+  return <App />;
+}
+
+export default AppWithWhatsApp;

@@ -1,3 +1,4 @@
+import AssignmentIcon from '@mui/icons-material/Assignment';
 import React, { useEffect, useState } from 'react';
 import {
   Box,
@@ -371,13 +372,22 @@ const MyOrdersPage = () => {
           pt: { xs: 9, md: 10 }, // Padding top para espacio con el header
           px: 3, // Padding horizontal
           pb: 3, // Padding bottom
+          ml: { xs: 0, md: 10, lg: 14, xl: 24 },
         }}
       >
         <Container maxWidth="xl" disableGutters>
           {/* Título de la página */}
-          <Typography variant="h4" component="h1" gutterBottom>
-            Mis Pedidos
-          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', mb: 4 }}>
+            <AssignmentIcon sx={{ color: 'primary.main', fontSize: 36, mr: 1 }} />
+            <Typography
+              variant="h4"
+              fontWeight={600}
+              color="primary.main"
+              gutterBottom
+            >
+              Mis Pedidos
+            </Typography>
+          </Box>
 
           {/* Componente para filtrar pedidos por estado */}
           <Filter

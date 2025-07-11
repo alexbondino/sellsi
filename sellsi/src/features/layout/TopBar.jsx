@@ -19,6 +19,7 @@ import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import { supabase } from '../../services/supabase';
 import useCartStore from '../buyer/hooks/cartStore';
 import ContactModal from '../ui/ContactModal';
+import Modal, { MODAL_TYPES } from '../ui/Modal';
 import Login from '../login/Login';
 import Register from '../register/Register';
 import { setSkipScrollToTopOnce } from '../ScrollToTop';
@@ -160,54 +161,86 @@ export default function TopBar({
 
   const profileMenuButton = (
     <IconButton onClick={handleOpenProfileMenu} sx={{ color: 'white', p: 0, display: { xs: 'none', md: 'inline-flex' } }}>
-      <Avatar
-        src={logoUrl && typeof logoUrl === 'string' && logoUrl.trim() !== '' ? logoUrl : undefined}
-        key={logoUrl || 'default-avatar'}
-        sx={{
-          transition: 'opacity 0.5s',
-          opacity: avatarLoaded ? 1 : 0,
-          background: '#e0e0e0',
-        }}
-        imgProps={{
-          onLoad: () => setAvatarLoaded(true),
-          onError: () => setAvatarLoaded(true),
-          style: { transition: 'opacity 0.5s', opacity: avatarLoaded ? 1 : 0 }
-        }}
-      >
-        <PersonIcon sx={{ opacity: avatarLoaded ? 0 : 1, transition: 'opacity 0.3s' }} />
-      </Avatar>
+      {logoUrl && typeof logoUrl === 'string' && logoUrl.trim() !== '' ? (
+        <Avatar
+          src={logoUrl}
+          key={logoUrl}
+          sx={{
+            transition: 'none !important',
+            opacity: avatarLoaded ? 1 : 0,
+            background: 'transparent !important',
+          }}
+          imgProps={{
+            onLoad: () => setAvatarLoaded(true),
+            onError: () => setAvatarLoaded(true),
+            style: { transition: 'opacity 0.5s', opacity: avatarLoaded ? 1 : 0 }
+          }}
+        />
+      ) : (
+        <Avatar sx={{ background: '#fff !important', color: '#111 !important' }}>
+          <PersonIcon sx={{ color: '#111 !important', fontSize: 32 }} />
+        </Avatar>
+      )}
     </IconButton>
   );
+  // Estado para el modal de "Próximamente..."
+  const [openComingSoonModal, setOpenComingSoonModal] = useState(false);
 
   if (!isLoggedIn) {
+    // Botones públicos, pero el de "Trabaja con Nosotros" ahora abre modal
     const publicNavButtons = [
-      { label: 'Quiénes somos', ref: 'quienesSomosRef' },
+      { label: 'Quiénes Somos', ref: 'quienesSomosRef' },
       { label: 'Servicios', ref: 'serviciosRef' },
       { label: 'Trabaja con Nosotros', ref: 'trabajaConNosotrosRef' },
-      { label: 'Contáctanos', ref: 'contactModal' }, // Cambiado a contactModal para abrir el modal
+      { label: 'Contáctanos', ref: 'contactModal' },
     ];
 
-    desktopNavLinks = publicNavButtons.map(({ label, ref }) => (
-      <Button
-        key={label}
-        onClick={() => handleNavigate(ref)}
-        sx={{
-          color: 'white',
-          textTransform: 'none',
-          fontSize: 16,
-          outline: 'none',
-          boxShadow: 'none',
-          border: 'none',
-          '&:focus': { outline: 'none', boxShadow: 'none', border: 'none' },
-          '&:active': { outline: 'none', boxShadow: 'none', border: 'none' },
-          '&:hover': { outline: 'none', boxShadow: 'none', border: 'none' },
-        }}
-        disableFocusRipple
-        disableRipple
-      >
-        {label}
-      </Button>
-    ));
+    desktopNavLinks = publicNavButtons.map(({ label, ref }) => {
+      if (ref === 'trabajaConNosotrosRef') {
+        return (
+          <Button
+            key={label}
+            onClick={() => setOpenComingSoonModal(true)}
+            sx={{
+              color: 'white',
+              textTransform: 'none',
+              fontSize: 16,
+              outline: 'none',
+              boxShadow: 'none',
+              border: 'none',
+              '&:focus': { outline: 'none', boxShadow: 'none', border: 'none' },
+              '&:active': { outline: 'none', boxShadow: 'none', border: 'none' },
+              '&:hover': { outline: 'none', boxShadow: 'none', border: 'none' },
+            }}
+            disableFocusRipple
+            disableRipple
+          >
+            {label}
+          </Button>
+        );
+      }
+      return (
+        <Button
+          key={label}
+          onClick={() => handleNavigate(ref)}
+          sx={{
+            color: 'white',
+            textTransform: 'none',
+            fontSize: 16,
+            outline: 'none',
+            boxShadow: 'none',
+            border: 'none',
+            '&:focus': { outline: 'none', boxShadow: 'none', border: 'none' },
+            '&:active': { outline: 'none', boxShadow: 'none', border: 'none' },
+            '&:hover': { outline: 'none', boxShadow: 'none', border: 'none' },
+          }}
+          disableFocusRipple
+          disableRipple
+        >
+          {label}
+        </Button>
+      );
+    });
 
     desktopRightContent = (
       <>
@@ -250,11 +283,26 @@ export default function TopBar({
     );
 
     mobileMenuItems = [
-      ...publicNavButtons.map(({ label, ref }) => (
-        <MenuItem key={label} onClick={() => handleNavigate(ref)}>
-          {label}
-        </MenuItem>
-      )),
+      ...publicNavButtons.map(({ label, ref }) => {
+        if (ref === 'trabajaConNosotrosRef') {
+          return (
+            <MenuItem
+              key={label}
+              onClick={() => {
+                setOpenComingSoonModal(true);
+                handleCloseMobileMenu();
+              }}
+            >
+              {label}
+            </MenuItem>
+          );
+        }
+        return (
+          <MenuItem key={label} onClick={() => handleNavigate(ref)}>
+            {label}
+          </MenuItem>
+        );
+      }),
       <Divider key="divider1" />,
       <MenuItem
         key="login"
@@ -277,7 +325,7 @@ export default function TopBar({
     ];
   } else {
     // Si el usuario está logueado
-    paddingX = { xs: 2, md: 6, mac: 6, lg: 6 }; // Updated padding for logged in
+    paddingX = { xs: 2, md: 4, mac: 4, lg: 4 }; // Updated padding for logged in
     desktopRightContent = (
       <>
         {/* Usamos el componente Switch */}
@@ -401,7 +449,19 @@ export default function TopBar({
                 lineHeight: 0,
                 overflow: 'hidden',
               }}
-              onClick={() => navigate('/?scrollTo=top')}
+              onClick={() => {
+                if (isLoggedIn) {
+                  if (currentRole === 'supplier') {
+                    navigate('/supplier/home');
+                  } else if (currentRole === 'buyer') {
+                    navigate('/buyer/marketplace');
+                  } else {
+                    navigate('/?scrollTo=top');
+                  }
+                } else {
+                  navigate('/?scrollTo=top');
+                }
+              }}
             >
               <Box
                 component="img"
@@ -548,6 +608,17 @@ export default function TopBar({
           }}
         />
       )}
+      {/* Modal Proximamente */}
+      <Modal
+        isOpen={openComingSoonModal}
+        onClose={() => setOpenComingSoonModal(false)}
+        onSubmit={() => setOpenComingSoonModal(false)}
+        type={MODAL_TYPES.INFO}
+        title="Próximamente..."
+        showCancelButton={false}
+      >
+        Esta funcionalidad estará disponible pronto.
+      </Modal>
     </>
   );
 }

@@ -12,7 +12,7 @@ import useMarketplaceLogic from '../marketplace/useMarketplaceLogic.jsx';
 
 // Componentes de secciones
 import SearchSection from '../marketplace/sections/SearchSection.jsx';
-import FilterSection from '../marketplace/sections/FilterSection.jsx';
+// import FilterSection from '../marketplace/sections/FilterSection.jsx'; // Botón de filtros comentado
 import ProductsSection from '../marketplace/sections/ProductsSection.jsx';
 
 // ✅ MEJORA DE RENDIMIENTO: Memoización del componente principal
@@ -87,7 +87,7 @@ const MarketplaceBuyer = React.memo(() => {
         {/* Sección de búsqueda y navegación */}
         <SearchSection {...searchSectionProps} />
         {/* Sección de filtros */}
-        <FilterSection {...filterSectionProps} filterPosition="right" />
+        {/* <FilterSection {...filterSectionProps} filterPosition="right" /> */} {/* Botón de filtros comentado */}
         {/* Sección de productos */}
         <ProductsSection {...productsSectionProps} />
       </Box>

@@ -44,8 +44,6 @@ import { useLocation } from 'react-router-dom'
 
 import ProductImageGallery from './components/ProductImageGallery'
 // import SalesCharacteristics from './components/SalesCharacteristics'
-import SaleConditions from './components/SaleConditions'
-import TechnicalSpecifications from './components/TechnicalSpecifications'
 import PurchaseActions from './components/PurchaseActions'
 import ProductHeader from './components/ProductHeader'
 import LoadingOverlay from '../../ui/LoadingOverlay'
@@ -207,7 +205,7 @@ const ProductPageView = ({
           width: '100%',
         }}
       >
-        {/* Header y breadcrumbs ahora SIEMPRE dentro del Paper, arriba del contenido */}
+        {/* Paper padre restaurado */}
         <Box
           sx={{
             backgroundColor: 'white',
@@ -218,24 +216,11 @@ const ProductPageView = ({
             border: '1.5px solid #e0e0e0',
             boxShadow: 6,
             borderRadius: 3,
+            width: '100%',
           }}
         >
-          <Box sx={{ mb: 4, boxShadow: 'none', border: 'none', outline: 'none', backgroundImage: 'none' }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-              <Button
-                startIcon={<ArrowBack />}
-                onClick={onClose}
-                sx={{ textTransform: 'none' }}
-              >
-                {fromMyProducts
-                  ? 'Volver a Mis Productos'
-                  : isFromSupplierMarketplace
-                    ? 'Volver a Marketplace'
-                    : 'Volver al Marketplace'}
-              </Button>
-              <Typography variant="h4" fontWeight="600" color="black">
-              </Typography>
-            </Box>
+          {/* 1. Breadcrumbs (hijo 1) */}
+          <Box sx={{ width: '100%', mb: 2 }}>
             <Breadcrumbs sx={{ fontSize: '0.875rem', color: 'text.secondary' }}>
               <Link
                 underline="hover"
@@ -262,53 +247,106 @@ const ProductPageView = ({
                     : 'Marketplace'}
               </Link>
               {product && (
-                <Typography color="black" sx={{ fontWeight: 600 }}>
+                <Typography color="primary.main" sx={{ fontWeight: 600 }}>
                   {product.nombre}
                 </Typography>
               )}
             </Breadcrumbs>
           </Box>
-          <Grid container spacing={3} sx={{ boxShadow: 'none', border: 'none', outline: 'none', backgroundImage: 'none' }}>
-          {/* Columna principal */}
-          <Grid item xs={12} lg={8} sx={{ boxShadow: 'none', border: 'none', outline: 'none', backgroundImage: 'none' }}>
+          {/* 2. ProductHeader (hijo 2) */}
+          <Box sx={{ width: '100%' }}>
+            <ProductHeader
+              product={product}
+              selectedImageIndex={selectedImageIndex}
+              onImageSelect={setSelectedImageIndex}
+              onAddToCart={handleAddToCart}
+              isLoggedIn={isLoggedIn}
+              fromMyProducts={fromMyProducts}
+            />
+          </Box>
+          {/* 3. Descripción del Producto (hijo 3) */}
+          <Box sx={{ width: '100%', mt: 6, mb:6 }}>
             <Paper
+              elevation={2}
               sx={{
-                p: 0,
-                width: '100%',
-                minWidth: '100%',
-                maxWidth: '100%',
-                boxSizing: 'border-box',
-                boxShadow: 'none',
-                border: 'none',
-                outline: 'none',
-                backgroundImage: 'none',
+                p: { xs: 3, sm: 4, md: 5 },
+                borderRadius: 3,
+                width: { xs: '100%', md: '70%' },
+                maxWidth: '900px',
+                textAlign: 'center',
+                background: 'linear-gradient(135deg, #f8fafc 0%, #ffffff 100%)',
+                border: '1px solid #e2e8f0',
+                position: 'relative',
+                overflow: 'hidden',
+                margin: '0 auto',
+                '&::before': {
+                  content: '""',
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  height: '4px',
+                  background: 'linear-gradient(90deg, #1976d2, #42a5f5, #1976d2)',
+                  backgroundSize: '200% 100%',
+                  animation: 'shimmer 3s ease-in-out infinite',
+                },
+                '@keyframes shimmer': {
+                  '0%': { backgroundPosition: '-200% 0' },
+                  '100%': { backgroundPosition: '200% 0' },
+                },
               }}
-              elevation={0}
-              square
             >
-              {/* Galería e info principal */}
-              <ProductHeader
-                product={product}
-                selectedImageIndex={selectedImageIndex}
-                onImageSelect={setSelectedImageIndex}
-                onAddToCart={handleAddToCart}
-                isLoggedIn={isLoggedIn}
-                fromMyProducts={fromMyProducts}
-              />
-              {/* Condiciones de venta */}
-              <Box sx={{ mt: 6 }}>
-                <SaleConditions product={product} />
-              </Box>
-              {/* Especificaciones técnicas */}
-              <Box sx={{ mt: 6, mb: 4 }}>
-                <TechnicalSpecifications product={product} />
-              </Box>
+              <Typography
+                variant="h4"
+                sx={{
+                  fontWeight: 700,
+                  color: 'primary.main',
+                  mb: 3,
+                  fontSize: { xs: '1.5rem', sm: '1.75rem', md: '2rem' },
+                  position: 'relative',
+                  '&::after': {
+                    content: '""',
+                    position: 'absolute',
+                    bottom: -8,
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    width: '60px',
+                    height: '3px',
+                    background: 'linear-gradient(90deg, #1976d2, #42a5f5)',
+                    borderRadius: '2px',
+                  },
+                }}
+              >
+                📋 Descripción del Producto
+              </Typography>
+              <Typography
+                variant="body1"
+                sx={{
+                  fontSize: { xs: '1rem', sm: '1.1rem', md: '1.125rem' },
+                  lineHeight: 1.8,
+                  color: 'text.primary',
+                  textAlign: 'justify',
+                  hyphens: 'auto',
+                  wordBreak: 'break-word',
+                  letterSpacing: '0.5px',
+                  fontWeight: 400,
+                  '&::first-letter': {
+                    fontSize: '1.5em',
+                    fontWeight: 700,
+                    color: 'primary.main',
+                    float: 'left',
+                    lineHeight: 1,
+                    marginRight: '4px',
+                    marginTop: '2px',
+                  },
+                }}
+              >
+                {descripcion}
+              </Typography>
             </Paper>
-          </Grid>
-          {/* Aquí podrías agregar una columna lateral si la necesitas */}
-        </Grid>
+          </Box>
         </Box>
-    </Box>
+      </Box>
     </ThemeProvider>
   )
 }

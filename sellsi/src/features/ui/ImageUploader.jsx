@@ -190,8 +190,9 @@ const ImageUploader = ({
             </Typography>
             <Typography variant="body2" color="text.secondary">
               {dropText}
-            </Typography>            <Typography variant="caption" color="text.secondary">
-              Formatos soportados: {acceptedTypes} • Máximo {maxImages} archivos • 2MB por imagen
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              <b>Formatos soportados: jpeg, png, webp • Máximo {maxImages} archivos • 2MB por imagen</b>
             </Typography>
           </Box>
         </Paper>

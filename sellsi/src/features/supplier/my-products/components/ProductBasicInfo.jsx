@@ -111,9 +111,9 @@ const ProductBasicInfo = ({
         <TextField
           fullWidth
           label="Descripción Producto:"
-          placeholder="Máximo 600 caracteres"
+          placeholder="Máximo 3000 caracteres"
           multiline
-          rows={3}
+          rows={4}
           value={formData.descripcion}
           onChange={onInputChange('descripcion')}
           onBlur={() => onFieldBlur('descripcion')}
@@ -124,10 +124,10 @@ const ProductBasicInfo = ({
           helperText={
             touched.descripcion || triedSubmit
               ? errors.descripcion ||
-                `${formData.descripcion.length}/600 caracteres`
+                `${formData.descripcion.length}/3000 caracteres`
               : ''
           }
-          inputProps={{ maxLength: 600 }}
+          inputProps={{ maxLength: 3000 }}
         />
       </Box>
     </>

@@ -17,7 +17,10 @@ import {
   CloudUpload as CloudUploadIcon,
   Delete as DeleteIcon,
   Close as CloseIcon,
+  Person as PersonIcon,
 } from '@mui/icons-material';
+
+import Tooltip from '@mui/material/Tooltip';
 
 /**
  * ProfileImageModal - Modal reutilizable para cambiar imagen de perfil
@@ -40,6 +43,7 @@ const ProfileImageModal = ({
   const [selectedImage, setSelectedImage] = useState(null);
   const [dragOver, setDragOver] = useState(false);
   const [error, setError] = useState('');
+  const [localImageUrl, setLocalImageUrl] = useState(currentImageUrl);
 
   const maxFileSize = 300 * 1024; // 300KB en bytes
 
@@ -72,14 +76,24 @@ const ProfileImageModal = ({
     const file = files[0];
     if (!file || !validateFile(file)) return;
 
+    // Limpiar imagen anterior si existe
+    if (selectedImage?.url) {
+      URL.revokeObjectURL(selectedImage.url);
+    }
+
     setError('');
     const imageUrl = URL.createObjectURL(file);
-    setSelectedImage({
-      file,
+    
+    // Crear un nuevo objeto cada vez para evitar referencias cruzadas
+    const newImageData = {
+      file: file, // Usar el archivo original directamente
       url: imageUrl,
       name: file.name,
       size: file.size,
-    });
+      timestamp: Date.now(), // Agregar timestamp para unicidad
+    };
+    
+    setSelectedImage(newImageData);
   };
 
   const handleFileChange = (event) => {
@@ -114,24 +128,46 @@ const ProfileImageModal = ({
   const handleRemoveImage = () => {
     if (selectedImage?.url) {
       URL.revokeObjectURL(selectedImage.url);
-      // ...log eliminado...
+      // console.log('[ProfileImageModal] handleRemoveImage: URL revocada para', selectedImage.url);
     }
+    // console.log('[ProfileImageModal] handleRemoveImage: Imagen seleccionada eliminada');
     setSelectedImage(null);
     setError('');
   };
 
+  // Determinar si hay un cambio pendiente para guardar
+  const isDeletePending = !selectedImage && localImageUrl === undefined && currentImageUrl;
+  const isSaveEnabled = !!selectedImage || isDeletePending;
+
   const handleSave = () => {
-    if (!selectedImage) {
-      setError('Por favor, selecciona una imagen');
+    if (selectedImage) {
+      // Crear una copia del objeto para evitar mutaciones
+      const imageToSave = {
+        file: selectedImage.file,
+        url: selectedImage.url,
+        name: selectedImage.name,
+        size: selectedImage.size,
+        timestamp: selectedImage.timestamp
+      };
+      
+      // Pasar la imagen al componente padre SIN revocar la URL
+      onImageChange(imageToSave);
+      
+      // Limpiar estado local pero NO revocar URL (el padre se encarga)
+      setSelectedImage(null);
+      setError('');
+      onClose();
       return;
     }
-
-    // Pasar la imagen al componente padre SIN revocar la URL
-    onImageChange(selectedImage);
-    
-    // Limpiar solo el estado local del modal (SIN revocar URL)
-    setSelectedImage(null);
-    setError('');
+    if (isDeletePending) {
+      // Notificar al padre que debe eliminar la imagen
+      onImageChange(null);
+      setError('');
+      onClose();
+      return;
+    }
+    // Even if nothing to save, log and call parent with null to be explicit
+    onImageChange(null);
     onClose();
   };
 
@@ -146,7 +182,6 @@ const ProfileImageModal = ({
     // Solo revocar la URL cuando se cancela explícitamente
     if (selectedImage?.url) {
       URL.revokeObjectURL(selectedImage.url);
-      // ...log eliminado...
     }
     setSelectedImage(null);
     setError('');
@@ -157,8 +192,26 @@ const ProfileImageModal = ({
     fileInputRef.current?.click();
   };
 
-  // Determinar qué imagen mostrar en el preview
-  const previewImageUrl = selectedImage?.url || currentImageUrl;
+  React.useEffect(() => {
+    setLocalImageUrl(currentImageUrl);
+  }, [currentImageUrl]);
+
+  // Limpiar estado cuando se abre el modal
+  React.useEffect(() => {
+    if (open) {
+      // Limpiar cualquier imagen seleccionada previa al abrir
+      if (selectedImage?.url) {
+        URL.revokeObjectURL(selectedImage.url);
+      }
+      setSelectedImage(null);
+      setError('');
+      setLocalImageUrl(currentImageUrl);
+    }
+  }, [open]);
+
+  const previewImageUrl = selectedImage?.url || (localImageUrl ? localImageUrl : undefined);
+
+  // Debug logs removed
 
   return (
     <Dialog
@@ -186,20 +239,61 @@ const ProfileImageModal = ({
       </DialogTitle>
 
       <DialogContent sx={{ pt: 2, overflow: 'visible' }}>
-        {/* Preview de imagen actual */}
-        <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
+
+        {/* Preview de imagen actual + botón eliminar */}
+        <Box sx={{ position: 'relative', display: 'flex', justifyContent: 'center', alignItems: 'center', mb: 3 }}>
           <Avatar
             src={previewImageUrl}
             sx={{
               width: 120,
               height: 120,
               fontSize: 40,
-              bgcolor: 'primary.main',
+              color: 'white !important',
+              bgcolor: previewImageUrl ? 'transparent' : 'primary.main',
               border: `3px solid ${theme.palette.primary.main}`,
+              transition: 'none !important'
             }}
+            // imgProps removed debug logs
           >
-            {!previewImageUrl && userInitials}
+            {!previewImageUrl && (
+              userInitials && userInitials !== 'U' ? 
+                userInitials : 
+                <PersonIcon sx={{ 
+                  color: 'white !important', 
+                  fontSize: 40, 
+                  transition: 'none !important',
+                  '&:hover': { color: 'white !important' },
+                  '&:focus': { color: 'white !important' },
+                  '&:active': { color: 'white !important' }
+                }} />
+            )}
           </Avatar>
+          {/* Debug logs removed */}
+          {currentImageUrl && !selectedImage && (
+            <Tooltip title="Eliminar imagen actual">
+              <IconButton
+                onClick={() => {
+                  setSelectedImage(null);
+                  setLocalImageUrl(undefined);
+                }}
+                size="large"
+                sx={{
+                  position: 'absolute',
+                  right: 0,
+                  top: 0,
+                  color: 'grey.600',
+                  background: 'white',
+                  boxShadow: 1,
+                  '&:hover': {
+                    color: 'grey.800',
+                    background: 'rgba(158, 158, 158, 0.13)',
+                  },
+                }}
+              >
+                <DeleteIcon fontSize="medium" />
+              </IconButton>
+            </Tooltip>
+          )}
         </Box>
 
         {/* Área de upload */}
@@ -284,7 +378,7 @@ const ProfileImageModal = ({
         <Button
           onClick={handleSave}
           variant="contained"
-          disabled={!selectedImage}
+          disabled={!isSaveEnabled}
         >
           Guardar
         </Button>

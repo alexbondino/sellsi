@@ -367,6 +367,7 @@ const Modal = ({
           gap: 1,
           p: 3,
           pt: 1,
+          justifyContent: 'center',
         }}
       >
         {showCancelButton && (

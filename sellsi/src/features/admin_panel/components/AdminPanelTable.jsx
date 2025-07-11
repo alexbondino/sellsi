@@ -9,7 +9,7 @@
  * @date 30 de Junio de 2025
  */
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, memo } from 'react';
 import {
   Box,
   Paper,
@@ -34,11 +34,16 @@ import {
   FileDownload,
   Refresh,
   FilterList,
-  Add
+  Add,
+  Assessment as AssessmentIcon,
+  Schedule as ScheduleIcon,
+  Done as DoneIcon,
+  Error as ErrorIcon
 } from '@mui/icons-material';
 
 // Importar componentes UI existentes
-import { StatCard, Widget } from '../../ui';
+import { Widget } from '../../ui';
+import AdminStatCard from './AdminStatCard';
 import { getSolicitudes, getEstadisticas } from '../../../services/adminPanelService';
 
 // Importar modales
@@ -107,6 +112,7 @@ const commonStyles = {
 };
 
 // ✅ ADMIN PANEL TABLE COMPONENT
+const MemoAdminStatCard = memo(AdminStatCard);
 const AdminPanelTable = () => {
   // ========================================
   // 🔧 ESTADO
@@ -178,39 +184,36 @@ const AdminPanelTable = () => {
     }
   };
 
-  const handleFiltroChange = (campo, valor) => {
+  const handleFiltroChange = useCallback((campo, valor) => {
     setFiltros(prev => ({
       ...prev,
       [campo]: valor
     }));
-  };
+  }, []);
 
-  const abrirModal = (tipo, solicitud) => {
+  const abrirModal = useCallback((tipo, solicitud) => {
     setModales(prev => ({
       ...prev,
       [tipo]: { open: true, solicitud }
     }));
-  };
+  }, []);
 
-  const cerrarModal = (tipo) => {
+  const cerrarModal = useCallback((tipo) => {
     setModales(prev => ({
       ...prev,
       [tipo]: { open: false, solicitud: null }
     }));
-  };
+  }, []);
 
-  const handleAccionCompletada = () => {
-    // Recargar datos después de una acción
+  const handleAccionCompletada = useCallback(() => {
     cargarDatos();
-    
-    // Cerrar todos los modales
     setModales({
       confirmar: { open: false, solicitud: null },
       rechazar: { open: false, solicitud: null },
       devolver: { open: false, solicitud: null },
       detalles: { open: false, solicitud: null }
     });
-  };
+  }, []);
 
   // ========================================
   // 🔧 COMPUTED VALUES
@@ -234,68 +237,81 @@ const AdminPanelTable = () => {
     });
   }, [solicitudes, filtros]);
 
-  const estadisticasCards = useMemo(() => [
-    {
-      title: 'Total Solicitudes',
-      value: estadisticas.total || 0,
-      icon: '📊',
-      color: '#2196f3'
-    },
-    {
-      title: 'Pendientes',
-      value: estadisticas.pendientes || 0,
-      icon: '⏳',
-      color: '#ff9800'
-    },
-    {
-      title: 'Confirmados',
-      value: estadisticas.confirmados || 0,
-      icon: '✅',
-      color: '#4caf50'
-    },
-    {
-      title: 'Rechazados/Devueltos',
-      value: (estadisticas.rechazados || 0) + (estadisticas.devueltos || 0),
-      icon: '❌',
-      color: '#f44336'
-    }
-  ], [estadisticas]);
-
   // ========================================
   // 🎨 RENDER FUNCTIONS
   // ========================================
 
-  const renderEstadisticas = () => (
+  const renderEstadisticas = useCallback(() => (
     <Grid container spacing={3} sx={{ mb: 3 }}>
-      {estadisticasCards.map((stat, index) => (
-        <Grid item xs={12} sm={6} md={3} key={index}>
-          <StatCard
-            title={stat.title}
-            value={stat.value}
-            color={stat.color}
-          >
-            <span style={{ fontSize: 24 }}>{stat.icon}</span>
-          </StatCard>
-        </Grid>
-      ))}
+      <Grid item xs={12} sm={6} md={3}>
+        <MemoAdminStatCard
+          title="Total Solicitudes"
+          value={estadisticas.total || 0}
+          icon={AssessmentIcon}
+          color="primary"
+        />
+      </Grid>
+      <Grid item xs={12} sm={6} md={3}>
+        <MemoAdminStatCard
+          title="Pendientes"
+          value={estadisticas.pendientes || 0}
+          icon={ScheduleIcon}
+          color="warning"
+        />
+      </Grid>
+      <Grid item xs={12} sm={6} md={3}>
+        <MemoAdminStatCard
+          title="Confirmados"
+          value={estadisticas.confirmados || 0}
+          icon={DoneIcon}
+          color="success"
+        />
+      </Grid>
+      <Grid item xs={12} sm={6} md={3}>
+        <MemoAdminStatCard
+          title="Rechazados/Devueltos"
+          value={(estadisticas.rechazados || 0) + (estadisticas.devueltos || 0)}
+          icon={ErrorIcon}
+          color="error"
+        />
+      </Grid>
     </Grid>
-  );
+  ), [estadisticas]);
 
-  const renderFiltros = () => (
+  const menuPropsEstado = useMemo(() => ({
+    disableScrollLock: true,
+    PaperProps: {
+      style: {
+        maxHeight: 300,
+        minWidth: 200
+      }
+    },
+    anchorOrigin: {
+      vertical: 'bottom',
+      horizontal: 'left'
+    },
+    transformOrigin: {
+      vertical: 'top',
+      horizontal: 'left'
+    }
+  }), []);
+  const sxEstado = useMemo(() => ({ '& .MuiSelect-select': { minHeight: 'auto' }, maxWidth: '100%' }), []);
+
+  const renderFiltros = useCallback(() => (
     <Paper sx={commonStyles.filtersSection}>
       <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
         <FilterList sx={{ mr: 1 }} />
         <Typography variant="h6">Filtros</Typography>
       </Box>
-      
       <Grid container spacing={2}>
         <Grid item xs={12} sm={6} md={3}>
-          <FormControl fullWidth>
+          <FormControl fullWidth sx={sxEstado}>
             <InputLabel>Estado</InputLabel>
             <Select
               value={filtros.estado}
               onChange={(e) => handleFiltroChange('estado', e.target.value)}
               label="Estado"
+              MenuProps={menuPropsEstado}
             >
               {FILTROS_ESTADO.map(filtro => (
                 <MenuItem key={filtro.value} value={filtro.value}>
@@ -305,7 +321,6 @@ const AdminPanelTable = () => {
             </Select>
           </FormControl>
         </Grid>
-        
         <Grid item xs={12} sm={6} md={3}>
           <TextField
             fullWidth
@@ -315,7 +330,6 @@ const AdminPanelTable = () => {
             placeholder="Buscar por proveedor..."
           />
         </Grid>
-        
         <Grid item xs={12} sm={6} md={3}>
           <TextField
             fullWidth
@@ -325,7 +339,6 @@ const AdminPanelTable = () => {
             placeholder="Buscar por comprador..."
           />
         </Grid>
-        
         <Grid item xs={12} sm={6} md={3}>
           <TextField
             fullWidth
@@ -338,7 +351,7 @@ const AdminPanelTable = () => {
         </Grid>
       </Grid>
     </Paper>
-  );
+  ), [filtros, handleFiltroChange]);
 
   const renderAcciones = (solicitud) => {
     const acciones = solicitud.acciones?.split(',') || [];

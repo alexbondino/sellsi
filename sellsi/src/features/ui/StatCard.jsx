@@ -3,11 +3,11 @@ import { useTheme } from '@mui/material/styles';
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
-import Chip from '@mui/material/Chip';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
-import { SparkLineChart } from '@mui/x-charts/SparkLineChart';
-import { areaElementClasses } from '@mui/x-charts/LineChart';
+// Iconos para cards específicas
+import Inventory2OutlinedIcon from '@mui/icons-material/Inventory2Outlined';
+import NotificationsActiveOutlinedIcon from '@mui/icons-material/NotificationsActiveOutlined';
 
 /* Cards de estadística del comprador. Mergear con cards de etadística del proveedor. */
 
@@ -46,7 +46,7 @@ export default function StatCard({
   icon,
 }) {
   const theme = useTheme();
-  const daysInWeek = getDaysInMonth(4, 2024);
+  // const daysInWeek = getDaysInMonth(4, 2024);
   const trendColors = {
     up:
       theme.palette.mode === 'light'
@@ -71,25 +71,37 @@ export default function StatCard({
   const color = labelColors[trend];
   const chartColor = trendColors[trend];
   const trendValues = { up: '+25%', down: '-25%', neutral: '+5%' };
+  
+  // Colores específicos para ciertas tarjetas
+  let displayIcon = icon;
+  let displayColor = chartColor;
+  
+  // Aplicar colores específicos basados en el título
+  if (title) {
+    if (title.toLowerCase().includes('sin stock')) {
+      displayColor = '#f44336'; // rojo para productos sin stock
+    } else if (title.toLowerCase().includes('solicitud') || title.toLowerCase().includes('semanal')) {
+      displayColor = '#1976d2'; // azul para solicitudes semanales
+    }
+  }
   return (
     <Card variant="outlined" sx={{ height: '100%', flexGrow: 1 }}>
       <CardContent>
-        {' '}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-          {icon && (
+          {displayIcon && (
             <Box
-              component={icon}
+              component={displayIcon}
               sx={{
-                fontSize: 20,
-                color: chartColor,
-                opacity: 0.8,
+                fontSize: 28,
+                color: displayColor,
+                opacity: 0.85,
               }}
             />
           )}
           <Typography
             component="h2"
             variant="subtitle2"
-            sx={{ fontWeight: 600, fontSize: '0.9rem' }}
+            sx={{ fontWeight: 700, fontSize: '1.2rem' }}
           >
             {title}
           </Typography>
@@ -103,43 +115,11 @@ export default function StatCard({
               direction="row"
               sx={{ justifyContent: 'space-between', alignItems: 'center' }}
             >
-              <Typography variant="h4" component="p">
+              <Typography variant="h3" component="p" sx={{ fontWeight: 800, fontSize: '2.2rem' }}>
                 {value}
               </Typography>
-              <Chip size="small" color={color} label={trendValues[trend]} />
             </Stack>
-            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-              {interval}
-            </Typography>
-          </Stack>{' '}
-          {data && data.length > 0 && (
-            <Box sx={{ width: '100%', height: 50 }}>
-              <SparkLineChart
-                colors={[chartColor]}
-                data={data}
-                area
-                showHighlight
-                showTooltip
-                xAxis={{
-                  scaleType: 'band',
-                  data: daysInWeek,
-                }}
-                sx={{
-                  [`& .${areaElementClasses.root}`]: {
-                    fill: `url(#area-gradient-${value.replace(
-                      /[^a-zA-Z0-9]/g,
-                      ''
-                    )})`,
-                  },
-                }}
-              >
-                <AreaGradient
-                  color={chartColor}
-                  id={`area-gradient-${value.replace(/[^a-zA-Z0-9]/g, '')}`}
-                />
-              </SparkLineChart>
-            </Box>
-          )}
+          </Stack>
         </Stack>
       </CardContent>
     </Card>

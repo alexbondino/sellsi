@@ -17,6 +17,9 @@ export { BannerProvider, useBanner } from './banner/BannerContext';
 export { default as Modal } from './Modal';
 export { default as ContactModal } from './ContactModal';
 export { default as CountrySelector } from './CountrySelector';
+export { default as SecurityBadge } from './SecurityBadge'
+export { default as CheckoutProgressStepper } from './CheckoutProgressStepper'
+export { default as PaymentMethodCard } from './PaymentMethodCard'
 export { default as PrimaryButton } from './PrimaryButton';
 export { default as FileUploader } from './FileUploader';
 export { default as ImageUploader } from './ImageUploader';
@@ -44,6 +47,10 @@ export {
 export { default as Widget } from './Widget';
 export { default as Wizard } from './wizard/Wizard';
 export { default as SelectChip } from './SelectChip';
+export { default as ShippingRegionsModal } from './ShippingRegionsModal';
+export { default as ShippingRegionsDisplay } from './ShippingRegionsDisplay';
+export { default as TermsAndConditionsModal } from './TermsAndConditionsModal';
+export { default as PrivacyPolicyModal } from './PrivacyPolicyModal';
 
 // Re-exportar hooks de UI si existen
 export * from './hooks';

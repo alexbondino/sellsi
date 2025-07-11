@@ -43,10 +43,12 @@ const StockIndicator = ({
         icon: <WarningIcon fontSize="small" />,
       }
     } else {
+      // Formatear stock con separador de miles
+      const formattedStock = stock.toLocaleString('es-CL')
       return {
         status: 'available',
         color: 'success.main',
-        message: showUnits ? `Stock disponible: ${stock} unidades` : 'En stock',
+        message: showUnits ? `Stock disponible: ${formattedStock} unidades` : 'En stock',
         chipColor: 'success',
         icon: <CheckCircleIcon fontSize="small" />,
       }

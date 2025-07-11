@@ -1,5 +1,6 @@
 // 📁 components/SideBar.jsx
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import {
   Box,
   List,
@@ -19,6 +20,7 @@ import {
   TrendingUp as PerformanceIcon,
   Home as HomeIcon,
   Inventory as ProductsIcon,
+  InfoOutlined as InfoIcon,
 } from '@mui/icons-material';
 import { useLocation, useNavigate } from 'react-router-dom';
 
@@ -26,14 +28,14 @@ import { useLocation, useNavigate } from 'react-router-dom';
 const buyerMenuItems = [
   { text: 'Marketplace', path: '/buyer/marketplace', icon: <MarketplaceIcon /> },
   { text: 'Mis Pedidos', path: '/buyer/orders', icon: <OrdersIcon /> },
-  { text: 'Mi Performance', path: '/buyer/performance', icon: <PerformanceIcon /> },
+  // { text: 'Mi Performance', path: '/buyer/performance', icon: <PerformanceIcon /> }, // Eliminado
 ];
 
 const providerMenuItems = [
   { text: 'Inicio', path: '/supplier/home', icon: <HomeIcon /> },
   { text: 'Mis Productos', path: '/supplier/myproducts', icon: <ProductsIcon /> },
   { text: 'Mis Pedidos', path: '/supplier/my-orders', icon: <OrdersIcon /> },
-  { text: 'Mi Performance', path: '/supplier/myperformance', icon: <PerformanceIcon /> },
+  // { text: 'Mi Performance', path: '/supplier/myperformance', icon: <PerformanceIcon /> }, // Eliminado
   { text: 'Marketplace', path: '/supplier/marketplace', icon: <MarketplaceIcon /> },
 ];
 
@@ -95,22 +97,21 @@ const SideBar = ({ role, width = '210px', onWidthChange }) => {
   return (
     <Box
       sx={{
-        position: 'fixed', // La barra lateral es fija
-        top: '64px', // Comienza justo debajo de la TopBar
+        position: 'fixed',
+        top: '64px',
         left: 0,
-        width: currentWidth, // Ancho dinámico basado en el estado de colapso
-        height: 'calc(100vh - 64px)', // Se extiende desde top:64px hasta el final de la ventana
+        width: currentWidth,
+        height: '100vh',
         backgroundColor: sidebarBackgroundColor,
-        color: '#FFFFFF', // Main text color is WHITE!
-        display: { xs: 'none', md: 'flex' }, // Ocultar en móviles, mostrar en desktop
+        color: '#FFFFFF',
+        display: { xs: 'none', md: 'flex' },
         flexDirection: 'column',
-        zIndex: 100, // Asegura que la BottomBar (zIndex: 200) esté por encima
-        overflowY: 'hidden', // La barra lateral no se scrollea
-        overflowX: 'hidden', // Evita scroll horizontal durante animaciones
-        borderRight: 'none', // Asegura que no haya borde derecho
-        transition: 'width 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)', // Animación más suave y lenta
-
-        // Estilos para los ListItemButton generales (incluyendo hover, disabled/activo)
+        zIndex: 900,
+        overflowY: 'hidden',
+        overflowX: 'hidden',
+        borderRight: 'none',
+        transition: 'width 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+        // ...estilos existentes...
         '& .MuiListItemButton-root': {
           color: '#FFFFFF !important',
           fontWeight: 'normal',
@@ -118,24 +119,22 @@ const SideBar = ({ role, width = '210px', onWidthChange }) => {
           borderRadius: '4px !important',
           paddingLeft: isCollapsed ? '12px !important' : '6px !important',
           paddingRight: isCollapsed ? '12px !important' : '6px !important',
-          paddingTop: '10px !important', // Padding fijo para evitar movimiento vertical
-          paddingBottom: '10px !important', // Padding fijo para evitar movimiento vertical
-          minHeight: '48px !important', // Altura fija para evitar movimiento vertical
-          height: '48px !important', // Altura fija
-          margin: '4px 8px', // Margin fijo
-          width: 'calc(100% - 16px)', // Adjust width for 8px margin on each side
+          paddingTop: '10px !important',
+          paddingBottom: '10px !important',
+          minHeight: '48px !important',
+          height: '48px !important',
+          margin: '4px 8px',
+          width: 'calc(100% - 16px)',
           opacity: 1,
           transition: 'padding-left 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94), padding-right 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94), background-color 0.2s ease',
           justifyContent: isCollapsed ? 'center' : 'flex-start',
-          alignItems: 'center', // Centrar verticalmente
-          display: 'flex', // Asegurar flexbox
-
+          alignItems: 'center',
+          display: 'flex',
           '&:hover': {
             backgroundColor: hoverBackgroundColor,
             color: '#FFFFFF !important',
             transform: 'none',
           },
-          // Estilos para el botón cuando está activo/deshabilitado (misma ruta)
           '&.Mui-disabled': {
             backgroundColor: activeBackgroundColor,
             color: '#FFFFFF !important',
@@ -143,12 +142,10 @@ const SideBar = ({ role, width = '210px', onWidthChange }) => {
             opacity: 1,
             cursor: 'default',
           },
-          // Combinación de activo y hover (mantiene el color activo)
           '&.Mui-disabled:hover': {
             backgroundColor: activeHoverBackgroundColor,
           },
         },
-        // Estilos para el texto dentro del ListItemText
         '& .MuiTypography-root': {
           color: '#FFFFFF !important',
           fontWeight: 'normal',
@@ -158,7 +155,6 @@ const SideBar = ({ role, width = '210px', onWidthChange }) => {
           transition: 'opacity 0.4s ease-in-out',
           transform: isCollapsed ? 'translateX(-10px)' : 'translateX(0)',
         },
-        // Estilos para los iconos
         '& .MuiListItemIcon-root': {
           color: '#FFFFFF !important',
           minWidth: isCollapsed ? 'auto' : '40px',
@@ -168,7 +164,7 @@ const SideBar = ({ role, width = '210px', onWidthChange }) => {
           alignItems: 'center',
           '& .MuiSvgIcon-root': {
             fontSize: '2.3rem',
-            transition: 'none', // Sin transición para el ícono mismo
+            transition: 'none',
           },
         },
       }}
@@ -181,20 +177,21 @@ const SideBar = ({ role, width = '210px', onWidthChange }) => {
           padding: '16px 12px 12px 12px',
           borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
           marginBottom: '12px',
-          height: '56px', // Altura fija para evitar saltos
+          height: '56px',
           alignItems: 'center',
           transition: 'justify-content 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
         }}
       >
-        <Tooltip 
-          title={isCollapsed ? "Expandir menú" : "Contraer menú"} 
+        <Tooltip
+          key={isCollapsed ? 'collapsed' : 'expanded'}
+          title={isCollapsed ? "Expandir menú" : "Contraer menú"}
           placement="right"
           arrow
           componentsProps={{
             tooltip: {
               sx: {
-                fontSize: '1.2rem', // 15% más grande que el tamaño por defecto (0.7rem)
-                padding: '8px 12px', // Más padding
+                fontSize: '1.2rem',
+                padding: '8px 12px',
                 maxWidth: 'none',
               }
             }
@@ -218,82 +215,111 @@ const SideBar = ({ role, width = '210px', onWidthChange }) => {
         </Tooltip>
       </Box>
 
-      <List sx={{ pt: 0, flex: 1 }}>
-        {menuItemsToDisplay.map((item, index) => {
-          const isActive = location.pathname === item.path;
-          const isFirstItem = index === 0;
-
-          return (
-            <ListItem
-              disablePadding
-              key={item.text}
-              sx={{
-                mt: isFirstItem ? '8px' : 0,
-                mb: '2px', // Espaciado fijo entre elementos
-                display: 'block',
-                height: '56px', // Altura fija para cada item
-              }}
-            >
-              <Tooltip 
-                title={isCollapsed ? item.text : ""} 
-                placement="right"
-                arrow
-                disableHoverListener={!isCollapsed}
-                componentsProps={{
-                  tooltip: {
-                    sx: {
-                      fontSize: '1.2rem', // 15% más grande que el tamaño por defecto
-                      padding: '8px 12px', // Más padding para mejor legibilidad
-                      maxWidth: 'none', // Sin límite de ancho para textos largos
-                      whiteSpace: 'nowrap', // Evita que se corte el texto
-                    }
-                  }
+      <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+        <List sx={{ pt: 0 }}>
+          {menuItemsToDisplay.map((item, index) => {
+            const isActive = location.pathname === item.path;
+            const isFirstItem = index === 0;
+            return (
+              <ListItem
+                disablePadding
+                key={item.text}
+                sx={{
+                  mt: isFirstItem ? '8px' : 0,
+                  mb: '2px',
+                  display: 'block',
+                  height: '56px',
                 }}
               >
-                <ListItemButton
-                  onClick={() => {
-                    if (!isActive) {
-                      navigate(item.path);
-                      setTimeout(() => {
-                        window.scrollTo({ top: 0, behavior: 'smooth' });
-                      }, 100);
+                <Tooltip
+                  key={isCollapsed ? `collapsed-${item.text}` : `expanded-${item.text}`}
+                  title={isCollapsed ? item.text : ""}
+                  placement="right"
+                  arrow
+                  disableHoverListener={!isCollapsed}
+                  componentsProps={{
+                    tooltip: {
+                      sx: {
+                        fontSize: '1.2rem',
+                        padding: '8px 12px',
+                        maxWidth: 'none',
+                        whiteSpace: 'nowrap',
+                      }
                     }
                   }}
-                  disabled={isActive}
-                  sx={{
-                    height: '48px', // Altura fija para el botón
-                    display: 'flex',
-                    alignItems: 'center',
-                  }}
                 >
-                  <ListItemIcon 
-                    sx={{ 
-                      justifyContent: 'center',
-                      alignItems: 'center',
+                  <ListItemButton
+                    onClick={() => {
+                      if (!isActive) {
+                        navigate(item.path);
+                        setTimeout(() => {
+                          window.scrollTo({ top: 0, behavior: 'smooth' });
+                        }, 100);
+                      }
+                    }}
+                    disabled={isActive}
+                    sx={{
+                      height: '48px',
                       display: 'flex',
+                      alignItems: 'center',
                     }}
                   >
-                    {item.icon}
-                  </ListItemIcon>
-                  {!isCollapsed && (
-                    <ListItemText 
-                      primary={item.text}
+                    <ListItemIcon
                       sx={{
-                        ml: 1, // Margen izquierdo fijo
-                        '& .MuiTypography-root': {
-                          whiteSpace: 'nowrap',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                        }
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        display: 'flex',
                       }}
-                    />
-                  )}
-                </ListItemButton>
-              </Tooltip>
-            </ListItem>
-          );
-        })}
-      </List>
+                    >
+                      {item.icon}
+                    </ListItemIcon>
+                    {!isCollapsed && (
+                      <ListItemText
+                        primary={item.text}
+                        sx={{
+                          ml: 1,
+                          '& .MuiTypography-root': {
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                          }
+                        }}
+                      />
+                    )}
+                  </ListItemButton>
+                </Tooltip>
+              </ListItem>
+            );
+          })}
+        </List>
+        <Box sx={{ flex: 1 }} />
+        {typeof window !== 'undefined' && !isCollapsed && createPortal(
+          <Box
+            sx={{
+              position: 'fixed',
+              left: 0,
+              bottom: 24, // 24px sobre el borde inferior de la ventana
+              width: currentWidth,
+              zIndex: 1000, // Menor que la BottomBar
+              textAlign: 'center',
+              fontSize: '0.85rem',
+              color: '#FFFFFF',
+              letterSpacing: '0.5px',
+              fontWeight: 400,
+              userSelect: 'none',
+              pointerEvents: 'none',
+              display: { xs: 'none', md: 'flex' },
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 1.2,
+            }}
+          >
+            <InfoIcon sx={{ fontSize: '1em', mr: 0.5, color: '#90caf9', verticalAlign: 'middle' }} />
+            Versión 1.0.0
+          </Box>,
+          document.body
+        )}
+      </Box>
     </Box>
   );
 };

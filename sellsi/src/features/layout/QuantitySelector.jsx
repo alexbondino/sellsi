@@ -277,9 +277,9 @@ const QuantitySelector = ({
           <QuantityInput />
           <DecrementButton />
 
-          {showStockLimit && (
+          {showStockLimit && stockText && (
             <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
-              {stockText || `${max} disponibles`}
+              {stockText}
             </Typography>
           )}
         </Box>
@@ -321,9 +321,9 @@ const QuantitySelector = ({
           <IncrementButton />
         </Stack>
 
-        {showStockLimit && (
+        {showStockLimit && stockText && (
           <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
-            {stockText || `${max} disponibles`}
+            {stockText}
           </Typography>
         )}
       </Box>

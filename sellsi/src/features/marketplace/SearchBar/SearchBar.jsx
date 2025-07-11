@@ -4,7 +4,7 @@
 // - Ajustar dropdown de ordenamiento
 // - Cambiar estilos del botón de filtros
 
-import React from 'react'
+import React, { useCallback } from 'react'
 import {
   TextField,
   InputAdornment,
@@ -15,6 +15,9 @@ import {
   Select,
   MenuItem,
   Badge,
+  Switch,
+  FormControlLabel,
+  Typography,
 } from '@mui/material'
 import SearchIcon from '@mui/icons-material/Search'
 import ClearIcon from '@mui/icons-material/Clear'
@@ -38,7 +41,8 @@ const useDebounce = (value, delay) => {
   return debouncedValue
 }
 
-const SearchBar = ({
+// ✅ OPTIMIZACIÓN: Memoización del componente SearchBar
+const SearchBar = React.memo(({
   busqueda,
   setBusqueda,
   ordenamiento,
@@ -58,30 +62,37 @@ const SearchBar = ({
     lg: 33.7,
     xl: 41,
   }, // Valores por defecto para Marketplace normal
+  showFiltersButton = true,
+  // ✅ NUEVAS PROPS: Para el switch de vistas
+  isProviderView = false,
+  onToggleProviderView = () => {},
+  hasSideBar = false, // Para determinar si mostrar el switch
 }) => {
   // ✅ OPTIMIZACIÓN: Estado local para el input con debouncing
   const [localBusqueda, setLocalBusqueda] = React.useState(busqueda)
   const debouncedBusqueda = useDebounce(localBusqueda, 300) // 300ms delay
+
+  // ✅ OPTIMIZACIÓN: Estado local simplificado para el switch
+  const [localProviderView, setLocalProviderView] = React.useState(isProviderView);
 
   // ✅ OPTIMIZACIÓN: Sincronizar el valor debounced con el estado global
   React.useEffect(() => {
     if (debouncedBusqueda !== busqueda) {
       setBusqueda(debouncedBusqueda)
     }
-  }, [debouncedBusqueda, setBusqueda, busqueda])
+  }, [debouncedBusqueda, setBusqueda])
 
-  // ✅ OPTIMIZACIÓN: Sincronizar cambios externos
+  // ✅ OPTIMIZACIÓN: Sincronizar cambios externos - SIMPLIFICADO
   React.useEffect(() => {
-    if (busqueda !== localBusqueda) {
-      setLocalBusqueda(busqueda)
-    }
-  }, [busqueda])
+    setLocalBusqueda(busqueda);
+  }, [busqueda]);
 
-  // ✅ MEJORA DE RENDIMIENTO: Memoización del handler de limpiar búsqueda
-  const handleClear = React.useCallback(() => {
-    setLocalBusqueda('')
-    setBusqueda('')
-  }, [setBusqueda])
+  // ✅ OPTIMIZACIÓN: Sincronizar el estado local del switch con el prop externo SOLO cuando sea diferente
+  React.useEffect(() => {
+    if (localProviderView !== isProviderView) {
+      setLocalProviderView(isProviderView);
+    }
+  }, [isProviderView, localProviderView]);
 
   // ✅ MEJORA DE RENDIMIENTO: Handler optimizado para cambio de búsqueda
   const handleSearchChange = React.useCallback((e) => {
@@ -98,20 +109,38 @@ const SearchBar = ({
   const handleToggleFilters = React.useCallback(() => {
     onToggleFilters() // Llama la función original para desktop
   }, [onToggleFilters])
+
+  // ✅ OPTIMIZACIÓN: Handler para el switch de vistas - CON memoización optimizada
+  const handleToggleView = React.useCallback(() => {
+    console.log('🔄 SearchBar: handleToggleView called, current localProviderView:', localProviderView);
+    
+    // Actualizar estado local inmediatamente
+    const newValue = !localProviderView;
+    setLocalProviderView(newValue);
+    
+    // Llamar al handler externo
+    onToggleProviderView();
+  }, [localProviderView, onToggleProviderView]);
+
+  // ✅ DEBUG: Log para verificar que isProviderView se actualiza - MEMOIZADO
+  React.useEffect(() => {
+    console.log('🔄 SearchBar: isProviderView changed to:', isProviderView);
+  }, [isProviderView]);
+
+  // ✅ DEBUG: Log para verificar cambios en localProviderView - MEMOIZADO
+  React.useEffect(() => {
+    console.log('🔄 SearchBar: localProviderView changed to:', localProviderView);
+  }, [localProviderView]);
   // ✅ MEJORA DE RENDIMIENTO: Memoización de estilos del contenedor principal
-  const containerStyles = React.useMemo(
-    () => ({
-      display: 'flex',
-      gap: { xs: 0.5, sm: 0.5, md: 1 }, // ✅ Gap más pequeño en móviles
-      alignItems: 'center',
-      width: '100%',
-      flexDirection: 'row', // ✅ SIEMPRE en fila para xs/sm/md
-      py: { xs: 0, md: 0.5 }, // 🔽 Padding vertical superior reducido en mobile
-      // ✅ Usar prop searchBarMarginLeft para permitir diferentes valores
-      marginLeft: searchBarMarginLeft,
-    }),
-    [searchBarMarginLeft]
-  )
+  const containerStyles = {
+    display: 'flex',
+    gap: { xs: 0.5, sm: 0.5, md: 1 },
+    alignItems: 'center',
+    width: '100%',
+    flexDirection: 'row',
+    py: { xs: 0, md: 0.5 },
+    marginLeft: searchBarMarginLeft,
+  }
 
   // ✅ MEJORA DE RENDIMIENTO: Memoización de estilos del TextField - Estáticos
   const textFieldStyles = React.useMemo(
@@ -170,17 +199,21 @@ const SearchBar = ({
       endAdornment: localBusqueda && (
         <InputAdornment position="end">
           <IconButton
-            onClick={handleClear}
+            onClick={() => {
+              setLocalBusqueda('');
+              setBusqueda('');
+            }}
             edge="end"
             size="small"
             aria-label="limpiar búsqueda"
+            sx={{ mr: 0.5 }}
           >
             <ClearIcon fontSize="small" />
           </IconButton>
         </InputAdornment>
       ),
     }),
-    [localBusqueda, handleClear]
+    [localBusqueda, setBusqueda]
   )
 
   // ✅ OPTIMIZACIÓN: Memoización de MenuProps para Select
@@ -210,6 +243,13 @@ const SearchBar = ({
     }),
     []
   )
+
+  // ✅ LOG TEMPORAL: Para debuggear el switch - MEMOIZADO
+  const debugInfo = React.useMemo(() => {
+    console.log('🔍 SearchBar render - isProviderView:', isProviderView);
+    return isProviderView;
+  }, [isProviderView]);
+
   return (
     <Box sx={containerStyles}>
       {/* Barra de búsqueda - Más compacta */}
@@ -217,66 +257,121 @@ const SearchBar = ({
         size="small" // ✅ Hacer más pequeña
         value={localBusqueda}
         onChange={handleSearchChange}
-        placeholder="Buscar productos..."
+        placeholder={localProviderView ? "Buscar proveedores..." : "Buscar productos..."}
         variant="outlined"
         InputProps={inputProps}
         sx={textFieldStyles}
       />
-      {/* Selector de ordenamiento - Más compacto */}
-      <FormControl sx={formControlStyles}>
-        <Select
-          value={ordenamiento}
-          onChange={handleSortChange}
-          displayEmpty
-          startAdornment={
-            <InputAdornment position="start">
-              <SortIcon color="action" fontSize="small" />
-            </InputAdornment>
-          }
-          MenuProps={selectMenuProps}
-          sx={selectStyles}
-        >
-          {sortOptions.map((option) => (
-            <MenuItem key={option.value} value={option.value}>
-              {option.label}
-            </MenuItem>
-          ))}
-        </Select>
-      </FormControl>
-      {/* Botón de filtros - Optimizado para móviles */}
-      <Button
-        size="small"
-        variant={buttonVariantStyles.variant}
-        onClick={handleToggleFilters}
-        sx={buttonBaseStyles}
-      >
-        {/* Solo icono en xs y sm, texto completo en md+ */}
+      {/* Selector de ordenamiento - Más compacto - Oculto en vista de proveedores */}
+      {!localProviderView && (
+        <FormControl sx={formControlStyles}>
+          <Select
+            value={ordenamiento}
+            onChange={handleSortChange}
+            displayEmpty
+            startAdornment={
+              <InputAdornment position="start">
+                <SortIcon color="action" fontSize="small" />
+              </InputAdornment>
+            }
+            MenuProps={selectMenuProps}
+            sx={selectStyles}
+          >
+            {sortOptions.map((option) => (
+              <MenuItem key={option.value} value={option.value}>
+                {option.label}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+      )}
+      {/* Switch de vista Productos/Proveedores - Solo para marketplace con sidebar */}
+      {hasSideBar && (
         <Box
           sx={{
-            display: { xs: 'none', sm: 'none', md: 'flex' },
+            display: 'flex',
             alignItems: 'center',
-            gap: 1,
+            flexShrink: 0,
+            ml: { xs: 0.5, md: 1 },
+            mr: { xs: 0.5, md: 1 },
           }}
         >
-          <Badge color="error" variant="dot" invisible={!hayFiltrosActivos}>
-            <FilterAltIcon fontSize="small" />
-          </Badge>
-          Filtros
+          <FormControlLabel
+            control={
+              <Switch
+                checked={localProviderView}
+                onChange={handleToggleView}
+                size="small"
+                color="primary"
+                onClick={() => console.log('🔍 Switch clicked!')}
+              />
+            }
+            label={
+              <Typography
+                variant="caption"
+                sx={{
+                  fontSize: { xs: '0.65rem', sm: '0.7rem', md: '0.75rem' },
+                  fontWeight: 500,
+                  color: 'text.secondary',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {localProviderView ? 'Proveedores' : 'Productos'}
+              </Typography>
+            }
+            labelPlacement="top"
+            sx={{
+              m: 0,
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: 0.25,
+              '& .MuiFormControlLabel-label': {
+                fontSize: { xs: '0.65rem', sm: '0.7rem', md: '0.75rem' },
+              },
+            }}
+          />
         </Box>
-        {/* Solo icono en xs y sm */}
-        <Box
-          sx={{
-            display: { xs: 'flex', sm: 'flex', md: 'none' },
-            justifyContent: 'center',
-          }}
+      )}
+
+      {/* Botón de filtros - Optimizado para móviles */}
+      {showFiltersButton !== false && (
+        <Button
+          size="small"
+          variant={buttonVariantStyles.variant}
+          onClick={handleToggleFilters}
+          sx={buttonBaseStyles}
         >
-          <Badge color="error" variant="dot" invisible={!hayFiltrosActivos}>
-            <FilterAltIcon fontSize="small" />
-          </Badge>
-        </Box>
-      </Button>
+          {/* Solo icono en xs y sm, texto completo en md+ */}
+          <Box
+            sx={{
+              display: { xs: 'none', sm: 'none', md: 'flex' },
+              alignItems: 'center',
+              gap: 1,
+            }}
+          >
+            <Badge color="error" variant="dot" invisible={!hayFiltrosActivos}>
+              <FilterAltIcon fontSize="small" />
+            </Badge>
+            Filtros
+          </Box>
+          {/* Solo icono en xs y sm */}
+          <Box
+            sx={{
+              display: { xs: 'flex', sm: 'flex', md: 'none' },
+              justifyContent: 'center',
+            }}
+          >
+            <Badge color="error" variant="dot" invisible={!hayFiltrosActivos}>
+              <FilterAltIcon fontSize="small" />
+            </Badge>
+          </Box>
+        </Button>
+      )}
     </Box>
   )
-}
+});
 
-export default React.memo(SearchBar)
+// ✅ OPTIMIZACIÓN: DisplayName para debugging
+SearchBar.displayName = 'SearchBar';
+
+export default SearchBar

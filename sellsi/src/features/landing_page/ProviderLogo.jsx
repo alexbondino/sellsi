@@ -29,32 +29,21 @@ const ProviderLogo = React.memo(({ provider }) => (
     elevation={2}
     sx={{
       width: { xs: 144, sm: 144, md: 162, lg: 180, xl: 180 },
-      height: { xs: 144, sm: 144, md: 162, lg: 180, xl: 180 }, // Altura igual al ancho para todas las cards
+      height: { xs: 144, sm: 144, md: 162, lg: 180, xl: 180 },
       borderRadius: { xs: 2, sm: 3, md: 4, lg: 4, xl: 4 },
       overflow: 'hidden',
       background: 'transparent',
       border: '2px solid #f0f4f8',
-      transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+      transition: 'all 0.3s ease',
       cursor: 'pointer',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
+      boxShadow: '0 4px 15px rgba(0,0,0,0.2)',
       '&:hover': {
-        transform: {
-          xs: 'translateY(-4px) scale(1.02)',
-          sm: 'translateY(-6px) scale(1.02)',
-          md: 'translateY(-8px) scale(1.02)',
-          lg: 'translateY(-8px) scale(1.02)',
-          xl: 'translateY(-8px) scale(1.02)',
-        },
-        boxShadow: {
-          xs: '0 8px 20px rgba(0,0,0,0.08)',
-          sm: '0 12px 25px rgba(0,0,0,0.10)',
-          md: '0 16px 30px rgba(0,0,0,0.12)',
-          lg: '0 20px 40px rgba(0,0,0,0.12)',
-          xl: '0 20px 40px rgba(0,0,0,0.12)',
-        },
-        borderColor: '#e2e8f0',
+        transform: 'translateY(-2px)',
+        boxShadow: '0 6px 20px rgba(0,0,0,0.25)',
+        borderColor: '#ffffff',
         background: 'transparent',
       },
     }}
@@ -63,20 +52,23 @@ const ProviderLogo = React.memo(({ provider }) => (
       sx={{
         width: '100%',
         height: '100%',
-        p: 1, // Padding para que el logo no ocupe el 100%
+        p: 0, // Sin padding para centrado perfecto
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         position: 'relative', // Necesario para overlay
+        '&:last-child': {
+          paddingBottom: 0, // Eliminar padding bottom por defecto de CardContent
+        },
       }}
     >
       <img
         src={provider.src}
         alt={provider.alt}
         style={{
-          width: '100%',
-          height: '100%',
-          objectFit: 'contain', // Fuerza a que la imagen llene todo el espacio de la card
+          width: '85%', // Reducir ligeramente para mejor presentación
+          height: '85%', // Reducir ligeramente para mejor presentación
+          objectFit: 'contain', // Mantener aspecto de la imagen
           display: 'block',
           zIndex: 1,
           position: 'relative',

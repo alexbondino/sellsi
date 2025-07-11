@@ -93,11 +93,13 @@ const BuyerPerformance = () => {
       <Container maxWidth="xl" disableGutters>
         <Typography
           variant="h4"
-          component="h1"
-          sx={{ mb: 4, fontWeight: 'bold' }}
+          fontWeight={600}
+          color="primary.main"
+          gutterBottom
+          sx={{ mb: 4 }}
         >
-            Mi Performance
-          </Typography>
+          Mi Performance
+        </Typography>
           {/* Estadísticas principales */}{' '}
           <Grid container spacing={3} sx={{ mb: 4 }}>
             <Grid size={{ xs: 12, sm: 6, md: 3 }}>

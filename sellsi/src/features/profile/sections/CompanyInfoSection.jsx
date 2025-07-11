@@ -2,7 +2,7 @@ import React from 'react';
 import { Box, Typography, TextField, Button } from '@mui/material';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import ProfileSwitch from '../ProfileSwitch';
-import { validateRut, cleanRut } from '../../../utils/validators';
+import { validateRut, cleanRut, formatRut } from '../../../utils/validators';
 
 /**
  * Sección de Información de Empresa del perfil
@@ -55,11 +55,15 @@ const CompanyInfoSection = ({
         <TextField
           label="RUT"
           value={formData.rut || ''}
-          onChange={(e) => onFieldChange('rut', cleanRut(e.target.value))}
+          onChange={(e) => {
+            const raw = cleanRut(e.target.value);
+            const formatted = formatRut(raw);
+            onFieldChange('rut', formatted);
+          }}
           fullWidth
           variant="outlined"
           size="small"
-          placeholder="12345678-5"
+          placeholder="12.345.678-5"
           error={!validateRut(formData.rut)}
           helperText={!validateRut(formData.rut) ? 'Formato de RUT inválido (solo números, guion y dígito verificador)' : ''}
         />
@@ -82,6 +86,26 @@ const CompanyInfoSection = ({
             Esta será tu función primaria. Cuando inicies sesión, verás el panel según tu función.
           </Typography>
         </Box>
+        {/* Descripción proveedor solo si el rol es supplier */}
+        {formData.role === 'supplier' && (
+          <TextField
+            label="Descripción breve del proveedor"
+            variant="outlined"
+            fullWidth
+            multiline
+            rows={3}
+            value={formData.descripcionProveedor || ''}
+            onChange={e => {
+              const value = e.target.value;
+              if (value.length <= 200) {
+                onFieldChange('descripcionProveedor', value);
+              }
+            }}
+            placeholder="Una descripción resumida del tipo de productos que comercializas..."
+            helperText={`Una descripción resumida del tipo de productos que comercializas. Esta información ayudará a los compradores a identificar rápidamente tu oferta. (${(formData.descripcionProveedor || '').length}/200)`}
+            sx={{ mt: 2, '.MuiOutlinedInput-root': { borderRadius: 2 } }}
+          />
+        )}
       </Box>
     </Box>
   );

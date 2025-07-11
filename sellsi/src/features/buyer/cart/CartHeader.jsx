@@ -87,26 +87,18 @@ const CartHeader = ({
           <Box sx={{ textAlign: { xs: 'center', md: 'left' }, position: 'relative' }}>
             {' '}
             <Typography
-              variant="h3"
+              variant="h4"
               component="h1"
-              sx={{
-                fontWeight: 'bold',
-                background: isSelectionMode
-                  ? 'linear-gradient(45deg, #ff6b6b, #ee5a24)'
-                  : '#000000',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                mb: 1,
-                display: 'flex',
-                alignItems: 'center',
-                gap: 1,
-              }}
+              fontWeight={600}
+              color="primary.main"
+              gutterBottom
+              sx={{ mb: 4, display: 'flex', alignItems: 'center', gap: 1 }}
             >
               {!isSelectionMode && (
                 <ShoppingCartIcon sx={{ fontSize: 40, color: '#1976d2', mr: 1 }} />
               )}
               {isSelectionMode ? 'Seleccionar Items' : 'Mi Carrito'}
-            </Typography>{' '}
+            </Typography>
             <Box
               sx={{
                 display: 'flex',
@@ -375,7 +367,7 @@ const CartHeader = ({
         onClose={() => setOpenDeleteModal(false)}
         onSubmit={onDeleteSelected}
         type={MODAL_TYPES.DELETE}
-        title="¿Eliminar productos seleccionados?"
+        title="Eliminar productos seleccionados"
         submitButtonText="Eliminar"
         cancelButtonText="Cancelar"
         showCancelButton

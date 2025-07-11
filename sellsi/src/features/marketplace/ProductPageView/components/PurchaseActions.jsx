@@ -17,6 +17,7 @@ const PurchaseActions = ({
   product,
   tiers = [],
   isLoggedIn = false,
+  onQuantityChange,
 }) => {
   const minimumPurchase = product.minimum_purchase || product.compraMinima || 1
   const [quantity, setQuantity] = useState(minimumPurchase)
@@ -33,6 +34,7 @@ const PurchaseActions = ({
     setInputValue(newQuantity.toString())
     if (!isNaN(newQuantity) && newQuantity >= minimumPurchase && newQuantity <= stock) {
       setQuantity(newQuantity)
+      if (onQuantityChange) onQuantityChange(newQuantity)
     }
   }
   const handleAddToCart = () => {
@@ -90,6 +92,7 @@ const PurchaseActions = ({
               if (value > stock) value = stock
               setInputValue(value.toString())
               setQuantity(value)
+              if (onQuantityChange) onQuantityChange(value)
             }}
             inputProps={{
               min: minimumPurchase,
@@ -116,10 +119,6 @@ const PurchaseActions = ({
           >
             <Add fontSize="small" />
           </IconButton>
-
-          <Typography variant="body2" color="text.secondary" sx={{ ml: 2 }}>
-            {stock} disponibles
-          </Typography>
         </Box>
       </Box>
       <Divider sx={{ mb: 3 }} /> {/* Action Buttons */}

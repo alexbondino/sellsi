@@ -11,12 +11,16 @@
 // Componentes principales
 export { default as AdminLogin } from './components/AdminLogin';
 export { default as AdminPanelTable } from './components/AdminPanelTable';
+export { default as UserManagementTable } from './components/UserManagementTable';
+export { default as AdminDashboard } from './components/AdminDashboard';
+export { default as AdminStatCard } from './components/AdminStatCard';
 
 // Modales
 export { default as ConfirmarPagoModal } from './modals/ConfirmarPagoModal';
 export { default as RechazarPagoModal } from './modals/RechazarPagoModal';
 export { default as DevolverPagoModal } from './modals/DevolverPagoModal';
 export { default as DetallesSolicitudModal } from './modals/DetallesSolicitudModal';
+export { default as UserBanModal } from './modals/UserBanModal';
 
 // Hooks
 export { useAdminLogin } from './hooks';

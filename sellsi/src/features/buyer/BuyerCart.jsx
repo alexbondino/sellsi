@@ -27,7 +27,7 @@ import {
 import { motion, AnimatePresence, useAnimation } from 'framer-motion';
 import { toast } from 'react-hot-toast';
 import { useInView } from 'react-intersection-observer';
-import confetti from 'canvas-confetti';
+// import confetti from 'canvas-confetti';
 import debounce from 'lodash.debounce';
 import { ThemeProvider } from '@mui/material/styles';
 import SideBarProvider from '../layout/SideBar';
@@ -88,47 +88,7 @@ const CustomToast = ({ message, type, duration = 3000 }) => {
   return null;
 };
 
-// Componente de animación de confetti
-const ConfettiEffect = ({ trigger }) => {
-  useEffect(() => {
-    if (trigger) {
-      const celebrate = () => {
-        confetti({
-          particleCount: 100,
-          spread: 70,
-          origin: { y: 0.6 },
-          colors: ['#FFD700', '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4'],
-        });
 
-        // Segundo disparo después de 150ms
-        setTimeout(() => {
-          confetti({
-            particleCount: 50,
-            angle: 60,
-            spread: 55,
-            origin: { x: 0 },
-            colors: ['#FFD700', '#FF6B6B'],
-          });
-        }, 150);
-
-        // Tercer disparo después de 300ms
-        setTimeout(() => {
-          confetti({
-            particleCount: 50,
-            angle: 120,
-            spread: 55,
-            origin: { x: 1 },
-            colors: ['#4ECDC4', '#45B7D1'],
-          });
-        }, 300);
-      };
-
-      celebrate();
-    }
-  }, [trigger]);
-
-  return null;
-};
 
 // ============================================================================
 // COMPONENTE PRINCIPAL ULTRA-PREMIUM
@@ -157,7 +117,7 @@ const BuyerCart = () => {
   const isInWishlist = useCartStore(state => state.isInWishlist);
 
   // ===== ESTADOS LOCALES OPTIMIZADOS =====
-  const [showConfetti, setShowConfetti] = useState(false);
+  // const [showConfetti, setShowConfetti] = useState(false);
   const [lastAction, setLastAction] = useState(null);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [deliveryDate, setDeliveryDate] = useState(null);
@@ -381,8 +341,7 @@ const BuyerCart = () => {
     item => {
       if (!isInWishlist(item.id)) {
         addToWishlist(item);
-        setShowConfetti(true);
-        setTimeout(() => setShowConfetti(false), 200); // OPTIMIZADO: 200ms
+        // Confetti eliminado
       } else {
         removeFromWishlist(item.id);
       }
@@ -447,14 +406,7 @@ const BuyerCart = () => {
     if (couponInput.trim()) {
       const beforeTotal = getTotal();
       applyCoupon(couponInput.trim());
-
-      setTimeout(() => {
-        const afterTotal = getTotal();
-        if (afterTotal < beforeTotal) {
-          setShowConfetti(true);
-          setTimeout(() => setShowConfetti(false), 200); // OPTIMIZADO: 200ms
-        }
-      }, 10); // OPTIMIZADO: 10ms en lugar de 100ms
+      // Confetti eliminado
     }
   }, [couponInput, applyCoupon, getTotal]);
 
@@ -465,17 +417,13 @@ const BuyerCart = () => {
       // Simular proceso de checkout
       await new Promise(resolve => setTimeout(resolve, 100)); // OPTIMIZADO: 100ms
 
-      setShowConfetti(true);
       toast.success('¡Compra realizada con éxito!', {
         icon: '🎉',
         duration: 5000,
       });
 
-      setTimeout(() => {
-        setShowConfetti(false);
-        // Clear the cart after successful checkout
-        clearCart();
-      }, 500); // OPTIMIZADO: 500ms en lugar de 3000ms
+      // Clear the cart after successful checkout
+      clearCart();
     } catch (error) {
       toast.error('Error en el proceso de compra', { icon: '❌' });
     } finally {
@@ -526,15 +474,10 @@ const BuyerCart = () => {
       removeItem(itemId);
     });
 
-    // Se elimina el toast aquí para evitar duplicados, solo se muestra desde el store
-
     // Limpiar selección y salir del modo selección
     setSelectedItems([]);
     setIsSelectionMode(false);
-
-    // Efecto confetti para la eliminación múltiple
-    setShowConfetti(true);
-    setTimeout(() => setShowConfetti(false), 300); // OPTIMIZADO: 300ms
+    // Confetti eliminado
   }, [selectedItems, items, removeItem]);
 
   // Limpiar selecciones cuando cambie la lista de items
@@ -612,82 +555,95 @@ const BuyerCart = () => {
           pt: { xs: 9, md: 10 },
           px: 3,
           pb: 3,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          // Agrega margen izquierdo solo en desktop (md+)
+          ml: { xs: 0, md: 8, lg: 24, xl: 34 },
+          transition: 'margin-left 0.3s',
         }}
       >
-      {/* <Toaster position="top-right" toastOptions={{ style: { marginTop: 72 } }} /> */}
-      <ConfettiEffect trigger={showConfetti} />
-      <Container maxWidth="xl" disableGutters>
+        {/* <Toaster position="top-right" toastOptions={{ style: { marginTop: 72 } }} /> */}
+        {/* ConfettiEffect eliminado */}
+        <Container maxWidth="xl" disableGutters sx={{ px: { xs: 0, md: 2 } }}>
+          {/* Header con estadísticas */}{' '}
+          <motion.div
+            ref={ref}
+            variants={containerVariants}
+            initial="hidden"
+            animate={controls}
+          >
             {/* Header con estadísticas */}{' '}
-            <motion.div
-              ref={ref}
-              variants={containerVariants}
-              initial="hidden"
-              animate={controls}
-            >
-              {/* Header con estadísticas */}{' '}
-              <CartHeader
-                cartStats={cartStats}
-                formatPrice={formatPrice}
-                discount={cartCalculations.discount}
-                wishlistLength={wishlist.length}
-                onUndo={undo}
-                onRedo={redo}
-                onClearCart={clearCart}
-                onToggleWishlist={() => setShowWishlist(!showWishlist)}
-                showWishlist={showWishlist}
-                undoInfo={getUndoInfo()}
-                redoInfo={getRedoInfo()}
-                historyInfo={getHistoryInfo()}
-                // Nuevas props para selección múltiple
-                isSelectionMode={isSelectionMode}
-                selectedItems={selectedItems}
-                onToggleSelectionMode={handleToggleSelectionMode}
-                onSelectAll={handleSelectAll}
-                onDeleteSelected={handleDeleteSelected}
-                totalItems={items.length}
-              />
-              {/* Barra de progreso hacia envío gratis */}
-              {/* <ShippingProgressBar
+            <CartHeader
+              cartStats={cartStats}
+              formatPrice={formatPrice}
+              discount={cartCalculations.discount}
+              wishlistLength={wishlist.length}
+              onUndo={undo}
+              onRedo={redo}
+              onClearCart={clearCart}
+              onToggleWishlist={() => setShowWishlist(!showWishlist)}
+              showWishlist={showWishlist}
+              undoInfo={getUndoInfo()}
+              redoInfo={getRedoInfo()}
+              historyInfo={getHistoryInfo()}
+              // Nuevas props para selección múltiple
+              isSelectionMode={isSelectionMode}
+              selectedItems={selectedItems}
+              onToggleSelectionMode={handleToggleSelectionMode}
+              onSelectAll={handleSelectAll}
+              onDeleteSelected={handleDeleteSelected}
+              totalItems={items.length}
+            />
+            {/* Barra de progreso hacia envío gratis */}
+            {/* <ShippingProgressBar
                 subtotal={cartCalculations.subtotal}
                 formatPrice={formatPrice}
                 itemVariants={itemVariants}
               /> */}
-              <Grid container spacing={15}>
-                {/* Lista de productos */}
-                <Grid
-                  item
-                  sx={{
-                    xs: 12,
-                    md: 7,
-                    lg: 6.5,
-                    xl: 5.3,
-                  }}
-                >
-                  <AnimatePresence>
-                    {items.map((item, index) => (
-                      <CartItem
-                        key={
-                          item.id ||
-                          item.product_id ||
-                          item.cart_items_id ||
-                          `item-${index}`
-                        }
-                        item={item}
-                        formatPrice={formatPrice}
-                        updateQuantity={handleQuantityChange}
-                        isInWishlist={isInWishlist}
-                        handleAddToWishlist={handleAddToWishlist}
-                        handleRemoveWithAnimation={handleRemoveWithAnimation}
-                        itemVariants={itemVariants}
-                        onShippingChange={handleProductShippingChange}
-                        // Nuevas props para selección múltiple
-                        isSelectionMode={isSelectionMode}
-                        isSelected={selectedItems.includes(item.id)}
-                        onToggleSelection={handleToggleItemSelection}
-                      />
-                    ))}
-                  </AnimatePresence>
-                  {/* Productos recomendados */}
+            <Grid container spacing={{ xs: 2, md: 2, lg: 6, xl: 6 }}>
+              {/* Lista de productos */}
+              <Grid
+                item
+                xs={12}
+                md={6}
+                lg={6}
+                xl={6}
+                sx={{
+                  width: {
+                    xs: '100%',
+                    md: '68%',
+                    lg: '65%',
+                    xl: '65%',
+                  },
+                }}
+              >
+                <AnimatePresence>
+                  {items.map((item, index) => (
+                    <CartItem
+                      key={
+                        item.id ||
+                        item.product_id ||
+                        item.cart_items_id ||
+                        `item-${index}`
+                      }
+                      item={item}
+                      formatPrice={formatPrice}
+                      updateQuantity={handleQuantityChange}
+                      isInWishlist={isInWishlist}
+                      handleAddToWishlist={handleAddToWishlist}
+                      handleRemoveWithAnimation={handleRemoveWithAnimation}
+                      itemVariants={itemVariants}
+                      onShippingChange={handleProductShippingChange}
+                      // Nuevas props para selección múltiple
+                      isSelectionMode={isSelectionMode}
+                      isSelected={selectedItems.includes(item.id)}
+                      onToggleSelection={handleToggleItemSelection}
+                    />
+                  ))}
+                </AnimatePresence>
+                {/* Productos recomendados */}
+                {false && (
                   <motion.div variants={itemVariants}>
                     <Accordion sx={{ mt: 3, borderRadius: 2 }}>
                       <AccordionSummary expandIcon={<ExpandMoreIcon />}>
@@ -710,46 +666,47 @@ const BuyerCart = () => {
                       </AccordionDetails>
                     </Accordion>
                   </motion.div>
-                </Grid>
-                {/* Panel lateral - Resumen y opciones */}
-                <Grid
-                  item
-                  sx={{
-                    xs: 12,
-                    lg: 5.5,
-                    xl: 6.7,
-                  }}
+                )}
+              </Grid>
+              {/* Panel lateral - Resumen y opciones */}
+              <Grid
+                item
+                sx={{
+                  xs: 12,
+                  lg: 5.5,
+                  xl: 6.7,
+                }}
+              >
+                <Box
+                  sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}
                 >
-                  <Box
-                    sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}
-                  >
-                    {/* Resumen del pedido modularizado (sin códigos de descuento) */}
-                    <motion.div variants={itemVariants}>
-                      <OrderSummary
-                        subtotal={cartCalculations.subtotal}
-                        discount={0} // Ocultamos descuento por código
-                        shippingCost={productShippingCost}
-                        total={cartCalculations.subtotal + productShippingCost}
-                        cartStats={cartStats}
-                        deliveryDate={deliveryDate}
-                        appliedCoupons={[]} // Ocultamos cupones
-                        couponInput={''} // Ocultamos input de cupones
-                        isCheckingOut={isCheckingOut}
-                        // Options
-                        availableCodes={[]} // Ocultamos lista de códigos
-                        // Functions
-                        formatPrice={formatPrice}
-                        formatDate={formatDate}
-                        setCouponInput={() => {}} // No-op
-                        onApplyCoupon={() => {}} // No-op
-                        onRemoveCoupon={() => {}} // No-op
-                        onCheckout={handleCheckout}
-                        // Puedes agregar una prop extra en OrderSummary para ocultar el input de cupones si existe
-                        hideCouponInput={true}
-                      />
-                    </motion.div>
-                    {/* Calculadora de ahorros modularizada */}
-                    {/*
+                  {/* Resumen del pedido modularizado (sin códigos de descuento) */}
+                  <motion.div variants={itemVariants}>
+                    <OrderSummary
+                      subtotal={cartCalculations.subtotal}
+                      discount={0} // Ocultamos descuento por código
+                      shippingCost={productShippingCost}
+                      total={cartCalculations.subtotal + productShippingCost}
+                      cartStats={cartStats}
+                      deliveryDate={deliveryDate}
+                      appliedCoupons={[]} // Ocultamos cupones
+                      couponInput={''} // Ocultamos input de cupones
+                      isCheckingOut={isCheckingOut}
+                      // Options
+                      availableCodes={[]} // Ocultamos lista de códigos
+                      // Functions
+                      formatPrice={formatPrice}
+                      formatDate={formatDate}
+                      setCouponInput={() => {}} // No-op
+                      onApplyCoupon={() => {}} // No-op
+                      onRemoveCoupon={() => {}} // No-op
+                      onCheckout={handleCheckout}
+                      // Puedes agregar una prop extra en OrderSummary para ocultar el input de cupones si existe
+                      hideCouponInput={true}
+                    />
+                  </motion.div>
+                  {/* Calculadora de ahorros modularizada */}
+                  {/*
                     <motion.div variants={itemVariants}>
                       <SavingsCalculator
                         subtotal={cartCalculations.subtotal}
@@ -759,18 +716,18 @@ const BuyerCart = () => {
                       />
                     </motion.div>
                     */}
-                  </Box>
-                </Grid>
+                </Box>
               </Grid>
-              {/* Wishlist modularizada */}
-              <WishlistSection
-                showWishlist={showWishlist}
-                wishlist={wishlist}
-                formatPrice={formatPrice}
-                moveToCart={moveToCart}
-                removeFromWishlist={removeFromWishlist}
-              />
-            </motion.div>
+            </Grid>
+            {/* Wishlist modularizada */}
+            <WishlistSection
+              showWishlist={showWishlist}
+              wishlist={wishlist}
+              formatPrice={formatPrice}
+              moveToCart={moveToCart}
+              removeFromWishlist={removeFromWishlist}
+            />
+          </motion.div>
         </Container>
       </Box>
     </ThemeProvider>

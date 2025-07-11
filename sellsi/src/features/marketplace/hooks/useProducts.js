@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../../../services/supabase'
+import { filterActiveProducts } from '../../../utils/productActiveStatus'
 
 const USE_MOCKS = import.meta.env.VITE_USE_MOCKS === 'true'
 
@@ -30,27 +31,33 @@ export function useProducts() {
           if (data && data.length > 0) {
             // Obtener todos los productids y supplier_ids
             const productIds = data.map((p) => p.productid)
-            const supplierIds = [...new Set(data.map((p) => p.supplier_id))]            // Traer todos los tramos de precio de una vez
+            const supplierIds = [...new Set(data.map((p) => p.supplier_id))]
+            
+            // Traer todos los tramos de precio de una vez
             const { data: tiersData } = await supabase
               .from('product_quantity_ranges')
               .select('*')
-              .in('product_id', productIds)// Traer nombres de proveedores
+              .in('product_id', productIds)
+            
+            // Traer nombres de proveedores
             let usersMap = {}
             if (supplierIds.length > 0) {
               const supplierIdsStr = supplierIds.map(id => String(id).trim())
               const { data: usersData, error: usersError } = await supabase
                 .from('users')
-                .select('user_id, user_nm')
+                .select('user_id, user_nm, logo_url') // ✅ AGREGAR logo_url
                 .in('user_id', supplierIdsStr)
               if (usersError) {
                 console.error('Error al consultar users:', usersError)
               }
               if (usersData) {
                 usersMap = Object.fromEntries(
-                  usersData.map((u) => [u.user_id, u.user_nm])
+                  usersData.map((u) => [u.user_id, { name: u.user_nm, logo_url: u.logo_url }]) // ✅ GUARDAR ambos campos
                 )
               }
-            }            mapped = data.map((p) => {
+            }
+            
+            mapped = data.map((p) => {
               // Obtener imagen principal
               const imagenPrincipal = p.product_images && p.product_images.length > 0 
                 ? p.product_images[0].image_url 
@@ -76,7 +83,8 @@ export function useProducts() {
                 productid: p.productid,
                 supplier_id: p.supplier_id,
                 nombre: p.productnm,
-                proveedor: usersMap[p.supplier_id] || "Proveedor no encontrado",
+                proveedor: usersMap[p.supplier_id]?.name || "Proveedor no encontrado", // ✅ USAR .name
+                supplier_logo_url: usersMap[p.supplier_id]?.logo_url, // ✅ AGREGAR logo del proveedor
                 imagen: imagenPrincipal,
                 precio: minPrice,
                 precioOriginal: p.precioOriginal || null,
@@ -88,15 +96,20 @@ export function useProducts() {
                 ventas: p.ventas || 0,
                 stock: p.productqty,
                 compraMinima: p.minimum_purchase,
+                minimum_purchase: p.minimum_purchase, // Mantener ambos nombres para compatibilidad
                 negociable: p.negociable,
+                is_active: p.is_active, // ✅ AGREGAR estado activo de BD
                 priceTiers,
                 maxPrice,
                 minPrice,
               }
             })
           }
-          setProducts(mapped)
-          setLoading(false)
+          
+          // ✅ APLICAR FILTRO DE PRODUCTOS ACTIVOS: solo mostrar productos con stock >= compra mínima
+          const activeProducts = filterActiveProducts(mapped);
+          setProducts(activeProducts);
+          setLoading(false);
         })
     }
     return () => {
@@ -106,3 +119,8 @@ export function useProducts() {
 
   return { products, loading, error }
 }
+
+// Mock products data (unchanged)
+const PRODUCTOS = [
+  // ... existing mock data would go here
+];
