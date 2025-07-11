@@ -122,15 +122,6 @@ const SearchBar = React.memo(({
     onToggleProviderView();
   }, [localProviderView, onToggleProviderView]);
 
-  // ✅ DEBUG: Log para verificar que isProviderView se actualiza - MEMOIZADO
-  React.useEffect(() => {
-    console.log('🔄 SearchBar: isProviderView changed to:', isProviderView);
-  }, [isProviderView]);
-
-  // ✅ DEBUG: Log para verificar cambios en localProviderView - MEMOIZADO
-  React.useEffect(() => {
-    console.log('🔄 SearchBar: localProviderView changed to:', localProviderView);
-  }, [localProviderView]);
   // ✅ MEJORA DE RENDIMIENTO: Memoización de estilos del contenedor principal
   const containerStyles = {
     display: 'flex',
@@ -243,12 +234,6 @@ const SearchBar = React.memo(({
     }),
     []
   )
-
-  // ✅ LOG TEMPORAL: Para debuggear el switch - MEMOIZADO
-  const debugInfo = React.useMemo(() => {
-    console.log('🔍 SearchBar render - isProviderView:', isProviderView);
-    return isProviderView;
-  }, [isProviderView]);
 
   return (
     <Box sx={containerStyles}>

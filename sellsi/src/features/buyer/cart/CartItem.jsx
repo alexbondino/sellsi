@@ -162,7 +162,7 @@ const CartItem = ({
   // Handler optimizado para cambio de cantidad
   const handleQuantityChange = React.useCallback((newQuantity) => {
     updateQuantity(item.id, newQuantity)
-  }, [item.id, productData.price_tiers, productData.basePrice, updateQuantity])
+  }, [item.id, updateQuantity])
   // Handler optimizado para agregar a wishlist
   const handleWishlistClick = React.useCallback(() => {
     handleAddToWishlist(item)

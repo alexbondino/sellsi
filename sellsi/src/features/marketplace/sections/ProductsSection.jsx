@@ -654,11 +654,6 @@ const ProductsSection = React.memo(
 
                 <Box sx={gridStyles}>
                   {visibleProducts.map(producto => {
-                    // ✅ OPTIMIZACIÓN: Log solo una vez por render, no por cada producto
-                    if (producto === visibleProducts[0]) {
-                      console.log('🔍 ProductsSection rendering:', visibleProducts.length, 'products in isProviderView:', isProviderView);
-                    }
-                    
                     return (
                     <Box
                       key={`product-${producto.id || producto.productid}`}

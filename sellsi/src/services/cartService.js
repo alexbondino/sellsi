@@ -294,7 +294,7 @@ class CartService {  /**
       return data;
 
     } catch (error) {
-      console.error('Error updating item quantity:', error);
+      console.error('🗄️ [cartService] ERROR:', error);
       throw new Error(`No se pudo actualizar la cantidad: ${error.message}`);
     }
   }
