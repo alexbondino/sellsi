@@ -148,7 +148,8 @@ class OrderService {
                 price: item.products.price,
                 category: item.products.category,
                 description: item.products.description,
-                image_url: item.products.product_images?.[0]?.image_url
+                image_url: item.products.product_images?.[0]?.image_url,
+                thumbnail_url: item.products.product_images?.[0]?.thumbnail_url // ✅ NUEVO: Agregar thumbnail_url
               }
             })),
 
@@ -349,7 +350,7 @@ class OrderService {
   async logOrderAction(orderId, action, data = {}) {
     try {
       // Esta función puede expandirse en el futuro para crear una tabla de logs
-      console.log(`📝 Acción en pedido ${orderId}: ${action}`, data);
+      // Acción en pedido
       
       // En el futuro, se puede implementar una tabla order_logs:
       // const { error } = await supabase

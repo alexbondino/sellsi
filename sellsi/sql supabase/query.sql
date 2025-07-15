@@ -2,7 +2,7 @@
 -- Table order and constraints may not be valid for execution.
 
 CREATE TABLE public.bank_info (
-  user_id uuid,
+  user_id uuid UNIQUE,
   account_holder character varying,
   bank character varying,
   account_number character varying,
@@ -12,7 +12,7 @@ CREATE TABLE public.bank_info (
   CONSTRAINT bank_info_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(user_id)
 );
 CREATE TABLE public.billing_info (
-  user_id uuid,
+  user_id uuid UNIQUE,
   business_name character varying,
   billing_rut character varying,
   business_line character varying,
@@ -31,8 +31,8 @@ CREATE TABLE public.cart_items (
   added_at timestamp with time zone DEFAULT now(),
   updated_at timestamp with time zone DEFAULT now(),
   CONSTRAINT cart_items_pkey PRIMARY KEY (cart_items_id),
-  CONSTRAINT cart_items_cart_id_fkey FOREIGN KEY (cart_id) REFERENCES public.carts(cart_id),
-  CONSTRAINT cart_items_product_id_fkey FOREIGN KEY (product_id) REFERENCES public.products(productid)
+  CONSTRAINT cart_items_product_id_fkey FOREIGN KEY (product_id) REFERENCES public.products(productid),
+  CONSTRAINT cart_items_cart_id_fkey FOREIGN KEY (cart_id) REFERENCES public.carts(cart_id)
 );
 CREATE TABLE public.carts (
   user_id uuid NOT NULL,
@@ -55,6 +55,8 @@ CREATE TABLE public.control_panel_users (
 CREATE TABLE public.product_images (
   product_id uuid NOT NULL,
   image_url text,
+  thumbnail_url text,
+  thumbnails jsonb,
   CONSTRAINT product_images_product_id_fkey FOREIGN KEY (product_id) REFERENCES public.products(productid)
 );
 CREATE TABLE public.product_quantity_ranges (
@@ -96,8 +98,8 @@ CREATE TABLE public.request_products (
   quantity integer NOT NULL,
   request_product_id uuid NOT NULL DEFAULT gen_random_uuid(),
   CONSTRAINT request_products_pkey PRIMARY KEY (request_product_id),
-  CONSTRAINT request_products_product_id_fkey FOREIGN KEY (product_id) REFERENCES public.products(productid),
-  CONSTRAINT request_products_request_id_fkey FOREIGN KEY (request_id) REFERENCES public.requests(request_id)
+  CONSTRAINT request_products_request_id_fkey FOREIGN KEY (request_id) REFERENCES public.requests(request_id),
+  CONSTRAINT request_products_product_id_fkey FOREIGN KEY (product_id) REFERENCES public.products(productid)
 );
 CREATE TABLE public.requests (
   delivery_country text NOT NULL,
@@ -125,7 +127,7 @@ CREATE TABLE public.sales (
   CONSTRAINT sales_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(user_id)
 );
 CREATE TABLE public.shipping_info (
-  user_id uuid,
+  user_id uuid UNIQUE,
   shipping_region text,
   shipping_commune text,
   shipping_address text,

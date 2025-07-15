@@ -76,8 +76,7 @@ const SideBar = ({ role, width = '210px', onWidthChange }) => {
   const hoverBackgroundColor = 'rgba(255, 255, 255, 0.15)'; // White with 15% opacity for hover
   // Define el color de fondo para el elemento activo (un tono ligeramente más claro o distinto que el fondo general)
   const activeBackgroundColor = '#4d4d4d'; // A slightly lighter grey for the active item
-  // Define el color de hover para el elemento activo (aún más oscuro)
-  const activeHoverBackgroundColor = '#555555'; // A slightly darker grey for active item on hover
+
 
   let menuItemsToDisplay = [];
 
@@ -136,14 +135,16 @@ const SideBar = ({ role, width = '210px', onWidthChange }) => {
             transform: 'none',
           },
           '&.Mui-disabled': {
-            backgroundColor: activeBackgroundColor,
-            color: '#FFFFFF !important',
+            backgroundColor: theme.palette.primary.main,
+            color: theme.palette.primary.contrastText + ' !important',
             fontWeight: 'normal',
             opacity: 1,
             cursor: 'default',
+            transition: 'background-color 0.2s, color 0.2s',
           },
           '&.Mui-disabled:hover': {
-            backgroundColor: activeHoverBackgroundColor,
+            backgroundColor: theme.palette.primary.main,
+            color: theme.palette.primary.contrastText + ' !important',
           },
         },
         '& .MuiTypography-root': {

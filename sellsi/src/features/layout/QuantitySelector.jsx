@@ -165,7 +165,7 @@ const QuantitySelector = ({
   // ============================================================================
 
   const DecrementButton = () => (
-    <Tooltip title={isMinReached ? `Mínimo: ${min}` : `Disminuir cantidad`}>
+    <Tooltip title={isMinReached ? `Mínimo: ${min}` : `Disminuir cantidad`} placement="left">
       <span>
         <IconButton
           onClick={handleDecrement}
@@ -190,7 +190,7 @@ const QuantitySelector = ({
   )
 
   const IncrementButton = () => (
-    <Tooltip title={isMaxReached ? `Máximo: ${max}` : `Aumentar cantidad`}>
+    <Tooltip title={isMaxReached ? `Máximo: ${max}` : `Aumentar cantidad`} placement="right">
       <span>
         <IconButton
           onClick={handleIncrement}

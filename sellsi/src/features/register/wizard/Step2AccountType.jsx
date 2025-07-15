@@ -568,7 +568,7 @@ const Step2AccountType = ({ selectedType, onTypeSelect, onNext, onBack }) => {
             fullWidth
             sx={{ mt: 0.5, height: { md: '32px', lg: '44px' } }}
           >
-            Volver atrás
+            Volver
           </PrimaryButton>
         </Box>
       </Box>

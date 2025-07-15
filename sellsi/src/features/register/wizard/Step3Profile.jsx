@@ -67,7 +67,6 @@ const Step3Profile = ({
       return;
     }
 
-    console.log('✅ Usuario creado, esperando verificación por correo');
     onNext();
   };
 
@@ -237,7 +236,7 @@ const Step3Profile = ({
           fullWidth
           sx={{ mt: 0.5 }}
         >
-          Volver atrás
+          Volver
         </PrimaryButton>
       </Box>
     </Box>

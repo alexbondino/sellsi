@@ -87,7 +87,7 @@ const Step2Code = ({
           mt: 0.5,
         }}
       >
-        Volver atrás
+        Volver
       </Button>
       {showCodigoEnviado && (
         <Fade in={fadeIn} timeout={800} unmountOnExit>

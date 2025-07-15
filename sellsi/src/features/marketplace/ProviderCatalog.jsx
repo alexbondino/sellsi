@@ -33,11 +33,14 @@ import {
 } from '@mui/icons-material';
 import { ThemeProvider } from '@mui/material/styles';
 import { dashboardThemeCore } from '../../styles/dashboardThemeCore';
+import { SPACING_BOTTOM_MAIN } from '../../styles/layoutSpacing';
 import { supabase } from '../../services/supabase';
+
 import ProductCard from '../ui/product-card/ProductCard';
 import useCartStore from '../buyer/hooks/cartStore';
 import { toast } from 'react-hot-toast';
 import { filterActiveProducts } from '../../utils/productActiveStatus';
+import { CATEGORIAS } from './CategoryNavigation/CategoryNavigation';
 
 /**
  * ProviderCatalog - Catálogo de productos de un proveedor específico
@@ -58,7 +61,8 @@ const ProviderCatalog = () => {
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [priceOrder, setPriceOrder] = useState('none'); // none, asc, desc
   const [filteredProducts, setFilteredProducts] = useState([]);
-  const [availableCategories, setAvailableCategories] = useState([]);
+  // Usar las categorías estandarizadas
+  const availableCategories = CATEGORIAS;
 
   // Determinar de dónde viene el usuario (para el botón de volver)
   const fromPath = location.state?.from || '/buyer/marketplace';
@@ -128,10 +132,12 @@ const ProviderCatalog = () => {
             price: range.price
           }));
 
-          // Obtener la primera imagen del producto
+          // Obtener la primera imagen del producto y thumbnail
           let imagenPrincipal = null;
+          let thumbnailUrl = null;
           if (product.product_images && Array.isArray(product.product_images) && product.product_images.length > 0) {
             imagenPrincipal = product.product_images[0].image_url;
+            thumbnailUrl = product.product_images[0].thumbnail_url; // ✅ NUEVO: Obtener thumbnail_url
           }
           
           return {
@@ -139,6 +145,7 @@ const ProviderCatalog = () => {
             id: product.productid, // Mapear productid a id para compatibilidad
             nombre: product.productnm, // Mapear productnm a nombre
             imagen: imagenPrincipal, // Mapear image_url a imagen
+            thumbnail_url: thumbnailUrl, // ✅ NUEVO: Agregar thumbnail_url
             precio: product.price, // Ya está correcto
             stock: product.productqty, // Mapear productqty a stock
             categoria: product.category, // Ya está correcto
@@ -163,9 +170,8 @@ const ProviderCatalog = () => {
         });
         setProducts(activeProducts);
 
-        // Extraer categorías únicas para el filtro
-        const categories = [...new Set(activeProducts.map(p => p.categoria).filter(Boolean))];
-        setAvailableCategories(categories);
+        // No extraer categorías dinámicamente, se usan las estandarizadas
+        // setAvailableCategories(CATEGORIAS); // No necesario
         setFilteredProducts(activeProducts);
 
       } catch (err) {
@@ -352,7 +358,7 @@ const ProviderCatalog = () => {
           minHeight: '100vh',
           pt: { xs: 2, md: 4 },
           px: 3,
-          pb: 12,
+          pb: SPACING_BOTTOM_MAIN,
           width: '100%',
           // Prevenir desplazamiento horizontal al abrir dropdowns
           overflowX: 'hidden',
@@ -380,7 +386,7 @@ const ProviderCatalog = () => {
                 onClick={handleGoBack}
                 sx={{ textTransform: 'none' }}
               >
-                Volver atrás
+                Volver
               </Button>
             </Box>
 

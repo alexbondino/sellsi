@@ -45,6 +45,7 @@ import {
   useProductAnimations,
 } from '../hooks/useLazyProducts';
 import { dashboardThemeCore } from '../../../styles/dashboardThemeCore';
+import { SPACING_BOTTOM_MAIN } from '../../../styles/layoutSpacing';
 import { formatPrice } from '../../marketplace/utils/formatters';
 import { generateProductUrl } from '../../marketplace/marketplace/productUrl';
 
@@ -59,11 +60,11 @@ import {
 // Constantes
 const CATEGORIES = [
   { value: 'all', label: 'Todas las categorías' },
-  { value: 'Supermercado', label: 'Supermercado' },
-  { value: 'Electrodomésticos', label: 'Electrodomésticos' },
-  { value: 'Tecnología', label: 'Tecnología' },
-  { value: 'Hogar', label: 'Hogar' },
-  { value: 'Moda', label: 'Moda' },
+  { value: 'Tabaquería', label: 'Tabaquería' },
+  { value: 'Alcoholes', label: 'Alcoholes' },
+  { value: 'Ferretería y Construcción', label: 'Ferretería y Construcción' },
+  { value: 'Gastronomía', label: 'Gastronomía' },
+  { value: 'Otros', label: 'Otros' },
 ];
 
 const SORT_OPTIONS = [
@@ -211,9 +212,9 @@ const MyProducts = () => {
           // marginLeft: '210px', // Eliminado para ocupar todo el ancho
           backgroundColor: 'background.default',
           minHeight: '100vh',
-          pt: { xs: 9, md: 10 },
+          pt: { xs: 4.5, md: 5 },
           px: 3,
-          pb: 3,
+          pb: SPACING_BOTTOM_MAIN,
           ml: { xs: 0, md: 10, lg: 14, xl: 24 },
         }}
       >
@@ -422,6 +423,8 @@ const MyProducts = () => {
                     ),
                   }}
                   sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
+                  autoComplete="off"
+                  autoCorrect="off"
                 />
               </Grid>
 
@@ -600,6 +603,8 @@ const MyProducts = () => {
                           onDelete={handleDeleteProduct}
                           onViewStats={handleViewStats}
                           isDeleting={operationStates.deleting?.[product.id]}
+                          isUpdating={operationStates.updating?.[product.id]}
+                          isProcessing={operationStates.processing?.[product.id]}
                           onProductClick={handleProductCardClick}
                         />
                       </Box>

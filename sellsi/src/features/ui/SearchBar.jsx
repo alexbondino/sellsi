@@ -218,6 +218,8 @@ const SearchBar = ({
         variant="outlined"
         InputProps={inputProps}
         sx={textFieldStyles}
+        autoComplete="off"
+        autoCorrect="off"
       />
       {/* Selector de ordenamiento - Más compacto */}
       <FormControl sx={formControlStyles}>

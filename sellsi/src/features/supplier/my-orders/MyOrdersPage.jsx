@@ -16,6 +16,7 @@ import Modal, { MODAL_TYPES } from '../../ui/Modal'; // Componente Modal genéri
 import { useBanner } from '../../ui/banner/BannerContext'; // Contexto para mostrar banners
 import SideBarProvider from '../../layout/SideBar'; // Proveedor para la barra lateral
 import { dashboardThemeCore } from '../../../styles/dashboardThemeCore'; // Tema de Material-UI para el dashboard
+import { SPACING_BOTTOM_MAIN } from '../../../styles/layoutSpacing';
 
 // TODO: Importar hook para obtener usuario autenticado
 // import { useAuth } from '../../auth/hooks/useAuth';
@@ -142,7 +143,6 @@ const MyOrdersPage = () => {
           break;
 
         case 'chat':
-          console.log('Abriendo chat para pedido:', selectedOrder.order_id);
           messageToUser =
             '💬 Abriendo chat... (funcionalidad pendiente de implementación).';
           // Para el chat, cerramos el modal y solo mostramos el banner de información
@@ -315,7 +315,7 @@ const MyOrdersPage = () => {
             // marginLeft: '210px', // Eliminado para ocupar todo el ancho
             backgroundColor: 'background.default',
             minHeight: '100vh',
-            pt: { xs: 9, md: 10 },
+            pt: { xs: 4.5, md: 5 },
             px: 3,
             pb: 3,
             display: 'flex',
@@ -339,7 +339,7 @@ const MyOrdersPage = () => {
             // marginLeft: '210px', // Eliminado para ocupar todo el ancho
             backgroundColor: 'background.default',
             minHeight: '100vh',
-            pt: { xs: 9, md: 10 },
+            pt: { xs: 4.5, md: 5 },
             px: 3,
             pb: 3,
             display: 'flex',
@@ -369,9 +369,9 @@ const MyOrdersPage = () => {
           // marginLeft: '210px', // Eliminado para ocupar todo el ancho
           backgroundColor: 'background.default',
           minHeight: '100vh',
-          pt: { xs: 9, md: 10 }, // Padding top para espacio con el header
+          pt: { xs: 4.5, md: 5 }, // Padding top para espacio con el header
           px: 3, // Padding horizontal
-          pb: 3, // Padding bottom
+          pb: SPACING_BOTTOM_MAIN, // Padding bottom
           ml: { xs: 0, md: 10, lg: 14, xl: 24 },
         }}
       >

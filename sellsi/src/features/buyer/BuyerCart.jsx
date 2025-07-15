@@ -32,6 +32,7 @@ import debounce from 'lodash.debounce';
 import { ThemeProvider } from '@mui/material/styles';
 import SideBarProvider from '../layout/SideBar';
 import { dashboardThemeCore } from '../../styles/dashboardThemeCore';
+import { SPACING_BOTTOM_MAIN } from '../../styles/layoutSpacing';
 import useCartStore from './hooks/cartStore';
 import {
   SHIPPING_OPTIONS,
@@ -46,9 +47,13 @@ import {
   WishlistSection,
   EmptyCartState,
 } from './cart';
+import useShippingValidation from './cart/hooks/useShippingValidation';
+import ShippingToggle from './cart/components/ShippingToggle';
+import ShippingCompatibilityModal from './cart/components/ShippingCompatibilityModal';
 
 // ============================================================================
 // ULTRA-PREMIUM BUYER CART COMPONENT - NIVEL 11/10
+import { useNavigate } from 'react-router-dom';
 // ============================================================================
 
 // Lazy loading components para optimización
@@ -134,6 +139,13 @@ const BuyerCart = () => {
     });
     return initialShipping;
   });
+
+  // ===== SHIPPING VALIDATION HOOK =====
+  const [isAdvancedShippingMode, setIsAdvancedShippingMode] = useState(false);
+  const [compatibilityModalOpen, setCompatibilityModalOpen] = useState(false);
+  
+  const shippingValidation = useShippingValidation(items, isAdvancedShippingMode);
+
   // ===== CÁLCULOS MEMOIZADOS =====
   const cartCalculations = useMemo(() => {
     const subtotal = getSubtotal();
@@ -360,14 +372,12 @@ const BuyerCart = () => {
   // TODO: Implementar historial completo de acciones del carrito
   const undo = useCallback(() => {
     if (process.env.NODE_ENV === 'development') {
-      console.log('↶ BuyerCart - Undo action');
     }
     // Implementar lógica de undo
   }, []);
 
   const redo = useCallback(() => {
     if (process.env.NODE_ENV === 'development') {
-      console.log('↷ BuyerCart - Redo action');
     }
     // Implementar lógica de redo
   }, []);
@@ -397,7 +407,6 @@ const BuyerCart = () => {
   );
   const moveToCart = useCallback(item => {
     if (process.env.NODE_ENV === 'development') {
-      console.log('🛒 BuyerCart - Mover de wishlist a carrito:', item.name);
     }
     // Implementar lógica para mover de wishlist a carrito
   }, []);
@@ -410,26 +419,39 @@ const BuyerCart = () => {
     }
   }, [couponInput, applyCoupon, getTotal]);
 
+  const navigate = useNavigate();
+
   const handleCheckout = useCallback(async () => {
+    console.log('[BuyerCart] handleCheckout called');
+    // Validar compatibilidad de envío antes del checkout
+    if (isAdvancedShippingMode && !shippingValidation.isCartCompatible) {
+      console.log('[BuyerCart] handleCheckout: incompatibilidad de envío', shippingValidation);
+      setCompatibilityModalOpen(true);
+      return;
+    }
+
     setIsCheckingOut(true);
+    console.log('[BuyerCart] handleCheckout: iniciando proceso de checkout');
 
     try {
       // Simular proceso de checkout
       await new Promise(resolve => setTimeout(resolve, 100)); // OPTIMIZADO: 100ms
+      console.log('[BuyerCart] handleCheckout: compra simulada exitosa');
+      // toast de éxito eliminado, solo navegación
 
-      toast.success('¡Compra realizada con éxito!', {
-        icon: '🎉',
-        duration: 5000,
-      });
+      // No limpiar el carrito después del checkout
 
-      // Clear the cart after successful checkout
-      clearCart();
+      // Navegar al método de pago
+      console.log('[BuyerCart] handleCheckout: navegando a /buyer/paymentmethod');
+      navigate('/buyer/paymentmethod');
     } catch (error) {
+      console.error('[BuyerCart] handleCheckout: error en el proceso de compra', error);
       toast.error('Error en el proceso de compra', { icon: '❌' });
     } finally {
       setIsCheckingOut(false);
+      console.log('[BuyerCart] handleCheckout: setIsCheckingOut(false)');
     }
-  }, [clearCart]);
+  }, [clearCart, isAdvancedShippingMode, shippingValidation.isCartCompatible]);
 
   // ===== FUNCIONES DE SELECCIÓN MÚLTIPLE =====
   const handleToggleSelectionMode = useCallback(() => {
@@ -554,7 +576,7 @@ const BuyerCart = () => {
           minHeight: '100vh',
           pt: { xs: 9, md: 10 },
           px: 3,
-          pb: 3,
+          pb: SPACING_BOTTOM_MAIN,
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
@@ -601,6 +623,15 @@ const BuyerCart = () => {
                 formatPrice={formatPrice}
                 itemVariants={itemVariants}
               /> */}
+            
+            {/* Toggle para validación de envío */}
+            <motion.div variants={itemVariants}>
+              <ShippingToggle
+                isAdvancedMode={isAdvancedShippingMode}
+                onToggle={setIsAdvancedShippingMode}
+              />
+            </motion.div>
+            
             <Grid container spacing={{ xs: 2, md: 2, lg: 6, xl: 6 }}>
               {/* Lista de productos */}
               <Grid
@@ -639,6 +670,9 @@ const BuyerCart = () => {
                       isSelectionMode={isSelectionMode}
                       isSelected={selectedItems.includes(item.id)}
                       onToggleSelection={handleToggleItemSelection}
+                      // Nuevas props para validación de envío
+                      shippingValidation={shippingValidation}
+                      isAdvancedShippingMode={isAdvancedShippingMode}
                     />
                   ))}
                 </AnimatePresence>
@@ -694,6 +728,10 @@ const BuyerCart = () => {
                       isCheckingOut={isCheckingOut}
                       // Options
                       availableCodes={[]} // Ocultamos lista de códigos
+                      // Shipping validation props
+                      shippingValidation={shippingValidation}
+                      isAdvancedShippingMode={isAdvancedShippingMode}
+                      onShippingCompatibilityError={() => setCompatibilityModalOpen(true)}
                       // Functions
                       formatPrice={formatPrice}
                       formatDate={formatDate}
@@ -729,6 +767,14 @@ const BuyerCart = () => {
             />
           </motion.div>
         </Container>
+        
+        {/* Modal de compatibilidad de envío */}
+        <ShippingCompatibilityModal
+          open={compatibilityModalOpen}
+          onClose={() => setCompatibilityModalOpen(false)}
+          incompatibleProducts={shippingValidation.incompatibleProducts}
+          userRegion={shippingValidation.userRegion}
+        />
       </Box>
     </ThemeProvider>
   );

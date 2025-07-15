@@ -24,20 +24,13 @@ import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import { SECTIONS, SECTION_LABELS } from '../marketplace/constants';
 import { categoryNavigationStyles as styles } from '../hooks/CategoryNavigation/CategoryNavigation.styles';
 
-// Definir categorías por defecto si no existe import
-const CATEGORIAS = [
-  'Tecnología',
-  'Electrodomésticos',
-  'Hogar',
-  'Deportes',
-  'Moda',
-  'Juguetes',
-  'Salud',
-  'Belleza',
-  'Automotriz',
-  'Libros',
-  'Mascotas',
-  // Agrega o edita según tus necesidades
+// Categorías estandarizadas
+export const CATEGORIAS = [
+  'Tabaquería',
+  'Alcoholes',
+  'Ferretería y Construcción',
+  'Gastronomía',
+  'Otros',
 ];
 
 const CategoryNavigation = React.memo(({

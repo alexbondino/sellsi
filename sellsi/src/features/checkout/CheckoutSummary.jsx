@@ -33,6 +33,7 @@ import { motion } from 'framer-motion'
 // Servicios
 import checkoutService from './services/checkoutService'
 import { calculatePriceForQuantity } from '../../utils/priceCalculation'
+import { useMinithumb } from '../../hooks/useResponsiveThumbnail' // Hook para minithumb
 
 // Componentes UI
 import SecurityBadge from '../ui/SecurityBadge'
@@ -40,6 +41,21 @@ import SecurityBadge from '../ui/SecurityBadge'
 // ============================================================================
 // COMPONENTE PRINCIPAL
 // ============================================================================
+
+// Componente optimizado para avatares de productos con minithumb
+const ProductAvatar = ({ item }) => {
+  const minithumbUrl = useMinithumb(item);
+  
+  return (
+    <Avatar
+      src={minithumbUrl}
+      alt={item.name || item.nombre}
+      sx={{ width: 40, height: 40 }}
+    >
+      <ShoppingCartIcon />
+    </Avatar>
+  );
+};
 
 const CheckoutSummary = ({
   orderData,
@@ -81,13 +97,13 @@ const CheckoutSummary = ({
   
   const fees = selectedMethod 
     ? checkoutService.formatPrice(
-        (orderData.total * (selectedMethod.fees?.percentage || 0)) / 100 + (selectedMethod.fees?.fixed || 0)
+        (orderData.subtotal * (selectedMethod.fees?.percentage || 0)) / 100 + (selectedMethod.fees?.fixed || 0)
       )
     : checkoutService.formatPrice(0)
 
   const totalWithFees = selectedMethod
-    ? orderData.total + ((orderData.total * (selectedMethod.fees?.percentage || 0)) / 100 + (selectedMethod.fees?.fixed || 0))
-    : orderData.total
+    ? orderData.subtotal + orderData.tax + orderData.shipping + ((orderData.subtotal * (selectedMethod.fees?.percentage || 0)) / 100 + (selectedMethod.fees?.fixed || 0))
+    : orderData.subtotal + orderData.tax + orderData.shipping
 
   // ===== RENDERIZADO =====
 
@@ -157,8 +173,8 @@ const CheckoutSummary = ({
           <List dense sx={{ 
             bgcolor: 'background.paper', 
             borderRadius: 2, 
-            minHeight: 120,
-            maxHeight: 120,
+            minHeight: 72,
+            maxHeight: 72,
             overflow: 'hidden',
             display: 'flex',
             flexDirection: 'column',
@@ -167,13 +183,7 @@ const CheckoutSummary = ({
             {paginatedItems.map((item, index) => (
               <ListItem key={`${currentPage}-${index}`} sx={{ px: 2 }}>
                 <ListItemAvatar>
-                  <Avatar
-                    src={item.image || item.imagen}
-                    alt={item.name || item.nombre}
-                    sx={{ width: 40, height: 40 }}
-                  >
-                    <ShoppingCartIcon />
-                  </Avatar>
+                  <ProductAvatar item={item} />
                 </ListItemAvatar>
                 <ListItemText
                   primary={item.name || item.nombre}
@@ -208,12 +218,7 @@ const CheckoutSummary = ({
               </Typography>
             </Stack>
             
-            <Stack direction="row" justifyContent="space-between">
-              <Typography variant="body2">Comisión por servicio (2%)</Typography>
-              <Typography variant="body2" fontWeight="medium">
-                {checkoutService.formatPrice(orderData.serviceFee)}
-              </Typography>
-            </Stack>
+            {/* Comisión por servicio (2%) eliminada */}
             
             <Stack direction="row" justifyContent="space-between">
               <Typography variant="body2">Envío</Typography>

@@ -933,7 +933,6 @@ const useCartStore = create(
             localStorage.removeItem('cart-storage');
             localStorage.removeItem('cart-items');
             localStorage.removeItem('carrito');
-            console.log('[cartStore] ✅ LocalStorage del carrito limpiado');
           } catch (error) {
             console.error('[cartStore] ❌ Error limpiando localStorage:', error);
           }

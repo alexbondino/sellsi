@@ -217,7 +217,7 @@ export const confirmarPago = async (solicitudId, datos) => {
     return { success: true }
     */
     
-    console.log('Confirmar pago:', { solicitudId, datos })
+    // Confirmar pago
     return { success: true }
   } catch (error) {
     console.error('Error en confirmarPago:', error)
@@ -255,7 +255,7 @@ export const rechazarPago = async (solicitudId, datos) => {
     return { success: true }
     */
     
-    console.log('Rechazar pago:', { solicitudId, datos })
+    // Rechazar pago
     return { success: true }
   } catch (error) {
     console.error('Error en rechazarPago:', error)
@@ -292,7 +292,7 @@ export const devolverPago = async (solicitudId, datos) => {
     return { success: true }
     */
     
-    console.log('Devolver pago:', { solicitudId, datos })
+    // Devolver pago
     return { success: true }
   } catch (error) {
     console.error('Error en devolverPago:', error)
@@ -402,7 +402,7 @@ export const registrarAccion = async (accion, solicitudId, detalles = {}) => {
     return { success: true }
     */
     
-    console.log('Registrar acción:', { accion, solicitudId, detalles })
+    // Registrar acción
     return { success: true }
   } catch (error) {
     console.error('Error en registrarAccion:', error)
@@ -530,7 +530,7 @@ export const enviarNotificacion = async (compradorEmail, tipoNotificacion, datos
     // TODO: Implementar sistema de notificaciones
     // Podría usar Supabase Functions, SendGrid, o similar
     
-    console.log('Enviar notificación:', { compradorEmail, tipoNotificacion, datos })
+    // Enviar notificación
     return { success: true }
   } catch (error) {
     console.error('Error en enviarNotificacion:', error)
@@ -691,7 +691,7 @@ export const banUser = async (userId, reason) => {
     */
 
     // Por ahora solo simulamos la respuesta
-    console.log('Simulando ban de usuario:', { userId, reason });
+    // Simulando ban de usuario
     
     return { success: true };
   } catch (error) {
@@ -745,7 +745,7 @@ export const unbanUser = async (userId, reason) => {
     */
 
     // Por ahora solo simulamos la respuesta
-    console.log('Simulando unban de usuario:', { userId, reason });
+    // Simulando unban de usuario
     
     return { success: true };
   } catch (error) {
@@ -807,7 +807,8 @@ export const getMarketplaceProducts = async () => {
         minimum_purchase,
         is_active,
         supplier_id,
-        createddt
+        createddt,
+        product_images (image_url, thumbnail_url, thumbnails)
       `)
       .eq('is_active', true)
       .order('createddt', { ascending: false });
@@ -847,15 +848,31 @@ export const getMarketplaceProducts = async () => {
     }
 
     // Formatear datos para el componente
-    const formattedData = availableProducts.map(product => ({
-      product_id: product.productid,
-      product_name: product.productnm || 'Producto sin nombre',
-      price: product.price || 0,
-      stock: product.productqty || 0,
-      min_purchase: product.minimum_purchase || 1,
-      supplier_name: suppliersData[product.supplier_id]?.user_nm || 'Proveedor no encontrado',
-      user_id: product.supplier_id || 'N/A'
-    }));
+    const formattedData = availableProducts.map(product => {
+      // Obtener imagen principal
+      let imagenPrincipal = null;
+      let thumbnailUrl = null;
+      let thumbnails = null;
+      
+      if (product.product_images && Array.isArray(product.product_images) && product.product_images.length > 0) {
+        imagenPrincipal = product.product_images[0].image_url;
+        thumbnailUrl = product.product_images[0].thumbnail_url;
+        thumbnails = product.product_images[0].thumbnails;
+      }
+
+      return {
+        product_id: product.productid,
+        product_name: product.productnm || 'Producto sin nombre',
+        price: product.price || 0,
+        stock: product.productqty || 0,
+        min_purchase: product.minimum_purchase || 1,
+        supplier_name: suppliersData[product.supplier_id]?.user_nm || 'Proveedor no encontrado',
+        user_id: product.supplier_id || 'N/A',
+        imagen: imagenPrincipal,
+        thumbnail_url: thumbnailUrl,
+        thumbnails: thumbnails
+      };
+    });
 
     return { success: true, data: formattedData };
   } catch (error) {
@@ -865,21 +882,64 @@ export const getMarketplaceProducts = async () => {
 };
 
 /**
- * Eliminar un producto del marketplace
+ * Eliminar un producto del marketplace (UX optimizada)
  * @param {string} productId - ID del producto a eliminar
  * @returns {Promise<{success: boolean, error?: string}>}
  */
 export const deleteProduct = async (productId) => {
   try {
+    // 1. Obtener información del producto para background cleanup
+    const { data: product, error: productError } = await supabase
+      .from('products')
+      .select('supplier_id')
+      .eq('productid', productId)
+      .single();
+
+    if (productError) {
+      console.error('Error obteniendo producto:', productError);
+      return { success: false, error: 'Error al obtener información del producto' };
+    }
+
+    // 2. Eliminar producto de la BD PRIMERO (respuesta rápida)
     const { error } = await supabase
       .from('products')
-      .update({ is_active: false })
+      .delete()
       .eq('productid', productId);
 
     if (error) {
       console.error('Error eliminando producto:', error);
       return { success: false, error: 'Error al eliminar producto' };
     }
+
+    // 3. Limpiar imágenes en background (no bloquea la respuesta)
+    const folderPrefix = `${product.supplier_id}/${productId}/`;
+    
+    // Ejecutar limpieza en background sin esperar
+    Promise.all([
+      // Limpiar bucket principal
+      supabase.storage.from('product-images').list(folderPrefix, { limit: 100 })
+        .then(({ data: bucketFiles }) => {
+          if (bucketFiles?.length > 0) {
+            const toDeleteFromBucket = bucketFiles.map(file => folderPrefix + file.name);
+            return supabase.storage.from('product-images').remove(toDeleteFromBucket);
+          }
+        }),
+      
+      // Limpiar bucket de thumbnails
+      supabase.storage.from('product-images-thumbnails').list(folderPrefix, { limit: 100 })
+        .then(({ data: thumbnailFiles }) => {
+          if (thumbnailFiles?.length > 0) {
+            const toDeleteFromThumbnails = thumbnailFiles.map(file => folderPrefix + file.name);
+            return supabase.storage.from('product-images-thumbnails').remove(toDeleteFromThumbnails);
+          }
+        }),
+      
+      // Limpiar referencias en BD
+      supabase.from('product_images').delete().eq('product_id', productId)
+    ]).catch(error => {
+      console.warn('⚠️ Error limpiando imágenes en background:', error);
+      // El producto ya fue eliminado, este error no es crítico para el usuario
+    });
 
     return { success: true };
   } catch (error) {

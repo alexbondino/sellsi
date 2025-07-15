@@ -58,10 +58,15 @@ export function useProducts() {
             }
             
             mapped = data.map((p) => {
-              // Obtener imagen principal
+              // Obtener imagen principal y thumbnail
               const imagenPrincipal = p.product_images && p.product_images.length > 0 
                 ? p.product_images[0].image_url 
                 : '/placeholder-product.jpg'
+              
+              // ✅ NUEVO: Obtener thumbnail_url
+              const thumbnailUrl = p.product_images && p.product_images.length > 0 
+                ? p.product_images[0].thumbnail_url 
+                : null
               
               // Obtener tramos de precio para este producto
               const priceTiers = tiersData 
@@ -86,6 +91,7 @@ export function useProducts() {
                 proveedor: usersMap[p.supplier_id]?.name || "Proveedor no encontrado", // ✅ USAR .name
                 supplier_logo_url: usersMap[p.supplier_id]?.logo_url, // ✅ AGREGAR logo del proveedor
                 imagen: imagenPrincipal,
+                thumbnail_url: thumbnailUrl, // ✅ NUEVO: Agregar thumbnail_url
                 precio: minPrice,
                 precioOriginal: p.precioOriginal || null,
                 descuento: p.descuento || 0,

@@ -49,7 +49,6 @@ const PurchaseActions = ({
     }
     if (onAddToCart && product) {
       const cartProduct = formatProductForCart(product, quantity, tiers)
-      console.log('[PurchaseActions] Enviando al carrito:', cartProduct)
       onAddToCart(cartProduct)
     }
   }
@@ -136,24 +135,22 @@ const PurchaseActions = ({
             py: 1.5,
             fontSize: '1.1rem',
             fontWeight: 700,
-            background: canAdd
-              ? 'linear-gradient(135deg, #1976d2 0%, #42a5f5 100%)'
-              : 'rgba(0,0,0,0.12)',
+            backgroundColor: canAdd ? 'primary.main' : 'rgba(0,0,0,0.12)',
             color: !isLoggedIn
               ? '#111 !important' // Negro forzado para el texto cuando no está logueado
               : canAdd
                 ? 'white'
                 : 'rgba(0,0,0,0.26)',
             boxShadow: canAdd
-              ? '0 4px 16px rgba(25, 118, 210, 0.3)'
+              ? '0 3px 10px rgba(25, 118, 210, 0.3)'
               : 'none',
             transition: 'opacity 0.2s',
             '&:hover': {
-              background: canAdd
-                ? 'linear-gradient(135deg, #1565c0 0%, #1976d2 100%)'
+              backgroundColor: canAdd
+                ? 'primary.dark'
                 : 'rgba(0,0,0,0.12)',
               boxShadow: canAdd
-                ? '0 6px 20px rgba(25, 118, 210, 0.4)'
+                ? '0 6px 20px rgba(25, 118, 210, 0.6)'
                 : 'none',
               transform: canAdd ? 'translateY(-2px)' : 'none',
             },

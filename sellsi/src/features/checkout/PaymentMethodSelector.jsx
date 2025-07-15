@@ -197,12 +197,11 @@ const PaymentMethodSelector = () => {
   // ===== RENDERIZADO =====
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: 'background.default', py: 4 }}>
-      <motion.div
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-      >
+    <motion.div
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+    >
         {/* Header */}
         <Box sx={{ mb: 4, px: 3 }}>
           <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 3 }}>
@@ -215,12 +214,25 @@ const PaymentMethodSelector = () => {
           </Stack>
           
           {/* Stepper de progreso */}
-          <CheckoutProgressStepper 
-            currentStep={currentStep}
-            completedSteps={completedSteps}
-            orientation="horizontal"
-            showLabels={true}
-          />
+          <Box sx={{
+            maxWidth: {
+              xs: 340,
+              sm: 480,
+              md: 700,
+              lg: 1360,
+              xl: 1560,
+            },
+            width: '100%',
+            display: 'flex',
+            justifyContent: 'flex-start'
+          }}>
+            <CheckoutProgressStepper 
+              currentStep={currentStep}
+              completedSteps={completedSteps}
+              orientation="horizontal"
+              showLabels={true}
+            />
+          </Box>
         </Box>
 
         {/* Contenido principal */}
@@ -228,7 +240,14 @@ const PaymentMethodSelector = () => {
           <Stack direction={{ xs: 'column', lg: 'row' }} spacing={4}>
             
             {/* Panel izquierdo - Métodos de pago */}
-            <Box sx={{ flex: 1 }}>
+            <Box sx={{ 
+              width: {
+                xs: '100%',
+                md: '68%',
+                lg: '65%',
+                xl: '65%',
+              },
+            }}>
               <motion.div variants={itemVariants}>
                 <Paper
                   elevation={3}
@@ -311,7 +330,6 @@ const PaymentMethodSelector = () => {
           </Stack>
         </Box>
       </motion.div>
-    </Box>
   )
 }
 

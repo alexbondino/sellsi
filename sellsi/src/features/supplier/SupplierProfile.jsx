@@ -61,27 +61,23 @@ const SupplierProfile = ({ onProfileUpdated }) => {
 
       // REPARAR URL DE IMAGEN SI ES NECESARIO
       if (data.logo_url) {
-        console.log('[SupplierProfile] Verificando URL de imagen:', data.logo_url);
+
         // Test si la URL funciona
         fetch(data.logo_url)
           .then(response => {
             if (!response.ok) {
-              console.log('[SupplierProfile] URL rota, iniciando reparación FORZADA...');
               return forceFixImageUrl(user.id);
             }
             return { success: true, message: 'URL funciona correctamente' };
           })
           .then(repairResult => {
-            console.log('[SupplierProfile] Resultado de reparación FORZADA:', repairResult);
             if (repairResult.success && repairResult.correctUrl) {
               // Recargar perfil con URL corregida
               fetchUserProfile();
             }
           })
           .catch(error => {
-            console.log('[SupplierProfile] Error verificando URL, iniciando reparación...', error);
             repairUserImageUrl(user.id).then(repairResult => {
-              console.log('[SupplierProfile] Resultado de reparación:', repairResult);
               if (repairResult.success && repairResult.correctUrl) {
                 fetchUserProfile();
               }

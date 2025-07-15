@@ -48,12 +48,7 @@ const CartHeader = ({
   cartStats,
   formatPrice,
   discount,
-  onUndo,
-  onRedo,
   onClearCart,
-  undoInfo,
-  redoInfo,
-  historyInfo,
   // Nueva funcionalidad de selección múltiple
   isSelectionMode,
   selectedItems,
@@ -171,84 +166,7 @@ const CartHeader = ({
             sx={{ mt: { xs: 2, sm: 0 } }}
           >
             {' '}
-            <Tooltip
-              title={
-                undoInfo?.canUndo
-                  ? `Deshacer: ${
-                      undoInfo.action?.description || 'Última acción'
-                    }`
-                  : 'No hay acciones para deshacer'
-              }
-            >
-              <span>
-                <Badge
-                  badgeContent={Number.isFinite(Number(historyInfo?.currentIndex)) ? Number(historyInfo.currentIndex) : 0}
-                  color="primary"
-                  invisible={!undoInfo?.canUndo}
-                  sx={{
-                    '& .MuiBadge-badge': {
-                      fontSize: '0.7rem',
-                      height: '16px',
-                      minWidth: '16px',
-                    },
-                  }}
-                >
-                  <IconButton
-                    onClick={onUndo}
-                    color="primary"
-                    disabled={!undoInfo?.canUndo}                    sx={{
-                      opacity: undoInfo?.canUndo ? 1 : 0.5,
-                      '&:hover': {
-                        transform: undoInfo?.canUndo ? 'scale(1.1)' : 'none',
-                      },
-                    }}
-                  >
-                    <UndoIcon />
-                  </IconButton>
-                </Badge>
-              </span>
-            </Tooltip>
-            <Tooltip
-              title={
-                redoInfo?.canRedo
-                  ? `Rehacer: ${
-                      redoInfo.action?.description || 'Próxima acción'
-                    }`
-                  : 'No hay acciones para rehacer'
-              }
-            >
-              <span>
-                <Badge
-                  badgeContent={
-                    historyInfo && Number.isFinite(Number(historyInfo.totalStates)) && Number.isFinite(Number(historyInfo.currentIndex))
-                      ? Math.max(0, Number(historyInfo.totalStates) - Number(historyInfo.currentIndex) - 1)
-                      : 0
-                  }
-                  color="secondary"
-                  invisible={!redoInfo?.canRedo}
-                  sx={{
-                    '& .MuiBadge-badge': {
-                      fontSize: '0.7rem',
-                      height: '16px',
-                      minWidth: '16px',
-                    },
-                  }}
-                >
-                  <IconButton
-                    onClick={onRedo}
-                    color="primary"
-                    disabled={!redoInfo?.canRedo}                    sx={{
-                      opacity: redoInfo?.canRedo ? 1 : 0.5,
-                      '&:hover': {
-                        transform: redoInfo?.canRedo ? 'scale(1.1)' : 'none',
-                      },
-                    }}
-                  >
-                    <RedoIcon />
-                  </IconButton>
-                </Badge>
-              </span>{' '}
-            </Tooltip>
+            {/* Botones de deshacer/rehacer eliminados */}
             {/* Sistema de selección múltiple */}
             {isSelectionMode ? (
               <motion.div
@@ -286,40 +204,38 @@ const CartHeader = ({
                 </Tooltip>
 
                 {/* Botón de eliminar seleccionados */}
-                <Tooltip
-                  title={
-                    selectedItems.length === 0
-                      ? 'Selecciona items para eliminar'
-                      : `Eliminar ${selectedItems.length} seleccionados`
-                  }
-                >
-                  <span>
-                    <IconButton
-                      onClick={() => selectedItems.length > 0 && setOpenDeleteModal(true)}
-                      color="default"
-                      disabled={selectedItems.length === 0}
-                      sx={{
-                        opacity: selectedItems.length === 0 ? 0.5 : 1,
-                        '&:hover': {
-                          transform:
-                            selectedItems.length > 0 ? 'scale(1.1)' : 'none',
-                          background:
-                            selectedItems.length > 0
-                              ? 'rgba(158, 158, 158, 0.1)'
-                              : 'transparent',
-                        },
-                      }}
+                <Button
+                  onClick={() => selectedItems.length > 0 && setOpenDeleteModal(true)}
+                  color="inherit"
+                  startIcon={
+                    <Badge
+                      badgeContent={selectedItems.length}
+                      color="error"
+                      invisible={selectedItems.length === 0}
                     >
-                      <Badge
-                        badgeContent={selectedItems.length}
-                        color="error"
-                        invisible={selectedItems.length === 0}
-                      >
-                        <DeleteIcon sx={{ color: 'grey.600' }} />
-                      </Badge>
-                    </IconButton>
-                  </span>
-                </Tooltip>
+                      <DeleteIcon sx={{ color: 'grey.600' }} />
+                    </Badge>
+                  }
+                  disabled={selectedItems.length === 0}
+                  sx={{
+                    fontWeight: 500,
+                    color: selectedItems.length === 0 ? 'grey.400' : 'text.secondary',
+                    textTransform: 'none',
+                    background: 'transparent',
+                    opacity: selectedItems.length === 0 ? 0.5 : 1,
+                    '&:hover': {
+                      background: selectedItems.length > 0 ? 'rgba(158, 158, 158, 0.1)' : 'transparent',
+                      transform: selectedItems.length > 0 ? 'scale(1.05)' : 'none',
+                    },
+                    pl: 1,
+                    pr: 2,
+                    borderRadius: 2,
+                  }}
+                >
+                  {selectedItems.length === 0
+                    ? 'Selecciona items para eliminar'
+                    : `Eliminar ${selectedItems.length} seleccionados`}
+                </Button>
 
                 {/* Botón para salir del modo selección */}
                 <Button
@@ -342,22 +258,26 @@ const CartHeader = ({
               </motion.div>
             ) : (
               /* Botón normal de eliminar que activa modo selección */
-              <Tooltip title="Eliminar productos">
-                <span>
-                  <IconButton
-                    onClick={onToggleSelectionMode}
-                    color="default"
-                    sx={{
-                      '&:hover': {
-                        transform: 'scale(1.1)',
-                        background: 'rgba(158, 158, 158, 0.1)',
-                      },
-                    }}
-                  >
-                    <DeleteIcon sx={{ color: 'grey.600' }} />
-                  </IconButton>
-                </span>
-              </Tooltip>
+              <Button
+                onClick={onToggleSelectionMode}
+                color="inherit"
+                startIcon={<DeleteIcon sx={{ color: 'grey.600' }} />}
+                sx={{
+                  fontWeight: 500,
+                  color: 'text.secondary',
+                  textTransform: 'none',
+                  background: 'transparent',
+                  '&:hover': {
+                    background: 'rgba(158, 158, 158, 0.1)',
+                    transform: 'scale(1.05)',
+                  },
+                  pl: 1,
+                  pr: 2,
+                  borderRadius: 2,
+                }}
+              >
+                Eliminar productos
+              </Button>
             )}
           </Stack>{' '}
         </Grid>

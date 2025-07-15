@@ -6,10 +6,17 @@ import { supabase } from '../services/supabase'
  * Soporta: URL absoluta, path relativo, objeto imagen, blob, null.
  * @param {string|object} image - Path, URL o objeto de la imagen
  * @param {object} productData - Datos del producto (opcional) con supplier_id y productid
+ * @param {boolean} useThumbnail - Si usar thumbnail cuando esté disponible
  * @returns {string} URL pública lista para usar en <img />
  */
-export function getProductImageUrl(image, productData = null) {
+export function getProductImageUrl(image, productData = null, useThumbnail = false) {
   if (!image) return '/placeholder-product.jpg'
+  
+  // ✅ NUEVO: Si hay thumbnail disponible y se solicita, usarlo
+  if (useThumbnail && productData?.thumbnail_url) {
+    return productData.thumbnail_url
+  }
+
   // Si es objeto con url
   if (typeof image === 'object' && image !== null) {
     if (image.url && typeof image.url === 'string') {
@@ -54,4 +61,42 @@ export function getProductImageUrl(image, productData = null) {
     return data?.publicUrl || '/placeholder-product.jpg'
   }
   return '/placeholder-product.jpg'
+}
+
+/**
+ * ✅ NUEVO: Obtiene la URL del thumbnail de un producto si está disponible
+ * @param {object} productData - Datos del producto con thumbnail_url
+ * @param {string} fallbackImage - Imagen original como fallback
+ * @returns {string} URL del thumbnail o imagen original
+ */
+export function getProductThumbnailUrl(productData, fallbackImage = null) {
+  // Prioridad: thumbnail_url > imagen original > placeholder
+  if (productData?.thumbnail_url) {
+    return productData.thumbnail_url
+  }
+  
+  if (fallbackImage) {
+    return getProductImageUrl(fallbackImage, productData, false)
+  }
+  
+  return '/placeholder-product.jpg'
+}
+
+/**
+ * ✅ NUEVO: Obtiene la mejor imagen disponible (thumbnail o original)
+ * @param {object} productData - Datos del producto completo
+ * @param {boolean} preferThumbnail - Si preferir thumbnail cuando esté disponible
+ * @returns {string} URL de la mejor imagen disponible
+ */
+export function getBestProductImageUrl(productData, preferThumbnail = true) {
+  if (!productData) return '/placeholder-product.jpg'
+  
+  // Si prefiere thumbnail y está disponible
+  if (preferThumbnail && productData.thumbnail_url) {
+    return productData.thumbnail_url
+  }
+  
+  // Usar imagen original
+  const originalImage = productData.imagen || productData.image
+  return getProductImageUrl(originalImage, productData, false)
 }

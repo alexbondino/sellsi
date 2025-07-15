@@ -127,9 +127,6 @@ const Step1Account = ({
       // Si signUpData.user es null, significa que el correo fue enviado y el usuario está pendiente de confirmación.
       // Este es el comportamiento esperado para los flujos de verificación de correo.
       if (!signUpData.user) {
-        console.log(
-          '✅ Correo de verificación enviado. Usuario en estado pendiente.'
-        );
         showBanner({
           message: `¡Gracias por registrarte! Hemos enviado un correo de verificación a ${correo}. Por favor, revisa tu bandeja de entrada (y spam).`,
           severity: 'success',
@@ -141,10 +138,6 @@ const Step1Account = ({
       }
 
       // Si signUpData.user NO es null, significa que la auto-confirmación está habilitada en Supabase (menos común para email verification)
-      console.log(
-        '✅ Usuario creado y confirmado (o esperando verificación):',
-        signUpData.user
-      );
       showBanner({
         message: '¡Registro completado! Bienvenido a Sellsi.',
         severity: 'success',
@@ -381,7 +374,7 @@ const Step1Account = ({
           fullWidth
           sx={{ mt: 0.5 }}
         >
-          Volver atrás
+          Volver
         </PrimaryButton>
       </form>
 

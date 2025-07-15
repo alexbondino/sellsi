@@ -45,7 +45,7 @@ const Step4Verification = ({ email, onBack }) => {
           height: { md: '32px' },
         }}
       >
-        Volver atrás
+        Volver
       </PrimaryButton>
     </Box>
   );

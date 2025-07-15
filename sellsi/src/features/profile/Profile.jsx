@@ -28,12 +28,33 @@ import BillingInfoSection from './sections/BillingInfoSection';
 
 // Utilidades
 import { getInitials } from '../../utils/profileHelpers';
+import { getUserProfile } from '../../services/profileService';
 
 const Profile = ({ userProfile, onUpdateProfile }) => {
   const { showBanner } = useBanner();
-  
-  // Usar los hooks modulares
-  const { formData, hasChanges, updateField, resetForm, updateInitialData } = useProfileForm(userProfile);
+
+  // Estado local para el perfil cargado
+  const [loadedProfile, setLoadedProfile] = useState(null);
+
+  // Cargar perfil completo desde Supabase al montar
+  useEffect(() => {
+    async function fetchProfile() {
+      const userId = userProfile?.user_id;
+      if (userId) {
+        const profile = await getUserProfile(userId);
+        console.log('[Profile.jsx] Perfil completo cargado:', profile);
+        setLoadedProfile(profile?.data || null);
+      }
+    }
+    fetchProfile();
+  }, [userProfile?.user_id]);
+
+  // Usar los hooks modulares con el perfil cargado
+  const { formData, hasChanges, updateField, resetForm, updateInitialData } = useProfileForm(loadedProfile);
+  useEffect(() => {
+    console.log('[Profile.jsx] formData.shippingRegion:', formData.shippingRegion);
+    console.log('[Profile.jsx] formData.shippingComuna:', formData.shippingComuna);
+  }, [formData.shippingRegion, formData.shippingComuna]);
   const { 
     pendingImage, 
     handleImageChange: _handleImageChange, 
@@ -70,9 +91,6 @@ const Profile = ({ userProfile, onUpdateProfile }) => {
   // Debug effect para monitorear cambios
   useEffect(() => {
     // Debug: Monitorear cambios de imagen y logo_url
-    // console.log('[Profile] userProfile.logo_url changed:', userProfile?.logo_url);
-    // console.log('[Profile] pendingImage changed:', pendingImage);
-    // console.log('[Profile] getDisplayImageUrl():', getDisplayImageUrl());
   }, [userProfile?.logo_url, pendingImage]);
 
   // Handlers simplificados que usan los hooks
@@ -93,12 +111,8 @@ const Profile = ({ userProfile, onUpdateProfile }) => {
     const hasImageChanges = !!pendingImage;
     const hasPendingChanges = hasFormChanges || hasImageChanges;
 
-    // console.log('[Profile] handleUpdate - hasFormChanges:', hasFormChanges);
-    // console.log('[Profile] handleUpdate - hasImageChanges:', hasImageChanges);
-    // console.log('[Profile] handleUpdate - formData:', formData);
 
     if (!hasPendingChanges) {
-      // console.log('[Profile] handleUpdate - No hay cambios pendientes, no se actualiza.');
       return;
     }
 
@@ -110,16 +124,13 @@ const Profile = ({ userProfile, onUpdateProfile }) => {
       // Si hay imagen pendiente, incluirla en la actualización
       if (pendingImage) {
         if (pendingImage.delete) {
-          // console.log('[Profile] handleUpdate - Eliminando imagen de perfil (logo_url=null)');
           dataToUpdate.logo_url = null; // Eliminar imagen
           dataToUpdate.profileImage = null; // Asegurar que se pase null
         } else {
-          // console.log('[Profile] handleUpdate - Subiendo nueva imagen de perfil');
           dataToUpdate.profileImage = pendingImage;
         }
       }
 
-      // console.log('[Profile] handleUpdate - Llamando a onUpdateProfile con:', dataToUpdate);
       await onUpdateProfile(dataToUpdate);
       updateInitialData(); // Actualizar datos iniciales en lugar de resetear
 
@@ -194,19 +205,14 @@ const Profile = ({ userProfile, onUpdateProfile }) => {
   // Función para manejar el avatar con logo o iniciales
   const getAvatarProps = () => {
     const logoUrl = getDisplayImageUrl(); // Usar la función que incluye imagen preliminar
-    // console.log('[Profile] getAvatarProps - logoUrl:', logoUrl);
-    // console.log('[Profile] getAvatarProps - getDisplayName():', getDisplayName());
     if (logoUrl) {
-      // console.log('[Profile] getAvatarProps - Using image URL');
       return {
         src: logoUrl,
         sx: { bgcolor: 'transparent' }
       };
     } else {
       const initials = getInitials(getDisplayName());
-      // console.log('[Profile] getAvatarProps - initials:', initials);
       if (initials && initials.trim()) {
-        // console.log('[Profile] getAvatarProps - Using initials');
         return {
           children: initials, // Mostrar iniciales si no hay logo
           sx: { 
@@ -216,7 +222,6 @@ const Profile = ({ userProfile, onUpdateProfile }) => {
           }
         };
       } else {
-        // console.log('[Profile] getAvatarProps - Using PersonIcon');
         return {
           children: <PersonIcon sx={{ 
             color: 'white !important', 

@@ -87,17 +87,14 @@ export const useProductPageData = () => {
   // HANDLERS DE ACCIONES
   // ============================================================================
   const handleAddToCart = (product) => {
-    console.log('Agregando al carrito:', product)
     // Implementar lógica de carrito
   }
 
   const handleBuyNow = (product) => {
-    console.log('Comprar ahora:', product)
     // Implementar lógica de compra directa
   }
 
   const handleClose = () => {
-    console.log('Cerrando vista de producto')
     // Implementar lógica de navegación
   }
 

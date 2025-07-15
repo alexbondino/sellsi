@@ -112,7 +112,6 @@ const SearchBar = React.memo(({
 
   // ✅ OPTIMIZACIÓN: Handler para el switch de vistas - CON memoización optimizada
   const handleToggleView = React.useCallback(() => {
-    console.log('🔄 SearchBar: handleToggleView called, current localProviderView:', localProviderView);
     
     // Actualizar estado local inmediatamente
     const newValue = !localProviderView;
@@ -288,7 +287,7 @@ const SearchBar = React.memo(({
                 onChange={handleToggleView}
                 size="small"
                 color="primary"
-                onClick={() => console.log('🔍 Switch clicked!')}
+                onClick={() => {}}
               />
             }
             label={

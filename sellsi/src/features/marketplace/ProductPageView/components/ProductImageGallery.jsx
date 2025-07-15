@@ -98,7 +98,7 @@ const ProductImageGallery = ({
             maxWidth: 500, // Evitar que se agrande
             maxHeight: 500, // Evitar que se agrande
             objectFit: 'contain',
-            bgcolor: '#ededed',
+            bgcolor: '#fff',
             p: 1.9, // Reducido de 2 a 1.9
             transition: 'transform 0.3s ease, transform-origin 0.1s ease', // Transición suave
             transformOrigin: isHovering && isDesktop 
@@ -187,7 +187,7 @@ const ProductImageGallery = ({
                 width: '100%',
                 height: '100%',
                 objectFit: 'contain',
-                bgcolor: '#ededed',
+                bgcolor: '#fff',
                 p: 0.475, // Reducido de 0.5 a 0.475 (5% menos)
               }}
             />

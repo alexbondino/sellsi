@@ -68,7 +68,7 @@ export const updateProductSpecifications = async (productId, specifications) => 
       return await clearProductSpecifications(productId)
     }
 
-    console.log(`💾 Actualizando especificación del producto ${productId}:`, firstSpec)
+    // Actualizar especificación del producto
     
     const { error } = await supabase
       .from('products')
@@ -88,7 +88,7 @@ export const updateProductSpecifications = async (productId, specifications) => 
       console.warn(`⚠️ Advertencia: Solo se pudo guardar la primera especificación. La BD actual solo soporta una especificación por producto.`)
     }
 
-    console.log('✅ Especificación actualizada exitosamente')
+    // Especificación actualizada exitosamente
     return true
   } catch (error) {
     console.error('❌ Error actualizando especificación:', error)
@@ -124,7 +124,7 @@ export const deleteProductSpecifications = async (productId) => {
  */
 const clearProductSpecifications = async (productId) => {
   try {
-    console.log(`🗑️ Limpiando especificaciones del producto ${productId}`)
+    // Limpiando especificaciones del producto
     
     const { error } = await supabase
       .from('products')
@@ -140,7 +140,7 @@ const clearProductSpecifications = async (productId) => {
       return false
     }
 
-    console.log('🗑️ Especificaciones limpiadas exitosamente')
+    // Especificaciones limpiadas exitosamente
     return true
   } catch (error) {
     console.error('❌ Error limpiando especificaciones:', error)

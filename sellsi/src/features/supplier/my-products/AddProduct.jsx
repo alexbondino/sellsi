@@ -36,6 +36,7 @@ import { useProductForm } from '../hooks/useProductForm';
 import { useProductValidation } from './hooks/useProductValidation';
 import { calculateEarnings } from './utils/productCalculations';
 import { dashboardThemeCore } from '../../../styles/dashboardThemeCore';
+import { SPACING_BOTTOM_MAIN } from '../../../styles/layoutSpacing';
 
 const AddProduct = () => {
   const location = useLocation();
@@ -206,7 +207,7 @@ const AddProduct = () => {
       toast.success(
         isEditMode
           ? 'Producto actualizado exitosamente'
-          : 'Producto agregado exitosamente'
+          : 'Producto creado exitosamente! Las imágenes se están procesando en segundo plano.'
       );
       navigate('/supplier/myproducts');
     } catch (error) {
@@ -243,7 +244,7 @@ const AddProduct = () => {
           minHeight: '100vh',
           pt: { xs: 9, md: 10 },
           px: 3,
-          pb: 3,
+          pb: SPACING_BOTTOM_MAIN,
           ml: { xs: 0, md: 10, lg: 14, xl: 24 },
         }}
       >

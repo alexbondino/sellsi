@@ -27,6 +27,7 @@ import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import StorefrontOutlinedIcon from '@mui/icons-material/StorefrontOutlined';
 import Inventory2OutlinedIcon from '@mui/icons-material/Inventory2Outlined';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import { useResponsiveThumbnail } from '../../../../hooks/useResponsiveThumbnail'; // Nuevo hook
 
 import ProductImageGallery from './ProductImageGallery'
 import PurchaseActions from './PurchaseActions'
@@ -62,6 +63,9 @@ const ProductHeader = React.memo(({
 
   // Usar tramos del producto si existen, sino usar los del hook
   const finalTiers = product.priceTiers || tiers || []
+
+  // ✅ NUEVO: Hook para obtener thumbnail responsivo de la imagen principal
+  const mainImageThumbnail = useResponsiveThumbnail(product);
 
   const [copied, setCopied] = useState({ name: false, price: false })
   // Estado para la cantidad seleccionada
@@ -312,19 +316,22 @@ const ProductHeader = React.memo(({
   function resolveImageSrc(image) {
     const SUPABASE_PUBLIC_URL =
       'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v1/object/public/product-images/'
-    if (!image) return '/placeholder-product.jpg'
+    
+    if (!image) return mainImageThumbnail || '/placeholder-product.jpg'
+    
     if (typeof image === 'string') {
       if (image.startsWith(SUPABASE_PUBLIC_URL)) return image
       if (image.startsWith('/')) return image
       if (/^https?:\/\//.test(image)) return image
       return getProductImageUrl(image)
     }
+    
     if (typeof image === 'object' && image !== null) {
       if (typeof image === 'string') {
         try {
           image = JSON.parse(image)
         } catch (e) {
-          return '/placeholder-product.jpg'
+          return mainImageThumbnail || '/placeholder-product.jpg'
         }
       }
       if (
@@ -336,7 +343,8 @@ const ProductHeader = React.memo(({
       }
       if (image.image_url) return getProductImageUrl(image.image_url)
     }
-    return '/placeholder-product.jpg'
+    
+    return mainImageThumbnail || '/placeholder-product.jpg'
   }
   return (
     // MUIV2 GRID - CONTENEDOR PRINCIPAL (MuiGrid-container)
@@ -346,7 +354,7 @@ const ProductHeader = React.memo(({
         <Box sx={{ flex: 1, minWidth: 0, display: 'flex', justifyContent: { xs: 'center', md: 'right' } }}>
           <ProductImageGallery
             images={imagenes.map(resolveImageSrc)}
-            mainImage={resolveImageSrc(imagen)}
+            mainImage={mainImageThumbnail || resolveImageSrc(imagen)}
             selectedIndex={selectedImageIndex}
             onImageSelect={onImageSelect}
             productName={nombre}

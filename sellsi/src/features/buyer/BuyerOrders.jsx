@@ -4,6 +4,7 @@ import AssignmentIcon from '@mui/icons-material/Assignment';
 import { ThemeProvider } from '@mui/material/styles';
 import SideBarProvider from '../layout/SideBar';
 import { dashboardThemeCore } from '../../styles/dashboardThemeCore';
+import { SPACING_BOTTOM_MAIN } from '../../styles/layoutSpacing';
 
 const BuyerOrders = () => {
   // ============================================================================
@@ -70,10 +71,10 @@ const BuyerOrders = () => {
         sx={{
           backgroundColor: 'background.default',
           minHeight: '100vh',
-          pt: { xs: 9, md: 10 },
+          pt: { xs: 4.5, md: 5 },
           ml: { xs: 0, md: 10, lg: 14, xl: 24 },
           px: 3,
-          pb: 3,
+          pb: SPACING_BOTTOM_MAIN,
         }}
       >
       <Container maxWidth="xl" disableGutters>

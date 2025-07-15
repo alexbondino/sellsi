@@ -4,13 +4,13 @@
 
 import React, { useEffect } from 'react'
 import { ThemeProvider } from '@mui/material/styles'
-import { Box } from '@mui/material'
+import { Box, Container } from '@mui/material'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'react-hot-toast'
 
 // Layout y tema
-import SideBarProvider from '../layout/SideBar'
 import { dashboardThemeCore } from '../../styles/dashboardThemeCore'
+import { SPACING_BOTTOM_MAIN } from '../../styles/layoutSpacing'
 
 // Hooks del carrito
 import useCartStore from '../buyer/hooks/cartStore'
@@ -71,17 +71,24 @@ const PaymentMethod = () => {
 
   return (
     <ThemeProvider theme={dashboardThemeCore}>
-      <SideBarProvider />
-      
       <Box
         sx={{
           backgroundColor: 'background.default',
           minHeight: '100vh',
-          pt: { xs: 1, md: 2 },
-          pb: 10
+          pt: { xs: 4.5, md: 5 },
+          px: 3,
+          pb: SPACING_BOTTOM_MAIN,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          // Mismo margen que BuyerCart
+          ml: { xs: 0, md: 8, lg: 24, xl: 34 },
+          transition: 'margin-left 0.3s',
         }}
       >
-        <PaymentMethodSelector />
+        <Container maxWidth="xl" disableGutters sx={{ px: { xs: 0, md: 2 } }}>
+          <PaymentMethodSelector />
+        </Container>
       </Box>
     </ThemeProvider>
   )

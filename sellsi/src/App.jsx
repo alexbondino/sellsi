@@ -173,6 +173,7 @@ function AppContent({ mensaje }) {
     '/buyer/orders',
     '/buyer/performance',
     '/buyer/cart',
+    '/buyer/paymentmethod',
     '/buyer/profile',
     '/catalog', // Catálogo del proveedor accesible desde buyer
   ]);
@@ -577,9 +578,8 @@ function AppContent({ mensaje }) {
   const isAdminRoute = location.pathname.startsWith('/admin-login') || 
                        location.pathname.startsWith('/admin-panel');
 
-  // La BottomBar se muestra en todas las rutas excepto en '/supplier/home', '/onboarding' y rutas admin
+  // La BottomBar se muestra en todas las rutas excepto en '/onboarding' y rutas admin
   const showBottomBar = !isAdminRoute && 
-                        location.pathname !== '/supplier/home' && 
                         location.pathname !== '/onboarding';
   
   // TopBar se oculta solo en rutas admin

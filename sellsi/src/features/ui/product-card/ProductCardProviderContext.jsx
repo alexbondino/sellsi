@@ -22,24 +22,8 @@ import {
 const ProductCardProviderContext = React.memo(
   ({ product }) => {
     const navigate = useNavigate();
-    
-    // Comentar log de debug para producción
-    // console.log('🔍 ProductCardProviderContext - Real provider data:', {
-    //   supplier_id: product.supplier_id,
-    //   user_nm: product.user_nm,
-    //   proveedor: product.proveedor,
-    //   logo_url: product.logo_url,
-    //   product_count: product.product_count
-    // });
-
-    // Provider destructuring - usando datos reales de proveedores
-    const {
-      supplier_id,
-      logo_url,
-      user_nm,
-      proveedor, // Este viene del mapeo en useProducts
-      product_count,
-    } = product;
+    // Desestructurar fuera del bloque comentado
+    const { supplier_id, user_nm, proveedor, logo_url, product_count } = product || {};
 
     // ✅ OPTIMIZACIÓN: Memoizar texto mock para evitar recreaciones
     const mockDescription = React.useMemo(() => 

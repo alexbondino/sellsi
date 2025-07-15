@@ -152,6 +152,7 @@ class CartService {  /**
         image: item.products?.product_images?.[0]?.image_url, // Para item.image
         imagen: item.products?.product_images?.[0]?.image_url, // Para item.imagen
         image_url: item.products?.product_images?.[0]?.image_url,
+        thumbnail_url: item.products?.product_images?.[0]?.thumbnail_url, // ✅ NUEVO: Agregar thumbnail_url
         
         // Precios
         price: item.products?.price, // Para item.price

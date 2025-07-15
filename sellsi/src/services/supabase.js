@@ -54,7 +54,6 @@ export const testConnection = async () => {
       return { success: false, error: error.message }
     }
 
-    console.log('✅ Connection successful')
     return { success: true, data }
   } catch (error) {
     console.error('❌ Unexpected connection error:', error)

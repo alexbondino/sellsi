@@ -6,6 +6,7 @@ import AddIcon from '@mui/icons-material/Add';
 import { useSupplierDashboard } from './hooks/useSupplierDashboard';
 import SideBarProvider from '../../layout/SideBar';
 import { dashboardThemeCore } from '../../../styles/dashboardThemeCore';
+import { SPACING_BOTTOM_MAIN } from '../../../styles/layoutSpacing';
 
 // Lazy imports para reducir el bundle inicial
 const DashboardSummary = React.lazy(() => import('./dashboard-summary/DashboardSummary'));
@@ -56,9 +57,9 @@ const ProviderHome = () => {
         sx={{
           backgroundColor: 'background.default',
           minHeight: '100vh',
-          pt: { xs: 9, md: 10 },
+          pt: { xs: 4.5, md: 5 },
           px: 3,
-          pb: 3,
+          pb: SPACING_BOTTOM_MAIN,
           ml: { xs: 0, md: 10, lg: 14, xl: 24 },
         }}
       >

@@ -56,6 +56,7 @@ import {
 import AdminStatCard from './AdminStatCard';
 import { getMarketplaceProducts, deleteProduct, getProductStats } from '../../../services/adminPanelService';
 import { useBanner } from '../../ui';
+import { useMinithumb } from '../../../hooks/useResponsiveThumbnail'; // Hook para minithumb
 
 // ✅ CONSTANTS
 const PRODUCT_STATUS = {
@@ -118,6 +119,21 @@ const commonStyles = {
     borderRadius: 1
   }
 };
+
+// ✅ PRODUCT AVATAR COMPONENT
+const ProductAvatar = memo(({ product }) => {
+  const minithumbUrl = useMinithumb(product);
+  
+  return (
+    <Avatar 
+      src={minithumbUrl} 
+      sx={commonStyles.productImage}
+      variant="rounded"
+    >
+      <InventoryIcon />
+    </Avatar>
+  );
+});
 
 // ✅ PRODUCT MARKETPLACE TABLE COMPONENT
 const ProductMarketplaceTable = memo(() => {
@@ -497,13 +513,7 @@ const ProductMarketplaceTable = memo(() => {
 
                 <TableCell>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                    <Avatar 
-                      src={product.product_image} 
-                      sx={commonStyles.productImage}
-                      variant="rounded"
-                    >
-                      <InventoryIcon />
-                    </Avatar>
+                    <ProductAvatar product={product} />
                     <Box>
                       <Typography component="span" variant="body2" fontWeight="medium">
                         {product.product_name || 'N/A'}
