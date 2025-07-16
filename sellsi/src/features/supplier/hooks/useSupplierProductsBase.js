@@ -96,16 +96,17 @@ const useSupplierProductsBase = create((set, get) => ({
 
     try {      const { data: products, error: prodError } = await supabase
         .from('products')
-        .select('*, product_images(*), product_quantity_ranges(*)')
+        .select('*, product_images(*), product_quantity_ranges(*), product_delivery_regions(*)')
         .eq('supplier_id', supplierId)
         .order('updateddt', { ascending: false })
 
-      if (prodError) throw prodError      // Procesar productos para incluir tramos de precio
+      if (prodError) throw prodError      // Procesar productos para incluir tramos de precio y regiones de despacho
       const processedProducts =
         products?.map((product) => ({
           ...product,
           priceTiers: product.product_quantity_ranges || [],
           images: product.product_images || [],
+          delivery_regions: product.product_delivery_regions || [],
         })) || []
 
       set((state) => ({

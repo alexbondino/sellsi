@@ -9,6 +9,7 @@
 
 import React, { useState, useCallback, useEffect } from 'react'
 import { useSupplierProducts } from './useSupplierProducts'
+import { convertDbRegionsToForm } from '../../../utils/shippingRegionsUtils'
 
 // Valores iniciales del formulario
 const initialFormData = {
@@ -120,7 +121,7 @@ export const useProductForm = (productId = null) => {
       specifications: product.specifications || [{ key: '', value: '' }],
       negociable: product.negociable || false,
       activo: product.activo !== false,
-      shippingRegions: product.delivery_regions || [], // ✅ CORREGIDO: Mapear desde delivery_regions
+      shippingRegions: convertDbRegionsToForm(product.delivery_regions || []), // ✅ CORREGIDO: Convertir formato BD a formulario
     }
   }
 
@@ -139,7 +140,7 @@ export const useProductForm = (productId = null) => {
       is_active: formData.activo,
       imagenes: formData.imagenes,
       specifications: formData.specifications.filter((s) => s.key && s.value),
-      delivery_regions: formData.shippingRegions || [], // ✅ CORREGIDO: Usar delivery_regions en lugar de shippingRegions
+      // delivery_regions eliminado: se guarda por separado en product_delivery_regions
     }
 
     if (formData.pricingType === 'Por Unidad') {
@@ -379,6 +380,7 @@ export const useProductForm = (productId = null) => {
     // Acciones
     updateField,
     updateFields,
+    handleFieldBlur,
     submitForm,
     resetForm,
     validateForm,

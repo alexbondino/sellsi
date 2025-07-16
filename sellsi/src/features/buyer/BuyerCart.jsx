@@ -19,6 +19,7 @@ import {
   AccordionDetails,
   CircularProgress,
   Backdrop,
+  Paper,
 } from '@mui/material';
 import {
   ExpandMore as ExpandMoreIcon,
@@ -48,7 +49,6 @@ import {
   EmptyCartState,
 } from './cart';
 import useShippingValidation from './cart/hooks/useShippingValidation';
-import ShippingToggle from './cart/components/ShippingToggle';
 import ShippingCompatibilityModal from './cart/components/ShippingCompatibilityModal';
 
 // ============================================================================
@@ -141,10 +141,28 @@ const BuyerCart = () => {
   });
 
   // ===== SHIPPING VALIDATION HOOK =====
-  const [isAdvancedShippingMode, setIsAdvancedShippingMode] = useState(false);
   const [compatibilityModalOpen, setCompatibilityModalOpen] = useState(false);
-  
+  // ✅ NUEVO: Modo avanzado por defecto, sin toggle
+  const isAdvancedShippingMode = true;
   const shippingValidation = useShippingValidation(items, isAdvancedShippingMode);
+
+  // ===== DEBUGGING: Log para verificar que las regiones se están cargando =====
+  React.useEffect(() => {
+    if (isAdvancedShippingMode && items.length > 0) {
+      console.log('🚚 [BuyerCart] Modo avanzado activado. Verificando regiones de despacho:');
+      items.forEach(item => {
+        console.log(`📦 Producto: ${item.name || item.nombre}`, {
+          id: item.id,
+          shippingRegions: item.shippingRegions,
+          delivery_regions: item.delivery_regions,
+          shipping_regions: item.shipping_regions,
+          hasShippingData: !!(item.shippingRegions?.length || item.delivery_regions?.length || item.shipping_regions?.length)
+        });
+      });
+      console.log('👤 Usuario región:', shippingValidation.userRegion);
+      console.log('🔍 Estados de envío:', shippingValidation.shippingStates);
+    }
+  }, [items, isAdvancedShippingMode, shippingValidation]);
 
   // ===== CÁLCULOS MEMOIZADOS =====
   const cartCalculations = useMemo(() => {
@@ -333,13 +351,16 @@ const BuyerCart = () => {
     [updateQuantity]
   );
 
+  // Set para evitar múltiples toasts por item eliminado
+  const deletedItemsRef = React.useRef(new Set());
   const handleRemoveWithAnimation = useCallback(
     id => {
+      if (deletedItemsRef.current.has(id)) return; // Ya se eliminó, no mostrar otro toast
+      deletedItemsRef.current.add(id);
       const item = items.find(item => item.id === id);
       if (item) {
         removeItem(id);
         setLastAction({ type: 'remove', item });
-        // Mostrar toast de confirmación
         toast.success(`${item.name} eliminado del carrito`, {
           icon: '🗑️',
           style: { background: '#fffde7', color: '#795548' },
@@ -623,14 +644,6 @@ const BuyerCart = () => {
                 formatPrice={formatPrice}
                 itemVariants={itemVariants}
               /> */}
-            
-            {/* Toggle para validación de envío */}
-            <motion.div variants={itemVariants}>
-              <ShippingToggle
-                isAdvancedMode={isAdvancedShippingMode}
-                onToggle={setIsAdvancedShippingMode}
-              />
-            </motion.div>
             
             <Grid container spacing={{ xs: 2, md: 2, lg: 6, xl: 6 }}>
               {/* Lista de productos */}

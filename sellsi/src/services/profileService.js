@@ -96,6 +96,9 @@ export const getUserProfile = async (userId) => {
       billing_address: billingData?.billing_address || '',
       billing_region: billingData?.billing_region || '',
       billing_commune: billingData?.billing_commune || '',
+
+      // Descripción de proveedor
+      descripcion_proveedor: userData?.descripcion_proveedor || '',
     };
 
     return { data: completeProfile, error: null };
@@ -121,6 +124,7 @@ export const updateUserProfile = async (userId, profileData) => {
       country: profileData.country,
       rut: profileData.rut,
       updatedt: new Date().toISOString(),
+      descripcion_proveedor: profileData.descripcionProveedor || profileData.descripcion_proveedor || '',
     };
 
     // Agregar logo_url solo si se proporciona

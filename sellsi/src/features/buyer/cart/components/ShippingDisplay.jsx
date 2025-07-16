@@ -57,7 +57,7 @@ const ShippingDisplay = ({
         <Typography variant="caption" sx={{ fontWeight: 'bold', mb: 0.5 }}>
           🚚 Envío Estándar
         </Typography>
-        <Typography variant="caption" color="text.secondary">
+        <Typography variant="caption" color="text.secondary" component="span">
           3-5 días hábiles
         </Typography>
         <Typography
@@ -78,8 +78,10 @@ const ShippingDisplay = ({
   // Modo avanzado: mostrar información validada
   const productId = product.id || product.productid;
   const validation = shippingValidation?.shippingStates?.[productId];
+  const isLoading = shippingValidation?.isLoading;
 
-  if (!validation) {
+  // ✅ NUEVO: Mostrar estado de carga profesional
+  if (isLoading || !validation) {
     return (
       <Box sx={{
         display: 'flex',
@@ -90,9 +92,34 @@ const ShippingDisplay = ({
         maxWidth: '140px',
         py: 1,
         px: 0,
+        borderRadius: 1,
+        bgcolor: 'action.hover',
+        border: '1px solid',
+        borderColor: 'divider',
       }}>
-        <Typography variant="caption" sx={{ fontWeight: 'bold', mb: 0.5 }}>
-          🚚 Cargando...
+        <Box sx={{ display: 'flex', alignItems: 'center', mb: 0.5 }}>
+          <Box 
+            sx={{ 
+              width: 14, 
+              height: 14, 
+              borderRadius: '50%',
+              bgcolor: 'primary.main',
+              opacity: 0.6,
+              animation: 'pulse 1.5s ease-in-out infinite',
+              mr: 0.5,
+              '@keyframes pulse': {
+                '0%': { opacity: 0.6 },
+                '50%': { opacity: 1 },
+                '100%': { opacity: 0.6 }
+              }
+            }} 
+          />
+          <Typography variant="caption" sx={{ fontWeight: 'bold', color: 'text.secondary' }}>
+            Cargando...
+          </Typography>
+        </Box>
+        <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.65rem' }} component="span">
+          Verificando despacho
         </Typography>
       </Box>
     );
@@ -112,9 +139,8 @@ const ShippingDisplay = ({
           py: 1,
           px: 0,
           borderRadius: 1,
-          bgcolor: 'success.50',
-          border: '1px solid',
-          borderColor: 'success.200',
+          bgcolor: 'transparent',
+          border: 'none',
         }}>
           <Box sx={{ display: 'flex', alignItems: 'center', mb: 0.5 }}>
             <ShippingIcon sx={{ fontSize: 14, color: 'success.main', mr: 0.5 }} />
@@ -122,7 +148,7 @@ const ShippingDisplay = ({
               Disponible
             </Typography>
           </Box>
-          <Typography variant="caption" color="text.secondary">
+          <Typography variant="caption" color="text.secondary" component="span">
             {validation.shippingInfo?.days} días hábiles
           </Typography>
           <Typography
@@ -151,9 +177,8 @@ const ShippingDisplay = ({
           py: 1,
           px: 0,
           borderRadius: 1,
-          bgcolor: 'warning.50',
-          border: '1px solid',
-          borderColor: 'warning.200',
+          bgcolor: 'transparent',
+          border: 'none',
         }}>
           <Box sx={{ display: 'flex', alignItems: 'center', mb: 0.5 }}>
             <WarningIcon sx={{ fontSize: 14, color: 'warning.main', mr: 0.5 }} />
@@ -169,7 +194,12 @@ const ShippingDisplay = ({
               </IconButton>
             </Tooltip>
           </Box>
-          <Typography variant="caption" color="warning.main" sx={{ fontSize: '0.65rem' }}>
+          <Typography 
+            variant="caption" 
+            color="warning.main" 
+            sx={{ fontSize: '0.65rem' }}
+            component="span"
+          >
             {validation.message}
           </Typography>
         </Box>
@@ -191,15 +221,16 @@ const ShippingDisplay = ({
           border: 'none',
         }}>
           <Box sx={{ display: 'flex', alignItems: 'center', mb: 0.5 }}>
-            <ErrorIcon sx={{ fontSize: 14, color: 'error.main', mr: 0.5 }} />
-            <Typography variant="caption" sx={{ fontWeight: 'bold', color: 'error.main' }}>
-              Sin información
+            <InfoIcon sx={{ fontSize: 14, color: 'info.main', mr: 0.5 }} />
+            <Typography variant="caption" sx={{ fontWeight: 'bold', color: 'info.main' }}>
+              Sin Información
             </Typography>
           </Box>
           <Typography 
             variant="caption" 
-            color="error.main" 
+            color="info.main" 
             sx={{ fontSize: '0.65rem', textAlign: 'left' }}
+            component="span"
           >
             {validation.message}
           </Typography>
@@ -221,7 +252,7 @@ const ShippingDisplay = ({
           <Typography variant="caption" sx={{ fontWeight: 'bold', mb: 0.5 }}>
             🚚 Envío Estándar
           </Typography>
-          <Typography variant="caption" color="text.secondary">
+          <Typography variant="caption" color="text.secondary" component="span">
             3-5 días hábiles
           </Typography>
           <Typography

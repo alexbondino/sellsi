@@ -30,6 +30,10 @@ import {
   ProductResultsPanel,
 } from './components';
 
+// Servicio para regiones de entrega
+import { fetchProductRegions, saveProductRegions } from '../../../services/productDeliveryRegionsService';
+import { convertDbRegionsToForm, convertFormRegionsToDb } from '../../../utils/shippingRegionsUtils';
+
 // Hooks y utilidades
 import { useSupplierProducts } from '../hooks/useSupplierProducts';
 import { useProductForm } from '../hooks/useProductForm';
@@ -71,8 +75,12 @@ const AddProduct = () => {
     markSubmitAttempt,
   } = useProductValidation();
 
+
   // Estado local para errores de imágenes
   const [imageError, setImageError] = useState('');
+
+  // Estado shippingRegions para mapeo con Supabase
+  const [shippingRegions, setShippingRegions] = useState([]);
 
   // Cálculos dinámicos
   const [calculations, setCalculations] = useState({
@@ -87,12 +95,32 @@ const AddProduct = () => {
     },
   });
 
+
   // Cargar productos al montar el componente
   useEffect(() => {
     if (supplierId) {
       loadProducts(supplierId);
     }
   }, [supplierId, loadProducts]);
+
+  // Cargar regiones de entrega si editando
+  useEffect(() => {
+    if (isEditMode && editProductId) {
+      console.log('[AddProduct] useEffect - Cargando regiones para producto:', editProductId);
+      fetchProductRegions(editProductId)
+        .then(regions => {
+          console.log('[AddProduct] useEffect - Regiones cargadas desde BD:', regions);
+          const formattedRegions = convertDbRegionsToForm(regions);
+          console.log('[AddProduct] useEffect - Regiones convertidas al formato formulario:', formattedRegions);
+          setShippingRegions(formattedRegions);
+          updateField('shippingRegions', formattedRegions); // Sincroniza con formData
+          console.log('[AddProduct] useEffect - shippingRegions state actualizado:', formattedRegions);
+        })
+        .catch(error => {
+          console.error('[AddProduct] useEffect - Error cargando regiones:', error);
+        });
+    }
+  }, [isEditMode, editProductId, updateField]);
 
   // Validación en tiempo real solo si el campo fue tocado o tras submit
   useEffect(() => {
@@ -116,8 +144,14 @@ const AddProduct = () => {
     updateField(field, value);
   };
 
-  const handleRegionChange = (shippingRegions) => {
-    updateField('shippingRegions', shippingRegions);
+
+  // Actualiza shippingRegions en formData y estado local
+  const handleRegionChange = (regions) => {
+    console.log('[AddProduct] handleRegionChange - Regiones recibidas:', regions);
+    setShippingRegions(regions);
+    updateField('shippingRegions', regions);
+    console.log('[AddProduct] handleRegionChange - shippingRegions state actualizado:', regions);
+    console.log('[AddProduct] handleRegionChange - formData.shippingRegions será:', regions);
   };
 
   const handlePricingTypeChange = (event, newValue) => {
@@ -191,9 +225,16 @@ const AddProduct = () => {
       return;
     }
 
+    // LOG: Estado de formData y shippingRegions antes de guardar
+    console.log('[AddProduct] handleSubmit - formData:', formData);
+    console.log('[AddProduct] handleSubmit - formData.shippingRegions:', formData.shippingRegions);
+    console.log('[AddProduct] handleSubmit - shippingRegions state:', shippingRegions);
+
     try {
+      // 1. Guardar producto principal
       const result = await submitForm();
-      
+      console.log('[AddProduct] handleSubmit - resultado submitForm:', result);
+
       if (!result.success) {
         console.error('❌ Backend errors:', result.errors);
         if (result.errors && typeof result.errors === 'object') {
@@ -204,10 +245,45 @@ const AddProduct = () => {
         throw new Error(result.error || 'No se pudo procesar el producto');
       }
 
+      // 2. Guardar regiones de entrega en Supabase
+      let productId;
+      
+      if (isEditMode) {
+        productId = editProductId;
+      } else {
+        // Para productos nuevos, usar el ID del producto creado
+        productId = result.product?.productid || result.productId;
+      }
+
+      console.log('[AddProduct] handleSubmit - productId usado para regiones:', productId);
+      console.log('[AddProduct] handleSubmit - result completo:', result);
+      
+      if (productId && shippingRegions.length > 0) {
+        console.log('[AddProduct] handleSubmit - Guardando shippingRegions:', shippingRegions);
+        // Convertir formato de display a formato BD antes de guardar
+        const dbRegions = convertFormRegionsToDb(shippingRegions);
+        console.log('[AddProduct] handleSubmit - Regiones convertidas para BD:', dbRegions);
+        
+        try {
+          await saveProductRegions(productId, dbRegions);
+          console.log('[AddProduct] handleSubmit - Regiones guardadas exitosamente');
+        } catch (regionError) {
+          console.error('[AddProduct] handleSubmit - Error guardando regiones:', regionError);
+          // No lanzar error aquí para que el producto se guarde aunque falle las regiones
+          toast.error('Producto guardado, pero hubo un error al guardar las regiones de entrega');
+        }
+      } else {
+        console.warn('[AddProduct] handleSubmit - No se guardaron shippingRegions. productId:', productId, 'shippingRegions:', shippingRegions);
+        if (!productId) {
+          console.error('[AddProduct] handleSubmit - ERROR: productId no disponible para guardar regiones');
+          console.error('[AddProduct] handleSubmit - Estructura del result:', JSON.stringify(result, null, 2));
+        }
+      }
+
       toast.success(
         isEditMode
           ? 'Producto actualizado exitosamente'
-          : 'Producto creado exitosamente! Las imágenes se están procesando en segundo plano.'
+          : 'Producto creado exitosamente!'
       );
       navigate('/supplier/myproducts');
     } catch (error) {

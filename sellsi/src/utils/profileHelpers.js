@@ -44,6 +44,7 @@ export const mapUserProfileToFormData = (userProfile) => {
     rut: userProfile.rut || '',
     role: userProfile.main_supplier ? 'supplier' : 'buyer', // Convertir boolean → string
     user_nm: userProfile.user_nm || '',
+    descripcionProveedor: userProfile.descripcion_proveedor || '', // <--- MAPEO CORRECTO
 
     // Información de Envío
     shippingRegion: userProfile.shipping_region || '',
@@ -51,6 +52,7 @@ export const mapUserProfileToFormData = (userProfile) => {
     shippingAddress: userProfile.shipping_address || '',
     shippingNumber: userProfile.shipping_number || '',
     shippingDept: userProfile.shipping_dept || '',
+    shippingRegions: userProfile.shippingRegions || [], // <--- FIX: asegura que siempre esté definido
 
     // Información de Transferencia
     accountHolder: userProfile.account_holder || '',
@@ -66,7 +68,7 @@ export const mapUserProfileToFormData = (userProfile) => {
     businessLine: userProfile.business_line || '',
     billingAddress: userProfile.billing_address || '',
     billingRegion: userProfile.billing_region || '',
-    billingComuna: userProfile.billing_comuna || '',
+    billingComuna: userProfile.billing_comuna || userProfile.billing_commune || '',
   };
   console.log('[mapUserProfileToFormData] shipping_commune:', userProfile.shipping_commune, '→ shippingComuna:', mapped.shippingComuna);
   return mapped;
@@ -86,6 +88,7 @@ export const mapFormDataToUserProfile = (formData, userProfile) => {
     rut: formData.rut,
     main_supplier: formData.role === 'supplier', // Convertir string → boolean
     user_nm: formData.user_nm || userProfile?.user_nm, // Preservar nombre de usuario
+    descripcion_proveedor: formData.descripcionProveedor || '', // <--- MAPEO CORRECTO
     
     // Información de Envío
     shipping_region: formData.shippingRegion,

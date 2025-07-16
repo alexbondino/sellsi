@@ -44,7 +44,7 @@ import {
 } from '@mui/material';
 import {
   Delete as DeleteIcon,
-  Visibility as ViewIcon,
+  Edit as EditIcon,
   Store as StoreIcon,
   Inventory as InventoryIcon,
   Refresh as RefreshIcon,
@@ -54,9 +54,10 @@ import {
 
 // Importar componentes UI existentes
 import AdminStatCard from './AdminStatCard';
-import { getMarketplaceProducts, deleteProduct, getProductStats } from '../../../services/adminPanelService';
+import EditProductNameModal from '../../ui/EditProductNameModal';
+import DeleteMultipleProductsModal from '../../ui/DeleteMultipleProductsModal';
+import { getMarketplaceProducts, deleteProduct, getProductStats, deleteMultipleProducts, updateProductName } from '../../../services/adminPanelService';
 import { useBanner } from '../../ui';
-import { useMinithumb } from '../../../hooks/useResponsiveThumbnail'; // Hook para minithumb
 
 // ✅ CONSTANTS
 const PRODUCT_STATUS = {
@@ -122,13 +123,86 @@ const commonStyles = {
 
 // ✅ PRODUCT AVATAR COMPONENT
 const ProductAvatar = memo(({ product }) => {
-  const minithumbUrl = useMinithumb(product);
+  const [hasError, setHasError] = useState(false);
+  
+  // Función para construir URL del minithumb dinámicamente
+  const getMinithumbUrl = useCallback((product) => {
+    if (!product) return null;
+    
+    // Si ya tiene thumbnail_url, construir el minithumb
+    if (product.thumbnail_url) {
+      return product.thumbnail_url.replace('_desktop_320x260.jpg', '_minithumb_40x40.jpg');
+    }
+    
+    // Si tiene imagen principal, construir desde ella
+    if (product.imagen) {
+      try {
+        const url = new URL(product.imagen);
+        const pathParts = url.pathname.split('/');
+        
+        // Buscar la estructura: .../product-images/user_id/product_id/...
+        const productImagesIndex = pathParts.findIndex(part => part === 'product-images');
+        
+        if (productImagesIndex !== -1 && pathParts.length > productImagesIndex + 2) {
+          const userId = pathParts[productImagesIndex + 1];
+          const productId = pathParts[productImagesIndex + 2];
+          
+          // Extraer timestamp del nombre del archivo
+          const fileName = pathParts[pathParts.length - 1];
+          const timestampMatch = fileName.match(/^(\d+)_/);
+          
+          if (timestampMatch) {
+            const timestamp = timestampMatch[1];
+            console.log('🔍 [ProductAvatar] Extrayendo timestamp:', {
+              fileName,
+              timestamp,
+              userId,
+              productId
+            });
+            // Construir URL del minithumb con la estructura correcta
+            return `${url.origin}/storage/v1/object/public/product-images-thumbnails/${userId}/${productId}/${timestamp}_minithumb_40x40.jpg`;
+          }
+        }
+      } catch (error) {
+        console.warn('[ProductAvatar] Error construyendo minithumb URL:', error);
+      }
+    }
+    
+    return null;
+  }, []);
+  
+  const minithumbUrl = getMinithumbUrl(product);
+  
+  console.log('🎯 [ProductAvatar] URL dinámica construida:', minithumbUrl);
+  console.log('🔍 [ProductAvatar] Datos del producto:', {
+    product_id: product.id,
+    imagen: product.imagen,
+    thumbnail_url: product.thumbnail_url,
+    name: product.name || product.nombre
+  });
+  
+  // Si hay error, usar imagen por defecto
+  const finalUrl = hasError ? (product.imagen || null) : (minithumbUrl || product.imagen || null);
+  
+  console.log('🚀 [ProductAvatar] Estado final:', {
+    hasError,
+    minithumbUrl,
+    finalUrl,
+    productImagen: product.imagen
+  });
   
   return (
     <Avatar 
-      src={minithumbUrl} 
+      src={finalUrl} 
       sx={commonStyles.productImage}
       variant="rounded"
+      onError={(e) => {
+        console.error('❌ [ProductAvatar] Error cargando imagen:', {
+          src: finalUrl,
+          error: e
+        });
+        setHasError(true);
+      }}
     >
       <InventoryIcon />
     </Avatar>
@@ -183,6 +257,21 @@ const ProductMarketplaceTable = memo(() => {
     open: false,
     product: null
   });
+
+  // Modal para eliminar múltiples productos
+  const [deleteMultipleModal, setDeleteMultipleModal] = useState({
+    open: false,
+    products: []
+  });
+
+  // Modal para editar nombre de producto
+  const [editNameModal, setEditNameModal] = useState({
+    open: false,
+    product: null
+  });
+
+  // Estado de carga para operaciones
+  const [operationLoading, setOperationLoading] = useState(false);
 
   const { showBanner } = useBanner();
 
@@ -320,6 +409,7 @@ const ProductMarketplaceTable = memo(() => {
 
   const handleDeleteConfirm = async () => {
     const { product } = deleteModal;
+    setOperationLoading(true);
     try {
       const result = await deleteProduct(product.product_id);
       if (result.success) {
@@ -335,6 +425,96 @@ const ProductMarketplaceTable = memo(() => {
     } catch (error) {
       console.error('Error eliminando producto:', error);
       setError('Error interno del servidor');
+    } finally {
+      setOperationLoading(false);
+    }
+  };
+
+  // Handlers para eliminar múltiples productos
+  const openDeleteMultipleModal = () => {
+    const selectedProductsArray = filteredProducts.filter(product => 
+      selectedProducts.has(product.product_id)
+    );
+    setDeleteMultipleModal({
+      open: true,
+      products: selectedProductsArray
+    });
+  };
+
+  const closeDeleteMultipleModal = () => {
+    setDeleteMultipleModal({
+      open: false,
+      products: []
+    });
+  };
+
+  const handleDeleteMultipleConfirm = async () => {
+    const productIds = deleteMultipleModal.products.map(p => p.product_id);
+    setOperationLoading(true);
+    try {
+      const result = await deleteMultipleProducts(productIds);
+      if (result.success) {
+        await loadData();
+        setSelectedProducts(new Set()); // Limpiar selección
+        closeDeleteMultipleModal();
+        
+        if (result.errors.length > 0) {
+          showBanner({
+            message: `Se eliminaron ${result.deleted} de ${productIds.length} productos. Algunos productos tuvieron errores.`,
+            severity: 'warning',
+          });
+        } else {
+          showBanner({
+            message: `Se eliminaron ${result.deleted} producto${result.deleted !== 1 ? 's' : ''} correctamente`,
+            severity: 'success',
+          });
+        }
+      } else {
+        setError(result.error || 'Error al eliminar productos');
+      }
+    } catch (error) {
+      console.error('Error eliminando productos:', error);
+      setError('Error interno del servidor');
+    } finally {
+      setOperationLoading(false);
+    }
+  };
+
+  // Handlers para editar nombre de producto
+  const openEditNameModal = (product) => {
+    setEditNameModal({
+      open: true,
+      product
+    });
+  };
+
+  const closeEditNameModal = () => {
+    setEditNameModal({
+      open: false,
+      product: null
+    });
+  };
+
+  const handleEditNameConfirm = async (newName) => {
+    const { product } = editNameModal;
+    setOperationLoading(true);
+    try {
+      const result = await updateProductName(product.product_id, newName);
+      if (result.success) {
+        await loadData();
+        closeEditNameModal();
+        showBanner({
+          message: `El nombre del producto fue actualizado correctamente`,
+          severity: 'success',
+        });
+      } else {
+        setError(result.error || 'Error al actualizar el nombre del producto');
+      }
+    } catch (error) {
+      console.error('Error actualizando nombre del producto:', error);
+      setError('Error interno del servidor');
+    } finally {
+      setOperationLoading(false);
     }
   };
 
@@ -467,9 +647,26 @@ const ProductMarketplaceTable = memo(() => {
             </Typography>
           </Box>
         </Grid>
+        
+        {/* Botón para eliminar productos seleccionados */}
+        {selectedProducts.size > 0 && (
+          <Grid item xs={12}>
+            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 1 }}>
+              <Button
+                variant="contained"
+                color="error"
+                startIcon={<DeleteIcon />}
+                onClick={openDeleteMultipleModal}
+                disabled={operationLoading}
+              >
+                Eliminar {selectedProducts.size} producto{selectedProducts.size !== 1 ? 's' : ''} seleccionado{selectedProducts.size !== 1 ? 's' : ''}
+              </Button>
+            </Box>
+          </Grid>
+        )}
       </Grid>
     </Paper>
-  ), [filters, handleFilterChange, searchTerm, debouncedSearchTerm, initialLoadComplete, filteredProducts.length, products.length]);
+  ), [filters, handleFilterChange, searchTerm, debouncedSearchTerm, initialLoadComplete, filteredProducts.length, products.length, selectedProducts.size, operationLoading]);
 
   const renderProductsTable = () => (
     <TableContainer component={Paper} sx={commonStyles.tableContainer}>
@@ -563,9 +760,14 @@ const ProductMarketplaceTable = memo(() => {
 
                 <TableCell align="center">
                   <Box sx={{ display: 'flex', justifyContent: 'center', gap: 0.5 }}>
-                    <Tooltip title="Ver detalles">
-                      <IconButton size="small" sx={commonStyles.actionButton}>
-                        <ViewIcon fontSize="small" />
+                    <Tooltip title="Editar nombre del producto">
+                      <IconButton 
+                        size="small" 
+                        sx={commonStyles.actionButton}
+                        onClick={() => openEditNameModal(product)}
+                        disabled={operationLoading}
+                      >
+                        <EditIcon fontSize="small" />
                       </IconButton>
                     </Tooltip>
 
@@ -575,6 +777,7 @@ const ProductMarketplaceTable = memo(() => {
                         sx={commonStyles.actionButton}
                         color="error"
                         onClick={() => openDeleteModal(product)}
+                        disabled={operationLoading}
                       >
                         <DeleteIcon fontSize="small" />
                       </IconButton>
@@ -618,11 +821,11 @@ const ProductMarketplaceTable = memo(() => {
         </DialogContentText>
       </DialogContent>
       <DialogActions sx={{ justifyContent: 'center', gap: 3 }}>
-        <Button onClick={closeDeleteModal} color="inherit">
+        <Button onClick={closeDeleteModal} color="inherit" disabled={operationLoading}>
           Cancelar
         </Button>
-        <Button onClick={handleDeleteConfirm} color="error" variant="contained">
-          Eliminar
+        <Button onClick={handleDeleteConfirm} color="error" variant="contained" disabled={operationLoading}>
+          {operationLoading ? 'Eliminando...' : 'Eliminar'}
         </Button>
       </DialogActions>
     </Dialog>
@@ -680,6 +883,24 @@ const ProductMarketplaceTable = memo(() => {
 
       {/* Modal de confirmación de eliminación */}
       {renderDeleteModal()}
+
+      {/* Modal para eliminar múltiples productos */}
+      <DeleteMultipleProductsModal
+        open={deleteMultipleModal.open}
+        onClose={closeDeleteMultipleModal}
+        products={deleteMultipleModal.products}
+        onConfirm={handleDeleteMultipleConfirm}
+        loading={operationLoading}
+      />
+
+      {/* Modal para editar nombre de producto */}
+      <EditProductNameModal
+        open={editNameModal.open}
+        onClose={closeEditNameModal}
+        product={editNameModal.product}
+        onConfirm={handleEditNameConfirm}
+        loading={operationLoading}
+      />
     </Box>
   );
 });

@@ -4,6 +4,7 @@
 
 import { supabase } from '../../../services/supabase'
 import { PAYMENT_STATUS } from '../constants/paymentMethods'
+import { trackUserAction } from '../../../services/ipTrackingService'
 
 class CheckoutService {
   
@@ -16,6 +17,9 @@ class CheckoutService {
    */
   async createOrder(orderData) {
     try {
+      // Registrar IP del usuario al crear la orden
+      await trackUserAction(`order_created_${orderData.paymentMethod || 'unknown'}`)
+      
       const { data, error } = await supabase
         .from('orders')
         .insert({

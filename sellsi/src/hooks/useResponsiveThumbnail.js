@@ -1,6 +1,19 @@
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useTheme } from '@mui/material/styles';
 import { useMediaQuery } from '@mui/material';
+import { supabase } from '../services/supabase';
+
+// Cache global para thumbnails para evitar consultas repetidas
+const thumbnailCache = new Map();
+
+// Función para limpiar el cache (útil para debugging)
+const clearThumbnailCache = () => {
+  thumbnailCache.clear();
+  console.log('[useMinithumb] 🧹 Cache limpiado');
+};
+
+// Exponer función para debug
+window.clearThumbnailCache = clearThumbnailCache;
 
 /**
  * Hook para obtener la URL del thumbnail apropiado según el breakpoint actual
@@ -76,29 +89,189 @@ export const useThumbnailInfo = (product) => {
 /**
  * Hook para obtener el minithumb específicamente (40x40)
  * Siempre devuelve el minithumb sin importar el breakpoint
+ * Si no está disponible en el producto, consulta la base de datos
  * @param {Object} product - Producto con información de imágenes
  * @returns {string} URL del minithumb (40x40)
  */
 export const useMinithumb = (product) => {
+  const [dbThumbnails, setDbThumbnails] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Función para construir URL del minithumb basándose en la imagen original
+  const buildMinithumbUrl = (originalImageUrl) => {
+    if (!originalImageUrl) return null;
+    
+    try {
+      // Extraer información de la URL original
+      const url = new URL(originalImageUrl);
+      
+      // Verificar si es una URL de Supabase con el bucket de imágenes
+      if (url.pathname.includes('/storage/v1/object/public/product-images/')) {
+        // Cambiar el bucket de product-images a product-images-thumbnails
+        const thumbnailPath = url.pathname.replace('/storage/v1/object/public/product-images/', '/storage/v1/object/public/product-images-thumbnails/');
+        
+        // Obtener el nombre del archivo original y extraer timestamp
+        const pathParts = thumbnailPath.split('/');
+        const fileName = pathParts[pathParts.length - 1];
+        
+        // Extraer timestamp del nombre del archivo original
+        const timestampMatch = fileName.match(/^(\d+)_/);
+        if (timestampMatch) {
+          const timestamp = timestampMatch[1];
+          const minithumbFileName = `${timestamp}_minithumb_40x40.jpg`;
+          
+          // Construir URL del minithumb
+          const minithumbUrl = `${url.origin}${pathParts.slice(0, -1).join('/')}/${minithumbFileName}`;
+          
+          return minithumbUrl;
+        }
+      }
+    } catch (error) {
+      console.warn('[useMinithumb] Error construyendo URL del minithumb:', error);
+    }
+    
+    return null;
+  };
+
+  // Función para obtener thumbnails desde la base de datos
+  const fetchThumbnailsFromDB = async (productId) => {
+    if (!productId || isLoading) return;
+
+    // Verificar cache primero
+    const cacheKey = `minithumb_first_${productId}`;
+    if (thumbnailCache.has(cacheKey)) {
+      const cachedData = thumbnailCache.get(cacheKey);
+      console.log('[useMinithumb] ✅ Usando thumbnail desde cache:', cacheKey, cachedData);
+      setDbThumbnails(cachedData);
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      console.log('[useMinithumb] Consultando BD para producto:', productId);
+
+      // Consultar la tabla product_images para obtener thumbnails
+      const { data, error } = await supabase
+        .from('product_images')
+        .select('thumbnails, thumbnail_url')
+        .eq('product_id', productId)
+        .order('image_url', { ascending: true }) // Ordenar por image_url ascendente para tomar la primera
+        .limit(1);
+
+      if (error) {
+        console.warn('[useMinithumb] Error consultando BD:', error);
+        thumbnailCache.set(cacheKey, null);
+        return;
+      }
+
+      const firstRow = data?.[0];
+      console.log('[useMinithumb] 📋 Primera fila obtenida:', firstRow);
+      
+      if (firstRow?.thumbnails) {
+        console.log('[useMinithumb] ✅ Thumbnails encontrados en BD:', firstRow.thumbnails);
+        setDbThumbnails(firstRow.thumbnails);
+        thumbnailCache.set(cacheKey, firstRow.thumbnails);
+      } else if (firstRow?.thumbnail_url) {
+        console.log('[useMinithumb] ⚠️ thumbnails es null, pero existe thumbnail_url:', firstRow.thumbnail_url);
+        
+        // Construir minithumb desde thumbnail_url
+        const minithumbUrl = firstRow.thumbnail_url.replace(
+          '_desktop_320x260.jpg',
+          '_minithumb_40x40.jpg'
+        );
+        
+        if (minithumbUrl !== firstRow.thumbnail_url) {
+          console.log('[useMinithumb] ✅ Construyendo minithumb desde thumbnail_url:', minithumbUrl);
+          
+          // Verificar si el minithumb existe, si no, usar el desktop como fallback
+          const constructedThumbnails = { 
+            minithumb: minithumbUrl,
+            fallback: firstRow.thumbnail_url // Usar desktop como fallback
+          };
+          
+          setDbThumbnails(constructedThumbnails);
+          thumbnailCache.set(cacheKey, constructedThumbnails);
+        } else {
+          console.log('[useMinithumb] ⚠️ No se pudo construir minithumb desde thumbnail_url');
+          thumbnailCache.set(cacheKey, null);
+        }
+      } else {
+        console.log('[useMinithumb] ⚠️ No se encontraron thumbnails ni thumbnail_url en BD para producto:', productId);
+        thumbnailCache.set(cacheKey, null);
+      }
+    } catch (error) {
+      console.error('[useMinithumb] Error inesperado:', error);
+      thumbnailCache.set(cacheKey, null);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Efecto para consultar BD cuando no hay thumbnails en el producto
+  useEffect(() => {
+    const needsDbLookup = product && 
+                         product.id && 
+                         !product.thumbnails;
+
+    if (needsDbLookup) {
+      fetchThumbnailsFromDB(product.id);
+    }
+  }, [product?.id, product?.thumbnails]);
+
   return useMemo(() => {
     if (!product) return '/placeholder-product.jpg';
 
-    // Buscar el minithumb específico
-    if (product.thumbnails && product.thumbnails.minithumb) {
-      return product.thumbnails.minithumb;
+    // 🎯 PRIORIDAD 1: Buscar el minithumb específico (40x40) en el producto
+    if (product.thumbnails && typeof product.thumbnails === 'object') {
+      if (product.thumbnails.minithumb) {
+        return product.thumbnails.minithumb;
+      }
     }
 
-    // Fallback al thumbnail principal si existe
-    if (product.thumbnailUrl || product.thumbnail_url) {
-      const thumbnailUrl = product.thumbnailUrl || product.thumbnail_url;
-      return thumbnailUrl;
+    // 🎯 PRIORIDAD 2: Buscar en thumbnails de la base de datos
+    if (dbThumbnails) {
+      if (typeof dbThumbnails === 'object' && dbThumbnails.minithumb) {
+        return dbThumbnails.minithumb;
+      }
+      // Si minithumb falla, usar fallback
+      if (typeof dbThumbnails === 'object' && dbThumbnails.fallback) {
+        console.log('[useMinithumb] 🔄 Usando fallback desktop:', dbThumbnails.fallback);
+        return dbThumbnails.fallback;
+      }
+      if (typeof dbThumbnails === 'string') {
+        try {
+          const parsed = JSON.parse(dbThumbnails);
+          if (parsed.minithumb) {
+            return parsed.minithumb;
+          }
+        } catch (e) {
+          console.warn('[useMinithumb] Error parseando thumbnails BD JSON:', e);
+        }
+      }
     }
 
-    // Último fallback a la imagen principal
+    // 🎯 PRIORIDAD 3: Construir URL del minithumb basándose en la imagen original
+    if (product.imagen) {
+      const constructedUrl = buildMinithumbUrl(product.imagen);
+      if (constructedUrl) {
+        return constructedUrl;
+      }
+    }
+
+    // 🎯 PRIORIDAD 4: Fallback a thumbnails principales
+    if (product.thumbnailUrl) {
+      return product.thumbnailUrl;
+    }
+    
+    if (product.thumbnail_url) {
+      return product.thumbnail_url;
+    }
+
+    // 🎯 PRIORIDAD 5: Último fallback a la imagen principal
     if (product.imagen) {
       return product.imagen;
     }
 
     return '/placeholder-product.jpg';
-  }, [product]);
+  }, [product, dbThumbnails]);
 };

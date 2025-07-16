@@ -28,6 +28,7 @@ import BillingInfoSection from './sections/BillingInfoSection';
 
 // Utilidades
 import { getInitials } from '../../utils/profileHelpers';
+import { trackUserAction } from '../../services/ipTrackingService';
 import { getUserProfile } from '../../services/profileService';
 
 const Profile = ({ userProfile, onUpdateProfile }) => {
@@ -133,6 +134,9 @@ const Profile = ({ userProfile, onUpdateProfile }) => {
 
       await onUpdateProfile(dataToUpdate);
       updateInitialData(); // Actualizar datos iniciales en lugar de resetear
+
+      // Registrar IP del usuario al actualizar perfil
+      await trackUserAction('profile_updated')
 
       // Limpiar imagen pendiente después de guardar exitosamente
       clearPendingImage();
@@ -382,28 +386,6 @@ const Profile = ({ userProfile, onUpdateProfile }) => {
             onBlurSensitive={handleSensitiveBlur}
           />
         </Box>
-        {/* Descripción proveedor solo si el rol es supplier */}
-        {formData.role === 'supplier' && (
-          <Box sx={{ mt: 3, px: 3 }}>
-            <TextField
-              label="Descripción breve del proveedor"
-              variant="outlined"
-              fullWidth
-              multiline
-              rows={3}
-              value={formData.descripcionProveedor || ''}
-              onChange={e => {
-                const value = e.target.value;
-                if (value.length <= 200) {
-                  updateField('descripcionProveedor', value);
-                }
-              }}
-              placeholder="Una descripción resumida del tipo de productos que comercializas..."
-              helperText={`Una descripción resumida del tipo de productos que comercializas. Esta información ayudará a los compradores a identificar rápidamente tu oferta. (${(formData.descripcionProveedor || '').length}/200)`}
-              sx={{ '.MuiOutlinedInput-root': { borderRadius: 2 } }}
-            />
-          </Box>
-        )}
       </Paper>
 
       {/* Modal de Cambio de Contraseña */}

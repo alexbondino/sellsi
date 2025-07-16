@@ -1,6 +1,7 @@
 import { useReducer } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../../services/supabase'
+import { trackLoginIP } from '../../../services/ipTrackingService'
 
 const initialState = {
   correo: '',
@@ -185,6 +186,19 @@ export const useLoginForm = () => {
         perfil = newPerfil
       }
       localStorage.setItem('user_id', user.id)
+
+      // ✅ NUEVO: Tracking de IP al hacer login
+      try {
+        const ipResult = await trackLoginIP(user.id, 'email_password');
+        if (ipResult.success) {
+          console.log('📡 IP actualizada en login:', ipResult.ip);
+        } else {
+          console.warn('⚠️ Error actualizando IP en login:', ipResult.error);
+        }
+      } catch (ipError) {
+        console.warn('⚠️ Error en tracking de IP:', ipError);
+        // No fallar el login por errores de IP tracking
+      }
 
       // Guardar account_type basado en main_supplier
       if (perfil.main_supplier) {

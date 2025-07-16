@@ -51,6 +51,8 @@ export { default as ShippingRegionsModal } from './ShippingRegionsModal';
 export { default as ShippingRegionsDisplay } from './ShippingRegionsDisplay';
 export { default as TermsAndConditionsModal } from './TermsAndConditionsModal';
 export { default as PrivacyPolicyModal } from './PrivacyPolicyModal';
+export { default as EditProductNameModal } from './EditProductNameModal';
+export { default as DeleteMultipleProductsModal } from './DeleteMultipleProductsModal';
 
 // Re-exportar hooks de UI si existen
 export * from './hooks';

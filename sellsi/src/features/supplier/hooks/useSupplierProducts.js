@@ -171,6 +171,8 @@ export const useSupplierProducts = () => {
         tramoMax,
         tramoPrecioMin,
         tramoPrecioMax,
+        // ✅ NUEVO: Incluir regiones de despacho
+        delivery_regions: product.delivery_regions || [],
       }
     })
   }, [filteredProducts])

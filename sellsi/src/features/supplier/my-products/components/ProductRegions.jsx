@@ -3,6 +3,7 @@ import { Box, Typography, Button } from '@mui/material';
 import { Settings as SettingsIcon } from '@mui/icons-material';
 import ShippingRegionsModal from '../../../ui/ShippingRegionsModal';
 import ShippingRegionsDisplay from '../../../ui/ShippingRegionsDisplay';
+import { convertModalRegionsToDisplay, convertFormRegionsToDb } from '../../../../utils/shippingRegionsUtils';
 
 /**
  * Componente para la configuración de regiones de despacho
@@ -26,9 +27,25 @@ const ProductRegions = ({
   };
 
   const handleSaveRegions = (regions) => {
+    console.log('[ProductRegions] handleSaveRegions - Datos recibidos del modal:', regions);
+    
+    // Convertir datos del modal al formato de display y formulario
+    const displayRegions = convertModalRegionsToDisplay(regions);
+    console.log('[ProductRegions] handleSaveRegions - Datos convertidos para display:', displayRegions);
+    
     // Actualizar el formData con las nuevas regiones
-    onRegionChange(regions);
+    onRegionChange(displayRegions);
+    console.log('[ProductRegions] handleSaveRegions - Datos enviados a onRegionChange:', displayRegions);
+    
     setModalOpen(false);
+  };
+
+  // Preparar datos para el modal (convertir de formato display a formato BD)
+  const prepareModalData = () => {
+    console.log('[ProductRegions] prepareModalData - shippingRegions actuales:', shippingRegions);
+    const modalData = convertFormRegionsToDb(shippingRegions);
+    console.log('[ProductRegions] prepareModalData - Datos preparados para modal:', modalData);
+    return modalData;
   };
 
   return (
@@ -40,6 +57,8 @@ const ProductRegions = ({
         minWidth: 0,
         display: 'block',
         mx: 0,
+        position: 'relative',
+        zIndex: 1402, // Asegura que esté sobre la BottomBar (zIndex 1401)
       }}
     >
       <Typography
@@ -75,7 +94,7 @@ const ProductRegions = ({
         isOpen={modalOpen}
         onClose={handleCloseModal}
         onSave={handleSaveRegions}
-        initialData={shippingRegions}
+        initialData={prepareModalData()}
       />
     </Box>
   );

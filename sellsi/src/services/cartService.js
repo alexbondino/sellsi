@@ -111,7 +111,14 @@ class CartService {  /**
             description,
             supplier_id,
             productqty,
-            product_images (image_url),            users!products_supplier_id_fkey (
+            product_images (image_url),
+            product_delivery_regions (
+              id,
+              region,
+              price,
+              delivery_days
+            ),
+            users!products_supplier_id_fkey (
               user_nm,
               logo_url
             )
@@ -144,7 +151,8 @@ class CartService {  /**
         name: item.products?.productnm, // Para item.name
         nombre: item.products?.productnm, // Para item.nombre
         productnm: item.products?.productnm,
-          // Proveedor
+        
+        // Proveedor
         supplier: item.products?.users?.user_nm || 'Proveedor no encontrado', // Para item.supplier
         proveedor: item.products?.users?.user_nm || 'Proveedor no encontrado', // Para item.proveedor
         
@@ -160,16 +168,23 @@ class CartService {  /**
         originalPrice: item.products?.price, // Para item.originalPrice
         precioOriginal: item.products?.price, // Para item.precioOriginal
         basePrice: item.products?.price,
-          // Stock
+        
+        // Stock
         stock: item.products?.productqty || 99, // Para item.stock
         maxStock: item.products?.productqty || 99, // Para item.maxStock
-            // Otros campos
-          category: item.products?.category,
-          minimum_purchase: item.products?.minimum_purchase,
-          compraMinima: item.products?.minimum_purchase, // Para item.compraMinima
-          negotiable: item.products?.negotiable,
-          description: item.products?.description,
-          supplier_id: item.products?.supplier_id
+        
+        // ✅ NUEVO: Regiones de despacho para validación avanzada
+        shippingRegions: item.products?.product_delivery_regions || [], // Para useShippingValidation
+        delivery_regions: item.products?.product_delivery_regions || [], // Alias alternativo
+        shipping_regions: item.products?.product_delivery_regions || [], // Alias alternativo
+        
+        // Otros campos
+        category: item.products?.category,
+        minimum_purchase: item.products?.minimum_purchase,
+        compraMinima: item.products?.minimum_purchase, // Para item.compraMinima
+        negotiable: item.products?.negotiable,
+        description: item.products?.description,
+        supplier_id: item.products?.supplier_id
         };
       });
       

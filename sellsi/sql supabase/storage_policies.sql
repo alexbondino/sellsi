@@ -1,47 +1,26 @@
--- Storage policies for thumbnails bucket
+product_images
 
--- Ensure the bucket exists
-INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
-VALUES (
-  'product-images-thumbnails',
-  'product-images-thumbnails',
-  true,
-  5242880, -- 5MB
-  ARRAY['image/jpeg', 'image/png', 'image/webp', 'image/gif']
-) ON CONFLICT (id) DO NOTHING;
+SELECT
 
--- Policy to allow Edge Functions to upload thumbnails
-CREATE POLICY "Allow Edge Functions to upload thumbnails"
-ON storage.objects
-FOR INSERT
-TO anon, authenticated
-WITH CHECK (
-  bucket_id = 'product-images-thumbnails'
-);
 
--- Policy to allow public read access to thumbnails
-CREATE POLICY "Allow public read access to thumbnails"
-ON storage.objects
-FOR SELECT
-TO anon, authenticated
-USING (bucket_id = 'product-images-thumbnails');
+Allow public view of product images
+Applied to: public role
 
--- Policy to allow users to delete their own thumbnails
-CREATE POLICY "Allow users to delete their own thumbnails"
-ON storage.objects
-FOR DELETE
-TO authenticated
-USING (
-  bucket_id = 'product-images-thumbnails' AND
-  auth.uid()::text = (storage.foldername(name))[1]
-);
+DELETE
 
--- Policy to allow users to update their own thumbnails
-CREATE POLICY "Allow users to update their own thumbnails"
-ON storage.objects
-FOR UPDATE
-TO authenticated
-USING (
-  bucket_id = 'product-images-thumbnails' AND
-  auth.uid()::text = (storage.foldername(name))[1]
-);
+
+Only product owners can delete images
+Applied to: public role
+
+INSERT
+
+
+Only product owners can modify images
+Applied to: public role
+
+UPDATE
+
+
+Only product owners can update images
+Applied to: public role
+

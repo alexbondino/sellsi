@@ -79,7 +79,7 @@ const ProviderCatalog = () => {
         // 1. Obtener información del proveedor
         const { data: providerData, error: providerError } = await supabase
           .from('users')
-          .select('user_id, user_nm, logo_url, main_supplier')
+          .select('user_id, user_nm, logo_url, main_supplier, descripcion_proveedor')
           .eq('user_id', userId)
           .single();
 
@@ -153,6 +153,7 @@ const ProviderCatalog = () => {
             compraMinima: product.minimum_purchase || 1, // Para compatibilidad
             negociable: product.negotiable || false,
             proveedor: providerData.user_nm,
+            descripcion_proveedor: providerData.descripcion_proveedor,
             priceTiers: priceTiers,
             product_price_tiers: priceTiers, // Para compatibilidad
             supplier_id: product.supplier_id, // Para getProductImageUrl
@@ -281,10 +282,10 @@ const ProviderCatalog = () => {
     return items;
   }, [provider, isFromBuyer, isFromSupplier, navigate]);
 
-  // Descripción mock del proveedor
+  // Descripción real del proveedor
   const providerDescription = useMemo(() => 
-    "Venta mayorista de alimentos saludables: frutos secos, cereales, snacks sin azúcar, productos naturales y sin gluten. Atención rápida a negocios, tiendas, empresas y almacenes en todo Chile. Vengan xd",
-    []
+    provider?.descripcion_proveedor || 'Proveedor sin descripción.',
+    [provider?.descripcion_proveedor]
   );
 
   if (loading) {

@@ -171,7 +171,9 @@ const ProductsSection = React.memo(
           return (
             <>
               <AutoAwesomeIcon sx={{ color: 'primary.main', verticalAlign: 'middle', fontSize: { xs: 24, md: 32 }, mr: 1 }} />
-              Nuevos Productos
+              <span style={{ color: '#1976d2' }}>
+                Nuevos Productos
+              </span>
             </>
           );
         case 'ofertas':

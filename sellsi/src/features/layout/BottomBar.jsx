@@ -101,9 +101,6 @@ const BottomBar = () => {
                 </Typography>
                 <Box sx={columnStyle}>
                   <Typography variant="body2" sx={navItemStyle}>
-                    Marketplace
-                  </Typography>
-                  <Typography variant="body2" sx={navItemStyle}>
                     Para Proveedores
                   </Typography>
                   <Typography variant="body2" sx={navItemStyle}>
@@ -242,9 +239,6 @@ const BottomBar = () => {
                 </Button>
                 <Collapse in={servicesOpen}>
                   <Box sx={{ pl: 2, pr: 2, pt: 1, pb: 1 }}>
-                    <Typography variant="body2" sx={{ ...navItemStyle, py: 0.5 }}>
-                      Marketplace
-                    </Typography>
                     <Typography variant="body2" sx={{ ...navItemStyle, py: 0.5 }}>
                       Para Proveedores
                     </Typography>

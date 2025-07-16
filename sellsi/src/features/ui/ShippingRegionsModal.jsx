@@ -43,6 +43,55 @@ const ShippingRegionsModal = ({
   // Estado local para las regiones y sus configuraciones
   const [regionsConfig, setRegionsConfig] = useState([]);
 
+  // Controlar scroll del body cuando el modal está abierto
+  useEffect(() => {
+    if (isOpen) {
+      // Guardar el scroll actual antes de bloquearlo
+      const scrollY = window.scrollY;
+      
+      // Aplicar estilos para bloquear scroll
+      document.documentElement.style.position = 'fixed';
+      document.documentElement.style.top = `-${scrollY}px`;
+      document.documentElement.style.left = '0';
+      document.documentElement.style.right = '0';
+      document.documentElement.style.overflow = 'hidden';
+      
+      document.body.style.position = 'fixed';
+      document.body.style.top = `-${scrollY}px`;
+      document.body.style.left = '0';
+      document.body.style.right = '0';
+      document.body.style.overflow = 'hidden';
+      document.body.style.touchAction = 'none'; // Prevenir scroll en mobile
+      
+      // Guardar posición para restaurar después
+      document.body.dataset.scrollY = scrollY.toString();
+      
+      return () => {
+        // Restaurar scroll del body
+        const savedScrollY = parseInt(document.body.dataset.scrollY || '0');
+        
+        document.documentElement.style.position = '';
+        document.documentElement.style.top = '';
+        document.documentElement.style.left = '';
+        document.documentElement.style.right = '';
+        document.documentElement.style.overflow = '';
+        
+        document.body.style.position = '';
+        document.body.style.top = '';
+        document.body.style.left = '';
+        document.body.style.right = '';
+        document.body.style.overflow = '';
+        document.body.style.touchAction = '';
+        
+        // Restaurar posición de scroll
+        window.scrollTo(0, savedScrollY);
+        
+        // Limpiar dataset
+        delete document.body.dataset.scrollY;
+      };
+    }
+  }, [isOpen]);
+
   // Funciones utilitarias para formateo de moneda
   const formatCurrency = (value) => {
     if (!value || value === '') return '';
@@ -87,17 +136,24 @@ const ShippingRegionsModal = ({
   // Inicializar estado cuando se abre el modal
   useEffect(() => {
     if (isOpen) {
+      console.log('[ShippingRegionsModal] useEffect - Modal abierto, initialData:', initialData);
+      
       // Crear configuración inicial con todas las regiones
       const initialConfig = regiones.map(region => {
+        // Buscar configuración existente por region
         const existingConfig = initialData.find(item => item.region === region.value);
+        console.log('[ShippingRegionsModal] useEffect - Procesando región:', region.value, 'existingConfig:', existingConfig);
+        
         return {
           region: region.value,
           regionLabel: region.label,
           enabled: !!existingConfig,
-          shippingValue: existingConfig ? formatCurrency(existingConfig.shippingValue) : '',
-          maxDeliveryDays: existingConfig?.maxDeliveryDays || '',
+          shippingValue: existingConfig ? formatCurrency(existingConfig.price) : '', // ✅ CORREGIDO: usar 'price' en lugar de 'shippingValue'
+          maxDeliveryDays: existingConfig?.delivery_days || '', // ✅ CORREGIDO: usar 'delivery_days' en lugar de 'maxDeliveryDays'
         };
       });
+      
+      console.log('[ShippingRegionsModal] useEffect - Configuración inicial:', initialConfig);
       setRegionsConfig(initialConfig);
     }
   }, [isOpen, initialData]);
@@ -115,10 +171,16 @@ const ShippingRegionsModal = ({
 
   // Manejar cambio en campos de texto
   const handleFieldChange = (regionValue, field, value) => {
+    // Solo permitir números en el campo shippingValue
+    let newValue = value;
+    if (field === 'shippingValue') {
+      // Eliminar todo lo que no sea dígito
+      newValue = value.replace(/[^0-9]/g, '');
+    }
     setRegionsConfig(prev => 
       prev.map(config => 
         config.region === regionValue 
-          ? { ...config, [field]: value }
+          ? { ...config, [field]: newValue }
           : config
       )
     );
@@ -181,19 +243,25 @@ const ShippingRegionsModal = ({
 
   // Manejar guardado
   const handleSave = () => {
+    console.log('[ShippingRegionsModal] handleSave - Iniciando validación');
+    
     if (!validateData()) {
+      console.log('[ShippingRegionsModal] handleSave - Validación falló');
       return;
     }
 
+    console.log('[ShippingRegionsModal] handleSave - Validación exitosa, preparando datos');
+    
     const enabledRegions = regionsConfig
       .filter(config => config.enabled)
       .map(config => ({
         region: config.region,
-        regionLabel: config.regionLabel,
-        shippingValue: parseFloat(extractNumericValue(config.shippingValue)),
-        maxDeliveryDays: parseInt(config.maxDeliveryDays),
+        price: parseFloat(extractNumericValue(config.shippingValue)),
+        delivery_days: parseInt(config.maxDeliveryDays),
       }));
 
+    console.log('[ShippingRegionsModal] handleSave - Datos a enviar:', enabledRegions);
+    
     onSave(enabledRegions);
   };
 
@@ -206,13 +274,36 @@ const ShippingRegionsModal = ({
       maxWidth="md"
       fullWidth
       fullScreen={isMobile}
-      disableScrollLock={true}
+      disableScrollLock={false}
+      disableEnforceFocus={false}
+      disableAutoFocus={false}
+      disableRestoreFocus={false}
       PaperProps={{
         elevation: 0,
         sx: {
           borderRadius: isMobile ? 0 : 3,
           overflow: 'hidden',
           maxHeight: '90vh',
+          zIndex: 2000,
+          position: isMobile ? 'fixed' : 'relative',
+          top: isMobile ? 0 : 'auto',
+          left: isMobile ? 0 : 'auto',
+          right: isMobile ? 0 : 'auto',
+          bottom: isMobile ? 0 : 'auto',
+          width: isMobile ? '100vw' : 'auto',
+          height: isMobile ? '100vh' : 'auto',
+        },
+      }}
+      BackdropProps={{
+        sx: {
+          zIndex: 1999,
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        },
+      }}
+      sx={{
+        zIndex: 2000,
+        '& .MuiDialog-container': {
+          zIndex: 2000,
         },
       }}
     >
@@ -318,7 +409,8 @@ const ShippingRegionsModal = ({
                   <TableCell>
                     <TextField
                       size="small"
-                      type="text"
+                      type="tel"
+                      inputProps={{ inputMode: 'numeric', pattern: '[0-9]*', maxLength: 9 }}
                       placeholder="$0"
                       value={config.shippingValue}
                       onChange={(e) => handleFieldChange(config.region, 'shippingValue', e.target.value)}

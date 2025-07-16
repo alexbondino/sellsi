@@ -36,7 +36,7 @@ const providerMenuItems = [
   { text: 'Mis Productos', path: '/supplier/myproducts', icon: <ProductsIcon /> },
   { text: 'Mis Pedidos', path: '/supplier/my-orders', icon: <OrdersIcon /> },
   // { text: 'Mi Performance', path: '/supplier/myperformance', icon: <PerformanceIcon /> }, // Eliminado
-  { text: 'Marketplace', path: '/supplier/marketplace', icon: <MarketplaceIcon /> },
+  // Marketplace oculto para supplier
 ];
 
 /**
@@ -294,32 +294,7 @@ const SideBar = ({ role, width = '210px', onWidthChange }) => {
           })}
         </List>
         <Box sx={{ flex: 1 }} />
-        {typeof window !== 'undefined' && !isCollapsed && createPortal(
-          <Box
-            sx={{
-              position: 'fixed',
-              left: 0,
-              bottom: 24, // 24px sobre el borde inferior de la ventana
-              width: currentWidth,
-              zIndex: 1000, // Menor que la BottomBar
-              textAlign: 'center',
-              fontSize: '0.85rem',
-              color: '#FFFFFF',
-              letterSpacing: '0.5px',
-              fontWeight: 400,
-              userSelect: 'none',
-              pointerEvents: 'none',
-              display: { xs: 'none', md: 'flex' },
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 1.2,
-            }}
-          >
-            <InfoIcon sx={{ fontSize: '1em', mr: 0.5, color: '#90caf9', verticalAlign: 'middle' }} />
-            Versión 1.0.0
-          </Box>,
-          document.body
-        )}
+        {/* Versión eliminada */}
       </Box>
     </Box>
   );

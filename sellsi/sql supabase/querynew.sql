@@ -11,6 +11,14 @@ CREATE TABLE public.bank_info (
   account_type character varying DEFAULT 'corriente'::character varying,
   CONSTRAINT bank_info_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(user_id)
 );
+CREATE TABLE public.banned_ips (
+  ip text NOT NULL,
+  banned_at timestamp with time zone DEFAULT now(),
+  banned_reason text,
+  banned_by uuid,
+  CONSTRAINT banned_ips_pkey PRIMARY KEY (ip),
+  CONSTRAINT banned_ips_banned_by_fkey FOREIGN KEY (banned_by) REFERENCES public.control_panel_users(id)
+);
 CREATE TABLE public.billing_info (
   user_id uuid UNIQUE,
   business_name character varying,
@@ -31,8 +39,8 @@ CREATE TABLE public.cart_items (
   added_at timestamp with time zone DEFAULT now(),
   updated_at timestamp with time zone DEFAULT now(),
   CONSTRAINT cart_items_pkey PRIMARY KEY (cart_items_id),
-  CONSTRAINT cart_items_product_id_fkey FOREIGN KEY (product_id) REFERENCES public.products(productid),
-  CONSTRAINT cart_items_cart_id_fkey FOREIGN KEY (cart_id) REFERENCES public.carts(cart_id)
+  CONSTRAINT cart_items_cart_id_fkey FOREIGN KEY (cart_id) REFERENCES public.carts(cart_id),
+  CONSTRAINT cart_items_product_id_fkey FOREIGN KEY (product_id) REFERENCES public.products(productid)
 );
 CREATE TABLE public.carts (
   user_id uuid NOT NULL,
@@ -52,6 +60,15 @@ CREATE TABLE public.control_panel_users (
   created_at timestamp with time zone DEFAULT now(),
   CONSTRAINT control_panel_users_pkey PRIMARY KEY (id)
 );
+CREATE TABLE public.product_delivery_regions (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  product_id uuid NOT NULL,
+  region text NOT NULL,
+  price numeric NOT NULL,
+  delivery_days integer NOT NULL,
+  CONSTRAINT product_delivery_regions_pkey PRIMARY KEY (id),
+  CONSTRAINT product_delivery_regions_product_id_fkey FOREIGN KEY (product_id) REFERENCES public.products(productid)
+);
 CREATE TABLE public.product_images (
   product_id uuid NOT NULL,
   image_url text,
@@ -69,7 +86,6 @@ CREATE TABLE public.product_quantity_ranges (
   CONSTRAINT product_quantity_ranges_product_id_fkey FOREIGN KEY (product_id) REFERENCES public.products(productid)
 );
 CREATE TABLE public.products (
-  -- Columnas eliminadas: delivery_regions, delivery_prices, delivery_time_days
   productnm text NOT NULL,
   supplier_id uuid,
   category character varying,
@@ -85,8 +101,8 @@ CREATE TABLE public.products (
   spec_name character varying NOT NULL DEFAULT 'N/A'::character varying,
   spec_value text NOT NULL DEFAULT 'N/A'::text,
   is_active boolean DEFAULT true,
-  createddt timestamp with time zone DEFAULT now(),
-  updateddt timestamp with time zone DEFAULT now(),
+  createddt timestamp with time zone NOT NULL DEFAULT now(),
+  updateddt timestamp with time zone NOT NULL DEFAULT now(),
   CONSTRAINT products_pkey PRIMARY KEY (productid),
   CONSTRAINT products_supplier_id_fkey FOREIGN KEY (supplier_id) REFERENCES public.users(user_id)
 );
@@ -96,8 +112,8 @@ CREATE TABLE public.request_products (
   quantity integer NOT NULL,
   request_product_id uuid NOT NULL DEFAULT gen_random_uuid(),
   CONSTRAINT request_products_pkey PRIMARY KEY (request_product_id),
-  CONSTRAINT request_products_request_id_fkey FOREIGN KEY (request_id) REFERENCES public.requests(request_id),
-  CONSTRAINT request_products_product_id_fkey FOREIGN KEY (product_id) REFERENCES public.products(productid)
+  CONSTRAINT request_products_product_id_fkey FOREIGN KEY (product_id) REFERENCES public.products(productid),
+  CONSTRAINT request_products_request_id_fkey FOREIGN KEY (request_id) REFERENCES public.requests(request_id)
 );
 CREATE TABLE public.requests (
   delivery_country text NOT NULL,
@@ -144,17 +160,14 @@ CREATE TABLE public.users (
   main_supplier boolean NOT NULL DEFAULT false,
   createdt timestamp with time zone NOT NULL DEFAULT now(),
   updatedt timestamp with time zone NOT NULL DEFAULT now(),
+  descripcion_proveedor text,
+  banned boolean NOT NULL DEFAULT false,
+  banned_at timestamp with time zone,
+  banned_reason text,
+  verified boolean NOT NULL DEFAULT false,
+  verified_at timestamp with time zone,
+  verified_by uuid,
+  last_ip text,
   CONSTRAINT users_pkey PRIMARY KEY (user_id),
   CONSTRAINT users_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
-);
--- Nueva tabla relacional para regiones, montos y días por producto
-CREATE TABLE public.product_delivery_regions (
-  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
-  product_id uuid NOT NULL REFERENCES public.products(productid),
-  region text NOT NULL,
-  price numeric NOT NULL,
-  delivery_days integer NOT NULL,
-  -- Puedes agregar más columnas si lo necesitas, por ejemplo:
-  -- extra_info jsonb,
-  UNIQUE(product_id, region)
 );

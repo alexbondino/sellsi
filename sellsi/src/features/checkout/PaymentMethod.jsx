@@ -19,6 +19,9 @@ import useCartStore from '../buyer/hooks/cartStore'
 import PaymentMethodSelector from './PaymentMethodSelector'
 import useCheckout from './hooks/useCheckout'
 
+// Utilidades de cálculo de envío
+import { calculateRealShippingCost } from '../../utils/shippingCalculation'
+
 // ============================================================================
 // COMPONENTE PRINCIPAL
 // ============================================================================
@@ -27,7 +30,7 @@ const PaymentMethod = () => {
   const navigate = useNavigate()
   
   // Estados del carrito
-  const { items, getSubtotal, getTotal, getShippingCost } = useCartStore()
+  const { items, getSubtotal, getTotal } = useCartStore() // ✅ REMOVIDO: getShippingCost (no usar mock)
   
   // Estados del checkout
   const { initializeCheckout, resetCheckout } = useCheckout()
@@ -43,29 +46,49 @@ const PaymentMethod = () => {
     }
 
     // Inicializar checkout con datos del carrito
-    const subtotal = getSubtotal()
-    const tax = Math.round(subtotal * 0.19) // IVA 19%
-    const serviceFee = Math.round(subtotal * 0.02) // Comisión por servicio 2%
-    const shipping = getShippingCost() // Obtener costo de envío real
-    const total = subtotal + tax + serviceFee + shipping
-    
-    const cartData = {
-      items: items,
-      subtotal: subtotal,
-      tax: tax,
-      serviceFee: serviceFee,
-      shipping: shipping,
-      total: total,
-      currency: 'CLP'
+    const initializeCheckoutData = async () => {
+      const subtotal = getSubtotal()
+      const tax = Math.round(subtotal * 0.19) // IVA 19%
+      const serviceFee = Math.round(subtotal * 0.02) // Comisión por servicio 2%
+      
+      // ✅ NUEVO: Calcular costo REAL de envío basado en regiones de despacho
+      const shipping = await calculateRealShippingCost(items)
+      const total = subtotal + tax + serviceFee + shipping
+      
+      console.log('[PaymentMethod] Datos de checkout inicializados:', {
+        itemsCount: items.length,
+        subtotal,
+        tax,
+        serviceFee,
+        shipping,
+        total,
+        itemsDetail: items.map(item => ({
+          name: item.name,
+          quantity: item.quantity,
+          price: item.price
+        }))
+      })
+      
+      const cartData = {
+        items: items,
+        subtotal: subtotal,
+        tax: tax,
+        serviceFee: serviceFee,
+        shipping: shipping,
+        total: total,
+        currency: 'CLP'
+      }
+
+      initializeCheckout(cartData)
     }
 
-    initializeCheckout(cartData)
+    initializeCheckoutData()
     
     // Limpiar checkout al desmontar (opcional)
     return () => {
       // No resetear automáticamente para permitir navegación back/forward
     }
-  }, [items, getSubtotal, getTotal, getShippingCost, initializeCheckout, navigate])
+  }, [items, getSubtotal, getTotal, initializeCheckout, navigate]) // ✅ REMOVIDO: getShippingCost
 
   // ===== RENDERIZADO =====
 

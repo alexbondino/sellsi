@@ -25,6 +25,7 @@ import { toast } from 'react-hot-toast'
 import useCheckout from './hooks/useCheckout'
 import usePaymentMethods from './hooks/usePaymentMethods'
 import checkoutService from './services/checkoutService'
+import { trackUserAction } from '../../services/ipTrackingService'
 
 // Componentes UI
 import CheckoutSummary from './CheckoutSummary'
@@ -97,6 +98,11 @@ const PaymentMethodSelector = () => {
       
       if (isValid) {
         selectPaymentMethod(availableMethods.find(m => m.id === methodId))
+        
+        // Registrar IP del usuario al seleccionar método de pago
+        const selectedMethod = availableMethods.find(m => m.id === methodId)
+        await trackUserAction(`payment_method_selected_${selectedMethod?.name || methodId}`)
+        
         clearError()
       }
     } catch (error) {

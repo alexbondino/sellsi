@@ -6,6 +6,7 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { CHECKOUT_STEPS, CHECKOUT_FLOW } from '../constants/checkoutSteps'
 import { PAYMENT_STATUS } from '../constants/paymentMethods'
+import { trackUserAction } from '../../../services/ipTrackingService'
 
 const useCheckout = create(
   persist(
@@ -114,12 +115,18 @@ const useCheckout = create(
         })
 
         try {
+          // Registrar IP del usuario al iniciar el proceso de pago
+          await trackUserAction(`payment_process_started_${paymentData?.method || 'unknown'}`)
+          
           // Aquí se integrará con el servicio de pago real
           // Por ahora simulamos el proceso
           await new Promise(resolve => setTimeout(resolve, 2000))
           
           const transactionId = `TXN_${Date.now()}`
           const paymentReference = `REF_${Math.random().toString(36).substr(2, 9)}`
+          
+          // Registrar IP del usuario al completar el pago
+          await trackUserAction(`payment_completed_${paymentData?.method || 'unknown'}`)
           
           set({
             isProcessing: false,
@@ -135,6 +142,9 @@ const useCheckout = create(
             paymentReference
           }
         } catch (error) {
+          // Registrar IP del usuario en caso de fallo de pago
+          await trackUserAction(`payment_failed_${paymentData?.method || 'unknown'}`)
+          
           set({
             isProcessing: false,
             paymentStatus: PAYMENT_STATUS.FAILED,

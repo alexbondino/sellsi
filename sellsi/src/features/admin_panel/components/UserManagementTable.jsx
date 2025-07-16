@@ -35,7 +35,8 @@ import {
   TableRow,
   Checkbox,
   Avatar,
-  Switch
+  Switch,
+  Button
 } from '@mui/material';
 import {
   Block as BlockIcon,
@@ -45,22 +46,30 @@ import {
   Store as StoreIcon,
   Refresh as RefreshIcon,
   Search as SearchIcon,
-  FilterList as FilterIcon
+  FilterList as FilterIcon,
+  Info as InfoIcon,
+  VerifiedUser as VerifiedIcon,
+  Cancel as UnverifiedIcon,
+  Delete as DeleteIcon
 } from '@mui/icons-material';
 
 // Importar componentes UI existentes
 import { Modal } from '../../ui';
 import AdminStatCard from './AdminStatCard';
-import { getUsers, getUserStats, banUser, unbanUser } from '../../../services/adminPanelService';
+import { getUsers, getUserStats, banUser, unbanUser, verifyUser, unverifyUser, deleteUser, deleteMultipleUsers } from '../../../services/adminPanelService';
 
-// Importar modal de confirmación
+// Importar modales
 import UserBanModal from '../modals/UserBanModal';
+import UserDetailsModal from '../modals/UserDetailsModal';
+import UserVerificationModal from '../modals/UserVerificationModal';
+import UserDeleteModal from '../modals/UserDeleteModal';
+import UserDeleteMultipleModal from '../modals/UserDeleteMultipleModal';
 
 // ✅ CONSTANTS
 const USER_STATUS = {
-  active: { color: 'success', icon: '✅', label: 'Activa' },
-  banned: { color: 'error', icon: '🚫', label: 'Baneada' },
-  inactive: { color: 'warning', icon: '⏸️', label: 'Inactiva' }
+  active: { color: 'success', icon: '✅', label: 'Activo' },
+  banned: { color: 'error', icon: '🚫', label: 'Baneado' },
+  inactive: { color: 'warning', icon: '⏸️', label: 'Inactivo' }
 };
 
 const USER_FILTERS = [
@@ -163,12 +172,36 @@ const UserManagementTable = memo(() => {
   // Estado de selección múltiple
   const [selectedUsers, setSelectedUsers] = useState(new Set());
 
-  // Modal
+  // Modales
   const [banModal, setBanModal] = useState({
     open: false,
     user: null,
     action: 'ban' // 'ban' | 'unban'
   });
+
+  const [detailsModal, setDetailsModal] = useState({
+    open: false,
+    user: null
+  });
+
+  const [verificationModal, setVerificationModal] = useState({
+    open: false,
+    user: null,
+    action: 'verify' // 'verify' | 'unverify'
+  });
+
+  const [deleteModal, setDeleteModal] = useState({
+    open: false,
+    user: null
+  });
+
+  const [deleteMultipleModal, setDeleteMultipleModal] = useState({
+    open: false,
+    users: []
+  });
+
+  // Estado para evitar foco no deseado en el campo de búsqueda
+  const [preventSearchFocus, setPreventSearchFocus] = useState(false);
 
   // ========================================
   // 🔧 EFECTOS
@@ -217,10 +250,11 @@ const UserManagementTable = memo(() => {
   // ========================================
 
   const getUserStatus = (user) => {
-    // TODO: Implementar lógica de ban cuando se agregue el campo a la BD
-    // Por ahora simulamos con el campo is_active o createddt
-    if (user.banned) return 'banned';
+    // Verificar si el usuario está baneado
+    if (user.banned === true) return 'banned';
+    // Verificar si el usuario está inactivo
     if (user.is_active === false) return 'inactive';
+    // Por defecto, usuario activo
     return 'active';
   };
 
@@ -309,6 +343,71 @@ const UserManagementTable = memo(() => {
     });
   }, []);
 
+  const openDetailsModal = useCallback((user) => {
+    setDetailsModal({
+      open: true,
+      user
+    });
+  }, []);
+
+  const closeDetailsModal = useCallback(() => {
+    setDetailsModal({
+      open: false,
+      user: null
+    });
+  }, []);
+
+  const openVerificationModal = useCallback((user, action) => {
+    setVerificationModal({
+      open: true,
+      user,
+      action
+    });
+  }, []);
+
+  const closeVerificationModal = useCallback(() => {
+    setVerificationModal({
+      open: false,
+      user: null,
+      action: 'verify'
+    });
+  }, []);
+
+  const openDeleteModal = useCallback((user) => {
+    setPreventSearchFocus(true);
+    setDeleteModal({
+      open: true,
+      user
+    });
+  }, []);
+
+  const closeDeleteModal = useCallback(() => {
+    setDeleteModal({
+      open: false,
+      user: null
+    });
+    setTimeout(() => setPreventSearchFocus(false), 100);
+  }, []);
+
+  const openDeleteMultipleModal = useCallback(() => {
+    setPreventSearchFocus(true);
+    const selectedUsersArray = filteredUsers.filter(user => 
+      selectedUsers.has(user.user_id)
+    );
+    setDeleteMultipleModal({
+      open: true,
+      users: selectedUsersArray
+    });
+  }, [filteredUsers, selectedUsers]);
+
+  const closeDeleteMultipleModal = useCallback(() => {
+    setDeleteMultipleModal({
+      open: false,
+      users: []
+    });
+    setTimeout(() => setPreventSearchFocus(false), 100);
+  }, []);
+
   const handleBanConfirm = useCallback(async (reason) => {
     const { user, action } = banModal;
     try {
@@ -329,6 +428,64 @@ const UserManagementTable = memo(() => {
     }
   }, [banModal, closeBanModal]);
 
+  const handleVerificationConfirm = useCallback(async (reason) => {
+    const { user, action } = verificationModal;
+    try {
+      const result = action === 'verify' 
+        ? await verifyUser(user.user_id, reason)
+        : await unverifyUser(user.user_id, reason);
+
+      if (result.success) {
+        await loadData();
+        closeVerificationModal();
+        // TODO: Mostrar notificación de éxito
+      } else {
+        setError(result.error || `Error al ${action === 'verify' ? 'verificar' : 'desverificar'} usuario`);
+      }
+    } catch (error) {
+      console.error(`Error en ${action}:`, error);
+      setError('Error interno del servidor');
+    }
+  }, [verificationModal, closeVerificationModal]);
+
+  const handleDeleteConfirm = useCallback(async (userId) => {
+    try {
+      const result = await deleteUser(userId);
+      if (result.success) {
+        await loadData();
+        closeDeleteModal();
+        // TODO: Mostrar notificación de éxito
+      } else {
+        setError(result.error || 'Error al eliminar usuario');
+      }
+    } catch (error) {
+      console.error('Error eliminando usuario:', error);
+      setError('Error interno del servidor');
+    }
+  }, []);
+
+  const handleDeleteMultipleConfirm = useCallback(async (userIds) => {
+    try {
+      const result = await deleteMultipleUsers(userIds);
+      if (result.success) {
+        await loadData();
+        setSelectedUsers(new Set()); // Limpiar selección
+        closeDeleteMultipleModal();
+        
+        if (result.errors.length > 0) {
+          setError(`Se eliminaron ${result.deleted} de ${userIds.length} usuarios. Algunos usuarios tuvieron errores.`);
+        } else {
+          // TODO: Mostrar notificación de éxito
+        }
+      } else {
+        setError(result.error || 'Error al eliminar usuarios');
+      }
+    } catch (error) {
+      console.error('Error eliminando usuarios:', error);
+      setError('Error interno del servidor');
+    }
+  }, []);
+
   // ========================================
   // 🎨 RENDER COMPONENTS
   // ========================================
@@ -336,7 +493,7 @@ const UserManagementTable = memo(() => {
   const MemoAdminStatCard = useMemo(() => memo(AdminStatCard), []);
   const renderStatsCards = useCallback(() => (
     <Grid container spacing={3} sx={commonStyles.headerSection}>
-      <Grid item xs={12} sm={6} md={3}>
+      <Grid item xs={12} sm={6} md={2.4}>
         <MemoAdminStatCard
           title="Total Usuarios"
           value={stats.totalUsers || 0}
@@ -344,7 +501,7 @@ const UserManagementTable = memo(() => {
           color="primary"
         />
       </Grid>
-      <Grid item xs={12} sm={6} md={3}>
+      <Grid item xs={12} sm={6} md={2.4}>
         <MemoAdminStatCard
           title="Usuarios Activos"
           value={stats.activeUsers || 0}
@@ -352,7 +509,15 @@ const UserManagementTable = memo(() => {
           color="success"
         />
       </Grid>
-      <Grid item xs={12} sm={6} md={3}>
+      <Grid item xs={12} sm={6} md={2.4}>
+        <MemoAdminStatCard
+          title="Usuarios Verificados"
+          value={stats.verifiedUsers || 0}
+          icon={VerifiedIcon}
+          color="info"
+        />
+      </Grid>
+      <Grid item xs={12} sm={6} md={2.4}>
         <MemoAdminStatCard
           title="Usuarios Baneados"
           value={stats.bannedUsers || 0}
@@ -360,12 +525,12 @@ const UserManagementTable = memo(() => {
           color="error"
         />
       </Grid>
-      <Grid item xs={12} sm={6} md={3}>
+      <Grid item xs={12} sm={6} md={2.4}>
         <MemoAdminStatCard
           title="Proveedores"
           value={stats.suppliers || 0}
           icon={StoreIcon}
-          color="info"
+          color="warning"
         />
       </Grid>
     </Grid>
@@ -447,6 +612,13 @@ const UserManagementTable = memo(() => {
                 startAdornment: <SearchIcon sx={{ mr: 1, color: 'text.secondary' }} />
               }}
               sx={{ minWidth: 320, maxWidth: 600, width: '100%' }}
+              autoComplete="off"
+              onFocus={(e) => {
+                // Prevenir foco no deseado cuando se abren modales
+                if (preventSearchFocus) {
+                  e.target.blur();
+                }
+              }}
             />
             <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: 'nowrap', minWidth: 120 }}>
               {
@@ -459,9 +631,25 @@ const UserManagementTable = memo(() => {
             </Typography>
           </Box>
         </Grid>
+        
+        {/* Botón para eliminar usuarios seleccionados */}
+        {selectedUsers.size > 0 && (
+          <Grid item xs={12}>
+            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 1 }}>
+              <Button
+                variant="contained"
+                color="error"
+                startIcon={<DeleteIcon />}
+                onClick={openDeleteMultipleModal}
+              >
+                Eliminar {selectedUsers.size} usuario{selectedUsers.size !== 1 ? 's' : ''} seleccionado{selectedUsers.size !== 1 ? 's' : ''}
+              </Button>
+            </Box>
+          </Grid>
+        )}
       </Grid>
     </Paper>
-  ), [filters, handleFilterChange, searchTerm, debouncedSearchTerm, initialLoadComplete, filteredUsers.length, users.length, menuPropsEstado, menuPropsTipo, sxEstado, sxTipo]);
+  ), [filters, handleFilterChange, searchTerm, debouncedSearchTerm, initialLoadComplete, filteredUsers.length, users.length, selectedUsers.size, openDeleteMultipleModal, preventSearchFocus, menuPropsEstado, menuPropsTipo, sxEstado, sxTipo]);
 
   const renderUsersTable = () => (
     <TableContainer component={Paper} sx={commonStyles.tableContainer}>
@@ -479,9 +667,33 @@ const UserManagementTable = memo(() => {
             <TableCell sx={{ color: 'white' }}>Usuario</TableCell>
             <TableCell sx={{ color: 'white' }}>ID</TableCell>
             <TableCell sx={{ color: 'white' }}>Email</TableCell>
+            <TableCell sx={{ color: 'white' }}>Última IP</TableCell>
             <TableCell sx={{ color: 'white' }}>Productos Activos</TableCell>
-            <TableCell sx={{ color: 'white' }}>Estado</TableCell>
+            <TableCell sx={{ color: 'white', display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Tooltip 
+                title="Estado del usuario en el sistema. Activo: puede usar normalmente la plataforma. Baneado: no puede acceder ni realizar acciones en la plataforma."
+                arrow
+                placement="top"
+              >
+                <IconButton size="small" sx={{ color: 'white', p: 0 }}>
+                  <InfoIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+              Estado
+            </TableCell>
             <TableCell sx={{ color: 'white' }}>Tipo</TableCell>
+            <TableCell sx={{ color: 'white', display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Tooltip 
+                title="Si el proveedor ha sido verificado por el equipo Sellsi como proveedor de confianza"
+                arrow
+                placement="top"
+              >
+                <IconButton size="small" sx={{ color: 'white', p: 0 }}>
+                  <InfoIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+              ¿Verificado?
+            </TableCell>
             <TableCell align="center" sx={{ color: 'white' }}>Acciones</TableCell>
           </TableRow>
         </TableHead>
@@ -531,6 +743,12 @@ const UserManagementTable = memo(() => {
                 </TableCell>
 
                 <TableCell>
+                  <Typography variant="body2" sx={{ fontFamily: 'monospace', fontSize: '0.875rem' }}>
+                    {user.last_ip || 'No registrada'}
+                  </Typography>
+                </TableCell>
+
+                <TableCell>
                   <Chip
                     label={activeProducts}
                     size="small"
@@ -557,13 +775,63 @@ const UserManagementTable = memo(() => {
                   />
                 </TableCell>
 
+                <TableCell>
+                  <Chip
+                    label={user.verified ? 'Verificado' : 'No Verificado'}
+                    size="small"
+                    color={user.verified ? 'primary' : 'default'}
+                    icon={user.verified ? <VerifiedIcon /> : <UnverifiedIcon />}
+                    sx={{ minWidth: 120 }}
+                  />
+                </TableCell>
+
                 <TableCell align="center">
                   <Box sx={{ display: 'flex', justifyContent: 'center', gap: 0.5 }}>
                     <Tooltip title="Ver detalles">
-                      <IconButton size="small" sx={commonStyles.actionButton}>
+                      <IconButton 
+                        size="small" 
+                        sx={commonStyles.actionButton}
+                        onClick={() => openDetailsModal(user)}
+                      >
                         <ViewIcon fontSize="small" />
                       </IconButton>
                     </Tooltip>
+
+                    {user.verified ? (
+                      <Tooltip title="Desverificar usuario">
+                        <IconButton 
+                          size="small" 
+                          sx={{
+                            ...commonStyles.actionButton,
+                            color: '#FF8C00', // Naranja oscuro
+                            '&:hover': {
+                              backgroundColor: 'rgba(255, 140, 0, 0.1)',
+                              color: '#FF6347' // Rojo tomate en hover
+                            }
+                          }}
+                          onClick={() => openVerificationModal(user, 'unverify')}
+                        >
+                          <UnverifiedIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    ) : (
+                      <Tooltip title="Verificar a este usuario">
+                        <IconButton 
+                          size="small" 
+                          sx={{
+                            ...commonStyles.actionButton,
+                            color: '#00bcd4', // Celeste
+                            '&:hover': {
+                              backgroundColor: 'rgba(0, 188, 212, 0.1)',
+                              color: 'primary.main'
+                            }
+                          }}
+                          onClick={() => openVerificationModal(user, 'verify')}
+                        >
+                          <VerifiedIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    )}
 
                     {userStatus === 'active' ? (
                       <Tooltip title="Banear usuario">
@@ -588,6 +856,17 @@ const UserManagementTable = memo(() => {
                         </IconButton>
                       </Tooltip>
                     ) : null}
+
+                    <Tooltip title="Eliminar usuario">
+                      <IconButton 
+                        size="small" 
+                        sx={commonStyles.actionButton}
+                        color="error"
+                        onClick={() => openDeleteModal(user)}
+                      >
+                        <DeleteIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
                   </Box>
                 </TableCell>
               </TableRow>
@@ -663,6 +942,39 @@ const UserManagementTable = memo(() => {
         action={banModal.action}
         onConfirm={handleBanConfirm}
         onClose={closeBanModal}
+      />
+
+      {/* Modal de detalles de usuario */}
+      <UserDetailsModal
+        open={detailsModal.open}
+        user={detailsModal.user}
+        onClose={closeDetailsModal}
+        onUserUpdated={loadData}
+      />
+
+      {/* Modal de verificación de usuario */}
+      <UserVerificationModal
+        open={verificationModal.open}
+        user={verificationModal.user}
+        action={verificationModal.action}
+        onConfirm={handleVerificationConfirm}
+        onClose={closeVerificationModal}
+      />
+
+      {/* Modal de eliminación de usuario */}
+      <UserDeleteModal
+        open={deleteModal.open}
+        user={deleteModal.user}
+        onConfirm={handleDeleteConfirm}
+        onClose={closeDeleteModal}
+      />
+
+      {/* Modal de eliminación múltiple de usuarios */}
+      <UserDeleteMultipleModal
+        open={deleteMultipleModal.open}
+        users={deleteMultipleModal.users}
+        onConfirm={handleDeleteMultipleConfirm}
+        onClose={closeDeleteMultipleModal}
       />
     </Box>
   );

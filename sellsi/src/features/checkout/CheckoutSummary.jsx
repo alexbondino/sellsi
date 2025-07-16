@@ -2,7 +2,7 @@
 // CHECKOUT SUMMARY - RESUMEN DEL PEDIDO EN CHECKOUT
 // ============================================================================
 
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useCallback, useEffect } from 'react'
 import {
   Box,
   Paper,
@@ -42,15 +42,83 @@ import SecurityBadge from '../ui/SecurityBadge'
 // COMPONENTE PRINCIPAL
 // ============================================================================
 
-// Componente optimizado para avatares de productos con minithumb
+// Componente para avatares de productos con minithumb
 const ProductAvatar = ({ item }) => {
-  const minithumbUrl = useMinithumb(item);
+  const [hasError, setHasError] = useState(false);
+  
+  // Función para construir URL del minithumb dinámicamente
+  const getMinithumbUrl = useCallback((item) => {
+    if (!item) return null;
+    
+    // Construir URL del minithumb desde el bucket product-images-thumbnails
+    if (item.imagen) {
+      try {
+        const url = new URL(item.imagen);
+        const pathParts = url.pathname.split('/');
+        
+        // Buscar la estructura: .../product-images/user_id/product_id/...
+        const productImagesIndex = pathParts.findIndex(part => part === 'product-images');
+        
+        if (productImagesIndex !== -1 && pathParts.length > productImagesIndex + 2) {
+          const userId = pathParts[productImagesIndex + 1];
+          const productId = pathParts[productImagesIndex + 2];
+          
+          // Extraer timestamp del nombre del archivo
+          const fileName = pathParts[pathParts.length - 1];
+          const timestampMatch = fileName.match(/^(\d+)_/);
+          
+          if (timestampMatch) {
+            const timestamp = timestampMatch[1];
+            console.log('🔍 [ProductAvatar] Extrayendo timestamp:', {
+              fileName,
+              timestamp,
+              userId,
+              productId
+            });
+            // Construir URL del minithumb con la estructura correcta
+            return `${url.origin}/storage/v1/object/public/product-images-thumbnails/${userId}/${productId}/${timestamp}_minithumb_40x40.jpg`;
+          }
+        }
+      } catch (error) {
+        console.warn('[ProductAvatar] Error construyendo minithumb URL:', error);
+      }
+    }
+    
+    return null;
+  }, []);
+  
+  const minithumbUrl = getMinithumbUrl(item);
+  
+  console.log('🎯 [ProductAvatar] URL dinámica construida:', minithumbUrl);
+  console.log('🔍 [ProductAvatar] Datos del item:', {
+    product_id: item.product_id,
+    imagen: item.imagen,
+    thumbnail_url: item.thumbnail_url,
+    name: item.name || item.nombre
+  });
+  
+  // Si hay error, usar imagen por defecto
+  const finalUrl = hasError ? (item.imagen || null) : (minithumbUrl || item.imagen || null);
+  
+  console.log('🚀 [ProductAvatar] Estado final:', {
+    hasError,
+    minithumbUrl,
+    finalUrl,
+    itemImagen: item.imagen
+  });
   
   return (
     <Avatar
-      src={minithumbUrl}
+      src={finalUrl}
       alt={item.name || item.nombre}
       sx={{ width: 40, height: 40 }}
+      onError={(e) => {
+        console.error('❌ [ProductAvatar] Error cargando imagen:', {
+          src: finalUrl,
+          error: e
+        });
+        setHasError(true);
+      }}
     >
       <ShoppingCartIcon />
     </Avatar>
@@ -69,9 +137,9 @@ const CheckoutSummary = ({
   onContinueShopping
 }) => {
   
-  // ===== ESTADO PARA VIRTUALIZACIÓN =====
+  // ===== ESTADO PARA NAVEGACIÓN DE PRODUCTOS =====
   const [currentPage, setCurrentPage] = useState(1)
-  const ITEMS_PER_PAGE = 2
+  const ITEMS_PER_PAGE = 1 // Mostrar 1 producto por vez para navegación más intuitiva
   
   // ===== CÁLCULOS =====
   
@@ -85,6 +153,18 @@ const CheckoutSummary = ({
   
   const totalPages = Math.ceil((orderData.items?.length || 0) / ITEMS_PER_PAGE)
   const hasMultiplePages = totalPages > 1
+  
+  // ✅ ACTUALIZADO: Usar directamente el costo de envío real del orderData
+  const calculateProductShippingCost = useMemo(() => {
+    console.log('[CheckoutSummary] Usando costo de envío real del orderData:', {
+      orderDataShipping: orderData.shipping,
+      itemsCount: (orderData.items || []).length
+    })
+    
+    // Usar directamente el costo de envío calculado en PaymentMethod.jsx
+    // que ya incluye los costos reales basados en regiones de despacho
+    return orderData.shipping || 0
+  }, [orderData.shipping])
   
   // Función para calcular el precio correcto de un item (con tramos si los tiene)
   const getItemPrice = (item) => {
@@ -102,8 +182,8 @@ const CheckoutSummary = ({
     : checkoutService.formatPrice(0)
 
   const totalWithFees = selectedMethod
-    ? orderData.subtotal + orderData.tax + orderData.shipping + ((orderData.subtotal * (selectedMethod.fees?.percentage || 0)) / 100 + (selectedMethod.fees?.fixed || 0))
-    : orderData.subtotal + orderData.tax + orderData.shipping
+    ? orderData.subtotal + orderData.tax + calculateProductShippingCost + ((orderData.subtotal * (selectedMethod.fees?.percentage || 0)) / 100 + (selectedMethod.fees?.fixed || 0))
+    : orderData.subtotal + orderData.tax + calculateProductShippingCost
 
   // ===== RENDERIZADO =====
 
@@ -130,73 +210,111 @@ const CheckoutSummary = ({
           </Typography>
         </Box>
 
-        {/* Lista de productos virtualizada */}
+        {/* Lista de productos con navegación */}
         <Box>
           <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
             <Typography variant="subtitle2" fontWeight="bold">
               Productos
             </Typography>
-            <Stack direction="row" spacing={1} alignItems="center">
-              {hasMultiplePages && (
-                <Chip 
-                  label={`${currentPage} de ${totalPages}`} 
-                  size="small" 
-                  variant="outlined"
-                  color="primary"
-                />
-              )}
-              {/* Controles de navegación movidos arriba */}
-              {hasMultiplePages && (
-                <Stack direction="row" spacing={0.5} alignItems="center">
-                  <IconButton 
-                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                    disabled={currentPage === 1}
-                    size="small"
-                    sx={{ width: 32, height: 32 }}
-                  >
-                    <ArrowBackIcon fontSize="small" />
-                  </IconButton>
-                  
-                  <IconButton 
-                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                    disabled={currentPage === totalPages}
-                    size="small"
-                    sx={{ width: 32, height: 32 }}
-                  >
-                    <ArrowForwardIcon fontSize="small" />
-                  </IconButton>
-                </Stack>
-              )}
-            </Stack>
+            {hasMultiplePages && (
+              <Chip 
+                label={`${currentPage} de ${totalPages}`} 
+                size="small" 
+                variant="outlined"
+                color="primary"
+              />
+            )}
           </Stack>
           
-          <List dense sx={{ 
-            bgcolor: 'background.paper', 
-            borderRadius: 2, 
-            minHeight: 72,
-            maxHeight: 72,
-            overflow: 'hidden',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'flex-start'
-          }}>
-            {paginatedItems.map((item, index) => (
-              <ListItem key={`${currentPage}-${index}`} sx={{ px: 2 }}>
-                <ListItemAvatar>
-                  <ProductAvatar item={item} />
-                </ListItemAvatar>
-                <ListItemText
-                  primary={item.name || item.nombre}
-                  secondary={`Cantidad: ${item.quantity}`}
-                  primaryTypographyProps={{ variant: 'body2', fontWeight: 'medium' }}
-                  secondaryTypographyProps={{ variant: 'caption' }}
-                />
-                <Typography variant="body2" fontWeight="bold">
-                  {checkoutService.formatPrice(getItemPrice(item) * item.quantity)}
-                </Typography>
-              </ListItem>
-            ))}
-          </List>
+          <Box sx={{ position: 'relative' }}>
+            {/* Flecha izquierda */}
+            {hasMultiplePages && (
+              <IconButton 
+                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                disabled={currentPage === 1}
+                size="small"
+                sx={{ 
+                  position: 'absolute',
+                  left: -16,
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  zIndex: 2,
+                  bgcolor: 'background.paper',
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  width: 32,
+                  height: 32,
+                  '&:hover': {
+                    bgcolor: 'action.hover'
+                  },
+                  '&:disabled': {
+                    opacity: 0.3
+                  }
+                }}
+              >
+                <ArrowBackIcon fontSize="small" />
+              </IconButton>
+            )}
+
+            {/* Lista de productos */}
+            <List dense sx={{ 
+              bgcolor: 'background.paper', 
+              borderRadius: 2, 
+              minHeight: 60,
+              maxHeight: 60,
+              overflow: 'hidden',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
+              mx: hasMultiplePages ? 2 : 0
+            }}>
+              {paginatedItems.map((item, index) => (
+                <ListItem key={`${currentPage}-${index}`} sx={{ px: 2 }}>
+                  <ListItemAvatar>
+                    <ProductAvatar item={item} />
+                  </ListItemAvatar>
+                  <ListItemText
+                    primary={item.name || item.nombre}
+                    secondary={`Cantidad: ${item.quantity}`}
+                    primaryTypographyProps={{ variant: 'body2', fontWeight: 'medium' }}
+                    secondaryTypographyProps={{ variant: 'caption' }}
+                  />
+                  <Typography variant="body2" fontWeight="bold">
+                    {checkoutService.formatPrice(getItemPrice(item) * item.quantity)}
+                  </Typography>
+                </ListItem>
+              ))}
+            </List>
+
+            {/* Flecha derecha */}
+            {hasMultiplePages && (
+              <IconButton 
+                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                disabled={currentPage === totalPages}
+                size="small"
+                sx={{ 
+                  position: 'absolute',
+                  right: -16,
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  zIndex: 2,
+                  bgcolor: 'background.paper',
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  width: 32,
+                  height: 32,
+                  '&:hover': {
+                    bgcolor: 'action.hover'
+                  },
+                  '&:disabled': {
+                    opacity: 0.3
+                  }
+                }}
+              >
+                <ArrowForwardIcon fontSize="small" />
+              </IconButton>
+            )}
+          </Box>
         </Box>
 
         <Divider />
@@ -225,9 +343,9 @@ const CheckoutSummary = ({
               <Typography 
                 variant="body2" 
                 fontWeight="medium"
-                color={orderData.shipping === 0 ? 'success.main' : 'text.primary'}
+                color={calculateProductShippingCost === 0 ? 'success.main' : 'text.primary'}
               >
-                {orderData.shipping === 0 ? '¡GRATIS!' : checkoutService.formatPrice(orderData.shipping)}
+                {calculateProductShippingCost === 0 ? '¡GRATIS!' : checkoutService.formatPrice(calculateProductShippingCost)}
               </Typography>
             </Stack>
 

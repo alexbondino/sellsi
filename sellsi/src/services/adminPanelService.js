@@ -560,7 +560,14 @@ export const getUsers = async (filtros = {}) => {
         logo_url,
         main_supplier,
         createdt,
-        updatedt
+        updatedt,
+        banned,
+        banned_at,
+        banned_reason,
+        verified,
+        verified_at,
+        verified_by,
+        last_ip
       `);
 
     // Aplicar filtros
@@ -601,8 +608,9 @@ export const getUsers = async (filtros = {}) => {
       processedData.push({
         ...user,
         active_products_count: activeProductsCount,
-        // TODO: Agregar campo banned cuando se actualice la BD
-        banned: false // Temporalmente false hasta implementar campo en BD
+        banned: user.banned || false,
+        banned_at: user.banned_at || null,
+        banned_reason: user.banned_reason || null
       });
     }
 
@@ -619,25 +627,33 @@ export const getUsers = async (filtros = {}) => {
  */
 export const getUserStats = async () => {
   try {
-    // Obtener conteos básicos
-    const [usersResult, suppliersResult] = await Promise.all([
-      supabase.from('users').select('user_id, main_supplier', { count: 'exact', head: true }),
-      supabase.from('users').select('user_id', { count: 'exact', head: true }).eq('main_supplier', true)
-    ]);
+    // Obtener todos los usuarios con información de ban y verificación
+    const { data: usersData, error: usersError } = await supabase
+      .from('users')
+      .select('user_id, main_supplier, banned, verified');
 
-    const totalUsers = usersResult.count || 0;
-    const suppliers = suppliersResult.count || 0;
+    if (usersError) {
+      console.error('Error obteniendo usuarios:', usersError);
+      return { success: false, error: 'Error al cargar estadísticas de usuarios' };
+    }
 
-    // TODO: Calcular usuarios baneados cuando se implemente el campo
-    const bannedUsers = 0;
+    const users = usersData || [];
+    const totalUsers = users.length;
+    const bannedUsers = users.filter(user => user.banned === true).length;
     const activeUsers = totalUsers - bannedUsers;
+    const suppliers = users.filter(user => user.main_supplier === true).length;
+    const buyers = totalUsers - suppliers;
+    const verifiedUsers = users.filter(user => user.verified === true).length;
+    const unverifiedUsers = totalUsers - verifiedUsers;
 
     const stats = {
       totalUsers,
       activeUsers,
       bannedUsers,
       suppliers,
-      buyers: totalUsers - suppliers
+      buyers,
+      verifiedUsers,
+      unverifiedUsers
     };
 
     return { success: true, stats };
@@ -655,17 +671,26 @@ export const getUserStats = async () => {
  */
 export const banUser = async (userId, reason) => {
   try {
-    // TODO: Implementar cuando se agregue el campo 'banned' a la tabla users
-    // También necesitaremos una tabla de audit para logs de bans
-    
-    /*
+    // Primero obtenemos la información del usuario, incluyendo su última IP
+    const { data: userData, error: userError } = await supabase
+      .from('users')
+      .select('last_ip')
+      .eq('user_id', userId)
+      .single();
+
+    if (userError) {
+      console.error('Error obteniendo datos del usuario:', userError);
+      return { success: false, error: 'Error obteniendo datos del usuario' };
+    }
+
+    // Usar las nuevas columnas implementadas en el SQL
     const { error: updateError } = await supabase
       .from('users')
       .update({ 
         banned: true,
-        ban_reason: reason,
         banned_at: new Date().toISOString(),
-        banned_by: 'admin' // TODO: Usar ID del admin actual
+        banned_reason: reason || null,
+        updatedt: new Date().toISOString()
       })
       .eq('user_id', userId);
 
@@ -674,25 +699,23 @@ export const banUser = async (userId, reason) => {
       return { success: false, error: 'Error al banear usuario' };
     }
 
-    // Crear registro de auditoría
-    const { error: auditError } = await supabase
-      .from('user_ban_audit')
-      .insert({
-        user_id: userId,
-        action: 'ban',
-        reason: reason,
-        admin_id: 'admin', // TODO: Usar ID del admin actual
-        created_at: new Date().toISOString()
-      });
+    // Si el usuario tiene una IP registrada, también banear la IP
+    if (userData.last_ip) {
+      const { error: ipBanError } = await supabase
+        .from('banned_ips')
+        .upsert({
+          ip: userData.last_ip,
+          banned_at: new Date().toISOString(),
+          banned_reason: reason || 'Baneado junto con usuario',
+          banned_by: null // TODO: Usar ID del admin actual cuando esté implementado
+        });
 
-    if (auditError) {
-      console.warn('Error creando log de auditoría:', auditError);
+      if (ipBanError) {
+        console.warn('Error baneando IP:', ipBanError);
+        // No fallar la operación completa si solo falla el baneo de IP
+      }
     }
-    */
 
-    // Por ahora solo simulamos la respuesta
-    // Simulando ban de usuario
-    
     return { success: true };
   } catch (error) {
     console.error('Error en banUser:', error);
@@ -708,18 +731,24 @@ export const banUser = async (userId, reason) => {
  */
 export const unbanUser = async (userId, reason) => {
   try {
-    // TODO: Implementar cuando se agregue el campo 'banned' a la tabla users
-    
-    /*
+    // Primero obtenemos la información del usuario, incluyendo su última IP
+    const { data: userData, error: userError } = await supabase
+      .from('users')
+      .select('last_ip')
+      .eq('user_id', userId)
+      .single();
+
+    if (userError) {
+      console.error('Error obteniendo datos del usuario:', userError);
+      return { success: false, error: 'Error obteniendo datos del usuario' };
+    }
+
+    // Actualizar el estado de baneo del usuario
     const { error: updateError } = await supabase
       .from('users')
       .update({ 
         banned: false,
-        ban_reason: null,
-        banned_at: null,
-        banned_by: null,
-        unbanned_at: new Date().toISOString(),
-        unbanned_by: 'admin' // TODO: Usar ID del admin actual
+        updatedt: new Date().toISOString()
       })
       .eq('user_id', userId);
 
@@ -728,7 +757,21 @@ export const unbanUser = async (userId, reason) => {
       return { success: false, error: 'Error al desbanear usuario' };
     }
 
-    // Crear registro de auditoría
+    // Si el usuario tiene una IP registrada, también desbanear la IP
+    if (userData.last_ip) {
+      const { error: ipUnbanError } = await supabase
+        .from('banned_ips')
+        .delete()
+        .eq('ip', userData.last_ip);
+
+      if (ipUnbanError) {
+        console.warn('Error desbaneando IP:', ipUnbanError);
+        // No fallar la operación completa si solo falla el desbaneo de IP
+      }
+    }
+
+    // TODO: Crear registro de auditoría cuando se implemente la tabla user_ban_audit
+    /*
     const { error: auditError } = await supabase
       .from('user_ban_audit')
       .insert({
@@ -744,12 +787,68 @@ export const unbanUser = async (userId, reason) => {
     }
     */
 
-    // Por ahora solo simulamos la respuesta
-    // Simulando unban de usuario
-    
     return { success: true };
   } catch (error) {
     console.error('Error en unbanUser:', error);
+    return { success: false, error: 'Error interno del servidor' };
+  }
+};
+
+/**
+ * Verificar un usuario
+ * @param {string} userId - ID del usuario a verificar
+ * @param {string} reason - Razón de la verificación
+ * @returns {Promise<{success: boolean, error?: string}>}
+ */
+export const verifyUser = async (userId, reason) => {
+  try {
+    const { error: updateError } = await supabase
+      .from('users')
+      .update({ 
+        verified: true,
+        verified_at: new Date().toISOString(),
+        updatedt: new Date().toISOString()
+      })
+      .eq('user_id', userId);
+
+    if (updateError) {
+      console.error('Error verificando usuario:', updateError);
+      return { success: false, error: 'Error al verificar usuario' };
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error('Error en verifyUser:', error);
+    return { success: false, error: 'Error interno del servidor' };
+  }
+};
+
+/**
+ * Desverificar un usuario
+ * @param {string} userId - ID del usuario a desverificar
+ * @param {string} reason - Razón de la desverificación
+ * @returns {Promise<{success: boolean, error?: string}>}
+ */
+export const unverifyUser = async (userId, reason) => {
+  try {
+    const { error: updateError } = await supabase
+      .from('users')
+      .update({ 
+        verified: false,
+        verified_at: null,
+        verified_by: null,
+        updatedt: new Date().toISOString()
+      })
+      .eq('user_id', userId);
+
+    if (updateError) {
+      console.error('Error desverificando usuario:', updateError);
+      return { success: false, error: 'Error al desverificar usuario' };
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error('Error en unverifyUser:', error);
     return { success: false, error: 'Error interno del servidor' };
   }
 };
@@ -949,6 +1048,82 @@ export const deleteProduct = async (productId) => {
 };
 
 /**
+ * Eliminar múltiples productos del marketplace
+ * @param {string[]} productIds - Array de IDs de productos a eliminar
+ * @returns {Promise<{success: boolean, deleted: number, errors: string[], error?: string}>}
+ */
+export const deleteMultipleProducts = async (productIds) => {
+  try {
+    if (!productIds || productIds.length === 0) {
+      return { success: false, error: 'No se proporcionaron productos para eliminar' };
+    }
+
+    let deletedCount = 0;
+    const errors = [];
+
+    // Eliminar productos uno por uno para mejor control de errores
+    for (const productId of productIds) {
+      const result = await deleteProduct(productId);
+      if (result.success) {
+        deletedCount++;
+      } else {
+        errors.push(`Error eliminando producto ${productId}: ${result.error}`);
+      }
+    }
+
+    return {
+      success: deletedCount > 0,
+      deleted: deletedCount,
+      errors,
+      error: errors.length > 0 ? `Se eliminaron ${deletedCount} de ${productIds.length} productos` : undefined
+    };
+  } catch (error) {
+    console.error('Error en deleteMultipleProducts:', error);
+    return { success: false, error: 'Error interno del servidor', deleted: 0, errors: [] };
+  }
+};
+
+/**
+ * Actualizar nombre de producto
+ * @param {string} productId - ID del producto
+ * @param {string} newName - Nuevo nombre del producto
+ * @returns {Promise<{success: boolean, error?: string}>}
+ */
+export const updateProductName = async (productId, newName) => {
+  try {
+    if (!productId || !newName) {
+      return { success: false, error: 'ID del producto y nuevo nombre son requeridos' };
+    }
+
+    if (newName.trim().length < 3) {
+      return { success: false, error: 'El nombre del producto debe tener al menos 3 caracteres' };
+    }
+
+    if (newName.trim().length > 100) {
+      return { success: false, error: 'El nombre del producto no puede exceder 100 caracteres' };
+    }
+
+    const { error } = await supabase
+      .from('products')
+      .update({ 
+        productnm: newName.trim(),
+        updateddt: new Date().toISOString()
+      })
+      .eq('productid', productId);
+
+    if (error) {
+      console.error('Error actualizando nombre del producto:', error);
+      return { success: false, error: 'Error al actualizar el nombre del producto' };
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error('Error en updateProductName:', error);
+    return { success: false, error: 'Error interno del servidor' };
+  }
+};
+
+/**
  * Obtener estadísticas de productos del marketplace
  * @returns {Promise<{success: boolean, stats?: object, error?: string}>}
  */
@@ -1001,6 +1176,172 @@ export const getProductStats = async () => {
     return { success: true, stats };
   } catch (error) {
     console.error('Error en getProductStats:', error);
+    return { success: false, error: 'Error interno del servidor' };
+  }
+};
+
+/**
+ * Eliminar un usuario del sistema
+ * @param {string} userId - ID del usuario a eliminar
+ * @returns {Promise<{success: boolean, error?: string}>}
+ */
+export const deleteUser = async (userId) => {
+  try {
+    const { error: deleteError } = await supabase
+      .from('users')
+      .delete()
+      .eq('user_id', userId);
+
+    if (deleteError) {
+      console.error('Error eliminando usuario:', deleteError);
+      return { success: false, error: 'Error al eliminar usuario' };
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error('Error en deleteUser:', error);
+    return { success: false, error: 'Error interno del servidor' };
+  }
+};
+
+/**
+ * Eliminar múltiples usuarios del sistema
+ * @param {string[]} userIds - Array de IDs de usuarios a eliminar
+ * @returns {Promise<{success: boolean, deleted: number, errors: string[], error?: string}>}
+ */
+export const deleteMultipleUsers = async (userIds) => {
+  try {
+    if (!userIds || userIds.length === 0) {
+      return { success: false, error: 'No se proporcionaron usuarios para eliminar' };
+    }
+
+    let deletedCount = 0;
+    const errors = [];
+
+    // Eliminar usuarios uno por uno para mejor control de errores
+    for (const userId of userIds) {
+      const result = await deleteUser(userId);
+      if (result.success) {
+        deletedCount++;
+      } else {
+        errors.push(`Error eliminando usuario ${userId}: ${result.error}`);
+      }
+    }
+
+    return {
+      success: deletedCount > 0,
+      deleted: deletedCount,
+      errors,
+      error: errors.length > 0 ? `Se eliminaron ${deletedCount} de ${userIds.length} usuarios` : undefined
+    };
+  } catch (error) {
+    console.error('Error en deleteMultipleUsers:', error);
+    return { success: false, error: 'Error interno del servidor', deleted: 0, errors: [] };
+  }
+};
+
+/**
+ * Verificar si una IP está baneada
+ * @param {string} ip - La IP a verificar
+ * @returns {Promise<{success: boolean, isBanned: boolean, banInfo?: object, error?: string}>}
+ */
+export const isIpBanned = async (ip) => {
+  try {
+    const { data, error } = await supabase
+      .from('banned_ips')
+      .select('*')
+      .eq('ip', ip)
+      .single();
+
+    if (error && error.code !== 'PGRST116') { // PGRST116 = no rows found
+      console.error('Error verificando IP baneada:', error);
+      return { success: false, error: 'Error interno del servidor' };
+    }
+
+    return { 
+      success: true, 
+      isBanned: !!data,
+      banInfo: data || null
+    };
+  } catch (error) {
+    console.error('Error en isIpBanned:', error);
+    return { success: false, error: 'Error interno del servidor' };
+  }
+};
+
+/**
+ * Banear una IP específica
+ * @param {string} ip - La IP a banear
+ * @param {string} reason - Razón del baneo
+ * @param {string} bannedBy - ID del admin que realiza el baneo
+ * @returns {Promise<{success: boolean, error?: string}>}
+ */
+export const banIp = async (ip, reason, bannedBy = null) => {
+  try {
+    const { error } = await supabase
+      .from('banned_ips')
+      .upsert({
+        ip,
+        banned_at: new Date().toISOString(),
+        banned_reason: reason || 'Baneado manualmente',
+        banned_by: bannedBy
+      });
+
+    if (error) {
+      console.error('Error baneando IP:', error);
+      return { success: false, error: 'Error al banear IP' };
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error('Error en banIp:', error);
+    return { success: false, error: 'Error interno del servidor' };
+  }
+};
+
+/**
+ * Desbanear una IP específica
+ * @param {string} ip - La IP a desbanear
+ * @returns {Promise<{success: boolean, error?: string}>}
+ */
+export const unbanIp = async (ip) => {
+  try {
+    const { error } = await supabase
+      .from('banned_ips')
+      .delete()
+      .eq('ip', ip);
+
+    if (error) {
+      console.error('Error desbaneando IP:', error);
+      return { success: false, error: 'Error al desbanear IP' };
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error('Error en unbanIp:', error);
+    return { success: false, error: 'Error interno del servidor' };
+  }
+};
+
+/**
+ * Obtener lista de IPs baneadas
+ * @returns {Promise<{success: boolean, data?: array, error?: string}>}
+ */
+export const getBannedIps = async () => {
+  try {
+    const { data, error } = await supabase
+      .from('banned_ips')
+      .select('*')
+      .order('banned_at', { ascending: false });
+
+    if (error) {
+      console.error('Error obteniendo IPs baneadas:', error);
+      return { success: false, error: 'Error al obtener IPs baneadas' };
+    }
+
+    return { success: true, data: data || [] };
+  } catch (error) {
+    console.error('Error en getBannedIps:', error);
     return { success: false, error: 'Error interno del servidor' };
   }
 };

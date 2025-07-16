@@ -33,6 +33,31 @@ export const useShippingValidation = (cartItems = [], isAdvancedMode = false) =>
   const [incompatibleProducts, setIncompatibleProducts] = useState([]);
 
   /**
+   * Obtener nombre legible de la región
+   */
+  const getUserRegionName = useCallback((regionValue) => {
+    const regionMap = {
+      'arica-parinacota': 'Arica y Parinacota',
+      'tarapaca': 'Tarapacá',
+      'antofagasta': 'Antofagasta',
+      'atacama': 'Atacama',
+      'coquimbo': 'Coquimbo',
+      'valparaiso': 'Valparaíso',
+      'metropolitana': 'Región Metropolitana',
+      'ohiggins': "O'Higgins",
+      'maule': 'Maule',
+      'nuble': 'Ñuble',
+      'biobio': 'Biobío',
+      'araucania': 'Araucanía',
+      'los-rios': 'Los Ríos',
+      'los-lagos': 'Los Lagos',
+      'aysen': 'Aysén',
+      'magallanes': 'Magallanes'
+    };
+    return regionMap[regionValue] || regionValue;
+  }, []);
+
+  /**
    * Obtener información del perfil del usuario
    */
   const fetchUserProfile = useCallback(async () => {
@@ -77,11 +102,18 @@ export const useShippingValidation = (cartItems = [], isAdvancedMode = false) =>
       };
     }
 
-    // Obtener información de despacho del producto
+    // ✅ MEJORADO: Obtener información de despacho del producto con múltiples fuentes
     const shippingRegions = product.shippingRegions || 
                           product.delivery_regions || 
                           product.shipping_regions || 
+                          product.product_delivery_regions || // ✅ NUEVO: Soporte directo para datos de BD
                           [];
+
+    console.log(`[useShippingValidation] Validando producto ${product.id || product.name}:`, {
+      userRegion,
+      shippingRegions,
+      productKeys: Object.keys(product)
+    });
 
     // Estado: Sin información de despacho
     if (!shippingRegions || shippingRegions.length === 0) {
@@ -92,15 +124,32 @@ export const useShippingValidation = (cartItems = [], isAdvancedMode = false) =>
       };
     }
 
-    // Buscar la región del usuario en las regiones del producto
-    const matchingRegion = shippingRegions.find(region => 
-      region.region === userRegion || region.value === userRegion
-    );
+    // ✅ MEJORADO: Buscar la región del usuario en las regiones del producto
+    // Soportar tanto formato de BD como formato de frontend
+    const matchingRegion = shippingRegions.find(region => {
+      // Formato de BD: { region: 'metropolitana', price: 5000, delivery_days: 3 }
+      const regionValue = region.region || region.value;
+      
+      // Formato de frontend: { region: 'metropolitana', shippingValue: 5000, maxDeliveryDays: 3 }
+      const altRegionValue = region.region || region.value;
+      
+      return regionValue === userRegion || altRegionValue === userRegion;
+    });
+
+    console.log(`[useShippingValidation] Región matching para ${userRegion}:`, matchingRegion);
 
     // Estado: Compatible
     if (matchingRegion) {
-      const days = matchingRegion.maxDeliveryDays || matchingRegion.days || 'N/A';
-      const cost = matchingRegion.shippingValue || matchingRegion.price || 0;
+      // ✅ MEJORADO: Soporte para ambos formatos de datos
+      const days = matchingRegion.delivery_days || 
+                  matchingRegion.maxDeliveryDays || 
+                  matchingRegion.days || 
+                  'N/A';
+      
+      const cost = matchingRegion.price || 
+                  matchingRegion.shippingValue || 
+                  matchingRegion.cost || 
+                  0;
       
       return {
         state: SHIPPING_STATES.COMPATIBLE,
@@ -114,9 +163,11 @@ export const useShippingValidation = (cartItems = [], isAdvancedMode = false) =>
     }
 
     // Estado: Incompatible por región
-    const availableRegions = shippingRegions.map(region => 
-      region.regionLabel || region.label || region.region
-    );
+    const availableRegions = shippingRegions.map(region => {
+      // Mapear valor de región a nombre legible
+      const regionValue = region.region || region.value;
+      return getUserRegionName(regionValue);
+    });
     
     return {
       state: SHIPPING_STATES.INCOMPATIBLE_REGION,
@@ -200,31 +251,6 @@ export const useShippingValidation = (cartItems = [], isAdvancedMode = false) =>
       return false;
     }
   }, [isAdvancedMode]);
-
-  /**
-   * Obtener nombre legible de la región
-   */
-  const getUserRegionName = (regionValue) => {
-    const regionMap = {
-      'arica-parinacota': 'Arica y Parinacota',
-      'tarapaca': 'Tarapacá',
-      'antofagasta': 'Antofagasta',
-      'atacama': 'Atacama',
-      'coquimbo': 'Coquimbo',
-      'valparaiso': 'Valparaíso',
-      'metropolitana': 'Región Metropolitana',
-      'ohiggins': "O'Higgins",
-      'maule': 'Maule',
-      'nuble': 'Ñuble',
-      'biobio': 'Biobío',
-      'araucania': 'Araucanía',
-      'los-rios': 'Los Ríos',
-      'los-lagos': 'Los Lagos',
-      'aysen': 'Aysén',
-      'magallanes': 'Magallanes'
-    };
-    return regionMap[regionValue] || regionValue;
-  };
 
   // Efecto para cargar perfil del usuario
   useEffect(() => {

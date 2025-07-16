@@ -38,14 +38,12 @@ const ColorlibConnector = styled(StepConnector)(({ theme }) => ({
   },
   [`&.${stepConnectorClasses.active}`]: {
     [`& .${stepConnectorClasses.line}`]: {
-      backgroundImage:
-        'linear-gradient(95deg, #41B6E6 0%, #2fa4d6 50%, #1976d2 100%)',
+      background: theme.palette.primary.main,
     },
   },
   [`&.${stepConnectorClasses.completed}`]: {
     [`& .${stepConnectorClasses.line}`]: {
-      backgroundImage:
-        'linear-gradient(95deg, #41B6E6 0%, #2fa4d6 50%, #1976d2 100%)',
+      background: theme.palette.primary.main,
     },
   },
   [`& .${stepConnectorClasses.line}`]: {
@@ -95,16 +93,14 @@ const ColorlibStepIconRoot = styled('div')(({ theme }) => ({
     {
       props: ({ ownerState }) => ownerState.active,
       style: {
-        backgroundImage:
-          'linear-gradient(136deg, #41B6E6 0%, #2fa4d6 50%, #1976d2 100%)',
-        boxShadow: '0 4px 10px 0 rgba(65, 182, 230, 0.25)',
+        background: theme.palette.primary.main,
+        boxShadow: `0 4px 10px 0 ${theme.palette.primary.main}40`,
       },
     },
     {
       props: ({ ownerState }) => ownerState.completed,
       style: {
-        backgroundImage:
-          'linear-gradient(136deg, #41B6E6 0%, #2fa4d6 50%, #1976d2 100%)',
+        background: theme.palette.primary.main,
       },
     },
   ],
@@ -139,21 +135,21 @@ const Stepper = ({ activeStep, steps }) => {
         activeStep={activeStep - 1}
         alternativeLabel
         connector={<ColorlibConnector />}
-        sx={{
+        sx={theme => ({
           '& .MuiStepLabel-label': {
             fontSize: '12px',
             fontWeight: 500,
             color: '#666',
           },
           '& .MuiStepLabel-label.Mui-active': {
-            color: '#41B6E6',
+            color: theme.palette.primary.main,
             fontWeight: 600,
           },
           '& .MuiStepLabel-label.Mui-completed': {
-            color: '#41B6E6',
+            color: theme.palette.primary.main,
             fontWeight: 600,
           },
-        }}
+        })}
       >
         {steps.map((label, index) => (
           <Step key={label}>
