@@ -27,7 +27,7 @@ import { usePrefetch } from './hooks/usePrefetch';
 import useCartStore from './features/buyer/hooks/cartStore';
 
 import SideBar from './features/layout/SideBar';
-import { AdminLogin, AdminDashboard } from './features/admin_panel';
+import { AdminLogin, AdminDashboard, AdminPanelHome } from './features/admin_panel';
 import ScrollToTop from './features/ScrollToTop';
 
 // ============================================================================
@@ -46,6 +46,8 @@ const Marketplace = React.lazy(() =>
 );
 const BuyerCart = React.lazy(() => import('./features/buyer/BuyerCart'));
 const PaymentMethod = React.lazy(() => import('./features/checkout/PaymentMethod'));
+const CheckoutSuccess = React.lazy(() => import('./features/checkout/CheckoutSuccess'));
+const CheckoutCancel = React.lazy(() => import('./features/checkout/CheckoutCancel'));
 
 // 📦 SUPPLIER DASHBOARD - LAZY LOADING
 const ProviderHome = React.lazy(() =>
@@ -184,6 +186,8 @@ function AppContent({ mensaje }) {
     '/buyer/paymentmethod',
     '/buyer/profile',
     '/catalog', // Catálogo del proveedor accesible desde buyer
+    '/checkout/success',
+    '/checkout/cancel',
   ]);
   const supplierDashboardRoutes = new Set([
     '/supplier/home',
@@ -708,6 +712,7 @@ function AppContent({ mensaje }) {
 
                 {/* RUTAS ADMINISTRATIVAS - ACCESO VISUAL PARA TESTING */}
                 <Route path="/admin-login" element={<AdminLogin />} />
+                <Route path="/admin-panel" element={<AdminPanelHome />} />
                 <Route path="/admin-panel/dashboard" element={<AdminDashboard />} />
 
                 {/* Ruta para página de ban (acceso directo para testing) */}
@@ -799,6 +804,36 @@ function AppContent({ mensaje }) {
                       redirectTo="/"
                     >
                       <PaymentMethod />
+                    </PrivateRoute>
+                  }
+                />
+
+                {/* RUTA DEL CHECKOUT - ÉXITO */}
+                <Route
+                  path="/checkout/success"
+                  element={
+                    <PrivateRoute
+                      isAuthenticated={!!session}
+                      needsOnboarding={needsOnboarding}
+                      loading={loadingUserStatus}
+                      redirectTo="/"
+                    >
+                      <CheckoutSuccess />
+                    </PrivateRoute>
+                  }
+                />
+
+                {/* RUTA DEL CHECKOUT - CANCELACIÓN */}
+                <Route
+                  path="/checkout/cancel"
+                  element={
+                    <PrivateRoute
+                      isAuthenticated={!!session}
+                      needsOnboarding={needsOnboarding}
+                      loading={loadingUserStatus}
+                      redirectTo="/"
+                    >
+                      <CheckoutCancel />
                     </PrivateRoute>
                   }
                 />

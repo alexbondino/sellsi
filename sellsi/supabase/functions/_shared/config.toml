@@ -1,0 +1,18 @@
+# ============================================================================
+# CONFIGURACIÓN DE FUNCIONES EDGE PARA KHIPU
+# ============================================================================
+
+# Este archivo contiene la configuración necesaria para las funciones Edge de Supabase
+# que manejan la integración con Khipu
+
+[create-khipu-payment]
+  verify_jwt = false
+  import_map = "./import_map.json"
+
+[verify-khipu-payment]
+  verify_jwt = false
+  import_map = "./import_map.json"
+
+[process-khipu-webhook]
+  verify_jwt = false
+  import_map = "./import_map.json"

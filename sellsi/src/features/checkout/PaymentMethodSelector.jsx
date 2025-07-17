@@ -133,11 +133,19 @@ const PaymentMethodSelector = () => {
     setIsProcessing(true)
     
     try {
+      // Obtener datos del usuario
+      const userId = localStorage.getItem('user_id')
+      const userEmail = localStorage.getItem('user_email') // Asegurate de que esto esté guardado en el login
+      
+      if (!userId) {
+        throw new Error('Usuario no autenticado')
+      }
+
       // Validar datos del checkout
       const validation = checkoutService.validateCheckoutData({
         ...orderData,
         paymentMethod: selectedMethod.id,
-        userId: localStorage.getItem('user_id')
+        userId: userId
       })
 
       if (!validation.isValid) {
@@ -145,27 +153,57 @@ const PaymentMethodSelector = () => {
         throw new Error(errorMessage)
       }
 
-      // TODO: En el futuro, aquí se redirigirá a Khipu
-      // window.location.href = khipuPaymentUrl
-      
-      // Por ahora, simular el proceso
-      toast.success('Redirigiendo a Khipu...')
-      
       // Marcar como procesando en el stepper
       startPaymentProcessing()
-      
-      // Simular el proceso de Khipu (esto se eliminará cuando esté la integración real)
-      setTimeout(() => {
-        // Simular respuesta exitosa de Khipu
-        const transactionData = {
-          transactionId: `TXN_${Date.now()}`,
-          paymentReference: `REF_${Math.random().toString(36).substr(2, 9)}`
-        }
+
+      // Crear orden en la base de datos
+      console.log('[PaymentMethodSelector] Creando orden...')
+      const order = await checkoutService.createOrder({
+        userId: userId,
+        items: orderData.items,
+        subtotal: orderData.subtotal,
+        tax: orderData.tax,
+        shipping: orderData.shipping,
+        total: orderData.total,
+        currency: orderData.currency || 'CLP',
+        paymentMethod: selectedMethod.id,
+        shippingAddress: orderData.shippingAddress,
+        billingAddress: orderData.billingAddress
+      })
+
+      console.log('[PaymentMethodSelector] Orden creada:', order)
+
+      if (selectedMethod.id === 'khipu') {
+        // Procesar pago con Khipu
+        console.log('[PaymentMethodSelector] Procesando pago con Khipu...')
         
-        completePayment(transactionData)
-        toast.success('¡Pago completado exitosamente!')
-        setIsCompleted(true)
-      }, 3000) // 3 segundos para simular el proceso
+        const paymentResult = await checkoutService.processKhipuPayment({
+          orderId: order.id,
+          userId: userId,
+          userEmail: userEmail || '',
+          amount: orderData.total,
+          currency: orderData.currency || 'CLP',
+          items: orderData.items
+        })
+
+        if (paymentResult.success && paymentResult.paymentUrl) {
+          console.log('[PaymentMethodSelector] Redirigiendo a Khipu:', paymentResult.paymentUrl)
+          
+          // Mostrar mensaje de redirección
+          toast.success('Redirigiendo a Khipu para completar el pago...')
+          
+          // Esperar un momento y redirigir
+          setTimeout(() => {
+            window.location.href = paymentResult.paymentUrl
+          }, 1500)
+          
+        } else {
+          throw new Error('Error al crear orden de pago en Khipu')
+        }
+      } else {
+        // Para otros métodos de pago futuro (Webpay, etc.)
+        throw new Error('Método de pago no implementado aún')
+      }
       
     } catch (error) {
       console.error('Error processing payment:', error)

@@ -18,6 +18,11 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
+// 🚀 OPTIMIZACIÓN: Reducir logging masivo que consume BigQuery
+const DEBUG_MODE = Deno.env.get('DEBUG_MODE') === 'true'
+const log = DEBUG_MODE ? console.log : () => {}
+const logError = DEBUG_MODE ? console.error : () => {}
+
 serve(async (req) => {
   // Manejar preflight requests
   if (req.method === 'OPTIONS') {
@@ -102,12 +107,12 @@ serve(async (req) => {
       .single();
 
     if (banError && banError.code !== 'PGRST116') {
-      console.error('Error verificando IP baneada:', banError);
+      logError('Error verificando IP baneada:', banError);
     }
 
     // Si la IP está baneada, registrar intento pero no actualizar
     if (bannedIp) {
-      console.log(`🚫 IP baneada intentó acceder: ${clientIp} - Usuario: ${user_id}`);
+      log(`🚫 IP baneada intentó acceder: ${clientIp} - Usuario: ${user_id}`);
       
       return new Response(
         JSON.stringify({ 
@@ -130,7 +135,7 @@ serve(async (req) => {
         .eq("user_id", user_id);
 
       if (updateError) {
-        console.error('Error actualizando last_ip:', updateError);
+        logError('Error actualizando last_ip:', updateError);
         return new Response(
           JSON.stringify({ error: "Error actualizando IP: " + updateError.message }), 
           { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -150,7 +155,7 @@ serve(async (req) => {
     };
 
     // Log de auditoría para debugging
-    console.log('✅ IP actualizada:', {
+    log('✅ IP actualizada:', {
       user_id: user_id,
       email: existingUser.email,
       old_ip: existingUser.last_ip,
@@ -165,7 +170,7 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('Error inesperado en update-lastip:', error);
+    logError('Error inesperado en update-lastip:', error);
     return new Response(
       JSON.stringify({ error: "Error interno del servidor" }), 
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

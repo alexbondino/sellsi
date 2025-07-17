@@ -204,9 +204,9 @@ export class UploadService {
    */
   static async uploadMultipleImagesWithThumbnails(files, productId, supplierId) {
     try {
-      // Subir imágenes en paralelo
-      const uploadPromises = files.map(file => 
-        this.uploadImageWithThumbnail(file, productId, supplierId)
+      // Subir imágenes en paralelo - solo thumbnails para la primera (principal)
+      const uploadPromises = files.map((file, index) => 
+        this.uploadImageWithThumbnail(file, productId, supplierId, index === 0)
       )
 
       const results = await Promise.allSettled(uploadPromises)
@@ -239,9 +239,10 @@ export class UploadService {
    * @param {File} file - Archivo de imagen a subir
    * @param {string} productId - ID del producto
    * @param {string} supplierId - ID del proveedor
+   * @param {boolean} isMainImage - Si es la imagen principal (para generar thumbnails)
    * @returns {Promise<{success: boolean, data?: any, error?: string}>}
    */
-  static async uploadImageWithThumbnail(file, productId, supplierId) {
+  static async uploadImageWithThumbnail(file, productId, supplierId, isMainImage = false) {
     try {
       // 1. Validaciones
       if (!file) {
@@ -295,16 +296,18 @@ export class UploadService {
       // 4. Obtener URL pública de la imagen original (usar la que ya generamos)
       const urlData = publicUrlData
 
-      // 5. Generar thumbnail usando Edge Function
+      // 5. Generar thumbnail usando Edge Function (SOLO para imagen principal)
       let thumbnailUrl = null
-      try {
-        const thumbnailResult = await this.generateThumbnail(urlData.publicUrl, productId, supplierId)
-        if (thumbnailResult.success) {
-          thumbnailUrl = thumbnailResult.thumbnailUrl
+      if (isMainImage) {
+        try {
+          const thumbnailResult = await this.generateThumbnail(urlData.publicUrl, productId, supplierId)
+          if (thumbnailResult.success) {
+            thumbnailUrl = thumbnailResult.thumbnailUrl
+          }
+          // Si falla, continuar sin thumbnail
+        } catch (thumbnailError) {
+          // Si falla, continuar sin thumbnail
         }
-        // Si falla, continuar sin thumbnail
-      } catch (thumbnailError) {
-        // Si falla, continuar sin thumbnail
       }
 
       return {
@@ -326,7 +329,7 @@ export class UploadService {
   }
 
   /**
-   * ✅ NUEVO: Generar thumbnail usando Edge Function
+   * ✅ NUEVO: Generar thumbnail usando Edge Function (solo para imagen principal)
    * @param {string} imageUrl - URL de la imagen original
    * @param {string} productId - ID del producto
    * @param {string} supplierId - ID del proveedor
@@ -341,7 +344,7 @@ export class UploadService {
           'Authorization': `Bearer ${supabase.supabaseKey}`,
         },
         body: JSON.stringify({
-          imageUrl,
+          imageUrl: imageUrl, // Correcto: imageUrl en lugar de imagePath
           productId,
           supplierId,
         }),

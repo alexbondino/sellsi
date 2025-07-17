@@ -6,22 +6,30 @@ export const PAYMENT_METHODS = {
   KHIPU: {
     id: 'khipu',
     name: 'Transferencia por Khipu',
-    description: 'Pago seguro mediante transferencia bancaria',
+    description: 'Pago seguro mediante transferencia bancaria instantánea',
     icon: '/Checkout/khipu.svg',
     enabled: true,
     fees: {
-      percentage: 0,
+      percentage: 0, // Sin comisiones adicionales por parte de Sellsi
       fixed: 0
     },
-    minAmount: 1000,
-    maxAmount: 10000000,
+    minAmount: 10, // Mínimo CLP $10
+    maxAmount: 10000000, // Máximo CLP $10M
     supportedCurrencies: ['CLP'],
-    processingTime: 'Inmediato',
+    processingTime: 'Instantáneo',
     security: {
       ssl: true,
       encrypted: true,
-      verified: true
-    }
+      verified: true,
+      description: 'Certificado por CMF y protegido con encriptación bancaria'
+    },
+    features: [
+      'Sin comisiones adicionales',
+      'Transferencia instantánea',
+      'Disponible 24/7',
+      'Compatible con todos los bancos',
+      'Confirmación inmediata'
+    ]
   },
   // Métodos futuros
   WEBPAY: {

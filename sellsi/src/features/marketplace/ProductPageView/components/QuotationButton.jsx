@@ -40,7 +40,7 @@ const QuotationButton = ({ product, quantity, unitPrice, tiers }) => {
             },
           }}
         >
-          Cotizar
+          Solicitar Cotización
         </Button>
       </Tooltip>
 

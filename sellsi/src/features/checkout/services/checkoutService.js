@@ -5,6 +5,7 @@
 import { supabase } from '../../../services/supabase'
 import { PAYMENT_STATUS } from '../constants/paymentMethods'
 import { trackUserAction } from '../../../services/ipTrackingService'
+import khipuService from '../../../services/khipuService'
 
 class CheckoutService {
   
@@ -32,6 +33,7 @@ class CheckoutService {
           currency: orderData.currency || 'CLP',
           status: 'pending',
           payment_method: orderData.paymentMethod,
+          payment_status: 'pending',
           shipping_address: orderData.shippingAddress,
           billing_address: orderData.billingAddress
         })
@@ -83,25 +85,77 @@ class CheckoutService {
    */
   async processKhipuPayment(paymentData) {
     try {
-      // TODO: Integrar con API de Khipu
-      // Por ahora simulamos el proceso
-      
-      await new Promise(resolve => setTimeout(resolve, 1500))
-      
-      const transactionId = `KHIPU_${Date.now()}`
-      const paymentReference = `REF_${Math.random().toString(36).substr(2, 9).toUpperCase()}`
-      
-      // Simular respuesta exitosa
+      console.log('[CheckoutService] Iniciando pago con Khipu:', paymentData)
+
+      // Validar monto
+      if (!khipuService.validateAmount(paymentData.amount)) {
+        throw new Error('Monto fuera del rango permitido por Khipu')
+      }
+
+      // Crear orden de pago en Khipu
+      const khipuResponse = await khipuService.createPaymentOrder({
+        orderId: paymentData.orderId,
+        userId: paymentData.userId,
+        userEmail: paymentData.userEmail,
+        total: paymentData.amount,
+        currency: paymentData.currency || 'CLP',
+        items: paymentData.items
+      })
+
+      if (!khipuResponse.success) {
+        throw new Error('Error al crear orden de pago en Khipu')
+      }
+
+      // Actualizar orden con datos de Khipu
+      const { error: updateError } = await supabase
+        .from('orders')
+        .update({
+          khipu_payment_id: khipuResponse.paymentId,
+          khipu_transaction_id: khipuResponse.transactionId,
+          khipu_payment_url: khipuResponse.paymentUrl,
+          khipu_expires_at: khipuResponse.expiresAt,
+          payment_status: 'pending',
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', paymentData.orderId)
+
+      if (updateError) {
+        console.error('Error actualizando orden con datos de Khipu:', updateError)
+        throw new Error('Error al actualizar orden con datos de pago')
+      }
+
+      // Crear transacción de pago
+      const { error: transactionError } = await supabase
+        .from('payment_transactions')
+        .insert({
+          order_id: paymentData.orderId,
+          payment_method: 'khipu',
+          external_payment_id: khipuResponse.paymentId,
+          external_transaction_id: khipuResponse.transactionId,
+          amount: paymentData.amount,
+          currency: paymentData.currency || 'CLP',
+          status: 'pending',
+          gateway_response: khipuResponse
+        })
+
+      if (transactionError) {
+        console.error('Error creando transacción de pago:', transactionError)
+        // No lanzar error aquí, ya que la orden se creó correctamente
+      }
+
+      console.log('[CheckoutService] Pago Khipu creado exitosamente:', khipuResponse)
+
       return {
         success: true,
-        transactionId,
-        paymentReference,
-        status: PAYMENT_STATUS.COMPLETED,
-        amount: paymentData.amount,
-        currency: paymentData.currency || 'CLP',
+        paymentId: khipuResponse.paymentId,
+        paymentUrl: khipuResponse.paymentUrl,
+        transactionId: khipuResponse.transactionId,
+        expiresAt: khipuResponse.expiresAt,
+        status: PAYMENT_STATUS.PENDING,
         paymentMethod: 'khipu',
         processedAt: new Date().toISOString()
       }
+
     } catch (error) {
       console.error('Error processing Khipu payment:', error)
       throw new Error(`Error en el pago: ${error.message}`)
@@ -109,22 +163,30 @@ class CheckoutService {
   }
 
   /**
-   * Verificar estado de pago
-   * @param {string} transactionId - ID de la transacción
+   * Verificar estado de pago con Khipu
+   * @param {string} paymentId - ID del pago en Khipu
    * @returns {Object} Estado del pago
    */
-  async verifyPaymentStatus(transactionId) {
+  async verifyKhipuPaymentStatus(paymentId) {
     try {
-      // TODO: Consultar estado real del pago
-      // Por ahora simulamos
+      const verification = await khipuService.verifyPaymentStatus(paymentId)
       
+      if (!verification.success) {
+        throw new Error('Error al verificar estado del pago')
+      }
+
       return {
-        transactionId,
-        status: PAYMENT_STATUS.COMPLETED,
+        success: true,
+        paymentId: verification.paymentId,
+        transactionId: verification.transactionId,
+        status: verification.status,
+        amount: verification.amount,
+        currency: verification.currency,
+        paidAt: verification.paidAt,
         verifiedAt: new Date().toISOString()
       }
     } catch (error) {
-      console.error('Error verifying payment status:', error)
+      console.error('Error verifying Khipu payment status:', error)
       throw new Error(`Error verificando pago: ${error.message}`)
     }
   }

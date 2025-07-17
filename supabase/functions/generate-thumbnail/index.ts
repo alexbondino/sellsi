@@ -15,6 +15,11 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
+// 🚀 OPTIMIZACIÓN: Reducir logging masivo que consume BigQuery
+const DEBUG_MODE = Deno.env.get('DEBUG_MODE') === 'true'
+const log = DEBUG_MODE ? console.log : () => {}
+const logError = DEBUG_MODE ? console.error : () => {}
+
 // Función para detectar el tipo de imagen basado en los magic bytes
 function detectImageType(buffer: ArrayBuffer): string {
   const bytes = new Uint8Array(buffer);
@@ -48,7 +53,7 @@ async function createThumbnailFromOriginal(imageBuffer: ArrayBuffer, width: numb
     } catch (decodeError) {
       // Si es WebP transparente no soportado, sugerir conversión previa a PNG
       if (imageType === 'webp') {
-        console.error('❌ WebP transparente no soportado. Se recomienda convertir a PNG antes de subir.');
+        logError('❌ WebP transparente no soportado. Se recomienda convertir a PNG antes de subir.');
       }
       throw decodeError;
     }
@@ -85,7 +90,7 @@ async function createThumbnailFromOriginal(imageBuffer: ArrayBuffer, width: numb
     }
     // Validar tamaño final
     if (finalImage.width !== width || finalImage.height !== height) {
-      console.error(`❌ Thumbnail size incorrect (${finalImage.width}x${finalImage.height}), forzando fondo blanco ${width}x${height}`);
+      logError(`❌ Thumbnail size incorrect (${finalImage.width}x${finalImage.height}), forzando fondo blanco ${width}x${height}`);
       const blank = new Image(width, height);
       blank.fill(0xffffffff);
       finalImage = blank;
@@ -94,9 +99,9 @@ async function createThumbnailFromOriginal(imageBuffer: ArrayBuffer, width: numb
     const thumbnailData = await finalImage.encode(80);
     return thumbnailData;
   } catch (error) {
-    console.error(`❌ Error creating thumbnail ${width}x${height}:`, error);
-    console.error('Error details:', error.message);
-    console.error('Error stack:', error.stack);
+    logError(`❌ Error creating thumbnail ${width}x${height}:`, error);
+    logError('Error details:', error.message);
+    logError('Error stack:', error.stack);
     // Fallback: retornar thumbnail blanco del tamaño correcto
     const { Image } = await import("https://deno.land/x/imagescript@1.2.15/mod.ts");
     const blank = new Image(width, height);
@@ -136,7 +141,7 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get("SUPABASE_ANON_KEY");
 
     if (!supabaseUrl || !supabaseKey) {
-      console.error("❌ Missing environment variables");
+      logError("❌ Missing environment variables");
       return new Response(JSON.stringify({ error: 'Server configuration error' }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -159,7 +164,7 @@ serve(async (req) => {
       clearTimeout(timeoutId);
 
       if (!imageResponse.ok) {
-        console.error("❌ Failed to fetch image:", imageResponse.status, imageResponse.statusText);
+        logError("❌ Failed to fetch image:", imageResponse.status, imageResponse.statusText);
         return new Response(JSON.stringify({ error: 'Failed to fetch image' }), {
           status: 400,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -170,7 +175,7 @@ serve(async (req) => {
       const imageBuffer = await imageResponse.arrayBuffer();
 
       if (imageBuffer.byteLength === 0) {
-        console.error("❌ Empty image buffer");
+        logError("❌ Empty image buffer");
         return new Response(JSON.stringify({ error: 'Empty image data' }), {
           status: 400,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -180,7 +185,7 @@ serve(async (req) => {
       // Detectar tipo de imagen antes de procesar thumbnails
       const imageType = detectImageType(imageBuffer);
       if (imageType === 'webp') {
-        console.error('❌ No se permiten imágenes WebP.');
+        logError('❌ No se permiten imágenes WebP.');
         return new Response(JSON.stringify({ error: 'No se permiten imágenes WebP como entrada.' }), {
           status: 400,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -205,12 +210,12 @@ serve(async (req) => {
       const timestampMatch = filename.match(/^(\d+)_/);
       if (timestampMatch) {
         timestamp = parseInt(timestampMatch[1]);
-        console.log(`✅ Extracted timestamp from original image: ${timestamp}`);
+        log(`✅ Extracted timestamp from original image: ${timestamp}`);
       } else {
-        console.log(`⚠️ No timestamp found in filename: ${filename}, using current timestamp: ${timestamp}`);
+        log(`⚠️ No timestamp found in filename: ${filename}, using current timestamp: ${timestamp}`);
       }
     } catch (error) {
-      console.log(`⚠️ Error extracting timestamp from URL: ${error.message}, using current timestamp: ${timestamp}`);
+      log(`⚠️ Error extracting timestamp from URL: ${error.message}, using current timestamp: ${timestamp}`);
     }
 
     // Upload thumbnails to storage
@@ -244,7 +249,7 @@ serve(async (req) => {
     const uploadResults = await Promise.all(uploadPromises);
     const errors = uploadResults.filter(result => result.error);
     if (errors.length > 0) {
-      console.error("❌ Error uploading thumbnails:", errors);
+      logError("❌ Error uploading thumbnails:", errors);
       return new Response(JSON.stringify({ 
         error: 'Failed to upload thumbnails',
         details: errors.map(err => err.error?.message).join(', ')
@@ -285,7 +290,7 @@ serve(async (req) => {
       .eq('product_id', productId);
 
     if (dbUpdateError) {
-      console.error("❌ Error updating thumbnails in DB:", dbUpdateError);
+      logError("❌ Error updating thumbnails in DB:", dbUpdateError);
       // Optionally, you can return an error here or just log it and continue
     }
 
@@ -316,7 +321,7 @@ serve(async (req) => {
     } catch (fetchError) {
       clearTimeout(timeoutId);
       if (fetchError.name === 'AbortError') {
-        console.error("❌ Image fetch timeout");
+        logError("❌ Image fetch timeout");
         return new Response(JSON.stringify({ error: 'Image fetch timeout' }), {
           status: 408,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -326,7 +331,7 @@ serve(async (req) => {
     }
 
   } catch (error) {
-    console.error("❌ Edge Function error:", error);
+    logError("❌ Edge Function error:", error);
     return new Response(JSON.stringify({ 
       error: error.message || 'Internal server error',
       details: error.stack,

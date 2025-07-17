@@ -25,10 +25,6 @@ import { supabase } from './supabase'
  */
 export const loginAdmin = async (usuario, password) => {
   try {
-    // TODO: Implementar cuando se creen las tablas
-    // Por ahora retornamos estructura de respuesta
-    
-    /*
     const { data, error } = await supabase
       .from('control_panel_users')
       .select('*')
@@ -40,8 +36,8 @@ export const loginAdmin = async (usuario, password) => {
       return { success: false, error: 'Usuario no encontrado o inactivo' }
     }
     
-    // Verificar hash de contraseña (usar bcrypt en producción)
-    const passwordMatch = await verifyPassword(password, data.password_hash)
+    // Verificar hash de contraseña (temporal con btoa, cambiar por bcrypt)
+    const passwordMatch = data.password_hash === btoa(password)
     if (!passwordMatch) {
       return { success: false, error: 'Contraseña incorrecta' }
     }
@@ -52,10 +48,14 @@ export const loginAdmin = async (usuario, password) => {
       .update({ last_login: new Date().toISOString() })
       .eq('id', data.id)
     
-    return { success: true, user: data }
-    */
+    // ✅ NUEVA LÓGICA 2FA OBLIGATORIO
+    const twofaStatus = {
+      required: data.twofa_required,
+      configured: data.twofa_configured,
+      hasSecret: !!data.twofa_secret
+    }
     
-    return { success: false, error: 'Tablas de administración no creadas aún' }
+    return { success: true, user: data, twofaStatus }
   } catch (error) {
     console.error('Error en loginAdmin:', error)
     return { success: false, error: 'Error interno del servidor' }
@@ -70,31 +70,117 @@ export const loginAdmin = async (usuario, password) => {
  */
 export const verify2FA = async (userId, code) => {
   try {
-    // TODO: Implementar verificación 2FA con speakeasy
-    /*
-    const { data } = await supabase
-      .from('control_panel_users')
-      .select('twofa_secret')
-      .eq('id', userId)
-      .single()
-    
-    if (!data?.twofa_secret) {
-      return { success: false, error: '2FA no configurado' }
-    }
-    
-    const verified = speakeasy.totp.verify({
-      secret: data.twofa_secret,
-      encoding: 'base32',
-      token: code,
-      window: 2
+    // Llamar a la Edge Function para verificar el código
+    const { data, error } = await supabase.functions.invoke('admin-2fa', {
+      body: {
+        action: 'verify_token',
+        adminId: userId,
+        token: code
+      }
     })
-    
-    return { success: verified, error: verified ? null : 'Código 2FA inválido' }
-    */
-    
-    return { success: false, error: '2FA no implementado aún' }
+
+    if (error) {
+      console.error('Error en verify2FA:', error)
+      return { success: false, error: 'Error verificando código 2FA' }
+    }
+
+    if (!data.success) {
+      return { success: false, error: 'Error interno del servidor' }
+    }
+
+    return { 
+      success: data.isValid, 
+      error: data.isValid ? null : 'Código 2FA inválido o expirado' 
+    }
   } catch (error) {
     console.error('Error en verify2FA:', error)
+    return { success: false, error: 'Error interno del servidor' }
+  }
+}
+
+/**
+ * Generar secret para 2FA y QR code
+ * @param {string} adminId - ID del administrador
+ * @param {string} email - Email del administrador
+ * @returns {Promise<{success: boolean, secret?: string, qrCode?: string, error?: string}>}
+ */
+export const generate2FASecret = async (adminId, email) => {
+  try {
+    const { data, error } = await supabase.functions.invoke('admin-2fa', {
+      body: {
+        action: 'generate_secret',
+        adminId: adminId
+      },
+      headers: {
+        'admin-email': email
+      }
+    })
+
+    if (error) {
+      console.error('Error en generate2FASecret:', error)
+      return { success: false, error: 'Error generando código 2FA' }
+    }
+
+    return {
+      success: true,
+      secret: data.secret,
+      qrCode: data.qrCode
+    }
+  } catch (error) {
+    console.error('Error en generate2FASecret:', error)
+    return { success: false, error: 'Error interno del servidor' }
+  }
+}
+
+/**
+ * Deshabilitar 2FA para un administrador
+ * @param {string} adminId - ID del administrador
+ * @returns {Promise<{success: boolean, error?: string}>}
+ */
+export const disable2FA = async (adminId) => {
+  try {
+    const { data, error } = await supabase.functions.invoke('admin-2fa', {
+      body: {
+        action: 'disable_2fa',
+        adminId: adminId
+      }
+    })
+
+    if (error) {
+      console.error('Error en disable2FA:', error)
+      return { success: false, error: 'Error deshabilitando 2FA' }
+    }
+
+    return { success: true }
+  } catch (error) {
+    console.error('Error en disable2FA:', error)
+    return { success: false, error: 'Error interno del servidor' }
+  }
+}
+
+/**
+ * Marcar 2FA como configurado después de la primera configuración exitosa
+ * @param {string} adminId - ID del administrador
+ * @returns {Promise<{success: boolean, error?: string}>}
+ */
+export const mark2FAAsConfigured = async (adminId) => {
+  try {
+    const { error } = await supabase
+      .from('control_panel_users')
+      .update({ 
+        twofa_configured: true,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', adminId)
+    
+    if (error) {
+      console.error('Error marcando 2FA como configurado:', error)
+      return { success: false, error: 'Error al actualizar estado 2FA' }
+    }
+    
+    return { success: true }
+  } catch (error) {
+    console.error('Error en mark2FAAsConfigured:', error)
     return { success: false, error: 'Error interno del servidor' }
   }
 }
@@ -1217,131 +1303,289 @@ export const deleteMultipleUsers = async (userIds) => {
 
     let deletedCount = 0;
     const errors = [];
+    const deleted = [];
 
     // Eliminar usuarios uno por uno para mejor control de errores
     for (const userId of userIds) {
       const result = await deleteUser(userId);
-      if (result.success) {
-        deletedCount++;
-      } else {
+      if (!result.success) {
         errors.push(`Error eliminando usuario ${userId}: ${result.error}`);
+      } else {
+        deleted.push(userId);
+        deletedCount++;
       }
-    }
-
-    return {
-      success: deletedCount > 0,
-      deleted: deletedCount,
-      errors,
-      error: errors.length > 0 ? `Se eliminaron ${deletedCount} de ${userIds.length} usuarios` : undefined
-    };
-  } catch (error) {
-    console.error('Error en deleteMultipleUsers:', error);
-    return { success: false, error: 'Error interno del servidor', deleted: 0, errors: [] };
-  }
-};
-
-/**
- * Verificar si una IP está baneada
- * @param {string} ip - La IP a verificar
- * @returns {Promise<{success: boolean, isBanned: boolean, banInfo?: object, error?: string}>}
- */
-export const isIpBanned = async (ip) => {
-  try {
-    const { data, error } = await supabase
-      .from('banned_ips')
-      .select('*')
-      .eq('ip', ip)
-      .single();
-
-    if (error && error.code !== 'PGRST116') { // PGRST116 = no rows found
-      console.error('Error verificando IP baneada:', error);
-      return { success: false, error: 'Error interno del servidor' };
     }
 
     return { 
       success: true, 
-      isBanned: !!data,
-      banInfo: data || null
+      deleted: deletedCount, 
+      errors,
+      deletedIds: deleted
     };
   } catch (error) {
-    console.error('Error en isIpBanned:', error);
+    console.error('Error en deleteMultipleUsers:', error);
     return { success: false, error: 'Error interno del servidor' };
   }
 };
 
 /**
- * Banear una IP específica
- * @param {string} ip - La IP a banear
- * @param {string} reason - Razón del baneo
- * @param {string} bannedBy - ID del admin que realiza el baneo
- * @returns {Promise<{success: boolean, error?: string}>}
+ * Crear nueva cuenta de administrador
+ * @param {Object} adminData - Datos del nuevo administrador
+ * @param {string} adminData.email - Email del admin
+ * @param {string} adminData.password - Contraseña del admin
+ * @param {string} adminData.fullName - Nombre completo del admin
+ * @param {string} adminData.role - Rol del admin (default: 'admin')
+ * @param {string} [createdById] - ID del admin que crea la cuenta
+ * @returns {Promise<{success: boolean, admin?: object, error?: string}>}
  */
-export const banIp = async (ip, reason, bannedBy = null) => {
+export const createAdminAccount = async (adminData, createdById = null) => {
   try {
-    const { error } = await supabase
-      .from('banned_ips')
-      .upsert({
-        ip,
-        banned_at: new Date().toISOString(),
-        banned_reason: reason || 'Baneado manualmente',
-        banned_by: bannedBy
-      });
+    const { email, password, fullName, usuario, role = 'admin', notes } = adminData;
+
+    // Verificar que los datos requeridos están presentes
+    if (!email || !password || !fullName || !usuario) {
+      return { success: false, error: 'Datos incompletos' };
+    }
+
+    // Verificar si el email ya existe
+    const { data: existingAdmin, error: emailCheckError } = await supabase
+      .from('control_panel_users')
+      .select('email')
+      .eq('email', email)
+      .maybeSingle();
+
+    if (emailCheckError) {
+      console.error('Error verificando email:', emailCheckError);
+      // Continuamos el proceso aunque falle la verificación
+    }
+
+    if (existingAdmin) {
+      return { success: false, error: 'El email ya está registrado' };
+    }
+
+    // Verificar si el usuario ya existe
+    const { data: existingUser, error: userCheckError } = await supabase
+      .from('control_panel_users')
+      .select('usuario')
+      .eq('usuario', usuario)
+      .maybeSingle();
+
+    if (userCheckError) {
+      console.error('Error verificando usuario:', userCheckError);
+      // Continuamos el proceso aunque falle la verificación
+    }
+
+    if (existingUser) {
+      return { success: false, error: 'El usuario ya está registrado' };
+    }
+
+    // Crear hash de la contraseña (en producción usar bcrypt)
+    const hashedPassword = btoa(password); // Temporal, cambiar por bcrypt
+
+    // Crear el nuevo administrador
+    const { data: newAdmin, error } = await supabase
+      .from('control_panel_users')
+      .insert([
+        {
+          usuario,
+          email,
+          password_hash: hashedPassword, // Usar password_hash en lugar de password
+          full_name: fullName,
+          role,
+          created_by: createdById,
+          is_active: true,
+          notes
+        }
+      ])
+      .select()
+      .single();
 
     if (error) {
-      console.error('Error baneando IP:', error);
-      return { success: false, error: 'Error al banear IP' };
+      console.error('Error creando admin:', error);
+      return { success: false, error: 'Error al crear la cuenta' };
     }
+
+    // Registrar la acción en el log de auditoría
+    if (createdById) {
+      await supabase
+        .from('admin_audit_log')
+        .insert([
+          {
+            admin_id: createdById,
+            action: 'create_admin',
+            target_id: newAdmin.id,
+            details: {
+              email,
+              full_name: fullName,
+              role
+            }
+          }
+        ]);
+    }
+
+    // Retornar el admin creado sin la contraseña
+    const { password: _, ...adminResponse } = newAdmin;
+    return { success: true, admin: adminResponse };
+
+  } catch (error) {
+    console.error('Error en createAdminAccount:', error);
+    return { success: false, error: 'Error interno del servidor' };
+  }
+};
+
+/**
+ * Obtener lista de cuentas de administrador
+ * @param {Object} filters - Filtros para la búsqueda
+ * @returns {Promise<{success: boolean, admins?: Array, error?: string}>}
+ */
+export const getAdminAccounts = async (filters = {}) => {
+  try {
+    let query = supabase
+      .from('control_panel_users')
+      .select('id, email, full_name, role, is_active, created_at, updated_at');
+
+    // Aplicar filtros
+    if (filters.role) {
+      query = query.eq('role', filters.role);
+    }
+    if (filters.is_active !== undefined) {
+      query = query.eq('is_active', filters.is_active);
+    }
+    if (filters.email) {
+      query = query.ilike('email', `%${filters.email}%`);
+    }
+
+    const { data: admins, error } = await query.order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error obteniendo admins:', error);
+      return { success: false, error: 'Error al obtener las cuentas' };
+    }
+
+    return { success: true, admins };
+  } catch (error) {
+    console.error('Error en getAdminAccounts:', error);
+    return { success: false, error: 'Error interno del servidor' };
+  }
+};
+
+/**
+ * Actualizar estado de cuenta de administrador
+ * @param {string} adminId - ID del administrador a actualizar
+ * @param {boolean} isActive - Nuevo estado activo/inactivo
+ * @param {string} updatedById - ID del admin que hace la actualización
+ * @returns {Promise<{success: boolean, error?: string}>}
+ */
+export const updateAdminStatus = async (adminId, isActive, updatedById) => {
+  try {
+    const { data: updatedAdmin, error } = await supabase
+      .from('control_panel_users')
+      .update({ 
+        is_active: isActive,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', adminId)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error actualizando estado admin:', error);
+      return { success: false, error: 'Error al actualizar el estado' };
+    }
+
+    // Registrar la acción en el log de auditoría
+    await supabase
+      .from('admin_audit_log')
+      .insert([
+        {
+          admin_id: updatedById,
+          action: isActive ? 'activate_admin' : 'deactivate_admin',
+          target_id: adminId,
+          details: {
+            previous_status: !isActive,
+            new_status: isActive
+          }
+        }
+      ]);
 
     return { success: true };
   } catch (error) {
-    console.error('Error en banIp:', error);
+    console.error('Error en updateAdminStatus:', error);
     return { success: false, error: 'Error interno del servidor' };
   }
 };
 
 /**
- * Desbanear una IP específica
- * @param {string} ip - La IP a desbanear
+ * Eliminar cuenta de administrador
+ * @param {string} adminId - ID del administrador a eliminar
+ * @param {string} deletedById - ID del admin que hace la eliminación
  * @returns {Promise<{success: boolean, error?: string}>}
  */
-export const unbanIp = async (ip) => {
+export const deleteAdminAccount = async (adminId, deletedById) => {
   try {
+    // Verificar que no se está eliminando a sí mismo
+    if (adminId === deletedById) {
+      return { success: false, error: 'No puedes eliminar tu propia cuenta' };
+    }
+
+    // Obtener información del admin antes de eliminarlo
+    const { data: adminToDelete } = await supabase
+      .from('control_panel_users')
+      .select('email, full_name')
+      .eq('id', adminId)
+      .single();
+
+    // Eliminar el administrador
     const { error } = await supabase
-      .from('banned_ips')
+      .from('control_panel_users')
       .delete()
-      .eq('ip', ip);
+      .eq('id', adminId);
 
     if (error) {
-      console.error('Error desbaneando IP:', error);
-      return { success: false, error: 'Error al desbanear IP' };
+      console.error('Error eliminando admin:', error);
+      return { success: false, error: 'Error al eliminar la cuenta' };
     }
+
+    // Registrar la acción en el log de auditoría
+    await supabase
+      .from('admin_audit_log')
+      .insert([
+        {
+          admin_id: deletedById,
+          action: 'delete_admin',
+          target_id: adminId,
+          details: {
+            deleted_email: adminToDelete?.email,
+            deleted_name: adminToDelete?.full_name
+          }
+        }
+      ]);
 
     return { success: true };
   } catch (error) {
-    console.error('Error en unbanIp:', error);
+    console.error('Error en deleteAdminAccount:', error);
     return { success: false, error: 'Error interno del servidor' };
   }
 };
 
 /**
- * Obtener lista de IPs baneadas
- * @returns {Promise<{success: boolean, data?: array, error?: string}>}
+ * Verificar si el admin actual puede crear nuevos admins
+ * @param {string} adminId - ID del administrador actual
+ * @returns {Promise<{success: boolean, error?: string}>}
  */
-export const getBannedIps = async () => {
+export const canCreateAdmins = async (adminId) => {
   try {
-    const { data, error } = await supabase
-      .from('banned_ips')
-      .select('*')
-      .order('banned_at', { ascending: false });
-
-    if (error) {
-      console.error('Error obteniendo IPs baneadas:', error);
-      return { success: false, error: 'Error al obtener IPs baneadas' };
+    // Verificar que el admin está autenticado
+    const sessionCheck = await verifyAdminSession(adminId);
+    if (!sessionCheck.success) {
+      return sessionCheck;
     }
 
-    return { success: true, data: data || [] };
+    // En tu caso, todos los admins pueden crear otros admins
+    // Si quisieras restricción adicional, podrías agregar lógica aquí
+    return { success: true };
   } catch (error) {
-    console.error('Error en getBannedIps:', error);
+    console.error('Error verificando permisos:', error);
     return { success: false, error: 'Error interno del servidor' };
   }
 };

@@ -35,12 +35,14 @@ import {
 
 import { PrimaryButton } from '../../ui';
 import { useAdminLogin } from '../hooks';
-import { loginAdmin, verify2FA } from '../../../services/adminPanelService';
+import { loginAdmin, verify2FA, mark2FAAsConfigured } from '../../../services/adminPanelService';
+import Setup2FA from './Setup2FA';
+import QRCode from 'react-qr-code';
 
 // ✅ CONSTANTS
 const CONSTANTS = {
   FORM_WIDTH: 400,
-  STEPS: ['Credenciales', 'Verificación 2FA', 'Acceso Concedido']
+  STEPS: ['Credenciales', 'Verificación 2FA', 'Acceso Concedido', 'Configuración 2FA']
 };
 
 // ✅ COMMON STYLES
@@ -118,6 +120,16 @@ const AdminLogin = ({ open, onClose }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [tempUserId, setTempUserId] = useState(null);
+  const [twofaStatus, setTwofaStatus] = useState(null);
+  const [tempAdminData, setTempAdminData] = useState(null); // ✅ NUEVO ESTADO
+  
+  // Estados para configuración 2FA embebida
+  const [qrCode, setQrCode] = useState('');
+  const [secret, setSecret] = useState('');
+  const [verificationCode, setVerificationCode] = useState('');
+  const [setupStep, setSetupStep] = useState(0);
+  const [setupLoading, setSetupLoading] = useState(false);
+  const [setupError, setSetupError] = useState('');
 
   // Hook personalizado para manejo del estado
   const {
@@ -158,13 +170,21 @@ const AdminLogin = ({ open, onClose }) => {
       const result = await loginAdmin(formData.usuario, formData.password);
       
       if (result.success) {
-        // Si el usuario tiene 2FA habilitado, ir al siguiente paso
-        if (result.user?.twofa_secret) {
-          setTempUserId(result.user.id);
-          setCurrentStep(1);
+        const { user, twofaStatus } = result;
+        setTempUserId(user.id);
+        setTwofaStatus(twofaStatus);
+        setTempAdminData(user); // ✅ GUARDAR DATOS ADMIN
+        
+        // ✅ NUEVA LÓGICA 2FA OBLIGATORIO
+        if (twofaStatus.required && !twofaStatus.configured) {
+          // Primer login - forzar configuración 2FA
+          setCurrentStep(3); // Ir a configuración 2FA
+        } else if (twofaStatus.configured && twofaStatus.hasSecret) {
+          // Ya tiene 2FA configurado - pedir código
+          setCurrentStep(1); // Ir a verificación 2FA
         } else {
-          // Si no tiene 2FA, proceder directamente
-          handleSuccessfulLogin(result.user);
+          // Sin 2FA (no debería pasar con required=true)
+          handleSuccessfulLogin(user);
         }
       } else {
         setError(result.error || 'Credenciales incorrectas');
@@ -195,6 +215,38 @@ const AdminLogin = ({ open, onClose }) => {
       }
     } catch (error) {
       console.error('Error en 2FA:', error);
+      setError('Error interno del servidor');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ✅ NUEVO: Manejar configuración 2FA obligatoria
+  const handleForced2FASetup = async (secret, code) => {
+    setLoading(true);
+    setError('');
+
+    try {
+      // Verificar que el código funciona con el secreto generado
+      const verifyResult = await verify2FA(tempUserId, code);
+      
+      if (verifyResult.success) {
+        // Marcar 2FA como configurado
+        const markResult = await mark2FAAsConfigured(tempUserId);
+        
+        if (markResult.success) {
+          setCurrentStep(2); // Mostrar éxito
+          setTimeout(() => {
+            handleSuccessfulLogin({ id: tempUserId });
+          }, 1500);
+        } else {
+          setError('Error al confirmar configuración 2FA');
+        }
+      } else {
+        setError('Código 2FA incorrecto. Verifica tu aplicación.');
+      }
+    } catch (error) {
+      console.error('Error en configuración 2FA:', error);
       setError('Error interno del servidor');
     } finally {
       setLoading(false);
@@ -356,6 +408,149 @@ const AdminLogin = ({ open, onClose }) => {
     </Box>
   );
 
+  // ✅ NUEVO: Renderizar paso de configuración 2FA obligatoria
+  const renderSetup2FAStep = () => {
+    const handleGenerateSecret = async () => {
+      setSetupLoading(true);
+      setSetupError('');
+      
+      try {
+        const { generate2FASecret } = await import('../../../services/adminPanelService');
+        const result = await generate2FASecret(tempUserId, tempAdminData?.email || 'admin@sellsi.com');
+        
+        if (result.success) {
+          setSecret(result.secret);
+          setQrCode(result.qrCode);
+          setSetupStep(1);
+        } else {
+          setSetupError(result.error || 'Error generando código QR');
+        }
+      } catch (error) {
+        console.error('Error generando secret:', error);
+        setSetupError('Error interno del servidor');
+      } finally {
+        setSetupLoading(false);
+      }
+    };
+
+    const handleVerifySetup = async () => {
+      setSetupLoading(true);
+      setSetupError('');
+
+      try {
+        const verifyResult = await verify2FA(tempUserId, verificationCode);
+        
+        if (verifyResult.success) {
+          const markResult = await mark2FAAsConfigured(tempUserId);
+          
+          if (markResult.success) {
+            setCurrentStep(2); // Ir a success
+            setTimeout(() => {
+              handleSuccessfulLogin(tempAdminData);
+            }, 1500);
+          } else {
+            setSetupError('Error al confirmar configuración 2FA');
+          }
+        } else {
+          setSetupError('Código 2FA incorrecto. Verifica tu aplicación.');
+        }
+      } catch (error) {
+        console.error('Error en configuración 2FA:', error);
+        setSetupError('Error interno del servidor');
+      } finally {
+        setSetupLoading(false);
+      }
+    };
+
+    return (
+      <Box>
+        <Typography variant="h6" sx={{ mb: 2, textAlign: 'center' }}>
+          🔐 Configuración 2FA Obligatoria
+        </Typography>
+        
+        <Alert severity="warning" sx={{ mb: 3 }}>
+          <Typography variant="body2">
+            <strong>Primer acceso detectado.</strong><br/>
+            Por seguridad, debes configurar la autenticación de dos factores antes de continuar.
+          </Typography>
+        </Alert>
+
+        {setupStep === 0 && (
+          <Box>
+            <Typography variant="body1" sx={{ mb: 2 }}>
+              📱 Necesitarás una aplicación de autenticación como:
+            </Typography>
+            <ul>
+              <li>Google Authenticator</li>
+              <li>Microsoft Authenticator</li>
+              <li>Authy</li>
+            </ul>
+            
+            <PrimaryButton
+              onClick={handleGenerateSecret}
+              loading={setupLoading}
+              fullWidth
+              sx={{ mt: 2 }}
+            >
+              Generar Código QR
+            </PrimaryButton>
+          </Box>
+        )}
+
+        {setupStep === 1 && (
+          <Box>
+            <Typography variant="body1" sx={{ mb: 2 }}>
+              📷 Escanea este código QR con tu aplicación:
+            </Typography>
+            
+            {qrCode && (
+              <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
+                <Box sx={{ p: 2, bgcolor: 'white', borderRadius: 1 }}>
+                  <QRCode value={qrCode} size={200} />
+                </Box>
+              </Box>
+            )}
+
+            <TextField
+              fullWidth
+              label="Código de verificación (6 dígitos)"
+              value={verificationCode}
+              onChange={(e) => {
+                const value = e.target.value.replace(/\D/g, '').slice(0, 6);
+                setVerificationCode(value);
+                setSetupError('');
+              }}
+              placeholder="000000"
+              inputProps={{ maxLength: 6 }}
+              sx={{ mb: 2 }}
+            />
+
+            <PrimaryButton
+              onClick={handleVerifySetup}
+              loading={setupLoading}
+              disabled={verificationCode.length !== 6}
+              fullWidth
+            >
+              Verificar y Completar Configuración
+            </PrimaryButton>
+          </Box>
+        )}
+        
+        {setupError && (
+          <Alert severity="error" sx={{ mt: 2 }}>
+            {setupError}
+          </Alert>
+        )}
+
+        {error && (
+          <Alert severity="error" sx={{ mt: 2 }}>
+            {error}
+          </Alert>
+        )}
+      </Box>
+    );
+  };
+
   const renderCurrentStep = () => {
     switch (currentStep) {
       case 0:
@@ -364,6 +559,8 @@ const AdminLogin = ({ open, onClose }) => {
         return render2FAStep();
       case 2:
         return renderSuccessStep();
+      case 3:
+        return renderSetup2FAStep();
       default:
         return renderCredentialsStep();
     }

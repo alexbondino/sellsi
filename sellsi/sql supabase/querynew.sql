@@ -1,6 +1,29 @@
 -- WARNING: This schema is for context only and is not meant to be run.
 -- Table order and constraints may not be valid for execution.
 
+CREATE TABLE public.admin_audit_log (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  admin_id uuid NOT NULL,
+  action text NOT NULL,
+  target_id uuid,
+  details jsonb,
+  timestamp timestamp with time zone DEFAULT now(),
+  ip_address text,
+  user_agent text,
+  CONSTRAINT admin_audit_log_pkey PRIMARY KEY (id),
+  CONSTRAINT admin_audit_log_admin_id_fkey FOREIGN KEY (admin_id) REFERENCES public.control_panel_users(id)
+);
+CREATE TABLE public.admin_sessions (
+  session_id uuid NOT NULL DEFAULT gen_random_uuid(),
+  admin_id uuid NOT NULL,
+  created_at timestamp with time zone DEFAULT now(),
+  expires_at timestamp with time zone,
+  ip_address text,
+  user_agent text,
+  is_active boolean DEFAULT true,
+  CONSTRAINT admin_sessions_pkey PRIMARY KEY (session_id),
+  CONSTRAINT admin_sessions_admin_id_fkey FOREIGN KEY (admin_id) REFERENCES public.control_panel_users(id)
+);
 CREATE TABLE public.bank_info (
   user_id uuid UNIQUE,
   account_holder character varying,
@@ -39,8 +62,8 @@ CREATE TABLE public.cart_items (
   added_at timestamp with time zone DEFAULT now(),
   updated_at timestamp with time zone DEFAULT now(),
   CONSTRAINT cart_items_pkey PRIMARY KEY (cart_items_id),
-  CONSTRAINT cart_items_cart_id_fkey FOREIGN KEY (cart_id) REFERENCES public.carts(cart_id),
-  CONSTRAINT cart_items_product_id_fkey FOREIGN KEY (product_id) REFERENCES public.products(productid)
+  CONSTRAINT cart_items_product_id_fkey FOREIGN KEY (product_id) REFERENCES public.products(productid),
+  CONSTRAINT cart_items_cart_id_fkey FOREIGN KEY (cart_id) REFERENCES public.carts(cart_id)
 );
 CREATE TABLE public.carts (
   user_id uuid NOT NULL,
@@ -58,7 +81,69 @@ CREATE TABLE public.control_panel_users (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
   is_active boolean DEFAULT true,
   created_at timestamp with time zone DEFAULT now(),
+  email text UNIQUE,
+  full_name text,
+  role text DEFAULT 'admin'::text CHECK (role = 'admin'::text),
+  twofa_secret text,
+  notes text,
+  created_by uuid,
+  updated_at timestamp with time zone DEFAULT now(),
+  twofa_required boolean DEFAULT true,
+  twofa_configured boolean DEFAULT false,
   CONSTRAINT control_panel_users_pkey PRIMARY KEY (id)
+);
+CREATE TABLE public.khipu_webhook_logs (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  payment_id character varying,
+  transaction_id character varying,
+  status character varying,
+  webhook_data jsonb,
+  signature_header text,
+  processed boolean DEFAULT false,
+  processed_at timestamp with time zone,
+  error_message text,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT khipu_webhook_logs_pkey PRIMARY KEY (id)
+);
+CREATE TABLE public.orders (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL,
+  items jsonb NOT NULL,
+  subtotal numeric NOT NULL DEFAULT 0,
+  tax numeric NOT NULL DEFAULT 0,
+  shipping numeric NOT NULL DEFAULT 0,
+  total numeric NOT NULL DEFAULT 0,
+  currency character varying NOT NULL DEFAULT 'CLP'::character varying,
+  status character varying NOT NULL DEFAULT 'pending'::character varying,
+  payment_method character varying,
+  payment_status character varying NOT NULL DEFAULT 'pending'::character varying,
+  shipping_address jsonb,
+  billing_address jsonb,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  updated_at timestamp with time zone NOT NULL DEFAULT now(),
+  khipu_payment_id character varying,
+  khipu_transaction_id character varying,
+  khipu_payment_url text,
+  khipu_expires_at timestamp with time zone,
+  paid_at timestamp with time zone,
+  CONSTRAINT orders_pkey PRIMARY KEY (id),
+  CONSTRAINT orders_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(user_id)
+);
+CREATE TABLE public.payment_transactions (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  order_id uuid NOT NULL,
+  payment_method character varying NOT NULL,
+  external_payment_id character varying,
+  external_transaction_id character varying,
+  amount numeric NOT NULL,
+  currency character varying NOT NULL DEFAULT 'CLP'::character varying,
+  status character varying NOT NULL DEFAULT 'pending'::character varying,
+  gateway_response jsonb,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  updated_at timestamp with time zone NOT NULL DEFAULT now(),
+  processed_at timestamp with time zone,
+  CONSTRAINT payment_transactions_pkey PRIMARY KEY (id),
+  CONSTRAINT payment_transactions_order_id_fkey FOREIGN KEY (order_id) REFERENCES public.orders(id)
 );
 CREATE TABLE public.product_delivery_regions (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
