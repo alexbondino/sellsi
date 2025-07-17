@@ -117,7 +117,7 @@ const Step3Reset = ({
           mt: 0.5,
         }}
       >
-        Volver atrás
+        Volver
       </Button>
     </Box>
   );

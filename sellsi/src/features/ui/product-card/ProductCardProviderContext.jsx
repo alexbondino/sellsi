@@ -22,32 +22,10 @@ import {
 const ProductCardProviderContext = React.memo(
   ({ product }) => {
     const navigate = useNavigate();
-    
-    // Comentar log de debug para producción
-    // console.log('🔍 ProductCardProviderContext - Real provider data:', {
-    //   supplier_id: product.supplier_id,
-    //   user_nm: product.user_nm,
-    //   proveedor: product.proveedor,
-    //   logo_url: product.logo_url,
-    //   product_count: product.product_count
-    // });
+    // Desestructurar fuera del bloque comentado
+    const { supplier_id, user_nm, proveedor, logo_url, product_count, descripcion_proveedor } = product || {};
 
-    // Provider destructuring - usando datos reales de proveedores
-    const {
-      supplier_id,
-      logo_url,
-      user_nm,
-      proveedor, // Este viene del mapeo en useProducts
-      product_count,
-    } = product;
-
-    // ✅ OPTIMIZACIÓN: Memoizar texto mock para evitar recreaciones
-    const mockDescription = React.useMemo(() => 
-      "Venta mayorista de alimentos saludables: frutos secos, cereales, snacks sin azúcar, productos naturales y sin gluten. Atención rápida a negocios, tiendas, empresas y almacenes en todo Chile. Vengan xd",
-      []
-    );
-    
-    // ✅ OPTIMIZACIÓN: Memoizar nombre del proveedor - usar datos reales
+    // Memoizar nombre del proveedor - usar datos reales
     const providerName = React.useMemo(() => 
       user_nm || proveedor || `Proveedor #${supplier_id}`,
       [user_nm, proveedor, supplier_id]
@@ -137,7 +115,7 @@ const ProductCardProviderContext = React.memo(
             </Typography>
           )}
 
-          {/* Mock Description con información del proveedor */}
+          {/* Descripción real del proveedor */}
           <Typography
             variant="body2"
             sx={{
@@ -146,18 +124,17 @@ const ProductCardProviderContext = React.memo(
               overflow: 'hidden',
               textOverflow: 'ellipsis',
               display: '-webkit-box',
-              WebkitLineClamp: { xs: 8, sm: 7, md: 6, lg: 8 }, // Más líneas para aprovechar mejor el espacio
+              WebkitLineClamp: { xs: 8, sm: 7, md: 6, lg: 8 },
               WebkitBoxOrient: 'vertical',
               textAlign: 'justify',
               mb: 0.5,
-              color: 'text.primary', // Color negro en lugar de secondary
+              color: 'text.primary',
               fontWeight: 400,
             }}
           >
-            {product_count && product_count > 1 
-              ? `Proveedor especializado con ${product_count} productos activos disponibles. ${mockDescription}`
-              : mockDescription
-            }
+            {descripcion_proveedor && descripcion_proveedor.trim().length > 0
+              ? descripcion_proveedor
+              : 'Proveedor sin descripción.'}
           </Typography>
         </CardContent>
 
@@ -250,6 +227,7 @@ const areEqual = (prevProps, nextProps) => {
     prevProps.product.logo_url === nextProps.product.logo_url &&
     prevProps.product.user_nm === nextProps.product.user_nm &&
     prevProps.product.proveedor === nextProps.product.proveedor &&
+    prevProps.product.descripcion_proveedor === nextProps.product.descripcion_proveedor &&
     prevProps.product.product_count === nextProps.product.product_count
   );
 };

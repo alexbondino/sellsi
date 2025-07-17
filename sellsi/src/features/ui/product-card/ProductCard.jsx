@@ -4,8 +4,9 @@ import { useNavigate } from 'react-router-dom';
 import { Card, Box, alpha } from '@mui/material';
 
 // Common Utility Imports (adjust paths relative to this file)
-import { getProductImageUrl } from '../../../utils/getProductImageUrl'; // Adjust path
+import { getProductImageUrl, getBestProductImageUrl } from '../../../utils/getProductImageUrl'; // Adjust path
 import { LazyImage } from '../../layout'; // Importar desde layout
+import { useResponsiveThumbnail } from '../../../hooks/useResponsiveThumbnail'; // Nuevo hook
 
 // Sub-components (updated names)
 import ProductCardBuyerContext from './ProductCardBuyerContext'; // Adjust path
@@ -35,20 +36,29 @@ const ProductCard = React.memo(
     onViewStats,
     isDeleting = false,
     isUpdating = false,
+    isProcessing = false,
     onAddToCart,
   }) => {
     const navigate = useNavigate();
 
     // --- Common Product Data Extraction ---
     if (!product) {
-      // console.warn('ProductCard received no product data. Returning null.'); // Keep this for debugging
       return null;
     }
 
     const { id, nombre, imagen } = product;
 
+    // ✅ NUEVO: Hook para obtener thumbnail responsivo
+    const thumbnailUrl = useResponsiveThumbnail(product);
+
     // --- Memoized common elements ---
     const resolvedImageSrc = useMemo(() => {
+      // ✅ PRIORIZAR THUMBNAIL: Usar thumbnail responsivo cuando esté disponible
+      if (thumbnailUrl) {
+        return thumbnailUrl;
+      }
+      
+      // Fallback a imagen original solo si no hay thumbnail
       let img = product?.imagen || product?.image;
       if (!img) return '/placeholder-product.jpg';
       if (typeof img === 'string') {
@@ -65,7 +75,7 @@ const ProductCard = React.memo(
         }
       }
       return '/placeholder-product.jpg';
-    }, [product]);
+    }, [product, thumbnailUrl]);
 
     const memoizedImage = useMemo(
       () => (
@@ -80,14 +90,15 @@ const ProductCard = React.memo(
             height: type === 'supplier' ? 
               { xs: 142, sm: 154, md: 187.5, lg: 243.75, xl: 260 } :
               { xs: 142, sm: 154, md: 187.5, lg: 243.75, xl: 260 },
-            bgcolor: '#fafafa',
+            bgcolor: '#fff',
             // 🎯 PADDING RESPONSIVE
             p: type === 'supplier' ? 
               { xs: 0.5, sm: 0.8, md: 1, lg: 0 } : 
               { xs: 1, sm: 1.2, md: 1.5, lg: 0},
             display: 'block',
             mx: 'auto',
-            border: theme => `1px solid ${theme.palette.primary.main}`,
+            mt: 0.5,
+            // border eliminado
           }}
         />
       ),
@@ -222,6 +233,7 @@ const ProductCard = React.memo(
             onViewStats={onViewStats}
             isDeleting={isDeleting}
             isUpdating={isUpdating}
+            isProcessing={isProcessing}
           />
         )}
         {type === 'buyer' && (

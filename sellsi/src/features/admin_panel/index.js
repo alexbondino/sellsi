@@ -14,6 +14,11 @@ export { default as AdminPanelTable } from './components/AdminPanelTable';
 export { default as UserManagementTable } from './components/UserManagementTable';
 export { default as AdminDashboard } from './components/AdminDashboard';
 export { default as AdminStatCard } from './components/AdminStatCard';
+export { default as AdminPanelHome } from './AdminPanelHome';
+
+// Componentes de 2FA
+export { default as Setup2FA } from './components/Setup2FA';
+export { default as Manage2FA } from './components/Manage2FA';
 
 // Modales
 export { default as ConfirmarPagoModal } from './modals/ConfirmarPagoModal';

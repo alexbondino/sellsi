@@ -18,6 +18,7 @@ El módulo `services` centraliza la lógica de acceso a datos y comunicación co
 | profileService.js              | Servicio  | Gestión de datos de perfil de usuario       | CRUD de perfil y validaciones            |
 | supabase.js                    | Servicio  | Cliente Supabase y helpers de conexión      | Acceso a base de datos y storage         |
 | uploadService.js               | Servicio  | Lógica de subida de archivos e imágenes     | Upload y gestión de media                |
+| thumbnailService.js            | Servicio  | Gestión de thumbnails automáticos           | Generación y gestión de thumbnails       |
 | README.md                      | Doc       | Documentación de los servicios              | Explicar uso y API de cada servicio      |
 
 ## 3. Relaciones internas del módulo

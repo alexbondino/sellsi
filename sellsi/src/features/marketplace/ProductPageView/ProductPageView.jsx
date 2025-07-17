@@ -49,6 +49,7 @@ import ProductHeader from './components/ProductHeader'
 import LoadingOverlay from '../../ui/LoadingOverlay'
 import { ProductPageSkeleton } from './components/ProductPageSkeletons'
 import { dashboardThemeCore } from '../../../styles/dashboardThemeCore'
+import { SPACING_BOTTOM_MAIN } from '../../../styles/layoutSpacing'
 
 
 const ProductPageView = ({
@@ -108,7 +109,7 @@ const ProductPageView = ({
             backgroundColor: 'background.default',
             pt: { xs: 2, md: 4 },
             px: 3,
-            pb: 12,
+            pb: SPACING_BOTTOM_MAIN,
             width: '100%',
           }}
         >
@@ -201,7 +202,7 @@ const ProductPageView = ({
           backgroundColor: 'background.default',
           pt: { xs: 2, md: 4 },
           px: 3,
-          pb: 12,
+          pb: SPACING_BOTTOM_MAIN,
           width: '100%',
         }}
       >
@@ -302,7 +303,7 @@ const ProductPageView = ({
                   fontWeight: 700,
                   color: 'primary.main',
                   mb: 3,
-                  fontSize: { xs: '1.5rem', sm: '1.75rem', md: '2rem' },
+                  fontSize: { xs: '1.5rem', sm: '1.75rem', md: '1.75rem' },
                   position: 'relative',
                   '&::after': {
                     content: '""',
@@ -322,7 +323,7 @@ const ProductPageView = ({
               <Typography
                 variant="body1"
                 sx={{
-                  fontSize: { xs: '1rem', sm: '1.1rem', md: '1.125rem' },
+                  fontSize: { xs: '1rem', sm: '1.1rem', md: '1rem' },
                   lineHeight: 1.8,
                   color: 'text.primary',
                   textAlign: 'justify',
@@ -333,10 +334,10 @@ const ProductPageView = ({
                   '&::first-letter': {
                     fontSize: '1.5em',
                     fontWeight: 700,
-                    color: 'primary.main',
+                    color: 'text.primary',
                     float: 'left',
                     lineHeight: 1,
-                    marginRight: '4px',
+                    marginRight: '1px',
                     marginTop: '2px',
                   },
                 }}

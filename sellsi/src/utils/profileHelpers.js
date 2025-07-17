@@ -37,21 +37,23 @@ export const getInitials = (name) => {
  * @returns {object} - Datos formateados para el formulario
  */
 export const mapUserProfileToFormData = (userProfile) => {
-  return {
+  const mapped = {
     // Información Empresa
     email: userProfile.email || '',
     phone: userProfile.phone_nbr || '', // Mapear phone_nbr → phone
     rut: userProfile.rut || '',
     role: userProfile.main_supplier ? 'supplier' : 'buyer', // Convertir boolean → string
     user_nm: userProfile.user_nm || '',
-    
-    // Información de Envío  
+    descripcionProveedor: userProfile.descripcion_proveedor || '', // <--- MAPEO CORRECTO
+
+    // Información de Envío
     shippingRegion: userProfile.shipping_region || '',
-    shippingComuna: userProfile.shipping_comuna || '',
+    shippingComuna: userProfile.shipping_commune || '',
     shippingAddress: userProfile.shipping_address || '',
     shippingNumber: userProfile.shipping_number || '',
     shippingDept: userProfile.shipping_dept || '',
-    
+    shippingRegions: userProfile.shippingRegions || [], // <--- FIX: asegura que siempre esté definido
+
     // Información de Transferencia
     accountHolder: userProfile.account_holder || '',
     accountType: userProfile.account_type || 'corriente',
@@ -59,15 +61,17 @@ export const mapUserProfileToFormData = (userProfile) => {
     accountNumber: userProfile.account_number || '',
     transferRut: userProfile.transfer_rut || '',
     confirmationEmail: userProfile.confirmation_email || '',
-    
+
     // Información de Facturación
     businessName: userProfile.business_name || '',
     billingRut: userProfile.billing_rut || '',
     businessLine: userProfile.business_line || '',
     billingAddress: userProfile.billing_address || '',
     billingRegion: userProfile.billing_region || '',
-    billingComuna: userProfile.billing_comuna || '',
+    billingComuna: userProfile.billing_comuna || userProfile.billing_commune || '',
   };
+  console.log('[mapUserProfileToFormData] shipping_commune:', userProfile.shipping_commune, '→ shippingComuna:', mapped.shippingComuna);
+  return mapped;
 };
 
 /**
@@ -84,6 +88,7 @@ export const mapFormDataToUserProfile = (formData, userProfile) => {
     rut: formData.rut,
     main_supplier: formData.role === 'supplier', // Convertir string → boolean
     user_nm: formData.user_nm || userProfile?.user_nm, // Preservar nombre de usuario
+    descripcion_proveedor: formData.descripcionProveedor || '', // <--- MAPEO CORRECTO
     
     // Información de Envío
     shipping_region: formData.shippingRegion,

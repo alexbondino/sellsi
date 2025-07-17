@@ -15,23 +15,20 @@ const BuyerProfile = ({ onProfileUpdated }) => {
   const fetchUserProfile = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      
       if (!user) {
         throw new Error('Usuario no autenticado');
       }
 
       // Usar el nuevo servicio para obtener el perfil completo
       const { data, error } = await getUserProfile(user.id);
-      
       if (error) {
         throw error;
       }
 
       // Mapear campos de BD a Frontend según ProfileBack.md
-      setUserProfile({
+      const mappedProfile = {
         ...data,
         email: user.email, // Email del auth
-        // Mapeo directo de campos existentes
         phone: data.phone_nbr, // phone_nbr → phone
         full_name: data.user_nm, // user_nm → full_name  
         user_nm: data.user_nm, // AGREGAR: También pasar user_nm directamente
@@ -57,40 +54,52 @@ const BuyerProfile = ({ onProfileUpdated }) => {
         billing_region: data.billing_region,
         billing_comuna: data.billing_comuna,
         logo_url: data.logo_url, // Para el avatar
-      });
+      };
 
       // REPARAR URL DE IMAGEN SI ES NECESARIO
       if (data.logo_url) {
-        console.log('[BuyerProfile] Verificando URL de imagen:', data.logo_url);
-        // Test si la URL funciona
-        fetch(data.logo_url)
-          .then(response => {
-            if (!response.ok) {
-              console.log('[BuyerProfile] URL rota, iniciando reparación FORZADA...');
-              return forceFixImageUrl(user.id);
+        let imageOk = false;
+        try {
+          const response = await fetch(data.logo_url);
+          imageOk = response.ok;
+        } catch (err) {
+          imageOk = false;
+        }
+        if (!imageOk) {
+          // Intentar reparar la URL
+          const repairResult = await forceFixImageUrl(user.id);
+          if (repairResult.success && repairResult.correctUrl) {
+            // Recargar perfil con URL corregida
+            const { data: repairedData, error: repairedError } = await getUserProfile(user.id);
+            if (!repairedError) {
+              setUserProfile({
+                ...mappedProfile,
+                logo_url: repairedData.logo_url,
+              });
+              setLoading(false);
+              return;
             }
-            return { success: true, message: 'URL funciona correctamente' };
-          })
-          .then(repairResult => {
-            console.log('[BuyerProfile] Resultado de reparación FORZADA:', repairResult);
-            if (repairResult.success && repairResult.correctUrl) {
-              // Recargar perfil con URL corregida
-              fetchUserProfile();
-            }
-          })
-          .catch(error => {
-            console.log('[BuyerProfile] Error verificando URL, iniciando reparación...', error);
-            repairUserImageUrl(user.id).then(repairResult => {
-              console.log('[BuyerProfile] Resultado de reparación:', repairResult);
-              if (repairResult.success && repairResult.correctUrl) {
-                fetchUserProfile();
+          } else {
+            // Intentar reparación secundaria
+            const fallbackRepair = await repairUserImageUrl(user.id);
+            if (fallbackRepair.success && fallbackRepair.correctUrl) {
+              const { data: fallbackData, error: fallbackError } = await getUserProfile(user.id);
+              if (!fallbackError) {
+                setUserProfile({
+                  ...mappedProfile,
+                  logo_url: fallbackData.logo_url,
+                });
+                setLoading(false);
+                return;
               }
-            });
-          });
+            }
+          }
+        }
       }
+      setUserProfile(mappedProfile);
+      setLoading(false);
     } catch (error) {
       console.error('Error fetching user profile:', error);
-    } finally {
       setLoading(false);
     }
   };
@@ -147,7 +156,7 @@ const BuyerProfile = ({ onProfileUpdated }) => {
     }
   };
 
-  if (loading) {
+  if (loading || !userProfile) {
     return (
       <Box
         sx={{

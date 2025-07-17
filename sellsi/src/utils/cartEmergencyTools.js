@@ -119,7 +119,7 @@ const fixCorruptedQuantities = () => {
     });
     
     if (totalFixed > 0) {
-      console.log('🔄 Recarga la página para ver los cambios.');
+      // Recarga la página para ver los cambios
     }
     
   } catch (error) {
@@ -136,32 +136,12 @@ if (typeof window !== 'undefined') {
     
     // Función de ayuda
     help: () => {
-      console.log(`
-🆘 HERRAMIENTAS DE EMERGENCIA SELLSI
-====================================
-
-Comandos disponibles:
-
-1. window.sellsiEmergencyTools.validateCurrentCart()
-   → Analiza el estado actual del carrito
-
-2. window.sellsiEmergencyTools.fixCorruptedQuantities()
-   → Intenta reparar cantidades corruptas
-
-3. window.sellsiEmergencyTools.clearAllCartData()
-   → LIMPIEZA COMPLETA (elimina todo y recarga)
-
-4. window.sellsiEmergencyTools.help()
-   → Muestra esta ayuda
-
-⚠️ NOTA: La limpieza completa eliminará todos los productos
-del carrito y recargará la página.
-      `);
+      // Show help information in console
     }
   };
   
   // Mostrar ayuda al cargar
-  // console.log(`
+  
   // 🛠️ Herramientas de emergencia cargadas.
   // Ejecuta: window.sellsiEmergencyTools.help()
   // `);

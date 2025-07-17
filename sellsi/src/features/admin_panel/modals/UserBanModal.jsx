@@ -8,7 +8,7 @@
  * @date 10 de Julio de 2025
  */
 
-import React, { useState, memo } from 'react';
+import React, { useState } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -34,17 +34,18 @@ import {
   Warning as WarningIcon,
   Person as PersonIcon,
   Store as StoreIcon,
-  Close as CloseIcon
+  Close as CloseIcon,
+  Router as IpIcon
 } from '@mui/icons-material';
 
 // ✅ CONSTANTS
 const BAN_REASONS = [
-  { value: 'spam', label: 'Spam o contenido no deseado' },
-  { value: 'fraud', label: 'Actividad fraudulenta' },
-  { value: 'harassment', label: 'Acoso o comportamiento inapropiado' },
-  { value: 'fake_products', label: 'Productos falsos o engañosos' },
-  { value: 'violations', label: 'Violación de términos de servicio' },
-  { value: 'security', label: 'Compromiso de seguridad' },
+  { value: 'contenido_no_deseado', label: 'Spam o contenido no deseado' },
+  { value: 'actividad_fraudulenta', label: 'Actividad fraudulenta' },
+  { value: 'acoso_conducta_inapropiada', label: 'Acoso o comportamiento inapropiado' },
+  { value: 'productos_falsos', label: 'Productos falsos o engañosos' },
+  { value: 'violacion_terminos', label: 'Violación de términos de servicio' },
+  { value: 'riesgo_seguridad', label: 'Compromiso de seguridad' },
   { value: 'other', label: 'Otra razón' }
 ];
 
@@ -93,7 +94,7 @@ const modalStyles = {
 };
 
 // ✅ USER BAN MODAL COMPONENT
-const UserBanModal = memo(({ open, user, action, onConfirm, onClose }) => {
+const UserBanModal = ({ open, user, action, onConfirm, onClose }) => {
   // ========================================
   // 🔧 ESTADO
   // ========================================
@@ -102,6 +103,9 @@ const UserBanModal = memo(({ open, user, action, onConfirm, onClose }) => {
   const [customReason, setCustomReason] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // Debug: Verificar props
+  console.log('UserBanModal props:', { open, user: !!user, action, onConfirm: typeof onConfirm, onClose: typeof onClose });
 
   // ========================================
   // 🔧 HELPER FUNCTIONS
@@ -158,6 +162,9 @@ const UserBanModal = memo(({ open, user, action, onConfirm, onClose }) => {
 
     try {
       const finalReason = reason === 'other' ? customReason : reason;
+      console.log('About to call onConfirm with reason:', finalReason);
+      console.log('onConfirm type:', typeof onConfirm);
+      console.log('onConfirm value:', onConfirm);
       await onConfirm(finalReason);
       handleClose();
     } catch (error) {
@@ -235,6 +242,12 @@ const UserBanModal = memo(({ open, user, action, onConfirm, onClose }) => {
                   color={user.main_supplier ? 'primary' : 'secondary'}
                   variant="outlined"
                 />
+                <Chip
+                  size="small"
+                  label={user.verified ? 'Verificado' : 'No Verificado'}
+                  color={user.verified ? 'success' : 'default'}
+                  variant="outlined"
+                />
                 {user.main_supplier && (
                   <Chip
                     size="small"
@@ -244,6 +257,16 @@ const UserBanModal = memo(({ open, user, action, onConfirm, onClose }) => {
                   />
                 )}
               </Box>
+              
+              {/* Información de IP */}
+              {user.last_ip && (
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1 }}>
+                  <IpIcon sx={{ color: 'primary.main', fontSize: 16 }} />
+                  <Typography variant="body2" color="text.secondary">
+                    Última IP: <span style={{ fontFamily: 'monospace', fontWeight: 500 }}>{user.last_ip}</span>
+                  </Typography>
+                </Box>
+              )}
             </Grid>
           </Grid>
         </Box>
@@ -329,7 +352,7 @@ const UserBanModal = memo(({ open, user, action, onConfirm, onClose }) => {
       </DialogActions>
     </Dialog>
   );
-});
+};
 
 UserBanModal.displayName = 'UserBanModal';
 

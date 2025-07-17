@@ -456,8 +456,9 @@ const ProductCardBuyerContext = React.memo(
               pointerEvents: 'auto',
               position: 'relative',
               zIndex: 10,
+              transition: 'opacity 0.2s',
               '&:hover': {
-                backgroundColor: 'primary.dark',
+                backgroundColor: '#42a5f5',
                 boxShadow: '0 6px 20px rgba(25, 118, 210, 0.6)',
                 transform: 'translateY(-2px)',
                 border: 'none',
@@ -656,6 +657,11 @@ const ProductCardBuyerContext = React.memo(
                   userSelect: 'none',
                   touchAction: 'manipulation',
                   transition: 'opacity 0.2s',
+                  '&:hover': {
+                    backgroundColor: '#42a5f5',
+                    boxShadow: '0 6px 20px rgba(25, 118, 210, 0.6)',
+                    transform: 'translateY(-2px)',
+                  },
                 }}
               >
                 {canAdd ? 'Agregar' : `Mín: ${minimumPurchase}`}

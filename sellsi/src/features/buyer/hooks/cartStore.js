@@ -68,14 +68,6 @@ const useCartStore = create(
         error: null,
         notifications: [],
         
-        // Cache para optimización de cálculos
-        _subtotalCache: null,
-        
-        // Función auxiliar para limpiar cache
-        _clearSubtotalCache: () => {
-          set(state => ({ ...state, _subtotalCache: null }))
-        },
-        
         // === ESTADO PARA INTEGRACIÓN CON BACKEND ===
         cartId: null,
         userId: null,
@@ -140,15 +132,13 @@ const useCartStore = create(
             // Validar la nueva cantidad total
             const newTotalQuantity = validateCartQuantity(existingItem.quantity + safeQuantity);
             const maxStock = Math.min(product.maxStock || 15000, 15000);
-            if (newTotalQuantity <= maxStock) {
-              set({
-                items: currentState.items.map((item) =>
-                  item.id === product.id
-                    ? { ...item, quantity: newTotalQuantity }
-                    : item
-                ),
-                _subtotalCache: null // Limpiar cache
-              })
+            if (newTotalQuantity <= maxStock) {            set({
+              items: currentState.items.map((item) =>
+                item.id === product.id
+                  ? { ...item, quantity: newTotalQuantity }
+                  : item
+              ),
+            })
             } else {
               console.warn('[cartStore] No hay suficiente stock')
             }
@@ -159,7 +149,6 @@ const useCartStore = create(
             }
             set({
               items: [...currentState.items, newItem],
-              _subtotalCache: null // Limpiar cache
             })
           }
 
@@ -183,12 +172,15 @@ const useCartStore = create(
           
           // DETECCIÓN AUTOMÁTICA: Si hay usuario autenticado, usar backend
           if (state.userId && state.cartId && state.isBackendSynced) {
-            return await get().updateQuantityWithBackend(id, safeInputQuantity)
+            const result = await get().updateQuantityWithBackend(id, safeInputQuantity)
+            return result
           }
           
           const currentState = get()
           const item = currentState.items.find((item) => item.id === id)
-          if (!item) return
+          if (!item) {
+            return
+          }
           
           // Forzar mínimo de compra y máximo de stock
           const min = item.minimum_purchase || item.compraMinima || 1
@@ -229,7 +221,6 @@ const useCartStore = create(
                     }
                   : cartItem
               ),
-              _subtotalCache: null // Limpiar cache
             })
 
             // Delegar al módulo de historial
@@ -263,10 +254,7 @@ const useCartStore = create(
           const currentState = get()
           const item = currentState.items.find((item) => item.id === id)
           if (item) {
-            set({ 
-              items: currentState.items.filter((item) => item.id !== id),
-              _subtotalCache: null // Limpiar cache
-            })
+            set({ items: currentState.items.filter((item) => item.id !== id) })
           } else {
             console.warn('[cartStore] Item no encontrado para remover:', id)
           }
@@ -296,7 +284,6 @@ const useCartStore = create(
           const itemCount = currentState.items.length
           set({
             items: [],
-            _subtotalCache: null // Limpiar cache
           })
 
           // También limpiar los módulos relacionados
@@ -407,35 +394,19 @@ const useCartStore = create(
         getSubtotal: () => {
           const state = get()
           
-          // Usar un simple hash para evitar recálculos innecesarios
-          const itemsHash = state.items.map(item => `${item.id}-${item.quantity}-${item.price}`).join('|')
-          
-          // Si no hay cache o cambió algo, recalcular
-          if (!state._subtotalCache || state._subtotalCache.hash !== itemsHash) {
-            const result = state.items.reduce((sum, item) => {
-              // Para productos con precio por tramos, usar el precio calculado
-              if (item.price_tiers && item.price_tiers.length > 0) {
-                const price_tiers = item.price_tiers || []
-                const basePrice = item.originalPrice || item.precioOriginal || item.price || item.precio || 0
-                const calculatedPrice = calculatePriceForQuantity(item.quantity, price_tiers, basePrice)
-                return sum + calculatedPrice * item.quantity
-              }
-              
-              // Para productos sin precio por tramos, usar el precio normal
-              return sum + item.price * item.quantity
-            }, 0)
+          // Calcular subtotal sin cache para evitar setState durante render
+          return state.items.reduce((sum, item) => {
+            // Para productos con precio por tramos, usar el precio calculado
+            if (item.price_tiers && item.price_tiers.length > 0) {
+              const price_tiers = item.price_tiers || []
+              const basePrice = item.originalPrice || item.precioOriginal || item.price || item.precio || 0
+              const calculatedPrice = calculatePriceForQuantity(item.quantity, price_tiers, basePrice)
+              return sum + calculatedPrice * item.quantity
+            }
             
-            // Guardar en cache
-            set(prevState => ({
-              ...prevState,
-              _subtotalCache: { hash: itemsHash, value: result }
-            }))
-            
-            return result
-          }
-          
-          // Devolver valor cacheado
-          return state._subtotalCache.value
+            // Para productos sin precio por tramos, usar el precio normal
+            return sum + item.price * item.quantity
+          }, 0)
         },
 
         // Obtener descuento total (delega a módulo de cupones)
@@ -763,9 +734,31 @@ const useCartStore = create(
           
           const productId = item.product_id || item.productid || item.id
 
-          try {
-            set({ isSyncing: true })
+          // 🚀 UPDATE OPTIMISTA: Actualizar UI inmediatamente
+          const oldQuantity = item.quantity;
+          
+          // Actualizar localmente primero para respuesta inmediata
+          if (newQuantity <= 0) {
+            // Remover item optimísticamente
+            set({
+              items: state.items.filter(i => i.id !== itemId),
+              isSyncing: true
+            })
+          } else {
+            // Actualizar cantidad optimísticamente
+            set({
+              items: state.items.map(i => 
+                i.id === itemId 
+                  ? { ...i, quantity: newQuantity }
+                  : i
+              ),
+              isSyncing: true
+            })
+          }
 
+          try {
+            // Luego sincronizar con backend en segundo plano
+            
             // Actualizar en backend
             if (newQuantity <= 0) {
               await cartService.removeItemFromCart(state.cartId, productId)
@@ -773,18 +766,33 @@ const useCartStore = create(
               await cartService.updateItemQuantity(state.cartId, productId, newQuantity)
             }
 
-            // Recargar carrito desde backend
-            const updatedCart = await cartService.getOrCreateActiveCart(state.userId)
-            set({
-              items: updatedCart.items || [],
-              isSyncing: false
-            })
-
-            return true} catch (error) {
-            console.error('[cartStore] ❌ Error actualizando cantidad en backend:', error)
+            // ✅ NO RECARGAR TODO EL CARRITO - Solo confirmar que todo está bien
             set({ isSyncing: false })
-            // Fallback a función local
-            return get().updateQuantity(itemId, newQuantity)
+            
+            return true
+          } catch (error) {
+            console.error('🌐 [cartStore] ❌ Backend sync failed, reverting:', error)
+            
+            // Revertir cambio optimista si falla
+            if (newQuantity <= 0) {
+              // Restaurar item removido
+              set({
+                items: [...state.items, item],
+                isSyncing: false
+              })
+            } else {
+              // Restaurar cantidad anterior
+              set({
+                items: state.items.map(i => 
+                  i.id === itemId 
+                    ? { ...i, quantity: oldQuantity }
+                    : i
+                ),
+                isSyncing: false
+              })
+            }
+            
+            return false
           }
         },        // Remover item con sincronización backend
         removeItemWithBackend: async (itemId) => {
@@ -917,8 +925,7 @@ const useCartStore = create(
             isBackendSynced: false,
             error: null,
             isLoading: false,
-            isSyncing: false,
-            _subtotalCache: null // Limpiar cache
+            isSyncing: false
           });
           
           // Limpiar localStorage
@@ -926,7 +933,6 @@ const useCartStore = create(
             localStorage.removeItem('cart-storage');
             localStorage.removeItem('cart-items');
             localStorage.removeItem('carrito');
-            console.log('[cartStore] ✅ LocalStorage del carrito limpiado');
           } catch (error) {
             console.error('[cartStore] ❌ Error limpiando localStorage:', error);
           }

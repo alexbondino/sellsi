@@ -278,7 +278,7 @@ export default function Register({ open, onClose }) {
               padding: '4px 8px',
               backgroundColor: 'transparent',
               border: 'none',
-              color: '#41B6E6',
+              color: 'primary.main',
               fontWeight: 700,
               cursor: 'pointer',
               borderRadius: 1,

@@ -9,6 +9,7 @@
 
 import React, { useState, useCallback, useEffect } from 'react'
 import { useSupplierProducts } from './useSupplierProducts'
+import { convertDbRegionsToForm } from '../../../utils/shippingRegionsUtils'
 
 // Valores iniciales del formulario
 const initialFormData = {
@@ -120,7 +121,7 @@ export const useProductForm = (productId = null) => {
       specifications: product.specifications || [{ key: '', value: '' }],
       negociable: product.negociable || false,
       activo: product.activo !== false,
-      shippingRegions: product.shippingRegions || [], // Regiones de despacho configuradas
+      shippingRegions: convertDbRegionsToForm(product.delivery_regions || []), // ✅ CORREGIDO: Convertir formato BD a formulario
     }
   }
 
@@ -128,7 +129,6 @@ export const useProductForm = (productId = null) => {
    * Mapear formulario a formato de producto
    */
   function mapFormToProduct(formData) {
-    console.log('🔄 [MAP FORM TO PRODUCT] - formData entrada:', formData)
     
     const productData = {
       productnm: formData.nombre,
@@ -140,7 +140,7 @@ export const useProductForm = (productId = null) => {
       is_active: formData.activo,
       imagenes: formData.imagenes,
       specifications: formData.specifications.filter((s) => s.key && s.value),
-      shippingRegions: formData.shippingRegions || [], // Regiones de despacho configuradas
+      // delivery_regions eliminado: se guarda por separado en product_delivery_regions
     }
 
     if (formData.pricingType === 'Por Unidad') {
@@ -158,7 +158,6 @@ export const useProductForm = (productId = null) => {
         }))
     }
 
-    console.log('📤 [MAP FORM TO PRODUCT] - productData salida:', productData)
     return productData
   }
   /**
@@ -170,27 +169,21 @@ export const useProductForm = (productId = null) => {
    * Validar un campo específico
    */
   const validateField = useCallback((fieldName, value) => {
-    console.log(`🔍 [VALIDATE FIELD] - ${fieldName}:`, value, typeof value);
     const rule = memoizedValidationRules[fieldName]
     if (!rule) {
-      console.log(`🔍 [VALIDATE FIELD] - ${fieldName}: no rule found`);
       return null
     }
 
-    console.log(`🔍 [VALIDATE FIELD] - ${fieldName} rule:`, rule);
 
     if (rule.required && (!value || value.toString().trim() === '')) {
-      console.log(`❌ [VALIDATE FIELD] - ${fieldName}: required field empty`);
       return 'Este campo es requerido'
     }
 
     if (rule.minLength && value.length < rule.minLength) {
-      console.log(`❌ [VALIDATE FIELD] - ${fieldName}: minLength failed`);
       return `Mínimo ${rule.minLength} caracteres`
     }
 
     if (rule.maxLength && value.length > rule.maxLength) {
-      console.log(`❌ [VALIDATE FIELD] - ${fieldName}: maxLength failed`);
       return `Máximo ${rule.maxLength} caracteres`
     }
 
@@ -198,23 +191,18 @@ export const useProductForm = (productId = null) => {
       // Solo validar tipo si el campo no está vacío o si es requerido
       if (value && value.toString().trim() !== '') {
         const numValue = parseFloat(value)
-        console.log(`🔢 [VALIDATE FIELD] - ${fieldName}: numValue = ${numValue}`);
         if (isNaN(numValue)) {
-          console.log(`❌ [VALIDATE FIELD] - ${fieldName}: not a valid number`);
           return 'Debe ser un número válido'
         }
         if (rule.min !== undefined && numValue < rule.min) {
-          console.log(`❌ [VALIDATE FIELD] - ${fieldName}: below minimum`);
           return `El valor mínimo es ${rule.min}`
         }
         if (rule.max !== undefined && numValue > rule.max) {
-          console.log(`❌ [VALIDATE FIELD] - ${fieldName}: above maximum`);
           return `El valor máximo es ${rule.max}`
         }
       }
     }
 
-    console.log(`✅ [VALIDATE FIELD] - ${fieldName}: validation passed`);
     return null
   }, [memoizedValidationRules])  /**
    * ✅ MEJORA DE RENDIMIENTO: Validar todo el formulario con memoización
@@ -320,30 +308,20 @@ export const useProductForm = (productId = null) => {
   /**
    * Submit del formulario
    */  const submitForm = useCallback(async () => {
-    console.log('🚀 [SUBMIT FORM] - Iniciando submit...');
-    console.log('🚀 [SUBMIT FORM] - formData:', formData);
-    console.log('🚀 [SUBMIT FORM] - isEditMode:', isEditMode);
-    console.log('🚀 [SUBMIT FORM] - productId:', productId);
       const isValid = validateForm()
     if (!isValid) {
-      console.log('❌ [SUBMIT FORM] - Validación falló, errors:', errors);
       return { success: false, errors: errors }
     }
-    console.log('✅ [SUBMIT FORM] - Validación pasó correctamente');
 
     const productData = mapFormToProduct(formData)
-    console.log('📝 [SUBMIT FORM] - productData mapeado:', productData);
 
     let result
     if (isEditMode) {
-      console.log('🔄 [SUBMIT FORM] - Llamando updateProduct...');
       result = await updateProduct(productId, productData)
     } else {
-      console.log('➕ [SUBMIT FORM] - Llamando createProduct...');
       result = await createProduct(productData)
     }
 
-    console.log('📥 [SUBMIT FORM] - result final:', result);
 
     if (result.success) {
       setIsDirty(false)
@@ -406,7 +384,6 @@ export const useProductForm = (productId = null) => {
     submitForm,
     resetForm,
     validateForm,
-
     // Utilidades
     hasErrors: Object.values(errors).some((v) => !!v),
     isValid: Object.values(errors).every((v) => !v),

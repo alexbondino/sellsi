@@ -112,7 +112,6 @@ const SearchBar = React.memo(({
 
   // ✅ OPTIMIZACIÓN: Handler para el switch de vistas - CON memoización optimizada
   const handleToggleView = React.useCallback(() => {
-    console.log('🔄 SearchBar: handleToggleView called, current localProviderView:', localProviderView);
     
     // Actualizar estado local inmediatamente
     const newValue = !localProviderView;
@@ -122,15 +121,6 @@ const SearchBar = React.memo(({
     onToggleProviderView();
   }, [localProviderView, onToggleProviderView]);
 
-  // ✅ DEBUG: Log para verificar que isProviderView se actualiza - MEMOIZADO
-  React.useEffect(() => {
-    console.log('🔄 SearchBar: isProviderView changed to:', isProviderView);
-  }, [isProviderView]);
-
-  // ✅ DEBUG: Log para verificar cambios en localProviderView - MEMOIZADO
-  React.useEffect(() => {
-    console.log('🔄 SearchBar: localProviderView changed to:', localProviderView);
-  }, [localProviderView]);
   // ✅ MEJORA DE RENDIMIENTO: Memoización de estilos del contenedor principal
   const containerStyles = {
     display: 'flex',
@@ -244,12 +234,6 @@ const SearchBar = React.memo(({
     []
   )
 
-  // ✅ LOG TEMPORAL: Para debuggear el switch - MEMOIZADO
-  const debugInfo = React.useMemo(() => {
-    console.log('🔍 SearchBar render - isProviderView:', isProviderView);
-    return isProviderView;
-  }, [isProviderView]);
-
   return (
     <Box sx={containerStyles}>
       {/* Barra de búsqueda - Más compacta */}
@@ -303,7 +287,7 @@ const SearchBar = React.memo(({
                 onChange={handleToggleView}
                 size="small"
                 color="primary"
-                onClick={() => console.log('🔍 Switch clicked!')}
+                onClick={() => {}}
               />
             }
             label={

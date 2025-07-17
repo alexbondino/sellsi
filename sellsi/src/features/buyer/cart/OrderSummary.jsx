@@ -28,6 +28,11 @@ const OrderSummary = ({
   // Available discount codes
   availableCodes,
 
+  // Shipping validation props
+  shippingValidation,
+  isAdvancedShippingMode,
+  onShippingCompatibilityError,
+
   // Functions
   formatPrice,
   formatDate,
@@ -37,16 +42,73 @@ const OrderSummary = ({
   onCheckout,
 }) => {
   const navigate = useNavigate()
+  // LOG: props iniciales
+  console.log('[OrderSummary] PROPS:', {
+    subtotal,
+    discount,
+    shippingCost,
+    total,
+    cartStats,
+    deliveryDate,
+    appliedCoupons,
+    couponInput,
+    isCheckingOut,
+    availableCodes,
+    shippingValidation,
+    isAdvancedShippingMode,
+    onShippingCompatibilityError,
+    formatPrice,
+    formatDate,
+    setCouponInput,
+    onApplyCoupon,
+    onRemoveCoupon,
+    onCheckout,
+  })
 
   // Handler para navegar al checkout
   const handleCheckout = () => {
+    console.log('[OrderSummary] handleCheckout called')
     // Validar que haya productos
     if (!cartStats || cartStats.isEmpty) {
+      console.log('[OrderSummary] handleCheckout: carrito vacío')
       return
     }
-    
+    // Validar compatibilidad de envío si está en modo avanzado
+    if (isAdvancedShippingMode && shippingValidation && !shippingValidation.isCartCompatible) {
+      console.log('[OrderSummary] handleCheckout: incompatibilidad de envío', shippingValidation)
+      // Notificar al componente padre para mostrar el modal
+      if (onShippingCompatibilityError) {
+        console.log('[OrderSummary] handleCheckout: llamando onShippingCompatibilityError')
+        onShippingCompatibilityError()
+      }
+      return
+    }
+    // Si hay función de checkout personalizada, usar esa
+    if (onCheckout) {
+      console.log('[OrderSummary] handleCheckout: usando función personalizada onCheckout')
+      onCheckout()
+      return
+    }
     // Navegar al método de pago
+    console.log('[OrderSummary] handleCheckout: navegando a /buyer/paymentmethod')
     navigate('/buyer/paymentmethod')
+  }
+
+  // Determinar si el botón debe estar deshabilitado
+  const isButtonDisabled = () => {
+    const disabled = (
+      isCheckingOut ||
+      !cartStats ||
+      cartStats.isEmpty ||
+      (isAdvancedShippingMode && shippingValidation && !shippingValidation.isCartCompatible)
+    )
+    console.log('[OrderSummary] isButtonDisabled:', disabled, {
+      isCheckingOut,
+      cartStats,
+      isAdvancedShippingMode,
+      shippingValidation,
+    })
+    return disabled
   }
   return (
     <Paper
@@ -97,8 +159,15 @@ const OrderSummary = ({
             variant="contained"
             fullWidth
             size="large"
-            onClick={handleCheckout}
-            disabled={isCheckingOut || !cartStats || cartStats.isEmpty}
+            onClick={e => {
+              console.log('[OrderSummary] Button onClick');
+              if (isButtonDisabled()) {
+                console.log('[OrderSummary] Button click: deshabilitado');
+                return;
+              }
+              handleCheckout();
+            }}
+            disabled={isButtonDisabled()}
             startIcon={
               isCheckingOut ? (
                 <CircularProgress size={20} sx={{ color: 'white' }} />
@@ -109,18 +178,22 @@ const OrderSummary = ({
             sx={{
               py: 1.5,
               borderRadius: 1,
-              backgroundColor: 'primary.main',
-              color: 'white',
-              boxShadow: '0 8px 16px rgba(102, 126, 234, 0.3)',
+              backgroundColor: isButtonDisabled() ? 'rgba(128,128,128,0.18)' : 'primary.main',
+              color: isButtonDisabled() ? 'rgba(0,0,0,0.32)' : 'white',
+              boxShadow: isButtonDisabled() ? 'none' : '0 8px 16px rgba(102, 126, 234, 0.3)',
+              cursor: isButtonDisabled() ? 'not-allowed' : 'pointer',
+              border: '1px solid rgba(128,128,128,0.18)',
               '&:hover': {
-                backgroundColor: 'primary.dark',
-                boxShadow: '0 12px 20px rgba(102, 126, 234, 0.4)',
-                color: 'white',
+                backgroundColor: isButtonDisabled() ? 'rgba(128,128,128,0.18)' : 'primary.dark',
+                color: isButtonDisabled() ? 'rgba(0,0,0,0.32)' : 'white',
               },
               '&:disabled': {
-                color: 'white',
-                backgroundColor: 'primary.main',
                 opacity: 0.7,
+                backgroundColor: 'rgba(128,128,128,0.18)',
+                color: 'rgba(0,0,0,0.32)',
+                boxShadow: 'none',
+                cursor: 'not-allowed',
+                border: '1px solid rgba(128,128,128,0.18)',
               },
             }}
           >

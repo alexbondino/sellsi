@@ -4,7 +4,7 @@ import { orderService } from '../../../services/orderService';
 // Función para calcular si un pedido está atrasado
 const calculateIsLate = order => {
   const currentDate = new Date();
-  const endDate = new Date(order.requestedDate?.end || order.created_at);
+  const endDate = new Date(order.estimated_delivery_date || order.created_at);
   const excludedStatuses = ['delivered', 'cancelled', 'rejected'];
 
   return currentDate > endDate && !excludedStatuses.includes(order.status);
@@ -59,16 +59,16 @@ export const useOrdersStore = create((set, get) => ({
         status: orderService.getStatusDisplayName(order.status),
         // Calcular si está atrasado
         isLate: calculateIsLate(order),
-        // Asegurar formato de dirección
+        // Usar la dirección de entrega desde shipping_info
         deliveryAddress: order.delivery_address || {
           street: 'Dirección no especificada',
           city: 'Ciudad no especificada',
           region: 'Región no especificada',
         },
-        // Asegurar formato de fecha de entrega
-        requestedDate: order.requested_date || {
+        // Usar la fecha de entrega calculada desde product_delivery_regions
+        requestedDate: {
           start: order.created_at,
-          end: order.created_at,
+          end: order.estimated_delivery_date || order.created_at,
         },
         // Mapear productos al formato esperado por la UI
         products:

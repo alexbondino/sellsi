@@ -44,17 +44,22 @@ import {
 } from '@mui/material';
 import {
   Delete as DeleteIcon,
-  Visibility as ViewIcon,
+  Edit as EditIcon,
   Store as StoreIcon,
   Inventory as InventoryIcon,
   Refresh as RefreshIcon,
   Search as SearchIcon,
-  ShoppingCart as ShoppingCartIcon
+  ShoppingCart as ShoppingCartIcon,
+  Info as InfoIcon,
+  ToggleOn as ToggleOnIcon,
+  ToggleOff as ToggleOffIcon
 } from '@mui/icons-material';
 
 // Importar componentes UI existentes
 import AdminStatCard from './AdminStatCard';
-import { getMarketplaceProducts, deleteProduct, getProductStats } from '../../../services/adminPanelService';
+import EditProductNameModal from '../../ui/EditProductNameModal';
+import DeleteMultipleProductsModal from '../../ui/DeleteMultipleProductsModal';
+import { getMarketplaceProducts, deleteProduct, getProductStats, deleteMultipleProducts, updateProductName } from '../../../services/adminPanelService';
 import { useBanner } from '../../ui';
 
 // ✅ CONSTANTS
@@ -119,6 +124,94 @@ const commonStyles = {
   }
 };
 
+// ✅ PRODUCT AVATAR COMPONENT
+const ProductAvatar = memo(({ product }) => {
+  const [hasError, setHasError] = useState(false);
+  
+  // Función para construir URL del minithumb dinámicamente
+  const getMinithumbUrl = useCallback((product) => {
+    if (!product) return null;
+    
+    // Si ya tiene thumbnail_url, construir el minithumb
+    if (product.thumbnail_url) {
+      return product.thumbnail_url.replace('_desktop_320x260.jpg', '_minithumb_40x40.jpg');
+    }
+    
+    // Si tiene imagen principal, construir desde ella
+    if (product.imagen) {
+      try {
+        const url = new URL(product.imagen);
+        const pathParts = url.pathname.split('/');
+        
+        // Buscar la estructura: .../product-images/user_id/product_id/...
+        const productImagesIndex = pathParts.findIndex(part => part === 'product-images');
+        
+        if (productImagesIndex !== -1 && pathParts.length > productImagesIndex + 2) {
+          const userId = pathParts[productImagesIndex + 1];
+          const productId = pathParts[productImagesIndex + 2];
+          
+          // Extraer timestamp del nombre del archivo
+          const fileName = pathParts[pathParts.length - 1];
+          const timestampMatch = fileName.match(/^(\d+)_/);
+          
+          if (timestampMatch) {
+            const timestamp = timestampMatch[1];
+            console.log('🔍 [ProductAvatar] Extrayendo timestamp:', {
+              fileName,
+              timestamp,
+              userId,
+              productId
+            });
+            // Construir URL del minithumb con la estructura correcta
+            return `${url.origin}/storage/v1/object/public/product-images-thumbnails/${userId}/${productId}/${timestamp}_minithumb_40x40.jpg`;
+          }
+        }
+      } catch (error) {
+        console.warn('[ProductAvatar] Error construyendo minithumb URL:', error);
+      }
+    }
+    
+    return null;
+  }, []);
+  
+  const minithumbUrl = getMinithumbUrl(product);
+  
+  console.log('🎯 [ProductAvatar] URL dinámica construida:', minithumbUrl);
+  console.log('🔍 [ProductAvatar] Datos del producto:', {
+    product_id: product.id,
+    imagen: product.imagen,
+    thumbnail_url: product.thumbnail_url,
+    name: product.name || product.nombre
+  });
+  
+  // Si hay error, usar imagen por defecto
+  const finalUrl = hasError ? (product.imagen || null) : (minithumbUrl || product.imagen || null);
+  
+  console.log('🚀 [ProductAvatar] Estado final:', {
+    hasError,
+    minithumbUrl,
+    finalUrl,
+    productImagen: product.imagen
+  });
+  
+  return (
+    <Avatar 
+      src={finalUrl} 
+      sx={commonStyles.productImage}
+      variant="rounded"
+      onError={(e) => {
+        console.error('❌ [ProductAvatar] Error cargando imagen:', {
+          src: finalUrl,
+          error: e
+        });
+        setHasError(true);
+      }}
+    >
+      <InventoryIcon />
+    </Avatar>
+  );
+});
+
 // ✅ PRODUCT MARKETPLACE TABLE COMPONENT
 const ProductMarketplaceTable = memo(() => {
   // ========================================
@@ -137,6 +230,9 @@ const ProductMarketplaceTable = memo(() => {
     search: '',
     supplier: 'all'
   });
+
+  // Estado para alternar entre productos activos e inactivos
+  const [showActiveProducts, setShowActiveProducts] = useState(true);
 
   // Estado para búsqueda con debounce
   const [searchTerm, setSearchTerm] = useState('');
@@ -167,6 +263,21 @@ const ProductMarketplaceTable = memo(() => {
     open: false,
     product: null
   });
+
+  // Modal para eliminar múltiples productos
+  const [deleteMultipleModal, setDeleteMultipleModal] = useState({
+    open: false,
+    products: []
+  });
+
+  // Modal para editar nombre de producto
+  const [editNameModal, setEditNameModal] = useState({
+    open: false,
+    product: null
+  });
+
+  // Estado de carga para operaciones
+  const [operationLoading, setOperationLoading] = useState(false);
 
   const { showBanner } = useBanner();
 
@@ -203,6 +314,14 @@ const ProductMarketplaceTable = memo(() => {
     if (!products.length) return [];
 
     return products.filter(product => {
+      // Filtro por tipo de producto (activo/inactivo)
+      const stock = product.stock || 0;
+      const minPurchase = product.min_purchase || 1;
+      const isActive = stock >= minPurchase;
+      
+      if (showActiveProducts && !isActive) return false;
+      if (!showActiveProducts && isActive) return false;
+
       // Filtro por estado
       if (filters.status !== 'all') {
         const productStatus = getProductStatus(product);
@@ -222,7 +341,7 @@ const ProductMarketplaceTable = memo(() => {
 
       return true;
     });
-  }, [products, filters]);
+  }, [products, filters, showActiveProducts]);
 
   // ========================================
   // 🔧 HANDLERS
@@ -235,7 +354,7 @@ const ProductMarketplaceTable = memo(() => {
     try {
       // Cargar todos los productos sin filtros (filtrado local)
       const [productsResult, statsResult] = await Promise.all([
-        getMarketplaceProducts({}), // Sin filtros - cargar todos los productos disponibles
+        getMarketplaceProducts({ includeInactive: true }), // Incluir productos inactivos para filtrado local
         getProductStats()
       ]);
 
@@ -304,6 +423,7 @@ const ProductMarketplaceTable = memo(() => {
 
   const handleDeleteConfirm = async () => {
     const { product } = deleteModal;
+    setOperationLoading(true);
     try {
       const result = await deleteProduct(product.product_id);
       if (result.success) {
@@ -319,6 +439,96 @@ const ProductMarketplaceTable = memo(() => {
     } catch (error) {
       console.error('Error eliminando producto:', error);
       setError('Error interno del servidor');
+    } finally {
+      setOperationLoading(false);
+    }
+  };
+
+  // Handlers para eliminar múltiples productos
+  const openDeleteMultipleModal = () => {
+    const selectedProductsArray = filteredProducts.filter(product => 
+      selectedProducts.has(product.product_id)
+    );
+    setDeleteMultipleModal({
+      open: true,
+      products: selectedProductsArray
+    });
+  };
+
+  const closeDeleteMultipleModal = () => {
+    setDeleteMultipleModal({
+      open: false,
+      products: []
+    });
+  };
+
+  const handleDeleteMultipleConfirm = async () => {
+    const productIds = deleteMultipleModal.products.map(p => p.product_id);
+    setOperationLoading(true);
+    try {
+      const result = await deleteMultipleProducts(productIds);
+      if (result.success) {
+        await loadData();
+        setSelectedProducts(new Set()); // Limpiar selección
+        closeDeleteMultipleModal();
+        
+        if (result.errors.length > 0) {
+          showBanner({
+            message: `Se eliminaron ${result.deleted} de ${productIds.length} productos. Algunos productos tuvieron errores.`,
+            severity: 'warning',
+          });
+        } else {
+          showBanner({
+            message: `Se eliminaron ${result.deleted} producto${result.deleted !== 1 ? 's' : ''} correctamente`,
+            severity: 'success',
+          });
+        }
+      } else {
+        setError(result.error || 'Error al eliminar productos');
+      }
+    } catch (error) {
+      console.error('Error eliminando productos:', error);
+      setError('Error interno del servidor');
+    } finally {
+      setOperationLoading(false);
+    }
+  };
+
+  // Handlers para editar nombre de producto
+  const openEditNameModal = (product) => {
+    setEditNameModal({
+      open: true,
+      product
+    });
+  };
+
+  const closeEditNameModal = () => {
+    setEditNameModal({
+      open: false,
+      product: null
+    });
+  };
+
+  const handleEditNameConfirm = async (newName) => {
+    const { product } = editNameModal;
+    setOperationLoading(true);
+    try {
+      const result = await updateProductName(product.product_id, newName);
+      if (result.success) {
+        await loadData();
+        closeEditNameModal();
+        showBanner({
+          message: `El nombre del producto fue actualizado correctamente`,
+          severity: 'success',
+        });
+      } else {
+        setError(result.error || 'Error al actualizar el nombre del producto');
+      }
+    } catch (error) {
+      console.error('Error actualizando nombre del producto:', error);
+      setError('Error interno del servidor');
+    } finally {
+      setOperationLoading(false);
     }
   };
 
@@ -388,6 +598,52 @@ const ProductMarketplaceTable = memo(() => {
   const renderFilters = useCallback(() => (
     <Paper sx={commonStyles.filtersSection}>
       <Grid container spacing={3} alignItems="center">
+        {/* Título y botón de toggle mejorado */}
+        <Grid item xs={12}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+            <Tooltip 
+              title={
+                <Box sx={{ p: 1 }}>
+                  <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
+                    Explicación de estados:
+                  </Typography>
+                  <Typography variant="body2" sx={{ mb: 1 }}>
+                    <strong>Productos Activos:</strong> Productos visibles en el marketplace donde el stock es mayor o igual a la compra mínima.
+                  </Typography>
+                  <Typography variant="body2">
+                    <strong>Productos Inactivos:</strong> Productos no visibles en el marketplace, pero creados en la base de datos, donde el stock es menor que la compra mínima.
+                  </Typography>
+                </Box>
+              }
+              arrow
+              placement="left"
+            >
+              <IconButton size="small" sx={{ color: 'primary.main' }}>
+                <InfoIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+            <Typography variant="h6" sx={{ fontWeight: 600 }}>
+              {showActiveProducts ? 'Productos Activos' : 'Productos Inactivos'}
+            </Typography>
+            <Button
+              variant={showActiveProducts ? 'contained' : 'outlined'}
+              color={showActiveProducts ? 'primary' : 'secondary'}
+              size="small"
+              endIcon={<span style={{fontSize:'1.2em'}}>&#8646;</span>}
+              onClick={() => setShowActiveProducts(!showActiveProducts)}
+              sx={{ 
+                minWidth: 180,
+                borderRadius: 2,
+                textTransform: 'none',
+                fontWeight: 500,
+                boxShadow: showActiveProducts ? 2 : 0
+              }}
+            >
+              {showActiveProducts ? 'Ver productos inactivos' : 'Ver productos activos'}
+            </Button>
+          </Box>
+        </Grid>
+
         <Grid item xs={12} sm={6} md={3}>
           <FormControl 
             fullWidth 
@@ -451,9 +707,26 @@ const ProductMarketplaceTable = memo(() => {
             </Typography>
           </Box>
         </Grid>
+        
+        {/* Botón para eliminar productos seleccionados */}
+        {selectedProducts.size > 0 && (
+          <Grid item xs={12}>
+            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 1 }}>
+              <Button
+                variant="contained"
+                color="error"
+                startIcon={<DeleteIcon />}
+                onClick={openDeleteMultipleModal}
+                disabled={operationLoading}
+              >
+                Eliminar {selectedProducts.size} producto{selectedProducts.size !== 1 ? 's' : ''} seleccionado{selectedProducts.size !== 1 ? 's' : ''}
+              </Button>
+            </Box>
+          </Grid>
+        )}
       </Grid>
     </Paper>
-  ), [filters, handleFilterChange, searchTerm, debouncedSearchTerm, initialLoadComplete, filteredProducts.length, products.length]);
+  ), [filters, handleFilterChange, searchTerm, debouncedSearchTerm, initialLoadComplete, filteredProducts.length, products.length, selectedProducts.size, operationLoading, showActiveProducts]);
 
   const renderProductsTable = () => (
     <TableContainer component={Paper} sx={commonStyles.tableContainer}>
@@ -474,7 +747,24 @@ const ProductMarketplaceTable = memo(() => {
             <TableCell sx={{ color: 'white' }}>User ID</TableCell>
             <TableCell sx={{ color: 'white' }}>Stock</TableCell>
             <TableCell sx={{ color: 'white' }}>Estado</TableCell>
-            <TableCell align="center" sx={{ color: 'white' }}>Acciones</TableCell>
+            <TableCell align="center" sx={{ color: 'white' }}>
+              <Tooltip 
+                title={<Box sx={{ p: 1, maxWidth: 260 }}>
+                  <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>Acciones disponibles:</Typography>
+                  <ul style={{ margin: 0, paddingLeft: 18, fontSize: '0.95em' }}>
+                    <li><strong>Editar nombre:</strong> Permite modificar el nombre del producto en el marketplace.</li>
+                    <li><strong>Eliminar producto:</strong> Quita el producto del marketplace. Esta acción es irreversible.</li>
+                  </ul>
+                </Box>}
+                arrow
+                placement="top"
+              >
+                <IconButton size="small" sx={{ color: 'white', p: 0, mr: 1 }}>
+                  <InfoIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+              Acciones
+            </TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
@@ -497,13 +787,7 @@ const ProductMarketplaceTable = memo(() => {
 
                 <TableCell>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                    <Avatar 
-                      src={product.product_image} 
-                      sx={commonStyles.productImage}
-                      variant="rounded"
-                    >
-                      <InventoryIcon />
-                    </Avatar>
+                    <ProductAvatar product={product} />
                     <Box>
                       <Typography component="span" variant="body2" fontWeight="medium">
                         {product.product_name || 'N/A'}
@@ -553,9 +837,14 @@ const ProductMarketplaceTable = memo(() => {
 
                 <TableCell align="center">
                   <Box sx={{ display: 'flex', justifyContent: 'center', gap: 0.5 }}>
-                    <Tooltip title="Ver detalles">
-                      <IconButton size="small" sx={commonStyles.actionButton}>
-                        <ViewIcon fontSize="small" />
+                    <Tooltip title="Editar nombre del producto">
+                      <IconButton 
+                        size="small" 
+                        sx={commonStyles.actionButton}
+                        onClick={() => openEditNameModal(product)}
+                        disabled={operationLoading}
+                      >
+                        <EditIcon fontSize="small" />
                       </IconButton>
                     </Tooltip>
 
@@ -565,6 +854,7 @@ const ProductMarketplaceTable = memo(() => {
                         sx={commonStyles.actionButton}
                         color="error"
                         onClick={() => openDeleteModal(product)}
+                        disabled={operationLoading}
                       >
                         <DeleteIcon fontSize="small" />
                       </IconButton>
@@ -608,11 +898,11 @@ const ProductMarketplaceTable = memo(() => {
         </DialogContentText>
       </DialogContent>
       <DialogActions sx={{ justifyContent: 'center', gap: 3 }}>
-        <Button onClick={closeDeleteModal} color="inherit">
+        <Button onClick={closeDeleteModal} color="inherit" disabled={operationLoading}>
           Cancelar
         </Button>
-        <Button onClick={handleDeleteConfirm} color="error" variant="contained">
-          Eliminar
+        <Button onClick={handleDeleteConfirm} color="error" variant="contained" disabled={operationLoading}>
+          {operationLoading ? 'Eliminando...' : 'Eliminar'}
         </Button>
       </DialogActions>
     </Dialog>
@@ -670,6 +960,24 @@ const ProductMarketplaceTable = memo(() => {
 
       {/* Modal de confirmación de eliminación */}
       {renderDeleteModal()}
+
+      {/* Modal para eliminar múltiples productos */}
+      <DeleteMultipleProductsModal
+        open={deleteMultipleModal.open}
+        onClose={closeDeleteMultipleModal}
+        products={deleteMultipleModal.products}
+        onConfirm={handleDeleteMultipleConfirm}
+        loading={operationLoading}
+      />
+
+      {/* Modal para editar nombre de producto */}
+      <EditProductNameModal
+        open={editNameModal.open}
+        onClose={closeEditNameModal}
+        product={editNameModal.product}
+        onConfirm={handleEditNameConfirm}
+        loading={operationLoading}
+      />
     </Box>
   );
 });

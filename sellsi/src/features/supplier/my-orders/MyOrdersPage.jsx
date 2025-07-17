@@ -16,9 +16,19 @@ import Modal, { MODAL_TYPES } from '../../ui/Modal'; // Componente Modal genéri
 import { useBanner } from '../../ui/banner/BannerContext'; // Contexto para mostrar banners
 import SideBarProvider from '../../layout/SideBar'; // Proveedor para la barra lateral
 import { dashboardThemeCore } from '../../../styles/dashboardThemeCore'; // Tema de Material-UI para el dashboard
+import { SPACING_BOTTOM_MAIN } from '../../../styles/layoutSpacing';
 
-// TODO: Importar hook para obtener usuario autenticado
+// TODO: Implementar hook de autenticación
 // import { useAuth } from '../../auth/hooks/useAuth';
+// 
+// Cuando se implemente el hook de autenticación, reemplazar la línea:
+// const supplierId = localStorage.getItem('user_id');
+// 
+// Por:
+// const { user } = useAuth();
+// const supplierId = user?.user_id;
+//
+// Y agregar validación adicional para usuarios no autenticados
 
 const MyOrdersPage = () => {
   // Estado y acciones del store de Zustand
@@ -44,12 +54,10 @@ const MyOrdersPage = () => {
     selectedOrder: null,
   });
 
-  // TODO: En producción, obtener el supplierId del hook de autenticación
+  // TEMPORAL: Obtener el supplier ID del localStorage
+  // Cuando se implemente el hook de autenticación, esto será reemplazado por:
   // const { user } = useAuth();
   // const supplierId = user?.user_id;
-
-  // TEMPORAL: Obtener el supplier ID del localStorage
-  // Esto debe ser reemplazado por la lógica de autenticación real
   const supplierId = localStorage.getItem('user_id');
 
   // Obtener los pedidos filtrados utilizando un selector del store
@@ -142,7 +150,6 @@ const MyOrdersPage = () => {
           break;
 
         case 'chat':
-          console.log('Abriendo chat para pedido:', selectedOrder.order_id);
           messageToUser =
             '💬 Abriendo chat... (funcionalidad pendiente de implementación).';
           // Para el chat, cerramos el modal y solo mostramos el banner de información
@@ -315,7 +322,7 @@ const MyOrdersPage = () => {
             // marginLeft: '210px', // Eliminado para ocupar todo el ancho
             backgroundColor: 'background.default',
             minHeight: '100vh',
-            pt: { xs: 9, md: 10 },
+            pt: { xs: 4.5, md: 5 },
             px: 3,
             pb: 3,
             display: 'flex',
@@ -339,7 +346,7 @@ const MyOrdersPage = () => {
             // marginLeft: '210px', // Eliminado para ocupar todo el ancho
             backgroundColor: 'background.default',
             minHeight: '100vh',
-            pt: { xs: 9, md: 10 },
+            pt: { xs: 4.5, md: 5 },
             px: 3,
             pb: 3,
             display: 'flex',
@@ -369,9 +376,9 @@ const MyOrdersPage = () => {
           // marginLeft: '210px', // Eliminado para ocupar todo el ancho
           backgroundColor: 'background.default',
           minHeight: '100vh',
-          pt: { xs: 9, md: 10 }, // Padding top para espacio con el header
+          pt: { xs: 4.5, md: 5 }, // Padding top para espacio con el header
           px: 3, // Padding horizontal
-          pb: 3, // Padding bottom
+          pb: SPACING_BOTTOM_MAIN, // Padding bottom
           ml: { xs: 0, md: 10, lg: 14, xl: 24 },
         }}
       >

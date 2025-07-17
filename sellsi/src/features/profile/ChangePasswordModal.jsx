@@ -15,6 +15,7 @@ import {
 import CloseIcon from '@mui/icons-material/Close';
 import PasswordRequirements from '../ui/PasswordRequirements';
 import { supabase } from '../../services/supabase';
+import { trackUserAction } from '../../services/ipTrackingService';
 
 const ChangePasswordModal = ({ open, onClose, onPasswordChanged, showBanner }) => {
   const [formData, setFormData] = useState({
@@ -150,6 +151,9 @@ const ChangePasswordModal = ({ open, onClose, onPasswordChanged, showBanner }) =
 
       // Éxito - mostrar mensaje temporal en el modal antes de cerrar
       setSuccess(true);
+      
+      // Registrar IP del usuario al cambiar contraseña
+      await trackUserAction('password_changed')
       
       // Cerrar el modal después de un breve delay y notificar al padre
       setTimeout(() => {

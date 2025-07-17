@@ -33,7 +33,7 @@ const providerMenuItems = [
   { text: 'Mis Productos', path: '/supplier/myproducts', icon: <ProductsIcon /> },
   { text: 'Mis Pedidos', path: '/supplier/my-orders', icon: <OrdersIcon /> },
   // { text: 'Mi Performance', path: '/supplier/myperformance', icon: <PerformanceIcon /> }, // Eliminado
-  { text: 'Marketplace', path: '/supplier/marketplace', icon: <MarketplaceIcon /> },
+  // Marketplace oculto para supplier
 ];
 
 /**

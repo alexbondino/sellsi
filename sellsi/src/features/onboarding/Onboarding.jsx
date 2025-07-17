@@ -105,7 +105,6 @@ const LogoUploader = ({
 // COMPONENTE PRINCIPAL: Onboarding
 // ==================================================================
 const Onboarding = () => {
-  // console.log('Onboarding render');
   const [isLoading, setIsLoading] = useState(false);
   const theme = useTheme();
 
@@ -122,7 +121,6 @@ const Onboarding = () => {
   const [logoError, setLogoError] = useState('');
 
   useEffect(() => {
-    // console.log('Onboarding useEffect: logoPreview', logoPreview);
   }, [logoPreview]);
 
   const handleFieldChange = useCallback((field, value) => {

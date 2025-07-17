@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react'
 import { motion } from 'framer-motion'
+import { useNavigate } from 'react-router-dom'
 import {
   Box,
   Container,
@@ -14,6 +15,7 @@ import {
   ShoppingCart as ShoppingCartIcon,
   Favorite as FavoriteIcon,
 } from '@mui/icons-material'
+import SideBarProvider from '../../layout/SideBar'
 
 // Mensajes aleatorios para el carrito vacío
 const EMPTY_CART_MESSAGES = [
@@ -28,16 +30,39 @@ const EMPTY_CART_MESSAGES = [
  * @param {function} props.setShowWishlist - Función para mostrar wishlist
  */
 const EmptyCartState = ({ wishlist, setShowWishlist }) => {
+  const navigate = useNavigate()
+  
   // Seleccionar mensaje aleatorio usando useMemo para que no cambie en cada re-render
   const randomMessage = useMemo(() => {
     const randomIndex = Math.floor(Math.random() * EMPTY_CART_MESSAGES.length)
     return EMPTY_CART_MESSAGES[randomIndex]
   }, []) // Sin dependencias para que solo se calcule una vez
+
+  // Función para navegar al marketplace correcto según el rol actual
+  const handleExploreMarketplace = () => {
+    // Obtener el rol actual desde window.currentAppRole (definido en App.jsx)
+    const currentRole = window.currentAppRole || 'buyer'
+    
+    if (currentRole === 'supplier') {
+      navigate('/supplier/marketplace')
+    } else {
+      navigate('/buyer/marketplace')
+    }
+  }
   return (
-    <Container
-      maxWidth="lg"
-      sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}
-    >      <motion.div
+    <>
+      <SideBarProvider />
+      <Container
+        maxWidth="lg"
+        sx={{ 
+          display: 'flex', 
+          flexDirection: 'column', 
+          alignItems: 'center',
+          // Agrega margen izquierdo solo en desktop (md+) para alinear con SideBar
+          ml: { xs: 0, md: 8, lg: 24, xl: 34 },
+          transition: 'margin-left 0.3s',
+        }}
+      >      <motion.div
         initial={{ opacity: 0, y: 50 }}
         animate={{ opacity: 1, y: 0 }}
         style={{
@@ -129,7 +154,7 @@ const EmptyCartState = ({ wishlist, setShowWishlist }) => {
               variant="contained"
               size="large"
               startIcon={<ShoppingCartIcon />}
-              onClick={() => window.history.back()}
+              onClick={handleExploreMarketplace}
               sx={{
                 px: 4,
                 py: 1.5,
@@ -160,6 +185,7 @@ const EmptyCartState = ({ wishlist, setShowWishlist }) => {
         </Paper>
       </motion.div>
     </Container>
+    </>
   )
 }
 

@@ -112,7 +112,7 @@ const ServicesSection = ({ serviciosRef }) => {
     },
   }), []); // Sin dependencias ya que la configuración es estática
   const [currentStep, setCurrentStep] = useState(0);
-  const autoAdvanceInterval = 10000;
+  const autoAdvanceInterval = 30000;
   const stepsLength = services.length;
   const autoAdvanceRef = useRef();
 

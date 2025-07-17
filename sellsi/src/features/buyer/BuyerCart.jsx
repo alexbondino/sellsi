@@ -10,7 +10,6 @@ import React, {
 import {
   Box,
   Typography,
-  Container,
   Button,
   IconButton,
   Grid,
@@ -19,6 +18,7 @@ import {
   AccordionDetails,
   CircularProgress,
   Backdrop,
+  Paper,
 } from '@mui/material';
 import {
   ExpandMore as ExpandMoreIcon,
@@ -32,6 +32,7 @@ import debounce from 'lodash.debounce';
 import { ThemeProvider } from '@mui/material/styles';
 import SideBarProvider from '../layout/SideBar';
 import { dashboardThemeCore } from '../../styles/dashboardThemeCore';
+import { SPACING_BOTTOM_MAIN } from '../../styles/layoutSpacing';
 import useCartStore from './hooks/cartStore';
 import {
   SHIPPING_OPTIONS,
@@ -46,9 +47,12 @@ import {
   WishlistSection,
   EmptyCartState,
 } from './cart';
+import useShippingValidation from './cart/hooks/useShippingValidation';
+import ShippingCompatibilityModal from './cart/components/ShippingCompatibilityModal';
 
 // ============================================================================
 // ULTRA-PREMIUM BUYER CART COMPONENT - NIVEL 11/10
+import { useNavigate } from 'react-router-dom';
 // ============================================================================
 
 // Lazy loading components para optimización
@@ -134,6 +138,31 @@ const BuyerCart = () => {
     });
     return initialShipping;
   });
+
+  // ===== SHIPPING VALIDATION HOOK =====
+  const [compatibilityModalOpen, setCompatibilityModalOpen] = useState(false);
+  // ✅ NUEVO: Modo avanzado por defecto, sin toggle
+  const isAdvancedShippingMode = true;
+  const shippingValidation = useShippingValidation(items, isAdvancedShippingMode);
+
+  // ===== DEBUGGING: Log para verificar que las regiones se están cargando =====
+  React.useEffect(() => {
+    if (isAdvancedShippingMode && items.length > 0) {
+      console.log('🚚 [BuyerCart] Modo avanzado activado. Verificando regiones de despacho:');
+      items.forEach(item => {
+        console.log(`📦 Producto: ${item.name || item.nombre}`, {
+          id: item.id,
+          shippingRegions: item.shippingRegions,
+          delivery_regions: item.delivery_regions,
+          shipping_regions: item.shipping_regions,
+          hasShippingData: !!(item.shippingRegions?.length || item.delivery_regions?.length || item.shipping_regions?.length)
+        });
+      });
+      console.log('👤 Usuario región:', shippingValidation.userRegion);
+      console.log('🔍 Estados de envío:', shippingValidation.shippingStates);
+    }
+  }, [items, isAdvancedShippingMode, shippingValidation]);
+
   // ===== CÁLCULOS MEMOIZADOS =====
   const cartCalculations = useMemo(() => {
     const subtotal = getSubtotal();
@@ -321,13 +350,16 @@ const BuyerCart = () => {
     [updateQuantity]
   );
 
+  // Set para evitar múltiples toasts por item eliminado
+  const deletedItemsRef = React.useRef(new Set());
   const handleRemoveWithAnimation = useCallback(
     id => {
+      if (deletedItemsRef.current.has(id)) return; // Ya se eliminó, no mostrar otro toast
+      deletedItemsRef.current.add(id);
       const item = items.find(item => item.id === id);
       if (item) {
         removeItem(id);
         setLastAction({ type: 'remove', item });
-        // Mostrar toast de confirmación
         toast.success(`${item.name} eliminado del carrito`, {
           icon: '🗑️',
           style: { background: '#fffde7', color: '#795548' },
@@ -360,14 +392,12 @@ const BuyerCart = () => {
   // TODO: Implementar historial completo de acciones del carrito
   const undo = useCallback(() => {
     if (process.env.NODE_ENV === 'development') {
-      console.log('↶ BuyerCart - Undo action');
     }
     // Implementar lógica de undo
   }, []);
 
   const redo = useCallback(() => {
     if (process.env.NODE_ENV === 'development') {
-      console.log('↷ BuyerCart - Redo action');
     }
     // Implementar lógica de redo
   }, []);
@@ -397,7 +427,6 @@ const BuyerCart = () => {
   );
   const moveToCart = useCallback(item => {
     if (process.env.NODE_ENV === 'development') {
-      console.log('🛒 BuyerCart - Mover de wishlist a carrito:', item.name);
     }
     // Implementar lógica para mover de wishlist a carrito
   }, []);
@@ -410,26 +439,39 @@ const BuyerCart = () => {
     }
   }, [couponInput, applyCoupon, getTotal]);
 
+  const navigate = useNavigate();
+
   const handleCheckout = useCallback(async () => {
+    console.log('[BuyerCart] handleCheckout called');
+    // Validar compatibilidad de envío antes del checkout
+    if (isAdvancedShippingMode && !shippingValidation.isCartCompatible) {
+      console.log('[BuyerCart] handleCheckout: incompatibilidad de envío', shippingValidation);
+      setCompatibilityModalOpen(true);
+      return;
+    }
+
     setIsCheckingOut(true);
+    console.log('[BuyerCart] handleCheckout: iniciando proceso de checkout');
 
     try {
       // Simular proceso de checkout
       await new Promise(resolve => setTimeout(resolve, 100)); // OPTIMIZADO: 100ms
+      console.log('[BuyerCart] handleCheckout: compra simulada exitosa');
+      // toast de éxito eliminado, solo navegación
 
-      toast.success('¡Compra realizada con éxito!', {
-        icon: '🎉',
-        duration: 5000,
-      });
+      // No limpiar el carrito después del checkout
 
-      // Clear the cart after successful checkout
-      clearCart();
+      // Navegar al método de pago
+      console.log('[BuyerCart] handleCheckout: navegando a /buyer/paymentmethod');
+      navigate('/buyer/paymentmethod');
     } catch (error) {
+      console.error('[BuyerCart] handleCheckout: error en el proceso de compra', error);
       toast.error('Error en el proceso de compra', { icon: '❌' });
     } finally {
       setIsCheckingOut(false);
+      console.log('[BuyerCart] handleCheckout: setIsCheckingOut(false)');
     }
-  }, [clearCart]);
+  }, [clearCart, isAdvancedShippingMode, shippingValidation.isCartCompatible]);
 
   // ===== FUNCIONES DE SELECCIÓN MÚLTIPLE =====
   const handleToggleSelectionMode = useCallback(() => {
@@ -553,19 +595,30 @@ const BuyerCart = () => {
           backgroundColor: 'background.default',
           minHeight: '100vh',
           pt: { xs: 9, md: 10 },
-          px: 3,
-          pb: 3,
+          px: { xs: 2, sm: 3, md: 4 },
+          pb: SPACING_BOTTOM_MAIN,
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
           // Agrega margen izquierdo solo en desktop (md+)
-          ml: { xs: 0, md: 8, lg: 24, xl: 34 },
           transition: 'margin-left 0.3s',
         }}
       >
         {/* <Toaster position="top-right" toastOptions={{ style: { marginTop: 72 } }} /> */}
         {/* ConfettiEffect eliminado */}
-        <Container maxWidth="xl" disableGutters sx={{ px: { xs: 0, md: 2 } }}>
+        <Box
+          sx={{
+            backgroundColor: 'white',
+            width: '100%',
+            maxWidth: '1450px',
+            mx: 'auto',
+            p: 3,
+            mb: 6,
+            border: '1.5px solid #e0e0e0',
+            boxShadow: 6,
+            borderRadius: 3,
+          }}
+        >
           {/* Header con estadísticas */}{' '}
           <motion.div
             ref={ref}
@@ -601,6 +654,7 @@ const BuyerCart = () => {
                 formatPrice={formatPrice}
                 itemVariants={itemVariants}
               /> */}
+            
             <Grid container spacing={{ xs: 2, md: 2, lg: 6, xl: 6 }}>
               {/* Lista de productos */}
               <Grid
@@ -639,6 +693,9 @@ const BuyerCart = () => {
                       isSelectionMode={isSelectionMode}
                       isSelected={selectedItems.includes(item.id)}
                       onToggleSelection={handleToggleItemSelection}
+                      // Nuevas props para validación de envío
+                      shippingValidation={shippingValidation}
+                      isAdvancedShippingMode={isAdvancedShippingMode}
                     />
                   ))}
                 </AnimatePresence>
@@ -694,6 +751,10 @@ const BuyerCart = () => {
                       isCheckingOut={isCheckingOut}
                       // Options
                       availableCodes={[]} // Ocultamos lista de códigos
+                      // Shipping validation props
+                      shippingValidation={shippingValidation}
+                      isAdvancedShippingMode={isAdvancedShippingMode}
+                      onShippingCompatibilityError={() => setCompatibilityModalOpen(true)}
                       // Functions
                       formatPrice={formatPrice}
                       formatDate={formatDate}
@@ -728,7 +789,15 @@ const BuyerCart = () => {
               removeFromWishlist={removeFromWishlist}
             />
           </motion.div>
-        </Container>
+        </Box>
+        
+        {/* Modal de compatibilidad de envío */}
+        <ShippingCompatibilityModal
+          open={compatibilityModalOpen}
+          onClose={() => setCompatibilityModalOpen(false)}
+          incompatibleProducts={shippingValidation.incompatibleProducts}
+          userRegion={shippingValidation.userRegion}
+        />
       </Box>
     </ThemeProvider>
   );

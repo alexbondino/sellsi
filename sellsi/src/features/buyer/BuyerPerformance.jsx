@@ -10,6 +10,7 @@ import {
 import { ThemeProvider } from '@mui/material/styles';
 import SideBarProvider from '../layout/SideBar';
 import { dashboardThemeCore } from '../../styles/dashboardThemeCore';
+import { SPACING_BOTTOM_MAIN } from '../../styles/layoutSpacing';
 // import MarketplaceTopBar from '../layout/MarketplaceTopBar' // Eliminado
 import StatCard from './components/StatCard';
 
@@ -87,7 +88,7 @@ const BuyerPerformance = () => {
           minHeight: '100vh',
           pt: { xs: 9, md: 10 },
           px: 3,
-          pb: 3,
+          pb: SPACING_BOTTOM_MAIN,
         }}
       >
       <Container maxWidth="xl" disableGutters>

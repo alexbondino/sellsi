@@ -110,7 +110,7 @@ const ProductInfo = ({
 
       {description && (
         <Typography
-          variant="body1"
+          variant="body"
           color="text.secondary"
           sx={{ lineHeight: 1.6 }}
         >

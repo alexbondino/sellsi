@@ -4,40 +4,63 @@
  * ============================================================================
  *
  * Store base para operaciones CRUD de productos del proveedor.
- *    console.log(`    // 4. PROCESAR URLs existentes (mantener con sus thumbnails actuales)
-    for (const url of existingUrls) {
-      const existingImage = currentImages?.find(img => img.image_url === url);
-      finalImageData.push({
-        image_url: url,
-        thumbnail_url: existingImage?.thumbnail_url || null
-      });
-    }
-
-    // 5. SUBIR nuevas imágenes CON THUMBNAILS
+ * Se enfoca únic    // 4. SUBIR nuevas imágenes CON THUMBNAILS
+    
     if (newImages.length > 0) {
-      console.log(`� [PROCESS IMAGES] Subiendo ${newImages.length} imágenes nuevas con thumbnails...`);
       
       const files = newImages.map(img => img.file || img);
-      const uploadResult = await UploadService.uploadMultipleImagesWithThumbnails(files, productId, supplierId);
+      
+      const uploadResult = await UploadServ              
+              
+              // Intentar eliminar con reintentos
+              let deleteData = null;
+              let deleteError = null;
+              let attempts = 0;
+              const maxAttempts = 3;
+              
+              while (attempts < maxAttempts) {
+                attempts++;
+
+                
+                const result = await supabase.storage
+                  .from('product-images')
+                  .remove([filePath]);
+                
+                deleteData = result.data;
+                deleteError = result.error;
+                
+                if (deleteError) {
+
+                  if (attempts < maxAttempts) {
+                    await new Promise(resolve => setTimeout(resolve, 1000)); // Esperar 1 segundo
+                  }
+                } else if (deleteData && deleteData.length > 0) {
+
+                  break;
+                } else {
+
+                  if (attempts < maxAttempts) {
+                    await new Promise(resolve => setTimeout(resolve, 1000)); // Esperar 1 segundo
+                  }
+                }
+              }
+              
+
+                filePath,
+                data: deleteData, 
+                error: deleteError,
+                deletedCount: deleteData?.length || 0,
+                finalAttempt: attempts
+              });tipleImagesWithThumbnails(files, productId, supplierId);
       
       if (uploadResult.success && uploadResult.data) {
         for (const imageData of uploadResult.data) {
-          finalImageData.push({
-            image_url: imageData.publicUrl,
-            thumbnail_url: imageData.thumbnailUrl || null
-          });
-          console.log(`✅ Nueva imagen procesada: ${imageData.publicUrl} ${imageData.thumbnailUrl ? '(con thumbnail)' : '(sin thumbnail)'}`);
+          finalImageUrls.push(imageData.publicUrl);
         }
+      } else {
       }
-      
-      if (uploadResult.errors) {
-        console.warn('⚠️ [PROCESS IMAGES] Algunos uploads fallaron:', uploadResult.errors);
-      }
-    }
-
-    console.log('📋 Datos finales para registrar:', finalImageData);mages.length} nuevas, ${existingUrls.length} existentes`);Se enf    console.log(`🔍 [PROCESS IMAGES] Análisis: ${newImages.length} nuevas, ${existingUrls.length} existentes`);
-    console.log('🔍 [PROCESS IMAGES] newImages:', newImages);
-    console.log('🔍 [PROCESS IMAGES] existingUrls:', existingUrls);ca únicamente en la gestión de datos sin lógica de UI.
+    } else {
+    }stión de datos sin lógica de UI.
  */
 
 import { create } from 'zustand'
@@ -58,6 +81,7 @@ const useSupplierProductsBase = create((set, get) => ({
     deleting: {}, // { productId: boolean }
     updating: {}, // { productId: boolean }
     creating: false,
+    processing: {}, // { productId: boolean } - Para procesamiento en background
   },
 
   // ============================================================================
@@ -72,22 +96,28 @@ const useSupplierProductsBase = create((set, get) => ({
 
     try {      const { data: products, error: prodError } = await supabase
         .from('products')
-        .select('*, product_images(*), product_quantity_ranges(*)')
+        .select('*, product_images(*), product_quantity_ranges(*), product_delivery_regions(*)')
         .eq('supplier_id', supplierId)
         .order('updateddt', { ascending: false })
 
-      if (prodError) throw prodError      // Procesar productos para incluir tramos de precio
+      if (prodError) throw prodError      // Procesar productos para incluir tramos de precio y regiones de despacho
       const processedProducts =
         products?.map((product) => ({
           ...product,
           priceTiers: product.product_quantity_ranges || [],
           images: product.product_images || [],
+          delivery_regions: product.product_delivery_regions || [],
         })) || []
 
-      set({
+      set((state) => ({
         products: processedProducts,
         loading: false,
-      })
+        // Preservar estados de procesamiento existentes
+        operationStates: {
+          ...state.operationStates,
+          // No resetear processing, solo actualizar si ya no está procesando
+        },
+      }))
 
       return { success: true, data: processedProducts }
     } catch (error) {
@@ -100,7 +130,7 @@ const useSupplierProductsBase = create((set, get) => ({
   },
 
   /**
-   * Crear nuevo producto
+   * Crear nuevo producto de forma asíncrona
    */
   createProduct: async (productData) => {
     set((state) => ({
@@ -123,7 +153,7 @@ const useSupplierProductsBase = create((set, get) => ({
         )
       }
 
-      // 1. Insertar producto principal
+      // 1. Insertar producto principal INMEDIATAMENTE
       const { data: product, error } = await supabase
         .from('products')
         .insert([
@@ -145,36 +175,37 @@ const useSupplierProductsBase = create((set, get) => ({
         .select()
         .single()
 
-      if (error) throw error      // 2. Procesar imágenes si existen
-      if (productData.imagenes?.length > 0) {
-        await get().processProductImages(
-          product.productid,
-          productData.imagenes
-        )
-      }      // 3. Procesar especificaciones si existen
-      if (productData.specifications?.length > 0) {
-        await get().processProductSpecifications(product.productid, productData.specifications)
-      }
+      if (error) throw error
 
-      // 4. Procesar tramos de precio si existen
-      if (productData.priceTiers?.length > 0) {
-        await get().processPriceTiers(product.productid, productData.priceTiers)
-      }
-
-      // 5. Recargar productos para obtener los datos actualizados con imágenes
-      const supplierId = localStorage.getItem('user_id')
-      if (supplierId) {
-        await get().loadProducts(supplierId)
+      // 2. Agregar producto al estado inmediatamente con flag de procesamiento
+      const tempProduct = {
+        ...product,
+        nombre: product.productnm,
+        descripcion: product.description,
+        categoria: product.category,
+        precio: product.price,
+        stock: product.productqty,
+        imagenes: [],
+        isProcessing: true, // Flag para mostrar spinner
+        processingStartTime: Date.now(),
       }
 
       set((state) => ({
+        products: [tempProduct, ...state.products],
         operationStates: {
           ...state.operationStates,
           creating: false,
+          processing: {
+            ...state.operationStates.processing,
+            [product.productid]: true,
+          },
         },
       }))
 
-      return { success: true, product }
+      // 3. Procesar imágenes, especificaciones y tramos EN BACKGROUND
+      get().processProductInBackground(product.productid, productData)
+
+      return { success: true, product: tempProduct }
     } catch (error) {
       set((state) => ({
         operationStates: {
@@ -184,6 +215,67 @@ const useSupplierProductsBase = create((set, get) => ({
         error: error.message || 'Error al crear producto',
       }))
       return { success: false, error: error.message }
+    }
+  },
+
+  /**
+   * Procesar producto en background (imágenes, especificaciones, tramos)
+   */
+  processProductInBackground: async (productId, productData) => {
+    try {
+
+
+      // Procesar imágenes si existen
+      if (productData.imagenes?.length > 0) {
+
+        await get().processProductImages(productId, productData.imagenes)
+      }
+
+      // Procesar especificaciones si existen
+      if (productData.specifications?.length > 0) {
+
+        await get().processProductSpecifications(productId, productData.specifications)
+      }
+
+      // Procesar tramos de precio si existen
+      if (productData.priceTiers?.length > 0) {
+
+        await get().processPriceTiers(productId, productData.priceTiers)
+      }
+
+      // Recargar producto actualizado
+      const supplierId = localStorage.getItem('user_id')
+      if (supplierId) {
+
+        await get().loadProducts(supplierId)
+      }
+
+      // Actualizar estado de procesamiento
+      set((state) => ({
+        operationStates: {
+          ...state.operationStates,
+          processing: {
+            ...state.operationStates.processing,
+            [productId]: false,
+          },
+        },
+      }))
+
+
+    } catch (error) {
+
+      
+      // Actualizar estado de error
+      set((state) => ({
+        operationStates: {
+          ...state.operationStates,
+          processing: {
+            ...state.operationStates.processing,
+            [productId]: false,
+          },
+        },
+        error: `Error procesando producto: ${error.message}`,
+      }))
     }
   },
 
@@ -251,7 +343,7 @@ const useSupplierProductsBase = create((set, get) => ({
   },
 
   /**
-   * Eliminar producto
+   * Eliminar producto (UX optimizada - elimina producto primero, limpia imágenes después)
    */
   deleteProduct: async (productId) => {
     set((state) => ({
@@ -263,10 +355,20 @@ const useSupplierProductsBase = create((set, get) => ({
     }))
 
     try {
-      // Eliminar imágenes del storage primero
-      await get().cleanupProductImages(productId)
+      // 1. PRIMERO: Obtener URLs de imágenes ANTES de eliminar
 
-      // Eliminar producto de la base de datos
+      const { data: imageRecords, error: fetchError } = await supabase
+        .from('product_images')
+        .select('image_url, thumbnail_url')
+        .eq('product_id', productId);
+
+      if (fetchError) {
+
+      } else {
+
+      }
+
+      // 2. Eliminar producto de la base de datos
       const { error } = await supabase
         .from('products')
         .delete()
@@ -274,7 +376,7 @@ const useSupplierProductsBase = create((set, get) => ({
 
       if (error) throw error
 
-      // Actualizar store
+      // 3. Actualizar store inmediatamente (UI responde rápido)
       const { products } = get()
       const updatedProducts = products.filter((p) => p.productid !== productId)
 
@@ -285,6 +387,16 @@ const useSupplierProductsBase = create((set, get) => ({
           deleting: { ...state.operationStates.deleting, [productId]: false },
         },
       }))
+
+      // 4. Limpiar imágenes en background usando URLs obtenidas previamente
+      if (imageRecords?.length > 0) {
+
+        get().cleanupImagesFromUrls(imageRecords).catch(error => {
+
+        });
+      } else {
+
+      }
 
       return { success: true }
     } catch (error) {
@@ -310,7 +422,6 @@ const useSupplierProductsBase = create((set, get) => ({
     }
 
     const supplierId = localStorage.getItem('user_id')
-    const finalImageUrls = []
 
     // 1. SEPARAR imágenes nuevas (archivos) de existentes (URLs)
     const newImages = []       // Archivos que hay que subir
@@ -328,7 +439,6 @@ const useSupplierProductsBase = create((set, get) => ({
       }
     }
 
-    console.log(`� Análisis: ${newImages.length} nuevas, ${existingUrls.length} existentes`);    // 2. OBTENER imágenes actuales de la BD para comparar
     const { data: currentImages } = await supabase
       .from('product_images')
       .select('image_url')
@@ -336,56 +446,98 @@ const useSupplierProductsBase = create((set, get) => ({
 
     const currentUrls = currentImages?.map(img => img.image_url) || [];// 3. ELIMINAR imágenes que ya no están en la nueva lista
     const urlsToDelete = currentUrls.filter(url => !existingUrls.includes(url));
-    console.log('🗑️ [PROCESS IMAGES] URLs actuales en BD:', currentUrls);
-    console.log('🗑️ [PROCESS IMAGES] URLs a mantener:', existingUrls);
-    console.log('🗑️ [PROCESS IMAGES] URLs a eliminar:', urlsToDelete);
     
     if (urlsToDelete.length > 0) {
-      console.log(`🗑️ [PROCESS IMAGES] ELIMINANDO SELECTIVAMENTE ${urlsToDelete.length} imágenes no utilizadas`);
       await get().deleteSpecificImages(productId, urlsToDelete);
     } else {
-      console.log('✅ [PROCESS IMAGES] No hay imágenes para eliminar - todas se mantienen');
     }
 
-    // 4. SUBIR nuevas imágenes
-    for (let i = 0; i < newImages.length; i++) {
-      const img = newImages[i]
-      console.log(`� Subiendo imagen nueva ${i + 1}:`, img);
+    // 4. COMBINAR URLs existentes + nuevas (con thumbnails)
+    const finalImageData = [];
+    
+    // Procesar URLs existentes (mantener con sus thumbnails actuales)
+    const { data: currentImagesWithThumbnails } = await supabase
+      .from('product_images')
+      .select('image_url, thumbnail_url')
+      .eq('product_id', productId);
+    
+    for (const url of existingUrls) {
+      const existingImage = currentImagesWithThumbnails?.find(img => img.image_url === url);
+      finalImageData.push({
+        image_url: url,
+        thumbnail_url: existingImage?.thumbnail_url || null
+      });
+    }
+
+    // 5. SUBIR nuevas imágenes con thumbnails
+    if (newImages.length > 0) {
       
-      const file = img.file || img;
-      const uploadRes = await UploadService.uploadImage(file, productId, supplierId)
+      const files = newImages.map(img => img.file || img);
       
-      if (uploadRes.success) {
-        finalImageUrls.push(uploadRes.data.publicUrl)
-        console.log(`✅ Nueva imagen subida: ${uploadRes.data.publicUrl}`);
+      const uploadResult = await UploadService.uploadMultipleImagesWithThumbnails(files, productId, supplierId);
+      
+      if (uploadResult.success && uploadResult.data) {
+        for (const imageData of uploadResult.data) {
+          finalImageData.push({
+            image_url: imageData.publicUrl,
+            thumbnail_url: imageData.thumbnailUrl || null
+          });
+        }
       } else {
-        console.error(`❌ Error subiendo imagen ${i + 1}:`, uploadRes.error);
       }
+    } else {
     }
-
-    // 5. COMBINAR URLs existentes + nuevas
-    const allImageUrls = [...existingUrls, ...finalImageUrls];
-    console.log('� URLs finales para registrar:', allImageUrls);
+    
 
     // 6. REEMPLAZAR TODOS los registros en product_images
-    if (allImageUrls.length > 0) {
-      // Eliminar todos los registros actuales
+    if (finalImageData.length > 0) {
+
+
+      
+      // PRIMERO: Obtener URLs existentes ANTES de eliminar
+      const { data: existingImages, error: fetchError } = await supabase
+        .from('product_images')
+        .select('image_url, thumbnail_url')
+        .eq('product_id', productId);
+      
+      if (fetchError) {
+        // Manejo de error silenciado
+      } else {
+        // Limpiar imágenes existentes del storage
+        if (existingImages?.length > 0) {
+          await get().cleanupImagesFromUrls(existingImages);
+        }
+      }
+      
+      // DESPUÉS: Eliminar registros de la BD
       await supabase.from('product_images').delete().eq('product_id', productId);
 
-      // Insertar todos los registros nuevos
-      const imagesToInsert = allImageUrls.map((url) => ({
+      // Insertar todos los registros nuevos (con thumbnails)
+      const imagesToInsert = finalImageData.map((imageData) => ({
         product_id: productId,
-        image_url: url,
+        image_url: imageData.image_url,
+        thumbnail_url: imageData.thumbnail_url
       }));
 
-      console.log('💾 Registrando en product_images:', imagesToInsert);
-      const { error } = await supabase.from('product_images').insert(imagesToInsert);
+      const { data: insertedData, error } = await supabase.from('product_images').insert(imagesToInsert);
       
       if (error) {
-        console.error('❌ Error registrando en product_images:', error);
+        throw error;
       } else {
-        console.log('✅ Imágenes registradas exitosamente');
+        // Verificar si realmente se insertaron
+        const { data: verifyData, error: verifyError } = await supabase
+          .from('product_images')
+          .select('*')
+          .eq('product_id', productId);
+        if (verifyError) {
+
+        } else {
+
+
+        }
       }
+    } else {
+
     }
   },
   /**
@@ -417,26 +569,276 @@ const useSupplierProductsBase = create((set, get) => ({
   },
 
   /**
-   * Limpiar imágenes del producto
+   * Verificar si archivos existen en el storage (para debugging)
+   */
+  verifyFileExistence: async (filePaths) => {
+
+    
+    for (const filePath of filePaths) {
+      try {
+        const { data, error } = await supabase.storage
+          .from('product-images')
+          .list(filePath.substring(0, filePath.lastIndexOf('/')), {
+            limit: 1000,
+            search: filePath.substring(filePath.lastIndexOf('/') + 1)
+          });
+        
+        if (error) {
+
+        } else {
+          const exists = data?.length > 0;
+
+        }
+      } catch (error) {
+
+      }
+    }
+  },
+
+  /**
+   * Limpiar imágenes usando URLs directas (más eficiente)
+   */
+  cleanupImagesFromUrls: async (imageRecords) => {
+
+
+    
+    try {
+      // Limpiar imágenes originales
+      for (const record of imageRecords) {
+        if (record.image_url) {
+          try {
+            const urlParts = record.image_url.split('/product-images/');
+            if (urlParts.length > 1) {
+              const filePath = urlParts[1];
+
+              
+              // Intentar eliminar directamente sin verificación previa
+              const { data: deleteData, error: deleteError } = await supabase.storage
+                .from('product-images')
+                .remove([filePath]);
+              // No logs ni objetos huérfanos
+            }
+          } catch (error) {
+
+          }
+        }
+        
+        // Limpiar thumbnails
+        if (record.thumbnail_url) {
+          try {
+            const urlParts = record.thumbnail_url.split('/product-images-thumbnails/');
+            if (urlParts.length > 1) {
+              const filePath = urlParts[1];
+              // Intentar eliminar directamente
+              const { data: deleteData, error: deleteError } = await supabase.storage
+                .from('product-images-thumbnails')
+                .remove([filePath]);
+              // No logs ni objetos huérfanos
+              if (deleteError) {
+                // Manejo de error silenciado
+              } else {
+                // Thumbnail eliminado
+              }
+            } else {
+              // URL no tiene formato correcto
+            }
+          } catch (error) {
+            // Error procesando URL de thumbnail
+          }
+        } else {
+          // No hay thumbnail_url en el registro
+        }
+      }
+      
+      // Limpiar thumbnails huérfanos del directorio
+      try {
+        // Obtener el directorio base del supplier/product
+        const firstRecord = imageRecords[0];
+        if (firstRecord && firstRecord.image_url) {
+          const urlParts = firstRecord.image_url.split('/product-images/');
+          if (urlParts.length > 1) {
+            const directory = urlParts[1].split('/').slice(0, -1).join('/');
+            
+            // Listar todos los thumbnails en el directorio
+            const { data: thumbnailFiles, error: listError } = await supabase.storage
+              .from('product-images-thumbnails')
+              .list(directory);
+            
+            if (!listError && thumbnailFiles && thumbnailFiles.length > 0) {
+              
+              // Eliminar todos los thumbnails del directorio
+              const filesToDelete = thumbnailFiles.map(file => `${directory}/${file.name}`);
+              const { data: bulkDeleteData, error: bulkDeleteError } = await supabase.storage
+                .from('product-images-thumbnails')
+                .remove(filesToDelete);
+              
+              if (bulkDeleteError) {
+                // Error en eliminación masiva
+              } else {
+                // Thumbnails eliminados
+              }
+            } else {
+              // No se encontraron thumbnails adicionales
+            }
+          }
+        }
+      } catch (error) {
+        // Error limpiando thumbnails huérfanos
+      }
+      
+      // Verificar si realmente se eliminaron
+      for (const record of imageRecords) {
+        if (record.image_url) {
+          const urlParts = record.image_url.split('/product-images/');
+          if (urlParts.length > 1) {
+            const filePath = urlParts[1];
+            const fileName = filePath.split('/').pop();
+            const directory = filePath.split('/').slice(0, -1).join('/');
+            const { data: checkData, error: checkError } = await supabase.storage
+              .from('product-images')
+              .list(directory);
+            const fileExists = checkData?.some(file => file.name === fileName);
+            // ...log removed...
+          }
+        }
+        if (record.thumbnail_url) {
+          const urlParts = record.thumbnail_url.split('/product-images-thumbnails/');
+          if (urlParts.length > 1) {
+            const filePath = urlParts[1];
+            const fileName = filePath.split('/').pop();
+            const directory = filePath.split('/').slice(0, -1).join('/');
+            const { data: checkData, error: checkError } = await supabase.storage
+              .from('product-images-thumbnails')
+              .list(directory);
+            const fileExists = checkData?.some(file => file.name === fileName);
+            // ...log removed...
+          }
+        }
+      }
+      // ...log removed...
+    } catch (error) {
+      // ...log removed...
+      throw error;
+    }
+  },
+
+  /**
+   * Limpiar imágenes del producto (método híbrido - BD + búsqueda directa)
    */
   cleanupProductImages: async (productId) => {
     const supplierId = localStorage.getItem('user_id')
     const folderPrefix = `${supplierId}/${productId}/`
 
-    // Eliminar archivos del bucket
-    const { data: bucketFiles } = await supabase.storage
-      .from('product-images')
-      .list(folderPrefix, { limit: 100 })
+    try {
+      // MÉTODO 1: Eliminar usando registros de la BD (más confiable)
+      const { data: imageRecords, error: dbError } = await supabase
+        .from('product_images')
+        .select('image_url, thumbnail_url')
+        .eq('product_id', productId)
 
-    if (bucketFiles?.length > 0) {
-      const toDeleteFromBucket = bucketFiles.map(
-        (file) => folderPrefix + file.name
-      )
-      await supabase.storage.from('product-images').remove(toDeleteFromBucket)
+      if (dbError) {
+        // ...log removed...
+      } else if (imageRecords?.length > 0) {
+        // ...log removed...
+        
+        // Eliminar imágenes originales basándose en las URLs de la BD
+        for (const record of imageRecords) {
+          if (record.image_url) {
+            try {
+              const urlParts = record.image_url.split('/product-images/')
+              if (urlParts.length > 1) {
+                const filePath = urlParts[1]
+                const { error: deleteError } = await supabase.storage
+                  .from('product-images')
+                  .remove([filePath])
+                // ...log removed...
+              }
+            } catch (error) {
+              // ...log removed...
+            }
+          }
+
+          // Eliminar thumbnail si existe
+          if (record.thumbnail_url) {
+            try {
+              const thumbParts = record.thumbnail_url.split('/product-images-thumbnails/')
+              if (thumbParts.length > 1) {
+                const thumbPath = thumbParts[1]
+                const { error: thumbError } = await supabase.storage
+                  .from('product-images-thumbnails')
+                  .remove([thumbPath])
+                // ...log removed...
+              }
+            } catch (error) {
+              // ...log removed...
+            }
+          }
+        }
+      } else {
+        // No se encontraron registros en BD
+      }
+
+      // MÉTODO 2: Backup - buscar archivos directamente en buckets (como fallback)
+      
+      // Buscar en bucket principal
+      const { data: bucketFiles, error: listError } = await supabase.storage
+        .from('product-images')
+        .list(folderPrefix, { limit: 100 })
+
+      if (listError) {
+        // Error listando bucket principal
+      } else {
+        if (bucketFiles?.length > 0) {
+          const toDeleteFromBucket = bucketFiles.map(file => folderPrefix + file.name)
+          
+          const { error: deleteError } = await supabase.storage
+            .from('product-images')
+            .remove(toDeleteFromBucket)
+
+          if (deleteError) {
+            // Error eliminando archivos adicionales
+          } else {
+            // Archivos adicionales eliminados
+          }
+        }
+      }
+
+      // Buscar en bucket de thumbnails
+      const { data: thumbnailFiles, error: listThumbError } = await supabase.storage
+        .from('product-images-thumbnails')
+        .list(folderPrefix, { limit: 100 })
+
+      if (listThumbError) {
+        // Error listando bucket de thumbnails
+      } else {
+        if (thumbnailFiles?.length > 0) {
+          const toDeleteFromThumbnails = thumbnailFiles.map(file => folderPrefix + file.name)
+          
+          const { error: deleteThumbError } = await supabase.storage
+            .from('product-images-thumbnails')
+            .remove(toDeleteFromThumbnails)
+
+          if (deleteThumbError) {
+            // Error eliminando thumbnails adicionales
+          } else {
+            // Thumbnails adicionales eliminados
+          }
+        }
+      }
+
+      // MÉTODO 3: Eliminar referencias de la tabla (siempre al final)
+      const { error: dbDeleteError } = await supabase
+        .from('product_images')
+        .delete()
+        .eq('product_id', productId)
+
+      if (dbDeleteError) {
+        throw dbDeleteError
+      }
+
+    } catch (error) {
+      throw error
     }
-
-    // Eliminar referencias de la tabla
-    await supabase.from('product_images').delete().eq('product_id', productId)
   },
 
   /**
@@ -444,7 +846,6 @@ const useSupplierProductsBase = create((set, get) => ({
    */
   processProductSpecifications: async (productId, specifications) => {
     if (!specifications?.length) {
-      console.log('⚠️ No hay especificaciones para procesar');
       return;
     }    // 🔧 Actualizar especificaciones del producto usando el servicio seguro
     await updateProductSpecifications(productId, specifications);
@@ -454,24 +855,17 @@ const useSupplierProductsBase = create((set, get) => ({
    */
   deleteExistingImages: async (productId) => {
     try {
-      console.log('🚨 [DELETE ALL] ATENCIÓN: Se está llamando deleteExistingImages');
-      console.log('🚨 [DELETE ALL] Esto borrará TODAS las imágenes del producto:', productId);
-      console.log('🚨 [DELETE ALL] Stack trace:', new Error().stack);
-      console.log('🗑️ Eliminando imágenes existentes del producto:', productId);      // 1. Obtener imágenes existentes de la BD
       const { data: existingImages, error: fetchError } = await supabase
         .from('product_images')
         .select('image_url')
         .eq('product_id', productId);
 
       if (fetchError) {
-        console.error('❌ Error obteniendo imágenes existentes:', fetchError);
         return;
       }
 
       if (existingImages && existingImages.length > 0) {
-        console.log(`🗑️ Encontradas ${existingImages.length} imágenes para eliminar`);
-        
-        // 2. Eliminar archivos del bucket
+        // 2. Eliminar archivos del bucket principal y thumbnails
         for (const imageRecord of existingImages) {
           try {
             // Extraer la ruta del archivo de la URL
@@ -479,20 +873,17 @@ const useSupplierProductsBase = create((set, get) => ({
             const urlParts = url.split('/product-images/');
             if (urlParts.length > 1) {
               const filePath = urlParts[1]; // ej: "supplierId/productId/filename.png"
-              
-              console.log('🗑️ Eliminando archivo del bucket:', filePath);
+              // Eliminar del bucket principal
               const { error: deleteError } = await supabase.storage
                 .from('product-images')
                 .remove([filePath]);
 
-              if (deleteError) {
-                console.error('❌ Error eliminando archivo del bucket:', deleteError);
-              } else {
-                console.log('✅ Archivo eliminado del bucket:', filePath);
-              }
+              // Eliminar del bucket de thumbnails
+              const { error: thumbnailDeleteError } = await supabase.storage
+                .from('product-images-thumbnails')
+                .remove([filePath]);
             }
           } catch (error) {
-            console.error('❌ Error procesando eliminación de archivo:', error);
           }
         }
 
@@ -501,17 +892,8 @@ const useSupplierProductsBase = create((set, get) => ({
           .from('product_images')
           .delete()
           .eq('product_id', productId);
-
-        if (dbDeleteError) {
-          console.error('❌ Error eliminando registros de BD:', dbDeleteError);
-        } else {
-          console.log('✅ Registros de BD eliminados exitosamente');
-        }
-      } else {
-        console.log('ℹ️ No hay imágenes existentes para eliminar');
       }
     } catch (error) {
-      console.error('❌ Error en deleteExistingImages:', error);
     }
   },
 
@@ -520,28 +902,23 @@ const useSupplierProductsBase = create((set, get) => ({
    */
   deleteSpecificImages: async (productId, urlsToDelete) => {
     try {
-      console.log('🗑️ Eliminando imágenes específicas:', urlsToDelete);
-      
-      // 1. Eliminar archivos del bucket
+      // 1. Eliminar archivos del bucket principal y thumbnails
       for (const url of urlsToDelete) {
         try {
           const urlParts = url.split('/product-images/');
           if (urlParts.length > 1) {
             const filePath = urlParts[1];
-            
-            console.log('🗑️ Eliminando archivo específico del bucket:', filePath);
+            // Eliminar del bucket principal
             const { error: deleteError } = await supabase.storage
               .from('product-images')
               .remove([filePath]);
 
-            if (deleteError) {
-              console.error('❌ Error eliminando archivo específico del bucket:', deleteError);
-            } else {
-              console.log('✅ Archivo específico eliminado del bucket:', filePath);
-            }
+            // Eliminar del bucket de thumbnails
+            const { error: thumbnailDeleteError } = await supabase.storage
+              .from('product-images-thumbnails')
+              .remove([filePath]);
           }
         } catch (error) {
-          console.error('❌ Error procesando eliminación de archivo específico:', error);
         }
       }
 
@@ -552,15 +929,8 @@ const useSupplierProductsBase = create((set, get) => ({
           .delete()
           .eq('product_id', productId)
           .in('image_url', urlsToDelete);
-
-        if (dbDeleteError) {
-          console.error('❌ Error eliminando registros específicos de BD:', dbDeleteError);
-        } else {
-          console.log('✅ Registros específicos de BD eliminados exitosamente');
-        }
       }
     } catch (error) {
-      console.error('❌ Error en deleteSpecificImages:', error);
     }
   },
 

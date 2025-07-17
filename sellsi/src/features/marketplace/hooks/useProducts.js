@@ -45,23 +45,28 @@ export function useProducts() {
               const supplierIdsStr = supplierIds.map(id => String(id).trim())
               const { data: usersData, error: usersError } = await supabase
                 .from('users')
-                .select('user_id, user_nm, logo_url') // ✅ AGREGAR logo_url
+                .select('user_id, user_nm, logo_url, descripcion_proveedor') // ✅ AGREGAR logo_url y descripcion_proveedor
                 .in('user_id', supplierIdsStr)
               if (usersError) {
                 console.error('Error al consultar users:', usersError)
               }
               if (usersData) {
                 usersMap = Object.fromEntries(
-                  usersData.map((u) => [u.user_id, { name: u.user_nm, logo_url: u.logo_url }]) // ✅ GUARDAR ambos campos
+                  usersData.map((u) => [u.user_id, { name: u.user_nm, logo_url: u.logo_url, descripcion_proveedor: u.descripcion_proveedor }]) // ✅ GUARDAR todos los campos
                 )
               }
             }
             
             mapped = data.map((p) => {
-              // Obtener imagen principal
+              // Obtener imagen principal y thumbnail
               const imagenPrincipal = p.product_images && p.product_images.length > 0 
                 ? p.product_images[0].image_url 
                 : '/placeholder-product.jpg'
+              
+              // ✅ NUEVO: Obtener thumbnail_url
+              const thumbnailUrl = p.product_images && p.product_images.length > 0 
+                ? p.product_images[0].thumbnail_url 
+                : null
               
               // Obtener tramos de precio para este producto
               const priceTiers = tiersData 
@@ -85,7 +90,9 @@ export function useProducts() {
                 nombre: p.productnm,
                 proveedor: usersMap[p.supplier_id]?.name || "Proveedor no encontrado", // ✅ USAR .name
                 supplier_logo_url: usersMap[p.supplier_id]?.logo_url, // ✅ AGREGAR logo del proveedor
+                descripcion_proveedor: usersMap[p.supplier_id]?.descripcion_proveedor, // ✅ AGREGAR descripcion_proveedor
                 imagen: imagenPrincipal,
+                thumbnail_url: thumbnailUrl, // ✅ NUEVO: Agregar thumbnail_url
                 precio: minPrice,
                 precioOriginal: p.precioOriginal || null,
                 descuento: p.descuento || 0,

@@ -351,6 +351,7 @@ const Modal = ({
 
         <Typography
           variant="body1"
+          component="div"
           color="text.secondary"
           sx={{
             fontSize: { xs: '0.9rem', sm: '1rem' },

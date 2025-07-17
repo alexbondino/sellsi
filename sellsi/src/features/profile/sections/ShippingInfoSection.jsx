@@ -25,6 +25,7 @@ const ShippingInfoSection = ({
   
   const handleRegionChange = (event) => {
     const value = event.target.value;
+    console.log('[ShippingInfoSection] Región seleccionada:', value);
     onRegionChange('shipping', 'shippingRegion', 'shippingComuna', value);
   };
 
@@ -55,7 +56,10 @@ const ShippingInfoSection = ({
           <InputLabel>Comuna</InputLabel>
           <Select
             value={formData.shippingComuna || ''}
-            onChange={(e) => onFieldChange('shippingComuna', e.target.value)}
+            onChange={(e) => {
+              console.log('[ShippingInfoSection] Comuna seleccionada:', e.target.value);
+              onFieldChange('shippingComuna', e.target.value);
+            }}
             label="Comuna"
             MenuProps={{ disableScrollLock: true }}
           >

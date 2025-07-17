@@ -140,7 +140,7 @@ const useMarketplaceLogic = (options = {}) => {
   const handleToggleProviderView = useCallback(() => {
     setIsProviderView(prev => {
       const newValue = !prev;
-      console.log('🔄 useMarketplaceLogic: isProviderView toggled to:', newValue);
+
       // Al cambiar la vista, resetea los filtros activos
       resetFiltros();
       return newValue;

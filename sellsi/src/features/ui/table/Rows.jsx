@@ -25,7 +25,15 @@ const Rows = ({ order, onActionClick }) => {
 
   // Formatear dirección
   const formatAddress = address => {
-    return `${address.street}, ${address.city}, ${address.region}`;
+    if (!address) return 'Dirección no disponible';
+    
+    // Si viene del nuevo formato de shipping_info
+    if (address.fullAddress) {
+      return `${address.fullAddress}, ${address.commune}, ${address.region}`;
+    }
+    
+    // Formato anterior (fallback)
+    return `${address.street || address.address || 'Dirección no especificada'}, ${address.city || address.commune || 'Comuna no especificada'}, ${address.region || 'Región no especificada'}`;
   };
 
   // Formatear fecha

@@ -33,11 +33,14 @@ import {
 } from '@mui/icons-material';
 import { ThemeProvider } from '@mui/material/styles';
 import { dashboardThemeCore } from '../../styles/dashboardThemeCore';
+import { SPACING_BOTTOM_MAIN } from '../../styles/layoutSpacing';
 import { supabase } from '../../services/supabase';
+
 import ProductCard from '../ui/product-card/ProductCard';
 import useCartStore from '../buyer/hooks/cartStore';
 import { toast } from 'react-hot-toast';
 import { filterActiveProducts } from '../../utils/productActiveStatus';
+import { CATEGORIAS } from './CategoryNavigation/CategoryNavigation';
 
 /**
  * ProviderCatalog - Catálogo de productos de un proveedor específico
@@ -58,7 +61,8 @@ const ProviderCatalog = () => {
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [priceOrder, setPriceOrder] = useState('none'); // none, asc, desc
   const [filteredProducts, setFilteredProducts] = useState([]);
-  const [availableCategories, setAvailableCategories] = useState([]);
+  // Usar las categorías estandarizadas
+  const availableCategories = CATEGORIAS;
 
   // Determinar de dónde viene el usuario (para el botón de volver)
   const fromPath = location.state?.from || '/buyer/marketplace';
@@ -75,7 +79,7 @@ const ProviderCatalog = () => {
         // 1. Obtener información del proveedor
         const { data: providerData, error: providerError } = await supabase
           .from('users')
-          .select('user_id, user_nm, logo_url, main_supplier')
+          .select('user_id, user_nm, logo_url, main_supplier, descripcion_proveedor, verified')
           .eq('user_id', userId)
           .single();
 
@@ -128,10 +132,12 @@ const ProviderCatalog = () => {
             price: range.price
           }));
 
-          // Obtener la primera imagen del producto
+          // Obtener la primera imagen del producto y thumbnail
           let imagenPrincipal = null;
+          let thumbnailUrl = null;
           if (product.product_images && Array.isArray(product.product_images) && product.product_images.length > 0) {
             imagenPrincipal = product.product_images[0].image_url;
+            thumbnailUrl = product.product_images[0].thumbnail_url; // ✅ NUEVO: Obtener thumbnail_url
           }
           
           return {
@@ -139,6 +145,7 @@ const ProviderCatalog = () => {
             id: product.productid, // Mapear productid a id para compatibilidad
             nombre: product.productnm, // Mapear productnm a nombre
             imagen: imagenPrincipal, // Mapear image_url a imagen
+            thumbnail_url: thumbnailUrl, // ✅ NUEVO: Agregar thumbnail_url
             precio: product.price, // Ya está correcto
             stock: product.productqty, // Mapear productqty a stock
             categoria: product.category, // Ya está correcto
@@ -146,6 +153,7 @@ const ProviderCatalog = () => {
             compraMinima: product.minimum_purchase || 1, // Para compatibilidad
             negociable: product.negotiable || false,
             proveedor: providerData.user_nm,
+            descripcion_proveedor: providerData.descripcion_proveedor,
             priceTiers: priceTiers,
             product_price_tiers: priceTiers, // Para compatibilidad
             supplier_id: product.supplier_id, // Para getProductImageUrl
@@ -163,9 +171,8 @@ const ProviderCatalog = () => {
         });
         setProducts(activeProducts);
 
-        // Extraer categorías únicas para el filtro
-        const categories = [...new Set(activeProducts.map(p => p.categoria).filter(Boolean))];
-        setAvailableCategories(categories);
+        // No extraer categorías dinámicamente, se usan las estandarizadas
+        // setAvailableCategories(CATEGORIAS); // No necesario
         setFilteredProducts(activeProducts);
 
       } catch (err) {
@@ -275,10 +282,10 @@ const ProviderCatalog = () => {
     return items;
   }, [provider, isFromBuyer, isFromSupplier, navigate]);
 
-  // Descripción mock del proveedor
+  // Descripción real del proveedor
   const providerDescription = useMemo(() => 
-    "Venta mayorista de alimentos saludables: frutos secos, cereales, snacks sin azúcar, productos naturales y sin gluten. Atención rápida a negocios, tiendas, empresas y almacenes en todo Chile. Vengan xd",
-    []
+    provider?.descripcion_proveedor || 'Proveedor sin descripción.',
+    [provider?.descripcion_proveedor]
   );
 
   if (loading) {
@@ -352,7 +359,7 @@ const ProviderCatalog = () => {
           minHeight: '100vh',
           pt: { xs: 2, md: 4 },
           px: 3,
-          pb: 12,
+          pb: SPACING_BOTTOM_MAIN,
           width: '100%',
           // Prevenir desplazamiento horizontal al abrir dropdowns
           overflowX: 'hidden',
@@ -380,7 +387,7 @@ const ProviderCatalog = () => {
                 onClick={handleGoBack}
                 sx={{ textTransform: 'none' }}
               >
-                Volver atrás
+                Volver
               </Button>
             </Box>
 
@@ -435,7 +442,7 @@ const ProviderCatalog = () => {
                   <Typography variant="h4" sx={{ fontWeight: 600, color: 'primary.main' }}>
                     {provider?.user_nm || 'Proveedor'}
                   </Typography>
-                  {provider?.main_supplier && (
+                  {provider?.verified === true && (
                     <Chip
                       icon={<VerifiedUser />}
                       label="Verificado"

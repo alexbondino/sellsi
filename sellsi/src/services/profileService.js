@@ -36,7 +36,7 @@ export const getUserProfile = async (userId) => {
         bankData = data;
       }
     } catch (bankError) {
-      console.warn('⚠️ Error accessing bank_info (table may not exist or lack permissions):', bankError);
+      // ...removed log...
     }
 
     // Obtener información de envío con manejo de errores
@@ -52,7 +52,7 @@ export const getUserProfile = async (userId) => {
         shippingData = data;
       }
     } catch (shippingError) {
-      console.warn('⚠️ Error accessing shipping_info (table may not exist or lack permissions):', shippingError);
+      // ...removed log...
     }
 
     // Obtener información de facturación con manejo de errores
@@ -68,7 +68,7 @@ export const getUserProfile = async (userId) => {
         billingData = data;
       }
     } catch (billingError) {
-      console.warn('⚠️ Error accessing billing_info (table may not exist or lack permissions):', billingError);
+      // ...removed log...
     }
 
     // Combinar todos los datos (las consultas adicionales pueden fallar si no existen registros)
@@ -96,11 +96,14 @@ export const getUserProfile = async (userId) => {
       billing_address: billingData?.billing_address || '',
       billing_region: billingData?.billing_region || '',
       billing_commune: billingData?.billing_commune || '',
+
+      // Descripción de proveedor
+      descripcion_proveedor: userData?.descripcion_proveedor || '',
     };
 
     return { data: completeProfile, error: null };
   } catch (error) {
-    console.error('Error fetching user profile:', error);
+    // ...removed log...
     return { data: null, error };
   }
 };
@@ -121,6 +124,7 @@ export const updateUserProfile = async (userId, profileData) => {
       country: profileData.country,
       rut: profileData.rut,
       updatedt: new Date().toISOString(),
+      descripcion_proveedor: profileData.descripcionProveedor || profileData.descripcion_proveedor || '',
     };
 
     // Agregar logo_url solo si se proporciona
@@ -154,10 +158,10 @@ export const updateUserProfile = async (userId, profileData) => {
           .upsert(bankData, { onConflict: ['user_id'] });
 
         if (bankError) {
-          console.warn('⚠️ Could not update bank_info (table may not exist):', bankError);
+          // ...removed log...
         }
       } catch (error) {
-        console.warn('⚠️ Bank info update failed - continuing without it:', error);
+        // ...removed log...
       }
     }
 
@@ -179,10 +183,10 @@ export const updateUserProfile = async (userId, profileData) => {
           .upsert(shippingData, { onConflict: ['user_id'] });
 
         if (shippingError) {
-          console.warn('⚠️ Could not update shipping_info (table may not exist):', shippingError);
+          // ...removed log...
         }
       } catch (error) {
-        console.warn('⚠️ Shipping info update failed - continuing without it:', error);
+        // ...removed log...
       }
     }
 
@@ -205,17 +209,16 @@ export const updateUserProfile = async (userId, profileData) => {
           .upsert(billingData, { onConflict: ['user_id'] });
 
         if (billingError) {
-          console.warn('⚠️ Could not update billing_info (table may not exist):', billingError);
+          // ...removed log...
         }
       } catch (error) {
-        console.warn('⚠️ Billing info update failed - continuing without it:', error);
+        // ...removed log...
       }
     }
 
-    console.log('[updateUserProfile] Perfil actualizado correctamente para user_id:', userId);
     return { success: true, error: null };
   } catch (error) {
-    console.error('Error updating user profile:', error);
+    // ...removed log...
     return { success: false, error };
   }
 };
@@ -231,7 +234,7 @@ export const uploadProfileImage = async (userId, imageFile) => {
     // 1. Eliminar TODAS las imágenes previas del usuario
     const deleteResult = await deleteAllUserImages(userId);
     if (!deleteResult.success) {
-      console.warn('[uploadProfileImage] No se pudieron eliminar archivos previos:', deleteResult.error);
+      // ...removed log...
     }
 
     // 2. Subir el nuevo archivo con timestamp para evitar cache
@@ -271,25 +274,25 @@ export const uploadProfileImage = async (userId, imageFile) => {
       .eq('user_id', userId)
       .single();
     if (userReadError) {
-      console.error('[uploadProfileImage] Error leyendo usuario después de update:', userReadError);
+      // ...removed log...
     } else {
       // Si no coincide, intentar actualizar de nuevo
       if (userData?.logo_url !== publicUrl) {
-        console.warn('[uploadProfileImage] MISMATCH detectado. Intentando actualizar de nuevo...');
+        // ...removed log...
         const { error: retryError } = await supabase
           .from('users')
           .update({ logo_url: publicUrl })
           .eq('user_id', userId);
         
         if (retryError) {
-          console.error('[uploadProfileImage] Error en retry update:', retryError);
+          // ...removed log...
         }
       }
     }
 
     return { url: publicUrl, error: null };
   } catch (error) {
-    console.error('[uploadProfileImage] Error uploading profile image:', error);
+    // ...removed log...
     return { url: null, error };
   }
 };
@@ -307,12 +310,11 @@ export const deleteAllUserImages = async (userId) => {
       .list(userId + '/', { limit: 100 });
     
     if (listError) {
-      console.warn('[deleteAllUserImages] Error listando archivos:', listError);
+      // ...removed log...
       return { success: false, error: listError };
     }
     
     if (!listData || listData.length === 0) {
-      console.log('[deleteAllUserImages] No hay archivos para eliminar');
       return { success: true, deletedCount: 0 };
     }
     
@@ -323,14 +325,14 @@ export const deleteAllUserImages = async (userId) => {
       .remove(filesToRemove);
     
     if (removeError) {
-      console.error('[deleteAllUserImages] Error eliminando archivos:', removeError);
+      // ...removed log...
       return { success: false, error: removeError };
     }
     
     return { success: true, deletedCount: filesToRemove.length };
     
   } catch (error) {
-    console.error('[deleteAllUserImages] Error inesperado:', error);
+    // ...removed log...
     return { success: false, error };
   }
 };
@@ -398,7 +400,6 @@ export const diagnoseTables = async (userId) => {
     diagnosis.billing_info.error = error.message;
   }
 
-  console.log('🔍 Table Access Diagnosis:', diagnosis);
   return diagnosis;
 };
 
@@ -409,7 +410,6 @@ export const diagnoseTables = async (userId) => {
  */
 export const repairUserImageUrl = async (userId) => {
   try {
-    console.log('[repairUserImageUrl] Iniciando reparación para userId:', userId);
     
     // 1. Listar todos los archivos del usuario
     const { data: listData, error: listError } = await supabase.storage
@@ -417,11 +417,10 @@ export const repairUserImageUrl = async (userId) => {
       .list(userId + '/', { limit: 100 });
     
     if (listError) {
-      console.error('[repairUserImageUrl] Error listando archivos:', listError);
+      // ...removed log...
       return { success: false, error: listError };
     }
     
-    console.log('[repairUserImageUrl] Archivos encontrados:', listData);
     
     if (!listData || listData.length === 0) {
       // No hay archivos, actualizar BD para quitar URL
@@ -456,7 +455,6 @@ export const repairUserImageUrl = async (userId) => {
       .from('user-logos')
       .getPublicUrl(correctPath);
     const correctUrl = urlData.publicUrl;
-    console.log('[repairUserImageUrl] URL correcta:', correctUrl);
     
     // 4. Actualizar BD con URL correcta
     const { error: updateError } = await supabase
@@ -468,7 +466,7 @@ export const repairUserImageUrl = async (userId) => {
       .eq('user_id', userId);
     
     if (updateError) {
-      console.error('[repairUserImageUrl] Error actualizando BD:', updateError);
+      // ...removed log...
       return { success: false, error: updateError };
     }
     
@@ -477,7 +475,6 @@ export const repairUserImageUrl = async (userId) => {
       .filter(file => imageRegex.test(file.name) && file.name !== validFile.name)
       .map(file => `${userId}/${file.name}`);
     if (filesToDelete.length > 0) {
-      console.log('[repairUserImageUrl] Eliminando archivos duplicados:', filesToDelete);
       const { error: deleteError } = await supabase.storage
         .from('user-logos')
         .remove(filesToDelete);
@@ -507,7 +504,6 @@ export const repairUserImageUrl = async (userId) => {
  */
 export const forceFixImageUrl = async (userId) => {
   try {
-    console.log('[forceFixImageUrl] 🚀 INICIANDO CORRECCIÓN FORZADA para userId:', userId);
     
     // 1. Listar todos los archivos del usuario
     const { data: listData, error: listError } = await supabase.storage
@@ -519,10 +515,8 @@ export const forceFixImageUrl = async (userId) => {
       return { success: false, error: listError };
     }
     
-    console.log('[forceFixImageUrl] 📁 Archivos encontrados:', listData);
     
     if (!listData || listData.length === 0) {
-      console.log('[forceFixImageUrl] 🗑️ No hay archivos, limpiando BD...');
       const { error: clearError } = await supabase
         .from('users')
         .update({ logo_url: null })
@@ -541,7 +535,6 @@ export const forceFixImageUrl = async (userId) => {
     const validImages = listData.filter(file => imageRegex.test(file.name));
     
     if (!validImages || validImages.length === 0) {
-      console.log('[forceFixImageUrl] ❌ No se encontró archivo de imagen válido');
       return { success: false, error: 'No se encontró archivo de imagen válido' };
     }
     
@@ -556,7 +549,6 @@ export const forceFixImageUrl = async (userId) => {
       });
     }
     
-    console.log('[forceFixImageUrl] 🎯 Archivo seleccionado:', selectedFile);
     
     // 4. Construir URL correcta
     const correctPath = `${userId}/${selectedFile.name}`;
@@ -565,7 +557,6 @@ export const forceFixImageUrl = async (userId) => {
       .getPublicUrl(correctPath);
     const correctUrl = urlData.publicUrl;
     
-    console.log('[forceFixImageUrl] 🔗 URL correcta construida:', correctUrl);
     
     // 5. ACTUALIZACIÓN FORZADA con múltiples intentos
     let updateSuccess = false;
@@ -573,7 +564,6 @@ export const forceFixImageUrl = async (userId) => {
     const maxAttempts = 3;
     
     // Primero verificar que el usuario existe
-    console.log('[forceFixImageUrl] 🔍 Verificando que el usuario existe...');
     const { data: existingUser, error: existingUserError } = await supabase
       .from('users')
       .select('user_id, logo_url')
@@ -585,12 +575,9 @@ export const forceFixImageUrl = async (userId) => {
       return { success: false, error: 'Usuario no existe en la tabla users' };
     }
     
-    console.log('[forceFixImageUrl] ✅ Usuario encontrado:', existingUser);
-    console.log('[forceFixImageUrl] 📝 URL actual en BD:', existingUser.logo_url);
     
     while (!updateSuccess && attempts < maxAttempts) {
       attempts++;
-      console.log(`[forceFixImageUrl] 🔄 Intento ${attempts}/${maxAttempts} de actualizar BD...`);
       
       const { data: updateData, error: updateError } = await supabase
         .from('users')
@@ -601,7 +588,6 @@ export const forceFixImageUrl = async (userId) => {
         .eq('user_id', userId)
         .select();
       
-      console.log(`[forceFixImageUrl] 📊 Update response - data:`, updateData, 'error:', updateError);
       
       if (updateError) {
         console.error(`[forceFixImageUrl] ❌ Error en intento ${attempts}:`, updateError);
@@ -611,7 +597,6 @@ export const forceFixImageUrl = async (userId) => {
         // Esperar un poco antes del siguiente intento
         await new Promise(resolve => setTimeout(resolve, 1000));
       } else {
-        console.log(`[forceFixImageUrl] ✅ Actualización exitosa en intento ${attempts}:`, updateData);
         if (updateData && updateData.length > 0) {
           updateSuccess = true;
         } else {
@@ -625,7 +610,6 @@ export const forceFixImageUrl = async (userId) => {
     }
     
     // 6. Verificar que la actualización se aplicó
-    console.log('[forceFixImageUrl] 🔍 Verificando actualización...');
     const { data: verifyData, error: verifyError } = await supabase
       .from('users')
       .select('logo_url')
@@ -637,14 +621,13 @@ export const forceFixImageUrl = async (userId) => {
       return { success: false, error: verifyError };
     }
     
-    console.log('[forceFixImageUrl] 🔍 URL en BD después de update:', verifyData?.logo_url);
-    console.log('[forceFixImageUrl] 🔍 ¿Coincide con la esperada?', verifyData?.logo_url === correctUrl);
+    // ...removed log...
     
     if (verifyData?.logo_url !== correctUrl) {
       console.error('[forceFixImageUrl] ❌ MISMATCH PERSISTENTE - Intentando UPSERT como alternativa...');
       
       const upsertResult = await forceUpsertImageUrl(userId, correctUrl);
-      console.log('[forceFixImageUrl] 📊 Resultado UPSERT:', upsertResult);
+      // ...removed log...
       
       if (!upsertResult.success) {
         return { 
@@ -674,7 +657,7 @@ export const forceFixImageUrl = async (userId) => {
         };
       }
       
-      console.log('[forceFixImageUrl] ✅ UPSERT exitoso!');
+      // ...removed log...
     }
     
     // 7. Limpiar archivos duplicados
@@ -683,7 +666,7 @@ export const forceFixImageUrl = async (userId) => {
       .map(file => `${userId}/${file.name}`);
     
     if (filesToDelete.length > 0) {
-      console.log('[forceFixImageUrl] 🗑️ Eliminando archivos duplicados:', filesToDelete);
+      // ...removed log...
       const { error: deleteError } = await supabase.storage
         .from('user-logos')
         .remove(filesToDelete);
@@ -691,7 +674,7 @@ export const forceFixImageUrl = async (userId) => {
       if (deleteError) {
         console.warn('[forceFixImageUrl] ⚠️ Error eliminando duplicados:', deleteError);
       } else {
-        console.log('[forceFixImageUrl] ✅ Duplicados eliminados exitosamente');
+        // ...removed log...
       }
     }
     
@@ -717,7 +700,7 @@ export const forceFixImageUrl = async (userId) => {
  */
 export const forceUpsertImageUrl = async (userId, correctUrl) => {
   try {
-    console.log('[forceUpsertImageUrl] 🚀 Intentando UPSERT para:', userId, 'URL:', correctUrl);
+    // ...removed log...
     
     const { data, error } = await supabase
       .from('users')
@@ -731,7 +714,7 @@ export const forceUpsertImageUrl = async (userId, correctUrl) => {
       })
       .select();
     
-    console.log('[forceUpsertImageUrl] 📊 Upsert result - data:', data, 'error:', error);
+    // ...removed log...
     
     if (error) {
       return { success: false, error };
@@ -779,21 +762,21 @@ if (typeof window !== 'undefined') {
         return;
       }
       
-      console.log('🚀 Ejecutando corrección forzada de imagen para usuario:', user.id);
+      // ...removed log...
       const result = await forceFixImageUrl(user.id);
-      console.log('✅ Resultado:', result);
+      // ...removed log...
       
       if (result.success) {
-        console.log('🎉 ¡URL corregida! Recarga la página para ver los cambios.');
+        // ...removed log...
         // Intentar recargar automáticamente el perfil
         setTimeout(() => {
           window.location.reload();
         }, 2000);
       } else {
-        console.log('🔧 Probando método alternativo directo...');
+        // ...removed log...
         // Intentar corrección manual directa
         const manualResult = await forceUpsertImageUrl(user.id, result.expected || 'URL_PLACEHOLDER');
-        console.log('🔧 Resultado manual:', manualResult);
+        // ...removed log...
       }
       
       return result;
@@ -811,7 +794,7 @@ if (typeof window !== 'undefined') {
         return;
       }
       
-      console.log('🔍 Inspeccionando datos del usuario:', user.id);
+      // ...removed log...
       
       // 1. Verificar usuario en tabla users
       const { data: userData, error: userError } = await supabase
@@ -820,7 +803,7 @@ if (typeof window !== 'undefined') {
         .eq('user_id', user.id)
         .single();
       
-      console.log('👤 Datos del usuario en BD:', userData);
+      // ...removed log...
       if (userError) console.error('❌ Error obteniendo usuario:', userError);
       
       // 2. Verificar archivos en storage
@@ -828,7 +811,7 @@ if (typeof window !== 'undefined') {
         .from('user-logos')
         .list(user.id + '/', { limit: 100 });
       
-      console.log('📁 Archivos en storage:', files);
+      // ...removed log...
       if (filesError) console.error('❌ Error obteniendo archivos:', filesError);
       
       return { userData, files };
@@ -846,10 +829,10 @@ if (typeof window !== 'undefined') {
         return;
       }
       
-      console.log('🧪 Probando actualizaciones directas para usuario:', user.id);
+      // ...removed log...
       
       // Test 1: Update solo logo_url (sin updated_at que podría no existir)
-      console.log('Test 1: Solo logo_url...');
+      // ...removed log...
       const testUrl = 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v1/object/public/user-logos/' + user.id + '/logo.png';
       const { data: test1Data, error: test1Error } = await supabase
         .from('users')
@@ -857,47 +840,47 @@ if (typeof window !== 'undefined') {
         .eq('user_id', user.id)
         .select();
       
-      console.log('Test 1 - data:', test1Data, 'error:', test1Error);
+      // ...removed log...
       
       // Test 2: Update solo updatedt (campo que sí existe)
-      console.log('Test 2: Solo updatedt...');
+      // ...removed log...
       const { data: test2Data, error: test2Error } = await supabase
         .from('users')
         .update({ updatedt: new Date().toISOString() })
         .eq('user_id', user.id)
         .select();
       
-      console.log('Test 2 - data:', test2Data, 'error:', test2Error);
+      // ...removed log...
       
       // Test 3: Verificar si el campo updatedt existe
-      console.log('Test 3: Probando campo updatedt...');
+      // ...removed log...
       const { data: test3Data, error: test3Error } = await supabase
         .from('users')
         .update({ updatedt: new Date().toISOString() })
         .eq('user_id', user.id)
         .select();
       
-      console.log('Test 3 - data:', test3Data, 'error:', test3Error);
+      // ...removed log...
       
       // Test 4: Verificar estructura de tabla
-      console.log('Test 4: Columnas disponibles...');
+      // ...removed log...
       const { data: test4Data, error: test4Error } = await supabase
         .from('users')
         .select('*')
         .eq('user_id', user.id)
         .limit(1);
       
-      console.log('Test 4 - Columnas disponibles:', test4Data ? Object.keys(test4Data[0] || {}) : 'No data');
+      // ...removed log...
       
       // Test 5: Verificar RLS (Row Level Security)
-      console.log('Test 5: Probando sin WHERE clause...');
+      // ...removed log...
       const { data: test5Data, error: test5Error } = await supabase
         .from('users')
         .select('user_id, logo_url')
         .limit(5);
       
-      console.log('Test 5 - ¿Podemos leer otros usuarios?:', test5Data?.length || 0, 'usuarios visibles');
-      if (test5Error) console.log('Test 5 - Error RLS:', test5Error);
+      // ...removed log...
+      // ...removed log...
       
       return { 
         test1: { data: test1Data, error: test1Error },
@@ -911,7 +894,7 @@ if (typeof window !== 'undefined') {
     }
   };
   
-  console.log('🛠️ Función de debug disponible: window.fixMyImageUrl()');
-  console.log('🔍 Función de inspección disponible: window.inspectUserData()');
-  console.log('🧪 Función de test de BD disponible: window.testDirectUpdate()');
+  // ...removed log...
+  // ...removed log...
+  // ...removed log...
 }

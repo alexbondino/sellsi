@@ -90,6 +90,7 @@ const ProductPageWrapper = ({ isLoggedIn }) => {
             supplier_id: data.supplier_id,
             nombre: data.productnm,
             imagen: data.product_images?.[0]?.image_url || '/placeholder-product.jpg',
+            thumbnail_url: data.product_images?.[0]?.thumbnail_url || null, // ✅ NUEVO: Agregar thumbnail_url
             precio: data.price,
             stock: data.productqty,
             categoria: data.category,
@@ -154,7 +155,6 @@ const ProductPageWrapper = ({ isLoggedIn }) => {
     let productToAdd = { ...cartProduct };
     if (!productToAdd.quantity) {
       productToAdd.quantity = 1;
-      console.log('[Cart] No quantity provided, defaulting to 1');
     } else {
       const quantity = parseInt(productToAdd.quantity);
       if (isNaN(quantity) || quantity <= 0 || quantity > 15000) {
@@ -162,11 +162,9 @@ const ProductPageWrapper = ({ isLoggedIn }) => {
         return;
       }
       productToAdd.quantity = Math.max(1, Math.min(quantity, 15000));
-      console.log('[Cart] Quantity validated:', productToAdd.quantity);
     }
     // Agregar al carrito real
     if (addToCart && productToAdd) {
-      console.log('[Cart] Adding to cart:', productToAdd);
       addToCart(productToAdd, productToAdd.quantity);
     } else {
       console.error('[Cart] addToCart function or productToAdd missing', { addToCart, productToAdd });

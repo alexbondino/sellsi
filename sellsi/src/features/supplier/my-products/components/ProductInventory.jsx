@@ -57,6 +57,7 @@ const ProductInventory = ({
             }
             type="number"
             inputProps={{ min: 1, max: 15000 }}
+            autoComplete="off"
           />
           <TextField
             sx={{ width: '35%' }}
@@ -76,6 +77,7 @@ const ProductInventory = ({
             }
             type="number"
             inputProps={{ min: 1, max: 15000 }}
+            autoComplete="off"
           />
         </Box>
 
@@ -111,6 +113,7 @@ const ProductInventory = ({
               inputProps: { min: 1 },
             }}
             type="number"
+            autoComplete="off"
           />
         </Box>
 

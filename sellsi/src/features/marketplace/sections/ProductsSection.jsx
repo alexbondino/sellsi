@@ -23,6 +23,10 @@ import {
   Grid, // Asegúrate de que Grid está importado de @mui/material
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import ShoppingBagIcon from '@mui/icons-material/ShoppingBag';
+import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
+import BusinessIcon from '@mui/icons-material/Business';
+import { SPACING_BOTTOM_MAIN } from '../../../styles/layoutSpacing';
 import { toast } from 'react-hot-toast';
 import { isProductActive, getActiveProductCountByProvider } from '../../../utils/productActiveStatus';
 import ProductCard from '../../ui/product-card/ProductCard'; // Asegúrate que esta es la ruta correcta al componente principal
@@ -96,7 +100,8 @@ const ProductsSection = React.memo(
     // ✅ LAYOUT ESTÁTICO: Padding fijo para mejor performance
     const mainContainerStyles = React.useMemo(
       () => ({
-        pt:  { xs: 1, md:'60px'},
+        pt:  { xs: 1, md:'90px'},
+        pb: SPACING_BOTTOM_MAIN, // Usar espaciado estándar global
         minHeight: '100vh',
         display: 'flex',
         justifyContent: 'center',
@@ -154,20 +159,46 @@ const ProductsSection = React.memo(
     // ✅ MEJORA DE RENDIMIENTO: Memoización del título de sección
     const sectionTitle = React.useMemo(() => {
       if (isProviderView) {
-        return '🏢 Proveedores Disponibles';
+        return (
+          <>
+            <BusinessIcon sx={{ color: 'primary.main', verticalAlign: 'middle', fontSize: { xs: 24, md: 32 }, mr: 1 }} />
+            Proveedores Disponibles
+          </>
+        );
       }
-      
       switch (seccionActiva) {
         case 'nuevos':
-          return '✨ Nuevos Productos';
+          return (
+            <>
+              <AutoAwesomeIcon sx={{ color: 'primary.main', verticalAlign: 'middle', fontSize: { xs: 24, md: 32 }, mr: 1 }} />
+              <span style={{ color: '#1976d2' }}>
+                Nuevos Productos
+              </span>
+            </>
+          );
         case 'ofertas':
           return '🔥 Ofertas Destacadas';
         case 'topVentas':
           return '⭐ Top Ventas';
         default:
-          return '🛍️ Todos los Productos';
+          return (
+            <>
+              <ShoppingBagIcon sx={{ color: 'primary.main', verticalAlign: 'middle', fontSize: { xs: 24, md: 32 }, mr: 1 }} />
+              Todos los Productos
+            </>
+          );
       }
     }, [seccionActiva, isProviderView]);
+
+    // ✅ CALCULAR PROVEEDORES ÚNICOS SI isProviderView
+    const totalProveedores = React.useMemo(() => {
+      if (!isProviderView || !Array.isArray(productosOrdenados)) return 0;
+      const uniqueSuppliers = new Set();
+      productosOrdenados.forEach(p => {
+        if (p.supplier_id) uniqueSuppliers.add(p.supplier_id);
+      });
+      return uniqueSuppliers.size;
+    }, [isProviderView, productosOrdenados]);
     // ✅ MEJORA DE RENDIMIENTO: Memoización del handler de volver (solo dependencias necesarias)
     const handleBackClick = React.useCallback(() => {
       setSeccionActiva('todos');
@@ -199,6 +230,8 @@ const ProductsSection = React.memo(
               user_nm: producto.proveedor || `Proveedor #${supplierId}`,
               // ✅ USAR logo real del proveedor desde la BD o fallback
               logo_url: producto.supplier_logo_url || `/LOGO-removebg-preview.png`,
+              // ✅ USAR descripcion_proveedor real del proveedor
+              descripcion_proveedor: producto.descripcion_proveedor,
               provider_id: supplierId,
               product_count: 1
             });
@@ -210,8 +243,6 @@ const ProductsSection = React.memo(
         });
         
         const testProviders = Array.from(providersMap.values()).slice(0, 6);
-        console.log('🔍 Provider view activated. Real providers from active products:', testProviders.length);
-        console.log('🔍 Providers with names:', testProviders.map(p => ({ id: p.supplier_id, name: p.user_nm, activeProductCount: p.product_count })));
         return testProviders;
       }
 
@@ -512,7 +543,7 @@ const ProductsSection = React.memo(
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
-              mb: {xs: 2, md:4},
+              mb: {xs: 2, md:8},
             }}
           >
             <Box
@@ -578,7 +609,7 @@ const ProductsSection = React.memo(
                 color="text.secondary"
                 sx={{ fontSize: { xs: '0.85rem', sm: '0.9rem', md: '1rem' }, textAlign: { xs: 'right', sm: 'right', md: 'left' } }}
               >
-                {totalProductos} productos encontrados
+                {isProviderView ? `${totalProveedores} proveedores disponibles` : `${totalProductos} productos encontrados`}
               </Typography>
               {totalPages > 1 && (
                 <Typography
@@ -654,11 +685,6 @@ const ProductsSection = React.memo(
 
                 <Box sx={gridStyles}>
                   {visibleProducts.map(producto => {
-                    // ✅ OPTIMIZACIÓN: Log solo una vez por render, no por cada producto
-                    if (producto === visibleProducts[0]) {
-                      console.log('🔍 ProductsSection rendering:', visibleProducts.length, 'products in isProviderView:', isProviderView);
-                    }
-                    
                     return (
                     <Box
                       key={`product-${producto.id || producto.productid}`}
@@ -746,12 +772,7 @@ const ProductsSection = React.memo(
                       border: '1px dashed #e9ecef',
                     }}
                   >
-                    <Typography variant="caption" color="text.secondary">
-                      📊 Debug: Productos visibles: {visibleProductsCount} |
-                      Trigger de carga: {PRELOAD_TRIGGER} | Lote de carga:{' '}
-                      {LOAD_MORE_BATCH} | Total en página:{' '}
-                      {currentPageProducts.length}
-                    </Typography>
+                    {/* Debug info removed */}
                   </Box>
                 )}
 

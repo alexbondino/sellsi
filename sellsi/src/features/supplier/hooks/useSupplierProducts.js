@@ -130,14 +130,22 @@ export const useSupplierProducts = () => {
         tramoPrecioMax = Math.max(...sorted.map((t) => Number(t.price)))
       }
 
-      // Obtener imagen principal
+      // Obtener imagen principal y thumbnail
       let imagenPrincipal = product.image_url
+      let thumbnailUrl = null
       let imagenes = []
 
       if (product.images?.length > 0) {
         imagenes = product.images.map((img) => img.image_url)
         const principal = product.images.find((img) => img.is_primary)
         imagenPrincipal = principal ? principal.image_url : imagenes[0]
+        
+        // ✅ NUEVO: Obtener thumbnail_url de la imagen principal
+        if (principal && principal.thumbnail_url) {
+          thumbnailUrl = principal.thumbnail_url
+        } else if (product.images[0]?.thumbnail_url) {
+          thumbnailUrl = product.images[0].thumbnail_url
+        }
       }
 
       return {
@@ -146,6 +154,7 @@ export const useSupplierProducts = () => {
         supplier_id: product.supplier_id,
         nombre: product.productnm,
         imagen: imagenPrincipal,
+        thumbnail_url: thumbnailUrl, // ✅ NUEVO: Agregar thumbnail_url
         imagenes,
         precio: product.price,
         categoria: product.category,
@@ -162,6 +171,8 @@ export const useSupplierProducts = () => {
         tramoMax,
         tramoPrecioMin,
         tramoPrecioMax,
+        // ✅ NUEVO: Incluir regiones de despacho
+        delivery_regions: product.delivery_regions || [],
       }
     })
   }, [filteredProducts])

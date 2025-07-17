@@ -190,7 +190,7 @@ const DetallesSolicitudModal = ({ open, solicitud, onClose }) => {
 
   const handleDescargarAdjunto = (adjunto) => {
     // TODO: Implementar descarga real
-    console.log('Descargar adjunto:', adjunto);
+
     
     // Mock de descarga
     const link = document.createElement('a');

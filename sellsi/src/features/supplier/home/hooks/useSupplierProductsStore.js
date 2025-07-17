@@ -572,6 +572,8 @@ const useSupplierProductsStore = create((set, get) => ({
       // Obtener imágenes del producto (si existen)
       let imagenes = []
       let imagenPrincipal = p.image_url
+      let thumbnailUrl = null
+      
       if (
         p.product_images &&
         Array.isArray(p.product_images) &&
@@ -579,8 +581,13 @@ const useSupplierProductsStore = create((set, get) => ({
       ) {
         imagenes = p.product_images.map((img) => img.image_url)
         const principal = p.product_images.find((img) => img.is_primary)
-        if (principal) imagenPrincipal = principal.image_url
-        else imagenPrincipal = imagenes[0]
+        if (principal) {
+          imagenPrincipal = principal.image_url
+          thumbnailUrl = principal.thumbnail_url || null // ✅ NUEVO: Obtener thumbnail_url
+        } else {
+          imagenPrincipal = imagenes[0]
+          thumbnailUrl = p.product_images[0]?.thumbnail_url || null // ✅ NUEVO: Fallback al primer thumbnail
+        }
       }
       return {
         id: p.productid,
@@ -588,6 +595,7 @@ const useSupplierProductsStore = create((set, get) => ({
         supplier_id: p.supplier_id, // ✅ Agregar supplier_id explícito
         nombre: p.productnm,
         imagen: imagenPrincipal,
+        thumbnail_url: thumbnailUrl, // ✅ NUEVO: Agregar thumbnail_url
         imagenes,
         precio: p.price,
         categoria: p.category,

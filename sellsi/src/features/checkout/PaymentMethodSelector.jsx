@@ -25,6 +25,7 @@ import { toast } from 'react-hot-toast'
 import useCheckout from './hooks/useCheckout'
 import usePaymentMethods from './hooks/usePaymentMethods'
 import checkoutService from './services/checkoutService'
+import { trackUserAction } from '../../services/ipTrackingService'
 
 // Componentes UI
 import CheckoutSummary from './CheckoutSummary'
@@ -97,6 +98,11 @@ const PaymentMethodSelector = () => {
       
       if (isValid) {
         selectPaymentMethod(availableMethods.find(m => m.id === methodId))
+        
+        // Registrar IP del usuario al seleccionar método de pago
+        const selectedMethod = availableMethods.find(m => m.id === methodId)
+        await trackUserAction(`payment_method_selected_${selectedMethod?.name || methodId}`)
+        
         clearError()
       }
     } catch (error) {
@@ -127,11 +133,19 @@ const PaymentMethodSelector = () => {
     setIsProcessing(true)
     
     try {
+      // Obtener datos del usuario
+      const userId = localStorage.getItem('user_id')
+      const userEmail = localStorage.getItem('user_email') // Asegurate de que esto esté guardado en el login
+      
+      if (!userId) {
+        throw new Error('Usuario no autenticado')
+      }
+
       // Validar datos del checkout
       const validation = checkoutService.validateCheckoutData({
         ...orderData,
         paymentMethod: selectedMethod.id,
-        userId: localStorage.getItem('user_id')
+        userId: userId
       })
 
       if (!validation.isValid) {
@@ -139,27 +153,57 @@ const PaymentMethodSelector = () => {
         throw new Error(errorMessage)
       }
 
-      // TODO: En el futuro, aquí se redirigirá a Khipu
-      // window.location.href = khipuPaymentUrl
-      
-      // Por ahora, simular el proceso
-      toast.success('Redirigiendo a Khipu...')
-      
       // Marcar como procesando en el stepper
       startPaymentProcessing()
-      
-      // Simular el proceso de Khipu (esto se eliminará cuando esté la integración real)
-      setTimeout(() => {
-        // Simular respuesta exitosa de Khipu
-        const transactionData = {
-          transactionId: `TXN_${Date.now()}`,
-          paymentReference: `REF_${Math.random().toString(36).substr(2, 9)}`
-        }
+
+      // Crear orden en la base de datos
+      console.log('[PaymentMethodSelector] Creando orden...')
+      const order = await checkoutService.createOrder({
+        userId: userId,
+        items: orderData.items,
+        subtotal: orderData.subtotal,
+        tax: orderData.tax,
+        shipping: orderData.shipping,
+        total: orderData.total,
+        currency: orderData.currency || 'CLP',
+        paymentMethod: selectedMethod.id,
+        shippingAddress: orderData.shippingAddress,
+        billingAddress: orderData.billingAddress
+      })
+
+      console.log('[PaymentMethodSelector] Orden creada:', order)
+
+      if (selectedMethod.id === 'khipu') {
+        // Procesar pago con Khipu
+        console.log('[PaymentMethodSelector] Procesando pago con Khipu...')
         
-        completePayment(transactionData)
-        toast.success('¡Pago completado exitosamente!')
-        setIsCompleted(true)
-      }, 3000) // 3 segundos para simular el proceso
+        const paymentResult = await checkoutService.processKhipuPayment({
+          orderId: order.id,
+          userId: userId,
+          userEmail: userEmail || '',
+          amount: orderData.total,
+          currency: orderData.currency || 'CLP',
+          items: orderData.items
+        })
+
+        if (paymentResult.success && paymentResult.paymentUrl) {
+          console.log('[PaymentMethodSelector] Redirigiendo a Khipu:', paymentResult.paymentUrl)
+          
+          // Mostrar mensaje de redirección
+          toast.success('Redirigiendo a Khipu para completar el pago...')
+          
+          // Esperar un momento y redirigir
+          setTimeout(() => {
+            window.location.href = paymentResult.paymentUrl
+          }, 1500)
+          
+        } else {
+          throw new Error('Error al crear orden de pago en Khipu')
+        }
+      } else {
+        // Para otros métodos de pago futuro (Webpay, etc.)
+        throw new Error('Método de pago no implementado aún')
+      }
       
     } catch (error) {
       console.error('Error processing payment:', error)
@@ -197,12 +241,11 @@ const PaymentMethodSelector = () => {
   // ===== RENDERIZADO =====
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: 'background.default', py: 4 }}>
-      <motion.div
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-      >
+    <motion.div
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+    >
         {/* Header */}
         <Box sx={{ mb: 4, px: 3 }}>
           <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 3 }}>
@@ -215,12 +258,25 @@ const PaymentMethodSelector = () => {
           </Stack>
           
           {/* Stepper de progreso */}
-          <CheckoutProgressStepper 
-            currentStep={currentStep}
-            completedSteps={completedSteps}
-            orientation="horizontal"
-            showLabels={true}
-          />
+          <Box sx={{
+            maxWidth: {
+              xs: 340,
+              sm: 480,
+              md: 700,
+              lg: 1360,
+              xl: 1560,
+            },
+            width: '100%',
+            display: 'flex',
+            justifyContent: 'flex-start'
+          }}>
+            <CheckoutProgressStepper 
+              currentStep={currentStep}
+              completedSteps={completedSteps}
+              orientation="horizontal"
+              showLabels={true}
+            />
+          </Box>
         </Box>
 
         {/* Contenido principal */}
@@ -228,7 +284,14 @@ const PaymentMethodSelector = () => {
           <Stack direction={{ xs: 'column', lg: 'row' }} spacing={4}>
             
             {/* Panel izquierdo - Métodos de pago */}
-            <Box sx={{ flex: 1 }}>
+            <Box sx={{ 
+              width: {
+                xs: '100%',
+                md: '68%',
+                lg: '65%',
+                xl: '65%',
+              },
+            }}>
               <motion.div variants={itemVariants}>
                 <Paper
                   elevation={3}
@@ -311,7 +374,6 @@ const PaymentMethodSelector = () => {
           </Stack>
         </Box>
       </motion.div>
-    </Box>
   )
 }
 

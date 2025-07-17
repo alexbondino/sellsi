@@ -27,7 +27,9 @@ import {
   LocalAtm as LocalAtmIcon,
   Warning as WarningIcon,
   LocalShipping as LocalShippingIcon,
+  Search as SearchIcon,
 } from '@mui/icons-material'
+import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import PriceDisplay from '../../marketplace/PriceDisplay/PriceDisplay'
 import StockIndicator from '../../marketplace//StockIndicator/StockIndicator'
@@ -39,6 +41,8 @@ import {
   formatProductForCart,
 } from '../../../utils/priceCalculation'
 import Modal, { MODAL_TYPES } from '../../ui/Modal'
+import { useResponsiveThumbnail } from '../../../hooks/useResponsiveThumbnail' // Nuevo hook
+import ShippingDisplay from './components/ShippingDisplay'
 
 /*
 ========== GUÍA DE IDENTIFICACIÓN DE ELEMENTOS DEL CARRITO ==========
@@ -82,8 +86,13 @@ const OptimizedImage = ({ src, alt, sx }) => {
   )
 }
 
-// Helper robusto para obtener la imagen primaria
-function resolveImageSrc(item) {
+// Helper robusto para obtener la imagen primaria con soporte para thumbnails
+function resolveImageSrc(item, thumbnailUrl) {
+  // ✅ NUEVO: Preferir thumbnail responsivo si está disponible
+  if (thumbnailUrl && thumbnailUrl !== '/placeholder-product.jpg') {
+    return thumbnailUrl;
+  }
+  
   let image = item?.image || item?.imagen
   if (!image) return '/placeholder-product.jpg'
   // Si es string (url pública o path relativo)
@@ -118,9 +127,34 @@ const CartItem = ({
   isSelectionMode,
   isSelected,
   onToggleSelection,
+  // Nuevas props para validación de despacho
+  shippingValidation,
+  isAdvancedShippingMode = false,
 }) => {
+  // Hook de navegación debe ir dentro del cuerpo del componente
+  const navigate = useNavigate();
+  // Construir slug SEO a partir del nombre del producto
+  const getProductSlug = (name) => {
+    if (!name) return '';
+    return name
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-+|-+$/g, '');
+  };
+
+  const handleViewFichaTecnica = React.useCallback(() => {
+    const id = item.product_id || item.id;
+    const slug = getProductSlug(item.name || item.nombre);
+    navigate(`/marketplace/product/${id}${slug ? `/${slug}` : ''}`);
+  }, [navigate, item]);
   const [selectedShipping, setSelectedShipping] = useState('standard')
   const [openDeleteModal, setOpenDeleteModal] = useState(false)
+  
+  // ✅ NUEVO: Hook para obtener thumbnail responsivo
+  const thumbnailUrl = useResponsiveThumbnail(item);
+  
   // ===== CÁLCULOS DE PRECIOS OPTIMIZADOS (USAR priceCalculations MEMOIZADO) =====
   // Los precios se calculan en priceCalculations para evitar recálculos innecesarios
   // Función optimizada para manejar el cambio de envío y calcular el precio
@@ -143,6 +177,11 @@ const CartItem = ({
     maxStock: item.maxStock || item.stock || 50
   }), [item])
 
+  // ✅ NUEVO: Memoizar la URL de la imagen con thumbnail responsivo
+  const imageUrl = React.useMemo(() => {
+    return resolveImageSrc(item, thumbnailUrl);
+  }, [item, thumbnailUrl]);
+
   // Memoizar cálculos de precio para evitar recálculos innecesarios
   const priceCalculations = React.useMemo(() => {
     const unitPrice = calculatePriceForQuantity(item.quantity, productData.price_tiers, productData.basePrice)
@@ -162,7 +201,7 @@ const CartItem = ({
   // Handler optimizado para cambio de cantidad
   const handleQuantityChange = React.useCallback((newQuantity) => {
     updateQuantity(item.id, newQuantity)
-  }, [item.id, productData.price_tiers, productData.basePrice, updateQuantity])
+  }, [item.id, updateQuantity])
   // Handler optimizado para agregar a wishlist
   const handleWishlistClick = React.useCallback(() => {
     handleAddToWishlist(item)
@@ -266,7 +305,7 @@ const CartItem = ({
               }}
             >
               <OptimizedImage
-                src={resolveImageSrc(item)}
+                src={imageUrl}
                 alt={productData.name}
                 sx={{
                   height: 160,
@@ -457,13 +496,14 @@ const CartItem = ({
               }}
             >
               {/* Botón de eliminar en la esquina superior derecha */}
-              <Box sx={{ position: 'absolute', top: 8, right: 8, zIndex: 2 }}>
+              <Box sx={{ position: 'absolute', top: 8, right: 8, zIndex: 2, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5 }}>
                 <Tooltip
                   title={
                     isSelectionMode
                       ? 'Usa el modo selección para eliminar'
                       : 'Eliminar del carrito'
                   }
+                  placement="right"
                 >
                   <motion.div whileTap={{ scale: 0.95 }}>
                     <IconButton
@@ -471,11 +511,24 @@ const CartItem = ({
                       onClick={() => setOpenDeleteModal(true)}
                       color="default"
                       disabled={isSelectionMode}
-                      sx={{ bgcolor: 'transparent', border: 'none', p: 0.5 }}
+                      sx={{ bgcolor: 'transparent', border: 'none', p: 1.5, mb: 2 }}
                     >
                       <DeleteIcon sx={{ color: 'grey.600' }} />
                     </IconButton>
                   </motion.div>
+                </Tooltip>
+                <Tooltip title="Ver Ficha Técnica" placement="right">
+                  <span>
+                    <IconButton
+                      size="small"
+                      onClick={handleViewFichaTecnica}
+                      color="primary"
+                      disabled={isSelectionMode}
+                      sx={{ bgcolor: 'transparent', border: 'none', p: 1.5 }}
+                    >
+                      <SearchIcon />
+                    </IconButton>
+                  </span>
                 </Tooltip>
                 <Modal
                   isOpen={openDeleteModal}
@@ -503,20 +556,7 @@ const CartItem = ({
                   </Box>
                 </Modal>
               </Box>
-              <Typography
-                variant="subtitle2"
-                sx={{
-                  fontWeight: 'bold',
-                  color: '#2563eb',
-                  mb: 1,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 0.5,
-                }}
-              >
-                <LocalShippingIcon sx={{ fontSize: 16 }} />
-                Despacho
-              </Typography>
+              {/* Despacho label and truck icon removed as requested */}
               <Box sx={{
                 display: 'flex',
                 flexDirection: 'column',
@@ -530,30 +570,13 @@ const CartItem = ({
                 bgcolor: 'transparent',
                 border: 'none',
               }}>
-                <Typography variant="caption" sx={{ fontWeight: 'bold', mb: 0.5 }}>
-                  🚚 Envío Estándar
-                </Typography>
-                <Typography variant="caption" color="text.secondary">
-                  {formatPrice(SHIPPING_OPTIONS.find(opt => opt.id === 'standard')?.price || 0)}
-                </Typography>
-                <Typography variant="caption" color="text.secondary">
-                  {SHIPPING_OPTIONS.find(opt => opt.id === 'standard')?.days || '2-5 días hábiles'}
-                </Typography>
+                <ShippingDisplay
+                  product={item}
+                  shippingValidation={shippingValidation}
+                  isAdvancedMode={isAdvancedShippingMode}
+                  formatPrice={formatPrice}
+                />
               </Box>
-              <Typography
-                variant="body1"
-                sx={{
-                  mt: 1,
-                  color: 'success.main',
-                  fontWeight: 'bold',
-                  fontSize: '1rem',
-                }}
-              >
-                {(() => {
-                  const std = SHIPPING_OPTIONS.find(opt => opt.id === 'standard');
-                  return std && std.price > 0 ? formatPrice(std.price) : 'Gratis';
-                })()}
-              </Typography>
             </Box>
           </Grid>
         </Grid>

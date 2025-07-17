@@ -5,6 +5,9 @@ import {
   Typography,
   Box,
   Chip,
+  CircularProgress,
+  LinearProgress,
+  Backdrop,
 } from '@mui/material';
 import {
   Edit as EditIcon,
@@ -12,6 +15,7 @@ import {
   Visibility as VisibilityIcon,
   TrendingUp as TrendingUpIcon,
   Inventory as InventoryIcon,
+  CloudUpload as CloudUploadIcon,
 } from '@mui/icons-material';
 
 // Utility imports (adjust paths relative to this file)
@@ -25,7 +29,7 @@ import StatusChip from './StatusChip'; // Adjust path
  * This component is an internal part of the main ProductCard.
  */
 const ProductCardSupplierContext = React.memo(
-  ({ product, onEdit, onDelete, onViewStats, isDeleting, isUpdating }) => {
+  ({ product, onEdit, onDelete, onViewStats, isDeleting, isUpdating, isProcessing }) => {
     // Product properties (already destructuring in main ProductCard, passed here)
     const {
       nombre,
@@ -42,6 +46,7 @@ const ProductCardSupplierContext = React.memo(
       tramoPrecioMin,
       tramoPrecioMax,
       priceTiers = [], // Ensure priceTiers is available for conditional rendering
+      processingStartTime,
     } = product;
 
     // Configure menu actions
@@ -51,22 +56,23 @@ const ProductCardSupplierContext = React.memo(
           icon: <EditIcon />,
           label: 'Editar producto',
           onClick: () => onEdit?.(product),
-          disabled: isUpdating,
+          disabled: isUpdating || isProcessing,
         },
         {
           icon: <VisibilityIcon />,
           label: 'Ver estadísticas',
           onClick: () => onViewStats?.(product),
+          disabled: isProcessing,
         },
         {
           icon: <DeleteIcon />,
           label: 'Eliminar producto',
           onClick: () => onDelete?.(product),
-          disabled: isDeleting,
+          disabled: isDeleting || isProcessing,
           color: 'error',
         },
       ],
-      [product, onEdit, onViewStats, onDelete, isUpdating, isDeleting]
+      [product, onEdit, onViewStats, onDelete, isUpdating, isDeleting, isProcessing]
     );
 
     // Configure product badges
@@ -99,24 +105,69 @@ const ProductCardSupplierContext = React.memo(
 
     return (
       <>
+        {/* Overlay de procesamiento */}
+        {isProcessing && (
+          <Backdrop
+            open={isProcessing}
+            sx={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              zIndex: 10,
+              backgroundColor: 'rgba(255, 255, 255, 0.9)',
+              backdropFilter: 'blur(2px)',
+              borderRadius: 'inherit',
+            }}
+          >
+            <Box
+              sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: 2,
+                p: 3,
+              }}
+            >
+              <CircularProgress
+                size={40}
+                sx={{ color: 'primary.main' }}
+              />
+              <Box sx={{ textAlign: 'center' }}>
+                <Typography
+                  variant="body2"
+                  fontWeight={600}
+                  color="primary.main"
+                  sx={{ mb: 0.5 }}
+                >
+                  <CloudUploadIcon sx={{ fontSize: 16, mr: 1, verticalAlign: 'middle' }} />
+                  Procesando producto...
+                </Typography>
+              </Box>
+            </Box>
+          </Backdrop>
+        )}
+
         {/* Badges del producto */}
         <ProductBadges badges={productBadges} position="top-left" />
         {/* Menú de acciones */}
         <Box sx={{ position: 'absolute', top: 8, right: 8, zIndex: 2 }}>
           <ActionMenu
             actions={menuActions}
-            disabled={isDeleting || isUpdating}
+            disabled={isDeleting || isUpdating || isProcessing}
             tooltip="Opciones del producto"
             sx={{
               border: '2px solid',
-              borderColor: 'primary.main',
+              borderColor: isProcessing ? 'grey.300' : 'primary.main',
               borderRadius: '12px',
+              opacity: isProcessing ? 0.5 : 1,
             }}
           />
         </Box>
 
         {/* Contenido principal */}
-        <CardContent sx={{ flexGrow: 1, p: 2 }}>
+        <CardContent sx={{ flexGrow: 1, p: 2, opacity: isProcessing ? 0.6 : 1 }}>
           {/* Categoría */}
           <Chip
             label={categoria}

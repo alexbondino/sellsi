@@ -12,11 +12,11 @@ import {
 // Constantes
 const CATEGORIES = [
   { value: '', label: 'Selecciona una categoría' },
-  { value: 'Supermercado', label: 'Supermercado' },
-  { value: 'Electrodomésticos', label: 'Electrodomésticos' },
-  { value: 'Tecnología', label: 'Tecnología' },
-  { value: 'Hogar', label: 'Hogar' },
-  { value: 'Moda', label: 'Moda' },
+  { value: 'Tabaquería', label: 'Tabaquería' },
+  { value: 'Alcoholes', label: 'Alcoholes' },
+  { value: 'Ferretería y Construcción', label: 'Ferretería y Construcción' },
+  { value: 'Gastronomía', label: 'Gastronomía' },
+  { value: 'Otros', label: 'Otros' },
 ];
 
 /**
@@ -59,6 +59,7 @@ const ProductBasicInfo = ({
               : ''
           }
           inputProps={{ maxLength: 40 }}
+          autoComplete="off"
         />
       </Box>
       
@@ -128,6 +129,7 @@ const ProductBasicInfo = ({
               : ''
           }
           inputProps={{ maxLength: 3000 }}
+          autoComplete="off"
         />
       </Box>
     </>

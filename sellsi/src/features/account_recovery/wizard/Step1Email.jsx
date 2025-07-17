@@ -120,7 +120,7 @@ const Step1Email = ({
             mt: 0.5,
           }}
         >
-          Volver atrás
+          Volver
         </Button>
       </form>
     </Box>

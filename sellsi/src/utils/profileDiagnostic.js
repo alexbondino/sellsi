@@ -15,5 +15,4 @@ const runDiagnosis = async () => {
 };
 
 // O simplemente agregar esto temporalmente al handleUpdateProfile:
-console.log('🔍 Running table diagnosis...');
 await diagnoseTables(user.id);

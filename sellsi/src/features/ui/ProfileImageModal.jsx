@@ -128,9 +128,7 @@ const ProfileImageModal = ({
   const handleRemoveImage = () => {
     if (selectedImage?.url) {
       URL.revokeObjectURL(selectedImage.url);
-      // console.log('[ProfileImageModal] handleRemoveImage: URL revocada para', selectedImage.url);
     }
-    // console.log('[ProfileImageModal] handleRemoveImage: Imagen seleccionada eliminada');
     setSelectedImage(null);
     setError('');
   };
