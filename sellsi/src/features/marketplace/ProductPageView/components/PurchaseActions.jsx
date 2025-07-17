@@ -10,6 +10,8 @@ import {
 import { ShoppingCart, Add, Remove } from '@mui/icons-material'
 import { toast } from 'react-hot-toast'
 import { formatProductForCart } from '../../../../utils/priceCalculation'
+import QuotationButton from './QuotationButton'
+import { calculateUnitPrice } from '../utils/quotationUtils'
 
 const PurchaseActions = ({
   onAddToCart,
@@ -23,6 +25,10 @@ const PurchaseActions = ({
   const [quantity, setQuantity] = useState(minimumPurchase)
   // Permitir edición libre
   const [inputValue, setInputValue] = useState(minimumPurchase.toString())
+  
+  // Calcular precio unitario dinámico basado en cantidad y tramos
+  const unitPrice = calculateUnitPrice(quantity, tiers, product.price || product.precio || 0)
+  
   const canAdd =
     !isNaN(parseInt(inputValue)) &&
     parseInt(inputValue) >= minimumPurchase &&
@@ -162,6 +168,16 @@ const PurchaseActions = ({
             ? `Mín: ${minimumPurchase}`
             : 'Agregar al Carrito'}
         </Button>
+        
+        {/* Quotation Button - Solo para compradores */}
+        {isLoggedIn && (
+          <QuotationButton
+            product={product}
+            quantity={quantity}
+            unitPrice={unitPrice}
+            tiers={tiers}
+          />
+        )}
       </Box>
     </Box>
   )

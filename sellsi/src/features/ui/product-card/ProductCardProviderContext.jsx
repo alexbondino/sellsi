@@ -227,6 +227,7 @@ const areEqual = (prevProps, nextProps) => {
     prevProps.product.logo_url === nextProps.product.logo_url &&
     prevProps.product.user_nm === nextProps.product.user_nm &&
     prevProps.product.proveedor === nextProps.product.proveedor &&
+    prevProps.product.descripcion_proveedor === nextProps.product.descripcion_proveedor &&
     prevProps.product.product_count === nextProps.product.product_count
   );
 };

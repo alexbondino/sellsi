@@ -10,7 +10,6 @@ import React, {
 import {
   Box,
   Typography,
-  Container,
   Button,
   IconButton,
   Grid,
@@ -596,19 +595,30 @@ const BuyerCart = () => {
           backgroundColor: 'background.default',
           minHeight: '100vh',
           pt: { xs: 9, md: 10 },
-          px: 3,
+          px: { xs: 2, sm: 3, md: 4 },
           pb: SPACING_BOTTOM_MAIN,
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
           // Agrega margen izquierdo solo en desktop (md+)
-          ml: { xs: 0, md: 8, lg: 24, xl: 34 },
           transition: 'margin-left 0.3s',
         }}
       >
         {/* <Toaster position="top-right" toastOptions={{ style: { marginTop: 72 } }} /> */}
         {/* ConfettiEffect eliminado */}
-        <Container maxWidth="xl" disableGutters sx={{ px: { xs: 0, md: 2 } }}>
+        <Box
+          sx={{
+            backgroundColor: 'white',
+            width: '100%',
+            maxWidth: '1450px',
+            mx: 'auto',
+            p: 3,
+            mb: 6,
+            border: '1.5px solid #e0e0e0',
+            boxShadow: 6,
+            borderRadius: 3,
+          }}
+        >
           {/* Header con estadísticas */}{' '}
           <motion.div
             ref={ref}
@@ -779,7 +789,7 @@ const BuyerCart = () => {
               removeFromWishlist={removeFromWishlist}
             />
           </motion.div>
-        </Container>
+        </Box>
         
         {/* Modal de compatibilidad de envío */}
         <ShippingCompatibilityModal

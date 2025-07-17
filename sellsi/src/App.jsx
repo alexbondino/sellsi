@@ -2,6 +2,7 @@ import AuthCallback from './features/auth/AuthCallback';
 import React, { useEffect, useState, useRef, Suspense } from 'react';
 import { Box, CssBaseline, CircularProgress, Typography } from '@mui/material';
 import Loader from './components/Loader';
+import BanGuard from './components/BanGuard';
 import { ThemeProvider } from '@mui/material/styles';
 import GlobalStyles from '@mui/material/GlobalStyles';
 import {
@@ -93,6 +94,13 @@ const Onboarding = React.lazy(() => import('./features/onboarding/Onboarding'));
 
 // 📦 ERROR PAGES - LAZY LOADING
 const NotFound = React.lazy(() => import('./features/ui/NotFound'));
+
+// 📦 BAN PAGE - LAZY LOADING
+const BannedPage = React.lazy(() => import('./features/ban/BanPageView'));
+
+// 📦 TERMS AND PRIVACY PAGES - LAZY LOADING
+const TermsAndConditionsPage = React.lazy(() => import('./features/terms_policies/TermsAndConditionsPage'));
+const PrivacyPolicyPage = React.lazy(() => import('./features/terms_policies/PrivacyPolicyPage'));
 
 // ============================================================================
 // 🎨 COMPONENTE DE LOADING UNIVERSAL PARA SUSPENSE
@@ -193,6 +201,8 @@ function AppContent({ mensaje }) {
     '/login',
     '/crear-cuenta',
     '/onboarding',
+    '/terms-and-conditions',
+    '/privacy-policy',
   ]);
 
   useEffect(() => {
@@ -334,6 +344,8 @@ function AppContent({ mensaje }) {
         location.pathname === '/login' ||
         location.pathname === '/crear-cuenta' ||
         location.pathname === '/onboarding' ||
+        location.pathname === '/terms-and-conditions' ||
+        location.pathname === '/privacy-policy' ||
         location.pathname.startsWith('/technicalspecs')
       )
     ) {
@@ -432,7 +444,9 @@ function AppContent({ mensaje }) {
   // basado en su perfil real.
   useEffect(() => {
     if (!loadingUserStatus && session && !needsOnboarding && userProfile) {
-      if (neutralRoutes.has(location.pathname)) {
+      if (neutralRoutes.has(location.pathname) && 
+          location.pathname !== '/terms-and-conditions' && 
+          location.pathname !== '/privacy-policy') {
         const target = userProfile.main_supplier
           ? '/supplier/home'
           : '/buyer/marketplace';
@@ -557,9 +571,13 @@ function AppContent({ mensaje }) {
   // Determinar si la SideBar debe mostrarse.
   // La SideBar se muestra si hay una sesión, no se necesita onboarding,
   // y la ruta actual es una ruta de dashboard (ya sea de comprador o proveedor),
-  // o si la ruta es una ficha técnica de producto.
+  // o si la ruta es una ficha técnica de producto, o si es una página de términos/privacidad.
   const isProductPageRoute =
     location.pathname.match(/^\/marketplace\/product\/[^/]+(\/[^/]+)?$/);
+
+  const isTermsOrPrivacyRoute = 
+    location.pathname === '/terms-and-conditions' || 
+    location.pathname === '/privacy-policy';
 
   const isDashboardRoute =
     session &&
@@ -571,7 +589,8 @@ function AppContent({ mensaje }) {
       Array.from(supplierDashboardRoutes).some(route =>
         location.pathname.startsWith(route)
       ) ||
-      isProductPageRoute
+      isProductPageRoute ||
+      isTermsOrPrivacyRoute
     );
 
   // Ocultar TopBar y BottomBar en rutas administrativas
@@ -683,9 +702,16 @@ function AppContent({ mensaje }) {
                 <Route path="/login" element={<Login />} />
                 <Route path="/crear-cuenta" element={<Register />} />
 
+                {/* RUTAS DE TÉRMINOS Y POLÍTICAS */}
+                <Route path="/terms-and-conditions" element={<TermsAndConditionsPage />} />
+                <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+
                 {/* RUTAS ADMINISTRATIVAS - ACCESO VISUAL PARA TESTING */}
                 <Route path="/admin-login" element={<AdminLogin />} />
                 <Route path="/admin-panel/dashboard" element={<AdminDashboard />} />
+
+                {/* Ruta para página de ban (acceso directo para testing) */}
+                <Route path="/banned" element={<BannedPage />} />
 
                 {/* Ruta para testing de 404 (solo desarrollo) */}
                 <Route path="/404" element={<NotFound />} />
@@ -974,7 +1000,9 @@ function App() {
       <BannerProvider>
         <BrowserRouter>
           <ScrollToTop />
-          <AppContent mensaje={mensaje} />
+          <BanGuard>
+            <AppContent mensaje={mensaje} />
+          </BanGuard>
         </BrowserRouter>
         <Toaster
           position="top-right"

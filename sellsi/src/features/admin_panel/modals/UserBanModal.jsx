@@ -40,12 +40,12 @@ import {
 
 // ✅ CONSTANTS
 const BAN_REASONS = [
-  { value: 'spam', label: 'Spam o contenido no deseado' },
-  { value: 'fraud', label: 'Actividad fraudulenta' },
-  { value: 'harassment', label: 'Acoso o comportamiento inapropiado' },
-  { value: 'fake_products', label: 'Productos falsos o engañosos' },
-  { value: 'violations', label: 'Violación de términos de servicio' },
-  { value: 'security', label: 'Compromiso de seguridad' },
+  { value: 'contenido_no_deseado', label: 'Spam o contenido no deseado' },
+  { value: 'actividad_fraudulenta', label: 'Actividad fraudulenta' },
+  { value: 'acoso_conducta_inapropiada', label: 'Acoso o comportamiento inapropiado' },
+  { value: 'productos_falsos', label: 'Productos falsos o engañosos' },
+  { value: 'violacion_terminos', label: 'Violación de términos de servicio' },
+  { value: 'riesgo_seguridad', label: 'Compromiso de seguridad' },
   { value: 'other', label: 'Otra razón' }
 ];
 

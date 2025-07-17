@@ -1,77 +1,307 @@
-CheckoutSummary.jsx:159 [CheckoutSummary] Usando costo de envío real del orderData: {orderDataShipping: 3232, itemsCount: 1}
-CheckoutSummary.jsx:159 [CheckoutSummary] Usando costo de envío real del orderData: {orderDataShipping: 3232, itemsCount: 1}
-CheckoutSummary.jsx:72 🔍 [ProductAvatar] Extrayendo timestamp: {fileName: '1752647979157_Screenshot_2025-06-29_133837.png', timestamp: '1752647979157', userId: '34e23a46-f8bb-4e50-b058-301ac6b0af12', productId: '1ec9cd0b-04ce-447d-8cc1-22d93ed63fd7'}
-CheckoutSummary.jsx:92 🎯 [ProductAvatar] URL dinámica construida: https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v1/object/public/product-images-thumbnails/34e23a46-f8bb-4e50-b058-301ac6b0af12/1ec9cd0b-04ce-447d-8cc1-22d93ed63fd7/1752647979157_minithumb_40x40.jpg
-CheckoutSummary.jsx:93 🔍 [ProductAvatar] Datos del item: {product_id: '1ec9cd0b-04ce-447d-8cc1-22d93ed63fd7', imagen: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…d7/1752647979157_Screenshot_2025-06-29_133837.png', thumbnail_url: undefined, name: 'Producto Dimeeerda'}
-CheckoutSummary.jsx:103 🚀 [ProductAvatar] Estado final: {hasError: false, minithumbUrl: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…c1-22d93ed63fd7/1752647979157_minithumb_40x40.jpg', finalUrl: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…c1-22d93ed63fd7/1752647979157_minithumb_40x40.jpg', itemImagen: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…d7/1752647979157_Screenshot_2025-06-29_133837.png'}
-CheckoutSummary.jsx:72 🔍 [ProductAvatar] Extrayendo timestamp: {fileName: '1752647979157_Screenshot_2025-06-29_133837.png', timestamp: '1752647979157', userId: '34e23a46-f8bb-4e50-b058-301ac6b0af12', productId: '1ec9cd0b-04ce-447d-8cc1-22d93ed63fd7'}
-CheckoutSummary.jsx:92 🎯 [ProductAvatar] URL dinámica construida: https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v1/object/public/product-images-thumbnails/34e23a46-f8bb-4e50-b058-301ac6b0af12/1ec9cd0b-04ce-447d-8cc1-22d93ed63fd7/1752647979157_minithumb_40x40.jpg
-CheckoutSummary.jsx:93 🔍 [ProductAvatar] Datos del item: {product_id: '1ec9cd0b-04ce-447d-8cc1-22d93ed63fd7', imagen: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…d7/1752647979157_Screenshot_2025-06-29_133837.png', thumbnail_url: undefined, name: 'Producto Dimeeerda'}
-CheckoutSummary.jsx:103 🚀 [ProductAvatar] Estado final: {hasError: false, minithumbUrl: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…c1-22d93ed63fd7/1752647979157_minithumb_40x40.jpg', finalUrl: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…c1-22d93ed63fd7/1752647979157_minithumb_40x40.jpg', itemImagen: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…d7/1752647979157_Screenshot_2025-06-29_133837.png'}
-CheckoutSummary.jsx:72 🔍 [ProductAvatar] Extrayendo timestamp: {fileName: '1752647979157_Screenshot_2025-06-29_133837.png', timestamp: '1752647979157', userId: '34e23a46-f8bb-4e50-b058-301ac6b0af12', productId: '1ec9cd0b-04ce-447d-8cc1-22d93ed63fd7'}
-CheckoutSummary.jsx:92 🎯 [ProductAvatar] URL dinámica construida: https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v1/object/public/product-images-thumbnails/34e23a46-f8bb-4e50-b058-301ac6b0af12/1ec9cd0b-04ce-447d-8cc1-22d93ed63fd7/1752647979157_minithumb_40x40.jpg
-CheckoutSummary.jsx:93 🔍 [ProductAvatar] Datos del item: {product_id: '1ec9cd0b-04ce-447d-8cc1-22d93ed63fd7', imagen: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…d7/1752647979157_Screenshot_2025-06-29_133837.png', thumbnail_url: undefined, name: 'Producto Dimeeerda'}
-CheckoutSummary.jsx:103 🚀 [ProductAvatar] Estado final: {hasError: false, minithumbUrl: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…c1-22d93ed63fd7/1752647979157_minithumb_40x40.jpg', finalUrl: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…c1-22d93ed63fd7/1752647979157_minithumb_40x40.jpg', itemImagen: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…d7/1752647979157_Screenshot_2025-06-29_133837.png'}
-CheckoutSummary.jsx:72 🔍 [ProductAvatar] Extrayendo timestamp: {fileName: '1752647979157_Screenshot_2025-06-29_133837.png', timestamp: '1752647979157', userId: '34e23a46-f8bb-4e50-b058-301ac6b0af12', productId: '1ec9cd0b-04ce-447d-8cc1-22d93ed63fd7'}
-CheckoutSummary.jsx:92 🎯 [ProductAvatar] URL dinámica construida: https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v1/object/public/product-images-thumbnails/34e23a46-f8bb-4e50-b058-301ac6b0af12/1ec9cd0b-04ce-447d-8cc1-22d93ed63fd7/1752647979157_minithumb_40x40.jpg
-CheckoutSummary.jsx:93 🔍 [ProductAvatar] Datos del item: {product_id: '1ec9cd0b-04ce-447d-8cc1-22d93ed63fd7', imagen: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…d7/1752647979157_Screenshot_2025-06-29_133837.png', thumbnail_url: undefined, name: 'Producto Dimeeerda'}
-CheckoutSummary.jsx:103 🚀 [ProductAvatar] Estado final: {hasError: false, minithumbUrl: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…c1-22d93ed63fd7/1752647979157_minithumb_40x40.jpg', finalUrl: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…c1-22d93ed63fd7/1752647979157_minithumb_40x40.jpg', itemImagen: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…d7/1752647979157_Screenshot_2025-06-29_133837.png'}
-PaymentMethod.jsx:58 [PaymentMethod] Datos de checkout inicializados: {itemsCount: 1, subtotal: 121, tax: 23, serviceFee: 2, shipping: 3232, …}
-CheckoutSummary.jsx:72 🔍 [ProductAvatar] Extrayendo timestamp: {fileName: '1752647979157_Screenshot_2025-06-29_133837.png', timestamp: '1752647979157', userId: '34e23a46-f8bb-4e50-b058-301ac6b0af12', productId: '1ec9cd0b-04ce-447d-8cc1-22d93ed63fd7'}
-CheckoutSummary.jsx:92 🎯 [ProductAvatar] URL dinámica construida: https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v1/object/public/product-images-thumbnails/34e23a46-f8bb-4e50-b058-301ac6b0af12/1ec9cd0b-04ce-447d-8cc1-22d93ed63fd7/1752647979157_minithumb_40x40.jpg
-CheckoutSummary.jsx:93 🔍 [ProductAvatar] Datos del item: {product_id: '1ec9cd0b-04ce-447d-8cc1-22d93ed63fd7', imagen: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…d7/1752647979157_Screenshot_2025-06-29_133837.png', thumbnail_url: undefined, name: 'Producto Dimeeerda'}
-CheckoutSummary.jsx:103 🚀 [ProductAvatar] Estado final: {hasError: false, minithumbUrl: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…c1-22d93ed63fd7/1752647979157_minithumb_40x40.jpg', finalUrl: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…c1-22d93ed63fd7/1752647979157_minithumb_40x40.jpg', itemImagen: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…d7/1752647979157_Screenshot_2025-06-29_133837.png'}
-CheckoutSummary.jsx:72 🔍 [ProductAvatar] Extrayendo timestamp: {fileName: '1752647979157_Screenshot_2025-06-29_133837.png', timestamp: '1752647979157', userId: '34e23a46-f8bb-4e50-b058-301ac6b0af12', productId: '1ec9cd0b-04ce-447d-8cc1-22d93ed63fd7'}
-CheckoutSummary.jsx:92 🎯 [ProductAvatar] URL dinámica construida: https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v1/object/public/product-images-thumbnails/34e23a46-f8bb-4e50-b058-301ac6b0af12/1ec9cd0b-04ce-447d-8cc1-22d93ed63fd7/1752647979157_minithumb_40x40.jpg
-CheckoutSummary.jsx:93 🔍 [ProductAvatar] Datos del item: {product_id: '1ec9cd0b-04ce-447d-8cc1-22d93ed63fd7', imagen: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…d7/1752647979157_Screenshot_2025-06-29_133837.png', thumbnail_url: undefined, name: 'Producto Dimeeerda'}
-CheckoutSummary.jsx:103 🚀 [ProductAvatar] Estado final: {hasError: false, minithumbUrl: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…c1-22d93ed63fd7/1752647979157_minithumb_40x40.jpg', finalUrl: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…c1-22d93ed63fd7/1752647979157_minithumb_40x40.jpg', itemImagen: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…d7/1752647979157_Screenshot_2025-06-29_133837.png'}
-CheckoutSummary.jsx:72 🔍 [ProductAvatar] Extrayendo timestamp: {fileName: '1752647979157_Screenshot_2025-06-29_133837.png', timestamp: '1752647979157', userId: '34e23a46-f8bb-4e50-b058-301ac6b0af12', productId: '1ec9cd0b-04ce-447d-8cc1-22d93ed63fd7'}
-CheckoutSummary.jsx:92 🎯 [ProductAvatar] URL dinámica construida: https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v1/object/public/product-images-thumbnails/34e23a46-f8bb-4e50-b058-301ac6b0af12/1ec9cd0b-04ce-447d-8cc1-22d93ed63fd7/1752647979157_minithumb_40x40.jpg
-CheckoutSummary.jsx:93 🔍 [ProductAvatar] Datos del item: {product_id: '1ec9cd0b-04ce-447d-8cc1-22d93ed63fd7', imagen: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…d7/1752647979157_Screenshot_2025-06-29_133837.png', thumbnail_url: undefined, name: 'Producto Dimeeerda'}
-CheckoutSummary.jsx:103 🚀 [ProductAvatar] Estado final: {hasError: false, minithumbUrl: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…c1-22d93ed63fd7/1752647979157_minithumb_40x40.jpg', finalUrl: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…c1-22d93ed63fd7/1752647979157_minithumb_40x40.jpg', itemImagen: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…d7/1752647979157_Screenshot_2025-06-29_133837.png'}
-CheckoutSummary.jsx:72 🔍 [ProductAvatar] Extrayendo timestamp: {fileName: '1752647979157_Screenshot_2025-06-29_133837.png', timestamp: '1752647979157', userId: '34e23a46-f8bb-4e50-b058-301ac6b0af12', productId: '1ec9cd0b-04ce-447d-8cc1-22d93ed63fd7'}
-CheckoutSummary.jsx:92 🎯 [ProductAvatar] URL dinámica construida: https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v1/object/public/product-images-thumbnails/34e23a46-f8bb-4e50-b058-301ac6b0af12/1ec9cd0b-04ce-447d-8cc1-22d93ed63fd7/1752647979157_minithumb_40x40.jpg
-CheckoutSummary.jsx:93 🔍 [ProductAvatar] Datos del item: {product_id: '1ec9cd0b-04ce-447d-8cc1-22d93ed63fd7', imagen: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…d7/1752647979157_Screenshot_2025-06-29_133837.png', thumbnail_url: undefined, name: 'Producto Dimeeerda'}
-CheckoutSummary.jsx:103 🚀 [ProductAvatar] Estado final: {hasError: false, minithumbUrl: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…c1-22d93ed63fd7/1752647979157_minithumb_40x40.jpg', finalUrl: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…c1-22d93ed63fd7/1752647979157_minithumb_40x40.jpg', itemImagen: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…d7/1752647979157_Screenshot_2025-06-29_133837.png'}
-PaymentMethod.jsx:58 [PaymentMethod] Datos de checkout inicializados: {itemsCount: 1, subtotal: 121, tax: 23, serviceFee: 2, shipping: 3232, …}
-CheckoutSummary.jsx:72 🔍 [ProductAvatar] Extrayendo timestamp: {fileName: '1752647979157_Screenshot_2025-06-29_133837.png', timestamp: '1752647979157', userId: '34e23a46-f8bb-4e50-b058-301ac6b0af12', productId: '1ec9cd0b-04ce-447d-8cc1-22d93ed63fd7'}
-CheckoutSummary.jsx:92 🎯 [ProductAvatar] URL dinámica construida: https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v1/object/public/product-images-thumbnails/34e23a46-f8bb-4e50-b058-301ac6b0af12/1ec9cd0b-04ce-447d-8cc1-22d93ed63fd7/1752647979157_minithumb_40x40.jpg
-CheckoutSummary.jsx:93 🔍 [ProductAvatar] Datos del item: {product_id: '1ec9cd0b-04ce-447d-8cc1-22d93ed63fd7', imagen: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…d7/1752647979157_Screenshot_2025-06-29_133837.png', thumbnail_url: undefined, name: 'Producto Dimeeerda'}
-CheckoutSummary.jsx:103 🚀 [ProductAvatar] Estado final: {hasError: false, minithumbUrl: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…c1-22d93ed63fd7/1752647979157_minithumb_40x40.jpg', finalUrl: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…c1-22d93ed63fd7/1752647979157_minithumb_40x40.jpg', itemImagen: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…d7/1752647979157_Screenshot_2025-06-29_133837.png'}
-CheckoutSummary.jsx:72 🔍 [ProductAvatar] Extrayendo timestamp: {fileName: '1752647979157_Screenshot_2025-06-29_133837.png', timestamp: '1752647979157', userId: '34e23a46-f8bb-4e50-b058-301ac6b0af12', productId: '1ec9cd0b-04ce-447d-8cc1-22d93ed63fd7'}
-CheckoutSummary.jsx:92 🎯 [ProductAvatar] URL dinámica construida: https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v1/object/public/product-images-thumbnails/34e23a46-f8bb-4e50-b058-301ac6b0af12/1ec9cd0b-04ce-447d-8cc1-22d93ed63fd7/1752647979157_minithumb_40x40.jpg
-CheckoutSummary.jsx:93 🔍 [ProductAvatar] Datos del item: {product_id: '1ec9cd0b-04ce-447d-8cc1-22d93ed63fd7', imagen: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…d7/1752647979157_Screenshot_2025-06-29_133837.png', thumbnail_url: undefined, name: 'Producto Dimeeerda'}
-CheckoutSummary.jsx:103 🚀 [ProductAvatar] Estado final: {hasError: false, minithumbUrl: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…c1-22d93ed63fd7/1752647979157_minithumb_40x40.jpg', finalUrl: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…c1-22d93ed63fd7/1752647979157_minithumb_40x40.jpg', itemImagen: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…d7/1752647979157_Screenshot_2025-06-29_133837.png'}
-CheckoutSummary.jsx:72 🔍 [ProductAvatar] Extrayendo timestamp: {fileName: '1752647979157_Screenshot_2025-06-29_133837.png', timestamp: '1752647979157', userId: '34e23a46-f8bb-4e50-b058-301ac6b0af12', productId: '1ec9cd0b-04ce-447d-8cc1-22d93ed63fd7'}
-CheckoutSummary.jsx:92 🎯 [ProductAvatar] URL dinámica construida: https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v1/object/public/product-images-thumbnails/34e23a46-f8bb-4e50-b058-301ac6b0af12/1ec9cd0b-04ce-447d-8cc1-22d93ed63fd7/1752647979157_minithumb_40x40.jpg
-CheckoutSummary.jsx:93 🔍 [ProductAvatar] Datos del item: {product_id: '1ec9cd0b-04ce-447d-8cc1-22d93ed63fd7', imagen: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…d7/1752647979157_Screenshot_2025-06-29_133837.png', thumbnail_url: undefined, name: 'Producto Dimeeerda'}
-CheckoutSummary.jsx:103 🚀 [ProductAvatar] Estado final: {hasError: false, minithumbUrl: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…c1-22d93ed63fd7/1752647979157_minithumb_40x40.jpg', finalUrl: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…c1-22d93ed63fd7/1752647979157_minithumb_40x40.jpg', itemImagen: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…d7/1752647979157_Screenshot_2025-06-29_133837.png'}
-CheckoutSummary.jsx:72 🔍 [ProductAvatar] Extrayendo timestamp: {fileName: '1752647979157_Screenshot_2025-06-29_133837.png', timestamp: '1752647979157', userId: '34e23a46-f8bb-4e50-b058-301ac6b0af12', productId: '1ec9cd0b-04ce-447d-8cc1-22d93ed63fd7'}
-CheckoutSummary.jsx:92 🎯 [ProductAvatar] URL dinámica construida: https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v1/object/public/product-images-thumbnails/34e23a46-f8bb-4e50-b058-301ac6b0af12/1ec9cd0b-04ce-447d-8cc1-22d93ed63fd7/1752647979157_minithumb_40x40.jpg
-CheckoutSummary.jsx:93 🔍 [ProductAvatar] Datos del item: {product_id: '1ec9cd0b-04ce-447d-8cc1-22d93ed63fd7', imagen: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…d7/1752647979157_Screenshot_2025-06-29_133837.png', thumbnail_url: undefined, name: 'Producto Dimeeerda'}
-CheckoutSummary.jsx:103 🚀 [ProductAvatar] Estado final: {hasError: false, minithumbUrl: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…c1-22d93ed63fd7/1752647979157_minithumb_40x40.jpg', finalUrl: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…c1-22d93ed63fd7/1752647979157_minithumb_40x40.jpg', itemImagen: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…d7/1752647979157_Screenshot_2025-06-29_133837.png'}
-CheckoutSummary.jsx:72 🔍 [ProductAvatar] Extrayendo timestamp: {fileName: '1752647979157_Screenshot_2025-06-29_133837.png', timestamp: '1752647979157', userId: '34e23a46-f8bb-4e50-b058-301ac6b0af12', productId: '1ec9cd0b-04ce-447d-8cc1-22d93ed63fd7'}
-CheckoutSummary.jsx:92 🎯 [ProductAvatar] URL dinámica construida: https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v1/object/public/product-images-thumbnails/34e23a46-f8bb-4e50-b058-301ac6b0af12/1ec9cd0b-04ce-447d-8cc1-22d93ed63fd7/1752647979157_minithumb_40x40.jpg
-CheckoutSummary.jsx:93 🔍 [ProductAvatar] Datos del item: {product_id: '1ec9cd0b-04ce-447d-8cc1-22d93ed63fd7', imagen: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…d7/1752647979157_Screenshot_2025-06-29_133837.png', thumbnail_url: undefined, name: 'Producto Dimeeerda'}
-CheckoutSummary.jsx:103 🚀 [ProductAvatar] Estado final: {hasError: false, minithumbUrl: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…c1-22d93ed63fd7/1752647979157_minithumb_40x40.jpg', finalUrl: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…c1-22d93ed63fd7/1752647979157_minithumb_40x40.jpg', itemImagen: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…d7/1752647979157_Screenshot_2025-06-29_133837.png'}
-CheckoutSummary.jsx:72 🔍 [ProductAvatar] Extrayendo timestamp: {fileName: '1752647979157_Screenshot_2025-06-29_133837.png', timestamp: '1752647979157', userId: '34e23a46-f8bb-4e50-b058-301ac6b0af12', productId: '1ec9cd0b-04ce-447d-8cc1-22d93ed63fd7'}
-CheckoutSummary.jsx:92 🎯 [ProductAvatar] URL dinámica construida: https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v1/object/public/product-images-thumbnails/34e23a46-f8bb-4e50-b058-301ac6b0af12/1ec9cd0b-04ce-447d-8cc1-22d93ed63fd7/1752647979157_minithumb_40x40.jpg
-CheckoutSummary.jsx:93 🔍 [ProductAvatar] Datos del item: {product_id: '1ec9cd0b-04ce-447d-8cc1-22d93ed63fd7', imagen: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…d7/1752647979157_Screenshot_2025-06-29_133837.png', thumbnail_url: undefined, name: 'Producto Dimeeerda'}
-CheckoutSummary.jsx:103 🚀 [ProductAvatar] Estado final: {hasError: false, minithumbUrl: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…c1-22d93ed63fd7/1752647979157_minithumb_40x40.jpg', finalUrl: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…c1-22d93ed63fd7/1752647979157_minithumb_40x40.jpg', itemImagen: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…d7/1752647979157_Screenshot_2025-06-29_133837.png'}
-PaymentMethod.jsx:58 [PaymentMethod] Datos de checkout inicializados: {itemsCount: 1, subtotal: 121, tax: 23, serviceFee: 2, shipping: 3232, …}
-CheckoutSummary.jsx:72 🔍 [ProductAvatar] Extrayendo timestamp: {fileName: '1752647979157_Screenshot_2025-06-29_133837.png', timestamp: '1752647979157', userId: '34e23a46-f8bb-4e50-b058-301ac6b0af12', productId: '1ec9cd0b-04ce-447d-8cc1-22d93ed63fd7'}
-CheckoutSummary.jsx:92 🎯 [ProductAvatar] URL dinámica construida: https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v1/object/public/product-images-thumbnails/34e23a46-f8bb-4e50-b058-301ac6b0af12/1ec9cd0b-04ce-447d-8cc1-22d93ed63fd7/1752647979157_minithumb_40x40.jpg
-CheckoutSummary.jsx:93 🔍 [ProductAvatar] Datos del item: {product_id: '1ec9cd0b-04ce-447d-8cc1-22d93ed63fd7', imagen: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…d7/1752647979157_Screenshot_2025-06-29_133837.png', thumbnail_url: undefined, name: 'Producto Dimeeerda'}
-CheckoutSummary.jsx:103 🚀 [ProductAvatar] Estado final: {hasError: false, minithumbUrl: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…c1-22d93ed63fd7/1752647979157_minithumb_40x40.jpg', finalUrl: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…c1-22d93ed63fd7/1752647979157_minithumb_40x40.jpg', itemImagen: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…d7/1752647979157_Screenshot_2025-06-29_133837.png'}
-CheckoutSummary.jsx:72 🔍 [ProductAvatar] Extrayendo timestamp: {fileName: '1752647979157_Screenshot_2025-06-29_133837.png', timestamp: '1752647979157', userId: '34e23a46-f8bb-4e50-b058-301ac6b0af12', productId: '1ec9cd0b-04ce-447d-8cc1-22d93ed63fd7'}
-CheckoutSummary.jsx:92 🎯 [ProductAvatar] URL dinámica construida: https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v1/object/public/product-images-thumbnails/34e23a46-f8bb-4e50-b058-301ac6b0af12/1ec9cd0b-04ce-447d-8cc1-22d93ed63fd7/1752647979157_minithumb_40x40.jpg
-CheckoutSummary.jsx:93 🔍 [ProductAvatar] Datos del item: {product_id: '1ec9cd0b-04ce-447d-8cc1-22d93ed63fd7', imagen: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…d7/1752647979157_Screenshot_2025-06-29_133837.png', thumbnail_url: undefined, name: 'Producto Dimeeerda'}
-CheckoutSummary.jsx:103 🚀 [ProductAvatar] Estado final: {hasError: false, minithumbUrl: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…c1-22d93ed63fd7/1752647979157_minithumb_40x40.jpg', finalUrl: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…c1-22d93ed63fd7/1752647979157_minithumb_40x40.jpg', itemImagen: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…d7/1752647979157_Screenshot_2025-06-29_133837.png'}
-CheckoutSummary.jsx:72 🔍 [ProductAvatar] Extrayendo timestamp: {fileName: '1752647979157_Screenshot_2025-06-29_133837.png', timestamp: '1752647979157', userId: '34e23a46-f8bb-4e50-b058-301ac6b0af12', productId: '1ec9cd0b-04ce-447d-8cc1-22d93ed63fd7'}
-CheckoutSummary.jsx:92 🎯 [ProductAvatar] URL dinámica construida: https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v1/object/public/product-images-thumbnails/34e23a46-f8bb-4e50-b058-301ac6b0af12/1ec9cd0b-04ce-447d-8cc1-22d93ed63fd7/1752647979157_minithumb_40x40.jpg
-CheckoutSummary.jsx:93 🔍 [ProductAvatar] Datos del item: {product_id: '1ec9cd0b-04ce-447d-8cc1-22d93ed63fd7', imagen: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…d7/1752647979157_Screenshot_2025-06-29_133837.png', thumbnail_url: undefined, name: 'Producto Dimeeerda'}
-CheckoutSummary.jsx:103 🚀 [ProductAvatar] Estado final: {hasError: false, minithumbUrl: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…c1-22d93ed63fd7/1752647979157_minithumb_40x40.jpg', finalUrl: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…c1-22d93ed63fd7/1752647979157_minithumb_40x40.jpg', itemImagen: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…d7/1752647979157_Screenshot_2025-06-29_133837.png'}
-CheckoutSummary.jsx:72 🔍 [ProductAvatar] Extrayendo timestamp: {fileName: '1752647979157_Screenshot_2025-06-29_133837.png', timestamp: '1752647979157', userId: '34e23a46-f8bb-4e50-b058-301ac6b0af12', productId: '1ec9cd0b-04ce-447d-8cc1-22d93ed63fd7'}
-CheckoutSummary.jsx:92 🎯 [ProductAvatar] URL dinámica construida: https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v1/object/public/product-images-thumbnails/34e23a46-f8bb-4e50-b058-301ac6b0af12/1ec9cd0b-04ce-447d-8cc1-22d93ed63fd7/1752647979157_minithumb_40x40.jpg
-CheckoutSummary.jsx:93 🔍 [ProductAvatar] Datos del item: {product_id: '1ec9cd0b-04ce-447d-8cc1-22d93ed63fd7', imagen: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…d7/1752647979157_Screenshot_2025-06-29_133837.png', thumbnail_url: undefined, name: 'Producto Dimeeerda'}
-CheckoutSummary.jsx:103 🚀 [ProductAvatar] Estado final: {hasError: false, minithumbUrl: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…c1-22d93ed63fd7/1752647979157_minithumb_40x40.jpg', finalUrl: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…c1-22d93ed63fd7/1752647979157_minithumb_40x40.jpg', itemImagen: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…d7/1752647979157_Screenshot_2025-06-29_133837.png'}
+client:789 [vite] connecting...
+client:912 [vite] connected.
+scheduler.development.js:14 [Violation] 'message' handler took 450ms
+BuyerOrders.jsx:36   GET http://localhost:3000/src/features/buyer/hooks/useBuyerOrders.js?t=1752711728964 net::ERR_ABORTED 500 (Internal Server Error)
+react-dom-client.development.js:8282  Uncaught TypeError: Failed to fetch dynamically imported module: http://localhost:3000/src/features/buyer/BuyerOrders.jsx?t=1752711728964
+App.jsx:760  An error occurred in one of your React components.
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://react.dev/link/error-boundaries to learn more about error boundaries.
+
+overrideMethod @ hook.js:608
+defaultOnUncaughtError @ react-dom-client.development.js:8283
+logUncaughtError @ react-dom-client.development.js:8352
+runWithFiberInDEV @ react-dom-client.development.js:1519
+lane.callback @ react-dom-client.development.js:8382
+callCallback @ react-dom-client.development.js:5363
+commitCallbacks @ react-dom-client.development.js:5383
+runWithFiberInDEV @ react-dom-client.development.js:1522
+commitLayoutEffectOnFiber @ react-dom-client.development.js:12709
+flushLayoutEffects @ react-dom-client.development.js:15559
+commitRoot @ react-dom-client.development.js:15402
+commitRootWhenReady @ react-dom-client.development.js:14652
+<...>
+exports.jsxDEV @ react-jsx-dev-runtime.development.js:346
+AppContent @ App.jsx:760
+react-stack-bottom-frame @ react-dom-client.development.js:23863
+renderWithHooksAgain @ react-dom-client.development.js:5629
+renderWithHooks @ react-dom-client.development.js:5541
+updateFunctionComponent @ react-dom-client.development.js:8897
+beginWork @ react-dom-client.development.js:10522
+runWithFiberInDEV @ react-dom-client.development.js:1519
+performUnitOfWork @ react-dom-client.development.js:15132
+workLoopSync @ react-dom-client.development.js:14956
+renderRootSync @ react-dom-client.development.js:14936
+performWorkOnRoot @ react-dom-client.development.js:14419
+performSyncWorkOnRoot @ react-dom-client.development.js:16231
+flushSyncWorkAcrossRoots_impl @ react-dom-client.development.js:16079
+flushSpawnedWork @ react-dom-client.development.js:15677
+commitRoot @ react-dom-client.development.js:15403
+commitRootWhenReady @ react-dom-client.development.js:14652
+performWorkOnRoot @ react-dom-client.development.js:14575
+performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:16216
+performWorkUntilDeadline @ scheduler.development.js:45
+<AppContent>
+exports.jsxDEV @ react-jsx-dev-runtime.development.js:346
+App @ App.jsx:1004
+react-stack-bottom-frame @ react-dom-client.development.js:23863
+renderWithHooksAgain @ react-dom-client.development.js:5629
+renderWithHooks @ react-dom-client.development.js:5541
+updateFunctionComponent @ react-dom-client.development.js:8897
+beginWork @ react-dom-client.development.js:10522
+runWithFiberInDEV @ react-dom-client.development.js:1519
+performUnitOfWork @ react-dom-client.development.js:15132
+workLoopSync @ react-dom-client.development.js:14956
+renderRootSync @ react-dom-client.development.js:14936
+performWorkOnRoot @ react-dom-client.development.js:14419
+performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:16216
+performWorkUntilDeadline @ scheduler.development.js:45
+<App>
+exports.jsxDEV @ react-jsx-dev-runtime.development.js:346
+AppWithWhatsApp @ App.jsx:1040
+react-stack-bottom-frame @ react-dom-client.development.js:23863
+renderWithHooksAgain @ react-dom-client.development.js:5629
+renderWithHooks @ react-dom-client.development.js:5541
+updateFunctionComponent @ react-dom-client.development.js:8897
+beginWork @ react-dom-client.development.js:10522
+runWithFiberInDEV @ react-dom-client.development.js:1519
+performUnitOfWork @ react-dom-client.development.js:15132
+workLoopSync @ react-dom-client.development.js:14956
+renderRootSync @ react-dom-client.development.js:14936
+performWorkOnRoot @ react-dom-client.development.js:14419
+performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:16216
+performWorkUntilDeadline @ scheduler.development.js:45
+usePrefetch.js:84  ❌ Failed to prefetch /buyer/orders: TypeError: Failed to fetch dynamically imported module: http://localhost:3000/src/features/buyer/BuyerOrders.jsx?t=1752711728964
+overrideMethod @ hook.js:608
+(anonymous) @ usePrefetch.js:84
+Promise.catch
+prefetchRoute @ usePrefetch.js:81
+(anonymous) @ App.jsx:487
+setTimeout
+(anonymous) @ App.jsx:483
+react-stack-bottom-frame @ react-dom-client.development.js:23949
+runWithFiberInDEV @ react-dom-client.development.js:1519
+commitHookEffectListMount @ react-dom-client.development.js:11905
+commitHookPassiveMountEffects @ react-dom-client.development.js:12026
+commitPassiveMountOnFiber @ react-dom-client.development.js:13841
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
+commitPassiveMountOnFiber @ react-dom-client.development.js:13834
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
+commitPassiveMountOnFiber @ react-dom-client.development.js:13957
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
+commitPassiveMountOnFiber @ react-dom-client.development.js:13957
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
+commitPassiveMountOnFiber @ react-dom-client.development.js:13834
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
+commitPassiveMountOnFiber @ react-dom-client.development.js:13834
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
+commitPassiveMountOnFiber @ react-dom-client.development.js:13957
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
+commitPassiveMountOnFiber @ react-dom-client.development.js:13834
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
+commitPassiveMountOnFiber @ react-dom-client.development.js:13957
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
+commitPassiveMountOnFiber @ react-dom-client.development.js:13834
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
+commitPassiveMountOnFiber @ react-dom-client.development.js:13957
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
+commitPassiveMountOnFiber @ react-dom-client.development.js:13834
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
+commitPassiveMountOnFiber @ react-dom-client.development.js:13957
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
+commitPassiveMountOnFiber @ react-dom-client.development.js:13957
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
+commitPassiveMountOnFiber @ react-dom-client.development.js:13834
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
+commitPassiveMountOnFiber @ react-dom-client.development.js:13834
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
+commitPassiveMountOnFiber @ react-dom-client.development.js:13834
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
+commitPassiveMountOnFiber @ react-dom-client.development.js:13834
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
+commitPassiveMountOnFiber @ react-dom-client.development.js:13834
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
+commitPassiveMountOnFiber @ react-dom-client.development.js:13834
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
+commitPassiveMountOnFiber @ react-dom-client.development.js:13957
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
+commitPassiveMountOnFiber @ react-dom-client.development.js:13834
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
+commitPassiveMountOnFiber @ react-dom-client.development.js:13957
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
+commitPassiveMountOnFiber @ react-dom-client.development.js:13834
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
+commitPassiveMountOnFiber @ react-dom-client.development.js:13957
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
+commitPassiveMountOnFiber @ react-dom-client.development.js:13957
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
+commitPassiveMountOnFiber @ react-dom-client.development.js:13834
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
+commitPassiveMountOnFiber @ react-dom-client.development.js:13834
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
+commitPassiveMountOnFiber @ react-dom-client.development.js:13834
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
+commitPassiveMountOnFiber @ react-dom-client.development.js:13834
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
+commitPassiveMountOnFiber @ react-dom-client.development.js:13957
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
+commitPassiveMountOnFiber @ react-dom-client.development.js:13853
+flushPassiveEffects @ react-dom-client.development.js:15737
+flushPendingEffects @ react-dom-client.development.js:15702
+performSyncWorkOnRoot @ react-dom-client.development.js:16228
+flushSyncWorkAcrossRoots_impl @ react-dom-client.development.js:16079
+flushSpawnedWork @ react-dom-client.development.js:15677
+commitRoot @ react-dom-client.development.js:15403
+commitRootWhenReady @ react-dom-client.development.js:14652
+performWorkOnRoot @ react-dom-client.development.js:14575
+performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:16216
+performWorkUntilDeadline @ scheduler.development.js:45
+<AppContent>
+exports.jsxDEV @ react-jsx-dev-runtime.development.js:346
+App @ App.jsx:1004
+react-stack-bottom-frame @ react-dom-client.development.js:23863
+renderWithHooksAgain @ react-dom-client.development.js:5629
+renderWithHooks @ react-dom-client.development.js:5541
+updateFunctionComponent @ react-dom-client.development.js:8897
+beginWork @ react-dom-client.development.js:10522
+runWithFiberInDEV @ react-dom-client.development.js:1519
+performUnitOfWork @ react-dom-client.development.js:15132
+workLoopSync @ react-dom-client.development.js:14956
+renderRootSync @ react-dom-client.development.js:14936
+performWorkOnRoot @ react-dom-client.development.js:14419
+performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:16216
+performWorkUntilDeadline @ scheduler.development.js:45
+<App>
+exports.jsxDEV @ react-jsx-dev-runtime.development.js:346
+AppWithWhatsApp @ App.jsx:1040
+react-stack-bottom-frame @ react-dom-client.development.js:23863
+renderWithHooksAgain @ react-dom-client.development.js:5629
+renderWithHooks @ react-dom-client.development.js:5541
+updateFunctionComponent @ react-dom-client.development.js:8897
+beginWork @ react-dom-client.development.js:10522
+runWithFiberInDEV @ react-dom-client.development.js:1519
+performUnitOfWork @ react-dom-client.development.js:15132
+workLoopSync @ react-dom-client.development.js:14956
+renderRootSync @ react-dom-client.development.js:14936
+performWorkOnRoot @ react-dom-client.development.js:14419
+performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:16216
+performWorkUntilDeadline @ scheduler.development.js:45
+usePrefetch.js:84  ❌ Failed to prefetch /buyer/orders: TypeError: Failed to fetch dynamically imported module: http://localhost:3000/src/features/buyer/BuyerOrders.jsx?t=1752711728964
+overrideMethod @ hook.js:608
+(anonymous) @ usePrefetch.js:84
+Promise.catch
+prefetchRoute @ usePrefetch.js:81
+(anonymous) @ App.jsx:487
+setTimeout
+(anonymous) @ App.jsx:483
+react-stack-bottom-frame @ react-dom-client.development.js:23949
+runWithFiberInDEV @ react-dom-client.development.js:1519
+commitHookEffectListMount @ react-dom-client.development.js:11905
+commitHookPassiveMountEffects @ react-dom-client.development.js:12026
+commitPassiveMountOnFiber @ react-dom-client.development.js:13841
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
+commitPassiveMountOnFiber @ react-dom-client.development.js:13834
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
+commitPassiveMountOnFiber @ react-dom-client.development.js:13957
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
+commitPassiveMountOnFiber @ react-dom-client.development.js:13957
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
+commitPassiveMountOnFiber @ react-dom-client.development.js:13834
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
+commitPassiveMountOnFiber @ react-dom-client.development.js:13834
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
+commitPassiveMountOnFiber @ react-dom-client.development.js:13957
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
+commitPassiveMountOnFiber @ react-dom-client.development.js:13834
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
+commitPassiveMountOnFiber @ react-dom-client.development.js:13957
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
+commitPassiveMountOnFiber @ react-dom-client.development.js:13834
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
+commitPassiveMountOnFiber @ react-dom-client.development.js:13957
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
+commitPassiveMountOnFiber @ react-dom-client.development.js:13834
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
+commitPassiveMountOnFiber @ react-dom-client.development.js:13957
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
+commitPassiveMountOnFiber @ react-dom-client.development.js:13957
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
+commitPassiveMountOnFiber @ react-dom-client.development.js:13834
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
+commitPassiveMountOnFiber @ react-dom-client.development.js:13834
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
+commitPassiveMountOnFiber @ react-dom-client.development.js:13834
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
+commitPassiveMountOnFiber @ react-dom-client.development.js:13834
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
+commitPassiveMountOnFiber @ react-dom-client.development.js:13834
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
+commitPassiveMountOnFiber @ react-dom-client.development.js:13834
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
+commitPassiveMountOnFiber @ react-dom-client.development.js:13957
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
+commitPassiveMountOnFiber @ react-dom-client.development.js:13834
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
+commitPassiveMountOnFiber @ react-dom-client.development.js:13957
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
+commitPassiveMountOnFiber @ react-dom-client.development.js:13834
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
+commitPassiveMountOnFiber @ react-dom-client.development.js:13957
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
+commitPassiveMountOnFiber @ react-dom-client.development.js:13957
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
+commitPassiveMountOnFiber @ react-dom-client.development.js:13834
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
+commitPassiveMountOnFiber @ react-dom-client.development.js:13834
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
+commitPassiveMountOnFiber @ react-dom-client.development.js:13834
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
+commitPassiveMountOnFiber @ react-dom-client.development.js:13834
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
+commitPassiveMountOnFiber @ react-dom-client.development.js:13957
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
+commitPassiveMountOnFiber @ react-dom-client.development.js:13853
+flushPassiveEffects @ react-dom-client.development.js:15737
+flushPendingEffects @ react-dom-client.development.js:15702
+flushSpawnedWork @ react-dom-client.development.js:15668
+commitRoot @ react-dom-client.development.js:15403
+commitRootWhenReady @ react-dom-client.development.js:14652
+performWorkOnRoot @ react-dom-client.development.js:14575
+performSyncWorkOnRoot @ react-dom-client.development.js:16231
+flushSyncWorkAcrossRoots_impl @ react-dom-client.development.js:16079
+flushSpawnedWork @ react-dom-client.development.js:15677
+commitRoot @ react-dom-client.development.js:15403
+commitRootWhenReady @ react-dom-client.development.js:14652
+performWorkOnRoot @ react-dom-client.development.js:14575
+performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:16216
+performWorkUntilDeadline @ scheduler.development.js:45
+<AppContent>
+exports.jsxDEV @ react-jsx-dev-runtime.development.js:346
+App @ App.jsx:1004
+react-stack-bottom-frame @ react-dom-client.development.js:23863
+renderWithHooksAgain @ react-dom-client.development.js:5629
+renderWithHooks @ react-dom-client.development.js:5541
+updateFunctionComponent @ react-dom-client.development.js:8897
+beginWork @ react-dom-client.development.js:10522
+runWithFiberInDEV @ react-dom-client.development.js:1519
+performUnitOfWork @ react-dom-client.development.js:15132
+workLoopSync @ react-dom-client.development.js:14956
+renderRootSync @ react-dom-client.development.js:14936
+performWorkOnRoot @ react-dom-client.development.js:14419
+performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:16216
+performWorkUntilDeadline @ scheduler.development.js:45
+<App>
+exports.jsxDEV @ react-jsx-dev-runtime.development.js:346
+AppWithWhatsApp @ App.jsx:1040
+react-stack-bottom-frame @ react-dom-client.development.js:23863
+renderWithHooksAgain @ react-dom-client.development.js:5629
+renderWithHooks @ react-dom-client.development.js:5541
+updateFunctionComponent @ react-dom-client.development.js:8897
+beginWork @ react-dom-client.development.js:10522
+runWithFiberInDEV @ react-dom-client.development.js:1519
+performUnitOfWork @ react-dom-client.development.js:15132
+workLoopSync @ react-dom-client.development.js:14956
+renderRootSync @ react-dom-client.development.js:14936
+performWorkOnRoot @ react-dom-client.development.js:14419
+performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:16216
+performWorkUntilDeadline @ scheduler.development.js:45

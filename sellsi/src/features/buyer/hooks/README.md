@@ -18,6 +18,7 @@ Esta carpeta contiene todos los hooks personalizados que gestionan la lógica av
 | useCoupons.js          | Hook    | Gestión y validación de cupones de descuento.             |
 | useCartHistory.js      | Hook    | Historial de acciones y undo/redo del carrito.            |
 | useCartNotifications.js| Hook    | Notificaciones y alertas del carrito.                     |
+| useBuyerOrders.js      | Hook    | Maneja pedidos del comprador, conectado al backend.       |
 
 ## 3. Relaciones internas del módulo
 - `cartStore.js` centraliza el estado y delega a hooks especializados (`useWishlist`, `useShipping`, `useCoupons`, `useCartHistory`).
@@ -55,6 +56,10 @@ cartStore.js
 
 ### useCartNotifications.js
 - **Funciones:** notifyCartCleaned(summary), notifyQuantityLimited(productName, oldQuantity, newQuantity), notifyCartError(error), resetNotifications()
+
+### useBuyerOrders.js
+- **Estados:** orders (array de pedidos)
+- **Funciones:** fetchOrders(), cancelOrder(orderId), returnOrder(orderId)
 
 ## 5. Hooks personalizados
 Todos los archivos de la carpeta son hooks personalizados, diseñados para ser usados en componentes del módulo buyer o en otros módulos de compra.

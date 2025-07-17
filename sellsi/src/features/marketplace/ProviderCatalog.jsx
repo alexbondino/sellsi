@@ -79,7 +79,7 @@ const ProviderCatalog = () => {
         // 1. Obtener información del proveedor
         const { data: providerData, error: providerError } = await supabase
           .from('users')
-          .select('user_id, user_nm, logo_url, main_supplier, descripcion_proveedor')
+          .select('user_id, user_nm, logo_url, main_supplier, descripcion_proveedor, verified')
           .eq('user_id', userId)
           .single();
 
@@ -442,7 +442,7 @@ const ProviderCatalog = () => {
                   <Typography variant="h4" sx={{ fontWeight: 600, color: 'primary.main' }}>
                     {provider?.user_nm || 'Proveedor'}
                   </Typography>
-                  {provider?.main_supplier && (
+                  {provider?.verified === true && (
                     <Chip
                       icon={<VerifiedUser />}
                       label="Verificado"

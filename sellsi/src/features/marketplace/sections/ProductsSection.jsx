@@ -230,6 +230,8 @@ const ProductsSection = React.memo(
               user_nm: producto.proveedor || `Proveedor #${supplierId}`,
               // ✅ USAR logo real del proveedor desde la BD o fallback
               logo_url: producto.supplier_logo_url || `/LOGO-removebg-preview.png`,
+              // ✅ USAR descripcion_proveedor real del proveedor
+              descripcion_proveedor: producto.descripcion_proveedor,
               provider_id: supplierId,
               product_count: 1
             });
@@ -770,12 +772,7 @@ const ProductsSection = React.memo(
                       border: '1px dashed #e9ecef',
                     }}
                   >
-                    <Typography variant="caption" color="text.secondary">
-                      📊 Debug: Productos visibles: {visibleProductsCount} |
-                      Trigger de carga: {PRELOAD_TRIGGER} | Lote de carga:{' '}
-                      {LOAD_MORE_BATCH} | Total en página:{' '}
-                      {currentPageProducts.length}
-                    </Typography>
+                    {/* Debug info removed */}
                   </Box>
                 )}
 

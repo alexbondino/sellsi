@@ -92,9 +92,9 @@ export const checkIPBanStatus = async (ip) => {
       .from('banned_ips')
       .select('*')
       .eq('ip', ip)
-      .single();
+      .maybeSingle(); // Cambiamos de .single() a .maybeSingle()
 
-    if (error && error.code !== 'PGRST116') {
+    if (error) {
       throw error;
     }
 

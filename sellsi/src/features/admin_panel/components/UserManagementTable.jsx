@@ -78,7 +78,8 @@ const USER_FILTERS = [
   { value: 'banned', label: 'Usuarios baneados' },
   { value: 'inactive', label: 'Usuarios inactivos' },
   { value: 'suppliers', label: 'Solo proveedores' },
-  { value: 'buyers', label: 'Solo compradores' }
+  { value: 'buyers', label: 'Solo compradores' },
+  { value: 'verified', label: 'Solo verificados' }
 ];
 
 // ✅ COMMON STYLES
@@ -213,6 +214,24 @@ const UserManagementTable = memo(() => {
   }, []);
 
   // ========================================
+  // 🔧 HELPER FUNCTIONS
+  // ========================================
+
+  const getUserStatus = (user) => {
+    // Verificar si el usuario está baneado
+    if (user.banned === true) return 'banned';
+    // Verificar si el usuario está inactivo
+    if (user.is_active === false) return 'inactive';
+    // Por defecto, usuario activo
+    return 'active';
+  };
+
+  const getUserActiveProducts = (user) => {
+    // Retorna el conteo de productos activos del usuario
+    return user.active_products_count || 0;
+  };
+
+  // ========================================
   // 🔧 MEMOIZED VALUES - FILTRADO LOCAL
   // ========================================
 
@@ -224,7 +243,10 @@ const UserManagementTable = memo(() => {
       // Filtro por estado
       if (filters.status !== 'all') {
         const userStatus = getUserStatus(user);
-        if (userStatus !== filters.status) return false;
+        if (filters.status === 'suppliers' && !user.main_supplier) return false;
+        if (filters.status === 'buyers' && user.main_supplier) return false;
+        if (filters.status === 'verified' && !user.verified) return false;
+        if (filters.status !== 'suppliers' && filters.status !== 'buyers' && filters.status !== 'verified' && userStatus !== filters.status) return false;
       }
 
       // Filtro por tipo de usuario
@@ -244,24 +266,6 @@ const UserManagementTable = memo(() => {
       return true;
     });
   }, [users, filters]);
-
-  // ========================================
-  // 🔧 HELPER FUNCTIONS
-  // ========================================
-
-  const getUserStatus = (user) => {
-    // Verificar si el usuario está baneado
-    if (user.banned === true) return 'banned';
-    // Verificar si el usuario está inactivo
-    if (user.is_active === false) return 'inactive';
-    // Por defecto, usuario activo
-    return 'active';
-  };
-
-  const getUserActiveProducts = (user) => {
-    // Retorna el conteo de productos activos del usuario
-    return user.active_products_count || 0;
-  };
 
   // ========================================
   // 🔧 HANDLERS
@@ -694,7 +698,26 @@ const UserManagementTable = memo(() => {
               </Tooltip>
               ¿Verificado?
             </TableCell>
-            <TableCell align="center" sx={{ color: 'white' }}>Acciones</TableCell>
+            <TableCell align="center" sx={{ color: 'white' }}>
+              <Tooltip 
+                title={<Box sx={{ p: 1, maxWidth: 260 }}>
+                  <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>Acciones disponibles:</Typography>
+                  <ul style={{ margin: 0, paddingLeft: 18, fontSize: '0.95em' }}>
+                    <li><strong>Ver detalles:</strong> Muestra información completa del usuario.</li>
+                    <li><strong>Verificar/Desverificar:</strong> Cambia el estado de verificación del usuario.</li>
+                    <li><strong>Banear/Desbanear:</strong> Restringe o habilita el acceso del usuario.</li>
+                    <li><strong>Eliminar usuario:</strong> Quita el usuario del sistema. Irreversible.</li>
+                  </ul>
+                </Box>}
+                arrow
+                placement="top"
+              >
+                <IconButton size="small" sx={{ color: 'white', p: 0, mr: 1  }}>
+                  <InfoIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+              Acciones
+            </TableCell>
           </TableRow>
         </TableHead>
         <TableBody>

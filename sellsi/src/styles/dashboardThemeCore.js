@@ -32,9 +32,9 @@ export const dashboardThemeCore = createTheme({
   palette: {
     mode: 'light',
     primary: {
-      main: brand[500],
-      light: brand[400],
-      dark: brand[600],
+      main: '#1565c0', // ✅ Mismo color que el marketplace
+      light: '#42a5f5', // ✅ Mismo color de hover
+      dark: '#0d47a1',
     },
     background: {
       default: gray[400],
@@ -52,7 +52,7 @@ export const dashboardThemeCore = createTheme({
     },
   },
   shape: {
-    borderRadius: 8,
+    borderRadius: 4, // ✅ Usar el mismo valor que el tema principal del marketplace
   },
   components: {
     MuiButton: {
@@ -63,8 +63,13 @@ export const dashboardThemeCore = createTheme({
         },
         contained: {
           boxShadow: 'none',
+          borderRadius: 8, // ✅ 8px para que sea igual al marketplace (2 × 4px)
+          backgroundColor: '#1565c0', // ✅ Mismo color que el marketplace
+          color: 'white',
           '&:hover': {
-            boxShadow: 'rgba(99, 102, 241, 0.16) 0px 4px 16px',
+            backgroundColor: '#42a5f5', // ✅ Mismo hover que el marketplace
+            boxShadow: '0 6px 20px rgba(25, 118, 210, 0.6)', // ✅ Mismo shadow del marketplace
+            transform: 'translateY(-2px)',
           },
         },
       },

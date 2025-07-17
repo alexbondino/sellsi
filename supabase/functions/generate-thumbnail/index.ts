@@ -197,8 +197,23 @@ serve(async (req) => {
 
       const [minithumb, mobileThumb, tabletThumb, desktopThumb] = await Promise.all(thumbnailPromises);
 
+    // Extract timestamp from original image URL if possible, otherwise use current timestamp
+    let timestamp = Date.now();
+    try {
+      const urlParts = imageUrl.split('/');
+      const filename = urlParts[urlParts.length - 1];
+      const timestampMatch = filename.match(/^(\d+)_/);
+      if (timestampMatch) {
+        timestamp = parseInt(timestampMatch[1]);
+        console.log(`✅ Extracted timestamp from original image: ${timestamp}`);
+      } else {
+        console.log(`⚠️ No timestamp found in filename: ${filename}, using current timestamp: ${timestamp}`);
+      }
+    } catch (error) {
+      console.log(`⚠️ Error extracting timestamp from URL: ${error.message}, using current timestamp: ${timestamp}`);
+    }
+
     // Upload thumbnails to storage
-    const timestamp = Date.now();
     const uploadPromises = [
       supabase.storage
         .from('product-images-thumbnails')

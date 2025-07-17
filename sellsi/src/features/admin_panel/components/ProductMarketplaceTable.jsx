@@ -49,7 +49,10 @@ import {
   Inventory as InventoryIcon,
   Refresh as RefreshIcon,
   Search as SearchIcon,
-  ShoppingCart as ShoppingCartIcon
+  ShoppingCart as ShoppingCartIcon,
+  Info as InfoIcon,
+  ToggleOn as ToggleOnIcon,
+  ToggleOff as ToggleOffIcon
 } from '@mui/icons-material';
 
 // Importar componentes UI existentes
@@ -228,6 +231,9 @@ const ProductMarketplaceTable = memo(() => {
     supplier: 'all'
   });
 
+  // Estado para alternar entre productos activos e inactivos
+  const [showActiveProducts, setShowActiveProducts] = useState(true);
+
   // Estado para búsqueda con debounce
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
@@ -308,6 +314,14 @@ const ProductMarketplaceTable = memo(() => {
     if (!products.length) return [];
 
     return products.filter(product => {
+      // Filtro por tipo de producto (activo/inactivo)
+      const stock = product.stock || 0;
+      const minPurchase = product.min_purchase || 1;
+      const isActive = stock >= minPurchase;
+      
+      if (showActiveProducts && !isActive) return false;
+      if (!showActiveProducts && isActive) return false;
+
       // Filtro por estado
       if (filters.status !== 'all') {
         const productStatus = getProductStatus(product);
@@ -327,7 +341,7 @@ const ProductMarketplaceTable = memo(() => {
 
       return true;
     });
-  }, [products, filters]);
+  }, [products, filters, showActiveProducts]);
 
   // ========================================
   // 🔧 HANDLERS
@@ -340,7 +354,7 @@ const ProductMarketplaceTable = memo(() => {
     try {
       // Cargar todos los productos sin filtros (filtrado local)
       const [productsResult, statsResult] = await Promise.all([
-        getMarketplaceProducts({}), // Sin filtros - cargar todos los productos disponibles
+        getMarketplaceProducts({ includeInactive: true }), // Incluir productos inactivos para filtrado local
         getProductStats()
       ]);
 
@@ -584,6 +598,52 @@ const ProductMarketplaceTable = memo(() => {
   const renderFilters = useCallback(() => (
     <Paper sx={commonStyles.filtersSection}>
       <Grid container spacing={3} alignItems="center">
+        {/* Título y botón de toggle mejorado */}
+        <Grid item xs={12}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+            <Tooltip 
+              title={
+                <Box sx={{ p: 1 }}>
+                  <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
+                    Explicación de estados:
+                  </Typography>
+                  <Typography variant="body2" sx={{ mb: 1 }}>
+                    <strong>Productos Activos:</strong> Productos visibles en el marketplace donde el stock es mayor o igual a la compra mínima.
+                  </Typography>
+                  <Typography variant="body2">
+                    <strong>Productos Inactivos:</strong> Productos no visibles en el marketplace, pero creados en la base de datos, donde el stock es menor que la compra mínima.
+                  </Typography>
+                </Box>
+              }
+              arrow
+              placement="left"
+            >
+              <IconButton size="small" sx={{ color: 'primary.main' }}>
+                <InfoIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+            <Typography variant="h6" sx={{ fontWeight: 600 }}>
+              {showActiveProducts ? 'Productos Activos' : 'Productos Inactivos'}
+            </Typography>
+            <Button
+              variant={showActiveProducts ? 'contained' : 'outlined'}
+              color={showActiveProducts ? 'primary' : 'secondary'}
+              size="small"
+              endIcon={<span style={{fontSize:'1.2em'}}>&#8646;</span>}
+              onClick={() => setShowActiveProducts(!showActiveProducts)}
+              sx={{ 
+                minWidth: 180,
+                borderRadius: 2,
+                textTransform: 'none',
+                fontWeight: 500,
+                boxShadow: showActiveProducts ? 2 : 0
+              }}
+            >
+              {showActiveProducts ? 'Ver productos inactivos' : 'Ver productos activos'}
+            </Button>
+          </Box>
+        </Grid>
+
         <Grid item xs={12} sm={6} md={3}>
           <FormControl 
             fullWidth 
@@ -666,7 +726,7 @@ const ProductMarketplaceTable = memo(() => {
         )}
       </Grid>
     </Paper>
-  ), [filters, handleFilterChange, searchTerm, debouncedSearchTerm, initialLoadComplete, filteredProducts.length, products.length, selectedProducts.size, operationLoading]);
+  ), [filters, handleFilterChange, searchTerm, debouncedSearchTerm, initialLoadComplete, filteredProducts.length, products.length, selectedProducts.size, operationLoading, showActiveProducts]);
 
   const renderProductsTable = () => (
     <TableContainer component={Paper} sx={commonStyles.tableContainer}>
@@ -687,7 +747,24 @@ const ProductMarketplaceTable = memo(() => {
             <TableCell sx={{ color: 'white' }}>User ID</TableCell>
             <TableCell sx={{ color: 'white' }}>Stock</TableCell>
             <TableCell sx={{ color: 'white' }}>Estado</TableCell>
-            <TableCell align="center" sx={{ color: 'white' }}>Acciones</TableCell>
+            <TableCell align="center" sx={{ color: 'white' }}>
+              <Tooltip 
+                title={<Box sx={{ p: 1, maxWidth: 260 }}>
+                  <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>Acciones disponibles:</Typography>
+                  <ul style={{ margin: 0, paddingLeft: 18, fontSize: '0.95em' }}>
+                    <li><strong>Editar nombre:</strong> Permite modificar el nombre del producto en el marketplace.</li>
+                    <li><strong>Eliminar producto:</strong> Quita el producto del marketplace. Esta acción es irreversible.</li>
+                  </ul>
+                </Box>}
+                arrow
+                placement="top"
+              >
+                <IconButton size="small" sx={{ color: 'white', p: 0, mr: 1 }}>
+                  <InfoIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+              Acciones
+            </TableCell>
           </TableRow>
         </TableHead>
         <TableBody>

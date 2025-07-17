@@ -57,7 +57,14 @@ class OrderService {
             user_id,
             user_nm,
             email,
-            phone_nbr
+            phone_nbr,
+            shipping_info (
+              shipping_region,
+              shipping_commune,
+              shipping_address,
+              shipping_number,
+              shipping_dept
+            )
           ),
           cart_items!inner (
             cart_items_id,
@@ -74,7 +81,12 @@ class OrderService {
               category,
               description,
               supplier_id,
-              product_images (image_url)
+              product_images (image_url, thumbnail_url),
+              product_delivery_regions (
+                region,
+                price,
+                delivery_days
+              )
             )
           )
         `)
@@ -117,6 +129,42 @@ class OrderService {
           // Skip carts that don't have items for this supplier
           if (supplierItems.length === 0) return null;
 
+          // Obtener información de envío del comprador
+          const shippingInfo = cart.users?.shipping_info?.[0] || {};
+          const deliveryAddress = {
+            region: shippingInfo.shipping_region || 'Región no especificada',
+            commune: shippingInfo.shipping_commune || 'Comuna no especificada',
+            address: shippingInfo.shipping_address || 'Dirección no especificada',
+            number: shippingInfo.shipping_number || '',
+            department: shippingInfo.shipping_dept || '',
+            fullAddress: `${shippingInfo.shipping_address || 'Dirección no especificada'} ${shippingInfo.shipping_number || ''} ${shippingInfo.shipping_dept || ''}`.trim()
+          };
+
+          // Calcular fecha de entrega basada en product_delivery_regions
+          const calculateDeliveryDate = (items, buyerRegion) => {
+            let maxDeliveryDays = 0;
+            
+            items.forEach(item => {
+              const deliveryRegions = item.products?.product_delivery_regions || [];
+              const regionMatch = deliveryRegions.find(dr => dr.region === buyerRegion);
+              
+              if (regionMatch && regionMatch.delivery_days > maxDeliveryDays) {
+                maxDeliveryDays = regionMatch.delivery_days;
+              }
+            });
+            
+            // Si no hay match, usar 7 días por defecto
+            if (maxDeliveryDays === 0) {
+              maxDeliveryDays = 7;
+            }
+            
+            const deliveryDate = new Date();
+            deliveryDate.setDate(deliveryDate.getDate() + maxDeliveryDays);
+            return deliveryDate.toISOString().split('T')[0]; // Format YYYY-MM-DD
+          };
+
+          const estimatedDeliveryDate = calculateDeliveryDate(supplierItems, deliveryAddress.region);
+
           return {
             order_id: cart.cart_id,
             cart_id: cart.cart_id,
@@ -124,6 +172,7 @@ class OrderService {
             status: cart.status,
             created_at: cart.created_at,
             updated_at: cart.updated_at,
+            estimated_delivery_date: estimatedDeliveryDate,
             
             // Información del comprador
             buyer: {
@@ -132,6 +181,9 @@ class OrderService {
               email: cart.users?.email || 'Email no disponible',
               phone: cart.users?.phone_nbr || 'Teléfono no disponible'
             },
+
+            // Información de envío
+            delivery_address: deliveryAddress,
 
             // Items del pedido (solo los del proveedor)
             items: supplierItems.map(item => ({
@@ -149,7 +201,8 @@ class OrderService {
                 category: item.products.category,
                 description: item.products.description,
                 image_url: item.products.product_images?.[0]?.image_url,
-                thumbnail_url: item.products.product_images?.[0]?.thumbnail_url // ✅ NUEVO: Agregar thumbnail_url
+                thumbnail_url: item.products.product_images?.[0]?.thumbnail_url,
+                delivery_regions: item.products.product_delivery_regions || []
               }
             })),
 
@@ -410,6 +463,180 @@ class OrderService {
     } catch (error) {
       console.error('Error searching orders:', error);
       throw new Error(`Error en la búsqueda: ${error.message}`);
+    }
+  }
+
+  /**
+   * Obtiene todos los pedidos para un comprador específico
+   * @param {string} buyerId - ID del comprador
+   * @param {Object} filters - Filtros opcionales (status, fechas, etc.)
+   * @returns {Array} Lista de pedidos con sus items
+   */
+  async getOrdersForBuyer(buyerId, filters = {}) {
+    try {
+      // Validate buyerId is a valid UUID
+      if (!buyerId) {
+        throw new Error('ID de comprador es requerido');
+      }
+      
+      // Basic UUID format validation
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+      if (!uuidRegex.test(buyerId)) {
+        throw new Error('ID de comprador no tiene formato UUID válido');
+      }
+
+      // Get carts for this buyer that are not active (completed orders)
+      let query = supabase
+        .from('carts')
+        .select(`
+          cart_id,
+          user_id,
+          status,
+          created_at,
+          updated_at,
+          users!carts_user_id_fkey (
+            user_id,
+            user_nm,
+            email,
+            phone_nbr,
+            shipping_info (
+              shipping_region,
+              shipping_commune,
+              shipping_address,
+              shipping_number,
+              shipping_dept
+            )
+          ),
+          cart_items (
+            cart_items_id,
+            product_id,
+            quantity,
+            price_at_addition,
+            price_tiers,
+            added_at,
+            updated_at,
+            products (
+              productid,
+              productnm,
+              price,
+              category,
+              description,
+              supplier_id,
+              product_images (
+                image_url,
+                thumbnail_url,
+                thumbnails
+              ),
+              users!products_supplier_id_fkey (
+                user_nm,
+                email
+              )
+            )
+          )
+        `)
+        .eq('user_id', buyerId)
+        .neq('status', 'active') // Solo pedidos completados (no carritos activos)
+        .order('created_at', { ascending: false });
+
+      // Aplicar filtros de estado
+      if (filters.status && filters.status !== 'all') {
+        query = query.eq('status', filters.status);
+      }
+
+      // Aplicar filtros de fecha
+      if (filters.dateFrom) {
+        query = query.gte('created_at', filters.dateFrom);
+      }
+      if (filters.dateTo) {
+        query = query.lte('created_at', filters.dateTo);
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        console.error('Error querying carts for buyer:', error);
+        throw error;
+      }
+
+      // Handle case where no data is returned
+      if (!data || data.length === 0) {
+        return [];
+      }
+
+      // Transformar los datos para el formato esperado por BuyerOrders
+      const orders = data
+        .filter(cart => cart.cart_items && cart.cart_items.length > 0)
+        .map(cart => {
+          // Obtener información de envío del comprador
+          const shippingInfo = cart.users?.shipping_info?.[0] || {};
+          const deliveryAddress = {
+            region: shippingInfo.shipping_region || 'Región no especificada',
+            commune: shippingInfo.shipping_commune || 'Comuna no especificada',
+            address: shippingInfo.shipping_address || 'Dirección no especificada',
+            number: shippingInfo.shipping_number || '',
+            department: shippingInfo.shipping_dept || '',
+            fullAddress: `${shippingInfo.shipping_address || 'Dirección no especificada'} ${shippingInfo.shipping_number || ''} ${shippingInfo.shipping_dept || ''}`.trim()
+          };
+
+          return {
+            order_id: cart.cart_id,
+            cart_id: cart.cart_id,
+            buyer_id: cart.user_id,
+            status: cart.status,
+            created_at: cart.created_at,
+            updated_at: cart.updated_at,
+            
+            // Información del comprador
+            buyer: {
+              user_id: cart.users?.user_id || cart.user_id,
+              name: cart.users?.user_nm || 'Usuario desconocido',
+              email: cart.users?.email || 'Email no disponible',
+              phone: cart.users?.phone_nbr || 'Teléfono no disponible'
+            },
+
+            // Información de envío
+            delivery_address: deliveryAddress,
+
+            // Items del pedido
+            items: cart.cart_items.map(item => ({
+              cart_items_id: item.cart_items_id,
+              product_id: item.product_id,
+              quantity: item.quantity,
+              price_at_addition: item.price_at_addition,
+              price_tiers: item.price_tiers,
+              
+              // Información del producto
+              product: {
+                productid: item.products.productid,
+                name: item.products.productnm,
+                price: item.products.price,
+                category: item.products.category,
+                description: item.products.description,
+                supplier_id: item.products.supplier_id,
+                image_url: item.products.product_images?.[0]?.image_url,
+                thumbnail_url: item.products.product_images?.[0]?.thumbnail_url,
+                thumbnails: item.products.product_images?.[0]?.thumbnails,
+                
+                // Información del proveedor
+                supplier: {
+                  name: item.products.users?.user_nm || 'Proveedor desconocido',
+                  email: item.products.users?.email || 'Email no disponible'
+                }
+              }
+            })),
+
+            // Cálculos del pedido
+            total_items: cart.cart_items.length,
+            total_quantity: cart.cart_items.reduce((sum, item) => sum + item.quantity, 0),
+            total_amount: cart.cart_items.reduce((sum, item) => sum + (item.price_at_addition * item.quantity), 0)
+          };
+        });
+
+      return orders;
+
+    } catch (error) {
+      console.error('Error fetching orders for buyer:', error);
+      throw new Error(`No se pudieron obtener los pedidos: ${error.message}`);
     }
   }
 }

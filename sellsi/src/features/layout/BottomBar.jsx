@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Box, Typography, IconButton, Divider, Grid, Button, Collapse } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
 import LinkedInIcon from '@mui/icons-material/LinkedIn';
 import InstagramIcon from '@mui/icons-material/Instagram';
 import WhatsAppIcon from '@mui/icons-material/WhatsApp';
@@ -12,6 +13,7 @@ import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import ContactModal from '../ui/ContactModal';
 
 const BottomBar = () => {
+  const navigate = useNavigate();
   const [openContactModal, setOpenContactModal] = useState(false);
   const [navigationOpen, setNavigationOpen] = useState(false);
   const [servicesOpen, setServicesOpen] = useState(false);
@@ -23,6 +25,14 @@ const BottomBar = () => {
   const toggleNavigation = () => setNavigationOpen(!navigationOpen);
   const toggleServices = () => setServicesOpen(!servicesOpen);
   const toggleSupport = () => setSupportOpen(!supportOpen);
+
+  const handleNavigateToTerms = () => {
+    navigate('/terms-and-conditions');
+  };
+
+  const handleNavigateToPrivacy = () => {
+    navigate('/privacy-policy');
+  };
 
   return (
     <>
@@ -125,10 +135,18 @@ const BottomBar = () => {
                   <Typography variant="body2" sx={navItemStyle}>
                     Preguntas Frecuentes
                   </Typography>
-                  <Typography variant="body2" sx={navItemStyle}>
+                  <Typography 
+                    variant="body2" 
+                    sx={navItemStyle}
+                    onClick={handleNavigateToTerms}
+                  >
                     Términos y Condiciones
                   </Typography>
-                  <Typography variant="body2" sx={navItemStyle}>
+                  <Typography 
+                    variant="body2" 
+                    sx={navItemStyle}
+                    onClick={handleNavigateToPrivacy}
+                  >
                     Política de Privacidad
                   </Typography>
                 </Box>
@@ -287,10 +305,18 @@ const BottomBar = () => {
                     <Typography variant="body2" sx={{ ...navItemStyle, py: 0.5 }}>
                       Preguntas Frecuentes
                     </Typography>
-                    <Typography variant="body2" sx={{ ...navItemStyle, py: 0.5 }}>
+                    <Typography 
+                      variant="body2" 
+                      sx={{ ...navItemStyle, py: 0.5 }}
+                      onClick={handleNavigateToTerms}
+                    >
                       Términos y Condiciones
                     </Typography>
-                    <Typography variant="body2" sx={{ ...navItemStyle, py: 0.5 }}>
+                    <Typography 
+                      variant="body2" 
+                      sx={{ ...navItemStyle, py: 0.5 }}
+                      onClick={handleNavigateToPrivacy}
+                    >
                       Política de Privacidad
                     </Typography>
                   </Box>
