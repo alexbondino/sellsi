@@ -257,7 +257,7 @@ const Onboarding = () => {
         email: user.email, // ✅ ¡LA CORRECCIÓN CLAVE AQUÍ! Se añade el email.
         // Añadir descripción solo si es proveedor
         ...(formData.accountType === 'proveedor' && {
-          description: formData.descripcionProveedor,
+          descripcion_proveedor: formData.descripcionProveedor,
         }),
       };
 

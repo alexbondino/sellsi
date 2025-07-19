@@ -124,71 +124,213 @@ src/
 src/
 ├── domains/                    # 🎯 Dominios de negocio (antes features)
 │   ├── admin/
-│   │   ├── components/         # UI específica del dominio
-│   │   ├── hooks/              # Lógica del dominio
-│   │   ├── services/           # Servicios del dominio
-│   │   ├── types/              # TypeScript types/interfaces
-│   │   ├── utils/              # Utilidades del dominio
+│   │   ├── hooks/              # Lógica específica del dominio (useAdminAuth, useUserBans)
+│   │   ├── stores/             # Zustand stores específicos (adminStore.js)
+│   │   ├── types/              # TypeScript interfaces específicas del dominio
+│   │   ├── utils/              # Funciones específicas (adminValidators, adminFormatters)
 │   │   └── index.ts            # Barrel export
 │   ├── marketplace/
 │   ├── buyer/
 │   ├── supplier/
 │   └── ...
 ├── shared/                     # 🔗 Código compartido entre dominios
-│   ├── components/             # Componentes UI reutilizables
-│   │   ├── atoms/              # Componentes más básicos
-│   │   ├── molecules/          # Componentes compuestos
-│   │   └── organisms/          # Componentes complejos
-│   ├── hooks/                  # Hooks genéricos
-│   ├── services/               # Servicios base y utilidades
-│   │   ├── api/                # Cliente API base
-│   │   ├── auth/               # Autenticación centralizada
-│   │   └── storage/            # Gestión de archivos
-│   ├── utils/                  # Utilidades generales
-│   ├── types/                  # Types compartidos
-│   └── constants/              # Constantes globales
+│   ├── components/             # TODOS los componentes UI (100% reutilizables)
+│   │   ├── forms/              # QuantitySelector, InputField, FormWizard
+│   │   ├── display/            # ProductCard, UserCard, StatusBadge
+│   │   ├── feedback/           # LoadingSpinner, ErrorMessage, Toast
+│   │   ├── navigation/         # Sidebar, Topbar, Breadcrumbs
+│   │   └── layout/             # Grid, Container, Spacing
+│   ├── hooks/                  # Hooks genéricos (useLazyImage, usePrefetch)
+│   ├── services/               # Servicios que interactúan con Supabase
+│   │   ├── supabase/           # Configuración cliente Supabase
+│   │   ├── upload/             # Upload a Supabase Storage
+│   │   └── auth/               # Wrapper de Supabase Auth
+│   ├── utils/                  # Funciones puras (formatters, validators, helpers)
+│   ├── types/                  # Types globales y Context interfaces
+│   ├── context/                # React Context providers (UserContext, ThemeContext)
+│   └── constants/              # URLs, configuraciones, enums globales
 ├── infrastructure/             # 🏗️ Configuración e infraestructura
-│   ├── config/                 # Configuraciones
-│   ├── providers/              # Context providers
-│   ├── router/                 # Configuración de rutas
-│   └── store/                  # Estado global (si se implementa)
-├── design-system/              # 🎨 Sistema de diseño
-│   ├── tokens/                 # Design tokens
-│   ├── themes/                 # Temas
-│   ├── layouts/                # Layouts base
-│   └── styles/                 # Estilos globales
+│   ├── config/                 # Configuración de Supabase, Vite, etc.
+│   ├── router/                 # React Router setup y rutas protegidas
+│   └── providers/              # App-level providers (AuthProvider, ErrorBoundary)
+├── styles/                     # 🎨 Estilos y diseño
+│   ├── globals.css             # Reset, variables CSS, estilos base
+│   ├── themes.css              # Variables para theme claro/oscuro (si existe)
+│   └── layouts.css             # Layouts responsive (topbar, sidebar, grid)
 └── app/                        # 📱 Entry point y configuración
-    ├── App.tsx
-    ├── main.tsx
-    └── index.css
+    ├── App.tsx                 # App principal (después del refactor)
+    ├── main.tsx                # Entry point
+    └── index.css               # Imports de estilos globales
 ```
 
-### 2.2 Justificación de Cambios
+### 2.2 Justificación de Cambios Corregida (Basada en Sellsi Real)
 
-#### **1. `features/` → `domains/`**
-- **Problema**: El término "features" es ambiguo y no refleja la arquitectura DDD
-- **Solución**: "domains" clarifica que son contextos acotados de negocio
-- **Beneficio**: Mejor alineación con Domain-Driven Design
+#### **1. `features/` → `domains/` + Eliminación de `components/` por dominio**
+- **Problema Original**: El término "features" es ambiguo
+- **Corrección**: NO crear `domains/[feature]/components/` porque queremos reutilización total
+- **Solución Real**: TODOS los componentes van a `shared/components/` organizados por tipo
+- **Ejemplo**: `QuantitySelector` duplicado → `shared/components/forms/QuantitySelector.jsx`
 
-#### **2. Servicios dentro de cada dominio**
-- **Problema**: Servicios centralizados causan acoplamiento
-- **Solución**: Cada dominio gestiona sus propios servicios
-- **Beneficio**: Mayor cohesión y menor acoplamiento
+#### **2. "Servicios del dominio" explicado específicamente**
+- **Qué son**: Funciones que encapsulan lógica de negocio específica de un dominio
+- **Ejemplo real en admin**: `domains/admin/services/userBanService.js` (lógica de baneos)
+- **Ejemplo real en buyer**: `domains/buyer/services/cartCalculations.js` (cálculos carrito)
+- **NO van aquí**: Calls a Supabase (van en `shared/services/supabase/`)
+- **SÍ van aquí**: Validaciones complejas, transformaciones de datos específicas
 
-#### **3. Nueva carpeta `shared/`**
-- **Problema**: Componentes y utilidades dispersas sin clara reutilización
-- **Solución**: Centralizar todo lo verdaderamente compartido
-- **Beneficio**: Clara distinción entre código de dominio y código compartido
+#### **3. Context vs Types explicado**
+- **`domains/[feature]/types/`**: Interfaces TypeScript específicas del dominio
+  ```typescript
+  // domains/admin/types/index.ts
+  interface AdminUser { role: 'admin' | 'super_admin'; permissions: string[] }
+  ```
+- **`shared/context/`**: React Context providers y hooks
+  ```jsx
+  // shared/context/UserContext.jsx
+  export const UserProvider = ({ children }) => { /* provider logic */ }
+  export const useUser = () => useContext(UserContext)
+  ```
 
-#### **4. Separación `infrastructure/`**
-- **Problema**: Configuraciones mezcladas con lógica de negocio
-- **Solución**: Aislar toda la infraestructura técnica
-- **Beneficio**: Separación clara de responsabilidades técnicas vs negocio
+#### **4. Servicios Supabase explicados específicamente**
+- **`shared/services/supabase/`**: Cliente Supabase configurado para la app
+- **`shared/services/auth/`**: Wrapper de Supabase Auth con hooks personalizados
+- **`shared/services/upload/`**: Upload a Supabase Storage (reemplaza media/uploadService.js actual)
+- **Beneficio**: Centralizar configuración Supabase, no duplicar clientes
 
-#### **5. `design-system/` dedicado**
-- **Problema**: Estilos y temas dispersos, difícil mantener consistencia
-- **Solución**: Sistema de diseño centralizado con tokens
-- **Beneficio**: Consistencia visual y mantenibilidad de UI
+#### **5. Utils vs Components explicado**
+- **`shared/utils/`**: Funciones puras sin UI (formatters, validators, helpers)
+  ```javascript
+  // shared/utils/formatters.js
+  export const formatPrice = (price) => `$${price.toLocaleString()}`
+  export const formatDate = (date) => new Date(date).toLocaleDateString()
+  ```
+- **`shared/components/`**: Componentes React reutilizables con UI
+  ```jsx
+  // shared/components/display/PriceDisplay.jsx
+  export const PriceDisplay = ({ price }) => <span>{formatPrice(price)}</span>
+  ```
+
+#### **6. Constants explicado con ejemplos reales**
+```javascript
+// shared/constants/index.js
+export const SUPABASE_BUCKETS = {
+  PRODUCTS: 'product-images',
+  PROFILES: 'profile-avatars',
+  DOCUMENTS: 'documents'
+}
+
+export const USER_ROLES = {
+  BUYER: 'buyer',
+  SUPPLIER: 'supplier', 
+  ADMIN: 'admin'
+}
+
+export const API_ENDPOINTS = {
+  KHIPU_WEBHOOK: '/api/khipu-webhook',
+  THUMBNAIL_GENERATION: '/api/generate-thumbnail'
+}
+```
+
+#### **7. Infrastructure/Providers explicado**
+- **Qué hace**: Envuelve la app con Context Providers de alto nivel
+- **Ejemplo**: AuthProvider, ErrorBoundary, ThemeProvider
+- **Por qué es útil**: App.jsx actualmente tiene 1,079 LOC porque hace esto + routing + lazy loading
+- **Solución**: Separar responsabilidades en archivos específicos
+
+#### **8. Styles simplificado (NO design-system complejo)**
+- **`styles/globals.css`**: Reset CSS, variables CSS básicas, estilos base
+- **`styles/themes.css`**: Variables para modo claro/oscuro (si Sellsi lo implementa)
+- **`styles/layouts.css`**: Layouts responsive (grid, sidebar, topbar)
+- **Por qué simple**: Sellsi no necesita design tokens complejos aún
+
+---
+
+## 2.3 Ejemplos Concretos de Migración en Sellsi
+
+### **Caso 1: QuantitySelector Duplicado → shared/components/**
+```
+ANTES (570 LOC duplicadas):
+├── features/layout/components/QuantitySelector.jsx (319 LOC)
+└── features/buyer/components/QuantitySelector.jsx (251 LOC)
+
+DESPUÉS (250 LOC reutilizables):
+└── shared/components/forms/QuantitySelector/
+    ├── QuantitySelector.jsx (componente base)
+    ├── QuantitySelector.module.css (estilos)
+    └── index.js (export)
+```
+
+### **Caso 2: cartStore.js → domains/buyer/stores/ + shared/context/**
+```
+ANTES (906 LOC monolítico):
+└── features/buyer/stores/cartStore.js
+
+DESPUÉS (separado por responsabilidad):
+├── domains/buyer/stores/
+│   ├── cartItemsStore.js (items y cantidades)
+│   ├── cartCalculationsStore.js (cálculos)
+│   └── cartValidationStore.js (validaciones)
+└── shared/context/CartContext.jsx (provider global)
+```
+
+### **Caso 3: Upload Services → shared/services/supabase/**
+```
+ANTES (distribuido):
+├── services/media/uploadService.js (426 LOC)
+├── features/profile/utils/uploadLogic.js (~100 LOC)
+└── features/supplier/utils/productUpload.js (~150 LOC)
+
+DESPUÉS (centralizado):
+└── shared/services/supabase/
+    ├── uploadService.js (API unificada)
+    ├── storageConfig.js (configuración buckets)
+    └── thumbnailService.js (generación thumbnails)
+```
+
+### **Caso 4: Admin Services → domains/admin/services/**
+```
+ANTES (mezclado):
+├── services/adminPanelService.js (legacy)
+├── services/security/banService.js (163 LOC)
+└── services/security/ipTracking.js (200 LOC)
+
+DESPUÉS (organizado por dominio):
+└── domains/admin/services/
+    ├── userBanService.js (lógica de baneos)
+    ├── ipTrackingService.js (tracking específico)
+    └── adminAuthService.js (permisos admin)
+```
+
+### **Caso 5: Formatters Cross-Feature → shared/utils/**
+```
+ANTES (acoplamiento):
+└── features/marketplace/utils/formatters.js
+    ↑ importado por features/buyer/
+
+DESPUÉS (desacoplado):
+└── shared/utils/
+    ├── formatters/
+    │   ├── priceFormatters.js
+    │   ├── dateFormatters.js
+    │   └── textFormatters.js
+    └── validators/
+        ├── priceValidators.js
+        └── formValidators.js
+```
+
+### **Caso 6: App.jsx Refactor → infrastructure/**
+```
+ANTES (1,079 LOC monolítico):
+└── App.jsx (routing + auth + roles + prefetch + sesión)
+
+DESPUÉS (separado por responsabilidad):
+├── app/App.tsx (150 LOC - solo composición)
+├── infrastructure/
+│   ├── router/AppRouter.tsx (routing + lazy loading)
+│   ├── providers/AuthProvider.tsx (sesión + auth)
+│   └── providers/RoleProvider.tsx (gestión roles)
+└── shared/hooks/useAppInitialization.ts (setup inicial)
+```
 
 ---
 
@@ -308,11 +450,11 @@ src/
   useCartPersistence.js  // localStorage/sync
   ```
 
-#### **3. Re-renders en Marketplace (4,200 LOC)**
-- **Problema**: Grid de productos sin optimización
-- **Evidencia**: Falta de memoización en ProductCard components
-- **Solución**: React.memo + useMemo en cálculos + virtualization
-- **Beneficio**: -60% re-renders en scroll/filtros
+#### **3. Re-renders en Marketplace (4,200 LOC) - ✅ CORREGIDO**
+- **Estado Real**: Grid de productos YA OPTIMIZADO con memoización extensiva
+- **Evidencia Confirmada**: React.memo en ProductCard + useMemo en ProductsSection + useCallback en handlers
+- **Implementado**: React.memo, useMemo para productos filtrados, keys estables en .map()
+- **Oportunidad Restante**: Virtualization para grids >100 productos (nice-to-have)
 
 #### **2. Re-renders innecesarios**
 - **Problema**: Falta de memoización en componentes complejos
@@ -707,22 +849,6 @@ src/
 - ✅ Developer onboarding <1 día
 - ✅ Zero production errors por refactor
 
----
-
-**📈 ROI Estimado Final del Refactor:**
-- **Tiempo de desarrollo**: -50% para nuevas features
-- **Bugs en producción**: -45% por mejor separación y testing  
-- **Performance**: +30% inicial load, +60% navegación
-- **Mantenimiento**: -40% tiempo de debugging y hotfixes
-- **Onboarding**: -70% tiempo para nuevos desarrolladores
-- **Technical debt**: -60% reducción por documentación y patterns
-- **Escalabilidad**: +100% capacidad para nuevos módulos
-- **Developer satisfaction**: >8/10 en surveys post-refactor
-
-**⚠️ Critical Success Factor**: Compromiso del equipo con testing y documentación durante todo el proceso. Sin esto, el refactor puede introducir más problemas de los que resuelve.
-
----
+--
 
 **Fecha de creación**: 18/07/2025  
-**Última actualización**: 18/07/2025 - Incorporadas mejoras basadas en análisis de conversación  
-**Próxima revisión**: Al completar Fase 2 o si surgen blockers críticos  

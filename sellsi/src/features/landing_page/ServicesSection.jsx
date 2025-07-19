@@ -333,7 +333,7 @@ const ServicesSection = ({ serviciosRef }) => {
                         sx={{
                           mb: { xs: 0.5, sm: 0.7, md: 1.2, lg: 1.2 },
                           fontSize: breakpoints.timeline.titleFontSize,
-                          color: 'primary.main',
+                          color: 'common.white',
                         }}
                       >
                         {item.title}

@@ -150,6 +150,24 @@ const ProductHeader = React.memo(({
               sx={{ cursor: 'pointer' }}
             />
           </Tooltip>
+          <Tooltip title="Copiar todos los precios" arrow placement="right">
+            <IconButton
+              size="small"
+              onClick={handleCopyAllTiers}
+              sx={{
+                ml: 0.5,
+                '&:hover': {
+                  backgroundColor: 'rgba(25, 118, 210, 0.04)',
+                },
+              }}
+            >
+              {copied.allTiers ? (
+                <CheckCircleOutlineIcon color="success" fontSize="small" />
+              ) : (
+                <ContentCopyIcon fontSize="small" />
+              )}
+            </IconButton>
+          </Tooltip>
         </Box>        <TableContainer
           component={Paper}
           sx={{ maxWidth: 400, mx: 'auto', mb: 2 }}
@@ -196,38 +214,6 @@ const ProductHeader = React.memo(({
             </TableBody>
           </Table>
         </TableContainer>
-
-        {/* Botón para copiar todos los tramos */}
-        <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
-          <Button
-            variant="outlined"
-            size="small"
-            startIcon={<ContentCopyIcon />}
-            onClick={handleCopyAllTiers}
-            sx={{
-              textTransform: 'none',
-              borderRadius: 2,
-              px: 2,
-              py: 0.5,
-              fontSize: '0.875rem',
-              transition: 'all 0.2s ease',
-              '&:hover': {
-                backgroundColor: 'primary.main',
-                color: 'white',
-                borderColor: 'primary.main',
-              },
-            }}
-          >
-            {copied.allTiers ? (
-              <>
-                <CheckCircleOutlineIcon fontSize="small" sx={{ mr: 0.5 }} />
-                ¡Copiado!
-              </>
-            ) : (
-              'Copiar todos los precios'
-            )}
-          </Button>
-        </Box>
       </Box>
     )
   } else {
@@ -391,7 +377,7 @@ const ProductHeader = React.memo(({
             >
               {nombre}
             </Typography>
-            <Tooltip title="Copiar nombre del producto" arrow>
+            <Tooltip title="Copiar nombre del producto" arrow placement="right">
               <IconButton
                 size="small"
                 onClick={() => handleCopy('name', nombre)}
@@ -460,6 +446,20 @@ const ProductHeader = React.memo(({
               size="small"
               variant="outlined"
               color="primary"
+              onClick={isLoggedIn ? () => {
+                // Convertir el nombre del proveedor a formato slug (lowercase, espacios a guiones, caracteres especiales removidos)
+                const proveedorSlug = proveedor
+                  ?.toLowerCase()
+                  ?.replace(/\s+/g, '-')
+                  ?.replace(/[^\w\-]/g, '');
+                navigate(`/catalog/${proveedorSlug}/${product.supplier_id || product.supplierId || 'userid'}`);
+              } : undefined}
+              sx={{
+                cursor: isLoggedIn ? 'pointer' : 'default',
+                '&:hover': {
+                  backgroundColor: isLoggedIn ? 'rgba(25, 118, 210, 0.08)' : 'transparent',
+                },
+              }}
             />{' '}
           </Box>{' '}
           {/* Compra mínima */}

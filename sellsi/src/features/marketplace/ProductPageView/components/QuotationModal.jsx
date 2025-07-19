@@ -43,27 +43,27 @@ const QuotationModal = ({ open, onClose, product, quantity, unitPrice, tiers }) 
         </Box>
         <Box sx={{ mb: 0.5 }}>
           <Typography variant="body2" component="div" sx={{ color: 'text.primary', fontWeight: 500 }}>
-            • Cantidad: {quantity} unidades
+            Cantidad: {quantity} unidades
           </Typography>
         </Box>
         <Box sx={{ mb: 0.5 }}>
           <Typography variant="body2" component="div" sx={{ color: 'text.primary', fontWeight: 500 }}>
-            • Precio unitario: ${unitPrice?.toLocaleString('es-CL')} CLP
+            Precio unitario: ${unitPrice?.toLocaleString('es-CL')} CLP
           </Typography>
         </Box>
         <Box sx={{ mb: 0.5 }}>
           <Typography variant="body2" component="div" sx={{ color: 'text.primary', fontWeight: 500 }}>
-            • Total neto: ${(quantity * unitPrice)?.toLocaleString('es-CL')} CLP
+            Total neto: ${(quantity * unitPrice)?.toLocaleString('es-CL')} CLP
           </Typography>
         </Box>
         <Box sx={{ mb: 0.5 }}>
           <Typography variant="body2" component="div" sx={{ color: 'text.primary', fontWeight: 500 }}>
-            • IVA (19%): ${((quantity * unitPrice) * 0.19)?.toLocaleString('es-CL')} CLP
+            IVA (19%): ${((quantity * unitPrice) * 0.19)?.toLocaleString('es-CL')} CLP
           </Typography>
         </Box>
         <Box>
           <Typography variant="body2" component="div" sx={{ color: 'text.primary', fontWeight: 600 }}>
-            • Total: ${((quantity * unitPrice) * 1.19)?.toLocaleString('es-CL')} CLP
+            Total: ${((quantity * unitPrice) * 1.19)?.toLocaleString('es-CL')} CLP
           </Typography>
         </Box>
       </Box>
