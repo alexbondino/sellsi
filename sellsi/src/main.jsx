@@ -11,7 +11,7 @@ import './index.css';
 if (import.meta.env.PROD) {
   Sentry.init({
     // CORRECCIÓN: Se utiliza la variable con prefijo VITE_ para que sea accesible en el navegador.
-    dsn: import.meta.env.SENTRY_DSN,
+    dsn: import.meta.env.VITE_SENTRY_DSN,
 
     integrations: [
       Sentry.browserTracingIntegration(),
