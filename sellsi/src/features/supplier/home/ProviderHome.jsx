@@ -69,6 +69,10 @@ const ProviderHome = () => {
           ml: { xs: 0, md: 10, lg: 14, xl: 24 },
         }}
       >
+        {/*Eliminar esto eventualmente - Prueba Sentry */}
+        <Button variant="contained" onClick={() => funcionQueNoExiste()}>
+          Presióname
+        </Button>
         <Container maxWidth="xl" disableGutters>
           <Grid container spacing={3}>
             <Grid size={12}>
