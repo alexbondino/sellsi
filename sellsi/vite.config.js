@@ -1,9 +1,13 @@
+import { sentryVitePlugin } from "@sentry/vite-plugin";
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), sentryVitePlugin({
+    org: "sellsi",
+    project: "sellsi"
+  })],
   server: {
     port: 3000,
   },
@@ -74,7 +78,7 @@ export default defineConfig({
     },
     
     // Sin sourcemaps en producción
-    sourcemap: false,
+    sourcemap: true,
     
     // Target moderno para mejor optimización
     target: 'es2020'
