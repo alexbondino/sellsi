@@ -1,6 +1,14 @@
 // 📁 pages/ProviderHome.jsx
 import React, { Suspense } from 'react';
-import { Box, Grid, Button, Container, ThemeProvider, CircularProgress, Skeleton } from '@mui/material';
+import {
+  Box,
+  Grid,
+  Button,
+  Container,
+  ThemeProvider,
+  CircularProgress,
+  Skeleton,
+} from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import AddIcon from '@mui/icons-material/Add';
 import { useSupplierDashboard } from './hooks/useSupplierDashboard';
@@ -9,13 +17,15 @@ import { dashboardThemeCore } from '../../../styles/dashboardThemeCore';
 import { SPACING_BOTTOM_MAIN } from '../../../styles/layoutSpacing';
 
 // Lazy imports para reducir el bundle inicial
-const DashboardSummary = React.lazy(() => import('./dashboard-summary/DashboardSummary'));
+const DashboardSummary = React.lazy(() =>
+  import('./dashboard-summary/DashboardSummary')
+);
 const MonthlySalesChart = React.lazy(() => import('../../ui/graphs/BarChart'));
 
 // Loading fallbacks optimizados
 const DashboardSummaryFallback = () => (
   <Grid container spacing={2}>
-    {[1, 2, 3, 4].map((item) => (
+    {[1, 2, 3, 4].map(item => (
       <Grid key={item} size={{ xs: 12, sm: 6, md: 3 }}>
         <Skeleton variant="rectangular" height={120} sx={{ borderRadius: 2 }} />
       </Grid>
@@ -41,14 +51,10 @@ const ProviderHome = () => {
   } = useSupplierDashboard();
 
   // Ahora cuenta productos inactivos (is_active === false)
-  const productsOutOfStock = products.filter(
-    p => p.is_active === false
-  ).length;
+  const productsOutOfStock = products.filter(p => p.is_active === false).length;
 
   // Ahora cuenta productos activos (is_active === true)
-  const productsActive = products.filter(
-    p => p.is_active === true
-  ).length;
+  const productsActive = products.filter(p => p.is_active === true).length;
 
   return (
     <ThemeProvider theme={dashboardThemeCore}>
@@ -97,7 +103,11 @@ const ProviderHome = () => {
                     },
                     transition: 'all 0.2s ease-in-out',
                   }}
-                  onClick={() => navigate('/supplier/addproduct', { state: { fromHome: true } })}
+                  onClick={() =>
+                    navigate('/supplier/addproduct', {
+                      state: { fromHome: true },
+                    })
+                  }
                 >
                   Nuevo Producto
                 </Button>
