@@ -6,10 +6,13 @@ import * as Sentry from '@sentry/react';
 import App from './App.jsx';
 import './index.css';
 
-// 1. Inicializar Sentry (solo en producción, como buena práctica)
+// 1. Inicializar Sentry (solo en producción y preview, como buena práctica)
+// La condición 'import.meta.env.PROD' es verdadera tanto para 'production' como para 'preview' en Vercel.
 if (import.meta.env.PROD) {
   Sentry.init({
-    dsn: 'https://a2bae70d1df327d55986a9391ca3040b@o4509693014900736.ingest.us.sentry.io/4509693017063424',
+    // CORRECCIÓN: Se utiliza la variable con prefijo VITE_ para que sea accesible en el navegador.
+    dsn: import.meta.env.SENTRY_DSN,
+
     integrations: [
       Sentry.browserTracingIntegration(),
       Sentry.replayIntegration(),
@@ -26,7 +29,7 @@ const theme = createTheme({
 });
 
 // 3. Renderizar la aplicación UNA SOLA VEZ
-const container = document.getElementById('root'); // Usamos el ID correcto
+const container = document.getElementById('root');
 const root = createRoot(container);
 
 root.render(
