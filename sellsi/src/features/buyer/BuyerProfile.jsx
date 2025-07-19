@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Box, CircularProgress, Typography } from '@mui/material';
 import Profile from '../profile/Profile';
 import { supabase } from '../../services/supabase';
-import { getUserProfile, updateUserProfile, uploadProfileImage, deleteAllUserImages, repairUserImageUrl, forceFixImageUrl } from '../../services/profileService';
+import { getUserProfile, updateUserProfile, uploadProfileImage, deleteAllUserImages, repairUserImageUrl, forceFixImageUrl } from '../../services/user';
 
 const BuyerProfile = ({ onProfileUpdated }) => {
   const [userProfile, setUserProfile] = useState(null);

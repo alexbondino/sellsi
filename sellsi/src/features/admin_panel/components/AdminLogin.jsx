@@ -35,7 +35,7 @@ import {
 
 import { PrimaryButton } from '../../ui';
 import { useAdminLogin } from '../hooks';
-import { loginAdmin, verify2FA, mark2FAAsConfigured } from '../../../services/adminPanelService';
+import { loginAdmin, verify2FA, mark2FAAsConfigured, generate2FASecret } from '../../../services/adminPanelService';
 import Setup2FA from './Setup2FA';
 import QRCode from 'react-qr-code';
 
@@ -170,7 +170,11 @@ const AdminLogin = ({ open, onClose }) => {
       const result = await loginAdmin(formData.usuario, formData.password);
       
       if (result.success) {
-        const { user, twofaStatus } = result;
+        const { user, twofaStatus } = result.data || {};
+        if (!user || !user.id) {
+          setError('Error en la respuesta del servidor');
+          return;
+        }
         setTempUserId(user.id);
         setTwofaStatus(twofaStatus);
         setTempAdminData(user); // ✅ GUARDAR DATOS ADMIN
@@ -415,12 +419,16 @@ const AdminLogin = ({ open, onClose }) => {
       setSetupError('');
       
       try {
-        const { generate2FASecret } = await import('../../../services/adminPanelService');
         const result = await generate2FASecret(tempUserId, tempAdminData?.email || 'admin@sellsi.com');
         
         if (result.success) {
-          setSecret(result.secret);
-          setQrCode(result.qrCode);
+          const { secret, qrCode } = result.data || {};
+          if (!secret || !qrCode) {
+            setSetupError('Error en la respuesta del servidor');
+            return;
+          }
+          setSecret(secret);
+          setQrCode(qrCode);
           setSetupStep(1);
         } else {
           setSetupError(result.error || 'Error generando código QR');

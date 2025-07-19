@@ -8,7 +8,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { getUserProfile } from '../../../../services/profileService';
+import { getUserProfile } from '../../../../services/user';
 
 /**
  * Estados posibles para cada producto en el carrito

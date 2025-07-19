@@ -4,69 +4,13 @@
  * ============================================================================
  *
  * Store base para operaciones CRUD de productos del proveedor.
- * Se enfoca únic    // 4. SUBIR nuevas imágenes CON THUMBNAILS
-    
-    if (newImages.length > 0) {
-      
-      const files = newImages.map(img => img.file || img);
-      
-      const uploadResult = await UploadServ              
-              
-              // Intentar eliminar con reintentos
-              let deleteData = null;
-              let deleteError = null;
-              let attempts = 0;
-              const maxAttempts = 3;
-              
-              while (attempts < maxAttempts) {
-                attempts++;
-
-                
-                const result = await supabase.storage
-                  .from('product-images')
-                  .remove([filePath]);
-                
-                deleteData = result.data;
-                deleteError = result.error;
-                
-                if (deleteError) {
-
-                  if (attempts < maxAttempts) {
-                    await new Promise(resolve => setTimeout(resolve, 1000)); // Esperar 1 segundo
-                  }
-                } else if (deleteData && deleteData.length > 0) {
-
-                  break;
-                } else {
-
-                  if (attempts < maxAttempts) {
-                    await new Promise(resolve => setTimeout(resolve, 1000)); // Esperar 1 segundo
-                  }
-                }
-              }
-              
-
-                filePath,
-                data: deleteData, 
-                error: deleteError,
-                deletedCount: deleteData?.length || 0,
-                finalAttempt: attempts
-              });tipleImagesWithThumbnails(files, productId, supplierId);
-      
-      if (uploadResult.success && uploadResult.data) {
-        for (const imageData of uploadResult.data) {
-          finalImageUrls.push(imageData.publicUrl);
-        }
-      } else {
-      }
-    } else {
-    }stión de datos sin lógica de UI.
+ * Se enfoca únicamente en la gestión de datos sin lógica de UI.
  */
 
 import { create } from 'zustand'
 import { supabase } from '../../../services/supabase'
-import { updateProductSpecifications } from '../../../services/productSpecificationsService'
-import UploadService from '../../../services/uploadService'
+import { updateProductSpecifications } from '../../../services/marketplace'
+import UploadService from '../../../services/media/uploadService'
 
 const useSupplierProductsBase = create((set, get) => ({
   // ============================================================================

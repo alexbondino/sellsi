@@ -31,9 +31,9 @@ import { useResponsiveThumbnail } from '../../../../hooks/useResponsiveThumbnail
 
 import ProductImageGallery from './ProductImageGallery'
 import PurchaseActions from './PurchaseActions'
-import PriceDisplay from '../../PriceDisplay'
-import StockIndicator from '../../StockIndicator'
-import { useProductPriceTiers } from '../../hooks/useProductPriceTiers'
+import PriceDisplay from '../../PriceDisplay/PriceDisplay'
+import StockIndicator from '../../StockIndicator/StockIndicator'
+import { useProductPriceTiers } from '../hooks/useProductPriceTiers'
 
 const ProductHeader = React.memo(({
   product,

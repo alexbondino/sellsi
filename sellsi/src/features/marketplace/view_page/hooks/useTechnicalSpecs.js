@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { supabase } from '../../../../services/supabase'
-import { getProductSpecifications } from '../../../../services/productSpecificationsService'
+import { getProductSpecifications } from '../../../../services/marketplace'
 import { extractProductIdFromSlug } from '../../marketplace/productUrl'
 import useCartStore from '../../../buyer/hooks/cartStore'
 import { formatProductForCart } from '../../../../utils/priceCalculation'

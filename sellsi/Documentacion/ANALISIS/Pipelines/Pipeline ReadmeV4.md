@@ -2,7 +2,7 @@
 
 ## 📖 Instrucciones para Copilot
 
-Analiza todos los archivos `.js`, `.jsx`, `.ts`, `.tsx` de la carpeta proporcionada y genera un archivo `README.md` ubicado en la misma carpeta siguiendo EXACTAMENTE esta estructura:
+Analiza todos los archivos `.js`, `.jsx`, `.ts`, `.tsx` de la carpeta proporcionada y genera un archivo `README.ia.md` ubicado en la misma carpeta siguiendo EXACTAMENTE esta estructura:
 
 ---
 

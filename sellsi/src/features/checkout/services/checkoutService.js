@@ -4,8 +4,8 @@
 
 import { supabase } from '../../../services/supabase'
 import { PAYMENT_STATUS } from '../constants/paymentMethods'
-import { trackUserAction } from '../../../services/ipTrackingService'
-import khipuService from '../../../services/khipuService'
+import { trackUserAction } from '../../../services/security'
+import khipuService from '../../../services/payment'
 
 class CheckoutService {
   

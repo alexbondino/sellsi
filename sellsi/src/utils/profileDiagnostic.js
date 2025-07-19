@@ -4,7 +4,7 @@
  */
 
 // Importar en el componente donde se use:
-import { diagnoseTables } from '../services/profileService';
+import { diagnoseTables } from '../services/user';
 
 // Luego ejecutar:
 const runDiagnosis = async () => {

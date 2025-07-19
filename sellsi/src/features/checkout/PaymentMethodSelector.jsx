@@ -25,7 +25,7 @@ import { toast } from 'react-hot-toast'
 import useCheckout from './hooks/useCheckout'
 import usePaymentMethods from './hooks/usePaymentMethods'
 import checkoutService from './services/checkoutService'
-import { trackUserAction } from '../../services/ipTrackingService'
+import { trackUserAction } from '../../services/security'
 
 // Componentes UI
 import CheckoutSummary from './CheckoutSummary'

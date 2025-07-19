@@ -6,7 +6,7 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { CHECKOUT_STEPS, CHECKOUT_FLOW } from '../constants/checkoutSteps'
 import { PAYMENT_STATUS } from '../constants/paymentMethods'
-import { trackUserAction } from '../../../services/ipTrackingService'
+import { trackUserAction } from '../../../services/security'
 
 const useCheckout = create(
   persist(

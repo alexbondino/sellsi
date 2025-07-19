@@ -31,7 +31,7 @@ import {
 } from './components';
 
 // Servicio para regiones de entrega
-import { fetchProductRegions, saveProductRegions } from '../../../services/productDeliveryRegionsService';
+import { fetchProductRegions, saveProductRegions } from '../../../services/marketplace';
 import { convertDbRegionsToForm, convertFormRegionsToDb } from '../../../utils/shippingRegionsUtils';
 
 // Hooks y utilidades

@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { orderService } from '../../../services/orderService';
+import { orderService } from '../../../services/user';
 
 // Función para calcular si un pedido está atrasado
 const calculateIsLate = order => {

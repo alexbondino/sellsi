@@ -1,23 +1,121 @@
-# Marketplace Hooks (`src/features/marketplace/hooks`)
-
-> **Fecha de creación de este README:** 03/07/2025
+# Módulo: hooks
 
 ## 1. Resumen funcional del módulo
-
-Esta carpeta contiene hooks personalizados que encapsulan la lógica avanzada del marketplace de Sellsi. Permiten gestionar productos, filtros, ordenamiento, tramos de precios, estado global, comportamiento de scroll y utilidades de debounce, desacoplando la lógica de negocio de los componentes visuales.
-
-- **Problema que resuelve:** Centraliza y desacopla la lógica de estado, filtrado, ordenamiento y UX del marketplace, permitiendo componentes más simples y reutilizables.
-- **Arquitectura:** Hooks independientes y especializados, cada uno enfocado en una parte del flujo de marketplace.
-- **Función principal:** Proveer lógica reutilizable para productos, filtros, ordenamiento, precios escalonados y comportamiento de UI.
-- **Flujo de datos:**
-  - Los hooks exponen estado y funciones para ser consumidos por los componentes del marketplace.
+- **Problema que resuelve:** Centraliza la lógica de negocio del marketplace en hooks personalizados reutilizables, separando la lógica de estado de la presentación y optimizando performance mediante memoización.
+- **Arquitectura de alto nivel:** Conjunto de custom hooks especializados que encapsulan lógica compleja de estado, efectos y cálculos, siguiendo principios de responsabilidad única y composición.
+- **Función y casos de uso principales:** Gestionar estado de productos, filtros, ordenamiento, scroll behavior y datos de marketplace de forma reutilizable y optimizada.
+- **Flujo de datos/información simplificado:**
+  ```
+  Components → Custom Hooks → React Hooks → External APIs/State
+       ↓            ↓              ↓             ↓
+  Re-render ← State change ← Effects ← Data updates
+  ```
 
 ## 2. Listado de archivos
-| Archivo                | Tipo    | Descripción breve                                         | Responsabilidad principal                |
-|------------------------|---------|----------------------------------------------------------|------------------------------------------|
-| useProducts.js         | Hook    | Obtiene productos del backend o mocks                    | Estado y fetch de productos              |
-| useProductSorting.js   | Hook    | Ordena productos según criterios seleccionados            | Lógica de ordenamiento y opciones        |
-| useProductPriceTiers.js| Hook    | Obtiene tramos de precios por cantidad                   | Lógica de precios escalonados            |
+| Archivo | Tipo | Descripción | Responsabilidad |
+|---------|------|------------|----------------|
+| useMarketplaceState.js | Hook | Estado global de productos y filtros | Gestión centralizada de estado del marketplace |
+| useProductSorting.js | Hook | Lógica de ordenamiento de productos | Algoritmos de sorting y memoización |
+| useScrollBehavior.js | Hook | Comportamiento de scroll para UI | Control de visibilidad de elementos según scroll |
+| useProducts.js | Hook | Fetch y cache de productos desde Supabase | Integración con backend y manejo de datos |
+
+## 3. Relaciones internas del módulo
+**Diagrama de dependencias:**
+```
+useMarketplaceLogic (orchestrator)
+├── useMarketplaceState.js (state)
+│   └── useProducts.js (data)
+├── useProductSorting.js (sorting)
+└── useScrollBehavior.js (UI behavior)
+```
+
+**Patrones de comunicación:**
+- **Composition pattern**: Hooks se componen para crear funcionalidad compleja
+- **Data flow**: Estado fluye desde hooks de datos hacia hooks de lógica
+- **Memoization**: Optimización de cálculos costosos
+- **Effect coordination**: Coordinación de efectos entre hooks
+
+## 4. Props de los componentes
+Este módulo no contiene componentes, solo hooks.
+
+## 5. Hooks personalizados
+### `useMarketplaceState()`
+
+**Propósito:** Hook principal que gestiona todo el estado del marketplace incluyendo productos, filtros, búsqueda y navegación.
+
+**Estados y efectos principales:**
+- Estado de productos y filtrado en tiempo real
+- Gestión de categorías y secciones activas
+- Control de filtros aplicados y búsqueda
+- Loading y error states para UX
+
+**API que expone:**
+- `products`: Lista completa de productos
+- `productosFiltrados`: Productos después de aplicar filtros
+- `filtros`: Estado actual de filtros
+- `setBusqueda()`: Actualizar término de búsqueda
+- `updateFiltros()`: Modificar filtros activos
+- `resetFiltros()`: Limpiar todos los filtros
+
+**Ejemplo de uso básico:**
+```jsx
+const { 
+  productosFiltrados, 
+  setBusqueda, 
+  updateFiltros,
+  loading 
+} = useMarketplaceState();
+```
+
+## 6. Dependencias principales
+| Dependencia | Versión | Propósito | Impacto |
+|-------------|---------|-----------|---------|
+| `@supabase/supabase-js` | >=2 | Fetch de datos de productos | Alto - Fuente de datos principal |
+| `react` | >=17 | Hooks base y efectos | Crítico - Funcionalidad core |
+
+## 7. Consideraciones técnicas
+### Limitaciones y advertencias:
+- **Performance**: Filtrado sincrónico puede ser lento con muchos productos
+- **Memory**: Algunos efectos pueden crear memory leaks si no se limpian
+- **Complexity**: Coordinación entre hooks puede ser compleja de debuggear
+
+### Deuda técnica relevante:
+- **[ALTA]** Implementar debounce en filtros para mejor performance
+- **[MEDIA]** Mejorar cleanup de efectos para prevenir memory leaks
+
+## 8. Puntos de extensión
+- **Hooks composables**: Fácil crear nuevos hooks combinando existentes
+- **Custom logic**: Agregar nueva lógica sin afectar componentes
+- **Performance optimization**: Memoización granular según necesidades
+
+## 9. Ejemplos de uso
+### Ejemplo básico:
+```jsx
+import { useMarketplaceState } from 'src/features/marketplace/hooks';
+
+function CustomMarketplace() {
+  const { productosFiltrados, loading, setBusqueda } = useMarketplaceState();
+  
+  if (loading) return <div>Cargando...</div>;
+  
+  return (
+    <div>
+      <input onChange={(e) => setBusqueda(e.target.value)} />
+      {productosFiltrados.map(product => (
+        <ProductCard key={product.id} product={product} />
+      ))}
+    </div>
+  );
+}
+```
+
+## 10. Rendimiento y optimización
+- **Memoización estratégica**: useMemo y useCallback en cálculos costosos
+- **Debouncing**: Optimización de filtros y búsqueda (pendiente)
+- **Effect cleanup**: Prevención de memory leaks y listeners activos
+
+## 11. Actualización
+- **Última actualización:** 18/07/2025
 | useProductFilters.js   | Hook    | Gestiona filtros de precio, stock y rating               | Lógica de filtrado y callbacks           |
 | useMarketplaceState.js | Hook    | Estado global del marketplace, filtros y búsqueda        | Orquestación de estado y filtrado        |
 | useScrollBehavior.js   | Hook    | Maneja visibilidad y sticky de la barra de búsqueda      | UX de scroll y topbar                    |

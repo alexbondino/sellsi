@@ -1,6 +1,7 @@
 # Buyer Module (`src/features/buyer`)
 
 > **Fecha de creación de este README:** 03/07/2025
+> **Última actualización:** 18/07/2025
 
 ## 1. Resumen funcional del módulo
 
@@ -93,10 +94,11 @@ import { BuyerProfile } from './buyer';
 ```
 
 ## 10. Rendimiento y optimización
-- Lazy loading de componentes pesados.
-- Memoización de configuraciones y estilos.
-- Hooks desacoplados para evitar renders innecesarios.
+- Lazy loading de componentes pesados y vistas secundarias.
+- Memoización de configuraciones, estilos y lógica de negocio (`useMemo`, `useCallback`).
+- Hooks desacoplados y modularizados para evitar renders innecesarios y facilitar el testing.
+- Áreas de mejora: optimización de sincronización multi-dispositivo y code splitting avanzado.
 
 ## 11. Actualización
 - Creado: `03/07/2025`
-- Última actualización: `03/07/2025`
+- Última actualización: `18/07/2025`

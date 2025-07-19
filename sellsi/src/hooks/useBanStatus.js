@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import banService from '../services/banService';
+import { banService } from '../services/security';
 
 /**
  * Hook personalizado para verificar el estado de ban del usuario

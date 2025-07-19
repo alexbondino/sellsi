@@ -1,125 +1,143 @@
-# Profile
+# Módulo: profile
 
 ## 1. Resumen funcional del módulo
-El módulo `profile` gestiona la visualización, edición y protección de los datos sensibles del perfil de usuario en Sellsi. Permite mostrar y ocultar información confidencial (como números de cuenta y RUT), aplicar máscaras de seguridad y controlar la edición de campos clave. Su objetivo es brindar una experiencia segura y flexible para la gestión de datos personales y bancarios.
-
-- **Problema que resuelve:** Protege la exposición de datos sensibles y facilita la edición segura del perfil.
-- **Arquitectura:** Componentes de perfil y hooks personalizados para control granular de visibilidad y edición.
-- **Patrones:** State lifting, hooks reutilizables, separación de lógica y presentación.
-- **Flujo de datos:** Inputs → Estado local/hooks → Validación/máscara → Renderizado seguro.
+- **Problema que resuelve:** Gestiona la visualización, edición y protección de datos sensibles del perfil de usuario, aplicando máscaras de seguridad y control granular de visibilidad.
+- **Arquitectura de alto nivel:** Hook personalizado para control de campos sensibles con utilidades de enmascarado y componentes de perfil seguros.
+- **Función y casos de uso principales:** Protección de datos bancarios, RUT y información confidencial, edición segura de perfiles y control de visibilidad por campo.
+- **Flujo de datos/información simplificado:**
+  ```
+  User Action → Visibility Toggle → Mask/Unmask → Secure Display
+  ```
 
 ## 2. Listado de archivos
-| Archivo                | Tipo      | Descripción                                 | Responsabilidad principal                |
-|------------------------|-----------|---------------------------------------------|------------------------------------------|
-| hooks/useSensitiveFields.js | Hook  | Manejo de visibilidad y máscara de campos   | Controlar visibilidad de datos sensibles |
-| (utils/profileHelpers.js)   | Utilidad | Función de enmascarado de datos            | Lógica de máscara de datos               |
-| ...otros componentes        | Componente | Visualización y edición de perfil         | Renderizado y edición de datos           |
+| Archivo | Tipo | Descripción | Responsabilidad |
+|---------|------|------------|----------------|
+| hooks/useSensitiveFields.js | Hook | Control de visibilidad y enmascarado de campos sensibles | Gestión de seguridad de datos |
 
 ## 3. Relaciones internas del módulo
+**Diagrama de dependencias:**
 ```
-PerfilUsuario (componente principal)
-├── useSensitiveFields (hook)
-│   └── maskSensitiveData (utilidad)
-└── ...otros componentes de edición/visualización
+Profile Components
+└── useSensitiveFields (custom hook)
+    ├── showSensitiveData (state)
+    ├── toggleSensitiveData (action)
+    └── getSensitiveFieldValue (utility)
 ```
-- Comunicación por hooks y props.
-- Renderizado condicional según visibilidad de campos.
+
+**Patrones de comunicación:**
+- **Custom hooks**: Encapsulación de lógica de seguridad
+- **State management**: Control granular por campo
+- **Pure functions**: Utilidades de enmascarado sin efectos secundarios
 
 ## 4. Props de los componentes
-### useSensitiveFields
-No recibe props externas (es un hook personalizado).
-
-#### API expuesta:
-- `showSensitiveData`: Estado de visibilidad de cada campo.
-- `toggleSensitiveData(field)`: Alterna visibilidad de un campo.
-- `getSensitiveFieldValue(field, value, showLast)`: Devuelve valor enmascarado o completo.
-- `isFieldVisible(field)`: Indica si el campo está visible.
-- `hideAllFields()`: Oculta todos los campos.
-- `showField(field)`: Muestra un campo específico.
-- `hideField(field)`: Oculta un campo específico.
-
-**Notas:**
-- Los componentes de perfil consumen este hook para proteger datos sensibles.
+Este módulo se basa principalmente en hooks personalizados, no en componentes con props específicos.
 
 ## 5. Hooks personalizados
-### `useSensitiveFields()`
-**Propósito:** Controlar la visibilidad y enmascarado de campos sensibles (cuentas, RUT, etc.) en el perfil.
-
-**Estados y efectos principales:**
-- `showSensitiveData`: Estado booleano por campo.
-- Efectos: No tiene efectos secundarios globales.
-
-**API que expone:**
-- Ver tabla anterior.
-
-**Ejemplo de uso básico:**
-```jsx
-const {
-  showSensitiveData,
-  toggleSensitiveData,
-  getSensitiveFieldValue,
-  isFieldVisible,
-  hideAllFields,
-  showField,
-  hideField
-} = useSensitiveFields();
-
-// En un componente:
-<TextField
-  value={getSensitiveFieldValue('accountNumber', user.accountNumber)}
-  type={isFieldVisible('accountNumber') ? 'text' : 'password'}
-/>
-<Button onClick={() => toggleSensitiveData('accountNumber')}>Ver/Ocultar</Button>
-```
+### useSensitiveFields
+- **Propósito:** Control granular de visibilidad y enmascarado de campos sensibles en perfiles de usuario
+- **Inputs:** Ninguno (configuración interna)
+- **Outputs:** 
+  - `showSensitiveData`: Estado de visibilidad por campo
+  - `toggleSensitiveData(field)`: Alternar visibilidad de campo específico
+  - `getSensitiveFieldValue(field, value, showLast)`: Obtener valor enmascarado/completo
+  - `isFieldVisible(field)`: Verificar visibilidad de campo
+  - `hideAllFields()`: Ocultar todos los campos sensibles
+  - `showField(field)`: Mostrar campo específico
+  - `hideField(field)`: Ocultar campo específico
+- **Efectos secundarios:** Manejo de estado local de visibilidad
 
 ## 6. Dependencias principales
-| Dependencia         | Versión   | Propósito                        | Impacto                  |
-|---------------------|-----------|----------------------------------|--------------------------|
-| react               | ^18.x     | Renderizado y estado             | Core                     |
-| ...otras internas   | -         | Utilidades de máscara y helpers  | Seguridad y UX           |
+| Dependencia | Versión | Propósito | Impacto |
+|-------------|---------|-----------|---------|
+| react | ^18.0.0 | Hooks y estado para funcionalidad core | Alto - Funcionalidad base |
+| Sin dependencias externas | - | Hook implementado con React nativo | Bajo - Alta portabilidad |
 
 ## 7. Consideraciones técnicas
-### Limitaciones y advertencias
-- Solo controla visibilidad local; no cifra datos en backend.
-- Depende de la consistencia de nombres de campos sensibles.
-- No implementa logs de acceso a datos sensibles.
+### Limitaciones y advertencias:
+- **Client-side only**: Control de visibilidad local, no cifrado backend
+- **Field consistency**: Dependiente de nombres de campos sensibles consistentes
+- **No audit logs**: Sin implementación de logs de acceso a datos
+- **Static configuration**: Campos sensibles definidos estáticamente
 
-### Deuda técnica relevante
-- [MEDIA] Mejorar para soportar campos sensibles dinámicos.
-- [MEDIA] Integrar logs de visualización para auditoría.
+### Deuda técnica relevante:
+- **[MEDIA]** Implementar soporte para campos sensibles dinámicos
+- **[MEDIA]** Agregar sistema de logs de auditoría para visualización
+- **[BAJA]** Mejorar configurabilidad de patrones de enmascarado
 
 ## 8. Puntos de extensión
-- Permite agregar más campos sensibles fácilmente.
-- Puede integrarse con sistemas de auditoría o doble autenticación.
+- **Dynamic fields**: Configuración dinámica de campos sensibles
+- **Audit integration**: Integración con sistemas de auditoría y logs
+- **2FA integration**: Soporte para doble autenticación en campos críticos
+- **Custom masking**: Patrones de enmascarado personalizables por tipo de dato
 
 ## 9. Ejemplos de uso
-### Ejemplo básico
+### Implementación básica:
 ```jsx
-import { useSensitiveFields } from './hooks/useSensitiveFields';
+import { useSensitiveFields } from 'src/features/profile/hooks/useSensitiveFields';
 
-function ProfileFields({ user }) {
-  const { getSensitiveFieldValue, toggleSensitiveData, isFieldVisible } = useSensitiveFields();
+function ProfileField({ user }) {
+  const { 
+    getSensitiveFieldValue, 
+    toggleSensitiveData, 
+    isFieldVisible 
+  } = useSensitiveFields();
 
   return (
     <div>
-      <input
+      <TextField
         value={getSensitiveFieldValue('accountNumber', user.accountNumber)}
         type={isFieldVisible('accountNumber') ? 'text' : 'password'}
-        readOnly
+        InputProps={{
+          readOnly: true,
+          endAdornment: (
+            <IconButton onClick={() => toggleSensitiveData('accountNumber')}>
+              {isFieldVisible('accountNumber') ? <VisibilityOff /> : <Visibility />}
+            </IconButton>
+          )
+        }}
       />
-      <button onClick={() => toggleSensitiveData('accountNumber')}>
-        {isFieldVisible('accountNumber') ? 'Ocultar' : 'Ver'}
-      </button>
     </div>
   );
 }
 ```
 
+### Uso avanzado con múltiples campos:
+```jsx
+function CompleteProfile({ user }) {
+  const { 
+    getSensitiveFieldValue, 
+    toggleSensitiveData, 
+    isFieldVisible,
+    hideAllFields 
+  } = useSensitiveFields();
+
+  const sensitiveFields = ['accountNumber', 'rut', 'phoneNumber'];
+
+  return (
+    <Card>
+      <CardActions>
+        <Button onClick={hideAllFields}>Ocultar Todo</Button>
+      </CardActions>
+      {sensitiveFields.map(field => (
+        <ProfileField
+          key={field}
+          field={field}
+          value={user[field]}
+          visible={isFieldVisible(field)}
+          onToggle={() => toggleSensitiveData(field)}
+        />
+      ))}
+    </Card>
+  );
+}
+```
+
 ## 10. Rendimiento y optimización
-- Estado local optimizado por campo.
-- Sin efectos secundarios globales.
-- Áreas de mejora: soporte para campos dinámicos y memoización avanzada.
+- **Local state**: Estado optimizado por campo individual
+- **No side effects**: Hook sin efectos secundarios globales
+- **Minimal re-renders**: Actualizaciones granulares por campo
+- **Memory efficient**: Sin almacenamiento persistente de datos sensibles
+- **Optimization areas**: Memoización de utilidades de enmascarado, soporte para campos dinámicos
 
 ## 11. Actualización
-- Creado: `03/07/2025`
-- Última actualización: `03/07/2025`
+- **Última actualización:** 18/07/2025

@@ -1,94 +1,133 @@
-# FilterPanel Module (`src/features/marketplace/FilterPanel`)
-
-> **Fecha de creación de este README:** 03/07/2025
+# Módulo: FilterPanel
 
 ## 1. Resumen funcional del módulo
-
-Este módulo implementa el panel de filtros avanzado para el marketplace de Sellsi. Permite a los usuarios aplicar, visualizar y limpiar filtros de productos de forma intuitiva y responsiva, mejorando la experiencia de búsqueda y navegación.
-
-- **Problema que resuelve:** Facilita la selección y visualización de filtros activos, permitiendo búsquedas precisas y personalizadas en el catálogo de productos.
-- **Arquitectura:** Componentes desacoplados, hooks personalizados para lógica de filtros, estilos modulares y subcomponentes reutilizables.
-- **Función principal:** Proveer UI y lógica para aplicar, mostrar y limpiar filtros de productos.
-- **Flujo de datos:**
-  - El usuario ajusta filtros (precio, stock, negociable, etc.)
-  - El panel actualiza el estado de filtros y muestra los activos como chips.
-  - Los cambios se propagan al estado global del marketplace.
+- **Problema que resuelve:** Proporciona un sistema completo de filtrado avanzado para el marketplace, permitiendo búsquedas precisas mediante múltiples criterios (precio, stock, categorías, etc.).
+- **Arquitectura de alto nivel:** Componente contenedor que orquesta subcomponentes especializados de filtrado con hooks dedicados para la lógica de negocio.
+- **Función y casos de uso principales:** Filtrado por precio, stock, rating, categorías, negociabilidad y visualización de filtros activos con capacidad de eliminación individual.
+- **Flujo de datos/información simplificado:**
+  ```
+  User Input → Filter Components → Filter State → Product List Update
+  ```
 
 ## 2. Listado de archivos
-| Archivo                  | Tipo        | Descripción breve                                 | Responsabilidad principal                |
-|--------------------------|-------------|--------------------------------------------------|------------------------------------------|
-| FilterPanel.jsx          | Componente  | Panel principal de filtros, orquesta subcomponentes| UI y lógica de filtros                   |
-| components/PriceFilter.jsx| Componente | Slider y campos de precio                         | Selección de rango de precios            |
-| components/AppliedFiltersDisplay.jsx| Componente | Chips visuales de filtros activos                | Visualización y remoción de filtros      |
-| ...otros                 | ...         | ...                                              | ...                                      |
+| Archivo | Tipo | Descripción | Responsabilidad |
+|---------|------|------------|----------------|
+| FilterPanel.jsx | Componente | Panel principal que orquesta todos los filtros | Coordinación y estado de filtros |
+| components/PriceFilter.jsx | Componente | Slider de rango de precios | Filtrado por precio |
+| components/AppliedFiltersDisplay.jsx | Componente | Visualización de filtros activos como chips | UI de filtros aplicados |
 
 ## 3. Relaciones internas del módulo
-- `FilterPanel.jsx` orquesta la UI y lógica, importando subcomponentes.
-- `PriceFilter.jsx` y `AppliedFiltersDisplay.jsx` son hijos directos de `FilterPanel`.
-- Usa hooks de `../hooks/useProductFilters` para lógica de filtros.
+**Diagrama de dependencias:**
+```
+FilterPanel (container)
+├── PriceFilter (specialized filter)
+├── AppliedFiltersDisplay (filter visualization)
+└── useProductFilters (business logic)
+```
 
-```
-FilterPanel
-├── PriceFilter
-├── AppliedFiltersDisplay
-└── (usa hooks/useProductFilters)
-```
+**Patrones de comunicación:**
+- **Container/Presentational**: FilterPanel coordina, subcomponentes presentan
+- **Controlled components**: Estado centralizado en el container
+- **Custom hooks**: Lógica de filtros en useProductFilters
 
 ## 4. Props de los componentes
 ### FilterPanel
-| Prop              | Tipo           | Requerido | Descripción                                 |
-|-------------------|----------------|-----------|---------------------------------------------|
-| filtros           | objeto         | Sí        | Estado actual de los filtros                |
-| categoriaSeleccionada | array      | No        | Categorías seleccionadas                    |
-| busqueda          | string         | No        | Texto de búsqueda                           |
-| updateFiltros     | función        | Sí        | Callback para actualizar filtros            |
-| resetFiltros      | función        | Sí        | Callback para limpiar todos los filtros      |
-| totalProductos    | número         | No        | Total de productos filtrados                |
-| filtrosAbiertos   | boolean        | No        | Si el panel está abierto                    |
-| filterPosition    | string         | No        | Posición del panel ('left', 'right')        |
-| isMobileOpen      | boolean        | No        | Si el panel está abierto en móvil           |
-| onMobileClose     | función        | No        | Handler para cerrar en móvil                |
+| Prop | Tipo | Requerido | Descripción |
+|------|------|-----------|------------|
+| filtros | objeto | ✓ | Estado actual de filtros aplicados |
+| categoriaSeleccionada | array | ✗ | Lista de categorías seleccionadas |
+| busqueda | string | ✗ | Término de búsqueda actual |
+| updateFiltros | función | ✓ | Callback para actualizar filtros |
+| resetFiltros | función | ✓ | Callback para limpiar todos los filtros |
+| totalProductos | número | ✗ | Contador de productos filtrados |
+| filtrosAbiertos | boolean | ✗ | Estado de expansión del panel |
+| filterPosition | string | ✗ | Posición del panel ('left', 'right') |
+| isMobileOpen | boolean | ✗ | Estado móvil del panel |
+| onMobileClose | función | ✗ | Handler para cerrar en móvil |
 
 ### AppliedFiltersDisplay
-| Prop              | Tipo           | Requerido | Descripción                                 |
-|-------------------|----------------|-----------|---------------------------------------------|
-| filtros           | objeto         | Sí        | Estado actual de los filtros                |
-| categoriaSeleccionada | array      | No        | Categorías seleccionadas                    |
-| busqueda          | string         | No        | Texto de búsqueda                           |
-| onRemoveFilter    | función        | Sí        | Callback para remover un filtro             |
-| styles            | objeto         | No        | Estilos personalizados                      |
+| Prop | Tipo | Requerido | Descripción |
+|------|------|-----------|------------|
+| filtros | objeto | ✓ | Filtros aplicados para mostrar |
+| onRemoveFilter | función | ✓ | Callback para eliminar filtro específico |
+| styles | objeto | ✗ | Estilos personalizados del componente |
 
 ## 5. Hooks personalizados
-- Usa `useProductFilters` de `../hooks` para lógica de filtros y callbacks.
+### useProductFilters (importado)
+- **Propósito:** Encapsula lógica de filtrado y manipulación de estado
+- **Inputs:** Estado inicial de filtros
+- **Outputs:** Filtros actuales, funciones de actualización y reset
+- **Efectos secundarios:** Actualización de la lista de productos
 
 ## 6. Dependencias principales
-| Dependencia         | Versión | Propósito                  | Impacto                |
-|---------------------|---------|----------------------------|------------------------|
-| `react`             | >=17    | Hooks y estado             | Lógica y efectos       |
-| `@mui/material`     | >=5     | Componentes UI             | Visualización          |
-| `@mui/icons-material`| >=5    | Iconos para UI             | Visualización          |
+| Dependencia | Versión | Propósito | Impacto |
+|-------------|---------|-----------|---------|
+| @mui/material | ^5.0.0 | Componentes UI del panel | Alto - Core UI |
+| @mui/icons-material | ^5.0.0 | Iconos para filtros | Medio - UX |
+| react | ^18.0.0 | Hooks y estado | Alto - Funcionalidad |
 
 ## 7. Consideraciones técnicas
-- Arquitectura desacoplada: lógica en hooks, UI en componentes puros.
-- El panel es responsivo y optimizado para desktop y móvil.
-- Los filtros activos se muestran como chips y pueden limpiarse individualmente.
+### Limitaciones y advertencias:
+- **Responsive design**: Comportamiento diferente en móvil vs desktop
+- **Performance**: Filtros complejos pueden ser costosos con muchos productos
+- **State sync**: Requiere sincronización con el estado global del marketplace
+
+### Deuda técnica relevante:
+- **[MEDIA]** Implementar virtualization para listas largas de filtros
+- **[BAJA]** Mejorar accesibilidad con ARIA labels
+- **[BAJA]** Agregar tests unitarios para componentes de filtros
 
 ## 8. Puntos de extensión
-- Se pueden agregar nuevos filtros o criterios fácilmente.
-- Los subcomponentes pueden reutilizarse en otros flujos de filtrado.
+- **Nuevos filtros**: Fácil adición de nuevos tipos de filtro
+- **Custom themes**: Soporte para temas personalizados via Material-UI
+- **Filter persistence**: Posibilidad de guardar filtros en localStorage
 
 ## 9. Ejemplos de uso
-
-### Usar el panel de filtros
+### Implementación básica:
 ```jsx
-import FilterPanel from './FilterPanel/FilterPanel';
-<FilterPanel filtros={filtros} updateFiltros={setFiltros} resetFiltros={resetFiltros} />
+import FilterPanel from 'src/features/marketplace/FilterPanel/FilterPanel';
+import { useProductFilters } from 'src/features/marketplace/hooks';
+
+function MarketplacePage() {
+  const {
+    filtros,
+    updateFiltros,
+    resetFiltros,
+    filteredProducts
+  } = useProductFilters();
+
+  return (
+    <div>
+      <FilterPanel
+        filtros={filtros}
+        updateFiltros={updateFiltros}
+        resetFiltros={resetFiltros}
+        totalProductos={filteredProducts.length}
+        filtrosAbiertos={true}
+      />
+      <ProductList products={filteredProducts} />
+    </div>
+  );
+}
+```
+
+### Filtros personalizados:
+```jsx
+<FilterPanel
+  filtros={customFilters}
+  categoriaSeleccionada={['electronics', 'books']}
+  busqueda="laptop"
+  filterPosition="right"
+  isMobileOpen={mobileDrawerOpen}
+  onMobileClose={() => setMobileDrawerOpen(false)}
+/>
 ```
 
 ## 10. Rendimiento y optimización
-- Memoización de componentes y handlers.
-- Renderizado condicional para mejorar performance.
+- **React.memo**: Componentes memoizados para evitar re-renders innecesarios
+- **useMemo**: Cálculos de filtros memoizados
+- **Debounced updates**: Filtros de texto con debounce para reducir llamadas
+- **Lazy loading**: Carga condicional de filtros complejos
 
 ## 11. Actualización
-- Creado: `03/07/2025`
-- Última actualización: `03/07/2025`
+- **Última actualización:** 18/07/2025

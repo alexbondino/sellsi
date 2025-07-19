@@ -29,7 +29,7 @@ import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
 import debounce from 'lodash.debounce'
 import { calculatePriceForQuantity } from '../../../utils/priceCalculation'
-import { cartService } from '../../../services/cartService'
+import { cartService } from '../../../services/user'
 import { validateQuantity, sanitizeCartItems, isQuantityError, QUANTITY_LIMITS } from '../../../utils/quantityValidation'
 
 // Importar módulos especializados

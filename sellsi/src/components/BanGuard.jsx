@@ -1,8 +1,10 @@
-import React from 'react';
+import React, { Suspense } from 'react';
 import { useBanStatus } from '../hooks/useBanStatus';
-import BanPageView from '../features/ban/BanPageView';
 import Loader from './Loader';
-import { Box } from '@mui/material';
+import { Box, CircularProgress } from '@mui/material';
+
+// Lazy import para evitar conflicto con App.jsx
+const BanPageView = React.lazy(() => import('../features/ban/BanPageView'));
 
 /**
  * Componente guardian que verifica el estado de ban antes de renderizar el contenido
@@ -37,7 +39,11 @@ const BanGuard = ({ children, userId = null }) => {
 
   // Si el usuario está baneado, mostrar la página de ban
   if (banStatus.isBanned) {
-    return <BanPageView />;
+    return (
+      <Suspense fallback={<CircularProgress />}>
+        <BanPageView />
+      </Suspense>
+    );
   }
 
   // Si no está baneado, renderizar el contenido normal

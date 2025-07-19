@@ -15,7 +15,7 @@ import {
 import CloseIcon from '@mui/icons-material/Close';
 import PasswordRequirements from '../ui/PasswordRequirements';
 import { supabase } from '../../services/supabase';
-import { trackUserAction } from '../../services/ipTrackingService';
+import { trackUserAction } from '../../services/security';
 
 const ChangePasswordModal = ({ open, onClose, onPasswordChanged, showBanner }) => {
   const [formData, setFormData] = useState({

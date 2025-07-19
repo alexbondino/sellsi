@@ -1,7 +1,7 @@
 import React from 'react'
 import Modal, { MODAL_TYPES } from '../../../ui/Modal'
 import { Box, Typography } from '@mui/material'
-import { generateQuotationPDF } from '../utils/quotationPDFGenerator.jsx'
+import { generateQuotationPDF } from '../utils/quotationPDFGeneratorDynamic.js' // Versión con importación dinámica
 
 const QuotationModal = ({ open, onClose, product, quantity, unitPrice, tiers }) => {
   const handleConfirm = async () => {

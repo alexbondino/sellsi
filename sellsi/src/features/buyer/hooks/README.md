@@ -1,6 +1,7 @@
 # Buyer Hooks (`src/features/buyer/hooks`)
 
 > **Fecha de creación de este README:** 03/07/2025
+> **Última actualización:** 18/07/2025
 
 ## 1. Resumen funcional del módulo
 
@@ -98,8 +99,10 @@ const { setShippingOption, getShippingCost } = useShipping();
 
 ## 10. Rendimiento y optimización
 - Persistencia automática y debounced en localStorage.
-- Hooks desacoplados y memoizados para evitar renders innecesarios.
+- Hooks desacoplados y memoizados (`useMemo`, `useCallback`) para evitar renders innecesarios.
+- Estructura modular que permite code splitting y extensión sin penalizar el rendimiento.
+- Áreas de mejora: optimización de sincronización multi-dispositivo y lazy loading de lógica avanzada.
 
 ## 11. Actualización
 - Creado: `03/07/2025`
-- Última actualización: `03/07/2025`
+- Última actualización: `18/07/2025`

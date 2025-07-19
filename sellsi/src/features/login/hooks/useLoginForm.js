@@ -1,7 +1,7 @@
 import { useReducer } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../../services/supabase'
-import { trackLoginIP } from '../../../services/ipTrackingService'
+import { trackLoginIP } from '../../../services/security'
 
 const initialState = {
   correo: '',

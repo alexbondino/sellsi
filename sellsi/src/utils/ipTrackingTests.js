@@ -1,7 +1,7 @@
 // Test de funcionalidad del sistema de tracking de IP
 
 // Importar el servicio de tracking de IP
-import { trackUserAction, updateUserIP, getCurrentUserIP } from '../services/ipTrackingService';
+import { trackUserAction, updateUserIP, getCurrentUserIP } from '../services/security';
 
 // Test 1: Verificar que la función trackUserAction funciona
 async function testTrackUserAction() {

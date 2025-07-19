@@ -82,6 +82,21 @@ const USER_FILTERS = [
   { value: 'verified', label: 'Solo verificados' }
 ];
 
+// ✅ UTILITY FUNCTIONS
+const getCurrentAdminId = () => {
+  try {
+    const adminUser = localStorage.getItem('adminUser');
+    if (adminUser) {
+      const user = JSON.parse(adminUser);
+      return user.id;
+    }
+    return null;
+  } catch (error) {
+    console.error('Error getting admin ID:', error);
+    return null;
+  }
+};
+
 // ✅ COMMON STYLES
 const commonStyles = {
   container: {
@@ -415,9 +430,15 @@ const UserManagementTable = memo(() => {
   const handleBanConfirm = useCallback(async (reason) => {
     const { user, action } = banModal;
     try {
+      const adminId = getCurrentAdminId();
+      if (!adminId) {
+        setError('No hay sesión administrativa activa');
+        return;
+      }
+
       const result = action === 'ban' 
-        ? await banUser(user.user_id, reason)
-        : await unbanUser(user.user_id, reason);
+        ? await banUser(user.user_id, reason, adminId)
+        : await unbanUser(user.user_id, reason, adminId);
 
       if (result.success) {
         await loadData();
@@ -435,9 +456,15 @@ const UserManagementTable = memo(() => {
   const handleVerificationConfirm = useCallback(async (reason) => {
     const { user, action } = verificationModal;
     try {
+      const adminId = getCurrentAdminId();
+      if (!adminId) {
+        setError('No hay sesión administrativa activa');
+        return;
+      }
+
       const result = action === 'verify' 
-        ? await verifyUser(user.user_id, reason)
-        : await unverifyUser(user.user_id, reason);
+        ? await verifyUser(user.user_id, reason, adminId)
+        : await unverifyUser(user.user_id, reason, adminId);
 
       if (result.success) {
         await loadData();
@@ -454,7 +481,13 @@ const UserManagementTable = memo(() => {
 
   const handleDeleteConfirm = useCallback(async (userId) => {
     try {
-      const result = await deleteUser(userId);
+      const adminId = getCurrentAdminId();
+      if (!adminId) {
+        setError('No hay sesión administrativa activa');
+        return;
+      }
+
+      const result = await deleteUser(userId, adminId);
       if (result.success) {
         await loadData();
         closeDeleteModal();
@@ -470,7 +503,13 @@ const UserManagementTable = memo(() => {
 
   const handleDeleteMultipleConfirm = useCallback(async (userIds) => {
     try {
-      const result = await deleteMultipleUsers(userIds);
+      const adminId = getCurrentAdminId();
+      if (!adminId) {
+        setError('No hay sesión administrativa activa');
+        return;
+      }
+
+      const result = await deleteMultipleUsers(userIds, adminId);
       if (result.success) {
         await loadData();
         setSelectedUsers(new Set()); // Limpiar selección

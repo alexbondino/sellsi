@@ -21,8 +21,8 @@
 
 import { create } from 'zustand'
 import { supabase } from '../../../../services/supabase'
-import { insertProductSpecifications } from '../../../../services/productSpecificationsService'
-import UploadService from '../../../../services/uploadService'
+import { insertProductSpecifications } from '../../../../services/marketplace'
+import UploadService from '../../../../services/media/uploadService'
 
 // Adaptar a la tabla y campos reales de products
 const useSupplierProductsStore = create((set, get) => ({

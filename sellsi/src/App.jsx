@@ -28,7 +28,7 @@ import useCartStore from './features/buyer/hooks/cartStore';
 
 import SideBar from './features/layout/SideBar';
 import { AdminLogin, AdminDashboard, AdminPanelHome } from './features/admin_panel';
-import ScrollToTop from './features/ScrollToTop';
+import ScrollToTop from './features/ui/ScrollToTop';
 
 // ============================================================================
 // 🚀 CODE SPLITTING: LAZY LOADING DE COMPONENTES POR RUTAS

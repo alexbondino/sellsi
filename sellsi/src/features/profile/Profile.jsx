@@ -28,8 +28,8 @@ import BillingInfoSection from './sections/BillingInfoSection';
 
 // Utilidades
 import { getInitials } from '../../utils/profileHelpers';
-import { trackUserAction } from '../../services/ipTrackingService';
-import { getUserProfile } from '../../services/profileService';
+import { trackUserAction } from '../../services/security';
+import { getUserProfile } from '../../services/user';
 
 const Profile = ({ userProfile, onUpdateProfile }) => {
   const { showBanner } = useBanner();

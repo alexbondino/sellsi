@@ -1,99 +1,110 @@
-# Marketplace Utils (`src/features/marketplace/marketplace`)
-
-> **Fecha de creación de este README:** 03/07/2025
+# Módulo: marketplace (utils)
 
 ## 1. Resumen funcional del módulo
-
-Esta carpeta contiene utilidades, helpers y constantes que encapsulan la lógica de filtrado, ordenamiento, generación de datos y manejo de URLs para productos en el marketplace de Sellsi. Permite separar la lógica de negocio y utilidades del código de hooks y componentes, facilitando la reutilización y el mantenimiento.
-
-- **Problema que resuelve:** Centraliza funciones de filtrado, ordenamiento, generación de datos de muestra y helpers de URL, evitando duplicación y acoplamiento en los componentes y hooks del marketplace.
-- **Arquitectura:** Módulos de funciones puras, helpers y constantes, cada uno enfocado en una parte de la lógica de negocio del marketplace.
-- **Función principal:** Proveer utilidades reutilizables para manipulación de productos, generación de datos y configuración de filtros y ordenamientos.
-- **Flujo de datos:**
-  - Los helpers son consumidos por hooks y componentes para filtrar, ordenar, mapear y mostrar productos.
+- **Problema que resuelve:** Proporciona utilidades, constantes y funciones auxiliares específicas del dominio marketplace para filtrado, ordenamiento, formateo y manipulación de URLs de productos.
+- **Arquitectura de alto nivel:** Conjunto de módulos utilitarios puros sin estado que implementan lógica de negocio específica del marketplace mediante funciones helper.
+- **Función y casos de uso principales:** Filtrar productos por criterios complejos, generar URLs SEO-friendly, constantes de configuración y algoritmos de ordenamiento.
+- **Flujo de datos/información simplificado:**
+  ```
+  Raw Data → Utility Functions → Processed Data → Components
+  ```
 
 ## 2. Listado de archivos
-| Archivo                | Tipo      | Descripción breve                                 | Responsabilidad principal                |
-|------------------------|-----------|--------------------------------------------------|------------------------------------------|
-| salesDataGenerator.js  | Helper    | Genera datos de ventas y especificaciones técnicas| Mock y enriquecimiento de productos      |
-| productUrl.js          | Helper    | Genera y parsea slugs y URLs de productos         | Navegación y SEO                        |
-| productSorting.js      | Helper    | Funciones para ordenar productos                  | Lógica de ordenamiento                  |
-| productFilters.js      | Helper    | Funciones para filtrar productos por criterios    | Lógica de filtrado                      |
-| constants.js           | Constantes| Constantes de secciones, filtros y ordenamientos  | Configuración centralizada               |
+| Archivo | Tipo | Descripción | Responsabilidad |
+|---------|------|------------|----------------|
+| constants.js | Constantes | Configuración y valores fijos del marketplace | Centralización de configuración |
+| productFilters.js | Utilidad | Funciones de filtrado de productos | Lógica de filtros complejos |
+| productSorting.js | Utilidad | Algoritmos de ordenamiento | Implementación de criterios de sorting |
+| productUrl.js | Utilidad | Generación y parsing de URLs de productos | SEO y routing de productos |
+| salesDataGenerator.js | Utilidad | Generación de datos mock y especificaciones | Datos de prueba y desarrollo |
 
 ## 3. Relaciones internas del módulo
-- `productSorting.js` y `productFilters.js` consumen constantes de `constants.js`.
-- `salesDataGenerator.js` y `productUrl.js` son helpers independientes.
-- Todos los helpers pueden ser consumidos por hooks y componentes del marketplace.
-
+**Diagrama de dependencias:**
 ```
-productSorting.js
-├── constants.js
-productFilters.js
-├── constants.js
-salesDataGenerator.js
-productUrl.js
+Marketplace Components
+├── constants.js (configuración)
+├── productFilters.js (filtros)
+├── productSorting.js (ordenamiento)
+├── productUrl.js (URLs)
+└── salesDataGenerator.js (mock data)
 ```
 
-## 4. API y props principales de los helpers
+**Patrones de comunicación:**
+- **Pure functions**: Funciones sin efectos secundarios
+- **Utility pattern**: Helpers especializados por dominio
+- **Configuration pattern**: Constantes centralizadas
 
-### salesDataGenerator.js
-- **Funciones:**
-  - generateSalesCharacteristics(product): Genera datos de ventas aleatorios.
-  - generateTechnicalSpecifications(product): Genera especificaciones técnicas mock.
+## 4. Props de los componentes
+Este módulo no contiene componentes, solo utilidades.
 
-### productUrl.js
-- **Funciones:**
-  - createProductSlug(productName): Convierte nombre en slug URL.
-  - generateProductSlug(product): Slug completo con ID.
-  - generateProductUrl(product): URL completa para specs.
+## 5. Hooks personalizados
+Este módulo no define hooks personalizados.
 
-### productSorting.js
-- **Funciones:**
-  - sortProducts(productos, ordenamiento): Ordena productos según criterio.
+## 6. Dependencias principales
+| Dependencia | Versión | Propósito | Impacto |
+|-------------|---------|-----------|---------|
+| Sin dependencias externas | - | Funciones puras | Bajo - Alta portabilidad |
 
-### productFilters.js
-- **Funciones:**
-  - filterProductsBySection, filterProductsBySearch, filterProductsByCategory, filterProductsByPrice, filterProductsByStock, filterProductsByRating, filterProductsByNegotiable
+## 7. Consideraciones técnicas
+### Limitaciones y advertencias:
+- **Pure functions**: Sin estado interno, requieren datos como parámetros
+- **Performance**: Algunas funciones de filtrado pueden ser costosas con muchos datos
+- **Mock data**: salesDataGenerator para desarrollo únicamente
 
-### constants.js
-- **Constantes:**
-  - SECTIONS, SECTION_LABELS, SORT_OPTIONS, INITIAL_FILTERS, PRICE_RANGE, RATING_RANGE
+### Deuda técnica relevante:
+- **[BAJA]** Agregar JSDoc para mejor documentación
+- **[BAJA]** Considerar memoización para funciones costosas
+- **[MEDIA]** Migrar mock data a servicios reales en producción
 
-## 5. Dependencias principales
-| Dependencia         | Versión | Propósito                  | Impacto                |
-|---------------------|---------|----------------------------|------------------------|
-| `none`              | -       | Funciones puras            | Portabilidad           |
+## 8. Puntos de extensión
+- **Funciones puras**: Fácil testing y reutilización
+- **Modular design**: Agregar nuevas utilidades sin afectar existentes
+- **Configuration driven**: Cambios de comportamiento via constantes
 
-## 6. Consideraciones técnicas
-- Helpers y constantes desacoplados, sin dependencias externas.
-- Mock data y helpers pueden ser reemplazados por lógica real en producción.
-- Mantener consistencia en el uso de constantes y helpers en todo el marketplace.
+## 9. Ejemplos de uso
+### Ejemplo básico de filtrado y ordenamiento:
+```jsx
+import { 
+  SORT_OPTIONS, 
+  filterProductsBySection, 
+  sortProducts,
+  generateProductUrl 
+} from 'src/features/marketplace/marketplace';
 
-## 7. Puntos de extensión
-- Los helpers pueden adaptarse para nuevos criterios de filtrado, ordenamiento o generación de datos.
-- Fácil de extender con nuevas constantes o utilidades.
-
-## 8. Ejemplos de uso
-
-### Ordenar productos
-```js
-import { sortProducts } from './productSorting';
-const productosOrdenados = sortProducts(productos, 'mayor-precio');
+function ProductList({ products, filters, sortBy }) {
+  const filteredProducts = filterProductsBySection(products, filters.section);
+  const sortedProducts = sortProducts(filteredProducts, sortBy);
+  
+  return (
+    <div>
+      {sortedProducts.map(product => (
+        <ProductCard 
+          key={product.id} 
+          product={product}
+          href={generateProductUrl(product)}
+        />
+      ))}
+    </div>
+  );
+}
 ```
 
-### Filtrar productos
-```js
-import { filterProductsBySection, filterProductsByPrice } from './productFilters';
-const filtrados = filterProductsBySection(productos, 'ofertas');
+### Ejemplo de generación de datos mock:
+```jsx
+import { generateSalesCharacteristics, generateTechnicalSpecifications } from './salesDataGenerator';
+
+const enrichedProduct = {
+  ...product,
+  salesData: generateSalesCharacteristics(product),
+  techSpecs: generateTechnicalSpecifications(product)
+};
 ```
 
-### Generar slug de producto
-```js
-import { generateProductSlug } from './productUrl';
-const slug = generateProductSlug(producto);
-```
+## 10. Rendimiento y optimización
+- **Pure functions**: Optimización automática posible
+- **No side effects**: Funciones predecibles y eficientes
+- **Memoization friendly**: Resultados cacheables
+- **Lazy evaluation**: Usar solo las utilidades necesarias
 
-## 9. Actualización
-- Creado: `03/07/2025`
-- Última actualización: `03/07/2025`
+## 11. Actualización
+- **Última actualización:** 18/07/2025

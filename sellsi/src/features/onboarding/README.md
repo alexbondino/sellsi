@@ -1,50 +1,53 @@
-# Onboarding
+# Módulo: onboarding
 
 ## 1. Resumen funcional del módulo
-El módulo `onboarding` gestiona el flujo de registro y configuración inicial de cuentas para nuevos usuarios en Sellsi. Permite seleccionar el tipo de cuenta (proveedor o comprador), ingresar datos de perfil (nombre, país, teléfono) y subir un logo opcional. Implementa validaciones, feedback visual y persistencia de datos en Supabase. Su objetivo es garantizar que cada usuario complete los datos mínimos requeridos para operar en la plataforma.
-
-- **Problema que resuelve:** Facilita el alta guiada y validada de nuevos usuarios, asegurando la integridad de los datos y la experiencia de usuario.
-- **Arquitectura:** Componente principal `Onboarding` con helpers internos (ej. `LogoUploader`). Uso intensivo de hooks de React y Material UI.
-- **Patrones:** State lifting, validación progresiva, feedback inmediato, separación de lógica y presentación.
-- **Flujo de datos:** Inputs → Estado local → Validación → Supabase (persistencia) → Feedback UI.
+- **Problema que resuelve:** Gestiona el flujo de registro y configuración inicial para nuevos usuarios, permitiendo selección de tipo de cuenta, ingreso de datos de perfil y carga de logo opcional.
+- **Arquitectura de alto nivel:** Componente principal con helpers internos, validaciones progresivas y persistencia en Supabase mediante hooks de React.
+- **Función y casos de uso principales:** Onboarding guiado para proveedores y compradores, validación de datos, carga de imágenes y configuración inicial de perfiles.
+- **Flujo de datos/información simplificado:**
+  ```
+  User Input → Local Validation → Supabase Persistence → Profile Complete
+  ```
 
 ## 2. Listado de archivos
-| Archivo           | Tipo        | Descripción                                      | Responsabilidad principal                  |
-|-------------------|-------------|--------------------------------------------------|--------------------------------------------|
-| Onboarding.jsx    | Componente  | Componente principal del flujo de onboarding      | Orquestar UI, validaciones y persistencia  |
-| (ui/PrimaryButton)| Componente  | Botón estilizado reutilizable                    | Botón de acción principal                  |
-| (ui/CountrySelector)| Componente| Selector de país/indicativo telefónico           | Selección de país para teléfono            |
-| (services/supabase)| Servicio   | Cliente Supabase para persistencia y storage      | Comunicación con backend                   |
+| Archivo | Tipo | Descripción | Responsabilidad |
+|---------|------|------------|----------------|
+| Onboarding.jsx | Componente | Componente principal del flujo de onboarding | Orquestación UI, validaciones y persistencia |
 
 ## 3. Relaciones internas del módulo
+**Diagrama de dependencias:**
 ```
-Onboarding
-├── LogoUploader (interno)
-├── PrimaryButton (ui)
-├── CountrySelector (ui)
-└── supabase (servicio)
+Onboarding (main component)
+├── LogoUploader (internal helper)
+├── ui/PrimaryButton (shared UI)
+├── ui/CountrySelector (shared UI)
+└── services/supabase (data layer)
 ```
-- Comunicación por props y callbacks.
-- Renderizado condicional según estado y validaciones.
+
+**Patrones de comunicación:**
+- **State lifting**: Estado centralizado en componente principal
+- **Progressive validation**: Validaciones en tiempo real
+- **Callback pattern**: Comunicación vía props y callbacks
 
 ## 4. Props de los componentes
 ### Onboarding
-No recibe props externas (es punto de entrada de la ruta onboarding).
+| Prop | Tipo | Requerido | Descripción |
+|------|------|-----------|------------|
+| Sin props externas | - | - | Componente de entrada del flujo onboarding |
 
-### LogoUploader
-| Prop         | Tipo     | Requerido | Descripción                                 |
-|--------------|----------|-----------|---------------------------------------------|
-| logoPreview  | string   | No        | URL de previsualización del logo            |
-| onLogoSelect | func     | Sí        | Callback para manejar selección de archivo   |
-| size         | string   | No        | Tamaño del uploader ('large' por defecto)   |
-| logoError    | string   | No        | Mensaje de error para validación de logo    |
-
-**Notas:**
-- El componente principal no expone props públicas.
-- LogoUploader es helper interno, no exportado.
+### LogoUploader (interno)
+| Prop | Tipo | Requerido | Descripción |
+|------|------|-----------|------------|
+| logoPreview | string | ✗ | URL de previsualización del logo |
+| onLogoSelect | función | ✓ | Callback para manejar selección de archivo |
+| size | string | ✗ | Tamaño del uploader ('large' por defecto) |
+| logoError | string | ✗ | Mensaje de error para validación |
 
 ## 5. Hooks personalizados
-No se utilizan hooks personalizados exportados. Se emplean hooks estándar de React (`useState`, `useEffect`, `useCallback`).
+Este módulo no exporta hooks personalizados. Utiliza hooks estándar de React:
+- **useState**: Manejo de estado local (perfil, validaciones, preview)
+- **useEffect**: Limpieza de URLs de previsualización
+- **useCallback**: Optimización de callbacks para evitar re-renders
 
 ## 6. Dependencias principales
 | Dependencia         | Versión   | Propósito                        | Impacto                  |
@@ -56,42 +59,53 @@ No se utilizan hooks personalizados exportados. Se emplean hooks estándar de Re
 | react-hot-toast     | ^2.x      | Feedback de notificaciones       | UX                       |
 
 ## 7. Consideraciones técnicas
-### Limitaciones y advertencias
-- El logo es opcional, pero si se sube debe ser JPG, PNG o WEBP y pesar menos de 300 KB.
-- El email del usuario debe estar disponible en la sesión Supabase para guardar el perfil.
-- El componente depende de la estructura de la tabla `users` en Supabase.
-- No hay control de navegación avanzada (ej. pasos previos/siguientes).
+### Limitaciones y advertencias:
+- **File uploads**: Logo debe ser JPG, PNG o WEBP < 300KB
+- **Session dependency**: Requiere email disponible en sesión Supabase
+- **Database schema**: Dependiente de estructura tabla `users` en Supabase
+- **Single step**: No soporta navegación multi-paso avanzada
 
-### Deuda técnica relevante
-- [MEDIA] Mejorar modularidad para permitir onboarding multi-paso.
-- [MEDIA] Internacionalización de textos.
+### Deuda técnica relevante:
+- **[MEDIA]** Refactorizar para soporte multi-paso
+- **[MEDIA]** Implementar internacionalización
+- **[BAJA]** Extraer LogoUploader como componente reutilizable
 
 ## 8. Puntos de extensión
-- El componente puede extenderse para agregar pasos adicionales (ej. preferencias, invitaciones).
-- `LogoUploader` puede extraerse como componente reutilizable.
-- Integración con validaciones externas o servicios de verificación.
+- **Multi-step workflow**: Expandir para múltiples pasos de configuración
+- **Component extraction**: LogoUploader como componente reutilizable
+- **External validation**: Integración con servicios de verificación
+- **Customization**: Diferentes flujos según tipo de usuario
 
 ## 9. Ejemplos de uso
-### Ejemplo básico
+### Implementación básica:
 ```jsx
-import Onboarding from './Onboarding';
+import Onboarding from 'src/features/onboarding/Onboarding';
 
-function App() {
+function OnboardingPage() {
   return <Onboarding />;
 }
 ```
 
-### Ejemplo avanzado (con helpers internos)
+### Integración en router:
 ```jsx
-// El componente no expone hooks ni props avanzadas, se usa directamente.
+import { Routes, Route } from 'react-router-dom';
+import Onboarding from 'src/features/onboarding/Onboarding';
+
+function App() {
+  return (
+    <Routes>
+      <Route path="/onboarding" element={<Onboarding />} />
+    </Routes>
+  );
+}
 ```
 
 ## 10. Rendimiento y optimización
-- Uso de `useCallback` para evitar renders innecesarios.
-- Previsualización de imágenes con `URL.createObjectURL` y limpieza en `useEffect`.
-- Validaciones locales para evitar llamadas innecesarias a Supabase.
-- Áreas de mejora: code splitting, modularización de helpers.
+- **useCallback**: Prevención de re-renders innecesarios en callbacks
+- **URL management**: Limpieza automática de `URL.createObjectURL` en useEffect
+- **Local validation**: Validaciones locales antes de llamadas a Supabase
+- **Progressive loading**: Carga de componentes según necesidad
+- **Optimization areas**: Code splitting, modularización de helpers
 
 ## 11. Actualización
-- Creado: `03/07/2025`
-- Última actualización: `03/07/2025`
+- **Última actualización:** 18/07/2025

@@ -17,12 +17,20 @@ import { verifyAdminSession } from '../../../services/adminPanelService';
 import { isDevelopment, canCreateAdminInDev, DEV_CONFIG } from '../config/devConfig';
 
 const AdminGuard = ({ children }) => {
+  // 🚧 DESARROLLO: AdminGuard temporalmente deshabilitado
+  const TEMP_DISABLE_ADMIN_GUARD = true;
+  
   const [loading, setLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [error, setError] = useState('');
   const location = useLocation();
 
   useEffect(() => {
+    if (TEMP_DISABLE_ADMIN_GUARD) {
+      setIsAuthenticated(true);
+      setLoading(false);
+      return;
+    }
     checkAdminAuth();
   }, []);
 
@@ -108,8 +116,20 @@ const AdminGuard = ({ children }) => {
   // Authenticated - render protected content
   return (
     <Box>
+      {/* Alerta de AdminGuard deshabilitado temporalmente */}
+      {TEMP_DISABLE_ADMIN_GUARD && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Warning />
+            <Typography variant="body2">
+              <strong>⚠️ DESARROLLO:</strong> AdminGuard temporalmente DESHABILITADO - Recuerda habilitarlo antes de producción
+            </Typography>
+          </Box>
+        </Alert>
+      )}
+
       {/* Alerta de modo desarrollo */}
-      {isDevelopment() && (
+      {isDevelopment() && !TEMP_DISABLE_ADMIN_GUARD && (
         <Alert severity="warning" sx={{ mb: 2 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <Build />
@@ -124,15 +144,17 @@ const AdminGuard = ({ children }) => {
       <Paper sx={{ 
         mb: 2, 
         p: 2, 
-        backgroundColor: canCreateAdminInDev() ? '#fff3cd' : '#f5f5f5',
-        borderLeft: `4px solid ${canCreateAdminInDev() ? '#ffc107' : '#2196f3'}`
+        backgroundColor: TEMP_DISABLE_ADMIN_GUARD ? '#ffebee' : (canCreateAdminInDev() ? '#fff3cd' : '#f5f5f5'),
+        borderLeft: `4px solid ${TEMP_DISABLE_ADMIN_GUARD ? '#f44336' : (canCreateAdminInDev() ? '#ffc107' : '#2196f3')}`
       }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <Shield color={canCreateAdminInDev() ? 'warning' : 'primary'} />
+          <Shield color={TEMP_DISABLE_ADMIN_GUARD ? 'error' : (canCreateAdminInDev() ? 'warning' : 'primary')} />
           <Typography variant="body2" color="textSecondary">
-            {canCreateAdminInDev() 
-              ? 'Modo desarrollo - Acceso administrativo sin restricciones'
-              : 'Sesión administrativa activa - Acceso autorizado'
+            {TEMP_DISABLE_ADMIN_GUARD 
+              ? '🚫 AdminGuard DESHABILITADO - Sin restricciones de acceso'
+              : canCreateAdminInDev() 
+                ? 'Modo desarrollo - Acceso administrativo sin restricciones'
+                : 'Sesión administrativa activa - Acceso autorizado'
             }
           </Typography>
         </Box>

@@ -19,7 +19,7 @@
  * ✅ CORRECTO: $2.000 + $1.500 + $3.000 = $6.500
  */
 
-import { getUserProfile } from '../services/profileService';
+import { getUserProfile } from '../services/user';
 import { supabase } from '../services/supabase';
 
 /**

@@ -1,66 +1,64 @@
 # Módulo: product
 
-> **Creado:** 03/07/2025  
-> **Última actualización:** 03/07/2025
-
----
-
 ## 1. Resumen funcional del módulo
-- **Problema que resuelve:** Centraliza la visualización y manipulación de productos en el marketplace de Sellsi, permitiendo mostrar información clave y ejecutar acciones rápidas sobre productos.
-- **Arquitectura de alto nivel:** Componentes funcionales React, UI con Material UI, comunicación por props y callbacks, lógica desacoplada.
-- **Función y casos de uso principales:** Mostrar información relevante de productos, permitir agregar al carrito, wishlist, compartir, comparar, etc. Usado en páginas de detalle, listados y tarjetas de producto.
-- **Flujo de datos/información simplificado:** Los datos de producto llegan por props desde el contenedor/página. Los callbacks de acción se propagan hacia arriba para manejar lógica global (carrito, wishlist, etc.).
-
----
+- **Problema que resuelve:** Proporciona componentes especializados para visualización y manipulación de información de productos individuales en el marketplace, incluyendo precios, stock, acciones y datos básicos.
+- **Arquitectura de alto nivel:** Conjunto de componentes atómicos y modulares que siguen principios de responsabilidad única, cada uno enfocado en un aspecto específico de la presentación de productos.
+- **Función y casos de uso principales:** Renderizar información de productos en tarjetas, listas y vistas detalladas, con componentes reutilizables para precios, stock, acciones y metadatos.
+- **Flujo de datos/información simplificado:**
+  ```
+  Producto (props) → Componentes especializados → UI renderizada
+        ↓                    ↓                        ↓
+  Callbacks ← Acciones usuario ← Eventos de interacción
+  ```
 
 ## 2. Listado de archivos
-| Archivo              | Tipo        | Descripción                                      | Responsabilidad principal                  |
-|----------------------|-------------|--------------------------------------------------|--------------------------------------------|
-| ProductInfo.jsx      | Componente  | Muestra nombre, proveedor, categoría, rating, etc.| Visualización de info básica del producto   |
-| PriceDisplay.jsx     | Componente  | Muestra precio, descuentos y ahorro               | Visualización de precios y descuentos      |
-| StockIndicator.jsx   | Componente  | Indica estado y cantidad de stock                 | Visualización de disponibilidad de stock   |
-| ActionButtons.jsx    | Componente  | Botones de acción: carrito, wishlist, compartir   | Acciones rápidas sobre el producto        |
-| index.js             | Barrel      | Exporta todos los componentes del módulo          | Punto de entrada del módulo               |
-
----
+| Archivo | Tipo | Descripción | Responsabilidad |
+|---------|------|------------|----------------|
+| ProductInfo.jsx | Componente | Información básica del producto (nombre, proveedor, categoría) | Presentación de metadatos principales |
+| PriceDisplay.jsx | Componente | Visualización de precios con descuentos y ahorros | Lógica de presentación de precios |
+| StockIndicator.jsx | Componente | Indicador visual de disponibilidad de stock | Estado y cantidad de inventario |
+| ActionButtons.jsx | Componente | Conjunto de acciones rápidas (carrito, wishlist, compartir) | Interacciones principales del usuario |
+| index.js | Barrel | Exportación centralizada de componentes | Punto de entrada unificado |
 
 ## 3. Relaciones internas del módulo
-- **Diagrama de dependencias:**
+**Diagrama de dependencias:**
 ```
-VistaProducto
+ProductCard/ProductView (Parent)
+├── ProductInfo.jsx (metadatos)
+├── PriceDisplay.jsx (precios)
+├── StockIndicator.jsx (disponibilidad)
+└── ActionButtons.jsx (acciones)
+```
+
+**Patrones de comunicación:**
+- **Atomic design**: Componentes pequeños y reutilizables
+- **Props interface**: Datos fluyen via props desde containers
+- **Callback pattern**: Acciones se propagan via callbacks
+- **Composition pattern**: Componentes se componen en vistas más complejas
 ├── ProductInfo
 ├── PriceDisplay
 ├── StockIndicator
-├── ActionButtons
-```
-- **Patrones de comunicación:** props y callbacks, sin contexto global.
-- **Relaciones clave:** Los componentes suelen usarse juntos en vistas de producto.
-
----
-
 ## 4. Props de los componentes
 ### ProductInfo
-| Prop         | Tipo     | Requerido | Descripción                                 |
-|--------------|----------|-----------|---------------------------------------------|
-| name         | string   | Sí        | Nombre del producto                         |
-| supplier     | string   | Sí        | Proveedor                                   |
-| category     | string   | Sí        | Categoría                                   |
-| rating       | number   | No        | Rating (0-5)                                |
-| reviews      | number   | No        | Número de reseñas                           |
-| description  | string   | No        | Descripción del producto                    |
-| compact      | boolean  | No        | Versión compacta                            |
+| Prop | Tipo | Requerido | Descripción |
+|------|------|----------|-------------|
+| `product` | `object` | Sí | Datos del producto: `{nombre, proveedor, categoria, rating, ...}` |
+| `compact` | `boolean` | No | Versión compacta del componente |
 
-### PriceDisplay
-| Prop          | Tipo      | Requerido | Descripción                                 |
-|---------------|-----------|-----------|---------------------------------------------|
-| price         | number    | Sí        | Precio actual                               |
-| originalPrice | number    | No        | Precio original (para mostrar descuento)    |
-| discount      | number    | No        | Porcentaje de descuento                     |
-| formatPrice   | function  | No        | Función para formatear el precio            |
-| size          | string    | No        | Tamaño ('small', 'medium', 'large')         |
-| showDiscount  | boolean   | No        | Mostrar información de descuento            |
+### PriceDisplay  
+| Prop | Tipo | Requerido | Descripción |
+|------|------|----------|-------------|
+| `price` | `number` | Sí | Precio actual del producto |
+| `originalPrice` | `number` | No | Precio original para mostrar descuento |
+| `currency` | `string` | No | Código de moneda (default: 'CLP') |
+| `size` | `string` | No | Tamaño de display: 'small', 'medium', 'large' |
 
 ### StockIndicator
+| Prop | Tipo | Requerido | Descripción |
+|------|------|----------|-------------|
+| `stock` | `number` | Sí | Cantidad en inventario |
+| `showQuantity` | `boolean` | No | Si mostrar cantidad exacta o solo estado |
+| `threshold` | `number` | No | Umbral para stock bajo (default: 10) |
 | Prop            | Tipo     | Requerido | Descripción                                 |
 |-----------------|----------|-----------|---------------------------------------------|
 | stock           | number   | Sí        | Stock actual                                |
@@ -69,76 +67,95 @@ VistaProducto
 | showLabel       | boolean  | No        | Mostrar etiqueta de texto                   |
 
 ### ActionButtons
-| Prop            | Tipo      | Requerido | Descripción                                 |
-|-----------------|-----------|-----------|---------------------------------------------|
-| onAddToCart     | function  | Sí        | Callback para agregar al carrito            |
-| onToggleWishlist| function  | Sí        | Callback para wishlist                      |
-| onShare         | function  | No        | Callback para compartir                     |
-| onCompare       | function  | No        | Callback para comparar                      |
-| isInWishlist    | boolean   | No        | Si está en wishlist                         |
-| isInCart        | boolean   | No        | Si está en carrito                          |
-| disabled        | boolean   | No        | Deshabilitar botones                        |
-| layout          | string    | No        | Layout visual ('horizontal', 'vertical', etc)|
-| variant         | string    | No        | Variante de botón ('contained', 'outlined') |
+### ActionButtons
+| Prop | Tipo | Requerido | Descripción |
+|------|------|----------|-------------|
+| `onAddToCart` | `function` | No | Callback para agregar al carrito |
+| `onWishlist` | `function` | No | Callback para agregar/quitar de wishlist |
+| `onShare` | `function` | No | Callback para compartir producto |
+| `isInWishlist` | `boolean` | No | Estado actual de wishlist |
+| `disabled` | `boolean` | No | Deshabilitar todas las acciones |
 
-**Notas importantes:**
-- No se exporta `QuantitySelector.jsx` porque está obsoleto y debe migrarse a `/src/components/shared/QuantitySelector.jsx`.
-
----
+**Notas importantes:** Todos los componentes son puramente presentacionales sin estado interno.
 
 ## 5. Hooks personalizados
-Este módulo no define hooks personalizados propios.
-
----
+Este módulo no define hooks personalizados, utiliza hooks estándar de React.
 
 ## 6. Dependencias principales
-| Dependencia           | Versión | Propósito                  | Impacto                |
-|----------------------|---------|----------------------------|------------------------|
-| `react`              | >=17    | Hooks y estado             | Lógica y efectos       |
-| `@mui/material`      | >=5     | Componentes UI             | Visualización          |
-| `@mui/icons-material`| >=5     | Iconos para UI             | Visualización          |
-
----
+| Dependencia | Versión | Propósito | Impacto |
+|-------------|---------|-----------|---------|
+| `@mui/material` | >=5 | Componentes UI y theming | Alto - Interfaz visual completa |
+| `@mui/icons-material` | >=5 | Iconografía consistente | Medio - Elementos visuales |
 
 ## 7. Consideraciones técnicas
-- Arquitectura desacoplada: lógica en props, UI en componentes puros.
-- No hay hooks personalizados ni contexto global.
-- `QuantitySelector.jsx` está deprecado y debe migrarse.
+### Limitaciones y advertencias:
+- **Componentes puros**: Sin estado interno, dependientes de props
+- **No validación**: Props sin validación de tipos (considerar TypeScript)
+- **Coupling con Material-UI**: Fuertemente acoplado al design system
 
----
+### Deuda técnica relevante:
+- **[BAJA]** Migrar QuantitySelector obsoleto
+- **[BAJA]** Agregar prop-types para validación
+- **[BAJA]** Mejorar accessibility en botones de acción
 
 ## 8. Puntos de extensión
-- Los componentes pueden reutilizarse en otros módulos del marketplace.
-- Se pueden extender los componentes agregando props adicionales o integrando nuevos servicios.
-
----
+- **Atomic design**: Componentes reutilizables en cualquier contexto
+- **Composition friendly**: Fácil composición en layouts complejos
+- **Props extensibles**: Permite customización sin breaking changes
+- **Barrel exports**: Importación granular según necesidades
 
 ## 9. Ejemplos de uso
 ### Ejemplo básico:
 ```jsx
-import { ProductInfo, PriceDisplay, StockIndicator, ActionButtons } from './product';
+import { ProductInfo, PriceDisplay, StockIndicator } from 'src/features/marketplace/product';
 
-function EjemploProducto({ producto }) {
+function ProductCard({ product }) {
   return (
     <div>
-      <ProductInfo name={producto.nombre} supplier={producto.proveedor} category={producto.categoria} />
-      <PriceDisplay price={producto.precio} originalPrice={producto.precioOriginal} />
-      <StockIndicator stock={producto.stock} maxStock={producto.stockMaximo} />
-      <ActionButtons onAddToCart={() => {}} onToggleWishlist={() => {}} />
+      <ProductInfo product={product} />
+      <PriceDisplay 
+        price={product.precio} 
+        originalPrice={product.precioOriginal} 
+      />
+      <StockIndicator stock={product.stock} />
     </div>
   );
 }
 ```
 
----
+### Ejemplo más completo:
+```jsx
+import { ProductInfo, PriceDisplay, ActionButtons } from 'src/features/marketplace/product';
+import { useCart, useWishlist } from 'src/hooks';
+
+function InteractiveProductCard({ product }) {
+  const { addToCart } = useCart();
+  const { toggle, isInWishlist } = useWishlist();
+  
+  return (
+    <Card>
+      <ProductInfo product={product} compact />
+      <PriceDisplay 
+        price={product.precio}
+        originalPrice={product.precioOriginal}
+        size="large"
+      />
+      <ActionButtons
+        onAddToCart={() => addToCart(product)}
+        onWishlist={() => toggle(product.id)}
+        isInWishlist={isInWishlist(product.id)}
+        onShare={() => navigator.share({ url: product.url })}
+      />
+    </Card>
+  );
+}
+```
 
 ## 10. Rendimiento y optimización
-- Componentes funcionales y memoización por React.
-- Renderizado eficiente por separación de responsabilidades.
-- Áreas de mejora: migrar completamente `QuantitySelector` y revisar posibles optimizaciones en renderizados masivos.
-
----
+- **React.memo**: Componentes automáticamente memoizados
+- **Props mínimas**: Interfaz simple reduce re-renders
+- **No side effects**: Componentes predictibles y eficientes
+- **Optimizaciones pendientes**: Bundle splitting por uso, lazy loading de iconos
 
 ## 11. Actualización
-- Creado: `03/07/2025`
-- Última actualización: `03/07/2025`
+- **Última actualización:** 18/07/2025

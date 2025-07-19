@@ -1,6 +1,8 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, Suspense, memo } from 'react'
 // Si tienes un contexto de vista, importa aquí:
 // import { useViewType } from '../../context/ViewTypeContext'
+
+// Imports principales optimizados (solo lo esencial)
 import {
   Box,
   Container,
@@ -12,13 +14,6 @@ import {
   Chip,
   Divider,
   IconButton,
-  Card,
-  CardContent,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableRow,
   CircularProgress,
   Breadcrumbs,
   Link,
@@ -42,17 +37,28 @@ import {
 import { toast } from 'react-hot-toast'
 import { useLocation } from 'react-router-dom'
 
-import ProductImageGallery from './components/ProductImageGallery'
-// import SalesCharacteristics from './components/SalesCharacteristics'
-import PurchaseActions from './components/PurchaseActions'
-import ProductHeader from './components/ProductHeader'
-import LoadingOverlay from '../../ui/LoadingOverlay'
+// Lazy imports para componentes pesados - simplificados para evitar errores
+const ProductImageGallery = React.lazy(() => 
+  import('./components/ProductImageGallery').catch(() => ({ default: () => <div>Error al cargar galería</div> }))
+)
+const PurchaseActions = React.lazy(() => 
+  import('./components/PurchaseActions').catch(() => ({ default: () => <div>Error al cargar acciones</div> }))
+)
+const ProductHeader = React.lazy(() => 
+  import('./components/ProductHeader').catch(() => ({ default: () => <div>Error al cargar header</div> }))
+)
+const LoadingOverlay = React.lazy(() => 
+  import('../../ui/LoadingOverlay').catch(() => ({ default: () => <div>Cargando...</div> }))
+)
+
+// Import regular para skeleton (necesario para fallback)
 import { ProductPageSkeleton } from './components/ProductPageSkeletons'
 import { dashboardThemeCore } from '../../../styles/dashboardThemeCore'
 import { SPACING_BOTTOM_MAIN } from '../../../styles/layoutSpacing'
 
 
-const ProductPageView = ({
+// Componente memoizado para evitar re-renders innecesarios
+const ProductPageView = memo(({
   product,
   onClose,
   onAddToCart,
@@ -256,14 +262,16 @@ const ProductPageView = ({
           </Box>
           {/* 2. ProductHeader (hijo 2) */}
           <Box sx={{ width: '100%' }}>
-            <ProductHeader
-              product={product}
-              selectedImageIndex={selectedImageIndex}
-              onImageSelect={setSelectedImageIndex}
-              onAddToCart={handleAddToCart}
-              isLoggedIn={isLoggedIn}
-              fromMyProducts={fromMyProducts}
-            />
+            <Suspense fallback={<CircularProgress />}>
+              <ProductHeader
+                product={product}
+                selectedImageIndex={selectedImageIndex}
+                onImageSelect={setSelectedImageIndex}
+                onAddToCart={handleAddToCart}
+                isLoggedIn={isLoggedIn}
+                fromMyProducts={fromMyProducts}
+              />
+            </Suspense>
           </Box>
           {/* 3. Descripción del Producto (hijo 3) */}
           <Box sx={{ width: '100%', mt: 6, mb:6 }}>
@@ -350,6 +358,9 @@ const ProductPageView = ({
       </Box>
     </ThemeProvider>
   )
-}
+})
+
+// Definir displayName para debugging
+ProductPageView.displayName = 'ProductPageView'
 
 export default ProductPageView

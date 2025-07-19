@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { orderService } from '../../../services/orderService';
+import { orderService } from '../../../services/user';
 
 /**
  * Hook para manejar pedidos del comprador

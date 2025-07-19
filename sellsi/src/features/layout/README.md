@@ -13,6 +13,7 @@ El módulo **Layout** centraliza los componentes visuales y utilitarios que defi
 | TopBar.jsx               | Componente  | Barra superior de navegación, login, cambio de rol y acceso rápido.   |
 | SideBar.jsx              | Componente  | Barra lateral con menú dinámico según el rol del usuario.             |
 | BottomBar.jsx            | Componente  | Barra inferior con navegación, links, redes y contacto.               |
+| MobileBar.jsx            | Componente  | Barra inferior optimizada para navegación móvil, con menú dinámico.   |
 | QuantitySelector.jsx     | Componente  | Selector universal de cantidad, validación y accesibilidad.           |
 | QuantityInputModal.jsx   | Componente  | Modal para entrada directa de cantidad.                               |
 | LazyImage.jsx            | Componente  | Imagen con lazy loading, skeleton y optimización de carga.            |
@@ -26,12 +27,13 @@ El módulo **Layout** centraliza los componentes visuales y utilitarios que defi
 - `LazyImage.jsx` es utilizado por otros módulos para optimizar imágenes.
 - El barrel `index.js` exporta los componentes clave para uso externo.
 
-Árbol de relaciones simplificado:
 
+Árbol de relaciones simplificado:
 ```
 TopBar.jsx
 SideBar.jsx
 BottomBar.jsx
+MobileBar.jsx
 ├─ (usa ContactModal de ../ui)
 QuantitySelector.jsx
 ├─ QuantityInputModal.jsx
@@ -51,6 +53,10 @@ index.js
 | SideBar              | role                | string       | Sí        | Rol actual ('buyer' o 'supplier').               |
 |                      | width               | string       | No        | Ancho de la barra lateral.                       |
 | BottomBar            | -                   | -            | -         | No recibe props, es completamente autónoma.      |
+| MobileBar            | role                | string       | Sí        | Rol actual para menú dinámico.                   |
+|                      | session             | boolean      | No        | Si hay sesión activa.                            |
+|                      | isBuyer             | boolean      | No        | Si el usuario es comprador.                      |
+|                      | logoUrl             | string       | No        | URL del logo a mostrar.                          |
 | QuantitySelector     | value               | number       | Sí        | Valor actual de cantidad.                        |
 |                      | onChange            | function     | Sí        | Callback al cambiar la cantidad.                 |
 |                      | min, max, step      | number       | No        | Límites y paso de cantidad.                      |
@@ -90,16 +96,18 @@ Este módulo no define hooks personalizados propios, pero utiliza hooks de React
 - El barrel `index.js` permite importar fácilmente los componentes clave.
 - `LazyImage` y `QuantitySelector` son especialmente útiles para otros módulos de productos y marketplace.
 
+
 ## Ejemplos de uso
 
 ### Importar y usar el layout principal
 
 ```jsx
-import { TopBar, SideBar, BottomBar } from 'src/features/layout';
+import { TopBar, SideBar, BottomBar, MobileBar } from 'src/features/layout';
 
 <TopBar session={session} isBuyer={true} logoUrl="/logo.svg" />
 <SideBar role="buyer" />
 <BottomBar />
+<MobileBar role="buyer" session={session} isBuyer={true} logoUrl="/logo.svg" />
 ```
 
 ### Usar el selector de cantidad

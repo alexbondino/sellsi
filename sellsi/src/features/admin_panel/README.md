@@ -1,131 +1,147 @@
-# Admin Panel Module
+# Panel Administrativo Sellsi
 
 ## 1. Resumen funcional del módulo
-Este módulo implementa el panel administrativo de Sellsi, permitiendo a los administradores gestionar solicitudes de pago, confirmar, rechazar o devolver pagos, y visualizar detalles completos de cada solicitud. Incluye autenticación especializada y soporte para 2FA.
+El módulo `admin_panel` gestiona todas las funcionalidades administrativas del sistema Sellsi. Permite a los administradores:
+- Autenticarse con login especializado y 2FA.
+- Gestionar cuentas administrativas (crear, editar, desactivar).
+- Gestionar usuarios (banear/desbanear, ver detalles, filtrar).
+- Gestionar solicitudes de pago (confirmar, rechazar, devolver).
+- Visualizar estadísticas y dashboard.
+- Configurar seguridad y ajustes avanzados.
 
-- **Problema que resuelve:** Gestión centralizada y segura de pagos y solicitudes administrativas.
-- **Arquitectura:** Basada en componentes React desacoplados, modales reutilizables y hooks personalizados para manejo de estado y lógica de negocio.
-- **Función principal:** Proveer una interfaz robusta para la administración de pagos y solicitudes.
-- **Flujo de datos:**
-  1. El administrador inicia sesión (con 2FA).
-  2. Visualiza y filtra solicitudes en una tabla principal.
-  3. Gestiona cada solicitud mediante modales (confirmar, rechazar, devolver, ver detalles).
+**Arquitectura:**
+- Basado en React y Material UI.
+- Patrones: separación por componentes, hooks personalizados, modales para acciones críticas.
+- Flujo de datos: los componentes principales orquestan vistas y acciones, comunicándose por props, eventos y hooks.
 
 ## 2. Listado de archivos
-| Archivo                  | Tipo        | Descripción                                 | Responsabilidad                         |
-|--------------------------|-------------|---------------------------------------------|-----------------------------------------|
-| index.js                 | Entrada     | Exporta todos los componentes y hooks       | Punto de acceso del módulo              |
-| components/AdminLogin.jsx| Componente  | Login administrativo con 2FA                | Autenticación de administradores        |
-| components/AdminPanelTable.jsx | Componente | Tabla principal de solicitudes         | Visualización y gestión de solicitudes  |
-| modals/ConfirmarPagoModal.jsx | Modal   | Modal para confirmar pagos                  | Confirmación y notificación de pagos    |
-| modals/RechazarPagoModal.jsx  | Modal   | Modal para rechazar pagos                   | Rechazo y documentación de motivos      |
-| modals/DevolverPagoModal.jsx  | Modal   | Modal para devoluciones                     | Procesar devoluciones y notificar       |
-| modals/DetallesSolicitudModal.jsx | Modal | Modal de detalles completos de solicitud | Visualización avanzada de información   |
-| hooks/useAdminLogin.js   | Hook        | Hook para login administrativo              | Manejo de estado y validaciones login   |
-| hooks/index.js           | Entrada     | Re-exporta hooks del módulo                 | Organización de hooks                   |
+| Archivo                  | Tipo        | Descripción                                      | Responsabilidad                       |
+|------------------------- |------------ |--------------------------------------------------|---------------------------------------|
+| index.js                 | Exportador  | Centraliza exportaciones de componentes y hooks   | Punto de entrada                      |
+| AdminPanelHome.jsx       | Página      | Vista principal del panel administrativo          | Orquestación de vistas y modales      |
+| AdminLogin.jsx           | Componente  | Login administrativo con 2FA                      | Autenticación segura                  |
+| AdminPanelTable.jsx      | Componente  | Tabla de gestión de solicitudes de pago           | Gestión de pagos                      |
+| UserManagementTable.jsx  | Componente  | Tabla de gestión de usuarios                      | Banear/desbanear, ver usuarios        |
+| AdminDashboard.jsx       | Componente  | Dashboard principal con pestañas                  | Estadísticas y navegación             |
+| AdminAccountCreator.jsx  | Componente  | Crear cuentas administrativas                     | Alta de administradores               |
+| AdminAccountManager.jsx  | Componente  | Gestionar cuentas administrativas                 | Edición, auditoría, control acceso    |
+| AdminStatCard.jsx        | Componente  | Tarjeta de estadísticas                          | Visualización de métricas             |
+| Setup2FA.jsx             | Componente  | Configuración de autenticación 2FA                | Seguridad avanzada                    |
+| Manage2FA.jsx            | Componente  | Gestión de estado y configuración 2FA             | Habilitar/deshabilitar 2FA            |
+| ConfirmarPagoModal.jsx   | Modal       | Confirmar pagos                                  | Acción crítica                        |
+| RechazarPagoModal.jsx    | Modal       | Rechazar pagos                                   | Acción crítica                        |
+| DevolverPagoModal.jsx    | Modal       | Devolver pagos                                   | Acción crítica                        |
+| DetallesSolicitudModal.jsx| Modal      | Ver detalles completos de una solicitud           | Información detallada                 |
+| UserBanModal.jsx         | Modal       | Confirmar ban/desban de usuario                   | Seguridad y control                   |
+| hooks/useAdminLogin.js   | Hook        | Manejo de login administrativo y validaciones     | Estado y lógica de login              |
+| hooks/index.js           | Exportador  | Centraliza hooks personalizados                  | Reutilización                         |
 
 ## 3. Relaciones internas del módulo
 ```
-AdminPanelTable
-├── ConfirmarPagoModal
-├── RechazarPagoModal
-├── DevolverPagoModal
-└── DetallesSolicitudModal
-
-AdminLogin (usa useAdminLogin)
+AdminPanelHome
+├── AdminAccountCreator
+├── AdminAccountManager
+├── AdminDashboard
+│   ├── AdminPanelTable
+│   ├── UserManagementTable
+│   └── ProductMarketplaceTable
+├── Modales (ConfirmarPagoModal, RechazarPagoModal, etc.)
+└── Hooks (useAdminLogin)
 ```
-- Comunicación por props y callbacks.
-- Los modales reciben datos y handlers desde la tabla principal.
+- Comunicación por props, eventos y hooks.
+- Los modales se activan desde componentes principales.
+- Los hooks gestionan estado y lógica compartida.
 
 ## 4. Props de los componentes
+### AdminPanelHome
+| Prop      | Tipo    | Requerido | Descripción                         |
+|-----------|---------|-----------|-------------------------------------|
+| open      | bool    | No        | Controla apertura de modales        |
+| onClose   | func    | No        | Callback para cerrar modales        |
+| onSuccess | func    | No        | Callback tras acción exitosa        |
+
 ### AdminLogin
-| Prop      | Tipo     | Requerido | Descripción                                 |
-|-----------|----------|-----------|---------------------------------------------|
-| Ninguno (usa hooks internos y navegación)
+| Prop      | Tipo    | Requerido | Descripción                         |
+|-----------|---------|-----------|-------------------------------------|
+| onLogin   | func    | Sí        | Callback tras login exitoso         |
+| ...       | ...     | ...       | ...                                 |
 
-### AdminPanelTable
-| Prop      | Tipo     | Requerido | Descripción                                 |
-|-----------|----------|-----------|---------------------------------------------|
-| Ninguno (consume servicios y maneja estado interno)
-
-### Modales (ConfirmarPagoModal, RechazarPagoModal, DevolverPagoModal, DetallesSolicitudModal)
-| Prop      | Tipo     | Requerido | Descripción                                 |
-|-----------|----------|-----------|---------------------------------------------|
-| open      | boolean  | Sí        | Controla visibilidad del modal              |
-| onClose   | función  | Sí        | Handler para cerrar el modal                |
-| solicitud | objeto   | Sí        | Datos de la solicitud a gestionar           |
-
-**Notas:**
-- Los modales pueden recibir props adicionales según la acción (motivos, adjuntos, etc).
+**Notas:** Algunos componentes usan props para callbacks, datos y configuración avanzada. Revisar cada archivo para detalles específicos.
 
 ## 5. Hooks personalizados
-- **useAdminLogin()**
-  - Propósito: Maneja el estado, validaciones y lógica de autenticación del login administrativo.
-  - Estados: usuario, password, code2FA, errores, touched.
-  - Efectos: Validación de campos, envío de credenciales, manejo de 2FA.
-  - API expuesta: formState, handleInputChange, validateField, submitLogin, resetForm, etc.
-
-  **Ejemplo de uso:**
-  ```js
-  const { formState, handleInputChange, submitLogin } = useAdminLogin();
-  ```
+### `useAdminLogin()`
+**Propósito:** Maneja estado, validaciones y lógica de login administrativo, incluyendo 2FA y seguridad.
+**Estados y efectos principales:**
+- Estado del formulario (usuario, password, code2FA, errores, touched)
+- Validaciones en tiempo real y por campo
+- Seguridad: fuerza bruta, blacklist, fortaleza de contraseña
+**API que expone:**
+- `handleInputChange(field, value)`: Actualiza campo y limpia error
+- `validateForm(step)`: Valida credenciales y 2FA
+- `resetForm()`: Resetea formulario
+- `validatePasswordStrength(password)`: Evalúa fortaleza
+- `checkBruteForce(usuario)`: Detecta intentos excesivos
+- `recordFailedAttempt(usuario)`: Registra intento fallido
+- `clearFailedAttempts(usuario)`: Limpia intentos tras login
+- `checkBlacklist(usuario)`: Verifica usuario prohibido
+**Ejemplo de uso:**
+```jsx
+const {
+  formState,
+  handleInputChange,
+  validateForm,
+  resetForm,
+  validatePasswordStrength
+} = useAdminLogin();
+```
 
 ## 6. Dependencias principales
-| Dependencia        | Versión | Propósito                  | Impacto                |
-|--------------------|---------|----------------------------|------------------------|
-| @mui/material      | >=5     | UI components              | Interfaz moderna       |
-| react-router-dom   | >=6     | Navegación y rutas         | Control de navegación  |
+| Dependencia      | Versión   | Propósito                  | Impacto                |
+|------------------|-----------|----------------------------|------------------------|
+| react            | ^18.0.0   | UI y estado                | Base de la app         |
+| @mui/material    | ^5.0.0    | Componentes UI             | Interfaz moderna       |
+| @mui/icons-material | ^5.0.0 | Iconos UI                  | Visualización          |
+| react-router-dom | ^6.0.0    | Navegación SPA             | Routing                |
+| react-qr-code    | ^2.0.0    | QR para 2FA                | Seguridad              |
 
 ## 7. Consideraciones técnicas
-- El login requiere validación contra usuarios administrativos y soporta 2FA.
-- La tabla principal usa memoización y filtros para eficiencia.
-- Los modales desacoplan la lógica de cada acción administrativa.
-- **Limitaciones:**
-  - No incluye lógica de backend, solo frontend.
-  - El estado de sesión depende de la integración con servicios externos.
+### Limitaciones y advertencias:
+- El modo desarrollo permite crear administradores sin autenticación previa (deshabilitar en producción).
+- Validaciones estrictas en login y creación de cuentas.
+- Acciones críticas requieren confirmación por modal.
+### Deuda técnica relevante:
+- [ALTA] Mejorar auditoría y logs de acciones administrativas.
+- [MEDIA] Refactorizar componentes para mayor reutilización.
 
 ## 8. Puntos de extensión
-- Los modales pueden extenderse para nuevas acciones administrativas.
-- El hook `useAdminLogin` puede adaptarse para otros roles o flujos de autenticación.
-- Se pueden agregar nuevos filtros o columnas a la tabla principal.
+- Componentes y hooks diseñados para reutilización.
+- Interfaces públicas: exportaciones en `index.js` y `hooks/index.js`.
+- Para extender: crear nuevos componentes/modales y agregarlos a `index.js`.
 
 ## 9. Ejemplos de uso
 ### Ejemplo básico:
 ```jsx
-import { AdminLogin, AdminPanelTable } from './admin_panel';
+import { AdminPanelHome } from './admin_panel';
 
-function AdminPage() {
-  return (
-    <>
-      <AdminLogin />
-      <AdminPanelTable />
-    </>
-  );
+function MiComponente() {
+  return <AdminPanelHome />;
 }
 ```
-
 ### Ejemplo avanzado:
 ```jsx
-import { AdminPanelTable, ConfirmarPagoModal } from './admin_panel';
-import { useState } from 'react';
+import { AdminLogin, useAdminLogin } from './admin_panel';
 
-function Panel() {
-  const [modalOpen, setModalOpen] = useState(false);
-  const [solicitud, setSolicitud] = useState(null);
-  return (
-    <>
-      <AdminPanelTable onSelectSolicitud={setSolicitud} onOpenModal={() => setModalOpen(true)} />
-      <ConfirmarPagoModal open={modalOpen} solicitud={solicitud} onClose={() => setModalOpen(false)} />
-    </>
-  );
+function LoginAdmin() {
+  const login = useAdminLogin();
+  return <AdminLogin {...login} />;
 }
 ```
 
 ## 10. Rendimiento y optimización
-- Uso de memoización y hooks para evitar renders innecesarios.
-- Filtros y paginación en la tabla para eficiencia.
-- Modales cargados bajo demanda.
+- Uso de `memo` y `useMemo` para evitar renders innecesarios.
+- Code splitting por rutas y vistas.
+- Optimización de tablas y listas con paginación y filtros.
 
 ## 11. Actualización
-- Creado: `03/07/2025`
-- Última actualización: `03/07/2025`
+- Creado: `18/07/2025`
+- Última actualización: `18/07/2025`

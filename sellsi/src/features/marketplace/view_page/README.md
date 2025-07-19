@@ -1,119 +1,140 @@
 # Módulo: view_page
 
-> **Creado:** 03/07/2025  
-> **Última actualización:** 03/07/2025
-
----
-
 ## 1. Resumen funcional del módulo
-- **Problema que resuelve:** Implementa la ficha técnica y vista detallada de un producto, desacoplando la lógica de negocio (fetch, navegación, carrito) de la UI y permitiendo navegación inteligente según el contexto de origen.
-- **Arquitectura de alto nivel:** Componente UI puro (`TechnicalSpecs.jsx`) y hook personalizado (`useTechnicalSpecs.js`) para lógica de negocio, navegación y manejo de estado. Uso de Material UI y React Router.
-- **Función y casos de uso principales:** Mostrar la ficha técnica de un producto, gestionar navegación de retorno, agregar al carrito y mostrar feedback de carga o error.
+- **Problema que resuelve:** Implementa la vista detallada de especificaciones técnicas de productos en Sellsi, proporcionando una interfaz especializada para mostrar información técnica complementaria a la ficha principal del producto.
+- **Arquitectura de alto nivel:** Arquitectura Clean con separación clara entre presentación (TechnicalSpecs.jsx) y lógica de negocio (useTechnicalSpecs.js), siguiendo principios de responsabilidad única y desacoplamiento.
+- **Función y casos de uso principales:** Renderizar especificaciones técnicas detalladas, manejar estados de carga y error, proporcionar navegación contextual y integrar con sistema de autenticación.
 - **Flujo de datos/información simplificado:**
-  - El hook obtiene el producto desde la URL, Supabase o mocks.
-  - El componente renderiza la UI según el estado (cargando, error, producto encontrado).
-  - Callbacks gestionan navegación y acciones de compra.
+  ```
+  URL params → useTechnicalSpecs → Supabase fetch → Estado local → TechnicalSpecs UI
+       ↓                ↓                ↓              ↓
+  Navigation ← Callbacks ← User Actions ← Component Events
+  ```
 
 ---
 
 ## 2. Listado de archivos
-| Archivo                | Tipo      | Descripción                                 | Responsabilidad principal                  |
-|------------------------|-----------|---------------------------------------------|--------------------------------------------|
-| TechnicalSpecs.jsx     | Componente| Ficha técnica de producto                   | Renderizar UI y delegar lógica al hook     |
-| hooks/useTechnicalSpecs.js | Hook  | Lógica de negocio, fetch, navegación        | Manejar estado, navegación y acciones      |
-
----
+| Archivo | Tipo | Descripción | Responsabilidad |
+|---------|------|------------|----------------|
+| TechnicalSpecs.jsx | Componente | Vista de especificaciones técnicas con layout responsive | Presentación de datos técnicos y manejo de eventos UI |
+| hooks/useTechnicalSpecs.js | Hook | Lógica de negocio para fetch de datos y navegación | Gestión de estado, efectos y callbacks de navegación |
 
 ## 3. Relaciones internas del módulo
-- **Diagrama de dependencias:**
+**Diagrama de dependencias:**
 ```
-TechnicalSpecs
-└── useTechnicalSpecs (hook)
+TechnicalSpecs.jsx (Presentational)
+└── useTechnicalSpecs.js (Container Logic)
+    ├── React Router (navegación)
+    ├── Supabase (datos)
+    └── React hooks (estado)
 ```
-- **Patrones de comunicación:** props y callbacks, navegación con React Router, estado local y global (carrito).
-- **Relaciones clave:** El componente es UI puro y toda la lógica está en el hook.
+
+**Patrones de comunicación:**
+- **Container/Presentational**: Hook maneja lógica, componente maneja UI
+- **Custom hooks**: Encapsulación de efectos y estado complejo
+- **Callback patterns**: Comunicación ascendente via props
+- **URL-driven state**: Estado derivado de parámetros de ruta
 
 ---
 
 ## 4. Props de los componentes
 ### TechnicalSpecs
-| Prop        | Tipo     | Requerido | Descripción                                 |
-|-------------|----------|-----------|---------------------------------------------|
-| isLoggedIn  | boolean  | No        | Indica si el usuario está autenticado       |
+| Prop | Tipo | Requerido | Descripción |
+|------|------|----------|-------------|
+| `isLoggedIn` | `boolean` | No | Estado de autenticación del usuario para mostrar acciones disponibles |
 
-**Notas importantes:**
-- El resto de la información y callbacks provienen del hook.
-
----
+**Notas importantes:** El componente es casi auto-contenido, toda la lógica se maneja via hook interno.
 
 ## 5. Hooks personalizados
 ### `useTechnicalSpecs()`
-- **Propósito:** Manejar la lógica de negocio de la ficha técnica: fetch de producto, navegación inteligente, agregar al carrito, feedback de carga y error.
-- **Estados y efectos principales:**
-  - `product`: Producto actual
-  - `loading`: Estado de carga
-  - `originRoute`, `fromMyProducts`, `isFromBuyer`: Contexto de navegación
-- **API que expone:**
-  - `handleClose()`, `handleGoHome()`, `handleGoToMarketplace()`, `handleAddToCart()`, `handleBuyNow()`
-- **Ejemplo de uso básico:**
-```js
+
+**Propósito:** Centraliza la lógica de negocio para la vista de especificaciones técnicas, incluyendo fetch de datos, navegación contextual y manejo de estados.
+
+**Estados y efectos principales:**
+- Gestiona carga de producto desde URL params y Supabase
+- Maneja contexto de navegación (origen de la vista)
+- Controla estados de loading, error y datos cargados
+- Efectos para fetch inicial y cleanup de navegación
+
+**API que expone:**
+- `product`: Datos del producto cargado
+- `loading`: Estado de carga actual
+- `originRoute`: Ruta de origen detectada
+- `handleClose()`: Navegar de vuelta al origen
+- `handleAddToCart(product)`: Agregar producto al carrito
+- `handleBuyNow(product)`: Acción de compra rápida
+
+**Ejemplo de uso básico:**
+```jsx
 const {
-  product, loading, originRoute, fromMyProducts,
-  handleClose, handleGoHome, handleGoToMarketplace, handleAddToCart, handleBuyNow
+  product, 
+  loading, 
+  originRoute,
+  handleClose, 
+  handleAddToCart
 } = useTechnicalSpecs();
 ```
 
 ---
 
 ## 6. Dependencias principales
-| Dependencia           | Versión | Propósito                  | Impacto                |
-|----------------------|---------|----------------------------|------------------------|
-| `react`              | >=17    | Hooks y estado             | Lógica y efectos       |
-| `@mui/material`      | >=5     | Componentes UI             | Visualización          |
-| `@mui/icons-material`| >=5     | Iconos para UI             | Visualización          |
-| `react-router-dom`   | >=6     | Routing y navegación       | Navegación             |
-| `supabase-js`        | >=2     | Backend y autenticación    | Datos remotos          |
-| `react-hot-toast`    | >=2     | Feedback visual            | UX y notificaciones    |
-
----
+| Dependencia | Versión | Propósito | Impacto |
+|-------------|---------|-----------|---------|
+| `@mui/material` | >=5 | Componentes UI y layout | Alto - Interfaz visual completa |
+| `react-router-dom` | >=6 | Navegación y parámetros URL | Alto - Funcionalidad de routing crítica |
+| `@supabase/supabase-js` | >=2 | Fetch de datos de productos | Alto - Fuente de datos principal |
+| `react-hot-toast` | >=2 | Notificaciones de acciones | Medio - Feedback de usuario |
 
 ## 7. Consideraciones técnicas
 ### Limitaciones y advertencias:
-- El fetch de producto depende de la URL y puede fallar si el slug es inválido.
-- El origen de navegación se determina por prioridad (state, localStorage, referrer, default).
-- El hook usa mocks si no hay datos reales.
+- **Dependencia de URL**: Funcionalidad depende de parámetros válidos en la ruta
+- **Navegación contextual**: Lógica compleja para detectar origen de navegación
+- **Fallback a mocks**: Puede mostrar datos simulados si Supabase falla
 
 ### Deuda técnica relevante:
-- [MEDIA] Mejorar manejo de errores y feedback visual.
-- [MEDIA] Unificar lógica de navegación y persistencia de origen.
-
----
+- **[MEDIA]** Mejorar detección de contexto de navegación
+- **[BAJA]** Unificar manejo de estados de error
+- **[BAJA]** Optimizar re-renders innecesarios
 
 ## 8. Puntos de extensión
-- El componente puede extenderse para mostrar más información o integrar nuevos servicios.
-- El hook puede adaptarse para otros flujos de detalle de producto.
-
----
+- **Componente extensible**: Fácil agregar nuevas secciones de especificaciones
+- **Hook reutilizable**: Lógica adaptable para otros tipos de vistas detalladas
+- **Sistema de callbacks**: Permite customizar acciones sin modificar el core
 
 ## 9. Ejemplos de uso
 ### Ejemplo básico:
 ```jsx
-import TechnicalSpecs from './view_page/TechnicalSpecs';
+import TechnicalSpecs from 'src/features/marketplace/view_page/TechnicalSpecs';
 
-function FichaProducto() {
-  return <TechnicalSpecs isLoggedIn={true} />;
+function ProductSpecsPage() {
+  return <TechnicalSpecs isLoggedIn={user !== null} />;
 }
 ```
 
----
+### Ejemplo más completo:
+```jsx
+import { TechnicalSpecs } from 'src/features/marketplace/view_page';
+import { useAuth } from 'src/context/AuthContext';
+
+function ProductDetailRoute() {
+  const { user, isLoading } = useAuth();
+  
+  if (isLoading) return <div>Cargando...</div>;
+  
+  return (
+    <TechnicalSpecs 
+      isLoggedIn={!!user}
+    />
+  );
+}
+```
 
 ## 10. Rendimiento y optimización
-- Separación total de UI y lógica de negocio.
-- Memoización de handlers y estados en el hook.
-- Áreas de mejora: optimizar fetch y manejo de errores.
-
----
+- **Separación de responsabilidades**: UI pura separada de lógica de negocio
+- **Memoización de callbacks**: Previene re-renders innecesarios
+- **Lazy loading**: Carga diferida de datos de producto
+- **Optimizaciones pendientes**: Cache de productos visitados, mejores skeleton loaders
 
 ## 11. Actualización
-- Creado: `03/07/2025`
+- **Última actualización:** 18/07/2025
 - Última actualización: `03/07/2025`
