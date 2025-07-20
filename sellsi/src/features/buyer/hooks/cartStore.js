@@ -1,39 +1,21 @@
 /**
  * ============================================================================
- * CART STORE - GESTIÓN GLOBAL DEL CARRITO DE COMPRAS (REFACTORIZADO)
+ * CART STORE - COMPATIBILITY WRAPPER (DEPRECATED)
  * ============================================================================
  *
- * Store centralizado refactorizado usando módulos independientes.
- * Punto de entrada que mantiene la misma API externa mientras usa
- * el patrón facade internamente.
- *
- * CARACTERÍSTICAS:
- * - ✅ Persistencia automática en localStorage
- * - ✅ Módulos independientes para mejor mantenibilidad
- * - ✅ Cálculos automáticos de totales
- * - ✅ Validación de stock
- * - ✅ Integración con notificaciones
- * - ✅ Arquitectura modular con facade
- *
- * MÓDULOS REFACTORIZADOS:
- * - 🔄 cartStore.constants: Constantes y configuraciones
- * - 🔄 cartStore.helpers: Funciones puras y utilitarias
- * - 🔄 cartStore.calculations: Lógica de cálculos
- * - 🔄 cartStore.local: Operaciones locales
- * - 🔄 cartStore.backend: Operaciones con backend
- * - 🔄 cartStore.core: Estado principal
- * - 🔄 cartStore.facade: Compositor de módulos
- *
- * MÓDULOS EXTERNOS:
- * - 🔄 useCartHistory: Historial y undo/redo
- * - 🔄 useWishlist: Lista de deseos
- * - 🔄 useCoupons: Cupones de descuento
- * - 🔄 useShipping: Opciones de envío
+ * ⚠️  DEPRECATED: Este archivo solo mantiene compatibilidad hacia atrás.
+ * 
+ * 🚨 MIGRACIÓN COMPLETADA:
+ * El cartStore se ha migrado a `shared/stores/cart/` según el plan de refactor.
+ * 
+ * 📋 NUEVO IMPORT:
+ * import useCartStore from '../../../shared/stores/cart'
+ * 
+ * 🔄 TODO: Actualizar todos los imports a la nueva ubicación y eliminar este archivo
  */
 
-import { createCartStoreFacade } from './cartStore.facade'
+// Re-export desde la nueva ubicación en shared/stores
+export { default } from '../../../shared/stores/cart/cartStore'
 
-// Crear y exportar el store facade como hook de Zustand
-const useCartStore = createCartStoreFacade()
-
-export default useCartStore
+// También disponible con import por named export
+export { useCartStore } from '../../../shared/stores/cart'

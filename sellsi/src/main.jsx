@@ -3,7 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { ThemeProvider, CssBaseline, createTheme } from '@mui/material';
 import * as Sentry from '@sentry/react';
 
-import App from './App.jsx';
+import App from './app/App.jsx';
 import './index.css';
 
 // 1. Inicializar Sentry (solo en producción y preview, como buena práctica)
