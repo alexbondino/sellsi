@@ -109,12 +109,6 @@ export const useShippingValidation = (cartItems = [], isAdvancedMode = false) =>
                           product.product_delivery_regions || // ✅ NUEVO: Soporte directo para datos de BD
                           [];
 
-    console.log(`[useShippingValidation] Validando producto ${product.id || product.name}:`, {
-      userRegion,
-      shippingRegions,
-      productKeys: Object.keys(product)
-    });
-
     // Estado: Sin información de despacho
     if (!shippingRegions || shippingRegions.length === 0) {
       return {
@@ -135,8 +129,6 @@ export const useShippingValidation = (cartItems = [], isAdvancedMode = false) =>
       
       return regionValue === userRegion || altRegionValue === userRegion;
     });
-
-    console.log(`[useShippingValidation] Región matching para ${userRegion}:`, matchingRegion);
 
     // Estado: Compatible
     if (matchingRegion) {

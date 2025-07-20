@@ -153,7 +153,7 @@ export const trackUserAction = async (userId, action) => {
 export const debugCurrentIP = async () => {
   const result = await getCurrentUserIP();
   if (result.success) {
-    console.log('🌐 IP actual del usuario:', result.ip);
+
   } else {
     console.error('❌ Error obteniendo IP:', result.error);
   }

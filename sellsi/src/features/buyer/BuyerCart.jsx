@@ -148,18 +148,7 @@ const BuyerCart = () => {
   // ===== DEBUGGING: Log para verificar que las regiones se están cargando =====
   React.useEffect(() => {
     if (isAdvancedShippingMode && items.length > 0) {
-      console.log('🚚 [BuyerCart] Modo avanzado activado. Verificando regiones de despacho:');
-      items.forEach(item => {
-        console.log(`📦 Producto: ${item.name || item.nombre}`, {
-          id: item.id,
-          shippingRegions: item.shippingRegions,
-          delivery_regions: item.delivery_regions,
-          shipping_regions: item.shipping_regions,
-          hasShippingData: !!(item.shippingRegions?.length || item.delivery_regions?.length || item.shipping_regions?.length)
-        });
-      });
-      console.log('👤 Usuario región:', shippingValidation.userRegion);
-      console.log('🔍 Estados de envío:', shippingValidation.shippingStates);
+      // Log removido para producción
     }
   }, [items, isAdvancedShippingMode, shippingValidation]);
 
@@ -442,34 +431,28 @@ const BuyerCart = () => {
   const navigate = useNavigate();
 
   const handleCheckout = useCallback(async () => {
-    console.log('[BuyerCart] handleCheckout called');
     // Validar compatibilidad de envío antes del checkout
     if (isAdvancedShippingMode && !shippingValidation.isCartCompatible) {
-      console.log('[BuyerCart] handleCheckout: incompatibilidad de envío', shippingValidation);
       setCompatibilityModalOpen(true);
       return;
     }
 
     setIsCheckingOut(true);
-    console.log('[BuyerCart] handleCheckout: iniciando proceso de checkout');
 
     try {
       // Simular proceso de checkout
       await new Promise(resolve => setTimeout(resolve, 100)); // OPTIMIZADO: 100ms
-      console.log('[BuyerCart] handleCheckout: compra simulada exitosa');
       // toast de éxito eliminado, solo navegación
 
       // No limpiar el carrito después del checkout
 
       // Navegar al método de pago
-      console.log('[BuyerCart] handleCheckout: navegando a /buyer/paymentmethod');
       navigate('/buyer/paymentmethod');
     } catch (error) {
       console.error('[BuyerCart] handleCheckout: error en el proceso de compra', error);
       toast.error('Error en el proceso de compra', { icon: '❌' });
     } finally {
       setIsCheckingOut(false);
-      console.log('[BuyerCart] handleCheckout: setIsCheckingOut(false)');
     }
   }, [clearCart, isAdvancedShippingMode, shippingValidation.isCartCompatible]);
 

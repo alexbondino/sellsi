@@ -106,15 +106,15 @@ const AddProduct = () => {
   // Cargar regiones de entrega si editando
   useEffect(() => {
     if (isEditMode && editProductId) {
-      console.log('[AddProduct] useEffect - Cargando regiones para producto:', editProductId);
+
       fetchProductRegions(editProductId)
         .then(regions => {
-          console.log('[AddProduct] useEffect - Regiones cargadas desde BD:', regions);
+
           const formattedRegions = convertDbRegionsToForm(regions);
-          console.log('[AddProduct] useEffect - Regiones convertidas al formato formulario:', formattedRegions);
+
           setShippingRegions(formattedRegions);
           updateField('shippingRegions', formattedRegions); // Sincroniza con formData
-          console.log('[AddProduct] useEffect - shippingRegions state actualizado:', formattedRegions);
+
         })
         .catch(error => {
           console.error('[AddProduct] useEffect - Error cargando regiones:', error);
@@ -147,11 +147,11 @@ const AddProduct = () => {
 
   // Actualiza shippingRegions en formData y estado local
   const handleRegionChange = (regions) => {
-    console.log('[AddProduct] handleRegionChange - Regiones recibidas:', regions);
+
     setShippingRegions(regions);
     updateField('shippingRegions', regions);
-    console.log('[AddProduct] handleRegionChange - shippingRegions state actualizado:', regions);
-    console.log('[AddProduct] handleRegionChange - formData.shippingRegions será:', regions);
+
+
   };
 
   const handlePricingTypeChange = (event, newValue) => {
@@ -226,14 +226,14 @@ const AddProduct = () => {
     }
 
     // LOG: Estado de formData y shippingRegions antes de guardar
-    console.log('[AddProduct] handleSubmit - formData:', formData);
-    console.log('[AddProduct] handleSubmit - formData.shippingRegions:', formData.shippingRegions);
-    console.log('[AddProduct] handleSubmit - shippingRegions state:', shippingRegions);
+
+
+
 
     try {
       // 1. Guardar producto principal
       const result = await submitForm();
-      console.log('[AddProduct] handleSubmit - resultado submitForm:', result);
+
 
       if (!result.success) {
         console.error('❌ Backend errors:', result.errors);
@@ -255,18 +255,18 @@ const AddProduct = () => {
         productId = result.product?.productid || result.productId;
       }
 
-      console.log('[AddProduct] handleSubmit - productId usado para regiones:', productId);
-      console.log('[AddProduct] handleSubmit - result completo:', result);
+
+
       
       if (productId && shippingRegions.length > 0) {
-        console.log('[AddProduct] handleSubmit - Guardando shippingRegions:', shippingRegions);
+
         // Convertir formato de display a formato BD antes de guardar
         const dbRegions = convertFormRegionsToDb(shippingRegions);
-        console.log('[AddProduct] handleSubmit - Regiones convertidas para BD:', dbRegions);
+
         
         try {
           await saveProductRegions(productId, dbRegions);
-          console.log('[AddProduct] handleSubmit - Regiones guardadas exitosamente');
+
         } catch (regionError) {
           console.error('[AddProduct] handleSubmit - Error guardando regiones:', regionError);
           // No lanzar error aquí para que el producto se guarde aunque falle las regiones

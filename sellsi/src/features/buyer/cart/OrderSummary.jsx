@@ -42,55 +42,27 @@ const OrderSummary = ({
   onCheckout,
 }) => {
   const navigate = useNavigate()
-  // LOG: props iniciales
-  console.log('[OrderSummary] PROPS:', {
-    subtotal,
-    discount,
-    shippingCost,
-    total,
-    cartStats,
-    deliveryDate,
-    appliedCoupons,
-    couponInput,
-    isCheckingOut,
-    availableCodes,
-    shippingValidation,
-    isAdvancedShippingMode,
-    onShippingCompatibilityError,
-    formatPrice,
-    formatDate,
-    setCouponInput,
-    onApplyCoupon,
-    onRemoveCoupon,
-    onCheckout,
-  })
 
   // Handler para navegar al checkout
   const handleCheckout = () => {
-    console.log('[OrderSummary] handleCheckout called')
     // Validar que haya productos
     if (!cartStats || cartStats.isEmpty) {
-      console.log('[OrderSummary] handleCheckout: carrito vacío')
       return
     }
     // Validar compatibilidad de envío si está en modo avanzado
     if (isAdvancedShippingMode && shippingValidation && !shippingValidation.isCartCompatible) {
-      console.log('[OrderSummary] handleCheckout: incompatibilidad de envío', shippingValidation)
       // Notificar al componente padre para mostrar el modal
       if (onShippingCompatibilityError) {
-        console.log('[OrderSummary] handleCheckout: llamando onShippingCompatibilityError')
         onShippingCompatibilityError()
       }
       return
     }
     // Si hay función de checkout personalizada, usar esa
     if (onCheckout) {
-      console.log('[OrderSummary] handleCheckout: usando función personalizada onCheckout')
       onCheckout()
       return
     }
     // Navegar al método de pago
-    console.log('[OrderSummary] handleCheckout: navegando a /buyer/paymentmethod')
     navigate('/buyer/paymentmethod')
   }
 
@@ -102,12 +74,6 @@ const OrderSummary = ({
       cartStats.isEmpty ||
       (isAdvancedShippingMode && shippingValidation && !shippingValidation.isCartCompatible)
     )
-    console.log('[OrderSummary] isButtonDisabled:', disabled, {
-      isCheckingOut,
-      cartStats,
-      isAdvancedShippingMode,
-      shippingValidation,
-    })
     return disabled
   }
   return (
@@ -160,9 +126,7 @@ const OrderSummary = ({
             fullWidth
             size="large"
             onClick={e => {
-              console.log('[OrderSummary] Button onClick');
               if (isButtonDisabled()) {
-                console.log('[OrderSummary] Button click: deshabilitado');
                 return;
               }
               handleCheckout();

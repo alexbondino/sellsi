@@ -9,7 +9,6 @@ const thumbnailCache = new Map();
 // Función para limpiar el cache (útil para debugging)
 const clearThumbnailCache = () => {
   thumbnailCache.clear();
-  console.log('[useMinithumb] 🧹 Cache limpiado');
 };
 
 // Exponer función para debug
@@ -141,14 +140,12 @@ export const useMinithumb = (product) => {
     const cacheKey = `minithumb_first_${productId}`;
     if (thumbnailCache.has(cacheKey)) {
       const cachedData = thumbnailCache.get(cacheKey);
-      console.log('[useMinithumb] ✅ Usando thumbnail desde cache:', cacheKey, cachedData);
       setDbThumbnails(cachedData);
       return;
     }
 
     try {
       setIsLoading(true);
-      console.log('[useMinithumb] Consultando BD para producto:', productId);
 
       // Consultar la tabla product_images para obtener thumbnails
       const { data, error } = await supabase
@@ -165,14 +162,11 @@ export const useMinithumb = (product) => {
       }
 
       const firstRow = data?.[0];
-      console.log('[useMinithumb] 📋 Primera fila obtenida:', firstRow);
       
       if (firstRow?.thumbnails) {
-        console.log('[useMinithumb] ✅ Thumbnails encontrados en BD:', firstRow.thumbnails);
         setDbThumbnails(firstRow.thumbnails);
         thumbnailCache.set(cacheKey, firstRow.thumbnails);
       } else if (firstRow?.thumbnail_url) {
-        console.log('[useMinithumb] ⚠️ thumbnails es null, pero existe thumbnail_url:', firstRow.thumbnail_url);
         
         // Construir minithumb desde thumbnail_url
         const minithumbUrl = firstRow.thumbnail_url.replace(
@@ -181,7 +175,6 @@ export const useMinithumb = (product) => {
         );
         
         if (minithumbUrl !== firstRow.thumbnail_url) {
-          console.log('[useMinithumb] ✅ Construyendo minithumb desde thumbnail_url:', minithumbUrl);
           
           // Verificar si el minithumb existe, si no, usar el desktop como fallback
           const constructedThumbnails = { 
@@ -192,11 +185,9 @@ export const useMinithumb = (product) => {
           setDbThumbnails(constructedThumbnails);
           thumbnailCache.set(cacheKey, constructedThumbnails);
         } else {
-          console.log('[useMinithumb] ⚠️ No se pudo construir minithumb desde thumbnail_url');
           thumbnailCache.set(cacheKey, null);
         }
       } else {
-        console.log('[useMinithumb] ⚠️ No se encontraron thumbnails ni thumbnail_url en BD para producto:', productId);
         thumbnailCache.set(cacheKey, null);
       }
     } catch (error) {
@@ -235,7 +226,6 @@ export const useMinithumb = (product) => {
       }
       // Si minithumb falla, usar fallback
       if (typeof dbThumbnails === 'object' && dbThumbnails.fallback) {
-        console.log('[useMinithumb] 🔄 Usando fallback desktop:', dbThumbnails.fallback);
         return dbThumbnails.fallback;
       }
       if (typeof dbThumbnails === 'string') {

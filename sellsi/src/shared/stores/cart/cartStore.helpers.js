@@ -67,9 +67,7 @@ export const prepareCartItem = (product, quantity) => {
 export const cleanLocalCartItems = (items) => {
   const result = sanitizeCartItems(items);
   
-  if (result.summary.removed > 0 || result.summary.corrected > 0) {
-    console.warn('[cartStore] 🧹 Limpieza de carrito:', result.summary);
-  }
+  // Log removido para producción
   
   return result.validItems;
 }

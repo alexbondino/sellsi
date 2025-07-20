@@ -2,7 +2,7 @@ import { supabase } from '../supabase';
 
 // Obtener regiones de entrega de un producto
 export async function fetchProductRegions(productId) {
-  console.log('[productDeliveryRegionsService] fetchProductRegions - productId:', productId);
+
   
   const { data, error } = await supabase
     .from('product_delivery_regions')
@@ -14,16 +14,16 @@ export async function fetchProductRegions(productId) {
     throw error;
   }
   
-  console.log('[productDeliveryRegionsService] fetchProductRegions - Regiones obtenidas:', data);
+
   return data || [];
 }
 
 // Guardar regiones de entrega (sobrescribe todas)
 export async function saveProductRegions(productId, regions) {
-  console.log('[productDeliveryRegionsService] saveProductRegions - productId:', productId, 'regions:', regions);
+
   
   // Elimina las regiones existentes
-  console.log('[productDeliveryRegionsService] saveProductRegions - Eliminando regiones existentes...');
+
   const { error: deleteError } = await supabase
     .from('product_delivery_regions')
     .delete()
@@ -34,7 +34,7 @@ export async function saveProductRegions(productId, regions) {
     throw deleteError;
   }
   
-  console.log('[productDeliveryRegionsService] saveProductRegions - Regiones existentes eliminadas');
+
 
   // Preparar datos para inserción
   const insertData = regions.map(r => ({
@@ -44,7 +44,7 @@ export async function saveProductRegions(productId, regions) {
     delivery_days: r.delivery_days != null && !isNaN(r.delivery_days) ? Number(r.delivery_days) : 0,
   }));
   
-  console.log('[productDeliveryRegionsService] saveProductRegions - Datos a insertar:', insertData);
+
 
   // Inserta las nuevas regiones
   const { error: insertError } = await supabase
@@ -56,5 +56,5 @@ export async function saveProductRegions(productId, regions) {
     throw insertError;
   }
   
-  console.log('[productDeliveryRegionsService] saveProductRegions - Regiones guardadas exitosamente');
+
 }

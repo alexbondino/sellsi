@@ -136,13 +136,13 @@ const ShippingRegionsModal = ({
   // Inicializar estado cuando se abre el modal
   useEffect(() => {
     if (isOpen) {
-      console.log('[ShippingRegionsModal] useEffect - Modal abierto, initialData:', initialData);
+
       
       // Crear configuración inicial con todas las regiones
       const initialConfig = regiones.map(region => {
         // Buscar configuración existente por region
         const existingConfig = initialData.find(item => item.region === region.value);
-        console.log('[ShippingRegionsModal] useEffect - Procesando región:', region.value, 'existingConfig:', existingConfig);
+
         
         return {
           region: region.value,
@@ -153,7 +153,7 @@ const ShippingRegionsModal = ({
         };
       });
       
-      console.log('[ShippingRegionsModal] useEffect - Configuración inicial:', initialConfig);
+
       setRegionsConfig(initialConfig);
     }
   }, [isOpen, initialData]);
@@ -243,14 +243,14 @@ const ShippingRegionsModal = ({
 
   // Manejar guardado
   const handleSave = () => {
-    console.log('[ShippingRegionsModal] handleSave - Iniciando validación');
+
     
     if (!validateData()) {
-      console.log('[ShippingRegionsModal] handleSave - Validación falló');
+
       return;
     }
 
-    console.log('[ShippingRegionsModal] handleSave - Validación exitosa, preparando datos');
+
     
     const enabledRegions = regionsConfig
       .filter(config => config.enabled)
@@ -260,7 +260,7 @@ const ShippingRegionsModal = ({
         delivery_days: parseInt(config.maxDeliveryDays),
       }));
 
-    console.log('[ShippingRegionsModal] handleSave - Datos a enviar:', enabledRegions);
+
     
     onSave(enabledRegions);
   };
