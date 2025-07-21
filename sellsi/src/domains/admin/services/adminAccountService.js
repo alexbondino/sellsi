@@ -5,10 +5,10 @@
  * del sistema de panel de control.
  * 
  * @author Panel Administrativo Sellsi
- * @date 17 de Julio de 2025
+ * @date 21 de Julio de 2025 - Migrado a domains/admin/services/
  */
 
-import { supabase } from '../../supabase'
+import { supabase } from '../../../services/supabase'
 
 /**
  * Crear nueva cuenta de administrador

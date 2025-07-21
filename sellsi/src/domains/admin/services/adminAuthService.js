@@ -1,5 +1,5 @@
 /**
- * 🔐 Servicio de Autenticación Administrativa
+ * 🔐 Servicio de Autenticación Administrativa - Dominio Admin
  * 
  * Gestiona todas las operaciones de autenticación y seguridad:
  * - Login de administradores
@@ -8,11 +8,11 @@
  * - Validación de permisos
  * 
  * @author Panel Administrativo Sellsi
- * @date 17 de Julio de 2025
+ * @date 21 de Julio de 2025 - Migrado a domains/admin/services/
  */
 
-import { AdminApiService, AUDIT_ACTIONS } from '../core/adminApiService'
-import { supabase } from '../../supabase'
+import { AdminApiService, AUDIT_ACTIONS } from './adminApiService'
+import { supabase } from '../../../services/supabase'
 
 // ========================================
 // 🔐 AUTENTICACIÓN BÁSICA

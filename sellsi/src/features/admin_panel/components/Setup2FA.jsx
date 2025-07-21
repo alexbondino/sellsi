@@ -45,7 +45,7 @@ import {
 import QRCode from 'react-qr-code';
 
 import { PrimaryButton } from '../../ui';
-import { generate2FASecret, verify2FA, disable2FA } from '../../../services/adminPanelService';
+import { generate2FASecret, verify2FA, disable2FA } from '../../../domains/admin';
 
 // ✅ CONSTANTS
 const STEPS = [

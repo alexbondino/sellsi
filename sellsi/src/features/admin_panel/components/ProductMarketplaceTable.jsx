@@ -59,7 +59,7 @@ import {
 import AdminStatCard from './AdminStatCard';
 import EditProductNameModal from '../../ui/EditProductNameModal';
 import DeleteMultipleProductsModal from '../../ui/DeleteMultipleProductsModal';
-import { getMarketplaceProducts, deleteProduct, getProductStats, deleteMultipleProducts, updateProductName } from '../../../services/adminPanelService';
+import { getMarketplaceProducts, deleteProduct, getProductStats, deleteMultipleProducts, updateProductName } from '../../../domains/admin';
 import { useBanner } from '../../ui';
 
 // ✅ CONSTANTS

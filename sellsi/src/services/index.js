@@ -4,10 +4,17 @@
  * Punto de entrada centralizado para todos los servicios de Sellsi
  * Permite importaciones limpias desde cualquier parte de la aplicación
  * 
+ * ⚠️ NOTA DE MIGRACIÓN: Los servicios admin han sido migrados a domains/admin/
+ * Ver PLANREFACTOR.md paso 4 para detalles de la nueva estructura
+ * 
  * @example
  * import { updateUserIP, banUser } from '../services/security';
  * import { addToCart } from '../services/user';
  * import { khipuPayment } from '../services/payment';
+ * 
+ * // ✅ Nueva estructura recomendada para admin:
+ * import { AdminServices } from '../domains/admin';
+ * import { loginAdmin, getUsers } from '../domains/admin/services';
  */
 
 // 🔐 Servicios de autenticación
@@ -28,11 +35,12 @@ export * from './media';
 // 🔒 Servicios de seguridad
 export * from './security';
 
-// 👑 Servicios administrativos
-export * from './admin';
+// 👑 Servicios administrativos - MIGRADOS A DOMAINS
+// LEGACY: export * from './admin'; 
+// ✅ NUEVO: Ver '../domains/admin' para la nueva estructura
+
+// 🏗️ Dominios de negocio (nueva estructura)
+export * from '../domains';
 
 // 🔧 Cliente base de Supabase
 export { supabase } from './supabase';
-
-// 📋 Servicios legacy (temporalmente, hasta que toda la app migre)
-export * from './adminPanelService';

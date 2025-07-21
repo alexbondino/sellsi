@@ -13,7 +13,7 @@ import { Navigate, useLocation } from 'react-router-dom';
 import { Box, CircularProgress, Typography, Paper, Alert } from '@mui/material';
 import { Shield, Warning, Build } from '@mui/icons-material';
 
-import { verifyAdminSession } from '../../../services/adminPanelService';
+import { verifyAdminSession } from '../../../domains/admin';
 import { isDevelopment, canCreateAdminInDev, DEV_CONFIG } from '../config/devConfig';
 
 const AdminGuard = ({ children }) => {

@@ -26,7 +26,7 @@ import { CheckCircle, Receipt, Notifications } from '@mui/icons-material';
 
 // Importar componentes UI existentes
 import { PrimaryButton, FileUploader } from '../../ui';
-import { confirmarPago, subirComprobante, enviarNotificacion } from '../../../services/adminPanelService';
+import { confirmarPago, subirComprobante, enviarNotificacion } from '../../../domains/admin';
 
 // ✅ COMMON STYLES
 const commonStyles = {

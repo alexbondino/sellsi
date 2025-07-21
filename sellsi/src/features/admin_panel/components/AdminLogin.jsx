@@ -35,7 +35,7 @@ import {
 
 import { PrimaryButton } from '../../ui';
 import { useAdminLogin } from '../hooks';
-import { loginAdmin, verify2FA, mark2FAAsConfigured, generate2FASecret } from '../../../services/adminPanelService';
+import { loginAdmin, verify2FA, mark2FAAsConfigured, generate2FASecret } from '../../../domains/admin';
 import Setup2FA from './Setup2FA';
 import QRCode from 'react-qr-code';
 

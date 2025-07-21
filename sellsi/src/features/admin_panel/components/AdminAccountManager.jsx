@@ -55,7 +55,7 @@ import {
   getAdminAccounts, 
   updateAdminStatus,
   deleteAdminAccount
-} from '../../../services/adminPanelService';
+} from '../../../domains/admin';
 
 // ✅ CONFIGURACIÓN DE ROLES
 const ROLE_CONFIG = {

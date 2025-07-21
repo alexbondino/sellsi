@@ -47,7 +47,7 @@ import {
 } from '@mui/icons-material';
 
 import { PrimaryButton } from '../../ui';
-import { createAdminAccount } from '../../../services/adminPanelService';
+import { createAdminAccount } from '../../../domains/admin';
 import { 
   FIRST_ADMIN_CONFIG, 
   isDevelopment, 

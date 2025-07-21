@@ -44,7 +44,7 @@ import {
 // Importar componentes UI existentes
 import { Widget } from '../../ui';
 import AdminStatCard from './AdminStatCard';
-import { getSolicitudes, getEstadisticas } from '../../../services/adminPanelService';
+import { getSolicitudes, getEstadisticas } from '../../../domains/admin';
 
 // Importar modales
 import ConfirmarPagoModal from '../modals/ConfirmarPagoModal';

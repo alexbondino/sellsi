@@ -1,14 +1,14 @@
 /**
- * 🔧 Cliente Base para Servicios Administrativos
+ * 🔧 Cliente Base para Servicios Administrativos - Dominio Admin
  * 
  * Maneja patrones comunes de Supabase, respuestas estándar y logging
  * Reduce duplicación de código entre servicios administrativos
  * 
  * @author Panel Administrativo Sellsi
- * @date 17 de Julio de 2025
+ * @date 21 de Julio de 2025 - Migrado a domains/admin/services/
  */
 
-import { supabase } from '../../supabase'
+import { supabase } from '../../../services/supabase'
 
 export class AdminApiService {
   /**

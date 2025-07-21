@@ -9,11 +9,11 @@
  * - Gestión de inventario
  * 
  * @author Panel Administrativo Sellsi
- * @date 17 de Julio de 2025
+ * @date 21 de Julio de 2025 - Migrado a domains/admin/services/
  */
 
-import { AdminApiService, AUDIT_ACTIONS } from '../core/adminApiService'
-import { supabase } from '../../supabase'
+import { AdminApiService, AUDIT_ACTIONS } from './adminApiService'
+import { supabase } from '../../../services/supabase'
 
 // ========================================
 // 📋 GESTIÓN DE PRODUCTOS - CONSULTA

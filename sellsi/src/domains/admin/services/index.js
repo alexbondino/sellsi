@@ -1,3 +1,18 @@
+/**
+ * 🏗️ Dominio Admin - Servicios Unificados
+ * 
+ * Punto de entrada principal para todos los servicios del dominio administrativo.
+ * Esta estructura sigue el plan de refactor estructural de Sellsi para:
+ * 
+ * ✅ Eliminar dependencias de adminPanelService.js legacy
+ * ✅ Proporcionar estructura consistente
+ * ✅ Facilitar mantenimiento y testing
+ * ✅ Mejorar separación de responsabilidades
+ * 
+ * @author Panel Administrativo Sellsi
+ * @date 21 de Julio de 2025 - Migrado según PLANREFACTOR.md paso 4
+ */
+
 // ========================================
 // 🔐 SERVICIOS DE AUTENTICACIÓN
 // ========================================
@@ -6,8 +21,9 @@ export {
   verify2FA,
   generate2FASecret,
   disable2FA,
-  mark2FAAsConfigured
-} from './auth/adminAuthService'
+  mark2FAAsConfigured,
+  verifyAdminSession
+} from './adminAuthService'
 
 // ========================================
 // 👥 SERVICIOS DE GESTIÓN DE USUARIOS
@@ -22,7 +38,7 @@ export {
   deleteUser,
   deleteMultipleUsers,
   getUserBanHistory
-} from './users/adminUserService'
+} from './adminUserService'
 
 // ========================================
 // 👤 SERVICIOS DE CUENTAS ADMINISTRATIVAS
@@ -33,7 +49,7 @@ export {
   updateAdminStatus,
   deleteAdminAccount,
   canCreateAdmins
-} from './accounts/adminAccountService'
+} from './adminAccountService'
 
 // ========================================
 // 🛒 SERVICIOS DE GESTIÓN DE PRODUCTOS
@@ -44,7 +60,7 @@ export {
   deleteProduct,
   deleteMultipleProducts,
   updateProductName
-} from './products/adminProductService'
+} from './adminProductService'
 
 // ========================================
 // 📋 SERVICIOS DE GESTIÓN DE SOLICITUDES
@@ -55,7 +71,7 @@ export {
   rechazarPago,
   devolverPago,
   enviarNotificacion
-} from './requests/adminRequestService'
+} from './adminRequestService'
 
 // ========================================
 // 📎 SERVICIOS DE GESTIÓN DE ARCHIVOS
@@ -64,7 +80,7 @@ export {
   subirComprobante,
   subirAdjuntos,
   validarArchivo
-} from './files/adminFileService'
+} from './adminFileService'
 
 // ========================================
 // 📊 SERVICIOS DE AUDITORÍA Y LOGS
@@ -72,14 +88,28 @@ export {
 export {
   registrarAccion,
   getLogs
-} from './audit/adminAuditService'
+} from './adminAuditService'
+
+// ========================================
+// 🔒 SERVICIOS DE SEGURIDAD Y BANEOS
+// ========================================
+export { default as BanService } from './banService'
+export {
+  updateUserIP,
+  getCurrentUserIP,
+  checkIPBanStatus,
+  trackLoginIP,
+  trackUserAction,
+  debugCurrentIP,
+  trackRouteVisit
+} from './ipTrackingService'
 
 // ========================================
 // 🔧 SERVICIOS PRINCIPALES Y UTILIDADES
 // ========================================
 export {
   AdminApiService
-} from './core/adminApiService'
+} from './adminApiService'
 
 // ========================================
 // 📊 FUNCIONES DE ESTADÍSTICAS GENERALES
@@ -105,4 +135,51 @@ export const getEstadisticas = async () => {
     console.error('Error en getEstadisticas:', error)
     return { success: false, error: 'Error interno del servidor' }
   }
+}
+
+// ========================================
+// 🔗 COMPATIBILIDAD LEGACY
+// ========================================
+
+// Importamos todas las funciones que necesitamos para el objeto legacy
+import * as authServices from './adminAuthService'
+import * as userServices from './adminUserService'
+import * as accountServices from './adminAccountService'
+import * as productServices from './adminProductService'
+import * as requestServices from './adminRequestService'
+import * as fileServices from './adminFileService'
+import * as auditServices from './adminAuditService'
+import * as ipTrackingServices from './ipTrackingService'
+
+/**
+ * @deprecated Use direct imports from domains/admin/services instead
+ * Esta función mantiene compatibilidad con importaciones legacy
+ */
+export const AdminPanelService = {
+  // Auth
+  ...authServices,
+  
+  // Users
+  ...userServices,
+  
+  // Accounts
+  ...accountServices,
+  
+  // Products
+  ...productServices,
+  
+  // Requests
+  ...requestServices,
+  
+  // Files
+  ...fileServices,
+  
+  // Audit
+  ...auditServices,
+  
+  // Security & IP Tracking
+  ...ipTrackingServices,
+  
+  // Stats - función local
+  getEstadisticas
 }

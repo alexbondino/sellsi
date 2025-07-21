@@ -50,7 +50,7 @@ import {
 } from '@mui/icons-material';
 
 import { PrimaryButton } from '../../ui';
-import { createAdminAccount, canCreateAdmins } from '../../../services/adminPanelService';
+import { createAdminAccount, canCreateAdmins } from '../../../domains/admin';
 import { 
   canCreateAdminInDev, 
   isDevelopment, 

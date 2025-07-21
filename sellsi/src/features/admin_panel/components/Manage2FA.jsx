@@ -38,7 +38,7 @@ import {
 } from '@mui/icons-material';
 
 import { PrimaryButton } from '../../ui';
-import { disable2FA } from '../../../services/adminPanelService';
+import { disable2FA } from '../../../domains/admin';
 import Setup2FA from './Setup2FA';
 
 // ✅ COMMON STYLES

@@ -56,7 +56,7 @@ import {
 // Importar componentes UI existentes
 import { Modal } from '../../ui';
 import AdminStatCard from './AdminStatCard';
-import { getUsers, getUserStats, banUser, unbanUser, verifyUser, unverifyUser, deleteUser, deleteMultipleUsers } from '../../../services/adminPanelService';
+import { getUsers, getUserStats, banUser, unbanUser, verifyUser, unverifyUser, deleteUser, deleteMultipleUsers } from '../../../domains/admin';
 
 // Importar modales
 import UserBanModal from '../modals/UserBanModal';

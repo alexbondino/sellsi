@@ -30,7 +30,7 @@ import { Cancel, Warning, AttachFile } from '@mui/icons-material';
 
 // Importar componentes UI existentes
 import { PrimaryButton, FileUploader } from '../../ui';
-import { rechazarPago, subirAdjuntos, enviarNotificacion } from '../../../services/adminPanelService';
+import { rechazarPago, subirAdjuntos, enviarNotificacion } from '../../../domains/admin';
 
 // ✅ CONSTANTS
 const MOTIVOS_RECHAZO = [
