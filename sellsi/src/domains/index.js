@@ -1,27 +1,3 @@
-/**
- * 🏗️ Domains - Arquitectura por Dominios de Negocio
- * 
- * Punto de entrada para todos los dominios de negocio de Sellsi.
- * Esta estructura sigue el plan de refactor estructural para:
- * 
- * ✅ Separar código por dominio de negocio
- * ✅ Reducir acoplamiento entre features
- * ✅ Facilitar testing y mantenimiento
- * ✅ Escalar de forma organizada
- * 
- * Dominios Implementados:
- * - admin: Gestión administrativa completa
- * 
- * Dominios Futuros (según PLANREFACTOR.md):
- * - marketplace: Core marketplace B2B
- * - buyer: Experiencia comprador + carrito  
- * - supplier: Dashboard proveedor + productos
- * - checkout: Flujo de pago crítico
- * 
- * @author Sellsi Development Team
- * @date 21 de Julio de 2025 - Fase 2 del Plan de Refactor
- */
-
 // ========================================
 // 🔧 DOMINIO ADMINISTRATIVO
 // ========================================

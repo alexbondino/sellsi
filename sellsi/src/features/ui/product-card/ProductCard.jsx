@@ -49,7 +49,7 @@ const ProductCard = React.memo(
     const { id, nombre, imagen } = product;
 
     // ✅ NUEVO: Hook para obtener thumbnail responsivo
-    const thumbnailUrl = useResponsiveThumbnail(product);
+    const { thumbnailUrl } = useResponsiveThumbnail(product);
 
     // --- Memoized common elements ---
     const resolvedImageSrc = useMemo(() => {

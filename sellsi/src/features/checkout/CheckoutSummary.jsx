@@ -33,7 +33,7 @@ import { motion } from 'framer-motion'
 // Servicios
 import checkoutService from './services/checkoutService'
 import { calculatePriceForQuantity } from '../../utils/priceCalculation'
-import { useMinithumb } from '../../hooks/useResponsiveThumbnail' // Hook para minithumb
+import { useResponsiveThumbnail } from '../../hooks/useResponsiveThumbnail' // Hook para thumbnails responsivos
 
 // Componentes UI
 import SecurityBadge from '../ui/SecurityBadge'
@@ -46,63 +46,24 @@ import SecurityBadge from '../ui/SecurityBadge'
 const ProductAvatar = ({ item }) => {
   const [hasError, setHasError] = useState(false);
   
-  // Función para construir URL del minithumb dinámicamente
-  const getMinithumbUrl = useCallback((item) => {
-    if (!item) return null;
-    
-    // Construir URL del minithumb desde el bucket product-images-thumbnails
-    if (item.imagen) {
-      try {
-        const url = new URL(item.imagen);
-        const pathParts = url.pathname.split('/');
-        
-        // Buscar la estructura: .../product-images/user_id/product_id/...
-        const productImagesIndex = pathParts.findIndex(part => part === 'product-images');
-        
-        if (productImagesIndex !== -1 && pathParts.length > productImagesIndex + 2) {
-          const userId = pathParts[productImagesIndex + 1];
-          const productId = pathParts[productImagesIndex + 2];
-          
-          // Extraer timestamp del nombre del archivo
-          const fileName = pathParts[pathParts.length - 1];
-          const timestampMatch = fileName.match(/^(\d+)_/);
-          
-          if (timestampMatch) {
-            const timestamp = timestampMatch[1];
-            console.log('🔍 [ProductAvatar] Extrayendo timestamp:', {
-              fileName,
-              timestamp,
-              userId,
-              productId
-            });
-            // Construir URL del minithumb con la estructura correcta
-            return `${url.origin}/storage/v1/object/public/product-images-thumbnails/${userId}/${productId}/${timestamp}_minithumb_40x40.jpg`;
-          }
-        }
-      } catch (error) {
-        console.warn('[ProductAvatar] Error construyendo minithumb URL:', error);
-      }
-    }
-    
-    return null;
-  }, []);
+  // ✅ USAR HOOK RESPONSIVO EN LUGAR DE LÓGICA MANUAL
+  const { thumbnailUrl, isLoading, error } = useResponsiveThumbnail(item);
   
-  const minithumbUrl = getMinithumbUrl(item);
-  
-  console.log('🎯 [ProductAvatar] URL dinámica construida:', minithumbUrl);
-  console.log('🔍 [ProductAvatar] Datos del item:', {
-    product_id: item.product_id,
-    imagen: item.imagen,
-    thumbnail_url: item.thumbnail_url,
-    name: item.name || item.nombre
+  console.log('🎯 [ProductAvatar] Hook useResponsiveThumbnail resultado:', {
+    thumbnailUrl,
+    isLoading,
+    error,
+    itemId: item.product_id || item.id,
+    itemName: item.name || item.nombre
   });
   
-  // Si hay error, usar imagen por defecto
-  const finalUrl = hasError ? (item.imagen || null) : (minithumbUrl || item.imagen || null);
+  // Si hay error del hook o error de carga de imagen, usar imagen por defecto
+  const finalUrl = (hasError || error) ? (item.imagen || null) : (thumbnailUrl || item.imagen || null);
   
   console.log('🚀 [ProductAvatar] Estado final:', {
     hasError,
-    minithumbUrl,
+    hookError: error,
+    thumbnailUrl,
     finalUrl,
     itemImagen: item.imagen
   });

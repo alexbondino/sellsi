@@ -61,6 +61,7 @@ import EditProductNameModal from '../../ui/EditProductNameModal';
 import DeleteMultipleProductsModal from '../../ui/DeleteMultipleProductsModal';
 import { getMarketplaceProducts, deleteProduct, getProductStats, deleteMultipleProducts, updateProductName } from '../../../domains/admin';
 import { useBanner } from '../../ui';
+import { useResponsiveThumbnail } from '../../../hooks/useResponsiveThumbnail';
 
 // ✅ CONSTANTS
 const PRODUCT_STATUS = {
@@ -128,68 +129,24 @@ const commonStyles = {
 const ProductAvatar = memo(({ product }) => {
   const [hasError, setHasError] = useState(false);
   
-  // Función para construir URL del minithumb dinámicamente
-  const getMinithumbUrl = useCallback((product) => {
-    if (!product) return null;
-    
-    // Si ya tiene thumbnail_url, construir el minithumb
-    if (product.thumbnail_url) {
-      return product.thumbnail_url.replace('_desktop_320x260.jpg', '_minithumb_40x40.jpg');
-    }
-    
-    // Si tiene imagen principal, construir desde ella
-    if (product.imagen) {
-      try {
-        const url = new URL(product.imagen);
-        const pathParts = url.pathname.split('/');
-        
-        // Buscar la estructura: .../product-images/user_id/product_id/...
-        const productImagesIndex = pathParts.findIndex(part => part === 'product-images');
-        
-        if (productImagesIndex !== -1 && pathParts.length > productImagesIndex + 2) {
-          const userId = pathParts[productImagesIndex + 1];
-          const productId = pathParts[productImagesIndex + 2];
-          
-          // Extraer timestamp del nombre del archivo
-          const fileName = pathParts[pathParts.length - 1];
-          const timestampMatch = fileName.match(/^(\d+)_/);
-          
-          if (timestampMatch) {
-            const timestamp = timestampMatch[1];
-            console.log('🔍 [ProductAvatar] Extrayendo timestamp:', {
-              fileName,
-              timestamp,
-              userId,
-              productId
-            });
-            // Construir URL del minithumb con la estructura correcta
-            return `${url.origin}/storage/v1/object/public/product-images-thumbnails/${userId}/${productId}/${timestamp}_minithumb_40x40.jpg`;
-          }
-        }
-      } catch (error) {
-        console.warn('[ProductAvatar] Error construyendo minithumb URL:', error);
-      }
-    }
-    
-    return null;
-  }, []);
+  // ✅ USAR HOOK RESPONSIVO EN LUGAR DE LÓGICA MANUAL
+  const { thumbnailUrl, isLoading, error } = useResponsiveThumbnail(product);
   
-  const minithumbUrl = getMinithumbUrl(product);
-  
-  console.log('🎯 [ProductAvatar] URL dinámica construida:', minithumbUrl);
-  console.log('🔍 [ProductAvatar] Datos del producto:', {
-    product_id: product.id,
-    imagen: product.imagen,
-    thumbnail_url: product.thumbnail_url,
-    name: product.name || product.nombre
+  console.log('🎯 [ProductAvatar] Hook useResponsiveThumbnail resultado:', {
+    thumbnailUrl,
+    isLoading,
+    error,
+    productId: product.id,
+    productName: product.name || product.nombre
   });
   
-  // Si hay error, usar imagen por defecto
-  const finalUrl = hasError ? (product.imagen || null) : (minithumbUrl || product.imagen || null);
+  // Si hay error del hook o error de carga de imagen, usar imagen por defecto
+  const finalUrl = (hasError || error) ? (product.imagen || null) : (thumbnailUrl || product.imagen || null);
   
   console.log('🚀 [ProductAvatar] Estado final:', {
     hasError,
-    minithumbUrl,
+    hookError: error,
+    thumbnailUrl,
     finalUrl,
     productImagen: product.imagen
   });

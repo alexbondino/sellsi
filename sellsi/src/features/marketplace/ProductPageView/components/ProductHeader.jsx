@@ -65,7 +65,7 @@ const ProductHeader = React.memo(({
   const finalTiers = product.priceTiers || tiers || []
 
   // ✅ NUEVO: Hook para obtener thumbnail responsivo de la imagen principal
-  const mainImageThumbnail = useResponsiveThumbnail(product);
+  const { thumbnailUrl: mainImageThumbnail, isLoading: thumbnailLoading } = useResponsiveThumbnail(product);
 
   const [copied, setCopied] = useState({ name: false, price: false })
   // Estado para la cantidad seleccionada

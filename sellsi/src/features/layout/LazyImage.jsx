@@ -19,6 +19,7 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { Box, Skeleton, CardMedia, Fade } from '@mui/material'
 import { Image as ImageIcon } from '@mui/icons-material'
+import { globalObserverPool } from '../../utils/observerPoolManager';
 
 /**
  * Hook personalizado para lazy loading con Intersection Observer
@@ -28,27 +29,21 @@ const useLazyLoading = (rootMargin = '50px') => {
   const elementRef = useRef(null)
 
   useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const [entry] = entries
-        if (entry.isIntersecting) {
-          setIsVisible(true)
-          observer.disconnect()
-        }
-      },
-      { rootMargin }
-    )
+    if (!elementRef.current) return;
 
-    const currentElement = elementRef.current
-    if (currentElement) {
-      observer.observe(currentElement)
-    }
-
-    return () => {
-      if (currentElement) {
-        observer.unobserve(currentElement)
+    const handleIntersection = (entry) => {
+      if (entry.isIntersecting) {
+        setIsVisible(true);
       }
-    }
+    };
+
+    const unobserveFunc = globalObserverPool.observe(
+      elementRef.current,
+      handleIntersection,
+      { rootMargin }
+    );
+
+    return unobserveFunc;
   }, [rootMargin])
 
   return [elementRef, isVisible]

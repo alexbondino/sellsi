@@ -154,7 +154,7 @@ const CartItem = ({
   const [openDeleteModal, setOpenDeleteModal] = useState(false)
   
   // ✅ NUEVO: Hook para obtener thumbnail responsivo
-  const thumbnailUrl = useResponsiveThumbnail(item);
+  const { thumbnailUrl } = useResponsiveThumbnail(item);
   
   // ===== CÁLCULOS DE PRECIOS OPTIMIZADOS (USAR priceCalculations MEMOIZADO) =====
   // Los precios se calculan en priceCalculations para evitar recálculos innecesarios
