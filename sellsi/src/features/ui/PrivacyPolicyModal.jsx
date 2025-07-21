@@ -13,8 +13,8 @@ import {
   useMediaQuery,
 } from '@mui/material';
 import { Close as CloseIcon, Security as SecurityIcon } from '@mui/icons-material';
-import { privacyContent } from '../terms_policies/content';
-import TextFormatter from '../terms_policies/TextFormatter';
+import { privacyContent } from '../../shared/constants/content';
+import { TextFormatter } from '../../shared/components/formatters';
 
 const PrivacyPolicyModal = ({ open, onClose }) => {
   const theme = useTheme();

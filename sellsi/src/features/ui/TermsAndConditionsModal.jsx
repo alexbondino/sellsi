@@ -13,8 +13,8 @@ import {
   useMediaQuery,
 } from '@mui/material';
 import { Close as CloseIcon, Gavel as GavelIcon } from '@mui/icons-material';
-import { termsContent } from '../terms_policies/content';
-import TextFormatter from '../terms_policies/TextFormatter';
+import { termsContent } from '../../shared/constants/content';
+import { TextFormatter } from '../../shared/components/formatters';
 
 const TermsAndConditionsModal = ({ open, onClose }) => {
   const theme = useTheme();

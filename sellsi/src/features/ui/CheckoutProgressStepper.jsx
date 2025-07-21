@@ -22,7 +22,7 @@ import {
   Done as DoneIcon
 } from '@mui/icons-material'
 import { motion } from 'framer-motion'
-import { CHECKOUT_STEPS } from '../checkout/constants/checkoutSteps'
+import { CHECKOUT_STEPS } from '../../shared/constants/checkout'
 
 // ============================================================================
 // COMPONENTE DE ICONO PERSONALIZADO
