@@ -46,7 +46,7 @@ import {
 } from '@mui/icons-material';
 
 // Importar componentes UI existentes
-import { PrimaryButton } from '../../ui';
+import { PrimaryButton } from '../../../shared/components/forms';
 
 // ✅ CONSTANTS
 const ESTADOS_HISTORIA = {

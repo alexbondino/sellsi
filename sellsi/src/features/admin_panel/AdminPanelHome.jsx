@@ -33,7 +33,7 @@ import {
   Build
 } from '@mui/icons-material';
 
-import { PrimaryButton } from '../ui';
+import { PrimaryButton } from '../../shared/components/forms';
 import AdminAccountCreator from './components/AdminAccountCreator';
 import AdminAccountManager from './components/AdminAccountManager';
 import { isDevelopment, DEV_CONFIG } from './config/devConfig';

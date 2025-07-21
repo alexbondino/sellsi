@@ -1,6 +1,6 @@
 import React from 'react';
 import { Box, Typography, useTheme, Fade } from '@mui/material';
-import PrimaryButton from '../ui/PrimaryButton';
+import { PrimaryButton } from '../../shared/components/forms';
 import StatisticCard from './StatisticCard';
 import CarouselIndicator from './CarouselIndicator';
 import CarouselNavigationButton from './CarouselNavigationButton';

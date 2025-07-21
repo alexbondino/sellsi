@@ -30,7 +30,7 @@ import {
 import { Undo, AccountBalance, Receipt } from '@mui/icons-material';
 
 // Importar componentes UI existentes
-import { PrimaryButton, FileUploader } from '../../ui';
+import { PrimaryButton, FileUploader } from '../../../shared/components/forms';
 import { devolverPago, subirComprobante, enviarNotificacion } from '../../../domains/admin';
 
 // ✅ CONSTANTS

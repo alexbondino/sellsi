@@ -21,7 +21,7 @@ import { supabase } from '../../services/supabase';
 import toast from 'react-hot-toast';
 
 // Asumimos que estos componentes existen en tu proyecto y están bien estilizados.
-import { PrimaryButton, CountrySelector } from '../ui';
+import { PrimaryButton, CountrySelector } from '../../shared/components/forms';
 
 // ==================================================================
 // COMPONENTE HELPER: Uploader de logos (estilo mejorado)

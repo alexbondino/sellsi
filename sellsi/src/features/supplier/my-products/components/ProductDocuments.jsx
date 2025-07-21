@@ -1,6 +1,6 @@
 import React from 'react';
 import { Box, Typography } from '@mui/material';
-import { FileUploader } from '../../../ui';
+import { FileUploader } from '../../../../shared/components/forms';
 
 /**
  * Componente para la gestión de documentación técnica del producto

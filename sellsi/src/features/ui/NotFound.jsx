@@ -3,7 +3,7 @@ import { Box, Typography, Container } from '@mui/material'
 import { motion } from 'framer-motion'
 import { Home as HomeIcon } from '@mui/icons-material'
 import { useNavigate } from 'react-router-dom'
-import PrimaryButton from './PrimaryButton'
+import { PrimaryButton } from '../../shared/components/forms'
 
 const NotFound = () => {
   const navigate = useNavigate()

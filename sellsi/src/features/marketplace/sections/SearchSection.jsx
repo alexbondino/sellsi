@@ -11,7 +11,7 @@
 import React from 'react';
 import { Box } from '@mui/material';
 import ReactDOM from 'react-dom';
-import SearchBar from '../SearchBar/SearchBar';
+import { SearchBar } from '../../../shared/components/forms';
 import CategoryNavigation from '../CategoryNavigation/CategoryNavigation';
 
 /**
