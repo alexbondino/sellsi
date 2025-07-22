@@ -26,6 +26,7 @@ import {
   LocalShipping as LocalShippingIcon,
 } from '@mui/icons-material';
 import { regiones } from '../../../utils/chileData';
+import { formatCurrency } from '../../utils/formatters';
 
 /**
  * Modal para configurar regiones de despacho con valores y tiempos
@@ -92,16 +93,12 @@ const ShippingRegionsModal = ({
     }
   }, [isOpen]);
 
-  // Funciones utilitarias para formateo de moneda
-  const formatCurrency = (value) => {
+  // Función utilitaria para parsear valor de moneda
+  const parseCurrencyValue = (value) => {
     if (!value || value === '') return '';
     const numericValue = parseFloat(value.toString().replace(/[^\d]/g, ''));
     if (isNaN(numericValue)) return '';
-    return new Intl.NumberFormat('es-CL', {
-      style: 'currency',
-      currency: 'CLP',
-      minimumFractionDigits: 0,
-    }).format(numericValue);
+    return numericValue;
   };
 
   const extractNumericValue = (value) => {

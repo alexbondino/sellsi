@@ -8,7 +8,7 @@ import {
   Stack,
 } from '@mui/material';
 import { Info as InfoIcon } from '@mui/icons-material';
-import { formatPrice } from '../../../marketplace/utils/formatters';
+import { formatPrice } from '../../../../shared/utils/formatters';
 
 /**
  * Componente para mostrar el panel de resultados de venta

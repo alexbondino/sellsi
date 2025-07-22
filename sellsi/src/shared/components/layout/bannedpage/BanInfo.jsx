@@ -11,6 +11,7 @@ import {
   Computer as ComputerIcon,
   Warning as WarningIcon
 } from '@mui/icons-material';
+import { formatDateTime } from '../../../utils/formatters';
 
 /**
  * Componente para mostrar información detallada del ban
@@ -38,17 +39,6 @@ const BanInfo = ({ banStatus }) => {
 
   const getBanTypeColor = () => {
     return banStatus.banType === 'user' ? 'warning' : 'error';
-  };
-
-  const formatDate = (dateString) => {
-    if (!dateString) return 'No disponible';
-    return new Date(dateString).toLocaleDateString('es-CL', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
   };
 
   // Helper para obtener el label del motivo
@@ -82,7 +72,7 @@ const BanInfo = ({ banStatus }) => {
             <Box sx={{ width: '100%', display: 'flex', justifyContent: 'flex-start' }}>
               <Typography variant="body2" sx={{ mb: 1, textAlign: 'left', display: 'flex', alignItems: 'center', gap: 1 }}>
                 <ScheduleIcon fontSize="small" color="error" />
-                <strong>Fecha:</strong> {formatDate(banStatus.bannedAt)}
+                <strong>Fecha:</strong> {formatDateTime(banStatus.bannedAt)}
               </Typography>
             </Box>
           )}

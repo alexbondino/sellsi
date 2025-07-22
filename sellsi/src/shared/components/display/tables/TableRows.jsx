@@ -19,6 +19,7 @@ import {
   ExpandMore as ExpandMoreIcon,
   ExpandLess as ExpandLessIcon,
 } from '@mui/icons-material';
+import { formatDate, formatCurrency } from '../../../utils/formatters';
 
 const Rows = ({ order, onActionClick }) => {
   const [expandedProducts, setExpandedProducts] = useState(false);
@@ -36,26 +37,11 @@ const Rows = ({ order, onActionClick }) => {
     return `${address.street || address.address || 'Dirección no especificada'}, ${address.city || address.commune || 'Comuna no especificada'}, ${address.region || 'Región no especificada'}`;
   };
 
-  // Formatear fecha
-  const formatDate = dateString => {
-    if (!dateString) return '';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('es-CL');
-  };
-
   // Formatear rango de fechas
   const formatDateRange = requestedDate => {
     const startDate = formatDate(requestedDate.start);
     const endDate = formatDate(requestedDate.end);
     return `${startDate} - ${endDate}`;
-  };
-
-  // Formatear moneda
-  const formatCurrency = amount => {
-    return new Intl.NumberFormat('es-CL', {
-      style: 'currency',
-      currency: 'CLP',
-    }).format(amount);
   };
 
   // Obtener color del chip según estado

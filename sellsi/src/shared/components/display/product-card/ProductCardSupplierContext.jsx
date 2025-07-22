@@ -19,7 +19,7 @@ import {
 } from '@mui/icons-material';
 
 // Utility imports (updated paths for shared location)
-import { formatPrice } from '../../../../features/marketplace/utils/formatters';
+import { formatPrice } from '../../../utils/formatters';
 import ActionMenu from './ActionMenu';
 import ProductBadges from './ProductBadges';
 import StatusChip from './StatusChip';

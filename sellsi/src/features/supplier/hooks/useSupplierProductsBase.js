@@ -10,7 +10,7 @@
 import { create } from 'zustand'
 import { supabase } from '../../../services/supabase'
 import { updateProductSpecifications } from '../../../services/marketplace'
-import UploadService from '../../../services/media/uploadService'
+import { UploadService } from '../../../shared/services/upload'
 
 const useSupplierProductsBase = create((set, get) => ({
   // ============================================================================

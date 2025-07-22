@@ -46,7 +46,7 @@ import {
 } from '../hooks/useLazyProducts';
 import { dashboardThemeCore } from '../../../styles/dashboardThemeCore';
 import { SPACING_BOTTOM_MAIN } from '../../../styles/layoutSpacing';
-import { formatPrice } from '../../marketplace/utils/formatters';
+import { formatPrice } from '../../../shared/utils/formatters';
 import { generateProductUrl } from '../../marketplace/marketplace/productUrl';
 
 // Advanced Loading Components

@@ -82,14 +82,11 @@ export const getModalConfig = type => {
   }
 };
 
+import { formatCurrency } from '../../../utils/formatters';
+
 // --- Helper Functions ---
 export const formatAddress = address => {
   return `${address.street}, ${address.city}, ${address.region}`;
 };
 
-export const formatCurrency = amount => {
-  return new Intl.NumberFormat('es-CL', {
-    style: 'currency',
-    currency: 'CLP',
-  }).format(amount);
-};
+export { formatCurrency };
