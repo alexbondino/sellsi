@@ -17,6 +17,9 @@ import {
   Select,
   MenuItem,
   Badge,
+  Switch,
+  FormControlLabel,
+  Typography,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import ClearIcon from '@mui/icons-material/Clear';
@@ -57,10 +60,18 @@ const SearchBar = ({
     lg: 33.7,
     xl: 41,
   }, // Valores por defecto para Marketplace normal
+  showFiltersButton = true,
+  // ✅ NUEVAS PROPS: Para el switch de vistas productos/proveedores
+  isProviderView = false,
+  onToggleProviderView = () => {},
+  hasSideBar = false, // Para determinar si mostrar el switch
 }) => {
   // ✅ OPTIMIZACIÓN: Estado local para el input con debouncing
   const [localBusqueda, setLocalBusqueda] = React.useState(busqueda);
   const debouncedBusqueda = useDebounce(localBusqueda, 300); // 300ms delay
+
+  // ✅ NUEVO: Estado local para el switch de vistas
+  const [localProviderView, setLocalProviderView] = React.useState(isProviderView);
 
   // ✅ OPTIMIZACIÓN: Sincronizar el valor debounced con el estado global
   React.useEffect(() => {
@@ -75,6 +86,13 @@ const SearchBar = ({
       setLocalBusqueda(busqueda);
     }
   }, [busqueda]);
+
+  // ✅ NUEVO: Sincronizar el estado del switch con el prop externo
+  React.useEffect(() => {
+    if (localProviderView !== isProviderView) {
+      setLocalProviderView(isProviderView);
+    }
+  }, [isProviderView, localProviderView]);
 
   // ✅ MEJORA DE RENDIMIENTO: Memoización del handler de limpiar búsqueda
   const handleClear = React.useCallback(() => {
@@ -95,6 +113,14 @@ const SearchBar = ({
     },
     [setOrdenamiento]
   );
+
+  // ✅ NUEVO: Handler para el switch de vistas productos/proveedores
+  const handleToggleView = React.useCallback(() => {
+    const newValue = !localProviderView;
+    setLocalProviderView(newValue);
+    onToggleProviderView();
+  }, [localProviderView, onToggleProviderView]);
+
   // ✅ MEJORA DE RENDIMIENTO: Memoización de estilos del contenedor principal
   const containerStyles = React.useMemo(
     () => ({
@@ -214,35 +240,84 @@ const SearchBar = ({
         size="small" // ✅ Hacer más pequeña
         value={localBusqueda}
         onChange={handleSearchChange}
-        placeholder="Buscar productos..."
+        placeholder={localProviderView ? "Buscar proveedores..." : "Buscar productos..."}
         variant="outlined"
         InputProps={inputProps}
         sx={textFieldStyles}
         autoComplete="off"
         autoCorrect="off"
       />
-      {/* Selector de ordenamiento - Más compacto */}
-      <FormControl sx={formControlStyles}>
-        <Select
-          value={ordenamiento}
-          onChange={handleSortChange}
-          displayEmpty
-          startAdornment={
-            <InputAdornment position="start">
-              <SortIcon color="action" fontSize="small" />
-            </InputAdornment>
-          }
-          MenuProps={selectMenuProps}
-          sx={selectStyles}
+      {/* Selector de ordenamiento - Más compacto - Oculto en vista de proveedores */}
+      {!localProviderView && (
+        <FormControl sx={formControlStyles}>
+          <Select
+            value={ordenamiento}
+            onChange={handleSortChange}
+            displayEmpty
+            startAdornment={
+              <InputAdornment position="start">
+                <SortIcon color="action" fontSize="small" />
+              </InputAdornment>
+            }
+            MenuProps={selectMenuProps}
+            sx={selectStyles}
+          >
+            {sortOptions.map(option => (
+              <MenuItem key={option.value} value={option.value}>
+                {option.label}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+      )}
+      {/* Switch de vista Productos/Proveedores - Solo para marketplace con sidebar */}
+      {hasSideBar && (
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            flexShrink: 0,
+            ml: { xs: 0.5, md: 1 },
+            mr: { xs: 0.5, md: 1 },
+          }}
         >
-          {sortOptions.map(option => (
-            <MenuItem key={option.value} value={option.value}>
-              {option.label}
-            </MenuItem>
-          ))}
-        </Select>
-      </FormControl>
+          <FormControlLabel
+            control={
+              <Switch
+                checked={localProviderView}
+                onChange={handleToggleView}
+                size="small"
+                color="primary"
+              />
+            }
+            label={
+              <Typography
+                variant="caption"
+                sx={{
+                  fontSize: { xs: '0.65rem', sm: '0.7rem', md: '0.75rem' },
+                  fontWeight: 500,
+                  color: 'text.secondary',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {localProviderView ? 'Proveedores' : 'Productos'}
+              </Typography>
+            }
+            labelPlacement="top"
+            sx={{
+              m: 0,
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: 0.25,
+              '& .MuiFormControlLabel-label': {
+                fontSize: { xs: '0.65rem', sm: '0.7rem', md: '0.75rem' },
+              },
+            }}
+          />
+        </Box>
+      )}
       {/* Botón de filtros - Optimizado para móviles */}
+      {showFiltersButton !== false && (
       <Button
         size="small"
         variant={buttonVariantStyles.variant}
@@ -274,6 +349,7 @@ const SearchBar = ({
           </Badge>
         </Box>
       </Button>
+      )}
     </Box>
   );
 };

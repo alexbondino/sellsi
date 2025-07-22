@@ -146,11 +146,13 @@ export const generateQuotationPDF = async ({
         React.createElement(Page, { size: 'A4', style: styles.page },
           // Header con logo (replicando estructura HTML)
           React.createElement(View, { style: styles.header },
-            React.createElement(View, null,
-              React.createElement(Text, { style: styles.title }, 'COTIZACIÓN'),
-              React.createElement(Text, { style: styles.subtitle }, `FECHA: ${new Date().toLocaleDateString('es-CL')}`)
-            ),
+            React.createElement(Image, { 
+              style: styles.logo, 
+              src: `${window.location.origin}/pdf/logopdf.jpg` 
+            }),
             React.createElement(View, { style: styles.headerRight },
+              React.createElement(Text, { style: styles.title }, 'COTIZACIÓN'),
+              React.createElement(Text, { style: styles.subtitle }, `FECHA: ${new Date().toLocaleDateString('es-CL')}`),
               React.createElement(Text, { style: styles.subtitle }, `PROVEEDOR: ${supplier}`)
             )
           ),

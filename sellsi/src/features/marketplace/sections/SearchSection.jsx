@@ -11,7 +11,7 @@
 import React from 'react';
 import { Box } from '@mui/material';
 import ReactDOM from 'react-dom';
-import { SearchBar } from '../../../shared/components/forms';
+import { SearchBar } from '../../../shared/components/forms'; // ✅ REFACTOR: Usar el SearchBar compartido con funcionalidad de switch
 import CategoryNavigation from '../CategoryNavigation/CategoryNavigation';
 
 /**
@@ -89,7 +89,7 @@ const SearchSection = ({
     return ReactDOM.createPortal(
       <Box sx={finalContainerStyles}>
         <Box sx={innerContainerStyles}>
-          {/* ✅ USAR SearchBar EXISTENTE */}
+          {/* ✅ USAR SearchBar EXISTENTE - Sin botón de filtros */}
           <SearchBar {...searchBarProps} showFiltersButton={false} />
           {/* ✅ USAR CategoryNavigation EXISTENTE */}
           <CategoryNavigation {...categoryNavigationProps} />
