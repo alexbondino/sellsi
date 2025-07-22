@@ -37,7 +37,7 @@ import {
   Shield
 } from '@mui/icons-material';
 
-import { PrimaryButton } from '../../ui';
+import { PrimaryButton } from '../../../shared/components/forms';
 import { disable2FA } from '../../../domains/admin';
 import Setup2FA from './Setup2FA';
 

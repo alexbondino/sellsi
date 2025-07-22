@@ -57,10 +57,10 @@ import {
 
 // Importar componentes UI existentes
 import AdminStatCard from './AdminStatCard';
-import EditProductNameModal from '../../ui/EditProductNameModal';
-import DeleteMultipleProductsModal from '../../ui/DeleteMultipleProductsModal';
+import EditProductNameModal from '../../../shared/components/modals/EditProductNameModal';
+import DeleteMultipleProductsModal from '../../../shared/components/modals/DeleteMultipleProductsModal';
 import { getMarketplaceProducts, deleteProduct, getProductStats, deleteMultipleProducts, updateProductName } from '../../../domains/admin';
-import { useBanner } from '../../ui';
+import { useBanner } from '../../../shared/components/display/banners/BannerContext';
 import { useResponsiveThumbnail } from '../../../hooks/useResponsiveThumbnail';
 
 // ✅ CONSTANTS

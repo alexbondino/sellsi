@@ -25,7 +25,7 @@ import {
   Close as CloseIcon,
   LocalShipping as LocalShippingIcon,
 } from '@mui/icons-material';
-import { regiones } from '../../utils/chileData';
+import { regiones } from '../../../utils/chileData';
 
 /**
  * Modal para configurar regiones de despacho con valores y tiempos

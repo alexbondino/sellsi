@@ -14,8 +14,8 @@ import { useTheme } from '@mui/material/styles';
 import { PasswordRequirements, PrimaryButton } from '../../landing_page/hooks';
 import { supabase } from '../../../services/supabase';
 // Importa useBanner para mostrar mensajes de error/éxito si es necesario
-import { useBanner } from '../../ui/banner/BannerContext';
-import { TermsAndConditionsModal, PrivacyPolicyModal } from '../../ui';
+import { useBanner } from '../../../shared/components/display/banners/BannerContext';
+import { TermsAndConditionsModal, PrivacyPolicyModal } from '../../../shared/components/modals';
 import { useTermsModal } from '../hooks/useTermsModal';
 
 const Step1Account = ({

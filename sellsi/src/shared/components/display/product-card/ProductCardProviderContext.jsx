@@ -1,4 +1,4 @@
-// src/components/ProductCard/ProductCardProviderContext.jsx
+// src/shared/components/display/product-card/ProductCardProviderContext.jsx
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import {

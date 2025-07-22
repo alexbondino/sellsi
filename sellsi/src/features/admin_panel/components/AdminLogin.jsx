@@ -33,7 +33,7 @@ import {
   VpnKey
 } from '@mui/icons-material';
 
-import { PrimaryButton } from '../../ui';
+import { PrimaryButton } from '../../../shared/components/forms';
 import { useAdminLogin } from '../hooks';
 import { loginAdmin, verify2FA, mark2FAAsConfigured, generate2FASecret } from '../../../domains/admin';
 import Setup2FA from './Setup2FA';

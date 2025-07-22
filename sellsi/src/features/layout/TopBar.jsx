@@ -18,12 +18,12 @@ import PersonIcon from '@mui/icons-material/Person';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import { supabase } from '../../services/supabase';
 import useCartStore from '../buyer/hooks/cartStore';
-import ContactModal from '../ui/ContactModal';
+import ContactModal from '../../shared/components/modals/ContactModal';
 import { Modal, MODAL_TYPES } from '../../shared/components/feedback';
 // Lazy imports para evitar bundling mixto
 const Login = React.lazy(() => import('../login/Login'));
 const Register = React.lazy(() => import('../register/Register'));
-import { setSkipScrollToTopOnce } from '../ui/ScrollToTop';
+import { setSkipScrollToTopOnce } from '../../shared/components/navigation/ScrollToTop/ScrollToTop';
 
 // Importa el nuevo componente reutilizable y ahora verdaderamente controlado
 import { Switch } from '../../shared/components/navigation'; // Ajusta la ruta si es diferente

@@ -12,11 +12,11 @@ import {
   useTheme,
   useMediaQuery,
 } from '@mui/material';
-import { Close as CloseIcon, Gavel as GavelIcon } from '@mui/icons-material';
-import { termsContent } from '../../shared/constants/content';
-import { TextFormatter } from '../../shared/components/formatters';
+import { Close as CloseIcon, Security as SecurityIcon } from '@mui/icons-material';
+import { privacyContent } from '../../constants/content';
+import { TextFormatter } from '../formatters';
 
-const TermsAndConditionsModal = ({ open, onClose }) => {
+const PrivacyPolicyModal = ({ open, onClose }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
@@ -47,7 +47,7 @@ const TermsAndConditionsModal = ({ open, onClose }) => {
         }}
       >
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          <GavelIcon sx={{ color: '#41B6E6', fontSize: '2rem' }} />
+          <SecurityIcon sx={{ color: '#41B6E6', fontSize: '2rem' }} />
           <Typography
             variant="h5"
             sx={{
@@ -56,7 +56,7 @@ const TermsAndConditionsModal = ({ open, onClose }) => {
               fontSize: { xs: '1.3rem', md: '1.5rem' },
             }}
           >
-            Términos y Condiciones
+            Política de Privacidad
           </Typography>
         </Box>
         <IconButton
@@ -78,7 +78,7 @@ const TermsAndConditionsModal = ({ open, onClose }) => {
           bgcolor: '#fff',
         }}
       >
-        <TextFormatter text={termsContent} />
+        <TextFormatter text={privacyContent} />
       </DialogContent>
 
       <Divider sx={{ borderColor: '#e0e0e0' }} />
@@ -93,18 +93,14 @@ const TermsAndConditionsModal = ({ open, onClose }) => {
         <Button
           onClick={onClose}
           variant="contained"
+          color="primary"
           sx={{
-            bgcolor: 'primary',
-            color: 'white',
             px: 4,
             py: 1.5,
             borderRadius: 2,
             fontWeight: 600,
             fontSize: '1rem',
             textTransform: 'none',
-            '&:hover': {
-              bgcolor: '#1976d2',
-            },
           }}
         >
           Entendido
@@ -114,4 +110,4 @@ const TermsAndConditionsModal = ({ open, onClose }) => {
   );
 };
 
-export default TermsAndConditionsModal;
+export default PrivacyPolicyModal;

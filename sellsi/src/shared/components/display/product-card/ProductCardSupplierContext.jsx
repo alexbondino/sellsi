@@ -1,4 +1,4 @@
-// src/components/ProductCard/ProductCardSupplierContext.jsx
+// src/shared/components/display/product-card/ProductCardSupplierContext.jsx
 import React, { useMemo } from 'react';
 import {
   CardContent, // Keep CardContent from MUI, this refers to the MUI component
@@ -18,11 +18,11 @@ import {
   CloudUpload as CloudUploadIcon,
 } from '@mui/icons-material';
 
-// Utility imports (adjust paths relative to this file)
-import { formatPrice } from '../../marketplace/utils/formatters'; // Adjust path
-import ActionMenu from './ActionMenu'; // Adjust path
-import ProductBadges from './ProductBadges'; // Adjust path
-import StatusChip from './StatusChip'; // Adjust path
+// Utility imports (updated paths for shared location)
+import { formatPrice } from '../../../../features/marketplace/utils/formatters';
+import ActionMenu from './ActionMenu';
+import ProductBadges from './ProductBadges';
+import StatusChip from './StatusChip';
 
 /**
  * ProductCardSupplierContext - Renders the specific content and actions for a supplier's product card.

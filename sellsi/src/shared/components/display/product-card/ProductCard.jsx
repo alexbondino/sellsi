@@ -1,17 +1,17 @@
-// src/components/ProductCard/ProductCard.jsx
+// src/shared/components/display/product-card/ProductCard.jsx
 import React, { useState, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, Box, alpha } from '@mui/material';
 
-// Common Utility Imports (adjust paths relative to this file)
-import { getProductImageUrl, getBestProductImageUrl } from '../../../utils/getProductImageUrl'; // Adjust path
-import { LazyImage } from '../../layout'; // Importar desde layout
-import { useResponsiveThumbnail } from '../../../hooks/useResponsiveThumbnail'; // Nuevo hook
+// Common Utility Imports
+import { getProductImageUrl, getBestProductImageUrl } from '../../../../utils/getProductImageUrl';
+import { LazyImage } from '../../../../features/layout';
+import { useResponsiveThumbnail } from '../../../../hooks/useResponsiveThumbnail';
 
-// Sub-components (updated names)
-import ProductCardBuyerContext from './ProductCardBuyerContext'; // Adjust path
-import ProductCardSupplierContext from './ProductCardSupplierContext'; // Adjust path
-import ProductCardProviderContext from './ProductCardProviderContext'; // Adjust path
+// Sub-components
+import ProductCardBuyerContext from './ProductCardBuyerContext';
+import ProductCardSupplierContext from './ProductCardSupplierContext';
+import ProductCardProviderContext from './ProductCardProviderContext';
 
 /**
  * ProductCard - Componente de tarjeta de producto universal

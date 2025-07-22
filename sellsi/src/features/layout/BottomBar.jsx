@@ -10,7 +10,7 @@ import BusinessIcon from '@mui/icons-material/Business';
 import SupportIcon from '@mui/icons-material/Support';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
-import ContactModal from '../ui/ContactModal';
+import ContactModal from '../../shared/components/modals/ContactModal';
 
 const BottomBar = () => {
   const navigate = useNavigate();

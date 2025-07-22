@@ -49,7 +49,7 @@ import {
   Shield
 } from '@mui/icons-material';
 
-import { PrimaryButton } from '../../ui';
+import { PrimaryButton } from '../../../shared/components/forms';
 import { createAdminAccount, canCreateAdmins } from '../../../domains/admin';
 import { 
   canCreateAdminInDev, 

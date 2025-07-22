@@ -34,3 +34,46 @@ export {
   setSkipScrollToTopOnce,
   Switch
 } from './navigation';
+
+// Display (Sprint 2 Fase 3 - COMPLETADO)
+export {
+  ProductCard,
+  ProductCardBuyerContext,
+  ProductCardSupplierContext,
+  ProductCardProviderContext,
+  ActionMenu,
+  ProductBadges,
+  StatusChip,
+  StatsCards,
+  StatCard,
+  Table,
+  TableRows,
+  TableFilter,
+  BarChart,
+  PieChart,
+  Banner,
+  BannerContext,
+  RequestList
+} from './display';
+
+// Modals (Sprint 2 Fase 3 - COMPLETADO)
+export {
+  PrivacyPolicyModal,
+  TermsAndConditionsModal,
+  ProfileImageModal,
+  EditProductNameModal,
+  DeleteMultipleProductsModal,
+  ShippingRegionsModal,
+  PaymentMethodCard,
+  ContactModal
+} from './modals';
+
+// Layout (Sprint 2 Fase 3 - COMPLETADO)  
+export {
+  SuspenseLoader,
+  AppShell,
+  NotFound,
+  Widget,
+  BannedPageUI,
+  BanInfo
+} from './layout';

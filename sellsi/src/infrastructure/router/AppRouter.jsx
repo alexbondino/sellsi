@@ -65,7 +65,7 @@ const Register = React.lazy(() => import('../../features/register/Register'));
 const Onboarding = React.lazy(() => import('../../features/onboarding/Onboarding'));
 
 // 📦 ERROR PAGES - LAZY LOADING
-const NotFound = React.lazy(() => import('../../features/ui/NotFound'));
+const NotFound = React.lazy(() => import('../../shared/components/layout/NotFound'));
 
 // 📦 BAN PAGE - LAZY LOADING
 const BannedPage = React.lazy(() => import('../../features/ban/BanPageView'));

@@ -20,7 +20,7 @@ import { SPACING_BOTTOM_MAIN } from '../../../styles/layoutSpacing';
 const DashboardSummary = React.lazy(() =>
   import('./dashboard-summary/DashboardSummary')
 );
-const MonthlySalesChart = React.lazy(() => import('../../ui/graphs/BarChart'));
+const MonthlySalesChart = React.lazy(() => import('../../../shared/components/display/graphs/BarChart'));
 
 // Loading fallbacks optimizados
 const DashboardSummaryFallback = () => (

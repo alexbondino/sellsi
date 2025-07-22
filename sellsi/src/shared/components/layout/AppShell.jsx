@@ -6,9 +6,9 @@ import TopBar from '../../../features/layout/TopBar';
 import BottomBar from '../../../features/layout/BottomBar';
 import MobileBar from '../../../features/layout/MobileBar';
 import SideBar from '../../../features/layout/SideBar';
-import Banner from '../../../features/ui/banner/Banner';
+import Banner from '../display/banners/Banner';
 import WhatsAppWidget from '../../../components/WhatsAppWidget';
-import { useBanner } from '../../../features/ui/banner/BannerContext';
+import { useBanner } from '../display/banners/BannerContext';
 
 import { useAuth } from '../../../infrastructure/providers/AuthProvider';
 import { useRole } from '../../../infrastructure/providers/RoleProvider';

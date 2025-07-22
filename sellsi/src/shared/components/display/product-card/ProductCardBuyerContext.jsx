@@ -1,4 +1,4 @@
-// src/components/ProductCard/ProductCardBuyerContext.jsx
+// src/shared/components/display/product-card/ProductCardBuyerContext.jsx
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -20,14 +20,14 @@ import {
 } from '@mui/icons-material';
 import { toast } from 'react-hot-toast';
 
-// Utility imports (adjust paths relative to this file)
-import { generateProductUrl } from '../../marketplace/marketplace/productUrl'; // Adjust path
-import PriceDisplay from '../../marketplace/PriceDisplay'; // Adjust path
-import { useProductPriceTiers } from '../../marketplace/hooks/useProductPriceTiers'; // Adjust path
+// Utility imports (updated paths for shared location)
+import { generateProductUrl } from '../../../../features/marketplace/marketplace/productUrl';
+import PriceDisplay from '../../../../features/marketplace/PriceDisplay';
+import { useProductPriceTiers } from '../../../../features/marketplace/hooks/useProductPriceTiers';
 import {
   formatProductForCart,
   calculatePriceForQuantity,
-} from '../../../utils/priceCalculation'; // Adjust path
+} from '../../../../utils/priceCalculation';
 
 /**
  * ProductCardBuyerContext - Renders the specific content and actions for a buyer's product card.

@@ -49,7 +49,7 @@ import {
   VisibilityOff
 } from '@mui/icons-material';
 
-import { PrimaryButton } from '../../ui';
+import { PrimaryButton } from '../../../shared/components/forms';
 import AdminAccountCreator from './AdminAccountCreator';
 import { 
   getAdminAccounts, 

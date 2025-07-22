@@ -22,7 +22,7 @@ import {
   Phone as PhoneIcon,
   Send as SendIcon,
 } from '@mui/icons-material';
-import { useBanner } from './banner/BannerContext';
+import { useBanner } from '../display/banners/BannerContext';
 
 // ✅ 1. Definimos la URL de tu función de Supabase como una constante
 const supabaseFunctionUrl =

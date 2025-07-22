@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Box, Typography, Button } from '@mui/material';
 import { Settings as SettingsIcon } from '@mui/icons-material';
-import ShippingRegionsModal from '../../../ui/ShippingRegionsModal';
+import ShippingRegionsModal from '../../../../shared/components/modals/ShippingRegionsModal';
 import ShippingRegionsDisplay from '../../../ui/ShippingRegionsDisplay';
 import { convertModalRegionsToDisplay, convertFormRegionsToDb } from '../../../../utils/shippingRegionsUtils';
 

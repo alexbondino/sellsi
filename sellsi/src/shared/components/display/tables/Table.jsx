@@ -9,7 +9,7 @@ import {
   Paper,
   Typography,
 } from '@mui/material';
-import Rows from './Rows';
+import Rows from './TableRows';
 
 const Table = ({ orders, onActionClick }) => {
   if (!orders || orders.length === 0) {

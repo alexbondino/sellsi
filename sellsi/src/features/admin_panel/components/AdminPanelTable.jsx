@@ -42,7 +42,7 @@ import {
 } from '@mui/icons-material';
 
 // Importar componentes UI existentes
-import { Widget } from '../../ui';
+import { Widget } from '../../../shared/components/layout';
 import AdminStatCard from './AdminStatCard';
 import { getSolicitudes, getEstadisticas } from '../../../domains/admin';
 

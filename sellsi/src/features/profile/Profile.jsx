@@ -12,8 +12,8 @@ import EditIcon from '@mui/icons-material/Edit';
 import CameraAltIcon from '@mui/icons-material/CameraAlt';
 import PersonIcon from '@mui/icons-material/Person';
 import ChangePasswordModal from './ChangePasswordModal';
-import ProfileImageModal from '../ui/ProfileImageModal';
-import { useBanner } from '../ui/banner/BannerContext';
+import ProfileImageModal from '../../shared/components/modals/ProfileImageModal';
+import { useBanner } from '../../shared/components/display/banners/BannerContext';
 
 // Hooks personalizados
 import { useProfileForm } from './hooks/useProfileForm';

@@ -44,7 +44,7 @@ import {
 } from '@mui/icons-material';
 import QRCode from 'react-qr-code';
 
-import { PrimaryButton } from '../../ui';
+import { PrimaryButton } from '../../../shared/components/forms';
 import { generate2FASecret, verify2FA, disable2FA } from '../../../domains/admin';
 
 // ✅ CONSTANTS

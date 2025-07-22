@@ -1,6 +1,6 @@
 import React from 'react';
 import { Box, Container } from '@mui/material';
-import BannedPageUI from '../ui/bannedpage';
+import BannedPageUI from '../../shared/components/layout/bannedpage';
 import { useBanStatus } from '../../hooks/useBanStatus';
 
 const BanPageView = () => {

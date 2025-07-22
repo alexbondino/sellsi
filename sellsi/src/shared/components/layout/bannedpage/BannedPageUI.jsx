@@ -13,7 +13,7 @@ import {
   Email as EmailIcon
 } from '@mui/icons-material';
 import BanInfo from './BanInfo';
-import TermsAndConditionsModal from '../TermsAndConditionsModal';
+import TermsAndConditionsModal from '../../modals/TermsAndConditionsModal';
 
 const BannedPageUI = ({ onContactClick, banStatus = null }) => {
   const [openTerms, setOpenTerms] = React.useState(false);

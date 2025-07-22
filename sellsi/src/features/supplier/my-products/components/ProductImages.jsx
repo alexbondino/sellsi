@@ -1,6 +1,6 @@
 import React from 'react';
 import { Box, Typography } from '@mui/material';
-import { ImageUploader } from '../../../ui';
+import { ImageUploader } from '../../../../shared/components/forms';
 
 /**
  * Componente para la gestión de imágenes del producto

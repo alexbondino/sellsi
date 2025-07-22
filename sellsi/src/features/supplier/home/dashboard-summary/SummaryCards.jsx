@@ -1,6 +1,6 @@
 import React from 'react';
 import { Box } from '@mui/material';
-import StatCard from '../../../ui/StatCard';
+import StatCard from '../../../../shared/components/display/statistics/StatCard';
 import {
   Inventory as InventoryIcon,
   AttachMoney as AttachMoneyIcon,

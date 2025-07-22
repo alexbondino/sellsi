@@ -314,7 +314,7 @@ export const ProductPageSkeleton = () => (
 
 /*
 // Ejemplo: Usar StatusChip en skeleton loaders
-import { StatusChip } from '../../ui'
+import { StatusChip } from '../../../../shared/components/display/product-card'
 
 export const ProductInfoSkeletonWithStatusChip = () => (
   <Grow in={true} timeout={800}>

@@ -46,7 +46,7 @@ import {
   AccountCircle
 } from '@mui/icons-material';
 
-import { PrimaryButton } from '../../ui';
+import { PrimaryButton } from '../../../shared/components/forms';
 import { createAdminAccount } from '../../../domains/admin';
 import { 
   FIRST_ADMIN_CONFIG, 

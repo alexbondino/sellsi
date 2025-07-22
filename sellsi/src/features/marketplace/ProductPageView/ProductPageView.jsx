@@ -48,7 +48,7 @@ const ProductHeader = React.lazy(() =>
   import('./components/ProductHeader').catch(() => ({ default: () => <div>Error al cargar header</div> }))
 )
 const LoadingOverlay = React.lazy(() => 
-  import('../../ui/LoadingOverlay').catch(() => ({ default: () => <div>Cargando...</div> }))
+  import('../../../shared/components/feedback/LoadingOverlay').catch(() => ({ default: () => <div>Cargando...</div> }))
 )
 
 // Import regular para skeleton (necesario para fallback)

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Box } from '@mui/material';
-import RequestList from '../../../ui/RequestList';
+import RequestList from '../../../../shared/components/display/RequestList';
 
 const RequestListWrapper = ({ weeklyRequests }) => (
   <Box
