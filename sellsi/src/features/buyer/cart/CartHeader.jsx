@@ -24,7 +24,7 @@ import {
   ShoppingCart as ShoppingCartIcon,
 } from '@mui/icons-material'
 import { motion } from 'framer-motion'
-import Modal, { MODAL_TYPES } from '../../ui/Modal' // Asegúrate de importar tu componente Modal correctamente
+import { Modal, MODAL_TYPES } from '../../../shared/components/feedback' // Asegúrate de importar tu componente Modal correctamente
 
 /**
  * ============================================================================

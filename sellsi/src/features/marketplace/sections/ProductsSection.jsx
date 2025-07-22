@@ -32,7 +32,7 @@ import { isProductActive, getActiveProductCountByProvider } from '../../../utils
 import ProductCard from '../../ui/product-card/ProductCard'; // Asegúrate que esta es la ruta correcta al componente principal
 import ProductCardProviderContext from '../../ui/product-card/ProductCardProviderContext'; // ✅ NUEVO: Para vista de proveedores
 import useCartStore from '../../../features/buyer/hooks/cartStore';
-import LoadingOverlay from '../../ui/LoadingOverlay';
+import { LoadingOverlay } from '../../../shared/components/feedback';
 import Fab from '@mui/material/Fab';
 import Grow from '@mui/material/Grow';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';

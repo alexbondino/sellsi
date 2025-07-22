@@ -54,7 +54,7 @@ import {
 } from '@mui/icons-material';
 
 // Importar componentes UI existentes
-import { Modal } from '../../ui';
+import { Modal } from '../../../shared/components/feedback';
 import AdminStatCard from './AdminStatCard';
 import { getUsers, getUserStats, banUser, unbanUser, verifyUser, unverifyUser, deleteUser, deleteMultipleUsers } from '../../../domains/admin';
 

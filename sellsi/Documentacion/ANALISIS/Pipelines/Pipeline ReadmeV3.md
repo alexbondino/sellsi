@@ -122,5 +122,4 @@ Incluir:
    - Áreas de mejora identificadas
 
 ## 11. Actualización
-   - Creado: `03/07/2025`
-   - Última actualización: `03/07/2025`
+   - Última actualización: 'fecha de hoy'

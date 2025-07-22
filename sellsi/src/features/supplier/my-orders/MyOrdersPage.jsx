@@ -12,7 +12,7 @@ import {
 import { useOrdersStore } from '../my-orders/ordersStore'; // Asegúrate que esta ruta sea correcta
 import Filter from '../../ui/table/Filter'; // Asegúrate que esta ruta sea correcta
 import Table from '../../ui/table/Table'; // Asegúrate que esta ruta sea correcta
-import Modal, { MODAL_TYPES } from '../../ui/Modal'; // Componente Modal genérico y sus tipos
+import { Modal, MODAL_TYPES } from '../../../shared/components/feedback'; // Componente Modal genérico y sus tipos
 import { useBanner } from '../../ui/banner/BannerContext'; // Contexto para mostrar banners
 import SideBarProvider from '../../layout/SideBar'; // Proveedor para la barra lateral
 import { dashboardThemeCore } from '../../../styles/dashboardThemeCore'; // Tema de Material-UI para el dashboard

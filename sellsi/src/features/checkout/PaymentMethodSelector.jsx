@@ -30,7 +30,7 @@ import { trackUserAction } from '../../services/security'
 // Componentes UI
 import CheckoutSummary from './CheckoutSummary'
 import PaymentMethodCard from '../ui/PaymentMethodCard'
-import CheckoutProgressStepper from '../ui/CheckoutProgressStepper'
+import { CheckoutProgressStepper } from '../../shared/components/navigation'
 
 // ============================================================================
 // COMPONENTE PRINCIPAL

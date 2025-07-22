@@ -1,5 +1,5 @@
 import React from 'react'
-import Modal, { MODAL_TYPES } from '../../../ui/Modal'
+import { Modal, MODAL_TYPES } from '../../../../shared/components/feedback'
 import { Box, Typography } from '@mui/material'
 import { generateQuotationPDF } from '../utils/quotationPDFGeneratorDynamic.js' // Versión con importación dinámica
 

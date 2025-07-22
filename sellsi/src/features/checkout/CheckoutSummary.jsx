@@ -36,7 +36,7 @@ import { calculatePriceForQuantity } from '../../utils/priceCalculation'
 import { useResponsiveThumbnail } from '../../hooks/useResponsiveThumbnail' // Hook para thumbnails responsivos
 
 // Componentes UI
-import SecurityBadge from '../ui/SecurityBadge'
+import { SecurityBadge } from '../../shared/components/feedback'
 
 // ============================================================================
 // COMPONENTE PRINCIPAL

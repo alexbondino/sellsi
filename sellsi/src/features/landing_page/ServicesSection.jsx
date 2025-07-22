@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Box, Typography, Button, Grid, Fade } from '@mui/material';
-import Wizard from '../ui/wizard/Wizard';
+import { Wizard } from '../../shared/components/navigation';
 import { SERVICES_DATA } from './constants.jsx';
 
 /**

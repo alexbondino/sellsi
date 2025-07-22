@@ -36,7 +36,7 @@ import { toast } from 'react-hot-toast';
 // Components
 import SideBarProvider from '../../layout/SideBar';
 import ProductCard from '../../ui/product-card/ProductCard';
-import Modal, { MODAL_TYPES } from '../../ui/Modal'; // <--- Importación del nuevo componente Modal
+import { Modal, MODAL_TYPES } from '../../../shared/components/feedback'; // <--- Importación del nuevo componente Modal
 
 // Hooks y stores
 import { useSupplierProducts } from '../hooks/useSupplierProducts';

@@ -19,7 +19,7 @@ export const generateQuotationPDF = async ({
     const React = await import('react')
     const { supabase } = await import('../../../../services/supabase')
 
-    // Definir estilos
+    // Definir estilos - ACTUALIZADOS PARA COINCIDIR CON HTML
     const styles = StyleSheet.create({
       page: {
         fontFamily: 'Helvetica',
@@ -45,63 +45,60 @@ export const generateQuotationPDF = async ({
         alignItems: 'flex-end',
       },
       title: {
-        fontSize: 24,
+        fontSize: 20,
         fontWeight: 'bold',
-        color: '#1976d2',
-        marginBottom: 10,
+        color: '#1565c0',
+        marginBottom: 8,
       },
       subtitle: {
-        fontSize: 14,
-        color: '#666',
-        marginBottom: 5,
+        fontSize: 10,
+        color: '#000',
+        marginBottom: 3,
       },
-      section: {
-        marginBottom: 15,
-        padding: 12,
-        backgroundColor: '#f8f9fa',
-        borderRadius: 4,
+      // Estilos para tabla (idénticos a HTML)
+      table: {
+        width: '85%',
+        marginBottom: 20,
+        border: '1px solid #000',
       },
-      sectionTitle: {
-        fontSize: 14,
-        fontWeight: 'bold',
-        marginBottom: 8,
-        color: '#1976d2',
-      },
-      row: {
+      tableHeader: {
         flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 4,
+        backgroundColor: '#f5f5f5',
+        borderBottom: '1px solid #000',
+        padding: '8px 5px',
       },
-      label: {
-        fontSize: 11,
-        color: '#666',
+      tableRow: {
+        flexDirection: 'row',
+        borderBottom: '1px solid #000',
+        padding: '8px 5px',
+      },
+      tableCell: {
         flex: 1,
+        textAlign: 'center',
+        borderRight: '0.5px solid #ccc',
+        paddingRight: 5,
       },
-      value: {
-        fontSize: 11,
-        fontWeight: 'bold',
-        color: '#333',
-        textAlign: 'right',
+      // Estilos para totales (idénticos a HTML)
+      totalsSection: {
+        marginTop: 20,
+        flexDirection: 'column',
+        alignItems: 'flex-end',
       },
       totalRow: {
         flexDirection: 'row',
+        width: 200,
         justifyContent: 'space-between',
-        alignItems: 'center',
-        marginTop: 8,
-        paddingTop: 8,
-        borderTopWidth: 1,
-        borderTopColor: '#ddd',
+        marginBottom: 5,
       },
       totalLabel: {
-        fontSize: 12,
+        fontSize: 11,
         fontWeight: 'bold',
-        color: '#1976d2',
+        color: '#000',
       },
       totalValue: {
-        fontSize: 12,
+        fontSize: 11,
         fontWeight: 'bold',
-        color: '#1976d2',
+        color: '#000',
       },
       footer: {
         position: 'absolute',
@@ -126,74 +123,119 @@ export const generateQuotationPDF = async ({
     const iva = totalNeto * 0.19
     const totalFinal = totalNeto + iva
 
-    // Componente del documento PDF
+    // Obtener información del usuario actual
+    let currentUserName = 'Usuario'
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        const { data: profile } = await supabase
+          .from('users')
+          .select('user_nm')
+          .eq('user_id', user.id)
+          .single()
+        currentUserName = profile?.user_nm || 'Usuario'
+      }
+    } catch (e) {
+      // Si hay error, dejar 'Usuario'
+      console.log('No se pudo obtener el nombre del usuario:', e)
+    }
+
+    // Componente del documento PDF - ESTRUCTURA IDÉNTICA A DEV HTML
     const QuotationDocument = () => (
       React.createElement(Document, null,
         React.createElement(Page, { size: 'A4', style: styles.page },
-          // Header
+          // Header con logo (replicando estructura HTML)
           React.createElement(View, { style: styles.header },
             React.createElement(View, null,
               React.createElement(Text, { style: styles.title }, 'COTIZACIÓN'),
-              React.createElement(Text, { style: styles.subtitle }, `Fecha: ${new Date().toLocaleDateString('es-CL')}`)
+              React.createElement(Text, { style: styles.subtitle }, `FECHA: ${new Date().toLocaleDateString('es-CL')}`)
             ),
             React.createElement(View, { style: styles.headerRight },
-              React.createElement(Text, { style: styles.subtitle }, 'Sellsi Platform'),
-              React.createElement(Text, { style: { fontSize: 10, color: '#999' } }, 'www.sellsi.com')
+              React.createElement(Text, { style: styles.subtitle }, `PROVEEDOR: ${supplier}`)
             )
           ),
 
-          // Información del producto
-          React.createElement(View, { style: styles.section },
-            React.createElement(Text, { style: styles.sectionTitle }, 'INFORMACIÓN DEL PRODUCTO'),
-            React.createElement(View, { style: styles.row },
-              React.createElement(Text, { style: styles.label }, 'Producto:'),
-              React.createElement(Text, { style: styles.value }, productName)
+          // Información del cliente
+          React.createElement(View, { style: { marginBottom: 8 } },
+            React.createElement(Text, { style: { fontSize: 11, color: '#000' } }, `Estimado: ${currentUserName}`)
+          ),
+          React.createElement(View, { style: { marginBottom: 15 } },
+            React.createElement(Text, { style: { fontSize: 11, color: '#000' } }, 
+              'Adjuntamos cotización para el siguiente producto adjunto:')
+          ),
+
+          // Tabla de productos (replicando estructura HTML)
+          React.createElement(View, { style: styles.table },
+            // Header de tabla
+            React.createElement(View, { style: styles.tableHeader },
+              React.createElement(View, { style: [styles.tableCell, { fontWeight: 'bold' }] },
+                React.createElement(Text, { style: { fontSize: 11, fontWeight: 'bold' } }, 'Ítem')
+              ),
+              React.createElement(View, { style: [styles.tableCell, { fontWeight: 'bold' }] },
+                React.createElement(Text, { style: { fontSize: 11, fontWeight: 'bold' } }, 'Cantidad')
+              ),
+              React.createElement(View, { style: [styles.tableCell, { fontWeight: 'bold' }] },
+                React.createElement(Text, { style: { fontSize: 11, fontWeight: 'bold' } }, 'Precio Unitario')
+              ),
+              React.createElement(View, { style: [styles.tableCell, { fontWeight: 'bold' }] },
+                React.createElement(Text, { style: { fontSize: 11, fontWeight: 'bold' } }, 'Total')
+              )
             ),
-            React.createElement(View, { style: styles.row },
-              React.createElement(Text, { style: styles.label }, 'Proveedor:'),
-              React.createElement(Text, { style: styles.value }, supplier)
-            ),
-            React.createElement(View, { style: styles.row },
-              React.createElement(Text, { style: styles.label }, 'Cantidad:'),
-              React.createElement(Text, { style: styles.value }, `${quantity} unidades`)
-            ),
-            React.createElement(View, { style: styles.row },
-              React.createElement(Text, { style: styles.label }, 'Precio unitario:'),
-              React.createElement(Text, { style: styles.value }, `$${unitPrice?.toLocaleString('es-CL')} CLP`)
+            // Fila de datos
+            React.createElement(View, { style: styles.tableRow },
+              React.createElement(View, { style: styles.tableCell },
+                React.createElement(Text, { style: { fontSize: 10 } }, productName)
+              ),
+              React.createElement(View, { style: styles.tableCell },
+                React.createElement(Text, { style: { fontSize: 10 } }, quantity?.toLocaleString('es-CL'))
+              ),
+              React.createElement(View, { style: styles.tableCell },
+                React.createElement(Text, { style: { fontSize: 10 } }, `$${unitPrice?.toLocaleString('es-CL')}`)
+              ),
+              React.createElement(View, { style: styles.tableCell },
+                React.createElement(Text, { style: { fontSize: 10 } }, `$${totalNeto?.toLocaleString('es-CL')}`)
+              )
             )
           ),
 
-          // Resumen de costos
-          React.createElement(View, { style: styles.section },
-            React.createElement(Text, { style: styles.sectionTitle }, 'RESUMEN DE COSTOS'),
-            React.createElement(View, { style: styles.row },
-              React.createElement(Text, { style: styles.label }, 'Subtotal (neto):'),
-              React.createElement(Text, { style: styles.value }, `$${totalNeto?.toLocaleString('es-CL')} CLP`)
-            ),
-            React.createElement(View, { style: styles.row },
-              React.createElement(Text, { style: styles.label }, 'IVA (19%):'),
-              React.createElement(Text, { style: styles.value }, `$${iva?.toLocaleString('es-CL')} CLP`)
+          // Totales (estructura idéntica a HTML)
+          React.createElement(View, { style: styles.totalsSection },
+            React.createElement(View, { style: styles.totalRow },
+              React.createElement(Text, { style: styles.totalLabel }, 'Total Neto:'),
+              React.createElement(Text, { style: styles.totalValue }, `$${totalNeto?.toLocaleString('es-CL')}`)
             ),
             React.createElement(View, { style: styles.totalRow },
-              React.createElement(Text, { style: styles.totalLabel }, 'TOTAL:'),
-              React.createElement(Text, { style: styles.totalValue }, `$${totalFinal?.toLocaleString('es-CL')} CLP`)
+              React.createElement(Text, { style: styles.totalLabel }, 'IVA (19%):'),
+              React.createElement(Text, { style: styles.totalValue }, `$${iva?.toLocaleString('es-CL')}`)
+            ),
+            React.createElement(View, { style: [styles.totalRow, { borderTopWidth: 1, borderTopColor: '#000', paddingTop: 5 }] },
+              React.createElement(Text, { style: [styles.totalLabel, { fontSize: 12 }] }, 'Total:'),
+              React.createElement(Text, { style: [styles.totalValue, { fontSize: 12 }] }, `$${totalFinal?.toLocaleString('es-CL')}`)
             )
           ),
 
-          // Información adicional
-          React.createElement(View, { style: [styles.section, { marginTop: 30 }] },
-            React.createElement(Text, { style: styles.sectionTitle }, 'INFORMACIÓN IMPORTANTE'),
-            React.createElement(Text, { style: { fontSize: 10, color: '#666', lineHeight: 1.4 } }, 
-              '• Esta cotización es válida por 30 días desde la fecha de emisión.\n' +
-              '• Los precios están sujetos a disponibilidad de stock.\n' +
-              '• Para proceder con la compra, contacte directamente al proveedor.\n' +
-              '• Sellsi actúa como plataforma intermediaria.'
-            )
+          // Notas (idénticas a HTML - 48 horas)
+          React.createElement(View, { style: { marginTop: 15 } },
+            React.createElement(Text, { style: { fontSize: 10, color: '#000', fontStyle: 'italic', marginBottom: 3 } }, 
+              '* La presente cotización tendrá una vigencia de 48 horas, y estará sujeta a la disponibilidad del proveedor.')
+          ),
+          React.createElement(View, { style: { marginBottom: 30 } },
+            React.createElement(Text, { style: { fontSize: 10, color: '#000', fontStyle: 'italic' } }, 
+              '* Los precios están expresados en pesos chilenos (CLP).')
           ),
 
-          // Footer
-          React.createElement(View, { style: styles.footer },
-            React.createElement(Text, null, 'Generado por Sellsi Platform - Tu marketplace B2B de confianza')
+          // Firma (idéntica a HTML)
+          React.createElement(View, { style: { textAlign: 'center', marginTop: 30 } },
+            React.createElement(Text, { style: { fontSize: 12, color: '#000' } }, 'Atentamente,')
+          ),
+          React.createElement(View, { style: { textAlign: 'center', marginTop: 5 } },
+            React.createElement(Text, { style: { fontSize: 12, fontWeight: 'bold', color: '#1565c0' } }, 'Equipo Sellsi')
+          ),
+          React.createElement(View, { style: { textAlign: 'center', marginTop: 3 } },
+            React.createElement(Text, { style: { fontSize: 10, color: '#000' } }, '+569 6310 9665')
+          ),
+          React.createElement(View, { style: { textAlign: 'center', marginTop: 3 } },
+            React.createElement(Text, { style: { fontSize: 10, color: '#000' } }, 'contacto@sellsi.com')
           )
         )
       )

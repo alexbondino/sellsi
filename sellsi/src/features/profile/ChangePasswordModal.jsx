@@ -13,7 +13,7 @@ import {
   CircularProgress,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
-import PasswordRequirements from '../ui/PasswordRequirements';
+import { PasswordRequirements } from '../../shared/components/feedback';
 import { supabase } from '../../services/supabase';
 import { trackUserAction } from '../../services/security';
 

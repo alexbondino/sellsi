@@ -19,14 +19,14 @@ import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import { supabase } from '../../services/supabase';
 import useCartStore from '../buyer/hooks/cartStore';
 import ContactModal from '../ui/ContactModal';
-import Modal, { MODAL_TYPES } from '../ui/Modal';
+import { Modal, MODAL_TYPES } from '../../shared/components/feedback';
 // Lazy imports para evitar bundling mixto
 const Login = React.lazy(() => import('../login/Login'));
 const Register = React.lazy(() => import('../register/Register'));
 import { setSkipScrollToTopOnce } from '../ui/ScrollToTop';
 
 // Importa el nuevo componente reutilizable y ahora verdaderamente controlado
-import Switch from '../ui/Switch'; // Ajusta la ruta si es diferente
+import { Switch } from '../../shared/components/navigation'; // Ajusta la ruta si es diferente
 
 export default function TopBar({
   session,

@@ -41,7 +41,7 @@ import {
   calculatePriceForQuantity,
   formatProductForCart,
 } from '../../../utils/priceCalculation'
-import Modal, { MODAL_TYPES } from '../../ui/Modal'
+import { Modal, MODAL_TYPES } from '../../../shared/components/feedback'
 import { useResponsiveThumbnail } from '../../../hooks/useResponsiveThumbnail' // Nuevo hook
 import ShippingDisplay from './components/ShippingDisplay'
 
