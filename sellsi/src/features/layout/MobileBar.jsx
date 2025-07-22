@@ -19,7 +19,7 @@ import {
   Person as PersonIcon,
 } from '@mui/icons-material';
 import { useLocation, useNavigate } from 'react-router-dom';
-import useCartStore from '../buyer/hooks/cartStore';
+import useCartStore from '../../shared/stores/cart/cartStore';
 
 // Define los ítems de menú para cada rol
 const buyerMenuItems = [

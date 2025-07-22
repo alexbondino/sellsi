@@ -11,7 +11,7 @@ import {
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import AddIcon from '@mui/icons-material/Add';
-import { useSupplierDashboard } from './hooks/useSupplierDashboard';
+import { useSupplierDashboard } from '../../../domains/supplier/hooks/dashboard-management/useSupplierDashboard';
 import SideBarProvider from '../../layout/SideBar';
 import { dashboardThemeCore } from '../../../styles/dashboardThemeCore';
 import { SPACING_BOTTOM_MAIN } from '../../../styles/layoutSpacing';

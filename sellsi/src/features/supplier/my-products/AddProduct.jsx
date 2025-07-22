@@ -35,8 +35,8 @@ import { fetchProductRegions, saveProductRegions } from '../../../services/marke
 import { convertDbRegionsToForm, convertFormRegionsToDb } from '../../../utils/shippingRegionsUtils';
 
 // Hooks y utilidades
-import { useSupplierProducts } from '../hooks/useSupplierProducts';
-import { useProductForm } from '../hooks/useProductForm';
+import { useSupplierProducts } from '../../../domains/supplier/hooks/useSupplierProducts';
+import { useProductForm } from '../../../domains/supplier/hooks/useProductForm';
 import { useProductValidation } from './hooks/useProductValidation';
 import { calculateEarnings } from './utils/productCalculations';
 import { dashboardThemeCore } from '../../../styles/dashboardThemeCore';

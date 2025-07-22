@@ -18,7 +18,7 @@ import {
 } from '@mui/icons-material';
 import ProductPageView from './ProductPageView';
 import { supabase } from '../../../services/supabase';
-import useCartStore from '../../buyer/hooks/cartStore';
+import useCartStore from '../../../shared/stores/cart/cartStore';
 import { extractProductIdFromSlug } from '../../marketplace/marketplace/productUrl';
 
 const ProductPageWrapper = ({ isLoggedIn }) => {

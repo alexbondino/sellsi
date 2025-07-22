@@ -37,7 +37,7 @@ import { SPACING_BOTTOM_MAIN } from '../../styles/layoutSpacing';
 import { supabase } from '../../services/supabase';
 
 import ProductCard from '../../shared/components/display/product-card/ProductCard';
-import useCartStore from '../buyer/hooks/cartStore';
+import useCartStore from '../../shared/stores/cart/cartStore';
 import { toast } from 'react-hot-toast';
 import { filterActiveProducts } from '../../utils/productActiveStatus';
 import { CATEGORIAS } from './CategoryNavigation/CategoryNavigation';

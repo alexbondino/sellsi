@@ -17,7 +17,7 @@ import MenuIcon from '@mui/icons-material/Menu';
 import PersonIcon from '@mui/icons-material/Person';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import { supabase } from '../../services/supabase';
-import useCartStore from '../buyer/hooks/cartStore';
+import useCartStore from '../../shared/stores/cart/cartStore';
 import ContactModal from '../../shared/components/modals/ContactModal';
 import { Modal, MODAL_TYPES } from '../../shared/components/feedback';
 // Lazy imports para evitar bundling mixto

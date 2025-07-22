@@ -11,8 +11,6 @@
 // - LayoutProvider: Gestión de layout y sidebar
 // - AppRouter: Routing y lazy loading
 // - AppShell: Layout principal con TopBar, SideBar, Content
-//
-// Backup del código original disponible en: App.jsx.backup
 // ============================================================================
 
 import App from './app/App.jsx';

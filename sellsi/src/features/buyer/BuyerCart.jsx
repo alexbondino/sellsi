@@ -33,7 +33,7 @@ import { ThemeProvider } from '@mui/material/styles';
 import SideBarProvider from '../layout/SideBar';
 import { dashboardThemeCore } from '../../styles/dashboardThemeCore';
 import { SPACING_BOTTOM_MAIN } from '../../styles/layoutSpacing';
-import useCartStore from './hooks/cartStore';
+import useCartStore from '../../shared/stores/cart/cartStore';
 import {
   SHIPPING_OPTIONS,
   DISCOUNT_CODES,

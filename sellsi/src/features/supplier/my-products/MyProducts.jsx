@@ -39,11 +39,11 @@ import ProductCard from '../../../shared/components/display/product-card/Product
 import { Modal, MODAL_TYPES } from '../../../shared/components/feedback'; // <--- Importación del nuevo componente Modal
 
 // Hooks y stores
-import { useSupplierProducts } from '../hooks/useSupplierProducts';
+import { useSupplierProducts } from '../../../domains/supplier/hooks/useSupplierProducts';
 import {
   useLazyProducts,
   useProductAnimations,
-} from '../hooks/useLazyProducts';
+} from '../../../domains/supplier/hooks/useLazyProducts';
 import { dashboardThemeCore } from '../../../styles/dashboardThemeCore';
 import { SPACING_BOTTOM_MAIN } from '../../../styles/layoutSpacing';
 import { formatPrice } from '../../../shared/utils/formatters';

@@ -13,7 +13,7 @@ import { dashboardThemeCore } from '../../styles/dashboardThemeCore'
 import { SPACING_BOTTOM_MAIN } from '../../styles/layoutSpacing'
 
 // Hooks del carrito
-import useCartStore from '../buyer/hooks/cartStore'
+import useCartStore from '../../shared/stores/cart/cartStore'
 
 // Componentes del checkout
 import PaymentMethodSelector from './PaymentMethodSelector'

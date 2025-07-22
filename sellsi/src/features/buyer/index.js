@@ -19,7 +19,7 @@ export { default as BuyerPerformance } from './BuyerPerformance.jsx'
 export { default as StatCard } from './components/StatCard.jsx'
 
 // Hooks
-export { default as useCartStore } from './hooks/cartStore.js'
+export { default as useCartStore } from '../../shared/stores/cart/cartStore.js'
 
 // Exportar todos los componentes del carrito
 export * from './cart'

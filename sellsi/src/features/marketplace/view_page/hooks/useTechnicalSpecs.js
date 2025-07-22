@@ -3,7 +3,7 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { supabase } from '../../../../services/supabase'
 import { getProductSpecifications } from '../../../../services/marketplace'
 import { extractProductIdFromSlug } from '../../marketplace/productUrl'
-import useCartStore from '../../../buyer/hooks/cartStore'
+import useCartStore from '../../../../shared/stores/cart/cartStore'
 import { formatProductForCart } from '../../../../utils/priceCalculation'
 import { toast } from 'react-hot-toast'
 

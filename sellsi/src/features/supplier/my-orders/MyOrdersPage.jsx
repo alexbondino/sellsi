@@ -9,7 +9,7 @@ import {
   TextField,
   ThemeProvider, // Necesario para aplicar el tema
 } from '@mui/material';
-import { useOrdersStore } from '../my-orders/ordersStore'; // Asegúrate que esta ruta sea correcta
+import { useOrdersStore } from '../../../shared/stores/orders/ordersStore'; // Actualizado a nueva ubicación
 import TableFilter from '../../../shared/components/display/tables/TableFilter'; // Asegúrate que esta ruta sea correcta
 import Table from '../../../shared/components/display/tables/Table'; // Asegúrate que esta ruta sea correcta
 import { Modal, MODAL_TYPES } from '../../../shared/components/feedback'; // Componente Modal genérico y sus tipos

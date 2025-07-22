@@ -31,7 +31,7 @@ import { toast } from 'react-hot-toast';
 import { isProductActive, getActiveProductCountByProvider } from '../../../utils/productActiveStatus';
 import ProductCard from '../../../shared/components/display/product-card/ProductCard'; // Asegúrate que esta es la ruta correcta al componente principal
 import ProductCardProviderContext from '../../../shared/components/display/product-card/ProductCardProviderContext'; // ✅ NUEVO: Para vista de proveedores
-import useCartStore from '../../../features/buyer/hooks/cartStore';
+import useCartStore from '../../../shared/stores/cart/cartStore';
 import { LoadingOverlay } from '../../../shared/components/feedback';
 import Fab from '@mui/material/Fab';
 import Grow from '@mui/material/Grow';

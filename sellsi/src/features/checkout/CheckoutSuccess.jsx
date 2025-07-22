@@ -25,7 +25,7 @@ import { toast } from 'react-hot-toast'
 
 // Servicios
 import checkoutService from './services/checkoutService.js'
-import useCartStore from '../buyer/hooks/cartStore.js'
+import useCartStore from '../../shared/stores/cart/cartStore.js'
 
 // ============================================================================
 // COMPONENTE PRINCIPAL
