@@ -52,8 +52,8 @@ export const QUERY_KEYS = {
 // Configuraciones de cache específicas por tipo
 export const CACHE_CONFIGS = {
   THUMBNAILS: {
-    staleTime: 15 * 60 * 1000, // 15 minutos
-    cacheTime: 60 * 60 * 1000, // 1 hora
+    staleTime: 5 * 60 * 1000,  // 5 minutos (reducido de 15min)
+    cacheTime: 15 * 60 * 1000, // 15 minutos (reducido de 1h)
   },
   
   PRODUCT_DATA: {

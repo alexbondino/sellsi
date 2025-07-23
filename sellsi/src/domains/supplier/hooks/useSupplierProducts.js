@@ -1,38 +1,47 @@
 /**
  * ============================================================================
- * USE SUPPLIER PRODUCTS - HOOK PRINCIPAL COMBINADO
+ * USE SUPPLIER PRODUCTS - FACADE PRINCIPAL REFACTORIZADO
  * ============================================================================
  *
- * Hook principal que combina los stores especializados y proporciona
+ * Hook facade que combina los hooks especializados y proporciona
  * una interfaz unificada para la gestión de productos del proveedor.
+ * 
+ * ARQUITECTURA POST-REFACTOR:
+ * - CRUD básico: useSupplierProductsCRUD
+ * - Gestión de imágenes: useProductImages
+ * - Especificaciones: useProductSpecifications
+ * - Tramos de precio: useProductPriceTiers
+ * - Procesamiento background: useProductBackground
+ * - Limpieza: useProductCleanup
+ * - Filtros: useSupplierProductFilters (se mantiene)
  */
 
-import { useMemo } from 'react'
-import useSupplierProductsBase from './useSupplierProductsBase'
+import { useMemo, useEffect } from 'react'
+import useSupplierProductsCRUD from './crud/useSupplierProductsCRUD'
+import useProductImages from './images/useProductImages'
+import useProductSpecifications from './specifications/useProductSpecifications'
+import useProductPriceTiers from './pricing/useProductPriceTiers'
+import useProductBackground from './background/useProductBackground'
+import useProductCleanup from './cleanup/useProductCleanup'
 import useSupplierProductFilters from './useSupplierProductFilters'
 import { isProductActive } from '../../../utils/productActiveStatus'
+import { supabase } from '../../../services/supabase'
 
 /**
- * Hook principal para gestión de productos del proveedor
- * Combina funcionalidad de CRUD y filtros
+ * Hook facade para gestión completa de productos del proveedor
+ * Inyección de dependencias opcional para testing y flexibilidad
  */
-export const useSupplierProducts = () => {
-  // Store base de productos
-  const {
-    products,
-    loading,
-    error,
-    operationStates,
-    loadProducts,
-    createProduct,
-    updateProduct,
-    deleteProduct,
-    getProductById,
-    clearError,
-    reset: resetProducts,
-  } = useSupplierProductsBase()
+export const useSupplierProducts = (options = {}) => {
+  // Inyección de dependencias con defaults
+  const crud = options.crudHook || useSupplierProductsCRUD()
+  const images = options.imagesHook || useProductImages()
+  const specifications = options.specificationsHook || useProductSpecifications()
+  const priceTiers = options.priceTiersHook || useProductPriceTiers()
+  const background = options.backgroundHook || useProductBackground()
+  const cleanup = options.cleanupHook || useProductCleanup()
+  const filters = options.filtersHook || useSupplierProductFilters()
 
-  // Store de filtros
+  // Store de filtros (mantenido tal como estaba)
   const {
     searchTerm,
     categoryFilter,
@@ -55,13 +64,53 @@ export const useSupplierProducts = () => {
     getFiltersSummary,
     setPresetFilter,
     reset: resetFilters,
-  } = useSupplierProductFilters()
+  } = filters
 
-  // Productos filtrados (calculado)
-  const filteredProducts = useMemo(() => {
-    return applyFilters(products)
+  // Estado consolidado (loading principal solo para CRUD, otros hooks no bloquean UI)
+  const loading = crud.loading
+
+  // Loading específico para operaciones (sin bloquear UI principal)
+  const operationLoading = images.loading || specifications.loading || 
+                          priceTiers.loading || cleanup.loading || background.hasActiveTasks()
+
+  // Error consolidado (prioridad: crud > images > specs > pricing > cleanup)
+  const error = crud.error || images.error || specifications.error || 
+                priceTiers.error || cleanup.error || background.error
+
+  // Estado de procesamiento consolidado (combina todos los tipos de procesamiento)
+  const consolidatedProcessing = useMemo(() => {
+    const processing = {}
+    
+    // Función helper para agregar estados de procesamiento
+    const addProcessingStates = (stateObj) => {
+      if (stateObj && typeof stateObj === 'object') {
+        Object.entries(stateObj).forEach(([productId, isProcessing]) => {
+          if (isProcessing === true) {
+            processing[productId] = true
+          }
+        })
+      }
+    }
+    
+    // Agregar todos los tipos de procesamiento
+    addProcessingStates(images.processingImages)
+    addProcessingStates(specifications.processingSpecs)
+    addProcessingStates(priceTiers.processingTiers)
+    addProcessingStates(background.backgroundTasks)
+    
+    return processing
   }, [
-    products,
+    images.processingImages,
+    specifications.processingSpecs,
+    priceTiers.processingTiers,
+    background.backgroundTasks
+  ])
+
+  // Productos filtrados (calculado usando el store de filtros)
+  const filteredProducts = useMemo(() => {
+    return applyFilters(crud.products)
+  }, [
+    crud.products,
     searchTerm,
     categoryFilter,
     statusFilter,
@@ -74,16 +123,16 @@ export const useSupplierProducts = () => {
 
   // Estadísticas (calculadas)
   const stats = useMemo(() => {
-    const total = products.length
+    const total = crud.products.length
     // ✅ USAR NUEVA LÓGICA: productos realmente activos (stock >= compra mínima)
-    const active = products.filter(isProductActive).length
-    const inStock = products.filter((p) => (p.productqty || 0) > 0).length
-    const lowStock = products.filter((p) => {
+    const active = crud.products.filter(isProductActive).length
+    const inStock = crud.products.filter((p) => (p.productqty || 0) > 0).length
+    const lowStock = crud.products.filter((p) => {
       const stock = p.productqty || 0
       return stock > 0 && stock <= 10
     }).length
-    const outOfStock = products.filter((p) => (p.productqty || 0) === 0).length
-    const totalValue = products.reduce(
+    const outOfStock = crud.products.filter((p) => (p.productqty || 0) === 0).length
+    const totalValue = crud.products.reduce(
       (sum, p) => sum + (p.price || 0) * (p.productqty || 0),
       0
     )
@@ -98,10 +147,37 @@ export const useSupplierProducts = () => {
       totalValue,
       averagePrice:
         total > 0
-          ? products.reduce((sum, p) => sum + (p.price || 0), 0) / total
+          ? crud.products.reduce((sum, p) => sum + (p.price || 0), 0) / total
           : 0,
     }
-  }, [products])
+  }, [crud.products])
+
+  // ============================================================================
+  // EFECTOS - CARGA AUTOMÁTICA DE DATOS
+  // ============================================================================
+
+  /**
+   * Cargar productos automáticamente cuando el hook se monta
+   */
+  useEffect(() => {
+    const loadInitialData = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        
+        if (session?.user?.id) {
+          // Cargar productos si no están ya cargados Y no está cargando
+          if (crud.products.length === 0 && !crud.loading) {
+            console.log('[DEBUG] Loading initial products for supplier:', session.user.id)
+            await crud.loadProducts(session.user.id)
+          }
+        }
+      } catch (error) {
+        console.error('Error loading initial supplier products:', error)
+      }
+    }
+
+    loadInitialData()
+  }, [crud.products.length, crud.loading]) // Dependencias específicas para evitar loops
 
   // Productos para UI (con formato mejorado)
   const uiProducts = useMemo(() => {
@@ -140,7 +216,7 @@ export const useSupplierProducts = () => {
         const principal = product.images.find((img) => img.is_primary)
         imagenPrincipal = principal ? principal.image_url : imagenes[0]
         
-        // ✅ NUEVO: Obtener thumbnail_url de la imagen principal
+        // Obtener thumbnail_url de la imagen principal
         if (principal && principal.thumbnail_url) {
           thumbnailUrl = principal.thumbnail_url
         } else if (product.images[0]?.thumbnail_url) {
@@ -154,8 +230,8 @@ export const useSupplierProducts = () => {
         supplier_id: product.supplier_id,
         nombre: product.productnm,
         imagen: imagenPrincipal,
-        thumbnail_url: thumbnailUrl, // ✅ NUEVO: Agregar thumbnail_url
-        imagenes,
+        thumbnail_url: thumbnailUrl,
+        imagenes: imagenes,
         precio: product.price,
         categoria: product.category,
         stock: product.productqty,
@@ -171,7 +247,6 @@ export const useSupplierProducts = () => {
         tramoMax,
         tramoPrecioMin,
         tramoPrecioMax,
-        // ✅ NUEVO: Incluir regiones de despacho
         delivery_regions: product.delivery_regions || [],
       }
     })
@@ -179,23 +254,102 @@ export const useSupplierProducts = () => {
 
   // Reset completo
   const reset = () => {
-    resetProducts()
+    crud.clearError()
+    images.clearError()
+    specifications.clearError()
+    priceTiers.clearError()
+    cleanup.clearError()
+    background.clearError()
     resetFilters()
   }
 
+  // ============================================================================
+  // API UNIFICADA FACADE
+  // ============================================================================
+
   return {
-    // Datos
-    products,
+    // ========================================
+    // DATOS PRINCIPALES
+    // ========================================
+    products: crud.products,
     filteredProducts,
     uiProducts,
     stats,
 
-    // Estados
-    loading,
+    // ========================================
+    // ESTADOS CONSOLIDADOS
+    // ========================================
+    loading, // Solo CRUD loading (para ProductGrid principal)
+    operationLoading, // Loading de operaciones específicas
     error,
-    operationStates,
+    operationStates: {
+      ...crud.operationStates,
+      processing: consolidatedProcessing, // ✅ Estado consolidado para ProductCard
+      processingImages: images.processingImages,
+      processingSpecs: specifications.processingSpecs,
+      processingTiers: priceTiers.processingTiers,
+      backgroundTasks: background.backgroundTasks
+    },
 
-    // Filtros
+    // ========================================
+    // OPERACIONES PRINCIPALES (FACADE)
+    // ========================================
+    
+    // CRUD básico
+    loadProducts: crud.loadProducts,
+    createProduct: (productData) => background.createCompleteProduct(productData, {
+      crudHook: crud,
+      imagesHook: images,
+      specificationsHook: specifications,
+      priceTiersHook: priceTiers
+    }),
+    updateProduct: (productId, updates) => background.updateCompleteProduct(productId, updates, {
+      crudHook: crud,
+      imagesHook: images,
+      specificationsHook: specifications,
+      priceTiersHook: priceTiers
+    }),
+    deleteProduct: crud.deleteProduct,
+
+    // Operaciones especializadas (acceso directo si se necesita)
+    processImages: async (productId, imagesList) => {
+      console.log('[DEBUG] Starting processImages for product:', productId)
+      const result = await images.processProductImages(productId, imagesList)
+      
+      // Si el procesamiento fue exitoso, refrescar el producto para mostrar las nuevas imágenes
+      if (result.success) {
+        try {
+          console.log('[DEBUG] Image processing successful, refreshing product:', productId)
+          const refreshResult = await crud.refreshProduct(productId)
+          
+          if (refreshResult.success) {
+            console.log('[DEBUG] Product refreshed successfully:', refreshResult.data)
+            
+            // FORZAR UN RE-RENDER ADICIONAL con un pequeño delay
+            // para asegurar que React detecte el cambio
+            setTimeout(() => {
+              console.log('[DEBUG] Triggering additional refresh...')
+              crud.refreshProduct(productId)
+            }, 100)
+          } else {
+            console.error('[DEBUG] Product refresh failed:', refreshResult.error)
+          }
+        } catch (error) {
+          console.warn('Error refreshing product after image processing:', error)
+        }
+      } else {
+        console.error('[DEBUG] Image processing failed:', result.error)
+      }
+      
+      return result
+    },
+    processSpecifications: specifications.processProductSpecifications,
+    processPriceTiers: priceTiers.processPriceTiers,
+    cleanupOrphanedFiles: cleanup.cleanupOrphanedFiles,
+
+    // ========================================
+    // FILTROS (DELEGATION)
+    // ========================================
     searchTerm,
     categoryFilter,
     sortBy,
@@ -205,14 +359,6 @@ export const useSupplierProducts = () => {
     priceRange,
     dateRange,
     activeFiltersCount,
-
-    // Acciones CRUD
-    loadProducts,
-    createProduct,
-    updateProduct,
-    deleteProduct,
-
-    // Acciones de filtros
     setSearchTerm,
     setCategoryFilter,
     setStatusFilter,
@@ -223,10 +369,40 @@ export const useSupplierProducts = () => {
     clearFilters,
     setPresetFilter,
 
-    // Utilidades
-    getProductById,
-    getFiltersSummary,
-    clearError,
+    // ========================================
+    // UTILIDADES
+    // ========================================
+    clearError: () => {
+      crud.clearError()
+      images.clearError()
+      specifications.clearError()
+      priceTiers.clearError()
+      cleanup.clearError()
+      background.clearError()
+    },
     reset,
+    getFiltersSummary,
+
+    // ========================================
+    // HOOKS INDIVIDUALES (para casos avanzados)
+    // ========================================
+    hooks: {
+      crud,
+      images,
+      specifications,
+      priceTiers,
+      background,
+      cleanup,
+      filters
+    },
+
+    // ========================================
+    // BACKWARD COMPATIBILITY
+    // ========================================
+    // Mantener compatibilidad con código existente
+    getProductById: (productId) => crud.products.find(p => p.productid === productId),
+    refreshProduct: crud.refreshProduct,
   }
 }
+
+export default useSupplierProducts

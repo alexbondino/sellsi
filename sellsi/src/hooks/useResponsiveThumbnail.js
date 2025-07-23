@@ -8,6 +8,7 @@ import { useMemo } from 'react';
 import { useTheme } from '@mui/material/styles';
 import { useMediaQuery } from '@mui/material';
 import { useThumbnailQuery } from './useThumbnailQueries';
+import { CACHE_CONFIGS } from '../utils/queryClient';
 
 /**
  * Hook optimizado para thumbnails con React Query
@@ -29,9 +30,8 @@ export const useResponsiveThumbnail = (product) => {
     product?.id,
     { 
       enabled: needsQuery,
-      // Cache extra largo para thumbnails
-      staleTime: 30 * 60 * 1000, // 30 minutos
-      cacheTime: 2 * 60 * 60 * 1000, // 2 horas
+      // Usar configuración optimizada menos agresiva
+      ...CACHE_CONFIGS.THUMBNAILS,
     }
   );
 

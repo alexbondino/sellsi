@@ -82,6 +82,16 @@ const LazyImage = ({
   const [elementRef, isVisible] = useLazyLoading(rootMargin)
   const [imageLoaded, setImageLoaded] = useState(false)
   const [imageError, setImageError] = useState(false)
+  const [imageSrc, setImageSrc] = useState(src) // Track src changes
+
+  // Force reload when src changes
+  useEffect(() => {
+    if (src !== imageSrc) {
+      setImageLoaded(false)
+      setImageError(false)  
+      setImageSrc(src)
+    }
+  }, [src, imageSrc])
 
   const handleImageLoad = () => {
     setImageLoaded(true)
@@ -175,13 +185,14 @@ const LazyImage = ({
       {imageError && <ErrorFallback />}
 
       {/* Imagen real - solo se renderiza cuando es visible */}
-      {isVisible && src && !imageError && (
+      {isVisible && imageSrc && !imageError && (
         <Box
           component="img"
-          src={src}
+          src={imageSrc}
           alt={alt}
           onLoad={handleImageLoad}
           onError={handleImageError}
+          key={imageSrc} // Force re-render when src changes
           sx={{
             position: 'absolute',
             top: 0,

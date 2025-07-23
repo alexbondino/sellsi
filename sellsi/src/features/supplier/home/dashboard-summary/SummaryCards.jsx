@@ -9,7 +9,7 @@ import {
 } from '@mui/icons-material';
 import { generateChartData } from './utils';
 
-const SummaryCards = ({ products, totalSales, outOfStock, weeklyRequests, productsActive }) => {
+const SummaryCards = ({ products = [], totalSales = 0, outOfStock = 0, weeklyRequests = [], productsActive = 0 }) => {
   const chartData = {
     products: generateChartData(productsActive ?? products.length, 'up'),
     sales: generateChartData(totalSales / 1000, 'up'),
@@ -28,7 +28,7 @@ const SummaryCards = ({ products, totalSales, outOfStock, weeklyRequests, produc
     },
     {
       title: 'Ventas Este Mes',
-      value: `$${totalSales.toLocaleString()}`,
+      value: `$${(totalSales || 0).toLocaleString()}`,
       interval: 'Últimos 30 días',
       trend: 'up',
       data: chartData.sales,

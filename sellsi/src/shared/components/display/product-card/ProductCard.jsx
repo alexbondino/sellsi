@@ -82,7 +82,6 @@ const ProductCard = React.memo(
         <LazyImage
           src={resolvedImageSrc}
           alt={nombre}
-          // aspectRatio eliminado para que height y width funcionen sin restricciones
           rootMargin="150px"
           objectFit="contain"
           sx={{

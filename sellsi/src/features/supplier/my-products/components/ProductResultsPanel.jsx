@@ -6,6 +6,7 @@ import {
   Paper,
   Divider,
   Stack,
+  CircularProgress,
 } from '@mui/material';
 import { Info as InfoIcon } from '@mui/icons-material';
 import { formatPrice } from '../../../../shared/utils/formatters';
@@ -117,14 +118,34 @@ const ProductResultsPanel = ({
           variant="contained"
           onClick={onSubmit}
           disabled={!isValid || isLoading}
-          sx={{ textTransform: 'none', fontWeight: 600 }}
+          sx={{ 
+            textTransform: 'none', 
+            fontWeight: 600,
+            position: 'relative'
+          }}
           fullWidth
         >
-          {isLoading
-            ? 'Guardando...'
-            : isEditMode
-            ? 'Actualizar Producto'
-            : 'Publicar Producto'}
+          {isLoading ? (
+            <>
+              <Box
+                component="span"
+                sx={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 1
+                }}
+              >
+                <CircularProgress 
+                  size={20} 
+                  color="inherit"
+                  sx={{ color: 'white' }} 
+                />
+                {isEditMode ? 'Actualizando...' : 'Publicando...'}
+              </Box>
+            </>
+          ) : (
+            isEditMode ? 'Actualizar Producto' : 'Publicar Producto'
+          )}
         </Button>
       </Stack>
     </Paper>

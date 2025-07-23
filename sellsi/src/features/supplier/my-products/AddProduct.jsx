@@ -229,11 +229,17 @@ const AddProduct = () => {
 
 
 
+    // Mostrar toast informativo
+    toast.loading(
+      isEditMode 
+        ? `Actualizando producto...`
+        : `Creando producto...`,
+      { id: 'product-save' }
+    );
 
     try {
       // 1. Guardar producto principal
       const result = await submitForm();
-
 
       if (!result.success) {
         console.error('❌ Backend errors:', result.errors);
@@ -255,18 +261,12 @@ const AddProduct = () => {
         productId = result.product?.productid || result.productId;
       }
 
-
-
-      
       if (productId && shippingRegions.length > 0) {
-
         // Convertir formato de display a formato BD antes de guardar
         const dbRegions = convertFormRegionsToDb(shippingRegions);
 
-        
         try {
           await saveProductRegions(productId, dbRegions);
-
         } catch (regionError) {
           console.error('[AddProduct] handleSubmit - Error guardando regiones:', regionError);
           // No lanzar error aquí para que el producto se guarde aunque falle las regiones
@@ -280,23 +280,35 @@ const AddProduct = () => {
         }
       }
 
+      // 3. Mostrar éxito y navegar
       toast.success(
         isEditMode
-          ? 'Producto actualizado exitosamente'
-          : 'Producto creado exitosamente!'
+          ? ` Producto actualizado exitosamente!`
+          : ` Producto creado exitosamente!`,
+        { 
+          id: 'product-save',
+          duration: 3000
+        }
       );
-      navigate('/supplier/myproducts');
+
+      // 4. Navegar después de un breve delay
+      setTimeout(() => {
+        navigate('/supplier/myproducts');
+      }, 1500);
+
     } catch (error) {
       console.error('❌ Error en handleSubmit:', error);
 
       // Manejar error específico de overflow numérico
       if (error.message && error.message.includes('numeric field overflow')) {
         toast.error(
-          'Error: Uno o más precios superan el límite permitido (máximo 8 dígitos). Por favor, reduce los valores.'
+          'Error: Uno o más precios superan el límite permitido (máximo 8 dígitos). Por favor, reduce los valores.',
+          { id: 'product-save' }
         );
       } else {
         toast.error(
-          error.message || 'Error inesperado al procesar el producto'
+          error.message || 'Error inesperado al procesar el producto',
+          { id: 'product-save' }
         );
       }
     }

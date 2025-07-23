@@ -1,34 +1,57 @@
 /**
  * ============================================================================
- * SUPPLIER DASHBOARD - DASHBOARD Y ANALYTICS
+ * SUPPLIER DASHBOARD - DASHBOARD Y ANALYTICS ESPECIALIZADO
  * ============================================================================
  *
- * Hook especializado para manejo del dashboard del proveedor.
- * Maneja: métricas, analytics, estados generales, filtros básicos.
+ * Hook especializado ÚNICAMENTE para dashboard, métricas y analytics.
+ * POST-REFACTOR: Ya NO maneja CRUD de productos, solo métricas y visualización.
+ * 
+ * RESPONSABILIDADES:
+ * ✅ Métricas y estadísticas
+ * ✅ Analytics y reportes
+ * ✅ Datos para gráficos
+ * ✅ KPIs del dashboard
+ * ❌ CRUD de productos (movido a useSupplierProductsCRUD)
+ * ❌ Filtros de productos (delegado a useSupplierProductFilters)
  */
 
 import { useEffect, useState } from 'react'
 import { supabase } from '../../../../services/supabase'
 
 export const useSupplierDashboard = () => {
-  const [products, setProducts] = useState([])
-  const [sales, setSales] = useState([])
-  const [productStocks, setProductStocks] = useState([])
-  const [weeklyRequests, setWeeklyRequests] = useState([])
+  // ============================================================================
+  // ESTADO ESPECIALIZADO EN DASHBOARD
+  // ============================================================================
+  const [dashboardData, setDashboardData] = useState({
+    metrics: {
+      totalProducts: 0,
+      activeProducts: 0,
+      totalSales: 0,
+      totalRevenue: 0,
+      averageRating: 0,
+      totalOrders: 0
+    },
+    charts: {
+      salesData: [],
+      productStocks: [],
+      weeklyRequests: [],
+      categoryDistribution: [],
+      revenueData: []
+    },
+    trends: {
+      salesGrowth: 0,
+      productGrowth: 0,
+      revenueGrowth: 0
+    }
+  })
+  
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [lastUpdated, setLastUpdated] = useState(null)
 
-  // Estados de operaciones específicas para compatibilidad
-  const [deleting, setDeleting] = useState({})
-  const [updating, setUpdating] = useState({})
-
-  // Estados de filtros para compatibilidad
-  const [searchTerm, setSearchTerm] = useState('')
-  const [categoryFilter, setCategoryFilter] = useState('all')
-  const [sortBy, setSortBy] = useState('updateddt')
-  const [sortOrder, setSortOrder] = useState('desc')
-  const [filteredProducts, setFilteredProducts] = useState([])
-
+  // ============================================================================
+  // UTILIDADES DE FECHAS
+  // ============================================================================
   const getStartOfWeek = () => {
     const now = new Date()
     const day = now.getDay()
@@ -43,175 +66,218 @@ export const useSupplierDashboard = () => {
     return new Date(now.setDate(diff)).toISOString().split('T')[0]
   }
 
-  // Función para cargar productos con imágenes y tramos de precio (como el original)
-  const loadProducts = async (supplierId) => {
+  const getDateRange = (days) => {
+    const end = new Date()
+    const start = new Date()
+    start.setDate(start.getDate() - days)
+    return {
+      start: start.toISOString(),
+      end: end.toISOString()
+    }
+  }
+
+  // ============================================================================
+  // CARGAR MÉTRICAS DEL DASHBOARD
+  // ============================================================================
+
+  /**
+   * Cargar métricas principales del proveedor
+   */
+  const loadDashboardMetrics = async (supplierId) => {
     setLoading(true)
     setError(null)
 
     try {
-      // Obtener productos del proveedor, incluyendo imágenes
-      const { data: products, error: prodError } = await supabase
+      // Obtener métricas básicas de productos
+      const { data: productMetrics, error: prodError } = await supabase
         .from('products')
-        .select('*, product_images(*)')
+        .select('productid, price, productqty, is_active, createddt')
         .eq('supplier_id', supplierId)
-        .order('updateddt', { ascending: false })
 
       if (prodError) throw prodError
 
-      // Obtener todos los tramos de precio de estos productos
-      const productIds = products.map((p) => p.productid)
-      let priceTiers = []
+      // NOTE: Orders table doesn't have supplier_id column directly
+      // For now, we'll skip order metrics and focus on product metrics
+      // TODO: Implement proper order-to-supplier mapping through items jsonb
+      const orderMetrics = []
 
-      if (productIds.length > 0) {
-        const { data: tiers, error: tierError } = await supabase
-          .from('product_quantity_ranges')
-          .select('*')
-          .in('product_id', productIds)
+      // Obtener solicitudes que incluyen productos del proveedor
+      // Usar join con request_products y products para filtrar por supplier_id
+      const { data: quoteRequests, error: quoteError } = await supabase
+        .from('requests')
+        .select(`
+          request_id,
+          created_dt,
+          request_products!inner(
+            product_id,
+            products!inner(
+              supplier_id
+            )
+          )
+        `)
+        .eq('request_products.products.supplier_id', supplierId)
+        .gte('created_dt', getDateRange(7).start)
 
-        if (tierError) throw tierError
-        priceTiers = tiers
+      if (quoteError) throw quoteError
+
+      // Calcular métricas
+      const metrics = {
+        totalProducts: productMetrics.length,
+        activeProducts: productMetrics.filter(p => p.is_active).length,
+        totalSales: orderMetrics.filter(o => o.status === 'completed').length,
+        totalRevenue: orderMetrics
+          .filter(o => o.status === 'completed')
+          .reduce((sum, o) => sum + (o.total_amount || 0), 0),
+        averageRating: 0, // Se puede agregar después
+        totalOrders: orderMetrics.length
       }
 
-      // Asociar tramos a cada producto
-      const productsWithTiers = products.map((p) => ({
-        ...p,
-        priceTiers: priceTiers.filter((t) => t.product_id === p.productid),
-      }))
+      // Datos para gráficos
+      const charts = {
+        salesData: await generateSalesChart(supplierId),
+        productStocks: productMetrics.map(p => ({
+          name: p.productid,
+          stock: p.productqty || 0
+        })),
+        weeklyRequests: generateWeeklyRequestsChart(quoteRequests),
+        categoryDistribution: await generateCategoryChart(supplierId),
+        revenueData: generateRevenueChart(orderMetrics)
+      }
 
-      setProducts(productsWithTiers)
-      setFilteredProducts(productsWithTiers)
-      setProductStocks(productsWithTiers.map((p) => ({ productqty: p.productqty })))
-      
-      return { success: true }
+      // Calcular tendencias (comparar con período anterior)
+      const trends = await calculateTrends(supplierId)
+
+      setDashboardData({
+        metrics,
+        charts,
+        trends
+      })
+      setLastUpdated(new Date().toISOString())
+
+      return { success: true, data: { metrics, charts, trends } }
     } catch (error) {
-      setError(error.message || 'Error al cargar productos')
+      setError(`Error cargando métricas: ${error.message}`)
       return { success: false, error: error.message }
     } finally {
       setLoading(false)
     }
   }
 
+  /**
+   * Generar datos para gráfico de ventas
+   */
+  const generateSalesChart = async (supplierId) => {
+    try {
+      // TODO: Implement proper sales tracking through orders->items->products join
+      // For now, return empty data to prevent API errors
+      return []
+    } catch (error) {
+      return []
+    }
+  }
+
+  /**
+   * Generar datos para gráfico de solicitudes semanales
+   */
+  const generateWeeklyRequestsChart = (requests) => {
+    const weeklyData = {}
+    
+    requests.forEach(request => {
+      const date = request.created_at.split('T')[0]
+      if (!weeklyData[date]) {
+        weeklyData[date] = { date, requests: 0 }
+      }
+      weeklyData[date].requests += 1
+    })
+
+    return Object.values(weeklyData)
+  }
+
+  /**
+   * Generar distribución por categorías
+   */
+  const generateCategoryChart = async (supplierId) => {
+    try {
+      const { data, error } = await supabase
+        .from('products')
+        .select('category')
+        .eq('supplier_id', supplierId)
+
+      if (error) throw error
+
+      const categoryCount = {}
+      data.forEach(product => {
+        const category = product.category || 'Sin categoría'
+        categoryCount[category] = (categoryCount[category] || 0) + 1
+      })
+
+      return Object.entries(categoryCount).map(([name, value]) => ({
+        name,
+        value
+      }))
+    } catch (error) {
+      return []
+    }
+  }
+
+  /**
+   * Generar datos de ingresos
+   */
+  const generateRevenueChart = (orders) => {
+    const monthlyRevenue = {}
+    
+    orders.forEach(order => {
+      if (order.status === 'completed') {
+        const month = order.created_at.substring(0, 7) // YYYY-MM
+        if (!monthlyRevenue[month]) {
+          monthlyRevenue[month] = { month, revenue: 0 }
+        }
+        monthlyRevenue[month].revenue += order.total_amount || 0
+      }
+    })
+
+    return Object.values(monthlyRevenue)
+  }
+
+  /**
+   * Calcular tendencias comparando períodos
+   */
+  const calculateTrends = async (supplierId) => {
+    try {
+      // TODO: Implement proper trends calculation through orders->items->products join
+      // For now, return neutral trends to prevent API errors
+      return { salesGrowth: 0, revenueGrowth: 0, productGrowth: 0 }
+    } catch (error) {
+      return { salesGrowth: 0, revenueGrowth: 0, productGrowth: 0 }
+    }
+  }
+
+  // ============================================================================
+  // EFECTOS Y CARGAS AUTOMÁTICAS
+  // ============================================================================
+
   useEffect(() => {
     const fetchDashboardData = async () => {
-      setLoading(true)
-      setError(null)
-
-      const {
-        data: { session },
-        error: sessionError,
-      } = await supabase.auth.getSession()
-
-      if (sessionError || !session) {
-        setError('No hay sesión activa')
-        setLoading(false)
-        return
-      }
-
-      const supplierId = session.user.id
-
       try {
-        // Cargar productos directamente (sin usar loadProducts para evitar loop)
-        const { data: products, error: prodError } = await supabase
-          .from('products')
-          .select('*, product_images(*)')
-          .eq('supplier_id', supplierId)
-          .order('updateddt', { ascending: false })
-
-        if (prodError) throw prodError
-
-        // Cargar tramos de precio (opcional - tabla puede no existir)
-        let priceTiers = []
+        const { data: { session } } = await supabase.auth.getSession()
         
-        // COMENTADO: Funcionalidad avanzada price_tiers no implementada
-        // if (products && products.length > 0) {
-        //   try {
-        //     const productIds = products.map((p) => p.productid)
-        //     const { data: tiers, error: tierError } = await supabase
-        //       .from('price_tiers')
-        //       .select('*')
-        //       .in('product_id', productIds)
-        //       .order('min_qty', { ascending: true })
-
-        //     if (tierError) {
-        //       // Si la tabla no existe, solo loguear y continuar
-        //       if (tierError.code === '42P01') {
-        //         console.warn('Tabla price_tiers no existe, continuando sin tramos de precio')
-        //       } else {
-        //         throw tierError
-        //       }
-        //     } else {
-        //       priceTiers = tiers || []
-        //     }
-        //   } catch (tierErr) {
-        //     console.warn('Error cargando price_tiers:', tierErr.message)
-        //     // Continuar sin tramos de precio
-        //   }
-        // }
-
-        // Asociar tramos a cada producto
-        const productsWithTiers = products.map((p) => ({
-          ...p,
-          priceTiers: priceTiers.filter((t) => t.product_id === p.productid),
-        }))
-
-        setProducts(productsWithTiers)
-        setFilteredProducts(productsWithTiers)
-        setProductStocks(productsWithTiers.map((p) => ({ productqty: p.productqty })))
-
-        // Ventas del proveedor (tabla sales)
-        const { data: salesData, error: salesError } = await supabase
-          .from('sales')
-          .select('amount, trx_date')
-          .eq('user_id', supplierId)
-
-        if (salesError) throw salesError
-        setSales(salesData)
-
-        // Solicitudes semanales
-        const start = getStartOfWeek()
-        const end = getEndOfWeek()
-        const productIds = products.map((p) => p.productid)
-
-        if (productIds.length > 0) {
-          const { data: requestProductsData, error: requestProductsError } = await supabase
-            .from('request_products')
-            .select(`
-              *,
-              requests!inner (
-                request_id,
-                created_dt,
-                buyer_id,
-                label,
-                total_sale
-              ),
-              products!inner (
-                productid,
-                productnm,
-                supplier_id
-              )
-            `)
-            .in('product_id', productIds)
-
-          if (requestProductsError) {
-            console.warn('Error loading weekly requests:', requestProductsError)
-            setWeeklyRequests([])
-          } else {
-            const filteredRequests = (requestProductsData || []).filter(item => {
-              if (!item.requests?.created_dt) return false
-              const createdDate = new Date(item.requests.created_dt)
-              const startDate = new Date(start)
-              const endDate = new Date(end)
-              return createdDate >= startDate && createdDate <= endDate
-            })
-            setWeeklyRequests(filteredRequests)
-          }
+        if (session?.user?.id) {
+          await loadDashboardMetrics(session.user.id)
         } else {
-          setWeeklyRequests([])
+          // Si no hay sesión inmediatamente, intentar de nuevo después de un breve delay
+          setTimeout(async () => {
+            const { data: { session: retrySession } } = await supabase.auth.getSession()
+            if (retrySession?.user?.id) {
+              await loadDashboardMetrics(retrySession.user.id)
+            } else {
+              setError('No hay sesión activa')
+              setLoading(false)
+            }
+          }, 500) // Esperar 500ms antes de reintentar
         }
-      } catch (err) {
-        console.error('Error cargando dashboard:', err)
-        setError('Error al cargar datos')
-      } finally {
+      } catch (error) {
+        console.error('Error loading dashboard data:', error)
+        setError('Error al cargar datos del dashboard')
         setLoading(false)
       }
     }
@@ -219,92 +285,56 @@ export const useSupplierDashboard = () => {
     fetchDashboardData()
   }, [])
 
-  const totalSales = sales.reduce((acc, s) => acc + Number(s.amount), 0)
-
-  const groupedSales = sales.reduce((acc, sale) => {
-    const date = new Date(sale.trx_date)
-    const key = `${date.toLocaleString('default', {
-      month: 'short',
-    })} ${date.getFullYear()}`
-    acc[key] = (acc[key] || 0) + Number(sale.amount)
-    return acc
-  }, {})
-
-  const monthlyData = Object.entries(groupedSales).map(([mes, total]) => ({
-    mes,
-    total,
-  }))
-
-  // Métodos para compatibilidad con el hook original
-  const applyFilters = () => {
-    let filtered = [...products]
-    
-    if (searchTerm) {
-      filtered = filtered.filter(p => 
-        p.productnm?.toLowerCase().includes(searchTerm.toLowerCase())
-      )
-    }
-    
-    if (categoryFilter !== 'all') {
-      filtered = filtered.filter(p => p.category === categoryFilter)
-    }
-    
-    setFilteredProducts(filtered)
-  }
-
-  const getProductById = (productId) => {
-    return products.find(p => p.productid === productId)
-  }
-
-  // Aplicar filtros cuando cambien los criterios
-  useEffect(() => {
-    applyFilters()
-  }, [products, searchTerm, categoryFilter, sortBy, sortOrder])
+  // ============================================================================
+  // API PÚBLICA DEL HOOK
+  // ============================================================================
 
   return {
-    // Estados principales
-    products,
-    filteredProducts,
-    sales,
-    productStocks,
-    weeklyRequests,
-    monthlyData,
-    totalSales,
+    // Datos del dashboard
+    dashboardData,
+    metrics: dashboardData.metrics,
+    charts: dashboardData.charts,
+    trends: dashboardData.trends,
+    
+    // Estados
     loading,
     error,
+    lastUpdated,
 
-    // Estados de operaciones para compatibilidad
-    deleting,
-    updating,
-
-    // Estados de filtros para compatibilidad
-    searchTerm,
-    categoryFilter,
-    sortBy,
-    sortOrder,
-
-    // Métodos para compatibilidad con el hook original
-    loadProducts,
-    setSearchTerm,
-    setCategoryFilter,
-    setSorting: (field, order) => {
-      setSortBy(field)
-      setSortOrder(order)
+    // Acciones
+    loadDashboardMetrics,
+    refresh: async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session?.user?.id) {
+        return await loadDashboardMetrics(session.user.id)
+      }
+      return { success: false, error: 'No hay sesión activa' }
     },
-    applyFilters,
-    getProductById,
-    clearFilters: () => {
-      setSearchTerm('')
-      setCategoryFilter('all')
-      setSortBy('updateddt')
-      setSortOrder('desc')
-    },
+    clearError: () => setError(null),
 
-    // Métodos básicos para compatibilidad
-    addProduct: async () => { throw new Error('addProduct no implementado en dashboard hook') },
-    updateProduct: async () => { throw new Error('updateProduct no implementado en dashboard hook') },
-    deleteProduct: async () => { throw new Error('deleteProduct no implementado en dashboard hook') },
+    // Utilidades
+    getDateRange,
+    formatCurrency: (amount, currency = 'CLP') => {
+      return new Intl.NumberFormat('es-CL', {
+        style: 'currency',
+        currency: currency,
+        minimumFractionDigits: 0,
+      }).format(amount)
+    },
+    formatPercentage: (value) => `${value >= 0 ? '+' : ''}${value.toFixed(1)}%`,
+    
+    // KPIs calculados
+    getKPIs: () => {
+      const { metrics } = dashboardData
+      return {
+        productActivityRate: metrics.totalProducts > 0 
+          ? (metrics.activeProducts / metrics.totalProducts) * 100 
+          : 0,
+        averageOrderValue: metrics.totalOrders > 0 
+          ? metrics.totalRevenue / metrics.totalOrders 
+          : 0,
+        conversionRate: 0, // Se puede implementar después
+      }
+    }
   }
 }
-
-export default useSupplierDashboard

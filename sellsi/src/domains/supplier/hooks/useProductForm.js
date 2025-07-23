@@ -363,10 +363,14 @@ export const useProductForm = (productId = null) => {
         (p) => p.productid?.toString() === productId?.toString()
       )
       if (product) {
-        setFormData(mapProductToForm(product))
+        // Solo cargar si el formulario está vacío o es un producto diferente
+        const currentProductId = formData.productid || formData.id
+        if (!currentProductId || currentProductId.toString() !== productId.toString()) {
+          setFormData(mapProductToForm(product))
+        }
       }
     }
-  }, [isEditMode, productId, uiProducts])
+  }, [isEditMode, productId]) // REMOVIDO: uiProducts, formData.productid, formData.id
 
   return {
     // Estado del formulario
