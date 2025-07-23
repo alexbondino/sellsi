@@ -13,7 +13,6 @@ import {
 } from '@mui/material';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import { ThemeProvider } from '@mui/material/styles';
-import { SideBarProvider } from '../../../shared/components/navigation/SideBar';
 import { dashboardThemeCore } from '../../../styles/dashboardThemeCore';
 import { SPACING_BOTTOM_MAIN } from '../../../styles/layoutSpacing';
 import { useBuyerOrders } from '../hooks';
@@ -45,7 +44,6 @@ const BuyerOrders = () => {
   if (loading) {
     return (
       <ThemeProvider theme={dashboardThemeCore}>
-        <SideBarProvider />
         <Box
           sx={{
             backgroundColor: 'background.default',
@@ -69,7 +67,6 @@ const BuyerOrders = () => {
   if (error) {
     return (
       <ThemeProvider theme={dashboardThemeCore}>
-        <SideBarProvider />
         <Box
           sx={{
             backgroundColor: 'background.default',
@@ -167,8 +164,6 @@ const BuyerOrders = () => {
   // ============================================================================
   return (
     <ThemeProvider theme={dashboardThemeCore}>
-      <SideBarProvider />
-
       <Box
         sx={{
           backgroundColor: 'background.default',

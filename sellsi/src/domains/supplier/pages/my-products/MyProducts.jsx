@@ -34,7 +34,6 @@ import { ThemeProvider } from '@mui/material/styles';
 import { toast } from 'react-hot-toast';
 
 // Components
-import { SideBarProvider } from '../../../../shared/components/navigation/SideBar';
 import ProductCard from '../../../../shared/components/display/product-card/ProductCard';
 import { Modal, MODAL_TYPES } from '../../../../shared/components/feedback'; // <--- Importación del nuevo componente Modal
 
@@ -205,8 +204,6 @@ const MyProducts = () => {
 
   return (
     <ThemeProvider theme={dashboardThemeCore}>
-      <SideBarProvider />
-
       <Box
         sx={{
           // marginLeft: '210px', // Eliminado para ocupar todo el ancho

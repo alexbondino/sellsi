@@ -301,18 +301,16 @@ const SideBar = ({ role, width = '210px', onWidthChange }) => {
   );
 };
 
-/**
- * Componente Provider que usa el RoleProvider para determinar el rol actual
- * y renderiza la SideBar correspondiente.
- */
-const SideBarProvider = ({ width, onWidthChange }) => {
-  const { currentAppRole, isDashboardRoute } = useRole();
-  
-  // Solo renderizar si estamos en una ruta de dashboard y hay un rol válido
-  if (!isDashboardRoute || !currentAppRole) return null;
-
-  return <SideBar role={currentAppRole} width={width} onWidthChange={onWidthChange} />;
-};
+// ============================================================================
+// 🎯 REFACTORIZACIÓN COMPLETA: ARQUITECTURA PROFESIONAL
+// ============================================================================
+// 
+// ✅ ELIMINADO: SideBarProvider redundante
+// ✅ CENTRALIZADO: Control único desde AppShell
+// ✅ OPTIMIZADO: Sin duplicaciones de renderizado
+// 
+// El AppShell es ahora el único responsable de renderizar la SideBar,
+// eliminando todas las instancias redundantes en componentes individuales.
+// ============================================================================
 
 export default SideBar;
-export { SideBarProvider };

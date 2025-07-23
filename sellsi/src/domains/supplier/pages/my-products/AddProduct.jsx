@@ -18,7 +18,6 @@ import { toast } from 'react-hot-toast';
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 
 // Components
-import { SideBarProvider } from '../../../../shared/components/navigation/SideBar';
 import { PriceTiers } from '../../../../shared/components/forms/PriceTiers';
 
 // Subcomponentes modularizados
@@ -346,8 +345,6 @@ const AddProduct = () => {
   };
   return (
     <ThemeProvider theme={dashboardThemeCore}>
-      <SideBarProvider />
-
       <Box
         sx={{
           backgroundColor: 'background.default',

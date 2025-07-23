@@ -269,7 +269,10 @@ const CartHeader = ({
       <Modal
         isOpen={openDeleteModal}
         onClose={() => setOpenDeleteModal(false)}
-        onSubmit={onDeleteSelected}
+        onSubmit={() => {
+          onDeleteSelected();
+          setOpenDeleteModal(false); // ✅ CERRAR MODAL DESPUÉS DE ELIMINAR
+        }}
         type={MODAL_TYPES.DELETE}
         title="Eliminar productos seleccionados"
         submitButtonText="Eliminar"

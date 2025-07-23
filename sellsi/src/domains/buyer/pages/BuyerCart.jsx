@@ -30,7 +30,6 @@ import { useInView } from 'react-intersection-observer';
 // import confetti from 'canvas-confetti';
 import debounce from 'lodash.debounce';
 import { ThemeProvider } from '@mui/material/styles';
-import { SideBarProvider } from '../../../shared/components/navigation/SideBar';
 import { dashboardThemeCore } from '../../../styles/dashboardThemeCore';
 import { SPACING_BOTTOM_MAIN } from '../../../styles/layoutSpacing';
 import useCartStore from '../../../shared/stores/cart/cartStore';
@@ -571,8 +570,6 @@ const BuyerCart = () => {
   // ===== RENDERIZADO PRINCIPAL =====
   return (
     <ThemeProvider theme={dashboardThemeCore}>
-      <SideBarProvider />
-
       <Box
         sx={{
           backgroundColor: 'background.default',

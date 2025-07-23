@@ -121,7 +121,7 @@ const MobileBar = ({ role, session, isBuyer, logoUrl }) => {
         justifyContent: 'space-around',
         alignItems: 'center',
         padding: '8px 4px',
-        zIndex: 1000,
+        zIndex: 1400, // Asegura que MobileBar esté por encima de BottomBar
         borderTop: '1px solid rgba(255, 255, 255, 0.1)',
         boxShadow: '0 -2px 10px rgba(0, 0, 0, 0.1)',
       }}

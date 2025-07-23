@@ -15,7 +15,8 @@ import {
   ShoppingCart as ShoppingCartIcon,
   Favorite as FavoriteIcon,
 } from '@mui/icons-material'
-import { SideBarProvider } from '../../../../shared/components/navigation/SideBar'
+import { ThemeProvider } from '@mui/material/styles';
+import { dashboardThemeCore } from '../../../../styles/dashboardThemeCore';
 
 // Mensajes aleatorios para el carrito vacío
 const EMPTY_CART_MESSAGES = [
@@ -51,7 +52,6 @@ const EmptyCartState = ({ wishlist, setShowWishlist }) => {
   }
   return (
     <>
-      <SideBarProvider />
       <Container
         maxWidth="lg"
         sx={{ 

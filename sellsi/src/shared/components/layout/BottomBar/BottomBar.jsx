@@ -208,7 +208,7 @@ const BottomBar = () => {
               flexDirection: 'column',
               alignItems: 'center',
               gap: 3,
-              mb: 4,
+              mb: 6,
             }}
           >
             {/* Logo y eslogan - Mobile */}
@@ -352,10 +352,10 @@ const BottomBar = () => {
                 />
               </Box>
               {/* Teléfono debajo de los iconos */}
-              <Box sx={{ display: 'flex', alignItems: 'center', mt: 1, justifyContent: 'center', width: '100%' }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', mt: 0, justifyContent: 'center', width: '100%' }}>
                 <IconButton
                   href="tel:+56963109664"
-                  sx={{ color: '#b0b0b0', mr: 1, p: 0.5, '&:hover': { color: '#25d366', backgroundColor: 'rgba(255,255,255,0.1)' } }}
+                  sx={{ color: '#b0b0b0', mr: 1, p: 0, '&:hover': { color: '#25d366', backgroundColor: 'rgba(255,255,255,0.1)' } }}
                   aria-label="Llamar a +56 9 6310 9664"
                 >
                   <PhoneIcon />
@@ -370,17 +370,30 @@ const BottomBar = () => {
                 </Typography>
               </Box>
             </Box>
+
+            {/* Copyright - Mobile */}
+            <Divider sx={{ my: 0, borderColor: '#333', width: '100%' }} />
+            <Box sx={{ textAlign: 'center', width: '100%', mb: 5 }}>
+              <Typography
+                variant="body2"
+                sx={{ color: '#b0b0b0', fontSize: '0.9rem' }}
+              >
+                © 2025 SELLSI Todos los derechos reservados.
+              </Typography>
+            </Box>
           </Box>
 
-          {/* Copyright */}
-          <Divider sx={{ my: 1, borderColor: '#333' }} />
-          <Box sx={{ textAlign: 'center' }}>
-            <Typography
-              variant="body2"
-              sx={{ color: '#b0b0b0', fontSize: '0.9rem' }}
-            >
-              © 2025 SELLSI Todos los derechos reservados.
-            </Typography>
+          {/* Copyright - Desktop */}
+          <Box sx={{ display: { xs: 'none', md: 'block' } }}>
+            <Divider sx={{ my: 1, borderColor: '#333' }} />
+            <Box sx={{ textAlign: 'center' }}>
+              <Typography
+                variant="body2"
+                sx={{ color: '#b0b0b0', fontSize: '0.9rem' }}
+              >
+                © 2025 SELLSI Todos los derechos reservados.
+              </Typography>
+            </Box>
           </Box>
         </Box>
 

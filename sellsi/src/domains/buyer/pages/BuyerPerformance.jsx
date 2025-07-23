@@ -8,7 +8,6 @@ import {
   LinearProgress,
 } from '@mui/material';
 import { ThemeProvider } from '@mui/material/styles';
-import { SideBarProvider } from '../../../shared/components/navigation/SideBar';
 import { dashboardThemeCore } from '../../../styles/dashboardThemeCore';
 import { SPACING_BOTTOM_MAIN } from '../../../styles/layoutSpacing';
 // import MarketplaceTopBar from '../layout/MarketplaceTopBar' // Eliminado
@@ -80,8 +79,6 @@ const BuyerPerformance = () => {
   // ============================================================================
   return (
     <ThemeProvider theme={dashboardThemeCore}>
-      <SideBarProvider />
-
       <Box
         sx={{
           backgroundColor: 'background.default',

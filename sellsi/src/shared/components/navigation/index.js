@@ -5,5 +5,5 @@ export { default as Switch } from './Switch';
 
 // Layout navigation components
 export { TopBar } from './TopBar';
-export { SideBar, SideBarProvider } from './SideBar';
+export { SideBar } from './SideBar';
 export { MobileBar } from './MobileBar';
