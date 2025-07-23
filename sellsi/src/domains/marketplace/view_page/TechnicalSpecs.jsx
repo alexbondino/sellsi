@@ -11,7 +11,7 @@ import {
   CircularProgress,
 } from '@mui/material'
 import { ArrowBack, Home, StorefrontOutlined, Inventory2Outlined } from '@mui/icons-material'
-import ProductPageView from '../ProductPageView/ProductPageView'
+import ProductPageView from '../../ProductPageView/ProductPageView'
 import { useTechnicalSpecs } from './hooks/useTechnicalSpecs'
 
 /**

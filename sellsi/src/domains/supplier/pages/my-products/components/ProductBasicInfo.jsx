@@ -86,6 +86,20 @@ const ProductBasicInfo = ({
             label="Categoría:"
             MenuProps={{
               disableScrollLock: true,
+              sx: {
+                zIndex: 1500, // z-index para el menú desplegable
+              },
+              PaperProps: {
+                sx: {
+                  zIndex: 1500, // z-index para el papel del dropdown
+                }
+              },
+              // Forzar el z-index del backdrop/modal
+              BackdropProps: {
+                sx: {
+                  zIndex: 1499,
+                }
+              }
             }}
           >
             {CATEGORIES.map(category => (

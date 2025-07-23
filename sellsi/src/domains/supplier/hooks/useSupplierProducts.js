@@ -177,7 +177,7 @@ export const useSupplierProducts = (options = {}) => {
     }
 
     loadInitialData()
-  }, [crud.products.length, crud.loading]) // Dependencias específicas para evitar loops
+  }, []) // Cambio: Solo ejecutar una vez al montar el hook
 
   // Productos para UI (con formato mejorado)
   const uiProducts = useMemo(() => {

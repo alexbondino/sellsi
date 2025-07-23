@@ -111,22 +111,6 @@ const CartHeader = ({
                     color="primary"
                     variant="filled"
                   />
-                  {selectedItems.length > 0 && (
-                    <Chip
-                      icon={<DeleteIcon sx={{ color: 'grey.600' }} />}
-                      label={`Eliminar ${selectedItems.length}`}
-                      color="default"
-                      variant="outlined"
-                      sx={{
-                        position: 'absolute',
-                        top: 0,
-                        right: -60, // Ajusta este valor si necesitas más separación
-                        zIndex: 2,
-                        backgroundColor: 'background.paper',
-                        boxShadow: 2,
-                      }}
-                    />
-                  )}
                 </>
               ) : (
                 /* Chips normales */

@@ -50,13 +50,13 @@ const BuyerPerformance = React.lazy(() =>
   import('../../domains/buyer/pages/BuyerPerformance')
 );
 const TechnicalSpecs = React.lazy(() =>
-  import('../../domains/marketplace/pages/view_page/TechnicalSpecs')
+  import('../../domains/ProductPageView/pages/TechnicalSpecs')
 );
 const ProviderCatalog = React.lazy(() =>
   import('../../domains/marketplace/pages/ProviderCatalog')
 );
 const ProductPageWrapper = React.lazy(() =>
-  import('../../domains/marketplace/pages/ProductPageView/ProductPageWrapper')
+  import('../../domains/ProductPageView/ProductPageWrapper')
 );
 
 // 📦 AUTH & ONBOARDING - LAZY LOADING

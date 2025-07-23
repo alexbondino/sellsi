@@ -135,16 +135,40 @@ const CheckoutSummary = ({
     }
     return item.price || 0
   }
+
+  // ✅ RECALCULAR SUBTOTAL E IVA USANDO LA MISMA LÓGICA QUE QUOTATION
+  const { recalculatedSubtotal, recalculatedIVA, totalBruto } = useMemo(() => {
+    if (!orderData.items || orderData.items.length === 0) {
+      return { recalculatedSubtotal: 0, recalculatedIVA: 0, totalBruto: 0 }
+    }
+
+    // Calcular total bruto (suma de cantidad × precio unitario para cada item)
+    const totalBruto = orderData.items.reduce((total, item) => {
+      const unitPrice = getItemPrice(item)
+      const quantity = item.quantity || 0
+      return total + (quantity * unitPrice)
+    }, 0)
+
+    // Aplicar la misma lógica que quotationPDFGeneratorDynamic.js
+    const iva = Math.trunc(totalBruto * 0.19) // IVA truncado sin decimales
+    const subtotal = Math.trunc(totalBruto) - iva // Subtotal (Total Neto) es el total bruto truncado menos el IVA truncado
+
+    return {
+      recalculatedSubtotal: subtotal,
+      recalculatedIVA: iva,
+      totalBruto: totalBruto
+    }
+  }, [orderData.items])
   
   const fees = selectedMethod 
     ? checkoutService.formatPrice(
-        (orderData.subtotal * (selectedMethod.fees?.percentage || 0)) / 100 + (selectedMethod.fees?.fixed || 0)
+        (recalculatedSubtotal * (selectedMethod.fees?.percentage || 0)) / 100 + (selectedMethod.fees?.fixed || 0)
       )
     : checkoutService.formatPrice(0)
 
   const totalWithFees = selectedMethod
-    ? orderData.subtotal + orderData.tax + calculateProductShippingCost + ((orderData.subtotal * (selectedMethod.fees?.percentage || 0)) / 100 + (selectedMethod.fees?.fixed || 0))
-    : orderData.subtotal + orderData.tax + calculateProductShippingCost
+    ? recalculatedSubtotal + recalculatedIVA + calculateProductShippingCost + ((recalculatedSubtotal * (selectedMethod.fees?.percentage || 0)) / 100 + (selectedMethod.fees?.fixed || 0))
+    : recalculatedSubtotal + recalculatedIVA + calculateProductShippingCost
 
   // ===== RENDERIZADO =====
 
@@ -286,14 +310,14 @@ const CheckoutSummary = ({
             <Stack direction="row" justifyContent="space-between">
               <Typography variant="body2">Subtotal</Typography>
               <Typography variant="body2" fontWeight="medium">
-                {checkoutService.formatPrice(orderData.subtotal)}
+                {checkoutService.formatPrice(recalculatedSubtotal)}
               </Typography>
             </Stack>
             
             <Stack direction="row" justifyContent="space-between">
               <Typography variant="body2">IVA (19%)</Typography>
               <Typography variant="body2" fontWeight="medium">
-                {checkoutService.formatPrice(orderData.tax)}
+                {checkoutService.formatPrice(recalculatedIVA)}
               </Typography>
             </Stack>
             

@@ -12,6 +12,9 @@ import { convertModalRegionsToDisplay, convertFormRegionsToDb } from '../../../.
 const ProductRegions = ({
   formData,
   onRegionChange,
+  errors,
+  localErrors,
+  triedSubmit,
 }) => {
   const [modalOpen, setModalOpen] = useState(false);
 
@@ -58,13 +61,13 @@ const ProductRegions = ({
         display: 'block',
         mx: 0,
         position: 'relative',
-        zIndex: 1402, // Asegura que esté sobre la BottomBar (zIndex 1401)
+        zIndex: 1, // Reducir z-index para que no interfiera con dropdowns
       }}
     >
       <Typography
         variant="h6"
         gutterBottom
-        sx={{ fontWeight: 600, color: 'black', mb: 2, textAlign: 'center', width: '100%' }}
+        sx={{ fontWeight: 600, color: 'black', mb: 2, textAlign: 'left', width: '100%' }}
       >
         Región de Despacho
       </Typography>
@@ -88,6 +91,18 @@ const ProductRegions = ({
       <Box sx={{ width: '100%' }}>
         <ShippingRegionsDisplay regions={shippingRegions} />
       </Box>
+
+      {/* Mostrar errores de validación */}
+      {(triedSubmit && (errors?.shippingRegions || localErrors?.shippingRegions)) && (
+        <Typography
+          variant="caption"
+          color="error"
+          display="block"
+          sx={{ mt: 1 }}
+        >
+          {errors?.shippingRegions || localErrors?.shippingRegions}
+        </Typography>
+      )}
 
       {/* Modal para configurar regiones */}
       <ShippingRegionsModal

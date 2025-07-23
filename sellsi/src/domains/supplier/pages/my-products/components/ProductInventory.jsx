@@ -56,7 +56,17 @@ const ProductInventory = ({
                 : ''
             }
             type="number"
-            inputProps={{ min: 1, max: 15000 }}
+            inputProps={{ 
+              min: 1, 
+              max: 15000,
+              step: 1,
+              onInput: (e) => {
+                // Solo permitir números enteros positivos
+                if (e.target.value.includes('.') || e.target.value.includes('-')) {
+                  e.target.value = e.target.value.replace(/[.-]/g, '');
+                }
+              }
+            }}
             autoComplete="off"
           />
           <TextField
@@ -76,7 +86,17 @@ const ProductInventory = ({
                 : ''
             }
             type="number"
-            inputProps={{ min: 1, max: 15000 }}
+            inputProps={{ 
+              min: 1, 
+              max: 15000,
+              step: 1,
+              onInput: (e) => {
+                // Solo permitir números enteros positivos
+                if (e.target.value.includes('.') || e.target.value.includes('-')) {
+                  e.target.value = e.target.value.replace(/[.-]/g, '');
+                }
+              }
+            }}
             autoComplete="off"
           />
         </Box>
@@ -110,7 +130,16 @@ const ProductInventory = ({
                   $
                 </InputAdornment>
               ),
-              inputProps: { min: 1 },
+              inputProps: { 
+                min: 1,
+                step: 1,
+                onInput: (e) => {
+                  // Solo permitir números enteros positivos
+                  if (e.target.value.includes('.') || e.target.value.includes('-')) {
+                    e.target.value = e.target.value.replace(/[.-]/g, '');
+                  }
+                }
+              },
             }}
             type="number"
             autoComplete="off"

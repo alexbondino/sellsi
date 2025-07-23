@@ -64,7 +64,7 @@ const PriceTiers = ({
               <Typography variant="subtitle2" fontWeight="600">
                 Tramo {index + 1}
               </Typography>
-              {tramos.length > 1 && (
+              {tramos.length > 2 && index >= 2 && (
                 <IconButton
                   onClick={() => onRemoveTramo(index)}
                   color="error"
@@ -83,6 +83,17 @@ const PriceTiers = ({
                 onChange={e => onTramoChange(index, 'cantidad', e.target.value)}
                 type="number"
                 size="small"
+                disabled={index === 0} // Deshabilitar para el Tramo 1
+                inputProps={{ 
+                  min: 1,
+                  step: 1,
+                  onInput: (e) => {
+                    // Solo permitir números enteros positivos
+                    if (e.target.value.includes('.') || e.target.value.includes('-')) {
+                      e.target.value = e.target.value.replace(/[.-]/g, '');
+                    }
+                  }
+                }}
               />
               <TextField
                 fullWidth
@@ -96,7 +107,16 @@ const PriceTiers = ({
                   startAdornment: (
                     <InputAdornment position="start">$</InputAdornment>
                   ),
-                  inputProps: { min: 1 }, // Prevenir valores menores a 1
+                  inputProps: { 
+                    min: 1,
+                    step: 1,
+                    onInput: (e) => {
+                      // Solo permitir números enteros positivos
+                      if (e.target.value.includes('.') || e.target.value.includes('-')) {
+                        e.target.value = e.target.value.replace(/[.-]/g, '');
+                      }
+                    }
+                  }, // Prevenir valores menores a 1
                 }}
               />
             </Stack>
@@ -161,7 +181,7 @@ const PriceTiers = ({
                     color="text.secondary"
                     display="block"
                   >
-                    Tramo {idx + 1}: si el cliente compra entre <b>{min}</b> y{' '}
+                    Tramo {idx + 1}: si el cliente compra entre <b>{min || `Cantidad a definir del Tramo ${idx + 1}`}</b> y{' '}
                     <b>Cantidad a definir del Tramo {idx + 2}</b> unidades, paga{' '}
                     <b>${precio}</b> por unidad.
                   </Typography>

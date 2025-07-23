@@ -142,6 +142,13 @@ const AddProduct = () => {
   const handleInputChange = field => event => {
     const value = event.target.value;
     updateField(field, value);
+    
+    // Si se cambia la compra mínima y hay tramos, sincronizar con el Tramo 1
+    if (field === 'compraMinima' && formData.pricingType === 'Por Tramo' && formData.tramos.length > 0) {
+      const newTramos = [...formData.tramos];
+      newTramos[0] = { ...newTramos[0], cantidad: value };
+      updateField('tramos', newTramos);
+    }
   };
 
 
@@ -159,6 +166,13 @@ const AddProduct = () => {
       updateField('pricingType', newValue);
       if (newValue === 'Por Tramo') {
         updateField('precioUnidad', '');
+        // Agregar automáticamente Tramo 1 y Tramo 2
+        // Si ya existe una compra mínima, sincronizar el Tramo 1 con ese valor
+        const compraMinima = formData.compraMinima || '';
+        updateField('tramos', [
+          { cantidad: compraMinima, precio: '' },
+          { cantidad: '', precio: '' }
+        ]);
       } else {
         updateField('tramos', [{ cantidad: '', precio: '' }]);
       }
@@ -166,6 +180,13 @@ const AddProduct = () => {
   };
 
   const handleTramoChange = (index, field, value) => {
+    // Si es el Tramo 1 y se está cambiando la cantidad, no permitir el cambio
+    // La cantidad del Tramo 1 debe ser igual a la Compra Mínima
+    if (index === 0 && field === 'cantidad') {
+      toast.error('La cantidad del Tramo 1 debe ser igual a la Compra Mínima. Modifica la Compra Mínima para cambiar este valor.');
+      return;
+    }
+    
     const newTramos = [...formData.tramos];
     newTramos[index] = { ...newTramos[index], [field]: value };
     updateField('tramos', newTramos);
@@ -177,7 +198,8 @@ const AddProduct = () => {
   };
 
   const removeTramo = index => {
-    if (formData.tramos.length > 1) {
+    // Solo permitir eliminar si hay más de 2 tramos (mínimo debe haber Tramo 1 y Tramo 2)
+    if (formData.tramos.length > 2) {
       const newTramos = formData.tramos.filter((_, i) => i !== index);
       updateField('tramos', newTramos);
     }
@@ -258,7 +280,7 @@ const AddProduct = () => {
         productId = editProductId;
       } else {
         // Para productos nuevos, usar el ID del producto creado
-        productId = result.product?.productid || result.productId;
+        productId = result.data?.productid || result.product?.productid || result.productId;
       }
 
       if (productId && shippingRegions.length > 0) {
@@ -424,6 +446,9 @@ const AddProduct = () => {
                     <ProductRegions
                       formData={formData}
                       onRegionChange={handleRegionChange}
+                      errors={errors}
+                      localErrors={localErrors}
+                      triedSubmit={triedSubmit}
                     />
                   </Box>
 

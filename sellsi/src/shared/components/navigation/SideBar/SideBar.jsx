@@ -23,6 +23,7 @@ import {
   InfoOutlined as InfoIcon,
 } from '@mui/icons-material';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { useRole } from '../../../../infrastructure/providers/RoleProvider';
 
 // Define los ítems de menú para cada rol directamente en este archivo con iconos
 const buyerMenuItems = [
@@ -301,26 +302,16 @@ const SideBar = ({ role, width = '210px', onWidthChange }) => {
 };
 
 /**
- * Componente Provider que automáticamente determina el rol basado en la ruta actual
+ * Componente Provider que usa el RoleProvider para determinar el rol actual
  * y renderiza la SideBar correspondiente.
  */
 const SideBarProvider = ({ width, onWidthChange }) => {
-  const location = useLocation();
+  const { currentAppRole, isDashboardRoute } = useRole();
   
-  // Determinar el rol basado en la ruta actual
-  const getCurrentRole = () => {
-    const pathname = location.pathname;
-    if (pathname.startsWith('/buyer')) return 'buyer';
-    if (pathname.startsWith('/supplier')) return 'supplier';
-    return null;
-  };
+  // Solo renderizar si estamos en una ruta de dashboard y hay un rol válido
+  if (!isDashboardRoute || !currentAppRole) return null;
 
-  const role = getCurrentRole();
-
-  // Solo renderizar si hay un rol válido
-  if (!role) return null;
-
-  return <SideBar role={role} width={width} onWidthChange={onWidthChange} />;
+  return <SideBar role={currentAppRole} width={width} onWidthChange={onWidthChange} />;
 };
 
 export default SideBar;

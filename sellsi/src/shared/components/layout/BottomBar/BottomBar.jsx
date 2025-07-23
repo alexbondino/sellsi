@@ -57,6 +57,7 @@ const BottomBar = () => {
           zIndex: 1301, // Debe ser mayor que la SideBar (por defecto 1200 en MUI Drawer)
           position: 'sticky', // Ahora sticky
           bottom: 0, // Se pega al fondo de la ventana
+          borderTop: '1px solid white',
         }}
       >
         <Box

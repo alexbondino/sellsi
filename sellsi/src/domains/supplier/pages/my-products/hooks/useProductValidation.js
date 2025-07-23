@@ -43,6 +43,8 @@ export const useProductValidation = () => {
       parseInt(formData.stock) > 15000
     ) {
       newErrors.stock = 'Ingrese un número entre 1 y 15.000';
+    } else if (!Number.isInteger(parseFloat(formData.stock))) {
+      newErrors.stock = 'El stock debe ser un número entero positivo';
     }
 
     // Validación de la compra mínima
@@ -53,6 +55,8 @@ export const useProductValidation = () => {
       parseInt(formData.compraMinima) > 15000
     ) {
       newErrors.compraMinima = 'Seleccione un número entre 1 y 15.000';
+    } else if (!Number.isInteger(parseFloat(formData.compraMinima))) {
+      newErrors.compraMinima = 'La compra mínima debe ser un número entero positivo';
     } else if (
       parseInt(formData.compraMinima) > parseInt(formData.stock || 0)
     ) {
@@ -66,6 +70,8 @@ export const useProductValidation = () => {
         newErrors.precioUnidad = 'El precio es requerido';
       } else if (parseFloat(formData.precioUnidad) < 1) {
         newErrors.precioUnidad = 'El precio mínimo es 1';
+      } else if (!Number.isInteger(parseFloat(formData.precioUnidad))) {
+        newErrors.precioUnidad = 'El precio debe ser un número entero positivo';
       }
     } else {
       // Validación para tramos de precio
@@ -81,6 +87,15 @@ export const useProductValidation = () => {
         newErrors.tramos =
           'Debe agregar al menos dos tramos válidos (cantidad y precio definidos)';
       } else {
+        // Validar que el primer tramo coincida con la compra mínima
+        const compraMinima = parseInt(formData.compraMinima || 0);
+        const firstTramo = formData.tramos[0]; // El primer tramo siempre debe ser el Tramo 1
+        
+        if (!firstTramo || !firstTramo.cantidad || parseInt(firstTramo.cantidad) !== compraMinima) {
+          newErrors.tramos =
+            'La cantidad del Tramo 1 debe ser igual a la Compra Mínima';
+        }
+
         // Validar que ningún precio de tramo supere los 8 dígitos
         const tramosConPrecioAlto = validTramos.filter(
           t => parseFloat(t.precio) > 99999999
@@ -102,6 +117,17 @@ export const useProductValidation = () => {
             const tramosConPrecioBajo = validTramos.filter(t => parseFloat(t.precio) < 1);
             if (tramosConPrecioBajo.length > 0) {
               newErrors.tramos = 'El precio mínimo por tramo es 1';
+            } else {
+              // Validar que las cantidades sean números enteros positivos
+              const tramosConCantidadInvalida = validTramos.filter(t => !Number.isInteger(parseFloat(t.cantidad)) || parseInt(t.cantidad) < 1);
+              if (tramosConCantidadInvalida.length > 0) {
+                newErrors.tramos = 'Las cantidades de los tramos deben ser números enteros positivos';
+              }
+              // Validar que los precios sean números enteros positivos
+              const tramosConPrecioInvalido = validTramos.filter(t => !Number.isInteger(parseFloat(t.precio)) || parseFloat(t.precio) < 1);
+              if (tramosConPrecioInvalido.length > 0) {
+                newErrors.tramos = 'Los precios de los tramos deben ser números enteros positivos';
+              }
             }
           }
         }
@@ -140,6 +166,11 @@ export const useProductValidation = () => {
     if (formData.specifications.some(s => s.key && !s.value)) {
       newErrors.specifications =
         'Completa todos los valores de las especificaciones';
+    }
+
+    // Validación de regiones de despacho (obligatorio al menos una)
+    if (!formData.shippingRegions || formData.shippingRegions.length === 0) {
+      newErrors.shippingRegions = 'Debe configurar al menos una región de despacho';
     }
 
     setLocalErrors(newErrors);
