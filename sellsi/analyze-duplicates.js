@@ -11,56 +11,56 @@ const duplicateFolders = {
   //   'src/domains/marketplace/pages/marketplace' // ✅ MANTENER
   // ],
   
-  // Hooks duplicados - CRÍTICO
-  'CategoryNavigation': [
-    'src/domains/marketplace/CategoryNavigation',
-    'src/domains/marketplace/hooks/CategoryNavigation',
-    'src/domains/marketplace/pages/CategoryNavigation',
-    'src/domains/marketplace/pages/hooks/CategoryNavigation'
-  ],
+  // Hooks duplicados - ✅ ELIMINADO EXITOSAMENTE
+  // 'CategoryNavigation': [
+  //   'src/domains/marketplace/CategoryNavigation', // ✅ ELIMINADO
+  //   'src/domains/marketplace/hooks/CategoryNavigation', // ✅ ELIMINADO
+  //   'src/domains/marketplace/pages/CategoryNavigation', // ✅ MANTENER
+  //   'src/domains/marketplace/pages/hooks/CategoryNavigation' // ✅ MANTENER
+  // ],
   
-  'FilterPanel': [
-    'src/domains/marketplace/FilterPanel',
-    'src/domains/marketplace/hooks/FilterPanel',
-    'src/domains/marketplace/pages/FilterPanel',
-    'src/domains/marketplace/pages/hooks/FilterPanel'
-  ],
+  // 'FilterPanel': [
+  //   'src/domains/marketplace/FilterPanel', // ✅ ELIMINADO
+  //   'src/domains/marketplace/hooks/FilterPanel', // ✅ ELIMINADO
+  //   'src/domains/marketplace/pages/FilterPanel', // ✅ MANTENER
+  //   'src/domains/marketplace/pages/hooks/FilterPanel' // ✅ MANTENER
+  // ],
   
-  'ProductCard': [
-    'src/domains/marketplace/hooks/ProductCard',
-    'src/domains/marketplace/pages/hooks/ProductCard'
-  ],
+  // 'ProductCard': [
+  //   'src/domains/marketplace/hooks/ProductCard', // ✅ ELIMINADO
+  //   'src/domains/marketplace/pages/hooks/ProductCard' // ✅ ELIMINADO
+  // ],
   
-  'ProductGrid': [
-    'src/domains/marketplace/hooks/ProductGrid',
-    'src/domains/marketplace/pages/hooks/ProductGrid'
-  ],
+  // 'ProductGrid': [
+  //   'src/domains/marketplace/hooks/ProductGrid', // ✅ ELIMINADO
+  //   'src/domains/marketplace/pages/hooks/ProductGrid' // ✅ ELIMINADO
+  // ],
   
-  // Componentes duplicados
-  'PriceDisplay': [
-    'src/domains/marketplace/PriceDisplay',
-    'src/domains/marketplace/pages/PriceDisplay'
-  ],
+  // Componentes duplicados - ✅ ELIMINADO EXITOSAMENTE
+  // 'PriceDisplay': [
+  //   'src/domains/marketplace/PriceDisplay', // ✅ MANTENER
+  //   'src/domains/marketplace/pages/PriceDisplay' // ✅ ELIMINADO
+  // ],
   
-  'product': [
-    'src/domains/marketplace/product',
-    'src/domains/marketplace/pages/product'
-  ],
+  // 'product': [
+  //   'src/domains/marketplace/product', // ✅ ELIMINADO
+  //   'src/domains/marketplace/pages/product' // ✅ ELIMINADO
+  // ],
   
-  'sections': [
-    'src/domains/marketplace/sections',
-    'src/domains/marketplace/pages/sections'
-  ],
+  // 'sections': [
+  //   'src/domains/marketplace/sections', // ✅ ELIMINADO
+  //   'src/domains/marketplace/pages/sections' // ✅ MANTENER
+  // ],
   
-  'StockIndicator': [
-    'src/domains/marketplace/StockIndicator',
-    'src/domains/marketplace/pages/StockIndicator'
-  ],
+  // 'StockIndicator': [
+  //   'src/domains/marketplace/StockIndicator', // ✅ MANTENER
+  //   'src/domains/marketplace/pages/StockIndicator' // ✅ ELIMINADO
+  // ],
   
-  'view_page': [
-    'src/domains/marketplace/view_page',
-    'src/domains/marketplace/pages/view_page'
-  ],
+  // 'view_page': [
+  //   'src/domains/marketplace/view_page', // ✅ ELIMINADO
+  //   'src/domains/marketplace/pages/view_page' // ✅ ELIMINADO
+  // ],
   
   // Formatters
   'formatters': [

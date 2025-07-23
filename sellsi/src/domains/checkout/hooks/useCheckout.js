@@ -4,7 +4,7 @@
 
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { CHECKOUT_STEPS, CHECKOUT_FLOW } from '../constants/checkoutSteps'
+import { CHECKOUT_STEPS, CHECKOUT_FLOW } from '../../../shared/constants/checkout'
 import { PAYMENT_STATUS } from '../constants/paymentMethods'
 import { trackUserAction } from '../../../services/security'
 

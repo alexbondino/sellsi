@@ -1,1 +1,1 @@
-export { default } from '../../../components/marketplace/CategoryNavigation/CategoryNavigation'
+export { default } from '../../CategoryNavigation/CategoryNavigation'

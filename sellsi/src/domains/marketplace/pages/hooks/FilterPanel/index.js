@@ -1,1 +1,1 @@
-export { default } from '../../../../components/marketplace/FilterPanel/FilterPanel';
+export { default } from '../../FilterPanel/FilterPanel';
