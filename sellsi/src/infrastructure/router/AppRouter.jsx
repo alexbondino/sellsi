@@ -9,12 +9,12 @@ import { Home } from '../../app/pages/landing';
 
 // 📦 RUTAS PRINCIPALES - LAZY LOADING
 const MarketplaceBuyer = React.lazy(() =>
-  import('../../features/buyer/MarketplaceBuyer')
+  import('../../domains/buyer/pages/MarketplaceBuyer')
 );
 const Marketplace = React.lazy(() =>
-  import('../../features/marketplace/Marketplace')
+  import('../../domains/marketplace/pages/Marketplace')
 );
-const BuyerCart = React.lazy(() => import('../../features/buyer/BuyerCart'));
+const BuyerCart = React.lazy(() => import('../../domains/buyer/pages/BuyerCart'));
 const PaymentMethod = React.lazy(() => import('../../domains/checkout/pages/PaymentMethod'));
 const CheckoutSuccess = React.lazy(() => import('../../domains/checkout/pages/CheckoutSuccess'));
 const CheckoutCancel = React.lazy(() => import('../../domains/checkout/pages/CheckoutCancel'));
@@ -41,22 +41,22 @@ const SupplierProfile = React.lazy(() =>
   import('../../domains/supplier/pages/SupplierProfile')
 );
 const BuyerProfile = React.lazy(() =>
-  import('../../features/buyer/BuyerProfile')
+  import('../../domains/profile/pages/Profile')
 );
 
 // 📦 RUTAS SECUNDARIAS - LAZY LOADING
-const BuyerOrders = React.lazy(() => import('../../features/buyer/BuyerOrders'));
+const BuyerOrders = React.lazy(() => import('../../domains/buyer/pages/BuyerOrders'));
 const BuyerPerformance = React.lazy(() =>
-  import('../../features/buyer/BuyerPerformance')
+  import('../../domains/buyer/pages/BuyerPerformance')
 );
 const TechnicalSpecs = React.lazy(() =>
-  import('../../features/marketplace/view_page/TechnicalSpecs')
+  import('../../domains/marketplace/pages/view_page/TechnicalSpecs')
 );
 const ProviderCatalog = React.lazy(() =>
-  import('../../features/marketplace/ProviderCatalog')
+  import('../../domains/marketplace/pages/ProviderCatalog')
 );
 const ProductPageWrapper = React.lazy(() =>
-  import('../../features/marketplace/ProductPageView/ProductPageWrapper')
+  import('../../domains/marketplace/pages/ProductPageView/ProductPageWrapper')
 );
 
 // 📦 AUTH & ONBOARDING - LAZY LOADING
@@ -68,16 +68,16 @@ const Onboarding = React.lazy(() => import('../../app/pages/onboarding/Onboardin
 const NotFound = React.lazy(() => import('../../shared/components/layout/NotFound'));
 
 // 📦 BAN PAGE - LAZY LOADING
-const BannedPage = React.lazy(() => import('../../features/ban/BanPageView'));
+const BannedPage = React.lazy(() => import('../../domains/ban/pages/BanPageView'));
 
 // 📦 TERMS AND PRIVACY PAGES - LAZY LOADING
 const TermsAndConditionsPage = React.lazy(() => import('../../app/pages/legal/TermsAndConditionsPage'));
 const PrivacyPolicyPage = React.lazy(() => import('../../app/pages/legal/PrivacyPolicyPage'));
 
 // 📦 ADMIN PAGES - LAZY LOADING
-const AdminLogin = React.lazy(() => import('../../features/admin_panel').then(module => ({ default: module.AdminLogin })));
-const AdminDashboard = React.lazy(() => import('../../features/admin_panel').then(module => ({ default: module.AdminDashboard })));
-const AdminPanelHome = React.lazy(() => import('../../features/admin_panel').then(module => ({ default: module.AdminPanelHome })));
+const AdminLogin = React.lazy(() => import('../../domains/admin').then(module => ({ default: module.AdminLogin })));
+const AdminDashboard = React.lazy(() => import('../../domains/admin').then(module => ({ default: module.AdminDashboard })));
+const AdminPanelHome = React.lazy(() => import('../../domains/admin').then(module => ({ default: module.AdminPanelHome })));
 
 // 📦 AUTH CALLBACK - LAZY LOADING
 const AuthCallback = React.lazy(() => import('../../domains/auth').then(module => ({ default: module.AuthCallback })));

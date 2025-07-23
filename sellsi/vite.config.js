@@ -50,20 +50,11 @@ export default defineConfig({
           // Animaciones
           'animation': ['framer-motion', 'canvas-confetti', 'react-confetti'],
           
-          // PDFs - SEPARAR EN SU PROPIO CHUNK
-          'pdf-libs': ['@react-pdf/renderer'],
-          
           // Charts - SEPARAR DE PDFs
           'charts': ['recharts'],
           
           // Utilidades pequeñas
-          'utils': ['lodash.debounce', 'react-hot-toast', 'zustand', 'immer'],
-          
-          // Autenticación y QR (separar de PDF)
-          'auth-libs': ['react-phone-input-2', 'react-qr-code', 'qrcode', 'otplib', 'speakeasy'],
-          
-          // Crypto y seguridad - COMBINAR CON AUTH
-          'security': ['bcryptjs', 'crypto-browserify']
+          'utils': ['lodash.debounce', 'react-hot-toast', 'zustand', 'immer']
         },
         
         // Optimizar nombres de archivos

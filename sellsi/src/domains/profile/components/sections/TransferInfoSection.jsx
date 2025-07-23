@@ -1,6 +1,6 @@
 import React from 'react';
 import { Box, Typography, TextField } from '@mui/material';
-import ProfileSwitch from '../../ProfileSwitch';
+import ProfileSwitch from '../ProfileSwitch';
 import { validateRut, validateEmail } from '../../../../utils/validators';
 
 /**

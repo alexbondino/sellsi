@@ -11,7 +11,7 @@ import {
 import EditIcon from '@mui/icons-material/Edit';
 import CameraAltIcon from '@mui/icons-material/CameraAlt';
 import PersonIcon from '@mui/icons-material/Person';
-import ChangePasswordModal from './ChangePasswordModal';
+import ChangePasswordModal from '../components/ChangePasswordModal';
 import ProfileImageModal from '../../../shared/components/modals/ProfileImageModal';
 import { useBanner } from '../../../shared/components/display/banners/BannerContext';
 
@@ -21,7 +21,7 @@ import { useProfileImage } from '../hooks/useProfileImage';
 import { useSensitiveFields } from '../hooks/useSensitiveFields';
 
 // Secciones modulares
-import { CompanyInfoSection, TransferInfoSection, ShippingInfoSection, BillingInfoSection } from './sections';
+import { CompanyInfoSection, TransferInfoSection, ShippingInfoSection, BillingInfoSection } from '../components/sections';
 
 // Utilidades
 import { getInitials } from '../../../utils/profileHelpers';

@@ -1,5 +1,7 @@
-// Marketplace Domain - Main Index
-// Re-export all marketplace domain functionality
+// Exportar todos los componentes compartidos
 
-// Hooks
-export * from './hooks/index.js';
+// Componentes del carrito
+export * from './cart'
+
+// Componentes de productos
+export * from './product'

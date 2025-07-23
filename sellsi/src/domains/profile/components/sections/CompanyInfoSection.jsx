@@ -1,7 +1,7 @@
 import React from 'react';
 import { Box, Typography, TextField, Button } from '@mui/material';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
-import ProfileSwitch from '../../ProfileSwitch';
+import ProfileSwitch from '../ProfileSwitch';
 import { validateRut, cleanRut, formatRut } from '../../../../utils/validators';
 
 /**

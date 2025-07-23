@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Box, CircularProgress, Typography } from '@mui/material';
-import Profile from '../../../features/profile/Profile';
+import Profile from '../../profile/pages/Profile';
 import { supabase } from '../../../services/supabase';
 import { getUserProfile, updateUserProfile, uploadProfileImage, deleteAllUserImages, repairUserImageUrl, forceFixImageUrl } from '../../../services/user';
 

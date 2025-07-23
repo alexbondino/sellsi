@@ -47,7 +47,7 @@ import {
 import { dashboardThemeCore } from '../../../../styles/dashboardThemeCore';
 import { SPACING_BOTTOM_MAIN } from '../../../../styles/layoutSpacing';
 import { formatPrice } from '../../../../shared/utils/formatters';
-import { generateProductUrl } from '../../../../features/marketplace/marketplace/productUrl';
+import { generateProductUrl } from '../../../marketplace/utils/productUrl';
 
 // Advanced Loading Components
 import {

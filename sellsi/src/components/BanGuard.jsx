@@ -4,7 +4,7 @@ import Loader from './Loader';
 import { Box, CircularProgress } from '@mui/material';
 
 // Lazy import para evitar conflicto con App.jsx
-const BanPageView = React.lazy(() => import('../features/ban/BanPageView'));
+const BanPageView = React.lazy(() => import('../domains/ban/pages/BanPageView'));
 
 /**
  * Componente guardian que verifica el estado de ban antes de renderizar el contenido

@@ -21,8 +21,8 @@ import useCartStore from '../../../stores/cart/cartStore';
 import ContactModal from '../../modals/ContactModal';
 import { Modal, MODAL_TYPES } from '../../feedback';
 // Lazy imports para evitar bundling mixto
-const Login = React.lazy(() => import('../../../../features/login/Login'));
-const Register = React.lazy(() => import('../../../../features/register/Register'));
+const Login = React.lazy(() => import('../../../../domains/auth').then(module => ({ default: module.Login })));
+const Register = React.lazy(() => import('../../../../domains/auth').then(module => ({ default: module.Register })));
 import { setSkipScrollToTopOnce } from '../ScrollToTop/ScrollToTop';
 
 // Importa el nuevo componente reutilizable y ahora verdaderamente controlado

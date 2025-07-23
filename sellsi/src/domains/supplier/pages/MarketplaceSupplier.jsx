@@ -1,9 +1,9 @@
 import React from 'react';
 import { Box } from '@mui/material';
-import useMarketplaceLogic from '../../../features/marketplace/useMarketplaceLogic.jsx';
-import SearchSection from '../../../features/marketplace/sections/SearchSection.jsx';
-// import FilterSection from '../../../features/marketplace/sections/FilterSection.jsx'; // Botón de filtros comentado
-import ProductsSection from '../../../features/marketplace/sections/ProductsSection.jsx';
+import useMarketplaceLogic from '../../marketplace/pages/useMarketplaceLogic.jsx';
+import SearchSection from '../../marketplace/pages/sections/SearchSection.jsx';
+// import FilterSection from '../../marketplace/pages/sections/FilterSection.jsx'; // Botón de filtros comentado
+import ProductsSection from '../../marketplace/pages/sections/ProductsSection.jsx';
 
 // Marketplace para el proveedor: igual que el del comprador pero con SideBar de proveedor
 const MarketplaceSupplier = React.memo(() => {

@@ -10,7 +10,7 @@
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
 import { toast } from 'react-hot-toast'
-import { SHIPPING_OPTIONS } from '../../../marketplace/hooks/constants'
+import { SHIPPING_OPTIONS } from '../../../auth/constants'
 
 /**
  * Hook para gestión de envío
