@@ -484,10 +484,88 @@ app/pages/
 - ✅ **Navegación optimizada** con lazy loading y prefetch inteligente
 - ✅ **Responsive design** con breakpoints MUI y layouts adaptativos
 
-### **Sprint 11: Dominios menores (1 día)**
+### **Sprint 11: Dominios menores (1 día)** ✅ **COMPLETADO - 23/07/2025**
 - features/ban/ → domains/ban/
 - features/profile/ → domains/profile/
 - features/account_recovery/ → domains/auth/
+
+**Migración exitosa completada**:
+
+#### **🚫 domains/ban/ - Ban System**
+- ✅ **Página migrada**: BanPageView.jsx (45 LOC) con diseño centralizado
+- ✅ **Funcionalidad preservada**: Envío de emails de contacto, integración con useBanStatus
+- ✅ **Estructura implementada**: Página en pages/ con barrel exports
+- ✅ **Importaciones corregidas**: Referencias a shared/components/layout/bannedpage
+
+#### **👤 domains/profile/ - Profile Management System**
+- ✅ **Componente principal**: Profile.jsx (421 LOC) con grid layout 2x2 preservado
+- ✅ **Hooks migrados**: useProfileForm.js (84 LOC), useProfileImage.js (96 LOC), useSensitiveFields.js (89 LOC)
+- ✅ **Secciones migradas**: 4 secciones modulares (CompanyInfo, BillingInfo, ShippingInfo, TransferInfo)
+- ✅ **Componentes migrados**: ChangePasswordModal.jsx (330 LOC), ProfileSwitch.jsx (70 LOC)
+- ✅ **Funcionalidades completas**:
+  - Avatar con lazy loading e iniciales
+  - Cambio de contraseña con validación robusta
+  - Campos sensibles con enmascarado (RUT, cuentas bancarias)
+  - Formularios de empresa, facturación, envío y transferencias
+  - Validación en tiempo real con formatters específicos
+  - Integración completa con Supabase y tracking de IP
+
+#### **🔐 domains/auth/ - Account Recovery Enhancement**
+- ✅ **Hook migrado**: useRecuperarForm.js con lógica completa de recuperación
+- ✅ **Wizard step migrado**: Step1Email.jsx con validación mejorada de email
+- ✅ **Componente actualizado**: AccountRecovery.jsx (162 LOC) con imports corregidos
+- ✅ **Funcionalidad preservada**: Proceso wizard de 4 pasos para recuperación
+
+**Estructura final implementada**:
+```
+domains/
+├── ban/
+│   ├── pages/
+│   │   ├── BanPageView.jsx        # Página de cuenta suspendida
+│   │   └── index.js
+│   └── index.js
+├── profile/
+│   ├── pages/
+│   │   ├── Profile.jsx            # Componente principal (421 LOC)
+│   │   └── index.js
+│   ├── components/
+│   │   ├── sections/
+│   │   │   ├── CompanyInfoSection.jsx    # Info empresa + rol + RUT
+│   │   │   ├── BillingInfoSection.jsx    # Facturación + región + comuna
+│   │   │   ├── ShippingInfoSection.jsx   # Envío + dirección completa
+│   │   │   ├── TransferInfoSection.jsx   # Transferencias bancarias
+│   │   │   └── index.js
+│   │   ├── ChangePasswordModal.jsx # Modal cambio contraseña (330 LOC)
+│   │   ├── ProfileSwitch.jsx       # Switch role/account type
+│   │   └── index.js
+│   ├── hooks/
+│   │   ├── useProfileForm.js       # Gestión estado formulario
+│   │   ├── useProfileImage.js      # Gestión imagen perfil + preview
+│   │   ├── useSensitiveFields.js   # Campos sensibles enmascarados
+│   │   └── index.js
+│   └── index.js
+└── auth/
+    ├── components/
+    │   ├── AccountRecovery.jsx     # Componente principal recuperación
+    │   └── ...
+    ├── wizard/
+    │   ├── recovery/
+    │   │   ├── Step1Email.jsx      # Step 1: Email input con validación
+    │   │   └── ...
+    │   └── ...
+    └── hooks/
+        ├── useRecuperarForm.js     # Lógica wizard recuperación
+        └── ...
+```
+
+**Funcionalidades migradas**:
+- ✅ **Sistema completo de bans** con páginas informativas y contacto
+- ✅ **Gestión integral de perfil** con avatar, formularios sectorizados y validaciones
+- ✅ **Cambio de contraseña** con requisitos de seguridad y tracking IP
+- ✅ **Campos sensibles** con enmascarado para RUT y cuentas bancarias
+- ✅ **Recuperación de cuenta** con wizard de 4 pasos y validación email
+- ✅ **Integración completa** con shared/components, services y utils
+- ✅ **Build exitoso**: 38.01s, 79 chunks, funcionalidad preservada 100%
 
 ### **Sprint 12: Cleanup final (1 día)**
 - Eliminar carpeta features/ completamente

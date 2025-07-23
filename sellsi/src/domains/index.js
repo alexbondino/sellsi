@@ -1,8 +1,29 @@
 // ========================================
-// 🔧 DOMINIO ADMINISTRATIVO
+// 🔧 DOMINIOS DE NEGOCIO
 // ========================================
 export * from './admin'
 export * as Admin from './admin'
+
+export * from './auth'
+export * as Auth from './auth'
+
+export * from './ban'
+export * as Ban from './ban'
+
+export * from './buyer'
+export * as Buyer from './buyer'
+
+export * from './checkout'
+export * as Checkout from './checkout'
+
+export * from './marketplace'
+export * as Marketplace from './marketplace'
+
+export * from './profile'
+export * as Profile from './profile'
+
+export * from './supplier'
+export * as Supplier from './supplier'
 
 // ========================================
 // 🔗 UTILIDADES CROSS-DOMAIN
@@ -12,12 +33,14 @@ export * as Admin from './admin'
  * Registro de dominios disponibles para debugging y desarrollo
  */
 export const AVAILABLE_DOMAINS = {
-  ADMIN: 'admin'
-  // TODO: Agregar otros dominios según progreso del refactor
-  // MARKETPLACE: 'marketplace',
-  // BUYER: 'buyer', 
-  // SUPPLIER: 'supplier',
-  // CHECKOUT: 'checkout'
+  ADMIN: 'admin',
+  AUTH: 'auth',
+  BAN: 'ban',
+  BUYER: 'buyer',
+  CHECKOUT: 'checkout',
+  MARKETPLACE: 'marketplace',
+  PROFILE: 'profile',
+  SUPPLIER: 'supplier'
 }
 
 /**
