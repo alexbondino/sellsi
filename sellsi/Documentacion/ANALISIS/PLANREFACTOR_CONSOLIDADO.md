@@ -306,11 +306,11 @@ Se necesita continuar con **Sprint 6-12** para eliminar features/ completamente.
 
 ## 🎯 **PLAN DE RECUPERACIÓN - SPRINTS 6-12**
 
-### **Sprint 6: domains/auth/ (1-2 días)** COMPLETADO
+### **Sprint 6: domains/auth/ (1-2 días)** ✅ **COMPLETADO - 23/07/2025**
 - Migrar features/auth/, features/login/, features/register/
 - Consolidar autenticación en un dominio
 
-### **Sprint 7: domains/supplier/ (2-3 días)**  COMPLETADO 
+### **Sprint 7: domains/supplier/ (2-3 días)** ✅ **COMPLETADO - 23/07/2025**
 - Migrar features/supplier/ completo
 - Hooks, componentes y lógica de proveedor
 

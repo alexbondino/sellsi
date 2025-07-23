@@ -18,3 +18,7 @@ export * from './banners';
 
 // Lists
 export * from './lists';
+
+// Images and displays
+export { LazyImage } from './LazyImage';
+export { ShippingRegionsDisplay } from './ShippingRegionsDisplay';

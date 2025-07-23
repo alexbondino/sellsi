@@ -18,8 +18,8 @@ import { toast } from 'react-hot-toast';
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 
 // Components
-import SideBarProvider from '../../../../features/layout/SideBar';
-import PriceTiers from '../../../../features/ui/PriceTiers';
+import { SideBarProvider } from '../../../../shared/components/navigation/SideBar';
+import { PriceTiers } from '../../../../shared/components/forms/PriceTiers';
 
 // Subcomponentes modularizados
 import {

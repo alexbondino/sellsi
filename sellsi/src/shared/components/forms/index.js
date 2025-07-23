@@ -7,3 +7,6 @@ export { default as ImageUploader } from './ImageUploader'
 export { default as LogoUploader } from './LogoUploader'
 export { default as SearchBar } from './SearchBar'
 export { default as SelectChip } from './SelectChip'
+
+// Pricing components
+export { PriceTiers } from './PriceTiers';

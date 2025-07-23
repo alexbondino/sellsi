@@ -7,3 +7,6 @@ export { default as Widget } from './Widget';
 // Bannedpage components
 export { default as BannedPageUI } from './bannedpage/BannedPageUI';
 export { default as BanInfo } from './bannedpage/BanInfo';
+
+// Footer component
+export { BottomBar } from './BottomBar';

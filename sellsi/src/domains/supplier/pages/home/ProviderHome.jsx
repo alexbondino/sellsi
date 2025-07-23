@@ -13,7 +13,7 @@ import { useNavigate } from 'react-router-dom';
 import AddIcon from '@mui/icons-material/Add';
 import { useSupplierDashboard } from '../../hooks/dashboard-management/useSupplierDashboard';
 import { useSupplierProducts } from '../../hooks/useSupplierProducts';
-import SideBarProvider from '../../../../features/layout/SideBar';
+import { SideBarProvider } from '../../../../shared/components/navigation/SideBar';
 import { dashboardThemeCore } from '../../../../styles/dashboardThemeCore';
 import { SPACING_BOTTOM_MAIN } from '../../../../styles/layoutSpacing';
 import { supabase } from '../../../../services/supabase';

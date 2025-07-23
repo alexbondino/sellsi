@@ -34,7 +34,7 @@ import { ThemeProvider } from '@mui/material/styles';
 import { toast } from 'react-hot-toast';
 
 // Components
-import SideBarProvider from '../../../../features/layout/SideBar';
+import { SideBarProvider } from '../../../../shared/components/navigation/SideBar';
 import ProductCard from '../../../../shared/components/display/product-card/ProductCard';
 import { Modal, MODAL_TYPES } from '../../../../shared/components/feedback'; // <--- Importación del nuevo componente Modal
 
@@ -55,7 +55,7 @@ import {
   LoadMoreState,
   ScrollProgress,
   EmptyProductsState,
-} from '../../../../features/ui/AdvancedLoading';
+} from '../../../../shared/components/feedback/AdvancedLoading';
 
 // Constantes
 const CATEGORIES = [

@@ -2,10 +2,10 @@ import React from 'react';
 import { Box } from '@mui/material';
 import { useLocation } from 'react-router-dom';
 
-import TopBar from '../../../features/layout/TopBar';
-import BottomBar from '../../../features/layout/BottomBar';
-import MobileBar from '../../../features/layout/MobileBar';
-import SideBar from '../../../features/layout/SideBar';
+import { TopBar } from '../navigation/TopBar';
+import { BottomBar } from './BottomBar';
+import { MobileBar } from '../navigation/MobileBar';
+import { SideBar } from '../navigation/SideBar';
 import Banner from '../display/banners/Banner';
 import WhatsAppWidget from '../../../components/WhatsAppWidget';
 import { useBanner } from '../display/banners/BannerContext';

@@ -5,7 +5,7 @@ import { Card, Box, alpha } from '@mui/material';
 
 // Common Utility Imports
 import { getProductImageUrl, getBestProductImageUrl } from '../../../../utils/getProductImageUrl';
-import { LazyImage } from '../../../../features/layout';
+import { LazyImage } from '../LazyImage';
 import { useResponsiveThumbnail } from '../../../../hooks/useResponsiveThumbnail';
 
 // Sub-components
