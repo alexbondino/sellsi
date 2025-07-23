@@ -32,8 +32,8 @@ const ROUTE_COMPONENTS = {
     import('../domains/supplier/pages/my-products/MyProducts'),
   '/supplier/addproduct': () =>
     import('../domains/supplier/pages/my-products/AddProduct'),
-  '/login': () => import('../features/login/Login'),
-  '/crear-cuenta': () => import('../features/register/Register'),
+  '/login': () => import('../domains/auth').then(module => module.Login),
+  '/crear-cuenta': () => import('../domains/auth').then(module => module.Register),
 };
 
 // ============================================================================

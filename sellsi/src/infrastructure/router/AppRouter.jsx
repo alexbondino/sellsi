@@ -5,7 +5,7 @@ import { PrivateRoute } from '../../domains/auth';
 import { useAuth } from '../providers/AuthProvider';
 
 // Landing Page (carga inmediata para primera impresión)
-import Home from '../../features/landing_page/Home';
+import { Home } from '../../app/pages/landing';
 
 // 📦 RUTAS PRINCIPALES - LAZY LOADING
 const MarketplaceBuyer = React.lazy(() =>
@@ -62,7 +62,7 @@ const ProductPageWrapper = React.lazy(() =>
 // 📦 AUTH & ONBOARDING - LAZY LOADING
 const Login = React.lazy(() => import('../../domains/auth').then(module => ({ default: module.Login })));
 const Register = React.lazy(() => import('../../domains/auth').then(module => ({ default: module.Register })));
-const Onboarding = React.lazy(() => import('../../features/onboarding/Onboarding'));
+const Onboarding = React.lazy(() => import('../../app/pages/onboarding/Onboarding'));
 
 // 📦 ERROR PAGES - LAZY LOADING
 const NotFound = React.lazy(() => import('../../shared/components/layout/NotFound'));
@@ -71,8 +71,8 @@ const NotFound = React.lazy(() => import('../../shared/components/layout/NotFoun
 const BannedPage = React.lazy(() => import('../../features/ban/BanPageView'));
 
 // 📦 TERMS AND PRIVACY PAGES - LAZY LOADING
-const TermsAndConditionsPage = React.lazy(() => import('../../features/terms_policies/TermsAndConditionsPage'));
-const PrivacyPolicyPage = React.lazy(() => import('../../features/terms_policies/PrivacyPolicyPage'));
+const TermsAndConditionsPage = React.lazy(() => import('../../app/pages/legal/TermsAndConditionsPage'));
+const PrivacyPolicyPage = React.lazy(() => import('../../app/pages/legal/PrivacyPolicyPage'));
 
 // 📦 ADMIN PAGES - LAZY LOADING
 const AdminLogin = React.lazy(() => import('../../features/admin_panel').then(module => ({ default: module.AdminLogin })));
