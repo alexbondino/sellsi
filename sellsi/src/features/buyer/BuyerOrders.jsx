@@ -16,7 +16,7 @@ import { ThemeProvider } from '@mui/material/styles';
 import SideBarProvider from '../layout/SideBar';
 import { dashboardThemeCore } from '../../styles/dashboardThemeCore';
 import { SPACING_BOTTOM_MAIN } from '../../styles/layoutSpacing';
-import { useBuyerOrders } from './hooks/useBuyerOrders';
+import { useBuyerOrders } from '../../domains/buyer';
 
 const BuyerOrders = () => {
   // ============================================================================

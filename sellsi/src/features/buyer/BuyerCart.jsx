@@ -37,7 +37,7 @@ import useCartStore from '../../shared/stores/cart/cartStore';
 import {
   SHIPPING_OPTIONS,
   DISCOUNT_CODES,
-} from '../marketplace/hooks/constants';
+} from '../../domains/marketplace/hooks/constants';
 import {
   CartHeader,
   ShippingProgressBar,

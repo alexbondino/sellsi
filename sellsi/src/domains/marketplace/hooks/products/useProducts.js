@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
-import { supabase } from '../../../services/supabase'
-import { filterActiveProducts } from '../../../utils/productActiveStatus'
+import { supabase } from '../../../../services/supabase'
+import { filterActiveProducts } from '../../../../utils/productActiveStatus'
 
 const USE_MOCKS = import.meta.env.VITE_USE_MOCKS === 'true'
 

@@ -3,9 +3,9 @@ import { useTheme } from '@mui/material';
 import { useLocation } from 'react-router-dom';
 
 // Importar los hooks existentes
-import { useMarketplaceState } from './hooks/useMarketplaceState';
-import { useProductSorting } from './hooks/useProductSorting';
-import { useScrollBehavior } from './hooks/useScrollBehavior';
+import { useMarketplaceState } from '../../domains/marketplace/hooks/state/useMarketplaceState';
+import { useProductSorting } from '../../domains/marketplace/hooks/products/useProductSorting';
+import { useScrollBehavior } from '../../domains/marketplace/hooks/ui/useScrollBehavior';
 
 /**
  * Hook centralizado que consolida toda la lógica de Marketplace

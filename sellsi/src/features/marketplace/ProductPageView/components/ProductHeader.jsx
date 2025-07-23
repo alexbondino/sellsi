@@ -33,7 +33,7 @@ import ProductImageGallery from './ProductImageGallery'
 import PurchaseActions from './PurchaseActions'
 import PriceDisplay from '../../PriceDisplay/PriceDisplay'
 import StockIndicator from '../../StockIndicator/StockIndicator'
-import { useProductPriceTiers } from '../hooks/useProductPriceTiers'
+import { useProductPriceTiers } from '../../../../domains/marketplace/hooks/products/useProductPriceTiers'
 
 const ProductHeader = React.memo(({
   product,

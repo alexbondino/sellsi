@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { supabase } from '../../../services/supabase'
+import { supabase } from '../../../../services/supabase'
 
 const USE_MOCKS = import.meta.env.VITE_USE_MOCKS === 'true'
 

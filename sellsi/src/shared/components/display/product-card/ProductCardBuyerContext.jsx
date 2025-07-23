@@ -23,7 +23,7 @@ import { toast } from 'react-hot-toast';
 // Utility imports (updated paths for shared location)
 import { generateProductUrl } from '../../../../features/marketplace/marketplace/productUrl';
 import PriceDisplay from '../../../../features/marketplace/PriceDisplay';
-import { useProductPriceTiers } from '../../../../features/marketplace/hooks/useProductPriceTiers';
+import { useProductPriceTiers } from '../../../../domains/marketplace/hooks/products/useProductPriceTiers';
 import {
   formatProductForCart,
   calculatePriceForQuantity,

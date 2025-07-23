@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback } from 'react'
-import { INITIAL_FILTERS } from '../marketplace/constants'
-import { useProducts } from './useProducts'
+import { INITIAL_FILTERS } from '../constants'
+import { useProducts } from '../products/useProducts'
 
 export const useMarketplaceState = () => {
   const { products, loading, error } = useProducts()

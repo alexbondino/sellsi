@@ -27,7 +27,7 @@ import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined' // ✅ AGREGAR
 import PriceFilter from './components/PriceFilter'
 import AppliedFiltersDisplay from './components/AppliedFiltersDisplay'
 import { filterPanelStyles as styles } from '../hooks/FilterPanel/FilterPanel.styles'
-import { useProductFilters } from '../hooks/useProductFilters'
+import { useProductFilters } from '../../../domains/marketplace/hooks/products/useProductFilters'
 
 // ✅ MEJORA DE RENDIMIENTO: Memoización del componente principal
 const FilterPanel = React.memo((props) => {
