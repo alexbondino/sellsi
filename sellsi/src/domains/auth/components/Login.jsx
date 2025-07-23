@@ -17,7 +17,7 @@ import { Visibility, VisibilityOff } from '@mui/icons-material';
 
 import { PrimaryButton } from '../../../shared/components';
 import { useLoginForm } from '../hooks';
-import AccountRecovery from './AccountRecovery';
+import Recuperar from './AccountRecovery';
 import Register from './Register';
 import { supabase } from '../../../services/supabase';
 

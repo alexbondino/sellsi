@@ -1,6 +1,6 @@
 // src/shared/components/layout/index.js
 export { default as SuspenseLoader } from './SuspenseLoader';
-export { default as AppShell } from './AppShell';
+export { AppShell } from './AppShell';
 export { default as NotFound } from './NotFound';
 export { default as Widget } from './Widget';
 

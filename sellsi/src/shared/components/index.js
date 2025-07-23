@@ -52,7 +52,8 @@ export {
   BarChart,
   PieChart,
   Banner,
-  BannerContext,
+  BannerProvider,
+  useBanner,
   RequestList
 } from './display';
 

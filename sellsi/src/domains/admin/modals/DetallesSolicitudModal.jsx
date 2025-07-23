@@ -339,25 +339,25 @@ const DetallesSolicitudModal = ({ open, solicitud, onClose }) => {
                   <ListItemText
                     primary={
                       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
+                        <Typography variant="body1" component="span" sx={{ fontWeight: 'bold' }}>
                           {estadoInfo.label}
                         </Typography>
-                        <Typography variant="body2" color="textSecondary">
+                        <Typography variant="body2" component="span" color="textSecondary">
                           {new Date(item.fecha).toLocaleString('es-CL')}
                         </Typography>
                       </Box>
                     }
                     secondary={
                       <Box>
-                        <Typography variant="body2">
+                        <Typography variant="body2" component="div">
                           {item.descripcion}
                         </Typography>
                         {item.detalles && (
-                          <Typography variant="body2" color="textSecondary" sx={{ fontStyle: 'italic' }}>
+                          <Typography variant="body2" component="div" color="textSecondary" sx={{ fontStyle: 'italic' }}>
                             {item.detalles}
                           </Typography>
                         )}
-                        <Typography variant="caption" color="textSecondary">
+                        <Typography variant="caption" component="div" color="textSecondary">
                           Usuario: {item.usuario}
                         </Typography>
                       </Box>

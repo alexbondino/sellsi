@@ -33,10 +33,10 @@ import {
   Build
 } from '@mui/icons-material';
 
-import { PrimaryButton } from '../../shared/components/forms';
-import AdminAccountCreator from './components/AdminAccountCreator';
-import AdminAccountManager from './components/AdminAccountManager';
-import { isDevelopment, DEV_CONFIG } from './config/devConfig';
+import { PrimaryButton } from '../../../shared/components';
+import AdminAccountCreator from '../components/AdminAccountCreator';
+import AdminAccountManager from '../components/AdminAccountManager';
+import { isDevelopment, DEV_CONFIG } from '../config/devConfig';
 
 const AdminPanelHome = () => {
   const navigate = useNavigate();

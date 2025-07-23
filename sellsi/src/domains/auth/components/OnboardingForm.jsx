@@ -9,7 +9,7 @@ import {
   Button,
 } from '@mui/material';
 import { useOnboardingForm } from '../../../hooks/useOnboardingForm';
-import { PrimaryButton, CountrySelector } from '../../shared/components/forms';
+import { PrimaryButton, CountrySelector } from '../../../shared/components';
 
 // Componente para los botones de selección de tipo de cuenta
 const AccountTypeSelector = ({ selectedType, onTypeSelect }) => (

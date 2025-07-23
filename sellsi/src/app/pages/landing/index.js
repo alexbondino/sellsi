@@ -2,4 +2,4 @@
 export { default as Home } from './Home.jsx';
 export * from './hooks';
 export * from './components';
-export { default as constants } from './constants.jsx';
+export * from './constants.jsx';
