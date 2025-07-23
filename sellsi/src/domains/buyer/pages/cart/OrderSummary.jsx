@@ -33,6 +33,9 @@ const OrderSummary = ({
   isAdvancedShippingMode,
   onShippingCompatibilityError,
 
+  // Shipping loading state
+  isCalculatingShipping,
+
   // Functions
   formatPrice,
   formatDate,
@@ -117,6 +120,7 @@ const OrderSummary = ({
         total={total}
         formatPrice={formatPrice}
         cartStats={cartStats}
+        isCalculatingShipping={isCalculatingShipping}
       />
       {/* Botones de acción */}
       <Stack spacing={2}>

@@ -1,5 +1,5 @@
 import React from 'react'
-import { Box, Typography, Divider } from '@mui/material'
+import { Box, Typography, Divider, CircularProgress } from '@mui/material'
 
 const PriceBreakdown = ({
   subtotal,
@@ -8,6 +8,7 @@ const PriceBreakdown = ({
   total,
   formatPrice,
   cartStats,
+  isCalculatingShipping = false,
 }) => {
   return (
     <>
@@ -53,24 +54,23 @@ const PriceBreakdown = ({
           }}
         >
           <Typography variant="body2">Envío:</Typography>
-          <Typography
-            variant="body2"
-            fontWeight="medium"
-            color={shippingCost === 0 ? 'success.main' : 'text.primary'}
-          >
-            {shippingCost === 0 ? '¡GRATIS!' : formatPrice(shippingCost)}
-          </Typography>
+          {isCalculatingShipping ? (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <CircularProgress size={16} />
+              <Typography variant="body2" color="text.secondary">
+                Calculando envío...
+              </Typography>
+            </Box>
+          ) : (
+            <Typography
+              variant="body2"
+              fontWeight="medium"
+              color={shippingCost === 0 ? 'success.main' : 'text.primary'}
+            >
+              {shippingCost === 0 ? '¡GRATIS!' : formatPrice(shippingCost)}
+            </Typography>
+          )}
         </Box>
-
-        {subtotal > 100000 && shippingCost === 0 && (
-          <Typography
-            variant="caption"
-            color="success.main"
-            sx={{ display: 'block', mb: 1 }}
-          >
-            ✅ ¡Envío gratis por compras sobre $100.000!
-          </Typography>
-        )}
       </Box>
 
       <Divider sx={{ my: 2 }} />

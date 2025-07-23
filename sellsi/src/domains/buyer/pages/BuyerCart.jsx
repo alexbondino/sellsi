@@ -37,6 +37,7 @@ import {
   SHIPPING_OPTIONS,
   DISCOUNT_CODES,
 } from '../../marketplace/hooks/constants';
+import { calculateRealShippingCost } from '../../../utils/shippingCalculation';
 import {
   CartHeader,
   ShippingProgressBar,
@@ -138,6 +139,10 @@ const BuyerCart = () => {
     return initialShipping;
   });
 
+  // ===== ESTADO PARA COSTO REAL DE ENVÍO =====
+  const [realShippingCost, setRealShippingCost] = useState(0);
+  const [isCalculatingShipping, setIsCalculatingShipping] = useState(false);
+
   // ===== SHIPPING VALIDATION HOOK =====
   const [compatibilityModalOpen, setCompatibilityModalOpen] = useState(false);
   // ✅ NUEVO: Modo avanzado por defecto, sin toggle
@@ -170,18 +175,42 @@ const BuyerCart = () => {
     return stats;
   }, [items]);
 
-  // Calcular costo total de envío individual por producto
-  const productShippingCost = useMemo(() => {
-    const totalShipping = items.reduce((totalShipping, item) => {
-      const selectedShippingId = productShipping[item.id] || 'standard';
-      const shippingOption = SHIPPING_OPTIONS.find(
-        opt => opt.id === selectedShippingId
-      );
-      return totalShipping + (shippingOption ? shippingOption.price : 0);
-    }, 0);
+  // ===== CALCULAR COSTO REAL DE ENVÍO =====
+  useEffect(() => {
+    const calculateShipping = async () => {
+      if (items.length === 0) {
+        setRealShippingCost(0);
+        setIsCalculatingShipping(false);
+        return;
+      }
 
-    return totalShipping;
+      setIsCalculatingShipping(true);
+
+      try {
+        const cost = await calculateRealShippingCost(items);
+        setRealShippingCost(cost);
+        console.log('[BuyerCart] Costo real de envío calculado:', cost);
+      } catch (error) {
+        console.error('[BuyerCart] Error calculando costo de envío:', error);
+        // Fallback al cálculo anterior si hay error
+        const fallbackCost = items.reduce((totalShipping, item) => {
+          const selectedShippingId = productShipping[item.id] || 'standard';
+          const shippingOption = SHIPPING_OPTIONS.find(
+            opt => opt.id === selectedShippingId
+          );
+          return totalShipping + (shippingOption ? shippingOption.price : 0);
+        }, 0);
+        setRealShippingCost(fallbackCost);
+      } finally {
+        setIsCalculatingShipping(false);
+      }
+    };
+
+    calculateShipping();
   }, [items, productShipping]);
+
+  // Usar el costo real de envío calculado
+  const productShippingCost = realShippingCost;
 
   // Total final incluyendo envío individual por producto
   const finalTotal = useMemo(() => {
@@ -735,6 +764,8 @@ const BuyerCart = () => {
                       shippingValidation={shippingValidation}
                       isAdvancedShippingMode={isAdvancedShippingMode}
                       onShippingCompatibilityError={() => setCompatibilityModalOpen(true)}
+                      // Shipping loading state
+                      isCalculatingShipping={isCalculatingShipping}
                       // Functions
                       formatPrice={formatPrice}
                       formatDate={formatDate}
