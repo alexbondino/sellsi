@@ -27,11 +27,11 @@ const ROUTE_COMPONENTS = {
   '/buyer/cart': () => import('../features/buyer/BuyerCart'),
   '/buyer/orders': () => import('../features/buyer/BuyerOrders'),
   '/buyer/performance': () => import('../features/buyer/BuyerPerformance'),
-  '/supplier/home': () => import('../features/supplier/home/ProviderHome'),
+  '/supplier/home': () => import('../domains/supplier/pages/home/ProviderHome'),
   '/supplier/myproducts': () =>
-    import('../features/supplier/my-products/MyProducts'),
+    import('../domains/supplier/pages/my-products/MyProducts'),
   '/supplier/addproduct': () =>
-    import('../features/supplier/my-products/AddProduct'),
+    import('../domains/supplier/pages/my-products/AddProduct'),
   '/login': () => import('../features/login/Login'),
   '/crear-cuenta': () => import('../features/register/Register'),
 };

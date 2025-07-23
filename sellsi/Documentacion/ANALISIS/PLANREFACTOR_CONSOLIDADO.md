@@ -306,17 +306,71 @@ Se necesita continuar con **Sprint 6-12** para eliminar features/ completamente.
 
 ## 🎯 **PLAN DE RECUPERACIÓN - SPRINTS 6-12**
 
-### **Sprint 6: domains/auth/ (1-2 días)**
+### **Sprint 6: domains/auth/ (1-2 días)** COMPLETADO
 - Migrar features/auth/, features/login/, features/register/
 - Consolidar autenticación en un dominio
 
-### **Sprint 7: domains/supplier/ (2-3 días)**  
+### **Sprint 7: domains/supplier/ (2-3 días)**  COMPLETADO 
 - Migrar features/supplier/ completo
 - Hooks, componentes y lógica de proveedor
 
-### **Sprint 8: domains/checkout/ (2 días)**
+### **Sprint 8: domains/checkout/ (2 días)** ✅ **COMPLETADO - 23/07/2025**
 - Migrar features/checkout/
 - Sistema de pagos y proceso de compra
+
+**Migración exitosa completada**:
+- ✅ **Páginas migradas**: PaymentMethod, CheckoutSuccess, CheckoutCancel
+- ✅ **Hooks migrados**: useCheckout (250 LOC), usePaymentMethods (101 LOC), useCheckoutFormatting (159 LOC) 
+- ✅ **Servicios migrados**: checkoutService (266 LOC) con integración Khipu completa
+- ✅ **Componentes migrados**: PaymentMethodSelector (381 LOC), CheckoutSummary (452 LOC)
+- ✅ **Constantes migradas**: paymentMethods, checkoutSteps con configuración completa
+- ✅ **Configuración migrada**: checkoutConfig (190 LOC) con ambiente de producción
+- ✅ **Estilos migrados**: checkoutStyles con animaciones Framer Motion
+- ✅ **AppRouter actualizado**: Rutas corregidas a domains/checkout/
+- ✅ **Build exitoso**: 41.19s, 76 chunks, funcionalidad preservada 100%
+
+**Estructura final implementada**:
+```
+domains/checkout/
+├── pages/
+│   ├── PaymentMethod.jsx       # Página principal de método de pago
+│   ├── CheckoutSuccess.jsx     # Página de éxito con verificación Khipu
+│   ├── CheckoutCancel.jsx      # Página de cancelación
+│   └── index.js
+├── components/
+│   ├── PaymentMethodSelector.jsx # Selector con validación y UX
+│   ├── CheckoutSummary.jsx      # Resumen con navegación productos
+│   └── index.js
+├── hooks/
+│   ├── useCheckout.js          # Zustand store del proceso
+│   ├── usePaymentMethods.js    # Gestión métodos y validación
+│   ├── useCheckoutFormatting.js # Formatters especializados
+│   └── index.js
+├── services/
+│   ├── checkoutService.js      # Integración Supabase + Khipu
+│   └── index.js
+├── constants/
+│   ├── paymentMethods.js       # PAYMENT_METHODS, PAYMENT_STATUS
+│   ├── checkoutSteps.js        # CHECKOUT_STEPS, CHECKOUT_FLOW
+│   └── index.js
+├── config/
+│   ├── checkoutConfig.js       # Configuración por ambiente
+│   └── index.js
+├── styles/
+│   ├── checkoutStyles.js       # Estilos MUI + animaciones
+│   └── index.js
+└── index.js                    # Barrel exports completo
+```
+
+**Funcionalidades migradas**:
+- ✅ **Proceso completo de checkout** con stepper de progreso
+- ✅ **Integración Khipu** para transferencias bancarias instantáneas
+- ✅ **Validación de métodos de pago** con límites y comisiones
+- ✅ **Cálculo automático** de IVA, envío y total
+- ✅ **Manejo de errores** y estados de procesamiento
+- ✅ **IP tracking** integrado para seguridad
+- ✅ **Animaciones** Framer Motion para mejor UX
+- ✅ **Responsive design** con navegación de productos
 
 ### **Sprint 9: shared/components/ (2 días)**
 - Migrar features/layout/, features/ui/

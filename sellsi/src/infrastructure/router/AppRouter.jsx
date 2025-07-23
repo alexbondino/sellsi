@@ -1,7 +1,7 @@
 import React, { Suspense } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import SuspenseLoader from '../../shared/components/layout/SuspenseLoader';
-import PrivateRoute from '../../features/auth/PrivateRoute';
+import { PrivateRoute } from '../../domains/auth';
 import { useAuth } from '../providers/AuthProvider';
 
 // Landing Page (carga inmediata para primera impresión)
@@ -15,30 +15,30 @@ const Marketplace = React.lazy(() =>
   import('../../features/marketplace/Marketplace')
 );
 const BuyerCart = React.lazy(() => import('../../features/buyer/BuyerCart'));
-const PaymentMethod = React.lazy(() => import('../../features/checkout/PaymentMethod'));
-const CheckoutSuccess = React.lazy(() => import('../../features/checkout/CheckoutSuccess'));
-const CheckoutCancel = React.lazy(() => import('../../features/checkout/CheckoutCancel'));
+const PaymentMethod = React.lazy(() => import('../../domains/checkout/pages/PaymentMethod'));
+const CheckoutSuccess = React.lazy(() => import('../../domains/checkout/pages/CheckoutSuccess'));
+const CheckoutCancel = React.lazy(() => import('../../domains/checkout/pages/CheckoutCancel'));
 
 // 📦 SUPPLIER DASHBOARD - LAZY LOADING
 const ProviderHome = React.lazy(() =>
-  import('../../features/supplier/home/ProviderHome')
+  import('../../domains/supplier/pages/home/ProviderHome')
 );
 const MyProducts = React.lazy(() =>
-  import('../../features/supplier/my-products/MyProducts')
+  import('../../domains/supplier/pages/my-products/MyProducts')
 );
 const AddProduct = React.lazy(() =>
-  import('../../features/supplier/my-products/AddProduct')
+  import('../../domains/supplier/pages/my-products/AddProduct')
 );
 const MyOrdersPage = React.lazy(() =>
-  import('../../features/supplier/my-orders/MyOrdersPage')
+  import('../../domains/supplier/pages/my-orders/MyOrdersPage')
 );
 const MarketplaceSupplier = React.lazy(() =>
-  import('../../features/supplier/MarketplaceSupplier.jsx')
+  import('../../domains/supplier/pages/MarketplaceSupplier.jsx')
 );
 
 // 📦 PROFILE PAGES - LAZY LOADING
 const SupplierProfile = React.lazy(() =>
-  import('../../features/supplier/SupplierProfile')
+  import('../../domains/supplier/pages/SupplierProfile')
 );
 const BuyerProfile = React.lazy(() =>
   import('../../features/buyer/BuyerProfile')
@@ -60,8 +60,8 @@ const ProductPageWrapper = React.lazy(() =>
 );
 
 // 📦 AUTH & ONBOARDING - LAZY LOADING
-const Login = React.lazy(() => import('../../features/login/Login'));
-const Register = React.lazy(() => import('../../features/register/Register'));
+const Login = React.lazy(() => import('../../domains/auth').then(module => ({ default: module.Login })));
+const Register = React.lazy(() => import('../../domains/auth').then(module => ({ default: module.Register })));
 const Onboarding = React.lazy(() => import('../../features/onboarding/Onboarding'));
 
 // 📦 ERROR PAGES - LAZY LOADING
@@ -80,7 +80,7 @@ const AdminDashboard = React.lazy(() => import('../../features/admin_panel').the
 const AdminPanelHome = React.lazy(() => import('../../features/admin_panel').then(module => ({ default: module.AdminPanelHome })));
 
 // 📦 AUTH CALLBACK - LAZY LOADING
-const AuthCallback = React.lazy(() => import('../../features/auth/AuthCallback'));
+const AuthCallback = React.lazy(() => import('../../domains/auth').then(module => ({ default: module.AuthCallback })));
 
 export const AppRouter = ({ scrollTargets }) => {
   const { session, needsOnboarding, loadingUserStatus, refreshUserProfile } = useAuth();

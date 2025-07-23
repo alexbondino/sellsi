@@ -6,40 +6,16 @@ ProductRegions.jsx:45 [ProductRegions] prepareModalData - shippingRegions actual
 ProductRegions.jsx:47 [ProductRegions] prepareModalData - Datos preparados para modal: [{…}]
 ProductRegions.jsx:45 [ProductRegions] prepareModalData - shippingRegions actuales: [{…}]
 ProductRegions.jsx:47 [ProductRegions] prepareModalData - Datos preparados para modal: [{…}]
-react-dom-client.development.js:16244 [Violation] 'click' handler took 280ms
+react-dom-client.development.js:16244 [Violation] 'click' handler took 328ms
 ProductRegions.jsx:45 [ProductRegions] prepareModalData - shippingRegions actuales: [{…}]
 ProductRegions.jsx:47 [ProductRegions] prepareModalData - Datos preparados para modal: [{…}]
 ProductRegions.jsx:45 [ProductRegions] prepareModalData - shippingRegions actuales: [{…}]
 ProductRegions.jsx:47 [ProductRegions] prepareModalData - Datos preparados para modal: [{…}]
-ProductRegions.jsx:45 [ProductRegions] prepareModalData - shippingRegions actuales: [{…}]
-ProductRegions.jsx:47 [ProductRegions] prepareModalData - Datos preparados para modal: [{…}]
-ProductRegions.jsx:45 [ProductRegions] prepareModalData - shippingRegions actuales: [{…}]
-ProductRegions.jsx:47 [ProductRegions] prepareModalData - Datos preparados para modal: [{…}]
-useSupplierProducts.js:118 [DEBUG] Recalculating filteredProducts, total products: 2
-useSupplierProducts.js:118 [DEBUG] Recalculating filteredProducts, total products: 2
-useSupplierProducts.js:250 [DEBUG] AGGRESSIVE Cache buster applied: {original: '1753209616496_1752361458700_desktop_320x260.jpg', cacheBuster: 1753209826109, randomId: 'd6iatahd0c9', now: 1753209826881, final: '1753209616496_1752361458700_desktop_320x260.jpg?v=…3209826109&r=d6iatahd0c9&_cb=1753209826881&bust=1'}
-useSupplierProducts.js:250 [DEBUG] AGGRESSIVE Cache buster applied: {original: '1753209616496_desktop_320x260.jpg', cacheBuster: 1753209826109, randomId: 'd6iatahd0c9', now: 1753209826881, final: '1753209616496_desktop_320x260.jpg?v=1753209826109&r=d6iatahd0c9&_cb=1753209826881&bust=1'}
-useSupplierProducts.js:250 [DEBUG] AGGRESSIVE Cache buster applied: {original: '1753209616496_1752361458700_desktop_320x260.jpg', cacheBuster: 1753209826109, randomId: 'd6iatahd0c9', now: 1753209826881, final: '1753209616496_1752361458700_desktop_320x260.jpg?v=…3209826109&r=d6iatahd0c9&_cb=1753209826881&bust=1'}
-useSupplierProducts.js:250 [DEBUG] AGGRESSIVE Cache buster applied: {original: '1753209616496_1752361458700_desktop_320x260.jpg', cacheBuster: 1753209826109, randomId: 'dw07zabahq', now: 1753209826882, final: '1753209616496_1752361458700_desktop_320x260.jpg?v=…53209826109&r=dw07zabahq&_cb=1753209826882&bust=1'}
-useSupplierProducts.js:250 [DEBUG] AGGRESSIVE Cache buster applied: {original: '1753209616496_desktop_320x260.jpg', cacheBuster: 1753209826109, randomId: 'dw07zabahq', now: 1753209826882, final: '1753209616496_desktop_320x260.jpg?v=1753209826109&r=dw07zabahq&_cb=1753209826882&bust=1'}
-useSupplierProducts.js:250 [DEBUG] AGGRESSIVE Cache buster applied: {original: '1753209616496_1752361458700_desktop_320x260.jpg', cacheBuster: 1753209826109, randomId: 'dw07zabahq', now: 1753209826882, final: '1753209616496_1752361458700_desktop_320x260.jpg?v=…53209826109&r=dw07zabahq&_cb=1753209826882&bust=1'}
-useSupplierProducts.js:118 [DEBUG] Recalculating filteredProducts, total products: 2
-useSupplierProducts.js:118 [DEBUG] Recalculating filteredProducts, total products: 2
-useSupplierProducts.js:250 [DEBUG] AGGRESSIVE Cache buster applied: {original: '1753209616496_1752361458700_desktop_320x260.jpg', cacheBuster: 1753209826109, randomId: '1jea86omnld', now: 1753209826883, final: '1753209616496_1752361458700_desktop_320x260.jpg?v=…3209826109&r=1jea86omnld&_cb=1753209826883&bust=1'}
-useSupplierProducts.js:250 [DEBUG] AGGRESSIVE Cache buster applied: {original: '1753209616496_desktop_320x260.jpg', cacheBuster: 1753209826109, randomId: '1jea86omnld', now: 1753209826883, final: '1753209616496_desktop_320x260.jpg?v=1753209826109&r=1jea86omnld&_cb=1753209826883&bust=1'}
-useSupplierProducts.js:250 [DEBUG] AGGRESSIVE Cache buster applied: {original: '1753209616496_1752361458700_desktop_320x260.jpg', cacheBuster: 1753209826109, randomId: '1jea86omnld', now: 1753209826883, final: '1753209616496_1752361458700_desktop_320x260.jpg?v=…3209826109&r=1jea86omnld&_cb=1753209826883&bust=1'}
-useSupplierProducts.js:250 [DEBUG] AGGRESSIVE Cache buster applied: {original: '1753209616496_1752361458700_desktop_320x260.jpg', cacheBuster: 1753209826109, randomId: 'xp0fl9dsfpn', now: 1753209826883, final: '1753209616496_1752361458700_desktop_320x260.jpg?v=…3209826109&r=xp0fl9dsfpn&_cb=1753209826883&bust=1'}
-useSupplierProducts.js:250 [DEBUG] AGGRESSIVE Cache buster applied: {original: '1753209616496_desktop_320x260.jpg', cacheBuster: 1753209826109, randomId: 'xp0fl9dsfpn', now: 1753209826883, final: '1753209616496_desktop_320x260.jpg?v=1753209826109&r=xp0fl9dsfpn&_cb=1753209826883&bust=1'}
-useSupplierProducts.js:250 [DEBUG] AGGRESSIVE Cache buster applied: {original: '1753209616496_1752361458700_desktop_320x260.jpg', cacheBuster: 1753209826109, randomId: 'xp0fl9dsfpn', now: 1753209826883, final: '1753209616496_1752361458700_desktop_320x260.jpg?v=…3209826109&r=xp0fl9dsfpn&_cb=1753209826883&bust=1'}
 ProductRegions.jsx:45 [ProductRegions] prepareModalData - shippingRegions actuales: [{…}]
 ProductRegions.jsx:47 [ProductRegions] prepareModalData - Datos preparados para modal: [{…}]
 ProductRegions.jsx:45 [ProductRegions] prepareModalData - shippingRegions actuales: [{…}]
 ProductRegions.jsx:47 [ProductRegions] prepareModalData - Datos preparados para modal: [{…}]
 useProductBackground.js:84 [DEBUG] Background: Processing images for product: 162a901a-652a-4c3d-b9b8-e4635b486153
-useSupplierProducts.js:104 [DEBUG] consolidatedProcessing updated: {162a901a-652a-4c3d-b9b8-e4635b486153: true}
-useSupplierProducts.js:104 [DEBUG] consolidatedProcessing updated: {162a901a-652a-4c3d-b9b8-e4635b486153: true}
-useSupplierProducts.js:104 [DEBUG] consolidatedProcessing updated: {162a901a-652a-4c3d-b9b8-e4635b486153: true}
-useSupplierProducts.js:104 [DEBUG] consolidatedProcessing updated: {162a901a-652a-4c3d-b9b8-e4635b486153: true}
 ProductRegions.jsx:45 [ProductRegions] prepareModalData - shippingRegions actuales: [{…}]
 ProductRegions.jsx:47 [ProductRegions] prepareModalData - Datos preparados para modal: [{…}]
 ProductRegions.jsx:45 [ProductRegions] prepareModalData - shippingRegions actuales: [{…}]
@@ -48,26 +24,24 @@ ProductRegions.jsx:45 [ProductRegions] prepareModalData - shippingRegions actual
 ProductRegions.jsx:47 [ProductRegions] prepareModalData - Datos preparados para modal: [{…}]
 ProductRegions.jsx:45 [ProductRegions] prepareModalData - shippingRegions actuales: [{…}]
 ProductRegions.jsx:47 [ProductRegions] prepareModalData - Datos preparados para modal: [{…}]
-useSupplierProducts.js:104 [DEBUG] consolidatedProcessing updated: {162a901a-652a-4c3d-b9b8-e4635b486153: true}
-useSupplierProducts.js:104 [DEBUG] consolidatedProcessing updated: {162a901a-652a-4c3d-b9b8-e4635b486153: true}
-useSupplierProducts.js:118 [DEBUG] Recalculating filteredProducts, total products: 2
-useSupplierProducts.js:118 [DEBUG] Recalculating filteredProducts, total products: 2
-useSupplierProducts.js:250 [DEBUG] AGGRESSIVE Cache buster applied: {original: '1753209616496_1752361458700_desktop_320x260.jpg', cacheBuster: 1753209826109, randomId: 'vf1dszh3rx', now: 1753209829219, final: '1753209616496_1752361458700_desktop_320x260.jpg?v=…53209826109&r=vf1dszh3rx&_cb=1753209829219&bust=1'}
-useSupplierProducts.js:250 [DEBUG] AGGRESSIVE Cache buster applied: {original: '1753209616496_desktop_320x260.jpg', cacheBuster: 1753209826109, randomId: 'vf1dszh3rx', now: 1753209829219, final: '1753209616496_desktop_320x260.jpg?v=1753209826109&r=vf1dszh3rx&_cb=1753209829219&bust=1'}
-useSupplierProducts.js:250 [DEBUG] AGGRESSIVE Cache buster applied: {original: '1753209616496_1752361458700_desktop_320x260.jpg', cacheBuster: 1753209826109, randomId: 'vf1dszh3rx', now: 1753209829219, final: '1753209616496_1752361458700_desktop_320x260.jpg?v=…53209826109&r=vf1dszh3rx&_cb=1753209829219&bust=1'}
-useSupplierProducts.js:250 [DEBUG] AGGRESSIVE Cache buster applied: {original: '1753209616496_1752361458700_desktop_320x260.jpg', cacheBuster: 1753209826109, randomId: 'p5ckhc0w6ko', now: 1753209829220, final: '1753209616496_1752361458700_desktop_320x260.jpg?v=…3209826109&r=p5ckhc0w6ko&_cb=1753209829220&bust=1'}
-useSupplierProducts.js:250 [DEBUG] AGGRESSIVE Cache buster applied: {original: '1753209616496_desktop_320x260.jpg', cacheBuster: 1753209826109, randomId: 'p5ckhc0w6ko', now: 1753209829220, final: '1753209616496_desktop_320x260.jpg?v=1753209826109&r=p5ckhc0w6ko&_cb=1753209829220&bust=1'}
-useSupplierProducts.js:250 [DEBUG] AGGRESSIVE Cache buster applied: {original: '1753209616496_1752361458700_desktop_320x260.jpg', cacheBuster: 1753209826109, randomId: 'p5ckhc0w6ko', now: 1753209829220, final: '1753209616496_1752361458700_desktop_320x260.jpg?v=…3209826109&r=p5ckhc0w6ko&_cb=1753209829220&bust=1'}
-scheduler.development.js:14 [Violation] 'message' handler took 177ms
-useSupplierProducts.js:118 [DEBUG] Recalculating filteredProducts, total products: 2
-useSupplierProducts.js:118 [DEBUG] Recalculating filteredProducts, total products: 2
-useSupplierProducts.js:250 [DEBUG] AGGRESSIVE Cache buster applied: {original: '1753209616496_1752361458700_desktop_320x260.jpg', cacheBuster: 1753209826109, randomId: 'ynqrat687cm', now: 1753209829782, final: '1753209616496_1752361458700_desktop_320x260.jpg?v=…3209826109&r=ynqrat687cm&_cb=1753209829782&bust=1'}
-useSupplierProducts.js:250 [DEBUG] AGGRESSIVE Cache buster applied: {original: '1753209616496_desktop_320x260.jpg', cacheBuster: 1753209826109, randomId: 'ynqrat687cm', now: 1753209829782, final: '1753209616496_desktop_320x260.jpg?v=1753209826109&r=ynqrat687cm&_cb=1753209829782&bust=1'}
-useSupplierProducts.js:250 [DEBUG] AGGRESSIVE Cache buster applied: {original: '1753209616496_1752361458700_desktop_320x260.jpg', cacheBuster: 1753209826109, randomId: 'ynqrat687cm', now: 1753209829782, final: '1753209616496_1752361458700_desktop_320x260.jpg?v=…3209826109&r=ynqrat687cm&_cb=1753209829782&bust=1'}
-useSupplierProducts.js:250 [DEBUG] AGGRESSIVE Cache buster applied: {original: '1753209616496_1752361458700_desktop_320x260.jpg', cacheBuster: 1753209826109, randomId: '6n35z2foco', now: 1753209829782, final: '1753209616496_1752361458700_desktop_320x260.jpg?v=…53209826109&r=6n35z2foco&_cb=1753209829782&bust=1'}
-useSupplierProducts.js:250 [DEBUG] AGGRESSIVE Cache buster applied: {original: '1753209616496_desktop_320x260.jpg', cacheBuster: 1753209826109, randomId: '6n35z2foco', now: 1753209829782, final: '1753209616496_desktop_320x260.jpg?v=1753209826109&r=6n35z2foco&_cb=1753209829782&bust=1'}
-useSupplierProducts.js:250 [DEBUG] AGGRESSIVE Cache buster applied: {original: '1753209616496_1752361458700_desktop_320x260.jpg', cacheBuster: 1753209826109, randomId: '6n35z2foco', now: 1753209829782, final: '1753209616496_1752361458700_desktop_320x260.jpg?v=…53209826109&r=6n35z2foco&_cb=1753209829782&bust=1'}
-ActionMenu.jsx:58  MUI: You are providing a disabled `button` child to the Tooltip component.
+scheduler.development.js:14 [Violation] 'message' handler took 207ms
+useResponsiveThumbnail.js:42 🔍 [useResponsiveThumbnail] Procesando producto 162a901a-652a-4c3d-b9b8-e4635b486153: {productThumbnails: undefined, dbThumbnails: {…}, isLoading: false, error: null}
+useResponsiveThumbnail.js:84 ✅ Using dbThumbnails.thumbnail_url: https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v1/object/public/product-images-thumbnails/34e23a46-f8bb-4e50-b058-301ac6b0af12/162a901a-652a-4c3d-b9b8-e4635b486153/1753211203208_desktop_320x260.jpg
+useResponsiveThumbnail.js:42 🔍 [useResponsiveThumbnail] Procesando producto 162a901a-652a-4c3d-b9b8-e4635b486153: {productThumbnails: undefined, dbThumbnails: {…}, isLoading: false, error: null}
+useResponsiveThumbnail.js:84 ✅ Using dbThumbnails.thumbnail_url: https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v1/object/public/product-images-thumbnails/34e23a46-f8bb-4e50-b058-301ac6b0af12/162a901a-652a-4c3d-b9b8-e4635b486153/1753211203208_desktop_320x260.jpg
+useResponsiveThumbnail.js:42 🔍 [useResponsiveThumbnail] Procesando producto 866df9ef-8aee-4cf9-aed0-0f235545f383: {productThumbnails: undefined, dbThumbnails: {…}, isLoading: false, error: null}
+useResponsiveThumbnail.js:84 ✅ Using dbThumbnails.thumbnail_url: https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v1/object/public/product-images-thumbnails/34e23a46-f8bb-4e50-b058-301ac6b0af12/866df9ef-8aee-4cf9-aed0-0f235545f383/1753207907337_desktop_320x260.jpg
+useResponsiveThumbnail.js:42 🔍 [useResponsiveThumbnail] Procesando producto 866df9ef-8aee-4cf9-aed0-0f235545f383: {productThumbnails: undefined, dbThumbnails: {…}, isLoading: false, error: null}
+useResponsiveThumbnail.js:84 ✅ Using dbThumbnails.thumbnail_url: https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v1/object/public/product-images-thumbnails/34e23a46-f8bb-4e50-b058-301ac6b0af12/866df9ef-8aee-4cf9-aed0-0f235545f383/1753207907337_desktop_320x260.jpg
+useResponsiveThumbnail.js:42 🔍 [useResponsiveThumbnail] Procesando producto 162a901a-652a-4c3d-b9b8-e4635b486153: {productThumbnails: undefined, dbThumbnails: {…}, isLoading: false, error: null}
+useResponsiveThumbnail.js:84 ✅ Using dbThumbnails.thumbnail_url: https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v1/object/public/product-images-thumbnails/34e23a46-f8bb-4e50-b058-301ac6b0af12/162a901a-652a-4c3d-b9b8-e4635b486153/1753211203208_desktop_320x260.jpg
+useResponsiveThumbnail.js:42 🔍 [useResponsiveThumbnail] Procesando producto 162a901a-652a-4c3d-b9b8-e4635b486153: {productThumbnails: undefined, dbThumbnails: {…}, isLoading: false, error: null}
+useResponsiveThumbnail.js:84 ✅ Using dbThumbnails.thumbnail_url: https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v1/object/public/product-images-thumbnails/34e23a46-f8bb-4e50-b058-301ac6b0af12/162a901a-652a-4c3d-b9b8-e4635b486153/1753211203208_desktop_320x260.jpg
+useResponsiveThumbnail.js:42 🔍 [useResponsiveThumbnail] Procesando producto 866df9ef-8aee-4cf9-aed0-0f235545f383: {productThumbnails: undefined, dbThumbnails: {…}, isLoading: false, error: null}
+useResponsiveThumbnail.js:84 ✅ Using dbThumbnails.thumbnail_url: https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v1/object/public/product-images-thumbnails/34e23a46-f8bb-4e50-b058-301ac6b0af12/866df9ef-8aee-4cf9-aed0-0f235545f383/1753207907337_desktop_320x260.jpg
+useResponsiveThumbnail.js:42 🔍 [useResponsiveThumbnail] Procesando producto 866df9ef-8aee-4cf9-aed0-0f235545f383: {productThumbnails: undefined, dbThumbnails: {…}, isLoading: false, error: null}
+useResponsiveThumbnail.js:84 ✅ Using dbThumbnails.thumbnail_url: https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v1/object/public/product-images-thumbnails/34e23a46-f8bb-4e50-b058-301ac6b0af12/866df9ef-8aee-4cf9-aed0-0f235545f383/1753207907337_desktop_320x260.jpg
+hook.js:608  MUI: You are providing a disabled `button` child to the Tooltip component.
 A disabled element does not fire events.
 Tooltip needs to listen to the child element's events to display the title.
 
@@ -272,109 +246,46 @@ commitPassiveMountOnFiber @ react-dom-client.development.js:13834
 recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
 commitPassiveMountOnFiber @ react-dom-client.development.js:13834
 recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
-<ForwardRef(Tooltip2)>
-exports.jsxDEV @ react-jsx-dev-runtime.development.js:346
-ActionMenu @ ActionMenu.jsx:58
-react-stack-bottom-frame @ react-dom-client.development.js:23863
-renderWithHooksAgain @ react-dom-client.development.js:5629
-renderWithHooks @ react-dom-client.development.js:5541
-updateFunctionComponent @ react-dom-client.development.js:8897
-beginWork @ react-dom-client.development.js:10522
-runWithFiberInDEV @ react-dom-client.development.js:1519
-performUnitOfWork @ react-dom-client.development.js:15132
-workLoopSync @ react-dom-client.development.js:14956
-renderRootSync @ react-dom-client.development.js:14936
-performWorkOnRoot @ react-dom-client.development.js:14419
-performSyncWorkOnRoot @ react-dom-client.development.js:16231
-flushSyncWorkAcrossRoots_impl @ react-dom-client.development.js:16079
-processRootScheduleInMicrotask @ react-dom-client.development.js:16116
-(anonymous) @ react-dom-client.development.js:16250
-<ActionMenu>
-exports.jsxDEV @ react-jsx-dev-runtime.development.js:346
-ProductCardSupplierContext @ ProductCardSupplierContext.jsx:156
-react-stack-bottom-frame @ react-dom-client.development.js:23863
-renderWithHooksAgain @ react-dom-client.development.js:5629
-renderWithHooks @ react-dom-client.development.js:5541
-updateFunctionComponent @ react-dom-client.development.js:8897
-updateSimpleMemoComponent @ react-dom-client.development.js:8752
-updateMemoComponent @ react-dom-client.development.js:8685
-beginWork @ react-dom-client.development.js:10950
-runWithFiberInDEV @ react-dom-client.development.js:1519
-performUnitOfWork @ react-dom-client.development.js:15132
-workLoopSync @ react-dom-client.development.js:14956
-renderRootSync @ react-dom-client.development.js:14936
-performWorkOnRoot @ react-dom-client.development.js:14419
-performSyncWorkOnRoot @ react-dom-client.development.js:16231
-flushSyncWorkAcrossRoots_impl @ react-dom-client.development.js:16079
-processRootScheduleInMicrotask @ react-dom-client.development.js:16116
-(anonymous) @ react-dom-client.development.js:16250
-<ProductCardSupplierContext>
-exports.jsxDEV @ react-jsx-dev-runtime.development.js:346
-ProductCard @ ProductCard.jsx:230
-react-stack-bottom-frame @ react-dom-client.development.js:23863
-renderWithHooksAgain @ react-dom-client.development.js:5629
-renderWithHooks @ react-dom-client.development.js:5541
-updateFunctionComponent @ react-dom-client.development.js:8897
-updateSimpleMemoComponent @ react-dom-client.development.js:8752
-updateMemoComponent @ react-dom-client.development.js:8685
-beginWork @ react-dom-client.development.js:10950
-runWithFiberInDEV @ react-dom-client.development.js:1519
-performUnitOfWork @ react-dom-client.development.js:15132
-workLoopSync @ react-dom-client.development.js:14956
-renderRootSync @ react-dom-client.development.js:14936
-performWorkOnRoot @ react-dom-client.development.js:14419
-performSyncWorkOnRoot @ react-dom-client.development.js:16231
-flushSyncWorkAcrossRoots_impl @ react-dom-client.development.js:16079
-processRootScheduleInMicrotask @ react-dom-client.development.js:16116
-(anonymous) @ react-dom-client.development.js:16250
-<ProductCard>
-exports.jsxDEV @ react-jsx-dev-runtime.development.js:346
-(anonymous) @ MyProducts.jsx:599
-MyProducts @ MyProducts.jsx:591
-react-stack-bottom-frame @ react-dom-client.development.js:23863
-renderWithHooksAgain @ react-dom-client.development.js:5629
-renderWithHooks @ react-dom-client.development.js:5541
-updateFunctionComponent @ react-dom-client.development.js:8897
-beginWork @ react-dom-client.development.js:10522
-runWithFiberInDEV @ react-dom-client.development.js:1519
-performUnitOfWork @ react-dom-client.development.js:15132
-workLoopSync @ react-dom-client.development.js:14956
-renderRootSync @ react-dom-client.development.js:14936
-performWorkOnRoot @ react-dom-client.development.js:14419
-performSyncWorkOnRoot @ react-dom-client.development.js:16231
-flushSyncWorkAcrossRoots_impl @ react-dom-client.development.js:16079
-processRootScheduleInMicrotask @ react-dom-client.development.js:16116
-(anonymous) @ react-dom-client.development.js:16250
-useSupplierProducts.js:118 [DEBUG] Recalculating filteredProducts, total products: 2
-useSupplierProducts.js:118 [DEBUG] Recalculating filteredProducts, total products: 2
-useSupplierProducts.js:250 [DEBUG] AGGRESSIVE Cache buster applied: {original: '1753209616496_1752361458700_desktop_320x260.jpg', cacheBuster: 1753209826109, randomId: 'lygpi3nnyid', now: 1753209830159, final: '1753209616496_1752361458700_desktop_320x260.jpg?v=…3209826109&r=lygpi3nnyid&_cb=1753209830159&bust=1'}
-useSupplierProducts.js:250 [DEBUG] AGGRESSIVE Cache buster applied: {original: '1753209616496_desktop_320x260.jpg', cacheBuster: 1753209826109, randomId: 'lygpi3nnyid', now: 1753209830159, final: '1753209616496_desktop_320x260.jpg?v=1753209826109&r=lygpi3nnyid&_cb=1753209830159&bust=1'}
-useSupplierProducts.js:250 [DEBUG] AGGRESSIVE Cache buster applied: {original: '1753209616496_1752361458700_desktop_320x260.jpg', cacheBuster: 1753209826109, randomId: 'lygpi3nnyid', now: 1753209830159, final: '1753209616496_1752361458700_desktop_320x260.jpg?v=…3209826109&r=lygpi3nnyid&_cb=1753209830159&bust=1'}
-useSupplierProducts.js:250 [DEBUG] AGGRESSIVE Cache buster applied: {original: '1753209616496_1752361458700_desktop_320x260.jpg', cacheBuster: 1753209826109, randomId: 'w7j47197mgd', now: 1753209830160, final: '1753209616496_1752361458700_desktop_320x260.jpg?v=…3209826109&r=w7j47197mgd&_cb=1753209830160&bust=1'}
-useSupplierProducts.js:250 [DEBUG] AGGRESSIVE Cache buster applied: {original: '1753209616496_desktop_320x260.jpg', cacheBuster: 1753209826109, randomId: 'w7j47197mgd', now: 1753209830160, final: '1753209616496_desktop_320x260.jpg?v=1753209826109&r=w7j47197mgd&_cb=1753209830160&bust=1'}
-useSupplierProducts.js:250 [DEBUG] AGGRESSIVE Cache buster applied: {original: '1753209616496_1752361458700_desktop_320x260.jpg', cacheBuster: 1753209826109, randomId: 'w7j47197mgd', now: 1753209830160, final: '1753209616496_1752361458700_desktop_320x260.jpg?v=…3209826109&r=w7j47197mgd&_cb=1753209830160&bust=1'}
+useResponsiveThumbnail.js:42 🔍 [useResponsiveThumbnail] Procesando producto 162a901a-652a-4c3d-b9b8-e4635b486153: {productThumbnails: undefined, dbThumbnails: {…}, isLoading: false, error: null}
+useResponsiveThumbnail.js:84 ✅ Using dbThumbnails.thumbnail_url: https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v1/object/public/product-images-thumbnails/34e23a46-f8bb-4e50-b058-301ac6b0af12/162a901a-652a-4c3d-b9b8-e4635b486153/1753211203208_desktop_320x260.jpg
+useResponsiveThumbnail.js:42 🔍 [useResponsiveThumbnail] Procesando producto 162a901a-652a-4c3d-b9b8-e4635b486153: {productThumbnails: undefined, dbThumbnails: {…}, isLoading: false, error: null}
+useResponsiveThumbnail.js:84 ✅ Using dbThumbnails.thumbnail_url: https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v1/object/public/product-images-thumbnails/34e23a46-f8bb-4e50-b058-301ac6b0af12/162a901a-652a-4c3d-b9b8-e4635b486153/1753211203208_desktop_320x260.jpg
+useResponsiveThumbnail.js:42 🔍 [useResponsiveThumbnail] Procesando producto 866df9ef-8aee-4cf9-aed0-0f235545f383: {productThumbnails: undefined, dbThumbnails: {…}, isLoading: false, error: null}
+useResponsiveThumbnail.js:84 ✅ Using dbThumbnails.thumbnail_url: https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v1/object/public/product-images-thumbnails/34e23a46-f8bb-4e50-b058-301ac6b0af12/866df9ef-8aee-4cf9-aed0-0f235545f383/1753207907337_desktop_320x260.jpg
+useResponsiveThumbnail.js:42 🔍 [useResponsiveThumbnail] Procesando producto 866df9ef-8aee-4cf9-aed0-0f235545f383: {productThumbnails: undefined, dbThumbnails: {…}, isLoading: false, error: null}
+useResponsiveThumbnail.js:84 ✅ Using dbThumbnails.thumbnail_url: https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v1/object/public/product-images-thumbnails/34e23a46-f8bb-4e50-b058-301ac6b0af12/866df9ef-8aee-4cf9-aed0-0f235545f383/1753207907337_desktop_320x260.jpg
+useProductImages.js:354 🔄 Cache de thumbnails invalidado inmediatamente después de eliminar imágenes específicas para producto: 162a901a-652a-4c3d-b9b8-e4635b486153
+useResponsiveThumbnail.js:42 🔍 [useResponsiveThumbnail] Procesando producto 162a901a-652a-4c3d-b9b8-e4635b486153: {productThumbnails: undefined, dbThumbnails: null, isLoading: false, error: null}
+useResponsiveThumbnail.js:90 ✅ Using product thumbnail: https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v1/object/public/product-images-thumbnails/34e23a46-f8bb-4e50-b058-301ac6b0af12/162a901a-652a-4c3d-b9b8-e4635b486153/1753211203208_desktop_320x260.jpg
+useResponsiveThumbnail.js:42 🔍 [useResponsiveThumbnail] Procesando producto 162a901a-652a-4c3d-b9b8-e4635b486153: {productThumbnails: undefined, dbThumbnails: null, isLoading: false, error: null}
+useResponsiveThumbnail.js:90 ✅ Using product thumbnail: https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v1/object/public/product-images-thumbnails/34e23a46-f8bb-4e50-b058-301ac6b0af12/162a901a-652a-4c3d-b9b8-e4635b486153/1753211203208_desktop_320x260.jpg
+useProductImages.js:160 🔄 Cache de thumbnails actualizado inmediatamente para producto: 162a901a-652a-4c3d-b9b8-e4635b486153 {thumbnails: {…}, thumbnail_url: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…b8-e4635b486153/1753211458540_desktop_320x260.jpg'}
+useResponsiveThumbnail.js:42 🔍 [useResponsiveThumbnail] Procesando producto 162a901a-652a-4c3d-b9b8-e4635b486153: {productThumbnails: undefined, dbThumbnails: {…}, isLoading: false, error: null}
+useResponsiveThumbnail.js:77 ✅ Using dbThumbnails.thumbnails.desktop: https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v1/object/public/product-images-thumbnails/34e23a46-f8bb-4e50-b058-301ac6b0af12/162a901a-652a-4c3d-b9b8-e4635b486153/1753211458540_desktop_320x260.jpg
+useResponsiveThumbnail.js:42 🔍 [useResponsiveThumbnail] Procesando producto 162a901a-652a-4c3d-b9b8-e4635b486153: {productThumbnails: undefined, dbThumbnails: {…}, isLoading: false, error: null}
+useResponsiveThumbnail.js:77 ✅ Using dbThumbnails.thumbnails.desktop: https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v1/object/public/product-images-thumbnails/34e23a46-f8bb-4e50-b058-301ac6b0af12/162a901a-652a-4c3d-b9b8-e4635b486153/1753211458540_desktop_320x260.jpg
 useProductBackground.js:94 [DEBUG] Background: Refreshing product after image processing: 162a901a-652a-4c3d-b9b8-e4635b486153
 useSupplierProductsCRUD.js:253 [DEBUG] Refreshing product from database: 162a901a-652a-4c3d-b9b8-e4635b486153
 useSupplierProductsCRUD.js:263 [DEBUG] Fresh product data from DB: {productId: '162a901a-652a-4c3d-b9b8-e4635b486153', imagesCount: 1, images: Array(1)}
 useSupplierProductsCRUD.js:282 [DEBUG] Replacing product in state: {productId: '162a901a-652a-4c3d-b9b8-e4635b486153', oldImagesCount: 1, newImagesCount: 1}
-useSupplierProducts.js:118 [DEBUG] Recalculating filteredProducts, total products: 2
-useSupplierProducts.js:118 [DEBUG] Recalculating filteredProducts, total products: 2
-useSupplierProducts.js:250 [DEBUG] AGGRESSIVE Cache buster applied: {original: '1753209830975_cursoprimaverap6.jpg', cacheBuster: 1753209826109, randomId: '2z6y4ea3cjc', now: 1753209838465, final: '1753209830975_cursoprimaverap6.jpg?v=1753209826109&r=2z6y4ea3cjc&_cb=1753209838465&bust=1'}
-useSupplierProducts.js:250 [DEBUG] AGGRESSIVE Cache buster applied: {original: '1753209830975_desktop_320x260.jpg', cacheBuster: 1753209826109, randomId: '2z6y4ea3cjc', now: 1753209838465, final: '1753209830975_desktop_320x260.jpg?v=1753209826109&r=2z6y4ea3cjc&_cb=1753209838465&bust=1'}
-useSupplierProducts.js:250 [DEBUG] AGGRESSIVE Cache buster applied: {original: '1753209830975_cursoprimaverap6.jpg', cacheBuster: 1753209826109, randomId: '2z6y4ea3cjc', now: 1753209838465, final: '1753209830975_cursoprimaverap6.jpg?v=1753209826109&r=2z6y4ea3cjc&_cb=1753209838465&bust=1'}
-useSupplierProducts.js:250 [DEBUG] AGGRESSIVE Cache buster applied: {original: '1753209830975_cursoprimaverap6.jpg', cacheBuster: 1753209826109, randomId: 'eq8a9ylt5fh', now: 1753209838465, final: '1753209830975_cursoprimaverap6.jpg?v=1753209826109&r=eq8a9ylt5fh&_cb=1753209838465&bust=1'}
-useSupplierProducts.js:250 [DEBUG] AGGRESSIVE Cache buster applied: {original: '1753209830975_desktop_320x260.jpg', cacheBuster: 1753209826109, randomId: 'eq8a9ylt5fh', now: 1753209838465, final: '1753209830975_desktop_320x260.jpg?v=1753209826109&r=eq8a9ylt5fh&_cb=1753209838465&bust=1'}
-useSupplierProducts.js:250 [DEBUG] AGGRESSIVE Cache buster applied: {original: '1753209830975_cursoprimaverap6.jpg', cacheBuster: 1753209826109, randomId: 'eq8a9ylt5fh', now: 1753209838465, final: '1753209830975_cursoprimaverap6.jpg?v=1753209826109&r=eq8a9ylt5fh&_cb=1753209838465&bust=1'}
 useProductBackground.js:97 [DEBUG] Background: Product refreshed successfully after images
 useSupplierProductsCRUD.js:253 [DEBUG] Refreshing product from database: 162a901a-652a-4c3d-b9b8-e4635b486153
+useResponsiveThumbnail.js:42 🔍 [useResponsiveThumbnail] Procesando producto 162a901a-652a-4c3d-b9b8-e4635b486153: {productThumbnails: undefined, dbThumbnails: {…}, isLoading: false, error: null}
+useResponsiveThumbnail.js:77 ✅ Using dbThumbnails.thumbnails.desktop: https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v1/object/public/product-images-thumbnails/34e23a46-f8bb-4e50-b058-301ac6b0af12/162a901a-652a-4c3d-b9b8-e4635b486153/1753211458540_desktop_320x260.jpg
+useResponsiveThumbnail.js:42 🔍 [useResponsiveThumbnail] Procesando producto 162a901a-652a-4c3d-b9b8-e4635b486153: {productThumbnails: undefined, dbThumbnails: {…}, isLoading: false, error: null}
+useResponsiveThumbnail.js:77 ✅ Using dbThumbnails.thumbnails.desktop: https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v1/object/public/product-images-thumbnails/34e23a46-f8bb-4e50-b058-301ac6b0af12/162a901a-652a-4c3d-b9b8-e4635b486153/1753211458540_desktop_320x260.jpg
+useResponsiveThumbnail.js:42 🔍 [useResponsiveThumbnail] Procesando producto 866df9ef-8aee-4cf9-aed0-0f235545f383: {productThumbnails: undefined, dbThumbnails: {…}, isLoading: false, error: null}
+useResponsiveThumbnail.js:84 ✅ Using dbThumbnails.thumbnail_url: https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v1/object/public/product-images-thumbnails/34e23a46-f8bb-4e50-b058-301ac6b0af12/866df9ef-8aee-4cf9-aed0-0f235545f383/1753207907337_desktop_320x260.jpg
+useResponsiveThumbnail.js:42 🔍 [useResponsiveThumbnail] Procesando producto 866df9ef-8aee-4cf9-aed0-0f235545f383: {productThumbnails: undefined, dbThumbnails: {…}, isLoading: false, error: null}
+useResponsiveThumbnail.js:84 ✅ Using dbThumbnails.thumbnail_url: https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v1/object/public/product-images-thumbnails/34e23a46-f8bb-4e50-b058-301ac6b0af12/866df9ef-8aee-4cf9-aed0-0f235545f383/1753207907337_desktop_320x260.jpg
 useSupplierProductsCRUD.js:263 [DEBUG] Fresh product data from DB: {productId: '162a901a-652a-4c3d-b9b8-e4635b486153', imagesCount: 1, images: Array(1)}
 useSupplierProductsCRUD.js:282 [DEBUG] Replacing product in state: {productId: '162a901a-652a-4c3d-b9b8-e4635b486153', oldImagesCount: 1, newImagesCount: 1}
-useSupplierProducts.js:118 [DEBUG] Recalculating filteredProducts, total products: 2
-useSupplierProducts.js:118 [DEBUG] Recalculating filteredProducts, total products: 2
-useSupplierProducts.js:250 [DEBUG] AGGRESSIVE Cache buster applied: {original: '1753209830975_cursoprimaverap6.jpg', cacheBuster: 1753209826109, randomId: '6nxz4x8ku7t', now: 1753209838932, final: '1753209830975_cursoprimaverap6.jpg?v=1753209826109&r=6nxz4x8ku7t&_cb=1753209838932&bust=1'}
-useSupplierProducts.js:250 [DEBUG] AGGRESSIVE Cache buster applied: {original: '1753209830975_desktop_320x260.jpg', cacheBuster: 1753209826109, randomId: '6nxz4x8ku7t', now: 1753209838932, final: '1753209830975_desktop_320x260.jpg?v=1753209826109&r=6nxz4x8ku7t&_cb=1753209838932&bust=1'}
-useSupplierProducts.js:250 [DEBUG] AGGRESSIVE Cache buster applied: {original: '1753209830975_cursoprimaverap6.jpg', cacheBuster: 1753209826109, randomId: '6nxz4x8ku7t', now: 1753209838932, final: '1753209830975_cursoprimaverap6.jpg?v=1753209826109&r=6nxz4x8ku7t&_cb=1753209838932&bust=1'}
-useSupplierProducts.js:250 [DEBUG] AGGRESSIVE Cache buster applied: {original: '1753209830975_cursoprimaverap6.jpg', cacheBuster: 1753209826109, randomId: 'ej717wkfbke', now: 1753209838932, final: '1753209830975_cursoprimaverap6.jpg?v=1753209826109&r=ej717wkfbke&_cb=1753209838932&bust=1'}
-useSupplierProducts.js:250 [DEBUG] AGGRESSIVE Cache buster applied: {original: '1753209830975_desktop_320x260.jpg', cacheBuster: 1753209826109, randomId: 'ej717wkfbke', now: 1753209838932, final: '1753209830975_desktop_320x260.jpg?v=1753209826109&r=ej717wkfbke&_cb=1753209838932&bust=1'}
-useSupplierProducts.js:250 [DEBUG] AGGRESSIVE Cache buster applied: {original: '1753209830975_cursoprimaverap6.jpg', cacheBuster: 1753209826109, randomId: 'ej717wkfbke', now: 1753209838932, final: '1753209830975_cursoprimaverap6.jpg?v=1753209826109&r=ej717wkfbke&_cb=1753209838932&bust=1'}
 useProductBackground.js:131 [DEBUG] Background: Product refreshed after processing: 162a901a-652a-4c3d-b9b8-e4635b486153
+useResponsiveThumbnail.js:42 🔍 [useResponsiveThumbnail] Procesando producto 162a901a-652a-4c3d-b9b8-e4635b486153: {productThumbnails: undefined, dbThumbnails: {…}, isLoading: false, error: null}
+useResponsiveThumbnail.js:77 ✅ Using dbThumbnails.thumbnails.desktop: https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v1/object/public/product-images-thumbnails/34e23a46-f8bb-4e50-b058-301ac6b0af12/162a901a-652a-4c3d-b9b8-e4635b486153/1753211458540_desktop_320x260.jpg
+useResponsiveThumbnail.js:42 🔍 [useResponsiveThumbnail] Procesando producto 162a901a-652a-4c3d-b9b8-e4635b486153: {productThumbnails: undefined, dbThumbnails: {…}, isLoading: false, error: null}
+useResponsiveThumbnail.js:77 ✅ Using dbThumbnails.thumbnails.desktop: https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v1/object/public/product-images-thumbnails/34e23a46-f8bb-4e50-b058-301ac6b0af12/162a901a-652a-4c3d-b9b8-e4635b486153/1753211458540_desktop_320x260.jpg
+useResponsiveThumbnail.js:42 🔍 [useResponsiveThumbnail] Procesando producto 866df9ef-8aee-4cf9-aed0-0f235545f383: {productThumbnails: undefined, dbThumbnails: {…}, isLoading: false, error: null}
+useResponsiveThumbnail.js:84 ✅ Using dbThumbnails.thumbnail_url: https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v1/object/public/product-images-thumbnails/34e23a46-f8bb-4e50-b058-301ac6b0af12/866df9ef-8aee-4cf9-aed0-0f235545f383/1753207907337_desktop_320x260.jpg
+useResponsiveThumbnail.js:42 🔍 [useResponsiveThumbnail] Procesando producto 866df9ef-8aee-4cf9-aed0-0f235545f383: {productThumbnails: undefined, dbThumbnails: {…}, isLoading: false, error: null}
+useResponsiveThumbnail.js:84 ✅ Using dbThumbnails.thumbnail_url: https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v1/object/public/product-images-thumbnails/34e23a46-f8bb-4e50-b058-301ac6b0af12/866df9ef-8aee-4cf9-aed0-0f235545f383/1753207907337_desktop_320x260.jpg
