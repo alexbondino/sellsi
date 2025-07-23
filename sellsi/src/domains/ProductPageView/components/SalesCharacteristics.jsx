@@ -10,7 +10,7 @@ import {
 import {
   generateSalesCharacteristics,
   formatSalesDataForDisplay,
-} from '../../../utils/marketplace/salesDataGenerator'
+} from '../../marketplace/pages/marketplace/salesDataGenerator'
 
 const SalesCharacteristics = ({ product }) => {
   if (!product) return null

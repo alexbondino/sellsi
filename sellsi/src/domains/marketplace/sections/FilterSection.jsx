@@ -9,7 +9,7 @@
 // - Botón flotante con badge
 
 import React from 'react'
-import FilterPanel from '../FilterPanel/FilterPanel'
+import FilterPanel from '../pages/FilterPanel/FilterPanel'
 
 /**
  * Componente que maneja los filtros tanto para desktop como mobile

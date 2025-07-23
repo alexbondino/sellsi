@@ -21,7 +21,7 @@ import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import KeyboardArrowRightIcon from '@mui/icons-material/KeyboardArrowRight';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
-import { SECTIONS, SECTION_LABELS } from '../marketplace/constants';
+import { SECTIONS, SECTION_LABELS } from '../pages/marketplace/constants';
 import { categoryNavigationStyles as styles } from '../hooks/CategoryNavigation/CategoryNavigation.styles';
 
 // Categorías estandarizadas

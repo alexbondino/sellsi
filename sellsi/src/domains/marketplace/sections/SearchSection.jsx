@@ -12,7 +12,7 @@ import React from 'react';
 import { Box } from '@mui/material';
 import ReactDOM from 'react-dom';
 import { SearchBar } from '../../../shared/components/forms'; // ✅ REFACTOR: Usar el SearchBar compartido con funcionalidad de switch
-import CategoryNavigation from '../CategoryNavigation/CategoryNavigation';
+import CategoryNavigation from '../pages/CategoryNavigation/CategoryNavigation';
 
 /**
  * Componente que encapsula la barra de búsqueda y navegación de categorías

@@ -8,7 +8,7 @@ import {
   Build,
   Category,
 } from '@mui/icons-material';
-import { generateTechnicalSpecifications } from '../../marketplace/salesDataGenerator';
+import { generateTechnicalSpecifications } from '../../marketplace/pages/marketplace/salesDataGenerator';
 
 const TechnicalSpecifications = ({ product }) => {
   if (!product) return null;

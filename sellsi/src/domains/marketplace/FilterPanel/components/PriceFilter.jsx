@@ -1,6 +1,6 @@
 import React from 'react';
 import { Box, TextField, Typography, Slider } from '@mui/material';
-import { PRICE_RANGE } from '../../marketplace/constants';
+import { PRICE_RANGE } from '../../pages/marketplace/constants';
 
 const PriceFilter = ({ filtros, onPrecioChange, styles }) => {
   const formatPrice = value => {
