@@ -5,7 +5,7 @@ import { getProductSpecifications } from '../../../../services/marketplace'
 import { extractProductIdFromSlug } from '../../../marketplace/utils/productUrl'
 import useCartStore from '../../../../shared/stores/cart/cartStore'
 import { formatProductForCart } from '../../../../utils/priceCalculation'
-import { toast } from 'react-hot-toast'
+import { showErrorToast } from '../../../../utils/toastHelpers'
 
 // Definir PRODUCTOS mock si no existe import
 const PRODUCTOS = [
@@ -263,7 +263,7 @@ export const useTechnicalSpecs = () => {
     const isLoggedIn = !!(userId || supplierid || sellerid)
 
     if (!isLoggedIn) {
-      toast.error('Debes iniciar sesión para agregar productos al carrito', {
+      showErrorToast('Debes iniciar sesión para agregar productos al carrito', {
         icon: '🔒',
       })
       // Disparar evento para abrir Login modal
@@ -328,7 +328,7 @@ export const useTechnicalSpecs = () => {
     const isLoggedIn = !!(userId || supplierid || sellerid)
 
     if (!isLoggedIn) {
-      toast.error('Debes iniciar sesión para comprar productos', {
+      showErrorToast('Debes iniciar sesión para comprar productos', {
         icon: '🔒',
       })
       // Disparar evento para abrir Login modal

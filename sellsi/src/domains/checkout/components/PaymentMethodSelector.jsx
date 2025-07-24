@@ -19,7 +19,6 @@ import {
 } from '@mui/icons-material'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
-import { toast } from 'react-hot-toast'
 
 // Hooks y servicios
 import { useCheckout, usePaymentMethods } from '../hooks'

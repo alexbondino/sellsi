@@ -6,7 +6,6 @@ import React, { useEffect } from 'react'
 import { ThemeProvider } from '@mui/material/styles'
 import { Box, Container } from '@mui/material'
 import { useNavigate } from 'react-router-dom'
-import { toast } from 'react-hot-toast'
 
 // Layout y tema
 import { dashboardThemeCore } from '../../../styles/dashboardThemeCore'

@@ -23,23 +23,46 @@ const useProductPriceTiers = create((set, get) => ({
   // ============================================================================
 
   /**
-   * Procesar tramos de precio
+   * Procesar tramos de precio - INCLUYE LIMPIEZA PARA ARRAY VACÍO
    */
   processPriceTiers: async (productId, priceTiers) => {
-    if (!priceTiers?.length) {
-      return { success: true, data: [] }
-    }
-
+    console.log('🔧 [processPriceTiers] Procesando tramos para producto:', productId)
+    console.log('📊 [processPriceTiers] PriceTiers recibidos:', priceTiers)
+    
     set((state) => ({
       processingTiers: { ...state.processingTiers, [productId]: true },
       error: null,
     }))
 
     try {
-      // Validar y preparar tramos
+      // SIEMPRE limpiar tramos existentes primero
+      console.log('🧹 [processPriceTiers] Limpiando tramos existentes...')
+      const { error: deleteError } = await supabase
+        .from('product_quantity_ranges')
+        .delete()
+        .eq('product_id', productId)
+
+      if (deleteError) {
+        console.error('❌ [processPriceTiers] Error limpiando tramos:', deleteError)
+        throw deleteError
+      }
+      console.log('✅ [processPriceTiers] Tramos existentes limpiados')
+
+      // Si no hay tramos o está vacío, terminar aquí (modo Por Unidad)
+      if (!priceTiers || priceTiers.length === 0) {
+        console.log('ℹ️  [processPriceTiers] No hay tramos para insertar (modo Por Unidad)')
+        set((state) => ({
+          processingTiers: { ...state.processingTiers, [productId]: false },
+        }))
+        return { success: true, data: [] }
+      }
+
+      // Validar y preparar tramos para insertar
+      console.log('📋 [processPriceTiers] Validando tramos...')
       const validationResult = get().validatePriceTiers(priceTiers)
       
       if (!validationResult.isValid) {
+        console.error('❌ [processPriceTiers] Tramos inválidos:', validationResult.errors)
         throw new Error(`Tramos de precio inválidos: ${validationResult.errors.join(', ')}`)
       }
 
@@ -51,13 +74,7 @@ const useProductPriceTiers = create((set, get) => ({
         price: Number(t.precio),
       }))
 
-      // Eliminar tramos existentes
-      const { error: deleteError } = await supabase
-        .from('product_quantity_ranges')
-        .delete()
-        .eq('product_id', productId)
-
-      if (deleteError) throw deleteError
+      console.log('💾 [processPriceTiers] Insertando nuevos tramos:', tiersToInsert)
 
       // Insertar nuevos tramos
       if (tiersToInsert.length > 0) {
@@ -65,15 +82,21 @@ const useProductPriceTiers = create((set, get) => ({
           .from('product_quantity_ranges')
           .insert(tiersToInsert)
 
-        if (insertError) throw insertError
+        if (insertError) {
+          console.error('❌ [processPriceTiers] Error insertando tramos:', insertError)
+          throw insertError
+        }
+        console.log('✅ [processPriceTiers] Tramos insertados exitosamente')
       }
 
       set((state) => ({
         processingTiers: { ...state.processingTiers, [productId]: false },
       }))
 
+      console.log('✅ [processPriceTiers] Proceso completado exitosamente')
       return { success: true, data: validationResult.data }
     } catch (error) {
+      console.error('❌ [processPriceTiers] Error:', error)
       set((state) => ({
         processingTiers: { ...state.processingTiers, [productId]: false },
         error: `Error procesando tramos de precio: ${error.message}`,
@@ -114,16 +137,16 @@ const useProductPriceTiers = create((set, get) => ({
       const precio = Number(tier.precio)
       const maxCantidad = tier.maxCantidad ? Number(tier.maxCantidad) : null
 
-      if (cantidad > 1000000) {
-        errors.push(`Tramo ${i + 1}: Cantidad mínima muy alta (máximo 1,000,000)`)
+      if (cantidad > 10000000) {
+        errors.push(`Tramo ${i + 1}: Cantidad mínima muy alta (máximo 10,000,000)`)
       }
 
       if (precio > 10000000) {
         errors.push(`Tramo ${i + 1}: Precio muy alto (máximo $10,000,000)`)
       }
 
-      if (maxCantidad && maxCantidad > 1000000) {
-        errors.push(`Tramo ${i + 1}: Cantidad máxima muy alta (máximo 1,000,000)`)
+      if (maxCantidad && maxCantidad > 10000000) {
+        errors.push(`Tramo ${i + 1}: Cantidad máxima muy alta (máximo 10,000,000)`)
       }
 
       // Si pasa validaciones, agregar a la lista

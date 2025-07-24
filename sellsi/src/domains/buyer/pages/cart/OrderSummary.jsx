@@ -36,6 +36,10 @@ const OrderSummary = ({
   // Shipping loading state
   isCalculatingShipping,
 
+  // ✅ NUEVAS PROPS para lógica de envío avanzada
+  cartItems = [],
+  userRegion,
+
   // Functions
   formatPrice,
   formatDate,
@@ -121,6 +125,10 @@ const OrderSummary = ({
         formatPrice={formatPrice}
         cartStats={cartStats}
         isCalculatingShipping={isCalculatingShipping}
+        // ✅ NUEVAS PROPS para lógica de envío avanzada
+        cartItems={cartItems}
+        isAdvancedShippingMode={isAdvancedShippingMode}
+        userRegion={userRegion}
       />
       {/* Botones de acción */}
       <Stack spacing={2}>

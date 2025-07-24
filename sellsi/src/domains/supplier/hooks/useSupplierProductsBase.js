@@ -224,8 +224,16 @@ const useSupplierProductsBase = create((set, get) => ({
   },
 
   /**
-   * Actualizar producto existente
-   */  updateProduct: async (productId, updates) => {
+   * ========================================================================
+   * ACTUALIZACIÓN ROBUSTA DE PRODUCTO
+   * ========================================================================
+   * 
+   * Maneja correctamente la transición entre modos de pricing
+   */
+  updateProduct: async (productId, updates) => {
+    console.log('🔄 Actualizando producto:', productId)
+    console.log('📝 Updates recibidos:', updates)
+    
     set((state) => ({
       operationStates: {
         ...state.operationStates,
@@ -237,7 +245,19 @@ const useSupplierProductsBase = create((set, get) => ({
     try {
       const { priceTiers, imagenes, specifications, ...productFields } = updates
 
-      // Actualizar campos básicos del producto
+      console.log('🏷️  Campos del producto a actualizar:', productFields)
+      console.log('📊 Price tiers:', priceTiers)
+      
+      // LOGGING CRÍTICO: Verificar campos de pricing
+      if (productFields.product_type) {
+        console.log('🔄 CAMBIO DETECTADO - product_type:', productFields.product_type)
+      }
+      if (productFields.price !== undefined) {
+        console.log('💰 CAMBIO DETECTADO - price:', productFields.price)
+      }
+
+      // PASO 1: Actualizar campos básicos del producto
+      console.log('📝 EJECUTANDO UPDATE EN SUPABASE con campos:', productFields)
       const { data, error } = await supabase
         .from('products')
         .update({ ...productFields, updateddt: new Date().toISOString() })
@@ -245,24 +265,33 @@ const useSupplierProductsBase = create((set, get) => ({
         .select()
         .single()
 
-      if (error) throw error// Procesar especificaciones si se proporcionan
+      if (error) {
+        console.error('❌ Error actualizando campos básicos:', error)
+        throw error
+      }
+      
+      console.log('✅ Campos básicos actualizados')
+
+      // PASO 2: Procesar especificaciones si se proporcionan
       if (specifications) {
+        console.log('📋 Procesando especificaciones...')
         await get().processProductSpecifications(productId, specifications)
       }
 
-      // Procesar imágenes si se proporcionan
+      // PASO 3: Procesar imágenes si se proporcionan
       if (imagenes) {
+        console.log('🖼️  Procesando imágenes...')
         await get().processProductImages(productId, imagenes)
       }
 
-      // Procesar tramos de precio si se proporcionan
-      if (priceTiers) {
-        await get().processPriceTiers(productId, priceTiers)
-      }
+      // PASO 4: Procesar tramos de precio SIEMPRE (para limpiar o crear)
+      console.log('💰 Procesando price tiers...')
+      await get().processPriceTiers(productId, priceTiers || [])
 
-      // Recargar productos para obtener los datos actualizados con imágenes
+      // PASO 5: Recargar productos para obtener los datos actualizados
       const supplierId = localStorage.getItem('user_id')
       if (supplierId) {
+        console.log('🔄 Recargando productos...')
         await get().loadProducts(supplierId)
       }
 
@@ -273,8 +302,12 @@ const useSupplierProductsBase = create((set, get) => ({
         },
       }))
 
+      console.log('✅ Producto actualizado exitosamente')
       return { success: true }
+      
     } catch (error) {
+      console.error('❌ Error en updateProduct:', error)
+      
       set((state) => ({
         operationStates: {
           ...state.operationStates,
@@ -282,6 +315,7 @@ const useSupplierProductsBase = create((set, get) => ({
         },
         error: error.message || 'Error al actualizar producto',
       }))
+      
       return { success: false, error: error.message }
     }
   },
@@ -487,28 +521,69 @@ const useSupplierProductsBase = create((set, get) => ({
   /**
    * Procesar tramos de precio
    */
+  /**
+   * ========================================================================
+   * PROCESAMIENTO ROBUSTO DE PRICE TIERS
+   * ========================================================================
+   * 
+   * Maneja tanto la creación como la limpieza de tramos de precio
+   * de forma profesional y sin inconsistencias.
+   */
   processPriceTiers: async (productId, priceTiers) => {
-    if (!priceTiers?.length) return
+    console.log('🔧 Procesando price tiers para producto:', productId)
+    console.log('📊 Price tiers recibidos:', priceTiers)
+    
+    try {
+      // PASO 1: Siempre limpiar tramos existentes primero
+      console.log('🧹 Limpiando tramos existentes...')
+      const { error: deleteError } = await supabase
+        .from('product_quantity_ranges')
+        .delete()
+        .eq('product_id', productId)
 
-    // Preparar tramos para insertar
-    const tiersToInsert = priceTiers
-      .filter((t) => t.cantidad && t.precio)
-      .map((t) => ({
-        product_id: productId,
-        min_quantity: Number(t.cantidad),
-        max_quantity: t.maxCantidad ? Number(t.maxCantidad) : null,
-        price: Number(t.precio),
-      }))
+      if (deleteError) {
+        console.error('❌ Error limpiando tramos existentes:', deleteError)
+        throw deleteError
+      }
+      console.log('✅ Tramos existentes limpiados')
 
-    // Eliminar tramos existentes
-    await supabase
-      .from('product_quantity_ranges')
-      .delete()
-      .eq('product_id', productId)
+      // PASO 2: Si no hay priceTiers o está vacío, terminar aquí (modo Por Unidad)
+      if (!priceTiers || priceTiers.length === 0) {
+        console.log('ℹ️  No hay price tiers para insertar (modo Por Unidad)')
+        return
+      }
 
-    // Insertar nuevos tramos
-    if (tiersToInsert.length > 0) {
-      await supabase.from('product_quantity_ranges').insert(tiersToInsert)
+      // PASO 3: Preparar y validar tramos para insertar
+      const tiersToInsert = priceTiers
+        .filter((t) => t.cantidad && t.precio && Number(t.cantidad) > 0 && Number(t.precio) > 0)
+        .map((t) => ({
+          product_id: productId,
+          min_quantity: Number(t.cantidad),
+          max_quantity: t.maxCantidad ? Number(t.maxCantidad) : null,
+          price: Number(t.precio),
+        }))
+
+      console.log('📝 Tramos preparados para insertar:', tiersToInsert)
+
+      // PASO 4: Insertar nuevos tramos solo si hay datos válidos
+      if (tiersToInsert.length > 0) {
+        console.log('💾 Insertando nuevos tramos...')
+        const { error: insertError } = await supabase
+          .from('product_quantity_ranges')
+          .insert(tiersToInsert)
+
+        if (insertError) {
+          console.error('❌ Error insertando tramos:', insertError)
+          throw insertError
+        }
+        console.log('✅ Tramos insertados exitosamente')
+      } else {
+        console.log('ℹ️  No hay tramos válidos para insertar')
+      }
+
+    } catch (error) {
+      console.error('❌ Error en processPriceTiers:', error)
+      throw error
     }
   },
 

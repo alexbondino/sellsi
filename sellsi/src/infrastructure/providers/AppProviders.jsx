@@ -24,21 +24,6 @@ const globalStyles = {
   '#root': { overflowX: 'hidden', position: 'relative' },
 };
 
-const toasterConfig = {
-  position: "top-right",
-  toastOptions: {
-    duration: 4000,
-    style: {
-      background: '#333',
-      color: '#fff',
-      borderRadius: '8px',
-      marginTop: '60px' // Mover los toasts más abajo del TopBar
-    },
-    success: { style: { background: '#4caf50' } },
-    error: { style: { background: '#f44336' } },
-  }
-};
-
 export const AppProviders = ({ children }) => {
   // Inicializar servicios globales
   useEffect(() => {
@@ -71,7 +56,63 @@ export const AppProviders = ({ children }) => {
             </AuthProvider>
           </BrowserRouter>
           
-          <Toaster {...toasterConfig} />
+          <Toaster 
+            position="top-right"
+            gutter={8}
+            containerStyle={{
+              top: 70,
+              right: 20,
+              zIndex: 9999
+            }}
+            toastOptions={{
+              duration: 4000,
+              style: {
+                background: '#fff',
+                color: '#333',
+                borderRadius: '12px',
+                padding: '12px 16px',
+                fontSize: '14px',
+                fontWeight: '500',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                border: '1px solid #e0e0e0',
+                maxWidth: '400px',
+                wordBreak: 'break-word'
+              },
+              success: { 
+                style: { 
+                  background: '#e8f5e8',
+                  color: '#2e7D32',
+                  border: '1px solid #4caf50'
+                },
+                iconTheme: {
+                  primary: '#4caf50',
+                  secondary: '#fff'
+                }
+              },
+              error: { 
+                style: { 
+                  background: '#ffeaea',
+                  color: '#c62828',
+                  border: '1px solid #f44336'
+                },
+                iconTheme: {
+                  primary: '#f44336',
+                  secondary: '#fff'
+                }
+              },
+              loading: {
+                style: {
+                  background: '#e3f2fd',
+                  color: '#1976d2',
+                  border: '1px solid #2196f3'
+                },
+                iconTheme: {
+                  primary: '#2196f3',
+                  secondary: '#fff'
+                }
+              }
+            }}
+          />
         </BannerProvider>
       </ThemeProvider>
       

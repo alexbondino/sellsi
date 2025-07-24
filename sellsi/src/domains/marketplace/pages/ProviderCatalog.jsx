@@ -38,7 +38,6 @@ import { supabase } from '../../../services/supabase';
 
 import ProductCard from '../../../shared/components/display/product-card/ProductCard';
 import useCartStore from '../../../shared/stores/cart/cartStore';
-import { toast } from 'react-hot-toast';
 import { filterActiveProducts } from '../../../utils/productActiveStatus';
 import { CATEGORIAS } from './CategoryNavigation/CategoryNavigation';
 

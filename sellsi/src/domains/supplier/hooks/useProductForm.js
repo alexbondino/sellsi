@@ -1,63 +1,78 @@
 /**
  * ============================================================================
- * USE PRODUCT FORM - HOOK PARA GESTIÓN DE FORMULARIOS DE PRODUCTOS
+ * USE PRODUCT FORM - HOOK PROFESIONAL PARA GESTIÓN DE FORMULARIOS
  * ============================================================================
  *
- * Hook especializado para manejar la lógica de formularios de productos,
- * incluyendo validaciones, estado del formulario y operaciones.
+ * Hook refactorizado con arquitectura robusta que garantiza consistencia
+ * en el manejo de productos por unidad y por tramos.
  */
 
 import React, { useState, useCallback, useEffect } from 'react'
 import { useSupplierProducts } from './useSupplierProducts'
 import { convertDbRegionsToForm } from '../../../utils/shippingRegionsUtils'
+import { 
+  PRICE_LIMITS, 
+  QUANTITY_LIMITS, 
+  PRICING_TYPES, 
+  PRODUCT_TYPES_DB 
+} from '../constants/productValidationConstants'
+import { ProductValidator } from '../validators/ProductValidator'
 
-// Valores iniciales del formulario
+// ============================================================================
+// CONFIGURACIÓN INICIAL ROBUSTA
+// ============================================================================
+
 const initialFormData = {
   nombre: '',
   descripcion: '',
   categoria: '',
   stock: '',
   compraMinima: '',
-  pricingType: 'Por Unidad',
+  pricingType: PRICING_TYPES.UNIT,
   precioUnidad: '',
-  tramos: [{ cantidad: '', precio: '' }],
+  tramos: [
+    { cantidad: '', precio: '' },
+    { cantidad: '', precio: '' }
+  ],
   imagenes: [],
   documentos: [],
   specifications: [{ key: '', value: '' }],
   negociable: false,
   activo: true,
-  shippingRegions: [], // Array de regiones de despacho con configuración
+  shippingRegions: [],
 }
 
-// Reglas de validación
+// Reglas de validación profesionales
 const validationRules = {
   nombre: {
     required: true,
     minLength: 2,
-    maxLength: 100,
+    maxLength: 40,
   },
   descripcion: {
     required: true,
     minLength: 10,
-    maxLength: 600, // Corregido a 600 para coincidir con el formulario y validación visual
+    maxLength: 3000,
   },
   categoria: {
     required: true,
-  },  stock: {
+  },
+  stock: {
     required: true,
-    min: 0,
-    max: 99999999, // Máximo 8 dígitos
+    min: QUANTITY_LIMITS.MIN_STOCK,
+    max: QUANTITY_LIMITS.MAX_STOCK,
     type: 'number',
   },
   compraMinima: {
     required: true,
-    min: 1,
-    max: 99999999, // Máximo 8 dígitos
+    min: QUANTITY_LIMITS.MIN_QUANTITY,
+    max: QUANTITY_LIMITS.MAX_STOCK,
     type: 'number',
-  },precioUnidad: {
-    required: false, // Será validado condicionalmente
-    min: 0,
-    max: 99999999, // Máximo 8 dígitos
+  },
+  precioUnidad: {
+    required: false, // Validado condicionalmente
+    min: PRICE_LIMITS.MIN_PRICE,
+    max: PRICE_LIMITS.MAX_PRICE,
     type: 'number',
   },
 }
@@ -91,72 +106,112 @@ export const useProductForm = (productId = null) => {
     operationStates.creating || operationStates.updating[productId]
 
   /**
-   * Mapear producto a formato de formulario
+   * ========================================================================
+   * MAPEO ROBUSTO DE PRODUCTO A FORMULARIO
+   * ========================================================================
    */
   function mapProductToForm(product) {
+    // Determinar tipo de pricing de forma robusta
+    const hasPriceTiers = product.priceTiers?.length > 0
+    const pricingType = hasPriceTiers ? PRICING_TYPES.TIER : PRICING_TYPES.UNIT
+
     return {
       nombre: product.nombre || '',
       descripcion: product.descripcion || '',
       categoria: product.categoria || '',
       stock: product.stock?.toString() || '',
       compraMinima: product.compraMinima?.toString() || '',
-      pricingType: product.priceTiers?.length > 0 ? 'Por Tramo' : 'Por Unidad',
-      precioUnidad: product.precio?.toString() || '',
-      tramos:
-        product.priceTiers?.length > 0
-          ? product.priceTiers.map((t) => ({
-              cantidad: t.min_quantity?.toString() || '',
-              precio: t.price?.toString() || '',
-            }))
-          : [{ cantidad: '', precio: '' }],
+      pricingType: pricingType,
+      
+      // Precio por unidad: solo si NO es por tramos
+      precioUnidad: !hasPriceTiers ? (product.precio?.toString() || '') : '',
+      
+      // Tramos: mapear si existen, sino inicializar con 2 tramos vacíos por defecto
+      tramos: hasPriceTiers
+        ? product.priceTiers.map((t) => ({
+            cantidad: t.min_quantity?.toString() || '',
+            precio: t.price?.toString() || '',
+          }))
+        : [
+            { cantidad: '', precio: '' },
+            { cantidad: '', precio: '' }
+          ],
+        
       imagenes: product.imagenes
         ? product.imagenes.map((url, index) => ({
             id: `existing_${index}_${Date.now()}`,
             url: url,
             name: url.split('/').pop() || `imagen_${index + 1}`,
-            isExisting: true, // Flag para indicar que es una imagen existente
+            isExisting: true,
           }))
         : [],
+        
       documentos: product.documentos || [],
       specifications: product.specifications || [{ key: '', value: '' }],
       negociable: product.negociable || false,
       activo: product.activo !== false,
-      shippingRegions: convertDbRegionsToForm(product.delivery_regions || []), // ✅ CORREGIDO: Convertir formato BD a formulario
+      shippingRegions: convertDbRegionsToForm(product.delivery_regions || []),
     }
   }
 
   /**
-   * Mapear formulario a formato de producto
+   * ========================================================================
+   * MAPEO ROBUSTO DE FORMULARIO A PRODUCTO
+   * ========================================================================
    */
   function mapFormToProduct(formData) {
-    
+    // Validación de integridad antes del mapeo
+    if (!formData.nombre || !formData.descripcion || !formData.categoria) {
+      throw new Error('Campos básicos requeridos faltantes')
+    }
+
     const productData = {
       productnm: formData.nombre,
       description: formData.descripcion,
       category: formData.categoria,
-      productqty: Math.min(parseInt(formData.stock) || 0, 99999999), // Limitar a 8 dígitos
-      minimum_purchase: Math.min(parseInt(formData.compraMinima) || 1, 99999999), // Limitar a 8 dígitos
+      productqty: Math.min(parseInt(formData.stock) || 0, PRICE_LIMITS.DB_MAX_VALUE),
+      minimum_purchase: Math.min(parseInt(formData.compraMinima) || 1, PRICE_LIMITS.DB_MAX_VALUE),
       negotiable: formData.negociable,
       is_active: formData.activo,
       imagenes: formData.imagenes,
       specifications: formData.specifications.filter((s) => s.key && s.value),
-      // delivery_regions eliminado: se guarda por separado en product_delivery_regions
     }
 
-    if (formData.pricingType === 'Por Unidad') {
-      productData.price = Math.min(parseFloat(formData.precioUnidad) || 0, 99999999) // Limitar a 8 dígitos
-      productData.product_type = 'unit'
-    } else {
-      // Para productos por tramo, el precio base será 0 (la BD no permite null)
-      productData.price = 0
-      productData.product_type = 'tier'
-      productData.priceTiers = formData.tramos
+    // ========================================================================
+    // LÓGICA ROBUSTA PARA PRICING - CON LOGGING DETALLADO
+    // ========================================================================
+    
+    console.log('🔧 [mapFormToProduct] Procesando pricing type:', formData.pricingType)
+    
+    if (formData.pricingType === PRICING_TYPES.UNIT) {
+      // Modo Por Unidad
+      const unitPrice = Math.min(parseFloat(formData.precioUnidad) || 0, PRICE_LIMITS.MAX_PRICE)
+      productData.price = unitPrice
+      productData.product_type = PRODUCT_TYPES_DB.UNIT
+      // CRÍTICO: Limpiar completamente los price tiers
+      productData.priceTiers = []
+      
+      console.log('💰 [UNIT MODE] price:', unitPrice, 'product_type:', PRODUCT_TYPES_DB.UNIT, 'priceTiers: []')
+      
+    } else if (formData.pricingType === PRICING_TYPES.TIER) {
+      // Modo Por Tramo
+      productData.price = 0 // Precio base para productos por tramo
+      productData.product_type = PRODUCT_TYPES_DB.TIER
+      
+      // Filtrar y mapear tramos válidos
+      const validTiers = formData.tramos
         .filter((t) => t.cantidad && t.precio)
         .map((t) => ({
-          cantidad: Math.min(parseInt(t.cantidad), 99999999), // Limitar cantidad a 8 dígitos
-          precio: Math.min(parseFloat(t.precio), 99999999), // Limitar precio a 8 dígitos
+          cantidad: Math.min(parseInt(t.cantidad), QUANTITY_LIMITS.MAX_QUANTITY),
+          precio: Math.min(parseFloat(t.precio), PRICE_LIMITS.MAX_PRICE),
         }))
+      
+      productData.priceTiers = validTiers
+      
+      console.log('📊 [TIER MODE] price: 0, product_type:', PRODUCT_TYPES_DB.TIER, 'priceTiers:', validTiers)
     }
+
+    console.log('✅ [mapFormToProduct] Producto final:', productData)
 
     return productData
   }
@@ -205,58 +260,109 @@ export const useProductForm = (productId = null) => {
 
     return null
   }, [memoizedValidationRules])  /**
-   * ✅ MEJORA DE RENDIMIENTO: Validar todo el formulario con memoización
+   * ========================================================================
+   * VALIDACIÓN ROBUSTA CON PRODUCTVALIDATOR
+   * ========================================================================
    */
   const validateForm = useCallback(() => {
-    const newErrors = {}
+    const validationResult = ProductValidator.validateProduct(formData)
+    
+    setErrors(validationResult.errors)
+    return validationResult.isValid
+  }, [formData])
 
-    Object.keys(memoizedValidationRules).forEach((fieldName) => {
-      const error = validateField(fieldName, formData[fieldName])
-      if (error) {
-        newErrors[fieldName] = error
-      }
-    })// Validaciones condicionales
-    if (formData.pricingType === 'Por Unidad') {
-      // Para productos por unidad, el precio es requerido
-      if (!formData.precioUnidad || formData.precioUnidad.toString().trim() === '') {
-        newErrors.precioUnidad = 'El precio es requerido'
+  /**
+   * ========================================================================
+   * GESTIÓN DE CAMBIOS CON VALIDACIÓN INMEDIATA
+   * ========================================================================
+   */
+  const handleInputChange = useCallback((name, value) => {
+    setFormData(prev => ({ ...prev, [name]: value }))
+    
+    setTouched(prev => ({ ...prev, [name]: true }))
+    setIsDirty(true)
+    
+    // Validación inmediata usando la función validateField existente
+    const fieldError = validateField(name, value)
+    
+    setErrors(prev => {
+      const newErrors = { ...prev }
+      if (fieldError) {
+        newErrors[name] = fieldError
       } else {
-        const numValue = parseFloat(formData.precioUnidad)
-        if (isNaN(numValue) || numValue < 0) {
-          newErrors.precioUnidad = 'Debe ser un precio válido mayor o igual a 0'
-        } else if (numValue > 99999999) {
-          newErrors.precioUnidad = 'El precio no puede superar los 8 dígitos (99,999,999)'
-        }
+        delete newErrors[name]
       }
-    } else if (formData.pricingType === 'Por Tramo') {
-      // Para productos por tramo, validar que existan tramos válidos
-      const validTramos = formData.tramos.filter((t) => t.cantidad && t.precio)
-      if (validTramos.length === 0) {
-        newErrors.tramos = 'Debe definir al menos un tramo de precios'
-      } else {
-        // Validar que ningún precio de tramo supere los 8 dígitos
-        const tramosConPrecioAlto = validTramos.filter(t => parseFloat(t.precio) > 99999999)
-        if (tramosConPrecioAlto.length > 0) {
-          newErrors.tramos = 'Los precios de los tramos no pueden superar los 8 dígitos (99,999,999)'
-        }
-      }
-    }
+      return newErrors
+    })
+  }, [validateField])
 
-    if (formData.imagenes.length === 0) {
-      newErrors.imagenes = 'Debe subir al menos una imagen'
-    }    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
-  }, [formData, validateField, memoizedValidationRules])
+  /**
+   * ========================================================================
+   * MANEJO ROBUSTO DEL CAMBIO DE TIPO DE PRICING
+   * ========================================================================
+   */
+  const handlePricingTypeChange = useCallback((newType) => {
+    console.log(`🔄 Cambiando tipo de pricing de "${formData.pricingType}" a "${newType}"`)
+    
+    setFormData(prev => {
+      const newFormData = { ...prev, pricingType: newType }
+      
+      if (newType === PRICING_TYPES.UNIT) {
+        // Cambio a pricing por unidad - limpiar tramos
+        console.log('🧹 Limpiando tramos para modo unitario')
+        newFormData.tramos = [{ cantidad: '', precio: '' }]
+        // Mantener precioUnidad si ya existe
+      } else {
+        // Cambio a pricing por tramos - limpiar precio unitario
+        console.log('🧹 Limpiando precio unitario para modo tramos')
+        newFormData.precioUnidad = ''
+        
+        // 🔧 FIX: AUTO-MAPEAR compraMinima al primer tramo y crear 2 tramos por defecto
+        const compraMinima = prev.compraMinima || ''
+        newFormData.tramos = [
+          { cantidad: compraMinima, precio: '' },
+          { cantidad: '', precio: '' }
+        ]
+        console.log('🎯 Auto-mapeando compraMinima al primer tramo:', compraMinima)
+      }
+      
+      console.log('✅ Nuevo estado del formulario:', newFormData)
+      return newFormData
+    })
+    
+    setTouched(prev => ({ ...prev, pricingType: true }))
+    setIsDirty(true)
+    
+    // Limpiar errores relacionados con el cambio de pricing
+    setErrors(prev => {
+      const newErrors = { ...prev }
+      if (newType === PRICING_TYPES.UNIT) {
+        delete newErrors.tramos
+      } else {
+        delete newErrors.precioUnidad
+      }
+      return newErrors
+    })
+  }, [formData.pricingType])
 
   /**
    * Actualizar campo del formulario
    */
   const updateField = useCallback(
     (fieldName, value) => {
-      setFormData((prev) => ({
-        ...prev,
-        [fieldName]: value,
-      }))
+      setFormData((prev) => {
+        const newFormData = { ...prev, [fieldName]: value }
+        
+        // 🎯 SINCRONIZACIÓN AUTOMÁTICA: compraMinima -> primer tramo
+        if (fieldName === 'compraMinima' && prev.pricingType === PRICING_TYPES.TIER) {
+          console.log('🔄 Sincronizando compra mínima con primer tramo:', value)
+          newFormData.tramos = [...prev.tramos]
+          newFormData.tramos[0] = { ...newFormData.tramos[0], cantidad: value }
+        }
+        
+        return newFormData
+      })
+      
       setIsDirty(true)
 
       // Limpiar error del campo si existe
@@ -306,26 +412,41 @@ export const useProductForm = (productId = null) => {
   )
 
   /**
-   * Submit del formulario
-   */  const submitForm = useCallback(async () => {
-      const isValid = validateForm()
+   * Submit del formulario - CON LOGGING DETALLADO
+   */
+  const submitForm = useCallback(async () => {
+    console.log('🚀 [submitForm] Iniciando submit del formulario')
+    console.log('📋 [submitForm] FormData actual:', formData)
+    
+    const isValid = validateForm()
+    console.log('✅ [submitForm] Validación resultado:', isValid)
+    
     if (!isValid) {
+      console.log('❌ [submitForm] Formulario no válido, errores:', errors)
       return { success: false, errors: errors }
     }
 
+    console.log('🔄 [submitForm] Mapeando formulario a producto...')
     const productData = mapFormToProduct(formData)
+    console.log('📦 [submitForm] Datos del producto mapeados:', productData)
 
     let result
     if (isEditMode) {
+      console.log('✏️  [submitForm] Modo edición - llamando updateProduct con ID:', productId)
       result = await updateProduct(productId, productData)
     } else {
+      console.log('➕ [submitForm] Modo creación - llamando createProduct')
       result = await createProduct(productData)
     }
 
+    console.log('📊 [submitForm] Resultado de la operación:', result)
 
     if (result.success) {
       setIsDirty(false)
       setTouched({})
+      console.log('✅ [submitForm] Submit exitoso')
+    } else {
+      console.log('❌ [submitForm] Submit falló:', result.error)
     }
 
     return result
@@ -385,9 +506,12 @@ export const useProductForm = (productId = null) => {
     updateField,
     updateFields,
     handleFieldBlur,
+    handleInputChange,
+    handlePricingTypeChange,
     submitForm,
     resetForm,
     validateForm,
+    
     // Utilidades
     hasErrors: Object.values(errors).some((v) => !!v),
     isValid: Object.values(errors).every((v) => !v),

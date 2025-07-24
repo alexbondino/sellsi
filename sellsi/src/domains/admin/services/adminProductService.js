@@ -666,9 +666,9 @@ export const validateProductData = (productData) => {
   if (productData.productnm && productData.productnm.trim().length > 100) {
     errors.push('El nombre del producto no puede exceder 100 caracteres')
   }
-  
-  if (productData.price !== undefined && (productData.price < 0 || productData.price > 99999999)) {
-    errors.push('El precio debe estar entre 0 y 99,999,999')
+
+  if (productData.price !== undefined && (productData.price < 0 || productData.price > 10000000)) {
+    errors.push('El precio debe estar entre 0 y 10,000,000')
   }
   
   if (productData.productqty !== undefined && (productData.productqty < 0 || !Number.isInteger(productData.productqty))) {

@@ -9,7 +9,7 @@
 
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
-import { toast } from 'react-hot-toast'
+import { showSuccessToast, showErrorToast, showWarningToast } from '../../../utils/toastHelpers'
 import { DISCOUNT_CODES } from '../../../domains/marketplace/hooks/constants'
 
 /**
@@ -35,12 +35,12 @@ const useCoupons = create(
 
         // Validaciones
         if (!coupon) {
-          toast.error('Código de descuento inválido', { icon: '❌' })
+          showErrorToast('Código de descuento inválido', { icon: '❌' })
           return false
         }
 
         if (subtotal < coupon.minAmount) {
-          toast.error(
+          showWarningToast(
             `Compra mínima de $${coupon.minAmount.toLocaleString()} requerida`,
             { icon: '⚠️' }
           )
@@ -51,17 +51,15 @@ const useCoupons = create(
           (c) => c.code === code.toUpperCase()
         )
         if (alreadyApplied) {
-          toast.error('Cupón ya aplicado', { icon: '⚠️' })
+          showWarningToast('Cupón ya aplicado', { icon: '⚠️' })
           return false
         }
 
         // Validar compatibilidad de cupones
         if (!get().isCouponCompatible(coupon)) {
-          toast.error(
+          showWarningToast(
             'Este cupón no es compatible con otros cupones aplicados',
-            {
-              icon: '⚠️',
-            }
+            { icon: '⚠️' }
           )
           return false
         }
@@ -78,7 +76,7 @@ const useCoupons = create(
           couponInput: '',
         })
 
-        toast.success(`Cupón ${code} aplicado correctamente`, { icon: '🎉' })
+        showSuccessToast(`Cupón ${code} aplicado correctamente`, { icon: '🎉' })
         return true
       },
 
@@ -95,7 +93,7 @@ const useCoupons = create(
             appliedCoupons: state.appliedCoupons.filter((c) => c.code !== code),
           })
 
-          toast.success(`Cupón ${code} removido`, { icon: '🗑️' })
+          showSuccessToast(`Cupón ${code} removido`, { icon: '🗑️' })
           return true
         }
         return false

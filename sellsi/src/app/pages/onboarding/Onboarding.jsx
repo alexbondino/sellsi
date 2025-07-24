@@ -18,7 +18,6 @@ import BusinessIcon from '@mui/icons-material/Business';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
 import { supabase } from '../../../services/supabase';
-import toast from 'react-hot-toast';
 
 // Asumimos que estos componentes existen en tu proyecto y están bien estilizados.
 import PrimaryButton from '../../../shared/components/forms/PrimaryButton';

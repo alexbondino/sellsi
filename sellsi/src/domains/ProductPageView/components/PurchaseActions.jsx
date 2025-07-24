@@ -8,8 +8,8 @@ import {
   Divider,
 } from '@mui/material'
 import { ShoppingCart, Add, Remove } from '@mui/icons-material'
-import { toast } from 'react-hot-toast'
 import { formatProductForCart } from '../../../utils/priceCalculation'
+import { showErrorToast } from '../../../utils/toastHelpers'
 import QuotationButton from './QuotationButton'
 import { calculateUnitPrice } from '../utils/quotationUtils'
 
@@ -46,7 +46,7 @@ const PurchaseActions = ({
   const handleAddToCart = () => {
     // ...log eliminado...
     if (!isLoggedIn) {
-      toast.error('Debes iniciar sesión para agregar productos al carrito', {
+      showErrorToast('Debes iniciar sesión para agregar productos al carrito', {
         icon: '🔒',
       })
       const event = new CustomEvent('openLogin')

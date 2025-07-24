@@ -45,9 +45,7 @@ const ProductRegions = ({
 
   // Preparar datos para el modal (convertir de formato display a formato BD)
   const prepareModalData = () => {
-    console.log('[ProductRegions] prepareModalData - shippingRegions actuales:', shippingRegions);
     const modalData = convertFormRegionsToDb(shippingRegions);
-    console.log('[ProductRegions] prepareModalData - Datos preparados para modal:', modalData);
     return modalData;
   };
 

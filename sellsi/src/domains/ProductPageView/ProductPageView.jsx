@@ -34,8 +34,8 @@ import {
   StorefrontOutlined,
   Inventory2Outlined,
 } from '@mui/icons-material'
-import { toast } from 'react-hot-toast'
 import { useLocation } from 'react-router-dom'
+import { showErrorToast, showCartSuccess } from '../../utils/toastHelpers'
 
 // Lazy imports para componentes pesados - simplificados para evitar errores
 const ProductImageGallery = React.lazy(() => 
@@ -81,7 +81,7 @@ const ProductPageView = memo(({
     // Debug log removed
     // Verificar sesión antes de permitir agregar al carrito
     if (!isLoggedIn) {
-      toast.error('Debes iniciar sesión para agregar productos al carrito', {
+      showErrorToast('Debes iniciar sesión para agregar productos al carrito', {
         icon: '🔒',
       })
       // Disparar evento para abrir Login modal
@@ -94,11 +94,8 @@ const ProductPageView = memo(({
       // Si no, formatear con los datos básicos del producto
       onAddToCart(cartProduct || product)
       // Mostrar toast de confirmación aquí
-      toast.success(
-        `Agregado al carrito: ${(cartProduct || product)?.name || product?.nombre}`,
-        {
-          icon: '✅',
-        }
+      showCartSuccess(
+        `Agregado al carrito: ${(cartProduct || product)?.name || product?.nombre}`
       )
       // Debug log removed
     }

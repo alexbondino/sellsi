@@ -9,7 +9,7 @@
 
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
-import { toast } from 'react-hot-toast'
+import { showSuccessToast, showErrorToast } from '../../../utils/toastHelpers'
 import { SHIPPING_OPTIONS } from '../../../domains/marketplace/hooks/constants'
 
 /**
@@ -36,7 +36,7 @@ const useShipping = create(
         const newOption = SHIPPING_OPTIONS.find((opt) => opt.id === optionId)
 
         if (!newOption) {
-          toast.error('Opción de envío no válida', { icon: '❌' })
+          showErrorToast('Opción de envío no válida', { icon: '❌' })
           return false
         }
 
@@ -44,9 +44,7 @@ const useShipping = create(
           selectedShipping: optionId,
         })
 
-        toast.success(`Envío seleccionado: ${newOption.name}`, {
-          icon: '🚚',
-        })
+        showSuccessToast(`Envío seleccionado: ${newOption.name}`, { icon: '🚚' })
 
         return {
           oldOption,

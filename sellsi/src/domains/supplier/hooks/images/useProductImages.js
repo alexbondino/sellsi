@@ -147,11 +147,9 @@ const useProductImages = create((set, get) => ({
           };
           
           queryClient.setQueryData(QUERY_KEYS.THUMBNAIL(productId), newThumbnailData);
-          console.log(`✅ Cache de thumbnails actualizado inmediatamente para producto: ${productId}`, newThumbnailData);
         } else {
           // Si no hay imágenes, limpiar el cache
           queryClient.setQueryData(QUERY_KEYS.THUMBNAIL(productId), null);
-          console.log(`🧹 Cache de thumbnails limpiado para producto sin imágenes: ${productId}`);
         }
       } catch (cacheError) {
         console.warn('Error actualizando cache:', cacheError);
@@ -264,7 +262,6 @@ const useProductImages = create((set, get) => ({
       try {
         // Limpiar cache inmediatamente (producto sin imágenes)
         queryClient.setQueryData(QUERY_KEYS.THUMBNAIL(productId), null);
-        console.log(`✅ Cache de thumbnails limpiado inmediatamente después de limpieza para producto: ${productId}`);
       } catch (cacheError) {
         console.warn('Error limpiando cache:', cacheError);
       }
@@ -322,11 +319,9 @@ const useProductImages = create((set, get) => ({
           };
           
           queryClient.setQueryData(QUERY_KEYS.THUMBNAIL(productId), newThumbnailData);
-          console.log(`✅ Cache de thumbnails actualizado después de eliminar imágenes específicas para producto: ${productId}`, newThumbnailData);
         } else {
           // Si no quedan imágenes, limpiar el cache
           queryClient.setQueryData(QUERY_KEYS.THUMBNAIL(productId), null);
-          console.log(`🧹 Cache de thumbnails limpiado (sin imágenes restantes) para producto: ${productId}`);
         }
       } catch (cacheError) {
         console.warn('Error actualizando cache después de eliminación específica:', cacheError);

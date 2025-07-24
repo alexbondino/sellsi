@@ -14,11 +14,20 @@ import {
   Inventory2 as Inventory2Icon
 } from '@mui/icons-material';
 import { ThemeProvider } from '@mui/material/styles';
-import { toast } from 'react-hot-toast';
+import { 
+  showValidationError, 
+  showSaveLoading, 
+  showSaveSuccess, 
+  showSaveError,
+  showErrorToast,
+  replaceLoadingWithSuccess,
+  replaceLoadingWithError
+} from '../../../../utils/toastHelpers';
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 
 // Components
 import { PriceTiers } from '../../../../shared/components/forms/PriceTiers';
+import { PRICING_TYPES } from '../../constants/productValidationConstants';
 
 // Subcomponentes modularizados
 import {
@@ -62,6 +71,7 @@ const AddProduct = () => {
     isValid,
     updateField,
     handleFieldBlur,
+    handlePricingTypeChange,
     submitForm,
     resetForm,
   } = useProductForm(editProductId);
@@ -143,7 +153,7 @@ const AddProduct = () => {
     updateField(field, value);
     
     // Si se cambia la compra mínima y hay tramos, sincronizar con el Tramo 1
-    if (field === 'compraMinima' && formData.pricingType === 'Por Tramo' && formData.tramos.length > 0) {
+    if (field === 'compraMinima' && formData.pricingType === PRICING_TYPES.TIER && formData.tramos.length > 0) {
       const newTramos = [...formData.tramos];
       newTramos[0] = { ...newTramos[0], cantidad: value };
       updateField('tramos', newTramos);
@@ -160,29 +170,23 @@ const AddProduct = () => {
 
   };
 
-  const handlePricingTypeChange = (event, newValue) => {
-    if (newValue !== null) {
-      updateField('pricingType', newValue);
-      if (newValue === 'Por Tramo') {
-        updateField('precioUnidad', '');
-        // Agregar automáticamente Tramo 1 y Tramo 2
-        // Si ya existe una compra mínima, sincronizar el Tramo 1 con ese valor
-        const compraMinima = formData.compraMinima || '';
-        updateField('tramos', [
-          { cantidad: compraMinima, precio: '' },
-          { cantidad: '', precio: '' }
-        ]);
-      } else {
-        updateField('tramos', [{ cantidad: '', precio: '' }]);
-      }
-    }
-  };
+  // ========================================================================
+  // HANDLER ROBUSTO PARA CAMBIO DE PRICING TYPE
+  // ========================================================================
+  const handlePricingTypeChangeUI = (event, newValue) => {
+    if (newValue === null) return
+    
+    console.log(`🔄 [AddProduct] Cambiando pricing type de "${formData.pricingType}" a "${newValue}"`)
+    
+    // Usar el método del hook que maneja todo el estado correctamente
+    handlePricingTypeChange(newValue)
+  }
 
   const handleTramoChange = (index, field, value) => {
     // Si es el Tramo 1 y se está cambiando la cantidad, no permitir el cambio
     // La cantidad del Tramo 1 debe ser igual a la Compra Mínima
     if (index === 0 && field === 'cantidad') {
-      toast.error('La cantidad del Tramo 1 debe ser igual a la Compra Mínima. Modifica la Compra Mínima para cambiar este valor.');
+      showErrorToast('La cantidad del Tramo 1 debe ser igual a la Compra Mínima. Modifica la Compra Mínima para cambiar este valor.');
       return;
     }
     
@@ -234,39 +238,145 @@ const AddProduct = () => {
       updateField('specifications', newSpecs);
     }
   };
+  /**
+   * 🎯 GENERADOR DE MENSAJES DE ERROR CONTEXTUALES
+   * Analiza los errores y genera mensajes específicos para el usuario
+   */
+  const generateContextualErrorMessage = (validationErrors) => {
+    console.log('🔍 [generateContextualErrorMessage] Procesando errores:', validationErrors)
+    
+    if (!validationErrors || Object.keys(validationErrors).length === 0) {
+      return null;
+    }
+
+    const errorKeys = Object.keys(validationErrors);
+    console.log('🔑 [generateContextualErrorMessage] Error keys:', errorKeys)
+    
+    const hasTramoErrors = errorKeys.includes('tramos');
+    const hasBasicFieldErrors = errorKeys.some(key => 
+      ['nombre', 'descripcion', 'categoria', 'stock', 'compraMinima', 'precioUnidad'].includes(key)
+    );
+    const hasImageErrors = errorKeys.includes('imagenes');
+    const hasRegionErrors = errorKeys.includes('shippingRegions');
+
+    console.log('🔍 [generateContextualErrorMessage] Tipos de errores detectados:', {
+      hasTramoErrors,
+      hasBasicFieldErrors,
+      hasImageErrors,
+      hasRegionErrors
+    })
+
+    // Construir mensaje específico
+    const messages = [];
+
+    if (hasTramoErrors) {
+      const tramoError = validationErrors.tramos;
+      
+      // Detectar tipo específico de error en tramos
+      if (tramoError.includes('ascendentes')) {
+        messages.push('🔢 Las cantidades de los tramos deben ser ascendentes (ej: 50, 100, 200)');
+      } else if (tramoError.includes('descendentes') || tramoError.includes('compran más')) {
+        messages.push('💰 Los precios deben ser descendentes: compran más, pagan menos por unidad');
+      } else if (tramoError.includes('Tramo 1') || tramoError.includes('Compra Mínima')) {
+        messages.push('📊 El primer tramo debe coincidir con la compra mínima');
+      } else if (tramoError.includes('al menos')) {
+        messages.push('📈 Debes configurar al menos 2 tramos de precios válidos');
+      } else if (tramoError.includes('stock')) {
+        messages.push('⚠️ Las cantidades de los tramos no pueden superar el stock disponible');
+      } else if (tramoError.includes('enteros positivos')) {
+        messages.push('🔢 Las cantidades y precios deben ser números enteros positivos');
+      } else {
+        messages.push('📈 Revisa la configuración de los tramos de precios');
+      }
+    }
+
+    if (hasBasicFieldErrors) {
+      const basicErrors = [];
+      if (validationErrors.nombre) basicErrors.push('nombre');
+      if (validationErrors.descripcion) basicErrors.push('descripción');
+      if (validationErrors.categoria) basicErrors.push('categoría');
+      if (validationErrors.stock) basicErrors.push('stock');
+      if (validationErrors.compraMinima) basicErrors.push('compra mínima');
+      if (validationErrors.precioUnidad) basicErrors.push('precio');
+      
+      if (basicErrors.length > 0) {
+        messages.push(`📝 Completa: ${basicErrors.join(', ')}`);
+      } else {
+        messages.push('📝 Completa la información básica del producto');
+      }
+    }
+
+    if (hasImageErrors) {
+      messages.push('🖼️ Agrega al menos una imagen del producto');
+    }
+
+    if (hasRegionErrors) {
+      messages.push('🚛 Configura las regiones de despacho');
+    }
+
+    // Formatear mensaje final
+    if (messages.length > 1) {
+      const finalMessage = `${messages.join(' • ')}`;
+      console.log('📝 [generateContextualErrorMessage] Mensaje múltiple:', finalMessage)
+      return finalMessage;
+    } else if (messages.length === 1) {
+      console.log('📝 [generateContextualErrorMessage] Mensaje único:', messages[0])
+      return messages[0];
+    } else {
+      const defaultMessage = 'Por favor, completa todos los campos requeridos';
+      console.log('📝 [generateContextualErrorMessage] Mensaje por defecto:', defaultMessage)
+      return defaultMessage;
+    }
+  };
+
   // Handler para el submit
   const handleSubmit = async e => {
+    console.log('🔥 [AddProduct.handleSubmit] Iniciando submit')
     e.preventDefault();
     markSubmitAttempt();
 
+    console.log('🔍 [AddProduct.handleSubmit] Validando formulario...')
     const validationErrors = validateForm(formData);
+    console.log('📊 [AddProduct.handleSubmit] Errores de validación:', validationErrors)
+    console.log('🧪 [AddProduct.handleSubmit] Nombre del producto:', formData.nombre)
     
     if (validationErrors && Object.keys(validationErrors).length > 0) {
-      toast.error('Por favor, completa todos los campos requeridos');
+      console.log('❌ [AddProduct.handleSubmit] Validación falló, no continuando')
+      
+      // 🎯 Generar mensaje contextual específico
+      const contextualMessage = generateContextualErrorMessage(validationErrors);
+      console.log('📝 [AddProduct.handleSubmit] Mensaje contextual:', contextualMessage)
+      
+      showValidationError(contextualMessage);
+      
       return;
     }
+
+    console.log('✅ [AddProduct.handleSubmit] Validación pasó, continuando...')
 
     // LOG: Estado de formData y shippingRegions antes de guardar
 
 
 
     // Mostrar toast informativo
-    toast.loading(
+    showSaveLoading(
       isEditMode 
-        ? `Actualizando producto...`
-        : `Creando producto...`,
-      { id: 'product-save' }
+        ? 'Actualizando producto...'
+        : 'Creando producto...',
+      'product-save'
     );
 
     try {
+      console.log('💾 [AddProduct.handleSubmit] Llamando submitForm()...')
       // 1. Guardar producto principal
       const result = await submitForm();
+      console.log('📋 [AddProduct.handleSubmit] Resultado de submitForm:', result)
 
       if (!result.success) {
         console.error('❌ Backend errors:', result.errors);
         if (result.errors && typeof result.errors === 'object') {
           Object.entries(result.errors).forEach(([key, value]) => {
-            if (value) toast.error(`${key}: ${value}`);
+            if (value) showErrorToast(`${key}: ${value}`);
           });
         }
         throw new Error(result.error || 'No se pudo procesar el producto');
@@ -291,7 +401,7 @@ const AddProduct = () => {
         } catch (regionError) {
           console.error('[AddProduct] handleSubmit - Error guardando regiones:', regionError);
           // No lanzar error aquí para que el producto se guarde aunque falle las regiones
-          toast.error('Producto guardado, pero hubo un error al guardar las regiones de entrega');
+          showErrorToast('Producto guardado, pero hubo un error al guardar las regiones de entrega');
         }
       } else {
         console.warn('[AddProduct] handleSubmit - No se guardaron shippingRegions. productId:', productId, 'shippingRegions:', shippingRegions);
@@ -302,14 +412,12 @@ const AddProduct = () => {
       }
 
       // 3. Mostrar éxito y navegar
-      toast.success(
+      replaceLoadingWithSuccess(
+        'product-save',
         isEditMode
-          ? ` Producto actualizado exitosamente!`
-          : ` Producto creado exitosamente!`,
-        { 
-          id: 'product-save',
-          duration: 3000
-        }
+          ? 'Producto actualizado exitosamente!'
+          : 'Producto creado exitosamente!',
+        '🎉'
       );
 
       // 4. Navegar después de un breve delay
@@ -322,14 +430,14 @@ const AddProduct = () => {
 
       // Manejar error específico de overflow numérico
       if (error.message && error.message.includes('numeric field overflow')) {
-        toast.error(
-          'Error: Uno o más precios superan el límite permitido (máximo 8 dígitos). Por favor, reduce los valores.',
-          { id: 'product-save' }
+        replaceLoadingWithError(
+          'product-save',
+          'Error: Uno o más precios superan el límite permitido (máximo 8 dígitos). Por favor, reduce los valores.'
         );
       } else {
-        toast.error(
-          error.message || 'Error inesperado al procesar el producto',
-          { id: 'product-save' }
+        replaceLoadingWithError(
+          'product-save',
+          error.message || 'Error inesperado al procesar el producto'
         );
       }
     }
@@ -427,7 +535,7 @@ const AddProduct = () => {
                     triedSubmit={triedSubmit}
                     onInputChange={handleInputChange}
                     onFieldBlur={handleFieldBlur}
-                    onPricingTypeChange={handlePricingTypeChange}
+                    onPricingTypeChange={handlePricingTypeChangeUI}
                   />
 
 
@@ -450,7 +558,7 @@ const AddProduct = () => {
                   </Box>
 
                   {/* Configuración de Tramos de Precio (condicional) */}
-                  {formData.pricingType === 'Por Tramo' && (
+                  {formData.pricingType === PRICING_TYPES.TIER && (
                     <Box
                       className="full-width"
                       sx={{

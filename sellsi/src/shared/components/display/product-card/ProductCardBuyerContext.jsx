@@ -18,9 +18,9 @@ import {
   Add as AddIcon,
   Remove as RemoveIcon,
 } from '@mui/icons-material';
-import { toast } from 'react-hot-toast';
 
 // Utility imports (updated paths for shared location)
+import { showErrorToast } from '../../../../utils/toastHelpers';
 import { generateProductUrl } from '../../../../domains/marketplace/utils/productUrl';
 import PriceDisplay from '../../../../domains/marketplace/PriceDisplay/PriceDisplay';
 import { useProductPriceTiers } from '../../../../domains/marketplace/hooks/products/useProductPriceTiers';
@@ -157,7 +157,7 @@ const ProductCardBuyerContext = React.memo(
 
       if (!isLoggedIn) {
         // If not logged in, open login modal
-        toast.error('Debes iniciar sesión para agregar productos al carrito', {
+        showErrorToast('Debes iniciar sesión para agregar productos al carrito', {
           icon: '🔒',
         });
         const loginEvent = new CustomEvent('openLogin');

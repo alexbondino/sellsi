@@ -71,6 +71,11 @@ export const calculateRealShippingCost = async (items = [], userRegion = null) =
  * IMPORTANTE: El costo es POR PRODUCTO, no por cantidad.
  * Si hay 5 unidades del mismo producto, el costo de envío es uno solo.
  * 
+ * LÓGICA DE CÁLCULO:
+ * - Si no tiene información de despacho: costo = 0
+ * - Si tiene información pero no para la región del usuario: costo = 0
+ * - Si tiene información y coincide con la región del usuario: usar el costo configurado
+ * 
  * @param {Object} product - Producto del carrito
  * @param {string} userRegion - Región del usuario
  * @returns {number} - Costo de envío del producto (fijo, independiente de cantidad)
@@ -85,7 +90,7 @@ export const calculateProductShippingCost = (product, userRegion) => {
 
   // Si no hay información de despacho, usar precio por defecto
   if (!shippingRegions || shippingRegions.length === 0) {
-    return 5990; // Precio por defecto
+    return 0; // Precio por defecto
   }
 
   // Buscar la región del usuario en las regiones disponibles
@@ -99,19 +104,13 @@ export const calculateProductShippingCost = (product, userRegion) => {
     const cost = matchingRegion.price || 
                 matchingRegion.shippingValue || 
                 matchingRegion.cost || 
-                5990;
+                0; // ✅ CORREGIDO: Usar 0 en lugar de 5990
     
     return cost;
   } else {
-    // Región no compatible, usar el precio MÁS BAJO disponible
-    const availableCosts = shippingRegions.map(region => 
-      region.price || region.shippingValue || region.cost || 5990
-    );
-    
-    // Usar el precio más bajo en lugar del promedio
-    const finalCost = Math.min(...availableCosts);
-    
-    return finalCost;
+    // ✅ CORREGIDO: Si el producto tiene información de despacho pero no para la región del usuario,
+    // entonces este producto no puede ser despachado, por lo tanto costo = 0
+    return 0;
   }
 };
 
@@ -170,7 +169,7 @@ export const getShippingInfo = (product, userRegion) => {
   if (matchingRegion) {
     return {
       canShip: true,
-      cost: matchingRegion.price || matchingRegion.shippingValue || matchingRegion.cost || 5990,
+      cost: matchingRegion.price || matchingRegion.shippingValue || matchingRegion.cost || 0,
       days: matchingRegion.delivery_days || matchingRegion.maxDeliveryDays || matchingRegion.days || 'N/A',
       message: 'Envío disponible'
     };

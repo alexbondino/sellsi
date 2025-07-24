@@ -11,7 +11,7 @@
 
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
-import { toast } from 'react-hot-toast'
+import { showWishlistSuccess, showWishlistInfo, showSuccessToast } from '../../../utils/toastHelpers'
 
 /**
  * Hook para gestión de wishlist
@@ -42,14 +42,10 @@ const useWishlist = create(
             wishlist: [...state.wishlist, productWithTimestamp],
           })
 
-          toast.success(`${product.name} agregado a favoritos`, {
-            icon: '❤️',
-          })
+          showWishlistSuccess(`${product.name} agregado a favoritos`)
           return true
         } else {
-          toast.info(`${product.name} ya está en favoritos`, {
-            icon: '💛',
-          })
+          showWishlistInfo(`${product.name} ya está en favoritos`, '💛')
           return false
         }
       },
@@ -67,7 +63,7 @@ const useWishlist = create(
             wishlist: state.wishlist.filter((item) => item.id !== productId),
           })
 
-          toast.success(`${item.name} removido de favoritos`, { icon: '💔' })
+          showWishlistInfo(`${item.name} removido de favoritos`, '💔')
           return true
         }
         return false
@@ -89,7 +85,7 @@ const useWishlist = create(
           if (success !== false) {
             // Remover de wishlist solo si se agregó exitosamente al carrito
             get().removeFromWishlist(productId)
-            toast.success(`${item.name} movido al carrito`, { icon: '🛒' })
+            showSuccessToast(`${item.name} movido al carrito`, { icon: '🛒' })
             return true
           }
         }
@@ -156,9 +152,7 @@ const useWishlist = create(
           wishlist: [],
         })
 
-        toast.success(`${itemCount} productos removidos de favoritos`, {
-          icon: '🧹',
-        })
+        showSuccessToast(`${itemCount} productos removidos de favoritos`, { icon: '🧹' })
       },
 
       /**
@@ -181,9 +175,7 @@ const useWishlist = create(
             wishlist: [...state.wishlist, ...itemsWithTimestamp],
           })
 
-          toast.success(`${newItems.length} productos agregados a favoritos`, {
-            icon: '❤️',
-          })
+          showWishlistSuccess(`${newItems.length} productos agregados a favoritos`)
           return newItems.length
         }
         return 0
@@ -206,11 +198,9 @@ const useWishlist = create(
             ),
           })
 
-          toast.success(
+          showWishlistInfo(
             `${removedItems.length} productos removidos de favoritos`,
-            {
-              icon: '💔',
-            }
+            '💔'
           )
           return removedItems.length
         }

@@ -31,7 +31,11 @@ import {
   Storefront as StorefrontIcon
 } from '@mui/icons-material';
 import { ThemeProvider } from '@mui/material/styles';
-import { toast } from 'react-hot-toast';
+import { 
+  showProductSuccess, 
+  showProductError,
+  showSuccessToast 
+} from '../../../../utils/toastHelpers';
 
 // Components
 import ProductCard from '../../../../shared/components/display/product-card/ProductCard';
@@ -174,16 +178,16 @@ const MyProducts = () => {
 
     try {
       await deleteProduct(deleteModal.product.id);
-      toast.success(`${deleteModal.product.nombre} eliminado correctamente`);
+      showProductSuccess(`${deleteModal.product.nombre} eliminado correctamente`, '🗑️');
       setDeleteModal({ isOpen: false, product: null, loading: false }); // <--- Cambiado de 'open' a 'isOpen'
     } catch (error) {
-      toast.error(error.message || 'Error al eliminar el producto');
+      showProductError(error.message || 'Error al eliminar el producto');
       setDeleteModal(prev => ({ ...prev, loading: false }));
     }
   };
 
   const handleViewStats = product => {
-    toast.success(`Próximamente: Estadísticas de ${product.nombre}`);
+    showProductSuccess(`Próximamente: Estadísticas de ${product.nombre}`, '📊');
   };
 
   const handleSortChange = event => {
@@ -195,7 +199,7 @@ const MyProducts = () => {
   const handleClearFilters = () => {
     clearFilters();
     scrollToTop(); // Desplazamiento suave hacia arriba al limpiar filtros
-    toast.success('Filtros limpiados');
+    showSuccessToast('Filtros limpiados', { icon: '🧹' });
   };
   const handleProductCardClick = (product) => {
     const url = generateProductUrl(product);

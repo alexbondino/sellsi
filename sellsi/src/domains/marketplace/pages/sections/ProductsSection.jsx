@@ -27,7 +27,7 @@ import ShoppingBagIcon from '@mui/icons-material/ShoppingBag';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import BusinessIcon from '@mui/icons-material/Business';
 import { SPACING_BOTTOM_MAIN } from '../../../../styles/layoutSpacing';
-import { toast } from 'react-hot-toast';
+import { showCartSuccess } from '../../../../utils/toastHelpers';
 import { isProductActive, getActiveProductCountByProvider } from '../../../../utils/productActiveStatus';
 import ProductCard from '../../../../shared/components/display/product-card/ProductCard'; // Asegúrate que esta es la ruta correcta al componente principal
 import ProductCardProviderContext from '../../../../shared/components/display/product-card/ProductCardProviderContext'; // ✅ NUEVO: Para vista de proveedores
@@ -91,9 +91,7 @@ const ProductsSection = React.memo(
         }
 
         // Mostrar toast de confirmación
-        toast.success(`Agregado al carrito: ${producto.nombre}`, {
-          icon: '✅',
-        });
+        showCartSuccess(`Agregado al carrito: ${producto.nombre}`);
       },
       [addItem]
     );

@@ -21,7 +21,6 @@ import {
 } from '@mui/icons-material'
 import { motion } from 'framer-motion'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { toast } from 'react-hot-toast'
 
 // Servicios
 import { checkoutService } from '../services'

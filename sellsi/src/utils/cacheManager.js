@@ -143,7 +143,6 @@ class CacheManager {
     }
 
     this.stats.cleanups++;
-    console.log(`[CacheManager] Cleanup completado: ${cleanupCount} entradas eliminadas`);
     
     // Verificar límites de memoria
     this.checkMemoryLimits();

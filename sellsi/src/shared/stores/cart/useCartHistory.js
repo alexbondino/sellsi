@@ -8,7 +8,6 @@
  */
 
 import { create } from 'zustand'
-import { toast } from 'react-hot-toast'
 
 // Helper function para describir acciones del historial
 const getActionDescription = (actionType, actionData) => {
