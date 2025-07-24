@@ -16,6 +16,7 @@ import { useSupplierProducts } from '../../hooks/useSupplierProducts';
 import { dashboardThemeCore } from '../../../../styles/dashboardThemeCore';
 import { SPACING_BOTTOM_MAIN } from '../../../../styles/layoutSpacing';
 import { supabase } from '../../../../services/supabase';
+import { SupplierErrorBoundary } from '../../components/ErrorBoundary';
 
 // Lazy imports para reducir el bundle inicial
 const DashboardSummary = React.lazy(() =>
@@ -106,7 +107,14 @@ const ProviderHome = () => {
     return () => clearTimeout(checkAndRetryLoad)
   }, []) // Solo ejecutar una vez después del montaje
 
+  const handleRetry = () => {
+    // Reload dashboard data
+    loadDashboardData();
+    loadProducts(supplierId);
+  };
+
   return (
+    <SupplierErrorBoundary onRetry={handleRetry}>
     <ThemeProvider theme={dashboardThemeCore}>
       <Box
         sx={{
@@ -176,6 +184,7 @@ const ProviderHome = () => {
         </Container>
       </Box>
     </ThemeProvider>
+    </SupplierErrorBoundary>
   );
 };
 

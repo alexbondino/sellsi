@@ -29,6 +29,9 @@ import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { PriceTiers } from '../../../../shared/components/forms/PriceTiers';
 import { PRICING_TYPES } from '../../constants/productValidationConstants';
 
+// Error Boundaries
+import { SupplierErrorBoundary, ProductFormErrorBoundary } from '../../components/ErrorBoundary';
+
 // Subcomponentes modularizados
 import {
   ProductBasicInfo,
@@ -451,8 +454,20 @@ const AddProduct = () => {
       navigate('/supplier/myproducts');
     }
   };
+
+  const handleRetry = () => {
+    // Reset form errors and reload if needed
+    resetErrors();
+    if (isEditMode && productId) {
+      // Could reload product data here if needed
+      console.log('Retrying product edit form...');
+    }
+  };
+
   return (
-    <ThemeProvider theme={dashboardThemeCore}>
+    <SupplierErrorBoundary onRetry={handleRetry}>
+      <ThemeProvider theme={dashboardThemeCore}>
+        <ProductFormErrorBoundary formData={formData} onRetry={handleRetry}>
       <Box
         sx={{
           backgroundColor: 'background.default',
@@ -610,7 +625,9 @@ const AddProduct = () => {
           </Grid>
         </Container>
       </Box>
+        </ProductFormErrorBoundary>
     </ThemeProvider>
+    </SupplierErrorBoundary>
   );
 };
 

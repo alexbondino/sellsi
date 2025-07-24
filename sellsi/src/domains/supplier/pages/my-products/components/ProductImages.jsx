@@ -1,6 +1,7 @@
 import React from 'react';
 import { Box, Typography } from '@mui/material';
 import { ImageUploader } from '../../../../../shared/components/forms';
+import { ImageUploadErrorBoundary } from '../../../components/ErrorBoundary';
 
 /**
  * Componente para la gestión de imágenes del producto
@@ -16,7 +17,14 @@ const ProductImages = ({
   onImagesChange,
   onImageError,
 }) => {
+  const handleRetry = () => {
+    // Reset image errors and clear any failed uploads
+    onImageError(null);
+    // Could trigger a re-upload process here
+  };
+
   return (
+    <ImageUploadErrorBoundary onRetry={handleRetry}>
     <Box
       className="full-width"
       sx={{
@@ -45,6 +53,7 @@ const ProductImages = ({
         }
       />
     </Box>
+    </ImageUploadErrorBoundary>
   );
 };
 

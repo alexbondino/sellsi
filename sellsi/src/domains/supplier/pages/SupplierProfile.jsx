@@ -3,6 +3,7 @@ import { Box, CircularProgress, Typography } from '@mui/material';
 import Profile from '../../profile/pages/Profile';
 import { supabase } from '../../../services/supabase';
 import { getUserProfile, updateUserProfile, uploadProfileImage, deleteAllUserImages, repairUserImageUrl, forceFixImageUrl } from '../../../services/user';
+import { SupplierErrorBoundary } from '../components/ErrorBoundary';
 
 const SupplierProfile = ({ onProfileUpdated }) => {
   const [userProfile, setUserProfile] = useState(null);
@@ -176,11 +177,18 @@ const SupplierProfile = ({ onProfileUpdated }) => {
     );
   }
 
+  const handleRetry = () => {
+    setLoading(true);
+    fetchUserProfile();
+  };
+
   return (
-    <Profile 
-      userProfile={userProfile}
-      onUpdateProfile={handleUpdateProfile} 
-    />
+    <SupplierErrorBoundary onRetry={handleRetry}>
+      <Profile 
+        userProfile={userProfile}
+        onUpdateProfile={handleUpdateProfile} 
+      />
+    </SupplierErrorBoundary>
   );
 };
 

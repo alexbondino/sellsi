@@ -4,6 +4,7 @@ import useMarketplaceLogic from '../../marketplace/pages/useMarketplaceLogic.jsx
 import SearchSection from '../../marketplace/pages/sections/SearchSection.jsx';
 // import FilterSection from '../../marketplace/pages/sections/FilterSection.jsx'; // Botón de filtros comentado
 import ProductsSection from '../../marketplace/pages/sections/ProductsSection.jsx';
+import { SupplierErrorBoundary } from '../components/ErrorBoundary';
 
 // Marketplace para el proveedor: igual que el del comprador pero con SideBar de proveedor
 const MarketplaceSupplier = React.memo(() => {
@@ -26,14 +27,20 @@ const MarketplaceSupplier = React.memo(() => {
     }),
     []
   );
+  const handleRetry = () => {
+    window.location.reload();
+  };
+
   return (
-    <Box>
-      <Box sx={containerStyles}>
-        <SearchSection {...searchSectionProps} />
-        {/* <FilterSection {...filterSectionProps} filterPosition="right" /> */} {/* Botón de filtros comentado */}
-        <ProductsSection {...productsSectionProps} />
+    <SupplierErrorBoundary onRetry={handleRetry}>
+      <Box>
+        <Box sx={containerStyles}>
+          <SearchSection {...searchSectionProps} />
+          {/* <FilterSection {...filterSectionProps} filterPosition="right" /> */} {/* Botón de filtros comentado */}
+          <ProductsSection {...productsSectionProps} />
+        </Box>
       </Box>
-    </Box>
+    </SupplierErrorBoundary>
   );
 });
 MarketplaceSupplier.displayName = 'MarketplaceSupplier';

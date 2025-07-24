@@ -16,6 +16,7 @@ import { Modal, MODAL_TYPES } from '../../../../shared/components/feedback'; // 
 import { useBanner } from '../../../../shared/components/display/banners/BannerContext'; // Contexto para mostrar banners
 import { dashboardThemeCore } from '../../../../styles/dashboardThemeCore'; // Tema de Material-UI para el dashboard
 import { SPACING_BOTTOM_MAIN } from '../../../../styles/layoutSpacing';
+import { SupplierErrorBoundary } from '../../components/ErrorBoundary';
 
 // TODO: Implementar hook de autenticación
 // import { useAuth } from '../../auth/hooks/useAuth';
@@ -419,4 +420,16 @@ const MyOrdersPage = () => {
   );
 };
 
-export default MyOrdersPage;
+const WrappedMyOrdersPage = () => {
+  const handleRetry = () => {
+    window.location.reload();
+  };
+
+  return (
+    <SupplierErrorBoundary onRetry={handleRetry}>
+      <MyOrdersPage />
+    </SupplierErrorBoundary>
+  );
+};
+
+export default WrappedMyOrdersPage;

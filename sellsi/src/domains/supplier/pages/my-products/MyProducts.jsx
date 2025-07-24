@@ -41,6 +41,9 @@ import {
 import ProductCard from '../../../../shared/components/display/product-card/ProductCard';
 import { Modal, MODAL_TYPES } from '../../../../shared/components/feedback'; // <--- Importación del nuevo componente Modal
 
+// Error Boundaries
+import { SupplierErrorBoundary } from '../../components/ErrorBoundary';
+
 // Hooks y stores
 import { useSupplierProducts } from '../../hooks/useSupplierProducts';
 import {
@@ -206,8 +209,14 @@ const MyProducts = () => {
     navigate(url, { state: { from: '/supplier/myproducts' } });
   };
 
+  const handleRetry = () => {
+    clearError();
+    loadProducts(supplierId);
+  };
+
   return (
-    <ThemeProvider theme={dashboardThemeCore}>
+    <SupplierErrorBoundary onRetry={handleRetry}>
+      <ThemeProvider theme={dashboardThemeCore}>
       <Box
         sx={{
           // marginLeft: '210px', // Eliminado para ocupar todo el ancho
@@ -692,6 +701,7 @@ const MyProducts = () => {
           : ''}
       </Modal>
     </ThemeProvider>
+    </SupplierErrorBoundary>
   );
 };
 
