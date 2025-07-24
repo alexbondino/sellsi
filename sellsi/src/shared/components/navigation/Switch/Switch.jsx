@@ -14,13 +14,14 @@ import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
  * @param {object} props - Las props del componente.
  * @param {'buyer' | 'supplier'} props.value - El rol actualmente seleccionado ('buyer' o 'supplier').
  * @param {function(React.SyntheticEvent, 'buyer' | 'supplier'): void} props.onChange - Callback que se ejecuta cuando el rol cambia.
+ * @param {boolean} [props.disabled] - Si el switch está deshabilitado.
  * @param {object} [props.sx] - Estilos adicionales para el ToggleButtonGroup principal.
  */
-export default function Switch({ value, onChange, sx }) {
+export default function Switch({ value, onChange, disabled = false, sx }) {
   const theme = useTheme();
 
   const handleChange = (event, newValue) => {
-    if (onChange) {
+    if (!disabled && onChange) {
       onChange(event, newValue);
     }
   };
@@ -30,6 +31,7 @@ export default function Switch({ value, onChange, sx }) {
       value={value} // El valor es controlado por el padre
       exclusive // Solo una opción puede estar seleccionada
       onChange={handleChange} // El cambio es manejado por el padre
+      disabled={disabled} // ✅ Soporte para disabled
       aria-label="Selección de rol"
       sx={{
         mr: 2, // Margen derecho por defecto, el padre puede sobrescribirlo

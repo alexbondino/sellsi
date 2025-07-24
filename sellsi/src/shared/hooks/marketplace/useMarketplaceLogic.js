@@ -1,15 +1,28 @@
+/**
+ * 🎯 MARKETPLACE LOGIC HOOK - SHARED
+ * 
+ * Migrado desde: domains/marketplace/pages/useMarketplaceLogic.jsx
+ * Motivo: Es usado por buyer y supplier domains
+ * 
+ * USADO EN:
+ * - domains/buyer/pages/MarketplaceBuyer.jsx
+ * - domains/supplier/pages/MarketplaceSupplier.jsx
+ */
+
 import { useState, useCallback, useMemo, useEffect } from 'react';
 import { useTheme } from '@mui/material';
 import { useLocation } from 'react-router-dom';
-// Importar los hooks existentes
-import { useMarketplaceState } from '../hooks/state/useMarketplaceState';
-import { useProductSorting } from '../hooks/products/useProductSorting';
-import { useScrollBehavior } from '../hooks/ui/useScrollBehavior';
+
+// Importar los hooks desde marketplace (mantenemos la referencia)
+import { useMarketplaceState } from '../../../domains/marketplace/hooks/state/useMarketplaceState';
+import { useProductSorting } from '../../../domains/marketplace/hooks/products/useProductSorting';
+import { useScrollBehavior } from '../../../domains/marketplace/hooks/ui/useScrollBehavior';
+
 /**
  * Hook centralizado que consolida toda la lógica de Marketplace
  * ✅ OPTIMIZADO: Reduce re-renders innecesarios
  */
-const useMarketplaceLogic = (options = {}) => {
+export const useMarketplaceLogic = (options = {}) => {
   // ✅ OPTIMIZACIÓN: Memoizar configuración estática con comparación profunda
   const memoizedOptions = useMemo(
     () => {
@@ -43,14 +56,17 @@ const useMarketplaceLogic = (options = {}) => {
     },
     [options]
   );
+
   const {
     hasSideBar,
     searchBarMarginLeft,
     categoryMarginLeft,
     titleMarginLeft,
   } = memoizedOptions;
+
   const theme = useTheme();
   const location = useLocation();
+
   // ===== CONSOLIDAR HOOKS EXISTENTES =====
   const {
     seccionActiva,
@@ -79,6 +95,7 @@ const useMarketplaceLogic = (options = {}) => {
     toggleCategoria,
     handleTipoVentaChange,
   } = useMarketplaceState();
+
   // Hook para opciones de ordenamiento
   const {
     ordenamiento: currentOrdenamiento,
@@ -86,16 +103,21 @@ const useMarketplaceLogic = (options = {}) => {
     productosOrdenados,
     sortOptions: currentSortOptions,
   } = useProductSorting(productosFiltrados);
+
   // Hook para comportamiento de scroll - SOLO para SearchSection
   const { shouldShowSearchBar } = useScrollBehavior();
+
   // ===== ESTADOS LOCALES PARA UI =====
   const [anchorElCategorias, setAnchorElCategorias] = useState(null);
+  
   // ✅ NUEVO: Estado para manejar el modal móvil de filtros
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
+  
   // ✅ NUEVO: Estado para el switch de vistas (Vista 1: proveedores, Vista 2: productos)
   const [isProviderView, setIsProviderView] = useState(
     location.state?.providerSwitchActive || false
   );
+
   // ✅ NUEVO: Effect para detectar navegación desde catálogo del proveedor
   useEffect(() => {
     if (location.state?.providerSwitchActive) {
@@ -104,16 +126,19 @@ const useMarketplaceLogic = (options = {}) => {
       window.history.replaceState({}, document.title);
     }
   }, [location.state?.providerSwitchActive]);
+
   // ===== HANDLERS MEMOIZADOS =====
   const handleToggleFiltro = useCallback(() => {
     // Para desktop: toggle del panel lateral
     setFiltroModalOpen(prev => !prev);
     setFiltroVisible(prev => !prev);
   }, [setFiltroModalOpen, setFiltroVisible]);
+
   // ✅ NUEVO: Handler para móvil
   const handleMobileFilterClose = useCallback(() => {
     setIsMobileFilterOpen(false);
   }, []);
+
   // ✅ NUEVO: Handler unificado que detecta el dispositivo
   const handleUnifiedToggleFilters = useCallback(() => {
     // Para móvil (xs, sm): abrir modal
@@ -124,6 +149,7 @@ const useMarketplaceLogic = (options = {}) => {
       handleToggleFiltro();
     }
   }, [handleToggleFiltro]);
+
   // ✅ OPTIMIZACIÓN: Handler para el switch de vistas - memoizado estable
   const handleToggleProviderView = useCallback(() => {
     setIsProviderView(prev => {
@@ -133,6 +159,7 @@ const useMarketplaceLogic = (options = {}) => {
       return newValue;
     });
   }, [resetFiltros]);
+
   // ✅ OPTIMIZACIÓN: Memoizar todos los handlers que se pasan como props
   const memoSetBusqueda = useCallback(v => setBusqueda(v), [setBusqueda]);
   const memoSetSeccionActiva = useCallback(
@@ -149,13 +176,17 @@ const useMarketplaceLogic = (options = {}) => {
     v => setCurrentOrdenamiento(v),
     [setCurrentOrdenamiento]
   );
+
   const handleOpenCategorias = useCallback(event => {
     setAnchorElCategorias(event.currentTarget);
   }, []);
+
   const handleCloseCategorias = useCallback(() => {
     setAnchorElCategorias(null);
   }, []);
+
   // ===== PROPS ORGANIZADOS POR SECCIONES (MEMOIZADOS) =====
+  
   // ✅ OPTIMIZACIÓN: Memoizar searchBarProps separadamente para mayor granularidad
   const searchBarProps = useMemo(
     () => ({
@@ -195,6 +226,7 @@ const useMarketplaceLogic = (options = {}) => {
       hasSideBar,
     ]
   );
+
   // ✅ OPTIMIZACIÓN: Memoizar categoryNavigationProps separadamente
   const categoryNavigationProps = useMemo(
     () => ({
@@ -214,6 +246,7 @@ const useMarketplaceLogic = (options = {}) => {
       isProviderView,
     ]
   );
+
   // Props para SearchSection - SOLO SearchSection necesita shouldShowSearchBar
   const searchSectionProps = useMemo(
     () => ({
@@ -224,6 +257,7 @@ const useMarketplaceLogic = (options = {}) => {
     }),
     [shouldShowSearchBar, hasSideBar, searchBarProps, categoryNavigationProps]
   );
+
   // ✅ DESACOPLADO: FilterSection ya no depende de shouldShowSearchBar
   const desktopFilterProps = useMemo(
     () => ({
@@ -245,6 +279,7 @@ const useMarketplaceLogic = (options = {}) => {
       filtroVisible,
     ]
   );
+
   const filterSectionProps = useMemo(
     () => ({
       hayFiltrosActivos,
@@ -256,6 +291,7 @@ const useMarketplaceLogic = (options = {}) => {
     }),
     [hayFiltrosActivos, handleToggleFiltro, desktopFilterProps, isMobileFilterOpen, handleMobileFilterClose]
   );
+
   // ✅ DESACOPLADO: ProductsSection ya no depende de shouldShowSearchBar
   const productsSectionProps = useMemo(
     () => ({
@@ -284,6 +320,7 @@ const useMarketplaceLogic = (options = {}) => {
       isProviderView,
     ]
   );
+
   // ===== RETORNAR TODO ORGANIZADO =====
   return {
     // Props por secciones
@@ -294,11 +331,10 @@ const useMarketplaceLogic = (options = {}) => {
     theme,
   };
 };
-export default useMarketplaceLogic;
+
 // ✅ EDITAR AQUÍ PARA:
 // - Cambiar lógica de estados
 // - Modificar handlers de eventos
 // - Ajustar comportamiento de filtros
 // - Agregar nueva funcionalidad
 // - Cambiar props que se pasan a las secciones
-

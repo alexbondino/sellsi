@@ -393,10 +393,19 @@ const MyProducts = () => {
                               variant="h6"
                               sx={{ fontWeight: 600, lineHeight: 1.2 }}
                             >
-                              {formatPrice(stats.totalValue)}
+                              {/* 🆕 MOSTRAR RANGO: Valor mínimo - máximo */}
+                              {stats.inventoryRange && stats.inventoryRange.min !== stats.inventoryRange.max ? (
+                                `${formatPrice(stats.inventoryRange.min)} - ${formatPrice(stats.inventoryRange.max)}`
+                              ) : (
+                                formatPrice(stats.totalValue)
+                              )}
                             </Typography>
                             <Typography variant="body2" color="text.secondary">
                               Valor del inventario
+                              {/* 🆕 INDICADOR DE RANGO: Mostrar % de variación si existe */}
+                              {stats.inventoryRange && stats.inventoryRange.spreadPercentage > 0 && (
+                                ` (±${stats.inventoryRange.spreadPercentage}%)`
+                              )}
                             </Typography>
                           </Box>
                         </Box>

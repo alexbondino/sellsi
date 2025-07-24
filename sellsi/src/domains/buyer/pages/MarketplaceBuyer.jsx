@@ -7,8 +7,8 @@
 import React from 'react';
 import { Box } from '@mui/material';
 
-// Hook centralizado
-import useMarketplaceLogic from '../../marketplace/pages/useMarketplaceLogic.jsx';
+// Hook centralizado - MIGRADO A SHARED
+import { useMarketplaceLogic } from '../../../shared/hooks'; // ✅ MIGRADO: Era ../../marketplace/pages/useMarketplaceLogic.jsx
 
 // Componentes de secciones
 import SearchSection from '../../marketplace/pages/sections/SearchSection.jsx';

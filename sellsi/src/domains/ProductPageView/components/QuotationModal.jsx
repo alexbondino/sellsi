@@ -32,39 +32,44 @@ const QuotationModal = ({ open, onClose, product, quantity, unitPrice, tiers }) 
     >
       <Box sx={{ mb: 2 }}>
         <Typography variant="body1" component="div" sx={{ color: 'text.secondary', lineHeight: 1.6 }}>
-          ¿Estás seguro que quieres descargar la cotización para <strong>{product?.productnm || product?.name}</strong>?
+          ¿Estás seguro de que deseas continuar?
         </Typography>
       </Box>
       
       <Box sx={{ p: 2, bgcolor: 'grey.50', borderRadius: 2 }}>
         <Box sx={{ mb: 1 }}>
-          <Typography variant="body2" component="div" sx={{ color: 'text.secondary' }}>
-            La cotización incluirá:
+          <Typography variant="body2" component="div" sx={{ color: 'text.secondary'}}>
+            La Cotización incluirá:
           </Typography>
         </Box>
         <Box sx={{ mb: 0.5 }}>
-          <Typography variant="body2" component="div" sx={{ color: 'text.primary', fontWeight: 500 }}>
+          <Typography variant="body2" component="div" sx={{ color: 'text.primary', fontWeight: 500, textAlign: 'left' }}>
             Cantidad: {quantity} unidades
           </Typography>
         </Box>
         <Box sx={{ mb: 0.5 }}>
-          <Typography variant="body2" component="div" sx={{ color: 'text.primary', fontWeight: 500 }}>
-            Precio unitario: ${Math.trunc(unitPrice).toLocaleString('es-CL')} CLP
+          <Typography variant="body2" component="div" sx={{ color: 'text.primary', fontWeight: 500, textAlign: 'left' }}>
+            Precio unitario: ${Math.trunc(unitPrice).toLocaleString('es-CL')}
           </Typography>
         </Box>
         <Box sx={{ mb: 0.5 }}>
-          <Typography variant="body2" component="div" sx={{ color: 'text.primary', fontWeight: 500 }}>
-            Total neto: ${(Math.trunc(quantity * unitPrice) - Math.trunc((quantity * unitPrice) * 0.19)).toLocaleString('es-CL')} CLP
+          <Typography variant="body2" component="div" sx={{ color: 'text.primary', fontWeight: 500, textAlign: 'left' }}>
+            Total neto: ${(Math.trunc(quantity * unitPrice) - Math.trunc((quantity * unitPrice) * 0.19)).toLocaleString('es-CL')}
           </Typography>
         </Box>
         <Box sx={{ mb: 0.5 }}>
-          <Typography variant="body2" component="div" sx={{ color: 'text.primary', fontWeight: 500 }}>
-            IVA (19%): ${Math.trunc((quantity * unitPrice) * 0.19).toLocaleString('es-CL')} CLP
+          <Typography variant="body2" component="div" sx={{ color: 'text.primary', fontWeight: 500, textAlign: 'left' }}>
+            IVA (19%): ${Math.trunc((quantity * unitPrice) * 0.19).toLocaleString('es-CL')}
           </Typography>
         </Box>
         <Box>
-          <Typography variant="body2" component="div" sx={{ color: 'text.primary', fontWeight: 600 }}>
-            Total: ${Math.trunc(quantity * unitPrice).toLocaleString('es-CL')} CLP
+          <Typography variant="body2" component="div" sx={{ color: 'text.primary', fontWeight: 600, textAlign: 'left' }}>
+            Total: ${Math.trunc(quantity * unitPrice).toLocaleString('es-CL')}
+          </Typography>
+        </Box>
+        <Box sx={{ mt: 2 }}>
+          <Typography variant="body2" component="div" sx={{ color: 'text.disabled', fontStyle: 'italic', textAlign: 'center' }}>
+            Los precios están expresados en pesos chilenos (CLP).
           </Typography>
         </Box>
       </Box>

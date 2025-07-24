@@ -49,7 +49,7 @@ import { convertDbRegionsToForm, convertFormRegionsToDb } from '../../../../util
 import { useSupplierProducts } from '../../hooks/useSupplierProducts';
 import { useProductForm } from '../../hooks/useProductForm';
 import { useProductValidation } from './hooks/useProductValidation';
-import { calculateEarnings } from './utils/productCalculations';
+import { calculateProductEarnings } from '../../utils/centralizedCalculations'; // 🔧 USANDO NOMBRE CORRECTO
 import { dashboardThemeCore } from '../../../../styles/dashboardThemeCore';
 import { SPACING_BOTTOM_MAIN } from '../../../../styles/layoutSpacing';
 
@@ -143,7 +143,7 @@ const AddProduct = () => {
 
   // Efecto para calcular dinámicamente
   useEffect(() => {
-    const newCalculations = calculateEarnings(formData);
+    const newCalculations = calculateProductEarnings(formData); // 🔧 USANDO LÓGICA CENTRALIZADA
     setCalculations(newCalculations);
   }, [
     formData.stock,

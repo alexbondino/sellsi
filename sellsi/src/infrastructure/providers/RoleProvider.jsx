@@ -25,11 +25,24 @@ export const RoleProvider = ({ children }) => {
         return storedRole;
       }
     } catch (e) {}
-    return 'buyer';
+    // ✅ MEJORA: No forzar 'buyer' por defecto, esperar a que se determine desde el perfil
+    return null;
   };
 
   const [currentAppRole, setCurrentAppRole] = useState(getInitialAppRole());
   const [isRoleSwitching, setIsRoleSwitching] = useState(false);
+
+  // ✅ NUEVO: Determinar rol inicial desde el perfil del usuario cuando no hay localStorage
+  useEffect(() => {
+    if (currentAppRole === null && session && userProfile && !loadingUserStatus) {
+      const initialRole = userProfile.main_supplier ? 'supplier' : 'buyer';
+      setCurrentAppRole(initialRole);
+      // Guardar en localStorage para próximas sesiones
+      try {
+        localStorage.setItem('currentAppRole', initialRole);
+      } catch (e) {}
+    }
+  }, [currentAppRole, session, userProfile, loadingUserStatus]);
 
   // Sincroniza el tipo de vista global para ProductPageWrapper
   window.currentAppRole = currentAppRole;
@@ -70,6 +83,9 @@ export const RoleProvider = ({ children }) => {
 
   // Estados derivados
   const isBuyer = currentAppRole === 'buyer';
+  
+  // ✅ MEJORA: Manejar estado inicial mientras se determina el rol
+  const isRoleLoading = currentAppRole === null && session && !loadingUserStatus;
 
   // Determinar si la ruta es de dashboard
   const isProductPageRoute = location.pathname.match(/^\/marketplace\/product\/[^/]+(\/[^/]+)?$/);
@@ -160,11 +176,14 @@ export const RoleProvider = ({ children }) => {
         setCurrentAppRole(newRole);
       }
     } else if (!session && currentAppRole !== 'buyer') {
-      setCurrentAppRole('buyer');
+      setCurrentAppRole('buyer'); // Default para usuarios no logueados
       // Limpiar localStorage al cerrar sesión
       try { 
         localStorage.removeItem('currentAppRole'); 
       } catch (e) {}
+    } else if (!session && currentAppRole === null) {
+      // Si no hay sesión y el rol es null, establecer buyer por defecto
+      setCurrentAppRole('buyer');
     }
   }, [
     location.pathname,
@@ -234,6 +253,7 @@ export const RoleProvider = ({ children }) => {
   const value = {
     currentAppRole,
     isRoleSwitching,
+    isRoleLoading,
     handleRoleChange,
     isDashboardRoute,
     isBuyer,

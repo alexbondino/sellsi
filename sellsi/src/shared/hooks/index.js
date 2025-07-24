@@ -1,3 +1,6 @@
 // src/shared/hooks/index.js
-export { default as useAppInitialization } from './useAppInitialization';
+export { useAppInitialization } from './useAppInitialization';
 export { useCountrySelector } from './useCountrySelector';
+
+// ✅ MARKETPLACE HOOKS MIGRADOS
+export { useMarketplaceLogic } from './marketplace/useMarketplaceLogic.js';

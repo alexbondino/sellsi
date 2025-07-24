@@ -83,6 +83,7 @@ const PriceTiers = ({
                 onChange={e => onTramoChange(index, 'cantidad', e.target.value)}
                 type="number"
                 size="small"
+                autoComplete="off"
                 disabled={index === 0} // Deshabilitar para el Tramo 1
                 inputProps={{ 
                   min: 1,
@@ -103,6 +104,7 @@ const PriceTiers = ({
                 onChange={e => onTramoChange(index, 'precio', e.target.value)}
                 type="number"
                 size="small"
+                autoComplete="off"
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">$</InputAdornment>

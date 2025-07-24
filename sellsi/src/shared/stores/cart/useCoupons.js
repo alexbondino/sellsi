@@ -10,7 +10,7 @@
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
 import { showSuccessToast, showErrorToast, showWarningToast } from '../../../utils/toastHelpers'
-import { DISCOUNT_CODES } from '../../../domains/marketplace/hooks/constants'
+import { DISCOUNT_CODES } from '../../constants/discounts' // ✅ MIGRADO: Era domains/marketplace/hooks/constants
 
 /**
  * Hook para gestión de cupones

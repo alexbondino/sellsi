@@ -1,10 +1,15 @@
 /**
  * ============================================================================
- * PRODUCT IMAGES HOOK - GESTIÓN DE IMÁGENES
+ * PRODUCT IMAGES HOOK - GESTIÓN DE IMÁGENES CON LIMPIEZA Y CACHE ROBUSTO
  * ============================================================================
  *
  * Hook especializado únicamente en la gestión de imágenes de productos.
- * Incluye subida, procesamiento, thumbnails y limpieza.
+ * Incluye subida, procesamiento, thumbnails y limpieza robusta.
+ * 
+ * MEJORAS v2.0:
+ * - Sistema de limpieza automática de archivos huérfanos
+ * - Gestión robusta de cache con auto-reparación
+ * - Verificación de integridad automática
  */
 
 import { create } from 'zustand'
@@ -12,6 +17,8 @@ import { supabase } from '../../../../services/supabase'
 import { UploadService } from '../../../../shared/services/upload'
 import { queryClient } from '../../../../utils/queryClient'
 import { QUERY_KEYS } from '../../../../utils/queryClient'
+import { StorageCleanupService } from '../../../../shared/services/storage/storageCleanupService'
+import { CacheManagementService } from '../../../../shared/services/cache/cacheManagementService'
 
 const useProductImages = create((set, get) => ({
   // ============================================================================
@@ -20,13 +27,76 @@ const useProductImages = create((set, get) => ({
   loading: false,
   error: null,
   processingImages: {}, // { productId: boolean }
+  cacheService: null, // Se inicializa dinámicamente
 
   // ============================================================================
-  // OPERACIONES DE IMÁGENES
+  // INICIALIZACIÓN
+  // ============================================================================
+  
+  /**
+   * Inicializar servicios (se ejecuta automáticamente)
+   */
+  _initializeServices: () => {
+    const state = get()
+    if (!state.cacheService) {
+      set({ cacheService: new CacheManagementService(queryClient) })
+    }
+  },
+
+  /**
+   * Verificar y reparar integridad antes de operaciones críticas
+   */
+  ensureIntegrity: async (productId) => {
+    const state = get()
+    
+    // Inicializar servicios si no existen
+    if (!state.cacheService) {
+      state._initializeServices()
+    }
+
+    try {
+      // 1. Verificar integridad del cache
+      const cacheIntegrity = await state.cacheService.verifyImageCacheIntegrity(productId)
+      
+      if (!cacheIntegrity.isHealthy) {
+        console.warn(`⚠️ Cache corrompido detectado para producto ${productId}:`, cacheIntegrity.issues)
+      }
+
+      // 2. Limpiar archivos huérfanos si existen problemas
+      if (!cacheIntegrity.isHealthy || cacheIntegrity.issues.some(issue => issue.includes('huérfano'))) {
+        const cleanupResult = await StorageCleanupService.cleanupProductOrphans(productId)
+        
+        if (cleanupResult.cleaned > 0) {
+          console.log(`🧹 Limpiados ${cleanupResult.cleaned} archivos huérfanos para producto ${productId}`)
+        }
+
+        if (cleanupResult.errors.length > 0) {
+          console.warn('⚠️ Errores durante limpieza:', cleanupResult.errors)
+        }
+      }
+
+      return {
+        cacheHealthy: cacheIntegrity.isHealthy,
+        cacheRepaired: cacheIntegrity.repaired,
+        filesCleanedUp: true
+      }
+    } catch (error) {
+      console.error('Error verificando integridad:', error)
+      return {
+        cacheHealthy: false,
+        cacheRepaired: false,
+        filesCleanedUp: false,
+        error: error.message
+      }
+    }
+  },
+
+  // ============================================================================
+  // OPERACIONES DE IMÁGENES MEJORADAS
   // ============================================================================
 
   /**
-   * Procesar imágenes del producto (versión inteligente)
+   * Procesar imágenes del producto (versión robusta con auto-limpieza)
    */
   processProductImages: async (productId, images) => {
     if (!images?.length) {
@@ -39,6 +109,13 @@ const useProductImages = create((set, get) => ({
     }))
 
     try {
+      // 🔧 VERIFICAR INTEGRIDAD ANTES DE PROCESAR
+      const integrityCheck = await get().ensureIntegrity(productId)
+      
+      if (integrityCheck.error) {
+        console.warn('Continuando a pesar de errores de integridad:', integrityCheck.error)
+      }
+
       const supplierId = localStorage.getItem('user_id')
 
       // 1. SEPARAR imágenes nuevas (archivos) de existentes (URLs)
@@ -137,23 +214,49 @@ const useProductImages = create((set, get) => ({
         processingImages: { ...state.processingImages, [productId]: false },
       }))
 
-      // 🔥 ACTUALIZAR CACHÉ DE REACT QUERY INMEDIATAMENTE
+      // 🔥 ACTUALIZAR CACHÉ DE REACT QUERY CON VERIFICACIÓN ROBUSTA
       try {
+        const state = get()
+        
         if (finalImageData.length > 0) {
+          // Crear backup antes de actualizar
+          const backup = await state.cacheService?.createCacheBackup(productId)
+          
           // Setear data nueva inmediatamente (sin esperar refetch)
           const newThumbnailData = {
             thumbnails: finalImageData[0]?.thumbnails || null,
             thumbnail_url: finalImageData[0]?.thumbnail_url || null
-          };
+          }
           
-          queryClient.setQueryData(QUERY_KEYS.THUMBNAIL(productId), newThumbnailData);
+          queryClient.setQueryData(QUERY_KEYS.THUMBNAIL(productId), newThumbnailData)
+          
+          // Verificar que la actualización fue exitosa
+          setTimeout(async () => {
+            const verification = await state.cacheService?.verifyImageCacheIntegrity(productId)
+            if (verification && !verification.isHealthy) {
+              console.warn('Cache actualizado pero detectado problema, restaurando backup...')
+              if (backup) {
+                await state.cacheService?.restoreCacheFromBackup(backup)
+              }
+            }
+          }, 1000)
+          
         } else {
           // Si no hay imágenes, limpiar el cache
-          queryClient.setQueryData(QUERY_KEYS.THUMBNAIL(productId), null);
+          queryClient.setQueryData(QUERY_KEYS.THUMBNAIL(productId), null)
         }
       } catch (cacheError) {
-        console.warn('Error actualizando cache:', cacheError);
+        console.warn('Error actualizando cache:', cacheError)
       }
+
+      // 🧹 LIMPIEZA FINAL PARA PREVENIR ARCHIVOS HUÉRFANOS
+      setTimeout(async () => {
+        try {
+          await StorageCleanupService.cleanupProductOrphans(productId)
+        } catch (cleanupError) {
+          console.warn('Error en limpieza final:', cleanupError)
+        }
+      }, 2000)
 
       return { success: true, data: finalImageData }
     } catch (error) {
@@ -233,11 +336,21 @@ const useProductImages = create((set, get) => ({
   },
 
   /**
-   * Limpiar imágenes del producto
+   * Limpiar imágenes del producto (versión robusta)
    */
   cleanupProductImages: async (productId) => {
     try {
-      // Obtener imágenes actuales
+      // 🔧 VERIFICAR INTEGRIDAD ANTES DE LIMPIAR
+      await get().ensureIntegrity(productId)
+
+      // Usar el servicio especializado de limpieza
+      const cleanupResult = await StorageCleanupService.cleanupProductOrphans(productId)
+      
+      if (cleanupResult.errors.length > 0) {
+        console.warn('Errores durante limpieza robusta:', cleanupResult.errors)
+      }
+
+      // Método tradicional como fallback
       const { data: imageRecords, error } = await supabase
         .from('product_images')
         .select('image_url, thumbnail_url')
@@ -258,15 +371,33 @@ const useProductImages = create((set, get) => ({
         if (deleteError) throw deleteError
       }
 
-      // 🔥 LIMPIAR CACHÉ DE REACT QUERY PARA THUMBNAILS
+      // 🔥 LIMPIAR CACHÉ DE REACT QUERY CON VERIFICACIÓN
       try {
+        const state = get()
+        
+        // Crear backup antes de limpiar
+        const backup = await state.cacheService?.createCacheBackup(productId)
+        
         // Limpiar cache inmediatamente (producto sin imágenes)
-        queryClient.setQueryData(QUERY_KEYS.THUMBNAIL(productId), null);
+        queryClient.setQueryData(QUERY_KEYS.THUMBNAIL(productId), null)
+        
+        // Invalidar todas las queries relacionadas para forzar refetch
+        await queryClient.invalidateQueries({
+          queryKey: ['product-images', productId]
+        })
+        
+        await queryClient.invalidateQueries({
+          queryKey: ['thumbnail'],
+          predicate: (query) => query.queryKey.includes(productId)
+        })
+        
       } catch (cacheError) {
-        console.warn('Error limpiando cache:', cacheError);
+        console.warn('Error limpiando cache:', cacheError)
       }
 
-      return { success: true }
+      console.log(`✅ Limpieza completa para producto ${productId}: ${cleanupResult.cleaned} archivos huérfanos eliminados`)
+
+      return { success: true, cleaned: cleanupResult.cleaned }
     } catch (error) {
       set({ error: `Error limpiando imágenes: ${error.message}` })
       return { success: false, error: error.message }
@@ -386,7 +517,7 @@ const useProductImages = create((set, get) => ({
   },
 
   // ============================================================================
-  // UTILIDADES
+  // UTILIDADES MEJORADAS
   // ============================================================================
 
   /**
@@ -401,6 +532,80 @@ const useProductImages = create((set, get) => ({
     const state = get()
     return state.processingImages[productId] || false
   },
+
+  /**
+   * Inicializar monitoreo automático de salud del cache
+   */
+  startHealthMonitoring: (productId, intervalMs = 60000) => {
+    const state = get()
+    
+    if (!state.cacheService) {
+      state._initializeServices()
+    }
+
+    return state.cacheService?.startCacheHealthMonitoring(productId, intervalMs)
+  },
+
+  /**
+   * Ejecutar verificación manual de integridad
+   */  
+  runHealthCheck: async (productId) => {
+    try {
+      const integrityResult = await get().ensureIntegrity(productId)
+      const cleanupResult = await StorageCleanupService.cleanupProductOrphans(productId)
+      
+      return {
+        success: true,
+        cache: {
+          healthy: integrityResult.cacheHealthy,
+          repaired: integrityResult.cacheRepaired
+        },
+        storage: {
+          cleaned: cleanupResult.cleaned,
+          errors: cleanupResult.errors
+        }
+      }
+    } catch (error) {
+      return {
+        success: false,
+        error: error.message
+      }
+    }
+  },
+
+  /**
+   * Estadísticas de uso del sistema
+   */
+  getSystemStats: async () => {
+    try {
+      // Obtener estadísticas de cache
+      const cacheStats = queryClient.getQueryCache().getAll().filter(query => 
+        query.queryKey.includes('product-images') || query.queryKey.includes('thumbnail')
+      )
+
+      // Obtener productos con imágenes
+      const { data: productsWithImages, error } = await supabase
+        .from('product_images')
+        .select('product_id')
+        .limit(1000)
+
+      const uniqueProducts = new Set(productsWithImages?.map(p => p.product_id) || [])
+
+      return {
+        cacheEntries: cacheStats.length,
+        productsWithImages: uniqueProducts.size,
+        cacheHealth: cacheStats.filter(q => q.state.status === 'success').length / cacheStats.length,
+        lastUpdated: Math.max(...cacheStats.map(q => q.state.dataUpdatedAt))
+      }
+    } catch (error) {
+      return {
+        error: error.message
+      }
+    }
+  }
 }))
+
+// Inicializar servicios automáticamente
+useProductImages.getState()._initializeServices()
 
 export default useProductImages

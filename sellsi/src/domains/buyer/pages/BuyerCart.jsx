@@ -33,6 +33,7 @@ import { ThemeProvider } from '@mui/material/styles';
 import { dashboardThemeCore } from '../../../styles/dashboardThemeCore';
 import { SPACING_BOTTOM_MAIN } from '../../../styles/layoutSpacing';
 import useCartStore from '../../../shared/stores/cart/cartStore';
+import { useAdvancedPriceCalculation, useCartStats } from '../../../shared/stores/cart';
 import {
   SHIPPING_OPTIONS,
   DISCOUNT_CODES,
@@ -81,9 +82,9 @@ const BuyerCart = () => {
   const applyCoupon = useCartStore(state => state.applyCoupon);
   const removeCoupon = useCartStore(state => state.removeCoupon);
   const setCouponInput = useCartStore(state => state.setCouponInput);
-  const getSubtotal = useCartStore(state => state.getSubtotal);
-  const getDiscount = useCartStore(state => state.getDiscount);
-  const getTotal = useCartStore(state => state.getTotal);
+  // const getSubtotal = useCartStore(state => state.getSubtotal); // ✅ REEMPLAZADO POR usePriceCalculation
+  // const getDiscount = useCartStore(state => state.getDiscount); // ✅ REEMPLAZADO POR usePriceCalculation
+  const getTotal = useCartStore(state => state.getTotal); // ⚠️ USADO EN handleApplyCoupon
   const isInWishlist = useCartStore(state => state.isInWishlist);
 
   // ===== ESTADOS LOCALES OPTIMIZADOS =====
@@ -122,37 +123,28 @@ const BuyerCart = () => {
     }
   }, [items, isAdvancedShippingMode, shippingValidation]);
 
-  // ===== CÁLCULOS MEMOIZADOS =====
-  const cartCalculations = useMemo(() => {
-    const subtotal = getSubtotal();
-    const discount = getDiscount();
-    const total = getTotal();
+  // ===== CÁLCULOS UNIFICADOS CON HOOK =====
+  const priceCalculations = useAdvancedPriceCalculation(
+    items,
+    productShipping,
+    isAdvancedShippingMode ? null : realShippingCost,
+    shippingValidation.userRegion // Pasar región del usuario para cálculos reales
+  );
 
-    return { subtotal, discount, total };
-  }, [items, appliedCoupons, getSubtotal, getDiscount, getTotal]);
+  // Extraer valores para compatibilidad con código existente
+  const cartCalculations = {
+    subtotal: priceCalculations.subtotal,
+    discount: priceCalculations.discount,
+    total: priceCalculations.subtotalAfterDiscount // Total sin envío para compatibilidad
+  };
 
-  const cartStats = useMemo(() => {
-    const stats = {
-      totalItems: items.length,
-      totalQuantity: items.reduce((sum, item) => sum + item.quantity, 0),
-      isEmpty: items.length === 0,
-    };
+  const cartStats = useCartStats(items);
 
-    return stats;
-  }, [items]);
-
-  // ===== CALCULAR COSTO REAL DE ENVÍO =====
+  // ===== CALCULAR COSTO REAL DE ENVÍO (SOLO MODO SIMPLE) =====
   useEffect(() => {
     const calculateShipping = async () => {
-      if (items.length === 0) {
+      if (items.length === 0 || isAdvancedShippingMode) {
         setRealShippingCost(0);
-        setIsCalculatingShipping(false);
-        return;
-      }
-
-      // ✅ NUEVA LÓGICA: Si está en modo avanzado, PriceBreakdown maneja el cálculo
-      if (isAdvancedShippingMode) {
-        setRealShippingCost(0); // PriceBreakdown se encarga del cálculo
         setIsCalculatingShipping(false);
         return;
       }
@@ -165,37 +157,27 @@ const BuyerCart = () => {
         console.log('[BuyerCart] Costo real de envío calculado (modo simple):', cost);
       } catch (error) {
         console.error('[BuyerCart] Error calculando costo de envío:', error);
-        // Fallback al cálculo anterior si hay error
-        const fallbackCost = items.reduce((totalShipping, item) => {
-          const selectedShippingId = productShipping[item.id] || 'standard';
-          const shippingOption = SHIPPING_OPTIONS.find(
-            opt => opt.id === selectedShippingId
-          );
-          return totalShipping + (shippingOption ? shippingOption.price : 0);
-        }, 0);
-        setRealShippingCost(fallbackCost);
+        // Usar cálculo del hook como fallback
+        setRealShippingCost(0); // El hook manejará el cálculo
       } finally {
         setIsCalculatingShipping(false);
       }
     };
 
     calculateShipping();
-  }, [items, productShipping, isAdvancedShippingMode]); // ✅ Agregar dependencia
+  }, [items, isAdvancedShippingMode]);
 
-  // Usar el costo real de envío calculado
-  const productShippingCost = realShippingCost;
-
-  // Total final incluyendo envío individual por producto
-  const finalTotal = useMemo(() => {
-    const baseTotal = cartCalculations.subtotal - cartCalculations.discount;
-    const total = baseTotal + productShippingCost;
-
-    return total;
-  }, [
-    cartCalculations.subtotal,
-    cartCalculations.discount,
-    productShippingCost,
-  ]);
+  // Usar cálculos del hook para envío y total final
+  const productShippingCost = priceCalculations.shipping;
+  const finalTotal = priceCalculations.total;
+  
+  // Combinar estados de cálculo: local (modo simple) + hook (modo avanzado)
+  const isShippingBeingCalculated = isAdvancedShippingMode 
+    ? priceCalculations.isShippingCalculating 
+    : isCalculatingShipping;
+  
+  // Combinar estados de cálculo: tanto el del hook como el local
+  const isCalculatingShippingCombined = isCalculatingShipping || priceCalculations.isShippingCalculating;
 
   // ===== ANIMACIONES =====
   const controls = useAnimation();
@@ -722,7 +704,7 @@ const BuyerCart = () => {
                       subtotal={cartCalculations.subtotal}
                       discount={0} // Ocultamos descuento por código
                       shippingCost={productShippingCost}
-                      total={cartCalculations.subtotal + productShippingCost}
+                      total={finalTotal}
                       cartStats={cartStats}
                       deliveryDate={deliveryDate}
                       appliedCoupons={[]} // Ocultamos cupones
@@ -735,7 +717,7 @@ const BuyerCart = () => {
                       isAdvancedShippingMode={isAdvancedShippingMode}
                       onShippingCompatibilityError={() => setCompatibilityModalOpen(true)}
                       // Shipping loading state
-                      isCalculatingShipping={isCalculatingShipping}
+                      isCalculatingShipping={isCalculatingShippingCombined}
                       // ✅ NUEVA PROP para lógica de envío avanzada
                       cartItems={items}
                       userRegion={shippingValidation.userRegion}

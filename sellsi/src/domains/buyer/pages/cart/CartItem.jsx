@@ -35,7 +35,7 @@ import PriceDisplay from '../../../marketplace/PriceDisplay/PriceDisplay'
 import StockIndicator from '../../../marketplace/StockIndicator/StockIndicator'
 import QuantitySelector from '../../../../shared/components/forms/QuantitySelector'
 import { LazyImage } from '../../../../shared/components/display/LazyImage'
-import { SHIPPING_OPTIONS } from '../../../../domains/marketplace/hooks/constants'
+import { SHIPPING_OPTIONS } from '../../../../shared/constants/shipping' // ✅ MIGRADO: Era domains/marketplace/hooks/constants
 import { getProductImageUrl } from '../../../../utils/getProductImageUrl'
 import {
   calculatePriceForQuantity,

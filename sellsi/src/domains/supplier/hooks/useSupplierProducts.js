@@ -25,6 +25,7 @@ import useProductBackground from './background/useProductBackground'
 import useProductCleanup from './cleanup/useProductCleanup'
 import useSupplierProductFilters from './useSupplierProductFilters'
 import { isProductActive } from '../../../utils/productActiveStatus'
+import { calculateInventoryStats } from '../utils/centralizedCalculations' // 🔧 IMPORTAR FUNCIÓN CENTRALIZADA CON RANGOS
 import { supabase } from '../../../services/supabase'
 
 /**
@@ -121,35 +122,34 @@ export const useSupplierProducts = (options = {}) => {
     sortOrder,
   ])
 
-  // Estadísticas (calculadas)
+  // 🔧 ESTADÍSTICAS MEJORADAS: Ahora usando lógica centralizada con rangos completos
   const stats = useMemo(() => {
-    const total = crud.products.length
-    // ✅ USAR NUEVA LÓGICA: productos realmente activos (stock >= compra mínima)
-    const active = crud.products.filter(isProductActive).length
-    const inStock = crud.products.filter((p) => (p.productqty || 0) > 0).length
-    const lowStock = crud.products.filter((p) => {
-      const stock = p.productqty || 0
-      return stock > 0 && stock <= 10
-    }).length
-    const outOfStock = crud.products.filter((p) => (p.productqty || 0) === 0).length
-    const totalValue = crud.products.reduce(
-      (sum, p) => sum + (p.price || 0) * (p.productqty || 0),
-      0
-    )
+    const basicStats = {
+      total: crud.products.length,
+      active: crud.products.filter(isProductActive).length,
+      inStock: crud.products.filter(p => (p.productqty || 0) > 0).length,
+      lowStock: crud.products.filter(p => {
+        const stock = p.productqty || 0;
+        return stock > 0 && stock <= 10;
+      }).length,
+      outOfStock: crud.products.filter(p => (p.productqty || 0) === 0).length,
+    };
 
+    // 🎯 USAR FUNCIÓN CENTRALIZADA: Obtener estadísticas completas con rangos
+    const inventoryStats = calculateInventoryStats(crud.products);
+    
     return {
-      total,
-      active,
-      inactive: total - active,
-      inStock,
-      lowStock,
-      outOfStock,
-      totalValue,
-      averagePrice:
-        total > 0
-          ? crud.products.reduce((sum, p) => sum + (p.price || 0), 0) / total
-          : 0,
-    }
+      ...basicStats,
+      inactive: basicStats.total - basicStats.active,
+      // Mantener compatibilidad con código existente
+      totalValue: inventoryStats.value.totalValue,
+      averagePrice: basicStats.total > 0 
+        ? crud.products.reduce((sum, p) => sum + (p.price || 0), 0) / basicStats.total 
+        : 0,
+      // 🆕 NUEVAS ESTADÍSTICAS: Información de rangos de inventario
+      inventoryRange: inventoryStats.range,
+      inventoryScenarios: inventoryStats.value,
+    };
   }, [crud.products])
 
   // ============================================================================

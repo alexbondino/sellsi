@@ -20,6 +20,7 @@ import { supabase } from '../../../services/supabase';
 import useCartStore from '../../../stores/cart/cartStore';
 import ContactModal from '../../modals/ContactModal';
 import { Modal, MODAL_TYPES } from '../../feedback';
+import { useRole } from '../../../../infrastructure/providers/RoleProvider';
 // Lazy imports para evitar bundling mixto
 const Login = React.lazy(() => import('../../../../domains/auth').then(module => ({ default: module.Login })));
 const Register = React.lazy(() => import('../../../../domains/auth').then(module => ({ default: module.Register })));
@@ -38,6 +39,7 @@ export default function TopBar({
   const theme = useTheme();
   const navigate = useNavigate();
   const itemsInCart = useCartStore(state => state.items).length;
+  const { isRoleLoading } = useRole(); // ✅ Acceder al estado de loading del rol
 
   const [mobileMenuAnchor, setMobileMenuAnchor] = useState(null);
   const [profileAnchor, setProfileAnchor] = useState(null);
@@ -48,22 +50,27 @@ export default function TopBar({
 
   // El estado `currentRole` se mantiene en TopBar, ya que es quien controla
   // el `Switch` y lo sincroniza con `isBuyer` del padre (App.jsx).
-  const [currentRole, setCurrentRole] = useState(
-    isBuyer ? 'buyer' : 'supplier'
-  );
+  const [currentRole, setCurrentRole] = useState(() => {
+    // ✅ MEJORA: Solo establecer rol inicial si isBuyer no es undefined/null
+    if (typeof isBuyer === 'boolean') {
+      return isBuyer ? 'buyer' : 'supplier';
+    }
+    // Si isBuyer aún no está determinado, usar buyer como fallback temporal
+    return 'buyer';
+  });
 
   // Este useEffect es crucial para la sincronización con la prop `isBuyer`
-  // (que viene de Supabase en App.jsx) al inicio o tras un cambio de sesión.
+  // (que viene de RoleProvider) al inicio o tras un cambio de sesión.
   useEffect(() => {
-    if (session) {
+    if (session && typeof isBuyer === 'boolean') {
       const newRoleFromProps = isBuyer ? 'buyer' : 'supplier';
       if (currentRole !== newRoleFromProps) {
         setCurrentRole(newRoleFromProps);
       }
-    } else {
+    } else if (!session) {
       setCurrentRole('buyer');
     }
-  }, [session, isBuyer, currentRole]); // currentRole como dependencia es importante para la condición de no-coincidencia.
+  }, [session, isBuyer, currentRole]);
 
   const isLoggedIn = !!session;
 
@@ -333,9 +340,13 @@ export default function TopBar({
         <Switch
           value={currentRole} // Le pasamos el estado interno de TopBar como valor
           onChange={handleRoleToggleChange} // Le pasamos el manejador de cambios
+          disabled={isRoleLoading} // ✅ Deshabilitar mientras se carga el rol
           // Los estilos base del switch ya están en Switch,
           // pero puedes agregarle más aquí si necesitas un ajuste específico para el desktop
-          sx={{ mr: 2 }}
+          sx={{ 
+            mr: 2,
+            opacity: isRoleLoading ? 0.6 : 1, // ✅ Indicador visual de loading
+          }}
         />
 
         <Tooltip title="Carrito" arrow>
@@ -382,7 +393,12 @@ export default function TopBar({
         <Switch
           value={currentRole} // Le pasamos el estado interno de TopBar como valor
           onChange={handleRoleToggleChange} // Le pasamos el manejador de cambios
-          sx={{ width: '100%', mr: 0 }} // Estilos específicos para el móvil, anula el mr del desktop
+          disabled={isRoleLoading} // ✅ Deshabilitar mientras se carga el rol
+          sx={{ 
+            width: '100%', 
+            mr: 0,
+            opacity: isRoleLoading ? 0.6 : 1, // ✅ Indicador visual de loading
+          }} // Estilos específicos para el móvil, anula el mr del desktop
         />
       </MenuItem>,
       <Divider key="dividerMobileRole" />,

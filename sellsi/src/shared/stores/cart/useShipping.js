@@ -10,7 +10,7 @@
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
 import { showSuccessToast, showErrorToast } from '../../../utils/toastHelpers'
-import { SHIPPING_OPTIONS } from '../../../domains/marketplace/hooks/constants'
+import { SHIPPING_OPTIONS } from '../../constants/shipping' // ✅ MIGRADO: Era domains/marketplace/hooks/constants
 
 /**
  * Hook para gestión de envío

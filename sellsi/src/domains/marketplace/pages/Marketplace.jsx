@@ -8,6 +8,7 @@ import React, { useState, useEffect } from 'react';
 import { Box } from '@mui/material';
 
 // Hook centralizado
+// Hook centralizado
 import useMarketplaceLogic from './useMarketplaceLogic.jsx';
 
 // Componentes de secciones

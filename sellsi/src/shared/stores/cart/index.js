@@ -22,5 +22,13 @@ export { default as useWishlist } from './useWishlist'
 export { default as useCoupons } from './useCoupons'
 export { default as useShipping } from './useShipping'
 
+// Hook unificado de cálculos de precio
+export { 
+  usePriceCalculation,
+  useBasicPriceCalculation,
+  useAdvancedPriceCalculation,
+  useCartStats
+} from './usePriceCalculation'
+
 // Constantes y helpers para uso externo si es necesario
 export { CART_CONFIG } from './cartStore.constants'

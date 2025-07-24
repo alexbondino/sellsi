@@ -39,8 +39,10 @@ export * from './security';
 // LEGACY: export * from './admin'; 
 // ✅ NUEVO: Ver '../domains/admin' para la nueva estructura
 
-// 🏗️ Dominios de negocio (nueva estructura)
-export * from '../domains';
+// 🏗️ Dominios de negocio - ELIMINADO BARREL EXPORT
+// ❌ REMOVIDO: export * from '../domains'; 
+//    Motivo: Violaba encapsulación DDD, causaba bundle bloat y dependency hell
+//    Solución: Usar imports específicos donde se necesiten
 
 // 🔧 Cliente base de Supabase
 export { supabase } from './supabase';
