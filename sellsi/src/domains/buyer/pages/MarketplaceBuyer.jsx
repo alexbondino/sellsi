@@ -10,10 +10,8 @@ import { Box } from '@mui/material';
 // Hook centralizado - MIGRADO A SHARED
 import { useMarketplaceLogic } from '../../../shared/hooks'; // ✅ MIGRADO: Era ../../marketplace/pages/useMarketplaceLogic.jsx
 
-// Componentes de secciones
-import SearchSection from '../../marketplace/pages/sections/SearchSection.jsx';
-// import FilterSection from '../../marketplace/pages/sections/FilterSection.jsx'; // Botón de filtros comentado
-import ProductsSection from '../../marketplace/pages/sections/ProductsSection.jsx';
+// Componentes de secciones - MIGRADOS A SHARED
+import { SearchSection, ProductsSection } from '../../../shared/components/marketplace/sections';
 
 // ✅ MEJORA DE RENDIMIENTO: Memoización del componente principal
 const MarketplaceBuyer = React.memo(() => {

@@ -1,18 +1,40 @@
 /**
  * ============================================================================
- * DEPRECATED - RE-EXPORT FROM SHARED
+ * PRODUCT URL UTILITIES - FUNCIONES COMPARTIDAS PARA URLS DE PRODUCTOS
  * ============================================================================
  * 
- * Este archivo re-exporta desde shared para mantener compatibilidad.
- * ⚠️ DEPRECADO: Usa import desde shared/utils/product/productUrl directamente
+ * Utilidades migradas desde domains/marketplace para uso compartido.
+ * Evita cross-imports de shared components hacia domains específicos.
  */
 
-// Re-export all functions from shared location
-export * from '../../../shared/utils/product/productUrl'
+/**
+ * Converts a product name to a URL-friendly slug
+ * @param {string} productName - The product name
+ * @returns {string} - URL-friendly slug
+ */
+export const createProductSlug = (productName) => {
+  if (!productName || typeof productName !== 'string') {
+    console.warn(
+      'createProductSlug: productName is not a valid string:',
+      productName
+    )
+    return 'producto-sin-nombre'
+  }
 
-// Legacy default export for compatibility
-import productUrlUtils from '../../../shared/utils/product/productUrl'
-export default productUrlUtils
+  return productName
+    .toLowerCase()
+    .replace(/[áàäâ]/g, 'a')
+    .replace(/[éèëê]/g, 'e')
+    .replace(/[íìïî]/g, 'i')
+    .replace(/[óòöô]/g, 'o')
+    .replace(/[úùüû]/g, 'u')
+    .replace(/[ñ]/g, 'n')
+    .replace(/[ç]/g, 'c')
+    .replace(/[^a-z0-9\s]/g, '') // Remove special characters
+    .replace(/\s+/g, '-') // Replace spaces with hyphens
+    .replace(/-+/g, '-') // Replace multiple hyphens with single hyphen
+    .trim()
+}
 
 /**
  * Generates a complete product URL slug including ID
@@ -73,4 +95,12 @@ export const validateProductSlug = (slug, product) => {
 
   const expectedSlug = generateProductSlug(product)
   return slug === expectedSlug
+}
+
+export default {
+  createProductSlug,
+  generateProductSlug,
+  generateProductUrl,
+  extractProductIdFromSlug,
+  validateProductSlug
 }

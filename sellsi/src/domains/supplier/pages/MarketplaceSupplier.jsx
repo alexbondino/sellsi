@@ -1,9 +1,7 @@
 import React from 'react';
 import { Box } from '@mui/material';
 import { useMarketplaceLogic } from '../../../shared/hooks'; // ✅ MIGRADO: Era ../../marketplace/pages/useMarketplaceLogic.jsx
-import SearchSection from '../../marketplace/pages/sections/SearchSection.jsx';
-// import FilterSection from '../../marketplace/pages/sections/FilterSection.jsx'; // Botón de filtros comentado
-import ProductsSection from '../../marketplace/pages/sections/ProductsSection.jsx';
+import { SearchSection, ProductsSection } from '../../../shared/components/marketplace/sections';
 import { SupplierErrorBoundary } from '../components/ErrorBoundary';
 
 // Marketplace para el proveedor: igual que el del comprador pero con SideBar de proveedor

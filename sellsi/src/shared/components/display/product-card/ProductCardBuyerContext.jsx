@@ -21,9 +21,9 @@ import {
 
 // Utility imports (updated paths for shared location)
 import { showErrorToast } from '../../../../utils/toastHelpers';
-import { generateProductUrl } from '../../../../domains/marketplace/utils/productUrl';
-import PriceDisplay from '../../../../domains/marketplace/PriceDisplay/PriceDisplay';
-import { useProductPriceTiers } from '../../../../domains/marketplace/hooks/products/useProductPriceTiers';
+import { generateProductUrl } from '../../../utils/product/productUrl';
+import PriceDisplay from '../price/PriceDisplay';
+import { useProductPriceTiers } from '../../../hooks/product/useProductPriceTiers';
 import {
   formatProductForCart,
   calculatePriceForQuantity,
