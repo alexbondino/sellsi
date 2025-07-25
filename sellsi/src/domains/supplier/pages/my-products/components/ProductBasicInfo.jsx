@@ -40,11 +40,11 @@ const ProductBasicInfo = ({
           gutterBottom
           sx={{ fontWeight: 600, color: 'black', mb: 2 }}
         >
-          Información Básica
+          Información General
         </Typography>
         <TextField
           fullWidth
-          label="Nombre Producto:"
+          label="Nombre Producto"
           placeholder="Máximo 40 caracteres"
           value={formData.nombre}
           onChange={onInputChange('nombre')}
@@ -63,14 +63,8 @@ const ProductBasicInfo = ({
         />
       </Box>
       
-      <Box>
-        <Typography
-          variant="h6"
-          gutterBottom
-          sx={{ fontWeight: 600, color: 'black', mb: 2 }}
-        >
-          Categoría
-        </Typography>
+      <Box sx={{ mt: 6 }}>
+        {/* Eliminado título de Categoría; se agregó margen superior para alinear con el campo de Nombre Producto */}
         <FormControl
           fullWidth
           error={
@@ -78,12 +72,12 @@ const ProductBasicInfo = ({
             !!errors.categoria
           }
         >
-          <InputLabel>Categoría:</InputLabel>
+          <InputLabel>Categoría</InputLabel>
           <Select
             value={formData.categoria}
             onChange={onInputChange('categoria')}
             onBlur={() => onFieldBlur('categoria')}
-            label="Categoría:"
+            label="Categoría"
             MenuProps={{
               disableScrollLock: true,
               sx: {
@@ -122,10 +116,10 @@ const ProductBasicInfo = ({
       </Box>
 
       {/* FILA 2: Descripción del Producto (100%) */}
-      <Box className="full-width">
+      <Box className="full-width" sx={{ mb: 2 }}>
         <TextField
           fullWidth
-          label="Descripción Producto:"
+          label="Descripción Producto"
           placeholder="Máximo 3000 caracteres"
           multiline
           rows={4}

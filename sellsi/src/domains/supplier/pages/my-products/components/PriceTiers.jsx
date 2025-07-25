@@ -16,10 +16,22 @@ const PriceTiers = ({
   onAddTramo,
   onRemoveTramo,
   errors,
+  stockDisponible, // Nueva prop para el stock disponible
 }) => {
   
   // Función para manejar cambios en tramos con lógica de auto-corrección
   const handleTramoChange = (index, field, value) => {
+    if (field === 'min' && index > 0) {
+      // No permitir editar cantidad mínima en rangos 2+
+      return;
+    }
+    
+    // Para todos los campos, permitir cualquier valor durante la edición
+    onTramoChange(index, field, value);
+  };
+  
+  // Función para validar y corregir valores al salir del campo (onBlur)
+  const handleTramoBlur = (index, field, value) => {
     if (field === 'min' && index > 0) {
       // No permitir editar cantidad mínima en rangos 2+
       return;
@@ -32,12 +44,19 @@ const PriceTiers = ({
       
       // Llamar al handler del padre para actualizar tanto min como max
       onTramoChange(index, 'min', newMin.toString());
-      onTramoChange(index, 'max', value);
       
       // Si el nuevo max es menor o igual al min, ajustar max
       const newMax = parseInt(value) || 0;
+      let finalMaxValue = value;
       if (newMax <= newMin) {
-        onTramoChange(index, 'max', (newMin + 1).toString());
+        finalMaxValue = (newMin + 1).toString();
+        onTramoChange(index, 'max', finalMaxValue);
+      }
+      
+      // Actualizar el min del siguiente tramo si existe
+      if (tramos[index + 1]) {
+        const nextMin = (parseInt(finalMaxValue) || 0) + 1;
+        onTramoChange(index + 1, 'min', nextMin.toString());
       }
       return;
     }
@@ -47,10 +66,16 @@ const PriceTiers = ({
       const currentMin = parseInt(tramos[0]?.min) || 1;
       const newMax = parseInt(value) || 0;
       
+      let finalMaxValue = value;
       if (newMax <= currentMin) {
-        onTramoChange(index, field, (currentMin + 1).toString());
-      } else {
-        onTramoChange(index, field, value);
+        finalMaxValue = (currentMin + 1).toString();
+        onTramoChange(index, field, finalMaxValue);
+      }
+      
+      // Actualizar el min del siguiente tramo si existe
+      if (tramos[index + 1]) {
+        const nextMin = (parseInt(finalMaxValue) || 0) + 1;
+        onTramoChange(index + 1, 'min', nextMin.toString());
       }
       return;
     }
@@ -60,21 +85,53 @@ const PriceTiers = ({
       const currentMax = parseInt(tramos[0]?.max) || 0;
       const newMin = parseInt(value) || 1;
       
-      onTramoChange(index, field, value);
-      
       if (newMin >= currentMax) {
         onTramoChange(index, 'max', (newMin + 1).toString());
+        
+        // Actualizar el min del siguiente tramo si existe
+        if (tramos[index + 1]) {
+          const nextMin = newMin + 2;
+          onTramoChange(index + 1, 'min', nextMin.toString());
+        }
       }
       return;
     }
-    
-    // Para otros campos (precio), usar el handler normal
-    onTramoChange(index, field, value);
+  };
+  
+  // Función para determinar si un rango es el último
+  const isLastRange = (index) => {
+    return index === tramos.length - 1;
+  };
+  
+  // Función para determinar si el campo MAX debe estar oculto y mostrar stock disponible
+  const shouldShowStockInsteadOfMaxInput = (index) => {
+    return index > 0 && isLastRange(index); // A partir del rango 2 y siendo el último
+  };
+  
+  // Función para obtener el valor que debe mostrar el campo MAX
+  const getMaxFieldValue = (tramo, index) => {
+    if (shouldShowStockInsteadOfMaxInput(index)) {
+      return stockDisponible?.toString() || '';
+    }
+    return tramo.max;
+  };
+  
+  // Función para determinar si el campo MAX debe estar deshabilitado
+  const isMaxFieldDisabled = (index) => {
+    return shouldShowStockInsteadOfMaxInput(index);
+  };
+  
+  // Función para determinar el estilo del campo MAX cuando debe estar resaltado en rojo
+  const getMaxFieldError = (tramo, index) => {
+    if (index > 0 && !isLastRange(index) && (!tramo.max || tramo.max === '')) {
+      return true; // Campo vacío en rango intermedio (no último)
+    }
+    return false;
   };
   return (
     <Box>
       <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 600, mb: 1}}>
-        Define diferentes precios según la cantidad vendida.{' '}
+        Define diferentes precios según la cantidad vendida{' '}
       </Typography>
 
       <Box
@@ -131,6 +188,7 @@ const PriceTiers = ({
                     placeholder="Ej: 10"
                     value={tramo.min}
                     onChange={e => handleTramoChange(index, 'min', e.target.value)}
+                    onBlur={e => handleTramoBlur(index, 'min', e.target.value)}
                     type="number"
                     size="small"
                     autoComplete="off"
@@ -163,12 +221,14 @@ const PriceTiers = ({
                   <TextField
                     label="Max"
                     placeholder="Ej: 99"
-                    value={tramo.max}
+                    value={getMaxFieldValue(tramo, index)}
                     onChange={e => handleTramoChange(index, 'max', e.target.value)}
+                    onBlur={e => handleTramoBlur(index, 'max', e.target.value)}
                     type="number"
                     size="small"
                     autoComplete="off"
-                    disabled={false} // Siempre editable
+                    disabled={isMaxFieldDisabled(index)}
+                    error={getMaxFieldError(tramo, index)}
                     InputLabelProps={{ shrink: true }}
                     inputProps={{
                       min: 1,
@@ -192,14 +252,28 @@ const PriceTiers = ({
                         '-webkit-appearance': 'none',
                         margin: 0,
                       },
+                      ...(shouldShowStockInsteadOfMaxInput(index) && {
+                        '& .MuiInputBase-input': {
+                          color: 'text.secondary',
+                          fontWeight: 500,
+                        },
+                        '& .MuiOutlinedInput-root': {
+                          backgroundColor: 'grey.50',
+                        }
+                      }),
+                      ...(getMaxFieldError(tramo, index) && {
+                        '& .MuiOutlinedInput-root': {
+                          backgroundColor: 'error.50',
+                        }
+                      })
                     }}
                   />
                 </Box>
               </Box>
               <TextField
                 fullWidth
-                label="Precio"
-                placeholder="Ej: 1500"
+                label="Precio Unitario"
+                placeholder="Ej: 15000"
                 value={tramo.precio}
                 onChange={e => handleTramoChange(index, 'precio', e.target.value)}
                 type="number"

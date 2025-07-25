@@ -41,8 +41,8 @@ export const PRODUCT_LIMITS = {
 // ============================================================================
 
 export const PRICING_TYPES = {
-  UNIT: 'Por Unidad',
-  TIER: 'Por Tramo',
+  UNIT: 'Unidad',
+  TIER: 'Volumen',
 }
 
 export const PRODUCT_TYPES_DB = {

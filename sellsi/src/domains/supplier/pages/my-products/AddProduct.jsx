@@ -195,10 +195,32 @@ const AddProduct = () => {
     updateField(field, value);
     
     // Si se cambia la compra mínima y hay tramos, sincronizar con el Tramo 1
-    if (field === 'compraMinima' && formData.pricingType === 'Por Tramos' && formData.tramos.length > 0) {
+    if (field === 'compraMinima' && formData.pricingType === 'Volumen' && formData.tramos.length > 0) {
       const newTramos = [...formData.tramos];
       newTramos[0] = { ...newTramos[0], cantidad: value };
       updateField('tramos', newTramos);
+    }
+    
+    // Lógica de validación por Stock Disponible (solo aplica para rangos 3, 4 y 5)
+    if (field === 'stock' && formData.pricingType === 'Volumen' && formData.tramos.length >= 3) {
+      const newStock = parseInt(value) || 0;
+      
+      if (newStock > 0) {
+        // Filtrar rangos que superen el nuevo stock disponible
+        const validatedTramos = formData.tramos.filter((tramo, index) => {
+          // Rango 1 y 2 siempre se mantienen
+          if (index < 2) return true;
+          
+          // Para rangos 3+, verificar si el MIN supera el stock
+          const min = parseInt(tramo.min) || 0;
+          return min <= newStock;
+        });
+        
+        // Si se eliminaron rangos, actualizar
+        if (validatedTramos.length !== formData.tramos.length) {
+          updateField('tramos', validatedTramos);
+        }
+      }
     }
   };
 
@@ -227,11 +249,67 @@ const AddProduct = () => {
   const handleTramoChange = (index, field, value) => {
     const newTramos = [...formData.tramos];
     newTramos[index] = { ...newTramos[index], [field]: value };
+    
+    // Lógica para rangos 2+: MIN = MAX del rango anterior + 1
+    if (index > 0) {
+      if (field === 'max' && index > 0) {
+        // Cuando se actualiza MAX de un rango 2+, actualizar MIN del siguiente si existe
+        if (newTramos[index + 1]) {
+          const newMax = parseInt(value) || 0;
+          const nextMin = newMax + 1;
+          newTramos[index + 1] = { ...newTramos[index + 1], min: nextMin.toString() };
+        }
+      }
+      
+      // Actualizar MIN del rango actual basado en el MAX del rango anterior
+      if (index > 0 && newTramos[index - 1]?.max) {
+        const prevMax = parseInt(newTramos[index - 1].max) || 0;
+        const autoMin = prevMax + 1;
+        newTramos[index] = { ...newTramos[index], min: autoMin.toString() };
+      } else if (index === 1 && newTramos[0]?.max) {
+        // Caso especial para rango 2: MIN = MAX del rango 1 + 1
+        const rango1Max = parseInt(newTramos[0].max) || 0;
+        const rango2Min = rango1Max + 1;
+        newTramos[1] = { ...newTramos[1], min: rango2Min.toString() };
+      }
+    }
+    
     updateField('tramos', newTramos);
   };
 
   const addTramo = () => {
-    const newTramos = [...formData.tramos, { min: '', max: '', precio: '' }];
+    // Cuando se agrega un nuevo tramo:
+    // 1. El tramo anterior (que era el último) ahora debe tener su MAX habilitado y vacío
+    // 2. El nuevo tramo será el último con MAX = stock disponible
+    
+    const lastTramo = formData.tramos[formData.tramos.length - 1];
+    const newTramos = [...formData.tramos];
+    
+    // Si hay un tramo anterior y es del rango 2+, limpiar su MAX para que se habilite
+    if (newTramos.length > 1) {
+      const previousTramoIndex = newTramos.length - 1;
+      newTramos[previousTramoIndex] = { 
+        ...newTramos[previousTramoIndex], 
+        max: '' // Limpiar MAX para habilitarlo y resaltarlo en rojo
+      };
+    }
+    
+    // Calcular MIN para el nuevo tramo
+    let newMin = '';
+    if (lastTramo && lastTramo.max && lastTramo.max !== '') {
+      newMin = (parseInt(lastTramo.max) + 1).toString();
+    } else if (lastTramo && lastTramo.min) {
+      // Si el tramo anterior no tiene MAX definido, usar MIN + 2
+      newMin = (parseInt(lastTramo.min) + 2).toString();
+    }
+    
+    // Agregar el nuevo tramo
+    newTramos.push({ 
+      min: newMin, 
+      max: '', // El último tramo tendrá MAX oculto = stock disponible 
+      precio: '' 
+    });
+    
     updateField('tramos', newTramos);
   };
 
@@ -544,14 +622,6 @@ const AddProduct = () => {
                   width: '100%', // Usa todo el ancho disponible
                 }}
               >
-                {/* Tab de Producto */}
-                <Box sx={{ mb: 3 }}>
-                  <Chip
-                    label="Producto"
-                    color="primary"
-                    sx={{ fontWeight: 600 }}
-                  />
-                </Box>{' '}
                 {/* Formulario con CSS Grid nativo */}
                 <Box
                   sx={{
@@ -605,7 +675,7 @@ const AddProduct = () => {
                   </Box>
 
                   {/* Configuración de Precio: Campo Precio de Venta O Tramos (condicional) */}
-                  {formData.pricingType === 'Por Unidad' ? (
+                  {formData.pricingType === 'Unidad' ? (
                     <ProductPricing
                       formData={formData}
                       errors={errors}
@@ -633,6 +703,7 @@ const AddProduct = () => {
                         onAddTramo={addTramo}
                         onRemoveTramo={removeTramo}
                         errors={localErrors.tramos}
+                        stockDisponible={formData.stock}
                       />
                     </Box>
                   )}

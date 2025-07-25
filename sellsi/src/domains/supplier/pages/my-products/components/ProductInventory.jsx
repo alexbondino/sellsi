@@ -27,51 +27,7 @@ const ProductInventory = ({
 }) => {
   return (
     <Box>
-      <Typography
-        variant="h6"
-        gutterBottom
-        sx={{ fontWeight: 600, color: 'black', mb: 2 }}
-      >
-        Stock Disponible
-      </Typography>
-      <Box
-        sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}
-      >
-        {/* Primera fila: Stock y Compra Mínima */}
-        <Box sx={{ display: 'flex', gap: 2 }}>
-                <TextField
-                  sx={{ width: '35%' }}
-                  label="Cantidad"
-                  placeholder="Ingrese su stock"
-                  value={formData.stock}
-                  onChange={onInputChange('stock')}
-                  onBlur={() => onFieldBlur('stock')}
-                  error={
-                    !!(touched.stock || triedSubmit) &&
-                    !!(errors.stock || localErrors.stock)
-                  }
-                  helperText={
-                    touched.stock || triedSubmit
-                      ? errors.stock || localErrors.stock
-                      : ''
-                  }
-                  type="number"
-                  inputProps={{ 
-                    min: 1, 
-                    max: 15000,
-                    step: 1,
-                    onInput: (e) => {
-                      if (e.target.value.includes('.') || e.target.value.includes('-')) {
-                        e.target.value = e.target.value.replace(/[.-]/g, '');
-                      }
-                    }
-                  }}
-                  autoComplete="off"
-                  disabled={formData.pricingType === 'Por Unidad'}
-                />
-                {/* Compra Mínima eliminada de esta fila por requerimiento */}
-        </Box>
-
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
         {/* Segunda fila: Configuración de Precios y ToggleButtonGroup */}
         <Box>
           <Typography
@@ -79,14 +35,48 @@ const ProductInventory = ({
             gutterBottom
             sx={{ fontWeight: 600, color: 'black', mb: 2 }}
           >
-            Configuración de Precios
+            Condiciones de Venta
           </Typography>
+          {/* Primera fila: Stock y Compra Mínima (ahora debajo de Condiciones de Venta y sobre Precio a cobrar según) */}
+          <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+            <TextField
+              sx={{ width: '35%' }}
+              label="Stock Disponible"
+              placeholder="Ingrese su stock"
+              value={formData.stock}
+              onChange={onInputChange('stock')}
+              onBlur={() => onFieldBlur('stock')}
+              error={
+                !!(touched.stock || triedSubmit) &&
+                !!(errors.stock || localErrors.stock)
+              }
+              helperText={
+                touched.stock || triedSubmit
+                  ? errors.stock || localErrors.stock
+                  : ''
+              }
+              type="number"
+              inputProps={{ 
+                min: 1, 
+                max: 15000,
+                step: 1,
+                onInput: (e) => {
+                  if (e.target.value.includes('.') || e.target.value.includes('-')) {
+                    e.target.value = e.target.value.replace(/[.-]/g, '');
+                  }
+                }
+              }}
+              autoComplete="off"
+              // Siempre habilitado
+            />
+            {/* Compra Mínima eliminada de esta fila por requerimiento */}
+          </Box>
           <Typography
             variant="subtitle2"
             gutterBottom
             sx={{ fontWeight: 600 , mb: 2 }}
           >
-            Precio a cobrar según:
+            Precio a cobrar por:
           </Typography>
           <ToggleButtonGroup
             value={formData.pricingType}
@@ -95,16 +85,16 @@ const ProductInventory = ({
             sx={{ mb: 3 }}
           >
             <ToggleButton
-              value="Por Unidad"
-              sx={{ textTransform: 'none' }}
+              value="Unidad"
+              sx={{ textTransform: 'none', width: '110px' }}
             >
-              Por Unidad
+              Unidad
             </ToggleButton>
             <ToggleButton
-              value="Por Volumen"
-              sx={{ textTransform: 'none' }}
+              value="Volumen"
+              sx={{ textTransform: 'none', width: '110px' }}
             >
-              Por Volumen
+              Volumen
             </ToggleButton>
             <Tooltip
               title={
@@ -146,6 +136,8 @@ const ProductInventory = ({
             </Tooltip>
           </ToggleButtonGroup>
         </Box>
+
+        {/* Eliminado duplicado de Stock */}
       </Box>
     </Box>
   );

@@ -83,7 +83,7 @@ const calculateMaximumIncome = (tramos, stock) => {
 export const calculateProductEarnings = (formData) => {
   const SERVICE_RATE = 0.02; // 2% de tarifa de servicio
 
-  if (formData.pricingType === 'Por Unidad' && formData.precioUnidad && formData.stock) {
+  if (formData.pricingType === 'Unidad' && formData.precioUnidad && formData.stock) {
     // Cálculo simple para precio por unidad
     const totalIncome = parseFloat(formData.precioUnidad) * parseInt(formData.stock);
     const serviceFee = totalIncome * SERVICE_RATE;
@@ -100,7 +100,7 @@ export const calculateProductEarnings = (formData) => {
         total: { min: 0, max: 0 },
       },
     };
-  } else if (formData.pricingType === 'Por Tramo' && formData.tramos?.length > 0) {
+  } else if (formData.pricingType === 'Volumen' && formData.tramos?.length > 0) {
     // Cálculo de rangos para precios por tramo
     const validTramos = formData.tramos.filter(
       t => t.cantidad && t.precio && !isNaN(Number(t.cantidad)) && !isNaN(Number(t.precio))

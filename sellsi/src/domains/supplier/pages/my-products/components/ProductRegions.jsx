@@ -67,7 +67,7 @@ const ProductRegions = ({
         gutterBottom
         sx={{ fontWeight: 600, color: 'black', mb: 2, textAlign: 'left', width: '100%' }}
       >
-        Región de Despacho
+        Despacho
       </Typography>
 
       {/* Botón para abrir el modal de configuración */}

@@ -38,7 +38,7 @@ const SaleConditions = React.memo(({ product }) => {
           textAlign: 'center',
         }}
       >
-        Condiciones de Venta
+        {/* Eliminado duplicado de 'Condiciones de Venta' */}
       </Typography>
 
       <Grid

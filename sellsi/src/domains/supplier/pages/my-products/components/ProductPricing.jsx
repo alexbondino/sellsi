@@ -36,13 +36,13 @@ const ProductPricing = ({
         gutterBottom
         sx={{ fontWeight: 600, color: 'black', mb: 2 }}
       >
-        Define el valor unitario y la compra mínima:
+        Define el valor unitario y la compra mínima
       </Typography>
       <Box sx={{ display: 'flex', gap: 2, alignItems: 'flex-start' }}>
         <TextField
-          sx={{ width: '35%' }}
-          label="Precio de Venta:"
-          placeholder="Campo de entrada"
+          sx={{ width: '17%' }}
+          label="Precio de Venta"
+          placeholder="Ej: 15000"
           value={formData.precioUnidad}
           onChange={onInputChange('precioUnidad')}
           onBlur={() => onFieldBlur('precioUnidad')}
@@ -56,27 +56,20 @@ const ProductPricing = ({
                 localErrors.precioUnidad
               : ''
           }
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                $
-              </InputAdornment>
-            ),
-            inputProps: { 
-              min: 1,
-              step: 1,
-              onInput: (e) => {
-                if (e.target.value.includes('.') || e.target.value.includes('-')) {
-                  e.target.value = e.target.value.replace(/[.-]/g, '');
-                }
-              }
-            },
-          }}
           type="number"
           autoComplete="off"
+          inputProps={{ 
+            min: 1, 
+            step: 1,
+            onInput: (e) => {
+              if (e.target.value.includes('.') || e.target.value.includes('-')) {
+                e.target.value = e.target.value.replace(/[.-]/g, '');
+              }
+            }
+          }}
         />
         <TextField
-          sx={{ width: '35%' }}
+          sx={{ width: '17%' }}
           label="Compra Mínima"
           placeholder="Ej: 1"
           value={formData.compraMinima}
