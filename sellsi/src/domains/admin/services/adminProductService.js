@@ -14,6 +14,38 @@
 
 import { AdminApiService, AUDIT_ACTIONS } from './adminApiService'
 import { supabase } from '../../../services/supabase'
+import { useQueryClient } from '@tanstack/react-query'
+
+// Cache invalidation utility - funciona sin componente React
+const invalidateProductCache = (productId) => {
+  try {
+    // Acceder al query client global si existe
+    const queryClient = window.queryClient;
+    if (queryClient) {
+      console.log(`🔧 [adminProductService] Invalidando cache para producto eliminado:`, productId);
+      
+      // Invalidar todas las queries relacionadas con thumbnails de este producto
+      queryClient.invalidateQueries({
+        queryKey: ['thumbnails', productId],
+        exact: false
+      });
+      
+      // También invalidar queries de productos en general para refrescar listas
+      queryClient.invalidateQueries({
+        queryKey: ['marketplace-products'],
+        exact: false
+      });
+      
+      // Refrescar queries de productos admin
+      queryClient.invalidateQueries({
+        queryKey: ['admin-products'],
+        exact: false
+      });
+    }
+  } catch (error) {
+    console.warn('⚠️ Error invalidando cache del producto:', error);
+  }
+};
 
 // ========================================
 // 📋 GESTIÓN DE PRODUCTOS - CONSULTA
@@ -236,7 +268,7 @@ export const deleteProduct = async (productId, adminId) => {
       throw new Error('Error al obtener información del producto')
     }
 
-    // 2. Eliminar producto de la BD PRIMERO (respuesta rápida)
+    // 2. Eliminar producto de la BD
     const { error } = await supabase
       .from('products')
       .delete()
@@ -246,6 +278,9 @@ export const deleteProduct = async (productId, adminId) => {
       throw new Error('Error al eliminar producto')
     }
 
+    // 🚀 INVALIDACIÓN PROACTIVA DE CACHÉ
+    invalidateProductCache(productId);
+
     // 3. Registrar acción en auditoría
     if (adminId) {
       await AdminApiService.logAuditAction(adminId, AUDIT_ACTIONS.DELETE_PRODUCT, productId, {
@@ -254,7 +289,7 @@ export const deleteProduct = async (productId, adminId) => {
       })
     }
 
-    // 4. Limpiar imágenes en background (no bloquea la respuesta)
+    // 4. Limpiar archivos del storage en background (no bloquea la respuesta)
     const folderPrefix = `${product.supplier_id}/${productId}/`
     
     // Ejecutar limpieza en background sin esperar
@@ -275,13 +310,10 @@ export const deleteProduct = async (productId, adminId) => {
             const toDeleteFromThumbnails = thumbnailFiles.map(file => folderPrefix + file.name)
             return supabase.storage.from('product-images-thumbnails').remove(toDeleteFromThumbnails)
           }
-        }),
-      
-      // Limpiar referencias en BD
-      supabase.from('product_images').delete().eq('product_id', productId)
+        })
     ]).catch(error => {
-      console.warn('⚠️ Error limpiando imágenes en background:', error)
-      // El producto ya fue eliminado, este error no es crítico para el usuario
+      console.warn('⚠️ Error limpiando archivos de storage en background:', error)
+      // Solo archivos físicos, no afecta la consistencia de datos
     })
 
     return { deleted: true }

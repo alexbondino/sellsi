@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import {
   Box,
   Container,
@@ -28,7 +29,7 @@ import {
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 
 // Components
-import { PriceTiers } from '../../../../shared/components/forms/PriceTiers';
+import { PriceTiers } from './components';
 
 // Error Boundaries
 import { SupplierErrorBoundary, ProductFormErrorBoundary } from '../../components/ErrorBoundary';
@@ -40,6 +41,7 @@ import {
   ProductImages,
   ProductRegions,
   ProductResultsPanel,
+  ProductPricing,
 } from './components';
 
 // Servicio para regiones de entrega
@@ -116,6 +118,42 @@ const AddProduct = () => {
     }
   }, [supplierId, loadProducts]);
 
+  // Componente Portal para el panel de resultados
+  const ResultsPanelPortal = ({ children }) => {
+    return createPortal(
+      <Box
+        sx={{
+          position: 'fixed',
+          top: {
+            xs: 80,   // top menor en mobile
+            sm: 120,  // sm
+            md: 180,  // md
+            lg: 242,  // lg
+            xl: 242   // xl
+          },
+          right: {
+            xs: 20,   // mobile
+            sm: 40,   // sm
+            md: 80,   // md: volvemos a 80 porque el portal evita el problema
+            lg: 80,   // lg: volvemos a 80 porque el portal evita el problema
+            xl: 80    // xl
+          },
+          zIndex: 1200,
+          width: {
+            xs: 'calc(100vw - 40px)', // mobile con padding
+            sm: 360,     // sm: 360px
+            md: 420,     // md: 420px
+            lg: 480,     // lg: 480px
+            xl: 560      // xl: 560px
+          }
+        }}
+      >
+        {children}
+      </Box>,
+      document.body
+    );
+  };
+
   // Cargar regiones de entrega si editando
   useEffect(() => {
     if (isEditMode && editProductId) {
@@ -187,20 +225,13 @@ const AddProduct = () => {
   }
 
   const handleTramoChange = (index, field, value) => {
-    // Si es el Tramo 1 y se está cambiando la cantidad, no permitir el cambio
-    // La cantidad del Tramo 1 debe ser igual a la Compra Mínima
-    if (index === 0 && field === 'cantidad') {
-      showErrorToast('La cantidad del Tramo 1 debe ser igual a la Compra Mínima. Modifica la Compra Mínima para cambiar este valor.');
-      return;
-    }
-    
     const newTramos = [...formData.tramos];
     newTramos[index] = { ...newTramos[index], [field]: value };
     updateField('tramos', newTramos);
   };
 
   const addTramo = () => {
-    const newTramos = [...formData.tramos, { cantidad: '', precio: '' }];
+    const newTramos = [...formData.tramos, { min: '', max: '', precio: '' }];
     updateField('tramos', newTramos);
   };
 
@@ -575,55 +606,15 @@ const AddProduct = () => {
 
                   {/* Configuración de Precio: Campo Precio de Venta O Tramos (condicional) */}
                   {formData.pricingType === 'Por Unidad' ? (
-                    <Box
-                      className="full-width"
-                      sx={{
-                        p: 0,
-                        m: 0,
-                        boxShadow: 'none',
-                        bgcolor: 'transparent',
-                        overflow: 'visible',
-                        mb: 3,
-                      }}
-                    >
-                      <TextField
-                        sx={{ width: '73.51%' }}
-                        label="Precio de Venta:"
-                        placeholder="Campo de entrada"
-                        value={formData.precioUnidad}
-                        onChange={handleInputChange('precioUnidad')}
-                        onBlur={() => handleFieldBlur('precioUnidad')}
-                        error={
-                          !!(touched.precioUnidad || triedSubmit) &&
-                          !!(errors.precioUnidad || localErrors.precioUnidad)
-                        }
-                        helperText={
-                          touched.precioUnidad || triedSubmit
-                            ? errors.precioUnidad ||
-                              localErrors.precioUnidad
-                            : ''
-                        }
-                        InputProps={{
-                          startAdornment: (
-                            <InputAdornment position="start">
-                              $
-                            </InputAdornment>
-                          ),
-                          inputProps: { 
-                            min: 1,
-                            step: 1,
-                            onInput: (e) => {
-                              // Solo permitir números enteros positivos
-                              if (e.target.value.includes('.') || e.target.value.includes('-')) {
-                                e.target.value = e.target.value.replace(/[.-]/g, '');
-                              }
-                            }
-                          },
-                        }}
-                        type="number"
-                        autoComplete="off"
-                      />
-                    </Box>
+                    <ProductPricing
+                      formData={formData}
+                      errors={errors}
+                      localErrors={localErrors}
+                      touched={touched}
+                      triedSubmit={triedSubmit}
+                      onInputChange={handleInputChange}
+                      onFieldBlur={handleFieldBlur}
+                    />
                   ) : (
                     <Box
                       className="full-width"
@@ -664,20 +655,25 @@ const AddProduct = () => {
             </Grid>{' '}
             {/* Panel de resultados */}
             <Grid size={{ xs: 12, lg: 4 }}>
-              <ProductResultsPanel
-                calculations={calculations}
-                isValid={isValid}
-                isLoading={isLoading}
-                isEditMode={isEditMode}
-                onBack={handleBack}
-                onSubmit={handleSubmit}
-              />
+              {/* Panel renderizado como portal */}
             </Grid>
           </Grid>
         </Container>
       </Box>
         </ProductFormErrorBoundary>
     </ThemeProvider>
+    
+    {/* Portal del panel de resultados */}
+    <ResultsPanelPortal>
+      <ProductResultsPanel
+        calculations={calculations}
+        isValid={isValid}
+        isLoading={isLoading}
+        isEditMode={isEditMode}
+        onBack={handleBack}
+        onSubmit={handleSubmit}
+      />
+    </ResultsPanelPortal>
     </SupplierErrorBoundary>
   );
 };

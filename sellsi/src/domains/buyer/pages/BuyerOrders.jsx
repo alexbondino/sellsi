@@ -16,6 +16,7 @@ import { ThemeProvider } from '@mui/material/styles';
 import { dashboardThemeCore } from '../../../styles/dashboardThemeCore';
 import { SPACING_BOTTOM_MAIN } from '../../../styles/layoutSpacing';
 import { useBuyerOrders } from '../hooks';
+import { MinithumbImage } from '../../../components/UniversalProductImage';
 
 const BuyerOrders = () => {
   // ============================================================================
@@ -241,14 +242,12 @@ const BuyerOrders = () => {
                         >
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                             {/* Imagen del producto */}
-                            <Avatar
-                              src={getProductImage(item.product)}
-                              alt={item.product.name}
-                              variant="rounded"
-                              sx={{ 
-                                width: 80, 
-                                height: 80,
-                                backgroundColor: 'grey.200',
+                            <MinithumbImage
+                              product={item.product}
+                              width={80}
+                              height={80}
+                              sx={{
+                                borderRadius: 2,
                                 flexShrink: 0
                               }}
                             />

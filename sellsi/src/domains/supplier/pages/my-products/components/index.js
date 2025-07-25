@@ -6,3 +6,5 @@ export { default as ProductSpecs } from './ProductSpecs';
 export { default as ProductDocuments } from './ProductDocuments';
 export { default as ProductRegions } from './ProductRegions';
 export { default as ProductResultsPanel } from './ProductResultsPanel';
+export { default as ProductPricing } from './ProductPricing';
+export { default as PriceTiers } from './PriceTiers';

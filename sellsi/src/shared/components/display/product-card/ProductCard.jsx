@@ -4,9 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Card, Box, alpha } from '@mui/material';
 
 // Common Utility Imports
-import { getProductImageUrl, getBestProductImageUrl } from '../../../../utils/getProductImageUrl';
-import { LazyImage } from '../LazyImage';
-import { useResponsiveThumbnail } from '../../../../hooks/useResponsiveThumbnail';
+import { ProductCardImage } from '../../../../components/UniversalProductImage'; // Nueva imagen universal
 
 // Sub-components
 import ProductCardBuyerContext from './ProductCardBuyerContext';
@@ -48,60 +46,16 @@ const ProductCard = React.memo(
 
     const { id, nombre, imagen } = product;
 
-    // ✅ NUEVO: Hook para obtener thumbnail responsivo
-    const { thumbnailUrl } = useResponsiveThumbnail(product);
-
     // --- Memoized common elements ---
-    const resolvedImageSrc = useMemo(() => {
-      // ✅ PRIORIZAR THUMBNAIL: Usar thumbnail responsivo cuando esté disponible
-      if (thumbnailUrl) {
-        return thumbnailUrl;
-      }
-      
-      // Fallback a imagen original solo si no hay thumbnail
-      let img = product?.imagen || product?.image;
-      if (!img) return '/placeholder-product.jpg';
-      if (typeof img === 'string') {
-        if (img.startsWith('blob:')) return '/placeholder-product.jpg';
-        return getProductImageUrl(img, product);
-      }
-      if (typeof img === 'object' && img !== null) {
-        if (img.url && typeof img.url === 'string') {
-          if (img.url.startsWith('blob:')) return '/placeholder-product.jpg';
-          return getProductImageUrl(img.url, product);
-        }
-        if (img.path && typeof img.path === 'string') {
-          return getProductImageUrl(img.path, product);
-        }
-      }
-      return '/placeholder-product.jpg';
-    }, [product, thumbnailUrl]);
-
     const memoizedImage = useMemo(
       () => (
-        <LazyImage
-          src={resolvedImageSrc}
+        <ProductCardImage
+          product={product}
+          type={type}
           alt={nombre}
-          rootMargin="150px"
-          objectFit="contain"
-          sx={{
-            maxWidth: '100%',
-            height: type === 'supplier' ? 
-              { xs: 142, sm: 154, md: 187.5, lg: 243.75, xl: 260 } :
-              { xs: 142, sm: 154, md: 187.5, lg: 243.75, xl: 260 },
-            bgcolor: '#fff',
-            // 🎯 PADDING RESPONSIVE
-            p: type === 'supplier' ? 
-              { xs: 0.5, sm: 0.8, md: 1, lg: 0 } : 
-              { xs: 1, sm: 1.2, md: 1.5, lg: 0},
-            display: 'block',
-            mx: 'auto',
-            mt: 0.5,
-            // border eliminado
-          }}
         />
       ),
-      [resolvedImageSrc, nombre, type]
+      [product, type, nombre]
     );
 
     // --- Common Card Styles (can be adjusted per type if needed) ---

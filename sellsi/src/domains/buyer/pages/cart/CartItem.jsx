@@ -34,15 +34,14 @@ import { motion } from 'framer-motion'
 import PriceDisplay from '../../../marketplace/PriceDisplay/PriceDisplay'
 import StockIndicator from '../../../marketplace/StockIndicator/StockIndicator'
 import QuantitySelector from '../../../../shared/components/forms/QuantitySelector'
-import { LazyImage } from '../../../../shared/components/display/LazyImage'
+import LazyImage from '../../../../shared/components/display/LazyImage/LazyImage'
 import { SHIPPING_OPTIONS } from '../../../../shared/constants/shipping' // ✅ MIGRADO: Era domains/marketplace/hooks/constants
-import { getProductImageUrl } from '../../../../utils/getProductImageUrl'
 import {
   calculatePriceForQuantity,
   formatProductForCart,
 } from '../../../../utils/priceCalculation'
 import { Modal, MODAL_TYPES } from '../../../../shared/components/feedback'
-import { useResponsiveThumbnail } from '../../../../hooks/useResponsiveThumbnail' // Nuevo hook
+import { CartItemImage } from '../../../../components/UniversalProductImage' // Nueva imagen universal
 import ShippingDisplay from './components/ShippingDisplay'
 
 /*
@@ -68,52 +67,6 @@ PROBLEMAS IDENTIFICADOS:
 - Los CONTROLES no están alineados a la derecha
 - Ambos problemas afectan a los 3 items del carrito
 */
-
-// ✅ OPTIMIZACIÓN: Usar LazyImage compartido en vez de componente local
-const OptimizedImage = ({ src, alt, sx }) => {
-  return (
-    <LazyImage
-      src={src}
-      alt={alt}
-      aspectRatio="1"
-      rootMargin="50px"
-      objectFit="cover"
-      borderRadius={1}
-      sx={{
-        backgroundColor: '#f5f5f5',
-        ...sx,
-      }}
-    />
-  )
-}
-
-// Helper robusto para obtener la imagen primaria con soporte para thumbnails
-function resolveImageSrc(item, thumbnailUrl) {
-  // ✅ NUEVO: Preferir thumbnail responsivo si está disponible
-  if (thumbnailUrl && thumbnailUrl !== '/placeholder-product.jpg') {
-    return thumbnailUrl;
-  }
-  
-  let image = item?.image || item?.imagen
-  if (!image) return '/placeholder-product.jpg'
-  // Si es string (url pública o path relativo)
-  if (typeof image === 'string') {
-    if (image.startsWith('blob:')) return '/placeholder-product.jpg'
-    return getProductImageUrl(image, item) // ✅ Pasar datos del item
-  }
-  // Si es objeto con url
-  if (typeof image === 'object' && image !== null) {
-    if (image.url && typeof image.url === 'string') {
-      if (image.url.startsWith('blob:')) return '/placeholder-product.jpg'
-      return getProductImageUrl(image.url, item) // ✅ Pasar datos del item
-    }
-    // Si es objeto con path relativo
-    if (image.path && typeof image.path === 'string') {
-      return getProductImageUrl(image.path, item) // ✅ Pasar datos del item
-    }
-  }
-  return '/placeholder-product.jpg'
-}
 
 const CartItem = ({
   item,
@@ -153,9 +106,6 @@ const CartItem = ({
   const [selectedShipping, setSelectedShipping] = useState('standard')
   const [openDeleteModal, setOpenDeleteModal] = useState(false)
   
-  // ✅ NUEVO: Hook para obtener thumbnail responsivo
-  const { thumbnailUrl } = useResponsiveThumbnail(item);
-  
   // ===== CÁLCULOS DE PRECIOS OPTIMIZADOS (USAR priceCalculations MEMOIZADO) =====
   // Los precios se calculan en priceCalculations para evitar recálculos innecesarios
   // Función optimizada para manejar el cambio de envío y calcular el precio
@@ -177,11 +127,6 @@ const CartItem = ({
     basePrice: item.originalPrice || item.precioOriginal || item.price || item.precio || 0,
     maxStock: item.maxStock || item.stock || 50
   }), [item])
-
-  // ✅ NUEVO: Memoizar la URL de la imagen con thumbnail responsivo
-  const imageUrl = React.useMemo(() => {
-    return resolveImageSrc(item, thumbnailUrl);
-  }, [item, thumbnailUrl]);
 
   // Memoizar cálculos de precio para evitar recálculos innecesarios
   const priceCalculations = React.useMemo(() => {
@@ -305,15 +250,11 @@ const CartItem = ({
                 width: '160px',
               }}
             >
-              <OptimizedImage
-                src={imageUrl}
-                alt={productData.name}
+              <CartItemImage
+                product={item}
                 sx={{
                   height: 160,
                   width: '100%',
-                  borderRadius: 1,
-                  objectFit: 'contain',
-                  backgroundColor: '#f9f9f9',
                 }}
               />
             </Box>

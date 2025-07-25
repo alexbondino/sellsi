@@ -35,6 +35,11 @@ export const queryClient = new QueryClient({
   },
 });
 
+// 🌐 GLOBAL ACCESS: Hacer queryClient disponible globalmente para servicios
+if (typeof window !== 'undefined') {
+  window.queryClient = queryClient;
+}
+
 // Configuración específica para diferentes tipos de queries
 export const QUERY_KEYS = {
   // Thumbnails

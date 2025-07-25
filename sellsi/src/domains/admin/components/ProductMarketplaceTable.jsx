@@ -62,6 +62,7 @@ import DeleteMultipleProductsModal from '../../../shared/components/modals/Delet
 import { getMarketplaceProducts, deleteProduct, getProductStats, deleteMultipleProducts, updateProductName } from '../../../domains/admin';
 import { useBanner } from '../../../shared/components/display/banners/BannerContext';
 import { useResponsiveThumbnail } from '../../../hooks/useResponsiveThumbnail';
+import { AdminTableImage } from '../../../components/UniversalProductImage';
 
 // ✅ CONSTANTS
 const PRODUCT_STATUS = {
@@ -124,50 +125,6 @@ const commonStyles = {
     borderRadius: 1
   }
 };
-
-// ✅ PRODUCT AVATAR COMPONENT
-const ProductAvatar = memo(({ product }) => {
-  const [hasError, setHasError] = useState(false);
-  
-  // ✅ USAR HOOK RESPONSIVO EN LUGAR DE LÓGICA MANUAL
-  const { thumbnailUrl, isLoading, error } = useResponsiveThumbnail(product);
-  
-  console.log('🎯 [ProductAvatar] Hook useResponsiveThumbnail resultado:', {
-    thumbnailUrl,
-    isLoading,
-    error,
-    productId: product.id,
-    productName: product.name || product.nombre
-  });
-  
-  // Si hay error del hook o error de carga de imagen, usar imagen por defecto
-  const finalUrl = (hasError || error) ? (product.imagen || null) : (thumbnailUrl || product.imagen || null);
-  
-  console.log('🚀 [ProductAvatar] Estado final:', {
-    hasError,
-    hookError: error,
-    thumbnailUrl,
-    finalUrl,
-    productImagen: product.imagen
-  });
-  
-  return (
-    <Avatar 
-      src={finalUrl} 
-      sx={commonStyles.productImage}
-      variant="rounded"
-      onError={(e) => {
-        console.error('❌ [ProductAvatar] Error cargando imagen:', {
-          src: finalUrl,
-          error: e
-        });
-        setHasError(true);
-      }}
-    >
-      <InventoryIcon />
-    </Avatar>
-  );
-});
 
 // ✅ PRODUCT MARKETPLACE TABLE COMPONENT
 const ProductMarketplaceTable = memo(() => {
@@ -744,7 +701,7 @@ const ProductMarketplaceTable = memo(() => {
 
                 <TableCell>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                    <ProductAvatar product={product} />
+                    <AdminTableImage product={product} />
                     <Box>
                       <Typography component="span" variant="body2" fontWeight="medium">
                         {product.product_name || 'N/A'}

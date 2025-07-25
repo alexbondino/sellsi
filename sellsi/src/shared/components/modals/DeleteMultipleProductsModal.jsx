@@ -27,6 +27,7 @@ import {
   ArrowForward as ArrowForwardIcon,
   Inventory as InventoryIcon
 } from '@mui/icons-material';
+import { AdminTableImage } from '../../../components/UniversalProductImage';
 
 const DeleteMultipleProductsModal = ({ 
   open, 
@@ -186,18 +187,15 @@ const DeleteMultipleProductsModal = ({
               {paginatedProducts.map((product, index) => (
                 <React.Fragment key={product.product_id}>
                   <ListItem sx={{ py: 1.5, px: 2 }}>
-                    <Avatar 
-                      src={product.imagen} 
+                    <AdminTableImage 
+                      product={product}
                       sx={{ 
                         width: 48, 
                         height: 48, 
                         mr: 2,
                         borderRadius: 1
                       }}
-                      variant="rounded"
-                    >
-                      <InventoryIcon />
-                    </Avatar>
+                    />
                     <ListItemText
                       primary={product.product_name || 'N/A'}
                       secondary={

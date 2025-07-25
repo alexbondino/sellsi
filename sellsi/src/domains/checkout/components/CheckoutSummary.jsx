@@ -33,7 +33,7 @@ import { motion } from 'framer-motion'
 // Servicios
 import { checkoutService } from '../services'
 import { calculatePriceForQuantity } from '../../../utils/priceCalculation'
-import { useResponsiveThumbnail } from '../../../hooks/useResponsiveThumbnail' // Hook para thumbnails responsivos
+import { CheckoutSummaryImage } from '../../../components/UniversalProductImage' // Nueva imagen universal
 
 // Componentes UI
 import { SecurityBadge } from '../../../shared/components/feedback'
@@ -41,50 +41,6 @@ import { SecurityBadge } from '../../../shared/components/feedback'
 // ============================================================================
 // COMPONENTE PRINCIPAL
 // ============================================================================
-
-// Componente para avatares de productos con minithumb
-const ProductAvatar = ({ item }) => {
-  const [hasError, setHasError] = useState(false);
-  
-  // ✅ USAR HOOK RESPONSIVO EN LUGAR DE LÓGICA MANUAL
-  const { thumbnailUrl, isLoading, error } = useResponsiveThumbnail(item);
-  
-  console.log('🎯 [ProductAvatar] Hook useResponsiveThumbnail resultado:', {
-    thumbnailUrl,
-    isLoading,
-    error,
-    itemId: item.product_id || item.id,
-    itemName: item.name || item.nombre
-  });
-  
-  // Si hay error del hook o error de carga de imagen, usar imagen por defecto
-  const finalUrl = (hasError || error) ? (item.imagen || null) : (thumbnailUrl || item.imagen || null);
-  
-  console.log('🚀 [ProductAvatar] Estado final:', {
-    hasError,
-    hookError: error,
-    thumbnailUrl,
-    finalUrl,
-    itemImagen: item.imagen
-  });
-  
-  return (
-    <Avatar
-      src={finalUrl}
-      alt={item.name || item.nombre}
-      sx={{ width: 40, height: 40 }}
-      onError={(e) => {
-        console.error('❌ [ProductAvatar] Error cargando imagen:', {
-          src: finalUrl,
-          error: e
-        });
-        setHasError(true);
-      }}
-    >
-      <ShoppingCartIcon />
-    </Avatar>
-  );
-};
 
 const CheckoutSummary = ({
   orderData,
@@ -256,7 +212,7 @@ const CheckoutSummary = ({
               {paginatedItems.map((item, index) => (
                 <ListItem key={`${currentPage}-${index}`} sx={{ px: 2 }}>
                   <ListItemAvatar>
-                    <ProductAvatar item={item} />
+                    <CheckoutSummaryImage product={item} />
                   </ListItemAvatar>
                   <ListItemText
                     primary={item.name || item.nombre}

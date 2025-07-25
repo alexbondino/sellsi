@@ -32,73 +32,44 @@ const ProductInventory = ({
         gutterBottom
         sx={{ fontWeight: 600, color: 'black', mb: 2 }}
       >
-        Inventario y Disponibilidad
+        Stock Disponible
       </Typography>
       <Box
         sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}
       >
         {/* Primera fila: Stock y Compra Mínima */}
         <Box sx={{ display: 'flex', gap: 2 }}>
-          <TextField
-            sx={{ width: '35%' }}
-            label="Stock Disponible:"
-            placeholder="Ingrese un número entre 1 y 15.000"
-            value={formData.stock}
-            onChange={onInputChange('stock')}
-            onBlur={() => onFieldBlur('stock')}
-            error={
-              !!(touched.stock || triedSubmit) &&
-              !!(errors.stock || localErrors.stock)
-            }
-            helperText={
-              touched.stock || triedSubmit
-                ? errors.stock || localErrors.stock
-                : ''
-            }
-            type="number"
-            inputProps={{ 
-              min: 1, 
-              max: 15000,
-              step: 1,
-              onInput: (e) => {
-                // Solo permitir números enteros positivos
-                if (e.target.value.includes('.') || e.target.value.includes('-')) {
-                  e.target.value = e.target.value.replace(/[.-]/g, '');
-                }
-              }
-            }}
-            autoComplete="off"
-          />
-          <TextField
-            sx={{ width: '35%' }}
-            label="Compra Mínima:"
-            placeholder="Seleccione un número entre 1 y 15.000"
-            value={formData.compraMinima}
-            onChange={onInputChange('compraMinima')}
-            onBlur={() => onFieldBlur('compraMinima')}
-            error={
-              !!(touched.compraMinima || triedSubmit) &&
-              !!(errors.compraMinima || localErrors.compraMinima)
-            }
-            helperText={
-              touched.compraMinima || triedSubmit
-                ? errors.compraMinima || localErrors.compraMinima
-                : ''
-            }
-            type="number"
-            inputProps={{ 
-              min: 1, 
-              max: 15000,
-              step: 1,
-              onInput: (e) => {
-                // Solo permitir números enteros positivos
-                if (e.target.value.includes('.') || e.target.value.includes('-')) {
-                  e.target.value = e.target.value.replace(/[.-]/g, '');
-                }
-              }
-            }}
-            autoComplete="off"
-          />
+                <TextField
+                  sx={{ width: '35%' }}
+                  label="Cantidad"
+                  placeholder="Ingrese su stock"
+                  value={formData.stock}
+                  onChange={onInputChange('stock')}
+                  onBlur={() => onFieldBlur('stock')}
+                  error={
+                    !!(touched.stock || triedSubmit) &&
+                    !!(errors.stock || localErrors.stock)
+                  }
+                  helperText={
+                    touched.stock || triedSubmit
+                      ? errors.stock || localErrors.stock
+                      : ''
+                  }
+                  type="number"
+                  inputProps={{ 
+                    min: 1, 
+                    max: 15000,
+                    step: 1,
+                    onInput: (e) => {
+                      if (e.target.value.includes('.') || e.target.value.includes('-')) {
+                        e.target.value = e.target.value.replace(/[.-]/g, '');
+                      }
+                    }
+                  }}
+                  autoComplete="off"
+                  disabled={formData.pricingType === 'Por Unidad'}
+                />
+                {/* Compra Mínima eliminada de esta fila por requerimiento */}
         </Box>
 
         {/* Segunda fila: Configuración de Precios y ToggleButtonGroup */}
@@ -130,15 +101,15 @@ const ProductInventory = ({
               Por Unidad
             </ToggleButton>
             <ToggleButton
-              value="Por Tramos"
+              value="Por Volumen"
               sx={{ textTransform: 'none' }}
             >
-              Por Tramos
+              Por Volumen
             </ToggleButton>
             <Tooltip
               title={
                 <>
-                  <b>¿Qué son los tramos?</b>
+                  <b>¿Qué son las ventas por Volumen?</b>
                   <br />
                   Permite asignar hasta 5 precios según la
                   cantidad que te compren. Por ejemplo: si te
