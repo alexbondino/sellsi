@@ -7,6 +7,8 @@ import {
   Paper,
   Grid,
   Chip,
+  TextField,
+  InputAdornment,
   useTheme,
 } from '@mui/material';
 import {
@@ -571,8 +573,58 @@ const AddProduct = () => {
                     />
                   </Box>
 
-                  {/* Configuración de Tramos de Precio (condicional) */}
-                  {formData.pricingType === 'Por Tramos' && (
+                  {/* Configuración de Precio: Campo Precio de Venta O Tramos (condicional) */}
+                  {formData.pricingType === 'Por Unidad' ? (
+                    <Box
+                      className="full-width"
+                      sx={{
+                        p: 0,
+                        m: 0,
+                        boxShadow: 'none',
+                        bgcolor: 'transparent',
+                        overflow: 'visible',
+                        mb: 3,
+                      }}
+                    >
+                      <TextField
+                        sx={{ width: '73.51%' }}
+                        label="Precio de Venta:"
+                        placeholder="Campo de entrada"
+                        value={formData.precioUnidad}
+                        onChange={handleInputChange('precioUnidad')}
+                        onBlur={() => handleFieldBlur('precioUnidad')}
+                        error={
+                          !!(touched.precioUnidad || triedSubmit) &&
+                          !!(errors.precioUnidad || localErrors.precioUnidad)
+                        }
+                        helperText={
+                          touched.precioUnidad || triedSubmit
+                            ? errors.precioUnidad ||
+                              localErrors.precioUnidad
+                            : ''
+                        }
+                        InputProps={{
+                          startAdornment: (
+                            <InputAdornment position="start">
+                              $
+                            </InputAdornment>
+                          ),
+                          inputProps: { 
+                            min: 1,
+                            step: 1,
+                            onInput: (e) => {
+                              // Solo permitir números enteros positivos
+                              if (e.target.value.includes('.') || e.target.value.includes('-')) {
+                                e.target.value = e.target.value.replace(/[.-]/g, '');
+                              }
+                            }
+                          },
+                        }}
+                        type="number"
+                        autoComplete="off"
+                      />
+                    </Box>
+                  ) : (
                     <Box
                       className="full-width"
                       sx={{

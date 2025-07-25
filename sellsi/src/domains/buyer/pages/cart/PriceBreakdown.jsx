@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react'
-import { Box, Typography, Divider, CircularProgress } from '@mui/material'
+import { Box, Typography, Divider, CircularProgress, Alert } from '@mui/material'
 import { calculateProductShippingCost } from '../../../../utils/shippingCalculation'
 
 const PriceBreakdown = ({
@@ -37,13 +37,13 @@ const PriceBreakdown = ({
       };
     }
 
-    // ✅ CRÍTICO: Si no tenemos la región del usuario aún, mostrar loading
+    // ✅ NUEVO: Si no tenemos la región del usuario (no configurada), mostrar mensaje de advertencia
     if (!userRegion) {
       return {
         cost: 0,
-        status: 'loading',
-        message: null,
-        isLoading: true
+        status: 'no_region_configured',
+        message: 'Configure su región de envío en su perfil',
+        isLoading: false
       };
     }
 
@@ -161,6 +161,15 @@ const PriceBreakdown = ({
                 Calculando envío...
               </Typography>
             </Box>
+          ) : shippingDisplayData.status === 'no_region_configured' ? (
+            <Typography
+              variant="body2"
+              fontWeight="medium"
+              color="warning.main"
+              sx={{ fontSize: '0.875rem' }}
+            >
+              {shippingDisplayData.message}
+            </Typography>
           ) : (
             <Typography
               variant="body2"
@@ -182,6 +191,23 @@ const PriceBreakdown = ({
             </Typography>
           )}
         </Box>
+
+        {/* ✅ NUEVO: Mensaje de advertencia más visible cuando no hay región configurada */}
+        {shippingDisplayData.status === 'no_region_configured' && (
+          <Alert 
+            severity="warning" 
+            sx={{ 
+              mt: 1, 
+              mb: 2,
+              fontSize: '0.8rem',
+              '& .MuiAlert-message': {
+                fontSize: '0.8rem'
+              }
+            }}
+          >
+            Para calcular el costo de envío, configure su región en el perfil
+          </Alert>
+        )}
       </Box>
 
       <Divider sx={{ my: 2 }} />

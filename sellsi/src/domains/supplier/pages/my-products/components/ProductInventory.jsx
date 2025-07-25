@@ -174,47 +174,6 @@ const ProductInventory = ({
               </IconButton>
             </Tooltip>
           </ToggleButtonGroup>
-
-          {/* Campo Precio de Venta (condicional - misma ubicación que los tramos) */}
-          {formData.pricingType === 'Por Unidad' && (
-            <TextField
-              sx={{ width: '73.51%' }}
-              label="Precio de Venta:"
-              placeholder="Campo de entrada"
-              value={formData.precioUnidad}
-              onChange={onInputChange('precioUnidad')}
-              onBlur={() => onFieldBlur('precioUnidad')}
-              error={
-                !!(touched.precioUnidad || triedSubmit) &&
-                !!(errors.precioUnidad || localErrors.precioUnidad)
-              }
-              helperText={
-                touched.precioUnidad || triedSubmit
-                  ? errors.precioUnidad ||
-                    localErrors.precioUnidad
-                  : ''
-              }
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    $
-                  </InputAdornment>
-                ),
-                inputProps: { 
-                  min: 1,
-                  step: 1,
-                  onInput: (e) => {
-                    // Solo permitir números enteros positivos
-                    if (e.target.value.includes('.') || e.target.value.includes('-')) {
-                      e.target.value = e.target.value.replace(/[.-]/g, '');
-                    }
-                  }
-                },
-              }}
-              type="number"
-              autoComplete="off"
-            />
-          )}
         </Box>
       </Box>
     </Box>
