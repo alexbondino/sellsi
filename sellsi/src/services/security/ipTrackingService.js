@@ -39,6 +39,11 @@ export const updateUserIP = async (userId, sessionInfo = null) => {
     const data = await response.json();
 
     if (!response.ok) {
+      // Si la función Edge no existe (404), manejar silenciosamente
+      if (response.status === 404) {
+        console.warn('IP tracking function not deployed, skipping...');
+        return { success: true, skipped: true };
+      }
       throw new Error(data.error || 'Error actualizando IP');
     }
 
@@ -50,9 +55,11 @@ export const updateUserIP = async (userId, sessionInfo = null) => {
     };
   } catch (error) {
     console.error('Error en updateUserIP:', error);
+    // En lugar de fallar, devolver success: true para no afectar el flujo principal
     return { 
-      success: false, 
-      error: error.message 
+      success: true, 
+      error: error.message,
+      skipped: true
     };
   }
 };

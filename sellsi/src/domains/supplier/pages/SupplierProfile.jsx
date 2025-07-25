@@ -29,6 +29,7 @@ const SupplierProfile = ({ onProfileUpdated }) => {
       // Mapear campos de BD a Frontend según ProfileBack.md
       const mappedProfile = {
         ...data,
+        user_id: user.id, // AGREGAR: user_id del auth
         email: user.email, // Email del auth
         phone: data.phone_nbr, // phone_nbr → phone
         full_name: data.user_nm, // user_nm → full_name  

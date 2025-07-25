@@ -41,7 +41,7 @@ const SupplierProfile = React.lazy(() =>
   import('../../domains/supplier/pages/SupplierProfile')
 );
 const BuyerProfile = React.lazy(() =>
-  import('../../domains/profile/pages/Profile')
+  import('../../domains/buyer/pages/BuyerProfile')
 );
 
 // 📦 RUTAS SECUNDARIAS - LAZY LOADING

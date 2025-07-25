@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Box, CircularProgress, Typography } from '@mui/material';
-import Profile from '../profile/Profile';
-import { supabase } from '../../services/supabase';
-import { getUserProfile, updateUserProfile, uploadProfileImage, deleteAllUserImages, repairUserImageUrl, forceFixImageUrl } from '../../services/user';
+import Profile from '../../profile/pages/Profile';
+import { supabase } from '../../../services/supabase';
+import { getUserProfile, updateUserProfile, uploadProfileImage, deleteAllUserImages, repairUserImageUrl, forceFixImageUrl } from '../../../services/user';
 
 const BuyerProfile = ({ onProfileUpdated }) => {
   const [userProfile, setUserProfile] = useState(null);
@@ -28,6 +28,7 @@ const BuyerProfile = ({ onProfileUpdated }) => {
       // Mapear campos de BD a Frontend según ProfileBack.md
       const mappedProfile = {
         ...data,
+        user_id: user.id, // AGREGAR: user_id del auth
         email: user.email, // Email del auth
         phone: data.phone_nbr, // phone_nbr → phone
         full_name: data.user_nm, // user_nm → full_name  

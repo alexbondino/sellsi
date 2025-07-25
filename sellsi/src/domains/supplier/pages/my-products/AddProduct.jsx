@@ -27,7 +27,6 @@ import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 
 // Components
 import { PriceTiers } from '../../../../shared/components/forms/PriceTiers';
-import { PRICING_TYPES } from '../../constants/productValidationConstants';
 
 // Error Boundaries
 import { SupplierErrorBoundary, ProductFormErrorBoundary } from '../../components/ErrorBoundary';
@@ -156,7 +155,7 @@ const AddProduct = () => {
     updateField(field, value);
     
     // Si se cambia la compra mínima y hay tramos, sincronizar con el Tramo 1
-    if (field === 'compraMinima' && formData.pricingType === PRICING_TYPES.TIER && formData.tramos.length > 0) {
+    if (field === 'compraMinima' && formData.pricingType === 'Por Tramos' && formData.tramos.length > 0) {
       const newTramos = [...formData.tramos];
       newTramos[0] = { ...newTramos[0], cantidad: value };
       updateField('tramos', newTramos);
@@ -573,7 +572,7 @@ const AddProduct = () => {
                   </Box>
 
                   {/* Configuración de Tramos de Precio (condicional) */}
-                  {formData.pricingType === PRICING_TYPES.TIER && (
+                  {formData.pricingType === 'Por Tramos' && (
                     <Box
                       className="full-width"
                       sx={{

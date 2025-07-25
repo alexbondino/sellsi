@@ -132,8 +132,15 @@ const Profile = ({ userProfile, onUpdateProfile }) => {
       await onUpdateProfile(dataToUpdate);
       updateInitialData(); // Actualizar datos iniciales en lugar de resetear
 
-      // Registrar IP del usuario al actualizar perfil
-      await trackUserAction('profile_updated')
+      // Registrar IP del usuario al actualizar perfil (solo si tenemos perfil cargado)
+      if (loadedProfile?.user_id) {
+        try {
+          await trackUserAction(loadedProfile.user_id, 'profile_updated');
+        } catch (trackError) {
+          // Error silencioso para no afectar la experiencia del usuario
+          console.warn('Error tracking user action:', trackError);
+        }
+      }
 
       // Limpiar imagen pendiente después de guardar exitosamente
       clearPendingImage();

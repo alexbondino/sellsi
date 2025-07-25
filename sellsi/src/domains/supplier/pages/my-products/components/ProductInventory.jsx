@@ -101,52 +101,7 @@ const ProductInventory = ({
           />
         </Box>
 
-        {/* Segunda fila: Precio de Venta */}
-        <Box>
-          <TextField
-            sx={{ width: '73.51%' }}
-            label="Precio de Venta:"
-            placeholder="Campo de entrada"
-            value={formData.precioUnidad}
-            onChange={onInputChange('precioUnidad')}
-            onBlur={() => onFieldBlur('precioUnidad')}
-            disabled={formData.pricingType === 'Por Tramo'}
-            error={
-              formData.pricingType === 'Por Unidad' &&
-              !!(touched.precioUnidad || triedSubmit) &&
-              !!(errors.precioUnidad || localErrors.precioUnidad)
-            }
-            helperText={
-              formData.pricingType === 'Por Unidad'
-                ? touched.precioUnidad || triedSubmit
-                  ? errors.precioUnidad ||
-                    localErrors.precioUnidad
-                  : ''
-                : ''
-            }
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  $
-                </InputAdornment>
-              ),
-              inputProps: { 
-                min: 1,
-                step: 1,
-                onInput: (e) => {
-                  // Solo permitir números enteros positivos
-                  if (e.target.value.includes('.') || e.target.value.includes('-')) {
-                    e.target.value = e.target.value.replace(/[.-]/g, '');
-                  }
-                }
-              },
-            }}
-            type="number"
-            autoComplete="off"
-          />
-        </Box>
-
-        {/* Tercera fila: Configuración de Precios y ToggleButtonGroup */}
+        {/* Segunda fila: Configuración de Precios y ToggleButtonGroup */}
         <Box>
           <Typography
             variant="h6"
@@ -175,10 +130,10 @@ const ProductInventory = ({
               Por Unidad
             </ToggleButton>
             <ToggleButton
-              value="Por Tramo"
+              value="Por Tramos"
               sx={{ textTransform: 'none' }}
             >
-              Por Tramo
+              Por Tramos
             </ToggleButton>
             <Tooltip
               title={
@@ -219,6 +174,47 @@ const ProductInventory = ({
               </IconButton>
             </Tooltip>
           </ToggleButtonGroup>
+
+          {/* Campo Precio de Venta (condicional - misma ubicación que los tramos) */}
+          {formData.pricingType === 'Por Unidad' && (
+            <TextField
+              sx={{ width: '73.51%' }}
+              label="Precio de Venta:"
+              placeholder="Campo de entrada"
+              value={formData.precioUnidad}
+              onChange={onInputChange('precioUnidad')}
+              onBlur={() => onFieldBlur('precioUnidad')}
+              error={
+                !!(touched.precioUnidad || triedSubmit) &&
+                !!(errors.precioUnidad || localErrors.precioUnidad)
+              }
+              helperText={
+                touched.precioUnidad || triedSubmit
+                  ? errors.precioUnidad ||
+                    localErrors.precioUnidad
+                  : ''
+              }
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    $
+                  </InputAdornment>
+                ),
+                inputProps: { 
+                  min: 1,
+                  step: 1,
+                  onInput: (e) => {
+                    // Solo permitir números enteros positivos
+                    if (e.target.value.includes('.') || e.target.value.includes('-')) {
+                      e.target.value = e.target.value.replace(/[.-]/g, '');
+                    }
+                  }
+                },
+              }}
+              type="number"
+              autoComplete="off"
+            />
+          )}
         </Box>
       </Box>
     </Box>
