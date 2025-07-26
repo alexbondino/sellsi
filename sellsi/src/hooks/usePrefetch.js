@@ -22,18 +22,18 @@ import { useLocation } from 'react-router-dom';
 // MAPEO DE RUTAS Y SUS COMPONENTES LAZY
 // ============================================================================
 const ROUTE_COMPONENTS = {
-  '/marketplace': () => import('../features/marketplace/Marketplace'),
-  '/buyer/marketplace': () => import('../features/buyer/MarketplaceBuyer'),
-  '/buyer/cart': () => import('../features/buyer/BuyerCart'),
-  '/buyer/orders': () => import('../features/buyer/BuyerOrders'),
-  '/buyer/performance': () => import('../features/buyer/BuyerPerformance'),
-  '/supplier/home': () => import('../features/supplier/home/ProviderHome'),
+  '/marketplace': () => import('../domains/marketplace/pages/Marketplace'),
+  '/buyer/marketplace': () => import('../domains/buyer/pages/MarketplaceBuyer'),
+  '/buyer/cart': () => import('../domains/buyer/pages/BuyerCart'),
+  '/buyer/orders': () => import('../domains/buyer/pages/BuyerOrders'),
+  '/buyer/performance': () => import('../domains/buyer/pages/BuyerPerformance'),
+  '/supplier/home': () => import('../domains/supplier/pages/home/ProviderHome'),
   '/supplier/myproducts': () =>
-    import('../features/supplier/my-products/MyProducts'),
+    import('../domains/supplier/pages/my-products/MyProducts'),
   '/supplier/addproduct': () =>
-    import('../features/supplier/my-products/AddProduct'),
-  '/login': () => import('../features/login/Login'),
-  '/crear-cuenta': () => import('../features/register/Register'),
+    import('../domains/supplier/pages/my-products/AddProduct'),
+  '/login': () => import('../domains/auth').then(module => module.Login),
+  '/crear-cuenta': () => import('../domains/auth').then(module => module.Register),
 };
 
 // ============================================================================

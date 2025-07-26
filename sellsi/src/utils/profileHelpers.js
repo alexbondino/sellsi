@@ -70,7 +70,7 @@ export const mapUserProfileToFormData = (userProfile) => {
     billingRegion: userProfile.billing_region || '',
     billingComuna: userProfile.billing_comuna || userProfile.billing_commune || '',
   };
-  console.log('[mapUserProfileToFormData] shipping_commune:', userProfile.shipping_commune, '→ shippingComuna:', mapped.shippingComuna);
+
   return mapped;
 };
 

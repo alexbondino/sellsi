@@ -6,10 +6,8 @@ import { regiones } from './chileData';
  * @returns {Array} Array de regiones en formato de formulario
  */
 export const convertDbRegionsToForm = (regions = []) => {
-  console.log('[convertDbRegionsToForm] - Input regions:', regions);
   
   if (!regions || regions.length === 0) {
-    console.log('[convertDbRegionsToForm] - No hay regiones, retornando array vacío');
     return [];
   }
   
@@ -24,11 +22,9 @@ export const convertDbRegionsToForm = (regions = []) => {
       regionLabel: regionData ? regionData.label : region.region,
     };
     
-    console.log('[convertDbRegionsToForm] - Convirtiendo región:', region, '-> resultado:', converted);
     return converted;
   });
   
-  console.log('[convertDbRegionsToForm] - Resultado final:', result);
   return result;
 };
 
@@ -38,10 +34,10 @@ export const convertDbRegionsToForm = (regions = []) => {
  * @returns {Array} Array de regiones en formato de base de datos
  */
 export const convertFormRegionsToDb = (regions = []) => {
-  console.log('[convertFormRegionsToDb] - Input regions:', regions);
+
   
   if (!regions || regions.length === 0) {
-    console.log('[convertFormRegionsToDb] - No hay regiones, retornando array vacío');
+
     return [];
   }
   
@@ -52,11 +48,11 @@ export const convertFormRegionsToDb = (regions = []) => {
       delivery_days: parseInt(region.maxDeliveryDays || region.delivery_days || 0),
     };
     
-    console.log('[convertFormRegionsToDb] - Convirtiendo región:', region, '-> resultado:', converted);
+
     return converted;
   });
   
-  console.log('[convertFormRegionsToDb] - Resultado final:', result);
+
   return result;
 };
 
@@ -66,10 +62,10 @@ export const convertFormRegionsToDb = (regions = []) => {
  * @returns {Array} Array de regiones en formato para display
  */
 export const convertModalRegionsToDisplay = (regions = []) => {
-  console.log('[convertModalRegionsToDisplay] - Input regions:', regions);
+
   
   if (!regions || regions.length === 0) {
-    console.log('[convertModalRegionsToDisplay] - No hay regiones, retornando array vacío');
+
     return [];
   }
   
@@ -84,10 +80,10 @@ export const convertModalRegionsToDisplay = (regions = []) => {
       regionLabel: regionData ? regionData.label : region.region,
     };
     
-    console.log('[convertModalRegionsToDisplay] - Convirtiendo región:', region, '-> resultado:', converted);
+
     return converted;
   });
   
-  console.log('[convertModalRegionsToDisplay] - Resultado final:', result);
+
   return result;
 };

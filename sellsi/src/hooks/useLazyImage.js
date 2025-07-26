@@ -8,6 +8,7 @@
  */
 
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { globalObserverPool } from '../utils/observerPoolManager';
 
 export const useLazyImage = (src, options = {}) => {
   const {
@@ -49,30 +50,23 @@ export const useLazyImage = (src, options = {}) => {
   }, [src, placeholder, enableProgressiveLoading])
 
   useEffect(() => {
-    if (!src) return
+    if (!src || !imgRef.current) return;
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const [entry] = entries
-        if (entry.isIntersecting && !isLoaded && !isLoading) {
-          setIsLoading(true)
-          loadImage()
-        }
-      },
-      { threshold, rootMargin }
-    )
-
-    const currentRef = imgRef.current
-    if (currentRef) {
-      observer.observe(currentRef)
-    }
-
-    return () => {
-      if (currentRef) {
-        observer.unobserve(currentRef)
+    const handleIntersection = (entry) => {
+      if (entry.isIntersecting && !isLoaded && !isLoading) {
+        setIsLoading(true);
+        loadImage();
       }
-    }
-  }, [src, threshold, rootMargin, loadImage]) // Agregar loadImage como dependencia
+    };
+
+    const unobserveFunc = globalObserverPool.observe(
+      imgRef.current,
+      handleIntersection,
+      { threshold, rootMargin }
+    );
+
+    return unobserveFunc;
+  }, [src, threshold, rootMargin, loadImage, isLoaded, isLoading]);
 
   return {
     imageSrc,
