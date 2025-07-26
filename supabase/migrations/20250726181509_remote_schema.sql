@@ -6,6 +6,7 @@ CREATE EXTENSION IF NOT EXISTS "pgcrypto" WITH SCHEMA "extensions";
 CREATE EXTENSION IF NOT EXISTS "supabase_vault" WITH SCHEMA "vault";
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp" WITH SCHEMA "extensions";
 
+-- Fix for ban_user
 DROP FUNCTION IF EXISTS "public"."ban_user"(uuid, text);
 CREATE FUNCTION "public"."ban_user"("target_user_id" "uuid", "admin_reason" "text") RETURNS boolean
     LANGUAGE "plpgsql"
@@ -21,6 +22,7 @@ CREATE FUNCTION "public"."ban_user"("target_user_id" "uuid", "admin_reason" "tex
 END;$$;
 ALTER FUNCTION "public"."ban_user"("target_user_id" "uuid", "admin_reason" "text") OWNER TO "postgres";
 
+-- Fix for clean_expired_admin_sessions
 DROP FUNCTION IF EXISTS "public"."clean_expired_admin_sessions"();
 CREATE FUNCTION "public"."clean_expired_admin_sessions"() RETURNS "void"
     LANGUAGE "plpgsql"
@@ -31,6 +33,7 @@ CREATE FUNCTION "public"."clean_expired_admin_sessions"() RETURNS "void"
 END;$$;
 ALTER FUNCTION "public"."clean_expired_admin_sessions"() OWNER TO "postgres";
 
+-- Fix for get_banned_users
 DROP FUNCTION IF EXISTS "public"."get_banned_users"();
 CREATE FUNCTION "public"."get_banned_users"() RETURNS TABLE("user_id" "uuid", "user_name" "text", "email" "text", "banned_at" timestamp with time zone, "banned_reason" "text", "days_banned" integer)
     LANGUAGE "plpgsql"
@@ -52,6 +55,7 @@ END;
 $$;
 ALTER FUNCTION "public"."get_banned_users"() OWNER TO "postgres";
 
+-- Fix for get_user_ban_info
 DROP FUNCTION IF EXISTS "public"."get_user_ban_info"(uuid);
 CREATE FUNCTION "public"."get_user_ban_info"("target_user_id" "uuid") RETURNS TABLE("user_id" "uuid", "user_name" "text", "email" "text", "is_banned" boolean, "banned_at" timestamp with time zone, "banned_reason" "text", "days_banned" integer)
     LANGUAGE "plpgsql"
@@ -77,6 +81,8 @@ END;
 $$;
 ALTER FUNCTION "public"."get_user_ban_info"("target_user_id" "uuid") OWNER TO "postgres";
 
+-- Fix for handle_new_user (and its trigger)
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 DROP FUNCTION IF EXISTS "public"."handle_new_user"();
 CREATE FUNCTION "public"."handle_new_user"() RETURNS "trigger"
     LANGUAGE "plpgsql"
@@ -89,7 +95,10 @@ BEGIN
   RETURN NEW;
 END;$$;
 ALTER FUNCTION "public"."handle_new_user"() OWNER TO "postgres";
+-- Recreate the trigger for handle_new_user at the end of the functions section
 
+-- Fix for handle_user_update (and its trigger)
+DROP TRIGGER IF EXISTS on_auth_user_updated ON auth.users;
 DROP FUNCTION IF EXISTS "public"."handle_user_update"();
 CREATE FUNCTION "public"."handle_user_update"() RETURNS "trigger"
     LANGUAGE "plpgsql"
@@ -109,7 +118,9 @@ BEGIN
   RETURN NEW;
 END;$$;
 ALTER FUNCTION "public"."handle_user_update"() OWNER TO "postgres";
+-- Recreate the trigger for handle_user_update at the end of the functions section
 
+-- Fix for unban_user
 DROP FUNCTION IF EXISTS "public"."unban_user"(uuid, text);
 CREATE FUNCTION "public"."unban_user"("target_user_id" "uuid", "admin_reason" "text") RETURNS boolean
     LANGUAGE "plpgsql"
@@ -125,6 +136,7 @@ CREATE FUNCTION "public"."unban_user"("target_user_id" "uuid", "admin_reason" "t
 END;$$;
 ALTER FUNCTION "public"."unban_user"("target_user_id" "uuid", "admin_reason" "text") OWNER TO "postgres";
 
+-- Fix for update_updated_at_column
 DROP FUNCTION IF EXISTS "public"."update_updated_at_column"();
 CREATE FUNCTION "public"."update_updated_at_column"() RETURNS "trigger"
     LANGUAGE "plpgsql"
@@ -133,6 +145,16 @@ CREATE FUNCTION "public"."update_updated_at_column"() RETURNS "trigger"
   RETURN NEW;
 END;$$;
 ALTER FUNCTION "public"."update_updated_at_column"() OWNER TO "postgres";
+
+-- Recreate triggers that were dropped earlier
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+
+CREATE TRIGGER on_auth_user_updated
+  AFTER UPDATE ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION public.handle_user_update();
+
 
 SET default_tablespace = '';
 SET default_table_access_method = "heap";
