@@ -37,7 +37,8 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp" WITH SCHEMA "extensions";
 
 
 
-CREATE OR REPLACE FUNCTION "public"."ban_user"("target_user_id" "uuid", "admin_reason" "text") RETURNS boolean
+DROP FUNCTION IF EXISTS "public"."ban_user"(uuid, text);
+CREATE FUNCTION "public"."ban_user"("target_user_id" "uuid", "admin_reason" "text") RETURNS boolean
     LANGUAGE "plpgsql"
     AS $$BEGIN
     UPDATE public.users 
