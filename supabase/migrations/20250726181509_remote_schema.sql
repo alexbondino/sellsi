@@ -128,7 +128,7 @@ ALTER TABLE public.product_delivery_regions DROP CONSTRAINT IF EXISTS product_de
 ALTER TABLE public.product_delivery_regions ADD CONSTRAINT product_delivery_regions_product_id_region_key UNIQUE (product_id, region);
 ALTER TABLE public.product_quantity_ranges DROP CONSTRAINT IF EXISTS product_quantity_ranges_pkey CASCADE;
 ALTER TABLE public.product_quantity_ranges ADD CONSTRAINT product_quantity_ranges_pkey PRIMARY KEY (product_qty_id);
-ALTER TABLE public.products DROP CONSTRAINT IF EXISTS products_pkey CASCADE CASCADE;
+ALTER TABLE public.products DROP CONSTRAINT IF EXISTS products_pkey CASCADE;
 ALTER TABLE public.products ADD CONSTRAINT products_pkey PRIMARY KEY (productid);
 ALTER TABLE public.request_products DROP CONSTRAINT IF EXISTS request_products_pkey CASCADE;
 ALTER TABLE public.request_products ADD CONSTRAINT request_products_pkey PRIMARY KEY (request_product_id);
