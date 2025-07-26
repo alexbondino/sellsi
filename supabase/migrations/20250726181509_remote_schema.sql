@@ -166,8 +166,8 @@ ALTER TABLE ONLY public.users ADD CONSTRAINT users_user_id_fkey FOREIGN KEY (use
 
 -- PASO 8: Recrear triggers
 CREATE TRIGGER update_control_panel_users_updated_at BEFORE UPDATE ON public.control_panel_users FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
-CREATE TRIGGER on_auth_user_created AFTER INSERT ON auth.users FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
-CREATE TRIGGER on_auth_user_updated AFTER UPDATE ON auth.users FOR EACH ROW EXECUTE FUNCTION public.handle_user_update();
+--CREATE TRIGGER on_auth_user_created AFTER INSERT ON auth.users FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+--CREATE TRIGGER on_auth_user_updated AFTER UPDATE ON auth.users FOR EACH ROW EXECUTE FUNCTION public.handle_user_update();
 
 -- PASO 9: Configurar secuencias y permisos
 ALTER SEQUENCE IF EXISTS public.ejemplo_id_seq OWNED BY public.ejemplo.id;
