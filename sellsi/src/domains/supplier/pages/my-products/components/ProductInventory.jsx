@@ -86,13 +86,13 @@ const ProductInventory = ({
           >
             <ToggleButton
               value="Unidad"
-              sx={{ textTransform: 'none', width: '110px' }}
+              sx={{ textTransform: 'none', width: '103px' }}
             >
               Unidad
             </ToggleButton>
             <ToggleButton
               value="Volumen"
-              sx={{ textTransform: 'none', width: '110px' }}
+              sx={{ textTransform: 'none', width: '103px' }}
             >
               Volumen
             </ToggleButton>

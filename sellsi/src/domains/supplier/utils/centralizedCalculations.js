@@ -20,14 +20,14 @@ import { useMemo } from 'react';
 
 /**
  * Calcula el valor mínimo de ingresos (peor escenario) para tramos de precio
- * @param {Array} tramos - Array de tramos con cantidad y precio
+ * @param {Array} tramos - Array de tramos con min, max y precio
  * @param {number} stock - Stock disponible
  * @returns {number} Ingreso mínimo
  */
 const calculateMinimumIncome = (tramos, stock) => {
-  // Ordenar tramos de mayor a menor cantidad (más barato a más caro)
+  // Ordenar tramos de mayor a menor cantidad mínima (más conservador)
   const sortedTramos = [...tramos].sort(
-    (a, b) => parseInt(b.cantidad) - parseInt(a.cantidad)
+    (a, b) => parseInt(b.min) - parseInt(a.min)
   );
 
   let remainingStock = stock;
@@ -36,15 +36,17 @@ const calculateMinimumIncome = (tramos, stock) => {
   for (const tramo of sortedTramos) {
     if (remainingStock <= 0) break;
 
-    const tramoCantidad = parseInt(tramo.cantidad);
-    const tramoPrecio = parseFloat(tramo.precio);
+    const tramoMin = parseInt(tramo.min) || 0;
+    const tramoPrecio = parseFloat(tramo.precio) || 0;
 
-    // Usar división entera
-    const tramosCompletos = Math.floor(remainingStock / tramoCantidad);
+    if (tramoMin > 0 && tramoPrecio > 0) {
+      // Usar división entera para calcular cuántos tramos completos se pueden vender
+      const tramosCompletos = Math.floor(remainingStock / tramoMin);
 
-    if (tramosCompletos > 0) {
-      totalIncome += tramosCompletos * tramoPrecio;
-      remainingStock -= tramosCompletos * tramoCantidad;
+      if (tramosCompletos > 0) {
+        totalIncome += tramosCompletos * tramoMin * tramoPrecio;
+        remainingStock -= tramosCompletos * tramoMin;
+      }
     }
   }
 
@@ -53,23 +55,28 @@ const calculateMinimumIncome = (tramos, stock) => {
 
 /**
  * Calcula el valor máximo de ingresos (mejor escenario) para tramos de precio
- * @param {Array} tramos - Array de tramos con cantidad y precio
+ * @param {Array} tramos - Array de tramos con min, max y precio
  * @param {number} stock - Stock disponible
  * @returns {number} Ingreso máximo
  */
 const calculateMaximumIncome = (tramos, stock) => {
-  // Encontrar el tramo con menor cantidad (más caro)
-  const smallestTramo = tramos.reduce((min, current) =>
-    parseInt(current.cantidad) < parseInt(min.cantidad) ? current : min
-  );
+  // Encontrar el tramo con menor cantidad mínima (más optimista)
+  const smallestTramo = tramos.reduce((min, current) => {
+    const currentMin = parseInt(current.min) || Infinity;
+    const minMin = parseInt(min.min) || Infinity;
+    return currentMin < minMin ? current : min;
+  });
 
-  const tramoCantidad = parseInt(smallestTramo.cantidad);
-  const tramoPrecio = parseFloat(smallestTramo.precio);
+  const tramoMin = parseInt(smallestTramo.min) || 0;
+  const tramoPrecio = parseFloat(smallestTramo.precio) || 0;
 
-  // Usar división entera
-  const tramosCompletos = Math.floor(stock / tramoCantidad);
+  if (tramoMin > 0 && tramoPrecio > 0) {
+    // Usar división entera para calcular cuántos tramos completos se pueden vender
+    const tramosCompletos = Math.floor(stock / tramoMin);
+    return tramosCompletos * tramoMin * tramoPrecio;
+  }
 
-  return tramosCompletos * tramoPrecio;
+  return 0;
 };
 
 // ============================================================================
@@ -103,7 +110,7 @@ export const calculateProductEarnings = (formData) => {
   } else if (formData.pricingType === 'Volumen' && formData.tramos?.length > 0) {
     // Cálculo de rangos para precios por tramo
     const validTramos = formData.tramos.filter(
-      t => t.cantidad && t.precio && !isNaN(Number(t.cantidad)) && !isNaN(Number(t.precio))
+      t => t.min && t.precio && !isNaN(Number(t.min)) && !isNaN(Number(t.precio))
     );
 
     if (validTramos.length > 0 && formData.stock) {
@@ -180,8 +187,8 @@ export const calculateInventoryValue = (products, scenario = 'conservative') => 
       const validTramos = product.priceTiers
         .filter(t => t.min_quantity && t.price && !isNaN(Number(t.min_quantity)) && !isNaN(Number(t.price)))
         .map(t => ({
-          cantidad: t.min_quantity,  // Mapear min_quantity -> cantidad
-          precio: t.price            // Mapear price -> precio
+          min: t.min_quantity,      // Mapear min_quantity -> min
+          precio: t.price           // Mapear price -> precio
         }));
       
       if (validTramos.length === 0) {

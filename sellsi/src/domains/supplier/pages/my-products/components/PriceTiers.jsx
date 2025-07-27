@@ -128,6 +128,22 @@ const PriceTiers = ({
     }
     return false;
   };
+  
+  // Función para detectar si un tramo tiene precio incorrecto (no descendente)
+  const getPriceFieldError = (tramo, index) => {
+    if (index === 0) return false; // El primer tramo no puede tener error de precio descendente
+    
+    const currentPrice = parseFloat(tramo.precio) || 0;
+    const previousPrice = parseFloat(tramos[index - 1]?.precio) || 0;
+    
+    // Error si el precio actual es mayor o igual al anterior
+    return currentPrice > 0 && previousPrice > 0 && currentPrice >= previousPrice;
+  };
+  
+  // Función para determinar si toda la card debe tener borde rojo por error de precio
+  const getCardBorderError = (tramo, index) => {
+    return getPriceFieldError(tramo, index);
+  };
   return (
     <Box>
       <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 600, mb: 1}}>
@@ -149,11 +165,12 @@ const PriceTiers = ({
             sx={{
               p: 2,
               border: '1px solid',
-              borderColor: 'divider',
+              borderColor: getCardBorderError(tramo, index) ? 'error.main' : 'divider',
               borderRadius: 2,
               height: '100%',
               width: '180px',
               minHeight: '192px',
+              backgroundColor: getCardBorderError(tramo, index) ? 'error.50' : 'inherit',
             }}
           >
             <Box
@@ -279,6 +296,12 @@ const PriceTiers = ({
                 type="number"
                 size="small"
                 autoComplete="off"
+                error={getPriceFieldError(tramo, index)}
+                helperText={
+                  getPriceFieldError(tramo, index) 
+                    ? "los precios deben ser descendentes"
+                    : ""
+                }
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">$</InputAdornment>
@@ -305,6 +328,11 @@ const PriceTiers = ({
                     '-webkit-appearance': 'none',
                     margin: 0,
                   },
+                  ...(getPriceFieldError(tramo, index) && {
+                    '& .MuiOutlinedInput-root': {
+                      backgroundColor: 'error.50',
+                    }
+                  })
                 }}
               />
             </Stack>
@@ -354,56 +382,37 @@ const PriceTiers = ({
             ¿Cómo funcionan los rangos?
           </Typography>
           {tramos.map((tramo, idx, arr) => {
-            const min = tramo.cantidad;
-            const nextTramo = arr[idx + 1];
-            const max =
-              nextTramo && nextTramo.cantidad ? nextTramo.cantidad - 1 : null;
+            const min = tramo.min;
+            const max = shouldShowStockInsteadOfMaxInput(idx) ? stockDisponible : tramo.max;
             const precio = tramo.precio;
-            // Si el siguiente tramo existe pero no tiene cantidad, mostrar solo la línea del tramo actual
-            if (idx < arr.length - 1) {
-              if (nextTramo && !nextTramo.cantidad) {
-                return (
-                  <Typography
-                    key={idx}
-                    variant="caption"
-                    color="text.secondary"
-                    display="block"
-                  >
-                    Rango {idx + 1}: si el cliente compra entre <b>{min || `Cantidad a definir del Rango ${idx + 1}`}</b> y{' '}
-                    <b>Cantidad a definir del Rango {idx + 2}</b> unidades, paga{' '}
-                    <b>${precio}</b> por unidad.
-                  </Typography>
-                );
-              } else {
-                return (
-                  <Typography
-                    key={idx}
-                    variant="caption"
-                    color="text.secondary"
-                    display="block"
-                  >
-                    Rango {idx + 1}: si el cliente compra entre <b>{min}</b> y{' '}
-                    <b>{max}</b> unidades, paga <b>${precio}</b> por unidad.
-                  </Typography>
-                );
-              }
+            
+            // Si es el último rango
+            if (idx === arr.length - 1) {
+              return (
+                <Typography
+                  key={idx}
+                  variant="caption"
+                  color="text.secondary"
+                  display="block"
+                >
+                  Rango {idx + 1}: si el cliente compra <b>{min || `Cantidad mínima a definir`}</b> unidades o más, paga{' '}
+                  <b>${precio || 'Precio a definir'}</b> por unidad.
+                </Typography>
+              );
             } else {
-              // Solo mostrar el último tramo si su cantidad está definida
-              if (tramo.cantidad) {
-                return (
-                  <Typography
-                    key={idx}
-                    variant="caption"
-                    color="text.secondary"
-                    display="block"
-                  >
-                    Rango {idx + 1}: si compra <b>{min}</b> unidades o más, paga{' '}
-                    <b>${precio}</b> por unidad.
-                  </Typography>
-                );
-              } else {
-                return null;
-              }
+              // Rangos intermedios
+              return (
+                <Typography
+                  key={idx}
+                  variant="caption"
+                  color="text.secondary"
+                  display="block"
+                >
+                  Rango {idx + 1}: si el cliente compra entre <b>{min || `Cantidad mínima a definir`}</b> y{' '}
+                  <b>{max || `Cantidad máxima a definir`}</b> unidades, paga{' '}
+                  <b>${precio || 'Precio a definir'}</b> por unidad.
+                </Typography>
+              );
             }
           })}
         </Box>

@@ -67,10 +67,11 @@ const useProductPriceTiers = create((set, get) => ({
       }
 
       // Preparar tramos para insertar
-      const tiersToInsert = validationResult.data.map((t) => ({
+      const tiersToInsert = validationResult.data.map((t, index, array) => ({
         product_id: productId,
-        min_quantity: Number(t.cantidad),
-        max_quantity: t.maxCantidad ? Number(t.maxCantidad) : null,
+        min_quantity: Number(t.min),
+        // El último rango siempre tiene max_quantity = null (sin límite superior, limitado por stock)
+        max_quantity: index === array.length - 1 ? null : (t.max ? Number(t.max) : null),
         price: Number(t.precio),
       }))
 

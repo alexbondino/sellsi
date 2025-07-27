@@ -144,22 +144,13 @@ export class ProductValidator {
    */
   static _validateTierPricing(formData, errors) {
     const validTramos = formData.tramos?.filter(
-      t => t.cantidad !== '' && t.precio !== '' && 
-           !isNaN(Number(t.cantidad)) && !isNaN(Number(t.precio))
+      t => t.min !== '' && t.precio !== '' && 
+           !isNaN(Number(t.min)) && !isNaN(Number(t.precio))
     ) || []
 
     // Verificar cantidad mínima de tramos
     if (validTramos.length < TIER_VALIDATION.MIN_TIERS) {
       errors.tramos = ERROR_MESSAGES.INSUFFICIENT_TIERS
-      return
-    }
-
-    // Validar que el primer tramo coincida con la compra mínima
-    const compraMinima = parseInt(formData.compraMinima || 0)
-    const firstTramo = formData.tramos?.[TIER_VALIDATION.FIRST_TIER_INDEX]
-    
-    if (!firstTramo?.cantidad || parseInt(firstTramo.cantidad) !== compraMinima) {
-      errors.tramos = ERROR_MESSAGES.FIRST_TIER_MISMATCH
       return
     }
 
@@ -172,10 +163,10 @@ export class ProductValidator {
       return
     }
 
-    // Validar que las cantidades no excedan el stock
+    // Validar que las cantidades mínimas no excedan el stock
     const stockNumber = parseInt(formData.stock || 0)
     const tramosExcedStock = validTramos.filter(
-      tramo => parseInt(tramo.cantidad) > stockNumber
+      tramo => parseInt(tramo.min) > stockNumber
     )
     if (tramosExcedStock.length > 0) {
       errors.tramos = ERROR_MESSAGES.TIER_QUANTITY_EXCEEDS_STOCK
@@ -193,7 +184,7 @@ export class ProductValidator {
 
     // Validar que las cantidades sean enteros positivos
     const tramosConCantidadInvalida = validTramos.filter(
-      t => !Number.isInteger(parseFloat(t.cantidad)) || parseInt(t.cantidad) < 1
+      t => !Number.isInteger(parseFloat(t.min)) || parseInt(t.min) < 1
     )
     if (tramosConCantidadInvalida.length > 0) {
       errors.tramos = ERROR_MESSAGES.TIER_QUANTITIES_INVALID
@@ -213,8 +204,8 @@ export class ProductValidator {
     
     // Validar cantidades ascendentes
     for (let i = 1; i < validTramos.length; i++) {
-      const currentQuantity = parseInt(validTramos[i].cantidad)
-      const previousQuantity = parseInt(validTramos[i - 1].cantidad)
+      const currentQuantity = parseInt(validTramos[i].min)
+      const previousQuantity = parseInt(validTramos[i - 1].min)
       
       if (currentQuantity <= previousQuantity) {
         errors.tramos = ERROR_MESSAGES.TIER_QUANTITIES_NOT_ASCENDING

@@ -555,11 +555,12 @@ const useSupplierProductsBase = create((set, get) => ({
 
       // PASO 3: Preparar y validar tramos para insertar
       const tiersToInsert = priceTiers
-        .filter((t) => t.cantidad && t.precio && Number(t.cantidad) > 0 && Number(t.precio) > 0)
-        .map((t) => ({
+        .filter((t) => t.min && t.precio && Number(t.min) > 0 && Number(t.precio) > 0)
+        .map((t, index, array) => ({
           product_id: productId,
-          min_quantity: Number(t.cantidad),
-          max_quantity: t.maxCantidad ? Number(t.maxCantidad) : null,
+          min_quantity: Number(t.min),
+          // El último rango siempre tiene max_quantity = null (sin límite superior, limitado por stock)
+          max_quantity: index === array.length - 1 ? null : (t.max ? Number(t.max) : null),
           price: Number(t.precio),
         }))
 

@@ -200,9 +200,10 @@ export const useProductForm = (productId = null) => {
       
       // Filtrar y mapear tramos válidos
       const validTiers = formData.tramos
-        .filter((t) => t.cantidad && t.precio)
+        .filter((t) => t.min && t.precio)
         .map((t) => ({
-          cantidad: Math.min(parseInt(t.cantidad), QUANTITY_LIMITS.MAX_QUANTITY),
+          min: Math.min(parseInt(t.min), QUANTITY_LIMITS.MAX_QUANTITY),
+          max: t.max ? Math.min(parseInt(t.max), QUANTITY_LIMITS.MAX_QUANTITY) : null,
           precio: Math.min(parseFloat(t.precio), PRICE_LIMITS.MAX_PRICE),
         }))
       

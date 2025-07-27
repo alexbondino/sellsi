@@ -194,13 +194,6 @@ const AddProduct = () => {
     const value = event.target.value;
     updateField(field, value);
     
-    // Si se cambia la compra mínima y hay tramos, sincronizar con el Tramo 1
-    if (field === 'compraMinima' && formData.pricingType === 'Volumen' && formData.tramos.length > 0) {
-      const newTramos = [...formData.tramos];
-      newTramos[0] = { ...newTramos[0], cantidad: value };
-      updateField('tramos', newTramos);
-    }
-    
     // Lógica de validación por Stock Disponible (solo aplica para rangos 3, 4 y 5)
     if (field === 'stock' && formData.pricingType === 'Volumen' && formData.tramos.length >= 3) {
       const newStock = parseInt(value) || 0;
@@ -390,8 +383,8 @@ const AddProduct = () => {
         messages.push('🔢 Las cantidades de los tramos deben ser ascendentes (ej: 50, 100, 200)');
       } else if (tramoError.includes('descendentes') || tramoError.includes('compran más')) {
         messages.push('💰 Los precios deben ser descendentes: compran más, pagan menos por unidad');
-      } else if (tramoError.includes('Tramo 1') || tramoError.includes('Compra Mínima')) {
-        messages.push('📊 El primer tramo debe coincidir con la compra mínima');
+      } else if (tramoError.includes('Tramo')) {
+        messages.push('📊 Revisa la configuración de los tramos de precio');
       } else if (tramoError.includes('al menos')) {
         messages.push('📈 Debes configurar al menos 2 tramos de precios válidos');
       } else if (tramoError.includes('stock')) {
