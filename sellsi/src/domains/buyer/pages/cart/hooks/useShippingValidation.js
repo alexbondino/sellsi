@@ -7,7 +7,7 @@
  * y la región del usuario, implementando la lógica avanzada de validación.
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { getUserProfile } from '../../../../../services/user';
 
 /**
@@ -33,9 +33,9 @@ export const useShippingValidation = (cartItems = [], isAdvancedMode = false) =>
   const [incompatibleProducts, setIncompatibleProducts] = useState([]);
 
   /**
-   * Obtener nombre legible de la región
+   * Obtener nombre legible de la región - memoizado para evitar recreaciones
    */
-  const getUserRegionName = useCallback((regionValue) => {
+  const getUserRegionName = useMemo(() => {
     const regionMap = {
       'arica-parinacota': 'Arica y Parinacota',
       'tarapaca': 'Tarapacá',
@@ -54,15 +54,18 @@ export const useShippingValidation = (cartItems = [], isAdvancedMode = false) =>
       'aysen': 'Aysén',
       'magallanes': 'Magallanes'
     };
-    return regionMap[regionValue] || regionValue;
+    
+    return (regionValue) => regionMap[regionValue] || regionValue;
   }, []);
 
   /**
-   * Obtener información del perfil del usuario
+   * Obtener información del perfil del usuario - estable con useCallback
    */
   const fetchUserProfile = useCallback(async () => {
     try {
       setIsLoading(true);
+      setError(null);
+      
       const userId = localStorage.getItem('user_id');
       if (!userId) {
         setUserRegion(null);
@@ -70,6 +73,7 @@ export const useShippingValidation = (cartItems = [], isAdvancedMode = false) =>
       }
 
       const { data: profile, error: profileError } = await getUserProfile(userId);
+      
       if (profileError) {
         console.error('Error fetching user profile:', profileError);
         setError('Error al obtener información del perfil');
@@ -77,104 +81,93 @@ export const useShippingValidation = (cartItems = [], isAdvancedMode = false) =>
       }
 
       setUserRegion(profile?.shipping_region || null);
-      setError(null);
     } catch (err) {
       console.error('Error in fetchUserProfile:', err);
       setError('Error al obtener información del perfil');
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, []); // ✅ Array vacío - función estable
 
   /**
-   * Validar estado de despacho para un producto específico
-   * @param {Object} product - Producto a validar
-   * @param {string} userRegion - Región del usuario
-   * @returns {Object} Estado de validación del producto
+   * Validar estado de despacho para un producto específico - función pura memoizada
    */
-  const validateProductShipping = useCallback((product, userRegion) => {
-    // Si no hay región del usuario, no se puede validar
-    if (!userRegion) {
+  const validateProductShipping = useMemo(() => {
+    return (product, userRegion) => {
+      // Si no hay región del usuario, no se puede validar
+      if (!userRegion) {
+        return {
+          state: SHIPPING_STATES.NO_SHIPPING_INFO,
+          message: 'Configura tu región de envío en tu perfil',
+          canShip: false
+        };
+      }
+
+      // Obtener información de despacho del producto con múltiples fuentes
+      const shippingRegions = product.shippingRegions || 
+                            product.delivery_regions || 
+                            product.shipping_regions || 
+                            product.product_delivery_regions ||
+                            [];
+
+      // Estado: Sin información de despacho
+      if (!shippingRegions || shippingRegions.length === 0) {
+        return {
+          state: SHIPPING_STATES.NO_SHIPPING_INFO,
+          message: 'Este producto no cuenta con información de despacho. Por favor, contacta a Sellsi.',
+          canShip: false
+        };
+      }
+
+      // Buscar la región del usuario en las regiones del producto
+      const matchingRegion = shippingRegions.find(region => {
+        const regionValue = region.region || region.value;
+        return regionValue === userRegion;
+      });
+
+      // Estado: Compatible
+      if (matchingRegion) {
+        const days = matchingRegion.delivery_days || 
+                    matchingRegion.maxDeliveryDays || 
+                    matchingRegion.days || 
+                    'N/A';
+        
+        const cost = matchingRegion.price || 
+                    matchingRegion.shippingValue || 
+                    matchingRegion.cost || 
+                    0;
+        
+        return {
+          state: SHIPPING_STATES.COMPATIBLE,
+          message: `${days} días hábiles - $${cost.toLocaleString('es-CL')}`,
+          canShip: true,
+          shippingInfo: {
+            days: days,
+            cost: cost
+          }
+        };
+      }
+
+      // Estado: Incompatible por región
+      const availableRegions = shippingRegions.map(region => {
+        const regionValue = region.region || region.value;
+        return getUserRegionName(regionValue);
+      });
+      
       return {
-        state: SHIPPING_STATES.NO_SHIPPING_INFO,
-        message: 'Configura tu región de envío en tu perfil',
-        canShip: false
+        state: SHIPPING_STATES.INCOMPATIBLE_REGION,
+        message: `Este producto no cuenta con despacho a tu región: ${getUserRegionName(userRegion)}`,
+        canShip: false,
+        availableRegions: availableRegions
       };
-    }
-
-    // ✅ MEJORADO: Obtener información de despacho del producto con múltiples fuentes
-    const shippingRegions = product.shippingRegions || 
-                          product.delivery_regions || 
-                          product.shipping_regions || 
-                          product.product_delivery_regions || // ✅ NUEVO: Soporte directo para datos de BD
-                          [];
-
-    // Estado: Sin información de despacho
-    if (!shippingRegions || shippingRegions.length === 0) {
-      return {
-        state: SHIPPING_STATES.NO_SHIPPING_INFO,
-        message: 'Este producto no cuenta con información de despacho. Por favor, contacta a Sellsi.',
-        canShip: false
-      };
-    }
-
-    // ✅ MEJORADO: Buscar la región del usuario en las regiones del producto
-    // Soportar tanto formato de BD como formato de frontend
-    const matchingRegion = shippingRegions.find(region => {
-      // Formato de BD: { region: 'metropolitana', price: 5000, delivery_days: 3 }
-      const regionValue = region.region || region.value;
-      
-      // Formato de frontend: { region: 'metropolitana', shippingValue: 5000, maxDeliveryDays: 3 }
-      const altRegionValue = region.region || region.value;
-      
-      return regionValue === userRegion || altRegionValue === userRegion;
-    });
-
-    // Estado: Compatible
-    if (matchingRegion) {
-      // ✅ MEJORADO: Soporte para ambos formatos de datos
-      const days = matchingRegion.delivery_days || 
-                  matchingRegion.maxDeliveryDays || 
-                  matchingRegion.days || 
-                  'N/A';
-      
-      const cost = matchingRegion.price || 
-                  matchingRegion.shippingValue || 
-                  matchingRegion.cost || 
-                  0;
-      
-      return {
-        state: SHIPPING_STATES.COMPATIBLE,
-        message: `${days} días hábiles - $${cost.toLocaleString('es-CL')}`,
-        canShip: true,
-        shippingInfo: {
-          days: days,
-          cost: cost
-        }
-      };
-    }
-
-    // Estado: Incompatible por región
-    const availableRegions = shippingRegions.map(region => {
-      // Mapear valor de región a nombre legible
-      const regionValue = region.region || region.value;
-      return getUserRegionName(regionValue);
-    });
-    
-    return {
-      state: SHIPPING_STATES.INCOMPATIBLE_REGION,
-      message: `Este producto no cuenta con despacho a tu región: ${getUserRegionName(userRegion)}`,
-      canShip: false,
-      availableRegions: availableRegions
     };
-  }, []);
+  }, [getUserRegionName]); // ✅ Solo depende de getUserRegionName que es estable
 
   /**
-   * Validar compatibilidad de todos los productos del carrito
+   * Función para revalidar manualmente los productos - estable
    */
-  const validateAllProducts = useCallback(() => {
+  const revalidate = useCallback(() => {
     if (!isAdvancedMode) {
-      // Modo simple: limpiar estados
       setShippingStates({});
       setIncompatibleProducts([]);
       return;
@@ -208,61 +201,78 @@ export const useShippingValidation = (cartItems = [], isAdvancedMode = false) =>
     
     // Si no hay región del usuario, el carrito no es compatible
     if (!userRegion) return false;
-    
-    return Object.values(shippingStates).every(state => 
-      state.canShip
-    );
-  }, [shippingStates, isAdvancedMode, userRegion]);
+
+    // Si hay productos incompatibles, el carrito no es compatible
+    return incompatibleProducts.length === 0;
+  }, [isAdvancedMode, userRegion, incompatibleProducts]);
 
   /**
-   * Verificar si el usuario ha completado su información de envío
+   * Verificar si la información de envío está completa
    */
-  const isShippingInfoComplete = useCallback(async () => {
-    if (!isAdvancedMode) return true;
-    
+  const isShippingInfoComplete = useCallback(() => {
     try {
-      const userId = localStorage.getItem('user_id');
-      if (!userId) return false;
-
-      const { data: profile, error: profileError } = await getUserProfile(userId);
-      if (profileError) return false;
-
-      // Verificar campos requeridos
-      const requiredFields = [
-        'shipping_region',
-        'shipping_comuna', 
-        'shipping_address',
-        'shipping_number'
-      ];
-
-      return requiredFields.every(field => 
-        profile[field] && profile[field].toString().trim() !== ''
+      return !!(
+        userRegion && 
+        Object.keys(shippingStates).length > 0 &&
+        Object.values(shippingStates).every(state => 
+          state.state !== SHIPPING_STATES.NO_SHIPPING_INFO
+        )
       );
     } catch (err) {
       console.error('Error checking shipping info:', err);
       return false;
     }
-  }, [isAdvancedMode]);
+  }, [userRegion, shippingStates]);
 
-  // Efecto para cargar perfil del usuario
+  // ============================================================================
+  // EFECTOS - SIMPLIFICADOS PARA EVITAR BUCLES
+  // ============================================================================
+
+  // Efecto para cargar perfil del usuario - solo al montar
   useEffect(() => {
     fetchUserProfile();
-  }, [fetchUserProfile]);
+  }, []); // ✅ Solo ejecutar una vez
 
-  // Efecto para revalidar cuando cambian los items del carrito o la región
+  // Efecto para revalidar cuando cambian los datos relevantes - SIN validateProductShipping en deps
   useEffect(() => {
-    validateAllProducts();
-  }, [validateAllProducts]);
+    // Solo ejecutar si tenemos los datos necesarios y está en modo avanzado
+    if (isAdvancedMode && cartItems.length > 0 && userRegion) {
+      const newStates = {};
+      const incompatible = [];
 
-  // Efecto para revalidar cuando el usuario inicia/cierra sesión
+      cartItems.forEach(item => {
+        const validation = validateProductShipping(item, userRegion);
+        newStates[item.id] = validation;
+        
+        if (!validation.canShip && validation.state !== SHIPPING_STATES.NO_SHIPPING_INFO) {
+          incompatible.push({
+            id: item.id,
+            name: item.name || item.nombre,
+            availableRegions: validation.availableRegions || []
+          });
+        }
+      });
+
+      setShippingStates(newStates);
+      setIncompatibleProducts(incompatible);
+    } else if (!isAdvancedMode) {
+      // Limpiar estados en modo simple
+      setShippingStates({});
+      setIncompatibleProducts([]);
+    }
+  }, [isAdvancedMode, cartItems.length, userRegion]); // ✅ Solo dependencias primitivas
+
+  // Efecto para escuchar cambios en localStorage (login/logout)
   useEffect(() => {
-    const handleStorageChange = () => {
-      fetchUserProfile();
+    const handleStorageChange = (e) => {
+      if (e.key === 'user_id') {
+        fetchUserProfile();
+      }
     };
 
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
-  }, [fetchUserProfile]);
+  }, []); // ✅ Array vacío porque fetchUserProfile es estable
 
   return {
     // Estados
@@ -272,17 +282,17 @@ export const useShippingValidation = (cartItems = [], isAdvancedMode = false) =>
     error,
     incompatibleProducts,
 
-    // Funciones de validación
-    validateProductShipping,
+    // Estados derivados
     isCartCompatible: isCartCompatible(),
-    isShippingInfoComplete,
+    isShippingInfoComplete: isShippingInfoComplete(),
 
     // Funciones de control
-    revalidate: validateAllProducts,
+    revalidate,
     refreshUserProfile: fetchUserProfile,
 
     // Utilidades
     getUserRegionName,
+    validateProductShipping,
     SHIPPING_STATES
   };
 };

@@ -78,3 +78,9 @@ export {
   BannedPageUI,
   BanInfo
 } from './layout';
+
+// Cart (Nuevos componentes)
+export {
+  AddToCart,
+  AddToCartModal
+} from './cart';
