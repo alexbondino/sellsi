@@ -56,28 +56,24 @@ const QuantitySelector = ({
 }) => {
   // Estado local para el input (permite validación en tiempo real)
   const [inputValue, setInputValue] = useState(value.toString())
+  const [isEditing, setIsEditing] = useState(false)
+  const isEditingRef = React.useRef(false) // Ref para control inmediato
+  const inputRef = React.useRef(null) // Ref para el input
   
-  // Sincronizar estado local cuando cambia la prop - SOLO si realmente es diferente
+  // Sincronizar estado local cuando cambia la prop - SOLO si no está editando
   useEffect(() => {
-    const newValueString = value.toString();
-    if (inputValue !== newValueString) {
-      setInputValue(newValueString);
+    if (!isEditing && !isEditingRef.current) {
+      const newValueString = value.toString();
+      if (inputValue !== newValueString) {
+        setInputValue(newValueString);
+      }
     }
-  }, [value]); // ✅ Solo depender de value, no de inputValue
+  }, [value, isEditing, inputValue]);
 
   // ============================================================================
   // HANDLERS DE EVENTOS
   // ============================================================================
-  // ===== OPTIMIZACIONES DE RENDIMIENTO =====
   
-  // Memoizar validaciones para evitar recálculos
-  const validations = React.useMemo(() => ({
-    isMinDisabled: value <= min,
-    isMaxDisabled: value >= max,
-    hasError: isNaN(parseInt(inputValue)) || parseInt(inputValue) < min,
-    isInputValid: !isNaN(parseInt(inputValue)) && parseInt(inputValue) >= min && parseInt(inputValue) <= max
-  }), [value, min, max, inputValue])
-
   // Handlers optimizados con useCallback
   const handleIncrement = React.useCallback(() => {
     const newValue = Math.min(value + step, max)
@@ -95,24 +91,38 @@ const QuantitySelector = ({
 
   const handleInputChange = React.useCallback((event) => {
     const inputVal = event.target.value
+    isEditingRef.current = true // Inmediatamente marcar en la ref
     setInputValue(inputVal)
-    // No llamar onChange aquí para evitar bucles infinitos
-    // Solo actualizar el estado local, onChange se llamará en handleInputBlur
+    setIsEditing(true) // Marcar que está editando
   }, [])
 
   const handleInputBlur = React.useCallback(() => {
-    // Al perder foco, corregir a mínimo si está vacío o menor
+    isEditingRef.current = false // Inmediatamente limpiar la ref
+    setIsEditing(false) // Ya no está editando
+    // Al perder foco, permitir cualquier valor durante edición, 
+    // pero corregir automáticamente si es menor al mínimo
     let numValue = parseInt(inputValue)
-    if (isNaN(numValue) || numValue < min) {
+    if (isNaN(numValue) || numValue < 1) {
+      // Si no es un número válido o es menor a 1, usar el mínimo
       numValue = min
     } else if (numValue > max) {
+      // Si excede el máximo, usar el máximo
       numValue = max
+    } else if (numValue < min) {
+      // Si es menor al mínimo, corregir automáticamente al mínimo
+      numValue = min
     }
+    
     setInputValue(numValue.toString())
     if (numValue !== value) {
       onChange(numValue)
     }
   }, [inputValue, min, max, value, onChange])
+
+  const handleInputFocus = React.useCallback(() => {
+    isEditingRef.current = true
+    setIsEditing(true)
+  }, [])
 
   // ============================================================================
   // CONFIGURACIÓN DE ESTILOS POR TAMAÑO
@@ -140,8 +150,10 @@ const QuantitySelector = ({
   }
 
   const config = sizeConfig[size]
-  const isMinReached = value <= min
-  const isMaxReached = value >= max
+  
+  // Memoizar valores para evitar cálculos en cada render
+  const isMinReached = React.useMemo(() => value <= min, [value, min])
+  const isMaxReached = React.useMemo(() => value >= max, [value, max])
 
   // ============================================================================
   // COMPONENTES INTERNOS
@@ -197,10 +209,13 @@ const QuantitySelector = ({
     </Tooltip>
   )
 
-  const QuantityInput = () => (
+  // Memoizar el componente QuantityInput para evitar re-creaciones que causen pérdida de foco
+  const QuantityInput = React.useMemo(() => (
     <TextField
+      ref={inputRef}
       value={inputValue}
       onChange={handleInputChange}
+      onFocus={handleInputFocus}
       onBlur={handleInputBlur}
       disabled={disabled}
       size={size === 'large' ? 'medium' : 'small'}
@@ -217,8 +232,6 @@ const QuantitySelector = ({
         },
         'aria-label': 'Cantidad',
       }}
-      error={parseInt(inputValue) < min}
-      helperText={parseInt(inputValue) < min ? `Mínimo ${min}` : ''}
       sx={{
         '& .MuiOutlinedInput-root': {
           '&:hover fieldset': {
@@ -227,10 +240,29 @@ const QuantitySelector = ({
         },
         '& .MuiInputBase-input': {
           cursor: disabled ? 'default' : 'text',
+          // Ocultar las flechas de incremento/decremento del input number
+          '&::-webkit-outer-spin-button, &::-webkit-inner-spin-button': {
+            WebkitAppearance: 'none',
+            margin: 0,
+          },
+          '&[type=number]': {
+            MozAppearance: 'textfield', // Firefox
+          },
         },
       }}
     />
-  )
+  ), [
+    inputValue, 
+    handleInputChange, 
+    handleInputFocus, 
+    handleInputBlur, 
+    disabled, 
+    size, 
+    config.inputWidth, 
+    min, 
+    max, 
+    step
+  ])
 
   // ============================================================================
   // RENDERIZADO CONDICIONAL POR ORIENTACIÓN
@@ -254,7 +286,7 @@ const QuantitySelector = ({
         )}
 
         <IncrementButton />
-        <QuantityInput />
+        {QuantityInput}
         <DecrementButton />
 
         {showStockLimit && stockText && (
@@ -284,7 +316,7 @@ const QuantitySelector = ({
 
       <Stack direction="row" spacing={config.spacing} alignItems="center">
         <DecrementButton />
-        <QuantityInput />
+        {QuantityInput}
         <IncrementButton />
       </Stack>
 

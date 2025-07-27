@@ -90,23 +90,28 @@ export class ProductValidator {
       }
     }
 
-    // Compra mínima
-    if (!formData.compraMinima) {
-      errors.compraMinima = ERROR_MESSAGES.MIN_PURCHASE_REQUIRED
-    } else {
-      const compraMinima = parseInt(formData.compraMinima)
-      const stock = parseInt(formData.stock || 0)
-      
-      if (isNaN(compraMinima) || compraMinima < QUANTITY_LIMITS.MIN_QUANTITY) {
-        errors.compraMinima = ERROR_MESSAGES.STOCK_TOO_LOW
-      } else if (compraMinima > QUANTITY_LIMITS.MAX_STOCK) {
-        errors.compraMinima = ERROR_MESSAGES.STOCK_TOO_HIGH
-      } else if (!Number.isInteger(parseFloat(formData.compraMinima))) {
-        errors.compraMinima = ERROR_MESSAGES.INVALID_INTEGER
-      } else if (compraMinima > stock) {
-        errors.compraMinima = ERROR_MESSAGES.MIN_PURCHASE_EXCEEDS_STOCK
+    // Compra mínima - solo requerida para productos con pricing por unidad
+    if (formData.pricingType !== PRICING_TYPES.TIER) {
+      // Solo validar compraMinima si NO es pricing por tramos
+      if (!formData.compraMinima) {
+        errors.compraMinima = ERROR_MESSAGES.MIN_PURCHASE_REQUIRED
+      } else {
+        const compraMinima = parseInt(formData.compraMinima)
+        const stock = parseInt(formData.stock || 0)
+        
+        if (isNaN(compraMinima) || compraMinima < QUANTITY_LIMITS.MIN_QUANTITY) {
+          errors.compraMinima = ERROR_MESSAGES.STOCK_TOO_LOW
+        } else if (compraMinima > QUANTITY_LIMITS.MAX_STOCK) {
+          errors.compraMinima = ERROR_MESSAGES.STOCK_TOO_HIGH
+        } else if (!Number.isInteger(parseFloat(formData.compraMinima))) {
+          errors.compraMinima = ERROR_MESSAGES.INVALID_INTEGER
+        } else if (compraMinima > stock) {
+          errors.compraMinima = ERROR_MESSAGES.MIN_PURCHASE_EXCEEDS_STOCK
+        }
       }
     }
+    // Para productos con pricing por tramos, la compra mínima se define automáticamente
+    // por el primer tramo, por lo que no es necesaria como campo separado
   }
 
   /**

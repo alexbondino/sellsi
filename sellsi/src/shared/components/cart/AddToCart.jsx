@@ -36,6 +36,7 @@ const AddToCart = ({
   userRegion = null,
   onSuccess,
   onError,
+  onModalStateChange, // Callback para comunicar cuando el modal se abre/cierra
   children,
   sx = {},
   ...buttonProps
@@ -54,12 +55,18 @@ const AddToCart = ({
   const handleOpenModal = useCallback(() => {
     if (!disabled && product) {
       setModalOpen(true);
+      if (onModalStateChange) {
+        onModalStateChange(true);
+      }
     }
-  }, [disabled, product]);
+  }, [disabled, product, onModalStateChange]);
 
   const handleCloseModal = useCallback(() => {
     setModalOpen(false);
-  }, []);
+    if (onModalStateChange) {
+      onModalStateChange(false);
+    }
+  }, [onModalStateChange]);
 
   const handleAddToCart = useCallback(async (cartItem) => {
     try {

@@ -69,8 +69,17 @@ const AddToCartModal = ({
   // Sincronizar cantidad inicial cuando se abre el modal
   useEffect(() => {
     if (open) {
-      const minimumPurchase = product?.minimum_purchase || product?.compraMinima || 1;
-      setQuantity(Math.max(initialQuantity, minimumPurchase));
+      // Calcular cantidad mínima efectiva
+      let effectiveMinimum = product?.minimum_purchase || product?.compraMinima || 1;
+      
+      // Si hay price tiers, usar el primer tramo como mínimo
+      const priceTiers = product?.priceTiers || product?.price_tiers || [];
+      if (priceTiers.length > 0) {
+        const sortedTiers = [...priceTiers].sort((a, b) => (a.min_quantity || 1) - (b.min_quantity || 1));
+        effectiveMinimum = sortedTiers[0]?.min_quantity || 1;
+      }
+      
+      setQuantity(Math.max(initialQuantity, effectiveMinimum));
       setQuantityError(''); // Limpiar errores al abrir
     }
   }, [open, initialQuantity, product]);
@@ -151,23 +160,42 @@ const AddToCartModal = ({
   const handleQuantityChange = useCallback((newQuantity) => {
     setQuantity(newQuantity);
     
-    // Validar cantidad mínima
-    const minPurchase = productData.minimumPurchase;
-    if (newQuantity < minPurchase) {
-      setQuantityError(`La cantidad mínima de compra es ${minPurchase} unidades`);
+    // Para productos con price tiers, usar el primer tramo como mínimo
+    const { priceTiers } = productData;
+    let effectiveMinimum = productData.minimumPurchase;
+    
+    if (priceTiers.length > 0) {
+      // Si hay tramos, usar la cantidad mínima del primer tramo
+      const sortedTiers = [...priceTiers].sort((a, b) => (a.min_quantity || 1) - (b.min_quantity || 1));
+      effectiveMinimum = sortedTiers[0]?.min_quantity || 1;
+    }
+    
+    // Validar cantidad mínima efectiva
+    if (newQuantity < effectiveMinimum) {
+      setQuantityError(`La cantidad mínima de compra es ${effectiveMinimum} unidades`);
     } else {
       setQuantityError('');
     }
-  }, [productData.minimumPurchase]);
+  }, [productData.minimumPurchase, productData.priceTiers]);
 
   const handleDocumentTypeChange = useCallback((event) => {
     setDocumentType(event.target.value);
   }, []);
 
   const handleAddToCart = useCallback(async () => {
+    // Calcular cantidad mínima efectiva basada en si hay price tiers
+    const { priceTiers } = productData;
+    let effectiveMinimum = productData.minimumPurchase;
+    
+    if (priceTiers.length > 0) {
+      // Si hay tramos, usar la cantidad mínima del primer tramo
+      const sortedTiers = [...priceTiers].sort((a, b) => (a.min_quantity || 1) - (b.min_quantity || 1));
+      effectiveMinimum = sortedTiers[0]?.min_quantity || 1;
+    }
+
     // Validar cantidad antes de procesar
-    if (quantity < productData.minimumPurchase) {
-      setQuantityError(`La cantidad mínima de compra es ${productData.minimumPurchase} unidades`);
+    if (quantity < effectiveMinimum) {
+      setQuantityError(`La cantidad mínima de compra es ${effectiveMinimum} unidades`);
       return;
     }
 
@@ -229,33 +257,6 @@ const AddToCartModal = ({
       );
     }
 
-    // Función auxiliar para determinar el tramo activo exacto
-    const getActiveTierIndex = (quantity, tiers) => {
-      // Ordenar tramos por cantidad mínima
-      const sortedTiers = [...tiers].sort((a, b) => (a.min_quantity || 1) - (b.min_quantity || 1));
-      
-      for (let i = 0; i < sortedTiers.length; i++) {
-        const tier = sortedTiers[i];
-        const minQty = tier.min_quantity || 1;
-        const maxQty = tier.max_quantity;
-        
-        if (maxQty === null || maxQty === undefined) {
-          // Último tramo: activo si quantity >= minQty
-          if (quantity >= minQty) {
-            return tiers.findIndex(t => t === tier);
-          }
-        } else {
-          // Tramo intermedio: activo si minQty <= quantity <= maxQty
-          if (quantity >= minQty && quantity <= maxQty) {
-            return tiers.findIndex(t => t === tier);
-          }
-        }
-      }
-      return -1; // Ningún tramo activo
-    };
-
-    const activeTierIndex = getActiveTierIndex(quantity, priceTiers);
-
     return (
       <Box>
         <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 600 }}>
@@ -263,9 +264,28 @@ const AddToCartModal = ({
         </Typography>
         <Stack spacing={1}>
           {priceTiers.map((tier, index) => {
-            const isActive = index === activeTierIndex;
             const minQty = tier.min_quantity || 1;
             const maxQty = tier.max_quantity;
+            
+            // LÓGICA CORREGIDA: Solo activar EL tramo que contiene exactamente la cantidad
+            let isActive = false;
+            
+            if (maxQty === null || maxQty === undefined) {
+              // Último tramo (sin máximo): activo si quantity >= minQty Y no hay tramos posteriores que apliquen
+              isActive = quantity >= minQty;
+              // Verificar que no hay tramos posteriores que también apliquen
+              for (let i = index + 1; i < priceTiers.length; i++) {
+                const laterTier = priceTiers[i];
+                const laterMinQty = laterTier.min_quantity || 1;
+                if (quantity >= laterMinQty) {
+                  isActive = false; // Hay un tramo posterior que aplica
+                  break;
+                }
+              }
+            } else {
+              // Tramo con rango definido: activo SOLO si está exactamente en el rango
+              isActive = quantity >= minQty && quantity <= maxQty;
+            }
             
             const rangeText = maxQty 
               ? `${minQty} - ${maxQty}` 
@@ -364,7 +384,15 @@ const AddToCartModal = ({
               <QuantitySelector
                 value={quantity}
                 onChange={handleQuantityChange}
-                min={productData.minimumPurchase}
+                min={(() => {
+                  // Calcular cantidad mínima efectiva para el QuantitySelector
+                  const { priceTiers } = productData;
+                  if (priceTiers.length > 0) {
+                    const sortedTiers = [...priceTiers].sort((a, b) => (a.min_quantity || 1) - (b.min_quantity || 1));
+                    return sortedTiers[0]?.min_quantity || 1;
+                  }
+                  return productData.minimumPurchase;
+                })()}
                 max={productData.maxPurchase}
                 size="small"
                 orientation="horizontal"
@@ -463,6 +491,14 @@ const AddToCartModal = ({
       );
     }
 
+    // Debug: Veamos qué hay en shippingValidation
+    console.log('🔍 Debug ShippingValidation:', {
+      shippingValidation,
+      availableRegions: shippingValidation?.availableRegions,
+      productShippingRegions: product?.shippingRegions || product?.delivery_regions || product?.shipping_regions,
+      userRegion
+    });
+
     return (
       <Alert 
         severity="warning" 
@@ -472,9 +508,13 @@ const AddToCartModal = ({
         <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
           Este producto actualmente no cuenta con despacho hacia tu región
         </Typography>
-        {shippingValidation.availableRegions && shippingValidation.availableRegions.length > 0 && (
+        {shippingValidation.availableRegions && shippingValidation.availableRegions.length > 0 ? (
           <Typography variant="caption" color="text.secondary">
             Este producto solo tiene despacho a: {shippingValidation.availableRegions.join(', ')}
+          </Typography>
+        ) : (
+          <Typography variant="caption" color="text.secondary">
+            Este producto no tiene regiones de despacho configuradas. Contáctanos a contacto@sellsi.cl para más información.
           </Typography>
         )}
       </Alert>
@@ -517,7 +557,9 @@ const AddToCartModal = ({
         <Drawer
           anchor="right"
           open={open}
-          onClose={handleClose}
+          onClose={handleClose} // Permitir cierre normal con X
+          hideBackdrop={false}
+          disableEscapeKeyDown={false} // Permitir cerrar con Escape
           PaperProps={{
             component: motion.div,
             initial: { x: '100%' },
@@ -535,6 +577,7 @@ const AddToCartModal = ({
             BackdropProps: {
               sx: {
                 zIndex: 9998, // Backdrop justo debajo del modal
+                backgroundColor: 'rgba(0, 0, 0, 0.5)', // Asegurar que sea visible
               }
             }
           }}
@@ -544,12 +587,6 @@ const AddToCartModal = ({
         >
           <Box 
             sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}
-            onClick={(e) => {
-              // Solo evitar propagación si el click no viene de un elemento interactivo
-              if (!e.target.closest('button, input, [role="button"]')) {
-                e.stopPropagation();
-              }
-            }}
           >
             
             {/* Header */}
@@ -564,7 +601,7 @@ const AddToCartModal = ({
             }}>
               <Stack direction="row" justifyContent="space-between" alignItems="center">
                 <Typography variant="h6" sx={{ fontWeight: 700 }}>
-                  Selecciona la Cantidad y Tipo de documento
+                  Selecciona la Cantidad y Tipo de Documento
                 </Typography>
                 <IconButton onClick={handleClose} size="small">
                   <CloseIcon />

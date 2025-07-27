@@ -34,7 +34,7 @@ import { getUserProfile } from '../../../../services/user';
  * This component is an internal part of the main ProductCard.
  */
 const ProductCardBuyerContext = React.memo(
-  ({ product, onAddToCart, handleProductClick }) => {
+  ({ product, onAddToCart, handleProductClick, onModalStateChange }) => {
     const navigate = useNavigate();
 
     const [userRegion, setUserRegion] = useState(null);
@@ -361,6 +361,7 @@ const ProductCardBuyerContext = React.memo(
             initialQuantity={minimumPurchase}
             userRegion={userRegion}
             onSuccess={onAddToCart}
+            onModalStateChange={onModalStateChange}
             sx={{
               textTransform: 'none',
               fontWeight: 600,

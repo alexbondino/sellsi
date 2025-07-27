@@ -110,6 +110,37 @@ export const useShippingValidation = (cartItems = [], isAdvancedMode = false) =>
                             product.product_delivery_regions ||
                             [];
 
+      // Debug para entender qué datos llegan
+      console.log('📦 Product shipping data:', {
+        productId: product.id,
+        productName: product.nombre || product.name,
+        shippingRegionsCount: shippingRegions.length,
+        shippingRegions,
+        allProductKeys: Object.keys(product), // Ver todas las propiedades del producto
+        rawProduct: {
+          shippingRegions: product.shippingRegions,
+          delivery_regions: product.delivery_regions,
+          shipping_regions: product.shipping_regions,
+          product_delivery_regions: product.product_delivery_regions,
+          deliveryRegions: product.deliveryRegions,
+          // Ver si hay otras variantes de nombres
+          productDeliveryRegions: product.productDeliveryRegions,
+        },
+      });
+
+      // Si no hay regiones, mostrar mensaje específico
+      if (!shippingRegions || shippingRegions.length === 0) {
+        console.warn('⚠️ No shipping regions found for product:', {
+          productId: product.id,
+          productName: product.nombre || product.name,
+          availableFields: Object.keys(product).filter(key => 
+            key.toLowerCase().includes('region') || 
+            key.toLowerCase().includes('delivery') || 
+            key.toLowerCase().includes('shipping')
+          )
+        });
+      }
+
       // Estado: Sin información de despacho
       if (!shippingRegions || shippingRegions.length === 0) {
         return {
@@ -152,6 +183,15 @@ export const useShippingValidation = (cartItems = [], isAdvancedMode = false) =>
       const availableRegions = shippingRegions.map(region => {
         const regionValue = region.region || region.value;
         return getUserRegionName(regionValue);
+      });
+      
+      // Debug para ver qué está pasando
+      console.log('🚚 Shipping Validation Debug:', {
+        userRegion,
+        shippingRegions,
+        availableRegions,
+        productId: product.id,
+        productName: product.nombre || product.name
       });
       
       return {

@@ -38,6 +38,9 @@ const ProductCard = React.memo(
     onAddToCart,
   }) => {
     const navigate = useNavigate();
+    
+    // Estado para controlar si el modal AddToCart está abierto
+    const [isModalOpen, setIsModalOpen] = useState(false);
 
     // --- Common Product Data Extraction ---
     if (!product) {
@@ -134,6 +137,11 @@ const ProductCard = React.memo(
           return;
         }
         
+        // Si el modal AddToCart está abierto, no permitir navegación
+        if (isModalOpen) {
+          return;
+        }
+        
         // This logic applies to both 'buyer' and 'supplier' types
         // but prevent navigation if click originated from an interactive element
         const target = e.target;
@@ -167,7 +175,7 @@ const ProductCard = React.memo(
           state: { from: fromPath },
         });
       },
-      [navigate, product, generateProductUrl] // Updated dependencies
+      [navigate, product, generateProductUrl, type, isModalOpen] // Updated dependencies
     );
 
     return (
@@ -194,6 +202,7 @@ const ProductCard = React.memo(
             product={product}
             onAddToCart={onAddToCart}
             handleProductClick={handleProductClick} // Pass down if buyer context needs to know about this
+            onModalStateChange={setIsModalOpen} // Callback para manejar el estado del modal
           />
         )}
         {type === 'provider' && (
