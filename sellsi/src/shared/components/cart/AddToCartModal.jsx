@@ -28,6 +28,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 // Imports de componentes compartidos
 import QuantitySelector from '../forms/QuantitySelector/QuantitySelector';
 import PriceDisplay from '../display/price/PriceDisplay';
+import { CheckoutSummaryImage } from '../../../components/UniversalProductImage'; // Imagen universal con fallbacks
 import { useShippingValidation } from '../../../domains/buyer/pages/cart/hooks/useShippingValidation';
 import { calculatePriceForQuantity } from '../../../utils/priceCalculation';
 import { supabase } from '../../../services/supabase';
@@ -153,7 +154,13 @@ const AddToCartModal = ({
     basePrice: enrichedProduct?.precio || enrichedProduct?.price || 0,
     originalPrice: enrichedProduct?.precioOriginal || enrichedProduct?.originalPrice,
     priceTiers: enrichedProduct?.priceTiers || enrichedProduct?.price_tiers || [],
+    // Mapeo completo de propiedades de imagen para CheckoutSummaryImage
     thumbnail: enrichedProduct?.thumbnail || enrichedProduct?.image_url,
+    thumbnailUrl: enrichedProduct?.thumbnailUrl || enrichedProduct?.thumbnail_url,
+    thumbnail_url: enrichedProduct?.thumbnail_url,
+    imagen: enrichedProduct?.imagen || enrichedProduct?.image_url,
+    image_url: enrichedProduct?.image_url,
+    thumbnails: enrichedProduct?.thumbnails,
     supplier: enrichedProduct?.proveedor || enrichedProduct?.supplier || 'Proveedor no encontrado',
     minimumPurchase: enrichedProduct?.minimum_purchase || enrichedProduct?.compraMinima || 1,
     maxPurchase: enrichedProduct?.max_purchase || enrichedProduct?.maxPurchase || 999,
@@ -318,7 +325,7 @@ const AddToCartModal = ({
     return (
       <Box>
         <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 600 }}>
-          Precios por cantidad
+          Precios antes del envío
         </Typography>
         <Stack spacing={1}>
           {priceTiers.map((tier, index) => {
@@ -423,15 +430,11 @@ const AddToCartModal = ({
       }}
     >
       <Stack direction="row" spacing={2} alignItems="center">
-        <Avatar
-          src={productData.thumbnail}
-          alt={productData.name}
+        <CheckoutSummaryImage
+          product={productData}
           sx={{ 
-            width: 40, 
-            height: 40,
             pointerEvents: 'none',
           }}
-          variant="rounded"
         />
         <Box sx={{ flex: 1 }}>
           <Stack direction="row" justifyContent="space-between" alignItems="flex-start" sx={{ mb: 0.5 }}>
@@ -675,7 +678,7 @@ const AddToCartModal = ({
             }}>
               <Stack direction="row" justifyContent="space-between" alignItems="center">
                 <Typography variant="h6" sx={{ fontWeight: 700 }}>
-                  Selecciona la Cantidad y Tipo de Documento
+                  {productData.name}
                 </Typography>
                 <IconButton onClick={handleClose} size="small">
                   <CloseIcon />

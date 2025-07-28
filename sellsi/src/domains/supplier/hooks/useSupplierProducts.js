@@ -311,7 +311,7 @@ export const useSupplierProducts = (options = {}) => {
 
     // Operaciones especializadas (acceso directo si se necesita)
     processImages: async (productId, imagesList) => {
-      const result = await images.processProductImages(productId, imagesList)
+      const result = await images.uploadImages(imagesList, productId, crud.supplierId)
       
       // Si el procesamiento fue exitoso, refrescar el producto para mostrar las nuevas imágenes
       if (result.success) {

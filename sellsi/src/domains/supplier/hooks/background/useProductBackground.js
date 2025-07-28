@@ -79,9 +79,9 @@ const useProductBackground = create((set, get) => ({
       }
 
       // Procesar imágenes si existen
-      if (productData.imagenes?.length > 0 && imagesHook) {
+      if (productData.imagenes?.length > 0 && imagesHook && typeof imagesHook.uploadImages === 'function') {
         updateProgress('images', 'processing')
-        const result = await imagesHook.processProductImages(productId, productData.imagenes)
+        const result = await imagesHook.uploadImages(productData.imagenes, productId, productData.supplier_id)
         updateProgress('images', result.success ? 'completed' : 'failed')
         
         if (!result.success) {
