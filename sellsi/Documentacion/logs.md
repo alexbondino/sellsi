@@ -108,34 +108,22 @@ useShippingValidation.js:313 [useShippingValidation] userRegion exists from sess
 useShippingValidation.js:138 📦 Product shipping data: {productId: '1394be41-62dc-4225-a003-e0250e0f7a64', productName: 'Producto Tramos Nuevos', shippingRegionsCount: 1, shippingRegions: Array(1), allProductKeys: Array(34), …}
 useShippingValidation.js:351 [useShippingValidation] Saved userRegion to sessionStorage: araucania
 PaymentMethod.jsx:46 [PaymentMethod] useEffect triggered: {itemsLength: 1, shippingValidation: {…}}
-PaymentMethod.jsx:88 [PaymentMethod] All validations passed, initializing checkout...
-useShippingValidation.js:48 [useShippingValidation] Hook called: {cartItemsLength: 1, isAdvancedMode: true, currentState: {…}}
-useShippingValidation.js:277 [useShippingValidation] isCartCompatible: true {userRegion: 'araucania', incompatibleProductsCount: 0}
-useShippingValidation.js:48 [useShippingValidation] Hook called: {cartItemsLength: 1, isAdvancedMode: true, currentState: {…}}
-useShippingValidation.js:277 [useShippingValidation] isCartCompatible: true {userRegion: 'araucania', incompatibleProductsCount: 0}
-useShippingValidation.js:33 [useShippingValidation] Reading from sessionStorage: araucania
-useShippingValidation.js:33 [useShippingValidation] Reading from sessionStorage: araucania
-useShippingValidation.js:48 [useShippingValidation] Hook called: {cartItemsLength: 1, isAdvancedMode: true, currentState: {…}}
-useShippingValidation.js:277 [useShippingValidation] isCartCompatible: true {userRegion: 'araucania', incompatibleProductsCount: 0}
-useShippingValidation.js:48 [useShippingValidation] Hook called: {cartItemsLength: 1, isAdvancedMode: true, currentState: {…}}
-useShippingValidation.js:277 [useShippingValidation] isCartCompatible: true {userRegion: 'araucania', incompatibleProductsCount: 0}
-useShippingValidation.js:313 [useShippingValidation] userRegion exists from sessionStorage: araucania
-useShippingValidation.js:138 📦 Product shipping data: {productId: '1394be41-62dc-4225-a003-e0250e0f7a64', productName: 'Producto Tramos Nuevos', shippingRegionsCount: 1, shippingRegions: Array(1), allProductKeys: Array(34), …}
-useShippingValidation.js:351 [useShippingValidation] Saved userRegion to sessionStorage: araucania
-useShippingValidation.js:313 [useShippingValidation] userRegion exists from sessionStorage: araucania
-useShippingValidation.js:138 📦 Product shipping data: {productId: '1394be41-62dc-4225-a003-e0250e0f7a64', productName: 'Producto Tramos Nuevos', shippingRegionsCount: 1, shippingRegions: Array(1), allProductKeys: Array(34), …}
-useShippingValidation.js:351 [useShippingValidation] Saved userRegion to sessionStorage: araucania
-useShippingValidation.js:48 [useShippingValidation] Hook called: {cartItemsLength: 1, isAdvancedMode: true, currentState: {…}}
-useShippingValidation.js:277 [useShippingValidation] isCartCompatible: true {userRegion: 'araucania', incompatibleProductsCount: 0}
-useShippingValidation.js:48 [useShippingValidation] Hook called: {cartItemsLength: 1, isAdvancedMode: true, currentState: {…}}
-useShippingValidation.js:277 [useShippingValidation] isCartCompatible: true {userRegion: 'araucania', incompatibleProductsCount: 0}
-useShippingValidation.js:48 [useShippingValidation] Hook called: {cartItemsLength: 1, isAdvancedMode: true, currentState: {…}}
-useShippingValidation.js:277 [useShippingValidation] isCartCompatible: true {userRegion: 'araucania', incompatibleProductsCount: 0}
-useShippingValidation.js:48 [useShippingValidation] Hook called: {cartItemsLength: 1, isAdvancedMode: true, currentState: {…}}
-useShippingValidation.js:277 [useShippingValidation] isCartCompatible: true {userRegion: 'araucania', incompatibleProductsCount: 0}
-useShippingValidation.js:48 [useShippingValidation] Hook called: {cartItemsLength: 1, isAdvancedMode: true, currentState: {…}}
-useShippingValidation.js:277 [useShippingValidation] isCartCompatible: true {userRegion: 'araucania', incompatibleProductsCount: 0}
-useShippingValidation.js:48 [useShippingValidation] Hook called: {cartItemsLength: 1, isAdvancedMode: true, currentState: {…}}
-useShippingValidation.js:277 [useShippingValidation] isCartCompatible: true {userRegion: 'araucania', incompatibleProductsCount: 0}
-PaymentMethod.jsx:100 [PaymentMethod] Datos de checkout inicializados: {itemsCount: 1, subtotal: 3000000, tax: 570000, serviceFee: 60000, shipping: 7855, …}
-PaymentMethod.jsx:100 [PaymentMethod] Datos de checkout inicializados: {itemsCount: 1, subtotal: 3000000, tax: 570000, serviceFee: 60000, shipping: 7855, …}
+react-dom-client.development.js:16244 [Violation] 'focusout' handler took 184ms
+[Violation] 'message' handler took <N>ms
+[Violation] 'message' handler took <N>ms
+[Violation] 'message' handler took <N>ms
+[Violation] 'message' handler took <N>ms
+[Violation] 'message' handler took <N>ms
+[Violation] 'message' handler took <N>ms
+[Violation] 'message' handler took <N>ms
+[Violation] 'message' handler took <N>ms
+AddProduct.jsx:442 🔥 [AddProduct.handleSubmit] Iniciando submit
+AddProduct.jsx:446 🔍 [AddProduct.handleSubmit] Validando formulario...
+AddProduct.jsx:448 📊 [AddProduct.handleSubmit] Errores de validación: {}
+AddProduct.jsx:449 🧪 [AddProduct.handleSubmit] Nombre del producto: Producto Tramos Nuevox
+AddProduct.jsx:463 ✅ [AddProduct.handleSubmit] Validación pasó, continuando...
+AddProduct.jsx:478 💾 [AddProduct.handleSubmit] Llamando submitForm()...
+react-dom-client.development.js:16244 [Violation] 'click' handler took 459ms
+AddProduct.jsx:481 📋 [AddProduct.handleSubmit] Resultado de submitForm: {success: true}
+client:883 [vite] hot updated: /src/domains/supplier/pages/my-products/AddProduct.jsx
+client:883 [vite] hot updated: /src/domains/supplier/pages/my-products/AddProduct.jsx

@@ -17,6 +17,9 @@ import {
   Remove as RemoveIcon,
 } from '@mui/icons-material';
 
+// Custom hooks
+import { useUserShippingRegion } from '../../../../hooks/useUserShippingRegion';
+
 // Utility imports (updated paths for shared location)
 import { showErrorToast } from '../../../../utils/toastHelpers';
 import { generateProductUrl } from '../../../utils/product/productUrl';
@@ -27,7 +30,6 @@ import {
   calculatePriceForQuantity,
 } from '../../../../utils/priceCalculation';
 import { AddToCart } from '../../cart';
-import { getUserProfile } from '../../../../services/user';
 
 /**
  * ProductCardBuyerContext - Renders the specific content and actions for a buyer's product card.
@@ -37,8 +39,9 @@ const ProductCardBuyerContext = React.memo(
   ({ product, onAddToCart, handleProductClick, onModalStateChange }) => {
     const navigate = useNavigate();
 
-    const [userRegion, setUserRegion] = useState(null);
-    const [isLoadingUserRegion, setIsLoadingUserRegion] = useState(true); // Nuevo estado de carga
+    // ✅ Hook para región de envío con Supabase Realtime
+    const { userRegion, isLoadingUserRegion } = useUserShippingRegion();
+    
     const minimumPurchase =
       product?.minimum_purchase || product?.compraMinima || 1;
 
@@ -65,25 +68,6 @@ const ProductCardBuyerContext = React.memo(
         ? tiers
         : [];
     }, [product.priceTiers, tiers]);
-
-    // Obtener región del usuario para validación de despacho
-    useEffect(() => {
-      const fetchUserRegion = async () => {
-        try {
-          setIsLoadingUserRegion(true);
-          const userId = localStorage.getItem('user_id');
-          if (userId) {
-            const { data: profile } = await getUserProfile(userId);
-            setUserRegion(profile?.shipping_region || null);
-          }
-        } catch (error) {
-        } finally {
-          setIsLoadingUserRegion(false);
-        }
-      };
-      
-      fetchUserRegion();
-    }, []);
 
     const memoizedPriceContent = useMemo(() => {
       if (loadingTiers) {

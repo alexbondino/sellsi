@@ -98,6 +98,14 @@ const BuyerProfile = ({ onProfileUpdated }) => {
         }
       }
       setUserProfile(mappedProfile);
+      
+      // ✅ NUEVO: Guardar región en localStorage para sincronización
+      if (mappedProfile.shipping_region) {
+        localStorage.setItem('user_shipping_region', mappedProfile.shipping_region);
+      } else {
+        localStorage.removeItem('user_shipping_region');
+      }
+      
       setLoading(false);
     } catch (error) {
       console.error('Error fetching user profile:', error);
@@ -147,6 +155,14 @@ const BuyerProfile = ({ onProfileUpdated }) => {
 
       // Actualizar el estado local
       await fetchUserProfile();
+      
+      // ✅ NUEVO: Actualizar localStorage con la nueva región
+      const { data: updatedProfile } = await getUserProfile(user.id);
+      if (updatedProfile?.shipping_region) {
+        localStorage.setItem('user_shipping_region', updatedProfile.shipping_region);
+      } else {
+        localStorage.removeItem('user_shipping_region');
+      }
       
       // Refrescar el perfil del usuario en App.jsx para actualizar TopBar
       if (onProfileUpdated) {

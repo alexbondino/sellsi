@@ -28,7 +28,9 @@ import StorefrontOutlinedIcon from '@mui/icons-material/StorefrontOutlined';
 import Inventory2OutlinedIcon from '@mui/icons-material/Inventory2Outlined';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { useResponsiveThumbnail } from '../../../hooks/useResponsiveThumbnail'; // Nuevo hook
+import { useUserShippingRegion } from '../../../hooks/useUserShippingRegion'; // Hook para región
 import { supabase } from '../../../services/supabase'
+import { getUserProfile } from '../../../services/user'
 
 import ProductImageGallery from './ProductImageGallery'
 import PurchaseActions from './PurchaseActions'
@@ -68,6 +70,9 @@ const ProductHeader = React.memo(({
   // ✅ NUEVO: Hook para obtener thumbnail responsivo de la imagen principal
   const { thumbnailUrl: mainImageThumbnail, isLoading: thumbnailLoading } = useResponsiveThumbnail(product);
 
+  // ✅ Hook para región de envío con Supabase Realtime
+  const { userRegion, isLoadingUserRegion } = useUserShippingRegion();
+
   const [copied, setCopied] = useState({ name: false, price: false })
   // ✅ NUEVO: Estado para verificar si el producto pertenece al usuario actual
   const [isOwnProduct, setIsOwnProduct] = useState(false)
@@ -79,15 +84,10 @@ const ProductHeader = React.memo(({
   // ✅ NUEVO: Función para obtener el nombre del usuario actual
   const getCurrentUserName = React.useCallback(async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return null
+      const userId = localStorage.getItem('user_id')
+      if (!userId) return null
       
-      const { data: profile } = await supabase
-        .from('users')
-        .select('user_nm')
-        .eq('user_id', user.id)
-        .single()
-      
+      const { data: profile } = await getUserProfile(userId)
       return profile?.user_nm || null
     } catch (error) {
       console.error('Error obteniendo nombre del usuario:', error)
@@ -123,6 +123,7 @@ const ProductHeader = React.memo(({
     
     checkOwnership()
   }, [isLoggedIn, product, proveedor, getCurrentUserName])
+
   // Función para copiar texto al portapapeles y mostrar feedback
   const handleCopy = (type, value) => {
     navigator.clipboard.writeText(value).then(() => {
@@ -710,6 +711,8 @@ const ProductHeader = React.memo(({
                   product={product}
                   tiers={finalTiers}
                   isLoggedIn={isLoggedIn}
+                  userRegion={userRegion}
+                  isLoadingUserProfile={isLoadingUserRegion}
                 />
               )
             }

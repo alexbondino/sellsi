@@ -9,6 +9,8 @@ const PurchaseActions = ({
   product,
   tiers = [],
   isLoggedIn = false,
+  userRegion = null,
+  isLoadingUserProfile = false,
 }) => {
   // No necesitamos manejar estado de cantidad local ya que AddToCart se encarga de todo
 
@@ -19,6 +21,8 @@ const PurchaseActions = ({
         variant="button"
         size="large"
         disabled={!isLoggedIn || stock === 0}
+        userRegion={userRegion}
+        isLoadingUserProfile={isLoadingUserProfile}
         sx={{
           py: 1.5,
           fontSize: '1.1rem',
