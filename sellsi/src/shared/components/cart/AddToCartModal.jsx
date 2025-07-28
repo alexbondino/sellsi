@@ -318,7 +318,7 @@ const AddToCartModal = ({
       return (
         <Paper variant="outlined" sx={{ p: 2, textAlign: 'center' }}>
           <Typography variant="h6" color="text.primary" sx={{ fontWeight: 700 }}>
-            Precio único
+            Precio
           </Typography>
           <Typography variant="h5" color="primary.main" sx={{ fontWeight: 800, mt: 1 }}>
             ${productData.basePrice.toLocaleString('es-CL')}
