@@ -110,33 +110,48 @@ const useProductPriceTiers = create((set, get) => ({
    * Validar tramos de precio
    */
   validatePriceTiers: (priceTiers) => {
+    console.log('🔍 [validatePriceTiers] Validando tramos recibidos:', JSON.stringify(priceTiers, null, 2))
+    
     const errors = []
     const validatedTiers = []
 
     for (let i = 0; i < priceTiers.length; i++) {
       const tier = priceTiers[i]
+      console.log(`🔎 [validatePriceTiers] Procesando tramo ${i + 1}:`, tier)
+      
+      // Soporte para estructura antigua y nueva
+      const minQuantity = tier.min_quantity || tier.cantidad || tier.min
+      const price = tier.price || tier.precio
+      const maxQuantity = tier.max_quantity || tier.maxCantidad || tier.max
+      
+      console.log(`📋 [validatePriceTiers] Tramo ${i + 1} mapeado:`, {
+        minQuantity,
+        price,
+        maxQuantity,
+        originalTier: tier
+      })
       
       // Validar campos requeridos
-      if (!tier.cantidad || isNaN(Number(tier.cantidad)) || Number(tier.cantidad) <= 0) {
+      if (!minQuantity || isNaN(Number(minQuantity)) || Number(minQuantity) <= 0) {
         errors.push(`Tramo ${i + 1}: Cantidad mínima debe ser un número mayor a 0`)
         continue
       }
 
-      if (!tier.precio || isNaN(Number(tier.precio)) || Number(tier.precio) <= 0) {
+      if (!price || isNaN(Number(price)) || Number(price) <= 0) {
         errors.push(`Tramo ${i + 1}: Precio debe ser un número mayor a 0`)
         continue
       }
 
       // Validar cantidad máxima si se proporciona
-      if (tier.maxCantidad && (isNaN(Number(tier.maxCantidad)) || Number(tier.maxCantidad) <= Number(tier.cantidad))) {
+      if (maxQuantity && (isNaN(Number(maxQuantity)) || Number(maxQuantity) <= Number(minQuantity))) {
         errors.push(`Tramo ${i + 1}: Cantidad máxima debe ser mayor a la cantidad mínima`)
         continue
       }
 
       // Validar rangos razonables
-      const cantidad = Number(tier.cantidad)
-      const precio = Number(tier.precio)
-      const maxCantidad = tier.maxCantidad ? Number(tier.maxCantidad) : null
+      const cantidad = Number(minQuantity)
+      const precio = Number(price)
+      const maxCantidad = maxQuantity ? Number(maxQuantity) : null
 
       if (cantidad > 10000000) {
         errors.push(`Tramo ${i + 1}: Cantidad mínima muy alta (máximo 10,000,000)`)
@@ -150,10 +165,13 @@ const useProductPriceTiers = create((set, get) => ({
         errors.push(`Tramo ${i + 1}: Cantidad máxima muy alta (máximo 10,000,000)`)
       }
 
-      // Si pasa validaciones, agregar a la lista
+      // Si pasa validaciones, agregar a la lista (mantener estructura legacy para compatibilidad)
       validatedTiers.push({
-        cantidad: cantidad,
+        min: cantidad,
         precio: precio,
+        max: maxCantidad,
+        // También campos legacy por compatibilidad
+        cantidad: cantidad,
         maxCantidad: maxCantidad,
         descuento: tier.descuento || null,
         descripcion: tier.descripcion || null,
@@ -161,12 +179,12 @@ const useProductPriceTiers = create((set, get) => ({
     }
 
     // Validar que no haya solapamientos en rangos
-    const sortedTiers = [...validatedTiers].sort((a, b) => a.cantidad - b.cantidad)
+    const sortedTiers = [...validatedTiers].sort((a, b) => a.min - b.min)
     for (let i = 1; i < sortedTiers.length; i++) {
       const prevTier = sortedTiers[i - 1]
       const currentTier = sortedTiers[i]
       
-      if (prevTier.maxCantidad && currentTier.cantidad <= prevTier.maxCantidad) {
+      if (prevTier.max && currentTier.min <= prevTier.max) {
         errors.push(`Solapamiento de rangos: Tramo ${i} se solapa con el anterior`)
       }
     }

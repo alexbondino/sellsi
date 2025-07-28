@@ -113,7 +113,7 @@ const PriceTiers = ({
     if (shouldShowStockInsteadOfMaxInput(index)) {
       return stockDisponible?.toString() || '';
     }
-    return tramo.max;
+    return tramo.max || '';
   };
   
   // Función para determinar si el campo MAX debe estar deshabilitado
@@ -203,7 +203,7 @@ const PriceTiers = ({
                   <TextField
                     label="Min"
                     placeholder="Ej: 10"
-                    value={tramo.min}
+                    value={tramo.min || ''}
                     onChange={e => handleTramoChange(index, 'min', e.target.value)}
                     onBlur={e => handleTramoBlur(index, 'min', e.target.value)}
                     type="number"
@@ -223,14 +223,14 @@ const PriceTiers = ({
                     sx={{ 
                       width: '50%',
                       '& input[type=number]': {
-                        '-moz-appearance': 'textfield',
+                        MozAppearance: 'textfield',
                       },
                       '& input[type=number]::-webkit-outer-spin-button': {
-                        '-webkit-appearance': 'none',
+                        WebkitAppearance: 'none',
                         margin: 0,
                       },
                       '& input[type=number]::-webkit-inner-spin-button': {
-                        '-webkit-appearance': 'none',
+                        WebkitAppearance: 'none',
                         margin: 0,
                       },
                     }}
@@ -259,14 +259,14 @@ const PriceTiers = ({
                     sx={{ 
                       width: '50%',
                       '& input[type=number]': {
-                        '-moz-appearance': 'textfield',
+                        MozAppearance: 'textfield',
                       },
                       '& input[type=number]::-webkit-outer-spin-button': {
-                        '-webkit-appearance': 'none',
+                        WebkitAppearance: 'none',
                         margin: 0,
                       },
                       '& input[type=number]::-webkit-inner-spin-button': {
-                        '-webkit-appearance': 'none',
+                        WebkitAppearance: 'none',
                         margin: 0,
                       },
                       ...(shouldShowStockInsteadOfMaxInput(index) && {
@@ -291,7 +291,7 @@ const PriceTiers = ({
                 fullWidth
                 label="Precio Unitario"
                 placeholder="Ej: 15000"
-                value={tramo.precio}
+                value={tramo.precio || ''}
                 onChange={e => handleTramoChange(index, 'precio', e.target.value)}
                 type="number"
                 size="small"
@@ -318,14 +318,14 @@ const PriceTiers = ({
                 }}
                 sx={{
                   '& input[type=number]': {
-                    '-moz-appearance': 'textfield',
+                    MozAppearance: 'textfield',
                   },
                   '& input[type=number]::-webkit-outer-spin-button': {
-                    '-webkit-appearance': 'none',
+                    WebkitAppearance: 'none',
                     margin: 0,
                   },
                   '& input[type=number]::-webkit-inner-spin-button': {
-                    '-webkit-appearance': 'none',
+                    WebkitAppearance: 'none',
                     margin: 0,
                   },
                   ...(getPriceFieldError(tramo, index) && {
