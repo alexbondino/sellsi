@@ -296,17 +296,21 @@ export class UploadService {
       // 4. Obtener URL pública de la imagen original (usar la que ya generamos)
       const urlData = publicUrlData
 
-      // 5. Generar thumbnail usando Edge Function (SOLO para imagen principal)
+      // 5. Generar thumbnail usando Edge Function (SOLO para imagen principal y NO WebP)
       let thumbnailUrl = null
       if (isMainImage) {
-        try {
-          const thumbnailResult = await this.generateThumbnail(urlData.publicUrl, productId, supplierId)
-          if (thumbnailResult.success) {
-            thumbnailUrl = thumbnailResult.thumbnailUrl
+        // Skip thumbnail generation for WebP images since Edge Function doesn't support them
+        if (file.type === 'image/webp') {
+          // WebP detected - skip thumbnail generation, image uploaded successfully
+        } else {
+          try {
+            const thumbnailResult = await this.generateThumbnail(urlData.publicUrl, productId, supplierId)
+            if (thumbnailResult.success) {
+              thumbnailUrl = thumbnailResult.thumbnailUrl
+            }
+          } catch (thumbnailError) {
+            // Continue without thumbnail if generation fails
           }
-          // Si falla, continuar sin thumbnail
-        } catch (thumbnailError) {
-          // Si falla, continuar sin thumbnail
         }
       }
 

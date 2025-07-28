@@ -351,8 +351,7 @@ export const createCartStoreFacade = () => {
               }
               localStorage.setItem('sellsi-cart-v3-refactored', JSON.stringify(dataToSave))
             } catch (error) {
-              console.error('❌ Error guardando en localStorage:', error)
-            }
+              }
           },
 
           /**
@@ -372,8 +371,7 @@ export const createCartStoreFacade = () => {
                 }
               }
             } catch (error) {
-              console.error('❌ Error cargando desde localStorage:', error)
-            }
+              }
             return false
           },
 
@@ -384,8 +382,7 @@ export const createCartStoreFacade = () => {
             try {
               localStorage.removeItem('sellsi-cart-v3-refactored')
             } catch (error) {
-              console.error('❌ Error limpiando localStorage:', error)
-            }
+              }
           },
 
           // === UTILIDADES ===

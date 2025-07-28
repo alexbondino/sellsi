@@ -420,8 +420,7 @@ export const repairUserImageUrl = async (userId) => {
       // ...removed log...
       return { success: false, error: listError };
     }
-    
-    
+
     if (!listData || listData.length === 0) {
       // No hay archivos, actualizar BD para quitar URL
       await supabase
@@ -479,7 +478,6 @@ export const repairUserImageUrl = async (userId) => {
         .from('user-logos')
         .remove(filesToDelete);
       if (deleteError) {
-        console.warn('[repairUserImageUrl] Error eliminando duplicados:', deleteError);
       }
     }
     
@@ -491,7 +489,6 @@ export const repairUserImageUrl = async (userId) => {
     };
     
   } catch (error) {
-    console.error('[repairUserImageUrl] Error inesperado:', error);
     return { success: false, error };
   }
 };
@@ -511,11 +508,9 @@ export const forceFixImageUrl = async (userId) => {
       .list(userId + '/', { limit: 100 });
     
     if (listError) {
-      console.error('[forceFixImageUrl] ❌ Error listando archivos:', listError);
       return { success: false, error: listError };
     }
-    
-    
+
     if (!listData || listData.length === 0) {
       const { error: clearError } = await supabase
         .from('users')
@@ -523,7 +518,6 @@ export const forceFixImageUrl = async (userId) => {
         .eq('user_id', userId);
       
       if (clearError) {
-        console.error('[forceFixImageUrl] ❌ Error limpiando BD:', clearError);
         return { success: false, error: clearError };
       }
       
@@ -548,16 +542,14 @@ export const forceFixImageUrl = async (userId) => {
         return a.name > b.name ? a : b;
       });
     }
-    
-    
+
     // 4. Construir URL correcta
     const correctPath = `${userId}/${selectedFile.name}`;
     const { data: urlData } = supabase.storage
       .from('user-logos')
       .getPublicUrl(correctPath);
     const correctUrl = urlData.publicUrl;
-    
-    
+
     // 5. ACTUALIZACIÓN FORZADA con múltiples intentos
     let updateSuccess = false;
     let attempts = 0;
@@ -571,11 +563,9 @@ export const forceFixImageUrl = async (userId) => {
       .single();
     
     if (existingUserError) {
-      console.error('[forceFixImageUrl] ❌ Usuario no encontrado:', existingUserError);
       return { success: false, error: 'Usuario no existe en la tabla users' };
     }
-    
-    
+
     while (!updateSuccess && attempts < maxAttempts) {
       attempts++;
       
@@ -587,10 +577,8 @@ export const forceFixImageUrl = async (userId) => {
       })
         .eq('user_id', userId)
         .select();
-      
-      
+
       if (updateError) {
-        console.error(`[forceFixImageUrl] ❌ Error en intento ${attempts}:`, updateError);
         if (attempts === maxAttempts) {
           return { success: false, error: updateError };
         }
@@ -600,9 +588,7 @@ export const forceFixImageUrl = async (userId) => {
         if (updateData && updateData.length > 0) {
           updateSuccess = true;
         } else {
-          console.warn(`[forceFixImageUrl] ⚠️ Update exitoso pero sin filas afectadas en intento ${attempts}`);
           if (attempts === maxAttempts) {
-            console.error('[forceFixImageUrl] ❌ No se pudo actualizar después de todos los intentos');
             return { success: false, error: 'No se actualizó ninguna fila' };
           }
         }
@@ -617,15 +603,12 @@ export const forceFixImageUrl = async (userId) => {
       .single();
     
     if (verifyError) {
-      console.error('[forceFixImageUrl] ❌ Error verificando:', verifyError);
       return { success: false, error: verifyError };
     }
     
     // ...removed log...
     
     if (verifyData?.logo_url !== correctUrl) {
-      console.error('[forceFixImageUrl] ❌ MISMATCH PERSISTENTE - Intentando UPSERT como alternativa...');
-      
       const upsertResult = await forceUpsertImageUrl(userId, correctUrl);
       // ...removed log...
       
@@ -648,7 +631,6 @@ export const forceFixImageUrl = async (userId) => {
         .single();
       
       if (finalVerifyError || finalVerifyData?.logo_url !== correctUrl) {
-        console.error('[forceFixImageUrl] ❌ UPSERT también falló');
         return { 
           success: false, 
           error: 'Ni UPDATE ni UPSERT funcionaron',
@@ -672,7 +654,6 @@ export const forceFixImageUrl = async (userId) => {
         .remove(filesToDelete);
       
       if (deleteError) {
-        console.warn('[forceFixImageUrl] ⚠️ Error eliminando duplicados:', deleteError);
       } else {
         // ...removed log...
       }
@@ -687,7 +668,6 @@ export const forceFixImageUrl = async (userId) => {
     };
     
   } catch (error) {
-    console.error('[forceFixImageUrl] ❌ Error general:', error);
     return { success: false, error };
   }
 };
@@ -722,7 +702,6 @@ export const forceUpsertImageUrl = async (userId, correctUrl) => {
     
     return { success: true, data };
   } catch (error) {
-    console.error('[forceUpsertImageUrl] ❌ Error:', error);
     return { success: false, error };
   }
 };
@@ -758,7 +737,6 @@ if (typeof window !== 'undefined') {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        console.error('❌ No hay usuario autenticado');
         return;
       }
       
@@ -781,7 +759,6 @@ if (typeof window !== 'undefined') {
       
       return result;
     } catch (error) {
-      console.error('❌ Error ejecutando corrección:', error);
     }
   };
   
@@ -790,7 +767,6 @@ if (typeof window !== 'undefined') {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        console.error('❌ No hay usuario autenticado');
         return;
       }
       
@@ -803,20 +779,21 @@ if (typeof window !== 'undefined') {
         .eq('user_id', user.id)
         .single();
       
-      // ...removed log...
-      if (userError) console.error('❌ Error obteniendo usuario:', userError);
-      
+      if (userError) {
+        return { userData: null, files: [] };
+      }
+
       // 2. Verificar archivos en storage
       const { data: files, error: filesError } = await supabase.storage
         .from('user-logos')
         .list(user.id + '/', { limit: 100 });
       
-      // ...removed log...
-      if (filesError) console.error('❌ Error obteniendo archivos:', filesError);
+      if (filesError) {
+        return { userData, files: [] };
+      }
       
       return { userData, files };
     } catch (error) {
-      console.error('❌ Error en inspección:', error);
     }
   };
 
@@ -825,7 +802,6 @@ if (typeof window !== 'undefined') {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        console.error('❌ No hay usuario autenticado');
         return;
       }
       
@@ -890,7 +866,6 @@ if (typeof window !== 'undefined') {
         test5: { data: test5Data, error: test5Error }
       };
     } catch (error) {
-      console.error('❌ Error en test directo:', error);
     }
   };
   

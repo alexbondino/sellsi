@@ -14,10 +14,6 @@
  */
 export const createProductSlug = (productName) => {
   if (!productName || typeof productName !== 'string') {
-    console.warn(
-      'createProductSlug: productName is not a valid string:',
-      productName
-    )
     return 'producto-sin-nombre'
   }
 
@@ -43,7 +39,6 @@ export const createProductSlug = (productName) => {
  */
 export const generateProductSlug = (product) => {
   if (!product) {
-    console.warn('generateProductSlug: product is null or undefined')
     return 'producto-sin-datos'
   }
 

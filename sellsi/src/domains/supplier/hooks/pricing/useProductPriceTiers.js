@@ -26,9 +26,6 @@ const useProductPriceTiers = create((set, get) => ({
    * Procesar tramos de precio - INCLUYE LIMPIEZA PARA ARRAY VACÍO
    */
   processPriceTiers: async (productId, priceTiers) => {
-    console.log('🔧 [processPriceTiers] Procesando tramos para producto:', productId)
-    console.log('📊 [processPriceTiers] PriceTiers recibidos:', priceTiers)
-    
     set((state) => ({
       processingTiers: { ...state.processingTiers, [productId]: true },
       error: null,
@@ -36,21 +33,16 @@ const useProductPriceTiers = create((set, get) => ({
 
     try {
       // SIEMPRE limpiar tramos existentes primero
-      console.log('🧹 [processPriceTiers] Limpiando tramos existentes...')
       const { error: deleteError } = await supabase
         .from('product_quantity_ranges')
         .delete()
         .eq('product_id', productId)
 
       if (deleteError) {
-        console.error('❌ [processPriceTiers] Error limpiando tramos:', deleteError)
-        throw deleteError
       }
-      console.log('✅ [processPriceTiers] Tramos existentes limpiados')
 
       // Si no hay tramos o está vacío, terminar aquí (modo Por Unidad)
       if (!priceTiers || priceTiers.length === 0) {
-        console.log('ℹ️  [processPriceTiers] No hay tramos para insertar (modo Por Unidad)')
         set((state) => ({
           processingTiers: { ...state.processingTiers, [productId]: false },
         }))
@@ -58,11 +50,9 @@ const useProductPriceTiers = create((set, get) => ({
       }
 
       // Validar y preparar tramos para insertar
-      console.log('📋 [processPriceTiers] Validando tramos...')
       const validationResult = get().validatePriceTiers(priceTiers)
       
       if (!validationResult.isValid) {
-        console.error('❌ [processPriceTiers] Tramos inválidos:', validationResult.errors)
         throw new Error(`Tramos de precio inválidos: ${validationResult.errors.join(', ')}`)
       }
 
@@ -75,8 +65,6 @@ const useProductPriceTiers = create((set, get) => ({
         price: Number(t.precio),
       }))
 
-      console.log('💾 [processPriceTiers] Insertando nuevos tramos:', tiersToInsert)
-
       // Insertar nuevos tramos
       if (tiersToInsert.length > 0) {
         const { error: insertError } = await supabase
@@ -84,20 +72,16 @@ const useProductPriceTiers = create((set, get) => ({
           .insert(tiersToInsert)
 
         if (insertError) {
-          console.error('❌ [processPriceTiers] Error insertando tramos:', insertError)
           throw insertError
         }
-        console.log('✅ [processPriceTiers] Tramos insertados exitosamente')
       }
 
       set((state) => ({
         processingTiers: { ...state.processingTiers, [productId]: false },
       }))
 
-      console.log('✅ [processPriceTiers] Proceso completado exitosamente')
       return { success: true, data: validationResult.data }
     } catch (error) {
-      console.error('❌ [processPriceTiers] Error:', error)
       set((state) => ({
         processingTiers: { ...state.processingTiers, [productId]: false },
         error: `Error procesando tramos de precio: ${error.message}`,
@@ -110,26 +94,15 @@ const useProductPriceTiers = create((set, get) => ({
    * Validar tramos de precio
    */
   validatePriceTiers: (priceTiers) => {
-    console.log('🔍 [validatePriceTiers] Validando tramos recibidos:', JSON.stringify(priceTiers, null, 2))
-    
     const errors = []
     const validatedTiers = []
 
     for (let i = 0; i < priceTiers.length; i++) {
       const tier = priceTiers[i]
-      console.log(`🔎 [validatePriceTiers] Procesando tramo ${i + 1}:`, tier)
-      
       // Soporte para estructura antigua y nueva
       const minQuantity = tier.min_quantity || tier.cantidad || tier.min
       const price = tier.price || tier.precio
       const maxQuantity = tier.max_quantity || tier.maxCantidad || tier.max
-      
-      console.log(`📋 [validatePriceTiers] Tramo ${i + 1} mapeado:`, {
-        minQuantity,
-        price,
-        maxQuantity,
-        originalTier: tier
-      })
       
       // Validar campos requeridos
       if (!minQuantity || isNaN(Number(minQuantity)) || Number(minQuantity) <= 0) {

@@ -88,7 +88,6 @@ export const useOrdersStore = create((set, get) => ({
       // Obtener estadísticas también
       get().fetchStats();
     } catch (error) {
-      console.error('❌ Error fetching orders:', error);
       set({
         error: `Error al cargar los pedidos: ${error.message}`,
         loading: false,
@@ -113,7 +112,6 @@ export const useOrdersStore = create((set, get) => ({
       const stats = await orderService.getOrderStats(supplierId, period);
       set({ stats });
     } catch (error) {
-      console.error('❌ Error fetching stats:', error);
       // No mostrar error aquí porque las estadísticas son secundarias
     }
   },
@@ -169,8 +167,6 @@ export const useOrdersStore = create((set, get) => ({
 
       return result;
     } catch (error) {
-      console.error('❌ Error updating order status:', error);
-
       // Revertir cambio optimista en caso de error
       await get().fetchOrders();
 
@@ -209,7 +205,6 @@ export const useOrdersStore = create((set, get) => ({
         loading: false,
       });
     } catch (error) {
-      console.error('❌ Error searching orders:', error);
       set({
         error: `Error en la búsqueda: ${error.message}`,
         loading: false,

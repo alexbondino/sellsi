@@ -108,7 +108,6 @@ class OrderService {
       }
 
       const { data, error } = await query;      if (error) {
-        console.error('Error querying carts for supplier:', error);
         throw error;
       }
 
@@ -218,7 +217,6 @@ class OrderService {
       return orders;
 
     } catch (error) {
-      console.error('Error fetching orders for supplier:', error);
       throw new Error(`No se pudieron obtener los pedidos: ${error.message}`);
     }
   }
@@ -275,7 +273,6 @@ class OrderService {
       };
 
     } catch (error) {
-      console.error('Error updating order status:', error);
       throw new Error(`No se pudo actualizar el estado del pedido: ${error.message}`);
     }
   }
@@ -389,7 +386,6 @@ class OrderService {
       return stats;
 
     } catch (error) {
-      console.error('Error getting order stats:', error);
       throw new Error(`No se pudieron obtener las estadísticas: ${error.message}`);
     }
   }
@@ -416,7 +412,6 @@ class OrderService {
       //   });
 
     } catch (error) {
-      console.error('Error logging order action:', error);
       // No lanzar error aquí porque es una función auxiliar
     }
   }
@@ -461,7 +456,6 @@ class OrderService {
       return data || [];
 
     } catch (error) {
-      console.error('Error searching orders:', error);
       throw new Error(`Error en la búsqueda: ${error.message}`);
     }
   }
@@ -554,7 +548,6 @@ class OrderService {
       const { data, error } = await query;
 
       if (error) {
-        console.error('Error querying carts for buyer:', error);
         throw error;
       }
 
@@ -635,7 +628,6 @@ class OrderService {
       return orders;
 
     } catch (error) {
-      console.error('Error fetching orders for buyer:', error);
       throw new Error(`No se pudieron obtener los pedidos: ${error.message}`);
     }
   }

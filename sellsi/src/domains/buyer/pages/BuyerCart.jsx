@@ -154,9 +154,7 @@ const BuyerCart = () => {
       try {
         const cost = await calculateRealShippingCost(items);
         setRealShippingCost(cost);
-        console.log('[BuyerCart] Costo real de envío calculado (modo simple):', cost);
       } catch (error) {
-        console.error('[BuyerCart] Error calculando costo de envío:', error);
         // Usar cálculo del hook como fallback
         setRealShippingCost(0); // El hook manejará el cálculo
       } finally {
@@ -429,7 +427,6 @@ const BuyerCart = () => {
       // Navegar al método de pago
       navigate('/buyer/paymentmethod');
     } catch (error) {
-      console.error('[BuyerCart] handleCheckout: error en el proceso de compra', error);
       showCartError('Error en el proceso de compra');
     } finally {
       setIsCheckingOut(false);

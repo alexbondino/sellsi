@@ -40,7 +40,6 @@ const Profile = ({ userProfile, onUpdateProfile }) => {
       const userId = userProfile?.user_id;
       if (userId) {
         const profile = await getUserProfile(userId);
-        console.log('[Profile.jsx] Perfil completo cargado:', profile);
         setLoadedProfile(profile?.data || null);
       }
     }
@@ -50,9 +49,7 @@ const Profile = ({ userProfile, onUpdateProfile }) => {
   // Usar los hooks modulares con el perfil cargado
   const { formData, hasChanges, updateField, resetForm, updateInitialData } = useProfileForm(loadedProfile);
   useEffect(() => {
-    console.log('[Profile.jsx] formData.shippingRegion:', formData.shippingRegion);
-    console.log('[Profile.jsx] formData.shippingComuna:', formData.shippingComuna);
-  }, [formData.shippingRegion, formData.shippingComuna]);
+    }, [formData.shippingRegion, formData.shippingComuna]);
   const { 
     pendingImage, 
     handleImageChange: _handleImageChange, 
@@ -109,7 +106,6 @@ const Profile = ({ userProfile, onUpdateProfile }) => {
     const hasImageChanges = !!pendingImage;
     const hasPendingChanges = hasFormChanges || hasImageChanges;
 
-
     if (!hasPendingChanges) {
       return;
     }
@@ -138,8 +134,7 @@ const Profile = ({ userProfile, onUpdateProfile }) => {
           await trackUserAction(loadedProfile.user_id, 'profile_updated');
         } catch (trackError) {
           // Error silencioso para no afectar la experiencia del usuario
-          console.warn('Error tracking user action:', trackError);
-        }
+          }
       }
 
       // Limpiar imagen pendiente después de guardar exitosamente
@@ -153,8 +148,6 @@ const Profile = ({ userProfile, onUpdateProfile }) => {
       });
 
     } catch (error) {
-      console.error('Error updating profile:', error);
-      
       // Mostrar banner de error
       showBanner({
         message: '❌ Error al actualizar el perfil. Por favor, inténtalo nuevamente.',

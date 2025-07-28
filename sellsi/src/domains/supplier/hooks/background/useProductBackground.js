@@ -88,10 +88,28 @@ const useProductBackground = create((set, get) => ({
           throw new Error(`Error procesando imágenes: ${result.error}`)
         }
         
-        // 🔥 REFRESH DESHABILITADO: Conservar React Query cache intacto
+        // 🔥 NUEVO: COMUNICACIÓN INTELIGENTE EN LUGAR DE REFRESH BLOQUEADO
         if (result.success && crudHook && crudHook.refreshProduct) {
-          // ❌ DESHABILITADO: await crudHook.refreshProduct(productId)
-          // Razón: refreshProduct() sobreescribe setQueryData() y causa flicker de imagen
+          // En lugar de refresh que causa conflicto, usar comunicación por eventos
+          
+          // 1. Notificar a componentes que las imágenes están disponibles
+          window.dispatchEvent(new CustomEvent('productImagesReady', {
+            detail: { 
+              productId,
+              imageCount: productData.imagenes?.length || 0,
+              timestamp: Date.now()
+            }
+          }))
+          
+          // 2. Solo actualizar el estado de Zustand SIN refrescar React Query
+          setTimeout(async () => {
+            if (crudHook.refreshProduct) {
+              const refreshResult = await crudHook.refreshProduct(productId)
+              if (refreshResult.success) {
+                //
+              }
+            }
+          }, 100) // Delay mínimo para no interferir con React Query
         }
       }
 
@@ -192,7 +210,6 @@ const useProductBackground = create((set, get) => ({
         // NO esperar - procesar verdaderamente en background
         get().processProductInBackground(productId, productData, hooks)
           .catch(error => {
-            console.error('Error en procesamiento background:', error)
             set({ error: `Error procesando en background: ${error.message}` })
           })
       }
@@ -208,56 +225,39 @@ const useProductBackground = create((set, get) => ({
    * Actualizar producto completo (CRUD + Background processing)
    */
   updateCompleteProduct: async (productId, updates, hooks = {}) => {
-    console.log('🔄 [updateCompleteProduct] Iniciando actualización completa')
-    console.log('📝 [updateCompleteProduct] Updates:', updates)
-    console.log('🆔 [updateCompleteProduct] ProductId:', productId)
-    
     const { crudHook, priceTiersHook } = hooks
 
     try {
       // 1. Actualizar campos básicos primero
       if (crudHook) {
-        console.log('📊 [updateCompleteProduct] Actualizando campos básicos...')
         const updateResult = await crudHook.updateBasicProduct(productId, updates)
         
         if (!updateResult.success) {
-          console.error('❌ [updateCompleteProduct] Error en campos básicos:', updateResult.error)
           throw new Error(updateResult.error)
         }
-        console.log('✅ [updateCompleteProduct] Campos básicos actualizados')
       }
 
       // 2. CRÍTICO: Procesar priceTiers SINCRÓNICAMENTE cuando hay cambio de pricing
       if (updates.priceTiers !== undefined && priceTiersHook) {
-        console.log('💰 [updateCompleteProduct] Procesando priceTiers sincrónicamente...')
-        console.log('📊 [updateCompleteProduct] PriceTiers:', updates.priceTiers)
-        
         const priceTierResult = await priceTiersHook.processPriceTiers(productId, updates.priceTiers)
         
         if (!priceTierResult.success) {
-          console.error('❌ [updateCompleteProduct] Error en priceTiers:', priceTierResult.error)
           throw new Error(`Error procesando priceTiers: ${priceTierResult.error}`)
         }
-        console.log('✅ [updateCompleteProduct] PriceTiers procesados exitosamente')
       }
 
       // 3. Procesar otros elementos en background si no son críticos
       if (updates.imagenes?.length > 0 || updates.specifications?.length > 0) {
-        console.log('🖼️ [updateCompleteProduct] Procesando imágenes/specs en background...')
-        
         // NO esperar - procesar verdaderamente en background
         get().processProductInBackground(productId, updates, hooks)
           .catch(error => {
-            console.error('Error en procesamiento background:', error)
             set({ error: `Error procesando en background: ${error.message}` })
           })
       }
 
       // 4. Retornar éxito
-      console.log('✅ [updateCompleteProduct] Actualización completa exitosa')
       return { success: true }
     } catch (error) {
-      console.error('❌ [updateCompleteProduct] Error:', error)
       set({ error: `Error actualizando producto completo: ${error.message}` })
       return { success: false, error: error.message }
     }

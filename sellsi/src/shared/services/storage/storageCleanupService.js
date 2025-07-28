@@ -53,9 +53,6 @@ export class StorageCleanupService {
       // 5. Verificar y limpiar registros BD sin archivos
       const dbCleanupResult = await this.cleanupBrokenDbRecords(productId, dbImages || []);
       results.errors.push(...dbCleanupResult.errors);
-
-      console.log(`🧹 Storage cleanup para producto ${productId}: ${results.cleaned} archivos limpiados`);
-      
       return results;
     } catch (error) {
       results.success = false;
@@ -102,7 +99,6 @@ export class StorageCleanupService {
             })));
           }
         } catch (error) {
-          console.warn(`Error listando archivos en ${basePath}:`, error);
         }
       }
 
@@ -125,12 +121,10 @@ export class StorageCleanupService {
           })));
         }
       } catch (error) {
-        console.warn('Error listando thumbnails:', error);
       }
 
       return allFiles;
     } catch (error) {
-      console.error('Error obteniendo archivos de storage:', error);
       return [];
     }
   }
@@ -277,7 +271,6 @@ export class StorageCleanupService {
           if (error) {
             result.errors.push(`Error limpiando registros rotos: ${error.message}`);
           } else {
-            console.log(`🗑️ Limpiados ${brokenRecords.length} registros rotos de BD`);
           }
         }
       } catch (error) {
@@ -325,9 +318,6 @@ export class StorageCleanupService {
       totalCleaned: 0,
       errors: []
     };
-
-    console.log(`🧹 Iniciando limpieza masiva de ${productIds.length} productos...`);
-
     for (const productId of productIds) {
       try {
         const cleanupResult = await this.cleanupProductOrphans(productId);
@@ -340,8 +330,6 @@ export class StorageCleanupService {
         results.errors.push(`Error en producto ${productId}: ${error.message}`);
       }
     }
-
-    console.log(`✅ Limpieza masiva completada: ${results.totalCleaned} archivos limpiados`);
     return results;
   }
 }

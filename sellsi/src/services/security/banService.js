@@ -20,7 +20,6 @@ class BanService {
         .single();
 
       if (error) {
-        console.error('Error verificando ban de usuario:', error);
         return { isBanned: false };
       }
 
@@ -30,7 +29,6 @@ class BanService {
         bannedAt: data?.banned_at,
       };
     } catch (error) {
-      console.error('Error en checkUserBan:', error);
       return { isBanned: false };
     }
   }
@@ -49,7 +47,6 @@ class BanService {
         .maybeSingle(); // Cambiamos de .single() a .maybeSingle()
 
       if (error) {
-        console.error('Error verificando ban de IP:', error);
         return { isBanned: false };
       }
 
@@ -59,7 +56,6 @@ class BanService {
         bannedAt: data?.banned_at,
       };
     } catch (error) {
-      console.error('Error en checkIPBan:', error);
       return { isBanned: false };
     }
   }
@@ -95,7 +91,6 @@ class BanService {
       const data = await response.json();
       return data.ip;
     } catch (error) {
-      console.error('Error obteniendo IP actual:', error);
       return null;
     }
   }
@@ -143,7 +138,6 @@ class BanService {
 
       return { isBanned: false };
     } catch (error) {
-      console.error('Error en checkBanStatus:', error);
       return { isBanned: false };
     }
   }

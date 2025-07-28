@@ -25,7 +25,6 @@ const ShippingInfoSection = ({
   
   const handleRegionChange = (event) => {
     const value = event.target.value;
-    console.log('[ShippingInfoSection] Región seleccionada:', value);
     onRegionChange('shipping', 'shippingRegion', 'shippingComuna', value);
   };
 
@@ -57,7 +56,6 @@ const ShippingInfoSection = ({
           <Select
             value={formData.shippingComuna || ''}
             onChange={(e) => {
-              console.log('[ShippingInfoSection] Comuna seleccionada:', e.target.value);
               onFieldChange('shippingComuna', e.target.value);
             }}
             label="Comuna"

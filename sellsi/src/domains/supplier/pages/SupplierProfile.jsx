@@ -101,7 +101,6 @@ const SupplierProfile = ({ onProfileUpdated }) => {
       setUserProfile(mappedProfile);
       setLoading(false);
     } catch (error) {
-      console.error('Error fetching user profile:', error);
       setLoading(false);
     }
   };
@@ -121,7 +120,7 @@ const SupplierProfile = ({ onProfileUpdated }) => {
         // Eliminar todas las imágenes del usuario
         const deleteResult = await deleteAllUserImages(user.id);
         if (!deleteResult.success) {
-          console.warn('No se pudieron eliminar las imágenes previas:', deleteResult.error);
+          //
         }
         logoPublicUrl = null;
         profileData.logo_url = null;

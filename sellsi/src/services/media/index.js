@@ -1,10 +1,9 @@
 /**
  * 📦 Media Services
  * 
- * Servicios de archivos multimedia (upload, thumbnails)
+ * Servicios de archivos multimedia (thumbnails)
  */
 
-export * from './uploadService';
 export * from './thumbnailService';
 
 export default {};

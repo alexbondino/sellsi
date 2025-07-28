@@ -181,8 +181,6 @@ export const useProductForm = (productId = null) => {
     // LÓGICA ROBUSTA PARA PRICING - CON LOGGING DETALLADO
     // ========================================================================
     
-    console.log('🔧 [mapFormToProduct] Procesando pricing type:', formData.pricingType)
-    
     if (formData.pricingType === PRICING_TYPES.UNIT) {
       // Modo Por Unidad
       const unitPrice = Math.min(parseFloat(formData.precioUnidad) || 0, PRICE_LIMITS.MAX_PRICE)
@@ -191,9 +189,7 @@ export const useProductForm = (productId = null) => {
       // CRÍTICO: Limpiar completamente los price tiers
       productData.priceTiers = []
       
-      console.log('💰 [UNIT MODE] price:', unitPrice, 'product_type:', PRODUCT_TYPES_DB.UNIT, 'priceTiers: []')
-      
-    } else if (formData.pricingType === PRICING_TYPES.TIER) {
+      } else if (formData.pricingType === PRICING_TYPES.TIER) {
       // Modo Por Tramo
       productData.price = 0 // Precio base para productos por tramo
       productData.product_type = PRODUCT_TYPES_DB.TIER
@@ -209,10 +205,7 @@ export const useProductForm = (productId = null) => {
       
       productData.priceTiers = validTiers
       
-      console.log('📊 [TIER MODE] price: 0, product_type:', PRODUCT_TYPES_DB.TIER, 'priceTiers:', validTiers)
-    }
-
-    console.log('✅ [mapFormToProduct] Producto final:', productData)
+      }
 
     return productData
   }
@@ -229,7 +222,6 @@ export const useProductForm = (productId = null) => {
     if (!rule) {
       return null
     }
-
 
     if (rule.required && (!value || value.toString().trim() === '')) {
       return 'Este campo es requerido'
@@ -303,19 +295,15 @@ export const useProductForm = (productId = null) => {
    * ========================================================================
    */
   const handlePricingTypeChange = useCallback((newType) => {
-    console.log(`🔄 Cambiando tipo de pricing de "${formData.pricingType}" a "${newType}"`)
-    
     setFormData(prev => {
       const newFormData = { ...prev, pricingType: newType }
       
       if (newType === PRICING_TYPES.UNIT) {
         // Cambio a pricing por unidad - limpiar tramos
-        console.log('🧹 Limpiando tramos para modo unitario')
         newFormData.tramos = [{ cantidad: '', precio: '' }]
         // Mantener precioUnidad si ya existe
       } else {
         // Cambio a pricing por tramos - limpiar precio unitario
-        console.log('🧹 Limpiando precio unitario para modo tramos')
         newFormData.precioUnidad = ''
         
         // 🔧 FIX: AUTO-MAPEAR compraMinima al primer tramo y crear 2 tramos por defecto
@@ -324,10 +312,8 @@ export const useProductForm = (productId = null) => {
           { cantidad: compraMinima, precio: '' },
           { cantidad: '', precio: '' }
         ]
-        console.log('🎯 Auto-mapeando compraMinima al primer tramo:', compraMinima)
-      }
+        }
       
-      console.log('✅ Nuevo estado del formulario:', newFormData)
       return newFormData
     })
     
@@ -356,7 +342,6 @@ export const useProductForm = (productId = null) => {
         
         // 🎯 SINCRONIZACIÓN AUTOMÁTICA: compraMinima -> primer tramo
         if (fieldName === 'compraMinima' && prev.pricingType === PRICING_TYPES.TIER) {
-          console.log('🔄 Sincronizando compra mínima con primer tramo:', value)
           newFormData.tramos = [...prev.tramos]
           newFormData.tramos[0] = { ...newFormData.tramos[0], cantidad: value }
         }
@@ -416,39 +401,24 @@ export const useProductForm = (productId = null) => {
    * Submit del formulario - CON LOGGING DETALLADO
    */
   const submitForm = useCallback(async () => {
-    console.log('🚀 [submitForm] Iniciando submit del formulario')
-    console.log('📋 [submitForm] FormData actual:', formData)
-    
     const isValid = validateForm()
-    console.log('✅ [submitForm] Validación resultado:', isValid)
-    
     if (!isValid) {
-      console.log('❌ [submitForm] Formulario no válido, errores:', errors)
       return { success: false, errors: errors }
     }
 
-    console.log('🔄 [submitForm] Mapeando formulario a producto...')
     const productData = mapFormToProduct(formData)
-    console.log('📦 [submitForm] Datos del producto mapeados:', productData)
-
     let result
     if (isEditMode) {
-      console.log('✏️  [submitForm] Modo edición - llamando updateProduct con ID:', productId)
       result = await updateProduct(productId, productData)
     } else {
-      console.log('➕ [submitForm] Modo creación - llamando createProduct')
       result = await createProduct(productData)
     }
-
-    console.log('📊 [submitForm] Resultado de la operación:', result)
 
     if (result.success) {
       setIsDirty(false)
       setTouched({})
-      console.log('✅ [submitForm] Submit exitoso')
-    } else {
-      console.log('❌ [submitForm] Submit falló:', result.error)
-    }
+      } else {
+      }
 
     return result
   }, [

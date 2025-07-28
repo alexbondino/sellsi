@@ -114,7 +114,6 @@ const ContactModal = ({ open, onClose }) => {
       if (!response.ok) {
         // Intentamos leer el error que nos envía el servidor para tener más detalles
         const errorData = await response.json();
-        console.error('Error del servidor:', errorData);
         // Lanzamos un error para que sea capturado por el bloque catch
         throw new Error('La respuesta del servidor no fue exitosa.');
       }
@@ -128,7 +127,6 @@ const ContactModal = ({ open, onClose }) => {
 
       handleClose(); // Cerramos el modal
     } catch (error) {
-      console.error('Error al enviar el formulario:', error);
       showBanner({
         message:
           'Hubo un error al enviar tu mensaje. Por favor, inténtalo nuevamente.',

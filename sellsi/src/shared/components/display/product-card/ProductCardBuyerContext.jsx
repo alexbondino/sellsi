@@ -77,7 +77,6 @@ const ProductCardBuyerContext = React.memo(
             setUserRegion(profile?.shipping_region || null);
           }
         } catch (error) {
-          console.error('Error fetching user region:', error);
         } finally {
           setIsLoadingUserRegion(false);
         }

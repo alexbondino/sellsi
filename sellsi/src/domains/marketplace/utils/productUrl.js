@@ -21,7 +21,6 @@ export default productUrlUtils
  */
 export const generateProductSlug = (product) => {
   if (!product) {
-    console.warn('generateProductSlug: product is null or undefined')
     return 'producto-sin-datos'
   }
 

@@ -53,7 +53,6 @@ export class ThumbnailService {
         }
       }
     } catch (error) {
-      console.error('❌ Error generating thumbnail:', error)
       return {
         success: false,
         error: error.message,
@@ -78,7 +77,6 @@ export class ThumbnailService {
       // Generar nuevo thumbnail
       return await this.generateThumbnail(imageUrl, productId, supplierId)
     } catch (error) {
-      console.error('❌ Error regenerating thumbnail:', error)
       return {
         success: false,
         error: error.message,
@@ -103,14 +101,12 @@ export class ThumbnailService {
         .remove([thumbnailPath])
 
       if (error) {
-        console.error('❌ Error deleting thumbnail:', error)
         return { success: false, error: error.message }
       }
 
       // Thumbnail deleted successfully
       return { success: true }
     } catch (error) {
-      console.error('❌ Unexpected error deleting thumbnail:', error)
       return { success: false, error: error.message }
     }
   }
@@ -131,14 +127,12 @@ export class ThumbnailService {
         .eq('id', productImageId)
 
       if (error) {
-        console.error('❌ Error updating thumbnail_url in database:', error)
         return { success: false, error: error.message }
       }
 
       // Thumbnail URL updated in database successfully
       return { success: true }
     } catch (error) {
-      console.error('❌ Unexpected error updating thumbnail URL in database:', error)
       return { success: false, error: error.message }
     }
   }
@@ -173,13 +167,11 @@ export class ThumbnailService {
         .list('', { search: thumbnailPath })
 
       if (error) {
-        console.error('❌ Error checking thumbnail existence:', error)
         return false
       }
 
       return data && data.length > 0
     } catch (error) {
-      console.error('❌ Unexpected error checking thumbnail existence:', error)
       return false
     }
   }

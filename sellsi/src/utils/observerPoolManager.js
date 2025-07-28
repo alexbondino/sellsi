@@ -50,7 +50,6 @@ class ObserverPoolManager {
 
     // Verificar límite de observers
     if (this.observers.size >= this.maxObservers) {
-      console.warn(`[ObserverPool] Límite de observers alcanzado (${this.maxObservers}). Reusando observer existente.`);
       // Retornar el primer observer disponible
       return this.observers.values().next().value;
     }
@@ -63,8 +62,6 @@ class ObserverPoolManager {
     this.observers.set(hash, observer);
     this.stats.createdObservers++;
     this.stats.activeObservers = this.observers.size;
-    
-    console.log(`[ObserverPool] Nuevo observer creado. Total: ${this.observers.size}`);
     return observer;
   }
 
@@ -73,7 +70,6 @@ class ObserverPoolManager {
    */
   observe(element, callback, options = this.defaultOptions) {
     if (!element || typeof callback !== 'function') {
-      console.warn('[ObserverPool] Elemento o callback inválido');
       return () => {}; // Retornar unobserve dummy
     }
 
@@ -137,7 +133,6 @@ class ObserverPoolManager {
           try {
             callback(entry);
           } catch (error) {
-            console.error('[ObserverPool] Error en callback:', error);
           }
         });
       }
@@ -159,8 +154,6 @@ class ObserverPoolManager {
       reusedObservers: this.stats.reusedObservers,
       createdObservers: this.stats.createdObservers
     };
-    
-    console.log('[ObserverPool] Cleanup completo realizado');
   }
 
   /**

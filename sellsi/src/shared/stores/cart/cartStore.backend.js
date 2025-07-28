@@ -39,8 +39,7 @@ export const initializeCartWithUser = async (userId, set, get) => {
     
     // Informar si se limpiaron datos corruptos
     if (rawLocalItems.length !== localItems.length) {
-      console.warn(`[cartStore] 🧹 Limpiados ${rawLocalItems.length - localItems.length} items corruptos del carrito local`)
-    }
+      }
 
     // Obtener o crear carrito en backend
     const backendCart = await cartService.getOrCreateActiveCart(userId)
@@ -73,14 +72,10 @@ export const initializeCartWithUser = async (userId, set, get) => {
     }
     return true
   } catch (error) {
-    console.error('[cartStore] ❌ Error inicializando carrito con usuario:', error)
-    
     // Verificar si es un error relacionado con datos corruptos
     const isCorruptedDataError = isQuantityError(error)
     
     if (isCorruptedDataError) {
-      console.warn('[cartStore] 🚨 Detectados datos corruptos, limpiando carrito...')
-      
       // Limpiar carrito corrupto
       set({ items: [] })
       
@@ -98,8 +93,7 @@ export const initializeCartWithUser = async (userId, set, get) => {
         })
         return true
       } catch (retryError) {
-        console.error('[cartStore] ❌ Error en segundo intento:', retryError)
-      }
+        }
     }
     
     set({ 
@@ -132,7 +126,6 @@ export const syncToBackend = async (get, wishlistStore, couponsStore, shippingSt
     }
     return true
   } catch (error) {
-    console.error('❌ Error en sincronización:', error)
     return false
   }
 }
@@ -179,7 +172,6 @@ export const addItemWithBackend = async (product, quantity, set, get, historySto
 
     return true
   } catch (error) {
-    console.error('[cartStore] ❌ Error agregando item al backend:', error)
     set({ isSyncing: false })
     return false
   }
@@ -210,7 +202,6 @@ export const updateQuantityWithBackend = async (itemId, newQuantity, set, get) =
   )
   
   if (!item) {
-    console.error('[cartStore] ❌ Item no encontrado en carrito local:', itemId)
     return false
   }
   
@@ -253,8 +244,6 @@ export const updateQuantityWithBackend = async (itemId, newQuantity, set, get) =
     
     return true
   } catch (error) {
-    console.error('🌐 [cartStore] ❌ Backend sync failed, reverting:', error)
-    
     // Revertir cambio optimista si falla
     if (newQuantity <= 0) {
       // Restaurar item removido
@@ -302,7 +291,6 @@ export const removeItemWithBackend = async (itemId, set, get) => {
   )
   
   if (!item) {
-    console.error('[cartStore] ❌ Item no encontrado en carrito local:', itemId)
     return false
   }
   
@@ -323,7 +311,6 @@ export const removeItemWithBackend = async (itemId, set, get) => {
 
     return true
   } catch (error) {
-    console.error('[cartStore] ❌ Error removiendo item del backend:', error)
     set({ isSyncing: false })
     return false
   }
@@ -340,7 +327,6 @@ export const clearCartWithBackend = async (set, get) => {
   
   // Si no hay usuario autenticado, usar función local
   if (!state.userId || !state.cartId) {
-    console.warn('[cartStore] No userId/cartId, usando clearCart local')
     return false
   }
 
@@ -358,7 +344,6 @@ export const clearCartWithBackend = async (set, get) => {
 
     return true
   } catch (error) {
-    console.error('[cartStore] ❌ Error limpiando carrito en backend:', error)
     set({ isSyncing: false })
     return false
   }
@@ -400,7 +385,6 @@ export const checkout = async (checkoutData, set, get, couponsStore) => {
 
     return order
   } catch (error) {
-    console.error('[cartStore] ❌ Error en checkout:', error)
     set({ isLoading: false, error: 'Error en el checkout' })
     throw error
   }

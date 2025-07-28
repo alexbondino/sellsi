@@ -13,14 +13,10 @@ export const useProfileForm = (userProfile) => {
   // Mapeo BD → FormData cuando cambia userProfile
   useEffect(() => {
     if (userProfile) {
-      console.log('[useProfileForm] userProfile recibido:', userProfile);
       if (userProfile.shipping_commune !== undefined) {
-        console.log('[useProfileForm] shipping_commune:', userProfile.shipping_commune);
       } else {
-        console.log('[useProfileForm] shipping_commune NO está presente en userProfile');
       }
       const userData = mapUserProfileToFormData(userProfile);
-      console.log('[useProfileForm] userData mapeado:', userData);
       setFormData(userData);
       setInitialData(userData);
     }

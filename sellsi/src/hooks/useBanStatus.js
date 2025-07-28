@@ -30,7 +30,6 @@ export const useBanStatus = (userId = null, enabled = true) => {
       const status = await banService.checkBanStatus(userId);
       setBanStatus(status);
     } catch (err) {
-      console.error('Error verificando estado de ban:', err);
       setError(err);
       setBanStatus({
         isBanned: false,

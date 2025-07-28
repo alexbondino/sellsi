@@ -56,7 +56,6 @@ export const useRobustThumbnail = (product) => {
           setThumbnailUrl(url);
         }
       } catch (err) {
-        console.error('[useRobustThumbnail] Error:', err);
         if (isMounted) {
           setError(err);
           setThumbnailUrl('/placeholder-product.jpg');
@@ -117,7 +116,6 @@ export const useRobustMinithumb = (product) => {
           setMinithumbUrl(url);
         }
       } catch (err) {
-        console.error('[useRobustMinithumb] Error:', err);
         if (isMounted) {
           setMinithumbUrl('/placeholder-product.jpg');
         }
@@ -176,7 +174,6 @@ export const useAllThumbnails = (product) => {
           setThumbnails(thumbnailObj);
         }
       } catch (err) {
-        console.error('[useAllThumbnails] Error:', err);
       } finally {
         if (isMounted) {
           setIsLoading(false);

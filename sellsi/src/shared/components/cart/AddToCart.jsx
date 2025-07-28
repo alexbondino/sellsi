@@ -95,8 +95,6 @@ const AddToCart = ({
       }
 
     } catch (error) {
-      console.error('Error adding product to cart:', error);
-      
       // Mostrar notificación de error
       showCartError(
         'Error al agregar el producto al carrito',
@@ -115,7 +113,6 @@ const AddToCart = ({
   // ============================================================================
 
   if (!product) {
-    console.warn('AddToCart: No product provided');
     return null;
   }
 

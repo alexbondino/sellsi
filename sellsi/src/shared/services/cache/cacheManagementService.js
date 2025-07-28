@@ -267,7 +267,6 @@ export class CacheManagementService {
       result.success = result.actions.length > 0;
       
       if (result.success) {
-        console.log(`🔧 Cache reparado para producto ${productId}:`, result.actions);
       }
 
     } catch (error) {
@@ -313,12 +312,10 @@ export class CacheManagementService {
         sessionStorage.setItem(backupKey, JSON.stringify(backup));
         backup.metadata.storageKey = backupKey;
       } catch (storageError) {
-        console.warn('No se pudo guardar backup en sessionStorage:', storageError);
       }
 
       return backup;
     } catch (error) {
-      console.error('Error creando backup de cache:', error);
       return null;
     }
   }
@@ -348,15 +345,11 @@ export class CacheManagementService {
             const queryKey = JSON.parse(keyString);
             this.queryClient.setQueryData(queryKey, data.data);
           } catch (parseError) {
-            console.warn('Error restaurando thumbnail:', parseError);
           }
         }
       }
-
-      console.log(`✅ Cache restaurado desde backup para producto ${productId}`);
       return true;
     } catch (error) {
-      console.error('Error restaurando cache desde backup:', error);
       return false;
     }
   }
@@ -377,14 +370,10 @@ export class CacheManagementService {
         const health = await this.verifyImageCacheIntegrity(productId);
         
         if (!health.isHealthy) {
-          console.warn(`⚠️ Cache no saludable para producto ${productId}:`, health.issues);
-          
           if (health.repaired) {
-            console.log(`🔧 Cache auto-reparado para producto ${productId}`);
           }
         }
       } catch (error) {
-        console.error('Error en monitoreo de cache:', error);
       }
 
       // Programar siguiente verificación
@@ -399,7 +388,6 @@ export class CacheManagementService {
     // Retornar función para detener
     return () => {
       isActive = false;
-      console.log(`🛑 Monitoreo de cache detenido para producto ${productId}`);
     };
   }
 }

@@ -172,8 +172,6 @@ const ChangePasswordModal = ({ open, onClose, onPasswordChanged, showBanner }) =
           duration: 5000
         });
       }
-      
-      console.error('Password change error:', err);
     } finally {
       setLoading(false);
     }

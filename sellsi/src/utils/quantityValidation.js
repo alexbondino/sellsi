@@ -27,19 +27,16 @@ export const validateQuantity = (quantity, min = QUANTITY_LIMITS.MIN, max = QUAN
   
   // Validar que sea un número válido
   if (isNaN(numQuantity)) {
-    console.warn(`[quantityValidation] Cantidad no numérica "${quantity}", usando ${QUANTITY_LIMITS.DEFAULT}`);
     return QUANTITY_LIMITS.DEFAULT;
   }
   
   // Aplicar límite mínimo
   if (numQuantity < min) {
-    console.warn(`[quantityValidation] Cantidad ${numQuantity} menor al mínimo ${min}, ajustando`);
     return min;
   }
   
   // Aplicar límite máximo
   if (numQuantity > max) {
-    console.warn(`[quantityValidation] Cantidad ${numQuantity} mayor al máximo ${max}, limitando`);
     return max;
   }
   
@@ -75,7 +72,6 @@ export const sanitizeCartItems = (items) => {
     // Verificar que el item tenga ID
     const hasId = item.id || item.productid || item.product_id;
     if (!hasId) {
-      console.warn('[quantityValidation] Item sin ID descartado:', item);
       invalidCount++;
       return false;
     }
@@ -83,7 +79,6 @@ export const sanitizeCartItems = (items) => {
     // Verificar que tenga nombre
     const hasName = item.name || item.nombre;
     if (!hasName) {
-      console.warn('[quantityValidation] Item sin nombre descartado:', item);
       invalidCount++;
       return false;
     }
@@ -93,7 +88,6 @@ export const sanitizeCartItems = (items) => {
     const validatedQuantity = validateQuantity(originalQuantity);
     
     if (originalQuantity !== validatedQuantity) {
-      console.warn(`[quantityValidation] Cantidad corregida: ${originalQuantity} → ${validatedQuantity}`);
       item.quantity = validatedQuantity;
       correctedCount++;
     }

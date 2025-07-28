@@ -276,7 +276,6 @@ export const useSupplierDashboard = () => {
           }, 500) // Esperar 500ms antes de reintentar
         }
       } catch (error) {
-        console.error('Error loading dashboard data:', error)
         setError('Error al cargar datos del dashboard')
         setLoading(false)
       }

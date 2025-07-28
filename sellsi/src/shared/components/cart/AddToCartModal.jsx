@@ -82,13 +82,11 @@ const AddToCartModal = ({
         .eq('product_id', productId);
 
       if (error) {
-        console.error('Error loading shipping regions:', error);
         return [];
       }
 
       return data || [];
     } catch (error) {
-      console.error('Error loading shipping regions:', error);
       return [];
     } finally {
       setIsLoadingRegions(false);
@@ -119,18 +117,6 @@ const AddToCartModal = ({
         shipping_regions: shippingRegions,
         product_delivery_regions: shippingRegions
       };
-
-      console.log('🔄 Product enriched with shipping regions:', {
-        productId: product.id,
-        originalRegions: {
-          shippingRegions: product.shippingRegions,
-          delivery_regions: product.delivery_regions,
-          shipping_regions: product.shipping_regions,
-          product_delivery_regions: product.product_delivery_regions
-        },
-        loadedRegions: shippingRegions,
-        enrichedProduct: productWithRegions
-      });
 
       setEnrichedProduct(productWithRegions);
     };
@@ -287,8 +273,7 @@ const AddToCartModal = ({
       await onAddToCart(cartItem);
       onClose();
     } catch (error) {
-      console.error('Error adding to cart:', error);
-    } finally {
+      } finally {
       setIsProcessing(false);
     }
   }, [
@@ -588,14 +573,6 @@ const AddToCartModal = ({
     }
 
     // Debug: Veamos qué hay en shippingValidation
-    console.log('🔍 Debug ShippingValidation:', {
-      shippingValidation,
-      availableRegions: shippingValidation?.availableRegions,
-      productShippingRegions: enrichedProduct?.shippingRegions || enrichedProduct?.delivery_regions || enrichedProduct?.shipping_regions,
-      userRegion,
-      isLoadingRegions
-    });
-
     return (
       <Alert 
         severity="warning" 

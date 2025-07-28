@@ -34,12 +34,10 @@ class CartService {  /**
         searchError = error;
         
       } catch (err) {
-        console.warn('[CartService] Error buscando carrito existente, procederemos a crear uno nuevo:', err);
         searchError = err;
       }
 
       if (searchError && searchError.code !== 'PGRST116') {
-        console.warn('[CartService] Error no fatal buscando carrito:', searchError);
       }
 
       let cartId;
@@ -60,7 +58,6 @@ class CartService {  /**
           .single();
 
         if (createError) {
-          console.error('[CartService] Error creando carrito:', createError);
           throw createError;
         }
         
@@ -81,7 +78,6 @@ class CartService {  /**
       return result;
 
     } catch (error) {
-      console.error('[CartService] ❌ Error getting or creating cart:', error);
       throw new Error(`No se pudo obtener el carrito: ${error.message}`);
     }
   }  /**
@@ -128,7 +124,6 @@ class CartService {  /**
         .order('added_at', { ascending: false });
 
       if (error) {
-        console.error('[CartService] Error obteniendo items del carrito:', error);
         // En lugar de lanzar error, retornar array vacío para mantener funcionalidad
         return [];
       }      // Transformar los datos para que coincidan con el formato esperado por el frontend
@@ -191,7 +186,6 @@ class CartService {  /**
       return transformedData;
 
     } catch (error) {
-      console.error('[CartService] ❌ Error inesperado obteniendo items del carrito:', error);
       // Retornar array vacío en lugar de lanzar error
       return [];
     }
@@ -223,7 +217,6 @@ class CartService {  /**
         .maybeSingle(); // Usar maybeSingle para evitar errores si no hay resultados
 
       if (searchError && searchError.code !== 'PGRST116') {
-        console.error('[CartService] Error buscando item existente:', searchError);
         throw searchError;
       }
 
@@ -248,7 +241,6 @@ class CartService {  /**
           .single();
 
         if (error) {
-          console.error('[CartService] Error insertando item:', error);
           throw error;
         }
         
@@ -261,7 +253,6 @@ class CartService {  /**
       return result;
 
     } catch (error) {
-      console.error('[CartService] ❌ Error adding item to cart:', error);
       throw new Error(`No se pudo agregar el producto al carrito: ${error.message}`);
     }
   }
@@ -310,7 +301,6 @@ class CartService {  /**
       return data;
 
     } catch (error) {
-      console.error('🗄️ [cartService] ERROR:', error);
       throw new Error(`No se pudo actualizar la cantidad: ${error.message}`);
     }
   }
@@ -337,7 +327,6 @@ class CartService {  /**
       return true;
 
     } catch (error) {
-      console.error('Error removing item from cart:', error);
       throw new Error(`No se pudo eliminar el producto del carrito: ${error.message}`);
     }
   }
@@ -362,7 +351,6 @@ class CartService {  /**
       return true;
 
     } catch (error) {
-      console.error('Error clearing cart:', error);
       throw new Error(`No se pudo vaciar el carrito: ${error.message}`);
     }
   }
@@ -396,7 +384,6 @@ class CartService {  /**
       };
 
     } catch (error) {
-      console.error('Error during checkout:', error);
       throw new Error(`No se pudo procesar el checkout: ${error.message}`);
     }
   }
@@ -412,7 +399,6 @@ class CartService {  /**
         .update({ updated_at: new Date().toISOString() })
         .eq('cart_id', cartId);
     } catch (error) {
-      console.error('Error updating cart timestamp:', error);
       // No lanzamos error aquí porque es una operación secundaria
     }
   }
@@ -451,14 +437,11 @@ class CartService {  /**
         try {
           await this.updateItemQuantity(cart.cart_id, item.product_id || item.id, finalQty);
         } catch (error) {
-          console.error(`[CartService] ❌ Error migrando item ${item.id || item.name}:`, error);
           // Si es un error de cantidad, intentar con cantidad mínima
           if (isQuantityError(error)) {
             try {
-              console.warn(`[CartService] 🚨 Reintentando con cantidad mínima para item ${item.id}`);
               await this.updateItemQuantity(cart.cart_id, item.product_id || item.id, 1);
             } catch (retryError) {
-              console.error(`[CartService] ❌ Falló reintento para item ${item.id}:`, retryError);
             }
           }
         }
@@ -468,7 +451,6 @@ class CartService {  /**
       return await this.getOrCreateActiveCart(userId);
 
     } catch (error) {
-      console.error('Error migrating local cart:', error);
       throw new Error(`No se pudo migrar el carrito local: ${error.message}`);
     }
   }

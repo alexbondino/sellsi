@@ -56,8 +56,6 @@ class ThumbnailCacheService {
       
       return exists;
     } catch (error) {
-      console.warn(`[ThumbnailCache] Error verificando URL: ${url}`, error);
-      
       // Cachear como no existente en caso de error
       this.urlValidationCache.set(cacheKey, {
         exists: false,
@@ -78,14 +76,11 @@ class ThumbnailCacheService {
     if (!forceRefresh && this.cache.has(cacheKey)) {
       const cached = this.cache.get(cacheKey);
       if (Date.now() - cached.timestamp < this.TTL) {
-        console.log(`[ThumbnailCache] ✅ Cache hit para ${productId}`);
         return cached.data;
       }
     }
 
     try {
-      console.log(`[ThumbnailCache] 🔍 Consultando BD para ${productId}`);
-      
       // Consultar base de datos
       const { data, error } = await supabase
         .from('product_images')
@@ -95,7 +90,6 @@ class ThumbnailCacheService {
         .limit(1);
 
       if (error) {
-        console.warn(`[ThumbnailCache] Error BD para ${productId}:`, error);
         return null;
       }
 
@@ -110,7 +104,6 @@ class ThumbnailCacheService {
               ? JSON.parse(firstRow.thumbnails)
               : firstRow.thumbnails;
           } catch (e) {
-            console.warn(`[ThumbnailCache] Error parsing thumbnails para ${productId}:`, e);
           }
         }
 
@@ -139,12 +132,9 @@ class ThumbnailCacheService {
       
       this.cache.set(cacheKey, cacheData);
       this.cleanupCache();
-      
-      console.log(`[ThumbnailCache] 💾 Guardado en cache para ${productId}:`, thumbnailData);
       return thumbnailData;
 
     } catch (error) {
-      console.error(`[ThumbnailCache] Error inesperado para ${productId}:`, error);
       return null;
     }
   }
@@ -181,7 +171,6 @@ class ThumbnailCacheService {
         }
       }
     } catch (error) {
-      console.warn('[ThumbnailCache] Error construyendo minithumb URL:', error);
     }
     
     return null;
@@ -202,10 +191,8 @@ class ThumbnailCacheService {
         if (thumbnailUrl) {
           const exists = await this.verifyThumbnailExists(thumbnailUrl);
           if (exists) {
-            console.log(`[ThumbnailCache] ✅ Thumbnail ${size} desde producto verificado`);
             return this.addCacheBuster(thumbnailUrl);
           } else {
-            console.log(`[ThumbnailCache] ❌ Thumbnail ${size} desde producto no existe, invalidando...`);
             this.invalidateProductCache(productId);
           }
         }
@@ -216,10 +203,8 @@ class ThumbnailCacheService {
       if (thumbnailData && thumbnailData[size]) {
         const exists = await this.verifyThumbnailExists(thumbnailData[size]);
         if (exists) {
-          console.log(`[ThumbnailCache] ✅ Thumbnail ${size} desde BD verificado`);
           return this.addCacheBuster(thumbnailData[size]);
         } else {
-          console.log(`[ThumbnailCache] ❌ Thumbnail ${size} desde BD no existe, invalidando...`);
           this.invalidateProductCache(productId);
         }
       }
@@ -230,7 +215,6 @@ class ThumbnailCacheService {
         if (constructedUrl) {
           const exists = await this.verifyThumbnailExists(constructedUrl);
           if (exists) {
-            console.log(`[ThumbnailCache] ✅ Thumbnail construido verificado`);
             return this.addCacheBuster(constructedUrl);
           }
         }
@@ -246,16 +230,12 @@ class ThumbnailCacheService {
       for (const fallbackUrl of fallbacks) {
         const exists = await this.verifyThumbnailExists(fallbackUrl);
         if (exists) {
-          console.log(`[ThumbnailCache] ✅ Fallback verificado:`, fallbackUrl);
           return this.addCacheBuster(fallbackUrl);
         }
       }
-
-      console.log(`[ThumbnailCache] ⚠️ No se encontró thumbnail válido para producto ${productId}`);
       return '/placeholder-product.jpg';
 
     } catch (error) {
-      console.error(`[ThumbnailCache] Error obteniendo thumbnail para ${productId}:`, error);
       return '/placeholder-product.jpg';
     }
   }
@@ -289,8 +269,6 @@ class ThumbnailCacheService {
         this.urlValidationCache.delete(key);
       }
     }
-    
-    console.log(`[ThumbnailCache] 🗑️ Cache invalidado para producto ${productId}`);
   }
 
   /**
@@ -332,7 +310,6 @@ class ThumbnailCacheService {
   clearAllCache() {
     this.cache.clear();
     this.urlValidationCache.clear();
-    console.log('[ThumbnailCache] 🧹 Todo el cache limpiado');
   }
 
   /**
