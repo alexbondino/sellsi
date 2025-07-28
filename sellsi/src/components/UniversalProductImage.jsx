@@ -47,10 +47,13 @@ const UniversalProductImage = ({
     const finalUrl = (() => {
       switch (size) {
         case 'minithumb':
-          return minithumb || responsiveThumbnail || '/placeholder-product.jpg';
+          // Para minithumb: minithumb específico → thumbnail responsivo → imagen original → placeholder
+          return minithumb || responsiveThumbnail || product?.imagen || '/placeholder-product.jpg';
         case 'responsive':
         default:
-          return responsiveThumbnail || '/placeholder-product.jpg';
+          // Para responsive: thumbnail responsivo → imagen original → placeholder
+          // responsiveThumbnail ya incluye el fallback a product.imagen internamente
+          return responsiveThumbnail || product?.imagen || '/placeholder-product.jpg';
       }
     })();
 
@@ -310,12 +313,13 @@ export const ProductCardImage = ({ product, type = 'buyer', ...props }) => {
 };
 
 /**
- * Componente para CartItem - Usa thumbnail pequeño optimizado
+ * Componente para CartItem - Usa thumbnails responsivos con fallback a avatar
+ * NUNCA usa minithumb - sigue jerarquía: thumbnails > imágenes normales > avatar
  */
 export const CartItemImage = ({ product, ...props }) => (
   <UniversalProductImage
     product={product}
-    size="minithumb"
+    size="responsive"
     aspectRatio="1"
     objectFit="cover"
     sx={{
@@ -327,12 +331,13 @@ export const CartItemImage = ({ product, ...props }) => (
 );
 
 /**
- * Componente para CheckoutSummary - Avatar pequeño con minithumb
+ * Componente para CheckoutSummary - Usa thumbnails responsivos con fallback a avatar
+ * NUNCA usa minithumb - sigue jerarquía: thumbnails > imágenes normales > avatar
  */
 export const CheckoutSummaryImage = ({ product, ...props }) => (
   <UniversalProductImage
     product={product}
-    size="minithumb"
+    size="responsive"
     width={40}
     height={40}
     lazy={false}

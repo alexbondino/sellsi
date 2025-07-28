@@ -14,6 +14,9 @@ import { SPACING_BOTTOM_MAIN } from '../../../styles/layoutSpacing'
 // Hooks del carrito
 import useCartStore from '../../../shared/stores/cart/cartStore'
 
+// Hook de validación de shipping para evitar race condition
+import useShippingValidation from '../../buyer/pages/cart/hooks/useShippingValidation'
+
 // Componentes del checkout
 import PaymentMethodSelector from '../components/PaymentMethodSelector'
 import { useCheckout } from '../hooks'
@@ -31,6 +34,9 @@ const PaymentMethod = () => {
   // Estados del carrito
   const { items, getSubtotal, getTotal } = useCartStore() // ✅ REMOVIDO: getShippingCost (no usar mock)
   
+  // ✅ NUEVO: Hook de validación de shipping para evitar race condition
+  const shippingValidation = useShippingValidation(items, true)
+  
   // Estados del checkout
   const { initializeCheckout, resetCheckout } = useCheckout()
 
@@ -44,6 +50,23 @@ const PaymentMethod = () => {
       return
     }
 
+    // ✅ NUEVO: Verificar que la validación de shipping esté completa
+    // Si el shipping validation está cargando, esperar
+    if (shippingValidation.isLoading) {
+      return
+    }
+
+    // ✅ NUEVO: Si no hay userRegion pero tampoco está cargando, esperar un momento más
+    if (!shippingValidation.userRegion && !shippingValidation.isLoading) {
+      return
+    }
+
+    // Si hay productos incompatibles, redirigir al carrito
+    if (!shippingValidation.isCartCompatible) {
+      navigate('/buyer/cart', { replace: true })
+      return
+    }
+
     // Inicializar checkout con datos del carrito
     const initializeCheckoutData = async () => {
       const subtotal = getSubtotal()
@@ -53,20 +76,6 @@ const PaymentMethod = () => {
       // ✅ NUEVO: Calcular costo REAL de envío basado en regiones de despacho
       const shipping = await calculateRealShippingCost(items)
       const total = subtotal + tax + serviceFee + shipping
-      
-      console.log('[PaymentMethod] Datos de checkout inicializados:', {
-        itemsCount: items.length,
-        subtotal,
-        tax,
-        serviceFee,
-        shipping,
-        total,
-        itemsDetail: items.map(item => ({
-          name: item.name,
-          quantity: item.quantity,
-          price: item.price
-        }))
-      })
       
       const cartData = {
         items: items,
@@ -87,7 +96,7 @@ const PaymentMethod = () => {
     return () => {
       // No resetear automáticamente para permitir navegación back/forward
     }
-  }, [items, getSubtotal, getTotal, initializeCheckout, navigate]) // ✅ REMOVIDO: getShippingCost
+  }, [items, getSubtotal, getTotal, initializeCheckout, navigate, shippingValidation.isLoading, shippingValidation.isCartCompatible, shippingValidation.userRegion]) // ✅ NUEVO: incluir userRegion
 
   // ===== RENDERIZADO =====
 

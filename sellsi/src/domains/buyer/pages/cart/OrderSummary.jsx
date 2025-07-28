@@ -79,8 +79,11 @@ const OrderSummary = ({
       isCheckingOut ||
       !cartStats ||
       cartStats.isEmpty ||
+      (isAdvancedShippingMode && shippingValidation && shippingValidation.isLoading) || // ✅ NUEVO: deshabilitar si está validando
+      (isAdvancedShippingMode && shippingValidation && !shippingValidation.userRegion) || // ✅ NUEVO: deshabilitar si no hay userRegion
       (isAdvancedShippingMode && shippingValidation && !shippingValidation.isCartCompatible)
     )
+    
     return disabled
   }
   return (
@@ -147,6 +150,8 @@ const OrderSummary = ({
             startIcon={
               isCheckingOut ? (
                 <CircularProgress size={20} sx={{ color: 'white' }} />
+              ) : (isAdvancedShippingMode && shippingValidation && shippingValidation.isLoading) ? (
+                <CircularProgress size={20} sx={{ color: 'white' }} />
               ) : (
                 <CreditCardIcon sx={{ color: 'white' }} />
               )
@@ -173,7 +178,10 @@ const OrderSummary = ({
               },
             }}
           >
-            {isCheckingOut ? 'Procesando...' : 'Continuar al pago'}
+            {isCheckingOut ? 'Procesando...' : 
+             (isAdvancedShippingMode && shippingValidation && shippingValidation.isLoading) ? 'Validando envíos...' :
+             (isAdvancedShippingMode && shippingValidation && !shippingValidation.userRegion) ? 'Cargando perfil...' :
+             'Continuar al pago'}
           </Button>
         </motion.div>
       </Stack>

@@ -1,255 +1,141 @@
-AddProduct.jsx:440 🔥 [AddProduct.handleSubmit] Iniciando submit
-AddProduct.jsx:444 🔍 [AddProduct.handleSubmit] Validando formulario...
-AddProduct.jsx:446 📊 [AddProduct.handleSubmit] Errores de validación: {}
-AddProduct.jsx:447 🧪 [AddProduct.handleSubmit] Nombre del producto: Teeeeeest
-AddProduct.jsx:461 ✅ [AddProduct.handleSubmit] Validación pasó, continuando...
-AddProduct.jsx:476 💾 [AddProduct.handleSubmit] Llamando submitForm()...
-useProductForm.js:419 🚀 [submitForm] Iniciando submit del formulario
-useProductForm.js:420 📋 [submitForm] FormData actual: {nombre: 'Teeeeeest', descripcion: 'TeeeeeestTeeeeeestTeeeeeest', categoria: 'Alcoholes', stock: '1500', compraMinima: '40', …}
-useProductForm.js:423 ✅ [submitForm] Validación resultado: true
-useProductForm.js:430 🔄 [submitForm] Mapeando formulario a producto...
-useProductForm.js:184 🔧 [mapFormToProduct] Procesando pricing type: Unidad
-useProductForm.js:194 💰 [UNIT MODE] price: 45000 product_type: unit priceTiers: []
-useProductForm.js:215 ✅ [mapFormToProduct] Producto final: {productnm: 'Teeeeeest', description: 'TeeeeeestTeeeeeestTeeeeeest', category: 'Alcoholes', productqty: 1500, minimum_purchase: 40, …}
-useProductForm.js:432 📦 [submitForm] Datos del producto mapeados: {productnm: 'Teeeeeest', description: 'TeeeeeestTeeeeeestTeeeeeest', category: 'Alcoholes', productqty: 1500, minimum_purchase: 40, …}
-useProductForm.js:439 ➕ [submitForm] Modo creación - llamando createProduct
-react-dom-client.development.js:16244 [Violation] 'click' handler took 322ms
-useProductForm.js:443 📊 [submitForm] Resultado de la operación: {success: true, data: {…}}
-useProductForm.js:448 ✅ [submitForm] Submit exitoso
-AddProduct.jsx:479 📋 [AddProduct.handleSubmit] Resultado de submitForm: {success: true, data: {…}}
-[Violation] 'message' handler took <N>ms
-[Violation] 'message' handler took <N>ms
-[Violation] 'message' handler took <N>ms
-[Violation] 'message' handler took <N>ms
-[Violation] 'message' handler took <N>ms
-[Violation] 'message' handler took <N>ms
-UniversalProductImage.jsx:57 [UniversalProductImage] Debug thumbnails para producto 9029638f-33a6-4d91-9e3b-021be65a0f62: {responsiveThumbnail: '/placeholder-product.jpg', minithumb: '/placeholder-product.jpg', size: 'responsive', product: 'Teeeeeest', retryCount: 0, …}
-UniversalProductImage.jsx:57 [UniversalProductImage] Debug thumbnails para producto 9029638f-33a6-4d91-9e3b-021be65a0f62: {responsiveThumbnail: '/placeholder-product.jpg', minithumb: '/placeholder-product.jpg', size: 'responsive', product: 'Teeeeeest', retryCount: 0, …}
-UniversalProductImage.jsx:57 [UniversalProductImage] Debug thumbnails para producto 1394be41-62dc-4225-a003-e0250e0f7a64: {responsiveThumbnail: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…03-e0250e0f7a64/1753663727263_desktop_320x260.jpg', minithumb: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…03-e0250e0f7a64/1753663727263_desktop_320x260.jpg', size: 'responsive', product: 'Producto Tramos Nuevos', retryCount: 0, …}
-UniversalProductImage.jsx:57 [UniversalProductImage] Debug thumbnails para producto 1394be41-62dc-4225-a003-e0250e0f7a64: {responsiveThumbnail: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…03-e0250e0f7a64/1753663727263_desktop_320x260.jpg', minithumb: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…03-e0250e0f7a64/1753663727263_desktop_320x260.jpg', size: 'responsive', product: 'Producto Tramos Nuevos', retryCount: 0, …}
-UniversalProductImage.jsx:57 [UniversalProductImage] Debug thumbnails para producto 9029638f-33a6-4d91-9e3b-021be65a0f62: {responsiveThumbnail: '/placeholder-product.jpg', minithumb: '/placeholder-product.jpg', size: 'responsive', product: 'Teeeeeest', retryCount: 0, …}
-UniversalProductImage.jsx:57 [UniversalProductImage] Debug thumbnails para producto 9029638f-33a6-4d91-9e3b-021be65a0f62: {responsiveThumbnail: '/placeholder-product.jpg', minithumb: '/placeholder-product.jpg', size: 'responsive', product: 'Teeeeeest', retryCount: 0, …}
-UniversalProductImage.jsx:57 [UniversalProductImage] Debug thumbnails para producto 1394be41-62dc-4225-a003-e0250e0f7a64: {responsiveThumbnail: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…03-e0250e0f7a64/1753663727263_desktop_320x260.jpg', minithumb: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…03-e0250e0f7a64/1753663727263_desktop_320x260.jpg', size: 'responsive', product: 'Producto Tramos Nuevos', retryCount: 0, …}
-UniversalProductImage.jsx:57 [UniversalProductImage] Debug thumbnails para producto 1394be41-62dc-4225-a003-e0250e0f7a64: {responsiveThumbnail: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…03-e0250e0f7a64/1753663727263_desktop_320x260.jpg', minithumb: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…03-e0250e0f7a64/1753663727263_desktop_320x260.jpg', size: 'responsive', product: 'Producto Tramos Nuevos', retryCount: 0, …}
-hook.js:608  MUI: You are providing a disabled `button` child to the Tooltip component.
-A disabled element does not fire events.
-Tooltip needs to listen to the child element's events to display the title.
+useShippingValidation.js:33 [useShippingValidation] Reading from sessionStorage: null
+useShippingValidation.js:33 [useShippingValidation] Reading from sessionStorage: null
+useShippingValidation.js:48 [useShippingValidation] Hook called: {cartItemsLength: 1, isAdvancedMode: true, currentState: {…}}
+useShippingValidation.js:271 [useShippingValidation] isCartCompatible: false (no user region)
+useShippingValidation.js:48 [useShippingValidation] Hook called: {cartItemsLength: 1, isAdvancedMode: true, currentState: {…}}
+useShippingValidation.js:271 [useShippingValidation] isCartCompatible: false (no user region)
+BuyerCart.jsx:618  MUI Grid: The `item` prop has been removed and is no longer necessary. You can safely remove it.
 
-Add a simple wrapper element, such as a `span`.
-overrideMethod @ hook.js:608
-(anonymous) @ Tooltip.js:381
-react-stack-bottom-frame @ react-dom-client.development.js:23949
+(anonymous) @ deleteLegacyGridProps.js:37
+deleteLegacyGridProps @ deleteLegacyGridProps.js:34
+Grid3 @ createGrid.js:82
+react-stack-bottom-frame @ react-dom-client.development.js:23863
+renderWithHooks @ react-dom-client.development.js:5529
+updateForwardRef @ react-dom-client.development.js:8645
+beginWork @ react-dom-client.development.js:10861
 runWithFiberInDEV @ react-dom-client.development.js:1519
-commitHookEffectListMount @ react-dom-client.development.js:11905
-commitHookPassiveMountEffects @ react-dom-client.development.js:12026
-commitPassiveMountOnFiber @ react-dom-client.development.js:13841
-recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
-commitPassiveMountOnFiber @ react-dom-client.development.js:13834
-recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
-commitPassiveMountOnFiber @ react-dom-client.development.js:13957
-recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
-commitPassiveMountOnFiber @ react-dom-client.development.js:13834
-recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
-commitPassiveMountOnFiber @ react-dom-client.development.js:13834
-recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
-commitPassiveMountOnFiber @ react-dom-client.development.js:13834
-recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
-commitPassiveMountOnFiber @ react-dom-client.development.js:13957
-recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
-commitPassiveMountOnFiber @ react-dom-client.development.js:13834
-recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
-commitPassiveMountOnFiber @ react-dom-client.development.js:13834
-recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
-commitPassiveMountOnFiber @ react-dom-client.development.js:13834
-recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
-commitPassiveMountOnFiber @ react-dom-client.development.js:13834
-recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
-commitPassiveMountOnFiber @ react-dom-client.development.js:13834
-recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
-commitPassiveMountOnFiber @ react-dom-client.development.js:13957
-recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
-commitPassiveMountOnFiber @ react-dom-client.development.js:13834
-recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
-commitPassiveMountOnFiber @ react-dom-client.development.js:13834
-recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
-commitPassiveMountOnFiber @ react-dom-client.development.js:13957
-recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
-commitPassiveMountOnFiber @ react-dom-client.development.js:13844
-recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
-commitPassiveMountOnFiber @ react-dom-client.development.js:13834
-recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
-commitPassiveMountOnFiber @ react-dom-client.development.js:13957
-recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
-commitPassiveMountOnFiber @ react-dom-client.development.js:13834
-recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
-commitPassiveMountOnFiber @ react-dom-client.development.js:13834
-recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
-commitPassiveMountOnFiber @ react-dom-client.development.js:13957
-recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
-commitPassiveMountOnFiber @ react-dom-client.development.js:13957
-recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
-commitPassiveMountOnFiber @ react-dom-client.development.js:13834
-recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
-commitPassiveMountOnFiber @ react-dom-client.development.js:13834
-recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
-commitPassiveMountOnFiber @ react-dom-client.development.js:13957
-recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
-commitPassiveMountOnFiber @ react-dom-client.development.js:13834
-recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
-commitPassiveMountOnFiber @ react-dom-client.development.js:13834
-recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
-commitPassiveMountOnFiber @ react-dom-client.development.js:13957
-recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
-commitPassiveMountOnFiber @ react-dom-client.development.js:13834
-recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
-commitPassiveMountOnFiber @ react-dom-client.development.js:13834
-recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
-commitPassiveMountOnFiber @ react-dom-client.development.js:13957
-recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
-commitPassiveMountOnFiber @ react-dom-client.development.js:13834
-recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
-commitPassiveMountOnFiber @ react-dom-client.development.js:13957
-recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
-commitPassiveMountOnFiber @ react-dom-client.development.js:13834
-recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
-commitPassiveMountOnFiber @ react-dom-client.development.js:13957
-recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
-commitPassiveMountOnFiber @ react-dom-client.development.js:13957
-recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
-commitPassiveMountOnFiber @ react-dom-client.development.js:13834
-recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
-commitPassiveMountOnFiber @ react-dom-client.development.js:13834
-recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
-commitPassiveMountOnFiber @ react-dom-client.development.js:13834
-recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
-commitPassiveMountOnFiber @ react-dom-client.development.js:13834
-recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
-commitPassiveMountOnFiber @ react-dom-client.development.js:13844
-recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
-commitPassiveMountOnFiber @ react-dom-client.development.js:13834
-recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
-commitPassiveMountOnFiber @ react-dom-client.development.js:13834
-recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
-commitPassiveMountOnFiber @ react-dom-client.development.js:13957
-recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
-commitPassiveMountOnFiber @ react-dom-client.development.js:13834
-recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
-commitPassiveMountOnFiber @ react-dom-client.development.js:13834
-recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
-commitPassiveMountOnFiber @ react-dom-client.development.js:13928
-recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
-commitPassiveMountOnFiber @ react-dom-client.development.js:13903
-recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
-commitPassiveMountOnFiber @ react-dom-client.development.js:13834
-recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
-commitPassiveMountOnFiber @ react-dom-client.development.js:13957
-recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
-commitPassiveMountOnFiber @ react-dom-client.development.js:13834
-recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
-commitPassiveMountOnFiber @ react-dom-client.development.js:13834
-recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
-commitPassiveMountOnFiber @ react-dom-client.development.js:13957
-recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
-commitPassiveMountOnFiber @ react-dom-client.development.js:13834
-recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
-commitPassiveMountOnFiber @ react-dom-client.development.js:13834
-recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
-commitPassiveMountOnFiber @ react-dom-client.development.js:13957
-recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
-commitPassiveMountOnFiber @ react-dom-client.development.js:13834
-recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
-commitPassiveMountOnFiber @ react-dom-client.development.js:13834
-recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
-commitPassiveMountOnFiber @ react-dom-client.development.js:13834
-recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
-commitPassiveMountOnFiber @ react-dom-client.development.js:13834
-recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
-commitPassiveMountOnFiber @ react-dom-client.development.js:13834
-recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
-commitPassiveMountOnFiber @ react-dom-client.development.js:13957
-recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
-commitPassiveMountOnFiber @ react-dom-client.development.js:13834
-recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
-commitPassiveMountOnFiber @ react-dom-client.development.js:13957
-recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
-commitPassiveMountOnFiber @ react-dom-client.development.js:13834
-recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
-commitPassiveMountOnFiber @ react-dom-client.development.js:13957
-recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
-commitPassiveMountOnFiber @ react-dom-client.development.js:13834
-recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
-commitPassiveMountOnFiber @ react-dom-client.development.js:13957
-recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
-commitPassiveMountOnFiber @ react-dom-client.development.js:13957
-recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
-commitPassiveMountOnFiber @ react-dom-client.development.js:13834
-recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
-commitPassiveMountOnFiber @ react-dom-client.development.js:13834
-recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
-commitPassiveMountOnFiber @ react-dom-client.development.js:13957
-recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
-commitPassiveMountOnFiber @ react-dom-client.development.js:13834
-recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
-commitPassiveMountOnFiber @ react-dom-client.development.js:13957
-recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
-commitPassiveMountOnFiber @ react-dom-client.development.js:13834
-recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
-commitPassiveMountOnFiber @ react-dom-client.development.js:13957
-recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
-commitPassiveMountOnFiber @ react-dom-client.development.js:13834
-recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
-commitPassiveMountOnFiber @ react-dom-client.development.js:13957
-recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
-commitPassiveMountOnFiber @ react-dom-client.development.js:13957
-recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
-commitPassiveMountOnFiber @ react-dom-client.development.js:13834
-recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
-commitPassiveMountOnFiber @ react-dom-client.development.js:13834
-recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
-commitPassiveMountOnFiber @ react-dom-client.development.js:13834
-recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
-commitPassiveMountOnFiber @ react-dom-client.development.js:13834
-recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
-commitPassiveMountOnFiber @ react-dom-client.development.js:13957
-recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
-commitPassiveMountOnFiber @ react-dom-client.development.js:13834
-recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
-commitPassiveMountOnFiber @ react-dom-client.development.js:13834
-recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
-commitPassiveMountOnFiber @ react-dom-client.development.js:13834
-recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
-commitPassiveMountOnFiber @ react-dom-client.development.js:13834
-recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
-commitPassiveMountOnFiber @ react-dom-client.development.js:13957
-recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
-commitPassiveMountOnFiber @ react-dom-client.development.js:13834
-recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
-commitPassiveMountOnFiber @ react-dom-client.development.js:13957
-recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
-commitPassiveMountOnFiber @ react-dom-client.development.js:13834
-recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
-commitPassiveMountOnFiber @ react-dom-client.development.js:13957
-recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
-commitPassiveMountOnFiber @ react-dom-client.development.js:13957
-recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
-commitPassiveMountOnFiber @ react-dom-client.development.js:13834
-recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
-commitPassiveMountOnFiber @ react-dom-client.development.js:13834
-recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
-UniversalProductImage.jsx:57 [UniversalProductImage] Debug thumbnails para producto 9029638f-33a6-4d91-9e3b-021be65a0f62: {responsiveThumbnail: '/placeholder-product.jpg', minithumb: '/placeholder-product.jpg', size: 'responsive', product: 'Teeeeeest', retryCount: 0, …}
-UniversalProductImage.jsx:57 [UniversalProductImage] Debug thumbnails para producto 9029638f-33a6-4d91-9e3b-021be65a0f62: {responsiveThumbnail: '/placeholder-product.jpg', minithumb: '/placeholder-product.jpg', size: 'responsive', product: 'Teeeeeest', retryCount: 0, …}
-UniversalProductImage.jsx:57 [UniversalProductImage] Debug thumbnails para producto 1394be41-62dc-4225-a003-e0250e0f7a64: {responsiveThumbnail: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…03-e0250e0f7a64/1753663727263_desktop_320x260.jpg', minithumb: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…03-e0250e0f7a64/1753663727263_desktop_320x260.jpg', size: 'responsive', product: 'Producto Tramos Nuevos', retryCount: 0, …}
-UniversalProductImage.jsx:57 [UniversalProductImage] Debug thumbnails para producto 1394be41-62dc-4225-a003-e0250e0f7a64: {responsiveThumbnail: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…03-e0250e0f7a64/1753663727263_desktop_320x260.jpg', minithumb: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…03-e0250e0f7a64/1753663727263_desktop_320x260.jpg', size: 'responsive', product: 'Producto Tramos Nuevos', retryCount: 0, …}
-UniversalProductImage.jsx:191 [UniversalProductImage] LazyImage onLoad disparado para: 1394be41-62dc-4225-a003-e0250e0f7a64 https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v1/object/public/product-images-thumbnails/34e23a46-f8bb-4e50-b058-301ac6b0af12/1394be41-62dc-4225-a003-e0250e0f7a64/1753663727263_desktop_320x260.jpg
-UniversalProductImage.jsx:57 [UniversalProductImage] Debug thumbnails para producto 9029638f-33a6-4d91-9e3b-021be65a0f62: {responsiveThumbnail: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…3b-021be65a0f62/1753664063869_desktop_320x260.jpg', minithumb: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…3b-021be65a0f62/1753664063869_minithumb_40x40.jpg', size: 'responsive', product: 'Teeeeeest', retryCount: 0, …}
-UniversalProductImage.jsx:57 [UniversalProductImage] Debug thumbnails para producto 9029638f-33a6-4d91-9e3b-021be65a0f62: {responsiveThumbnail: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…3b-021be65a0f62/1753664063869_desktop_320x260.jpg', minithumb: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…3b-021be65a0f62/1753664063869_minithumb_40x40.jpg', size: 'responsive', product: 'Teeeeeest', retryCount: 0, …}
-cacheManagementService.js:270 🔧 Cache reparado para producto 9029638f-33a6-4d91-9e3b-021be65a0f62: ['Regeneración de thumbnails iniciada']
-useProductImages.js:237  Cache actualizado pero detectado problema, restaurando backup...
-overrideMethod @ hook.js:608
-(anonymous) @ useProductImages.js:237
-setTimeout
-processProductImages @ useProductImages.js:234
-cacheManagementService.js:356 ✅ Cache restaurado desde backup para producto 9029638f-33a6-4d91-9e3b-021be65a0f62
-UniversalProductImage.jsx:57 [UniversalProductImage] Debug thumbnails para producto 9029638f-33a6-4d91-9e3b-021be65a0f62: {responsiveThumbnail: '/placeholder-product.jpg', minithumb: '/placeholder-product.jpg', size: 'responsive', product: 'Teeeeeest', retryCount: 0, …}
-UniversalProductImage.jsx:57 [UniversalProductImage] Debug thumbnails para producto 9029638f-33a6-4d91-9e3b-021be65a0f62: {responsiveThumbnail: '/placeholder-product.jpg', minithumb: '/placeholder-product.jpg', size: 'responsive', product: 'Teeeeeest', retryCount: 0, …}
-storageCleanupService.js:57 🧹 Storage cleanup para producto 9029638f-33a6-4d91-9e3b-021be65a0f62: 0 archivos limpiados
+performUnitOfWork @ react-dom-client.development.js:15132
+workLoopConcurrentByScheduler @ react-dom-client.development.js:15126
+renderRootConcurrent @ react-dom-client.development.js:15101
+performWorkOnRoot @ react-dom-client.development.js:14418
+performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:16216
+performWorkUntilDeadline @ scheduler.development.js:45
+<ForwardRef(Grid3)>
+exports.jsxDEV @ react-jsx-dev-runtime.development.js:346
+BuyerCart @ BuyerCart.jsx:618
+react-stack-bottom-frame @ react-dom-client.development.js:23863
+renderWithHooksAgain @ react-dom-client.development.js:5629
+renderWithHooks @ react-dom-client.development.js:5541
+updateFunctionComponent @ react-dom-client.development.js:8897
+updateSimpleMemoComponent @ react-dom-client.development.js:8752
+updateMemoComponent @ react-dom-client.development.js:8685
+beginWork @ react-dom-client.development.js:10497
+runWithFiberInDEV @ react-dom-client.development.js:1519
+performUnitOfWork @ react-dom-client.development.js:15132
+workLoopConcurrentByScheduler @ react-dom-client.development.js:15126
+renderRootConcurrent @ react-dom-client.development.js:15101
+performWorkOnRoot @ react-dom-client.development.js:14418
+performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:16216
+performWorkUntilDeadline @ scheduler.development.js:45
+<...>
+exports.jsxDEV @ react-jsx-dev-runtime.development.js:346
+AppRouter @ AppRouter.jsx:190
+react-stack-bottom-frame @ react-dom-client.development.js:23863
+renderWithHooksAgain @ react-dom-client.development.js:5629
+renderWithHooks @ react-dom-client.development.js:5541
+updateFunctionComponent @ react-dom-client.development.js:8897
+beginWork @ react-dom-client.development.js:10522
+runWithFiberInDEV @ react-dom-client.development.js:1519
+performUnitOfWork @ react-dom-client.development.js:15132
+workLoopConcurrentByScheduler @ react-dom-client.development.js:15126
+renderRootConcurrent @ react-dom-client.development.js:15101
+performWorkOnRoot @ react-dom-client.development.js:14418
+performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:16216
+performWorkUntilDeadline @ scheduler.development.js:45
+useShippingValidation.js:310 [useShippingValidation] No userRegion, fetching profile...
+useShippingValidation.js:310 [useShippingValidation] No userRegion, fetching profile...
+useShippingValidation.js:48 [useShippingValidation] Hook called: {cartItemsLength: 1, isAdvancedMode: true, currentState: {…}}
+useShippingValidation.js:271 [useShippingValidation] isCartCompatible: false (no user region)
+useShippingValidation.js:48 [useShippingValidation] Hook called: {cartItemsLength: 1, isAdvancedMode: true, currentState: {…}}
+useShippingValidation.js:271 [useShippingValidation] isCartCompatible: false (no user region)
+useShippingValidation.js:48 [useShippingValidation] Hook called: {cartItemsLength: 1, isAdvancedMode: true, currentState: {…}}
+useShippingValidation.js:271 [useShippingValidation] isCartCompatible: false (no user region)
+useShippingValidation.js:48 [useShippingValidation] Hook called: {cartItemsLength: 1, isAdvancedMode: true, currentState: {…}}
+useShippingValidation.js:271 [useShippingValidation] isCartCompatible: false (no user region)
+scheduler.development.js:14 [Violation] 'message' handler took 509ms
+[Violation] Forced reflow while executing JavaScript took 37ms
+useShippingValidation.js:48 [useShippingValidation] Hook called: {cartItemsLength: 1, isAdvancedMode: true, currentState: {…}}
+useShippingValidation.js:271 [useShippingValidation] isCartCompatible: false (no user region)
+useShippingValidation.js:48 [useShippingValidation] Hook called: {cartItemsLength: 1, isAdvancedMode: true, currentState: {…}}
+useShippingValidation.js:271 [useShippingValidation] isCartCompatible: false (no user region)
+useShippingValidation.js:48 [useShippingValidation] Hook called: {cartItemsLength: 1, isAdvancedMode: true, currentState: {…}}
+useShippingValidation.js:277 [useShippingValidation] isCartCompatible: true {userRegion: 'araucania', incompatibleProductsCount: 0}
+useShippingValidation.js:48 [useShippingValidation] Hook called: {cartItemsLength: 1, isAdvancedMode: true, currentState: {…}}
+useShippingValidation.js:277 [useShippingValidation] isCartCompatible: true {userRegion: 'araucania', incompatibleProductsCount: 0}
+useShippingValidation.js:138 📦 Product shipping data: {productId: '1394be41-62dc-4225-a003-e0250e0f7a64', productName: 'Producto Tramos Nuevos', shippingRegionsCount: 1, shippingRegions: Array(1), allProductKeys: Array(34), …}
+useShippingValidation.js:351 [useShippingValidation] Saved userRegion to sessionStorage: araucania
+useShippingValidation.js:48 [useShippingValidation] Hook called: {cartItemsLength: 1, isAdvancedMode: true, currentState: {…}}
+useShippingValidation.js:277 [useShippingValidation] isCartCompatible: true {userRegion: 'araucania', incompatibleProductsCount: 0}
+useShippingValidation.js:48 [useShippingValidation] Hook called: {cartItemsLength: 1, isAdvancedMode: true, currentState: {…}}
+useShippingValidation.js:277 [useShippingValidation] isCartCompatible: true {userRegion: 'araucania', incompatibleProductsCount: 0}
+scheduler.development.js:14 [Violation] 'message' handler took 216ms
+useShippingValidation.js:48 [useShippingValidation] Hook called: {cartItemsLength: 1, isAdvancedMode: true, currentState: {…}}
+useShippingValidation.js:277 [useShippingValidation] isCartCompatible: true {userRegion: 'araucania', incompatibleProductsCount: 0}
+useShippingValidation.js:48 [useShippingValidation] Hook called: {cartItemsLength: 1, isAdvancedMode: true, currentState: {…}}
+useShippingValidation.js:277 [useShippingValidation] isCartCompatible: true {userRegion: 'araucania', incompatibleProductsCount: 0}
+useShippingValidation.js:48 [useShippingValidation] Hook called: {cartItemsLength: 1, isAdvancedMode: true, currentState: {…}}
+useShippingValidation.js:277 [useShippingValidation] isCartCompatible: true {userRegion: 'araucania', incompatibleProductsCount: 0}
+useShippingValidation.js:48 [useShippingValidation] Hook called: {cartItemsLength: 1, isAdvancedMode: true, currentState: {…}}
+useShippingValidation.js:277 [useShippingValidation] isCartCompatible: true {userRegion: 'araucania', incompatibleProductsCount: 0}
+useShippingValidation.js:48 [useShippingValidation] Hook called: {cartItemsLength: 1, isAdvancedMode: true, currentState: {…}}
+useShippingValidation.js:277 [useShippingValidation] isCartCompatible: true {userRegion: 'araucania', incompatibleProductsCount: 0}
+useShippingValidation.js:48 [useShippingValidation] Hook called: {cartItemsLength: 1, isAdvancedMode: true, currentState: {…}}
+useShippingValidation.js:277 [useShippingValidation] isCartCompatible: true {userRegion: 'araucania', incompatibleProductsCount: 0}
+useShippingValidation.js:33 [useShippingValidation] Reading from sessionStorage: araucania
+useShippingValidation.js:33 [useShippingValidation] Reading from sessionStorage: araucania
+useShippingValidation.js:48 [useShippingValidation] Hook called: {cartItemsLength: 1, isAdvancedMode: true, currentState: {…}}
+useShippingValidation.js:277 [useShippingValidation] isCartCompatible: true {userRegion: 'araucania', incompatibleProductsCount: 0}
+useShippingValidation.js:48 [useShippingValidation] Hook called: {cartItemsLength: 1, isAdvancedMode: true, currentState: {…}}
+useShippingValidation.js:277 [useShippingValidation] isCartCompatible: true {userRegion: 'araucania', incompatibleProductsCount: 0}
+CheckoutSummary.jsx:76 [CheckoutSummary] Usando costo de envío real del orderData: {orderDataShipping: 0, itemsCount: 0}
+CheckoutSummary.jsx:76 [CheckoutSummary] Usando costo de envío real del orderData: {orderDataShipping: 0, itemsCount: 0}
+useShippingValidation.js:313 [useShippingValidation] userRegion exists from sessionStorage: araucania
+useShippingValidation.js:138 📦 Product shipping data: {productId: '1394be41-62dc-4225-a003-e0250e0f7a64', productName: 'Producto Tramos Nuevos', shippingRegionsCount: 1, shippingRegions: Array(1), allProductKeys: Array(34), …}
+useShippingValidation.js:351 [useShippingValidation] Saved userRegion to sessionStorage: araucania
+PaymentMethod.jsx:46 [PaymentMethod] useEffect triggered: {itemsLength: 1, shippingValidation: {…}}
+PaymentMethod.jsx:88 [PaymentMethod] All validations passed, initializing checkout...
+useShippingValidation.js:313 [useShippingValidation] userRegion exists from sessionStorage: araucania
+useShippingValidation.js:138 📦 Product shipping data: {productId: '1394be41-62dc-4225-a003-e0250e0f7a64', productName: 'Producto Tramos Nuevos', shippingRegionsCount: 1, shippingRegions: Array(1), allProductKeys: Array(34), …}
+useShippingValidation.js:351 [useShippingValidation] Saved userRegion to sessionStorage: araucania
+PaymentMethod.jsx:46 [PaymentMethod] useEffect triggered: {itemsLength: 1, shippingValidation: {…}}
+PaymentMethod.jsx:88 [PaymentMethod] All validations passed, initializing checkout...
+useShippingValidation.js:48 [useShippingValidation] Hook called: {cartItemsLength: 1, isAdvancedMode: true, currentState: {…}}
+useShippingValidation.js:277 [useShippingValidation] isCartCompatible: true {userRegion: 'araucania', incompatibleProductsCount: 0}
+useShippingValidation.js:48 [useShippingValidation] Hook called: {cartItemsLength: 1, isAdvancedMode: true, currentState: {…}}
+useShippingValidation.js:277 [useShippingValidation] isCartCompatible: true {userRegion: 'araucania', incompatibleProductsCount: 0}
+useShippingValidation.js:33 [useShippingValidation] Reading from sessionStorage: araucania
+useShippingValidation.js:33 [useShippingValidation] Reading from sessionStorage: araucania
+useShippingValidation.js:48 [useShippingValidation] Hook called: {cartItemsLength: 1, isAdvancedMode: true, currentState: {…}}
+useShippingValidation.js:277 [useShippingValidation] isCartCompatible: true {userRegion: 'araucania', incompatibleProductsCount: 0}
+useShippingValidation.js:48 [useShippingValidation] Hook called: {cartItemsLength: 1, isAdvancedMode: true, currentState: {…}}
+useShippingValidation.js:277 [useShippingValidation] isCartCompatible: true {userRegion: 'araucania', incompatibleProductsCount: 0}
+useShippingValidation.js:313 [useShippingValidation] userRegion exists from sessionStorage: araucania
+useShippingValidation.js:138 📦 Product shipping data: {productId: '1394be41-62dc-4225-a003-e0250e0f7a64', productName: 'Producto Tramos Nuevos', shippingRegionsCount: 1, shippingRegions: Array(1), allProductKeys: Array(34), …}
+useShippingValidation.js:351 [useShippingValidation] Saved userRegion to sessionStorage: araucania
+useShippingValidation.js:313 [useShippingValidation] userRegion exists from sessionStorage: araucania
+useShippingValidation.js:138 📦 Product shipping data: {productId: '1394be41-62dc-4225-a003-e0250e0f7a64', productName: 'Producto Tramos Nuevos', shippingRegionsCount: 1, shippingRegions: Array(1), allProductKeys: Array(34), …}
+useShippingValidation.js:351 [useShippingValidation] Saved userRegion to sessionStorage: araucania
+useShippingValidation.js:48 [useShippingValidation] Hook called: {cartItemsLength: 1, isAdvancedMode: true, currentState: {…}}
+useShippingValidation.js:277 [useShippingValidation] isCartCompatible: true {userRegion: 'araucania', incompatibleProductsCount: 0}
+useShippingValidation.js:48 [useShippingValidation] Hook called: {cartItemsLength: 1, isAdvancedMode: true, currentState: {…}}
+useShippingValidation.js:277 [useShippingValidation] isCartCompatible: true {userRegion: 'araucania', incompatibleProductsCount: 0}
+useShippingValidation.js:48 [useShippingValidation] Hook called: {cartItemsLength: 1, isAdvancedMode: true, currentState: {…}}
+useShippingValidation.js:277 [useShippingValidation] isCartCompatible: true {userRegion: 'araucania', incompatibleProductsCount: 0}
+useShippingValidation.js:48 [useShippingValidation] Hook called: {cartItemsLength: 1, isAdvancedMode: true, currentState: {…}}
+useShippingValidation.js:277 [useShippingValidation] isCartCompatible: true {userRegion: 'araucania', incompatibleProductsCount: 0}
+useShippingValidation.js:48 [useShippingValidation] Hook called: {cartItemsLength: 1, isAdvancedMode: true, currentState: {…}}
+useShippingValidation.js:277 [useShippingValidation] isCartCompatible: true {userRegion: 'araucania', incompatibleProductsCount: 0}
+useShippingValidation.js:48 [useShippingValidation] Hook called: {cartItemsLength: 1, isAdvancedMode: true, currentState: {…}}
+useShippingValidation.js:277 [useShippingValidation] isCartCompatible: true {userRegion: 'araucania', incompatibleProductsCount: 0}
+PaymentMethod.jsx:100 [PaymentMethod] Datos de checkout inicializados: {itemsCount: 1, subtotal: 3000000, tax: 570000, serviceFee: 60000, shipping: 7855, …}
+PaymentMethod.jsx:100 [PaymentMethod] Datos de checkout inicializados: {itemsCount: 1, subtotal: 3000000, tax: 570000, serviceFee: 60000, shipping: 7855, …}

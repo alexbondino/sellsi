@@ -26,7 +26,18 @@ export const SHIPPING_STATES = {
  * @returns {Object} Estado de validación y funciones
  */
 export const useShippingValidation = (cartItems = [], isAdvancedMode = false) => {
-  const [userRegion, setUserRegion] = useState(null);
+  // ✅ NUEVO: Función para leer userRegion de sessionStorage de forma síncrona
+  const getUserRegionFromStorage = () => {
+    try {
+      const stored = sessionStorage.getItem('shippingValidation_userRegion');
+      return stored;
+    } catch {
+      return null;
+    }
+  };
+
+  // ✅ NUEVO: Inicializar userRegion desde sessionStorage si existe
+  const [userRegion, setUserRegion] = useState(getUserRegionFromStorage);
   const [shippingStates, setShippingStates] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -81,6 +92,13 @@ export const useShippingValidation = (cartItems = [], isAdvancedMode = false) =>
       }
 
       setUserRegion(profile?.shipping_region || null);
+      
+      // ✅ NUEVO: Verificar si la región cambió vs sessionStorage
+      const storedRegion = getUserRegionFromStorage();
+      if (storedRegion && storedRegion !== profile?.shipping_region) {
+        console.log('User region changed from', storedRegion, 'to', profile?.shipping_region);
+        // La región cambió, sessionStorage se actualizará automáticamente por el useEffect
+      }
     } catch (err) {
       console.error('Error in fetchUserProfile:', err);
       setError('Error al obtener información del perfil');
@@ -237,13 +255,18 @@ export const useShippingValidation = (cartItems = [], isAdvancedMode = false) =>
    * Verificar si todos los productos son compatibles
    */
   const isCartCompatible = useCallback(() => {
-    if (!isAdvancedMode) return true;
+    if (!isAdvancedMode) {
+      return true;
+    }
     
     // Si no hay región del usuario, el carrito no es compatible
-    if (!userRegion) return false;
+    if (!userRegion) {
+      return false;
+    }
 
     // Si hay productos incompatibles, el carrito no es compatible
-    return incompatibleProducts.length === 0;
+    const compatible = incompatibleProducts.length === 0;
+    return compatible;
   }, [isAdvancedMode, userRegion, incompatibleProducts]);
 
   /**
@@ -270,6 +293,8 @@ export const useShippingValidation = (cartItems = [], isAdvancedMode = false) =>
 
   // Efecto para cargar perfil del usuario - solo al montar
   useEffect(() => {
+    // ✅ NUEVO: Siempre fetch profile para verificar que sessionStorage sea correcto
+    // Esto asegura que si el usuario cambió su región, se actualice
     fetchUserProfile();
   }, []); // ✅ Solo ejecutar una vez
 
@@ -302,10 +327,38 @@ export const useShippingValidation = (cartItems = [], isAdvancedMode = false) =>
     }
   }, [isAdvancedMode, cartItems.length, userRegion]); // ✅ Solo dependencias primitivas
 
+  // ✅ NUEVO: Efecto para guardar userRegion en sessionStorage cuando cambie
+  useEffect(() => {
+    if (userRegion) {
+      try {
+        const storedRegion = sessionStorage.getItem('shippingValidation_userRegion');
+        if (storedRegion !== userRegion) {
+          sessionStorage.setItem('shippingValidation_userRegion', userRegion);
+          console.log('Updated sessionStorage region from', storedRegion, 'to', userRegion);
+        }
+      } catch (err) {
+        console.warn('Failed to save userRegion to sessionStorage:', err);
+      }
+    } else {
+      // Si userRegion es null, limpiar sessionStorage
+      try {
+        sessionStorage.removeItem('shippingValidation_userRegion');
+      } catch (err) {
+        console.warn('Failed to clear userRegion from sessionStorage:', err);
+      }
+    }
+  }, [userRegion]);
+
   // Efecto para escuchar cambios en localStorage (login/logout)
   useEffect(() => {
     const handleStorageChange = (e) => {
       if (e.key === 'user_id') {
+        // Limpiar sessionStorage cuando cambia user_id
+        try {
+          sessionStorage.removeItem('shippingValidation_userRegion');
+        } catch (err) {
+          console.warn('Failed to clear userRegion from sessionStorage:', err);
+        }
         fetchUserProfile();
       }
     };
