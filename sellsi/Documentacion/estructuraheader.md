@@ -92,6 +92,7 @@ ProductHeader (Box: width 100%, maxWidth 100%)
   - Box de stock/compra mínima optimizada: ancho responsivo (85%-90%) con maxWidth 500px y gap reducido
   - Todos los precios ahora aparecen en color negro en lugar de primary.main
   - Se agregó botón "Cotiza aquí" al final de la sección de precios (reemplaza Solicitar Cotización)
+  - Botón "Cotiza aquí" conectado a QuotationModal con cantidad mínima y precio correspondiente
   - PurchaseActions simplificado: eliminado quantity selector, solo botón "Agregar al Carrito" centrado
   - Botón conectado a AddToCartModal para manejo completo de lógica de cantidad y agregado
   - Botón mantiene ancho natural (sin fullWidth) para mejor proporción visual

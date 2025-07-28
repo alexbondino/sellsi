@@ -34,6 +34,7 @@ import ProductImageGallery from './ProductImageGallery'
 import PurchaseActions from './PurchaseActions'
 import PriceDisplay from '../../marketplace/PriceDisplay/PriceDisplay'
 import StockIndicator from '../../marketplace/StockIndicator/StockIndicator'
+import QuotationModal from './QuotationModal'
 import { useProductPriceTiers } from '../../marketplace/hooks/products/useProductPriceTiers';
 
 const ProductHeader = React.memo(({
@@ -72,6 +73,8 @@ const ProductHeader = React.memo(({
   const [isOwnProduct, setIsOwnProduct] = useState(false)
   // ✅ NUEVO: Estado de loading para evitar flash de contenido
   const [checkingOwnership, setCheckingOwnership] = useState(false)
+  // ✅ NUEVO: Estado para el modal de cotización
+  const [isQuotationModalOpen, setIsQuotationModalOpen] = useState(false)
   
   // ✅ NUEVO: Función para obtener el nombre del usuario actual
   const getCurrentUserName = React.useCallback(async () => {
@@ -143,6 +146,29 @@ const ProductHeader = React.memo(({
       const csvContent = generateTiersCSV(tiers)
       handleCopy('allTiers', csvContent)
     }
+  }
+
+  // ✅ NUEVO: Funciones para manejar el modal de cotización
+  const handleOpenQuotationModal = () => {
+    setIsQuotationModalOpen(true)
+  }
+
+  const handleCloseQuotationModal = () => {
+    setIsQuotationModalOpen(false)
+  }
+
+  // ✅ NUEVO: Calcular precio unitario y cantidad por defecto para cotización
+  const getQuotationDefaults = () => {
+    const defaultQuantity = compraMinima || 1
+    let defaultUnitPrice = precio || 0
+
+    // Si hay tramos, usar el precio del primer tramo o el que corresponda a la cantidad mínima
+    if (tiers && tiers.length > 0) {
+      const applicableTier = tiers.find(tier => tier.min_quantity <= defaultQuantity) || tiers[0]
+      defaultUnitPrice = applicableTier.price
+    }
+
+    return { defaultQuantity, defaultUnitPrice }
   }
 
   // Lógica para mostrar precios y tramos
@@ -283,10 +309,7 @@ const ProductHeader = React.memo(({
                   textDecoration: 'underline',
                 },
               }}
-              onClick={() => {
-                // Aquí puedes agregar la lógica para el botón de cotización
-                console.log('Botón de cotización clickeado')
-              }}
+              onClick={handleOpenQuotationModal}
             >
               Cotiza aquí
             </Button>
@@ -392,10 +415,7 @@ const ProductHeader = React.memo(({
                   textDecoration: 'underline',
                 },
               }}
-              onClick={() => {
-                // Aquí puedes agregar la lógica para el botón de cotización
-                console.log('Botón de cotización clickeado')
-              }}
+              onClick={handleOpenQuotationModal}
             >
               Cotiza aquí
             </Button>
@@ -696,6 +716,16 @@ const ProductHeader = React.memo(({
           })()}
         </Box>
       </Box>
+
+      {/* Modal de Cotización */}
+      <QuotationModal
+        open={isQuotationModalOpen}
+        onClose={handleCloseQuotationModal}
+        product={product}
+        quantity={getQuotationDefaults().defaultQuantity}
+        unitPrice={getQuotationDefaults().defaultUnitPrice}
+        tiers={finalTiers}
+      />
     </Box>
   )
 })
