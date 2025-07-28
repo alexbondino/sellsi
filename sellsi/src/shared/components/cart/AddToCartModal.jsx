@@ -277,10 +277,16 @@ const AddToCartModal = ({
         selectedTier: activeTier,
       };
       
+      console.log('🛒 [AddToCartModal] Intentando agregar al carrito:', cartItem);
       await onAddToCart(cartItem);
+      console.log('✅ [AddToCartModal] Producto agregado exitosamente al carrito');
       onClose();
     } catch (error) {
-      } finally {
+      console.error('❌ [AddToCartModal] Error al agregar producto al carrito:', error);
+      console.error('📋 [AddToCartModal] Detalles del producto:', productData);
+      console.error('🔢 [AddToCartModal] Cantidad:', quantity);
+      console.error('💰 [AddToCartModal] Precios:', currentPricing);
+    } finally {
       setIsProcessing(false);
     }
   }, [

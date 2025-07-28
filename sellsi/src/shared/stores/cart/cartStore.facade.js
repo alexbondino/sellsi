@@ -10,6 +10,7 @@
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
 import debounce from 'lodash.debounce'
+import toast from 'react-hot-toast'
 
 import { PERSIST_CONFIG } from './cartStore.constants'
 import { createDebouncedSave } from './cartStore.core'

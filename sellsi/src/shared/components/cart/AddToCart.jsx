@@ -47,7 +47,7 @@ const AddToCart = ({
   // ============================================================================
   
   const [modalOpen, setModalOpen] = useState(false);
-  const addToCart = useCartStore(state => state.addToCart);
+  const addItem = useCartStore(state => state.addItem);
 
   // ============================================================================
   // HANDLERS
@@ -71,22 +71,32 @@ const AddToCart = ({
 
   const handleAddToCart = useCallback(async (cartItem) => {
     try {
-      // Formatear el producto para el carrito
-      const formattedProduct = formatProductForCart({
-        ...product,
-        ...cartItem,
-      });
+      console.log('🛒 [AddToCart] Datos recibidos del modal:', cartItem);
+      
+      // Formatear el producto para el carrito con los parámetros correctos
+      const formattedProduct = formatProductForCart(
+        product, // producto base
+        cartItem.quantity, // cantidad seleccionada
+        cartItem.priceTiers || product.priceTiers || product.price_tiers || [] // tramos de precios
+      );
 
-      // Agregar al store del carrito
-      addToCart(formattedProduct);
+      // Agregar información adicional del modal
+      const finalProduct = {
+        ...formattedProduct,
+        documentType: cartItem.documentType,
+        selectedTier: cartItem.selectedTier,
+        unitPrice: cartItem.unitPrice,
+        totalPrice: cartItem.totalPrice,
+      };
+
+      console.log('📦 [AddToCart] Producto final para carrito:', finalProduct);
+
+      // Agregar al store del carrito usando addItem(product, quantity)
+      await addItem(finalProduct, cartItem.quantity);
 
       // Mostrar notificación de éxito
       showCartSuccess(
-        `${formattedProduct.name} agregado al carrito`,
-        {
-          quantity: cartItem.quantity,
-          unitPrice: cartItem.unitPrice,
-        }
+        `${finalProduct.name} agregado al carrito (${cartItem.quantity} unidades)`
       );
 
       // Callback de éxito personalizado
@@ -106,7 +116,7 @@ const AddToCart = ({
         onError(error);
       }
     }
-  }, [product, addToCart, onSuccess, onError]);
+  }, [product, addItem, onSuccess, onError]);
 
   // ============================================================================
   // VALIDACIONES
