@@ -31,8 +31,8 @@ const initialFormData = {
   pricingType: PRICING_TYPES.UNIT,
   precioUnidad: '',
   tramos: [
-    { cantidad: '', precio: '' },
-    { cantidad: '', precio: '' }
+    { min: '', max: '', precio: '' },
+    { min: '', max: '', precio: '' }
   ],
   imagenes: [],
   documentos: [],
@@ -129,12 +129,13 @@ export const useProductForm = (productId = null) => {
       // Tramos: mapear si existen, sino inicializar con 2 tramos vacíos por defecto
       tramos: hasPriceTiers
         ? product.priceTiers.map((t) => ({
-            cantidad: t.min_quantity?.toString() || '',
+            min: t.min_quantity?.toString() || '',
+            max: t.max_quantity?.toString() || '',
             precio: t.price?.toString() || '',
           }))
         : [
-            { cantidad: '', precio: '' },
-            { cantidad: '', precio: '' }
+            { min: '', max: '', precio: '' },
+            { min: '', max: '', precio: '' }
           ],
         
       imagenes: product.imagenes
@@ -300,19 +301,24 @@ export const useProductForm = (productId = null) => {
       
       if (newType === PRICING_TYPES.UNIT) {
         // Cambio a pricing por unidad - limpiar tramos
-        newFormData.tramos = [{ cantidad: '', precio: '' }]
+        newFormData.tramos = [{ min: '', max: '', precio: '' }]
         // Mantener precioUnidad si ya existe
       } else {
         // Cambio a pricing por tramos - limpiar precio unitario
         newFormData.precioUnidad = ''
         
         // 🔧 FIX: AUTO-MAPEAR compraMinima al primer tramo y crear 2 tramos por defecto
-        const compraMinima = prev.compraMinima || ''
+        const compraMinima = prev.compraMinima || '1'
         newFormData.tramos = [
-          { cantidad: compraMinima, precio: '' },
-          { cantidad: '', precio: '' }
+          { min: compraMinima, max: '', precio: '' },
+          { min: '', max: '', precio: '' }
         ]
+        
+        // 🔧 NUEVO: Si no hay compra mínima definida, usar el valor por defecto
+        if (!prev.compraMinima || prev.compraMinima === '') {
+          newFormData.compraMinima = '1'
         }
+      }
       
       return newFormData
     })
@@ -330,7 +336,7 @@ export const useProductForm = (productId = null) => {
       }
       return newErrors
     })
-  }, [formData.pricingType])
+  }, [])
 
   /**
    * Actualizar campo del formulario
@@ -343,7 +349,19 @@ export const useProductForm = (productId = null) => {
         // 🎯 SINCRONIZACIÓN AUTOMÁTICA: compraMinima -> primer tramo
         if (fieldName === 'compraMinima' && prev.pricingType === PRICING_TYPES.TIER) {
           newFormData.tramos = [...prev.tramos]
-          newFormData.tramos[0] = { ...newFormData.tramos[0], cantidad: value }
+          newFormData.tramos[0] = { ...newFormData.tramos[0], min: value }
+        }
+        
+        // 🔧 NUEVO: SINCRONIZACIÓN AUTOMÁTICA: primer tramo -> compraMinima
+        if (fieldName === 'tramos' && prev.pricingType === PRICING_TYPES.TIER) {
+          const tramos = Array.isArray(value) ? value : []
+          if (tramos.length > 0 && tramos[0] && tramos[0].min) {
+            const minPrimerTramo = parseInt(tramos[0].min) || 0
+            if (minPrimerTramo > 0 && parseInt(prev.compraMinima) !== minPrimerTramo) {
+              console.log(`🔄 [useProductForm] Sincronizando compra mínima: ${prev.compraMinima} -> ${minPrimerTramo}`)
+              newFormData.compraMinima = minPrimerTramo.toString()
+            }
+          }
         }
         
         return newFormData
@@ -463,6 +481,21 @@ export const useProductForm = (productId = null) => {
       }
     }
   }, [isEditMode, productId]) // REMOVIDO: uiProducts, formData.productid, formData.id
+
+  // 🔧 NUEVO: Efecto para sincronizar compra mínima con primer tramo cuando es pricing por volumen
+  useEffect(() => {
+    if (formData.pricingType === PRICING_TYPES.TIER && formData.tramos.length > 0) {
+      const primerTramo = formData.tramos[0]
+      if (primerTramo && primerTramo.min && primerTramo.min !== '') {
+        const minPrimerTramo = parseInt(primerTramo.min) || 0
+        // Solo actualizar si la compra mínima actual es diferente
+        if (minPrimerTramo > 0 && parseInt(formData.compraMinima) !== minPrimerTramo) {
+          console.log(`🔄 [useProductForm] Auto-sincronizando compra mínima: ${formData.compraMinima} -> ${minPrimerTramo}`)
+          setFormData(prev => ({ ...prev, compraMinima: minPrimerTramo.toString() }))
+        }
+      }
+    }
+  }, [formData.pricingType, formData.tramos, formData.compraMinima])
 
   return {
     // Estado del formulario

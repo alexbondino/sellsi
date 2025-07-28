@@ -40,7 +40,6 @@ const ProductHeader = React.memo(({
   product,
   selectedImageIndex,
   onImageSelect,
-  onAddToCart,
   isLoggedIn,
   fromMyProducts = false,
 }) => {
@@ -69,8 +68,6 @@ const ProductHeader = React.memo(({
   const { thumbnailUrl: mainImageThumbnail, isLoading: thumbnailLoading } = useResponsiveThumbnail(product);
 
   const [copied, setCopied] = useState({ name: false, price: false })
-  // Estado para la cantidad seleccionada
-  const [selectedQuantity, setSelectedQuantity] = useState(0)
   // ✅ NUEVO: Estado para verificar si el producto pertenece al usuario actual
   const [isOwnProduct, setIsOwnProduct] = useState(false)
   // ✅ NUEVO: Estado de loading para evitar flash de contenido
@@ -190,7 +187,7 @@ const ProductHeader = React.memo(({
             mb: 1,
           }}
         >
-          <Typography variant="h6" sx={{ color: 'primary.main' }}>
+          <Typography variant="h6" sx={{ color: 'text.primary' }}>
             Precios por cantidad
           </Typography>          <Tooltip
             title="El precio varía según la cantidad que compres. Cada tramo indica el precio unitario para ese rango de unidades."
@@ -256,7 +253,7 @@ const ProductHeader = React.memo(({
                         {rangeText}
                       </TableCell>
                       <TableCell align="center">
-                        <Typography color="primary" fontWeight={700}>
+                        <Typography color="text.primary" fontWeight={700}>
                           ${tier.price.toLocaleString('es-CL')}
                         </Typography>
                       </TableCell>
@@ -267,6 +264,34 @@ const ProductHeader = React.memo(({
             </TableBody>
           </Table>
         </TableContainer>
+        
+        {/* Botón de Cotización */}
+        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2, mb: 4 }}>
+          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+            ¿Quieres saber los detalles de todo?{' '}
+            <Button
+              variant="text"
+              size="small"
+              sx={{
+                color: 'primary.main',
+                textTransform: 'none',
+                fontWeight: 600,
+                p: 0,
+                minWidth: 'auto',
+                '&:hover': {
+                  backgroundColor: 'transparent',
+                  textDecoration: 'underline',
+                },
+              }}
+              onClick={() => {
+                // Aquí puedes agregar la lógica para el botón de cotización
+                console.log('Botón de cotización clickeado')
+              }}
+            >
+              Cotiza aquí
+            </Button>
+          </Typography>
+        </Box>
       </Box>
     )
   } else {
@@ -287,11 +312,11 @@ const ProductHeader = React.memo(({
           variant="h4"
           sx={{
             fontWeight: 700,
-            color: 'primary.main',
+            color: 'text.primary',
             fontSize: { xs: '1.1rem', sm: '1.3rem', md: '1.5rem', lg: '1.7rem', xl: '2rem' },
             lineHeight: 1.2,
             '& .MuiTypography-root': {
-              color: 'primary.main',
+              color: 'text.primary',
             },
           }}
         />
@@ -347,6 +372,34 @@ const ProductHeader = React.memo(({
               transition: 'visibility 0.2s',
             }}
           />
+        </Box>
+        
+        {/* Botón de Cotización */}
+        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+            ¿Quieres saber los detalles de todo?{' '}
+            <Button
+              variant="text"
+              size="small"
+              sx={{
+                color: 'primary.main',
+                textTransform: 'none',
+                fontWeight: 600,
+                p: 0,
+                minWidth: 'auto',
+                '&:hover': {
+                  backgroundColor: 'transparent',
+                  textDecoration: 'underline',
+                },
+              }}
+              onClick={() => {
+                // Aquí puedes agregar la lógica para el botón de cotización
+                console.log('Botón de cotización clickeado')
+              }}
+            >
+              Cotiza aquí
+            </Button>
+          </Typography>
         </Box>
       </Box>
     )
@@ -482,6 +535,96 @@ const ProductHeader = React.memo(({
               />
             </Box>
           </Box>
+          {/* Nueva Box: Stock, Compra mínima y Chips de facturación */}
+          <Box sx={{ 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: 'center', 
+            mb: 3, 
+            width: { xs: '100%', sm: '90%', md: '85%' },
+            maxWidth: 500,
+            gap: 2
+          }}>
+            {/* Lado izquierdo: Stock y Compra mínima */}
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, flex: 1 }}>
+              {/* Stock */}
+              <Box>
+                {stock === 0 ? (
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      fontWeight: 600,
+                      color: 'text.primary',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 1,
+                    }}
+                  >
+                    <Assignment sx={{ fontSize: 18, color: 'error.main' }} />
+                    Producto agotado
+                  </Typography>
+                ) : (
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      fontWeight: 600,
+                      color: 'text.primary',
+                    }}
+                  >
+                    Stock: {stock} unidades
+                  </Typography>
+                )}
+              </Box>
+              {/* Compra mínima */}
+              <Typography
+                variant="body2"
+                sx={{
+                  fontWeight: 600,
+                  color: 'text.primary',
+                }}
+              >
+                Compra mínima: {compraMinima} unidades
+              </Typography>
+            </Box>
+            
+            {/* Lado derecho: Chips de facturación */}
+            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+              <Chip
+                label="Factura"
+                size="small"
+                sx={{
+                  backgroundColor: 'primary.main',
+                  color: 'white',
+                  '&:hover': {
+                    backgroundColor: 'primary.main',
+                  },
+                }}
+              />
+              <Chip
+                label="Boleta"
+                size="small"
+                sx={{
+                  backgroundColor: 'primary.main',
+                  color: 'white',
+                  '&:hover': {
+                    backgroundColor: 'primary.main',
+                  },
+                }}
+              />
+              <Chip
+                label="Ninguno"
+                size="small"
+                sx={{
+                  backgroundColor: 'primary.main',
+                  color: 'white',
+                  '&:hover': {
+                    backgroundColor: 'primary.main',
+                  },
+                }}
+              />
+            </Box>
+          </Box>
+
           {/* Nombre del Proveedor */}
           <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
             <Avatar
@@ -515,40 +658,8 @@ const ProductHeader = React.memo(({
               }}
             />{' '}
           </Box>{' '}
-          {/* Compra mínima */}
-          <Typography
-            variant="body1"
-            sx={{
-              mb: 3,
-              fontSize: 16,
-              fontWeight: 500,
-              color: 'text.secondary',
-            }}
-          >
-            Compra mínima: {compraMinima} unidades
-          </Typography>{' '}
           {/* Precios y/o tramos */}
           {priceContent}
-          {/* Stock mejorado */}
-          <Box sx={{ mb: 4 }}>
-            {stock === 0 ? (
-              <Typography
-                variant="h6"
-                color="error"
-                sx={{
-                  fontWeight: 700,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 1,
-                }}
-              >
-                <Assignment sx={{ fontSize: 24, color: 'error.main' }} />
-                Producto agotado
-              </Typography>
-            ) : (
-              <StockIndicator stock={stock - (typeof selectedQuantity === 'number' ? selectedQuantity : 0)} showUnits={true} />
-            )}
-          </Box>{' '}
           {/* Botones de Compra */}
           {/* Solo mostrar acciones de compra si NO es supplier, ni supplier marketplace, ni mis productos, ni es producto propio */}
           {(() => {
@@ -572,12 +683,10 @@ const ProductHeader = React.memo(({
             if (!shouldHidePurchaseActions) {
               return (
                 <PurchaseActions
-                  onAddToCart={onAddToCart}
                   stock={stock}
                   product={product}
                   tiers={finalTiers}
                   isLoggedIn={isLoggedIn}
-                  onQuantityChange={setSelectedQuantity}
                 />
               )
             }

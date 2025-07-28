@@ -268,6 +268,8 @@ const AddProduct = () => {
     }
     
     updateField('tramos', newTramos);
+
+    // ✅ REMOVIDO: La sincronización ahora se maneja automáticamente en el hook useProductForm
   };
 
   const addTramo = () => {
