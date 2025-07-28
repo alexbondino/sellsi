@@ -291,7 +291,7 @@ const ProductHeader = React.memo(({
           </Table>
         </TableContainer>
         
-        {/* Botón de Cotización */}
+        {/* Botón de Cotización para tramos */}
         <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2, mb: 4 }}>
           <Typography variant="body2" sx={{ color: 'text.secondary' }}>
             ¿Quieres saber los detalles de todo?{' '}
@@ -395,31 +395,6 @@ const ProductHeader = React.memo(({
               transition: 'visibility 0.2s',
             }}
           />
-        </Box>
-        
-        {/* Botón de Cotización */}
-        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
-          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-            ¿Quieres saber los detalles de todo?{' '}
-            <Button
-              variant="text"
-              size="small"
-              sx={{
-                color: 'primary.main',
-                textTransform: 'none',
-                fontWeight: 600,
-                p: 0,
-                minWidth: 'auto',
-                '&:hover': {
-                  backgroundColor: 'transparent',
-                  textDecoration: 'underline',
-                },
-              }}
-              onClick={handleOpenQuotationModal}
-            >
-              Cotiza aquí
-            </Button>
-          </Typography>
         </Box>
       </Box>
     )
@@ -680,6 +655,34 @@ const ProductHeader = React.memo(({
           </Box>{' '}
           {/* Precios y/o tramos */}
           {priceContent}
+          
+          {/* Botón de Cotización - Solo para precio único */}
+          {!(tiers && tiers.length > 0) && (
+            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2, mb: 4, width: '100%' }}>
+              <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                ¿Quieres saber los detalles de todo?{' '}
+                <Button
+                  variant="text"
+                  size="small"
+                  sx={{
+                    color: 'primary.main',
+                    textTransform: 'none',
+                    fontWeight: 600,
+                    p: 0,
+                    minWidth: 'auto',
+                    '&:hover': {
+                      backgroundColor: 'transparent',
+                      textDecoration: 'underline',
+                    },
+                  }}
+                  onClick={handleOpenQuotationModal}
+                >
+                  Cotiza aquí
+                </Button>
+              </Typography>
+            </Box>
+          )}
+          
           {/* Botones de Compra */}
           {/* Solo mostrar acciones de compra si NO es supplier, ni supplier marketplace, ni mis productos, ni es producto propio */}
           {(() => {

@@ -93,6 +93,7 @@ ProductHeader (Box: width 100%, maxWidth 100%)
   - Todos los precios ahora aparecen en color negro en lugar de primary.main
   - Se agregó botón "Cotiza aquí" al final de la sección de precios (reemplaza Solicitar Cotización)
   - Botón "Cotiza aquí" conectado a QuotationModal con cantidad mínima y precio correspondiente
+  - Botón "Cotiza aquí" movido a Box independiente para centrado consistente en ambos casos de precio
   - PurchaseActions simplificado: eliminado quantity selector, solo botón "Agregar al Carrito" centrado
   - Botón conectado a AddToCartModal para manejo completo de lógica de cantidad y agregado
   - Botón mantiene ancho natural (sin fullWidth) para mejor proporción visual
