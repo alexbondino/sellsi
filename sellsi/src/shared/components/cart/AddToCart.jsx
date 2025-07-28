@@ -34,6 +34,7 @@ const AddToCart = ({
   disabled = false,
   initialQuantity = 1,
   userRegion = null,
+  isLoadingUserProfile = false,
   onSuccess,
   onError,
   onModalStateChange, // Callback para comunicar cuando el modal se abre/cierra
@@ -180,6 +181,7 @@ const AddToCart = ({
         product={product}
         initialQuantity={initialQuantity}
         userRegion={userRegion}
+        isLoadingUserProfile={isLoadingUserProfile}
       />
     </>
   );

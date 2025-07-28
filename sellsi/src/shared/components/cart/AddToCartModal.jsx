@@ -30,6 +30,7 @@ import QuantitySelector from '../forms/QuantitySelector/QuantitySelector';
 import PriceDisplay from '../display/price/PriceDisplay';
 import { useShippingValidation } from '../../../domains/buyer/pages/cart/hooks/useShippingValidation';
 import { calculatePriceForQuantity } from '../../../utils/priceCalculation';
+import { supabase } from '../../../services/supabase';
 
 /**
  * ============================================================================
@@ -56,6 +57,7 @@ const AddToCartModal = ({
   product,
   initialQuantity = 1,
   userRegion = null,
+  isLoadingUserProfile = false, // Nuevo prop para indicar si el perfil del usuario está cargando
 }) => {
   // ============================================================================
   // ESTADOS LOCALES
@@ -65,15 +67,85 @@ const AddToCartModal = ({
   const [documentType, setDocumentType] = useState('factura');
   const [isProcessing, setIsProcessing] = useState(false);
   const [quantityError, setQuantityError] = useState('');
+  const [enrichedProduct, setEnrichedProduct] = useState(product);
+  const [isLoadingRegions, setIsLoadingRegions] = useState(false);
+
+  // Función para cargar las regiones de despacho del producto
+  const loadProductShippingRegions = useCallback(async (productId) => {
+    if (!productId) return [];
+    
+    try {
+      setIsLoadingRegions(true);
+      const { data, error } = await supabase
+        .from('product_delivery_regions')
+        .select('id, region, price, delivery_days')
+        .eq('product_id', productId);
+
+      if (error) {
+        console.error('Error loading shipping regions:', error);
+        return [];
+      }
+
+      return data || [];
+    } catch (error) {
+      console.error('Error loading shipping regions:', error);
+      return [];
+    } finally {
+      setIsLoadingRegions(false);
+    }
+  }, []);
+
+  // Enriquecer el producto con regiones de despacho cuando se abre el modal
+  useEffect(() => {
+    const enrichProductWithRegions = async () => {
+      if (!open || !product?.id) return;
+
+      // Si el producto ya tiene regiones, no necesitamos cargarlas
+      if (product.shippingRegions?.length > 0 || 
+          product.delivery_regions?.length > 0 || 
+          product.shipping_regions?.length > 0 ||
+          product.product_delivery_regions?.length > 0) {
+        setEnrichedProduct(product);
+        return;
+      }
+
+      // Cargar regiones de despacho desde la base de datos
+      const shippingRegions = await loadProductShippingRegions(product.id);
+      
+      const productWithRegions = {
+        ...product,
+        shippingRegions,
+        delivery_regions: shippingRegions,
+        shipping_regions: shippingRegions,
+        product_delivery_regions: shippingRegions
+      };
+
+      console.log('🔄 Product enriched with shipping regions:', {
+        productId: product.id,
+        originalRegions: {
+          shippingRegions: product.shippingRegions,
+          delivery_regions: product.delivery_regions,
+          shipping_regions: product.shipping_regions,
+          product_delivery_regions: product.product_delivery_regions
+        },
+        loadedRegions: shippingRegions,
+        enrichedProduct: productWithRegions
+      });
+
+      setEnrichedProduct(productWithRegions);
+    };
+
+    enrichProductWithRegions();
+  }, [open, product, loadProductShippingRegions]);
 
   // Sincronizar cantidad inicial cuando se abre el modal
   useEffect(() => {
     if (open) {
       // Calcular cantidad mínima efectiva
-      let effectiveMinimum = product?.minimum_purchase || product?.compraMinima || 1;
+      let effectiveMinimum = enrichedProduct?.minimum_purchase || enrichedProduct?.compraMinima || 1;
       
       // Si hay price tiers, usar el primer tramo como mínimo
-      const priceTiers = product?.priceTiers || product?.price_tiers || [];
+      const priceTiers = enrichedProduct?.priceTiers || enrichedProduct?.price_tiers || [];
       if (priceTiers.length > 0) {
         const sortedTiers = [...priceTiers].sort((a, b) => (a.min_quantity || 1) - (b.min_quantity || 1));
         effectiveMinimum = sortedTiers[0]?.min_quantity || 1;
@@ -82,7 +154,7 @@ const AddToCartModal = ({
       setQuantity(Math.max(initialQuantity, effectiveMinimum));
       setQuantityError(''); // Limpiar errores al abrir
     }
-  }, [open, initialQuantity, product]);
+  }, [open, initialQuantity, enrichedProduct]);
 
   // ============================================================================
   // DATOS DEL PRODUCTO Y VALIDACIONES
@@ -90,26 +162,27 @@ const AddToCartModal = ({
 
   // Extraer datos del producto con fallbacks
   const productData = useMemo(() => ({
-    id: product?.id,
-    name: product?.nombre || product?.name || 'Producto sin nombre',
-    basePrice: product?.precio || product?.price || 0,
-    originalPrice: product?.precioOriginal || product?.originalPrice,
-    priceTiers: product?.priceTiers || product?.price_tiers || [],
-    thumbnail: product?.thumbnail || product?.image_url,
-    supplier: product?.proveedor || product?.supplier || 'Proveedor no encontrado',
-    minimumPurchase: product?.minimum_purchase || product?.compraMinima || 1,
-    maxPurchase: product?.max_purchase || product?.maxPurchase || 999,
-    shippingRegions: product?.shippingRegions || product?.delivery_regions || [],
-  }), [product]);
+    id: enrichedProduct?.id,
+    name: enrichedProduct?.nombre || enrichedProduct?.name || 'Producto sin nombre',
+    basePrice: enrichedProduct?.precio || enrichedProduct?.price || 0,
+    originalPrice: enrichedProduct?.precioOriginal || enrichedProduct?.originalPrice,
+    priceTiers: enrichedProduct?.priceTiers || enrichedProduct?.price_tiers || [],
+    thumbnail: enrichedProduct?.thumbnail || enrichedProduct?.image_url,
+    supplier: enrichedProduct?.proveedor || enrichedProduct?.supplier || 'Proveedor no encontrado',
+    minimumPurchase: enrichedProduct?.minimum_purchase || enrichedProduct?.compraMinima || 1,
+    maxPurchase: enrichedProduct?.max_purchase || enrichedProduct?.maxPurchase || 999,
+    shippingRegions: enrichedProduct?.shippingRegions || enrichedProduct?.delivery_regions || [],
+  }), [enrichedProduct]);
 
   // Hook para validación de despacho - Solo necesitamos las funciones, no los estados
   const { validateProductShipping, getUserRegionName } = useShippingValidation([], false);
 
-  // Validar despacho para el producto actual
+  // Validar despacho para el producto actual - solo cuando tanto las regiones como el perfil estén cargados
   const shippingValidation = useMemo(() => {
-    if (!userRegion || !product) return null;
-    return validateProductShipping(product, userRegion);
-  }, [product, userRegion, validateProductShipping]);
+    // No validar si estamos cargando regiones del producto, perfil del usuario, o no hay región del usuario
+    if (!userRegion || !enrichedProduct || isLoadingRegions || isLoadingUserProfile) return null;
+    return validateProductShipping(enrichedProduct, userRegion);
+  }, [enrichedProduct, userRegion, validateProductShipping, isLoadingRegions, isLoadingUserProfile]);
 
   // ============================================================================
   // CÁLCULOS DE PRECIOS DINÁMICOS
@@ -462,11 +535,34 @@ const AddToCartModal = ({
   );
 
   const ShippingStatus = () => {
-    if (!shippingValidation) {
+    // Mostrar carga mientras se cargan las regiones del producto O el perfil del usuario
+    if (isLoadingRegions || isLoadingUserProfile) {
+      return (
+        <Alert severity="info" sx={{ mt: 2 }}>
+          <Typography variant="body2">
+            Cargando información de despacho...
+          </Typography>
+        </Alert>
+      );
+    }
+
+    // Si no hay región del usuario después de cargar el perfil, mostrar mensaje de configuración
+    if (!userRegion) {
       return (
         <Alert severity="info" sx={{ mt: 2 }}>
           <Typography variant="body2">
             Configura tu región en tu perfil para ver disponibilidad de despacho
+          </Typography>
+        </Alert>
+      );
+    }
+
+    // Si hay región pero aún no hay validación (está procesando), seguir mostrando loading
+    if (!shippingValidation) {
+      return (
+        <Alert severity="info" sx={{ mt: 2 }}>
+          <Typography variant="body2">
+            Cargando información de despacho...
           </Typography>
         </Alert>
       );
@@ -495,8 +591,9 @@ const AddToCartModal = ({
     console.log('🔍 Debug ShippingValidation:', {
       shippingValidation,
       availableRegions: shippingValidation?.availableRegions,
-      productShippingRegions: product?.shippingRegions || product?.delivery_regions || product?.shipping_regions,
-      userRegion
+      productShippingRegions: enrichedProduct?.shippingRegions || enrichedProduct?.delivery_regions || enrichedProduct?.shipping_regions,
+      userRegion,
+      isLoadingRegions
     });
 
     return (

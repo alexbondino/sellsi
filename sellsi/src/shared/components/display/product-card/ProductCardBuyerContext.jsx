@@ -38,6 +38,7 @@ const ProductCardBuyerContext = React.memo(
     const navigate = useNavigate();
 
     const [userRegion, setUserRegion] = useState(null);
+    const [isLoadingUserRegion, setIsLoadingUserRegion] = useState(true); // Nuevo estado de carga
     const minimumPurchase =
       product?.minimum_purchase || product?.compraMinima || 1;
 
@@ -69,6 +70,7 @@ const ProductCardBuyerContext = React.memo(
     useEffect(() => {
       const fetchUserRegion = async () => {
         try {
+          setIsLoadingUserRegion(true);
           const userId = localStorage.getItem('user_id');
           if (userId) {
             const { data: profile } = await getUserProfile(userId);
@@ -76,6 +78,8 @@ const ProductCardBuyerContext = React.memo(
           }
         } catch (error) {
           console.error('Error fetching user region:', error);
+        } finally {
+          setIsLoadingUserRegion(false);
         }
       };
       
@@ -360,6 +364,7 @@ const ProductCardBuyerContext = React.memo(
             size="medium"
             initialQuantity={minimumPurchase}
             userRegion={userRegion}
+            isLoadingUserProfile={isLoadingUserRegion}
             onSuccess={onAddToCart}
             onModalStateChange={onModalStateChange}
             sx={{
