@@ -45,6 +45,7 @@ const ProductHeader = React.memo(({
   onImageSelect,
   isLoggedIn,
   fromMyProducts = false,
+  isMobile = false, // Nuevo prop para responsividad
 }) => {
   const navigate = useNavigate();
 
@@ -459,44 +460,34 @@ const ProductHeader = React.memo(({
   return (
     // MUIV2 GRID - CONTENEDOR PRINCIPAL (MuiGrid-container)
     <Box sx={{ width: '100%', maxWidth: '100%' }}>
-      <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, width: '100%' }}>
-        {/* Galería de imágenes */}
-        <Box sx={{ flex: 1, minWidth: 0, display: 'flex', justifyContent: { xs: 'center', md: 'right' } }}>
-          <ProductImageGallery
-            images={imagenes.map(resolveImageSrc)}
-            mainImage={mainImageThumbnail || resolveImageSrc(imagen)}
-            selectedIndex={selectedImageIndex}
-            onImageSelect={onImageSelect}
-            productName={nombre}
-          />
-        </Box>
-        {/* Información del Producto */}
-        <Box
-          sx={{
-            flex: 1,
-            minWidth: 0,
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'flex-start',
-            textAlign: 'left',
-            px: { xs: 2, sm: 2, md: 1 },
-            width: { xs: '100%', sm: '90%', md: '80%', lg: '75%', xl: '80%' },
-            maxWidth: 580,
-            mx: { xs: 'auto', md: 0 },
-          }}
-        >
-          {/* Nombre del Producto */}
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', gap: 1, mb: 2, width: '100%' }}>
+      <Box sx={{ 
+        display: 'flex', 
+        flexDirection: { xs: 'column', md: 'row' }, 
+        width: '100%',
+        gap: { xs: 2, md: 0 }
+      }}>
+        {/* En móvil: Mostrar nombre primero */}
+        {isMobile && (
+          <Box sx={{ 
+            px: 2, 
+            mb: 2, 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'flex-start', 
+            gap: 1, 
+            width: '100%',
+            order: -1 // Forzar que aparezca primero
+          }}>
             <Typography
-              variant="h4"
+              variant="h5"
               sx={{
                 fontWeight: 700,
                 color: 'primary.main',
-                lineHeight: 1.2,
-                px: { xs: 2, sm: 2, md: 0 },
-                py: { xs: 2, md: 1 },
-                fontSize: { xs: '1.1rem', sm: '1.3rem', md: '1.5rem', lg: '1.7rem', xl: '2rem' },
+                lineHeight: 1.3,
+                py: 1,
+                fontSize: '1.25rem',
                 wordBreak: 'break-word',
+                hyphens: 'auto',
               }}
             >
               {nombre}
@@ -514,6 +505,87 @@ const ProductHeader = React.memo(({
                     boxShadow: 'none',
                     outline: 'none',
                   },
+                }}
+              >
+                {copied.name ? (
+                  <CheckCircleOutlineIcon color="success" fontSize="small" />
+                ) : (
+                  <ContentCopyIcon fontSize="small" />
+                )}
+              </IconButton>
+            </Tooltip>
+          </Box>
+        )}
+
+        {/* Galería de imágenes */}
+        <Box sx={{
+          flex: { xs: 'none', md: 1 },
+          width: '100%',
+          minWidth: 0,
+          display: 'flex',
+          justifyContent: 'center',
+          px: 0,
+        }}>
+          <ProductImageGallery
+            images={imagenes.map(resolveImageSrc)}
+            mainImage={mainImageThumbnail || resolveImageSrc(imagen)}
+            selectedIndex={selectedImageIndex}
+            onImageSelect={onImageSelect}
+            productName={nombre}
+            isMobile={isMobile}
+          />
+        </Box>
+
+        {/* Información del Producto */}
+        <Box
+          sx={{
+            flex: { xs: 'none', md: 1 },
+            minWidth: 0,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'flex-start',
+            textAlign: 'left',
+            px: { xs: 2, md: 1 },
+            width: { xs: '100%', md: '80%' },
+            maxWidth: { xs: 'none', md: 580 },
+            mx: { xs: 0, md: 0 },
+          }}
+        >
+          {/* Nombre del Producto - Solo en desktop */}
+          {!isMobile && (
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', gap: 1, mb: 2, width: '100%' }}>
+              <Typography
+                variant="h4"
+                sx={{
+                  fontWeight: 700,
+                  color: 'primary.main',
+                  lineHeight: 1.2,
+                  px: 0,
+                  py: 1,
+                  fontSize: { 
+                    md: '1.5rem', 
+                    lg: '1.7rem', 
+                    xl: '2rem' 
+                  },
+                  wordBreak: 'break-word',
+                  hyphens: 'auto',
+                }}
+              >
+                {nombre}
+              </Typography>
+              <Tooltip title="Copiar nombre del producto" arrow placement="right">
+                <IconButton
+                  size="small"
+                  onClick={() => handleCopy('name', nombre)}
+                  sx={{
+                    boxShadow: 'none',
+                    outline: 'none',
+                    bgcolor: 'transparent',
+                    '&:hover': {
+                      bgcolor: 'rgba(0,0,0,0.04)',
+                      boxShadow: 'none',
+                      outline: 'none',
+                    },
                   '&:active': {
                     boxShadow: 'none !important',
                     outline: 'none !important',
@@ -540,27 +612,35 @@ const ProductHeader = React.memo(({
             </Tooltip>
             {/* Tick verde eliminado, ahora está dentro del IconButton como en Copiar todos los precios */}
           </Box>
+          )}
+
           {/* Nueva Box: Stock, Compra mínima y Chips de facturación */}
-          {/* ...existing code... */}
           <Box
             sx={{
               display: 'flex',
-              flexDirection: 'column',
+              flexDirection: { xs: 'column', md: 'column' }, // Siempre columna
               alignItems: 'flex-start',
               mb: 3,
-              width: { xs: '100%', sm: '90%', md: '85%' },
-              maxWidth: 500,
-              gap: 1,
+              width: '100%', // Full width en móvil
+              maxWidth: { xs: 'none', md: 500 }, // Sin maxWidth en móvil
+              gap: { xs: 2, md: 1 }, // Más gap en móvil
             }}
           >
             {/* Fila 1: Chips de facturación */}
-            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', width: '100%' }}>
+            <Box sx={{ 
+              display: 'flex', 
+              gap: { xs: 1.5, md: 1 }, // Más gap en móvil
+              flexWrap: 'wrap', 
+              width: '100%',
+              justifyContent: { xs: 'flex-start', md: 'flex-start' } // Alineación consistente
+            }}>
               <Chip
                 label="Factura"
-                size="small"
+                size={isMobile ? "medium" : "small"} // Chips más grandes en móvil
                 sx={{
                   backgroundColor: 'primary.main',
                   color: 'white',
+                  fontSize: { xs: '0.8rem', md: '0.75rem' }, // Texto un poco más grande móvil
                   '&:hover': {
                     backgroundColor: 'primary.main',
                   },
@@ -568,10 +648,11 @@ const ProductHeader = React.memo(({
               />
               <Chip
                 label="Boleta"
-                size="small"
+                size={isMobile ? "medium" : "small"}
                 sx={{
                   backgroundColor: 'primary.main',
                   color: 'white',
+                  fontSize: { xs: '0.8rem', md: '0.75rem' },
                   '&:hover': {
                     backgroundColor: 'primary.main',
                   },
@@ -579,10 +660,11 @@ const ProductHeader = React.memo(({
               />
               <Chip
                 label="Ninguno"
-                size="small"
+                size={isMobile ? "medium" : "small"}
                 sx={{
                   backgroundColor: 'primary.main',
                   color: 'white',
+                  fontSize: { xs: '0.8rem', md: '0.75rem' },
                   '&:hover': {
                     backgroundColor: 'primary.main',
                   },

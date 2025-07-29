@@ -18,6 +18,8 @@ import {
   Breadcrumbs,
   Link,
   ThemeProvider,
+  useTheme,
+  useMediaQuery,
 } from '@mui/material'
 import {
   ArrowBack,
@@ -75,6 +77,10 @@ const ProductPageView = memo(({
   // ...logs eliminados...
   const [selectedImageIndex, setSelectedImageIndex] = useState(0)
   const location = useLocation()
+  
+  // Hook para responsividad
+  const theme = useTheme()
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'))
 
   // Mover useCallback ANTES de cualquier return condicional para seguir las reglas de los Hooks
   const handleAddToCart = useCallback((cartProduct) => {
@@ -110,22 +116,24 @@ const ProductPageView = memo(({
         <Box
           sx={{
             backgroundColor: 'background.default',
-            pt: { xs: 2, md: 4 },
-            px: 3,
+            pt: { xs: 1, md: 4 }, // Menos padding top en móvil
+            px: { xs: 0, md: 3 }, // Sin padding horizontal en móvil
             pb: SPACING_BOTTOM_MAIN,
             width: '100%',
           }}
         >
           <Box
             sx={{
-              backgroundColor: 'white',
+              // Estilos condicionales del container
+              backgroundColor: { xs: 'transparent', md: 'white' },
+              border: { xs: 'none', md: '1.5px solid #e0e0e0' },
+              boxShadow: { xs: 'none', md: 6 },
+              borderRadius: { xs: 0, md: 3 },
+              p: { xs: 0, md: 3 },
+              mb: { xs: 0, md: 6 },
               maxWidth: '1450px',
               mx: 'auto',
-              p: 3,
-              mb: 6,
-              border: '1.5px solid #e0e0e0',
-              boxShadow: 6,
-              borderRadius: 3,
+              width: '100%',
             }}
           >
             <Box sx={{ mb: 4, boxShadow: 'none', border: 'none', outline: 'none', backgroundImage: 'none' }}>
@@ -144,37 +152,43 @@ const ProductPageView = memo(({
                 <Typography variant="h4" fontWeight="600" color="black">
                 </Typography>
               </Box>
-              <Breadcrumbs sx={{ fontSize: '0.875rem', color: 'text.secondary' }}>
-                <Link
-                  underline="hover"
-                  color="inherit"
-                  onClick={onGoHome}
-                  sx={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 0.5 }}
-                >
-                  <Home fontSize="small" />
-                  Inicio
-                </Link>
-                <Link
-                  underline="hover"
-                  color="inherit"
-                  onClick={onGoToMarketplace}
-                  sx={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 0.5 }}
-                >
-                  {fromMyProducts
-                    ? <Inventory2Outlined fontSize="small" />
-                    : <StorefrontOutlined fontSize="small" />}
-                  {fromMyProducts
-                    ? 'Mis Productos'
-                    : isFromSupplierMarketplace
-                      ? 'Marketplace'
-                      : 'Marketplace'}
-                </Link>
-                {product && (
-                  <Typography color="black" sx={{ fontWeight: 600 }}>
-                    {product.nombre}
-                  </Typography>
-                )}
-              </Breadcrumbs>
+              {/* Breadcrumbs responsivos */}
+              <Box sx={{ 
+                px: { xs: 2, md: 0 }, 
+                mb: { xs: 1, md: 2 } 
+              }}>
+                <Breadcrumbs sx={{ fontSize: '0.875rem', color: 'text.secondary' }}>
+                  <Link
+                    underline="hover"
+                    color="inherit"
+                    onClick={onGoHome}
+                    sx={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 0.5 }}
+                  >
+                    <Home fontSize="small" />
+                    Inicio
+                  </Link>
+                  <Link
+                    underline="hover"
+                    color="inherit"
+                    onClick={onGoToMarketplace}
+                    sx={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 0.5 }}
+                  >
+                    {fromMyProducts
+                      ? <Inventory2Outlined fontSize="small" />
+                      : <StorefrontOutlined fontSize="small" />}
+                    {fromMyProducts
+                      ? 'Mis Productos'
+                      : isFromSupplierMarketplace
+                        ? 'Marketplace'
+                        : 'Marketplace'}
+                  </Link>
+                  {product && (
+                    <Typography color="black" sx={{ fontWeight: 600 }}>
+                      {product.nombre}
+                    </Typography>
+                  )}
+                </Breadcrumbs>
+              </Box>
             </Box>
             <Container maxWidth="xl">
               <ProductPageSkeleton />
@@ -203,28 +217,33 @@ const ProductPageView = memo(({
       <Box
         sx={{
           backgroundColor: 'background.default',
-          pt: { xs: 2, md: 4 },
-          px: 3,
+          pt: { xs: 1, md: 4 }, // Menos padding top en móvil
+          px: { xs: 0, md: 3 }, // Sin padding horizontal en móvil
           pb: SPACING_BOTTOM_MAIN,
           width: '100%',
         }}
       >
-        {/* Paper padre restaurado */}
+        {/* Paper padre con estilos condicionales */}
         <Box
           sx={{
-            backgroundColor: 'white',
+            // Estilos condicionales del container
+            backgroundColor: { xs: 'transparent', md: 'white' },
+            border: { xs: 'none', md: '1.5px solid #e0e0e0' },
+            boxShadow: { xs: 'none', md: 6 },
+            borderRadius: { xs: 0, md: 3 },
+            p: { xs: 0, md: 3 },
+            mb: { xs: 0, md: 6 },
             maxWidth: '1450px',
             mx: 'auto',
-            p: 3,
-            mb: 6,
-            border: '1.5px solid #e0e0e0',
-            boxShadow: 6,
-            borderRadius: 3,
             width: '100%',
           }}
         >
-          {/* 1. Breadcrumbs (hijo 1) */}
-          <Box sx={{ width: '100%', mb: 2 }}>
+          {/* 1. Breadcrumbs responsivos */}
+          <Box sx={{ 
+            px: { xs: 2, md: 0 }, 
+            mb: { xs: 1, md: 2 },
+            width: '100%' 
+          }}>
             <Breadcrumbs sx={{ fontSize: '0.875rem', color: 'text.secondary' }}>
               <Link
                 underline="hover"
@@ -257,7 +276,8 @@ const ProductPageView = memo(({
               )}
             </Breadcrumbs>
           </Box>
-          {/* 2. ProductHeader (hijo 2) */}
+
+          {/* 2. ProductHeader con prop de responsividad */}
           <Box sx={{ width: '100%' }}>
             <Suspense fallback={<CircularProgress />}>
               <ProductHeader
@@ -267,11 +287,18 @@ const ProductPageView = memo(({
                 onAddToCart={handleAddToCart}
                 isLoggedIn={isLoggedIn}
                 fromMyProducts={fromMyProducts}
+                isMobile={isMobile}
               />
             </Suspense>
           </Box>
-          {/* 3. Descripción del Producto (hijo 3) */}
-          <Box sx={{ width: '100%', mt: 6, mb:6 }}>
+
+          {/* 3. Descripción del Producto responsiva */}
+          <Box sx={{ 
+            px: { xs: 2, md: 0 }, 
+            mt: { xs: 4, md: 6 }, 
+            mb: 6,
+            width: '100%' 
+          }}>
             <Paper
               elevation={2}
               sx={{
