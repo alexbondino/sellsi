@@ -92,8 +92,8 @@ const ServicesSection = ({ serviciosRef }) => {
     },
     timeline: {
       gap: { xs: 1, sm: 1.3, md: 4, lg: 6, xl: 8 },
-      imageSize: { xs: 30, sm: 33, md: 72, lg: 84, xl: 96 }, // Reducido 40%
-      borderWidth: { xs: 2, sm: 2.4, md: 3.6, lg: 3.6, xl: 4.2 }, // Reducido 40%
+      imageSize: { xs: 60, sm: 60, md: 72, lg: 84, xl: 96 }, // Aumentado para xs y sm
+      borderWidth: { xs: 2.5, sm: 2.8, md: 3.6, lg: 3.6, xl: 4.2 }, // Aumentado para xs y sm
       lineHeight: { xs: 6, sm: 8, md: 12, lg: 12, xl: 14 },
       titleFontSize: {
         xs: '0.65rem',
