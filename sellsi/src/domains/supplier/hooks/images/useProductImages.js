@@ -125,13 +125,21 @@ const useProductImages = create((set, get) => ({
         processingImages: { ...state.processingImages, [productId]: false },
       }))
 
+      // Asegurar que siempre tengamos un error válido si success es false
+      if (!uploadResult.success && !uploadResult.error && !uploadResult.errors) {
+        return {
+          success: false,
+          error: 'Error desconocido al procesar imágenes'
+        }
+      }
+
       return uploadResult
     } catch (error) {
       set((state) => ({
         processingImages: { ...state.processingImages, [productId]: false },
         error: `Error subiendo imágenes: ${error.message}`,
       }))
-      return { success: false, error: error.message }
+      return { success: false, error: error.message || 'Error inesperado al subir imágenes' }
     }
   },
 

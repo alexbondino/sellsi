@@ -166,10 +166,17 @@ export const useProductForm = (productId = null) => {
       throw new Error('Campos básicos requeridos faltantes')
     }
 
+    // Obtener supplierId del localStorage
+    const supplierId = localStorage.getItem('user_id')
+    if (!supplierId) {
+      throw new Error('No se pudo obtener el ID del proveedor')
+    }
+
     const productData = {
       productnm: formData.nombre,
       description: formData.descripcion,
       category: formData.categoria,
+      supplier_id: supplierId, // ✅ CRÍTICO: Agregar supplier_id
       productqty: Math.min(parseInt(formData.stock) || 0, PRICE_LIMITS.DB_MAX_VALUE),
       minimum_purchase: Math.min(parseInt(formData.compraMinima) || 1, PRICE_LIMITS.DB_MAX_VALUE),
       negotiable: formData.negociable,

@@ -214,12 +214,12 @@ export class UploadService {
       const errors = []
 
       results.forEach((result, index) => {
-        if (result.status === 'fulfilled' && result.value.success) {
+        if (result.status === 'fulfilled' && result.value?.success) {
           successful.push(result.value.data)
         } else {
           const errorMsg = result.status === 'rejected' 
-            ? result.reason.message 
-            : result.value.error
+            ? (result.reason?.message || 'Error desconocido')
+            : (result.value?.error || 'Error de procesamiento')
           errors.push(`Archivo ${files[index].name}: ${errorMsg}`)
         }
       })

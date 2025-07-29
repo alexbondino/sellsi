@@ -85,7 +85,8 @@ const useProductBackground = create((set, get) => ({
         updateProgress('images', result.success ? 'completed' : 'failed')
         
         if (!result.success) {
-          throw new Error(`Error procesando imágenes: ${result.error}`)
+          const errorMsg = result.error || result.errors?.join(', ') || 'Error desconocido en procesamiento de imágenes'
+          throw new Error(`Error procesando imágenes: ${errorMsg}`)
         }
         
         // 🔥 NUEVO: COMUNICACIÓN INTELIGENTE EN LUGAR DE REFRESH BLOQUEADO
@@ -120,7 +121,8 @@ const useProductBackground = create((set, get) => ({
         updateProgress('specifications', result.success ? 'completed' : 'failed')
         
         if (!result.success) {
-          throw new Error(`Error procesando especificaciones: ${result.error}`)
+          const errorMsg = result.error || result.errors?.join(', ') || 'Error desconocido en procesamiento de especificaciones'
+          throw new Error(`Error procesando especificaciones: ${errorMsg}`)
         }
       }
 
@@ -131,7 +133,8 @@ const useProductBackground = create((set, get) => ({
         updateProgress('priceTiers', result.success ? 'completed' : 'failed')
         
         if (!result.success) {
-          throw new Error(`Error procesando tramos de precio: ${result.error}`)
+          const errorMsg = result.error || result.errors?.join(', ') || 'Error desconocido en procesamiento de tramos de precio'
+          throw new Error(`Error procesando tramos de precio: ${errorMsg}`)
         }
       }
 
@@ -197,7 +200,8 @@ const useProductBackground = create((set, get) => ({
       const createResult = await crudHook.createBasicProduct(productData)
       
       if (!createResult.success) {
-        throw new Error(createResult.error)
+        const errorMsg = createResult.error || createResult.errors?.join(', ') || 'Error desconocido creando producto'
+        throw new Error(errorMsg)
       }
 
       const productId = createResult.data.productid
@@ -233,7 +237,8 @@ const useProductBackground = create((set, get) => ({
         const updateResult = await crudHook.updateBasicProduct(productId, updates)
         
         if (!updateResult.success) {
-          throw new Error(updateResult.error)
+          const errorMsg = updateResult.error || updateResult.errors?.join(', ') || 'Error desconocido actualizando producto'
+          throw new Error(errorMsg)
         }
       }
 
@@ -242,7 +247,8 @@ const useProductBackground = create((set, get) => ({
         const priceTierResult = await priceTiersHook.processPriceTiers(productId, updates.priceTiers)
         
         if (!priceTierResult.success) {
-          throw new Error(`Error procesando priceTiers: ${priceTierResult.error}`)
+          const errorMsg = priceTierResult.error || priceTierResult.errors?.join(', ') || 'Error desconocido procesando tramos de precio'
+          throw new Error(`Error procesando priceTiers: ${errorMsg}`)
         }
       }
 
