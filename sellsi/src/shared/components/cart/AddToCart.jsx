@@ -6,9 +6,10 @@ import { ShoppingCart as ShoppingCartIcon } from '@mui/icons-material';
 import AddToCartModal from './AddToCartModal';
 
 // Hooks and services
-import { showCartSuccess, showCartError } from '../../../utils/toastHelpers';
+import { showCartSuccess, showCartError, showErrorToast } from '../../../utils/toastHelpers';
 import useCartStore from '../../stores/cart/cartStore';
 import { formatProductForCart } from '../../../utils/priceCalculation';
+import { supabase } from '../../../services/supabase';
 
 /**
  * ============================================================================
@@ -53,11 +54,32 @@ const AddToCart = ({
   // HANDLERS
   // ============================================================================
 
-  const handleOpenModal = useCallback(() => {
+  const handleOpenModal = useCallback(async () => {
     if (!disabled && product) {
-      setModalOpen(true);
-      if (onModalStateChange) {
-        onModalStateChange(true);
+      // Verificar sesión antes de abrir el modal
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (!session?.user) {
+          // Usuario no logueado - mostrar error y disparar evento para abrir Login
+          showErrorToast('Debes iniciar sesión para agregar productos al carrito', {
+            icon: '🔒',
+          });
+          
+          // Disparar evento para abrir Login modal
+          const event = new CustomEvent('openLogin');
+          window.dispatchEvent(event);
+          return;
+        }
+        
+        // Usuario logueado - abrir modal
+        setModalOpen(true);
+        if (onModalStateChange) {
+          onModalStateChange(true);
+        }
+      } catch (error) {
+        console.error('Error al verificar sesión:', error);
+        showErrorToast('Error al verificar sesión. Por favor, inténtalo de nuevo.');
       }
     }
   }, [disabled, product, onModalStateChange]);

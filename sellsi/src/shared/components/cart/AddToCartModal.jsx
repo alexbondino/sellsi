@@ -164,6 +164,7 @@ const AddToCartModal = ({
     supplier: enrichedProduct?.proveedor || enrichedProduct?.supplier || 'Proveedor no encontrado',
     minimumPurchase: enrichedProduct?.minimum_purchase || enrichedProduct?.compraMinima || 1,
     maxPurchase: enrichedProduct?.max_purchase || enrichedProduct?.maxPurchase || 999,
+    stock: enrichedProduct?.stock || enrichedProduct?.maxStock || enrichedProduct?.productqty || 50,
     shippingRegions: enrichedProduct?.shippingRegions || enrichedProduct?.delivery_regions || [],
   }), [enrichedProduct]);
 
@@ -227,8 +228,9 @@ const AddToCartModal = ({
     setQuantity(newQuantity);
     
     // Para productos con price tiers, usar el primer tramo como mínimo
-    const { priceTiers } = productData;
+    const { priceTiers, stock } = productData;
     let effectiveMinimum = productData.minimumPurchase;
+    let effectiveMaximum = Math.min(productData.maxPurchase, stock);
     
     if (priceTiers.length > 0) {
       // Si hay tramos, usar la cantidad mínima del primer tramo
@@ -239,10 +241,15 @@ const AddToCartModal = ({
     // Validar cantidad mínima efectiva
     if (newQuantity < effectiveMinimum) {
       setQuantityError(`La cantidad mínima de compra es ${effectiveMinimum} unidades`);
-    } else {
+    } 
+    // Validar cantidad máxima contra stock disponible
+    else if (newQuantity > effectiveMaximum) {
+      setQuantityError(`La cantidad máxima disponible es ${effectiveMaximum} unidades`);
+    } 
+    else {
       setQuantityError('');
     }
-  }, [productData.minimumPurchase, productData.priceTiers]);
+  }, [productData.minimumPurchase, productData.priceTiers, productData.maxPurchase, productData.stock]);
 
   const handleDocumentTypeChange = useCallback((event) => {
     setDocumentType(event.target.value);
@@ -250,8 +257,9 @@ const AddToCartModal = ({
 
   const handleAddToCart = useCallback(async () => {
     // Calcular cantidad mínima efectiva basada en si hay price tiers
-    const { priceTiers } = productData;
+    const { priceTiers, stock } = productData;
     let effectiveMinimum = productData.minimumPurchase;
+    let effectiveMaximum = Math.min(productData.maxPurchase, stock);
     
     if (priceTiers.length > 0) {
       // Si hay tramos, usar la cantidad mínima del primer tramo
@@ -262,6 +270,12 @@ const AddToCartModal = ({
     // Validar cantidad antes de procesar
     if (quantity < effectiveMinimum) {
       setQuantityError(`La cantidad mínima de compra es ${effectiveMinimum} unidades`);
+      return;
+    }
+
+    // Validar cantidad máxima contra stock disponible
+    if (quantity > effectiveMaximum) {
+      setQuantityError(`La cantidad máxima disponible es ${effectiveMaximum} unidades`);
       return;
     }
 
@@ -460,7 +474,7 @@ const AddToCartModal = ({
                   }
                   return productData.minimumPurchase;
                 })()}
-                max={productData.maxPurchase}
+                max={Math.min(productData.maxPurchase, productData.stock)}
                 size="small"
                 orientation="horizontal"
                 label="Cantidad:"
@@ -471,6 +485,19 @@ const AddToCartModal = ({
                 }}
               />
               <QuantityErrorDisplay />
+              {/* Mostrar stock disponible */}
+              <Typography 
+                variant="caption" 
+                color="text.secondary" 
+                sx={{ 
+                  display: 'block',
+                  mt: 0.5,
+                  fontSize: '0.75rem',
+                  pointerEvents: 'none'
+                }}
+              >
+                Stock: {productData.stock.toLocaleString('es-CL')}
+              </Typography>
             </Box>
           </Stack>
           <Typography variant="body2" color="text.secondary" sx={{ pointerEvents: 'none' }}>

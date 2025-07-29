@@ -233,8 +233,28 @@ const ProductHeader = React.memo(({
               onClick={handleCopyAllTiers}
               sx={{
                 ml: 0.5,
+                boxShadow: 'none',
+                outline: 'none',
+                bgcolor: 'transparent',
                 '&:hover': {
                   backgroundColor: 'rgba(25, 118, 210, 0.04)',
+                  boxShadow: 'none',
+                  outline: 'none',
+                },
+                '&:active': {
+                  boxShadow: 'none !important',
+                  outline: 'none !important',
+                  background: 'rgba(25, 118, 210, 0.04) !important',
+                },
+                '&:focus': {
+                  boxShadow: 'none !important',
+                  outline: 'none !important',
+                  background: 'rgba(25, 118, 210, 0.04) !important',
+                },
+                '&:focus-visible': {
+                  boxShadow: 'none !important',
+                  outline: 'none !important',
+                  background: 'rgba(25, 118, 210, 0.04) !important',
                 },
               }}
             >
@@ -258,7 +278,7 @@ const ProductHeader = React.memo(({
                 let rangeText;
                 
                 if (isLastTier) {
-                  // Para el último tramo: "Si tú compras X unidades o más"
+                  // Para el último tramo: "Si compras X unidades o más"
                   tooltipMessage = `Si compras ${tier.min_quantity} unidades o más, el precio unitario es $${tier.price.toLocaleString('es-CL')}`;
                   rangeText = `${tier.min_quantity}+ uds`;
                 } else {
@@ -266,7 +286,7 @@ const ProductHeader = React.memo(({
                   const nextTier = tiers[idx + 1];
                   const maxQuantity = nextTier ? nextTier.min_quantity - 1 : tier.max_quantity;
                   
-                  tooltipMessage = `Si tú compras entre ${tier.min_quantity} y ${maxQuantity} unidades, el precio unitario es de $${tier.price.toLocaleString('es-CL')}`;
+                  tooltipMessage = `Si compras entre ${tier.min_quantity} y ${maxQuantity} unidades, el precio unitario es de $${tier.price.toLocaleString('es-CL')}`;
                   rangeText = `${tier.min_quantity} - ${maxQuantity} uds`;
                 }                return (
                   <Tooltip
@@ -509,82 +529,30 @@ const ProductHeader = React.memo(({
                   },
                 }}
               >
-                <ContentCopyIcon fontSize="small" />
+                {copied.name ? (
+                  <CheckCircleOutlineIcon color="success" fontSize="small" />
+                ) : (
+                  <ContentCopyIcon fontSize="small" />
+                )}
               </IconButton>
             </Tooltip>
-            <Box
-              sx={{
-                width: 24,
-                height: 24,
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <CheckCircleOutlineIcon
-                color="success"
-                fontSize="small"
-                sx={{
-                  visibility: copied.name ? 'visible' : 'hidden',
-                  transition: 'visibility 0.2s',
-                }}
-              />
-            </Box>
+            {/* Tick verde eliminado, ahora está dentro del IconButton como en Copiar todos los precios */}
           </Box>
           {/* Nueva Box: Stock, Compra mínima y Chips de facturación */}
-          <Box sx={{ 
-            display: 'flex', 
-            justifyContent: 'space-between', 
-            alignItems: 'center', 
-            mb: 3, 
-            width: { xs: '100%', sm: '90%', md: '85%' },
-            maxWidth: 500,
-            gap: 2
-          }}>
-            {/* Lado izquierdo: Stock y Compra mínima */}
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, flex: 1 }}>
-              {/* Stock */}
-              <Box>
-                {stock === 0 ? (
-                  <Typography
-                    variant="body2"
-                    sx={{
-                      fontWeight: 600,
-                      color: 'text.primary',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 1,
-                    }}
-                  >
-                    <Assignment sx={{ fontSize: 18, color: 'error.main' }} />
-                    Producto agotado
-                  </Typography>
-                ) : (
-                  <Typography
-                    variant="body2"
-                    sx={{
-                      fontWeight: 600,
-                      color: 'text.primary',
-                    }}
-                  >
-                    Stock: {stock} unidades
-                  </Typography>
-                )}
-              </Box>
-              {/* Compra mínima */}
-              <Typography
-                variant="body2"
-                sx={{
-                  fontWeight: 600,
-                  color: 'text.primary',
-                }}
-              >
-                Compra mínima: {compraMinima} unidades
-              </Typography>
-            </Box>
-            
-            {/* Lado derecho: Chips de facturación */}
-            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+          {/* ...existing code... */}
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'flex-start',
+              mb: 3,
+              width: { xs: '100%', sm: '90%', md: '85%' },
+              maxWidth: 500,
+              gap: 1,
+            }}
+          >
+            {/* Fila 1: Chips de facturación */}
+            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', width: '100%' }}>
               <Chip
                 label="Factura"
                 size="small"
@@ -619,9 +587,47 @@ const ProductHeader = React.memo(({
                 }}
               />
             </Box>
+            {/* Fila 2: Stock */}
+            <Box sx={{ width: '100%' }}>
+              {stock === 0 ? (
+                <Typography
+                  variant="body2"
+                  sx={{
+                    fontWeight: 600,
+                    color: 'text.primary',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1,
+                  }}
+                >
+                  <Assignment sx={{ fontSize: 18, color: 'error.main' }} />
+                  Producto agotado
+                </Typography>
+              ) : (
+                <Typography
+                  variant="body2"
+                  sx={{
+                    fontWeight: 600,
+                    color: 'text.primary',
+                  }}
+                >
+                  Stock: {stock} unidades
+                </Typography>
+              )}
+            </Box>
+            {/* Fila 3: Compra mínima */}
+            <Box sx={{ width: '100%' }}>
+              <Typography
+                variant="body2"
+                sx={{
+                  fontWeight: 600,
+                  color: 'text.primary',
+                }}
+              >
+                Compra mínima: {compraMinima} unidades
+              </Typography>
+            </Box>
           </Box>
-
-          {/* Nombre del Proveedor */}
           <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
             <Avatar
               sx={{
