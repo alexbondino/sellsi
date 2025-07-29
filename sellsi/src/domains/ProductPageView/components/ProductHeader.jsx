@@ -312,30 +312,32 @@ const ProductHeader = React.memo(({
           </Table>
         </TableContainer>
         
-        {/* Botón de Cotización para tramos */}
-        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2, mb: 4 }}>
-          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-            ¿Quieres saber los detalles de todo?{' '}
-            <Button
-              variant="text"
-              size="small"
-              sx={{
-                color: 'primary.main',
-                textTransform: 'none',
-                fontWeight: 600,
-                p: 0,
-                minWidth: 'auto',
-                '&:hover': {
-                  backgroundColor: 'transparent',
-                  textDecoration: 'underline',
-                },
-              }}
-              onClick={handleOpenQuotationModal}
-            >
-              Cotiza aquí
-            </Button>
-          </Typography>
-        </Box>
+        {/* Botón de Cotización para tramos - Solo si está logueado */}
+        {isLoggedIn && (
+          <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2, mb: 4 }}>
+            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+              ¿Quieres saber los detalles de todo?{' '}
+              <Button
+                variant="text"
+                size="small"
+                sx={{
+                  color: 'primary.main',
+                  textTransform: 'none',
+                  fontWeight: 600,
+                  p: 0,
+                  minWidth: 'auto',
+                  '&:hover': {
+                    backgroundColor: 'transparent',
+                    textDecoration: 'underline',
+                  },
+                }}
+                onClick={handleOpenQuotationModal}
+              >
+                Cotiza aquí
+              </Button>
+            </Typography>
+          </Box>
+        )}
       </Box>
     )
   } else {
@@ -663,8 +665,8 @@ const ProductHeader = React.memo(({
           {/* Precios y/o tramos */}
           {priceContent}
           
-          {/* Botón de Cotización - Solo para precio único */}
-          {!(tiers && tiers.length > 0) && (
+          {/* Botón de Cotización - Solo para precio único y si está logueado */}
+          {!(tiers && tiers.length > 0) && isLoggedIn && (
             <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2, mb: 4, width: '100%' }}>
               <Typography variant="body2" sx={{ color: 'text.secondary' }}>
                 ¿Quieres saber los detalles de todo?{' '}

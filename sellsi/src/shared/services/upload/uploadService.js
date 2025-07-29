@@ -1,5 +1,6 @@
 // uploadService.js - Servicio optimizado para uploads a Supabase Storage
 import { supabase } from '../../../services/supabase.js'
+import { StorageCleanupService } from '../storage/storageCleanupService.js'
 
 // Solo verificar en desarrollo
 if (import.meta.env.DEV && !supabase) {
@@ -250,9 +251,13 @@ export class UploadService {
    * @param {string} productId - ID del producto
    * @param {string} supplierId - ID del proveedor
    * @param {boolean} isMainImage - Si es la imagen principal (para generar thumbnails)
+   * @param {Object} options - Opciones adicionales
+   * @param {boolean} options.replaceExisting - Si debe limpiar imágenes existentes antes
    * @returns {Promise<{success: boolean, data?: any, error?: string}>}
    */
-  static async uploadImageWithThumbnail(file, productId, supplierId, isMainImage = false) {
+  static async uploadImageWithThumbnail(file, productId, supplierId, isMainImage = false, options = {}) {
+    const { replaceExisting = false } = options
+    
     console.log('🔍 [uploadImageWithThumbnail] Iniciando upload:', {
       fileName: file?.name || file?.file?.name,
       fileSize: file?.size || file?.file?.size,
@@ -260,10 +265,23 @@ export class UploadService {
       isWrapper: !!file?.file,
       productId,
       supplierId,
-      isMainImage
+      isMainImage,
+      replaceExisting
     })
 
     try {
+      // 0. Si es reemplazo, limpiar imágenes existentes primero
+      if (replaceExisting) {
+        console.log(`🧹 [uploadImageWithThumbnail] Limpiando imágenes existentes para producto ${productId}`)
+        try {
+          const cleanupResult = await StorageCleanupService.cleanupProductOrphans(productId)
+          console.log(`✅ [uploadImageWithThumbnail] Archivos limpiados: ${cleanupResult.cleaned}`)
+        } catch (cleanupError) {
+          console.warn('⚠️ [uploadImageWithThumbnail] Error en limpieza (continuando):', cleanupError.message)
+          // No fallar por errores de limpieza, continuar con el upload
+        }
+      }
+
       // 🔥 CRÍTICO: Manejar objetos wrapper del ImageUploader
       const actualFile = file?.file || file // Si es wrapper, usar file.file, sino usar file directamente
       
