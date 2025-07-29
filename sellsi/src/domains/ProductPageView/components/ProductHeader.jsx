@@ -37,7 +37,7 @@ import PurchaseActions from './PurchaseActions'
 import PriceDisplay from '../../marketplace/PriceDisplay/PriceDisplay'
 import StockIndicator from '../../marketplace/StockIndicator/StockIndicator'
 import QuotationModal from './QuotationModal'
-import { useProductPriceTiers } from '../../marketplace/hooks/products/useProductPriceTiers';
+import { useProductPriceTiers } from '../../../shared/hooks/product/useProductPriceTiers';
 
 const ProductHeader = React.memo(({
   product,

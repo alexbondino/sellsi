@@ -13,20 +13,21 @@ import { Add as AddIcon, Delete as DeleteIcon } from '@mui/icons-material';
 const PriceTiers = ({
   tramos,
   onTramoChange,
+  onTramoBlur, // Nueva prop desde AddProduct.jsx
   onAddTramo,
   onRemoveTramo,
   errors,
   stockDisponible, // Nueva prop para el stock disponible
 }) => {
   
-  // Función para manejar cambios en tramos con lógica de auto-corrección
+  // Función para manejar cambios en tramos - solo actualiza valor
   const handleTramoChange = (index, field, value) => {
     if (field === 'min' && index > 0) {
       // No permitir editar cantidad mínima en rangos 2+
       return;
     }
     
-    // Para todos los campos, permitir cualquier valor durante la edición
+    // Delegar al handler del padre
     onTramoChange(index, field, value);
   };
   
@@ -37,64 +38,9 @@ const PriceTiers = ({
       return;
     }
     
-    if (field === 'max' && index > 0) {
-      // Para rangos 2+, actualizar cantidad mínima automáticamente
-      const prevTramoMax = parseInt(tramos[index - 1]?.max) || 0;
-      const newMin = prevTramoMax + 1;
-      
-      // Llamar al handler del padre para actualizar tanto min como max
-      onTramoChange(index, 'min', newMin.toString());
-      
-      // Si el nuevo max es menor o igual al min, ajustar max
-      const newMax = parseInt(value) || 0;
-      let finalMaxValue = value;
-      if (newMax <= newMin) {
-        finalMaxValue = (newMin + 1).toString();
-        onTramoChange(index, 'max', finalMaxValue);
-      }
-      
-      // Actualizar el min del siguiente tramo si existe
-      if (tramos[index + 1]) {
-        const nextMin = (parseInt(finalMaxValue) || 0) + 1;
-        onTramoChange(index + 1, 'min', nextMin.toString());
-      }
-      return;
-    }
-    
-    if (field === 'max' && index === 0) {
-      // Para rango 1, si max es menor o igual a min, ajustar max
-      const currentMin = parseInt(tramos[0]?.min) || 1;
-      const newMax = parseInt(value) || 0;
-      
-      let finalMaxValue = value;
-      if (newMax <= currentMin) {
-        finalMaxValue = (currentMin + 1).toString();
-        onTramoChange(index, field, finalMaxValue);
-      }
-      
-      // Actualizar el min del siguiente tramo si existe
-      if (tramos[index + 1]) {
-        const nextMin = (parseInt(finalMaxValue) || 0) + 1;
-        onTramoChange(index + 1, 'min', nextMin.toString());
-      }
-      return;
-    }
-    
-    if (field === 'min' && index === 0) {
-      // Para rango 1, si min es mayor o igual a max, ajustar max
-      const currentMax = parseInt(tramos[0]?.max) || 0;
-      const newMin = parseInt(value) || 1;
-      
-      if (newMin >= currentMax) {
-        onTramoChange(index, 'max', (newMin + 1).toString());
-        
-        // Actualizar el min del siguiente tramo si existe
-        if (tramos[index + 1]) {
-          const nextMin = newMin + 2;
-          onTramoChange(index + 1, 'min', nextMin.toString());
-        }
-      }
-      return;
+    // Solo delegar al handler del padre si existe
+    if (onTramoBlur) {
+      onTramoBlur(index, field, value);
     }
   };
   

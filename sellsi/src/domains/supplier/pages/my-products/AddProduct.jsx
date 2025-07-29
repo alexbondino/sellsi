@@ -242,14 +242,29 @@ const AddProduct = () => {
   const handleTramoChange = (index, field, value) => {
     const newTramos = [...formData.tramos];
     newTramos[index] = { ...newTramos[index], [field]: value };
+    updateField('tramos', newTramos);
+  };
+
+  const handleTramoBlur = (index, field, value) => {
+    const newTramos = [...formData.tramos];
+    newTramos[index] = { ...newTramos[index], [field]: value };
     
     // Lógica para rangos 2+: MIN = MAX del rango anterior + 1
     if (index > 0) {
       if (field === 'max' && index > 0) {
+        // Validación al salir del campo: Si el nuevo max es menor o igual al min del mismo rango, corregir
+        const currentMin = parseInt(newTramos[index].min) || 1;
+        const newMax = parseInt(value) || 0;
+        
+        if (newMax <= currentMin) {
+          // Corregir el max al mínimo + 1
+          newTramos[index] = { ...newTramos[index], max: (currentMin + 1).toString() };
+        }
+        
         // Cuando se actualiza MAX de un rango 2+, actualizar MIN del siguiente si existe
         if (newTramos[index + 1]) {
-          const newMax = parseInt(value) || 0;
-          const nextMin = newMax + 1;
+          const finalMax = parseInt(newTramos[index].max) || 0;
+          const nextMin = finalMax + 1;
           newTramos[index + 1] = { ...newTramos[index + 1], min: nextMin.toString() };
         }
       }
@@ -268,8 +283,6 @@ const AddProduct = () => {
     }
     
     updateField('tramos', newTramos);
-
-    // ✅ REMOVIDO: La sincronización ahora se maneja automáticamente en el hook useProductForm
   };
 
   const addTramo = () => {
@@ -695,6 +708,7 @@ const AddProduct = () => {
                       <PriceTiers
                         tramos={formData.tramos}
                         onTramoChange={handleTramoChange}
+                        onTramoBlur={handleTramoBlur}
                         onAddTramo={addTramo}
                         onRemoveTramo={removeTramo}
                         errors={localErrors.tramos}
