@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import {
   Box,
@@ -52,7 +52,9 @@ import { convertDbRegionsToForm, convertFormRegionsToDb } from '../../../../util
 import { useSupplierProducts } from '../../hooks/useSupplierProducts';
 import { useProductForm } from '../../hooks/useProductForm';
 import { useProductValidation } from './hooks/useProductValidation';
+import { useProductPricingLogic } from './hooks/useProductPricingLogic';
 import { calculateProductEarnings } from '../../utils/centralizedCalculations'; // 🔧 USANDO NOMBRE CORRECTO
+import { ProductValidator } from '../../validators/ProductValidator';
 import { dashboardThemeCore } from '../../../../styles/dashboardThemeCore';
 import { SPACING_BOTTOM_MAIN } from '../../../../styles/layoutSpacing';
 
@@ -90,6 +92,14 @@ const AddProduct = () => {
     markSubmitAttempt,
   } = useProductValidation();
 
+  // Hook para lógica de manipulación de tramos (NUEVO)
+  const {
+    handleTramoChange,
+    handleTramoBlur,
+    addTramo,
+    removeTramo,
+    validateStockConstraints
+  } = useProductPricingLogic(formData, updateField);
 
   // Estado local para errores de imágenes
   const [imageError, setImageError] = useState('');
@@ -97,18 +107,15 @@ const AddProduct = () => {
   // Estado shippingRegions para mapeo con Supabase
   const [shippingRegions, setShippingRegions] = useState([]);
 
-  // Cálculos dinámicos
-  const [calculations, setCalculations] = useState({
-    ingresoPorVentas: 0,
-    tarifaServicio: 0,
-    total: 0,
-    isRange: false,
-    rangos: {
-      ingresoPorVentas: { min: 0, max: 0 },
-      tarifaServicio: { min: 0, max: 0 },
-      total: { min: 0, max: 0 },
-    },
-  });
+  // Cálculos dinámicos optimizados con useMemo
+  const calculations = useMemo(() => {
+    return calculateProductEarnings(formData);
+  }, [
+    formData.stock,
+    formData.precioUnidad,
+    formData.tramos,
+    formData.pricingType,
+  ]);
 
 
   // Cargar productos al montar el componente
@@ -180,40 +187,14 @@ const AddProduct = () => {
     }
   }, [formData, triedSubmit, validateForm]);
 
-  // Efecto para calcular dinámicamente
-  useEffect(() => {
-    const newCalculations = calculateProductEarnings(formData); // 🔧 USANDO LÓGICA CENTRALIZADA
-    setCalculations(newCalculations);
-  }, [
-    formData.stock,
-    formData.precioUnidad,
-    formData.tramos,
-    formData.pricingType,
-  ]);  // Handlers
+  // Handlers
   const handleInputChange = field => event => {
     const value = event.target.value;
     updateField(field, value);
     
-    // Lógica de validación por Stock Disponible (solo aplica para rangos 3, 4 y 5)
-    if (field === 'stock' && formData.pricingType === 'Volumen' && formData.tramos.length >= 3) {
-      const newStock = parseInt(value) || 0;
-      
-      if (newStock > 0) {
-        // Filtrar rangos que superen el nuevo stock disponible
-        const validatedTramos = formData.tramos.filter((tramo, index) => {
-          // Rango 1 y 2 siempre se mantienen
-          if (index < 2) return true;
-          
-          // Para rangos 3+, verificar si el MIN supera el stock
-          const min = parseInt(tramo.min) || 0;
-          return min <= newStock;
-        });
-        
-        // Si se eliminaron rangos, actualizar
-        if (validatedTramos.length !== formData.tramos.length) {
-          updateField('tramos', validatedTramos);
-        }
-      }
+    // Usar lógica centralizada para validación de stock vs tramos
+    if (field === 'stock') {
+      validateStockConstraints(value);
     }
   };
 
@@ -238,96 +219,6 @@ const AddProduct = () => {
     // Usar el método del hook que maneja todo el estado correctamente
     handlePricingTypeChange(newValue)
   }
-
-  const handleTramoChange = (index, field, value) => {
-    const newTramos = [...formData.tramos];
-    newTramos[index] = { ...newTramos[index], [field]: value };
-    updateField('tramos', newTramos);
-  };
-
-  const handleTramoBlur = (index, field, value) => {
-    const newTramos = [...formData.tramos];
-    newTramos[index] = { ...newTramos[index], [field]: value };
-    
-    // Lógica para rangos 2+: MIN = MAX del rango anterior + 1
-    if (index > 0) {
-      if (field === 'max' && index > 0) {
-        // Validación al salir del campo: Si el nuevo max es menor o igual al min del mismo rango, corregir
-        const currentMin = parseInt(newTramos[index].min) || 1;
-        const newMax = parseInt(value) || 0;
-        
-        if (newMax <= currentMin) {
-          // Corregir el max al mínimo + 1
-          newTramos[index] = { ...newTramos[index], max: (currentMin + 1).toString() };
-        }
-        
-        // Cuando se actualiza MAX de un rango 2+, actualizar MIN del siguiente si existe
-        if (newTramos[index + 1]) {
-          const finalMax = parseInt(newTramos[index].max) || 0;
-          const nextMin = finalMax + 1;
-          newTramos[index + 1] = { ...newTramos[index + 1], min: nextMin.toString() };
-        }
-      }
-      
-      // Actualizar MIN del rango actual basado en el MAX del rango anterior
-      if (index > 0 && newTramos[index - 1]?.max) {
-        const prevMax = parseInt(newTramos[index - 1].max) || 0;
-        const autoMin = prevMax + 1;
-        newTramos[index] = { ...newTramos[index], min: autoMin.toString() };
-      } else if (index === 1 && newTramos[0]?.max) {
-        // Caso especial para rango 2: MIN = MAX del rango 1 + 1
-        const rango1Max = parseInt(newTramos[0].max) || 0;
-        const rango2Min = rango1Max + 1;
-        newTramos[1] = { ...newTramos[1], min: rango2Min.toString() };
-      }
-    }
-    
-    updateField('tramos', newTramos);
-  };
-
-  const addTramo = () => {
-    // Cuando se agrega un nuevo tramo:
-    // 1. El tramo anterior (que era el último) ahora debe tener su MAX habilitado y vacío
-    // 2. El nuevo tramo será el último con MAX = stock disponible
-    
-    const lastTramo = formData.tramos[formData.tramos.length - 1];
-    const newTramos = [...formData.tramos];
-    
-    // Si hay un tramo anterior y es del rango 2+, limpiar su MAX para que se habilite
-    if (newTramos.length > 1) {
-      const previousTramoIndex = newTramos.length - 1;
-      newTramos[previousTramoIndex] = { 
-        ...newTramos[previousTramoIndex], 
-        max: '' // Limpiar MAX para habilitarlo y resaltarlo en rojo
-      };
-    }
-    
-    // Calcular MIN para el nuevo tramo
-    let newMin = '';
-    if (lastTramo && lastTramo.max && lastTramo.max !== '') {
-      newMin = (parseInt(lastTramo.max) + 1).toString();
-    } else if (lastTramo && lastTramo.min) {
-      // Si el tramo anterior no tiene MAX definido, usar MIN + 2
-      newMin = (parseInt(lastTramo.min) + 2).toString();
-    }
-    
-    // Agregar el nuevo tramo
-    newTramos.push({ 
-      min: newMin, 
-      max: '', // El último tramo tendrá MAX oculto = stock disponible 
-      precio: '' 
-    });
-    
-    updateField('tramos', newTramos);
-  };
-
-  const removeTramo = index => {
-    // Solo permitir eliminar si hay más de 2 tramos (mínimo debe haber Tramo 1 y Tramo 2)
-    if (formData.tramos.length > 2) {
-      const newTramos = formData.tramos.filter((_, i) => i !== index);
-      updateField('tramos', newTramos);
-    }
-  };
 
   const handleImagesChange = images => {
     setImageError('');
@@ -359,96 +250,6 @@ const AddProduct = () => {
       updateField('specifications', newSpecs);
     }
   };
-  /**
-   * 🎯 GENERADOR DE MENSAJES DE ERROR CONTEXTUALES
-   * Analiza los errores y genera mensajes específicos para el usuario
-   */
-  const generateContextualErrorMessage = (validationErrors) => {
-    console.log('🔍 [generateContextualErrorMessage] Procesando errores:', validationErrors)
-    
-    if (!validationErrors || Object.keys(validationErrors).length === 0) {
-      return null;
-    }
-
-    const errorKeys = Object.keys(validationErrors);
-    console.log('🔑 [generateContextualErrorMessage] Error keys:', errorKeys)
-    
-    const hasTramoErrors = errorKeys.includes('tramos');
-    const hasBasicFieldErrors = errorKeys.some(key => 
-      ['nombre', 'descripcion', 'categoria', 'stock', 'compraMinima', 'precioUnidad'].includes(key)
-    );
-    const hasImageErrors = errorKeys.includes('imagenes');
-    const hasRegionErrors = errorKeys.includes('shippingRegions');
-
-    console.log('🔍 [generateContextualErrorMessage] Tipos de errores detectados:', {
-      hasTramoErrors,
-      hasBasicFieldErrors,
-      hasImageErrors,
-      hasRegionErrors
-    })
-
-    // Construir mensaje específico
-    const messages = [];
-
-    if (hasTramoErrors) {
-      const tramoError = validationErrors.tramos;
-      
-      // Detectar tipo específico de error en tramos
-      if (tramoError.includes('ascendentes')) {
-        messages.push('🔢 Las cantidades de los tramos deben ser ascendentes (ej: 50, 100, 200)');
-      } else if (tramoError.includes('descendentes') || tramoError.includes('compran más')) {
-        messages.push('💰 Los precios deben ser descendentes: compran más, pagan menos por unidad');
-      } else if (tramoError.includes('Tramo')) {
-        messages.push('📊 Revisa la configuración de los tramos de precio');
-      } else if (tramoError.includes('al menos')) {
-        messages.push('📈 Debes configurar al menos 2 tramos de precios válidos');
-      } else if (tramoError.includes('stock')) {
-        messages.push('⚠️ Las cantidades de los tramos no pueden superar el stock disponible');
-      } else if (tramoError.includes('enteros positivos')) {
-        messages.push('🔢 Las cantidades y precios deben ser números enteros positivos');
-      } else {
-        messages.push('📈 Revisa la configuración de los tramos de precios');
-      }
-    }
-
-    if (hasBasicFieldErrors) {
-      const basicErrors = [];
-      if (validationErrors.nombre) basicErrors.push('nombre');
-      if (validationErrors.descripcion) basicErrors.push('descripción');
-      if (validationErrors.categoria) basicErrors.push('categoría');
-      if (validationErrors.stock) basicErrors.push('stock');
-      if (validationErrors.compraMinima) basicErrors.push('compra mínima');
-      if (validationErrors.precioUnidad) basicErrors.push('precio');
-      
-      if (basicErrors.length > 0) {
-        messages.push(`📝 Completa: ${basicErrors.join(', ')}`);
-      } else {
-        messages.push('📝 Completa la información básica del producto');
-      }
-    }
-
-    if (hasImageErrors) {
-      messages.push('🖼️ Agrega al menos una imagen del producto');
-    }
-
-    if (hasRegionErrors) {
-      messages.push('🚛 Configura las regiones de despacho');
-    }
-
-    // Formatear mensaje final
-    if (messages.length > 1) {
-      const finalMessage = `${messages.join(' • ')}`;
-      console.log('📝 [generateContextualErrorMessage] Mensaje múltiple:', finalMessage)
-      return finalMessage;
-    } else if (messages.length === 1) {
-      console.log('📝 [generateContextualErrorMessage] Mensaje único:', messages[0])
-      return messages[0];
-    } else {
-      const defaultMessage = 'Por favor, completa todos los campos requeridos';
-      console.log('📝 [generateContextualErrorMessage] Mensaje por defecto:', defaultMessage)
-      return defaultMessage;
-    }
-  };
 
   // Handler para el submit
   const handleSubmit = async e => {
@@ -464,8 +265,8 @@ const AddProduct = () => {
     if (validationErrors && Object.keys(validationErrors).length > 0) {
       console.log('❌ [AddProduct.handleSubmit] Validación falló, no continuando')
       
-      // 🎯 Generar mensaje contextual específico
-      const contextualMessage = generateContextualErrorMessage(validationErrors);
+      // 🎯 Usar mensaje contextual centralizado desde ProductValidator
+      const contextualMessage = ProductValidator.generateContextualMessage(validationErrors);
       console.log('📝 [AddProduct.handleSubmit] Mensaje contextual:', contextualMessage)
       
       showValidationError(contextualMessage);

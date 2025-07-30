@@ -271,7 +271,7 @@ const ProductPageView = memo(({
               </Link>
               {product && (
                 <Typography color="primary.main" sx={{ fontWeight: 600 }}>
-                  {product.nombre}
+                  {isMobile ? 'Ficha Técnica' : product.nombre}
                 </Typography>
               )}
             </Breadcrumbs>

@@ -470,11 +470,10 @@ const ProductHeader = React.memo(({
         {isMobile && (
           <Box sx={{ 
             px: 2, 
-            mb: 2, 
             display: 'flex', 
+            flexDirection: 'column',
             alignItems: 'center', 
-            justifyContent: 'flex-start', 
-            gap: 1, 
+            justifyContent: 'center', 
             width: '100%',
             order: -1 // Forzar que aparezca primero
           }}>
@@ -483,37 +482,18 @@ const ProductHeader = React.memo(({
               sx={{
                 fontWeight: 700,
                 color: 'primary.main',
-                lineHeight: 1.3,
-                py: 1,
+                lineHeight: 1.2, // Reducir lineHeight
+                mt: 4, // Reducir padding vertical
                 fontSize: '1.25rem',
                 wordBreak: 'break-word',
                 hyphens: 'auto',
+                textAlign: 'center',
+                width: '100%',
               }}
             >
               {nombre}
             </Typography>
-            <Tooltip title="Copiar nombre del producto" arrow placement="right">
-              <IconButton
-                size="small"
-                onClick={() => handleCopy('name', nombre)}
-                sx={{
-                  boxShadow: 'none',
-                  outline: 'none',
-                  bgcolor: 'transparent',
-                  '&:hover': {
-                    bgcolor: 'rgba(0,0,0,0.04)',
-                    boxShadow: 'none',
-                    outline: 'none',
-                  },
-                }}
-              >
-                {copied.name ? (
-                  <CheckCircleOutlineIcon color="success" fontSize="small" />
-                ) : (
-                  <ContentCopyIcon fontSize="small" />
-                )}
-              </IconButton>
-            </Tooltip>
+            {/* Botón de copiar nombre eliminado en mobile */}
           </Box>
         )}
 

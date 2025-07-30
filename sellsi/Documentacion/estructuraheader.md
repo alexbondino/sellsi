@@ -32,7 +32,7 @@ ProductHeader (Box: width 100%, maxWidth 100%)
 │         ├── Box (Nombre del Producto)
 │         │     display: flex, alignItems: center, justifyContent: flex-start, gap: 1, mb: 2, width: 100%
 │         │     ├── Typography (variant h4, nombre)
-│         │     ├── Tooltip + IconButton (copiar nombre)
+│         │     ├── Tooltip + IconButton (copiar nombre) [solo desktop]
 │         │     └── Box (CheckCircleOutlineIcon feedback)
 │         │
 │         ├── Box (Stock, Compra mínima y Chips de facturación)

@@ -317,4 +317,101 @@ export class ProductValidator {
     if (errorCount === 1) return '1 error encontrado'
     return `${errorCount} errores encontrados`
   }
+
+  /**
+   * ========================================================================
+   * GENERADOR DE MENSAJES DE ERROR CONTEXTUALES
+   * ========================================================================
+   * Analiza los errores y genera mensajes específicos y contextuales para el usuario.
+   * Movido desde AddProduct.jsx para centralizar la lógica de mensajes.
+   * 
+   * @param {Object} validationErrors - Objeto con errores de validación
+   * @returns {string|null} - Mensaje contextual específico o null si no hay errores
+   */
+  static generateContextualMessage(validationErrors) {
+    console.log('🔍 [ProductValidator.generateContextualMessage] Procesando errores:', validationErrors)
+    
+    if (!validationErrors || Object.keys(validationErrors).length === 0) {
+      return null;
+    }
+
+    const errorKeys = Object.keys(validationErrors);
+    console.log('🔑 [ProductValidator.generateContextualMessage] Error keys:', errorKeys)
+    
+    const hasTramoErrors = errorKeys.includes('tramos');
+    const hasBasicFieldErrors = errorKeys.some(key => 
+      ['nombre', 'descripcion', 'categoria', 'stock', 'compraMinima', 'precioUnidad'].includes(key)
+    );
+    const hasImageErrors = errorKeys.includes('imagenes');
+    const hasRegionErrors = errorKeys.includes('shippingRegions');
+
+    console.log('🔍 [ProductValidator.generateContextualMessage] Tipos de errores detectados:', {
+      hasTramoErrors,
+      hasBasicFieldErrors,
+      hasImageErrors,
+      hasRegionErrors
+    })
+
+    // Construir mensaje específico
+    const messages = [];
+
+    if (hasTramoErrors) {
+      const tramoError = validationErrors.tramos;
+      
+      // Detectar tipo específico de error en tramos
+      if (tramoError.includes('ascendentes')) {
+        messages.push('🔢 Las cantidades de los tramos deben ser ascendentes (ej: 50, 100, 200)');
+      } else if (tramoError.includes('descendentes') || tramoError.includes('compran más')) {
+        messages.push('💰 Los precios deben ser descendentes: compran más, pagan menos por unidad');
+      } else if (tramoError.includes('Tramo')) {
+        messages.push('📊 Revisa la configuración de los tramos de precio');
+      } else if (tramoError.includes('al menos')) {
+        messages.push('📈 Debes configurar al menos 2 tramos de precios válidos');
+      } else if (tramoError.includes('stock')) {
+        messages.push('⚠️ Las cantidades de los tramos no pueden superar el stock disponible');
+      } else if (tramoError.includes('enteros positivos')) {
+        messages.push('🔢 Las cantidades y precios deben ser números enteros positivos');
+      } else {
+        messages.push('📈 Revisa la configuración de los tramos de precios');
+      }
+    }
+
+    if (hasBasicFieldErrors) {
+      const basicErrors = [];
+      if (validationErrors.nombre) basicErrors.push('nombre');
+      if (validationErrors.descripcion) basicErrors.push('descripción');
+      if (validationErrors.categoria) basicErrors.push('categoría');
+      if (validationErrors.stock) basicErrors.push('stock');
+      if (validationErrors.compraMinima) basicErrors.push('compra mínima');
+      if (validationErrors.precioUnidad) basicErrors.push('precio');
+      
+      if (basicErrors.length > 0) {
+        messages.push(`📝 Completa: ${basicErrors.join(', ')}`);
+      } else {
+        messages.push('📝 Completa la información básica del producto');
+      }
+    }
+
+    if (hasImageErrors) {
+      messages.push('🖼️ Agrega al menos una imagen del producto');
+    }
+
+    if (hasRegionErrors) {
+      messages.push('🚛 Configura las regiones de despacho');
+    }
+
+    // Formatear mensaje final
+    if (messages.length > 1) {
+      const finalMessage = `${messages.join(' • ')}`;
+      console.log('📝 [ProductValidator.generateContextualMessage] Mensaje múltiple:', finalMessage)
+      return finalMessage;
+    } else if (messages.length === 1) {
+      console.log('📝 [ProductValidator.generateContextualMessage] Mensaje único:', messages[0])
+      return messages[0];
+    } else {
+      const defaultMessage = 'Por favor, completa todos los campos requeridos';
+      console.log('📝 [ProductValidator.generateContextualMessage] Mensaje por defecto:', defaultMessage)
+      return defaultMessage;
+    }
+  }
 }
