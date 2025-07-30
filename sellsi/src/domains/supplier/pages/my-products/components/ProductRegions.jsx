@@ -15,6 +15,7 @@ const ProductRegions = ({
   errors,
   localErrors,
   triedSubmit,
+  isMobile = false, // 🔧 Nueva prop para móvil
 }) => {
   const [modalOpen, setModalOpen] = useState(false);
 

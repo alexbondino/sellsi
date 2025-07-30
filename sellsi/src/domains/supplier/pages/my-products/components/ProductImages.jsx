@@ -16,6 +16,7 @@ const ProductImages = ({
   imageError,
   onImagesChange,
   onImageError,
+  isMobile = false, // 🔧 Nueva prop para móvil
 }) => {
   const handleRetry = () => {
     // Reset image errors and clear any failed uploads

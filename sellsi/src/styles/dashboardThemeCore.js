@@ -74,6 +74,17 @@ export const dashboardThemeCore = createTheme({
         },
       },
     },
-    // Removido MuiContainer override para mantener padding normal
+    // 🔧 Container optimizado para móvil
+    MuiContainer: {
+      styleOverrides: {
+        root: {
+          '@media (max-width: 767px)': { // mobile
+            paddingLeft: '0px !important',
+            paddingRight: '0px !important',
+            maxWidth: '100% !important',
+          },
+        },
+      },
+    },
   },
 })
