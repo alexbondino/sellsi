@@ -18,10 +18,6 @@ import {
 import {
   ArrowBack as ArrowBackIcon,
   Inventory2 as Inventory2Icon,
-  ExpandLess as ExpandLessIcon,
-  ExpandMore as ExpandMoreIcon,
-  Visibility as VisibilityIcon,
-  Close as CloseIcon
 } from '@mui/icons-material';
 import { ThemeProvider } from '@mui/material/styles';
 import { 
@@ -49,6 +45,7 @@ import {
   ProductRegions,
   ProductResultsPanel,
   ProductPricing,
+  MobileExpandableBottomBar,
 } from './components';
 
 // Servicio para regiones de entrega
@@ -344,9 +341,6 @@ const AddProduct = () => {
 
   // 🔧 Hook para responsividad móvil - SOLO xs y sm
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-
-  // 📊 Estado para panel expandible móvil
-  const [isPanelExpanded, setIsPanelExpanded] = useState(false);
 
   // Detectar modo de edición
   const editProductId = searchParams.get('edit');
@@ -666,334 +660,6 @@ const AddProduct = () => {
     }
   };
 
-  // 📱 Mobile Expandable Bottom Actions Bar - Rediseñado
-  const MobileExpandableBottomBar = () => {
-    console.log('🔍 MobileExpandableBottomBar renderizándose', { isMobile });
-    return (
-    <>
-      {/* Barra Principal Compacta - JUSTO ENCIMA de MobileBar */}
-      <Paper
-        elevation={24}
-        sx={{
-          position: 'fixed',
-          bottom: 80, // 🔧 80px desde abajo para estar encima de MobileBar (que mide ~70px)
-          left: 0,
-          right: 0,
-          zIndex: 1450, // 🔧 Mayor que MobileBar (1400) pero no excesivo
-          borderRadius: '16px 16px 0 0',
-          background: 'linear-gradient(135deg, #fff 0%, #f8f9fa 100%)',
-          borderTop: '2px solid #1976d2',
-          p: 2,
-          boxShadow: '0 -8px 32px rgba(0,0,0,0.25)',
-        }}
-      >
-        {/* Una sola fila con Total a la izquierda y botones a la derecha */}
-        <Box sx={{ 
-          display: 'flex', 
-          justifyContent: 'space-between', 
-          alignItems: 'center',
-          gap: 2,
-        }}>
-          {/* Total Estimado - Izquierda */}
-          <Box sx={{ flex: 1 }}>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
-              Total estimado
-            </Typography>
-            <Typography variant="h6" fontWeight="700" color="primary.main" sx={{ lineHeight: 1 }}>
-              {calculations.isRange 
-                ? `${formatPrice(
-                    calculations.rangos.total?.min || 0
-                  )} - ${formatPrice(
-                    calculations.rangos.total?.max || 0
-                  )}`
-                : `${formatPrice(calculations.total || 0)}`
-              }
-            </Typography>
-          </Box>
-          
-          {/* Botones de Acción - Derecha */}
-          <Box sx={{ display: 'flex', gap: 1 }}>
-            {/* Botón Ver Detalles - 50% más chico */}
-            <Button
-              variant="outlined"
-              size="small"
-              startIcon={<VisibilityIcon sx={{ fontSize: '0.9rem' }} />}
-              onClick={() => setIsPanelExpanded(true)}
-              sx={{
-                py: 0.5, // 🔧 Reducido de 1 a 0.5
-                px: 1, // 🔧 Reducido de 2 a 1
-                fontSize: '0.75rem', // 🔧 Texto más pequeño
-                textTransform: 'none',
-                borderRadius: 2,
-                fontWeight: 600,
-                minWidth: 'auto',
-              }}
-            >
-              Ver Detalles
-            </Button>
-            
-            {/* Botón Publicar Producto - 50% más chico */}
-            <Button
-              variant="contained"
-              size="small"
-              onClick={handleSubmit}
-              disabled={!isValid || isLoading}
-              sx={{
-                py: 0.5, // 🔧 Reducido de 1 a 0.5
-                px: 1.5, // 🔧 Reducido de 3 a 1.5
-                fontSize: '0.75rem', // 🔧 Reducido de 0.95rem a 0.75rem
-                borderRadius: 2,
-                textTransform: 'none',
-                fontWeight: 600,
-                minWidth: 'auto',
-              }}
-            >
-              {isLoading ? (
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                  <Typography sx={{ fontSize: '0.7rem' }}>
-                    {isEditMode ? 'Actualizando...' : 'Publicando...'}
-                  </Typography>
-                </Box>
-              ) : (
-                isEditMode ? 'Actualizar' : 'Publicar'
-              )}
-            </Button>
-          </Box>
-        </Box>
-      </Paper>
-
-      {/* Panel de Detalles Expandido */}
-      {isPanelExpanded && (
-        <Paper
-          elevation={24}
-          sx={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            zIndex: 10000, // 🔧 Z-index máximo para estar por encima de todo
-            background: 'linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%)',
-            display: 'flex',
-            flexDirection: 'column',
-          }}
-        >
-          {/* Header del Panel Expandido */}
-          <Box sx={{ 
-            p: 3, 
-            borderBottom: '2px solid #e0e0e0',
-            background: 'linear-gradient(135deg, #fff 0%, #f8f9fa 100%)',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-          }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-              <Typography variant="h5" fontWeight="700" color="primary.main">
-                Detalles de Venta
-              </Typography>
-              <Button
-                variant="outlined"
-                size="small"
-                startIcon={<CloseIcon />}
-                onClick={() => setIsPanelExpanded(false)}
-                sx={{
-                  textTransform: 'none',
-                  borderRadius: 2,
-                  fontWeight: 600,
-                }}
-              >
-                Cerrar
-              </Button>
-            </Box>
-            
-            {/* Total destacado */}
-            <Box sx={{ 
-              textAlign: 'center', 
-              p: 2, 
-              borderRadius: 3,
-              background: 'linear-gradient(135deg, #e3f2fd 0%, #f1f8e9 100%)',
-              border: '2px solid #1976d2',
-            }}>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                Total Estimado de Ganancia
-              </Typography>
-              <Typography variant="h4" fontWeight="800" color="primary.main">
-                {calculations.isRange 
-                  ? `${formatPrice(
-                      calculations.rangos.total?.min || 0
-                    )} - ${formatPrice(
-                      calculations.rangos.total?.max || 0
-                    )}`
-                  : `${formatPrice(calculations.total || 0)}`
-                }
-              </Typography>
-            </Box>
-          </Box>
-
-          {/* Contenido Scrolleable */}
-          <Box sx={{ 
-            flex: 1, 
-            overflow: 'auto', 
-            p: 3,
-            '&::-webkit-scrollbar': {
-              width: '6px',
-            },
-            '&::-webkit-scrollbar-track': {
-              backgroundColor: 'grey.200',
-              borderRadius: '3px',
-            },
-            '&::-webkit-scrollbar-thumb': {
-              backgroundColor: 'primary.main',
-              borderRadius: '3px',
-            },
-          }}>
-            <Stack spacing={3}>
-              {calculations.isRange ? (
-                // Mostrar detalles de rangos
-                <>
-                  <Typography variant="h6" fontWeight="600" sx={{ mb: 2 }}>
-                    💰 Ganancias por Volumen
-                  </Typography>
-                  {calculations.rangos.details?.map((detail, index) => (
-                    <Card key={index} elevation={2} sx={{ 
-                      p: 3, 
-                      borderRadius: 3,
-                      background: `linear-gradient(135deg, ${index % 2 === 0 ? '#f3e5f5' : '#e8f5e8'} 0%, #ffffff 100%)`,
-                      border: `2px solid ${index % 2 === 0 ? '#9c27b0' : '#4caf50'}`,
-                    }}>
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                        <Typography variant="h6" fontWeight="600" color="primary.main">
-                          📊 Rango {index + 1}
-                        </Typography>
-                        <Chip 
-                          label={`${detail.min}-${detail.max} unidades`}
-                          color="primary"
-                          variant="outlined"
-                        />
-                      </Box>
-                      <Stack spacing={1}>
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                          <Typography variant="body2" color="text.secondary">
-                            Precio por unidad:
-                          </Typography>
-                          <Typography variant="body1" fontWeight="600">
-                            {formatPrice(detail.precio)}
-                          </Typography>
-                        </Box>
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                          <Typography variant="body2" color="text.secondary">
-                            Ganancia por unidad:
-                          </Typography>
-                          <Typography variant="body1" fontWeight="600" color="success.main">
-                            {formatPrice(detail.ganancia)}
-                          </Typography>
-                        </Box>
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', pt: 1, borderTop: '1px solid #e0e0e0' }}>
-                          <Typography variant="body1" fontWeight="600">
-                            Total rango:
-                          </Typography>
-                          <Typography variant="h6" fontWeight="700" color="primary.main">
-                            {formatPrice(detail.total)}
-                          </Typography>
-                        </Box>
-                      </Stack>
-                    </Card>
-                  ))}
-                </>
-              ) : (
-                // Mostrar detalles precio fijo
-                <Card elevation={2} sx={{ 
-                  p: 3, 
-                  borderRadius: 3,
-                  background: 'linear-gradient(135deg, #e3f2fd 0%, #ffffff 100%)',
-                  border: '2px solid #1976d2',
-                }}>
-                  <Typography variant="h6" fontWeight="600" sx={{ mb: 2 }}>
-                    💵 Precio Fijo por Unidad
-                  </Typography>
-                  <Stack spacing={2}>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <Typography variant="body2" color="text.secondary">
-                        Precio de venta:
-                      </Typography>
-                      <Typography variant="h6" fontWeight="600">
-                        {formatPrice(formData.precio)}
-                      </Typography>
-                    </Box>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <Typography variant="body2" color="text.secondary">
-                        Ganancia por unidad:
-                      </Typography>
-                      <Typography variant="h6" fontWeight="600" color="success.main">
-                        {formatPrice(calculations.ganancia)}
-                      </Typography>
-                    </Box>
-                    <Box sx={{ 
-                      display: 'flex', 
-                      justifyContent: 'space-between', 
-                      pt: 2, 
-                      borderTop: '2px solid #1976d2',
-                      background: 'rgba(25, 118, 210, 0.1)',
-                      p: 2,
-                      borderRadius: 2,
-                      mt: 2,
-                    }}>
-                      <Typography variant="h6" fontWeight="700">
-                        Total estimado:
-                      </Typography>
-                      <Typography variant="h5" fontWeight="800" color="primary.main">
-                        {formatPrice(calculations.total)}
-                      </Typography>
-                    </Box>
-                  </Stack>
-                </Card>
-              )}
-              
-              {/* Información adicional */}
-              <Card elevation={1} sx={{ 
-                p: 3, 
-                borderRadius: 3,
-                background: 'linear-gradient(135deg, #f5f5f5 0%, #ffffff 100%)',
-                border: '1px solid #e0e0e0',
-              }}>
-                <Typography variant="h6" fontWeight="600" sx={{ mb: 2 }}>
-                  📦 Información del Producto
-                </Typography>
-                <Stack spacing={1}>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <Typography variant="body2" color="text.secondary">
-                      Stock disponible:
-                    </Typography>
-                    <Typography variant="body1" fontWeight="600">
-                      {formData.stock} unidades
-                    </Typography>
-                  </Box>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <Typography variant="body2" color="text.secondary">
-                      Compra mínima:
-                    </Typography>
-                    <Typography variant="body1" fontWeight="600">
-                      {formData.compraMinima} unidades
-                    </Typography>
-                  </Box>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <Typography variant="body2" color="text.secondary">
-                      Tipo de precio:
-                    </Typography>
-                    <Chip 
-                      label={formData.pricingType}
-                      color="primary"
-                      size="small"
-                    />
-                  </Box>
-                </Stack>
-              </Card>
-            </Stack>
-          </Box>
-        </Paper>
-      )}
-    </>
-    );
-  };
-
   return (
     <SupplierErrorBoundary onRetry={handleRetry}>
       <ThemeProvider theme={dashboardThemeCore}>
@@ -1128,7 +794,16 @@ const AddProduct = () => {
     )}
     
     {/* Bottom Bar Expandible - SOLO MÓVIL */}
-    {isMobile && <MobileExpandableBottomBar />}
+    {isMobile && (
+      <MobileExpandableBottomBar
+        calculations={calculations}
+        formData={formData}
+        isValid={isValid}
+        isLoading={isLoading}
+        isEditMode={isEditMode}
+        onSubmit={handleSubmit}
+      />
+    )}
     </SupplierErrorBoundary>
   );
 };

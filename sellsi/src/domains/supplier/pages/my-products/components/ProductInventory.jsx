@@ -32,13 +32,6 @@ const ProductInventory = ({
       {isMobile ? (
         // 📱 Layout Móvil - Stack Vertical
         <Box>
-          <Typography
-            variant="h6"
-            gutterBottom
-            sx={{ fontWeight: 600, color: 'black', mb: 2 }}
-          >
-            Condiciones de Venta
-          </Typography>
           <Stack spacing={2}>
             <TextField
               fullWidth
@@ -118,6 +111,11 @@ const ProductInventory = ({
                   }
                   placement="top"
                   arrow
+                  enterTouchDelay={0}
+                  leaveTouchDelay={3000}
+                  disableFocusListener={false}
+                  disableHoverListener={false}
+                  disableTouchListener={false}
                 >
                   <IconButton
                     size="small"
@@ -230,6 +228,11 @@ const ProductInventory = ({
                 }
                 placement="right"
                 arrow
+                enterTouchDelay={0}
+                leaveTouchDelay={3000}
+                disableFocusListener={false}
+                disableHoverListener={false}
+                disableTouchListener={false}
               >
                 <IconButton
                   size="small"

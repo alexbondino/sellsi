@@ -38,13 +38,6 @@ const ProductBasicInfo = ({
       {isMobile ? (
         // 📱 Layout Móvil - Stack Vertical
         <Box>
-          <Typography
-            variant="h6"
-            gutterBottom
-            sx={{ fontWeight: 600, color: 'black', mb: 2 }}
-          >
-            Información General
-          </Typography>
           <Stack spacing={2}>
             <TextField
               fullWidth

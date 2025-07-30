@@ -63,13 +63,15 @@ const ProductRegions = ({
         zIndex: 1, // Reducir z-index para que no interfiera con dropdowns
       }}
     >
-      <Typography
-        variant="h6"
-        gutterBottom
-        sx={{ fontWeight: 600, color: 'black', mb: 2, textAlign: 'left', width: '100%' }}
-      >
-        Despacho
-      </Typography>
+      {!isMobile && (
+        <Typography
+          variant="h6"
+          gutterBottom
+          sx={{ fontWeight: 600, color: 'black', mb: 2, textAlign: 'left', width: '100%' }}
+        >
+          Despacho
+        </Typography>
+      )}
 
       {/* Botón para abrir el modal de configuración */}
       <Button

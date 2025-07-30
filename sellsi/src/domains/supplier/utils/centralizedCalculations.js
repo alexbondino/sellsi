@@ -3,7 +3,19 @@
  * Centraliza toda la lógica matemática de productos para evitar duplicación
  * 
  * USADO EN:
- * - AddProduct.jsx (calculateEarnings)
+   // Sin datos válidos, retornar valores por defecto
+  return {
+    ingresoPorVentas: 0,
+    tarifaServicio: 0,
+    total: 0,
+    isRange: false,
+    rangos: {
+      ingresoPorVentas: { min: 0, max: 0 },
+      tarifaServicio: { min: 0, max: 0 },
+      total: { min: 0, max: 0 },
+      details: []
+    }
+  };ct.jsx (calculateEarnings)
  * - MyProducts.jsx (valor del inventario)
  * - useSupplierProducts.js (estadísticas)
  * 
@@ -105,6 +117,7 @@ export const calculateProductEarnings = (formData) => {
         ingresoPorVentas: { min: 0, max: 0 },
         tarifaServicio: { min: 0, max: 0 },
         total: { min: 0, max: 0 },
+        details: []
       },
     };
   } else if (formData.pricingType === 'Volumen' && formData.tramos?.length > 0) {
@@ -129,6 +142,27 @@ export const calculateProductEarnings = (formData) => {
       const minTotal = minIncome - minServiceFee;
       const maxTotal = maxIncome - maxServiceFee;
 
+      // Generar detalles por cada tramo
+      const rangeDetails = validTramos.map((tramo, index) => {
+        const precio = parseFloat(tramo.precio) || 0;
+        const min = parseInt(tramo.min) || 0;
+        const max = tramo.max ? parseInt(tramo.max) : stock;
+        
+        // Calcular ingresos para este tramo
+        const tramoIncome = precio * Math.min(max, stock);
+        const tramoServiceFee = tramoIncome * SERVICE_RATE;
+        const tramoTotal = tramoIncome - tramoServiceFee;
+        
+        return {
+          min,
+          max,
+          precio,
+          ingresoPorVentas: tramoIncome,
+          tarifaServicio: tramoServiceFee,
+          total: tramoTotal
+        };
+      });
+
       return {
         ingresoPorVentas: 0, // No se usa en modo rango
         tarifaServicio: 0,   // No se usa en modo rango
@@ -138,6 +172,7 @@ export const calculateProductEarnings = (formData) => {
           ingresoPorVentas: { min: minIncome, max: maxIncome },
           tarifaServicio: { min: minServiceFee, max: maxServiceFee },
           total: { min: minTotal, max: maxTotal },
+          details: rangeDetails
         },
       };
     }
