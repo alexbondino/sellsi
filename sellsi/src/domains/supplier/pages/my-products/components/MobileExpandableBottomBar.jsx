@@ -12,9 +12,7 @@ import {
   Visibility as VisibilityIcon,
   Close as CloseIcon,
 } from '@mui/icons-material';
-import { formatPrice } from '../../../../../shared/utils/formatters';
-
-/**
+import { formatPrice } from '../../../../../shared/utils/formatters';/**
  * Componente para la barra inferior expandible en móvil
  * Muestra el total y permite expandir para ver detalles completos
  */
@@ -164,28 +162,56 @@ const MobileExpandableBottomBar = ({
               </Button>
             </Box>
             
-            {/* Total destacado */}
+            {/* Total destacado - Ahora es Resumen General igual que desktop */}
             <Box sx={{ 
-              textAlign: 'center', 
+              textAlign: 'left', 
               p: 2, 
               borderRadius: 3,
-              background: 'linear-gradient(135deg, #e3f2fd 0%, #f1f8e9 100%)',
+              background: 'white',
               border: '2px solid #1976d2',
             }}>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 1, fontSize: '0.75rem' }}>
-                Total a Recibir
+              <Typography variant="h6" fontWeight="600" sx={{ mb: 2, fontSize: '1rem' }}>
+                📊 Resumen General
               </Typography>
-              <Typography variant="h4" fontWeight="800" color="primary.main" sx={{ fontSize: '1.8rem' }}>
-                {calculations.isRange 
-                  ? `${formatPrice(
-                      calculations.rangos.total?.min || 0
-                    )} - ${formatPrice(
-                      calculations.rangos.total?.max || 0
-                    )}`
-                  : `${formatPrice(calculations.total || 0)}`
-                }
-              </Typography>
-              <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block', fontSize: '0.7rem' }}>
+              
+              <Stack spacing={1}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
+                    Ingreso por Ventas:
+                  </Typography>
+                  <Typography variant="body1" fontWeight="600" sx={{ fontSize: '0.8rem' }}>
+                    {calculations.isRange 
+                      ? `${formatPrice(calculations.rangos.ingresoPorVentas.min)} - ${formatPrice(calculations.rangos.ingresoPorVentas.max)}`
+                      : formatPrice(calculations.ingresoPorVentas)
+                    }
+                  </Typography>
+                </Box>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
+                    Tarifa por Servicio (2%):
+                  </Typography>
+                  <Typography variant="body1" fontWeight="600" sx={{ fontSize: '0.8rem' }}>
+                    {calculations.isRange 
+                      ? `${formatPrice(calculations.rangos.tarifaServicio.min)} - ${formatPrice(calculations.rangos.tarifaServicio.max)}`
+                      : formatPrice(calculations.tarifaServicio)
+                    }
+                  </Typography>
+                </Box>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', pt: 1, borderTop: '2px solid #1976d2', mt: 1 }}>
+                  <Typography variant="h6" fontWeight="700" sx={{ fontSize: '0.9rem' }}>
+                    Total:
+                  </Typography>
+                  <Typography variant="h6" fontWeight="700" color="primary.main" sx={{ fontSize: '0.9rem' }}>
+                    {calculations.isRange 
+                      ? `${formatPrice(calculations.rangos.total.min)} - ${formatPrice(calculations.rangos.total.max)}`
+                      : formatPrice(calculations.total)
+                    }
+                  </Typography>
+                </Box>
+              </Stack>
+              
+              {/* Texto explicativo debajo del total */}
+              <Typography variant="caption" color="text.secondary" sx={{ mt: 2, display: 'block', fontSize: '0.7rem' }}>
                 {calculations.isRange
                   ? 'Estos son los rangos de montos que podrás recibir según cómo se distribuyan las ventas entre los tramos de precio'
                   : 'Este es el monto que recibirás en tu cuenta una vez concretada la venta. El valor no considera los costos de despacho.'}
@@ -212,122 +238,49 @@ const MobileExpandableBottomBar = ({
           }}>
             <Stack spacing={3}>
               {calculations.isRange ? (
-                // Mostrar detalles de rangos
+                // Mostrar detalles de rangos - Igual que desktop
                 <>
-                  <Typography variant="h6" fontWeight="600" sx={{ mb: 2, fontSize: '1rem' }}>
-                    💰 Ganancias por Volumen
+                  {/* Mostrar detalles por tramo */}
+                  <Typography variant="h6" fontWeight="600" sx={{ mb: 2, fontSize: '0.9rem' }}>
+                    📋 Detalles por Tramo
                   </Typography>
                   {calculations.rangos.details?.map((detail, index) => (
-                    <Card key={index} elevation={2} sx={{ 
-                      p: 3, 
+                    <Card key={index} elevation={1} sx={{ 
+                      p: 2.5, 
                       borderRadius: 3,
-                      background: `linear-gradient(135deg, ${index % 2 === 0 ? '#f3e5f5' : '#e8f5e8'} 0%, #ffffff 100%)`,
-                      border: `2px solid ${index % 2 === 0 ? '#9c27b0' : '#4caf50'}`,
+                      background: `linear-gradient(135deg, ${index % 2 === 0 ? '#f8f9fa' : '#f5f5f5'} 0%, #ffffff 100%)`,
+                      border: `1px solid ${index % 2 === 0 ? '#e0e0e0' : '#d0d0d0'}`,
                     }}>
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                        <Typography variant="h6" fontWeight="600" color="primary.main" sx={{ fontSize: '0.95rem' }}>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
+                        <Typography variant="h6" fontWeight="600" color="primary.main" sx={{ fontSize: '0.85rem' }}>
                           📊 Rango {index + 1}
                         </Typography>
                         <Chip 
                           label={`${detail.min}-${detail.max} unidades`}
                           color="primary"
                           variant="outlined"
-                          sx={{ fontSize: '0.65rem' }}
+                          sx={{ fontSize: '0.6rem' }}
                         />
                       </Box>
-                      <Stack spacing={1}>
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                          <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
-                            Precio por unidad:
-                          </Typography>
-                          <Typography variant="body1" fontWeight="600" sx={{ fontSize: '0.8rem' }}>
-                            {formatPrice(detail.precio)}
-                          </Typography>
-                        </Box>
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                          <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
-                            Ingreso por ventas:
-                          </Typography>
-                          <Typography variant="body1" fontWeight="600" sx={{ fontSize: '0.8rem' }}>
-                            {formatPrice(detail.ingresoPorVentas)}
-                          </Typography>
-                        </Box>
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                          <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
-                            Tarifa por servicio (2%):
-                          </Typography>
-                          <Typography variant="body1" fontWeight="600" color="error.main" sx={{ fontSize: '0.8rem' }}>
-                            -{formatPrice(detail.tarifaServicio)}
-                          </Typography>
-                        </Box>
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', pt: 1, borderTop: '1px solid #e0e0e0' }}>
-                          <Typography variant="body1" fontWeight="600" sx={{ fontSize: '0.8rem' }}>
-                            Total rango:
-                          </Typography>
-                          <Typography variant="h6" fontWeight="700" color="primary.main" sx={{ fontSize: '0.9rem' }}>
-                            {formatPrice(detail.total)}
-                          </Typography>
-                        </Box>
-                      </Stack>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.7rem' }}>
+                          Precio por unidad:
+                        </Typography>
+                        <Typography variant="body1" fontWeight="600" sx={{ fontSize: '0.75rem' }}>
+                          {formatPrice(detail.precio)}
+                        </Typography>
+                      </Box>
                     </Card>
                   ))}
                 </>
-              ) : (
-                // Mostrar detalles precio fijo
-                <Card elevation={2} sx={{ 
-                  p: 3, 
-                  borderRadius: 3,
-                  background: 'linear-gradient(135deg, #e3f2fd 0%, #ffffff 100%)',
-                  border: '2px solid #1976d2',
-                }}>
+              ) : null}
+              
+              {/* Información adicional */}
+
                   <Typography variant="h6" fontWeight="600" sx={{ mb: 2, fontSize: '1rem' }}>
-                    💵 Precio Fijo por Unidad
+                    � Detalles del Producto
                   </Typography>
-                  <Stack spacing={2}>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
-                        Precio de venta:
-                      </Typography>
-                      <Typography variant="h6" fontWeight="600" sx={{ fontSize: '0.9rem' }}>
-                        {formatPrice(formData.precio)}
-                      </Typography>
-                    </Box>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
-                        Ingreso por ventas:
-                      </Typography>
-                      <Typography variant="h6" fontWeight="600" sx={{ fontSize: '0.9rem' }}>
-                        {formatPrice(calculations.ingresoPorVentas)}
-                      </Typography>
-                    </Box>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
-                        Tarifa por servicio (2%):
-                      </Typography>
-                      <Typography variant="h6" fontWeight="600" color="error.main" sx={{ fontSize: '0.9rem' }}>
-                        -{formatPrice(calculations.tarifaServicio)}
-                      </Typography>
-                    </Box>
-                    <Box sx={{ 
-                      display: 'flex', 
-                      justifyContent: 'space-between', 
-                      pt: 2, 
-                      borderTop: '2px solid #1976d2',
-                      background: 'rgba(25, 118, 210, 0.1)',
-                      p: 2,
-                      borderRadius: 2,
-                      mt: 2,
-                    }}>
-                      <Typography variant="h6" fontWeight="700" sx={{ fontSize: '0.9rem' }}>
-                        Total a recibir:
-                      </Typography>
-                      <Typography variant="h5" fontWeight="800" color="primary.main" sx={{ fontSize: '1.1rem' }}>
-                        {formatPrice(calculations.total)}
-                      </Typography>
-                    </Box>
-                  </Stack>
-                </Card>
-              )}
+
               
               {/* Información adicional */}
               <Card elevation={1} sx={{ 
@@ -368,6 +321,49 @@ const MobileExpandableBottomBar = ({
                     />
                   </Box>
                 </Stack>
+              </Card>
+              
+              {/* Información de Despacho */}
+              <Card elevation={1} sx={{ 
+                p: 3, 
+                borderRadius: 3,
+                background: 'linear-gradient(135deg, #e8f5e8 0%, #ffffff 100%)',
+                border: '2px solid #4caf50',
+              }}>
+                <Typography variant="h6" fontWeight="600" sx={{ mb: 2, fontSize: '1rem' }}>
+                  🚚 Información de Despacho
+                </Typography>
+                
+                {/* Mostrar regiones de despacho */}
+                {formData.shippingRegions && formData.shippingRegions.length > 0 ? (
+                  <Box>
+                    {formData.shippingRegions.map((region, index) => (
+                      <Box key={index} sx={{ 
+                        display: 'flex', 
+                        justifyContent: 'space-between', 
+                        alignItems: 'center',
+                        py: 1,
+                        borderBottom: index < formData.shippingRegions.length - 1 ? '1px solid #e0e0e0' : 'none'
+                      }}>
+                        <Box sx={{ flex: 1 }}>
+                          <Typography variant="body2" fontWeight="600" sx={{ fontSize: '0.75rem' }}>
+                            {region.regionLabel}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.65rem' }}>
+                            {region.maxDeliveryDays} días hábiles
+                          </Typography>
+                        </Box>
+                        <Typography variant="body2" fontWeight="600" color="primary.main" sx={{ fontSize: '0.75rem' }}>
+                          {formatPrice(region.shippingValue)}
+                        </Typography>
+                      </Box>
+                    ))}
+                  </Box>
+                ) : (
+                  <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.7rem' }}>
+                    No hay regiones de despacho configuradas
+                  </Typography>
+                )}
               </Card>
             </Stack>
           </Box>
