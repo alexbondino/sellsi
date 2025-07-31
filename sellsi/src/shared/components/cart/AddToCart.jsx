@@ -118,7 +118,7 @@ const AddToCart = ({
 
       // Mostrar notificación de éxito
       showCartSuccess(
-        `${finalProduct.name} agregado al carrito (${cartItem.quantity} unidades)`
+        `Agregado al carrito: ${finalProduct.name} (${cartItem.quantity} unidades)`
       );
 
       // Callback de éxito personalizado

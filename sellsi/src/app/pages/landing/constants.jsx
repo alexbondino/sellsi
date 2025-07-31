@@ -131,14 +131,14 @@ export const SERVICES_DATA = [
     image: '/Landing Page/Proveedor.webp',
     timeline: [
       {
-        title: 'Publica sin costo',
-        description: 'Sube tus productos sin costo a nuestro Marketplace con su descripción, ficha técnica y stock disponible.',
+        title: 'Publica sin costo y Vende Más',
+        description: 'Sube tus productos sin costo a nuestro Marketplace. Incorpora una descripción detallada, ficha técnica, el stock disponible y las regiones de despacho para que los compradores encuentren exactamente lo que necesitan',
         icon: <Inventory />,
         image: '/Landing Page/Proveedor/publica.webp',
       },
       {
-        title: 'Define tus condiciones',
-        description: '• Publica tus precios según los tramos de venta que busques<br>• Define si quieres sólo venta directa o también agregar un intermediario ofreciendo la comisión que te acomode<br>¿El precio es negociable? Establece si estás dispuesto a recibir ofertas por tus productos',
+        title: 'Tú defines las reglas',
+        description: '• A tu medida: Define si quieres vender por unidades o por volumen (tramos)<br>• Define si quieres sólo venta directa o también agregar un intermediario ofreciendo la comisión que te acomode<br>¿El precio es negociable? Establece si estás dispuesto a recibir ofertas por tus productos',
         icon: <Visibility />,
         image: '/Landing Page/Proveedor/visible.webp',
       },

@@ -99,10 +99,6 @@ const ProductPageView = memo(({
       // Si recibimos un producto formateado del PurchaseActions, usar ese
       // Si no, formatear con los datos básicos del producto
       onAddToCart(cartProduct || product)
-      // Mostrar toast de confirmación aquí
-      showCartSuccess(
-        `Agregado al carrito: ${(cartProduct || product)?.name || product?.nombre}`
-      )
       // Debug log removed
     }
   }, [isLoggedIn, onAddToCart, product])
@@ -333,9 +329,9 @@ const ProductPageView = memo(({
                 variant="h4"
                 sx={{
                   fontWeight: 700,
-                  color: 'primary.main',
+                  color: 'black',
                   mb: 3,
-                  fontSize: { xs: '1.5rem', sm: '1.75rem', md: '1.75rem' },
+                  fontSize: { xs: '1.5rem', sm: '1.5rem', md: '1.5rem' },
                   position: 'relative',
                   '&::after': {
                     content: '""',
@@ -357,7 +353,7 @@ const ProductPageView = memo(({
                 sx={{
                   fontSize: { xs: '1rem', sm: '1.1rem', md: '1rem' },
                   lineHeight: 1.8,
-                  color: 'text.primary',
+                  color: '#000000ff',
                   textAlign: 'justify',
                   hyphens: 'auto',
                   wordBreak: 'break-word',
@@ -366,7 +362,7 @@ const ProductPageView = memo(({
                   '&::first-letter': {
                     fontSize: '1.5em',
                     fontWeight: 700,
-                    color: 'text.primary',
+                    color: '#000000ff',
                     float: 'left',
                     lineHeight: 1,
                     marginRight: '1px',

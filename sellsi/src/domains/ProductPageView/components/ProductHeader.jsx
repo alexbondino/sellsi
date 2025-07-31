@@ -216,8 +216,9 @@ const ProductHeader = React.memo(({
           }}
         >
           <Typography variant="h6" sx={{ color: 'text.primary' }}>
-            Precios por cantidad
-          </Typography>          <Tooltip
+            Precios por volumen
+          </Typography>
+          <Tooltip
             title="El precio varía según la cantidad que compres. Cada tramo indica el precio unitario para ese rango de unidades."
             arrow
             placement="right"
