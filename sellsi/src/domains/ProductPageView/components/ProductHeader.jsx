@@ -353,7 +353,7 @@ const ProductHeader = React.memo(({
               </Button>
             </Box>
             {finalTiers && finalTiers.length > 0 && isLoggedIn && (
-          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', mt: 2, mb: 4, width: '100%', gap: 1 }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', mb: 4, width: '100%', gap: 1 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
               <Typography variant="body2" sx={{ color: 'text.secondary', textAlign: 'center' }}>
                 ¿Necesitas alguna condición especial?
