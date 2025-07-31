@@ -59,7 +59,7 @@ const EmptyCartState = ({ wishlist, setShowWishlist }) => {
           flexDirection: 'column', 
           alignItems: 'center',
           // Agrega margen izquierdo solo en desktop (md+) para alinear con SideBar
-          ml: { xs: 0, md: 8, lg: 24, xl: 34 },
+          ml: { xs: 0, md: 2, lg: 3, xl: 34 },
           transition: 'margin-left 0.3s',
         }}
       >      <motion.div

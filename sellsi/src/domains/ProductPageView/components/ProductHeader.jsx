@@ -38,6 +38,7 @@ import PriceDisplay from '../../marketplace/PriceDisplay/PriceDisplay'
 import StockIndicator from '../../marketplace/StockIndicator/StockIndicator'
 import QuotationModal from './QuotationModal'
 import { useProductPriceTiers } from '../../../shared/hooks/product/useProductPriceTiers';
+import ContactSupplierModal from '../../../shared/components/modals/ContactSupplierModal';
 
 const ProductHeader = React.memo(({
   product,
@@ -81,6 +82,8 @@ const ProductHeader = React.memo(({
   const [checkingOwnership, setCheckingOwnership] = useState(false)
   // ✅ NUEVO: Estado para el modal de cotización
   const [isQuotationModalOpen, setIsQuotationModalOpen] = useState(false)
+  // ✅ NUEVO: Estado para el modal de contacto con proveedor
+  const [isSupplierModalOpen, setIsSupplierModalOpen] = useState(false);
   
   // ✅ NUEVO: Función para obtener el nombre del usuario actual
   const getCurrentUserName = React.useCallback(async () => {
@@ -158,6 +161,14 @@ const ProductHeader = React.memo(({
   const handleCloseQuotationModal = () => {
     setIsQuotationModalOpen(false)
   }
+
+  // ✅ NUEVO: Funciones para manejar el modal de contacto con proveedor
+  const handleOpenSupplierModal = () => {
+    setIsSupplierModalOpen(true);
+  };
+  const handleCloseSupplierModal = () => {
+    setIsSupplierModalOpen(false);
+  };
 
   // ✅ NUEVO: Calcular precio unitario y cantidad por defecto para cotización
   const getQuotationDefaults = () => {
@@ -316,9 +327,11 @@ const ProductHeader = React.memo(({
         
         {/* Botón de Cotización para tramos - Solo si está logueado */}
         {isLoggedIn && (
-          <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2, mb: 4 }}>
-            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-              ¿Quieres saber los detalles de todo?{' '}
+          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', mt: 2, mb: 4, width: '100%', gap: 1 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
+              <Typography variant="body2" sx={{ color: 'text.secondary', textAlign: 'center' }}>
+                ¿Quieres saber los detalles de todo?
+              </Typography>
               <Button
                 variant="text"
                 size="small"
@@ -328,6 +341,7 @@ const ProductHeader = React.memo(({
                   fontWeight: 600,
                   p: 0,
                   minWidth: 'auto',
+                  textAlign: 'center',
                   '&:hover': {
                     backgroundColor: 'transparent',
                     textDecoration: 'underline',
@@ -337,7 +351,35 @@ const ProductHeader = React.memo(({
               >
                 Cotiza aquí
               </Button>
-            </Typography>
+            </Box>
+            {finalTiers && finalTiers.length > 0 && isLoggedIn && (
+          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', mt: 2, mb: 4, width: '100%', gap: 1 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
+              <Typography variant="body2" sx={{ color: 'text.secondary', textAlign: 'center' }}>
+                ¿Necesitas alguna condición especial?
+              </Typography>
+              <Button
+                variant="text"
+                size="small"
+                sx={{
+                  color: 'primary.main',
+                  textTransform: 'none',
+                  fontWeight: 600,
+                  p: 0,
+                  minWidth: 'auto',
+                  textAlign: 'center',
+                  '&:hover': {
+                    backgroundColor: 'transparent',
+                    textDecoration: 'underline',
+                  },
+                }}
+                onClick={handleOpenSupplierModal}
+              >
+                Contacta con el proveedor
+              </Button>
+            </Box>
+          </Box>
+        )}
           </Box>
         )}
       </Box>
@@ -725,14 +767,16 @@ const ProductHeader = React.memo(({
               }}
             />{' '}
           </Box>{' '}
-          {/* Precios y/o tramos */}
+          {/* Precios and/or tramos */}
           {priceContent}
           
           {/* Botón de Cotización - Solo para precio único y si está logueado */}
           {!(tiers && tiers.length > 0) && isLoggedIn && (
-            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2, mb: 4, width: '100%' }}>
-              <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                ¿Quieres saber los detalles de todo?{' '}
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', mt: 2, mb: 4, width: '100%', gap: 1 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
+                <Typography variant="body2" sx={{ color: 'text.secondary', textAlign: 'center' }}>
+                  ¿Quieres saber los detalles de todo?
+                </Typography>
                 <Button
                   variant="text"
                   size="small"
@@ -742,6 +786,7 @@ const ProductHeader = React.memo(({
                     fontWeight: 600,
                     p: 0,
                     minWidth: 'auto',
+                    textAlign: 'center',
                     '&:hover': {
                       backgroundColor: 'transparent',
                       textDecoration: 'underline',
@@ -751,7 +796,31 @@ const ProductHeader = React.memo(({
                 >
                   Cotiza aquí
                 </Button>
-              </Typography>
+              </Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
+                <Typography variant="body2" sx={{ color: 'text.secondary', textAlign: 'center' }}>
+                  ¿Necesitas alguna condición especial?
+                </Typography>
+                <Button
+                  variant="text"
+                  size="small"
+                  sx={{
+                    color: 'primary.main',
+                    textTransform: 'none',
+                    fontWeight: 600,
+                    p: 0,
+                    minWidth: 'auto',
+                    textAlign: 'center',
+                    '&:hover': {
+                      backgroundColor: 'transparent',
+                      textDecoration: 'underline',
+                    },
+                  }}
+                  onClick={handleOpenSupplierModal}
+                >
+                  Contacta con el proveedor
+                </Button>
+              </Box>
             </Box>
           )}
           
@@ -802,6 +871,12 @@ const ProductHeader = React.memo(({
         quantity={getQuotationDefaults().defaultQuantity}
         unitPrice={getQuotationDefaults().defaultUnitPrice}
         tiers={finalTiers}
+      />
+      {/* Modal de Contacto con Proveedor */}
+      <ContactSupplierModal
+        open={isSupplierModalOpen}
+        onClose={handleCloseSupplierModal}
+        supplierName={product.proveedor}
       />
     </Box>
   )

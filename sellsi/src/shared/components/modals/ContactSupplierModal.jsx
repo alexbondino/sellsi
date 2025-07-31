@@ -1,6 +1,4 @@
-import React, { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
-/* Home page, contactanos */
+import React, { useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -10,7 +8,6 @@ import {
   Button,
   IconButton,
   Stack,
-  Divider,
   useTheme,
   useMediaQuery,
   Fade,
@@ -18,20 +15,16 @@ import {
 } from '@mui/material';
 import {
   Close as CloseIcon,
-  Email as EmailIcon,
-  Phone as PhoneIcon,
   Send as SendIcon,
 } from '@mui/icons-material';
 import { useBanner } from '../display/banners/BannerContext';
 
-// ✅ 1. Definimos la URL de tu función de Supabase como una constante
 const supabaseFunctionUrl =
   'https://pvtmkfckdaeiqrfjskrq.supabase.co/functions/v1/contact-form';
 
-const ContactModal = ({ open, onClose }) => {
+const ContactSupplierModal = ({ open, onClose, supplierName }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  const location = useLocation();
   const { showBanner } = useBanner();
 
   const [formData, setFormData] = useState({
@@ -39,22 +32,8 @@ const ContactModal = ({ open, onClose }) => {
     email: '',
     mensaje: '',
   });
-
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [initialPath, setInitialPath] = useState(null);
-
-  useEffect(() => {
-    if (open) {
-      setInitialPath(location.pathname);
-    }
-  }, [open, location.pathname]);
-
-  useEffect(() => {
-    if (open && initialPath && location.pathname !== initialPath) {
-      onClose();
-    }
-  }, [location.pathname, open, initialPath, onClose]);
 
   const handleClose = () => {
     setFormData({ nombre: '', email: '', mensaje: '' });
@@ -76,12 +55,10 @@ const ContactModal = ({ open, onClose }) => {
     else if (!/\S+@\S+\.\S+/.test(formData.email))
       newErrors.email = 'Email inválido';
     if (!formData.mensaje.trim()) newErrors.mensaje = 'Mensaje requerido';
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  // ✅ 2. HEMOS ACTUALIZADO COMPLETAMENTE LA FUNCIÓN `handleSubmit`
   const handleSubmit = async e => {
     e.preventDefault();
     if (!validate()) {
@@ -91,41 +68,29 @@ const ContactModal = ({ open, onClose }) => {
       });
       return;
     }
-
     setIsSubmitting(true);
-
     try {
-      // Hacemos la llamada real a la API de Supabase
       const response = await fetch(supabaseFunctionUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        // Mapeamos los nombres del estado del formulario a los que espera la API
-        // (nombre -> name, mensaje -> message)
         body: JSON.stringify({
           name: formData.nombre,
           email: formData.email,
           message: formData.mensaje,
+          supplier: supplierName,
         }),
       });
-
-      // Si la respuesta NO es exitosa (ej: error 400, 500)
       if (!response.ok) {
-        // Intentamos leer el error que nos envía el servidor para tener más detalles
-        const errorData = await response.json();
-        // Lanzamos un error para que sea capturado por el bloque catch
         throw new Error('La respuesta del servidor no fue exitosa.');
       }
-
-      // Si todo fue bien, mostramos el banner de éxito
       showBanner({
         message:
-          '¡Gracias! Tu mensaje ha sido enviado. Nos pondremos en contacto contigo pronto.',
+          '¡Gracias! Tu mensaje ha sido enviado al proveedor. Nos pondremos en contacto contigo pronto.',
         severity: 'success',
       });
-
-      handleClose(); // Cerramos el modal
+      handleClose();
     } catch (error) {
       showBanner({
         message:
@@ -133,7 +98,6 @@ const ContactModal = ({ open, onClose }) => {
         severity: 'error',
       });
     } finally {
-      // Esto se ejecuta siempre, tanto si hubo éxito como si hubo error
       setIsSubmitting(false);
     }
   };
@@ -177,7 +141,6 @@ const ContactModal = ({ open, onClose }) => {
         },
       }}
     >
-      {/* El resto del componente permanece igual... */}
       <Box
         sx={{
           position: 'relative',
@@ -209,65 +172,14 @@ const ContactModal = ({ open, onClose }) => {
             fontSize: {
               xs: '1.5rem',
               sm: '1.75rem',
-              md: '2rem',
-              lg: '2.125rem',
-              xl: '2.125rem',
+              md: '1.9rem',
             },
           }}
         >
-          Contáctanos
-        </Typography>
-        <Typography
-          variant="body1"
-          sx={{
-            opacity: 0.9,
-            fontSize: {
-              xs: '0.875rem',
-              sm: '0.9rem',
-              md: '1rem',
-              lg: '1rem',
-              xl: '1rem',
-            },
-          }}
-        >
-          Estamos aquí para ayudarte
+          Contactarse con:<br />{supplierName}
         </Typography>
       </Box>
-
       <DialogContent sx={{ p: 0 }}>
-        <Box
-          sx={{
-            bgcolor: alpha(theme.palette.primary.main, 0.03),
-            py: 3,
-            px: 4,
-          }}
-        >
-          <Stack
-            direction={isMobile ? 'column' : 'row'}
-            spacing={3}
-            justifyContent="center"
-            alignItems="center"
-          >
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <EmailIcon color="primary" />
-              <Typography variant="body2" fontWeight="500">
-                contacto@sellsi.cl {/* Corregí el dominio a .cl */}
-              </Typography>
-            </Box>
-            <Divider
-              orientation={isMobile ? 'horizontal' : 'vertical'}
-              flexItem
-              sx={{ display: isMobile ? 'none' : 'block' }}
-            />
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <PhoneIcon color="primary" />
-              <Typography variant="body2" fontWeight="500">
-                +(56) 963109665
-              </Typography>
-            </Box>
-          </Stack>
-        </Box>
-
         <Box
           component="form"
           onSubmit={handleSubmit}
@@ -320,7 +232,7 @@ const ContactModal = ({ open, onClose }) => {
               onChange={handleChange('mensaje')}
               error={!!errors.mensaje}
               helperText={errors.mensaje}
-              placeholder="Cuéntanos cómo podemos ayudarte..."
+              placeholder="Escribe tu mensaje para el proveedor..."
               variant="outlined"
               sx={{
                 '& .MuiOutlinedInput-root': {
@@ -365,4 +277,4 @@ const ContactModal = ({ open, onClose }) => {
   );
 };
 
-export default ContactModal;
+export default ContactSupplierModal;
