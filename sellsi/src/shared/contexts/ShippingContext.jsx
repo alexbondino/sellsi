@@ -8,7 +8,7 @@
  */
 
 import React, { createContext, useContext, useCallback, useMemo } from 'react';
-import { useOptimizedShippingValidation } from '../hooks/shipping/useOptimizedShippingValidation';
+import { useUnifiedShippingValidation } from '../hooks/shipping/useUnifiedShippingValidation';
 
 // Context para shipping
 const ShippingContext = createContext();
@@ -24,9 +24,8 @@ export const ShippingProvider = ({ children }) => {
     validateProductShipping,
     getUserRegionName,
     cacheStats,
-    validationCount,
     SHIPPING_STATES
-  } = useOptimizedShippingValidation();
+  } = useUnifiedShippingValidation();
 
   // Función optimizada para validar productos en marketplace
   const validateMarketplaceProducts = useCallback(async (products) => {

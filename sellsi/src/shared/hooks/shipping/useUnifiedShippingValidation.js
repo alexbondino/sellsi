@@ -1,17 +1,20 @@
 /**
  * ============================================================================
- * OPTIMIZED SHIPPING VALIDATION HOOK - LAZY LOADING
+ * UNIFIED SHIPPING VALIDATION HOOK - BEST OF BOTH WORLDS
  * ============================================================================
  * 
- * Hook que elimina las validaciones automáticas masivas y solo valida
- * cuando realmente se necesita (en modals, hover, etc.)
+ * Hook unificado que combina lo mejor de:
+ * - useOptimizedShippingValidation (shared) - Cache avanzado
+ * - useOptimizedShippingValidation (cart) - Validación bajo demanda
+ * 
+ * Proporciona una API consistente para ambos casos de uso.
  */
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { useOptimizedUserShippingRegion } from '../../../../../hooks/useOptimizedUserShippingRegion';
+import { useOptimizedUserShippingRegion } from '../../../hooks/useOptimizedUserShippingRegion';
 
 /**
- * Estados posibles para cada producto en el carrito
+ * Estados unificados para validación de shipping
  */
 export const SHIPPING_STATES = {
   COMPATIBLE: 'compatible',
@@ -20,17 +23,50 @@ export const SHIPPING_STATES = {
 };
 
 /**
- * Hook optimizado para validación de shipping - SOLO BAJO DEMANDA
+ * Cache global para validaciones de shipping
  */
-export const useOptimizedShippingValidation = (cartItems = [], isAdvancedMode = false) => {
+const globalShippingCache = {
+  validations: new Map(),
+  timestamp: Date.now(),
+  CACHE_DURATION: 5 * 60 * 1000, // 5 minutos
+  
+  get: (productId, region) => {
+    const key = `${productId}-${region}`;
+    const cached = globalShippingCache.validations.get(key);
+    
+    if (cached && (Date.now() - cached.timestamp) < globalShippingCache.CACHE_DURATION) {
+      return cached.data;
+    }
+    return null;
+  },
+  
+  set: (productId, region, validation) => {
+    const key = `${productId}-${region}`;
+    globalShippingCache.validations.set(key, {
+      data: validation,
+      timestamp: Date.now()
+    });
+  },
+  
+  clear: () => {
+    globalShippingCache.validations.clear();
+  }
+};
+
+/**
+ * Hook unificado para validación de shipping
+ * Compatibile con ambos casos de uso existentes
+ */
+export const useUnifiedShippingValidation = (cartItems = [], isAdvancedMode = false) => {
   const { userRegion, isLoadingUserRegion } = useOptimizedUserShippingRegion();
   
   const [shippingStates, setShippingStates] = useState({});
   const [error, setError] = useState(null);
   const [incompatibleProducts, setIncompatibleProducts] = useState([]);
+  const [validationResults, setValidationResults] = useState(new Map());
 
   /**
-   * Obtener nombre legible de la región - memoizado para evitar recreaciones
+   * Obtener nombre legible de la región - memoizado
    */
   const getUserRegionName = useMemo(() => {
     const regionMap = {
@@ -56,7 +92,7 @@ export const useOptimizedShippingValidation = (cartItems = [], isAdvancedMode = 
   }, []);
 
   /**
-   * Función principal de validación de shipping - SIN CONSULTAS AUTOMÁTICAS
+   * Función principal de validación de shipping (sin efectos secundarios)
    */
   const validateProductShipping = useCallback((product, targetUserRegion = null) => {
     const effectiveUserRegion = targetUserRegion || userRegion;
@@ -130,15 +166,66 @@ export const useOptimizedShippingValidation = (cartItems = [], isAdvancedMode = 
   }, [userRegion, getUserRegionName]);
 
   /**
-   * Función para validar manualmente un producto específico (BAJO DEMANDA)
+   * Validación con caché inteligente (para uso general)
    */
-  const validateSingleProduct = useCallback((product) => {
-    if (!product || !userRegion) return null;
-    return validateProductShipping(product, userRegion);
+  const validateProductWithCache = useCallback((product) => {
+    if (!product?.id || !userRegion) {
+      return validateProductShipping(product);
+    }
+
+    // Verificar caché global primero
+    const cached = globalShippingCache.get(product.id, userRegion);
+    if (cached) {
+      return cached;
+    }
+
+    // Validar y guardar en caché
+    const validation = validateProductShipping(product, userRegion);
+    globalShippingCache.set(product.id, userRegion, validation);
+    
+    return validation;
   }, [userRegion, validateProductShipping]);
 
   /**
-   * Verificar si todos los productos son compatibles
+   * Validación de un producto específico (BAJO DEMANDA - para carrito)
+   */
+  const validateSingleProduct = useCallback((product) => {
+    if (!product || !userRegion) return null;
+    return validateProductWithCache(product);
+  }, [userRegion, validateProductWithCache]);
+
+  /**
+   * Obtener validación existente por ID
+   */
+  const getProductValidation = useCallback((productId) => {
+    return validationResults.get(productId);
+  }, [validationResults]);
+
+  /**
+   * Validación batch para múltiples productos
+   */
+  const validateProductsBatch = useCallback((products) => {
+    if (!userRegion || !Array.isArray(products)) return [];
+
+    const results = products.map(product => ({
+      product,
+      validation: validateProductWithCache(product)
+    }));
+
+    // Actualizar estado local para compatibilidad con carrito
+    const newResults = new Map(validationResults);
+    results.forEach(({ product, validation }) => {
+      if (product?.id) {
+        newResults.set(product.id, validation);
+      }
+    });
+    setValidationResults(newResults);
+
+    return results;
+  }, [userRegion, validateProductWithCache, validationResults]);
+
+  /**
+   * Verificar si todos los productos son compatibles (para carrito)
    */
   const isCartCompatible = useCallback(() => {
     if (!isAdvancedMode) return true;
@@ -164,17 +251,20 @@ export const useOptimizedShippingValidation = (cartItems = [], isAdvancedMode = 
     }
   }, [userRegion, shippingStates]);
 
-  // ✅ OPTIMIZACIÓN CRÍTICA: NO hacer validaciones automáticas
-  // Solo limpiar estados cuando cambia la región
+  /**
+   * Limpiar cache y estados cuando cambia la región
+   */
   useEffect(() => {
     if (userRegion) {
       setShippingStates({});
       setIncompatibleProducts([]);
+      setValidationResults(new Map());
+      // No limpiar cache global para mantener performance entre componentes
     }
   }, [userRegion]);
 
   return {
-    // Estados
+    // Estados principales
     userRegion,
     isLoadingUserRegion,
     shippingStates,
@@ -185,14 +275,25 @@ export const useOptimizedShippingValidation = (cartItems = [], isAdvancedMode = 
     isCartCompatible: isCartCompatible(),
     isShippingInfoComplete: isShippingInfoComplete(),
 
-    // Funciones de control - SOLO BAJO DEMANDA
-    validateProductShipping, // Función pura sin side effects
-    validateSingleProduct,   // Wrapper que usa userRegion actual
+    // Funciones de validación
+    validateProductShipping,     // Función pura sin cache (shared)
+    validateProductWithCache,    // Con cache inteligente (shared)
+    validateSingleProduct,       // Wrapper para carrito (cart)
+    getProductValidation,        // Obtener validación existente (shared)
+    validateProductsBatch,       // Validación en lote (shared)
 
     // Utilidades
     getUserRegionName,
-    SHIPPING_STATES
+    
+    // Constantes
+    SHIPPING_STATES,
+
+    // Métricas de cache
+    cacheStats: {
+      size: globalShippingCache.validations.size,
+      validationCount: validationResults.size
+    }
   };
 };
 
-export default useOptimizedShippingValidation;
+export default useUnifiedShippingValidation;

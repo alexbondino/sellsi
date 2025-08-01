@@ -31,18 +31,47 @@ export const RoleProvider = ({ children }) => {
 
   const [currentAppRole, setCurrentAppRole] = useState(getInitialAppRole());
   const [isRoleSwitching, setIsRoleSwitching] = useState(false);
+  
+  // ✅ NUEVO: Rastrear cambios en main_supplier para sincronización automática
+  const [lastMainSupplier, setLastMainSupplier] = useState(userProfile?.main_supplier);
 
   // ✅ NUEVO: Determinar rol inicial desde el perfil del usuario cuando no hay localStorage
   useEffect(() => {
     if (currentAppRole === null && session && userProfile && !loadingUserStatus) {
       const initialRole = userProfile.main_supplier ? 'supplier' : 'buyer';
       setCurrentAppRole(initialRole);
+      setLastMainSupplier(userProfile.main_supplier);
       // Guardar en localStorage para próximas sesiones
       try {
         localStorage.setItem('currentAppRole', initialRole);
       } catch (e) {}
     }
   }, [currentAppRole, session, userProfile, loadingUserStatus]);
+
+  // ✅ NUEVO: Detectar cambios en main_supplier del perfil y sincronizar SOLO si no hay override manual
+  useEffect(() => {
+    if (userProfile && userProfile.main_supplier !== lastMainSupplier && session) {
+      setLastMainSupplier(userProfile.main_supplier);
+      
+      const newRoleFromProfile = userProfile.main_supplier ? 'supplier' : 'buyer';
+      
+      // Solo actualizar si NO hay localStorage (es decir, primera vez o después de logout)
+      const hasStoredRole = (() => {
+        try {
+          return localStorage.getItem('currentAppRole') !== null;
+        } catch (e) {
+          return false;
+        }
+      })();
+      
+      if (!hasStoredRole && currentAppRole !== newRoleFromProfile) {
+        setCurrentAppRole(newRoleFromProfile);
+        try {
+          localStorage.setItem('currentAppRole', newRoleFromProfile);
+        } catch (e) {}
+      }
+    }
+  }, [userProfile?.main_supplier, lastMainSupplier, currentAppRole, session]);
 
   // Sincroniza el tipo de vista global para ProductPageWrapper
   window.currentAppRole = currentAppRole;
@@ -52,7 +81,7 @@ export const RoleProvider = ({ children }) => {
     '/buyer/marketplace',
     '/buyer/orders',
     '/buyer/performance',
-    '/buyer/cart',
+    // '/buyer/cart', // ✅ MOVIDO A neutralRoutes
     '/buyer/paymentmethod',
     '/buyer/profile',
     '/catalog',
@@ -73,6 +102,7 @@ export const RoleProvider = ({ children }) => {
   const neutralRoutes = new Set([
     '/',
     '/marketplace',
+    '/buyer/cart', // ✅ AGREGADO: Carrito accesible para ambos roles
     '/technicalspecs',
     '/login',
     '/crear-cuenta',
@@ -106,8 +136,10 @@ export const RoleProvider = ({ children }) => {
       isTermsOrPrivacyRoute
     );
 
-  // Función para manejar el cambio de rol desde TopBar
-  const handleRoleChange = (newRole) => {
+  // ✅ MEJORA: Función para manejar el cambio de rol con opciones
+  const handleRoleChange = (newRole, options = {}) => {
+    const { skipNavigation = false } = options;
+    
     setCurrentAppRole(newRole);
     // Persistir en localStorage mientras haya sesión
     try {
@@ -115,84 +147,105 @@ export const RoleProvider = ({ children }) => {
         localStorage.setItem('currentAppRole', newRole);
       }
     } catch (e) {}
-    setIsRoleSwitching(true);
-    if (newRole === 'supplier') {
-      navigate('/supplier/home');
-    } else {
-      navigate('/buyer/marketplace');
+    
+    // Solo navegar si no se especifica skipNavigation
+    if (!skipNavigation) {
+      setIsRoleSwitching(true);
+      if (newRole === 'supplier') {
+        navigate('/supplier/home');
+      } else {
+        navigate('/buyer/marketplace');
+      }
     }
   };
 
-  // Sincroniza el currentAppRole con la ruta actual
+  // ✅ NUEVO: Manejar transiciones manuales del switch
   useEffect(() => {
     if (isRoleSwitching) {
-      // Si estamos en transición de rol, no forzar sincronización
+      // Si estamos en transición de rol, esperar a llegar a la ruta correcta
       if (
         (currentAppRole === 'supplier' && location.pathname.startsWith('/supplier')) ||
         (currentAppRole === 'buyer' && location.pathname.startsWith('/buyer'))
       ) {
         setIsRoleSwitching(false);
       }
-      return;
     }
+  }, [isRoleSwitching, currentAppRole, location.pathname]);
 
-    // Si hay override temporal (localStorage), no sobrescribir el rol
-    let overrideRole = null;
-    try {
-      const storedRole = localStorage.getItem('currentAppRole');
-      if (storedRole === 'supplier' || storedRole === 'buyer') {
-        overrideRole = storedRole;
+  // ✅ SIMPLIFICADO: Solo manejar usuarios no logueados
+  useEffect(() => {
+    if (!session) {
+      if (currentAppRole !== 'buyer') {
+        setCurrentAppRole('buyer'); // Default para usuarios no logueados
       }
-    } catch (e) {}
-
-    if (overrideRole) {
-      if (currentAppRole !== overrideRole) {
-        setCurrentAppRole(overrideRole);
-      }
-      return;
-    }
-
-    if (session && !needsOnboarding && !loadingUserStatus && userProfile) {
-      const currentPath = location.pathname;
-      let newRole = currentAppRole;
-      
-      if (
-        Array.from(supplierDashboardRoutes).some(route =>
-          currentPath.startsWith(route)
-        )
-      ) {
-        newRole = 'supplier';
-      } else if (
-        Array.from(buyerDashboardRoutes).some(route =>
-          currentPath.startsWith(route)
-        )
-      ) {
-        newRole = 'buyer';
-      } else {
-        newRole = userProfile.main_supplier ? 'supplier' : 'buyer';
-      }
-      
-      if (newRole !== currentAppRole && !neutralRoutes.has(currentPath)) {
-        setCurrentAppRole(newRole);
-      }
-    } else if (!session && currentAppRole !== 'buyer') {
-      setCurrentAppRole('buyer'); // Default para usuarios no logueados
       // Limpiar localStorage al cerrar sesión
       try { 
         localStorage.removeItem('currentAppRole'); 
       } catch (e) {}
-    } else if (!session && currentAppRole === null) {
-      // Si no hay sesión y el rol es null, establecer buyer por defecto
-      setCurrentAppRole('buyer');
+    }
+  }, [session, currentAppRole]);
+
+  // ✅ NUEVO: Protección de rutas - redirigir si el usuario intenta acceder a rutas que no coinciden con su rol actual
+  useEffect(() => {
+    if (!session || needsOnboarding || loadingUserStatus || !userProfile || !currentAppRole || isRoleSwitching) {
+      return;
+    }
+
+    const currentPath = location.pathname;
+    
+    // ✅ DEBUG: Log para verificar la ruta actual
+    console.log('🔍 Route protection check:', { currentPath, currentAppRole });
+    
+    // ✅ PRIMERO: Verificar si es una ruta neutral (incluyendo cart)
+    const isNeutralRoute = Array.from(neutralRoutes).some(route => {
+      // ✅ FIX: Comparación exacta para ruta raíz, startsWith para otras
+      if (route === '/') {
+        return currentPath === '/';
+      }
+      const isMatch = currentPath === route || currentPath.startsWith(route + '/') || currentPath.startsWith(route + '?');
+      if (isMatch) {
+        console.log('✅ Neutral route detected:', route, 'for path:', currentPath);
+      }
+      return isMatch;
+    });
+    
+    if (isNeutralRoute) {
+      console.log('✅ Skipping protection for neutral route:', currentPath);
+      return; // No redirigir rutas neutrales
+    }
+    
+    // Determinar si está en una ruta de supplier o buyer (DESPUÉS de verificar rutas neutrales)
+    const isOnSupplierRoute = Array.from(supplierDashboardRoutes).some(route =>
+      currentPath.startsWith(route)
+    );
+    const isOnBuyerRoute = Array.from(buyerDashboardRoutes).some(route =>
+      currentPath.startsWith(route) && !neutralRoutes.has(currentPath) // Excluir rutas neutrales
+    );
+
+    // Si tiene rol SUPPLIER pero está en ruta de BUYER → redirigir a supplier
+    if (currentAppRole === 'supplier' && isOnBuyerRoute) {
+      console.log('🔄 Supplier detected on buyer route, redirecting to supplier home');
+      navigate('/supplier/home', { replace: true });
+      return;
+    }
+    
+    // Si tiene rol BUYER pero está en ruta de SUPPLIER → redirigir a buyer
+    if (currentAppRole === 'buyer' && isOnSupplierRoute) {
+      console.log('🔄 Buyer detected on supplier route, redirecting to buyer marketplace');
+      navigate('/buyer/marketplace', { replace: true });
+      return;
     }
   }, [
-    location.pathname,
     session,
     needsOnboarding,
     loadingUserStatus,
     userProfile,
     currentAppRole,
     isRoleSwitching,
+    location.pathname,
+    navigate,
+    supplierDashboardRoutes,
+    buyerDashboardRoutes
   ]);
 
   // Redirigir a usuarios logueados de rutas neutrales a su dashboard preferido
@@ -200,7 +253,9 @@ export const RoleProvider = ({ children }) => {
     if (!loadingUserStatus && session && !needsOnboarding && userProfile) {
       if (neutralRoutes.has(location.pathname) && 
           location.pathname !== '/terms-and-conditions' && 
-          location.pathname !== '/privacy-policy') {
+          location.pathname !== '/privacy-policy' &&
+          location.pathname !== '/buyer/cart' && // ✅ EXCEPCIÓN: No redirigir desde cart
+          !location.pathname.startsWith('/buyer/cart/')) { // ✅ EXCEPCIÓN: Incluir subrutas del cart
         const target = userProfile.main_supplier
           ? '/supplier/home'
           : '/buyer/marketplace';

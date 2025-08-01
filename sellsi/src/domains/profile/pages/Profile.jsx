@@ -20,6 +20,7 @@ import { useProfileForm } from '../hooks/useProfileForm';
 import { useProfileImage } from '../hooks/useProfileImage';
 import { useSensitiveFields } from '../hooks/useSensitiveFields';
 import { useOptimizedUserShippingRegion } from '../../../hooks/useOptimizedUserShippingRegion';
+import { useRoleSync } from '../../../shared/hooks';
 
 // Secciones modulares
 import { CompanyInfoSection, TransferInfoSection, ShippingInfoSection, BillingInfoSection } from '../components/sections';
@@ -70,6 +71,9 @@ const Profile = ({ userProfile, onUpdateProfile }) => {
 
   // Hook para invalidar caché de shipping
   const { invalidateUserCache } = useOptimizedUserShippingRegion();
+  
+  // ✅ NUEVO: Hook para sincronización automática de roles
+  const { isInSync, debug } = useRoleSync();
 
   // Estado local solo para UI
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
@@ -91,6 +95,13 @@ const Profile = ({ userProfile, onUpdateProfile }) => {
   useEffect(() => {
     // Debug: Monitorear cambios de imagen y logo_url
   }, [userProfile?.logo_url, pendingImage]);
+
+  // ✅ NUEVO: Debug effect para monitorear sincronización de roles (opcional, solo en desarrollo)
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'development' && !isInSync) {
+      console.warn('🔄 Role sync issue detected:', debug);
+    }
+  }, [isInSync, debug]);
 
   // Handlers simplificados que usan los hooks
   const handleSwitchChange = (field) => (event, newValue) => {

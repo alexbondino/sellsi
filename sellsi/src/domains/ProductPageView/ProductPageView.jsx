@@ -49,6 +49,9 @@ const PurchaseActions = React.lazy(() =>
 const ProductHeader = React.lazy(() => 
   import('./components/ProductHeader').catch(() => ({ default: () => <div>Error al cargar header</div> }))
 )
+const ProductShipping = React.lazy(() => 
+  import('./components/ProductShipping').catch(() => ({ default: () => <div>Error al cargar shipping</div> }))
+)
 const LoadingOverlay = React.lazy(() => 
   import('../../shared/components/feedback/LoadingOverlay').catch(() => ({ default: () => <div>Cargando...</div> }))
 )
@@ -284,6 +287,17 @@ const ProductPageView = memo(({
                 isLoggedIn={isLoggedIn}
                 fromMyProducts={fromMyProducts}
                 isMobile={isMobile}
+              />
+            </Suspense>
+          </Box>
+
+          {/* 2.5. ProductShipping - Regiones de Despacho */}
+          <Box sx={{ width: '100%' }}>
+            <Suspense fallback={<CircularProgress />}>
+              <ProductShipping
+                product={product}
+                isMobile={isMobile}
+                isLoggedIn={isLoggedIn}
               />
             </Suspense>
           </Box>

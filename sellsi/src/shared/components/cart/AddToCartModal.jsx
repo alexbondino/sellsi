@@ -29,7 +29,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import QuantitySelector from '../forms/QuantitySelector/QuantitySelector';
 import PriceDisplay from '../display/price/PriceDisplay';
 import { CheckoutSummaryImage } from '../../../components/UniversalProductImage'; // Imagen universal con fallbacks
-import { useOptimizedShippingValidation } from '../../../domains/buyer/pages/cart/hooks/useOptimizedShippingValidation';
+import { useUnifiedShippingValidation } from '../../hooks/shipping/useUnifiedShippingValidation';
 import { calculatePriceForQuantity } from '../../../utils/priceCalculation';
 import { supabase } from '../../../services/supabase';
 
@@ -99,18 +99,30 @@ const AddToCartModal = ({
     const enrichProductWithRegions = async () => {
       if (!open || !product?.id) return;
 
+      console.log('🔄 [DEBUG MODAL] Iniciando enriquecimiento de producto:', {
+        productId: product.id,
+        hasExistingRegions: !!(product.shippingRegions?.length || product.delivery_regions?.length)
+      });
+
       // Si el producto ya tiene regiones, no necesitamos cargarlas
       if (product.shippingRegions?.length > 0 || 
           product.delivery_regions?.length > 0 || 
           product.shipping_regions?.length > 0 ||
           product.product_delivery_regions?.length > 0) {
+        console.log('✅ [DEBUG MODAL] Producto ya tiene regiones, usando existentes');
         setEnrichedProduct(product);
         return;
       }
 
       // Cargar regiones de despacho desde la base de datos
+      console.log('📡 [DEBUG MODAL] Cargando regiones desde Supabase...');
       const shippingRegions = await loadProductShippingRegions(product.id);
       
+      console.log('📦 [DEBUG MODAL] Regiones cargadas:', {
+        count: shippingRegions.length,
+        regions: shippingRegions.map(r => ({ region: r.region, price: r.price, days: r.delivery_days }))
+      });
+
       const productWithRegions = {
         ...product,
         shippingRegions,
@@ -120,6 +132,7 @@ const AddToCartModal = ({
       };
 
       setEnrichedProduct(productWithRegions);
+      console.log('✅ [DEBUG MODAL] Producto enriquecido establecido');
     };
 
     enrichProductWithRegions();
@@ -169,7 +182,10 @@ const AddToCartModal = ({
   }), [enrichedProduct]);
 
   // Hook para validación de despacho optimizado - Solo bajo demanda
-  const { validateSingleProduct, getUserRegionName } = useOptimizedShippingValidation();
+  const { validateSingleProduct, getUserRegionName, userRegion: hookUserRegion } = useUnifiedShippingValidation();
+
+  // Usar la región del hook o la prop (fallback)
+  const effectiveUserRegion = hookUserRegion || userRegion;
 
   // Estado para validación de shipping (solo cuando se necesite)
   const [shippingValidation, setShippingValidation] = useState(null);
@@ -177,7 +193,7 @@ const AddToCartModal = ({
 
   // Función para validar shipping solo cuando se abre el modal
   const validateShippingOnDemand = useCallback(async () => {
-    if (!userRegion || !enrichedProduct || isLoadingRegions || isLoadingUserProfile) {
+    if (!effectiveUserRegion || !enrichedProduct || isLoadingRegions || isLoadingUserProfile) {
       setShippingValidation(null);
       return;
     }
@@ -192,16 +208,21 @@ const AddToCartModal = ({
     } finally {
       setIsValidatingShipping(false);
     }
-  }, [enrichedProduct, userRegion, validateSingleProduct, isLoadingRegions, isLoadingUserProfile]);
+  }, [enrichedProduct, effectiveUserRegion, validateSingleProduct, isLoadingRegions, isLoadingUserProfile]);
 
   // Validar shipping solo cuando se abre el modal y los datos están listos
   useEffect(() => {
-    if (open && !isLoadingRegions && !isLoadingUserProfile && userRegion && enrichedProduct) {
-      validateShippingOnDemand();
+    if (open && !isLoadingRegions && !isLoadingUserProfile && effectiveUserRegion && enrichedProduct) {
+      // ESPERAR UN TICK para asegurar que las regiones se hayan cargado completamente
+      const timer = setTimeout(() => {
+        validateShippingOnDemand();
+      }, 100); // Pequeño delay para asegurar sincronización
+      
+      return () => clearTimeout(timer);
     } else {
       setShippingValidation(null);
     }
-  }, [open, isLoadingRegions, isLoadingUserProfile, userRegion, enrichedProduct, validateShippingOnDemand]);
+  }, [open, isLoadingRegions, isLoadingUserProfile, effectiveUserRegion, enrichedProduct, validateShippingOnDemand]);
 
   // ============================================================================
   // CÁLCULOS DE PRECIOS DINÁMICOS
@@ -593,7 +614,7 @@ const AddToCartModal = ({
     }
 
     // Si no hay región del usuario después de cargar el perfil, mostrar mensaje de configuración
-    if (!userRegion) {
+    if (!effectiveUserRegion) {
       return (
         <Alert severity="info" sx={{ mt: 2 }}>
           <Typography variant="body2">
@@ -622,7 +643,7 @@ const AddToCartModal = ({
           icon={<CheckIcon />}
         >
           <Typography variant="body2" sx={{ fontWeight: 600 }}>
-            Este producto tiene despacho hacia tu región: {getUserRegionName(userRegion)}
+            Este producto tiene despacho hacia tu región: {getUserRegionName(effectiveUserRegion)}
           </Typography>
           {shippingValidation.shippingInfo && (
             <Typography variant="caption" color="text.secondary">
