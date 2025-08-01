@@ -568,7 +568,13 @@ const BuyerCart = () => {
           sx={{
             backgroundColor: 'white',
             width: '100%',
-            maxWidth: '1450px',
+            maxWidth: {
+              xs: 340,
+              sm: 480,
+              md: 700,
+              lg: 1360,
+              xl: 1560,
+            },
             mx: 'auto',
             p: 3,
             mb: 6,

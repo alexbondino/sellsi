@@ -6,7 +6,6 @@ import { AppProviders } from '../infrastructure/providers/AppProviders';
 import { AppRouter } from '../infrastructure/router/AppRouter';
 import { AppShell } from '../shared/components/layout/AppShell';
 import { useAuth } from '../infrastructure/providers/AuthProvider';
-import { useAppInitialization } from '../shared/hooks/useAppInitialization';
 import { useLocation } from 'react-router-dom';
 
 // ============================================================================
@@ -16,7 +15,6 @@ function AppContent() {
   const location = useLocation();
   const scrollTargets = useRef({});
   const { session, loadingUserStatus } = useAuth();
-  const { isInitialized } = useAppInitialization();
 
   // Loader global centrado SOLO para rutas privadas
   const isPublicRoute = 

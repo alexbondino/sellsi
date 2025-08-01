@@ -121,6 +121,7 @@ export const RoleProvider = ({ children }) => {
   // Determinar si la ruta es de dashboard
   const isProductPageRoute = location.pathname.match(/^\/marketplace\/product\/[^/]+(\/[^/]+)?$/);
   const isCatalogRoute = location.pathname.startsWith('/catalog/');
+  const isCartRoute = location.pathname.startsWith('/buyer/cart'); // ✅ NUEVO: Incluir carrito para mostrar sidebar
   const isTermsOrPrivacyRoute = 
     location.pathname === '/terms-and-conditions' || 
     location.pathname === '/privacy-policy';
@@ -136,6 +137,7 @@ export const RoleProvider = ({ children }) => {
       ) ||
       isProductPageRoute ||
       isCatalogRoute || // ✅ AGREGADO: Mostrar SideBar en rutas de catálogo
+      isCartRoute || // ✅ NUEVO: Mostrar SideBar en rutas del carrito
       isTermsOrPrivacyRoute
     );
 
