@@ -5,7 +5,7 @@
 import { supabase } from '../../../services/supabase'
 import { PAYMENT_STATUS } from '../constants/paymentMethods'
 import { trackUserAction } from '../../../services/security'
-import khipuService from '../../../services/payment'
+import { default as khipuService } from '../../../services/payment/khipuService'
 
 class CheckoutService {
   

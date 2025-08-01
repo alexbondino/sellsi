@@ -391,7 +391,7 @@ const AddToCartModal = ({
     return (
       <Box>
         <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 600 }}>
-          Precios antes del envío
+          Precio antes de envío
         </Typography>
         <Stack spacing={1}>
           {priceTiers.map((tier, index) => {

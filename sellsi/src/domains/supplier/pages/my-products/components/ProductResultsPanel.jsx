@@ -78,7 +78,7 @@ const ProductResultsPanel = ({
           }}
         >
           <Typography variant="body2">
-            Tarifa por Servicio (2%)
+            Tarifa por Servicio (3%)
           </Typography>
           <Typography variant="body2" fontWeight="600">
             {calculations.isRange

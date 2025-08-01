@@ -71,7 +71,7 @@ const PaymentMethod = () => {
     const initializeCheckoutData = async () => {
       const subtotal = getSubtotal()
       const tax = Math.round(subtotal * 0.19) // IVA 19%
-      const serviceFee = Math.round(subtotal * 0.02) // Comisión por servicio 2%
+      const serviceFee = Math.round(subtotal * 0.03) // Comisión por servicio 3%
       
       // ✅ NUEVO: Calcular costo REAL de envío basado en regiones de despacho
       const shipping = await calculateRealShippingCost(items)

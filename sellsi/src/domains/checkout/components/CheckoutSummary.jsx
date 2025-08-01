@@ -277,7 +277,7 @@ const CheckoutSummary = ({
               </Typography>
             </Stack>
             
-            {/* Comisión por servicio (2%) eliminada */}
+            {/* Comisión por servicio (3%) eliminada */}
             
             <Stack direction="row" justifyContent="space-between">
               <Typography variant="body2">Envío</Typography>

@@ -100,7 +100,7 @@ const calculateMaximumIncome = (tramos, stock) => {
  * Centraliza la lógica que estaba en productCalculations.js
  */
 export const calculateProductEarnings = (formData) => {
-  const SERVICE_RATE = 0.02; // 2% de tarifa de servicio
+  const SERVICE_RATE = 0.03; // 3% de tarifa de servicio
 
   if (formData.pricingType === 'Unidad' && formData.precioUnidad && formData.stock) {
     // Cálculo simple para precio por unidad

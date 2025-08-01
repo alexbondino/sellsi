@@ -44,7 +44,7 @@ const useCheckout = create(
             items: cartData.items || [],
             subtotal: cartData.subtotal || 0,
             tax: cartData.tax || Math.round((cartData.subtotal || 0) * 0.19), // IVA 19%
-            serviceFee: cartData.serviceFee || Math.round((cartData.subtotal || 0) * 0.02), // Comisión 2%
+            serviceFee: cartData.serviceFee || Math.round((cartData.subtotal || 0) * 0.03), // Comisión 3%
             shipping: cartData.shipping || 0,
             total: cartData.total || 0,
             currency: 'CLP'
