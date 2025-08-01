@@ -8,13 +8,12 @@ import {
   Button,
   IconButton,
   Box,
-  Chip,
-  Avatar,
   TextField,
 } from '@mui/material';
 import {
   Add as AddIcon,
   Remove as RemoveIcon,
+  Verified as VerifiedIcon,
 } from '@mui/icons-material';
 
 // Custom hooks - OPTIMIZADO: Usar hook optimizado con caché global
@@ -52,6 +51,7 @@ const ProductCardBuyerContext = React.memo(
     const precioOriginal = product.precioOriginal || product.originalPrice;
     const stock = product.stock || product.maxStock || 50;
     const negociable = product.negociable || product.negotiable || false;
+    const proveedorVerificado = product.proveedorVerificado || product.supplierVerified || false;
 
     // Hook to get price tiers (maintain for compatibility)
     const {
@@ -148,23 +148,26 @@ const ProductCardBuyerContext = React.memo(
               // minHeight and flexGrow removed to let image use full space
             }}
           >
-            {/* CHIP (sin avatar en mobile) */}
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Chip
-                label={proveedor}
-                size="small"
-                variant="outlined"
-                color="primary"
+            {/* PROVIDER NAME (sin avatar ni chip en mobile) */}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              <Typography
+                variant="body2"
                 sx={{
-                  fontSize: '0.65rem',
-                  height: 20,
-                  px: 0.5,
-                  borderRadius: 1.5,
-                  maxWidth: 250,
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
+                  fontSize: 12,
+                  fontWeight: 500,
+                  color: 'text.secondary',
                 }}
-              />
+              >
+                {proveedor}
+              </Typography>
+              {proveedorVerificado && (
+                <VerifiedIcon 
+                  sx={{ 
+                    fontSize: 16, 
+                    color: '#1976d2' 
+                  }} 
+                />
+              )}
             </Box>
             {/* MINIMUM PURCHASE */}
             <Box>
@@ -206,34 +209,26 @@ const ProductCardBuyerContext = React.memo(
               // minHeight and flexGrow removed to let image use full space
             }}
           >
-            {/* CHIP + AVATAR (arriba en desktop) */}
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Avatar
+            {/* PROVIDER NAME + VERIFICATION (sin avatar ni chip en desktop) */}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              <Typography
+                variant="body2"
                 sx={{
-                  width: 24,
-                  height: 24,
-                  mr: 1,
-                  fontSize: '0.75rem',
-                  display: 'flex',
+                  fontSize: 12,
+                  fontWeight: 500,
+                  color: 'text.secondary',
                 }}
               >
-                {proveedor?.charAt(0)}
-              </Avatar>
-              <Chip
-                label={proveedor}
-                size="small"
-                variant="outlined"
-                color="primary"
-                sx={{
-                  fontSize: '0.8rem',
-                  height: 24,
-                  px: 1.5,
-                  borderRadius: 1.5,
-                  maxWidth: '100%',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                }}
-              />
+                {proveedor}
+              </Typography>
+              {proveedorVerificado && (
+                <VerifiedIcon 
+                  sx={{ 
+                    fontSize: 16, 
+                    color: '#1976d2' 
+                  }} 
+                />
+              )}
             </Box>
             {/* MINIMUM PURCHASE */}
             <Box>

@@ -45,14 +45,14 @@ export function useProducts() {
               const supplierIdsStr = supplierIds.map(id => String(id).trim())
               const { data: usersData, error: usersError } = await supabase
                 .from('users')
-                .select('user_id, user_nm, logo_url, descripcion_proveedor') // ✅ AGREGAR logo_url y descripcion_proveedor
+                .select('user_id, user_nm, logo_url, descripcion_proveedor, verified') // ✅ AGREGAR campo verified
                 .in('user_id', supplierIdsStr)
               if (usersError) {
                 console.error('Error al consultar users:', usersError)
               }
               if (usersData) {
                 usersMap = Object.fromEntries(
-                  usersData.map((u) => [u.user_id, { name: u.user_nm, logo_url: u.logo_url, descripcion_proveedor: u.descripcion_proveedor }]) // ✅ GUARDAR todos los campos
+                  usersData.map((u) => [u.user_id, { name: u.user_nm, logo_url: u.logo_url, descripcion_proveedor: u.descripcion_proveedor, verified: u.verified }]) // ✅ AGREGAR campo verified
                 )
               }
             }
@@ -91,6 +91,7 @@ export function useProducts() {
                 proveedor: usersMap[p.supplier_id]?.name || "Proveedor no encontrado", // ✅ USAR .name
                 supplier_logo_url: usersMap[p.supplier_id]?.logo_url, // ✅ AGREGAR logo del proveedor
                 descripcion_proveedor: usersMap[p.supplier_id]?.descripcion_proveedor, // ✅ AGREGAR descripcion_proveedor
+                proveedorVerificado: usersMap[p.supplier_id]?.verified || false, // ✅ AGREGAR estado de verificación del proveedor
                 imagen: imagenPrincipal,
                 thumbnail_url: thumbnailUrl, // ✅ NUEVO: Agregar thumbnail_url
                 precio: minPrice,

@@ -19,14 +19,25 @@ export const useProductSorting = (productos = []) => {
       return []
     }
 
-    // ✅ OPTIMIZACIÓN: Solo crear copia si necesitamos ordenar
-    if (ordenamiento === 'relevancia') {
-      return productos // No necesitamos ordenar si es relevancia
-    }
-
     const productosArray = [...productos] // Crear copia para ordenar
 
     switch (ordenamiento) {
+      case 'relevancia':
+        // ✅ NUEVO: Ordenamiento por proveedor verificado + alfabético
+        return productosArray.sort((a, b) => {
+          // Primero ordenar por verificación del proveedor (verificados primero)
+          const aVerificado = a.proveedorVerificado || a.supplierVerified || false;
+          const bVerificado = b.proveedorVerificado || b.supplierVerified || false;
+          
+          if (aVerificado !== bVerificado) {
+            return bVerificado ? 1 : -1; // Verificados primero
+          }
+          
+          // Dentro del mismo grupo de verificación, ordenar alfabéticamente por nombre de producto
+          const aNombre = (a.nombre || a.name || '').toLowerCase();
+          const bNombre = (b.nombre || b.name || '').toLowerCase();
+          return aNombre.localeCompare(bNombre, 'es', { sensitivity: 'base' });
+        });
       case 'menor-precio':
         return productosArray.sort((a, b) => (a.precio || 0) - (b.precio || 0))
       case 'mayor-precio':
