@@ -39,6 +39,7 @@ export const useProductPricingLogic = (formData, updateField) => {
    * Maneja eventos blur con lógica de sincronización automática
    * - Actualiza MIN/MAX automáticamente entre tramos
    * - Valida ranges y corrige valores incorrectos
+   * - 🔧 FIX 1: Sincroniza compraMinima con primer tramo
    */
   const handleTramoBlur = useCallback((index, field, value) => {
     const newTramos = [...formData.tramos];
@@ -49,6 +50,15 @@ export const useProductPricingLogic = (formData, updateField) => {
       const rango1Max = parseInt(value) || 0;
       const rango2Min = rango1Max + 1;
       newTramos[1] = { ...newTramos[1], min: rango2Min.toString() };
+    }
+
+    // 🔧 FIX 1: Si se modifica el MIN del primer tramo, sincronizar con compraMinima
+    if (index === 0 && field === 'min') {
+      const primerTramoMin = parseInt(value) || 1;
+      if (primerTramoMin > 0 && parseInt(formData.compraMinima) !== primerTramoMin) {
+        console.log(`🔄 [useProductPricingLogic] Sincronizando compra mínima desde primer tramo: ${formData.compraMinima} -> ${primerTramoMin}`);
+        updateField('compraMinima', primerTramoMin.toString());
+      }
     }
 
     // Lógica para rangos 2+: MIN = MAX del rango anterior + 1
@@ -85,7 +95,7 @@ export const useProductPricingLogic = (formData, updateField) => {
     }
 
     updateField('tramos', newTramos);
-  }, [formData.tramos, updateField]);
+  }, [formData.tramos, formData.compraMinima, updateField]);
 
   /**
    * Agrega un nuevo tramo con lógica de cálculo automático

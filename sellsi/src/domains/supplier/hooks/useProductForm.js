@@ -100,8 +100,92 @@ export const useProductForm = (productId = null) => {
   const [touched, setTouched] = useState({})
   const [isDirty, setIsDirty] = useState(false)
 
-  // Modo de edición
+  // 🔧 FIX EDIT: Estado original para detectar cambios reales en modo edición
+  const [originalFormData, setOriginalFormData] = useState(() => {
+    if (productId) {
+      const product = uiProducts.find(
+        (p) => p.productid?.toString() === productId?.toString()
+      )
+      return product ? mapProductToForm(product) : initialFormData
+    }
+    return null
+  })
+
+  // Modo de edición - MOVIDO AQUÍ ANTES DE useMemo
   const isEditMode = Boolean(productId)
+
+  // 🔧 FIX 4: Cálculo de isValid más robusto usando validación en tiempo real
+  const isValid = React.useMemo(() => {
+    const validationResult = ProductValidator.validateProduct(formData);
+    return validationResult.isValid;
+  }, [formData]);
+
+  // 🔧 FIX EDIT: Función para comparar profundamente los datos del formulario
+  const hasActualChanges = React.useMemo(() => {
+    if (!isEditMode || !originalFormData) {
+      return true; // En modo creación, siempre considerar que hay cambios
+    }
+
+    // Función auxiliar para comparar arrays de objetos
+    const arraysEqual = (arr1, arr2) => {
+      if (arr1.length !== arr2.length) return false;
+      return arr1.every((item, index) => {
+        const item2 = arr2[index];
+        if (typeof item === 'object' && typeof item2 === 'object') {
+          return JSON.stringify(item) === JSON.stringify(item2);
+        }
+        return item === item2;
+      });
+    };
+
+    // Función auxiliar para comparar imágenes (solo URLs y nombres, no metadatos)
+    const imagesEqual = (images1, images2) => {
+      if (images1.length !== images2.length) return false;
+      return images1.every((img1, index) => {
+        const img2 = images2[index];
+        return img1.url === img2.url && img1.name === img2.name;
+      });
+    };
+
+    // Comparar campos básicos
+    const basicFieldsChanged = 
+      formData.nombre !== originalFormData.nombre ||
+      formData.descripcion !== originalFormData.descripcion ||
+      formData.categoria !== originalFormData.categoria ||
+      formData.stock !== originalFormData.stock ||
+      formData.compraMinima !== originalFormData.compraMinima ||
+      formData.pricingType !== originalFormData.pricingType ||
+      formData.precioUnidad !== originalFormData.precioUnidad ||
+      formData.negociable !== originalFormData.negociable ||
+      formData.activo !== originalFormData.activo;
+
+    // Comparar tramos
+    const tramosChanged = !arraysEqual(formData.tramos, originalFormData.tramos);
+
+    // Comparar imágenes (solo URLs, no metadatos como file)
+    const imagenesChanged = !imagesEqual(formData.imagenes, originalFormData.imagenes);
+
+    // Comparar especificaciones
+    const specificationsChanged = !arraysEqual(formData.specifications, originalFormData.specifications);
+
+    // Comparar regiones de entrega
+    const shippingRegionsChanged = !arraysEqual(formData.shippingRegions, originalFormData.shippingRegions);
+
+    const hasChanges = basicFieldsChanged || tramosChanged || imagenesChanged || specificationsChanged || shippingRegionsChanged;
+
+    console.log('🔍 [hasActualChanges] Detección de cambios:', {
+      basicFieldsChanged,
+      tramosChanged,
+      imagenesChanged,
+      specificationsChanged,
+      shippingRegionsChanged,
+      hasChanges
+    });
+
+    return hasChanges;
+  }, [formData, originalFormData, isEditMode]);
+
+  // Estado de carga
   const isLoading =
     operationStates.creating || operationStates.updating[productId]
 
@@ -144,6 +228,12 @@ export const useProductForm = (productId = null) => {
             url: url,
             name: url.split('/').pop() || `imagen_${index + 1}`,
             isExisting: true,
+            // 🔧 FIX EDIT: Crear un objeto file simulado para evitar errores de validación
+            file: {
+              type: 'image/jpeg', // Tipo por defecto para imágenes existentes
+              name: url.split('/').pop() || `imagen_${index + 1}`,
+              size: 0, // Tamaño 0 para identificar como existente
+            }
           }))
         : [],
         
@@ -212,6 +302,13 @@ export const useProductForm = (productId = null) => {
         }))
       
       productData.priceTiers = validTiers
+      
+      // 🔧 FIX 1: SINCRONIZAR compraMinima con el primer tramo
+      if (validTiers.length > 0) {
+        const primerTramoMin = validTiers[0].min
+        console.log(`🔄 [mapFormToProduct] Sincronizando compra mínima con primer tramo: ${productData.minimum_purchase} -> ${primerTramoMin}`)
+        productData.minimum_purchase = primerTramoMin
+      }
       
       }
 
@@ -525,7 +622,8 @@ export const useProductForm = (productId = null) => {
     
     // Utilidades
     hasErrors: Object.values(errors).some((v) => !!v),
-    isValid: Object.values(errors).every((v) => !v),
+    isValid, // 🔧 FIX 4: Usar el isValid calculado con useMemo para mayor precisión
+    hasActualChanges, // 🔧 FIX EDIT: Nueva funcionalidad para detectar cambios reales
   }
 }
 

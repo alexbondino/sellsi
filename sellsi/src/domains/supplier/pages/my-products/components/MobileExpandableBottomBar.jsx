@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -20,11 +20,56 @@ const MobileExpandableBottomBar = ({
   calculations,
   formData,
   isValid,
+  hasActualChanges, // 🔧 FIX EDIT: Para detectar cambios reales
   isLoading,
   isEditMode,
   onSubmit,
 }) => {
   const [isPanelExpanded, setIsPanelExpanded] = useState(false);
+
+  // 🔧 FIX EDIT: Lógica para habilitar/deshabilitar botón según el modo
+  const isButtonDisabled = React.useMemo(() => {
+    if (isLoading) return true;
+    if (!isValid) return true;
+    
+    // En modo edición, solo habilitar si hay cambios reales
+    if (isEditMode && hasActualChanges !== undefined) {
+      return !hasActualChanges;
+    }
+    
+    // En modo creación, solo verificar validez
+    return false;
+  }, [isLoading, isValid, isEditMode, hasActualChanges]);
+
+  // 🔧 FIX 3: Bloquear scroll del body cuando el panel está expandido
+  useEffect(() => {
+    if (isPanelExpanded) {
+      // Guardar el scroll actual y bloquear
+      const scrollY = window.scrollY;
+      document.body.style.position = 'fixed';
+      document.body.style.top = `-${scrollY}px`;
+      document.body.style.width = '100%';
+      document.body.style.overflow = 'hidden';
+    } else {
+      // Restaurar el scroll
+      const scrollY = document.body.style.top;
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.width = '';
+      document.body.style.overflow = '';
+      if (scrollY) {
+        window.scrollTo(0, parseInt(scrollY || '0') * -1);
+      }
+    }
+
+    // Cleanup al desmontar el componente
+    return () => {
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.width = '';
+      document.body.style.overflow = '';
+    };
+  }, [isPanelExpanded]);
 
   return (
     <>
@@ -94,7 +139,7 @@ const MobileExpandableBottomBar = ({
               variant="contained"
               size="small"
               onClick={onSubmit}
-              disabled={!isValid || isLoading}
+              disabled={isButtonDisabled} // 🔧 FIX EDIT: Usar nueva lógica condicional
               sx={{
                 py: 0.4,
                 px: 1.2,

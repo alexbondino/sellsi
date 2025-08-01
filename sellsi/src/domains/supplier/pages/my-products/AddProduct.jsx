@@ -354,6 +354,7 @@ const AddProduct = () => {
     touched,
     isLoading,
     isValid,
+    hasActualChanges, // 🔧 FIX EDIT: Para detectar cambios reales en modo edición
     updateField,
     handleFieldBlur,
     handlePricingTypeChange,
@@ -380,6 +381,12 @@ const AddProduct = () => {
 
   // Estado local para errores de imágenes
   const [imageError, setImageError] = useState('');
+
+  // 🔧 FIX 2: Estado para prevenir múltiples clicks del botón submit
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // 🔧 FIX 2C: Estado adicional para indicar éxito y navegación pendiente
+  const [isNavigating, setIsNavigating] = useState(false);
 
   // Estado shippingRegions para mapeo con Supabase
   const [shippingRegions, setShippingRegions] = useState([]);
@@ -532,6 +539,14 @@ const AddProduct = () => {
   const handleSubmit = async e => {
     console.log('🔥 [AddProduct.handleSubmit] Iniciando submit')
     e.preventDefault();
+
+    // 🔧 FIX 2C: Prevenir múltiples clicks - considerar tanto isSubmitting como isNavigating
+    if (isSubmitting || isNavigating) {
+      console.log('⚠️ [AddProduct.handleSubmit] Submit ya en progreso o navegando, ignorando...')
+      return;
+    }
+
+    setIsSubmitting(true);
     markSubmitAttempt();
 
     console.log('🔍 [AddProduct.handleSubmit] Validando formulario...')
@@ -548,6 +563,8 @@ const AddProduct = () => {
       
       showValidationError(contextualMessage);
       
+      // Liberar el estado de submit
+      setIsSubmitting(false);
       return;
     }
 
@@ -619,9 +636,13 @@ const AddProduct = () => {
         '🎉'
       );
 
+      // 🔧 FIX 2C: Marcar que estamos navegando (esto deshabilitará el botón permanentemente)
+      setIsNavigating(true);
+
       // 4. Navegar después de un breve delay
       setTimeout(() => {
         navigate('/supplier/myproducts');
+        // No es necesario liberar estados aquí porque el componente se desmontará
       }, 1500);
 
     } catch (error) {
@@ -639,7 +660,11 @@ const AddProduct = () => {
           error.message || 'Error inesperado al procesar el producto'
         );
       }
+      
+      // 🔧 FIX 2C: Solo liberar el estado en caso de error (no tocamos isNavigating)
+      setIsSubmitting(false);
     }
+    // 🔧 FIX 2C: No hay finally - en caso de éxito, isNavigating permanece true hasta que el componente se desmonte
   };
 
   const handleBack = () => {
@@ -785,7 +810,8 @@ const AddProduct = () => {
         <ProductResultsPanel
           calculations={calculations}
           isValid={isValid}
-          isLoading={isLoading}
+          hasActualChanges={hasActualChanges} // 🔧 FIX EDIT: Pasar hasActualChanges
+          isLoading={isLoading || isSubmitting || isNavigating}
           isEditMode={isEditMode}
           onBack={handleBack}
           onSubmit={handleSubmit}
@@ -799,7 +825,8 @@ const AddProduct = () => {
         calculations={calculations}
         formData={formData}
         isValid={isValid}
-        isLoading={isLoading}
+        hasActualChanges={hasActualChanges} // 🔧 FIX EDIT: Pasar hasActualChanges
+        isLoading={isLoading || isSubmitting || isNavigating}
         isEditMode={isEditMode}
         onSubmit={handleSubmit}
       />

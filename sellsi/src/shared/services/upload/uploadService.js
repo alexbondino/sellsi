@@ -215,8 +215,30 @@ export class UploadService {
    */
   static async uploadMultipleImagesWithThumbnails(files, productId, supplierId) {
     try {
+      // 🔧 FIX EDIT: Filtrar imágenes existentes para no procesarlas
+      const newFiles = files.filter(file => {
+        // Si tiene isExisting o si el file.size es 0 (marcador de existente), saltarlo
+        const isExisting = file.isExisting || (file.file && file.file.size === 0);
+        if (isExisting) {
+          console.log('🔍 [uploadMultipleImages] Saltando imagen existente:', file.name || file.file?.name);
+        }
+        return !isExisting;
+      });
+
+      console.log(`📊 [uploadMultipleImages] Total archivos: ${files.length}, Nuevos: ${newFiles.length}, Existentes: ${files.length - newFiles.length}`);
+
+      // Si no hay archivos nuevos que subir, retornar éxito
+      if (newFiles.length === 0) {
+        console.log('✅ [uploadMultipleImages] No hay archivos nuevos que subir');
+        return {
+          success: true,
+          data: [],
+          message: 'No hay archivos nuevos que procesar'
+        };
+      }
+
       // Subir imágenes en paralelo - solo thumbnails para la primera (principal)
-      const uploadPromises = files.map((file, index) => 
+      const uploadPromises = newFiles.map((file, index) => 
         this.uploadImageWithThumbnail(file, productId, supplierId, index === 0)
       )
 
@@ -231,12 +253,12 @@ export class UploadService {
           const errorMsg = result.status === 'rejected' 
             ? (result.reason?.message || 'Error desconocido')
             : (result.value?.error || 'Error de procesamiento')
-          errors.push(`Archivo ${files[index].name}: ${errorMsg}`)
+          errors.push(`Archivo ${newFiles[index].name || newFiles[index].file?.name}: ${errorMsg}`)
         }
       })
 
       return {
-        success: successful.length > 0,
+        success: successful.length > 0 || files.length > newFiles.length, // Éxito si subió algo O si había existentes
         data: successful,
         errors: errors.length > 0 ? errors : undefined,
       }

@@ -18,11 +18,33 @@ import { formatPrice } from '../../../../../shared/utils/formatters';
 const ProductResultsPanel = ({
   calculations,
   isValid,
+  hasActualChanges, // 🔧 FIX EDIT: Para detectar cambios reales
   isLoading,
   isEditMode,
   onBack,
   onSubmit,
 }) => {
+  // 🔧 FIX EDIT: Lógica para habilitar/deshabilitar botón según el modo
+  const isButtonDisabled = React.useMemo(() => {
+    if (isLoading) return true;
+    if (!isValid) return true;
+    
+    // En modo edición, solo habilitar si hay cambios reales
+    if (isEditMode && hasActualChanges !== undefined) {
+      return !hasActualChanges;
+    }
+    
+    // En modo creación, solo verificar validez
+    return false;
+  }, [isLoading, isValid, isEditMode, hasActualChanges]);
+
+  console.log('🔍 [ProductResultsPanel] Estado del botón:', {
+    isEditMode,
+    isValid,
+    hasActualChanges,
+    isLoading,
+    isButtonDisabled
+  });
   return (
     <Paper sx={{ p: 3, position: 'sticky', top: 100 }}>
       <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
@@ -117,7 +139,7 @@ const ProductResultsPanel = ({
         <Button
           variant="contained"
           onClick={onSubmit}
-          disabled={!isValid || isLoading}
+          disabled={isButtonDisabled} // 🔧 FIX EDIT: Usar nueva lógica condicional
           sx={{ 
             textTransform: 'none', 
             fontWeight: 600,
