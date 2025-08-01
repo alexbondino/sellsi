@@ -156,8 +156,10 @@ const ProductsSection = React.memo(
       if (isProviderView) {
         return (
           <>
-            <BusinessIcon sx={{ color: 'primary.main', verticalAlign: 'middle', fontSize: { xs: 24, md: 32 }, mr: 1 }} />
-            Proveedores Disponibles
+            <BusinessIcon sx={{ color: '#1976d2', verticalAlign: 'middle', fontSize: { xs: 24, md: 32 }, mr: 1 }} />
+            <span style={{ color: '#1976d2' }}>
+              Proveedores Disponibles
+            </span>
           </>
         );
       }

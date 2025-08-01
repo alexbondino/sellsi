@@ -312,32 +312,6 @@ const ProductHeader = React.memo(({
           <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', mt: 2, mb: 4, width: '100%', gap: 1 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
               <Typography variant="body2" sx={{ color: 'text.secondary', textAlign: 'center' }}>
-                ¿Quieres saber los detalles de todo?
-              </Typography>
-              <Button
-                variant="text"
-                size="small"
-                sx={{
-                  color: 'primary.main',
-                  textTransform: 'none',
-                  fontWeight: 600,
-                  p: 0,
-                  minWidth: 'auto',
-                  textAlign: 'center',
-                  '&:hover': {
-                    backgroundColor: 'transparent',
-                    textDecoration: 'underline',
-                  },
-                }}
-                onClick={handleOpenQuotationModal}
-              >
-                Cotiza aquí
-              </Button>
-            </Box>
-            {finalTiers && finalTiers.length > 0 && isLoggedIn && (
-          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', mb: 4, width: '100%', gap: 1 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
-              <Typography variant="body2" sx={{ color: 'text.secondary', textAlign: 'center' }}>
                 ¿Necesitas alguna condición especial?
               </Typography>
               <Button
@@ -360,8 +334,30 @@ const ProductHeader = React.memo(({
                 Contacta con el proveedor
               </Button>
             </Box>
-          </Box>
-        )}
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
+              <Typography variant="body2" sx={{ color: 'text.secondary', textAlign: 'center' }}>
+                ¿Quieres saber los detalles de todo?
+              </Typography>
+              <Button
+                variant="text"
+                size="small"
+                sx={{
+                  color: 'primary.main',
+                  textTransform: 'none',
+                  fontWeight: 600,
+                  p: 0,
+                  minWidth: 'auto',
+                  textAlign: 'center',
+                  '&:hover': {
+                    backgroundColor: 'transparent',
+                    textDecoration: 'underline',
+                  },
+                }}
+                onClick={handleOpenQuotationModal}
+              >
+                Cotiza aquí
+              </Button>
+            </Box>
           </Box>
         )}
       </Box>
@@ -754,56 +750,56 @@ const ProductHeader = React.memo(({
           
           {/* Botón de Cotización - Solo para precio único y si está logueado */}
           {!(tiers && tiers.length > 0) && isLoggedIn && (
-            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', mt: 2, mb: 4, width: '100%', gap: 1 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
-                <Typography variant="body2" sx={{ color: 'text.secondary', textAlign: 'center' }}>
-                  ¿Quieres saber los detalles de todo?
-                </Typography>
-                <Button
-                  variant="text"
-                  size="small"
-                  sx={{
-                    color: 'primary.main',
-                    textTransform: 'none',
-                    fontWeight: 600,
-                    p: 0,
-                    minWidth: 'auto',
-                    textAlign: 'center',
-                    '&:hover': {
-                      backgroundColor: 'transparent',
-                      textDecoration: 'underline',
-                    },
-                  }}
-                  onClick={handleOpenQuotationModal}
-                >
-                  Cotiza aquí
-                </Button>
-              </Box>
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
-                <Typography variant="body2" sx={{ color: 'text.secondary', textAlign: 'center' }}>
-                  ¿Necesitas alguna condición especial?
-                </Typography>
-                <Button
-                  variant="text"
-                  size="small"
-                  sx={{
-                    color: 'primary.main',
-                    textTransform: 'none',
-                    fontWeight: 600,
-                    p: 0,
-                    minWidth: 'auto',
-                    textAlign: 'center',
-                    '&:hover': {
-                      backgroundColor: 'transparent',
-                      textDecoration: 'underline',
-                    },
-                  }}
-                  onClick={handleOpenSupplierModal}
-                >
-                  Contacta con el proveedor
-                </Button>
-              </Box>
+          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', mb: 4, width: '100%', gap: 1 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
+              <Typography variant="body2" sx={{ color: 'text.secondary', textAlign: 'center' }}>
+                ¿Necesitas alguna condición especial?
+              </Typography>
+              <Button
+                variant="text"
+                size="small"
+                sx={{
+                  color: 'primary.main',
+                  textTransform: 'none',
+                  fontWeight: 600,
+                  p: 0,
+                  minWidth: 'auto',
+                  textAlign: 'center',
+                  '&:hover': {
+                    backgroundColor: 'transparent',
+                    textDecoration: 'underline',
+                  },
+                }}
+                onClick={handleOpenSupplierModal}
+              >
+                Contacta con el proveedor
+              </Button>
             </Box>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
+              <Typography variant="body2" sx={{ color: 'text.secondary', textAlign: 'center' }}>
+                ¿Quieres saber los detalles de todo?
+              </Typography>
+              <Button
+                variant="text"
+                size="small"
+                sx={{
+                  color: 'primary.main',
+                  textTransform: 'none',
+                  fontWeight: 600,
+                  p: 0,
+                  minWidth: 'auto',
+                  textAlign: 'center',
+                  '&:hover': {
+                    backgroundColor: 'transparent',
+                    textDecoration: 'underline',
+                  },
+                }}
+                onClick={handleOpenQuotationModal}
+              >
+                Cotiza aquí
+              </Button>
+            </Box>
+          </Box>
           )}
           
           {/* Botones de Compra */}

@@ -84,7 +84,7 @@ export const RoleProvider = ({ children }) => {
     // '/buyer/cart', // ✅ MOVIDO A neutralRoutes
     '/buyer/paymentmethod',
     '/buyer/profile',
-    '/catalog',
+    // '/catalog', // ✅ MOVIDO A neutralRoutes - debe ser accesible para ambos roles
     '/checkout/success',
     '/checkout/cancel',
   ]);
@@ -96,13 +96,14 @@ export const RoleProvider = ({ children }) => {
     '/supplier/my-orders',
     '/supplier/profile',
     '/supplier/marketplace',
-    '/catalog',
+    // '/catalog', // ✅ MOVIDO A neutralRoutes - debe ser accesible para ambos roles
   ]);
 
   const neutralRoutes = new Set([
     '/',
     '/marketplace',
     '/buyer/cart', // ✅ AGREGADO: Carrito accesible para ambos roles
+    '/catalog', // ✅ AGREGADO: Catálogo accesible para ambos roles sin redirección
     '/technicalspecs',
     '/login',
     '/crear-cuenta',
@@ -119,6 +120,7 @@ export const RoleProvider = ({ children }) => {
 
   // Determinar si la ruta es de dashboard
   const isProductPageRoute = location.pathname.match(/^\/marketplace\/product\/[^/]+(\/[^/]+)?$/);
+  const isCatalogRoute = location.pathname.startsWith('/catalog/');
   const isTermsOrPrivacyRoute = 
     location.pathname === '/terms-and-conditions' || 
     location.pathname === '/privacy-policy';
@@ -133,6 +135,7 @@ export const RoleProvider = ({ children }) => {
         location.pathname.startsWith(route)
       ) ||
       isProductPageRoute ||
+      isCatalogRoute || // ✅ AGREGADO: Mostrar SideBar en rutas de catálogo
       isTermsOrPrivacyRoute
     );
 
