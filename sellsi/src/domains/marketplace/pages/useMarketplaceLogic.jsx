@@ -126,13 +126,12 @@ const useMarketplaceLogic = (options = {}) => {
   }, [handleToggleFiltro]);
   // ✅ OPTIMIZACIÓN: Handler para el switch de vistas - memoizado estable
   const handleToggleProviderView = useCallback(() => {
-    setIsProviderView(prev => {
-      const newValue = !prev;
-      // Al cambiar la vista, resetea los filtros activos
-      resetFiltros();
-      return newValue;
-    });
-  }, [resetFiltros]);
+    // ✅ LIMPIAR búsqueda PRIMERO antes de cambiar la vista
+    setBusqueda('');
+    resetFiltros();
+    
+    setIsProviderView(prev => !prev);
+  }, [resetFiltros, setBusqueda]);
   // ✅ OPTIMIZACIÓN: Memoizar todos los handlers que se pasan como props
   const memoSetBusqueda = useCallback(v => setBusqueda(v), [setBusqueda]);
   const memoSetSeccionActiva = useCallback(

@@ -26,23 +26,6 @@ import ClearIcon from '@mui/icons-material/Clear';
 import FilterAltIcon from '@mui/icons-material/FilterAlt';
 import SortIcon from '@mui/icons-material/Sort';
 
-// ✅ OPTIMIZACIÓN: Hook personalizado para debouncing
-const useDebounce = (value, delay) => {
-  const [debouncedValue, setDebouncedValue] = React.useState(value);
-
-  React.useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedValue(value);
-    }, delay);
-
-    return () => {
-      clearTimeout(handler);
-    };
-  }, [value, delay]);
-
-  return debouncedValue;
-};
-
 const SearchBar = ({
   busqueda,
   setBusqueda,
@@ -66,45 +49,18 @@ const SearchBar = ({
   onToggleProviderView = () => {},
   hasSideBar = false, // Para determinar si mostrar el switch
 }) => {
-  // ✅ OPTIMIZACIÓN: Estado local para el input con debouncing
-  const [localBusqueda, setLocalBusqueda] = React.useState(busqueda);
-  const debouncedBusqueda = useDebounce(localBusqueda, 300); // 300ms delay
-
-  // ✅ NUEVO: Estado local para el switch de vistas
-  const [localProviderView, setLocalProviderView] = React.useState(isProviderView);
-
-  // ✅ OPTIMIZACIÓN: Sincronizar el valor debounced con el estado global
-  React.useEffect(() => {
-    if (debouncedBusqueda !== busqueda) {
-      setBusqueda(debouncedBusqueda);
-    }
-  }, [debouncedBusqueda, setBusqueda, busqueda]);
-
-  // ✅ OPTIMIZACIÓN: Sincronizar cambios externos
-  React.useEffect(() => {
-    if (busqueda !== localBusqueda) {
-      setLocalBusqueda(busqueda);
-    }
-  }, [busqueda]);
-
-  // ✅ NUEVO: Sincronizar el estado del switch con el prop externo
-  React.useEffect(() => {
-    if (localProviderView !== isProviderView) {
-      setLocalProviderView(isProviderView);
-    }
-  }, [isProviderView, localProviderView]);
+  // ✅ SOLUCIÓN ROBUSTA: Solo usamos el estado global, debouncing manejado en useMarketplaceState
 
   // ✅ MEJORA DE RENDIMIENTO: Memoización del handler de limpiar búsqueda
   const handleClear = React.useCallback(() => {
-    setLocalBusqueda('');
     setBusqueda('');
   }, [setBusqueda]);
 
   // ✅ MEJORA DE RENDIMIENTO: Handler optimizado para cambio de búsqueda
   const handleSearchChange = React.useCallback(e => {
     const value = e.target.value;
-    setLocalBusqueda(value);
-  }, []);
+    setBusqueda(value);
+  }, [setBusqueda]);
 
   // ✅ MEJORA DE RENDIMIENTO: Memoización del handler de cambio de ordenamiento
   const handleSortChange = React.useCallback(
@@ -113,13 +69,6 @@ const SearchBar = ({
     },
     [setOrdenamiento]
   );
-
-  // ✅ NUEVO: Handler para el switch de vistas productos/proveedores
-  const handleToggleView = React.useCallback(() => {
-    const newValue = !localProviderView;
-    setLocalProviderView(newValue);
-    onToggleProviderView();
-  }, [localProviderView, onToggleProviderView]);
 
   // ✅ MEJORA DE RENDIMIENTO: Memoización de estilos del contenedor principal
   const containerStyles = React.useMemo(
@@ -136,27 +85,35 @@ const SearchBar = ({
     [searchBarMarginLeft]
   );
 
-  // ✅ MEJORA DE RENDIMIENTO: Memoización de estilos del TextField - Estáticos
+  // ✅ MEJORA DE RENDIMIENTO: Memoización de estilos del TextField - Responsivos según vista
   const textFieldStyles = React.useMemo(
     () => ({
-      width: { xs: '30%', sm: '30%', md: '240px' }, // ✅ 40% en xs/sm, tamaño fijo en md+
-      minWidth: { xs: 'auto', sm: 'auto', md: '500px' }, // ✅ Sin minWidth en móviles
+      // ✅ NUEVO: Se agranda 50% cuando está en vista de proveedores
+      width: isProviderView 
+        ? { xs: '45%', sm: '45%', md: '360px' } // 50% más ancho en vista proveedores
+        : { xs: '30%', sm: '30%', md: '240px' }, // Tamaño normal en vista productos
+      minWidth: isProviderView
+        ? { xs: 'auto', sm: 'auto', md: '750px' } // 50% más minWidth en vista proveedores  
+        : { xs: 'auto', sm: 'auto', md: '500px' }, // minWidth normal en vista productos
       '& .MuiOutlinedInput-root': {
         borderRadius: 1.5,
         backgroundColor: 'white',
         height: '36px', // ✅ Altura fija más pequeña
       },
     }),
-    []
+    [isProviderView] // ✅ Dependencia de isProviderView para recalcular cuando cambie
   );
 
-  // ✅ MEJORA DE RENDIMIENTO: Memoización de estilos del FormControl - Estáticos
+  // ✅ MEJORA DE RENDIMIENTO: Memoización de estilos del FormControl - Responsivos según vista
   const formControlStyles = React.useMemo(
     () => ({
-      width: { xs: '47%', sm: '50%', md: 245 }, // ✅ AUMENTADO a 40% para compensar reducción del botón filtros
+      // ✅ AJUSTE: Se adapta al espacio restante cuando SearchBar se agranda en vista proveedores
+      width: isProviderView 
+        ? { xs: '32%', sm: '35%', md: 195 } // Más estrecho cuando SearchBar es más ancho
+        : { xs: '47%', sm: '50%', md: 245 }, // Tamaño normal cuando SearchBar es normal
       minWidth: 'auto', // ✅ Sin minWidth en móviles
     }),
-    []
+    [isProviderView] // ✅ Dependencia de isProviderView
   );
 
   // ✅ OPTIMIZACIÓN: Memoización de estilos del botón - Estáticos
@@ -190,7 +147,7 @@ const SearchBar = ({
           <SearchIcon color="action" fontSize="small" />
         </InputAdornment>
       ),
-      endAdornment: localBusqueda && (
+      endAdornment: busqueda && (
         <InputAdornment position="end">
           <IconButton
             onClick={handleClear}
@@ -203,7 +160,7 @@ const SearchBar = ({
         </InputAdornment>
       ),
     }),
-    [localBusqueda, handleClear]
+    [busqueda, handleClear]
   );
 
   // ✅ OPTIMIZACIÓN: Memoización de MenuProps para Select
@@ -238,9 +195,9 @@ const SearchBar = ({
       {/* Barra de búsqueda - Más compacta */}
       <TextField
         size="small" // ✅ Hacer más pequeña
-        value={localBusqueda}
+        value={busqueda}
         onChange={handleSearchChange}
-        placeholder={localProviderView ? "Buscar proveedores..." : "Buscar productos..."}
+        placeholder={isProviderView ? "Buscar proveedores..." : "Buscar productos..."}
         variant="outlined"
         InputProps={inputProps}
         sx={textFieldStyles}
@@ -248,7 +205,7 @@ const SearchBar = ({
         autoCorrect="off"
       />
       {/* Selector de ordenamiento - Más compacto - Oculto en vista de proveedores */}
-      {!localProviderView && (
+      {!isProviderView && (
         <FormControl sx={formControlStyles}>
           <Select
             value={ordenamiento}
@@ -284,8 +241,8 @@ const SearchBar = ({
           <FormControlLabel
             control={
               <Switch
-                checked={localProviderView}
-                onChange={handleToggleView}
+                checked={isProviderView}
+                onChange={onToggleProviderView}
                 size="small"
                 color="primary"
               />
@@ -300,7 +257,7 @@ const SearchBar = ({
                   whiteSpace: 'nowrap',
                 }}
               >
-                {localProviderView ? 'Proveedores' : 'Productos'}
+                {isProviderView ? 'Proveedores' : 'Productos'}
               </Typography>
             }
             labelPlacement="top"
