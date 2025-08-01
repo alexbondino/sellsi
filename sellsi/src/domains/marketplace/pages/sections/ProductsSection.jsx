@@ -89,9 +89,6 @@ const ProductsSection = React.memo(
           const quantity = producto.cantidadSeleccionada || 1;
           addItem(productForCart, quantity);
         }
-
-        // Mostrar toast de confirmación
-        showCartSuccess(`Agregado al carrito: ${producto.nombre}`);
       },
       [addItem]
     );
@@ -814,4 +811,5 @@ const ProductsSection = React.memo(
 // ✅ MEJORA DE RENDIMIENTO: DisplayName para debugging
 ProductsSection.displayName = 'ProductsSection';
 
+// ✅ ROLLBACK TEMPORAL: Exportar directamente sin ShippingProvider hasta resolver issues
 export default ProductsSection;

@@ -28,7 +28,7 @@ import StorefrontOutlinedIcon from '@mui/icons-material/StorefrontOutlined';
 import Inventory2OutlinedIcon from '@mui/icons-material/Inventory2Outlined';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { useResponsiveThumbnail } from '../../../hooks/useResponsiveThumbnail'; // Nuevo hook
-import { useUserShippingRegion } from '../../../hooks/useUserShippingRegion'; // Hook para región
+import { useOptimizedUserShippingRegion } from '../../../hooks/useOptimizedUserShippingRegion'; // Hook optimizado para región
 import { supabase } from '../../../services/supabase'
 import { getUserProfile } from '../../../services/user'
 
@@ -73,7 +73,7 @@ const ProductHeader = React.memo(({
   const { thumbnailUrl: mainImageThumbnail, isLoading: thumbnailLoading } = useResponsiveThumbnail(product);
 
   // ✅ Hook para región de envío con Supabase Realtime
-  const { userRegion, isLoadingUserRegion } = useUserShippingRegion();
+  const { userRegion, isLoadingUserRegion } = useOptimizedUserShippingRegion();
 
   const [copied, setCopied] = useState({ name: false, price: false })
   // ✅ NUEVO: Estado para verificar si el producto pertenece al usuario actual

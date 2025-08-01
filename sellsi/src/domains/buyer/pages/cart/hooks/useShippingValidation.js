@@ -8,7 +8,7 @@
  */
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { getUserProfile } from '../../../../../services/user';
+import { useOptimizedUserShippingRegion } from '../../../../../hooks/useOptimizedUserShippingRegion';
 
 /**
  * Estados posibles para cada producto en el carrito
@@ -26,21 +26,10 @@ export const SHIPPING_STATES = {
  * @returns {Object} Estado de validación y funciones
  */
 export const useShippingValidation = (cartItems = [], isAdvancedMode = false) => {
-  // ✅ NUEVO: Función para leer userRegion de sessionStorage de forma síncrona
-  const getUserRegionFromStorage = () => {
-    try {
-      const stored = sessionStorage.getItem('shippingValidation_userRegion');
-      return stored;
-    } catch {
-      return null;
-    }
-  };
-
-  // ✅ NUEVO: Inicializar userRegion desde sessionStorage si existe
-  const [userRegion, setUserRegion] = useState(getUserRegionFromStorage);
+  // ✅ OPTIMIZADO: Usar hook optimizado con caché global
+  const { userRegion: optimizedUserRegion, isLoadingUserRegion } = useOptimizedUserShippingRegion();
+  
   const [shippingStates, setShippingStates] = useState({});
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState(null);
   const [incompatibleProducts, setIncompatibleProducts] = useState([]);
 
   /**
@@ -68,44 +57,6 @@ export const useShippingValidation = (cartItems = [], isAdvancedMode = false) =>
     
     return (regionValue) => regionMap[regionValue] || regionValue;
   }, []);
-
-  /**
-   * Obtener información del perfil del usuario - estable con useCallback
-   */
-  const fetchUserProfile = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      
-      const userId = localStorage.getItem('user_id');
-      if (!userId) {
-        setUserRegion(null);
-        return;
-      }
-
-      const { data: profile, error: profileError } = await getUserProfile(userId);
-      
-      if (profileError) {
-        console.error('Error fetching user profile:', profileError);
-        setError('Error al obtener información del perfil');
-        return;
-      }
-
-      setUserRegion(profile?.shipping_region || null);
-      
-      // ✅ NUEVO: Verificar si la región cambió vs sessionStorage
-      const storedRegion = getUserRegionFromStorage();
-      if (storedRegion && storedRegion !== profile?.shipping_region) {
-        console.log('User region changed from', storedRegion, 'to', profile?.shipping_region);
-        // La región cambió, sessionStorage se actualizará automáticamente por el useEffect
-      }
-    } catch (err) {
-      console.error('Error in fetchUserProfile:', err);
-      setError('Error al obtener información del perfil');
-    } finally {
-      setIsLoading(false);
-    }
-  }, []); // ✅ Array vacío - función estable
 
   /**
    * Validar estado de despacho para un producto específico - función pura memoizada
@@ -235,7 +186,7 @@ export const useShippingValidation = (cartItems = [], isAdvancedMode = false) =>
     const incompatible = [];
 
     cartItems.forEach(item => {
-      const validation = validateProductShipping(item, userRegion);
+      const validation = validateProductShipping(item, optimizedUserRegion);
       newStates[item.id] = validation;
       
       if (!validation.canShip && validation.state !== SHIPPING_STATES.NO_SHIPPING_INFO) {
@@ -249,7 +200,7 @@ export const useShippingValidation = (cartItems = [], isAdvancedMode = false) =>
 
     setShippingStates(newStates);
     setIncompatibleProducts(incompatible);
-  }, [cartItems, userRegion, isAdvancedMode, validateProductShipping]);
+  }, [cartItems, optimizedUserRegion, isAdvancedMode, validateProductShipping]);
 
   /**
    * Verificar si todos los productos son compatibles
@@ -260,14 +211,14 @@ export const useShippingValidation = (cartItems = [], isAdvancedMode = false) =>
     }
     
     // Si no hay región del usuario, el carrito no es compatible
-    if (!userRegion) {
+    if (!optimizedUserRegion) {
       return false;
     }
 
     // Si hay productos incompatibles, el carrito no es compatible
     const compatible = incompatibleProducts.length === 0;
     return compatible;
-  }, [isAdvancedMode, userRegion, incompatibleProducts]);
+  }, [isAdvancedMode, optimizedUserRegion, incompatibleProducts]);
 
   /**
    * Verificar si la información de envío está completa
@@ -275,7 +226,7 @@ export const useShippingValidation = (cartItems = [], isAdvancedMode = false) =>
   const isShippingInfoComplete = useCallback(() => {
     try {
       return !!(
-        userRegion && 
+        optimizedUserRegion && 
         Object.keys(shippingStates).length > 0 &&
         Object.values(shippingStates).every(state => 
           state.state !== SHIPPING_STATES.NO_SHIPPING_INFO
@@ -285,28 +236,21 @@ export const useShippingValidation = (cartItems = [], isAdvancedMode = false) =>
       console.error('Error checking shipping info:', err);
       return false;
     }
-  }, [userRegion, shippingStates]);
+  }, [optimizedUserRegion, shippingStates]);
 
   // ============================================================================
   // EFECTOS - SIMPLIFICADOS PARA EVITAR BUCLES
   // ============================================================================
 
-  // Efecto para cargar perfil del usuario - solo al montar
-  useEffect(() => {
-    // ✅ NUEVO: Siempre fetch profile para verificar que sessionStorage sea correcto
-    // Esto asegura que si el usuario cambió su región, se actualice
-    fetchUserProfile();
-  }, []); // ✅ Solo ejecutar una vez
-
-  // Efecto para revalidar cuando cambian los datos relevantes - SIN validateProductShipping en deps
+  // Efecto para revalidar cuando cambian los datos relevantes
   useEffect(() => {
     // Solo ejecutar si tenemos los datos necesarios y está en modo avanzado
-    if (isAdvancedMode && cartItems.length > 0 && userRegion) {
+    if (isAdvancedMode && cartItems.length > 0 && optimizedUserRegion) {
       const newStates = {};
       const incompatible = [];
 
       cartItems.forEach(item => {
-        const validation = validateProductShipping(item, userRegion);
+        const validation = validateProductShipping(item, optimizedUserRegion);
         newStates[item.id] = validation;
         
         if (!validation.canShip && validation.state !== SHIPPING_STATES.NO_SHIPPING_INFO) {
@@ -325,54 +269,14 @@ export const useShippingValidation = (cartItems = [], isAdvancedMode = false) =>
       setShippingStates({});
       setIncompatibleProducts([]);
     }
-  }, [isAdvancedMode, cartItems.length, userRegion]); // ✅ Solo dependencias primitivas
-
-  // ✅ NUEVO: Efecto para guardar userRegion en sessionStorage cuando cambie
-  useEffect(() => {
-    if (userRegion) {
-      try {
-        const storedRegion = sessionStorage.getItem('shippingValidation_userRegion');
-        if (storedRegion !== userRegion) {
-          sessionStorage.setItem('shippingValidation_userRegion', userRegion);
-          console.log('Updated sessionStorage region from', storedRegion, 'to', userRegion);
-        }
-      } catch (err) {
-        console.warn('Failed to save userRegion to sessionStorage:', err);
-      }
-    } else {
-      // Si userRegion es null, limpiar sessionStorage
-      try {
-        sessionStorage.removeItem('shippingValidation_userRegion');
-      } catch (err) {
-        console.warn('Failed to clear userRegion from sessionStorage:', err);
-      }
-    }
-  }, [userRegion]);
-
-  // Efecto para escuchar cambios en localStorage (login/logout)
-  useEffect(() => {
-    const handleStorageChange = (e) => {
-      if (e.key === 'user_id') {
-        // Limpiar sessionStorage cuando cambia user_id
-        try {
-          sessionStorage.removeItem('shippingValidation_userRegion');
-        } catch (err) {
-          console.warn('Failed to clear userRegion from sessionStorage:', err);
-        }
-        fetchUserProfile();
-      }
-    };
-
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
-  }, []); // ✅ Array vacío porque fetchUserProfile es estable
+  }, [isAdvancedMode, cartItems.length, optimizedUserRegion]); // ✅ Solo dependencias primitivas
 
   return {
     // Estados
-    userRegion,
+    userRegion: optimizedUserRegion,
     shippingStates,
-    isLoading,
-    error,
+    isLoading: isLoadingUserRegion,
+    error: null, // El hook optimizado maneja errores internamente
     incompatibleProducts,
 
     // Estados derivados
@@ -381,7 +285,6 @@ export const useShippingValidation = (cartItems = [], isAdvancedMode = false) =>
 
     // Funciones de control
     revalidate,
-    refreshUserProfile: fetchUserProfile,
 
     // Utilidades
     getUserRegionName,

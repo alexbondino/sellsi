@@ -29,7 +29,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import QuantitySelector from '../forms/QuantitySelector/QuantitySelector';
 import PriceDisplay from '../display/price/PriceDisplay';
 import { CheckoutSummaryImage } from '../../../components/UniversalProductImage'; // Imagen universal con fallbacks
-import { useShippingValidation } from '../../../domains/buyer/pages/cart/hooks/useShippingValidation';
+import { useOptimizedShippingValidation } from '../../../domains/buyer/pages/cart/hooks/useOptimizedShippingValidation';
 import { calculatePriceForQuantity } from '../../../utils/priceCalculation';
 import { supabase } from '../../../services/supabase';
 
@@ -168,15 +168,40 @@ const AddToCartModal = ({
     shippingRegions: enrichedProduct?.shippingRegions || enrichedProduct?.delivery_regions || [],
   }), [enrichedProduct]);
 
-  // Hook para validación de despacho - Solo necesitamos las funciones, no los estados
-  const { validateProductShipping, getUserRegionName } = useShippingValidation([], false);
+  // Hook para validación de despacho optimizado - Solo bajo demanda
+  const { validateSingleProduct, getUserRegionName } = useOptimizedShippingValidation();
 
-  // Validar despacho para el producto actual - solo cuando tanto las regiones como el perfil estén cargados
-  const shippingValidation = useMemo(() => {
-    // No validar si estamos cargando regiones del producto, perfil del usuario, o no hay región del usuario
-    if (!userRegion || !enrichedProduct || isLoadingRegions || isLoadingUserProfile) return null;
-    return validateProductShipping(enrichedProduct, userRegion);
-  }, [enrichedProduct, userRegion, validateProductShipping, isLoadingRegions, isLoadingUserProfile]);
+  // Estado para validación de shipping (solo cuando se necesite)
+  const [shippingValidation, setShippingValidation] = useState(null);
+  const [isValidatingShipping, setIsValidatingShipping] = useState(false);
+
+  // Función para validar shipping solo cuando se abre el modal
+  const validateShippingOnDemand = useCallback(async () => {
+    if (!userRegion || !enrichedProduct || isLoadingRegions || isLoadingUserProfile) {
+      setShippingValidation(null);
+      return;
+    }
+
+    setIsValidatingShipping(true);
+    try {
+      const validation = validateSingleProduct(enrichedProduct);
+      setShippingValidation(validation);
+    } catch (error) {
+      console.error('Error validating shipping:', error);
+      setShippingValidation(null);
+    } finally {
+      setIsValidatingShipping(false);
+    }
+  }, [enrichedProduct, userRegion, validateSingleProduct, isLoadingRegions, isLoadingUserProfile]);
+
+  // Validar shipping solo cuando se abre el modal y los datos están listos
+  useEffect(() => {
+    if (open && !isLoadingRegions && !isLoadingUserProfile && userRegion && enrichedProduct) {
+      validateShippingOnDemand();
+    } else {
+      setShippingValidation(null);
+    }
+  }, [open, isLoadingRegions, isLoadingUserProfile, userRegion, enrichedProduct, validateShippingOnDemand]);
 
   // ============================================================================
   // CÁLCULOS DE PRECIOS DINÁMICOS

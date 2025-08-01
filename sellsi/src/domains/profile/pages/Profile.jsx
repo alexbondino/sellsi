@@ -19,6 +19,7 @@ import { useBanner } from '../../../shared/components/display/banners/BannerCont
 import { useProfileForm } from '../hooks/useProfileForm';
 import { useProfileImage } from '../hooks/useProfileImage';
 import { useSensitiveFields } from '../hooks/useSensitiveFields';
+import { useOptimizedUserShippingRegion } from '../../../hooks/useOptimizedUserShippingRegion';
 
 // Secciones modulares
 import { CompanyInfoSection, TransferInfoSection, ShippingInfoSection, BillingInfoSection } from '../components/sections';
@@ -66,6 +67,9 @@ const Profile = ({ userProfile, onUpdateProfile }) => {
     toggleSensitiveData, 
     getSensitiveFieldValue 
   } = useSensitiveFields();
+
+  // Hook para invalidar caché de shipping
+  const { invalidateUserCache } = useOptimizedUserShippingRegion();
 
   // Estado local solo para UI
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
@@ -127,6 +131,11 @@ const Profile = ({ userProfile, onUpdateProfile }) => {
 
       await onUpdateProfile(dataToUpdate);
       updateInitialData(); // Actualizar datos iniciales en lugar de resetear
+
+      // ✅ INVALIDAR CACHÉ DE SHIPPING si cambió la región
+      if (dataToUpdate.shipping_region || dataToUpdate.shippingRegion) {
+        invalidateUserCache();
+      }
 
       // Registrar IP del usuario al actualizar perfil (solo si tenemos perfil cargado)
       if (loadedProfile?.user_id) {

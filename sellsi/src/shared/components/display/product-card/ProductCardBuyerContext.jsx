@@ -17,8 +17,8 @@ import {
   Remove as RemoveIcon,
 } from '@mui/icons-material';
 
-// Custom hooks
-import { useUserShippingRegion } from '../../../../hooks/useUserShippingRegion';
+// Custom hooks - OPTIMIZADO: Usar hook optimizado con caché global
+import { useOptimizedUserShippingRegion } from '../../../../hooks/useOptimizedUserShippingRegion';
 
 // Utility imports (updated paths for shared location)
 import { showErrorToast } from '../../../../utils/toastHelpers';
@@ -39,8 +39,8 @@ const ProductCardBuyerContext = React.memo(
   ({ product, onAddToCart, handleProductClick, onModalStateChange }) => {
     const navigate = useNavigate();
 
-    // ✅ Hook para región de envío con Supabase Realtime
-    const { userRegion, isLoadingUserRegion } = useUserShippingRegion();
+    // ✅ OPTIMIZADO: Usar hook optimizado con caché global
+    const { userRegion, isLoadingUserRegion } = useOptimizedUserShippingRegion();
     
     const minimumPurchase =
       product?.minimum_purchase || product?.compraMinima || 1;
