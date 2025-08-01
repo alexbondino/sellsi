@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   Box,
   Typography,
@@ -25,7 +25,7 @@ const ProductResultsPanel = ({
   onSubmit,
 }) => {
   // 🔧 FIX EDIT: Lógica para habilitar/deshabilitar botón según el modo
-  const isButtonDisabled = React.useMemo(() => {
+  const isButtonDisabled = useMemo(() => {
     if (isLoading) return true;
     if (!isValid) return true;
     

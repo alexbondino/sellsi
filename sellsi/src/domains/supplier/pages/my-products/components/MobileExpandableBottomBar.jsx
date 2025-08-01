@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Box,
   Typography,
@@ -28,7 +28,7 @@ const MobileExpandableBottomBar = ({
   const [isPanelExpanded, setIsPanelExpanded] = useState(false);
 
   // 🔧 FIX EDIT: Lógica para habilitar/deshabilitar botón según el modo
-  const isButtonDisabled = React.useMemo(() => {
+  const isButtonDisabled = useMemo(() => {
     if (isLoading) return true;
     if (!isValid) return true;
     
