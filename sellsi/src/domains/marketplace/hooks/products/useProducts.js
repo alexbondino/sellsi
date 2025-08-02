@@ -63,9 +63,16 @@ export function useProducts() {
                 ? p.product_images[0].image_url 
                 : '/placeholder-product.jpg'
               
-              // ✅ NUEVO: Obtener thumbnail_url
+              // ✅ NUEVO: Obtener thumbnail_url (fallback)
               const thumbnailUrl = p.product_images && p.product_images.length > 0 
                 ? p.product_images[0].thumbnail_url 
+                : null
+              
+              // ✅ NUEVO: Obtener thumbnails object (responsive thumbnails)
+              const thumbnails = p.product_images && p.product_images.length > 0 && p.product_images[0].thumbnails
+                ? (typeof p.product_images[0].thumbnails === 'string' 
+                   ? JSON.parse(p.product_images[0].thumbnails) 
+                   : p.product_images[0].thumbnails)
                 : null
               
               // Obtener tramos de precio para este producto
@@ -93,7 +100,8 @@ export function useProducts() {
                 descripcion_proveedor: usersMap[p.supplier_id]?.descripcion_proveedor, // ✅ AGREGAR descripcion_proveedor
                 proveedorVerificado: usersMap[p.supplier_id]?.verified || false, // ✅ AGREGAR estado de verificación del proveedor
                 imagen: imagenPrincipal,
-                thumbnail_url: thumbnailUrl, // ✅ NUEVO: Agregar thumbnail_url
+                thumbnails: thumbnails, // ✅ NUEVO: Agregar object thumbnails responsive
+                thumbnail_url: thumbnailUrl, // ✅ FALLBACK: Mantener thumbnail_url como fallback
                 precio: minPrice,
                 precioOriginal: p.precioOriginal || null,
                 descuento: p.descuento || 0,

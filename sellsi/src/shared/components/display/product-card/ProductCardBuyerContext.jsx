@@ -183,7 +183,7 @@ const ProductCardBuyerContext = React.memo(
                   color: 'text.secondary',
                 }}
               >
-                Compra mínima: {minimumPurchase.toLocaleString('es-CL')} uds.
+                Compra Mín: {minimumPurchase.toLocaleString('es-CL')} uds.
               </Typography>
             </Box>
             {/* PRICE DISPLAY */}
@@ -249,7 +249,7 @@ const ProductCardBuyerContext = React.memo(
                   display: 'none',
                 }}
               >
-                Compra mínima: {minimumPurchase.toLocaleString('es-CL')} uds.
+                Compra Mín: {minimumPurchase.toLocaleString('es-CL')} uds.
               </Typography>
               <Typography
                 variant="body2"
@@ -260,7 +260,7 @@ const ProductCardBuyerContext = React.memo(
                   display: 'block',
                 }}
               >
-                Compra mínima: {minimumPurchase.toLocaleString('es-CL')} unidades
+                Compra Mín: {minimumPurchase.toLocaleString('es-CL')} unidades
               </Typography>
             </Box>
             {/* PRICE DISPLAY */}
