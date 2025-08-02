@@ -2,7 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { Box, CircularProgress, Typography } from '@mui/material';
 import Profile from '../../profile/pages/Profile';
 import { supabase } from '../../../services/supabase';
-import { getUserProfile, updateUserProfile, uploadProfileImage, deleteAllUserImages, repairUserImageUrl, forceFixImageUrl } from '../../../services/user';
+import {
+  getUserProfile,
+  updateUserProfile,
+  uploadProfileImage,
+  deleteAllUserImages,
+  repairUserImageUrl,
+  forceFixImageUrl,
+} from '../../../services/user';
 
 const BuyerProfile = ({ onProfileUpdated }) => {
   const [userProfile, setUserProfile] = useState(null);
@@ -14,7 +21,9 @@ const BuyerProfile = ({ onProfileUpdated }) => {
 
   const fetchUserProfile = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) {
         throw new Error('Usuario no autenticado');
       }
@@ -31,7 +40,7 @@ const BuyerProfile = ({ onProfileUpdated }) => {
         user_id: user.id, // AGREGAR: user_id del auth
         email: user.email, // Email del auth
         phone: data.phone_nbr, // phone_nbr → phone
-        full_name: data.user_nm, // user_nm → full_name  
+        full_name: data.user_nm, // user_nm → full_name
         user_nm: data.user_nm, // AGREGAR: También pasar user_nm directamente
         role: data.main_supplier ? 'supplier' : 'buyer', // boolean → string
         country: data.country, // Campo ya existe
@@ -71,7 +80,8 @@ const BuyerProfile = ({ onProfileUpdated }) => {
           const repairResult = await forceFixImageUrl(user.id);
           if (repairResult.success && repairResult.correctUrl) {
             // Recargar perfil con URL corregida
-            const { data: repairedData, error: repairedError } = await getUserProfile(user.id);
+            const { data: repairedData, error: repairedError } =
+              await getUserProfile(user.id);
             if (!repairedError) {
               setUserProfile({
                 ...mappedProfile,
@@ -84,7 +94,8 @@ const BuyerProfile = ({ onProfileUpdated }) => {
             // Intentar reparación secundaria
             const fallbackRepair = await repairUserImageUrl(user.id);
             if (fallbackRepair.success && fallbackRepair.correctUrl) {
-              const { data: fallbackData, error: fallbackError } = await getUserProfile(user.id);
+              const { data: fallbackData, error: fallbackError } =
+                await getUserProfile(user.id);
               if (!fallbackError) {
                 setUserProfile({
                   ...mappedProfile,
@@ -98,14 +109,17 @@ const BuyerProfile = ({ onProfileUpdated }) => {
         }
       }
       setUserProfile(mappedProfile);
-      
+
       // ✅ NUEVO: Guardar región en localStorage para sincronización
       if (mappedProfile.shipping_region) {
-        localStorage.setItem('user_shipping_region', mappedProfile.shipping_region);
+        localStorage.setItem(
+          'user_shipping_region',
+          mappedProfile.shipping_region
+        );
       } else {
         localStorage.removeItem('user_shipping_region');
       }
-      
+
       setLoading(false);
     } catch (error) {
       console.error('Error fetching user profile:', error);
@@ -113,10 +127,12 @@ const BuyerProfile = ({ onProfileUpdated }) => {
     }
   };
 
-  const handleUpdateProfile = async (profileData) => {
+  const handleUpdateProfile = async profileData => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
       if (!user) {
         throw new Error('Usuario no autenticado');
       }
@@ -124,23 +140,32 @@ const BuyerProfile = ({ onProfileUpdated }) => {
       let logoPublicUrl = userProfile?.logo_url; // Mantener URL actual por defecto
 
       // MANEJAR ELIMINACIÓN DE IMAGEN DE PERFIL
-      if (profileData.profileImage === null || (profileData.profileImage && profileData.profileImage.delete)) {
+      if (
+        profileData.profileImage === null ||
+        (profileData.profileImage && profileData.profileImage.delete)
+      ) {
         // Eliminar todas las imágenes del usuario
         const deleteResult = await deleteAllUserImages(user.id);
         if (!deleteResult.success) {
-          console.warn('No se pudieron eliminar las imágenes previas:', deleteResult.error);
+          console.warn(
+            'No se pudieron eliminar las imágenes previas:',
+            deleteResult.error
+          );
         }
         logoPublicUrl = null;
         profileData.logo_url = null;
       }
       // MANEJAR SUBIDA DE NUEVA IMAGEN DE PERFIL
       else if (profileData.profileImage && profileData.profileImage.file) {
-        const { url, error } = await uploadProfileImage(user.id, profileData.profileImage.file);
-        
+        const { url, error } = await uploadProfileImage(
+          user.id,
+          profileData.profileImage.file
+        );
+
         if (error) {
           throw new Error(`Error al subir la imagen: ${error.message}`);
         }
-        
+
         logoPublicUrl = url;
         // Agregar la nueva URL al profileData para la actualización
         profileData.logo_url = logoPublicUrl;
@@ -148,22 +173,25 @@ const BuyerProfile = ({ onProfileUpdated }) => {
 
       // Usar el nuevo servicio para actualizar el perfil
       const { success, error } = await updateUserProfile(user.id, profileData);
-      
+
       if (!success) {
         throw error;
       }
 
       // Actualizar el estado local
       await fetchUserProfile();
-      
+
       // ✅ NUEVO: Actualizar localStorage con la nueva región
       const { data: updatedProfile } = await getUserProfile(user.id);
       if (updatedProfile?.shipping_region) {
-        localStorage.setItem('user_shipping_region', updatedProfile.shipping_region);
+        localStorage.setItem(
+          'user_shipping_region',
+          updatedProfile.shipping_region
+        );
       } else {
         localStorage.removeItem('user_shipping_region');
       }
-      
+
       // Refrescar el perfil del usuario en App.jsx para actualizar TopBar
       if (onProfileUpdated) {
         await onProfileUpdated();
@@ -194,10 +222,12 @@ const BuyerProfile = ({ onProfileUpdated }) => {
   }
 
   return (
-    <Profile 
-      userProfile={userProfile}
-      onUpdateProfile={handleUpdateProfile} 
-    />
+    <Box mt={2}>
+      <Profile
+        userProfile={userProfile}
+        onUpdateProfile={handleUpdateProfile}
+      />
+    </Box>
   );
 };
 

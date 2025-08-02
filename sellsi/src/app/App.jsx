@@ -7,6 +7,7 @@ import { AppRouter } from '../infrastructure/router/AppRouter';
 import { AppShell } from '../shared/components/layout/AppShell';
 import { useAuth } from '../infrastructure/providers/AuthProvider';
 import { useLocation } from 'react-router-dom';
+import KhipuButton from '../components/KhipuButton';
 
 // ============================================================================
 // 📍 COMPONENTE DE CONTENIDO PRINCIPAL
@@ -17,11 +18,11 @@ function AppContent() {
   const { session, loadingUserStatus } = useAuth();
 
   // Loader global centrado SOLO para rutas privadas
-  const isPublicRoute = 
-    location.pathname.startsWith('/technicalspecs') || 
-    location.pathname === '/' || 
-    location.pathname.startsWith('/marketplace') || 
-    location.pathname === '/login' || 
+  const isPublicRoute =
+    location.pathname.startsWith('/technicalspecs') ||
+    location.pathname === '/' ||
+    location.pathname.startsWith('/marketplace') ||
+    location.pathname === '/login' ||
     location.pathname === '/crear-cuenta';
 
   if (loadingUserStatus && !isPublicRoute) {
@@ -42,6 +43,7 @@ function AppContent() {
         }}
       >
         <Loader />
+        <KhipuButton />
       </Box>
     );
   }
