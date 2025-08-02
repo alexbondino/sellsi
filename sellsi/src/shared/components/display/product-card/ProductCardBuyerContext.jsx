@@ -152,11 +152,15 @@ const ProductCardBuyerContext = React.memo(
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
               <Typography
                 variant="body2"
-                sx={{
-                  fontSize: 12,
-                  fontWeight: 500,
-                  color: 'text.secondary',
-                }}
+                sx={{ fontSize: 12, fontWeight: 400, color: 'text.secondary', display: 'inline' }}
+                component="span"
+              >
+                por{' '}
+              </Typography>
+              <Typography
+                variant="body2"
+                sx={{ fontSize: 12, fontWeight: 700, color: 'text.secondary', display: 'inline' }}
+                component="span"
               >
                 {proveedor}
               </Typography>
@@ -213,11 +217,15 @@ const ProductCardBuyerContext = React.memo(
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
               <Typography
                 variant="body2"
-                sx={{
-                  fontSize: 12,
-                  fontWeight: 500,
-                  color: 'text.secondary',
-                }}
+                sx={{ fontSize: 12, fontWeight: 400, color: 'text.secondary', display: 'inline' }}
+                component="span"
+              >
+                por{' '}
+              </Typography>
+              <Typography
+                variant="body2"
+                sx={{ fontSize: 12, fontWeight: 700, color: 'text.secondary', display: 'inline' }}
+                component="span"
               >
                 {proveedor}
               </Typography>
