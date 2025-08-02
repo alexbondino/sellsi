@@ -17,11 +17,11 @@ function AppContent() {
   const { session, loadingUserStatus } = useAuth();
 
   // Loader global centrado SOLO para rutas privadas
-  const isPublicRoute = 
-    location.pathname.startsWith('/technicalspecs') || 
-    location.pathname === '/' || 
-    location.pathname.startsWith('/marketplace') || 
-    location.pathname === '/login' || 
+  const isPublicRoute =
+    location.pathname.startsWith('/technicalspecs') ||
+    location.pathname === '/' ||
+    location.pathname.startsWith('/marketplace') ||
+    location.pathname === '/login' ||
     location.pathname === '/crear-cuenta';
 
   if (loadingUserStatus && !isPublicRoute) {
@@ -42,6 +42,7 @@ function AppContent() {
         }}
       >
         <Loader />
+        <KhipuButton />
       </Box>
     );
   }
