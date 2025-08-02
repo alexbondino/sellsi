@@ -11,6 +11,7 @@
  */
 
 import React, { useState, memo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Container,
@@ -19,14 +20,17 @@ import {
   Tab,
   Typography,
   Divider,
-  Badge
+  Badge,
+  IconButton,
+  Tooltip
 } from '@mui/material';
 import {
   Dashboard as DashboardIcon,
   Payment as PaymentIcon,
   People as PeopleIcon,
   Inventory as InventoryIcon,
-  Security as SecurityIcon
+  Security as SecurityIcon,
+  ArrowBack as ArrowBackIcon
 } from '@mui/icons-material';
 
 // Importar componentes de pestañas
@@ -56,7 +60,32 @@ const dashboardStyles = {
   },
   header: {
     mb: 3,
-    textAlign: 'center'
+    textAlign: 'center',
+    position: 'relative'
+  },
+  backButtonContainer: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    display: 'flex',
+    alignItems: 'center',
+    gap: 1
+  },
+  backButton: {
+    color: 'primary.main',
+    '&:hover': {
+      backgroundColor: 'primary.light',
+      color: 'white'
+    }
+  },
+  backButtonText: {
+    color: 'primary.main',
+    fontSize: '0.875rem',
+    fontWeight: 'medium',
+    cursor: 'pointer',
+    '&:hover': {
+      color: 'primary.dark'
+    }
   },
   securityBadge: {
     display: 'inline-flex',
@@ -111,9 +140,10 @@ TabPanel.displayName = 'TabPanel';
 // ✅ ADMIN DASHBOARD COMPONENT
 const AdminDashboard = memo(() => {
   // ========================================
-  // 🔧 ESTADO
+  // 🔧 ESTADO Y NAVEGACIÓN
   // ========================================
   
+  const navigate = useNavigate();
   const [currentTab, setCurrentTab] = useState(0);
 
   // ========================================
@@ -122,6 +152,10 @@ const AdminDashboard = memo(() => {
 
   const handleTabChange = (event, newValue) => {
     setCurrentTab(newValue);
+  };
+
+  const handleGoBack = () => {
+    navigate('/admin-panel');
   };
 
   const getTabProps = (index) => ({
@@ -135,6 +169,23 @@ const AdminDashboard = memo(() => {
 
   const renderHeader = () => (
     <Box sx={dashboardStyles.header}>
+      {/* Botón de Volver Atrás con Texto */}
+      <Box sx={dashboardStyles.backButtonContainer}>
+        <IconButton
+          onClick={handleGoBack}
+          sx={dashboardStyles.backButton}
+          aria-label="Regresar a Menu Admin"
+        >
+          <ArrowBackIcon />
+        </IconButton>
+        <Typography
+          onClick={handleGoBack}
+          sx={dashboardStyles.backButtonText}
+        >
+          Regresar a Menu Admin
+        </Typography>
+      </Box>
+
       <Box sx={dashboardStyles.securityBadge}>
         <SecurityIcon fontSize="small" />
         PANEL DE CONTROL ADMINISTRATIVO
