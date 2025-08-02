@@ -46,6 +46,7 @@
     "react-phone-input-2": "^2.15.1",
     "react-qr-code": "^2.0.18",
     "react-router-dom": "^7.6.0",
+    "react-toastify": "^11.0.5",
     "react-window": "^1.8.11",
     "react-window-infinite-loader": "^1.0.10",
     "recharts": "^2.15.3",
