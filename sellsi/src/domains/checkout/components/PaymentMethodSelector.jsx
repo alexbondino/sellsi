@@ -22,6 +22,7 @@ import { toast } from 'react-toastify';
 import { useCheckout, usePaymentMethods } from '../hooks';
 import checkoutService from '../services/checkoutService'; // Corregido
 import { trackUserAction } from '../../../services/security';
+import { calculatePriceForQuantity } from '../../../utils/priceCalculation';
 
 // Componentes UI
 import CheckoutSummary from './CheckoutSummary';
@@ -140,13 +141,42 @@ const PaymentMethodSelector = () => {
 
       startPaymentProcessing();
 
+      // Calcular el total exactamente igual que en CheckoutSummary.jsx
+      const getItemPrice = item => {
+        if (item.price_tiers && item.price_tiers.length > 0) {
+          const basePrice =
+            item.originalPrice ||
+            item.precioOriginal ||
+            item.price ||
+            item.precio ||
+            0;
+          return calculatePriceForQuantity(
+            item.quantity,
+            item.price_tiers,
+            basePrice
+          );
+        }
+        return item.price || 0;
+      };
+      const totalBruto = orderData.items.reduce((total, item) => {
+        const unitPrice = getItemPrice(item);
+        const quantity = item.quantity || 0;
+        return total + quantity * unitPrice;
+      }, 0);
+      const calculatedIva = Math.trunc(totalBruto * 0.19);
+      const calculatedSubtotal = Math.trunc(totalBruto) - calculatedIva;
+      const shippingCost = orderData.shipping || 0;
+      const orderTotal = Math.round(
+        calculatedSubtotal + calculatedIva + shippingCost
+      );
+
       const order = await checkoutService.createOrder({
         userId: userId,
         items: orderData.items,
         subtotal: orderData.subtotal,
         tax: orderData.tax,
         shipping: orderData.shipping,
-        total: orderData.total,
+        total: orderTotal, // Guardar el mismo total en la orden
         currency: orderData.currency || 'CLP',
         paymentMethod: selectedMethod.id,
         shippingAddress: orderData.shippingAddress,
@@ -161,7 +191,7 @@ const PaymentMethodSelector = () => {
           orderId: order.id,
           userId: userId,
           userEmail: userEmail || '',
-          amount: orderData.total,
+          amount: orderTotal, // Usar el mismo valor mostrado
           currency: orderData.currency || 'CLP',
           items: orderData.items,
         });
