@@ -17,7 +17,7 @@ import { dashboardThemeCore } from '../../../../styles/dashboardThemeCore';
 import { SPACING_BOTTOM_MAIN } from '../../../../styles/layoutSpacing';
 import { supabase } from '../../../../services/supabase';
 import { SupplierErrorBoundary } from '../../components/ErrorBoundary';
-import KhipuButton from '/Users/bondino/Dropbox/Projects/sellsi/sellsi/src/components/khipuButton.jsx';
+import KhipuButton from '../../../../components/khipuButton.jsx';
 
 // Lazy imports para reducir el bundle inicial
 const DashboardSummary = React.lazy(() =>
