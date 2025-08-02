@@ -17,7 +17,6 @@ import { dashboardThemeCore } from '../../../../styles/dashboardThemeCore';
 import { SPACING_BOTTOM_MAIN } from '../../../../styles/layoutSpacing';
 import { supabase } from '../../../../services/supabase';
 import { SupplierErrorBoundary } from '../../components/ErrorBoundary';
-import KhipuButton from '../../../../components/khipuButton.jsx';
 
 // Lazy imports para reducir el bundle inicial
 const DashboardSummary = React.lazy(() =>
@@ -137,7 +136,6 @@ const ProviderHome = () => {
           <Button variant="contained" onClick={() => funcionQueNoExiste()}>
             Presióname
           </Button>
-          <KhipuButton />
           <Container maxWidth="xl" disableGutters>
             <Grid container spacing={3}>
               <Grid size={12}>
