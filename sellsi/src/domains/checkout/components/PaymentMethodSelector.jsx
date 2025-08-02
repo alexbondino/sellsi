@@ -1,5 +1,5 @@
 // ============================================================================
-// PAYMENT METHOD SELECTOR - VERSIÓN 100% COMPLETA Y CORREGIDA
+// PAYMENT METHOD SELECTOR - VERSIÓN FINAL
 // ============================================================================
 
 import React, { useState, useEffect } from 'react';
@@ -16,15 +16,11 @@ import {
 import { ArrowBack as ArrowBackIcon } from '@mui/icons-material';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-
-// <-- CORRECCIÓN 1: Importa la librería de notificaciones.
 import { toast } from 'react-toastify';
 
 // Hooks y servicios
 import { useCheckout, usePaymentMethods } from '../hooks';
-// <-- CORRECCIÓN 2: Importa 'checkoutService' correctamente (sin llaves) y con la ruta completa.
-// Asegúrate de que esta ruta relativa sea la correcta para tu proyecto.
-import checkoutService from '../services/checkoutService';
+import checkoutService from '../services/checkoutService'; // Corregido
 import { trackUserAction } from '../../../services/security';
 
 // Componentes UI

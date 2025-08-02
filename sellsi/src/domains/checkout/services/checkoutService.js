@@ -90,6 +90,7 @@ class CheckoutService {
 
       // Validar monto
       if (!khipuService.validateAmount(paymentData.amount)) {
+        console.log(paymentData.amount);
         throw new Error('Monto fuera del rango permitido por Khipu');
       }
 
