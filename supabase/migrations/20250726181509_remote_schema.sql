@@ -11,7 +11,7 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp" WITH SCHEMA "extensions";
 -- PASO 1: Eliminar TODAS las dependencias primero (Triggers)
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 DROP TRIGGER IF EXISTS on_auth_user_updated ON auth.users;
-DROP TRIGGER IF EXISTS update_control_panel_users_updated_at ON public.control_panel_users;
+--DROP TRIGGER IF EXISTS update_control_panel_users_updated_at ON public.control_panel_users;
 
 -- PASO 2: Ahora eliminar las funciones existentes ahora
 DROP FUNCTION IF EXISTS public.update_updated_at_column();
