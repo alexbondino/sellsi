@@ -2,9 +2,9 @@ import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
 
 // Lista de orígenes permitidos para CORS
 const allowedOrigins = [
-  'https://tu-proyecto.vercel.app', // Reemplaza con tu URL de Vercel
-  'https://staging-sellsi.vercel.app',
-  'http://localhost:5173',
+  'https://sellsi.cl', // URL de producción
+  'https://staging-sellsi.vercel.app', // URL de staging
+  'http://localhost:5173', // URL de desarrollo local
   'http://127.0.0.1:5173',
   'http://localhost:3000',
 ];
