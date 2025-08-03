@@ -30,13 +30,11 @@ export const testAuth = async () => {
     } = await supabase.auth.getUser()
 
     if (error) {
-      console.error('❌ Error getting user:', error.message)
       return { success: false, error: error.message }
     }
 
     return { success: true, user }
   } catch (error) {
-    console.error('❌ Unexpected error:', error)
     return { success: false, error: error.message }
   }
 }
@@ -50,13 +48,11 @@ export const testConnection = async () => {
       .limit(1)
 
     if (error) {
-      console.error('❌ Connection error:', error.message)
       return { success: false, error: error.message }
     }
 
     return { success: true, data }
   } catch (error) {
-    console.error('❌ Unexpected connection error:', error)
     return { success: false, error: error.message }
   }
 }

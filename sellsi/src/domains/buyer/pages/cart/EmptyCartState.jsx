@@ -14,15 +14,20 @@ import {
 import {
   ShoppingCart as ShoppingCartIcon,
   Favorite as FavoriteIcon,
+  Home as HomeIcon,
 } from '@mui/icons-material'
 import { ThemeProvider } from '@mui/material/styles';
 import { dashboardThemeCore } from '../../../../styles/dashboardThemeCore';
+import { useRole } from '../../../../infrastructure/providers/RoleProvider';
 
 // Mensajes aleatorios para el carrito vacío
 const EMPTY_CART_MESSAGES = [
   'Tu carrito está vacío. ¡Descubre productos increíbles en el marketplace!',
   'Tu carrito está vacío. ¡Sigue explorando productos increíbles en el marketplace!',
 ]
+
+// Mensaje específico para suppliers
+const SUPPLIER_CART_MESSAGE = 'Tu carrito está vacío. Debes cambiar a Vista Comprador, para poder seguir comprando productos en el Marketplace'
 
 /**
  * Componente para mostrar el estado cuando el carrito está vacío
@@ -32,22 +37,32 @@ const EMPTY_CART_MESSAGES = [
  */
 const EmptyCartState = ({ wishlist, setShowWishlist }) => {
   const navigate = useNavigate()
+  const { currentAppRole } = useRole()
+  const isSupplier = currentAppRole === 'supplier'
   
-  // Seleccionar mensaje aleatorio usando useMemo para que no cambie en cada re-render
-  const randomMessage = useMemo(() => {
+  // Seleccionar mensaje apropiado según el rol
+  const displayMessage = useMemo(() => {
+    if (isSupplier) {
+      return SUPPLIER_CART_MESSAGE
+    }
+    // Para buyers, usar mensaje aleatorio
     const randomIndex = Math.floor(Math.random() * EMPTY_CART_MESSAGES.length)
     return EMPTY_CART_MESSAGES[randomIndex]
-  }, []) // Sin dependencias para que solo se calcule una vez
+  }, [isSupplier]) // Depende del rol
 
-  // Función para navegar al marketplace correcto según el rol actual
-  const handleExploreMarketplace = () => {
-    // Obtener el rol actual desde window.currentAppRole (definido en App.jsx)
-    const currentRole = window.currentAppRole || 'buyer'
-    
-    if (currentRole === 'supplier') {
-      navigate('/supplier/marketplace')
+  // Función para navegar según el contexto del usuario
+  const handlePrimaryAction = () => {
+    if (isSupplier) {
+      // Si es supplier, llevar a supplier/home
+      navigate('/supplier/home')
     } else {
-      navigate('/buyer/marketplace')
+      // Si es buyer, llevar al marketplace correspondiente
+      const currentRole = window.currentAppRole || 'buyer'
+      if (currentRole === 'supplier') {
+        navigate('/supplier/marketplace')
+      } else {
+        navigate('/buyer/marketplace')
+      }
     }
   }
   return (
@@ -59,7 +74,7 @@ const EmptyCartState = ({ wishlist, setShowWishlist }) => {
           flexDirection: 'column', 
           alignItems: 'center',
           // Agrega margen izquierdo solo en desktop (md+) para alinear con SideBar
-          ml: { xs: 0, md: 8, lg: 24, xl: 34 },
+          ml: { xs: 0, md: 2, lg: 3, xl: 34 },
           transition: 'margin-left 0.3s',
         }}
       >      <motion.div
@@ -115,10 +130,10 @@ const EmptyCartState = ({ wishlist, setShowWishlist }) => {
             color="text.secondary"
             sx={{ mb: 4, fontStyle: 'italic' }}
           >
-            {randomMessage}
+            {displayMessage}
           </Typography>
-          {/* Wishlist preview */}
-          {wishlist.length > 0 && (
+          {/* Wishlist preview - Solo mostrar para buyers */}
+          {!isSupplier && wishlist.length > 0 && (
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -153,24 +168,28 @@ const EmptyCartState = ({ wishlist, setShowWishlist }) => {
             <Button
               variant="contained"
               size="large"
-              startIcon={<ShoppingCartIcon />}
-              onClick={handleExploreMarketplace}
+              startIcon={isSupplier ? <HomeIcon /> : <ShoppingCartIcon />}
+              onClick={handlePrimaryAction}
               sx={{
                 px: 4,
                 py: 1.5,
                 borderRadius: 3,
-                background: '#1565c0',
-                boxShadow: '0 8px 16px rgba(102, 126, 234, 0.3)',
+                background: isSupplier ? '#1565c0' : '#1565c0',
+                boxShadow: isSupplier 
+                  ? '0 8px 16px rgba(46, 125, 50, 0.3)' 
+                  : '0 8px 16px rgba(102, 126, 234, 0.3)',
                 '&:hover': {
                   transform: 'translateY(-2px)',
-                  boxShadow: '0 12px 20px rgba(102, 126, 234, 0.4)',
+                  boxShadow: isSupplier 
+                    ? '0 12px 20px rgba(46, 125, 50, 0.4)' 
+                    : '0 12px 20px rgba(102, 126, 234, 0.4)',
                 },
               }}
             >
-              Explorar Marketplace
+              {isSupplier ? 'Volver a Inicio' : 'Explorar Marketplace'}
             </Button>
 
-            {wishlist.length > 0 && (
+            {!isSupplier && wishlist.length > 0 && (
               <Button
                 variant="outlined"
                 size="large"

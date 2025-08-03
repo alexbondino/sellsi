@@ -9,6 +9,7 @@ const ProductImageGallery = ({
   selectedIndex = 0,
   onImageSelect,
   productName,
+  isMobile = false, // Nuevo prop
 }) => {
   const theme = useTheme()
   const isDesktop = useMediaQuery(theme.breakpoints.up('md')) // Solo en md y superiores
@@ -59,32 +60,34 @@ const ProductImageGallery = ({
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        justifyContent: 'flex-start', // Cambiar de center a flex-start
+        justifyContent: 'flex-start',
         width: '100%',
         maxWidth: '100%',
-        px: { xs: 2, sm: 3, md: 4 }, // Horizontal padding
-        pt: 0, // Sin padding top
-        pb: 2, // Solo padding bottom
+        px: { xs: 0, sm: 2, md: 4 }, // Sin padding horizontal en móvil
+        pt: 0,
+        pb: 2,
       }}
     >
-      {' '}      {/* Main Image */}      <Card
+      {/* Main Image */}
+      <Card
         elevation={2}
         sx={{
-          mb: 2, // Volver a margin bottom 2
+          mb: 2,
           overflow: 'hidden',
-          borderRadius: 3,
-          width: 'fit-content', // Ajustar al contenido
-          maxWidth: 'none', // Sin límite máximo
+          borderRadius: { xs: 0, sm: 3 }, // Sin border radius en móvil
+          width: '100%', // Full width en todos los tamaños
+          maxWidth: { xs: '100%', md: 500 }, // Sin límite en móvil, 500px en desktop
           display: 'flex',
           justifyContent: 'center',
-          mx: 'auto', // Margin auto horizontal para centrado adicional
-          position: 'relative', // Para el efecto zoom
-          cursor: isDesktop ? 'none' : 'default', // Sin cursor para efecto más limpio
+          mx: 'auto',
+          position: 'relative',
+          cursor: isDesktop ? 'none' : 'default',
           transition: 'box-shadow 0.3s ease',
           ...(isHovering && isDesktop && {
             boxShadow: '0 20px 60px rgba(0, 0, 0, 0.2)',
           })
-        }}        onMouseMove={handleMouseMove}
+        }}
+        onMouseMove={handleMouseMove}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
       >
@@ -93,20 +96,20 @@ const ProductImageGallery = ({
           image={galleryImages[selectedIndex]}
           alt={productName}
           sx={{
-            width: 500, // Ancho fijo de 500px
-            height: 500, // Alto fijo de 500px
-            maxWidth: 500, // Evitar que se agrande
-            maxHeight: 500, // Evitar que se agrande
-            objectFit: 'contain',
+            width: '100%', // Responsive width
+            height: { xs: 300, sm: 400, md: 500 }, // Altura responsive
+            maxWidth: '100%', // Responsive max width
+            objectFit: 'contain', // Mantener aspecto completo de la imagen
+            display: 'block', // Evitar problemas de inline
             bgcolor: '#fff',
-            p: 1.9, // Reducido de 2 a 1.9
-            transition: 'transform 0.3s ease, transform-origin 0.1s ease', // Transición suave
+            p: { xs: 1, md: 1.9 }, // Menos padding en móvil
+            transition: 'transform 0.3s ease, transform-origin 0.1s ease',
             transformOrigin: isHovering && isDesktop 
               ? `${mousePosition.x}% ${mousePosition.y}%` 
-              : 'center center', // Zoom sigue al mouse
+              : 'center center',
             transform: isHovering && isDesktop 
-              ? 'scale(1.8)' // Zoom más pronunciado
-              : 'scale(1)', // Sin zoom
+              ? 'scale(1.8)' 
+              : 'scale(1)',
             position: 'relative',
             zIndex: 2,
           }}
@@ -149,11 +152,12 @@ const ProductImageGallery = ({
           overflowX: 'auto',
           pb: 1,
           justifyContent: 'center',
-          width: 480, // Ancho fijo de 480px
-          height: 95, // Altura fija de 95px
-          maxWidth: 480, // Máximo 480px
+          width: '100%', // Full width
+          maxWidth: { xs: '100%', md: 480 }, // Sin límite en móvil, 480px en desktop
+          height: { xs: 80, md: 95 }, // Altura responsive
           alignItems: 'center',
-          mx: 'auto', // Center the thumbnails container
+          mx: 'auto',
+          px: { xs: 2, md: 0 }, // Padding en móvil para evitar bordes
         }}
       >
         {galleryImages.map((image, index) => (
@@ -161,10 +165,10 @@ const ProductImageGallery = ({
             key={index}
             elevation={selectedIndex === index ? 3 : 1}
             sx={{
-              width: 80, // Aumentado de 73px a 80px
-              height: 80, // Aumentado de 73px a 80px
-              minWidth: 80, // Evitar que se encoja
-              maxWidth: 80, // Evitar que se agrande
+              width: { xs: 70, md: 80 }, // Más pequeñas en móvil
+              height: { xs: 70, md: 80 },
+              minWidth: { xs: 70, md: 80 },
+              maxWidth: { xs: 70, md: 80 },
               cursor: 'pointer',
               border: selectedIndex === index ? '2px solid' : '1px solid',
               borderColor:
@@ -188,7 +192,7 @@ const ProductImageGallery = ({
                 height: '100%',
                 objectFit: 'contain',
                 bgcolor: '#fff',
-                p: 0.475, // Reducido de 0.5 a 0.475 (5% menos)
+                p: { xs: 0.3, md: 0.475 }, // Menos padding en móvil
               }}
             />
           </Card>

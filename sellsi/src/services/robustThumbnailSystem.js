@@ -24,19 +24,14 @@ class RobustThumbnailSystem {
    */
   initialize() {
     if (this.isInitialized) {
-      console.warn('[RobustThumbnailSystem] Sistema ya inicializado');
       return;
     }
-
-    console.log('[RobustThumbnailSystem] 🚀 Inicializando sistema robusto de thumbnails...');
-    
     // Configurar listeners para desarrollo (opcional)
     if (process.env.NODE_ENV === 'development') {
       this.setupDevelopmentHelpers();
     }
 
     this.isInitialized = true;
-    console.log('[RobustThumbnailSystem] ✅ Sistema inicializado correctamente');
   }
 
   /**
@@ -47,10 +42,6 @@ class RobustThumbnailSystem {
     if (typeof window !== 'undefined') {
       window.thumbnailCache = this.cacheService;
       window.thumbnailInvalidation = this.invalidationService;
-      
-      console.log('[RobustThumbnailSystem] 🔧 Servicios expuestos globalmente:');
-      console.log('- window.thumbnailCache');
-      console.log('- window.thumbnailInvalidation');
     }
   }
 

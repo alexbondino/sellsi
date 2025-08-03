@@ -39,7 +39,6 @@ Se ha implementado la integración completa con Khipu para procesar pagos en Sel
 - ✅ **Servicios creados** - KhipuService y CheckoutService implementados
 - ✅ **Base de datos preparada** - Tablas orders, payment_transactions y khipu_webhook_logs existen
 - ✅ **Funciones Edge escritas** - create-khipu-payment, verify-khipu-payment, process-khipu-webhook
-- ⚠️ **Quota Supabase excedida** - Necesitas resolver esto primero
 - ❌ **Variables de entorno** - Falta configurar credenciales de Khipu
 - ❌ **Funciones Edge desplegadas** - Necesitas desplegarlas en Supabase
 

@@ -18,6 +18,8 @@ import {
   Breadcrumbs,
   Link,
   ThemeProvider,
+  useTheme,
+  useMediaQuery,
 } from '@mui/material'
 import {
   ArrowBack,
@@ -47,6 +49,9 @@ const PurchaseActions = React.lazy(() =>
 const ProductHeader = React.lazy(() => 
   import('./components/ProductHeader').catch(() => ({ default: () => <div>Error al cargar header</div> }))
 )
+const ProductShipping = React.lazy(() => 
+  import('./components/ProductShipping').catch(() => ({ default: () => <div>Error al cargar shipping</div> }))
+)
 const LoadingOverlay = React.lazy(() => 
   import('../../shared/components/feedback/LoadingOverlay').catch(() => ({ default: () => <div>Cargando...</div> }))
 )
@@ -75,6 +80,10 @@ const ProductPageView = memo(({
   // ...logs eliminados...
   const [selectedImageIndex, setSelectedImageIndex] = useState(0)
   const location = useLocation()
+  
+  // Hook para responsividad
+  const theme = useTheme()
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'))
 
   // Mover useCallback ANTES de cualquier return condicional para seguir las reglas de los Hooks
   const handleAddToCart = useCallback((cartProduct) => {
@@ -93,10 +102,6 @@ const ProductPageView = memo(({
       // Si recibimos un producto formateado del PurchaseActions, usar ese
       // Si no, formatear con los datos básicos del producto
       onAddToCart(cartProduct || product)
-      // Mostrar toast de confirmación aquí
-      showCartSuccess(
-        `Agregado al carrito: ${(cartProduct || product)?.name || product?.nombre}`
-      )
       // Debug log removed
     }
   }, [isLoggedIn, onAddToCart, product])
@@ -110,22 +115,24 @@ const ProductPageView = memo(({
         <Box
           sx={{
             backgroundColor: 'background.default',
-            pt: { xs: 2, md: 4 },
-            px: 3,
+            pt: { xs: 1, md: 4 }, // Menos padding top en móvil
+            px: { xs: 0, md: 3 }, // Sin padding horizontal en móvil
             pb: SPACING_BOTTOM_MAIN,
             width: '100%',
           }}
         >
           <Box
             sx={{
-              backgroundColor: 'white',
+              // Estilos condicionales del container
+              backgroundColor: { xs: 'transparent', md: 'white' },
+              border: { xs: 'none', md: '1.5px solid #e0e0e0' },
+              boxShadow: { xs: 'none', md: 6 },
+              borderRadius: { xs: 0, md: 3 },
+              p: { xs: 0, md: 3 },
+              mb: { xs: 0, md: 6 },
               maxWidth: '1450px',
               mx: 'auto',
-              p: 3,
-              mb: 6,
-              border: '1.5px solid #e0e0e0',
-              boxShadow: 6,
-              borderRadius: 3,
+              width: '100%',
             }}
           >
             <Box sx={{ mb: 4, boxShadow: 'none', border: 'none', outline: 'none', backgroundImage: 'none' }}>
@@ -144,37 +151,43 @@ const ProductPageView = memo(({
                 <Typography variant="h4" fontWeight="600" color="black">
                 </Typography>
               </Box>
-              <Breadcrumbs sx={{ fontSize: '0.875rem', color: 'text.secondary' }}>
-                <Link
-                  underline="hover"
-                  color="inherit"
-                  onClick={onGoHome}
-                  sx={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 0.5 }}
-                >
-                  <Home fontSize="small" />
-                  Inicio
-                </Link>
-                <Link
-                  underline="hover"
-                  color="inherit"
-                  onClick={onGoToMarketplace}
-                  sx={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 0.5 }}
-                >
-                  {fromMyProducts
-                    ? <Inventory2Outlined fontSize="small" />
-                    : <StorefrontOutlined fontSize="small" />}
-                  {fromMyProducts
-                    ? 'Mis Productos'
-                    : isFromSupplierMarketplace
-                      ? 'Marketplace'
-                      : 'Marketplace'}
-                </Link>
-                {product && (
-                  <Typography color="black" sx={{ fontWeight: 600 }}>
-                    {product.nombre}
-                  </Typography>
-                )}
-              </Breadcrumbs>
+              {/* Breadcrumbs responsivos */}
+              <Box sx={{ 
+                px: { xs: 2, md: 0 }, 
+                mb: { xs: 1, md: 2 } 
+              }}>
+                <Breadcrumbs sx={{ fontSize: '0.875rem', color: 'text.secondary' }}>
+                  <Link
+                    underline="hover"
+                    color="inherit"
+                    onClick={onGoHome}
+                    sx={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 0.5 }}
+                  >
+                    <Home fontSize="small" />
+                    Inicio
+                  </Link>
+                  <Link
+                    underline="hover"
+                    color="inherit"
+                    onClick={onGoToMarketplace}
+                    sx={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 0.5 }}
+                  >
+                    {fromMyProducts
+                      ? <Inventory2Outlined fontSize="small" />
+                      : <StorefrontOutlined fontSize="small" />}
+                    {fromMyProducts
+                      ? 'Mis Productos'
+                      : isFromSupplierMarketplace
+                        ? 'Marketplace'
+                        : 'Marketplace'}
+                  </Link>
+                  {product && (
+                    <Typography color="black" sx={{ fontWeight: 600 }}>
+                      {product.nombre}
+                    </Typography>
+                  )}
+                </Breadcrumbs>
+              </Box>
             </Box>
             <Container maxWidth="xl">
               <ProductPageSkeleton />
@@ -203,28 +216,33 @@ const ProductPageView = memo(({
       <Box
         sx={{
           backgroundColor: 'background.default',
-          pt: { xs: 2, md: 4 },
-          px: 3,
+          pt: { xs: 1, md: 4 }, // Menos padding top en móvil
+          px: { xs: 0, md: 3 }, // Sin padding horizontal en móvil
           pb: SPACING_BOTTOM_MAIN,
           width: '100%',
         }}
       >
-        {/* Paper padre restaurado */}
+        {/* Paper padre con estilos condicionales */}
         <Box
           sx={{
-            backgroundColor: 'white',
+            // Estilos condicionales del container
+            backgroundColor: { xs: 'transparent', md: 'white' },
+            border: { xs: 'none', md: '1.5px solid #e0e0e0' },
+            boxShadow: { xs: 'none', md: 6 },
+            borderRadius: { xs: 0, md: 3 },
+            p: { xs: 0, md: 3 },
+            mb: { xs: 0, md: 6 },
             maxWidth: '1450px',
             mx: 'auto',
-            p: 3,
-            mb: 6,
-            border: '1.5px solid #e0e0e0',
-            boxShadow: 6,
-            borderRadius: 3,
             width: '100%',
           }}
         >
-          {/* 1. Breadcrumbs (hijo 1) */}
-          <Box sx={{ width: '100%', mb: 2 }}>
+          {/* 1. Breadcrumbs responsivos */}
+          <Box sx={{ 
+            px: { xs: 2, md: 0 }, 
+            mb: { xs: 1, md: 2 },
+            width: '100%' 
+          }}>
             <Breadcrumbs sx={{ fontSize: '0.875rem', color: 'text.secondary' }}>
               <Link
                 underline="hover"
@@ -252,12 +270,13 @@ const ProductPageView = memo(({
               </Link>
               {product && (
                 <Typography color="primary.main" sx={{ fontWeight: 600 }}>
-                  {product.nombre}
+                  {isMobile ? 'Ficha Técnica' : product.nombre}
                 </Typography>
               )}
             </Breadcrumbs>
           </Box>
-          {/* 2. ProductHeader (hijo 2) */}
+
+          {/* 2. ProductHeader con prop de responsividad */}
           <Box sx={{ width: '100%' }}>
             <Suspense fallback={<CircularProgress />}>
               <ProductHeader
@@ -267,11 +286,29 @@ const ProductPageView = memo(({
                 onAddToCart={handleAddToCart}
                 isLoggedIn={isLoggedIn}
                 fromMyProducts={fromMyProducts}
+                isMobile={isMobile}
               />
             </Suspense>
           </Box>
-          {/* 3. Descripción del Producto (hijo 3) */}
-          <Box sx={{ width: '100%', mt: 6, mb:6 }}>
+
+          {/* 2.5. ProductShipping - Regiones de Despacho */}
+          <Box sx={{ width: '100%' }}>
+            <Suspense fallback={<CircularProgress />}>
+              <ProductShipping
+                product={product}
+                isMobile={isMobile}
+                isLoggedIn={isLoggedIn}
+              />
+            </Suspense>
+          </Box>
+
+          {/* 3. Descripción del Producto responsiva */}
+          <Box sx={{ 
+            px: { xs: 2, md: 0 }, 
+            mt: { xs: 4, md: 6 }, 
+            mb: 6,
+            width: '100%' 
+          }}>
             <Paper
               elevation={2}
               sx={{
@@ -306,9 +343,9 @@ const ProductPageView = memo(({
                 variant="h4"
                 sx={{
                   fontWeight: 700,
-                  color: 'primary.main',
+                  color: 'black',
                   mb: 3,
-                  fontSize: { xs: '1.5rem', sm: '1.75rem', md: '1.75rem' },
+                  fontSize: { xs: '1.5rem', sm: '1.5rem', md: '1.5rem' },
                   position: 'relative',
                   '&::after': {
                     content: '""',
@@ -330,7 +367,7 @@ const ProductPageView = memo(({
                 sx={{
                   fontSize: { xs: '1rem', sm: '1.1rem', md: '1rem' },
                   lineHeight: 1.8,
-                  color: 'text.primary',
+                  color: '#000000ff',
                   textAlign: 'justify',
                   hyphens: 'auto',
                   wordBreak: 'break-word',
@@ -339,7 +376,7 @@ const ProductPageView = memo(({
                   '&::first-letter': {
                     fontSize: '1.5em',
                     fontWeight: 700,
-                    color: 'text.primary',
+                    color: '#000000ff',
                     float: 'left',
                     lineHeight: 1,
                     marginRight: '1px',

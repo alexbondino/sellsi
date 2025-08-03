@@ -32,7 +32,6 @@ class ThumbnailInvalidationService {
           table: 'product_images'
         },
         (payload) => {
-          console.log('[ThumbnailInvalidation] Cambio detectado en product_images:', payload);
           this.handleProductImageChange(payload);
         }
       )
@@ -49,7 +48,6 @@ class ThumbnailInvalidationService {
           table: 'products'
         },
         (payload) => {
-          console.log('[ThumbnailInvalidation] Producto eliminado:', payload);
           this.handleProductDeletion(payload);
         }
       )
@@ -67,17 +65,14 @@ class ThumbnailInvalidationService {
     switch (eventType) {
       case 'INSERT':
         productId = newRecord?.product_id;
-        console.log(`[ThumbnailInvalidation] Nueva imagen añadida para producto ${productId}`);
         break;
         
       case 'UPDATE':
         productId = newRecord?.product_id || oldRecord?.product_id;
-        console.log(`[ThumbnailInvalidation] Imagen actualizada para producto ${productId}`);
         break;
         
       case 'DELETE':
         productId = oldRecord?.product_id;
-        console.log(`[ThumbnailInvalidation] Imagen eliminada para producto ${productId}`);
         break;
     }
 
@@ -93,7 +88,6 @@ class ThumbnailInvalidationService {
     const productId = payload.old?.id;
     
     if (productId) {
-      console.log(`[ThumbnailInvalidation] Invalidando cache por eliminación de producto ${productId}`);
       this.invalidateProductThumbnails(productId);
     }
   }
@@ -110,10 +104,7 @@ class ThumbnailInvalidationService {
       
       // Emitir evento personalizado para componentes que lo necesiten
       this.emitInvalidationEvent(productId);
-      
-      console.log(`[ThumbnailInvalidation] ✅ Cache invalidado para producto ${productId}`);
     } catch (error) {
-      console.error(`[ThumbnailInvalidation] ❌ Error invalidando cache para producto ${productId}:`, error);
     }
   }
 
@@ -147,7 +138,6 @@ class ThumbnailInvalidationService {
      * Invalidar después de eliminar una imagen
      */
     onImageDeleted: (productId) => {
-      console.log(`[ThumbnailInvalidation] Invalidación manual: imagen eliminada de producto ${productId}`);
       this.invalidateProductThumbnails(productId);
     },
 
@@ -155,7 +145,6 @@ class ThumbnailInvalidationService {
      * Invalidar después de subir una nueva imagen
      */
     onImageUploaded: (productId) => {
-      console.log(`[ThumbnailInvalidation] Invalidación manual: nueva imagen para producto ${productId}`);
       this.invalidateProductThumbnails(productId);
     },
 
@@ -163,7 +152,6 @@ class ThumbnailInvalidationService {
      * Invalidar después de eliminar un producto completo
      */
     onProductDeleted: (productId) => {
-      console.log(`[ThumbnailInvalidation] Invalidación manual: producto eliminado ${productId}`);
       this.invalidateProductThumbnails(productId);
     },
 
@@ -171,7 +159,6 @@ class ThumbnailInvalidationService {
      * Invalidar múltiples productos (para operaciones en lote)
      */
     onBulkOperation: (productIds) => {
-      console.log(`[ThumbnailInvalidation] Invalidación manual en lote:`, productIds);
       this.invalidateMultipleProducts(productIds);
     }
   };
@@ -182,8 +169,6 @@ class ThumbnailInvalidationService {
   cleanup() {
     // Remover los canales de Supabase
     supabase.removeAllChannels();
-    
-    console.log('[ThumbnailInvalidation] 🧹 Listeners limpiados');
   }
 
   /**
@@ -191,7 +176,6 @@ class ThumbnailInvalidationService {
    */
   forceInvalidateAll() {
     thumbnailCacheService.clearAllCache();
-    console.log('[ThumbnailInvalidation] 🔥 Cache total invalidado (modo desarrollo)');
   }
 
   /**

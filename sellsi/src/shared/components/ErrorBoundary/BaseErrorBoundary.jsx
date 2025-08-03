@@ -39,10 +39,6 @@ class BaseErrorBoundary extends React.Component {
 
     // 🔧 Logging automático del error
     console.group('🚨 Error Boundary Activated')
-    console.error('Error:', error)
-    console.error('Error Info:', errorInfo)
-    console.error('Component Stack:', errorInfo.componentStack)
-    console.error('Error ID:', this.state.errorId)
     console.groupEnd()
 
     // 🔗 Aquí podrías integrar con servicios de logging como Sentry
@@ -65,13 +61,10 @@ class BaseErrorBoundary extends React.Component {
         url: window.location.href,
       }
 
-      console.log('📤 Error Report Generated:', errorReport)
-      
       // TODO: Enviar a servicio real
       // Sentry.captureException(error, { extra: errorReport })
     } catch (loggingError) {
-      console.error('❌ Failed to report error:', loggingError)
-    }
+      }
   }
 
   handleRetry = () => {

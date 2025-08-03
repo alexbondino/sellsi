@@ -16,8 +16,8 @@ import { CACHE_CONFIGS } from '../utils/queryClient';
 export const useResponsiveThumbnail = (product) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  const isTablet = useMediaQuery(theme.breakpoints.between('md', 'lg'));
-  const isDesktop = useMediaQuery(theme.breakpoints.up('lg'));
+  const isTablet = useMediaQuery(theme.breakpoints.between('md', 'xl'));
+  const isDesktop = useMediaQuery(theme.breakpoints.up('xl'));
 
   // Query solo si no tenemos thumbnails en el producto
   const needsQuery = product && product.id && !product.thumbnails;
@@ -59,17 +59,28 @@ export const useResponsiveThumbnail = (product) => {
       if (isDesktop && thumbs.desktop) return thumbs.desktop;
     }
 
-    // Prioridad 3: Thumbnail_url de la BD
-    if (dbThumbnails?.thumbnail_url) {
-      return dbThumbnails.thumbnail_url;
+    // Prioridad 3: Construir URL responsive desde thumbnail_url existente
+    if (dbThumbnails?.thumbnail_url || product.thumbnail_url || product.thumbnailUrl) {
+      const baseUrl = dbThumbnails?.thumbnail_url || product.thumbnail_url || product.thumbnailUrl;
+      
+      // Construir URL responsive basándose en el patrón de nomenclatura
+      if (baseUrl.includes('_desktop_320x260.jpg')) {
+        if (isMobile) {
+          return baseUrl.replace('_desktop_320x260.jpg', '_mobile_190x153.jpg');
+        }
+        if (isTablet) {
+          return baseUrl.replace('_desktop_320x260.jpg', '_tablet_300x230.jpg');
+        }
+        if (isDesktop) {
+          return baseUrl; // Ya es desktop
+        }
+      }
+      
+      // Si no coincide con el patrón esperado, usar como está
+      return baseUrl;
     }
 
-    // Prioridad 4: Thumbnails principales del producto
-    if (product.thumbnailUrl || product.thumbnail_url) {
-      return product.thumbnailUrl || product.thumbnail_url;
-    }
-
-    // Prioridad 5: Imagen original
+    // Prioridad 4: Imagen original
     if (product.imagen) {
       return product.imagen;
     }

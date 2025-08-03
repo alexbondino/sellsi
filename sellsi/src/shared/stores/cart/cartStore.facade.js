@@ -10,6 +10,7 @@
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
 import debounce from 'lodash.debounce'
+import toast from 'react-hot-toast'
 
 import { PERSIST_CONFIG } from './cartStore.constants'
 import { createDebouncedSave } from './cartStore.core'
@@ -351,8 +352,7 @@ export const createCartStoreFacade = () => {
               }
               localStorage.setItem('sellsi-cart-v3-refactored', JSON.stringify(dataToSave))
             } catch (error) {
-              console.error('❌ Error guardando en localStorage:', error)
-            }
+              }
           },
 
           /**
@@ -372,8 +372,7 @@ export const createCartStoreFacade = () => {
                 }
               }
             } catch (error) {
-              console.error('❌ Error cargando desde localStorage:', error)
-            }
+              }
             return false
           },
 
@@ -384,8 +383,7 @@ export const createCartStoreFacade = () => {
             try {
               localStorage.removeItem('sellsi-cart-v3-refactored')
             } catch (error) {
-              console.error('❌ Error limpiando localStorage:', error)
-            }
+              }
           },
 
           // === UTILIDADES ===

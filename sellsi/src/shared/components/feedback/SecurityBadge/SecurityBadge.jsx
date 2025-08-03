@@ -52,9 +52,9 @@ const SecurityBadge = ({
 
   if (variant === 'compact') {
     return (
-      <Tooltip 
-        title="Pago 100% seguro y encriptado" 
-        placement="top"
+      <Tooltip
+        title="Sellsi retendrá los fondos hasta la confirmación de entrega"
+        placement="bottom"
         arrow
         disabled={!showTooltip}
       >

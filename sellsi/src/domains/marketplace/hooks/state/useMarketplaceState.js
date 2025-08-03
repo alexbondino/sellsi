@@ -1,6 +1,23 @@
-import { useState, useMemo, useCallback } from 'react'
+import { useState, useMemo, useCallback, useEffect } from 'react'
 import { INITIAL_FILTERS } from '../constants'
 import { useProducts } from '../products/useProducts'
+
+// ✅ HOOK PERSONALIZADO: Debouncing global para búsqueda
+const useDebounce = (value, delay) => {
+  const [debouncedValue, setDebouncedValue] = useState(value);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [value, delay]);
+
+  return debouncedValue;
+};
 
 export const useMarketplaceState = () => {
   const { products, loading, error } = useProducts()
@@ -12,6 +29,9 @@ export const useMarketplaceState = () => {
   const [precioRango, setPrecioRango] = useState([0, 1000000])
   const [filtroModalOpen, setFiltroModalOpen] = useState(false)
 
+  // ✅ DEBOUNCING GLOBAL: Aplicar debouncing a la búsqueda a nivel de estado global
+  const debouncedBusqueda = useDebounce(busqueda, 300);
+
   // ✅ OPTIMIZACIÓN: Memoizar lógica de filtrado compleja
   const productosFiltrados = useMemo(() => {
     if (error || !Array.isArray(products)) return []
@@ -22,8 +42,8 @@ export const useMarketplaceState = () => {
       if (seccionActiva === 'ofertas' && producto.tipo !== 'oferta') return false
       if (seccionActiva === 'topVentas' && producto.tipo !== 'top') return false
 
-      // Filtrar por búsqueda
-      if (busqueda && !producto.nombre?.toLowerCase().includes(busqueda.toLowerCase())) {
+      // Filtrar por búsqueda (usando valor debounced)
+      if (debouncedBusqueda && !producto.nombre?.toLowerCase().includes(debouncedBusqueda.toLowerCase())) {
         return false
       }
 
@@ -57,7 +77,7 @@ export const useMarketplaceState = () => {
   }, [
     products,
     seccionActiva,
-    busqueda,
+    debouncedBusqueda,
     categoriaSeleccionada,
     filtros,
     error,

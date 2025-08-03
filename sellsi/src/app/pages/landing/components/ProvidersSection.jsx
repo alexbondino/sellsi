@@ -236,7 +236,7 @@ const ProvidersSection = ({ statistics }) => {
               mb: { xs: 3, sm: 4, md: 4, lg: 0, xl: 0 },
             }}
           >
-            Conoce a nuestros proveedores
+            Nuestros proveedores
           </Typography>
         </Box>
 

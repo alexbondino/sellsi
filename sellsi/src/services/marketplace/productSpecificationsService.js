@@ -41,7 +41,6 @@ export const getProductSpecifications = async (productId) => {
       product_id: productId
     }]
   } catch (error) {
-    console.warn(`⚠️ Error al consultar especificaciones del producto ${productId}:`, error.message)
     return []
   }
 }
@@ -55,7 +54,6 @@ export const getProductSpecifications = async (productId) => {
 export const updateProductSpecifications = async (productId, specifications) => {
   try {
     if (!specifications || specifications.length === 0) {
-      console.debug('📋 No hay especificaciones para actualizar')
       // Limpiar especificaciones (establecer valores por defecto)
       return await clearProductSpecifications(productId)
     }
@@ -64,7 +62,6 @@ export const updateProductSpecifications = async (productId, specifications) => 
     const firstSpec = specifications.find(spec => spec.key && spec.value)
     
     if (!firstSpec) {
-      console.debug('📋 No hay especificaciones válidas para actualizar')
       return await clearProductSpecifications(productId)
     }
 
@@ -80,18 +77,15 @@ export const updateProductSpecifications = async (productId, specifications) => 
       .eq('productid', productId)
 
     if (error) {
-      console.error('❌ Error actualizando especificación:', error)
       return false
     }
 
     if (specifications.length > 1) {
-      console.warn(`⚠️ Advertencia: Solo se pudo guardar la primera especificación. La BD actual solo soporta una especificación por producto.`)
-    }
+      }
 
     // Especificación actualizada exitosamente
     return true
   } catch (error) {
-    console.error('❌ Error actualizando especificación:', error)
     return false
   }
 }
@@ -104,7 +98,6 @@ export const updateProductSpecifications = async (productId, specifications) => 
  * @returns {Promise<boolean>} - true si fue exitoso
  */
 export const insertProductSpecifications = async (productId, specifications, category = 'general') => {
-  console.debug(`🔧 insertProductSpecifications llamada - redirigiendo a updateProductSpecifications`)
   return await updateProductSpecifications(productId, specifications)
 }
 
@@ -136,14 +129,12 @@ const clearProductSpecifications = async (productId) => {
       .eq('productid', productId)
 
     if (error) {
-      console.error('❌ Error limpiando especificaciones:', error)
       return false
     }
 
     // Especificaciones limpiadas exitosamente
     return true
   } catch (error) {
-    console.error('❌ Error limpiando especificaciones:', error)
     return false
   }
 }

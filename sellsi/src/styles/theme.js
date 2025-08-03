@@ -12,7 +12,7 @@ const theme = createTheme({
     },
   },
   palette: {
-    primary: { main: '#1565c0' },
+    primary: { main: '#1565c0' }, // Azul Sellsi
     secondary: { main: '#2e2e2e' },
     bars: { main: '#2e2e2e' },
     background: { default: '#f9f9f9' },

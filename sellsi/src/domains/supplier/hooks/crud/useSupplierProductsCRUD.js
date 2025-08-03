@@ -9,6 +9,7 @@
 
 import { create } from 'zustand'
 import { supabase } from '../../../../services/supabase'
+import { StorageCleanupService } from '../../../../shared/services/storage/storageCleanupService'
 
 const useSupplierProductsCRUD = create((set, get) => ({
   // ============================================================================
@@ -207,12 +208,19 @@ const useSupplierProductsCRUD = create((set, get) => ({
     }))
 
     try {
+      // 1. Limpiar archivos huérfanos ANTES de eliminar
+      const cleanupResult = await StorageCleanupService.cleanupProductOrphans(productId)
+
+      // 2. Eliminar producto de BD
       const { error } = await supabase
         .from('products')
         .delete()
         .eq('productid', productId)
 
       if (error) throw error
+
+      // 3. Log de limpieza para auditoría
+      console.log(`Producto ${productId} eliminado. Archivos limpiados: ${cleanupResult.cleaned}`)
 
       // Remover producto del estado
       set((state) => ({
@@ -223,7 +231,7 @@ const useSupplierProductsCRUD = create((set, get) => ({
         },
       }))
 
-      return { success: true }
+      return { success: true, cleaned: cleanupResult.cleaned }
     } catch (error) {
       set((state) => ({
         operationStates: {

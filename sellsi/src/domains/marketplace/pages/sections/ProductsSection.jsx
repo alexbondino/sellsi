@@ -89,9 +89,6 @@ const ProductsSection = React.memo(
           const quantity = producto.cantidadSeleccionada || 1;
           addItem(productForCart, quantity);
         }
-
-        // Mostrar toast de confirmación
-        showCartSuccess(`Agregado al carrito: ${producto.nombre}`);
       },
       [addItem]
     );
@@ -159,8 +156,10 @@ const ProductsSection = React.memo(
       if (isProviderView) {
         return (
           <>
-            <BusinessIcon sx={{ color: 'primary.main', verticalAlign: 'middle', fontSize: { xs: 24, md: 32 }, mr: 1 }} />
-            Proveedores Disponibles
+            <BusinessIcon sx={{ color: '#1976d2', verticalAlign: 'middle', fontSize: { xs: 24, md: 32 }, mr: 1 }} />
+            <span style={{ color: '#1976d2' }}>
+              Proveedores Disponibles
+            </span>
           </>
         );
       }
@@ -814,4 +813,5 @@ const ProductsSection = React.memo(
 // ✅ MEJORA DE RENDIMIENTO: DisplayName para debugging
 ProductsSection.displayName = 'ProductsSection';
 
+// ✅ ROLLBACK TEMPORAL: Exportar directamente sin ShippingProvider hasta resolver issues
 export default ProductsSection;

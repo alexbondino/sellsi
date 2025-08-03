@@ -23,8 +23,6 @@ class KhipuService {
    */
   async createPaymentOrder(orderData) {
     try {
-      console.log('[KhipuService] Creando orden de pago:', orderData)
-
       // Obtener las credenciales de Khipu desde variables de entorno
       const receiverId = import.meta.env.VITE_KHIPU_RECEIVER_ID
       const secret = import.meta.env.VITE_KHIPU_SECRET
@@ -53,8 +51,6 @@ class KhipuService {
         payer_email: orderData.userEmail || ''
       }
 
-      console.log('[KhipuService] Datos para Khipu:', khipuData)
-
       // Llamar a la función Edge de Supabase que maneja la API de Khipu
       const { data, error } = await supabase.functions.invoke('create-khipu-payment', {
         body: {
@@ -65,16 +61,12 @@ class KhipuService {
       })
 
       if (error) {
-        console.error('[KhipuService] Error en función Edge:', error)
         throw new Error(error.message || 'Error al crear orden de pago')
       }
 
       if (!data.success) {
-        console.error('[KhipuService] Error en respuesta de Khipu:', data.error)
         throw new Error(data.error || 'Error al procesar orden de pago')
       }
-
-      console.log('[KhipuService] Orden creada exitosamente:', data)
 
       return {
         success: true,
@@ -85,7 +77,6 @@ class KhipuService {
       }
 
     } catch (error) {
-      console.error('[KhipuService] Error creando orden:', error)
       throw new Error(`Error al crear orden de pago: ${error.message}`)
     }
   }
@@ -127,7 +118,6 @@ class KhipuService {
       }
 
     } catch (error) {
-      console.error('[KhipuService] Error verificando pago:', error)
       throw new Error(`Error al verificar pago: ${error.message}`)
     }
   }
@@ -162,7 +152,6 @@ class KhipuService {
       return data
 
     } catch (error) {
-      console.error('[KhipuService] Error procesando webhook:', error)
       throw new Error(`Error al procesar notificación: ${error.message}`)
     }
   }

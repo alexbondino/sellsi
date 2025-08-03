@@ -3,7 +3,19 @@
  * Centraliza toda la lógica matemática de productos para evitar duplicación
  * 
  * USADO EN:
- * - AddProduct.jsx (calculateEarnings)
+   // Sin datos válidos, retornar valores por defecto
+  return {
+    ingresoPorVentas: 0,
+    tarifaServicio: 0,
+    total: 0,
+    isRange: false,
+    rangos: {
+      ingresoPorVentas: { min: 0, max: 0 },
+      tarifaServicio: { min: 0, max: 0 },
+      total: { min: 0, max: 0 },
+      details: []
+    }
+  };ct.jsx (calculateEarnings)
  * - MyProducts.jsx (valor del inventario)
  * - useSupplierProducts.js (estadísticas)
  * 
@@ -20,14 +32,14 @@ import { useMemo } from 'react';
 
 /**
  * Calcula el valor mínimo de ingresos (peor escenario) para tramos de precio
- * @param {Array} tramos - Array de tramos con cantidad y precio
+ * @param {Array} tramos - Array de tramos con min, max y precio
  * @param {number} stock - Stock disponible
  * @returns {number} Ingreso mínimo
  */
 const calculateMinimumIncome = (tramos, stock) => {
-  // Ordenar tramos de mayor a menor cantidad (más barato a más caro)
+  // Ordenar tramos de mayor a menor cantidad mínima (más conservador)
   const sortedTramos = [...tramos].sort(
-    (a, b) => parseInt(b.cantidad) - parseInt(a.cantidad)
+    (a, b) => parseInt(b.min) - parseInt(a.min)
   );
 
   let remainingStock = stock;
@@ -36,15 +48,17 @@ const calculateMinimumIncome = (tramos, stock) => {
   for (const tramo of sortedTramos) {
     if (remainingStock <= 0) break;
 
-    const tramoCantidad = parseInt(tramo.cantidad);
-    const tramoPrecio = parseFloat(tramo.precio);
+    const tramoMin = parseInt(tramo.min) || 0;
+    const tramoPrecio = parseFloat(tramo.precio) || 0;
 
-    // Usar división entera
-    const tramosCompletos = Math.floor(remainingStock / tramoCantidad);
+    if (tramoMin > 0 && tramoPrecio > 0) {
+      // Usar división entera para calcular cuántos tramos completos se pueden vender
+      const tramosCompletos = Math.floor(remainingStock / tramoMin);
 
-    if (tramosCompletos > 0) {
-      totalIncome += tramosCompletos * tramoPrecio;
-      remainingStock -= tramosCompletos * tramoCantidad;
+      if (tramosCompletos > 0) {
+        totalIncome += tramosCompletos * tramoMin * tramoPrecio;
+        remainingStock -= tramosCompletos * tramoMin;
+      }
     }
   }
 
@@ -53,23 +67,28 @@ const calculateMinimumIncome = (tramos, stock) => {
 
 /**
  * Calcula el valor máximo de ingresos (mejor escenario) para tramos de precio
- * @param {Array} tramos - Array de tramos con cantidad y precio
+ * @param {Array} tramos - Array de tramos con min, max y precio
  * @param {number} stock - Stock disponible
  * @returns {number} Ingreso máximo
  */
 const calculateMaximumIncome = (tramos, stock) => {
-  // Encontrar el tramo con menor cantidad (más caro)
-  const smallestTramo = tramos.reduce((min, current) =>
-    parseInt(current.cantidad) < parseInt(min.cantidad) ? current : min
-  );
+  // Encontrar el tramo con menor cantidad mínima (más optimista)
+  const smallestTramo = tramos.reduce((min, current) => {
+    const currentMin = parseInt(current.min) || Infinity;
+    const minMin = parseInt(min.min) || Infinity;
+    return currentMin < minMin ? current : min;
+  });
 
-  const tramoCantidad = parseInt(smallestTramo.cantidad);
-  const tramoPrecio = parseFloat(smallestTramo.precio);
+  const tramoMin = parseInt(smallestTramo.min) || 0;
+  const tramoPrecio = parseFloat(smallestTramo.precio) || 0;
 
-  // Usar división entera
-  const tramosCompletos = Math.floor(stock / tramoCantidad);
+  if (tramoMin > 0 && tramoPrecio > 0) {
+    // Usar división entera para calcular cuántos tramos completos se pueden vender
+    const tramosCompletos = Math.floor(stock / tramoMin);
+    return tramosCompletos * tramoMin * tramoPrecio;
+  }
 
-  return tramosCompletos * tramoPrecio;
+  return 0;
 };
 
 // ============================================================================
@@ -81,7 +100,7 @@ const calculateMaximumIncome = (tramos, stock) => {
  * Centraliza la lógica que estaba en productCalculations.js
  */
 export const calculateProductEarnings = (formData) => {
-  const SERVICE_RATE = 0.02; // 2% de tarifa de servicio
+  const SERVICE_RATE = 0.03; // 3% de tarifa de servicio
 
   if (formData.pricingType === 'Unidad' && formData.precioUnidad && formData.stock) {
     // Cálculo simple para precio por unidad
@@ -98,12 +117,13 @@ export const calculateProductEarnings = (formData) => {
         ingresoPorVentas: { min: 0, max: 0 },
         tarifaServicio: { min: 0, max: 0 },
         total: { min: 0, max: 0 },
+        details: []
       },
     };
   } else if (formData.pricingType === 'Volumen' && formData.tramos?.length > 0) {
     // Cálculo de rangos para precios por tramo
     const validTramos = formData.tramos.filter(
-      t => t.cantidad && t.precio && !isNaN(Number(t.cantidad)) && !isNaN(Number(t.precio))
+      t => t.min && t.precio && !isNaN(Number(t.min)) && !isNaN(Number(t.precio))
     );
 
     if (validTramos.length > 0 && formData.stock) {
@@ -122,6 +142,27 @@ export const calculateProductEarnings = (formData) => {
       const minTotal = minIncome - minServiceFee;
       const maxTotal = maxIncome - maxServiceFee;
 
+      // Generar detalles por cada tramo
+      const rangeDetails = validTramos.map((tramo, index) => {
+        const precio = parseFloat(tramo.precio) || 0;
+        const min = parseInt(tramo.min) || 0;
+        const max = tramo.max ? parseInt(tramo.max) : stock;
+        
+        // Calcular ingresos para este tramo
+        const tramoIncome = precio * Math.min(max, stock);
+        const tramoServiceFee = tramoIncome * SERVICE_RATE;
+        const tramoTotal = tramoIncome - tramoServiceFee;
+        
+        return {
+          min,
+          max,
+          precio,
+          ingresoPorVentas: tramoIncome,
+          tarifaServicio: tramoServiceFee,
+          total: tramoTotal
+        };
+      });
+
       return {
         ingresoPorVentas: 0, // No se usa en modo rango
         tarifaServicio: 0,   // No se usa en modo rango
@@ -131,6 +172,7 @@ export const calculateProductEarnings = (formData) => {
           ingresoPorVentas: { min: minIncome, max: maxIncome },
           tarifaServicio: { min: minServiceFee, max: maxServiceFee },
           total: { min: minTotal, max: maxTotal },
+          details: rangeDetails
         },
       };
     }
@@ -180,8 +222,8 @@ export const calculateInventoryValue = (products, scenario = 'conservative') => 
       const validTramos = product.priceTiers
         .filter(t => t.min_quantity && t.price && !isNaN(Number(t.min_quantity)) && !isNaN(Number(t.price)))
         .map(t => ({
-          cantidad: t.min_quantity,  // Mapear min_quantity -> cantidad
-          precio: t.price            // Mapear price -> precio
+          min: t.min_quantity,      // Mapear min_quantity -> min
+          precio: t.price           // Mapear price -> precio
         }));
       
       if (validTramos.length === 0) {

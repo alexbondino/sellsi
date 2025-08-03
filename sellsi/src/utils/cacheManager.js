@@ -199,8 +199,6 @@ class CacheManager {
     const memoryMB = this.stats.memoryUsage / (1024 * 1024);
     
     if (memoryMB > this.maxMemoryMB) {
-      console.warn(`[CacheManager] Límite de memoria excedido: ${memoryMB.toFixed(2)}MB`);
-      
       // Evict agresivamente hasta estar bajo el límite
       while (this.cache.size > 0 && (this.stats.memoryUsage / (1024 * 1024)) > this.maxMemoryMB * 0.8) {
         this.evictLRU();

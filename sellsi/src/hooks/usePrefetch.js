@@ -81,7 +81,6 @@ export const usePrefetch = () => {
         .catch(error => {
           // Si falla, remover de prefetched para reintentarlo
           prefetchedRoutes.current.delete(routePath);
-          console.warn(`❌ Failed to prefetch ${routePath}:`, error);
         });
     }
   };

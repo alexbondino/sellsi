@@ -167,13 +167,11 @@ export const useSupplierProducts = (options = {}) => {
         if (session?.user?.id) {
           // Cargar productos si no están ya cargados Y no está cargando
           if (crud.products.length === 0 && !crud.loading) {
-            console.log('[DEBUG] Loading initial products for supplier:', session.user.id)
             await crud.loadProducts(session.user.id)
           }
         }
       } catch (error) {
-        console.error('Error loading initial supplier products:', error)
-      }
+        }
     }
 
     loadInitialData()
@@ -313,33 +311,25 @@ export const useSupplierProducts = (options = {}) => {
 
     // Operaciones especializadas (acceso directo si se necesita)
     processImages: async (productId, imagesList) => {
-      console.log('[DEBUG] Starting processImages for product:', productId)
-      const result = await images.processProductImages(productId, imagesList)
+      const result = await images.uploadImages(imagesList, productId, crud.supplierId)
       
       // Si el procesamiento fue exitoso, refrescar el producto para mostrar las nuevas imágenes
       if (result.success) {
         try {
-          console.log('[DEBUG] Image processing successful, refreshing product:', productId)
           const refreshResult = await crud.refreshProduct(productId)
           
           if (refreshResult.success) {
-            console.log('[DEBUG] Product refreshed successfully:', refreshResult.data)
-            
             // FORZAR UN RE-RENDER ADICIONAL con un pequeño delay
             // para asegurar que React detecte el cambio
             setTimeout(() => {
-              console.log('[DEBUG] Triggering additional refresh...')
               crud.refreshProduct(productId)
             }, 100)
           } else {
-            console.error('[DEBUG] Product refresh failed:', refreshResult.error)
-          }
+            }
         } catch (error) {
-          console.warn('Error refreshing product after image processing:', error)
-        }
+          }
       } else {
-        console.error('[DEBUG] Image processing failed:', result.error)
-      }
+        }
       
       return result
     },

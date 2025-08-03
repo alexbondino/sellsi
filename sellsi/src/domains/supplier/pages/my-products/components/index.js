@@ -8,3 +8,4 @@ export { default as ProductRegions } from './ProductRegions';
 export { default as ProductResultsPanel } from './ProductResultsPanel';
 export { default as ProductPricing } from './ProductPricing';
 export { default as PriceTiers } from './PriceTiers';
+export { default as MobileExpandableBottomBar } from './MobileExpandableBottomBar';

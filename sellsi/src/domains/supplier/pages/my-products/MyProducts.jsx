@@ -157,6 +157,21 @@ const MyProducts = () => {
     }
   }, [displayedProducts.length, loading, triggerAnimation]);
 
+  // NUEVO: Monitorear eventos de imágenes procesadas en background
+  useEffect(() => {
+    const handleImagesReady = (event) => {
+      const { productId, imageCount } = event.detail
+      // Mostrar notificación al usuario que las imágenes están listas
+      showSuccessToast(`Imágenes del producto procesadas correctamente (${imageCount} imágenes)`)
+    }
+    
+    window.addEventListener('productImagesReady', handleImagesReady)
+    
+    return () => {
+      window.removeEventListener('productImagesReady', handleImagesReady)
+    }
+  }, [])
+
   // --- Handlers ---
   const handleAddProduct = () => {
     navigate('/supplier/addproduct');

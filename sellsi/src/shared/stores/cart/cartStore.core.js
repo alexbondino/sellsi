@@ -42,8 +42,7 @@ export const createDebouncedSave = (getState) => {
       getState().saveToLocal()
       // En el futuro, también llamar: getState().syncToBackend()
     } catch (error) {
-      console.error('❌ Error en auto-guardado:', error)
-    }
+      }
   }, CART_CONFIG.AUTO_SAVE_DELAY)
 }
 
@@ -154,8 +153,7 @@ export const createCartCoreStore = () => {
             }
             localStorage.setItem('sellsi-cart-v3-refactored', JSON.stringify(dataToSave))
           } catch (error) {
-            console.error('❌ Error guardando en localStorage:', error)
-          }
+            }
         },
 
         /**
@@ -176,8 +174,7 @@ export const createCartCoreStore = () => {
               }
             }
           } catch (error) {
-            console.error('❌ Error cargando desde localStorage:', error)
-          }
+            }
           return false
         },
 
@@ -188,8 +185,7 @@ export const createCartCoreStore = () => {
           try {
             localStorage.removeItem('sellsi-cart-v3-refactored')
           } catch (error) {
-            console.error('❌ Error limpiando localStorage:', error)
-          }
+            }
         },
 
         // === UTILIDADES ===

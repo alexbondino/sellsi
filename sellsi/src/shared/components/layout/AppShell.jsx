@@ -13,6 +13,7 @@ import { useBanner } from '../display/banners/BannerContext';
 import { useAuth } from '../../../infrastructure/providers/AuthProvider';
 import { useRole } from '../../../infrastructure/providers/RoleProvider';
 import { useLayout } from '../../../infrastructure/providers/LayoutProvider';
+import { useAppInitialization } from '../../hooks/useAppInitialization';
 
 export const AppShell = ({ children }) => {
   const location = useLocation();
@@ -33,6 +34,9 @@ export const AppShell = ({ children }) => {
     showTopBar,
     topBarHeight,
   } = useLayout();
+
+  // ✅ MOVER AQUÍ: Inicialización de la app donde todos los contextos están disponibles
+  const { isInitialized } = useAppInitialization();
 
   const handleScrollTo = (refName, scrollTargets) => {
     const element = scrollTargets.current[refName]?.current;

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import {
   Box,
@@ -11,10 +11,13 @@ import {
   TextField,
   InputAdornment,
   useTheme,
+  useMediaQuery,
+  Card,
+  Stack,
 } from '@mui/material';
 import {
   ArrowBack as ArrowBackIcon,
-  Inventory2 as Inventory2Icon
+  Inventory2 as Inventory2Icon,
 } from '@mui/icons-material';
 import { ThemeProvider } from '@mui/material/styles';
 import { 
@@ -42,6 +45,7 @@ import {
   ProductRegions,
   ProductResultsPanel,
   ProductPricing,
+  MobileExpandableBottomBar,
 } from './components';
 
 // Servicio para regiones de entrega
@@ -52,9 +56,281 @@ import { convertDbRegionsToForm, convertFormRegionsToDb } from '../../../../util
 import { useSupplierProducts } from '../../hooks/useSupplierProducts';
 import { useProductForm } from '../../hooks/useProductForm';
 import { useProductValidation } from './hooks/useProductValidation';
+import { useProductPricingLogic } from './hooks/useProductPricingLogic';
 import { calculateProductEarnings } from '../../utils/centralizedCalculations'; // 🔧 USANDO NOMBRE CORRECTO
+import { ProductValidator } from '../../validators/ProductValidator';
 import { dashboardThemeCore } from '../../../../styles/dashboardThemeCore';
 import { SPACING_BOTTOM_MAIN } from '../../../../styles/layoutSpacing';
+import { formatPrice } from '../../../../shared/utils/formatters';
+
+// 📱 Mobile Form Layout Component - Separado para evitar re-renders
+const MobileFormLayout = ({ 
+  formData, 
+  errors, 
+  localErrors, 
+  touched, 
+  triedSubmit, 
+  handleInputChange, 
+  handleFieldBlur, 
+  handlePricingTypeChangeUI, 
+  handleTramoChange, 
+  handleTramoBlur, 
+  addTramo, 
+  removeTramo, 
+  handleRegionChange, 
+  imageError, 
+  handleImagesChange, 
+  handleImageError 
+}) => (
+  <Box
+    sx={{
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 0, // 🔧 Gap 0 para unir visualmente
+      px: 0.5, // 🔧 Padding ultra mínimo para llegar al 95%
+      pb: 16,
+      width: '100%',
+      mx: 0,
+    }}
+  >
+    {/* Container Unificado - Todas las secciones en una sola tarjeta */}
+    <Card 
+      elevation={2} 
+      sx={{ 
+        width: '100%', 
+        mx: 0, 
+        borderRadius: 3,
+        overflow: 'hidden', // Para que los divisores internos se vean bien
+        background: 'linear-gradient(135deg, #fafafa 0%, #ffffff 100%)',
+      }}
+    >
+      {/* Información Básica */}
+      <Box sx={{ p: 3, borderBottom: '1px solid #f0f0f0' }}>
+        <Typography variant="h6" gutterBottom sx={{ color: 'primary.main', fontWeight: 700, mb: 2 }}>
+          📝 Información Básica
+        </Typography>
+        <ProductBasicInfo
+          formData={formData}
+          errors={{ ...errors, ...localErrors }}
+          touched={touched}
+          triedSubmit={triedSubmit}
+          onInputChange={handleInputChange}
+          onFieldBlur={handleFieldBlur}
+          isMobile={true}
+        />
+      </Box>
+      
+      {/* Inventario y Condiciones */}
+      <Box sx={{ p: 3, borderBottom: '1px solid #f0f0f0' }}>
+        <Typography variant="h6" gutterBottom sx={{ color: 'primary.main', fontWeight: 700, mb: 2 }}>
+          📦 Inventario y Condiciones
+        </Typography>
+        <ProductInventory
+          formData={formData}
+          errors={errors}
+          localErrors={localErrors}
+          touched={touched}
+          triedSubmit={triedSubmit}
+          onInputChange={handleInputChange}
+          onFieldBlur={handleFieldBlur}
+          onPricingTypeChange={handlePricingTypeChangeUI}
+          isMobile={true}
+        />
+      </Box>
+      
+      {/* Configuración de Precios */}
+      <Box sx={{ p: 3, borderBottom: '1px solid #f0f0f0' }}>
+        <Typography variant="h6" gutterBottom sx={{ color: 'primary.main', fontWeight: 700, mb: 2 }}>
+          💰 Configuración de Precios
+        </Typography>
+        {formData.pricingType === 'Unidad' ? (
+          <ProductPricing
+            formData={formData}
+            errors={errors}
+            localErrors={localErrors}
+            touched={touched}
+            triedSubmit={triedSubmit}
+            onInputChange={handleInputChange}
+            onFieldBlur={handleFieldBlur}
+            isMobile={true}
+          />
+        ) : (
+          <PriceTiers
+            tramos={formData.tramos}
+            onTramoChange={handleTramoChange}
+            onTramoBlur={handleTramoBlur}
+            onAddTramo={addTramo}
+            onRemoveTramo={removeTramo}
+            errors={localErrors.tramos}
+            stockDisponible={formData.stock}
+            isMobile={true}
+          />
+        )}
+      </Box>
+      
+      {/* Regiones de Despacho */}
+      <Box sx={{ p: 3, borderBottom: '1px solid #f0f0f0' }}>
+        <Typography variant="h6" gutterBottom sx={{ color: 'primary.main', fontWeight: 700, mb: 2 }}>
+          🚚 Regiones de Despacho
+        </Typography>
+        <ProductRegions
+          formData={formData}
+          onRegionChange={handleRegionChange}
+          errors={errors}
+          localErrors={localErrors}
+          triedSubmit={triedSubmit}
+          isMobile={true}
+        />
+      </Box>
+      
+      {/* Imágenes del Producto */}
+      <Box sx={{ p: 3 }}> {/* Sin border-bottom en la última sección */}
+        <Typography variant="h6" gutterBottom sx={{ color: 'primary.main', fontWeight: 700, mb: 2 }}>
+          📸 Imágenes del Producto
+        </Typography>
+        <ProductImages
+          formData={formData}
+          errors={errors}
+          localErrors={localErrors}
+          touched={touched}
+          triedSubmit={triedSubmit}
+          imageError={imageError}
+          onImagesChange={handleImagesChange}
+          onImageError={handleImageError}
+          isMobile={true}
+        />
+      </Box>
+    </Card>
+  </Box>
+);
+
+// 🖥️ Desktop Form Layout Component - Separado para evitar re-renders
+const DesktopFormLayout = ({ 
+  formData, 
+  errors, 
+  localErrors, 
+  touched, 
+  triedSubmit, 
+  handleInputChange, 
+  handleFieldBlur, 
+  handlePricingTypeChangeUI, 
+  handleTramoChange, 
+  handleTramoBlur, 
+  addTramo, 
+  removeTramo, 
+  handleRegionChange, 
+  imageError, 
+  handleImagesChange, 
+  handleImageError 
+}) => (
+  <Grid container spacing={3}>
+    <Grid size={{ xs: 12, lg: 8 }}>
+      <Paper
+        sx={{
+          p: 3,
+          minWidth: '980px',
+          maxWidth: '100%',
+          width: '100%',
+        }}
+      >
+        <Box
+          sx={{
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr',
+            gridTemplateRows: 'auto auto auto auto auto',
+            gap: 3,
+            '& .full-width': {
+              gridColumn: '1 / -1',
+            },
+          }}
+        >
+          {/* Información Básica - Permite que ocupe naturalmente las posiciones del grid */}
+          <ProductBasicInfo
+            formData={formData}
+            errors={{ ...errors, ...localErrors }}
+            touched={touched}
+            triedSubmit={triedSubmit}
+            onInputChange={handleInputChange}
+            onFieldBlur={handleFieldBlur}
+          />
+
+          {/* Inventario y Precios - Columna 1, Fila 3 */}
+          <Box sx={{ gridColumn: 1, gridRow: 3 }}>
+            <ProductInventory
+              formData={formData}
+              errors={errors}
+              localErrors={localErrors}
+              touched={touched}
+              triedSubmit={triedSubmit}
+              onInputChange={handleInputChange}
+              onFieldBlur={handleFieldBlur}
+              onPricingTypeChange={handlePricingTypeChangeUI}
+            />
+          </Box>
+
+          {/* Regiones - Columna 2, Fila 3 (al lado de Condiciones de Venta) */}
+          <Box sx={{ gridColumn: 2, gridRow: 3 }}>
+            <ProductRegions
+              formData={formData}
+              onRegionChange={handleRegionChange}
+              errors={errors}
+              localErrors={localErrors}
+              triedSubmit={triedSubmit}
+            />
+          </Box>
+
+          {/* Configuración de Precios */}
+          {formData.pricingType === 'Unidad' ? (
+            <ProductPricing
+              formData={formData}
+              errors={errors}
+              localErrors={localErrors}
+              touched={touched}
+              triedSubmit={triedSubmit}
+              onInputChange={handleInputChange}
+              onFieldBlur={handleFieldBlur}
+            />
+          ) : (
+            <Box
+              className="full-width"
+              sx={{
+                overflow: 'visible',
+                mb: 3,
+              }}
+            >
+              <PriceTiers
+                tramos={formData.tramos}
+                onTramoChange={handleTramoChange}
+                onTramoBlur={handleTramoBlur}
+                onAddTramo={addTramo}
+                onRemoveTramo={removeTramo}
+                errors={localErrors.tramos}
+                stockDisponible={formData.stock}
+              />
+            </Box>
+          )}
+
+          {/* Imágenes del Producto */}
+          <ProductImages
+            formData={formData}
+            errors={errors}
+            localErrors={localErrors}
+            touched={touched}
+            triedSubmit={triedSubmit}
+            imageError={imageError}
+            onImagesChange={handleImagesChange}
+            onImageError={handleImageError}
+          />
+        </Box>
+      </Paper>
+    </Grid>
+    
+    {/* Panel de resultados desktop */}
+    <Grid size={{ xs: 12, lg: 4 }}>
+      {/* Panel renderizado como portal */}
+    </Grid>
+  </Grid>
+);
 
 const AddProduct = () => {
   const location = useLocation();
@@ -62,6 +338,9 @@ const AddProduct = () => {
   const [searchParams] = useSearchParams();
   const theme = useTheme();
   const { createProduct, loadProducts } = useSupplierProducts();
+
+  // 🔧 Hook para responsividad móvil - SOLO xs y sm
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
   // Detectar modo de edición
   const editProductId = searchParams.get('edit');
@@ -75,6 +354,7 @@ const AddProduct = () => {
     touched,
     isLoading,
     isValid,
+    hasActualChanges, // 🔧 FIX EDIT: Para detectar cambios reales en modo edición
     updateField,
     handleFieldBlur,
     handlePricingTypeChange,
@@ -90,25 +370,36 @@ const AddProduct = () => {
     markSubmitAttempt,
   } = useProductValidation();
 
+  // Hook para lógica de manipulación de tramos (NUEVO)
+  const {
+    handleTramoChange,
+    handleTramoBlur,
+    addTramo,
+    removeTramo,
+    validateStockConstraints
+  } = useProductPricingLogic(formData, updateField);
 
   // Estado local para errores de imágenes
   const [imageError, setImageError] = useState('');
 
+  // 🔧 FIX 2: Estado para prevenir múltiples clicks del botón submit
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // 🔧 FIX 2C: Estado adicional para indicar éxito y navegación pendiente
+  const [isNavigating, setIsNavigating] = useState(false);
+
   // Estado shippingRegions para mapeo con Supabase
   const [shippingRegions, setShippingRegions] = useState([]);
 
-  // Cálculos dinámicos
-  const [calculations, setCalculations] = useState({
-    ingresoPorVentas: 0,
-    tarifaServicio: 0,
-    total: 0,
-    isRange: false,
-    rangos: {
-      ingresoPorVentas: { min: 0, max: 0 },
-      tarifaServicio: { min: 0, max: 0 },
-      total: { min: 0, max: 0 },
-    },
-  });
+  // Cálculos dinámicos optimizados con useMemo
+  const calculations = useMemo(() => {
+    return calculateProductEarnings(formData);
+  }, [
+    formData.stock,
+    formData.precioUnidad,
+    formData.tramos,
+    formData.pricingType,
+  ]);
 
 
   // Cargar productos al montar el componente
@@ -180,47 +471,14 @@ const AddProduct = () => {
     }
   }, [formData, triedSubmit, validateForm]);
 
-  // Efecto para calcular dinámicamente
-  useEffect(() => {
-    const newCalculations = calculateProductEarnings(formData); // 🔧 USANDO LÓGICA CENTRALIZADA
-    setCalculations(newCalculations);
-  }, [
-    formData.stock,
-    formData.precioUnidad,
-    formData.tramos,
-    formData.pricingType,
-  ]);  // Handlers
+  // Handlers
   const handleInputChange = field => event => {
     const value = event.target.value;
     updateField(field, value);
     
-    // Si se cambia la compra mínima y hay tramos, sincronizar con el Tramo 1
-    if (field === 'compraMinima' && formData.pricingType === 'Volumen' && formData.tramos.length > 0) {
-      const newTramos = [...formData.tramos];
-      newTramos[0] = { ...newTramos[0], cantidad: value };
-      updateField('tramos', newTramos);
-    }
-    
-    // Lógica de validación por Stock Disponible (solo aplica para rangos 3, 4 y 5)
-    if (field === 'stock' && formData.pricingType === 'Volumen' && formData.tramos.length >= 3) {
-      const newStock = parseInt(value) || 0;
-      
-      if (newStock > 0) {
-        // Filtrar rangos que superen el nuevo stock disponible
-        const validatedTramos = formData.tramos.filter((tramo, index) => {
-          // Rango 1 y 2 siempre se mantienen
-          if (index < 2) return true;
-          
-          // Para rangos 3+, verificar si el MIN supera el stock
-          const min = parseInt(tramo.min) || 0;
-          return min <= newStock;
-        });
-        
-        // Si se eliminaron rangos, actualizar
-        if (validatedTramos.length !== formData.tramos.length) {
-          updateField('tramos', validatedTramos);
-        }
-      }
+    // Usar lógica centralizada para validación de stock vs tramos
+    if (field === 'stock') {
+      validateStockConstraints(value);
     }
   };
 
@@ -245,81 +503,6 @@ const AddProduct = () => {
     // Usar el método del hook que maneja todo el estado correctamente
     handlePricingTypeChange(newValue)
   }
-
-  const handleTramoChange = (index, field, value) => {
-    const newTramos = [...formData.tramos];
-    newTramos[index] = { ...newTramos[index], [field]: value };
-    
-    // Lógica para rangos 2+: MIN = MAX del rango anterior + 1
-    if (index > 0) {
-      if (field === 'max' && index > 0) {
-        // Cuando se actualiza MAX de un rango 2+, actualizar MIN del siguiente si existe
-        if (newTramos[index + 1]) {
-          const newMax = parseInt(value) || 0;
-          const nextMin = newMax + 1;
-          newTramos[index + 1] = { ...newTramos[index + 1], min: nextMin.toString() };
-        }
-      }
-      
-      // Actualizar MIN del rango actual basado en el MAX del rango anterior
-      if (index > 0 && newTramos[index - 1]?.max) {
-        const prevMax = parseInt(newTramos[index - 1].max) || 0;
-        const autoMin = prevMax + 1;
-        newTramos[index] = { ...newTramos[index], min: autoMin.toString() };
-      } else if (index === 1 && newTramos[0]?.max) {
-        // Caso especial para rango 2: MIN = MAX del rango 1 + 1
-        const rango1Max = parseInt(newTramos[0].max) || 0;
-        const rango2Min = rango1Max + 1;
-        newTramos[1] = { ...newTramos[1], min: rango2Min.toString() };
-      }
-    }
-    
-    updateField('tramos', newTramos);
-  };
-
-  const addTramo = () => {
-    // Cuando se agrega un nuevo tramo:
-    // 1. El tramo anterior (que era el último) ahora debe tener su MAX habilitado y vacío
-    // 2. El nuevo tramo será el último con MAX = stock disponible
-    
-    const lastTramo = formData.tramos[formData.tramos.length - 1];
-    const newTramos = [...formData.tramos];
-    
-    // Si hay un tramo anterior y es del rango 2+, limpiar su MAX para que se habilite
-    if (newTramos.length > 1) {
-      const previousTramoIndex = newTramos.length - 1;
-      newTramos[previousTramoIndex] = { 
-        ...newTramos[previousTramoIndex], 
-        max: '' // Limpiar MAX para habilitarlo y resaltarlo en rojo
-      };
-    }
-    
-    // Calcular MIN para el nuevo tramo
-    let newMin = '';
-    if (lastTramo && lastTramo.max && lastTramo.max !== '') {
-      newMin = (parseInt(lastTramo.max) + 1).toString();
-    } else if (lastTramo && lastTramo.min) {
-      // Si el tramo anterior no tiene MAX definido, usar MIN + 2
-      newMin = (parseInt(lastTramo.min) + 2).toString();
-    }
-    
-    // Agregar el nuevo tramo
-    newTramos.push({ 
-      min: newMin, 
-      max: '', // El último tramo tendrá MAX oculto = stock disponible 
-      precio: '' 
-    });
-    
-    updateField('tramos', newTramos);
-  };
-
-  const removeTramo = index => {
-    // Solo permitir eliminar si hay más de 2 tramos (mínimo debe haber Tramo 1 y Tramo 2)
-    if (formData.tramos.length > 2) {
-      const newTramos = formData.tramos.filter((_, i) => i !== index);
-      updateField('tramos', newTramos);
-    }
-  };
 
   const handleImagesChange = images => {
     setImageError('');
@@ -351,101 +534,19 @@ const AddProduct = () => {
       updateField('specifications', newSpecs);
     }
   };
-  /**
-   * 🎯 GENERADOR DE MENSAJES DE ERROR CONTEXTUALES
-   * Analiza los errores y genera mensajes específicos para el usuario
-   */
-  const generateContextualErrorMessage = (validationErrors) => {
-    console.log('🔍 [generateContextualErrorMessage] Procesando errores:', validationErrors)
-    
-    if (!validationErrors || Object.keys(validationErrors).length === 0) {
-      return null;
-    }
-
-    const errorKeys = Object.keys(validationErrors);
-    console.log('🔑 [generateContextualErrorMessage] Error keys:', errorKeys)
-    
-    const hasTramoErrors = errorKeys.includes('tramos');
-    const hasBasicFieldErrors = errorKeys.some(key => 
-      ['nombre', 'descripcion', 'categoria', 'stock', 'compraMinima', 'precioUnidad'].includes(key)
-    );
-    const hasImageErrors = errorKeys.includes('imagenes');
-    const hasRegionErrors = errorKeys.includes('shippingRegions');
-
-    console.log('🔍 [generateContextualErrorMessage] Tipos de errores detectados:', {
-      hasTramoErrors,
-      hasBasicFieldErrors,
-      hasImageErrors,
-      hasRegionErrors
-    })
-
-    // Construir mensaje específico
-    const messages = [];
-
-    if (hasTramoErrors) {
-      const tramoError = validationErrors.tramos;
-      
-      // Detectar tipo específico de error en tramos
-      if (tramoError.includes('ascendentes')) {
-        messages.push('🔢 Las cantidades de los tramos deben ser ascendentes (ej: 50, 100, 200)');
-      } else if (tramoError.includes('descendentes') || tramoError.includes('compran más')) {
-        messages.push('💰 Los precios deben ser descendentes: compran más, pagan menos por unidad');
-      } else if (tramoError.includes('Tramo 1') || tramoError.includes('Compra Mínima')) {
-        messages.push('📊 El primer tramo debe coincidir con la compra mínima');
-      } else if (tramoError.includes('al menos')) {
-        messages.push('📈 Debes configurar al menos 2 tramos de precios válidos');
-      } else if (tramoError.includes('stock')) {
-        messages.push('⚠️ Las cantidades de los tramos no pueden superar el stock disponible');
-      } else if (tramoError.includes('enteros positivos')) {
-        messages.push('🔢 Las cantidades y precios deben ser números enteros positivos');
-      } else {
-        messages.push('📈 Revisa la configuración de los tramos de precios');
-      }
-    }
-
-    if (hasBasicFieldErrors) {
-      const basicErrors = [];
-      if (validationErrors.nombre) basicErrors.push('nombre');
-      if (validationErrors.descripcion) basicErrors.push('descripción');
-      if (validationErrors.categoria) basicErrors.push('categoría');
-      if (validationErrors.stock) basicErrors.push('stock');
-      if (validationErrors.compraMinima) basicErrors.push('compra mínima');
-      if (validationErrors.precioUnidad) basicErrors.push('precio');
-      
-      if (basicErrors.length > 0) {
-        messages.push(`📝 Completa: ${basicErrors.join(', ')}`);
-      } else {
-        messages.push('📝 Completa la información básica del producto');
-      }
-    }
-
-    if (hasImageErrors) {
-      messages.push('🖼️ Agrega al menos una imagen del producto');
-    }
-
-    if (hasRegionErrors) {
-      messages.push('🚛 Configura las regiones de despacho');
-    }
-
-    // Formatear mensaje final
-    if (messages.length > 1) {
-      const finalMessage = `${messages.join(' • ')}`;
-      console.log('📝 [generateContextualErrorMessage] Mensaje múltiple:', finalMessage)
-      return finalMessage;
-    } else if (messages.length === 1) {
-      console.log('📝 [generateContextualErrorMessage] Mensaje único:', messages[0])
-      return messages[0];
-    } else {
-      const defaultMessage = 'Por favor, completa todos los campos requeridos';
-      console.log('📝 [generateContextualErrorMessage] Mensaje por defecto:', defaultMessage)
-      return defaultMessage;
-    }
-  };
 
   // Handler para el submit
   const handleSubmit = async e => {
     console.log('🔥 [AddProduct.handleSubmit] Iniciando submit')
     e.preventDefault();
+
+    // 🔧 FIX 2C: Prevenir múltiples clicks - considerar tanto isSubmitting como isNavigating
+    if (isSubmitting || isNavigating) {
+      console.log('⚠️ [AddProduct.handleSubmit] Submit ya en progreso o navegando, ignorando...')
+      return;
+    }
+
+    setIsSubmitting(true);
     markSubmitAttempt();
 
     console.log('🔍 [AddProduct.handleSubmit] Validando formulario...')
@@ -456,12 +557,14 @@ const AddProduct = () => {
     if (validationErrors && Object.keys(validationErrors).length > 0) {
       console.log('❌ [AddProduct.handleSubmit] Validación falló, no continuando')
       
-      // 🎯 Generar mensaje contextual específico
-      const contextualMessage = generateContextualErrorMessage(validationErrors);
+      // 🎯 Usar mensaje contextual centralizado desde ProductValidator
+      const contextualMessage = ProductValidator.generateContextualMessage(validationErrors);
       console.log('📝 [AddProduct.handleSubmit] Mensaje contextual:', contextualMessage)
       
       showValidationError(contextualMessage);
       
+      // Liberar el estado de submit
+      setIsSubmitting(false);
       return;
     }
 
@@ -533,9 +636,13 @@ const AddProduct = () => {
         '🎉'
       );
 
+      // 🔧 FIX 2C: Marcar que estamos navegando (esto deshabilitará el botón permanentemente)
+      setIsNavigating(true);
+
       // 4. Navegar después de un breve delay
       setTimeout(() => {
         navigate('/supplier/myproducts');
+        // No es necesario liberar estados aquí porque el componente se desmontará
       }, 1500);
 
     } catch (error) {
@@ -553,7 +660,11 @@ const AddProduct = () => {
           error.message || 'Error inesperado al procesar el producto'
         );
       }
+      
+      // 🔧 FIX 2C: Solo liberar el estado en caso de error (no tocamos isNavigating)
+      setIsSubmitting(false);
     }
+    // 🔧 FIX 2C: No hay finally - en caso de éxito, isNavigating permanece true hasta que el componente se desmonte
   };
 
   const handleBack = () => {
@@ -582,169 +693,144 @@ const AddProduct = () => {
         sx={{
           backgroundColor: 'background.default',
           minHeight: '100vh',
-          pt: { xs: 9, md: 10 },
-          px: 3,
+          pt: { xs: 4, md: 10 },
+          px: { xs: 0, md: 3 }, // ✅ Correcto: sin padding horizontal en móvil
           pb: SPACING_BOTTOM_MAIN,
           ml: { xs: 0, md: 10, lg: 14, xl: 24 },
+          width: { xs: '100%', md: 'auto' }, // 🔧 Forzar 100% width en móvil
         }}
       >
-        <Container maxWidth="xl" disableGutters>
+        <Container maxWidth={isMobile ? false : "xl"} disableGutters={isMobile ? true : false}>
           {/* Header */}
-          <Box sx={{ mb: 4 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-              <Button
-                startIcon={<ArrowBackIcon />}
-                onClick={handleBack}
-                variant="outlined"
-                sx={{ textTransform: 'none' }}
-              >
-                Volver
-              </Button>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              {!isEditMode && (
-                <Inventory2Icon sx={{ color: 'primary.main', fontSize: 36 }} />
-              )}
-              <Typography variant="h4" fontWeight="600" color="primary.main">
-                {isEditMode ? 'Editar Producto' : 'Agregar Producto'}
-              </Typography>
-            </Box>
-            </Box>
-          </Box>
-
-          <Grid container spacing={3}>
-            {/* Formulario principal */}
-            <Grid size={{ xs: 12, lg: 8 }}>
-              <Paper
-                sx={{
-                  p: 3,
-                  minWidth: '980px', // Ancho mínimo fijo
-                  maxWidth: '100%', // Máximo para mantener responsividad
-                  width: '100%', // Usa todo el ancho disponible
-                }}
-              >
-                {/* Formulario con CSS Grid nativo */}
-                <Box
-                  sx={{
-                    display: 'grid',
-                    gridTemplateColumns: '1fr 1fr',
-                    gap: 3,
-                    '& .full-width': {
-                      gridColumn: '1 / -1',
-                    },
-                  }}
-                >
-                  {/* Información Básica y Categoría */}
-                  <ProductBasicInfo
-                    formData={formData}
-                    errors={{ ...errors, ...localErrors }}
-                    touched={touched}
-                    triedSubmit={triedSubmit}
-                    onInputChange={handleInputChange}
-                    onFieldBlur={handleFieldBlur}
-                  />
-
-                  {/* Inventario y Precios */}
-                  <ProductInventory
-                    formData={formData}
-                    errors={errors}
-                    localErrors={localErrors}
-                    touched={touched}
-                    triedSubmit={triedSubmit}
-                    onInputChange={handleInputChange}
-                    onFieldBlur={handleFieldBlur}
-                    onPricingTypeChange={handlePricingTypeChangeUI}
-                  />
-
-
-                  {/* Región de Despacho: ocupa toda la columna, alineada al inicio */}
-                  <Box
-                    sx={{
-                      gridRow: 3,
-                      gridColumn: 2,
-                      width: '100%',
-                      justifySelf: 'start',
+          <Box sx={{ 
+            mb: { xs: 2, md: 4 },
+            px: { xs: 0.5, md: 0 }, // 🔧 Reducido aún más para maximizar width
+          }}>
+            {isMobile ? (
+              // 📱 Header Móvil - Botón volver separado encima
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                {/* Fila 1: Solo botón Volver */}
+                <Box sx={{ display: 'flex', justifyContent: 'flex-start' }}>
+                  <Button
+                    startIcon={<ArrowBackIcon />}
+                    onClick={handleBack}
+                    variant="outlined"
+                    size="small"
+                    sx={{ 
+                      textTransform: 'none',
                     }}
                   >
-                    <ProductRegions
-                      formData={formData}
-                      onRegionChange={handleRegionChange}
-                      errors={errors}
-                      localErrors={localErrors}
-                      triedSubmit={triedSubmit}
-                    />
-                  </Box>
-
-                  {/* Configuración de Precio: Campo Precio de Venta O Tramos (condicional) */}
-                  {formData.pricingType === 'Unidad' ? (
-                    <ProductPricing
-                      formData={formData}
-                      errors={errors}
-                      localErrors={localErrors}
-                      touched={touched}
-                      triedSubmit={triedSubmit}
-                      onInputChange={handleInputChange}
-                      onFieldBlur={handleFieldBlur}
-                    />
-                  ) : (
-                    <Box
-                      className="full-width"
-                      sx={{
-                        p: 0,
-                        m: 0,
-                        boxShadow: 'none',
-                        bgcolor: 'transparent',
-                        overflow: 'visible',
-                        mb: 3,
-                      }}
-                    >
-                      <PriceTiers
-                        tramos={formData.tramos}
-                        onTramoChange={handleTramoChange}
-                        onAddTramo={addTramo}
-                        onRemoveTramo={removeTramo}
-                        errors={localErrors.tramos}
-                        stockDisponible={formData.stock}
-                      />
-                    </Box>
-                  )}
-
-                  {/* Imágenes del Producto */}
-                  <ProductImages
-                    formData={formData}
-                    errors={errors}
-                    localErrors={localErrors}
-                    touched={touched}
-                    triedSubmit={triedSubmit}
-                    imageError={imageError}
-                    onImagesChange={handleImagesChange}
-                    onImageError={handleImageError}
-                  />
-
-                  {/* Especificaciones Técnicas y Documentación Técnica deshabilitadas temporalmente */}
+                    Volver
+                  </Button>
                 </Box>
-              </Paper>
-            </Grid>{' '}
-            {/* Panel de resultados */}
-            <Grid size={{ xs: 12, lg: 4 }}>
-              {/* Panel renderizado como portal */}
-            </Grid>
-          </Grid>
+                
+                {/* Fila 2: Título centrado */}
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
+                  {!isEditMode && (
+                    <Inventory2Icon sx={{ color: 'primary.main', fontSize: 28 }} />
+                  )}
+                  <Typography variant="h5" fontWeight="600" color="primary.main">
+                    {isEditMode ? 'Editar Producto' : 'Agregar Producto'}
+                  </Typography>
+                </Box>
+              </Box>
+            ) : (
+              // 🖥️ Header Desktop - Mantener actual
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+                <Button
+                  startIcon={<ArrowBackIcon />}
+                  onClick={handleBack}
+                  variant="outlined"
+                  sx={{ textTransform: 'none' }}
+                >
+                  Volver
+                </Button>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  {!isEditMode && (
+                    <Inventory2Icon sx={{ color: 'primary.main', fontSize: 36 }} />
+                  )}
+                  <Typography variant="h4" fontWeight="600" color="primary.main">
+                    {isEditMode ? 'Editar Producto' : 'Agregar Producto'}
+                  </Typography>
+                </Box>
+              </Box>
+            )}
+          </Box>
+
+          {/* Form container condicional */}
+          {isMobile ? (
+            <Box sx={{ px: 0, width: '100%' }}> {/* 🔧 Eliminado px: '1%' */}
+              <MobileFormLayout 
+                formData={formData}
+                errors={errors}
+                localErrors={localErrors}
+                touched={touched}
+                triedSubmit={triedSubmit}
+                handleInputChange={handleInputChange}
+                handleFieldBlur={handleFieldBlur}
+                handlePricingTypeChangeUI={handlePricingTypeChangeUI}
+                handleTramoChange={handleTramoChange}
+                handleTramoBlur={handleTramoBlur}
+                addTramo={addTramo}
+                removeTramo={removeTramo}
+                handleRegionChange={handleRegionChange}
+                imageError={imageError}
+                handleImagesChange={handleImagesChange}
+                handleImageError={handleImageError}
+              />
+            </Box>
+          ) : (
+            <DesktopFormLayout 
+              formData={formData}
+              errors={errors}
+              localErrors={localErrors}
+              touched={touched}
+              triedSubmit={triedSubmit}
+              handleInputChange={handleInputChange}
+              handleFieldBlur={handleFieldBlur}
+              handlePricingTypeChangeUI={handlePricingTypeChangeUI}
+              handleTramoChange={handleTramoChange}
+              handleTramoBlur={handleTramoBlur}
+              addTramo={addTramo}
+              removeTramo={removeTramo}
+              handleRegionChange={handleRegionChange}
+              imageError={imageError}
+              handleImagesChange={handleImagesChange}
+              handleImageError={handleImageError}
+            />
+          )}
         </Container>
       </Box>
         </ProductFormErrorBoundary>
     </ThemeProvider>
     
-    {/* Portal del panel de resultados */}
-    <ResultsPanelPortal>
-      <ProductResultsPanel
+    {/* Portal del panel de resultados - SOLO DESKTOP */}
+    {!isMobile && (
+      <ResultsPanelPortal>
+        <ProductResultsPanel
+          calculations={calculations}
+          isValid={isValid}
+          hasActualChanges={hasActualChanges} // 🔧 FIX EDIT: Pasar hasActualChanges
+          isLoading={isLoading || isSubmitting || isNavigating}
+          isEditMode={isEditMode}
+          onBack={handleBack}
+          onSubmit={handleSubmit}
+        />
+      </ResultsPanelPortal>
+    )}
+    
+    {/* Bottom Bar Expandible - SOLO MÓVIL */}
+    {isMobile && (
+      <MobileExpandableBottomBar
         calculations={calculations}
+        formData={formData}
         isValid={isValid}
-        isLoading={isLoading}
+        hasActualChanges={hasActualChanges} // 🔧 FIX EDIT: Pasar hasActualChanges
+        isLoading={isLoading || isSubmitting || isNavigating}
         isEditMode={isEditMode}
-        onBack={handleBack}
         onSubmit={handleSubmit}
       />
-    </ResultsPanelPortal>
+    )}
     </SupplierErrorBoundary>
   );
 };

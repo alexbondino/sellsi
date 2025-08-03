@@ -8,16 +8,16 @@ import {
   Button,
   IconButton,
   Box,
-  Chip,
-  Avatar,
-  Popover,
   TextField,
 } from '@mui/material';
 import {
-  ShoppingCart as ShoppingCartIcon,
   Add as AddIcon,
   Remove as RemoveIcon,
+  Verified as VerifiedIcon,
 } from '@mui/icons-material';
+
+// Custom hooks - OPTIMIZADO: Usar hook optimizado con caché global
+import { useOptimizedUserShippingRegion } from '../../../../hooks/useOptimizedUserShippingRegion';
 
 // Utility imports (updated paths for shared location)
 import { showErrorToast } from '../../../../utils/toastHelpers';
@@ -28,26 +28,21 @@ import {
   formatProductForCart,
   calculatePriceForQuantity,
 } from '../../../../utils/priceCalculation';
+import { AddToCart } from '../../cart';
 
 /**
  * ProductCardBuyerContext - Renders the specific content and actions for a buyer's product card.
  * This component is an internal part of the main ProductCard.
  */
 const ProductCardBuyerContext = React.memo(
-  ({ product, onAddToCart, handleProductClick }) => {
+  ({ product, onAddToCart, handleProductClick, onModalStateChange }) => {
     const navigate = useNavigate();
 
-    const [anchorEl, setAnchorEl] = useState(null);
+    // ✅ OPTIMIZADO: Usar hook optimizado con caché global
+    const { userRegion, isLoadingUserRegion } = useOptimizedUserShippingRegion();
+    
     const minimumPurchase =
       product?.minimum_purchase || product?.compraMinima || 1;
-    const [cantidad, setCantidad] = useState(minimumPurchase);
-    const [inputValue, setInputValue] = useState(cantidad.toString());
-
-    // Validation optimized quantity (memoized)
-    const canAdd = useMemo(() => {
-      const numValue = parseInt(inputValue, 10); // Always specify radix
-      return !isNaN(numValue) && numValue >= minimumPurchase;
-    }, [inputValue, minimumPurchase]);
 
     // Robust field mapping for compatibility
     const nombre = product.nombre || product.name || 'Producto sin nombre';
@@ -56,6 +51,7 @@ const ProductCardBuyerContext = React.memo(
     const precioOriginal = product.precioOriginal || product.originalPrice;
     const stock = product.stock || product.maxStock || 50;
     const negociable = product.negociable || product.negotiable || false;
+    const proveedorVerificado = product.proveedorVerificado || product.supplierVerified || false;
 
     // Hook to get price tiers (maintain for compatibility)
     const {
@@ -72,25 +68,6 @@ const ProductCardBuyerContext = React.memo(
         ? tiers
         : [];
     }, [product.priceTiers, tiers]);
-
-    // Calculate dynamic price based on selected quantity (memoized)
-    const currentPrices = useMemo(() => {
-      if (price_tiers.length > 0) {
-        const unitPrice = calculatePriceForQuantity(
-          cantidad,
-          price_tiers,
-          precio
-        );
-        return {
-          unitPrice,
-          total: unitPrice * cantidad,
-        };
-      }
-      return {
-        unitPrice: precio,
-        total: precio * cantidad,
-      };
-    }, [cantidad, price_tiers, precio]);
 
     const memoizedPriceContent = useMemo(() => {
       if (loadingTiers) {
@@ -137,80 +114,6 @@ const ProductCardBuyerContext = React.memo(
       }
     }, [loadingTiers, errorTiers, price_tiers, precio, precioOriginal]);
 
-    const handleClosePopover = useCallback(() => {
-      setAnchorEl(null);
-      setCantidad(minimumPurchase); // Reset quantity on close
-      setInputValue(minimumPurchase.toString()); // Reset input too
-    }, [minimumPurchase]);
-
-    const handleAgregarClick = useCallback(event => {
-      event.stopPropagation(); // Prevent propagation to ProductCard
-      event.preventDefault(); // Prevent default behavior
-
-      // Check if user is logged in
-      const userId = localStorage.getItem('user_id');
-      const accountType = localStorage.getItem('account_type');
-      const supplierid = localStorage.getItem('supplierid');
-      const sellerid = localStorage.getItem('sellerid');
-
-      const isLoggedIn = !!(userId || supplierid || sellerid);
-
-      if (!isLoggedIn) {
-        // If not logged in, open login modal
-        showErrorToast('Debes iniciar sesión para agregar productos al carrito', {
-          icon: '🔒',
-        });
-        const loginEvent = new CustomEvent('openLogin');
-        window.dispatchEvent(loginEvent);
-        return;
-      }
-
-      // If logged in, open quantity modal
-      setAnchorEl(event.currentTarget);
-    }, []);
-
-    const handleCantidadChange = useCallback(event => {
-      const value = event.target.value;
-      setInputValue(value);
-      const numValue = parseInt(value, 10); // Always specify radix
-      if (!isNaN(numValue)) {
-        setCantidad(numValue);
-      }
-    }, []);
-
-    const handleIncrement = useCallback(() => {
-      let numValue = parseInt(inputValue, 10); // Always specify radix
-      if (isNaN(numValue)) numValue = minimumPurchase;
-      if (numValue < stock) {
-        numValue++;
-        setInputValue(numValue.toString());
-        setCantidad(numValue);
-      }
-    }, [inputValue, minimumPurchase, stock]);
-
-    const handleDecrement = useCallback(() => {
-      let numValue = parseInt(inputValue, 10); // Always specify radix
-      if (isNaN(numValue)) numValue = minimumPurchase;
-      if (numValue > minimumPurchase) {
-        numValue--;
-        setInputValue(numValue.toString());
-        setCantidad(numValue);
-      }
-    }, [inputValue, minimumPurchase]);
-
-    const handleConfirmarAgregar = useCallback(() => {
-      if (onAddToCart) {
-        // Create product for cart preserving real price_tiers and minimum
-        const cartProduct = formatProductForCart(
-          product,
-          cantidad,
-          price_tiers
-        );
-        onAddToCart(cartProduct);
-      }
-      handleClosePopover();
-    }, [price_tiers, cantidad, onAddToCart, product, handleClosePopover]);
-
     return (
       <>
         <CardContent sx={{ flexGrow: 1, p: 2, pb: 1, display: 'flex', flexDirection: 'column' }}>
@@ -245,23 +148,30 @@ const ProductCardBuyerContext = React.memo(
               // minHeight and flexGrow removed to let image use full space
             }}
           >
-            {/* CHIP (sin avatar en mobile) */}
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Chip
-                label={proveedor}
-                size="small"
-                variant="outlined"
-                color="primary"
-                sx={{
-                  fontSize: '0.65rem',
-                  height: 20,
-                  px: 0.5,
-                  borderRadius: 1.5,
-                  maxWidth: 250,
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                }}
-              />
+            {/* PROVIDER NAME (sin avatar ni chip en mobile) */}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              <Typography
+                variant="body2"
+                sx={{ fontSize: 12, fontWeight: 400, color: 'text.secondary', display: 'inline' }}
+                component="span"
+              >
+                por{' '}
+              </Typography>
+              <Typography
+                variant="body2"
+                sx={{ fontSize: 12, fontWeight: 700, color: 'text.secondary', display: 'inline' }}
+                component="span"
+              >
+                {proveedor}
+              </Typography>
+              {proveedorVerificado && (
+                <VerifiedIcon 
+                  sx={{ 
+                    fontSize: 16, 
+                    color: '#1976d2' 
+                  }} 
+                />
+              )}
             </Box>
             {/* MINIMUM PURCHASE */}
             <Box>
@@ -273,7 +183,7 @@ const ProductCardBuyerContext = React.memo(
                   color: 'text.secondary',
                 }}
               >
-                Compra mínima: {minimumPurchase.toLocaleString('es-CL')} uds.
+                Compra Mín: {minimumPurchase.toLocaleString('es-CL')} uds.
               </Typography>
             </Box>
             {/* PRICE DISPLAY */}
@@ -303,34 +213,30 @@ const ProductCardBuyerContext = React.memo(
               // minHeight and flexGrow removed to let image use full space
             }}
           >
-            {/* CHIP + AVATAR (arriba en desktop) */}
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Avatar
-                sx={{
-                  width: 24,
-                  height: 24,
-                  mr: 1,
-                  fontSize: '0.75rem',
-                  display: 'flex',
-                }}
+            {/* PROVIDER NAME + VERIFICATION (sin avatar ni chip en desktop) */}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              <Typography
+                variant="body2"
+                sx={{ fontSize: 12, fontWeight: 400, color: 'text.secondary', display: 'inline' }}
+                component="span"
               >
-                {proveedor?.charAt(0)}
-              </Avatar>
-              <Chip
-                label={proveedor}
-                size="small"
-                variant="outlined"
-                color="primary"
-                sx={{
-                  fontSize: '0.8rem',
-                  height: 24,
-                  px: 1.5,
-                  borderRadius: 1.5,
-                  maxWidth: '100%',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                }}
-              />
+                por{' '}
+              </Typography>
+              <Typography
+                variant="body2"
+                sx={{ fontSize: 12, fontWeight: 700, color: 'text.secondary', display: 'inline' }}
+                component="span"
+              >
+                {proveedor}
+              </Typography>
+              {proveedorVerificado && (
+                <VerifiedIcon 
+                  sx={{ 
+                    fontSize: 16, 
+                    color: '#1976d2' 
+                  }} 
+                />
+              )}
             </Box>
             {/* MINIMUM PURCHASE */}
             <Box>
@@ -343,7 +249,7 @@ const ProductCardBuyerContext = React.memo(
                   display: 'none',
                 }}
               >
-                Compra mínima: {minimumPurchase.toLocaleString('es-CL')} uds.
+                Compra Mín: {minimumPurchase.toLocaleString('es-CL')} uds.
               </Typography>
               <Typography
                 variant="body2"
@@ -354,7 +260,7 @@ const ProductCardBuyerContext = React.memo(
                   display: 'block',
                 }}
               >
-                Compra mínima: {minimumPurchase.toLocaleString('es-CL')} unidades
+                Compra Mín: {minimumPurchase.toLocaleString('es-CL')} unidades
               </Typography>
             </Box>
             {/* PRICE DISPLAY */}
@@ -437,238 +343,32 @@ const ProductCardBuyerContext = React.memo(
           */}
         </CardContent>
         <CardActions sx={{ p: 1.5, pt: 0.5 }}>
-          <Button
-            variant="contained"
-            color="primary"
+          <AddToCart
+            product={product}
+            variant="button"
             fullWidth
-            data-no-card-click="true"
-            startIcon={<ShoppingCartIcon sx={{ fontSize: 16, color: 'white' }} />}
-            onClick={handleAgregarClick}
+            size="medium"
+            initialQuantity={minimumPurchase}
+            userRegion={userRegion}
+            isLoadingUserProfile={isLoadingUserRegion}
+            onSuccess={onAddToCart}
+            onModalStateChange={onModalStateChange}
             sx={{
               textTransform: 'none',
               fontWeight: 600,
               borderRadius: 2,
               py: 0.8,
               fontSize: '0.9rem',
-              color: 'white',
-              backgroundColor: 'primary.main',
               boxShadow: '0 3px 10px rgba(25, 118, 210, 0.3)',
-              pointerEvents: 'auto',
-              position: 'relative',
-              zIndex: 10,
-              transition: 'opacity 0.2s',
               '&:hover': {
-                backgroundColor: '#42a5f5',
                 boxShadow: '0 6px 20px rgba(25, 118, 210, 0.6)',
                 transform: 'translateY(-2px)',
-                border: 'none',
-              },
-              '&:active': {
-                border: 'none !important',
-                outline: 'none !important',
-              },
-              '&:focus': {
-                border: 'none !important',
-                outline: 'none !important',
-              },
-              '& .MuiButton-startIcon': {
-                marginRight: 1,
-                color: 'white',
               },
             }}
           >
             AGREGAR
-          </Button>
+          </AddToCart>
         </CardActions>
-        <Popover
-          open={Boolean(anchorEl)}
-          anchorEl={anchorEl}
-          onClose={handleClosePopover}
-          anchorOrigin={{
-            vertical: 'bottom',
-            horizontal: 'center',
-          }}
-          transformOrigin={{
-            vertical: 'top',
-            horizontal: 'center',
-          }}
-          onClick={e => e.stopPropagation()}
-          disableScrollLock={true}
-          disableRestoreFocus={true}
-          disableAutoFocus={true}
-          PaperProps={{
-            onClick: e => e.stopPropagation(),
-            sx: {
-              p: 2,
-              borderRadius: 2,
-              boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
-              minWidth: 220,
-              maxWidth: 240,
-              zIndex: 10000,
-              bgcolor: 'white',
-              border: '1px solid #e0e0e0',
-              position: 'fixed',
-            },
-          }}
-          sx={{
-            zIndex: 10000,
-          }}
-        >
-          <Box sx={{ userSelect: 'none' }}>
-            <Typography
-              variant="h6"
-              sx={{
-                mb: 2,
-                textAlign: 'center',
-                fontSize: {
-                  xs: '1rem', // móvil
-                  md: '1.1rem', // desktop mediano
-                  xl: '1.2rem', // pantallas grandes
-                },
-                fontWeight: 700,
-              }}
-            >
-              Seleccionar Cantidad
-            </Typography>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-              <IconButton
-                onClick={useCallback(
-                  e => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    handleDecrement();
-                  },
-                  [handleDecrement]
-                )}
-                disabled={parseInt(inputValue, 10) <= minimumPurchase}
-                size="small"
-                sx={{
-                  userSelect: 'none',
-                  touchAction: 'manipulation',
-                }}
-              >
-                <RemoveIcon />
-              </IconButton>
-              <TextField
-                type="number"
-                value={inputValue}
-                onChange={handleCantidadChange}
-                onBlur={useCallback(() => {
-                  let numValue = parseInt(inputValue, 10); // Always specify radix
-                  if (isNaN(numValue) || numValue < minimumPurchase)
-                    numValue = minimumPurchase;
-                  if (numValue > stock) numValue = stock;
-                  setInputValue(numValue.toString());
-                  setCantidad(numValue);
-                }, [inputValue, minimumPurchase, stock])}
-                inputProps={{
-                  min: minimumPurchase,
-                  max: product.stock || 9999,
-                }}
-                size="small"
-                error={parseInt(inputValue, 10) < minimumPurchase}
-                helperText={
-                  parseInt(inputValue, 10) < minimumPurchase
-                    ? `Mínimo ${minimumPurchase}`
-                    : ''
-                }
-                sx={{
-                  width: 100,
-                  '& input': {
-                    textAlign: 'center',
-                    userSelect: 'text',
-                  },
-                }}
-              />
-              <IconButton
-                onClick={useCallback(
-                  e => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    handleIncrement();
-                  },
-                  [handleIncrement]
-                )}
-                disabled={parseInt(inputValue, 10) >= stock}
-                size="small"
-                sx={{
-                  userSelect: 'none',
-                  touchAction: 'manipulation',
-                }}
-              >
-                <AddIcon />
-              </IconButton>
-            </Box>
-            <Typography
-              variant="body2"
-              sx={{ mb: 2, textAlign: 'center', color: 'text.secondary' }}
-            >
-              Stock disponible: {stock}
-            </Typography>
-            
-            {/* Mostrar precio por unidad si hay tramos de precios */}
-            {price_tiers && price_tiers.length > 0 && (
-              <Typography
-                variant="body2"
-                sx={{ 
-                  mb: 2, 
-                  textAlign: 'center', 
-                  color: 'primary.main',
-                  fontWeight: 600 
-                }}
-              >
-                Precio: ${currentPrices.unitPrice.toLocaleString('es-CL')} por und.
-              </Typography>
-            )}
-            
-            <Box sx={{ display: 'flex', gap: 1 }}>
-              <Button
-                variant="outlined"
-                onClick={useCallback(
-                  e => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    handleClosePopover();
-                  },
-                  [handleClosePopover]
-                )}
-                fullWidth
-                sx={{
-                  userSelect: 'none', // ✅ SOLUCIÓN: Prevenir selección
-                  touchAction: 'manipulation', // ✅ SOLUCIÓN: Mejorar comportamiento táctil
-                }}
-              >
-                Cancelar
-              </Button>
-              <Button
-                variant="contained"
-                onClick={useCallback(
-                  e => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    handleConfirmarAgregar();
-                  },
-                  [handleConfirmarAgregar]
-                )}
-                disabled={!canAdd}
-                fullWidth
-                sx={{
-                  opacity: canAdd ? 1 : 0.5,
-                  userSelect: 'none',
-                  touchAction: 'manipulation',
-                  transition: 'opacity 0.2s',
-                  '&:hover': {
-                    backgroundColor: '#42a5f5',
-                    boxShadow: '0 6px 20px rgba(25, 118, 210, 0.6)',
-                    transform: 'translateY(-2px)',
-                  },
-                }}
-              >
-                {canAdd ? 'Agregar' : `Mín: ${minimumPurchase}`}
-              </Button>
-            </Box>
-          </Box>
-        </Popover>
       </>
     );
   }

@@ -214,12 +214,12 @@ export class UploadService {
       const errors = []
 
       results.forEach((result, index) => {
-        if (result.status === 'fulfilled' && result.value.success) {
+        if (result.status === 'fulfilled' && result.value?.success) {
           successful.push(result.value.data)
         } else {
           const errorMsg = result.status === 'rejected' 
-            ? result.reason.message 
-            : result.value.error
+            ? (result.reason?.message || 'Error desconocido')
+            : (result.value?.error || 'Error de procesamiento')
           errors.push(`Archivo ${files[index].name}: ${errorMsg}`)
         }
       })
@@ -296,17 +296,23 @@ export class UploadService {
       // 4. Obtener URL pública de la imagen original (usar la que ya generamos)
       const urlData = publicUrlData
 
-      // 5. Generar thumbnail usando Edge Function (SOLO para imagen principal)
+      // 5. Generar thumbnail usando Edge Function (SOLO para imagen principal y NO WebP)
       let thumbnailUrl = null
       if (isMainImage) {
-        try {
-          const thumbnailResult = await this.generateThumbnail(urlData.publicUrl, productId, supplierId)
-          if (thumbnailResult.success) {
-            thumbnailUrl = thumbnailResult.thumbnailUrl
+        // Skip thumbnail generation for WebP images since Edge Function doesn't support them
+        if (file.type === 'image/webp') {
+          //
+        } else {
+          try {
+            const thumbnailResult = await this.generateThumbnail(urlData.publicUrl, productId, supplierId)
+            if (thumbnailResult.success) {
+              thumbnailUrl = thumbnailResult.thumbnailUrl
+            } else {
+              //
+            }
+          } catch (thumbnailError) {
+            //
           }
-          // Si falla, continuar sin thumbnail
-        } catch (thumbnailError) {
-          // Si falla, continuar sin thumbnail
         }
       }
 
@@ -352,7 +358,8 @@ export class UploadService {
 
       if (!response.ok) {
         const errorText = await response.text()
-        throw new Error(`Edge Function error: ${response.status} ${errorText}`)
+        const errorMsg = `Thumbnail service unavailable: ${response.status}`
+        throw new Error(errorMsg)
       }
 
       const result = await response.json()
@@ -368,6 +375,7 @@ export class UploadService {
         }
       }
     } catch (error) {
+      // Thumbnail generation failed, but this is not critical
       return {
         success: false,
         error: error.message,

@@ -26,9 +26,6 @@ const useProductPriceTiers = create((set, get) => ({
    * Procesar tramos de precio - INCLUYE LIMPIEZA PARA ARRAY VACÍO
    */
   processPriceTiers: async (productId, priceTiers) => {
-    console.log('🔧 [processPriceTiers] Procesando tramos para producto:', productId)
-    console.log('📊 [processPriceTiers] PriceTiers recibidos:', priceTiers)
-    
     set((state) => ({
       processingTiers: { ...state.processingTiers, [productId]: true },
       error: null,
@@ -36,21 +33,16 @@ const useProductPriceTiers = create((set, get) => ({
 
     try {
       // SIEMPRE limpiar tramos existentes primero
-      console.log('🧹 [processPriceTiers] Limpiando tramos existentes...')
       const { error: deleteError } = await supabase
         .from('product_quantity_ranges')
         .delete()
         .eq('product_id', productId)
 
       if (deleteError) {
-        console.error('❌ [processPriceTiers] Error limpiando tramos:', deleteError)
-        throw deleteError
       }
-      console.log('✅ [processPriceTiers] Tramos existentes limpiados')
 
       // Si no hay tramos o está vacío, terminar aquí (modo Por Unidad)
       if (!priceTiers || priceTiers.length === 0) {
-        console.log('ℹ️  [processPriceTiers] No hay tramos para insertar (modo Por Unidad)')
         set((state) => ({
           processingTiers: { ...state.processingTiers, [productId]: false },
         }))
@@ -58,23 +50,20 @@ const useProductPriceTiers = create((set, get) => ({
       }
 
       // Validar y preparar tramos para insertar
-      console.log('📋 [processPriceTiers] Validando tramos...')
       const validationResult = get().validatePriceTiers(priceTiers)
       
       if (!validationResult.isValid) {
-        console.error('❌ [processPriceTiers] Tramos inválidos:', validationResult.errors)
         throw new Error(`Tramos de precio inválidos: ${validationResult.errors.join(', ')}`)
       }
 
       // Preparar tramos para insertar
-      const tiersToInsert = validationResult.data.map((t) => ({
+      const tiersToInsert = validationResult.data.map((t, index, array) => ({
         product_id: productId,
-        min_quantity: Number(t.cantidad),
-        max_quantity: t.maxCantidad ? Number(t.maxCantidad) : null,
+        min_quantity: Number(t.min),
+        // El último rango siempre tiene max_quantity = null (sin límite superior, limitado por stock)
+        max_quantity: index === array.length - 1 ? null : (t.max ? Number(t.max) : null),
         price: Number(t.precio),
       }))
-
-      console.log('💾 [processPriceTiers] Insertando nuevos tramos:', tiersToInsert)
 
       // Insertar nuevos tramos
       if (tiersToInsert.length > 0) {
@@ -83,20 +72,16 @@ const useProductPriceTiers = create((set, get) => ({
           .insert(tiersToInsert)
 
         if (insertError) {
-          console.error('❌ [processPriceTiers] Error insertando tramos:', insertError)
           throw insertError
         }
-        console.log('✅ [processPriceTiers] Tramos insertados exitosamente')
       }
 
       set((state) => ({
         processingTiers: { ...state.processingTiers, [productId]: false },
       }))
 
-      console.log('✅ [processPriceTiers] Proceso completado exitosamente')
       return { success: true, data: validationResult.data }
     } catch (error) {
-      console.error('❌ [processPriceTiers] Error:', error)
       set((state) => ({
         processingTiers: { ...state.processingTiers, [productId]: false },
         error: `Error procesando tramos de precio: ${error.message}`,
@@ -114,28 +99,32 @@ const useProductPriceTiers = create((set, get) => ({
 
     for (let i = 0; i < priceTiers.length; i++) {
       const tier = priceTiers[i]
+      // Soporte para estructura antigua y nueva
+      const minQuantity = tier.min_quantity || tier.cantidad || tier.min
+      const price = tier.price || tier.precio
+      const maxQuantity = tier.max_quantity || tier.maxCantidad || tier.max
       
       // Validar campos requeridos
-      if (!tier.cantidad || isNaN(Number(tier.cantidad)) || Number(tier.cantidad) <= 0) {
+      if (!minQuantity || isNaN(Number(minQuantity)) || Number(minQuantity) <= 0) {
         errors.push(`Tramo ${i + 1}: Cantidad mínima debe ser un número mayor a 0`)
         continue
       }
 
-      if (!tier.precio || isNaN(Number(tier.precio)) || Number(tier.precio) <= 0) {
+      if (!price || isNaN(Number(price)) || Number(price) <= 0) {
         errors.push(`Tramo ${i + 1}: Precio debe ser un número mayor a 0`)
         continue
       }
 
       // Validar cantidad máxima si se proporciona
-      if (tier.maxCantidad && (isNaN(Number(tier.maxCantidad)) || Number(tier.maxCantidad) <= Number(tier.cantidad))) {
+      if (maxQuantity && (isNaN(Number(maxQuantity)) || Number(maxQuantity) <= Number(minQuantity))) {
         errors.push(`Tramo ${i + 1}: Cantidad máxima debe ser mayor a la cantidad mínima`)
         continue
       }
 
       // Validar rangos razonables
-      const cantidad = Number(tier.cantidad)
-      const precio = Number(tier.precio)
-      const maxCantidad = tier.maxCantidad ? Number(tier.maxCantidad) : null
+      const cantidad = Number(minQuantity)
+      const precio = Number(price)
+      const maxCantidad = maxQuantity ? Number(maxQuantity) : null
 
       if (cantidad > 10000000) {
         errors.push(`Tramo ${i + 1}: Cantidad mínima muy alta (máximo 10,000,000)`)
@@ -149,10 +138,13 @@ const useProductPriceTiers = create((set, get) => ({
         errors.push(`Tramo ${i + 1}: Cantidad máxima muy alta (máximo 10,000,000)`)
       }
 
-      // Si pasa validaciones, agregar a la lista
+      // Si pasa validaciones, agregar a la lista (mantener estructura legacy para compatibilidad)
       validatedTiers.push({
-        cantidad: cantidad,
+        min: cantidad,
         precio: precio,
+        max: maxCantidad,
+        // También campos legacy por compatibilidad
+        cantidad: cantidad,
         maxCantidad: maxCantidad,
         descuento: tier.descuento || null,
         descripcion: tier.descripcion || null,
@@ -160,12 +152,12 @@ const useProductPriceTiers = create((set, get) => ({
     }
 
     // Validar que no haya solapamientos en rangos
-    const sortedTiers = [...validatedTiers].sort((a, b) => a.cantidad - b.cantidad)
+    const sortedTiers = [...validatedTiers].sort((a, b) => a.min - b.min)
     for (let i = 1; i < sortedTiers.length; i++) {
       const prevTier = sortedTiers[i - 1]
       const currentTier = sortedTiers[i]
       
-      if (prevTier.maxCantidad && currentTier.cantidad <= prevTier.maxCantidad) {
+      if (prevTier.max && currentTier.min <= prevTier.max) {
         errors.push(`Solapamiento de rangos: Tramo ${i} se solapa con el anterior`)
       }
     }

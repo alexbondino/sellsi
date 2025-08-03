@@ -79,34 +79,34 @@ const OrderSummary = ({
       isCheckingOut ||
       !cartStats ||
       cartStats.isEmpty ||
+      (isAdvancedShippingMode && shippingValidation && shippingValidation.isLoading) || // ✅ NUEVO: deshabilitar si está validando
+      (isAdvancedShippingMode && shippingValidation && !shippingValidation.userRegion) || // ✅ NUEVO: deshabilitar si no hay userRegion
       (isAdvancedShippingMode && shippingValidation && !shippingValidation.isCartCompatible)
     )
+    
     return disabled
   }
   return (
     <Paper
+      elevation={3}
       sx={{
         p: 3,
         borderRadius: 3,
-        background: 'linear-gradient(135deg, #ffffff 0%, #f0f4ff 100%)',
-        boxShadow: '0 12px 24px rgba(0,0,0,0.1)',
-        border: '1px solid rgba(102, 126, 234, 0.2)',
+        background: 'linear-gradient(135deg, #ffffff 0%, #f8f9ff 100%)',
+        border: '1px solid rgba(102, 126, 234, 0.1)',
         position: 'sticky',
-        top: 100,
+        top: 100
       }}
     >
-      <Typography
-        variant="h5"
-        sx={{
-          fontWeight: 'bold',
-          mb: 3,
-          background: '#1565c0',
-          WebkitBackgroundClip: 'text',
-          WebkitTextFillColor: 'transparent',
-        }}
-      >
-        Resumen del Pedido
-      </Typography>{' '}
+      <Stack spacing={3}>
+        <Typography
+          variant="h6"
+          sx={{
+            fontWeight: 'bold',
+          }}
+        >
+          Resumen del Pedido
+        </Typography>
       {/* Códigos de descuento */}
       <DiscountSection
         couponInput={couponInput}
@@ -147,35 +147,30 @@ const OrderSummary = ({
             startIcon={
               isCheckingOut ? (
                 <CircularProgress size={20} sx={{ color: 'white' }} />
+              ) : (isAdvancedShippingMode && shippingValidation && shippingValidation.isLoading) ? (
+                <CircularProgress size={20} sx={{ color: 'white' }} />
               ) : (
                 <CreditCardIcon sx={{ color: 'white' }} />
               )
             }
             sx={{
               py: 1.5,
-              borderRadius: 1,
-              backgroundColor: isButtonDisabled() ? 'rgba(128,128,128,0.18)' : 'primary.main',
-              color: isButtonDisabled() ? 'rgba(0,0,0,0.32)' : 'white',
-              boxShadow: isButtonDisabled() ? 'none' : '0 8px 16px rgba(102, 126, 234, 0.3)',
-              cursor: isButtonDisabled() ? 'not-allowed' : 'pointer',
-              border: '1px solid rgba(128,128,128,0.18)',
-              '&:hover': {
-                backgroundColor: isButtonDisabled() ? 'rgba(128,128,128,0.18)' : 'primary.dark',
-                color: isButtonDisabled() ? 'rgba(0,0,0,0.32)' : 'white',
-              },
+              borderRadius: 2,
+              fontWeight: 'bold',
+              textTransform: 'none',
               '&:disabled': {
-                opacity: 0.7,
-                backgroundColor: 'rgba(128,128,128,0.18)',
-                color: 'rgba(0,0,0,0.32)',
-                boxShadow: 'none',
-                cursor: 'not-allowed',
-                border: '1px solid rgba(128,128,128,0.18)',
-              },
+                opacity: 0.6,
+                cursor: 'not-allowed'
+              }
             }}
           >
-            {isCheckingOut ? 'Procesando...' : 'Continuar al pago'}
+            {isCheckingOut ? 'Procesando...' : 
+             (isAdvancedShippingMode && shippingValidation && shippingValidation.isLoading) ? 'Validando envíos...' :
+             (isAdvancedShippingMode && shippingValidation && !shippingValidation.userRegion) ? 'Cargando perfil...' :
+             'Continuar al pago'}
           </Button>
         </motion.div>
+      </Stack>
       </Stack>
     </Paper>
   )

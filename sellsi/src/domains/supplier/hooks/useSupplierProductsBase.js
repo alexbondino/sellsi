@@ -168,7 +168,6 @@ const useSupplierProductsBase = create((set, get) => ({
   processProductInBackground: async (productId, productData) => {
     try {
 
-
       // Procesar imágenes si existen
       if (productData.imagenes?.length > 0) {
 
@@ -205,10 +204,8 @@ const useSupplierProductsBase = create((set, get) => ({
         },
       }))
 
-
     } catch (error) {
 
-      
       // Actualizar estado de error
       set((state) => ({
         operationStates: {
@@ -231,115 +228,6 @@ const useSupplierProductsBase = create((set, get) => ({
    * Maneja correctamente la transición entre modos de pricing
    */
   updateProduct: async (productId, updates) => {
-    console.log('🔄 Actualizando producto:', productId)
-    console.log('📝 Updates recibidos:', updates)
-    
-    set((state) => ({
-      operationStates: {
-        ...state.operationStates,
-        updating: { ...state.operationStates.updating, [productId]: true },
-      },
-      error: null,
-    }))
-
-    try {
-      const { priceTiers, imagenes, specifications, ...productFields } = updates
-
-      console.log('🏷️  Campos del producto a actualizar:', productFields)
-      console.log('📊 Price tiers:', priceTiers)
-      
-      // LOGGING CRÍTICO: Verificar campos de pricing
-      if (productFields.product_type) {
-        console.log('🔄 CAMBIO DETECTADO - product_type:', productFields.product_type)
-      }
-      if (productFields.price !== undefined) {
-        console.log('💰 CAMBIO DETECTADO - price:', productFields.price)
-      }
-
-      // PASO 1: Actualizar campos básicos del producto
-      console.log('📝 EJECUTANDO UPDATE EN SUPABASE con campos:', productFields)
-      const { data, error } = await supabase
-        .from('products')
-        .update({ ...productFields, updateddt: new Date().toISOString() })
-        .eq('productid', productId)
-        .select()
-        .single()
-
-      if (error) {
-        console.error('❌ Error actualizando campos básicos:', error)
-        throw error
-      }
-      
-      console.log('✅ Campos básicos actualizados')
-
-      // PASO 2: Procesar especificaciones si se proporcionan
-      if (specifications) {
-        console.log('📋 Procesando especificaciones...')
-        await get().processProductSpecifications(productId, specifications)
-      }
-
-      // PASO 3: Procesar imágenes si se proporcionan
-      if (imagenes) {
-        console.log('🖼️  Procesando imágenes...')
-        await get().processProductImages(productId, imagenes)
-      }
-
-      // PASO 4: Procesar tramos de precio SIEMPRE (para limpiar o crear)
-      console.log('💰 Procesando price tiers...')
-      await get().processPriceTiers(productId, priceTiers || [])
-
-      // PASO 5: Recargar productos para obtener los datos actualizados
-      const supplierId = localStorage.getItem('user_id')
-      if (supplierId) {
-        console.log('🔄 Recargando productos...')
-        await get().loadProducts(supplierId)
-      }
-
-      set((state) => ({
-        operationStates: {
-          ...state.operationStates,
-          updating: { ...state.operationStates.updating, [productId]: false },
-        },
-      }))
-
-      console.log('✅ Producto actualizado exitosamente')
-      return { success: true }
-      
-    } catch (error) {
-      console.error('❌ Error en updateProduct:', error)
-      
-      set((state) => ({
-        operationStates: {
-          ...state.operationStates,
-          updating: { ...state.operationStates.updating, [productId]: false },
-        },
-        error: error.message || 'Error al actualizar producto',
-      }))
-      
-      return { success: false, error: error.message }
-    }
-  },
-
-  /**
-   * Eliminar producto (UX optimizada - elimina producto primero, limpia imágenes después)
-   */
-  deleteProduct: async (productId) => {
-    set((state) => ({
-      operationStates: {
-        ...state.operationStates,
-        deleting: { ...state.operationStates.deleting, [productId]: true },
-      },
-      error: null,
-    }))
-
-    try {
-      // 1. PRIMERO: Obtener URLs de imágenes ANTES de eliminar
-
-      const { data: imageRecords, error: fetchError } = await supabase
-        .from('product_images')
-        .select('image_url, thumbnail_url')
-        .eq('product_id', productId);
-
       if (fetchError) {
 
       } else {
@@ -465,13 +353,10 @@ const useSupplierProductsBase = create((set, get) => ({
       }
     } else {
     }
-    
 
     // 6. REEMPLAZAR TODOS los registros en product_images
     if (finalImageData.length > 0) {
 
-
-      
       // PRIMERO: Obtener URLs existentes ANTES de eliminar
       const { data: existingImages, error: fetchError } = await supabase
         .from('product_images')
@@ -511,7 +396,6 @@ const useSupplierProductsBase = create((set, get) => ({
 
         } else {
 
-
         }
       }
     } else {
@@ -530,78 +414,6 @@ const useSupplierProductsBase = create((set, get) => ({
    * de forma profesional y sin inconsistencias.
    */
   processPriceTiers: async (productId, priceTiers) => {
-    console.log('🔧 Procesando price tiers para producto:', productId)
-    console.log('📊 Price tiers recibidos:', priceTiers)
-    
-    try {
-      // PASO 1: Siempre limpiar tramos existentes primero
-      console.log('🧹 Limpiando tramos existentes...')
-      const { error: deleteError } = await supabase
-        .from('product_quantity_ranges')
-        .delete()
-        .eq('product_id', productId)
-
-      if (deleteError) {
-        console.error('❌ Error limpiando tramos existentes:', deleteError)
-        throw deleteError
-      }
-      console.log('✅ Tramos existentes limpiados')
-
-      // PASO 2: Si no hay priceTiers o está vacío, terminar aquí (modo Por Unidad)
-      if (!priceTiers || priceTiers.length === 0) {
-        console.log('ℹ️  No hay price tiers para insertar (modo Por Unidad)')
-        return
-      }
-
-      // PASO 3: Preparar y validar tramos para insertar
-      const tiersToInsert = priceTiers
-        .filter((t) => t.cantidad && t.precio && Number(t.cantidad) > 0 && Number(t.precio) > 0)
-        .map((t) => ({
-          product_id: productId,
-          min_quantity: Number(t.cantidad),
-          max_quantity: t.maxCantidad ? Number(t.maxCantidad) : null,
-          price: Number(t.precio),
-        }))
-
-      console.log('📝 Tramos preparados para insertar:', tiersToInsert)
-
-      // PASO 4: Insertar nuevos tramos solo si hay datos válidos
-      if (tiersToInsert.length > 0) {
-        console.log('💾 Insertando nuevos tramos...')
-        const { error: insertError } = await supabase
-          .from('product_quantity_ranges')
-          .insert(tiersToInsert)
-
-        if (insertError) {
-          console.error('❌ Error insertando tramos:', insertError)
-          throw insertError
-        }
-        console.log('✅ Tramos insertados exitosamente')
-      } else {
-        console.log('ℹ️  No hay tramos válidos para insertar')
-      }
-
-    } catch (error) {
-      console.error('❌ Error en processPriceTiers:', error)
-      throw error
-    }
-  },
-
-  /**
-   * Verificar si archivos existen en el storage (para debugging)
-   */
-  verifyFileExistence: async (filePaths) => {
-
-    
-    for (const filePath of filePaths) {
-      try {
-        const { data, error } = await supabase.storage
-          .from('product-images')
-          .list(filePath.substring(0, filePath.lastIndexOf('/')), {
-            limit: 1000,
-            search: filePath.substring(filePath.lastIndexOf('/') + 1)
-          });
-        
         if (error) {
 
         } else {
@@ -619,8 +431,6 @@ const useSupplierProductsBase = create((set, get) => ({
    */
   cleanupImagesFromUrls: async (imageRecords) => {
 
-
-    
     try {
       // Limpiar imágenes originales
       for (const record of imageRecords) {
@@ -630,7 +440,6 @@ const useSupplierProductsBase = create((set, get) => ({
             if (urlParts.length > 1) {
               const filePath = urlParts[1];
 
-              
               // Intentar eliminar directamente sin verificación previa
               const { data: deleteData, error: deleteError } = await supabase.storage
                 .from('product-images')

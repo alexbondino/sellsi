@@ -22,7 +22,9 @@ import { SupplierErrorBoundary } from '../../components/ErrorBoundary';
 const DashboardSummary = React.lazy(() =>
   import('../../components/dashboard-summary/DashboardSummary')
 );
-const MonthlySalesChart = React.lazy(() => import('../../../../shared/components/display/graphs/BarChart'));
+const MonthlySalesChart = React.lazy(() =>
+  import('../../../../shared/components/display/graphs/BarChart')
+);
 
 // Loading fallbacks optimizados
 const DashboardSummaryFallback = () => (
@@ -41,7 +43,7 @@ const ChartFallback = () => (
 
 const ProviderHome = () => {
   const navigate = useNavigate();
-  
+
   // Dashboard data (metrics, charts, analytics)
   const {
     charts,
@@ -87,25 +89,29 @@ const ProviderHome = () => {
   useEffect(() => {
     const checkAndRetryLoad = setTimeout(async () => {
       if (!loading && products.length === 0 && !error) {
-        console.log('Datos vacíos detectados después del montaje inicial, reintentando carga...')
+        console.log(
+          'Datos vacíos detectados después del montaje inicial, reintentando carga...'
+        );
         try {
-          const { data: { session } } = await supabase.auth.getSession()
-          
+          const {
+            data: { session },
+          } = await supabase.auth.getSession();
+
           if (session?.user?.id) {
             // Refrescar dashboard y productos en paralelo
             await Promise.all([
               refreshDashboard(),
-              loadProducts(session.user.id)
-            ])
+              loadProducts(session.user.id),
+            ]);
           }
         } catch (error) {
-          console.error('Error refreshing data:', error)
+          console.error('Error refreshing data:', error);
         }
       }
-    }, 3000) // Esperar 3 segundos antes de verificar
+    }, 3000); // Esperar 3 segundos antes de verificar
 
-    return () => clearTimeout(checkAndRetryLoad)
-  }, []) // Solo ejecutar una vez después del montaje
+    return () => clearTimeout(checkAndRetryLoad);
+  }, []); // Solo ejecutar una vez después del montaje
 
   const handleRetry = () => {
     // Reload dashboard data
@@ -115,75 +121,75 @@ const ProviderHome = () => {
 
   return (
     <SupplierErrorBoundary onRetry={handleRetry}>
-    <ThemeProvider theme={dashboardThemeCore}>
-      <Box
-        sx={{
-          backgroundColor: 'background.default',
-          minHeight: '100vh',
-          pt: { xs: 4.5, md: 5 },
-          px: 3,
-          pb: SPACING_BOTTOM_MAIN,
-          ml: { xs: 0, md: 10, lg: 14, xl: 24 },
-        }}
-      >
-        {/*Eliminar esto eventualmente - Prueba Sentry */}
-        <Button variant="contained" onClick={() => funcionQueNoExiste()}>
-          Presióname
-        </Button>
-        <Container maxWidth="xl" disableGutters>
-          <Grid container spacing={3}>
-            <Grid size={12}>
-              <Box sx={{ mb: 4 }}>
-                <Suspense fallback={<DashboardSummaryFallback />}>
-                  <DashboardSummary
-                    products={products}
-                    totalSales={totalSales}
-                    outOfStock={productsOutOfStock}
-                    weeklyRequests={weeklyRequests}
-                    productsActive={productsActive}
-                  />
-                </Suspense>
-              </Box>
+      <ThemeProvider theme={dashboardThemeCore}>
+        <Box
+          sx={{
+            backgroundColor: 'background.default',
+            minHeight: '100vh',
+            pt: { xs: 4.5, md: 5 },
+            px: 3,
+            pb: SPACING_BOTTOM_MAIN,
+            ml: { xs: 0, md: 10, lg: 14, xl: 24 },
+          }}
+        >
+          {/*Eliminar esto eventualmente - Prueba Sentry */}
+          <Button variant="contained" onClick={() => funcionQueNoExiste()}>
+            Presióname
+          </Button>
+          <Container maxWidth="xl" disableGutters>
+            <Grid container spacing={3}>
+              <Grid size={12}>
+                <Box sx={{ mb: 4 }}>
+                  <Suspense fallback={<DashboardSummaryFallback />}>
+                    <DashboardSummary
+                      products={products}
+                      totalSales={totalSales}
+                      outOfStock={productsOutOfStock}
+                      weeklyRequests={weeklyRequests}
+                      productsActive={productsActive}
+                    />
+                  </Suspense>
+                </Box>
 
-              <Box sx={{ mb: 4 }}>
-                <Button
-                  variant="contained"
-                  size="large"
-                  startIcon={<AddIcon />}
-                  fullWidth
-                  sx={{
-                    py: 2,
-                    borderRadius: 2,
-                    fontSize: '1.1rem',
-                    fontWeight: 600,
-                    textTransform: 'none',
-                    boxShadow: 'rgba(99, 102, 241, 0.16) 0px 4px 16px',
-                    '&:hover': {
-                      boxShadow: 'rgba(99, 102, 241, 0.24) 0px 6px 20px',
-                      transform: 'translateY(-1px)',
-                    },
-                    transition: 'all 0.2s ease-in-out',
-                  }}
-                  onClick={() =>
-                    navigate('/supplier/addproduct', {
-                      state: { fromHome: true },
-                    })
-                  }
-                >
-                  Nuevo Producto
-                </Button>
-              </Box>
+                <Box sx={{ mb: 4 }}>
+                  <Button
+                    variant="contained"
+                    size="large"
+                    startIcon={<AddIcon />}
+                    fullWidth
+                    sx={{
+                      py: 2,
+                      borderRadius: 2,
+                      fontSize: '1.1rem',
+                      fontWeight: 600,
+                      textTransform: 'none',
+                      boxShadow: 'rgba(99, 102, 241, 0.16) 0px 4px 16px',
+                      '&:hover': {
+                        boxShadow: 'rgba(99, 102, 241, 0.24) 0px 6px 20px',
+                        transform: 'translateY(-1px)',
+                      },
+                      transition: 'all 0.2s ease-in-out',
+                    }}
+                    onClick={() =>
+                      navigate('/supplier/addproduct', {
+                        state: { fromHome: true },
+                      })
+                    }
+                  >
+                    Nuevo Producto
+                  </Button>
+                </Box>
 
-              <Box>
-                <Suspense fallback={<ChartFallback />}>
-                  <MonthlySalesChart data={monthlyData} />
-                </Suspense>
-              </Box>
+                <Box>
+                  <Suspense fallback={<ChartFallback />}>
+                    <MonthlySalesChart data={monthlyData} />
+                  </Suspense>
+                </Box>
+              </Grid>
             </Grid>
-          </Grid>
-        </Container>
-      </Box>
-    </ThemeProvider>
+          </Container>
+        </Box>
+      </ThemeProvider>
     </SupplierErrorBoundary>
   );
 };

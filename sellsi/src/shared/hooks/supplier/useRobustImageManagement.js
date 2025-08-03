@@ -40,27 +40,23 @@ export const useRobustImageManagement = (productId, options = {}) => {
    */
   const processImages = useCallback(async (images) => {
     if (debugMode) {
-      console.log(`🔄 Procesando ${images?.length || 0} imágenes para producto ${productId}`)
-    }
+      }
 
     try {
       // Verificar salud del sistema antes de procesar
       const healthCheck = await runHealthCheck()
       
       if (!healthCheck.success && debugMode) {
-        console.warn('⚠️ Problemas de salud detectados antes del procesamiento:', healthCheck)
-      }
+        }
 
       // Procesar imágenes usando el store mejorado
       const result = await productImagesStore.processProductImages(productId, images)
 
       if (result.success && debugMode) {
-        console.log(`✅ Procesamiento exitoso para producto ${productId}`)
-      }
+        }
 
       return result
     } catch (error) {
-      console.error('❌ Error en procesamiento robusto:', error)
       return { success: false, error: error.message }
     }
   }, [productId, debugMode, productImagesStore])
@@ -70,19 +66,16 @@ export const useRobustImageManagement = (productId, options = {}) => {
    */
   const cleanupImages = useCallback(async () => {
     if (debugMode) {
-      console.log(`🧹 Iniciando limpieza robusta para producto ${productId}`)
-    }
+      }
 
     try {
       const result = await productImagesStore.cleanupProductImages(productId)
       
       if (result.success && debugMode) {
-        console.log(`✅ Limpieza exitosa: ${result.cleaned || 0} archivos eliminados`)
-      }
+        }
 
       return result
     } catch (error) {
-      console.error('❌ Error en limpieza robusta:', error)
       return { success: false, error: error.message }
     }
   }, [productId, debugMode, productImagesStore])
@@ -101,19 +94,16 @@ export const useRobustImageManagement = (productId, options = {}) => {
     lastHealthCheckRef.current = now
 
     if (debugMode) {
-      console.log(`🔍 Ejecutando verificación de salud para producto ${productId}`)
-    }
+      }
 
     try {
       const result = await productImagesStore.runHealthCheck(productId)
       
       if (debugMode) {
-        console.log('📊 Resultado de verificación de salud:', result)
-      }
+        }
 
       return result
     } catch (error) {
-      console.error('❌ Error en verificación de salud:', error)
       return { success: false, error: error.message }
     }
   }, [productId, debugMode, productImagesStore])
@@ -125,7 +115,6 @@ export const useRobustImageManagement = (productId, options = {}) => {
     try {
       return await productImagesStore.getSystemStats()
     } catch (error) {
-      console.error('Error obteniendo estadísticas:', error)
       return { error: error.message }
     }
   }, [productImagesStore])
@@ -135,8 +124,7 @@ export const useRobustImageManagement = (productId, options = {}) => {
    */
   const forceRegeneration = useCallback(async () => {
     if (debugMode) {
-      console.log(`🔄 Forzando regeneración completa para producto ${productId}`)
-    }
+      }
 
     try {
       // 1. Limpiar todo el cache relacionado
@@ -158,8 +146,7 @@ export const useRobustImageManagement = (productId, options = {}) => {
       })
 
       if (debugMode) {
-        console.log(`✅ Regeneración completa exitosa: ${cleanupResult.cleaned} archivos limpiados`)
-      }
+        }
 
       return {
         success: true,
@@ -167,7 +154,6 @@ export const useRobustImageManagement = (productId, options = {}) => {
         errors: cleanupResult.errors
       }
     } catch (error) {
-      console.error('❌ Error en regeneración forzada:', error)
       return { success: false, error: error.message }
     }
   }, [productId, debugMode, queryClient])
@@ -183,8 +169,7 @@ export const useRobustImageManagement = (productId, options = {}) => {
     if (!healthMonitoring || !productId) return
 
     if (debugMode) {
-      console.log(`🔍 Iniciando monitoreo de salud para producto ${productId}`)
-    }
+      }
 
     // Iniciar monitoreo
     const stopMonitoring = productImagesStore.startHealthMonitoring(productId, monitoringInterval)
@@ -202,8 +187,7 @@ export const useRobustImageManagement = (productId, options = {}) => {
       }
       
       if (debugMode) {
-        console.log(`🛑 Monitoreo detenido para producto ${productId}`)
-      }
+        }
     }
   }, [productId, healthMonitoring, monitoringInterval, debugMode, productImagesStore, runHealthCheck])
 
@@ -218,11 +202,9 @@ export const useRobustImageManagement = (productId, options = {}) => {
         const cleanupResult = await StorageCleanupService.cleanupProductOrphans(productId)
         
         if (cleanupResult.cleaned > 0 && debugMode) {
-          console.log(`🧹 Auto-limpieza ejecutada: ${cleanupResult.cleaned} archivos eliminados`)
-        }
+          }
       } catch (error) {
-        console.warn('Error en auto-limpieza:', error)
-      }
+        }
     }, monitoringInterval * 2) // Limpieza cada 2 intervalos de monitoreo
 
     return () => clearInterval(cleanupInterval)

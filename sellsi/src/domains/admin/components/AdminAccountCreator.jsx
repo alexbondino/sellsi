@@ -130,7 +130,7 @@ const AdminAccountCreator = ({ open, onClose, onSuccess }) => {
       overflowY: 'auto'
     },
     sectionCard: {
-      backgroundColor: alpha(theme.palette.primary.main, 0.02),
+      backgroundColor: alpha(theme.palette.primary.main, 0.03),
       borderRadius: '12px',
       padding: '24px',
       marginBottom: '24px',

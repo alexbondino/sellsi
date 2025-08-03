@@ -19,6 +19,8 @@ import { useBanner } from '../../../shared/components/display/banners/BannerCont
 import { useProfileForm } from '../hooks/useProfileForm';
 import { useProfileImage } from '../hooks/useProfileImage';
 import { useSensitiveFields } from '../hooks/useSensitiveFields';
+import { useOptimizedUserShippingRegion } from '../../../hooks/useOptimizedUserShippingRegion';
+import { useRoleSync } from '../../../shared/hooks';
 
 // Secciones modulares
 import { CompanyInfoSection, TransferInfoSection, ShippingInfoSection, BillingInfoSection } from '../components/sections';
@@ -40,7 +42,6 @@ const Profile = ({ userProfile, onUpdateProfile }) => {
       const userId = userProfile?.user_id;
       if (userId) {
         const profile = await getUserProfile(userId);
-        console.log('[Profile.jsx] Perfil completo cargado:', profile);
         setLoadedProfile(profile?.data || null);
       }
     }
@@ -50,9 +51,7 @@ const Profile = ({ userProfile, onUpdateProfile }) => {
   // Usar los hooks modulares con el perfil cargado
   const { formData, hasChanges, updateField, resetForm, updateInitialData } = useProfileForm(loadedProfile);
   useEffect(() => {
-    console.log('[Profile.jsx] formData.shippingRegion:', formData.shippingRegion);
-    console.log('[Profile.jsx] formData.shippingComuna:', formData.shippingComuna);
-  }, [formData.shippingRegion, formData.shippingComuna]);
+    }, [formData.shippingRegion, formData.shippingComuna]);
   const { 
     pendingImage, 
     handleImageChange: _handleImageChange, 
@@ -69,6 +68,12 @@ const Profile = ({ userProfile, onUpdateProfile }) => {
     toggleSensitiveData, 
     getSensitiveFieldValue 
   } = useSensitiveFields();
+
+  // Hook para invalidar caché de shipping
+  const { invalidateUserCache } = useOptimizedUserShippingRegion();
+  
+  // ✅ NUEVO: Hook para sincronización automática de roles
+  const { isInSync, debug } = useRoleSync();
 
   // Estado local solo para UI
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
@@ -91,6 +96,13 @@ const Profile = ({ userProfile, onUpdateProfile }) => {
     // Debug: Monitorear cambios de imagen y logo_url
   }, [userProfile?.logo_url, pendingImage]);
 
+  // ✅ NUEVO: Debug effect para monitorear sincronización de roles (opcional, solo en desarrollo)
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'development' && !isInSync) {
+      console.warn('🔄 Role sync issue detected:', debug);
+    }
+  }, [isInSync, debug]);
+
   // Handlers simplificados que usan los hooks
   const handleSwitchChange = (field) => (event, newValue) => {
     if (newValue !== null) {
@@ -108,7 +120,6 @@ const Profile = ({ userProfile, onUpdateProfile }) => {
     const hasFormChanges = hasChanges;
     const hasImageChanges = !!pendingImage;
     const hasPendingChanges = hasFormChanges || hasImageChanges;
-
 
     if (!hasPendingChanges) {
       return;
@@ -132,14 +143,18 @@ const Profile = ({ userProfile, onUpdateProfile }) => {
       await onUpdateProfile(dataToUpdate);
       updateInitialData(); // Actualizar datos iniciales en lugar de resetear
 
+      // ✅ INVALIDAR CACHÉ DE SHIPPING si cambió la región
+      if (dataToUpdate.shipping_region || dataToUpdate.shippingRegion) {
+        invalidateUserCache();
+      }
+
       // Registrar IP del usuario al actualizar perfil (solo si tenemos perfil cargado)
       if (loadedProfile?.user_id) {
         try {
           await trackUserAction(loadedProfile.user_id, 'profile_updated');
         } catch (trackError) {
           // Error silencioso para no afectar la experiencia del usuario
-          console.warn('Error tracking user action:', trackError);
-        }
+          }
       }
 
       // Limpiar imagen pendiente después de guardar exitosamente
@@ -153,8 +168,6 @@ const Profile = ({ userProfile, onUpdateProfile }) => {
       });
 
     } catch (error) {
-      console.error('Error updating profile:', error);
-      
       // Mostrar banner de error
       showBanner({
         message: '❌ Error al actualizar el perfil. Por favor, inténtalo nuevamente.',

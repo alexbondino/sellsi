@@ -32,8 +32,6 @@ export const AppProviders = ({ children }) => {
       window.cacheManager = globalCacheManager;
       window.observerPool = globalObserverPool;
     }
-    
-    console.log('[AppProviders] Cache Manager y Observer Pool inicializados');
   }, []);
 
   return (

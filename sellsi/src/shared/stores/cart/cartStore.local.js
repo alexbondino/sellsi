@@ -39,8 +39,7 @@ export const addItemLocal = (product, quantity, set, get, historyStore, debounce
         ),
       })
     } else {
-      console.warn('[cartStore] No hay suficiente stock')
-    }
+      }
   } else {
     set({
       items: [...currentState.items, item],
@@ -154,8 +153,7 @@ export const removeItemLocal = (id, set, get, historyStore, debouncedSave) => {
   if (item) {
     set({ items: currentState.items.filter((item) => item.id !== id) })
   } else {
-    console.warn('[cartStore] Item no encontrado para remover:', id)
-  }
+    }
 
   // Delegar al módulo de historial
   setTimeout(() => {

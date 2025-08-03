@@ -58,7 +58,7 @@ const AboutUsSection = ({ quienesSomosRef }) => {
               mb: { xs: 2, sm: 2.5, md: 2.5, lg: 2.5, xl: 2.5 },
             }}
           >
-            ¿Quiénes somos?
+            Conoce Sellsi
           </Typography>
           <Typography
             variant="body1"
@@ -106,20 +106,9 @@ const AboutUsSection = ({ quienesSomosRef }) => {
               color: 'common.black',
             }}
           >
-            ¿Por qué elegirnos?
-          </Typography>
-          <Typography
-            variant="subtitle1"
-            sx={{
-              fontSize: { md: '1.5rem' },
-              lineHeight: 1.7,
-              color: '#111',
-              mb: 2,
-              mt: 0,
-            }}
-          >
             Te presentamos nuestra innovadora propuesta de valor
           </Typography>
+          {/* Eliminado 'hola que talca' */}
           <Typography
             variant="body1"
             sx={{
@@ -216,21 +205,9 @@ const AboutUsSection = ({ quienesSomosRef }) => {
               variant="h4"
               fontWeight="bold"
               sx={{
-                mb: 0.5,
+                mb: 3,
                 fontSize: { md: '2.5rem' },
                 color: 'common.black',
-              }}
-            >
-              ¿Por qué elegirnos?
-            </Typography>
-            <Typography
-              variant="subtitle1"
-              sx={{
-                fontSize: { md: '1.5rem' },
-                lineHeight: 1.7,
-                color: '#111', // Cambiado a negro
-                mb: 2,
-                mt: 0,
               }}
             >
               Te presentamos nuestra innovadora propuesta de valor

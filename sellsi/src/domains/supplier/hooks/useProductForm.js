@@ -31,8 +31,8 @@ const initialFormData = {
   pricingType: PRICING_TYPES.UNIT,
   precioUnidad: '',
   tramos: [
-    { cantidad: '', precio: '' },
-    { cantidad: '', precio: '' }
+    { min: '', max: '', precio: '' },
+    { min: '', max: '', precio: '' }
   ],
   imagenes: [],
   documentos: [],
@@ -100,8 +100,92 @@ export const useProductForm = (productId = null) => {
   const [touched, setTouched] = useState({})
   const [isDirty, setIsDirty] = useState(false)
 
-  // Modo de edición
+  // 🔧 FIX EDIT: Estado original para detectar cambios reales en modo edición
+  const [originalFormData, setOriginalFormData] = useState(() => {
+    if (productId) {
+      const product = uiProducts.find(
+        (p) => p.productid?.toString() === productId?.toString()
+      )
+      return product ? mapProductToForm(product) : initialFormData
+    }
+    return null
+  })
+
+  // Modo de edición - MOVIDO AQUÍ ANTES DE useMemo
   const isEditMode = Boolean(productId)
+
+  // 🔧 FIX 4: Cálculo de isValid más robusto usando validación en tiempo real
+  const isValid = React.useMemo(() => {
+    const validationResult = ProductValidator.validateProduct(formData);
+    return validationResult.isValid;
+  }, [formData]);
+
+  // 🔧 FIX EDIT: Función para comparar profundamente los datos del formulario
+  const hasActualChanges = React.useMemo(() => {
+    if (!isEditMode || !originalFormData) {
+      return true; // En modo creación, siempre considerar que hay cambios
+    }
+
+    // Función auxiliar para comparar arrays de objetos
+    const arraysEqual = (arr1, arr2) => {
+      if (arr1.length !== arr2.length) return false;
+      return arr1.every((item, index) => {
+        const item2 = arr2[index];
+        if (typeof item === 'object' && typeof item2 === 'object') {
+          return JSON.stringify(item) === JSON.stringify(item2);
+        }
+        return item === item2;
+      });
+    };
+
+    // Función auxiliar para comparar imágenes (solo URLs y nombres, no metadatos)
+    const imagesEqual = (images1, images2) => {
+      if (images1.length !== images2.length) return false;
+      return images1.every((img1, index) => {
+        const img2 = images2[index];
+        return img1.url === img2.url && img1.name === img2.name;
+      });
+    };
+
+    // Comparar campos básicos
+    const basicFieldsChanged = 
+      formData.nombre !== originalFormData.nombre ||
+      formData.descripcion !== originalFormData.descripcion ||
+      formData.categoria !== originalFormData.categoria ||
+      formData.stock !== originalFormData.stock ||
+      formData.compraMinima !== originalFormData.compraMinima ||
+      formData.pricingType !== originalFormData.pricingType ||
+      formData.precioUnidad !== originalFormData.precioUnidad ||
+      formData.negociable !== originalFormData.negociable ||
+      formData.activo !== originalFormData.activo;
+
+    // Comparar tramos
+    const tramosChanged = !arraysEqual(formData.tramos, originalFormData.tramos);
+
+    // Comparar imágenes (solo URLs, no metadatos como file)
+    const imagenesChanged = !imagesEqual(formData.imagenes, originalFormData.imagenes);
+
+    // Comparar especificaciones
+    const specificationsChanged = !arraysEqual(formData.specifications, originalFormData.specifications);
+
+    // Comparar regiones de entrega
+    const shippingRegionsChanged = !arraysEqual(formData.shippingRegions, originalFormData.shippingRegions);
+
+    const hasChanges = basicFieldsChanged || tramosChanged || imagenesChanged || specificationsChanged || shippingRegionsChanged;
+
+    console.log('🔍 [hasActualChanges] Detección de cambios:', {
+      basicFieldsChanged,
+      tramosChanged,
+      imagenesChanged,
+      specificationsChanged,
+      shippingRegionsChanged,
+      hasChanges
+    });
+
+    return hasChanges;
+  }, [formData, originalFormData, isEditMode]);
+
+  // Estado de carga
   const isLoading =
     operationStates.creating || operationStates.updating[productId]
 
@@ -129,12 +213,13 @@ export const useProductForm = (productId = null) => {
       // Tramos: mapear si existen, sino inicializar con 2 tramos vacíos por defecto
       tramos: hasPriceTiers
         ? product.priceTiers.map((t) => ({
-            cantidad: t.min_quantity?.toString() || '',
+            min: t.min_quantity?.toString() || '',
+            max: t.max_quantity?.toString() || '',
             precio: t.price?.toString() || '',
           }))
         : [
-            { cantidad: '', precio: '' },
-            { cantidad: '', precio: '' }
+            { min: '', max: '', precio: '' },
+            { min: '', max: '', precio: '' }
           ],
         
       imagenes: product.imagenes
@@ -143,6 +228,12 @@ export const useProductForm = (productId = null) => {
             url: url,
             name: url.split('/').pop() || `imagen_${index + 1}`,
             isExisting: true,
+            // 🔧 FIX EDIT: Crear un objeto file simulado para evitar errores de validación
+            file: {
+              type: 'image/jpeg', // Tipo por defecto para imágenes existentes
+              name: url.split('/').pop() || `imagen_${index + 1}`,
+              size: 0, // Tamaño 0 para identificar como existente
+            }
           }))
         : [],
         
@@ -165,10 +256,17 @@ export const useProductForm = (productId = null) => {
       throw new Error('Campos básicos requeridos faltantes')
     }
 
+    // Obtener supplierId del localStorage
+    const supplierId = localStorage.getItem('user_id')
+    if (!supplierId) {
+      throw new Error('No se pudo obtener el ID del proveedor')
+    }
+
     const productData = {
       productnm: formData.nombre,
       description: formData.descripcion,
       category: formData.categoria,
+      supplier_id: supplierId, // ✅ CRÍTICO: Agregar supplier_id
       productqty: Math.min(parseInt(formData.stock) || 0, PRICE_LIMITS.DB_MAX_VALUE),
       minimum_purchase: Math.min(parseInt(formData.compraMinima) || 1, PRICE_LIMITS.DB_MAX_VALUE),
       negotiable: formData.negociable,
@@ -181,8 +279,6 @@ export const useProductForm = (productId = null) => {
     // LÓGICA ROBUSTA PARA PRICING - CON LOGGING DETALLADO
     // ========================================================================
     
-    console.log('🔧 [mapFormToProduct] Procesando pricing type:', formData.pricingType)
-    
     if (formData.pricingType === PRICING_TYPES.UNIT) {
       // Modo Por Unidad
       const unitPrice = Math.min(parseFloat(formData.precioUnidad) || 0, PRICE_LIMITS.MAX_PRICE)
@@ -191,27 +287,30 @@ export const useProductForm = (productId = null) => {
       // CRÍTICO: Limpiar completamente los price tiers
       productData.priceTiers = []
       
-      console.log('💰 [UNIT MODE] price:', unitPrice, 'product_type:', PRODUCT_TYPES_DB.UNIT, 'priceTiers: []')
-      
-    } else if (formData.pricingType === PRICING_TYPES.TIER) {
+      } else if (formData.pricingType === PRICING_TYPES.TIER) {
       // Modo Por Tramo
       productData.price = 0 // Precio base para productos por tramo
       productData.product_type = PRODUCT_TYPES_DB.TIER
       
       // Filtrar y mapear tramos válidos
       const validTiers = formData.tramos
-        .filter((t) => t.cantidad && t.precio)
+        .filter((t) => t.min && t.precio)
         .map((t) => ({
-          cantidad: Math.min(parseInt(t.cantidad), QUANTITY_LIMITS.MAX_QUANTITY),
+          min: Math.min(parseInt(t.min), QUANTITY_LIMITS.MAX_QUANTITY),
+          max: t.max ? Math.min(parseInt(t.max), QUANTITY_LIMITS.MAX_QUANTITY) : null,
           precio: Math.min(parseFloat(t.precio), PRICE_LIMITS.MAX_PRICE),
         }))
       
       productData.priceTiers = validTiers
       
-      console.log('📊 [TIER MODE] price: 0, product_type:', PRODUCT_TYPES_DB.TIER, 'priceTiers:', validTiers)
-    }
-
-    console.log('✅ [mapFormToProduct] Producto final:', productData)
+      // 🔧 FIX 1: SINCRONIZAR compraMinima con el primer tramo
+      if (validTiers.length > 0) {
+        const primerTramoMin = validTiers[0].min
+        console.log(`🔄 [mapFormToProduct] Sincronizando compra mínima con primer tramo: ${productData.minimum_purchase} -> ${primerTramoMin}`)
+        productData.minimum_purchase = primerTramoMin
+      }
+      
+      }
 
     return productData
   }
@@ -228,7 +327,6 @@ export const useProductForm = (productId = null) => {
     if (!rule) {
       return null
     }
-
 
     if (rule.required && (!value || value.toString().trim() === '')) {
       return 'Este campo es requerido'
@@ -302,31 +400,30 @@ export const useProductForm = (productId = null) => {
    * ========================================================================
    */
   const handlePricingTypeChange = useCallback((newType) => {
-    console.log(`🔄 Cambiando tipo de pricing de "${formData.pricingType}" a "${newType}"`)
-    
     setFormData(prev => {
       const newFormData = { ...prev, pricingType: newType }
       
       if (newType === PRICING_TYPES.UNIT) {
         // Cambio a pricing por unidad - limpiar tramos
-        console.log('🧹 Limpiando tramos para modo unitario')
-        newFormData.tramos = [{ cantidad: '', precio: '' }]
+        newFormData.tramos = [{ min: '', max: '', precio: '' }]
         // Mantener precioUnidad si ya existe
       } else {
         // Cambio a pricing por tramos - limpiar precio unitario
-        console.log('🧹 Limpiando precio unitario para modo tramos')
         newFormData.precioUnidad = ''
         
         // 🔧 FIX: AUTO-MAPEAR compraMinima al primer tramo y crear 2 tramos por defecto
-        const compraMinima = prev.compraMinima || ''
+        const compraMinima = prev.compraMinima || '1'
         newFormData.tramos = [
-          { cantidad: compraMinima, precio: '' },
-          { cantidad: '', precio: '' }
+          { min: compraMinima, max: '', precio: '' },
+          { min: '', max: '', precio: '' }
         ]
-        console.log('🎯 Auto-mapeando compraMinima al primer tramo:', compraMinima)
+        
+        // 🔧 NUEVO: Si no hay compra mínima definida, usar el valor por defecto
+        if (!prev.compraMinima || prev.compraMinima === '') {
+          newFormData.compraMinima = '1'
+        }
       }
       
-      console.log('✅ Nuevo estado del formulario:', newFormData)
       return newFormData
     })
     
@@ -343,7 +440,7 @@ export const useProductForm = (productId = null) => {
       }
       return newErrors
     })
-  }, [formData.pricingType])
+  }, [])
 
   /**
    * Actualizar campo del formulario
@@ -355,9 +452,20 @@ export const useProductForm = (productId = null) => {
         
         // 🎯 SINCRONIZACIÓN AUTOMÁTICA: compraMinima -> primer tramo
         if (fieldName === 'compraMinima' && prev.pricingType === PRICING_TYPES.TIER) {
-          console.log('🔄 Sincronizando compra mínima con primer tramo:', value)
           newFormData.tramos = [...prev.tramos]
-          newFormData.tramos[0] = { ...newFormData.tramos[0], cantidad: value }
+          newFormData.tramos[0] = { ...newFormData.tramos[0], min: value }
+        }
+        
+        // 🔧 NUEVO: SINCRONIZACIÓN AUTOMÁTICA: primer tramo -> compraMinima
+        if (fieldName === 'tramos' && prev.pricingType === PRICING_TYPES.TIER) {
+          const tramos = Array.isArray(value) ? value : []
+          if (tramos.length > 0 && tramos[0] && tramos[0].min) {
+            const minPrimerTramo = parseInt(tramos[0].min) || 0
+            if (minPrimerTramo > 0 && parseInt(prev.compraMinima) !== minPrimerTramo) {
+              console.log(`🔄 [useProductForm] Sincronizando compra mínima: ${prev.compraMinima} -> ${minPrimerTramo}`)
+              newFormData.compraMinima = minPrimerTramo.toString()
+            }
+          }
         }
         
         return newFormData
@@ -415,39 +523,24 @@ export const useProductForm = (productId = null) => {
    * Submit del formulario - CON LOGGING DETALLADO
    */
   const submitForm = useCallback(async () => {
-    console.log('🚀 [submitForm] Iniciando submit del formulario')
-    console.log('📋 [submitForm] FormData actual:', formData)
-    
     const isValid = validateForm()
-    console.log('✅ [submitForm] Validación resultado:', isValid)
-    
     if (!isValid) {
-      console.log('❌ [submitForm] Formulario no válido, errores:', errors)
       return { success: false, errors: errors }
     }
 
-    console.log('🔄 [submitForm] Mapeando formulario a producto...')
     const productData = mapFormToProduct(formData)
-    console.log('📦 [submitForm] Datos del producto mapeados:', productData)
-
     let result
     if (isEditMode) {
-      console.log('✏️  [submitForm] Modo edición - llamando updateProduct con ID:', productId)
       result = await updateProduct(productId, productData)
     } else {
-      console.log('➕ [submitForm] Modo creación - llamando createProduct')
       result = await createProduct(productData)
     }
-
-    console.log('📊 [submitForm] Resultado de la operación:', result)
 
     if (result.success) {
       setIsDirty(false)
       setTouched({})
-      console.log('✅ [submitForm] Submit exitoso')
-    } else {
-      console.log('❌ [submitForm] Submit falló:', result.error)
-    }
+      } else {
+      }
 
     return result
   }, [
@@ -493,6 +586,21 @@ export const useProductForm = (productId = null) => {
     }
   }, [isEditMode, productId]) // REMOVIDO: uiProducts, formData.productid, formData.id
 
+  // 🔧 NUEVO: Efecto para sincronizar compra mínima con primer tramo cuando es pricing por volumen
+  useEffect(() => {
+    if (formData.pricingType === PRICING_TYPES.TIER && formData.tramos.length > 0) {
+      const primerTramo = formData.tramos[0]
+      if (primerTramo && primerTramo.min && primerTramo.min !== '') {
+        const minPrimerTramo = parseInt(primerTramo.min) || 0
+        // Solo actualizar si la compra mínima actual es diferente
+        if (minPrimerTramo > 0 && parseInt(formData.compraMinima) !== minPrimerTramo) {
+          console.log(`🔄 [useProductForm] Auto-sincronizando compra mínima: ${formData.compraMinima} -> ${minPrimerTramo}`)
+          setFormData(prev => ({ ...prev, compraMinima: minPrimerTramo.toString() }))
+        }
+      }
+    }
+  }, [formData.pricingType, formData.tramos, formData.compraMinima])
+
   return {
     // Estado del formulario
     formData,
@@ -514,7 +622,8 @@ export const useProductForm = (productId = null) => {
     
     // Utilidades
     hasErrors: Object.values(errors).some((v) => !!v),
-    isValid: Object.values(errors).every((v) => !v),
+    isValid, // 🔧 FIX 4: Usar el isValid calculado con useMemo para mayor precisión
+    hasActualChanges, // 🔧 FIX EDIT: Nueva funcionalidad para detectar cambios reales
   }
 }
 

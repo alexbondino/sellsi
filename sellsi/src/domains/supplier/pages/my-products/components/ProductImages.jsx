@@ -16,6 +16,7 @@ const ProductImages = ({
   imageError,
   onImagesChange,
   onImageError,
+  isMobile = false, // 🔧 Nueva prop para móvil
 }) => {
   const handleRetry = () => {
     // Reset image errors and clear any failed uploads
@@ -35,13 +36,15 @@ const ProductImages = ({
         overflow: 'visible',
       }}
     >
-      <Typography
-        variant="h6"
-        gutterBottom
-        sx={{ fontWeight: 600, color: 'black', mb: 2 }}
-      >
-        Imágenes del Producto
-      </Typography>
+      {!isMobile && (
+        <Typography
+          variant="h6"
+          gutterBottom
+          sx={{ fontWeight: 600, color: 'black', mb: 2 }}
+        >
+          Imágenes del Producto
+        </Typography>
+      )}
       <ImageUploader
         images={formData.imagenes}
         onImagesChange={onImagesChange}

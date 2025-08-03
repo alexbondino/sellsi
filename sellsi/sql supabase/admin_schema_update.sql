@@ -107,7 +107,7 @@ INSERT INTO public.control_panel_users (
 ) VALUES (
   'admin',
   'admin@sellsi.com',
-  'hashed_admin123_temp', -- CAMBIAR EN PRODUCCIÓN
+  '$2a$12$XieZq7SnC0Sxvy6RgSgzruHVN3meGtj1kIghaz3TBvPPqBX4VS7/.', -- hash de 'admin123'
   'Administrador Principal',
   'admin',
   true

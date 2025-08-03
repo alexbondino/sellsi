@@ -2,15 +2,14 @@
 // CHECKOUT SERVICE - INTEGRACIÓN CON BACKEND
 // ============================================================================
 
-import { supabase } from '../../../services/supabase'
-import { PAYMENT_STATUS } from '../constants/paymentMethods'
-import { trackUserAction } from '../../../services/security'
-import khipuService from '../../../services/payment'
+import { supabase } from '../../../services/supabase';
+import { PAYMENT_STATUS } from '../constants/paymentMethods';
+import { trackUserAction } from '../../../services/security';
+import { default as khipuService } from './khipuService';
 
 class CheckoutService {
-  
   // ===== ÓRDENES =====
-  
+
   /**
    * Crear orden de compra
    * @param {Object} orderData - Datos de la orden
@@ -19,8 +18,10 @@ class CheckoutService {
   async createOrder(orderData) {
     try {
       // Registrar IP del usuario al crear la orden
-      await trackUserAction(`order_created_${orderData.paymentMethod || 'unknown'}`)
-      
+      await trackUserAction(
+        `order_created_${orderData.paymentMethod || 'unknown'}`
+      );
+
       const { data, error } = await supabase
         .from('orders')
         .insert({
@@ -35,17 +36,17 @@ class CheckoutService {
           payment_method: orderData.paymentMethod,
           payment_status: 'pending',
           shipping_address: orderData.shippingAddress,
-          billing_address: orderData.billingAddress
+          billing_address: orderData.billingAddress,
         })
         .select()
-        .single()
+        .single();
 
-      if (error) throw error
+      if (error) throw error;
 
-      return data
+      return data;
     } catch (error) {
-      console.error('Error creating order:', error)
-      throw new Error(`No se pudo crear la orden: ${error.message}`)
+      console.error('Error creating order:', error);
+      throw new Error(`No se pudo crear la orden: ${error.message}`);
     }
   }
 
@@ -61,18 +62,18 @@ class CheckoutService {
         .from('orders')
         .update({
           status,
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
         })
         .eq('id', orderId)
         .select()
-        .single()
+        .single();
 
-      if (error) throw error
+      if (error) throw error;
 
-      return data
+      return data;
     } catch (error) {
-      console.error('Error updating order status:', error)
-      throw new Error(`No se pudo actualizar la orden: ${error.message}`)
+      console.error('Error updating order status:', error);
+      throw new Error(`No se pudo actualizar la orden: ${error.message}`);
     }
   }
 
@@ -85,11 +86,12 @@ class CheckoutService {
    */
   async processKhipuPayment(paymentData) {
     try {
-      console.log('[CheckoutService] Iniciando pago con Khipu:', paymentData)
+      console.log('[CheckoutService] Iniciando pago con Khipu:', paymentData);
 
       // Validar monto
       if (!khipuService.validateAmount(paymentData.amount)) {
-        throw new Error('Monto fuera del rango permitido por Khipu')
+        console.log(paymentData.amount);
+        throw new Error('Monto fuera del rango permitido por Khipu');
       }
 
       // Crear orden de pago en Khipu
@@ -99,11 +101,11 @@ class CheckoutService {
         userEmail: paymentData.userEmail,
         total: paymentData.amount,
         currency: paymentData.currency || 'CLP',
-        items: paymentData.items
-      })
+        items: paymentData.items,
+      });
 
       if (!khipuResponse.success) {
-        throw new Error('Error al crear orden de pago en Khipu')
+        throw new Error('Error al crear orden de pago en Khipu');
       }
 
       // Actualizar orden con datos de Khipu
@@ -115,13 +117,16 @@ class CheckoutService {
           khipu_payment_url: khipuResponse.paymentUrl,
           khipu_expires_at: khipuResponse.expiresAt,
           payment_status: 'pending',
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
         })
-        .eq('id', paymentData.orderId)
+        .eq('id', paymentData.orderId);
 
       if (updateError) {
-        console.error('Error actualizando orden con datos de Khipu:', updateError)
-        throw new Error('Error al actualizar orden con datos de pago')
+        console.error(
+          'Error actualizando orden con datos de Khipu:',
+          updateError
+        );
+        throw new Error('Error al actualizar orden con datos de pago');
       }
 
       // Crear transacción de pago
@@ -135,15 +140,18 @@ class CheckoutService {
           amount: paymentData.amount,
           currency: paymentData.currency || 'CLP',
           status: 'pending',
-          gateway_response: khipuResponse
-        })
+          gateway_response: khipuResponse,
+        });
 
       if (transactionError) {
-        console.error('Error creando transacción de pago:', transactionError)
+        console.error('Error creando transacción de pago:', transactionError);
         // No lanzar error aquí, ya que la orden se creó correctamente
       }
 
-      console.log('[CheckoutService] Pago Khipu creado exitosamente:', khipuResponse)
+      console.log(
+        '[CheckoutService] Pago Khipu creado exitosamente:',
+        khipuResponse
+      );
 
       return {
         success: true,
@@ -153,12 +161,11 @@ class CheckoutService {
         expiresAt: khipuResponse.expiresAt,
         status: PAYMENT_STATUS.PENDING,
         paymentMethod: 'khipu',
-        processedAt: new Date().toISOString()
-      }
-
+        processedAt: new Date().toISOString(),
+      };
     } catch (error) {
-      console.error('Error processing Khipu payment:', error)
-      throw new Error(`Error en el pago: ${error.message}`)
+      console.error('Error processing Khipu payment:', error);
+      throw new Error(`Error en el pago: ${error.message}`);
     }
   }
 
@@ -169,10 +176,10 @@ class CheckoutService {
    */
   async verifyKhipuPaymentStatus(paymentId) {
     try {
-      const verification = await khipuService.verifyPaymentStatus(paymentId)
-      
+      const verification = await khipuService.verifyPaymentStatus(paymentId);
+
       if (!verification.success) {
-        throw new Error('Error al verificar estado del pago')
+        throw new Error('Error al verificar estado del pago');
       }
 
       return {
@@ -183,11 +190,11 @@ class CheckoutService {
         amount: verification.amount,
         currency: verification.currency,
         paidAt: verification.paidAt,
-        verifiedAt: new Date().toISOString()
-      }
+        verifiedAt: new Date().toISOString(),
+      };
     } catch (error) {
-      console.error('Error verifying Khipu payment status:', error)
-      throw new Error(`Error verificando pago: ${error.message}`)
+      console.error('Error verifying Khipu payment status:', error);
+      throw new Error(`Error verificando pago: ${error.message}`);
     }
   }
 
@@ -199,32 +206,32 @@ class CheckoutService {
    * @returns {Object} Resultado de la validación
    */
   validateCheckoutData(checkoutData) {
-    const errors = {}
+    const errors = {};
 
     // Validar items
     if (!checkoutData.items || checkoutData.items.length === 0) {
-      errors.items = 'No hay productos en el carrito'
+      errors.items = 'No hay productos en el carrito';
     }
 
     // Validar método de pago
     if (!checkoutData.paymentMethod) {
-      errors.paymentMethod = 'Debe seleccionar un método de pago'
+      errors.paymentMethod = 'Debe seleccionar un método de pago';
     }
 
     // Validar montos
     if (!checkoutData.total || checkoutData.total <= 0) {
-      errors.total = 'El total debe ser mayor a 0'
+      errors.total = 'El total debe ser mayor a 0';
     }
 
     // Validar información del usuario
     if (!checkoutData.userId) {
-      errors.userId = 'Usuario no autenticado'
+      errors.userId = 'Usuario no autenticado';
     }
 
     return {
       isValid: Object.keys(errors).length === 0,
-      errors
-    }
+      errors,
+    };
   }
 
   // ===== UTILIDADES =====
@@ -238,8 +245,8 @@ class CheckoutService {
   formatPrice(amount, currency = 'CLP') {
     return new Intl.NumberFormat('es-CL', {
       style: 'currency',
-      currency
-    }).format(amount)
+      currency,
+    }).format(amount);
   }
 
   /**
@@ -248,7 +255,7 @@ class CheckoutService {
    * @returns {number} IVA calculado
    */
   calculateTax(subtotal) {
-    return Math.round(subtotal * 0.19) // IVA 19%
+    return Math.round(subtotal * 0.19); // IVA 19%
   }
 
   /**
@@ -256,10 +263,13 @@ class CheckoutService {
    * @returns {string} Referencia única
    */
   generatePaymentReference() {
-    return `PAY_${Date.now()}_${Math.random().toString(36).substr(2, 9).toUpperCase()}`
+    return `PAY_${Date.now()}_${Math.random()
+      .toString(36)
+      .substr(2, 9)
+      .toUpperCase()}`;
   }
 }
 
 // Instancia singleton
-const checkoutService = new CheckoutService()
-export default checkoutService
+const checkoutService = new CheckoutService();
+export default checkoutService;

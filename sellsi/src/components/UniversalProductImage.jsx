@@ -47,38 +47,28 @@ const UniversalProductImage = ({
     const finalUrl = (() => {
       switch (size) {
         case 'minithumb':
-          return minithumb || responsiveThumbnail || '/placeholder-product.jpg';
+          // Para minithumb: minithumb específico → thumbnail responsivo → imagen original → placeholder
+          return minithumb || responsiveThumbnail || product?.imagen || '/placeholder-product.jpg';
         case 'responsive':
         default:
-          return responsiveThumbnail || '/placeholder-product.jpg';
+          // Para responsive: thumbnail responsivo → imagen original → placeholder
+          // responsiveThumbnail ya incluye el fallback a product.imagen internamente
+          return responsiveThumbnail || product?.imagen || '/placeholder-product.jpg';
       }
     })();
-
-    console.log(`[UniversalProductImage] Debug thumbnails para producto ${product?.id || product?.product_id}:`, {
-      responsiveThumbnail,
-      minithumb,
-      size,
-      product: product?.nombre || product?.name,
-      retryCount,
-      finalUrl,
-      imageError
-    });
 
     return finalUrl;
   }, [product, size, minithumb, responsiveThumbnail, retryCount]);
 
   // Manejar errores de carga de imagen
   const handleImageError = useCallback(() => {
-    console.warn(`[UniversalProductImage] Error cargando imagen para producto:`, product?.id || product?.product_id);
-    console.warn(`[UniversalProductImage] URL que falló:`, selectedThumbnail);
 
     setImageError(true);
 
     // FUNCIONALIDAD PRINCIPAL: Invalidar cache cuando hay error 404
     if (product?.id) {
       const cacheKey = ['thumbnails', product.id];
-      console.log(`[UniversalProductImage] Invalidando cache para producto:`, product.id);
-      
+
       // Invalidar cache de React Query para este producto
       queryClient.invalidateQueries({
         queryKey: cacheKey,
@@ -94,7 +84,7 @@ const UniversalProductImage = ({
       // Reintentar después de un delay (máximo 2 reintentos)
       if (retryCount < 2) {
         setTimeout(() => {
-          console.log(`[UniversalProductImage] Reintentando carga ${retryCount + 1}/2 para producto:`, product.id);
+          
           setRetryCount(prev => prev + 1);
           setImageError(false);
         }, 1000);
@@ -184,11 +174,11 @@ const UniversalProductImage = ({
         objectFit={objectFit}
         sx={baseStyles}
         onError={() => {
-          console.log(`[UniversalProductImage] LazyImage onError disparado para:`, product?.id, selectedThumbnail);
+          
           handleImageError();
         }}
         onLoad={() => {
-          console.log(`[UniversalProductImage] LazyImage onLoad disparado para:`, product?.id, selectedThumbnail);
+          
           handleImageLoad();
         }}
         {...props}
@@ -208,12 +198,63 @@ const UniversalProductImage = ({
         display: 'block'
       }}
       onError={() => {
-        console.log(`[UniversalProductImage] Box img onError disparado para:`, product?.id, selectedThumbnail);
+        
         handleImageError();
       }}
       onLoad={() => {
-        console.log(`[UniversalProductImage] Box img onLoad disparado para:`, product?.id, selectedThumbnail);
+        
         handleImageLoad();
+      }}
+      {...props}
+    />
+  );
+
+  // NUEVO: Listener para imágenes procesadas en background
+  useEffect(() => {
+    const handleImagesReady = (event) => {
+      const { productId: readyProductId, imageCount } = event.detail
+      
+      // Verificar si es nuestro producto
+      const currentProductId = product?.id || product?.productid || product?.product_id
+      
+      if (readyProductId === currentProductId) {
+
+        // Invalidar solo el cache de este producto específico
+        if (queryClient) {
+          queryClient.invalidateQueries({
+            queryKey: ['thumbnail', currentProductId],
+            exact: false
+          })
+        }
+        
+        // Reset estados de error para permitir nueva carga
+        setImageError(false)
+        setRetryCount(0)
+        
+        // Forzar re-evaluación del thumbnail
+        setTimeout(() => {
+          // Trigger re-render del useMemo
+          setRetryCount(prev => prev + 1)
+          setRetryCount(prev => prev - 1)
+        }, 500)
+      }
+    }
+    
+    window.addEventListener('productImagesReady', handleImagesReady)
+    
+    return () => {
+      window.removeEventListener('productImagesReady', handleImagesReady)
+    }
+  }, [product, queryClient])
+
+  return (
+    <img
+      src={finalSrc}
+      alt={altText}
+      onError={handleImageError}
+      style={{
+        display: imageError ? 'none' : 'block',
+        ...style
       }}
       {...props}
     />
@@ -272,12 +313,13 @@ export const ProductCardImage = ({ product, type = 'buyer', ...props }) => {
 };
 
 /**
- * Componente para CartItem - Usa thumbnail pequeño optimizado
+ * Componente para CartItem - Usa thumbnails responsivos con fallback a avatar
+ * NUNCA usa minithumb - sigue jerarquía: thumbnails > imágenes normales > avatar
  */
 export const CartItemImage = ({ product, ...props }) => (
   <UniversalProductImage
     product={product}
-    size="minithumb"
+    size="responsive"
     aspectRatio="1"
     objectFit="cover"
     sx={{
@@ -289,12 +331,13 @@ export const CartItemImage = ({ product, ...props }) => (
 );
 
 /**
- * Componente para CheckoutSummary - Avatar pequeño con minithumb
+ * Componente para CheckoutSummary - Usa thumbnails responsivos con fallback a avatar
+ * NUNCA usa minithumb - sigue jerarquía: thumbnails > imágenes normales > avatar
  */
 export const CheckoutSummaryImage = ({ product, ...props }) => (
   <UniversalProductImage
     product={product}
-    size="minithumb"
+    size="responsive"
     width={40}
     height={40}
     lazy={false}

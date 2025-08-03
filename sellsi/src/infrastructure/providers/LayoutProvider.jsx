@@ -40,7 +40,9 @@ export const LayoutProvider = ({ children }) => {
 
   const showBottomBar = !isAdminRoute && location.pathname !== '/onboarding';
   const showTopBar = !isAdminRoute;
-  const topBarHeight = '64px';
+  // ✅ CORREGIDO: topBarHeight debe coincidir con las alturas responsive del TopBar
+  // TopBar usa: height: { xs: 45, md: 64 }
+  const topBarHeight = { xs: '45px', md: '64px' };
 
   const value = {
     // SideBar state

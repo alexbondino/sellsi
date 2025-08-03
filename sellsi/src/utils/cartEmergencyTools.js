@@ -27,7 +27,6 @@ const clearAllCartData = () => {
       try {
         localStorage.removeItem(key);
       } catch (e) {
-        console.warn(`⚠️ No se pudo remover ${key}:`, e);
       }
     });
     
@@ -35,14 +34,12 @@ const clearAllCartData = () => {
     try {
       sessionStorage.clear();
     } catch (e) {
-      console.warn('⚠️ Error limpiando SessionStorage:', e);
     }
     
     // Recargar la página
     window.location.reload();
     
   } catch (error) {
-    console.error('❌ Error durante limpieza de emergencia:', error);
   }
 };
 
@@ -65,17 +62,14 @@ const validateCurrentCart = () => {
           });
           
           if (corruptedItems.length > 0) {
-            console.warn(`⚠️ ${corruptedItems.length} items corruptos en ${key}:`, corruptedItems);
           }
         }
         
       } catch (e) {
-        console.warn(`⚠️ Error parseando ${key}:`, e);
       }
     });
     
   } catch (error) {
-    console.error('❌ Error durante diagnóstico:', error);
   }
 };
 
@@ -114,7 +108,6 @@ const fixCorruptedQuantities = () => {
         }
         
       } catch (e) {
-        console.warn(`⚠️ Error reparando ${key}:`, e);
       }
     });
     
@@ -123,7 +116,6 @@ const fixCorruptedQuantities = () => {
     }
     
   } catch (error) {
-    console.error('❌ Error durante reparación:', error);
   }
 };
 

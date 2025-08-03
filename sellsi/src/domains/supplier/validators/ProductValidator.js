@@ -90,23 +90,28 @@ export class ProductValidator {
       }
     }
 
-    // Compra mínima
-    if (!formData.compraMinima) {
-      errors.compraMinima = ERROR_MESSAGES.MIN_PURCHASE_REQUIRED
-    } else {
-      const compraMinima = parseInt(formData.compraMinima)
-      const stock = parseInt(formData.stock || 0)
-      
-      if (isNaN(compraMinima) || compraMinima < QUANTITY_LIMITS.MIN_QUANTITY) {
-        errors.compraMinima = ERROR_MESSAGES.STOCK_TOO_LOW
-      } else if (compraMinima > QUANTITY_LIMITS.MAX_STOCK) {
-        errors.compraMinima = ERROR_MESSAGES.STOCK_TOO_HIGH
-      } else if (!Number.isInteger(parseFloat(formData.compraMinima))) {
-        errors.compraMinima = ERROR_MESSAGES.INVALID_INTEGER
-      } else if (compraMinima > stock) {
-        errors.compraMinima = ERROR_MESSAGES.MIN_PURCHASE_EXCEEDS_STOCK
+    // Compra mínima - solo requerida para productos con pricing por unidad
+    if (formData.pricingType !== PRICING_TYPES.TIER) {
+      // Solo validar compraMinima si NO es pricing por tramos
+      if (!formData.compraMinima) {
+        errors.compraMinima = ERROR_MESSAGES.MIN_PURCHASE_REQUIRED
+      } else {
+        const compraMinima = parseInt(formData.compraMinima)
+        const stock = parseInt(formData.stock || 0)
+        
+        if (isNaN(compraMinima) || compraMinima < QUANTITY_LIMITS.MIN_QUANTITY) {
+          errors.compraMinima = ERROR_MESSAGES.STOCK_TOO_LOW
+        } else if (compraMinima > QUANTITY_LIMITS.MAX_STOCK) {
+          errors.compraMinima = ERROR_MESSAGES.STOCK_TOO_HIGH
+        } else if (!Number.isInteger(parseFloat(formData.compraMinima))) {
+          errors.compraMinima = ERROR_MESSAGES.INVALID_INTEGER
+        } else if (compraMinima > stock) {
+          errors.compraMinima = ERROR_MESSAGES.MIN_PURCHASE_EXCEEDS_STOCK
+        }
       }
     }
+    // Para productos con pricing por tramos, la compra mínima se define automáticamente
+    // por el primer tramo, por lo que no es necesaria como campo separado
   }
 
   /**
@@ -144,22 +149,13 @@ export class ProductValidator {
    */
   static _validateTierPricing(formData, errors) {
     const validTramos = formData.tramos?.filter(
-      t => t.cantidad !== '' && t.precio !== '' && 
-           !isNaN(Number(t.cantidad)) && !isNaN(Number(t.precio))
+      t => t.min !== '' && t.precio !== '' && 
+           !isNaN(Number(t.min)) && !isNaN(Number(t.precio))
     ) || []
 
     // Verificar cantidad mínima de tramos
     if (validTramos.length < TIER_VALIDATION.MIN_TIERS) {
       errors.tramos = ERROR_MESSAGES.INSUFFICIENT_TIERS
-      return
-    }
-
-    // Validar que el primer tramo coincida con la compra mínima
-    const compraMinima = parseInt(formData.compraMinima || 0)
-    const firstTramo = formData.tramos?.[TIER_VALIDATION.FIRST_TIER_INDEX]
-    
-    if (!firstTramo?.cantidad || parseInt(firstTramo.cantidad) !== compraMinima) {
-      errors.tramos = ERROR_MESSAGES.FIRST_TIER_MISMATCH
       return
     }
 
@@ -172,10 +168,10 @@ export class ProductValidator {
       return
     }
 
-    // Validar que las cantidades no excedan el stock
+    // Validar que las cantidades mínimas no excedan el stock
     const stockNumber = parseInt(formData.stock || 0)
     const tramosExcedStock = validTramos.filter(
-      tramo => parseInt(tramo.cantidad) > stockNumber
+      tramo => parseInt(tramo.min) > stockNumber
     )
     if (tramosExcedStock.length > 0) {
       errors.tramos = ERROR_MESSAGES.TIER_QUANTITY_EXCEEDS_STOCK
@@ -193,7 +189,7 @@ export class ProductValidator {
 
     // Validar que las cantidades sean enteros positivos
     const tramosConCantidadInvalida = validTramos.filter(
-      t => !Number.isInteger(parseFloat(t.cantidad)) || parseInt(t.cantidad) < 1
+      t => !Number.isInteger(parseFloat(t.min)) || parseInt(t.min) < 1
     )
     if (tramosConCantidadInvalida.length > 0) {
       errors.tramos = ERROR_MESSAGES.TIER_QUANTITIES_INVALID
@@ -213,8 +209,8 @@ export class ProductValidator {
     
     // Validar cantidades ascendentes
     for (let i = 1; i < validTramos.length; i++) {
-      const currentQuantity = parseInt(validTramos[i].cantidad)
-      const previousQuantity = parseInt(validTramos[i - 1].cantidad)
+      const currentQuantity = parseInt(validTramos[i].min)
+      const previousQuantity = parseInt(validTramos[i - 1].min)
       
       if (currentQuantity <= previousQuantity) {
         errors.tramos = ERROR_MESSAGES.TIER_QUANTITIES_NOT_ASCENDING
@@ -320,5 +316,102 @@ export class ProductValidator {
     if (errorCount === 0) return 'Sin errores'
     if (errorCount === 1) return '1 error encontrado'
     return `${errorCount} errores encontrados`
+  }
+
+  /**
+   * ========================================================================
+   * GENERADOR DE MENSAJES DE ERROR CONTEXTUALES
+   * ========================================================================
+   * Analiza los errores y genera mensajes específicos y contextuales para el usuario.
+   * Movido desde AddProduct.jsx para centralizar la lógica de mensajes.
+   * 
+   * @param {Object} validationErrors - Objeto con errores de validación
+   * @returns {string|null} - Mensaje contextual específico o null si no hay errores
+   */
+  static generateContextualMessage(validationErrors) {
+    console.log('🔍 [ProductValidator.generateContextualMessage] Procesando errores:', validationErrors)
+    
+    if (!validationErrors || Object.keys(validationErrors).length === 0) {
+      return null;
+    }
+
+    const errorKeys = Object.keys(validationErrors);
+    console.log('🔑 [ProductValidator.generateContextualMessage] Error keys:', errorKeys)
+    
+    const hasTramoErrors = errorKeys.includes('tramos');
+    const hasBasicFieldErrors = errorKeys.some(key => 
+      ['nombre', 'descripcion', 'categoria', 'stock', 'compraMinima', 'precioUnidad'].includes(key)
+    );
+    const hasImageErrors = errorKeys.includes('imagenes');
+    const hasRegionErrors = errorKeys.includes('shippingRegions');
+
+    console.log('🔍 [ProductValidator.generateContextualMessage] Tipos de errores detectados:', {
+      hasTramoErrors,
+      hasBasicFieldErrors,
+      hasImageErrors,
+      hasRegionErrors
+    })
+
+    // Construir mensaje específico
+    const messages = [];
+
+    if (hasTramoErrors) {
+      const tramoError = validationErrors.tramos;
+      
+      // Detectar tipo específico de error en tramos
+      if (tramoError.includes('ascendentes')) {
+        messages.push('🔢 Las cantidades de los tramos deben ser ascendentes (ej: 50, 100, 200)');
+      } else if (tramoError.includes('descendentes') || tramoError.includes('compran más')) {
+        messages.push('💰 Los precios deben ser descendentes: compran más, pagan menos por unidad');
+      } else if (tramoError.includes('Tramo')) {
+        messages.push('📊 Revisa la configuración de los tramos de precio');
+      } else if (tramoError.includes('al menos')) {
+        messages.push('📈 Debes configurar al menos 2 tramos de precios válidos');
+      } else if (tramoError.includes('stock')) {
+        messages.push('⚠️ Las cantidades de los tramos no pueden superar el stock disponible');
+      } else if (tramoError.includes('enteros positivos')) {
+        messages.push('🔢 Las cantidades y precios deben ser números enteros positivos');
+      } else {
+        messages.push('📈 Revisa la configuración de los tramos de precios');
+      }
+    }
+
+    if (hasBasicFieldErrors) {
+      const basicErrors = [];
+      if (validationErrors.nombre) basicErrors.push('nombre');
+      if (validationErrors.descripcion) basicErrors.push('descripción');
+      if (validationErrors.categoria) basicErrors.push('categoría');
+      if (validationErrors.stock) basicErrors.push('stock');
+      if (validationErrors.compraMinima) basicErrors.push('compra mínima');
+      if (validationErrors.precioUnidad) basicErrors.push('precio');
+      
+      if (basicErrors.length > 0) {
+        messages.push(`📝 Completa: ${basicErrors.join(', ')}`);
+      } else {
+        messages.push('📝 Completa la información básica del producto');
+      }
+    }
+
+    if (hasImageErrors) {
+      messages.push('🖼️ Agrega al menos una imagen del producto');
+    }
+
+    if (hasRegionErrors) {
+      messages.push('🚛 Configura las regiones de despacho');
+    }
+
+    // Formatear mensaje final
+    if (messages.length > 1) {
+      const finalMessage = `${messages.join(' • ')}`;
+      console.log('📝 [ProductValidator.generateContextualMessage] Mensaje múltiple:', finalMessage)
+      return finalMessage;
+    } else if (messages.length === 1) {
+      console.log('📝 [ProductValidator.generateContextualMessage] Mensaje único:', messages[0])
+      return messages[0];
+    } else {
+      const defaultMessage = 'Por favor, completa todos los campos requeridos';
+      console.log('📝 [ProductValidator.generateContextualMessage] Mensaje por defecto:', defaultMessage)
+      return defaultMessage;
+    }
   }
 }

@@ -48,29 +48,11 @@ export default function TopBar({
   const [openRegisterModal, setOpenRegisterModal] = useState(false);
   const [openContactModal, setOpenContactModal] = useState(false);
 
-  // El estado `currentRole` se mantiene en TopBar, ya que es quien controla
-  // el `Switch` y lo sincroniza con `isBuyer` del padre (App.jsx).
-  const [currentRole, setCurrentRole] = useState(() => {
-    // ✅ MEJORA: Solo establecer rol inicial si isBuyer no es undefined/null
-    if (typeof isBuyer === 'boolean') {
-      return isBuyer ? 'buyer' : 'supplier';
-    }
-    // Si isBuyer aún no está determinado, usar buyer como fallback temporal
-    return 'buyer';
-  });
-
-  // Este useEffect es crucial para la sincronización con la prop `isBuyer`
-  // (que viene de RoleProvider) al inicio o tras un cambio de sesión.
-  useEffect(() => {
-    if (session && typeof isBuyer === 'boolean') {
-      const newRoleFromProps = isBuyer ? 'buyer' : 'supplier';
-      if (currentRole !== newRoleFromProps) {
-        setCurrentRole(newRoleFromProps);
-      }
-    } else if (!session) {
-      setCurrentRole('buyer');
-    }
-  }, [session, isBuyer, currentRole]);
+  // ✅ MEJORA: Usar directamente isBuyer como fuente única de verdad, con protección contra parpadeo
+  // Solo mostrar el rol cuando esté completamente determinado
+  const currentRole = isRoleLoading 
+    ? null // No mostrar rol durante loading para evitar parpadeo
+    : (typeof isBuyer === 'boolean' ? (isBuyer ? 'buyer' : 'supplier') : 'buyer');
 
   const isLoggedIn = !!session;
 
@@ -134,14 +116,11 @@ export default function TopBar({
     }, 0);
   };
 
-  // Este es el manejador de cambios del `Switch`.
-  // Recibe el `newRole` del `Switch` y lo pasa al padre `App.jsx`.
+  // ✅ SIMPLIFICACIÓN: Handler directo sin estado local conflictivo
+  // Recibe el `newRole` del `Switch` y lo pasa directamente al RoleProvider
   const handleRoleToggleChange = (event, newRole) => {
-    if (newRole !== null) {
-      setCurrentRole(newRole);
-      if (onRoleChange) {
-        onRoleChange(newRole);
-      }
+    if (newRole !== null && onRoleChange) {
+      onRoleChange(newRole);
     }
   };
 
@@ -336,18 +315,20 @@ export default function TopBar({
     paddingX = { xs: 2, md: 4, mac: 4, lg: 4 }; // Updated padding for logged in
     desktopRightContent = (
       <>
-        {/* Usamos el componente Switch */}
-        <Switch
-          value={currentRole} // Le pasamos el estado interno de TopBar como valor
-          onChange={handleRoleToggleChange} // Le pasamos el manejador de cambios
-          disabled={isRoleLoading} // ✅ Deshabilitar mientras se carga el rol
-          // Los estilos base del switch ya están en Switch,
-          // pero puedes agregarle más aquí si necesitas un ajuste específico para el desktop
-          sx={{ 
-            mr: 2,
-            opacity: isRoleLoading ? 0.6 : 1, // ✅ Indicador visual de loading
-          }}
-        />
+        {/* Usamos el componente Switch - Solo mostrar cuando el rol esté determinado */}
+        {currentRole && (
+          <Switch
+            value={currentRole} // Le pasamos el rol determinado
+            onChange={handleRoleToggleChange} // Le pasamos el manejador de cambios
+            disabled={isRoleLoading} // ✅ Deshabilitar mientras se carga el rol
+            // Los estilos base del switch ya están en Switch,
+            // pero puedes agregarle más aquí si necesitas un ajuste específico para el desktop
+            sx={{ 
+              mr: 2,
+              opacity: isRoleLoading ? 0.6 : 1, // ✅ Indicador visual de loading
+            }}
+          />
+        )}
 
         <Tooltip title="Carrito" arrow>
           <IconButton
@@ -389,17 +370,19 @@ export default function TopBar({
         key="roleToggleMobile"
         sx={{ display: 'flex', justifyContent: 'center', py: 1 }}
       >
-        {/* Usamos el componente Switch en el menú móvil también */}
-        <Switch
-          value={currentRole} // Le pasamos el estado interno de TopBar como valor
-          onChange={handleRoleToggleChange} // Le pasamos el manejador de cambios
-          disabled={isRoleLoading} // ✅ Deshabilitar mientras se carga el rol
-          sx={{ 
-            width: '100%', 
-            mr: 0,
-            opacity: isRoleLoading ? 0.6 : 1, // ✅ Indicador visual de loading
-          }} // Estilos específicos para el móvil, anula el mr del desktop
-        />
+        {/* Usamos el componente Switch en el menú móvil - Solo mostrar cuando el rol esté determinado */}
+        {currentRole && (
+          <Switch
+            value={currentRole} // Le pasamos el rol determinado
+            onChange={handleRoleToggleChange} // Le pasamos el manejador de cambios
+            disabled={isRoleLoading} // ✅ Deshabilitar mientras se carga el rol
+            sx={{ 
+              width: '100%', 
+              mr: 0,
+              opacity: isRoleLoading ? 0.6 : 1, // ✅ Indicador visual de loading
+            }} // Estilos específicos para el móvil, anula el mr del desktop
+          />
+        )}
       </MenuItem>,
       <Divider key="dividerMobileRole" />,
       // Eliminado el botón de carrito en mobileMenuItems

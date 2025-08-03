@@ -20,6 +20,7 @@ import ProductPageView from './ProductPageView';
 import { supabase } from '../../services/supabase';
 import useCartStore from '../../shared/stores/cart/cartStore';
 import { extractProductIdFromSlug } from '../marketplace/utils/productUrl';
+import { convertDbRegionsToForm } from '../../utils/shippingRegionsUtils';
 
 const ProductPageWrapper = ({ isLoggedIn }) => {
   // Obtener el tipo de vista desde App.jsx vía window o prop global
@@ -70,6 +71,7 @@ const ProductPageWrapper = ({ isLoggedIn }) => {
             *,
             product_images (*),
             product_quantity_ranges (*),
+            product_delivery_regions (*),
             users!products_supplier_id_fkey (
               user_nm,
               logo_url
@@ -102,6 +104,11 @@ const ProductPageWrapper = ({ isLoggedIn }) => {
             proveedor: data.users?.user_nm || 'Proveedor',
             priceTiers: data.product_quantity_ranges || [],
             imagenes: data.product_images || [],
+            // Regiones de despacho mapeadas al formato correcto
+            shippingRegions: convertDbRegionsToForm(data.product_delivery_regions || []),
+            delivery_regions: data.product_delivery_regions || [],
+            shipping_regions: data.product_delivery_regions || [],
+            product_delivery_regions: data.product_delivery_regions || [],
             rating: 4.5, // Default rating
             ventas: Math.floor(Math.random() * 100), // Mock ventas
             // Flags para controlar visibilidad de acciones de compra

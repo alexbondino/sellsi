@@ -15,6 +15,7 @@
 import { AdminApiService, AUDIT_ACTIONS } from './adminApiService'
 import { supabase } from '../../../services/supabase'
 import { useQueryClient } from '@tanstack/react-query'
+import { StorageCleanupService } from '../../../shared/services/storage/storageCleanupService'
 
 // Cache invalidation utility - funciona sin componente React
 const invalidateProductCache = (productId) => {
@@ -257,7 +258,10 @@ export const deleteProduct = async (productId, adminId) => {
       throw new Error('ID del producto es requerido')
     }
 
-    // 1. Obtener información del producto para background cleanup
+    // 1. Auditoría admin
+    console.log(`Admin ${adminId} eliminando producto ${productId}`)
+
+    // 2. Obtener información del producto para auditoría
     const { data: product, error: productError } = await supabase
       .from('products')
       .select('supplier_id, productnm')
@@ -268,7 +272,10 @@ export const deleteProduct = async (productId, adminId) => {
       throw new Error('Error al obtener información del producto')
     }
 
-    // 2. Eliminar producto de la BD
+    // 3. Limpiar archivos huérfanos ANTES de eliminar
+    const cleanupResult = await StorageCleanupService.cleanupProductOrphans(productId)
+
+    // 4. Eliminar producto de la BD
     const { error } = await supabase
       .from('products')
       .delete()
@@ -278,45 +285,26 @@ export const deleteProduct = async (productId, adminId) => {
       throw new Error('Error al eliminar producto')
     }
 
-    // 🚀 INVALIDACIÓN PROACTIVA DE CACHÉ
-    invalidateProductCache(productId);
+    // 5. Invalidación proactiva de caché
+    invalidateProductCache(productId)
 
-    // 3. Registrar acción en auditoría
+    // 6. Registrar acción en auditoría
     if (adminId) {
       await AdminApiService.logAuditAction(adminId, AUDIT_ACTIONS.DELETE_PRODUCT, productId, {
         product_name: product.productnm,
-        supplier_id: product.supplier_id
+        supplier_id: product.supplier_id,
+        files_removed: cleanupResult.cleaned
       })
     }
 
-    // 4. Limpiar archivos del storage en background (no bloquea la respuesta)
-    const folderPrefix = `${product.supplier_id}/${productId}/`
-    
-    // Ejecutar limpieza en background sin esperar
-    Promise.all([
-      // Limpiar bucket principal
-      supabase.storage.from('product-images').list(folderPrefix, { limit: 100 })
-        .then(({ data: bucketFiles }) => {
-          if (bucketFiles?.length > 0) {
-            const toDeleteFromBucket = bucketFiles.map(file => folderPrefix + file.name)
-            return supabase.storage.from('product-images').remove(toDeleteFromBucket)
-          }
-        }),
-      
-      // Limpiar bucket de thumbnails
-      supabase.storage.from('product-images-thumbnails').list(folderPrefix, { limit: 100 })
-        .then(({ data: thumbnailFiles }) => {
-          if (thumbnailFiles?.length > 0) {
-            const toDeleteFromThumbnails = thumbnailFiles.map(file => folderPrefix + file.name)
-            return supabase.storage.from('product-images-thumbnails').remove(toDeleteFromThumbnails)
-          }
-        })
-    ]).catch(error => {
-      console.warn('⚠️ Error limpiando archivos de storage en background:', error)
-      // Solo archivos físicos, no afecta la consistencia de datos
-    })
+    // 7. Log de auditoría detallado
+    console.log(`Producto ${productId} eliminado por admin. Archivos limpiados: ${cleanupResult.cleaned}`)
 
-    return { deleted: true }
+    return { 
+      deleted: true, 
+      cleaned: cleanupResult.cleaned,
+      productName: product.productnm
+    }
   }, 'Error al eliminar producto')
 }
 

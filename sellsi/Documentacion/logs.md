@@ -1,838 +1,204 @@
-client:789 [vite] connecting...
-client:912 [vite] connected.
-AppProviders.jsx:36 [AppProviders] Cache Manager y Observer Pool inicializados
-AppProviders.jsx:36 [AppProviders] Cache Manager y Observer Pool inicializados
-MyProducts.jsx:301  MUI Grid: The `item` prop has been removed and is no longer necessary. You can safely remove it.
-
-overrideMethod @ hook.js:608
-(anonymous) @ deleteLegacyGridProps.js:37
-deleteLegacyGridProps @ deleteLegacyGridProps.js:34
-Grid3 @ createGrid.js:82
-react-stack-bottom-frame @ react-dom-client.development.js:23863
-renderWithHooks @ react-dom-client.development.js:5529
-updateForwardRef @ react-dom-client.development.js:8645
-beginWork @ react-dom-client.development.js:10861
-runWithFiberInDEV @ react-dom-client.development.js:1519
-performUnitOfWork @ react-dom-client.development.js:15132
-workLoopConcurrentByScheduler @ react-dom-client.development.js:15126
-renderRootConcurrent @ react-dom-client.development.js:15101
-performWorkOnRoot @ react-dom-client.development.js:14418
-performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:16216
-performWorkUntilDeadline @ scheduler.development.js:45
-<ForwardRef(Grid3)>
-exports.jsxDEV @ react-jsx-dev-runtime.development.js:346
-MyProducts @ MyProducts.jsx:301
-react-stack-bottom-frame @ react-dom-client.development.js:23863
-renderWithHooksAgain @ react-dom-client.development.js:5629
-renderWithHooks @ react-dom-client.development.js:5541
-updateFunctionComponent @ react-dom-client.development.js:8897
-beginWork @ react-dom-client.development.js:10471
-runWithFiberInDEV @ react-dom-client.development.js:1519
-performUnitOfWork @ react-dom-client.development.js:15132
-workLoopConcurrentByScheduler @ react-dom-client.development.js:15126
-renderRootConcurrent @ react-dom-client.development.js:15101
-performWorkOnRoot @ react-dom-client.development.js:14418
-performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:16216
-performWorkUntilDeadline @ scheduler.development.js:45
-<...>
-exports.jsxDEV @ react-jsx-dev-runtime.development.js:346
-AppRouter @ AppRouter.jsx:278
-react-stack-bottom-frame @ react-dom-client.development.js:23863
-renderWithHooksAgain @ react-dom-client.development.js:5629
-renderWithHooks @ react-dom-client.development.js:5541
-updateFunctionComponent @ react-dom-client.development.js:8897
-beginWork @ react-dom-client.development.js:10522
-runWithFiberInDEV @ react-dom-client.development.js:1519
-performUnitOfWork @ react-dom-client.development.js:15132
-workLoopSync @ react-dom-client.development.js:14956
-renderRootSync @ react-dom-client.development.js:14936
-performWorkOnRoot @ react-dom-client.development.js:14419
-performSyncWorkOnRoot @ react-dom-client.development.js:16231
-flushSyncWorkAcrossRoots_impl @ react-dom-client.development.js:16079
-flushSpawnedWork @ react-dom-client.development.js:15677
-commitRoot @ react-dom-client.development.js:15403
-commitRootWhenReady @ react-dom-client.development.js:14652
-performWorkOnRoot @ react-dom-client.development.js:14575
-performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:16216
-performWorkUntilDeadline @ scheduler.development.js:45
-<AppRouter>
-exports.jsxDEV @ react-jsx-dev-runtime.development.js:346
-AppContent @ App.jsx:53
-react-stack-bottom-frame @ react-dom-client.development.js:23863
-renderWithHooksAgain @ react-dom-client.development.js:5629
-renderWithHooks @ react-dom-client.development.js:5541
-updateFunctionComponent @ react-dom-client.development.js:8897
-beginWork @ react-dom-client.development.js:10522
-runWithFiberInDEV @ react-dom-client.development.js:1519
-performUnitOfWork @ react-dom-client.development.js:15132
-workLoopSync @ react-dom-client.development.js:14956
-renderRootSync @ react-dom-client.development.js:14936
-performWorkOnRoot @ react-dom-client.development.js:14419
-performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:16216
-performWorkUntilDeadline @ scheduler.development.js:45
-<AppContent>
-exports.jsxDEV @ react-jsx-dev-runtime.development.js:346
-App @ App.jsx:74
-react-stack-bottom-frame @ react-dom-client.development.js:23863
-renderWithHooksAgain @ react-dom-client.development.js:5629
-renderWithHooks @ react-dom-client.development.js:5541
-updateFunctionComponent @ react-dom-client.development.js:8897
-beginWork @ react-dom-client.development.js:10522
-runWithFiberInDEV @ react-dom-client.development.js:1519
-performUnitOfWork @ react-dom-client.development.js:15132
-workLoopSync @ react-dom-client.development.js:14956
-renderRootSync @ react-dom-client.development.js:14936
-performWorkOnRoot @ react-dom-client.development.js:14419
-performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:16216
-performWorkUntilDeadline @ scheduler.development.js:45
-<App>
-exports.jsxDEV @ react-jsx-dev-runtime.development.js:346
-AppWithWhatsApp @ App.jsx:81
-react-stack-bottom-frame @ react-dom-client.development.js:23863
-renderWithHooksAgain @ react-dom-client.development.js:5629
-renderWithHooks @ react-dom-client.development.js:5541
-updateFunctionComponent @ react-dom-client.development.js:8897
-beginWork @ react-dom-client.development.js:10522
-runWithFiberInDEV @ react-dom-client.development.js:1519
-performUnitOfWork @ react-dom-client.development.js:15132
-workLoopSync @ react-dom-client.development.js:14956
-renderRootSync @ react-dom-client.development.js:14936
-performWorkOnRoot @ react-dom-client.development.js:14419
-performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:16216
-performWorkUntilDeadline @ scheduler.development.js:45
-MyProducts.jsx:301  MUI Grid: The `xs` prop has been removed. See https://mui.com/material-ui/migration/upgrade-to-grid-v2/ for migration instructions.
-
-overrideMethod @ hook.js:608
-(anonymous) @ deleteLegacyGridProps.js:37
-deleteLegacyGridProps @ deleteLegacyGridProps.js:34
-Grid3 @ createGrid.js:82
-react-stack-bottom-frame @ react-dom-client.development.js:23863
-renderWithHooks @ react-dom-client.development.js:5529
-updateForwardRef @ react-dom-client.development.js:8645
-beginWork @ react-dom-client.development.js:10861
-runWithFiberInDEV @ react-dom-client.development.js:1519
-performUnitOfWork @ react-dom-client.development.js:15132
-workLoopConcurrentByScheduler @ react-dom-client.development.js:15126
-renderRootConcurrent @ react-dom-client.development.js:15101
-performWorkOnRoot @ react-dom-client.development.js:14418
-performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:16216
-performWorkUntilDeadline @ scheduler.development.js:45
-<ForwardRef(Grid3)>
-exports.jsxDEV @ react-jsx-dev-runtime.development.js:346
-MyProducts @ MyProducts.jsx:301
-react-stack-bottom-frame @ react-dom-client.development.js:23863
-renderWithHooksAgain @ react-dom-client.development.js:5629
-renderWithHooks @ react-dom-client.development.js:5541
-updateFunctionComponent @ react-dom-client.development.js:8897
-beginWork @ react-dom-client.development.js:10471
-runWithFiberInDEV @ react-dom-client.development.js:1519
-performUnitOfWork @ react-dom-client.development.js:15132
-workLoopConcurrentByScheduler @ react-dom-client.development.js:15126
-renderRootConcurrent @ react-dom-client.development.js:15101
-performWorkOnRoot @ react-dom-client.development.js:14418
-performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:16216
-performWorkUntilDeadline @ scheduler.development.js:45
-<...>
-exports.jsxDEV @ react-jsx-dev-runtime.development.js:346
-AppRouter @ AppRouter.jsx:278
-react-stack-bottom-frame @ react-dom-client.development.js:23863
-renderWithHooksAgain @ react-dom-client.development.js:5629
-renderWithHooks @ react-dom-client.development.js:5541
-updateFunctionComponent @ react-dom-client.development.js:8897
-beginWork @ react-dom-client.development.js:10522
-runWithFiberInDEV @ react-dom-client.development.js:1519
-performUnitOfWork @ react-dom-client.development.js:15132
-workLoopSync @ react-dom-client.development.js:14956
-renderRootSync @ react-dom-client.development.js:14936
-performWorkOnRoot @ react-dom-client.development.js:14419
-performSyncWorkOnRoot @ react-dom-client.development.js:16231
-flushSyncWorkAcrossRoots_impl @ react-dom-client.development.js:16079
-flushSpawnedWork @ react-dom-client.development.js:15677
-commitRoot @ react-dom-client.development.js:15403
-commitRootWhenReady @ react-dom-client.development.js:14652
-performWorkOnRoot @ react-dom-client.development.js:14575
-performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:16216
-performWorkUntilDeadline @ scheduler.development.js:45
-<AppRouter>
-exports.jsxDEV @ react-jsx-dev-runtime.development.js:346
-AppContent @ App.jsx:53
-react-stack-bottom-frame @ react-dom-client.development.js:23863
-renderWithHooksAgain @ react-dom-client.development.js:5629
-renderWithHooks @ react-dom-client.development.js:5541
-updateFunctionComponent @ react-dom-client.development.js:8897
-beginWork @ react-dom-client.development.js:10522
-runWithFiberInDEV @ react-dom-client.development.js:1519
-performUnitOfWork @ react-dom-client.development.js:15132
-workLoopSync @ react-dom-client.development.js:14956
-renderRootSync @ react-dom-client.development.js:14936
-performWorkOnRoot @ react-dom-client.development.js:14419
-performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:16216
-performWorkUntilDeadline @ scheduler.development.js:45
-<AppContent>
-exports.jsxDEV @ react-jsx-dev-runtime.development.js:346
-App @ App.jsx:74
-react-stack-bottom-frame @ react-dom-client.development.js:23863
-renderWithHooksAgain @ react-dom-client.development.js:5629
-renderWithHooks @ react-dom-client.development.js:5541
-updateFunctionComponent @ react-dom-client.development.js:8897
-beginWork @ react-dom-client.development.js:10522
-runWithFiberInDEV @ react-dom-client.development.js:1519
-performUnitOfWork @ react-dom-client.development.js:15132
-workLoopSync @ react-dom-client.development.js:14956
-renderRootSync @ react-dom-client.development.js:14936
-performWorkOnRoot @ react-dom-client.development.js:14419
-performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:16216
-performWorkUntilDeadline @ scheduler.development.js:45
-<App>
-exports.jsxDEV @ react-jsx-dev-runtime.development.js:346
-AppWithWhatsApp @ App.jsx:81
-react-stack-bottom-frame @ react-dom-client.development.js:23863
-renderWithHooksAgain @ react-dom-client.development.js:5629
-renderWithHooks @ react-dom-client.development.js:5541
-updateFunctionComponent @ react-dom-client.development.js:8897
-beginWork @ react-dom-client.development.js:10522
-runWithFiberInDEV @ react-dom-client.development.js:1519
-performUnitOfWork @ react-dom-client.development.js:15132
-workLoopSync @ react-dom-client.development.js:14956
-renderRootSync @ react-dom-client.development.js:14936
-performWorkOnRoot @ react-dom-client.development.js:14419
-performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:16216
-performWorkUntilDeadline @ scheduler.development.js:45
-MyProducts.jsx:301  MUI Grid: The `sm` prop has been removed. See https://mui.com/material-ui/migration/upgrade-to-grid-v2/ for migration instructions.
-
-overrideMethod @ hook.js:608
-(anonymous) @ deleteLegacyGridProps.js:37
-deleteLegacyGridProps @ deleteLegacyGridProps.js:34
-Grid3 @ createGrid.js:82
-react-stack-bottom-frame @ react-dom-client.development.js:23863
-renderWithHooks @ react-dom-client.development.js:5529
-updateForwardRef @ react-dom-client.development.js:8645
-beginWork @ react-dom-client.development.js:10861
-runWithFiberInDEV @ react-dom-client.development.js:1519
-performUnitOfWork @ react-dom-client.development.js:15132
-workLoopConcurrentByScheduler @ react-dom-client.development.js:15126
-renderRootConcurrent @ react-dom-client.development.js:15101
-performWorkOnRoot @ react-dom-client.development.js:14418
-performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:16216
-performWorkUntilDeadline @ scheduler.development.js:45
-<ForwardRef(Grid3)>
-exports.jsxDEV @ react-jsx-dev-runtime.development.js:346
-MyProducts @ MyProducts.jsx:301
-react-stack-bottom-frame @ react-dom-client.development.js:23863
-renderWithHooksAgain @ react-dom-client.development.js:5629
-renderWithHooks @ react-dom-client.development.js:5541
-updateFunctionComponent @ react-dom-client.development.js:8897
-beginWork @ react-dom-client.development.js:10471
-runWithFiberInDEV @ react-dom-client.development.js:1519
-performUnitOfWork @ react-dom-client.development.js:15132
-workLoopConcurrentByScheduler @ react-dom-client.development.js:15126
-renderRootConcurrent @ react-dom-client.development.js:15101
-performWorkOnRoot @ react-dom-client.development.js:14418
-performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:16216
-performWorkUntilDeadline @ scheduler.development.js:45
-<...>
-exports.jsxDEV @ react-jsx-dev-runtime.development.js:346
-AppRouter @ AppRouter.jsx:278
-react-stack-bottom-frame @ react-dom-client.development.js:23863
-renderWithHooksAgain @ react-dom-client.development.js:5629
-renderWithHooks @ react-dom-client.development.js:5541
-updateFunctionComponent @ react-dom-client.development.js:8897
-beginWork @ react-dom-client.development.js:10522
-runWithFiberInDEV @ react-dom-client.development.js:1519
-performUnitOfWork @ react-dom-client.development.js:15132
-workLoopSync @ react-dom-client.development.js:14956
-renderRootSync @ react-dom-client.development.js:14936
-performWorkOnRoot @ react-dom-client.development.js:14419
-performSyncWorkOnRoot @ react-dom-client.development.js:16231
-flushSyncWorkAcrossRoots_impl @ react-dom-client.development.js:16079
-flushSpawnedWork @ react-dom-client.development.js:15677
-commitRoot @ react-dom-client.development.js:15403
-commitRootWhenReady @ react-dom-client.development.js:14652
-performWorkOnRoot @ react-dom-client.development.js:14575
-performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:16216
-performWorkUntilDeadline @ scheduler.development.js:45
-<AppRouter>
-exports.jsxDEV @ react-jsx-dev-runtime.development.js:346
-AppContent @ App.jsx:53
-react-stack-bottom-frame @ react-dom-client.development.js:23863
-renderWithHooksAgain @ react-dom-client.development.js:5629
-renderWithHooks @ react-dom-client.development.js:5541
-updateFunctionComponent @ react-dom-client.development.js:8897
-beginWork @ react-dom-client.development.js:10522
-runWithFiberInDEV @ react-dom-client.development.js:1519
-performUnitOfWork @ react-dom-client.development.js:15132
-workLoopSync @ react-dom-client.development.js:14956
-renderRootSync @ react-dom-client.development.js:14936
-performWorkOnRoot @ react-dom-client.development.js:14419
-performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:16216
-performWorkUntilDeadline @ scheduler.development.js:45
-<AppContent>
-exports.jsxDEV @ react-jsx-dev-runtime.development.js:346
-App @ App.jsx:74
-react-stack-bottom-frame @ react-dom-client.development.js:23863
-renderWithHooksAgain @ react-dom-client.development.js:5629
-renderWithHooks @ react-dom-client.development.js:5541
-updateFunctionComponent @ react-dom-client.development.js:8897
-beginWork @ react-dom-client.development.js:10522
-runWithFiberInDEV @ react-dom-client.development.js:1519
-performUnitOfWork @ react-dom-client.development.js:15132
-workLoopSync @ react-dom-client.development.js:14956
-renderRootSync @ react-dom-client.development.js:14936
-performWorkOnRoot @ react-dom-client.development.js:14419
-performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:16216
-performWorkUntilDeadline @ scheduler.development.js:45
-<App>
-exports.jsxDEV @ react-jsx-dev-runtime.development.js:346
-AppWithWhatsApp @ App.jsx:81
-react-stack-bottom-frame @ react-dom-client.development.js:23863
-renderWithHooksAgain @ react-dom-client.development.js:5629
-renderWithHooks @ react-dom-client.development.js:5541
-updateFunctionComponent @ react-dom-client.development.js:8897
-beginWork @ react-dom-client.development.js:10522
-runWithFiberInDEV @ react-dom-client.development.js:1519
-performUnitOfWork @ react-dom-client.development.js:15132
-workLoopSync @ react-dom-client.development.js:14956
-renderRootSync @ react-dom-client.development.js:14936
-performWorkOnRoot @ react-dom-client.development.js:14419
-performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:16216
-performWorkUntilDeadline @ scheduler.development.js:45
-MyProducts.jsx:431  MUI Grid: The `md` prop has been removed. See https://mui.com/material-ui/migration/upgrade-to-grid-v2/ for migration instructions.
-
-overrideMethod @ hook.js:608
-(anonymous) @ deleteLegacyGridProps.js:37
-deleteLegacyGridProps @ deleteLegacyGridProps.js:34
-Grid3 @ createGrid.js:82
-react-stack-bottom-frame @ react-dom-client.development.js:23863
-renderWithHooks @ react-dom-client.development.js:5529
-updateForwardRef @ react-dom-client.development.js:8645
-beginWork @ react-dom-client.development.js:10861
-runWithFiberInDEV @ react-dom-client.development.js:1519
-performUnitOfWork @ react-dom-client.development.js:15132
-workLoopConcurrentByScheduler @ react-dom-client.development.js:15126
-renderRootConcurrent @ react-dom-client.development.js:15101
-performWorkOnRoot @ react-dom-client.development.js:14418
-performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:16216
-performWorkUntilDeadline @ scheduler.development.js:45
-<ForwardRef(Grid3)>
-exports.jsxDEV @ react-jsx-dev-runtime.development.js:346
-MyProducts @ MyProducts.jsx:431
-react-stack-bottom-frame @ react-dom-client.development.js:23863
-renderWithHooksAgain @ react-dom-client.development.js:5629
-renderWithHooks @ react-dom-client.development.js:5541
-updateFunctionComponent @ react-dom-client.development.js:8897
-beginWork @ react-dom-client.development.js:10471
-runWithFiberInDEV @ react-dom-client.development.js:1519
-performUnitOfWork @ react-dom-client.development.js:15132
-workLoopConcurrentByScheduler @ react-dom-client.development.js:15126
-renderRootConcurrent @ react-dom-client.development.js:15101
-performWorkOnRoot @ react-dom-client.development.js:14418
-performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:16216
-performWorkUntilDeadline @ scheduler.development.js:45
-<...>
-exports.jsxDEV @ react-jsx-dev-runtime.development.js:346
-AppRouter @ AppRouter.jsx:278
-react-stack-bottom-frame @ react-dom-client.development.js:23863
-renderWithHooksAgain @ react-dom-client.development.js:5629
-renderWithHooks @ react-dom-client.development.js:5541
-updateFunctionComponent @ react-dom-client.development.js:8897
-beginWork @ react-dom-client.development.js:10522
-runWithFiberInDEV @ react-dom-client.development.js:1519
-performUnitOfWork @ react-dom-client.development.js:15132
-workLoopSync @ react-dom-client.development.js:14956
-renderRootSync @ react-dom-client.development.js:14936
-performWorkOnRoot @ react-dom-client.development.js:14419
-performSyncWorkOnRoot @ react-dom-client.development.js:16231
-flushSyncWorkAcrossRoots_impl @ react-dom-client.development.js:16079
-flushSpawnedWork @ react-dom-client.development.js:15677
-commitRoot @ react-dom-client.development.js:15403
-commitRootWhenReady @ react-dom-client.development.js:14652
-performWorkOnRoot @ react-dom-client.development.js:14575
-performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:16216
-performWorkUntilDeadline @ scheduler.development.js:45
-<AppRouter>
-exports.jsxDEV @ react-jsx-dev-runtime.development.js:346
-AppContent @ App.jsx:53
-react-stack-bottom-frame @ react-dom-client.development.js:23863
-renderWithHooksAgain @ react-dom-client.development.js:5629
-renderWithHooks @ react-dom-client.development.js:5541
-updateFunctionComponent @ react-dom-client.development.js:8897
-beginWork @ react-dom-client.development.js:10522
-runWithFiberInDEV @ react-dom-client.development.js:1519
-performUnitOfWork @ react-dom-client.development.js:15132
-workLoopSync @ react-dom-client.development.js:14956
-renderRootSync @ react-dom-client.development.js:14936
-performWorkOnRoot @ react-dom-client.development.js:14419
-performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:16216
-performWorkUntilDeadline @ scheduler.development.js:45
-<AppContent>
-exports.jsxDEV @ react-jsx-dev-runtime.development.js:346
-App @ App.jsx:74
-react-stack-bottom-frame @ react-dom-client.development.js:23863
-renderWithHooksAgain @ react-dom-client.development.js:5629
-renderWithHooks @ react-dom-client.development.js:5541
-updateFunctionComponent @ react-dom-client.development.js:8897
-beginWork @ react-dom-client.development.js:10522
-runWithFiberInDEV @ react-dom-client.development.js:1519
-performUnitOfWork @ react-dom-client.development.js:15132
-workLoopSync @ react-dom-client.development.js:14956
-renderRootSync @ react-dom-client.development.js:14936
-performWorkOnRoot @ react-dom-client.development.js:14419
-performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:16216
-performWorkUntilDeadline @ scheduler.development.js:45
-<App>
-exports.jsxDEV @ react-jsx-dev-runtime.development.js:346
-AppWithWhatsApp @ App.jsx:81
-react-stack-bottom-frame @ react-dom-client.development.js:23863
-renderWithHooksAgain @ react-dom-client.development.js:5629
-renderWithHooks @ react-dom-client.development.js:5541
-updateFunctionComponent @ react-dom-client.development.js:8897
-beginWork @ react-dom-client.development.js:10522
-runWithFiberInDEV @ react-dom-client.development.js:1519
-performUnitOfWork @ react-dom-client.development.js:15132
-workLoopSync @ react-dom-client.development.js:14956
-renderRootSync @ react-dom-client.development.js:14936
-performWorkOnRoot @ react-dom-client.development.js:14419
-performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:16216
-performWorkUntilDeadline @ scheduler.development.js:45
-useSupplierProducts.js:170 [DEBUG] Loading initial products for supplier: 34e23a46-f8bb-4e50-b058-301ac6b0af12
-useSupplierProducts.js:170 [DEBUG] Loading initial products for supplier: 34e23a46-f8bb-4e50-b058-301ac6b0af12
-UniversalProductImage.jsx:57 [UniversalProductImage] Debug thumbnails para producto 382ec724-ca97-4232-a49f-59045ef2cbd1: {responsiveThumbnail: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…ef2cbd1/1753342573793_webp-image-file-format.webp', minithumb: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…ef2cbd1/1753342573793_webp-image-file-format.webp', size: 'responsive', product: 'YAKUUUUZA', retryCount: 0, …}
-UniversalProductImage.jsx:57 [UniversalProductImage] Debug thumbnails para producto 382ec724-ca97-4232-a49f-59045ef2cbd1: {responsiveThumbnail: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…ef2cbd1/1753342573793_webp-image-file-format.webp', minithumb: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…ef2cbd1/1753342573793_webp-image-file-format.webp', size: 'responsive', product: 'YAKUUUUZA', retryCount: 0, …}
-UniversalProductImage.jsx:57 [UniversalProductImage] Debug thumbnails para producto 068af62f-462b-4d7d-8e9d-a8777e6b4043: {responsiveThumbnail: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…9d-a8777e6b4043/1753328227643_desktop_320x260.jpg', minithumb: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…9d-a8777e6b4043/1753328227643_desktop_320x260.jpg', size: 'responsive', product: 'fg', retryCount: 0, …}
-UniversalProductImage.jsx:57 [UniversalProductImage] Debug thumbnails para producto 068af62f-462b-4d7d-8e9d-a8777e6b4043: {responsiveThumbnail: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…9d-a8777e6b4043/1753328227643_desktop_320x260.jpg', minithumb: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…9d-a8777e6b4043/1753328227643_desktop_320x260.jpg', size: 'responsive', product: 'fg', retryCount: 0, …}
-observerPoolManager.js:67 [ObserverPool] Nuevo observer creado. Total: 1
-UniversalProductImage.jsx:57 [UniversalProductImage] Debug thumbnails para producto 382ec724-ca97-4232-a49f-59045ef2cbd1: {responsiveThumbnail: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…ef2cbd1/1753342573793_webp-image-file-format.webp', minithumb: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…ef2cbd1/1753342573793_webp-image-file-format.webp', size: 'responsive', product: 'YAKUUUUZA', retryCount: 0, …}
-UniversalProductImage.jsx:57 [UniversalProductImage] Debug thumbnails para producto 382ec724-ca97-4232-a49f-59045ef2cbd1: {responsiveThumbnail: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…ef2cbd1/1753342573793_webp-image-file-format.webp', minithumb: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…ef2cbd1/1753342573793_webp-image-file-format.webp', size: 'responsive', product: 'YAKUUUUZA', retryCount: 0, …}
-UniversalProductImage.jsx:57 [UniversalProductImage] Debug thumbnails para producto 068af62f-462b-4d7d-8e9d-a8777e6b4043: {responsiveThumbnail: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…9d-a8777e6b4043/1753328227643_desktop_320x260.jpg', minithumb: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…9d-a8777e6b4043/1753328227643_desktop_320x260.jpg', size: 'responsive', product: 'fg', retryCount: 0, …}
-UniversalProductImage.jsx:57 [UniversalProductImage] Debug thumbnails para producto 068af62f-462b-4d7d-8e9d-a8777e6b4043: {responsiveThumbnail: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…9d-a8777e6b4043/1753328227643_desktop_320x260.jpg', minithumb: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…9d-a8777e6b4043/1753328227643_desktop_320x260.jpg', size: 'responsive', product: 'fg', retryCount: 0, …}
-UniversalProductImage.jsx:57 [UniversalProductImage] Debug thumbnails para producto 382ec724-ca97-4232-a49f-59045ef2cbd1: {responsiveThumbnail: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…ef2cbd1/1753342573793_webp-image-file-format.webp', minithumb: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…ef2cbd1/1753342573793_webp-image-file-format.webp', size: 'responsive', product: 'YAKUUUUZA', retryCount: 0, …}
-UniversalProductImage.jsx:57 [UniversalProductImage] Debug thumbnails para producto 382ec724-ca97-4232-a49f-59045ef2cbd1: {responsiveThumbnail: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…ef2cbd1/1753342573793_webp-image-file-format.webp', minithumb: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…ef2cbd1/1753342573793_webp-image-file-format.webp', size: 'responsive', product: 'YAKUUUUZA', retryCount: 0, …}
-UniversalProductImage.jsx:57 [UniversalProductImage] Debug thumbnails para producto 068af62f-462b-4d7d-8e9d-a8777e6b4043: {responsiveThumbnail: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…9d-a8777e6b4043/1753328227643_desktop_320x260.jpg', minithumb: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…9d-a8777e6b4043/1753328227643_desktop_320x260.jpg', size: 'responsive', product: 'fg', retryCount: 0, …}
-UniversalProductImage.jsx:57 [UniversalProductImage] Debug thumbnails para producto 068af62f-462b-4d7d-8e9d-a8777e6b4043: {responsiveThumbnail: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…9d-a8777e6b4043/1753328227643_desktop_320x260.jpg', minithumb: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…9d-a8777e6b4043/1753328227643_desktop_320x260.jpg', size: 'responsive', product: 'fg', retryCount: 0, …}
-UniversalProductImage.jsx:164 [UniversalProductImage] LazyImage onLoad disparado para: 068af62f-462b-4d7d-8e9d-a8777e6b4043 https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v1/object/public/product-images-thumbnails/34e23a46-f8bb-4e50-b058-301ac6b0af12/068af62f-462b-4d7d-8e9d-a8777e6b4043/1753328227643_desktop_320x260.jpg
-UniversalProductImage.jsx:57 [UniversalProductImage] Debug thumbnails para producto 382ec724-ca97-4232-a49f-59045ef2cbd1: {responsiveThumbnail: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…ef2cbd1/1753342573793_webp-image-file-format.webp', minithumb: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…ef2cbd1/1753342573793_webp-image-file-format.webp', size: 'responsive', product: 'YAKUUUUZA', retryCount: 0, …}
-UniversalProductImage.jsx:57 [UniversalProductImage] Debug thumbnails para producto 382ec724-ca97-4232-a49f-59045ef2cbd1: {responsiveThumbnail: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…ef2cbd1/1753342573793_webp-image-file-format.webp', minithumb: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…ef2cbd1/1753342573793_webp-image-file-format.webp', size: 'responsive', product: 'YAKUUUUZA', retryCount: 0, …}
-UniversalProductImage.jsx:57 [UniversalProductImage] Debug thumbnails para producto 068af62f-462b-4d7d-8e9d-a8777e6b4043: {responsiveThumbnail: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…9d-a8777e6b4043/1753328227643_desktop_320x260.jpg', minithumb: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…9d-a8777e6b4043/1753328227643_desktop_320x260.jpg', size: 'responsive', product: 'fg', retryCount: 0, …}
-UniversalProductImage.jsx:57 [UniversalProductImage] Debug thumbnails para producto 068af62f-462b-4d7d-8e9d-a8777e6b4043: {responsiveThumbnail: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…9d-a8777e6b4043/1753328227643_desktop_320x260.jpg', minithumb: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…9d-a8777e6b4043/1753328227643_desktop_320x260.jpg', size: 'responsive', product: 'fg', retryCount: 0, …}
-UniversalProductImage.jsx:57 [UniversalProductImage] Debug thumbnails para producto 068af62f-462b-4d7d-8e9d-a8777e6b4043: {responsiveThumbnail: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…9d-a8777e6b4043/1753328227643_desktop_320x260.jpg', minithumb: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…9d-a8777e6b4043/1753328227643_minithumb_40x40.jpg', size: 'responsive', product: 'fg', retryCount: 0, …}
-UniversalProductImage.jsx:57 [UniversalProductImage] Debug thumbnails para producto 068af62f-462b-4d7d-8e9d-a8777e6b4043: {responsiveThumbnail: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…9d-a8777e6b4043/1753328227643_desktop_320x260.jpg', minithumb: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…9d-a8777e6b4043/1753328227643_minithumb_40x40.jpg', size: 'responsive', product: 'fg', retryCount: 0, …}
-UniversalProductImage.jsx:160 [UniversalProductImage] LazyImage onError disparado para: 382ec724-ca97-4232-a49f-59045ef2cbd1 https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v1/object/public/product-images/34e23a46-f8bb-4e50-b058-301ac6b0af12/382ec724-ca97-4232-a49f-59045ef2cbd1/1753342573793_webp-image-file-format.webp
-UniversalProductImage.jsx:72  [UniversalProductImage] Error cargando imagen para producto: 382ec724-ca97-4232-a49f-59045ef2cbd1
-overrideMethod @ hook.js:608
-(anonymous) @ UniversalProductImage.jsx:72
-onError @ UniversalProductImage.jsx:161
-handleImageError @ LazyImage.jsx:103
-executeDispatch @ react-dom-client.development.js:16368
-runWithFiberInDEV @ react-dom-client.development.js:1519
-processDispatchQueue @ react-dom-client.development.js:16418
-(anonymous) @ react-dom-client.development.js:17016
-batchedUpdates$1 @ react-dom-client.development.js:3262
-dispatchEventForPluginEventSystem @ react-dom-client.development.js:16572
-dispatchEvent @ react-dom-client.development.js:20658
-<img>
-exports.createElement @ react.development.js:1033
-(anonymous) @ emotion-styled-base.browser.development.esm.js:156
-Styled(div) @ emotion-element-489459f2.browser.development.esm.js:34
-react-stack-bottom-frame @ react-dom-client.development.js:23863
-renderWithHooksAgain @ react-dom-client.development.js:5629
-renderWithHooks @ react-dom-client.development.js:5541
-updateForwardRef @ react-dom-client.development.js:8645
-beginWork @ react-dom-client.development.js:10861
-runWithFiberInDEV @ react-dom-client.development.js:1519
-performUnitOfWork @ react-dom-client.development.js:15132
-workLoopSync @ react-dom-client.development.js:14956
-renderRootSync @ react-dom-client.development.js:14936
-performWorkOnRoot @ react-dom-client.development.js:14419
-performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:16216
-performWorkUntilDeadline @ scheduler.development.js:45
-<Styled(div)>
-exports.jsx @ react-jsx-runtime.development.js:339
-Box3 @ createBox.js:26
-react-stack-bottom-frame @ react-dom-client.development.js:23863
-renderWithHooksAgain @ react-dom-client.development.js:5629
-renderWithHooks @ react-dom-client.development.js:5541
-updateForwardRef @ react-dom-client.development.js:8645
-beginWork @ react-dom-client.development.js:10861
-runWithFiberInDEV @ react-dom-client.development.js:1519
-performUnitOfWork @ react-dom-client.development.js:15132
-workLoopSync @ react-dom-client.development.js:14956
-renderRootSync @ react-dom-client.development.js:14936
-performWorkOnRoot @ react-dom-client.development.js:14419
-performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:16216
-performWorkUntilDeadline @ scheduler.development.js:45
-<ForwardRef(Box3)>
-exports.jsxDEV @ react-jsx-dev-runtime.development.js:346
-LazyImage @ LazyImage.jsx:189
-react-stack-bottom-frame @ react-dom-client.development.js:23863
-renderWithHooksAgain @ react-dom-client.development.js:5629
-renderWithHooks @ react-dom-client.development.js:5541
-updateFunctionComponent @ react-dom-client.development.js:8897
-beginWork @ react-dom-client.development.js:10522
-runWithFiberInDEV @ react-dom-client.development.js:1519
-performUnitOfWork @ react-dom-client.development.js:15132
-workLoopSync @ react-dom-client.development.js:14956
-renderRootSync @ react-dom-client.development.js:14936
-performWorkOnRoot @ react-dom-client.development.js:14419
-performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:16216
-performWorkUntilDeadline @ scheduler.development.js:45
-UniversalProductImage.jsx:73  [UniversalProductImage] URL que falló: https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v1/object/public/product-images/34e23a46-f8bb-4e50-b058-301ac6b0af12/382ec724-ca97-4232-a49f-59045ef2cbd1/1753342573793_webp-image-file-format.webp
-overrideMethod @ hook.js:608
-(anonymous) @ UniversalProductImage.jsx:73
-onError @ UniversalProductImage.jsx:161
-handleImageError @ LazyImage.jsx:103
-executeDispatch @ react-dom-client.development.js:16368
-runWithFiberInDEV @ react-dom-client.development.js:1519
-processDispatchQueue @ react-dom-client.development.js:16418
-(anonymous) @ react-dom-client.development.js:17016
-batchedUpdates$1 @ react-dom-client.development.js:3262
-dispatchEventForPluginEventSystem @ react-dom-client.development.js:16572
-dispatchEvent @ react-dom-client.development.js:20658
-<img>
-exports.createElement @ react.development.js:1033
-(anonymous) @ emotion-styled-base.browser.development.esm.js:156
-Styled(div) @ emotion-element-489459f2.browser.development.esm.js:34
-react-stack-bottom-frame @ react-dom-client.development.js:23863
-renderWithHooksAgain @ react-dom-client.development.js:5629
-renderWithHooks @ react-dom-client.development.js:5541
-updateForwardRef @ react-dom-client.development.js:8645
-beginWork @ react-dom-client.development.js:10861
-runWithFiberInDEV @ react-dom-client.development.js:1519
-performUnitOfWork @ react-dom-client.development.js:15132
-workLoopSync @ react-dom-client.development.js:14956
-renderRootSync @ react-dom-client.development.js:14936
-performWorkOnRoot @ react-dom-client.development.js:14419
-performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:16216
-performWorkUntilDeadline @ scheduler.development.js:45
-<Styled(div)>
-exports.jsx @ react-jsx-runtime.development.js:339
-Box3 @ createBox.js:26
-react-stack-bottom-frame @ react-dom-client.development.js:23863
-renderWithHooksAgain @ react-dom-client.development.js:5629
-renderWithHooks @ react-dom-client.development.js:5541
-updateForwardRef @ react-dom-client.development.js:8645
-beginWork @ react-dom-client.development.js:10861
-runWithFiberInDEV @ react-dom-client.development.js:1519
-performUnitOfWork @ react-dom-client.development.js:15132
-workLoopSync @ react-dom-client.development.js:14956
-renderRootSync @ react-dom-client.development.js:14936
-performWorkOnRoot @ react-dom-client.development.js:14419
-performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:16216
-performWorkUntilDeadline @ scheduler.development.js:45
-<ForwardRef(Box3)>
-exports.jsxDEV @ react-jsx-dev-runtime.development.js:346
-LazyImage @ LazyImage.jsx:189
-react-stack-bottom-frame @ react-dom-client.development.js:23863
-renderWithHooksAgain @ react-dom-client.development.js:5629
-renderWithHooks @ react-dom-client.development.js:5541
-updateFunctionComponent @ react-dom-client.development.js:8897
-beginWork @ react-dom-client.development.js:10522
-runWithFiberInDEV @ react-dom-client.development.js:1519
-performUnitOfWork @ react-dom-client.development.js:15132
-workLoopSync @ react-dom-client.development.js:14956
-renderRootSync @ react-dom-client.development.js:14936
-performWorkOnRoot @ react-dom-client.development.js:14419
-performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:16216
-performWorkUntilDeadline @ scheduler.development.js:45
-UniversalProductImage.jsx:80 [UniversalProductImage] Invalidando cache para producto: 382ec724-ca97-4232-a49f-59045ef2cbd1
-UniversalProductImage.jsx:97 [UniversalProductImage] Reintentando carga 1/2 para producto: 382ec724-ca97-4232-a49f-59045ef2cbd1
-UniversalProductImage.jsx:57 [UniversalProductImage] Debug thumbnails para producto 382ec724-ca97-4232-a49f-59045ef2cbd1: {responsiveThumbnail: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…ef2cbd1/1753342573793_webp-image-file-format.webp', minithumb: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…ef2cbd1/1753342573793_webp-image-file-format.webp', size: 'responsive', product: 'YAKUUUUZA', retryCount: 1, …}
-UniversalProductImage.jsx:57 [UniversalProductImage] Debug thumbnails para producto 382ec724-ca97-4232-a49f-59045ef2cbd1: {responsiveThumbnail: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…ef2cbd1/1753342573793_webp-image-file-format.webp', minithumb: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…ef2cbd1/1753342573793_webp-image-file-format.webp', size: 'responsive', product: 'YAKUUUUZA', retryCount: 1, …}
-UniversalProductImage.jsx:160 [UniversalProductImage] LazyImage onError disparado para: 382ec724-ca97-4232-a49f-59045ef2cbd1 https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v1/object/public/product-images/34e23a46-f8bb-4e50-b058-301ac6b0af12/382ec724-ca97-4232-a49f-59045ef2cbd1/1753342573793_webp-image-file-format.webp
-UniversalProductImage.jsx:72  [UniversalProductImage] Error cargando imagen para producto: 382ec724-ca97-4232-a49f-59045ef2cbd1
-overrideMethod @ hook.js:608
-(anonymous) @ UniversalProductImage.jsx:72
-onError @ UniversalProductImage.jsx:161
-handleImageError @ LazyImage.jsx:103
-executeDispatch @ react-dom-client.development.js:16368
-runWithFiberInDEV @ react-dom-client.development.js:1519
-processDispatchQueue @ react-dom-client.development.js:16418
-(anonymous) @ react-dom-client.development.js:17016
-batchedUpdates$1 @ react-dom-client.development.js:3262
-dispatchEventForPluginEventSystem @ react-dom-client.development.js:16572
-dispatchEvent @ react-dom-client.development.js:20658
-<img>
-exports.createElement @ react.development.js:1033
-(anonymous) @ emotion-styled-base.browser.development.esm.js:156
-Styled(div) @ emotion-element-489459f2.browser.development.esm.js:34
-react-stack-bottom-frame @ react-dom-client.development.js:23863
-renderWithHooksAgain @ react-dom-client.development.js:5629
-renderWithHooks @ react-dom-client.development.js:5541
-updateForwardRef @ react-dom-client.development.js:8645
-beginWork @ react-dom-client.development.js:10861
-runWithFiberInDEV @ react-dom-client.development.js:1519
-performUnitOfWork @ react-dom-client.development.js:15132
-workLoopSync @ react-dom-client.development.js:14956
-renderRootSync @ react-dom-client.development.js:14936
-performWorkOnRoot @ react-dom-client.development.js:14419
-performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:16216
-performWorkUntilDeadline @ scheduler.development.js:45
-<Styled(div)>
-exports.jsx @ react-jsx-runtime.development.js:339
-Box3 @ createBox.js:26
-react-stack-bottom-frame @ react-dom-client.development.js:23863
-renderWithHooksAgain @ react-dom-client.development.js:5629
-renderWithHooks @ react-dom-client.development.js:5541
-updateForwardRef @ react-dom-client.development.js:8645
-beginWork @ react-dom-client.development.js:10861
-runWithFiberInDEV @ react-dom-client.development.js:1519
-performUnitOfWork @ react-dom-client.development.js:15132
-workLoopSync @ react-dom-client.development.js:14956
-renderRootSync @ react-dom-client.development.js:14936
-performWorkOnRoot @ react-dom-client.development.js:14419
-performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:16216
-performWorkUntilDeadline @ scheduler.development.js:45
-<ForwardRef(Box3)>
-exports.jsxDEV @ react-jsx-dev-runtime.development.js:346
-LazyImage @ LazyImage.jsx:189
-react-stack-bottom-frame @ react-dom-client.development.js:23863
-renderWithHooksAgain @ react-dom-client.development.js:5629
-renderWithHooks @ react-dom-client.development.js:5541
-updateFunctionComponent @ react-dom-client.development.js:8897
-beginWork @ react-dom-client.development.js:10522
-runWithFiberInDEV @ react-dom-client.development.js:1519
-performUnitOfWork @ react-dom-client.development.js:15132
-workLoopSync @ react-dom-client.development.js:14956
-renderRootSync @ react-dom-client.development.js:14936
-performWorkOnRoot @ react-dom-client.development.js:14419
-performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:16216
-performWorkUntilDeadline @ scheduler.development.js:45
-<LazyImage>
-exports.jsxDEV @ react-jsx-dev-runtime.development.js:346
-UniversalProductImage @ UniversalProductImage.jsx:152
-react-stack-bottom-frame @ react-dom-client.development.js:23863
-renderWithHooksAgain @ react-dom-client.development.js:5629
-renderWithHooks @ react-dom-client.development.js:5541
-updateFunctionComponent @ react-dom-client.development.js:8897
-beginWork @ react-dom-client.development.js:10522
-runWithFiberInDEV @ react-dom-client.development.js:1519
-performUnitOfWork @ react-dom-client.development.js:15132
-workLoopSync @ react-dom-client.development.js:14956
-renderRootSync @ react-dom-client.development.js:14936
-performWorkOnRoot @ react-dom-client.development.js:14419
-performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:16216
-performWorkUntilDeadline @ scheduler.development.js:45
-UniversalProductImage.jsx:73  [UniversalProductImage] URL que falló: https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v1/object/public/product-images/34e23a46-f8bb-4e50-b058-301ac6b0af12/382ec724-ca97-4232-a49f-59045ef2cbd1/1753342573793_webp-image-file-format.webp
-overrideMethod @ hook.js:608
-(anonymous) @ UniversalProductImage.jsx:73
-onError @ UniversalProductImage.jsx:161
-handleImageError @ LazyImage.jsx:103
-executeDispatch @ react-dom-client.development.js:16368
-runWithFiberInDEV @ react-dom-client.development.js:1519
-processDispatchQueue @ react-dom-client.development.js:16418
-(anonymous) @ react-dom-client.development.js:17016
-batchedUpdates$1 @ react-dom-client.development.js:3262
-dispatchEventForPluginEventSystem @ react-dom-client.development.js:16572
-dispatchEvent @ react-dom-client.development.js:20658
-<img>
-exports.createElement @ react.development.js:1033
-(anonymous) @ emotion-styled-base.browser.development.esm.js:156
-Styled(div) @ emotion-element-489459f2.browser.development.esm.js:34
-react-stack-bottom-frame @ react-dom-client.development.js:23863
-renderWithHooksAgain @ react-dom-client.development.js:5629
-renderWithHooks @ react-dom-client.development.js:5541
-updateForwardRef @ react-dom-client.development.js:8645
-beginWork @ react-dom-client.development.js:10861
-runWithFiberInDEV @ react-dom-client.development.js:1519
-performUnitOfWork @ react-dom-client.development.js:15132
-workLoopSync @ react-dom-client.development.js:14956
-renderRootSync @ react-dom-client.development.js:14936
-performWorkOnRoot @ react-dom-client.development.js:14419
-performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:16216
-performWorkUntilDeadline @ scheduler.development.js:45
-<Styled(div)>
-exports.jsx @ react-jsx-runtime.development.js:339
-Box3 @ createBox.js:26
-react-stack-bottom-frame @ react-dom-client.development.js:23863
-renderWithHooksAgain @ react-dom-client.development.js:5629
-renderWithHooks @ react-dom-client.development.js:5541
-updateForwardRef @ react-dom-client.development.js:8645
-beginWork @ react-dom-client.development.js:10861
-runWithFiberInDEV @ react-dom-client.development.js:1519
-performUnitOfWork @ react-dom-client.development.js:15132
-workLoopSync @ react-dom-client.development.js:14956
-renderRootSync @ react-dom-client.development.js:14936
-performWorkOnRoot @ react-dom-client.development.js:14419
-performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:16216
-performWorkUntilDeadline @ scheduler.development.js:45
-<ForwardRef(Box3)>
-exports.jsxDEV @ react-jsx-dev-runtime.development.js:346
-LazyImage @ LazyImage.jsx:189
-react-stack-bottom-frame @ react-dom-client.development.js:23863
-renderWithHooksAgain @ react-dom-client.development.js:5629
-renderWithHooks @ react-dom-client.development.js:5541
-updateFunctionComponent @ react-dom-client.development.js:8897
-beginWork @ react-dom-client.development.js:10522
-runWithFiberInDEV @ react-dom-client.development.js:1519
-performUnitOfWork @ react-dom-client.development.js:15132
-workLoopSync @ react-dom-client.development.js:14956
-renderRootSync @ react-dom-client.development.js:14936
-performWorkOnRoot @ react-dom-client.development.js:14419
-performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:16216
-performWorkUntilDeadline @ scheduler.development.js:45
-<LazyImage>
-exports.jsxDEV @ react-jsx-dev-runtime.development.js:346
-UniversalProductImage @ UniversalProductImage.jsx:152
-react-stack-bottom-frame @ react-dom-client.development.js:23863
-renderWithHooksAgain @ react-dom-client.development.js:5629
-renderWithHooks @ react-dom-client.development.js:5541
-updateFunctionComponent @ react-dom-client.development.js:8897
-beginWork @ react-dom-client.development.js:10522
-runWithFiberInDEV @ react-dom-client.development.js:1519
-performUnitOfWork @ react-dom-client.development.js:15132
-workLoopSync @ react-dom-client.development.js:14956
-renderRootSync @ react-dom-client.development.js:14936
-performWorkOnRoot @ react-dom-client.development.js:14419
-performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:16216
-performWorkUntilDeadline @ scheduler.development.js:45
-UniversalProductImage.jsx:80 [UniversalProductImage] Invalidando cache para producto: 382ec724-ca97-4232-a49f-59045ef2cbd1
-UniversalProductImage.jsx:97 [UniversalProductImage] Reintentando carga 2/2 para producto: 382ec724-ca97-4232-a49f-59045ef2cbd1
-UniversalProductImage.jsx:57 [UniversalProductImage] Debug thumbnails para producto 382ec724-ca97-4232-a49f-59045ef2cbd1: {responsiveThumbnail: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…ef2cbd1/1753342573793_webp-image-file-format.webp', minithumb: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…ef2cbd1/1753342573793_webp-image-file-format.webp', size: 'responsive', product: 'YAKUUUUZA', retryCount: 2, …}
-UniversalProductImage.jsx:57 [UniversalProductImage] Debug thumbnails para producto 382ec724-ca97-4232-a49f-59045ef2cbd1: {responsiveThumbnail: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…ef2cbd1/1753342573793_webp-image-file-format.webp', minithumb: 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v…ef2cbd1/1753342573793_webp-image-file-format.webp', size: 'responsive', product: 'YAKUUUUZA', retryCount: 2, …}
-UniversalProductImage.jsx:160 [UniversalProductImage] LazyImage onError disparado para: 382ec724-ca97-4232-a49f-59045ef2cbd1 https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v1/object/public/product-images/34e23a46-f8bb-4e50-b058-301ac6b0af12/382ec724-ca97-4232-a49f-59045ef2cbd1/1753342573793_webp-image-file-format.webp
-UniversalProductImage.jsx:72  [UniversalProductImage] Error cargando imagen para producto: 382ec724-ca97-4232-a49f-59045ef2cbd1
-overrideMethod @ hook.js:608
-(anonymous) @ UniversalProductImage.jsx:72
-onError @ UniversalProductImage.jsx:161
-handleImageError @ LazyImage.jsx:103
-executeDispatch @ react-dom-client.development.js:16368
-runWithFiberInDEV @ react-dom-client.development.js:1519
-processDispatchQueue @ react-dom-client.development.js:16418
-(anonymous) @ react-dom-client.development.js:17016
-batchedUpdates$1 @ react-dom-client.development.js:3262
-dispatchEventForPluginEventSystem @ react-dom-client.development.js:16572
-dispatchEvent @ react-dom-client.development.js:20658
-<img>
-exports.createElement @ react.development.js:1033
-(anonymous) @ emotion-styled-base.browser.development.esm.js:156
-Styled(div) @ emotion-element-489459f2.browser.development.esm.js:34
-react-stack-bottom-frame @ react-dom-client.development.js:23863
-renderWithHooksAgain @ react-dom-client.development.js:5629
-renderWithHooks @ react-dom-client.development.js:5541
-updateForwardRef @ react-dom-client.development.js:8645
-beginWork @ react-dom-client.development.js:10861
-runWithFiberInDEV @ react-dom-client.development.js:1519
-performUnitOfWork @ react-dom-client.development.js:15132
-workLoopSync @ react-dom-client.development.js:14956
-renderRootSync @ react-dom-client.development.js:14936
-performWorkOnRoot @ react-dom-client.development.js:14419
-performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:16216
-performWorkUntilDeadline @ scheduler.development.js:45
-<Styled(div)>
-exports.jsx @ react-jsx-runtime.development.js:339
-Box3 @ createBox.js:26
-react-stack-bottom-frame @ react-dom-client.development.js:23863
-renderWithHooksAgain @ react-dom-client.development.js:5629
-renderWithHooks @ react-dom-client.development.js:5541
-updateForwardRef @ react-dom-client.development.js:8645
-beginWork @ react-dom-client.development.js:10861
-runWithFiberInDEV @ react-dom-client.development.js:1519
-performUnitOfWork @ react-dom-client.development.js:15132
-workLoopSync @ react-dom-client.development.js:14956
-renderRootSync @ react-dom-client.development.js:14936
-performWorkOnRoot @ react-dom-client.development.js:14419
-performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:16216
-performWorkUntilDeadline @ scheduler.development.js:45
-<ForwardRef(Box3)>
-exports.jsxDEV @ react-jsx-dev-runtime.development.js:346
-LazyImage @ LazyImage.jsx:189
-react-stack-bottom-frame @ react-dom-client.development.js:23863
-renderWithHooksAgain @ react-dom-client.development.js:5629
-renderWithHooks @ react-dom-client.development.js:5541
-updateFunctionComponent @ react-dom-client.development.js:8897
-beginWork @ react-dom-client.development.js:10522
-runWithFiberInDEV @ react-dom-client.development.js:1519
-performUnitOfWork @ react-dom-client.development.js:15132
-workLoopSync @ react-dom-client.development.js:14956
-renderRootSync @ react-dom-client.development.js:14936
-performWorkOnRoot @ react-dom-client.development.js:14419
-performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:16216
-performWorkUntilDeadline @ scheduler.development.js:45
-<LazyImage>
-exports.jsxDEV @ react-jsx-dev-runtime.development.js:346
-UniversalProductImage @ UniversalProductImage.jsx:152
-react-stack-bottom-frame @ react-dom-client.development.js:23863
-renderWithHooksAgain @ react-dom-client.development.js:5629
-renderWithHooks @ react-dom-client.development.js:5541
-updateFunctionComponent @ react-dom-client.development.js:8897
-beginWork @ react-dom-client.development.js:10522
-runWithFiberInDEV @ react-dom-client.development.js:1519
-performUnitOfWork @ react-dom-client.development.js:15132
-workLoopSync @ react-dom-client.development.js:14956
-renderRootSync @ react-dom-client.development.js:14936
-performWorkOnRoot @ react-dom-client.development.js:14419
-performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:16216
-performWorkUntilDeadline @ scheduler.development.js:45
-UniversalProductImage.jsx:73  [UniversalProductImage] URL que falló: https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v1/object/public/product-images/34e23a46-f8bb-4e50-b058-301ac6b0af12/382ec724-ca97-4232-a49f-59045ef2cbd1/1753342573793_webp-image-file-format.webp
-overrideMethod @ hook.js:608
-(anonymous) @ UniversalProductImage.jsx:73
-onError @ UniversalProductImage.jsx:161
-handleImageError @ LazyImage.jsx:103
-executeDispatch @ react-dom-client.development.js:16368
-runWithFiberInDEV @ react-dom-client.development.js:1519
-processDispatchQueue @ react-dom-client.development.js:16418
-(anonymous) @ react-dom-client.development.js:17016
-batchedUpdates$1 @ react-dom-client.development.js:3262
-dispatchEventForPluginEventSystem @ react-dom-client.development.js:16572
-dispatchEvent @ react-dom-client.development.js:20658
-<img>
-exports.createElement @ react.development.js:1033
-(anonymous) @ emotion-styled-base.browser.development.esm.js:156
-Styled(div) @ emotion-element-489459f2.browser.development.esm.js:34
-react-stack-bottom-frame @ react-dom-client.development.js:23863
-renderWithHooksAgain @ react-dom-client.development.js:5629
-renderWithHooks @ react-dom-client.development.js:5541
-updateForwardRef @ react-dom-client.development.js:8645
-beginWork @ react-dom-client.development.js:10861
-runWithFiberInDEV @ react-dom-client.development.js:1519
-performUnitOfWork @ react-dom-client.development.js:15132
-workLoopSync @ react-dom-client.development.js:14956
-renderRootSync @ react-dom-client.development.js:14936
-performWorkOnRoot @ react-dom-client.development.js:14419
-performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:16216
-performWorkUntilDeadline @ scheduler.development.js:45
-<Styled(div)>
-exports.jsx @ react-jsx-runtime.development.js:339
-Box3 @ createBox.js:26
-react-stack-bottom-frame @ react-dom-client.development.js:23863
-renderWithHooksAgain @ react-dom-client.development.js:5629
-renderWithHooks @ react-dom-client.development.js:5541
-updateForwardRef @ react-dom-client.development.js:8645
-beginWork @ react-dom-client.development.js:10861
-runWithFiberInDEV @ react-dom-client.development.js:1519
-performUnitOfWork @ react-dom-client.development.js:15132
-workLoopSync @ react-dom-client.development.js:14956
-renderRootSync @ react-dom-client.development.js:14936
-performWorkOnRoot @ react-dom-client.development.js:14419
-performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:16216
-performWorkUntilDeadline @ scheduler.development.js:45
-<ForwardRef(Box3)>
-exports.jsxDEV @ react-jsx-dev-runtime.development.js:346
-LazyImage @ LazyImage.jsx:189
-react-stack-bottom-frame @ react-dom-client.development.js:23863
-renderWithHooksAgain @ react-dom-client.development.js:5629
-renderWithHooks @ react-dom-client.development.js:5541
-updateFunctionComponent @ react-dom-client.development.js:8897
-beginWork @ react-dom-client.development.js:10522
-runWithFiberInDEV @ react-dom-client.development.js:1519
-performUnitOfWork @ react-dom-client.development.js:15132
-workLoopSync @ react-dom-client.development.js:14956
-renderRootSync @ react-dom-client.development.js:14936
-performWorkOnRoot @ react-dom-client.development.js:14419
-performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:16216
-performWorkUntilDeadline @ scheduler.development.js:45
-<LazyImage>
-exports.jsxDEV @ react-jsx-dev-runtime.development.js:346
-UniversalProductImage @ UniversalProductImage.jsx:152
-react-stack-bottom-frame @ react-dom-client.development.js:23863
-renderWithHooksAgain @ react-dom-client.development.js:5629
-renderWithHooks @ react-dom-client.development.js:5541
-updateFunctionComponent @ react-dom-client.development.js:8897
-beginWork @ react-dom-client.development.js:10522
-runWithFiberInDEV @ react-dom-client.development.js:1519
-performUnitOfWork @ react-dom-client.development.js:15132
-workLoopSync @ react-dom-client.development.js:14956
-renderRootSync @ react-dom-client.development.js:14936
-performWorkOnRoot @ react-dom-client.development.js:14419
-performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:16216
-performWorkUntilDeadline @ scheduler.development.js:45
-UniversalProductImage.jsx:80 [UniversalProductImage] Invalidando cache para producto: 382ec724-ca97-4232-a49f-59045ef2cbd1
+useShippingPerformanceMonitor.js:44 📊 [ProductCard-48aa] Component unmounted after 82277ms, queries: 2
+useShippingPerformanceMonitor.js:44 📊 [ProductCard-305f] Component unmounted after 82251ms, queries: 2
+useShippingPerformanceMonitor.js:44 📊 [ProductCard-6075] Component unmounted after 82231ms, queries: 2
+useShippingPerformanceMonitor.js:44 📊 [ProductCard-84e1] Component unmounted after 82210ms, queries: 2
+useShippingPerformanceMonitor.js:44 📊 [ProductCard-4cc7] Component unmounted after 82190ms, queries: 2
+useShippingPerformanceMonitor.js:44 📊 [ProductCard-349a] Component unmounted after 82163ms, queries: 2
+useShippingPerformanceMonitor.js:44 📊 [ProductCard-b470] Component unmounted after 82137ms, queries: 2
+useShippingPerformanceMonitor.js:44 📊 [ProductCard-08fe] Component unmounted after 82093ms, queries: 2
+useShippingPerformanceMonitor.js:44 📊 [ProductCard-6b13] Component unmounted after 82072ms, queries: 2
+useShippingPerformanceMonitor.js:44 📊 [ProductCard-b61e] Component unmounted after 82050ms, queries: 2
+useShippingPerformanceMonitor.js:44 📊 [ProductCard-3445] Component unmounted after 82026ms, queries: 2
+useShippingPerformanceMonitor.js:44 📊 [ProductCard-7a64] Component unmounted after 82004ms, queries: 2
+useShippingPerformanceMonitor.js:44 📊 [ProductCard-1275] Component unmounted after 81984ms, queries: 2
+useShippingPerformanceMonitor.js:44 📊 [ProductCard-d145] Component unmounted after 81958ms, queries: 2
+useShippingPerformanceMonitor.js:44 📊 [ProductCard-09c1] Component unmounted after 81938ms, queries: 2
+useShippingPerformanceMonitor.js:44 📊 [ProductCard-20fa] Component unmounted after 82323ms, queries: 2
+useShippingPerformanceMonitor.js:44 📊 [ProductCard-0f62] Component unmounted after 82125ms, queries: 2
+useShippingPerformanceMonitor.js:40 📊 [ProductCard-20fa] Component mounted
+useShippingPerformanceMonitor.js:52 🔍 [ProductCard-20fa] component-mount query #1 {productId: '69c930ae-f86a-4dbe-be23-982c662d20fa', productName: 'Vino El Peuco Chardonnay, 750cc'}
+useShippingPerformanceMonitor.js:40 📊 [ProductCard-48aa] Component mounted
+useShippingPerformanceMonitor.js:52 🔍 [ProductCard-48aa] component-mount query #1 {productId: '3baeb9f1-33ba-4956-b2d1-cbc05b2b48aa', productName: 'Caja 2 vinos Late Harvest'}
+useShippingPerformanceMonitor.js:40 📊 [ProductCard-305f] Component mounted
+useShippingPerformanceMonitor.js:52 🔍 [ProductCard-305f] component-mount query #1 {productId: '26df1134-63d9-4f32-9217-c2496629305f', productName: 'Pisco El Mesías, 750cc'}
+useShippingPerformanceMonitor.js:40 📊 [ProductCard-6075] Component mounted
+useShippingPerformanceMonitor.js:52 🔍 [ProductCard-6075] component-mount query #1 {productId: '956bb71e-759f-4a56-846b-5fe0fb596075', productName: 'Tabaco Ross Premium, 45 gr'}
+useShippingPerformanceMonitor.js:40 📊 [ProductCard-84e1] Component mounted
+useShippingPerformanceMonitor.js:52 🔍 [ProductCard-84e1] component-mount query #1 {productId: '40030ef5-8ef2-434d-9960-d7174f7b84e1', productName: 'Vino Cerro Name Reserva, Cabernet 750cc'}
+useShippingPerformanceMonitor.js:40 📊 [ProductCard-4cc7] Component mounted
+useShippingPerformanceMonitor.js:52 🔍 [ProductCard-4cc7] component-mount query #1 {productId: 'c3b869a7-e589-43d1-b36f-987701d44cc7', productName: 'Vino Tinto 600cc'}
+useShippingPerformanceMonitor.js:40 📊 [ProductCard-349a] Component mounted
+useShippingPerformanceMonitor.js:52 🔍 [ProductCard-349a] component-mount query #1 {productId: 'a21aca9b-4853-4af9-9883-3518fc6a349a', productName: 'Vino El Peuco Carignan 750cc Doña Aurora'}
+useShippingPerformanceMonitor.js:40 📊 [ProductCard-b470] Component mounted
+useShippingPerformanceMonitor.js:52 🔍 [ProductCard-b470] component-mount query #1 {productId: '016920c8-442d-4f30-8dc3-be24c4c0b470', productName: 'Vino Stark Haus Gran Reserva 700cc'}
+useShippingPerformanceMonitor.js:40 📊 [ProductCard-0f62] Component mounted
+useShippingPerformanceMonitor.js:52 🔍 [ProductCard-0f62] component-mount query #1 {productId: '9029638f-33a6-4d91-9e3b-021be65a0f62', productName: 'Teeeeeest'}
+useShippingPerformanceMonitor.js:40 📊 [ProductCard-08fe] Component mounted
+useShippingPerformanceMonitor.js:52 🔍 [ProductCard-08fe] component-mount query #1 {productId: 'fee971f5-a288-4edf-861a-2cf2463a08fe', productName: 'Probando Refactor'}
+useShippingPerformanceMonitor.js:40 📊 [ProductCard-6b13] Component mounted
+useShippingPerformanceMonitor.js:52 🔍 [ProductCard-6b13] component-mount query #1 {productId: '16e20775-07ac-4ecb-b5c2-10fb69bc6b13', productName: 'Fixeees'}
+useShippingPerformanceMonitor.js:40 📊 [ProductCard-b61e] Component mounted
+useShippingPerformanceMonitor.js:52 🔍 [ProductCard-b61e] component-mount query #1 {productId: '34bb9472-b430-4910-a67a-d47aaf71b61e', productName: 'PAPAPAPAPA'}
+useShippingPerformanceMonitor.js:40 📊 [ProductCard-3445] Component mounted
+useShippingPerformanceMonitor.js:52 🔍 [ProductCard-3445] component-mount query #1 {productId: '8163198b-a8d7-4ff8-964f-bd45e7a63445', productName: 'Fixeees'}
+useShippingPerformanceMonitor.js:40 📊 [ProductCard-7a64] Component mounted
+useShippingPerformanceMonitor.js:52 🔍 [ProductCard-7a64] component-mount query #1 {productId: '1394be41-62dc-4225-a003-e0250e0f7a64', productName: 'Producto Tramos Nuevox'}
+useShippingPerformanceMonitor.js:40 📊 [ProductCard-1275] Component mounted
+useShippingPerformanceMonitor.js:52 🔍 [ProductCard-1275] component-mount query #1 {productId: '90daf94d-f91d-4b39-a3cc-016255621275', productName: 'Fixeees'}
+useShippingPerformanceMonitor.js:40 📊 [ProductCard-d145] Component mounted
+useShippingPerformanceMonitor.js:52 🔍 [ProductCard-d145] component-mount query #1 {productId: '4b5c650f-7a97-4910-910b-43f93b0fd145', productName: 'PSPSPSP'}
+useShippingPerformanceMonitor.js:40 📊 [ProductCard-09c1] Component mounted
+useShippingPerformanceMonitor.js:52 🔍 [ProductCard-09c1] component-mount query #1 {productId: '7f112164-f924-4c40-b698-192f9aa409c1', productName: 'PSPSPSP'}
+useShippingPerformanceMonitor.js:44 📊 [ProductCard-20fa] Component unmounted after 463ms, queries: 1
+useShippingPerformanceMonitor.js:40 📊 [ProductCard-20fa] Component mounted
+useShippingPerformanceMonitor.js:52 🔍 [ProductCard-20fa] component-mount query #2 {productId: '69c930ae-f86a-4dbe-be23-982c662d20fa', productName: 'Vino El Peuco Chardonnay, 750cc'}
+useShippingPerformanceMonitor.js:44 📊 [ProductCard-48aa] Component unmounted after 441ms, queries: 1
+useShippingPerformanceMonitor.js:40 📊 [ProductCard-48aa] Component mounted
+useShippingPerformanceMonitor.js:52 🔍 [ProductCard-48aa] component-mount query #2 {productId: '3baeb9f1-33ba-4956-b2d1-cbc05b2b48aa', productName: 'Caja 2 vinos Late Harvest'}
+useShippingPerformanceMonitor.js:44 📊 [ProductCard-305f] Component unmounted after 423ms, queries: 1
+useShippingPerformanceMonitor.js:40 📊 [ProductCard-305f] Component mounted
+useShippingPerformanceMonitor.js:52 🔍 [ProductCard-305f] component-mount query #2 {productId: '26df1134-63d9-4f32-9217-c2496629305f', productName: 'Pisco El Mesías, 750cc'}
+useShippingPerformanceMonitor.js:44 📊 [ProductCard-6075] Component unmounted after 398ms, queries: 1
+useShippingPerformanceMonitor.js:40 📊 [ProductCard-6075] Component mounted
+useShippingPerformanceMonitor.js:52 🔍 [ProductCard-6075] component-mount query #2 {productId: '956bb71e-759f-4a56-846b-5fe0fb596075', productName: 'Tabaco Ross Premium, 45 gr'}
+useShippingPerformanceMonitor.js:44 📊 [ProductCard-84e1] Component unmounted after 379ms, queries: 1
+useShippingPerformanceMonitor.js:40 📊 [ProductCard-84e1] Component mounted
+useShippingPerformanceMonitor.js:52 🔍 [ProductCard-84e1] component-mount query #2 {productId: '40030ef5-8ef2-434d-9960-d7174f7b84e1', productName: 'Vino Cerro Name Reserva, Cabernet 750cc'}
+useShippingPerformanceMonitor.js:44 📊 [ProductCard-4cc7] Component unmounted after 357ms, queries: 1
+useShippingPerformanceMonitor.js:40 📊 [ProductCard-4cc7] Component mounted
+useShippingPerformanceMonitor.js:52 🔍 [ProductCard-4cc7] component-mount query #2 {productId: 'c3b869a7-e589-43d1-b36f-987701d44cc7', productName: 'Vino Tinto 600cc'}
+useShippingPerformanceMonitor.js:44 📊 [ProductCard-349a] Component unmounted after 332ms, queries: 1
+useShippingPerformanceMonitor.js:40 📊 [ProductCard-349a] Component mounted
+useShippingPerformanceMonitor.js:52 🔍 [ProductCard-349a] component-mount query #2 {productId: 'a21aca9b-4853-4af9-9883-3518fc6a349a', productName: 'Vino El Peuco Carignan 750cc Doña Aurora'}
+useShippingPerformanceMonitor.js:44 📊 [ProductCard-b470] Component unmounted after 311ms, queries: 1
+useShippingPerformanceMonitor.js:40 📊 [ProductCard-b470] Component mounted
+useShippingPerformanceMonitor.js:52 🔍 [ProductCard-b470] component-mount query #2 {productId: '016920c8-442d-4f30-8dc3-be24c4c0b470', productName: 'Vino Stark Haus Gran Reserva 700cc'}
+useShippingPerformanceMonitor.js:44 📊 [ProductCard-0f62] Component unmounted after 287ms, queries: 1
+useShippingPerformanceMonitor.js:40 📊 [ProductCard-0f62] Component mounted
+useShippingPerformanceMonitor.js:52 🔍 [ProductCard-0f62] component-mount query #2 {productId: '9029638f-33a6-4d91-9e3b-021be65a0f62', productName: 'Teeeeeest'}
+useShippingPerformanceMonitor.js:44 📊 [ProductCard-08fe] Component unmounted after 271ms, queries: 1
+useShippingPerformanceMonitor.js:40 📊 [ProductCard-08fe] Component mounted
+useShippingPerformanceMonitor.js:52 🔍 [ProductCard-08fe] component-mount query #2 {productId: 'fee971f5-a288-4edf-861a-2cf2463a08fe', productName: 'Probando Refactor'}
+useShippingPerformanceMonitor.js:44 📊 [ProductCard-6b13] Component unmounted after 253ms, queries: 1
+useShippingPerformanceMonitor.js:40 📊 [ProductCard-6b13] Component mounted
+useShippingPerformanceMonitor.js:52 🔍 [ProductCard-6b13] component-mount query #2 {productId: '16e20775-07ac-4ecb-b5c2-10fb69bc6b13', productName: 'Fixeees'}
+useShippingPerformanceMonitor.js:44 📊 [ProductCard-b61e] Component unmounted after 233ms, queries: 1
+useShippingPerformanceMonitor.js:40 📊 [ProductCard-b61e] Component mounted
+useShippingPerformanceMonitor.js:52 🔍 [ProductCard-b61e] component-mount query #2 {productId: '34bb9472-b430-4910-a67a-d47aaf71b61e', productName: 'PAPAPAPAPA'}
+useShippingPerformanceMonitor.js:44 📊 [ProductCard-3445] Component unmounted after 212ms, queries: 1
+useShippingPerformanceMonitor.js:40 📊 [ProductCard-3445] Component mounted
+useShippingPerformanceMonitor.js:52 🔍 [ProductCard-3445] component-mount query #2 {productId: '8163198b-a8d7-4ff8-964f-bd45e7a63445', productName: 'Fixeees'}
+useShippingPerformanceMonitor.js:44 📊 [ProductCard-7a64] Component unmounted after 184ms, queries: 1
+useShippingPerformanceMonitor.js:40 📊 [ProductCard-7a64] Component mounted
+useShippingPerformanceMonitor.js:52 🔍 [ProductCard-7a64] component-mount query #2 {productId: '1394be41-62dc-4225-a003-e0250e0f7a64', productName: 'Producto Tramos Nuevox'}
+useShippingPerformanceMonitor.js:44 📊 [ProductCard-1275] Component unmounted after 163ms, queries: 1
+useShippingPerformanceMonitor.js:40 📊 [ProductCard-1275] Component mounted
+useShippingPerformanceMonitor.js:52 🔍 [ProductCard-1275] component-mount query #2 {productId: '90daf94d-f91d-4b39-a3cc-016255621275', productName: 'Fixeees'}
+useShippingPerformanceMonitor.js:44 📊 [ProductCard-d145] Component unmounted after 148ms, queries: 1
+useShippingPerformanceMonitor.js:40 📊 [ProductCard-d145] Component mounted
+useShippingPerformanceMonitor.js:52 🔍 [ProductCard-d145] component-mount query #2 {productId: '4b5c650f-7a97-4910-910b-43f93b0fd145', productName: 'PSPSPSP'}
+useShippingPerformanceMonitor.js:44 📊 [ProductCard-09c1] Component unmounted after 131ms, queries: 1
+useShippingPerformanceMonitor.js:40 📊 [ProductCard-09c1] Component mounted
+useShippingPerformanceMonitor.js:52 🔍 [ProductCard-09c1] component-mount query #2 {productId: '7f112164-f924-4c40-b698-192f9aa409c1', productName: 'PSPSPSP'}
+useShippingPerformanceMonitor.js:44 📊 [ProductCard-48aa] Component unmounted after 4347ms, queries: 2
+useShippingPerformanceMonitor.js:44 📊 [ProductCard-305f] Component unmounted after 4326ms, queries: 2
+useShippingPerformanceMonitor.js:44 📊 [ProductCard-6075] Component unmounted after 4299ms, queries: 2
+useShippingPerformanceMonitor.js:44 📊 [ProductCard-84e1] Component unmounted after 4278ms, queries: 2
+useShippingPerformanceMonitor.js:44 📊 [ProductCard-4cc7] Component unmounted after 4254ms, queries: 2
+useShippingPerformanceMonitor.js:44 📊 [ProductCard-349a] Component unmounted after 4226ms, queries: 2
+useShippingPerformanceMonitor.js:44 📊 [ProductCard-b470] Component unmounted after 4203ms, queries: 2
+useShippingPerformanceMonitor.js:44 📊 [ProductCard-08fe] Component unmounted after 4157ms, queries: 2
+useShippingPerformanceMonitor.js:44 📊 [ProductCard-6b13] Component unmounted after 4136ms, queries: 2
+useShippingPerformanceMonitor.js:44 📊 [ProductCard-b61e] Component unmounted after 4114ms, queries: 2
+useShippingPerformanceMonitor.js:44 📊 [ProductCard-3445] Component unmounted after 4091ms, queries: 2
+useShippingPerformanceMonitor.js:44 📊 [ProductCard-7a64] Component unmounted after 4062ms, queries: 2
+useShippingPerformanceMonitor.js:44 📊 [ProductCard-1275] Component unmounted after 4038ms, queries: 2
+useShippingPerformanceMonitor.js:44 📊 [ProductCard-d145] Component unmounted after 4021ms, queries: 2
+useShippingPerformanceMonitor.js:44 📊 [ProductCard-09c1] Component unmounted after 4002ms, queries: 2
+useShippingPerformanceMonitor.js:44 📊 [ProductCard-20fa] Component unmounted after 4385ms, queries: 2
+useShippingPerformanceMonitor.js:44 📊 [ProductCard-0f62] Component unmounted after 4184ms, queries: 2
+useShippingPerformanceMonitor.js:40 📊 [ProductCard-20fa] Component mounted
+useShippingPerformanceMonitor.js:52 🔍 [ProductCard-20fa] component-mount query #1 {productId: '69c930ae-f86a-4dbe-be23-982c662d20fa', productName: 'Vino El Peuco Chardonnay, 750cc'}
+useShippingPerformanceMonitor.js:40 📊 [ProductCard-48aa] Component mounted
+useShippingPerformanceMonitor.js:52 🔍 [ProductCard-48aa] component-mount query #1 {productId: '3baeb9f1-33ba-4956-b2d1-cbc05b2b48aa', productName: 'Caja 2 vinos Late Harvest'}
+useShippingPerformanceMonitor.js:40 📊 [ProductCard-305f] Component mounted
+useShippingPerformanceMonitor.js:52 🔍 [ProductCard-305f] component-mount query #1 {productId: '26df1134-63d9-4f32-9217-c2496629305f', productName: 'Pisco El Mesías, 750cc'}
+useShippingPerformanceMonitor.js:40 📊 [ProductCard-6075] Component mounted
+useShippingPerformanceMonitor.js:52 🔍 [ProductCard-6075] component-mount query #1 {productId: '956bb71e-759f-4a56-846b-5fe0fb596075', productName: 'Tabaco Ross Premium, 45 gr'}
+useShippingPerformanceMonitor.js:40 📊 [ProductCard-84e1] Component mounted
+useShippingPerformanceMonitor.js:52 🔍 [ProductCard-84e1] component-mount query #1 {productId: '40030ef5-8ef2-434d-9960-d7174f7b84e1', productName: 'Vino Cerro Name Reserva, Cabernet 750cc'}
+useShippingPerformanceMonitor.js:40 📊 [ProductCard-4cc7] Component mounted
+useShippingPerformanceMonitor.js:52 🔍 [ProductCard-4cc7] component-mount query #1 {productId: 'c3b869a7-e589-43d1-b36f-987701d44cc7', productName: 'Vino Tinto 600cc'}
+useShippingPerformanceMonitor.js:40 📊 [ProductCard-349a] Component mounted
+useShippingPerformanceMonitor.js:52 🔍 [ProductCard-349a] component-mount query #1 {productId: 'a21aca9b-4853-4af9-9883-3518fc6a349a', productName: 'Vino El Peuco Carignan 750cc Doña Aurora'}
+useShippingPerformanceMonitor.js:40 📊 [ProductCard-b470] Component mounted
+useShippingPerformanceMonitor.js:52 🔍 [ProductCard-b470] component-mount query #1 {productId: '016920c8-442d-4f30-8dc3-be24c4c0b470', productName: 'Vino Stark Haus Gran Reserva 700cc'}
+useShippingPerformanceMonitor.js:40 📊 [ProductCard-0f62] Component mounted
+useShippingPerformanceMonitor.js:52 🔍 [ProductCard-0f62] component-mount query #1 {productId: '9029638f-33a6-4d91-9e3b-021be65a0f62', productName: 'Teeeeeest'}
+useShippingPerformanceMonitor.js:40 📊 [ProductCard-08fe] Component mounted
+useShippingPerformanceMonitor.js:52 🔍 [ProductCard-08fe] component-mount query #1 {productId: 'fee971f5-a288-4edf-861a-2cf2463a08fe', productName: 'Probando Refactor'}
+useShippingPerformanceMonitor.js:40 📊 [ProductCard-6b13] Component mounted
+useShippingPerformanceMonitor.js:52 🔍 [ProductCard-6b13] component-mount query #1 {productId: '16e20775-07ac-4ecb-b5c2-10fb69bc6b13', productName: 'Fixeees'}
+useShippingPerformanceMonitor.js:40 📊 [ProductCard-b61e] Component mounted
+useShippingPerformanceMonitor.js:52 🔍 [ProductCard-b61e] component-mount query #1 {productId: '34bb9472-b430-4910-a67a-d47aaf71b61e', productName: 'PAPAPAPAPA'}
+useShippingPerformanceMonitor.js:40 📊 [ProductCard-3445] Component mounted
+useShippingPerformanceMonitor.js:52 🔍 [ProductCard-3445] component-mount query #1 {productId: '8163198b-a8d7-4ff8-964f-bd45e7a63445', productName: 'Fixeees'}
+useShippingPerformanceMonitor.js:40 📊 [ProductCard-7a64] Component mounted
+useShippingPerformanceMonitor.js:52 🔍 [ProductCard-7a64] component-mount query #1 {productId: '1394be41-62dc-4225-a003-e0250e0f7a64', productName: 'Producto Tramos Nuevox'}
+useShippingPerformanceMonitor.js:40 📊 [ProductCard-1275] Component mounted
+useShippingPerformanceMonitor.js:52 🔍 [ProductCard-1275] component-mount query #1 {productId: '90daf94d-f91d-4b39-a3cc-016255621275', productName: 'Fixeees'}
+useShippingPerformanceMonitor.js:40 📊 [ProductCard-d145] Component mounted
+useShippingPerformanceMonitor.js:52 🔍 [ProductCard-d145] component-mount query #1 {productId: '4b5c650f-7a97-4910-910b-43f93b0fd145', productName: 'PSPSPSP'}
+useShippingPerformanceMonitor.js:40 📊 [ProductCard-09c1] Component mounted
+useShippingPerformanceMonitor.js:52 🔍 [ProductCard-09c1] component-mount query #1 {productId: '7f112164-f924-4c40-b698-192f9aa409c1', productName: 'PSPSPSP'}
+useShippingPerformanceMonitor.js:44 📊 [ProductCard-20fa] Component unmounted after 435ms, queries: 1
+useShippingPerformanceMonitor.js:40 📊 [ProductCard-20fa] Component mounted
+useShippingPerformanceMonitor.js:52 🔍 [ProductCard-20fa] component-mount query #2 {productId: '69c930ae-f86a-4dbe-be23-982c662d20fa', productName: 'Vino El Peuco Chardonnay, 750cc'}
+useShippingPerformanceMonitor.js:44 📊 [ProductCard-48aa] Component unmounted after 416ms, queries: 1
+useShippingPerformanceMonitor.js:40 📊 [ProductCard-48aa] Component mounted
+useShippingPerformanceMonitor.js:52 🔍 [ProductCard-48aa] component-mount query #2 {productId: '3baeb9f1-33ba-4956-b2d1-cbc05b2b48aa', productName: 'Caja 2 vinos Late Harvest'}
+useShippingPerformanceMonitor.js:44 📊 [ProductCard-305f] Component unmounted after 386ms, queries: 1
+useShippingPerformanceMonitor.js:40 📊 [ProductCard-305f] Component mounted
+useShippingPerformanceMonitor.js:52 🔍 [ProductCard-305f] component-mount query #2 {productId: '26df1134-63d9-4f32-9217-c2496629305f', productName: 'Pisco El Mesías, 750cc'}
+useShippingPerformanceMonitor.js:44 📊 [ProductCard-6075] Component unmounted after 363ms, queries: 1
+useShippingPerformanceMonitor.js:40 📊 [ProductCard-6075] Component mounted
+useShippingPerformanceMonitor.js:52 🔍 [ProductCard-6075] component-mount query #2 {productId: '956bb71e-759f-4a56-846b-5fe0fb596075', productName: 'Tabaco Ross Premium, 45 gr'}
+useShippingPerformanceMonitor.js:44 📊 [ProductCard-84e1] Component unmounted after 346ms, queries: 1
+useShippingPerformanceMonitor.js:40 📊 [ProductCard-84e1] Component mounted
+useShippingPerformanceMonitor.js:52 🔍 [ProductCard-84e1] component-mount query #2 {productId: '40030ef5-8ef2-434d-9960-d7174f7b84e1', productName: 'Vino Cerro Name Reserva, Cabernet 750cc'}
+useShippingPerformanceMonitor.js:44 📊 [ProductCard-4cc7] Component unmounted after 331ms, queries: 1
+useShippingPerformanceMonitor.js:40 📊 [ProductCard-4cc7] Component mounted
+useShippingPerformanceMonitor.js:52 🔍 [ProductCard-4cc7] component-mount query #2 {productId: 'c3b869a7-e589-43d1-b36f-987701d44cc7', productName: 'Vino Tinto 600cc'}
+useShippingPerformanceMonitor.js:44 📊 [ProductCard-349a] Component unmounted after 315ms, queries: 1
+useShippingPerformanceMonitor.js:40 📊 [ProductCard-349a] Component mounted
+useShippingPerformanceMonitor.js:52 🔍 [ProductCard-349a] component-mount query #2 {productId: 'a21aca9b-4853-4af9-9883-3518fc6a349a', productName: 'Vino El Peuco Carignan 750cc Doña Aurora'}
+useShippingPerformanceMonitor.js:44 📊 [ProductCard-b470] Component unmounted after 299ms, queries: 1
+useShippingPerformanceMonitor.js:40 📊 [ProductCard-b470] Component mounted
+useShippingPerformanceMonitor.js:52 🔍 [ProductCard-b470] component-mount query #2 {productId: '016920c8-442d-4f30-8dc3-be24c4c0b470', productName: 'Vino Stark Haus Gran Reserva 700cc'}
+useShippingPerformanceMonitor.js:44 📊 [ProductCard-0f62] Component unmounted after 280ms, queries: 1
+useShippingPerformanceMonitor.js:40 📊 [ProductCard-0f62] Component mounted
+useShippingPerformanceMonitor.js:52 🔍 [ProductCard-0f62] component-mount query #2 {productId: '9029638f-33a6-4d91-9e3b-021be65a0f62', productName: 'Teeeeeest'}
+useShippingPerformanceMonitor.js:44 📊 [ProductCard-08fe] Component unmounted after 262ms, queries: 1
+useShippingPerformanceMonitor.js:40 📊 [ProductCard-08fe] Component mounted
+useShippingPerformanceMonitor.js:52 🔍 [ProductCard-08fe] component-mount query #2 {productId: 'fee971f5-a288-4edf-861a-2cf2463a08fe', productName: 'Probando Refactor'}
+useShippingPerformanceMonitor.js:44 📊 [ProductCard-6b13] Component unmounted after 244ms, queries: 1
+useShippingPerformanceMonitor.js:40 📊 [ProductCard-6b13] Component mounted
+useShippingPerformanceMonitor.js:52 🔍 [ProductCard-6b13] component-mount query #2 {productId: '16e20775-07ac-4ecb-b5c2-10fb69bc6b13', productName: 'Fixeees'}
+useShippingPerformanceMonitor.js:44 📊 [ProductCard-b61e] Component unmounted after 227ms, queries: 1
+useShippingPerformanceMonitor.js:40 📊 [ProductCard-b61e] Component mounted
+useShippingPerformanceMonitor.js:52 🔍 [ProductCard-b61e] component-mount query #2 {productId: '34bb9472-b430-4910-a67a-d47aaf71b61e', productName: 'PAPAPAPAPA'}
+useShippingPerformanceMonitor.js:44 📊 [ProductCard-3445] Component unmounted after 200ms, queries: 1
+useShippingPerformanceMonitor.js:40 📊 [ProductCard-3445] Component mounted
+useShippingPerformanceMonitor.js:52 🔍 [ProductCard-3445] component-mount query #2 {productId: '8163198b-a8d7-4ff8-964f-bd45e7a63445', productName: 'Fixeees'}
+useShippingPerformanceMonitor.js:44 📊 [ProductCard-7a64] Component unmounted after 176ms, queries: 1
+useShippingPerformanceMonitor.js:40 📊 [ProductCard-7a64] Component mounted
+useShippingPerformanceMonitor.js:52 🔍 [ProductCard-7a64] component-mount query #2 {productId: '1394be41-62dc-4225-a003-e0250e0f7a64', productName: 'Producto Tramos Nuevox'}
+useShippingPerformanceMonitor.js:44 📊 [ProductCard-1275] Component unmounted after 156ms, queries: 1
+useShippingPerformanceMonitor.js:40 📊 [ProductCard-1275] Component mounted
+useShippingPerformanceMonitor.js:52 🔍 [ProductCard-1275] component-mount query #2 {productId: '90daf94d-f91d-4b39-a3cc-016255621275', productName: 'Fixeees'}
+useShippingPerformanceMonitor.js:44 📊 [ProductCard-d145] Component unmounted after 138ms, queries: 1
+useShippingPerformanceMonitor.js:40 📊 [ProductCard-d145] Component mounted
+useShippingPerformanceMonitor.js:52 🔍 [ProductCard-d145] component-mount query #2 {productId: '4b5c650f-7a97-4910-910b-43f93b0fd145', productName: 'PSPSPSP'}
+useShippingPerformanceMonitor.js:44 📊 [ProductCard-09c1] Component unmounted after 122ms, queries: 1
+useShippingPerformanceMonitor.js:40 📊 [ProductCard-09c1] Component mounted
+useShippingPerformanceMonitor.js:52 🔍 [ProductCard-09c1] component-mount query #2 {productId: '7f112164-f924-4c40-b698-192f9aa409c1', productName: 'PSPSPSP'}

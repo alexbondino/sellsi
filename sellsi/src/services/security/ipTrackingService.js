@@ -41,7 +41,6 @@ export const updateUserIP = async (userId, sessionInfo = null) => {
     if (!response.ok) {
       // Si la función Edge no existe (404), manejar silenciosamente
       if (response.status === 404) {
-        console.warn('IP tracking function not deployed, skipping...');
         return { success: true, skipped: true };
       }
       throw new Error(data.error || 'Error actualizando IP');
@@ -54,7 +53,6 @@ export const updateUserIP = async (userId, sessionInfo = null) => {
       previous_ip: data.previous_ip 
     };
   } catch (error) {
-    console.error('Error en updateUserIP:', error);
     // En lugar de fallar, devolver success: true para no afectar el flujo principal
     return { 
       success: true, 
@@ -80,7 +78,6 @@ export const getCurrentUserIP = async () => {
       ip: data.ip
     };
   } catch (error) {
-    console.error('Error obteniendo IP actual:', error);
     return {
       success: false,
       error: 'No se pudo obtener la IP actual'
@@ -111,7 +108,6 @@ export const checkIPBanStatus = async (ip) => {
       banInfo: data || null
     };
   } catch (error) {
-    console.error('Error verificando estado de IP:', error);
     return {
       success: false,
       error: error.message
@@ -162,7 +158,6 @@ export const debugCurrentIP = async () => {
   if (result.success) {
 
   } else {
-    console.error('❌ Error obteniendo IP:', result.error);
   }
   return result;
 };

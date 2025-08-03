@@ -146,7 +146,6 @@ export const AuthProvider = ({ children }) => {
         .single();
 
       if (userError) {
-        console.error('❌ [AUTH] Error refreshing user profile:', userError.message);
         return;
       }
 
@@ -154,7 +153,6 @@ export const AuthProvider = ({ children }) => {
         setUserProfile(userData);
       }
     } catch (error) {
-      console.error('❌ [AUTH] Error refreshing user profile:', error);
     }
   };
 
