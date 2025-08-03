@@ -41,14 +41,26 @@ serve(async req => {
       `[create-payment-khipu] Datos recibidos: amount=${amount}, subject=${subject}`
     );
 
-    // 2. Verificar que la API Key de Khipu esté configurada en los secretos de Supabase
+    // 2. Verificar que las variables de entorno necesarias estén configuradas
     const apiKey = Deno.env.get('KHIPU_API_KEY');
+    const supabaseUrl = Deno.env.get('SUPABASE_URL'); // Obtener la URL base de Supabase
+
     if (!apiKey) {
       throw new Error(
         'El secreto KHIPU_API_KEY no está configurado en Supabase.'
       );
     }
-    console.log('[create-payment-khipu] API Key de Khipu encontrada.');
+    if (!supabaseUrl) {
+      throw new Error(
+        'La variable de entorno SUPABASE_URL no está disponible.'
+      );
+    }
+    console.log(
+      '[create-payment-khipu] Secretos y variables de entorno encontrados.'
+    );
+
+    // Construir la URL de notificación dinámicamente
+    const notifyUrl = `${supabaseUrl}/functions/v1/process-khipu-webhook`;
 
     // 3. Preparar y enviar la petición a la API de Khipu
     const khipuApiUrl = 'https://payment-api.khipu.com/v3/payments';
@@ -56,7 +68,8 @@ serve(async req => {
       subject,
       amount: Math.round(amount), // Khipu requiere montos enteros
       currency,
-      return_url: 'http://localhost:3000/buyer/orders',
+      return_url: 'https://sellsi.cl/buyer/orders', // Es mejor usar la URL de producción
+      notify_url: notifyUrl, // Usar la URL construida dinámicamente
     });
 
     console.log(
