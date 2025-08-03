@@ -56,6 +56,7 @@ serve(async req => {
       subject,
       amount: Math.round(amount), // Khipu requiere montos enteros
       currency,
+      return_url: 'http://localhost:3000/buyer/orders',
     });
 
     console.log(
