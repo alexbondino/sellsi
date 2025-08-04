@@ -54,7 +54,7 @@ const SecurityBadge = ({
     return (
       <Tooltip
         title="Sellsi retendrá los fondos hasta la confirmación de entrega"
-        placement="bottom"
+        placement="right"
         arrow
         disabled={!showTooltip}
       >

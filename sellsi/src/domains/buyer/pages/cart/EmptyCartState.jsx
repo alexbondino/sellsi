@@ -32,10 +32,8 @@ const SUPPLIER_CART_MESSAGE = 'Tu carrito está vacío. Debes cambiar a Vista Co
 /**
  * Componente para mostrar el estado cuando el carrito está vacío
  * @param {Object} props
- * @param {Array} props.wishlist - Array de productos en wishlist
- * @param {function} props.setShowWishlist - Función para mostrar wishlist
  */
-const EmptyCartState = ({ wishlist, setShowWishlist }) => {
+const EmptyCartState = () => {
   const navigate = useNavigate()
   const { currentAppRole } = useRole()
   const isSupplier = currentAppRole === 'supplier'
@@ -132,38 +130,7 @@ const EmptyCartState = ({ wishlist, setShowWishlist }) => {
           >
             {displayMessage}
           </Typography>
-          {/* Wishlist preview - Solo mostrar para buyers */}
-          {!isSupplier && wishlist.length > 0 && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.15 }} // reducido a la mitad
-            >
-              <Card sx={{ mb: 4, borderRadius: 2 }}>
-                <CardContent>
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      mb: 2,
-                    }}
-                  >
-                    <FavoriteIcon sx={{ color: 'error.main', mr: 1 }} />
-                    <Typography variant="h6">
-                      Tienes {wishlist.length} productos guardados
-                    </Typography>
-                  </Box>
-                  <Button
-                    variant="outlined"
-                    onClick={() => setShowWishlist(true)}
-                    sx={{ mr: 2 }}
-                  >
-                    Ver Wishlist
-                  </Button>
-                </CardContent>
-              </Card>
-            </motion.div>
-          )}
+          
           <Stack direction="row" spacing={2} justifyContent="center">
             <Button
               variant="contained"
@@ -189,17 +156,6 @@ const EmptyCartState = ({ wishlist, setShowWishlist }) => {
               {isSupplier ? 'Volver a Inicio' : 'Explorar Marketplace'}
             </Button>
 
-            {!isSupplier && wishlist.length > 0 && (
-              <Button
-                variant="outlined"
-                size="large"
-                startIcon={<FavoriteIcon />}
-                onClick={() => setShowWishlist(true)}
-                sx={{ px: 4, py: 1.5, borderRadius: 3 }}
-              >
-                Ver Favoritos ({wishlist.length})
-              </Button>
-            )}
           </Stack>
         </Paper>
       </motion.div>

@@ -116,7 +116,8 @@ class CartService {  /**
             ),
             users!products_supplier_id_fkey (
               user_nm,
-              logo_url
+              logo_url,
+              verified
             )
           )
         `)
@@ -150,6 +151,11 @@ class CartService {  /**
         // Proveedor
         supplier: item.products?.users?.user_nm || 'Proveedor no encontrado', // Para item.supplier
         proveedor: item.products?.users?.user_nm || 'Proveedor no encontrado', // Para item.proveedor
+        
+        // ✅ Verificación del proveedor
+        proveedorVerificado: item.products?.users?.verified || false, // Para item.proveedorVerificado
+        verified: item.products?.users?.verified || false, // Para item.verified
+        supplier_verified: item.products?.users?.verified || false, // Para item.supplier_verified
         
         // Imagen
         image: item.products?.product_images?.[0]?.image_url, // Para item.image

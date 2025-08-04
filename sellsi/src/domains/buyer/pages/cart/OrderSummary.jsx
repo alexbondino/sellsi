@@ -10,7 +10,6 @@ import {
 import { CreditCard as CreditCardIcon } from '@mui/icons-material'
 import { motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
-import DiscountSection from './DiscountSection'
 import PriceBreakdown from './PriceBreakdown'
 
 const OrderSummary = ({
@@ -21,12 +20,7 @@ const OrderSummary = ({
   total,
   cartStats,
   deliveryDate,
-  appliedCoupons,
-  couponInput,
   isCheckingOut,
-
-  // Available discount codes
-  availableCodes,
 
   // Shipping validation props
   shippingValidation,
@@ -43,9 +37,6 @@ const OrderSummary = ({
   // Functions
   formatPrice,
   formatDate,
-  setCouponInput,
-  onApplyCoupon,
-  onRemoveCoupon,
   onCheckout,
 }) => {
   const navigate = useNavigate()
@@ -107,19 +98,11 @@ const OrderSummary = ({
         >
           Resumen del Pedido
         </Typography>
-      {/* Códigos de descuento */}
-      <DiscountSection
-        couponInput={couponInput}
-        setCouponInput={setCouponInput}
-        onApplyCoupon={onApplyCoupon}
-        appliedCoupons={appliedCoupons}
-        onRemoveCoupon={onRemoveCoupon}
-        availableCodes={availableCodes}
-      />
+      
       {/* Desglose de precios */}
       <PriceBreakdown
         subtotal={subtotal}
-        discount={discount}
+        discount={0}
         shippingCost={shippingCost}
         total={total}
         formatPrice={formatPrice}

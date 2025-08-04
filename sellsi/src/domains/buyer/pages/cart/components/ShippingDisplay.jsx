@@ -143,21 +143,21 @@ const ShippingDisplay = ({
           border: 'none',
         }}>
           <Box sx={{ display: 'flex', alignItems: 'center', mb: 0.5 }}>
-            <ShippingIcon sx={{ fontSize: 14, color: 'success.main', mr: 0.5 }} />
-            <Typography variant="caption" sx={{ fontWeight: 'bold', color: 'success.main' }}>
+            <ShippingIcon sx={{ fontSize: 15, color: 'success.main', mr: 0.5 }} />
+            <Typography variant="caption" sx={{ fontWeight: 'bold', color: 'success.main', fontSize: '0.9rem' }}>
               Disponible
             </Typography>
           </Box>
-          <Typography variant="caption" color="text.secondary" component="span">
+          <Typography variant="caption" color="text.secondary" component="span" sx={{ fontSize: '0.8rem' }}>
             {validation.shippingInfo?.days} días hábiles
           </Typography>
           <Typography
             variant="body1"
             sx={{
               mt: 1,
-              color: 'success.main',
+              color: '#000000ff',
               fontWeight: 'bold',
-              fontSize: '1rem',
+              fontSize: '0.9rem',
             }}
           >
             {formatPrice(validation.shippingInfo?.cost || 0)}

@@ -40,8 +40,6 @@ import {
   ShippingProgressBar,
   CartItem,
   OrderSummary,
-  SavingsCalculator,
-  WishlistSection,
   EmptyCartState,
 } from './cart';
 import useShippingValidation from './cart/hooks/useShippingValidation';
@@ -64,24 +62,14 @@ const RecommendedProducts = lazy(() =>
 const BuyerCart = () => {
   // ===== ZUSTAND STORE (SELECTORES MEMOIZADOS) =====
   const items = useCartStore(state => state.items);
-  const wishlist = useCartStore(state => state.wishlist);
   const isLoading = useCartStore(state => state.isLoading);
-  const appliedCoupons = useCartStore(state => state.appliedCoupons);
-  const couponInput = useCartStore(state => state.couponInput);
 
   // Acciones memoizadas del store
   const updateQuantity = useCartStore(state => state.updateQuantity);
   const removeItem = useCartStore(state => state.removeItem);
   const clearCart = useCartStore(state => state.clearCart);
-  const addToWishlist = useCartStore(state => state.addToWishlist);
-  const removeFromWishlist = useCartStore(state => state.removeFromWishlist);
-  const applyCoupon = useCartStore(state => state.applyCoupon);
-  const removeCoupon = useCartStore(state => state.removeCoupon);
-  const setCouponInput = useCartStore(state => state.setCouponInput);
   // const getSubtotal = useCartStore(state => state.getSubtotal); // ✅ REEMPLAZADO POR usePriceCalculation
   // const getDiscount = useCartStore(state => state.getDiscount); // ✅ REEMPLAZADO POR usePriceCalculation
-  const getTotal = useCartStore(state => state.getTotal); // ⚠️ USADO EN handleApplyCoupon
-  const isInWishlist = useCartStore(state => state.isInWishlist);
 
   // ===== ESTADOS LOCALES OPTIMIZADOS =====
   // const [showConfetti, setShowConfetti] = useState(false);
@@ -91,7 +79,6 @@ const BuyerCart = () => {
   // Estados para el sistema de selección múltiple (memoizados)
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [selectedItems, setSelectedItems] = useState([]);
-  const [showWishlist, setShowWishlist] = useState(false);
 
   // Estado para manejar envíos por producto (optimizado)
   const [productShipping, setProductShipping] = useState(() => {
@@ -130,7 +117,6 @@ const BuyerCart = () => {
   // Extraer valores para compatibilidad con código existente
   const cartCalculations = {
     subtotal: priceCalculations.subtotal,
-    discount: priceCalculations.discount,
     total: priceCalculations.subtotalAfterDiscount // Total sin envío para compatibilidad
   };
 
@@ -319,18 +305,6 @@ const BuyerCart = () => {
     [items, removeItem]
   );
 
-  const handleAddToWishlist = useCallback(
-    item => {
-      if (!isInWishlist(item.id)) {
-        addToWishlist(item);
-        // Confetti eliminado
-      } else {
-        removeFromWishlist(item.id);
-      }
-    },
-    [isInWishlist, addToWishlist, removeFromWishlist]
-  );
-
   // Manejar cambios de envío por producto
   const handleProductShippingChange = useCallback((productId, shippingId) => {
     setProductShipping(prev => ({
@@ -375,19 +349,6 @@ const BuyerCart = () => {
     }),
     []
   );
-  const moveToCart = useCallback(item => {
-    if (process.env.NODE_ENV === 'development') {
-    }
-    // Implementar lógica para mover de wishlist a carrito
-  }, []);
-
-  const handleApplyCoupon = useCallback(() => {
-    if (couponInput.trim()) {
-      const beforeTotal = getTotal();
-      applyCoupon(couponInput.trim());
-      // Confetti eliminado
-    }
-  }, [couponInput, applyCoupon, getTotal]);
 
   const navigate = useNavigate();
 
@@ -490,7 +451,7 @@ const BuyerCart = () => {
     }).format(date);
   }, []);
   // ===== RENDERIZADO DE ESTADO VACÍO =====
-  if (items.length === 0 && !showWishlist) {
+  if (items.length === 0) {
     return (
       <Box>
         {/* <Toaster position="top-right" toastOptions={{ style: { marginTop: 72 } }} /> */}
@@ -518,10 +479,7 @@ const BuyerCart = () => {
               }}
             >
               {' '}
-              <EmptyCartState
-                wishlist={wishlist}
-                setShowWishlist={setShowWishlist}
-              />
+              <EmptyCartState />
             </Box>
           </Box>
         </Box>
@@ -577,13 +535,10 @@ const BuyerCart = () => {
             <CartHeader
               cartStats={cartStats}
               formatPrice={formatPrice}
-              discount={cartCalculations.discount}
-              wishlistLength={wishlist.length}
+              discount={0}
               onUndo={undo}
               onRedo={redo}
               onClearCart={clearCart}
-              onToggleWishlist={() => setShowWishlist(!showWishlist)}
-              showWishlist={showWishlist}
               undoInfo={getUndoInfo()}
               redoInfo={getRedoInfo()}
               historyInfo={getHistoryInfo()}
@@ -631,8 +586,6 @@ const BuyerCart = () => {
                       item={item}
                       formatPrice={formatPrice}
                       updateQuantity={handleQuantityChange}
-                      isInWishlist={isInWishlist}
-                      handleAddToWishlist={handleAddToWishlist}
                       handleRemoveWithAnimation={handleRemoveWithAnimation}
                       itemVariants={itemVariants}
                       onShippingChange={handleProductShippingChange}
@@ -688,16 +641,12 @@ const BuyerCart = () => {
                   <motion.div variants={itemVariants}>
                     <OrderSummary
                       subtotal={cartCalculations.subtotal}
-                      discount={0} // Ocultamos descuento por código
+                      discount={0}
                       shippingCost={productShippingCost}
                       total={finalTotal}
                       cartStats={cartStats}
                       deliveryDate={deliveryDate}
-                      appliedCoupons={[]} // Ocultamos cupones
-                      couponInput={''} // Ocultamos input de cupones
                       isCheckingOut={isCheckingOut}
-                      // Options
-                      availableCodes={[]} // Ocultamos lista de códigos
                       // Shipping validation props
                       shippingValidation={shippingValidation}
                       isAdvancedShippingMode={isAdvancedShippingMode}
@@ -710,12 +659,7 @@ const BuyerCart = () => {
                       // Functions
                       formatPrice={formatPrice}
                       formatDate={formatDate}
-                      setCouponInput={() => {}} // No-op
-                      onApplyCoupon={() => {}} // No-op
-                      onRemoveCoupon={() => {}} // No-op
                       onCheckout={handleCheckout}
-                      // Puedes agregar una prop extra en OrderSummary para ocultar el input de cupones si existe
-                      hideCouponInput={true}
                     />
                   </motion.div>
                   {/* Calculadora de ahorros modularizada */}
@@ -732,14 +676,6 @@ const BuyerCart = () => {
                 </Box>
               </Grid>
             </Grid>
-            {/* Wishlist modularizada */}
-            <WishlistSection
-              showWishlist={showWishlist}
-              wishlist={wishlist}
-              formatPrice={formatPrice}
-              moveToCart={moveToCart}
-              removeFromWishlist={removeFromWishlist}
-            />
           </motion.div>
         </Box>
         
@@ -754,53 +690,5 @@ const BuyerCart = () => {
     </ThemeProvider>
   );
 };
-
-// ============================================================================
-// MOCK DATA - PRODUCTOS DEMO PARA EL CARRITO
-// ============================================================================
-// TODO: Esta data será reemplazada por productos reales de Supabase
-// Se usa para demostrar funcionalidad del carrito sin conexión a BD
-
-const MOCK_CART_ITEMS = [
-  {
-    id: 1,
-    name: 'LATE HARVEST DOÑA AURORA 6 unidades',
-    price: 45990,
-    image: '/Marketplace productos/lavadora.jpg',
-    supplier: 'Viña Doña Aurora',
-    maxStock: 15,
-    rating: 4.8,
-    reviews: 89,
-    discount: 20,
-    category: 'Vinos y Bebidas',
-    description: 'Vino de cosecha tardía premium, 6 botellas de 750ml cada una',
-  },
-  {
-    id: 2,
-    name: 'DOÑA AURORA BREBAJE ARTESANAL PAIS 6 unidades',
-    price: 750000,
-    image: '/Marketplace productos/notebookasustuf.jpg',
-    supplier: 'PC Factory',
-    maxStock: 8,
-    rating: 4.6,
-    reviews: 124,
-    discount: 15,
-    category: 'Vinos y Bebidas',
-    description:
-      'Vino artesanal de la variedad País, 6 botellas de 750ml cada una',
-  },
-  {
-    id: 3,
-    name: 'LATE HARVEST DOÑA AURORA 6 unidades',
-    price: 45990,
-    image: '/Marketplace productos/lavadora.jpg',
-    supplier: 'Viña Doña Aurora',
-    maxStock: 15,
-    rating: 4.8,
-    reviews: 89,
-    category: 'Vinos y Bebidas',
-    description: 'Vino de cosecha tardía premium, 6 botellas de 750ml cada una',
-  },
-];
 
 export default memo(BuyerCart);

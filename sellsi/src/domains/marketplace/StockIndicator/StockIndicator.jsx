@@ -47,7 +47,7 @@ const StockIndicator = ({
       const formattedStock = stock.toLocaleString('es-CL')
       return {
         status: 'available',
-        color: 'success.main',
+        color: '#000000ff',
         message: showUnits ? `Stock disponible: ${formattedStock} unidades` : 'En stock',
         chipColor: 'success',
         icon: <CheckCircleIcon fontSize="small" />,

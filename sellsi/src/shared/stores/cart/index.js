@@ -18,8 +18,6 @@ export { default as useCartStore } from './cartStore'
 
 // Hooks especializados
 export { default as useCartHistory } from './useCartHistory'
-export { default as useWishlist } from './useWishlist'
-export { default as useCoupons } from './useCoupons'
 export { default as useShipping } from './useShipping'
 
 // Hook unificado de cálculos de precio

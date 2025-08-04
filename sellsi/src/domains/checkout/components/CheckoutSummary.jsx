@@ -84,9 +84,9 @@ const CheckoutSummary = ({
   };
 
   // ✅ CÁLCULO CENTRALIZADO Y CORRECTO
-  const { subtotal, iva, orderTotal } = useMemo(() => {
+  const { subtotalWithIva, orderTotal } = useMemo(() => {
     if (!orderData.items || orderData.items.length === 0) {
-      return { subtotal: 0, iva: 0, orderTotal: 0 };
+      return { subtotalWithIva: 0, orderTotal: 0 };
     }
 
     const totalBruto = orderData.items.reduce((total, item) => {
@@ -95,18 +95,17 @@ const CheckoutSummary = ({
       return total + quantity * unitPrice;
     }, 0);
 
-    const calculatedIva = Math.trunc(totalBruto * 0.19);
-    const calculatedSubtotal = Math.trunc(totalBruto) - calculatedIva;
+    // Khipu fee (fixed $500 when payment method is selected)
+    const khipuFee = selectedMethod ? 500 : 0;
 
-    // <-- El único total que este componente calcula: Subtotal + IVA + Envío
-    const finalOrderTotal = calculatedSubtotal + calculatedIva + shippingCost;
+    // Total del pedido: Subtotal (con IVA incluido) + Envío + Khipu
+    const finalOrderTotal = Math.trunc(totalBruto) + shippingCost + khipuFee;
 
     return {
-      subtotal: calculatedSubtotal,
-      iva: calculatedIva,
+      subtotalWithIva: Math.trunc(totalBruto),
       orderTotal: finalOrderTotal,
     };
-  }, [orderData.items, shippingCost]);
+  }, [orderData.items, shippingCost, selectedMethod]);
 
   // ===== RENDERIZADO =====
 
@@ -245,16 +244,9 @@ const CheckoutSummary = ({
         <Box>
           <Stack spacing={2}>
             <Stack direction="row" justifyContent="space-between">
-              <Typography variant="body2">Subtotal</Typography>
+              <Typography variant="body2">Subtotal (IVA inc.)</Typography>
               <Typography variant="body2" fontWeight="medium">
-                {checkoutService.formatPrice(subtotal)}
-              </Typography>
-            </Stack>
-
-            <Stack direction="row" justifyContent="space-between">
-              <Typography variant="body2">IVA (19%)</Typography>
-              <Typography variant="body2" fontWeight="medium">
-                {checkoutService.formatPrice(iva)}
+                {checkoutService.formatPrice(subtotalWithIva)}
               </Typography>
             </Stack>
 
@@ -271,7 +263,15 @@ const CheckoutSummary = ({
               </Typography>
             </Stack>
 
-            {/* <-- ELIMINADO: La fila que mostraba la comisión del método de pago ya no es necesaria. */}
+            {/* Mostrar comisión Khipu cuando hay método de pago seleccionado */}
+            {selectedMethod && (
+              <Stack direction="row" justifyContent="space-between">
+                <Typography variant="body2">Khipu</Typography>
+                <Typography variant="body2" fontWeight="medium">
+                  {checkoutService.formatPrice(500)}
+                </Typography>
+              </Stack>
+            )}
           </Stack>
         </Box>
 

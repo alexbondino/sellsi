@@ -173,13 +173,6 @@ export const showProductSuccess = (message, icon = '📦') =>
 export const showProductError = (message) => 
   showErrorToast(message, { icon: '📦' });
 
-// Wishlist/Favoritos
-export const showWishlistSuccess = (message, icon = '❤️') => 
-  showSuccessToast(message, { icon });
-
-export const showWishlistInfo = (message, icon = '💔') => 
-  showInfoToast(message, { icon });
-
 // Validación
 export const showValidationError = (message, options = {}) => 
   showErrorToast(message, { 

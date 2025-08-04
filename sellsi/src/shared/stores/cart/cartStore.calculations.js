@@ -30,13 +30,12 @@ export const calculateSubtotal = (items) => {
 }
 
 /**
- * Calcula el descuento total usando el store de cupones
+ * Calcula el descuento total (deshabilitado)
  * @param {number} subtotal - Subtotal del carrito
- * @param {Object} couponsStore - Store de cupones
  * @returns {number} Descuento total
  */
-export const calculateDiscount = (subtotal, couponsStore) => {
-  return couponsStore.getDiscount(subtotal)
+export const calculateDiscount = (subtotal) => {
+  return 0
 }
 
 /**

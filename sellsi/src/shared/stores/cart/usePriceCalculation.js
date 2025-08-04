@@ -11,7 +11,6 @@
 
 import { useMemo } from 'react'
 import useCartStore from './cartStore'
-import useCoupons from './useCoupons'
 import useShipping from './useShipping'
 import { calculatePriceForQuantity } from '../../../utils/priceCalculation'
 import { calculateProductShippingCost } from '../../../utils/shippingCalculation'
@@ -27,7 +26,6 @@ export const usePriceCalculation = (items = null, options = {}) => {
   const cartItems = useCartStore(state => state.items)
   const finalItems = items || cartItems
   
-  const couponsStore = useCoupons()
   const shippingStore = useShipping()
   
   // ===== OPCIONES =====
@@ -37,7 +35,8 @@ export const usePriceCalculation = (items = null, options = {}) => {
     productShipping = {},
     realShippingCost = null,
     userRegion = null, // Nueva opción para región del usuario
-    appliedCoupons = couponsStore.appliedCoupons || []
+    // Variables de cupones deshabilitadas
+    appliedCoupons = [] // Funcionalidad deshabilitada
   } = options
 
   // ===== CÁLCULOS MEMOIZADOS =====
@@ -56,8 +55,8 @@ export const usePriceCalculation = (items = null, options = {}) => {
       return sum + (item.price || 0) * item.quantity
     }, 0)
 
-    // 2. DESCUENTOS - Usando store de cupones
-    const discount = couponsStore.getDiscount ? couponsStore.getDiscount(subtotal) : 0
+    // 2. DESCUENTOS - Funcionalidad deshabilitada
+    const discount = 0
 
     // 3. SUBTOTAL DESPUÉS DE DESCUENTOS
     const subtotalAfterDiscount = subtotal - discount
@@ -110,7 +109,7 @@ export const usePriceCalculation = (items = null, options = {}) => {
       } else {
         // Modo simple: cálculo unificado
         shipping = shippingStore.getShippingCost ? 
-          shippingStore.getShippingCost(subtotalAfterDiscount, appliedCoupons) : 0
+          shippingStore.getShippingCost(subtotalAfterDiscount, []) : 0
       }
     }
 
@@ -150,14 +149,12 @@ export const usePriceCalculation = (items = null, options = {}) => {
     }
   }, [
     finalItems, 
-    couponsStore, 
     shippingStore, 
     includeShipping, 
     useAdvancedShipping, 
     productShipping, 
     realShippingCost, 
-    userRegion, // Agregar userRegion a las dependencias
-    appliedCoupons
+    userRegion // Agregar userRegion a las dependencias
   ])
 
   return calculations
