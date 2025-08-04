@@ -402,7 +402,7 @@ export class ProductValidator {
 
     // Formatear mensaje final
     if (messages.length > 1) {
-      const finalMessage = `${messages.join(' • ')}`;
+      const finalMessage = messages.join('\n');
       console.log('📝 [ProductValidator.generateContextualMessage] Mensaje múltiple:', finalMessage)
       return finalMessage;
     } else if (messages.length === 1) {

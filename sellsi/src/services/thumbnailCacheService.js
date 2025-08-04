@@ -86,7 +86,7 @@ class ThumbnailCacheService {
         .from('product_images')
         .select('thumbnails, thumbnail_url, image_url')
         .eq('product_id', productId)
-        .order('image_url', { ascending: true })
+        .order('image_order', { ascending: true })
         .limit(1);
 
       if (error) {

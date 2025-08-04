@@ -254,7 +254,7 @@ const PriceTiers = ({
                         error={getPriceFieldError(tramo, index)}
                         helperText={
                           getPriceFieldError(tramo, index) 
-                            ? "los precios deben ser descendentes"
+                            ? "Los precios deben ser descendentes"
                             : ""
                         }
                         InputProps={{
@@ -523,7 +523,7 @@ const PriceTiers = ({
                 error={getPriceFieldError(tramo, index)}
                 helperText={
                   getPriceFieldError(tramo, index) 
-                    ? "los precios deben ser descendentes"
+                    ? "Los precios deben ser descendentes"
                     : ""
                 }
                 InputProps={{
@@ -611,6 +611,14 @@ const PriceTiers = ({
             const max = shouldShowStockInsteadOfMaxInput(idx) ? stockDisponible : tramo.max;
             const precio = tramo.precio;
             
+            // Verificar si el rango está completado (tiene min, max (o es último), y precio)
+            const isRangeCompleted = min && precio && (idx === arr.length - 1 || max);
+            
+            // Solo mostrar el texto si el rango está completado
+            if (!isRangeCompleted) {
+              return null;
+            }
+            
             // Si es el último rango
             if (idx === arr.length - 1) {
               return (
@@ -620,8 +628,8 @@ const PriceTiers = ({
                   color="text.secondary"
                   display="block"
                 >
-                  Rango {idx + 1}: si el cliente compra <b>{min || `Cantidad mínima a definir`}</b> unidades o más, paga{' '}
-                  <b>${precio || 'Precio a definir'}</b> por unidad.
+                  Rango {idx + 1}: si el cliente compra <b>{min}</b> unidades o más, paga{' '}
+                  <b>${precio}</b> por unidad.
                 </Typography>
               );
             } else {
@@ -633,9 +641,9 @@ const PriceTiers = ({
                   color="text.secondary"
                   display="block"
                 >
-                  Rango {idx + 1}: si el cliente compra entre <b>{min || `Cantidad mínima a definir`}</b> y{' '}
-                  <b>{max || `Cantidad máxima a definir`}</b> unidades, paga{' '}
-                  <b>${precio || 'Precio a definir'}</b> por unidad.
+                  Rango {idx + 1}: si el cliente compra entre <b>{min}</b> y{' '}
+                  <b>{max}</b> unidades, paga{' '}
+                  <b>${precio}</b> por unidad.
                 </Typography>
               );
             }

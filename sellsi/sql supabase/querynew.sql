@@ -62,8 +62,8 @@ CREATE TABLE public.cart_items (
   added_at timestamp with time zone DEFAULT now(),
   updated_at timestamp with time zone DEFAULT now(),
   CONSTRAINT cart_items_pkey PRIMARY KEY (cart_items_id),
-  CONSTRAINT cart_items_product_id_fkey FOREIGN KEY (product_id) REFERENCES public.products(productid),
-  CONSTRAINT cart_items_cart_id_fkey FOREIGN KEY (cart_id) REFERENCES public.carts(cart_id)
+  CONSTRAINT cart_items_cart_id_fkey FOREIGN KEY (cart_id) REFERENCES public.carts(cart_id),
+  CONSTRAINT cart_items_product_id_fkey FOREIGN KEY (product_id) REFERENCES public.products(productid)
 );
 CREATE TABLE public.carts (
   user_id uuid NOT NULL,
@@ -91,6 +91,16 @@ CREATE TABLE public.control_panel_users (
   twofa_required boolean DEFAULT true,
   twofa_configured boolean DEFAULT false,
   CONSTRAINT control_panel_users_pkey PRIMARY KEY (id)
+);
+CREATE TABLE public.ejemplo (
+  id bigint NOT NULL DEFAULT nextval('ejemplo_id_seq'::regclass),
+  nombre text,
+  CONSTRAINT ejemplo_pkey PRIMARY KEY (id)
+);
+CREATE TABLE public.ejemplo_prueba (
+  id bigint NOT NULL DEFAULT nextval('ejemplo_prueba_id_seq'::regclass),
+  nombre text,
+  CONSTRAINT ejemplo_prueba_pkey PRIMARY KEY (id)
 );
 CREATE TABLE public.khipu_webhook_logs (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
@@ -159,6 +169,7 @@ CREATE TABLE public.product_images (
   image_url text,
   thumbnail_url text,
   thumbnails jsonb,
+  image_order integer DEFAULT 0,
   CONSTRAINT product_images_product_id_fkey FOREIGN KEY (product_id) REFERENCES public.products(productid)
 );
 CREATE TABLE public.product_quantity_ranges (
@@ -197,7 +208,6 @@ CREATE TABLE public.request_products (
   quantity integer NOT NULL,
   request_product_id uuid NOT NULL DEFAULT gen_random_uuid(),
   CONSTRAINT request_products_pkey PRIMARY KEY (request_product_id),
-  CONSTRAINT request_products_product_id_fkey FOREIGN KEY (product_id) REFERENCES public.products(productid),
   CONSTRAINT request_products_request_id_fkey FOREIGN KEY (request_id) REFERENCES public.requests(request_id)
 );
 CREATE TABLE public.requests (
@@ -233,6 +243,18 @@ CREATE TABLE public.shipping_info (
   shipping_number text,
   shipping_dept text,
   CONSTRAINT shipping_info_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(user_id)
+);
+CREATE TABLE public.storage_cleanup_logs (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  executed_at timestamp with time zone NOT NULL DEFAULT now(),
+  products_processed integer NOT NULL DEFAULT 0,
+  files_removed integer NOT NULL DEFAULT 0,
+  execution_time_ms integer NOT NULL DEFAULT 0,
+  errors jsonb DEFAULT '[]'::jsonb,
+  success boolean NOT NULL DEFAULT true,
+  trigger_type text DEFAULT 'scheduled'::text,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT storage_cleanup_logs_pkey PRIMARY KEY (id)
 );
 CREATE TABLE public.users (
   rut character varying,

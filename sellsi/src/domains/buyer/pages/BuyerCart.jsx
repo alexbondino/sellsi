@@ -512,8 +512,8 @@ const BuyerCart = () => {
             maxWidth: {
               xs: 340,
               sm: 480,
-              md: 700,
-              lg: 1360,
+              md: 1000,
+              lg: 1500,
               xl: 1560,
             },
             mx: 'auto',
@@ -557,20 +557,20 @@ const BuyerCart = () => {
                 itemVariants={itemVariants}
               /> */}
             
-            <Grid container spacing={{ xs: 2, md: 2, lg: 6, xl: 6 }}>
+            <Grid container spacing={{ xs: 2, md: 2, lg: 2, xl: 3 }} sx={{ flexWrap: 'nowrap' }}>
               {/* Lista de productos */}
               <Grid
                 item
                 xs={12}
-                md={6}
-                lg={6}
-                xl={6}
+                md={8}
+                lg={8}
+                xl={8}
                 sx={{
                   width: {
                     xs: '100%',
-                    md: '68%',
-                    lg: '65%',
-                    xl: '65%',
+                    md: '75%',
+                    lg: '75%',
+                    xl: '75%',
                   },
                 }}
               >
@@ -628,10 +628,12 @@ const BuyerCart = () => {
               {/* Panel lateral - Resumen y opciones */}
               <Grid
                 item
+                xs={12}
+                md={4}
+                lg={4}
+                xl={4}
                 sx={{
-                  xs: 12,
-                  lg: 5.5,
-                  xl: 6.7,
+                  minWidth: '350px', // Asegurar ancho mínimo para OrderSummary
                 }}
               >
                 <Box

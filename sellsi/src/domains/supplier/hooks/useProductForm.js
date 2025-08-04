@@ -580,7 +580,10 @@ export const useProductForm = (productId = null) => {
         // Solo cargar si el formulario está vacío o es un producto diferente
         const currentProductId = formData.productid || formData.id
         if (!currentProductId || currentProductId.toString() !== productId.toString()) {
-          setFormData(mapProductToForm(product))
+          const mappedProduct = mapProductToForm(product)
+          setFormData(mappedProduct)
+          // 🔧 FIX: Actualizar también originalFormData para detectar cambios correctamente
+          setOriginalFormData(mappedProduct)
         }
       }
     }

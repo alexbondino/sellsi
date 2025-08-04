@@ -24,6 +24,7 @@ import {
 } from '@mui/icons-material';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useRole } from '../../../../infrastructure/providers/RoleProvider';
+import { useAuth } from '../../../../infrastructure/providers/AuthProvider';
 
 // Define los ítems de menú para cada rol directamente en este archivo con iconos
 const buyerMenuItems = [
@@ -41,18 +42,61 @@ const providerMenuItems = [
 ];
 
 /**
- * Componente de SideBar unificado que muestra ítems de menú según el rol.
- * Incluye toda la lógica y estilos.
+ * Componente de SideBar unificado que se adapta automáticamente a la página actual.
+ * Determina el rol basándose en la ruta actual, similar al comportamiento del switch.
  * @param {object} props - Las props del componente.
- * @param {'buyer' | 'supplier' | null} props.role - El rol actual del usuario ('buyer' o 'supplier').
- * @param {string} [props.width='210px'] - Ancho opcional de la SideBar. (¡Ancho predeterminado a 210px!)
+ * @param {'buyer' | 'supplier' | null} props.role - El rol del perfil del usuario (usado como fallback para rutas neutrales).
+ * @param {string} [props.width='210px'] - Ancho opcional de la SideBar.
  * @param {function} [props.onWidthChange] - Callback opcional que se llama cuando cambia el ancho de la sidebar.
  */
 const SideBar = ({ role, width = '210px', onWidthChange }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const theme = useTheme();
+  const { userProfile } = useAuth();
   const [isCollapsed, setIsCollapsed] = useState(false);
+
+  // ✅ NUEVO: Determinar el rol basado en la ruta actual (adaptativo como el switch)
+  const getRoleFromCurrentRoute = () => {
+    const currentPath = location.pathname;
+    
+    // Rutas que son específicamente de supplier
+    const supplierRoutes = [
+      '/supplier/home',
+      '/supplier/myproducts',
+      '/supplier/addproduct', 
+      '/supplier/my-orders',
+      '/supplier/profile',
+      '/supplier/marketplace'
+    ];
+    
+    // Rutas que son específicamente de buyer
+    const buyerRoutes = [
+      '/buyer/marketplace',
+      '/buyer/orders',
+      '/buyer/performance',
+      '/buyer/cart',
+      '/buyer/paymentmethod',
+      '/buyer/profile'
+    ];
+    
+    // Verificar si está en una ruta específica de supplier
+    if (supplierRoutes.some(route => currentPath.startsWith(route))) {
+      return 'supplier';
+    }
+    
+    // Verificar si está en una ruta específica de buyer
+    if (buyerRoutes.some(route => currentPath.startsWith(route))) {
+      return 'buyer';
+    }
+    
+    // Para rutas neutrales, usar el rol del perfil del usuario
+    const profileBasedRole = userProfile?.main_supplier ? 'supplier' : 'buyer';
+    return profileBasedRole;
+  };
+
+  // ✅ CAMBIO: Usar rol adaptativo basado en la ruta actual
+  const effectiveRole = getRoleFromCurrentRoute();
 
   // Calcular el ancho colapsado (40% del ancho original)
   const expandedWidth = width;
@@ -81,16 +125,17 @@ const SideBar = ({ role, width = '210px', onWidthChange }) => {
 
   let menuItemsToDisplay = [];
 
-  if (role === 'buyer') {
+  // ✅ CAMBIO: Usar rol efectivo (adaptativo) en lugar del rol prop
+  if (effectiveRole === 'buyer') {
     menuItemsToDisplay = buyerMenuItems;
-  } else if (role === 'supplier') {
+  } else if (effectiveRole === 'supplier') {
     menuItemsToDisplay = providerMenuItems;
   } else {
     // Si el rol no está definido o es nulo (ej. no logueado), no se mostrarán ítems de menú.
   }
 
-  // Si no hay elementos para mostrar, no renderizamos la SideBar
-  if (!role || menuItemsToDisplay.length === 0) {
+  // ✅ CAMBIO: Verificar rol efectivo en lugar del prop role
+  if (!effectiveRole || menuItemsToDisplay.length === 0) {
     return null;
   }
 

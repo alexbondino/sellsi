@@ -86,7 +86,14 @@ const OrderSummary = ({
         background: 'linear-gradient(135deg, #ffffff 0%, #f8f9ff 100%)',
         border: '1px solid rgba(102, 126, 234, 0.1)',
         position: 'sticky',
-        top: 100
+        top: 100,
+        width: {
+          xs: '50%',
+          sm: '59%',
+          md: '300px',
+          lg: '360px',
+          xl: '400px',
+        },
       }}
     >
       <Stack spacing={3}>

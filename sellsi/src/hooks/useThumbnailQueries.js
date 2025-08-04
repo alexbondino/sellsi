@@ -21,7 +21,7 @@ export const useThumbnailQuery = (productId, options = {}) => {
         .from('product_images')
         .select('thumbnails, thumbnail_url')
         .eq('product_id', productId)
-        .order('image_url', { ascending: true })
+        .order('image_order', { ascending: true })
         .limit(1);
 
       if (error) throw error;
@@ -49,7 +49,7 @@ export const useThumbnailsBatch = (productIds = [], options = {}) => {
         .from('product_images')
         .select('product_id, thumbnails, thumbnail_url')
         .in('product_id', productIds)
-        .order('product_id, image_url');
+        .order('product_id, image_order');
 
       if (error) throw error;
 
@@ -82,7 +82,7 @@ export const useThumbnailsIndependent = (productIds = []) => {
           .from('product_images')
           .select('thumbnails, thumbnail_url')
           .eq('product_id', productId)
-          .order('image_url', { ascending: true })
+          .order('image_order', { ascending: true })
           .limit(1);
 
         if (error) throw error;

@@ -1,6 +1,6 @@
 // 📁 shared/components/navigation/TopBar/TopBar.jsx
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import {
   Box,
   Button,
@@ -38,6 +38,7 @@ export default function TopBar({
 }) {
   const theme = useTheme();
   const navigate = useNavigate();
+  const location = useLocation();
   const itemsInCart = useCartStore(state => state.items).length;
   const { isRoleLoading } = useRole(); // ✅ Acceder al estado de loading del rol
 
@@ -48,11 +49,48 @@ export default function TopBar({
   const [openRegisterModal, setOpenRegisterModal] = useState(false);
   const [openContactModal, setOpenContactModal] = useState(false);
 
-  // ✅ MEJORA: Usar directamente isBuyer como fuente única de verdad, con protección contra parpadeo
-  // Solo mostrar el rol cuando esté completamente determinado
+  // ✅ NUEVO: Determinar el rol basado en la ruta actual
+  const getRoleFromCurrentRoute = () => {
+    const currentPath = location.pathname;
+    
+    // Rutas que son específicamente de supplier
+    const supplierRoutes = [
+      '/supplier/home',
+      '/supplier/myproducts',
+      '/supplier/addproduct', 
+      '/supplier/my-orders',
+      '/supplier/profile',
+      '/supplier/marketplace'
+    ];
+    
+    // Rutas que son específicamente de buyer
+    const buyerRoutes = [
+      '/buyer/marketplace',
+      '/buyer/orders',
+      '/buyer/performance',
+      '/buyer/cart',
+      '/buyer/paymentmethod',
+      '/buyer/profile'
+    ];
+    
+    // Verificar si está en una ruta específica de supplier
+    if (supplierRoutes.some(route => currentPath.startsWith(route))) {
+      return 'supplier';
+    }
+    
+    // Verificar si está en una ruta específica de buyer
+    if (buyerRoutes.some(route => currentPath.startsWith(route))) {
+      return 'buyer';
+    }
+    
+    // Para rutas neutrales, usar el rol del perfil del usuario
+    return isBuyer ? 'buyer' : 'supplier';
+  };
+
+  // ✅ CAMBIO: El switch se adapta automáticamente a la ruta actual
   const currentRole = isRoleLoading 
     ? null // No mostrar rol durante loading para evitar parpadeo
-    : (typeof isBuyer === 'boolean' ? (isBuyer ? 'buyer' : 'supplier') : 'buyer');
+    : (typeof isBuyer === 'boolean' ? getRoleFromCurrentRoute() : 'buyer');
 
   const isLoggedIn = !!session;
 
@@ -116,11 +154,11 @@ export default function TopBar({
     }, 0);
   };
 
-  // ✅ SIMPLIFICACIÓN: Handler directo sin estado local conflictivo
-  // Recibe el `newRole` del `Switch` y lo pasa directamente al RoleProvider
+  // ✅ CAMBIO: Handler que usa RoleProvider para cambio completo de rol
   const handleRoleToggleChange = (event, newRole) => {
     if (newRole !== null && onRoleChange) {
-      onRoleChange(newRole);
+      // Usar la función del RoleProvider que SÍ navega cuando es cambio manual
+      onRoleChange(newRole, { skipNavigation: false });
     }
   };
 

@@ -372,13 +372,25 @@ export class UploadService {
 
       // 🔥 CRÍTICO: INSERTAR REGISTRO EN product_images ANTES DE GENERAR THUMBNAIL
       console.log('💾 [uploadImageWithThumbnail] Guardando referencia en DB...')
+      
+      // Obtener el siguiente orden para este producto
+      const { data: existingImages, error: countError } = await supabase
+        .from('product_images')
+        .select('image_order')
+        .eq('product_id', productId)
+        .order('image_order', { ascending: false })
+        .limit(1)
+      
+      const nextOrder = existingImages?.length > 0 ? (existingImages[0].image_order + 1) : 0
+      
       const { error: dbInsertError } = await supabase
         .from('product_images')
         .insert({
           product_id: productId,
           image_url: urlData.publicUrl,
           thumbnail_url: null, // Se actualizará después con el thumbnail
-          thumbnails: null     // Se actualizará después con los thumbnails
+          thumbnails: null,    // Se actualizará después con los thumbnails
+          image_order: nextOrder // Mantener orden de inserción
         })
 
       if (dbInsertError) {

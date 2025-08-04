@@ -228,11 +228,70 @@ const useSupplierProductsBase = create((set, get) => ({
    * Maneja correctamente la transición entre modos de pricing
    */
   updateProduct: async (productId, updates) => {
-      if (fetchError) {
+    set((state) => ({
+      operationStates: {
+        ...state.operationStates,
+        updating: { ...state.operationStates.updating, [productId]: true },
+      },
+      error: null,
+    }))
 
-      } else {
+    try {
+      // Actualizar producto en la base de datos
+      const { data, error } = await supabase
+        .from('products')
+        .update({
+          ...updates,
+          updateddt: new Date().toISOString(),
+        })
+        .eq('productid', productId)
+        .select()
+        .single()
 
-      }
+      if (error) throw error
+
+      // Actualizar producto en el estado local
+      set((state) => ({
+        products: state.products.map(p => 
+          p.productid === productId ? { ...p, ...data } : p
+        ),
+        operationStates: {
+          ...state.operationStates,
+          updating: { ...state.operationStates.updating, [productId]: false },
+        },
+      }))
+
+      return { success: true, data }
+    } catch (error) {
+      set((state) => ({
+        operationStates: {
+          ...state.operationStates,
+          updating: { ...state.operationStates.updating, [productId]: false },
+        },
+        error: error.message || 'Error al actualizar producto',
+      }))
+      return { success: false, error: error.message }
+    }
+  },
+
+  /**
+   * Eliminar producto
+   */
+  deleteProduct: async (productId) => {
+    set((state) => ({
+      operationStates: {
+        ...state.operationStates,
+        deleting: { ...state.operationStates.deleting, [productId]: true },
+      },
+      error: null,
+    }))
+
+    try {
+      // 1. Obtener URLs de las imágenes antes de eliminar
+      const { data: imageRecords, error: fetchError } = await supabase
+        .from('product_images')
+        .select('image_url, thumbnail_url')
+        .eq('product_id', productId)
 
       // 2. Eliminar producto de la base de datos
       const { error } = await supabase
@@ -256,12 +315,9 @@ const useSupplierProductsBase = create((set, get) => ({
 
       // 4. Limpiar imágenes en background usando URLs obtenidas previamente
       if (imageRecords?.length > 0) {
-
         get().cleanupImagesFromUrls(imageRecords).catch(error => {
-
-        });
-      } else {
-
+          console.error('Error limpiando imágenes:', error)
+        })
       }
 
       return { success: true }
@@ -276,6 +332,7 @@ const useSupplierProductsBase = create((set, get) => ({
       return { success: false, error: error.message }
     }
   },
+
   // ============================================================================
   // HELPERS INTERNOS
   // ============================================================================
@@ -375,11 +432,12 @@ const useSupplierProductsBase = create((set, get) => ({
       // DESPUÉS: Eliminar registros de la BD
       await supabase.from('product_images').delete().eq('product_id', productId);
 
-      // Insertar todos los registros nuevos (con thumbnails)
-      const imagesToInsert = finalImageData.map((imageData) => ({
+      // Insertar todos los registros nuevos (con thumbnails y orden)
+      const imagesToInsert = finalImageData.map((imageData, index) => ({
         product_id: productId,
         image_url: imageData.image_url,
-        thumbnail_url: imageData.thumbnail_url
+        thumbnail_url: imageData.thumbnail_url,
+        image_order: index // Mantener el orden de inserción
       }));
 
       const { data: insertedData, error } = await supabase.from('product_images').insert(imagesToInsert);
@@ -399,7 +457,7 @@ const useSupplierProductsBase = create((set, get) => ({
         }
       }
     } else {
-
+      console.log('📊 [processProductImages] No hay imágenes que procesar')
     }
   },
   /**
@@ -414,15 +472,46 @@ const useSupplierProductsBase = create((set, get) => ({
    * de forma profesional y sin inconsistencias.
    */
   processPriceTiers: async (productId, priceTiers) => {
-        if (error) {
-
-        } else {
-          const exists = data?.length > 0;
-
-        }
-      } catch (error) {
-
+    try {
+      console.log(`🎯 [processPriceTiers] Procesando tramos de precio para producto ${productId}`)
+      
+      if (!priceTiers?.length) {
+        console.log('📊 [processPriceTiers] No hay tramos de precio que procesar')
+        return
       }
+
+      // Eliminar tramos existentes
+      const { error: deleteError } = await supabase
+        .from('product_quantity_ranges')
+        .delete()
+        .eq('product_id', productId)
+
+      if (deleteError) {
+        console.error('❌ [processPriceTiers] Error al eliminar tramos existentes:', deleteError)
+        throw deleteError
+      }
+
+      // Insertar nuevos tramos
+      const tierData = priceTiers.map(tier => ({
+        product_id: productId,
+        min_quantity: tier.quantity_from,
+        max_quantity: tier.quantity_to,
+        price: tier.price
+      }))
+
+      const { error: insertError } = await supabase
+        .from('product_quantity_ranges')
+        .insert(tierData)
+
+      if (insertError) {
+        console.error('❌ [processPriceTiers] Error al insertar tramos:', insertError)
+        throw insertError
+      }
+
+      console.log('✅ [processPriceTiers] Tramos de precio procesados exitosamente')
+    } catch (error) {
+      console.error('🔥 [processPriceTiers] Error procesando tramos:', error)
+      throw error
     }
   },
 
@@ -675,7 +764,9 @@ const useSupplierProductsBase = create((set, get) => ({
   processProductSpecifications: async (productId, specifications) => {
     if (!specifications?.length) {
       return;
-    }    // 🔧 Actualizar especificaciones del producto usando el servicio seguro
+    }
+    
+    // 🔧 Actualizar especificaciones del producto usando el servicio seguro
     await updateProductSpecifications(productId, specifications);
   },
   /**

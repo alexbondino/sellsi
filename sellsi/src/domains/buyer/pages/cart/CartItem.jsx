@@ -173,7 +173,13 @@ const CartItem = ({
               ? '2px solid rgba(25, 118, 210, 0.6)'
               : '1px solid rgba(102, 126, 234, 0.1)',
           width: '100%',
-          maxWidth: '100%',
+          maxWidth: {
+            xs: '100%',
+            sm: '600px',
+            md: '800px',
+            lg: '1030px',
+            xl: '1200px',
+          },
           overflow: 'hidden', // Prevenir overflow horizontal
           position: 'relative',
           '&:hover': {
@@ -232,12 +238,12 @@ const CartItem = ({
         {/* Columna 4: Opciones de envío (xs=12, sm=2.8) */}
         <Grid
           container
-          spacing={2}
+          spacing={3}
           alignItems="flex-start"
           sx={{ overflow: 'hidden' }}
         >
           {' '}          {/* Imagen optimizada */}{' '}
-          <Grid size={{ xs: 12, sm: 2.4 }}>
+          <Grid size={{ xs: 12, sm: 2.4,}}>
             <Box
               sx={{
                 position: 'relative',
@@ -249,6 +255,7 @@ const CartItem = ({
                 sx={{
                   height: 160,
                   width: '100%',
+                 
                 }}
               />
             </Box>
