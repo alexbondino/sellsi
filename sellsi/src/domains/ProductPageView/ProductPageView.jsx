@@ -52,6 +52,9 @@ const ProductHeader = React.lazy(() =>
 const ProductShipping = React.lazy(() => 
   import('./components/ProductShipping').catch(() => ({ default: () => <div>Error al cargar shipping</div> }))
 )
+const ProductInfo = React.lazy(() => 
+  import('./components/ProductInfo').catch(() => ({ default: () => <div>Error al cargar información</div> }))
+)
 const LoadingOverlay = React.lazy(() => 
   import('../../shared/components/feedback/LoadingOverlay').catch(() => ({ default: () => <div>Cargando...</div> }))
 )
@@ -207,7 +210,6 @@ const ProductPageView = memo(({
     ventas,
     stock,
     categoria,
-    descripcion = 'Producto de alta calidad con excelentes características y garantía de satisfacción.',
   } = product
   // Debug log removed
 
@@ -291,7 +293,15 @@ const ProductPageView = memo(({
             </Suspense>
           </Box>
 
-          {/* 2.5. ProductShipping - Regiones de Despacho */}
+          {/* 2.5. Descripción del Producto */}
+          <Suspense fallback={<CircularProgress />}>
+            <ProductInfo
+              product={product}
+              isMobile={isMobile}
+            />
+          </Suspense>
+
+          {/* 3. ProductShipping - Regiones de Despacho */}
           <Box sx={{ width: '100%' }}>
             <Suspense fallback={<CircularProgress />}>
               <ProductShipping
@@ -300,93 +310,6 @@ const ProductPageView = memo(({
                 isLoggedIn={isLoggedIn}
               />
             </Suspense>
-          </Box>
-
-          {/* 3. Descripción del Producto responsiva */}
-          <Box sx={{ 
-            px: { xs: 2, md: 0 }, 
-            mt: { xs: 4, md: 6 }, 
-            mb: 6,
-            width: '100%' 
-          }}>
-            <Paper
-              elevation={2}
-              sx={{
-                p: { xs: 3, sm: 4, md: 5 },
-                borderRadius: 3,
-                width: { xs: '100%', md: '70%' },
-                maxWidth: '900px',
-                textAlign: 'center',
-                background: 'linear-gradient(135deg, #f8fafc 0%, #ffffff 100%)',
-                border: '1px solid #e2e8f0',
-                position: 'relative',
-                overflow: 'hidden',
-                margin: '0 auto',
-                '&::before': {
-                  content: '""',
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  height: '4px',
-                  background: 'linear-gradient(90deg, #1976d2, #42a5f5, #1976d2)',
-                  backgroundSize: '200% 100%',
-                  animation: 'shimmer 3s ease-in-out infinite',
-                },
-                '@keyframes shimmer': {
-                  '0%': { backgroundPosition: '-200% 0' },
-                  '100%': { backgroundPosition: '200% 0' },
-                },
-              }}
-            >
-              <Typography
-                variant="h4"
-                sx={{
-                  fontWeight: 700,
-                  color: 'black',
-                  mb: 3,
-                  fontSize: { xs: '1.5rem', sm: '1.5rem', md: '1.5rem' },
-                  position: 'relative',
-                  '&::after': {
-                    content: '""',
-                    position: 'absolute',
-                    bottom: -8,
-                    left: '50%',
-                    transform: 'translateX(-50%)',
-                    width: '60px',
-                    height: '3px',
-                    background: 'linear-gradient(90deg, #1976d2, #42a5f5)',
-                    borderRadius: '2px',
-                  },
-                }}
-              >
-                📋 Descripción del Producto
-              </Typography>
-              <Typography
-                variant="body1"
-                sx={{
-                  fontSize: { xs: '1rem', sm: '1.1rem', md: '1rem' },
-                  lineHeight: 1.8,
-                  color: '#000000ff',
-                  textAlign: 'justify',
-                  hyphens: 'auto',
-                  wordBreak: 'break-word',
-                  letterSpacing: '0.5px',
-                  fontWeight: 400,
-                  '&::first-letter': {
-                    fontSize: '1.5em',
-                    fontWeight: 700,
-                    color: '#000000ff',
-                    float: 'left',
-                    lineHeight: 1,
-                    marginRight: '1px',
-                    marginTop: '2px',
-                  },
-                }}
-              >
-                {descripcion}
-              </Typography>
-            </Paper>
           </Box>
         </Box>
       </Box>

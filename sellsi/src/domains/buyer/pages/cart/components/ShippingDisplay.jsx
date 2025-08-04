@@ -58,7 +58,7 @@ const ShippingDisplay = ({
           🚚 Envío Estándar
         </Typography>
         <Typography variant="caption" color="text.secondary" component="span">
-          3-5 días hábiles
+          Según región seleccionada
         </Typography>
         <Typography
           variant="body1"
@@ -69,7 +69,7 @@ const ShippingDisplay = ({
             fontSize: '1rem',
           }}
         >
-          $5.990
+          Consultar precio
         </Typography>
       </Box>
     );
@@ -253,7 +253,7 @@ const ShippingDisplay = ({
             🚚 Envío Estándar
           </Typography>
           <Typography variant="caption" color="text.secondary" component="span">
-            3-5 días hábiles
+            Según región seleccionada
           </Typography>
           <Typography
             variant="body1"
@@ -264,7 +264,7 @@ const ShippingDisplay = ({
               fontSize: '1rem',
             }}
           >
-            $5.990
+            Consultar precio
           </Typography>
         </Box>
       );

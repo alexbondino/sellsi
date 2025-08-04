@@ -18,7 +18,7 @@ import {
   Tooltip,
   CircularProgress,
 } from '@mui/material'
-import { LocalShipping, Security, Assignment } from '@mui/icons-material'
+import { LocalShipping, Security, Assignment, Verified as VerifiedIcon } from '@mui/icons-material'
 import ContentCopyIcon from '@mui/icons-material/ContentCopy'
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline'
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined'
@@ -37,7 +37,7 @@ import PriceDisplay from '../../marketplace/PriceDisplay/PriceDisplay'
 import StockIndicator from '../../marketplace/StockIndicator/StockIndicator'
 import QuotationModal from './QuotationModal'
 import { useProductPriceTiers } from '../../../shared/hooks/product/useProductPriceTiers';
-import ContactSupplierModal from '../../../shared/components/modals/ContactSupplierModal';
+import ContactModal from '../../../shared/components/modals/ContactModal';
 
 const ProductHeader = React.memo(({
   product,
@@ -84,8 +84,8 @@ const ProductHeader = React.memo(({
   const [copied, setCopied] = useState({ name: false, price: false })
   // ✅ NUEVO: Estado para el modal de cotización
   const [isQuotationModalOpen, setIsQuotationModalOpen] = useState(false)
-  // ✅ NUEVO: Estado para el modal de contacto con proveedor
-  const [isSupplierModalOpen, setIsSupplierModalOpen] = useState(false);
+  // ✅ NUEVO: Estado para el modal de contacto
+  const [isContactModalOpen, setIsContactModalOpen] = useState(false);
   
   // ✅ OPTIMIZADO: Verificación instantánea de propiedad del producto (1-5ms vs 1000ms+)
   const ownershipVerification = React.useMemo(() => {
@@ -144,13 +144,14 @@ const ProductHeader = React.memo(({
     setIsQuotationModalOpen(false)
   }
 
-  // ✅ NUEVO: Funciones para manejar el modal de contacto con proveedor
-  const handleOpenSupplierModal = () => {
-    setIsSupplierModalOpen(true);
-  };
-  const handleCloseSupplierModal = () => {
-    setIsSupplierModalOpen(false);
-  };
+  // ✅ NUEVO: Funciones para manejar el modal de contacto
+  const handleOpenContactModal = () => {
+    setIsContactModalOpen(true)
+  }
+
+  const handleCloseContactModal = () => {
+    setIsContactModalOpen(false)
+  }
 
   // ✅ NUEVO: Calcular precio unitario y cantidad por defecto para cotización
   const getQuotationDefaults = () => {
@@ -309,9 +310,9 @@ const ProductHeader = React.memo(({
         
         {/* Botón de Cotización para tramos - Solo si está logueado */}
         {isLoggedIn && (
-          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', mt: 2, mb: 4, width: '100%', gap: 1 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
-              <Typography variant="body2" sx={{ color: 'text.secondary', textAlign: 'center' }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', justifyContent: 'flex-start', mt: 2, mb: 4, width: '100%', gap: 1 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', gap: 1 }}>
+              <Typography variant="body2" sx={{ color: 'text.secondary' }}>
                 ¿Necesitas alguna condición especial?
               </Typography>
               <Button
@@ -323,19 +324,18 @@ const ProductHeader = React.memo(({
                   fontWeight: 600,
                   p: 0,
                   minWidth: 'auto',
-                  textAlign: 'center',
                   '&:hover': {
                     backgroundColor: 'transparent',
                     textDecoration: 'underline',
                   },
                 }}
-                onClick={handleOpenSupplierModal}
+                onClick={handleOpenContactModal}
               >
-                Contacta con el proveedor
+                Contáctanos
               </Button>
             </Box>
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
-              <Typography variant="body2" sx={{ color: 'text.secondary', textAlign: 'center' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', gap: 1 }}>
+              <Typography variant="body2" sx={{ color: 'text.secondary' }}>
                 ¿Quieres saber los detalles de todo?
               </Typography>
               <Button
@@ -347,7 +347,6 @@ const ProductHeader = React.memo(({
                   fontWeight: 600,
                   p: 0,
                   minWidth: 'auto',
-                  textAlign: 'center',
                   '&:hover': {
                     backgroundColor: 'transparent',
                     textDecoration: 'underline',
@@ -363,84 +362,64 @@ const ProductHeader = React.memo(({
       </Box>
     )
   } else {
-    // Precio único (sin tramos)
+    // Precio único (sin tramos) - Con box similar a los tramos
     priceContent = (
-      <Box
-        sx={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: 1,
-          mb: 3,
-        }}
-      >
-        <PriceDisplay
-          price={product.precio}
-          originalPrice={product.precioOriginal}
-          variant="h4"
-          sx={{
-            fontWeight: 700,
-            color: 'text.primary',
-            fontSize: { xs: '1.1rem', sm: '1.3rem', md: '1.5rem', lg: '1.7rem', xl: '2rem' },
-            lineHeight: 1.2,
-            '& .MuiTypography-root': {
-              color: 'text.primary',
-            },
-          }}
-        />
-        <Tooltip title="Copiar precio" arrow>
-          <IconButton
-            size="small"
-            onClick={() =>
-              handleCopy('price', product.precio.toLocaleString('es-CL'))
-            }
-            sx={{
-              boxShadow: 'none',
-              outline: 'none',
-              bgcolor: 'transparent',
-              '&:hover': {
-                bgcolor: 'rgba(0,0,0,0.04)',
-                boxShadow: 'none',
-                outline: 'none',
-              },
-              '&:active': {
-                boxShadow: 'none !important',
-                outline: 'none !important',
-                background: 'rgba(0,0,0,0.04) !important',
-              },
-              '&:focus': {
-                boxShadow: 'none !important',
-                outline: 'none !important',
-                background: 'rgba(0,0,0,0.04) !important',
-              },
-              '&:focus-visible': {
-                boxShadow: 'none !important',
-                outline: 'none !important',
-                background: 'rgba(0,0,0,0.04) !important',
-              },
-            }}
-          >
-            <ContentCopyIcon fontSize="small" />
-          </IconButton>
-        </Tooltip>
+      <Box sx={{ 
+        mb: 3, 
+        display: 'flex', 
+        flexDirection: 'column', 
+        alignItems: 'flex-start',
+        justifyContent: 'flex-start',
+        width: '100%'
+      }}>
         <Box
           sx={{
-            width: 24,
-            height: 24,
-            display: 'inline-flex',
+            display: 'flex',
             alignItems: 'center',
-            justifyContent: 'center',
+            justifyContent: 'flex-start',
+            mb: 1,
+            width: '100%'
           }}
         >
-          <CheckCircleOutlineIcon
-            color="success"
-            fontSize="small"
-            sx={{
-              visibility: copied.price ? 'visible' : 'hidden',
-              transition: 'visibility 0.2s',
-            }}
-          />
+          <Typography variant="h6" sx={{ color: 'text.primary' }}>
+            Precio
+          </Typography>
         </Box>
+        
+        {/* Tabla para precio unitario con mismo estilo que tramos */}
+        <TableContainer
+          component={Paper}
+          sx={{ 
+            maxWidth: 400, 
+            mb: 2,
+            width: 'fit-content'
+          }}
+        >
+          <Table size="small">
+            <TableBody>
+              <TableRow hover>
+                <TableCell align="center" sx={{ fontWeight: 600 }}>
+                  Por unidad
+                </TableCell>
+                <TableCell align="center">
+                  <PriceDisplay
+                    price={product.precio}
+                    originalPrice={product.precioOriginal}
+                    variant="body1"
+                    sx={{
+                      fontWeight: 700,
+                      color: 'text.primary',
+                      fontSize: '1rem',
+                      '& .MuiTypography-root': {
+                        color: 'text.primary',
+                      },
+                    }}
+                  />
+                </TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>
+        </TableContainer>
       </Box>
     )
   }
@@ -574,45 +553,7 @@ const ProductHeader = React.memo(({
               >
                 {nombre}
               </Typography>
-              <Tooltip title="Copiar nombre del producto" arrow placement="right">
-                <IconButton
-                  size="small"
-                  onClick={() => handleCopy('name', nombre)}
-                  sx={{
-                    boxShadow: 'none',
-                    outline: 'none',
-                    bgcolor: 'transparent',
-                    '&:hover': {
-                      bgcolor: 'rgba(0,0,0,0.04)',
-                      boxShadow: 'none',
-                      outline: 'none',
-                    },
-                  '&:active': {
-                    boxShadow: 'none !important',
-                    outline: 'none !important',
-                    background: 'rgba(0,0,0,0.04) !important',
-                  },
-                  '&:focus': {
-                    boxShadow: 'none !important',
-                    outline: 'none !important',
-                    background: 'rgba(0,0,0,0.04) !important',
-                  },
-                  '&:focus-visible': {
-                    boxShadow: 'none !important',
-                    outline: 'none !important',
-                    background: 'rgba(0,0,0,0.04) !important',
-                  },
-                }}
-              >
-                {copied.name ? (
-                  <CheckCircleOutlineIcon color="success" fontSize="small" />
-                ) : (
-                  <ContentCopyIcon fontSize="small" />
-                )}
-              </IconButton>
-            </Tooltip>
-            {/* Tick verde eliminado, ahora está dentro del IconButton como en Copiar todos los precios */}
-          </Box>
+            </Box>
           )}
 
           {/* Nueva Box: Stock, Compra mínima y Chips de facturación */}
@@ -692,11 +633,10 @@ const ProductHeader = React.memo(({
                 <Typography
                   variant="body2"
                   sx={{
-                    fontWeight: 600,
                     color: 'text.primary',
                   }}
                 >
-                  Stock: {stock} unidades
+                  <b>Stock:</b> {stock} unidades
                 </Typography>
               )}
             </Box>
@@ -705,30 +645,34 @@ const ProductHeader = React.memo(({
               <Typography
                 variant="body2"
                 sx={{
-                  fontWeight: 600,
                   color: 'text.primary',
                 }}
               >
-                Compra mínima: {compraMinima} unidades
+                <b>Compra mínima:</b> {compraMinima} unidades
               </Typography>
             </Box>
           </Box>
-          <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', mb: 3, gap: 1.5 }}>
             <Avatar
+              src={product?.logo_url || product?.supplier_logo_url}
               sx={{
-                width: 24,
-                height: 24,
-                mr: 1,
-                fontSize: '0.75rem',
+                width: 40,
+                height: 40,
+                fontSize: '1rem',
               }}
             >
               {proveedor?.charAt(0)}
             </Avatar>
-            <Chip
-              label={proveedor}
-              size="small"
-              variant="outlined"
-              color="primary"
+            <Typography
+              variant="body1"
+              sx={{
+                color: 'primary.main',
+                fontWeight: 600,
+                cursor: isLoggedIn ? 'pointer' : 'default',
+                '&:hover': {
+                  textDecoration: isLoggedIn ? 'underline' : 'none',
+                },
+              }}
               onClick={isLoggedIn ? () => {
                 // Convertir el nombre del proveedor a formato slug (lowercase, espacios a guiones, caracteres especiales removidos)
                 const proveedorSlug = proveedor
@@ -737,22 +681,26 @@ const ProductHeader = React.memo(({
                   ?.replace(/[^\w\-]/g, '');
                 navigate(`/catalog/${proveedorSlug}/${product.supplier_id || product.supplierId || 'userid'}`);
               } : undefined}
-              sx={{
-                cursor: isLoggedIn ? 'pointer' : 'default',
-                '&:hover': {
-                  backgroundColor: isLoggedIn ? 'rgba(25, 118, 210, 0.08)' : 'transparent',
-                },
-              }}
-            />{' '}
-          </Box>{' '}
+            >
+              {proveedor}
+            </Typography>
+            {(product?.proveedorVerificado || product?.verified) && (
+              <VerifiedIcon
+                sx={{
+                  fontSize: 20,
+                  color: 'primary.main',
+                }}
+              />
+            )}
+          </Box>
           {/* Precios and/or tramos */}
           {priceContent}
           
           {/* Botón de Cotización - Solo para precio único y si está logueado */}
           {!(tiers && tiers.length > 0) && isLoggedIn && (
-          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', mb: 4, width: '100%', gap: 1 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
-              <Typography variant="body2" sx={{ color: 'text.secondary', textAlign: 'center' }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', justifyContent: 'flex-start', mb: 4, width: '100%', gap: 1 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', gap: 1 }}>
+              <Typography variant="body2" sx={{ color: 'text.secondary' }}>
                 ¿Necesitas alguna condición especial?
               </Typography>
               <Button
@@ -764,19 +712,18 @@ const ProductHeader = React.memo(({
                   fontWeight: 600,
                   p: 0,
                   minWidth: 'auto',
-                  textAlign: 'center',
                   '&:hover': {
                     backgroundColor: 'transparent',
                     textDecoration: 'underline',
                   },
                 }}
-                onClick={handleOpenSupplierModal}
+                onClick={handleOpenContactModal}
               >
-                Contacta con el proveedor
+                Contáctanos
               </Button>
             </Box>
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
-              <Typography variant="body2" sx={{ color: 'text.secondary', textAlign: 'center' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', gap: 1 }}>
+              <Typography variant="body2" sx={{ color: 'text.secondary' }}>
                 ¿Quieres saber los detalles de todo?
               </Typography>
               <Button
@@ -788,7 +735,6 @@ const ProductHeader = React.memo(({
                   fontWeight: 600,
                   p: 0,
                   minWidth: 'auto',
-                  textAlign: 'center',
                   '&:hover': {
                     backgroundColor: 'transparent',
                     textDecoration: 'underline',
@@ -850,11 +796,10 @@ const ProductHeader = React.memo(({
         unitPrice={getQuotationDefaults().defaultUnitPrice}
         tiers={finalTiers}
       />
-      {/* Modal de Contacto con Proveedor */}
-      <ContactSupplierModal
-        open={isSupplierModalOpen}
-        onClose={handleCloseSupplierModal}
-        supplierName={product.proveedor}
+      {/* Modal de Contacto */}
+      <ContactModal
+        open={isContactModalOpen}
+        onClose={handleCloseContactModal}
       />
     </Box>
   )

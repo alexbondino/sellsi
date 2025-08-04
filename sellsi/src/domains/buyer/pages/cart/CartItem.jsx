@@ -35,7 +35,6 @@ import PriceDisplay from '../../../marketplace/PriceDisplay/PriceDisplay'
 import StockIndicator from '../../../marketplace/StockIndicator/StockIndicator'
 import QuantitySelector from '../../../../shared/components/forms/QuantitySelector'
 import LazyImage from '../../../../shared/components/display/LazyImage/LazyImage'
-import { SHIPPING_OPTIONS } from '../../../../shared/constants/shipping' // ✅ MIGRADO: Era domains/marketplace/hooks/constants
 import {
   calculatePriceForQuantity,
   formatProductForCart,
@@ -135,12 +134,11 @@ const CartItem = ({
     return { unitPrice, subtotal }
   }, [item.quantity, productData.price_tiers, productData.basePrice])
 
-  // Memoizar opciones de envío
+  // Memoizar opciones de envío - ahora calculado dinámicamente
   const shippingData = React.useMemo(() => {
-    const selectedOption = SHIPPING_OPTIONS.find(opt => opt.id === selectedShipping)
     return {
-      price: selectedOption ? selectedOption.price : 0,
-      label: selectedOption ? selectedOption.label : 'Estándar'
+      price: 0, // Se calculará dinámicamente según región
+      label: 'Según región'
     }
   }, [selectedShipping])
 

@@ -34,10 +34,6 @@ import { dashboardThemeCore } from '../../../styles/dashboardThemeCore';
 import { SPACING_BOTTOM_MAIN } from '../../../styles/layoutSpacing';
 import useCartStore from '../../../shared/stores/cart/cartStore';
 import { useAdvancedPriceCalculation, useCartStats } from '../../../shared/stores/cart';
-import {
-  SHIPPING_OPTIONS,
-  DISCOUNT_CODES,
-} from '../../marketplace/hooks/constants';
 import { calculateRealShippingCost } from '../../../utils/shippingCalculation';
 import {
   CartHeader,
@@ -215,22 +211,9 @@ const BuyerCart = () => {
       // Encontrar el envío más lento entre todos los productos
       items.forEach(item => {
         const selectedShippingId = productShipping[item.id] || 'standard';
-        const shippingOption = SHIPPING_OPTIONS.find(
-          opt => opt.id === selectedShippingId
-        );
-
-        if (shippingOption) {
-          const deliveryDays =
-            shippingOption.id === 'premium'
-              ? 0
-              : shippingOption.id === 'express'
-              ? 2
-              : shippingOption.id === 'pickup'
-              ? 0
-              : 4;
-
-          maxDeliveryDays = Math.max(maxDeliveryDays, deliveryDays);
-        }
+        // Cálculo dinámico de envío - ya no depende de SHIPPING_OPTIONS
+        const deliveryDays = 3; // Valor por defecto, será calculado dinámicamente
+        maxDeliveryDays = Math.max(maxDeliveryDays, deliveryDays);
       });
 
       const estimatedDate = new Date(today);
