@@ -49,6 +49,42 @@ export default function TopBar({
   const [openRegisterModal, setOpenRegisterModal] = useState(false);
   const [openContactModal, setOpenContactModal] = useState(false);
 
+  // ✅ SISTEMA CENTRALIZADO DE AUTENTICACIÓN
+  // TopBar es el único responsable de manejar modales de auth para evitar duplicados
+  useEffect(() => {
+    const handleOpenLogin = () => {
+      // Verificar que no esté ya abierto para evitar duplicados
+      if (!openLoginModal) {
+        setOpenLoginModal(true);
+      }
+    };
+
+    const handleOpenRegister = () => {
+      // Verificar que no esté ya abierto para evitar duplicados
+      if (!openRegisterModal) {
+        setOpenRegisterModal(true);
+      }
+    };
+
+    // ✅ ROBUSTEZ: Listeners con opciones para mejor control
+    window.addEventListener('openLogin', handleOpenLogin, { passive: true });
+    window.addEventListener('openRegister', handleOpenRegister, { passive: true });
+
+    return () => {
+      window.removeEventListener('openLogin', handleOpenLogin);
+      window.removeEventListener('openRegister', handleOpenRegister);
+    };
+  }, [openLoginModal, openRegisterModal]); // ✅ Dependencias para evitar duplicados
+
+  // ✅ HANDLER CENTRALIZADO PARA TRANSICIÓN LOGIN → REGISTER
+  const handleLoginToRegisterTransition = () => {
+    setOpenLoginModal(false);
+    // Usar setTimeout para asegurar que el modal se cierre antes de abrir el otro
+    setTimeout(() => {
+      setOpenRegisterModal(true);
+    }, 100);
+  };
+
   // ✅ NUEVO: Determinar el rol basado en la ruta actual
   const getRoleFromCurrentRoute = () => {
     const currentPath = location.pathname;
@@ -625,10 +661,7 @@ export default function TopBar({
         <Login
           open={openLoginModal}
           onClose={() => setOpenLoginModal(false)}
-          onOpenRegister={() => {
-            setOpenLoginModal(false);
-            setOpenRegisterModal(true);
-          }}
+          onOpenRegister={handleLoginToRegisterTransition}
         />
       )}
       {openRegisterModal && (

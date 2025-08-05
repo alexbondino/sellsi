@@ -19,10 +19,12 @@ import {
   CircularProgress,
   Backdrop,
   Paper,
+  Tooltip,
 } from '@mui/material';
 import {
   ExpandMore as ExpandMoreIcon,
   ThumbUp as RecommendIcon,
+  ArrowBack as ArrowBackIcon,
 } from '@mui/icons-material';
 import { motion, AnimatePresence, useAnimation } from 'framer-motion';
 import { showCartSuccess, showCartError } from '../../../utils/toastHelpers';
@@ -48,6 +50,7 @@ import ShippingCompatibilityModal from './cart/components/ShippingCompatibilityM
 // ============================================================================
 // ULTRA-PREMIUM BUYER CART COMPONENT - NIVEL 11/10
 import { useNavigate } from 'react-router-dom';
+import { useRole } from '../../../infrastructure/providers/RoleProvider';
 // ============================================================================
 
 // Lazy loading components para optimización
@@ -351,6 +354,17 @@ const BuyerCart = () => {
   );
 
   const navigate = useNavigate();
+  const { currentAppRole } = useRole();
+
+  const handleBack = useCallback(() => {
+    // Si está en modo supplier, volver a supplier/home
+    // Si está en modo buyer, volver a /buyer/marketplace
+    if (currentAppRole === 'supplier') {
+      navigate('/supplier/home');
+    } else {
+      navigate('/buyer/marketplace');
+    }
+  }, [navigate, currentAppRole]);
 
   const handleCheckout = useCallback(async () => {
     // Validar compatibilidad de envío antes del checkout
@@ -536,6 +550,7 @@ const BuyerCart = () => {
               cartStats={cartStats}
               formatPrice={formatPrice}
               discount={0}
+              onBack={handleBack}
               onUndo={undo}
               onRedo={redo}
               onClearCart={clearCart}

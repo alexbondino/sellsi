@@ -12,8 +12,12 @@ import {
   Alert,
   CircularProgress,
   IconButton,
+  Tooltip,
 } from '@mui/material';
-import { ArrowBack as ArrowBackIcon } from '@mui/icons-material';
+import { 
+  ArrowBack as ArrowBackIcon,
+  CreditCard as CreditCardIcon 
+} from '@mui/icons-material';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
@@ -251,9 +255,12 @@ const PaymentMethodSelector = () => {
       {/* Header */}
       <Box sx={{ mb: 4, px: 3 }}>
         <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 3 }}>
-          <IconButton onClick={handleBack} sx={{ p: 1 }}>
-            <ArrowBackIcon />
-          </IconButton>
+          <Tooltip title="Volver" arrow>
+            <IconButton onClick={handleBack} sx={{ p: 1 }}>
+              <ArrowBackIcon />
+            </IconButton>
+          </Tooltip>
+          <CreditCardIcon sx={{ color: 'primary.main', fontSize: 32, mr: 1 }} />
           <Typography variant="h4" fontWeight="bold">
             <span style={{ color: '#1976d2' }}>Método de Pago</span>
           </Typography>

@@ -4,12 +4,26 @@ import { motion } from 'framer-motion'
 import { Home as HomeIcon } from '@mui/icons-material'
 import { useNavigate } from 'react-router-dom'
 import { PrimaryButton } from '../forms'
+import { useAuth } from '../../../infrastructure/providers/AuthProvider'
+import { useRole } from '../../../infrastructure/providers/RoleProvider'
 
 const NotFound = () => {
   const navigate = useNavigate()
+  const { session, userProfile } = useAuth()
+  const { currentAppRole } = useRole()
 
   const handleGoHome = () => {
-    navigate('/')
+    // Navegación inteligente basada en sesión y rol
+    if (!session) {
+      // Sin sesión -> Home público
+      navigate('/')
+    } else if (userProfile?.main_supplier) {
+      // Usuario es supplier -> Dashboard de supplier
+      navigate('/supplier/home')
+    } else {
+      // Usuario es buyer -> Marketplace de buyer
+      navigate('/buyer/marketplace')
+    }
   }
 
   return (
