@@ -125,6 +125,7 @@ export const updateUserProfile = async (userId, profileData) => {
       rut: profileData.rut,
       updatedt: new Date().toISOString(),
       descripcion_proveedor: profileData.descripcionProveedor || profileData.descripcion_proveedor || '',
+      document_types: profileData.document_types || [], // Campo de tipos de documento tributario
     };
 
     // Agregar logo_url solo si se proporciona

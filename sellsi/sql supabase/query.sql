@@ -92,8 +92,8 @@ CREATE TABLE public.control_panel (
   created_at timestamp with time zone NOT NULL DEFAULT now(),
   updated_at timestamp with time zone NOT NULL DEFAULT now(),
   CONSTRAINT control_panel_pkey PRIMARY KEY (id),
-  CONSTRAINT control_panel_request_id_fkey FOREIGN KEY (request_id) REFERENCES public.requests(request_id),
-  CONSTRAINT control_panel_procesado_por_fkey FOREIGN KEY (procesado_por) REFERENCES public.control_panel_users(id)
+  CONSTRAINT control_panel_procesado_por_fkey FOREIGN KEY (procesado_por) REFERENCES public.control_panel_users(id),
+  CONSTRAINT control_panel_request_id_fkey FOREIGN KEY (request_id) REFERENCES public.requests(request_id)
 );
 CREATE TABLE public.control_panel_users (
   usuario text NOT NULL UNIQUE,
@@ -296,6 +296,7 @@ CREATE TABLE public.users (
   verified_at timestamp with time zone,
   verified_by uuid,
   last_ip text,
+  document_types ARRAY DEFAULT '{}'::text[] CHECK (document_types <@ ARRAY['ninguno'::text, 'boleta'::text, 'factura'::text]),
   CONSTRAINT users_pkey PRIMARY KEY (user_id),
   CONSTRAINT users_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
 );

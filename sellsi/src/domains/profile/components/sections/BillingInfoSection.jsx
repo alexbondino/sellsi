@@ -18,6 +18,7 @@ import { validateRut, validateEmail } from '../../../../utils/validators';
 /**
  * Sección de Información de Facturación del perfil
  * Incluye: razón social, RUT, giro, dirección, región, comuna y botón actualizar
+ * Solo se muestra si el documento tributario incluye "Factura"
  */
 const BillingInfoSection = ({ 
   formData, 
@@ -28,13 +29,20 @@ const BillingInfoSection = ({
   onUpdate,
   getSensitiveFieldValue,
   onFocusSensitive,
-  onBlurSensitive
+  onBlurSensitive,
+  showBilling = true,  // Nueva prop para controlar visibilidad
+  showUpdateButton = true  // Nueva prop para controlar el botón
 }) => {
   
   const handleRegionChange = (event) => {
     const value = event.target.value;
     onRegionChange('billing', 'billingRegion', 'billingComuna', value);
   };
+
+  // No renderizar si showBilling es false
+  if (!showBilling) {
+    return null;
+  }
 
   return (
     <Box sx={{ p: 3, height: 'fit-content' }}>
@@ -96,7 +104,17 @@ const BillingInfoSection = ({
             value={formData.billingRegion || ''}
             onChange={handleRegionChange}
             label="Región"
-            MenuProps={{ disableScrollLock: true }}
+            MenuProps={{ 
+              disableScrollLock: true,
+              disablePortal: true,
+              PaperProps: {
+                style: {
+                  maxHeight: 48 * 5 + 8, // 5 elementos × 48px altura + padding
+                  overflowX: 'hidden',
+                  overflowY: 'auto',
+                },
+              },
+            }}
           >
             {regiones.map(region => (
               <MenuItem key={region.value} value={region.value}>
@@ -112,7 +130,17 @@ const BillingInfoSection = ({
             value={formData.billingComuna || ''}
             onChange={(e) => onFieldChange('billingComuna', e.target.value)}
             label="Comuna"
-            MenuProps={{ disableScrollLock: true }}
+            MenuProps={{ 
+              disableScrollLock: true,
+              disablePortal: true,
+              PaperProps: {
+                style: {
+                  maxHeight: 48 * 5 + 8, // 5 elementos × 48px altura + padding
+                  overflowX: 'hidden',
+                  overflowY: 'auto',
+                },
+              },
+            }}
           >
             {(formData.billingRegion ? getComunasByRegion(formData.billingRegion) : []).map(comuna => (
               <MenuItem key={comuna.value} value={comuna.value}>
@@ -122,19 +150,22 @@ const BillingInfoSection = ({
           </Select>
         </FormControl>
         
-        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
-          <Button 
-            variant="contained" 
-            onClick={onUpdate}
-            disabled={!hasChanges || loading}
-            sx={{ 
-              bgcolor: 'primary.main',
-              '&:hover': { bgcolor: 'primary.dark' }
-            }}
-          >
-            {loading ? 'Actualizando...' : 'Actualizar'}
-          </Button>
-        </Box>
+        {/* Botón Actualizar - Solo se muestra si showUpdateButton es true */}
+        {showUpdateButton && (
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
+            <Button 
+              variant="contained" 
+              onClick={onUpdate}
+              disabled={!hasChanges || loading}
+              sx={{ 
+                bgcolor: 'primary.main',
+                '&:hover': { bgcolor: 'primary.dark' }
+              }}
+            >
+              {loading ? 'Actualizando...' : 'Actualizar'}
+            </Button>
+          </Box>
+        )}
       </Box>
     </Box>
   );

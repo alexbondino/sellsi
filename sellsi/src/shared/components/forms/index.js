@@ -7,5 +7,7 @@ export { default as ImageUploader } from './ImageUploader'
 export { default as LogoUploader } from './LogoUploader'
 export { default as SearchBar } from './SearchBar'
 export { default as SelectChip } from './SelectChip'
+export { default as TaxDocumentSelector } from './TaxDocumentSelector'
+export { default as BillingInfoForm } from './BillingInfoForm'
 
 // Pricing components

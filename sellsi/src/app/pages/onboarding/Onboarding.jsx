@@ -22,6 +22,8 @@ import { supabase } from '../../../services/supabase';
 // Asumimos que estos componentes existen en tu proyecto y están bien estilizados.
 import PrimaryButton from '../../../shared/components/forms/PrimaryButton';
 import CountrySelector from '../../../shared/components/forms/CountrySelector';
+import { TaxDocumentSelector, BillingInfoForm } from '../../../shared/components';
+import { Collapse } from '@mui/material';
 
 // ==================================================================
 // COMPONENTE HELPER: Uploader de logos (estilo mejorado)
@@ -114,6 +116,17 @@ const Onboarding = () => {
     telefonoContacto: '',
     codigoPais: '', // Default to Chile
     descripcionProveedor: '',
+    
+    // Campos de Documento Tributario
+    documentTypes: [],
+    
+    // Campos de Información de Facturación
+    businessName: '',
+    billingRut: '',
+    businessLine: '',
+    billingAddress: '',
+    billingRegion: '',
+    billingComuna: ''
   });
 
   const [logoFile, setLogoFile] = useState(null);
@@ -169,15 +182,26 @@ const Onboarding = () => {
 
   const handleFinishOnboarding = async () => {
     if (!formData.accountType) {
-      toast.error('Por favor, elige un tipo de cuenta.');
+      console.error('Por favor, elige un tipo de cuenta.');
       return;
     }
     if (!formData.nombreEmpresa.trim()) {
-      toast.error('El nombre es obligatorio.');
+      console.error('El nombre es obligatorio.');
       return;
     }
+    
+    // Validar campos de facturación si es proveedor y seleccionó factura
+    if (formData.accountType === 'proveedor' && 
+        formData.documentTypes?.includes('factura')) {
+      if (!formData.businessName || !formData.billingRut || !formData.businessLine ||
+          !formData.billingAddress || !formData.billingRegion || !formData.billingComuna) {
+        console.error('Por favor completa todos los campos de información de facturación.');
+        return;
+      }
+    }
+    
     if (logoError) {
-      toast.error('Corrige el error del logo antes de continuar.');
+      console.error('Corrige el error del logo antes de continuar.');
       return;
     }
 
@@ -258,6 +282,17 @@ const Onboarding = () => {
         // Añadir descripción solo si es proveedor
         ...(formData.accountType === 'proveedor' && {
           descripcion_proveedor: formData.descripcionProveedor,
+          // Campos de documento tributario
+          document_types: formData.documentTypes || [],
+          // Campos de facturación si seleccionó factura
+          ...(formData.documentTypes?.includes('factura') && {
+            business_name: formData.businessName,
+            billing_rut: formData.billingRut,
+            business_line: formData.businessLine,
+            billing_address: formData.billingAddress,
+            billing_region: formData.billingRegion,
+            billing_comuna: formData.billingComuna
+          })
         }),
       };
 
@@ -270,17 +305,34 @@ const Onboarding = () => {
         throw new Error(`Error al guardar tu perfil: ${upsertError.message}`);
       }
 
-      toast.success('¡Perfil actualizado con éxito!');
+      console.log('¡Perfil actualizado con éxito!');
       window.location.reload();
     } catch (error) {
       console.error('❌ Error al actualizar el perfil:', error);
-      toast.error(error.message || 'Hubo un error al guardar tu perfil.');
+      console.error(error.message || 'Hubo un error al guardar tu perfil.');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const isFormValid = formData.accountType && formData.nombreEmpresa.trim();
+  const isFormValid = () => {
+    const hasBasicInfo = formData.accountType && formData.nombreEmpresa.trim();
+    
+    // Si es proveedor y seleccionó factura, validar campos de facturación
+    if (formData.accountType === 'proveedor' && 
+        formData.documentTypes?.includes('factura')) {
+      const hasBillingInfo = formData.businessName && 
+        formData.billingRut && 
+        formData.businessLine &&
+        formData.billingAddress &&
+        formData.billingRegion &&
+        formData.billingComuna;
+      
+      return hasBasicInfo && hasBillingInfo;
+    }
+    
+    return hasBasicInfo;
+  };
 
   return (
     <>
@@ -610,13 +662,66 @@ const Onboarding = () => {
                 </Paper>
               </Grid>
             </Grid>
+
+            {/* Sección específica para proveedores - Documento Tributario e Información de Facturación */}
+            {/* Esta sección está FUERA del Grid principal para que ocupe todo el ancho disponible */}
+            <Collapse in={formData.accountType === 'proveedor'}>
+              {formData.accountType === 'proveedor' && (
+                <Box sx={{ mt: 4, maxWidth: { xs: '100%', md: '800px', lg: '950px' }, mx: 'auto' }}>
+                  <Divider sx={{ mb: 3 }}>
+                    <Typography variant="body2" color="text.secondary">
+                      Configuración Tributaria
+                    </Typography>
+                  </Divider>
+
+                  {/* Grid para layout horizontal */}
+                  <Grid container spacing={3}>
+                    {/* Columna izquierda: Selector de tipo de documento */}
+                    <Grid size={{ xs: 12, md: 6 }}>
+                      <TaxDocumentSelector
+                        documentTypes={formData.documentTypes}
+                        onDocumentTypesChange={(types) => 
+                          handleFieldChange('documentTypes', types)
+                        }
+                        showTitle={true}
+                        size="medium"
+                      />
+                    </Grid>
+
+                    {/* Columna derecha: Información de facturación (solo si selecciona factura) */}
+                    <Grid size={{ xs: 12, md: 6 }}>
+                      <Collapse in={formData.documentTypes?.includes('factura')}>
+                        {formData.documentTypes?.includes('factura') && (
+                          <Box sx={{ 
+                            border: 1, 
+                            borderColor: 'divider', 
+                            borderRadius: 2, 
+                            p: 3,
+                            mb: 5,
+                            bgcolor: 'grey.50',
+                            height: 'fit-content'
+                          }}>
+                            <BillingInfoForm
+                              formData={formData}
+                              onFieldChange={handleFieldChange}
+                              showTitle={true}
+                              size="small"
+                            />
+                          </Box>
+                        )}
+                      </Collapse>
+                    </Grid>
+                  </Grid>
+                </Box>
+              )}
+            </Collapse>
           </Box>
 
           {/* --- SECCIÓN 3: BOTÓN DE ACCIÓN FINAL --- */}
           <Box sx={{ mt: 6, display: 'flex', justifyContent: 'center' }}>
             <PrimaryButton
               onClick={handleFinishOnboarding}
-              disabled={isLoading || !isFormValid} // 'disabled' prop ya controla el estado
+              disabled={isLoading || !isFormValid()} // 'disabled' prop ya controla el estado
               sx={{
                 py: 1.8,
                 px: 8,

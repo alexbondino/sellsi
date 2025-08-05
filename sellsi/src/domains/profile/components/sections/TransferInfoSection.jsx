@@ -1,7 +1,8 @@
 import React from 'react';
-import { Box, Typography, TextField } from '@mui/material';
+import { Box, Typography, TextField, FormControl, Select, MenuItem } from '@mui/material';
 import ProfileSwitch from '../ProfileSwitch';
 import { validateRut, validateEmail } from '../../../../utils/validators';
+import { BANKS, ACCOUNT_TYPES } from '../../../../shared/constants/profile';
 
 /**
  * Sección de Información de Transferencia del perfil
@@ -34,22 +35,62 @@ const TransferInfoSection = ({
           <Typography variant="body2" sx={{ minWidth: 120 }}>
             Tipo de Cuenta
           </Typography>
-          <ProfileSwitch
-            type="accountType"
-            value={formData.accountType || 'corriente'}
-            onChange={(e, newValue) => onFieldChange('accountType', newValue)}
-            sx={{ flexGrow: 1 }}
-          />
+          <FormControl size="small" sx={{ flexGrow: 1 }}>
+            <Select
+              value={formData.accountType || 'corriente'}
+              onChange={(e) => onFieldChange('accountType', e.target.value)}
+              displayEmpty
+              MenuProps={{
+                disableScrollLock: true,
+                disablePortal: true,
+                PaperProps: {
+                  style: {
+                    maxHeight: 48 * 5 + 8, // 5 elementos × 48px altura + padding
+                    overflowX: 'hidden',
+                    overflowY: 'auto',
+                  },
+                },
+              }}
+            >
+              {ACCOUNT_TYPES.map((type) => (
+                <MenuItem key={type.value} value={type.value}>
+                  {type.label}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
         </Box>
         
-        <TextField
-          label="Banco"
-          value={formData.bank || ''}
-          onChange={(e) => onFieldChange('bank', e.target.value)}
-          fullWidth
-          variant="outlined"
-          size="small"
-        />
+        <FormControl fullWidth size="small">
+          <Typography variant="body2" sx={{ mb: 1 }}>
+            Banco
+          </Typography>
+          <Select
+            value={formData.bank || ''}
+            onChange={(e) => onFieldChange('bank', e.target.value)}
+            displayEmpty
+            MenuProps={{
+              disableScrollLock: true,
+              disablePortal: true,
+              PaperProps: {
+                style: {
+                  maxHeight: 48 * 5 + 8, // 5 elementos × 48px altura + padding
+                  overflowX: 'hidden',
+                  overflowY: 'auto',
+                },
+              },
+            }}
+          >
+            <MenuItem value="">
+              <em>Seleccionar banco</em>
+            </MenuItem>
+            {BANKS.map((bank) => (
+              <MenuItem key={bank} value={bank}>
+                {bank}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
         
         <TextField
           label="N° de Cuenta"

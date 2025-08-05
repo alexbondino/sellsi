@@ -62,6 +62,9 @@ export const mapUserProfileToFormData = (userProfile) => {
     transferRut: userProfile.transfer_rut || '',
     confirmationEmail: userProfile.confirmation_email || '',
 
+    // Documento Tributario
+    documentTypes: userProfile.document_types || [],
+
     // Información de Facturación
     businessName: userProfile.business_name || '',
     billingRut: userProfile.billing_rut || '',
@@ -104,6 +107,9 @@ export const mapFormDataToUserProfile = (formData, userProfile) => {
     account_number: formData.accountNumber,
     transfer_rut: formData.transferRut,
     confirmation_email: formData.confirmationEmail,
+    
+    // Documento Tributario
+    document_types: formData.documentTypes || [],
     
     // Información de Facturación
     business_name: formData.businessName,

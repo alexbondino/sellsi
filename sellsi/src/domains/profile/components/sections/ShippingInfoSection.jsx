@@ -41,7 +41,17 @@ const ShippingInfoSection = ({
             value={formData.shippingRegion || ''}
             onChange={handleRegionChange}
             label="Región"
-            MenuProps={{ disableScrollLock: true }}
+            MenuProps={{ 
+              disableScrollLock: true,
+              disablePortal: true,
+              PaperProps: {
+                style: {
+                  maxHeight: 48 * 5 + 8, // 5 elementos × 48px altura + padding
+                  overflowX: 'hidden',
+                  overflowY: 'auto',
+                },
+              },
+            }}
           >
             {regiones.map(region => (
               <MenuItem key={region.value} value={region.value}>
@@ -59,7 +69,17 @@ const ShippingInfoSection = ({
               onFieldChange('shippingComuna', e.target.value);
             }}
             label="Comuna"
-            MenuProps={{ disableScrollLock: true }}
+            MenuProps={{ 
+              disableScrollLock: true,
+              disablePortal: true,
+              PaperProps: {
+                style: {
+                  maxHeight: 48 * 5 + 8, // 5 elementos × 48px altura + padding
+                  overflowX: 'hidden',
+                  overflowY: 'auto',
+                },
+              },
+            }}
           >
             {(formData.shippingRegion ? getComunasByRegion(formData.shippingRegion) : []).map(comuna => (
               <MenuItem key={comuna.value} value={comuna.value}>
