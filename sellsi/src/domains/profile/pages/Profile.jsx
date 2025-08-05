@@ -31,7 +31,7 @@ import CompanyInfoSection from '../components/sections/CompanyInfoSection';
 import TaxDocumentSection from '../components/TaxDocumentSection';
 
 // Utilidades
-import { getInitials } from '../../../utils/profileHelpers';
+import { getInitials, mapFormDataToUserProfile } from '../../../utils/profileHelpers';
 import { trackUserAction } from '../../../services/security';
 import { getUserProfile, updateUserProfile, uploadProfileImage, deleteAllUserImages } from '../../../services/user';
 import { supabase } from '../../../services/supabase';
@@ -95,7 +95,7 @@ const Profile = ({ userProfile: initialUserProfile, onUpdateProfile: externalUpd
         shipping_dept: data.shipping_dept,
         account_holder: data.account_holder,
         account_type: data.account_type,
-        bank: data.bank,
+        bank: data.bank || '', // Asegurar que bank no sea null/undefined para evitar el error de MUI
         account_number: data.account_number,
         transfer_rut: data.transfer_rut,
         confirmation_email: data.confirmation_email,
@@ -106,6 +106,8 @@ const Profile = ({ userProfile: initialUserProfile, onUpdateProfile: externalUpd
         billing_region: data.billing_region,
         billing_comuna: data.billing_comuna,
         logo_url: data.logo_url,
+        // ✅ AGREGAR: Mapear document_types desde la BD
+        documentTypes: data.document_types || [],
       };
 
       setUserProfile(mappedProfile);
@@ -232,8 +234,8 @@ const Profile = ({ userProfile: initialUserProfile, onUpdateProfile: externalUpd
 
     setLoading(true);
     try {
-      // Preparar datos para actualizar (excluyendo imagen y nombre)
-      let dataToUpdate = { ...formData };
+      // ✅ MAPEAR CORRECTAMENTE: FormData → BD format
+      let dataToUpdate = mapFormDataToUserProfile(formData, loadedProfile);
       
       // Eliminar campos que se manejan automáticamente
       delete dataToUpdate.profileImage;

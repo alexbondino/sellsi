@@ -4,6 +4,27 @@
  */
 
 import { supabase } from '../supabase';
+import { BANKS } from '../../shared/constants/profile';
+
+/**
+ * Limpia y valida el valor del banco
+ * @param {string} bankValue - Valor del banco a validar
+ * @returns {string} - Valor del banco válido o cadena vacía
+ */
+const cleanBankValue = (bankValue) => {
+  if (!bankValue || typeof bankValue !== 'string') {
+    return '';
+  }
+  
+  // Si el banco está en la lista de bancos válidos, devolverlo
+  if (BANKS.includes(bankValue)) {
+    return bankValue;
+  }
+  
+  // Si no está en la lista, devolver cadena vacía
+  console.warn(`Banco inválido encontrado: "${bankValue}". Limpiando valor.`);
+  return '';
+};
 
 /**
  * Obtiene el perfil completo del usuario uniendo todas las tablas relacionadas
@@ -76,7 +97,7 @@ export const getUserProfile = async (userId) => {
       ...userData,
       // Información bancaria (opcional)
       account_holder: bankData?.account_holder || '',
-      bank: bankData?.bank || '',
+      bank: cleanBankValue(bankData?.bank), // ✅ LIMPIAR: Validar banco
       account_number: bankData?.account_number || '',
       transfer_rut: bankData?.transfer_rut || '',
       confirmation_email: bankData?.confirmation_email || '',
@@ -99,6 +120,9 @@ export const getUserProfile = async (userId) => {
 
       // Descripción de proveedor
       descripcion_proveedor: userData?.descripcion_proveedor || '',
+      
+      // ✅ AGREGAR: Tipos de documento tributario
+      document_types: userData?.document_types || [],
     };
 
     return { data: completeProfile, error: null };
@@ -125,7 +149,8 @@ export const updateUserProfile = async (userId, profileData) => {
       rut: profileData.rut,
       updatedt: new Date().toISOString(),
       descripcion_proveedor: profileData.descripcionProveedor || profileData.descripcion_proveedor || '',
-      document_types: profileData.document_types || [], // Campo de tipos de documento tributario
+      // ✅ CORREGIR: Mapear tanto documentTypes (frontend) como document_types (BD)
+      document_types: profileData.documentTypes || profileData.document_types || [],
     };
 
     // Agregar logo_url solo si se proporciona
