@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
 import { supabase } from '../../services/supabase';
-import { TransferInfoManager } from '../../shared/components/managers';
 
 // Constante para el estado pendiente del nombre de usuario
 const USER_NAME_STATUS = {
@@ -167,7 +166,6 @@ export const AuthProvider = ({ children }) => {
 
   return (
     <AuthContext.Provider value={value}>
-      <TransferInfoManager />
       {children}
     </AuthContext.Provider>
   );
