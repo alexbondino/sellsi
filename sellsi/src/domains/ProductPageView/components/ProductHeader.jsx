@@ -38,6 +38,7 @@ import StockIndicator from '../../marketplace/StockIndicator/StockIndicator'
 import QuotationModal from './QuotationModal'
 import { useProductPriceTiers } from '../../../shared/hooks/product/useProductPriceTiers';
 import ContactModal from '../../../shared/components/modals/ContactModal';
+import { useSupplierDocumentTypes } from '../../../shared/utils/supplierDocumentTypes';
 
 const ProductHeader = React.memo(({
   product,
@@ -80,6 +81,24 @@ const ProductHeader = React.memo(({
     isUserDataReady, 
     isLoadingOwnership 
   } = useOptimizedProductOwnership();
+
+  // Hook para obtener tipos de documentos permitidos por el proveedor
+  const supplierId = product?.supplier_id || product?.supplierId;
+  const { 
+    documentTypes: supplierDocumentTypes, 
+    availableOptions, 
+    loading: loadingDocumentTypes,
+    error: documentTypesError 
+  } = useSupplierDocumentTypes(supplierId);
+
+  // Debug logs
+  console.log('🔍 [ProductHeader] Debug supplier document types:', {
+    supplierId,
+    supplierDocumentTypes,
+    availableOptions,
+    loadingDocumentTypes,
+    documentTypesError
+  });
 
   const [copied, setCopied] = useState({ name: false, price: false })
   // ✅ NUEVO: Estado para el modal de cotización
@@ -568,7 +587,7 @@ const ProductHeader = React.memo(({
               gap: { xs: 2, md: 1 }, // Más gap en móvil
             }}
           >
-            {/* Fila 1: Chips de facturación */}
+            {/* Fila 1: Chips de facturación dinámicos */}
             <Box sx={{ 
               display: 'flex', 
               gap: { xs: 1.5, md: 1 }, // Más gap en móvil
@@ -576,42 +595,72 @@ const ProductHeader = React.memo(({
               width: '100%',
               justifyContent: { xs: 'flex-start', md: 'flex-start' } // Alineación consistente
             }}>
-              <Chip
-                label="Factura"
-                size={isMobile ? "medium" : "small"} // Chips más grandes en móvil
-                sx={{
-                  backgroundColor: 'primary.main',
-                  color: 'white',
-                  fontSize: { xs: '0.8rem', md: '0.75rem' }, // Texto un poco más grande móvil
-                  '&:hover': {
-                    backgroundColor: 'primary.main',
-                  },
-                }}
-              />
-              <Chip
-                label="Boleta"
-                size={isMobile ? "medium" : "small"}
-                sx={{
-                  backgroundColor: 'primary.main',
-                  color: 'white',
-                  fontSize: { xs: '0.8rem', md: '0.75rem' },
-                  '&:hover': {
-                    backgroundColor: 'primary.main',
-                  },
-                }}
-              />
-              <Chip
-                label="Ninguno"
-                size={isMobile ? "medium" : "small"}
-                sx={{
-                  backgroundColor: 'primary.main',
-                  color: 'white',
-                  fontSize: { xs: '0.8rem', md: '0.75rem' },
-                  '&:hover': {
-                    backgroundColor: 'primary.main',
-                  },
-                }}
-              />
+              {loadingDocumentTypes ? (
+                <Typography variant="body2" color="text.secondary">
+                  Cargando opciones...
+                </Typography>
+              ) : availableOptions && availableOptions.length > 0 ? (
+                // Si solo hay "ninguno", no mostrar ningún chip
+                availableOptions.length === 1 && availableOptions[0].value === 'ninguno' ? null : (
+                  availableOptions
+                    .filter(option => option.value !== 'ninguno') // Excluir "ninguno" de los chips
+                    .map((option) => (
+                      <Chip
+                        key={option.value}
+                        label={option.label}
+                        size={isMobile ? "medium" : "small"}
+                        sx={{
+                          backgroundColor: 'primary.main',
+                          color: 'white',
+                          fontSize: { xs: '0.8rem', md: '0.75rem' },
+                          '&:hover': {
+                            backgroundColor: 'primary.main',
+                          },
+                        }}
+                      />
+                    ))
+                )
+              ) : (
+                // Fallback a opciones por defecto si hay error o no hay datos
+                <>
+                  <Chip
+                    label="Factura"
+                    size={isMobile ? "medium" : "small"}
+                    sx={{
+                      backgroundColor: 'primary.main',
+                      color: 'white',
+                      fontSize: { xs: '0.8rem', md: '0.75rem' },
+                      '&:hover': {
+                        backgroundColor: 'primary.main',
+                      },
+                    }}
+                  />
+                  <Chip
+                    label="Boleta"
+                    size={isMobile ? "medium" : "small"}
+                    sx={{
+                      backgroundColor: 'primary.main',
+                      color: 'white',
+                      fontSize: { xs: '0.8rem', md: '0.75rem' },
+                      '&:hover': {
+                        backgroundColor: 'primary.main',
+                      },
+                    }}
+                  />
+                  <Chip
+                    label="Ninguno"
+                    size={isMobile ? "medium" : "small"}
+                    sx={{
+                      backgroundColor: 'primary.main',
+                      color: 'white',
+                      fontSize: { xs: '0.8rem', md: '0.75rem' },
+                      '&:hover': {
+                        backgroundColor: 'primary.main',
+                      },
+                    }}
+                  />
+                </>
+              )}
             </Box>
             {/* Fila 2: Stock */}
             <Box sx={{ width: '100%' }}>

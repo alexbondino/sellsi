@@ -32,6 +32,7 @@ import { CheckoutSummaryImage } from '../../../components/UniversalProductImage'
 import { useUnifiedShippingValidation } from '../../hooks/shipping/useUnifiedShippingValidation';
 import { calculatePriceForQuantity } from '../../../utils/priceCalculation';
 import { supabase } from '../../../services/supabase';
+import { useSupplierDocumentTypes } from '../../utils/supplierDocumentTypes';
 
 /**
  * ============================================================================
@@ -70,6 +71,24 @@ const AddToCartModal = ({
   const [quantityError, setQuantityError] = useState('');
   const [enrichedProduct, setEnrichedProduct] = useState(product);
   const [isLoadingRegions, setIsLoadingRegions] = useState(false);
+
+  // Hook para obtener tipos de documentos permitidos por el proveedor
+  const supplierId = enrichedProduct?.supplier_id || enrichedProduct?.supplierId;
+  const { 
+    documentTypes: supplierDocumentTypes, 
+    availableOptions, 
+    loading: loadingDocumentTypes,
+    error: documentTypesError 
+  } = useSupplierDocumentTypes(supplierId);
+
+  // Debug logs
+  console.log('🔍 [AddToCartModal] Debug supplier document types:', {
+    supplierId,
+    supplierDocumentTypes,
+    availableOptions,
+    loadingDocumentTypes,
+    documentTypesError
+  });
 
   // Función para cargar las regiones de despacho del producto
   const loadProductShippingRegions = useCallback(async (productId) => {
@@ -155,6 +174,17 @@ const AddToCartModal = ({
       setQuantityError(''); // Limpiar errores al abrir
     }
   }, [open, initialQuantity, enrichedProduct]);
+
+  // Establecer tipo de documento inicial basándose en opciones disponibles del proveedor
+  useEffect(() => {
+    if (open && availableOptions && availableOptions.length > 0) {
+      // Si el tipo actual no está disponible para este proveedor, usar el primero disponible
+      const currentIsAvailable = availableOptions.some(option => option.value === documentType);
+      if (!currentIsAvailable) {
+        setDocumentType(availableOptions[0].value);
+      }
+    }
+  }, [open, availableOptions, documentType]);
 
   // ============================================================================
   // DATOS DEL PRODUCTO Y VALIDACIONES
@@ -556,52 +586,115 @@ const AddToCartModal = ({
     </Paper>
   );
 
-  const DocumentTypeSelector = () => (
-    <Box
-      onClick={(e) => {
-        e.stopPropagation();
-      }}
-    >
-      <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 600 }}>
-        Tipo de Documento
-      </Typography>
-      <FormControl component="fieldset">
-        <RadioGroup
-          value={documentType}
-          onChange={handleDocumentTypeChange}
-          row
+  const DocumentTypeSelector = () => {
+    // Si está cargando los tipos de documentos del proveedor
+    if (loadingDocumentTypes) {
+      return (
+        <Box
           onClick={(e) => {
             e.stopPropagation();
           }}
         >
-          <FormControlLabel
-            value="factura"
-            control={<Radio size="small" />}
-            label="Factura"
+          <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 600 }}>
+            Tipo de Documento
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Cargando opciones...
+          </Typography>
+        </Box>
+      );
+    }
+
+    // Si hay error cargando los tipos de documentos o no hay availableOptions
+    if (documentTypesError || !availableOptions || availableOptions.length === 0) {
+      return (
+        <Box
+          onClick={(e) => {
+            e.stopPropagation();
+          }}
+        >
+          <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 600 }}>
+            Tipo de Documento
+          </Typography>
+          <FormControl component="fieldset">
+            <RadioGroup
+              value={documentType}
+              onChange={handleDocumentTypeChange}
+              row
+              onClick={(e) => {
+                e.stopPropagation();
+              }}
+            >
+              <FormControlLabel
+                value="factura"
+                control={<Radio size="small" />}
+                label="Factura"
+                onClick={(e) => {
+                  e.stopPropagation();
+                }}
+              />
+              <FormControlLabel
+                value="boleta"
+                control={<Radio size="small" />}
+                label="Boleta"
+                onClick={(e) => {
+                  e.stopPropagation();
+                }}
+              />
+              <FormControlLabel
+                value="ninguno"
+                control={<Radio size="small" />}
+                label="Ninguno"
+                onClick={(e) => {
+                  e.stopPropagation();
+                }}
+              />
+            </RadioGroup>
+          </FormControl>
+        </Box>
+      );
+    }
+
+    // Si solo hay "ninguno" como opción, no mostrar nada
+    if (availableOptions.length === 1 && availableOptions[0].value === 'ninguno') {
+      return null;
+    }
+
+    // Mostrar solo las opciones disponibles para este proveedor (excluyendo caso de solo "ninguno")
+    return (
+      <Box
+        onClick={(e) => {
+          e.stopPropagation();
+        }}
+      >
+        <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 600 }}>
+          Tipo de Documento
+        </Typography>
+        <FormControl component="fieldset">
+          <RadioGroup
+            value={documentType}
+            onChange={handleDocumentTypeChange}
+            row
             onClick={(e) => {
               e.stopPropagation();
             }}
-          />
-          <FormControlLabel
-            value="boleta"
-            control={<Radio size="small" />}
-            label="Boleta"
-            onClick={(e) => {
-              e.stopPropagation();
-            }}
-          />
-          <FormControlLabel
-            value="ninguno"
-            control={<Radio size="small" />}
-            label="Ninguno"
-            onClick={(e) => {
-              e.stopPropagation();
-            }}
-          />
-        </RadioGroup>
-      </FormControl>
-    </Box>
-  );
+          >
+            {availableOptions.map((option) => (
+              <FormControlLabel
+                key={option.value}
+                value={option.value}
+                control={<Radio size="small" />}
+                label={option.label}
+                onClick={(e) => {
+                  e.stopPropagation();
+                }}
+              />
+            ))}
+          </RadioGroup>
+        </FormControl>
+      </Box>
+    );
+  };
 
   const ShippingStatus = () => {
     // Mostrar carga mientras se cargan las regiones del producto O el perfil del usuario
