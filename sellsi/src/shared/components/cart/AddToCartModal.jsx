@@ -496,12 +496,17 @@ const AddToCartModal = ({
       }}
     >
       <Stack direction="row" spacing={2} alignItems="center">
-        <CheckoutSummaryImage
-          product={productData}
-          sx={{ 
-            pointerEvents: 'none',
-          }}
-        />
+        <Box sx={{ width: 50, height: 50, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <CheckoutSummaryImage
+            product={productData}
+            sx={{ 
+              width: 50,
+              height: 50,
+              objectFit: 'contain',
+              pointerEvents: 'none',
+            }}
+          />
+        </Box>
         <Box sx={{ flex: 1 }}>
           <Stack direction="row" justifyContent="space-between" alignItems="flex-start" sx={{ mb: 0.5 }}>
             <Typography variant="body1" sx={{ fontWeight: 600, flex: 1, pointerEvents: 'none' }}>
@@ -546,9 +551,6 @@ const AddToCartModal = ({
               </Typography>
             </Box>
           </Stack>
-          <Typography variant="body2" color="text.secondary" sx={{ pointerEvents: 'none' }}>
-            Precio unitario: ${currentPricing.unitPrice.toLocaleString('es-CL')}
-          </Typography>
         </Box>
       </Stack>
     </Paper>
@@ -755,9 +757,9 @@ const AddToCartModal = ({
               top: 0,
               zIndex: 1,
             }}>
-              <Stack direction="row" justifyContent="space-between" alignItems="center">
+            <Stack direction="row" justifyContent="space-between" alignItems="center">
                 <Typography variant="h6" sx={{ fontWeight: 700 }}>
-                  {productData.name}
+                  Resumen del Pedido
                 </Typography>
                 <IconButton onClick={handleClose} size="small">
                   <CloseIcon />

@@ -227,7 +227,7 @@ const PriceBreakdown = ({
           variant="h5"
           fontWeight="bold"
           sx={{
-            background: '#1565c0',
+            background: '#000000ff',
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
           }}

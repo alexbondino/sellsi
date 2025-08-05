@@ -286,7 +286,7 @@ const CheckoutSummary = ({
           <Typography variant="h6" fontWeight="bold">
             Total
           </Typography>
-          <Typography variant="h6" fontWeight="bold" color="primary">
+          <Typography variant="h6" fontWeight="bold" color="#000000ff">
             {/* <-- CORREGIDO: Muestra el total del pedido, sin comisiones adivinadas. */}
             {checkoutService.formatPrice(orderTotal)}
           </Typography>

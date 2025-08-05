@@ -25,7 +25,7 @@
 | security/banService.js | Service | ~163 | MEDIA | Sistema de baneos por usuario/IP | supabase, ipTrackingService |
 | security/ipTrackingService.js | Service | ~200 | MEDIA | Tracking de IPs y geolocalización | supabase, external APIs |
 | payment/khipuService.js | Service | ~215 | ALTA | Integración completa con Khipu | supabase, crypto para HMAC |
-| media/uploadService.js | Service | ~426 | ALTA | Upload de archivos con thumbnails | supabase storage |
+| shared/services/upload/uploadService.js | Service | ~501 | ALTA | Upload de archivos con thumbnails y cleanup | supabase storage, StorageCleanupService |
 | media/thumbnailService.js | Service | ~100 | BAJA | Generación de thumbnails | supabase functions |
 | marketplace/productSpecificationsService.js | Service | ~120 | MEDIA | CRUD especificaciones productos | supabase |
 | marketplace/productDeliveryRegionsService.js | Service | ~50 | BAJA | Gestión regiones entrega | supabase |

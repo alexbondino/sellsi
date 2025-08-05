@@ -1,204 +1,104 @@
-useShippingPerformanceMonitor.js:44 📊 [ProductCard-48aa] Component unmounted after 82277ms, queries: 2
-useShippingPerformanceMonitor.js:44 📊 [ProductCard-305f] Component unmounted after 82251ms, queries: 2
-useShippingPerformanceMonitor.js:44 📊 [ProductCard-6075] Component unmounted after 82231ms, queries: 2
-useShippingPerformanceMonitor.js:44 📊 [ProductCard-84e1] Component unmounted after 82210ms, queries: 2
-useShippingPerformanceMonitor.js:44 📊 [ProductCard-4cc7] Component unmounted after 82190ms, queries: 2
-useShippingPerformanceMonitor.js:44 📊 [ProductCard-349a] Component unmounted after 82163ms, queries: 2
-useShippingPerformanceMonitor.js:44 📊 [ProductCard-b470] Component unmounted after 82137ms, queries: 2
-useShippingPerformanceMonitor.js:44 📊 [ProductCard-08fe] Component unmounted after 82093ms, queries: 2
-useShippingPerformanceMonitor.js:44 📊 [ProductCard-6b13] Component unmounted after 82072ms, queries: 2
-useShippingPerformanceMonitor.js:44 📊 [ProductCard-b61e] Component unmounted after 82050ms, queries: 2
-useShippingPerformanceMonitor.js:44 📊 [ProductCard-3445] Component unmounted after 82026ms, queries: 2
-useShippingPerformanceMonitor.js:44 📊 [ProductCard-7a64] Component unmounted after 82004ms, queries: 2
-useShippingPerformanceMonitor.js:44 📊 [ProductCard-1275] Component unmounted after 81984ms, queries: 2
-useShippingPerformanceMonitor.js:44 📊 [ProductCard-d145] Component unmounted after 81958ms, queries: 2
-useShippingPerformanceMonitor.js:44 📊 [ProductCard-09c1] Component unmounted after 81938ms, queries: 2
-useShippingPerformanceMonitor.js:44 📊 [ProductCard-20fa] Component unmounted after 82323ms, queries: 2
-useShippingPerformanceMonitor.js:44 📊 [ProductCard-0f62] Component unmounted after 82125ms, queries: 2
-useShippingPerformanceMonitor.js:40 📊 [ProductCard-20fa] Component mounted
-useShippingPerformanceMonitor.js:52 🔍 [ProductCard-20fa] component-mount query #1 {productId: '69c930ae-f86a-4dbe-be23-982c662d20fa', productName: 'Vino El Peuco Chardonnay, 750cc'}
-useShippingPerformanceMonitor.js:40 📊 [ProductCard-48aa] Component mounted
-useShippingPerformanceMonitor.js:52 🔍 [ProductCard-48aa] component-mount query #1 {productId: '3baeb9f1-33ba-4956-b2d1-cbc05b2b48aa', productName: 'Caja 2 vinos Late Harvest'}
-useShippingPerformanceMonitor.js:40 📊 [ProductCard-305f] Component mounted
-useShippingPerformanceMonitor.js:52 🔍 [ProductCard-305f] component-mount query #1 {productId: '26df1134-63d9-4f32-9217-c2496629305f', productName: 'Pisco El Mesías, 750cc'}
-useShippingPerformanceMonitor.js:40 📊 [ProductCard-6075] Component mounted
-useShippingPerformanceMonitor.js:52 🔍 [ProductCard-6075] component-mount query #1 {productId: '956bb71e-759f-4a56-846b-5fe0fb596075', productName: 'Tabaco Ross Premium, 45 gr'}
-useShippingPerformanceMonitor.js:40 📊 [ProductCard-84e1] Component mounted
-useShippingPerformanceMonitor.js:52 🔍 [ProductCard-84e1] component-mount query #1 {productId: '40030ef5-8ef2-434d-9960-d7174f7b84e1', productName: 'Vino Cerro Name Reserva, Cabernet 750cc'}
-useShippingPerformanceMonitor.js:40 📊 [ProductCard-4cc7] Component mounted
-useShippingPerformanceMonitor.js:52 🔍 [ProductCard-4cc7] component-mount query #1 {productId: 'c3b869a7-e589-43d1-b36f-987701d44cc7', productName: 'Vino Tinto 600cc'}
-useShippingPerformanceMonitor.js:40 📊 [ProductCard-349a] Component mounted
-useShippingPerformanceMonitor.js:52 🔍 [ProductCard-349a] component-mount query #1 {productId: 'a21aca9b-4853-4af9-9883-3518fc6a349a', productName: 'Vino El Peuco Carignan 750cc Doña Aurora'}
-useShippingPerformanceMonitor.js:40 📊 [ProductCard-b470] Component mounted
-useShippingPerformanceMonitor.js:52 🔍 [ProductCard-b470] component-mount query #1 {productId: '016920c8-442d-4f30-8dc3-be24c4c0b470', productName: 'Vino Stark Haus Gran Reserva 700cc'}
-useShippingPerformanceMonitor.js:40 📊 [ProductCard-0f62] Component mounted
-useShippingPerformanceMonitor.js:52 🔍 [ProductCard-0f62] component-mount query #1 {productId: '9029638f-33a6-4d91-9e3b-021be65a0f62', productName: 'Teeeeeest'}
-useShippingPerformanceMonitor.js:40 📊 [ProductCard-08fe] Component mounted
-useShippingPerformanceMonitor.js:52 🔍 [ProductCard-08fe] component-mount query #1 {productId: 'fee971f5-a288-4edf-861a-2cf2463a08fe', productName: 'Probando Refactor'}
-useShippingPerformanceMonitor.js:40 📊 [ProductCard-6b13] Component mounted
-useShippingPerformanceMonitor.js:52 🔍 [ProductCard-6b13] component-mount query #1 {productId: '16e20775-07ac-4ecb-b5c2-10fb69bc6b13', productName: 'Fixeees'}
-useShippingPerformanceMonitor.js:40 📊 [ProductCard-b61e] Component mounted
-useShippingPerformanceMonitor.js:52 🔍 [ProductCard-b61e] component-mount query #1 {productId: '34bb9472-b430-4910-a67a-d47aaf71b61e', productName: 'PAPAPAPAPA'}
-useShippingPerformanceMonitor.js:40 📊 [ProductCard-3445] Component mounted
-useShippingPerformanceMonitor.js:52 🔍 [ProductCard-3445] component-mount query #1 {productId: '8163198b-a8d7-4ff8-964f-bd45e7a63445', productName: 'Fixeees'}
-useShippingPerformanceMonitor.js:40 📊 [ProductCard-7a64] Component mounted
-useShippingPerformanceMonitor.js:52 🔍 [ProductCard-7a64] component-mount query #1 {productId: '1394be41-62dc-4225-a003-e0250e0f7a64', productName: 'Producto Tramos Nuevox'}
-useShippingPerformanceMonitor.js:40 📊 [ProductCard-1275] Component mounted
-useShippingPerformanceMonitor.js:52 🔍 [ProductCard-1275] component-mount query #1 {productId: '90daf94d-f91d-4b39-a3cc-016255621275', productName: 'Fixeees'}
-useShippingPerformanceMonitor.js:40 📊 [ProductCard-d145] Component mounted
-useShippingPerformanceMonitor.js:52 🔍 [ProductCard-d145] component-mount query #1 {productId: '4b5c650f-7a97-4910-910b-43f93b0fd145', productName: 'PSPSPSP'}
-useShippingPerformanceMonitor.js:40 📊 [ProductCard-09c1] Component mounted
-useShippingPerformanceMonitor.js:52 🔍 [ProductCard-09c1] component-mount query #1 {productId: '7f112164-f924-4c40-b698-192f9aa409c1', productName: 'PSPSPSP'}
-useShippingPerformanceMonitor.js:44 📊 [ProductCard-20fa] Component unmounted after 463ms, queries: 1
-useShippingPerformanceMonitor.js:40 📊 [ProductCard-20fa] Component mounted
-useShippingPerformanceMonitor.js:52 🔍 [ProductCard-20fa] component-mount query #2 {productId: '69c930ae-f86a-4dbe-be23-982c662d20fa', productName: 'Vino El Peuco Chardonnay, 750cc'}
-useShippingPerformanceMonitor.js:44 📊 [ProductCard-48aa] Component unmounted after 441ms, queries: 1
-useShippingPerformanceMonitor.js:40 📊 [ProductCard-48aa] Component mounted
-useShippingPerformanceMonitor.js:52 🔍 [ProductCard-48aa] component-mount query #2 {productId: '3baeb9f1-33ba-4956-b2d1-cbc05b2b48aa', productName: 'Caja 2 vinos Late Harvest'}
-useShippingPerformanceMonitor.js:44 📊 [ProductCard-305f] Component unmounted after 423ms, queries: 1
-useShippingPerformanceMonitor.js:40 📊 [ProductCard-305f] Component mounted
-useShippingPerformanceMonitor.js:52 🔍 [ProductCard-305f] component-mount query #2 {productId: '26df1134-63d9-4f32-9217-c2496629305f', productName: 'Pisco El Mesías, 750cc'}
-useShippingPerformanceMonitor.js:44 📊 [ProductCard-6075] Component unmounted after 398ms, queries: 1
-useShippingPerformanceMonitor.js:40 📊 [ProductCard-6075] Component mounted
-useShippingPerformanceMonitor.js:52 🔍 [ProductCard-6075] component-mount query #2 {productId: '956bb71e-759f-4a56-846b-5fe0fb596075', productName: 'Tabaco Ross Premium, 45 gr'}
-useShippingPerformanceMonitor.js:44 📊 [ProductCard-84e1] Component unmounted after 379ms, queries: 1
-useShippingPerformanceMonitor.js:40 📊 [ProductCard-84e1] Component mounted
-useShippingPerformanceMonitor.js:52 🔍 [ProductCard-84e1] component-mount query #2 {productId: '40030ef5-8ef2-434d-9960-d7174f7b84e1', productName: 'Vino Cerro Name Reserva, Cabernet 750cc'}
-useShippingPerformanceMonitor.js:44 📊 [ProductCard-4cc7] Component unmounted after 357ms, queries: 1
-useShippingPerformanceMonitor.js:40 📊 [ProductCard-4cc7] Component mounted
-useShippingPerformanceMonitor.js:52 🔍 [ProductCard-4cc7] component-mount query #2 {productId: 'c3b869a7-e589-43d1-b36f-987701d44cc7', productName: 'Vino Tinto 600cc'}
-useShippingPerformanceMonitor.js:44 📊 [ProductCard-349a] Component unmounted after 332ms, queries: 1
-useShippingPerformanceMonitor.js:40 📊 [ProductCard-349a] Component mounted
-useShippingPerformanceMonitor.js:52 🔍 [ProductCard-349a] component-mount query #2 {productId: 'a21aca9b-4853-4af9-9883-3518fc6a349a', productName: 'Vino El Peuco Carignan 750cc Doña Aurora'}
-useShippingPerformanceMonitor.js:44 📊 [ProductCard-b470] Component unmounted after 311ms, queries: 1
-useShippingPerformanceMonitor.js:40 📊 [ProductCard-b470] Component mounted
-useShippingPerformanceMonitor.js:52 🔍 [ProductCard-b470] component-mount query #2 {productId: '016920c8-442d-4f30-8dc3-be24c4c0b470', productName: 'Vino Stark Haus Gran Reserva 700cc'}
-useShippingPerformanceMonitor.js:44 📊 [ProductCard-0f62] Component unmounted after 287ms, queries: 1
-useShippingPerformanceMonitor.js:40 📊 [ProductCard-0f62] Component mounted
-useShippingPerformanceMonitor.js:52 🔍 [ProductCard-0f62] component-mount query #2 {productId: '9029638f-33a6-4d91-9e3b-021be65a0f62', productName: 'Teeeeeest'}
-useShippingPerformanceMonitor.js:44 📊 [ProductCard-08fe] Component unmounted after 271ms, queries: 1
-useShippingPerformanceMonitor.js:40 📊 [ProductCard-08fe] Component mounted
-useShippingPerformanceMonitor.js:52 🔍 [ProductCard-08fe] component-mount query #2 {productId: 'fee971f5-a288-4edf-861a-2cf2463a08fe', productName: 'Probando Refactor'}
-useShippingPerformanceMonitor.js:44 📊 [ProductCard-6b13] Component unmounted after 253ms, queries: 1
-useShippingPerformanceMonitor.js:40 📊 [ProductCard-6b13] Component mounted
-useShippingPerformanceMonitor.js:52 🔍 [ProductCard-6b13] component-mount query #2 {productId: '16e20775-07ac-4ecb-b5c2-10fb69bc6b13', productName: 'Fixeees'}
-useShippingPerformanceMonitor.js:44 📊 [ProductCard-b61e] Component unmounted after 233ms, queries: 1
-useShippingPerformanceMonitor.js:40 📊 [ProductCard-b61e] Component mounted
-useShippingPerformanceMonitor.js:52 🔍 [ProductCard-b61e] component-mount query #2 {productId: '34bb9472-b430-4910-a67a-d47aaf71b61e', productName: 'PAPAPAPAPA'}
-useShippingPerformanceMonitor.js:44 📊 [ProductCard-3445] Component unmounted after 212ms, queries: 1
-useShippingPerformanceMonitor.js:40 📊 [ProductCard-3445] Component mounted
-useShippingPerformanceMonitor.js:52 🔍 [ProductCard-3445] component-mount query #2 {productId: '8163198b-a8d7-4ff8-964f-bd45e7a63445', productName: 'Fixeees'}
-useShippingPerformanceMonitor.js:44 📊 [ProductCard-7a64] Component unmounted after 184ms, queries: 1
-useShippingPerformanceMonitor.js:40 📊 [ProductCard-7a64] Component mounted
-useShippingPerformanceMonitor.js:52 🔍 [ProductCard-7a64] component-mount query #2 {productId: '1394be41-62dc-4225-a003-e0250e0f7a64', productName: 'Producto Tramos Nuevox'}
-useShippingPerformanceMonitor.js:44 📊 [ProductCard-1275] Component unmounted after 163ms, queries: 1
-useShippingPerformanceMonitor.js:40 📊 [ProductCard-1275] Component mounted
-useShippingPerformanceMonitor.js:52 🔍 [ProductCard-1275] component-mount query #2 {productId: '90daf94d-f91d-4b39-a3cc-016255621275', productName: 'Fixeees'}
-useShippingPerformanceMonitor.js:44 📊 [ProductCard-d145] Component unmounted after 148ms, queries: 1
-useShippingPerformanceMonitor.js:40 📊 [ProductCard-d145] Component mounted
-useShippingPerformanceMonitor.js:52 🔍 [ProductCard-d145] component-mount query #2 {productId: '4b5c650f-7a97-4910-910b-43f93b0fd145', productName: 'PSPSPSP'}
-useShippingPerformanceMonitor.js:44 📊 [ProductCard-09c1] Component unmounted after 131ms, queries: 1
-useShippingPerformanceMonitor.js:40 📊 [ProductCard-09c1] Component mounted
-useShippingPerformanceMonitor.js:52 🔍 [ProductCard-09c1] component-mount query #2 {productId: '7f112164-f924-4c40-b698-192f9aa409c1', productName: 'PSPSPSP'}
-useShippingPerformanceMonitor.js:44 📊 [ProductCard-48aa] Component unmounted after 4347ms, queries: 2
-useShippingPerformanceMonitor.js:44 📊 [ProductCard-305f] Component unmounted after 4326ms, queries: 2
-useShippingPerformanceMonitor.js:44 📊 [ProductCard-6075] Component unmounted after 4299ms, queries: 2
-useShippingPerformanceMonitor.js:44 📊 [ProductCard-84e1] Component unmounted after 4278ms, queries: 2
-useShippingPerformanceMonitor.js:44 📊 [ProductCard-4cc7] Component unmounted after 4254ms, queries: 2
-useShippingPerformanceMonitor.js:44 📊 [ProductCard-349a] Component unmounted after 4226ms, queries: 2
-useShippingPerformanceMonitor.js:44 📊 [ProductCard-b470] Component unmounted after 4203ms, queries: 2
-useShippingPerformanceMonitor.js:44 📊 [ProductCard-08fe] Component unmounted after 4157ms, queries: 2
-useShippingPerformanceMonitor.js:44 📊 [ProductCard-6b13] Component unmounted after 4136ms, queries: 2
-useShippingPerformanceMonitor.js:44 📊 [ProductCard-b61e] Component unmounted after 4114ms, queries: 2
-useShippingPerformanceMonitor.js:44 📊 [ProductCard-3445] Component unmounted after 4091ms, queries: 2
-useShippingPerformanceMonitor.js:44 📊 [ProductCard-7a64] Component unmounted after 4062ms, queries: 2
-useShippingPerformanceMonitor.js:44 📊 [ProductCard-1275] Component unmounted after 4038ms, queries: 2
-useShippingPerformanceMonitor.js:44 📊 [ProductCard-d145] Component unmounted after 4021ms, queries: 2
-useShippingPerformanceMonitor.js:44 📊 [ProductCard-09c1] Component unmounted after 4002ms, queries: 2
-useShippingPerformanceMonitor.js:44 📊 [ProductCard-20fa] Component unmounted after 4385ms, queries: 2
-useShippingPerformanceMonitor.js:44 📊 [ProductCard-0f62] Component unmounted after 4184ms, queries: 2
-useShippingPerformanceMonitor.js:40 📊 [ProductCard-20fa] Component mounted
-useShippingPerformanceMonitor.js:52 🔍 [ProductCard-20fa] component-mount query #1 {productId: '69c930ae-f86a-4dbe-be23-982c662d20fa', productName: 'Vino El Peuco Chardonnay, 750cc'}
-useShippingPerformanceMonitor.js:40 📊 [ProductCard-48aa] Component mounted
-useShippingPerformanceMonitor.js:52 🔍 [ProductCard-48aa] component-mount query #1 {productId: '3baeb9f1-33ba-4956-b2d1-cbc05b2b48aa', productName: 'Caja 2 vinos Late Harvest'}
-useShippingPerformanceMonitor.js:40 📊 [ProductCard-305f] Component mounted
-useShippingPerformanceMonitor.js:52 🔍 [ProductCard-305f] component-mount query #1 {productId: '26df1134-63d9-4f32-9217-c2496629305f', productName: 'Pisco El Mesías, 750cc'}
-useShippingPerformanceMonitor.js:40 📊 [ProductCard-6075] Component mounted
-useShippingPerformanceMonitor.js:52 🔍 [ProductCard-6075] component-mount query #1 {productId: '956bb71e-759f-4a56-846b-5fe0fb596075', productName: 'Tabaco Ross Premium, 45 gr'}
-useShippingPerformanceMonitor.js:40 📊 [ProductCard-84e1] Component mounted
-useShippingPerformanceMonitor.js:52 🔍 [ProductCard-84e1] component-mount query #1 {productId: '40030ef5-8ef2-434d-9960-d7174f7b84e1', productName: 'Vino Cerro Name Reserva, Cabernet 750cc'}
-useShippingPerformanceMonitor.js:40 📊 [ProductCard-4cc7] Component mounted
-useShippingPerformanceMonitor.js:52 🔍 [ProductCard-4cc7] component-mount query #1 {productId: 'c3b869a7-e589-43d1-b36f-987701d44cc7', productName: 'Vino Tinto 600cc'}
-useShippingPerformanceMonitor.js:40 📊 [ProductCard-349a] Component mounted
-useShippingPerformanceMonitor.js:52 🔍 [ProductCard-349a] component-mount query #1 {productId: 'a21aca9b-4853-4af9-9883-3518fc6a349a', productName: 'Vino El Peuco Carignan 750cc Doña Aurora'}
-useShippingPerformanceMonitor.js:40 📊 [ProductCard-b470] Component mounted
-useShippingPerformanceMonitor.js:52 🔍 [ProductCard-b470] component-mount query #1 {productId: '016920c8-442d-4f30-8dc3-be24c4c0b470', productName: 'Vino Stark Haus Gran Reserva 700cc'}
-useShippingPerformanceMonitor.js:40 📊 [ProductCard-0f62] Component mounted
-useShippingPerformanceMonitor.js:52 🔍 [ProductCard-0f62] component-mount query #1 {productId: '9029638f-33a6-4d91-9e3b-021be65a0f62', productName: 'Teeeeeest'}
-useShippingPerformanceMonitor.js:40 📊 [ProductCard-08fe] Component mounted
-useShippingPerformanceMonitor.js:52 🔍 [ProductCard-08fe] component-mount query #1 {productId: 'fee971f5-a288-4edf-861a-2cf2463a08fe', productName: 'Probando Refactor'}
-useShippingPerformanceMonitor.js:40 📊 [ProductCard-6b13] Component mounted
-useShippingPerformanceMonitor.js:52 🔍 [ProductCard-6b13] component-mount query #1 {productId: '16e20775-07ac-4ecb-b5c2-10fb69bc6b13', productName: 'Fixeees'}
-useShippingPerformanceMonitor.js:40 📊 [ProductCard-b61e] Component mounted
-useShippingPerformanceMonitor.js:52 🔍 [ProductCard-b61e] component-mount query #1 {productId: '34bb9472-b430-4910-a67a-d47aaf71b61e', productName: 'PAPAPAPAPA'}
-useShippingPerformanceMonitor.js:40 📊 [ProductCard-3445] Component mounted
-useShippingPerformanceMonitor.js:52 🔍 [ProductCard-3445] component-mount query #1 {productId: '8163198b-a8d7-4ff8-964f-bd45e7a63445', productName: 'Fixeees'}
-useShippingPerformanceMonitor.js:40 📊 [ProductCard-7a64] Component mounted
-useShippingPerformanceMonitor.js:52 🔍 [ProductCard-7a64] component-mount query #1 {productId: '1394be41-62dc-4225-a003-e0250e0f7a64', productName: 'Producto Tramos Nuevox'}
-useShippingPerformanceMonitor.js:40 📊 [ProductCard-1275] Component mounted
-useShippingPerformanceMonitor.js:52 🔍 [ProductCard-1275] component-mount query #1 {productId: '90daf94d-f91d-4b39-a3cc-016255621275', productName: 'Fixeees'}
-useShippingPerformanceMonitor.js:40 📊 [ProductCard-d145] Component mounted
-useShippingPerformanceMonitor.js:52 🔍 [ProductCard-d145] component-mount query #1 {productId: '4b5c650f-7a97-4910-910b-43f93b0fd145', productName: 'PSPSPSP'}
-useShippingPerformanceMonitor.js:40 📊 [ProductCard-09c1] Component mounted
-useShippingPerformanceMonitor.js:52 🔍 [ProductCard-09c1] component-mount query #1 {productId: '7f112164-f924-4c40-b698-192f9aa409c1', productName: 'PSPSPSP'}
-useShippingPerformanceMonitor.js:44 📊 [ProductCard-20fa] Component unmounted after 435ms, queries: 1
-useShippingPerformanceMonitor.js:40 📊 [ProductCard-20fa] Component mounted
-useShippingPerformanceMonitor.js:52 🔍 [ProductCard-20fa] component-mount query #2 {productId: '69c930ae-f86a-4dbe-be23-982c662d20fa', productName: 'Vino El Peuco Chardonnay, 750cc'}
-useShippingPerformanceMonitor.js:44 📊 [ProductCard-48aa] Component unmounted after 416ms, queries: 1
-useShippingPerformanceMonitor.js:40 📊 [ProductCard-48aa] Component mounted
-useShippingPerformanceMonitor.js:52 🔍 [ProductCard-48aa] component-mount query #2 {productId: '3baeb9f1-33ba-4956-b2d1-cbc05b2b48aa', productName: 'Caja 2 vinos Late Harvest'}
-useShippingPerformanceMonitor.js:44 📊 [ProductCard-305f] Component unmounted after 386ms, queries: 1
-useShippingPerformanceMonitor.js:40 📊 [ProductCard-305f] Component mounted
-useShippingPerformanceMonitor.js:52 🔍 [ProductCard-305f] component-mount query #2 {productId: '26df1134-63d9-4f32-9217-c2496629305f', productName: 'Pisco El Mesías, 750cc'}
-useShippingPerformanceMonitor.js:44 📊 [ProductCard-6075] Component unmounted after 363ms, queries: 1
-useShippingPerformanceMonitor.js:40 📊 [ProductCard-6075] Component mounted
-useShippingPerformanceMonitor.js:52 🔍 [ProductCard-6075] component-mount query #2 {productId: '956bb71e-759f-4a56-846b-5fe0fb596075', productName: 'Tabaco Ross Premium, 45 gr'}
-useShippingPerformanceMonitor.js:44 📊 [ProductCard-84e1] Component unmounted after 346ms, queries: 1
-useShippingPerformanceMonitor.js:40 📊 [ProductCard-84e1] Component mounted
-useShippingPerformanceMonitor.js:52 🔍 [ProductCard-84e1] component-mount query #2 {productId: '40030ef5-8ef2-434d-9960-d7174f7b84e1', productName: 'Vino Cerro Name Reserva, Cabernet 750cc'}
-useShippingPerformanceMonitor.js:44 📊 [ProductCard-4cc7] Component unmounted after 331ms, queries: 1
-useShippingPerformanceMonitor.js:40 📊 [ProductCard-4cc7] Component mounted
-useShippingPerformanceMonitor.js:52 🔍 [ProductCard-4cc7] component-mount query #2 {productId: 'c3b869a7-e589-43d1-b36f-987701d44cc7', productName: 'Vino Tinto 600cc'}
-useShippingPerformanceMonitor.js:44 📊 [ProductCard-349a] Component unmounted after 315ms, queries: 1
-useShippingPerformanceMonitor.js:40 📊 [ProductCard-349a] Component mounted
-useShippingPerformanceMonitor.js:52 🔍 [ProductCard-349a] component-mount query #2 {productId: 'a21aca9b-4853-4af9-9883-3518fc6a349a', productName: 'Vino El Peuco Carignan 750cc Doña Aurora'}
-useShippingPerformanceMonitor.js:44 📊 [ProductCard-b470] Component unmounted after 299ms, queries: 1
-useShippingPerformanceMonitor.js:40 📊 [ProductCard-b470] Component mounted
-useShippingPerformanceMonitor.js:52 🔍 [ProductCard-b470] component-mount query #2 {productId: '016920c8-442d-4f30-8dc3-be24c4c0b470', productName: 'Vino Stark Haus Gran Reserva 700cc'}
-useShippingPerformanceMonitor.js:44 📊 [ProductCard-0f62] Component unmounted after 280ms, queries: 1
-useShippingPerformanceMonitor.js:40 📊 [ProductCard-0f62] Component mounted
-useShippingPerformanceMonitor.js:52 🔍 [ProductCard-0f62] component-mount query #2 {productId: '9029638f-33a6-4d91-9e3b-021be65a0f62', productName: 'Teeeeeest'}
-useShippingPerformanceMonitor.js:44 📊 [ProductCard-08fe] Component unmounted after 262ms, queries: 1
-useShippingPerformanceMonitor.js:40 📊 [ProductCard-08fe] Component mounted
-useShippingPerformanceMonitor.js:52 🔍 [ProductCard-08fe] component-mount query #2 {productId: 'fee971f5-a288-4edf-861a-2cf2463a08fe', productName: 'Probando Refactor'}
-useShippingPerformanceMonitor.js:44 📊 [ProductCard-6b13] Component unmounted after 244ms, queries: 1
-useShippingPerformanceMonitor.js:40 📊 [ProductCard-6b13] Component mounted
-useShippingPerformanceMonitor.js:52 🔍 [ProductCard-6b13] component-mount query #2 {productId: '16e20775-07ac-4ecb-b5c2-10fb69bc6b13', productName: 'Fixeees'}
-useShippingPerformanceMonitor.js:44 📊 [ProductCard-b61e] Component unmounted after 227ms, queries: 1
-useShippingPerformanceMonitor.js:40 📊 [ProductCard-b61e] Component mounted
-useShippingPerformanceMonitor.js:52 🔍 [ProductCard-b61e] component-mount query #2 {productId: '34bb9472-b430-4910-a67a-d47aaf71b61e', productName: 'PAPAPAPAPA'}
-useShippingPerformanceMonitor.js:44 📊 [ProductCard-3445] Component unmounted after 200ms, queries: 1
-useShippingPerformanceMonitor.js:40 📊 [ProductCard-3445] Component mounted
-useShippingPerformanceMonitor.js:52 🔍 [ProductCard-3445] component-mount query #2 {productId: '8163198b-a8d7-4ff8-964f-bd45e7a63445', productName: 'Fixeees'}
-useShippingPerformanceMonitor.js:44 📊 [ProductCard-7a64] Component unmounted after 176ms, queries: 1
-useShippingPerformanceMonitor.js:40 📊 [ProductCard-7a64] Component mounted
-useShippingPerformanceMonitor.js:52 🔍 [ProductCard-7a64] component-mount query #2 {productId: '1394be41-62dc-4225-a003-e0250e0f7a64', productName: 'Producto Tramos Nuevox'}
-useShippingPerformanceMonitor.js:44 📊 [ProductCard-1275] Component unmounted after 156ms, queries: 1
-useShippingPerformanceMonitor.js:40 📊 [ProductCard-1275] Component mounted
-useShippingPerformanceMonitor.js:52 🔍 [ProductCard-1275] component-mount query #2 {productId: '90daf94d-f91d-4b39-a3cc-016255621275', productName: 'Fixeees'}
-useShippingPerformanceMonitor.js:44 📊 [ProductCard-d145] Component unmounted after 138ms, queries: 1
-useShippingPerformanceMonitor.js:40 📊 [ProductCard-d145] Component mounted
-useShippingPerformanceMonitor.js:52 🔍 [ProductCard-d145] component-mount query #2 {productId: '4b5c650f-7a97-4910-910b-43f93b0fd145', productName: 'PSPSPSP'}
-useShippingPerformanceMonitor.js:44 📊 [ProductCard-09c1] Component unmounted after 122ms, queries: 1
-useShippingPerformanceMonitor.js:40 📊 [ProductCard-09c1] Component mounted
-useShippingPerformanceMonitor.js:52 🔍 [ProductCard-09c1] component-mount query #2 {productId: '7f112164-f924-4c40-b698-192f9aa409c1', productName: 'PSPSPSP'}
+useProductForm.js:176 🔍 [hasActualChanges] Detección de cambios: {basicFieldsChanged: false, tramosChanged: false, imagenesChanged: true, specificationsChanged: false, shippingRegionsChanged: true, …}
+useProductForm.js:176 🔍 [hasActualChanges] Detección de cambios: {basicFieldsChanged: false, tramosChanged: false, imagenesChanged: true, specificationsChanged: false, shippingRegionsChanged: true, …}
+ProductResultsPanel.jsx:45 🔍 [ProductResultsPanel] Estado del botón: {isEditMode: true, isValid: false, hasActualChanges: true, isLoading: false, isButtonDisabled: true}
+ProductResultsPanel.jsx:45 🔍 [ProductResultsPanel] Estado del botón: {isEditMode: true, isValid: false, hasActualChanges: true, isLoading: false, isButtonDisabled: true}
+useProductForm.js:176 🔍 [hasActualChanges] Detección de cambios: {basicFieldsChanged: false, tramosChanged: false, imagenesChanged: true, specificationsChanged: false, shippingRegionsChanged: true, …}
+useProductForm.js:176 🔍 [hasActualChanges] Detección de cambios: {basicFieldsChanged: false, tramosChanged: false, imagenesChanged: true, specificationsChanged: false, shippingRegionsChanged: true, …}
+ProductResultsPanel.jsx:45 🔍 [ProductResultsPanel] Estado del botón: {isEditMode: true, isValid: true, hasActualChanges: true, isLoading: false, isButtonDisabled: false}
+ProductResultsPanel.jsx:45 🔍 [ProductResultsPanel] Estado del botón: {isEditMode: true, isValid: true, hasActualChanges: true, isLoading: false, isButtonDisabled: false}
+AddProduct.jsx:540 🔥 [AddProduct.handleSubmit] Iniciando submit
+AddProduct.jsx:552 🔍 [AddProduct.handleSubmit] Validando formulario...
+AddProduct.jsx:554 📊 [AddProduct.handleSubmit] Errores de validación: {}
+AddProduct.jsx:555 🧪 [AddProduct.handleSubmit] Nombre del producto: PSPSPSP
+AddProduct.jsx:571 ✅ [AddProduct.handleSubmit] Validación pasó, continuando...
+AddProduct.jsx:586 💾 [AddProduct.handleSubmit] Llamando submitForm()...
+ProductResultsPanel.jsx:45 🔍 [ProductResultsPanel] Estado del botón: {isEditMode: true, isValid: true, hasActualChanges: true, isLoading: true, isButtonDisabled: true}
+ProductResultsPanel.jsx:45 🔍 [ProductResultsPanel] Estado del botón: {isEditMode: true, isValid: true, hasActualChanges: true, isLoading: true, isButtonDisabled: true}
+ProductResultsPanel.jsx:45 🔍 [ProductResultsPanel] Estado del botón: {isEditMode: true, isValid: true, hasActualChanges: true, isLoading: true, isButtonDisabled: true}
+ProductResultsPanel.jsx:45 🔍 [ProductResultsPanel] Estado del botón: {isEditMode: true, isValid: true, hasActualChanges: true, isLoading: true, isButtonDisabled: true}
+useProductForm.js:176 🔍 [hasActualChanges] Detección de cambios: {basicFieldsChanged: false, tramosChanged: false, imagenesChanged: true, specificationsChanged: false, shippingRegionsChanged: true, …}
+useProductForm.js:176 🔍 [hasActualChanges] Detección de cambios: {basicFieldsChanged: false, tramosChanged: false, imagenesChanged: true, specificationsChanged: false, shippingRegionsChanged: true, …}
+ProductResultsPanel.jsx:45 🔍 [ProductResultsPanel] Estado del botón: {isEditMode: true, isValid: true, hasActualChanges: true, isLoading: true, isButtonDisabled: true}
+ProductResultsPanel.jsx:45 🔍 [ProductResultsPanel] Estado del botón: {isEditMode: true, isValid: true, hasActualChanges: true, isLoading: true, isButtonDisabled: true}
+ProductResultsPanel.jsx:45 🔍 [ProductResultsPanel] Estado del botón: {isEditMode: true, isValid: true, hasActualChanges: true, isLoading: true, isButtonDisabled: true}
+ProductResultsPanel.jsx:45 🔍 [ProductResultsPanel] Estado del botón: {isEditMode: true, isValid: true, hasActualChanges: true, isLoading: true, isButtonDisabled: true}
+ProductResultsPanel.jsx:45 🔍 [ProductResultsPanel] Estado del botón: {isEditMode: true, isValid: true, hasActualChanges: true, isLoading: true, isButtonDisabled: true}
+ProductResultsPanel.jsx:45 🔍 [ProductResultsPanel] Estado del botón: {isEditMode: true, isValid: true, hasActualChanges: true, isLoading: true, isButtonDisabled: true}
+ProductResultsPanel.jsx:45 🔍 [ProductResultsPanel] Estado del botón: {isEditMode: true, isValid: true, hasActualChanges: true, isLoading: true, isButtonDisabled: true}
+ProductResultsPanel.jsx:45 🔍 [ProductResultsPanel] Estado del botón: {isEditMode: true, isValid: true, hasActualChanges: true, isLoading: true, isButtonDisabled: true}
+ProductResultsPanel.jsx:45 🔍 [ProductResultsPanel] Estado del botón: {isEditMode: true, isValid: true, hasActualChanges: true, isLoading: true, isButtonDisabled: true}
+ProductResultsPanel.jsx:45 🔍 [ProductResultsPanel] Estado del botón: {isEditMode: true, isValid: true, hasActualChanges: true, isLoading: true, isButtonDisabled: true}
+useProductBackground.js:266 🔄 [updateCompleteProduct] Verificando si procesar imágenes: {hasImages: true, imageCount: 1, hasSpecs: false}
+useProductBackground.js:273 📸 [updateCompleteProduct] Procesando imágenes/specs en background
+useProductBackground.js:84 🔥 [processProductInBackground] Procesando imágenes: 1 archivos
+useProductImages.js:124 🔥 [useProductImages.uploadImages] Llamando UploadService con replaceExisting: true
+uploadService.js:222 🔥 [uploadMultipleImages] Iniciando con replaceExisting: true
+uploadService.js:226 🧹 [uploadMultipleImages] Limpiando todas las imágenes existentes del producto 7f112164-f924-4c40-b698-192f9aa409c1
+storageCleanupService.js:415 🔥 [deleteAllProductImages] Eliminando TODAS las imágenes del producto 7f112164-f924-4c40-b698-192f9aa409c1
+storageCleanupService.js:418 🔍 [deleteAllProductImages] Paso 1: Eliminando registros de la BD
+ProductResultsPanel.jsx:45 🔍 [ProductResultsPanel] Estado del botón: {isEditMode: true, isValid: true, hasActualChanges: true, isLoading: true, isButtonDisabled: true}
+ProductResultsPanel.jsx:45 🔍 [ProductResultsPanel] Estado del botón: {isEditMode: true, isValid: true, hasActualChanges: true, isLoading: true, isButtonDisabled: true}
+storageCleanupService.js:431 🗑️ [deleteAllProductImages] Eliminados 1 registros de la BD
+storageCleanupService.js:434 🔍 [deleteAllProductImages] Paso 2: Buscando archivos en storage
+storageCleanupService.js:73 🔍 [getProductFilesFromStorage] Buscando archivos para producto 7f112164-f924-4c40-b698-192f9aa409c1
+storageCleanupService.js:76 🔍 [getProductFilesFromStorage] Listando directorios raíz del bucket product-images
+storageCleanupService.js:86 📂 [getProductFilesFromStorage] Encontrados 8 elementos en la raíz
+storageCleanupService.js:92 🔍 [getProductFilesFromStorage] Explorando directorio de supplier: 34e23a46-f8bb-4e50-b058-301ac6b0af12
+storageCleanupService.js:100 📁 [getProductFilesFromStorage] Encontrados 11 elementos en 34e23a46-f8bb-4e50-b058-301ac6b0af12
+storageCleanupService.js:108 🎯 [getProductFilesFromStorage] Encontrado directorio del producto: 34e23a46-f8bb-4e50-b058-301ac6b0af12/7f112164-f924-4c40-b698-192f9aa409c1
+storageCleanupService.js:115 📄 [getProductFilesFromStorage] Encontrados 1 archivos en directorio del producto
+storageCleanupService.js:92 🔍 [getProductFilesFromStorage] Explorando directorio de supplier: 36131165-9505-4a7b-a96f-ac078de794af
+storageCleanupService.js:100 📁 [getProductFilesFromStorage] Encontrados 3 elementos en 36131165-9505-4a7b-a96f-ac078de794af
+storageCleanupService.js:92 🔍 [getProductFilesFromStorage] Explorando directorio de supplier: 65be7e25-d1a7-4a97-92d8-2ff0569a07dc
+storageCleanupService.js:100 📁 [getProductFilesFromStorage] Encontrados 1 elementos en 65be7e25-d1a7-4a97-92d8-2ff0569a07dc
+storageCleanupService.js:92 🔍 [getProductFilesFromStorage] Explorando directorio de supplier: 779b757a-b0f7-4095-86a1-8faa927fed24
+storageCleanupService.js:100 📁 [getProductFilesFromStorage] Encontrados 3 elementos en 779b757a-b0f7-4095-86a1-8faa927fed24
+storageCleanupService.js:92 🔍 [getProductFilesFromStorage] Explorando directorio de supplier: d8154398-b275-496f-936d-c44782e4ef00
+storageCleanupService.js:100 📁 [getProductFilesFromStorage] Encontrados 26 elementos en d8154398-b275-496f-936d-c44782e4ef00
+storageCleanupService.js:92 🔍 [getProductFilesFromStorage] Explorando directorio de supplier: db33e097-89df-45a1-9e40-72fe85138fb9
+storageCleanupService.js:100 📁 [getProductFilesFromStorage] Encontrados 11 elementos en db33e097-89df-45a1-9e40-72fe85138fb9
+storageCleanupService.js:92 🔍 [getProductFilesFromStorage] Explorando directorio de supplier: e6075619-052d-48a3-a1cb-20f9b37471c5
+storageCleanupService.js:100 📁 [getProductFilesFromStorage] Encontrados 8 elementos en e6075619-052d-48a3-a1cb-20f9b37471c5
+storageCleanupService.js:92 🔍 [getProductFilesFromStorage] Explorando directorio de supplier: product-images
+storageCleanupService.js:100 📁 [getProductFilesFromStorage] Encontrados 1 elementos en product-images
+storageCleanupService.js:190 ✅ [getProductFilesFromStorage] Encontrados 5 archivos para producto 7f112164-f924-4c40-b698-192f9aa409c1
+storageCleanupService.js:436 📂 [deleteAllProductImages] Encontrados 5 archivos en storage: (5) ['34e23a46-f8bb-4e50-b058-301ac6b0af12/7f112164-f924…698-192f9aa409c1/1754340743946_Modal_Rechazar.png', '34e23a46-f8bb-4e50-b058-301ac6b0af12/7f112164-f924…98-192f9aa409c1/1754340743946_desktop_320x260.jpg', '34e23a46-f8bb-4e50-b058-301ac6b0af12/7f112164-f924…98-192f9aa409c1/1754340743946_minithumb_40x40.jpg', '34e23a46-f8bb-4e50-b058-301ac6b0af12/7f112164-f924…698-192f9aa409c1/1754340743946_mobile_190x153.jpg', '34e23a46-f8bb-4e50-b058-301ac6b0af12/7f112164-f924…698-192f9aa409c1/1754340743946_tablet_300x230.jpg']
+storageCleanupService.js:440 🔍 [deleteAllProductImages] Paso 3: Eliminando 5 archivos del storage
+storageCleanupService.js:467 🔥 [removeFiles] Iniciando eliminación de 5 archivos
+storageCleanupService.js:471 🗑️ [removeFiles] Eliminando archivo: product-images/34e23a46-f8bb-4e50-b058-301ac6b0af12/7f112164-f924-4c40-b698-192f9aa409c1/1754340743946_Modal_Rechazar.png
+storageCleanupService.js:482 ✅ [removeFiles] Eliminado exitosamente: product-images/34e23a46-f8bb-4e50-b058-301ac6b0af12/7f112164-f924-4c40-b698-192f9aa409c1/1754340743946_Modal_Rechazar.png
+storageCleanupService.js:471 🗑️ [removeFiles] Eliminando archivo: product-images-thumbnails/34e23a46-f8bb-4e50-b058-301ac6b0af12/7f112164-f924-4c40-b698-192f9aa409c1/1754340743946_desktop_320x260.jpg
+storageCleanupService.js:482 ✅ [removeFiles] Eliminado exitosamente: product-images-thumbnails/34e23a46-f8bb-4e50-b058-301ac6b0af12/7f112164-f924-4c40-b698-192f9aa409c1/1754340743946_desktop_320x260.jpg
+storageCleanupService.js:471 🗑️ [removeFiles] Eliminando archivo: product-images-thumbnails/34e23a46-f8bb-4e50-b058-301ac6b0af12/7f112164-f924-4c40-b698-192f9aa409c1/1754340743946_minithumb_40x40.jpg
+storageCleanupService.js:482 ✅ [removeFiles] Eliminado exitosamente: product-images-thumbnails/34e23a46-f8bb-4e50-b058-301ac6b0af12/7f112164-f924-4c40-b698-192f9aa409c1/1754340743946_minithumb_40x40.jpg
+storageCleanupService.js:471 🗑️ [removeFiles] Eliminando archivo: product-images-thumbnails/34e23a46-f8bb-4e50-b058-301ac6b0af12/7f112164-f924-4c40-b698-192f9aa409c1/1754340743946_mobile_190x153.jpg
+storageCleanupService.js:482 ✅ [removeFiles] Eliminado exitosamente: product-images-thumbnails/34e23a46-f8bb-4e50-b058-301ac6b0af12/7f112164-f924-4c40-b698-192f9aa409c1/1754340743946_mobile_190x153.jpg
+storageCleanupService.js:471 🗑️ [removeFiles] Eliminando archivo: product-images-thumbnails/34e23a46-f8bb-4e50-b058-301ac6b0af12/7f112164-f924-4c40-b698-192f9aa409c1/1754340743946_tablet_300x230.jpg
+storageCleanupService.js:482 ✅ [removeFiles] Eliminado exitosamente: product-images-thumbnails/34e23a46-f8bb-4e50-b058-301ac6b0af12/7f112164-f924-4c40-b698-192f9aa409c1/1754340743946_tablet_300x230.jpg
+storageCleanupService.js:490 📊 [removeFiles] Resultado final: 5 eliminados, 0 errores
+storageCleanupService.js:444 🧹 [deleteAllProductImages] Eliminados 5 archivos del storage
+storageCleanupService.js:449 ✅ [deleteAllProductImages] Proceso completado: 5 archivos eliminados
+uploadService.js:229 ✅ [uploadMultipleImages] Archivos limpiados: 5
+uploadService.js:241 📊 [uploadMultipleImages] Total archivos: 1, Nuevos: 1, Existentes: 0
+uploadService.js:378 🔍 [uploadImageWithThumbnail] Iniciando upload: {fileName: 'LK.webp', fileSize: 173494, isMainImage: true}
+uploadService.js:414 📤 [uploadImageWithThumbnail] Iniciando upload a Supabase...
+uploadService.js:433 💾 [uploadImageWithThumbnail] Guardando referencia en DB...
+uploadService.js:459 ✅ [uploadImageWithThumbnail] Referencia guardada en DB exitosamente
+uploadService.js:467 ⚠️ [uploadImageWithThumbnail] WebP detectado - saltando generación de thumbnail
+ProductResultsPanel.jsx:45 🔍 [ProductResultsPanel] Estado del botón: {isEditMode: true, isValid: true, hasActualChanges: true, isLoading: true, isButtonDisabled: true}
+ProductResultsPanel.jsx:45 🔍 [ProductResultsPanel] Estado del botón: {isEditMode: true, isValid: true, hasActualChanges: true, isLoading: true, isButtonDisabled: true}
+useProductBackground.js:100 ✅ [processProductInBackground] Imágenes procesadas exitosamente
+ProductResultsPanel.jsx:45 🔍 [ProductResultsPanel] Estado del botón: {isEditMode: true, isValid: true, hasActualChanges: true, isLoading: true, isButtonDisabled: true}
+ProductResultsPanel.jsx:45 🔍 [ProductResultsPanel] Estado del botón: {isEditMode: true, isValid: true, hasActualChanges: true, isLoading: true, isButtonDisabled: true}
+useProductBackground.js:277 ✅ [updateCompleteProduct] Procesamiento background completado
+AddProduct.jsx:589 📋 [AddProduct.handleSubmit] Resultado de submitForm: {success: true}
+ProductResultsPanel.jsx:45 🔍 [ProductResultsPanel] Estado del botón: {isEditMode: true, isValid: true, hasActualChanges: true, isLoading: true, isButtonDisabled: true}
+ProductResultsPanel.jsx:45 🔍 [ProductResultsPanel] Estado del botón: {isEditMode: true, isValid: true, hasActualChanges: true, isLoading: true, isButtonDisabled: true}
+useSupplierProductsCRUD.js:266 [DEBUG] Refreshing product from database: 7f112164-f924-4c40-b698-192f9aa409c1
+useSupplierProductsCRUD.js:281 [DEBUG] Fresh product data from DB: {productId: '7f112164-f924-4c40-b698-192f9aa409c1', imagesCount: 1, images: Array(1)}
+useSupplierProductsCRUD.js:300 [DEBUG] Replacing product in state: {productId: '7f112164-f924-4c40-b698-192f9aa409c1', oldImagesCount: 1, newImagesCount: 1}
+ProductResultsPanel.jsx:45 🔍 [ProductResultsPanel] Estado del botón: {isEditMode: true, isValid: true, hasActualChanges: true, isLoading: true, isButtonDisabled: true}
+ProductResultsPanel.jsx:45 🔍 [ProductResultsPanel] Estado del botón: {isEditMode: true, isValid: true, hasActualChanges: true, isLoading: true, isButtonDisabled: true}
+ProductResultsPanel.jsx:45 🔍 [ProductResultsPanel] Estado del botón: {isEditMode: true, isValid: true, hasActualChanges: true, isLoading: true, isButtonDisabled: true}
+ProductResultsPanel.jsx:45 🔍 [ProductResultsPanel] Estado del botón: {isEditMode: true, isValid: true, hasActualChanges: true, isLoading: true, isButtonDisabled: true}
+uploadService.js:12 ✅ [UploadService] Supabase client inicializado correctamente
