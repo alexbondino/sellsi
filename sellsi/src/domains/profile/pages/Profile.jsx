@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom'; // Para manejar parámetros de URL
 import {
   Box,
   Typography,
@@ -36,6 +37,7 @@ import { trackUserAction } from '../../../services/security';
 import { getUserProfile, updateUserProfile, uploadProfileImage, deleteAllUserImages } from '../../../services/user';
 import { supabase } from '../../../services/supabase';
 import { SPACING_BOTTOM_MAIN } from '../../../styles/layoutSpacing';
+import { invalidateTransferInfoCache } from '../../../shared/hooks/profile/useTransferInfoValidation'; // Para invalidar cache bancario
 
 /**
  * 🎭 Profile - Orquestador Universal de Perfiles
@@ -53,11 +55,34 @@ import { SPACING_BOTTOM_MAIN } from '../../../styles/layoutSpacing';
  */
 const Profile = ({ userProfile: initialUserProfile, onUpdateProfile: externalUpdateHandler }) => {
   const { showBanner } = useBanner();
+  const location = useLocation(); // Para obtener parámetros de URL
 
   // Estado local para el perfil cargado y completo
   const [userProfile, setUserProfile] = useState(initialUserProfile);
   const [loadedProfile, setLoadedProfile] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  // ✅ NUEVO: Estado para highlight de campos bancarios
+  const [shouldHighlightTransferFields, setShouldHighlightTransferFields] = useState(false);
+
+  // ✅ NUEVO: Verificar parámetros de URL al montar y cuando cambie la location
+  useEffect(() => {
+    const urlParams = new URLSearchParams(location.search);
+    const section = urlParams.get('section');
+    const highlight = urlParams.get('highlight');
+    
+    if (section === 'transfer' && highlight === 'true') {
+      setShouldHighlightTransferFields(true);
+      console.log('🎯 Resaltando campos de información bancaria por redirección');
+      
+      // Remover el highlight después de 10 segundos para mejor UX
+      const timer = setTimeout(() => {
+        setShouldHighlightTransferFields(false);
+      }, 10000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [location.search]);
 
   // Cargar perfil completo desde Supabase al montar (lógica antes en BuyerProfile/SupplierProfile)
   useEffect(() => {
@@ -133,6 +158,20 @@ const Profile = ({ userProfile: initialUserProfile, onUpdateProfile: externalUpd
 
       // Actualizar usando el servicio
       await updateUserProfile(user.id, profileData);
+      
+      // ✅ INVALIDAR CACHE DE INFORMACIÓN BANCARIA si se actualizaron campos relacionados
+      // NOTA: Los campos que llegan aquí están en formato BD (snake_case)
+      const transferFields = ['account_holder', 'bank', 'account_number', 'transfer_rut', 'confirmation_email'];
+      const hasTransferFieldUpdate = transferFields.some(field => profileData.hasOwnProperty(field));
+      
+      // ✅ TAMBIÉN verificar campos de formulario (camelCase) en caso de que vengan así
+      const transferFieldsForm = ['accountHolder', 'accountNumber', 'transferRut', 'confirmationEmail'];
+      const hasTransferFieldFormUpdate = transferFieldsForm.some(field => profileData.hasOwnProperty(field));
+      
+      if (hasTransferFieldUpdate || hasTransferFieldFormUpdate) {
+        console.log('🏦 Invalidando cache de información bancaria por actualización de perfil');
+        invalidateTransferInfoCache();
+      }
       
       // Recargar perfil después de actualizar
       await fetchUserProfile();
@@ -599,6 +638,7 @@ const Profile = ({ userProfile: initialUserProfile, onUpdateProfile: externalUpd
             showSensitiveData={showSensitiveData}
             toggleSensitiveData={toggleSensitiveData}
             getSensitiveFieldValue={getSensitiveFieldValue}
+            shouldHighlight={shouldHighlightTransferFields}
           />
 
           {/* Segunda fila - Primera columna: Información de Envío */}
