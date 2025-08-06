@@ -23,6 +23,7 @@ import { formatPrice } from '../../../utils/formatters';
 import ActionMenu from './ActionMenu';
 import ProductBadges from './ProductBadges';
 import StatusChip from './StatusChip';
+import { useProductPriceTiers } from '../../../hooks/product/useProductPriceTiers';
 
 /**
  * ProductCardSupplierContext - Renders the specific content and actions for a supplier's product card.
@@ -30,6 +31,13 @@ import StatusChip from './StatusChip';
  */
 const ProductCardSupplierContext = React.memo(
   ({ product, onEdit, onDelete, onViewStats, isDeleting, isUpdating, isProcessing }) => {
+    // Hook to get price tiers (same as BuyerContext)
+    const {
+      tiers,
+      loading: loadingTiers,
+      error: errorTiers,
+    } = useProductPriceTiers(product.id);
+
     // Product properties (already destructuring in main ProductCard, passed here)
     const {
       nombre,
@@ -48,6 +56,15 @@ const ProductCardSupplierContext = React.memo(
       priceTiers = [], // Ensure priceTiers is available for conditional rendering
       processingStartTime,
     } = product;
+
+    // Unify source of price_tiers: prefer product's, if not, from hook (same logic as BuyerContext)
+    const price_tiers = useMemo(() => {
+      return product.priceTiers && product.priceTiers.length > 0
+        ? product.priceTiers
+        : tiers && tiers.length > 0
+        ? tiers
+        : [];
+    }, [product.priceTiers, tiers]);
 
     // Configure menu actions
     const menuActions = useMemo(
@@ -194,29 +211,60 @@ const ProductCardSupplierContext = React.memo(
           </Typography>
           {/* Precios */}
           <Box sx={{ mb: 2 }}>
-            {/* Mostrar tramos si existen */}
-            {priceTiers && priceTiers.length > 0 ? (
+            {/* Mostrar loading de tramos */}
+            {loadingTiers && (
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                sx={{ fontWeight: 500 }}
+              >
+                Cargando precios...
+              </Typography>
+            )}
+            
+            {/* Mostrar error de tramos */}
+            {errorTiers && (
+              <Typography
+                variant="body2"
+                color="error.main"
+                sx={{ fontWeight: 500 }}
+              >
+                Error al cargar precios
+              </Typography>
+            )}
+
+            {/* Mostrar tramos si existen (usando price_tiers unificado) */}
+            {!loadingTiers && !errorTiers && price_tiers && price_tiers.length > 0 ? (
               <Box>
                 <Typography
                   variant="body2"
                   color="text.secondary"
-                  sx={{ fontWeight: 500 }}
+                  sx={{ fontWeight: 500, fontSize: '0.75rem' }}
                 >
-                  Tramo: {tramoMin} - {tramoMax || '∞'} unidades
+                  Precios por volumen ({price_tiers.length} tramos)
                 </Typography>
                 <Typography
                   variant="h6"
                   color="primary.main"
                   sx={{ fontWeight: 700, fontSize: '1.1rem' }}
                 >
-                  {tramoPrecioMin === tramoPrecioMax || !tramoPrecioMax
-                    ? formatPrice(tramoPrecioMin)
-                    : `${formatPrice(tramoPrecioMin)} - ${formatPrice(
-                        tramoPrecioMax
-                      )}`}
+                  {(() => {
+                    const minPrice = Math.min(...price_tiers.map(t => t.price));
+                    const maxPrice = Math.max(...price_tiers.map(t => t.price));
+                    return minPrice !== maxPrice 
+                      ? `${formatPrice(minPrice)} - ${formatPrice(maxPrice)}`
+                      : formatPrice(minPrice);
+                  })()}
+                </Typography>
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  sx={{ fontSize: '0.7rem' }}
+                >
+                  Desde {price_tiers[0]?.min_quantity || 1} unidades
                 </Typography>
               </Box>
-            ) : (
+            ) : !loadingTiers && !errorTiers ? (
               <Box
                 sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}
               >
@@ -240,7 +288,8 @@ const ProductCardSupplierContext = React.memo(
                   </Typography>
                 )}
               </Box>
-            )}
+            ) : null}
+            
             {negociable && (
               <Chip
                 label="Precio negociable"

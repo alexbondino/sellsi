@@ -282,7 +282,7 @@ const MyProducts = () => {
                   </Typography>
                 </Box>
                 <Typography variant="body1" color="text.secondary">
-                  Gestiona tu catálogo de productos de manera eficiente
+                  Gestiona tu catálogo eficientemente
                 </Typography>
               </Box>
 

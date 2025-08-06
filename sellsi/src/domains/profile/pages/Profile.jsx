@@ -643,7 +643,7 @@ const Profile = ({ userProfile: initialUserProfile, onUpdateProfile: externalUpd
             shouldHighlight={shouldHighlightTransferFields}
           />
 
-          {/* Segunda fila - Primera columna: Información de Envío */}
+          {/* Segunda fila - Primera columna: Información de Despacho */}
           <ShippingInfoSection 
             formData={formData}
             onFieldChange={updateField}

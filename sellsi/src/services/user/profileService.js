@@ -60,7 +60,7 @@ export const getUserProfile = async (userId) => {
       // ...removed log...
     }
 
-    // Obtener información de envío con manejo de errores
+    // Obtener Información de Despacho con manejo de errores
     let shippingData = null;
     try {
       const { data, error } = await supabase
@@ -103,7 +103,7 @@ export const getUserProfile = async (userId) => {
       confirmation_email: bankData?.confirmation_email || '',
       account_type: bankData?.account_type || 'corriente',
       
-      // Información de envío (opcional)
+      // Información de Despacho (opcional)
       shipping_region: shippingData?.shipping_region || '',
       shipping_commune: shippingData?.shipping_commune || '',
       shipping_address: shippingData?.shipping_address || '',
@@ -195,7 +195,7 @@ export const updateUserProfile = async (userId, profileData) => {
       console.log('ℹ️ No hay datos bancarios para actualizar');
     }
 
-    // 3. Actualizar/Insertar información de envío (con validación de existencia)
+    // 3. Actualizar/Insertar Información de Despacho (con validación de existencia)
     if (hasShippingData(profileData)) {
       const shippingData = {
         user_id: userId,

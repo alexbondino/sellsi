@@ -92,11 +92,11 @@ export const usePriceCalculation = (items = null, options = {}) => {
                                    [];
             
             if (!shippingRegions || shippingRegions.length === 0) {
-              // Sin información de envío: costo 0
+              // Sin Información de Despacho: costo 0
               shippingByProduct[item.id] = 0
               shipping += 0
             } else {
-              // Tiene información de envío pero no sabemos la región del usuario
+              // Tiene Información de Despacho pero no sabemos la región del usuario
               hasProductsNeedingRegion = true
               shippingByProduct[item.id] = 0 // Temporal hasta obtener región
               shipping += 0

@@ -46,7 +46,7 @@ export const mapUserProfileToFormData = (userProfile) => {
     user_nm: userProfile.user_nm || '',
     descripcionProveedor: userProfile.descripcion_proveedor || '', // <--- MAPEO CORRECTO
 
-    // Información de Envío
+    // Información de Despacho
     shippingRegion: userProfile.shipping_region || '',
     shippingCommune: userProfile.shipping_commune || '', // 🔧 CORREGIDO: commune (no comuna)
     shippingAddress: userProfile.shipping_address || '',
@@ -93,7 +93,7 @@ export const mapFormDataToUserProfile = (formData, userProfile) => {
     user_nm: formData.user_nm || userProfile?.user_nm, // Preservar nombre de usuario
     descripcion_proveedor: formData.descripcionProveedor || '', // <--- MAPEO CORRECTO
     
-    // Información de Envío
+    // Información de Despacho
     shipping_region: formData.shippingRegion,
     shipping_commune: formData.shippingCommune, // 🔧 CORREGIDO: shipping_commune (no shipping_comuna)
     shipping_address: formData.shippingAddress,

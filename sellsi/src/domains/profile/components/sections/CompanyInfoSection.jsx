@@ -49,7 +49,7 @@ const CompanyInfoSection = ({
           fullWidth
           variant="outlined"
           size="small"
-          placeholder="56963109665"
+          placeholder="56998765432"
         />
         
         <TextField

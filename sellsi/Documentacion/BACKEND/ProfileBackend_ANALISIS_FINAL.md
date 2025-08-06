@@ -11,7 +11,7 @@ En lugar de una tabla `users` gigante como propone la documentación, el sistema
 ```sql
 users           # Información básica del usuario
 ├── bank_info    # Información bancaria/transferencia  
-├── shipping_info # Información de envío
+├── shipping_info # Información de Despacho
 └── billing_info  # Información de facturación
 ```
 
@@ -59,7 +59,7 @@ Creado un servicio completo que maneja:
 | `transferRut` | `bank_info.transfer_rut` | ✅ Funcional |
 | `confirmationEmail` | `bank_info.confirmation_email` | ✅ Funcional |
 
-#### **✅ Información de Envío (tabla `shipping_info`):**
+#### **✅ Información de Despacho (tabla `shipping_info`):**
 | Frontend | Base de Datos | Estado |
 |----------|---------------|--------|
 | `shippingRegion` | `shipping_info.shipping_region` | ✅ Funcional |

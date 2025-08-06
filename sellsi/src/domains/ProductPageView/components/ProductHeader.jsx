@@ -39,6 +39,7 @@ import QuotationModal from './QuotationModal'
 import { useProductPriceTiers } from '../../../shared/hooks/product/useProductPriceTiers';
 import ContactModal from '../../../shared/components/modals/ContactModal';
 import { useSupplierDocumentTypes } from '../../../shared/utils/supplierDocumentTypes';
+import { formatNumber } from '../../../shared/utils/formatters/numberFormatters';
 
 const ProductHeader = React.memo(({
   product,
@@ -327,8 +328,8 @@ const ProductHeader = React.memo(({
           </Table>
         </TableContainer>
         
-        {/* Botón de Cotización para tramos - Solo si está logueado */}
-        {isLoggedIn && (
+        {/* Botón de Cotización para tramos - Solo si está logueado y NO es producto propio */}
+        {isLoggedIn && !isOwnProduct && (
           <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', justifyContent: 'flex-start', mt: 2, mb: 4, width: '100%', gap: 1 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', gap: 1 }}>
               <Typography variant="body2" sx={{ color: 'text.secondary' }}>
@@ -685,7 +686,7 @@ const ProductHeader = React.memo(({
                     color: 'text.primary',
                   }}
                 >
-                  <b>Stock:</b> {stock} unidades
+                  <b>Stock:</b> {formatNumber(stock)} unidades
                 </Typography>
               )}
             </Box>
@@ -697,7 +698,7 @@ const ProductHeader = React.memo(({
                   color: 'text.primary',
                 }}
               >
-                <b>Compra mínima:</b> {compraMinima} unidades
+                <b>Compra mínima:</b> {formatNumber(compraMinima)} unidades
               </Typography>
             </Box>
           </Box>
@@ -751,8 +752,8 @@ const ProductHeader = React.memo(({
           {/* Precios and/or tramos */}
           {priceContent}
           
-          {/* Botón de Cotización - Solo para precio único y si está logueado */}
-          {!(tiers && tiers.length > 0) && isLoggedIn && (
+          {/* Botón de Cotización - Solo para precio único, si está logueado y NO es producto propio */}
+          {!(tiers && tiers.length > 0) && isLoggedIn && !isOwnProduct && (
           <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', justifyContent: 'flex-start', mb: 4, width: '100%', gap: 1 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', gap: 1 }}>
               <Typography variant="body2" sx={{ color: 'text.secondary' }}>

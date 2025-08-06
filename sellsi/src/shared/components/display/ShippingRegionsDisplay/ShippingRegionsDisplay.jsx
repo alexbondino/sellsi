@@ -59,6 +59,11 @@ const ShippingRegionsDisplay = ({ regions = [] }) => {
   }
 
   const formatCurrency = (value) => {
+    // Si el valor es 0, mostrar "GRATIS" en lugar de "$0"
+    if (value === 0 || value === '0') {
+      return 'GRATIS';
+    }
+    
     return new Intl.NumberFormat('es-CL', {
       style: 'currency',
       currency: 'CLP',

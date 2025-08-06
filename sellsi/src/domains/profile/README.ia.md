@@ -198,7 +198,7 @@ const {
     user_nm,                  // string
     descripcionProveedor,     // string (solo suppliers)
     
-    // Información de envío  
+    // Información de Despacho  
     shippingRegion,           // string
     shippingComuna,           // string
     shippingAddress,          // string

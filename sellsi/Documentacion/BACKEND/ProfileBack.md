@@ -123,7 +123,7 @@ CHECK (status IN ('pending', 'confirmed', 'processing', 'shipped', 'delivered', 
 ALTER TABLE public.users ADD COLUMN rut character varying;
 ```
 
-### 🚚 Información de Envío (agregar a tabla `users`):
+### 🚚 Información de Despacho (agregar a tabla `users`):
 ```sql
 ALTER TABLE public.users ADD COLUMN shipping_region text;
 ALTER TABLE public.users ADD COLUMN shipping_comuna text;
@@ -219,7 +219,7 @@ CREATE INDEX IF NOT EXISTS idx_requests_supplier_id ON requests(supplier_id);
 
 ### 📋 **Tabla `users` (18 campos nuevos):**
 - `rut` - RUT de la empresa
-- Información de envío (5 campos)
+- Información de Despacho (5 campos)
 - Información de transferencia (6 campos) 
 - Información de facturación (6 campos)
 
@@ -258,7 +258,7 @@ const mapUserFromDB = (dbUser) => ({
   country: dbUser.country,
   rut: dbUser.rut,
   
-  // Información de envío
+  // Información de Despacho
   shipping_region: dbUser.shipping_region,
   shipping_comuna: dbUser.shipping_comuna,
   shipping_address: dbUser.shipping_address,
@@ -290,7 +290,7 @@ const mapUserToDB = (frontendData) => ({
   country: frontendData.country,
   rut: frontendData.rut,
   
-  // Información de envío
+  // Información de Despacho
   shipping_region: frontendData.shipping_region,
   shipping_comuna: frontendData.shipping_comuna,
   shipping_address: frontendData.shipping_address,
