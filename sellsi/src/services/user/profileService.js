@@ -169,12 +169,12 @@ export const updateUserProfile = async (userId, profileData) => {
     if (hasbankingData(profileData)) {
       const bankData = {
         user_id: userId,
-        account_holder: profileData.accountHolder,
+        account_holder: profileData.account_holder,
         bank: profileData.bank,
-        account_number: profileData.accountNumber,
-        transfer_rut: profileData.transferRut,
-        confirmation_email: profileData.confirmationEmail,
-        account_type: profileData.accountType || 'corriente',
+        account_number: profileData.account_number,
+        transfer_rut: profileData.transfer_rut,
+        confirmation_email: profileData.confirmation_email,
+        account_type: profileData.account_type || 'corriente',
       };
 
       try {
@@ -184,22 +184,26 @@ export const updateUserProfile = async (userId, profileData) => {
           .upsert(bankData, { onConflict: ['user_id'] });
 
         if (bankError) {
-          // ...removed log...
+          console.error('❌ Error al actualizar datos bancarios:', bankError);
+        } else {
+          console.log('✅ Datos bancarios actualizados correctamente');
         }
       } catch (error) {
-        // ...removed log...
+        console.error('❌ Excepción al actualizar datos bancarios:', error);
       }
+    } else {
+      console.log('ℹ️ No hay datos bancarios para actualizar');
     }
 
     // 3. Actualizar/Insertar información de envío (con validación de existencia)
     if (hasShippingData(profileData)) {
       const shippingData = {
         user_id: userId,
-        shipping_region: profileData.shippingRegion,
-        shipping_commune: profileData.shippingComuna,
-        shipping_address: profileData.shippingAddress,
-        shipping_number: profileData.shippingNumber,
-        shipping_dept: profileData.shippingDept,
+        shipping_region: profileData.shipping_region,
+        shipping_commune: profileData.shipping_commune,
+        shipping_address: profileData.shipping_address,
+        shipping_number: profileData.shipping_number,
+        shipping_dept: profileData.shipping_dept,
       };
 
       try {
@@ -220,12 +224,12 @@ export const updateUserProfile = async (userId, profileData) => {
     if (hasBillingData(profileData)) {
       const billingData = {
         user_id: userId,
-        business_name: profileData.businessName,
-        billing_rut: profileData.billingRut,
-        business_line: profileData.businessLine,
-        billing_address: profileData.billingAddress,
-        billing_region: profileData.billingRegion,
-        billing_commune: profileData.billingComuna,
+        business_name: profileData.business_name,
+        billing_rut: profileData.billing_rut,
+        business_line: profileData.business_line,
+        billing_address: profileData.billing_address,
+        billing_region: profileData.billing_region,
+        billing_commune: profileData.billing_commune,
       };
 
       try {
@@ -736,18 +740,18 @@ export const forceUpsertImageUrl = async (userId, correctUrl) => {
  * Funciones auxiliares para validar si hay datos en cada sección
  */
 const hasbankingData = (data) => {
-  return data.accountHolder || data.bank || data.accountNumber || 
-         data.transferRut || data.confirmationEmail;
+  return data.account_holder || data.bank || data.account_number || 
+         data.transfer_rut || data.confirmation_email;
 };
 
 const hasShippingData = (data) => {
-  return data.shippingRegion || data.shippingComuna || data.shippingAddress || 
-         data.shippingNumber || data.shippingDept;
+  return data.shipping_region || data.shipping_commune || data.shipping_address || 
+         data.shipping_number || data.shipping_dept;
 };
 
 const hasBillingData = (data) => {
-  return data.businessName || data.billingRut || data.businessLine || 
-         data.billingAddress || data.billingRegion || data.billingComuna;
+  return data.business_name || data.billing_rut || data.business_line || 
+         data.billing_address || data.billing_region || data.billing_commune;
 };
 
 // ============================================================================

@@ -81,14 +81,7 @@ const AddToCartModal = ({
     error: documentTypesError 
   } = useSupplierDocumentTypes(supplierId);
 
-  // Debug logs
-  console.log('🔍 [AddToCartModal] Debug supplier document types:', {
-    supplierId,
-    supplierDocumentTypes,
-    availableOptions,
-    loadingDocumentTypes,
-    documentTypesError
-  });
+
 
   // Función para cargar las regiones de despacho del producto
   const loadProductShippingRegions = useCallback(async (productId) => {
@@ -118,29 +111,17 @@ const AddToCartModal = ({
     const enrichProductWithRegions = async () => {
       if (!open || !product?.id) return;
 
-      console.log('🔄 [DEBUG MODAL] Iniciando enriquecimiento de producto:', {
-        productId: product.id,
-        hasExistingRegions: !!(product.shippingRegions?.length || product.delivery_regions?.length)
-      });
-
       // Si el producto ya tiene regiones, no necesitamos cargarlas
       if (product.shippingRegions?.length > 0 || 
           product.delivery_regions?.length > 0 || 
           product.shipping_regions?.length > 0 ||
           product.product_delivery_regions?.length > 0) {
-        console.log('✅ [DEBUG MODAL] Producto ya tiene regiones, usando existentes');
         setEnrichedProduct(product);
         return;
       }
 
       // Cargar regiones de despacho desde la base de datos
-      console.log('📡 [DEBUG MODAL] Cargando regiones desde Supabase...');
       const shippingRegions = await loadProductShippingRegions(product.id);
-      
-      console.log('📦 [DEBUG MODAL] Regiones cargadas:', {
-        count: shippingRegions.length,
-        regions: shippingRegions.map(r => ({ region: r.region, price: r.price, days: r.delivery_days }))
-      });
 
       const productWithRegions = {
         ...product,
@@ -151,7 +132,6 @@ const AddToCartModal = ({
       };
 
       setEnrichedProduct(productWithRegions);
-      console.log('✅ [DEBUG MODAL] Producto enriquecido establecido');
     };
 
     enrichProductWithRegions();
@@ -367,15 +347,10 @@ const AddToCartModal = ({
         selectedTier: activeTier,
       };
       
-      console.log('🛒 [AddToCartModal] Intentando agregar al carrito:', cartItem);
       await onAddToCart(cartItem);
-      console.log('✅ [AddToCartModal] Producto agregado exitosamente al carrito');
       onClose();
     } catch (error) {
       console.error('❌ [AddToCartModal] Error al agregar producto al carrito:', error);
-      console.error('📋 [AddToCartModal] Detalles del producto:', productData);
-      console.error('🔢 [AddToCartModal] Cantidad:', quantity);
-      console.error('💰 [AddToCartModal] Precios:', currentPricing);
     } finally {
       setIsProcessing(false);
     }

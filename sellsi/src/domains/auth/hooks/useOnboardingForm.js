@@ -26,7 +26,7 @@ export const useOnboardingForm = (onClose) => {
     businessLine: '',
     billingAddress: '',
     billingRegion: '',
-    billingComuna: ''
+    billingCommune: ''
   });
 
   const [loading, setLoading] = useState(false);

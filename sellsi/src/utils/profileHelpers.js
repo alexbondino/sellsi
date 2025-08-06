@@ -48,7 +48,7 @@ export const mapUserProfileToFormData = (userProfile) => {
 
     // Información de Envío
     shippingRegion: userProfile.shipping_region || '',
-    shippingComuna: userProfile.shipping_commune || '',
+    shippingCommune: userProfile.shipping_commune || '', // 🔧 CORREGIDO: commune (no comuna)
     shippingAddress: userProfile.shipping_address || '',
     shippingNumber: userProfile.shipping_number || '',
     shippingDept: userProfile.shipping_dept || '',
@@ -71,7 +71,7 @@ export const mapUserProfileToFormData = (userProfile) => {
     businessLine: userProfile.business_line || '',
     billingAddress: userProfile.billing_address || '',
     billingRegion: userProfile.billing_region || '',
-    billingComuna: userProfile.billing_comuna || userProfile.billing_commune || '',
+    billingCommune: userProfile.billing_commune || '', // 🔧 CORREGIDO: commune (no comuna)
   };
 
   return mapped;
@@ -84,7 +84,7 @@ export const mapUserProfileToFormData = (userProfile) => {
  * @returns {object} - Datos formateados para la BD
  */
 export const mapFormDataToUserProfile = (formData, userProfile) => {
-  return {
+  const result = {
     // Información básica
     email: formData.email,
     phone_nbr: formData.phone, // Mapear phone → phone_nbr
@@ -95,7 +95,7 @@ export const mapFormDataToUserProfile = (formData, userProfile) => {
     
     // Información de Envío
     shipping_region: formData.shippingRegion,
-    shipping_comuna: formData.shippingComuna,
+    shipping_commune: formData.shippingCommune, // 🔧 CORREGIDO: shipping_commune (no shipping_comuna)
     shipping_address: formData.shippingAddress,
     shipping_number: formData.shippingNumber,
     shipping_dept: formData.shippingDept,
@@ -117,6 +117,8 @@ export const mapFormDataToUserProfile = (formData, userProfile) => {
     business_line: formData.businessLine,
     billing_address: formData.billingAddress,
     billing_region: formData.billingRegion,
-    billing_comuna: formData.billingComuna,
+    billing_commune: formData.billingCommune, // 🔧 CORREGIDO: billing_commune (no billing_comuna)
   };
+
+  return result;
 };

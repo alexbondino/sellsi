@@ -126,7 +126,7 @@ const Onboarding = () => {
     businessLine: '',
     billingAddress: '',
     billingRegion: '',
-    billingComuna: ''
+    billingCommune: ''
   });
 
   const [logoFile, setLogoFile] = useState(null);
@@ -194,7 +194,7 @@ const Onboarding = () => {
     if (formData.accountType === 'proveedor' && 
         formData.documentTypes?.includes('factura')) {
       if (!formData.businessName || !formData.billingRut || !formData.businessLine ||
-          !formData.billingAddress || !formData.billingRegion || !formData.billingComuna) {
+          !formData.billingAddress || !formData.billingRegion || !formData.billingCommune) {
         console.error('Por favor completa todos los campos de información de facturación.');
         return;
       }
@@ -291,7 +291,7 @@ const Onboarding = () => {
             business_line: formData.businessLine,
             billing_address: formData.billingAddress,
             billing_region: formData.billingRegion,
-            billing_comuna: formData.billingComuna
+            billing_commune: formData.billingCommune
           })
         }),
       };
@@ -326,7 +326,7 @@ const Onboarding = () => {
         formData.businessLine &&
         formData.billingAddress &&
         formData.billingRegion &&
-        formData.billingComuna;
+        formData.billingCommune;
       
       return hasBasicInfo && hasBillingInfo;
     }

@@ -103,10 +103,18 @@ const TaxDocumentSelector = ({
             displayEmpty
             MenuProps={{
               disableScrollLock: true,
-              disablePortal: true,
+              disablePortal: false,
+              anchorOrigin: {
+                vertical: 'bottom',
+                horizontal: 'left',
+              },
+              transformOrigin: {
+                vertical: 'top',
+                horizontal: 'left',
+              },
               PaperProps: {
                 style: {
-                  maxHeight: 48 * 5 + 8, // 5 elementos × 48px altura + padding
+                  maxHeight: 48 * 5 + 8,
                   overflowX: 'hidden',
                   overflowY: 'auto',
                 },

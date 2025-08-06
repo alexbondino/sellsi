@@ -17,6 +17,7 @@ import { dashboardThemeCore } from '../../../../styles/dashboardThemeCore';
 import { SPACING_BOTTOM_MAIN } from '../../../../styles/layoutSpacing';
 import { supabase } from '../../../../services/supabase';
 import { SupplierErrorBoundary } from '../../components/ErrorBoundary';
+import { TransferInfoValidationModal, useTransferInfoModal } from '../../../../shared/components/validation'; // Modal de validación bancaria
 
 // Lazy imports para reducir el bundle inicial
 const DashboardSummary = React.lazy(() =>
@@ -43,6 +44,14 @@ const ChartFallback = () => (
 
 const ProviderHome = () => {
   const navigate = useNavigate();
+
+  // Modal de validación bancaria
+  const {
+    isOpen: showModal,
+    checkAndProceed,
+    handleRegisterAccount,
+    handleClose
+  } = useTransferInfoModal();
 
   // Dashboard data (metrics, charts, analytics)
   const {
@@ -71,6 +80,15 @@ const ProviderHome = () => {
   // Combine loading and error states
   const loading = dashboardLoading || productsLoading;
   const error = dashboardError || productsError;
+
+  // Función para manejar la creación de nuevo producto con validación bancaria
+  const handleNewProduct = () => {
+    checkAndProceed(null, () => {
+      navigate('/supplier/addproduct', {
+        state: { fromHome: true },
+      });
+    });
+  };
 
   // Ahora cuenta productos inactivos (is_active === false) con safety check
   const productsOutOfStock = products.filter(p => p.is_active === false).length;
@@ -170,11 +188,7 @@ const ProviderHome = () => {
                       },
                       transition: 'all 0.2s ease-in-out',
                     }}
-                    onClick={() =>
-                      navigate('/supplier/addproduct', {
-                        state: { fromHome: true },
-                      })
-                    }
+                    onClick={handleNewProduct}
                   >
                     Nuevo Producto
                   </Button>
@@ -189,6 +203,13 @@ const ProviderHome = () => {
             </Grid>
           </Container>
         </Box>
+
+        {/* Modal de validación de información bancaria */}
+        <TransferInfoValidationModal
+          open={showModal}
+          onConfirm={handleRegisterAccount}
+          onCancel={handleClose}
+        />
       </ThemeProvider>
     </SupplierErrorBoundary>
   );

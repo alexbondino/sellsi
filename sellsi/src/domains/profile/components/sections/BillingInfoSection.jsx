@@ -36,7 +36,7 @@ const BillingInfoSection = ({
   
   const handleRegionChange = (event) => {
     const value = event.target.value;
-    onRegionChange('billing', 'billingRegion', 'billingComuna', value);
+    onRegionChange('billing', 'billingRegion', 'billingCommune', value);
   };
 
   // No renderizar si showBilling es false
@@ -106,10 +106,18 @@ const BillingInfoSection = ({
             label="Región"
             MenuProps={{ 
               disableScrollLock: true,
-              disablePortal: true,
+              disablePortal: false,
+              anchorOrigin: {
+                vertical: 'bottom',
+                horizontal: 'left',
+              },
+              transformOrigin: {
+                vertical: 'top',
+                horizontal: 'left',
+              },
               PaperProps: {
                 style: {
-                  maxHeight: 48 * 5 + 8, // 5 elementos × 48px altura + padding
+                  maxHeight: 48 * 5 + 8,
                   overflowX: 'hidden',
                   overflowY: 'auto',
                 },
@@ -127,15 +135,23 @@ const BillingInfoSection = ({
         <FormControl fullWidth size="small" disabled={!formData.billingRegion}>
           <InputLabel>Comuna</InputLabel>
           <Select
-            value={formData.billingComuna || ''}
-            onChange={(e) => onFieldChange('billingComuna', e.target.value)}
+            value={formData.billingCommune || ''}
+            onChange={(e) => onFieldChange('billingCommune', e.target.value)}
             label="Comuna"
             MenuProps={{ 
               disableScrollLock: true,
-              disablePortal: true,
+              disablePortal: false,
+              anchorOrigin: {
+                vertical: 'bottom',
+                horizontal: 'left',
+              },
+              transformOrigin: {
+                vertical: 'top',
+                horizontal: 'left',
+              },
               PaperProps: {
                 style: {
-                  maxHeight: 48 * 5 + 8, // 5 elementos × 48px altura + padding
+                  maxHeight: 48 * 5 + 8,
                   overflowX: 'hidden',
                   overflowY: 'auto',
                 },

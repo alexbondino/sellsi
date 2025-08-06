@@ -114,7 +114,7 @@ const Profile = ({ userProfile: initialUserProfile, onUpdateProfile: externalUpd
         country: data.country,
         rut: data.rut,
         shipping_region: data.shipping_region,
-        shipping_comuna: data.shipping_comuna,
+        shipping_commune: data.shipping_commune, // 🔧 CORREGIDO: shipping_commune (no shipping_comuna)
         shipping_address: data.shipping_address,
         shipping_number: data.shipping_number,
         shipping_dept: data.shipping_dept,
@@ -129,7 +129,7 @@ const Profile = ({ userProfile: initialUserProfile, onUpdateProfile: externalUpd
         business_line: data.business_line,
         billing_address: data.billing_address,
         billing_region: data.billing_region,
-        billing_comuna: data.billing_comuna,
+        billing_commune: data.billing_commune, // 🔧 CORREGIDO: billing_commune (no billing_comuna)
         logo_url: data.logo_url,
         // ✅ AGREGAR: Mapear document_types desde la BD
         documentTypes: data.document_types || [],
@@ -199,8 +199,7 @@ const Profile = ({ userProfile: initialUserProfile, onUpdateProfile: externalUpd
 
   // Usar los hooks modulares con el perfil cargado
   const { formData, hasChanges, updateField, resetForm, updateInitialData } = useProfileForm(loadedProfile);
-  useEffect(() => {
-    }, [formData.shippingRegion, formData.shippingComuna]);
+  
   const { 
     pendingImage, 
     handleImageChange: _handleImageChange, 
@@ -274,13 +273,16 @@ const Profile = ({ userProfile: initialUserProfile, onUpdateProfile: externalUpd
     setLoading(true);
     try {
       // ✅ MAPEAR CORRECTAMENTE: FormData → BD format
+      console.log('📋 FormData antes del mapeo:', formData);
       let dataToUpdate = mapFormDataToUserProfile(formData, loadedProfile);
+      console.log('🔄 Datos después del mapeo:', dataToUpdate);
       
       // Eliminar campos que se manejan automáticamente
       delete dataToUpdate.profileImage;
       delete dataToUpdate.user_nm;
       delete dataToUpdate.logo_url;
 
+      console.log('📤 Datos finales a enviar:', dataToUpdate);
       await handleUpdateProfile(dataToUpdate);
       updateInitialData(); // Actualizar datos iniciales en lugar de resetear
 

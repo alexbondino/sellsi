@@ -25,7 +25,7 @@ const ShippingInfoSection = ({
   
   const handleRegionChange = (event) => {
     const value = event.target.value;
-    onRegionChange('shipping', 'shippingRegion', 'shippingComuna', value);
+    onRegionChange('shipping', 'shippingRegion', 'shippingCommune', value);
   };
 
   return (
@@ -43,10 +43,18 @@ const ShippingInfoSection = ({
             label="Región"
             MenuProps={{ 
               disableScrollLock: true,
-              disablePortal: true,
+              disablePortal: false,
+              anchorOrigin: {
+                vertical: 'bottom',
+                horizontal: 'left',
+              },
+              transformOrigin: {
+                vertical: 'top',
+                horizontal: 'left',
+              },
               PaperProps: {
                 style: {
-                  maxHeight: 48 * 5 + 8, // 5 elementos × 48px altura + padding
+                  maxHeight: 48 * 5 + 8,
                   overflowX: 'hidden',
                   overflowY: 'auto',
                 },
@@ -64,17 +72,25 @@ const ShippingInfoSection = ({
         <FormControl fullWidth size="small" disabled={!formData.shippingRegion}>
           <InputLabel>Comuna</InputLabel>
           <Select
-            value={formData.shippingComuna || ''}
+            value={formData.shippingCommune || ''}
             onChange={(e) => {
-              onFieldChange('shippingComuna', e.target.value);
+              onFieldChange('shippingCommune', e.target.value);
             }}
             label="Comuna"
             MenuProps={{ 
               disableScrollLock: true,
-              disablePortal: true,
+              disablePortal: false,
+              anchorOrigin: {
+                vertical: 'bottom',
+                horizontal: 'left',
+              },
+              transformOrigin: {
+                vertical: 'top',
+                horizontal: 'left',
+              },
               PaperProps: {
                 style: {
-                  maxHeight: 48 * 5 + 8, // 5 elementos × 48px altura + padding
+                  maxHeight: 48 * 5 + 8,
                   overflowX: 'hidden',
                   overflowY: 'auto',
                 },

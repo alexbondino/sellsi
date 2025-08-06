@@ -31,11 +31,11 @@ const BillingInfoForm = ({
     const value = event.target.value;
     onFieldChange('billingRegion', value);
     // Limpiar comuna cuando cambia la región
-    onFieldChange('billingComuna', '');
+    onFieldChange('billingCommune', '');
     
     // Si se proporciona onRegionChange, usarlo (compatibilidad con Profile)
     if (onRegionChange) {
-      onRegionChange('billing', 'billingRegion', 'billingComuna', value);
+      onRegionChange('billing', 'billingRegion', 'billingCommune', value);
     }
   };
 
@@ -115,7 +115,15 @@ const BillingInfoForm = ({
             label="Región *"
             MenuProps={{ 
               disableScrollLock: true,
-              disablePortal: true,
+              disablePortal: false,
+              anchorOrigin: {
+                vertical: 'bottom',
+                horizontal: 'left',
+              },
+              transformOrigin: {
+                vertical: 'top',
+                horizontal: 'left',
+              },
               PaperProps: {
                 style: {
                   maxHeight: 48 * 5 + 8,
@@ -136,12 +144,20 @@ const BillingInfoForm = ({
         <FormControl fullWidth size={size} disabled={!formData.billingRegion}>
           <InputLabel>Comuna *</InputLabel>
           <Select
-            value={formData.billingComuna || ''}
-            onChange={(e) => onFieldChange('billingComuna', e.target.value)}
+            value={formData.billingCommune || ''}
+            onChange={(e) => onFieldChange('billingCommune', e.target.value)}
             label="Comuna *"
             MenuProps={{ 
               disableScrollLock: true,
-              disablePortal: true,
+              disablePortal: false,
+              anchorOrigin: {
+                vertical: 'bottom',
+                horizontal: 'left',
+              },
+              transformOrigin: {
+                vertical: 'top',
+                horizontal: 'left',
+              },
               PaperProps: {
                 style: {
                   maxHeight: 48 * 5 + 8,
