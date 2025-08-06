@@ -50,7 +50,9 @@ const ProviderHome = () => {
     isOpen: showModal,
     checkAndProceed,
     handleRegisterAccount,
-    handleClose
+    handleClose,
+    loading: transferModalLoading,
+    missingFieldLabels
   } = useTransferInfoModal();
 
   // Dashboard data (metrics, charts, analytics)
@@ -206,9 +208,11 @@ const ProviderHome = () => {
 
         {/* Modal de validación de información bancaria */}
         <TransferInfoValidationModal
-          open={showModal}
-          onConfirm={handleRegisterAccount}
-          onCancel={handleClose}
+          isOpen={showModal}
+          onClose={handleClose}
+          onRegisterAccount={handleRegisterAccount}
+          loading={transferModalLoading}
+          missingFieldLabels={missingFieldLabels}
         />
       </ThemeProvider>
     </SupplierErrorBoundary>

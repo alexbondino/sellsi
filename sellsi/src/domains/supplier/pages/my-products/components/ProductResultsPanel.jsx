@@ -42,13 +42,7 @@ const ProductResultsPanel = ({
     return false;
   }, [isLoading, isValid, isEditMode, hasActualChanges]);
 
-  console.log('🔍 [ProductResultsPanel] Estado del botón:', {
-    isEditMode,
-    isValid,
-    hasActualChanges,
-    isLoading,
-    isButtonDisabled
-  });
+  
   return (
     <Paper sx={{ p: 3, position: 'sticky', top: 100 }}>
       <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
