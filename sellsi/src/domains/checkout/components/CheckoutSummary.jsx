@@ -324,9 +324,7 @@ const CheckoutSummary = ({
                 >
                   {isProcessing
                     ? 'Procesando...'
-                    : `Confirmar y Pagar ${checkoutService.formatPrice(
-                        orderTotal
-                      )}`}
+                    : `Confirmar y Pagar`}
                 </Button>
               </motion.div>
 

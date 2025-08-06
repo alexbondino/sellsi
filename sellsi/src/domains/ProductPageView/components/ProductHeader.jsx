@@ -734,12 +734,18 @@ const ProductHeader = React.memo(({
               {proveedor}
             </Typography>
             {(product?.proveedorVerificado || product?.verified) && (
-              <VerifiedIcon
-                sx={{
-                  fontSize: 20,
-                  color: 'primary.main',
-                }}
-              />
+              <Tooltip
+                title="Este Proveedor ha sido verificado por Sellsi."
+                placement="right"
+                arrow
+              >
+                <VerifiedIcon
+                  sx={{
+                    fontSize: 20,
+                    color: 'primary.main',
+                  }}
+                />
+              </Tooltip>
             )}
           </Box>
           {/* Precios and/or tramos */}
