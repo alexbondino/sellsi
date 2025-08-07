@@ -99,7 +99,7 @@ const ProductShipping = ({ product, isMobile = false, isLoggedIn = false }) => {
             fontWeight: 700,
             color: 'black',
             mb: 3,
-            fontSize: { xs: '1.5rem', sm: '1.5rem', md: '1.5rem' },
+            fontSize: { xs: '1.4rem', sm: '1.4rem', md: '1.4rem' },
             position: 'relative',
             display: 'flex',
             alignItems: 'center',

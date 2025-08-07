@@ -32,7 +32,7 @@ const ProductInfo = ({ product, isMobile = false }) => {
             fontWeight: 700,
             color: 'black',
             mb: 3,
-            fontSize: { xs: '1.5rem', sm: '1.5rem', md: '1.5rem' },
+            fontSize: { xs: '1.4rem', sm: '1.4rem', md: '1.4rem' },
             position: 'relative',
             '&::after': {
               content: '""',
@@ -40,19 +40,19 @@ const ProductInfo = ({ product, isMobile = false }) => {
               bottom: -8,
               left: '50%',
               transform: 'translateX(-50%)',
-              width: '42%',
+              width: '23%',
               height: '3px',
               background: '#464646ff',
               borderRadius: '2px',
             },
           }}
         >
-          📋 Descripción del Producto
+          📋 Descripción
         </Typography>
         <Typography
           variant="body1"
           sx={{
-            fontSize: { xs: '1rem', sm: '1.1rem', md: '1rem' },
+            fontSize: { xs: '1rem', sm: '1rem', md: '1rem' },
             lineHeight: 1.8,
             color: '#000000ff',
             textAlign: 'justify',
