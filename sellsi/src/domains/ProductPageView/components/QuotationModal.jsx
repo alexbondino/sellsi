@@ -10,6 +10,18 @@ const QuotationModal = ({ open, onClose, product, quantity: initialQuantity, uni
   // Estado local para la cantidad seleccionada
   const [selectedQuantity, setSelectedQuantity] = useState(initialQuantity || 1)
 
+  // Calcular datos del producto (similar a AddToCartModal)
+  const productData = useMemo(() => ({
+    stock: product?.stock || product?.maxStock || product?.productqty || 50,
+    maxPurchase: product?.max_purchase || product?.maxPurchase || 999,
+    minimumPurchase: product?.minimum_purchase || product?.compraMinima || initialQuantity || 1,
+  }), [product, initialQuantity]);
+
+  // Calcular máximo efectivo (igual que AddToCartModal)
+  const maxQuantity = useMemo(() => {
+    return Math.min(productData.maxPurchase, productData.stock);
+  }, [productData.maxPurchase, productData.stock]);
+
   // Calcular precios dinámicamente basado en la cantidad seleccionada
   const calculatedPrices = useMemo(() => {
     const basePrice = product?.precio || product?.price || initialUnitPrice || 0
@@ -86,8 +98,8 @@ const QuotationModal = ({ open, onClose, product, quantity: initialQuantity, uni
           <QuantitySelector
             value={selectedQuantity}
             onChange={setSelectedQuantity}
-            min={initialQuantity || 1} // Usar la cantidad mínima como mínimo
-            max={999}
+            min={productData.minimumPurchase} // Usar la cantidad mínima del producto
+            max={maxQuantity} // Usar el stock máximo del producto
             size="medium"
             label="Cantidad"
             sx={{ 
@@ -99,6 +111,20 @@ const QuotationModal = ({ open, onClose, product, quantity: initialQuantity, uni
               }
             }}
           />
+        </Box>
+        
+        {/* Mostrar información de stock */}
+        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 1 }}>
+          <Typography 
+            variant="caption" 
+            color="text.secondary" 
+            sx={{ 
+              fontSize: '0.75rem',
+              textAlign: 'center'
+            }}
+          >
+            Stock disponible: {productData.stock.toLocaleString('es-CL')} unidades
+          </Typography>
         </Box>
       </Box>
     </Modal>
