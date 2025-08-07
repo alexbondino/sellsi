@@ -1,1 +1,4 @@
-o4509693014900736.ingest.us.sentry.io/api/4509693017063424/envelope/?sentry_version=7&sentry_key=a2bae70d1df327d55986a9391ca3040b&sentry_client=sentry.javascript.react%2F8.55.0:1   Failed to load resource: the server responded with a status of 429 ()
+ProductCardProviderContext.jsx:30 ProductCardProviderContext - Debug: {providerName: 'The Lich King', verified: undefined, allProductData: {…}}
+ProductCardProviderContext.jsx:30 ProductCardProviderContext - Debug: {providerName: 'The Lich King', verified: undefined, allProductData: {…}}
+ProductCardProviderContext.jsx:30 ProductCardProviderContext - Debug: {providerName: 'nitaj38934', verified: undefined, allProductData: {…}}
+ProductCardProviderContext.jsx:30 ProductCardProviderContext - Debug: {providerName: 'nitaj38934', verified: undefined, allProductData: {…}}

@@ -161,6 +161,14 @@ const RechazarPagoModal = ({ open, solicitud, onClose, onSuccess }) => {
     setSuccess('');
 
     try {
+      // Obtener adminId desde localStorage
+      const adminUser = JSON.parse(localStorage.getItem('adminUser') || '{}');
+      if (!adminUser.id) {
+        setError('Sesión administrativa expirada. Por favor, inicie sesión nuevamente.');
+        setLoading(false);
+        return;
+      }
+
       // Rechazar el pago
       const motivoFinal = formData.motivo === 'otro' 
         ? formData.motivoPersonalizado 
@@ -173,7 +181,7 @@ const RechazarPagoModal = ({ open, solicitud, onClose, onSuccess }) => {
         fecha_rechazo: new Date().toISOString()
       };
 
-      const result = await rechazarPago(solicitud.id, datos);
+      const result = await rechazarPago(solicitud.id, datos, adminUser.id);
 
       if (result.success) {
         // Enviar notificación al comprador si está habilitado

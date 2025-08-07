@@ -121,16 +121,14 @@ export {
  */
 export const getEstadisticas = async () => {
   try {
-    // Stats mock para desarrollo - mantener compatibilidad
-    const mockStats = {
-      total: 25,
-      pendientes: 8,
-      confirmados: 12,
-      rechazados: 3,
-      devueltos: 2
-    }
+    // Usar estadísticas reales desde adminRequestService
+    const result = await import('./adminRequestService').then(module => module.getSolicitudesStats())
     
-    return { success: true, stats: mockStats }
+    if (result.success) {
+      return { success: true, stats: result.data }
+    } else {
+      throw new Error(result.error)
+    }
   } catch (error) {
     console.error('Error en getEstadisticas:', error)
     return { success: false, error: 'Error interno del servidor' }

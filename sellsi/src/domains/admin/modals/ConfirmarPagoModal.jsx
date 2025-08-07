@@ -124,13 +124,21 @@ const ConfirmarPagoModal = ({ open, solicitud, onClose, onSuccess }) => {
     setSuccess('');
 
     try {
+      // Obtener adminId desde localStorage
+      const adminUser = JSON.parse(localStorage.getItem('adminUser') || '{}');
+      if (!adminUser.id) {
+        setError('Sesión administrativa expirada. Por favor, inicie sesión nuevamente.');
+        setLoading(false);
+        return;
+      }
+
       // Confirmar el pago
       const datos = {
         comprobantes_urls: comprobantes.map(c => c.url),
         fecha_confirmacion: new Date().toISOString()
       };
 
-      const result = await confirmarPago(solicitud.id, datos);
+      const result = await confirmarPago(solicitud.id, datos, adminUser.id);
 
       if (result.success) {
         // Enviar notificación al comprador si está habilitado
