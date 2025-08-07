@@ -123,7 +123,11 @@ const ShippingRegionsDisplay = ({ regions = [] }) => {
                 </Box>
               </TableCell>
               <TableCell sx={{ py: 1.5 }}>
-                <Typography variant="body2" color="primary.main" sx={{ fontWeight: 600 }}>
+                <Typography 
+                  variant="body2" 
+                  color={region.shippingValue === 0 || region.shippingValue === '0' ? 'success.main' : 'primary.main'} 
+                  sx={{ fontWeight: 600 }}
+                >
                   {formatCurrency(region.shippingValue)}
                 </Typography>
               </TableCell>

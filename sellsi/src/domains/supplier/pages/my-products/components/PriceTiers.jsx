@@ -597,59 +597,76 @@ const PriceTiers = ({
       )}
 
       {/* Mensaje de ayuda dinámico para tramos debajo de las cards */}
-      {tramos.length >= 2 && (
-        <Box sx={{ mt: 3 }}>
-          <Typography
-            variant="body2"
-            color="info.main"
-            sx={{ fontWeight: 500 }}
-          >
-            ¿Cómo funcionan los rangos?
-          </Typography>
-          {tramos.map((tramo, idx, arr) => {
-            const min = tramo.min;
-            const max = shouldShowStockInsteadOfMaxInput(idx) ? stockDisponible : tramo.max;
-            const precio = tramo.precio;
-            
-            // Verificar si el rango está completado (tiene min, max (o es último), y precio)
-            const isRangeCompleted = min && precio && (idx === arr.length - 1 || max);
-            
-            // Solo mostrar el texto si el rango está completado
-            if (!isRangeCompleted) {
-              return null;
-            }
-            
-            // Si es el último rango
-            if (idx === arr.length - 1) {
-              return (
-                <Typography
-                  key={idx}
-                  variant="caption"
-                  color="text.secondary"
-                  display="block"
-                >
-                  Rango {idx + 1}: si el cliente compra <b>{min}</b> unidades o más, paga{' '}
-                  <b>${precio}</b> por unidad.
-                </Typography>
-              );
-            } else {
-              // Rangos intermedios
-              return (
-                <Typography
-                  key={idx}
-                  variant="caption"
-                  color="text.secondary"
-                  display="block"
-                >
-                  Rango {idx + 1}: si el cliente compra entre <b>{min}</b> y{' '}
-                  <b>{max}</b> unidades, paga{' '}
-                  <b>${precio}</b> por unidad.
-                </Typography>
-              );
-            }
-          })}
-        </Box>
-      )}
+      {(() => {
+        // Contar cuántos rangos están completados
+        const completedRanges = tramos.filter((tramo, idx) => {
+          const min = tramo.min;
+          const max = shouldShowStockInsteadOfMaxInput(idx) ? stockDisponible : tramo.max;
+          const precio = tramo.precio;
+          
+          // Verificar si el rango está completado (tiene min, max (o es último), y precio)
+          return min && precio && (idx === tramos.length - 1 || max);
+        });
+        
+        // Solo mostrar si hay al menos 1 rango completado
+        if (completedRanges.length === 0) {
+          return null;
+        }
+        
+        return (
+          <Box sx={{ mt: 3 }}>
+            <Typography
+              variant="body2"
+              color="info.main"
+              sx={{ fontWeight: 500 }}
+            >
+              ¿Cómo funcionan los rangos?
+            </Typography>
+            {tramos.map((tramo, idx, arr) => {
+              const min = tramo.min;
+              const max = shouldShowStockInsteadOfMaxInput(idx) ? stockDisponible : tramo.max;
+              const precio = tramo.precio;
+              
+              // Verificar si el rango está completado (tiene min, max (o es último), y precio)
+              const isRangeCompleted = min && precio && (idx === arr.length - 1 || max);
+              
+              // Solo mostrar el texto si el rango está completado
+              if (!isRangeCompleted) {
+                return null;
+              }
+              
+              // Si es el último rango
+              if (idx === arr.length - 1) {
+                return (
+                  <Typography
+                    key={idx}
+                    variant="caption"
+                    color="text.secondary"
+                    display="block"
+                  >
+                    Rango {idx + 1}: si el cliente compra <b>{min}</b> unidades o más, paga{' '}
+                    <b>${precio}</b> por unidad.
+                  </Typography>
+                );
+              } else {
+                // Rangos intermedios
+                return (
+                  <Typography
+                    key={idx}
+                    variant="caption"
+                    color="text.secondary"
+                    display="block"
+                  >
+                    Rango {idx + 1}: si el cliente compra entre <b>{min}</b> y{' '}
+                    <b>{max}</b> unidades, paga{' '}
+                    <b>${precio}</b> por unidad.
+                  </Typography>
+                );
+              }
+            })}
+          </Box>
+        );
+      })()}
 
       {errors && (
         <Typography

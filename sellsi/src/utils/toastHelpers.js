@@ -179,7 +179,7 @@ export const showValidationError = (message, options = {}) => {
   // formatearlos para mejor legibilidad
   const formattedMessage = message.includes('\n') 
     ? message.split('\n').map((line, index) => 
-        index === 0 ? line : `• ${line}`
+        index === 0 ? line : `${line}`
       ).join('\n')
     : message;
     

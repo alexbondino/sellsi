@@ -601,8 +601,17 @@ const ProductHeader = React.memo(({
                   Cargando opciones...
                 </Typography>
               ) : availableOptions && availableOptions.length > 0 ? (
-                // Si solo hay "ninguno", no mostrar ningún chip
-                availableOptions.length === 1 && availableOptions[0].value === 'ninguno' ? null : (
+                // Si solo hay "ninguno", mostrar texto en negro con fuente de Stock
+                availableOptions.length === 1 && availableOptions[0].value === 'ninguno' ? (
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      color: 'text.primary',fontWeight: 600,
+                    }}
+                  >
+                    Proveedor no ofrece documento tributario
+                  </Typography>
+                ) : (
                   availableOptions
                     .filter(option => option.value !== 'ninguno') // Excluir "ninguno" de los chips
                     .map((option) => (
@@ -638,18 +647,6 @@ const ProductHeader = React.memo(({
                   />
                   <Chip
                     label="Boleta"
-                    size={isMobile ? "medium" : "small"}
-                    sx={{
-                      backgroundColor: 'primary.main',
-                      color: 'white',
-                      fontSize: { xs: '0.8rem', md: '0.75rem' },
-                      '&:hover': {
-                        backgroundColor: 'primary.main',
-                      },
-                    }}
-                  />
-                  <Chip
-                    label="Ninguno"
                     size={isMobile ? "medium" : "small"}
                     sx={{
                       backgroundColor: 'primary.main',

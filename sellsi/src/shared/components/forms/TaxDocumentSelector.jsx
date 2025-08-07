@@ -27,16 +27,16 @@ const TaxDocumentSelector = ({
     const value = event.target.value;
     const currentSelection = documentTypes || [];
     
-    // Si se selecciona "Ninguno", eliminar Boleta y Factura
+    // Si se selecciona "No ofrecer documento tributario", eliminar Boleta y Factura
     if (value.includes('ninguno') && !currentSelection.includes('ninguno')) {
-      // "Ninguno" se está agregando, eliminar todo lo demás
+      // "No ofrecer documento tributario" se está agregando, eliminar todo lo demás
       onDocumentTypesChange(['ninguno']);
     } else if (value.includes('ninguno') && currentSelection.includes('ninguno') && value.length > 1) {
-      // "Ninguno" ya estaba seleccionado y se está agregando algo más, eliminar "ninguno"
+      // "No ofrecer documento tributario" ya estaba seleccionado y se está agregando algo más, eliminar "ninguno"
       const filteredValue = value.filter(item => item !== 'ninguno');
       onDocumentTypesChange(filteredValue);
     } else if (!value.includes('ninguno')) {
-      // "Ninguno" no está en la selección, usar valor tal como está
+      // "No ofrecer documento tributario" no está en la selección, usar valor tal como está
       onDocumentTypesChange(value);
     } else {
       // Solo "ninguno" está seleccionado

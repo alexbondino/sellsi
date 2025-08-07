@@ -619,7 +619,7 @@ const AddToCartModal = ({
               <FormControlLabel
                 value="ninguno"
                 control={<Radio size="small" />}
-                label="Ninguno"
+                label="No ofrecer documento tributario"
                 onClick={(e) => {
                   e.stopPropagation();
                 }}
@@ -630,9 +630,27 @@ const AddToCartModal = ({
       );
     }
 
-    // Si solo hay "ninguno" como opción, no mostrar nada
+    // Si solo hay "ninguno" como opción, mostrar texto explicativo
     if (availableOptions.length === 1 && availableOptions[0].value === 'ninguno') {
-      return null;
+      return (
+        <Box
+          onClick={(e) => {
+            e.stopPropagation();
+          }}
+        >
+          <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 600 }}>
+            Tipo de Documento
+          </Typography>
+          <Typography
+            variant="body2"
+            sx={{
+              color: 'text.primary',
+            }}
+          >
+            Proveedor no ofrece documento tributario
+          </Typography>
+        </Box>
+      );
     }
 
     // Mostrar solo las opciones disponibles para este proveedor (excluyendo caso de solo "ninguno")

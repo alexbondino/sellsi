@@ -36,7 +36,7 @@ export const BANKS = [
 ];
 
 export const DOCUMENT_TYPES = [
-  { value: 'ninguno', label: 'Ninguno' },
+  { value: 'ninguno', label: 'No ofrecer documento tributario' },
   { value: 'boleta', label: 'Boleta' },
   { value: 'factura', label: 'Factura' }
 ];

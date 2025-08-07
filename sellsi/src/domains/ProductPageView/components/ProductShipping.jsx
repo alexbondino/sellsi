@@ -55,11 +55,15 @@ const ProductShipping = ({ product, isMobile = false, isLoggedIn = false }) => {
   };
 
   const formatCurrency = (value) => {
+    const numericValue = value || 0;
+    if (numericValue === 0) {
+      return 'GRATIS';
+    }
     return new Intl.NumberFormat('es-CL', {
       style: 'currency',
       currency: 'CLP',
       minimumFractionDigits: 0,
-    }).format(value || 0);
+    }).format(numericValue);
   };
 
   // Si no hay regiones de despacho o el usuario no está logueado, no mostrar el componente
@@ -107,7 +111,7 @@ const ProductShipping = ({ product, isMobile = false, isLoggedIn = false }) => {
               bottom: -8,
               left: '50%',
               transform: 'translateX(-50%)',
-              width: '45%',
+              width: '22%',
               height: '3px',
               background: '#464646ff',
               borderRadius: '2px',
@@ -116,7 +120,7 @@ const ProductShipping = ({ product, isMobile = false, isLoggedIn = false }) => {
         >
           <span style={{ display: 'flex', alignItems: 'center' }}>
             <span style={{ fontSize: '1.3em', marginRight: 8 }}>🚚</span>
-            Regiones de Despacho
+            Despacho
           </span>
         </Typography>
 
@@ -209,7 +213,7 @@ const ProductShipping = ({ product, isMobile = false, isLoggedIn = false }) => {
                         sx={{ 
                           fontWeight: 600,
                           fontSize: '1rem',
-                          color: 'black'
+                          color: (region.shippingValue || region.price) === 0 ? 'success.main' : 'black'
                         }}
                       >
                         {formatCurrency(region.shippingValue || region.price)}
@@ -240,11 +244,11 @@ const ProductShipping = ({ product, isMobile = false, isLoggedIn = false }) => {
           sx={{ 
             mt: 3,
             color: 'text.secondary',
-            fontSize: '1rem',
+            fontSize: '0.85rem',
             textAlign: 'center'
           }}
         >
-          <i>El tiempo de despacho indicado es un estimado y se considera en días hábiles.</i>
+          <i>Tiempo de despacho estimado en días hábiles.</i>
         </Typography>
       </Paper>
     </Box>

@@ -96,7 +96,7 @@ const ProductResultsPanel = ({
             mb: 2,
           }}
         >
-          <Typography variant="h6" fontWeight="600">
+          <Typography variant="h6" fontWeight="600" color="primary.main">
             Total
           </Typography>
           <Typography
