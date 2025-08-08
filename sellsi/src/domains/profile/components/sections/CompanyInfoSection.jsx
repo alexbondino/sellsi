@@ -134,6 +134,12 @@ const CompanyInfoSection = ({
             showTitle={false}
             size="small"
           />
+          <Box sx={{ display: 'flex', alignItems: 'center', mt: 0.5, ml: 0.5 }}>
+            <InfoOutlinedIcon sx={{ fontSize: 16, color: 'primary.main', mr: 0.5 }} />
+            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+              Estos serán los documentos tributarios que ofrecerás en el Marketplace al vender productos.
+            </Typography>
+          </Box>
         </Box>
 
   {/* Documento Tributario eliminado: Facturación ya no depende de este selector */}

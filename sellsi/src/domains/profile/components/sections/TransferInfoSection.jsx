@@ -1,6 +1,5 @@
 import React from 'react';
 import { Box, Typography, TextField, FormControl, Select, MenuItem } from '@mui/material';
-import ProfileSwitch from '../ProfileSwitch';
 import { validateRut, validateEmail } from '../../../../utils/validators';
 import { BANKS, ACCOUNT_TYPES } from '../../../../shared/constants/profile';
 
@@ -53,6 +52,7 @@ const TransferInfoSection = ({
       </Box>
       
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+        {/* 1) Nombre Titular */}
         <TextField
           label="Nombre Titular"
           value={formData.accountHolder || ''}
@@ -62,45 +62,29 @@ const TransferInfoSection = ({
           size="small"
           sx={getFieldStyle(formData.accountHolder, true)}
         />
-        
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          <Typography variant="body2" sx={{ minWidth: 120 }}>
-            Tipo de Cuenta
-          </Typography>
-          <FormControl size="small" sx={{ flexGrow: 1 }}>
-            <Select
-              value={formData.accountType || 'corriente'}
-              onChange={(e) => onFieldChange('accountType', e.target.value)}
-              displayEmpty
-              MenuProps={{
-                disableScrollLock: true,
-                disablePortal: false,
-                anchorOrigin: {
-                  vertical: 'bottom',
-                  horizontal: 'left',
-                },
-                transformOrigin: {
-                  vertical: 'top',
-                  horizontal: 'left',
-                },
-                PaperProps: {
-                  style: {
-                    maxHeight: 48 * 5 + 8,
-                    overflowX: 'hidden',
-                    overflowY: 'auto',
-                  },
-                },
-              }}
-            >
-              {ACCOUNT_TYPES.map((type) => (
-                <MenuItem key={type.value} value={type.value}>
-                  {type.label}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        </Box>
-        
+
+        {/* 2) Rut */}
+        <TextField
+          label="Rut"
+          value={formData.transferRut || ''}
+          onChange={(e) => {
+            const raw = e.target.value.replace(/[^0-9kK]/g, '');
+            const formatted = raw.replace(/(\d{1,2})(\d{3})(\d{3})([\dkK])?$/, (match, p1, p2, p3, p4) => {
+              let rut = p1 + '.' + p2 + '.' + p3;
+              if (p4) rut += '-' + p4;
+              return rut;
+            });
+            onFieldChange('transferRut', formatted);
+          }}
+          fullWidth
+          variant="outlined"
+          size="small"
+          error={!validateRut(formData.transferRut)}
+          helperText={!validateRut(formData.transferRut) ? 'Formato de RUT inválido' : ''}
+          sx={getFieldStyle(formData.transferRut, true)}
+        />
+
+        {/* 3) Banco */}
         <FormControl fullWidth size="small">
           <Typography variant="body2" sx={{ 
             mb: 1,
@@ -144,9 +128,49 @@ const TransferInfoSection = ({
             ))}
           </Select>
         </FormControl>
-        
+
+        {/* 4) Tipo de Cuenta */}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <Typography variant="body2" sx={{ minWidth: 120 }}>
+            Tipo de Cuenta
+          </Typography>
+          <FormControl size="small" sx={{ flexGrow: 1 }}>
+            <Select
+              value={formData.accountType || 'corriente'}
+              onChange={(e) => onFieldChange('accountType', e.target.value)}
+              displayEmpty
+              MenuProps={{
+                disableScrollLock: true,
+                disablePortal: false,
+                anchorOrigin: {
+                  vertical: 'bottom',
+                  horizontal: 'left',
+                },
+                transformOrigin: {
+                  vertical: 'top',
+                  horizontal: 'left',
+                },
+                PaperProps: {
+                  style: {
+                    maxHeight: 48 * 5 + 8,
+                    overflowX: 'hidden',
+                    overflowY: 'auto',
+                  },
+                },
+              }}
+            >
+              {ACCOUNT_TYPES.map((type) => (
+                <MenuItem key={type.value} value={type.value}>
+                  {type.label}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Box>
+
+        {/* 5) Numero de Cuenta */}
         <TextField
-          label="N° de Cuenta"
+          label="Numero de Cuenta"
           value={formData.accountNumber || ''}
           onChange={(e) => onFieldChange('accountNumber', e.target.value)}
           fullWidth
@@ -154,29 +178,10 @@ const TransferInfoSection = ({
           size="small"
           sx={getFieldStyle(formData.accountNumber, true)}
         />
-        
+
+        {/* 6) Correo */}
         <TextField
-          label="RUT"
-          value={formData.transferRut || ''}
-          onChange={(e) => {
-            const raw = e.target.value.replace(/[^0-9kK]/g, '');
-            const formatted = raw.replace(/(\d{1,2})(\d{3})(\d{3})([\dkK])?$/, (match, p1, p2, p3, p4) => {
-              let rut = p1 + '.' + p2 + '.' + p3;
-              if (p4) rut += '-' + p4;
-              return rut;
-            });
-            onFieldChange('transferRut', formatted);
-          }}
-          fullWidth
-          variant="outlined"
-          size="small"
-          error={!validateRut(formData.transferRut)}
-          helperText={!validateRut(formData.transferRut) ? 'Formato de RUT inválido' : ''}
-          sx={getFieldStyle(formData.transferRut, true)}
-        />
-        
-        <TextField
-          label="Correo Confirmación"
+          label="Correo"
           value={formData.confirmationEmail || ''}
           onChange={(e) => onFieldChange('confirmationEmail', e.target.value)}
           fullWidth
