@@ -15,7 +15,7 @@ import {
 import { validateRut } from '../../../utils/validators';
 
 /**
- * Componente modular para información de facturación
+ * Componente modular para Facturación
  * Reutilizable entre Profile y Onboarding
  */
 const BillingInfoForm = ({ 
@@ -53,7 +53,7 @@ const BillingInfoForm = ({
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
       {showTitle && (
         <Typography variant="h6" sx={{ mb: 1, pb: 1, borderBottom: 2, borderColor: 'primary.main' }}>
-          Información de Facturación
+          Facturación
         </Typography>
       )}
       

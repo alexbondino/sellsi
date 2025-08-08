@@ -2,6 +2,7 @@
  * Utilidades auxiliares para el módulo Profile
  * Funciones de formateo y manipulación de datos
  */
+import { normalizePhone, COUNTRY_CALLING_CODES } from './validators';
 
 /**
  * Enmascara datos sensibles mostrando solo los últimos N caracteres
@@ -37,11 +38,26 @@ export const getInitials = (name) => {
  * @returns {object} - Datos formateados para el formulario
  */
 export const mapUserProfileToFormData = (userProfile) => {
+  // Derivar NSN (número nacional sin prefijo) desde E.164 almacenado
+  const deriveNSN = (country, storedPhone) => {
+    if (!storedPhone) return '';
+    const cc = COUNTRY_CALLING_CODES[country] || '';
+    let digits = String(storedPhone).replace(/\D+/g, '');
+    if (cc && digits.startsWith(cc)) {
+      digits = digits.slice(cc.length);
+    }
+    // No reinsertar ceros de troncal; UI siempre muestra dígitos tal cual
+    return digits;
+  };
+
+  const uiCountry = userProfile.country || '';
+  const uiPhone = deriveNSN(uiCountry, userProfile.phone_nbr);
   const mapped = {
-    // Información Empresa
+    // Información General
     email: userProfile.email || '',
-    phone: userProfile.phone_nbr || '', // Mapear phone_nbr → phone
+    phone: uiPhone, // Mostrar solo NSN en UI (sin +código)
     rut: userProfile.rut || '',
+  country: uiCountry,
     role: userProfile.main_supplier ? 'supplier' : 'buyer', // Convertir boolean → string
     user_nm: userProfile.user_nm || '',
     descripcionProveedor: userProfile.descripcion_proveedor || '', // <--- MAPEO CORRECTO
@@ -65,7 +81,7 @@ export const mapUserProfileToFormData = (userProfile) => {
     // Documento Tributario
     documentTypes: userProfile.document_types || [],
 
-    // Información de Facturación
+    // Facturación
     businessName: userProfile.business_name || '',
     billingRut: userProfile.billing_rut || '',
     businessLine: userProfile.business_line || '',
@@ -84,11 +100,22 @@ export const mapUserProfileToFormData = (userProfile) => {
  * @returns {object} - Datos formateados para la BD
  */
 export const mapFormDataToUserProfile = (formData, userProfile) => {
+  // Normalizar teléfono a E.164 si es posible
+  let normalizedPhone = formData.phone;
+  if (formData.country && formData.phone) {
+    try {
+      normalizedPhone = normalizePhone(formData.country, formData.phone);
+    } catch {
+      // si falla por alguna razón, usar el valor crudo
+      normalizedPhone = formData.phone;
+    }
+  }
   const result = {
     // Información básica
     email: formData.email,
-    phone_nbr: formData.phone, // Mapear phone → phone_nbr
+  phone_nbr: normalizedPhone, // Guardar teléfono normalizado → phone_nbr
     rut: formData.rut,
+  country: formData.country,
     main_supplier: formData.role === 'supplier', // Convertir string → boolean
     user_nm: formData.user_nm || userProfile?.user_nm, // Preservar nombre de usuario
     descripcion_proveedor: formData.descripcionProveedor || '', // <--- MAPEO CORRECTO
@@ -111,7 +138,7 @@ export const mapFormDataToUserProfile = (formData, userProfile) => {
     // Documento Tributario
     document_types: formData.documentTypes || [],
     
-    // Información de Facturación
+    // Facturación
     business_name: formData.businessName,
     billing_rut: formData.billingRut,
     business_line: formData.businessLine,

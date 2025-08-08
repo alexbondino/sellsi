@@ -16,7 +16,7 @@ import {
 import { validateRut, validateEmail } from '../../../../utils/validators';
 
 /**
- * Sección de Información de Facturación del perfil
+ * Sección de Facturación del perfil
  * Incluye: razón social, RUT, giro, dirección, región, comuna y botón actualizar
  * Solo se muestra si el documento tributario incluye "Factura"
  */
@@ -46,9 +46,13 @@ const BillingInfoSection = ({
 
   return (
     <Box sx={{ p: 3, height: 'fit-content' }}>
-      <Typography variant="h6" sx={{ mb: 2, pb: 1, borderBottom: 2, borderColor: 'primary.main' }}>
-        Información de Facturación
-      </Typography>
+      <Box sx={{ mb: 2 }}>
+        <Typography variant="h6">Facturación</Typography>
+        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+          Si compras los Proveedores te facturarán y si vendes Sellsi te facturará
+        </Typography>
+        <Box sx={{ mt: 1, borderBottom: 2, borderColor: 'primary.main' }} />
+      </Box>
       
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
         <TextField

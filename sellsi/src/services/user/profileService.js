@@ -60,7 +60,7 @@ export const getUserProfile = async (userId) => {
       // ...removed log...
     }
 
-    // Obtener Información de Despacho con manejo de errores
+    // Obtener Dirección de Despacho con manejo de errores
     let shippingData = null;
     try {
       const { data, error } = await supabase
@@ -76,7 +76,7 @@ export const getUserProfile = async (userId) => {
       // ...removed log...
     }
 
-    // Obtener información de facturación con manejo de errores
+    // Obtener Facturación con manejo de errores
     let billingData = null;
     try {
       const { data, error } = await supabase
@@ -103,14 +103,14 @@ export const getUserProfile = async (userId) => {
       confirmation_email: bankData?.confirmation_email || '',
       account_type: bankData?.account_type || 'corriente',
       
-      // Información de Despacho (opcional)
+      // Dirección de Despacho (opcional)
       shipping_region: shippingData?.shipping_region || '',
       shipping_commune: shippingData?.shipping_commune || '',
       shipping_address: shippingData?.shipping_address || '',
       shipping_number: shippingData?.shipping_number || '',
       shipping_dept: shippingData?.shipping_dept || '',
       
-      // Información de facturación (opcional)
+      // Facturación (opcional)
       business_name: billingData?.business_name || '',
       billing_rut: billingData?.billing_rut || '',
       business_line: billingData?.business_line || '',
@@ -142,15 +142,20 @@ export const updateUserProfile = async (userId, profileData) => {
   try {
     // 1. Actualizar tabla users (información básica)
     const userUpdateData = {
-      phone_nbr: profileData.phone,
+      // Aceptar tanto payload camelCase (legacy) como snake_case (nuevo mapeo)
+      phone_nbr: profileData.phone_nbr !== undefined ? profileData.phone_nbr : profileData.phone,
       user_nm: profileData.user_nm || profileData.full_name,
-      main_supplier: profileData.role === 'supplier',
+      main_supplier: profileData.main_supplier !== undefined
+        ? profileData.main_supplier
+        : (profileData.role === 'supplier'),
       country: profileData.country,
       rut: profileData.rut,
       updatedt: new Date().toISOString(),
-      descripcion_proveedor: profileData.descripcionProveedor || profileData.descripcion_proveedor || '',
-      // ✅ CORREGIR: Mapear tanto documentTypes (frontend) como document_types (BD)
-      document_types: profileData.documentTypes || profileData.document_types || [],
+      descripcion_proveedor: profileData.descripcion_proveedor || profileData.descripcionProveedor || '',
+      // Document types desde cualquiera de las dos claves
+      document_types: profileData.document_types !== undefined
+        ? profileData.document_types
+        : (profileData.documentTypes || []),
     };
 
     // Agregar logo_url solo si se proporciona
@@ -195,7 +200,7 @@ export const updateUserProfile = async (userId, profileData) => {
       console.log('ℹ️ No hay datos bancarios para actualizar');
     }
 
-    // 3. Actualizar/Insertar Información de Despacho (con validación de existencia)
+    // 3. Actualizar/Insertar Dirección de Despacho (con validación de existencia)
     if (hasShippingData(profileData)) {
       const shippingData = {
         user_id: userId,
@@ -220,7 +225,7 @@ export const updateUserProfile = async (userId, profileData) => {
       }
     }
 
-    // 4. Actualizar/Insertar información de facturación (con validación de existencia)
+    // 4. Actualizar/Insertar Facturación (con validación de existencia)
     if (hasBillingData(profileData)) {
       const billingData = {
         user_id: userId,

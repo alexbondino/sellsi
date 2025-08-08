@@ -12,7 +12,7 @@ En lugar de una tabla `users` gigante como propone la documentación, el sistema
 users           # Información básica del usuario
 ├── bank_info    # Información bancaria/transferencia  
 ├── shipping_info # Información de Despacho
-└── billing_info  # Información de facturación
+└── billing_info  # Facturación
 ```
 
 **VENTAJAS de este diseño:**
@@ -68,7 +68,7 @@ Creado un servicio completo que maneja:
 | `shippingNumber` | `shipping_info.shipping_number` | ✅ Funcional |
 | `shippingDept` | `shipping_info.shipping_dept` | ✅ Funcional |
 
-#### **✅ Información de Facturación (tabla `billing_info`):**
+#### **✅ Facturación (tabla `billing_info`):**
 | Frontend | Base de Datos | Estado |
 |----------|---------------|--------|
 | `businessName` | `billing_info.business_name` | ✅ Funcional |

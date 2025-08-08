@@ -6,6 +6,7 @@ import {
   CountrySelector,
 } from '../../../shared/components';
 import { supabase } from '../../../services/supabase';
+import { validatePhone, normalizePhone } from '../../../utils/validators';
 
 const Step3Profile = ({
   accountType,
@@ -46,7 +47,15 @@ const Step3Profile = ({
     const isProvider = tipoCuenta === 'proveedor';
     const nombre = isProvider ? nombreEmpresa : nombrePersonal;
 
-    const { data: signUpData, error: signUpError } = await supabase.auth.signUp(
+    // Normalizar y validar teléfono a E.164 antes de enviar a Auth metadata
+    const validation = validatePhone(codigoPais || 'CL', telefonoContacto || '');
+    if (!validation.isValid) {
+      // Evitar continuar si el teléfono es inválido
+      return;
+    }
+    const normalizedPhone = normalizePhone(codigoPais || 'CL', telefonoContacto || '');
+
+  const { data: signUpData, error: signUpError } = await supabase.auth.signUp(
       {
         email: correo,
         password: contrasena,
@@ -54,7 +63,7 @@ const Step3Profile = ({
           emailRedirectTo: 'https://tusitio.com/bienvenido',
           data: {
             full_name: nombre, // aparecerá como Display Name en Supabase
-            phone: telefonoContacto, // aparecerá como Phone
+      phone: normalizedPhone, // almacenar E.164 en metadata
             proveedor: isProvider,
             pais: codigoPais,
           },
@@ -131,11 +140,17 @@ const Step3Profile = ({
                   fullWidth
                   label="Teléfono de contacto"
                   value={telefonoContacto}
-                  onChange={e =>
-                    onFieldChange('telefonoContacto', e.target.value)
-                  }
+                  onChange={e => {
+                    const digits = (e.target.value || '').replace(/\D+/g, '');
+                    onFieldChange('telefonoContacto', digits);
+                  }}
                   placeholder="Ej: 912345678"
                   type="tel"
+                  error={!validatePhone(codigoPais || 'CL', telefonoContacto || '').isValid}
+                  helperText={(() => {
+                    const res = validatePhone(codigoPais || 'CL', telefonoContacto || '');
+                    return res.isValid ? '' : res.reason;
+                  })()}
                 />
               </Box>
             </Box>
@@ -209,11 +224,17 @@ const Step3Profile = ({
                 fullWidth
                 label="Teléfono de contacto"
                 value={telefonoContacto}
-                onChange={e =>
-                  onFieldChange('telefonoContacto', e.target.value)
-                }
+                onChange={e => {
+                  const digits = (e.target.value || '').replace(/\D+/g, '');
+                  onFieldChange('telefonoContacto', digits);
+                }}
                 placeholder="Ej: 912345678"
                 type="tel"
+                error={!validatePhone(codigoPais || 'CL', telefonoContacto || '').isValid}
+                helperText={(() => {
+                  const res = validatePhone(codigoPais || 'CL', telefonoContacto || '');
+                  return res.isValid ? '' : res.reason;
+                })()}
               />
             </Box>
           </>

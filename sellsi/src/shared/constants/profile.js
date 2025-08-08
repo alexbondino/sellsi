@@ -42,7 +42,7 @@ export const DOCUMENT_TYPES = [
 ];
 
 export const ACCOUNT_TYPES = [
-  { value: 'corriente', label: 'Cuenta Corriente' },
-  { value: 'ahorro', label: 'Cuenta de Ahorro' },
-  { value: 'vista', label: 'Cuenta Vista' }
+  { value: 'corriente', label: 'Corriente' },
+  { value: 'ahorro', label: 'Ahorro' },
+  { value: 'vista', label: 'Vista' }
 ];

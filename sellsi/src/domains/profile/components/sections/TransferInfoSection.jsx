@@ -44,9 +44,13 @@ const TransferInfoSection = ({
   };
   return (
     <Box sx={{ p: 3, height: 'fit-content' }}>
-      <Typography variant="h6" sx={{ mb: 2, pb: 1, borderBottom: 2, borderColor: 'primary.main' }}>
-        Información de Transferencia
-      </Typography>
+      <Box sx={{ mb: 2 }}>
+        <Typography variant="h6">Información de Transferencia</Typography>
+        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+          Para el abono de fondos por cada venta o devolución que realices
+        </Typography>
+        <Box sx={{ mt: 1, borderBottom: 2, borderColor: 'primary.main' }} />
+      </Box>
       
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
         <TextField

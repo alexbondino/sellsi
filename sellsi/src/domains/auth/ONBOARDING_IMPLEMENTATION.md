@@ -1,8 +1,8 @@
-# 📋 Implementación de Documento Tributario e Información de Facturación en Onboarding
+# 📋 Implementación de Documento Tributario e Facturación en Onboarding
 
 ## 🎯 Resumen de Cambios
 
-Se han implementado exitosamente los campos de **Documento Tributario** e **Información de Facturación** en el formulario de Onboarding, creando una réplica exacta de la funcionalidad existente en Profile mediante componentes modulares reutilizables.
+Se han implementado exitosamente los campos de **Documento Tributario** e **Facturación** en el formulario de Onboarding, creando una réplica exacta de la funcionalidad existente en Profile mediante componentes modulares reutilizables.
 
 ## 🏗️ Arquitectura Implementada
 
@@ -19,7 +19,7 @@ Se han implementado exitosamente los campos de **Documento Tributario** e **Info
 
 #### `BillingInfoForm.jsx`
 - **Ubicación**: `/shared/components/forms/BillingInfoForm.jsx`
-- **Función**: Formulario completo de información de facturación
+- **Función**: Formulario completo de Facturación
 - **Campos**:
   - Razón Social (requerida)
   - RUT con validación y formato automático
@@ -83,7 +83,7 @@ Se han implementado exitosamente los campos de **Documento Tributario** e **Info
 -- Documento Tributario (para proveedores)
 document_types: JSON array
 
--- Información de Facturación (solo si incluye 'factura')
+-- Facturación (solo si incluye 'factura')
 business_name: VARCHAR
 billing_rut: VARCHAR  
 business_line: VARCHAR
@@ -162,4 +162,4 @@ billing_comuna: TEXT
 - ✅ Flujo de proveedor con facturación completo
 - ✅ Persistencia en base de datos configurada
 
-La implementación está completa y lista para testing. Los usuarios proveedores ahora pueden configurar su información de documento tributario e información de facturación directamente durante el onboarding, manteniendo la misma funcionalidad y experiencia que en Profile.
+La implementación está completa y lista para testing. Los usuarios proveedores ahora pueden configurar su información de documento tributario e Facturación directamente durante el onboarding, manteniendo la misma funcionalidad y experiencia que en Profile.

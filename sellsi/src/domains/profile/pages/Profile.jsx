@@ -9,6 +9,7 @@ import {
   IconButton,
   Tooltip,
   CircularProgress,
+  Button,
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import CameraAltIcon from '@mui/icons-material/CameraAlt';
@@ -29,7 +30,7 @@ import TransferInfoSection from '../components/sections/TransferInfoSection';
 import ShippingInfoSection from '../components/sections/ShippingInfoSection';
 import BillingInfoSection from '../components/sections/BillingInfoSection';
 import CompanyInfoSection from '../components/sections/CompanyInfoSection';
-import TaxDocumentSection from '../components/TaxDocumentSection';
+// Documento Tributario eliminado
 
 // Utilidades
 import { getInitials, mapFormDataToUserProfile } from '../../../utils/profileHelpers';
@@ -626,7 +627,7 @@ const Profile = ({ userProfile: initialUserProfile, onUpdateProfile: externalUpd
             gridTemplateRows: 'repeat(4, auto)',
           }
         }}>
-          {/* Primera fila - Primera columna: Información Empresa */}
+          {/* Primera fila - Primera columna: Información General */}
           <CompanyInfoSection 
             formData={formData}
             onFieldChange={updateField}
@@ -643,15 +644,15 @@ const Profile = ({ userProfile: initialUserProfile, onUpdateProfile: externalUpd
             shouldHighlight={shouldHighlightTransferFields}
           />
 
-          {/* Segunda fila - Primera columna: Información de Despacho */}
+          {/* Segunda fila - Primera columna: Dirección de Despacho */}
           <ShippingInfoSection 
             formData={formData}
             onFieldChange={updateField}
             onRegionChange={handleRegionChange}
           />
 
-          {/* Segunda fila - Segunda columna: Documento Tributario */}
-          <TaxDocumentSection 
+          {/* Segunda fila - Segunda columna: Facturación (independiente) */}
+          <BillingInfoSection
             formData={formData}
             onFieldChange={updateField}
             onRegionChange={handleRegionChange}
@@ -661,7 +662,20 @@ const Profile = ({ userProfile: initialUserProfile, onUpdateProfile: externalUpd
             getSensitiveFieldValue={getSensitiveFieldValue}
             onFocusSensitive={handleSensitiveFocus}
             onBlurSensitive={handleSensitiveBlur}
+            showBilling={true}
+            showUpdateButton={false}
           />
+        </Box>
+        {/* Botón Actualizar al fondo del Paper */}
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', p: 2, pt: 0 }}>
+          <Button 
+            variant="contained"
+            onClick={handleUpdate}
+            disabled={!hasPendingChanges || loading}
+            sx={{ bgcolor: 'primary.main', '&:hover': { bgcolor: 'primary.dark' } }}
+          >
+            {loading ? 'Actualizando...' : 'Actualizar'}
+          </Button>
         </Box>
       </Paper>
 

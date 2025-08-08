@@ -41,7 +41,7 @@ obviamente este por defecto viene en "Seleccionar"
 
 3.-Documento Tributario debe tener un tooltip que diga: "Elige el tipo de documento que estás dispuesto a entregarle a tus compradores"
 
-4.-La Información de Facturación debe permanecer OCULTA, esta solo se mostrara si Documento Tributario tiene a "Factura" activado
+4.-La Facturación debe permanecer OCULTA, esta solo se mostrara si Documento Tributario tiene a "Factura" activado
 
 5.-en funcion de mi SQL actual, query.sql que columnas deberiamos agregar para este campo de Documento Tributario?
 

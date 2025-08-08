@@ -22,6 +22,7 @@ import { supabase } from '../../../services/supabase';
 // Asumimos que estos componentes existen en tu proyecto y están bien estilizados.
 import PrimaryButton from '../../../shared/components/forms/PrimaryButton';
 import CountrySelector from '../../../shared/components/forms/CountrySelector';
+import { validatePhone, normalizePhone } from '../../../utils/validators';
 import { TaxDocumentSelector, BillingInfoForm } from '../../../shared/components';
 import { Collapse } from '@mui/material';
 
@@ -120,7 +121,7 @@ const Onboarding = () => {
     // Campos de Documento Tributario
     documentTypes: [],
     
-    // Campos de Información de Facturación
+    // Campos de Facturación
     businessName: '',
     billingRut: '',
     businessLine: '',
@@ -195,7 +196,7 @@ const Onboarding = () => {
         formData.documentTypes?.includes('factura')) {
       if (!formData.businessName || !formData.billingRut || !formData.businessLine ||
           !formData.billingAddress || !formData.billingRegion || !formData.billingCommune) {
-        console.error('Por favor completa todos los campos de información de facturación.');
+        console.error('Por favor completa todos los campos de Facturación.');
         return;
       }
     }
@@ -275,7 +276,7 @@ const Onboarding = () => {
       const updates = {
         user_nm: formData.nombreEmpresa,
         main_supplier: formData.accountType === 'proveedor',
-        phone_nbr: formData.telefonoContacto,
+        phone_nbr: normalizePhone(formData.codigoPais || 'CL', formData.telefonoContacto || ''),
         country: formData.codigoPais,
         logo_url: logoPublicUrl,
         email: user.email, // ✅ ¡LA CORRECCIÓN CLAVE AQUÍ! Se añade el email.
@@ -587,13 +588,18 @@ const Onboarding = () => {
                       fullWidth
                       label="Teléfono de contacto"
                       value={formData.telefonoContacto}
-                      inputProps={{ maxLength: 15 }}
-                      onChange={e =>
-                        handleFieldChange('telefonoContacto', e.target.value)
-                      }
+                      inputProps={{ maxLength: 15, inputMode: 'numeric', pattern: '[0-9]*' }}
+                      onChange={e => {
+                        const digits = (e.target.value || '').replace(/\D+/g, '');
+                        handleFieldChange('telefonoContacto', digits);
+                      }}
                       placeholder="Ej: 912345678"
                       type="tel"
-                      helperText={`${formData.telefonoContacto.length}/15`}
+                      error={!validatePhone(formData.codigoPais || 'CL', formData.telefonoContacto || '').isValid}
+                      helperText={(() => {
+                        const res = validatePhone(formData.codigoPais || 'CL', formData.telefonoContacto || '');
+                        return res.isValid ? `${formData.telefonoContacto.length}/15` : res.reason;
+                      })()}
                       sx={{ '.MuiOutlinedInput-root': { borderRadius: 2 } }}
                     />
                   </Box>
@@ -663,7 +669,7 @@ const Onboarding = () => {
               </Grid>
             </Grid>
 
-            {/* Sección específica para proveedores - Documento Tributario e Información de Facturación */}
+            {/* Sección específica para proveedores - Documento Tributario e Facturación */}
             {/* Esta sección está FUERA del Grid principal para que ocupe todo el ancho disponible */}
             <Collapse in={formData.accountType === 'proveedor'}>
               {formData.accountType === 'proveedor' && (
@@ -688,7 +694,7 @@ const Onboarding = () => {
                       />
                     </Grid>
 
-                    {/* Columna derecha: Información de facturación (solo si selecciona factura) */}
+                    {/* Columna derecha: Facturación (solo si selecciona factura) */}
                     <Grid size={{ xs: 12, md: 6 }}>
                       <Collapse in={formData.documentTypes?.includes('factura')}>
                         {formData.documentTypes?.includes('factura') && (

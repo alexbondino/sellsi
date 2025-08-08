@@ -20,7 +20,7 @@ export const useOnboardingForm = (onClose) => {
     // Campos de Documento Tributario
     documentTypes: [],
     
-    // Campos de Información de Facturación
+    // Campos de Facturación
     businessName: '',
     billingRut: '',
     businessLine: '',

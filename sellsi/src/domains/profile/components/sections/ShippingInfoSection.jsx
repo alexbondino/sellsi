@@ -14,7 +14,7 @@ import {
 } from '../../../../utils/chileData';
 
 /**
- * Sección de Información de Despacho del perfil
+ * Sección de Dirección de Despacho del perfil
  * Incluye: región, comuna, dirección, número, departamento
  */
 const ShippingInfoSection = ({ 
@@ -30,9 +30,13 @@ const ShippingInfoSection = ({
 
   return (
     <Box sx={{ p: 3, height: 'fit-content' }}>
-      <Typography variant="h6" sx={{ mb: 2, pb: 1, borderBottom: 2, borderColor: 'primary.main' }}>
-        Información de Despacho
-      </Typography>
+      <Box sx={{ mb: 2 }}>
+        <Typography variant="h6">Dirección de Despacho</Typography>
+        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+          Aquí enviaremos los productos que compres en el Marketplace
+        </Typography>
+        <Box sx={{ mt: 1, borderBottom: 2, borderColor: 'primary.main' }} />
+      </Box>
       
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
         <FormControl fullWidth size="small">

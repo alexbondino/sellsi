@@ -121,8 +121,8 @@ export {
  */
 export const getEstadisticas = async () => {
   try {
-    // Usar estadísticas reales desde adminRequestService
-    const result = await import('./adminRequestService').then(module => module.getSolicitudesStats())
+  // Usar estadísticas reales desde adminRequestService (importación estática para evitar mezcla dyn/static)
+  const result = await requestServices.getSolicitudesStats()
     
     if (result.success) {
       return { success: true, stats: result.data }
