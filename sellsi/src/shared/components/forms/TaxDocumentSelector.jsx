@@ -91,7 +91,7 @@ const TaxDocumentSelector = ({
       
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
         <Typography variant="body2" sx={{ minWidth: 120 }}>
-          Documento de Venta:
+          Documento de Venta
         </Typography>
         
         <FormControl size={selectSize} sx={{ flexGrow: 1 }}>

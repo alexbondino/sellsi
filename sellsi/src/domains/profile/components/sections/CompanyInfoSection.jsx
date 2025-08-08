@@ -27,7 +27,7 @@ const CompanyInfoSection = ({
         {/* Función primaria con ToggleButtonGroup (estilo replicado de ProductInventory) */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
           <Typography variant="body2" sx={{ minWidth: 120 }}>
-            Función
+            Función Primaria
           </Typography>
           <Box sx={{ display: 'flex', alignItems: 'center' }}>
             <ToggleButtonGroup
@@ -65,7 +65,7 @@ const CompanyInfoSection = ({
         <Box sx={{ display: 'flex', alignItems: 'center', mt: 0.5, ml: 0.5 }}>
           <InfoOutlinedIcon sx={{ fontSize: 16, color: 'primary.main', mr: 0.5 }} />
           <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-            Esta será tu función primaria. Cuando inicies sesión, verás el panel según tu función.
+            Esta será tu vista predeterminada cuando inicies sesión.
           </Typography>
         </Box>
 
@@ -74,9 +74,22 @@ const CompanyInfoSection = ({
           <Typography variant="body2" sx={{ minWidth: 120 }}>
             Correo Electrónico
           </Typography>
-          <Typography variant="body2" sx={{ flexGrow: 1, color: 'black' }}>
-            {formData.email || 'No especificado'}
-          </Typography>
+          <TextField
+            value={formData.email || ''}
+            placeholder="No especificado"
+            fullWidth
+            variant="outlined"
+            size="small"
+            disabled
+            InputProps={{ readOnly: true }}
+            sx={{
+              '& .MuiOutlinedInput-root.Mui-disabled': {
+                backgroundColor: 'rgba(0,0,0,0.06)',
+                color: 'text.primary',
+                WebkitTextFillColor: 'inherit',
+              },
+            }}
+          />
         </Box>
         
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
