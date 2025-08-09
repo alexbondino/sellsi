@@ -32,11 +32,18 @@ CREATE TABLE IF NOT EXISTS public.control_panel (
     REFERENCES public.control_panel_users(id) ON DELETE SET NULL
 );
 
--- Trigger para updated_at
-CREATE TRIGGER update_control_panel_updated_at 
-  BEFORE UPDATE ON public.control_panel 
-  FOR EACH ROW 
-  EXECUTE FUNCTION public.update_updated_at_column();
+-- Trigger para updated_at (idempotente si ya existe)
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_trigger WHERE tgname = 'update_control_panel_updated_at'
+  ) THEN
+    CREATE TRIGGER update_control_panel_updated_at
+      BEFORE UPDATE ON public.control_panel
+      FOR EACH ROW
+      EXECUTE FUNCTION public.update_updated_at_column();
+  END IF;
+END$$;
 
 -- Permisos básicos
 GRANT ALL ON public.control_panel TO service_role;
@@ -46,21 +53,30 @@ GRANT SELECT ON public.control_panel TO authenticated;
 ALTER TABLE public.control_panel ENABLE ROW LEVEL SECURITY;
 
 -- Política para service_role (admin panel)
-CREATE POLICY "Service role can manage control panel" ON public.control_panel
-  FOR ALL USING (auth.role() = 'service_role');
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename = 'control_panel'
+      AND policyname = 'Service role can manage control panel'
+  ) THEN
+    EXECUTE 'CREATE POLICY "Service role can manage control panel" ON public.control_panel FOR ALL USING (auth.role() = ''service_role'')';
+  END IF;
+END$$;
 
 -- Política para usuarios autenticados (solo lectura de sus propias solicitudes)
-CREATE POLICY "Users can view their own requests" ON public.control_panel
-  FOR SELECT USING (
-    auth.uid() IN (
-      SELECT r.buyer_id FROM public.requests r WHERE r.request_id = control_panel.request_id
-      UNION
-      SELECT p.supplier_id FROM public.requests r 
-      JOIN public.request_products rp ON r.request_id = rp.request_id
-      JOIN public.products p ON rp.product_id = p.productid
-      WHERE r.request_id = control_panel.request_id
-    )
-  );
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename = 'control_panel'
+      AND policyname = 'Users can view their own requests'
+  ) THEN
+    EXECUTE 'CREATE POLICY "Users can view their own requests" ON public.control_panel FOR SELECT USING (auth.uid() IN (SELECT r.buyer_id FROM public.requests r WHERE r.request_id = control_panel.request_id UNION SELECT p.supplier_id FROM public.requests r JOIN public.request_products rp ON r.request_id = rp.request_id JOIN public.products p ON rp.product_id = p.productid WHERE r.request_id = control_panel.request_id))';
+  END IF;
+END$$;
 
 -- Comentario
 COMMENT ON TABLE public.control_panel IS 'Gestión administrativa de solicitudes y pagos';
