@@ -26,16 +26,19 @@ export const useProductSorting = (productos = []) => {
         // ✅ NUEVO: Ordenamiento por proveedor verificado + alfabético
         return productosArray.sort((a, b) => {
           // Primero ordenar por verificación del proveedor (verificados primero)
-          const aVerificado = a.proveedorVerificado || a.supplierVerified || false;
-          const bVerificado = b.proveedorVerificado || b.supplierVerified || false;
+          // Para productos individuales
+          const aVerificado = a.verified || a.proveedorVerificado || a.supplierVerified || false;
+          const bVerificado = b.verified || b.proveedorVerificado || b.supplierVerified || false;
           
           if (aVerificado !== bVerificado) {
             return bVerificado ? 1 : -1; // Verificados primero
           }
           
-          // Dentro del mismo grupo de verificación, ordenar alfabéticamente por nombre de producto
-          const aNombre = (a.nombre || a.name || '').toLowerCase();
-          const bNombre = (b.nombre || b.name || '').toLowerCase();
+          // Dentro del mismo grupo de verificación, ordenar alfabéticamente
+          // Para productos: por nombre de producto
+          // Para proveedores: por nombre de proveedor
+          const aNombre = (a.nombre || a.name || a.user_nm || a.proveedor || '').toLowerCase();
+          const bNombre = (b.nombre || b.name || b.user_nm || b.proveedor || '').toLowerCase();
           return aNombre.localeCompare(bNombre, 'es', { sensitivity: 'base' });
         });
       case 'menor-precio':

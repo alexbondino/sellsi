@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom'; // Para manejar parámetros de URL
 import {
   Box,
   Typography,
@@ -7,6 +8,8 @@ import {
   Paper,
   IconButton,
   Tooltip,
+  CircularProgress,
+  Button,
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import CameraAltIcon from '@mui/icons-material/CameraAlt';
@@ -23,18 +26,165 @@ import { useOptimizedUserShippingRegion } from '../../../hooks/useOptimizedUserS
 import { useRoleSync } from '../../../shared/hooks';
 
 // Secciones modulares
-import { CompanyInfoSection, TransferInfoSection, ShippingInfoSection, BillingInfoSection } from '../components/sections';
+import TransferInfoSection from '../components/sections/TransferInfoSection';
+import ShippingInfoSection from '../components/sections/ShippingInfoSection';
+import BillingInfoSection from '../components/sections/BillingInfoSection';
+import CompanyInfoSection from '../components/sections/CompanyInfoSection';
+// Documento Tributario eliminado
 
 // Utilidades
-import { getInitials } from '../../../utils/profileHelpers';
+import { getInitials, mapFormDataToUserProfile } from '../../../utils/profileHelpers';
 import { trackUserAction } from '../../../services/security';
-import { getUserProfile } from '../../../services/user';
+import { getUserProfile, updateUserProfile, uploadProfileImage, deleteAllUserImages } from '../../../services/user';
+import { supabase } from '../../../services/supabase';
+import { SPACING_BOTTOM_MAIN } from '../../../styles/layoutSpacing';
+import { invalidateTransferInfoCache } from '../../../shared/hooks/profile/useTransferInfoValidation'; // Para invalidar cache bancario
 
-const Profile = ({ userProfile, onUpdateProfile }) => {
+/**
+ * 🎭 Profile - Orquestador Universal de Perfiles
+ * 
+ * Componente orquestador que maneja la carga de datos y delega
+ * la renderización a componentes modulares especializados.
+ * 
+ * Responsabilidades:
+ * - Carga y mapeo de datos del usuario
+ * - Orquestación de componentes modulares  
+ * - Gestión de estado global del perfil
+ * - Coordinación de actualizaciones
+ * 
+ * NO es monolítico: delega UI a secciones especializadas
+ */
+const Profile = ({ userProfile: initialUserProfile, onUpdateProfile: externalUpdateHandler }) => {
   const { showBanner } = useBanner();
+  const location = useLocation(); // Para obtener parámetros de URL
 
-  // Estado local para el perfil cargado
+  // Estado local para el perfil cargado y completo
+  const [userProfile, setUserProfile] = useState(initialUserProfile);
   const [loadedProfile, setLoadedProfile] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  // ✅ NUEVO: Estado para highlight de campos bancarios
+  const [shouldHighlightTransferFields, setShouldHighlightTransferFields] = useState(false);
+
+  // ✅ NUEVO: Verificar parámetros de URL al montar y cuando cambie la location
+  useEffect(() => {
+    const urlParams = new URLSearchParams(location.search);
+    const section = urlParams.get('section');
+    const highlight = urlParams.get('highlight');
+    
+    if (section === 'transfer' && highlight === 'true') {
+      setShouldHighlightTransferFields(true);
+      console.log('🎯 Resaltando campos de información bancaria por redirección');
+      
+      // Remover el highlight después de 10 segundos para mejor UX
+      const timer = setTimeout(() => {
+        setShouldHighlightTransferFields(false);
+      }, 10000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [location.search]);
+
+  // Cargar perfil completo desde Supabase al montar (lógica antes en BuyerProfile/SupplierProfile)
+  useEffect(() => {
+    fetchUserProfile();
+  }, []);
+
+  const fetchUserProfile = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error('Usuario no autenticado');
+      }
+
+      // Usar el servicio para obtener el perfil completo
+      const { data, error } = await getUserProfile(user.id);
+      if (error) {
+        throw error;
+      }
+
+      // Mapear campos de BD a Frontend (lógica antes duplicada en ambos profiles)
+      const mappedProfile = {
+        ...data,
+        user_id: user.id,
+        email: user.email,
+        phone: data.phone_nbr,
+        full_name: data.user_nm,
+        user_nm: data.user_nm,
+        role: data.main_supplier ? 'supplier' : 'buyer',
+        country: data.country,
+        rut: data.rut,
+        shipping_region: data.shipping_region,
+        shipping_commune: data.shipping_commune, // 🔧 CORREGIDO: shipping_commune (no shipping_comuna)
+        shipping_address: data.shipping_address,
+        shipping_number: data.shipping_number,
+        shipping_dept: data.shipping_dept,
+        account_holder: data.account_holder,
+        account_type: data.account_type,
+        bank: data.bank || '', // Asegurar que bank no sea null/undefined para evitar el error de MUI
+        account_number: data.account_number,
+        transfer_rut: data.transfer_rut,
+        confirmation_email: data.confirmation_email,
+        business_name: data.business_name,
+        billing_rut: data.billing_rut,
+        business_line: data.business_line,
+        billing_address: data.billing_address,
+        billing_region: data.billing_region,
+        billing_commune: data.billing_commune, // 🔧 CORREGIDO: billing_commune (no billing_comuna)
+        logo_url: data.logo_url,
+        // ✅ AGREGAR: Mapear document_types desde la BD
+        documentTypes: data.document_types || [],
+      };
+
+      setUserProfile(mappedProfile);
+      setLoadedProfile(mappedProfile);
+      setLoading(false);
+    } catch (error) {
+      setLoading(false);
+      showBanner({
+        message: '❌ Error al cargar el perfil',
+        severity: 'error',
+        duration: 6000
+      });
+    }
+  };
+
+  // Handler de actualización (lógica antes duplicada en ambos profiles)
+  const handleUpdateProfile = async (profileData) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error('Usuario no autenticado');
+      }
+
+      // Actualizar usando el servicio
+      await updateUserProfile(user.id, profileData);
+      
+      // ✅ INVALIDAR CACHE DE INFORMACIÓN BANCARIA si se actualizaron campos relacionados
+      // NOTA: Los campos que llegan aquí están en formato BD (snake_case)
+      const transferFields = ['account_holder', 'bank', 'account_number', 'transfer_rut', 'confirmation_email'];
+      const hasTransferFieldUpdate = transferFields.some(field => profileData.hasOwnProperty(field));
+      
+      // ✅ TAMBIÉN verificar campos de formulario (camelCase) en caso de que vengan así
+      const transferFieldsForm = ['accountHolder', 'accountNumber', 'transferRut', 'confirmationEmail'];
+      const hasTransferFieldFormUpdate = transferFieldsForm.some(field => profileData.hasOwnProperty(field));
+      
+      if (hasTransferFieldUpdate || hasTransferFieldFormUpdate) {
+        console.log('🏦 Invalidando cache de información bancaria por actualización de perfil');
+        invalidateTransferInfoCache();
+      }
+      
+      // Recargar perfil después de actualizar
+      await fetchUserProfile();
+      
+      // Notificar al componente padre si existe
+      if (externalUpdateHandler) {
+        await externalUpdateHandler(profileData);
+      }
+    } catch (error) {
+      throw error;
+    }
+  };
 
   // Cargar perfil completo desde Supabase al montar
   useEffect(() => {
@@ -50,8 +200,7 @@ const Profile = ({ userProfile, onUpdateProfile }) => {
 
   // Usar los hooks modulares con el perfil cargado
   const { formData, hasChanges, updateField, resetForm, updateInitialData } = useProfileForm(loadedProfile);
-  useEffect(() => {
-    }, [formData.shippingRegion, formData.shippingComuna]);
+  
   const { 
     pendingImage, 
     handleImageChange: _handleImageChange, 
@@ -75,10 +224,9 @@ const Profile = ({ userProfile, onUpdateProfile }) => {
   // ✅ NUEVO: Hook para sincronización automática de roles
   const { isInSync, debug } = useRoleSync();
 
-  // Estado local solo para UI
+  // Estado local solo para UI (sin duplicar loading)
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
   const [isEditingName, setIsEditingName] = useState(false);
   const [editedName, setEditedName] = useState('');
 
@@ -116,31 +264,27 @@ const Profile = ({ userProfile, onUpdateProfile }) => {
   };
 
   const handleUpdate = async () => {
-    // Verificar si hay cambios en formulario O imagen pendiente
+    // Verificar si hay cambios en formulario (excluyendo imagen y nombre que se guardan automáticamente)
     const hasFormChanges = hasChanges;
-    const hasImageChanges = !!pendingImage;
-    const hasPendingChanges = hasFormChanges || hasImageChanges;
 
-    if (!hasPendingChanges) {
+    if (!hasFormChanges) {
       return;
     }
 
     setLoading(true);
     try {
-      // Preparar datos para actualizar
-      let dataToUpdate = { ...formData };
+      // ✅ MAPEAR CORRECTAMENTE: FormData → BD format
+      console.log('📋 FormData antes del mapeo:', formData);
+      let dataToUpdate = mapFormDataToUserProfile(formData, loadedProfile);
+      console.log('🔄 Datos después del mapeo:', dataToUpdate);
+      
+      // Eliminar campos que se manejan automáticamente
+      delete dataToUpdate.profileImage;
+      delete dataToUpdate.user_nm;
+      delete dataToUpdate.logo_url;
 
-      // Si hay imagen pendiente, incluirla en la actualización
-      if (pendingImage) {
-        if (pendingImage.delete) {
-          dataToUpdate.logo_url = null; // Eliminar imagen
-          dataToUpdate.profileImage = null; // Asegurar que se pase null
-        } else {
-          dataToUpdate.profileImage = pendingImage;
-        }
-      }
-
-      await onUpdateProfile(dataToUpdate);
+      console.log('📤 Datos finales a enviar:', dataToUpdate);
+      await handleUpdateProfile(dataToUpdate);
       updateInitialData(); // Actualizar datos iniciales en lugar de resetear
 
       // ✅ INVALIDAR CACHÉ DE SHIPPING si cambió la región
@@ -180,8 +324,8 @@ const Profile = ({ userProfile, onUpdateProfile }) => {
     }
   };
 
-  // Calcular si hay cambios pendientes (formulario + imagen)
-  const hasPendingChanges = hasChanges || !!pendingImage;
+  // Calcular si hay cambios pendientes (solo formulario, excluyendo imagen y nombre que se guardan automáticamente)
+  const hasPendingChanges = hasChanges;
 
   // Funciones de nombre - RESTAURANDO LÓGICA ORIGINAL COMPLETA
   const getFullName = () => {
@@ -193,22 +337,42 @@ const Profile = ({ userProfile, onUpdateProfile }) => {
     return formData.user_nm || userProfile?.user_nm || 'Usuario';
   };
 
-  const handleNameSave = () => {
+  const handleNameSave = async () => {
     if (editedName.trim() && editedName !== getFullName()) {
-      // Actualizar el formData para detectar cambios
-      updateField('user_nm', editedName.trim());
-      
-      // Solo actualizar el estado local, NO guardar en BD automáticamente
-      // Los cambios se guardarán cuando el usuario presione "Actualizar"
+      try {
+        setLoading(true);
+        // Guardar automáticamente en Supabase
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          await updateUserProfile(user.id, { user_nm: editedName.trim() });
+          // Actualizar estado local
+          updateField('user_nm', editedName.trim());
+          updateInitialData();
+        }
+      } catch (error) {
+        showBanner('Error al actualizar el nombre', 'error');
+      } finally {
+        setLoading(false);
+      }
     }
     setIsEditingName(false);
   };
 
-  // Función para salir del modo edición sin guardar automáticamente
-  const handleNameBlur = () => {
-    // Solo actualizar el estado local si hay cambios
+  // Función para salir del modo edición y guardar automáticamente
+  const handleNameBlur = async () => {
     if (editedName.trim() && editedName !== getFullName()) {
-      updateField('user_nm', editedName.trim());
+      try {
+        // Guardar automáticamente en Supabase
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          await updateUserProfile(user.id, { user_nm: editedName.trim() });
+          // Actualizar estado local
+          updateField('user_nm', editedName.trim());
+          updateInitialData();
+        }
+      } catch (error) {
+        showBanner('Error al actualizar el nombre', 'error');
+      }
     }
     setIsEditingName(false);
   };
@@ -221,6 +385,46 @@ const Profile = ({ userProfile, onUpdateProfile }) => {
 
   const handleImageModalClose = () => {
     setIsImageModalOpen(false);
+  };
+
+  // Función para guardar imagen automáticamente en Supabase
+  const handleSaveImageAutomatic = async (imageFile) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error('Usuario no autenticado');
+      }
+
+      let logoPublicUrl = null;
+
+      if (imageFile === null) {
+        // Eliminar imagen
+        const deleteResult = await deleteAllUserImages(user.id);
+        if (!deleteResult.success) {
+          console.warn('No se pudieron eliminar las imágenes previas:', deleteResult.error);
+        }
+      } else {
+        // Subir nueva imagen
+        const { url, error } = await uploadProfileImage(user.id, imageFile);
+        if (error) {
+          throw new Error(`Error al subir la imagen: ${error.message}`);
+        }
+        logoPublicUrl = url;
+      }
+
+      // Actualizar en BD
+      await updateUserProfile(user.id, { logo_url: logoPublicUrl });
+      
+      // Actualizar estado local - recargar perfil desde la BD
+      const updatedProfile = await getUserProfile(user.id);
+      if (updatedProfile?.data) {
+        setLoadedProfile(updatedProfile.data);
+      }
+      
+      showBanner('Imagen actualizada correctamente', 'success');
+    } catch (error) {
+      throw new Error(error.message || 'Error al guardar la imagen');
+    }
   };
 
   // Función para manejar el avatar con logo o iniciales
@@ -265,6 +469,43 @@ const Profile = ({ userProfile, onUpdateProfile }) => {
     setIsImageModalOpen(true);
   };
 
+  // Función para guardar imagen automáticamente en Supabase
+  const handleSaveImageToSupabase = async (imageFile) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error('Usuario no autenticado');
+      }
+
+      if (imageFile === null) {
+        // Eliminar imagen
+        await deleteAllUserImages(user.id);
+        await updateUserProfile(user.id, { logo_url: null });
+        clearPendingImage();
+        updateInitialData();
+        showBanner('Imagen eliminada correctamente', 'success');
+      } else {
+        // Subir nueva imagen
+        const { url, error } = await uploadProfileImage(user.id, imageFile);
+        if (error) {
+          throw new Error(error.message);
+        }
+        
+        await updateUserProfile(user.id, { logo_url: url });
+        clearPendingImage();
+        updateInitialData();
+        showBanner('Imagen actualizada correctamente', 'success');
+      }
+      
+      // Refrescar el perfil
+      if (onUpdateProfile) {
+        await onUpdateProfile({});
+      }
+    } catch (error) {
+      throw new Error(error.message || 'Error al guardar la imagen');
+    }
+  };
+
   // Handlers para campos sensibles
   const handleSensitiveFocus = (field) => {
     toggleSensitiveData(field);
@@ -275,7 +516,26 @@ const Profile = ({ userProfile, onUpdateProfile }) => {
   };
 
   return (
-    <Box sx={{ p: 3, maxWidth: 1200, mx: 'auto' }}>
+    <>
+      {/* Loading state mientras se carga el perfil */}
+      {loading ? (
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            minHeight: '50vh',
+            gap: 2,
+          }}
+        >
+          <CircularProgress />
+          <Typography variant="body1" color="text.secondary">
+            Cargando perfil...
+          </Typography>
+        </Box>
+      ) : (
+        <Box sx={{ p: 3, maxWidth: 1200, mx: 'auto', pb: SPACING_BOTTOM_MAIN }}>
       {/* Header */}
       <Box sx={{ display: 'flex', alignItems: 'center', mb: 4 }}>
         {/* Avatar con hover clickeable */}
@@ -355,7 +615,7 @@ const Profile = ({ userProfile, onUpdateProfile }) => {
         </Box>
       </Box>
 
-      {/* Grid Layout 2x2 - PRESERVANDO ESTRUCTURA VISUAL ORIGINAL */}
+      {/* Grid Layout 2x2 - PRESERVANDO ESTRUCTURA VISUAL ORIGINAL CON NUEVAS FUNCIONALIDADES */}
       <Paper sx={{ p: 0, bgcolor: '#fff', boxShadow: 2, borderRadius: 3, mb: 4 }}>
         <Box sx={{ 
           display: 'grid',
@@ -367,7 +627,7 @@ const Profile = ({ userProfile, onUpdateProfile }) => {
             gridTemplateRows: 'repeat(4, auto)',
           }
         }}>
-          {/* Primera fila - Primera columna: Información Empresa */}
+          {/* Primera fila - Primera columna: Información General */}
           <CompanyInfoSection 
             formData={formData}
             onFieldChange={updateField}
@@ -381,17 +641,18 @@ const Profile = ({ userProfile, onUpdateProfile }) => {
             showSensitiveData={showSensitiveData}
             toggleSensitiveData={toggleSensitiveData}
             getSensitiveFieldValue={getSensitiveFieldValue}
+            shouldHighlight={shouldHighlightTransferFields}
           />
 
-          {/* Segunda fila - Primera columna: Información de Envío */}
+          {/* Segunda fila - Primera columna: Dirección de Despacho */}
           <ShippingInfoSection 
             formData={formData}
             onFieldChange={updateField}
             onRegionChange={handleRegionChange}
           />
 
-          {/* Segunda fila - Segunda columna: Información de Facturación */}
-          <BillingInfoSection 
+          {/* Segunda fila - Segunda columna: Facturación (independiente) */}
+          <BillingInfoSection
             formData={formData}
             onFieldChange={updateField}
             onRegionChange={handleRegionChange}
@@ -401,7 +662,20 @@ const Profile = ({ userProfile, onUpdateProfile }) => {
             getSensitiveFieldValue={getSensitiveFieldValue}
             onFocusSensitive={handleSensitiveFocus}
             onBlurSensitive={handleSensitiveBlur}
+            showBilling={true}
+            showUpdateButton={false}
           />
+        </Box>
+        {/* Botón Actualizar al fondo del Paper */}
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', p: 2, pt: 0 }}>
+          <Button 
+            variant="contained"
+            onClick={handleUpdate}
+            disabled={!hasPendingChanges || loading}
+            sx={{ bgcolor: 'primary.main', '&:hover': { bgcolor: 'primary.dark' } }}
+          >
+            {loading ? 'Actualizando...' : 'Actualizar'}
+          </Button>
         </Box>
       </Paper>
 
@@ -426,10 +700,13 @@ const Profile = ({ userProfile, onUpdateProfile }) => {
         open={isImageModalOpen}
         onClose={handleImageModalClose}
         onImageChange={handleImageChange}
+        onSaveImage={handleSaveImageAutomatic}
         currentImageUrl={userProfile?.logo_url}
         userInitials={getInitials(getDisplayName())}
       />
-    </Box>
+        </Box>
+      )}
+    </>
   );
 };
 

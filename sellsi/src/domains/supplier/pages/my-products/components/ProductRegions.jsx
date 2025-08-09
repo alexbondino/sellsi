@@ -83,6 +83,10 @@ const ProductRegions = ({
           fontWeight: 500,
           mb: 2,
           borderRadius: 2,
+          borderColor: 'grey.400',
+          '&:hover': {
+            borderColor: 'grey.500',
+          },
         }}
       >
         Configurar Regiones de Despacho

@@ -16,7 +16,7 @@ export const DEV_CONFIG = {
   SHOW_DEBUG_INFO: true,
   
   // Usar datos mock si las tablas no existen
-  USE_MOCK_DATA: true,
+  USE_MOCK_DATA: false,
   
   // Saltar verificación de permisos
   SKIP_PERMISSION_CHECK: true,

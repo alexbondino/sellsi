@@ -243,7 +243,7 @@ const MobileExpandableBottomBar = ({
                   </Typography>
                 </Box>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', pt: 1, borderTop: '2px solid #1976d2', mt: 1 }}>
-                  <Typography variant="h6" fontWeight="700" sx={{ fontSize: '0.9rem' }}>
+                  <Typography variant="h6" fontWeight="700" color="primary.main" sx={{ fontSize: '0.9rem' }}>
                     Total:
                   </Typography>
                   <Typography variant="h6" fontWeight="700" color="primary.main" sx={{ fontSize: '0.9rem' }}>

@@ -14,7 +14,7 @@ import {
 } from '../../../../utils/chileData';
 
 /**
- * Sección de Información de Envío del perfil
+ * Sección de Dirección de Despacho del perfil
  * Incluye: región, comuna, dirección, número, departamento
  */
 const ShippingInfoSection = ({ 
@@ -25,14 +25,18 @@ const ShippingInfoSection = ({
   
   const handleRegionChange = (event) => {
     const value = event.target.value;
-    onRegionChange('shipping', 'shippingRegion', 'shippingComuna', value);
+    onRegionChange('shipping', 'shippingRegion', 'shippingCommune', value);
   };
 
   return (
     <Box sx={{ p: 3, height: 'fit-content' }}>
-      <Typography variant="h6" sx={{ mb: 2, pb: 1, borderBottom: 2, borderColor: 'primary.main' }}>
-        Información de Envío
-      </Typography>
+      <Box sx={{ mb: 2 }}>
+        <Typography variant="h6">Dirección de Despacho</Typography>
+        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+          Aquí enviaremos los productos que compres en el Marketplace
+        </Typography>
+        <Box sx={{ mt: 1, borderBottom: 2, borderColor: 'primary.main' }} />
+      </Box>
       
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
         <FormControl fullWidth size="small">
@@ -41,7 +45,25 @@ const ShippingInfoSection = ({
             value={formData.shippingRegion || ''}
             onChange={handleRegionChange}
             label="Región"
-            MenuProps={{ disableScrollLock: true }}
+            MenuProps={{ 
+              disableScrollLock: true,
+              disablePortal: false,
+              anchorOrigin: {
+                vertical: 'bottom',
+                horizontal: 'left',
+              },
+              transformOrigin: {
+                vertical: 'top',
+                horizontal: 'left',
+              },
+              PaperProps: {
+                style: {
+                  maxHeight: 48 * 5 + 8,
+                  overflowX: 'hidden',
+                  overflowY: 'auto',
+                },
+              },
+            }}
           >
             {regiones.map(region => (
               <MenuItem key={region.value} value={region.value}>
@@ -54,12 +76,30 @@ const ShippingInfoSection = ({
         <FormControl fullWidth size="small" disabled={!formData.shippingRegion}>
           <InputLabel>Comuna</InputLabel>
           <Select
-            value={formData.shippingComuna || ''}
+            value={formData.shippingCommune || ''}
             onChange={(e) => {
-              onFieldChange('shippingComuna', e.target.value);
+              onFieldChange('shippingCommune', e.target.value);
             }}
             label="Comuna"
-            MenuProps={{ disableScrollLock: true }}
+            MenuProps={{ 
+              disableScrollLock: true,
+              disablePortal: false,
+              anchorOrigin: {
+                vertical: 'bottom',
+                horizontal: 'left',
+              },
+              transformOrigin: {
+                vertical: 'top',
+                horizontal: 'left',
+              },
+              PaperProps: {
+                style: {
+                  maxHeight: 48 * 5 + 8,
+                  overflowX: 'hidden',
+                  overflowY: 'auto',
+                },
+              },
+            }}
           >
             {(formData.shippingRegion ? getComunasByRegion(formData.shippingRegion) : []).map(comuna => (
               <MenuItem key={comuna.value} value={comuna.value}>

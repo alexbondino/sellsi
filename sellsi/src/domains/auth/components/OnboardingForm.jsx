@@ -7,9 +7,14 @@ import {
   Typography,
   TextField,
   Button,
+  Divider,
+  Collapse
 } from '@mui/material';
-import { useOnboardingForm } from '../../../hooks/useOnboardingForm';
-import { PrimaryButton, CountrySelector } from '../../../shared/components';
+import { useOnboardingForm } from '../hooks/useOnboardingForm';
+import { 
+  PrimaryButton, 
+  CountrySelector 
+} from '../../../shared/components';
 
 // Componente para los botones de selección de tipo de cuenta
 const AccountTypeSelector = ({ selectedType, onTypeSelect }) => (
@@ -73,9 +78,10 @@ const OnboardingForm = ({ open, user, onClose }) => {
   if (!user) return null;
 
   const isProvider = formData.tipoCuenta === 'proveedor';
+  const showBillingInfo = isProvider && formData.documentTypes?.includes('factura');
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
       <DialogTitle sx={{ textAlign: 'center', fontWeight: 700, pt: 3 }}>
         ¡Bienvenido(a)! Completa tu perfil
       </DialogTitle>
@@ -87,14 +93,16 @@ const OnboardingForm = ({ open, user, onClose }) => {
           flexDirection="column"
           alignItems="center"
           p={{ xs: 1, sm: 2 }}
+          sx={{ maxWidth: 600, mx: 'auto' }}
         >
           <Typography
             variant="body1"
-            sx={{ mb: 2, color: 'text.secondary', textAlign: 'center' }}
+            sx={{ mb: 3, color: 'text.secondary', textAlign: 'center' }}
           >
             Solo necesitamos unos datos más para configurar tu cuenta.
           </Typography>
 
+          {/* Selector de tipo de cuenta */}
           <AccountTypeSelector
             selectedType={formData.tipoCuenta}
             onTypeSelect={handleTypeSelect}
@@ -114,7 +122,7 @@ const OnboardingForm = ({ open, user, onClose }) => {
                 e.target.value
               )
             }
-            sx={{ mb: 2, maxWidth: 450 }}
+            sx={{ mb: 2 }}
             required
           />
 
@@ -123,9 +131,8 @@ const OnboardingForm = ({ open, user, onClose }) => {
             sx={{
               display: 'flex',
               gap: 1.5,
-              mb: 4,
+              mb: 3,
               width: '100%',
-              maxWidth: 450,
             }}
           >
             <CountrySelector
@@ -134,21 +141,38 @@ const OnboardingForm = ({ open, user, onClose }) => {
             />
             <TextField
               fullWidth
-              label="Teléfono de contacto"
+              label="Teléfono de contacto *"
               value={formData.telefonoContacto}
               onChange={e =>
                 handleFieldChange('telefonoContacto', e.target.value)
               }
               placeholder="Ej: 912345678"
               type="tel"
+              required
             />
           </Box>
+
+          {/* Sección específica para proveedores */}
+          <Collapse in={isProvider} sx={{ width: '100%' }}>
+            {isProvider && (
+              <TextField
+                label="Descripción del proveedor"
+                multiline
+                rows={3}
+                fullWidth
+                value={formData.description || ''}
+                onChange={(e) => handleFieldChange('description', e.target.value)}
+                sx={{ mt: 2 }}
+                placeholder="Describe brevemente tu negocio..."
+              />
+            )}
+          </Collapse>
 
           <PrimaryButton
             type="submit"
             fullWidth
             disabled={!isFormValid() || loading}
-            sx={{ maxWidth: 450, height: 48 }}
+            sx={{ height: 48, mt: 2 }}
           >
             {loading ? 'Guardando...' : 'Finalizar y Guardar'}
           </PrimaryButton>

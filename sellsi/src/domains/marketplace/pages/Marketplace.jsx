@@ -16,24 +16,9 @@ import SearchSection from './sections/SearchSection.jsx';
 // import FilterSection from './sections/FilterSection.jsx'; // Botón de filtros comentado
 import ProductsSection from './sections/ProductsSection.jsx';
 
-// Componente Login
-import { Login } from '../../auth';
-
 // ✅ MEJORA DE RENDIMIENTO: Memoización del componente principal
 const Marketplace = React.memo(() => {
-  // Estado para controlar el modal de login
-  const [openLogin, setOpenLogin] = useState(false); // Listener para el evento 'openLogin' disparado desde ProductCard
-  useEffect(() => {
-    const handleOpenLogin = () => {
-      setOpenLogin(true);
-    };
-
-    window.addEventListener('openLogin', handleOpenLogin);
-
-    return () => {
-      window.removeEventListener('openLogin', handleOpenLogin);
-    };
-  }, []);
+  // ✅ ELIMINADO: Login modal duplicado - ahora se gestiona centralmente desde TopBar
 
   // ===== USAR CUSTOM HOOK PARA TODA LA LÓGICA =====
   // ✅ MEJORA DE RENDIMIENTO: Memoización de configuración estática
@@ -105,9 +90,8 @@ const Marketplace = React.memo(() => {
 
         {/* Sección de productos */}
         <ProductsSection {...productsSectionProps} />
-      </Box>{' '}
-      {/* Modal de Login */}
-      <Login open={openLogin} onClose={() => setOpenLogin(false)} />
+      </Box>
+      {/* ✅ ELIMINADO: Login modal duplicado - ahora se gestiona centralmente desde TopBar */}
     </Box>
   );
 });

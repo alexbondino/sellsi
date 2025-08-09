@@ -70,62 +70,128 @@ export class StorageCleanupService {
     const allFiles = [];
     
     try {
-      // Buscar archivos en diferentes rutas posibles
-      const possiblePaths = [
-        `${productId}/`, // Ruta simple
-        // Buscar por supplier_id si es necesario (requiere más lógica)
-      ];
+      console.log(`🔍 [getProductFilesFromStorage] Buscando archivos para producto ${productId}`)
+      
+      // 🔥 MEJORADO: Buscar en todos los directorios del bucket
+      console.log(`🔍 [getProductFilesFromStorage] Listando directorios raíz del bucket ${this.IMAGE_BUCKET}`)
+      const { data: allFolders, error: foldersError } = await supabase.storage
+        .from(this.IMAGE_BUCKET)
+        .list('', { limit: 1000 });
 
-      // Buscar en bucket de imágenes
-      for (const basePath of possiblePaths) {
-        try {
-          const { data: imageFiles, error } = await supabase.storage
-            .from(this.IMAGE_BUCKET)
-            .list('', { limit: 1000 });
-
-          if (!error && imageFiles) {
-            // Filtrar archivos que contengan el productId
-            const productFiles = imageFiles.filter(file => 
-              file.name.includes(productId) || 
-              file.name.includes(`${productId}_`) ||
-              file.name.includes(`/${productId}/`)
-            );
-            
-            allFiles.push(...productFiles.map(file => ({
-              bucket: this.IMAGE_BUCKET,
-              path: file.name,
-              fullPath: file.name,
-              type: 'image'
-            })));
-          }
-        } catch (error) {
-        }
+      if (foldersError) {
+        console.error('❌ [getProductFilesFromStorage] Error listando directorios:', foldersError);
+        return allFiles;
       }
 
-      // Buscar en bucket de thumbnails
-      try {
-        const { data: thumbFiles, error } = await supabase.storage
-          .from(this.THUMBNAIL_BUCKET)
-          .list('', { limit: 1000 });
+      console.log(`📂 [getProductFilesFromStorage] Encontrados ${allFolders?.length || 0} elementos en la raíz`)
 
-        if (!error && thumbFiles) {
-          const productThumbs = thumbFiles.filter(file => 
-            file.name.includes(productId)
-          );
+      // Buscar en cada directorio de supplier
+      for (const folder of allFolders || []) {
+        if (folder.name && folder.id === null) { // Es un directorio
+          const supplierPath = folder.name;
+          console.log(`🔍 [getProductFilesFromStorage] Explorando directorio de supplier: ${supplierPath}`)
           
-          allFiles.push(...productThumbs.map(file => ({
-            bucket: this.THUMBNAIL_BUCKET,
-            path: file.name,
-            fullPath: file.name,
-            type: 'thumbnail'
-          })));
+          // Buscar archivos en este directorio de supplier
+          const { data: supplierFiles, error: supplierError } = await supabase.storage
+            .from(this.IMAGE_BUCKET)
+            .list(supplierPath, { limit: 1000 });
+
+          if (!supplierError && supplierFiles) {
+            console.log(`📁 [getProductFilesFromStorage] Encontrados ${supplierFiles.length} elementos en ${supplierPath}`)
+            
+            // Buscar subdirectorio del producto o archivos que contengan el productId
+            for (const file of supplierFiles) {
+              const fullPath = `${supplierPath}/${file.name}`;
+              
+              if (file.id === null) { // Es un subdirectorio
+                if (file.name === productId) {
+                  console.log(`🎯 [getProductFilesFromStorage] Encontrado directorio del producto: ${fullPath}`)
+                  // Este es el directorio del producto, listar sus archivos
+                  const { data: productFiles, error: productError } = await supabase.storage
+                    .from(this.IMAGE_BUCKET)
+                    .list(`${supplierPath}/${productId}`, { limit: 1000 });
+
+                  if (!productError && productFiles) {
+                    console.log(`📄 [getProductFilesFromStorage] Encontrados ${productFiles.length} archivos en directorio del producto`)
+                    allFiles.push(...productFiles.map(pFile => ({
+                      bucket: this.IMAGE_BUCKET,
+                      path: `${supplierPath}/${productId}/${pFile.name}`,
+                      fullPath: `${supplierPath}/${productId}/${pFile.name}`,
+                      type: 'image'
+                    })));
+                  }
+                }
+              } else {
+                // Es un archivo, verificar si pertenece al producto
+                if (file.name.includes(productId)) {
+                  console.log(`📄 [getProductFilesFromStorage] Encontrado archivo del producto: ${fullPath}`)
+                  allFiles.push({
+                    bucket: this.IMAGE_BUCKET,
+                    path: fullPath,
+                    fullPath: fullPath,
+                    type: 'image'
+                  });
+                }
+              }
+            }
+          } else if (supplierError) {
+            console.warn(`⚠️ [getProductFilesFromStorage] Error listando ${supplierPath}:`, supplierError)
+          }
         }
-      } catch (error) {
       }
 
+      // 🔥 MEJORADO: Buscar en bucket de thumbnails de manera similar
+      const { data: thumbFolders, error: thumbFoldersError } = await supabase.storage
+        .from(this.THUMBNAIL_BUCKET)
+        .list('', { limit: 1000 });
+
+      if (!thumbFoldersError && thumbFolders) {
+        for (const folder of thumbFolders) {
+          if (folder.name && folder.id === null) { // Es un directorio
+            const supplierPath = folder.name;
+            
+            const { data: supplierThumbs, error: supplierThumbError } = await supabase.storage
+              .from(this.THUMBNAIL_BUCKET)
+              .list(supplierPath, { limit: 1000 });
+
+            if (!supplierThumbError && supplierThumbs) {
+              for (const thumb of supplierThumbs) {
+                const fullPath = `${supplierPath}/${thumb.name}`;
+                
+                if (thumb.id === null && thumb.name === productId) {
+                  // Directorio del producto en thumbnails
+                  const { data: productThumbs, error: productThumbError } = await supabase.storage
+                    .from(this.THUMBNAIL_BUCKET)
+                    .list(`${supplierPath}/${productId}`, { limit: 1000 });
+
+                  if (!productThumbError && productThumbs) {
+                    allFiles.push(...productThumbs.map(pThumb => ({
+                      bucket: this.THUMBNAIL_BUCKET,
+                      path: `${supplierPath}/${productId}/${pThumb.name}`,
+                      fullPath: `${supplierPath}/${productId}/${pThumb.name}`,
+                      type: 'thumbnail'
+                    })));
+                  }
+                } else if (thumb.id !== null && thumb.name.includes(productId)) {
+                  // Archivo thumbnail que contiene el productId
+                  allFiles.push({
+                    bucket: this.THUMBNAIL_BUCKET,
+                    path: fullPath,
+                    fullPath: fullPath,
+                    type: 'thumbnail'
+                  });
+                }
+              }
+            }
+          }
+        }
+      }
+
+      console.log(`✅ [getProductFilesFromStorage] Encontrados ${allFiles.length} archivos para producto ${productId}`)
       return allFiles;
     } catch (error) {
-      return [];
+      console.error(`❌ [getProductFilesFromStorage] Error:`, error);
+      return allFiles;
     }
   }
 
@@ -330,6 +396,98 @@ export class StorageCleanupService {
         results.errors.push(`Error en producto ${productId}: ${error.message}`);
       }
     }
+    return results;
+  }
+
+  /**
+   * 🔥 NUEVO: Eliminar TODAS las imágenes de un producto (para reemplazo completo)
+   * @param {string} productId - ID del producto
+   * @returns {Promise<{success: boolean, cleaned: number, errors: string[]}>}
+   */
+  static async deleteAllProductImages(productId) {
+    const results = {
+      success: true,
+      cleaned: 0,
+      errors: []
+    };
+
+    try {
+      console.log(`🔥 [deleteAllProductImages] Eliminando TODAS las imágenes del producto ${productId}`)
+      
+      // 1. Eliminar TODOS los registros de la BD para este producto
+      console.log(`🔍 [deleteAllProductImages] Paso 1: Eliminando registros de la BD`)
+      const { error: dbDeleteError, count: deletedCount } = await supabase
+        .from('product_images')
+        .delete({ count: 'exact' })
+        .eq('product_id', productId);
+
+      if (dbDeleteError) {
+        console.error(`❌ [deleteAllProductImages] Error eliminando de BD:`, dbDeleteError)
+        results.errors.push(`Error eliminando registros de BD: ${dbDeleteError.message}`);
+        results.success = false;
+        return results;
+      }
+
+      console.log(`🗑️ [deleteAllProductImages] Eliminados ${deletedCount || 0} registros de la BD`)
+
+      // 2. Obtener TODOS los archivos del producto desde storage
+      console.log(`🔍 [deleteAllProductImages] Paso 2: Buscando archivos en storage`)
+      const storageFiles = await this.getProductFilesFromStorage(productId);
+      console.log(`📂 [deleteAllProductImages] Encontrados ${storageFiles.length} archivos en storage:`, storageFiles.map(f => f.path))
+
+      // 3. Eliminar TODOS los archivos del storage
+      if (storageFiles.length > 0) {
+        console.log(`🔍 [deleteAllProductImages] Paso 3: Eliminando ${storageFiles.length} archivos del storage`)
+        const deleteResult = await this.removeFiles(storageFiles);
+        results.cleaned = deleteResult.cleaned;
+        results.errors.push(...deleteResult.errors);
+        console.log(`🧹 [deleteAllProductImages] Eliminados ${deleteResult.cleaned} archivos del storage`)
+      } else {
+        console.log(`ℹ️ [deleteAllProductImages] No se encontraron archivos en storage para eliminar`)
+      }
+
+      console.log(`✅ [deleteAllProductImages] Proceso completado: ${results.cleaned} archivos eliminados`)
+      return results;
+    } catch (error) {
+      results.success = false;
+      results.errors.push(`Error general eliminando producto: ${error.message}`);
+      console.error(`❌ [deleteAllProductImages] Error:`, error);
+      return results;
+    }
+  }
+
+  /**
+   * 🔧 Helper: Eliminar archivos del storage
+   * @param {Array} files - Lista de archivos a eliminar
+   * @returns {Promise<{cleaned: number, errors: string[]}>}
+   */
+  static async removeFiles(files) {
+    const results = { cleaned: 0, errors: [] };
+
+    console.log(`🔥 [removeFiles] Iniciando eliminación de ${files.length} archivos`)
+    
+    for (const file of files) {
+      try {
+        console.log(`🗑️ [removeFiles] Eliminando archivo: ${file.bucket}/${file.path}`)
+        
+        const { error } = await supabase.storage
+          .from(file.bucket)
+          .remove([file.path]);
+
+        if (error) {
+          console.error(`❌ [removeFiles] Error eliminando ${file.path}:`, error)
+          results.errors.push(`Error eliminando ${file.path}: ${error.message}`);
+        } else {
+          results.cleaned++;
+          console.log(`✅ [removeFiles] Eliminado exitosamente: ${file.bucket}/${file.path}`);
+        }
+      } catch (error) {
+        console.error(`❌ [removeFiles] Error inesperado eliminando ${file.path}:`, error)
+        results.errors.push(`Error inesperado eliminando ${file.path}: ${error.message}`);
+      }
+    }
+
+    console.log(`📊 [removeFiles] Resultado final: ${results.cleaned} eliminados, ${results.errors.length} errores`)
     return results;
   }
 }

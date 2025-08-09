@@ -8,9 +8,6 @@ if (import.meta.env.DEV && !supabase) {
   throw new Error('Supabase client no inicializado')
 }
 
-if (import.meta.env.DEV) {
-  console.log('✅ [UploadService] Supabase client inicializado correctamente')
-}
 
 /**
  * Servicio optimizado para subir archivos PDF a Supabase Storage
@@ -211,41 +208,104 @@ export class UploadService {
    * @param {File[]} files - Archivos de imagen a subir
    * @param {string} productId - ID del producto
    * @param {string} supplierId - ID del proveedor
+   * @param {Object} options - Opciones adicionales
+   * @param {boolean} options.replaceExisting - Si debe limpiar imágenes existentes antes
    * @returns {Promise<{success: boolean, data?: any[], errors?: string[]}>}
    */
-  static async uploadMultipleImagesWithThumbnails(files, productId, supplierId) {
+  static async uploadMultipleImagesWithThumbnails(files, productId, supplierId, options = {}) {
+    const { replaceExisting = false } = options
+    
     try {
-      // 🔧 FIX EDIT: Filtrar imágenes existentes para no procesarlas
+      // Si replaceExisting es true, limpiar todas las imágenes del producto primero
+      if (replaceExisting) {
+        try {
+          const cleanupResult = await StorageCleanupService.deleteAllProductImages(productId)
+        } catch (cleanupError) {
+          console.warn('⚠️ [uploadMultipleImages] Error en limpieza (continuando):', cleanupError.message)
+          // No fallar por errores de limpieza, continuar con el upload
+        }
+      }
+      // En modo reemplazo, crear referencias para archivos existentes
+      if (replaceExisting) {
+        const existingFiles = files.filter(file => file.isExisting || (file.file && file.file.size === 0))
+        const newFiles = files.filter(file => !(file.isExisting || (file.file && file.file.size === 0)))
+        // Crear referencias para archivos existentes EN PARALELO
+        const referencePromises = existingFiles.map(async (file, index) => {
+          if (file.url) {
+            const { error: dbInsertError } = await supabase
+              .from('product_images')
+              .insert({
+                product_id: productId,
+                image_url: file.url,
+                thumbnail_url: null,
+                thumbnails: null,
+                image_order: index // Usar índice del array
+              })
+            if (dbInsertError) {
+              console.error('❌ [uploadMultipleImages] Error recreando referencia:', dbInsertError.message)
+              return { success: false, error: dbInsertError.message }
+            } else {
+              return { success: true }
+            }
+          }
+          return { success: false, error: 'No URL provided' }
+        })
+        // Esperar a que todas las referencias se creen
+        await Promise.allSettled(referencePromises)
+        // Procesar solo archivos nuevos
+        const filesToProcess = newFiles
+        if (filesToProcess.length === 0) {
+          return {
+            success: true,
+            data: [],
+            message: `Referencias recreadas: ${existingFiles.length}`
+          }
+        }
+        // Subir archivos nuevos
+        const uploadPromises = filesToProcess.map((file, index) => 
+          this.uploadImageWithThumbnail(file, productId, supplierId, index === 0)
+        )
+        const results = await Promise.allSettled(uploadPromises)
+        const successful = []
+        const errors = []
+        results.forEach((result, index) => {
+          if (result.status === 'fulfilled' && result.value?.success) {
+            successful.push(result.value.data)
+          } else {
+            const errorMsg = result.status === 'rejected' 
+              ? (result.reason?.message || 'Error desconocido')
+              : (result.value?.error || 'Error de procesamiento')
+            errors.push(`Archivo ${filesToProcess[index].name || filesToProcess[index].file?.name}: ${errorMsg}`)
+          }
+        })
+        return {
+          success: successful.length > 0 || existingFiles.length > 0,
+          data: successful,
+          errors: errors.length > 0 ? errors : undefined,
+          message: `Nuevos: ${successful.length}, Referencias: ${existingFiles.length}`
+        }
+      }
+      // MODO NORMAL: Filtrar imágenes existentes para no procesarlas
       const newFiles = files.filter(file => {
         // Si tiene isExisting o si el file.size es 0 (marcador de existente), saltarlo
         const isExisting = file.isExisting || (file.file && file.file.size === 0);
-        if (isExisting) {
-          console.log('🔍 [uploadMultipleImages] Saltando imagen existente:', file.name || file.file?.name);
-        }
         return !isExisting;
       });
-
-      console.log(`📊 [uploadMultipleImages] Total archivos: ${files.length}, Nuevos: ${newFiles.length}, Existentes: ${files.length - newFiles.length}`);
-
       // Si no hay archivos nuevos que subir, retornar éxito
       if (newFiles.length === 0) {
-        console.log('✅ [uploadMultipleImages] No hay archivos nuevos que subir');
         return {
           success: true,
           data: [],
           message: 'No hay archivos nuevos que procesar'
         };
       }
-
       // Subir imágenes en paralelo - solo thumbnails para la primera (principal)
       const uploadPromises = newFiles.map((file, index) => 
         this.uploadImageWithThumbnail(file, productId, supplierId, index === 0)
       )
-
       const results = await Promise.allSettled(uploadPromises)
       const successful = []
       const errors = []
-
       results.forEach((result, index) => {
         if (result.status === 'fulfilled' && result.value?.success) {
           successful.push(result.value.data)
@@ -256,7 +316,6 @@ export class UploadService {
           errors.push(`Archivo ${newFiles[index].name || newFiles[index].file?.name}: ${errorMsg}`)
         }
       })
-
       return {
         success: successful.length > 0 || files.length > newFiles.length, // Éxito si subió algo O si había existentes
         data: successful,
@@ -280,29 +339,9 @@ export class UploadService {
   static async uploadImageWithThumbnail(file, productId, supplierId, isMainImage = false, options = {}) {
     const { replaceExisting = false } = options
     
-    console.log('🔍 [uploadImageWithThumbnail] Iniciando upload:', {
-      fileName: file?.name || file?.file?.name,
-      fileSize: file?.size || file?.file?.size,
-      fileType: file?.type || file?.file?.type,
-      isWrapper: !!file?.file,
-      productId,
-      supplierId,
-      isMainImage,
-      replaceExisting
-    })
 
     try {
-      // 0. Si es reemplazo, limpiar imágenes existentes primero
-      if (replaceExisting) {
-        console.log(`🧹 [uploadImageWithThumbnail] Limpiando imágenes existentes para producto ${productId}`)
-        try {
-          const cleanupResult = await StorageCleanupService.cleanupProductOrphans(productId)
-          console.log(`✅ [uploadImageWithThumbnail] Archivos limpiados: ${cleanupResult.cleaned}`)
-        } catch (cleanupError) {
-          console.warn('⚠️ [uploadImageWithThumbnail] Error en limpieza (continuando):', cleanupError.message)
-          // No fallar por errores de limpieza, continuar con el upload
-        }
-      }
+      // 🔥 REMOVIDO: Limpieza duplicada (ya se hace en uploadMultipleImagesWithThumbnails)
 
       // 🔥 CRÍTICO: Manejar objetos wrapper del ImageUploader
       const actualFile = file?.file || file // Si es wrapper, usar file.file, sino usar file directamente
@@ -327,21 +366,9 @@ export class UploadService {
       const timestamp = Date.now()
       const fileExtension = actualFile.name.split('.').pop()
       const fileName = `${supplierId}/${productId}/${timestamp}_${actualFile.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`
-      console.log('📁 [uploadImageWithThumbnail] Nombre de archivo generado:', fileName)
       
-      // Verificar que el bucket existe y tenemos permisos
-      console.log('🪣 [uploadImageWithThumbnail] Verificando bucket:', this.IMAGE_BUCKET)
-      const { data: bucketData, error: bucketError } = await supabase.storage
-        .from(this.IMAGE_BUCKET)
-        .list('', { limit: 1 })
-      if (bucketError) {
-        console.error('❌ [uploadImageWithThumbnail] Error de bucket:', bucketError)
-        return { success: false, error: `Error accediendo al bucket: ${bucketError.message}` }
-      }
-      console.log('✅ [uploadImageWithThumbnail] Bucket verificado exitosamente')
+      // 🔥 REMOVIDO: Verificación de bucket (innecesaria para cada imagen)
 
-      // 3. Subir imagen original a Supabase Storage
-      console.log('📤 [uploadImageWithThumbnail] Iniciando upload a Supabase...')
       const { data, error } = await supabase.storage
         .from(this.IMAGE_BUCKET)
         .upload(fileName, actualFile, {
@@ -353,73 +380,61 @@ export class UploadService {
         console.error('❌ [uploadImageWithThumbnail] Error en upload:', error)
         return { success: false, error: error.message }
       }
-      console.log('✅ [uploadImageWithThumbnail] Upload exitoso:', data)
 
-      // Verificar que realmente se subió usando getPublicUrl
+      // 4. Obtener URL pública de la imagen original
       const { data: publicUrlData } = supabase.storage
         .from(this.IMAGE_BUCKET)
         .getPublicUrl(fileName)
-      // Verificar con un delay pequeño para que se propague
-      setTimeout(async () => {
-        const { data: verifyData, error: verifyError } = await supabase.storage
-          .from(this.IMAGE_BUCKET)
-          .list(fileName.split('/').slice(0, -1).join('/'))
-        // No logs
-      }, 800)
 
-      // 4. Obtener URL pública de la imagen original (usar la que ya generamos)
-      const urlData = publicUrlData
-
-      // 🔥 CRÍTICO: INSERTAR REGISTRO EN product_images ANTES DE GENERAR THUMBNAIL
-      console.log('💾 [uploadImageWithThumbnail] Guardando referencia en DB...')
+      
+      // Obtener el siguiente orden para este producto
+      const { data: existingImages, error: countError } = await supabase
+        .from('product_images')
+        .select('image_order')
+        .eq('product_id', productId)
+        .order('image_order', { ascending: false })
+        .limit(1)
+      
+      const nextOrder = existingImages?.length > 0 ? (existingImages[0].image_order + 1) : 0
+      
       const { error: dbInsertError } = await supabase
         .from('product_images')
         .insert({
           product_id: productId,
-          image_url: urlData.publicUrl,
+          image_url: publicUrlData.publicUrl,
           thumbnail_url: null, // Se actualizará después con el thumbnail
-          thumbnails: null     // Se actualizará después con los thumbnails
+          thumbnails: null,    // Se actualizará después con los thumbnails
+          image_order: nextOrder // Mantener orden de inserción
         })
 
       if (dbInsertError) {
         console.error('❌ [uploadImageWithThumbnail] Error insertando en DB:', dbInsertError)
         // No fallar todo el proceso, pero logging para debugging
-      } else {
-        console.log('✅ [uploadImageWithThumbnail] Referencia guardada en DB exitosamente')
       }
 
       // 5. Generar thumbnail usando Edge Function (SOLO para imagen principal y NO WebP)
       let thumbnailUrl = null
       if (isMainImage) {
         // Skip thumbnail generation for WebP images since Edge Function doesn't support them
-        if (actualFile.type === 'image/webp') {
-          console.log('⚠️ [uploadImageWithThumbnail] WebP detectado - saltando generación de thumbnail')
-          // WebP detected - skip thumbnail generation, image uploaded successfully
-        } else {
+        if (actualFile.type !== 'image/webp') {
           try {
-            console.log('🖼️ [uploadImageWithThumbnail] Generando thumbnail...')
-            const thumbnailResult = await this.generateThumbnail(urlData.publicUrl, productId, supplierId)
+            const thumbnailResult = await this.generateThumbnail(publicUrlData.publicUrl, productId, supplierId)
             if (thumbnailResult.success) {
               thumbnailUrl = thumbnailResult.thumbnailUrl
-              console.log('✅ [uploadImageWithThumbnail] Thumbnail generado:', thumbnailUrl)
-            } else {
-              console.log('⚠️ [uploadImageWithThumbnail] Falló generación de thumbnail:', thumbnailResult.error)
             }
           } catch (thumbnailError) {
-            console.log('⚠️ [uploadImageWithThumbnail] Error en thumbnail (continuando):', thumbnailError.message)
             // Continue without thumbnail if generation fails
           }
         }
       }
 
-      console.log('✅ [uploadImageWithThumbnail] Upload completado exitosamente')
       return {
         success: true,
         data: {
           id: data.id || fileName,
           fileName: actualFile.name,
           filePath: fileName,
-          publicUrl: urlData.publicUrl,
+          publicUrl: publicUrlData.publicUrl,
           thumbnailUrl: thumbnailUrl, // ✅ NUEVO: URL del thumbnail
           size: actualFile.size,
           type: actualFile.type,

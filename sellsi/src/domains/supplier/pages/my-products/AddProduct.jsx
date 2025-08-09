@@ -14,6 +14,8 @@ import {
   useMediaQuery,
   Card,
   Stack,
+  IconButton,
+  Tooltip,
 } from '@mui/material';
 import {
   ArrowBack as ArrowBackIcon,
@@ -711,17 +713,19 @@ const AddProduct = () => {
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                 {/* Fila 1: Solo botón Volver */}
                 <Box sx={{ display: 'flex', justifyContent: 'flex-start' }}>
-                  <Button
-                    startIcon={<ArrowBackIcon />}
-                    onClick={handleBack}
-                    variant="outlined"
-                    size="small"
-                    sx={{ 
-                      textTransform: 'none',
-                    }}
-                  >
-                    Volver
-                  </Button>
+                  <Tooltip title="Volver" arrow>
+                    <IconButton
+                      onClick={handleBack}
+                      sx={{ 
+                        p: 1,
+                        '&:hover': {
+                          backgroundColor: 'action.hover'
+                        }
+                      }}
+                    >
+                      <ArrowBackIcon />
+                    </IconButton>
+                  </Tooltip>
                 </Box>
                 
                 {/* Fila 2: Título centrado */}
@@ -737,14 +741,19 @@ const AddProduct = () => {
             ) : (
               // 🖥️ Header Desktop - Mantener actual
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-                <Button
-                  startIcon={<ArrowBackIcon />}
-                  onClick={handleBack}
-                  variant="outlined"
-                  sx={{ textTransform: 'none' }}
-                >
-                  Volver
-                </Button>
+                <Tooltip title="Volver" arrow>
+                  <IconButton
+                    onClick={handleBack}
+                    sx={{ 
+                      p: 1,
+                      '&:hover': {
+                        backgroundColor: 'action.hover'
+                      }
+                    }}
+                  >
+                    <ArrowBackIcon />
+                  </IconButton>
+                </Tooltip>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                   {!isEditMode && (
                     <Inventory2Icon sx={{ color: 'primary.main', fontSize: 36 }} />

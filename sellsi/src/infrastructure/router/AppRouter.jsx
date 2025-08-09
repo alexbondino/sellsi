@@ -37,11 +37,8 @@ const MarketplaceSupplier = React.lazy(() =>
 );
 
 // 📦 PROFILE PAGES - LAZY LOADING
-const SupplierProfile = React.lazy(() =>
-  import('../../domains/supplier/pages/SupplierProfile')
-);
-const BuyerProfile = React.lazy(() =>
-  import('../../domains/buyer/pages/BuyerProfile')
+const Profile = React.lazy(() =>
+  import('../../domains/profile/pages/Profile')
 );
 
 // 📦 RUTAS SECUNDARIAS - LAZY LOADING
@@ -314,7 +311,7 @@ export const AppRouter = ({ scrollTargets }) => {
               loading={loadingUserStatus}
               redirectTo="/"
             >
-              <SupplierProfile onProfileUpdated={refreshUserProfile} />
+              <Profile onProfileUpdated={refreshUserProfile} />
             </PrivateRoute>
           }
         />
@@ -341,7 +338,7 @@ export const AppRouter = ({ scrollTargets }) => {
               loading={loadingUserStatus}
               redirectTo="/"
             >
-              <BuyerProfile onProfileUpdated={refreshUserProfile} />
+              <Profile onProfileUpdated={refreshUserProfile} />
             </PrivateRoute>
           }
         />

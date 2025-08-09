@@ -128,7 +128,7 @@ class OrderService {
           // Skip carts that don't have items for this supplier
           if (supplierItems.length === 0) return null;
 
-          // Obtener información de envío del comprador
+          // Obtener Dirección de Despacho del comprador
           const shippingInfo = cart.users?.shipping_info?.[0] || {};
           const deliveryAddress = {
             region: shippingInfo.shipping_region || 'Región no especificada',
@@ -181,7 +181,7 @@ class OrderService {
               phone: cart.users?.phone_nbr || 'Teléfono no disponible'
             },
 
-            // Información de envío
+            // Dirección de Despacho
             delivery_address: deliveryAddress,
 
             // Items del pedido (solo los del proveedor)
@@ -560,7 +560,7 @@ class OrderService {
       const orders = data
         .filter(cart => cart.cart_items && cart.cart_items.length > 0)
         .map(cart => {
-          // Obtener información de envío del comprador
+          // Obtener Dirección de Despacho del comprador
           const shippingInfo = cart.users?.shipping_info?.[0] || {};
           const deliveryAddress = {
             region: shippingInfo.shipping_region || 'Región no especificada',
@@ -587,7 +587,7 @@ class OrderService {
               phone: cart.users?.phone_nbr || 'Teléfono no disponible'
             },
 
-            // Información de envío
+            // Dirección de Despacho
             delivery_address: deliveryAddress,
 
             // Items del pedido

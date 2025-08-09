@@ -30,8 +30,7 @@ export const getSolicitudes = async (filters = {}) => {
     const allowedFilters = ['estado', 'fechaDesde', 'fechaHasta', 'proveedor', 'comprador']
     const sanitizedFilters = AdminApiService.sanitizeFilters(filters, allowedFilters)
     
-    // TODO: Implementar cuando se creen las tablas
-    /*
+    // Consulta real a la base de datos
     let query = supabase
       .from('control_panel')
       .select(`
@@ -67,76 +66,9 @@ export const getSolicitudes = async (filters = {}) => {
     }
     
     return data
-    */
     
-    // Datos mock para desarrollo - actualizar según filtros
-    const mockData = [
-      {
-        id: '1',
-        proveedor: 'Proveedor Demo 1',
-        comprador: 'Comprador Demo 1',
-        ticket: 'TKT-001',
-        direccion_entrega: 'Av. Providencia 123, Santiago',
-        fecha_solicitada: '2025-07-17',
-        fecha_entrega: null,
-        venta: 150000,
-        estado: 'pendiente',
-        acciones: 'confirmar,rechazar',
-        comprobante_pago: null,
-        created_at: '2025-07-17T10:00:00Z'
-      },
-      {
-        id: '2',
-        proveedor: 'Proveedor Demo 2',
-        comprador: 'Comprador Demo 2',
-        ticket: 'TKT-002',
-        direccion_entrega: 'Av. Las Condes 456, Santiago',
-        fecha_solicitada: '2025-07-16',
-        fecha_entrega: '2025-07-17',
-        venta: 75000,
-        estado: 'entregado',
-        acciones: 'devolver',
-        comprobante_pago: 'comprobante_001.pdf',
-        created_at: '2025-07-16T15:30:00Z'
-      },
-      {
-        id: '3',
-        proveedor: 'Proveedor Demo 3',
-        comprador: 'Comprador Demo 3',
-        ticket: 'TKT-003',
-        direccion_entrega: 'Av. Vitacura 789, Santiago',
-        fecha_solicitada: '2025-07-15',
-        fecha_entrega: null,
-        venta: 200000,
-        estado: 'rechazado',
-        acciones: '',
-        comprobante_pago: null,
-        created_at: '2025-07-15T09:45:00Z'
-      }
-    ]
-    
-    // Aplicar filtros mock
-    let filteredData = [...mockData]
-    
-    if (sanitizedFilters.estado) {
-      filteredData = filteredData.filter(item => item.estado === sanitizedFilters.estado)
-    }
-    
-    if (sanitizedFilters.proveedor) {
-      filteredData = filteredData.filter(item => 
-        item.proveedor.toLowerCase().includes(sanitizedFilters.proveedor.toLowerCase())
-      )
-    }
-    
-    if (sanitizedFilters.fechaDesde) {
-      filteredData = filteredData.filter(item => item.fecha_solicitada >= sanitizedFilters.fechaDesde)
-    }
-    
-    if (sanitizedFilters.fechaHasta) {
-      filteredData = filteredData.filter(item => item.fecha_solicitada <= sanitizedFilters.fechaHasta)
-    }
-    
-    return filteredData
+    // Datos mock eliminados - ahora usando datos reales
+    // Los datos vienen de la consulta SQL real arriba
   }, 'Error al cargar solicitudes')
 }
 
@@ -151,14 +83,12 @@ export const getSolicitudDetails = async (solicitudId) => {
       throw new Error('ID de solicitud es requerido')
     }
 
-    // TODO: Implementar cuando se creen las tablas
-    /*
+    // Consulta real a la base de datos
     const { data, error } = await supabase
       .from('control_panel')
       .select(`
         *,
-        requests:request_id (*),
-        comprobantes:comprobante_id (*)
+        requests:request_id (*)
       `)
       .eq('id', solicitudId)
       .single()
@@ -168,20 +98,6 @@ export const getSolicitudDetails = async (solicitudId) => {
     }
     
     return data
-    */
-    
-    // Mock data para desarrollo
-    return {
-      id: solicitudId,
-      proveedor: 'Proveedor Demo',
-      comprador: 'Comprador Demo',
-      ticket: `TKT-${solicitudId}`,
-      direccion_entrega: 'Av. Demo 123, Santiago',
-      fecha_solicitada: '2025-07-17',
-      venta: 150000,
-      estado: 'pendiente',
-      created_at: '2025-07-17T10:00:00Z'
-    }
   }, 'Error obteniendo detalles de la solicitud')
 }
 
@@ -207,23 +123,20 @@ export const confirmarPago = async (solicitudId, datos, adminId) => {
       throw new Error('URL del comprobante no es válida')
     }
 
-    // TODO: Implementar cuando se creen las tablas
-    /*
+    // Actualizar en la base de datos
     const { error } = await supabase
       .from('control_panel')
       .update({
         estado: 'confirmado',
         comprobante_pago: datos.comprobante_url,
         updated_at: new Date().toISOString(),
-        confirmed_by: adminId,
-        confirmed_at: new Date().toISOString()
+        procesado_por: adminId
       })
       .eq('id', solicitudId)
     
     if (error) {
       throw new Error('Error al confirmar pago')
     }
-    */
 
     // Registrar acción en auditoría
     await AdminApiService.logAuditAction(adminId, AUDIT_ACTIONS.CONFIRM_REQUEST, solicitudId, {
@@ -276,24 +189,20 @@ export const rechazarPago = async (solicitudId, datos, adminId) => {
       }
     }
 
-    // TODO: Implementar cuando se creen las tablas
-    /*
+    // Actualizar en la base de datos
     const { error } = await supabase
       .from('control_panel')
       .update({
         estado: 'rechazado',
-        motivo_rechazo: datos.motivo.trim(),
-        adjuntos: datos.adjuntos_urls || [],
+        notas_admin: datos.motivo.trim(),
         updated_at: new Date().toISOString(),
-        rejected_by: adminId,
-        rejected_at: new Date().toISOString()
+        procesado_por: adminId
       })
       .eq('id', solicitudId)
     
     if (error) {
       throw new Error('Error al rechazar pago')
     }
-    */
 
     // Registrar acción en auditoría
     await AdminApiService.logAuditAction(adminId, AUDIT_ACTIONS.REJECT_REQUEST, solicitudId, {
@@ -340,25 +249,20 @@ export const devolverPago = async (solicitudId, datos, adminId) => {
       throw new Error('URL del comprobante de devolución no es válida')
     }
 
-    // TODO: Implementar cuando se creen las tablas
-    /*
+    // Actualizar en la base de datos
     const { error } = await supabase
       .from('control_panel')
       .update({
         estado: 'devuelto',
-        monto_devuelto: datos.monto,
-        comprobante_devolucion: datos.comprobante_devolucion_url,
-        motivo_devolucion: datos.motivo || null,
+        notas_admin: datos.motivo || null,
         updated_at: new Date().toISOString(),
-        refunded_by: adminId,
-        refunded_at: new Date().toISOString()
+        procesado_por: adminId
       })
       .eq('id', solicitudId)
     
     if (error) {
       throw new Error('Error al procesar devolución')
     }
-    */
 
     // Registrar acción en auditoría
     await AdminApiService.logAuditAction(adminId, AUDIT_ACTIONS.REFUND_REQUEST, solicitudId, {
@@ -392,8 +296,7 @@ export const devolverPago = async (solicitudId, datos, adminId) => {
  */
 export const getSolicitudesStats = async (filters = {}) => {
   return AdminApiService.executeQuery(async () => {
-    // TODO: Implementar cuando se creen las tablas
-    /*
+    // Consulta real a la base de datos para estadísticas
     let query = supabase
       .from('control_panel')
       .select('estado, venta, created_at')
@@ -426,21 +329,6 @@ export const getSolicitudesStats = async (filters = {}) => {
     }
     
     return stats
-    */
-    
-    // Stats mock para desarrollo
-    const mockStats = {
-      total: 28,
-      pendientes: 8,
-      confirmados: 12,
-      rechazados: 3,
-      devueltos: 2,
-      entregados: 3,
-      monto_total: 3500000,
-      monto_confirmado: 1800000
-    }
-    
-    return mockStats
   }, 'Error al cargar estadísticas de solicitudes')
 }
 
@@ -460,24 +348,49 @@ export const getSolicitudesReport = async (startDate, endDate) => {
       throw new Error('Fecha de inicio no puede ser mayor a fecha de fin')
     }
 
-    // TODO: Implementar cuando se creen las tablas
-    // Por ahora retornamos mock data
+    // Consulta real para generar reporte
+    const { data: solicitudes, error } = await supabase
+      .from('control_panel')
+      .select('estado, venta, created_at')
+      .gte('created_at', startDate)
+      .lte('created_at', endDate)
+
+    if (error) {
+      throw new Error('Error generando reporte')
+    }
+
+    // Calcular estadísticas del reporte
+    const total_requests = solicitudes.length
+    const total_amount = solicitudes.reduce((sum, s) => sum + (s.venta || 0), 0)
+    const avg_amount = total_requests > 0 ? total_amount / total_requests : 0
+
+    // Agrupar por estado
+    const by_status = {}
+    const estados = ['pendiente', 'confirmado', 'rechazado', 'devuelto', 'entregado']
+    
+    estados.forEach(estado => {
+      const filtradas = solicitudes.filter(s => s.estado === estado)
+      by_status[estado] = {
+        count: filtradas.length,
+        amount: filtradas.reduce((sum, s) => sum + (s.venta || 0), 0)
+      }
+    })
+
+    // Encontrar estado más común
+    const most_common_status = estados.reduce((a, b) => 
+      by_status[a].count > by_status[b].count ? a : b
+    )
+
     return {
       period: { start: startDate, end: endDate },
       summary: {
-        total_requests: 15,
-        total_amount: 2250000,
-        avg_amount: 150000,
-        most_common_status: 'confirmado'
+        total_requests,
+        total_amount,
+        avg_amount: Math.round(avg_amount),
+        most_common_status
       },
-      by_status: {
-        pendiente: { count: 3, amount: 450000 },
-        confirmado: { count: 8, amount: 1200000 },
-        rechazado: { count: 2, amount: 300000 },
-        devuelto: { count: 1, amount: 150000 },
-        entregado: { count: 1, amount: 150000 }
-      },
-      by_day: [] // Array de datos diarios
+      by_status,
+      by_day: [] // Se puede implementar más tarde si se necesita
     }
   }, 'Error generando reporte de solicitudes')
 }

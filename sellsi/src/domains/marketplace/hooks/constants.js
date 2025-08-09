@@ -3,19 +3,11 @@
 // ============================================================================
 
 /**
- * ⚠️ MIGRACIÓN EN PROGRESO
+ * ⚠️ MIGRACIÓN COMPLETADA
  * 
- * Las constantes SHIPPING_OPTIONS y DISCOUNT_CODES han sido migradas a:
- * - src/shared/constants/shipping.js
- * - src/shared/constants/discounts.js
- * 
- * Se mantienen aquí los re-exports para compatibilidad.
- * TODO: Una vez migrados todos los imports, eliminar este archivo.
+ * Las constantes de shipping han sido eliminadas ya que eran mocks antiguos.
+ * El sistema ahora calcula los precios de envío dinámicamente.
  */
-
-// ✅ RE-EXPORTS desde shared constants
-export { SHIPPING_OPTIONS, SHIPPING_CONFIG } from '../../../shared/constants/shipping';
-export { DISCOUNT_CODES, DISCOUNT_CONFIG } from '../../../shared/constants/discounts';
 
 // ============================================================================
 // CONSTANTES ESPECÍFICAS DEL MARKETPLACE

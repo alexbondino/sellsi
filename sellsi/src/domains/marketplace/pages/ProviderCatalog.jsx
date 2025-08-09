@@ -19,6 +19,7 @@ import {
   FormControl,
   Select,
   MenuItem,
+  Tooltip,
 } from '@mui/material';
 import {
   ArrowBack,
@@ -442,13 +443,21 @@ const ProviderCatalog = () => {
                     {provider?.user_nm || 'Proveedor'}
                   </Typography>
                   {provider?.verified === true && (
-                    <Chip
-                      icon={<VerifiedUser />}
-                      label="Verificado"
-                      color="primary"
-                      size="small"
-                      variant="outlined"
-                    />
+                    <Tooltip
+                      title="Este Proveedor ha sido verificado por Sellsi."
+                      placement="right"
+                      arrow
+                    >
+                      <Chip
+                        icon={<VerifiedUser />}
+                        label="Verificado"
+                        color="primary"
+                        size="small"
+                        variant="filled"
+                        clickable={false}
+                        onClick={() => {}}
+                      />
+                    </Tooltip>
                   )}
                 </Box>
                 

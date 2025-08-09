@@ -17,6 +17,7 @@ import BanGuard from '../../components/BanGuard';
 import { AuthProvider } from './AuthProvider';
 import { RoleProvider } from './RoleProvider';
 import { LayoutProvider } from './LayoutProvider';
+import { TransferInfoManager } from '../../shared/components/managers';
 
 const globalStyles = {
   html: { overflowX: 'hidden' },
@@ -44,6 +45,7 @@ export const AppProviders = ({ children }) => {
           <BrowserRouter>
             <ScrollToTop />
             <AuthProvider>
+              <TransferInfoManager />
               <RoleProvider>
                 <LayoutProvider>
                   <BanGuard>

@@ -2,7 +2,7 @@
 
 ## 1. 🎯 Resumen ejecutivo del módulo
 
-- **Problema de negocio que resuelve:** Sistema integral de gestión de perfiles de usuario B2B que maneja información empresarial, bancaria, de envío y facturación, con protección avanzada de datos sensibles, subida de logos corporativos, y sincronización multi-tabla en base de datos
+- **Problema de negocio que resuelve:** Sistema integral de gestión de perfiles de usuario B2B que maneja Información Generalrial, bancaria, de envío y facturación, con protección avanzada de datos sensibles, subida de logos corporativos, y sincronización multi-tabla en base de datos
 
 - **Responsabilidad principal:** Centralizar toda la información del perfil de usuario (básica, empresarial, bancaria, shipping, billing), proporcionar interfaces seguras para edición con validaciones, manejar subida de imágenes, y mantener consistencia entre múltiples tablas de base de datos
 
@@ -10,7 +10,7 @@
 
 - **Criticidad:** ALTA - Datos incorrectos o corruptos impactan directamente operaciones de negocio, pagos, y entregas
 
-- **Usuarios objetivo:** Todos los usuarios autenticados (compradores y proveedores) gestionando su información empresarial
+- **Usuarios objetivo:** Todos los usuarios autenticados (compradores y proveedores) gestionando su Información Generalrial
 
 ## 2. 📊 Análisis de complejidad
 
@@ -198,7 +198,7 @@ const {
     user_nm,                  // string
     descripcionProveedor,     // string (solo suppliers)
     
-    // Información de envío  
+    // Información de Despacho  
     shippingRegion,           // string
     shippingComuna,           // string
     shippingAddress,          // string
@@ -213,7 +213,7 @@ const {
     transferRut,              // string (masked)
     confirmationEmail,        // string
     
-    // Información de facturación
+    // Facturación
     businessName,             // string
     billingRut,               // string
     businessLine,             // string

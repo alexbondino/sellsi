@@ -118,12 +118,12 @@ CHECK (status IN ('pending', 'confirmed', 'processing', 'shipped', 'delivered', 
 
 ## ❌ Campos FALTANTES que necesitan ser agregados a la BD
 
-### 📋 Información Empresa (agregar a tabla `users`):
+### 📋 Información General (agregar a tabla `users`):
 ```sql
 ALTER TABLE public.users ADD COLUMN rut character varying;
 ```
 
-### 🚚 Información de Envío (agregar a tabla `users`):
+### 🚚 Información de Despacho (agregar a tabla `users`):
 ```sql
 ALTER TABLE public.users ADD COLUMN shipping_region text;
 ALTER TABLE public.users ADD COLUMN shipping_comuna text;
@@ -142,7 +142,7 @@ ALTER TABLE public.users ADD COLUMN transfer_rut character varying;
 ALTER TABLE public.users ADD COLUMN confirmation_email text;
 ```
 
-### 🧾 Información de Facturación (agregar a tabla `users`):
+### 🧾 Facturación (agregar a tabla `users`):
 ```sql
 ALTER TABLE public.users ADD COLUMN business_name character varying;
 ALTER TABLE public.users ADD COLUMN billing_rut character varying;
@@ -219,9 +219,9 @@ CREATE INDEX IF NOT EXISTS idx_requests_supplier_id ON requests(supplier_id);
 
 ### 📋 **Tabla `users` (18 campos nuevos):**
 - `rut` - RUT de la empresa
-- Información de envío (5 campos)
+- Información de Despacho (5 campos)
 - Información de transferencia (6 campos) 
-- Información de facturación (6 campos)
+- Facturación (6 campos)
 
 ### 💰 **Tabla `sales` (9 campos nuevos):**
 - `request_id` - Referencia al pedido
@@ -258,7 +258,7 @@ const mapUserFromDB = (dbUser) => ({
   country: dbUser.country,
   rut: dbUser.rut,
   
-  // Información de envío
+  // Información de Despacho
   shipping_region: dbUser.shipping_region,
   shipping_comuna: dbUser.shipping_comuna,
   shipping_address: dbUser.shipping_address,
@@ -273,7 +273,7 @@ const mapUserFromDB = (dbUser) => ({
   transfer_rut: dbUser.transfer_rut,
   confirmation_email: dbUser.confirmation_email,
   
-  // Información de facturación
+  // Facturación
   business_name: dbUser.business_name,
   billing_rut: dbUser.billing_rut,
   business_line: dbUser.business_line,
@@ -290,7 +290,7 @@ const mapUserToDB = (frontendData) => ({
   country: frontendData.country,
   rut: frontendData.rut,
   
-  // Información de envío
+  // Información de Despacho
   shipping_region: frontendData.shipping_region,
   shipping_comuna: frontendData.shipping_comuna,
   shipping_address: frontendData.shipping_address,
@@ -305,7 +305,7 @@ const mapUserToDB = (frontendData) => ({
   transfer_rut: frontendData.transfer_rut,
   confirmation_email: frontendData.confirmation_email,
   
-  // Información de facturación
+  // Facturación
   business_name: frontendData.business_name,
   billing_rut: frontendData.billing_rut,
   business_line: frontendData.business_line,

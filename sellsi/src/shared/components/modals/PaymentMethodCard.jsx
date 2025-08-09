@@ -169,7 +169,7 @@ const PaymentMethodCard = ({
                   <Typography variant="body2" color="text.secondary">
                     {fees.total > 0 && formatPrice
                       ? `Comisión: ${formatPrice(fees.total)}`
-                      : 'Sin comisiones'
+                      : 'Comisión de $500'
                     }
                   </Typography>
                   <CheckCircleIcon 

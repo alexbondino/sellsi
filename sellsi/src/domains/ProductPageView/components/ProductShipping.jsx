@@ -55,11 +55,15 @@ const ProductShipping = ({ product, isMobile = false, isLoggedIn = false }) => {
   };
 
   const formatCurrency = (value) => {
+    const numericValue = value || 0;
+    if (numericValue === 0) {
+      return 'GRATIS';
+    }
     return new Intl.NumberFormat('es-CL', {
       style: 'currency',
       currency: 'CLP',
       minimumFractionDigits: 0,
-    }).format(value || 0);
+    }).format(numericValue);
   };
 
   // Si no hay regiones de despacho o el usuario no está logueado, no mostrar el componente
@@ -87,21 +91,6 @@ const ProductShipping = ({ product, isMobile = false, isLoggedIn = false }) => {
           position: 'relative',
           overflow: 'hidden',
           margin: '0 auto',
-          '&::before': {
-            content: '""',
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            height: '4px',
-            background: 'linear-gradient(90deg, #1976d2, #42a5f5, #1976d2)',
-            backgroundSize: '200% 100%',
-            animation: 'shimmer 3s ease-in-out infinite',
-          },
-          '@keyframes shimmer': {
-            '0%': { backgroundPosition: '-200% 0' },
-            '100%': { backgroundPosition: '200% 0' },
-          },
         }}
       >
         <Typography
@@ -110,7 +99,7 @@ const ProductShipping = ({ product, isMobile = false, isLoggedIn = false }) => {
             fontWeight: 700,
             color: 'black',
             mb: 3,
-            fontSize: { xs: '1.5rem', sm: '1.5rem', md: '1.5rem' },
+            fontSize: { xs: '1.4rem', sm: '1.4rem', md: '1.4rem' },
             position: 'relative',
             display: 'flex',
             alignItems: 'center',
@@ -122,16 +111,16 @@ const ProductShipping = ({ product, isMobile = false, isLoggedIn = false }) => {
               bottom: -8,
               left: '50%',
               transform: 'translateX(-50%)',
-              width: '60px',
+              width: '22%',
               height: '3px',
-              background: 'linear-gradient(90deg, #1976d2, #42a5f5)',
+              background: '#464646ff',
               borderRadius: '2px',
             },
           }}
         >
           <span style={{ display: 'flex', alignItems: 'center' }}>
             <span style={{ fontSize: '1.3em', marginRight: 8 }}>🚚</span>
-            Regiones de Despacho
+            Despacho
           </span>
         </Typography>
 
@@ -153,7 +142,7 @@ const ProductShipping = ({ product, isMobile = false, isLoggedIn = false }) => {
                     sx={{ 
                       fontWeight: 600, 
                       py: { xs: 1, md: 1.5 },
-                      fontSize: { xs: '0.75rem', md: '0.875rem' }
+                      fontSize: '1rem'
                     }}
                   >
                     Región
@@ -162,7 +151,7 @@ const ProductShipping = ({ product, isMobile = false, isLoggedIn = false }) => {
                     sx={{ 
                       fontWeight: 600, 
                       py: { xs: 1, md: 1.5 },
-                      fontSize: { xs: '0.75rem', md: '0.875rem' }
+                      fontSize: '1rem'
                     }}
                   >
                     Precio
@@ -171,10 +160,10 @@ const ProductShipping = ({ product, isMobile = false, isLoggedIn = false }) => {
                     sx={{ 
                       fontWeight: 600, 
                       py: { xs: 1, md: 1.5 },
-                      fontSize: { xs: '0.75rem', md: '0.875rem' }
+                      fontSize: '1rem'
                     }}
                   >
-                    Días de Entrega estimados
+                    Tiempo despacho
                   </TableCell>
                 </TableRow>
               </TableHead>
@@ -201,7 +190,7 @@ const ProductShipping = ({ product, isMobile = false, isLoggedIn = false }) => {
                             color: 'primary.main',
                             minWidth: '32px',
                             textAlign: 'center',
-                            fontSize: { xs: '0.75rem', md: '0.875rem' }
+                            fontSize: '1rem'
                           }}
                         >
                           {getRegionRomanNumber(region.region)}
@@ -210,7 +199,7 @@ const ProductShipping = ({ product, isMobile = false, isLoggedIn = false }) => {
                           variant="body2" 
                           sx={{ 
                             fontWeight: 500,
-                            fontSize: { xs: '0.75rem', md: '0.875rem' },
+                            fontSize: '1rem',
                             textAlign: { xs: 'center', sm: 'left' }
                           }}
                         >
@@ -223,8 +212,8 @@ const ProductShipping = ({ product, isMobile = false, isLoggedIn = false }) => {
                         variant="body2" 
                         sx={{ 
                           fontWeight: 600,
-                          fontSize: { xs: '0.75rem', md: '0.875rem' },
-                          color: 'black'
+                          fontSize: '1rem',
+                          color: (region.shippingValue || region.price) === 0 ? 'success.main' : 'black'
                         }}
                       >
                         {formatCurrency(region.shippingValue || region.price)}
@@ -235,11 +224,11 @@ const ProductShipping = ({ product, isMobile = false, isLoggedIn = false }) => {
                         variant="body2" 
                         sx={{ 
                           fontWeight: 500,
-                          fontSize: { xs: '0.75rem', md: '0.875rem' },
+                          fontSize: '1rem',
                           color: 'text.primary'
                         }}
                       >
-                        {region.maxDeliveryDays || region.delivery_days || 'N/A'} días hábiles
+                        {region.maxDeliveryDays || region.delivery_days || 'N/A'} días
                       </Typography>
                     </TableCell>
                   </TableRow>
@@ -248,6 +237,19 @@ const ProductShipping = ({ product, isMobile = false, isLoggedIn = false }) => {
             </Table>
           </TableContainer>
         </Box>
+        
+        {/* Nota explicativa */}
+        <Typography 
+          variant="body2" 
+          sx={{ 
+            mt: 3,
+            color: 'text.secondary',
+            fontSize: '0.85rem',
+            textAlign: 'center'
+          }}
+        >
+          <i>Tiempo de despacho estimado en días hábiles.</i>
+        </Typography>
       </Paper>
     </Box>
   );

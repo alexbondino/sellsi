@@ -231,7 +231,7 @@ export const createBuyerStatsCards = data => {
       id: 'saved',
       title: 'Productos Guardados',
       value: savedItems?.toString() || '0',
-      interval: 'En wishlist',
+      interval: 'Total',
       trend: 'neutral',
       color: 'secondary',
     },

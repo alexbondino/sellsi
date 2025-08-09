@@ -30,6 +30,7 @@ import Tooltip from '@mui/material/Tooltip';
  * @param {Function} onImageChange - Función llamada cuando se selecciona una nueva imagen
  * @param {string} currentImageUrl - URL de la imagen actual del perfil
  * @param {string} userInitials - Iniciales del usuario para mostrar si no hay imagen
+ * @param {Function} onSaveImage - Función para guardar automáticamente en Supabase (nueva)
  */
 const ProfileImageModal = ({
   open,
@@ -37,6 +38,7 @@ const ProfileImageModal = ({
   onImageChange,
   currentImageUrl,
   userInitials = 'U',
+  onSaveImage, // Nueva prop para guardado automático
 }) => {
   const theme = useTheme();
   const fileInputRef = useRef(null);
@@ -44,6 +46,7 @@ const ProfileImageModal = ({
   const [dragOver, setDragOver] = useState(false);
   const [error, setError] = useState('');
   const [localImageUrl, setLocalImageUrl] = useState(currentImageUrl);
+  const [loading, setLoading] = useState(false); // Estado de carga para guardado automático
 
   const maxFileSize = 300 * 1024; // 300KB en bytes
 
@@ -137,36 +140,51 @@ const ProfileImageModal = ({
   const isDeletePending = !selectedImage && localImageUrl === undefined && currentImageUrl;
   const isSaveEnabled = !!selectedImage || isDeletePending;
 
-  const handleSave = () => {
-    if (selectedImage) {
-      // Crear una copia del objeto para evitar mutaciones
-      const imageToSave = {
-        file: selectedImage.file,
-        url: selectedImage.url,
-        name: selectedImage.name,
-        size: selectedImage.size,
-        timestamp: selectedImage.timestamp
-      };
+  const handleSave = async () => {
+    if (!onSaveImage) {
+      // Comportamiento original si no hay función de guardado automático
+      if (selectedImage) {
+        const imageToSave = {
+          file: selectedImage.file,
+          url: selectedImage.url,
+          name: selectedImage.name,
+          size: selectedImage.size,
+          timestamp: selectedImage.timestamp
+        };
+        onImageChange(imageToSave);
+        setSelectedImage(null);
+        setError('');
+        onClose();
+        return;
+      }
+      if (isDeletePending) {
+        onImageChange(null);
+        setError('');
+        onClose();
+        return;
+      }
+      onImageChange(null);
+      onClose();
+      return;
+    }
+
+    // Nuevo comportamiento: guardar automáticamente en Supabase
+    setLoading(true);
+    try {
+      if (selectedImage) {
+        await onSaveImage(selectedImage.file);
+      } else if (isDeletePending) {
+        await onSaveImage(null); // Eliminar imagen
+      }
       
-      // Pasar la imagen al componente padre SIN revocar la URL
-      onImageChange(imageToSave);
-      
-      // Limpiar estado local pero NO revocar URL (el padre se encarga)
       setSelectedImage(null);
       setError('');
       onClose();
-      return;
+    } catch (error) {
+      setError(error.message || 'Error al guardar la imagen');
+    } finally {
+      setLoading(false);
     }
-    if (isDeletePending) {
-      // Notificar al padre que debe eliminar la imagen
-      onImageChange(null);
-      setError('');
-      onClose();
-      return;
-    }
-    // Even if nothing to save, log and call parent with null to be explicit
-    onImageChange(null);
-    onClose();
   };
 
   const handleClose = () => {
@@ -376,9 +394,9 @@ const ProfileImageModal = ({
         <Button
           onClick={handleSave}
           variant="contained"
-          disabled={!isSaveEnabled}
+          disabled={!isSaveEnabled || loading}
         >
-          Guardar
+          {loading ? 'Guardando...' : 'Guardar'}
         </Button>
       </DialogActions>
     </Dialog>

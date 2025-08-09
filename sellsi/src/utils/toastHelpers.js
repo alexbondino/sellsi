@@ -173,20 +173,26 @@ export const showProductSuccess = (message, icon = '📦') =>
 export const showProductError = (message) => 
   showErrorToast(message, { icon: '📦' });
 
-// Wishlist/Favoritos
-export const showWishlistSuccess = (message, icon = '❤️') => 
-  showSuccessToast(message, { icon });
-
-export const showWishlistInfo = (message, icon = '💔') => 
-  showInfoToast(message, { icon });
-
 // Validación
-export const showValidationError = (message, options = {}) => 
-  showErrorToast(message, { 
+export const showValidationError = (message, options = {}) => {
+  // Si el mensaje contiene múltiples errores separados por \n, 
+  // formatearlos para mejor legibilidad
+  const formattedMessage = message.includes('\n') 
+    ? message.split('\n').map((line, index) => 
+        index === 0 ? line : `${line}`
+      ).join('\n')
+    : message;
+    
+  return showErrorToast(formattedMessage, { 
     id: 'validation-error',
-    duration: 5000,
+    duration: 6000, // Más tiempo para leer múltiples errores
+    style: {
+      whiteSpace: 'pre-line', // Permite saltos de línea
+      lineHeight: '1.4'
+    },
     ...options 
   });
+};
 
 // Guardado
 export const showSaveSuccess = (message, icon = '✅') => 

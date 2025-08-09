@@ -39,7 +39,12 @@ const useSupplierProductsCRUD = create((set, get) => ({
     try {
       const { data: products, error: prodError } = await supabase
         .from('products')
-        .select('*, product_images(*), product_quantity_ranges(*), product_delivery_regions(*)')
+        .select(`
+          *, 
+          product_images(image_url, thumbnail_url, thumbnails).order(image_order.asc), 
+          product_quantity_ranges(*), 
+          product_delivery_regions(*)
+        `)
         .eq('supplier_id', supplierId)
         .order('updateddt', { ascending: false })
 
@@ -262,7 +267,12 @@ const useSupplierProductsCRUD = create((set, get) => ({
       
       const { data: product, error } = await supabase
         .from('products')
-        .select('*, product_images(*), product_quantity_ranges(*), product_delivery_regions(*)')
+        .select(`
+          *, 
+          product_images(image_url, thumbnail_url, thumbnails).order(image_order.asc), 
+          product_quantity_ranges(*), 
+          product_delivery_regions(*)
+        `)
         .eq('productid', productId)
         .single()
 

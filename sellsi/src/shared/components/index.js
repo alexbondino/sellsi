@@ -12,7 +12,9 @@ export {
   ImageUploader,
   LogoUploader,
   SearchBar,
-  SelectChip
+  SelectChip,
+  TaxDocumentSelector,
+  BillingInfoForm
 } from './forms';
 
 // Feedback (Sprint 2 Fase 2 - COMPLETADO)

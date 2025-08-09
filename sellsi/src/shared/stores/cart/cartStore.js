@@ -26,8 +26,6 @@
  *
  * MÓDULOS EXTERNOS:
  * - 🔄 useCartHistory: Historial y undo/redo
- * - 🔄 useWishlist: Lista de deseos
- * - 🔄 useCoupons: Cupones de descuento
  * - 🔄 useShipping: Opciones de envío
  */
 

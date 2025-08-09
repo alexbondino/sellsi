@@ -27,6 +27,45 @@ const ProductInventory = ({
   onPricingTypeChange,
   isMobile = false, // 🔧 Nueva prop para móvil
 }) => {
+  
+  // 🔧 NUEVA FUNCIÓN: Validar stock vs tramos
+  const getStockValidationError = () => {
+    // Solo validar si estamos en modo volumen y hay tramos configurados
+    if (formData.pricingType !== 'Volumen' || !formData.tramos || formData.tramos.length === 0) {
+      return null;
+    }
+    
+    const stock = parseInt(formData.stock) || 0;
+    if (stock <= 0) return null;
+    
+    // Buscar tramos cuyas cantidades min o max excedan el stock
+    const invalidTramos = formData.tramos.filter((tramo, index) => {
+      const min = parseInt(tramo.min) || 0;
+      const max = parseInt(tramo.max) || 0;
+      
+      // Verificar MIN
+      if (min > stock) return true;
+      
+      // Verificar MAX solo si no es el último tramo (el último tiene MAX = stock automáticamente)
+      if (index < formData.tramos.length - 1 && max > 0 && max > stock) return true;
+      
+      return false;
+    });
+    
+    if (invalidTramos.length > 0) {
+      return 'El stock no puede ser menor a las cantidades de los tramos configurados';
+    }
+    
+    return null;
+  };
+  
+  // Obtener error de validación de stock
+  const stockValidationError = getStockValidationError();
+  
+  // Combinar errores existentes con el nuevo error de validación
+  const finalStockError = (touched.stock || triedSubmit) 
+    ? (errors.stock || localErrors.stock || stockValidationError)
+    : stockValidationError;
   return (
     <Box>
       {isMobile ? (
@@ -40,15 +79,8 @@ const ProductInventory = ({
               value={formData.stock}
               onChange={onInputChange('stock')}
               onBlur={() => onFieldBlur('stock')}
-              error={
-                !!(touched.stock || triedSubmit) &&
-                !!(errors.stock || localErrors.stock)
-              }
-              helperText={
-                touched.stock || triedSubmit
-                  ? errors.stock || localErrors.stock
-                  : ''
-              }
+              error={!!finalStockError}
+              helperText={finalStockError || ''}
               type="number"
               inputProps={{ 
                 min: 1, 
@@ -165,15 +197,8 @@ const ProductInventory = ({
                 value={formData.stock}
                 onChange={onInputChange('stock')}
                 onBlur={() => onFieldBlur('stock')}
-                error={
-                  !!(touched.stock || triedSubmit) &&
-                  !!(errors.stock || localErrors.stock)
-                }
-                helperText={
-                  touched.stock || triedSubmit
-                    ? errors.stock || localErrors.stock
-                    : ''
-                }
+                error={!!finalStockError}
+                helperText={finalStockError || ''}
                 type="number"
                 inputProps={{ 
                   min: 1, 

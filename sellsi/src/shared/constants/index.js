@@ -7,10 +7,7 @@ export {
   privacyContent
 } from './content';
 
-// ✅ NUEVAS CONSTANTES MIGRADAS DESDE DOMAINS
-// Constantes de envío (migradas desde domains/marketplace)
-export * from './shipping.js';
-
+// ✅ CONSTANTES MIGRADAS DESDE DOMAINS
 // Constantes de descuentos (migradas desde domains/marketplace)
 export * from './discounts.js';
 

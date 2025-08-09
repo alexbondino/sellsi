@@ -27,24 +27,22 @@ const ProductResultsPanel = ({
   // 🔧 FIX EDIT: Lógica para habilitar/deshabilitar botón según el modo
   const isButtonDisabled = useMemo(() => {
     if (isLoading) return true;
-    if (!isValid) return true;
     
-    // En modo edición, solo habilitar si hay cambios reales
-    if (isEditMode && hasActualChanges !== undefined) {
-      return !hasActualChanges;
+    // En modo edición, solo habilitar si hay cambios reales Y es válido
+    if (isEditMode) {
+      if (!isValid) return true;
+      if (hasActualChanges !== undefined) {
+        return !hasActualChanges;
+      }
+      return false;
     }
     
-    // En modo creación, solo verificar validez
+    // 🔧 NUEVO: En modo creación (producto nuevo), el botón SIEMPRE está habilitado
+    // Las validaciones se manejan en el momento del submit con toasters informativos
     return false;
   }, [isLoading, isValid, isEditMode, hasActualChanges]);
 
-  console.log('🔍 [ProductResultsPanel] Estado del botón:', {
-    isEditMode,
-    isValid,
-    hasActualChanges,
-    isLoading,
-    isButtonDisabled
-  });
+  
   return (
     <Paper sx={{ p: 3, position: 'sticky', top: 100 }}>
       <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
@@ -98,7 +96,7 @@ const ProductResultsPanel = ({
             mb: 2,
           }}
         >
-          <Typography variant="h6" fontWeight="600">
+          <Typography variant="h6" fontWeight="600" color="primary.main">
             Total
           </Typography>
           <Typography

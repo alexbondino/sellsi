@@ -16,7 +16,6 @@ import { PERSIST_CONFIG } from './cartStore.constants'
 import { createDebouncedSave } from './cartStore.core'
 import { 
   calculateSubtotal, 
-  calculateDiscount, 
   calculateShippingCost, 
   calculateTotal,
   calculateItemCount,
@@ -41,8 +40,6 @@ import {
 
 // Importar módulos especializados
 import useCartHistory from './useCartHistory'
-import useWishlist from './useWishlist'
-import useCoupons from './useCoupons'
 import useShipping from './useShipping'
 
 /**
@@ -57,8 +54,6 @@ export const createCartStoreFacade = () => {
         
         // Instanciar módulos especializados
         const historyStore = useCartHistory.getState()
-        const wishlistStore = useWishlist.getState()
-        const couponsStore = useCoupons.getState()
         const shippingStore = useShipping.getState()
 
         return {
@@ -76,15 +71,6 @@ export const createCartStoreFacade = () => {
           lastModified: null,
 
           // === PROPIEDADES DELEGADAS PARA RETROCOMPATIBILIDAD ===
-          get wishlist() {
-            return wishlistStore.wishlist
-          },
-          get appliedCoupons() {
-            return couponsStore.appliedCoupons
-          },
-          get couponInput() {
-            return couponsStore.couponInput
-          },
           get selectedShipping() {
             return shippingStore.selectedShipping
           },
@@ -155,7 +141,7 @@ export const createCartStoreFacade = () => {
             }
             
             // Usar operación local
-            clearCartLocal(set, get, couponsStore, historyStore, debouncedSave)
+            clearCartLocal(set, get, historyStore, debouncedSave)
             
             toast.success('Carrito limpiado', { icon: '🧹' })
           },
@@ -178,11 +164,10 @@ export const createCartStoreFacade = () => {
           },
 
           /**
-           * Obtiene el descuento total
+           * Obtiene el descuento total (deshabilitado)
            */
           getDiscount: () => {
-            const subtotal = get().getSubtotal()
-            return calculateDiscount(subtotal, couponsStore)
+            return 0
           },
 
           /**
@@ -190,8 +175,7 @@ export const createCartStoreFacade = () => {
            */
           getShippingCost: () => {
             const subtotal = get().getSubtotal()
-            const appliedCoupons = couponsStore.appliedCoupons
-            return calculateShippingCost(subtotal, appliedCoupons, shippingStore)
+            return calculateShippingCost(subtotal, [], shippingStore)
           },
 
           /**
@@ -199,7 +183,7 @@ export const createCartStoreFacade = () => {
            */
           getTotal: () => {
             const subtotal = get().getSubtotal()
-            const discount = get().getDiscount()
+            const discount = 0
             const shipping = get().getShippingCost()
             return calculateTotal(subtotal, discount, shipping)
           },
@@ -234,57 +218,17 @@ export const createCartStoreFacade = () => {
            * Sincroniza con el backend
            */
           syncToBackend: async () => {
-            return await syncToBackend(get, wishlistStore, couponsStore, shippingStore)
+            return await syncToBackend(get, shippingStore)
           },
 
           /**
            * Realiza el checkout
            */
           checkout: async (checkoutData = {}) => {
-            return await checkout(checkoutData, set, get, couponsStore)
+            return await checkout(checkoutData, set, get)
           },
 
           // === FUNCIONES DELEGADAS A MÓDULOS ===
-
-          // Wishlist
-          addToWishlist: (product) => {
-            return wishlistStore.addToWishlist(product)
-          },
-          removeFromWishlist: (id) => {
-            return wishlistStore.removeFromWishlist(id)
-          },
-          moveToCartFromWishlist: (id) => {
-            const item = wishlistStore.wishlist.find((item) => item.id === id)
-            if (item) {
-              get().addItem(item, 1)
-              wishlistStore.removeFromWishlist(id)
-            }
-          },
-          isInWishlist: (productId) => {
-            return wishlistStore.isInWishlist(productId)
-          },
-
-          // Cupones
-          applyCoupon: (code) => {
-            const subtotal = get().getSubtotal()
-            const result = couponsStore.applyCoupon(code, subtotal)
-            if (result.success) {
-              toast.success(result.message, { icon: '🎟️' })
-            } else {
-              toast.error(result.message, { icon: '❌' })
-            }
-            return result
-          },
-          removeCoupon: (code) => {
-            const result = couponsStore.removeCoupon(code)
-            if (result.success) {
-              toast.success(result.message, { icon: '🗑️' })
-            }
-            return result
-          },
-          setCouponInput: (value) => {
-            return couponsStore.setCouponInput(value)
-          },
 
           // Envío
           setShippingOption: (optionId) => {
@@ -316,7 +260,6 @@ export const createCartStoreFacade = () => {
                 // Restaurar otros estados si es necesario
               })
               // También restaurar estados de otros módulos
-              couponsStore.applyCoupons(undoState.appliedCoupons || [])
               shippingStore.setShippingOption(
                 undoState.selectedShipping || 'standard'
               )
@@ -330,7 +273,6 @@ export const createCartStoreFacade = () => {
                 // Restaurar otros estados si es necesario
               })
               // También restaurar estados de otros módulos
-              couponsStore.applyCoupons(redoState.appliedCoupons || [])
               shippingStore.setShippingOption(
                 redoState.selectedShipping || 'standard'
               )

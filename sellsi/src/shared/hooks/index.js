@@ -1,6 +1,5 @@
 // src/shared/hooks/index.js
 export { useAppInitialization } from './useAppInitialization';
-export { useCountrySelector } from './useCountrySelector';
 
 // ✅ ROLE SYNCHRONIZATION HOOKS
 export { useRoleSync, useCurrentRole } from './useRoleSync';

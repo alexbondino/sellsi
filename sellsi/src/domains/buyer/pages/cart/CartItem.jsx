@@ -35,7 +35,6 @@ import PriceDisplay from '../../../marketplace/PriceDisplay/PriceDisplay'
 import StockIndicator from '../../../marketplace/StockIndicator/StockIndicator'
 import QuantitySelector from '../../../../shared/components/forms/QuantitySelector'
 import LazyImage from '../../../../shared/components/display/LazyImage/LazyImage'
-import { SHIPPING_OPTIONS } from '../../../../shared/constants/shipping' // ✅ MIGRADO: Era domains/marketplace/hooks/constants
 import {
   calculatePriceForQuantity,
   formatProductForCart,
@@ -72,8 +71,6 @@ const CartItem = ({
   item,
   formatPrice,
   updateQuantity,
-  isInWishlist,
-  handleAddToWishlist,
   handleRemoveWithAnimation,
   itemVariants,
   onShippingChange, // Nueva prop para manejar cambios de envío
@@ -135,12 +132,11 @@ const CartItem = ({
     return { unitPrice, subtotal }
   }, [item.quantity, productData.price_tiers, productData.basePrice])
 
-  // Memoizar opciones de envío
+  // Memoizar opciones de envío - ahora calculado dinámicamente
   const shippingData = React.useMemo(() => {
-    const selectedOption = SHIPPING_OPTIONS.find(opt => opt.id === selectedShipping)
     return {
-      price: selectedOption ? selectedOption.price : 0,
-      label: selectedOption ? selectedOption.label : 'Estándar'
+      price: 0, // Se calculará dinámicamente según región
+      label: 'Según región'
     }
   }, [selectedShipping])
 
@@ -148,10 +144,8 @@ const CartItem = ({
   const handleQuantityChange = React.useCallback((newQuantity) => {
     updateQuantity(item.id, newQuantity)
   }, [item.id, updateQuantity])
-  // Handler optimizado para agregar a wishlist
-  const handleWishlistClick = React.useCallback(() => {
-    handleAddToWishlist(item)
-  }, [item, handleAddToWishlist])  // Handler optimizado para eliminar item
+  
+  // Handler optimizado para eliminar item
   const handleDeleteItem = React.useCallback(() => {
     handleRemoveWithAnimation(item.id)
   }, [item.id, handleRemoveWithAnimation])
@@ -179,7 +173,13 @@ const CartItem = ({
               ? '2px solid rgba(25, 118, 210, 0.6)'
               : '1px solid rgba(102, 126, 234, 0.1)',
           width: '100%',
-          maxWidth: '100%',
+          maxWidth: {
+            xs: '100%',
+            sm: '600px',
+            md: '800px',
+            lg: '1030px',
+            xl: '1200px',
+          },
           overflow: 'hidden', // Prevenir overflow horizontal
           position: 'relative',
           '&:hover': {
@@ -238,12 +238,12 @@ const CartItem = ({
         {/* Columna 4: Opciones de envío (xs=12, sm=2.8) */}
         <Grid
           container
-          spacing={2}
+          spacing={3}
           alignItems="flex-start"
           sx={{ overflow: 'hidden' }}
         >
           {' '}          {/* Imagen optimizada */}{' '}
-          <Grid size={{ xs: 12, sm: 2.4 }}>
+          <Grid size={{ xs: 12, sm: 2.4,}}>
             <Box
               sx={{
                 position: 'relative',
@@ -255,19 +255,18 @@ const CartItem = ({
                 sx={{
                   height: 160,
                   width: '100%',
+                 
                 }}
               />
             </Box>
           </Grid>{' '}          {/* Información del producto */}
-          <Grid size={{ xs: 12, sm: 3.6 }} sx={{ pt: '0 !important' }}>
+          <Grid size={{ xs: 12, sm: 3.6 }} >
             <Box
               sx={{
                 display: 'flex',
                 flexDirection: 'column',
                 justifyContent: 'flex-start',
                 height: '100%',
-                pt: '0 !important',
-                mt: '0 !important',
               }}
             >
               {' '}
@@ -275,54 +274,57 @@ const CartItem = ({
               {/* Este Typography contiene el título/nombre del producto */}
               {/* IMPORTANTE: Aquí está el título que debe tener el margin-top removido */}
               <Typography
-                variant="H5"
+                variant="h6"
                 sx={{
                   fontWeight: 'bold',
                   background: 'linear-gradient(45deg, #333, #666)',
                   WebkitBackgroundClip: 'text',
                   WebkitTextFillColor: 'transparent',
-                  mt: '0 !important',
-                  pt: '0 !important',
-                  mb: 1,
+                  mb: 2,
                 }}
               >
                 {productData.name}
               </Typography>
               {/* ========== INFORMACIÓN DEL PROVEEDOR ========== */}
-              {/* Box contenedor del avatar y chip del proveedor */}
+              {/* Box contenedor del nombre y verificación del proveedor */}
               <Box
                 sx={{
                   display: 'flex',
                   alignItems: 'center',
                   mb: 1,
+                  gap: 1,
+                  fontSize: '0.9rem',
                 }}
               >
-                <Avatar
+                <Typography
+                  variant="body1"
                   sx={{
-                    width: 24,
-                    height: 24,
-                    mr: 1,
-                    fontSize: '0.75rem',
+                    color: 'primary.main',
+                    fontWeight: 600,
+                    fontSize: '0.9rem',
                   }}
                 >
-                  {(item.proveedor || 'Proveedor no encontrado').charAt(0)}
-                </Avatar>
-                <Chip
-                  label={item.proveedor || 'Proveedor no encontrado'}
-                  size="small"
-                  variant="outlined"
-                  color="primary"
-                />
+                  {item.proveedor || 'Proveedor no encontrado'}
+                </Typography>
+                {/* Mostrar icono si está verificado - agregando múltiples condiciones para debug */}
+                {(item.proveedorVerificado || item.verified || item.supplier_verified || item.supplierVerified) && (
+                  <VerifiedIcon
+                    sx={{
+                      fontSize: 16,
+                      color: 'primary.main',
+                    }}
+                  />
+                )}
               </Box>{' '}
               {/* Price - Usando precio dinámico basado en quantity y price_tiers */}
               <Box sx={{ mb: 2 }}>
-                <Typography variant="body2" sx={{ color: '#222', fontWeight: 500, mb: 0.5 }}>
+                <Typography variant="body2" sx={{ color: '#222', fontWeight: 500, mb: 0.5, fontsize: '0.9rem' }}>
                   Precio Unitario:
                 </Typography>
                 <PriceDisplay
                   price={priceCalculations.unitPrice}
                   variant="h6"
-                  sx={{ color: '#222', fontWeight: 700 }}
+                  sx={{ color: '#222', fontWeight: 700, fontSize: '1rem' }}
                 />
               </Box>
               {/* Feature badges */}
@@ -400,6 +402,8 @@ const CartItem = ({
                     fontWeight: 500,
                     mb: 0,
                     textAlign: 'center',
+                    fontSize: '0.9rem'
+
                   }}
                 >
                   Precio Total:

@@ -74,7 +74,8 @@ const ProductPageWrapper = ({ isLoggedIn }) => {
             product_delivery_regions (*),
             users!products_supplier_id_fkey (
               user_nm,
-              logo_url
+              logo_url,
+              verified
             )
           `)
           .eq('productid', productId)
@@ -102,6 +103,9 @@ const ProductPageWrapper = ({ isLoggedIn }) => {
             tipo: data.product_type,
             activo: data.is_active,
             proveedor: data.users?.user_nm || 'Proveedor',
+            logo_url: data.users?.logo_url || null, // ✅ NUEVO: Agregar logo del proveedor
+            proveedorVerificado: data.users?.verified || false, // ✅ NUEVO: Agregar estado de verificación
+            verified: data.users?.verified || false, // ✅ NUEVO: Agregar estado de verificación (alternativo)
             priceTiers: data.product_quantity_ranges || [],
             imagenes: data.product_images || [],
             // Regiones de despacho mapeadas al formato correcto
