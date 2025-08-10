@@ -8,7 +8,7 @@ const corsHeaders = {
 };
 
 // ============================================================================
-// Función de Ayuda para la Verificación de Firma HMAC-SHA256 (Base64)
+// Verificar firma HMAC-SHA256 Base64 de Khipu
 // ============================================================================
 async function verifyKhipuSignature(
   requestBody: string,
@@ -28,6 +28,7 @@ async function verifyKhipuSignature(
     const timestamp = timestampPart.split('=')[1];
     const signature = signaturePart.split('=')[1];
     const stringToSign = `${timestamp}.${requestBody}`;
+
     const encoder = new TextEncoder();
     const keyData = encoder.encode(secret);
     const messageData = encoder.encode(stringToSign);
@@ -55,7 +56,7 @@ async function verifyKhipuSignature(
 }
 
 // ============================================================================
-// Función Principal del Webhook
+// Webhook principal
 // ============================================================================
 serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
@@ -115,65 +116,50 @@ serve(async (req: Request) => {
 
     console.log('📦 Payload procesado:', khipuPayload);
 
-    // ✅ **CORRECCIÓN:** Se asume que el payload completo es el objeto del evento.
-    // No se busca un campo 'data' anidado.
-    const eventData = khipuPayload;
+    // ========================================================================
+    // EXTRAER orderId DESDE subject
+    // ========================================================================
+    const subject: string = khipuPayload.subject || '';
+    const orderIdMatch = subject.match(/#([0-9a-fA-F-]{36})/);
+    const orderId = orderIdMatch ? orderIdMatch[1] : null;
 
+    if (!orderId) {
+      console.warn('⚠️ No se pudo extraer orderId del subject');
+      return new Response('OK (sin orderId)', { status: 200 });
+    }
+
+    console.log(`💰 Procesando pago exitoso para la orden: ${orderId}`);
+
+    // ========================================================================
+    // ACTUALIZAR EN SUPABASE
+    // ========================================================================
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     );
 
-    // Se usa 'eventData.event' para determinar el tipo de evento
-    if (eventData.event === 'payment.succeeded') {
-      // 'metadata' puede seguir siendo un string JSON, por lo que se parsea.
-      const metadata = JSON.parse(eventData.metadata || '{}');
-      const orderId = metadata.cart_id;
+    const { data, error } = await supabase
+      .from('orders')
+      .update({
+        status: 'completed',
+        payment_status: 'paid',
+        khipu_payment_id: khipuPayload.payment_id,
+        paid_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', orderId)
+      .select();
 
-      if (!orderId) {
-        console.warn('⚠️ Pago exitoso sin `cart_id` en metadata');
-        return new Response('OK (sin orderId)', { status: 200 });
-      }
-
-      console.log(`💰 Procesando pago exitoso para la orden: ${orderId}`);
-
-      await supabase
-        .from('orders')
-        .update({
-          status: 'completed',
-          payment_status: 'paid',
-          khipu_payment_id: eventData.id, // Se usa eventData.id
-          khipu_transaction_id: eventData.transaction_id, // Se usa eventData.transaction_id
-          paid_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', orderId);
-    } else if (eventData.event === 'payment.rejected') {
-      const metadata = JSON.parse(eventData.metadata || '{}');
-      const orderId = metadata.cart_id;
-
-      if (orderId) {
-        console.log(`❌ Procesando pago rechazado para la orden: ${orderId}`);
-        await supabase
-          .from('orders')
-          .update({
-            status: 'failed',
-            payment_status: 'failed',
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', orderId);
-      }
+    if (error) {
+      console.error('❌ Error al actualizar la orden:', error);
     } else {
-      console.log(`ℹ️ Evento no manejado: ${eventData.event}`);
+      console.log('✅ Orden actualizada:', data);
     }
 
-    return new Response(
-      JSON.stringify({ success: true, event: eventData.event }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200,
-      }
-    );
+    return new Response(JSON.stringify({ success: true, orderId }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      status: 200,
+    });
   } catch (error) {
     console.error('🔥 Error fatal:', error);
     return new Response(
