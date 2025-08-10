@@ -368,10 +368,10 @@ const ImageUploader = ({
         <Box sx={{ mt: 2, p: 2, bgcolor: 'info.50', borderRadius: 1 }}>
           <Typography
             variant="body2"
-            color="info.main"
+            color="#222"
             sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
           >
-            <ImageIcon fontSize="small" />
+            <ImageIcon fontSize="small" sx={{ color: 'info.main' }} />
             El primer archivo será el principal
           </Typography>
         </Box>

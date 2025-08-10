@@ -175,16 +175,13 @@ export const removeItemLocal = (id, set, get, historyStore, debouncedSave) => {
  * @param {Object} historyStore - Store de historial
  * @param {Function} debouncedSave - Función de guardado automático
  */
-export const clearCartLocal = (set, get, couponsStore, historyStore, debouncedSave) => {
+export const clearCartLocal = (set, get, historyStore, debouncedSave) => {
   const currentState = get()
   const itemCount = currentState.items.length
   
   set({
     items: [],
   })
-
-  // También limpiar los módulos relacionados
-  couponsStore.clearCoupons()
 
   // Delegar al módulo de historial
   setTimeout(() => {

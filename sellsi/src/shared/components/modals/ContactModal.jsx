@@ -262,7 +262,7 @@ const ContactModal = ({ open, onClose }) => {
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <PhoneIcon color="primary" />
               <Typography variant="body2" fontWeight="500">
-                +(56) 963109665
+                +(56) 963109664
               </Typography>
             </Box>
           </Stack>

@@ -16,8 +16,9 @@ import {
 import { validateRut, validateEmail } from '../../../../utils/validators';
 
 /**
- * Sección de Información de Facturación del perfil
+ * Sección de Facturación del perfil
  * Incluye: razón social, RUT, giro, dirección, región, comuna y botón actualizar
+ * Solo se muestra si el documento tributario incluye "Factura"
  */
 const BillingInfoSection = ({ 
   formData, 
@@ -28,19 +29,30 @@ const BillingInfoSection = ({
   onUpdate,
   getSensitiveFieldValue,
   onFocusSensitive,
-  onBlurSensitive
+  onBlurSensitive,
+  showBilling = true,  // Nueva prop para controlar visibilidad
+  showUpdateButton = true  // Nueva prop para controlar el botón
 }) => {
   
   const handleRegionChange = (event) => {
     const value = event.target.value;
-    onRegionChange('billing', 'billingRegion', 'billingComuna', value);
+    onRegionChange('billing', 'billingRegion', 'billingCommune', value);
   };
+
+  // No renderizar si showBilling es false
+  if (!showBilling) {
+    return null;
+  }
 
   return (
     <Box sx={{ p: 3, height: 'fit-content' }}>
-      <Typography variant="h6" sx={{ mb: 2, pb: 1, borderBottom: 2, borderColor: 'primary.main' }}>
-        Información de Facturación
-      </Typography>
+      <Box sx={{ mb: 2 }}>
+        <Typography variant="h6">Facturación</Typography>
+        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+          Si compras los Proveedores te facturarán y si vendes Sellsi te facturará
+        </Typography>
+        <Box sx={{ mt: 1, borderBottom: 2, borderColor: 'primary.main' }} />
+      </Box>
       
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
         <TextField
@@ -96,7 +108,25 @@ const BillingInfoSection = ({
             value={formData.billingRegion || ''}
             onChange={handleRegionChange}
             label="Región"
-            MenuProps={{ disableScrollLock: true }}
+            MenuProps={{ 
+              disableScrollLock: true,
+              disablePortal: false,
+              anchorOrigin: {
+                vertical: 'bottom',
+                horizontal: 'left',
+              },
+              transformOrigin: {
+                vertical: 'top',
+                horizontal: 'left',
+              },
+              PaperProps: {
+                style: {
+                  maxHeight: 48 * 5 + 8,
+                  overflowX: 'hidden',
+                  overflowY: 'auto',
+                },
+              },
+            }}
           >
             {regiones.map(region => (
               <MenuItem key={region.value} value={region.value}>
@@ -109,10 +139,28 @@ const BillingInfoSection = ({
         <FormControl fullWidth size="small" disabled={!formData.billingRegion}>
           <InputLabel>Comuna</InputLabel>
           <Select
-            value={formData.billingComuna || ''}
-            onChange={(e) => onFieldChange('billingComuna', e.target.value)}
+            value={formData.billingCommune || ''}
+            onChange={(e) => onFieldChange('billingCommune', e.target.value)}
             label="Comuna"
-            MenuProps={{ disableScrollLock: true }}
+            MenuProps={{ 
+              disableScrollLock: true,
+              disablePortal: false,
+              anchorOrigin: {
+                vertical: 'bottom',
+                horizontal: 'left',
+              },
+              transformOrigin: {
+                vertical: 'top',
+                horizontal: 'left',
+              },
+              PaperProps: {
+                style: {
+                  maxHeight: 48 * 5 + 8,
+                  overflowX: 'hidden',
+                  overflowY: 'auto',
+                },
+              },
+            }}
           >
             {(formData.billingRegion ? getComunasByRegion(formData.billingRegion) : []).map(comuna => (
               <MenuItem key={comuna.value} value={comuna.value}>
@@ -122,19 +170,22 @@ const BillingInfoSection = ({
           </Select>
         </FormControl>
         
-        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
-          <Button 
-            variant="contained" 
-            onClick={onUpdate}
-            disabled={!hasChanges || loading}
-            sx={{ 
-              bgcolor: 'primary.main',
-              '&:hover': { bgcolor: 'primary.dark' }
-            }}
-          >
-            {loading ? 'Actualizando...' : 'Actualizar'}
-          </Button>
-        </Box>
+        {/* Botón Actualizar - Solo se muestra si showUpdateButton es true */}
+        {showUpdateButton && (
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
+            <Button 
+              variant="contained" 
+              onClick={onUpdate}
+              disabled={!hasChanges || loading}
+              sx={{ 
+                bgcolor: 'primary.main',
+                '&:hover': { bgcolor: 'primary.dark' }
+              }}
+            >
+              {loading ? 'Actualizando...' : 'Actualizar'}
+            </Button>
+          </Box>
+        )}
       </Box>
     </Box>
   );

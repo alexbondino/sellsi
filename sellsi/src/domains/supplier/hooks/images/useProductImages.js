@@ -112,14 +112,22 @@ const useProductImages = create((set, get) => ({
   /**
    * Subir múltiples imágenes
    */
-  uploadImages: async (files, productId, supplierId) => {
+  uploadImages: async (files, productId, supplierId, options = {}) => {
+    const { replaceExisting = true } = options // 🔥 Por defecto siempre reemplazar para evitar acumulación
+    
     set((state) => ({
       processingImages: { ...state.processingImages, [productId]: true },
       error: null,
     }))
 
     try {
-      const uploadResult = await UploadService.uploadMultipleImagesWithThumbnails(files, productId, supplierId)
+      console.log(`🔥 [useProductImages.uploadImages] Llamando UploadService con replaceExisting: ${replaceExisting}`)
+      const uploadResult = await UploadService.uploadMultipleImagesWithThumbnails(
+        files, 
+        productId, 
+        supplierId, 
+        { replaceExisting }
+      )
       
       set((state) => ({
         processingImages: { ...state.processingImages, [productId]: false },

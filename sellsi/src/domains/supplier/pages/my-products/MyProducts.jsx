@@ -40,6 +40,7 @@ import {
 // Components
 import ProductCard from '../../../../shared/components/display/product-card/ProductCard';
 import { Modal, MODAL_TYPES } from '../../../../shared/components/feedback'; // <--- Importación del nuevo componente Modal
+import { TransferInfoValidationModal, useTransferInfoModal } from '../../../../shared/components/validation'; // Modal de validación bancaria
 
 // Error Boundaries
 import { SupplierErrorBoundary } from '../../components/ErrorBoundary';
@@ -130,6 +131,16 @@ const MyProducts = () => {
     loading: false,
   });
 
+  // Hook para validación de información bancaria (reemplaza estado manual)
+  const {
+    checkAndProceed,
+    handleRegisterAccount,
+    handleClose: handleCloseTransferModal,
+    isOpen: transferModalOpen,
+    loading: transferModalLoading,
+    missingFieldLabels
+  } = useTransferInfoModal();
+
   // Estado para el botón de scroll to top
   const [showScrollTop, setShowScrollTop] = useState(false);
 
@@ -174,11 +185,13 @@ const MyProducts = () => {
 
   // --- Handlers ---
   const handleAddProduct = () => {
-    navigate('/supplier/addproduct');
+    // Usar el hook de validación que maneja automáticamente el modal
+    checkAndProceed('/supplier/addproduct');
   };
 
   const handleEditProduct = product => {
-    navigate(`/supplier/addproduct?edit=${product.id}`);
+    // Para editar también verificar la información bancaria
+    checkAndProceed(`/supplier/addproduct?edit=${product.id}`);
   };
 
   const handleDeleteProduct = product => {
@@ -269,7 +282,7 @@ const MyProducts = () => {
                   </Typography>
                 </Box>
                 <Typography variant="body1" color="text.secondary">
-                  Gestiona tu catálogo de productos de manera eficiente
+                  Gestiona tu catálogo eficientemente
                 </Typography>
               </Box>
 
@@ -724,6 +737,15 @@ const MyProducts = () => {
           ? `¿Estás seguro de que deseas eliminar "${deleteModal.product.nombre}"? Esta acción no se puede deshacer.`
           : ''}
       </Modal>
+
+      {/* Modal de validación de información bancaria */}
+      <TransferInfoValidationModal
+        isOpen={transferModalOpen}
+        onClose={handleCloseTransferModal}
+        onRegisterAccount={handleRegisterAccount}
+        loading={transferModalLoading}
+        missingFieldLabels={missingFieldLabels}
+      />
     </ThemeProvider>
     </SupplierErrorBoundary>
   );

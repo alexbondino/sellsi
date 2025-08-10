@@ -214,6 +214,14 @@ const DevolverPagoModal = ({ open, solicitud, onClose, onSuccess }) => {
     setSuccess('');
 
     try {
+      // Obtener adminId desde localStorage
+      const adminUser = JSON.parse(localStorage.getItem('adminUser') || '{}');
+      if (!adminUser.id) {
+        setError('Sesión administrativa expirada. Por favor, inicie sesión nuevamente.');
+        setLoading(false);
+        return;
+      }
+
       // Procesar la devolución
       const motivoFinal = formData.motivo === 'otro' 
         ? formData.motivoPersonalizado 
@@ -230,7 +238,7 @@ const DevolverPagoModal = ({ open, solicitud, onClose, onSuccess }) => {
         fecha_devolucion: new Date().toISOString()
       };
 
-      const result = await devolverPago(solicitud.id, datos);
+      const result = await devolverPago(solicitud.id, datos, adminUser.id);
 
       if (result.success) {
         // Enviar notificación al comprador si está habilitado

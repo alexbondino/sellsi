@@ -25,7 +25,7 @@ Durante el proceso de registro, recopilamos:
 1.2.3. Rol: Supplier (proveedor) o Buyer (comprador)
 1.2.4. Logo corporativo: Imagen de perfil de la empresa
 
-**1.3. Información de Envío y Facturación**
+**1.3. Información de Despacho y Facturación**
 1.3.1. Dirección de envío: Región, comuna, dirección, número, departamento
 1.3.2. Información de facturación: Razón social, RUT, giro, dirección fiscal
 1.3.3. Datos bancarios: Titular, banco, número de cuenta, RUT del titular, tipo de cuenta

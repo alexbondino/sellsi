@@ -234,7 +234,7 @@ export const useUnifiedShippingValidation = (cartItems = [], isAdvancedMode = fa
   }, [isAdvancedMode, userRegion, incompatibleProducts]);
 
   /**
-   * Verificar si la información de envío está completa
+   * Verificar si la Información de Despacho está completa
    */
   const isShippingInfoComplete = useCallback(() => {
     try {

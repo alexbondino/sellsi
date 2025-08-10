@@ -189,83 +189,6 @@ export const ProductInfoSkeleton = () => (
 )
 
 /**
- * Skeleton para especificaciones técnicas
- */
-export const TechnicalSpecsSkeleton = () => (
-  <Fade in={true} timeout={1000}>
-    <Box sx={{ mt: 6, mb: 4 }}>
-      <Skeleton
-        variant="text"
-        width={250}
-        height={40}
-        sx={{ mb: 3, mx: 'auto', borderRadius: 1 }}
-      />
-
-      <Paper sx={{ p: 3 }}>
-        {Array.from({ length: 6 }).map((_, index) => (
-          <Box
-            key={index}
-            sx={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              py: 2,
-              borderBottom: index < 5 ? '1px solid' : 'none',
-              borderColor: 'divider',
-            }}
-          >
-            <Skeleton variant="text" width={150} height={20} />
-            <Skeleton variant="text" width={200} height={20} />
-          </Box>
-        ))}
-      </Paper>
-    </Box>
-  </Fade>
-)
-
-/**
- * Skeleton para condiciones de venta
- */
-export const SaleConditionsSkeleton = () => (
-  <Fade in={true} timeout={1200}>
-    <Box sx={{ mt: 6 }}>
-      <Skeleton
-        variant="text"
-        width={200}
-        height={40}
-        sx={{ mb: 3, mx: 'auto', borderRadius: 1 }}
-      />
-      <Grid container spacing={3}>
-        {Array.from({ length: 3 }).map((_, index) => (
-          <Grid xs={12} md={4} key={index}>
-            <Paper sx={{ p: 3, textAlign: 'center', height: 150 }}>
-              <Skeleton
-                variant="circular"
-                width={48}
-                height={48}
-                sx={{ mx: 'auto', mb: 2 }}
-              />
-              <Skeleton
-                variant="text"
-                width="80%"
-                height={24}
-                sx={{ mb: 1, mx: 'auto' }}
-              />
-              <Skeleton
-                variant="text"
-                width="60%"
-                height={20}
-                sx={{ mx: 'auto' }}
-              />
-            </Paper>
-          </Grid>
-        ))}
-      </Grid>
-    </Box>
-  </Fade>
-)
-
-/**
  * Skeleton completo para ProductPageView
  */
 export const ProductPageSkeleton = () => (
@@ -296,10 +219,6 @@ export const ProductPageSkeleton = () => (
         </Box>
       </Grid>
     </Grid>
-    {/* Condiciones de Venta */}
-    <SaleConditionsSkeleton />
-    {/* Especificaciones Técnicas */}
-    <TechnicalSpecsSkeleton />
   </Box>
 )
 

@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 
 /**
  * Hook para manejar la lógica del selector de países
@@ -8,49 +8,31 @@ export const useCountrySelector = (initialValue = '') => {
   const [selectedCountry, setSelectedCountry] = useState(initialValue)
   const [searchTerm, setSearchTerm] = useState('')
 
+  // Sincronizar con cambios externos del valor inicial (controlado por el padre)
+  useEffect(() => {
+    setSelectedCountry(initialValue || '')
+  }, [initialValue])
+
   // Datos de países con códigos y nombres
   const allCountries = useMemo(
     () => [
-      { code: 'CL', name: 'Chile', region: 'América del Sur' },
-      { code: 'AR', name: 'Argentina', region: 'América del Sur' },
-      { code: 'PE', name: 'Perú', region: 'América del Sur' },
-      { code: 'CO', name: 'Colombia', region: 'América del Sur' },
-      { code: 'MX', name: 'México', region: 'América del Norte' },
-      { code: 'ES', name: 'España', region: 'Europa' },
-      { code: 'US', name: 'Estados Unidos', region: 'América del Norte' },
-      { code: 'EC', name: 'Ecuador', region: 'América del Sur' },
-      { code: 'BO', name: 'Bolivia', region: 'América del Sur' },
-      { code: 'UY', name: 'Uruguay', region: 'América del Sur' },
-      { code: 'PY', name: 'Paraguay', region: 'América del Sur' },
-      { code: 'VE', name: 'Venezuela', region: 'América del Sur' },
-      { code: 'BR', name: 'Brasil', region: 'América del Sur' },
-      { code: 'GT', name: 'Guatemala', region: 'América Central' },
-      { code: 'CR', name: 'Costa Rica', region: 'América Central' },
-      { code: 'PA', name: 'Panamá', region: 'América Central' },
+      { code: 'CL', name: 'Chile +56', region: 'América del Sur' },
+      { code: 'AR', name: 'Argentina +54', region: 'América del Sur' },
+      { code: 'PE', name: 'Perú +51', region: 'América del Sur' },
+      { code: 'CO', name: 'Colombia +57', region: 'América del Sur' },
+      { code: 'MX', name: 'México +52', region: 'América del Norte' },
+      { code: 'ES', name: 'España +34', region: 'Europa' },
+      { code: 'US', name: 'EE.UU +1', region: 'América del Norte' },
+      { code: 'EC', name: 'Ecuador +593', region: 'América del Sur' },
+      { code: 'BO', name: 'Bolivia +591', region: 'América del Sur' },
+      { code: 'UY', name: 'Uruguay +598', region: 'América del Sur' },
+      { code: 'PY', name: 'Paraguay +595', region: 'América del Sur' },
+      { code: 'VE', name: 'Venezuela +58', region: 'América del Sur' },
+      { code: 'BR', name: 'Brasil +55', region: 'América del Sur' },
+      { code: 'GT', name: 'Guatemala +502', region: 'América Central' },
+      { code: 'CR', name: 'Costa Rica +506', region: 'América Central' },
+      { code: 'PA', name: 'Panamá +507', region: 'América Central' },
     ],
-    []
-  )
-
-  // Colores de banderas para el componente visual
-  const flagColors = useMemo(
-    () => ({
-      CL: ['#0033A0', '#ffffff', '#DA020E'],
-      AR: ['#75aadb', '#ffffff', '#75aadb'],
-      PE: ['#d52b1e', '#ffffff'],
-      CO: ['#fcdd09', '#003893', '#ce1126'],
-      MX: ['#006847', '#ffffff', '#ce1126'],
-      ES: ['#c60b1e', '#ffc400'],
-      US: ['#B22234', '#ffffff', '#3C3B6E'],
-      EC: ['#ffdd00', '#0072ce', '#ef3340'],
-      BO: ['#d52b1e', '#ffdd00', '#007934'],
-      UY: ['#0038a8', '#ffffff', '#0038a8'],
-      PY: ['#d52b1e', '#ffffff', '#0038a8'],
-      VE: ['#ffcc00', '#003893', '#cf142b'],
-      BR: ['#009739', '#ffdf00'],
-      GT: ['#4997d0', '#ffffff'],
-      CR: ['#0038a8', '#ffffff', '#ce1126'],
-      PA: ['#ffffff', '#da020e', '#0073ce'],
-    }),
     []
   )
 
@@ -90,7 +72,6 @@ export const useCountrySelector = (initialValue = '') => {
     searchTerm,
     allCountries,
     groupedCountries,
-    flagColors,
     handleCountryChange,
     handleSearchChange,
   }

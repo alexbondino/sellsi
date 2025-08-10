@@ -22,6 +22,7 @@ import {
   CheckBox as CheckBoxIcon,
   SelectAll as SelectAllIcon,
   ShoppingCart as ShoppingCartIcon,
+  ArrowBack as ArrowBackIcon,
 } from '@mui/icons-material'
 import { motion } from 'framer-motion'
 import { Modal, MODAL_TYPES } from '../../../../shared/components/feedback' // Asegúrate de importar tu componente Modal correctamente
@@ -49,6 +50,7 @@ const CartHeader = ({
   formatPrice,
   discount,
   onClearCart,
+  onBack, // Nueva prop para el botón de volver
   // Nueva funcionalidad de selección múltiple
   isSelectionMode,
   selectedItems,
@@ -89,6 +91,22 @@ const CartHeader = ({
               gutterBottom
               sx={{ mb: 4, display: 'flex', alignItems: 'center', gap: 1 }}
             >
+              {/* Flecha de volver - Estilo estándar */}
+              {onBack && (
+                <Tooltip title="Volver" arrow>
+                  <IconButton 
+                    onClick={onBack} 
+                    sx={{ 
+                      p: 1,
+                      '&:hover': {
+                        backgroundColor: 'action.hover'
+                      }
+                    }}
+                  >
+                    <ArrowBackIcon />
+                  </IconButton>
+                </Tooltip>
+              )}
               {!isSelectionMode && (
                 <ShoppingCartIcon sx={{ fontSize: 40, color: '#1976d2', mr: 1 }} />
               )}

@@ -108,19 +108,15 @@ export const initializeCartWithUser = async (userId, set, get) => {
 /**
  * Sincroniza el carrito local con el backend
  * @param {Function} get - Función get de Zustand
- * @param {Object} wishlistStore - Store de wishlist
- * @param {Object} couponsStore - Store de cupones
  * @param {Object} shippingStore - Store de envío
  * @returns {boolean} Éxito de la sincronización
  */
-export const syncToBackend = async (get, wishlistStore, couponsStore, shippingStore) => {
+export const syncToBackend = async (get, shippingStore) => {
   try {
     const state = get()
     const cartData = {
       items: state.items,
       // Obtener datos de módulos
-      wishlist: wishlistStore.wishlist,
-      coupons: couponsStore.appliedCoupons,
       shipping: shippingStore.selectedShipping,
       lastModified: Date.now(),
     }
@@ -354,10 +350,9 @@ export const clearCartWithBackend = async (set, get) => {
  * @param {Object} checkoutData - Datos del checkout
  * @param {Function} set - Función set de Zustand
  * @param {Function} get - Función get de Zustand
- * @param {Object} couponsStore - Store de cupones
  * @returns {Object} Orden creada
  */
-export const checkout = async (checkoutData, set, get, couponsStore) => {
+export const checkout = async (checkoutData, set, get) => {
   const state = get()
   
   if (!state.userId || !state.cartId) {
@@ -379,9 +374,6 @@ export const checkout = async (checkoutData, set, get, couponsStore) => {
       cartId: newCart.cart_id,
       isLoading: false
     })
-
-    // Limpiar módulos relacionados
-    couponsStore.clearCoupons()
 
     return order
   } catch (error) {

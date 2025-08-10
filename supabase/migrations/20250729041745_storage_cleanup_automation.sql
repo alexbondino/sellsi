@@ -7,8 +7,38 @@
 -- 2. Función para triggear la Edge Function
 -- 3. Cron job para ejecución diaria
 -- 4. Función de reporte semanal
+-- 5. Mejora del sistema de ordenamiento de imágenes
 
--- 1. Crear tabla para logs de limpieza (opcional)
+-- ============================================================================
+-- SECCIÓN 1: MEJORA SISTEMA DE ORDENAMIENTO DE IMÁGENES
+-- ============================================================================
+
+-- Agregar columna para mantener orden de imágenes
+ALTER TABLE public.product_images 
+ADD COLUMN IF NOT EXISTS image_order INTEGER DEFAULT 0;
+
+-- Actualizar imágenes existentes con orden basado en la URL (temporal)
+UPDATE public.product_images 
+SET image_order = (
+  SELECT ROW_NUMBER() OVER (PARTITION BY product_id ORDER BY image_url) - 1
+  FROM (
+    SELECT DISTINCT product_id, image_url 
+    FROM public.product_images
+  ) AS ordered_images 
+  WHERE ordered_images.product_id = product_images.product_id 
+    AND ordered_images.image_url = product_images.image_url
+)
+WHERE image_order = 0;
+
+-- Crear índice para mejor performance
+CREATE INDEX IF NOT EXISTS idx_product_images_order 
+ON public.product_images(product_id, image_order);
+
+-- ============================================================================
+-- SECCIÓN 2: AUTOMATIZACIÓN DE LIMPIEZA DE ALMACENAMIENTO
+-- ============================================================================
+
+-- 2. Crear tabla para logs de limpieza (opcional)
 CREATE TABLE IF NOT EXISTS storage_cleanup_logs (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     executed_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -25,10 +55,11 @@ CREATE TABLE IF NOT EXISTS storage_cleanup_logs (
 CREATE INDEX IF NOT EXISTS idx_cleanup_logs_executed_at ON storage_cleanup_logs(executed_at DESC);
 CREATE INDEX IF NOT EXISTS idx_cleanup_logs_success ON storage_cleanup_logs(success);
 
--- 2. Habilitar la extensión de HTTP para llamadas a Edge Functions
+-- 3. Habilitar la extensión de HTTP para llamadas a Edge Functions
 CREATE EXTENSION IF NOT EXISTS http;
 
--- 3. Función para triggear la limpieza diaria
+-- 4. Función para triggear la limpieza diaria
+-- 4. Función para triggear la limpieza diaria
 CREATE OR REPLACE FUNCTION trigger_daily_storage_cleanup()
 RETURNS void AS $$
 DECLARE
@@ -101,7 +132,7 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- 4. Programar ejecución diaria a las 2:00 AM
+-- 5. Programar ejecución diaria a las 2:00 AM
 -- Nota: Requiere la extensión pg_cron habilitada en Supabase
 SELECT cron.schedule(
     'daily-storage-cleanup',
@@ -109,7 +140,7 @@ SELECT cron.schedule(
     'SELECT trigger_daily_storage_cleanup();'
 );
 
--- 5. Función para generar reporte semanal
+-- 6. Función para generar reporte semanal
 CREATE OR REPLACE FUNCTION generate_weekly_cleanup_report()
 RETURNS TABLE (
     week_start date,
@@ -152,14 +183,14 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- 6. Programar reporte semanal los lunes a las 8:00 AM
+-- 7. Programar reporte semanal los lunes a las 8:00 AM
 SELECT cron.schedule(
     'weekly-cleanup-report',
     '0 8 * * 1',
     'SELECT * FROM generate_weekly_cleanup_report();'
 );
 
--- 7. Función para limpieza manual (emergency)
+-- 8. Función para limpieza manual (emergency)
 CREATE OR REPLACE FUNCTION manual_storage_cleanup()
 RETURNS void AS $$
 BEGIN
@@ -174,7 +205,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- 8. Función para obtener estadísticas actuales
+-- 9. Función para obtener estadísticas actuales
 CREATE OR REPLACE FUNCTION get_storage_health_stats()
 RETURNS JSON AS $$
 DECLARE
@@ -218,7 +249,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- 9. Vista para monitoreo fácil
+-- 10. Vista para monitoreo fácil
 CREATE OR REPLACE VIEW storage_health_dashboard AS
 SELECT 
     scl.executed_at,
@@ -239,13 +270,15 @@ SELECT
 FROM storage_cleanup_logs scl
 ORDER BY scl.executed_at DESC;
 
--- 10. Comentarios para administradores
+-- 11. Comentarios para administradores
 COMMENT ON TABLE storage_cleanup_logs IS 'Log de ejecuciones de limpieza automática del almacenamiento';
 COMMENT ON FUNCTION trigger_daily_storage_cleanup() IS 'Función para triggear la limpieza diaria de archivos huérfanos';
 COMMENT ON FUNCTION generate_weekly_cleanup_report() IS 'Genera reporte semanal de estadísticas de limpieza';
 COMMENT ON FUNCTION manual_storage_cleanup() IS 'Ejecuta limpieza manual de emergencia';
 COMMENT ON FUNCTION get_storage_health_stats() IS 'Obtiene estadísticas actuales de salud del almacenamiento';
 COMMENT ON VIEW storage_health_dashboard IS 'Dashboard de monitoreo de limpieza de almacenamiento';
+COMMENT ON COLUMN product_images.image_order IS 'Orden de inserción de las imágenes para mantener secuencia original';
+COMMENT ON INDEX idx_product_images_order IS 'Índice para optimizar consultas de imágenes ordenadas por producto';
 
 -- ============================================================================
 -- INSTRUCCIONES DE USO CON CORRECCIONES APLICADAS

@@ -32,6 +32,7 @@ import { CheckoutSummaryImage } from '../../../components/UniversalProductImage'
 import { useUnifiedShippingValidation } from '../../hooks/shipping/useUnifiedShippingValidation';
 import { calculatePriceForQuantity } from '../../../utils/priceCalculation';
 import { supabase } from '../../../services/supabase';
+import { useSupplierDocumentTypes } from '../../utils/supplierDocumentTypes';
 
 /**
  * ============================================================================
@@ -71,6 +72,17 @@ const AddToCartModal = ({
   const [enrichedProduct, setEnrichedProduct] = useState(product);
   const [isLoadingRegions, setIsLoadingRegions] = useState(false);
 
+  // Hook para obtener tipos de documentos permitidos por el proveedor
+  const supplierId = enrichedProduct?.supplier_id || enrichedProduct?.supplierId;
+  const { 
+    documentTypes: supplierDocumentTypes, 
+    availableOptions, 
+    loading: loadingDocumentTypes,
+    error: documentTypesError 
+  } = useSupplierDocumentTypes(supplierId);
+
+
+
   // Función para cargar las regiones de despacho del producto
   const loadProductShippingRegions = useCallback(async (productId) => {
     if (!productId) return [];
@@ -99,29 +111,17 @@ const AddToCartModal = ({
     const enrichProductWithRegions = async () => {
       if (!open || !product?.id) return;
 
-      console.log('🔄 [DEBUG MODAL] Iniciando enriquecimiento de producto:', {
-        productId: product.id,
-        hasExistingRegions: !!(product.shippingRegions?.length || product.delivery_regions?.length)
-      });
-
       // Si el producto ya tiene regiones, no necesitamos cargarlas
       if (product.shippingRegions?.length > 0 || 
           product.delivery_regions?.length > 0 || 
           product.shipping_regions?.length > 0 ||
           product.product_delivery_regions?.length > 0) {
-        console.log('✅ [DEBUG MODAL] Producto ya tiene regiones, usando existentes');
         setEnrichedProduct(product);
         return;
       }
 
       // Cargar regiones de despacho desde la base de datos
-      console.log('📡 [DEBUG MODAL] Cargando regiones desde Supabase...');
       const shippingRegions = await loadProductShippingRegions(product.id);
-      
-      console.log('📦 [DEBUG MODAL] Regiones cargadas:', {
-        count: shippingRegions.length,
-        regions: shippingRegions.map(r => ({ region: r.region, price: r.price, days: r.delivery_days }))
-      });
 
       const productWithRegions = {
         ...product,
@@ -132,7 +132,6 @@ const AddToCartModal = ({
       };
 
       setEnrichedProduct(productWithRegions);
-      console.log('✅ [DEBUG MODAL] Producto enriquecido establecido');
     };
 
     enrichProductWithRegions();
@@ -155,6 +154,17 @@ const AddToCartModal = ({
       setQuantityError(''); // Limpiar errores al abrir
     }
   }, [open, initialQuantity, enrichedProduct]);
+
+  // Establecer tipo de documento inicial basándose en opciones disponibles del proveedor
+  useEffect(() => {
+    if (open && availableOptions && availableOptions.length > 0) {
+      // Si el tipo actual no está disponible para este proveedor, usar el primero disponible
+      const currentIsAvailable = availableOptions.some(option => option.value === documentType);
+      if (!currentIsAvailable) {
+        setDocumentType(availableOptions[0].value);
+      }
+    }
+  }, [open, availableOptions, documentType]);
 
   // ============================================================================
   // DATOS DEL PRODUCTO Y VALIDACIONES
@@ -337,15 +347,10 @@ const AddToCartModal = ({
         selectedTier: activeTier,
       };
       
-      console.log('🛒 [AddToCartModal] Intentando agregar al carrito:', cartItem);
       await onAddToCart(cartItem);
-      console.log('✅ [AddToCartModal] Producto agregado exitosamente al carrito');
       onClose();
     } catch (error) {
       console.error('❌ [AddToCartModal] Error al agregar producto al carrito:', error);
-      console.error('📋 [AddToCartModal] Detalles del producto:', productData);
-      console.error('🔢 [AddToCartModal] Cantidad:', quantity);
-      console.error('💰 [AddToCartModal] Precios:', currentPricing);
     } finally {
       setIsProcessing(false);
     }
@@ -496,12 +501,17 @@ const AddToCartModal = ({
       }}
     >
       <Stack direction="row" spacing={2} alignItems="center">
-        <CheckoutSummaryImage
-          product={productData}
-          sx={{ 
-            pointerEvents: 'none',
-          }}
-        />
+        <Box sx={{ width: 50, height: 50, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <CheckoutSummaryImage
+            product={productData}
+            sx={{ 
+              width: 50,
+              height: 50,
+              objectFit: 'contain',
+              pointerEvents: 'none',
+            }}
+          />
+        </Box>
         <Box sx={{ flex: 1 }}>
           <Stack direction="row" justifyContent="space-between" alignItems="flex-start" sx={{ mb: 0.5 }}>
             <Typography variant="body1" sx={{ fontWeight: 600, flex: 1, pointerEvents: 'none' }}>
@@ -546,60 +556,138 @@ const AddToCartModal = ({
               </Typography>
             </Box>
           </Stack>
-          <Typography variant="body2" color="text.secondary" sx={{ pointerEvents: 'none' }}>
-            Precio unitario: ${currentPricing.unitPrice.toLocaleString('es-CL')}
-          </Typography>
         </Box>
       </Stack>
     </Paper>
   );
 
-  const DocumentTypeSelector = () => (
-    <Box
-      onClick={(e) => {
-        e.stopPropagation();
-      }}
-    >
-      <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 600 }}>
-        Tipo de Documento
-      </Typography>
-      <FormControl component="fieldset">
-        <RadioGroup
-          value={documentType}
-          onChange={handleDocumentTypeChange}
-          row
+  const DocumentTypeSelector = () => {
+    // Si está cargando los tipos de documentos del proveedor
+    if (loadingDocumentTypes) {
+      return (
+        <Box
           onClick={(e) => {
             e.stopPropagation();
           }}
         >
-          <FormControlLabel
-            value="factura"
-            control={<Radio size="small" />}
-            label="Factura"
+          <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 600 }}>
+            Tipo de Documento
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Cargando opciones...
+          </Typography>
+        </Box>
+      );
+    }
+
+    // Si hay error cargando los tipos de documentos o no hay availableOptions
+    if (documentTypesError || !availableOptions || availableOptions.length === 0) {
+      return (
+        <Box
+          onClick={(e) => {
+            e.stopPropagation();
+          }}
+        >
+          <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 600 }}>
+            Tipo de Documento
+          </Typography>
+          <FormControl component="fieldset">
+            <RadioGroup
+              value={documentType}
+              onChange={handleDocumentTypeChange}
+              row
+              onClick={(e) => {
+                e.stopPropagation();
+              }}
+            >
+              <FormControlLabel
+                value="factura"
+                control={<Radio size="small" />}
+                label="Factura"
+                onClick={(e) => {
+                  e.stopPropagation();
+                }}
+              />
+              <FormControlLabel
+                value="boleta"
+                control={<Radio size="small" />}
+                label="Boleta"
+                onClick={(e) => {
+                  e.stopPropagation();
+                }}
+              />
+              <FormControlLabel
+                value="ninguno"
+                control={<Radio size="small" />}
+                label="No ofrecer documento tributario"
+                onClick={(e) => {
+                  e.stopPropagation();
+                }}
+              />
+            </RadioGroup>
+          </FormControl>
+        </Box>
+      );
+    }
+
+    // Si solo hay "ninguno" como opción, mostrar texto explicativo
+    if (availableOptions.length === 1 && availableOptions[0].value === 'ninguno') {
+      return (
+        <Box
+          onClick={(e) => {
+            e.stopPropagation();
+          }}
+        >
+          <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 600 }}>
+            Tipo de Documento
+          </Typography>
+          <Typography
+            variant="body2"
+            sx={{
+              color: 'text.primary',
+            }}
+          >
+            Proveedor no ofrece documento tributario
+          </Typography>
+        </Box>
+      );
+    }
+
+    // Mostrar solo las opciones disponibles para este proveedor (excluyendo caso de solo "ninguno")
+    return (
+      <Box
+        onClick={(e) => {
+          e.stopPropagation();
+        }}
+      >
+        <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 600 }}>
+          Tipo de Documento
+        </Typography>
+        <FormControl component="fieldset">
+          <RadioGroup
+            value={documentType}
+            onChange={handleDocumentTypeChange}
+            row
             onClick={(e) => {
               e.stopPropagation();
             }}
-          />
-          <FormControlLabel
-            value="boleta"
-            control={<Radio size="small" />}
-            label="Boleta"
-            onClick={(e) => {
-              e.stopPropagation();
-            }}
-          />
-          <FormControlLabel
-            value="ninguno"
-            control={<Radio size="small" />}
-            label="Ninguno"
-            onClick={(e) => {
-              e.stopPropagation();
-            }}
-          />
-        </RadioGroup>
-      </FormControl>
-    </Box>
-  );
+          >
+            {availableOptions.map((option) => (
+              <FormControlLabel
+                key={option.value}
+                value={option.value}
+                control={<Radio size="small" />}
+                label={option.label}
+                onClick={(e) => {
+                  e.stopPropagation();
+                }}
+              />
+            ))}
+          </RadioGroup>
+        </FormControl>
+      </Box>
+    );
+  };
 
   const ShippingStatus = () => {
     // Mostrar carga mientras se cargan las regiones del producto O el perfil del usuario
@@ -755,9 +843,9 @@ const AddToCartModal = ({
               top: 0,
               zIndex: 1,
             }}>
-              <Stack direction="row" justifyContent="space-between" alignItems="center">
+            <Stack direction="row" justifyContent="space-between" alignItems="center">
                 <Typography variant="h6" sx={{ fontWeight: 700 }}>
-                  {productData.name}
+                  Resumen del Pedido
                 </Typography>
                 <IconButton onClick={handleClose} size="small">
                   <CloseIcon />

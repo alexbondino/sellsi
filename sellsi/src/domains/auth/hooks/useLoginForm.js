@@ -2,6 +2,7 @@ import { useReducer } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../../services/supabase'
 import { trackLoginIP } from '../../../services/security'
+import { useRole } from '../../../infrastructure/providers/RoleProvider'
 
 const initialState = {
   correo: '',
@@ -93,6 +94,7 @@ const reducer = (state, action) => {
 
 export const useLoginForm = () => {
   const navigate = useNavigate()
+  const { redirectToInitialHome } = useRole()
   const [state, dispatch] = useReducer(reducer, initialState)
 
   const validarFormulario = () => {
@@ -208,11 +210,8 @@ export const useLoginForm = () => {
       }
 
       onClose()
-      if (perfil.main_supplier) {
-        navigate('/supplier/home')
-      } else {
-        navigate('/buyer/marketplace')
-      }
+      // ✅ NUEVO: Usar función del RoleProvider para redirección inicial
+      redirectToInitialHome()
     } catch (error) {
       console.error('Error en login:', error)
       dispatch({

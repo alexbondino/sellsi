@@ -96,8 +96,11 @@ export function useProducts() {
                 supplier_id: p.supplier_id,
                 nombre: p.productnm,
                 proveedor: usersMap[p.supplier_id]?.name || "Proveedor no encontrado", // ✅ USAR .name
+                user_nm: usersMap[p.supplier_id]?.name, // ✅ AGREGAR user_nm para ProductCardProviderContext
                 supplier_logo_url: usersMap[p.supplier_id]?.logo_url, // ✅ AGREGAR logo del proveedor
+                logo_url: usersMap[p.supplier_id]?.logo_url, // ✅ AGREGAR logo_url para ProductCardProviderContext
                 descripcion_proveedor: usersMap[p.supplier_id]?.descripcion_proveedor, // ✅ AGREGAR descripcion_proveedor
+                verified: usersMap[p.supplier_id]?.verified || false, // ✅ AGREGAR para ProductCardProviderContext
                 proveedorVerificado: usersMap[p.supplier_id]?.verified || false, // ✅ AGREGAR estado de verificación del proveedor
                 imagen: imagenPrincipal,
                 thumbnails: thumbnails, // ✅ NUEVO: Agregar object thumbnails responsive

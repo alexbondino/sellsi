@@ -10,7 +10,17 @@
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
 import { showSuccessToast, showErrorToast } from '../../../utils/toastHelpers'
-import { SHIPPING_OPTIONS } from '../../constants/shipping' // ✅ MIGRADO: Era domains/marketplace/hooks/constants
+
+// Opciones de envío definidas localmente
+const SHIPPING_OPTIONS = [
+  {
+    id: 'standard',
+    name: 'Envío Estándar',
+    price: 0, // Precio será calculado dinámicamente
+    days: 'Según región',
+    icon: '📦',
+  }
+];
 
 /**
  * Hook para gestión de envío

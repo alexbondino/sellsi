@@ -78,16 +78,26 @@ const useProductBackground = create((set, get) => ({
         }))
       }
 
-      // Procesar imágenes si existen
-      if (productData.imagenes?.length > 0 && imagesHook && typeof imagesHook.uploadImages === 'function') {
+      // 🔥 NUEVO: Procesar imágenes si están definidas (incluso si está vacío para limpiar)
+      if (productData.imagenes !== undefined && imagesHook && typeof imagesHook.uploadImages === 'function') {
         updateProgress('images', 'processing')
-        const result = await imagesHook.uploadImages(productData.imagenes, productId, productData.supplier_id)
+        console.log(`🔥 [processProductInBackground] Procesando imágenes: ${productData.imagenes?.length || 0} archivos`)
+        
+        const result = await imagesHook.uploadImages(
+          productData.imagenes || [], 
+          productId, 
+          productData.supplier_id,
+          { replaceExisting: true } // 🔥 Siempre reemplazar para evitar acumulación
+        )
+        
         updateProgress('images', result.success ? 'completed' : 'failed')
         
         if (!result.success) {
           const errorMsg = result.error || result.errors?.join(', ') || 'Error desconocido en procesamiento de imágenes'
           throw new Error(`Error procesando imágenes: ${errorMsg}`)
         }
+        
+        console.log(`✅ [processProductInBackground] Imágenes procesadas exitosamente`)
         
         // 🔥 NUEVO: COMUNICACIÓN INTELIGENTE EN LUGAR DE REFRESH BLOQUEADO
         if (result.success && crudHook && crudHook.refreshProduct) {
@@ -252,13 +262,24 @@ const useProductBackground = create((set, get) => ({
         }
       }
 
-      // 3. Procesar otros elementos en background si no son críticos
-      if (updates.imagenes?.length > 0 || updates.specifications?.length > 0) {
-        // NO esperar - procesar verdaderamente en background
-        get().processProductInBackground(productId, updates, hooks)
-          .catch(error => {
-            set({ error: `Error procesando en background: ${error.message}` })
-          })
+      // 3. 🔧 FIX CRÍTICO: Procesar imágenes SIEMPRE en modo edición (array vacío también)
+      console.log('🔄 [updateCompleteProduct] Verificando si procesar imágenes:', {
+        hasImages: updates.imagenes !== undefined,
+        imageCount: updates.imagenes?.length || 0,
+        hasSpecs: updates.specifications?.length > 0
+      })
+      
+      if (updates.imagenes !== undefined || updates.specifications?.length > 0) {
+        console.log('📸 [updateCompleteProduct] Procesando imágenes/specs en background')
+        // ESPERAR el procesamiento para asegurar que se complete
+        try {
+          await get().processProductInBackground(productId, updates, hooks)
+          console.log('✅ [updateCompleteProduct] Procesamiento background completado')
+        } catch (error) {
+          console.error('❌ [updateCompleteProduct] Error en procesamiento background:', error)
+          set({ error: `Error procesando en background: ${error.message}` })
+          return { success: false, error: error.message }
+        }
       }
 
       // 4. Retornar éxito

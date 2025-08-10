@@ -221,7 +221,7 @@ export const useShippingValidation = (cartItems = [], isAdvancedMode = false) =>
   }, [isAdvancedMode, optimizedUserRegion, incompatibleProducts]);
 
   /**
-   * Verificar si la información de envío está completa
+   * Verificar si la información de despacho está completa
    */
   const isShippingInfoComplete = useCallback(() => {
     try {

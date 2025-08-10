@@ -1,6 +1,29 @@
 -- WARNING: This schema is for context only and is not meant to be run.
 -- Table order and constraints may not be valid for execution.
 
+CREATE TABLE public.admin_audit_log (
+  admin_id uuid NOT NULL,
+  action text NOT NULL,
+  target_id uuid,
+  details jsonb,
+  ip_address text,
+  user_agent text,
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  timestamp timestamp with time zone DEFAULT now(),
+  CONSTRAINT admin_audit_log_pkey PRIMARY KEY (id),
+  CONSTRAINT admin_audit_log_admin_id_fkey FOREIGN KEY (admin_id) REFERENCES public.control_panel_users(id)
+);
+CREATE TABLE public.admin_sessions (
+  admin_id uuid NOT NULL,
+  expires_at timestamp with time zone,
+  ip_address text,
+  user_agent text,
+  session_id uuid NOT NULL DEFAULT gen_random_uuid(),
+  created_at timestamp with time zone DEFAULT now(),
+  is_active boolean DEFAULT true,
+  CONSTRAINT admin_sessions_pkey PRIMARY KEY (session_id),
+  CONSTRAINT admin_sessions_admin_id_fkey FOREIGN KEY (admin_id) REFERENCES public.control_panel_users(id)
+);
 CREATE TABLE public.bank_info (
   user_id uuid UNIQUE,
   account_holder character varying,
@@ -10,6 +33,14 @@ CREATE TABLE public.bank_info (
   confirmation_email text,
   account_type character varying DEFAULT 'corriente'::character varying,
   CONSTRAINT bank_info_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(user_id)
+);
+CREATE TABLE public.banned_ips (
+  ip text NOT NULL,
+  banned_reason text,
+  banned_by uuid,
+  banned_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT banned_ips_pkey PRIMARY KEY (ip),
+  CONSTRAINT banned_ips_banned_by_fkey FOREIGN KEY (banned_by) REFERENCES public.control_panel_users(id)
 );
 CREATE TABLE public.billing_info (
   user_id uuid UNIQUE,
@@ -31,8 +62,8 @@ CREATE TABLE public.cart_items (
   added_at timestamp with time zone DEFAULT now(),
   updated_at timestamp with time zone DEFAULT now(),
   CONSTRAINT cart_items_pkey PRIMARY KEY (cart_items_id),
-  CONSTRAINT cart_items_product_id_fkey FOREIGN KEY (product_id) REFERENCES public.products(productid),
-  CONSTRAINT cart_items_cart_id_fkey FOREIGN KEY (cart_id) REFERENCES public.carts(cart_id)
+  CONSTRAINT cart_items_cart_id_fkey FOREIGN KEY (cart_id) REFERENCES public.carts(cart_id),
+  CONSTRAINT cart_items_product_id_fkey FOREIGN KEY (product_id) REFERENCES public.products(productid)
 );
 CREATE TABLE public.carts (
   user_id uuid NOT NULL,
@@ -43,35 +74,135 @@ CREATE TABLE public.carts (
   CONSTRAINT carts_pkey PRIMARY KEY (cart_id),
   CONSTRAINT carts_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(user_id)
 );
+CREATE TABLE public.control_panel (
+  venta numeric NOT NULL,
+  acciones text,
+  comprobante_pago text,
+  notas_admin text,
+  procesado_por uuid,
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  estado text NOT NULL DEFAULT 'pendiente'::text CHECK (estado = ANY (ARRAY['pendiente'::text, 'confirmado'::text, 'rechazado'::text, 'devuelto'::text, 'en_proceso'::text, 'entregado'::text])),
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  updated_at timestamp with time zone NOT NULL DEFAULT now(),
+  request_id uuid NOT NULL UNIQUE,
+  proveedor text NOT NULL,
+  comprador text NOT NULL,
+  ticket text NOT NULL,
+  direccion_entrega text,
+  fecha_solicitada date NOT NULL,
+  fecha_entrega date,
+  CONSTRAINT control_panel_pkey PRIMARY KEY (id),
+  CONSTRAINT control_panel_procesado_por_fkey FOREIGN KEY (procesado_por) REFERENCES public.control_panel_users(id),
+  CONSTRAINT control_panel_request_id_fkey FOREIGN KEY (request_id) REFERENCES public.requests(request_id)
+);
 CREATE TABLE public.control_panel_users (
-  usuario text NOT NULL UNIQUE,
-  password_hash text NOT NULL,
-  last_login timestamp with time zone,
   id uuid NOT NULL DEFAULT gen_random_uuid(),
   is_active boolean DEFAULT true,
   created_at timestamp with time zone DEFAULT now(),
+  usuario text NOT NULL UNIQUE,
+  password_hash text NOT NULL,
+  last_login timestamp with time zone,
+  email text UNIQUE,
+  full_name text,
+  twofa_secret text,
+  notes text,
+  created_by uuid,
+  role text DEFAULT 'admin'::text CHECK (role = 'admin'::text),
+  updated_at timestamp with time zone DEFAULT now(),
+  twofa_required boolean DEFAULT true,
+  twofa_configured boolean DEFAULT false,
   CONSTRAINT control_panel_users_pkey PRIMARY KEY (id)
+);
+CREATE TABLE public.ejemplo (
+  nombre text,
+  id bigint NOT NULL DEFAULT nextval('ejemplo_id_seq'::regclass),
+  CONSTRAINT ejemplo_pkey PRIMARY KEY (id)
+);
+CREATE TABLE public.ejemplo_prueba (
+  nombre text,
+  id bigint NOT NULL DEFAULT nextval('ejemplo_prueba_id_seq'::regclass),
+  CONSTRAINT ejemplo_prueba_pkey PRIMARY KEY (id)
+);
+CREATE TABLE public.khipu_webhook_logs (
+  payment_id character varying,
+  transaction_id character varying,
+  status character varying,
+  webhook_data jsonb,
+  signature_header text,
+  processed_at timestamp with time zone,
+  error_message text,
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  processed boolean DEFAULT false,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT khipu_webhook_logs_pkey PRIMARY KEY (id)
+);
+CREATE TABLE public.orders (
+  user_id uuid NOT NULL,
+  items jsonb NOT NULL,
+  payment_method character varying,
+  shipping_address jsonb,
+  billing_address jsonb,
+  khipu_payment_id character varying,
+  khipu_transaction_id character varying,
+  khipu_payment_url text,
+  khipu_expires_at timestamp with time zone,
+  paid_at timestamp with time zone,
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  subtotal numeric NOT NULL DEFAULT 0,
+  tax numeric NOT NULL DEFAULT 0,
+  shipping numeric NOT NULL DEFAULT 0,
+  total numeric NOT NULL DEFAULT 0,
+  currency character varying NOT NULL DEFAULT 'CLP'::character varying,
+  status character varying NOT NULL DEFAULT 'pending'::character varying,
+  payment_status character varying NOT NULL DEFAULT 'pending'::character varying,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  updated_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT orders_pkey PRIMARY KEY (id),
+  CONSTRAINT orders_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(user_id)
+);
+CREATE TABLE public.payment_transactions (
+  order_id uuid NOT NULL,
+  payment_method character varying NOT NULL,
+  external_payment_id character varying,
+  external_transaction_id character varying,
+  amount numeric NOT NULL,
+  gateway_response jsonb,
+  processed_at timestamp with time zone,
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  currency character varying NOT NULL DEFAULT 'CLP'::character varying,
+  status character varying NOT NULL DEFAULT 'pending'::character varying,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  updated_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT payment_transactions_pkey PRIMARY KEY (id),
+  CONSTRAINT payment_transactions_order_id_fkey FOREIGN KEY (order_id) REFERENCES public.orders(id)
+);
+CREATE TABLE public.product_delivery_regions (
+  product_id uuid NOT NULL,
+  region text NOT NULL,
+  price numeric NOT NULL,
+  delivery_days integer NOT NULL,
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  CONSTRAINT product_delivery_regions_pkey PRIMARY KEY (id),
+  CONSTRAINT product_delivery_regions_product_id_fkey FOREIGN KEY (product_id) REFERENCES public.products(productid)
 );
 CREATE TABLE public.product_images (
   product_id uuid NOT NULL,
   image_url text,
   thumbnail_url text,
   thumbnails jsonb,
+  image_order integer DEFAULT 0,
   CONSTRAINT product_images_product_id_fkey FOREIGN KEY (product_id) REFERENCES public.products(productid)
 );
 CREATE TABLE public.product_quantity_ranges (
-  product_qty_id uuid NOT NULL DEFAULT gen_random_uuid(),
-  price numeric NOT NULL DEFAULT 0.00,
   product_id uuid,
   min_quantity integer NOT NULL,
   max_quantity integer,
+  product_qty_id uuid NOT NULL DEFAULT gen_random_uuid(),
+  price numeric NOT NULL DEFAULT 0.00,
   CONSTRAINT product_quantity_ranges_pkey PRIMARY KEY (product_qty_id),
   CONSTRAINT product_quantity_ranges_product_id_fkey FOREIGN KEY (product_id) REFERENCES public.products(productid)
 );
 CREATE TABLE public.products (
-  delivery_regions ARRAY DEFAULT ARRAY[]::text[],
-  delivery_prices ARRAY DEFAULT ARRAY[]::text[],
-  delivery_time_days integer NOT NULL DEFAULT 0,
   productnm text NOT NULL,
   supplier_id uuid,
   category character varying,
@@ -87,8 +218,8 @@ CREATE TABLE public.products (
   spec_name character varying NOT NULL DEFAULT 'N/A'::character varying,
   spec_value text NOT NULL DEFAULT 'N/A'::text,
   is_active boolean DEFAULT true,
-  createddt timestamp with time zone DEFAULT now(),
-  updateddt timestamp with time zone DEFAULT now(),
+  createddt timestamp with time zone NOT NULL DEFAULT now(),
+  updateddt timestamp with time zone NOT NULL DEFAULT now(),
   CONSTRAINT products_pkey PRIMARY KEY (productid),
   CONSTRAINT products_supplier_id_fkey FOREIGN KEY (supplier_id) REFERENCES public.users(user_id)
 );
@@ -98,8 +229,7 @@ CREATE TABLE public.request_products (
   quantity integer NOT NULL,
   request_product_id uuid NOT NULL DEFAULT gen_random_uuid(),
   CONSTRAINT request_products_pkey PRIMARY KEY (request_product_id),
-  CONSTRAINT request_products_request_id_fkey FOREIGN KEY (request_id) REFERENCES public.requests(request_id),
-  CONSTRAINT request_products_product_id_fkey FOREIGN KEY (product_id) REFERENCES public.products(productid)
+  CONSTRAINT request_products_request_id_fkey FOREIGN KEY (request_id) REFERENCES public.requests(request_id)
 );
 CREATE TABLE public.requests (
   delivery_country text NOT NULL,
@@ -135,7 +265,20 @@ CREATE TABLE public.shipping_info (
   shipping_dept text,
   CONSTRAINT shipping_info_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(user_id)
 );
+CREATE TABLE public.storage_cleanup_logs (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  executed_at timestamp with time zone NOT NULL DEFAULT now(),
+  products_processed integer NOT NULL DEFAULT 0,
+  files_removed integer NOT NULL DEFAULT 0,
+  execution_time_ms integer NOT NULL DEFAULT 0,
+  errors jsonb DEFAULT '[]'::jsonb,
+  success boolean NOT NULL DEFAULT true,
+  trigger_type text DEFAULT 'scheduled'::text,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT storage_cleanup_logs_pkey PRIMARY KEY (id)
+);
 CREATE TABLE public.users (
+  document_types ARRAY DEFAULT '{}'::text[] CHECK (document_types <@ ARRAY['ninguno'::text, 'boleta'::text, 'factura'::text]),
   rut character varying,
   user_id uuid NOT NULL,
   email text NOT NULL UNIQUE,
@@ -143,9 +286,17 @@ CREATE TABLE public.users (
   phone_nbr character varying,
   country text NOT NULL,
   logo_url text,
+  descripcion_proveedor text,
+  banned_at timestamp with time zone,
+  banned_reason text,
+  verified_at timestamp with time zone,
+  verified_by uuid,
+  last_ip text,
   main_supplier boolean NOT NULL DEFAULT false,
   createdt timestamp with time zone NOT NULL DEFAULT now(),
   updatedt timestamp with time zone NOT NULL DEFAULT now(),
+  banned boolean NOT NULL DEFAULT false,
+  verified boolean NOT NULL DEFAULT false,
   CONSTRAINT users_pkey PRIMARY KEY (user_id),
   CONSTRAINT users_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
 );

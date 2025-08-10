@@ -86,7 +86,7 @@ const ShippingToggle = ({
               Modos de Validación:
             </Typography>
             <Typography variant="body2" sx={{ mb: 1 }}>
-              <strong>Simple:</strong> Muestra "3-5 días hábiles - $5.990" sin validación
+              <strong>Simple:</strong> Muestra información general de despacho sin validación específica
             </Typography>
             <Typography variant="body2">
               <strong>Avanzada:</strong> Valida información de despacho por producto y región del usuario

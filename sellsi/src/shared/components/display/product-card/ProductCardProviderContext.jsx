@@ -12,6 +12,7 @@ import {
 import {
   Handshake as HandshakeIcon,
   Visibility as VisibilityIcon,
+  Verified as VerifiedIcon,
 } from '@mui/icons-material';
 
 /**
@@ -23,7 +24,7 @@ const ProductCardProviderContext = React.memo(
   ({ product }) => {
     const navigate = useNavigate();
     // Desestructurar fuera del bloque comentado
-    const { supplier_id, user_nm, proveedor, logo_url, product_count, descripcion_proveedor } = product || {};
+    const { supplier_id, user_nm, proveedor, logo_url, product_count, descripcion_proveedor, verified } = product || {};
 
     // Memoizar nombre del proveedor - usar datos reales
     const providerName = React.useMemo(() => 
@@ -93,26 +94,36 @@ const ProductCardProviderContext = React.memo(
 
           {/* Provider Name */}
           {providerName && (
-            <Typography
-              variant="h6"
-              component="h3"
-              sx={{
-                fontSize: { xs: '0.9rem', sm: '1rem', md: '1.4rem' },
-                fontWeight: 600,
-                lineHeight: 1.2,
-                mb: 1.5,
-                color: 'primary.main',
-                display: '-webkit-box',
-                WebkitLineClamp: 2,
-                WebkitBoxOrient: 'vertical',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                wordBreak: 'break-word',
-                whiteSpace: 'normal',
-              }}
-            >
-              {providerName}
-            </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, justifyContent: 'center', mb: 1.5 }}>
+              <Typography
+                variant="h6"
+                component="h3"
+                sx={{
+                  fontSize: { xs: '0.9rem', sm: '1rem', md: '1.4rem' },
+                  fontWeight: 600,
+                  lineHeight: 1.2,
+                  color: 'primary.main',
+                  display: '-webkit-box',
+                  WebkitLineClamp: 2,
+                  WebkitBoxOrient: 'vertical',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  wordBreak: 'break-word',
+                  whiteSpace: 'normal',
+                }}
+              >
+                {providerName}
+              </Typography>
+              {verified && (
+                <VerifiedIcon 
+                  sx={{ 
+                    fontSize: { xs: 16, sm: 18, md: 20 }, 
+                    color: 'primary.main',
+                    flexShrink: 0
+                  }} 
+                />
+              )}
+            </Box>
           )}
 
           {/* Descripción real del proveedor */}
@@ -228,7 +239,8 @@ const areEqual = (prevProps, nextProps) => {
     prevProps.product.user_nm === nextProps.product.user_nm &&
     prevProps.product.proveedor === nextProps.product.proveedor &&
     prevProps.product.descripcion_proveedor === nextProps.product.descripcion_proveedor &&
-    prevProps.product.product_count === nextProps.product.product_count
+    prevProps.product.product_count === nextProps.product.product_count &&
+    prevProps.product.verified === nextProps.product.verified
   );
 };
 

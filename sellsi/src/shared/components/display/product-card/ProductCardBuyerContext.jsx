@@ -51,7 +51,7 @@ const ProductCardBuyerContext = React.memo(
     const precioOriginal = product.precioOriginal || product.originalPrice;
     const stock = product.stock || product.maxStock || 50;
     const negociable = product.negociable || product.negotiable || false;
-    const proveedorVerificado = product.proveedorVerificado || product.supplierVerified || false;
+    const proveedorVerificado = product.verified || product.proveedorVerificado || product.supplierVerified || false;
 
     // Hook to get price tiers (maintain for compatibility)
     const {

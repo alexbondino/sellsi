@@ -81,7 +81,7 @@ export const RoleProvider = ({ children }) => {
     '/buyer/marketplace',
     '/buyer/orders',
     '/buyer/performance',
-    // '/buyer/cart', // ✅ MOVIDO A neutralRoutes
+    '/buyer/cart', // ✅ VUELTO A BUYER ROUTES - cart ya no es neutral
     '/buyer/paymentmethod',
     '/buyer/profile',
     // '/catalog', // ✅ MOVIDO A neutralRoutes - debe ser accesible para ambos roles
@@ -102,7 +102,6 @@ export const RoleProvider = ({ children }) => {
   const neutralRoutes = new Set([
     '/',
     '/marketplace',
-    '/buyer/cart', // ✅ AGREGADO: Carrito accesible para ambos roles
     '/catalog', // ✅ AGREGADO: Catálogo accesible para ambos roles sin redirección
     '/technicalspecs',
     '/login',
@@ -121,7 +120,7 @@ export const RoleProvider = ({ children }) => {
   // Determinar si la ruta es de dashboard
   const isProductPageRoute = location.pathname.match(/^\/marketplace\/product\/[^/]+(\/[^/]+)?$/);
   const isCatalogRoute = location.pathname.startsWith('/catalog/');
-  const isCartRoute = location.pathname.startsWith('/buyer/cart'); // ✅ NUEVO: Incluir carrito para mostrar sidebar
+  const isCartRoute = location.pathname.startsWith('/buyer/cart'); // ✅ CART: Mostrar sidebar en cart (ahora es ruta buyer)
   const isTermsOrPrivacyRoute = 
     location.pathname === '/terms-and-conditions' || 
     location.pathname === '/privacy-policy';
@@ -141,6 +140,14 @@ export const RoleProvider = ({ children }) => {
       isTermsOrPrivacyRoute
     );
 
+  // ✅ NUEVO: Redirigir a home inicial SOLO después del login
+  const redirectToInitialHome = () => {
+    if (userProfile) {
+      const target = userProfile.main_supplier ? '/supplier/home' : '/buyer/marketplace';
+      navigate(target, { replace: true });
+    }
+  };
+
   // ✅ MEJORA: Función para manejar el cambio de rol con opciones
   const handleRoleChange = (newRole, options = {}) => {
     const { skipNavigation = false } = options;
@@ -153,7 +160,8 @@ export const RoleProvider = ({ children }) => {
       }
     } catch (e) {}
     
-    // Solo navegar si no se especifica skipNavigation
+    // ✅ CAMBIO: Por defecto SÍ navegar (para cambios manuales del switch)
+    // Solo NO navegar si se especifica explícitamente skipNavigation = true
     if (!skipNavigation) {
       setIsRoleSwitching(true);
       if (newRole === 'supplier') {
@@ -190,77 +198,16 @@ export const RoleProvider = ({ children }) => {
     }
   }, [session, currentAppRole]);
 
-  // ✅ NUEVO: Protección de rutas - redirigir si el usuario intenta acceder a rutas que no coinciden con su rol actual
-  useEffect(() => {
-    if (!session || needsOnboarding || loadingUserStatus || !userProfile || !currentAppRole || isRoleSwitching) {
-      return;
-    }
-
-    const currentPath = location.pathname;
-    
-    // ✅ DEBUG: Log para verificar la ruta actual
-    console.log('🔍 Route protection check:', { currentPath, currentAppRole });
-    
-    // ✅ PRIMERO: Verificar si es una ruta neutral (incluyendo cart)
-    const isNeutralRoute = Array.from(neutralRoutes).some(route => {
-      // ✅ FIX: Comparación exacta para ruta raíz, startsWith para otras
-      if (route === '/') {
-        return currentPath === '/';
-      }
-      const isMatch = currentPath === route || currentPath.startsWith(route + '/') || currentPath.startsWith(route + '?');
-      if (isMatch) {
-        console.log('✅ Neutral route detected:', route, 'for path:', currentPath);
-      }
-      return isMatch;
-    });
-    
-    if (isNeutralRoute) {
-      console.log('✅ Skipping protection for neutral route:', currentPath);
-      return; // No redirigir rutas neutrales
-    }
-    
-    // Determinar si está en una ruta de supplier o buyer (DESPUÉS de verificar rutas neutrales)
-    const isOnSupplierRoute = Array.from(supplierDashboardRoutes).some(route =>
-      currentPath.startsWith(route)
-    );
-    const isOnBuyerRoute = Array.from(buyerDashboardRoutes).some(route =>
-      currentPath.startsWith(route) && !neutralRoutes.has(currentPath) // Excluir rutas neutrales
-    );
-
-    // Si tiene rol SUPPLIER pero está en ruta de BUYER → redirigir a supplier
-    if (currentAppRole === 'supplier' && isOnBuyerRoute) {
-      console.log('🔄 Supplier detected on buyer route, redirecting to supplier home');
-      navigate('/supplier/home', { replace: true });
-      return;
-    }
-    
-    // Si tiene rol BUYER pero está en ruta de SUPPLIER → redirigir a buyer
-    if (currentAppRole === 'buyer' && isOnSupplierRoute) {
-      console.log('🔄 Buyer detected on supplier route, redirecting to buyer marketplace');
-      navigate('/buyer/marketplace', { replace: true });
-      return;
-    }
-  }, [
-    session,
-    needsOnboarding,
-    loadingUserStatus,
-    userProfile,
-    currentAppRole,
-    isRoleSwitching,
-    location.pathname,
-    navigate,
-    supplierDashboardRoutes,
-    buyerDashboardRoutes
-  ]);
+  // ✅ ELIMINADO: Protección de rutas por conflicto de rol
+  // Ahora permitimos que los usuarios accedan a cualquier ruta independientemente de su rol
+  // El switch y el sidebar se adaptan automáticamente a la ruta actual
 
   // Redirigir a usuarios logueados de rutas neutrales a su dashboard preferido
   useEffect(() => {
     if (!loadingUserStatus && session && !needsOnboarding && userProfile) {
       if (neutralRoutes.has(location.pathname) && 
           location.pathname !== '/terms-and-conditions' && 
-          location.pathname !== '/privacy-policy' &&
-          location.pathname !== '/buyer/cart' && // ✅ EXCEPCIÓN: No redirigir desde cart
-          !location.pathname.startsWith('/buyer/cart/')) { // ✅ EXCEPCIÓN: Incluir subrutas del cart
+          location.pathname !== '/privacy-policy') {
         const target = userProfile.main_supplier
           ? '/supplier/home'
           : '/buyer/marketplace';
@@ -315,6 +262,7 @@ export const RoleProvider = ({ children }) => {
     isRoleSwitching,
     isRoleLoading,
     handleRoleChange,
+    redirectToInitialHome,
     isDashboardRoute,
     isBuyer,
     buyerDashboardRoutes,
