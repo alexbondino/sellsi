@@ -137,7 +137,7 @@ const AboutUsSection = ({ quienesSomosRef }) => {
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
-                    justifyContent: 'center',
+                    justifyContent: 'flex-start',
                     gap: 1,
                     flexGrow: 1,
                   }}
