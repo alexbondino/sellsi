@@ -1,285 +1,178 @@
 import React from 'react';
-import { Box, Typography } from '@mui/material';
+import { Box, Typography, Grid, Card, CardContent } from '@mui/material';
+import DiscountOutlinedIcon from '@mui/icons-material/DiscountOutlined';
+import RequestQuoteOutlinedIcon from '@mui/icons-material/RequestQuoteOutlined';
+import HandshakeOutlinedIcon from '@mui/icons-material/HandshakeOutlined';
+import VerifiedUserOutlinedIcon from '@mui/icons-material/VerifiedUserOutlined';
+import Inventory2OutlinedIcon from '@mui/icons-material/Inventory2Outlined';
+import SupportAgentOutlinedIcon from '@mui/icons-material/SupportAgentOutlined';
+import QueryStatsOutlinedIcon from '@mui/icons-material/QueryStatsOutlined';
+
+import PrimaryButton from '../../../../shared/components/forms/PrimaryButton/PrimaryButton';
 
 /**
- * ====================================================================================
- * ABOUT US SECTION - SECCIÓN "QUIÉNES SOMOS"
- * ============================================================================
- *
- * Componente UI puro para la sección "Quiénes Somos" de la landing page
- *
- * @component
- * @param {Object} props - Propiedades del componente
- * @param {React.RefObject} props.quienesSomosRef - Referencia para scroll navigation
- *
- * CARACTERÍSTICAS:
- * - Layout responsivo diferenciado (mobile vs desktop)
- * - Contenido informativo sobre la empresa (misión, visión)
- * - Imágenes optimizadas y logo corporativo
- * - Tipografía consistente con sistema de diseño
- * - Espaciado y padding adaptativos
- * - Estructura semántica accesible
- *
- * LAYOUT:
- * - Mobile: Logo arriba, contenido abajo en columna
- * - Desktop: Contenido en dos columnas lado a lado
- * - Responsive breakpoints para todos los dispositivos
+ * Sección: ¿Por qué elegir Sellsi?
+ * - Header centrado con título y subtítulo
+ * - 7 cards con ícono, título (primary.main) y descripción
+ * - Grid responsivo: lg/xl 4 por fila, md 3 por fila, sm 2, xs 1
+ * - Botón centrado (PrimaryButton) "Agenda tu demo aquí"
  */
 const AboutUsSection = ({ quienesSomosRef }) => {
+  const features = [
+    {
+      icon: <DiscountOutlinedIcon color="primary" sx={{ fontSize: 40 }} />,
+      title: 'Oferta Mayorista y Minorista',
+      description: 'Define precios a nivel unitario o por volúmenes',
+    },
+    {
+      icon: <RequestQuoteOutlinedIcon color="primary" sx={{ fontSize: 40 }} />,
+      title: 'Cotización y Negociación en Línea',
+      description:
+        'Ofrece condiciones específicas y negocia directamente por la plataforma',
+    },
+    {
+      icon: <HandshakeOutlinedIcon color="primary" sx={{ fontSize: 40 }} />,
+      title: 'No somos sólo un Marketplace',
+      description:
+        'Contamos con servicios de intermediación para potenciar aún más tus ventas',
+    },
+    {
+      icon: <VerifiedUserOutlinedIcon color="primary" sx={{ fontSize: 40 }} />,
+      title: 'Tu seguridad es esencial para nosotros',
+      description:
+        'Proveedores verificados y liberación de pagos post entrega',
+    },
+    {
+      icon: <Inventory2OutlinedIcon color="primary" sx={{ fontSize: 40 }} />,
+      title: 'Inventarios Actualizados',
+      description:
+        'Integración mediante API y seguimiento en línea del stock de productos',
+    },
+    {
+      icon: <SupportAgentOutlinedIcon color="primary" sx={{ fontSize: 40 }} />,
+      title: 'Acompañamos tu proceso de venta',
+      description:
+        'Nuestro equipo estará monitoreando tu proceso de ventas para garantizar una experiencia satisfactoria',
+    },
+    {
+      icon: <QueryStatsOutlinedIcon color="primary" sx={{ fontSize: 40 }} />,
+      title: 'Sigue tus estadísticas',
+      description: 'Seguimiento en línea de tus transacciones',
+    },
+  ];
+
   return (
     <Box
       ref={quienesSomosRef}
+      component="section"
       sx={{
-        py: { xs: 6, sm: 7, md: 8, mac: 6, lg: 8, xl: 8 },
-        backgroundColor: 'transparent',
-        position: 'relative',
-        zIndex: 2,
+  py: { xs: 6, sm: 7, md: 8, mac: 8, lg: 9, xl: 9 },
       }}
     >
-      {/* Mobile Layout: Logo first, then content flows vertically */}
-      <Box sx={{ display: { xs: 'block', md: 'none' } }}>
-        {/* Logo para mobile eliminado para evitar duplicado, ahora solo aparece entre los textos */}
-        {/* All text content for mobile */}
-        <Box sx={{ mb: 4 }}>
-          <Typography
-            variant="h3"
-            fontWeight="bold"
-            gutterBottom
-            sx={{
-              fontSize: {
-                xs: '1.55rem',
-                sm: '1.8rem',
-                md: '2.2rem',
-                lg: '2.2rem',
-                xl: '2.2rem',
-              },
-              textAlign: 'left',
-              color: 'common.black',
-              mb: { xs: 2, sm: 2.5, md: 2.5, lg: 2.5, xl: 2.5 },
-            }}
-          >
-            Conoce Sellsi
-          </Typography>
-          <Typography
-            variant="body1"
-            sx={{
-              fontSize: {
-                xs: '0.95rem',
-                sm: '1rem',
-                md: '1.2rem',
-                lg: '1.2rem',
-                xl: '1.2rem',
-              },
-              lineHeight: { xs: 1.6, sm: 1.65, md: 1.7, lg: 1.7, xl: 1.7 },
-              color: '#111',
-              mb: { xs: 2.5, sm: 3, md: 3, lg: 3, xl: 3 },
-            }}
-          >
-            <span style={{ color: '#1565c0', fontWeight: 'bold' }}>
-              Sellsi
-            </span>{' '}
-            es la plataforma donde empresas conectan, negocian y gestionan sus procesos de compra / venta, ya sea mediante venta directa o intermediario.
-          </Typography>
-
-          {/* Imagen entre los dos bloques de texto en mobile */}
-          <Box sx={{ display: 'flex', justifyContent: 'center', my: { xs: 2, sm: 2.5 } }}>
-            <Box
-              component="img"
-              src="/Landing Page/imagenuno.png"
-              alt="Sellsi Logo"
-              sx={{ height: { xs: 180, sm: 200 }, width: { xs: 180, sm: 200 }, objectFit: 'contain' }}
-            />
-          </Box>
-
-          <Typography
-            variant="h4"
-            fontWeight="bold"
-            sx={{
-              mb: { xs: 1.2, sm: 1.3, md: 1.5, lg: 1.5, xl: 1.5 },
-              fontSize: {
-                xs: '1.55rem',
-                sm: '1.8rem',
-                md: '2rem',
-                lg: '2rem',
-                xl: '2rem',
-              },
-              color: 'common.black',
-            }}
-          >
-            Te presentamos nuestra innovadora propuesta de valor
-          </Typography>
-          {/* Eliminado 'hola que talca' */}
-          <Typography
-            variant="body1"
-            sx={{
-              fontSize: { md: '1.2rem' },
-              lineHeight: 1.7,
-              color: '#111',
-              mb: 3,
-            }}
-          >
-            Desarrollamos el primer marketplace mayorista de Chile, ofreciendo un canal de ventas adicional a los proveedores que participan con nosotros. Los compradores podrán optar por una gran variedad de productos con descuentos por tramos, cotizaciones en línea y negociación de precios directamente con los proveedores.
-          </Typography>
-        </Box>
-        {/* imagenuno.png debe ir debajo de los cuadros de texto en mobile, imagendos.png NO debe estar en mobile */}
-        <Box
+      {/* Header */}
+      <Box sx={{ textAlign: 'center', mb: { xs: 4, sm: 5, md: 6 } }}>
+        <Typography
+          variant="h3"
           sx={{
-            display: 'flex',
-            justifyContent: 'center',
-            mt: 2,
+            fontWeight: 800,
+            fontSize: { xs: '1.8rem', sm: '2rem', md: '2.4rem' },
+            mb: 1,
           }}
         >
-          {/* imagenuno.png debajo de los textos en mobile (repetido para énfasis visual, si no se desea, se puede eliminar) */}
-          {/*
-          <Box
-            component="img"
-            src="/Landing Page/imagenuno.png"
-            alt="Sellsi Logo"
-            sx={{
-              height: { xs: 200, sm: 220 },
-              width: { xs: 200, sm: 220 },
-              objectFit: 'contain',
-              mb: 0,
-            }}
-          />
-          */}
-        </Box>
+          ¿Por qué elegir{' '}
+          <Box component="span" sx={{ color: 'primary.main' }}>
+            Sellsi
+          </Box>
+          ?
+        </Typography>
+        <Typography
+          variant="subtitle1"
+          sx={{ color: 'text.secondary', maxWidth: 900, mx: 'auto' }}
+        >
+          Somos más que un Marketplace. Somos el ecosistema que impulsará y consolidará el crecimiento de tu negocio.
+        </Typography>
       </Box>
 
-      {/* Desktop Layout: Two columns side by side */}
-      <Box
-        sx={{
-          display: { xs: 'none', md: 'flex' },
-          flexDirection: 'row',
-          gap: 6,
-          alignItems: 'flex-start',
-          mt: 0,
-        }}
-      >
-        {/* Left Column: All Text Content for Desktop */}
-        <Box
-          sx={{
-            flex: 1,
-            width: '50%',
-          }}
+      {/* Grid de features */}
+      <Box sx={{ maxWidth: 1500, mx: 'auto', px: { xs: 2, sm: 3 } }}>
+        <Grid
+          container
+          spacing={{ xs: 2, sm: 3, md: 3 }}
+          alignItems="stretch"
+          justifyContent="center"
         >
-          <Box
-            sx={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'flex-start',
-              textAlign: 'left',
-            }}
-          >
-            <Typography
-              variant="h3"
-              fontWeight="bold"
-              gutterBottom
-              sx={{
-                fontSize: { md: '2.5rem' },
-                textAlign: 'left',
-                color: 'common.black',
-                mb: { md: 3 },
-              }}
+          {features.map((f, idx) => (
+            <Grid
+              key={idx}
+              item
+              xs={12}
+              sm={6}
+              md={4}
+              lg={3}
+              xl={3}
+              sx={(theme) => ({
+                display: 'flex',
+                [theme.breakpoints.up('md')]: {
+                  flexBasis: '25%',
+                  maxWidth: '23%',
+                },
+              })}
             >
-              ¿Quiénes Somos?
-            </Typography>
+              <Card
+                elevation={0}
+                sx={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  flex: 1,
+                  height: { xs: 200, sm: 220, md: 240, lg: 240 },
+                  borderRadius: 3,
+                  border: '1px solid',
+                  borderColor: 'divider',
+                }}
+              >
+                <CardContent
+                  sx={{
+                    textAlign: 'center',
+                    p: { xs: 2.5, sm: 3 },
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 1,
+                    flexGrow: 1,
+                  }}
+                >
+                  <Box sx={{ mb: 0.5, display: 'flex', justifyContent: 'center' }}>{f.icon}</Box>
+                  <Typography
+                    variant="h6"
+                    sx={{ color: 'primary.main', fontWeight: 700, mb: 0.5 }}
+                  >
+                    {f.title}
+                  </Typography>
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      color: 'common.black',
+                      display: '-webkit-box',
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: 'vertical',
+                      overflow: 'hidden',
+                    }}
+                  >
+                    {f.description}
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+          ))}
+        </Grid>
+      </Box>
 
-            <Typography
-              variant="body1"
-              sx={{
-                fontSize: { md: '1.2rem' },
-                lineHeight: 1.7,
-                color: '#111', // Cambiado a negro para desktop también
-                mb: 3,
-              }}
-            >
-              <span style={{ color: '#1565c0', fontWeight: 'bold' }}>
-                Sellsi
-              </span>
-              &nbsp;es la plataforma donde empresas conectan, negocian y gestionan sus procesos de compra / venta, ya sea mediante venta directa o intermediario.
-            </Typography>
-            {/* Salto de línea visual aumentado */}
-            <Box sx={{ height: 70 }} />
-            <Typography
-              variant="h4"
-              fontWeight="bold"
-              sx={{
-                mb: 3,
-                fontSize: { md: '2.5rem' },
-                color: 'common.black',
-              }}
-            >
-              Te presentamos nuestra innovadora propuesta de valor
-            </Typography>
-            <Typography
-              variant="body1"
-              sx={{
-                fontSize: { md: '1.2rem' },
-                lineHeight: 1.7,
-                color: '#111', // Cambiado a negro
-                mb: 3,
-              }}
-            >
-              Desarrollamos el primer marketplace mayorista de Chile, ofreciendo un canal de ventas adicional a los proveedores que participan con nosotros. Los compradores podrán optar por una gran variedad de productos con descuentos por tramos, cotizaciones en línea y negociación de precios directamente con los proveedores.
-            </Typography>
-          </Box>
-        </Box>
-
-        {/* Right Column: Logo and Image for Desktop */}
-        <Box
-          sx={{
-            flex: 1,
-            width: '50%',
-          }}
-        >
-          {/* Logo for desktop - hijo 1 */}
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              height: 250,
-              mb: 0, // sin margen inferior
-              p: 0, // sin padding
-            }}
-          >
-            <Box
-              component="img"
-              src="/Landing Page/imagenuno.png"
-              alt="Sellsi Logo"
-              sx={{
-                height: 300,
-                width: 450,
-                objectFit: 'contain',
-                mb: 6,
-              }}
-            />
-          </Box>
-          {/* QuienesSomos.jpg image for desktop - hijo 2 */}
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              height: 250,
-              mt: 0, // sin margen superior
-              p: 0, // sin padding
-            }}
-          >
-            <Box
-              component="img"
-              src="/Landing Page/imagendos.png"
-              alt="Equipo Sellsi trabajando"
-              sx={{
-                width: 450,
-                height: 300,
-                objectFit: 'contain',
-                mt: 4,
-              }}
-            />
-          </Box>
-        </Box>
+      {/* Botón */}
+      <Box sx={{ mt: { xs: 4, sm: 5 }, display: 'flex', justifyContent: 'center' }}>
+        <PrimaryButton size="medium">
+          Agenda tu demo aquí
+        </PrimaryButton>
       </Box>
     </Box>
   );
