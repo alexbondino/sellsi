@@ -19,7 +19,7 @@
 | Archivo | Tipo | Descripción | Responsabilidad |
 |---------|------|------------|----------------|
 | Marketplace.jsx | Componente | Orquestador principal del marketplace con layout responsive | Coordinación de secciones principales y manejo de estado de UI |
-| useMarketplaceLogic.jsx | Hook | Hook centralizado que consolida lógica de filtros, ordenamiento y navegación | Abstracción de lógica de negocio y optimización de props |
+| useMarketplaceLogic (shared) | Hook | Hook centralizado (ubicado en `src/shared/hooks/marketplace/useMarketplaceLogic.js`) | Abstracción de lógica de negocio y optimización de props |
 | ProviderCatalog.jsx | Componente | Vista especializada para catálogo de proveedor | Renderizado de productos del proveedor con navegación específica |
 | RecommendedProducts.jsx | Componente | Sistema de recomendación de productos contextual | Sugerencias inteligentes basadas en perfil de usuario |
 | index.js | Barrel | Punto de entrada unificado del módulo | Exportación centralizada de componentes y hooks públicos |
@@ -30,7 +30,7 @@
 **Diagrama de dependencias:**
 ```
 Marketplace.jsx (Orquestador principal)
-├── useMarketplaceLogic.jsx (Estado centralizado)
+├── useMarketplaceLogic (shared hook)
 │   ├── hooks/useMarketplaceState.js
 │   ├── hooks/useProductSorting.js
 │   └── hooks/useScrollBehavior.js
@@ -53,7 +53,7 @@ Marketplace.jsx (Orquestador principal)
 - **Context implícito**: Router location state para navegación entre vistas
 ```
 Marketplace.jsx
-├─ useMarketplaceLogic.jsx
+├─ useMarketplaceLogic (shared)
 ├─ sections/
 │   ├─ SearchSection.jsx
 │   ├─ FilterSection.jsx

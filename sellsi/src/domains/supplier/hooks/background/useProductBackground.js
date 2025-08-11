@@ -81,7 +81,7 @@ const useProductBackground = create((set, get) => ({
       // 🔥 NUEVO: Procesar imágenes si están definidas (incluso si está vacío para limpiar)
       if (productData.imagenes !== undefined && imagesHook && typeof imagesHook.uploadImages === 'function') {
         updateProgress('images', 'processing')
-        console.log(`🔥 [processProductInBackground] Procesando imágenes: ${productData.imagenes?.length || 0} archivos`)
+        
         
         const result = await imagesHook.uploadImages(
           productData.imagenes || [], 
@@ -97,7 +97,7 @@ const useProductBackground = create((set, get) => ({
           throw new Error(`Error procesando imágenes: ${errorMsg}`)
         }
         
-        console.log(`✅ [processProductInBackground] Imágenes procesadas exitosamente`)
+        
         
         // 🔥 NUEVO: COMUNICACIÓN INTELIGENTE EN LUGAR DE REFRESH BLOQUEADO
         if (result.success && crudHook && crudHook.refreshProduct) {
@@ -260,23 +260,23 @@ const useProductBackground = create((set, get) => ({
           const errorMsg = priceTierResult.error || priceTierResult.errors?.join(', ') || 'Error desconocido procesando tramos de precio'
           throw new Error(`Error procesando priceTiers: ${errorMsg}`)
         }
+        // 🔄 Refrescar producto para que product_quantity_ranges se refleje en products[] inmediatamente
+        if (crudHook && crudHook.refreshProduct) {
+          try { await crudHook.refreshProduct(productId) } catch (e) { /* ignore */ }
+        }
       }
 
       // 3. 🔧 FIX CRÍTICO: Procesar imágenes SIEMPRE en modo edición (array vacío también)
-      console.log('🔄 [updateCompleteProduct] Verificando si procesar imágenes:', {
-        hasImages: updates.imagenes !== undefined,
-        imageCount: updates.imagenes?.length || 0,
-        hasSpecs: updates.specifications?.length > 0
-      })
+          
       
       if (updates.imagenes !== undefined || updates.specifications?.length > 0) {
-        console.log('📸 [updateCompleteProduct] Procesando imágenes/specs en background')
+        
         // ESPERAR el procesamiento para asegurar que se complete
         try {
           await get().processProductInBackground(productId, updates, hooks)
-          console.log('✅ [updateCompleteProduct] Procesamiento background completado')
+          
         } catch (error) {
-          console.error('❌ [updateCompleteProduct] Error en procesamiento background:', error)
+          
           set({ error: `Error procesando en background: ${error.message}` })
           return { success: false, error: error.message }
         }

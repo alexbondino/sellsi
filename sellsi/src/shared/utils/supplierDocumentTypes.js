@@ -48,13 +48,13 @@ const fetchSupplierDocumentTypesCentralized = async (supplierId) => {
   if (cached && 
       cached.timestamp && 
       Date.now() - cached.timestamp < globalSupplierCache.CACHE_DURATION) {
-    console.log('🎯 [SupplierCache] Cache HIT para supplierId:', supplierId, cached.documentTypes);
+    
     return cached.documentTypes;
   }
 
   try {
     globalSupplierCache.loadingSuppliers.add(supplierId);
-    console.log('🔄 [SupplierCache] Fetching document_types para supplierId:', supplierId);
+    
 
     const { data, error } = await supabase
       .from('users')
@@ -78,7 +78,7 @@ const fetchSupplierDocumentTypesCentralized = async (supplierId) => {
     };
     
     globalSupplierCache.suppliers.set(supplierId, cacheEntry);
-    console.log('💾 [SupplierCache] Guardado en cache:', supplierId, filteredTypes);
+    
     
     // Notificar subscribers
     notifySubscribers(supplierId, cacheEntry);
@@ -182,7 +182,7 @@ export const useSupplierDocumentTypes = (supplierId) => {
       if (cached && 
           cached.timestamp && 
           Date.now() - cached.timestamp < globalSupplierCache.CACHE_DURATION) {
-        console.log('🎯 [useSupplierDocumentTypes] Cache HIT inicial para:', supplierId);
+        
         setDocumentTypes(cached.documentTypes);
         setIsLoading(false);
         return;
@@ -251,7 +251,7 @@ export const useSupplierDocumentTypes = (supplierId) => {
 export const invalidateSupplierCache = (supplierId) => {
   if (!supplierId) return;
   
-  console.log('🗑️ [SupplierCache] Invalidando cache para supplierId:', supplierId);
+  
   globalSupplierCache.suppliers.delete(supplierId);
   
   // Notificar a subscribers para que refresquen sus datos
@@ -263,7 +263,7 @@ export const invalidateSupplierCache = (supplierId) => {
  * Usar en casos de logout o actualizaciones masivas
  */
 export const clearAllSupplierCache = () => {
-  console.log('🗑️ [SupplierCache] Limpiando todo el cache de proveedores');
+  
   globalSupplierCache.suppliers.clear();
   globalSupplierCache.loadingSuppliers.clear();
 };
@@ -303,7 +303,7 @@ export const getSupplierCacheStats = () => {
 export const preloadSupplierDocumentTypes = async (supplierIds = []) => {
   if (!Array.isArray(supplierIds) || supplierIds.length === 0) return;
   
-  console.log('🚀 [SupplierCache] Precargando document_types para proveedores:', supplierIds);
+  
   
   const promises = supplierIds.map(supplierId => 
     fetchSupplierDocumentTypesCentralized(supplierId)
@@ -311,7 +311,7 @@ export const preloadSupplierDocumentTypes = async (supplierIds = []) => {
   
   try {
     await Promise.all(promises);
-    console.log('✅ [SupplierCache] Precarga completada');
+    
   } catch (error) {
     console.error('❌ [SupplierCache] Error en precarga:', error);
   }

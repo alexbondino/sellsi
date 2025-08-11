@@ -28,6 +28,9 @@ export const useMarketplaceLogic = (options = {}) => {
     () => {
       const defaultConfig = {
         hasSideBar: false,
+  // 🚩 NUEVO FLAG: Permite que algunos consumidores (Marketplace público) limpien la búsqueda
+  // cuando se cambia entre vista de proveedores y productos.
+  clearSearchOnViewToggle: false,
         searchBarMarginLeft: {
           xs: 0,
           sm: 0,
@@ -62,6 +65,7 @@ export const useMarketplaceLogic = (options = {}) => {
     searchBarMarginLeft,
     categoryMarginLeft,
     titleMarginLeft,
+  clearSearchOnViewToggle,
   } = memoizedOptions;
 
   const theme = useTheme();
@@ -152,13 +156,14 @@ export const useMarketplaceLogic = (options = {}) => {
 
   // ✅ OPTIMIZACIÓN: Handler para el switch de vistas - memoizado estable
   const handleToggleProviderView = useCallback(() => {
-    setIsProviderView(prev => {
-      const newValue = !prev;
-      // Al cambiar la vista, resetea los filtros activos
-      resetFiltros();
-      return newValue;
-    });
-  }, [resetFiltros]);
+    // Opcionalmente limpiar búsqueda (comportamiento legacy de Marketplace público)
+    if (clearSearchOnViewToggle) {
+      setBusqueda('');
+    }
+    // Resetear filtros antes o después no afecta porque no depende de isProviderView interno
+    resetFiltros();
+    setIsProviderView(prev => !prev);
+  }, [clearSearchOnViewToggle, resetFiltros, setBusqueda]);
 
   // ✅ OPTIMIZACIÓN: Memoizar todos los handlers que se pasan como props
   const memoSetBusqueda = useCallback(v => setBusqueda(v), [setBusqueda]);

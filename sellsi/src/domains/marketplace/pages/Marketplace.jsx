@@ -9,7 +9,8 @@ import { Box } from '@mui/material';
 
 // Hook centralizado
 // Hook centralizado
-import useMarketplaceLogic from './useMarketplaceLogic.jsx';
+// 🔄 Migrado: usar hook compartido parametrizable
+import { useMarketplaceLogic } from '../../../shared/hooks';
 
 // Componentes de secciones
 import SearchSection from './sections/SearchSection.jsx';
@@ -53,7 +54,7 @@ const Marketplace = React.memo(() => {
   );
 
   const { searchSectionProps, filterSectionProps, productsSectionProps } =
-    useMarketplaceLogic(marketplaceConfig);
+    useMarketplaceLogic({ ...marketplaceConfig, clearSearchOnViewToggle: true });
 
   // ✅ MEJORA DE RENDIMIENTO: Memoización de configuración estática
   // Configuración de botones de navegación (sin botones para Marketplace)

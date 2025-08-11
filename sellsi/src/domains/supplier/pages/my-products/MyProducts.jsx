@@ -34,7 +34,8 @@ import { ThemeProvider } from '@mui/material/styles';
 import { 
   showProductSuccess, 
   showProductError,
-  showSuccessToast 
+  showSuccessToast,
+  showErrorToast
 } from '../../../../utils/toastHelpers';
 
 // Components
@@ -81,6 +82,7 @@ const SORT_OPTIONS = [
   { value: 'precio', label: 'Precio: menor a mayor' },
   { value: 'stock', label: 'Stock disponible' },
   { value: 'ventas', label: 'Más vendidos' },
+  { value: 'pausedStatus', label: 'Pausados/Inactivos' }, // 🆕 Inactivos (pausados) primero A-Z, luego activos A-Z
 ];
 
 const MyProducts = () => {
@@ -108,6 +110,7 @@ const MyProducts = () => {
     clearFilters,
     deleteProduct,
     clearError,
+  updateProduct,
   } = useSupplierProducts();
 
   // Advanced lazy loading hooks
@@ -127,6 +130,13 @@ const MyProducts = () => {
   // Estado local para el modal de eliminación
   const [deleteModal, setDeleteModal] = useState({
     isOpen: false, // <--- Cambiado de 'open' a 'isOpen'
+    product: null,
+    loading: false,
+  });
+
+  // Modal para pausar producto
+  const [pauseModal, setPauseModal] = useState({
+    isOpen: false,
     product: null,
     loading: false,
   });
@@ -217,8 +227,30 @@ const MyProducts = () => {
     }
   };
 
-  const handleViewStats = product => {
-    showProductSuccess(`Próximamente: Estadísticas de ${product.nombre}`, '📊');
+  // Abrir modal de pausa
+  const handlePauseProduct = product => {
+    setPauseModal({ isOpen: true, product, loading: false });
+  };
+
+  // Confirmar pausa del producto (toggle is_active=false)
+  const confirmPause = async () => {
+    if (!pauseModal.product) return;
+    setPauseModal(prev => ({ ...prev, loading: true }));
+    try {
+      // toggle: si está activo lo pausamos, si está pausado lo reactivamos
+      const newActive = !(pauseModal.product.activo === true);
+      await updateProduct(pauseModal.product.id, { is_active: newActive });
+      showProductSuccess(
+        newActive
+          ? `Producto "${pauseModal.product.nombre}" reactivado`
+          : `Producto "${pauseModal.product.nombre}" pausado`,
+        newActive ? '▶️' : '⏸️'
+      );
+      setPauseModal({ isOpen: false, product: null, loading: false });
+    } catch (e) {
+      showErrorToast(e.message || 'Error al pausar el producto');
+      setPauseModal(prev => ({ ...prev, loading: false }));
+    }
   };
 
   const handleSortChange = event => {
@@ -422,16 +454,16 @@ const MyProducts = () => {
                               sx={{ fontWeight: 600, lineHeight: 1.2 }}
                             >
                               {/* 🆕 MOSTRAR RANGO: Valor mínimo - máximo */}
-                              {stats.inventoryRange && stats.inventoryRange.min !== stats.inventoryRange.max ? (
-                                `${formatPrice(stats.inventoryRange.min)} - ${formatPrice(stats.inventoryRange.max)}`
-                              ) : (
-                                formatPrice(stats.totalValue)
-                              )}
+                              {stats.inventoryRange && stats.inventoryRange.min !== stats.inventoryRange.max
+                                ? `${formatPrice(stats.inventoryRange.min)} - ${formatPrice(stats.inventoryRange.max)}`
+                                : (stats.hasTieredProducts
+                                    ? formatPrice(stats.inventoryRange?.min || stats.totalValue)
+                                    : formatPrice(stats.totalValue))}
                             </Typography>
                             <Typography variant="body2" color="text.secondary">
                               Valor del inventario
                               {/* 🆕 INDICADOR DE RANGO: Mostrar % de variación si existe */}
-                              {stats.inventoryRange && stats.inventoryRange.spreadPercentage > 0 && (
+                              {stats.inventoryRange && stats.inventoryRange.min !== stats.inventoryRange.max && stats.inventoryRange.spreadPercentage > 0 && (
                                 ` (±${stats.inventoryRange.spreadPercentage}%)`
                               )}
                             </Typography>
@@ -439,6 +471,16 @@ const MyProducts = () => {
                         </Box>
                       </Box>
                     </Grid>
+                    {/* DEBUG: Mostrar datos de rango cuando hay tramos (eliminar luego) */}
+                    {process.env.NODE_ENV === 'development' && stats.hasTieredProducts && (
+                      <Grid item xs={12}>
+                        <Box sx={{ p: 2, borderTop: '1px dashed', borderColor: 'divider' }}>
+                          <Typography variant="caption" color="text.secondary">
+                            Debug rango inventario: min={stats.inventoryRange?.min?.toLocaleString('es-CL')} max={stats.inventoryRange?.max?.toLocaleString('es-CL')} spread={stats.inventoryRange?.spread?.toLocaleString('es-CL')} tiers={stats.hasTieredProducts ? 'sí' : 'no'}
+                          </Typography>
+                        </Box>
+                      </Grid>
+                    )}
                   </Grid>
                 </Box>
               </Paper>
@@ -648,7 +690,7 @@ const MyProducts = () => {
                           type="supplier"
                           onEdit={handleEditProduct}
                           onDelete={handleDeleteProduct}
-                          onViewStats={handleViewStats}
+                          onViewStats={handlePauseProduct} // reutilizamos prop existente para acción de pausa
                           isDeleting={operationStates.deleting?.[product.id]}
                           isUpdating={operationStates.updating?.[product.id]}
                           isProcessing={operationStates.processing?.[product.id]}
@@ -736,6 +778,22 @@ const MyProducts = () => {
         {deleteModal.product
           ? `¿Estás seguro de que deseas eliminar "${deleteModal.product.nombre}"? Esta acción no se puede deshacer.`
           : ''}
+      </Modal>
+
+      {/* Modal de pausar / reactivar producto */}
+      <Modal
+        isOpen={pauseModal.isOpen}
+        onClose={() => setPauseModal({ isOpen: false, product: null, loading: false })}
+        onSubmit={confirmPause}
+        type={pauseModal.product?.activo ? MODAL_TYPES.WARNING : MODAL_TYPES.INFO}
+        title={pauseModal.product?.activo ? 'Pausar producto' : 'Reactivar producto'}
+        loading={pauseModal.loading}
+      >
+        {pauseModal.product && (
+          pauseModal.product.activo
+            ? `¿Seguro que deseas pausar "${pauseModal.product.nombre}"? Dejará de mostrarse en el Marketplace hasta que lo reactives.`
+            : `¿Deseas reactivar "${pauseModal.product.nombre}"? Volverá a mostrarse en el Marketplace.`
+        )}
       </Modal>
 
       {/* Modal de validación de información bancaria */}

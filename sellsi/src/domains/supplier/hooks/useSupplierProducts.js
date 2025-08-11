@@ -25,7 +25,7 @@ import useProductBackground from './background/useProductBackground'
 import useProductCleanup from './cleanup/useProductCleanup'
 import useSupplierProductFilters from './useSupplierProductFilters'
 import { isProductActive } from '../../../utils/productActiveStatus'
-import { calculateInventoryStats } from '../utils/centralizedCalculations' // 🔧 IMPORTAR FUNCIÓN CENTRALIZADA CON RANGOS
+import { calculateInventoryStats } from '../utils/centralizedCalculations'
 import { supabase } from '../../../services/supabase'
 
 /**
@@ -122,35 +122,8 @@ export const useSupplierProducts = (options = {}) => {
     sortOrder,
   ])
 
-  // 🔧 ESTADÍSTICAS MEJORADAS: Ahora usando lógica centralizada con rangos completos
-  const stats = useMemo(() => {
-    const basicStats = {
-      total: crud.products.length,
-      active: crud.products.filter(isProductActive).length,
-      inStock: crud.products.filter(p => (p.productqty || 0) > 0).length,
-      lowStock: crud.products.filter(p => {
-        const stock = p.productqty || 0;
-        return stock > 0 && stock <= 10;
-      }).length,
-      outOfStock: crud.products.filter(p => (p.productqty || 0) === 0).length,
-    };
-
-    // 🎯 USAR FUNCIÓN CENTRALIZADA: Obtener estadísticas completas con rangos
-    const inventoryStats = calculateInventoryStats(crud.products);
-    
-    return {
-      ...basicStats,
-      inactive: basicStats.total - basicStats.active,
-      // Mantener compatibilidad con código existente
-      totalValue: inventoryStats.value.totalValue,
-      averagePrice: basicStats.total > 0 
-        ? crud.products.reduce((sum, p) => sum + (p.price || 0), 0) / basicStats.total 
-        : 0,
-      // 🆕 NUEVAS ESTADÍSTICAS: Información de rangos de inventario
-      inventoryRange: inventoryStats.range,
-      inventoryScenarios: inventoryStats.value,
-    };
-  }, [crud.products])
+  // (stats se recalcula más abajo una vez que uiProducts incluye priceTiers)
+  const statsPlaceholder = null
 
   // ============================================================================
   // EFECTOS - CARGA AUTOMÁTICA DE DATOS
@@ -249,6 +222,126 @@ export const useSupplierProducts = (options = {}) => {
       }
     })
   }, [filteredProducts])
+
+  // 🔄 ESTADÍSTICAS (recalculadas DESPUÉS de construir uiProducts para asegurar que priceTiers estén presentes)
+  const stats = useMemo(() => {
+    const sourceProducts = crud.products // productos crudos para estados básicos
+    const enrichedProducts = uiProducts   // productos enriquecidos (asegura priceTiers en memoria)
+
+    const basicStats = {
+      total: sourceProducts.length,
+      active: sourceProducts.filter(isProductActive).length,
+      inStock: sourceProducts.filter(p => (p.productqty || 0) > 0).length,
+      lowStock: sourceProducts.filter(p => {
+        const stock = p.productqty || 0
+        return stock > 0 && stock <= 10
+      }).length,
+      outOfStock: sourceProducts.filter(p => (p.productqty || 0) === 0).length
+    }
+
+    // Usar productos enriquecidos para cálculo de rangos (porque incluyen priceTiers garantizados)
+    // Adaptar a estructura esperada: priceTiers con min_quantity y price
+    const adaptedForInventory = enrichedProducts.map(p => ({
+      productqty: p.stock,
+      stock: p.stock,
+      price: p.precio,
+      priceTiers: (p.priceTiers || []).map(t => ({
+        min_quantity: t.min_quantity ?? t.min ?? t.min_quantity, // tolerante a nombres
+        price: t.price ?? t.precio ?? t.price
+      }))
+    }))
+
+    const inventoryStats = calculateInventoryStats(adaptedForInventory)
+
+    // Detectar si existen productos con tramos y más de un precio distinto
+    const tieredProducts = adaptedForInventory.filter(p => Array.isArray(p.priceTiers) && p.priceTiers.length > 0)
+    const multiPriceTieredProducts = tieredProducts.filter(p => {
+      const distinct = [...new Set(p.priceTiers.map(t => Number(t.price) || 0))]
+      return distinct.length > 1
+    })
+
+    // Fallback de rango: si el algoritmo centralizado devolvió min==max pero hay múltiples precios en tramos
+    let range = inventoryStats.range
+    if (range.min === range.max && multiPriceTieredProducts.length > 0) {
+      // Recalcular rango simple: usar precios mínimo y máximo de cada producto * su stock
+      const altMin = adaptedForInventory.reduce((acc, p) => {
+        const stock = p.productqty || p.stock || 0
+        if (p.priceTiers?.length > 0) {
+          const prices = p.priceTiers.map(t => Number(t.price) || 0)
+          if (prices.length) {
+            return acc + Math.min(...prices) * stock
+          }
+        }
+        return acc + (Number(p.price) || 0) * stock
+      }, 0)
+      const altMax = adaptedForInventory.reduce((acc, p) => {
+        const stock = p.productqty || p.stock || 0
+        if (p.priceTiers?.length > 0) {
+          const prices = p.priceTiers.map(t => Number(t.price) || 0)
+          if (prices.length) {
+            return acc + Math.max(...prices) * stock
+          }
+        }
+        return acc + (Number(p.price) || 0) * stock
+      }, 0)
+      if (altMax !== altMin) {
+        range = {
+          min: altMin,
+            max: altMax,
+            spread: altMax - altMin,
+            spreadPercentage: altMin > 0 ? (((altMax - altMin) / altMin) * 100).toFixed(1) : 0
+        }
+      }
+    }
+
+    // Segunda estrategia (si todavía no hay rango): sumarizando por precio mínimo y máximo por producto
+    if (range.min === range.max && tieredProducts.length > 0) {
+      const summary = adaptedForInventory.reduce((acc, p) => {
+        const stock = p.productqty || p.stock || 0
+        if (!stock) return acc
+        if (p.priceTiers?.length > 0) {
+          const rawPrices = p.priceTiers.map(t => Number(t.price) || 0).filter(n => n > 0)
+          if (rawPrices.length) {
+            const minP = Math.min(...rawPrices)
+            const maxP = Math.max(...rawPrices)
+            acc.minTotal += minP * stock
+            acc.maxTotal += maxP * stock
+            acc.products++
+            if (maxP > minP) acc.productsWithVariation++
+          }
+        } else {
+          const basePrice = Number(p.price) || 0
+          acc.minTotal += basePrice * stock
+          acc.maxTotal += basePrice * stock
+        }
+        return acc
+      }, { minTotal: 0, maxTotal: 0, products: 0, productsWithVariation: 0 })
+
+      if (summary.maxTotal !== summary.minTotal) {
+        range = {
+          min: summary.minTotal,
+          max: summary.maxTotal,
+          spread: summary.maxTotal - summary.minTotal,
+          spreadPercentage: summary.minTotal > 0 ? (((summary.maxTotal - summary.minTotal) / summary.minTotal) * 100).toFixed(1) : 0,
+          _source: 'simpleTierAggregation'
+        }
+      }
+    }
+
+    const resultStats = {
+      ...basicStats,
+      inactive: basicStats.total - basicStats.active,
+      totalValue: inventoryStats.value.totalValue,
+      averagePrice: basicStats.total > 0
+        ? sourceProducts.reduce((sum, p) => sum + (p.price || 0), 0) / basicStats.total
+        : 0,
+      inventoryRange: range,
+      inventoryScenarios: inventoryStats.value,
+      hasTieredProducts: tieredProducts.length > 0
+    }
+
+    return resultStats
+  }, [crud.products, uiProducts])
 
   // Reset completo
   const reset = () => {

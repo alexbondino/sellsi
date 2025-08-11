@@ -222,7 +222,7 @@ export const generateQuotationPDF = async ({
           ),
           React.createElement(View, { style: { marginBottom: 30 } },
             React.createElement(Text, { style: { fontSize: 10, color: '#000', fontStyle: 'italic' } }, 
-              '* Los precios están expresados en pesos chilenos (CLP).')
+              '* Valores expresados en pesos chilenos (CLP).')
           ),
 
           // Firma (idéntica a HTML)
@@ -605,7 +605,7 @@ const showHTMLPreview = async ({ product, quantity, unitPrice, tiers }) => {
           * La presente cotización tendrá una vigencia de 48 horas, y estará sujeta a la disponibilidad del proveedor.
         </div>
         <div class="note-text">
-          * Los precios están expresados en pesos chilenos (CLP).
+          * Valores expresados en pesos chilenos (CLP).
         </div>
 
         <!-- Firma -->

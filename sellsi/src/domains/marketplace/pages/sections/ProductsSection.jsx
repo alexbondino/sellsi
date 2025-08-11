@@ -239,8 +239,8 @@ const ProductsSection = React.memo(
           }
         });
         
-        const testProviders = Array.from(providersMap.values()).slice(0, 6);
-        return testProviders;
+  // ✅ ANTERIOR: Se limitaba a 6 proveedores (slice). Ahora devolvemos todos los proveedores filtrados.
+  return Array.from(providersMap.values());
       }
 
       // ✅ OPTIMIZACIÓN: Evitar crear objetos nuevos si no es necesario
@@ -658,21 +658,21 @@ const ProductsSection = React.memo(
                 }}
               >
                 <Typography variant="h6" color="text.secondary" sx={{ mb: 2 }}>
-                  😞 No se encontraron productos
+                  {isProviderView ? '😞 No se encontraron proveedores' : '😞 No se encontraron productos'}
                 </Typography>
                 <Typography
                   variant="body2"
                   color="text.secondary"
                   sx={{ mb: 3 }}
                 >
-                  Intenta ajustar los filtros o realiza una búsqueda diferente
+                  {isProviderView ? 'Verifica el nombre del proveedor o intenta otra búsqueda.' : 'Intenta ajustar los filtros o realiza una búsqueda diferente'}
                 </Typography>{' '}
                 <Button
                   variant="outlined"
                   onClick={resetFiltros}
                   sx={{ mt: 2 }}
                 >
-                  Limpiar filtros
+                  {isProviderView ? 'Limpiar búsqueda' : 'Limpiar filtros'}
                 </Button>{' '}
               </Paper>
             ) : (

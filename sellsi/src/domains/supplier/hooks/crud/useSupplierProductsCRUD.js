@@ -50,6 +50,9 @@ const useSupplierProductsCRUD = create((set, get) => ({
 
       if (prodError) throw prodError
 
+      // Debug: log raw product_quantity_ranges counts
+      
+
       // Procesar productos para incluir relaciones
       const processedProducts =
         products?.map((product) => ({
@@ -58,6 +61,30 @@ const useSupplierProductsCRUD = create((set, get) => ({
           images: product.product_images || [],
           delivery_regions: product.product_delivery_regions || [],
         })) || []
+
+      // Fallback: si TODOS los priceTiers están vacíos, intentar recuperar en un query separado (posible fallo de relación / RLS)
+      const allEmpty = processedProducts.length > 0 && processedProducts.every(p => !p.priceTiers || p.priceTiers.length === 0)
+  if (allEmpty) {
+        const productIds = processedProducts.map(p => p.productid)
+        const { data: standaloneRanges, error: rangesError } = await supabase
+          .from('product_quantity_ranges')
+          .select('*')
+          .in('product_id', productIds)
+          .order('min_quantity', { ascending: true })
+        if (!rangesError && Array.isArray(standaloneRanges) && standaloneRanges.length > 0) {
+          const grouped = standaloneRanges.reduce((acc, r) => {
+            (acc[r.product_id] = acc[r.product_id] || []).push(r)
+            return acc
+          }, {})
+          processedProducts.forEach(p => {
+            if (grouped[p.productid]) {
+              p.priceTiers = grouped[p.productid]
+            }
+          })
+          
+        }
+      }
+
 
       set({
         products: processedProducts,
@@ -125,7 +152,8 @@ const useSupplierProductsCRUD = create((set, get) => ({
         precio: product.price,
         stock: product.productqty,
         images: [],
-        priceTiers: [],
+        // Optimistic: si createBasicProduct recibió priceTiers (vía createCompleteProduct) conservarlos para que stats detecten tramos
+        priceTiers: Array.isArray(productData.priceTiers) ? productData.priceTiers : [],
         delivery_regions: [],
       }
 
@@ -225,7 +253,7 @@ const useSupplierProductsCRUD = create((set, get) => ({
       if (error) throw error
 
       // 3. Log de limpieza para auditoría
-      console.log(`Producto ${productId} eliminado. Archivos limpiados: ${cleanupResult.cleaned}`)
+      
 
       // Remover producto del estado
       set((state) => ({
@@ -262,8 +290,7 @@ const useSupplierProductsCRUD = create((set, get) => ({
    * Refrescar un producto específico
    */
   refreshProduct: async (productId) => {
-    try {
-      console.log('[DEBUG] Refreshing product from database:', productId)
+  try {
       
       const { data: product, error } = await supabase
         .from('products')
@@ -278,15 +305,7 @@ const useSupplierProductsCRUD = create((set, get) => ({
 
       if (error) throw error
 
-      console.log('[DEBUG] Fresh product data from DB:', {
-        productId,
-        imagesCount: product.product_images?.length || 0,
-        images: product.product_images?.map(img => ({
-          url: img.image_url?.substring(img.image_url.lastIndexOf('/') + 1) || 'no-url',
-          thumbnail: img.thumbnail_url?.substring(img.thumbnail_url.lastIndexOf('/') + 1) || 'no-thumbnail',
-          fullUrl: img.image_url
-        }))
-      })
+      
 
       const processedProduct = {
         ...product,
@@ -296,12 +315,7 @@ const useSupplierProductsCRUD = create((set, get) => ({
       }
 
       set((state) => {
-        const oldProduct = state.products.find(p => p.productid === productId)
-        console.log('[DEBUG] Replacing product in state:', {
-          productId,
-          oldImagesCount: oldProduct?.images?.length || 0,
-          newImagesCount: processedProduct.images?.length || 0
-        })
+  const oldProduct = state.products.find(p => p.productid === productId)
         
         return {
           products: state.products.map((p) =>
@@ -312,7 +326,7 @@ const useSupplierProductsCRUD = create((set, get) => ({
 
       return { success: true, data: processedProduct }
     } catch (error) {
-      console.error('[DEBUG] Error refreshing product:', error)
+      
       set({ error: `Error refrescando producto: ${error.message}` })
       return { success: false, error: error.message }
     }

@@ -70,10 +70,10 @@ export class StorageCleanupService {
     const allFiles = [];
     
     try {
-      console.log(`🔍 [getProductFilesFromStorage] Buscando archivos para producto ${productId}`)
+      
       
       // 🔥 MEJORADO: Buscar en todos los directorios del bucket
-      console.log(`🔍 [getProductFilesFromStorage] Listando directorios raíz del bucket ${this.IMAGE_BUCKET}`)
+      
       const { data: allFolders, error: foldersError } = await supabase.storage
         .from(this.IMAGE_BUCKET)
         .list('', { limit: 1000 });
@@ -83,13 +83,13 @@ export class StorageCleanupService {
         return allFiles;
       }
 
-      console.log(`📂 [getProductFilesFromStorage] Encontrados ${allFolders?.length || 0} elementos en la raíz`)
+      
 
       // Buscar en cada directorio de supplier
       for (const folder of allFolders || []) {
         if (folder.name && folder.id === null) { // Es un directorio
           const supplierPath = folder.name;
-          console.log(`🔍 [getProductFilesFromStorage] Explorando directorio de supplier: ${supplierPath}`)
+          
           
           // Buscar archivos en este directorio de supplier
           const { data: supplierFiles, error: supplierError } = await supabase.storage
@@ -97,7 +97,7 @@ export class StorageCleanupService {
             .list(supplierPath, { limit: 1000 });
 
           if (!supplierError && supplierFiles) {
-            console.log(`📁 [getProductFilesFromStorage] Encontrados ${supplierFiles.length} elementos en ${supplierPath}`)
+            
             
             // Buscar subdirectorio del producto o archivos que contengan el productId
             for (const file of supplierFiles) {
@@ -105,14 +105,14 @@ export class StorageCleanupService {
               
               if (file.id === null) { // Es un subdirectorio
                 if (file.name === productId) {
-                  console.log(`🎯 [getProductFilesFromStorage] Encontrado directorio del producto: ${fullPath}`)
+                  
                   // Este es el directorio del producto, listar sus archivos
                   const { data: productFiles, error: productError } = await supabase.storage
                     .from(this.IMAGE_BUCKET)
                     .list(`${supplierPath}/${productId}`, { limit: 1000 });
 
                   if (!productError && productFiles) {
-                    console.log(`📄 [getProductFilesFromStorage] Encontrados ${productFiles.length} archivos en directorio del producto`)
+                    
                     allFiles.push(...productFiles.map(pFile => ({
                       bucket: this.IMAGE_BUCKET,
                       path: `${supplierPath}/${productId}/${pFile.name}`,
@@ -124,7 +124,6 @@ export class StorageCleanupService {
               } else {
                 // Es un archivo, verificar si pertenece al producto
                 if (file.name.includes(productId)) {
-                  console.log(`📄 [getProductFilesFromStorage] Encontrado archivo del producto: ${fullPath}`)
                   allFiles.push({
                     bucket: this.IMAGE_BUCKET,
                     path: fullPath,
@@ -135,7 +134,7 @@ export class StorageCleanupService {
               }
             }
           } else if (supplierError) {
-            console.warn(`⚠️ [getProductFilesFromStorage] Error listando ${supplierPath}:`, supplierError)
+            
           }
         }
       }
@@ -187,7 +186,7 @@ export class StorageCleanupService {
         }
       }
 
-      console.log(`✅ [getProductFilesFromStorage] Encontrados ${allFiles.length} archivos para producto ${productId}`)
+      
       return allFiles;
     } catch (error) {
       console.error(`❌ [getProductFilesFromStorage] Error:`, error);
@@ -412,10 +411,10 @@ export class StorageCleanupService {
     };
 
     try {
-      console.log(`🔥 [deleteAllProductImages] Eliminando TODAS las imágenes del producto ${productId}`)
+      
       
       // 1. Eliminar TODOS los registros de la BD para este producto
-      console.log(`🔍 [deleteAllProductImages] Paso 1: Eliminando registros de la BD`)
+      
       const { error: dbDeleteError, count: deletedCount } = await supabase
         .from('product_images')
         .delete({ count: 'exact' })
@@ -428,30 +427,30 @@ export class StorageCleanupService {
         return results;
       }
 
-      console.log(`🗑️ [deleteAllProductImages] Eliminados ${deletedCount || 0} registros de la BD`)
+      
 
       // 2. Obtener TODOS los archivos del producto desde storage
-      console.log(`🔍 [deleteAllProductImages] Paso 2: Buscando archivos en storage`)
+      
       const storageFiles = await this.getProductFilesFromStorage(productId);
-      console.log(`📂 [deleteAllProductImages] Encontrados ${storageFiles.length} archivos en storage:`, storageFiles.map(f => f.path))
+      
 
       // 3. Eliminar TODOS los archivos del storage
       if (storageFiles.length > 0) {
-        console.log(`🔍 [deleteAllProductImages] Paso 3: Eliminando ${storageFiles.length} archivos del storage`)
+        
         const deleteResult = await this.removeFiles(storageFiles);
         results.cleaned = deleteResult.cleaned;
         results.errors.push(...deleteResult.errors);
-        console.log(`🧹 [deleteAllProductImages] Eliminados ${deleteResult.cleaned} archivos del storage`)
+        
       } else {
-        console.log(`ℹ️ [deleteAllProductImages] No se encontraron archivos en storage para eliminar`)
+        
       }
 
-      console.log(`✅ [deleteAllProductImages] Proceso completado: ${results.cleaned} archivos eliminados`)
+      
       return results;
     } catch (error) {
       results.success = false;
       results.errors.push(`Error general eliminando producto: ${error.message}`);
-      console.error(`❌ [deleteAllProductImages] Error:`, error);
+      
       return results;
     }
   }
@@ -464,30 +463,30 @@ export class StorageCleanupService {
   static async removeFiles(files) {
     const results = { cleaned: 0, errors: [] };
 
-    console.log(`🔥 [removeFiles] Iniciando eliminación de ${files.length} archivos`)
+    
     
     for (const file of files) {
       try {
-        console.log(`🗑️ [removeFiles] Eliminando archivo: ${file.bucket}/${file.path}`)
+        
         
         const { error } = await supabase.storage
           .from(file.bucket)
           .remove([file.path]);
 
         if (error) {
-          console.error(`❌ [removeFiles] Error eliminando ${file.path}:`, error)
+          
           results.errors.push(`Error eliminando ${file.path}: ${error.message}`);
         } else {
           results.cleaned++;
-          console.log(`✅ [removeFiles] Eliminado exitosamente: ${file.bucket}/${file.path}`);
+          
         }
       } catch (error) {
-        console.error(`❌ [removeFiles] Error inesperado eliminando ${file.path}:`, error)
+        
         results.errors.push(`Error inesperado eliminando ${file.path}: ${error.message}`);
       }
     }
 
-    console.log(`📊 [removeFiles] Resultado final: ${results.cleaned} eliminados, ${results.errors.length} errores`)
+    
     return results;
   }
 }
