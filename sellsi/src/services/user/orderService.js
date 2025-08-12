@@ -25,7 +25,7 @@ class OrderService {
       if (!uuidRegex.test(buyerId)) throw new Error('ID de comprador no tiene formato UUID válido');
 
       // Pedidos ordenados con los más recientes primero
-      const { data, error } = await supabase
+  const { data, error } = await supabase
         .from('orders')
         .select(`
           id,
@@ -48,57 +48,83 @@ class OrderService {
       if (error) throw error;
       if (!data || data.length === 0) return [];
 
-      return data.map(row => {
-        // items puede venir como array de objetos con (product_id, name, quantity, price, ...)
+      // 1) Parse all items once and collect supplier_ids
+      const parsed = data.map(row => {
         let parsedItems = [];
-        if (Array.isArray(row.items)) {
-          parsedItems = row.items;
-        } else if (row.items && typeof row.items === 'string') {
-          try { parsedItems = JSON.parse(row.items); } catch (_) { parsedItems = []; }
-        } else if (row.items && typeof row.items === 'object') {
-          // podría venir como objeto con key items
-          if (Array.isArray(row.items.items)) parsedItems = row.items.items; else parsedItems = [row.items];
-        }
+        if (Array.isArray(row.items)) parsedItems = row.items;
+        else if (row.items && typeof row.items === 'string') { try { parsedItems = JSON.parse(row.items); } catch (_) { parsedItems = []; } }
+        else if (row.items && typeof row.items === 'object') { parsedItems = Array.isArray(row.items.items) ? row.items.items : [row.items]; }
+        return { row, parsedItems };
+      });
 
-        // Normalizamos items al formato usado por BuyerOrders (similar a carts.cart_items)
-        const normalizedItems = parsedItems.map((it, idx) => ({
-          cart_items_id: it.cart_items_id || it.id || `${row.id}-itm-${idx}`,
-          product_id: it.product_id || it.productid || it.id || null,
-          quantity: it.quantity || 1,
-          price_at_addition: it.price_at_addition || it.price || 0,
-          price_tiers: it.price_tiers || null,
-          product: {
-            productid: it.product_id || it.productid || null,
-            name: it.name || it.productnm || 'Producto',
-            price: it.price || it.price_at_addition || 0,
-            category: it.category || null,
-            description: it.description || '',
-            supplier_id: it.supplier_id || null,
-            image_url: it.image_url || null,
-            thumbnail_url: it.thumbnail_url || null,
-            thumbnails: it.thumbnails || null,
-            supplier: {
-              name: it.supplier_name || 'Proveedor',
-              email: it.supplier_email || ''
+      const supplierIdsSet = new Set();
+      parsed.forEach(({ parsedItems }) => {
+        parsedItems.forEach(it => { if (it?.supplier_id) supplierIdsSet.add(it.supplier_id); });
+      });
+      const supplierIds = Array.from(supplierIdsSet);
+
+      // 2) Batch fetch suppliers to enrich name/verified
+      let suppliersMap = new Map();
+      if (supplierIds.length > 0) {
+        const { data: suppliers, error: supErr } = await supabase
+          .from('users')
+          .select('user_id, user_nm, verified, email')
+          .in('user_id', supplierIds);
+        if (!supErr && suppliers) {
+          suppliersMap = new Map(suppliers.map(u => [u.user_id, u]));
+        }
+      }
+
+      // 3) Build final normalized orders with enriched supplier
+      return parsed.map(({ row, parsedItems }) => {
+        const normalizedItems = parsedItems.map((it, idx) => {
+          const sId = it.supplier_id || null;
+          const su = sId ? suppliersMap.get(sId) : null;
+          return {
+            cart_items_id: it.cart_items_id || it.id || `${row.id}-itm-${idx}`,
+            product_id: it.product_id || it.productid || it.id || null,
+            quantity: it.quantity || 1,
+            price_at_addition: it.price_at_addition || it.price || 0,
+            price_tiers: it.price_tiers || null,
+            product: {
+              id: it.product_id || it.productid || it.id || null,
+              productid: it.product_id || it.productid || null,
+              name: it.name || it.productnm || 'Producto',
+              price: it.price || it.price_at_addition || 0,
+              category: it.category || null,
+              description: it.description || '',
+              supplier_id: sId,
+              image_url: it.image_url || null,
+              thumbnail_url: it.thumbnail_url || null,
+              thumbnails: it.thumbnails || null,
+              imagen: it.image_url || it.thumbnail_url || null,
+              supplier: {
+                name: (su?.user_nm) || it.supplier_name || 'Proveedor desconocido',
+                email: (su?.email) || it.supplier_email || '',
+                verified: !!su?.verified
+              },
+              proveedor: (su?.user_nm) || it.supplier_name || 'Proveedor desconocido',
+              verified: !!su?.verified,
+              supplierVerified: !!su?.verified
             }
-          }
-        }));
+          };
+        });
 
         return {
           order_id: row.id,
-            cart_id: null,
-            buyer_id: row.user_id,
-            status: row.status || 'pending',
-            payment_status: row.payment_status || 'pending',
-            created_at: row.created_at,
-            updated_at: row.updated_at,
-            buyer: { user_id: row.user_id },
-            delivery_address: null,
-            items: normalizedItems,
-            total_items: normalizedItems.length,
-            total_quantity: normalizedItems.reduce((s,i)=>s + (i.quantity||0),0),
-            total_amount: row.total || normalizedItems.reduce((s,i)=>s + (i.price_at_addition * i.quantity),0),
-            is_payment_order: true
+          cart_id: null,
+          buyer_id: row.user_id,
+          status: row.status || 'pending',
+          payment_status: row.payment_status || 'pending',
+          created_at: row.created_at,
+          updated_at: row.updated_at,
+          buyer: { user_id: row.user_id },
+          delivery_address: null,
+          items: normalizedItems,
+          total_items: normalizedItems.length,
+          total_quantity: normalizedItems.reduce((s,i)=>s + (i.quantity||0),0),
+          total_amount: row.total || normalizedItems.reduce((s,i)=>s + (i.price_at_addition * i.quantity),0),
+          is_payment_order: true
         };
       });
     } catch (error) {
@@ -120,6 +146,22 @@ class OrderService {
       })
       .subscribe();
     return () => { try { supabase.removeChannel(channel); } catch (_) {} };
+  }
+
+  /**
+   * Obtiene solo estados mínimos de orders para un comprador (para polling liviano)
+   */
+  async getPaymentStatusesForBuyer(buyerId) {
+    if (!buyerId) throw new Error('ID de comprador es requerido');
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(buyerId)) throw new Error('ID de comprador no tiene formato UUID válido');
+    const { data, error } = await supabase
+      .from('orders')
+      .select('id, payment_status, status, updated_at')
+      .eq('user_id', buyerId)
+      .order('updated_at', { ascending: false });
+    if (error) throw error;
+    return data || [];
   }
   /**
    * Obtiene todos los pedidos para un proveedor específico
@@ -633,7 +675,8 @@ class OrderService {
               ),
               users!products_supplier_id_fkey (
                 user_nm,
-                email
+                email,
+                verified
               )
             )
           )
@@ -701,7 +744,7 @@ class OrderService {
             delivery_address: deliveryAddress,
 
             // Items del pedido
-            items: cart.cart_items.map(item => ({
+      items: cart.cart_items.map(item => ({
               cart_items_id: item.cart_items_id,
               product_id: item.product_id,
               quantity: item.quantity,
@@ -710,21 +753,28 @@ class OrderService {
               
               // Información del producto
               product: {
+        id: item.products.productid, // para hooks de thumbnails
                 productid: item.products.productid,
                 name: item.products.productnm,
                 price: item.products.price,
                 category: item.products.category,
                 description: item.products.description,
                 supplier_id: item.products.supplier_id,
-                image_url: item.products.product_images?.[0]?.image_url,
-                thumbnail_url: item.products.product_images?.[0]?.thumbnail_url,
-                thumbnails: item.products.product_images?.[0]?.thumbnails,
+        image_url: item.products.product_images?.[0]?.image_url,
+        thumbnail_url: item.products.product_images?.[0]?.thumbnail_url,
+        thumbnails: item.products.product_images?.[0]?.thumbnails,
+        imagen: item.products.product_images?.[0]?.image_url, // fallback genérico usado por UniversalProductImage
                 
                 // Información del proveedor
                 supplier: {
                   name: item.products.users?.user_nm || 'Proveedor desconocido',
-                  email: item.products.users?.email || 'Email no disponible'
-                }
+                  email: item.products.users?.email || 'Email no disponible',
+                  verified: !!item.products.users?.verified
+                },
+                // Aliases de compatibilidad con otros componentes
+                proveedor: item.products.users?.user_nm || 'Proveedor desconocido',
+                verified: !!item.products.users?.verified,
+                supplierVerified: !!item.products.users?.verified
               }
             })),
 

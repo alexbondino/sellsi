@@ -37,7 +37,7 @@ export const useBuyerOrders = buyerId => {
           ...paymentOrders.filter(o => o.payment_status !== 'pending'),
         ];
 
-        setOrders(merged);
+  setOrders(merged);
       } catch (err) {
         setError(err.message || 'Error al cargar los pedidos');
       } finally {
@@ -73,7 +73,30 @@ export const useBuyerOrders = buyerId => {
     const delay = getNextDelay(attempt);
     pollTimeoutRef.current = setTimeout(async () => {
       pollAttemptRef.current += 1;
-      await fetchOrders();
+      // Poll ligero: obtener solo estados y aplicar diffs
+      try {
+        const statuses = await orderService.getPaymentStatusesForBuyer(buyerId);
+        if (Array.isArray(statuses) && statuses.length) {
+          setOrders(prev => {
+            // Map para rápido lookup
+            const statusMap = new Map(statuses.map(s => [s.id, s.payment_status]));
+            let changed = false;
+            const next = prev.map(ord => {
+              if (ord.is_payment_order && statusMap.has(ord.order_id)) {
+                const newStatus = statusMap.get(ord.order_id);
+                if (newStatus && newStatus !== ord.payment_status) {
+                  changed = true;
+                  return { ...ord, payment_status: newStatus };
+                }
+              }
+              return ord;
+            });
+            return changed ? next : prev;
+          });
+        }
+      } catch (_) {
+        // Silencio: polling no debe romper UX
+      }
       scheduleNextPoll();
     }, delay);
   };
@@ -91,9 +114,30 @@ export const useBuyerOrders = buyerId => {
       subscriptionRef.current();
     }
     subscriptionRef.current = orderService.subscribeToBuyerPaymentOrders(buyerId, () => {
-      // Refetch rápido ante cualquier cambio y reiniciar estrategia de polling
+      // Recalcular estados sin afectar loading global
       pollAttemptRef.current = 0;
-      fetchOrders();
+      (async () => {
+        try {
+          const statuses = await orderService.getPaymentStatusesForBuyer(buyerId);
+          if (Array.isArray(statuses) && statuses.length) {
+            setOrders(prev => {
+              const statusMap = new Map(statuses.map(s => [s.id, s.payment_status]));
+              let changed = false;
+              const next = prev.map(ord => {
+                if (ord.is_payment_order && statusMap.has(ord.order_id)) {
+                  const newStatus = statusMap.get(ord.order_id);
+                  if (newStatus && newStatus !== ord.payment_status) {
+                    changed = true;
+                    return { ...ord, payment_status: newStatus };
+                  }
+                }
+                return ord;
+              });
+              return changed ? next : prev;
+            });
+          }
+        } catch (_) {}
+      })();
     });
     return () => {
       if (subscriptionRef.current) subscriptionRef.current();

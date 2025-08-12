@@ -13,11 +13,12 @@ import {
   Tooltip
 } from '@mui/material';
 import AssignmentIcon from '@mui/icons-material/Assignment';
+import VerifiedIcon from '@mui/icons-material/Verified';
 import { ThemeProvider } from '@mui/material/styles';
 import { dashboardThemeCore } from '../../../styles/dashboardThemeCore';
 import { SPACING_BOTTOM_MAIN } from '../../../styles/layoutSpacing';
 import { useBuyerOrders } from '../hooks';
-import { MinithumbImage } from '../../../components/UniversalProductImage';
+import { CheckoutSummaryImage } from '../../../components/UniversalProductImage';
 
 const BuyerOrders = () => {
   // ============================================================================
@@ -281,12 +282,12 @@ const BuyerOrders = () => {
                         >
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                             {/* Imagen del producto */}
-                            <MinithumbImage
+                            <CheckoutSummaryImage
                               product={item.product}
-                              width={80}
-                              height={80}
+                              width={40}
+                              height={40}
                               sx={{
-                                borderRadius: 2,
+                                borderRadius: '50%',
                                 flexShrink: 0
                               }}
                             />
@@ -296,9 +297,14 @@ const BuyerOrders = () => {
                               <Typography variant="h6" fontWeight="medium" gutterBottom>
                                 {item.product.name}
                               </Typography>
-                              <Typography variant="body2" color="text.secondary" gutterBottom>
-                                Proveedor: {item.product.supplier.name}
-                              </Typography>
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                <Typography variant="body2" color="text.secondary" gutterBottom>
+                                  Proveedor: {item.product?.supplier?.name || item.product?.proveedor || 'Proveedor desconocido'}
+                                </Typography>
+                                {(item.product?.supplier?.verified || item.product?.verified || item.product?.supplierVerified) && (
+                                  <VerifiedIcon sx={{ fontSize: 16, color: 'primary.main' }} />
+                                )}
+                              </Box>
                               <Typography variant="body1" fontWeight="medium" color="primary.main">
                                 {item.quantity} × {formatCurrency(item.price_at_addition)} = {formatCurrency(item.quantity * item.price_at_addition)}
                               </Typography>
