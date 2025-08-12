@@ -65,10 +65,10 @@ export const useOrdersStore = create((set, get) => ({
           city: 'Ciudad no especificada',
           region: 'Región no especificada',
         },
-        // Usar la fecha de entrega calculada desde product_delivery_regions
+        // requestedDate: solo fecha de solicitud/compra
         requestedDate: {
           start: order.created_at,
-          end: order.estimated_delivery_date || order.created_at,
+          end: order.created_at,
         },
         // Mapear productos al formato esperado por la UI
         products:

@@ -1,3 +1,5 @@
+// @ts-nocheck
+/// <reference lib="deno.ns" />
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
 
 // Lista de orígenes permitidos para CORS
@@ -107,8 +109,34 @@ serve(async req => {
       JSON.stringify(responseData, null, 2)
     );
 
-    // 5. Devolver la respuesta completa al frontend
-    return new Response(JSON.stringify(responseData), {
+    // 5. Normalizar salida para frontend
+    const normalized = {
+      // bandera de éxito para clientes que lo esperan
+      success: true,
+      // mapeo defensivo de campos posibles
+      payment_url:
+        responseData.payment_url ||
+        responseData.paymentUrl ||
+        responseData.simplified_transfer_url ||
+        responseData.transfer_url ||
+        null,
+      payment_id: responseData.payment_id || responseData.id || null,
+      transaction_id:
+        responseData.transaction_id ||
+        responseData.trx_id ||
+        responseData.transactionId ||
+        null,
+      expires_date: responseData.expires_date || responseData.expires_at || null,
+      // Devolvemos también el objeto crudo para depuración si fuera necesario en el cliente
+      raw: responseData,
+    } as Record<string, unknown>;
+
+    if (!normalized.payment_url) {
+      // Si por alguna razón Khipu no devolvió URL, informamos explícitamente
+      console.warn('[create-payment-khipu] Respuesta sin payment_url:', responseData);
+    }
+
+    return new Response(JSON.stringify(normalized), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,
     });

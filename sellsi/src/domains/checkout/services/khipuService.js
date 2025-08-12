@@ -28,13 +28,15 @@ class KhipuService {
           `Error al invocar la función de Supabase: ${error.message}`
         );
       }
-      if (khipuResponse.error) {
+      if (khipuResponse?.error) {
         throw new Error(
           `Error devuelto por la función de pago: ${khipuResponse.error}`
         );
       }
-      if (!khipuResponse.payment_url) {
-        throw new Error('La respuesta no contenía una URL de pago.');
+      if (!khipuResponse?.payment_url) {
+        console.error('[khipuService] Respuesta inesperada de create-payment-khipu:', khipuResponse);
+        const raw = khipuResponse?.raw ? ` Detalle: ${JSON.stringify(khipuResponse.raw)}` : '';
+        throw new Error('La respuesta no contenía una URL de pago.' + raw);
       }
 
       return {

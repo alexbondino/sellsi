@@ -1,14 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   TableRow,
   TableCell,
   Chip,
   IconButton,
   Tooltip,
+  Popover,
   Collapse,
   Box,
   Typography,
+  TextField,
+  Button,
 } from '@mui/material';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import {
   WarningAmber as WarningAmberIcon,
   Check as CheckIcon,
@@ -23,25 +27,110 @@ import { formatDate, formatCurrency } from '../../../utils/formatters';
 
 const Rows = ({ order, onActionClick }) => {
   const [expandedProducts, setExpandedProducts] = useState(false);
+  const [idAnchor, setIdAnchor] = useState(null);
+  const [copied, setCopied] = useState(false);
+  const copyTimerRef = useRef(null);
+  const [addrAnchor, setAddrAnchor] = useState(null);
+  const [addrCopied, setAddrCopied] = useState(false);
+  const addrCopyTimerRef = useRef(null);
+
+  const handleOpenId = event => setIdAnchor(event.currentTarget);
+  const handleCloseId = () => {
+    setIdAnchor(null);
+    if (copyTimerRef.current) {
+      clearTimeout(copyTimerRef.current);
+      copyTimerRef.current = null;
+    }
+    setCopied(false);
+  };
+  const openId = Boolean(idAnchor);
+
+  const handleOpenAddr = event => setAddrAnchor(event.currentTarget);
+  const handleCloseAddr = () => {
+    setAddrAnchor(null);
+    if (addrCopyTimerRef.current) {
+      clearTimeout(addrCopyTimerRef.current);
+      addrCopyTimerRef.current = null;
+    }
+    setAddrCopied(false);
+  };
+  const openAddr = Boolean(addrAnchor);
+
+  const handleCopyId = async () => {
+    try {
+      if (order?.order_id) await navigator.clipboard.writeText(order.order_id);
+      setCopied(true);
+      if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
+      copyTimerRef.current = setTimeout(() => setCopied(false), 3000);
+    } catch (_) {}
+  };
+
+  const shortId = id => {
+    if (!id) return '—';
+    const s = String(id);
+    return s.length > 12 ? `${s.slice(0, 8)}…${s.slice(-4)}` : s;
+  };
 
   // Formatear dirección
   const formatAddress = address => {
-    if (!address) return 'Dirección no disponible';
-    
-    // Si viene del nuevo formato de shipping_info
-    if (address.fullAddress) {
-      return `${address.fullAddress}, ${address.commune}, ${address.region}`;
+    if (!address) return '—';
+
+    // String directo
+    if (typeof address === 'string') {
+      return address.trim() || '—';
     }
-    
-    // Formato anterior (fallback)
-    return `${address.street || address.address || 'Dirección no especificada'}, ${address.city || address.commune || 'Comuna no especificada'}, ${address.region || 'Región no especificada'}`;
+
+    // Filtro para ignorar placeholders tipo "no especificada"
+    const clean = v => {
+      if (!v) return '';
+      const s = String(v).trim();
+      if (!s) return '';
+      return /no especificad/i.test(s) ? '' : s;
+    };
+
+    // Priorizar shipping_* y fullAddress
+    const street = clean(
+      address.shipping_address || address.fullAddress || address.street || address.address
+    );
+    const commune = clean(
+      address.shipping_commune || address.commune || address.city
+    );
+    const region = clean(address.shipping_region || address.region);
+
+    const parts = [street, commune, region].filter(Boolean);
+    return parts.length ? parts.join(', ') : '—';
   };
 
-  // Formatear rango de fechas
-  const formatDateRange = requestedDate => {
-    const startDate = formatDate(requestedDate.start);
-    const endDate = formatDate(requestedDate.end);
-    return `${startDate} - ${endDate}`;
+  // Obtener fecha de solicitud (solo una fecha)
+  const getRequestedDate = () => {
+    const d = order?.requestedDate?.start || order?.created_at;
+    return d ? formatDate(d) : '—';
+  };
+
+  // Construir texto profesional para copiar dirección
+  const buildAddressCopy = (addr) => {
+    const clean = v => {
+      if (!v) return '';
+      const s = String(v).trim();
+      return /no especificad/i.test(s) ? '' : s;
+    };
+    const region = clean(addr?.region || addr?.shipping_region);
+    const commune = clean(addr?.commune || addr?.shipping_commune);
+    const street = clean(addr?.address || addr?.shipping_address);
+    const number = clean(addr?.number || addr?.shipping_number);
+    const dept = clean(addr?.department || addr?.shipping_dept);
+    const streetLine = [street, number, dept].filter(Boolean).join(' ');
+    return `Región: ${region || '—'}\nComuna: ${commune || '—'}\nDirección: ${streetLine || '—'}`;
+  };
+
+  const handleCopyAddress = async () => {
+    try {
+      const text = buildAddressCopy(order?.deliveryAddress);
+      await navigator.clipboard.writeText(text);
+      setAddrCopied(true);
+      if (addrCopyTimerRef.current) clearTimeout(addrCopyTimerRef.current);
+      addrCopyTimerRef.current = setTimeout(() => setAddrCopied(false), 3000);
+    } catch (_) {}
   };
 
   // Obtener color del chip según estado
@@ -229,32 +318,125 @@ const Rows = ({ order, onActionClick }) => {
 
       {/* Columna ID Venta */}
       <TableCell>
-        <Typography variant="body2" fontWeight="medium">
-          {order.order_id}
-        </Typography>
+        <Box sx={{ display: 'inline-block' }}>
+          <Tooltip title="Clic para ver y copiar" placement="top">
+            <Typography
+              variant="body2"
+              fontWeight="medium"
+              onClick={handleOpenId}
+              sx={{ cursor: 'pointer', userSelect: 'none' }}
+            >
+              {shortId(order.order_id)}
+            </Typography>
+          </Tooltip>
+          <Popover
+            open={openId}
+            anchorEl={idAnchor}
+            onClose={handleCloseId}
+            anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+            transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+            PaperProps={{ sx: { p: 2, width: 420, maxWidth: '90vw' } }}
+          >
+            <Typography variant="subtitle2" gutterBottom>
+              ID de venta (completo)
+            </Typography>
+            <TextField
+              value={order.order_id || ''}
+              fullWidth
+              size="small"
+              InputProps={{ readOnly: true }}
+            />
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 1 }}>
+              <Typography variant="caption" color="text.secondary">
+                Selecciona o usa el botón para copiar
+              </Typography>
+              {copied ? (
+                <Button
+                  size="small"
+                  color="success"
+                  variant="contained"
+                  startIcon={<CheckCircleOutlineIcon sx={{ fontSize: 18 }} />}
+                  disableElevation
+                >
+                  Copiado
+                </Button>
+              ) : (
+                <Button onClick={handleCopyId} size="small">Copiar</Button>
+              )}
+            </Box>
+          </Popover>
+        </Box>
       </TableCell>
 
       {/* Columna Dirección Entrega */}
       <TableCell>
-        <Typography variant="body2">
-          {formatAddress(order.deliveryAddress)}
-        </Typography>
+        <Box sx={{ display: 'inline-block' }}>
+          <Tooltip title="Clic para ver y copiar" placement="top">
+            <Typography
+              variant="body2"
+              onClick={handleOpenAddr}
+              sx={{ cursor: 'pointer', userSelect: 'none' }}
+            >
+              {formatAddress(order.deliveryAddress)}
+            </Typography>
+          </Tooltip>
+          <Popover
+            open={openAddr}
+            anchorEl={addrAnchor}
+            onClose={handleCloseAddr}
+            anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+            transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+            PaperProps={{ sx: { p: 2, width: 460, maxWidth: '95vw' } }}
+          >
+            <Typography variant="subtitle2" gutterBottom>
+              Dirección de entrega
+            </Typography>
+            <Box sx={{ display: 'grid', gridTemplateColumns: '120px 1fr', rowGap: 1, columnGap: 1 }}>
+              <Typography variant="body2" color="text.secondary">Región:</Typography>
+              <Typography variant="body2">{order?.deliveryAddress?.region || '—'}</Typography>
+              <Typography variant="body2" color="text.secondary">Comuna:</Typography>
+              <Typography variant="body2">{order?.deliveryAddress?.commune || '—'}</Typography>
+              <Typography variant="body2" color="text.secondary">Dirección:</Typography>
+              <Typography variant="body2">
+                {[order?.deliveryAddress?.address, order?.deliveryAddress?.number, order?.deliveryAddress?.department]
+                  .filter(Boolean)
+                  .join(' ') || '—'}
+              </Typography>
+            </Box>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 1 }}>
+              <Typography variant="caption" color="text.secondary">
+                Selecciona o usa el botón para copiar
+              </Typography>
+              {addrCopied ? (
+                <Button
+                  size="small"
+                  color="success"
+                  variant="contained"
+                  startIcon={<CheckCircleOutlineIcon sx={{ fontSize: 18 }} />}
+                  disableElevation
+                >
+                  Copiado
+                </Button>
+              ) : (
+                <Button onClick={handleCopyAddress} size="small">Copiar</Button>
+              )}
+            </Box>
+          </Popover>
+        </Box>
       </TableCell>
 
-      {/* Columna Fecha Solicitada */}
+      {/* Columna Fecha Solicitada (solo una fecha) */}
       <TableCell>
-        <Typography variant="body2">
-          {formatDateRange(order.requestedDate)}
-        </Typography>
+        <Typography variant="body2">{getRequestedDate()}</Typography>
       </TableCell>
 
-      {/* Columna Fecha Entrega */}
+      {/* Columna Fecha Entrega Límite (siempre una fecha si existe) */}
       <TableCell>
-        {shouldShowDeliveryDate() && order.estimated_delivery_date && (
-          <Typography variant="body2">
-            {formatDate(order.estimated_delivery_date)}
-          </Typography>
-        )}
+        <Typography variant="body2">
+          {order.estimated_delivery_date
+            ? formatDate(order.estimated_delivery_date)
+            : '—'}
+        </Typography>
       </TableCell>
 
       {/* Columna Venta */}

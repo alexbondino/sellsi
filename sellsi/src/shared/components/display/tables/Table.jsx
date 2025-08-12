@@ -30,12 +30,12 @@ const Table = ({ orders, onActionClick }) => {
             <TableCell align="center" sx={{ width: '50px' }}>
               {/* Columna para icono de advertencia */}
             </TableCell>
-            <TableCell>Productos</TableCell>
+            <TableCell>Producto</TableCell>
             <TableCell>ID Venta</TableCell>
             <TableCell>Dirección Entrega</TableCell>
-            <TableCell>Fecha Solicitada</TableCell>
-            <TableCell>Fecha Entrega</TableCell>
-            <TableCell align="right">Venta</TableCell>
+            <TableCell>Fecha Solicitud</TableCell>
+            <TableCell>Fecha Entrega Limite</TableCell>
+            <TableCell align="right">Venta (IVA inc.)</TableCell>
             <TableCell>Estado</TableCell>
             <TableCell>Acciones</TableCell>
           </TableRow>

@@ -17,6 +17,7 @@ import { useBanner } from '../../../../shared/components/display/banners/BannerC
 import { dashboardThemeCore } from '../../../../styles/dashboardThemeCore'; // Tema de Material-UI para el dashboard
 import { SPACING_BOTTOM_MAIN } from '../../../../styles/layoutSpacing';
 import { SupplierErrorBoundary } from '../../components/ErrorBoundary';
+import { supabase } from '../../../../services/supabase';
 
 // TODO: Implementar hook de autenticación
 // import { useAuth } from '../../auth/hooks/useAuth';
@@ -54,30 +55,63 @@ const MyOrdersPage = () => {
     selectedOrder: null,
   });
 
-  // TEMPORAL: Obtener el supplier ID del localStorage
-  // Cuando se implemente el hook de autenticación, esto será reemplazado por:
-  // const { user } = useAuth();
-  // const supplierId = user?.user_id;
-  const supplierId = localStorage.getItem('user_id');
+  // ID del proveedor desde Supabase Auth (no chequea rol, solo sesión)
+  const [supplierId, setSupplierId] = useState(null);
+  const [authResolved, setAuthResolved] = useState(false);
+
+  // Resolver supplierId desde sesión autenticada; fallback a localStorage si no hay sesión
+  useEffect(() => {
+    let isMounted = true;
+
+  const resolveSupplierId = async () => {
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+    const authUid = user?.id || null;
+    const chosen = authUid || null; // solo sesión auth, sin validar rol
+        if (!isMounted) return;
+        setSupplierId(chosen);
+    setAuthResolved(true);
+      } catch (e) {
+        console.error('[MyOrders] Error obteniendo usuario Supabase:', e);
+    setSupplierId(null);
+    setAuthResolved(true);
+      }
+    };
+
+    resolveSupplierId();
+
+    // Suscribirse a cambios de sesión para mantener supplierId sincronizado
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+      const nextId = session?.user?.id || null;
+      setSupplierId(nextId || null);
+      setAuthResolved(true);
+    });
+
+    return () => {
+      isMounted = false;
+      try { sub?.subscription?.unsubscribe?.(); } catch (_) {}
+    };
+  }, []);
 
   // Obtener los pedidos filtrados utilizando un selector del store
   const filteredOrders = getFilteredOrders();
 
   // Efecto para inicializar el store con el ID del proveedor al cargar el componente
   useEffect(() => {
+    if (!authResolved) return; // esperar resolución de sesión para evitar falsos negativos
     if (supplierId) {
       initializeWithSupplier(supplierId);
-    } else {
-      // Si no hay supplier ID, mostrar un error al usuario
-      console.error('No se encontró el ID del proveedor en localStorage');
-      showBanner({
-        message:
-          'Error: No se pudo cargar el ID del proveedor. Intenta recargar la página.',
-        severity: 'error',
-        duration: 5000,
-      });
+      return;
     }
-  }, [supplierId, initializeWithSupplier, showBanner]);
+    // Sin sesión autenticada
+    showBanner({
+      message: 'Inicia sesión para ver tus pedidos.',
+      severity: 'warning',
+      duration: 5000,
+    });
+  }, [authResolved, supplierId, initializeWithSupplier, showBanner]);
 
   // Maneja la apertura del modal para una acción específica de un pedido
   const handleActionClick = (order, actionType) => {

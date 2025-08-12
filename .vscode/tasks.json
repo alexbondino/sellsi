@@ -17,6 +17,20 @@
 			"command": "npm run build",
 			"isBackground": false,
 			"group": "build"
+		},
+		{
+			"label": "Deploy Supabase Functions (npx)",
+			"type": "shell",
+			"command": "npx supabase functions deploy create-payment-khipu process-khipu-webhook update-lastip --project-ref clbngnjetipglkikondm",
+			"isBackground": false,
+			"group": "build"
+		},
+		{
+			"label": "Deploy Supabase Functions (npx)",
+			"type": "shell",
+			"command": "npx supabase functions deploy create-payment-khipu process-khipu-webhook update-lastip --project-ref clbngnjetipglkikondm",
+			"isBackground": false,
+			"group": "build"
 		}
 	]
 }

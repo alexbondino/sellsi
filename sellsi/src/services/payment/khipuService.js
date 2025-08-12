@@ -51,12 +51,12 @@ class KhipuService {
         payer_email: orderData.userEmail || ''
       }
 
-      // Llamar a la función Edge de Supabase que maneja la API de Khipu
-      const { data, error } = await supabase.functions.invoke('create-khipu-payment', {
+      // Llamar a la función Edge unificada (respuesta normalizada)
+      const { data, error } = await supabase.functions.invoke('create-payment-khipu', {
         body: {
-          khipuData,
-          receiverId,
-          secret
+          subject: khipuData.subject,
+          amount: khipuData.amount,
+          currency: khipuData.currency
         }
       })
 
@@ -70,10 +70,10 @@ class KhipuService {
 
       return {
         success: true,
-        paymentId: data.payment_id,
-        paymentUrl: data.payment_url,
-        transactionId: khipuData.transaction_id,
-        expiresAt: khipuData.expires_date
+  paymentId: data.payment_id,
+  paymentUrl: data.payment_url,
+  transactionId: data.transaction_id || khipuData.transaction_id,
+  expiresAt: data.expires_date || khipuData.expires_date
       }
 
     } catch (error) {

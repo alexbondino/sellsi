@@ -1,4 +1,8 @@
 import { supabase } from '../supabase';
+import { addBusinessDaysChile, toISODateOnly } from '../../utils/businessDaysChile';
+
+// Toggle detailed logging for diagnosing supplier orders and addresses
+const DEBUG_ORDERS = false;
 
 /**
  * OrderService - Servicio para manejar todas las operaciones de pedidos con Supabase
@@ -24,6 +28,8 @@ class OrderService {
       const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
       if (!uuidRegex.test(buyerId)) throw new Error('ID de comprador no tiene formato UUID válido');
 
+  if (DEBUG_ORDERS) console.debug('[OrderService] getPaymentOrdersForBuyer start', { buyerId });
+
       // Pedidos ordenados con los más recientes primero
   const { data, error } = await supabase
         .from('orders')
@@ -45,8 +51,10 @@ class OrderService {
         .eq('user_id', buyerId)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+  if (error) throw error;
       if (!data || data.length === 0) return [];
+
+  if (DEBUG_ORDERS) console.debug('[OrderService] getPaymentOrdersForBuyer rows', data.length);
 
       // 1) Parse all items once and collect supplier_ids
       const parsed = data.map(row => {
@@ -75,7 +83,7 @@ class OrderService {
         }
       }
 
-      // 3) Build final normalized orders with enriched supplier
+  // 3) Build final normalized orders with enriched supplier
       return parsed.map(({ row, parsedItems }) => {
         const normalizedItems = parsedItems.map((it, idx) => {
           const sId = it.supplier_id || null;
@@ -168,8 +176,10 @@ class OrderService {
    * @param {string} supplierId - ID del proveedor
    * @param {Object} filters - Filtros opcionales (status, fechas, etc.)
    * @returns {Array} Lista de pedidos con sus items
-   */  async getOrdersForSupplier(supplierId, filters = {}) {
+  */
+  async getOrdersForSupplier(supplierId, filters = {}) {
     try {
+      if (DEBUG_ORDERS) console.debug('[OrderService] getOrdersForSupplier start', { supplierId, filters });
       // Validate supplierId is a valid UUID
       if (!supplierId) {
         throw new Error('ID de proveedor es requerido');
@@ -193,10 +203,14 @@ class OrderService {
 
       if (!supplierProducts || supplierProducts.length === 0) {
         // No products for this supplier, return empty array
+        if (DEBUG_ORDERS) console.debug('[OrderService] No products for supplier; returning empty orders.');
         return [];
       }
 
-      const productIds = supplierProducts.map(p => p.productid);      // Now get carts that contain items from this supplier's products
+      const productIds = supplierProducts.map(p => p.productid);
+      if (DEBUG_ORDERS) console.debug('[OrderService] supplierProducts count:', supplierProducts.length, 'productIds sample:', productIds.slice(0, 5));
+
+      // Now get carts that contain items from this supplier's products
       let query = supabase
         .from('carts')
         .select(`
@@ -259,29 +273,78 @@ class OrderService {
         query = query.lte('created_at', filters.dateTo);
       }
 
-      const { data, error } = await query;      if (error) {
+      const { data, error } = await query;
+      if (error) {
+        if (DEBUG_ORDERS) console.error('[OrderService] getOrdersForSupplier error:', error);
         throw error;
       }
 
       // Handle case where no data is returned
       if (!data || data.length === 0) {
+        if (DEBUG_ORDERS) console.debug('[OrderService] No carts found for supplier.');
         return [];
+      }
+
+      if (DEBUG_ORDERS) console.debug('[OrderService] carts query returned count:', Array.isArray(data) ? data.length : 0);
+
+      // Fallback: recolectar user_ids sin shipping_info embebido y traerlos en un batch
+      const missingUserIds = Array.from(
+        new Set(
+          data
+            .filter(cart => !(Array.isArray(cart.users?.shipping_info) && cart.users.shipping_info.length > 0))
+            .map(cart => cart.user_id)
+            .filter(Boolean)
+        )
+      );
+
+      let fallbackShippingByUser = new Map();
+      if (missingUserIds.length > 0) {
+        if (DEBUG_ORDERS) console.debug('[OrderService] Fallback fetching shipping_info for users:', missingUserIds.length);
+        const { data: fallbackShip, error: fallbackErr } = await supabase
+          .from('shipping_info')
+          .select('user_id, shipping_region, shipping_commune, shipping_address, shipping_number, shipping_dept')
+          .in('user_id', missingUserIds);
+        if (!fallbackErr && Array.isArray(fallbackShip)) {
+          fallbackShippingByUser = new Map(
+            fallbackShip.map(r => [r.user_id, r])
+          );
+          if (DEBUG_ORDERS) console.debug('[OrderService] Fallback shipping rows fetched:', fallbackShip.length);
+        } else if (fallbackErr) {
+          if (DEBUG_ORDERS) console.warn('[OrderService] Fallback shipping_info query error:', fallbackErr?.message || fallbackErr);
+        }
       }
 
       // Transformar los datos para el formato esperado por MyOrders
       const orders = data
         .filter(cart => cart.cart_items && cart.cart_items.length > 0) // Solo carritos con items del proveedor
         .map(cart => {
+          if (DEBUG_ORDERS) console.debug('[OrderService] Processing cart:', {
+            cart_id: cart.cart_id,
+            status: cart.status,
+            itemsCount: cart.cart_items?.length || 0,
+            hasUser: !!cart.users,
+            hasShippingInfo: Array.isArray(cart.users?.shipping_info) && cart.users.shipping_info.length > 0,
+          });
           // Filter items that belong to this supplier
           const supplierItems = cart.cart_items.filter(item => 
             item.products && item.products.supplier_id === supplierId
           );
 
           // Skip carts that don't have items for this supplier
-          if (supplierItems.length === 0) return null;
+          if (supplierItems.length === 0) {
+            if (DEBUG_ORDERS) console.debug('[OrderService] Cart skipped (no items for supplier):', cart.cart_id);
+            return null;
+          }
 
           // Obtener Dirección de Despacho del comprador
-          const shippingInfo = cart.users?.shipping_info?.[0] || {};
+          let shippingInfo = cart.users?.shipping_info?.[0] || {};
+          if ((!shippingInfo || Object.keys(shippingInfo).length === 0) && fallbackShippingByUser.size > 0) {
+            const fb = fallbackShippingByUser.get(cart.user_id);
+            if (fb) {
+              shippingInfo = fb;
+              if (DEBUG_ORDERS) console.debug('[OrderService] Applied fallback shipping_info for cart:', cart.cart_id);
+            }
+          }
           const deliveryAddress = {
             region: shippingInfo.shipping_region || 'Región no especificada',
             commune: shippingInfo.shipping_commune || 'Comuna no especificada',
@@ -291,30 +354,25 @@ class OrderService {
             fullAddress: `${shippingInfo.shipping_address || 'Dirección no especificada'} ${shippingInfo.shipping_number || ''} ${shippingInfo.shipping_dept || ''}`.trim()
           };
 
-          // Calcular fecha de entrega basada en product_delivery_regions
-          const calculateDeliveryDate = (items, buyerRegion) => {
+          if (DEBUG_ORDERS) console.debug('[OrderService] shipping_info for cart:', cart.cart_id, 'raw:', shippingInfo, 'deliveryAddress:', deliveryAddress);
+
+          // Calcular fecha de entrega límite en días hábiles chilenos
+          const calculateDeliveryDeadline = (createdAtISO, items, buyerRegion) => {
             let maxDeliveryDays = 0;
-            
             items.forEach(item => {
               const deliveryRegions = item.products?.product_delivery_regions || [];
               const regionMatch = deliveryRegions.find(dr => dr.region === buyerRegion);
-              
-              if (regionMatch && regionMatch.delivery_days > maxDeliveryDays) {
-                maxDeliveryDays = regionMatch.delivery_days;
+              if (regionMatch && Number(regionMatch.delivery_days) > maxDeliveryDays) {
+                maxDeliveryDays = Number(regionMatch.delivery_days);
               }
             });
-            
-            // Si no hay match, usar 7 días por defecto
-            if (maxDeliveryDays === 0) {
-              maxDeliveryDays = 7;
-            }
-            
-            const deliveryDate = new Date();
-            deliveryDate.setDate(deliveryDate.getDate() + maxDeliveryDays);
-            return deliveryDate.toISOString().split('T')[0]; // Format YYYY-MM-DD
+            if (maxDeliveryDays === 0) maxDeliveryDays = 7; // fallback
+            const start = new Date(createdAtISO);
+            const deadline = addBusinessDaysChile(start, maxDeliveryDays);
+            return toISODateOnly(deadline);
           };
 
-          const estimatedDeliveryDate = calculateDeliveryDate(supplierItems, deliveryAddress.region);
+          const estimatedDeliveryDate = calculateDeliveryDeadline(cart.created_at, supplierItems, deliveryAddress.region);
 
           return {
             order_id: cart.cart_id,
@@ -366,6 +424,8 @@ class OrderService {
         .filter(order => order !== null) // Remove null entries
         .filter(order => order.items.length > 0); // Solo órdenes con items del proveedor
 
+      if (DEBUG_ORDERS) console.debug('[OrderService] getOrdersForSupplier final orders:', orders.length);
+
       return orders;
 
     } catch (error) {
@@ -398,11 +458,10 @@ class OrderService {
         throw new Error(`Estado no válido: ${newStatus}`);
       }
 
-      // Preparar datos para actualizar
+      // Preparar datos para actualizar (whitelist: evitar columnas inexistentes como message/rejectionReason)
       const updateData = {
         status: normalizedStatus,
-        updated_at: new Date().toISOString(),
-        ...additionalData
+        updated_at: new Date().toISOString()
       };
 
       // Actualizar en la base de datos
