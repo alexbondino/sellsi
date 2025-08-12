@@ -65,10 +65,11 @@ const Rows = ({ order, onActionClick }) => {
     } catch (_) {}
   };
 
+  // Formato amigable: #XXXXXXX (últimos 8 caracteres en mayúsculas)
   const shortId = id => {
     if (!id) return '—';
-    const s = String(id);
-    return s.length > 12 ? `${s.slice(0, 8)}…${s.slice(-4)}` : s;
+    const s = String(id).toUpperCase();
+    return `#${s.slice(-8)}`;
   };
 
   // Formatear dirección

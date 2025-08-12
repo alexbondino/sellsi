@@ -239,7 +239,7 @@ const useProductBackground = create((set, get) => ({
    * Actualizar producto completo (CRUD + Background processing)
    */
   updateCompleteProduct: async (productId, updates, hooks = {}) => {
-    const { crudHook, priceTiersHook } = hooks
+  const { crudHook, priceTiersHook } = hooks
 
     try {
       // 1. Actualizar campos básicos primero
@@ -252,8 +252,21 @@ const useProductBackground = create((set, get) => ({
         }
       }
 
-      // 2. CRÍTICO: Procesar priceTiers SINCRÓNICAMENTE cuando hay cambio de pricing
+      // 2. CRÍTICO: Optimismo + procesar priceTiers SINCRÓNICAMENTE cuando hay cambio de pricing
       if (updates.priceTiers !== undefined && priceTiersHook) {
+        // Optimistic update en memoria para evitar flash de mapeo antiguo
+        try {
+          if (crudHook && typeof crudHook.updateLocalProduct === 'function') {
+            // Adaptar nombres si vienen en formato de formulario
+            const normalizedTiers = (updates.priceTiers || []).map(t => ({
+              min_quantity: t.min_quantity ?? t.min ?? null,
+              max_quantity: t.max_quantity ?? t.max ?? null,
+              price: t.price ?? t.precio ?? 0,
+            }))
+            crudHook.updateLocalProduct(productId, { priceTiers: normalizedTiers })
+          }
+        } catch (_) { /* noop */ }
+
         const priceTierResult = await priceTiersHook.processPriceTiers(productId, updates.priceTiers)
         
         if (!priceTierResult.success) {

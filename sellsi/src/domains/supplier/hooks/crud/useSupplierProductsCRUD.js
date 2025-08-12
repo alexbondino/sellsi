@@ -287,6 +287,17 @@ const useSupplierProductsCRUD = create((set, get) => ({
   clearError: () => set({ error: null }),
 
   /**
+   * Actualizar parcialmente un producto en memoria (optimista, sin I/O)
+   */
+  updateLocalProduct: (productId, partial) => {
+    set((state) => ({
+      products: state.products.map((p) =>
+        p.productid === productId ? { ...p, ...partial } : p
+      ),
+    }))
+  },
+
+  /**
    * Refrescar un producto específico
    */
   refreshProduct: async (productId) => {

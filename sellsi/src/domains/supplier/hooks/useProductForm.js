@@ -7,7 +7,7 @@
  * en el manejo de productos por unidad y por tramos.
  */
 
-import React, { useState, useCallback, useEffect } from 'react'
+import React, { useState, useCallback, useEffect, useRef } from 'react'
 import { useSupplierProducts } from './useSupplierProducts'
 import { convertDbRegionsToForm } from '../../../utils/shippingRegionsUtils'
 import { 
@@ -200,6 +200,8 @@ export const useProductForm = (productId = null) => {
     const pricingType = hasPriceTiers ? PRICING_TYPES.TIER : PRICING_TYPES.UNIT
 
     return {
+      // Preservar referencia al producto para controles internos
+      productid: product.productid,
       nombre: product.nombre || '',
       descripcion: product.descripcion || '',
       categoria: product.categoria || '',
@@ -570,24 +572,23 @@ export const useProductForm = (productId = null) => {
     setIsDirty(false)
   }, [isEditMode, productId, uiProducts])
 
-  // Cargar producto cuando esté disponible
+  // Cargar producto cuando uiProducts lo provea (hidratar una sola vez)
+  const hasHydratedRef = useRef(false)
   useEffect(() => {
-    if (isEditMode && productId && uiProducts.length > 0) {
-      const product = uiProducts.find(
-        (p) => p.productid?.toString() === productId?.toString()
-      )
-      if (product) {
-        // Solo cargar si el formulario está vacío o es un producto diferente
-        const currentProductId = formData.productid || formData.id
-        if (!currentProductId || currentProductId.toString() !== productId.toString()) {
-          const mappedProduct = mapProductToForm(product)
-          setFormData(mappedProduct)
-          // 🔧 FIX: Actualizar también originalFormData para detectar cambios correctamente
-          setOriginalFormData(mappedProduct)
-        }
-      }
-    }
-  }, [isEditMode, productId]) // REMOVIDO: uiProducts, formData.productid, formData.id
+    if (!isEditMode || !productId) return
+    if (hasHydratedRef.current) return
+    if (!uiProducts || uiProducts.length === 0) return
+
+    const product = uiProducts.find(
+      (p) => p.productid?.toString() === productId?.toString()
+    )
+    if (!product) return
+
+    const mappedProduct = mapProductToForm(product)
+    setFormData(mappedProduct)
+    setOriginalFormData(mappedProduct)
+    hasHydratedRef.current = true
+  }, [isEditMode, productId, uiProducts])
 
   // 🔧 NUEVO: Efecto para sincronizar compra mínima con primer tramo cuando es pricing por volumen
   useEffect(() => {

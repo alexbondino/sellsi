@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import {
   Box,
@@ -55,7 +55,6 @@ import { fetchProductRegions, saveProductRegions } from '../../../../services/ma
 import { convertDbRegionsToForm, convertFormRegionsToDb } from '../../../../utils/shippingRegionsUtils';
 
 // Hooks y utilidades
-import { useSupplierProducts } from '../../hooks/useSupplierProducts';
 import { useProductForm } from '../../hooks/useProductForm';
 import { useProductValidation } from './hooks/useProductValidation';
 import { useProductPricingLogic } from './hooks/useProductPricingLogic';
@@ -82,7 +81,8 @@ const MobileFormLayout = ({
   handleRegionChange, 
   imageError, 
   handleImagesChange, 
-  handleImageError 
+  handleImageError,
+  freezeDisplay = false,
 }) => (
   <Box
     sx={{
@@ -181,6 +181,7 @@ const MobileFormLayout = ({
           errors={errors}
           localErrors={localErrors}
           triedSubmit={triedSubmit}
+          freezeDisplay={freezeDisplay}
           isMobile={true}
         />
       </Box>
@@ -223,7 +224,8 @@ const DesktopFormLayout = ({
   handleRegionChange, 
   imageError, 
   handleImagesChange, 
-  handleImageError 
+  handleImageError,
+  freezeDisplay = false,
 }) => (
   <Grid container spacing={3}>
     <Grid size={{ xs: 12, lg: 8 }}>
@@ -278,6 +280,7 @@ const DesktopFormLayout = ({
               errors={errors}
               localErrors={localErrors}
               triedSubmit={triedSubmit}
+              freezeDisplay={freezeDisplay}
             />
           </Box>
 
@@ -339,7 +342,6 @@ const AddProduct = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const theme = useTheme();
-  const { createProduct, loadProducts } = useSupplierProducts();
 
   // 🔧 Hook para responsividad móvil - SOLO xs y sm
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -404,12 +406,7 @@ const AddProduct = () => {
   ]);
 
 
-  // Cargar productos al montar el componente
-  useEffect(() => {
-    if (supplierId) {
-      loadProducts(supplierId);
-    }
-  }, [supplierId, loadProducts]);
+  // (Eliminado) Carga duplicada de productos que causaba rerenders con estado antiguo
 
   // Componente Portal para el panel de resultados
   const ResultsPanelPortal = ({ children }) => {
@@ -447,24 +444,28 @@ const AddProduct = () => {
     );
   };
 
-  // Cargar regiones de entrega si editando
+  // Cargar regiones de entrega si editando (una sola vez, sin sobreescribir ediciones locales)
+  const hasLoadedRegionsRef = useRef(false);
   useEffect(() => {
-    if (isEditMode && editProductId) {
+    if (!isEditMode || !editProductId) return;
+    if (hasLoadedRegionsRef.current) return;
 
-      fetchProductRegions(editProductId)
-        .then(regions => {
+    fetchProductRegions(editProductId)
+      .then(regions => {
+        const formattedRegions = convertDbRegionsToForm(regions);
 
-          const formattedRegions = convertDbRegionsToForm(regions);
-
-          setShippingRegions(formattedRegions);
-          updateField('shippingRegions', formattedRegions); // Sincroniza con formData
-
-        })
-        .catch(error => {
-          console.error('[AddProduct] useEffect - Error cargando regiones:', error);
-        });
-    }
-  }, [isEditMode, editProductId, updateField]);
+        // Solo hidratar si aún no hay regiones definidas localmente
+        setShippingRegions(prev => (prev && prev.length > 0 ? prev : formattedRegions));
+        if (!formData?.shippingRegions || formData.shippingRegions.length === 0) {
+          updateField('shippingRegions', formattedRegions); // Sincroniza con formData solo si estaba vacío
+        }
+        hasLoadedRegionsRef.current = true;
+      })
+      .catch(error => {
+        console.error('[AddProduct] useEffect - Error cargando regiones:', error);
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isEditMode, editProductId]);
 
   // Validación en tiempo real solo si el campo fue tocado o tras submit
   useEffect(() => {
@@ -786,6 +787,7 @@ const AddProduct = () => {
                 imageError={imageError}
                 handleImagesChange={handleImagesChange}
                 handleImageError={handleImageError}
+                freezeDisplay={isLoading || isSubmitting || isNavigating}
               />
             </Box>
           ) : (
@@ -806,6 +808,7 @@ const AddProduct = () => {
               imageError={imageError}
               handleImagesChange={handleImagesChange}
               handleImageError={handleImageError}
+              freezeDisplay={isLoading || isSubmitting || isNavigating}
             />
           )}
         </Container>

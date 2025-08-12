@@ -10,7 +10,8 @@ import {
   Avatar,
   Divider,
   Stack,
-  Tooltip
+  Tooltip,
+  Button
 } from '@mui/material';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import VerifiedIcon from '@mui/icons-material/Verified';
@@ -38,6 +39,120 @@ const BuyerOrders = () => {
     formatDate,
     formatCurrency
   } = useBuyerOrders(buyerId);
+
+  // ============================================================================
+  // PAGINACIÓN (5 órdenes por página)
+  // ============================================================================
+  const ORDERS_PER_PAGE = 5;
+  const [currentPage, setCurrentPage] = React.useState(1);
+
+  const totalPages = React.useMemo(() => {
+    return Math.max(1, Math.ceil((orders?.length || 0) / ORDERS_PER_PAGE));
+  }, [orders]);
+
+  // Asegura que currentPage esté dentro de rango cuando cambian las órdenes
+  React.useEffect(() => {
+    if (currentPage > totalPages) setCurrentPage(totalPages);
+    if (currentPage < 1) setCurrentPage(1);
+  }, [currentPage, totalPages]);
+
+  const handlePageChange = React.useCallback((page) => {
+    const safePage = Math.min(Math.max(1, page), totalPages);
+    setCurrentPage(safePage);
+    // Scroll suave al inicio para que el usuario vea desde arriba
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [totalPages]);
+
+  const startIndex = (currentPage - 1) * ORDERS_PER_PAGE;
+  const endIndex = startIndex + ORDERS_PER_PAGE;
+  const visibleOrders = React.useMemo(() => {
+    return (orders || []).slice(startIndex, endIndex);
+  }, [orders, startIndex, endIndex]);
+
+  const Pagination = React.useMemo(() => {
+    if (!orders || orders.length <= ORDERS_PER_PAGE) return null;
+
+    const showPages = 5; // similar a Marketplace
+    let startPage = Math.max(1, currentPage - Math.floor(showPages / 2));
+    let endPage = Math.min(totalPages, startPage + showPages - 1);
+    if (endPage - startPage < showPages - 1) {
+      startPage = Math.max(1, endPage - showPages + 1);
+    }
+
+    return (
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          gap: 1,
+          py: 2,
+          flexWrap: 'wrap'
+        }}
+      >
+        <Button
+          variant="outlined"
+          disabled={currentPage === 1}
+          onClick={() => handlePageChange(currentPage - 1)}
+          sx={{ minWidth: 'auto', px: 2, fontSize: '0.875rem' }}
+        >
+          ‹ Anterior
+        </Button>
+
+        {startPage > 1 && (
+          <>
+            <Button
+              variant={1 === currentPage ? 'contained' : 'outlined'}
+              onClick={() => handlePageChange(1)}
+              sx={{ minWidth: 40 }}
+            >
+              1
+            </Button>
+            {startPage > 2 && <Typography variant="body2">...</Typography>}
+          </>
+        )}
+
+        {Array.from({ length: endPage - startPage + 1 }, (_, i) => startPage + i).map((page) => (
+          <Button
+            key={page}
+            variant={page === currentPage ? 'contained' : 'outlined'}
+            onClick={() => handlePageChange(page)}
+            sx={{ minWidth: 40, fontSize: '0.875rem' }}
+          >
+            {page}
+          </Button>
+        ))}
+
+        {endPage < totalPages && (
+          <>
+            {endPage < totalPages - 1 && (
+              <Typography variant="body2">...</Typography>
+            )}
+            <Button
+              variant={totalPages === currentPage ? 'contained' : 'outlined'}
+              onClick={() => handlePageChange(totalPages)}
+              sx={{ minWidth: 40 }}
+            >
+              {totalPages}
+            </Button>
+          </>
+        )}
+
+        <Button
+          variant="outlined"
+          disabled={currentPage === totalPages}
+          onClick={() => handlePageChange(currentPage + 1)}
+          sx={{ minWidth: 'auto', px: 2, fontSize: '0.875rem' }}
+        >
+          Siguiente ›
+        </Button>
+
+        <Typography variant="body2" color="text.secondary" sx={{ ml: 2 }}>
+          Página {currentPage} de {totalPages}
+        </Typography>
+      </Box>
+    );
+  }, [orders, ORDERS_PER_PAGE, currentPage, totalPages, handlePageChange]);
 
   // ============================================================================
   // RENDERIZADO CONDICIONAL
@@ -154,7 +269,7 @@ const BuyerOrders = () => {
     if (paymentStatus === 'paid') {
       return (
         <Alert severity="success" sx={{ mb: 2 }}>
-          Pago confirmado. La orden será materializada y aparecerá como pedido normal en breve.
+          Pago confirmado. La orden quedará pendiente de aceptación por el proveedor.
         </Alert>
       );
     }
@@ -199,8 +314,11 @@ const BuyerOrders = () => {
 
           {/* Lista de pedidos */}
           {orders.length > 0 ? (
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-              {orders.map(order => (
+            <>
+              {/* Paginación superior */}
+              {Pagination}
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+              {visibleOrders.map(order => (
                 <Paper
                   key={order.order_id}
                   sx={{
@@ -318,6 +436,9 @@ const BuyerOrders = () => {
                 </Paper>
               ))}
             </Box>
+              {/* Paginación inferior */}
+              {Pagination}
+            </>
           ) : (
             // Estado vacío
             <Paper sx={{ p: 4, textAlign: 'center' }}>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Box, Typography, Button } from '@mui/material';
 import { Settings as SettingsIcon } from '@mui/icons-material';
 import ShippingRegionsModal from '../../../../../shared/components/modals/ShippingRegionsModal';
@@ -16,11 +16,18 @@ const ProductRegions = ({
   localErrors,
   triedSubmit,
   isMobile = false, // 🔧 Nueva prop para móvil
+  freezeDisplay = false, // 🔧 Nuevo: congelar UI durante submit/update
 }) => {
   const [modalOpen, setModalOpen] = useState(false);
+  // Snapshot interno para evitar parpadeos cuando props cambian durante un update
+  const [displayRegions, setDisplayRegions] = useState(formData.shippingRegions || []);
 
-  // Extraer las regiones de despacho del formData
-  const shippingRegions = formData.shippingRegions || [];
+  // Mantener el snapshot sincronizado solo cuando NO está congelado
+  useEffect(() => {
+    if (!freezeDisplay) {
+      setDisplayRegions(formData.shippingRegions || []);
+    }
+  }, [formData.shippingRegions, freezeDisplay]);
 
   const handleOpenModal = () => {
     setModalOpen(true);
@@ -37,8 +44,9 @@ const ProductRegions = ({
     const displayRegions = convertModalRegionsToDisplay(regions);
     console.log('[ProductRegions] handleSaveRegions - Datos convertidos para display:', displayRegions);
     
-    // Actualizar el formData con las nuevas regiones
-    onRegionChange(displayRegions);
+  // Actualizar snapshot local y formData con las nuevas regiones
+  setDisplayRegions(displayRegions);
+  onRegionChange(displayRegions);
     console.log('[ProductRegions] handleSaveRegions - Datos enviados a onRegionChange:', displayRegions);
     
     setModalOpen(false);
@@ -46,7 +54,7 @@ const ProductRegions = ({
 
   // Preparar datos para el modal (convertir de formato display a formato BD)
   const prepareModalData = () => {
-    const modalData = convertFormRegionsToDb(shippingRegions);
+  const modalData = convertFormRegionsToDb(displayRegions);
     return modalData;
   };
 
@@ -88,13 +96,14 @@ const ProductRegions = ({
             borderColor: 'grey.500',
           },
         }}
+        disabled={freezeDisplay}
       >
         Configurar Regiones de Despacho
       </Button>
 
       {/* Mostrar las regiones configuradas */}
       <Box sx={{ width: '100%' }}>
-        <ShippingRegionsDisplay regions={shippingRegions} />
+        <ShippingRegionsDisplay regions={displayRegions} />
       </Box>
 
       {/* Mostrar errores de validación */}
