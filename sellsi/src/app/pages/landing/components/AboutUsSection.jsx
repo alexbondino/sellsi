@@ -154,7 +154,7 @@ const AboutUsSection = ({ quienesSomosRef }) => {
                     sx={{
                       color: 'common.black',
                       display: '-webkit-box',
-                      WebkitLineClamp: 2,
+                      WebkitLineClamp: 3,
                       WebkitBoxOrient: 'vertical',
                       overflow: 'hidden',
                     }}
