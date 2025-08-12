@@ -96,21 +96,21 @@ export const useSupplierDashboard = () => {
 
       if (prodError) throw prodError
 
-      // Calcular ingresos del MES desde la tabla 'sales' por user_id (supplier)
+      // Calcular ingresos del MES desde la tabla 'product_sales' por supplier_id
       const now = new Date()
       const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
       const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1).toISOString()
-      const { data: salesRows, error: salesErr } = await supabase
-        .from('sales')
+      const { data: psRows, error: psErr } = await supabase
+        .from('product_sales')
         .select('amount, trx_date')
-        .eq('user_id', supplierId)
+        .eq('supplier_id', supplierId)
         .gte('trx_date', monthStart)
         .lt('trx_date', nextMonth)
 
-      if (salesErr) {
+      if (psErr) {
         // No bloquear métricas si falla
       }
-      const monthlyRevenue = (salesRows || []).reduce((sum, r) => sum + (Number(r.amount) || 0), 0)
+      const monthlyRevenue = (psRows || []).reduce((sum, r) => sum + (Number(r.amount) || 0), 0)
       const orderMetrics = []
 
       // Obtener solicitudes que incluyen productos del proveedor

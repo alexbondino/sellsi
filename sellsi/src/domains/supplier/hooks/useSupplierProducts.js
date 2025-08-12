@@ -16,7 +16,7 @@
  * - Filtros: useSupplierProductFilters (se mantiene)
  */
 
-import { useMemo, useEffect } from 'react'
+import { useMemo, useEffect, useState } from 'react'
 import useSupplierProductsCRUD from './crud/useSupplierProductsCRUD'
 import useProductImages from './images/useProductImages'
 import useProductSpecifications from './specifications/useProductSpecifications'
@@ -151,8 +151,9 @@ export const useSupplierProducts = (options = {}) => {
   }, []) // Cambio: Solo ejecutar una vez al montar el hook
 
   // Productos para UI (con formato mejorado)
+  const [ventasByProduct, setVentasByProduct] = useState({})
   const uiProducts = useMemo(() => {
-    return filteredProducts.map((product) => {
+  return filteredProducts.map((product) => {
       // Calcular datos de tramos de precio si existen
       let tramoMin = null,
         tramoMax = null,
@@ -195,7 +196,8 @@ export const useSupplierProducts = (options = {}) => {
         }
       }
 
-      return {
+  // ventas se inyectará más abajo (requiere consulta adicional); default 0
+  return {
         id: product.productid,
         productid: product.productid,
         supplier_id: product.supplier_id,
@@ -212,16 +214,44 @@ export const useSupplierProducts = (options = {}) => {
         tipo: product.product_type,
         activo: product.is_active,
         createdAt: product.createddt,
-        updatedAt: product.updateddt,
+    updatedAt: product.updateddt,
         priceTiers: product.priceTiers || [],
         tramoMin,
         tramoMax,
         tramoPrecioMin,
         tramoPrecioMax,
         delivery_regions: product.delivery_regions || [],
+    ventas: ventasByProduct[product.productid] || 0,
       }
     })
-  }, [filteredProducts])
+  }, [filteredProducts, ventasByProduct])
+
+  // Enriquecer con ventas por producto usando product_sales
+  useEffect(() => {
+    const enrichWithSales = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        if (!session?.user?.id) return
+        const supplierId = session.user.id
+        if (!filteredProducts || filteredProducts.length === 0) return
+        const productIds = filteredProducts.map(p => p.productid)
+        // Obtener ventas acumuladas por producto (total histórico)
+        const { data: psRows, error } = await supabase
+          .from('product_sales')
+          .select('product_id, quantity')
+          .eq('supplier_id', supplierId)
+          .in('product_id', productIds)
+        if (error) return
+        const byProduct = (psRows || []).reduce((acc, r) => {
+          acc[r.product_id] = (acc[r.product_id] || 0) + (Number(r.quantity) || 0)
+          return acc
+        }, {})
+        setVentasByProduct(byProduct)
+      } catch (_) {}
+    }
+    enrichWithSales()
+    // re-run when products list changes size
+  }, [filteredProducts.length])
 
   // 🔄 ESTADÍSTICAS (recalculadas DESPUÉS de construir uiProducts para asegurar que priceTiers estén presentes)
   const stats = useMemo(() => {

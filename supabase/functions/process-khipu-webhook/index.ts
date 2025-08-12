@@ -141,7 +141,7 @@ serve(async (req: Request) => {
     const { data, error } = await supabase
       .from('orders')
       .update({
-        status: 'completed',
+        status: 'paid',
         payment_status: 'paid',
         khipu_payment_id: khipuPayload.payment_id,
         paid_at: new Date().toISOString(),
@@ -247,7 +247,7 @@ serve(async (req: Request) => {
             .update({ updated_at: new Date().toISOString() })
             .eq('cart_id', targetCartId);
 
-          // 5) Ajustar inventario por cada producto comprado y registrar ventas por proveedor
+          // 5) Ajustar inventario por cada producto comprado y registrar ventas por proveedor y por producto
           for (const it of items) {
             const productId = it.product_id || it.productid || it.id;
             const qty = Number(it.quantity || 1);
@@ -273,9 +273,20 @@ serve(async (req: Request) => {
             // Registrar venta por proveedor si contamos con supplierId
             if (supplierId) {
               const amount = Math.max(0, unitPrice * qty);
+              // Insert into supplier-level sales (no unique key available; allow duplicates but could be deduped later)
+              await supabase.from('sales').insert({ user_id: supplierId, amount, trx_date: new Date().toISOString() });
+
+              // Insert product-level sale with idempotency per order/product/supplier
               await supabase
-                .from('sales')
-                .insert({ user_id: supplierId, amount, trx_date: new Date().toISOString() });
+                .from('product_sales')
+                .upsert({
+                  product_id: productId,
+                  supplier_id: supplierId,
+                  quantity: qty,
+                  amount: amount,
+                  trx_date: new Date().toISOString(),
+                  order_id: orderId,
+                }, { onConflict: 'order_id,product_id,supplier_id' });
             }
           }
         }
