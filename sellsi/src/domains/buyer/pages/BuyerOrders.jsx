@@ -9,7 +9,8 @@ import {
   Alert,
   Avatar,
   Divider,
-  Stack
+  Stack,
+  Tooltip
 } from '@mui/material';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import { ThemeProvider } from '@mui/material/styles';
@@ -160,6 +161,35 @@ const BuyerOrders = () => {
     ];
     return chips;
   };
+
+  // Render especial para órdenes de pago (tabla orders) con payment_status
+  const renderPaymentStatusBanner = (order) => {
+    if (!order.is_payment_order) return null;
+    const paymentStatus = order.payment_status || 'pending';
+    if (paymentStatus === 'pending') {
+      return (
+        <Alert severity="info" icon={<CircularProgress size={18} />} sx={{ mb: 2 }}>
+          Procesando pago con Khipu... Esta orden se confirmará automáticamente cuando el pago sea verificado.
+        </Alert>
+      );
+    }
+    if (paymentStatus === 'paid') {
+      return (
+        <Alert severity="success" sx={{ mb: 2 }}>
+          Pago confirmado. La orden será materializada y aparecerá como pedido normal en breve.
+        </Alert>
+      );
+    }
+    // Cualquier otro estado se considera error/issue
+    if (paymentStatus !== 'pending' && paymentStatus !== 'paid') {
+      return (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          Hubo un problema con tu pago (estado: {paymentStatus}). Si el error persiste contacta soporte.
+        </Alert>
+      );
+    }
+    return null;
+  };
   // ============================================================================
   // RENDERIZADO PRINCIPAL
   // ============================================================================
@@ -206,11 +236,14 @@ const BuyerOrders = () => {
                     },
                   }}
                 >
+                  {/* Banner estado pago (si aplica) */}
+                  {renderPaymentStatusBanner(order)}
+
                   {/* Header de la orden */}
                   <Box sx={{ mb: 3 }}>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
                       <Typography variant="h6" fontWeight="bold">
-                        Pedido {formatOrderNumber(order.order_id)}
+                        {order.is_payment_order ? 'Orden de Pago' : 'Pedido'} {formatOrderNumber(order.order_id)}
                       </Typography>
                       <Typography variant="h6" color="primary.main" fontWeight="bold">
                         {formatCurrency(order.total_amount)}
@@ -219,6 +252,11 @@ const BuyerOrders = () => {
                     <Typography variant="body2" color="text.secondary">
                       Fecha de compra: {formatDate(order.created_at)}
                     </Typography>
+                    {order.is_payment_order && (
+                      <Typography variant="caption" color="text.secondary">
+                        payment_status: {order.payment_status}
+                      </Typography>
+                    )}
                   </Box>
 
                   <Divider sx={{ mb: 2 }} />
@@ -226,7 +264,8 @@ const BuyerOrders = () => {
                   {/* Subtarjetas de productos */}
                   <Stack spacing={2}>
                     {order.items.map((item, index) => {
-                      const productStatus = getProductStatus(item, order.created_at, order.status);
+                      // Para payment orders aún no convertidos, mostramos solo estado de pago
+                      const productStatus = order.is_payment_order ? 'pending' : getProductStatus(item, order.created_at, order.status);
                       const statusChips = getStatusChips(productStatus);
                       
                       return (
@@ -266,21 +305,33 @@ const BuyerOrders = () => {
                             </Box>
                             
                             {/* Chips de estado */}
-                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, minWidth: 120 }}>
-                              {statusChips.map((chip) => (
-                                <Chip
-                                  key={chip.label}
-                                  label={chip.label}
-                                  color={chip.color}
-                                  variant={chip.active ? 'filled' : 'outlined'}
-                                  size="small"
-                                  sx={{ 
-                                    fontSize: '0.75rem',
-                                    opacity: chip.active ? 1 : 0.5 
-                                  }}
-                                />
-                              ))}
-                            </Box>
+                              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, minWidth: 120 }}>
+                                {order.is_payment_order ? (
+                                  <Tooltip title={`Estado de pago: ${order.payment_status}`} arrow>
+                                    <Chip
+                                      label={order.payment_status === 'pending' ? 'Procesando Pago' : order.payment_status === 'paid' ? 'Pago Confirmado' : 'Error Pago'}
+                                      color={order.payment_status === 'pending' ? 'warning' : order.payment_status === 'paid' ? 'success' : 'error'}
+                                      variant='filled'
+                                      size='small'
+                                      sx={{ fontSize: '0.70rem' }}
+                                    />
+                                  </Tooltip>
+                                ) : (
+                                  statusChips.map((chip) => (
+                                    <Chip
+                                      key={chip.label}
+                                      label={chip.label}
+                                      color={chip.color}
+                                      variant={chip.active ? 'filled' : 'outlined'}
+                                      size="small"
+                                      sx={{ 
+                                        fontSize: '0.75rem',
+                                        opacity: chip.active ? 1 : 0.5 
+                                      }}
+                                    />
+                                  ))
+                                )}
+                              </Box>
                           </Box>
                         </Paper>
                       );

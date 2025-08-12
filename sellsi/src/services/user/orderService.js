@@ -12,6 +12,116 @@ import { supabase } from '../supabase';
 
 class OrderService {
   /**
+   * Obtiene pedidos de la nueva tabla 'orders' (flujo de pago Khipu) para un comprador.
+   * Estos pueden estar en payment_status = pending (procesando pago) o paid (pagado) u otro (error).
+   * Se usarán para mostrar en BuyerOrders mientras aún no se materializa el pedido tradicional.
+   * @param {string} buyerId
+   * @returns {Array}
+   */
+  async getPaymentOrdersForBuyer(buyerId) {
+    try {
+      if (!buyerId) throw new Error('ID de comprador es requerido');
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+      if (!uuidRegex.test(buyerId)) throw new Error('ID de comprador no tiene formato UUID válido');
+
+      // Pedidos ordenados con los más recientes primero
+      const { data, error } = await supabase
+        .from('orders')
+        .select(`
+          id,
+          user_id,
+          items,
+          subtotal,
+          tax,
+          shipping,
+          total,
+          currency,
+          status,
+          payment_status,
+          payment_method,
+          created_at,
+          updated_at
+        `)
+        .eq('user_id', buyerId)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      if (!data || data.length === 0) return [];
+
+      return data.map(row => {
+        // items puede venir como array de objetos con (product_id, name, quantity, price, ...)
+        let parsedItems = [];
+        if (Array.isArray(row.items)) {
+          parsedItems = row.items;
+        } else if (row.items && typeof row.items === 'string') {
+          try { parsedItems = JSON.parse(row.items); } catch (_) { parsedItems = []; }
+        } else if (row.items && typeof row.items === 'object') {
+          // podría venir como objeto con key items
+          if (Array.isArray(row.items.items)) parsedItems = row.items.items; else parsedItems = [row.items];
+        }
+
+        // Normalizamos items al formato usado por BuyerOrders (similar a carts.cart_items)
+        const normalizedItems = parsedItems.map((it, idx) => ({
+          cart_items_id: it.cart_items_id || it.id || `${row.id}-itm-${idx}`,
+          product_id: it.product_id || it.productid || it.id || null,
+          quantity: it.quantity || 1,
+          price_at_addition: it.price_at_addition || it.price || 0,
+          price_tiers: it.price_tiers || null,
+          product: {
+            productid: it.product_id || it.productid || null,
+            name: it.name || it.productnm || 'Producto',
+            price: it.price || it.price_at_addition || 0,
+            category: it.category || null,
+            description: it.description || '',
+            supplier_id: it.supplier_id || null,
+            image_url: it.image_url || null,
+            thumbnail_url: it.thumbnail_url || null,
+            thumbnails: it.thumbnails || null,
+            supplier: {
+              name: it.supplier_name || 'Proveedor',
+              email: it.supplier_email || ''
+            }
+          }
+        }));
+
+        return {
+          order_id: row.id,
+            cart_id: null,
+            buyer_id: row.user_id,
+            status: row.status || 'pending',
+            payment_status: row.payment_status || 'pending',
+            created_at: row.created_at,
+            updated_at: row.updated_at,
+            buyer: { user_id: row.user_id },
+            delivery_address: null,
+            items: normalizedItems,
+            total_items: normalizedItems.length,
+            total_quantity: normalizedItems.reduce((s,i)=>s + (i.quantity||0),0),
+            total_amount: row.total || normalizedItems.reduce((s,i)=>s + (i.price_at_addition * i.quantity),0),
+            is_payment_order: true
+        };
+      });
+    } catch (error) {
+      throw new Error(`No se pudieron obtener payment orders: ${error.message}`);
+    }
+  }
+
+  /**
+   * Suscripción realtime a cambios en 'orders' para un comprador.
+   * Llama al callback con payload Supabase.
+   * Retorna función para desuscribir.
+   */
+  subscribeToBuyerPaymentOrders(buyerId, onChange) {
+    if (!buyerId) return () => {};
+    const channel = supabase
+      .channel(`orders_changes_${buyerId}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders', filter: `user_id=eq.${buyerId}` }, (payload) => {
+        try { onChange && onChange(payload); } catch (_) {}
+      })
+      .subscribe();
+    return () => { try { supabase.removeChannel(channel); } catch (_) {} };
+  }
+  /**
    * Obtiene todos los pedidos para un proveedor específico
    * @param {string} supplierId - ID del proveedor
    * @param {Object} filters - Filtros opcionales (status, fechas, etc.)
