@@ -253,11 +253,6 @@ const BuyerOrders = () => {
                     <Typography variant="body2" color="text.secondary">
                       Fecha de compra: {formatDate(order.created_at)}
                     </Typography>
-                    {order.is_payment_order && (
-                      <Typography variant="caption" color="text.secondary">
-                        payment_status: {order.payment_status}
-                      </Typography>
-                    )}
                   </Box>
 
                   <Divider sx={{ mb: 2 }} />

@@ -475,9 +475,6 @@ const MyProducts = () => {
                     {process.env.NODE_ENV === 'development' && stats.hasTieredProducts && (
                       <Grid item xs={12}>
                         <Box sx={{ p: 2, borderTop: '1px dashed', borderColor: 'divider' }}>
-                          <Typography variant="caption" color="text.secondary">
-                            Debug rango inventario: min={stats.inventoryRange?.min?.toLocaleString('es-CL')} max={stats.inventoryRange?.max?.toLocaleString('es-CL')} spread={stats.inventoryRange?.spread?.toLocaleString('es-CL')} tiers={stats.hasTieredProducts ? 'sí' : 'no'}
-                          </Typography>
                         </Box>
                       </Grid>
                     )}

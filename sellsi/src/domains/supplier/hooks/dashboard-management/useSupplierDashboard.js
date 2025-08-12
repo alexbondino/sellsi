@@ -96,9 +96,21 @@ export const useSupplierDashboard = () => {
 
       if (prodError) throw prodError
 
-      // NOTE: Orders table doesn't have supplier_id column directly
-      // For now, we'll skip order metrics and focus on product metrics
-      // TODO: Implement proper order-to-supplier mapping through items jsonb
+      // Calcular ingresos del MES desde la tabla 'sales' por user_id (supplier)
+      const now = new Date()
+      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
+      const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1).toISOString()
+      const { data: salesRows, error: salesErr } = await supabase
+        .from('sales')
+        .select('amount, trx_date')
+        .eq('user_id', supplierId)
+        .gte('trx_date', monthStart)
+        .lt('trx_date', nextMonth)
+
+      if (salesErr) {
+        // No bloquear métricas si falla
+      }
+      const monthlyRevenue = (salesRows || []).reduce((sum, r) => sum + (Number(r.amount) || 0), 0)
       const orderMetrics = []
 
       // Obtener solicitudes que incluyen productos del proveedor
@@ -125,9 +137,7 @@ export const useSupplierDashboard = () => {
         totalProducts: productMetrics.length,
         activeProducts: productMetrics.filter(p => p.is_active).length,
         totalSales: orderMetrics.filter(o => o.status === 'completed').length,
-        totalRevenue: orderMetrics
-          .filter(o => o.status === 'completed')
-          .reduce((sum, o) => sum + (o.total_amount || 0), 0),
+  totalRevenue: monthlyRevenue,
         averageRating: 0, // Se puede agregar después
         totalOrders: orderMetrics.length
       }

@@ -156,6 +156,142 @@ serve(async (req: Request) => {
       console.log('✅ Orden actualizada:', data);
     }
 
+    // ========================================================================
+    // MATERIALIZAR ORDEN PARA PROVEEDORES (carts/cart_items) Y AJUSTAR INVENTARIO/VENTAS
+    // ========================================================================
+    try {
+      // 1) Obtener la orden completa para extraer user_id e items
+      const { data: orderRows, error: fetchOrderErr } = await supabase
+        .from('orders')
+        .select('id, user_id, items, total, created_at')
+        .eq('id', orderId)
+        .limit(1);
+
+      if (fetchOrderErr) {
+        console.error('❌ No se pudo leer la orden para materializar:', fetchOrderErr);
+      } else if (orderRows && orderRows.length > 0) {
+        const ord = orderRows[0] as any;
+        const buyerId: string = ord.user_id;
+        let items: any[] = [];
+        try {
+          if (Array.isArray(ord.items)) items = ord.items;
+          else if (typeof ord.items === 'string') items = JSON.parse(ord.items);
+          else if (ord.items && typeof ord.items === 'object') items = (ord.items.items && Array.isArray(ord.items.items)) ? ord.items.items : [ord.items];
+        } catch (_) {
+          items = [];
+        }
+
+        // 2) Intentar tomar carrito ACTIVO del usuario y convertirlo a 'pending'
+        const { data: activeCart, error: activeCartErr } = await supabase
+          .from('carts')
+          .select('cart_id, status')
+          .eq('user_id', buyerId)
+          .eq('status', 'active')
+          .maybeSingle();
+
+        let targetCartId: string | null = null;
+
+        if (activeCart && activeCart.cart_id) {
+          // Convertir carrito activo en pedido pendiente
+          const { data: updCart, error: updErr } = await supabase
+            .from('carts')
+            .update({ status: 'pending', updated_at: new Date().toISOString() })
+            .eq('cart_id', activeCart.cart_id)
+            .select('cart_id')
+            .single();
+
+          if (!updErr && updCart) {
+            targetCartId = updCart.cart_id;
+          } else if (updErr) {
+            console.error('❌ Error convirtiendo carrito activo a pending:', updErr);
+          }
+        }
+
+        // 3) Si no hay carrito activo, crear un nuevo registro de carts en 'pending'
+        if (!targetCartId) {
+          const { data: newCart, error: newCartErr } = await supabase
+            .from('carts')
+            .insert({ user_id: buyerId, status: 'pending' })
+            .select('cart_id')
+            .single();
+
+          if (newCartErr) {
+            console.error('❌ Error creando carrito para orden pagada:', newCartErr);
+          } else if (newCart) {
+            targetCartId = newCart.cart_id;
+          }
+        }
+
+        // 4) Si tenemos un cart_id, asegurar que los cart_items reflejen los items pagados
+        if (targetCartId && items.length > 0) {
+          // Reemplazar items del carrito por los items exactos de la orden pagada
+          await supabase.from('cart_items').delete().eq('cart_id', targetCartId);
+          // Insertar cada item
+          for (const it of items) {
+            const productId = it.product_id || it.productid || it.id;
+            const qty = Number(it.quantity || 1);
+            const priceAt = Number(it.price_at_addition || it.price || 0);
+            if (!productId || !Number.isFinite(qty)) continue;
+            await supabase.from('cart_items').insert({
+              cart_id: targetCartId,
+              product_id: productId,
+              quantity: qty,
+              price_at_addition: priceAt,
+              price_tiers: it.price_tiers || null,
+            });
+          }
+
+          // Actualizar timestamp del carrito
+          await supabase
+            .from('carts')
+            .update({ updated_at: new Date().toISOString() })
+            .eq('cart_id', targetCartId);
+
+          // 5) Ajustar inventario por cada producto comprado y registrar ventas por proveedor
+          for (const it of items) {
+            const productId = it.product_id || it.productid || it.id;
+            const qty = Number(it.quantity || 1);
+            const unitPrice = Number(it.price_at_addition || it.price || 0);
+            const supplierId = it.supplier_id || it.product?.supplier_id || null;
+            if (!productId || !Number.isFinite(qty)) continue;
+
+            // Decrementar stock: seleccionar y actualizar
+            const { data: prodRows, error: prodErr } = await supabase
+              .from('products')
+              .select('productqty')
+              .eq('productid', productId)
+              .limit(1);
+            if (!prodErr && prodRows && prodRows.length > 0) {
+              const currentQty = Number(prodRows[0].productqty || 0);
+              const newQty = Math.max(0, currentQty - qty);
+              await supabase
+                .from('products')
+                .update({ productqty: newQty, updateddt: new Date().toISOString() })
+                .eq('productid', productId);
+            }
+
+            // Registrar venta por proveedor si contamos con supplierId
+            if (supplierId) {
+              const amount = Math.max(0, unitPrice * qty);
+              await supabase
+                .from('sales')
+                .insert({ user_id: supplierId, amount, trx_date: new Date().toISOString() });
+            }
+          }
+        }
+
+        // 6) Crear un nuevo carrito ACTIVO vacío para el usuario (para futuras compras)
+        const { error: newActiveErr } = await supabase
+          .from('carts')
+          .insert({ user_id: buyerId, status: 'active' });
+        if (newActiveErr) {
+          // No es crítico; puede fallar si ya existe
+        }
+      }
+    } catch (materializeErr) {
+      console.error('❌ Error materializando orden pagada:', materializeErr);
+    }
+
     return new Response(JSON.stringify({ success: true, orderId }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,
