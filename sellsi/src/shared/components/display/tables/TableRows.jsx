@@ -138,7 +138,7 @@ const Rows = ({ order, onActionClick }) => {
     const statusConfig = {
       Pendiente: { color: 'warning', label: 'Pendiente' },
       Aceptado: { color: 'info', label: 'Aceptado' },
-      'En Ruta': { color: 'secondary', label: 'En Ruta' },
+  'En Transito': { color: 'secondary', label: 'En Transito' },
       Entregado: { color: 'success', label: 'Entregado' },
       Pagado: { color: 'primary', label: 'Pagado' },
       Rechazado: { color: 'error', label: 'Rechazado' },
@@ -244,7 +244,7 @@ const Rows = ({ order, onActionClick }) => {
         );
         break;
 
-      case 'En Ruta':
+  case 'En Transito':
         actions.push(
           <Tooltip key="deliver" title="Confirmar Entrega">
             <IconButton
@@ -297,7 +297,7 @@ const Rows = ({ order, onActionClick }) => {
 
   // Determinar si debe mostrar fecha de entrega
   const shouldShowDeliveryDate = () => {
-    return ['En Ruta', 'Entregado', 'Pagado'].includes(order.status);
+  return ['En Transito', 'Entregado', 'Pagado'].includes(order.status);
   };
 
   const statusChipProps = getStatusChipProps(order.status);

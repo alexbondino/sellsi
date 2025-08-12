@@ -129,9 +129,9 @@ export const useOrdersStore = create((set, get) => ({
               ...additionalData,
             };
 
-            // Si el nuevo status es 'En Ruta', actualizar estimated_delivery_date
+            // Si el nuevo status es 'En Transito', actualizar estimated_delivery_date
             if (
-              newStatus === 'En Ruta' &&
+              newStatus === 'En Transito' &&
               additionalData.estimated_delivery_date
             ) {
               updatedOrder.estimated_delivery_date =
@@ -231,7 +231,7 @@ export const useOrdersStore = create((set, get) => ({
       Pendiente: 'pending',
       Aceptado: 'accepted',
       Rechazado: 'rejected',
-      'En Ruta': 'in_transit',
+  'En Transito': 'in_transit',
       Entregado: 'delivered',
       Cancelado: 'cancelled',
     };
@@ -261,7 +261,7 @@ export const useOrdersStore = create((set, get) => ({
       pendiente: orders.filter(o => o.status === 'Pendiente').length,
       aceptado: orders.filter(o => o.status === 'Aceptado').length,
       rechazado: orders.filter(o => o.status === 'Rechazado').length,
-      en_ruta: orders.filter(o => o.status === 'En Ruta').length,
+  en_ruta: orders.filter(o => o.status === 'En Transito').length,
       entregado: orders.filter(o => o.status === 'Entregado').length,
       atrasado: orders.filter(o => o.isLate).length,
     };

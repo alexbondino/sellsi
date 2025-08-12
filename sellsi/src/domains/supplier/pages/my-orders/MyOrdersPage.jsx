@@ -167,11 +167,11 @@ const MyOrdersPage = () => {
             });
             return;
           }
-          await updateOrderStatus(selectedOrder.order_id, 'En Ruta', {
+          await updateOrderStatus(selectedOrder.order_id, 'En Transito', {
             estimated_delivery_date: formData.deliveryDate,
             message: formData.message || '',
           });
-          messageToUser = '🚚 El pedido fue despachado y está en ruta.';
+          messageToUser = '🚚 El pedido fue despachado y está en tránsito.';
           break;
 
         case 'deliver':

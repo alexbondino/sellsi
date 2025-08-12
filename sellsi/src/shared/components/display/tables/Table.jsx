@@ -8,7 +8,11 @@ import {
   TableRow,
   Paper,
   Typography,
+  Box,
+  Tooltip,
+  IconButton,
 } from '@mui/material';
+import { InfoOutlined as InfoOutlinedIcon } from '@mui/icons-material';
 import Rows from './TableRows';
 
 const Table = ({ orders, onActionClick }) => {
@@ -37,7 +41,54 @@ const Table = ({ orders, onActionClick }) => {
             <TableCell>Fecha Entrega Limite</TableCell>
             <TableCell align="right">Venta (IVA inc.)</TableCell>
             <TableCell>Estado</TableCell>
-            <TableCell>Acciones</TableCell>
+            <TableCell>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                <span>Acciones</span>
+                <Tooltip
+                  placement="right"
+                  componentsProps={{
+                    tooltip: {
+                      sx: {
+                        maxWidth: 320,
+                        p: 1.25,
+                      },
+                    },
+                  }}
+                  title={
+                    <Box>
+                      <Typography variant="subtitle2" sx={{ color: 'common.white' }} gutterBottom>
+                        Guía rápida
+                      </Typography>
+                      <Typography variant="caption" sx={{ color: 'common.white' }} display="block">
+                        Flujo principal: Pendiente → Aceptado → En Transito → Entregado · Rechazado cierra el pedido.
+                      </Typography>
+                      <Typography variant="caption" sx={{ color: 'common.white' }} display="block" gutterBottom>
+                        Usa Chat para coordinar en cualquier estado.
+                      </Typography>
+                      <Typography variant="caption" sx={{ color: 'common.white' }} display="block">
+                        • Pendiente: Aceptar (continúa) · Rechazar (finaliza)
+                      </Typography>
+                      <Typography variant="caption" sx={{ color: 'common.white' }} display="block">
+                        • Aceptado: Despachar* (pasa a En Transito) · Rechazar
+                      </Typography>
+                      <Typography variant="caption" sx={{ color: 'common.white' }} display="block">
+                        • En Transito: Confirmar Entrega (finaliza)
+                      </Typography>
+                      <Typography variant="caption" sx={{ color: 'common.white' }} display="block" gutterBottom>
+                        • Entregado: Solo Chat postventa
+                      </Typography>
+                      <Typography variant="caption" sx={{ color: 'common.white', opacity: 0.9 }}>
+                        * Despachar requiere Fecha estimada; mensajes/motivos son opcionales.
+                      </Typography>
+                    </Box>
+                  }
+                >
+                  <IconButton size="small" aria-label="Información de acciones">
+                    <InfoOutlinedIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+              </Box>
+            </TableCell>
           </TableRow>
         </TableHead>
         <TableBody>

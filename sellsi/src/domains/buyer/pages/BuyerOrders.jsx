@@ -100,67 +100,44 @@ const BuyerOrders = () => {
     return `#${cartId.slice(-8).toUpperCase()}`;
   };
 
-  // Función para determinar el estado del producto basado en fechas y estado del supplier
-  const getProductStatus = (item, orderDate, orderStatus) => {
-    const now = new Date();
-    const purchaseDate = new Date(orderDate);
-    
-    // Si el supplier ya marcó como entregado, prevalece
-    if (orderStatus === 'delivered') {
-      return 'delivered';
-    }
-    
-    // Si el supplier rechazó, prevalece
-    if (orderStatus === 'rejected') {
-      return 'rejected';
-    }
-    
-    // Buscar delivery_days del producto para esta región
-    const deliveryRegions = item.product.delivery_regions || [];
-    let deliveryDays = 7; // Default si no se encuentra
-    
-    // Aquí deberías obtener la región del comprador, por ahora uso default
-    const buyerRegion = 'Región Metropolitana'; // TODO: obtener región real del comprador
-    
-    const regionMatch = deliveryRegions.find(dr => dr.region === buyerRegion);
-    if (regionMatch) {
-      deliveryDays = regionMatch.delivery_days;
-    }
-    
-    // Calcular fecha estimada de entrega
-    const estimatedDeliveryDate = new Date(purchaseDate);
-    estimatedDeliveryDate.setDate(estimatedDeliveryDate.getDate() + deliveryDays);
-    
-    // Determinar estado basado en fechas
-    if (now >= estimatedDeliveryDate) {
-      return 'delivered';
-    } else if (orderStatus === 'in_transit' || orderStatus === 'accepted') {
-      return 'in_transit';
-    } else {
-      return 'pending';
-    }
+  // Estado de producto basado exclusivamente en el estado del pedido (fuente de verdad backend)
+  const getProductStatus = (_item, _orderDate, orderStatus) => {
+    if (orderStatus === 'cancelled') return 'rejected'; // unificamos cancelado como rechazado para el primer chip
+    const allowed = ['pending', 'accepted', 'rejected', 'in_transit', 'delivered'];
+    return allowed.includes(orderStatus) ? orderStatus : 'pending';
   };
 
   // Función para obtener los 3 chips de estado
   const getStatusChips = (status) => {
-    const chips = [
-      { 
-        label: 'Pendiente', 
-        active: status === 'pending',
-        color: status === 'pending' ? 'warning' : 'default'
-      },
-      { 
-        label: 'En Tránsito', 
-        active: status === 'in_transit',
-        color: status === 'in_transit' ? 'info' : 'default'
-      },
-      { 
-        label: 'Entregado', 
-        active: status === 'delivered',
-        color: status === 'delivered' ? 'success' : 'default'
-      }
+    // Primer chip dinámico: Pendiente | Aceptado | Rechazado
+    let firstLabel = 'Pendiente';
+    let firstActive = false;
+    let firstColor = 'default';
+
+    if (status === 'pending') {
+      firstLabel = 'Pendiente';
+      firstActive = true;
+      firstColor = 'warning';
+    } else if (status === 'accepted') {
+      firstLabel = 'Aceptado';
+      firstActive = true;
+      firstColor = 'info';
+    } else if (status === 'rejected' || status === 'cancelled') {
+      firstLabel = 'Rechazado';
+      firstActive = true;
+      firstColor = 'error';
+    } else {
+      // Para estados posteriores (in_transit, delivered), mantenemos el primer paso como "Aceptado" pero inactivo
+      firstLabel = 'Aceptado';
+      firstActive = false;
+      firstColor = 'default';
+    }
+
+    return [
+      { label: firstLabel, active: firstActive, color: firstColor },
+      { label: 'En Transito', active: status === 'in_transit', color: status === 'in_transit' ? 'info' : 'default' },
+      { label: 'Entregado', active: status === 'delivered', color: status === 'delivered' ? 'success' : 'default' }
     ];
-    return chips;
   };
 
   // Render especial para órdenes de pago (tabla orders) con payment_status

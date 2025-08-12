@@ -498,7 +498,7 @@ class OrderService {
       'Pendiente': 'pending',
       'Aceptado': 'accepted',
       'Rechazado': 'rejected',
-      'En Ruta': 'in_transit',
+  'En Transito': 'in_transit',
       'Entregado': 'delivered',
       'Cancelado': 'cancelled',
       // También manejar estados en inglés
@@ -523,7 +523,7 @@ class OrderService {
       'pending': 'Pendiente',
       'accepted': 'Aceptado',
       'rejected': 'Rechazado',
-      'in_transit': 'En Ruta',
+  'in_transit': 'En Transito',
       'delivered': 'Entregado',
       'cancelled': 'Cancelado'
     };
