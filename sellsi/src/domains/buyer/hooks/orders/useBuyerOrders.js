@@ -29,15 +29,59 @@ export const useBuyerOrders = buyerId => {
         // Payment orders (tabla orders) incluyendo payment_status pending
         const paymentOrders = await orderService.getPaymentOrdersForBuyer(buyerId);
 
-        // Fusionar: si un payment_order ya tiene su equivalente clásico (match por id?), de momento mostramos ambos.
-        // Regla simple: mostrar payment orders primero cuando payment_status = pending
+        // ================== DEDUPLICACIÓN DE ÓRDENES ==================
+        // Objetivo: Mostrar SOLO 1 card. Mientras el pago está pendiente, se muestra la orden de pago.
+        // Cuando el pago pasa a 'paid' y se materializa un pedido clásico (carts), ocultamos la orden de pago duplicada.
+        // Sin columna de enlace (cart_id) en tabla orders, usamos heurísticas:
+        //  - buyer_id igual
+        //  - total_amount igual
+        //  - overlap significativo de product_ids (>= 80%)
+        //  - el pedido clásico creado después (o muy cerca) del payment order
+
+        const classicBySignature = classicOrders.map(co => {
+          const productIds = new Set(co.items.map(i => i.product_id));
+          return {
+            ref: co,
+            total: co.total_amount,
+            created: new Date(co.created_at).getTime(),
+            productIds,
+            size: productIds.size,
+          };
+        });
+
+        const isLikelyMaterialized = (payOrd) => {
+          if (payOrd.payment_status !== 'paid') return false; // solo deduplicar pagados
+          const payCreated = new Date(payOrd.created_at).getTime();
+            const payProducts = new Set(payOrd.items.map(i => i.product_id));
+          const paySize = payProducts.size || 1;
+          const WINDOW_MS = 1000 * 60 * 30; // 30 minutos ventana temporal
+
+          return classicBySignature.some(sig => {
+            if (Math.abs(sig.total - payOrd.total_amount) > 0.0001) return false;
+            // tiempo: el clásico debe ser igual o posterior (o unos minutos antes si se reutilizó cart) dentro de ventana
+            if (sig.created + WINDOW_MS < payCreated && payCreated - sig.created > WINDOW_MS) return false;
+            // overlap de productos
+            let overlap = 0;
+            payProducts.forEach(p => { if (sig.productIds.has(p)) overlap++; });
+            const overlapRatio = overlap / paySize;
+            return overlapRatio >= 0.8; // heurística
+          });
+        };
+
+        const filteredPayment = paymentOrders.filter(po => {
+          if (po.payment_status === 'pending') return true; // siempre mostrar mientras procesa
+          // si está pagado y NO encontramos aún un clásico similar, seguir mostrando hasta materialización
+          return !isLikelyMaterialized(po);
+        });
+
+        // Orden final: pending payment orders primero, luego clásicos, luego payment orders pagados que aún no se materializan
         const merged = [
-          ...paymentOrders.filter(o => o.payment_status === 'pending'),
+          ...filteredPayment.filter(o => o.payment_status === 'pending'),
           ...classicOrders,
-          ...paymentOrders.filter(o => o.payment_status !== 'pending'),
+          ...filteredPayment.filter(o => o.payment_status !== 'pending'),
         ];
 
-  setOrders(merged);
+        setOrders(merged);
       } catch (err) {
         setError(err.message || 'Error al cargar los pedidos');
       } finally {

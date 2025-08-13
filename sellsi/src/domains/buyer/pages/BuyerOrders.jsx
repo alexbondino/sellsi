@@ -250,7 +250,8 @@ const BuyerOrders = () => {
 
     return [
       { label: firstLabel, active: firstActive, color: firstColor },
-      { label: 'En Transito', active: status === 'in_transit', color: status === 'in_transit' ? 'info' : 'default' },
+      // Unificamos color morado (secondary) igual que en MyOrders (proveedor)
+      { label: 'En Transito', active: status === 'in_transit', color: status === 'in_transit' ? 'secondary' : 'default' },
       { label: 'Entregado', active: status === 'delivered', color: status === 'delivered' ? 'success' : 'default' }
     ];
   };

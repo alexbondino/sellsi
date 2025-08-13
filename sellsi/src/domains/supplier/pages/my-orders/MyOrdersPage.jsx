@@ -18,6 +18,7 @@ import { dashboardThemeCore } from '../../../../styles/dashboardThemeCore'; // T
 import { SPACING_BOTTOM_MAIN } from '../../../../styles/layoutSpacing';
 import { SupplierErrorBoundary } from '../../components/ErrorBoundary';
 import { supabase } from '../../../../services/supabase';
+import { uploadInvoicePDF } from '../../../../services/storage/invoiceStorageService';
 
 // TODO: Implementar hook de autenticación
 // import { useAuth } from '../../auth/hooks/useAuth';
@@ -58,6 +59,8 @@ const MyOrdersPage = () => {
   // ID del proveedor desde Supabase Auth (no chequea rol, solo sesión)
   const [supplierId, setSupplierId] = useState(null);
   const [authResolved, setAuthResolved] = useState(false);
+  const [supplierDocTypes, setSupplierDocTypes] = useState([]); // ['boleta','factura']
+  const [taxDocFileState, setTaxDocFileState] = useState({ file: null, error: null });
 
   // Resolver supplierId desde sesión autenticada; fallback a localStorage si no hay sesión
   useEffect(() => {
@@ -83,7 +86,7 @@ const MyOrdersPage = () => {
     resolveSupplierId();
 
     // Suscribirse a cambios de sesión para mantener supplierId sincronizado
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+  const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
       const nextId = session?.user?.id || null;
       setSupplierId(nextId || null);
       setAuthResolved(true);
@@ -94,6 +97,27 @@ const MyOrdersPage = () => {
       try { sub?.subscription?.unsubscribe?.(); } catch (_) {}
     };
   }, []);
+
+  // Cargar document_types del proveedor cuando se obtiene supplierId
+  useEffect(() => {
+    let active = true;
+    const fetchDocTypes = async () => {
+      if (!supplierId) return;
+      try {
+        const { data, error } = await supabase
+          .from('users')
+          .select('document_types')
+          .eq('user_id', supplierId)
+          .maybeSingle();
+        if (!error && active) {
+          const arr = Array.isArray(data?.document_types) ? data.document_types.filter(t => t !== 'ninguno') : [];
+          setSupplierDocTypes(arr);
+        }
+      } catch (_) {}
+    };
+    fetchDocTypes();
+    return () => { active = false; };
+  }, [supplierId]);
 
   // Obtener los pedidos filtrados utilizando un selector del store
   const filteredOrders = getFilteredOrders();
@@ -129,6 +153,7 @@ const MyOrdersPage = () => {
       type: null,
       selectedOrder: null,
     });
+  setTaxDocFileState({ file: null, error: null });
   };
 
   // Maneja el envío de datos desde los formularios del modal
@@ -142,58 +167,70 @@ const MyOrdersPage = () => {
       let messageToUser = ''; // Mensaje para el banner de éxito/información
 
       switch (type) {
-        case 'accept':
-          await updateOrderStatus(selectedOrder.order_id, 'Aceptado', {
+        case 'accept': {
+          // Subida opcional de documento tributario si el proveedor ofrece alguno
+          let taxDocPath = null;
+          if (supplierDocTypes.length > 0) {
+            try {
+              const maybe = formData.taxDocument; // input name
+              let file = null;
+              if (maybe instanceof File) file = maybe;
+              else if (maybe?.target?.files) file = maybe.target.files[0];
+              else if (Array.isArray(maybe)) file = maybe[0];
+              else if (maybe && maybe.files) file = maybe.files[0];
+              if (file) {
+                const up = await uploadInvoicePDF({ file, supplierId, orderId: selectedOrder.order_id, userId: supplierId });
+                taxDocPath = up.path;
+              }
+            } catch (errUp) {
+              console.error('[MyOrders] Error subiendo documento tributario:', errUp);
+              showBanner({ message: `⚠️ Documento tributario no subido: ${errUp.message}`, severity: 'warning', duration: 6000 });
+            }
+          }
+          await updateOrderStatus(selectedOrder.order_id, 'accepted', {
             message: formData.message || '',
+            tax_document_path: taxDocPath || undefined,
           });
-          messageToUser = '✅ El pedido fue aceptado con éxito.';
+          messageToUser = '✅ El pedido fue aceptado con éxito.' + (taxDocPath ? ' (Documento subido)' : '');
           break;
-
-        case 'reject':
-          await updateOrderStatus(selectedOrder.order_id, 'Rechazado', {
+        }
+        case 'reject': {
+          await updateOrderStatus(selectedOrder.order_id, 'rejected', {
             rejectionReason: formData.rejectionReason || '',
+            message: formData.message || '',
           });
           messageToUser = '❌ El pedido fue rechazado.';
           break;
-
-        case 'dispatch':
+        }
+        case 'dispatch': {
           if (!formData.deliveryDate) {
-            // Si la fecha de entrega es obligatoria y falta, muestra una alerta y detiene la ejecución
             showBanner({
-              message:
-                '⚠️ La fecha de entrega estimada es obligatoria para despachar.',
+              message: '⚠️ La fecha de entrega estimada es obligatoria para despachar.',
               severity: 'error',
               duration: 5000,
             });
             return;
           }
-          await updateOrderStatus(selectedOrder.order_id, 'En Transito', {
+          await updateOrderStatus(selectedOrder.order_id, 'in_transit', {
             estimated_delivery_date: formData.deliveryDate,
             message: formData.message || '',
           });
           messageToUser = '🚚 El pedido fue despachado y está en tránsito.';
           break;
-
-        case 'deliver':
-          await updateOrderStatus(selectedOrder.order_id, 'Entregado', {
-            // Asegúrate de cómo tu backend maneja los archivos (deliveryDocuments)
-            deliveryDocuments: formData.deliveryDocuments || null,
+        }
+        case 'deliver': {
+          await updateOrderStatus(selectedOrder.order_id, 'delivered', {
             message: formData.message || '',
           });
           messageToUser = '📦 La entrega fue confirmada con éxito.';
           break;
-
-        case 'chat':
-          messageToUser =
-            '💬 Abriendo chat... (funcionalidad pendiente de implementación).';
-          // Para el chat, cerramos el modal y solo mostramos el banner de información
+        }
+        case 'chat': {
+          messageToUser = ' Abriendo chat... (funcionalidad pendiente de implementación).';
           handleCloseModal();
-          showBanner({
-            message: messageToUser,
-            severity: 'info',
-            duration: 3000,
-          });
-          return; // Salir temprano ya que el modal ya se cerró
+          showBanner({ message: messageToUser, severity: 'info', duration: 3000 });
+          return; // early exit
+        }
         default:
           break;
       }
@@ -224,61 +261,101 @@ const MyOrdersPage = () => {
   const getModalConfig = () => {
     const { type } = modalState;
 
+    const docLabelSuffix = supplierDocTypes.length === 0 ? '' : supplierDocTypes.length === 2 ? '(Boleta/Factura)' : supplierDocTypes[0] === 'boleta' ? '(Boleta)' : '(Factura)';
+    const showTaxUpload = supplierDocTypes.length > 0;
+
     const configs = {
       accept: {
         title: 'Aceptar Pedido',
         submitButtonText: 'Confirmar',
         submitButtonColor: 'primary',
         showWarningIconHeader: false,
-        type: MODAL_TYPES.ORDER_CHECK, // Icono de verificación de orden
-        isFormModal: true, // Indica que este modal tiene un formulario
+        type: MODAL_TYPES.ORDER_CHECK,
+        isFormModal: true,
         children: (
-          <TextField
-            name="message"
-            label="Mensaje (opcional)"
-            multiline
-            rows={3}
-            fullWidth
-            variant="outlined"
-          />
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            {showTaxUpload && (
+              <TextField
+                name="taxDocument"
+                label={`Documento Tributario PDF ${docLabelSuffix} (máx 500KB)`}
+                type="file"
+                fullWidth
+                InputLabelProps={{ shrink: true }}
+                inputProps={{ accept: 'application/pdf' }}
+                helperText={taxDocFileState.error || (taxDocFileState.file ? taxDocFileState.file.name : 'Requerido para aceptar este pedido')}
+                error={Boolean(taxDocFileState.error) || (showTaxUpload && !taxDocFileState.file)}
+                onChange={e => {
+                  const file = e.target.files?.[0];
+                  if (!file) {
+                    setTaxDocFileState({ file: null, error: 'Archivo PDF requerido' });
+                    return;
+                  }
+                  if (file.type !== 'application/pdf') {
+                    setTaxDocFileState({ file: null, error: 'Solo se permite PDF' });
+                    return;
+                  }
+                  if (file.size > 500 * 1024) {
+                    setTaxDocFileState({ file: null, error: 'Máximo 500KB' });
+                    return;
+                  }
+                  setTaxDocFileState({ file, error: null });
+                }}
+              />
+            )}
+            <TextField
+              name="message"
+              label="Mensaje (opcional)"
+              multiline
+              rows={3}
+              fullWidth
+              variant="outlined"
+            />
+          </Box>
         ),
       },
       reject: {
         title: 'Rechazar Pedido',
         submitButtonText: 'Rechazar',
         submitButtonColor: 'error',
-  showWarningIconHeader: false, // Eliminado ícono de advertencia según requerimiento
-        type: MODAL_TYPES.WARNING, // Icono de advertencia general
+        showWarningIconHeader: false,
+        type: MODAL_TYPES.WARNING,
         isFormModal: true,
         children: (
-          <TextField
-            name="rejectionReason"
-            label="Motivo del rechazo (opcional)"
-            multiline
-            rows={3}
-            fullWidth
-            variant="outlined"
-          />
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <TextField
+              name="rejectionReason"
+              label="Motivo de rechazo"
+              multiline
+              rows={3}
+              fullWidth
+              variant="outlined"
+            />
+            <TextField
+              name="message"
+              label="Mensaje (opcional)"
+              multiline
+              rows={2}
+              fullWidth
+              variant="outlined"
+            />
+          </Box>
         ),
       },
       dispatch: {
-        title: 'Confirmar Despacho',
-        submitButtonText: 'Confirmar',
+        title: 'Despachar Pedido',
+        submitButtonText: 'Despachar',
         submitButtonColor: 'primary',
         showWarningIconHeader: false,
-        type: MODAL_TYPES.ORDER_TRUCK, // Icono de camión de entrega
+        type: MODAL_TYPES.ORDER_TRUCK || MODAL_TYPES.ORDER_BRIEFCASE,
         isFormModal: true,
         children: (
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             <TextField
               name="deliveryDate"
-              label="Fecha de entrega estimada"
+              label="Fecha estimada de entrega"
               type="date"
               fullWidth
-              required
-              InputLabelProps={{
-                shrink: true,
-              }}
+              InputLabelProps={{ shrink: true }}
             />
             <TextField
               name="message"
@@ -296,22 +373,10 @@ const MyOrdersPage = () => {
         submitButtonText: 'Confirmar',
         submitButtonColor: 'primary',
         showWarningIconHeader: false,
-        type: MODAL_TYPES.ORDER_BRIEFCASE, // Icono de maletín o documentos
+        type: MODAL_TYPES.ORDER_BRIEFCASE,
         isFormModal: true,
         children: (
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            {/* Nota: El manejo de `type="file"` con FormData puede requerir lógica adicional
-               para subir el archivo al backend si no lo haces ya */}
-            <TextField
-              name="deliveryDocuments"
-              label="Adjuntar documentos de entrega (opcional)"
-              type="file"
-              fullWidth
-              InputLabelProps={{
-                shrink: true,
-              }}
-              // inputProps={{ multiple: true }} // Puedes habilitar múltiples archivos
-            />
             <TextField
               name="message"
               label="Mensaje (opcional)"
@@ -328,16 +393,14 @@ const MyOrdersPage = () => {
         submitButtonText: 'Abrir Chat',
         submitButtonColor: 'info',
         showWarningIconHeader: false,
-        type: MODAL_TYPES.CHAT, // Icono de chat
-        isFormModal: false, // Este no es un formulario, solo una confirmación/acción directa
+        type: MODAL_TYPES.CHAT,
+        isFormModal: false,
         children: (
           <Typography variant="body1">
-            ¿Deseas abrir la conversación de chat para el pedido **#
-            {modalState.selectedOrder?.order_id}**?
+            ¿Deseas abrir la conversación de chat para el pedido #
+            {modalState.selectedOrder?.order_id}?
           </Typography>
         ),
-        // Para el caso 'chat', la acción se ejecuta directamente en el `handleModalSubmit`
-        // y este `onSubmit` específico se asegura de cerrar el modal y mostrar el banner.
       },
     };
 
@@ -398,6 +461,7 @@ const MyOrdersPage = () => {
 
   // Obtiene la configuración del modal basada en el estado actual
   const modalConfig = getModalConfig();
+  const submitDisabled = modalState.type === 'accept' && supplierDocTypes.length > 0 && (!taxDocFileState.file || !!taxDocFileState.error);
 
   // --- Renderizado Principal de la Página ---
   return (
@@ -445,6 +509,7 @@ const MyOrdersPage = () => {
               // o una función específica si `modalConfig.onSubmit` existe (como en el caso de 'chat').
               onSubmit={modalConfig.onSubmit || handleModalSubmit}
               order={modalState.selectedOrder} // Pasa el objeto de la orden al modal
+              submitDisabled={submitDisabled}
               {...modalConfig} // Extiende la configuración específica del tipo de modal
             />
           )}

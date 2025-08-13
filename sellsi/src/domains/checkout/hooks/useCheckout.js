@@ -116,7 +116,12 @@ const useCheckout = create(
 
         try {
           // Registrar IP del usuario al iniciar el proceso de pago
-          await trackUserAction(`payment_process_started_${paymentData?.method || 'unknown'}`)
+          // Intentar obtener userId desde paymentData u orderData persistido
+          const state = get()
+          const userId = paymentData?.userId || state?.orderData?.userId || state?.orderData?.user_id
+          if (userId) {
+            try { await trackUserAction(userId, `payment_process_started_${paymentData?.method || 'unknown'}`) } catch (_) {}
+          }
           
           // Aquí se integrará con el servicio de pago real
           // Por ahora simulamos el proceso
@@ -126,7 +131,9 @@ const useCheckout = create(
           const paymentReference = `REF_${Math.random().toString(36).substr(2, 9)}`
           
           // Registrar IP del usuario al completar el pago
-          await trackUserAction(`payment_completed_${paymentData?.method || 'unknown'}`)
+          if (userId) {
+            try { await trackUserAction(userId, `payment_completed_${paymentData?.method || 'unknown'}`) } catch (_) {}
+          }
           
           set({
             isProcessing: false,
@@ -143,8 +150,9 @@ const useCheckout = create(
           }
         } catch (error) {
           // Registrar IP del usuario en caso de fallo de pago
-          await trackUserAction(`payment_failed_${paymentData?.method || 'unknown'}`)
-          
+          if (userId) {
+            try { await trackUserAction(userId, `payment_failed_${paymentData?.method || 'unknown'}`) } catch (_) {}
+          }
           set({
             isProcessing: false,
             paymentStatus: PAYMENT_STATUS.FAILED,

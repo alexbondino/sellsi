@@ -52,6 +52,7 @@ const Modal = ({
   loading = false,
   showWarningIconHeader = false,
   isFormModal = false,
+  submitDisabled = false, // nuevo: permite deshabilitar el botón de submit por validaciones externas
 }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -299,7 +300,7 @@ const Modal = ({
         <Button
           onClick={isFormModal ? undefined : handleSubmitInternal}
           type={isFormModal ? 'submit' : 'button'}
-          disabled={loading}
+          disabled={loading || submitDisabled}
           variant="contained"
           color={currentSubmitButtonColor}
           fullWidth={isMobile}

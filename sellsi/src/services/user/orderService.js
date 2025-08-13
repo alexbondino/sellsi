@@ -1,8 +1,8 @@
 import { supabase } from '../supabase';
 import { addBusinessDaysChile, toISODateOnly } from '../../utils/businessDaysChile';
 
-// Toggle detailed logging for diagnosing supplier orders and addresses
-const DEBUG_ORDERS = false;
+// DEBUG deshabilitado (se removieron los console.logs); cambiar a true y reintroducir prints manualmente si se necesita diagnóstico.
+const DEBUG_ORDERS = false; // Mantener bandera por compatibilidad futura
 
 /**
  * OrderService - Servicio para manejar todas las operaciones de pedidos con Supabase
@@ -16,6 +16,269 @@ const DEBUG_ORDERS = false;
 
 class OrderService {
   /**
+   * Obtiene pedidos de la nueva tabla 'orders' (flujo de pago Khipu) para un proveedor.
+   * Filtra los items dentro de cada order para mostrar solo los productos del supplier.
+   * @param {string} supplierId
+   * @returns {Array}
+   */
+  async getPaymentOrdersForSupplier(supplierId) {
+    try {
+      if (!supplierId) throw new Error('ID de proveedor es requerido');
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+      if (!uuidRegex.test(supplierId)) throw new Error('ID de proveedor no tiene formato UUID válido');
+
+      // Obtener todas las órdenes con items
+      const { data, error } = await supabase
+        .from('orders')
+        .select(`
+          id,
+          user_id,
+          items,
+          subtotal,
+          tax,
+          shipping,
+          total,
+          currency,
+          status,
+          payment_status,
+          payment_method,
+          created_at,
+          updated_at,
+          accepted_at,
+          dispatched_at,
+          delivered_at,
+          cancelled_at,
+          rejection_reason,
+          cancellation_reason
+        `)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      if (!data || data.length === 0) return [];      // Filtrar y procesar órdenes que contengan productos del supplier
+      const supplierOrders = [];
+      const userIdsSet = new Set();
+      const productIdsSet = new Set();
+
+      for (const order of data) {
+        let parsedItems = [];
+        if (Array.isArray(order.items)) parsedItems = order.items;
+        else if (order.items && typeof order.items === 'string') { 
+          try { parsedItems = JSON.parse(order.items); } catch (_) { parsedItems = []; } 
+        }
+        else if (order.items && typeof order.items === 'object') { 
+          parsedItems = Array.isArray(order.items.items) ? order.items.items : [order.items]; 
+        }
+
+        // Filtrar items que pertenecen a este supplier
+        const supplierItems = parsedItems.filter(item => item.supplier_id === supplierId);
+        
+        if (supplierItems.length > 0) {
+          userIdsSet.add(order.user_id);
+          supplierItems.forEach(item => {
+            if (item.product_id) productIdsSet.add(item.product_id);
+          });
+          
+          supplierOrders.push({
+            ...order,
+            supplier_items: supplierItems,
+            original_total: order.total,
+            supplier_total: supplierItems.reduce((sum, item) => sum + (item.price_at_addition * item.quantity), 0)
+          });
+        }
+      }
+
+      // Batch fetch user data with shipping info
+      let usersMap = new Map();
+      if (userIdsSet.size > 0) {
+        const userIds = Array.from(userIdsSet);
+        const { data: users, error: usersError } = await supabase
+          .from('users')
+          .select(`
+            user_id,
+            user_nm,
+            email,
+            phone_nbr,
+            shipping_info (
+              shipping_region,
+              shipping_commune,
+              shipping_address,
+              shipping_number,
+              shipping_dept
+            )
+          `)
+          .in('user_id', userIds);
+
+        if (!usersError && users) {
+          usersMap = new Map(users.map(u => [u.user_id, u]));
+        }
+      }
+
+      // AGREGAR FALLBACK: Si algunos usuarios no tienen shipping_info, buscar directamente en la tabla shipping_info
+      const missingUserIds = Array.from(userIdsSet).filter(userId => {
+        const user = usersMap.get(userId);
+        // CORREGIR: Detectar arrays vacíos también como missing
+        const hasValidShippingInfo = user?.shipping_info && 
+          user.shipping_info.length > 0 && 
+          user.shipping_info[0]?.shipping_address && 
+          user.shipping_info[0]?.shipping_region;
+        
+        const isMissing = !user || !hasValidShippingInfo;
+        
+        return isMissing;
+      });
+
+      let fallbackShippingByUser = new Map();
+      if (missingUserIds.length > 0) {
+        const { data: fallbackShip, error: fallbackErr } = await supabase
+          .from('shipping_info')
+          .select('user_id, shipping_region, shipping_commune, shipping_address, shipping_number, shipping_dept')
+          .in('user_id', missingUserIds);
+        if (!fallbackErr && Array.isArray(fallbackShip)) {
+          fallbackShippingByUser = new Map(
+            fallbackShip.map(r => [r.user_id, r])
+          );
+        }
+      }
+
+      // Batch fetch product data with delivery regions
+      let productsMap = new Map();
+      if (productIdsSet.size > 0) {
+        const productIds = Array.from(productIdsSet);
+        const { data: products, error: productsError } = await supabase
+          .from('products')
+          .select(`
+            productid,
+            productnm,
+            price,
+            category,
+            description,
+            product_delivery_regions (
+              region,
+              price,
+              delivery_days
+            ),
+            product_images (
+              image_url,
+              thumbnail_url,
+              thumbnails
+            )
+          `)
+          .in('productid', productIds);
+
+        if (!productsError && products) {
+          productsMap = new Map(products.map(p => [p.productid, p]));
+        }
+      }
+
+      // Función para calcular fecha de entrega límite (igual que en flujo legacy)
+      const calculateDeliveryDeadline = (createdAtISO, items, buyerRegion) => {
+        let maxDeliveryDays = 0;
+        items.forEach(item => {
+          const product = productsMap.get(item.product_id);
+          const deliveryRegions = product?.product_delivery_regions || [];
+          const regionMatch = deliveryRegions.find(dr => dr.region === buyerRegion);
+          if (regionMatch && Number(regionMatch.delivery_days) > maxDeliveryDays) {
+            maxDeliveryDays = Number(regionMatch.delivery_days);
+          }
+        });
+        if (maxDeliveryDays === 0) maxDeliveryDays = 7; // fallback
+        const start = new Date(createdAtISO);
+        const deadline = addBusinessDaysChile(start, maxDeliveryDays);
+        return toISODateOnly(deadline);
+      };
+
+      // Transformar a formato compatible con MyOrdersPage
+      const transformedOrders = supplierOrders.map(order => {
+        const user = usersMap.get(order.user_id) || {};
+        let shippingInfo = user.shipping_info?.[0] || {};
+        
+        // USAR FALLBACK: Si no hay shipping_info en el user, buscar en fallback
+        if ((!shippingInfo || Object.keys(shippingInfo).length === 0) && fallbackShippingByUser.size > 0) {
+          const fb = fallbackShippingByUser.get(order.user_id);
+          if (fb) {
+            shippingInfo = fb;
+          }
+        }
+        
+        const deliveryAddress = {
+          region: shippingInfo.shipping_region || 'Región no especificada',
+          commune: shippingInfo.shipping_commune || 'Comuna no especificada',
+          address: shippingInfo.shipping_address || 'Dirección no especificada',
+          number: shippingInfo.shipping_number || '',
+          department: shippingInfo.shipping_dept || '',
+          fullAddress: `${shippingInfo.shipping_address || 'Dirección no especificada'} ${shippingInfo.shipping_number || ''} ${shippingInfo.shipping_dept || ''}`.trim()
+        };
+
+        // Calcular fecha límite usando la misma lógica que el flujo legacy
+        const estimatedDeliveryDate = calculateDeliveryDeadline(order.created_at, order.supplier_items, deliveryAddress.region);
+
+        return {
+          order_id: order.id,
+          buyer_id: order.user_id,
+          status: order.status,
+          payment_status: order.payment_status,
+          created_at: order.created_at,
+          updated_at: order.updated_at,
+          accepted_at: order.accepted_at,
+          dispatched_at: order.dispatched_at,
+          delivered_at: order.delivered_at,
+          estimated_delivery_date: estimatedDeliveryDate, // Calculado correctamente
+          
+          // Información del comprador
+          buyer: {
+            user_id: user.user_id || order.user_id,
+            name: user.user_nm || 'Usuario desconocido',
+            email: user.email || 'Email no disponible',
+            phone: user.phone_nbr || 'Teléfono no disponible'
+          },
+
+          // Dirección de entrega
+          delivery_address: deliveryAddress,
+          deliveryAddress: deliveryAddress,
+
+          // Items del supplier con información completa del producto
+          items: order.supplier_items.map(item => {
+            const product = productsMap.get(item.product_id) || {};
+            return {
+              cart_items_id: item.cart_items_id || item.id || `${order.id}-${item.product_id}`,
+              product_id: item.product_id,
+              quantity: item.quantity,
+              price_at_addition: item.price_at_addition,
+              price_tiers: item.price_tiers,
+              
+              product: {
+                productid: item.product_id,
+                name: item.name || item.productnm || product.productnm || 'Producto',
+                price: item.price || item.price_at_addition || product.price,
+                category: item.category || product.category,
+                description: item.description || product.description,
+                image_url: item.image_url || product.product_images?.[0]?.image_url,
+                thumbnail_url: item.thumbnail_url || product.product_images?.[0]?.thumbnail_url,
+                thumbnails: item.thumbnails || product.product_images?.[0]?.thumbnails,
+                delivery_regions: product.product_delivery_regions || []
+              }
+            };
+          }),
+
+          // Totales (solo del supplier)
+          total_items: order.supplier_items.length,
+          total_quantity: order.supplier_items.reduce((sum, item) => sum + item.quantity, 0),
+          total_amount: order.supplier_total,
+          
+          // Marcadores para identificar fuente
+          is_payment_order: true,
+          source: 'orders_table'
+        };
+      });
+
+      return transformedOrders;
+
+    } catch (error) {
+      throw new Error(`No se pudieron obtener payment orders para supplier: ${error.message}`);
+    }
+  }
+
+  /**
    * Obtiene pedidos de la nueva tabla 'orders' (flujo de pago Khipu) para un comprador.
    * Estos pueden estar en payment_status = pending (procesando pago) o paid (pagado) u otro (error).
    * Se usarán para mostrar en BuyerOrders mientras aún no se materializa el pedido tradicional.
@@ -28,7 +291,7 @@ class OrderService {
       const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
       if (!uuidRegex.test(buyerId)) throw new Error('ID de comprador no tiene formato UUID válido');
 
-  if (DEBUG_ORDERS) console.debug('[OrderService] getPaymentOrdersForBuyer start', { buyerId });
+  // Log eliminado
 
       // Pedidos ordenados con los más recientes primero
   const { data, error } = await supabase
@@ -54,7 +317,7 @@ class OrderService {
   if (error) throw error;
       if (!data || data.length === 0) return [];
 
-  if (DEBUG_ORDERS) console.debug('[OrderService] getPaymentOrdersForBuyer rows', data.length);
+  // Log eliminado
 
       // 1) Parse all items once and collect supplier_ids
       const parsed = data.map(row => {
@@ -179,7 +442,7 @@ class OrderService {
   */
   async getOrdersForSupplier(supplierId, filters = {}) {
     try {
-      if (DEBUG_ORDERS) console.debug('[OrderService] getOrdersForSupplier start', { supplierId, filters });
+  // Log eliminado
       // Validate supplierId is a valid UUID
       if (!supplierId) {
         throw new Error('ID de proveedor es requerido');
@@ -201,14 +464,10 @@ class OrderService {
         throw new Error(`Error obteniendo productos del proveedor: ${productsError.message}`);
       }
 
-      if (!supplierProducts || supplierProducts.length === 0) {
-        // No products for this supplier, return empty array
-        if (DEBUG_ORDERS) console.debug('[OrderService] No products for supplier; returning empty orders.');
-        return [];
-      }
+  if (!supplierProducts || supplierProducts.length === 0) return [];
 
       const productIds = supplierProducts.map(p => p.productid);
-      if (DEBUG_ORDERS) console.debug('[OrderService] supplierProducts count:', supplierProducts.length, 'productIds sample:', productIds.slice(0, 5));
+  // Log eliminado
 
       // Now get carts that contain items from this supplier's products
       let query = supabase
@@ -274,18 +533,12 @@ class OrderService {
       }
 
       const { data, error } = await query;
-      if (error) {
-        if (DEBUG_ORDERS) console.error('[OrderService] getOrdersForSupplier error:', error);
-        throw error;
-      }
+  if (error) throw error;
 
       // Handle case where no data is returned
-      if (!data || data.length === 0) {
-        if (DEBUG_ORDERS) console.debug('[OrderService] No carts found for supplier.');
-        return [];
-      }
+  if (!data || data.length === 0) return [];
 
-      if (DEBUG_ORDERS) console.debug('[OrderService] carts query returned count:', Array.isArray(data) ? data.length : 0);
+  // Log eliminado
 
       // Fallback: recolectar user_ids sin shipping_info embebido y traerlos en un batch
       const missingUserIds = Array.from(
@@ -299,7 +552,6 @@ class OrderService {
 
       let fallbackShippingByUser = new Map();
       if (missingUserIds.length > 0) {
-        if (DEBUG_ORDERS) console.debug('[OrderService] Fallback fetching shipping_info for users:', missingUserIds.length);
         const { data: fallbackShip, error: fallbackErr } = await supabase
           .from('shipping_info')
           .select('user_id, shipping_region, shipping_commune, shipping_address, shipping_number, shipping_dept')
@@ -308,9 +560,6 @@ class OrderService {
           fallbackShippingByUser = new Map(
             fallbackShip.map(r => [r.user_id, r])
           );
-          if (DEBUG_ORDERS) console.debug('[OrderService] Fallback shipping rows fetched:', fallbackShip.length);
-        } else if (fallbackErr) {
-          if (DEBUG_ORDERS) console.warn('[OrderService] Fallback shipping_info query error:', fallbackErr?.message || fallbackErr);
         }
       }
 
@@ -318,32 +567,20 @@ class OrderService {
       const orders = data
         .filter(cart => cart.cart_items && cart.cart_items.length > 0) // Solo carritos con items del proveedor
         .map(cart => {
-          if (DEBUG_ORDERS) console.debug('[OrderService] Processing cart:', {
-            cart_id: cart.cart_id,
-            status: cart.status,
-            itemsCount: cart.cart_items?.length || 0,
-            hasUser: !!cart.users,
-            hasShippingInfo: Array.isArray(cart.users?.shipping_info) && cart.users.shipping_info.length > 0,
-          });
+          // Logs de procesamiento eliminados
           // Filter items that belong to this supplier
           const supplierItems = cart.cart_items.filter(item => 
             item.products && item.products.supplier_id === supplierId
           );
 
           // Skip carts that don't have items for this supplier
-          if (supplierItems.length === 0) {
-            if (DEBUG_ORDERS) console.debug('[OrderService] Cart skipped (no items for supplier):', cart.cart_id);
-            return null;
-          }
+          if (supplierItems.length === 0) return null;
 
           // Obtener Dirección de Despacho del comprador
           let shippingInfo = cart.users?.shipping_info?.[0] || {};
           if ((!shippingInfo || Object.keys(shippingInfo).length === 0) && fallbackShippingByUser.size > 0) {
             const fb = fallbackShippingByUser.get(cart.user_id);
-            if (fb) {
-              shippingInfo = fb;
-              if (DEBUG_ORDERS) console.debug('[OrderService] Applied fallback shipping_info for cart:', cart.cart_id);
-            }
+            if (fb) shippingInfo = fb;
           }
           const deliveryAddress = {
             region: shippingInfo.shipping_region || 'Región no especificada',
@@ -354,7 +591,7 @@ class OrderService {
             fullAddress: `${shippingInfo.shipping_address || 'Dirección no especificada'} ${shippingInfo.shipping_number || ''} ${shippingInfo.shipping_dept || ''}`.trim()
           };
 
-          if (DEBUG_ORDERS) console.debug('[OrderService] shipping_info for cart:', cart.cart_id, 'raw:', shippingInfo, 'deliveryAddress:', deliveryAddress);
+          // Log eliminado
 
           // Calcular fecha de entrega límite en días hábiles chilenos
           const calculateDeliveryDeadline = (createdAtISO, items, buyerRegion) => {
@@ -393,6 +630,7 @@ class OrderService {
 
             // Dirección de Despacho
             delivery_address: deliveryAddress,
+            deliveryAddress: deliveryAddress, // ✅ AGREGAR para consistencia con payment orders
 
             // Items del pedido (solo los del proveedor)
             items: supplierItems.map(item => ({
@@ -424,7 +662,7 @@ class OrderService {
         .filter(order => order !== null) // Remove null entries
         .filter(order => order.items.length > 0); // Solo órdenes con items del proveedor
 
-      if (DEBUG_ORDERS) console.debug('[OrderService] getOrdersForSupplier final orders:', orders.length);
+  // Log eliminado
 
       return orders;
 
@@ -434,8 +672,8 @@ class OrderService {
   }
 
   /**
-   * Actualiza el estado de un pedido
-   * @param {string} orderId - ID del pedido (cart_id)
+   * Actualiza el estado de un pedido - maneja tanto órdenes legacy (carts) como nuevas (orders)
+   * @param {string} orderId - ID del pedido
    * @param {string} newStatus - Nuevo estado del pedido
    * @param {Object} additionalData - Datos adicionales (mensajes, fechas, etc.)
    * @returns {Object} Pedido actualizado
@@ -458,28 +696,49 @@ class OrderService {
         throw new Error(`Estado no válido: ${newStatus}`);
       }
 
-      // Preparar datos para actualizar (whitelist: evitar columnas inexistentes como message/rejectionReason)
+      // Preparar datos para actualizar
       const updateData = {
         status: normalizedStatus,
         updated_at: new Date().toISOString()
       };
 
-      // Actualizar en la base de datos
-      const { data, error } = await supabase
+      // Intentar actualizar primero en la tabla orders (nuevo flujo)
+      const { data: orderData, error: orderError } = await supabase
+        .from('orders')
+        .update(updateData)
+        .eq('id', orderId)
+        .select('*')
+        .single();
+
+      // Si encontramos el pedido en orders, usar ese resultado
+      if (!orderError && orderData) {
+        await this.logOrderAction(orderId, newStatus, additionalData);
+        return {
+          success: true,
+          order: orderData,
+          source: 'orders',
+          message: `Pedido ${this.getStatusDisplayName(normalizedStatus)} correctamente`
+        };
+      }
+
+      // Si no está en orders, intentar en carts (flujo legacy)
+      const { data: cartData, error: cartError } = await supabase
         .from('carts')
         .update(updateData)
         .eq('cart_id', orderId)
         .select('*')
         .single();
 
-      if (error) throw error;
+      if (cartError) {
+        throw new Error(`Pedido no encontrado en ninguna tabla: ${cartError.message}`);
+      }
 
-      // Registrar la acción en logs (opcional - para auditoria futura)
       await this.logOrderAction(orderId, newStatus, additionalData);
 
       return {
         success: true,
-        order: data,
+        order: cartData,
+        source: 'carts',
         message: `Pedido ${this.getStatusDisplayName(normalizedStatus)} correctamente`
       };
 

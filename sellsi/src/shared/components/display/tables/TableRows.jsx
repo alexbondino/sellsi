@@ -77,6 +77,8 @@ const Rows = ({ order, onActionClick }) => {
 
   // Formatear dirección
   const formatAddress = address => {
+  // Dirección puede venir como string simple o como objeto normalizado
+
     if (!address) return '—';
 
     // String directo
@@ -102,7 +104,9 @@ const Rows = ({ order, onActionClick }) => {
   const region = regionRaw ? getRegionDisplay(regionRaw, { withPrefix: true }) : '';
 
     const parts = [street, commune, region].filter(Boolean);
-    return parts.length ? parts.join(', ') : '—';
+    const result = parts.length ? parts.join(', ') : '—';
+    
+    return result;
   };
 
   // Obtener fecha de solicitud (solo una fecha)

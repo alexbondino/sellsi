@@ -46,21 +46,24 @@ export const useOrdersStore = create((set, get) => ({
     set({ loading: true, error: null });
 
     try {
-      // Obtener pedidos desde el backend
-      const backendOrders = await orderService.getOrdersForSupplier(
-        supplierId,
-        filters
-      );
+      // Obtener pedidos desde ambas fuentes
+      const [legacyOrders, paymentOrders] = await Promise.all([
+        orderService.getOrdersForSupplier(supplierId, filters),
+        orderService.getPaymentOrdersForSupplier(supplierId)
+      ]);
+
+      // Combinar y deduplicar pedidos
+      const allOrders = [...legacyOrders, ...paymentOrders];
 
       // Procesar y enriquecer los datos
-      const processedOrders = backendOrders.map(order => ({
+  const processedOrders = allOrders.map(order => ({
         ...order,
         // Convertir status del backend al formato de UI
         status: orderService.getStatusDisplayName(order.status),
         // Calcular si está atrasado
         isLate: calculateIsLate(order),
         // Usar la dirección de entrega desde shipping_info
-        deliveryAddress: order.delivery_address || {
+        deliveryAddress: order.delivery_address || order.deliveryAddress || {
           street: 'Dirección no especificada',
           city: 'Ciudad no especificada',
           region: 'Región no especificada',
@@ -73,11 +76,11 @@ export const useOrdersStore = create((set, get) => ({
         // Mapear productos al formato esperado por la UI
         products:
           order.items?.map(item => ({
-            name: item.product.name,
+            name: item.product?.name || item.product?.productnm || 'Producto',
             quantity: item.quantity,
             price: item.price_at_addition,
           })) || [],
-      }));
+  }));
 
       set({
         orders: processedOrders,
@@ -119,19 +122,34 @@ export const useOrdersStore = create((set, get) => ({
   // Actualizar estado de pedido con backend
   updateOrderStatus: async (orderId, newStatus, additionalData = {}) => {
     try {
+      // Convertir el estado de backend a display antes del optimistic update
+      const getDisplayStatus = (backendStatus) => {
+        const displayMap = {
+          'pending': 'Pendiente',
+          'accepted': 'Aceptado',
+          'rejected': 'Rechazado',
+          'in_transit': 'En Transito',
+          'delivered': 'Entregado',
+          'cancelled': 'Cancelado'
+        };
+        return displayMap[backendStatus] || backendStatus;
+      };
+
+      const displayStatus = getDisplayStatus(newStatus);
+
       // Optimistic update - actualizar UI inmediatamente
       set(state => {
         const updatedOrders = state.orders.map(order => {
           if (order.order_id === orderId) {
             const updatedOrder = {
               ...order,
-              status: newStatus,
+              status: displayStatus, // Usar el status de display
               ...additionalData,
             };
 
-            // Si el nuevo status es 'En Transito', actualizar estimated_delivery_date
+            // Si el nuevo status es 'in_transit', actualizar estimated_delivery_date
             if (
-              newStatus === 'En Transito' &&
+              newStatus === 'in_transit' &&
               additionalData.estimated_delivery_date
             ) {
               updatedOrder.estimated_delivery_date =
@@ -231,18 +249,20 @@ export const useOrdersStore = create((set, get) => ({
       Pendiente: 'pending',
       Aceptado: 'accepted',
       Rechazado: 'rejected',
-  'En Transito': 'in_transit',
+      'En Transito': 'in_transit',
       Entregado: 'delivered',
       Cancelado: 'cancelled',
     };
 
+    // Convertir el filtro de UI a estado de backend
     const backendStatus = statusMap[statusFilter] || statusFilter;
 
+    // Filtrar órdenes por estado de backend directamente
     return orders.filter(order => {
-      const orderBackendStatus =
-        Object.keys(statusMap).find(key => statusMap[key] === order.status) ||
-        order.status;
-      return orderBackendStatus === statusFilter;
+      // order.status ya debe estar en formato de display ('Pendiente', 'En Transito', etc.)
+      // Necesitamos convertirlo a backend status para comparar
+      const orderBackendStatus = statusMap[order.status] || order.status;
+      return orderBackendStatus === backendStatus;
     });
   },
 

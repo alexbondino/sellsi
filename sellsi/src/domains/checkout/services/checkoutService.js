@@ -18,9 +18,16 @@ class CheckoutService {
   async createOrder(orderData) {
     try {
       // Registrar IP del usuario al crear la orden
-      await trackUserAction(
-        `order_created_${orderData.paymentMethod || 'unknown'}`
-      );
+      if (orderData?.userId) {
+        try {
+          await trackUserAction(
+            orderData.userId,
+            `order_created_${orderData.paymentMethod || 'unknown'}`
+          );
+        } catch (e) {
+          console.warn('[CheckoutService] trackUserAction fallo (createOrder) pero no bloquea flujo:', e?.message);
+        }
+      }
 
       const { data, error } = await supabase
         .from('orders')
