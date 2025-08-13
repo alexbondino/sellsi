@@ -82,11 +82,40 @@ export const getModalConfig = type => {
   }
 };
 
+// Nota: formatCurrency vive en src/shared/utils/formatters
+// Ruta correcta relativa (subir 3 niveles a src/shared):
 import { formatCurrency } from '../../../utils/formatters';
+import { getRegionDisplay } from '../../../../utils/regionNames';
+import { getCommuneDisplay } from '../../../../utils/communeNames';
 
 // --- Helper Functions ---
 export const formatAddress = address => {
-  return `${address.street}, ${address.city}, ${address.region}`;
+  if (!address) return 'Sin dirección';
+
+  if (typeof address === 'string') {
+    return address.trim() || 'Sin dirección';
+  }
+
+  const safe = v => {
+    if (!v) return '';
+    const s = String(v).trim();
+    return /no especificad/i.test(s) ? '' : s;
+  };
+
+  // Normalizar posibles alias
+  const street = safe(address.street || address.address || address.calle || address.address_line);
+  const number = safe(address.number || address.numero || address.address_number);
+  const dept = safe(address.department || address.depto || address.departmento || address.apartment);
+  const communeRaw = safe(address.commune || address.comuna || address.city || address.shipping_commune);
+  const regionRaw = safe(address.region || address.shipping_region || address.estado || address.provincia);
+
+  const commune = communeRaw ? getCommuneDisplay(communeRaw) : '';
+  const region = regionRaw ? getRegionDisplay(regionRaw, { withPrefix: true }) : '';
+
+  const streetLine = [street, number, dept].filter(Boolean).join(' ');
+
+  const parts = [streetLine, commune, region].filter(Boolean);
+  return parts.length ? parts.join(', ') : 'Sin dirección';
 };
 
 export { formatCurrency };

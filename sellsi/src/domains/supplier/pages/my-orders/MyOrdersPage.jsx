@@ -247,7 +247,7 @@ const MyOrdersPage = () => {
         title: 'Rechazar Pedido',
         submitButtonText: 'Rechazar',
         submitButtonColor: 'error',
-        showWarningIconHeader: true, // Muestra un icono de advertencia en el encabezado
+  showWarningIconHeader: false, // Eliminado ícono de advertencia según requerimiento
         type: MODAL_TYPES.WARNING, // Icono de advertencia general
         isFormModal: true,
         children: (

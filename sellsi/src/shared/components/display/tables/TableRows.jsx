@@ -24,6 +24,9 @@ import {
   ExpandLess as ExpandLessIcon,
 } from '@mui/icons-material';
 import { formatDate, formatCurrency } from '../../../utils/formatters';
+// Nota: este archivo está en src/shared/components/display/tables -> subir 4 niveles hasta src
+import { getRegionDisplay } from '../../../../utils/regionNames';
+import { getCommuneDisplay } from '../../../../utils/communeNames';
 
 const Rows = ({ order, onActionClick }) => {
   const [expandedProducts, setExpandedProducts] = useState(false);
@@ -93,10 +96,10 @@ const Rows = ({ order, onActionClick }) => {
     const street = clean(
       address.shipping_address || address.fullAddress || address.street || address.address
     );
-    const commune = clean(
-      address.shipping_commune || address.commune || address.city
-    );
-    const region = clean(address.shipping_region || address.region);
+  const communeRaw = clean(address.shipping_commune || address.commune || address.city);
+  const commune = communeRaw ? getCommuneDisplay(communeRaw) : '';
+  const regionRaw = clean(address.shipping_region || address.region);
+  const region = regionRaw ? getRegionDisplay(regionRaw, { withPrefix: true }) : '';
 
     const parts = [street, commune, region].filter(Boolean);
     return parts.length ? parts.join(', ') : '—';
@@ -115,13 +118,15 @@ const Rows = ({ order, onActionClick }) => {
       const s = String(v).trim();
       return /no especificad/i.test(s) ? '' : s;
     };
-    const region = clean(addr?.region || addr?.shipping_region);
-    const commune = clean(addr?.commune || addr?.shipping_commune);
+  const regionRaw = clean(addr?.region || addr?.shipping_region);
+  const region = regionRaw ? getRegionDisplay(regionRaw, { withPrefix: true }) : '';
+  const communeRaw = clean(addr?.commune || addr?.shipping_commune);
+  const commune = communeRaw ? getCommuneDisplay(communeRaw) : '';
     const street = clean(addr?.address || addr?.shipping_address);
     const number = clean(addr?.number || addr?.shipping_number);
     const dept = clean(addr?.department || addr?.shipping_dept);
     const streetLine = [street, number, dept].filter(Boolean).join(' ');
-    return `Región: ${region || '—'}\nComuna: ${commune || '—'}\nDirección: ${streetLine || '—'}`;
+  return `Región: ${region || '—'}\nComuna: ${commune || '—'}\nDirección: ${streetLine || '—'}`;
   };
 
   const handleCopyAddress = async () => {
@@ -394,9 +399,9 @@ const Rows = ({ order, onActionClick }) => {
             </Typography>
             <Box sx={{ display: 'grid', gridTemplateColumns: '120px 1fr', rowGap: 1, columnGap: 1 }}>
               <Typography variant="body2" color="text.secondary">Región:</Typography>
-              <Typography variant="body2">{order?.deliveryAddress?.region || '—'}</Typography>
+              <Typography variant="body2">{order?.deliveryAddress?.region ? getRegionDisplay(order.deliveryAddress.region, { withPrefix: true }) : '—'}</Typography>
               <Typography variant="body2" color="text.secondary">Comuna:</Typography>
-              <Typography variant="body2">{order?.deliveryAddress?.commune || '—'}</Typography>
+              <Typography variant="body2">{order?.deliveryAddress?.commune ? getCommuneDisplay(order.deliveryAddress.commune) : '—'}</Typography>
               <Typography variant="body2" color="text.secondary">Dirección:</Typography>
               <Typography variant="body2">
                 {[order?.deliveryAddress?.address, order?.deliveryAddress?.number, order?.deliveryAddress?.department]
