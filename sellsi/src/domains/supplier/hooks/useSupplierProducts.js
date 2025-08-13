@@ -430,7 +430,10 @@ export const useSupplierProducts = (options = {}) => {
       specificationsHook: specifications,
       priceTiersHook: priceTiers
     }),
-    deleteProduct: crud.deleteProduct,
+    deleteProduct: async (productId) => {
+      console.log('[facade deleteProduct] called productId=', productId)
+      return crud.deleteProduct(productId)
+    },
 
     // Operaciones especializadas (acceso directo si se necesita)
     processImages: async (productId, imagesList) => {

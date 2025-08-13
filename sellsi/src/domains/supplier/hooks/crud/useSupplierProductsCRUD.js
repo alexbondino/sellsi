@@ -232,6 +232,7 @@ const useSupplierProductsCRUD = create((set, get) => ({
    * Eliminar producto
    */
   deleteProduct: async (productId) => {
+    console.log('[CRUD deleteProduct] start', productId)
     set((state) => ({
       operationStates: {
         ...state.operationStates,
@@ -241,30 +242,42 @@ const useSupplierProductsCRUD = create((set, get) => ({
     }))
 
     try {
-      // 1. Limpiar archivos huérfanos ANTES de eliminar
-      const cleanupResult = await StorageCleanupService.cleanupProductOrphans(productId)
+      const supplierId = localStorage.getItem('user_id')
+      // Ejecutar RPC unificada
+      const { data: result, error: rpcError } = await supabase.rpc('request_delete_product_v1', {
+        p_product_id: productId,
+        p_supplier_id: supplierId
+      })
+      if (rpcError) throw rpcError
+      if (!result?.success) throw new Error(result?.error || 'Fallo eliminación')
+      console.log('[CRUD deleteProduct] RPC action', result.action)
 
-      // 2. Eliminar producto de BD
-      const { error } = await supabase
-        .from('products')
-        .delete()
-        .eq('productid', productId)
+      // Limpieza defensiva (huérfanos) sin bloquear
+      let cleaned = 0
+      try {
+        const cleanupResult = await StorageCleanupService.cleanupProductOrphans(productId)
+        cleaned = cleanupResult.cleaned || 0
+      } catch (_) {}
 
-      if (error) throw error
+      set((state) => {
+        let updated = state.products
+        if (result.action === 'deleted') {
+          updated = state.products.filter(p => p.productid !== productId)
+        } else {
+          updated = state.products.map(p => p.productid === productId ? { ...p, is_active: false, deletion_status: 'pending_delete' } : p)
+        }
+        return {
+          products: updated,
+          operationStates: {
+            ...state.operationStates,
+            deleting: { ...state.operationStates.deleting, [productId]: false },
+          },
+        }
+      })
 
-      // 3. Log de limpieza para auditoría
-      
-
-      // Remover producto del estado
-      set((state) => ({
-        products: state.products.filter((product) => product.productid !== productId),
-        operationStates: {
-          ...state.operationStates,
-          deleting: { ...state.operationStates.deleting, [productId]: false },
-        },
-      }))
-
-      return { success: true, cleaned: cleanupResult.cleaned }
+      // Edge cleanup fire & forget
+      supabase.functions.invoke('cleanup-product', { body: { productId, action: result.action, supplierId } })
+      return { success: true, action: result.action, cleaned }
     } catch (error) {
       set((state) => ({
         operationStates: {

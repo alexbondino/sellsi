@@ -307,6 +307,7 @@ const useSupplierProductsBase = create((set, get) => ({
    * Eliminar producto
    */
   deleteProduct: async (productId) => {
+  console.log('[deleteProduct] INIT v2 path productId=', productId)
     set((state) => ({
       operationStates: {
         ...state.operationStates,
@@ -316,23 +317,26 @@ const useSupplierProductsBase = create((set, get) => ({
     }))
 
     try {
-      // 1. Obtener URLs de las imágenes antes de eliminar
-      const { data: imageRecords, error: fetchError } = await supabase
-        .from('product_images')
-        .select('image_url, thumbnail_url')
-        .eq('product_id', productId)
+      const supplierId = localStorage.getItem('user_id')
+      // Ejecutar RPC robusta
+  console.log('[deleteProduct] calling RPC request_delete_product_v1')
+  const { data: result, error: rpcError } = await supabase.rpc('request_delete_product_v1', {
+        p_product_id: productId,
+        p_supplier_id: supplierId,
+      })
+      if (rpcError) throw rpcError
+      if (!result?.success) throw new Error(result?.error || 'Fallo eliminación')
+  console.log('[deleteProduct] RPC result', result)
 
-      // 2. Eliminar producto de la base de datos
-      const { error } = await supabase
-        .from('products')
-        .delete()
-        .eq('productid', productId)
-
-      if (error) throw error
-
-      // 3. Actualizar store inmediatamente (UI responde rápido)
+      // Actualizar estado según acción (pero UI siempre mostrará 'Producto eliminado')
       const { products } = get()
-      const updatedProducts = products.filter((p) => p.productid !== productId)
+      let updatedProducts = products
+      if (result.action === 'deleted') {
+        updatedProducts = products.filter(p => p.productid !== productId)
+      } else {
+        // soft_deleted u otros futuros
+        updatedProducts = products.map(p => p.productid === productId ? { ...p, is_active: false, deletion_status: 'pending_delete' } : p)
+      }
 
       set((state) => ({
         products: updatedProducts,
@@ -342,15 +346,16 @@ const useSupplierProductsBase = create((set, get) => ({
         },
       }))
 
-      // 4. Limpiar imágenes en background usando URLs obtenidas previamente
-      if (imageRecords?.length > 0) {
-        get().cleanupImagesFromUrls(imageRecords).catch(error => {
-          console.error('Error limpiando imágenes:', error)
-        })
-      }
+      // Fire & forget edge function
+  console.log('[deleteProduct] invoking edge cleanup-product')
+  supabase.functions.invoke('cleanup-product', {
+        body: { productId, action: result.action, supplierId },
+      })
 
-      return { success: true }
+  console.log('[deleteProduct] completed with normalized action deleted')
+  return { success: true, action: 'deleted' } // Normalizamos para la capa de UI
     } catch (error) {
+  console.error('[deleteProduct] ERROR', error)
       set((state) => ({
         operationStates: {
           ...state.operationStates,

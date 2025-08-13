@@ -62,8 +62,8 @@ CREATE TABLE public.cart_items (
   added_at timestamp with time zone DEFAULT now(),
   updated_at timestamp with time zone DEFAULT now(),
   CONSTRAINT cart_items_pkey PRIMARY KEY (cart_items_id),
-  CONSTRAINT cart_items_cart_id_fkey FOREIGN KEY (cart_id) REFERENCES public.carts(cart_id),
-  CONSTRAINT cart_items_product_id_fkey FOREIGN KEY (product_id) REFERENCES public.products(productid)
+  CONSTRAINT cart_items_product_id_fkey FOREIGN KEY (product_id) REFERENCES public.products(productid),
+  CONSTRAINT cart_items_cart_id_fkey FOREIGN KEY (cart_id) REFERENCES public.carts(cart_id)
 );
 CREATE TABLE public.carts (
   user_id uuid NOT NULL,
@@ -73,6 +73,27 @@ CREATE TABLE public.carts (
   updated_at timestamp with time zone DEFAULT now(),
   CONSTRAINT carts_pkey PRIMARY KEY (cart_id),
   CONSTRAINT carts_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(user_id)
+);
+CREATE TABLE public.control_panel (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  request_id uuid NOT NULL UNIQUE,
+  proveedor text NOT NULL,
+  comprador text NOT NULL,
+  ticket text NOT NULL,
+  direccion_entrega text,
+  fecha_solicitada date NOT NULL,
+  fecha_entrega date,
+  venta numeric NOT NULL,
+  estado text NOT NULL DEFAULT 'pendiente'::text CHECK (estado = ANY (ARRAY['pendiente'::text, 'confirmado'::text, 'rechazado'::text, 'devuelto'::text, 'en_proceso'::text, 'entregado'::text])),
+  acciones text,
+  comprobante_pago text,
+  notas_admin text,
+  procesado_por uuid,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  updated_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT control_panel_pkey PRIMARY KEY (id),
+  CONSTRAINT control_panel_procesado_por_fkey FOREIGN KEY (procesado_por) REFERENCES public.control_panel_users(id),
+  CONSTRAINT control_panel_request_id_fkey FOREIGN KEY (request_id) REFERENCES public.requests(request_id)
 );
 CREATE TABLE public.control_panel_users (
   usuario text NOT NULL UNIQUE,
@@ -275,6 +296,7 @@ CREATE TABLE public.users (
   verified_at timestamp with time zone,
   verified_by uuid,
   last_ip text,
+  document_types ARRAY DEFAULT '{}'::text[] CHECK (document_types <@ ARRAY['ninguno'::text, 'boleta'::text, 'factura'::text]),
   CONSTRAINT users_pkey PRIMARY KEY (user_id),
   CONSTRAINT users_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
 );

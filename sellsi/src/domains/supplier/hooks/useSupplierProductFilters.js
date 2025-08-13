@@ -105,7 +105,10 @@ const useSupplierProductFilters = create((set, get) => ({
       sortOrder,
     } = get()
 
-    let filtered = [...products]
+  let filtered = [...products]
+
+  // Excluir productos marcados para eliminación (soft_deleted / archived) por defecto
+  filtered = filtered.filter(p => !p.deletion_status || p.deletion_status === 'active')
 
     // Filtro de búsqueda
     if (searchTerm) {
