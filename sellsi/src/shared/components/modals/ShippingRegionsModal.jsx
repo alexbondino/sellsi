@@ -326,7 +326,7 @@ const ShippingRegionsModal = ({
               Configurar Regiones de Despacho
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              Selecciona las regiones donde realizas despachos y configura precios y tiempos
+              Selecciona las regiones donde realizas despachos. Configura precios y tiempos.
             </Typography>
           </Box>
 
