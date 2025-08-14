@@ -1,4 +1,5 @@
 import React from 'react';
+import { formatNumber, formatCurrency } from '../../../utils/formatters';
 import { Box, Grid } from '@mui/material';
 
 /* Pendiente de revisión Klaus */
@@ -175,7 +176,7 @@ export const createSupplierStatsCards = data => {
     {
       id: 'products',
       title: 'Productos Activos',
-      value: products?.length?.toLocaleString() || '0',
+      value: formatNumber(products?.length || 0),
       interval: 'Últimos 30 días',
       trend: 'up',
       color: 'primary',
@@ -183,7 +184,7 @@ export const createSupplierStatsCards = data => {
     {
       id: 'sales',
       title: 'Ventas Este Mes',
-      value: `$${totalSales?.toLocaleString() || '0'}`,
+      value: formatCurrency(totalSales || 0),
       interval: 'Últimos 30 días',
       trend: 'up',
       color: 'success',

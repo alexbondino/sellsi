@@ -61,6 +61,7 @@ const MyOrdersPage = () => {
   const [authResolved, setAuthResolved] = useState(false);
   const [supplierDocTypes, setSupplierDocTypes] = useState([]); // ['boleta','factura']
   const [taxDocFileState, setTaxDocFileState] = useState({ file: null, error: null });
+  const [taxDocTouched, setTaxDocTouched] = useState(false);
 
   // Resolver supplierId desde sesión autenticada; fallback a localStorage si no hay sesión
   useEffect(() => {
@@ -154,6 +155,7 @@ const MyOrdersPage = () => {
       selectedOrder: null,
     });
   setTaxDocFileState({ file: null, error: null });
+  setTaxDocTouched(false);
   };
 
   // Maneja el envío de datos desde los formularios del modal
@@ -168,30 +170,10 @@ const MyOrdersPage = () => {
 
       switch (type) {
         case 'accept': {
-          // Subida opcional de documento tributario si el proveedor ofrece alguno
-          let taxDocPath = null;
-          if (supplierDocTypes.length > 0) {
-            try {
-              const maybe = formData.taxDocument; // input name
-              let file = null;
-              if (maybe instanceof File) file = maybe;
-              else if (maybe?.target?.files) file = maybe.target.files[0];
-              else if (Array.isArray(maybe)) file = maybe[0];
-              else if (maybe && maybe.files) file = maybe.files[0];
-              if (file) {
-                const up = await uploadInvoicePDF({ file, supplierId, orderId: selectedOrder.order_id, userId: supplierId });
-                taxDocPath = up.path;
-              }
-            } catch (errUp) {
-              console.error('[MyOrders] Error subiendo documento tributario:', errUp);
-              showBanner({ message: `⚠️ Documento tributario no subido: ${errUp.message}`, severity: 'warning', duration: 6000 });
-            }
-          }
           await updateOrderStatus(selectedOrder.order_id, 'accepted', {
             message: formData.message || '',
-            tax_document_path: taxDocPath || undefined,
           });
-          messageToUser = '✅ El pedido fue aceptado con éxito.' + (taxDocPath ? ' (Documento subido)' : '');
+          messageToUser = '✅ El pedido fue aceptado con éxito.';
           break;
         }
         case 'reject': {
@@ -211,11 +193,34 @@ const MyOrdersPage = () => {
             });
             return;
           }
+
+          // Subida opcional / requerida de documento tributario (migrada desde 'accept')
+          let taxDocPath = null;
+          if (supplierDocTypes.length > 0) {
+            try {
+              // Intentar leer el archivo desde el formData (como ocurría antes)
+              const maybe = formData.taxDocument; // input name
+              let file = null;
+              if (maybe instanceof File) file = maybe;
+              else if (maybe?.target?.files) file = maybe.target.files[0];
+              else if (Array.isArray(maybe)) file = maybe[0];
+              else if (maybe && maybe.files) file = maybe.files[0];
+              if (file) {
+                const up = await uploadInvoicePDF({ file, supplierId, orderId: selectedOrder.order_id, userId: supplierId });
+                taxDocPath = up.path;
+              }
+            } catch (errUp) {
+              console.error('[MyOrders] Error subiendo documento tributario:', errUp);
+              showBanner({ message: `⚠️ Documento tributario no subido: ${errUp.message}`, severity: 'warning', duration: 6000 });
+            }
+          }
+
           await updateOrderStatus(selectedOrder.order_id, 'in_transit', {
             estimated_delivery_date: formData.deliveryDate,
             message: formData.message || '',
+            tax_document_path: taxDocPath || undefined,
           });
-          messageToUser = '🚚 El pedido fue despachado y está en tránsito.';
+          messageToUser = '🚚 El pedido fue despachado y está en tránsito.' + (taxDocPath ? ' (Documento subido)' : '');
           break;
         }
         case 'deliver': {
@@ -261,8 +266,8 @@ const MyOrdersPage = () => {
   const getModalConfig = () => {
     const { type } = modalState;
 
-    const docLabelSuffix = supplierDocTypes.length === 0 ? '' : supplierDocTypes.length === 2 ? '(Boleta/Factura)' : supplierDocTypes[0] === 'boleta' ? '(Boleta)' : '(Factura)';
-    const showTaxUpload = supplierDocTypes.length > 0;
+  const docLabelSuffix = supplierDocTypes.length === 0 ? '' : supplierDocTypes.length === 2 ? '(Boleta/Factura)' : supplierDocTypes[0] === 'boleta' ? '(Boleta)' : '(Factura)';
+  const showTaxUpload = supplierDocTypes.length > 0;
 
     const configs = {
       accept: {
@@ -274,34 +279,6 @@ const MyOrdersPage = () => {
         isFormModal: true,
         children: (
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            {showTaxUpload && (
-              <TextField
-                name="taxDocument"
-                label={`Documento Tributario PDF ${docLabelSuffix} (máx 500KB)`}
-                type="file"
-                fullWidth
-                InputLabelProps={{ shrink: true }}
-                inputProps={{ accept: 'application/pdf' }}
-                helperText={taxDocFileState.error || (taxDocFileState.file ? taxDocFileState.file.name : 'Requerido para aceptar este pedido')}
-                error={Boolean(taxDocFileState.error) || (showTaxUpload && !taxDocFileState.file)}
-                onChange={e => {
-                  const file = e.target.files?.[0];
-                  if (!file) {
-                    setTaxDocFileState({ file: null, error: 'Archivo PDF requerido' });
-                    return;
-                  }
-                  if (file.type !== 'application/pdf') {
-                    setTaxDocFileState({ file: null, error: 'Solo se permite PDF' });
-                    return;
-                  }
-                  if (file.size > 500 * 1024) {
-                    setTaxDocFileState({ file: null, error: 'Máximo 500KB' });
-                    return;
-                  }
-                  setTaxDocFileState({ file, error: null });
-                }}
-              />
-            )}
             <TextField
               name="message"
               label="Mensaje (opcional)"
@@ -357,6 +334,37 @@ const MyOrdersPage = () => {
               fullWidth
               InputLabelProps={{ shrink: true }}
             />
+            {showTaxUpload && (
+              <TextField
+                name="taxDocument"
+                label={`Documento Tributario PDF ${docLabelSuffix} (máx 500KB)`}
+                type="file"
+                fullWidth
+                InputLabelProps={{ shrink: true }}
+                inputProps={{ accept: 'application/pdf' }}
+                helperText={
+                  taxDocFileState.error || (taxDocFileState.file ? taxDocFileState.file.name : (taxDocTouched ? 'Archivo PDF requerido' : 'Adjunta documento tributario (PDF)'))
+                }
+                error={Boolean(taxDocFileState.error) || (taxDocTouched && !taxDocFileState.file)}
+                onChange={e => {
+                  setTaxDocTouched(true);
+                  const file = e.target.files?.[0];
+                  if (!file) {
+                    setTaxDocFileState({ file: null, error: 'Archivo PDF requerido' });
+                    return;
+                  }
+                  if (file.type !== 'application/pdf') {
+                    setTaxDocFileState({ file: null, error: 'Solo se permite PDF' });
+                    return;
+                  }
+                  if (file.size > 500 * 1024) {
+                    setTaxDocFileState({ file: null, error: 'Máximo 500KB' });
+                    return;
+                  }
+                  setTaxDocFileState({ file, error: null });
+                }}
+              />
+            )}
             <TextField
               name="message"
               label="Mensaje (opcional)"
@@ -461,7 +469,10 @@ const MyOrdersPage = () => {
 
   // Obtiene la configuración del modal basada en el estado actual
   const modalConfig = getModalConfig();
-  const submitDisabled = modalState.type === 'accept' && supplierDocTypes.length > 0 && (!taxDocFileState.file || !!taxDocFileState.error);
+  const submitDisabled = (
+    (modalState.type === 'accept' && false) || // accept no longer requires tax upload
+    (modalState.type === 'dispatch' && supplierDocTypes.length > 0 && (!taxDocFileState.file || !!taxDocFileState.error))
+  );
 
   // --- Renderizado Principal de la Página ---
   return (
