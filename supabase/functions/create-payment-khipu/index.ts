@@ -9,12 +9,14 @@ const allowedOrigins = [
   'http://localhost:5173', // URL de desarrollo local
   'http://127.0.0.1:5173',
   'http://localhost:3000',
+  'http://localhost:3004',
 ];
 
 serve(async req => {
   // Configuración de CORS
   const origin = req.headers.get('origin') || '';
-  const isAllowed = allowedOrigins.includes(origin);
+  const isLocalhost = origin.startsWith('http://localhost:') || origin.startsWith('http://127.0.0.1:');
+  const isAllowed = allowedOrigins.includes(origin) || isLocalhost;
   const corsHeaders = {
     'Access-Control-Allow-Origin': isAllowed ? origin : allowedOrigins[0],
     'Access-Control-Allow-Headers':

@@ -174,9 +174,15 @@ const PaymentMethodSelector = () => {
         calculatedSubtotal + calculatedIva + shippingCost
       );
 
+      const itemsWithDocType = (orderData.items || []).map(it => {
+        const raw = it.document_type || it.documentType;
+        const norm = raw ? ['boleta','factura'].includes(String(raw).toLowerCase()) ? String(raw).toLowerCase() : 'ninguno' : 'ninguno';
+        return { ...it, document_type: norm, documentType: norm };
+      });
+
       const order = await checkoutService.createOrder({
         userId: userId,
-        items: orderData.items,
+        items: itemsWithDocType,
         subtotal: orderData.subtotal,
         tax: orderData.tax,
         shipping: orderData.shipping,
@@ -197,7 +203,7 @@ const PaymentMethodSelector = () => {
           userEmail: userEmail || '',
           amount: orderTotal, // Usar el mismo valor mostrado
           currency: orderData.currency || 'CLP',
-          items: orderData.items,
+          items: itemsWithDocType,
         });
 
         if (paymentResult.success && paymentResult.paymentUrl) {

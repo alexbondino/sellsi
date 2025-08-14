@@ -399,6 +399,19 @@ const BuyerOrders = () => {
                               <Typography variant="body1" fontWeight="medium" color="primary.main">
                                 {item.quantity} × {formatCurrency(item.price_at_addition)} = {formatCurrency(item.quantity * item.price_at_addition)}
                               </Typography>
+                              {/* Documento tributario seleccionado */}
+                              {(() => {
+                                const dt = (item.document_type || item.documentType || '').toLowerCase();
+                                const norm = dt === 'boleta' || dt === 'factura' ? dt : 'ninguno';
+                                return (
+                                  <Chip
+                                    size="small"
+                                    label={norm === 'boleta' ? 'Boleta' : norm === 'factura' ? 'Factura' : 'Sin Documento Tributario'}
+                                    color={norm === 'factura' ? 'info' : norm === 'boleta' ? 'success' : 'default'}
+                                    sx={{ mt: 0.5, fontSize: '0.65rem' }}
+                                  />
+                                );
+                              })()}
                             </Box>
                             
                             {/* Chips de estado */}

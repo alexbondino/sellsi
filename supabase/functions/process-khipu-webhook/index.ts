@@ -227,6 +227,11 @@ serve(async (req: Request) => {
           // Reemplazar items del carrito por los items exactos de la orden pagada
           await supabase.from('cart_items').delete().eq('cart_id', targetCartId);
           // Insertar cada item
+          const normalizeDocType = (val: any) => {
+            if (!val) return 'ninguno';
+            const s = String(val).toLowerCase();
+            return (s === 'boleta' || s === 'factura') ? s : 'ninguno';
+          };
           for (const it of items) {
             const productId = it.product_id || it.productid || it.id;
             const qty = Number(it.quantity || 1);
@@ -237,7 +242,8 @@ serve(async (req: Request) => {
               product_id: productId,
               quantity: qty,
               price_at_addition: priceAt,
-              price_tiers: it.price_tiers || null,
+              price_tiers: it.price_tiers || it.priceTiers || null,
+              document_type: normalizeDocType(it.document_type || it.documentType),
             });
           }
 

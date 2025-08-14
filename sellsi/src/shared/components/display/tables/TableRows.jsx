@@ -157,6 +157,21 @@ const Rows = ({ order, onActionClick }) => {
     return statusConfig[status] || { color: 'default', label: status };
   };
 
+  // Compute aggregated document types for this order's items
+  const docTypeSummary = React.useMemo(() => {
+    const srcItems = order?.items || order?.products || [];
+    if (!Array.isArray(srcItems) || srcItems.length === 0) return null;
+    const norm = v => {
+      if (!v) return 'ninguno';
+      const s = String(v).toLowerCase();
+      return (s === 'boleta' || s === 'factura') ? s : 'ninguno';
+    };
+    const types = Array.from(new Set(srcItems.map(it => norm(it.document_type || it.documentType))));
+    if (types.length === 1) return types[0];
+    if (types.length === 0) return null;
+    return 'mixed';
+  }, [order]);
+
   // Renderizar productos
   const renderProducts = () => {
     const { products } = order;
@@ -324,7 +339,7 @@ const Rows = ({ order, onActionClick }) => {
       </TableCell>
 
       {/* Columna Productos */}
-      <TableCell>{renderProducts()}</TableCell>
+  <TableCell>{renderProducts()}</TableCell>
 
       {/* Columna ID Venta */}
       <TableCell>
@@ -458,11 +473,21 @@ const Rows = ({ order, onActionClick }) => {
 
       {/* Columna Estado */}
       <TableCell>
-        <Chip
-          label={statusChipProps.label}
-          color={statusChipProps.color}
-          size="small"
-        />
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+          <Chip
+            label={statusChipProps.label}
+            color={statusChipProps.color}
+            size="small"
+          />
+          {docTypeSummary && docTypeSummary !== 'ninguno' && (
+            <Chip
+              size="small"
+              variant="outlined"
+              label={docTypeSummary === 'boleta' ? 'Boleta' : docTypeSummary === 'factura' ? 'Factura' : docTypeSummary === 'ninguno' ? 'Sin doc.' : 'Mixto'}
+              color={docTypeSummary === 'factura' ? 'info' : docTypeSummary === 'boleta' ? 'success' : docTypeSummary === 'ninguno' ? 'default' : 'warning'}
+            />
+          )}
+        </Box>
       </TableCell>
 
       {/* Columna Acciones */}

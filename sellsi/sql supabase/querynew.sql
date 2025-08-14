@@ -61,6 +61,7 @@ CREATE TABLE public.cart_items (
   cart_items_id uuid NOT NULL DEFAULT gen_random_uuid(),
   added_at timestamp with time zone DEFAULT now(),
   updated_at timestamp with time zone DEFAULT now(),
+  document_type text CHECK ((document_type = ANY (ARRAY['boleta'::text, 'factura'::text, 'ninguno'::text])) OR document_type IS NULL),
   CONSTRAINT cart_items_pkey PRIMARY KEY (cart_items_id),
   CONSTRAINT cart_items_cart_id_fkey FOREIGN KEY (cart_id) REFERENCES public.carts(cart_id),
   CONSTRAINT cart_items_product_id_fkey FOREIGN KEY (product_id) REFERENCES public.products(productid)
@@ -219,8 +220,8 @@ CREATE TABLE public.product_sales (
   order_id uuid,
   CONSTRAINT product_sales_pkey PRIMARY KEY (id),
   CONSTRAINT product_sales_supplier_id_fkey FOREIGN KEY (supplier_id) REFERENCES public.users(user_id),
-  CONSTRAINT product_sales_order_id_fkey FOREIGN KEY (order_id) REFERENCES public.orders(id),
-  CONSTRAINT product_sales_product_id_fkey FOREIGN KEY (product_id) REFERENCES public.products(productid)
+  CONSTRAINT product_sales_product_id_fkey FOREIGN KEY (product_id) REFERENCES public.products(productid),
+  CONSTRAINT product_sales_order_id_fkey FOREIGN KEY (order_id) REFERENCES public.orders(id)
 );
 CREATE TABLE public.products (
   productnm text NOT NULL,

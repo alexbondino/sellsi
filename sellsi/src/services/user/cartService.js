@@ -1,6 +1,14 @@
 import { supabase } from '../supabase';
 import { validateQuantity, sanitizeCartItems, isQuantityError } from '../../utils/quantityValidation';
 
+// Normaliza el tipo de documento tributario a uno de: 'boleta' | 'factura' | 'ninguno'
+function normalizeDocumentType(val) {
+  if (!val) return 'ninguno';
+  const v = String(val).toLowerCase();
+  if (v === 'boleta' || v === 'factura') return v;
+  return 'ninguno';
+}
+
 /**
  * CartService - Servicio para manejar todas las operaciones del carrito con Supabase
  * 
@@ -95,6 +103,7 @@ class CartService {  /**
           quantity,
           price_at_addition,
           price_tiers,
+          document_type,
           added_at,
           updated_at,
           products (
@@ -129,13 +138,15 @@ class CartService {  /**
         return [];
       }      // Transformar los datos para que coincidan con el formato esperado por el frontend
       const transformedData = (data || []).map(item => {
-        
+        const docType = normalizeDocumentType(item.document_type);
         return {
         cart_items_id: item.cart_items_id,
         product_id: item.product_id,
         quantity: item.quantity,
         price_at_addition: item.price_at_addition,
         price_tiers: item.price_tiers,
+        document_type: docType,
+        documentType: docType,
         added_at: item.added_at,
         updated_at: item.updated_at,
         
@@ -234,14 +245,15 @@ class CartService {  /**
         result = await this.updateItemQuantity(cartId, productId, newTotalQuantity);
       } else {
         // Insertar nuevo item
-        const { data, error } = await supabase
+    const { data, error } = await supabase
           .from('cart_items')
           .insert({
             cart_id: cartId,
             product_id: productId,
             quantity: safeQuantity,
             price_at_addition: product.price,
-            price_tiers: product.price_tiers || null
+            price_tiers: product.price_tiers || product.priceTiers || null,
+      document_type: normalizeDocumentType(product.documentType || product.document_type)
           })
           .select()
           .single();

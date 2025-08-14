@@ -1,6 +1,13 @@
 import { supabase } from '../supabase';
 import { addBusinessDaysChile, toISODateOnly } from '../../utils/businessDaysChile';
 
+// Normalizador único para document_type -> 'boleta' | 'factura' | 'ninguno'
+function normalizeDocumentType(val) {
+  if (!val) return 'ninguno';
+  const v = String(val).toLowerCase();
+  return (v === 'boleta' || v === 'factura') ? v : 'ninguno';
+}
+
 // DEBUG deshabilitado (se removieron los console.logs); cambiar a true y reintroducir prints manualmente si se necesita diagnóstico.
 const DEBUG_ORDERS = false; // Mantener bandera por compatibilidad futura
 
@@ -245,6 +252,8 @@ class OrderService {
               quantity: item.quantity,
               price_at_addition: item.price_at_addition,
               price_tiers: item.price_tiers,
+              // Added document_type propagation
+              document_type: normalizeDocumentType(item.document_type || item.documentType),
               
               product: {
                 productid: item.product_id,
@@ -357,6 +366,7 @@ class OrderService {
             quantity: it.quantity || 1,
             price_at_addition: it.price_at_addition || it.price || 0,
             price_tiers: it.price_tiers || null,
+            document_type: normalizeDocumentType(it.document_type || it.documentType),
             product: {
               id: it.product_id || it.productid || it.id || null,
               productid: it.product_id || it.productid || null,
@@ -499,6 +509,7 @@ class OrderService {
             price_tiers,
             added_at,
             updated_at,
+            document_type,
             products!inner (
               productid,
               productnm,
@@ -639,6 +650,7 @@ class OrderService {
               quantity: item.quantity,
               price_at_addition: item.price_at_addition,
               price_tiers: item.price_tiers,
+              document_type: item.document_type || item.documentType || 'ninguno',
               
               // Información del producto
               product: {
@@ -1068,6 +1080,7 @@ class OrderService {
               quantity: item.quantity,
               price_at_addition: item.price_at_addition,
               price_tiers: item.price_tiers,
+              document_type: item.document_type || item.documentType || 'ninguno',
               
               // Información del producto
               product: {
