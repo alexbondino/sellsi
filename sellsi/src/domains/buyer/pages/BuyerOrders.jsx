@@ -416,9 +416,9 @@ const BuyerOrders = () => {
                                     />
                                     {/* Mensaje y botón condicionales */}
                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                      {order.status === 'accepted' && !invoicePath && (
+                                      {order.status === 'accepted' && !invoicePath && (norm === 'boleta' || norm === 'factura') && (
                                         <Typography variant="caption" color="text.secondary">
-                                          Aquí podrás descargar tu {norm === 'boleta' ? 'Boleta' : norm === 'factura' ? 'Factura' : 'Documento'} una vez el proveedor la cargue al sistema.
+                                          Aquí podrás descargar tu {norm === 'boleta' ? 'Boleta' : 'Factura'} una vez el proveedor la cargue al sistema.
                                         </Typography>
                                       )}
 
