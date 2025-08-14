@@ -361,6 +361,8 @@ const Rows = ({ order, onActionClick }) => {
             anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
             transformOrigin={{ vertical: 'top', horizontal: 'left' }}
             PaperProps={{ sx: { p: 2, width: 420, maxWidth: '90vw' } }}
+            // Evita que el Modal subyacente bloquee el scroll del body y produzca shift en el layout
+            disableScrollLock
           >
             <Typography variant="subtitle2" gutterBottom>
               ID de venta (completo)
@@ -412,6 +414,8 @@ const Rows = ({ order, onActionClick }) => {
             anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
             transformOrigin={{ vertical: 'top', horizontal: 'left' }}
             PaperProps={{ sx: { p: 2, width: 460, maxWidth: '95vw' } }}
+            // Evita que el Modal subyacente bloquee el scroll del body y produzca shift en el layout
+            disableScrollLock
           >
             <Typography variant="subtitle2" gutterBottom>
               Dirección de entrega
