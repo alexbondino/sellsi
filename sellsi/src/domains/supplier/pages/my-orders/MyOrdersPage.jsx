@@ -266,8 +266,26 @@ const MyOrdersPage = () => {
   const getModalConfig = () => {
     const { type } = modalState;
 
-  const docLabelSuffix = supplierDocTypes.length === 0 ? '' : supplierDocTypes.length === 2 ? '(Boleta/Factura)' : supplierDocTypes[0] === 'boleta' ? '(Boleta)' : '(Factura)';
-  const showTaxUpload = supplierDocTypes.length > 0;
+  // Prefer the buyer's requested document types (from the selected order items) if present;
+  // otherwise fall back to the supplier's offered document types.
+  const buyerRequestedTypes = (() => {
+    const items = modalState.selectedOrder?.items || [];
+    if (!Array.isArray(items)) return [];
+    return items
+      .map(i => (i.document_type || i.documentType || '').toString().toLowerCase())
+      .filter(Boolean)
+      .filter(t => ['boleta', 'factura'].includes(t));
+  })();
+
+  const buyerSet = Array.from(new Set(buyerRequestedTypes));
+  let docLabelSuffix = '';
+  if (buyerSet.length > 0) {
+    docLabelSuffix = buyerSet.length === 2 ? '(Boleta/Factura)' : (buyerSet[0] === 'boleta' ? '(Boleta)' : '(Factura)');
+  } else {
+    docLabelSuffix = supplierDocTypes.length === 0 ? '' : supplierDocTypes.length === 2 ? '(Boleta/Factura)' : supplierDocTypes[0] === 'boleta' ? '(Boleta)' : '(Factura)';
+  }
+
+  const showTaxUpload = supplierDocTypes.length > 0 || buyerSet.length > 0;
 
     const configs = {
       accept: {
@@ -337,13 +355,18 @@ const MyOrdersPage = () => {
             {showTaxUpload && (
               <TextField
                 name="taxDocument"
-                label={`Documento Tributario PDF ${docLabelSuffix} (máx 500KB)`}
+                // Label kept concise; size/format guidance moved to helperText to avoid duplication
+                label={`Documento Tributario ${docLabelSuffix}`}
                 type="file"
                 fullWidth
                 InputLabelProps={{ shrink: true }}
                 inputProps={{ accept: 'application/pdf' }}
                 helperText={
-                  taxDocFileState.error || (taxDocFileState.file ? taxDocFileState.file.name : (taxDocTouched ? 'Archivo PDF requerido' : 'Adjunta documento tributario (PDF)'))
+                  taxDocFileState.error
+                    ? taxDocFileState.error
+                    : taxDocFileState.file
+                    ? taxDocFileState.file.name
+                    : 'Formato: PDF. Máx 500KB.'
                 }
                 error={Boolean(taxDocFileState.error) || (taxDocTouched && !taxDocFileState.file)}
                 onChange={e => {

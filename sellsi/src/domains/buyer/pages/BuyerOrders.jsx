@@ -19,6 +19,7 @@ import { ThemeProvider } from '@mui/material/styles';
 import { dashboardThemeCore } from '../../../styles/dashboardThemeCore';
 import { SPACING_BOTTOM_MAIN } from '../../../styles/layoutSpacing';
 import { useBuyerOrders } from '../hooks';
+import { createSignedInvoiceUrl } from '../../../services/storage/invoiceStorageService';
 import { CheckoutSummaryImage } from '../../../components/UniversalProductImage';
 
 const BuyerOrders = () => {
@@ -403,13 +404,33 @@ const BuyerOrders = () => {
                               {(() => {
                                 const dt = (item.document_type || item.documentType || '').toLowerCase();
                                 const norm = dt === 'boleta' || dt === 'factura' ? dt : 'ninguno';
+                                const invoicePath = item.tax_document_path || item.invoice_path || item.invoice || null;
+
                                 return (
-                                  <Chip
-                                    size="small"
-                                    label={norm === 'boleta' ? 'Boleta' : norm === 'factura' ? 'Factura' : 'Sin Documento Tributario'}
-                                    color={norm === 'factura' ? 'info' : norm === 'boleta' ? 'success' : 'default'}
-                                    sx={{ mt: 0.5, fontSize: '0.65rem' }}
-                                  />
+                                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
+                                    <Chip
+                                      size="small"
+                                      label={norm === 'boleta' ? 'Boleta' : norm === 'factura' ? 'Factura' : 'Sin Documento Tributario'}
+                                      color={norm === 'factura' ? 'info' : norm === 'boleta' ? 'success' : 'default'}
+                                      sx={{ fontSize: '0.65rem' }}
+                                    />
+                                    {/* Mensaje y botón condicionales */}
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                      {order.status === 'accepted' && !invoicePath && (
+                                        <Typography variant="caption" color="text.secondary">
+                                          Aquí podrás descargar tu {norm === 'boleta' ? 'Boleta' : norm === 'factura' ? 'Factura' : 'Documento'} una vez el proveedor la cargue al sistema.
+                                        </Typography>
+                                      )}
+
+                                      {invoicePath && (
+                                        <InvoiceDownload
+                                          invoicePath={invoicePath}
+                                          documentType={norm}
+                                          orderId={order.order_id}
+                                        />
+                                      )}
+                                    </Box>
+                                  </Box>
                                 );
                               })()}
                             </Box>
@@ -475,3 +496,72 @@ const BuyerOrders = () => {
 };
 
 export default BuyerOrders;
+
+// Helper component to download invoices with client-side throttling
+const InvoiceDownload = ({ invoicePath, documentType = 'documento', orderId }) => {
+  const [loading, setLoading] = React.useState(false);
+
+  const DOWNLOAD_LIMIT_COUNT = 5; // max attempts
+  const DOWNLOAD_WINDOW_MS = 60 * 1000; // per 60 seconds
+  const storageKey = `invoice_downloads_${orderId}`;
+
+  const canDownload = () => {
+    try {
+      const raw = localStorage.getItem(storageKey);
+      if (!raw) return true;
+      const arr = JSON.parse(raw);
+      const now = Date.now();
+      const recent = arr.filter(ts => now - ts < DOWNLOAD_WINDOW_MS);
+      return recent.length < DOWNLOAD_LIMIT_COUNT;
+    } catch (e) {
+      return true;
+    }
+  };
+
+  const recordDownload = () => {
+    try {
+      const raw = localStorage.getItem(storageKey);
+      const arr = raw ? JSON.parse(raw) : [];
+      arr.push(Date.now());
+      // Keep only last N to avoid growing forever
+      const pruned = arr.slice(-DOWNLOAD_LIMIT_COUNT * 2);
+      localStorage.setItem(storageKey, JSON.stringify(pruned));
+    } catch (e) {
+      // ignore
+    }
+  };
+
+  const handleDownload = async () => {
+    if (!canDownload()) {
+      alert('Límite de descargas alcanzado. Intenta de nuevo en un momento.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { data, error } = await createSignedInvoiceUrl(invoicePath, 60);
+      if (error || !data?.signedUrl) {
+        alert('No se pudo generar la URL de descarga. Intenta más tarde.');
+        return;
+      }
+      recordDownload();
+      window.open(data.signedUrl, '_blank');
+    } catch (e) {
+      console.error('Error generando URL firmada:', e);
+      alert('Error al generar descarga.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+      <Typography variant="caption" color="text.secondary">
+        Tu Documento Tributario {documentType === 'boleta' ? '(Boleta)' : documentType === 'factura' ? '(Factura)' : ''} está listo para ser descargado.
+      </Typography>
+      <Button size="small" variant="outlined" onClick={handleDownload} disabled={loading}>
+        {loading ? 'Generando...' : 'Descargar'}
+      </Button>
+    </Box>
+  );
+};
