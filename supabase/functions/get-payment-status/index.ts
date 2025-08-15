@@ -1,6 +1,7 @@
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
+import { withMetrics } from '../_shared/metrics.ts';
 
-serve(async req => {
+serve(req => withMetrics('get-payment-status', req, async () => {
   // Esta función es muy simple, no necesita CORS complejo si se llama desde tu propio frontend
   const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
@@ -52,4 +53,4 @@ serve(async req => {
       status: 500,
     });
   }
-});
+}));

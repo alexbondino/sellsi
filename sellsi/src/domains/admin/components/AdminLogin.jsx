@@ -35,7 +35,8 @@ import {
 
 import { PrimaryButton } from '../../../shared/components/forms';
 import { useAdminLogin } from '../hooks';
-import { loginAdmin, verify2FA, mark2FAAsConfigured, generate2FASecret } from '../../../domains/admin';
+import { loginAdmin, verify2FA, mark2FAAsConfigured, generate2FASecret, checkTrustedDevice } from '../../../domains/admin';
+import { getOrCreateDeviceFingerprint } from '../utils/deviceFingerprint';
 import Setup2FA from './Setup2FA';
 import QRCode from 'react-qr-code';
 
@@ -130,6 +131,9 @@ const AdminLogin = ({ open, onClose }) => {
   const [setupStep, setSetupStep] = useState(0);
   const [setupLoading, setSetupLoading] = useState(false);
   const [setupError, setSetupError] = useState('');
+  const [rememberDevice, setRememberDevice] = useState(true);
+  const [deviceFingerprint, setDeviceFingerprint] = useState(null);
+  const [trustToken, setTrustToken] = useState(() => localStorage.getItem('admin_trust_token'));
 
   // Hook personalizado para manejo del estado
   const {
@@ -178,16 +182,27 @@ const AdminLogin = ({ open, onClose }) => {
         setTempUserId(user.id);
         setTwofaStatus(twofaStatus);
         setTempAdminData(user); // ✅ GUARDAR DATOS ADMIN
-        
-        // ✅ NUEVA LÓGICA 2FA OBLIGATORIO
+        // Fingerprint y trusted device
+        let fp = deviceFingerprint;
+        if (!fp) {
+          fp = await getOrCreateDeviceFingerprint();
+          setDeviceFingerprint(fp);
+        }
+        if (twofaStatus.configured && fp && trustToken) {
+          try {
+            const trustRes = await checkTrustedDevice(user.id, fp, trustToken);
+            if (trustRes.trusted) {
+              handleSuccessfulLogin(user);
+              setCurrentStep(2);
+              return;
+            }
+          } catch (_) {/* ignorar */}
+        }
         if (twofaStatus.required && !twofaStatus.configured) {
-          // Primer login - forzar configuración 2FA
-          setCurrentStep(3); // Ir a configuración 2FA
+          setCurrentStep(3);
         } else if (twofaStatus.configured && twofaStatus.hasSecret) {
-          // Ya tiene 2FA configurado - pedir código
-          setCurrentStep(1); // Ir a verificación 2FA
+          setCurrentStep(1);
         } else {
-          // Sin 2FA (no debería pasar con required=true)
           handleSuccessfulLogin(user);
         }
       } else {
@@ -207,16 +222,17 @@ const AdminLogin = ({ open, onClose }) => {
     setError('');
 
     try {
-      const result = await verify2FA(tempUserId, formData.code2FA);
-      
+      const result = await verify2FA(tempUserId, formData.code2FA, { remember: rememberDevice, deviceFingerprint });
       if (result.success) {
+        if (result.data?.trustToken) {
+          localStorage.setItem('admin_trust_token', result.data.trustToken);
+          setTrustToken(result.data.trustToken);
+        }
         setCurrentStep(2);
         setTimeout(() => {
-          handleSuccessfulLogin({ id: tempUserId });
-        }, 1500);
-      } else {
-        setError(result.error || 'Código 2FA inválido');
-      }
+          handleSuccessfulLogin(tempAdminData || { id: tempUserId });
+        }, 800);
+      } else setError(result.error || 'Código 2FA inválido');
     } catch (error) {
       console.error('Error en 2FA:', error);
       setError('Error interno del servidor');
@@ -389,6 +405,19 @@ const AdminLogin = ({ open, onClose }) => {
         placeholder="000000"
       />
 
+      <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+        <input
+          id="rememberDevice"
+          type="checkbox"
+          checked={rememberDevice}
+          onChange={(e) => setRememberDevice(e.target.checked)}
+          style={{ marginRight: 8 }}
+        />
+        <label htmlFor="rememberDevice" style={{ fontSize: '0.8rem', color: '#555' }}>
+          Recordar este dispositivo por 30 días
+        </label>
+      </Box>
+
       <PrimaryButton
         type="submit"
         loading={loading}
@@ -422,9 +451,9 @@ const AdminLogin = ({ open, onClose }) => {
         const result = await generate2FASecret(tempUserId, tempAdminData?.email || 'admin@sellsi.com');
         
         if (result.success) {
-          const { secret, qrCode } = result.data || {};
+          const { secret, qrCode } = result;
           if (!secret || !qrCode) {
-            setSetupError('Error en la respuesta del servidor');
+            setSetupError('Respuesta inválida del servidor');
             return;
           }
           setSecret(secret);

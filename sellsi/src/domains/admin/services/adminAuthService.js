@@ -98,7 +98,7 @@ export const verifyAdminSession = async (adminId) => {
  * @param {string} code - Código 2FA de 6 dígitos
  * @returns {Promise<{success: boolean, error?: string}>}
  */
-export const verify2FA = async (userId, code) => {
+export const verify2FA = async (userId, code, { remember = false, deviceFingerprint } = {}) => {
   return AdminApiService.executeQuery(async () => {
     // Validar parámetros
     if (!userId || !code) {
@@ -110,13 +110,16 @@ export const verify2FA = async (userId, code) => {
     }
 
     // Llamar a la Edge Function para verificar el código
-    const { data, error } = await supabase.functions.invoke('admin-2fa', {
-      body: {
-        action: 'verify_token',
-        adminId: userId,
-        token: code
-      }
-    })
+    const body = {
+      action: 'verify_token',
+      adminId: userId,
+      token: code
+    }
+    if (remember && deviceFingerprint) {
+      body.remember = true
+      body.device_fingerprint = deviceFingerprint
+    }
+    const { data, error } = await supabase.functions.invoke('admin-2fa', { body })
 
     if (error) {
       console.error('Error en verify2FA:', error)
@@ -124,11 +127,10 @@ export const verify2FA = async (userId, code) => {
     }
 
     if (!data.success) {
-      throw new Error('Error interno del servidor')
-    }
-
-    if (!data.isValid) {
-      throw new Error('Código 2FA inválido o expirado')
+      if (data.error === 'Invalid token') {
+        throw new Error(data.error)
+      }
+      throw new Error(data.error || 'Error verificando código 2FA')
     }
 
     // Registrar verificación exitosa
@@ -136,8 +138,27 @@ export const verify2FA = async (userId, code) => {
       verification_time: new Date().toISOString()
     })
 
-    return { verified: true }
+    return { verified: true, trustToken: data.trust_token }
   }, 'Error verificando código 2FA')
+}
+
+// Verificar si el dispositivo ya es de confianza y puede saltar 2FA
+export const checkTrustedDevice = async (adminId, deviceFingerprint, trustToken) => {
+  return AdminApiService.executeQuery(async () => {
+    if (!adminId || !deviceFingerprint) throw new Error('Parámetros requeridos')
+    const headers = {}
+    if (trustToken) headers['x-trust-token'] = trustToken
+    const { data, error } = await supabase.functions.invoke('admin-2fa', {
+      body: {
+        action: 'check_trust',
+        adminId,
+        device_fingerprint: deviceFingerprint
+      },
+      headers
+    })
+    if (error) throw new Error('Error verificando dispositivo')
+    return { trusted: !!data?.trusted }
+  }, 'Error verificando dispositivo de confianza')
 }
 
 /**

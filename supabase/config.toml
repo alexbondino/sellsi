@@ -365,3 +365,9 @@ enabled = true
 verify_jwt = false
 import_map = "./functions/import_map.json"
 entrypoint = "./functions/update-lastip/index.ts"
+
+[functions.admin-2fa]
+enabled = true
+verify_jwt = true
+import_map = "./functions/import_map.json"
+entrypoint = "./functions/admin-2fa/index.ts"

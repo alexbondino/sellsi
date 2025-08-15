@@ -12,6 +12,7 @@ Checklist para el Owner
 - Copiar/pegar la Service Role desde Settings → API (no la anon).
 - Añadir la variable runtime `SUPABASE_SERVICE_ROLE_KEY` (o alternativamente `SERVICE_ROLE_KEY` si la UI se complica; el código soporta ambos) en las Environment variables del proyecto (UI).
 - Añadir la variable runtime `CLEANUP_SECRET_TOKEN` en las Environment variables (usa el token proporcionado por el equipo o genera uno nuevo de 32 bytes hex).
+- Añadir la variable runtime `EDGE_TRUST_SECRET` (feature "Recordar dispositivo" 2FA) — cadena aleatoria >=64 chars (base64 o hex) para firmar los trust_token.
 - Guardar y redeploy de las Edge Functions: generate-thumbnail, purge-orphans, retry-thumbnail-jobs.
 
 Pasos detallados (UI, recomendado)
@@ -93,3 +94,57 @@ Smoke test rápido tras configurar secretos y (opcional) reactivar RLS
 Notas finales
 - Mientras la service role no esté cargada evita reactivar RLS.
 - `SERVICE_ROLE_KEY` es sólo un alias de conveniencia; preferir `SUPABASE_SERVICE_ROLE_KEY` en UI.
+
+EDGE_TRUST_SECRET (Trusted Devices / "Recordar este dispositivo")
+--------------------------------------------------------------
+Propósito
+- Firmar (HMAC SHA-256) los `trust_token` emitidos cuando un admin marca "recordar este dispositivo" tras un login 2FA exitoso.
+- Validar tokens recibidos en la acción `check_trust` de la función `admin-2fa` evitando que se puedan falsificar.
+
+Por qué es necesario
+- Sin un secreto privado, la función usa el fallback `insecure-dev-secret` (visible en código), haciendo trivial forjar tokens y saltarse 2FA.
+- Protege contra replay/modificación: el payload (admin id, token_id, exp) se firma y se verifica cada vez.
+
+Formato recomendado
+- Cadena >= 64 bytes de entropía. Acepta cualquier string; sugerido: Base64 (88+ chars) o Hex (128 chars para 64 bytes).
+- Ejemplos de generación (PowerShell):
+	````powershell
+	# 64 bytes en Base64
+	[Convert]::ToBase64String((1..64 | ForEach-Object { Get-Random -Maximum 256 }))
+
+	# 64 bytes en Hex
+	-join ((1..64 | ForEach-Object { (Get-Random -Maximum 256).ToString("x2") }))
+	````
+
+Cómo añadirlo (UI – recomendado)
+1. Dashboard Supabase → Project → Settings → Environment Variables / Secrets.
+2. New Variable:
+	 - Key: `EDGE_TRUST_SECRET`
+	 - Value: (cadena generada)
+3. Guardar.
+4. Redeploy de la función `admin-2fa` para que el runtime cargue el nuevo valor.
+
+CLI (requiere rol Owner y token con permisos):
+````powershell
+npx supabase login
+$EDGE = [Convert]::ToBase64String((1..96 | ForEach-Object { Get-Random -Maximum 256 }))
+npx supabase secrets set EDGE_TRUST_SECRET=$EDGE --project-ref clbngnjetipglkikondm
+npx supabase functions deploy admin-2fa --project-ref clbngnjetipglkikondm
+````
+
+Impacto si falta
+- `check_trust` devolverá `trusted:false` o aceptará tokens falsos (riesgo de bypass 2FA).
+- Dispositivos "recordados" dejarán de ser confiables tras rotar el secreto si no se implementa validación dual (aceptamos esto como coste de rotación rápida).
+
+Buenas prácticas
+- Rotar cada 6-12 meses o tras sospecha de filtración. Rotación actual invalida tokens previos (aceptado). Si se requiere rotación suave, extender código para aceptar antiguo y nuevo temporalmente.
+- Mantenerlo sólo en entorno (no en repositorio). Usar gestor de secretos.
+
+Smoke test rápido (tras añadir la variable y redeploy `admin-2fa`)
+1. Login admin normal → ingresar TOTP → marcar "recordar dispositivo".
+2. Ver en respuesta `trust_token` no vacío.
+3. Refrescar y repetir login: debería omitir el paso TOTP (edge responde `trusted:true`).
+4. Forzar fallo cambiando un carácter del `trust_token` en header `x-trust-token`: debe responder `trusted:false`.
+
+Plan de contingencia
+- Si se expone el secreto: generar uno nuevo, setear, redeploy; forzar a todos los dispositivos a repetir 2FA (automático porque los tokens previos invalidan firma).

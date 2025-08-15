@@ -4,7 +4,9 @@
 //  - deleted: product removed physically -> ensure no leftover images
 //  - soft_deleted: product archived -> ensure only tiny thumbnail (if any) persists in product record
 
+// @ts-nocheck
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts'
+import { withMetrics } from '../_shared/metrics.ts'
 
 const allowedOrigins = [
   'https://sellsi.cl',
@@ -33,7 +35,7 @@ function buildCors(origin: string | null) {
   }
 }
 
-serve(async (req: Request) => {
+serve((req: Request) => withMetrics('cleanup-product', req, async () => {
   const origin = req.headers.get('origin')
   const cors = buildCors(origin)
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors })
@@ -143,4 +145,4 @@ serve(async (req: Request) => {
     console.error('[cleanup-product] error', e)
     return new Response(JSON.stringify({ error: e.message }), { status: 500, headers: { ...cors, 'Content-Type': 'application/json' } })
   }
-})
+}))

@@ -1,5 +1,7 @@
+// @ts-nocheck
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { withMetrics } from '../_shared/metrics.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -58,7 +60,7 @@ async function verifyKhipuSignature(
 // ============================================================================
 // Webhook principal
 // ============================================================================
-serve(async (req: Request) => {
+serve((req: Request) => withMetrics('process-khipu-webhook', req, async () => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }
@@ -323,4 +325,4 @@ serve(async (req: Request) => {
       }
     );
   }
-});
+}));

@@ -2,6 +2,8 @@
 /// <reference lib="deno.ns" />
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { withMetrics } from '../_shared/metrics.ts';
+
 
 // Lista de orígenes permitidos para CORS
 const allowedOrigins = [
@@ -13,7 +15,7 @@ const allowedOrigins = [
   'http://localhost:3004',
 ];
 
-serve(async req => {
+serve(req => withMetrics('create-payment-khipu', req, async () => {
   // Configuración de CORS
   const origin = req.headers.get('origin') || '';
   const isLocalhost = origin.startsWith('http://localhost:') || origin.startsWith('http://127.0.0.1:');
@@ -207,11 +209,10 @@ serve(async req => {
       status: 200,
     });
   } catch (error) {
-    // Capturar cualquier error (de nuestro código o de Khipu) y devolverlo con estado 500
-    console.error('[create-payment-khipu] ERROR FATAL:', error.message);
-    return new Response(JSON.stringify({ error: error.message }), {
+    console.error('[create-payment-khipu] ERROR FATAL:', (error as any).message);
+    return new Response(JSON.stringify({ error: (error as any).message }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 500,
     });
   }
-});
+}));

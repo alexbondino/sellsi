@@ -1,11 +1,12 @@
 // supabase/functions/khipu-webhook-handler/index.ts
 
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
+import { withMetrics } from '../_shared/metrics.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 console.log('khipu-webhook-handler function started');
 
-serve(async req => {
+serve(req => withMetrics('khipu-webhook-handler', req, async () => {
   try {
     const khipuPayload = await req.json();
     console.log(
@@ -74,4 +75,4 @@ serve(async req => {
       { status: 400 }
     );
   }
-});
+}));

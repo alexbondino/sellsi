@@ -22,7 +22,8 @@ export {
   generate2FASecret,
   disable2FA,
   mark2FAAsConfigured,
-  verifyAdminSession
+  verifyAdminSession,
+  checkTrustedDevice
 } from './adminAuthService'
 
 // ========================================

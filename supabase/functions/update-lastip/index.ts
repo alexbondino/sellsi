@@ -9,6 +9,7 @@
  */
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { withMetrics } from '../_shared/metrics.ts'
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 // Headers CORS
@@ -23,7 +24,7 @@ const DEBUG_MODE = Deno.env.get('DEBUG_MODE') === 'true'
 const log = DEBUG_MODE ? console.log : () => {}
 const logError = DEBUG_MODE ? console.error : () => {}
 
-serve(async (req) => {
+serve((req) => withMetrics('update-lastip', req, async () => {
   // Manejar preflight requests
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
@@ -176,4 +177,4 @@ serve(async (req) => {
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
-});
+}));

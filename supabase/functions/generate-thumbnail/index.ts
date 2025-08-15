@@ -5,9 +5,12 @@
 
 // Setup type definitions for built-in Supabase Runtime APIs
 import "jsr:@supabase/functions-js/edge-runtime.d.ts"
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+declare const Deno: any;
 
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { withMetrics } from "../_shared/metrics.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -110,7 +113,7 @@ async function createThumbnailFromOriginal(imageBuffer: ArrayBuffer, width: numb
   }
 }
 
-serve(async (req) => {
+serve((req) => withMetrics('generate-thumbnail', req, async () => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
@@ -136,19 +139,67 @@ serve(async (req) => {
       });
     }
 
-    // Validate environment variables
+    // Validate environment variables (Edge Step 2: soporte SERVICE_ROLE según nuevoplan.md)
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
-    const supabaseKey = Deno.env.get("SUPABASE_ANON_KEY");
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
+  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || Deno.env.get("SERVICE_ROLE_KEY");
 
-    if (!supabaseUrl || !supabaseKey) {
-      logError("❌ Missing environment variables");
+    if (!supabaseUrl || (!anonKey && !serviceRoleKey)) {
+      logError("❌ Missing required env vars: SUPABASE_URL and at least one of SUPABASE_ANON_KEY / SUPABASE_SERVICE_ROLE_KEY");
       return new Response(JSON.stringify({ error: 'Server configuration error' }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
 
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    // Cliente público (para acciones que puedan mantenerse con clave anon)
+    const supabasePublic = anonKey ? createClient(supabaseUrl, anonKey) : null;
+    // Cliente service role (privilegiado) sólo si la variable existe
+    const supabaseSr = serviceRoleKey ? createClient(supabaseUrl, serviceRoleKey, { auth: { persistSession: false } }) : null;
+    // Selección de cliente para operaciones de BD (lectura + escritura) — si existe service role lo usamos para preparar futura RLS
+    const dbClient = supabaseSr || supabasePublic!;
+
+    // ✅ Validar existencia de imagen principal e idempotencia ANTES de hacer fetch pesado
+  const { data: mainImage, error: mainImageError } = await dbClient
+      .from('product_images')
+      .select('id, thumbnails, thumbnail_url')
+      .eq('product_id', productId)
+      .eq('image_order', 0)
+      .single();
+
+    if (mainImageError || !mainImage) {
+      return new Response(JSON.stringify({ error: 'Imagen principal no encontrada para este producto' }), {
+        status: 404,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    if (mainImage.thumbnails && mainImage.thumbnails.desktop && mainImage.thumbnail_url) {
+      // Idempotente: ya existen thumbnails
+      return new Response(JSON.stringify({
+        success: true,
+        status: 'ok',
+        message: 'Thumbnails ya existentes (idempotente)',
+        thumbnails: mainImage.thumbnails,
+        thumbnailUrl: mainImage.thumbnail_url
+      }), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    // Job tracking con RPC start_thumbnail_job (atomic attempts+processing)
+    let jobTrackingEnabled = true;
+    try {
+      const { error: startErr } = await dbClient.rpc('start_thumbnail_job', { p_product_id: productId, p_product_image_id: mainImage.id });
+      if (startErr) {
+        jobTrackingEnabled = false;
+        logError('⚠️ start_thumbnail_job failed (sin tracking):', startErr.message);
+      }
+    } catch (e) {
+      jobTrackingEnabled = false;
+      logError('⚠️ Error RPC start_thumbnail_job:', e);
+    }
 
     // Fetch image with timeout
     const controller = new AbortController();
@@ -220,25 +271,25 @@ serve(async (req) => {
 
     // Upload thumbnails to storage
     const uploadPromises = [
-      supabase.storage
+  (supabaseSr || supabasePublic!).storage
         .from('product-images-thumbnails')
         .upload(`${supplierId}/${productId}/${timestamp}_minithumb_40x40.jpg`, minithumb, { 
           contentType: 'image/jpeg',
           cacheControl: '31536000' // 1 year cache
         }),
-      supabase.storage
+  (supabaseSr || supabasePublic!).storage
         .from('product-images-thumbnails')
         .upload(`${supplierId}/${productId}/${timestamp}_mobile_190x153.jpg`, mobileThumb, { 
           contentType: 'image/jpeg',
           cacheControl: '31536000' // 1 year cache
         }),
-      supabase.storage
+  (supabaseSr || supabasePublic!).storage
         .from('product-images-thumbnails')
         .upload(`${supplierId}/${productId}/${timestamp}_tablet_300x230.jpg`, tabletThumb, { 
           contentType: 'image/jpeg',
           cacheControl: '31536000'
         }),
-      supabase.storage
+  (supabaseSr || supabasePublic!).storage
         .from('product-images-thumbnails')
         .upload(`${supplierId}/${productId}/${timestamp}_desktop_320x260.jpg`, desktopThumb, { 
           contentType: 'image/jpeg',
@@ -250,6 +301,9 @@ serve(async (req) => {
     const errors = uploadResults.filter(result => result.error);
     if (errors.length > 0) {
       logError("❌ Error uploading thumbnails:", errors);
+      if (jobTrackingEnabled) {
+        await dbClient.rpc('mark_thumbnail_job_error', { p_product_id: productId, p_error: 'upload_fail' }).catch(()=>{});
+      }
       return new Response(JSON.stringify({ 
         error: 'Failed to upload thumbnails',
         details: errors.map(err => err.error?.message).join(', ')
@@ -260,24 +314,24 @@ serve(async (req) => {
     }
 
     // Generate public URLs
-    const minithumbUrl = supabase.storage
+  const minithumbUrl = (supabaseSr || supabasePublic!).storage
       .from('product-images-thumbnails')
       .getPublicUrl(`${supplierId}/${productId}/${timestamp}_minithumb_40x40.jpg`).data.publicUrl;
 
-    const mobileUrl = supabase.storage
+  const mobileUrl = (supabaseSr || supabasePublic!).storage
       .from('product-images-thumbnails')
       .getPublicUrl(`${supplierId}/${productId}/${timestamp}_mobile_190x153.jpg`).data.publicUrl;
 
-    const tabletUrl = supabase.storage
+  const tabletUrl = (supabaseSr || supabasePublic!).storage
       .from('product-images-thumbnails')
       .getPublicUrl(`${supplierId}/${productId}/${timestamp}_tablet_300x230.jpg`).data.publicUrl;
 
-    const desktopUrl = supabase.storage
+  const desktopUrl = (supabaseSr || supabasePublic!).storage
       .from('product-images-thumbnails')
       .getPublicUrl(`${supplierId}/${productId}/${timestamp}_desktop_320x260.jpg`).data.publicUrl;
 
-    // Update the product_images table with the new thumbnails
-    const { error: dbUpdateError } = await supabase
+    // Update SOLO la imagen principal (image_order=0) y solo si todavía no tenía thumbnails
+  const { error: dbUpdateError } = await dbClient
       .from('product_images')
       .update({
         thumbnails: {
@@ -285,18 +339,29 @@ serve(async (req) => {
           mobile: mobileUrl,
           tablet: tabletUrl,
           desktop: desktopUrl
-        }
+        },
+        thumbnail_url: desktopUrl
       })
-      .eq('product_id', productId);
+      .eq('product_id', productId)
+      .eq('image_order', 0)
+      .is('thumbnails', null);
 
     if (dbUpdateError) {
       logError("❌ Error updating thumbnails in DB:", dbUpdateError);
       // Optionally, you can return an error here or just log it and continue
+      if (jobTrackingEnabled) {
+        await dbClient.rpc('mark_thumbnail_job_error', { p_product_id: productId, p_error: dbUpdateError.message }).catch(()=>{});
+      }
+    }
+
+    if (!dbUpdateError && jobTrackingEnabled) {
+      await dbClient.rpc('mark_thumbnail_job_success', { p_product_id: productId }).catch(()=>{});
     }
 
     const response = {
       success: true,
-      thumbnailUrl: desktopUrl, // Main thumbnail for backward compatibility
+      status: dbUpdateError ? 'stored_without_db_update' : 'stored_and_updated',
+      thumbnailUrl: desktopUrl, // Compatibilidad
       thumbnails: {
         minithumb: minithumbUrl,
         mobile: mobileUrl,
@@ -310,7 +375,8 @@ serve(async (req) => {
         desktop: { width: 320, height: 260 }
       },
       originalSize: imageBuffer.byteLength,
-      generatedAt: new Date().toISOString()
+      generatedAt: new Date().toISOString(),
+      clientMode: serviceRoleKey ? 'service_role' : 'anon'
     };
 
     return new Response(JSON.stringify(response), { 
@@ -332,6 +398,20 @@ serve(async (req) => {
 
   } catch (error) {
     logError("❌ Edge Function error:", error);
+    try {
+      // Fallback: marcar job error si tracking activo
+      // (No re-lanzamos si falla este update)
+      const supabaseUrl = Deno.env.get("SUPABASE_URL");
+  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || Deno.env.get("SERVICE_ROLE_KEY");
+      const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
+      if (supabaseUrl && (serviceRoleKey || anonKey)) {
+        const tmpClient = createClient(supabaseUrl, serviceRoleKey || anonKey!);
+        const body = await req.clone().json().catch(() => ({}));
+        if (body?.productId) {
+          await tmpClient.rpc('mark_thumbnail_job_error', { p_product_id: body.productId, p_error: (error as any)?.message?.slice(0,500) || 'edge_error' }).catch(()=>{});
+        }
+      }
+    } catch (_) {}
     return new Response(JSON.stringify({ 
       error: error.message || 'Internal server error',
       details: error.stack,
@@ -341,7 +421,7 @@ serve(async (req) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
   }
-});
+}));
 
 /* To invoke locally:
 
