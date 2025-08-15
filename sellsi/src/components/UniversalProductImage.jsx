@@ -38,6 +38,7 @@ const UniversalProductImage = ({
 
   // Hooks para obtener thumbnails
   const { thumbnailUrl: responsiveThumbnail, isLoading: responsiveLoading } = useResponsiveThumbnail(product);
+  const productId = product?.id || product?.productid || product?.product_id || product?.productId;
   const minithumb = useMinithumb(product);
 
   // Determinar la URL a usar basada en el tamaño solicitado
@@ -66,8 +67,8 @@ const UniversalProductImage = ({
     setImageError(true);
 
     // FUNCIONALIDAD PRINCIPAL: Invalidar cache cuando hay error 404
-    if (product?.id) {
-      const cacheKey = ['thumbnails', product.id];
+    if (productId) {
+      const cacheKey = ['thumbnail', productId];
 
       // Invalidar cache de React Query para este producto
       queryClient.invalidateQueries({
@@ -116,6 +117,29 @@ const UniversalProductImage = ({
     borderRadius,
     ...sx
   };
+
+  // Listener para imágenes procesadas en background (reubicado arriba para no quedar tras returns)
+  useEffect(() => {
+    const handleImagesReady = (event) => {
+      const { productId: readyProductId } = event.detail || {};
+      if (!readyProductId || readyProductId !== productId) return;
+
+      // Invalidar cache del producto específico
+      queryClient.invalidateQueries({ queryKey: ['thumbnail', productId], exact: false });
+
+      // Reset estados de error para permitir nueva carga
+      setImageError(false);
+      setRetryCount(0);
+
+      // Forzar re-evaluación del memo (doble toggle seguro)
+      setTimeout(() => {
+        setRetryCount(prev => prev + 1);
+        setRetryCount(prev => prev - 1);
+      }, 300);
+    };
+    window.addEventListener('productImagesReady', handleImagesReady);
+    return () => window.removeEventListener('productImagesReady', handleImagesReady);
+  }, [productId, queryClient]);
 
   // Si hay error o no hay imagen válida, mostrar Avatar con icono CENTRADO
   if (imageError || !selectedThumbnail || selectedThumbnail === '/placeholder-product.jpg') {
@@ -209,56 +233,7 @@ const UniversalProductImage = ({
     />
   );
 
-  // NUEVO: Listener para imágenes procesadas en background
-  useEffect(() => {
-    const handleImagesReady = (event) => {
-      const { productId: readyProductId, imageCount } = event.detail
-      
-      // Verificar si es nuestro producto
-      const currentProductId = product?.id || product?.productid || product?.product_id
-      
-      if (readyProductId === currentProductId) {
-
-        // Invalidar solo el cache de este producto específico
-        if (queryClient) {
-          queryClient.invalidateQueries({
-            queryKey: ['thumbnail', currentProductId],
-            exact: false
-          })
-        }
-        
-        // Reset estados de error para permitir nueva carga
-        setImageError(false)
-        setRetryCount(0)
-        
-        // Forzar re-evaluación del thumbnail
-        setTimeout(() => {
-          // Trigger re-render del useMemo
-          setRetryCount(prev => prev + 1)
-          setRetryCount(prev => prev - 1)
-        }, 500)
-      }
-    }
-    
-    window.addEventListener('productImagesReady', handleImagesReady)
-    
-    return () => {
-      window.removeEventListener('productImagesReady', handleImagesReady)
-    }
-  }, [product, queryClient])
-
-  return (
-    <img
-      src={finalSrc}
-      alt={altText}
-      onError={handleImageError}
-      style={{
-        display: imageError ? 'none' : 'block',
-        ...style
-      }}
-      {...props}
-    />
-  );
+  // (Eliminado código inalcanzable y return redundante)
 };
 
 // Componentes especializados para casos de uso específicos

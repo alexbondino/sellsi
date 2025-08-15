@@ -19,15 +19,19 @@ export const useResponsiveThumbnail = (product) => {
   const isTablet = useMediaQuery(theme.breakpoints.between('md', 'xl'));
   const isDesktop = useMediaQuery(theme.breakpoints.up('xl'));
 
-  // Query solo si no tenemos thumbnails en el producto
-  const needsQuery = product && product.id && !product.thumbnails;
+  // Aceptar múltiples variantes de id para mayor compatibilidad (post refactors)
+  const productId = product?.id || product?.productid || product?.product_id || product?.productId;
+
+  // Query si no hay objeto thumbnails cargado o si sólo tenemos thumbnail_url sin el JSON completo
+  const hasLocalThumbnailsObject = !!(product && product.thumbnails && typeof product.thumbnails === 'object');
+  const needsQuery = !!productId && !hasLocalThumbnailsObject; // siempre intentar completar el JSON si falta
   
   const { 
     data: dbThumbnails, 
     isLoading: isLoadingThumbnails,
     error: thumbnailError 
   } = useThumbnailQuery(
-    product?.id,
+    productId,
     { 
       enabled: needsQuery,
       // Usar configuración optimizada menos agresiva
@@ -92,7 +96,8 @@ export const useResponsiveThumbnail = (product) => {
     thumbnailUrl,
     isLoading: isLoadingThumbnails,
     error: thumbnailError,
-    hasResponsiveThumbnails: !!(product?.thumbnails || dbThumbnails?.thumbnails),
+    // Considerar también presencia de thumbnail_url como indicador parcial
+    hasResponsiveThumbnails: !!(product?.thumbnails || dbThumbnails?.thumbnails || product?.thumbnail_url || product?.thumbnailUrl || dbThumbnails?.thumbnail_url),
   };
 };
 
@@ -100,14 +105,14 @@ export const useResponsiveThumbnail = (product) => {
  * Hook para minithumb con React Query
  */
 export const useMinithumb = (product) => {
-  const needsQuery = product && product.id && 
-    !(product.thumbnails?.minithumb);
+  const productId = product?.id || product?.productid || product?.product_id || product?.productId;
+  const needsQuery = !!productId && !(product?.thumbnails?.minithumb);
   
   const { 
     data: dbThumbnails,
     isLoading 
   } = useThumbnailQuery(
-    product?.id,
+    productId,
     { enabled: needsQuery }
   );
 

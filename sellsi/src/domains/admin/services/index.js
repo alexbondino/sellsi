@@ -94,7 +94,8 @@ export {
 // ========================================
 // 🔒 SERVICIOS DE SEGURIDAD Y BANEOS
 // ========================================
-export { default as BanService } from './banService'
+// Exportar BanService desde la ubicación canonical en services/security
+export { default as BanService } from '../../../services/security/banService'
 export {
   updateUserIP,
   getCurrentUserIP,

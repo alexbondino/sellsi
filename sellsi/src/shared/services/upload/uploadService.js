@@ -262,9 +262,9 @@ export class UploadService {
           }
         }
         // Subir archivos nuevos
-        const uploadPromises = filesToProcess.map((file, index) => 
-          this.uploadImageWithThumbnail(file, productId, supplierId, index === 0)
-        )
+          const uploadPromises = filesToProcess.map((file, index) => 
+            this.uploadImageWithThumbnail(file, productId, supplierId, index === 0)
+          )
         const results = await Promise.allSettled(uploadPromises)
         const successful = []
         const errors = []
@@ -278,6 +278,10 @@ export class UploadService {
             errors.push(`Archivo ${filesToProcess[index].name || filesToProcess[index].file?.name}: ${errorMsg}`)
           }
         })
+          // 🔔 Dispatch evento global cuando haya al menos una subida exitosa
+          if (successful.length > 0) {
+            this.dispatchProductImagesReady(productId, { count: successful.length, mode: 'multiple', mainUpdated: successful.some(img => img.isMain) })
+          }
         return {
           success: successful.length > 0 || existingFiles.length > 0,
           data: successful,
@@ -316,6 +320,10 @@ export class UploadService {
           errors.push(`Archivo ${newFiles[index].name || newFiles[index].file?.name}: ${errorMsg}`)
         }
       })
+        // 🔔 Dispatch evento global cuando haya al menos una subida exitosa
+        if (successful.length > 0) {
+          this.dispatchProductImagesReady(productId, { count: successful.length, mode: 'multiple', mainUpdated: successful.some(img => img.isMain) })
+        }
       return {
         success: successful.length > 0 || files.length > newFiles.length, // Éxito si subió algo O si había existentes
         data: successful,
@@ -504,6 +512,22 @@ export class UploadService {
         success: false,
         error: error.message,
       }
+    }
+  }
+
+  /**
+   * 🔔 Dispatch de evento global para notificar actualización de imágenes de un producto
+   * Consumido por UniversalProductImage (listener productImagesReady) para invalidar cache y recargar thumbnails.
+   * @param {string} productId
+   * @param {object} meta Información adicional (count, mode, mainUpdated, etc.)
+   */
+  static dispatchProductImagesReady(productId, meta = {}) {
+    try {
+      if (typeof window === 'undefined' || !productId) return;
+      const detail = { productId, timestamp: Date.now(), ...meta };
+      window.dispatchEvent(new CustomEvent('productImagesReady', { detail }));
+    } catch (e) {
+      // Silencioso: no bloquear flujo de upload por errores de dispatch
     }
   }
 
