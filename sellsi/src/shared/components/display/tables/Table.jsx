@@ -34,7 +34,8 @@ const Table = ({ orders, onActionClick }) => {
             <TableCell align="center" sx={{ width: '50px' }}>
               {/* Columna para icono de advertencia */}
             </TableCell>
-            <TableCell>Producto</TableCell>
+            <TableCell sx={{ pl: 0 }}>Producto</TableCell>
+            <TableCell>Unidades</TableCell>
             <TableCell>ID Venta</TableCell>
             <TableCell>Dirección Entrega</TableCell>
             <TableCell>Fecha Solicitud</TableCell>

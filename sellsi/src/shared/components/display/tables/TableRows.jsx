@@ -17,7 +17,7 @@ import {
   WarningAmber as WarningAmberIcon,
   Check as CheckIcon,
   Close as CloseIcon,
-  ChatBubbleOutline as ChatBubbleOutlineIcon,
+  HelpOutline as HelpOutlineIcon,
   LocalShipping as LocalShippingIcon,
   AssignmentTurnedIn as AssignmentTurnedInIcon,
   ExpandMore as ExpandMoreIcon,
@@ -27,15 +27,23 @@ import { formatDate, formatCurrency } from '../../../utils/formatters';
 // Nota: este archivo está en src/shared/components/display/tables -> subir 4 niveles hasta src
 import { getRegionDisplay } from '../../../../utils/regionNames';
 import { getCommuneDisplay } from '../../../../utils/communeNames';
+import ContactModal from '../../modals/ContactModal';
 
 const Rows = ({ order, onActionClick }) => {
   const [expandedProducts, setExpandedProducts] = useState(false);
   const [idAnchor, setIdAnchor] = useState(null);
   const [copied, setCopied] = useState(false);
   const copyTimerRef = useRef(null);
+  const [productsAnchor, setProductsAnchor] = useState(null);
+  const [productsCopied, setProductsCopied] = useState(false);
+  const productsCopyTimerRef = useRef(null);
   const [addrAnchor, setAddrAnchor] = useState(null);
   const [addrCopied, setAddrCopied] = useState(false);
   const addrCopyTimerRef = useRef(null);
+  const [isContactOpen, setIsContactOpen] = useState(false);
+
+  const openContact = () => setIsContactOpen(true);
+  const closeContact = () => setIsContactOpen(false);
 
   const handleOpenId = event => setIdAnchor(event.currentTarget);
   const handleCloseId = () => {
@@ -47,6 +55,17 @@ const Rows = ({ order, onActionClick }) => {
     setCopied(false);
   };
   const openId = Boolean(idAnchor);
+
+  const handleOpenProducts = event => setProductsAnchor(event.currentTarget);
+  const handleCloseProducts = () => {
+    setProductsAnchor(null);
+    if (productsCopyTimerRef.current) {
+      clearTimeout(productsCopyTimerRef.current);
+      productsCopyTimerRef.current = null;
+    }
+    setProductsCopied(false);
+  };
+  const openProducts = Boolean(productsAnchor);
 
   const handleOpenAddr = event => setAddrAnchor(event.currentTarget);
   const handleCloseAddr = () => {
@@ -68,6 +87,23 @@ const Rows = ({ order, onActionClick }) => {
     } catch (_) {}
   };
 
+  const buildProductsCopy = (items) => {
+    if (!items || !Array.isArray(items) || items.length === 0) return '';
+    return items.map(p => `${p.name || '—'} · ${p.quantity || 0} uds`).join('\n');
+  };
+
+  const handleCopyProducts = async () => {
+    try {
+      const items = order?.products || order?.items || [];
+      const text = buildProductsCopy(items);
+      if (!text) return;
+      await navigator.clipboard.writeText(text);
+      setProductsCopied(true);
+      if (productsCopyTimerRef.current) clearTimeout(productsCopyTimerRef.current);
+      productsCopyTimerRef.current = setTimeout(() => setProductsCopied(false), 3000);
+    } catch (_) {}
+  };
+
   // Formato amigable: #XXXXXXX (últimos 8 caracteres en mayúsculas)
   const shortId = id => {
     if (!id) return '—';
@@ -83,7 +119,9 @@ const Rows = ({ order, onActionClick }) => {
 
     // String directo
     if (typeof address === 'string') {
-      return address.trim() || '—';
+  const raw = address.trim() || '—';
+  if (raw === '—') return raw;
+  return raw.length > 60 ? `${raw.slice(0, 60)}...` : raw;
     }
 
     // Filtro para ignorar placeholders tipo "no especificada"
@@ -104,9 +142,9 @@ const Rows = ({ order, onActionClick }) => {
   const region = regionRaw ? getRegionDisplay(regionRaw, { withPrefix: true }) : '';
 
     const parts = [street, commune, region].filter(Boolean);
-    const result = parts.length ? parts.join(', ') : '—';
-    
-    return result;
+  const result = parts.length ? parts.join(', ') : '—';
+  if (!result) return '—';
+  return result.length > 60 ? `${result.slice(0, 40)}...` : result;
   };
 
   // Obtener fecha de solicitud (solo una fecha)
@@ -172,37 +210,57 @@ const Rows = ({ order, onActionClick }) => {
     return 'mixed';
   }, [order]);
 
-  // Renderizar productos
-  const renderProducts = () => {
-    const { products } = order;
-    const displayProducts = expandedProducts ? products : products.slice(0, 2);
-    const hasMoreProducts = products.length > 2;
-
-    return (
-      <Box>
-        {displayProducts.map((product, index) => (
-          <Typography key={index} variant="body2" component="div">
-            {product.name} x {product.quantity}
-          </Typography>
-        ))}
-
-        {hasMoreProducts && !expandedProducts && (
-          <Typography variant="body2" color="text.secondary">
-            ...y {products.length - 2} más
-          </Typography>
-        )}
-
-        {hasMoreProducts && (
-          <IconButton
-            size="small"
-            onClick={() => setExpandedProducts(!expandedProducts)}
-          >
-            {expandedProducts ? <ExpandLessIcon /> : <ExpandMoreIcon />}
-          </IconButton>
-        )}
-      </Box>
-    );
+  // Renderizar nombres de productos (columna Producto) y cantidades (columna Unidades)
+  const getTruncated = (name) => {
+    if (!name) return '—';
+    const n = String(name).trim();
+    return n.length > 15 ? `${n.slice(0, 15)}...` : n;
   };
+
+  const getDisplayProducts = () => {
+    const { products } = order;
+    if (!products) return [];
+    const display = expandedProducts ? products : products.slice(0, 5); // mostrar hasta 5 antes de expandir
+    return display.map(p => ({ name: getTruncated(p.name), quantity: p.quantity }));
+  };
+
+  const hasMoreProducts = Array.isArray(order?.products) && order.products.length > 5 && !expandedProducts;
+
+  const renderProductNames = () => (
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+      {getDisplayProducts().map((p, i) => (
+        <Box key={i} sx={{ display: 'flex', alignItems: 'center' }}>
+          <Typography variant="body2" component="div" noWrap sx={{ lineHeight: 1.2 }}>{p.name}</Typography>
+        </Box>
+      ))}
+      {hasMoreProducts && (
+        <Typography variant="body2" color="text.secondary">...y {order.products.length - 5} más</Typography>
+      )}
+      {Array.isArray(order?.products) && order.products.length > 5 && (
+        <IconButton size="small" onClick={(e) => { e.stopPropagation(); setExpandedProducts(!expandedProducts); }} sx={{ alignSelf: 'flex-start' }}>
+          {expandedProducts ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+        </IconButton>
+      )}
+    </Box>
+  );
+
+  const renderProductQuantities = () => (
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+      {getDisplayProducts().map((p, i) => (
+        <Box key={i} sx={{ display: 'flex', alignItems: 'center' }}>
+          <Typography variant="body2" component="div" noWrap sx={{ lineHeight: 1.2 }}>{p.quantity} uds</Typography>
+        </Box>
+      ))}
+      {hasMoreProducts && (
+        <Typography variant="body2" color="text.secondary">...</Typography>
+      )}
+      {Array.isArray(order?.products) && order.products.length > 5 && (
+        <IconButton size="small" onClick={(e) => { e.stopPropagation(); setExpandedProducts(!expandedProducts); }} sx={{ alignSelf: 'flex-start' }}>
+          {expandedProducts ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+        </IconButton>
+      )}
+    </Box>
+  );
 
   // Renderizar acciones según estado
   const renderActions = () => {
@@ -229,12 +287,12 @@ const Rows = ({ order, onActionClick }) => {
               <CloseIcon />
             </IconButton>
           </Tooltip>,
-          <Tooltip key="chat" title="Chat">
+          <Tooltip key="help" title="Ayuda">
             <IconButton
               color="primary"
-              onClick={() => onActionClick(order, 'chat')}
+              onClick={openContact}
             >
-              <ChatBubbleOutlineIcon />
+              <HelpOutlineIcon />
             </IconButton>
           </Tooltip>
         );
@@ -258,12 +316,9 @@ const Rows = ({ order, onActionClick }) => {
               <CloseIcon />
             </IconButton>
           </Tooltip>,
-          <Tooltip key="chat" title="Chat">
-            <IconButton
-              color="primary"
-              onClick={() => onActionClick(order, 'chat')}
-            >
-              <ChatBubbleOutlineIcon />
+          <Tooltip key="help" title="Ayuda">
+            <IconButton color="primary" onClick={openContact}>
+              <HelpOutlineIcon />
             </IconButton>
           </Tooltip>
         );
@@ -287,12 +342,9 @@ const Rows = ({ order, onActionClick }) => {
               <CloseIcon />
             </IconButton>
           </Tooltip>,
-          <Tooltip key="chat" title="Chat">
-            <IconButton
-              color="primary"
-              onClick={() => onActionClick(order, 'chat')}
-            >
-              <ChatBubbleOutlineIcon />
+          <Tooltip key="help" title="Ayuda">
+            <IconButton color="primary" onClick={openContact}>
+              <HelpOutlineIcon />
             </IconButton>
           </Tooltip>
         );
@@ -301,12 +353,9 @@ const Rows = ({ order, onActionClick }) => {
       case 'Entregado':
       case 'Pagado':
         actions.push(
-          <Tooltip key="chat" title="Chat">
-            <IconButton
-              color="primary"
-              onClick={() => onActionClick(order, 'chat')}
-            >
-              <ChatBubbleOutlineIcon />
+          <Tooltip key="help" title="Ayuda">
+            <IconButton color="primary" onClick={openContact}>
+              <HelpOutlineIcon />
             </IconButton>
           </Tooltip>
         );
@@ -361,8 +410,8 @@ const Rows = ({ order, onActionClick }) => {
 
   return (
     <TableRow hover>
-      {/* Columna de Advertencia */}
-      <TableCell align="center">
+  {/* Columna de Advertencia */}
+  <TableCell align="center" sx={{ verticalAlign: 'middle' }}>
         {order.isLate && (
           <Tooltip title="Atrasado">
             <WarningAmberIcon color="warning" />
@@ -370,8 +419,50 @@ const Rows = ({ order, onActionClick }) => {
         )}
       </TableCell>
 
-      {/* Columna Productos */}
-  <TableCell>{renderProducts()}</TableCell>
+  {/* Columna Productos */}
+  <TableCell sx={{ verticalAlign: 'middle', pl: 0 }}>
+    <Box sx={{ display: 'block', width: '100%' }}>
+      <Tooltip title="Clic para ver y copiar" placement="top">
+        <Box sx={{ cursor: 'pointer', userSelect: 'none' }} onClick={handleOpenProducts}>
+          {renderProductNames()}
+        </Box>
+      </Tooltip>
+      <Popover
+        open={openProducts}
+        anchorEl={productsAnchor}
+        onClose={handleCloseProducts}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+        transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+        PaperProps={{ sx: { p: 2, width: 420, maxWidth: '90vw' } }}
+        disableScrollLock
+      >
+        <Typography variant="subtitle2" gutterBottom>
+          Productos
+        </Typography>
+        <Box sx={{ display: 'grid', rowGap: 0.5 }}>
+          {(order?.products || order?.items || []).map((p, i) => (
+            <Box key={i} sx={{ display: 'grid', gridTemplateColumns: '1fr auto', columnGap: 8, alignItems: 'center' }}>
+              <Typography variant="body2">{p.name || p.title || '—'}</Typography>
+              <Typography variant="body2" color="text.secondary">{p.quantity || 0} uds</Typography>
+            </Box>
+          ))}
+        </Box>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 1 }}>
+          <Typography variant="caption" color="text.secondary">Selecciona o usa el botón para copiar</Typography>
+          {productsCopied ? (
+            <Button size="small" color="success" variant="contained" startIcon={<CheckCircleOutlineIcon sx={{ fontSize: 18 }} />} disableElevation>
+              Copiado
+            </Button>
+          ) : (
+            <Button onClick={handleCopyProducts} size="small">Copiar</Button>
+          )}
+        </Box>
+      </Popover>
+    </Box>
+  </TableCell>
+
+  {/* Columna Unidades */}
+  <TableCell sx={{ verticalAlign: 'middle', width: '110px', whiteSpace: 'nowrap' }}>{renderProductQuantities()}</TableCell>
 
       {/* Columna ID Venta */}
       <TableCell>
@@ -525,14 +616,6 @@ const Rows = ({ order, onActionClick }) => {
             color={statusChipProps.color}
             size="small"
           />
-          {docTypeSummary && docTypeSummary !== 'ninguno' && (
-            <Chip
-              size="small"
-              variant="outlined"
-              label={docTypeSummary === 'boleta' ? 'Boleta' : docTypeSummary === 'factura' ? 'Factura' : docTypeSummary === 'ninguno' ? 'Sin doc.' : 'Mixto'}
-              color={docTypeSummary === 'factura' ? 'info' : docTypeSummary === 'boleta' ? 'success' : docTypeSummary === 'ninguno' ? 'default' : 'warning'}
-            />
-          )}
         </Box>
       </TableCell>
 
@@ -540,6 +623,8 @@ const Rows = ({ order, onActionClick }) => {
       <TableCell>
         <Box sx={{ display: 'flex', gap: 0.5 }}>{renderActions()}</Box>
       </TableCell>
+  {/* Contact Modal abierto desde el icono de ayuda */}
+  <ContactModal open={isContactOpen} onClose={closeContact} />
     </TableRow>
   );
 };

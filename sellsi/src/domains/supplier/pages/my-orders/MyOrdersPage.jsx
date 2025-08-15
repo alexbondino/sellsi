@@ -230,12 +230,7 @@ const MyOrdersPage = () => {
           messageToUser = '📦 La entrega fue confirmada con éxito.';
           break;
         }
-        case 'chat': {
-          messageToUser = ' Abriendo chat... (funcionalidad pendiente de implementación).';
-          handleCloseModal();
-          showBanner({ message: messageToUser, severity: 'info', duration: 3000 });
-          return; // early exit
-        }
+  // 'chat' action removed: contact modal now opened from the table row
         default:
           break;
       }
@@ -419,20 +414,7 @@ const MyOrdersPage = () => {
           </Box>
         ),
       },
-      chat: {
-        title: 'Abrir Chat con Cliente',
-        submitButtonText: 'Abrir Chat',
-        submitButtonColor: 'info',
-        showWarningIconHeader: false,
-        type: MODAL_TYPES.CHAT,
-        isFormModal: false,
-        children: (
-          <Typography variant="body1">
-            ¿Deseas abrir la conversación de chat para el pedido #
-            {modalState.selectedOrder?.order_id}?
-          </Typography>
-        ),
-      },
+  // chat modal removed - use ContactModal from table rows for help/contact
     };
 
     return configs[type] || {};
