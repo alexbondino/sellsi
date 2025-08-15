@@ -1,6 +1,7 @@
 // @ts-nocheck
 /// <reference lib="deno.ns" />
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 // Lista de orígenes permitidos para CORS
 const allowedOrigins = [
@@ -33,7 +34,7 @@ serve(async req => {
     console.log('[create-payment-khipu] Función iniciada.');
 
     // 1. Leer los datos dinámicos que envía el frontend (khipuService.js)
-    const { amount, subject, currency } = await req.json();
+  const { amount, subject, currency, buyer_id, cart_items, cart_id } = await req.json();
 
     // Validar que los datos necesarios fueron recibidos
     if (!amount || !subject || !currency) {
@@ -46,7 +47,8 @@ serve(async req => {
     );
 
     // 2. Verificar que las variables de entorno necesarias estén configuradas
-    const apiKey = Deno.env.get('KHIPU_API_KEY');
+  const apiKey = Deno.env.get('KHIPU_API_KEY');
+  const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
     const supabaseUrl = Deno.env.get('SUPABASE_URL'); // Obtener la URL base de Supabase
 
     if (!apiKey) {
@@ -58,6 +60,9 @@ serve(async req => {
       throw new Error(
         'La variable de entorno SUPABASE_URL no está disponible.'
       );
+    }
+    if (!supabaseServiceKey) {
+      throw new Error('SUPABASE_SERVICE_ROLE_KEY no configurada.');
     }
     console.log(
       '[create-payment-khipu] Secretos y variables de entorno encontrados.'
@@ -72,8 +77,8 @@ serve(async req => {
       subject,
       amount: Math.round(amount), // Khipu requiere montos enteros
       currency,
-      return_url: 'https://sellsi.cl/buyer/orders', // Es mejor usar la URL de producción
-      notify_url: notifyUrl, // Usar la URL construida dinámicamente
+      return_url: 'https://sellsi.cl/buyer/orders',
+      notify_url: notifyUrl,
     });
 
     console.log(
@@ -112,7 +117,7 @@ serve(async req => {
     );
 
     // 5. Normalizar salida para frontend
-    const normalized = {
+  const normalized = {
       // bandera de éxito para clientes que lo esperan
       success: true,
       // mapeo defensivo de campos posibles
@@ -133,12 +138,63 @@ serve(async req => {
       raw: responseData,
     } as Record<string, unknown>;
 
+    // ================================================================
+    // Persistir / upsert de la payment order en tabla orders
+    // ================================================================
+    try {
+      const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+      const expiresRaw: string | null = (normalized as any).expires_date || null;
+      const expiresAt = expiresRaw ? new Date(expiresRaw).toISOString() : new Date(Date.now() + 20 * 60 * 1000).toISOString(); // fallback 20m
+
+      // Construir estructura items minimal (si se entregan cart_items)
+      let itemsPayload = [] as any[];
+      if (Array.isArray(cart_items)) {
+        itemsPayload = cart_items.map(ci => ({
+          product_id: ci.product_id || ci.productid || ci.id,
+          quantity: ci.quantity || 1,
+          price: ci.price || ci.price_at_addition || 0,
+          supplier_id: ci.supplier_id || ci.supplierId || null,
+        }));
+      }
+
+      const orderInsert = {
+        id: (normalized as any).payment_id || crypto.randomUUID(),
+        user_id: buyer_id || null,
+        cart_id: cart_id || null,
+        items: itemsPayload.length ? itemsPayload : null,
+        subtotal: amount,
+        total: amount,
+        total_amount: amount, // si existe esta convención en el servicio front
+        status: 'pending',
+        payment_method: 'khipu',
+        payment_status: 'pending',
+        khipu_payment_id: (normalized as any).payment_id || null,
+        khipu_payment_url: (normalized as any).payment_url || null,
+        khipu_expires_at: expiresAt,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      } as any;
+
+      // upsert por id para idempotencia
+      const { error: upsertErr } = await supabaseAdmin
+        .from('orders')
+        .upsert(orderInsert, { onConflict: 'id' });
+      if (upsertErr) {
+        console.error('[create-payment-khipu] Error persistiendo payment order:', upsertErr);
+      } else {
+        (normalized as any).persisted = true;
+        (normalized as any).khipu_expires_at = expiresAt;
+      }
+    } catch (persistErr) {
+      console.error('[create-payment-khipu] Persist error:', persistErr);
+    }
+
     if (!normalized.payment_url) {
       // Si por alguna razón Khipu no devolvió URL, informamos explícitamente
       console.warn('[create-payment-khipu] Respuesta sin payment_url:', responseData);
     }
 
-    return new Response(JSON.stringify(normalized), {
+  return new Response(JSON.stringify(normalized), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,
     });

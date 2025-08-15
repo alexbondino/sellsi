@@ -11,6 +11,81 @@ export const useBuyerOrders = buyerId => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  // TTL (debe coincidir con la ventana backend) para expirar payment orders pendientes
+  const PAYMENT_PENDING_TTL_MS = 20 * 60 * 1000; // 20 minutos (alineado con backend fallback)
+  const nowRef = () => Date.now();
+
+  // Refs / control de realtime + polling
+  const subscriptionRef = useRef(null);
+  const pollAttemptRef = useRef(0);
+  const pollTimeoutRef = useRef(null);
+  const pollingDisabledRef = useRef(false); // desactiva polling cuando no hay payment orders pendientes
+
+  const clearPollTimeout = () => {
+    if (pollTimeoutRef.current) {
+      clearTimeout(pollTimeoutRef.current);
+      pollTimeoutRef.current = null;
+    }
+  };
+
+  const getNextDelay = (attempt) => {
+    if (attempt < 5) return 5000; // 0-4
+    if (attempt < 10) return 10000; // 5-9
+    if (attempt < 15) return 15000; // 10-14
+    return 30000; // 15+
+  };
+
+  const hasPendingPaymentOrders = useCallback(
+    list => (list || []).some(o => o.is_payment_order && o.payment_status === 'pending'),
+    []
+  );
+
+  const scheduleNextPoll = useCallback(() => {
+    if (pollingDisabledRef.current) return; // no programar si está desactivado
+    clearPollTimeout();
+    const attempt = pollAttemptRef.current;
+    const delay = getNextDelay(attempt);
+    pollTimeoutRef.current = setTimeout(async () => {
+      pollAttemptRef.current += 1;
+      try {
+        const statuses = await orderService.getPaymentStatusesForBuyer(buyerId);
+        if (Array.isArray(statuses) && statuses.length) {
+          setOrders(prev => {
+            const statusMap = new Map(statuses.map(s => [s.id, s.payment_status]));
+            let changed = false;
+            const next = prev.map(ord => {
+              if (ord.is_payment_order && statusMap.has(ord.order_id)) {
+                const newStatus = statusMap.get(ord.order_id);
+                if (newStatus && newStatus !== ord.payment_status) {
+                  changed = true;
+                  return { ...ord, payment_status: newStatus };
+                }
+              }
+              return ord;
+            });
+            if (changed) evaluatePollingState(next);
+            return changed ? next : prev;
+          });
+        }
+      } catch (_) { /* silencioso */ }
+      scheduleNextPoll();
+    }, delay);
+  }, [buyerId]);
+
+  const evaluatePollingState = useCallback(
+    list => {
+      const hasPending = hasPendingPaymentOrders(list);
+      if (!hasPending && !pollingDisabledRef.current) {
+        clearPollTimeout();
+        pollingDisabledRef.current = true;
+      } else if (hasPending && pollingDisabledRef.current) {
+        pollingDisabledRef.current = false;
+        pollAttemptRef.current = 0;
+        scheduleNextPoll();
+      }
+    },
+    [hasPendingPaymentOrders, scheduleNextPoll]
+  );
 
   // Usamos useCallback para memorizar la función y evitar re-renderizados innecesarios.
   const fetchOrders = useCallback(
@@ -32,11 +107,8 @@ export const useBuyerOrders = buyerId => {
         // ================== DEDUPLICACIÓN DE ÓRDENES ==================
         // Objetivo: Mostrar SOLO 1 card. Mientras el pago está pendiente, se muestra la orden de pago.
         // Cuando el pago pasa a 'paid' y se materializa un pedido clásico (carts), ocultamos la orden de pago duplicada.
-        // Sin columna de enlace (cart_id) en tabla orders, usamos heurísticas:
-        //  - buyer_id igual
-        //  - total_amount igual
-        //  - overlap significativo de product_ids (>= 80%)
-        //  - el pedido clásico creado después (o muy cerca) del payment order
+  // Dedupe determinístico si hay cart_id en payment order; si no, usar heurísticas:
+  //  Heurística fallback (legacy) sólo se aplica cuando cart_id es null.
 
         const classicBySignature = classicOrders.map(co => {
           const productIds = new Set(co.items.map(i => i.product_id));
@@ -50,31 +122,41 @@ export const useBuyerOrders = buyerId => {
         });
 
         const isLikelyMaterialized = (payOrd) => {
-          if (payOrd.payment_status !== 'paid') return false; // solo deduplicar pagados
+          if (payOrd.payment_status !== 'paid') return false;
+          // Si hay cart_id y existe un clásico con mismo cart_id => materializado determinísticamente
+          if (payOrd.cart_id && classicOrders.some(c => c.cart_id === payOrd.cart_id)) return true;
+          // Fallback heurístico legacy cuando no hay cart_id
+          if (payOrd.cart_id) return false; // ya evaluado arriba
           const payCreated = new Date(payOrd.created_at).getTime();
-            const payProducts = new Set(payOrd.items.map(i => i.product_id));
+          const payProducts = new Set(payOrd.items.map(i => i.product_id));
           const paySize = payProducts.size || 1;
-          const WINDOW_MS = 1000 * 60 * 30; // 30 minutos ventana temporal
-
+          const WINDOW_MS = 1000 * 60 * 30;
           return classicBySignature.some(sig => {
             if (Math.abs(sig.total - payOrd.total_amount) > 0.0001) return false;
-            // tiempo: el clásico debe ser igual o posterior (o unos minutos antes si se reutilizó cart) dentro de ventana
             if (sig.created + WINDOW_MS < payCreated && payCreated - sig.created > WINDOW_MS) return false;
-            // overlap de productos
             let overlap = 0;
             payProducts.forEach(p => { if (sig.productIds.has(p)) overlap++; });
             const overlapRatio = overlap / paySize;
-            return overlapRatio >= 0.8; // heurística
+            return overlapRatio >= 0.7; // relax a 70% al tener fallback determinístico
           });
         };
 
-        const filteredPayment = paymentOrders.filter(po => {
-          if (po.payment_status === 'pending') return true; // siempre mostrar mientras procesa
-          // si está pagado y NO encontramos aún un clásico similar, seguir mostrando hasta materialización
-          return !isLikelyMaterialized(po);
-        });
+        const filteredPayment = paymentOrders
+          .map(po => {
+            const createdTs = po.created_at ? new Date(po.created_at).getTime() : 0;
+            const expiresAt = createdTs ? createdTs + PAYMENT_PENDING_TTL_MS : 0;
+            const isStalePending = po.payment_status === 'pending' && createdTs && nowRef() > expiresAt;
+            if (isStalePending) {
+              return { ...po, payment_status: 'expired', expired_locally: true };
+            }
+            return po;
+          })
+          .filter(po => {
+            if (po.payment_status === 'pending') return true; // mostrar mientras no expira
+            if (po.payment_status === 'expired') return false; // ocultar expiradas
+            return !isLikelyMaterialized(po);
+          });
 
-        // Orden final: pending payment orders primero, luego clásicos, luego payment orders pagados que aún no se materializan
         const merged = [
           ...filteredPayment.filter(o => o.payment_status === 'pending'),
           ...classicOrders,
@@ -82,68 +164,15 @@ export const useBuyerOrders = buyerId => {
         ];
 
         setOrders(merged);
+        evaluatePollingState(merged);
       } catch (err) {
         setError(err.message || 'Error al cargar los pedidos');
       } finally {
         setLoading(false);
       }
     },
-    [buyerId]
+    [buyerId, evaluatePollingState]
   );
-
-  // Realtime subscription ref
-  const subscriptionRef = useRef(null);
-  // Polling control refs
-  const pollAttemptRef = useRef(0);
-  const pollTimeoutRef = useRef(null);
-
-  const clearPollTimeout = () => {
-    if (pollTimeoutRef.current) {
-      clearTimeout(pollTimeoutRef.current);
-      pollTimeoutRef.current = null;
-    }
-  };
-
-  const getNextDelay = (attempt) => {
-    if (attempt < 5) return 5000; // 0-4
-    if (attempt < 10) return 10000; // 5-9
-    if (attempt < 15) return 15000; // 10-14
-    return 30000; // 15+ forever
-  };
-
-  const scheduleNextPoll = () => {
-    clearPollTimeout();
-    const attempt = pollAttemptRef.current;
-    const delay = getNextDelay(attempt);
-    pollTimeoutRef.current = setTimeout(async () => {
-      pollAttemptRef.current += 1;
-      // Poll ligero: obtener solo estados y aplicar diffs
-      try {
-        const statuses = await orderService.getPaymentStatusesForBuyer(buyerId);
-        if (Array.isArray(statuses) && statuses.length) {
-          setOrders(prev => {
-            // Map para rápido lookup
-            const statusMap = new Map(statuses.map(s => [s.id, s.payment_status]));
-            let changed = false;
-            const next = prev.map(ord => {
-              if (ord.is_payment_order && statusMap.has(ord.order_id)) {
-                const newStatus = statusMap.get(ord.order_id);
-                if (newStatus && newStatus !== ord.payment_status) {
-                  changed = true;
-                  return { ...ord, payment_status: newStatus };
-                }
-              }
-              return ord;
-            });
-            return changed ? next : prev;
-          });
-        }
-      } catch (_) {
-        // Silencio: polling no debe romper UX
-      }
-      scheduleNextPoll();
-    }, delay);
-  };
 
   // Cargar los pedidos la primera vez que el componente se monta o cuando cambia el buyerId.
   useEffect(() => {
@@ -153,12 +182,10 @@ export const useBuyerOrders = buyerId => {
   // Suscripción realtime a cambios en orders (payment_status)
   useEffect(() => {
     if (!buyerId) return;
-    // Limpiar suscripción anterior
     if (subscriptionRef.current) {
       subscriptionRef.current();
     }
     subscriptionRef.current = orderService.subscribeToBuyerPaymentOrders(buyerId, () => {
-      // Recalcular estados sin afectar loading global
       pollAttemptRef.current = 0;
       (async () => {
         try {
@@ -177,6 +204,7 @@ export const useBuyerOrders = buyerId => {
                 }
                 return ord;
               });
+              if (changed) evaluatePollingState(next);
               return changed ? next : prev;
             });
           }
@@ -186,20 +214,18 @@ export const useBuyerOrders = buyerId => {
     return () => {
       if (subscriptionRef.current) subscriptionRef.current();
     };
-  }, [buyerId, fetchOrders]);
+  }, [buyerId, fetchOrders, evaluatePollingState]);
 
-  // Fallback polling escalonado (se ejecuta siempre; realtime reduce necesidad pero no la elimina)
+  // Fallback polling escalonado (solo activo mientras existan payment orders pendientes)
   useEffect(() => {
     if (!buyerId) return;
+    pollingDisabledRef.current = false; // reset al cambiar buyer
     pollAttemptRef.current = 0;
     scheduleNextPoll();
     return () => {
       clearPollTimeout();
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [buyerId]);
-
-  // --- El resto de tus funciones auxiliares no necesitan cambios ---
+  }, [buyerId, scheduleNextPoll]);
 
   const getProductImage = product => {
     if (!product) return null;
@@ -228,6 +254,7 @@ export const useBuyerOrders = buyerId => {
       delivered: 'Entregado',
       paid: 'Pagado',
       cancelled: 'Cancelado',
+      expired: 'Expirado',
     };
     return statusMap[status] || status;
   };
@@ -241,6 +268,7 @@ export const useBuyerOrders = buyerId => {
       delivered: 'success',
       paid: 'primary',
       cancelled: 'default',
+      expired: 'default',
     };
     return colorMap[status] || 'default';
   };
@@ -261,12 +289,11 @@ export const useBuyerOrders = buyerId => {
     }).format(amount);
   };
 
-  // Devolvemos el estado y las funciones para que el componente las pueda usar.
   return {
     orders,
     loading,
     error,
-    fetchOrders, // Exponemos la función por si se necesita recargar manualmente
+    fetchOrders,
     getProductImage,
     getStatusDisplayName,
     getStatusColor,

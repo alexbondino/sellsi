@@ -5,7 +5,7 @@ import { supabase } from '../../../services/supabase';
 
 class KhipuService {
   async createPaymentOrder(orderDetails) {
-    const { total, currency, orderId } = orderDetails;
+  const { total, currency, orderId, userId, items } = orderDetails;
 
     try {
       // <-- CAMBIO 1: Volvemos a preparar el payload con los datos reales de la orden.
@@ -13,15 +13,22 @@ class KhipuService {
         amount: Math.round(total),
         currency: currency || 'CLP',
         subject: `Pago de Orden #${orderId}`,
+        buyer_id: userId || null,
+  cart_id: orderId || null,
+  cart_items: Array.isArray(items)
+          ? items.map(it => ({
+              product_id: it.product_id || it.id || it.productid || (it.product && (it.product.product_id || it.product.id || it.product.productid)) || null,
+              quantity: it.quantity || 1,
+              price: it.price || it.price_at_addition || it.unitPrice || 0,
+              supplier_id: it.supplier_id || it.supplierId || (it.product && (it.product.supplier_id || it.product.supplierId)) || null,
+            }))
+          : [],
       };
 
       // <-- CAMBIO 2: Invocamos la función pasándole el 'body' con los datos dinámicos.
-      const { data: khipuResponse, error } = await supabase.functions.invoke(
-        'create-payment-khipu',
-        {
-          body: paymentPayload,
-        }
-      );
+      const { data: khipuResponse, error } = await supabase.functions.invoke('create-payment-khipu', {
+        body: paymentPayload,
+      });
 
       if (error) {
         throw new Error(

@@ -63,8 +63,8 @@ CREATE TABLE public.cart_items (
   updated_at timestamp with time zone DEFAULT now(),
   document_type text CHECK ((document_type = ANY (ARRAY['boleta'::text, 'factura'::text, 'ninguno'::text])) OR document_type IS NULL),
   CONSTRAINT cart_items_pkey PRIMARY KEY (cart_items_id),
-  CONSTRAINT cart_items_cart_id_fkey FOREIGN KEY (cart_id) REFERENCES public.carts(cart_id),
-  CONSTRAINT cart_items_product_id_fkey FOREIGN KEY (product_id) REFERENCES public.products(productid)
+  CONSTRAINT cart_items_product_id_fkey FOREIGN KEY (product_id) REFERENCES public.products(productid),
+  CONSTRAINT cart_items_cart_id_fkey FOREIGN KEY (cart_id) REFERENCES public.carts(cart_id)
 );
 CREATE TABLE public.carts (
   user_id uuid NOT NULL,
@@ -156,7 +156,7 @@ CREATE TABLE public.orders (
   khipu_payment_id character varying,
   khipu_transaction_id character varying,
   khipu_payment_url text,
-  khipu_expires_at timestamp with time zone,
+  khipu_expires_at timestamp with time zone DEFAULT (now() + '00:20:00'::interval),
   paid_at timestamp with time zone,
   fulfillment_status text,
   accepted_at timestamp with time zone,
@@ -165,6 +165,7 @@ CREATE TABLE public.orders (
   cancelled_at timestamp with time zone,
   rejection_reason text,
   cancellation_reason text,
+  cart_id uuid,
   CONSTRAINT orders_pkey PRIMARY KEY (id),
   CONSTRAINT orders_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(user_id)
 );
@@ -219,9 +220,9 @@ CREATE TABLE public.product_sales (
   trx_date timestamp with time zone NOT NULL DEFAULT now(),
   order_id uuid,
   CONSTRAINT product_sales_pkey PRIMARY KEY (id),
-  CONSTRAINT product_sales_supplier_id_fkey FOREIGN KEY (supplier_id) REFERENCES public.users(user_id),
   CONSTRAINT product_sales_product_id_fkey FOREIGN KEY (product_id) REFERENCES public.products(productid),
-  CONSTRAINT product_sales_order_id_fkey FOREIGN KEY (order_id) REFERENCES public.orders(id)
+  CONSTRAINT product_sales_order_id_fkey FOREIGN KEY (order_id) REFERENCES public.orders(id),
+  CONSTRAINT product_sales_supplier_id_fkey FOREIGN KEY (supplier_id) REFERENCES public.users(user_id)
 );
 CREATE TABLE public.products (
   productnm text NOT NULL,
@@ -254,8 +255,8 @@ CREATE TABLE public.request_products (
   quantity integer NOT NULL,
   request_product_id uuid NOT NULL DEFAULT gen_random_uuid(),
   CONSTRAINT request_products_pkey PRIMARY KEY (request_product_id),
-  CONSTRAINT request_products_request_id_fkey FOREIGN KEY (request_id) REFERENCES public.requests(request_id),
-  CONSTRAINT request_products_product_id_fkey FOREIGN KEY (product_id) REFERENCES public.products(productid)
+  CONSTRAINT request_products_product_id_fkey FOREIGN KEY (product_id) REFERENCES public.products(productid),
+  CONSTRAINT request_products_request_id_fkey FOREIGN KEY (request_id) REFERENCES public.requests(request_id)
 );
 CREATE TABLE public.requests (
   delivery_country text NOT NULL,

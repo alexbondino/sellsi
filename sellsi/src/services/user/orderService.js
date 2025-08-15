@@ -307,6 +307,7 @@ class OrderService {
         .from('orders')
         .select(`
           id,
+          cart_id,
           user_id,
           items,
           subtotal,
@@ -393,7 +394,7 @@ class OrderService {
 
         return {
           order_id: row.id,
-          cart_id: null,
+          cart_id: row.cart_id || null,
           buyer_id: row.user_id,
           status: row.status || 'pending',
           payment_status: row.payment_status || 'pending',
