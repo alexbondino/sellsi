@@ -223,38 +223,66 @@ const BuyerOrders = () => {
     return allowed.includes(orderStatus) ? orderStatus : 'pending';
   };
 
-  // Función para obtener los 3 chips de estado
-  const getStatusChips = (status) => {
-    // Primer chip dinámico: Pendiente | Aceptado | Rechazado
-    let firstLabel = 'Pendiente';
-    let firstActive = false;
-    let firstColor = 'default';
-
-    if (status === 'pending') {
-      firstLabel = 'Pendiente';
-      firstActive = true;
-      firstColor = 'warning';
-    } else if (status === 'accepted') {
-      firstLabel = 'Aceptado';
-      firstActive = true;
-      firstColor = 'info';
-    } else if (status === 'rejected' || status === 'cancelled') {
-      firstLabel = 'Rechazado';
-      firstActive = true;
-      firstColor = 'error';
-    } else {
-      // Para estados posteriores (in_transit, delivered), mantenemos el primer paso como "Aceptado" pero inactivo
-      firstLabel = 'Aceptado';
-      firstActive = false;
-      firstColor = 'default';
+  // Función para obtener los chips de estado (4 etapas incluyendo Pago Confirmado)
+  const getStatusChips = (status, paymentStatus) => {
+    // Caso rechazado/cancelado: sólo Rechazado activo
+    const isRejected = status === 'rejected' || status === 'cancelled';
+    if (isRejected) {
+      return [
+        { key: 'pago_confirmado', label: 'Pago Confirmado', active: false, customColor: '#00bcd4', tooltip: 'Pago aún no confirmado.' },
+        { key: 'rechazado', label: 'Rechazado', active: true, color: 'error', tooltip: 'Tu pedido fue rechazado por el proveedor.' },
+        { key: 'en_transito', label: 'En Transito', active: false, color: 'default', tooltip: 'Pendiente de despacho por el proveedor.' },
+        { key: 'entregado', label: 'Entregado', active: false, color: 'default', tooltip: 'Aún no se ha entregado.' }
+      ];
     }
 
-    return [
-      { label: firstLabel, active: firstActive, color: firstColor },
-      // Unificamos color morado (secondary) igual que en MyOrders (proveedor)
-      { label: 'En Transito', active: status === 'in_transit', color: status === 'in_transit' ? 'secondary' : 'default' },
-      { label: 'Entregado', active: status === 'delivered', color: status === 'delivered' ? 'success' : 'default' }
+    // Determinar clave activa única
+    let activeKey = null;
+    if (status === 'delivered') activeKey = 'entregado';
+    else if (status === 'in_transit') activeKey = 'en_transito';
+    else if (status === 'accepted') activeKey = 'aceptado';
+    else if (paymentStatus === 'paid') activeKey = 'pago_confirmado';
+    else activeKey = null; // aún no confirmado (puede estar procesando pago en banner aparte)
+
+  const chips = [
+      {
+        key: 'pago_confirmado',
+        label: 'Pago Confirmado',
+    active: activeKey === 'pago_confirmado',
+    customColor: '#00bcd4',
+        tooltip: activeKey === 'pago_confirmado'
+          ? 'Pago confirmado. La orden quedará pendiente de aceptación por el proveedor.'
+          : 'Pago aún no confirmado.'
+      },
+      {
+        key: 'aceptado',
+        label: 'Aceptado',
+    active: activeKey === 'aceptado',
+    color: 'info',
+        tooltip: activeKey === 'aceptado'
+          ? 'El proveedor aceptó tu pedido.'
+          : 'En espera de aceptación por el proveedor.'
+      },
+      {
+        key: 'en_transito',
+        label: 'En Transito',
+    active: activeKey === 'en_transito',
+    color: 'secondary',
+        tooltip: activeKey === 'en_transito'
+          ? 'El pedido fue despachado y está en camino.'
+          : 'Pendiente de despacho por el proveedor.'
+      },
+      {
+        key: 'entregado',
+        label: 'Entregado',
+    active: activeKey === 'entregado',
+    color: 'success',
+        tooltip: activeKey === 'entregado'
+          ? 'El pedido fue entregado.'
+          : 'Aún no se ha entregado.'
+      }
     ];
+    return chips;
   };
 
   // Render especial para órdenes de pago (tabla orders) con payment_status
@@ -448,34 +476,72 @@ const BuyerOrders = () => {
                               })()}
                             </Box>
                             
-                            {/* Chips de estado */}
-                              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, minWidth: 120 }}>
-                                {order.is_payment_order ? (
-                                  <Tooltip title={`Estado de pago: ${order.payment_status}`} arrow>
-                                    <Chip
-                                      label={order.payment_status === 'pending' ? 'Procesando Pago' : order.payment_status === 'paid' ? 'Pago Confirmado' : 'Error Pago'}
-                                      color={order.payment_status === 'pending' ? 'warning' : order.payment_status === 'paid' ? 'success' : 'error'}
-                                      variant='filled'
-                                      size='small'
-                                      sx={{ fontSize: '0.70rem' }}
-                                    />
-                                  </Tooltip>
-                                ) : (
-                                  statusChips.map((chip) => (
-                                    <Chip
-                                      key={chip.label}
-                                      label={chip.label}
-                                      color={chip.color}
-                                      variant={chip.active ? 'filled' : 'outlined'}
-                                      size="small"
-                                      sx={{ 
-                                        fontSize: '0.75rem',
-                                        opacity: chip.active ? 1 : 0.5 
-                                      }}
-                                    />
-                                  ))
-                                )}
-                              </Box>
+                            {/* Chips de estado (incluye Pago Confirmado) */}
+                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, minWidth: 140 }}>
+                              {order.is_payment_order && order.payment_status === 'pending' ? (
+                                <Tooltip title="Procesando pago. Puede tardar unos segundos." arrow placement="left">
+                                  <Chip
+                                    label="Procesando Pago"
+                                    color="warning"
+                                    size="small"
+                                    sx={{ fontSize: '0.70rem' }}
+                                  />
+                                </Tooltip>
+                              ) : (
+                                getStatusChips(productStatus, order.payment_status).map(chip => {
+                                  // Determine whether each stage was reached historically
+                                  const pagoConfirmadoReached = order.payment_status === 'paid' || ['accepted', 'in_transit', 'delivered'].includes(order.status);
+                                  const aceptadoReached = ['accepted', 'in_transit', 'delivered'].includes(order.status);
+                                  const enTransitoReached = ['in_transit', 'delivered'].includes(order.status);
+                                  const entregadoReached = order.status === 'delivered';
+                                  const rechazadoReached = ['rejected', 'cancelled'].includes(order.status);
+
+                                  let computedTooltip = chip.tooltip || '';
+                                  if (chip.key === 'pago_confirmado') {
+                                    computedTooltip = pagoConfirmadoReached
+                                      ? 'Pago confirmado. La orden quedará pendiente de aceptación por el proveedor.'
+                                      : 'Pago aún no confirmado.';
+                                  } else if (chip.key === 'aceptado') {
+                                    computedTooltip = aceptadoReached
+                                      ? 'El proveedor aceptó tu pedido.'
+                                      : 'En espera de aceptación por el proveedor.';
+                                  } else if (chip.key === 'en_transito') {
+                                    computedTooltip = enTransitoReached
+                                      ? 'El pedido fue despachado y está en camino.'
+                                      : 'Pendiente de despacho por el proveedor.';
+                                  } else if (chip.key === 'entregado') {
+                                    computedTooltip = entregadoReached
+                                      ? 'El pedido fue entregado.'
+                                      : 'Aún no se ha entregado.';
+                                  } else if (chip.key === 'rechazado') {
+                                    computedTooltip = rechazadoReached
+                                      ? 'Tu pedido fue rechazado por el proveedor.'
+                                      : 'Pedido no rechazado.';
+                                  }
+
+                                  return (
+                                    <Tooltip key={chip.key} title={computedTooltip} arrow placement="left">
+                                      <Chip
+                                        label={chip.label}
+                                        color={chip.active ? (chip.color || 'default') : 'default'}
+                                        variant={chip.active ? 'filled' : 'outlined'}
+                                        size="small"
+                                        sx={{
+                                          fontSize: '0.70rem',
+                                          opacity: chip.active ? 1 : 0.45,
+                                          ...(chip.customColor && chip.active ? {
+                                            // Sólo aplicar color custom cuando está activo; inactivo debe verse gris como los demás
+                                            backgroundColor: chip.customColor,
+                                            borderColor: chip.customColor,
+                                            color: '#fff'
+                                          } : {})
+                                        }}
+                                      />
+                                    </Tooltip>
+                                  );
+                                })
+                              )}
+                            </Box>
                           </Box>
                         </Paper>
                       );

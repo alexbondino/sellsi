@@ -21,6 +21,7 @@ const ShippingInfoSection = ({
   formData, 
   onFieldChange,
   onRegionChange 
+  , showErrors = false
 }) => {
   
   const handleRegionChange = (event) => {
@@ -73,7 +74,7 @@ const ShippingInfoSection = ({
           </Select>
         </FormControl>
         
-        <FormControl fullWidth size="small" disabled={!formData.shippingRegion}>
+  <FormControl fullWidth size="small" disabled={!formData.shippingRegion} error={showErrors && !formData.shippingCommune}>
           <InputLabel>Comuna</InputLabel>
           <Select
             value={formData.shippingCommune || ''}
@@ -106,7 +107,10 @@ const ShippingInfoSection = ({
                 {comuna.label}
               </MenuItem>
             ))}
-          </Select>
+            </Select>
+            {showErrors && !formData.shippingCommune ? (
+              <Typography variant="caption" color="error">Comuna es obligatoria</Typography>
+            ) : null}
         </FormControl>
         
         <TextField
@@ -117,6 +121,8 @@ const ShippingInfoSection = ({
           variant="outlined"
           size="small"
           placeholder="Halimeda 433"
+          error={showErrors && !formData.shippingAddress}
+          helperText={showErrors && !formData.shippingAddress ? 'Dirección de envío es obligatoria' : ''}
         />
         
         <TextField

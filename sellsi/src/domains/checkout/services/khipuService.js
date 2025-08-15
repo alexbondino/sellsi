@@ -21,6 +21,12 @@ class KhipuService {
               quantity: it.quantity || 1,
               price: it.price || it.price_at_addition || it.unitPrice || 0,
               supplier_id: it.supplier_id || it.supplierId || (it.product && (it.product.supplier_id || it.product.supplierId)) || null,
+              // Propagar document_type (normalizado a 'boleta' | 'factura' | 'ninguno')
+              document_type: (() => {
+                const raw = it.document_type || it.documentType || (it.product && (it.product.document_type || it.product.documentType)) || '';
+                const v = String(raw).toLowerCase();
+                return v === 'boleta' || v === 'factura' ? v : 'ninguno';
+              })(),
             }))
           : [],
       };

@@ -149,12 +149,20 @@ serve(async req => {
       // Construir estructura items minimal (si se entregan cart_items)
       let itemsPayload = [] as any[];
       if (Array.isArray(cart_items)) {
-        itemsPayload = cart_items.map(ci => ({
-          product_id: ci.product_id || ci.productid || ci.id,
-          quantity: ci.quantity || 1,
-          price: ci.price || ci.price_at_addition || 0,
-          supplier_id: ci.supplier_id || ci.supplierId || null,
-        }));
+        itemsPayload = cart_items.map(ci => {
+          const rawDoc = ci.document_type || ci.documentType || '';
+          const normDoc = (() => {
+            const v = String(rawDoc).toLowerCase();
+            return v === 'boleta' || v === 'factura' ? v : 'ninguno';
+          })();
+          return {
+            product_id: ci.product_id || ci.productid || ci.id,
+            quantity: ci.quantity || 1,
+            price: ci.price || ci.price_at_addition || 0,
+            supplier_id: ci.supplier_id || ci.supplierId || null,
+            document_type: normDoc,
+          };
+        });
       }
 
       const orderInsert = {

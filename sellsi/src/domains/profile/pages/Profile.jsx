@@ -263,11 +263,23 @@ const Profile = ({ userProfile: initialUserProfile, onUpdateProfile: externalUpd
     updateField(comunaField, ''); // Reset comuna
   };
 
+  // Mostrar errores de shipping cuando el usuario intenta actualizar sin completar campos obligatorios
+  const [showShippingErrors, setShowShippingErrors] = useState(false);
+
+  // Wrapper para updateField que limpia errores al editar campos de envío
+  const handleFieldChange = (field, value) => {
+    updateField(field, value);
+    if (field.startsWith('shipping')) {
+      setShowShippingErrors(false);
+    }
+  };
+
   const handleUpdate = async () => {
     // Verificar si hay cambios en formulario (excluyendo imagen y nombre que se guardan automáticamente)
     const hasFormChanges = hasChanges;
 
     if (!hasFormChanges) {
+      showBanner({ message: 'No hay cambios para actualizar', severity: 'info', duration: 3000 });
       return;
     }
 
@@ -284,6 +296,20 @@ const Profile = ({ userProfile: initialUserProfile, onUpdateProfile: externalUpd
       delete dataToUpdate.logo_url;
 
       console.log('📤 Datos finales a enviar:', dataToUpdate);
+      // Validación adicional: si existe región, comuna y dirección son obligatorios
+      const regionValue = formData?.shippingRegion;
+      const communeValue = formData?.shippingCommune;
+      const addressValue = formData?.shippingAddress;
+      const regionSelected = regionValue !== undefined && regionValue !== null && String(regionValue).trim() !== '';
+      const communeFilled = communeValue !== undefined && communeValue !== null && String(communeValue).trim() !== '';
+      const addressFilled = addressValue !== undefined && addressValue !== null && String(addressValue).trim() !== '';
+      if (regionSelected && (!communeFilled || !addressFilled)) {
+        // Mostrar errores inline en los campos en vez de deshabilitar botón
+        setShowShippingErrors(true);
+        showBanner({ message: 'Por favor completa Comuna y Dirección de Envío para actualizar el perfil.', severity: 'error', duration: 6000 });
+        setLoading(false);
+        return;
+      }
       await handleUpdateProfile(dataToUpdate);
       updateInitialData(); // Actualizar datos iniciales en lugar de resetear
 
@@ -647,8 +673,9 @@ const Profile = ({ userProfile: initialUserProfile, onUpdateProfile: externalUpd
           {/* Segunda fila - Primera columna: Dirección de Despacho */}
           <ShippingInfoSection 
             formData={formData}
-            onFieldChange={updateField}
-            onRegionChange={handleRegionChange}
+            onFieldChange={handleFieldChange}
+            onRegionChange={(type, regionField, comunaField, value) => { handleRegionChange(type, regionField, comunaField, value); }}
+            showErrors={showShippingErrors}
           />
 
           {/* Segunda fila - Segunda columna: Facturación (independiente) */}
@@ -671,7 +698,7 @@ const Profile = ({ userProfile: initialUserProfile, onUpdateProfile: externalUpd
           <Button 
             variant="contained"
             onClick={handleUpdate}
-            disabled={!hasPendingChanges || loading}
+            disabled={loading}
             sx={{ bgcolor: 'primary.main', '&:hover': { bgcolor: 'primary.dark' } }}
           >
             {loading ? 'Actualizando...' : 'Actualizar'}
