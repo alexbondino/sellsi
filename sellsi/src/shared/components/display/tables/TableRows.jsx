@@ -325,6 +325,38 @@ const Rows = ({ order, onActionClick }) => {
   return ['En Transito', 'Entregado', 'Pagado'].includes(order.status);
   };
 
+  // Calcular costo total de envío: preferir order.shipping si viene desde backend,
+  // si no, intentar sumar por cada item buscando product.delivery_regions y
+  // coincidiendo con la región de deliveryAddress.
+  const computeShippingTotal = () => {
+    try {
+      // Si el backend ya aporta un campo shipping o total_shipping, úsalo
+      const maybe = order.shipping || order.total_shipping || order.shipping_cost || 0;
+      const parsedMaybe = Number(maybe || 0);
+      if (!Number.isNaN(parsedMaybe) && parsedMaybe > 0) return parsedMaybe;
+
+      const region = (order?.deliveryAddress?.region || order?.delivery_address?.region || '').toString().toLowerCase();
+      let total = 0;
+      const items = Array.isArray(order.items) ? order.items : (Array.isArray(order.products) ? order.products : []);
+      items.forEach(it => {
+        const qty = Number(it.quantity || 1);
+        const dr = it.product?.delivery_regions || it.product?.product_delivery_regions || [];
+        if (Array.isArray(dr)) {
+          // buscar coincidencia simple por nombre de región (case-insensitive, contains)
+          const match = dr.find(r => {
+            if (!r || !r.region) return false;
+            return r.region.toString().toLowerCase().includes(region) || region.includes(r.region.toString().toLowerCase());
+          }) || dr[0]; // fallback al primero si no hay match
+          const price = Number(match?.price || 0);
+          if (!Number.isNaN(price) && price > 0) total += price * qty;
+        }
+      });
+      return total;
+    } catch (e) {
+      return 0;
+    }
+  };
+
   const statusChipProps = getStatusChipProps(order.status);
 
   return (
@@ -468,11 +500,21 @@ const Rows = ({ order, onActionClick }) => {
         </Typography>
       </TableCell>
 
-      {/* Columna Venta */}
+      {/* Columna Venta y Envío */}
       <TableCell align="right">
-        <Typography variant="body2" fontWeight="medium">
-          {formatCurrency(order.total_amount)}
-        </Typography>
+        {(() => {
+          const sale = Number(order.total_amount || 0);
+          const shipping = computeShippingTotal();
+          const combined = sale + shipping;
+          return (
+            <Box>
+              <Typography variant="body2" fontWeight="medium">{formatCurrency(combined)}</Typography>
+              <Typography variant="caption" color="text.secondary" display="block">
+                Venta: {formatCurrency(sale)} · Envío: {formatCurrency(shipping)}
+              </Typography>
+            </Box>
+          );
+        })()}
       </TableCell>
 
       {/* Columna Estado */}

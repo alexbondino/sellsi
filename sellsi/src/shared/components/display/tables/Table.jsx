@@ -39,7 +39,7 @@ const Table = ({ orders, onActionClick }) => {
             <TableCell>Dirección Entrega</TableCell>
             <TableCell>Fecha Solicitud</TableCell>
             <TableCell>Fecha Entrega Limite</TableCell>
-            <TableCell align="right">Venta (IVA inc.)</TableCell>
+            <TableCell align="right">Venta y Envío (IVA inc.)</TableCell>
             <TableCell>Estado</TableCell>
             <TableCell>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>

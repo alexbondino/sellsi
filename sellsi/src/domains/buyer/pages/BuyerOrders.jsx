@@ -350,6 +350,19 @@ const BuyerOrders = () => {
                     <Typography variant="body2" color="text.secondary">
                       Fecha de compra: {formatDate(order.created_at)}
                     </Typography>
+
+                    {/* Fecha estimada / fecha de entrega real */}
+                    {order.status === 'in_transit' && order.estimated_delivery_date && (
+                      <Typography variant="body2" color="text.secondary">
+                        Fecha estimada de entrega: {formatDate(order.estimated_delivery_date)}
+                      </Typography>
+                    )}
+
+                    {order.status === 'delivered' && (order.delivered_at || order.deliveredAt || order.delivered) && (
+                      <Typography variant="body2" color="text.secondary">
+                        Pedido entregado con fecha: {formatDate(order.delivered_at || order.deliveredAt || order.delivered)}
+                      </Typography>
+                    )}
                   </Box>
 
                   <Divider sx={{ mb: 2 }} />

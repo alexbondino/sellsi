@@ -50,6 +50,8 @@ const CheckoutSummary = ({
 }) => {
   // Estado para navegación de productos
   const [currentPage, setCurrentPage] = useState(1);
+  // Estado local para bloquear permanentemente el botón tras el click
+  const [localProcessing, setLocalProcessing] = useState(false);
   const ITEMS_PER_PAGE = 1;
 
   // Paginación de productos
@@ -108,6 +110,14 @@ const CheckoutSummary = ({
   }, [orderData.items, shippingCost, selectedMethod]);
 
   // ===== RENDERIZADO =====
+
+  // Handler local que bloquea el botón permanentemente y delega al callback
+  const handleContinue = () => {
+    // Bloqueo local inmediato: el botón quedará en "Procesando..." incluso si
+    // la prop `isProcessing` cambia posteriormente.
+    setLocalProcessing(true);
+    if (typeof onContinue === 'function') onContinue();
+  };
 
   return (
     <Paper
@@ -306,10 +316,10 @@ const CheckoutSummary = ({
                   variant="contained"
                   fullWidth
                   size="large"
-                  onClick={onContinue}
-                  disabled={!canContinue || isProcessing}
+                  onClick={handleContinue}
+                  disabled={!canContinue || isProcessing || localProcessing}
                   startIcon={
-                    isProcessing ? (
+                    (isProcessing || localProcessing) ? (
                       <CircularProgress size={20} color="inherit" />
                     ) : (
                       <PaymentIcon />
@@ -322,7 +332,7 @@ const CheckoutSummary = ({
                     textTransform: 'none',
                   }}
                 >
-                  {isProcessing
+                  {(isProcessing || localProcessing)
                     ? 'Procesando...'
                     : `Confirmar y Pagar`}
                 </Button>
