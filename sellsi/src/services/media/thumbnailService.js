@@ -1,13 +1,17 @@
 // thumbnailService.js - Servicio específico para gestión de thumbnails
 import { supabase } from '../supabase.js'
 
+// Use the public env vars to call the Edge Function from the client
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY
+
 /**
  * Servicio especializado para la gestión de thumbnails
  * Maneja la generación, actualización y eliminación de thumbnails
  */
 export class ThumbnailService {
   static THUMBNAIL_BUCKET = 'product-images-thumbnails'
-  static EDGE_FUNCTION_URL = `${supabase.supabaseUrl}/functions/v1/generate-thumbnail`
+  static EDGE_FUNCTION_URL = `${SUPABASE_URL}/functions/v1/generate-thumbnail`
 
   /**
    * Generar thumbnail para una imagen específica
@@ -24,7 +28,7 @@ export class ThumbnailService {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${supabase.supabaseKey}`,
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
         },
         body: JSON.stringify({
           imageUrl,
@@ -94,18 +98,32 @@ export class ThumbnailService {
     try {
       // Deleting thumbnail for product
 
-      const thumbnailPath = `${supplierId}/${productId}/thumbnail.jpg`
-      
-      const { error } = await supabase.storage
-        .from(this.THUMBNAIL_BUCKET)
-        .remove([thumbnailPath])
+      try {
+        // List all objects under the product folder and remove them.
+        const prefix = `${supplierId}/${productId}/`;
+        const { data: list, error: listErr } = await supabase.storage
+          .from(this.THUMBNAIL_BUCKET)
+          .list(prefix);
 
-      if (error) {
-        return { success: false, error: error.message }
+        if (listErr) {
+          return { success: false, error: listErr.message };
+        }
+
+        if (!list || list.length === 0) {
+          return { success: true }; // nothing to delete
+        }
+
+        const paths = list.map(item => `${prefix}${item.name}`);
+        const { error } = await supabase.storage
+          .from(this.THUMBNAIL_BUCKET)
+          .remove(paths);
+
+        if (error) return { success: false, error: error.message };
+
+        return { success: true };
+      } catch (err) {
+        return { success: false, error: err.message };
       }
-
-      // Thumbnail deleted successfully
-      return { success: true }
     } catch (error) {
       return { success: false, error: error.message }
     }
@@ -143,13 +161,37 @@ export class ThumbnailService {
    * @param {string} supplierId - ID del proveedor
    * @returns {string} URL pública del thumbnail
    */
-  static getThumbnailUrl(productId, supplierId) {
-    const thumbnailPath = `${supplierId}/${productId}/thumbnail.jpg`
-    const { data } = supabase.storage
-      .from(this.THUMBNAIL_BUCKET)
-      .getPublicUrl(thumbnailPath)
-    
-    return data.publicUrl
+  static async getThumbnailUrl(productId, supplierId) {
+    // Prefer the thumbnail_url stored in DB for the main image (image_order=0)
+    try {
+      const { data: row, error } = await supabase
+        .from('product_images')
+        .select('thumbnail_url')
+        .eq('product_id', productId)
+        .eq('image_order', 0)
+        .limit(1)
+        .maybeSingle();
+
+      if (error) {
+        // fallback to constructing a public url for a conventional filename
+        const thumbnailPath = `${supplierId}/${productId}/thumbnail.jpg`;
+        const { data } = supabase.storage
+          .from(this.THUMBNAIL_BUCKET)
+          .getPublicUrl(thumbnailPath);
+        return data?.publicUrl || null;
+      }
+
+      if (row && row.thumbnail_url) return row.thumbnail_url;
+
+      // Fallback: construct public URL for conventional filename
+      const thumbnailPath = `${supplierId}/${productId}/thumbnail.jpg`;
+      const { data } = supabase.storage
+        .from(this.THUMBNAIL_BUCKET)
+        .getPublicUrl(thumbnailPath);
+      return data?.publicUrl || null;
+    } catch (err) {
+      return null;
+    }
   }
 
   /**
@@ -160,17 +202,13 @@ export class ThumbnailService {
    */
   static async thumbnailExists(productId, supplierId) {
     try {
-      const thumbnailPath = `${supplierId}/${productId}/thumbnail.jpg`
-      
+      const prefix = `${supplierId}/${productId}/`;
       const { data, error } = await supabase.storage
         .from(this.THUMBNAIL_BUCKET)
-        .list('', { search: thumbnailPath })
+        .list(prefix);
 
-      if (error) {
-        return false
-      }
-
-      return data && data.length > 0
+      if (error) return false;
+      return data && data.length > 0;
     } catch (error) {
       return false
     }

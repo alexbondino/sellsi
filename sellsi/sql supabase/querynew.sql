@@ -63,8 +63,8 @@ CREATE TABLE public.cart_items (
   updated_at timestamp with time zone DEFAULT now(),
   document_type text CHECK ((document_type = ANY (ARRAY['boleta'::text, 'factura'::text, 'ninguno'::text])) OR document_type IS NULL),
   CONSTRAINT cart_items_pkey PRIMARY KEY (cart_items_id),
-  CONSTRAINT cart_items_product_id_fkey FOREIGN KEY (product_id) REFERENCES public.products(productid),
-  CONSTRAINT cart_items_cart_id_fkey FOREIGN KEY (cart_id) REFERENCES public.carts(cart_id)
+  CONSTRAINT cart_items_cart_id_fkey FOREIGN KEY (cart_id) REFERENCES public.carts(cart_id),
+  CONSTRAINT cart_items_product_id_fkey FOREIGN KEY (product_id) REFERENCES public.products(productid)
 );
 CREATE TABLE public.carts (
   user_id uuid NOT NULL,
@@ -93,8 +93,8 @@ CREATE TABLE public.control_panel (
   created_at timestamp with time zone NOT NULL DEFAULT now(),
   updated_at timestamp with time zone NOT NULL DEFAULT now(),
   CONSTRAINT control_panel_pkey PRIMARY KEY (id),
-  CONSTRAINT control_panel_procesado_por_fkey FOREIGN KEY (procesado_por) REFERENCES public.control_panel_users(id),
-  CONSTRAINT control_panel_request_id_fkey FOREIGN KEY (request_id) REFERENCES public.requests(request_id)
+  CONSTRAINT control_panel_request_id_fkey FOREIGN KEY (request_id) REFERENCES public.requests(request_id),
+  CONSTRAINT control_panel_procesado_por_fkey FOREIGN KEY (procesado_por) REFERENCES public.control_panel_users(id)
 );
 CREATE TABLE public.control_panel_users (
   usuario text NOT NULL UNIQUE,
@@ -114,6 +114,34 @@ CREATE TABLE public.control_panel_users (
   twofa_configured boolean DEFAULT false,
   CONSTRAINT control_panel_users_pkey PRIMARY KEY (id)
 );
+CREATE TABLE public.edge_function_invocations (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  function_name text NOT NULL,
+  request_id uuid DEFAULT gen_random_uuid(),
+  started_at timestamp with time zone NOT NULL DEFAULT now(),
+  finished_at timestamp with time zone,
+  duration_ms integer,
+  status text NOT NULL CHECK (status = ANY (ARRAY['success'::text, 'error'::text])),
+  error_code text,
+  error_message text,
+  request_origin text,
+  input_size_bytes integer,
+  output_size_bytes integer,
+  meta jsonb DEFAULT '{}'::jsonb,
+  created_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT edge_function_invocations_pkey PRIMARY KEY (id),
+  CONSTRAINT edge_function_invocations_function_name_fkey FOREIGN KEY (function_name) REFERENCES public.edge_functions(function_name)
+);
+CREATE TABLE public.edge_functions (
+  function_name text NOT NULL,
+  display_name text,
+  category text,
+  owner text,
+  sla_ms integer,
+  is_active boolean DEFAULT true,
+  created_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT edge_functions_pkey PRIMARY KEY (function_name)
+);
 CREATE TABLE public.ejemplo (
   id bigint NOT NULL DEFAULT nextval('ejemplo_id_seq'::regclass),
   nombre text,
@@ -123,6 +151,31 @@ CREATE TABLE public.ejemplo_prueba (
   id bigint NOT NULL DEFAULT nextval('ejemplo_prueba_id_seq'::regclass),
   nombre text,
   CONSTRAINT ejemplo_prueba_pkey PRIMARY KEY (id)
+);
+CREATE TABLE public.image_orphan_candidates (
+  path text NOT NULL,
+  detected_at timestamp with time zone NOT NULL DEFAULT now(),
+  last_seen_reference timestamp with time zone,
+  confirmed_deleted_at timestamp with time zone,
+  bucket text NOT NULL CHECK (bucket = ANY (ARRAY['product-images'::text, 'product-images-thumbnails'::text])),
+  CONSTRAINT image_orphan_candidates_pkey PRIMARY KEY (path)
+);
+CREATE TABLE public.image_thumbnail_jobs (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  product_id uuid NOT NULL,
+  product_image_id uuid,
+  status text NOT NULL CHECK (status = ANY (ARRAY['queued'::text, 'processing'::text, 'success'::text, 'error'::text])),
+  attempts integer NOT NULL DEFAULT 0,
+  last_error text,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  updated_at timestamp with time zone NOT NULL DEFAULT now(),
+  started_at timestamp with time zone,
+  completed_at timestamp with time zone,
+  duration_ms integer,
+  error_code text,
+  CONSTRAINT image_thumbnail_jobs_pkey PRIMARY KEY (id),
+  CONSTRAINT image_thumbnail_jobs_product_id_fkey FOREIGN KEY (product_id) REFERENCES public.products(productid),
+  CONSTRAINT image_thumbnail_jobs_product_image_id_fkey FOREIGN KEY (product_image_id) REFERENCES public.product_images(id)
 );
 CREATE TABLE public.khipu_webhook_logs (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
@@ -135,6 +188,10 @@ CREATE TABLE public.khipu_webhook_logs (
   processed_at timestamp with time zone,
   error_message text,
   created_at timestamp with time zone NOT NULL DEFAULT now(),
+  order_id uuid,
+  signature_valid boolean DEFAULT true,
+  category text,
+  processing_latency_ms integer,
   CONSTRAINT khipu_webhook_logs_pkey PRIMARY KEY (id)
 );
 CREATE TABLE public.orders (
@@ -196,10 +253,14 @@ CREATE TABLE public.product_delivery_regions (
 );
 CREATE TABLE public.product_images (
   product_id uuid NOT NULL,
-  image_url text,
+  image_url text NOT NULL,
   thumbnail_url text,
   thumbnails jsonb,
-  image_order integer DEFAULT 0,
+  image_order integer NOT NULL DEFAULT 0 CHECK (image_order >= 0),
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  updated_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT product_images_pkey PRIMARY KEY (id),
   CONSTRAINT product_images_product_id_fkey FOREIGN KEY (product_id) REFERENCES public.products(productid)
 );
 CREATE TABLE public.product_quantity_ranges (
@@ -221,8 +282,8 @@ CREATE TABLE public.product_sales (
   order_id uuid,
   CONSTRAINT product_sales_pkey PRIMARY KEY (id),
   CONSTRAINT product_sales_product_id_fkey FOREIGN KEY (product_id) REFERENCES public.products(productid),
-  CONSTRAINT product_sales_order_id_fkey FOREIGN KEY (order_id) REFERENCES public.orders(id),
-  CONSTRAINT product_sales_supplier_id_fkey FOREIGN KEY (supplier_id) REFERENCES public.users(user_id)
+  CONSTRAINT product_sales_supplier_id_fkey FOREIGN KEY (supplier_id) REFERENCES public.users(user_id),
+  CONSTRAINT product_sales_order_id_fkey FOREIGN KEY (order_id) REFERENCES public.orders(id)
 );
 CREATE TABLE public.products (
   productnm text NOT NULL,
@@ -255,8 +316,8 @@ CREATE TABLE public.request_products (
   quantity integer NOT NULL,
   request_product_id uuid NOT NULL DEFAULT gen_random_uuid(),
   CONSTRAINT request_products_pkey PRIMARY KEY (request_product_id),
-  CONSTRAINT request_products_product_id_fkey FOREIGN KEY (product_id) REFERENCES public.products(productid),
-  CONSTRAINT request_products_request_id_fkey FOREIGN KEY (request_id) REFERENCES public.requests(request_id)
+  CONSTRAINT request_products_request_id_fkey FOREIGN KEY (request_id) REFERENCES public.requests(request_id),
+  CONSTRAINT request_products_product_id_fkey FOREIGN KEY (product_id) REFERENCES public.products(productid)
 );
 CREATE TABLE public.requests (
   delivery_country text NOT NULL,

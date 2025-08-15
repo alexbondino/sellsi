@@ -362,10 +362,11 @@ export class UploadService {
         return { success: false, error: 'La imagen debe ser menor a 2MB' }
       }
 
-      // 2. Generar nombre único del archivo
-      const timestamp = Date.now()
-      const fileExtension = actualFile.name.split('.').pop()
-      const fileName = `${supplierId}/${productId}/${timestamp}_${actualFile.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`
+  // 2. Generar nombre único del archivo (timestamp + sufijo aleatorio + nombre saneado)
+  const timestamp = Date.now()
+  const rand = (crypto?.randomUUID ? crypto.randomUUID().slice(0,8) : Math.random().toString(36).slice(2,10))
+  const safeName = actualFile.name.replace(/[^a-zA-Z0-9.-]/g, '_')
+  const fileName = `${supplierId}/${productId}/${timestamp}_${rand}_${safeName}`
       
       // 🔥 REMOVIDO: Verificación de bucket (innecesaria para cada imagen)
 
@@ -387,34 +388,28 @@ export class UploadService {
         .getPublicUrl(fileName)
 
       
-      // Obtener el siguiente orden para este producto
-      const { data: existingImages, error: countError } = await supabase
-        .from('product_images')
-        .select('image_order')
-        .eq('product_id', productId)
-        .order('image_order', { ascending: false })
-        .limit(1)
-      
-      const nextOrder = existingImages?.length > 0 ? (existingImages[0].image_order + 1) : 0
-      
-      const { error: dbInsertError } = await supabase
-        .from('product_images')
-        .insert({
-          product_id: productId,
-          image_url: publicUrlData.publicUrl,
-          thumbnail_url: null, // Se actualizará después con el thumbnail
-          thumbnails: null,    // Se actualizará después con los thumbnails
-          image_order: nextOrder // Mantener orden de inserción
+      // Insert atómico del registro y obtención del orden mediante RPC
+      let imageOrder = 0
+      try {
+        const { data: rpcResult, error: rpcError } = await supabase.rpc('insert_image_with_order', {
+          p_product_id: productId,
+          p_image_url: publicUrlData.publicUrl,
+          p_supplier_id: supplierId
         })
-
-      if (dbInsertError) {
-        console.error('❌ [uploadImageWithThumbnail] Error insertando en DB:', dbInsertError)
-        // No fallar todo el proceso, pero logging para debugging
+        if (rpcError) {
+          console.error('❌ [uploadImageWithThumbnail] Error RPC insert_image_with_order:', rpcError.message)
+        } else {
+          imageOrder = rpcResult ?? 0
+        }
+      } catch (rpcCatch) {
+        console.error('❌ [uploadImageWithThumbnail] Excepción RPC:', rpcCatch)
       }
 
       // 5. Generar thumbnail usando Edge Function (SOLO para imagen principal y NO WebP)
       let thumbnailUrl = null
-      if (isMainImage) {
+  // Decidir si es imagen principal por orden real (prioridad) o flag pasado
+  const effectiveIsMain = imageOrder === 0 || isMainImage
+  if (effectiveIsMain) {
         // Skip thumbnail generation for WebP images since Edge Function doesn't support them
         if (actualFile.type !== 'image/webp') {
           try {
@@ -439,6 +434,8 @@ export class UploadService {
           size: actualFile.size,
           type: actualFile.type,
           uploadedAt: new Date().toISOString(),
+          imageOrder,
+          isMain: imageOrder === 0,
         },
       }
     } catch (error) {

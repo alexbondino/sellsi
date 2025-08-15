@@ -9,6 +9,7 @@ export { default as FirstAdminSetup } from './components/FirstAdminSetup';
 
 // Páginas
 export { default as AdminPanelHome } from './pages/AdminPanelHome';
+export { default as AdminMetrics } from './pages/AdminMetrics';
 
 // Componentes de gestión
 export { default as AdminAccountCreator } from './components/AdminAccountCreator';
