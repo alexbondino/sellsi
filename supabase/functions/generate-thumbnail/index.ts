@@ -174,12 +174,17 @@ serve((req) => withMetrics('generate-thumbnail', req, async () => {
       });
     }
 
-    if (mainImage.thumbnails && mainImage.thumbnails.desktop && mainImage.thumbnail_url) {
-      // Idempotente: ya existen thumbnails
+    // Idempotencia SOLO si las 4 variantes + thumbnail_url existen
+    if (mainImage.thumbnails &&
+        mainImage.thumbnails.desktop &&
+        mainImage.thumbnails.tablet &&
+        mainImage.thumbnails.mobile &&
+        mainImage.thumbnails.minithumb &&
+        mainImage.thumbnail_url) {
       return new Response(JSON.stringify({
         success: true,
         status: 'ok',
-        message: 'Thumbnails ya existentes (idempotente)',
+        message: 'Todas las variantes de thumbnails ya existen (idempotente)',
         thumbnails: mainImage.thumbnails,
         thumbnailUrl: mainImage.thumbnail_url
       }), {
@@ -343,8 +348,7 @@ serve((req) => withMetrics('generate-thumbnail', req, async () => {
         thumbnail_url: desktopUrl
       })
       .eq('product_id', productId)
-      .eq('image_order', 0)
-      .is('thumbnails', null);
+      .eq('image_order', 0);
 
     if (dbUpdateError) {
       logError("❌ Error updating thumbnails in DB:", dbUpdateError);
