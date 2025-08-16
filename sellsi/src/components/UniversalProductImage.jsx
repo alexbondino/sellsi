@@ -30,6 +30,12 @@ const UniversalProductImage = ({
   onError,
   onLoad,
   lazy = true,
+  // priority = eager (useful for cart / product card)
+  priority = false,
+  // rootMargin forwarded to LazyImage
+  rootMargin = '150px',
+  // safety timeout (ms) to fall back to eager if observer never fires
+  observerTimeoutMs = 500,
   aspectRatio,
   objectFit = 'contain',
   borderRadius = 0,
@@ -38,6 +44,7 @@ const UniversalProductImage = ({
   const [imageError, setImageError] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
   const queryClient = useQueryClient();
+  const [forceEager, setForceEager] = useState(false);
 
   // Hooks para obtener thumbnails
   const { thumbnailUrl: responsiveThumbnail, isLoading: responsiveLoading } = useResponsiveThumbnail(product);
@@ -59,6 +66,25 @@ const UniversalProductImage = ({
   const phaseQuery = useThumbnailPhaseQuery(productId, currentPhase, { enabled: !FeatureFlags.ENABLE_VIEWPORT_THUMBS || inView })
   const phaseDataThumbUrl = phaseQuery.data?.thumbnail_url
 
+  // Safety: if lazy loading is enabled but the observer never triggers, fall back to eager after a short timeout
+  useEffect(() => {
+    if (!lazy || priority) return undefined; // no timeout when not lazy or when priority forces eager
+    if (inView) {
+      // observer already fired, no need for timeout
+      setForceEager(false);
+      return undefined;
+    }
+    let t = null;
+    t = setTimeout(() => {
+      setForceEager(true);
+      // eslint-disable-next-line no-console
+    // observer timeout - falling back to eager
+    }, observerTimeoutMs);
+    return () => {
+      if (t) clearTimeout(t);
+    };
+  }, [lazy, priority, inView, observerTimeoutMs, productId]);
+
   // Determinar la URL a usar basada en el tamaño solicitado
   const selectedThumbnail = React.useMemo(() => {
     if (!product) return '/placeholder-product.jpg';
@@ -68,9 +94,7 @@ const UniversalProductImage = ({
         case 'minithumb':
           // Para minithumb: minithumb específico → thumbnail responsivo → imagen original → placeholder
   const chosen = minithumb || phaseDataThumbUrl || responsiveThumbnail || product?.imagen || product?.image || '/placeholder-product.jpg';
-    if (process.env.NODE_ENV === 'development') {
-      console.debug('[THUMBS][UniversalProductImage] choose=minithumb', { productId, minithumb, phaseDataThumbUrl, responsiveThumbnail, original: product?.imagen, chosen });
-    }
+  // choose=minithumb
     return chosen;
         case 'mobile': {
           // Forzar siempre variante mobile independiente del viewport
@@ -85,9 +109,7 @@ const UniversalProductImage = ({
           }
           // 3) Minithumb NUNCA sustituye a mobile aquí (diferente tamaño) -> ignorado
           const chosenM = mobile || product?.imagen || product?.image || '/placeholder-product.jpg';
-          if (process.env.NODE_ENV === 'development') {
-            console.debug('[THUMBS][UniversalProductImage] choose=mobile', { productId, mobile, source, phaseDataThumbUrl, responsiveThumbnail, original: product?.imagen, chosen: chosenM });
-          }
+          // choose=mobile
           return chosenM;
         }
         case 'responsive':
@@ -95,9 +117,7 @@ const UniversalProductImage = ({
           // Para responsive: thumbnail responsivo → imagen original → placeholder
           // responsiveThumbnail ya incluye el fallback a product.imagen internamente
   const chosenR = phaseDataThumbUrl || responsiveThumbnail || product?.imagen || product?.image || '/placeholder-product.jpg';
-    if (process.env.NODE_ENV === 'development') {
-      console.debug('[THUMBS][UniversalProductImage] choose=responsive', { productId, phaseDataThumbUrl, responsiveThumbnail, original: product?.imagen, chosen: chosenR });
-    }
+  // choose=responsive
     return chosenR;
       }
     })();
@@ -235,22 +255,22 @@ const UniversalProductImage = ({
   }
 
   // Renderizar imagen lazy o normal según configuración
-  if (lazy) {
+  // Decide if we should render lazy or eager: priority overrides lazy; forceEager flips back to eager
+  const shouldLazy = lazy && !priority && !forceEager;
+  if (shouldLazy) {
     return (
       <LazyImage
         src={selectedThumbnail}
         alt={imageAlt}
         aspectRatio={aspectRatio}
-        rootMargin="150px"
+        rootMargin={rootMargin}
         objectFit={objectFit}
         sx={baseStyles}
         ref={viewportRef}
         onError={() => {
-          
           handleImageError();
         }}
         onLoad={() => {
-          
           handleImageLoad();
         }}
         {...props}
@@ -321,7 +341,7 @@ export const ProductCardImage = ({ product, type = 'buyer', ...props }) => {
       product={product}
       size="responsive"
       height={getCardHeight()}
-      lazy={false} // Forzar carga inmediata en cards para descartar issues de IntersectionObserver
+      priority={true} // Forzar carga inmediata con la nueva API de prioridad
       sx={{
         maxWidth: '100%',
         bgcolor: '#fff',
@@ -347,7 +367,7 @@ export const CartItemImage = ({ product, ...props }) => (
   <UniversalProductImage
     product={product}
     size="mobile" // Forzar siempre thumbnail mobile para consistencia visual en el carrito
-    lazy={false} // Evitar IntersectionObserver en el carrito para asegurar visibilidad inmediata
+    priority={true} // Forzar eager por prioridad
     aspectRatio="1"
     objectFit="cover"
     sx={{
@@ -370,7 +390,7 @@ export const CheckoutSummaryImage = ({ product, ...props }) => (
     size="minithumb"
     width={40}
     height={40}
-    lazy={false}
+  priority={true}
     sx={{
       borderRadius: '50%'
     }}

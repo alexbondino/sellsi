@@ -847,11 +847,14 @@ export class UploadService {
         }
         if (attempt < BACKOFFS.length) await new Promise(r => setTimeout(r, BACKOFFS[attempt - 1]))
       }
-      if (lastRow && lastRow.thumbnail_url) {
-        const partial = !!(lastRow.thumbnails && lastRow.thumbnails.desktop)
-        if (partial) {
-          recordMetric('generation_result', { productId, outcome: 'partial' })
-          return { ...resultBase, status: 'partial', signature: lastRow?.thumbnail_signature || null }
+      if (lastRow && lastRow.thumbnail_url && lastRow.thumbnails) {
+        const variants = ['desktop','tablet','mobile','minithumb']
+        const present = variants.filter(v => !!lastRow.thumbnails[v])
+        const haveSome = present.length > 0
+        const complete = present.length === variants.length
+        if (haveSome && !complete) {
+          recordMetric('generation_result', { productId, outcome: 'partial', present: present.length })
+          return { ...resultBase, status: 'partial', signature: lastRow?.thumbnail_signature || null, presentVariants: present }
         }
       }
       recordMetric('generation_result', { productId, outcome: 'failed' })
