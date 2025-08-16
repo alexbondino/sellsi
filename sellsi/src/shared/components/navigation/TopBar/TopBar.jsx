@@ -16,6 +16,7 @@ import {
 import MenuIcon from '@mui/icons-material/Menu';
 import PersonIcon from '@mui/icons-material/Person';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
+import NotificationsIcon from '@mui/icons-material/Notifications';
 import { supabase } from '../../../services/supabase';
 import useCartStore from '../../../stores/cart/cartStore';
 import ContactModal from '../../modals/ContactModal';
@@ -404,12 +405,43 @@ export default function TopBar({
           />
         )}
 
+        <Tooltip title="Notificaciones" arrow>
+          <IconButton
+            sx={{
+              color: 'white',
+              p: 0.4,
+              mr: 0.3, // acercar campana al carrito
+              minWidth: 36,
+              minHeight: 36,
+              boxShadow: 'none',
+              outline: 'none',
+              border: 'none',
+              transition: 'background 0.2s',
+              '&:focus': { outline: 'none', border: 'none', boxShadow: 'none' },
+              '&:active': { outline: 'none', border: 'none', boxShadow: 'none' },
+              '&:hover': {
+                background: theme => theme.palette.primary.main,
+                boxShadow: 'none',
+                outline: 'none',
+                border: 'none',
+              },
+            }}
+            disableFocusRipple
+            disableRipple
+          >
+            <NotificationsIcon sx={{ fontSize: '1.5rem', color: '#fff !important', lineHeight: 1 }} />
+          </IconButton>
+        </Tooltip>
+
         <Tooltip title="Carrito" arrow>
           <IconButton
             onClick={() => navigate('/buyer/cart')}
             sx={{
               color: 'white',
-              mr: 2.5,
+              p: 0.4,
+              mr: 3, // aumentar separación del avatar
+              minWidth: 36,
+              minHeight: 36,
               boxShadow: 'none',
               outline: 'none',
               border: 'none',
@@ -431,7 +463,7 @@ export default function TopBar({
             disableRipple
           >
             <Badge badgeContent={itemsInCart} color="error">
-              <CustomShoppingCartIcon />
+              <CustomShoppingCartIcon sx={{ lineHeight: 1 }} />
             </Badge>
           </IconButton>
         </Tooltip>
@@ -565,7 +597,7 @@ export default function TopBar({
             sx={{
               display: { xs: 'none', md: 'flex' },
               alignItems: 'center',
-              gap: 2,
+              gap: 0.5,
             }}
           >
             {desktopRightContent}
