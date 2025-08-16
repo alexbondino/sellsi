@@ -10,6 +10,7 @@
 import { create } from 'zustand'
 import { supabase } from '../../../services/supabase'
 import { updateProductSpecifications } from '../../../services/marketplace'
+import { queryClient, QUERY_KEYS } from '../../../utils/queryClient'
 import { UploadService } from '../../../shared/services/upload'
 
 const useSupplierProductsBase = create((set, get) => ({
@@ -149,6 +150,15 @@ const useSupplierProductsBase = create((set, get) => ({
 
       // 3. Procesar imágenes, especificaciones y tramos EN BACKGROUND
       get().processProductInBackground(product.productid, productData)
+
+      // 4. Invalidar caches iniciales (lista de productos del supplier)
+      try {
+        const supplierId = localStorage.getItem('user_id')
+        if (supplierId) {
+          queryClient.invalidateQueries({ queryKey: QUERY_KEYS.PRODUCTS_BY_SUPPLIER(supplierId) })
+        }
+        queryClient.invalidateQueries({ queryKey: ['productPriceTiers', product.productid] })
+      } catch (_) {}
 
       return { success: true, product: tempProduct }
     } catch (error) {
@@ -302,6 +312,15 @@ const useSupplierProductsBase = create((set, get) => ({
         await get().processPriceTiers(productId, priceTiers)
       }
 
+      // Invalidar caches relacionados al producto (datos base + tramos + imágenes)
+      try {
+        queryClient.invalidateQueries({ queryKey: QUERY_KEYS.PRODUCT(productId) })
+        queryClient.invalidateQueries({ queryKey: ['productPriceTiers', productId] })
+        const supplierId = localStorage.getItem('user_id')
+        if (supplierId) {
+          queryClient.invalidateQueries({ queryKey: QUERY_KEYS.PRODUCTS_BY_SUPPLIER(supplierId) })
+        }
+      } catch (_) {}
       return { success: true, data }
     } catch (error) {
       set((state) => ({
@@ -431,6 +450,10 @@ const useSupplierProductsBase = create((set, get) => ({
       }
 
       console.log('✅ [processPriceTiers] Tramos de precio procesados exitosamente')
+      try {
+        queryClient.invalidateQueries({ queryKey: ['productPriceTiers', productId] })
+        queryClient.invalidateQueries({ queryKey: QUERY_KEYS.PRODUCT(productId) })
+      } catch (_) {}
     } catch (error) {
       console.error('🔥 [processPriceTiers] Error procesando tramos:', error)
       throw error

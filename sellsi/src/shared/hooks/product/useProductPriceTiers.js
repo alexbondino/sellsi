@@ -7,8 +7,9 @@
  * Evita cross-imports de shared components hacia domains específicos.
  */
 
-import { useState, useEffect } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../../../services/supabase'
+import { QUERY_KEYS } from '../../../utils/queryClient'
 
 const USE_MOCKS = import.meta.env.VITE_USE_MOCKS === 'true'
 
@@ -27,41 +28,39 @@ const MOCK_PRICE_TIERS = [
  * @param {string|number} productId
  */
 export function useProductPriceTiers(productId) {
-  const [tiers, setTiers] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
-
-  useEffect(() => {
-    let isMounted = true
-    setLoading(true)
-    setError(null)
-
-    if (USE_MOCKS) {
-      const filtered = MOCK_PRICE_TIERS.filter(
-        (t) => t.product_id === productId
-      )
-      setTiers(filtered)
-      setLoading(false)
-    } else {
-      supabase
+  const queryClient = useQueryClient()
+  const query = useQuery({
+    queryKey: ['productPriceTiers', productId],
+    enabled: !!productId,
+    staleTime: 5 * 60 * 1000, // 5 minutos
+    queryFn: async () => {
+      if (USE_MOCKS) {
+        return MOCK_PRICE_TIERS.filter(t => t.product_id === productId)
+      }
+      const { data, error } = await supabase
         .from('product_quantity_ranges')
         .select('*')
         .eq('product_id', productId)
         .order('min_quantity', { ascending: true })
-        .then(({ data, error }) => {
-          if (!isMounted) return
-          if (error) setError(error.message)
-          setTiers(data || [])
-          setLoading(false)
-        })
-    }
+      if (error) throw new Error(error.message)
+      return data || []
+    },
+  })
 
-    return () => {
-      isMounted = false
-    }
-  }, [productId])
+  // Backward compatibility shape expected by existing components:
+  // { tiers, loading, error } in addition to full React Query result
+  return {
+    ...query,
+    tiers: query.data || [],
+    loading: query.isLoading,
+    error: query.error,
+  }
+}
 
-  return { tiers, loading, error }
+// Helper para invalidar desde otros módulos
+export const invalidateProductPriceTiers = (queryClient, productId) => {
+  if (!queryClient) return
+  queryClient.invalidateQueries({ queryKey: ['productPriceTiers', productId] })
 }
 
 export default useProductPriceTiers

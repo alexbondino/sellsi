@@ -256,7 +256,7 @@ const BuyerOrders = () => {
       },
       {
         key: 'aceptado',
-        label: 'Aceptado',
+        label: 'Pedido Aceptado',
     active: activeKey === 'aceptado',
     color: 'info',
         tooltip: activeKey === 'aceptado'
