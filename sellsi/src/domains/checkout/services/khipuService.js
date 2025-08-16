@@ -14,20 +14,24 @@ class KhipuService {
         currency: currency || 'CLP',
         subject: `Pago de Orden #${orderId}`,
         buyer_id: userId || null,
-  cart_id: orderId || null,
-  cart_items: Array.isArray(items)
-          ? items.map(it => ({
-              product_id: it.product_id || it.id || it.productid || (it.product && (it.product.product_id || it.product.id || it.product.productid)) || null,
-              quantity: it.quantity || 1,
-              price: it.price || it.price_at_addition || it.unitPrice || 0,
-              supplier_id: it.supplier_id || it.supplierId || (it.product && (it.product.supplier_id || it.product.supplierId)) || null,
-              // Propagar document_type (normalizado a 'boleta' | 'factura' | 'ninguno')
-              document_type: (() => {
-                const raw = it.document_type || it.documentType || (it.product && (it.product.document_type || it.product.documentType)) || '';
-                const v = String(raw).toLowerCase();
-                return v === 'boleta' || v === 'factura' ? v : 'ninguno';
-              })(),
-            }))
+        cart_id: orderId || null,
+        order_id: orderId, // NUEVO: para que la función actualice la orden existente
+        cart_items: Array.isArray(items)
+          ? items.map(it => {
+              const priceBase = it.price || it.price_at_addition || it.unitPrice || 0;
+              return {
+                product_id: it.product_id || it.id || it.productid || (it.product && (it.product.product_id || it.product.id || it.product.productid)) || null,
+                quantity: it.quantity || 1,
+                price: priceBase,
+                price_at_addition: it.price_at_addition || priceBase,
+                supplier_id: it.supplier_id || it.supplierId || (it.product && (it.product.supplier_id || it.product.supplierId)) || null,
+                document_type: (() => {
+                  const raw = it.document_type || it.documentType || (it.product && (it.product.document_type || it.product.documentType)) || '';
+                  const v = String(raw).toLowerCase();
+                  return v === 'boleta' || v === 'factura' ? v : 'ninguno';
+                })(),
+              };
+            })
           : [],
       };
 

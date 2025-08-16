@@ -105,7 +105,11 @@ const AddToCart = ({
       // Agregar información adicional del modal
       const finalProduct = {
         ...formattedProduct,
-        documentType: cartItem.documentType,
+        // Unificar a document_type para el flujo de compra (distinto del doc de perfil proveedor)
+        document_type: (() => {
+          const v = String(cartItem.documentType || cartItem.document_type || '').toLowerCase();
+          return v === 'boleta' || v === 'factura' ? v : 'ninguno';
+        })(),
         selectedTier: cartItem.selectedTier,
         unitPrice: cartItem.unitPrice,
         totalPrice: cartItem.totalPrice,

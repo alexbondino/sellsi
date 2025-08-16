@@ -174,10 +174,11 @@ const PaymentMethodSelector = () => {
         calculatedSubtotal + calculatedIva + shippingCost
       );
 
+      // Normalizar a un único campo document_type (alias legacy documentType eliminado en nuevos flujos)
       const itemsWithDocType = (orderData.items || []).map(it => {
         const raw = it.document_type || it.documentType;
-        const norm = raw ? ['boleta','factura'].includes(String(raw).toLowerCase()) ? String(raw).toLowerCase() : 'ninguno' : 'ninguno';
-        return { ...it, document_type: norm, documentType: norm };
+        const norm = raw && ['boleta','factura'].includes(String(raw).toLowerCase()) ? String(raw).toLowerCase() : 'ninguno';
+        return { ...it, document_type: norm };
       });
 
       const order = await checkoutService.createOrder({

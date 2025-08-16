@@ -36,7 +36,12 @@ serve(req => withMetrics('create-payment-khipu', req, async () => {
     console.log('[create-payment-khipu] Función iniciada.');
 
     // 1. Leer los datos dinámicos que envía el frontend (khipuService.js)
-  const { amount, subject, currency, buyer_id, cart_items, cart_id } = await req.json();
+  // Ahora esperamos también order_id (ID de la fila ya creada en orders)
+  const { amount, subject, currency, buyer_id, cart_items, cart_id, order_id } = await req.json();
+
+  if (!order_id) {
+    throw new Error('Falta order_id: la función ahora requiere el ID existente de la orden.');
+  }
 
     // Validar que los datos necesarios fueron recibidos
     if (!amount || !subject || !currency) {
@@ -141,15 +146,15 @@ serve(req => withMetrics('create-payment-khipu', req, async () => {
     } as Record<string, unknown>;
 
     // ================================================================
-    // Persistir / upsert de la payment order en tabla orders
+    // Actualizar la orden existente (NO crear nueva fila)
     // ================================================================
     try {
       const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
       const expiresRaw: string | null = (normalized as any).expires_date || null;
-      const expiresAt = expiresRaw ? new Date(expiresRaw).toISOString() : new Date(Date.now() + 20 * 60 * 1000).toISOString(); // fallback 20m
+      const expiresAt = expiresRaw ? new Date(expiresRaw).toISOString() : new Date(Date.now() + 20 * 60 * 1000).toISOString();
 
-      // Construir estructura items minimal (si se entregan cart_items)
-      let itemsPayload = [] as any[];
+      // 1. Construir payload normalizado de items (si se envían)
+      let itemsPayload: any[] | null = null;
       if (Array.isArray(cart_items)) {
         itemsPayload = cart_items.map(ci => {
           const rawDoc = ci.document_type || ci.documentType || '';
@@ -157,46 +162,84 @@ serve(req => withMetrics('create-payment-khipu', req, async () => {
             const v = String(rawDoc).toLowerCase();
             return v === 'boleta' || v === 'factura' ? v : 'ninguno';
           })();
+          const price = ci.price || ci.price_at_addition || 0;
           return {
-            product_id: ci.product_id || ci.productid || ci.id,
+            product_id: ci.product_id || ci.productid || ci.id || null,
             quantity: ci.quantity || 1,
-            price: ci.price || ci.price_at_addition || 0,
+            price: price,
+            price_at_addition: ci.price_at_addition || price,
             supplier_id: ci.supplier_id || ci.supplierId || null,
             document_type: normDoc,
           };
         });
       }
 
-      const orderInsert = {
-        id: (normalized as any).payment_id || crypto.randomUUID(),
-        user_id: buyer_id || null,
-        cart_id: cart_id || null,
-        items: itemsPayload.length ? itemsPayload : null,
-        subtotal: amount,
-        total: amount,
-        total_amount: amount, // si existe esta convención en el servicio front
-        status: 'pending',
-        payment_method: 'khipu',
-        payment_status: 'pending',
-        khipu_payment_id: (normalized as any).payment_id || null,
-        khipu_payment_url: (normalized as any).payment_url || null,
-        khipu_expires_at: expiresAt,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      } as any;
-
-      // upsert por id para idempotencia
-      const { error: upsertErr } = await supabaseAdmin
+      // 2. Verificar existencia de la orden
+      const { data: existingOrder, error: fetchErr } = await supabaseAdmin
         .from('orders')
-        .upsert(orderInsert, { onConflict: 'id' });
-      if (upsertErr) {
-        console.error('[create-payment-khipu] Error persistiendo payment order:', upsertErr);
-      } else {
-        (normalized as any).persisted = true;
-        (normalized as any).khipu_expires_at = expiresAt;
+        .select('id, items')
+        .eq('id', order_id)
+        .maybeSingle();
+
+      if (fetchErr) {
+        console.error('[create-payment-khipu] Error buscando orden existente:', fetchErr);
       }
+      if (!existingOrder) {
+        console.warn('[create-payment-khipu] Orden no encontrada, se intentará crear (fallback). ID:', order_id);
+        const fallbackInsert = {
+          id: order_id,
+          user_id: buyer_id || null,
+          cart_id: cart_id || null,
+          items: itemsPayload,
+          subtotal: amount,
+          total: amount,
+          total_amount: amount,
+          status: 'pending',
+          payment_method: 'khipu',
+          payment_status: 'pending',
+          khipu_payment_id: (normalized as any).payment_id || null,
+          khipu_payment_url: (normalized as any).payment_url || null,
+          khipu_expires_at: expiresAt,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+        const { error: fallbackErr } = await supabaseAdmin.from('orders').insert(fallbackInsert).single();
+        if (fallbackErr) {
+          console.error('[create-payment-khipu] Error en fallback insert:', fallbackErr);
+        } else {
+          (normalized as any).persisted = true;
+          (normalized as any).khipu_expires_at = expiresAt;
+        }
+      } else {
+        // 3. Merge opcional de items (si se recibieron nuevos items reemplazamos; si no, mantenemos los existentes)
+        const mergedItems = itemsPayload && itemsPayload.length > 0 ? itemsPayload : existingOrder.items;
+
+        const updateData: Record<string, any> = {
+          khipu_payment_id: (normalized as any).payment_id || null,
+          khipu_payment_url: (normalized as any).payment_url || null,
+          khipu_expires_at: expiresAt,
+          payment_method: 'khipu',
+          payment_status: 'pending',
+          subtotal: amount, // aseguremos monto coherente
+          total: amount,
+          total_amount: amount,
+          items: mergedItems,
+          updated_at: new Date().toISOString(),
+        };
+        const { error: updErr } = await supabaseAdmin
+          .from('orders')
+          .update(updateData)
+          .eq('id', order_id);
+        if (updErr) {
+          console.error('[create-payment-khipu] Error actualizando orden existente:', updErr);
+        } else {
+          (normalized as any).persisted = true;
+          (normalized as any).khipu_expires_at = expiresAt;
+        }
+      }
+      (normalized as any).order_id = order_id;
     } catch (persistErr) {
-      console.error('[create-payment-khipu] Persist error:', persistErr);
+      console.error('[create-payment-khipu] Persist error (update path):', persistErr);
     }
 
     if (!normalized.payment_url) {
