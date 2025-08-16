@@ -62,7 +62,7 @@ import DeleteMultipleProductsModal from '../../../shared/components/modals/Delet
 import { getMarketplaceProducts, deleteProduct, getProductStats, deleteMultipleProducts, updateProductName } from '../../../domains/admin';
 import { useBanner } from '../../../shared/components/display/banners/BannerContext';
 import { useResponsiveThumbnail } from '../../../hooks/useResponsiveThumbnail';
-import { AdminTableImage } from '../../../components/UniversalProductImage';
+import { AdminTableImage } from '../../../components/UniversalProductImage'; // Incluye gating viewport interno vía useInViewport
 
 // ✅ CONSTANTS
 const PRODUCT_STATUS = {

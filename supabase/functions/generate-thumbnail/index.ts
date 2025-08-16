@@ -22,6 +22,25 @@ const corsHeaders = {
 const DEBUG_MODE = Deno.env.get('DEBUG_MODE') === 'true'
 const log = DEBUG_MODE ? console.log : () => {}
 const logError = DEBUG_MODE ? console.error : () => {}
+function thumbsLog(event: string, data: Record<string, unknown> = {}) {
+  try { if (ENABLE_THUMBS_LOGS) log('[THUMBS]', event, JSON.stringify(data)) } catch(_) {}
+}
+
+// Feature flags (edge)
+const ENABLE_SIGNATURE_COLUMN = (Deno.env.get('ENABLE_SIGNATURE_COLUMN') || 'true') === 'true';
+const ENABLE_SIGNATURE_ENFORCE = (Deno.env.get('ENABLE_SIGNATURE_ENFORCE') || 'false') === 'true';
+const ENABLE_THUMBS_LOGS = (Deno.env.get('ENABLE_THUMBS_LOGS') || 'false') === 'true'; // protege cuota
+const SIGNATURE_ENFORCE_COOLDOWN_MS = Number(Deno.env.get('SIGNATURE_ENFORCE_COOLDOWN_MS') || '5000');
+
+function extractBasename(url: string): string {
+  try {
+    const clean = url.split('?')[0];
+    const parts = clean.split('/');
+    return parts[parts.length - 1];
+  } catch (_) {
+    return url;
+  }
+}
 
 // Función para detectar el tipo de imagen basado en los magic bytes
 function detectImageType(buffer: ArrayBuffer): string {
@@ -98,9 +117,9 @@ serve((req) => withMetrics('generate-thumbnail', req, async () => {
     }
 
     const requestBody = await req.json();
-    const { imageUrl, productId, supplierId } = requestBody;
+  const { imageUrl, productId, supplierId, force } = requestBody;
 
-    if (!imageUrl || !productId || !supplierId) {
+  if (!imageUrl || !productId || !supplierId) {
       return new Response(JSON.stringify({ 
         error: 'Missing required parameters: imageUrl, productId, supplierId' 
       }), {
@@ -130,9 +149,9 @@ serve((req) => withMetrics('generate-thumbnail', req, async () => {
     const dbClient = supabaseSr || supabasePublic!;
 
     // ✅ Validar existencia de imagen principal e idempotencia ANTES de hacer fetch pesado
-  const { data: mainImage, error: mainImageError } = await dbClient
+    const { data: mainImage, error: mainImageError } = await dbClient
       .from('product_images')
-      .select('id, thumbnails, thumbnail_url')
+      .select('id, thumbnails, thumbnail_url, image_url, thumbnail_signature, updated_at')
       .eq('product_id', productId)
       .eq('image_order', 0)
       .single();
@@ -144,23 +163,67 @@ serve((req) => withMetrics('generate-thumbnail', req, async () => {
       });
     }
 
-    // Idempotencia SOLO si las 4 variantes + thumbnail_url existen
-    if (mainImage.thumbnails &&
-        mainImage.thumbnails.desktop &&
-        mainImage.thumbnails.tablet &&
-        mainImage.thumbnails.mobile &&
-        mainImage.thumbnails.minithumb &&
-        mainImage.thumbnail_url) {
+    // Firma candidata (basename del URL provisto)
+    const candidateSignature = ENABLE_SIGNATURE_COLUMN ? extractBasename(imageUrl) : null;
+    const previousSignature = ENABLE_SIGNATURE_COLUMN ? (mainImage.thumbnail_signature || null) : null;
+    const signatureMismatch = ENABLE_SIGNATURE_COLUMN && previousSignature && candidateSignature && previousSignature !== candidateSignature;
+
+    // Idempotencia con posible enforcement: si todo existe y NO hay enforcement o cooldown activo, retornamos.
+    const allVariantsExist = !!(mainImage.thumbnails &&
+      mainImage.thumbnails.desktop &&
+      mainImage.thumbnails.tablet &&
+      mainImage.thumbnails.mobile &&
+      mainImage.thumbnails.minithumb &&
+      mainImage.thumbnail_url);
+
+    let cooldownActive = false;
+    if (ENABLE_SIGNATURE_ENFORCE && signatureMismatch) {
+      // Evaluar cooldown usando updated_at de la fila principal (cuando se actualizó por última vez cualquier campo)
+      try {
+        if (mainImage.updated_at) {
+          const updatedAtMs = Date.parse(mainImage.updated_at);
+            if (!Number.isNaN(updatedAtMs)) {
+              const delta = Date.now() - updatedAtMs;
+              cooldownActive = delta < SIGNATURE_ENFORCE_COOLDOWN_MS;
+            }
+        }
+      } catch (_) {}
+    }
+
+  if (!force && allVariantsExist && (!signatureMismatch || !ENABLE_SIGNATURE_ENFORCE || cooldownActive)) {
+      if (ENABLE_THUMBS_LOGS) {
+        if (signatureMismatch && !ENABLE_SIGNATURE_ENFORCE) {
+          thumbsLog('IDEMPOTENT_STALE', { productId, previousSignature, candidateSignature })
+        } else if (signatureMismatch && ENABLE_SIGNATURE_ENFORCE && cooldownActive) {
+          thumbsLog('ENFORCE_COOLDOWN_ACTIVE', { productId, previousSignature, candidateSignature, cooldownMs: SIGNATURE_ENFORCE_COOLDOWN_MS })
+        } else {
+          thumbsLog('IDEMPOTENT', { productId, signature: previousSignature || candidateSignature })
+        }
+      }
       return new Response(JSON.stringify({
         success: true,
         status: 'ok',
-        message: 'Todas las variantes de thumbnails ya existen (idempotente)',
+        message: 'Todas las variantes de thumbnails ya existen (idempotente)'+(signatureMismatch && ENABLE_SIGNATURE_ENFORCE && cooldownActive ? ' (cooldown)' : ''),
         thumbnails: mainImage.thumbnails,
-        thumbnailUrl: mainImage.thumbnail_url
+        thumbnailUrl: mainImage.thumbnail_url,
+        previousSignature,
+        candidateSignature,
+        staleDetected: !!signatureMismatch,
+        enforcement: ENABLE_SIGNATURE_ENFORCE,
+    cooldownActive,
+    forced: false
       }), {
         status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
+    }
+
+    if (ENABLE_THUMBS_LOGS) {
+      if (signatureMismatch && ENABLE_SIGNATURE_ENFORCE) {
+        thumbsLog('SIGNATURE_ENFORCE_REGENERATE', { productId, previousSignature, candidateSignature })
+      } else if (signatureMismatch) {
+        thumbsLog('SIGNATURE_OBSERVE_MISMATCH', { productId, previousSignature, candidateSignature })
+      }
     }
 
     // Job tracking con RPC start_thumbnail_job (atomic attempts+processing)
@@ -235,12 +298,12 @@ serve((req) => withMetrics('generate-thumbnail', req, async () => {
       const timestampMatch = filename.match(/^(\d+)_/);
       if (timestampMatch) {
         timestamp = parseInt(timestampMatch[1]);
-        log(`✅ Extracted timestamp from original image: ${timestamp}`);
+        thumbsLog('TIMESTAMP_EXTRACTED', { productId, timestampSource: 'filename', timestamp })
       } else {
-        log(`⚠️ No timestamp found in filename: ${filename}, using current timestamp: ${timestamp}`);
+        thumbsLog('TIMESTAMP_FALLBACK', { productId, filename, timestamp })
       }
     } catch (error) {
-      log(`⚠️ Error extracting timestamp from URL: ${error.message}, using current timestamp: ${timestamp}`);
+      thumbsLog('TIMESTAMP_ERROR', { productId, message: error.message })
     }
 
     // Upload thumbnails to storage
@@ -308,18 +371,28 @@ serve((req) => withMetrics('generate-thumbnail', req, async () => {
     .from('product-images-thumbnails')
     .getPublicUrl(variantPaths.desktop).data.publicUrl;
 
-    // Update SOLO la imagen principal (image_order=0) y solo si todavía no tenía thumbnails
-  const { error: dbUpdateError } = await dbClient
+    // Update principal (image_order=0). En observación: sólo seteamos signature si no existía o coincide.
+    const updatePayload: Record<string, unknown> = {
+      thumbnails: {
+        minithumb: minithumbUrl,
+        mobile: mobileUrl,
+        tablet: tabletUrl,
+        desktop: desktopUrl
+      },
+      thumbnail_url: desktopUrl
+    };
+    if (ENABLE_SIGNATURE_COLUMN) {
+      if (!previousSignature || previousSignature === candidateSignature) {
+        updatePayload.thumbnail_signature = candidateSignature; // observación / coincidencia
+      } else if (ENABLE_SIGNATURE_ENFORCE && signatureMismatch) {
+        // Enforcement: sobreescribir con la nueva firma
+        updatePayload.thumbnail_signature = candidateSignature;
+      }
+    }
+
+    const { error: dbUpdateError } = await dbClient
       .from('product_images')
-      .update({
-        thumbnails: {
-          minithumb: minithumbUrl,
-          mobile: mobileUrl,
-          tablet: tabletUrl,
-          desktop: desktopUrl
-        },
-        thumbnail_url: desktopUrl
-      })
+      .update(updatePayload)
       .eq('product_id', productId)
       .eq('image_order', 0);
 
@@ -353,7 +426,14 @@ serve((req) => withMetrics('generate-thumbnail', req, async () => {
       },
       originalSize: imageBuffer.byteLength,
       generatedAt: new Date().toISOString(),
-      clientMode: serviceRoleKey ? 'service_role' : 'anon'
+      clientMode: serviceRoleKey ? 'service_role' : 'anon',
+      previousSignature,
+      candidateSignature,
+      signatureApplied: !!updatePayload.thumbnail_signature,
+  staleDetected: !!(previousSignature && candidateSignature && previousSignature !== candidateSignature),
+  enforcement: ENABLE_SIGNATURE_ENFORCE,
+  cooldownActive: false,
+  forced: !!force
     };
 
     return new Response(JSON.stringify(response), { 

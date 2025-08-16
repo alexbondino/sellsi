@@ -8,6 +8,7 @@
  */
 
 import { create } from 'zustand'
+import { FeatureFlags } from '../../../../shared/flags/featureFlags.js'
 
 const useProductBackground = create((set, get) => ({
   // ============================================================================
@@ -102,26 +103,17 @@ const useProductBackground = create((set, get) => ({
         
         // 🔥 NUEVO: COMUNICACIÓN INTELIGENTE EN LUGAR DE REFRESH BLOQUEADO
         if (result.success && crudHook && crudHook.refreshProduct) {
-          // En lugar de refresh que causa conflicto, usar comunicación por eventos
-          
-          // 1. Notificar a componentes que las imágenes están disponibles
-          window.dispatchEvent(new CustomEvent('productImagesReady', {
-            detail: { 
-              productId,
-              imageCount: productData.imagenes?.length || 0,
-              timestamp: Date.now()
-            }
-          }))
-          
-          // 2. Solo actualizar el estado de Zustand SIN refrescar React Query
-          setTimeout(async () => {
-            if (crudHook.refreshProduct) {
-              const refreshResult = await crudHook.refreshProduct(productId)
-              if (refreshResult.success) {
-                //
-              }
-            }
-          }, 100) // Delay mínimo para no interferir con React Query
+          // Con phased events activos no emitimos eventos legacy ni forcemos refresh inmediato.
+          if (!FeatureFlags.ENABLE_PHASED_THUMB_EVENTS) {
+            // Modo legacy: aún se permite un evento directo simple.
+            window.dispatchEvent(new CustomEvent('productImagesReady', {
+              detail: { productId, imageCount: productData.imagenes?.length || 0, timestamp: Date.now() }
+            }))
+          }
+          // Pequeño refresh diferido sólo en modo legacy para sincronizar uiProducts.
+          if (!FeatureFlags.ENABLE_PHASED_THUMB_EVENTS) {
+            setTimeout(async () => { await crudHook.refreshProduct(productId) }, 100)
+          }
         }
       }
 

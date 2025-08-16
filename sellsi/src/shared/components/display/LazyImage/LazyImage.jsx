@@ -207,6 +207,11 @@ const LazyImage = ({
           }}
         />
       )}
+      {process.env.NODE_ENV === 'development' && isVisible && imageSrc && (
+        <Box sx={{position:'absolute',bottom:0,left:0,right:0, bgcolor:'rgba(0,0,0,0.3)', color:'#fff', fontSize:8, p:0.3, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>
+          {imageSrc.split('/').pop()}
+        </Box>
+      )}
     </Box>
   )
 }

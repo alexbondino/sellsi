@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Card, Box, alpha } from '@mui/material';
 
 // Common Utility Imports
-import { ProductCardImage } from '../../../../components/UniversalProductImage'; // Nueva imagen universal
+import { ProductCardImage } from '../../../../components/UniversalProductImage'; // Nueva imagen universal (incluye gating viewport interno)
 
 // Sub-components
 import ProductCardBuyerContext from './ProductCardBuyerContext';
@@ -50,16 +50,23 @@ const ProductCard = React.memo(
     const { id, nombre, imagen } = product;
 
     // --- Memoized common elements ---
-    const memoizedImage = useMemo(
-      () => (
+    const memoizedImage = useMemo(() => {
+      // Fallback: si es provider y no hay imagen base pero sí logo_url, usarlo como imagen
+      let productForImage = product
+      if (type === 'provider') {
+        const hasAnyImage = product.imagen || product.image_url || product.thumbnail_url || (product.thumbnails && Object.keys(product.thumbnails).length > 0)
+        if (!hasAnyImage && product.logo_url) {
+          productForImage = { ...product, imagen: product.logo_url }
+        }
+      }
+      return (
         <ProductCardImage
-          product={product}
+          product={productForImage}
           type={type}
           alt={nombre}
         />
-      ),
-      [product, type, nombre]
-    );
+      )
+    }, [product, type, nombre])
 
     // --- Common Card Styles (can be adjusted per type if needed) ---
     const cardStyles = useMemo(
@@ -184,8 +191,8 @@ const ProductCard = React.memo(
         onClick={handleProductClick}
         sx={cardStyles}
       >
-        {/* ✅ Solo mostrar imagen del producto para tipos 'supplier' y 'buyer', no para 'provider' */}
-        {type !== 'provider' && memoizedImage}
+  {/* ✅ Mostrar imagen también en provider (usando logo o thumbnail) */}
+  {memoizedImage}
         {type === 'supplier' && (
           <ProductCardSupplierContext
             product={product}

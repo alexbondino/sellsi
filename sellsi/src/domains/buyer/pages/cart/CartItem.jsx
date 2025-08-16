@@ -248,14 +248,31 @@ const CartItem = ({
               sx={{
                 position: 'relative',
                 width: '160px',
+                height: '160px',
               }}
             >
               <CartItemImage
                 product={item}
+                height={160}
                 sx={{
-                  height: 160,
                   width: '100%',
-                 
+                  height: '100%'
+                }}
+                onLoad={() => {
+                  if (process.env.NODE_ENV === 'development') {
+                    // Log minimal product image fields for debugging cart visibility
+                    // Avoid logging full object repeatedly if large
+                    const { id, productid, product_id, imagen, image, thumbnail_url, thumbnails } = item || {};
+                    // eslint-disable-next-line no-console
+                    console.debug('[CART][IMAGE_LOADED]', { id: id || productid || product_id, imagen, image, thumbnail_url, hasThumbs: !!thumbnails });
+                  }
+                }}
+                onError={() => {
+                  if (process.env.NODE_ENV === 'development') {
+                    const { id, productid, product_id, imagen, image, thumbnail_url, thumbnails } = item || {};
+                    // eslint-disable-next-line no-console
+                    console.warn('[CART][IMAGE_ERROR]', { id: id || productid || product_id, imagen, image, thumbnail_url, hasThumbs: !!thumbnails });
+                  }
                 }}
               />
             </Box>

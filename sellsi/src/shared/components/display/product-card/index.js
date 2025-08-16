@@ -1,11 +1,21 @@
 // src/shared/components/display/product-card/index.js
-export { default as ProductCard } from './ProductCard';
-export { default as ProductCardBuyerContext } from './ProductCardBuyerContext';
-export { default as ProductCardSupplierContext } from './ProductCardSupplierContext';
-export { default as ProductCardProviderContext } from './ProductCardProviderContext';
-export { default as ActionMenu } from './ActionMenu';
-export { default as ProductBadges } from './ProductBadges';
-export { default as StatusChip } from './StatusChip';
+// Se usa import explícito para evitar issues de re-export default en algunos entornos de HMR
+import ProductCard from './ProductCard';
+import ProductCardBuyerContext from './ProductCardBuyerContext';
+import ProductCardSupplierContext from './ProductCardSupplierContext';
+import ProductCardProviderContext from './ProductCardProviderContext';
+import ActionMenu from './ActionMenu';
+import ProductBadges from './ProductBadges';
+import StatusChip from './StatusChip';
 
-// Default export
-export { default } from './ProductCard';
+export {
+	ProductCard,
+	ProductCardBuyerContext,
+	ProductCardSupplierContext,
+	ProductCardProviderContext,
+	ActionMenu,
+	ProductBadges,
+	StatusChip
+};
+
+export default ProductCard;

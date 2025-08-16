@@ -364,6 +364,7 @@ const AddProduct = () => {
     handlePricingTypeChange,
     submitForm,
     resetForm,
+  markImagesTouched,
   } = useProductForm(editProductId);
 
   const {
@@ -508,6 +509,8 @@ const AddProduct = () => {
   }
 
   const handleImagesChange = images => {
+    // Marcar que el usuario interactuó manualmente con las imágenes antes de actualizar
+    markImagesTouched?.();
     setImageError('');
     updateField('imagenes', images);
   };

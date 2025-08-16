@@ -10,10 +10,13 @@
  */
 
 import React, { useState, useCallback, useEffect } from 'react';
+import { FeatureFlags, ThumbTimings } from '../shared/flags/featureFlags';
 import { Avatar, Box, Skeleton, CircularProgress } from '@mui/material';
 import { BrokenImage as BrokenImageIcon } from '@mui/icons-material';
 import { LazyImage } from '../shared/components/display/LazyImage';
 import { useResponsiveThumbnail, useMinithumb } from '../hooks/useResponsiveThumbnail';
+import { useThumbnailPhaseQuery, invalidateTransientThumbnailKeys } from '../hooks/thumbnails/useThumbnailPhaseQuery.js'
+import { useInViewport } from '../hooks/useInViewport.js'
 import { useQueryClient } from '@tanstack/react-query';
 
 const UniversalProductImage = ({
@@ -41,6 +44,21 @@ const UniversalProductImage = ({
   const productId = product?.id || product?.productid || product?.product_id || product?.productId;
   const minithumb = useMinithumb(product);
 
+  // Phase-aware query state
+  // Si el producto ya trae thumbnail_url o thumbnails, asumimos fase final lista
+  const [currentPhase, setCurrentPhase] = useState(
+    (product?.thumbnail_url || product?.thumbnailUrl || product?.thumbnails) ? 'thumbnails_ready' : null
+  )
+  // Actualizar fase inicial cuando cambie el producto
+  useEffect(() => {
+    if (product && (product.thumbnail_url || product.thumbnailUrl || product.thumbnails)) {
+      setCurrentPhase('thumbnails_ready')
+    }
+  }, [product?.id, product?.thumbnail_url, product?.thumbnailUrl, product?.thumbnails])
+  const { ref: viewportRef, inView } = useInViewport({ once: true, rootMargin: '200px' })
+  const phaseQuery = useThumbnailPhaseQuery(productId, currentPhase, { enabled: !FeatureFlags.ENABLE_VIEWPORT_THUMBS || inView })
+  const phaseDataThumbUrl = phaseQuery.data?.thumbnail_url
+
   // Determinar la URL a usar basada en el tamaño solicitado
   const selectedThumbnail = React.useMemo(() => {
     if (!product) return '/placeholder-product.jpg';
@@ -49,17 +67,43 @@ const UniversalProductImage = ({
       switch (size) {
         case 'minithumb':
           // Para minithumb: minithumb específico → thumbnail responsivo → imagen original → placeholder
-          return minithumb || responsiveThumbnail || product?.imagen || '/placeholder-product.jpg';
+  const chosen = minithumb || phaseDataThumbUrl || responsiveThumbnail || product?.imagen || product?.image || '/placeholder-product.jpg';
+    if (process.env.NODE_ENV === 'development') {
+      console.debug('[THUMBS][UniversalProductImage] choose=minithumb', { productId, minithumb, phaseDataThumbUrl, responsiveThumbnail, original: product?.imagen, chosen });
+    }
+    return chosen;
+        case 'mobile': {
+          // Forzar siempre variante mobile independiente del viewport
+          // 1) thumbnails.mobile directo
+          let mobile = product?.thumbnails?.mobile;
+          // 2) Si phaseDataThumbUrl apunta a desktop/tablet construir mobile
+          const source = phaseDataThumbUrl || responsiveThumbnail || product?.thumbnail_url || product?.thumbnailUrl;
+          if (!mobile && source && typeof source === 'string') {
+            if (source.includes('_mobile_')) mobile = source; // Ya es mobile
+            else if (source.includes('_desktop_320x260')) mobile = source.replace('_desktop_320x260.jpg', '_mobile_190x153.jpg');
+            else if (source.includes('_tablet_300x230')) mobile = source.replace('_tablet_300x230.jpg', '_mobile_190x153.jpg');
+          }
+          // 3) Minithumb NUNCA sustituye a mobile aquí (diferente tamaño) -> ignorado
+          const chosenM = mobile || product?.imagen || product?.image || '/placeholder-product.jpg';
+          if (process.env.NODE_ENV === 'development') {
+            console.debug('[THUMBS][UniversalProductImage] choose=mobile', { productId, mobile, source, phaseDataThumbUrl, responsiveThumbnail, original: product?.imagen, chosen: chosenM });
+          }
+          return chosenM;
+        }
         case 'responsive':
         default:
           // Para responsive: thumbnail responsivo → imagen original → placeholder
           // responsiveThumbnail ya incluye el fallback a product.imagen internamente
-          return responsiveThumbnail || product?.imagen || '/placeholder-product.jpg';
+  const chosenR = phaseDataThumbUrl || responsiveThumbnail || product?.imagen || product?.image || '/placeholder-product.jpg';
+    if (process.env.NODE_ENV === 'development') {
+      console.debug('[THUMBS][UniversalProductImage] choose=responsive', { productId, phaseDataThumbUrl, responsiveThumbnail, original: product?.imagen, chosen: chosenR });
+    }
+    return chosenR;
       }
     })();
 
     return finalUrl;
-  }, [product, size, minithumb, responsiveThumbnail, retryCount]);
+  }, [product, size, minithumb, responsiveThumbnail, phaseDataThumbUrl, retryCount]);
 
   // Manejar errores de carga de imagen
   const handleImageError = useCallback(() => {
@@ -120,26 +164,29 @@ const UniversalProductImage = ({
 
   // Listener para imágenes procesadas en background (reubicado arriba para no quedar tras returns)
   useEffect(() => {
+    const timers = {}
     const handleImagesReady = (event) => {
-      const { productId: readyProductId } = event.detail || {};
+      const { productId: readyProductId, phase } = event.detail || {};
       if (!readyProductId || readyProductId !== productId) return;
-
-      // Invalidar cache del producto específico
-      queryClient.invalidateQueries({ queryKey: ['thumbnail', productId], exact: false });
-
-      // Reset estados de error para permitir nueva carga
-      setImageError(false);
-      setRetryCount(0);
-
-      // Forzar re-evaluación del memo (doble toggle seguro)
-      setTimeout(() => {
-        setRetryCount(prev => prev + 1);
-        setRetryCount(prev => prev - 1);
-      }, 300);
-    };
-    window.addEventListener('productImagesReady', handleImagesReady);
-    return () => window.removeEventListener('productImagesReady', handleImagesReady);
-  }, [productId, queryClient]);
+      if (FeatureFlags.ENABLE_PHASED_THUMB_EVENTS) {
+        if (!['thumbnails_ready', 'thumbnails_skipped_webp'].includes(phase)) return
+      }
+      setCurrentPhase(phase)
+      if (timers[readyProductId]) clearTimeout(timers[readyProductId])
+      timers[readyProductId] = setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ['thumbnail', productId], exact: false })
+        invalidateTransientThumbnailKeys(productId)
+        setImageError(false)
+        setRetryCount(0)
+        setTimeout(() => {
+          setRetryCount(p => p + 1)
+          setRetryCount(p => p - 1)
+        }, 100)
+      }, ThumbTimings.PHASE_EVENT_DEBOUNCE_MS)
+    }
+    window.addEventListener('productImagesReady', handleImagesReady)
+    return () => window.removeEventListener('productImagesReady', handleImagesReady)
+  }, [productId, queryClient])
 
   // Si hay error o no hay imagen válida, mostrar Avatar con icono CENTRADO
   if (imageError || !selectedThumbnail || selectedThumbnail === '/placeholder-product.jpg') {
@@ -197,6 +244,7 @@ const UniversalProductImage = ({
         rootMargin="150px"
         objectFit={objectFit}
         sx={baseStyles}
+        ref={viewportRef}
         onError={() => {
           
           handleImageError();
@@ -221,6 +269,7 @@ const UniversalProductImage = ({
         objectFit,
         display: 'block'
       }}
+      ref={viewportRef}
       onError={() => {
         
         handleImageError();
@@ -272,6 +321,7 @@ export const ProductCardImage = ({ product, type = 'buyer', ...props }) => {
       product={product}
       size="responsive"
       height={getCardHeight()}
+      lazy={false} // Forzar carga inmediata en cards para descartar issues de IntersectionObserver
       sx={{
         maxWidth: '100%',
         bgcolor: '#fff',
@@ -281,6 +331,8 @@ export const ProductCardImage = ({ product, type = 'buyer', ...props }) => {
         display: 'block',
         mx: 'auto',
         mt: 0.5,
+        // debug temporal: borde ligero para ver el contenedor
+        border: process.env.NODE_ENV === 'development' ? '1px dashed rgba(0,0,0,0.1)' : undefined,
       }}
       {...props}
     />
@@ -294,12 +346,14 @@ export const ProductCardImage = ({ product, type = 'buyer', ...props }) => {
 export const CartItemImage = ({ product, ...props }) => (
   <UniversalProductImage
     product={product}
-    size="responsive"
+    size="mobile" // Forzar siempre thumbnail mobile para consistencia visual en el carrito
+    lazy={false} // Evitar IntersectionObserver en el carrito para asegurar visibilidad inmediata
     aspectRatio="1"
     objectFit="cover"
     sx={{
       borderRadius: 1,
-      bgcolor: '#fafafa'
+      bgcolor: '#fafafa',
+      border: process.env.NODE_ENV === 'development' ? '1px solid #e0e0e0' : undefined
     }}
     {...props}
   />
@@ -312,7 +366,8 @@ export const CartItemImage = ({ product, ...props }) => (
 export const CheckoutSummaryImage = ({ product, ...props }) => (
   <UniversalProductImage
     product={product}
-    size="responsive"
+    // Prioriza minithumb de 40x40 si existe
+    size="minithumb"
     width={40}
     height={40}
     lazy={false}

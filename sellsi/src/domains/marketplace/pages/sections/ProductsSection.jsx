@@ -31,6 +31,7 @@ import { showCartSuccess } from '../../../../utils/toastHelpers';
 import { isProductActive, getActiveProductCountByProvider } from '../../../../utils/productActiveStatus';
 import ProductCard from '../../../../shared/components/display/product-card/ProductCard'; // Asegúrate que esta es la ruta correcta al componente principal
 import ProductCardProviderContext from '../../../../shared/components/display/product-card/ProductCardProviderContext'; // ✅ NUEVO: Para vista de proveedores
+import { FeatureFlags } from '../../../../shared/flags/featureFlags';
 import useCartStore from '../../../../shared/stores/cart/cartStore';
 import { LoadingOverlay } from '../../../../shared/components/feedback';
 import Fab from '@mui/material/Fab';
@@ -196,11 +197,9 @@ const ProductsSection = React.memo(
       });
       return uniqueSuppliers.size;
     }, [isProviderView, productosOrdenados]);
-    // ✅ MEJORA DE RENDIMIENTO: Memoización del handler de volver (solo dependencias necesarias)
-    const handleBackClick = React.useCallback(() => {
-      setSeccionActiva('todos');
-    }, [setSeccionActiva]); // ✅ MEJORA DE RENDIMIENTO: Memoización del mapeo de productos para evitar re-renders innecesarios
+
     // ✅ OPTIMIZACIÓN CRÍTICA: Solo recalcular cuando productosOrdenados realmente cambie
+    // (Movido arriba antes de cualquier uso para evitar ReferenceError por TDZ)
     const memoizedProducts = React.useMemo(() => {
       if (
         !Array.isArray(productosOrdenados) ||
@@ -213,10 +212,8 @@ const ProductsSection = React.memo(
       if (isProviderView) {
         // Primero, filtrar solo productos activos
         const activeProducts = productosOrdenados.filter(isProductActive);
-        
         // Agrupar productos activos por proveedor (supplier_id) para crear tarjetas únicas
         const providersMap = new Map();
-        
         activeProducts.forEach((producto) => {
           const supplierId = producto.supplier_id;
           if (!providersMap.has(supplierId)) {
@@ -238,14 +235,34 @@ const ProductsSection = React.memo(
             existing.product_count += 1;
           }
         });
-        
-  // ✅ ANTERIOR: Se limitaba a 6 proveedores (slice). Ahora devolvemos todos los proveedores filtrados.
-  return Array.from(providersMap.values());
+        // ✅ Devuelve todos los proveedores filtrados
+        return Array.from(providersMap.values());
       }
-
       // ✅ OPTIMIZACIÓN: Evitar crear objetos nuevos si no es necesario
       return productosOrdenados;
-    }, [productosOrdenados, isProviderView]); // ✅ SISTEMA HÍBRIDO RESPONSIVO: Infinite Scroll + Paginación
+    }, [productosOrdenados, isProviderView]);
+
+    // 🚀 BATCHING THUMBNAILS: limitar cantidad de ProductCard montadas simultáneamente para reducir ráfagas de fetch
+    const [batchSize, setBatchSize] = React.useState(FeatureFlags?.ENABLE_VIEWPORT_THUMBS ? 24 : 1000)
+    const [visibleCount, setVisibleCount] = React.useState(batchSize)
+    React.useEffect(() => {
+      if (!FeatureFlags?.ENABLE_VIEWPORT_THUMBS) return
+      if (visibleCount >= memoizedProducts.length) return
+      const handle = setTimeout(() => {
+        setVisibleCount(v => Math.min(v + 24, memoizedProducts.length))
+      }, 400) // escalona cada 400ms aprox para evitar picos
+      return () => clearTimeout(handle)
+    }, [visibleCount, memoizedProducts.length])
+
+    const batchedProducts = React.useMemo(() => {
+      if (!FeatureFlags?.ENABLE_VIEWPORT_THUMBS) return memoizedProducts
+      return memoizedProducts.slice(0, visibleCount)
+    }, [memoizedProducts, visibleCount])
+    // ✅ MEJORA DE RENDIMIENTO: Memoización del handler de volver (solo dependencias necesarias)
+    const handleBackClick = React.useCallback(() => {
+      setSeccionActiva('todos');
+    }, [setSeccionActiva]); // ✅ MEJORA DE RENDIMIENTO: Memoización del mapeo de productos para evitar re-renders innecesarios
+  // ✅ SISTEMA HÍBRIDO RESPONSIVO: Infinite Scroll + Paginación
     const theme = useTheme();
     const isXs = useMediaQuery(theme.breakpoints.only('xs'));
     const isSm = useMediaQuery(theme.breakpoints.only('sm'));
@@ -681,7 +698,7 @@ const ProductsSection = React.memo(
                 {PaginationComponent}
 
                 <Box sx={gridStyles}>
-                  {visibleProducts.map(producto => {
+                  { (batchedProducts || visibleProducts).map(producto => {
                     return (
                     <Box
                       key={`product-${producto.id || producto.productid}`}

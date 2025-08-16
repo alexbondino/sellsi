@@ -273,6 +273,7 @@ CREATE TABLE public.product_images (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
   created_at timestamp with time zone NOT NULL DEFAULT now(),
   updated_at timestamp with time zone NOT NULL DEFAULT now(),
+  thumbnail_signature text,
   CONSTRAINT product_images_pkey PRIMARY KEY (id),
   CONSTRAINT product_images_product_id_fkey FOREIGN KEY (product_id) REFERENCES public.products(productid)
 );

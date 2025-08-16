@@ -1,6 +1,16 @@
 // uploadService.js - Servicio optimizado para uploads a Supabase Storage
 import { supabase } from '../../../services/supabase.js'
 import { StorageCleanupService } from '../storage/storageCleanupService.js'
+import { FeatureFlags, ThumbTimings } from '../../flags/featureFlags.js'
+import { record as recordMetric } from '../../thumbnail/thumbnailMetrics.js'
+const THUMBS_LOG_PREFIX = '[THUMBS]'
+function thumbsLog(event, data) {
+  try {
+    if (!data) data = {}
+    // Pequeño filtro para no spamear en producción si se desea: podría condicionarse a flag
+    console.log(THUMBS_LOG_PREFIX, event, JSON.stringify(data))
+  } catch(_) {}
+}
 
 // Solo verificar en desarrollo
 if (import.meta.env.DEV && !supabase) {
@@ -380,10 +390,11 @@ export class UploadService {
       if (!files || files.length === 0) {
         // Reemplazo a vacío -> borra todas
         await supabase.from('product_images').delete().eq('product_id', productId)
-        this.dispatchProductImagesReady(productId, { count: 0, mode: 'replace' })
+  // Fase inicial (modelo phased canónico)
+  this._dispatchPhase(productId, 'base_insert', { count: 0, mode: 'replace' })
         return { success: true, data: [] }
       }
-      console.log('🧩 [replaceAllProductImages] Inicio reemplazo atómico', {
+  thumbsLog('REPLACE_START', {
         productId,
         totalIncoming: files.length,
         sample: files.slice(0,3).map(f => ({
@@ -437,16 +448,17 @@ export class UploadService {
       }
 
       const orderedUrls = orderedEntries.map(e => e.url)
-      console.log('🔄 [replaceAllProductImages] URLs ordenadas para RPC', orderedUrls)
+  thumbsLog('REPLACE_RPC_CALL', { productId, count: orderedUrls.length })
 
-      // RPC reemplazo atómico
-      const { data: replacedRows, error: replaceErr } = await supabase.rpc('replace_product_images', {
+      // RPC reemplazo atómico (usa función que preserva thumbnails si firma igual cuando está habilitado signature)
+      const rpcName = FeatureFlags.ENABLE_SIGNATURE_COLUMN ? 'replace_product_images_preserve_thumbs' : 'replace_product_images'
+      const { data: replacedRows, error: replaceErr } = await supabase.rpc(rpcName, {
         p_product_id: productId,
         p_supplier_id: supplierId,
         p_image_urls: orderedUrls
       })
       if (replaceErr) {
-        console.error('❌ [replaceAllProductImages] RPC error:', replaceErr)
+        console.error('❌ [replaceAllProductImages] RPC error:', replaceErr, { rpcName })
         return { success: false, error: replaceErr.message }
       }
 
@@ -481,7 +493,7 @@ export class UploadService {
             const expectedIdx = verifiedRows.findIndex(r => r.image_url === expectedMainUrl)
           if (expectedIdx > -1) {
             const expectedRow = verifiedRows[expectedIdx]
-            console.warn('⚠️ [replaceAllProductImages] Main inesperada, corrigiendo swap', {
+            thumbsLog('MAIN_SWAP', {
               currentMain: currentMain.image_url, expectedMain: expectedMainUrl, expectedIdx
             })
             // Swap en 3 pasos para respetar índice único (image_order=0)
@@ -501,23 +513,56 @@ export class UploadService {
         console.error('❌ [replaceAllProductImages] Error corrigiendo main:', swapErr.message)
       }
 
-      // Emitir evento inicial (thumbnails pendientes)
-      this.dispatchProductImagesReady(productId, { count: verifiedRows?.length || 0, mode: 'replace', mainUpdated: true, thumbnailsPending: true })
+  this._dispatchPhase(productId, 'base_insert', { count: verifiedRows?.length || 0, mode: 'replace', mainUpdated: true })
 
-      // Programar generación robusta de thumbnails en background con reintentos
       if ((verifiedRows?.length || 0) > 0) {
-        setTimeout(() => {
-          this._ensureMainThumbnails(productId, supplierId, verifiedRows[0].image_url, 1).catch(() => {})
-        }, 150)
+        this._ensureMainThumbnails(productId, supplierId, verifiedRows[0].image_url)
+          .then(result => {
+            // Propagar posible staleDetected (si Edge enforcement aplicado) en evento final
+            if (result.status === 'ready') this._dispatchPhase(productId, 'thumbnails_ready', result)
+            else if (result.status === 'skipped_webp') this._dispatchPhase(productId, 'thumbnails_skipped_webp', result)
+            else if (result.status === 'partial') this._dispatchPhase(productId, 'thumbnails_partial', result)
+            else this._dispatchPhase(productId, 'thumbnails_failed', result)
+            if (['ready','partial'].includes(result.status)) {
+              setTimeout(()=>this._autoRepairIf404(productId, supplierId), 1500)
+            }
+          })
+          .catch(err => {
+            recordMetric('generation_result', { productId, outcome: 'exception', error: err?.message })
+            this._dispatchPhase(productId, 'thumbnails_failed', { error: err?.message })
+          })
       }
 
       if (cleanup) {
-        setTimeout(() => {
-          StorageCleanupService.cleanupProductOrphans(productId).catch(() => {})
-        }, 50)
+        // Opcional: retrasar cleanup hasta fase final si flag activo
+        if (FeatureFlags.ENABLE_DELAYED_CLEANUP) {
+          // Esperar a que fase final se emita (listener simple con timeout de seguridad)
+          const listener = (ev) => {
+            if (ev?.detail?.productId === productId && ['thumbnails_ready','thumbnails_skipped_webp','thumbnails_partial','thumbnails_failed'].includes(ev?.detail?.phase)) {
+              window.removeEventListener('productImagesReady', listener)
+              setTimeout(() => StorageCleanupService.cleanupProductOrphans(productId).catch(err => {
+                recordMetric('cleanup_error', { productId, error: err?.message })
+              }), 25)
+            }
+          }
+          try { window.addEventListener('productImagesReady', listener) } catch(_) { /* noop */ }
+          // Fallback: si no llega evento en 8s, ejecutar cleanup
+          setTimeout(() => {
+            try { window.removeEventListener('productImagesReady', listener) } catch(_) {}
+            StorageCleanupService.cleanupProductOrphans(productId).catch(err => {
+              recordMetric('cleanup_error', { productId, error: err?.message, fallback: true })
+            })
+          }, 8000)
+        } else {
+          setTimeout(() => {
+            StorageCleanupService.cleanupProductOrphans(productId).catch(err => {
+              recordMetric('cleanup_error', { productId, error: err?.message, immediate: true })
+            })
+          }, 50)
+        }
       }
 
-      console.log('✅ [replaceAllProductImages] Reemplazo completado', { total: verifiedRows?.length, productId })
+  thumbsLog('REPLACE_DONE', { total: verifiedRows?.length, productId })
       return { success: true, data: verifiedRows }
     } catch (e) {
       return { success: false, error: e.message }
@@ -664,7 +709,7 @@ export class UploadService {
    * @param {string} supplierId - ID del proveedor
    * @returns {Promise<{success: boolean, thumbnailUrl?: string, error?: string}>}
    */
-  static async generateThumbnail(imageUrl, productId, supplierId) {
+  static async generateThumbnail(imageUrl, productId, supplierId, { force = false } = {}) {
     try {
       const response = await fetch(`${supabase.supabaseUrl}/functions/v1/generate-thumbnail`, {
         method: 'POST',
@@ -676,6 +721,7 @@ export class UploadService {
           imageUrl: imageUrl, // Correcto: imageUrl en lugar de imagePath
           productId,
           supplierId,
+          force
         }),
       })
 
@@ -686,9 +732,12 @@ export class UploadService {
 
       const result = await response.json()
       if (result.thumbnailUrl) {
+        // Programar verificación 404 posterior (auto-repair) ligera
+        setTimeout(()=>this._autoRepairIf404(productId, supplierId), 2000)
         return {
           success: true,
           thumbnailUrl: result.thumbnailUrl,
+          forced: !!result.forced
         }
       } else {
         return {
@@ -716,8 +765,49 @@ export class UploadService {
       const detail = { productId, timestamp: Date.now(), ...meta };
       window.dispatchEvent(new CustomEvent('productImagesReady', { detail }));
     } catch (e) {
-      // Silencioso: no bloquear flujo de upload por errores de dispatch
+  recordMetric('dispatch_error', { productId, error: e?.message })
     }
+  }
+
+  static _dispatchPhase(productId, phase, meta = {}) {
+    try {
+      if (typeof window === 'undefined' || !productId) return
+      const detail = { productId, phase, timestamp: Date.now(), ...meta }
+      recordMetric('event_emit', { productId, phase })
+      window.dispatchEvent(new CustomEvent('productImagesReady', { detail }))
+    } catch (_) { /* noop */ }
+  }
+
+  /**
+   * Verifica si la URL principal del thumbnail retorna 404 y si es así fuerza regeneración.
+   * Usa HEAD para minimizar transferencia. Emite phase 'repair' si se detecta y se intenta regenerar.
+   */
+  static async _autoRepairIf404(productId, supplierId) {
+    try {
+      const { data: row } = await supabase
+        .from('product_images')
+        .select('image_url, thumbnail_url')
+        .eq('product_id', productId)
+        .eq('image_order', 0)
+        .single()
+      if (!row || !row.thumbnail_url || !row.image_url) return
+      // HEAD check
+      const controller = new AbortController()
+      const t = setTimeout(()=>controller.abort(), 4000)
+      let status = 0
+      try {
+        const resp = await fetch(row.thumbnail_url, { method: 'HEAD', signal: controller.signal })
+        status = resp.status
+      } catch (_) { status = 0 }
+      clearTimeout(t)
+      if (status === 404) {
+        recordMetric('generation_start', { productId, reason: 'auto_repair_404' })
+        this._dispatchPhase(productId, 'repair', { reason: 'thumbnail_404_detected' })
+        // Forzar regeneración (force flag en Edge)
+  const regen = await this.generateThumbnail(row.image_url, productId, supplierId, { force: true })
+  recordMetric('generation_result', { productId, outcome: regen?.success ? 'repair_forced_success' : 'repair_forced_failed' })
+      }
+    } catch (_) { /* noop */ }
   }
 
   /**
@@ -727,45 +817,48 @@ export class UploadService {
    * 2. Relee fila principal y verifica presence de desktop/tablet/mobile/minithumb
    * 3. Hasta maxAttempts, con backoff exponencial ligero.
    */
-  static async _ensureMainThumbnails(productId, supplierId, mainImageUrl, attempt = 1, maxAttempts = 3) {
+  static async _ensureMainThumbnails(productId, supplierId, mainImageUrl) {
+    const BACKOFFS = [250, 750, 2000]
+    const resultBase = { productId }
     try {
+      recordMetric('generation_start', { productId })
       if (/\.webp($|\?)/i.test(mainImageUrl || '')) {
-        this.dispatchProductImagesReady(productId, { thumbnailsSkippedWebp: true });
-        return;
+        recordMetric('generation_result', { productId, outcome: 'skipped_webp' })
+        return { ...resultBase, status: 'skipped_webp', reason: 'webp_main_ignored' }
       }
-      // Leer fila principal
-      const { data: mainRow, error: readErr } = await supabase
-        .from('product_images')
-        .select('id, thumbnails, thumbnail_url')
-        .eq('product_id', productId)
-        .eq('image_order', 0)
-        .single()
-      if (readErr || !mainRow) {
-        if (attempt < maxAttempts) {
-          setTimeout(() => this._ensureMainThumbnails(productId, supplierId, mainImageUrl, attempt + 1, maxAttempts), attempt * 400)
+      let lastRow = null
+      for (let attempt = 1; attempt <= BACKOFFS.length; attempt++) {
+        const { data: mainRow } = await supabase
+          .from('product_images')
+          .select('id, thumbnails, thumbnail_url, thumbnail_signature')
+          .eq('product_id', productId)
+          .eq('image_order', 0)
+          .single()
+        lastRow = mainRow || null
+        const hasAll = !!(mainRow && mainRow.thumbnails && mainRow.thumbnails.desktop && mainRow.thumbnails.tablet && mainRow.thumbnails.mobile && mainRow.thumbnails.minithumb && mainRow.thumbnail_url)
+        if (hasAll) {
+          recordMetric('generation_result', { productId, outcome: 'ready', attempt })
+          return { ...resultBase, status: 'ready', attempt, signature: mainRow?.thumbnail_signature || null }
         }
-        return
+        const hasDesktop = !!(mainRow && mainRow.thumbnails && mainRow.thumbnails.desktop && mainRow.thumbnail_url)
+        if (!hasDesktop) {
+          const gen = await this.generateThumbnail(mainImageUrl, productId, supplierId)
+          if (!gen.success) recordMetric('generation_error', { productId, attempt, error: gen.error })
+        }
+        if (attempt < BACKOFFS.length) await new Promise(r => setTimeout(r, BACKOFFS[attempt - 1]))
       }
-      const hasAll = !!(mainRow.thumbnails && mainRow.thumbnails.desktop && mainRow.thumbnails.tablet && mainRow.thumbnails.mobile && mainRow.thumbnails.minithumb && mainRow.thumbnail_url)
-      if (hasAll) {
-        this.dispatchProductImagesReady(productId, { thumbnailsReady: true, attempt })
-        return
+      if (lastRow && lastRow.thumbnail_url) {
+        const partial = !!(lastRow.thumbnails && lastRow.thumbnails.desktop)
+        if (partial) {
+          recordMetric('generation_result', { productId, outcome: 'partial' })
+          return { ...resultBase, status: 'partial', signature: lastRow?.thumbnail_signature || null }
+        }
       }
-      // Faltan variantes → invocar Edge
-      const gen = await this.generateThumbnail(mainImageUrl, productId, supplierId)
-      if (!gen.success) {
-        console.warn('⚠️ [_ensureMainThumbnails] Edge generate fail attempt', attempt, gen.error)
-      }
-      if (attempt < maxAttempts) {
-        setTimeout(() => this._ensureMainThumbnails(productId, supplierId, mainImageUrl, attempt + 1, maxAttempts), attempt * 700)
-      } else {
-        // Último intento: notificar parcial
-        this.dispatchProductImagesReady(productId, { thumbnailsPartial: true, attempt })
-      }
+      recordMetric('generation_result', { productId, outcome: 'failed' })
+      return { ...resultBase, status: 'failed' }
     } catch (err) {
-      if (attempt < maxAttempts) {
-        setTimeout(() => this._ensureMainThumbnails(productId, supplierId, mainImageUrl, attempt + 1, maxAttempts), attempt * 500)
-      }
+      recordMetric('generation_result', { productId, outcome: 'exception', error: err?.message })
+      return { ...resultBase, status: 'failed', error: err?.message }
     }
   }
 
