@@ -515,7 +515,7 @@ export class UploadService {
 
   this._dispatchPhase(productId, 'base_insert', { count: verifiedRows?.length || 0, mode: 'replace', mainUpdated: true })
 
-      if ((verifiedRows?.length || 0) > 0) {
+  if ((verifiedRows?.length || 0) > 0) {
         this._ensureMainThumbnails(productId, supplierId, verifiedRows[0].image_url)
           .then(result => {
             // Propagar posible staleDetected (si Edge enforcement aplicado) en evento final
@@ -525,6 +525,8 @@ export class UploadService {
             else this._dispatchPhase(productId, 'thumbnails_failed', result)
             if (['ready','partial'].includes(result.status)) {
               setTimeout(()=>this._autoRepairIf404(productId, supplierId), 1500)
+      // Iniciar grace period para cleanup (45s)
+      try { StorageCleanupService.markRecentGeneration(productId, 45000) } catch(_){}
             }
           })
           .catch(err => {
@@ -533,7 +535,7 @@ export class UploadService {
           })
       }
 
-      if (cleanup) {
+  if (cleanup) {
         // Opcional: retrasar cleanup hasta fase final si flag activo
         if (FeatureFlags.ENABLE_DELAYED_CLEANUP) {
           // Esperar a que fase final se emita (listener simple con timeout de seguridad)
@@ -554,11 +556,12 @@ export class UploadService {
             })
           }, 8000)
         } else {
+          // Programar cleanup tras grace period (45s + buffer)
           setTimeout(() => {
             StorageCleanupService.cleanupProductOrphans(productId).catch(err => {
-              recordMetric('cleanup_error', { productId, error: err?.message, immediate: true })
+              recordMetric('cleanup_error', { productId, error: err?.message, delayed: true })
             })
-          }, 50)
+          }, 46000)
         }
       }
 
@@ -658,6 +661,8 @@ export class UploadService {
             const thumbnailResult = await this.generateThumbnail(publicUrlData.publicUrl, productId, supplierId)
             if (thumbnailResult.success) {
               thumbnailUrl = thumbnailResult.thumbnailUrl
+      // Iniciar grace period porque se generarán variantes
+      try { StorageCleanupService.markRecentGeneration(productId, 45000) } catch(_){}
             }
           } catch (thumbnailError) {
             // Continue without thumbnail if generation fails

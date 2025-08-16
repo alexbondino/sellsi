@@ -12,6 +12,21 @@ import { supabase } from '../../../services/supabase.js';
 export class StorageCleanupService {
   static IMAGE_BUCKET = 'product-images';
   static THUMBNAIL_BUCKET = 'product-images-thumbnails';
+  // Mapa de producto -> timestamp (epoch ms) hasta el cual NO se debe ejecutar cleanup
+  static recentGenerationUntil = new Map();
+  static DEFAULT_GRACE_MS = 60000; // 60s por defecto
+
+  /**
+   * Marcar que un producto acaba de regenerar thumbnails; evita cleanup prematuro
+   * @param {string} productId
+   * @param {number} ms
+   */
+  static markRecentGeneration(productId, ms = this.DEFAULT_GRACE_MS) {
+    if (!productId) return;
+    const until = Date.now() + ms;
+    this.recentGenerationUntil.set(productId, until);
+    try { console.info('[StorageCleanupService] Grace period iniciado', { productId, until }); } catch(_){}
+  }
   
   /**
    * Verificar y limpiar archivos huérfanos de un producto específico
@@ -26,10 +41,22 @@ export class StorageCleanupService {
     };
 
     try {
+      // Guardar early si está dentro del grace period
+      const graceUntil = this.recentGenerationUntil.get(productId);
+      if (graceUntil && Date.now() < graceUntil) {
+        const remaining = graceUntil - Date.now();
+        try { console.info('[StorageCleanupService] Skip cleanup (grace period activo)', { productId, remaining }); } catch(_){}
+        // Reprogramar automáticamente después del periodo restante + pequeño buffer
+        setTimeout(() => {
+          this.cleanupProductOrphans(productId).catch(()=>{});
+        }, remaining + 500);
+        return results; // Nada limpiado (intencional)
+      }
       // 1. Obtener todas las URLs registradas en BD para este producto
+      // IMPORTANTE: incluir 'thumbnails' para no marcar como huérfanos los variants
       const { data: dbImages, error: dbError } = await supabase
         .from('product_images')
-        .select('image_url, thumbnail_url')
+        .select('image_url, thumbnail_url, thumbnails')
         .eq('product_id', productId);
 
       if (dbError) {
@@ -202,8 +229,8 @@ export class StorageCleanupService {
    */
   static identifyOrphanFiles(dbImages, storageFiles) {
     const dbUrls = new Set();
-    
-    // Extraer paths de URLs de BD
+
+    // Extraer paths de URLs de BD (image_url, thumbnail_url y cada variant en thumbnails JSON)
     dbImages.forEach(img => {
       if (img.image_url) {
         const path = this.extractPathFromUrl(img.image_url);
@@ -213,10 +240,41 @@ export class StorageCleanupService {
         const path = this.extractPathFromUrl(img.thumbnail_url);
         if (path) dbUrls.add(path);
       }
+      if (img.thumbnails && typeof img.thumbnails === 'object') {
+        try {
+          // thumbnails puede venir como objeto ya parseado o string JSON
+          const thumbObj = Array.isArray(img.thumbnails) ? img.thumbnails : (typeof img.thumbnails === 'string' ? JSON.parse(img.thumbnails) : img.thumbnails);
+          // Si es array, iteramos; si es objeto simple {variant:url,...}
+          if (Array.isArray(thumbObj)) {
+            thumbObj.forEach(entry => {
+              if (!entry) return;
+              Object.values(entry).forEach(url => {
+                const p = this.extractPathFromUrl(url);
+                if (p) dbUrls.add(p);
+              });
+            });
+          } else if (thumbObj && typeof thumbObj === 'object') {
+            Object.values(thumbObj).forEach(url => {
+              const p = this.extractPathFromUrl(url);
+              if (p) dbUrls.add(p);
+            });
+          }
+        } catch (e) {
+          // Ignorar parse errors
+        }
+      }
     });
 
     // Identificar archivos en storage que no están en BD
-    return storageFiles.filter(file => !dbUrls.has(file.path));
+    const orphans = storageFiles.filter(file => !dbUrls.has(file.path));
+
+    // Instrumentación: log de candidatos a eliminación (solo en debug)
+    if (orphans.length > 0) {
+      try {
+        console.warn('[StorageCleanupService] Archivos huérfanos detectados (previo a eliminación):', orphans.map(o => o.path));
+      } catch(_){}
+    }
+    return orphans;
   }
 
   /**
@@ -255,7 +313,7 @@ export class StorageCleanupService {
     const thumbFiles = orphanFiles.filter(f => f.bucket === this.THUMBNAIL_BUCKET);
 
     // Eliminar imágenes huérfanas
-    if (imageFiles.length > 0) {
+  if (imageFiles.length > 0) {
       try {
         const { error } = await supabase.storage
           .from(this.IMAGE_BUCKET)
@@ -265,6 +323,7 @@ export class StorageCleanupService {
           result.errors.push(`Error eliminando imágenes: ${error.message}`);
         } else {
           result.cleaned += imageFiles.length;
+      try { console.info('[StorageCleanupService] Eliminadas imágenes huérfanas:', imageFiles.map(f => f.path)); } catch(_){}
         }
       } catch (error) {
         result.errors.push(`Error eliminando imágenes: ${error.message}`);
@@ -272,7 +331,7 @@ export class StorageCleanupService {
     }
 
     // Eliminar thumbnails huérfanos
-    if (thumbFiles.length > 0) {
+  if (thumbFiles.length > 0) {
       try {
         const { error } = await supabase.storage
           .from(this.THUMBNAIL_BUCKET)
@@ -282,6 +341,7 @@ export class StorageCleanupService {
           result.errors.push(`Error eliminando thumbnails: ${error.message}`);
         } else {
           result.cleaned += thumbFiles.length;
+      try { console.info('[StorageCleanupService] Eliminados thumbnails huérfanos:', thumbFiles.map(f => f.path)); } catch(_){}
         }
       } catch (error) {
         result.errors.push(`Error eliminando thumbnails: ${error.message}`);

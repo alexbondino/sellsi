@@ -18,12 +18,36 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
-// 🚀 OPTIMIZACIÓN: Reducir logging masivo que consume BigQuery
-const DEBUG_MODE = Deno.env.get('DEBUG_MODE') === 'true'
-const log = DEBUG_MODE ? console.log : () => {}
-const logError = DEBUG_MODE ? console.error : () => {}
-// Logging casi nulo para reducir cuota: mantener sólo errores fatales fuera de thumbsLog.
-function thumbsLog(_event: string, _data: Record<string, unknown> = {}) { /* no-op */ }
+// Modo de logging
+const DEBUG_MODE = (Deno.env.get('DEBUG_MODE') || 'false') === 'true'
+// TRACE desactivado por defecto para evitar uso de cuota; activar con env THUMBS_TRACE='true' si necesitas trazas
+const TRACE_MODE = (Deno.env.get('THUMBS_TRACE') || 'false') === 'true'
+// Wrapper seguro
+function dbg(event: string, data: unknown = {}) {
+  if (TRACE_MODE) {
+    try { console.log('[THUMBS_TRACE]', event, JSON.stringify(safeJson(data))); } catch(_) {}
+  }
+}
+const log = DEBUG_MODE || TRACE_MODE ? console.log : () => {}
+const logError = DEBUG_MODE || TRACE_MODE ? console.error : () => {}
+// Logging de eventos sintéticos (mantener API previa)
+function thumbsLog(event: string, data: Record<string, unknown> = {}) { dbg(event, data) }
+
+function safeJson(value: unknown): unknown {
+  if (!value) return value;
+  if (Array.isArray(value)) return value.map(v=>safeJson(v));
+  if (typeof value === 'object') {
+    const out: Record<string, unknown> = {}
+    for (const [k,v] of Object.entries(value as Record<string, unknown>)) {
+      if (typeof v === 'object' && v !== null) {
+        if (v instanceof Uint8Array) out[k] = { type: 'Uint8Array', length: v.length }
+        else out[k] = safeJson(v)
+      } else out[k] = v
+    }
+    return out
+  }
+  return value
+}
 
 // Feature flags (edge)
 const ENABLE_SIGNATURE_COLUMN = (Deno.env.get('ENABLE_SIGNATURE_COLUMN') || 'true') === 'true';
@@ -78,48 +102,59 @@ async function getImageModule() {
   return _imageModulePromise;
 }
 
-// Función: ignora WebP, aplana PNG/JPEG con transparencia sobre fondo blanco
-async function createThumbnailFromOriginal(imageBuffer: ArrayBuffer, width: number, height: number): Promise<Uint8Array> {
+// Genera una sola variante (decode individual) evitando upscale severo y aplanando alpha.
+async function createThumbnailFromOriginal(imageBuffer: ArrayBuffer, width: number, height: number, variantKey: string, trace: any): Promise<Uint8Array> {
+  const t0 = Date.now();
   const imageType = detectImageType(imageBuffer);
   if (imageType === 'webp') throw new Error('WEBP_NOT_ALLOWED');
   const { Image } = await getImageModule();
   let originalImage: any;
   try {
     originalImage = await Image.decode(new Uint8Array(imageBuffer));
+    trace.steps.push({ step: 'decode_ok', variant: variantKey, ms: Date.now()-t0, origW: originalImage.width, origH: originalImage.height })
   } catch (e) {
-    thumbsLog('DECODE_FAIL', { message: (e as any)?.message?.slice(0,200) || 'decode_error' });
+    console.error('[THUMBS] DECODE_FAIL', (e as any)?.message || 'decode_error');
+    trace.steps.push({ step: 'decode_fail', variant: variantKey, ms: Date.now()-t0, error: (e as any)?.message })
     throw e;
   }
-  const aspectRatio = originalImage.width / originalImage.height;
-  const targetAspectRatio = width / height;
-  let newWidth = width;
-  let newHeight = height;
-  if (aspectRatio > targetAspectRatio) {
-    newHeight = height;
-    newWidth = Math.round(height * aspectRatio);
-  } else {
-    newWidth = width;
-    newHeight = Math.round(width / aspectRatio);
+  const origW = originalImage.width;
+  const origH = originalImage.height;
+  let workImage = originalImage;
+  if (origW > width || origH > height) {
+    const scale = Math.min(width / origW, height / origH);
+    const newW = Math.max(1, Math.round(origW * scale));
+    const newH = Math.max(1, Math.round(origH * scale));
+    workImage = originalImage.resize(newW, newH);
+    trace.steps.push({ step: 'resize', variant: variantKey, targetW: newW, targetH: newH })
   }
-  let resizedImage = originalImage.resize(newWidth, newHeight);
-  if (newWidth > width || newHeight > height) {
-    const cropX = Math.max(0, Math.floor((newWidth - width) / 2));
-    const cropY = Math.max(0, Math.floor((newHeight - height) / 2));
-    resizedImage = resizedImage.crop(cropX, cropY, width, height);
+  if (workImage.hasAlpha) {
+    const flattened = new Image(workImage.width, workImage.height);
+    flattened.fill(0xffffffff);
+    try { flattened.draw(workImage, 0, 0); } catch(_) {}
+    workImage = flattened;
+    trace.steps.push({ step: 'alpha_flatten', variant: variantKey })
   }
-  // Aplanar si tiene alpha
-  if (resizedImage.hasAlpha) {
-    const flattened = new Image(width, height);
-    flattened.fill(0xffffffff); // blanco
-    flattened.draw(resizedImage, 0, 0);
-    resizedImage = flattened;
+  if (workImage.width !== width || workImage.height !== height) {
+    try {
+      const canvas = new Image(width, height);
+      canvas.fill(0xffffffff);
+      const offX = Math.floor((width - workImage.width)/2);
+      const offY = Math.floor((height - workImage.height)/2);
+      try { canvas.draw(workImage, offX, offY); workImage = canvas; } catch(_) {}
+      trace.steps.push({ step: 'canvas_center', variant: variantKey, finalW: width, finalH: height })
+    } catch(_) { /* si falla canvas dejamos workImage tal cual */ }
   }
-  if (resizedImage.width !== width || resizedImage.height !== height) {
-    const blank = new Image(width, height);
-    blank.fill(0xffffffff);
-    resizedImage = blank;
-  }
-  return await resizedImage.encode(80);
+  try { // encodeJPEG preferido
+    // @ts-ignore
+    if (typeof workImage.encodeJPEG === 'function') {
+      const encoded = await workImage.encodeJPEG(90);
+      trace.steps.push({ step: 'encode_jpeg', variant: variantKey, bytes: encoded.length });
+      return encoded;
+    }
+  } catch(_) {}
+  const encoded = await workImage.encode(90);
+  trace.steps.push({ step: 'encode_generic', variant: variantKey, bytes: encoded.length });
+  return encoded;
 }
 
 serve((req) => withMetrics('generate-thumbnail', req, async () => {
@@ -137,8 +172,10 @@ serve((req) => withMetrics('generate-thumbnail', req, async () => {
       });
     }
 
-    const requestBody = await req.json();
+  const requestBody = await req.json();
+  const trace: any = { startedAt: Date.now(), steps: [], productId: requestBody?.productId, supplierId: requestBody?.supplierId };
   const { imageUrl, productId, supplierId, force } = requestBody;
+  dbg('REQUEST_BODY', safeJson({ productId, supplierId, force, hasImageUrl: !!imageUrl }));
   thumbsLog('REQ_BODY', { productId, supplierId, hasImageUrl: !!imageUrl, force: !!force });
 
   if (!imageUrl || !productId || !supplierId) {
@@ -172,12 +209,13 @@ serve((req) => withMetrics('generate-thumbnail', req, async () => {
     const dbClient = supabaseSr || supabasePublic!;
 
     // ✅ Validar existencia de imagen principal e idempotencia ANTES de hacer fetch pesado
-    const { data: mainImage, error: mainImageError } = await dbClient
+  const { data: mainImage, error: mainImageError } = await dbClient
       .from('product_images')
       .select('id, thumbnails, thumbnail_url, image_url, thumbnail_signature, updated_at')
       .eq('product_id', productId)
       .eq('image_order', 0)
       .single();
+  trace.steps.push({ step: 'fetch_main_row', success: !mainImageError, hasRow: !!mainImage, thumbnailsKeys: mainImage ? Object.keys(mainImage.thumbnails||{}) : [] });
 
     if (mainImageError || !mainImage) {
       return new Response(JSON.stringify({ error: 'Imagen principal no encontrada para este producto' }), {
@@ -213,7 +251,8 @@ serve((req) => withMetrics('generate-thumbnail', req, async () => {
       } catch (_) {}
     }
 
-  if (!force && allVariantsExist && (!signatureMismatch || !ENABLE_SIGNATURE_ENFORCE || cooldownActive)) {
+    if (!force && allVariantsExist && (!signatureMismatch || !ENABLE_SIGNATURE_ENFORCE || cooldownActive)) {
+      trace.steps.push({ step: 'idempotent_exit', allVariantsExist, signatureMismatch, cooldownActive });
       return new Response(JSON.stringify({
         success: true,
         status: 'ok',
@@ -294,42 +333,39 @@ serve((req) => withMetrics('generate-thumbnail', req, async () => {
         });
       }
 
-      // Generate thumbnails (per-variant error resilience)
+      // Generate thumbnails (parallel decode per variant)
       const variantDefs = [
         { key: 'minithumb', w: 40, h: 40 },
         { key: 'mobile', w: 190, h: 153 },
         { key: 'tablet', w: 300, h: 230 },
         { key: 'desktop', w: 320, h: 260 },
       ] as const;
-
-  const generationResults = await Promise.allSettled(
-        variantDefs.map(v => createThumbnailFromOriginal(imageBuffer, v.w, v.h)
-          .then(data => ({ variant: v.key, data }))
-        )
+      const generationResults = await Promise.allSettled(
+        variantDefs.map(v => {
+          trace.steps.push({ step: 'variant_generate_start', variant: v.key, target: `${v.w}x${v.h}` })
+          return createThumbnailFromOriginal(imageBuffer, v.w, v.h, v.key, trace).then(data => ({ variant: v.key, data }))
+        })
       );
-
+      trace.steps.push({ step: 'variants_generation_complete' });
       const genMap: Record<string, Uint8Array | null> = { minithumb: null, mobile: null, tablet: null, desktop: null };
-      let generationErrors: Array<{ variant: string; error: string }> = [];
+      const generationErrors: Array<{ variant: string; error: string }> = [];
       generationResults.forEach(r => {
-        if (r.status === 'fulfilled') {
-          genMap[r.value.variant] = r.value.data;
-        } else {
-          const message = (r.reason && (r.reason.message || String(r.reason))) || 'unknown_generation_error';
-          generationErrors.push({ variant: (r as any)?.reason?.variant || 'unknown', error: message });
-        }
+        if (r.status === 'fulfilled') genMap[r.value.variant] = r.value.data;
+        else generationErrors.push({ variant: (r as any)?.value?.variant || 'unknown', error: (r as any)?.reason?.message || 'generation_failed' });
       });
-  thumbsLog('GEN_VARIANTS_RESULT', { productId, errors: generationErrors, ok: variantDefs.map(v=>({v:v.key, present: !!genMap[v.key]})) });
+      // Logging reducido: usar dbg() para TRACE_MODE
+      try {
+        const sizeOf = (arr: Uint8Array|null) => arr ? arr.length : 0;
+        dbg('VARIANT_BYTES', { productId, variants: variantDefs.map(v=>({ key: v.key, size: sizeOf(genMap[v.key]) })) });
+      } catch(_) {}
+      if (generationErrors.length) console.error('[THUMBS] GEN_VARIANTS_RESULT', { productId, errors: generationErrors });
       const minithumb = genMap.minithumb;
       const mobileThumb = genMap.mobile;
       const tabletThumb = genMap.tablet;
       const desktopThumb = genMap.desktop;
       if (!desktopThumb && !mobileThumb && !tabletThumb && !minithumb) {
-        thumbsLog('ALL_VARIANTS_FAILED', { productId, generationErrors });
-        return new Response(JSON.stringify({
-          success: false,
-          error: 'NO_VARIANTS_GENERATED',
-          variantErrors: generationErrors
-        }), {
+        console.error('[THUMBS] ALL_VARIANTS_FAILED', { productId, generationErrors });
+        return new Response(JSON.stringify({ success: false, error: 'NO_VARIANTS_GENERATED', variantErrors: generationErrors }), {
           status: 422,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         });
@@ -366,7 +402,10 @@ serve((req) => withMetrics('generate-thumbnail', req, async () => {
         const { data: buckets } = await supabaseSr.storage.listBuckets();
         const exists = buckets?.some(b => b.name === bucketName);
         if (!exists) {
-          try { await supabaseSr.storage.createBucket(bucketName, { public: true, allowedMimeTypes: ['image/jpeg'], fileSizeLimit: '2097152' }); } catch(_) {}
+          try { await supabaseSr.storage.createBucket(bucketName, { public: true, allowedMimeTypes: ['image/jpeg','image/png'], fileSizeLimit: '2097152' }); } catch(_) {}
+        } else {
+          // Intentar ampliar allowedMimeTypes si estaba restringido solo a jpeg
+          try { await supabaseSr.storage.updateBucket(bucketName, { public: true, allowedMimeTypes: ['image/jpeg','image/png'], fileSizeLimit: '2097152' }); } catch(_) {}
         }
       }
     } catch (be) {
@@ -380,7 +419,13 @@ serve((req) => withMetrics('generate-thumbnail', req, async () => {
       { key: 'desktop', data: desktopThumb, path: variantPaths.desktop },
     ];
     const uploadPromises = uploadVariants.map(async v => {
+      if (!v.data) {
+        trace.steps.push({ step: 'upload_skip', variant: v.key, reason: 'no_data' })
+        return { variant: v.key, path: v.path, error: new Error('no_data') };
+      }
+      const upStart = Date.now();
       try {
+        trace.steps.push({ step: 'upload_attempt', variant: v.key, path: v.path, bytes: v.data.length });
         const res = await (supabaseSr || supabasePublic!).storage
           .from('product-images-thumbnails')
           .upload(v.path, v.data, {
@@ -388,18 +433,32 @@ serve((req) => withMetrics('generate-thumbnail', req, async () => {
             cacheControl: '31536000',
             upsert: true
           });
+        trace.steps.push({ step: 'upload_result', variant: v.key, ms: Date.now()-upStart, error: res.error ? (res.error.message||'err') : null });
         return { variant: v.key, path: v.path, error: res.error };
       } catch (e) {
+        trace.steps.push({ step: 'upload_throw', variant: v.key, ms: Date.now()-upStart, error: (e as any)?.message });
         return { variant: v.key, path: v.path, error: e };
       }
     });
 
-    const uploadResults = await Promise.all(uploadPromises);
-    const variantStatuses = uploadResults.map(r => ({
+  const uploadResults = await Promise.all(uploadPromises);
+  try { dbg('UPLOAD_RESULTS', { productId, results: uploadResults.map(r=>({ variant: r.variant, ok: !r.error })) }); } catch(_) {}
+    // Verificación HEAD de existencia real (puede detectar casos donde getPublicUrl construye URL aunque el objeto no exista)
+    async function headOk(url: string): Promise<boolean> {
+      const controller = new AbortController();
+      const to = setTimeout(()=>controller.abort(), 5000);
+      try {
+        const resp = await fetch(url, { method: 'HEAD', signal: controller.signal });
+        clearTimeout(to);
+        return resp.status >= 200 && resp.status < 400;
+      } catch(_) { clearTimeout(to); return false; }
+    }
+  const variantStatuses = uploadResults.map(r => ({
       variant: r.variant,
       ok: !r.error || /exists/i.test(r.error.message || ''),
       error: r.error ? (r.error.message || 'unknown_error') : null
     }));
+  trace.steps.push({ step: 'upload_statuses', statuses: variantStatuses });
     const hardErrors = variantStatuses.filter(v => !v.ok && v.error && !/exists/i.test(v.error));
     const successfulVariants = new Set(variantStatuses.filter(v => v.ok).map(v => v.variant));
     const partial = successfulVariants.size < uploadResults.length;
@@ -427,12 +486,73 @@ serve((req) => withMetrics('generate-thumbnail', req, async () => {
   const tabletUrl = successfulVariants.has('tablet') ? buildUrl('tablet') : null;
   const desktopUrl = successfulVariants.has('desktop') ? buildUrl('desktop') : null;
 
+    // HEAD verification pass (solo para variantes marcadas como exitosas)
+    const urlsToVerify: Array<{key: string; url: string}> = [];
+    if (minithumbUrl) urlsToVerify.push({ key: 'minithumb', url: minithumbUrl });
+    if (mobileUrl) urlsToVerify.push({ key: 'mobile', url: mobileUrl });
+    if (tabletUrl) urlsToVerify.push({ key: 'tablet', url: tabletUrl });
+    if (desktopUrl) urlsToVerify.push({ key: 'desktop', url: desktopUrl });
+  const existenceChecks = await Promise.all(urlsToVerify.map(async v => ({ key: v.key, ok: await headOk(v.url) })));
+  try { dbg('HEAD_CHECK', { productId, checks: existenceChecks.map(c=>({ key: c.key, ok: c.ok })) }); } catch(_) {}
+  trace.steps.push({ step: 'head_check', checks: existenceChecks });
+    const missingAfterHead = existenceChecks.filter(e => !e.ok).map(e => e.key);
+    if (missingAfterHead.length) {
+      console.warn('[THUMBS] HEAD_MISSING_VARIANTS', { productId, missingAfterHead });
+      // Reintento secuencial de re-upload para las variantes faltantes
+      for (const miss of missingAfterHead) {
+        const variantObj = uploadVariants.find(v => v.key === miss);
+        if (variantObj && variantObj.data) {
+          try {
+            const reRes = await (supabaseSr || supabasePublic!).storage
+              .from('product-images-thumbnails')
+              .upload(variantObj.path, variantObj.data, {
+                contentType: 'image/jpeg',
+                cacheControl: '31536000',
+                upsert: true
+              });
+            dbg('REUPLOAD_ATTEMPT', { productId, variant: miss, ok: !reRes.error });
+            trace.steps.push({ step: 'reupload_attempt', variant: miss, error: reRes.error ? (reRes.error.message||'err') : null });
+          } catch(reUpErr) {
+            console.error('[THUMBS] REUPLOAD_EXCEPTION', { productId, variant: miss, error: (reUpErr as any)?.message });
+            trace.steps.push({ step: 'reupload_exception', variant: miss, error: (reUpErr as any)?.message });
+          }
+        }
+      }
+      // Segunda verificación
+  const secondChecks = await Promise.all(urlsToVerify.map(async v => ({ key: v.key, ok: await headOk(v.url) })));
+  try { dbg('HEAD_RECHECK', { productId, checks: secondChecks.map(c=>({ key: c.key, ok: c.ok })) }); } catch(_) {}
+      trace.steps.push({ step: 'head_recheck', checks: secondChecks });
+      const stillMissing = secondChecks.filter(e => !e.ok).map(e => e.key);
+      if (stillMissing.length) {
+        console.error('[THUMBS] VARIANTS_STILL_MISSING', { productId, stillMissing });
+        trace.steps.push({ step: 'variants_still_missing', variants: stillMissing });
+        // Remover de successfulVariants para que no se persistan claves vacías que no existen realmente
+        stillMissing.forEach(k => successfulVariants.delete(k));
+      }
+    }
+
+    // Listar contenidos reales del path (si tenemos service role) para observar qué existe inmediatamente
+    if (supabaseSr) {
+      try {
+        const folderPath = `${supplierId}/${productId}`;
+        const { data: listed, error: listErr } = await supabaseSr.storage.from('product-images-thumbnails').list(folderPath, { limit: 50 });
+        if (!listErr) {
+          trace.steps.push({ step: 'storage_list', files: (listed||[]).map(f=>({ name: f.name, size: f.metadata?.size||null })) });
+          dbg('STORAGE_LIST', { productId, files: listed?.map(f=>f.name) });
+        } else {
+          trace.steps.push({ step: 'storage_list_error', error: listErr.message });
+        }
+      } catch (lx) {
+        trace.steps.push({ step: 'storage_list_exception', error: (lx as any)?.message });
+      }
+    }
+
     // Update principal (image_order=0). En observación: sólo seteamos signature si no existía o coincide.
     const thumbnailsPayload: Record<string,string> = {};
-    if (minithumbUrl) thumbnailsPayload.minithumb = minithumbUrl;
-    if (mobileUrl) thumbnailsPayload.mobile = mobileUrl;
-    if (tabletUrl) thumbnailsPayload.tablet = tabletUrl;
-    if (desktopUrl) thumbnailsPayload.desktop = desktopUrl;
+  if (minithumbUrl && successfulVariants.has('minithumb')) thumbnailsPayload.minithumb = minithumbUrl;
+  if (mobileUrl && successfulVariants.has('mobile')) thumbnailsPayload.mobile = mobileUrl;
+  if (tabletUrl && successfulVariants.has('tablet')) thumbnailsPayload.tablet = tabletUrl;
+  if (desktopUrl && successfulVariants.has('desktop')) thumbnailsPayload.desktop = desktopUrl;
     const primaryThumbnail = desktopUrl || tabletUrl || mobileUrl || minithumbUrl || null;
     const updatePayload: Record<string, unknown> = {
       thumbnails: thumbnailsPayload,
@@ -452,12 +572,59 @@ serve((req) => withMetrics('generate-thumbnail', req, async () => {
       .update(updatePayload)
       .eq('product_id', productId)
       .eq('image_order', 0);
+    trace.steps.push({ step: 'db_update', error: dbUpdateError ? dbUpdateError.message : null, payloadKeys: Object.keys(thumbnailsPayload) });
 
     if (dbUpdateError) {
       logError("❌ Error updating thumbnails in DB:", dbUpdateError);
       // Optionally, you can return an error here or just log it and continue
       if (jobTrackingEnabled) {
         try { await dbClient.rpc('mark_thumbnail_job_error', { p_product_id: productId, p_error: dbUpdateError.message }); } catch(_) {}
+      }
+    }
+
+    // Post-verificación: reconsultar fila y validar que las claves se guardaron
+    let storedThumbnails: any = null;
+    let storedPrimary: string | null = null;
+    if (!dbUpdateError) {
+      try {
+        const { data: verifyRow, error: verifyErr } = await dbClient
+          .from('product_images')
+          .select('thumbnails, thumbnail_url, image_url, updated_at')
+          .eq('product_id', productId)
+          .eq('image_order', 0)
+          .single();
+        if (!verifyErr && verifyRow) {
+          storedThumbnails = verifyRow.thumbnails;
+          storedPrimary = verifyRow.thumbnail_url;
+          const storedKeys = storedThumbnails ? Object.keys(storedThumbnails) : [];
+          const expectedKeys = Object.keys(thumbnailsPayload);
+          const missing = expectedKeys.filter(k => !storedKeys.includes(k));
+          dbg('DB_VERIFY', { productId, storedKeys, expectedKeys, missing });
+          trace.steps.push({ step: 'db_verify', storedKeys, expectedKeys, missing });
+          // Intento correctivo si faltan claves generadas
+          if (missing.length > 0) {
+            const merged = { ...(storedThumbnails||{}), ...thumbnailsPayload };
+            try {
+              const { error: retryErr } = await dbClient
+                .from('product_images')
+                .update({ thumbnails: merged, thumbnail_url: primaryThumbnail })
+                .eq('product_id', productId)
+                .eq('image_order', 0);
+              dbg('DB_RETRY', { productId, retryError: retryErr ? retryErr.message : null });
+              trace.steps.push({ step: 'db_retry', error: retryErr ? retryErr.message : null });
+              if (!retryErr) storedThumbnails = merged;
+            } catch(retryEx) {
+              console.error('[THUMBS] DB_RETRY_EXCEPTION', { productId, err: (retryEx as any)?.message });
+              trace.steps.push({ step: 'db_retry_exception', error: (retryEx as any)?.message });
+            }
+          }
+        } else {
+          console.warn('[THUMBS] DB_VERIFY_FAIL', { productId, error: verifyErr?.message });
+          trace.steps.push({ step: 'db_verify_fail', error: verifyErr?.message });
+        }
+      } catch (verEx) {
+        console.error('[THUMBS] DB_VERIFY_EXCEPTION', { productId, err: (verEx as any)?.message });
+        trace.steps.push({ step: 'db_verify_exception', error: (verEx as any)?.message });
       }
     }
 
@@ -481,14 +648,17 @@ serve((req) => withMetrics('generate-thumbnail', req, async () => {
   failedVariants: variantStatuses.filter(v=>!v.ok).map(v=>({ variant: v.variant, error: v.error })),
       originalSize: imageBuffer.byteLength,
       generatedAt: new Date().toISOString(),
-      clientMode: serviceRoleKey ? 'service_role' : 'anon',
-      previousSignature,
-      candidateSignature,
-      signatureApplied: !!updatePayload.thumbnail_signature,
+  clientMode: serviceRoleKey ? 'service_role' : 'anon',
+  previousSignature,
+  candidateSignature,
+  signatureApplied: !!updatePayload.thumbnail_signature,
   staleDetected: !!(previousSignature && candidateSignature && previousSignature !== candidateSignature),
   enforcement: ENABLE_SIGNATURE_ENFORCE,
   cooldownActive: false,
-  forced: !!force
+  forced: !!force,
+  storedThumbnailsKeys: storedThumbnails ? Object.keys(storedThumbnails) : null,
+  storedPrimaryThumbnail: storedPrimary || null,
+      trace: { durationMs: Date.now()-trace.startedAt, steps: trace.steps }
     };
 
   thumbsLog('GEN_SUCCESS_RESPONSE', { productId, partial: response.partial, variants: response.generatedVariants, failed: response.failedVariants });

@@ -39,21 +39,26 @@ const useSupplierProductsBase = create((set, get) => ({
   loadProducts: async (supplierId) => {
     set({ loading: true, error: null })
 
-    try {      const { data: products, error: prodError } = await supabase
-        .from('products')
-        .select('*, product_images(*), product_quantity_ranges(*), product_delivery_regions(*)')
+  try {      const { data: products, error: prodError } = await supabase
+    .from('products')
+    .select('*, product_images(image_url,thumbnail_url,thumbnails,image_order), product_quantity_ranges(*), product_delivery_regions(*)')
         .eq('supplier_id', supplierId)
         .order('updateddt', { ascending: false })
 
       if (prodError) throw prodError      // Procesar productos para incluir tramos de precio y regiones de despacho
       const processedProducts =
-        products?.map((product) => ({
-          ...product,
-          priceTiers: product.product_quantity_ranges || [],
-          // Ensure images are ordered by image_order so UI shows the main image first
-          images: (product.product_images || []).slice().sort((a, b) => (a.image_order || 0) - (b.image_order || 0)),
-          delivery_regions: product.product_delivery_regions || [],
-        })) || []
+        products?.map((product) => {
+          const images = (product.product_images || []).slice().sort((a, b) => (a.image_order || 0) - (b.image_order || 0))
+          const main = images.find(img => (img.image_order||0) === 0)
+          return {
+            ...product,
+            priceTiers: product.product_quantity_ranges || [],
+            images,
+            delivery_regions: product.product_delivery_regions || [],
+            thumbnails: main?.thumbnails || null,
+            thumbnail_url: main?.thumbnail_url || product.thumbnail_url || null,
+          }
+        }) || []
 
       set((state) => ({
         products: processedProducts,
@@ -835,3 +840,29 @@ const useSupplierProductsBase = create((set, get) => ({
 }))
 
 export default useSupplierProductsBase
+
+// Listener global para hidratar thumbnails en este store también
+let __BASE_THUMBS_LISTENER_ATTACHED = false;
+try {
+  if (typeof window !== 'undefined' && !__BASE_THUMBS_LISTENER_ATTACHED) {
+    window.addEventListener('productImagesReady', async (ev) => {
+      try {
+        const detail = ev?.detail;
+        if (!detail || !detail.productId) return;
+        if (detail.phase && !/^thumbnails_/.test(detail.phase)) return;
+        const productId = detail.productId;
+        const { data, error } = await supabase
+          .from('product_images')
+          .select('thumbnails, thumbnail_url')
+          .eq('product_id', productId)
+          .eq('image_order', 0)
+          .single();
+        if (error || !data || !data.thumbnails) return;
+        useSupplierProductsBase.setState((state) => ({
+          products: state.products.map(p => p.productid === productId ? { ...p, thumbnails: data.thumbnails, thumbnail_url: data.thumbnail_url } : p)
+        }));
+      } catch (_) { /* noop */ }
+    });
+    __BASE_THUMBS_LISTENER_ATTACHED = true;
+  }
+} catch (_) { /* noop */ }

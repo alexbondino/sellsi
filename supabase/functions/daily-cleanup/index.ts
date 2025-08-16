@@ -271,20 +271,44 @@ async function performRobustCleanup(options: CleanupRequestBody): Promise<Cleanu
     console.log(`📊 Archivos encontrados - Imágenes: ${imageFiles.length}, Thumbnails: ${thumbnailFiles.length}`)
     
     // 3. Obtener todas las referencias de BD
+    // INCLUYE thumbnails JSON para no marcar variantes válidas como huérfanas.
+    // Antes sólo se consultaban image_url y thumbnail_url, lo que causaba que las
+    // variantes (mobile/tablet/minithumb) guardadas únicamente dentro de thumbnails
+    // fueran tratadas como orphans y se insertaran en image_orphan_candidates.
     const { data: dbImages } = await supabase
       .from('product_images')
-      .select('product_id, image_url, thumbnail_url')
+      .select('product_id, image_url, thumbnail_url, thumbnails')
       .in('product_id', productIds)
     
     const dbUrls = new Set<string>()
     dbImages?.forEach(img => {
+      // Imagen original principal
       if (img.image_url) {
-        const path = extractPathFromUrl(img.image_url)
-        if (path) dbUrls.add(path)
+        const p = extractPathFromUrl(img.image_url)
+        if (p) dbUrls.add(p)
       }
+      // Variante primaria (desktop u otra) almacenada en thumbnail_url
       if (img.thumbnail_url) {
-        const path = extractPathFromUrl(img.thumbnail_url)
-        if (path) dbUrls.add(path)
+        const p = extractPathFromUrl(img.thumbnail_url)
+        if (p) dbUrls.add(p)
+      }
+      // TODAS las variantes dentro del objeto thumbnails
+      if (img.thumbnails) {
+        try {
+          // thumbnails puede ser objeto ya parseado o string JSON; manejar ambos
+          let thumbsObj: any = img.thumbnails;
+          if (typeof thumbsObj === 'string') {
+            try { thumbsObj = JSON.parse(thumbsObj); } catch(_) { thumbsObj = null; }
+          }
+          if (thumbsObj && typeof thumbsObj === 'object') {
+            Object.values(thumbsObj).forEach(val => {
+              if (typeof val === 'string' && val) {
+                const p = extractPathFromUrl(val)
+                if (p) dbUrls.add(p)
+              }
+            })
+          }
+        } catch (_) { /* noop */ }
       }
     })
     

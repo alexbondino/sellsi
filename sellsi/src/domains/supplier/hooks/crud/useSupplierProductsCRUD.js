@@ -41,7 +41,7 @@ const useSupplierProductsCRUD = create((set, get) => ({
         .from('products')
         .select(`
           *, 
-          product_images(image_url, thumbnail_url, thumbnails).order(image_order.asc), 
+          product_images(image_url, thumbnail_url, thumbnails, image_order).order(image_order.asc), 
           product_quantity_ranges(*), 
           product_delivery_regions(*)
         `)
@@ -55,12 +55,19 @@ const useSupplierProductsCRUD = create((set, get) => ({
 
       // Procesar productos para incluir relaciones
       const processedProducts =
-        products?.map((product) => ({
-          ...product,
-          priceTiers: product.product_quantity_ranges || [],
-          images: product.product_images || [],
-          delivery_regions: product.product_delivery_regions || [],
-        })) || []
+        products?.map((product) => {
+          const images = (product.product_images || []).slice().sort((a,b)=>(a.image_order||0)-(b.image_order||0))
+          const main = images.find(img => (img.image_order||0) === 0)
+          return {
+            ...product,
+            priceTiers: product.product_quantity_ranges || [],
+            images,
+            delivery_regions: product.product_delivery_regions || [],
+            // Exponer thumbnails en nivel superior para hooks que esperan product.thumbnails
+            thumbnails: main?.thumbnails || null,
+            thumbnail_url: main?.thumbnail_url || product.thumbnail_url || null,
+          }
+        }) || []
 
       // Fallback: si TODOS los priceTiers están vacíos, intentar recuperar en un query separado (posible fallo de relación / RLS)
       const allEmpty = processedProducts.length > 0 && processedProducts.every(p => !p.priceTiers || p.priceTiers.length === 0)
@@ -320,7 +327,7 @@ const useSupplierProductsCRUD = create((set, get) => ({
         .from('products')
         .select(`
           *, 
-          product_images(image_url, thumbnail_url, thumbnails).order(image_order.asc), 
+          product_images(image_url, thumbnail_url, thumbnails, image_order).order(image_order.asc), 
           product_quantity_ranges(*), 
           product_delivery_regions(*)
         `)
@@ -331,11 +338,15 @@ const useSupplierProductsCRUD = create((set, get) => ({
 
       
 
+      const images = (product.product_images || []).slice().sort((a,b)=>(a.image_order||0)-(b.image_order||0))
+      const main = images.find(img => (img.image_order||0) === 0)
       const processedProduct = {
         ...product,
         priceTiers: product.product_quantity_ranges || [],
-        images: product.product_images || [],
+        images,
         delivery_regions: product.product_delivery_regions || [],
+        thumbnails: main?.thumbnails || null,
+        thumbnail_url: main?.thumbnail_url || product.thumbnail_url || null,
       }
 
       set((state) => {
@@ -358,3 +369,30 @@ const useSupplierProductsCRUD = create((set, get) => ({
 }))
 
 export default useSupplierProductsCRUD
+
+// Listener global para actualizar thumbnails tras edge function sin recargar lista completa
+let __CRUD_THUMBS_LISTENER_ATTACHED = false;
+try {
+  if (typeof window !== 'undefined' && !__CRUD_THUMBS_LISTENER_ATTACHED) {
+    window.addEventListener('productImagesReady', async (ev) => {
+      try {
+        const detail = ev?.detail;
+        if (!detail || !detail.productId) return;
+        // Si viene phase y NO es de thumbnails finales, ignorar. Si no hay phase (legacy), continuar.
+        if (detail.phase && !/^thumbnails_/.test(detail.phase)) return;
+        const productId = detail.productId;
+        const { data, error } = await supabase
+          .from('product_images')
+          .select('thumbnails, thumbnail_url')
+          .eq('product_id', productId)
+          .eq('image_order', 0)
+          .single();
+        if (error || !data || !data.thumbnails) return;
+        useSupplierProductsCRUD.setState((state) => ({
+          products: state.products.map(p => p.productid === productId ? { ...p, thumbnails: data.thumbnails, thumbnail_url: data.thumbnail_url } : p)
+        }));
+      } catch (_) { /* noop */ }
+    });
+    __CRUD_THUMBS_LISTENER_ATTACHED = true;
+  }
+} catch (_) { /* noop */ }
