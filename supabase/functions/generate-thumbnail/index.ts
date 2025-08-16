@@ -44,73 +44,43 @@ function detectImageType(buffer: ArrayBuffer): string {
   return 'unknown';
 }
 
-// Función para redimensionar imágenes usando una librería compatible con Edge Runtime
+// Función: ignora WebP, aplana PNG/JPEG con transparencia sobre fondo blanco
 async function createThumbnailFromOriginal(imageBuffer: ArrayBuffer, width: number, height: number): Promise<Uint8Array> {
-  try {
-    // Detectar el tipo de imagen
-    const imageType = detectImageType(imageBuffer);
-    const { Image } = await import("https://deno.land/x/imagescript@1.2.15/mod.ts");
-    let originalImage;
-    try {
-      originalImage = await Image.decode(new Uint8Array(imageBuffer));
-    } catch (decodeError) {
-      // Si es WebP transparente no soportado, sugerir conversión previa a PNG
-      if (imageType === 'webp') {
-        logError('❌ WebP transparente no soportado. Se recomienda convertir a PNG antes de subir.');
-      }
-      throw decodeError;
-    }
-
-    // Si la imagen es WebP, abortar el pipeline y no generar thumbnails
-    if (imageType === 'webp') {
-      throw new Error('No se permiten imágenes WebP.');
-    }
-    // Si la imagen NO es WebP y tiene transparencia, lanzar error para abortar el pipeline
-    if (originalImage.hasAlpha) {
-      throw new Error('No se permiten imágenes con transparencia.');
-    }
-
-    // Calcular nuevas dimensiones manteniendo proporciones
-    const aspectRatio = originalImage.width / originalImage.height;
-    const targetAspectRatio = width / height;
-    let newWidth = width;
-    let newHeight = height;
-    if (aspectRatio > targetAspectRatio) {
-      newHeight = height;
-      newWidth = Math.round(height * aspectRatio);
-    } else {
-      newWidth = width;
-      newHeight = Math.round(width / aspectRatio);
-    }
-    // Redimensionar la imagen
-    const resizedImage = originalImage.resize(newWidth, newHeight);
-    // Si la imagen redimensionada es más grande que el target, hacer crop centrado
-    let finalImage = resizedImage;
-    if (newWidth > width || newHeight > height) {
-      const cropX = Math.max(0, Math.floor((newWidth - width) / 2));
-      const cropY = Math.max(0, Math.floor((newHeight - height) / 2));
-      finalImage = resizedImage.crop(cropX, cropY, width, height);
-    }
-    // Validar tamaño final
-    if (finalImage.width !== width || finalImage.height !== height) {
-      logError(`❌ Thumbnail size incorrect (${finalImage.width}x${finalImage.height}), forzando fondo blanco ${width}x${height}`);
-      const blank = new Image(width, height);
-      blank.fill(0xffffffff);
-      finalImage = blank;
-    }
-    // Codificar como JPEG con calidad 80% (todos los thumbnails serán JPEG para consistencia)
-    const thumbnailData = await finalImage.encode(80);
-    return thumbnailData;
-  } catch (error) {
-    logError(`❌ Error creating thumbnail ${width}x${height}:`, error);
-    logError('Error details:', error.message);
-    logError('Error stack:', error.stack);
-    // Fallback: retornar thumbnail blanco del tamaño correcto
-    const { Image } = await import("https://deno.land/x/imagescript@1.2.15/mod.ts");
+  const imageType = detectImageType(imageBuffer);
+  if (imageType === 'webp') throw new Error('WEBP_NOT_ALLOWED');
+  // @ts-ignore
+  const { Image } = await import("https://deno.land/x/imagescript@1.2.15/mod.ts");
+  let originalImage = await Image.decode(new Uint8Array(imageBuffer));
+  const aspectRatio = originalImage.width / originalImage.height;
+  const targetAspectRatio = width / height;
+  let newWidth = width;
+  let newHeight = height;
+  if (aspectRatio > targetAspectRatio) {
+    newHeight = height;
+    newWidth = Math.round(height * aspectRatio);
+  } else {
+    newWidth = width;
+    newHeight = Math.round(width / aspectRatio);
+  }
+  let resizedImage = originalImage.resize(newWidth, newHeight);
+  if (newWidth > width || newHeight > height) {
+    const cropX = Math.max(0, Math.floor((newWidth - width) / 2));
+    const cropY = Math.max(0, Math.floor((newHeight - height) / 2));
+    resizedImage = resizedImage.crop(cropX, cropY, width, height);
+  }
+  // Aplanar si tiene alpha
+  if (resizedImage.hasAlpha) {
+    const flattened = new Image(width, height);
+    flattened.fill(0xffffffff); // blanco
+    flattened.draw(resizedImage, 0, 0);
+    resizedImage = flattened;
+  }
+  if (resizedImage.width !== width || resizedImage.height !== height) {
     const blank = new Image(width, height);
     blank.fill(0xffffffff);
-    return await blank.encode(80);
+    resizedImage = blank;
   }
+  return await resizedImage.encode(80);
 }
 
 serve((req) => withMetrics('generate-thumbnail', req, async () => {
@@ -238,12 +208,11 @@ serve((req) => withMetrics('generate-thumbnail', req, async () => {
         });
       }
 
-      // Detectar tipo de imagen antes de procesar thumbnails
+      // Detectar tipo de imagen y respetar política: ignorar WebP
       const imageType = detectImageType(imageBuffer);
       if (imageType === 'webp') {
-        logError('❌ No se permiten imágenes WebP.');
-        return new Response(JSON.stringify({ error: 'No se permiten imágenes WebP como entrada.' }), {
-          status: 400,
+        return new Response(JSON.stringify({ success: true, ignored: true, reason: 'webp_main_ignored' }), {
+          status: 200,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         });
       }
@@ -275,65 +244,69 @@ serve((req) => withMetrics('generate-thumbnail', req, async () => {
     }
 
     // Upload thumbnails to storage
+    const variantPaths = {
+      minithumb: `${supplierId}/${productId}/${timestamp}_minithumb_40x40.jpg`,
+      mobile: `${supplierId}/${productId}/${timestamp}_mobile_190x153.jpg`,
+      tablet: `${supplierId}/${productId}/${timestamp}_tablet_300x230.jpg`,
+      desktop: `${supplierId}/${productId}/${timestamp}_desktop_320x260.jpg`
+    } as const;
+
+    // Asegurar bucket existe (solo con service role). Si no, crearlo público.
+    try {
+      const bucketName = 'product-images-thumbnails';
+      if (supabaseSr) {
+        const { data: buckets } = await supabaseSr.storage.listBuckets();
+        const exists = buckets?.some(b => b.name === bucketName);
+        if (!exists) {
+          await supabaseSr.storage.createBucket(bucketName, { public: true, allowedMimeTypes: ['image/jpeg'], fileSizeLimit: '2097152' }).catch(()=>{});
+        }
+      }
+    } catch (be) {
+      logError('⚠️ Bucket existence check/creation failed:', be);
+    }
+
     const uploadPromises = [
-  (supabaseSr || supabasePublic!).storage
-        .from('product-images-thumbnails')
-        .upload(`${supplierId}/${productId}/${timestamp}_minithumb_40x40.jpg`, minithumb, { 
-          contentType: 'image/jpeg',
-          cacheControl: '31536000' // 1 year cache
-        }),
-  (supabaseSr || supabasePublic!).storage
-        .from('product-images-thumbnails')
-        .upload(`${supplierId}/${productId}/${timestamp}_mobile_190x153.jpg`, mobileThumb, { 
-          contentType: 'image/jpeg',
-          cacheControl: '31536000' // 1 year cache
-        }),
-  (supabaseSr || supabasePublic!).storage
-        .from('product-images-thumbnails')
-        .upload(`${supplierId}/${productId}/${timestamp}_tablet_300x230.jpg`, tabletThumb, { 
-          contentType: 'image/jpeg',
-          cacheControl: '31536000'
-        }),
-  (supabaseSr || supabasePublic!).storage
-        .from('product-images-thumbnails')
-        .upload(`${supplierId}/${productId}/${timestamp}_desktop_320x260.jpg`, desktopThumb, { 
-          contentType: 'image/jpeg',
-          cacheControl: '31536000'
-        })
-    ];
+      { key: 'minithumb', data: minithumb, path: variantPaths.minithumb },
+      { key: 'mobile', data: mobileThumb, path: variantPaths.mobile },
+      { key: 'tablet', data: tabletThumb, path: variantPaths.tablet },
+      { key: 'desktop', data: desktopThumb, path: variantPaths.desktop },
+    ].map(v => (supabaseSr || supabasePublic!).storage
+      .from('product-images-thumbnails')
+      .upload(v.path, v.data, {
+        contentType: 'image/jpeg',
+        cacheControl: '31536000',
+        upsert: true
+      })
+      .then(res => ({ variant: v.key, path: v.path, error: res.error }))
+      .catch(e => ({ variant: v.key, path: v.path, error: e }))
+    );
 
     const uploadResults = await Promise.all(uploadPromises);
-    const errors = uploadResults.filter(result => result.error);
-    if (errors.length > 0) {
-      logError("❌ Error uploading thumbnails:", errors);
+    const hardErrors = uploadResults.filter(r => r.error && !/exists/i.test(r.error.message || ''));
+    if (hardErrors.length > 0) {
+      logError('❌ Errores duros subiendo variantes:', hardErrors.map(e=>({variant:e.variant,msg:e.error?.message})));
       if (jobTrackingEnabled) {
-        await dbClient.rpc('mark_thumbnail_job_error', { p_product_id: productId, p_error: 'upload_fail' }).catch(()=>{});
+        await dbClient.rpc('mark_thumbnail_job_error', { p_product_id: productId, p_error: 'upload_partial_fail' }).catch(()=>{});
       }
-      return new Response(JSON.stringify({ 
-        error: 'Failed to upload thumbnails',
-        details: errors.map(err => err.error?.message).join(', ')
-      }), {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
+      // Continuar: intentaremos igualmente construir URLs para variantes exitosas
     }
 
     // Generate public URLs
   const minithumbUrl = (supabaseSr || supabasePublic!).storage
-      .from('product-images-thumbnails')
-      .getPublicUrl(`${supplierId}/${productId}/${timestamp}_minithumb_40x40.jpg`).data.publicUrl;
+    .from('product-images-thumbnails')
+    .getPublicUrl(variantPaths.minithumb).data.publicUrl;
 
   const mobileUrl = (supabaseSr || supabasePublic!).storage
-      .from('product-images-thumbnails')
-      .getPublicUrl(`${supplierId}/${productId}/${timestamp}_mobile_190x153.jpg`).data.publicUrl;
+    .from('product-images-thumbnails')
+    .getPublicUrl(variantPaths.mobile).data.publicUrl;
 
   const tabletUrl = (supabaseSr || supabasePublic!).storage
-      .from('product-images-thumbnails')
-      .getPublicUrl(`${supplierId}/${productId}/${timestamp}_tablet_300x230.jpg`).data.publicUrl;
+    .from('product-images-thumbnails')
+    .getPublicUrl(variantPaths.tablet).data.publicUrl;
 
   const desktopUrl = (supabaseSr || supabasePublic!).storage
-      .from('product-images-thumbnails')
-      .getPublicUrl(`${supplierId}/${productId}/${timestamp}_desktop_320x260.jpg`).data.publicUrl;
+    .from('product-images-thumbnails')
+    .getPublicUrl(variantPaths.desktop).data.publicUrl;
 
     // Update SOLO la imagen principal (image_order=0) y solo si todavía no tenía thumbnails
   const { error: dbUpdateError } = await dbClient

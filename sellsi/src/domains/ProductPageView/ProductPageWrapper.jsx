@@ -87,13 +87,23 @@ const ProductPageWrapper = ({ isLoggedIn }) => {
           setError('Producto no encontrado');
         } else {
           // Transformar los datos al formato esperado por ProductPageView
+          // Ordenar product_images por image_order para que la UI reciba el orden del servidor
+          const orderedImages = (data.product_images || []).slice().sort((a, b) => ( (a?.image_order || 0) - (b?.image_order || 0) ));
+          const mainImageRecord = orderedImages.find(img => img && (img.image_order === 0)) || orderedImages[0] || null;
+          try {
+            console.debug('[ProductPageWrapper] fetched orderedImages for product', data.productid, orderedImages.map((r, i) => ({ i, image_order: r.image_order, url: r.image_url ? r.image_url.split('/').pop() : null })))
+            console.debug('[ProductPageWrapper] mainImageRecord', { image_order: mainImageRecord?.image_order, url: mainImageRecord?.image_url })
+          } catch (e) {}
+
           const product = {
             id: data.productid,
             productid: data.productid,
             supplier_id: data.supplier_id,
             nombre: data.productnm,
-            imagen: data.product_images?.[0]?.image_url || '/placeholder-product.jpg',
-            thumbnail_url: data.product_images?.[0]?.thumbnail_url || null, // ✅ NUEVO: Agregar thumbnail_url
+            // imagen debe ser la URL principal según image_order = 0
+            imagen: (mainImageRecord && mainImageRecord.image_url) || '/placeholder-product.jpg',
+            // thumbnail_url del registro principal si existe
+            thumbnail_url: (mainImageRecord && mainImageRecord.thumbnail_url) || null,
             precio: data.price,
             stock: data.productqty,
             categoria: data.category,
@@ -107,7 +117,10 @@ const ProductPageWrapper = ({ isLoggedIn }) => {
             proveedorVerificado: data.users?.verified || false, // ✅ NUEVO: Agregar estado de verificación
             verified: data.users?.verified || false, // ✅ NUEVO: Agregar estado de verificación (alternativo)
             priceTiers: data.product_quantity_ranges || [],
-            imagenes: data.product_images || [],
+            // Mantener la estructura completa de registros ordenados para que ProductHeader
+            // y ProductImageGallery puedan usar image.image_url / image.thumbnail_url y image_order
+            imagenes: orderedImages,
+            images: orderedImages,
             // Regiones de despacho mapeadas al formato correcto
             shippingRegions: convertDbRegionsToForm(data.product_delivery_regions || []),
             delivery_regions: data.product_delivery_regions || [],

@@ -225,7 +225,19 @@ serve((req: Request) => withMetrics('process-khipu-webhook', req, async () => {
         }
 
         // 4) Si tenemos un cart_id, asegurar que los cart_items reflejen los items pagados
-        if (targetCartId && items.length > 0) {
+        if (targetCartId) {
+          // 4.a) Vincular determinísticamente la orden de pagos (orders) con el cart materializado para permitir deduplicación en frontend
+          try {
+            await supabase
+              .from('orders')
+              .update({ cart_id: targetCartId, updated_at: new Date().toISOString() })
+              .eq('id', orderId)
+              .is('cart_id', null); // solo si aún no estaba seteado
+          } catch (linkErr) {
+            console.error('⚠️ No se pudo actualizar cart_id en orders:', linkErr);
+          }
+
+          if (items.length > 0) {
           // Reemplazar items del carrito por los items exactos de la orden pagada
           await supabase.from('cart_items').delete().eq('cart_id', targetCartId);
           // Insertar cada item
@@ -247,6 +259,7 @@ serve((req: Request) => withMetrics('process-khipu-webhook', req, async () => {
               price_tiers: it.price_tiers || it.priceTiers || null,
               document_type: normalizeDocType(it.document_type || it.documentType),
             });
+          }
           }
 
           // Actualizar timestamp del carrito

@@ -216,6 +216,18 @@ export class UploadService {
     const { replaceExisting = false } = options
     
     try {
+      // Detect if there is already a main image (image_order = 0) persisted
+      let hasMain = false
+      try {
+        const { data: existing } = await supabase
+          .from('product_images')
+          .select('id')
+          .eq('product_id', productId)
+          .eq('image_order', 0)
+          .limit(1)
+        hasMain = !!existing && existing.length > 0
+      } catch (_) {}
+
       // Si replaceExisting es true, limpiar todas las imágenes del producto primero
       if (replaceExisting) {
         try {
@@ -261,21 +273,30 @@ export class UploadService {
             message: `Referencias recreadas: ${existingFiles.length}`
           }
         }
-        // Subir archivos nuevos
-          const uploadPromises = filesToProcess.map((file, index) => 
-            this.uploadImageWithThumbnail(file, productId, supplierId, index === 0)
+        // Subir archivos nuevos preservando orden: primera imagen SIEMPRE primero (garantiza image_order=0)
+        const results = []
+        if (filesToProcess.length > 0) {
+          // Primera (main) secuencial
+          const firstRes = await this.uploadImageWithThumbnail(filesToProcess[0], productId, supplierId, true)
+          results.push({ status: 'fulfilled', value: firstRes })
+        }
+        if (filesToProcess.length > 1) {
+          const parallel = await Promise.allSettled(
+            filesToProcess.slice(1).map(f => this.uploadImageWithThumbnail(f, productId, supplierId, false))
           )
-        const results = await Promise.allSettled(uploadPromises)
+          results.push(...parallel)
+        }
         const successful = []
         const errors = []
-        results.forEach((result, index) => {
+        results.forEach((result, idx) => {
           if (result.status === 'fulfilled' && result.value?.success) {
             successful.push(result.value.data)
           } else {
             const errorMsg = result.status === 'rejected' 
               ? (result.reason?.message || 'Error desconocido')
               : (result.value?.error || 'Error de procesamiento')
-            errors.push(`Archivo ${filesToProcess[index].name || filesToProcess[index].file?.name}: ${errorMsg}`)
+            const fileRef = filesToProcess[idx]
+            errors.push(`Archivo ${fileRef?.name || fileRef?.file?.name}: ${errorMsg}`)
           }
         })
           // 🔔 Dispatch evento global cuando haya al menos una subida exitosa
@@ -303,21 +324,30 @@ export class UploadService {
           message: 'No hay archivos nuevos que procesar'
         };
       }
-      // Subir imágenes en paralelo - solo thumbnails para la primera (principal)
-      const uploadPromises = newFiles.map((file, index) => 
-        this.uploadImageWithThumbnail(file, productId, supplierId, index === 0)
-      )
-      const results = await Promise.allSettled(uploadPromises)
+      // Subida determinista: primera nueva (si no había main) se sube primero para asegurar orden 0
+      const results = []
+      if (newFiles.length > 0) {
+        const firstShouldBeMain = !hasMain
+        const firstRes = await this.uploadImageWithThumbnail(newFiles[0], productId, supplierId, firstShouldBeMain)
+        results.push({ status: 'fulfilled', value: firstRes })
+      }
+      if (newFiles.length > 1) {
+        const parallel = await Promise.allSettled(
+          newFiles.slice(1).map(f => this.uploadImageWithThumbnail(f, productId, supplierId, false))
+        )
+        results.push(...parallel)
+      }
       const successful = []
       const errors = []
-      results.forEach((result, index) => {
+      results.forEach((result, idx) => {
         if (result.status === 'fulfilled' && result.value?.success) {
           successful.push(result.value.data)
         } else {
           const errorMsg = result.status === 'rejected' 
             ? (result.reason?.message || 'Error desconocido')
             : (result.value?.error || 'Error de procesamiento')
-          errors.push(`Archivo ${newFiles[index].name || newFiles[index].file?.name}: ${errorMsg}`)
+          const fileRef = newFiles[idx]
+          errors.push(`Archivo ${fileRef?.name || fileRef?.file?.name}: ${errorMsg}`)
         }
       })
         // 🔔 Dispatch evento global cuando haya al menos una subida exitosa
@@ -331,6 +361,166 @@ export class UploadService {
       }
     } catch (error) {
       return { success: false, errors: ['Error inesperado al subir imágenes'] }
+    }
+  }
+
+  /**
+   * 🔐 Reemplazo atómico y robusto de TODAS las imágenes de un producto.
+   * Estrategia:
+   * 1. Sube todos los archivos (genera URLs) SIN tocar BD todavía.
+   * 2. Ejecuta función SQL replace_product_images(p_product_id, p_supplier_id, p_image_urls[]) que:
+   *    - Borra filas previas
+   *    - Inserta nuevas en orden (0..n) garantizando single main y constraints
+   * 3. Genera thumbnail SOLO para image_order=0 si no es webp.
+   * 4. Limpia en background archivos huérfanos si se pasa { cleanup: true }.
+   */
+  static async replaceAllProductImages(files, productId, supplierId, opts = {}) {
+    const { cleanup = true } = opts
+    try {
+      if (!files || files.length === 0) {
+        // Reemplazo a vacío -> borra todas
+        await supabase.from('product_images').delete().eq('product_id', productId)
+        this.dispatchProductImagesReady(productId, { count: 0, mode: 'replace' })
+        return { success: true, data: [] }
+      }
+      console.log('🧩 [replaceAllProductImages] Inicio reemplazo atómico', {
+        productId,
+        totalIncoming: files.length,
+        sample: files.slice(0,3).map(f => ({
+          hasFile: !!f?.file,
+          name: f?.file?.name || f?.name || 'n/a',
+          isExisting: !!f?.isExisting,
+          hasUrl: !!f?.url,
+          type: f?.file?.type || f?.type || 'unknown'
+        }))
+      })
+
+      // Clasificar entradas en EXISTENTES vs NUEVAS manteniendo orden original
+      const orderedEntries = [] // { kind: 'existing'|'new', url, uploadData?, originalIndex }
+      for (let idx = 0; idx < files.length; idx++) {
+        const item = files[idx]
+        const isExisting = item?.isExisting === true || (!!item?.url && !item?.file)
+        if (isExisting) {
+          const existingUrl = item.url || item.image_url || item.publicUrl
+          if (!existingUrl) {
+            console.warn('⚠️ [replaceAllProductImages] Entrada marcada existing sin URL, se ignora índice', idx)
+            continue
+          }
+          orderedEntries.push({ kind: 'existing', url: existingUrl, originalIndex: idx })
+        } else {
+          const actualFile = item?.file || item
+          if (!actualFile || !actualFile.name || !actualFile.type) {
+            console.error('❌ [replaceAllProductImages] Entrada no válida para upload en índice', idx, item)
+            return { success: false, error: 'Entrada de imagen no válida (faltan metadatos de archivo)' }
+          }
+          const uploadRes = await this.uploadImage(actualFile, productId, supplierId)
+          if (!uploadRes.success) {
+            console.error('❌ [replaceAllProductImages] Falló upload índice', idx, uploadRes.error)
+            return { success: false, error: uploadRes.error }
+          }
+          orderedEntries.push({ kind: 'new', url: uploadRes.data.publicUrl, uploadData: uploadRes.data, originalIndex: idx })
+        }
+      }
+
+      // Determinar main esperada: la PRIMERA entrada válida conservando intención del usuario
+      const expectedMainEntry = orderedEntries[0]
+      if (!expectedMainEntry) {
+        return { success: false, error: 'No se encontró ninguna entrada de imagen válida (todas inválidas)' }
+      }
+      const expectedMainUrl = expectedMainEntry.url
+
+      if (orderedEntries.length === 0) {
+        // Nada válido -> eliminar todas
+        await supabase.from('product_images').delete().eq('product_id', productId)
+        this.dispatchProductImagesReady(productId, { count: 0, mode: 'replace' })
+        return { success: true, data: [] }
+      }
+
+      const orderedUrls = orderedEntries.map(e => e.url)
+      console.log('🔄 [replaceAllProductImages] URLs ordenadas para RPC', orderedUrls)
+
+      // RPC reemplazo atómico
+      const { data: replacedRows, error: replaceErr } = await supabase.rpc('replace_product_images', {
+        p_product_id: productId,
+        p_supplier_id: supplierId,
+        p_image_urls: orderedUrls
+      })
+      if (replaceErr) {
+        console.error('❌ [replaceAllProductImages] RPC error:', replaceErr)
+        return { success: false, error: replaceErr.message }
+      }
+
+      // Post-verificación: reconsultar filas para validar orden y cardinalidad
+      let verifiedRows = replacedRows
+      try {
+        const { data: recheck, error: reErr } = await supabase
+          .from('product_images')
+          .select('id,image_url,image_order')
+          .eq('product_id', productId)
+          .order('image_order', { ascending: true })
+        if (!reErr && Array.isArray(recheck)) {
+          verifiedRows = recheck
+          // Validar secuencia 0..n-1
+          const sequenceOk = recheck.every((r, idx) => r.image_order === idx)
+          if (!sequenceOk) {
+            console.error('❌ [replaceAllProductImages] Secuencia image_order inconsistente', recheck)
+          }
+          // Validar cardinalidad
+          if (recheck.length !== orderedUrls.length) {
+            console.error('❌ [replaceAllProductImages] Cardinalidad inesperada', { esperado: orderedUrls.length, real: recheck.length })
+          }
+        }
+      } catch (vErr) {
+        console.warn('⚠️ [replaceAllProductImages] Verificación post-replace falló:', vErr.message)
+      }
+
+      // Verificar que la imagen principal real coincide con la esperada; si no, SWAP seguro
+      try {
+        if (verifiedRows && verifiedRows.length > 0 && verifiedRows[0].image_url !== expectedMainUrl) {
+          const currentMain = verifiedRows[0]
+            const expectedIdx = verifiedRows.findIndex(r => r.image_url === expectedMainUrl)
+          if (expectedIdx > -1) {
+            const expectedRow = verifiedRows[expectedIdx]
+            console.warn('⚠️ [replaceAllProductImages] Main inesperada, corrigiendo swap', {
+              currentMain: currentMain.image_url, expectedMain: expectedMainUrl, expectedIdx
+            })
+            // Swap en 3 pasos para respetar índice único (image_order=0)
+            await supabase.from('product_images').update({ image_order: -1 }).eq('id', expectedRow.id)
+            await supabase.from('product_images').update({ image_order: expectedRow.image_order }).eq('id', currentMain.id)
+            await supabase.from('product_images').update({ image_order: 0 }).eq('id', expectedRow.id)
+            // Reconsultar filas ordenadas
+            const { data: afterSwap } = await supabase
+              .from('product_images')
+              .select('id,image_url,image_order')
+              .eq('product_id', productId)
+              .order('image_order', { ascending: true })
+            if (afterSwap) verifiedRows = afterSwap
+          }
+        }
+      } catch (swapErr) {
+        console.error('❌ [replaceAllProductImages] Error corrigiendo main:', swapErr.message)
+      }
+
+      // Emitir evento inicial (thumbnails pendientes)
+      this.dispatchProductImagesReady(productId, { count: verifiedRows?.length || 0, mode: 'replace', mainUpdated: true, thumbnailsPending: true })
+
+      // Programar generación robusta de thumbnails en background con reintentos
+      if ((verifiedRows?.length || 0) > 0) {
+        setTimeout(() => {
+          this._ensureMainThumbnails(productId, supplierId, verifiedRows[0].image_url, 1).catch(() => {})
+        }, 150)
+      }
+
+      if (cleanup) {
+        setTimeout(() => {
+          StorageCleanupService.cleanupProductOrphans(productId).catch(() => {})
+        }, 50)
+      }
+
+      console.log('✅ [replaceAllProductImages] Reemplazo completado', { total: verifiedRows?.length, productId })
+      return { success: true, data: verifiedRows }
+    } catch (e) {
+      return { success: false, error: e.message }
     }
   }
 
@@ -413,10 +603,9 @@ export class UploadService {
         console.error('❌ [uploadImageWithThumbnail] Excepción RPC:', rpcCatch)
       }
 
-      // 5. Generar thumbnail usando Edge Function (SOLO para imagen principal y NO WebP)
-      let thumbnailUrl = null
-  // Decidir si es imagen principal por orden real (prioridad) o flag pasado
-  const effectiveIsMain = imageOrder === 0 || isMainImage
+  // 5. Generar thumbnail usando Edge Function (solo si el orden REAL es 0)
+  let thumbnailUrl = null
+  const effectiveIsMain = imageOrder === 0
   if (effectiveIsMain) {
         // Skip thumbnail generation for WebP images since Edge Function doesn't support them
         if (actualFile.type !== 'image/webp') {
@@ -528,6 +717,55 @@ export class UploadService {
       window.dispatchEvent(new CustomEvent('productImagesReady', { detail }));
     } catch (e) {
       // Silencioso: no bloquear flujo de upload por errores de dispatch
+    }
+  }
+
+  /**
+   * 🔄 Garantiza generación de las 4 variantes de thumbnails con reintentos escalonados.
+   * Estrategia:
+   * 1. Invoca Edge Function si faltan variantes (o todo null)
+   * 2. Relee fila principal y verifica presence de desktop/tablet/mobile/minithumb
+   * 3. Hasta maxAttempts, con backoff exponencial ligero.
+   */
+  static async _ensureMainThumbnails(productId, supplierId, mainImageUrl, attempt = 1, maxAttempts = 3) {
+    try {
+      if (/\.webp($|\?)/i.test(mainImageUrl || '')) {
+        this.dispatchProductImagesReady(productId, { thumbnailsSkippedWebp: true });
+        return;
+      }
+      // Leer fila principal
+      const { data: mainRow, error: readErr } = await supabase
+        .from('product_images')
+        .select('id, thumbnails, thumbnail_url')
+        .eq('product_id', productId)
+        .eq('image_order', 0)
+        .single()
+      if (readErr || !mainRow) {
+        if (attempt < maxAttempts) {
+          setTimeout(() => this._ensureMainThumbnails(productId, supplierId, mainImageUrl, attempt + 1, maxAttempts), attempt * 400)
+        }
+        return
+      }
+      const hasAll = !!(mainRow.thumbnails && mainRow.thumbnails.desktop && mainRow.thumbnails.tablet && mainRow.thumbnails.mobile && mainRow.thumbnails.minithumb && mainRow.thumbnail_url)
+      if (hasAll) {
+        this.dispatchProductImagesReady(productId, { thumbnailsReady: true, attempt })
+        return
+      }
+      // Faltan variantes → invocar Edge
+      const gen = await this.generateThumbnail(mainImageUrl, productId, supplierId)
+      if (!gen.success) {
+        console.warn('⚠️ [_ensureMainThumbnails] Edge generate fail attempt', attempt, gen.error)
+      }
+      if (attempt < maxAttempts) {
+        setTimeout(() => this._ensureMainThumbnails(productId, supplierId, mainImageUrl, attempt + 1, maxAttempts), attempt * 700)
+      } else {
+        // Último intento: notificar parcial
+        this.dispatchProductImagesReady(productId, { thumbnailsPartial: true, attempt })
+      }
+    } catch (err) {
+      if (attempt < maxAttempts) {
+        setTimeout(() => this._ensureMainThumbnails(productId, supplierId, mainImageUrl, attempt + 1, maxAttempts), attempt * 500)
+      }
     }
   }
 

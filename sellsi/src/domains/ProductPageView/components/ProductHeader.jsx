@@ -56,6 +56,7 @@ const ProductHeader = React.memo(({
     proveedor,
     imagen,
     imagenes = [],
+    images = [], // prefer server-ordered images when available
     precio,
     stock,
     compraMinima,
@@ -477,6 +478,53 @@ const ProductHeader = React.memo(({
     
     return mainImageThumbnail || '/placeholder-product.jpg'
   }
+  // Ensure we always pass a server-ordered array to the gallery.
+  const orderedImages = (Array.isArray(images) && images.length > 0)
+    ? images.slice().sort((a, b) => ( (a && a.image_order) || 0) - ((b && b.image_order) || 0))
+    : Array.isArray(imagenes) ? imagenes.slice() : []
+
+  const firstOrdered = orderedImages[0]
+
+  // Diagnostic log (only once per product to avoid noisy logs on re-renders)
+  const _loggedProductsRef = React.useRef(new Set())
+  try {
+    const pid = product?.productid
+    if (pid && !_loggedProductsRef.current.has(pid)) {
+      const diagnostic = (orderedImages || []).map((img, idx) => {
+        const url = typeof img === 'string' ? img : (img?.image_url || img?.url || '')
+        const name = url ? url.split('/').pop() : (typeof img === 'object' && img?.name) || ''
+        return { index: idx, name, url, image_order: img?.image_order }
+      })
+      console.debug('[ProductHeader] orderedImages diagnostic for product', pid, diagnostic)
+      _loggedProductsRef.current.add(pid)
+    }
+  } catch (e) {
+    // ignore logging errors
+  }
+
+  // If the parent passed selectedIndex but it doesn't point to the server main image,
+  // prefer the server main (image_order === 0). This keeps gallery selection in sync
+  // when DB order changes or arrays are reshaped by other layers.
+  React.useEffect(() => {
+    try {
+      if (!orderedImages || orderedImages.length === 0) return
+      if (!onImageSelect) return
+
+      const resolved = orderedImages.map(resolveImageSrc)
+      const mainUrl = resolveImageSrc(firstOrdered || imagen || orderedImages[0])
+      const mainIdx = resolved.findIndex((u) => u === mainUrl)
+      console.debug('[ProductHeader] selection diagnostic', { productId: product?.productid, selectedImageIndex, mainUrl, mainIdx })
+      if (mainIdx >= 0 && selectedImageIndex !== mainIdx) {
+        // ask parent to select the correct index
+        console.debug('[ProductHeader] requesting parent select index', mainIdx)
+        onImageSelect(mainIdx)
+      }
+    } catch (e) {
+      // silent
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [product && product.productid, images && images.length, imagenes && imagenes.length])
+
   return (
     // MUIV2 GRID - CONTENEDOR PRINCIPAL (MuiGrid-container)
     <Box sx={{ width: '100%', maxWidth: '100%' }}>
@@ -527,8 +575,14 @@ const ProductHeader = React.memo(({
           px: 0,
         }}>
           <ProductImageGallery
-            images={imagenes.map(resolveImageSrc)}
-            mainImage={mainImageThumbnail || resolveImageSrc(imagen)}
+            images={orderedImages.map(resolveImageSrc)}
+            imagesRaw={orderedImages}
+            mainImage={
+              mainImageThumbnail ||
+              resolveImageSrc(
+                imagen || (firstOrdered && (firstOrdered.image_url || firstOrdered)) || imagenes[0]
+              )
+            }
             selectedIndex={selectedImageIndex}
             onImageSelect={onImageSelect}
             productName={nombre}

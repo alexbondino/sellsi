@@ -106,8 +106,8 @@ CREATE TABLE public.control_panel (
   created_at timestamp with time zone NOT NULL DEFAULT now(),
   updated_at timestamp with time zone NOT NULL DEFAULT now(),
   CONSTRAINT control_panel_pkey PRIMARY KEY (id),
-  CONSTRAINT control_panel_request_id_fkey FOREIGN KEY (request_id) REFERENCES public.requests(request_id),
-  CONSTRAINT control_panel_procesado_por_fkey FOREIGN KEY (procesado_por) REFERENCES public.control_panel_users(id)
+  CONSTRAINT control_panel_procesado_por_fkey FOREIGN KEY (procesado_por) REFERENCES public.control_panel_users(id),
+  CONSTRAINT control_panel_request_id_fkey FOREIGN KEY (request_id) REFERENCES public.requests(request_id)
 );
 CREATE TABLE public.control_panel_users (
   usuario text NOT NULL UNIQUE,
@@ -294,9 +294,9 @@ CREATE TABLE public.product_sales (
   trx_date timestamp with time zone NOT NULL DEFAULT now(),
   order_id uuid,
   CONSTRAINT product_sales_pkey PRIMARY KEY (id),
-  CONSTRAINT product_sales_product_id_fkey FOREIGN KEY (product_id) REFERENCES public.products(productid),
+  CONSTRAINT product_sales_supplier_id_fkey FOREIGN KEY (supplier_id) REFERENCES public.users(user_id),
   CONSTRAINT product_sales_order_id_fkey FOREIGN KEY (order_id) REFERENCES public.orders(id),
-  CONSTRAINT product_sales_supplier_id_fkey FOREIGN KEY (supplier_id) REFERENCES public.users(user_id)
+  CONSTRAINT product_sales_product_id_fkey FOREIGN KEY (product_id) REFERENCES public.products(productid)
 );
 CREATE TABLE public.products (
   productnm text NOT NULL,

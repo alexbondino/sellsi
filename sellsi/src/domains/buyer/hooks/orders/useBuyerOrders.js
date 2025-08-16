@@ -110,6 +110,7 @@ export const useBuyerOrders = buyerId => {
   // Dedupe determinístico si hay cart_id en payment order; si no, usar heurísticas:
   //  Heurística fallback (legacy) sólo se aplica cuando cart_id es null.
 
+        // Precalcular firmas simples de pedidos clásicos para heurística de materialización
         const classicBySignature = classicOrders.map(co => {
           const productIds = new Set(co.items.map(i => i.product_id));
           return {
@@ -121,27 +122,39 @@ export const useBuyerOrders = buyerId => {
           };
         });
 
+        /**
+         * Determina si una payment order (ya pagada) ya se "materializó" en un pedido clásico.
+         * Reglas:
+         *  1. Coincidencia directa via cart_id.
+         *  2. Si no hay cart_id (o aún no seteado) usamos heurística:
+         *     - Overlap de productos >= 60% (relajamos porque total puede variar por shipping/tax)
+         *     - Ventana de creación +- 45 minutos.
+         *     - Ignoramos diferencia en total_amount (puede incluir shipping/impuestos no presentes en legacy).
+         */
         const isLikelyMaterialized = (payOrd) => {
-          if (payOrd.payment_status !== 'paid') return false;
-          // Si hay cart_id y existe un clásico con mismo cart_id => materializado determinísticamente
+          if (payOrd.payment_status !== 'paid') return false; // sólo interesa cuando ya está pagada
+
+            // 1) Match determinístico por cart_id
           if (payOrd.cart_id && classicOrders.some(c => c.cart_id === payOrd.cart_id)) return true;
-          // Fallback heurístico legacy cuando no hay cart_id
-          if (payOrd.cart_id) return false; // ya evaluado arriba
+          // Si tiene cart_id pero no encontramos aún el clásico, damos margen y la mostramos.
+          if (payOrd.cart_id) return false;
+
+          // 2) Heurística por overlap de items
           const payCreated = new Date(payOrd.created_at).getTime();
           const payProducts = new Set(payOrd.items.map(i => i.product_id));
           const paySize = payProducts.size || 1;
-          const WINDOW_MS = 1000 * 60 * 30;
+          const WINDOW_MS = 1000 * 60 * 45; // 45 minutos de ventana
           return classicBySignature.some(sig => {
-            if (Math.abs(sig.total - payOrd.total_amount) > 0.0001) return false;
-            if (sig.created + WINDOW_MS < payCreated && payCreated - sig.created > WINDOW_MS) return false;
+            // comprobamos que estén razonablemente cercanos en el tiempo
+            if (Math.abs(sig.created - payCreated) > WINDOW_MS) return false;
             let overlap = 0;
             payProducts.forEach(p => { if (sig.productIds.has(p)) overlap++; });
             const overlapRatio = overlap / paySize;
-            return overlapRatio >= 0.7; // relax a 70% al tener fallback determinístico
+            return overlapRatio >= 0.6; // 60% suficiente para asumir materialización
           });
         };
 
-        const filteredPayment = paymentOrders
+    const filteredPayment = paymentOrders
           .map(po => {
             const createdTs = po.created_at ? new Date(po.created_at).getTime() : 0;
             const expiresAt = createdTs ? createdTs + PAYMENT_PENDING_TTL_MS : 0;
@@ -154,7 +167,8 @@ export const useBuyerOrders = buyerId => {
           .filter(po => {
             if (po.payment_status === 'pending') return true; // mostrar mientras no expira
             if (po.payment_status === 'expired') return false; // ocultar expiradas
-            return !isLikelyMaterialized(po);
+      // Para 'paid' (u otros estados) ocultar si ya se materializó en un clásico
+      return !isLikelyMaterialized(po);
           });
 
         const merged = [

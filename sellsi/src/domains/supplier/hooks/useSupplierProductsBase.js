@@ -49,7 +49,8 @@ const useSupplierProductsBase = create((set, get) => ({
         products?.map((product) => ({
           ...product,
           priceTiers: product.product_quantity_ranges || [],
-          images: product.product_images || [],
+          // Ensure images are ordered by image_order so UI shows the main image first
+          images: (product.product_images || []).slice().sort((a, b) => (a.image_order || 0) - (b.image_order || 0)),
           delivery_regions: product.product_delivery_regions || [],
         })) || []
 
@@ -168,10 +169,10 @@ const useSupplierProductsBase = create((set, get) => ({
   processProductInBackground: async (productId, productData) => {
     try {
 
-      // Procesar imágenes si existen
+      // Procesar imágenes si existen (reemplazo atómico completo)
       if (productData.imagenes?.length > 0) {
-
-        await get().processProductImages(productId, productData.imagenes)
+        const supplierId = localStorage.getItem('user_id')
+        await UploadService.replaceAllProductImages(productData.imagenes, productId, supplierId, { cleanup: true })
       }
 
       // Procesar especificaciones si existen
@@ -270,12 +271,23 @@ const useSupplierProductsBase = create((set, get) => ({
       console.log('🔍 [updateProduct] tipo de imagenes:', typeof imagenes)
       console.log('🔍 [updateProduct] es array:', Array.isArray(imagenes))
       
-      // 🚨 SIEMPRE procesar imágenes en modo edición (CRÍTICO)
-      if (imagenes !== undefined) { // Solo verificar que no sea undefined
-        console.log(`📸 [updateProduct] Procesando ${imagenes?.length || 0} imágenes`)
-        await get().processProductImages(productId, imagenes)
-      } else {
-        console.log('⚠️ [updateProduct] imagenes es undefined, no se procesarán imágenes')
+      // 🚨 SIEMPRE procesar imágenes (reemplazo atómico) si el caller envía el array (aunque vacío)
+      if (imagenes !== undefined) {
+        console.log(`📸 [updateProduct] Reemplazo atómico de imágenes, total=${imagenes?.length || 0}`)
+        const supplierId = localStorage.getItem('user_id')
+        const replaceResult = await UploadService.replaceAllProductImages(imagenes || [], productId, supplierId, { cleanup: true })
+        // Sincronizar inmediatamente el estado local para evitar flicker / duplicados
+        if (replaceResult?.success) {
+          set((state) => ({
+            products: state.products.map(p => p.productid === productId ? {
+              ...p,
+              product_images: (replaceResult.data || []).slice().sort((a,b)=> (a.image_order||0)-(b.image_order||0)),
+              images: (replaceResult.data || []).slice().sort((a,b)=> (a.image_order||0)-(b.image_order||0))
+            } : p)
+          }))
+        } else if (replaceResult?.error) {
+          console.warn('[updateProduct] Error en replaceAllProductImages:', replaceResult.error)
+        }
       }
 
       // Procesar especificaciones si existen
@@ -370,127 +382,6 @@ const useSupplierProductsBase = create((set, get) => ({
   // ============================================================================
   // HELPERS INTERNOS
   // ============================================================================
-  /**
-   * Procesar imágenes del producto (versión SIMPLIFICADA y ROBUSTA)
-   * Esta versión REEMPLAZA completamente todas las imágenes existentes
-   */
-  processProductImages: async (productId, images) => {
-    console.log(`🔄 [processProductImages] INICIO - producto: ${productId}`)
-    console.log(`🔄 [processProductImages] images recibidas:`, images)
-    console.log(`🔄 [processProductImages] tipo:`, typeof images)
-    console.log(`� [processProductImages] es array:`, Array.isArray(images))
-    
-    // Normalizar images - si es undefined/null, tratar como array vacío
-    const normalizedImages = images || [];
-    
-    if (!Array.isArray(normalizedImages)) {
-      console.error('❌ [processProductImages] images no es un array válido:', normalizedImages)
-      return;
-    }
-
-    const supplierId = localStorage.getItem('user_id')
-    console.log(`🔄 [processProductImages] Iniciando procesamiento para producto ${productId} con ${normalizedImages.length} imágenes`)
-
-    try {
-      // 1. 🧹 LIMPIAR TODAS las imágenes existentes PRIMERO (storage + BD)
-      console.log('🧹 [processProductImages] Paso 1: Limpiando imágenes existentes')
-      
-      // Obtener URLs existentes ANTES de eliminar
-      const { data: existingImages, error: fetchError } = await supabase
-        .from('product_images')
-        .select('image_url, thumbnail_url')
-        .eq('product_id', productId);
-      
-      if (!fetchError && existingImages?.length > 0) {
-        console.log(`🗑️ [processProductImages] Eliminando ${existingImages.length} imágenes existentes del storage`)
-        // Limpiar archivos del storage
-        await get().cleanupImagesFromUrls(existingImages);
-      }
-      
-      // Eliminar TODOS los registros de la BD
-      const { error: deleteError } = await supabase.from('product_images').delete().eq('product_id', productId);
-      if (deleteError) {
-        console.error('❌ [processProductImages] Error eliminando registros de BD:', deleteError);
-      }
-      console.log('✅ [processProductImages] Limpieza completada')
-
-      // 2. 📸 PROCESAR nuevas imágenes
-      if (normalizedImages.length === 0) {
-        console.log('📊 [processProductImages] No hay nuevas imágenes para procesar - producto quedará sin imágenes')
-        return;
-      }
-
-      console.log(`📸 [processProductImages] Paso 2: Procesando ${normalizedImages.length} nuevas imágenes`)
-      const finalImageData = [];
-
-      // Separar archivos nuevos de URLs existentes
-      const newFiles = [];
-      const existingUrls = [];
-
-      for (const img of normalizedImages) {
-        if (img && img.file instanceof File) {
-          newFiles.push(img.file);
-        } else if (img instanceof File) {
-          newFiles.push(img);
-        } else if (typeof img === 'string') {
-          existingUrls.push(img);
-        } else if (img && typeof img.url === 'string') {
-          existingUrls.push(img.url);
-        }
-      }
-
-      // Procesar URLs existentes (mantener)
-      for (const url of existingUrls) {
-        finalImageData.push({
-          image_url: url,
-          thumbnail_url: null // Las URLs existentes no tienen thumbnail automático
-        });
-      }
-
-      // Subir archivos nuevos
-      if (newFiles.length > 0) {
-        console.log(`⬆️ [processProductImages] Subiendo ${newFiles.length} archivos nuevos`)
-        const uploadResult = await UploadService.uploadMultipleImagesWithThumbnails(newFiles, productId, supplierId);
-        
-        if (uploadResult.success && uploadResult.data) {
-          for (const imageData of uploadResult.data) {
-            finalImageData.push({
-              image_url: imageData.publicUrl,
-              thumbnail_url: imageData.thumbnailUrl || null
-            });
-          }
-          console.log(`✅ [processProductImages] Subidos ${uploadResult.data.length} archivos correctamente`)
-        } else {
-          console.error('❌ [processProductImages] Error subiendo archivos:', uploadResult.error || uploadResult.errors);
-        }
-      }
-
-      // 3. 💾 INSERTAR todas las nuevas imágenes
-      if (finalImageData.length > 0) {
-        console.log(`💾 [processProductImages] Paso 3: Insertando ${finalImageData.length} registros en BD`)
-        
-        const imagesToInsert = finalImageData.map((imageData, index) => ({
-          product_id: productId,
-          image_url: imageData.image_url,
-          thumbnail_url: imageData.thumbnail_url,
-          image_order: index
-        }));
-
-        const { error: insertError } = await supabase.from('product_images').insert(imagesToInsert);
-        
-        if (insertError) {
-          console.error('❌ [processProductImages] Error insertando imágenes:', insertError);
-          throw insertError;
-        }
-
-        console.log(`✅ [processProductImages] Procesamiento completado exitosamente para producto ${productId}`)
-      }
-      
-    } catch (error) {
-      console.error('❌ [processProductImages] Error en procesamiento:', error);
-      throw error;
-    }
-  },
   /**
    * Procesar tramos de precio
    */

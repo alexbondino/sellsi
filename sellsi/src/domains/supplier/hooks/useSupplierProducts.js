@@ -184,15 +184,19 @@ export const useSupplierProducts = (options = {}) => {
       let imagenes = []
 
       if (product.images?.length > 0) {
-        imagenes = product.images.map((img) => img.image_url)
-        const principal = product.images.find((img) => img.is_primary)
-        imagenPrincipal = principal ? principal.image_url : imagenes[0]
-        
-        // Obtener thumbnail_url de la imagen principal
+        // Ensure images are ordered by image_order (DB truth)
+        const ordered = (product.images || []).slice().sort((a, b) => ( (a?.image_order || 0) - (b?.image_order || 0) ));
+        imagenes = ordered.map((img) => img.image_url)
+
+        // Prefer the image with image_order === 0 as principal (DB-defined main)
+        const principal = ordered.find((img) => img && Number(img.image_order) === 0) || ordered[0]
+        imagenPrincipal = principal ? (principal.image_url || imagenes[0]) : imagenes[0]
+
+        // Obtener thumbnail_url del registro principal si existe
         if (principal && principal.thumbnail_url) {
           thumbnailUrl = principal.thumbnail_url
-        } else if (product.images[0]?.thumbnail_url) {
-          thumbnailUrl = product.images[0].thumbnail_url
+        } else if (ordered[0]?.thumbnail_url) {
+          thumbnailUrl = ordered[0].thumbnail_url
         }
       }
 

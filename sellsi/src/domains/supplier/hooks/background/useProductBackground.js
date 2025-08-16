@@ -83,11 +83,12 @@ const useProductBackground = create((set, get) => ({
         updateProgress('images', 'processing')
         
         
+        const supplierId = productData.supplier_id || localStorage.getItem('user_id')
         const result = await imagesHook.uploadImages(
           productData.imagenes || [], 
           productId, 
-          productData.supplier_id,
-          { replaceExisting: true } // 🔥 Siempre reemplazar para evitar acumulación
+          supplierId,
+          { replaceExisting: true } // ahora internamente hace replaceAllProductImages atómico
         )
         
         updateProgress('images', result.success ? 'completed' : 'failed')

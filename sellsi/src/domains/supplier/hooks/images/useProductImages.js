@@ -113,7 +113,7 @@ const useProductImages = create((set, get) => ({
    * Subir múltiples imágenes
    */
   uploadImages: async (files, productId, supplierId, options = {}) => {
-    const { replaceExisting = true } = options // 🔥 Por defecto siempre reemplazar para evitar acumulación
+  const { replaceExisting = true } = options // 🔥 Por defecto reemplazo atómico
     
     set((state) => ({
       processingImages: { ...state.processingImages, [productId]: true },
@@ -121,13 +121,18 @@ const useProductImages = create((set, get) => ({
     }))
 
     try {
-      console.log(`🔥 [useProductImages.uploadImages] Llamando UploadService con replaceExisting: ${replaceExisting}`)
-      const uploadResult = await UploadService.uploadMultipleImagesWithThumbnails(
-        files, 
-        productId, 
-        supplierId, 
-        { replaceExisting }
-      )
+      console.log(`🔥 [useProductImages.uploadImages] Inicio flujo imágenes (replaceExisting=${replaceExisting}) total=${files.length}`)
+      let uploadResult
+      if (replaceExisting) {
+        uploadResult = await UploadService.replaceAllProductImages(files, productId, supplierId, { cleanup: true })
+      } else {
+        uploadResult = await UploadService.uploadMultipleImagesWithThumbnails(
+          files,
+          productId,
+          supplierId,
+          { replaceExisting: false }
+        )
+      }
       
       set((state) => ({
         processingImages: { ...state.processingImages, [productId]: false },
