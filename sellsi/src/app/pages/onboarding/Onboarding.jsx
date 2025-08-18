@@ -573,19 +573,21 @@ const Onboarding = () => {
                     sx={{ '.MuiOutlinedInput-root': { borderRadius: 2 } }}
                   />
                   <Box sx={{ display: 'flex', gap: 1 }}>
-                    <CountrySelector
-                      value={formData.codigoPais}
-                      onChange={e =>
-                        handleFieldChange('codigoPais', e.target.value)
-                      }
-                      countries={['+56', '+54', '+52', '+51', '+57']}
-                      sx={{
-                        minWidth: 100,
-                        '.MuiOutlinedInput-root': { borderRadius: 2 },
-                      }}
-                    />
+                    <Box sx={{ minWidth: 180 }}>
+                      <CountrySelector
+                        value={formData.codigoPais}
+                        onChange={e =>
+                          handleFieldChange('codigoPais', e.target.value)
+                        }
+                        countries={['+56', '+54', '+52', '+51', '+57']}
+                        size="small"
+                        fullWidth
+                        sx={{ '.MuiOutlinedInput-root': { borderRadius: 2 } }}
+                      />
+                    </Box>
                     <TextField
                       fullWidth
+                      size="small"
                       label="Teléfono de contacto"
                       value={formData.telefonoContacto}
                       inputProps={{ maxLength: 15, inputMode: 'numeric', pattern: '[0-9]*' }}

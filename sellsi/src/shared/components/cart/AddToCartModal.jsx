@@ -768,6 +768,18 @@ const AddToCartModal = ({
           )}
         </Box>
       </Stack>
+
+      {/* Línea separada para el costo de envío: etiqueta izquierda, precio derecha (igual que Subtotal) */}
+      {shippingValidation?.canShip && shippingValidation?.shippingInfo?.cost != null && (
+        <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mt: 1 }}>
+          <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+            Envío
+          </Typography>
+          <Typography variant="h6" sx={{ fontWeight: 700 }}>
+            ${shippingValidation.shippingInfo.cost.toLocaleString('es-CL')}
+          </Typography>
+        </Stack>
+      )}
     </Paper>
   );
 
