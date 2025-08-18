@@ -62,37 +62,7 @@ const ProductsSection = React.memo(
     // Hook para usar el store del carrito
     const addItem = useCartStore(state => state.addItem);
 
-    // ✅ MEJORA DE RENDIMIENTO: Memoización del handler para agregar al carrito
-    const handleAddToCart = React.useCallback(
-      producto => {
-        // Si el producto ya viene formateado (con price_tiers), usarlo tal cual
-        if (producto.price_tiers || producto.cantidadSeleccionada) {
-          // Producto ya formateado desde ProductCard, usar directamente
-          addItem(producto, producto.cantidadSeleccionada || 1);
-        } else {
-          // Convertir la estructura del producto al formato esperado por el store
-          const productForCart = {
-            id: producto.id,
-            name: producto.nombre,
-            price: producto.precio,
-            image: producto.imagen,
-            maxStock: producto.stock || 50, // Usar stock disponible o valor por defecto
-            supplier:
-              producto.proveedor || producto.supplier || producto.provider,
-            // Añadir otros campos que pueda necesitar el store
-            originalPrice: producto.precioOriginal,
-            discount: producto.descuento,
-            rating: producto.rating,
-            sales: producto.ventas,
-          };
-
-          // Llamar la función addItem del store con la cantidad seleccionada
-          const quantity = producto.cantidadSeleccionada || 1;
-          addItem(productForCart, quantity);
-        }
-      },
-      [addItem]
-    );
+  // (Eliminado handleAddToCart para evitar doble agregado. AddToCart maneja la inserción.)
     // ✅ LAYOUT ESTÁTICO: Padding fijo para mejor performance
     const mainContainerStyles = React.useMemo(
       () => ({
@@ -707,22 +677,12 @@ const ProductsSection = React.memo(
                       {isProviderView ? (
                         <ProductCard
                           product={producto}
-                          type="provider" // ✅ Cambiar tipo a "provider" para mostrar ProductCardProviderContext
-                          onAddToCart={handleAddToCart}
-                          onViewDetails={producto => {
-                            // Aquí puedes agregar la lógica para ver detalles
-                            // ...log eliminado...
-                          }}
+                          type="provider"
                         />
                       ) : (
                         <ProductCard
-                          product={producto} // Prop 'product'
-                          type="buyer" // <--- ¡AQUÍ LE DAMOS EL CONTEXTO DE COMPRADOR!
-                          onAddToCart={handleAddToCart}
-                          onViewDetails={producto => {
-                            // Aquí puedes agregar la lógica para ver detalles
-                            // ...log eliminado...
-                          }}
+                          product={producto}
+                          type="buyer"
                         />
                       )}
                     </Box>

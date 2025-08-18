@@ -207,9 +207,8 @@ const ProductCard = React.memo(
         {type === 'buyer' && (
           <ProductCardBuyerContext
             product={product}
-            onAddToCart={onAddToCart}
-            handleProductClick={handleProductClick} // Pass down if buyer context needs to know about this
-            onModalStateChange={setIsModalOpen} // Callback para manejar el estado del modal
+            handleProductClick={handleProductClick}
+            onModalStateChange={setIsModalOpen}
           />
         )}
         {type === 'provider' && (

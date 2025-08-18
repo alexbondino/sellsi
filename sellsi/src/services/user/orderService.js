@@ -746,6 +746,31 @@ class OrderService {
         updated_at: new Date().toISOString()
       };
 
+      // ================================================================
+      // GUARDIA: No permitir avanzar (accepted / in_transit / delivered)
+      // si la orden de pagos asociada aún no está payment_status = 'paid'
+      // (Sólo aplica a filas en la tabla orders — flujo Khipu)
+      // ================================================================
+      const ADVANCE_STATUSES = new Set(['accepted','in_transit','delivered']);
+      if (ADVANCE_STATUSES.has(normalizedStatus)) {
+        try {
+          const { data: existingOrderRow, error: fetchExistingOrderErr } = await supabase
+            .from('orders')
+            .select('id, payment_status')
+            .eq('id', orderId)
+            .maybeSingle();
+          if (!fetchExistingOrderErr && existingOrderRow) {
+            const payStatus = existingOrderRow.payment_status || 'pending';
+            if (payStatus !== 'paid') {
+              throw new Error('No se puede cambiar el estado a "' + normalizedStatus + '" porque el pago no está confirmado (payment_status=' + payStatus + ').');
+            }
+          }
+        } catch (guardErr) {
+          // Re-lanzar para que el flujo superior capture y devuelva mensaje claro
+          throw guardErr;
+        }
+      }
+
       // Intentar actualizar primero en la tabla orders (nuevo flujo)
       const { data: orderData, error: orderError } = await supabase
         .from('orders')

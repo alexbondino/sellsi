@@ -33,7 +33,7 @@ import useCartStore from '../../../shared/stores/cart/cartStore.js';
 const CheckoutSuccess = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { clearLocal } = useCartStore();
+  const { clearLocal, clearCart } = useCartStore();
 
   // Estados
   const [isVerifying, setIsVerifying] = useState(true);
@@ -77,9 +77,14 @@ const CheckoutSuccess = () => {
             status: 'completed',
           });
 
-          // Limpiar SOLO el estado local del carrito para no borrar los cart_items del pedido convertido
-          // El webhook ya convirtió el carrito activo en pedido y creó uno nuevo activo
-          clearLocal();
+          // Limpiar el carrito correctamente (estado + persistencia)
+          try {
+            await clearCart(); // intenta limpiar (maneja backend si aplica)
+          } catch (e) {
+            // fallback local si falla backend
+            clearLocal();
+          }
+          clearLocal(); // asegurar localStorage limpio
 
           toast.success('¡Pago completado exitosamente!');
 
@@ -115,7 +120,7 @@ const CheckoutSuccess = () => {
     return () => {
       if (redirectTimeout) clearTimeout(redirectTimeout);
     };
-  }, [paymentId, transactionId, clearCart, navigate]);
+  }, [paymentId, transactionId, clearCart, clearLocal, navigate]);
 
   const handleViewOrders = () => {
     navigate('/buyer/orders');

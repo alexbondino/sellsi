@@ -214,18 +214,24 @@ serve(req => withMetrics('create-payment-khipu', req, async () => {
         // 3. Merge opcional de items (si se recibieron nuevos items reemplazamos; si no, mantenemos los existentes)
         const mergedItems = itemsPayload && itemsPayload.length > 0 ? itemsPayload : existingOrder.items;
 
+        // PROTECCIÓN: No degradar payment_status si ya está 'paid'
+        // Si la orden ya fue pagada evitamos sobreescribirla a 'pending'
+        const preservePaid = (existingOrder as any).payment_status === 'paid';
         const updateData: Record<string, any> = {
           khipu_payment_id: (normalized as any).payment_id || null,
           khipu_payment_url: (normalized as any).payment_url || null,
           khipu_expires_at: expiresAt,
           payment_method: 'khipu',
-          payment_status: 'pending',
+          payment_status: preservePaid ? 'paid' : 'pending',
           subtotal: amount, // aseguremos monto coherente
           total: amount,
           total_amount: amount,
           items: mergedItems,
           updated_at: new Date().toISOString(),
         };
+        if (preservePaid) {
+          console.log('[create-payment-khipu] Orden ya estaba pagada; se preserva payment_status=paid y no se degrada a pending');
+        }
         const { error: updErr } = await supabaseAdmin
           .from('orders')
           .update(updateData)
@@ -235,6 +241,7 @@ serve(req => withMetrics('create-payment-khipu', req, async () => {
         } else {
           (normalized as any).persisted = true;
           (normalized as any).khipu_expires_at = expiresAt;
+          (normalized as any).payment_status = updateData.payment_status;
         }
       }
       (normalized as any).order_id = order_id;

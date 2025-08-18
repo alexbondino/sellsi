@@ -35,7 +35,7 @@ import { AddToCart } from '../../cart';
  * This component is an internal part of the main ProductCard.
  */
 const ProductCardBuyerContext = React.memo(
-  ({ product, onAddToCart, handleProductClick, onModalStateChange }) => {
+  ({ product, /* onAddToCart (REMOVED to prevent double add) */ handleProductClick, onModalStateChange }) => {
     const navigate = useNavigate();
 
     // ✅ OPTIMIZADO: Usar hook optimizado con caché global
@@ -351,7 +351,6 @@ const ProductCardBuyerContext = React.memo(
             initialQuantity={minimumPurchase}
             userRegion={userRegion}
             isLoadingUserProfile={isLoadingUserRegion}
-            onSuccess={onAddToCart}
             onModalStateChange={onModalStateChange}
             sx={{
               textTransform: 'none',
