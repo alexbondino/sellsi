@@ -1002,6 +1002,8 @@ class OrderService {
           status,
           created_at,
           updated_at,
+          shipping_total,
+          shipping_currency,
           users!carts_user_id_fkey (
             user_id,
             user_nm,
@@ -1086,6 +1088,10 @@ class OrderService {
             department: shippingInfo.shipping_dept || '',
             fullAddress: `${shippingInfo.shipping_address || 'Dirección no especificada'} ${shippingInfo.shipping_number || ''} ${shippingInfo.shipping_dept || ''}`.trim()
           };
+
+          // Calcular totales de líneas y shipping persistido (similar a flujo supplier)
+          const linesTotal = cart.cart_items.reduce((sum, item) => sum + (item.price_at_addition * item.quantity), 0);
+          const shippingPersisted = cart.shipping_total || 0;
 
           return {
             order_id: cart.cart_id,

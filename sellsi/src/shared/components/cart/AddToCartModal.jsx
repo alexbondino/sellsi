@@ -30,7 +30,7 @@ import QuantitySelector from '../forms/QuantitySelector/QuantitySelector';
 import PriceDisplay from '../display/price/PriceDisplay';
 import { CheckoutSummaryImage } from '../../../components/UniversalProductImage'; // Imagen universal con fallbacks
 import { useUnifiedShippingValidation } from '../../hooks/shipping/useUnifiedShippingValidation';
-import { calculatePriceForQuantity } from '../../../utils/priceCalculation';
+import { calculatePriceForQuantity, normalizePriceTiers } from '../../../utils/priceCalculation';
 import { supabase } from '../../../services/supabase';
 import { useSupplierDocumentTypes } from '../../utils/supplierDocumentTypes';
 
@@ -125,6 +125,9 @@ const AddToCartModal = ({
 
       const productWithRegions = {
         ...product,
+        // Clonar arrays de tiers si existen para evitar mutaciones compartidas
+        priceTiers: product?.priceTiers ? product.priceTiers.map(t => ({ ...t })) : product?.priceTiers,
+        price_tiers: product?.price_tiers ? product.price_tiers.map(t => ({ ...t })) : product?.price_tiers,
         shippingRegions,
         delivery_regions: shippingRegions,
         shipping_regions: shippingRegions,
@@ -238,7 +241,10 @@ const AddToCartModal = ({
   // CÁLCULOS DE PRECIOS DINÁMICOS
   // ============================================================================
 
-  // Calcular precio actual basado en cantidad y tramos
+  // Normalizar tiers para UI (precio DESC estable). Solo recalcula cuando cambia la referencia original
+  const displayPriceTiers = useMemo(() => normalizePriceTiers(productData.priceTiers, 'price_desc'), [productData.priceTiers]);
+
+  // Calcular precio actual basado en cantidad y tramos (usar tiers originales para consistencia de cálculo)
   const currentPricing = useMemo(() => {
     const { priceTiers, basePrice } = productData;
     
@@ -260,20 +266,12 @@ const AddToCartModal = ({
 
   // Encontrar el tramo activo para resaltado (SOLO el que corresponde a la cantidad actual)
   const activeTier = useMemo(() => {
-    const { priceTiers } = productData;
-    if (priceTiers.length === 0) return null;
-    
-    // Buscar el tramo que corresponde exactamente a la cantidad actual
-    for (const tier of priceTiers) {
+    if (!productData.priceTiers || productData.priceTiers.length === 0) return null;
+    return productData.priceTiers.find(tier => {
       const minQty = tier.min_quantity || 1;
       const maxQty = tier.max_quantity;
-      
-      if (quantity >= minQty && (maxQty === null || quantity <= maxQty)) {
-        return tier;
-      }
-    }
-    
-    return null;
+      return quantity >= minQty && (maxQty == null || quantity <= maxQty);
+    }) || null;
   }, [quantity, productData.priceTiers]);
 
   // ============================================================================
@@ -375,9 +373,8 @@ const AddToCartModal = ({
   // ============================================================================
 
   const PriceTiersDisplay = () => {
-    const { priceTiers } = productData;
-    
-    if (priceTiers.length === 0) {
+  const priceTiers = displayPriceTiers;
+  if (priceTiers.length === 0) {
       return (
         <Paper variant="outlined" sx={{ p: 2, textAlign: 'center' }}>
           <Typography variant="h6" color="text.primary" sx={{ fontWeight: 700 }}>
@@ -402,26 +399,8 @@ const AddToCartModal = ({
           {priceTiers.map((tier, index) => {
             const minQty = tier.min_quantity || 1;
             const maxQty = tier.max_quantity;
-            
-            // LÓGICA CORREGIDA: Solo activar EL tramo que contiene exactamente la cantidad
-            let isActive = false;
-            
-            if (maxQty === null || maxQty === undefined) {
-              // Último tramo (sin máximo): activo si quantity >= minQty Y no hay tramos posteriores que apliquen
-              isActive = quantity >= minQty;
-              // Verificar que no hay tramos posteriores que también apliquen
-              for (let i = index + 1; i < priceTiers.length; i++) {
-                const laterTier = priceTiers[i];
-                const laterMinQty = laterTier.min_quantity || 1;
-                if (quantity >= laterMinQty) {
-                  isActive = false; // Hay un tramo posterior que aplica
-                  break;
-                }
-              }
-            } else {
-              // Tramo con rango definido: activo SOLO si está exactamente en el rango
-              isActive = quantity >= minQty && quantity <= maxQty;
-            }
+            // Highlight independiente del orden: solo evaluar rango
+            const isActive = quantity >= minQty && (maxQty == null || quantity <= maxQty);
             
             const rangeText = maxQty 
               ? `${minQty} - ${maxQty}` 

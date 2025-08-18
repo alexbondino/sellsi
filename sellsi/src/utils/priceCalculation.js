@@ -45,6 +45,33 @@ export const calculatePriceForQuantity = (
 }
 
 /**
+ * Normaliza y ordena los price tiers según un modo especificado.
+ * @param {Array} tiers - Array original de tramos (no se muta)
+ * @param {string} mode - 'price_desc' | 'min_desc' | 'min_asc'
+ * @returns {Array} Nuevo array ordenado
+ */
+export const normalizePriceTiers = (tiers = [], mode = 'price_desc') => {
+  if (!Array.isArray(tiers)) return []
+  const copy = tiers.slice().filter(t => t && (t.price != null || t.precio != null || t.min_quantity != null || t.cantidad_minima != null))
+  const getMin = t => t.min_quantity ?? t.cantidad_minima ?? t.min ?? 0
+  const getPrice = t => t.price ?? t.precio ?? 0
+  if (mode === 'price_desc') {
+    return copy.sort((a, b) => {
+      const d = getPrice(b) - getPrice(a)
+      if (d !== 0) return d
+      return getMin(a) - getMin(b) // tie-break: menor min primero
+    })
+  }
+  if (mode === 'min_desc') {
+    return copy.sort((a, b) => getMin(b) - getMin(a))
+  }
+  if (mode === 'min_asc') {
+    return copy.sort((a, b) => getMin(a) - getMin(b))
+  }
+  return copy
+}
+
+/**
  * Calcula el precio total para una cantidad específica
  * @param {number} quantity - Cantidad de productos
  * @param {Array} tiers - Array de tramos de precios
@@ -75,63 +102,43 @@ export const calculateTotalPriceForQuantity = (
  */
 export const formatProductForCart = (product, quantity, tiers = []) => {
   const basePrice = product.precio || product.price || 0
+  const safeTiers = Array.isArray(tiers) ? tiers.map(t => ({ ...t })) : []
 
-  const { unitPrice, totalPrice } = calculateTotalPriceForQuantity(
-    quantity,
-    tiers,
-    basePrice
-  )
-  // Buscar el tramo aplicado correctamente
-  const appliedTier = tiers
+  const { unitPrice, totalPrice } = calculateTotalPriceForQuantity(quantity, safeTiers, basePrice)
+
+  // Determinar tramo aplicado SIN mutar el array original
+  const appliedTier = [...safeTiers]
     .sort((a, b) => {
       const aMin = a.min_quantity || a.cantidad_minima || 0
       const bMin = b.min_quantity || b.cantidad_minima || 0
-      return bMin - aMin // Descendente
+      return bMin - aMin
     })
-    .find((tier) => {
+    .find(tier => {
       const minQty = tier.min_quantity || tier.cantidad_minima || 0
       return quantity >= minQty
-    })
-  // Mapeo de imagen
-  const finalImage =
-    product.imagen || product.image || '/placeholder-product.jpg'
-  
-  // Determinar price_tiers final
-  const finalPriceTiers = product.price_tiers || tiers || [{ min_quantity: 1, price: basePrice }]
-  
-  const cartItem = {
-    // Campos originales del producto
-    ...product,
+    }) || null
 
-    // Mapeo para compatibilidad con CartItem
+  const finalImage = product.imagen || product.image || '/placeholder-product.jpg'
+
+  const finalPriceTiers = product.price_tiers || safeTiers || [{ min_quantity: 1, price: basePrice }]
+
+  return {
+    ...product,
     id: product.id,
     name: product.nombre || product.name,
     price: unitPrice,
     image: finalImage,
-    supplier:
-      product.proveedor ||
-      product.supplier ||
-      product.provider ||
-      'Proveedor no especificado',
+    supplier: product.proveedor || product.supplier || product.provider || 'Proveedor no especificado',
     maxStock: product.stock || product.maxStock || 50,
-    quantity: quantity,
-
-    // ===== PRESERVAR PRICE_TIERS PARA CÁLCULOS FUTUROS =====
-    // Asegurar que price_tiers esté siempre disponible (invisible en UI)
+    quantity,
     price_tiers: finalPriceTiers,
-
-    // ===== PRESERVAR MÍNIMO DE COMPRA PARA VALIDACIÓN EN CART =====
     minimum_purchase: product.minimum_purchase || product.compraMinima || 1,
-
-    // Información adicional de cálculo
     cantidadSeleccionada: quantity,
     precioUnitario: unitPrice,
     precioTotal: totalPrice,
     precioOriginal: basePrice,
-    tramoAplicado: appliedTier || null,
+    tramoAplicado: appliedTier,
   }
-
-  return cartItem
 }
 
 /**
