@@ -136,9 +136,15 @@ export const getMarketplaceProducts = async (filters = {}) => {
       let thumbnails = null
       
       if (product.product_images && Array.isArray(product.product_images) && product.product_images.length > 0) {
-        imagenPrincipal = product.product_images[0].image_url
-        thumbnailUrl = product.product_images[0].thumbnail_url
-        thumbnails = product.product_images[0].thumbnails
+        const pi = product.product_images[0];
+        imagenPrincipal = pi.image_url || null;
+        thumbnailUrl = pi.thumbnail_url || null;
+        // Normalizar thumbnails: si viene como string parsear a objeto
+        let t = pi.thumbnails || null;
+        if (t && typeof t === 'string') {
+          try { t = JSON.parse(t); } catch (_) { t = null; }
+        }
+        thumbnails = t || null;
       }
 
       return {

@@ -701,7 +701,7 @@ const ProductMarketplaceTable = memo(() => {
 
                 <TableCell>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                    <AdminTableImage product={product} />
+                    <AdminTableImage product={product} priority={true} fallbackIcon={() => (<ShoppingCartIcon />)} />
                     <Box>
                       <Typography component="span" variant="body2" fontWeight="medium">
                         {product.product_name || 'N/A'}

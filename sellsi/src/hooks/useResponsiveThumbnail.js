@@ -120,8 +120,13 @@ export const useMinithumb = (product) => {
     if (!product) return '/placeholder-product.jpg';
 
     // Prioridad 1: Minithumb del producto
-    if (product.thumbnails?.minithumb) {
-      return product.thumbnails.minithumb;
+    // Si thumbnails viene como string intentar parsearlo
+    let localThumbs = product.thumbnails;
+    if (localThumbs && typeof localThumbs === 'string') {
+      try { localThumbs = JSON.parse(localThumbs); } catch (_) { localThumbs = null; }
+    }
+    if (localThumbs?.minithumb) {
+      return localThumbs.minithumb;
     }
 
     // Prioridad 2: Minithumb de la BD
@@ -130,14 +135,20 @@ export const useMinithumb = (product) => {
     }
 
     // Construir desde thumbnail_url si es posible
-    if (dbThumbnails?.thumbnail_url) {
-      const constructedUrl = dbThumbnails.thumbnail_url.replace(
-        '_desktop_320x260.jpg',
-        '_minithumb_40x40.jpg'
-      );
-      if (constructedUrl !== dbThumbnails.thumbnail_url) {
-        return constructedUrl;
+    const maybeConstructFrom = dbThumbnails?.thumbnail_url || product.thumbnail_url || product.thumbnailUrl || null;
+    if (maybeConstructFrom && typeof maybeConstructFrom === 'string') {
+      // Reemplazar patrones comunes de tamaño por la variante minithumb
+      // Ej: _desktop_320x260.jpg, _tablet_300x230.jpg, _mobile_190x153.jpg -> _minithumb_40x40.jpg
+      const re = /_(desktop|tablet|mobile)_[0-9]+x[0-9]+(\.[a-zA-Z0-9]+)$/;
+      const m = maybeConstructFrom.match(re);
+      if (m) {
+        const ext = m[2] || '.jpg';
+        const constructed = maybeConstructFrom.replace(re, `_minithumb_40x40${ext}`);
+        if (constructed !== maybeConstructFrom) return constructed;
       }
+      // Fallback adicional: reemplazo simple si coincide el sufijo desktop específico
+      const simple = maybeConstructFrom.replace('_desktop_320x260.jpg', '_minithumb_40x40.jpg');
+      if (simple !== maybeConstructFrom) return simple;
     }
 
     // Fallbacks
