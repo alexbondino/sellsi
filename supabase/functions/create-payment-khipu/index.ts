@@ -177,7 +177,7 @@ serve(req => withMetrics('create-payment-khipu', req, async () => {
       // 2. Verificar existencia de la orden
       const { data: existingOrder, error: fetchErr } = await supabaseAdmin
         .from('orders')
-        .select('id, items')
+        .select('id, items, payment_status')
         .eq('id', order_id)
         .maybeSingle();
 
@@ -193,7 +193,6 @@ serve(req => withMetrics('create-payment-khipu', req, async () => {
           items: itemsPayload,
           subtotal: amount,
           total: amount,
-          total_amount: amount,
           status: 'pending',
           payment_method: 'khipu',
           payment_status: 'pending',
@@ -216,7 +215,7 @@ serve(req => withMetrics('create-payment-khipu', req, async () => {
 
         // PROTECCIÓN: No degradar payment_status si ya está 'paid'
         // Si la orden ya fue pagada evitamos sobreescribirla a 'pending'
-        const preservePaid = (existingOrder as any).payment_status === 'paid';
+  const preservePaid = (existingOrder as any).payment_status === 'paid';
         const updateData: Record<string, any> = {
           khipu_payment_id: (normalized as any).payment_id || null,
           khipu_payment_url: (normalized as any).payment_url || null,
@@ -225,7 +224,6 @@ serve(req => withMetrics('create-payment-khipu', req, async () => {
           payment_status: preservePaid ? 'paid' : 'pending',
           subtotal: amount, // aseguremos monto coherente
           total: amount,
-          total_amount: amount,
           items: mergedItems,
           updated_at: new Date().toISOString(),
         };

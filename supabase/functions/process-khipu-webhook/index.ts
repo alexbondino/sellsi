@@ -143,7 +143,7 @@ serve((req: Request) => withMetrics('process-khipu-webhook', req, async () => {
     const { data, error } = await supabase
       .from('orders')
       .update({
-        status: 'paid',
+        // Mantenemos status existente (no introducimos valor fuera del constraint) solo marcamos payment_status
         payment_status: 'paid',
         khipu_payment_id: khipuPayload.payment_id,
         paid_at: new Date().toISOString(),
@@ -166,7 +166,7 @@ serve((req: Request) => withMetrics('process-khipu-webhook', req, async () => {
       const { data: orderRows, error: fetchOrderErr } = await supabase
         .from('orders')
         // Incluir campos relacionados a shipping para persistirlos en carts
-        .select('id, user_id, items, total, created_at, shipping, shipping_total, shipping_amount')
+  .select('id, user_id, items, total, created_at, shipping')
         .eq('id', orderId)
         .limit(1);
 
@@ -186,19 +186,7 @@ serve((req: Request) => withMetrics('process-khipu-webhook', req, async () => {
 
         // Derivar shipping a persistir en el cart
         const deriveShipping = () => {
-          let ship = Number(
-            ord.shipping ?? ord.shipping_total ?? ord.shipping_amount ?? 0
-          );
-            const itemsSubtotal = items.reduce((acc, it) => {
-              const unit = Number(it.price_at_addition || it.price || 0);
-              const qty = Number(it.quantity || 1);
-              if (!Number.isFinite(unit) || !Number.isFinite(qty)) return acc;
-              return acc + unit * qty;
-            }, 0);
-          if ((!ship || !Number.isFinite(ship)) && Number.isFinite(itemsSubtotal) && Number.isFinite(ord.total)) {
-            const delta = Number(ord.total) - itemsSubtotal;
-            if (delta > 0 && delta < 5_000_000) ship = delta;
-          }
+          let ship = Number(ord.shipping || 0);
           if (!Number.isFinite(ship) || ship < 0) ship = 0;
           return Math.trunc(ship);
         };
@@ -218,7 +206,8 @@ serve((req: Request) => withMetrics('process-khipu-webhook', req, async () => {
         if (activeCart && activeCart.cart_id) {
           // Convertir carrito activo en pedido pendiente + persistir shipping si no existe aún
           const cartUpdate: Record<string, any> = { status: 'pending', updated_at: new Date().toISOString() };
-          if (activeCart.shipping_total == null) {
+          // Solo persistimos shipping_total si no está seteado (>0 consideramos ya persistido)
+          if ((activeCart.shipping_total == null || activeCart.shipping_total === 0) && shippingPersist > 0) {
             cartUpdate.shipping_total = shippingPersist;
             cartUpdate.shipping_currency = shippingCurrency;
           }
@@ -238,9 +227,14 @@ serve((req: Request) => withMetrics('process-khipu-webhook', req, async () => {
 
         // 3) Si no hay carrito activo, crear un nuevo registro de carts en 'pending'
         if (!targetCartId) {
+          const insertCart: Record<string, any> = { user_id: buyerId, status: 'pending' };
+          if (shippingPersist > 0) {
+            insertCart.shipping_total = shippingPersist;
+            insertCart.shipping_currency = shippingCurrency;
+          }
           const { data: newCart, error: newCartErr } = await supabase
             .from('carts')
-            .insert({ user_id: buyerId, status: 'pending', shipping_total: shippingPersist, shipping_currency: shippingCurrency })
+            .insert(insertCart)
             .select('cart_id')
             .single();
 
