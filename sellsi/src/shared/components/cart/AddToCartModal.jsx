@@ -60,6 +60,7 @@ const AddToCartModal = ({
   initialQuantity = 1,
   userRegion = null,
   isLoadingUserProfile = false, // Nuevo prop para indicar si el perfil del usuario está cargando
+  isOwnProduct = false, // Nuevo: deshabilitar agregar si es producto propio
 }) => {
   // ============================================================================
   // ESTADOS LOCALES
@@ -816,17 +817,18 @@ const AddToCartModal = ({
             <Box sx={{ 
               p: 2, 
               borderBottom: 1, 
-              borderColor: 'divider',
-              bgcolor: 'background.paper',
+              borderColor: 'primary.dark',
+              bgcolor: 'primary.main',
+              color: 'common.white',
               position: 'sticky',
               top: 0,
               zIndex: 1,
             }}>
-            <Stack direction="row" justifyContent="space-between" alignItems="center">
-                <Typography variant="h6" sx={{ fontWeight: 700 }}>
+              <Stack direction="row" justifyContent="space-between" alignItems="center">
+                <Typography variant="h6" sx={{ fontWeight: 700, color: 'common.white' }}>
                   Resumen del Pedido
                 </Typography>
-                <IconButton onClick={handleClose} size="small">
+                <IconButton onClick={handleClose} size="small" sx={{ color: 'common.white' }}>
                   <CloseIcon />
                 </IconButton>
               </Stack>
@@ -870,6 +872,7 @@ const AddToCartModal = ({
                 size="large"
                 onClick={handleAddToCart}
                 disabled={
+                  isOwnProduct ||
                   isProcessing || 
                   (shippingValidation && !shippingValidation.canShip) ||
                   !!quantityError

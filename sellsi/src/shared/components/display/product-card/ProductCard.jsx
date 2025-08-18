@@ -191,8 +191,8 @@ const ProductCard = React.memo(
         onClick={handleProductClick}
         sx={cardStyles}
       >
-  {/* ✅ Mostrar imagen también en provider (usando logo o thumbnail) */}
-  {memoizedImage}
+  {/* ✅ Ocultar imagen de producto en tarjetas de proveedor (Option A) */}
+  {type !== 'provider' && memoizedImage}
         {type === 'supplier' && (
           <ProductCardSupplierContext
             product={product}

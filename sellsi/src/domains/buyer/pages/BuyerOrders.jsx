@@ -229,8 +229,15 @@ const BuyerOrders = () => {
     const isRejected = status === 'rejected' || status === 'cancelled';
     if (isRejected) {
       return [
-        { key: 'procesando_pago', label: 'Procesando Pago', active: paymentStatus === 'pending', color: 'warning', tooltip: 'Pago en proceso.' },
-        { key: 'pago_confirmado', label: 'Pago Confirmado', active: paymentStatus === 'paid', customColor: '#00bcd4', tooltip: 'Pago confirmado.' },
+        // Un único chip de pago que evoluciona de "Procesando Pago" a "Pago Confirmado"
+        {
+          key: 'pago',
+          label: paymentStatus === 'paid' ? 'Pago Confirmado' : 'Procesando Pago',
+          active: paymentStatus === 'paid' || paymentStatus === 'pending',
+          color: paymentStatus === 'paid' ? 'default' : 'warning',
+          customColor: paymentStatus === 'paid' ? '#00bcd4' : undefined,
+          tooltip: paymentStatus === 'paid' ? 'Pago confirmado.' : 'Pago en proceso.'
+        },
         { key: 'rechazado', label: 'Rechazado', active: true, color: 'error', tooltip: 'Tu pedido fue rechazado por el proveedor.' },
         { key: 'en_transito', label: 'En Transito', active: false, color: 'default', tooltip: 'Pendiente de despacho por el proveedor.' },
         { key: 'entregado', label: 'Entregado', active: false, color: 'default', tooltip: 'Aún no se ha entregado.' }
@@ -238,31 +245,23 @@ const BuyerOrders = () => {
     }
 
     // Determinar clave activa única
-    let activeKey = null;
+  let activeKey = null;
     if (status === 'delivered') activeKey = 'entregado';
     else if (status === 'in_transit') activeKey = 'en_transito';
     else if (status === 'accepted') activeKey = 'aceptado';
-    else if (paymentStatus === 'paid') activeKey = 'pago_confirmado';
-    else if (paymentStatus === 'pending') activeKey = 'procesando_pago';
+  else if (paymentStatus === 'paid' || paymentStatus === 'pending') activeKey = 'pago';
 
     const chips = [
+      // Un único chip de pago. La etiqueta y el estilo se deciden por el estado de pago.
       {
-        key: 'procesando_pago',
-        label: 'Procesando Pago',
-        active: activeKey === 'procesando_pago',
-        color: 'warning',
-        tooltip: activeKey === 'procesando_pago'
-          ? 'Estamos verificando tu pago.'
-          : 'Pago ya verificado.'
-      },
-      {
-        key: 'pago_confirmado',
-        label: 'Pago Confirmado',
-        active: activeKey === 'pago_confirmado',
-        customColor: '#00bcd4',
-        tooltip: activeKey === 'pago_confirmado'
+        key: 'pago',
+        label: paymentStatus === 'paid' ? 'Pago Confirmado' : 'Procesando Pago',
+        active: activeKey === 'pago',
+        color: paymentStatus === 'paid' ? 'default' : 'warning',
+        customColor: paymentStatus === 'paid' ? '#00bcd4' : undefined,
+        tooltip: paymentStatus === 'paid'
           ? 'Pago confirmado. La orden quedará pendiente de aceptación por el proveedor.'
-          : 'Pago aún no confirmado.'
+          : 'Estamos verificando tu pago.'
       },
       {
         key: 'aceptado',
@@ -481,7 +480,7 @@ const BuyerOrders = () => {
                                   const rechazadoReached = ['rejected', 'cancelled'].includes(order.status);
 
                                   let computedTooltip = chip.tooltip || '';
-                                  if (chip.key === 'pago_confirmado') {
+                                  if (chip.key === 'pago') {
                                     computedTooltip = pagoConfirmadoReached
                                       ? 'Pago confirmado. La orden quedará pendiente de aceptación por el proveedor.'
                                       : 'Pago aún no confirmado.';
