@@ -54,6 +54,7 @@ class OrderService {
           accepted_at,
           dispatched_at,
           delivered_at,
+          estimated_delivery_date,
           cancelled_at,
           rejection_reason,
           cancellation_reason
@@ -420,6 +421,7 @@ class OrderService {
           payment_status: row.payment_status || 'pending',
           created_at: row.created_at,
           updated_at: row.updated_at,
+          estimated_delivery_date: row.estimated_delivery_date || null,
           buyer: { user_id: row.user_id },
           delivery_address: null,
           items: normalizedItems,
@@ -745,6 +747,9 @@ class OrderService {
         status: normalizedStatus,
         updated_at: new Date().toISOString()
       };
+      if (normalizedStatus === 'in_transit' && additionalData.estimated_delivery_date) {
+        updateData.estimated_delivery_date = additionalData.estimated_delivery_date;
+      }
 
       // ================================================================
       // GUARDIA: No permitir avanzar (accepted / in_transit / delivered)
