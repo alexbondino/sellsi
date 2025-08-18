@@ -41,6 +41,13 @@ const BuyerOrders = () => {
     formatCurrency
   } = useBuyerOrders(buyerId);
 
+  // Mark related notifications as read on mount
+  const { markContext } = (typeof useNotificationsContext === 'function' ? require('../../notifications/components/NotificationProvider') : { useNotificationsContext: null }).useNotificationsContext?.() || {};
+  React.useEffect(() => {
+    try { markContext && markContext('buyer_orders'); } catch(_) {}
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // ============================================================================
   // PAGINACIÓN (5 órdenes por página)
   // ============================================================================

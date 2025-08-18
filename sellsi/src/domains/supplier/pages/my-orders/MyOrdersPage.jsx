@@ -63,6 +63,18 @@ const MyOrdersPage = () => {
   const [taxDocFileState, setTaxDocFileState] = useState({ file: null, error: null });
   const [taxDocTouched, setTaxDocTouched] = useState(false);
 
+  // Notifications: mark supplier context notifications as read on mount once auth resolved and supplierId exists
+  try {
+    // dynamic require to avoid circular issues if any
+    const { useNotificationsContext } = require('../../../../notifications/components/NotificationProvider');
+    const notifCtx = useNotificationsContext?.();
+    useEffect(() => {
+      if (authResolved && supplierId) {
+        try { notifCtx?.markContext?.('supplier_orders'); } catch(_) {}
+      }
+    }, [authResolved, supplierId]);
+  } catch(_) {}
+
   // Resolver supplierId desde sesión autenticada; fallback a localStorage si no hay sesión
   useEffect(() => {
     let isMounted = true;

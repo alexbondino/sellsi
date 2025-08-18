@@ -17,6 +17,7 @@ import BanGuard from '../../components/BanGuard';
 import { AuthProvider } from './AuthProvider';
 import { RoleProvider } from './RoleProvider';
 import { LayoutProvider } from './LayoutProvider';
+import { NotificationsProvider } from '../../domains/notifications/components/NotificationProvider';
 import { TransferInfoManager } from '../../shared/components/managers';
 
 const globalStyles = {
@@ -47,11 +48,13 @@ export const AppProviders = ({ children }) => {
             <AuthProvider>
               <TransferInfoManager />
               <RoleProvider>
-                <LayoutProvider>
-                  <BanGuard>
-                    {children}
-                  </BanGuard>
-                </LayoutProvider>
+                <NotificationsProvider>
+                  <LayoutProvider>
+                    <BanGuard>
+                      {children}
+                    </BanGuard>
+                  </LayoutProvider>
+                </NotificationsProvider>
               </RoleProvider>
             </AuthProvider>
           </BrowserRouter>

@@ -16,7 +16,7 @@ import {
 import MenuIcon from '@mui/icons-material/Menu';
 import PersonIcon from '@mui/icons-material/Person';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
-import NotificationsIcon from '@mui/icons-material/Notifications';
+import NotificationsIcon from '@mui/icons-material/Notifications'; // fallback icon for mobile or loading
 import { supabase } from '../../../services/supabase';
 import useCartStore from '../../../stores/cart/cartStore';
 import ContactModal from '../../modals/ContactModal';
@@ -29,6 +29,9 @@ import { setSkipScrollToTopOnce } from '../ScrollToTop/ScrollToTop';
 
 // Importa el nuevo componente reutilizable y ahora verdaderamente controlado
 import { Switch } from '../'; // Ajusta la ruta si es diferente
+import { useNotificationsContext } from '../../../../domains/notifications/components/NotificationProvider';
+import { NotificationBell, NotificationListPanel } from '../../../../domains/notifications';
+import { Popover, Dialog, DialogContent } from '@mui/material';
 
 export default function TopBar({
   session,
@@ -247,6 +250,24 @@ export default function TopBar({
   );
   // Estado para el modal de "Próximamente..."
   const [openComingSoonModal, setOpenComingSoonModal] = useState(false);
+  // Notifications
+  const notifCtx = useNotificationsContext?.() || null;
+  const [notifAnchor, setNotifAnchor] = useState(null);
+  const [notifModalOpen, setNotifModalOpen] = useState(false);
+  const handleOpenNotif = (e) => setNotifAnchor(e.currentTarget);
+  const handleCloseNotif = () => setNotifAnchor(null);
+  const handleViewAllNotif = () => { setNotifModalOpen(true); handleCloseNotif(); };
+  const handleCloseNotifModal = () => setNotifModalOpen(false);
+  const handleNotifItemClick = (n) => {
+    // Navigate based on context_section
+    if (n.context_section === 'supplier_orders') navigate('/supplier/my-orders');
+    else if (n.context_section === 'buyer_orders') navigate('/buyer/orders');
+    else if (n.order_status && currentRole === 'buyer') navigate('/buyer/orders');
+    else if (n.order_status && currentRole === 'supplier') navigate('/supplier/my-orders');
+    // Mark read locally
+    try { notifCtx?.markAsRead?.([n.id]); } catch(_) {}
+    handleCloseNotif();
+  };
 
   if (!isLoggedIn) {
     // Botones públicos, pero el de "Trabaja con Nosotros" ahora abre modal
@@ -406,31 +427,12 @@ export default function TopBar({
         )}
 
         <Tooltip title="Notificaciones" arrow>
-          <IconButton
-            sx={{
-              color: 'white',
-              p: 0.4,
-              mr: 0.3, // acercar campana al carrito
-              minWidth: 36,
-              minHeight: 36,
-              boxShadow: 'none',
-              outline: 'none',
-              border: 'none',
-              transition: 'background 0.2s',
-              '&:focus': { outline: 'none', border: 'none', boxShadow: 'none' },
-              '&:active': { outline: 'none', border: 'none', boxShadow: 'none' },
-              '&:hover': {
-                background: theme => theme.palette.primary.main,
-                boxShadow: 'none',
-                outline: 'none',
-                border: 'none',
-              },
-            }}
-            disableFocusRipple
-            disableRipple
-          >
-            <NotificationsIcon sx={{ fontSize: '1.5rem', color: '#fff !important', lineHeight: 1 }} />
-          </IconButton>
+          <span>
+            <NotificationBell
+              count={notifCtx?.unreadCount || 0}
+              onClick={handleOpenNotif}
+            />
+          </span>
         </Tooltip>
 
         <Tooltip title="Carrito" arrow>
@@ -711,6 +713,37 @@ export default function TopBar({
           }}
         />
       )}
+      {/* Notifications Popover */}
+      <Popover
+        open={Boolean(notifAnchor)}
+        anchorEl={notifAnchor}
+        onClose={handleCloseNotif}
+        disableScrollLock={true}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+        PaperProps={{ sx: { mt: 1, boxShadow: 6, borderRadius: 2, overflow: 'hidden' } }}
+      >
+        <NotificationListPanel
+          notifications={notifCtx?.notifications || []}
+          activeTab={notifCtx?.activeTab || 'all'}
+          onTabChange={(t)=>notifCtx?.setActiveTab?.(t)}
+          onItemClick={handleNotifItemClick}
+          onViewAll={handleViewAllNotif}
+          compact
+        />
+      </Popover>
+      <Dialog open={notifModalOpen} onClose={handleCloseNotifModal} fullWidth maxWidth="sm">
+        <DialogContent sx={{ p:0 }}>
+          <NotificationListPanel
+            notifications={notifCtx?.notifications || []}
+            activeTab={notifCtx?.activeTab || 'all'}
+            onTabChange={(t)=>notifCtx?.setActiveTab?.(t)}
+            onItemClick={handleNotifItemClick}
+            onViewAll={handleCloseNotifModal}
+            compact={false}
+          />
+        </DialogContent>
+      </Dialog>
       {/* Modal Proximamente */}
       <Modal
         isOpen={openComingSoonModal}
