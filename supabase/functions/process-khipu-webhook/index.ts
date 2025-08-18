@@ -165,7 +165,8 @@ serve((req: Request) => withMetrics('process-khipu-webhook', req, async () => {
       // 1) Obtener la orden completa para extraer user_id e items
       const { data: orderRows, error: fetchOrderErr } = await supabase
         .from('orders')
-        .select('id, user_id, items, total, created_at')
+        // Incluir campos relacionados a shipping para persistirlos en carts
+        .select('id, user_id, items, total, created_at, shipping, shipping_total, shipping_amount')
         .eq('id', orderId)
         .limit(1);
 
@@ -183,10 +184,31 @@ serve((req: Request) => withMetrics('process-khipu-webhook', req, async () => {
           items = [];
         }
 
+        // Derivar shipping a persistir en el cart
+        const deriveShipping = () => {
+          let ship = Number(
+            ord.shipping ?? ord.shipping_total ?? ord.shipping_amount ?? 0
+          );
+            const itemsSubtotal = items.reduce((acc, it) => {
+              const unit = Number(it.price_at_addition || it.price || 0);
+              const qty = Number(it.quantity || 1);
+              if (!Number.isFinite(unit) || !Number.isFinite(qty)) return acc;
+              return acc + unit * qty;
+            }, 0);
+          if ((!ship || !Number.isFinite(ship)) && Number.isFinite(itemsSubtotal) && Number.isFinite(ord.total)) {
+            const delta = Number(ord.total) - itemsSubtotal;
+            if (delta > 0 && delta < 5_000_000) ship = delta;
+          }
+          if (!Number.isFinite(ship) || ship < 0) ship = 0;
+          return Math.trunc(ship);
+        };
+        const shippingPersist = deriveShipping();
+        const shippingCurrency = 'CLP';
+
         // 2) Intentar tomar carrito ACTIVO del usuario y convertirlo a 'pending'
         const { data: activeCart, error: activeCartErr } = await supabase
           .from('carts')
-          .select('cart_id, status')
+          .select('cart_id, status, shipping_total, shipping_currency')
           .eq('user_id', buyerId)
           .eq('status', 'active')
           .maybeSingle();
@@ -194,10 +216,15 @@ serve((req: Request) => withMetrics('process-khipu-webhook', req, async () => {
         let targetCartId: string | null = null;
 
         if (activeCart && activeCart.cart_id) {
-          // Convertir carrito activo en pedido pendiente
+          // Convertir carrito activo en pedido pendiente + persistir shipping si no existe aún
+          const cartUpdate: Record<string, any> = { status: 'pending', updated_at: new Date().toISOString() };
+          if (activeCart.shipping_total == null) {
+            cartUpdate.shipping_total = shippingPersist;
+            cartUpdate.shipping_currency = shippingCurrency;
+          }
           const { data: updCart, error: updErr } = await supabase
             .from('carts')
-            .update({ status: 'pending', updated_at: new Date().toISOString() })
+            .update(cartUpdate)
             .eq('cart_id', activeCart.cart_id)
             .select('cart_id')
             .single();
@@ -213,7 +240,7 @@ serve((req: Request) => withMetrics('process-khipu-webhook', req, async () => {
         if (!targetCartId) {
           const { data: newCart, error: newCartErr } = await supabase
             .from('carts')
-            .insert({ user_id: buyerId, status: 'pending' })
+            .insert({ user_id: buyerId, status: 'pending', shipping_total: shippingPersist, shipping_currency: shippingCurrency })
             .select('cart_id')
             .single();
 

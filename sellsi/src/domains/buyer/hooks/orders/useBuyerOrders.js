@@ -11,6 +11,7 @@ export const useBuyerOrders = buyerId => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const DEBUG_BUYER_ORDERS = false; // activar para ver logs diagnósticos en consola
   // TTL (debe coincidir con la ventana backend) para expirar payment orders pendientes
   const PAYMENT_PENDING_TTL_MS = 20 * 60 * 1000; // 20 minutos (alineado con backend fallback)
   const nowRef = () => Date.now();
@@ -53,18 +54,21 @@ export const useBuyerOrders = buyerId => {
           setOrders(prev => {
             const statusMap = new Map(statuses.map(s => [s.id, s.payment_status]));
             let changed = false;
-            const next = prev.map(ord => {
-              if (ord.is_payment_order && statusMap.has(ord.order_id)) {
-                const newStatus = statusMap.get(ord.order_id);
-                if (newStatus && newStatus !== ord.payment_status) {
-                  changed = true;
-                  return { ...ord, payment_status: newStatus };
-                }
-              }
-              return ord;
+            const paymentOrders = []; const classicOrders = [];
+            prev.forEach(o => {
+              if (o.is_payment_order) {
+                if (statusMap.has(o.order_id)) {
+                  const ns = statusMap.get(o.order_id);
+                  if (ns && ns !== o.payment_status) { changed = true; paymentOrders.push({ ...o, payment_status: ns }); } else paymentOrders.push(o);
+                } else paymentOrders.push(o);
+              } else classicOrders.push(o);
             });
-            if (changed) evaluatePollingState(next);
-            return changed ? next : prev;
+            if (changed) {
+              const merged = mergeAndDedupe(paymentOrders, classicOrders);
+              evaluatePollingState(merged);
+              return merged;
+            }
+            return prev;
           });
         }
       } catch (_) { /* silencioso */ }
@@ -87,106 +91,83 @@ export const useBuyerOrders = buyerId => {
     [hasPendingPaymentOrders, scheduleNextPoll]
   );
 
-  // Usamos useCallback para memorizar la función y evitar re-renderizados innecesarios.
-  const fetchOrders = useCallback(
-    async (filters = {}) => {
-      if (!buyerId) {
-        setError('ID de comprador no disponible');
-        setLoading(false);
-        return;
-      }
-      try {
-        setLoading(true);
-        setError(null);
-
-        // Pedidos tradicionales (carts ya convertidos en pedidos)
-        const classicOrders = await orderService.getOrdersForBuyer(buyerId, filters);
-        // Payment orders (tabla orders) incluyendo payment_status pending
-        const paymentOrders = await orderService.getPaymentOrdersForBuyer(buyerId);
-
-        // ================== DEDUPLICACIÓN DE ÓRDENES ==================
-        // Objetivo: Mostrar SOLO 1 card. Mientras el pago está pendiente, se muestra la orden de pago.
-        // Cuando el pago pasa a 'paid' y se materializa un pedido clásico (carts), ocultamos la orden de pago duplicada.
-  // Dedupe determinístico si hay cart_id en payment order; si no, usar heurísticas:
-  //  Heurística fallback (legacy) sólo se aplica cuando cart_id es null.
-
-        // Precalcular firmas simples de pedidos clásicos para heurística de materialización
-        const classicBySignature = classicOrders.map(co => {
-          const productIds = new Set(co.items.map(i => i.product_id));
-          return {
-            ref: co,
-            total: co.total_amount,
-            created: new Date(co.created_at).getTime(),
-            productIds,
-            size: productIds.size,
-          };
-        });
-
-        /**
-         * Determina si una payment order (ya pagada) ya se "materializó" en un pedido clásico.
-         * Reglas:
-         *  1. Coincidencia directa via cart_id.
-         *  2. Si no hay cart_id (o aún no seteado) usamos heurística:
-         *     - Overlap de productos >= 60% (relajamos porque total puede variar por shipping/tax)
-         *     - Ventana de creación +- 45 minutos.
-         *     - Ignoramos diferencia en total_amount (puede incluir shipping/impuestos no presentes en legacy).
-         */
-        const isLikelyMaterialized = (payOrd) => {
-          if (payOrd.payment_status !== 'paid') return false; // sólo interesa cuando ya está pagada
-
-            // 1) Match determinístico por cart_id
-          if (payOrd.cart_id && classicOrders.some(c => c.cart_id === payOrd.cart_id)) return true;
-          // Si tiene cart_id pero no encontramos aún el clásico, damos margen y la mostramos.
-          if (payOrd.cart_id) return false;
-
-          // 2) Heurística por overlap de items
-          const payCreated = new Date(payOrd.created_at).getTime();
-          const payProducts = new Set(payOrd.items.map(i => i.product_id));
-          const paySize = payProducts.size || 1;
-          const WINDOW_MS = 1000 * 60 * 45; // 45 minutos de ventana
-          return classicBySignature.some(sig => {
-            // comprobamos que estén razonablemente cercanos en el tiempo
-            if (Math.abs(sig.created - payCreated) > WINDOW_MS) return false;
-            let overlap = 0;
-            payProducts.forEach(p => { if (sig.productIds.has(p)) overlap++; });
-            const overlapRatio = overlap / paySize;
-            return overlapRatio >= 0.6; // 60% suficiente para asumir materialización
-          });
-        };
-
+  // ============= mergeAndDedupe (función pura reutilizable) =============
+  const mergeAndDedupe = useCallback((paymentOrders, classicOrders) => {
+    const classicBySignature = classicOrders.map(co => {
+      const productIds = new Set(co.items.map(i => i.product_id));
+      return { created: new Date(co.created_at).getTime(), productIds, cart_id: co.cart_id };
+    });
+    const isLikelyMaterialized = (payOrd) => {
+      if (payOrd.payment_status !== 'paid') return false;
+      if (payOrd.cart_id && classicOrders.some(c => c.cart_id === payOrd.cart_id)) return true;
+      if (payOrd.cart_id) return false; // tiene cart_id pero el clásico aún no llegó
+      const payCreated = new Date(payOrd.created_at).getTime();
+      const payProducts = new Set(payOrd.items.map(i => i.product_id));
+      const paySize = payProducts.size || 1;
+  const WINDOW_MS = 1000 * 60 * 60 * 6; // 6 horas (ampliado para carritos antiguos)
+      return classicBySignature.some(sig => {
+        if (Math.abs(sig.created - payCreated) > WINDOW_MS) return false;
+        let overlap = 0; payProducts.forEach(p => { if (sig.productIds.has(p)) overlap++; });
+        return (overlap / paySize) >= 0.6;
+      });
+    };
     const filteredPayment = paymentOrders
-          .map(po => {
-            const createdTs = po.created_at ? new Date(po.created_at).getTime() : 0;
-            const expiresAt = createdTs ? createdTs + PAYMENT_PENDING_TTL_MS : 0;
-            const isStalePending = po.payment_status === 'pending' && createdTs && nowRef() > expiresAt;
-            if (isStalePending) {
-              return { ...po, payment_status: 'expired', expired_locally: true };
-            }
-            return po;
-          })
-          .filter(po => {
-            if (po.payment_status === 'pending') return true; // mostrar mientras no expira
-            if (po.payment_status === 'expired') return false; // ocultar expiradas
-      // Para 'paid' (u otros estados) ocultar si ya se materializó en un clásico
-      return !isLikelyMaterialized(po);
-          });
+      .map(po => {
+        const createdTs = po.created_at ? new Date(po.created_at).getTime() : 0;
+        const expiresAt = createdTs ? createdTs + PAYMENT_PENDING_TTL_MS : 0;
+        const isStalePending = po.payment_status === 'pending' && createdTs && nowRef() > expiresAt;
+        if (isStalePending) return { ...po, payment_status: 'expired', expired_locally: true };
+        return po;
+      })
+      .filter(po => {
+        if (po.payment_status === 'pending') return true;
+        if (po.payment_status === 'expired') return false;
+        return !isLikelyMaterialized(po);
+      });
+    const merged = [
+      ...filteredPayment.filter(o => o.payment_status === 'pending'),
+      ...classicOrders,
+      ...filteredPayment.filter(o => o.payment_status !== 'pending'),
+    ];
+    if (DEBUG_BUYER_ORDERS) {
+      // eslint-disable-next-line no-console
+      console.log('[buyerOrders] mergeAndDedupe', {
+        paymentOrders: paymentOrders.length,
+        classicOrders: classicOrders.length,
+        visible: merged.length,
+        pendingPayment: filteredPayment.filter(o => o.payment_status === 'pending').length
+      });
+    }
+    return merged;
+  }, [PAYMENT_PENDING_TTL_MS]);
 
-        const merged = [
-          ...filteredPayment.filter(o => o.payment_status === 'pending'),
-          ...classicOrders,
-          ...filteredPayment.filter(o => o.payment_status !== 'pending'),
-        ];
-
-        setOrders(merged);
-        evaluatePollingState(merged);
-      } catch (err) {
-        setError(err.message || 'Error al cargar los pedidos');
-      } finally {
-        setLoading(false);
+  // Usamos useCallback para memorizar la función y evitar re-renderizados innecesarios.
+  const fetchOrders = useCallback(async (filters = {}) => {
+    if (!buyerId) {
+      setError('ID de comprador no disponible');
+      setLoading(false);
+      return;
+    }
+    try {
+      setLoading(true);
+      setError(null);
+      const [classicOrders, paymentOrders] = await Promise.all([
+        orderService.getOrdersForBuyer(buyerId, filters),
+        orderService.getPaymentOrdersForBuyer(buyerId)
+      ]);
+      const merged = mergeAndDedupe(paymentOrders, classicOrders);
+      if (DEBUG_BUYER_ORDERS) {
+        // eslint-disable-next-line no-console
+        console.log('[buyerOrders] fetchOrders merged count', merged.length);
       }
-    },
-    [buyerId, evaluatePollingState]
-  );
+      setOrders(merged);
+      evaluatePollingState(merged);
+    } catch (err) {
+      setError(err.message || 'Error al cargar los pedidos');
+    } finally {
+      setLoading(false);
+    }
+  }, [buyerId, evaluatePollingState, mergeAndDedupe]);
 
   // Cargar los pedidos la primera vez que el componente se monta o cuando cambia el buyerId.
   useEffect(() => {
@@ -208,18 +189,21 @@ export const useBuyerOrders = buyerId => {
             setOrders(prev => {
               const statusMap = new Map(statuses.map(s => [s.id, s.payment_status]));
               let changed = false;
-              const next = prev.map(ord => {
-                if (ord.is_payment_order && statusMap.has(ord.order_id)) {
-                  const newStatus = statusMap.get(ord.order_id);
-                  if (newStatus && newStatus !== ord.payment_status) {
-                    changed = true;
-                    return { ...ord, payment_status: newStatus };
-                  }
-                }
-                return ord;
+              const paymentOrders = []; const classicOrders = [];
+              prev.forEach(o => {
+                if (o.is_payment_order) {
+                  if (statusMap.has(o.order_id)) {
+                    const ns = statusMap.get(o.order_id);
+                    if (ns && ns !== o.payment_status) { changed = true; paymentOrders.push({ ...o, payment_status: ns }); } else paymentOrders.push(o);
+                  } else paymentOrders.push(o);
+                } else classicOrders.push(o);
               });
-              if (changed) evaluatePollingState(next);
-              return changed ? next : prev;
+              if (changed) {
+                const merged = mergeAndDedupe(paymentOrders, classicOrders);
+                evaluatePollingState(merged);
+                return merged;
+              }
+              return prev;
             });
           }
         } catch (_) {}

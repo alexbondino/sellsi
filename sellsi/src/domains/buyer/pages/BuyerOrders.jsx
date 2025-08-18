@@ -229,7 +229,8 @@ const BuyerOrders = () => {
     const isRejected = status === 'rejected' || status === 'cancelled';
     if (isRejected) {
       return [
-        { key: 'pago_confirmado', label: 'Pago Confirmado', active: false, customColor: '#00bcd4', tooltip: 'Pago aún no confirmado.' },
+        { key: 'procesando_pago', label: 'Procesando Pago', active: paymentStatus === 'pending', color: 'warning', tooltip: 'Pago en proceso.' },
+        { key: 'pago_confirmado', label: 'Pago Confirmado', active: paymentStatus === 'paid', customColor: '#00bcd4', tooltip: 'Pago confirmado.' },
         { key: 'rechazado', label: 'Rechazado', active: true, color: 'error', tooltip: 'Tu pedido fue rechazado por el proveedor.' },
         { key: 'en_transito', label: 'En Transito', active: false, color: 'default', tooltip: 'Pendiente de despacho por el proveedor.' },
         { key: 'entregado', label: 'Entregado', active: false, color: 'default', tooltip: 'Aún no se ha entregado.' }
@@ -242,14 +243,23 @@ const BuyerOrders = () => {
     else if (status === 'in_transit') activeKey = 'en_transito';
     else if (status === 'accepted') activeKey = 'aceptado';
     else if (paymentStatus === 'paid') activeKey = 'pago_confirmado';
-    else activeKey = null; // aún no confirmado (puede estar procesando pago en banner aparte)
+    else if (paymentStatus === 'pending') activeKey = 'procesando_pago';
 
-  const chips = [
+    const chips = [
+      {
+        key: 'procesando_pago',
+        label: 'Procesando Pago',
+        active: activeKey === 'procesando_pago',
+        color: 'warning',
+        tooltip: activeKey === 'procesando_pago'
+          ? 'Estamos verificando tu pago.'
+          : 'Pago ya verificado.'
+      },
       {
         key: 'pago_confirmado',
         label: 'Pago Confirmado',
-    active: activeKey === 'pago_confirmado',
-    customColor: '#00bcd4',
+        active: activeKey === 'pago_confirmado',
+        customColor: '#00bcd4',
         tooltip: activeKey === 'pago_confirmado'
           ? 'Pago confirmado. La orden quedará pendiente de aceptación por el proveedor.'
           : 'Pago aún no confirmado.'
@@ -257,8 +267,8 @@ const BuyerOrders = () => {
       {
         key: 'aceptado',
         label: 'Pedido Aceptado',
-    active: activeKey === 'aceptado',
-    color: 'info',
+        active: activeKey === 'aceptado',
+        color: 'info',
         tooltip: activeKey === 'aceptado'
           ? 'El proveedor aceptó tu pedido.'
           : 'En espera de aceptación por el proveedor.'
@@ -266,8 +276,8 @@ const BuyerOrders = () => {
       {
         key: 'en_transito',
         label: 'En Transito',
-    active: activeKey === 'en_transito',
-    color: 'secondary',
+        active: activeKey === 'en_transito',
+        color: 'secondary',
         tooltip: activeKey === 'en_transito'
           ? 'El pedido fue despachado y está en camino.'
           : 'Pendiente de despacho por el proveedor.'
@@ -275,8 +285,8 @@ const BuyerOrders = () => {
       {
         key: 'entregado',
         label: 'Entregado',
-    active: activeKey === 'entregado',
-    color: 'success',
+        active: activeKey === 'entregado',
+        color: 'success',
         tooltip: activeKey === 'entregado'
           ? 'El pedido fue entregado.'
           : 'Aún no se ha entregado.'
@@ -286,33 +296,8 @@ const BuyerOrders = () => {
   };
 
   // Render especial para órdenes de pago (tabla orders) con payment_status
-  const renderPaymentStatusBanner = (order) => {
-    if (!order.is_payment_order) return null;
-    const paymentStatus = order.payment_status || 'pending';
-    if (paymentStatus === 'pending') {
-      return (
-        <Alert severity="info" icon={<CircularProgress size={18} />} sx={{ mb: 2 }}>
-          Procesando pago con Khipu... Esta orden se confirmará automáticamente cuando el pago sea verificado.
-        </Alert>
-      );
-    }
-    if (paymentStatus === 'paid') {
-      return (
-        <Alert severity="success" sx={{ mb: 2 }}>
-          Pago confirmado. La orden quedará pendiente de aceptación por el proveedor.
-        </Alert>
-      );
-    }
-    // Cualquier otro estado se considera error/issue
-    if (paymentStatus !== 'pending' && paymentStatus !== 'paid') {
-      return (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          Hubo un problema con tu pago (estado: {paymentStatus}). Si el error persiste contacta soporte.
-        </Alert>
-      );
-    }
-    return null;
-  };
+  // Banner eliminado: estados integrados en chips
+  const renderPaymentStatusBanner = () => null;
   // ============================================================================
   // RENDERIZADO PRINCIPAL
   // ============================================================================
@@ -371,9 +356,18 @@ const BuyerOrders = () => {
                       <Typography variant="h6" fontWeight="bold">
                         {order.is_payment_order ? 'Orden de Pago' : 'Pedido'} {formatOrderNumber(order.order_id)}
                       </Typography>
-                      <Typography variant="h6" color="primary.main" fontWeight="bold">
-                        {formatCurrency(order.total_amount)}
-                      </Typography>
+                      <Box sx={{ textAlign: 'right' }}>
+                        <Typography variant="h6" color="primary.main" fontWeight="bold">
+                          {formatCurrency(
+                            order.final_amount || (order.total_amount + (order.shipping_amount || 0)) || order.total_amount
+                          )}
+                        </Typography>
+                        { (order.shipping_amount || order.shipping) ? (
+                          <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                            Incluye envío: {formatCurrency(order.shipping_amount || order.shipping || 0)}
+                          </Typography>
+                        ) : null }
+                      </Box>
                     </Box>
                     <Typography variant="body2" color="text.secondary">
                       Fecha de compra: {formatDate(order.created_at)}
@@ -478,17 +472,7 @@ const BuyerOrders = () => {
                             
                             {/* Chips de estado (incluye Pago Confirmado) */}
                             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, minWidth: 140 }}>
-                              {order.is_payment_order && order.payment_status === 'pending' ? (
-                                <Tooltip title="Procesando pago. Puede tardar unos segundos." arrow placement="left">
-                                  <Chip
-                                    label="Procesando Pago"
-                                    color="warning"
-                                    size="small"
-                                    sx={{ fontSize: '0.70rem' }}
-                                  />
-                                </Tooltip>
-                              ) : (
-                                getStatusChips(productStatus, order.payment_status).map(chip => {
+                              {getStatusChips(productStatus, order.payment_status).map(chip => {
                                   // Determine whether each stage was reached historically
                                   const pagoConfirmadoReached = order.payment_status === 'paid' || ['accepted', 'in_transit', 'delivered'].includes(order.status);
                                   const aceptadoReached = ['accepted', 'in_transit', 'delivered'].includes(order.status);
@@ -539,8 +523,7 @@ const BuyerOrders = () => {
                                       />
                                     </Tooltip>
                                   );
-                                })
-                              )}
+                                })}
                             </Box>
                           </Box>
                         </Paper>

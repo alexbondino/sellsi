@@ -329,12 +329,14 @@ class OrderService {
 
   // Log eliminado
 
-      // 1) Parse all items once and collect supplier_ids
+      // 1) Parse all items once and collect supplier_ids y product_ids para enrichment
+      const productIdsSet = new Set();
       const parsed = data.map(row => {
         let parsedItems = [];
         if (Array.isArray(row.items)) parsedItems = row.items;
         else if (row.items && typeof row.items === 'string') { try { parsedItems = JSON.parse(row.items); } catch (_) { parsedItems = []; } }
         else if (row.items && typeof row.items === 'object') { parsedItems = Array.isArray(row.items.items) ? row.items.items : [row.items]; }
+        parsedItems.forEach(it => { if (it?.product_id) productIdsSet.add(it.product_id); });
         return { row, parsedItems };
       });
 
@@ -356,11 +358,29 @@ class OrderService {
         }
       }
 
-  // 3) Build final normalized orders with enriched supplier
+      // 3) Batch fetch products (para thumbnails) sólo si faltan
+      let productsMap = new Map();
+      if (productIdsSet.size > 0) {
+        const productIds = Array.from(productIdsSet);
+        const { data: products, error: prodErr } = await supabase
+          .from('products')
+          .select(`
+            productid,
+            product_images (image_url, thumbnail_url, thumbnails)
+          `)
+          .in('productid', productIds);
+        if (!prodErr && products) {
+          productsMap = new Map(products.map(p => [p.productid, p]));
+        }
+      }
+
+  // 4) Build final normalized orders with enriched supplier + imágenes
       return parsed.map(({ row, parsedItems }) => {
         const normalizedItems = parsedItems.map((it, idx) => {
           const sId = it.supplier_id || null;
           const su = sId ? suppliersMap.get(sId) : null;
+          const prod = (it.product_id && productsMap.get(it.product_id)) || {};
+          const firstImage = Array.isArray(prod.product_images) ? prod.product_images[0] : {};
           return {
             cart_items_id: it.cart_items_id || it.id || `${row.id}-itm-${idx}`,
             product_id: it.product_id || it.productid || it.id || null,
@@ -376,10 +396,10 @@ class OrderService {
               category: it.category || null,
               description: it.description || '',
               supplier_id: sId,
-              image_url: it.image_url || null,
-              thumbnail_url: it.thumbnail_url || null,
-              thumbnails: it.thumbnails || null,
-              imagen: it.image_url || it.thumbnail_url || null,
+              image_url: it.image_url || firstImage?.image_url || null,
+              thumbnail_url: it.thumbnail_url || firstImage?.thumbnail_url || null,
+              thumbnails: it.thumbnails || firstImage?.thumbnails || null,
+              imagen: it.image_url || it.thumbnail_url || firstImage?.image_url || firstImage?.thumbnail_url || null,
               supplier: {
                 name: (su?.user_nm) || it.supplier_name || 'Proveedor desconocido',
                 email: (su?.email) || it.supplier_email || '',
@@ -406,6 +426,11 @@ class OrderService {
           total_items: normalizedItems.length,
           total_quantity: normalizedItems.reduce((s,i)=>s + (i.quantity||0),0),
           total_amount: row.total || normalizedItems.reduce((s,i)=>s + (i.price_at_addition * i.quantity),0),
+          subtotal: row.subtotal || null,
+          tax: row.tax || null,
+          shipping: row.shipping || null,
+          shipping_amount: row.shipping || 0,
+          final_amount: row.total || (normalizedItems.reduce((s,i)=>s + (i.price_at_addition * i.quantity),0) + (row.shipping || 0)),
           is_payment_order: true
         };
       });
@@ -489,6 +514,8 @@ class OrderService {
           status,
           created_at,
           updated_at,
+          shipping_total,
+          shipping_currency,
           users!carts_user_id_fkey (
             user_id,
             user_nm,
@@ -623,6 +650,10 @@ class OrderService {
 
           const estimatedDeliveryDate = calculateDeliveryDeadline(cart.created_at, supplierItems, deliveryAddress.region);
 
+          // Calcular total líneas
+          const linesTotal = cart.cart_items.reduce((sum, item) => sum + (item.price_at_addition * item.quantity), 0);
+          const shippingPersisted = cart.shipping_total || 0;
+          // total_amount se mantiene como suma de líneas (legacy) para compat, pero añadimos final_amount
           return {
             order_id: cart.cart_id,
             cart_id: cart.cart_id,
@@ -992,6 +1023,7 @@ class OrderService {
             price_tiers,
             added_at,
             updated_at,
+            document_type,
             products (
               productid,
               productnm,
@@ -1113,7 +1145,9 @@ class OrderService {
             // Cálculos del pedido
             total_items: cart.cart_items.length,
             total_quantity: cart.cart_items.reduce((sum, item) => sum + item.quantity, 0),
-            total_amount: cart.cart_items.reduce((sum, item) => sum + (item.price_at_addition * item.quantity), 0)
+            total_amount: linesTotal,
+            shipping_amount: shippingPersisted,
+            final_amount: linesTotal + shippingPersisted
           };
         });
 

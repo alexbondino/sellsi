@@ -387,18 +387,24 @@ const Rows = ({ order, onActionClick }) => {
       const region = (order?.deliveryAddress?.region || order?.delivery_address?.region || '').toString().toLowerCase();
       let total = 0;
       const items = Array.isArray(order.items) ? order.items : (Array.isArray(order.products) ? order.products : []);
+      // Sumar shipping UNA vez por producto (independiente de la cantidad)
+      const seenProducts = new Set();
       items.forEach(it => {
-        const qty = Number(it.quantity || 1);
+        // identificar producto de la fila
+        const productId = it.product_id || it.product?.productid || it.productid || it.id || null;
+        if (productId && seenProducts.has(String(productId))) return; // ya contabilizado
         const dr = it.product?.delivery_regions || it.product?.product_delivery_regions || [];
-        if (Array.isArray(dr)) {
+        if (Array.isArray(dr) && dr.length > 0) {
           // buscar coincidencia simple por nombre de región (case-insensitive, contains)
           const match = dr.find(r => {
             if (!r || !r.region) return false;
             return r.region.toString().toLowerCase().includes(region) || region.includes(r.region.toString().toLowerCase());
           }) || dr[0]; // fallback al primero si no hay match
           const price = Number(match?.price || 0);
-          if (!Number.isNaN(price) && price > 0) total += price * qty;
+          if (!Number.isNaN(price) && price > 0) total += price;
         }
+        // marcar producto como procesado (evita doble cobro si hay múltiples renglones del mismo producto)
+        if (productId) seenProducts.add(String(productId));
       });
       return total;
     } catch (e) {
