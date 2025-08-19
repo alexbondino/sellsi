@@ -26,16 +26,11 @@ export {
   PasswordRequirements
 } from './feedback';
 
-// Navigation (Sprint 2 Fase 2 - COMPLETADO)
-export {
-  Wizard,
-  Stepper,
-  useWizard,
-  CheckoutProgressStepper,
-  ScrollToTop,
-  setSkipScrollToTopOnce,
-  Switch
-} from './navigation';
+// Navigation core exports (refactor: evitamos re-exportar TopBar/SideBar/MobileBar para reducir ciclos)
+export { Wizard, Stepper, useWizard } from './navigation/wizard';
+export { default as CheckoutProgressStepper } from './navigation/CheckoutProgressStepper';
+export { default as ScrollToTop, setSkipScrollToTopOnce } from './navigation/ScrollToTop';
+export { default as Switch } from './navigation/Switch';
 
 // Display (Sprint 2 Fase 3 - COMPLETADO)
 export {
@@ -71,15 +66,12 @@ export {
   ContactModal
 } from './modals';
 
-// Layout (Sprint 2 Fase 3 - COMPLETADO)  
-export {
-  SuspenseLoader,
-  AppShell,
-  NotFound,
-  Widget,
-  BannedPageUI,
-  BanInfo
-} from './layout';
+// Layout (refactor: no re-exportar AppShell para evitar dependencias cruzadas con hooks que importan este barrel)
+export { default as SuspenseLoader } from './layout/SuspenseLoader';
+export { default as NotFound } from './layout/NotFound';
+export { default as Widget } from './layout/Widget';
+export { default as BannedPageUI } from './layout/bannedpage/BannedPageUI';
+export { default as BanInfo } from './layout/bannedpage/BanInfo';
 
 // Cart (Nuevos componentes)
 export {

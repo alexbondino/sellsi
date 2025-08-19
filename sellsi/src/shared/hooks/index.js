@@ -1,5 +1,5 @@
 // src/shared/hooks/index.js
-export { useAppInitialization } from './useAppInitialization';
+// (Se eliminó re-export de useAppInitialization para evitar ciclo con páginas que usan este barrel)
 
 // ✅ ROLE SYNCHRONIZATION HOOKS
 export { useRoleSync, useCurrentRole } from './useRoleSync';

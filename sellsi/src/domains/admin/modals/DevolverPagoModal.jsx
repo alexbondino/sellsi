@@ -31,7 +31,9 @@ import { Undo, AccountBalance, Receipt } from '@mui/icons-material';
 
 // Importar componentes UI existentes
 import { PrimaryButton, FileUploader } from '../../../shared/components/forms';
-import { devolverPago, subirComprobante, enviarNotificacion } from '../../../domains/admin';
+// 🔍 Reemplazo de import desde barrel '../../../domains/admin' para reducir ciclos
+import { devolverPago, enviarNotificacion } from '../services/adminRequestService';
+import { subirComprobante } from '../services/adminFileService';
 
 // ✅ CONSTANTS
 const METODOS_DEVOLUCION = [

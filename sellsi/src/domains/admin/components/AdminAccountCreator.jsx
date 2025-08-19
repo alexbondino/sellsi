@@ -50,7 +50,8 @@ import {
 } from '@mui/icons-material';
 
 import { PrimaryButton } from '../../../shared/components/forms';
-import { createAdminAccount, canCreateAdmins } from '../../../domains/admin';
+// Refactor anti-ciclos: importación directa de servicios en lugar del barrel '../../../domains/admin'
+import { createAdminAccount, canCreateAdmins } from '../services/adminAccountService';
 import { 
   canCreateAdminInDev, 
   isDevelopment, 

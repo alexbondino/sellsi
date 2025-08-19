@@ -2,6 +2,7 @@ import React from 'react';
 import { Box } from '@mui/material';
 import { useLocation } from 'react-router-dom';
 
+// Import directo para evitar barrels que generen ciclos
 import { TopBar } from '../navigation/TopBar';
 import { BottomBar } from './BottomBar';
 import { MobileBar } from '../navigation/MobileBar';

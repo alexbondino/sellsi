@@ -1,7 +1,8 @@
 import React, { Suspense } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import SuspenseLoader from '../../shared/components/layout/SuspenseLoader';
-import { PrivateRoute } from '../../domains/auth';
+// Import interno directo para evitar que PrivateRoute forme parte del contrato público de auth
+import PrivateRoute from '../../domains/auth/components/PrivateRoute';
 import { useAuth } from '../providers/AuthProvider';
 
 // Landing Page (carga inmediata para primera impresión)
@@ -78,7 +79,8 @@ const AdminPanelHome = React.lazy(() => import('../../domains/admin').then(modul
 const AdminMetrics = React.lazy(() => import('../../domains/admin').then(module => ({ default: module.AdminMetrics })));
 
 // 📦 AUTH CALLBACK - LAZY LOADING
-const AuthCallback = React.lazy(() => import('../../domains/auth').then(module => ({ default: module.AuthCallback })));
+// AuthCallback también se importa directo para mantener el barrel público mínimo
+const AuthCallback = React.lazy(() => import('../../domains/auth/components/AuthCallback'));
 
 export const AppRouter = ({ scrollTargets }) => {
   const { session, needsOnboarding, loadingUserStatus, refreshUserProfile } = useAuth();

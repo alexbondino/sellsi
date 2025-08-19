@@ -5,10 +5,11 @@ import { useTheme } from '@mui/material/styles';
 
 import { PrimaryButton } from '../../../shared/components';
 import { useRecuperarForm } from '../hooks';
-import Step1Email from '../wizard/Step1Email'; // Componente para ingresar correo
-import Step2Code from '../wizard/Step2Code'; // Componente para verificar código
-import Step3Reset from '../wizard/Step3Reset'; // Componente para restablecer contraseña
-import Step4Success from '../wizard/Step4Success'; // Componente de éxito
+// Lazy imports para evitar duplicación con dynamic imports definidos en steps.config
+const Step1Email = React.lazy(() => import('../wizard/Step1Email'));
+const Step2Code = React.lazy(() => import('../wizard/Step2Code'));
+const Step3Reset = React.lazy(() => import('../wizard/Step3Reset'));
+const Step4Success = React.lazy(() => import('../wizard/Step4Success'));
 
 const Recuperar = forwardRef(function Recuperar(props, ref) {
   const theme = useTheme();
@@ -116,44 +117,46 @@ const Recuperar = forwardRef(function Recuperar(props, ref) {
           </PrimaryButton>
         )}
         {/* Renderizado condicional de pasos */}
-        {paso === 'correo' && (
-          <Step1Email
-            correo={correo}
-            setCorreo={setCorreo}
-            error={error}
-            mensaje={mensaje}
-            onSubmit={handleBuscar}
-            onCancel={handleCerrarTotal}
-          />
-        )}
-        {paso === 'codigo' && (
-          <Step2Code
-            correo={correo}
-            codigo={codigo}
-            setCodigo={setCodigo}
-            timer={timer}
-            onVerify={handleVerificarCodigo}
-            onResendCode={handleResendCode}
-            onBack={() => setPaso('correo')} // ✅ USAR setPaso CORRECTO
-            showCodigoEnviado={showCodigoEnviado}
-            fadeIn={fadeIn}
-          />
-        )}{' '}
-        {paso === 'restablecer' && (
-          <Step3Reset
-            nuevaContrasena={nuevaContrasena}
-            setNuevaContrasena={setNuevaContrasena}
-            repiteContrasena={repiteContrasena}
-            setRepiteContrasena={setRepiteContrasena}
-            showPassword={showPassword}
-            setShowPassword={setShowPassword}
-            showRepeatPassword={showRepeatPassword}
-            setShowRepeatPassword={setShowRepeatPassword}
-            onSubmit={handleCambiarContrasena}
-            onBack={() => setPaso('codigo')}
-          />
-        )}
-        {paso === 'exito' && <Step4Success onClose={props.onVolverLogin} />}
+        <React.Suspense fallback={null}>
+          {paso === 'correo' && (
+            <Step1Email
+              correo={correo}
+              setCorreo={setCorreo}
+              error={error}
+              mensaje={mensaje}
+              onSubmit={handleBuscar}
+              onCancel={handleCerrarTotal}
+            />
+          )}
+          {paso === 'codigo' && (
+            <Step2Code
+              correo={correo}
+              codigo={codigo}
+              setCodigo={setCodigo}
+              timer={timer}
+              onVerify={handleVerificarCodigo}
+              onResendCode={handleResendCode}
+              onBack={() => setPaso('correo')} // ✅ USAR setPaso CORRECTO
+              showCodigoEnviado={showCodigoEnviado}
+              fadeIn={fadeIn}
+            />
+          )}{' '}
+          {paso === 'restablecer' && (
+            <Step3Reset
+              nuevaContrasena={nuevaContrasena}
+              setNuevaContrasena={setNuevaContrasena}
+              repiteContrasena={repiteContrasena}
+              setRepiteContrasena={setRepiteContrasena}
+              showPassword={showPassword}
+              setShowPassword={setShowPassword}
+              showRepeatPassword={showRepeatPassword}
+              setShowRepeatPassword={setShowRepeatPassword}
+              onSubmit={handleCambiarContrasena}
+              onBack={() => setPaso('codigo')}
+            />
+          )}
+          {paso === 'exito' && <Step4Success onClose={props.onVolverLogin} />}
+        </React.Suspense>
       </Paper>
     </Box>
   );

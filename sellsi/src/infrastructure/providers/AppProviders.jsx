@@ -15,7 +15,9 @@ import { BannerProvider } from '../../shared/components/display/banners/BannerCo
 import ScrollToTop from '../../shared/components/navigation/ScrollToTop';
 import BanGuard from '../../components/BanGuard';
 import { AuthProvider } from './AuthProvider';
+import { AuthPrefetchProvider } from '../prefetch/AuthPrefetchProvider';
 import { RoleProvider } from './RoleProvider';
+import { RolePrefetchProvider } from '../prefetch/RolePrefetchProvider';
 import { LayoutProvider } from './LayoutProvider';
 import { NotificationsProvider } from '../../domains/notifications/components/NotificationProvider';
 import { TransferInfoManager } from '../../shared/components/managers';
@@ -46,16 +48,20 @@ export const AppProviders = ({ children }) => {
           <BrowserRouter>
             <ScrollToTop />
             <AuthProvider>
-              <TransferInfoManager />
-              <RoleProvider>
-                <NotificationsProvider>
-                  <LayoutProvider>
-                    <BanGuard>
-                      {children}
-                    </BanGuard>
-                  </LayoutProvider>
-                </NotificationsProvider>
-              </RoleProvider>
+              <AuthPrefetchProvider>
+                <RoleProvider>
+                  <RolePrefetchProvider>
+                    <TransferInfoManager />
+                    <NotificationsProvider>
+                      <LayoutProvider>
+                        <BanGuard>
+                          {children}
+                        </BanGuard>
+                      </LayoutProvider>
+                    </NotificationsProvider>
+                  </RolePrefetchProvider>
+                </RoleProvider>
+              </AuthPrefetchProvider>
             </AuthProvider>
           </BrowserRouter>
           

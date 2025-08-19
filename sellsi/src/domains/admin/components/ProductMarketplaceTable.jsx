@@ -59,7 +59,8 @@ import {
 import AdminStatCard from './AdminStatCard';
 import EditProductNameModal from '../../../shared/components/modals/EditProductNameModal';
 import DeleteMultipleProductsModal from '../../../shared/components/modals/DeleteMultipleProductsModal';
-import { getMarketplaceProducts, deleteProduct, getProductStats, deleteMultipleProducts, updateProductName } from '../../../domains/admin';
+// 🔍 Reemplazo de import desde barrel '../../../domains/admin' para reducir ciclos
+import { getMarketplaceProducts, deleteProduct, getProductStats, deleteMultipleProducts, updateProductName } from '../services/adminProductService';
 import { useBanner } from '../../../shared/components/display/banners/BannerContext';
 import { useResponsiveThumbnail } from '../../../hooks/useResponsiveThumbnail';
 import { AdminTableImage } from '../../../components/UniversalProductImage'; // Incluye gating viewport interno vía useInViewport

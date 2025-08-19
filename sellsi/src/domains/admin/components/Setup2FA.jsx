@@ -45,7 +45,8 @@ import {
 import QRCode from 'react-qr-code';
 
 import { PrimaryButton } from '../../../shared/components/forms';
-import { generate2FASecret, verify2FA, disable2FA } from '../../../domains/admin';
+// 🔍 Reemplazo de import desde barrel '../../../domains/admin' para reducir ciclos
+import { generate2FASecret, verify2FA, disable2FA } from '../services/adminAuthService';
 
 // ✅ CONSTANTS
 const STEPS = [

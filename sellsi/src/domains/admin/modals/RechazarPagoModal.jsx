@@ -30,7 +30,9 @@ import { Cancel, Warning, AttachFile } from '@mui/icons-material';
 
 // Importar componentes UI existentes
 import { PrimaryButton, FileUploader } from '../../../shared/components/forms';
-import { rechazarPago, subirAdjuntos, enviarNotificacion } from '../../../domains/admin';
+// 🔍 Reemplazo de import desde barrel '../../../domains/admin' para reducir ciclos
+import { rechazarPago, enviarNotificacion } from '../services/adminRequestService';
+import { subirAdjuntos } from '../services/adminFileService';
 
 // ✅ CONSTANTS
 const MOTIVOS_RECHAZO = [

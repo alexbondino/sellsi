@@ -12,7 +12,9 @@
     "preview": "vite preview",
     "lint": "eslint .",
     "optimize": "npm run lint && npm run build",
-    "optimize:cdn": "npm run lint && npm run build:cdn",
+  "optimize:cdn": "npm run lint && npm run build:cdn",
+  "analyze:cycles": "node ../detect_cycles.js --format pretty --suggest-breaks",
+  "analyze:cycles:md": "node ../detect_cycles.js --format md --suggest-breaks --output ./Documentacion/cycles/cycle-report.md",
     "size-check": "npm run build && du -sh dist/*"
   },
   "dependencies": {

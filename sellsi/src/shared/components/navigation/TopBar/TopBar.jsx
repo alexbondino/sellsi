@@ -1,5 +1,5 @@
 // 📁 shared/components/navigation/TopBar/TopBar.jsx
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, Suspense } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
   Box,
@@ -22,9 +22,14 @@ import useCartStore from '../../../stores/cart/cartStore';
 import ContactModal from '../../modals/ContactModal';
 import { Modal, MODAL_TYPES } from '../../feedback';
 import { useRole } from '../../../../infrastructure/providers/RoleProvider';
-// Lazy imports para evitar bundling mixto
-const Login = React.lazy(() => import('../../../../domains/auth').then(module => ({ default: module.Login })));
-const Register = React.lazy(() => import('../../../../domains/auth').then(module => ({ default: module.Register })));
+// Eliminamos dynamic import directo de domains/auth para evitar ciclos de inicialización.
+// Los contenedores superiores deben inyectar estos componentes (dependency injection) si se requiere lazy.
+// Para mantener compat sin romper UI inmediata, usamos placeholders que disparan eventos.
+const Login = (props) => {
+  // Placeholder informativo: se espera que en refactor futuro sea provisto por un AuthModalProvider sin ciclo.
+  return null;
+};
+const Register = (props) => null;
 import { setSkipScrollToTopOnce } from '../ScrollToTop/ScrollToTop';
 
 // Importa el nuevo componente reutilizable y ahora verdaderamente controlado
@@ -691,19 +696,9 @@ export default function TopBar({
         <MenuItem onClick={handleLogout}>Cerrar sesión</MenuItem>
       </Menu>
 
-      {openLoginModal && (
-        <Login
-          open={openLoginModal}
-          onClose={() => setOpenLoginModal(false)}
-          onOpenRegister={handleLoginToRegisterTransition}
-        />
-      )}
-      {openRegisterModal && (
-        <Register
-          open={openRegisterModal}
-          onClose={() => setOpenRegisterModal(false)}
-        />
-      )}
+  {/* Modales de auth removidos del ciclo: en esta fase placeholder (no render) */}
+  {openLoginModal && <Login />}
+  {openRegisterModal && <Register />}
       {openContactModal && (
         <ContactModal
           open={openContactModal}

@@ -47,7 +47,8 @@ import {
 } from '@mui/icons-material';
 
 import { PrimaryButton } from '../../../shared/components/forms';
-import { createAdminAccount } from '../../../domains/admin';
+// 🔍 Reemplazo de import desde barrel '../../../domains/admin' para reducir ciclos
+import { createAdminAccount } from '../services/adminAccountService';
 import { 
   FIRST_ADMIN_CONFIG, 
   isDevelopment, 

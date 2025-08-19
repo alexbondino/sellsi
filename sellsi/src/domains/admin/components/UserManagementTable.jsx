@@ -56,7 +56,8 @@ import {
 // Importar componentes UI existentes
 import { Modal } from '../../../shared/components/feedback';
 import AdminStatCard from './AdminStatCard';
-import { getUsers, getUserStats, banUser, unbanUser, verifyUser, unverifyUser, deleteUser, deleteMultipleUsers } from '../../../domains/admin';
+// 🔍 Reemplazo de import desde barrel '../../../domains/admin' para reducir ciclos
+import { getUsers, getUserStats, banUser, unbanUser, verifyUser, unverifyUser, deleteUser, deleteMultipleUsers } from '../services/adminUserService';
 
 // Importar modales
 import UserBanModal from '../modals/UserBanModal';

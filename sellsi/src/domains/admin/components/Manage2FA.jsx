@@ -38,7 +38,8 @@ import {
 } from '@mui/icons-material';
 
 import { PrimaryButton } from '../../../shared/components/forms';
-import { disable2FA } from '../../../domains/admin';
+// 🔍 Reemplazo de import desde barrel '../../../domains/admin' para reducir ciclos
+import { disable2FA } from '../services/adminAuthService';
 import Setup2FA from './Setup2FA';
 
 // ✅ COMMON STYLES

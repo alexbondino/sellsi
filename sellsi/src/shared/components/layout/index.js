@@ -1,6 +1,6 @@
 // src/shared/components/layout/index.js
 export { default as SuspenseLoader } from './SuspenseLoader';
-export { AppShell } from './AppShell';
+// AppShell no se re-exporta para reducir ciclos; importar directamente desde './AppShell'
 export { default as NotFound } from './NotFound';
 export { default as Widget } from './Widget';
 
