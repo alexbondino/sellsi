@@ -193,7 +193,7 @@ const ProductsSection = React.memo(
               // ✅ USAR datos reales: usar 'proveedor' que viene del mapeo usersMap
               user_nm: producto.proveedor || `Proveedor #${supplierId}`,
               // ✅ USAR logo real del proveedor desde la BD o fallback
-              logo_url: producto.supplier_logo_url || `/LOGO-removebg-preview.png`,
+              logo_url: producto.supplier_logo_url || `/LOGO-removebg-preview.webp`,
               // ✅ USAR descripcion_proveedor real del proveedor
               descripcion_proveedor: producto.descripcion_proveedor,
               provider_id: supplierId,
