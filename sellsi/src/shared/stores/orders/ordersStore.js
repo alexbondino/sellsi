@@ -55,8 +55,14 @@ export const useOrdersStore = create((set, get) => ({
       // Combinar y deduplicar pedidos
       const allOrders = [...legacyOrders, ...paymentOrders];
 
+      // Regla de negocio: solo mostrar pedidos de flujo de pago cuyo payment_status = 'paid'.
+      // (Pedidos legacy sin campo payment_status no se filtran.)
+      const visibilityFiltered = allOrders.filter(o => (
+        o.payment_status === undefined || o.payment_status === null || o.payment_status === 'paid'
+      ));
+
       // Procesar y enriquecer los datos
-  const processedOrders = allOrders.map(order => ({
+  const processedOrders = visibilityFiltered.map(order => ({
         ...order,
         // Convertir status del backend al formato de UI
         status: orderService.getStatusDisplayName(order.status),
@@ -82,8 +88,13 @@ export const useOrdersStore = create((set, get) => ({
           })) || [],
   }));
 
+      const sorted = [...processedOrders].sort((a, b) => {
+        const da = new Date(a.created_at || a.requestedDate?.start || 0).getTime();
+        const db = new Date(b.created_at || b.requestedDate?.start || 0).getTime();
+        return db - da; // descendente
+      });
       set({
-        orders: processedOrders,
+        orders: sorted,
         loading: false,
         lastFetch: new Date().toISOString(),
       });
@@ -214,12 +225,22 @@ export const useOrdersStore = create((set, get) => ({
         supplierId,
         searchText.trim()
       );
+      // Aplicar mismo filtro de visibilidad tras búsqueda.
+      const visibilityFiltered = searchResults.filter(o => (
+        o.payment_status === undefined || o.payment_status === null || o.payment_status === 'paid'
+      ));
+      const processed = visibilityFiltered.map(order => ({
+        ...order,
+        status: orderService.getStatusDisplayName(order.status),
+        isLate: calculateIsLate(order),
+      }));
+      const sorted = processed.sort((a, b) => {
+        const da = new Date(a.created_at || a.requestedDate?.start || 0).getTime();
+        const db = new Date(b.created_at || b.requestedDate?.start || 0).getTime();
+        return db - da;
+      });
       set({
-        orders: searchResults.map(order => ({
-          ...order,
-          status: orderService.getStatusDisplayName(order.status),
-          isLate: calculateIsLate(order),
-        })),
+        orders: sorted,
         loading: false,
       });
     } catch (error) {
@@ -236,12 +257,13 @@ export const useOrdersStore = create((set, get) => ({
   getFilteredOrders: () => {
     const { orders, statusFilter } = get();
 
+    const sorted = [...orders]; // ya deberían estar ordenadas, pero copiamos por seguridad
     if (statusFilter === 'Todos') {
-      return orders;
+      return sorted;
     }
 
     if (statusFilter === 'Atrasado') {
-      return orders.filter(order => order.isLate);
+      return sorted.filter(order => order.isLate);
     }
 
     // Mapear filtros de UI a estados de backend
@@ -258,7 +280,7 @@ export const useOrdersStore = create((set, get) => ({
     const backendStatus = statusMap[statusFilter] || statusFilter;
 
     // Filtrar órdenes por estado de backend directamente
-    return orders.filter(order => {
+  return sorted.filter(order => {
       // order.status ya debe estar en formato de display ('Pendiente', 'En Transito', etc.)
       // Necesitamos convertirlo a backend status para comparar
       const orderBackendStatus = statusMap[order.status] || order.status;

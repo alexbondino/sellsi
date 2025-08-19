@@ -241,8 +241,7 @@ const BuyerOrders = () => {
           key: 'pago',
           label: paymentStatus === 'paid' ? 'Pago Confirmado' : 'Procesando Pago',
           active: paymentStatus === 'paid' || paymentStatus === 'pending',
-          color: paymentStatus === 'paid' ? 'default' : 'warning',
-          customColor: paymentStatus === 'paid' ? '#00bcd4' : undefined,
+          color: paymentStatus === 'paid' ? 'success' : 'warning',
           tooltip: paymentStatus === 'paid' ? 'Pago confirmado.' : 'Pago en proceso.'
         },
         { key: 'rechazado', label: 'Rechazado', active: true, color: 'error', tooltip: 'Tu pedido fue rechazado por el proveedor.' },
@@ -264,8 +263,7 @@ const BuyerOrders = () => {
         key: 'pago',
         label: paymentStatus === 'paid' ? 'Pago Confirmado' : 'Procesando Pago',
         active: activeKey === 'pago',
-        color: paymentStatus === 'paid' ? 'default' : 'warning',
-        customColor: paymentStatus === 'paid' ? '#00bcd4' : undefined,
+        color: paymentStatus === 'paid' ? 'success' : 'warning',
         tooltip: paymentStatus === 'paid'
           ? 'Pago confirmado. La orden quedará pendiente de aceptación por el proveedor.'
           : 'Estamos verificando tu pago.'
@@ -523,13 +521,7 @@ const BuyerOrders = () => {
                                         size="small"
                                         sx={{
                                           fontSize: '0.70rem',
-                                          opacity: chip.active ? 1 : 0.45,
-                                          ...(chip.customColor && chip.active ? {
-                                            // Sólo aplicar color custom cuando está activo; inactivo debe verse gris como los demás
-                                            backgroundColor: chip.customColor,
-                                            borderColor: chip.customColor,
-                                            color: '#fff'
-                                          } : {})
+                                          opacity: chip.active ? 1 : 0.45
                                         }}
                                       />
                                     </Tooltip>
