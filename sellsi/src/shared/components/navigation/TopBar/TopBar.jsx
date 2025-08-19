@@ -22,14 +22,10 @@ import useCartStore from '../../../stores/cart/cartStore';
 import ContactModal from '../../modals/ContactModal';
 import { Modal, MODAL_TYPES } from '../../feedback';
 import { useRole } from '../../../../infrastructure/providers/RoleProvider';
-// Eliminamos dynamic import directo de domains/auth para evitar ciclos de inicialización.
-// Los contenedores superiores deben inyectar estos componentes (dependency injection) si se requiere lazy.
-// Para mantener compat sin romper UI inmediata, usamos placeholders que disparan eventos.
-const Login = (props) => {
-  // Placeholder informativo: se espera que en refactor futuro sea provisto por un AuthModalProvider sin ciclo.
-  return null;
-};
-const Register = (props) => null;
+// Lazy imports directos de componentes de auth (ruta específica, evitando barrel auth para no ampliar fan-out)
+// No reintroduce ciclo porque el barrel shared ya no re-exporta TopBar.
+const Login = React.lazy(() => import('../../../../domains/auth/components/Login'));
+const Register = React.lazy(() => import('../../../../domains/auth/components/Register'));
 import { setSkipScrollToTopOnce } from '../ScrollToTop/ScrollToTop';
 
 // Importa el nuevo componente reutilizable y ahora verdaderamente controlado
@@ -696,9 +692,24 @@ export default function TopBar({
         <MenuItem onClick={handleLogout}>Cerrar sesión</MenuItem>
       </Menu>
 
-  {/* Modales de auth removidos del ciclo: en esta fase placeholder (no render) */}
-  {openLoginModal && <Login />}
-  {openRegisterModal && <Register />}
+  {/* Modales de autenticación (lazy) */}
+  {openLoginModal && (
+    <Suspense fallback={null}>
+      <Login
+        open={openLoginModal}
+        onClose={() => setOpenLoginModal(false)}
+        onOpenRegister={handleLoginToRegisterTransition}
+      />
+    </Suspense>
+  )}
+  {openRegisterModal && (
+    <Suspense fallback={null}>
+      <Register
+        open={openRegisterModal}
+        onClose={() => setOpenRegisterModal(false)}
+      />
+    </Suspense>
+  )}
       {openContactModal && (
         <ContactModal
           open={openContactModal}
