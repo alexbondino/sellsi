@@ -25,7 +25,18 @@ export async function GetBuyerOrders(buyerId, filters = {}) {
         department: shippingInfo.shipping_dept || '',
         fullAddress: `${shippingInfo.shipping_address || 'Dirección no especificada'} ${shippingInfo.shipping_number || ''} ${shippingInfo.shipping_dept || ''}`.trim()
       };
-      const linesTotal = cart.cart_items.reduce((sum, item) => sum + (item.price_at_addition * item.quantity), 0);
+      // Sanitizar precios línea a línea (evita NaN si el refactor dejó price_at_addition nulo / string)
+      const safeLineAmount = (line) => {
+        const raw = line?.price_at_addition;
+        const parsed = typeof raw === 'number' ? raw : Number(raw);
+        if (Number.isFinite(parsed) && parsed >= 0) return parsed * (line.quantity || 0);
+        // fallback al precio actual del producto (legacy) si existe
+        const productPrice = line?.products?.price;
+        const productParsed = typeof productPrice === 'number' ? productPrice : Number(productPrice);
+        if (Number.isFinite(productParsed) && productParsed >= 0) return productParsed * (line.quantity || 0);
+        return 0;
+      };
+      const linesTotal = cart.cart_items.reduce((sum, line) => sum + safeLineAmount(line), 0);
       const shippingPersisted = cart.shipping_total || 0;
       return {
         order_id: cart.cart_id,
@@ -41,35 +52,44 @@ export async function GetBuyerOrders(buyerId, filters = {}) {
           phone: cart.users?.phone_nbr || 'Teléfono no disponible'
         },
         delivery_address: deliveryAddress,
-        items: cart.cart_items.map(item => ({
-          cart_items_id: item.cart_items_id,
-          product_id: item.product_id,
-          quantity: item.quantity,
-          price_at_addition: item.price_at_addition,
-          price_tiers: item.price_tiers,
-          document_type: item.document_type || item.documentType || 'ninguno',
-          product: {
-            id: item.products.productid,
-            productid: item.products.productid,
-            name: item.products.productnm,
-            price: item.products.price,
-            category: item.products.category,
-            description: item.products.description,
-            supplier_id: item.products.supplier_id,
-            image_url: item.products.product_images?.[0]?.image_url,
-            thumbnail_url: item.products.product_images?.[0]?.thumbnail_url,
-            thumbnails: item.products.product_images?.[0]?.thumbnails,
-            imagen: item.products.product_images?.[0]?.image_url,
-            supplier: {
-              name: item.products.users?.user_nm || 'Proveedor desconocido',
-              email: item.products.users?.email || 'Email no disponible',
-              verified: !!item.products.users?.verified
-            },
-            proveedor: item.products.users?.user_nm || 'Proveedor desconocido',
-            verified: !!item.products.users?.verified,
-            supplierVerified: !!item.products.users?.verified
+        items: cart.cart_items.map(item => {
+          // Normalizar precio de la línea (sin modificar fuente original), manteniendo referencia original
+          let normalizedPrice = item.price_at_addition;
+          if (!(typeof normalizedPrice === 'number' && Number.isFinite(normalizedPrice))) {
+            const fallback = item?.products?.price;
+            const parsedFallback = typeof fallback === 'number' ? fallback : Number(fallback);
+            normalizedPrice = Number.isFinite(parsedFallback) ? parsedFallback : 0;
           }
-        })),
+          return {
+            cart_items_id: item.cart_items_id,
+            product_id: item.product_id,
+            quantity: item.quantity,
+            price_at_addition: normalizedPrice,
+            price_tiers: item.price_tiers,
+            document_type: item.document_type || item.documentType || 'ninguno',
+            product: {
+              id: item.products.productid,
+              productid: item.products.productid,
+              name: item.products.productnm,
+              price: item.products.price,
+              category: item.products.category,
+              description: item.products.description,
+              supplier_id: item.products.supplier_id,
+              image_url: item.products.product_images?.[0]?.image_url,
+              thumbnail_url: item.products.product_images?.[0]?.thumbnail_url,
+              thumbnails: item.products.product_images?.[0]?.thumbnails,
+              imagen: item.products.product_images?.[0]?.image_url,
+              supplier: {
+                name: item.products.users?.user_nm || 'Proveedor desconocido',
+                email: item.products.users?.email || 'Email no disponible',
+                verified: !!item.products.users?.verified
+              },
+              proveedor: item.products.users?.user_nm || 'Proveedor desconocido',
+              verified: !!item.products.users?.verified,
+              supplierVerified: !!item.products.users?.verified
+            }
+          };
+        }),
         total_items: cart.cart_items.length,
         total_quantity: cart.cart_items.reduce((sum, i) => sum + i.quantity, 0),
         total_amount: linesTotal,

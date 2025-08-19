@@ -441,9 +441,19 @@ const BuyerOrders = () => {
                                   <VerifiedIcon sx={{ fontSize: 16, color: 'primary.main' }} />
                                 )}
                               </Box>
-                              <Typography variant="body1" fontWeight="medium" color="primary.main">
-                                {item.quantity} × {formatCurrency(item.price_at_addition)} = {formatCurrency(item.quantity * item.price_at_addition)}
-                              </Typography>
+                              {(() => {
+                                const unit = (typeof item.price_at_addition === 'number' && Number.isFinite(item.price_at_addition))
+                                  ? item.price_at_addition
+                                  : (typeof item.product?.price === 'number' && Number.isFinite(item.product.price))
+                                    ? item.product.price
+                                    : 0;
+                                const lineTotal = unit * (item.quantity || 0);
+                                return (
+                                  <Typography variant="body1" fontWeight="medium" color="primary.main">
+                                    {item.quantity} × {formatCurrency(unit)} = {formatCurrency(lineTotal)}
+                                  </Typography>
+                                );
+                              })()}
                               {/* Documento tributario seleccionado */}
                               {(() => {
                                 const dt = (item.document_type || item.documentType || '').toLowerCase();
