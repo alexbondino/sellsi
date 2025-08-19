@@ -360,8 +360,13 @@ const BuyerOrders = () => {
                   <Box sx={{ mb: 3 }}>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
                       <Typography variant="h6" fontWeight="bold">
-                        {order.is_payment_order ? 'Orden de Pago' : 'Pedido'} {formatOrderNumber(order.order_id)}
+                        Pedido {formatOrderNumber(order.order_id)}
                       </Typography>
+                      {order.payment_order_id && (
+                        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.2 }}>
+                          Orden de Pago {formatOrderNumber(order.payment_order_id)}
+                        </Typography>
+                      )}
                       <Box sx={{ textAlign: 'right' }}>
                         <Typography variant="h6" color="primary.main" fontWeight="bold">
                           {formatCurrency(

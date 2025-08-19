@@ -1,1 +1,3 @@
 cd ..; npx supabase db push -p Cozdip-toctit-qejta0 --debug
+
+

@@ -41,8 +41,9 @@ export async function uploadInvoicePDF({ file, supplierId, orderId, userId }) {
   if (error) throw new Error(error.message || 'Error subiendo factura')
 
   // Intentar registrar metadata si existe tabla invoices_meta
+  // Manejar explícitamente el resultado para evitar que políticas RLS hagan throw y rompan la UX
   try {
-    await supabase.from('invoices_meta').insert({
+    const { data: metaData, error: metaErr } = await supabase.from('invoices_meta').insert({
       user_id: userId || supplierId,
       supplier_id: supplierId,
       order_id: orderId,
@@ -50,9 +51,14 @@ export async function uploadInvoicePDF({ file, supplierId, orderId, userId }) {
       filename: file.name,
       size: file.size,
       content_type: file.type
-    })
-  } catch (_) {
-    // Silencioso si la tabla aún no existe
+    });
+    if (metaErr) {
+      // Loguear para diagnóstico pero no propagar al usuario
+      console.warn('[invoiceStorageService] invoices_meta insert error:', metaErr.message || metaErr);
+    }
+  } catch (e) {
+    // En caso de que supabase client lance (excepciones raras), loguear pero no propagar
+    console.warn('[invoiceStorageService] invoices_meta insert threw:', e?.message || e);
   }
 
   return { path: data.path }

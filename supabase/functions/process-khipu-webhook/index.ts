@@ -159,190 +159,205 @@ serve((req: Request) => withMetrics('process-khipu-webhook', req, async () => {
     }
 
     // ========================================================================
-    // MATERIALIZAR ORDEN PARA PROVEEDORES (carts/cart_items) Y AJUSTAR INVENTARIO/VENTAS
+    // MATERIALIZACIÓN DUAL / SPLIT (nuevo)
     // ========================================================================
     try {
-      // 1) Obtener la orden completa para extraer user_id e items
+      const SPLIT_MODE = (Deno.env.get('SPLIT_MODE') || 'legacy').toLowerCase(); // legacy | dual | split
       const { data: orderRows, error: fetchOrderErr } = await supabase
         .from('orders')
-        // Incluir campos relacionados a shipping para persistirlos en carts
-  .select('id, user_id, items, total, created_at, shipping')
+        .select('id, user_id, items, total, created_at, shipping, split_status')
         .eq('id', orderId)
         .limit(1);
-
       if (fetchOrderErr) {
         console.error('❌ No se pudo leer la orden para materializar:', fetchOrderErr);
       } else if (orderRows && orderRows.length > 0) {
         const ord = orderRows[0] as any;
         const buyerId: string = ord.user_id;
-        let items: any[] = [];
+        // Parse seguro
+        let rawItems: any[] = [];
         try {
-          if (Array.isArray(ord.items)) items = ord.items;
-          else if (typeof ord.items === 'string') items = JSON.parse(ord.items);
-          else if (ord.items && typeof ord.items === 'object') items = (ord.items.items && Array.isArray(ord.items.items)) ? ord.items.items : [ord.items];
-        } catch (_) {
-          items = [];
-        }
+          if (Array.isArray(ord.items)) rawItems = ord.items;
+          else if (typeof ord.items === 'string') rawItems = JSON.parse(ord.items);
+          else if (ord.items && typeof ord.items === 'object') rawItems = Array.isArray(ord.items.items) ? ord.items.items : [ord.items];
+        } catch(_) { rawItems = []; }
 
-        // Derivar shipping a persistir en el cart
-        const deriveShipping = () => {
-          let ship = Number(ord.shipping || 0);
-          if (!Number.isFinite(ship) || ship < 0) ship = 0;
-          return Math.trunc(ship);
-        };
-        const shippingPersist = deriveShipping();
-        const shippingCurrency = 'CLP';
-
-        // 2) Intentar tomar carrito ACTIVO del usuario y convertirlo a 'pending'
-        const { data: activeCart, error: activeCartErr } = await supabase
-          .from('carts')
-          .select('cart_id, status, shipping_total, shipping_currency')
-          .eq('user_id', buyerId)
-          .eq('status', 'active')
-          .maybeSingle();
-
-        let targetCartId: string | null = null;
-
-        if (activeCart && activeCart.cart_id) {
-          // Convertir carrito activo en pedido pendiente + persistir shipping si no existe aún
-          const cartUpdate: Record<string, any> = { status: 'pending', updated_at: new Date().toISOString() };
-          // Solo persistimos shipping_total si no está seteado (>0 consideramos ya persistido)
-          if ((activeCart.shipping_total == null || activeCart.shipping_total === 0) && shippingPersist > 0) {
-            cartUpdate.shipping_total = shippingPersist;
-            cartUpdate.shipping_currency = shippingCurrency;
+        const normItems = rawItems.map((it, idx) => {
+          const product_id = it.product_id || it.productid || it.id || null;
+          const supplier_id = it.supplier_id || it.supplierId || null;
+          const quantity = Number(it.quantity || 1);
+          const price_at_addition = Number(it.price_at_addition || it.price || 0);
+          if (!product_id || !supplier_id || !Number.isFinite(quantity) || quantity <= 0 || !Number.isFinite(price_at_addition)) {
+            console.warn('⚠️ Item inválido descartado', { idx, product_id, supplier_id });
+            return null;
           }
-          const { data: updCart, error: updErr } = await supabase
-            .from('carts')
-            .update(cartUpdate)
-            .eq('cart_id', activeCart.cart_id)
-            .select('cart_id')
-            .single();
+          const dtRaw = String(it.document_type || it.documentType || '').toLowerCase();
+          const document_type = (dtRaw === 'boleta' || dtRaw === 'factura') ? dtRaw : 'ninguno';
+          return { product_id, supplier_id, quantity, price_at_addition, price_tiers: it.price_tiers || it.priceTiers || null, document_type };
+        }).filter(Boolean);
 
-          if (!updErr && updCart) {
-            targetCartId = updCart.cart_id;
-          } else if (updErr) {
-            console.error('❌ Error convirtiendo carrito activo a pending:', updErr);
-          }
-        }
-
-        // 3) Si no hay carrito activo, crear un nuevo registro de carts en 'pending'
-        if (!targetCartId) {
-          const insertCart: Record<string, any> = { user_id: buyerId, status: 'pending' };
-          if (shippingPersist > 0) {
-            insertCart.shipping_total = shippingPersist;
-            insertCart.shipping_currency = shippingCurrency;
-          }
-          const { data: newCart, error: newCartErr } = await supabase
-            .from('carts')
-            .insert(insertCart)
-            .select('cart_id')
-            .single();
-
-          if (newCartErr) {
-            console.error('❌ Error creando carrito para orden pagada:', newCartErr);
-          } else if (newCart) {
-            targetCartId = newCart.cart_id;
-          }
-        }
-
-        // 4) Si tenemos un cart_id, asegurar que los cart_items reflejen los items pagados
-        if (targetCartId) {
-          // 4.a) Vincular determinísticamente la orden de pagos (orders) con el cart materializado para permitir deduplicación en frontend
+        // ===== LEGACY MATERIALIZATION (si legacy o dual) =====
+        if (SPLIT_MODE === 'legacy' || SPLIT_MODE === 'dual') {
           try {
-            await supabase
-              .from('orders')
-              .update({ cart_id: targetCartId, updated_at: new Date().toISOString() })
-              .eq('id', orderId)
-              .is('cart_id', null); // solo si aún no estaba seteado
-          } catch (linkErr) {
-            console.error('⚠️ No se pudo actualizar cart_id en orders:', linkErr);
+            const totalShippingLegacy = Number(ord.shipping || 0);
+            const shippingCurrency = 'CLP';
+            const { data: activeCart } = await supabase
+              .from('carts')
+              .select('cart_id, status, shipping_total, shipping_currency')
+              .eq('user_id', buyerId)
+              .eq('status', 'active')
+              .maybeSingle();
+            let legacyCartId: string | null = null;
+            if (activeCart?.cart_id) {
+              const cartUpdate: any = { status: 'pending', updated_at: new Date().toISOString() };
+              if ((activeCart.shipping_total == null || activeCart.shipping_total === 0) && totalShippingLegacy > 0) {
+                cartUpdate.shipping_total = totalShippingLegacy;
+                cartUpdate.shipping_currency = shippingCurrency;
+              }
+              const { data: upd } = await supabase
+                .from('carts')
+                .update(cartUpdate)
+                .eq('cart_id', activeCart.cart_id)
+                .select('cart_id')
+                .single();
+              legacyCartId = upd?.cart_id || activeCart.cart_id;
+            } else {
+              const insertLegacy: any = { user_id: buyerId, status: 'pending' };
+              if (totalShippingLegacy > 0) { insertLegacy.shipping_total = totalShippingLegacy; insertLegacy.shipping_currency = shippingCurrency; }
+              const { data: newLegacy } = await supabase
+                .from('carts')
+                .insert(insertLegacy)
+                .select('cart_id')
+                .single();
+              legacyCartId = newLegacy?.cart_id || null;
+            }
+            if (legacyCartId) {
+              // Reset items y volver a insertar
+              await supabase.from('cart_items').delete().eq('cart_id', legacyCartId);
+              for (const it of normItems) {
+                await supabase.from('cart_items').insert({
+                  cart_id: legacyCartId,
+                  product_id: it.product_id,
+                  quantity: it.quantity,
+                  price_at_addition: it.price_at_addition,
+                  price_tiers: it.price_tiers,
+                  document_type: it.document_type
+                });
+              }
+              // Vincular orders->cart si no estaba
+              try {
+                await supabase.from('orders')
+                  .update({ cart_id: legacyCartId, updated_at: new Date().toISOString() })
+                  .eq('id', orderId)
+                  .is('cart_id', null);
+              } catch(_) {}
+            }
+          } catch (legacyErr) {
+            console.error('⚠️ Error en materialización legacy:', legacyErr);
           }
+        }
 
-          if (items.length > 0) {
-          // Reemplazar items del carrito por los items exactos de la orden pagada
-          await supabase.from('cart_items').delete().eq('cart_id', targetCartId);
-          // Insertar cada item
-          const normalizeDocType = (val: any) => {
-            if (!val) return 'ninguno';
-            const s = String(val).toLowerCase();
-            return (s === 'boleta' || s === 'factura') ? s : 'ninguno';
-          };
-          for (const it of items) {
-            const productId = it.product_id || it.productid || it.id;
-            const qty = Number(it.quantity || 1);
-            const priceAt = Number(it.price_at_addition || it.price || 0);
-            if (!productId || !Number.isFinite(qty)) continue;
-            await supabase.from('cart_items').insert({
-              cart_id: targetCartId,
-              product_id: productId,
-              quantity: qty,
-              price_at_addition: priceAt,
-              price_tiers: it.price_tiers || it.priceTiers || null,
-              document_type: normalizeDocType(it.document_type || it.documentType),
+        // ===== SPLIT MATERIALIZATION =====
+        if (SPLIT_MODE === 'dual' || SPLIT_MODE === 'split') {
+          if (ord.split_status !== 'split') {
+            // Idempotencia optimista (no transaction available; rely on update+check)
+            try {
+              await supabase.from('orders')
+                .update({ split_status: 'split', updated_at: new Date().toISOString() })
+                .eq('id', orderId)
+                .eq('split_status', ord.split_status);
+            } catch(markErr) {
+              console.error('⚠️ No se pudo marcar split_status:', markErr);
+            }
+            // Agrupar por supplier
+            const groupMap = new Map<string, any[]>();
+            normItems.forEach(it => {
+              if (!groupMap.has(it.supplier_id)) groupMap.set(it.supplier_id, []);
+              groupMap.get(it.supplier_id)!.push(it);
             });
-          }
-          }
-
-          // Actualizar timestamp del carrito
-          await supabase
-            .from('carts')
-            .update({ updated_at: new Date().toISOString() })
-            .eq('cart_id', targetCartId);
-
-          // 5) Ajustar inventario por cada producto comprado y registrar ventas por proveedor y por producto
-          for (const it of items) {
-            const productId = it.product_id || it.productid || it.id;
-            const qty = Number(it.quantity || 1);
-            const unitPrice = Number(it.price_at_addition || it.price || 0);
-            const supplierId = it.supplier_id || it.product?.supplier_id || null;
-            if (!productId || !Number.isFinite(qty)) continue;
-
-            // Decrementar stock: seleccionar y actualizar
-            const { data: prodRows, error: prodErr } = await supabase
-              .from('products')
-              .select('productqty')
-              .eq('productid', productId)
-              .limit(1);
-            if (!prodErr && prodRows && prodRows.length > 0) {
-              const currentQty = Number(prodRows[0].productqty || 0);
-              const newQty = Math.max(0, currentQty - qty);
-              await supabase
-                .from('products')
-                .update({ productqty: newQty, updateddt: new Date().toISOString() })
-                .eq('productid', productId);
-            }
-
-            // Registrar venta por proveedor si contamos con supplierId
-            if (supplierId) {
-              const amount = Math.max(0, unitPrice * qty);
-              // Insert into supplier-level sales (no unique key available; allow duplicates but could be deduped later)
-              await supabase.from('sales').insert({ user_id: supplierId, amount, trx_date: new Date().toISOString() });
-
-              // Insert product-level sale with idempotency per order/product/supplier
-              await supabase
-                .from('product_sales')
-                .upsert({
-                  product_id: productId,
-                  supplier_id: supplierId,
-                  quantity: qty,
-                  amount: amount,
-                  trx_date: new Date().toISOString(),
-                  order_id: orderId,
-                }, { onConflict: 'order_id,product_id,supplier_id' });
+            // Subtotales + shipping prorrateado
+            const supplierEntries = Array.from(groupMap.entries());
+            const subtotals = supplierEntries.map(([sid, arr]) => ({ sid, subtotal: arr.reduce((s,i)=>s + i.price_at_addition*i.quantity,0) }));
+            const totalSubtotal = subtotals.reduce((s,o)=>s+o.subtotal,0) || 1;
+            const totalShipping = Number(ord.shipping || 0);
+            let acc = 0;
+            const shippingAlloc = subtotals.map((o,idx) => {
+              if (idx === subtotals.length -1) return { sid: o.sid, shipping: Math.max(0, totalShipping - acc) };
+              const share = Math.round(totalShipping * (o.subtotal / totalSubtotal));
+              acc += share; return { sid: o.sid, shipping: share };
+            });
+            const shippingMap = new Map(shippingAlloc.map(a => [a.sid, a.shipping]));
+            // Checar carts existentes (idempotencia)
+            const { data: existing } = await supabase
+              .from('carts')
+              .select('cart_id, supplier_id')
+              .eq('payment_order_id', orderId);
+            const existingSet = new Set((existing||[]).map(r => r.supplier_id));
+            for (const { sid, subtotal } of subtotals) {
+              if (existingSet.has(sid)) continue; // ya creado
+              const ship = shippingMap.get(sid) || 0;
+              const { data: newCart, error: splitErr } = await supabase
+                .from('carts')
+                .insert({
+                  user_id: buyerId,
+                  status: 'pending',
+                  payment_order_id: orderId,
+                  supplier_id: sid,
+                  shipping_total: ship > 0 ? ship : null,
+                  shipping_currency: ship > 0 ? 'CLP' : null
+                })
+                .select('cart_id')
+                .single();
+              if (splitErr) {
+                console.error('❌ Error creando cart split supplier:', splitErr);
+                continue;
+              }
+              const cartId = newCart?.cart_id;
+              if (!cartId) continue;
+              for (const it of groupMap.get(sid) || []) {
+                await supabase.from('cart_items').insert({
+                  cart_id: cartId,
+                  product_id: it.product_id,
+                  quantity: it.quantity,
+                  price_at_addition: it.price_at_addition,
+                  price_tiers: it.price_tiers,
+                  document_type: it.document_type
+                });
+              }
             }
           }
         }
 
-        // 6) Crear un nuevo carrito ACTIVO vacío para el usuario (para futuras compras)
-        const { error: newActiveErr } = await supabase
-          .from('carts')
-          .insert({ user_id: buyerId, status: 'active' });
-        if (newActiveErr) {
-          // No es crítico; puede fallar si ya existe
+        // ===== INVENTARIO & VENTAS (idempotente por product_sales) =====
+        for (const it of normItems) {
+          const { data: prodRows } = await supabase
+            .from('products')
+            .select('productqty')
+            .eq('productid', it.product_id)
+            .limit(1);
+          if (prodRows?.length) {
+            const currentQty = Number(prodRows[0].productqty || 0);
+            const newQty = Math.max(0, currentQty - it.quantity);
+            await supabase.from('products').update({ productqty: newQty, updateddt: new Date().toISOString() }).eq('productid', it.product_id);
+          }
+          if (it.supplier_id) {
+            const amount = Math.max(0, it.price_at_addition * it.quantity);
+            await supabase.from('sales').insert({ user_id: it.supplier_id, amount, trx_date: new Date().toISOString() });
+            await supabase.from('product_sales').upsert({
+              product_id: it.product_id,
+              supplier_id: it.supplier_id,
+              quantity: it.quantity,
+              amount,
+              trx_date: new Date().toISOString(),
+              order_id: orderId
+            }, { onConflict: 'order_id,product_id,supplier_id' });
+          }
         }
+
+        // Nuevo carrito activo vacío (ignorar errores)
+        try { await supabase.from('carts').insert({ user_id: buyerId, status: 'active' }); } catch(_) {}
       }
-    } catch (materializeErr) {
-      console.error('❌ Error materializando orden pagada:', materializeErr);
+    } catch(materializeErr) {
+      console.error('❌ Error materializando (dual/split):', materializeErr);
     }
 
     return new Response(JSON.stringify({ success: true, orderId }), {

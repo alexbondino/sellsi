@@ -309,6 +309,8 @@ class OrderService {
         .select(`
           id,
           cart_id,
+          payment_order_id,
+          supplier_id,
           user_id,
           items,
           subtotal,
@@ -659,8 +661,11 @@ class OrderService {
           return {
             order_id: cart.cart_id,
             cart_id: cart.cart_id,
+            payment_order_id: cart.payment_order_id || null,
+            supplier_id: cart.supplier_id || null,
             buyer_id: cart.user_id,
             status: cart.status,
+            payment_status: 'paid',
             created_at: cart.created_at,
             updated_at: cart.updated_at,
             estimated_delivery_date: estimatedDeliveryDate,
