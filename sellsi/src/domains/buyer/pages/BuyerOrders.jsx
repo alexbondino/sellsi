@@ -393,9 +393,9 @@ const BuyerOrders = () => {
                           <Chip size="small" color="primary" label={order.supplier_name ? `Proveedor: ${order.supplier_name}` : 'Parte de Pedido'} />
                         )}
                       </Box>
-                      {order.payment_order_id && (
+            {order.parent_order_id && order.parent_order_id !== order.order_id && (
                         <Typography variant="body2" color="text.secondary" sx={{ mt: 0.2 }}>
-                          Orden de Pago {formatOrderNumber(order.payment_order_id)}
+              Orden de Pago {formatOrderNumber(order.parent_order_id)}
                         </Typography>
                       )}
                       <Box sx={{ textAlign: 'right' }}>

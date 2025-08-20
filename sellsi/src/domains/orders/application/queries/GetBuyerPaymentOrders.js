@@ -5,7 +5,9 @@ import { parseOrderItems, normalizeDocumentType } from '../../shared/parsing';
 import { mapBuyerOrderFromServiceObject } from '../../infra/mappers/orderMappers';
 import { toBuyerUIOrder } from '../../presentation/adapters/legacyUIAdapter';
 
-const ALLOW_ZERO_PRICE_ITEMS = false; // futura flag/feature toggle
+// TEMPORAL: habilitamos tolerancia a items con precio 0 para no ocultar toda la lista si existe un item defectuoso.
+// En vez de abortar, marcamos pricing_warning y forzamos price_at_addition = 1 mientras se corrige el pipeline.
+const ALLOW_ZERO_PRICE_ITEMS = true; // toggled from false -> true (rollback simple si se desea)
 
 export async function GetBuyerPaymentOrders(buyerId, { limit, offset } = {}) {
   const { data, error } = await ordersRepository.listByBuyer(buyerId, { limit, offset });
@@ -61,6 +63,11 @@ export async function GetBuyerPaymentOrders(buyerId, { limit, offset } = {}) {
       }
       if (!ALLOW_ZERO_PRICE_ITEMS && price_at_addition <= 0) {
         throw new Error(`Precio inválido (0) detectado en item ${idx} de orden ${row.id}`);
+      }
+      // Tolerancia: si está permitido y el precio quedó <=0, lo elevamos a 1 CLP para no romper vista y marcamos warning.
+      if (ALLOW_ZERO_PRICE_ITEMS && price_at_addition <= 0) {
+        pricing_warning = true;
+        price_at_addition = 1;
       }
       return {
         cart_items_id: it.cart_items_id || it.id || `${row.id}-itm-${idx}`,

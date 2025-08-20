@@ -8,8 +8,6 @@ export class OrdersRepository {
       .select(`
           id,
           cart_id,
-          payment_order_id,
-          supplier_id,
           user_id,
           items,
           subtotal,

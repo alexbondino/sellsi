@@ -116,6 +116,8 @@ export const useBuyerOrders = buyerId => {
 
   const fetchOrders = useCallback(async (filters = {}) => {
     if (!buyerId || !isUUID(buyerId)) {
+      // Aseguramos que no quede spinner infinito si buyerId aún no está listo.
+      setLoading(false);
       return;
     }
     try {
@@ -123,14 +125,19 @@ export const useBuyerOrders = buyerId => {
       setError(null);
       const [legacy, payment, supplierParts] = await Promise.all([
         SUPPLIER_PARTS_FRONT ? Promise.resolve([]) : orderService.getOrdersForBuyer(buyerId, filters).catch(()=>[]),
-        orderService.getPaymentOrdersForBuyer(buyerId, filters).catch(()=>[]),
+        // No silenciar completamente: loggear para diagnóstico.
+        orderService.getPaymentOrdersForBuyer(buyerId, filters).catch(e => {
+          console.error('[buyerOrders][paymentOrders] error', e);
+          setError(prev => prev || e.message || 'Error cargando payment orders');
+          return [];
+        }),
         import('../../../../domains/orders/application/queries/GetBuyerSupplierOrders')
           .then(m => m.GetBuyerSupplierOrders(buyerId, filters))
           .catch(()=>[])
       ]);
       if (DEBUG_BUYER_ORDERS) {
         // eslint-disable-next-line no-console
-        console.log('[buyerOrders] legacy', legacy.length, 'payment', payment.length);
+        console.log('[buyerOrders] legacy', legacy.length, 'payment', payment.length, 'supplierParts', supplierParts.length);
       }
       // Diagnóstico precios 0
       legacy.concat(payment).forEach(o => {
@@ -153,6 +160,10 @@ export const useBuyerOrders = buyerId => {
         merged.sort((a,b)=> new Date(b.created_at) - new Date(a.created_at));
       }
       setOrders(merged);
+      if (merged.length === 0 && !error) {
+        // Pista diagnóstica rápida en consola.
+        console.warn('[buyerOrders] Resultado vacío tras merge. Verificar flags, RLS o errores previos en consola.');
+      }
     } catch (err) {
       setError(err.message || 'Error al cargar los pedidos');
     } finally {
