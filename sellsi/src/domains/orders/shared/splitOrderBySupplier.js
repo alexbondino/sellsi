@@ -18,7 +18,7 @@ export function splitOrderBySupplier(order) {
       shipping_amount: Number(order.shipping || order.shipping_amount || 0),
       shipping: Number(order.shipping || order.shipping_amount || 0), // alias para UI
       total_amount: Number(order.subtotal || order.total || 0),
-      final_amount: Number(order.total || 0),
+      final_amount: order.final_amount || Number(order.total || 0),
       status: order.status,
       payment_status: order.payment_status,
       is_supplier_part: false,
@@ -48,7 +48,7 @@ export function splitOrderBySupplier(order) {
       shipping_amount: Number(order.shipping || order.shipping_amount || 0),
       shipping: Number(order.shipping || order.shipping_amount || 0),
       total_amount: Number(order.subtotal || order.total || 0),
-      final_amount: Number(order.total || 0),
+      final_amount: order.final_amount || Number(order.total || 0),
       status: order.status,
       payment_status: order.payment_status,
       is_supplier_part: false,

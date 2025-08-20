@@ -47,7 +47,10 @@ const useCheckout = create(
             serviceFee: cartData.serviceFee || Math.round((cartData.subtotal || 0) * 0.03), // Comisión 3%
             shipping: cartData.shipping || 0,
             total: cartData.total || 0,
-            currency: 'CLP'
+            currency: 'CLP',
+            // ✅ CRÍTICO: Guardar direcciones del perfil
+            shippingAddress: cartData.shippingAddress || null,
+            billingAddress: cartData.billingAddress || null
           },
           currentStep: CHECKOUT_STEPS.PAYMENT_METHOD,
           completedSteps: [CHECKOUT_STEPS.CART],

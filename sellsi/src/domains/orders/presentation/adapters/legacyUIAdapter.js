@@ -25,6 +25,12 @@ export function toSupplierUIOrder(domainOrder, { includeAliases = true } = {}) {
     total_items: items.length,
     total_quantity: items.reduce((s,i)=>s + (i.quantity||0),0),
     total_amount: o.totals?.amount || o.total_amount || 0,
+    // ✅ FIX: Mapear campos de shipping desde domain order
+    shipping: o.shipping || 0,
+    shipping_amount: o.shipping_amount || 0,
+    shipping_cost: o.shipping_cost || 0,
+    // ✅ FIX: NO recalcular final_amount, usar el que viene del domain (ya incluye shipping)
+    final_amount: o.totals?.final || o.final_amount || (o.totals?.amount || o.total_amount || 0),
     source: o.source || 'orders'
   };
   if (includeAliases && FLAGS.ORDERS_EMIT_LEGACY_ALIASES) {

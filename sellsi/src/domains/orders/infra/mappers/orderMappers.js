@@ -43,6 +43,10 @@ export function mapSupplierOrderFromServiceObject(o) {
       amount: o.total_amount || 0,
       final: o.final_amount || o.total_amount || 0
     },
+    // ✅ FIX: Mapear campos de shipping que se perdían en la transformación
+    shipping: o.shipping || 0,
+    shipping_amount: o.shipping_amount || 0,
+    shipping_cost: o.shipping_cost || 0,
     deliveryAddress: o.delivery_address || o.deliveryAddress || null
   };
 }

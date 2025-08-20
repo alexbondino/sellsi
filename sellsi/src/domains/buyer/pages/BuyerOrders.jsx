@@ -247,8 +247,9 @@ const BuyerOrders = () => {
   
   // ✅ NUEVO: Función para unificar campos de envío
   const getShippingAmount = (order) => {
-    // Prioridad: shipping_amount > shipping > 0
-    return Number(order.shipping_amount || order.shipping || 0);
+    const shippingValue = order?.shipping_amount ?? order?.shipping ?? order?.total_shipping ?? order?.shipping_cost ?? 0;
+    const parsed = Number(shippingValue);
+    return Number.isFinite(parsed) ? parsed : 0;
   };
   
   // Función para generar número de orden desde cart_id
