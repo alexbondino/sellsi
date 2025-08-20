@@ -257,7 +257,6 @@ const useSupplierProductsCRUD = create((set, get) => ({
       })
       if (rpcError) throw rpcError
       if (!result?.success) throw new Error(result?.error || 'Fallo eliminación')
-      console.log('[CRUD deleteProduct] RPC action', result.action)
 
       // Limpieza defensiva (huérfanos) sin bloquear
       let cleaned = 0

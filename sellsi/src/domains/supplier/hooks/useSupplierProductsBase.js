@@ -355,14 +355,12 @@ const useSupplierProductsBase = create((set, get) => ({
     try {
       const supplierId = localStorage.getItem('user_id')
       // Ejecutar RPC robusta
-  console.log('[deleteProduct] calling RPC request_delete_product_v1')
   const { data: result, error: rpcError } = await supabase.rpc('request_delete_product_v1', {
         p_product_id: productId,
         p_supplier_id: supplierId,
       })
       if (rpcError) throw rpcError
       if (!result?.success) throw new Error(result?.error || 'Fallo eliminación')
-  console.log('[deleteProduct] RPC result', result)
 
       // Actualizar estado según acción (pero UI siempre mostrará 'Producto eliminado')
       const { products } = get()
