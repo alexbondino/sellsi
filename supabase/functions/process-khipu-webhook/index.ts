@@ -158,6 +158,7 @@ serve((req: Request) => withMetrics('process-khipu-webhook', req, async () => {
         Deno.env.get('SUPABASE_URL')!,
         Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
       );
+      // Obtener items y recalcular hash usando representación server (jsonb::text) vía RPC inline
       const { data: orderForHash, error: hashErr } = await supabaseHash
         .from('orders')
         .select('id, items, items_hash')
@@ -166,18 +167,29 @@ serve((req: Request) => withMetrics('process-khipu-webhook', req, async () => {
       if (hashErr) {
         console.error('❌ Error obteniendo orden para hash:', hashErr);
       } else if (orderForHash) {
-        const itemsJson = orderForHash.items;
-        let canonical: string;
-        try { canonical = typeof itemsJson === 'string' ? itemsJson : JSON.stringify(itemsJson); } catch { canonical = JSON.stringify([]); }
-        const encoder = new TextEncoder();
-        const dataBuf = encoder.encode(canonical);
-        const digestBuf = await crypto.subtle.digest('SHA-256', dataBuf);
-        const hex = Array.from(new Uint8Array(digestBuf)).map(b=>b.toString(16).padStart(2,'0')).join('');
-        if (orderForHash.items_hash && orderForHash.items_hash !== hex) {
+        // Llamar función SQL para asegurar mismo algoritmo que finalize_order_pricing
+        const { data: hashCalc, error: hashFuncErr } = await supabaseHash.rpc('order_items_canonical_hash', { o: orderForHash });
+        let hex = null;
+        if (hashFuncErr) {
+          console.warn('⚠️ Falla order_items_canonical_hash, fallback a hashing JS', hashFuncErr);
+          try {
+            const itemsJson = orderForHash.items;
+            const canonical = typeof itemsJson === 'string' ? itemsJson : JSON.stringify(itemsJson);
+            const encoder = new TextEncoder();
+            const dataBuf = encoder.encode(canonical);
+            const digestBuf = await crypto.subtle.digest('SHA-256', dataBuf);
+            hex = Array.from(new Uint8Array(digestBuf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+          } catch(_) { hex = null; }
+        } else {
+          hex = hashCalc as any;
+        }
+        if (hex && orderForHash.items_hash && orderForHash.items_hash !== hex) {
           integrityOk = false;
           console.error('❌ Mismatch items_hash detectado', { stored: orderForHash.items_hash, computed: hex });
-        } else {
+        } else if (hex) {
           console.log('🛡️ Hash integridad OK');
+        } else {
+          console.warn('⚠️ No se pudo calcular hash para comparación');
         }
       }
     } catch (hashEx) {
