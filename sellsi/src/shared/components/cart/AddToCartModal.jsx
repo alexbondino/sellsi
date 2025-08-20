@@ -341,7 +341,7 @@ const AddToCartModal = ({
   }), [enrichedProduct]);
 
   // Hook para validación de despacho optimizado - Solo bajo demanda
-  const { validateSingleProduct, getUserRegionName, userRegion: hookUserRegion } = useUnifiedShippingValidation();
+  const { validateSingleProduct, validateProductShipping, getUserRegionName, userRegion: hookUserRegion } = useUnifiedShippingValidation();
 
   // Usar la región del hook o la prop (fallback)
   const effectiveUserRegion = hookUserRegion || userRegion;
@@ -359,7 +359,15 @@ const AddToCartModal = ({
 
     setIsValidatingShipping(true);
     try {
-      const validation = validateSingleProduct(enrichedProduct);
+      let validation = null;
+      // Si el hook ya resolvió la región del usuario, usar la versión cacheada;
+      // si no, usar la función pura pasando la región efectiva (fallback desde props)
+      if (hookUserRegion) {
+        validation = validateSingleProduct(enrichedProduct);
+      } else {
+        validation = validateProductShipping(enrichedProduct, effectiveUserRegion);
+      }
+
       setShippingValidation(validation);
     } catch (error) {
       console.error('Error validating shipping:', error);
