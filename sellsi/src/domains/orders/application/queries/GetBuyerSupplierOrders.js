@@ -31,7 +31,11 @@ export async function GetBuyerSupplierOrders(buyerId, { limit, offset } = {}) {
           proveedor: it.supplier_name || 'Proveedor'
         }
       }));
+    // Derivar nombre de proveedor (primer item) para UI consistente con split virtual
+  // supplier name puede venir como campo plano 'supplier' en el JSON original
+  const supplierName = items[0]?.product?.supplier?.name || items[0]?.product?.proveedor || items[0]?.product?.supplier || 'Proveedor';
     results.push({
+      // Mantener order_id igual al parent para que realtime updates (payment_status) sigan aplicando.
       order_id: parent.id,
       parent_order_id: parent.id,
       supplier_order_id: p.id,
@@ -47,7 +51,9 @@ export async function GetBuyerSupplierOrders(buyerId, { limit, offset } = {}) {
       shipping_amount: Number(p.shipping_amount || 0),
       final_amount: Number(p.total || (p.subtotal + p.shipping_amount) || 0),
       is_payment_order: true,
-      is_supplier_part: true
+      is_supplier_part: true,
+      supplier_name: supplierName,
+      synthetic_id: `${parent.id}-${p.supplier_id}` // clave estable para React keys y dedupe
     });
   }
   return results;

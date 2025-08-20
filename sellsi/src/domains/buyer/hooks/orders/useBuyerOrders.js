@@ -45,7 +45,7 @@ export const useBuyerOrders = buyerId => {
     // ============================
     // Reemplaza una payment order con N suppliers por N "sub-órdenes" virtuales
     // Conserva order_id original para que realtime updates funcionen; añade synthetic_id para key UI.
-    const result = [];
+  const result = [];
     for (const o of ordered) {
       // Sólo aplicar a payment orders (is_payment_order true) con múltiples suppliers en items
   if (EFFECTIVE_SPLIT_MODE === 'off' || !o.is_payment_order || !Array.isArray(o.items) || o.items.length === 0) {
@@ -111,7 +111,17 @@ export const useBuyerOrders = buyerId => {
         });
       });
     }
-    return result;
+    // Dedupe defensivo: si por error quedó tanto parent payment order como un part con mismo supplier que virtual, nos quedamos con la versión "más específica".
+    // Clave base: synthetic_id || order_id (+supplier_id si existe)
+    const seen = new Set();
+    const deduped = [];
+    for (const r of result) {
+      const key = r.synthetic_id || (r.order_id + (r.supplier_id ? `-${r.supplier_id}` : ''));
+      if (seen.has(key)) continue;
+      seen.add(key);
+      deduped.push(r);
+    }
+    return deduped;
   }, [SHOW_UNPAID_PAYMENT_ORDERS]);
 
   const fetchOrders = useCallback(async (filters = {}) => {
@@ -151,14 +161,38 @@ export const useBuyerOrders = buyerId => {
       // If real supplier parts exist for certain parent orders, replace corresponding payment order entries with parts (skip virtual split for them)
       let merged = mergeAndSort(legacy, payment);
       if (supplierParts.length) {
-        const parentIdsWithParts = new Set(supplierParts.map(p => p.parent_order_id));
-        // Remove original payment order rows whose parent has parts (will be replaced by parts list)
-        merged = merged.filter(o => !(o.is_payment_order && !o.is_supplier_part && parentIdsWithParts.has(o.order_id)));
-        // Insert parts (they'll already have per-supplier amounts)
-        merged = [...merged, ...supplierParts];
-        // Re-sort by created_at
-        merged.sort((a,b)=> new Date(b.created_at) - new Date(a.created_at));
+        // Agrupar partes por parent
+        const partsByParent = supplierParts.reduce((acc, p) => {
+          if (!acc[p.parent_order_id]) acc[p.parent_order_id] = [];
+          acc[p.parent_order_id].push(p);
+          return acc;
+        }, {});
+        const parentIdsWithRealMultiParts = new Set(Object.entries(partsByParent).filter(([_, arr]) => arr.length > 1).map(([pid]) => pid));
+        // Remover parent sólo si hay más de 1 parte real (escenario multi-supplier). Si solo 1 parte, mostramos parent para evitar duplicar.
+        merged = merged.filter(o => !(o.is_payment_order && !o.is_supplier_part && parentIdsWithRealMultiParts.has(o.order_id)));
+        // Insertar únicamente partes de parents multi-supplier
+        const partsToInsert = supplierParts.filter(p => parentIdsWithRealMultiParts.has(p.parent_order_id));
+        if (partsToInsert.length) {
+          const normalizedParts = partsToInsert.map(p => ({
+            ...p,
+            synthetic_id: p.synthetic_id || `${p.parent_order_id}-${p.supplier_id}`,
+            supplier_name: p.supplier_name || p.items?.[0]?.product?.supplier?.name || p.items?.[0]?.product?.proveedor || p.items?.[0]?.product?.supplier || 'Proveedor'
+          }));
+          merged = [...merged, ...normalizedParts];
+          merged.sort((a,b)=> new Date(b.created_at) - new Date(a.created_at));
+        }
       }
+      // Final pass: if both a virtual split synthetic sub-order and a real supplier_part exist for same (order_id, supplier_id), prefer real part.
+      const byKey = new Map();
+      for (const m of merged) {
+        const baseKey = m.order_id + (m.supplier_id ? `-${m.supplier_id}` : '');
+        const existing = byKey.get(baseKey);
+        if (!existing) { byKey.set(baseKey, m); continue; }
+        // Prefer real supplier part over virtual split; otherwise keep existing
+        const prefer = (m.is_supplier_part && !m.is_virtual_split) ? m : existing;
+        byKey.set(baseKey, prefer);
+      }
+      merged = Array.from(byKey.values()).sort((a,b)=> new Date(b.created_at) - new Date(a.created_at));
       setOrders(merged);
       if (merged.length === 0 && !error) {
         // Pista diagnóstica rápida en consola.

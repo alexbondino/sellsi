@@ -389,7 +389,7 @@ const BuyerOrders = () => {
                         <Typography variant="h6" fontWeight="bold">
                           Pedido {formatOrderNumber(order.parent_order_id || order.order_id)}
                         </Typography>
-                        {order.is_virtual_split && (
+                        {(order.is_virtual_split || order.is_supplier_part) && (
                           <Chip size="small" color="primary" label={order.supplier_name ? `Proveedor: ${order.supplier_name}` : 'Parte de Pedido'} />
                         )}
                       </Box>
