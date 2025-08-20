@@ -1,5 +1,6 @@
 // Command: Actualizar estado de un pedido (orders o carts) con validaciones y notificaciones
 import { ordersRepository } from '../../infra/repositories/OrdersRepository';
+import { supplierOrdersRepository } from '../../infra/repositories/SupplierOrdersRepository';
 import { orderStatusService } from '../../domain/services/OrderStatusService';
 import { notificationService } from '../../domain/services/NotificationService';
 import { ORDER_STATUSES, ADVANCE_STATUSES, normalizeStatus, getStatusDisplayName } from '../../shared/constants';
@@ -12,6 +13,9 @@ export async function UpdateOrderStatus(orderId, newStatus, additionalData = {})
   const updateData = { status: normalizedStatus, updated_at: new Date().toISOString() };
   if (normalizedStatus === 'in_transit' && additionalData.estimated_delivery_date) {
     updateData.estimated_delivery_date = additionalData.estimated_delivery_date;
+  }
+  if (additionalData.tax_document_path) {
+    updateData.tax_document_path = additionalData.tax_document_path; // will be ignored if column not present
   }
 
   // Guardia pago (solo orders)
@@ -47,7 +51,29 @@ export async function UpdateOrderStatus(orderId, newStatus, additionalData = {})
   const check = orderStatusService.canTransition(currentStatus || 'pending', normalizedStatus, { paymentStatus: currentPaymentStatus });
   if (!check.ok) throw new Error(`Transición inválida: ${check.reason}`);
 
-  // Intentar orders primero
+  // Intentar supplier_orders (part) primero si existe el part id
+  try {
+    const { data: partMaybe } = await supplierOrdersRepository.getPartById(orderId);
+    if (partMaybe) {
+      // We are updating a supplier order part
+      const { data: updPart, error: updPartErr } = await supabase
+        .from('supplier_orders')
+        .update(updateData)
+        .eq('id', orderId)
+        .select('*')
+        .single();
+      if (updPartErr) throw updPartErr;
+      try { await notificationService.notifyStatusChange(updPart, normalizedStatus); } catch(_) {}
+      return {
+        success: true,
+        order: updPart,
+        source: 'supplier_orders',
+        message: `Pedido (parte proveedor) ${getStatusDisplayName(normalizedStatus)} correctamente`
+      };
+    }
+  } catch(_) {}
+
+  // Intentar orders (parent) luego
   const { data: orderData, error: orderError } = await supabase
     .from('orders')
     .update(updateData)

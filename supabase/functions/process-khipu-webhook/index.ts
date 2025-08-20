@@ -151,28 +151,78 @@ serve((req: Request) => withMetrics('process-khipu-webhook', req, async () => {
 
     console.log(`💰 Procesando pago exitoso (o idempotente) para la orden: ${orderId}`);
 
+    // Verificación de integridad (items_hash) antes de mutar inventario / supplier_orders
+    let integrityOk = true;
+    try {
+      const supabaseHash = createClient(
+        Deno.env.get('SUPABASE_URL')!,
+        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+      );
+      const { data: orderForHash, error: hashErr } = await supabaseHash
+        .from('orders')
+        .select('id, items, items_hash')
+        .eq('id', orderId)
+        .maybeSingle();
+      if (hashErr) {
+        console.error('❌ Error obteniendo orden para hash:', hashErr);
+      } else if (orderForHash) {
+        const itemsJson = orderForHash.items;
+        let canonical: string;
+        try { canonical = typeof itemsJson === 'string' ? itemsJson : JSON.stringify(itemsJson); } catch { canonical = JSON.stringify([]); }
+        const encoder = new TextEncoder();
+        const dataBuf = encoder.encode(canonical);
+        const digestBuf = await crypto.subtle.digest('SHA-256', dataBuf);
+        const hex = Array.from(new Uint8Array(digestBuf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+        if (orderForHash.items_hash && orderForHash.items_hash !== hex) {
+          integrityOk = false;
+          console.error('❌ Mismatch items_hash detectado', { stored: orderForHash.items_hash, computed: hex });
+        } else {
+          console.log('🛡️ Hash integridad OK');
+        }
+      }
+    } catch (hashEx) {
+      console.error('⚠️ Fallo verificando hash de items (continuando con caution):', hashEx);
+    }
+    if (!integrityOk) {
+      return new Response(JSON.stringify({ error: 'ITEMS_HASH_MISMATCH', order_id: orderId }), { status: 409, headers: corsHeaders });
+    }
+
     // ========================================================================
-    // ACTUALIZAR EN SUPABASE
+    // ACTUALIZAR EN SUPABASE + IDEMPOTENCIA INVENTARIO (inventory_processed_at)
     // ========================================================================
     const paidAt = khipuPayload.paid_at || khipuPayload.paidAt || new Date().toISOString();
 
-    // Idempotent update: solo si no está ya 'paid'
-    const { data, error } = await supabase
+    // Intento obtener estado actual incluyendo inventory_processed_at para decidir idempotencia
+    const { data: preOrder, error: preErr } = await supabase
       .from('orders')
-      .update({
-        payment_status: 'paid',
-        khipu_payment_id: paymentIdFromPayload,
-        paid_at: paidAt,
-        updated_at: new Date().toISOString(),
-      })
+      .select('id, payment_status, inventory_processed_at')
       .eq('id', orderId)
-      .neq('payment_status', 'paid')
-      .select();
+      .maybeSingle();
+    if (preErr) {
+      console.error('❌ Error obteniendo orden previa:', preErr);
+    }
 
-    if (error) {
-      console.error('❌ Error al actualizar la orden:', error);
-    } else {
-      console.log('✅ Orden actualizada:', data);
+    let alreadyProcessedInventory = false;
+    if (preOrder?.inventory_processed_at) {
+      console.log('ℹ️ Webhook idempotente (inventory ya procesado)');
+      alreadyProcessedInventory = true;
+    }
+
+    if (preOrder && preOrder.payment_status !== 'paid') {
+      const { error: payUpdErr } = await supabase
+        .from('orders')
+        .update({
+          payment_status: 'paid',
+          khipu_payment_id: paymentIdFromPayload,
+          paid_at: paidAt,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', orderId);
+      if (payUpdErr) console.error('❌ Error marcando pago:', payUpdErr); else console.log('✅ Orden marcada pagada');
+    }
+    // Si inventario ya procesado, salimos antes de mutar inventario / ventas / materializaciones
+    if (alreadyProcessedInventory) {
+      return new Response(JSON.stringify({ success: true, orderId, idempotent: true }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 });
     }
 
     // ========================================================================
@@ -180,6 +230,7 @@ serve((req: Request) => withMetrics('process-khipu-webhook', req, async () => {
     // ========================================================================
     try {
       const SPLIT_MODE = (Deno.env.get('SPLIT_MODE') || 'legacy').toLowerCase(); // legacy | dual | split
+      const SUPPLIER_PARTS_ENABLED = (Deno.env.get('SUPPLIER_PARTS_ENABLED') || 'false').toLowerCase() === 'true';
       const { data: orderRows, error: fetchOrderErr } = await supabase
         .from('orders')
         .select('id, user_id, items, total, created_at, shipping, split_status')
@@ -212,8 +263,86 @@ serve((req: Request) => withMetrics('process-khipu-webhook', req, async () => {
           return { product_id, supplier_id, quantity, price_at_addition, price_tiers: it.price_tiers || it.priceTiers || null, document_type };
         }).filter(Boolean);
 
-        // ===== LEGACY MATERIALIZATION (si legacy o dual) =====
-        if (SPLIT_MODE === 'legacy' || SPLIT_MODE === 'dual') {
+        // ====================================================================
+        // SUPPLIER PARTS (supplier_orders) CREATION (Fase 1.5)
+        // ====================================================================
+        if (SUPPLIER_PARTS_ENABLED) {
+          try {
+            // Group items by supplier
+            const groupMap = new Map<string, typeof normItems>();
+            for (const it of normItems) {
+              if (!it.supplier_id) continue;
+              if (!groupMap.has(it.supplier_id)) groupMap.set(it.supplier_id, []);
+              groupMap.get(it.supplier_id)!.push(it);
+            }
+            if (groupMap.size > 0) {
+              // Pre-fetch existing supplier_orders for idempotency
+              const { data: existingParts, error: partsErr } = await supabase
+                .from('supplier_orders')
+                .select('id, supplier_id')
+                .eq('parent_order_id', orderId);
+              if (partsErr) console.error('⚠️ Error leyendo supplier_orders existentes', partsErr);
+              const existingSet = new Set((existingParts||[]).map(p => p.supplier_id));
+
+              // Compute shipping allocation similar a lógica split carts
+              const subtotalsArray: { sid: string; subtotal: number; items: any[] }[] = [];
+              for (const [sid, items] of groupMap.entries()) {
+                const subtotal = items.reduce((s,i)=> s + (i.price_at_addition * i.quantity), 0);
+                subtotalsArray.push({ sid, subtotal, items });
+              }
+              const totalSubtotal = subtotalsArray.reduce((s,x)=>s+x.subtotal,0) || 1;
+              const totalShipping = Number(ord.shipping || 0);
+              let accShip = 0;
+              subtotalsArray.forEach((entry, idx) => {
+                if (totalShipping <= 0) entry.shippingAlloc = 0;
+                else if (idx === subtotalsArray.length -1) entry.shippingAlloc = Math.max(0, totalShipping - accShip);
+                else { const alloc = Math.round(totalShipping * (entry.subtotal / totalSubtotal)); entry.shippingAlloc = alloc; accShip += alloc; }
+              });
+
+              // Insert missing supplier_orders
+              for (const entry of subtotalsArray) {
+                if (existingSet.has(entry.sid)) continue;
+                const { data: insertedPart, error: insErr } = await supabase
+                  .from('supplier_orders')
+                  .insert({
+                    parent_order_id: orderId,
+                    supplier_id: entry.sid,
+                    status: ord.status || 'pending',
+                    payment_status: data && data.length ? (data[0] as any).payment_status || 'paid' : 'paid',
+                    subtotal: entry.subtotal,
+                    shipping_amount: entry.shippingAlloc || 0,
+                    total: entry.subtotal + (entry.shippingAlloc || 0),
+                    estimated_delivery_date: ord.estimated_delivery_date || null
+                  })
+                  .select('id, supplier_id')
+                  .single();
+                if (insErr) { console.error('❌ Error insert supplier_order', insErr); continue; }
+                existingSet.add(entry.sid);
+                const partId = insertedPart?.id;
+                if (!partId) continue;
+                // Insert items
+                for (const it of entry.items) {
+                  try {
+                    await supabase.from('supplier_order_items').insert({
+                      supplier_order_id: partId,
+                      product_id: it.product_id,
+                      quantity: it.quantity,
+                      unit_price: it.price_at_addition,
+                      price_at_addition: it.price_at_addition,
+                      price_tiers: it.price_tiers || null,
+                      document_type: it.document_type
+                    });
+                  } catch(e) { console.error('item insert fail supplier_order_items', e); }
+                }
+              }
+            }
+          } catch (supplierPartsErr) {
+            console.error('❌ Error creando supplier_orders:', supplierPartsErr);
+          }
+        }
+
+        // ===== LEGACY MATERIALIZATION (si legacy o dual) (omitido si supplier parts habilitado) =====
+        if (!SUPPLIER_PARTS_ENABLED && (SPLIT_MODE === 'legacy' || SPLIT_MODE === 'dual')) {
           try {
             const totalShippingLegacy = Number(ord.shipping || 0);
             const shippingCurrency = 'CLP';
@@ -274,7 +403,7 @@ serve((req: Request) => withMetrics('process-khipu-webhook', req, async () => {
         }
 
         // ===== SPLIT MATERIALIZATION =====
-        if (SPLIT_MODE === 'dual' || SPLIT_MODE === 'split') {
+  if (!SUPPLIER_PARTS_ENABLED && (SPLIT_MODE === 'dual' || SPLIT_MODE === 'split')) {
           if (ord.split_status !== 'split') {
             // Idempotencia optimista (no transaction available; rely on update+check)
             try {
@@ -344,7 +473,7 @@ serve((req: Request) => withMetrics('process-khipu-webhook', req, async () => {
           }
         }
 
-        // ===== INVENTARIO & VENTAS (idempotente por product_sales) =====
+  // ===== INVENTARIO & VENTAS =====
         for (const it of normItems) {
           const { data: prodRows } = await supabase
             .from('products')
@@ -372,8 +501,25 @@ serve((req: Request) => withMetrics('process-khipu-webhook', req, async () => {
           }
         }
 
+        // Marcar inventory_processed_at para idempotencia futura
+        try {
+          await supabase.from('orders')
+            .update({ inventory_processed_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+            .eq('id', orderId)
+            .is('inventory_processed_at', null);
+        } catch (invMarkErr) {
+          console.error('⚠️ No se pudo marcar inventory_processed_at', invMarkErr);
+        }
+
         // Nuevo carrito activo vacío (ignorar errores)
-        try { await supabase.from('carts').insert({ user_id: buyerId, status: 'active' }); } catch(_) {}
+        // Nota: Cuando SUPPLIER_PARTS_ENABLED está activo migramos a supplier_orders y
+        // deshabilitamos la creación automática de un nuevo cart activo aquí para reducir
+        // ruido legacy. La creación de un cart 'active' ocurrirá on-demand cuando el buyer
+        // vuelva a agregar un producto (frontend debería manejarlo). Esto acelera el retiro
+        // progresivo del modelo legacy de carts post–pago.
+        if (!SUPPLIER_PARTS_ENABLED) {
+          try { await supabase.from('carts').insert({ user_id: buyerId, status: 'active' }); } catch(_) {}
+        }
       }
     } catch(materializeErr) {
       console.error('❌ Error materializando (dual/split):', materializeErr);

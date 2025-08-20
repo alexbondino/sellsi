@@ -25,9 +25,9 @@ export function useNotifications(userId) {
     let mounted = true;
     (async () => {
       try {
-        const initial = await notificationService.fetchInitial();
+        const initial = await notificationService.fetchInitial(undefined, userId);
         if (mounted) bootstrap(initial);
-      } catch (e) { /* swallow for now */ }
+      } catch (e) { console.error('[useNotifications] fetchInitial error', e); }
     })();
     return () => { mounted = false; };
   }, [userId, bootstrap]);
@@ -47,10 +47,10 @@ export function useNotifications(userId) {
     const pollInterval = setInterval(async () => {
       if (Date.now() - lastRealtime > 120000) {
         try {
-          const latest = await notificationService.fetchInitial();
+          const latest = await notificationService.fetchInitial(undefined, userId);
           bootstrap(latest);
           lastRealtime = Date.now();
-        } catch (_) {}
+        } catch (e) { console.error('[useNotifications] poll refresh error', e); }
       }
     }, 30000);
     return () => { try { supabase.removeChannel(channel); } catch (_) {} };
@@ -60,9 +60,9 @@ export function useNotifications(userId) {
     if (!notifications.length) return;
     const last = notifications[notifications.length - 1];
     try {
-      const older = await notificationService.fetchOlder(last.created_at);
+      const older = await notificationService.fetchOlder(last.created_at, undefined, userId);
       appendOlder(older);
-    } catch (e) {}
+    } catch (e) { console.error('[useNotifications] fetchOlder error', e); }
   }, [notifications, appendOlder]);
 
   const markUnreadTabAsRead = useCallback(async () => {

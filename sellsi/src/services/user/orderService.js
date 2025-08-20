@@ -68,8 +68,16 @@ class OrderService {
   */
   async getOrdersForSupplier(supplierId, filters = {}) {
     try {
-      const { GetSupplierOrders } = await import('../../domains/orders/application/queries/GetSupplierOrders');
-      return await GetSupplierOrders(supplierId, filters);
+      const SUPPLIER_PARTS_ENABLED = (import.meta.env?.VITE_SUPPLIER_PARTS_ENABLED || '').toLowerCase() === 'true';
+      if (SUPPLIER_PARTS_ENABLED) {
+        try {
+          const { GetSupplierParts } = await import('../../domains/orders/application/queries/GetSupplierParts');
+          const parts = await GetSupplierParts(supplierId, filters);
+          if (parts.length) return parts;
+        } catch (e) { /* fallback to legacy */ }
+      }
+  // Legacy supplier orders (carts) eliminados. Si parts no está activo devolvemos [] para mantener contrato seguro.
+  return [];
     } catch (error) {
       throw new Error(`No se pudieron obtener los pedidos: ${error.message}`);
     }
@@ -113,8 +121,15 @@ class OrderService {
    */
   async getOrderStats(supplierId, period = {}) {
     try {
-      const { GetSupplierOrderStats } = await import('../../domains/orders/application/queries/GetSupplierOrderStats');
-      return await GetSupplierOrderStats(supplierId, period);
+      const SUPPLIER_PARTS_ENABLED = (import.meta.env?.VITE_SUPPLIER_PARTS_ENABLED || '').toLowerCase() === 'true';
+      if (SUPPLIER_PARTS_ENABLED) {
+        try {
+          const { GetSupplierPartStats } = await import('../../domains/orders/application/queries/GetSupplierPartStats');
+          return await GetSupplierPartStats(supplierId, period);
+        } catch (e) { /* fallback abajo */ }
+      }
+  // Legacy stats eliminadas; sin parts activos devolvemos estructura vacía.
+  return { total_orders: 0, pending:0, accepted:0, rejected:0, in_transit:0, delivered:0, cancelled:0, total_revenue:0, total_items_sold:0 };
     } catch (error) {
       throw new Error(`No se pudieron obtener las estadísticas: ${error.message}`);
     }
@@ -154,8 +169,15 @@ class OrderService {
    */
   async searchOrders(supplierId, searchText) {
     try {
-      const { SearchSupplierOrders } = await import('../../domains/orders/application/queries/SearchSupplierOrders');
-      return await SearchSupplierOrders(supplierId, searchText);
+      const SUPPLIER_PARTS_ENABLED = (import.meta.env?.VITE_SUPPLIER_PARTS_ENABLED || '').toLowerCase() === 'true';
+      if (SUPPLIER_PARTS_ENABLED) {
+        try {
+          const { SearchSupplierParts } = await import('../../domains/orders/application/queries/SearchSupplierParts');
+          return await SearchSupplierParts(supplierId, searchText);
+        } catch (e) { /* fallback abajo */ }
+      }
+  // Legacy search eliminada; sin parts activos retornamos []
+  return [];
     } catch (error) {
       throw new Error(`Error en la búsqueda: ${error.message}`);
     }
@@ -169,8 +191,8 @@ class OrderService {
    */
   async getOrdersForBuyer(buyerId, filters = {}) {
     try {
-      const { GetBuyerOrders } = await import('../../domains/orders/application/queries/GetBuyerOrders');
-      return await GetBuyerOrders(buyerId, filters);
+  // Legacy buyer carts removidos: retornamos siempre [] (buyer UI usa payment orders + supplier_parts)
+  return [];
     } catch (error) {
       throw new Error(`No se pudieron obtener los pedidos: ${error.message}`);
     }

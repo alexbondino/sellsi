@@ -36,8 +36,8 @@ serve(req => withMetrics('create-payment-khipu', req, async () => {
     console.log('[create-payment-khipu] Función iniciada.');
 
     // 1. Leer los datos dinámicos que envía el frontend (khipuService.js)
-  // Ahora esperamos también order_id (ID de la fila ya creada en orders)
-  const { amount, subject, currency, buyer_id, cart_items, cart_id, order_id } = await req.json();
+    // Ahora esperamos también order_id (ID de la fila ya creada en orders)
+    const { amount, subject, currency, buyer_id, cart_items, cart_id, order_id } = await req.json();
 
   if (!order_id) {
     throw new Error('Falta order_id: la función ahora requiere el ID existente de la orden.');
@@ -54,8 +54,8 @@ serve(req => withMetrics('create-payment-khipu', req, async () => {
     );
 
     // 2. Verificar que las variables de entorno necesarias estén configuradas
-  const apiKey = Deno.env.get('KHIPU_API_KEY');
-  const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    const apiKey = Deno.env.get('KHIPU_API_KEY');
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
     const supabaseUrl = Deno.env.get('SUPABASE_URL'); // Obtener la URL base de Supabase
 
     if (!apiKey) {
@@ -78,20 +78,85 @@ serve(req => withMetrics('create-payment-khipu', req, async () => {
     // Construir la URL de notificación dinámicamente
     const notifyUrl = `${supabaseUrl}/functions/v1/process-khipu-webhook`;
 
-    // 3. Preparar y enviar la petición a la API de Khipu
+    // ================================================================
+    // 3. Autoridad de Pricing (Server) – Recalcular y sellar antes de ir a Khipu
+    // ================================================================
+    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+    const PRICE_TOLERANCE_CLP = 5; // diferencia permitida entre monto front y monto sellado
+    let sealedOrder: any = null;
+    try {
+      const { data: sealed, error: sealErr } = await supabaseAdmin
+        .rpc('finalize_order_pricing', { p_order_id: order_id });
+      if (sealErr) {
+        console.error('[create-payment-khipu] Error en finalize_order_pricing:', sealErr);
+        return new Response(JSON.stringify({ error: 'PRICING_SEAL_FAILED' }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 422 });
+      }
+      sealedOrder = sealed;
+    } catch (sealEx) {
+      console.error('[create-payment-khipu] Excepción finalize_order_pricing:', sealEx);
+      return new Response(JSON.stringify({ error: 'PRICING_SEAL_EXCEPTION' }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 });
+    }
+
+    if (!sealedOrder || !sealedOrder.pricing_verified_at) {
+      return new Response(JSON.stringify({ error: 'PRICING_NOT_VERIFIED' }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 422 });
+    }
+
+    // 3.1 Validación básica de items (producto existe y supplier coincide)
+    try {
+      const items = Array.isArray(sealedOrder.items) ? sealedOrder.items : [];
+      const productIds = items.map((it: any) => it.product_id).filter(Boolean);
+      if (productIds.length) {
+        const { data: products, error: prodErr } = await supabaseAdmin
+          .from('products')
+          .select('productid, supplier_id, price')
+          .in('productid', productIds);
+        if (prodErr) {
+          console.warn('[create-payment-khipu] Advertencia leyendo productos para validación:', prodErr);
+        } else {
+          const pMap = new Map(products.map(p => [p.productid, p]));
+          for (const it of items) {
+            const ref = pMap.get(it.product_id);
+            if (!ref) {
+              return new Response(JSON.stringify({ error: 'ITEM_PRODUCT_NOT_FOUND', product_id: it.product_id }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 422 });
+            }
+            if (ref.supplier_id && it.supplier_id && ref.supplier_id !== it.supplier_id) {
+              return new Response(JSON.stringify({ error: 'ITEM_SUPPLIER_MISMATCH', product_id: it.product_id }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 422 });
+            }
+            const eff = Number(it.unit_price_effective || it.price_at_addition || 0);
+            if (!Number.isFinite(eff) || eff <= 0) {
+              return new Response(JSON.stringify({ error: 'ITEM_PRICE_INVALID', product_id: it.product_id }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 422 });
+            }
+          }
+        }
+      }
+    } catch (valEx) {
+      console.error('[create-payment-khipu] Error validación items (continuando con fallback abort):', valEx);
+      return new Response(JSON.stringify({ error: 'ITEM_VALIDATION_EXCEPTION' }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 });
+    }
+
+    // 3.2 Comparar monto sellado vs monto recibido del front
+    const sealedTotal = Math.round(Number(sealedOrder.total || 0));
+    const frontendAmount = Math.round(Number(amount || 0));
+    const diff = Math.abs(sealedTotal - frontendAmount);
+    if (!Number.isFinite(sealedTotal) || sealedTotal <= 0) {
+      return new Response(JSON.stringify({ error: 'SEALED_TOTAL_INVALID' }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 422 });
+    }
+    if (diff > PRICE_TOLERANCE_CLP) {
+      console.error('[create-payment-khipu] PRICING_MISMATCH', { sealedTotal, frontendAmount, diff });
+      return new Response(JSON.stringify({ error: 'PRICING_MISMATCH', sealed_total: sealedTotal, frontend_amount: frontendAmount, diff }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 409 });
+    }
+
+    // 4. Preparar y enviar la petición a la API de Khipu usando el monto sellado
     const khipuApiUrl = 'https://payment-api.khipu.com/v3/payments';
     const body = JSON.stringify({
       subject,
-      amount: Math.round(amount), // Khipu requiere montos enteros
+      amount: sealedTotal, // monto sellado authoritative
       currency,
       return_url: 'https://sellsi.cl/buyer/orders',
       notify_url: notifyUrl,
     });
 
-    console.log(
-      '[create-payment-khipu] Enviando petición a Khipu con body:',
-      body
-    );
+    console.log('[create-payment-khipu] Enviando petición a Khipu con body sellado:', body);
 
     const khipuResponse = await fetch(khipuApiUrl, {
       method: 'POST',
@@ -103,28 +168,18 @@ serve(req => withMetrics('create-payment-khipu', req, async () => {
       body,
     });
 
-    console.log(
-      `[create-payment-khipu] Respuesta de Khipu recibida con estado: ${khipuResponse.status}`
-    );
+    console.log(`[create-payment-khipu] Respuesta de Khipu recibida con estado: ${khipuResponse.status}`);
 
-    // 4. Procesar la respuesta de Khipu
+    // 5. Procesar la respuesta de Khipu
     const responseData = await khipuResponse.json();
-
     if (!khipuResponse.ok) {
-      // Si Khipu responde con un error, lo lanzamos para que se capture abajo
-      const errorMessage =
-        responseData.message || 'Error desconocido de Khipu.';
+      const errorMessage = responseData.message || 'Error desconocido de Khipu.';
       throw new Error(`Error de la API de Khipu: ${errorMessage}`);
     }
+    console.log('[create-payment-khipu] Respuesta de Khipu parseada:', JSON.stringify(responseData, null, 2));
 
-    // Log para depurar la respuesta exitosa de Khipu
-    console.log(
-      '[create-payment-khipu] Respuesta de Khipu parseada:',
-      JSON.stringify(responseData, null, 2)
-    );
-
-    // 5. Normalizar salida para frontend
-  const normalized = {
+    // 6. Normalizar salida para frontend
+    const normalized = {
       // bandera de éxito para clientes que lo esperan
       success: true,
       // mapeo defensivo de campos posibles
@@ -143,13 +198,13 @@ serve(req => withMetrics('create-payment-khipu', req, async () => {
       expires_date: responseData.expires_date || responseData.expires_at || null,
       // Devolvemos también el objeto crudo para depuración si fuera necesario en el cliente
       raw: responseData,
-    } as Record<string, unknown>;
+  } as Record<string, unknown>;
 
     // ================================================================
     // Actualizar la orden existente (NO crear nueva fila)
     // ================================================================
     try {
-      const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+  // (supabaseAdmin ya inicializado arriba)
       const expiresRaw: string | null = (normalized as any).expires_date || null;
       const expiresAt = expiresRaw ? new Date(expiresRaw).toISOString() : new Date(Date.now() + 20 * 60 * 1000).toISOString();
 
@@ -162,7 +217,20 @@ serve(req => withMetrics('create-payment-khipu', req, async () => {
             const v = String(rawDoc).toLowerCase();
             return v === 'boleta' || v === 'factura' ? v : 'ninguno';
           })();
-          const price = ci.price || ci.price_at_addition || 0;
+          let price = ci.price || ci.price_at_addition || 0;
+          // Recalcular si precio cero y hay price_tiers disponible
+          if ((!price || price === 0) && Array.isArray(ci.price_tiers) && ci.price_tiers.length) {
+            try {
+              // Simple algoritmo tier: ordenar desc por min y tomar el mayor min <= qty
+              const qty = ci.quantity || 1;
+              const tiers = [...ci.price_tiers].sort((a,b)=> (b.min||b.min_qty||0) - (a.min||a.min_qty||0));
+              for (const t of tiers) {
+                const min = t.min ?? t.min_qty ?? t.quantity ?? 1;
+                const tp = t.price ?? t.unit_price ?? t.value;
+                if (qty >= min && typeof tp === 'number') { price = tp; break; }
+              }
+            } catch(_) {}
+          }
           return {
             product_id: ci.product_id || ci.productid || ci.id || null,
             quantity: ci.quantity || 1,
@@ -170,6 +238,7 @@ serve(req => withMetrics('create-payment-khipu', req, async () => {
             price_at_addition: ci.price_at_addition || price,
             supplier_id: ci.supplier_id || ci.supplierId || null,
             document_type: normDoc,
+            price_tiers: ci.price_tiers || null,
           };
         });
       }
@@ -222,8 +291,8 @@ serve(req => withMetrics('create-payment-khipu', req, async () => {
           khipu_expires_at: expiresAt,
           payment_method: 'khipu',
           payment_status: preservePaid ? 'paid' : 'pending',
-          subtotal: amount, // aseguremos monto coherente
-          total: amount,
+          subtotal: sealedOrder.subtotal || sealedTotal,
+          total: sealedOrder.total || sealedTotal,
           items: mergedItems,
           updated_at: new Date().toISOString(),
         };
@@ -252,6 +321,9 @@ serve(req => withMetrics('create-payment-khipu', req, async () => {
       console.warn('[create-payment-khipu] Respuesta sin payment_url:', responseData);
     }
 
+  (normalized as any).sealed_total = sealedTotal;
+  (normalized as any).frontend_amount = frontendAmount;
+  (normalized as any).pricing_diff = diff;
   return new Response(JSON.stringify(normalized), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,

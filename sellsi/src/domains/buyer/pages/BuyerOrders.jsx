@@ -365,9 +365,9 @@ const BuyerOrders = () => {
               {/* Paginación superior */}
               {Pagination}
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-              {visibleOrders.map(order => (
+        {visibleOrders.map(order => (
                 <Paper
-                  key={order.order_id}
+          key={order.synthetic_id || order.order_id}
                   sx={{
                     p: 3,
                     borderRadius: 2,
@@ -385,9 +385,14 @@ const BuyerOrders = () => {
                   {/* Header de la orden */}
                   <Box sx={{ mb: 3 }}>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-                      <Typography variant="h6" fontWeight="bold">
-                        Pedido {formatOrderNumber(order.order_id)}
-                      </Typography>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Typography variant="h6" fontWeight="bold">
+                          Pedido {formatOrderNumber(order.parent_order_id || order.order_id)}
+                        </Typography>
+                        {order.is_virtual_split && (
+                          <Chip size="small" color="primary" label={order.supplier_name ? `Proveedor: ${order.supplier_name}` : 'Parte de Pedido'} />
+                        )}
+                      </Box>
                       {order.payment_order_id && (
                         <Typography variant="body2" color="text.secondary" sx={{ mt: 0.2 }}>
                           Orden de Pago {formatOrderNumber(order.payment_order_id)}
@@ -397,7 +402,7 @@ const BuyerOrders = () => {
                         <Typography variant="h6" color="primary.main" fontWeight="bold">
                           {formatCurrency(
                             order.final_amount || (order.total_amount + (order.shipping_amount || 0)) || order.total_amount
-                          )}
+                          )}{order.is_virtual_split ? ' (Subtotal)' : ''}
                         </Typography>
                         { (order.shipping_amount || order.shipping) ? (
                           <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
@@ -411,9 +416,9 @@ const BuyerOrders = () => {
                     </Typography>
 
                     {/* Fecha estimada / fecha de entrega real */}
-                    {order.status === 'in_transit' && order.estimated_delivery_date && (
+                    {order.estimated_delivery_date && (
                       <Typography variant="body2" color="text.secondary">
-                        Fecha estimada de entrega: {formatDate(order.estimated_delivery_date)}
+                        {order.status === 'accepted' ? 'Fecha estimada prevista:' : 'Fecha estimada de entrega:'} {formatDate(order.estimated_delivery_date)}
                       </Typography>
                     )}
 

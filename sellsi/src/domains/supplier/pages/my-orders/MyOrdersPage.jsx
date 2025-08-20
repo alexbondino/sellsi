@@ -197,13 +197,17 @@ const MyOrdersPage = () => {
           break;
         }
         case 'dispatch': {
-          if (!formData.deliveryDate) {
+          // Permitir fecha ingresada o autocalcular (+3 días) si no se ingresó
+          let deliveryDate = formData.deliveryDate;
+          if (!deliveryDate) {
+            const auto = new Date();
+            auto.setDate(auto.getDate() + 3);
+            deliveryDate = auto.toISOString().slice(0,10); // YYYY-MM-DD para input date
             showBanner({
-              message: '⚠️ La fecha de entrega estimada es obligatoria para despachar.',
-              severity: 'error',
-              duration: 5000,
+              message: 'No ingresaste fecha, se asignó automáticamente (+3 días).',
+              severity: 'info',
+              duration: 4000,
             });
-            return;
           }
 
           // Subida opcional / requerida de documento tributario (migrada desde 'accept')
@@ -228,7 +232,7 @@ const MyOrdersPage = () => {
           }
 
           await updateOrderStatus(selectedOrder.order_id, 'in_transit', {
-            estimated_delivery_date: formData.deliveryDate,
+            estimated_delivery_date: deliveryDate,
             message: formData.message || '',
             tax_document_path: taxDocPath || undefined,
           });

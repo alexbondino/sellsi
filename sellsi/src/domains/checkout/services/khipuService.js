@@ -2,6 +2,7 @@
 // VERSIÓN FINAL Y DINÁMICA
 
 import { supabase } from '../../../services/supabase';
+import { calculatePriceForQuantity } from '../../../utils/priceCalculation';
 
 class KhipuService {
   async createPaymentOrder(orderDetails) {
@@ -9,6 +10,15 @@ class KhipuService {
 
     try {
       // <-- CAMBIO 1: Volvemos a preparar el payload con los datos reales de la orden.
+      // Pre-inyectar precio efectivo por tier
+      const normalizedItems = Array.isArray(items) ? items.map(it => {
+        const priceTiers = it.price_tiers || it.priceTiers || it.tiers || [];
+        const basePrice = it.originalPrice || it.precioOriginal || it.basePrice || it.price || it.price_at_addition || 0;
+        let effective = basePrice;
+        try { if (priceTiers && priceTiers.length) effective = calculatePriceForQuantity(it.quantity || 1, priceTiers, basePrice); } catch(_) {}
+        return { ...it, __effective_price: effective };
+      }) : [];
+
       const paymentPayload = {
         amount: Math.round(total),
         currency: currency || 'CLP',
@@ -16,14 +26,13 @@ class KhipuService {
         buyer_id: userId || null,
         cart_id: orderId || null,
         order_id: orderId, // NUEVO: para que la función actualice la orden existente
-        cart_items: Array.isArray(items)
-          ? items.map(it => {
-              const priceBase = it.price || it.price_at_addition || it.unitPrice || 0;
+        cart_items: normalizedItems.map(it => {
+              const priceBase = it.__effective_price || it.price || it.price_at_addition || it.unitPrice || 0;
               return {
                 product_id: it.product_id || it.id || it.productid || (it.product && (it.product.product_id || it.product.id || it.product.productid)) || null,
                 quantity: it.quantity || 1,
                 price: priceBase,
-                price_at_addition: it.price_at_addition || priceBase,
+                price_at_addition: priceBase,
                 supplier_id: it.supplier_id || it.supplierId || (it.product && (it.product.supplier_id || it.product.supplierId)) || null,
                 document_type: (() => {
                   const raw = it.document_type || it.documentType || (it.product && (it.product.document_type || it.product.documentType)) || '';
@@ -31,8 +40,7 @@ class KhipuService {
                   return v === 'boleta' || v === 'factura' ? v : 'ninguno';
                 })(),
               };
-            })
-          : [],
+            }),
       };
 
       // <-- CAMBIO 2: Invocamos la función pasándole el 'body' con los datos dinámicos.

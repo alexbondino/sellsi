@@ -21,6 +21,7 @@ export class OrdersRepository {
           currency,
           status,
           payment_status,
+          estimated_delivery_date,
           payment_method,
           created_at,
           updated_at

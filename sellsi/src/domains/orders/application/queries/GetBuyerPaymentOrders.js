@@ -5,6 +5,8 @@ import { parseOrderItems, normalizeDocumentType } from '../../shared/parsing';
 import { mapBuyerOrderFromServiceObject } from '../../infra/mappers/orderMappers';
 import { toBuyerUIOrder } from '../../presentation/adapters/legacyUIAdapter';
 
+const ALLOW_ZERO_PRICE_ITEMS = false; // futura flag/feature toggle
+
 export async function GetBuyerPaymentOrders(buyerId, { limit, offset } = {}) {
   const { data, error } = await ordersRepository.listByBuyer(buyerId, { limit, offset });
   if (error) throw error;
@@ -45,8 +47,7 @@ export async function GetBuyerPaymentOrders(buyerId, { limit, offset } = {}) {
       const su = it.supplier_id ? suppliersMap.get(it.supplier_id) : null;
       const prod = it.product_id ? (productsMap.get(it.product_id) || {}) : {};
       const firstImage = Array.isArray(prod.product_images) ? prod.product_images[0] : {};
-      // Normalización robusta de precio
-      const rawPriceAddition = it.price_at_addition ?? it.price;
+      const rawPriceAddition = it.unit_price_effective ?? it.price_at_addition ?? it.price;
       let price_at_addition = 0;
       let pricing_warning = false;
       if (typeof rawPriceAddition === 'number' && Number.isFinite(rawPriceAddition)) {
@@ -57,6 +58,9 @@ export async function GetBuyerPaymentOrders(buyerId, { limit, offset } = {}) {
         if (Number.isFinite(parsed)) price_at_addition = parsed; else pricing_warning = true;
       } else {
         pricing_warning = true;
+      }
+      if (!ALLOW_ZERO_PRICE_ITEMS && price_at_addition <= 0) {
+        throw new Error(`Precio inválido (0) detectado en item ${idx} de orden ${row.id}`);
       }
       return {
         cart_items_id: it.cart_items_id || it.id || `${row.id}-itm-${idx}`,
@@ -69,7 +73,7 @@ export async function GetBuyerPaymentOrders(buyerId, { limit, offset } = {}) {
         product: {
           id: it.product_id || it.productid || it.id || null,
           productid: it.product_id || it.productid || null,
-          name: it.name || it.productnm || 'Producto',
+            name: it.name || it.productnm || 'Producto',
           price: price_at_addition,
           category: it.category || null,
           description: it.description || '',
