@@ -279,12 +279,11 @@ serve(req => withMetrics('create-payment-khipu', req, async () => {
           (normalized as any).khipu_expires_at = expiresAt;
         }
       } else {
-        // 3. Merge opcional de items (si se recibieron nuevos items reemplazamos; si no, mantenemos los existentes)
-        const mergedItems = itemsPayload && itemsPayload.length > 0 ? itemsPayload : existingOrder.items;
-
-        // PROTECCIÓN: No degradar payment_status si ya está 'paid'
-        // Si la orden ya fue pagada evitamos sobreescribirla a 'pending'
-  const preservePaid = (existingOrder as any).payment_status === 'paid';
+        // 3. No volver a sobrescribir items sellados: finalize_order_pricing ya generó items enriquecidos y hash.
+        //    Reemplazar aquí por items crudos rompe la integridad (items_hash mismatch en webhook).
+        //    Solo actualizamos metadatos de pago y totales sellados. (Si en el futuro se quieren cambiar items,
+        //    debe hacerse ANTES de llamar a finalize_order_pricing.)
+        const preservePaid = (existingOrder as any).payment_status === 'paid';
         const updateData: Record<string, any> = {
           khipu_payment_id: (normalized as any).payment_id || null,
           khipu_payment_url: (normalized as any).payment_url || null,
@@ -293,7 +292,7 @@ serve(req => withMetrics('create-payment-khipu', req, async () => {
           payment_status: preservePaid ? 'paid' : 'pending',
           subtotal: sealedOrder.subtotal || sealedTotal,
           total: sealedOrder.total || sealedTotal,
-          items: mergedItems,
+          // items OMITIDOS para preservar hash sellado
           updated_at: new Date().toISOString(),
         };
         if (preservePaid) {
