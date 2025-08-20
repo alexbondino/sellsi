@@ -69,15 +69,79 @@ class OrderService {
   async getOrdersForSupplier(supplierId, filters = {}) {
     try {
       const SUPPLIER_PARTS_ENABLED = (import.meta.env?.VITE_SUPPLIER_PARTS_ENABLED || '').toLowerCase() === 'true';
+      const SUPPLIER_PARTS_VIRTUAL_FALLBACK = (import.meta.env?.VITE_SUPPLIER_PARTS_VIRTUAL_FALLBACK || '').toLowerCase() === 'true';
+      // 1. Intentar parts reales si la feature está activada
       if (SUPPLIER_PARTS_ENABLED) {
         try {
           const { GetSupplierParts } = await import('../../domains/orders/application/queries/GetSupplierParts');
           const parts = await GetSupplierParts(supplierId, filters);
-          if (parts.length) return parts;
-        } catch (e) { /* fallback to legacy */ }
+          if (Array.isArray(parts) && parts.length) return parts;
+        } catch (e) {
+          // Ignorar error y evaluar fallback
+        }
       }
-  // Legacy supplier orders (carts) eliminados. Si parts no está activo devolvemos [] para mantener contrato seguro.
-  return [];
+
+      // 2. Fallback virtual (también si parts desactivado) cuando la tabla supplier_orders aún no tiene datos
+      if (SUPPLIER_PARTS_VIRTUAL_FALLBACK && supplierId) {
+        try {
+          const limit = Number(filters.limit) || 100; // limitar para evitar sobrecarga accidental
+          const { data: recent, error: recErr } = await supabase
+            .from('orders')
+            .select('id, items, status, payment_status, estimated_delivery_date, created_at, updated_at, shipping, total, subtotal')
+            .order('created_at', { ascending: false })
+            .limit(limit);
+          if (!recErr && Array.isArray(recent)) {
+            const { parseOrderItems } = await import('../../domains/orders/shared/parsing');
+            const virtual = [];
+            for (const row of recent) {
+              const parsed = parseOrderItems(row.items);
+              if (!Array.isArray(parsed) || !parsed.length) continue;
+              const items = parsed.filter(it => (it.supplier_id || it.supplierId) === supplierId);
+              if (!items.length) continue;
+              const normItems = items.map((it, idx) => ({
+                cart_items_id: it.id || `${row.id}-virt-${idx}`,
+                product_id: it.product_id || it.productid || it.id,
+                quantity: it.quantity || 1,
+                price_at_addition: Number(it.price_at_addition || it.price || it.basePrice || 0),
+                document_type: it.document_type || it.documentType || 'ninguno',
+                product: {
+                  id: it.product_id || it.productid || it.id,
+                  name: it.name || it.productnm || 'Producto',
+                  price: Number(it.price_at_addition || it.price || it.basePrice || 0),
+                  supplier_id: it.supplier_id || supplierId
+                }
+              }));
+              const subtotal = normItems.reduce((s,i)=> s + (i.price_at_addition * i.quantity),0);
+              virtual.push({
+                order_id: row.id,
+                parent_order_id: row.id,
+                supplier_id: supplierId,
+                status: row.status || 'pending',
+                payment_status: row.payment_status || 'pending',
+                created_at: row.created_at,
+                updated_at: row.updated_at,
+                estimated_delivery_date: row.estimated_delivery_date || null,
+                items: normItems,
+                total_amount: subtotal,
+                shipping_amount: 0,
+                final_amount: row.total || subtotal,
+                is_supplier_part: true,
+                is_payment_order: true,
+                is_virtual_part: true
+              });
+            }
+            if (virtual.length) {
+              console.warn('[orderService][virtualSupplierParts] fallback activo (SUPPLIER_PARTS_ENABLED=' + SUPPLIER_PARTS_ENABLED + ').', { count: virtual.length });
+              return virtual;
+            }
+          }
+        } catch (vfErr) {
+          console.error('[orderService][virtualSupplierParts] error fallback', vfErr);
+        }
+      }
+
+      // 3. Sin parts y sin fallback => retornar [] (contrato estable)
+      return [];
     } catch (error) {
       throw new Error(`No se pudieron obtener los pedidos: ${error.message}`);
     }
