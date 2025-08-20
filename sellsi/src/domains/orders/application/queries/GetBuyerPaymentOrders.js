@@ -126,9 +126,11 @@ export async function GetBuyerPaymentOrders(buyerId, { limit, offset } = {}) {
       total_amount: row.total ?? computedLinesTotal,
       subtotal: row.subtotal || null,
       tax: row.tax || null,
-      shipping: row.shipping || null,
-      shipping_amount: row.shipping || 0,
-      final_amount: (row.total ?? (computedLinesTotal + (row.shipping || 0))),
+      // ✅ NORMALIZACIÓN: Unificar campos de shipping
+      shipping_cost: Number(row.shipping || 0), // Campo unificado
+      shipping: row.shipping || null, // Campo original para compatibilidad  
+      shipping_amount: Number(row.shipping || 0), // Alias para UI
+      final_amount: (row.total ?? (computedLinesTotal + Number(row.shipping || 0))),
       computed_lines_total: computedLinesTotal,
       is_payment_order: true
     };

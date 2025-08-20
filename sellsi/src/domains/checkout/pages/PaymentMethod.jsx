@@ -24,6 +24,9 @@ import { useCheckout } from '../hooks'
 // Utilidades de cálculo de envío
 import { calculateRealShippingCost } from '../../../utils/shippingCalculation'
 
+// Servicios
+import { getUserProfile } from '../../../services/user/profileService'
+
 // ============================================================================
 // COMPONENTE PRINCIPAL
 // ============================================================================
@@ -77,6 +80,40 @@ const PaymentMethod = () => {
       const shipping = await calculateRealShippingCost(items)
       const total = subtotal + tax + serviceFee + shipping
       
+      // ✅ CRÍTICO: Obtener datos del perfil para direcciones
+      const userId = localStorage.getItem('user_id')
+      let shippingAddress = null
+      let billingAddress = null
+      
+      if (userId) {
+        try {
+          const profile = await getUserProfile(userId)
+          
+          // Capturar dirección de envío
+          if (profile.shipping_address) {
+            shippingAddress = {
+              region: profile.shipping_region || '',
+              commune: profile.shipping_commune || '',
+              address: profile.shipping_address || '',
+              number: profile.shipping_number || '',
+              department: profile.shipping_dept || ''
+            }
+          }
+          
+          // Capturar dirección de facturación
+          if (profile.billing_address || profile.business_name) {
+            billingAddress = {
+              business_name: profile.business_name || '',
+              billing_rut: profile.billing_rut || '',
+              billing_address: profile.billing_address || ''
+            }
+          }
+        } catch (error) {
+          console.error('[PaymentMethod] Error obteniendo perfil del usuario:', error)
+          // Continuar sin direcciones - el usuario puede agregarlas después
+        }
+      }
+      
       const cartData = {
         items: items,
         subtotal: subtotal,
@@ -84,7 +121,10 @@ const PaymentMethod = () => {
         serviceFee: serviceFee,
         shipping: shipping,
         total: total,
-        currency: 'CLP'
+        currency: 'CLP',
+        // ✅ NUEVO: Incluir direcciones capturadas del perfil
+        shippingAddress: shippingAddress,
+        billingAddress: billingAddress
       }
 
       initializeCheckout(cartData)

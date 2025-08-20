@@ -245,6 +245,12 @@ const BuyerOrders = () => {
   // FUNCIONES AUXILIARES
   // ============================================================================
   
+  // ✅ NUEVO: Función para unificar campos de envío
+  const getShippingAmount = (order) => {
+    // Prioridad: shipping_amount > shipping > 0
+    return Number(order.shipping_amount || order.shipping || 0);
+  };
+  
   // Función para generar número de orden desde cart_id
   const formatOrderNumber = (cartId) => {
     if (!cartId) return 'N/A';
@@ -401,12 +407,12 @@ const BuyerOrders = () => {
                       <Box sx={{ textAlign: 'right' }}>
                         <Typography variant="h6" color="primary.main" fontWeight="bold">
                           {formatCurrency(
-                            order.final_amount || (order.total_amount + (order.shipping_amount || 0)) || order.total_amount
+                            order.final_amount || (order.total_amount + getShippingAmount(order)) || order.total_amount
                           )}{order.is_virtual_split ? ' (Subtotal)' : ''}
                         </Typography>
-                        { (order.shipping_amount || order.shipping) ? (
+                        { getShippingAmount(order) > 0 ? (
                           <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-                            Incluye envío: {formatCurrency(order.shipping_amount || order.shipping || 0)}
+                            Incluye envío: {formatCurrency(getShippingAmount(order))}
                           </Typography>
                         ) : null }
                       </Box>

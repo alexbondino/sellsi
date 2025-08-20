@@ -268,6 +268,7 @@ CREATE TABLE public.orders (
   pricing_verified_at timestamp with time zone,
   items_hash text,
   inventory_processed_at timestamp with time zone,
+  supplier_ids ARRAY,
   CONSTRAINT orders_pkey PRIMARY KEY (id),
   CONSTRAINT orders_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(user_id)
 );

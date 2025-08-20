@@ -19,6 +19,12 @@ class CheckoutService {
    */
   async createOrder(orderData) {
     try {
+      // ✅ VALIDAR que haya dirección de envío
+      if (!orderData.shippingAddress || !orderData.shippingAddress.address) {
+        console.warn('[CheckoutService] Sin dirección de envío - creando orden sin direcciones');
+        // No bloquear la orden, pero loggear para debugging
+      }
+
       // Registrar IP del usuario al crear la orden
       if (orderData?.userId) {
         try {
@@ -30,6 +36,14 @@ class CheckoutService {
           console.warn('[CheckoutService] trackUserAction fallo (createOrder) pero no bloquea flujo:', e?.message);
         }
       }
+
+      // ✅ SERIALIZAR direcciones correctamente
+      const shippingAddressJson = orderData.shippingAddress 
+        ? JSON.stringify(orderData.shippingAddress) 
+        : null;
+      const billingAddressJson = orderData.billingAddress 
+        ? JSON.stringify(orderData.billingAddress) 
+        : null;
 
       const { data, error } = await supabase
         .from('orders')
@@ -44,8 +58,8 @@ class CheckoutService {
           status: 'pending',
           payment_method: orderData.paymentMethod,
           payment_status: 'pending',
-          shipping_address: orderData.shippingAddress,
-          billing_address: orderData.billingAddress,
+          shipping_address: shippingAddressJson,
+          billing_address: billingAddressJson,
         })
         .select()
         .single();
