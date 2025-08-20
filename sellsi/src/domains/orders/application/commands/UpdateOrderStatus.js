@@ -2,7 +2,7 @@
 import { ordersRepository } from '../../infra/repositories/OrdersRepository';
 import { supplierOrdersRepository } from '../../infra/repositories/SupplierOrdersRepository';
 import { orderStatusService } from '../../domain/services/OrderStatusService';
-import { notificationService } from '../../domain/services/NotificationService';
+import { notificationService } from '../../../notifications/services/notificationService';
 import { ORDER_STATUSES, ADVANCE_STATUSES, normalizeStatus, getStatusDisplayName } from '../../shared/constants';
 import { supabase } from '../../../../services/supabase';
 

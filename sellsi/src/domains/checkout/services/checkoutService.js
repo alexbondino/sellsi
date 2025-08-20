@@ -67,11 +67,13 @@ class CheckoutService {
       if (error) throw error;
 
       // Disparar notificaciones de creación (no bloquea el retorno)
+      console.log('[CheckoutService] About to call notifyNewOrder with order:', data);
       try {
         // Esperamos para asegurar consistencia inicial; si prefieres desvincular completamente, quitar await
         await orderService.notifyNewOrder(data);
+        console.log('[CheckoutService] notifyNewOrder completed successfully');
       } catch (e) {
-        console.warn('[CheckoutService] notifyNewOrder fallo, se continúa:', e?.message);
+        console.error('[CheckoutService] notifyNewOrder failed:', e);
       }
 
       return data;

@@ -56,14 +56,36 @@ class NotificationService {
   }
 
   async notifyNewOrder(orderRow) {
+    console.log('[NotificationService] notifyNewOrder called with:', {
+      orderId: orderRow?.id,
+      user_id: orderRow?.user_id,
+      items_count: Array.isArray(orderRow?.items) ? orderRow.items.length : 'not_array'
+    });
     if (!orderRow) return;
     const buyerId = orderRow.user_id || orderRow.buyer_id || null;
     let items = [];
     if (orderRow.items) items = parseOrderItems(orderRow.items);
+    console.log('[NotificationService] Parsed items:', items.map(it => ({
+      product_id: it.product_id,
+      supplier_id: it.supplier_id,
+      name: it.name,
+      quantity: it.quantity
+    })));
     if (!items.length) return;
     for (const it of items) {
       try {
-        await supabase.rpc('create_notification', {
+        console.log('[NotificationService v2.0 FIXED] Creating buyer notification:', {
+          p_user_id: buyerId,
+          p_supplier_id: it.supplier_id || null,
+          p_order_id: orderRow.id || orderRow.order_id || null,
+          p_product_id: it.product_id || null,
+          p_type: 'order_new',
+          p_role_context: 'buyer',
+          product_name: it.name,
+          p_title: 'Se registró tu compra',
+          p_body: it.name ? `Producto: ${it.name}` : 'Nuevo producto comprado'
+        });
+        const result = await supabase.rpc('create_notification', {
           p_user_id: buyerId,
           p_supplier_id: it.supplier_id || null,
           p_order_id: orderRow.id || orderRow.order_id || null,
@@ -76,12 +98,26 @@ class NotificationService {
           p_body: it.name ? `Producto: ${it.name}` : 'Nuevo producto comprado',
           p_metadata: { quantity: it.quantity, price_at_addition: it.price_at_addition }
         });
-      } catch (_) {}
+        console.log('[NotificationService] Buyer notification created:', result);
+      } catch (error) {
+        console.error('[NotificationService] ERROR creating buyer notification:', error);
+      }
     }
     const supplierSet = new Set(items.map(i => i.supplier_id).filter(Boolean));
+    console.log('[NotificationService] Suppliers found:', Array.from(supplierSet));
     for (const supplierId of supplierSet) {
       try {
-        await supabase.rpc('create_notification', {
+        console.log('[NotificationService v2.0 FIXED] Creating supplier notification:', {
+          p_user_id: supplierId,
+          p_supplier_id: supplierId,
+          p_order_id: orderRow.id || orderRow.order_id || null,
+          p_type: 'order_new',
+          p_role_context: 'supplier',
+          buyer_id: buyerId,
+          p_title: 'Nuevo pedido pendiente',
+          p_body: 'Revisa y acepta o rechaza los productos.'
+        });
+        const result = await supabase.rpc('create_notification', {
           p_user_id: supplierId,
           p_supplier_id: supplierId,
           p_order_id: orderRow.id || orderRow.order_id || null,
@@ -94,7 +130,10 @@ class NotificationService {
           p_body: 'Revisa y acepta o rechaza los productos.',
           p_metadata: { buyer_id: buyerId }
         });
-      } catch (_) {}
+        console.log('[NotificationService] Supplier notification created:', result);
+      } catch (error) {
+        console.error('[NotificationService] ERROR creating supplier notification:', error);
+      }
     }
   }
 }

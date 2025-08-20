@@ -445,9 +445,13 @@ const BuyerOrders = () => {
                       const productStatus = order.is_payment_order ? 'pending' : getProductStatus(item, order.created_at, order.status);
                       const statusChips = getStatusChips(productStatus);
                       
+                      // Crear key única y robusta combinando múltiples identificadores
+                      const itemKey = item.cart_items_id || 
+                                    `${order.order_id || order.synthetic_id}-${item.product_id || 'no-product'}-${index}`;
+                      
                       return (
                         <Paper
-                          key={item.cart_items_id}
+                          key={itemKey}
                           sx={{
                             p: 2,
                             backgroundColor: 'grey.50',
@@ -531,7 +535,7 @@ const BuyerOrders = () => {
                             
                             {/* Chips de estado (incluye Pago Confirmado) */}
                             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, minWidth: 140 }}>
-                              {getStatusChips(productStatus, order.payment_status).map(chip => {
+                              {getStatusChips(productStatus, order.payment_status).map((chip, chipIndex) => {
                                   // Determine whether each stage was reached historically
                                   const pagoConfirmadoReached = order.payment_status === 'paid' || ['accepted', 'in_transit', 'delivered'].includes(order.status);
                                   const aceptadoReached = ['accepted', 'in_transit', 'delivered'].includes(order.status);

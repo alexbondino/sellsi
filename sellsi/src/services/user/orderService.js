@@ -2,7 +2,7 @@ import { supabase } from '../supabase';
 import { normalizeStatus, getStatusDisplayName } from '../../domains/orders/shared/constants';
 import { isUUID } from '../../domains/orders/shared/validation';
 import { ordersRepository } from '../../domains/orders/infra/repositories/OrdersRepository';
-import { notificationService } from '../../domains/orders/domain/services/NotificationService';
+import { notificationService } from '../../domains/notifications/services/notificationService';
 
 // Normalizador único para document_type -> 'boleta' | 'factura' | 'ninguno'
 // (Se removió helper local normalizeDocumentType; ahora todo se resuelve en los use cases)
