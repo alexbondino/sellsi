@@ -68,80 +68,83 @@ class OrderService {
   */
   async getOrdersForSupplier(supplierId, filters = {}) {
     try {
-      const SUPPLIER_PARTS_ENABLED = (import.meta.env?.VITE_SUPPLIER_PARTS_ENABLED || '').toLowerCase() === 'true';
-      const SUPPLIER_PARTS_VIRTUAL_FALLBACK = (import.meta.env?.VITE_SUPPLIER_PARTS_VIRTUAL_FALLBACK || '').toLowerCase() === 'true';
-      // 1. Intentar parts reales si la feature está activada
-      if (SUPPLIER_PARTS_ENABLED) {
-        try {
-          const { GetSupplierParts } = await import('../../domains/orders/application/queries/GetSupplierParts');
-          const parts = await GetSupplierParts(supplierId, filters);
-          if (Array.isArray(parts) && parts.length) return parts;
-        } catch (e) {
-          // Ignorar error y evaluar fallback
+      if (!supplierId) return [];
+      const limit = Number(filters.limit) || 100;
+      const { data: recent, error: recErr } = await supabase
+        .from('orders')
+        .select('id, items, status, payment_status, estimated_delivery_date, created_at, updated_at, shipping, total, subtotal, shipping_address')
+        .eq('payment_status', 'paid')
+        .contains('supplier_ids', [supplierId]) // nuevo filtro server-side (B1)
+        .order('created_at', { ascending: false })
+        .limit(limit);
+      if (recErr || !Array.isArray(recent)) return [];
+      // === B3 ENRICHMENT: completar supplier_id en items legacy faltantes ===
+      const missingProductIds = new Set();
+      for (const row of recent) {
+        let itemsRaw = row.items;
+        if (typeof itemsRaw === 'string') { try { itemsRaw = JSON.parse(itemsRaw); } catch { itemsRaw = []; } }
+        if (!Array.isArray(itemsRaw)) continue;
+        for (const it of itemsRaw) {
+          const hasSupplier = !!(it?.supplier_id || it?.supplierId || it?.product?.supplier_id || it?.product?.supplierId);
+          const pid = it?.product_id || it?.productid || it?.id || it?.product?.productid;
+            if (!hasSupplier && pid) missingProductIds.add(pid);
         }
       }
-
-      // 2. Fallback virtual (también si parts desactivado) cuando la tabla supplier_orders aún no tiene datos
-      if (SUPPLIER_PARTS_VIRTUAL_FALLBACK && supplierId) {
-        try {
-          const limit = Number(filters.limit) || 100; // limitar para evitar sobrecarga accidental
-          const { data: recent, error: recErr } = await supabase
-            .from('orders')
-            .select('id, items, status, payment_status, estimated_delivery_date, created_at, updated_at, shipping, total, subtotal')
-            .order('created_at', { ascending: false })
-            .limit(limit);
-          if (!recErr && Array.isArray(recent)) {
-            const { parseOrderItems } = await import('../../domains/orders/shared/parsing');
-            const virtual = [];
-            for (const row of recent) {
-              const parsed = parseOrderItems(row.items);
-              if (!Array.isArray(parsed) || !parsed.length) continue;
-              const items = parsed.filter(it => (it.supplier_id || it.supplierId) === supplierId);
-              if (!items.length) continue;
-              const normItems = items.map((it, idx) => ({
-                cart_items_id: it.id || `${row.id}-virt-${idx}`,
-                product_id: it.product_id || it.productid || it.id,
-                quantity: it.quantity || 1,
-                price_at_addition: Number(it.price_at_addition || it.price || it.basePrice || 0),
-                document_type: it.document_type || it.documentType || 'ninguno',
-                product: {
-                  id: it.product_id || it.productid || it.id,
-                  name: it.name || it.productnm || 'Producto',
-                  price: Number(it.price_at_addition || it.price || it.basePrice || 0),
-                  supplier_id: it.supplier_id || supplierId
-                }
-              }));
-              const subtotal = normItems.reduce((s,i)=> s + (i.price_at_addition * i.quantity),0);
-              virtual.push({
-                order_id: row.id,
-                parent_order_id: row.id,
-                supplier_id: supplierId,
-                status: row.status || 'pending',
-                payment_status: row.payment_status || 'pending',
-                created_at: row.created_at,
-                updated_at: row.updated_at,
-                estimated_delivery_date: row.estimated_delivery_date || null,
-                items: normItems,
-                total_amount: subtotal,
-                shipping_amount: 0,
-                final_amount: row.total || subtotal,
-                is_supplier_part: true,
-                is_payment_order: true,
-                is_virtual_part: true
-              });
-            }
-            if (virtual.length) {
-              console.warn('[orderService][virtualSupplierParts] fallback activo (SUPPLIER_PARTS_ENABLED=' + SUPPLIER_PARTS_ENABLED + ').', { count: virtual.length });
-              return virtual;
+      let productMap = new Map();
+      if (missingProductIds.size > 0) {
+        const ids = Array.from(missingProductIds);
+        const { data: prodRows } = await supabase
+          .from('products')
+          .select('productid, supplier_id')
+          .in('productid', ids);
+        if (Array.isArray(prodRows)) productMap = new Map(prodRows.map(r => [r.productid, r]));
+      }
+      for (const row of recent) {
+        if (typeof row.items === 'string') { try { row.items = JSON.parse(row.items); } catch { row.items = []; } }
+        if (!Array.isArray(row.items)) row.items = [];
+        for (const it of row.items) {
+          const pid = it?.product_id || it?.productid || it?.id;
+          const hasSupplier = !!(it?.supplier_id || it?.supplierId || it?.product?.supplier_id || it?.product?.supplierId);
+          if (!hasSupplier && pid) {
+            const info = productMap.get(pid);
+            if (info?.supplier_id) {
+              if (!it.product) it.product = {};
+              it.product.supplier_id = info.supplier_id; // no sobreescribe existente
             }
           }
-        } catch (vfErr) {
-          console.error('[orderService][virtualSupplierParts] error fallback', vfErr);
         }
       }
-
-      // 3. Sin parts y sin fallback => retornar [] (contrato estable)
-      return [];
+      const { splitOrderBySupplier } = await import('../../domains/orders/shared/splitOrderBySupplier');
+      const { calculateEstimatedDeliveryDate } = await import('../../domains/orders/shared/delivery');
+      const parts = [];
+      for (const row of recent) {
+        const derived = splitOrderBySupplier({ ...row, id: row.id });
+        for (const p of derived) {
+          if (p.supplier_id === supplierId) {
+            // Calcular fecha estimada solo si falta y tenemos items
+            let est = row.estimated_delivery_date || p.estimated_delivery_date || null;
+            if (!est) {
+              try {
+                // Buscar region del comprador dentro de la dirección si existe
+                const buyerRegion = (row.shipping_address && (row.shipping_address.shipping_region || row.shipping_address.region)) || null;
+                est = calculateEstimatedDeliveryDate(row.created_at, p.items, buyerRegion, (pid)=> null);
+              } catch(_) {}
+            }
+            parts.push({
+              ...p,
+              order_id: row.id,
+              parent_order_id: row.id,
+              estimated_delivery_date: est,
+              total_amount: p.subtotal,
+              final_amount: p.final_amount || p.subtotal + (p.shipping_amount || 0),
+              is_supplier_part: true,
+              is_payment_order: true,
+              is_virtual_part: true
+            });
+          }
+        }
+      }
+      return parts.sort((a,b)=> new Date(b.created_at) - new Date(a.created_at));
     } catch (error) {
       throw new Error(`No se pudieron obtener los pedidos: ${error.message}`);
     }

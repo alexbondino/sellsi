@@ -1,3 +1,4 @@
+// DEPRECATED: Use dynamic derivation (splitOrderBySupplier) instead of persisted supplier_orders.
 import { supplierOrdersRepository } from '../../infra/repositories/SupplierOrdersRepository';
 import { parseOrderItems } from '../../shared/parsing';
 import { isUUID } from '../../shared/validation';

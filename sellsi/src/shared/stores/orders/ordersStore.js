@@ -1,12 +1,13 @@
 import { create } from 'zustand';
 import { orderService } from '../../../services/user';
+import { buildDeliveryAddress } from '../../../domains/orders/shared/parsing';
 
-// Función para calcular si un pedido está atrasado
+// Función para calcular si un pedido está atrasado (requiere SLA real)
 const calculateIsLate = order => {
+  if (!order.estimated_delivery_date) return false; // B5 guard: sólo marcar atraso con SLA real
   const currentDate = new Date();
-  const endDate = new Date(order.estimated_delivery_date || order.created_at);
+  const endDate = new Date(order.estimated_delivery_date);
   const excludedStatuses = ['delivered', 'cancelled', 'rejected'];
-
   return currentDate > endDate && !excludedStatuses.includes(order.status);
 };
 
@@ -46,47 +47,33 @@ export const useOrdersStore = create((set, get) => ({
     set({ loading: true, error: null });
 
     try {
-      // Obtener pedidos desde ambas fuentes
-      const [legacyOrders, paymentOrders] = await Promise.all([
-        orderService.getOrdersForSupplier(supplierId, filters),
-        orderService.getPaymentOrdersForSupplier(supplierId)
-      ]);
-
-      // Combinar y deduplicar pedidos
-      const allOrders = [...legacyOrders, ...paymentOrders];
-
-      // Regla de negocio: solo mostrar pedidos de flujo de pago cuyo payment_status = 'paid'.
-      // (Pedidos legacy sin campo payment_status no se filtran.)
-      const visibilityFiltered = allOrders.filter(o => (
-        o.payment_status === undefined || o.payment_status === null || o.payment_status === 'paid'
-      ));
+  // Obtener pedidos derivados dinámicamente (ya son payment parts virtuales)
+  const visibilityFiltered = await orderService.getOrdersForSupplier(supplierId, filters);
 
       // Procesar y enriquecer los datos
-  const processedOrders = visibilityFiltered.map(order => ({
-        ...order,
-        // Convertir status del backend al formato de UI
-        status: orderService.getStatusDisplayName(order.status),
-        // Calcular si está atrasado
-        isLate: calculateIsLate(order),
-        // Usar la dirección de entrega desde shipping_info
-        deliveryAddress: order.delivery_address || order.deliveryAddress || {
-          street: 'Dirección no especificada',
-          city: 'Ciudad no especificada',
-          region: 'Región no especificada',
-        },
-        // requestedDate: solo fecha de solicitud/compra
-        requestedDate: {
-          start: order.created_at,
-          end: order.created_at,
-        },
-        // Mapear productos al formato esperado por la UI
-        products:
-          order.items?.map(item => ({
-            name: item.product?.name || item.product?.productnm || 'Producto',
-            quantity: item.quantity,
-            price: item.price_at_addition,
-          })) || [],
-  }));
+      const processedOrders = visibilityFiltered.map(order => {
+        // Derivar dirección: preferir campos shipping_*, luego delivery_*
+  const rawAddr = order.shipping_address || order.shippingAddress || order.delivery_address || order.deliveryAddress || order.shippingAddressJson || null;
+        const normalizedAddr = buildDeliveryAddress(rawAddr || {});
+        // B7 suavizar placeholders
+        if (/no especificad/i.test(normalizedAddr.region)) normalizedAddr.region = '';
+        if (/no especificad/i.test(normalizedAddr.commune)) normalizedAddr.commune = '';
+        // Derivar productos: usar múltiples fallbacks y aceptar items sin product anidado
+        const products = (order.items || []).map(item => ({
+          name: item.product?.name || item.name || item.productnm || item.title || item.product?.productnm || 'Producto',
+          quantity: item.quantity || 0,
+          price: Number(item.price_at_addition || item.product?.price || 0)
+        }));
+        return {
+          ...order,
+          shipping: order.shipping || order.shipping_amount || 0, // B2 alias asegurado
+          status: orderService.getStatusDisplayName(order.status),
+          isLate: calculateIsLate(order),
+          deliveryAddress: normalizedAddr,
+          requestedDate: { start: order.created_at, end: order.created_at },
+          products
+        };
+      });
 
       const sorted = [...processedOrders].sort((a, b) => {
         const da = new Date(a.created_at || a.requestedDate?.start || 0).getTime();
@@ -99,8 +86,8 @@ export const useOrdersStore = create((set, get) => ({
         lastFetch: new Date().toISOString(),
       });
 
-      // Obtener estadísticas también
-      get().fetchStats();
+  // Estadísticas simplificadas: omitir por ahora (se pueden derivar luego). Mantener llamada existente.
+  get().fetchStats();
     } catch (error) {
       set({
         error: `Error al cargar los pedidos: ${error.message}`,

@@ -380,6 +380,7 @@ const Rows = ({ order, onActionClick }) => {
   const computeShippingTotal = () => {
     try {
       // Si el backend ya aporta un campo shipping o total_shipping, úsalo
+      if (Number(order?.shipping_amount) > 0) return Number(order.shipping_amount);
       const maybe = order.shipping || order.total_shipping || order.shipping_cost || 0;
       const parsedMaybe = Number(maybe || 0);
       if (!Number.isNaN(parsedMaybe) && parsedMaybe > 0) return parsedMaybe;
@@ -406,7 +407,7 @@ const Rows = ({ order, onActionClick }) => {
         // marcar producto como procesado (evita doble cobro si hay múltiples renglones del mismo producto)
         if (productId) seenProducts.add(String(productId));
       });
-      return total;
+  return total;
     } catch (e) {
       return 0;
     }

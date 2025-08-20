@@ -1,3 +1,5 @@
+// DEPRECATED: Real supplier parts path replaced by dynamic split in front-end (use splitOrderBySupplier).
+// Kept temporarily for backward compatibility / potential rollback.
 import { supplierOrdersRepository } from '../../infra/repositories/SupplierOrdersRepository';
 import { ordersRepository } from '../../infra/repositories/OrdersRepository';
 import { parseOrderItems } from '../../shared/parsing';

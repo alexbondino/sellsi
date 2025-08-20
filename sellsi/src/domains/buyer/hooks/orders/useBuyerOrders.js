@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { orderService } from '../../../../services/user';
 import { isUUID } from '../../../orders/shared/validation';
+import { splitOrderBySupplier } from '../../../orders/shared/splitOrderBySupplier';
 
 /**
  * Hook para manejar los pedidos de un comprador.
@@ -13,116 +14,30 @@ export const useBuyerOrders = buyerId => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const DEBUG_BUYER_ORDERS = false; // activar para ver logs diagnósticos
-
-  const SHOW_UNPAID_PAYMENT_ORDERS = true; // feature flag
-  const SPLIT_MODE = (import.meta.env?.VITE_SPLIT_MODE || 'virtual').toLowerCase(); // 'off' | 'virtual'
   const POLL_INTERVAL_MS = 15000;
   const pollRef = useRef(null);
   const lastRealtimeRef = useRef(Date.now());
 
-  const SUPPLIER_PARTS_FRONT = (import.meta.env?.VITE_SUPPLIER_PARTS_ENABLED || '').toLowerCase() === 'true';
-  // Cuando los supplier parts reales están habilitados, deshabilitamos automáticamente el split virtual
-  const EFFECTIVE_SPLIT_MODE = SUPPLIER_PARTS_FRONT ? 'off' : SPLIT_MODE;
-
-  const mergeAndSort = useCallback((legacy, payment) => {
-    // Heurística: si existe payment order para mismo cart_id / order_id, ocultar legacy duplicada
-    const paymentByCart = new Set(payment.map(p => p.cart_id).filter(Boolean));
-    const dedupedLegacy = legacy.filter(l => !paymentByCart.has(l.cart_id));
-    // Heurística transitoria de payment_status para legacy (mejora UX chips) si no existe
-    const enrichedLegacy = dedupedLegacy.map(l => {
-      if (l.payment_status) return l;
-      let heuristic = 'pending';
-      if (['accepted','in_transit','delivered'].includes(l.status)) heuristic = 'paid';
-      else if (['cancelled','rejected'].includes(l.status)) heuristic = 'cancelled';
-      return { ...l, payment_status: heuristic };
-    });
-    const all = [...enrichedLegacy, ...payment];
-    const filtered = SHOW_UNPAID_PAYMENT_ORDERS ? all : all.filter(o => !o.is_payment_order || o.payment_status === 'paid');
-    const ordered = filtered.sort((a,b)=> new Date(b.created_at) - new Date(a.created_at));
-
-    // ============================
-    // VIRTUAL SPLIT POR SUPPLIER
-    // ============================
-    // Reemplaza una payment order con N suppliers por N "sub-órdenes" virtuales
-    // Conserva order_id original para que realtime updates funcionen; añade synthetic_id para key UI.
-  const result = [];
-    for (const o of ordered) {
-      // Sólo aplicar a payment orders (is_payment_order true) con múltiples suppliers en items
-  if (EFFECTIVE_SPLIT_MODE === 'off' || !o.is_payment_order || !Array.isArray(o.items) || o.items.length === 0) {
-        result.push(o);
-        continue;
-      }
-      // Agrupar por supplier_id (diversos formatos posibles)
-      const groups = new Map();
-      for (const it of o.items) {
-        const sid = it.product?.supplier?.id || it.product?.supplier_id || it.supplier_id || it.product?.supplierId || null;
-        if (!sid) {
-          // Si no hay supplierId, no se puede dividir de forma confiable; aborta división completa
-          groups.clear();
-          break;
-        }
-        if (!groups.has(sid)) groups.set(sid, []);
-        groups.get(sid).push(it);
-      }
-      if (groups.size <= 1 || groups.size === 0) {
-        // Nada que dividir
-        result.push(o);
-        continue;
-      }
-      // Calcular subtotales por supplier
-      const supplierSubtotals = [];
-      for (const [sid, items] of groups.entries()) {
-        const subtotal = items.reduce((acc, it) => {
-          const unit = (typeof it.price_at_addition === 'number' && Number.isFinite(it.price_at_addition))
-            ? it.price_at_addition
-            : (typeof it.product?.price === 'number' && Number.isFinite(it.product.price)) ? it.product.price : 0;
-          return acc + unit * (it.quantity || 0);
-        }, 0);
-        supplierSubtotals.push({ sid, items, subtotal });
-      }
-      const totalSubtotal = supplierSubtotals.reduce((s, x) => s + x.subtotal, 0) || 1;
-      const shippingTotal = Number(o.shipping_amount || o.shipping || 0);
-      // Prorrateo de shipping (último absorbe residuo)
-      let accShip = 0;
-      supplierSubtotals.forEach((entry, idx) => {
-        if (shippingTotal <= 0) entry.shippingAlloc = 0;
-        else if (idx === supplierSubtotals.length - 1) entry.shippingAlloc = Math.max(0, shippingTotal - accShip);
-        else {
-          const alloc = Math.round(shippingTotal * (entry.subtotal / totalSubtotal));
-          entry.shippingAlloc = alloc; accShip += alloc;
-        }
-      });
-      // Crear sub-órdenes virtuales
-      supplierSubtotals.forEach(entry => {
-        const supplierName = entry.items[0]?.product?.supplier?.name || entry.items[0]?.product?.proveedor || null;
-        result.push({
-          ...o,
-          synthetic: true,
-            parent_order_id: o.order_id,
-          synthetic_id: `${o.order_id}-${entry.sid}`,
-          supplier_id: entry.sid,
-          supplier_name: supplierName,
-          items: entry.items,
-          // Sobrescribir montos a nivel sub-orden para UI
-          total_amount: entry.subtotal,
-          shipping_amount: entry.shippingAlloc,
-          // Marcar que no es legacy cart aunque comparta order_id
-          is_virtual_split: true,
-        });
-      });
+  const mergeAndSplit = useCallback((payment) => {
+    // 1. Ordenar por fecha
+    const ordered = payment.sort((a,b)=> new Date(b.created_at) - new Date(a.created_at));
+    // 2. Para cada payment order aplicar split derivado.
+    const parts = ordered.flatMap(o => splitOrderBySupplier({
+      ...o,
+      id: o.order_id || o.id // asegurar campo id para util
+    }));
+    // 3. Rule: Si sólo hay una parte para la order, dejamos esa (sin synthetic flag is_supplier_part=false)
+    // splitOrderBySupplier ya maneja esto.
+    // 4. Dedupe defensivo (por si llega duplicada la order completa). Clave: parent_order_id+supplier_id (o solo parent).
+    const map = new Map();
+    for (const p of parts) {
+      const key = p.parent_order_id + (p.supplier_id ? `-${p.supplier_id}` : '');
+      if (!map.has(key)) map.set(key, p);
     }
-    // Dedupe defensivo: si por error quedó tanto parent payment order como un part con mismo supplier que virtual, nos quedamos con la versión "más específica".
-    // Clave base: synthetic_id || order_id (+supplier_id si existe)
-    const seen = new Set();
-    const deduped = [];
-    for (const r of result) {
-      const key = r.synthetic_id || (r.order_id + (r.supplier_id ? `-${r.supplier_id}` : ''));
-      if (seen.has(key)) continue;
-      seen.add(key);
-      deduped.push(r);
-    }
-    return deduped;
-  }, [SHOW_UNPAID_PAYMENT_ORDERS]);
+    const result = Array.from(map.values()).sort((a,b)=> new Date(b.created_at) - new Date(a.created_at));
+    if (DEBUG_BUYER_ORDERS) console.log('[useBuyerOrders] parts', result.length);
+    return result;
+  }, [DEBUG_BUYER_ORDERS]);
 
   const fetchOrders = useCallback(async (filters = {}) => {
     if (!buyerId || !isUUID(buyerId)) {
@@ -133,24 +48,13 @@ export const useBuyerOrders = buyerId => {
     try {
       setLoading(true);
       setError(null);
-      const [legacy, payment, supplierParts] = await Promise.all([
-        SUPPLIER_PARTS_FRONT ? Promise.resolve([]) : orderService.getOrdersForBuyer(buyerId, filters).catch(()=>[]),
-        // No silenciar completamente: loggear para diagnóstico.
-        orderService.getPaymentOrdersForBuyer(buyerId, filters).catch(e => {
+      const payment = await orderService.getPaymentOrdersForBuyer(buyerId, filters).catch(e => {
           console.error('[buyerOrders][paymentOrders] error', e);
           setError(prev => prev || e.message || 'Error cargando payment orders');
           return [];
-        }),
-        import('../../../../domains/orders/application/queries/GetBuyerSupplierOrders')
-          .then(m => m.GetBuyerSupplierOrders(buyerId, filters))
-          .catch(()=>[])
-      ]);
-      if (DEBUG_BUYER_ORDERS) {
-        // eslint-disable-next-line no-console
-        console.log('[buyerOrders] legacy', legacy.length, 'payment', payment.length, 'supplierParts', supplierParts.length);
-      }
-      // Diagnóstico precios 0
-      legacy.concat(payment).forEach(o => {
+        });
+      // Diagnóstico precios 0 (sobre payment orders)
+      payment.forEach(o => {
         (o.items||[]).forEach(it => {
           if (it.price_at_addition === 0 && it.quantity > 0) {
             // eslint-disable-next-line no-console
@@ -158,43 +62,9 @@ export const useBuyerOrders = buyerId => {
           }
         });
       });
-      // If real supplier parts exist for certain parent orders, replace corresponding payment order entries with parts (skip virtual split for them)
-      let merged = mergeAndSort(legacy, payment);
-      if (supplierParts.length) {
-        // Agrupar partes por parent
-        const partsByParent = supplierParts.reduce((acc, p) => {
-          if (!acc[p.parent_order_id]) acc[p.parent_order_id] = [];
-          acc[p.parent_order_id].push(p);
-          return acc;
-        }, {});
-        const parentIdsWithRealMultiParts = new Set(Object.entries(partsByParent).filter(([_, arr]) => arr.length > 1).map(([pid]) => pid));
-        // Remover parent sólo si hay más de 1 parte real (escenario multi-supplier). Si solo 1 parte, mostramos parent para evitar duplicar.
-        merged = merged.filter(o => !(o.is_payment_order && !o.is_supplier_part && parentIdsWithRealMultiParts.has(o.order_id)));
-        // Insertar únicamente partes de parents multi-supplier
-        const partsToInsert = supplierParts.filter(p => parentIdsWithRealMultiParts.has(p.parent_order_id));
-        if (partsToInsert.length) {
-          const normalizedParts = partsToInsert.map(p => ({
-            ...p,
-            synthetic_id: p.synthetic_id || `${p.parent_order_id}-${p.supplier_id}`,
-            supplier_name: p.supplier_name || p.items?.[0]?.product?.supplier?.name || p.items?.[0]?.product?.proveedor || p.items?.[0]?.product?.supplier || 'Proveedor'
-          }));
-          merged = [...merged, ...normalizedParts];
-          merged.sort((a,b)=> new Date(b.created_at) - new Date(a.created_at));
-        }
-      }
-      // Final pass: if both a virtual split synthetic sub-order and a real supplier_part exist for same (order_id, supplier_id), prefer real part.
-      const byKey = new Map();
-      for (const m of merged) {
-        const baseKey = m.order_id + (m.supplier_id ? `-${m.supplier_id}` : '');
-        const existing = byKey.get(baseKey);
-        if (!existing) { byKey.set(baseKey, m); continue; }
-        // Prefer real supplier part over virtual split; otherwise keep existing
-        const prefer = (m.is_supplier_part && !m.is_virtual_split) ? m : existing;
-        byKey.set(baseKey, prefer);
-      }
-      merged = Array.from(byKey.values()).sort((a,b)=> new Date(b.created_at) - new Date(a.created_at));
-      setOrders(merged);
-      if (merged.length === 0 && !error) {
+      const split = mergeAndSplit(payment);
+      setOrders(split);
+      if (split.length === 0 && !error) {
         // Pista diagnóstica rápida en consola.
         console.warn('[buyerOrders] Resultado vacío tras merge. Verificar flags, RLS o errores previos en consola.');
       }
@@ -203,7 +73,7 @@ export const useBuyerOrders = buyerId => {
     } finally {
       setLoading(false);
     }
-  }, [buyerId, mergeAndSort]);
+  }, [buyerId, mergeAndSplit, error]);
 
   // Initial load
   useEffect(() => { fetchOrders(); }, [fetchOrders]);
