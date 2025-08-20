@@ -15,6 +15,8 @@ export class OrdersRepository {
           subtotal,
           tax,
           shipping,
+          shipping_address,
+          billing_address,
           total,
           currency,
           status,

@@ -45,18 +45,32 @@ export async function GetBuyerPaymentOrders(buyerId, { limit, offset } = {}) {
       const su = it.supplier_id ? suppliersMap.get(it.supplier_id) : null;
       const prod = it.product_id ? (productsMap.get(it.product_id) || {}) : {};
       const firstImage = Array.isArray(prod.product_images) ? prod.product_images[0] : {};
+      // Normalización robusta de precio
+      const rawPriceAddition = it.price_at_addition ?? it.price;
+      let price_at_addition = 0;
+      let pricing_warning = false;
+      if (typeof rawPriceAddition === 'number' && Number.isFinite(rawPriceAddition)) {
+        price_at_addition = rawPriceAddition;
+      } else if (typeof rawPriceAddition === 'string') {
+        const cleaned = rawPriceAddition.trim().replace(/[^0-9,\.]/g,'').replace(',','.');
+        const parsed = Number(cleaned);
+        if (Number.isFinite(parsed)) price_at_addition = parsed; else pricing_warning = true;
+      } else {
+        pricing_warning = true;
+      }
       return {
         cart_items_id: it.cart_items_id || it.id || `${row.id}-itm-${idx}`,
         product_id: it.product_id || it.productid || it.id || null,
         quantity: it.quantity || 1,
-        price_at_addition: it.price_at_addition || it.price || 0,
+        price_at_addition,
         price_tiers: it.price_tiers || null,
         document_type: normalizeDocumentType(it.document_type || it.documentType),
+        pricing_warning,
         product: {
           id: it.product_id || it.productid || it.id || null,
           productid: it.product_id || it.productid || null,
           name: it.name || it.productnm || 'Producto',
-          price: it.price || it.price_at_addition || 0,
+          price: price_at_addition,
           category: it.category || null,
           description: it.description || '',
           supplier_id: it.supplier_id || null,
@@ -75,6 +89,15 @@ export async function GetBuyerPaymentOrders(buyerId, { limit, offset } = {}) {
         }
       };
     });
+    const computedLinesTotal = normalizedItems.reduce((s,i)=>s + (i.price_at_addition * i.quantity),0);
+    const delivery_address = (() => {
+      const sa = row.shipping_address || row.shippingAddress || null;
+      if (!sa) return null;
+      if (typeof sa === 'string') {
+        try { return JSON.parse(sa); } catch { return { raw: sa }; }
+      }
+      return sa;
+    })();
     return {
       order_id: row.id,
       cart_id: row.cart_id || null,
@@ -85,16 +108,17 @@ export async function GetBuyerPaymentOrders(buyerId, { limit, offset } = {}) {
       updated_at: row.updated_at,
       estimated_delivery_date: row.estimated_delivery_date || null,
       buyer: { user_id: row.user_id },
-      delivery_address: null,
+      delivery_address,
       items: normalizedItems,
       total_items: normalizedItems.length,
       total_quantity: normalizedItems.reduce((s,i)=>s + (i.quantity||0),0),
-      total_amount: row.total || normalizedItems.reduce((s,i)=>s + (i.price_at_addition * i.quantity),0),
+      total_amount: row.total ?? computedLinesTotal,
       subtotal: row.subtotal || null,
       tax: row.tax || null,
       shipping: row.shipping || null,
       shipping_amount: row.shipping || 0,
-      final_amount: row.total || (normalizedItems.reduce((s,i)=>s + (i.price_at_addition * i.quantity),0) + (row.shipping || 0)),
+      final_amount: (row.total ?? (computedLinesTotal + (row.shipping || 0))),
+      computed_lines_total: computedLinesTotal,
       is_payment_order: true
     };
   });

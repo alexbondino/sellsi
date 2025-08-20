@@ -123,33 +123,50 @@ serve((req: Request) => withMetrics('process-khipu-webhook', req, async () => {
     // ========================================================================
     const subject: string = khipuPayload.subject || '';
     const orderIdMatch = subject.match(/#([0-9a-fA-F-]{36})/);
-    const orderId = orderIdMatch ? orderIdMatch[1] : null;
+    let orderId = orderIdMatch ? orderIdMatch[1] : null;
+    const paymentIdFromPayload = khipuPayload.payment_id || khipuPayload.paymentId || null;
 
-    if (!orderId) {
-      console.warn('⚠️ No se pudo extraer orderId del subject');
-      return new Response('OK (sin orderId)', { status: 200 });
-    }
-
-    console.log(`💰 Procesando pago exitoso para la orden: ${orderId}`);
-
-    // ========================================================================
-    // ACTUALIZAR EN SUPABASE
-    // ========================================================================
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     );
 
+    // Fallback: buscar order por khipu_payment_id si no se pudo parsear
+    if (!orderId && paymentIdFromPayload) {
+      const { data: lookup, error: lookupErr } = await supabase
+        .from('orders')
+        .select('id')
+        .eq('khipu_payment_id', paymentIdFromPayload)
+        .limit(1);
+      if (!lookupErr && lookup && lookup.length) {
+        orderId = lookup[0].id;
+        console.log('🔍 Order encontrada por khipu_payment_id fallback', orderId);
+      }
+    }
+
+    if (!orderId) {
+      console.warn('⚠️ No se pudo asociar pago a una orden (sin UUID parseable ni fallback).');
+      return new Response(JSON.stringify({ success: false, reason: 'order_not_found' }), { status: 200, headers: corsHeaders });
+    }
+
+    console.log(`💰 Procesando pago exitoso (o idempotente) para la orden: ${orderId}`);
+
+    // ========================================================================
+    // ACTUALIZAR EN SUPABASE
+    // ========================================================================
+    const paidAt = khipuPayload.paid_at || khipuPayload.paidAt || new Date().toISOString();
+
+    // Idempotent update: solo si no está ya 'paid'
     const { data, error } = await supabase
       .from('orders')
       .update({
-        // Mantenemos status existente (no introducimos valor fuera del constraint) solo marcamos payment_status
         payment_status: 'paid',
-        khipu_payment_id: khipuPayload.payment_id,
-        paid_at: new Date().toISOString(),
+        khipu_payment_id: paymentIdFromPayload,
+        paid_at: paidAt,
         updated_at: new Date().toISOString(),
       })
       .eq('id', orderId)
+      .neq('payment_status', 'paid')
       .select();
 
     if (error) {
@@ -341,15 +358,17 @@ serve((req: Request) => withMetrics('process-khipu-webhook', req, async () => {
           }
           if (it.supplier_id) {
             const amount = Math.max(0, it.price_at_addition * it.quantity);
-            await supabase.from('sales').insert({ user_id: it.supplier_id, amount, trx_date: new Date().toISOString() });
-            await supabase.from('product_sales').upsert({
-              product_id: it.product_id,
-              supplier_id: it.supplier_id,
-              quantity: it.quantity,
-              amount,
-              trx_date: new Date().toISOString(),
-              order_id: orderId
-            }, { onConflict: 'order_id,product_id,supplier_id' });
+            try { await supabase.from('sales').insert({ user_id: it.supplier_id, amount, trx_date: new Date().toISOString() }); } catch(e) { console.error('sales insert fail', e); }
+            try {
+              await supabase.from('product_sales').upsert({
+                product_id: it.product_id,
+                supplier_id: it.supplier_id,
+                quantity: it.quantity,
+                amount,
+                trx_date: new Date().toISOString(),
+                order_id: orderId
+              }, { onConflict: 'order_id,product_id,supplier_id' });
+            } catch(e) { console.error('product_sales upsert fail', e); }
           }
         }
 

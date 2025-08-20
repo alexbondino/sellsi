@@ -2,6 +2,7 @@ import { supabase } from '../supabase';
 import { normalizeStatus, getStatusDisplayName } from '../../domains/orders/shared/constants';
 import { isUUID } from '../../domains/orders/shared/validation';
 import { ordersRepository } from '../../domains/orders/infra/repositories/OrdersRepository';
+import { notificationService } from '../../domains/orders/domain/services/NotificationService';
 
 // Normalizador único para document_type -> 'boleta' | 'factura' | 'ninguno'
 // (Se removió helper local normalizeDocumentType; ahora todo se resuelve en los use cases)
@@ -187,12 +188,15 @@ class OrderService {
    * Crear notificaciones de nuevo pedido para supplier y buyer (por item) tras checkout.
    * Llamar desde el flujo de creación de order.
    */
-  async notifyNewOrder(orderRow) { try { await notificationService.notifyNewOrder(orderRow); } catch (_) {} }
-  // Nueva delegación (mantener método anterior por compat)
   async notifyNewOrder(orderRow) {
     try {
-      const { NotifyNewOrder } = await import('../../domains/orders/application/commands/NotifyNewOrder');
-      return await NotifyNewOrder(orderRow);
+      // Prefer command if available (encapsula dominio); fallback directa.
+      try {
+        const { NotifyNewOrder } = await import('../../domains/orders/application/commands/NotifyNewOrder');
+        return await NotifyNewOrder(orderRow);
+      } catch (e) {
+        await notificationService.notifyNewOrder(orderRow);
+      }
     } catch (_) {}
   }
 }

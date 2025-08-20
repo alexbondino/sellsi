@@ -41,6 +41,34 @@ const BuyerOrders = () => {
     formatCurrency
   } = useBuyerOrders(buyerId);
 
+  // ============================================================================
+  // RESALTAR TRANSICIÓN A PAGO CONFIRMADO (realtime)
+  // ============================================================================
+  const [recentlyPaid, setRecentlyPaid] = React.useState(new Set()); // order_id set
+  const prevPaidRef = React.useRef(new Set());
+  React.useEffect(() => {
+    const nextPrev = new Set(prevPaidRef.current);
+    (orders || []).forEach(o => {
+      if (o.payment_status === 'paid' && !prevPaidRef.current.has(o.order_id)) {
+        // Nuevo pago confirmado: agregar a highlight set
+        setRecentlyPaid(prev => {
+          const clone = new Set(prev);
+          clone.add(o.order_id);
+          return clone;
+        });
+        // Remover highlight tras 12s
+        setTimeout(() => {
+          setRecentlyPaid(prev => {
+            if (!prev.has(o.order_id)) return prev;
+            const clone = new Set(prev); clone.delete(o.order_id); return clone;
+          });
+        }, 12000);
+      }
+      if (o.payment_status === 'paid') nextPrev.add(o.order_id);
+    });
+    prevPaidRef.current = nextPrev;
+  }, [orders]);
+
   // Mark related notifications as read on mount
   const { markContext } = (typeof useNotificationsContext === 'function' ? require('../../notifications/components/NotificationProvider') : { useNotificationsContext: null }).useNotificationsContext?.() || {};
   React.useEffect(() => {
@@ -522,16 +550,28 @@ const BuyerOrders = () => {
                                       : 'Pedido no rechazado.';
                                   }
 
+                                  const isPagoChip = chip.key === 'pago';
+                                  const highlight = isPagoChip && order.payment_status === 'paid' && recentlyPaid.has(order.order_id);
                                   return (
                                     <Tooltip key={chip.key} title={computedTooltip} arrow placement="left">
                                       <Chip
                                         label={chip.label}
-                                        color={chip.active ? (chip.color || 'default') : 'default'}
-                                        variant={chip.active ? 'filled' : 'outlined'}
+                                        color={chip.active || highlight ? (chip.color || 'default') : 'default'}
+                                        variant={(chip.active || highlight) ? 'filled' : 'outlined'}
                                         size="small"
                                         sx={{
                                           fontSize: '0.70rem',
-                                          opacity: chip.active ? 1 : 0.45
+                                          opacity: (chip.active || highlight) ? 1 : 0.45,
+                                          ...(highlight ? {
+                                            position: 'relative',
+                                            boxShadow: theme => `0 0 0 0 rgba(76,175,80,0.6)`,
+                                            animation: 'pulsePaid 1.2s ease-in-out 4',
+                                            '@keyframes pulsePaid': {
+                                              '0%': { boxShadow: '0 0 0 0 rgba(76,175,80,0.6)' },
+                                              '70%': { boxShadow: '0 0 0 12px rgba(76,175,80,0)' },
+                                              '100%': { boxShadow: '0 0 0 0 rgba(76,175,80,0)' }
+                                            }
+                                          } : {})
                                         }}
                                       />
                                     </Tooltip>
