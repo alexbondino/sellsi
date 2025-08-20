@@ -1,7 +1,17 @@
-Sigo teniendo problemas con la generacion de ordenes en Mis Pedidos, hice un refactor y los problemas persisten y surgieron otros nuevos:
+Crea una regla de ESLint personalizada que complemente a eslint-plugin-react-hooks. 
+La regla debe:
+1. Analizar llamadas a useEffect, useMemo y useCallback.
+2. Revisar el array de dependencias.
+3. Marcar error si hay dependencias usadas en la función pero no incluidas en el array.
+4. Marcar warning si hay dependencias en el array que no se usan dentro del callback.
+5. Marcar warning si hay valores inline (objetos, arrays o funciones anónimas) dentro del array de dependencias. 
+   Ejemplo incorrecto:
+      useEffect(() => {...}, [{}]);
+      useEffect(() => {...}, [() => {}]);
+   Ejemplo correcto:
+      const opts = {};
+      useEffect(() => {...}, [opts]);
 
-1.-Al comprar un producto, la orden que se genera en BuyersOrders.jsx, no viene con el precio mapeado correctamente, el la seccion cantidad * precio, aparece cantidad * 0 "debido al fallback, ya que no encuentra el precio" esto nose si ocurre siempre, revisar
-
-2.-el Chip de Procesando Pago sigue con problemas, sigue sin cambiarse a Pago Aceptado cuando payment_status = paid
-
-3.-Las Notificaciones siguen sin funcionar, no se muestra ninguna en este proceso
+El resultado debe ser un archivo en Node.js que exporte la regla como plugin ESLint estándar, 
+listo para integrarse en un proyecto. 
+El archivo debe estar estructurado como 'eslint-plugin-custom-hooks/index.js' con module.exports.

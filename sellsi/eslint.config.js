@@ -2,6 +2,7 @@ import js from '@eslint/js'
 import globals from 'globals'
 import reactHooks from 'eslint-plugin-react-hooks'
 import reactRefresh from 'eslint-plugin-react-refresh'
+import customHooksPlugin from './eslint-plugin-custom-hooks/index.js'
 
 export default [
   { ignores: ['dist'] },
@@ -19,6 +20,7 @@ export default [
     plugins: {
       'react-hooks': reactHooks,
       'react-refresh': reactRefresh,
+      'custom-hooks': customHooksPlugin,
     },
     rules: {
       ...js.configs.recommended.rules,
@@ -27,6 +29,10 @@ export default [
       'react-refresh/only-export-components': [
         'warn',
         { allowConstantExport: true },
+      ],
+      // nuestra regla complementaria
+      'custom-hooks/hook-deps': [
+        'warn'
       ],
     },
   },

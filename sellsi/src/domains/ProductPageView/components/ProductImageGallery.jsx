@@ -24,16 +24,10 @@ const ProductImageGallery = ({
     images.length > 0
       ? images.map(getProductImageUrl)
       : ['/placeholder-product.jpg']
-  // Diagnostic: print incoming gallery images and selected index
-  try {
-    const diag = galleryImages.map((g, i) => ({ index: i, url: g, name: (g || '').split('/').pop() }))
-    console.debug('[ProductImageGallery] galleryImages', { productName, selectedIndex, diag })
-  } catch (e) {}
+  // Diagnostic removed: gallery images debug logs eliminated
   // Precargar las primeras 3 imágenes para mejor UX
   const { preloadedImages, isPreloading } = useImagePreloader(galleryImages)
-  try {
-    console.debug('[ProductImageGallery] preloadedImages', preloadedImages && preloadedImages.slice(0,5))
-  } catch (e) {}
+  // Diagnostic removed: preloadedImages debug logs eliminated
   // Manejar el movimiento del mouse sobre la imagen
   const handleMouseMove = (e) => {
     if (!isDesktop) return
@@ -193,23 +187,7 @@ const ProductImageGallery = ({
             onClick={() => onImageSelect && onImageSelect(index)}
           >
             <Box sx={{ position: 'relative' }}>
-              {/* Debug badge showing image_order and filename */}
-              {imagesRaw && imagesRaw[index] && (
-                <Box sx={{
-                  position: 'absolute',
-                  right: 6,
-                  top: 6,
-                  zIndex: 20,
-                  bgcolor: 'rgba(0,0,0,0.6)',
-                  color: 'white',
-                  px: 0.5,
-                  py: 0.25,
-                  fontSize: '0.65rem',
-                  borderRadius: 0.5,
-                }}>
-                  #{imagesRaw[index].image_order ?? '-'} { (imagesRaw[index].image_url || imagesRaw[index].url || '').split('/').pop() }
-                </Box>
-              )}
+              {/* imagesRaw debug badge removed to avoid exposing filenames in UI */}
               <CardMedia
               component="img"
               image={image}

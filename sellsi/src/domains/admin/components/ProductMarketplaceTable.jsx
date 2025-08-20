@@ -360,15 +360,10 @@ const ProductMarketplaceTable = memo(() => {
   };
 
   // Handlers para eliminar múltiples productos
-  const openDeleteMultipleModal = () => {
-    const selectedProductsArray = filteredProducts.filter(product => 
-      selectedProducts.has(product.product_id)
-    );
-    setDeleteMultipleModal({
-      open: true,
-      products: selectedProductsArray
-    });
-  };
+  const openDeleteMultipleModal = useCallback(() => {
+    const selectedProductsArray = filteredProducts.filter(product => selectedProducts.has(product.product_id));
+    setDeleteMultipleModal({ open: true, products: selectedProductsArray });
+  }, [filteredProducts, selectedProducts]);
 
   const closeDeleteMultipleModal = () => {
     setDeleteMultipleModal({

@@ -34,6 +34,151 @@ import { calculatePriceForQuantity, normalizePriceTiers } from '../../../utils/p
 import { supabase } from '../../../services/supabase';
 import { useSupplierDocumentTypes } from '../../utils/supplierDocumentTypes';
 
+// ===============================================
+// Estilos extraídos (optimizan recreación de objetos sx)
+// ===============================================
+const drawerPaperBaseSx = {
+  width: { xs: '100%', sm: 460, md: 518 },
+  maxWidth: '90vw',
+  zIndex: 9999,
+};
+
+const drawerHeaderSx = {
+  p: 2,
+  borderBottom: 1,
+  borderColor: 'primary.dark',
+  bgcolor: 'primary.main',
+  color: 'common.white',
+  position: 'sticky',
+  top: 0,
+  zIndex: 1,
+};
+
+const layoutRootSx = {
+  height: '100%',
+  display: 'flex',
+  flexDirection: 'column',
+};
+
+// Factory para estilos dependientes de estado
+const tierPaperSx = (isActive) => ({
+  p: 2,
+  border: isActive ? 2 : 1,
+  borderColor: isActive ? 'primary.main' : 'grey.300',
+  bgcolor: isActive ? 'primary.50' : 'transparent',
+  cursor: 'default',
+});
+
+// Estilos del contenedor de tiers (antes inline medium, ahora factory por posible dependencia futura)
+const tiersContainerSx = {
+  // Mantener literal: no depende de props/estado actualmente
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 2,
+  // Si se vuelve dinámico (e.g. responsive condicional) convertir en función
+};
+
+// PaperProps del Drawer (objeto grande extraído para evitar recreación inline)
+const drawerPaperProps = {
+  component: motion.div,
+  initial: { x: '100%' },
+  animate: { x: 0 },
+  exit: { x: '100%' },
+  transition: { type: 'tween', duration: 0.3, ease: 'easeInOut' },
+  sx: drawerPaperBaseSx,
+};
+
+// Sx estable para imagen resumen (evita re-render por nuevo objeto)
+const checkoutSummaryImageSx = {
+  width: 50,
+  height: 50,
+  objectFit: 'contain',
+  pointerEvents: 'none',
+};
+
+// ============================================================================
+// COMPONENTE EXTRAÍDO: ProductSummary
+// Motivo: Evitar recreación de la definición en cada render del modal que
+// provocaba remount del subtree (incluyendo la imagen) e impedía que React.memo
+// en CheckoutSummaryImage hiciera efecto. Al extraerlo a nivel de módulo y
+// memoizarlo, los cambios de cantidad ya no fuerzan re-render de la imagen.
+// ============================================================================
+const ProductSummary = React.memo(function ProductSummary({
+  productData,
+  quantity,
+  onQuantityChange,
+  quantityError,
+  minQuantity,
+  maxQuantity,
+}) {
+  return (
+    <Paper
+      variant="outlined"
+      sx={{ p: 2 }}
+      onClick={(e) => { e.stopPropagation(); }}
+      onMouseDown={(e) => { e.stopPropagation(); }}
+    >
+      <Stack direction="row" spacing={2} alignItems="center">
+        <Box sx={{ width: 50, height: 50, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <CheckoutSummaryImage
+            product={productData}
+            sx={checkoutSummaryImageSx}
+          />
+        </Box>
+        <Box sx={{ flex: 1 }}>
+          <Stack direction="row" justifyContent="space-between" alignItems="flex-start" sx={{ mb: 0.5 }}>
+            <Typography variant="body1" sx={{ fontWeight: 600, flex: 1, pointerEvents: 'none' }}>
+              {productData.name}
+            </Typography>
+            <Box sx={{ ml: 2, pointerEvents: 'auto', position: 'relative' }}>
+              <QuantitySelector
+                value={quantity}
+                onChange={onQuantityChange}
+                min={minQuantity}
+                max={maxQuantity}
+                size="small"
+                orientation="horizontal"
+                label="Cantidad:"
+                sx={{
+                  '& .MuiFormHelperText-root': { display: 'none' },
+                }}
+              />
+              {quantityError && (
+                <Box
+                  sx={{
+                    position: 'absolute',
+                    top: '100%',
+                    right: 0,
+                    mt: 0.5,
+                    zIndex: 10,
+                    minWidth: 200,
+                  }}
+                >
+                  <Alert severity="error" variant="filled" sx={{ fontSize: '0.75rem', py: 0.5 }}>
+                    {quantityError}
+                  </Alert>
+                </Box>
+              )}
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{
+                  display: 'block',
+                  mt: 0.5,
+                  fontSize: '0.75rem',
+                  pointerEvents: 'none'
+                }}
+              >
+                Stock: {productData.stock.toLocaleString('es-CL')}
+              </Typography>
+            </Box>
+          </Stack>
+        </Box>
+      </Stack>
+    </Paper>
+  );
+});
+
 /**
  * ============================================================================
  * MODAL AGREGAR AL CARRITO - COMPONENTE UNIVERSAL
@@ -396,7 +541,7 @@ const AddToCartModal = ({
         <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 600 }}>
           Precio antes de envío
         </Typography>
-        <Stack spacing={1}>
+  <Stack spacing={1} sx={tiersContainerSx}>
           {priceTiers.map((tier, index) => {
             const minQty = tier.min_quantity || 1;
             const maxQty = tier.max_quantity;
@@ -414,13 +559,7 @@ const AddToCartModal = ({
                 onClick={(e) => {
                   e.stopPropagation();
                 }}
-                sx={{
-                  p: 2,
-                  border: isActive ? 2 : 1,
-                  borderColor: isActive ? 'primary.main' : 'grey.300',
-                  bgcolor: isActive ? 'primary.50' : 'transparent',
-                  cursor: 'default',
-                }}
+                sx={tierPaperSx(isActive)}
               >
                 <Stack direction="row" justifyContent="space-between" alignItems="center">
                   <Box>
@@ -448,98 +587,17 @@ const AddToCartModal = ({
     );
   };
 
-  const QuantityErrorDisplay = () => {
-    if (!quantityError) return null;
-
-    return (
-      <Box
-        sx={{
-          position: 'absolute',
-          top: '100%',
-          right: 0,
-          mt: 0.5,
-          zIndex: 10,
-          minWidth: 200,
-        }}
-      >
-        <Alert severity="error" variant="filled" sx={{ fontSize: '0.75rem', py: 0.5 }}>
-          {quantityError}
-        </Alert>
-      </Box>
-    );
-  };
-
-  const ProductSummary = () => (
-    <Paper 
-      variant="outlined" 
-      sx={{ p: 2 }}
-      onClick={(e) => {
-        e.stopPropagation();
-      }}
-      onMouseDown={(e) => {
-        e.stopPropagation();
-      }}
-    >
-      <Stack direction="row" spacing={2} alignItems="center">
-        <Box sx={{ width: 50, height: 50, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <CheckoutSummaryImage
-            product={productData}
-            sx={{ 
-              width: 50,
-              height: 50,
-              objectFit: 'contain',
-              pointerEvents: 'none',
-            }}
-          />
-        </Box>
-        <Box sx={{ flex: 1 }}>
-          <Stack direction="row" justifyContent="space-between" alignItems="flex-start" sx={{ mb: 0.5 }}>
-            <Typography variant="body1" sx={{ fontWeight: 600, flex: 1, pointerEvents: 'none' }}>
-              {productData.name}
-            </Typography>
-            <Box sx={{ ml: 2, pointerEvents: 'auto', position: 'relative' }}>
-              <QuantitySelector
-                value={quantity}
-                onChange={handleQuantityChange}
-                min={(() => {
-                  // Calcular cantidad mínima efectiva para el QuantitySelector
-                  const { priceTiers } = productData;
-                  if (priceTiers.length > 0) {
-                    const sortedTiers = [...priceTiers].sort((a, b) => (a.min_quantity || 1) - (b.min_quantity || 1));
-                    return sortedTiers[0]?.min_quantity || 1;
-                  }
-                  return productData.minimumPurchase;
-                })()}
-                max={Math.min(productData.maxPurchase, productData.stock)}
-                size="small"
-                orientation="horizontal"
-                label="Cantidad:"
-                sx={{
-                  '& .MuiFormHelperText-root': {
-                    display: 'none', // Ocultar mensajes de error para evitar desacople del layout
-                  },
-                }}
-              />
-              <QuantityErrorDisplay />
-              {/* Mostrar stock disponible */}
-              <Typography 
-                variant="caption" 
-                color="text.secondary" 
-                sx={{ 
-                  display: 'block',
-                  mt: 0.5,
-                  fontSize: '0.75rem',
-                  pointerEvents: 'none'
-                }}
-              >
-                Stock: {productData.stock.toLocaleString('es-CL')}
-              </Typography>
-            </Box>
-          </Stack>
-        </Box>
-      </Stack>
-    </Paper>
-  );
+  // Cantidades mínima y máxima memorizadas para pasar props primitivas estables
+  const quantityBounds = useMemo(() => {
+    const { priceTiers } = productData;
+    let minQ = productData.minimumPurchase;
+    if (priceTiers.length > 0) {
+      const sortedTiers = [...priceTiers].sort((a, b) => (a.min_quantity || 1) - (b.min_quantity || 1));
+      minQ = sortedTiers[0]?.min_quantity || 1;
+    }
+    const maxQ = Math.min(productData.maxPurchase, productData.stock);
+    return { minQ, maxQ };
+  }, [productData]);
 
   const DocumentTypeSelector = () => {
     // Si está cargando los tipos de documentos del proveedor
@@ -796,18 +854,7 @@ const AddToCartModal = ({
           onClose={handleClose} // Permitir cierre normal con X
           hideBackdrop={false}
           disableEscapeKeyDown={false} // Permitir cerrar con Escape
-          PaperProps={{
-            component: motion.div,
-            initial: { x: '100%' },
-            animate: { x: 0 },
-            exit: { x: '100%' },
-            transition: { type: 'tween', duration: 0.3, ease: 'easeInOut' },
-            sx: {
-              width: { xs: '100%', sm: 460, md: 518 }, // 15% más ancho: 400*1.15=460, 450*1.15=518
-              maxWidth: '90vw',
-              zIndex: 9999, // Mayor z-index que FAB y WhatsApp
-            },
-          }}
+          PaperProps={drawerPaperProps}
           ModalProps={{
             keepMounted: false,
             BackdropProps: {
@@ -822,20 +869,11 @@ const AddToCartModal = ({
           }}
         >
           <Box 
-            sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}
+            sx={layoutRootSx}
           >
             
             {/* Header */}
-            <Box sx={{ 
-              p: 2, 
-              borderBottom: 1, 
-              borderColor: 'primary.dark',
-              bgcolor: 'primary.main',
-              color: 'common.white',
-              position: 'sticky',
-              top: 0,
-              zIndex: 1,
-            }}>
+            <Box sx={drawerHeaderSx}>
               <Stack direction="row" justifyContent="space-between" alignItems="center">
                 <Typography variant="h6" sx={{ fontWeight: 700, color: 'common.white' }}>
                   Resumen del Pedido
@@ -853,8 +891,15 @@ const AddToCartModal = ({
                 {/* 1. Precios */}
                 <PriceTiersDisplay />
 
-                {/* 2. Resumen del producto con selector de cantidad */}
-                <ProductSummary />
+                {/* 2. Resumen del producto con selector de cantidad (memoizado) */}
+                <ProductSummary
+                  productData={productData}
+                  quantity={quantity}
+                  onQuantityChange={handleQuantityChange}
+                  quantityError={quantityError}
+                  minQuantity={quantityBounds.minQ}
+                  maxQuantity={quantityBounds.maxQ}
+                />
 
                 {/* 3. Tipo de documento */}
                 <DocumentTypeSelector />

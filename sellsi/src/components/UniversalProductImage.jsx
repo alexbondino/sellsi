@@ -42,7 +42,7 @@ const UniversalProductImage = ({
   ...props
 }) => {
   const [imageError, setImageError] = useState(false);
-  const [retryCount, setRetryCount] = useState(0);
+  const retryCountRef = React.useRef(0);
   const queryClient = useQueryClient();
   const [forceEager, setForceEager] = useState(false);
 
@@ -50,6 +50,8 @@ const UniversalProductImage = ({
   const { thumbnailUrl: responsiveThumbnail, isLoading: responsiveLoading } = useResponsiveThumbnail(product);
   const productId = product?.id || product?.productid || product?.product_id || product?.productId;
   const minithumb = useMinithumb(product);
+
+  // Debug log removed to avoid noisy console output in dev.
 
   // Phase-aware query state
   // Si el producto ya trae thumbnail_url o thumbnails, asumimos fase final lista
@@ -123,7 +125,7 @@ const UniversalProductImage = ({
     })();
 
     return finalUrl;
-  }, [product, size, minithumb, responsiveThumbnail, phaseDataThumbUrl, retryCount]);
+  }, [product, size, minithumb, responsiveThumbnail, phaseDataThumbUrl]);
 
   // Manejar errores de carga de imagen
   const handleImageError = useCallback(() => {
@@ -147,10 +149,10 @@ const UniversalProductImage = ({
       }
 
       // Reintentar después de un delay (máximo 2 reintentos)
-      if (retryCount < 2) {
+      if (retryCountRef.current < 2) {
         setTimeout(() => {
-          
-          setRetryCount(prev => prev + 1);
+          // actualizar contador sin provocar re-render
+          retryCountRef.current = retryCountRef.current + 1;
           setImageError(false);
         }, 1000);
       }
@@ -160,15 +162,13 @@ const UniversalProductImage = ({
     if (onError) {
       onError();
     }
-  }, [product, onError, selectedThumbnail, queryClient, retryCount]);
+  }, [product, onError, selectedThumbnail, queryClient]);
 
   // Manejar carga exitosa de imagen
   const handleImageLoad = useCallback(() => {
     setImageError(false);
-    setRetryCount(0); // Reset retry count cuando carga exitosamente
-    if (onLoad) {
-      onLoad();
-    }
+    retryCountRef.current = 0; // Reset retry count cuando carga exitosamente
+    if (onLoad) onLoad();
   }, [onLoad]);
 
   // Nombre alternativo para la imagen
@@ -197,10 +197,12 @@ const UniversalProductImage = ({
         queryClient.invalidateQueries({ queryKey: ['thumbnail', productId], exact: false })
         invalidateTransientThumbnailKeys(productId)
         setImageError(false)
-        setRetryCount(0)
+        // reset without causing re-render
+        retryCountRef.current = 0;
         setTimeout(() => {
-          setRetryCount(p => p + 1)
-          setRetryCount(p => p - 1)
+          // touch ref to preserve previous behavior without state updates
+          retryCountRef.current = retryCountRef.current + 1;
+          retryCountRef.current = retryCountRef.current - 1;
         }, 100)
       }, ThumbTimings.PHASE_EVENT_DEBOUNCE_MS)
     }
@@ -211,7 +213,7 @@ const UniversalProductImage = ({
   // Si hay error o no hay imagen válida, mostrar Avatar con icono CENTRADO
   if (imageError || !selectedThumbnail || selectedThumbnail === '/placeholder-product.jpg') {
     // Mostrar spinner durante los reintentos
-    if (imageError && retryCount < 2) {
+  if (imageError && retryCountRef.current < 2) {
       let avatarSize = 64;
       if (typeof baseStyles.width === 'number') avatarSize = baseStyles.width;
       else if (typeof baseStyles.height === 'number') avatarSize = baseStyles.height;
@@ -383,20 +385,20 @@ export const CartItemImage = ({ product, ...props }) => (
  * Componente para CheckoutSummary - Usa thumbnails responsivos con fallback a avatar
  * NUNCA usa minithumb - sigue jerarquía: thumbnails > imágenes normales > avatar
  */
-export const CheckoutSummaryImage = ({ product, ...props }) => (
+// Sx base estable para evitar recreación y permitir memo suave
+const checkoutSummaryBaseSx = { borderRadius: '50%' };
+
+export const CheckoutSummaryImage = React.memo(({ product, ...props }) => (
   <UniversalProductImage
     product={product}
-    // Prioriza minithumb de 40x40 si existe
     size="minithumb"
     width={40}
     height={40}
-  priority={true}
-    sx={{
-      borderRadius: '50%'
-    }}
+    priority={true}
+    sx={checkoutSummaryBaseSx}
     {...props}
   />
-);
+));
 
 /**
  * Componente para tablas administrativas
@@ -414,4 +416,5 @@ export const AdminTableImage = ({ product, ...props }) => (
   />
 );
 
-export default UniversalProductImage;
+// Memoizar export por seguridad adicional: evitar re-renders si las props no cambian
+export default React.memo(UniversalProductImage);

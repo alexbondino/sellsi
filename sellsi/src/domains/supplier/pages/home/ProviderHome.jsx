@@ -107,31 +107,24 @@ const ProviderHome = () => {
    * Si después de 3 segundos no hay datos y no está cargando, intentar recargar
    */
   useEffect(() => {
-    const checkAndRetryLoad = setTimeout(async () => {
+    // Reintento condicional: si tras 3s seguimos sin datos y no hay error.
+    const timer = setTimeout(async () => {
       if (!loading && products.length === 0 && !error) {
-        console.log(
-          'Datos vacíos detectados después del montaje inicial, reintentando carga...'
-        );
         try {
-          const {
-            data: { session },
-          } = await supabase.auth.getSession();
-
+          const { data: { session } } = await supabase.auth.getSession();
           if (session?.user?.id) {
-            // Refrescar dashboard y productos en paralelo
             await Promise.all([
-              refreshDashboard(),
-              loadProducts(session.user.id),
+              refreshDashboard?.(),
+              loadProducts?.(session.user.id)
             ]);
           }
-        } catch (error) {
-          console.error('Error refreshing data:', error);
+        } catch (e) {
+          console.error('[ProviderHome] Retry load failed', e);
         }
       }
-    }, 3000); // Esperar 3 segundos antes de verificar
-
-    return () => clearTimeout(checkAndRetryLoad);
-  }, []); // Solo ejecutar una vez después del montaje
+    }, 3000);
+    return () => clearTimeout(timer);
+  }, [loading, products.length, error, refreshDashboard, loadProducts]);
 
   const handleRetry = () => {
     // Reload dashboard data

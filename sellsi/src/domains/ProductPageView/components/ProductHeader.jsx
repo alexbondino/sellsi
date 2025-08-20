@@ -1,4 +1,4 @@
-import React, { useState, useMemo, memo } from 'react'
+import React, { useState, useMemo, useCallback, memo } from 'react'
 import {
   Box,
   Typography,
@@ -93,14 +93,7 @@ const ProductHeader = React.memo(({
     error: documentTypesError 
   } = useSupplierDocumentTypes(supplierId);
 
-  // Debug logs
-  console.log('🔍 [ProductHeader] Debug supplier document types:', {
-    supplierId,
-    supplierDocumentTypes,
-    availableOptions,
-    loadingDocumentTypes,
-    documentTypesError
-  });
+  // Debug logs removed
 
   const [copied, setCopied] = useState({ name: false, price: false })
   // ✅ NUEVO: Estado para el modal de cotización
@@ -445,45 +438,37 @@ const ProductHeader = React.memo(({
     )
   }
 
-  function resolveImageSrc(image) {
-    const SUPABASE_PUBLIC_URL =
-      'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v1/object/public/product-images/'
-    
+  // Memoized image resolver so effect deps remain stable.
+  const resolveImageSrc = useCallback((image) => {
+    const SUPABASE_PUBLIC_URL = 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v1/object/public/product-images/'
     if (!image) return mainImageThumbnail || '/placeholder-product.jpg'
-    
     if (typeof image === 'string') {
       if (image.startsWith(SUPABASE_PUBLIC_URL)) return image
       if (image.startsWith('/')) return image
       if (/^https?:\/\//.test(image)) return image
       return getProductImageUrl(image)
     }
-    
     if (typeof image === 'object' && image !== null) {
-      if (typeof image === 'string') {
-        try {
-          image = JSON.parse(image)
-        } catch (e) {
-          return mainImageThumbnail || '/placeholder-product.jpg'
-        }
-      }
       if (
-        image.url &&
-        typeof image.url === 'string' &&
-        image.url.startsWith(SUPABASE_PUBLIC_URL)
-      ) {
-        return image.url
-      }
+        image.url && typeof image.url === 'string' && image.url.startsWith(SUPABASE_PUBLIC_URL)
+      ) return image.url
       if (image.image_url) return getProductImageUrl(image.image_url)
     }
-    
     return mainImageThumbnail || '/placeholder-product.jpg'
-  }
-  // Ensure we always pass a server-ordered array to the gallery.
-  const orderedImages = (Array.isArray(images) && images.length > 0)
-    ? images.slice().sort((a, b) => ( (a && a.image_order) || 0) - ((b && b.image_order) || 0))
-    : Array.isArray(imagenes) ? imagenes.slice() : []
+  }, [mainImageThumbnail])
 
-  const firstOrdered = orderedImages[0]
+  // Ensure we always pass a server-ordered array to the gallery (memoized for stable reference).
+  const orderedImages = useMemo(() => {
+    if (Array.isArray(images) && images.length > 0) {
+      return images.slice().sort((a, b) => ((a && a.image_order) || 0) - ((b && b.image_order) || 0))
+    }
+    return Array.isArray(imagenes) ? imagenes.slice() : []
+  }, [images, imagenes])
+
+  // Main image record (first with image_order 0 else first) memoized.
+  const mainImageRecord = useMemo(() => {
+    return orderedImages.find(img => img && img.image_order === 0) || orderedImages[0] || null
+  }, [orderedImages])
 
   // Diagnostic log (only once per product to avoid noisy logs on re-renders)
   const _loggedProductsRef = React.useRef(new Set())
@@ -495,7 +480,7 @@ const ProductHeader = React.memo(({
         const name = url ? url.split('/').pop() : (typeof img === 'object' && img?.name) || ''
         return { index: idx, name, url, image_order: img?.image_order }
       })
-      console.debug('[ProductHeader] orderedImages diagnostic for product', pid, diagnostic)
+  // diagnostic removed
       _loggedProductsRef.current.add(pid)
     }
   } catch (e) {
@@ -505,25 +490,19 @@ const ProductHeader = React.memo(({
   // If the parent passed selectedIndex but it doesn't point to the server main image,
   // prefer the server main (image_order === 0). This keeps gallery selection in sync
   // when DB order changes or arrays are reshaped by other layers.
+  // Effect: ensure parent selection points to server-defined main image.
+  // Dependencies intentionally include orderedImages (content & order), selectedImageIndex, callback & resolver.
   React.useEffect(() => {
+    if (!orderedImages.length || !onImageSelect) return
     try {
-      if (!orderedImages || orderedImages.length === 0) return
-      if (!onImageSelect) return
-
       const resolved = orderedImages.map(resolveImageSrc)
-      const mainUrl = resolveImageSrc(firstOrdered || imagen || orderedImages[0])
-      const mainIdx = resolved.findIndex((u) => u === mainUrl)
-      console.debug('[ProductHeader] selection diagnostic', { productId: product?.productid, selectedImageIndex, mainUrl, mainIdx })
+      const mainUrl = resolveImageSrc(mainImageRecord || imagen || orderedImages[0])
+      const mainIdx = resolved.findIndex(u => u === mainUrl)
       if (mainIdx >= 0 && selectedImageIndex !== mainIdx) {
-        // ask parent to select the correct index
-        console.debug('[ProductHeader] requesting parent select index', mainIdx)
         onImageSelect(mainIdx)
       }
-    } catch (e) {
-      // silent
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [product && product.productid, images && images.length, imagenes && imagenes.length])
+    } catch (_) {}
+  }, [orderedImages, selectedImageIndex, onImageSelect, resolveImageSrc, mainImageRecord, imagen])
 
   return (
     // MUIV2 GRID - CONTENEDOR PRINCIPAL (MuiGrid-container)
@@ -577,12 +556,7 @@ const ProductHeader = React.memo(({
           <ProductImageGallery
             images={orderedImages.map(resolveImageSrc)}
             imagesRaw={orderedImages}
-            mainImage={
-              mainImageThumbnail ||
-              resolveImageSrc(
-                imagen || (firstOrdered && (firstOrdered.image_url || firstOrdered)) || imagenes[0]
-              )
-            }
+            mainImage={mainImageThumbnail || resolveImageSrc(imagen || (mainImageRecord && (mainImageRecord.image_url || mainImageRecord)) || imagenes[0])}
             selectedIndex={selectedImageIndex}
             onImageSelect={onImageSelect}
             productName={nombre}

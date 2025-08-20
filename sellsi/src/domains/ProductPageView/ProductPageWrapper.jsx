@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { 
   Box, 
@@ -49,6 +49,7 @@ const ProductPageWrapper = ({ isLoggedIn }) => {
 
   // ...existing code...
 
+  // Fetch original product data (pure fetch depends ONLY on id/productSlug & extract fn)
   useEffect(() => {
     const fetchProduct = async () => {
       // Soportar ambos casos: id directo o productSlug (formato: uuid-nombre)
@@ -83,7 +84,6 @@ const ProductPageWrapper = ({ isLoggedIn }) => {
           .single();
 
         if (error) {
-          console.error('Error fetching product:', error);
           setError('Producto no encontrado');
         } else {
           // Transformar los datos al formato esperado por ProductPageView
@@ -91,8 +91,6 @@ const ProductPageWrapper = ({ isLoggedIn }) => {
           const orderedImages = (data.product_images || []).slice().sort((a, b) => ( (a?.image_order || 0) - (b?.image_order || 0) ));
           const mainImageRecord = orderedImages.find(img => img && (img.image_order === 0)) || orderedImages[0] || null;
           try {
-            console.debug('[ProductPageWrapper] fetched orderedImages for product', data.productid, orderedImages.map((r, i) => ({ i, image_order: r.image_order, url: r.image_url ? r.image_url.split('/').pop() : null })))
-            console.debug('[ProductPageWrapper] mainImageRecord', { image_order: mainImageRecord?.image_order, url: mainImageRecord?.image_url })
           } catch (e) {}
 
           const product = {
@@ -136,7 +134,6 @@ const ProductPageWrapper = ({ isLoggedIn }) => {
           setProduct(product);
         }
       } catch (err) {
-        console.error('Error:', err);
         setError('Error al cargar el producto');
       } finally {
         setLoading(false);
@@ -144,7 +141,18 @@ const ProductPageWrapper = ({ isLoggedIn }) => {
     };
 
     fetchProduct();
-  }, [id, productSlug]);
+  }, [id, productSlug, extractProductIdFromSlug, convertDbRegionsToForm]);
+
+  // Derive contextual flags separately so changes in navigation state don't trigger refetch.
+  const productWithContext = useMemo(() => {
+    if (!product) return product;
+    return {
+      ...product,
+      fromMyProducts,
+      isFromSupplierMarketplace,
+      isSupplier,
+    };
+  }, [product, fromMyProducts, isFromSupplierMarketplace, isSupplier]);
 
   const handleClose = () => {
     if (fromMyProducts) {
@@ -182,7 +190,6 @@ const ProductPageWrapper = ({ isLoggedIn }) => {
     } else {
       const quantity = parseInt(productToAdd.quantity);
       if (isNaN(quantity) || quantity <= 0 || quantity > 15000) {
-        console.error('[Cart] Cantidad inválida detectada:', productToAdd.quantity);
         return;
       }
       productToAdd.quantity = Math.max(1, Math.min(quantity, 15000));
@@ -191,7 +198,6 @@ const ProductPageWrapper = ({ isLoggedIn }) => {
     if (addToCart && productToAdd) {
       addToCart(productToAdd, productToAdd.quantity);
     } else {
-      console.error('[Cart] addToCart function or productToAdd missing', { addToCart, productToAdd });
     }
   };
 
@@ -237,7 +243,7 @@ const ProductPageWrapper = ({ isLoggedIn }) => {
         ) : (
           // Product view - Sin duplicar header ni breadcrumbs
           <ProductPageView
-            product={product}
+            product={productWithContext}
             onClose={handleClose}
             onAddToCart={handleAddToCart}
             isPageView={true}
