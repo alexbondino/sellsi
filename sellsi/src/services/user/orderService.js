@@ -72,7 +72,7 @@ class OrderService {
       const limit = Number(filters.limit) || 100;
       const { data: recent, error: recErr } = await supabase
         .from('orders')
-        .select('id, items, status, payment_status, estimated_delivery_date, created_at, updated_at, shipping, total, subtotal, shipping_address')
+        .select('id, items, status, payment_status, estimated_delivery_date, created_at, updated_at, shipping, total, subtotal, shipping_address, supplier_parts_meta')
         .eq('payment_status', 'paid')
         .contains('supplier_ids', [supplierId]) // nuevo filtro server-side (B1)
         .order('created_at', { ascending: false })
