@@ -99,7 +99,12 @@ export async function UpdateOrderStatus(orderId, newStatus, additionalData = {})
   }
   const { data: cartData, error: cartError } = await supabase
     .from('carts')
-    .update(cartUpdateData)
+    // carts (legacy) no soporta tax_document_path; remover si existe para evitar 400
+    .update(() => {
+      const clone = { ...cartUpdateData };
+      if ('tax_document_path' in clone) delete clone.tax_document_path;
+      return clone;
+    })
     .eq('cart_id', orderId)
     .select('*')
     .single();

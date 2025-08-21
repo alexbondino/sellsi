@@ -84,7 +84,7 @@ serve(req => withMetrics('create-payment-khipu', req, async () => {
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
     const PRICE_TOLERANCE_CLP = 5; // diferencia permitida entre monto front y monto sellado
     let sealedOrder: any = null;
-    try {
+  try {
       const { data: sealed, error: sealErr } = await supabaseAdmin
         .rpc('finalize_order_pricing', { p_order_id: order_id });
       if (sealErr) {
@@ -205,8 +205,20 @@ serve(req => withMetrics('create-payment-khipu', req, async () => {
     // ================================================================
     try {
   // (supabaseAdmin ya inicializado arriba)
+      // Fecha de expiración robusta: si Khipu entrega un formato inválido, fallback a +20m
       const expiresRaw: string | null = (normalized as any).expires_date || null;
-      const expiresAt = expiresRaw ? new Date(expiresRaw).toISOString() : new Date(Date.now() + 20 * 60 * 1000).toISOString();
+      let expiresAt: string;
+      if (expiresRaw) {
+        const parsed = new Date(expiresRaw);
+        if (isNaN(parsed.getTime())) {
+          console.warn('[create-payment-khipu] expires_date inválido recibido (%s); se aplica fallback +20m', expiresRaw);
+          expiresAt = new Date(Date.now() + 20 * 60 * 1000).toISOString();
+        } else {
+          expiresAt = parsed.toISOString();
+        }
+      } else {
+        expiresAt = new Date(Date.now() + 20 * 60 * 1000).toISOString();
+      }
 
       // 1. Construir payload normalizado de items (si se envían)
       let itemsPayload: any[] | null = null;
@@ -308,21 +320,25 @@ serve(req => withMetrics('create-payment-khipu', req, async () => {
         if (preservePaid) {
           console.log('[create-payment-khipu] Orden ya estaba pagada; se preserva payment_status=paid y no se degrada a pending');
         }
-        const { error: updErr } = await supabaseAdmin
+        const { data: updData, error: updErr } = await supabaseAdmin
           .from('orders')
           .update(updateData)
-          .eq('id', order_id);
+          .eq('id', order_id)
+          .select('id, khipu_expires_at, payment_status')
+          .maybeSingle();
         if (updErr) {
           console.error('[create-payment-khipu] Error actualizando orden existente:', updErr);
+          return new Response(JSON.stringify({ error: 'ORDER_UPDATE_FAILED' }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 });
         } else {
           (normalized as any).persisted = true;
-          (normalized as any).khipu_expires_at = expiresAt;
-          (normalized as any).payment_status = updateData.payment_status;
+          (normalized as any).khipu_expires_at = updData?.khipu_expires_at || expiresAt;
+          (normalized as any).payment_status = updData?.payment_status || updateData.payment_status;
         }
       }
       (normalized as any).order_id = order_id;
     } catch (persistErr) {
       console.error('[create-payment-khipu] Persist error (update path):', persistErr);
+      return new Response(JSON.stringify({ error: 'PERSIST_EXCEPTION' }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 });
     }
 
     if (!normalized.payment_url) {
