@@ -22,7 +22,8 @@ export class OrdersRepository {
           estimated_delivery_date,
           payment_method,
           created_at,
-          updated_at
+          updated_at,
+          supplier_parts_meta
         `)
       .eq('user_id', buyerId)
       .order('created_at', { ascending: false });

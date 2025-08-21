@@ -118,6 +118,7 @@ export async function GetBuyerPaymentOrders(buyerId, { limit, offset } = {}) {
       created_at: row.created_at,
       updated_at: row.updated_at,
       estimated_delivery_date: row.estimated_delivery_date || null,
+      supplier_parts_meta: row.supplier_parts_meta || null, // ← AGREGAR ESTE CAMPO
       buyer: { user_id: row.user_id },
       delivery_address,
       items: normalizedItems,
