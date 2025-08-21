@@ -4,6 +4,19 @@
 
 import { parseOrderItems } from './parsing';
 
+// Helper to convert backend status to display format
+function getStatusDisplayName(status) {
+  const statusMap = {
+    'pending': 'Pendiente',
+    'accepted': 'Aceptado', 
+    'rejected': 'Rechazado',
+    'in_transit': 'En Transito',
+    'delivered': 'Entregado',
+    'cancelled': 'Cancelado'
+  };
+  return statusMap[status] || status;
+}
+
 // Deterministic short code generator (base36 over first 10 hex chars)
 // Safe (~40 bits) and stable for display; not meant as secure identifier.
 export function shortCode(uuid, prefix = '') {
@@ -46,7 +59,7 @@ export function splitOrderBySupplier(order) {
     if (supplierMeta && typeof supplierMeta === 'object' && Object.keys(supplierMeta).length === 1) {
       const onlyKey = Object.keys(supplierMeta)[0];
       const node = supplierMeta[onlyKey] || {};
-      if (node.status) singlePart.status = node.status; // status parcial override
+      if (node.status) singlePart.status = getStatusDisplayName(node.status); // normalize status
       if (node.estimated_delivery_date) singlePart.estimated_delivery_date = node.estimated_delivery_date;
     }
     return [singlePart];
@@ -101,7 +114,7 @@ export function splitOrderBySupplier(order) {
     if (supplierMeta && typeof supplierMeta === 'object') {
       const node = supplierId ? supplierMeta[supplierId] : null;
       if (node) {
-        if (node.status) part.status = node.status;
+        if (node.status) part.status = getStatusDisplayName(node.status); // normalize status
         if (node.estimated_delivery_date) part.estimated_delivery_date = node.estimated_delivery_date;
       }
     }
@@ -143,7 +156,7 @@ export function splitOrderBySupplier(order) {
     // Overlay estado/ETA desde meta si existe
     if (supplierMeta && supplierMeta[entry.sid]) {
       const node = supplierMeta[entry.sid];
-      if (node.status) part.status = node.status;
+      if (node.status) part.status = getStatusDisplayName(node.status); // normalize status
       if (node.estimated_delivery_date) part.estimated_delivery_date = node.estimated_delivery_date;
     }
     parts.push(part);
