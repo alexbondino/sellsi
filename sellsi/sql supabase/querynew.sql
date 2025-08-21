@@ -285,6 +285,7 @@ CREATE TABLE public.orders (
   inventory_processed_at timestamp with time zone,
   supplier_ids ARRAY,
   tax_document_path text,
+  supplier_parts_meta jsonb,
   CONSTRAINT orders_pkey PRIMARY KEY (id),
   CONSTRAINT orders_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(user_id)
 );

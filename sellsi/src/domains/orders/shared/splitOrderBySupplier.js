@@ -61,17 +61,32 @@ export function splitOrderBySupplier(order) {
   }
   if (groups.size <= 1) {
     const supplierId = groups.size === 1 ? Array.from(groups.keys())[0] : null;
+    // Recalcular subtotal a partir de ítems (ya lo hacemos) y robustecer campos de totales
+    const subtotalCalc = items.reduce((s,i)=> s + Number(i.price_at_addition || i.price || 0) * (i.quantity || 0),0);
+    const shippingVal = Number(order.shipping || order.shipping_amount || 0);
+    // Usar total_amount provisto (payment order adaptado) si existe, si no fallback a subtotal calculado
+    const totalAmountNormalized = (typeof order.total_amount === 'number' && Number.isFinite(order.total_amount))
+      ? order.total_amount
+      : (typeof order.total === 'number' && Number.isFinite(order.total))
+        ? order.total
+        : (typeof order.subtotal === 'number' && Number.isFinite(order.subtotal))
+          ? order.subtotal
+          : subtotalCalc;
+    // final_amount normalmente YA incluye shipping cuando viene de payment order; sólo si viene ausente (null/undefined) lo reconstruimos
+    const finalAmountNormalized = (order.final_amount ?? order.finalAmount) != null
+      ? (order.final_amount ?? order.finalAmount)
+      : (totalAmountNormalized + shippingVal);
     const part = {
       synthetic_id: order.id + (supplierId ? '-' + supplierId : ''),
       order_id: order.id,
       parent_order_id: order.id,
       supplier_id: supplierId,
       items,
-      subtotal: items.reduce((s,i)=> s + Number(i.price_at_addition || i.price || 0) * (i.quantity || 0),0),
-      shipping_amount: Number(order.shipping || order.shipping_amount || 0),
-      shipping: Number(order.shipping || order.shipping_amount || 0),
-      total_amount: Number(order.subtotal || order.total || 0),
-      final_amount: order.final_amount || Number(order.total || 0),
+      subtotal: subtotalCalc,
+      shipping_amount: shippingVal,
+      shipping: shippingVal,
+      total_amount: totalAmountNormalized,
+      final_amount: finalAmountNormalized,
       status: order.status,
       payment_status: order.payment_status,
       is_supplier_part: false,
