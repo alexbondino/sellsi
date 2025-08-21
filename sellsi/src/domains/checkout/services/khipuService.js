@@ -25,10 +25,7 @@ class KhipuService {
         subject: `Pago de Orden #${orderId}`,
         buyer_id: userId || null,
         cart_id: orderId || null,
-        order_id: orderId, // NUEVO: para que la función actualice la orden existente
-        // ✔ Incluir direcciones para que la Edge Function pueda preservarlas / insertarlas en fallback
-        shipping_address: shippingAddress || null,
-        billing_address: billingAddress || null,
+        order_id: orderId,
         cart_items: normalizedItems.map(it => {
               const priceBase = it.__effective_price || it.price || it.price_at_addition || it.unitPrice || 0;
               return {
@@ -45,6 +42,14 @@ class KhipuService {
               };
             }),
       };
+
+      // Añadir direcciones solo si existen (evita claves null que provocarían intentos de downgrade)
+      if (shippingAddress && typeof shippingAddress === 'object') {
+        paymentPayload.shipping_address = shippingAddress;
+      }
+      if (billingAddress && typeof billingAddress === 'object') {
+        paymentPayload.billing_address = billingAddress;
+      }
 
       // <-- CAMBIO 2: Invocamos la función pasándole el 'body' con los datos dinámicos.
       const { data: khipuResponse, error } = await supabase.functions.invoke('create-payment-khipu', {

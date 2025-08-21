@@ -37,12 +37,12 @@ class CheckoutService {
         }
       }
 
-      // ✅ SERIALIZAR direcciones correctamente
-      const shippingAddressJson = orderData.shippingAddress 
-        ? JSON.stringify(orderData.shippingAddress) 
+      // ✅ Pasar objetos JSON directamente (Supabase cliente serializa a jsonb)
+      const shippingAddressObj = orderData.shippingAddress && typeof orderData.shippingAddress === 'object'
+        ? orderData.shippingAddress
         : null;
-      const billingAddressJson = orderData.billingAddress 
-        ? JSON.stringify(orderData.billingAddress) 
+      const billingAddressObj = orderData.billingAddress && typeof orderData.billingAddress === 'object'
+        ? orderData.billingAddress
         : null;
 
       const { data, error } = await supabase
@@ -58,8 +58,8 @@ class CheckoutService {
           status: 'pending',
           payment_method: orderData.paymentMethod,
           payment_status: 'pending',
-          shipping_address: shippingAddressJson,
-          billing_address: billingAddressJson,
+          shipping_address: shippingAddressObj,
+          billing_address: billingAddressObj,
         })
         .select()
         .single();

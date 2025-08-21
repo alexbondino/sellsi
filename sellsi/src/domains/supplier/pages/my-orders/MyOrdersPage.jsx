@@ -10,6 +10,7 @@ import {
   ThemeProvider, // Necesario para aplicar el tema
 } from '@mui/material';
 import { useOrdersStore } from '../../../../shared/stores/orders/ordersStore'; // Actualizado a nueva ubicación
+import { useSupplierPartActions } from '../../../supplier/hooks/useSupplierPartActions';
 import TableFilter from '../../../../shared/components/display/tables/TableFilter'; // Asegúrate que esta ruta sea correcta
 import Table from '../../../../shared/components/display/tables/Table'; // Asegúrate que esta ruta sea correcta
 import { Modal, MODAL_TYPES } from '../../../../shared/components/feedback'; // Componente Modal genérico y sus tipos
@@ -171,6 +172,8 @@ const MyOrdersPage = () => {
   };
 
   // Maneja el envío de datos desde los formularios del modal
+  const partActions = useSupplierPartActions(supplierId);
+
   const handleModalSubmit = async formData => {
     const { selectedOrder, type } = modalState;
 
@@ -182,17 +185,13 @@ const MyOrdersPage = () => {
 
       switch (type) {
         case 'accept': {
-          await updateOrderStatus(selectedOrder.order_id, 'accepted', {
-            message: formData.message || '',
-          });
+          // Actualización parcial por supplier (Opción A 2.0)
+          await partActions.accept(selectedOrder);
           messageToUser = '✅ El pedido fue aceptado con éxito.';
           break;
         }
         case 'reject': {
-          await updateOrderStatus(selectedOrder.order_id, 'rejected', {
-            rejectionReason: formData.rejectionReason || '',
-            message: formData.message || '',
-          });
+          await partActions.reject(selectedOrder, formData.rejectionReason || '');
           messageToUser = '❌ El pedido fue rechazado.';
           break;
         }
@@ -231,18 +230,12 @@ const MyOrdersPage = () => {
             }
           }
 
-          await updateOrderStatus(selectedOrder.order_id, 'in_transit', {
-            estimated_delivery_date: deliveryDate,
-            message: formData.message || '',
-            tax_document_path: taxDocPath || undefined,
-          });
+          await partActions.dispatch(selectedOrder, deliveryDate);
           messageToUser = '🚚 El pedido fue despachado y está en tránsito.' + (taxDocPath ? ' (Documento subido)' : '');
           break;
         }
         case 'deliver': {
-          await updateOrderStatus(selectedOrder.order_id, 'delivered', {
-            message: formData.message || '',
-          });
+          await partActions.deliver(selectedOrder);
           messageToUser = '📦 La entrega fue confirmada con éxito.';
           break;
         }

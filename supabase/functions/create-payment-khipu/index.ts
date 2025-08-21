@@ -258,7 +258,7 @@ serve(req => withMetrics('create-payment-khipu', req, async () => {
       // 2. Verificar existencia de la orden
       const { data: existingOrder, error: fetchErr } = await supabaseAdmin
         .from('orders')
-        .select('id, items, payment_status')
+        .select('id, items, payment_status, shipping_address, billing_address')
         .eq('id', order_id)
         .maybeSingle();
 
@@ -277,9 +277,9 @@ serve(req => withMetrics('create-payment-khipu', req, async () => {
           status: 'pending',
           payment_method: 'khipu',
           payment_status: 'pending',
-          // ✔ Insertar direcciones si vienen en el payload (evita pérdida en fallback)
-          shipping_address: shipping_address ? JSON.stringify(shipping_address) : null,
-          billing_address: billing_address ? JSON.stringify(billing_address) : null,
+          // Evitar doble stringificación: persistir objetos JSON directamente
+          shipping_address: (shipping_address && typeof shipping_address === 'object') ? shipping_address : null,
+          billing_address: (billing_address && typeof billing_address === 'object') ? billing_address : null,
           khipu_payment_id: (normalized as any).payment_id || null,
           khipu_payment_url: (normalized as any).payment_url || null,
           khipu_expires_at: expiresAt,
@@ -311,11 +311,21 @@ serve(req => withMetrics('create-payment-khipu', req, async () => {
           updated_at: new Date().toISOString(),
         };
         // ✔ Solo actualizar direcciones si se enviaron explícitamente (preserva existentes)
+        // Merge-preserve: solo actualizar si viene objeto; NO degradar non-null a null sin intención explícita
         if (typeof shipping_address !== 'undefined') {
-          updateData.shipping_address = shipping_address ? JSON.stringify(shipping_address) : null;
+          if (shipping_address && typeof shipping_address === 'object') {
+            updateData.shipping_address = shipping_address;
+          } else if (shipping_address === null) {
+            // preservar existente; si se requiere limpiarla en el futuro agregar flag force_clear_shipping_address
+            updateData.shipping_address = existingOrder?.shipping_address ?? null; // no change
+          }
         }
         if (typeof billing_address !== 'undefined') {
-          updateData.billing_address = billing_address ? JSON.stringify(billing_address) : null;
+          if (billing_address && typeof billing_address === 'object') {
+            updateData.billing_address = billing_address;
+          } else if (billing_address === null) {
+            updateData.billing_address = existingOrder?.billing_address ?? null;
+          }
         }
         if (preservePaid) {
           console.log('[create-payment-khipu] Orden ya estaba pagada; se preserva payment_status=paid y no se degrada a pending');

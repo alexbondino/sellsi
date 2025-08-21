@@ -4,11 +4,23 @@
 
 import { parseOrderItems } from './parsing';
 
+// Deterministic short code generator (base36 over first 10 hex chars)
+// Safe (~40 bits) and stable for display; not meant as secure identifier.
+export function shortCode(uuid, prefix = '') {
+  if (!uuid) return prefix + 'NA';
+  const raw = String(uuid).replace(/-/g, '').slice(0, 10);
+  let num = 0;
+  try { num = parseInt(raw, 16); } catch { num = 0; }
+  return prefix + num.toString(36).toUpperCase();
+}
+
 export function splitOrderBySupplier(order) {
   if (!order) return [];
+  const supplierMeta = order.supplier_parts_meta || order.supplierPartsMeta || null; // JSONB column overlay (Option A 2.0)
+  const parentDisplayCode = shortCode(order.id, 'K');
   const items = parseOrderItems(order.items);
   if (!Array.isArray(items) || items.length === 0) {
-    return [{
+    const singlePart = {
       synthetic_id: order.id,
       order_id: order.id,
       parent_order_id: order.id,
@@ -27,7 +39,17 @@ export function splitOrderBySupplier(order) {
   updated_at: order.updated_at,
   // Propagar dirección de envío cruda para que capas superiores la normalicen
   shipping_address: order.shipping_address
-    }];
+    };
+    singlePart.display_code = parentDisplayCode;
+    singlePart.part_display_code = parentDisplayCode; // identical en mono-supplier
+    // Overlay de meta si existe exactamente una clave
+    if (supplierMeta && typeof supplierMeta === 'object' && Object.keys(supplierMeta).length === 1) {
+      const onlyKey = Object.keys(supplierMeta)[0];
+      const node = supplierMeta[onlyKey] || {};
+      if (node.status) singlePart.status = node.status; // status parcial override
+      if (node.estimated_delivery_date) singlePart.estimated_delivery_date = node.estimated_delivery_date;
+    }
+    return [singlePart];
   }
   // Build groups keyed by supplier id (multiple potential field names for robustness)
   const groups = new Map();
@@ -38,11 +60,12 @@ export function splitOrderBySupplier(order) {
     groups.get(sid).push(it);
   }
   if (groups.size <= 1) {
-    return [{
-      synthetic_id: order.id,
+    const supplierId = groups.size === 1 ? Array.from(groups.keys())[0] : null;
+    const part = {
+      synthetic_id: order.id + (supplierId ? '-' + supplierId : ''),
       order_id: order.id,
       parent_order_id: order.id,
-      supplier_id: groups.size === 1 ? Array.from(groups.keys())[0] : null,
+      supplier_id: supplierId,
       items,
       subtotal: items.reduce((s,i)=> s + Number(i.price_at_addition || i.price || 0) * (i.quantity || 0),0),
       shipping_amount: Number(order.shipping || order.shipping_amount || 0),
@@ -56,7 +79,18 @@ export function splitOrderBySupplier(order) {
       created_at: order.created_at,
   updated_at: order.updated_at,
   shipping_address: order.shipping_address
-    }];
+    };
+    part.display_code = parentDisplayCode;
+    part.part_display_code = shortCode(order.id + (supplierId || ''), 'C');
+    // Overlay meta single-supplier scenario
+    if (supplierMeta && typeof supplierMeta === 'object') {
+      const node = supplierId ? supplierMeta[supplierId] : null;
+      if (node) {
+        if (node.status) part.status = node.status;
+        if (node.estimated_delivery_date) part.estimated_delivery_date = node.estimated_delivery_date;
+      }
+    }
+    return [part];
   }
   // Multi-supplier: allocate shipping prorata on subtotal (last part absorbs rounding diff)
   const shippingTotal = Number(order.shipping || order.shipping_amount || 0);
@@ -70,7 +104,7 @@ export function splitOrderBySupplier(order) {
       if (idx === entries.length - 1) shipAlloc = Math.max(0, shippingTotal - accShip);
       else { shipAlloc = Math.round(shippingTotal * (entry.subtotal / totalSubtotal)); accShip += shipAlloc; }
     }
-    parts.push({
+    const part = {
       synthetic_id: `${order.id}-${entry.sid}`,
       order_id: order.id,
       parent_order_id: order.id,
@@ -88,7 +122,16 @@ export function splitOrderBySupplier(order) {
       created_at: order.created_at,
   updated_at: order.updated_at,
   shipping_address: order.shipping_address
-    });
+    };
+    part.display_code = parentDisplayCode; // Payment Order code repeated for grouping
+    part.part_display_code = shortCode(order.id + entry.sid, 'C');
+    // Overlay estado/ETA desde meta si existe
+    if (supplierMeta && supplierMeta[entry.sid]) {
+      const node = supplierMeta[entry.sid];
+      if (node.status) part.status = node.status;
+      if (node.estimated_delivery_date) part.estimated_delivery_date = node.estimated_delivery_date;
+    }
+    parts.push(part);
   });
   return parts;
 }

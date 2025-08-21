@@ -204,10 +204,10 @@ serve((req: Request) => withMetrics('process-khipu-webhook', req, async () => {
     // ========================================================================
     const paidAt = khipuPayload.paid_at || khipuPayload.paidAt || new Date().toISOString();
 
-    // Intento obtener estado actual incluyendo inventory_processed_at para decidir idempotencia
+    // Intento obtener estado actual incluyendo inventory_processed_at y supplier_parts_meta para decidir idempotencia
     const { data: preOrder, error: preErr } = await supabase
       .from('orders')
-      .select('id, payment_status, inventory_processed_at')
+      .select('id, payment_status, inventory_processed_at, supplier_parts_meta, items')
       .eq('id', orderId)
       .maybeSingle();
     if (preErr) {
@@ -218,6 +218,42 @@ serve((req: Request) => withMetrics('process-khipu-webhook', req, async () => {
     if (preOrder?.inventory_processed_at) {
       console.log('ℹ️ Webhook idempotente (inventory ya procesado)');
       alreadyProcessedInventory = true;
+    }
+
+    // --------------------------------------------------------------------
+    // Opción A 2.0: Inicializar supplier_parts_meta si NULL
+    // Debe ocurrir ANTES de early-return por inventory_processed_at
+    // --------------------------------------------------------------------
+    try {
+      if (preOrder) {
+        const meta = preOrder.supplier_parts_meta; // puede ser null
+        if (meta == null) {
+          // Parse items para derivar supplier_ids únicos
+          let rawItems: any[] = [];
+          try {
+            const val = preOrder.items;
+            if (Array.isArray(val)) rawItems = val; else if (typeof val === 'string') rawItems = JSON.parse(val); else if (val && typeof val === 'object') rawItems = Array.isArray(val.items) ? val.items : [val];
+          } catch { rawItems = []; }
+          const supplierIds = Array.from(new Set(rawItems.map(it => it.supplier_id || it.supplierId || it.product?.supplier_id || it.product?.supplierId).filter(Boolean)));
+          if (supplierIds.length) {
+            const now = new Date().toISOString();
+            const metaObj: Record<string, any> = {};
+            for (const sid of supplierIds) {
+              metaObj[sid] = { status: 'pending', history: [{ at: now, from: null, to: 'pending' }] };
+            }
+            const { error: metaErr } = await supabase
+              .from('orders')
+              .update({ supplier_parts_meta: metaObj, updated_at: new Date().toISOString() })
+              .eq('id', orderId)
+              .is('supplier_parts_meta', null);
+            if (metaErr) console.error('⚠️ No se pudo inicializar supplier_parts_meta', metaErr); else console.log('✅ supplier_parts_meta inicializado (suppliers=', supplierIds.length, ')');
+          } else {
+            console.log('ℹ️ No se encontraron supplier_ids para inicializar meta');
+          }
+        }
+      }
+    } catch (metaInitEx) {
+      console.error('⚠️ Error inicializando supplier_parts_meta', metaInitEx);
     }
 
     if (preOrder && preOrder.payment_status !== 'paid') {
@@ -232,7 +268,7 @@ serve((req: Request) => withMetrics('process-khipu-webhook', req, async () => {
         .eq('id', orderId);
       if (payUpdErr) console.error('❌ Error marcando pago:', payUpdErr); else console.log('✅ Orden marcada pagada');
     }
-    // Si inventario ya procesado, salimos antes de mutar inventario / ventas / materializaciones
+    // Si inventario ya procesado, salimos (meta ya habría sido inicializada arriba si faltaba)
     if (alreadyProcessedInventory) {
       return new Response(JSON.stringify({ success: true, orderId, idempotent: true }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 });
     }

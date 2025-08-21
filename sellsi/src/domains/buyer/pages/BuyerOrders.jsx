@@ -441,8 +441,10 @@ const BuyerOrders = () => {
                   {/* Subtarjetas de productos */}
                   <Stack spacing={2}>
                     {order.items.map((item, index) => {
-                      // Para payment orders aún no convertidos, mostramos solo estado de pago
-                      const productStatus = order.is_payment_order ? 'pending' : getProductStatus(item, order.created_at, order.status);
+                      // Para partes de proveedor (supplier part) usamos su propio status parcial
+                      const productStatus = order.is_supplier_part
+                        ? order.status
+                        : (order.is_payment_order ? 'pending' : getProductStatus(item, order.created_at, order.status));
                       const statusChips = getStatusChips(productStatus);
                       
                       // Crear key única y robusta combinando múltiples identificadores

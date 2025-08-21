@@ -167,6 +167,33 @@ class OrderService {
   }
 
   /**
+   * Actualiza estado parcial por supplier (Opción A 2.0) contra edge function.
+   * @param {string} orderId
+   * @param {string} supplierId
+   * @param {string} newStatus
+   * @param {object} opts { estimated_delivery_date?, rejected_reason? }
+   */
+  async updateSupplierPartStatus(orderId, supplierId, newStatus, opts = {}) {
+    if (!orderId || !supplierId || !newStatus) throw new Error('orderId, supplierId y newStatus requeridos');
+  const baseFnUrl = import.meta.env?.VITE_SUPABASE_FUNCTIONS_URL || import.meta.env?.VITE_SUPABASE_EDGE_URL || '';
+  if (!baseFnUrl) throw new Error('Faltan vars: VITE_SUPABASE_FUNCTIONS_URL o VITE_SUPABASE_EDGE_URL');
+  const url = `${baseFnUrl.replace(/\/$/, '')}/update-supplier-part-status`;
+    const token = (await supabase.auth.getSession()).data?.session?.access_token;
+    if (!token) throw new Error('No autenticado');
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ order_id: orderId, supplier_id: supplierId, new_status: newStatus, ...opts })
+    });
+    const json = await res.json().catch(()=>({}));
+    if (!res.ok || json.error) throw new Error(json.error || 'Error actualizando parte');
+    return json;
+  }
+
+  /**
    * Normaliza el estado del pedido para la base de datos
    * @param {string} status - Estado en español o formato UI
    * @returns {string} Estado normalizado para BD
