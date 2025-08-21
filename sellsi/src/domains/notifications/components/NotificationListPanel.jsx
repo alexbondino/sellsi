@@ -24,7 +24,7 @@ export const NotificationListPanel = ({
           <Typography variant="body2" sx={{ p:2, color: 'text.secondary' }}>Sin notificaciones</Typography>
         )}
         {slice.map(n => (
-          <ListItemButton key={n.id} onClick={()=>onItemClick(n)} sx={(theme) => ({ bgcolor: n.is_read ? 'transparent' : alpha(theme.palette.primary.light, 0.6), alignItems: 'flex-start' })}>
+          <ListItemButton key={n.id} onClick={()=>onItemClick(n)} sx={(theme) => ({ bgcolor: n.is_read ? 'transparent' : alpha(theme.palette.primary.light, 0.4), alignItems: 'flex-start' })}>
             <ListItemText
               primary={<Typography variant="subtitle2" fontWeight={n.is_read?500:700}>{n.title}</Typography>}
               secondary={<>
