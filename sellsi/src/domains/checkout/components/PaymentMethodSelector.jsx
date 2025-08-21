@@ -205,6 +205,9 @@ const PaymentMethodSelector = () => {
           amount: orderTotal, // Usar el mismo valor mostrado
           currency: orderData.currency || 'CLP',
           items: itemsWithDocType,
+          // ✔ Propagar direcciones para que no se pierdan en el pipeline de pago
+          shippingAddress: orderData.shippingAddress || null,
+          billingAddress: orderData.billingAddress || null,
         });
 
         if (paymentResult.success && paymentResult.paymentUrl) {

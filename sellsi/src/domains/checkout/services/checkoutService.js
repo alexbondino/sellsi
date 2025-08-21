@@ -133,6 +133,9 @@ class CheckoutService {
         total: paymentData.amount,
         currency: paymentData.currency || 'CLP',
         items: paymentData.items,
+  // ✔ Forward de direcciones
+  shippingAddress: paymentData.shippingAddress || null,
+  billingAddress: paymentData.billingAddress || null,
       });
 
       if (!khipuResponse.success) {

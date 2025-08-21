@@ -6,7 +6,7 @@ import { calculatePriceForQuantity } from '../../../utils/priceCalculation';
 
 class KhipuService {
   async createPaymentOrder(orderDetails) {
-  const { total, currency, orderId, userId, items } = orderDetails;
+  const { total, currency, orderId, userId, items, shippingAddress, billingAddress } = orderDetails;
 
     try {
       // <-- CAMBIO 1: Volvemos a preparar el payload con los datos reales de la orden.
@@ -26,6 +26,9 @@ class KhipuService {
         buyer_id: userId || null,
         cart_id: orderId || null,
         order_id: orderId, // NUEVO: para que la función actualice la orden existente
+        // ✔ Incluir direcciones para que la Edge Function pueda preservarlas / insertarlas en fallback
+        shipping_address: shippingAddress || null,
+        billing_address: billingAddress || null,
         cart_items: normalizedItems.map(it => {
               const priceBase = it.__effective_price || it.price || it.price_at_addition || it.unitPrice || 0;
               return {
