@@ -237,15 +237,13 @@ serve((req: Request) => withMetrics('process-khipu-webhook', req, async () => {
       return new Response(JSON.stringify({ success: true, orderId, idempotent: true }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 });
     }
 
-    // ========================================================================
-    // MATERIALIZACIÓN DUAL / SPLIT (nuevo)
-    // ========================================================================
-    try {
-      const SPLIT_MODE = (Deno.env.get('SPLIT_MODE') || 'legacy').toLowerCase(); // legacy | dual | split
-      const SUPPLIER_PARTS_ENABLED = (Deno.env.get('SUPPLIER_PARTS_ENABLED') || 'false').toLowerCase() === 'true';
+  // ========================================================================
+  // SIMPLIFICACIÓN: Leer orden y procesar inventario / ventas sin materializar supplier_orders / carts
+  // ========================================================================
+  try {
       const { data: orderRows, error: fetchOrderErr } = await supabase
         .from('orders')
-        .select('id, user_id, items, total, created_at, shipping, split_status')
+  .select('id, user_id, items, total, created_at, shipping, shipping_address, split_status, payment_status, estimated_delivery_date, status')
         .eq('id', orderId)
         .limit(1);
       if (fetchOrderErr) {
@@ -275,232 +273,75 @@ serve((req: Request) => withMetrics('process-khipu-webhook', req, async () => {
           return { product_id, supplier_id, quantity, price_at_addition, price_tiers: it.price_tiers || it.priceTiers || null, document_type };
         }).filter(Boolean);
 
-        // ====================================================================
-        // SUPPLIER PARTS (supplier_orders) CREATION (Fase 1.5)
-        // ====================================================================
-        if (SUPPLIER_PARTS_ENABLED) {
+        // === B4: Persistir SLA (estimated_delivery_date) si falta ===
+        if (!ord.estimated_delivery_date && normItems.length) {
           try {
-            // Group items by supplier
-            const groupMap = new Map<string, typeof normItems>();
+            const productIds = Array.from(new Set(normItems.map(i => i.product_id)));
+            const { data: prodRows } = await supabase
+              .from('products')
+              .select('productid, product_delivery_regions')
+              .in('productid', productIds);
+            const productMap = new Map((prodRows || []).map(p => [p.productid, p]));
+            const norm = (v:string) => (v || '').toString().trim().toLowerCase();
+            const buyerRegion = norm(ord.shipping_address?.shipping_region || ord.shipping_address?.region || '');
+            let maxDays = 0;
             for (const it of normItems) {
-              if (!it.supplier_id) continue;
-              if (!groupMap.has(it.supplier_id)) groupMap.set(it.supplier_id, []);
-              groupMap.get(it.supplier_id)!.push(it);
-            }
-            if (groupMap.size > 0) {
-              // Pre-fetch existing supplier_orders for idempotency
-              const { data: existingParts, error: partsErr } = await supabase
-                .from('supplier_orders')
-                .select('id, supplier_id')
-                .eq('parent_order_id', orderId);
-              if (partsErr) console.error('⚠️ Error leyendo supplier_orders existentes', partsErr);
-              const existingSet = new Set((existingParts||[]).map(p => p.supplier_id));
-
-              // Compute shipping allocation similar a lógica split carts
-              const subtotalsArray: { sid: string; subtotal: number; items: any[] }[] = [];
-              for (const [sid, items] of groupMap.entries()) {
-                const subtotal = items.reduce((s,i)=> s + (i.price_at_addition * i.quantity), 0);
-                subtotalsArray.push({ sid, subtotal, items });
-              }
-              const totalSubtotal = subtotalsArray.reduce((s,x)=>s+x.subtotal,0) || 1;
-              const totalShipping = Number(ord.shipping || 0);
-              let accShip = 0;
-              subtotalsArray.forEach((entry, idx) => {
-                if (totalShipping <= 0) entry.shippingAlloc = 0;
-                else if (idx === subtotalsArray.length -1) entry.shippingAlloc = Math.max(0, totalShipping - accShip);
-                else { const alloc = Math.round(totalShipping * (entry.subtotal / totalSubtotal)); entry.shippingAlloc = alloc; accShip += alloc; }
-              });
-
-              // Insert missing supplier_orders
-              for (const entry of subtotalsArray) {
-                if (existingSet.has(entry.sid)) continue;
-                const { data: insertedPart, error: insErr } = await supabase
-                  .from('supplier_orders')
-                  .insert({
-                    parent_order_id: orderId,
-                    supplier_id: entry.sid,
-                    status: ord.status || 'pending',
-                    payment_status: data && data.length ? (data[0] as any).payment_status || 'paid' : 'paid',
-                    subtotal: entry.subtotal,
-                    shipping_amount: entry.shippingAlloc || 0,
-                    total: entry.subtotal + (entry.shippingAlloc || 0),
-                    estimated_delivery_date: ord.estimated_delivery_date || null
-                  })
-                  .select('id, supplier_id')
-                  .single();
-                if (insErr) { console.error('❌ Error insert supplier_order', insErr); continue; }
-                existingSet.add(entry.sid);
-                const partId = insertedPart?.id;
-                if (!partId) continue;
-                // Insert items
-                for (const it of entry.items) {
-                  try {
-                    await supabase.from('supplier_order_items').insert({
-                      supplier_order_id: partId,
-                      product_id: it.product_id,
-                      quantity: it.quantity,
-                      unit_price: it.price_at_addition,
-                      price_at_addition: it.price_at_addition,
-                      price_tiers: it.price_tiers || null,
-                      document_type: it.document_type
-                    });
-                  } catch(e) { console.error('item insert fail supplier_order_items', e); }
-                }
+              const prod = productMap.get(it.product_id);
+              const regions = (prod?.product_delivery_regions || []) as any[];
+              if (Array.isArray(regions)) {
+                const match = regions.find(r => norm(r.region) === buyerRegion);
+                if (match && Number(match.delivery_days) > maxDays) maxDays = Number(match.delivery_days);
               }
             }
-          } catch (supplierPartsErr) {
-            console.error('❌ Error creando supplier_orders:', supplierPartsErr);
+            if (maxDays === 0) maxDays = 7; // fallback
+            // Calcular sumando días hábiles (simple business day add: saltar sábado/domingo)
+            const addBusinessDays = (start: Date, days: number) => {
+              const d = new Date(start);
+              let added = 0;
+              while (added < days) {
+                d.setDate(d.getDate() + 1);
+                const dow = d.getDay();
+                if (dow !== 0 && dow !== 6) added++;
+              }
+              return d;
+            };
+            const createdAt = new Date(ord.created_at);
+            const deadline = addBusinessDays(createdAt, maxDays);
+            const isoDate = deadline.toISOString().slice(0,10);
+            const { error: slaErr } = await supabase
+              .from('orders')
+              .update({ estimated_delivery_date: isoDate, updated_at: new Date().toISOString() })
+              .eq('id', orderId)
+              .is('estimated_delivery_date', null);
+            if (slaErr) console.error('⚠️ No se pudo persistir SLA', slaErr); else console.log('✅ SLA persistido', isoDate);
+          } catch(slaEx) {
+            console.error('⚠️ Error calculando SLA', slaEx);
           }
         }
 
-        // ===== LEGACY MATERIALIZATION (si legacy o dual) (omitido si supplier parts habilitado) =====
-        if (!SUPPLIER_PARTS_ENABLED && (SPLIT_MODE === 'legacy' || SPLIT_MODE === 'dual')) {
-          try {
-            const totalShippingLegacy = Number(ord.shipping || 0);
-            const shippingCurrency = 'CLP';
-            const { data: activeCart } = await supabase
-              .from('carts')
-              .select('cart_id, status, shipping_total, shipping_currency')
-              .eq('user_id', buyerId)
-              .eq('status', 'active')
-              .maybeSingle();
-            let legacyCartId: string | null = null;
-            if (activeCart?.cart_id) {
-              const cartUpdate: any = { status: 'pending', updated_at: new Date().toISOString() };
-              if ((activeCart.shipping_total == null || activeCart.shipping_total === 0) && totalShippingLegacy > 0) {
-                cartUpdate.shipping_total = totalShippingLegacy;
-                cartUpdate.shipping_currency = shippingCurrency;
-              }
-              const { data: upd } = await supabase
-                .from('carts')
-                .update(cartUpdate)
-                .eq('cart_id', activeCart.cart_id)
-                .select('cart_id')
-                .single();
-              legacyCartId = upd?.cart_id || activeCart.cart_id;
-            } else {
-              const insertLegacy: any = { user_id: buyerId, status: 'pending' };
-              if (totalShippingLegacy > 0) { insertLegacy.shipping_total = totalShippingLegacy; insertLegacy.shipping_currency = shippingCurrency; }
-              const { data: newLegacy } = await supabase
-                .from('carts')
-                .insert(insertLegacy)
-                .select('cart_id')
-                .single();
-              legacyCartId = newLegacy?.cart_id || null;
-            }
-            if (legacyCartId) {
-              // Reset items y volver a insertar
-              await supabase.from('cart_items').delete().eq('cart_id', legacyCartId);
-              for (const it of normItems) {
-                await supabase.from('cart_items').insert({
-                  cart_id: legacyCartId,
-                  product_id: it.product_id,
-                  quantity: it.quantity,
-                  price_at_addition: it.price_at_addition,
-                  price_tiers: it.price_tiers,
-                  document_type: it.document_type
-                });
-              }
-              // Vincular orders->cart si no estaba
-              try {
-                await supabase.from('orders')
-                  .update({ cart_id: legacyCartId, updated_at: new Date().toISOString() })
-                  .eq('id', orderId)
-                  .is('cart_id', null);
-              } catch(_) {}
-            }
-          } catch (legacyErr) {
-            console.error('⚠️ Error en materialización legacy:', legacyErr);
-          }
-        }
-
-        // ===== SPLIT MATERIALIZATION =====
-  if (!SUPPLIER_PARTS_ENABLED && (SPLIT_MODE === 'dual' || SPLIT_MODE === 'split')) {
-          if (ord.split_status !== 'split') {
-            // Idempotencia optimista (no transaction available; rely on update+check)
-            try {
-              await supabase.from('orders')
-                .update({ split_status: 'split', updated_at: new Date().toISOString() })
-                .eq('id', orderId)
-                .eq('split_status', ord.split_status);
-            } catch(markErr) {
-              console.error('⚠️ No se pudo marcar split_status:', markErr);
-            }
-            // Agrupar por supplier
-            const groupMap = new Map<string, any[]>();
-            normItems.forEach(it => {
-              if (!groupMap.has(it.supplier_id)) groupMap.set(it.supplier_id, []);
-              groupMap.get(it.supplier_id)!.push(it);
-            });
-            // Subtotales + shipping prorrateado
-            const supplierEntries = Array.from(groupMap.entries());
-            const subtotals = supplierEntries.map(([sid, arr]) => ({ sid, subtotal: arr.reduce((s,i)=>s + i.price_at_addition*i.quantity,0) }));
-            const totalSubtotal = subtotals.reduce((s,o)=>s+o.subtotal,0) || 1;
-            const totalShipping = Number(ord.shipping || 0);
-            let acc = 0;
-            const shippingAlloc = subtotals.map((o,idx) => {
-              if (idx === subtotals.length -1) return { sid: o.sid, shipping: Math.max(0, totalShipping - acc) };
-              const share = Math.round(totalShipping * (o.subtotal / totalSubtotal));
-              acc += share; return { sid: o.sid, shipping: share };
-            });
-            const shippingMap = new Map(shippingAlloc.map(a => [a.sid, a.shipping]));
-            // Checar carts existentes (idempotencia)
-            const { data: existing } = await supabase
-              .from('carts')
-              .select('cart_id, supplier_id')
-              .eq('payment_order_id', orderId);
-            const existingSet = new Set((existing||[]).map(r => r.supplier_id));
-            for (const { sid, subtotal } of subtotals) {
-              if (existingSet.has(sid)) continue; // ya creado
-              const ship = shippingMap.get(sid) || 0;
-              const { data: newCart, error: splitErr } = await supabase
-                .from('carts')
-                .insert({
-                  user_id: buyerId,
-                  status: 'pending',
-                  payment_order_id: orderId,
-                  supplier_id: sid,
-                  shipping_total: ship > 0 ? ship : null,
-                  shipping_currency: ship > 0 ? 'CLP' : null
-                })
-                .select('cart_id')
-                .single();
-              if (splitErr) {
-                console.error('❌ Error creando cart split supplier:', splitErr);
-                continue;
-              }
-              const cartId = newCart?.cart_id;
-              if (!cartId) continue;
-              for (const it of groupMap.get(sid) || []) {
-                await supabase.from('cart_items').insert({
-                  cart_id: cartId,
-                  product_id: it.product_id,
-                  quantity: it.quantity,
-                  price_at_addition: it.price_at_addition,
-                  price_tiers: it.price_tiers,
-                  document_type: it.document_type
-                });
-              }
-            }
-          }
-        }
-
-  // ===== INVENTARIO & VENTAS =====
+        // NOTA: Se eliminó creación de supplier_orders, carts legacy y split carts.
+        // Mantenemos sólo inventario y métricas de ventas.
         for (const it of normItems) {
-          const { data: prodRows } = await supabase
-            .from('products')
-            .select('productqty')
-            .eq('productid', it.product_id)
-            .limit(1);
-          if (prodRows?.length) {
-            const currentQty = Number(prodRows[0].productqty || 0);
-            const newQty = Math.max(0, currentQty - it.quantity);
-            await supabase.from('products').update({ productqty: newQty, updateddt: new Date().toISOString() }).eq('productid', it.product_id);
-          }
-          if (it.supplier_id) {
-            const amount = Math.max(0, it.price_at_addition * it.quantity);
-            try { await supabase.from('sales').insert({ user_id: it.supplier_id, amount, trx_date: new Date().toISOString() }); } catch(e) { console.error('sales insert fail', e); }
-            try {
+          // Inventario
+          try {
+            const { data: prodRows } = await supabase
+              .from('products')
+              .select('productqty')
+              .eq('productid', it.product_id)
+              .limit(1);
+            if (prodRows?.length) {
+              const currentQty = Number(prodRows[0].productqty || 0);
+              const newQty = Math.max(0, currentQty - it.quantity);
+              await supabase.from('products')
+                .update({ productqty: newQty, updateddt: new Date().toISOString() })
+                .eq('productid', it.product_id);
+            }
+          } catch(invErr) { console.error('inventory update fail', invErr); }
+          // Ventas
+          try {
+            if (it.supplier_id) {
+              const amount = Math.max(0, it.price_at_addition * it.quantity);
+              await supabase.from('sales').insert({ user_id: it.supplier_id, amount, trx_date: new Date().toISOString() });
               await supabase.from('product_sales').upsert({
                 product_id: it.product_id,
                 supplier_id: it.supplier_id,
@@ -509,29 +350,18 @@ serve((req: Request) => withMetrics('process-khipu-webhook', req, async () => {
                 trx_date: new Date().toISOString(),
                 order_id: orderId
               }, { onConflict: 'order_id,product_id,supplier_id' });
-            } catch(e) { console.error('product_sales upsert fail', e); }
-          }
+            }
+          } catch(salesErr) { console.error('sales metrics fail', salesErr); }
         }
 
-        // Marcar inventory_processed_at para idempotencia futura
+        // Marcar inventory_processed_at (idempotencia)
         try {
           await supabase.from('orders')
             .update({ inventory_processed_at: new Date().toISOString(), updated_at: new Date().toISOString() })
             .eq('id', orderId)
             .is('inventory_processed_at', null);
-        } catch (invMarkErr) {
-          console.error('⚠️ No se pudo marcar inventory_processed_at', invMarkErr);
-        }
-
-        // Nuevo carrito activo vacío (ignorar errores)
-        // Nota: Cuando SUPPLIER_PARTS_ENABLED está activo migramos a supplier_orders y
-        // deshabilitamos la creación automática de un nuevo cart activo aquí para reducir
-        // ruido legacy. La creación de un cart 'active' ocurrirá on-demand cuando el buyer
-        // vuelva a agregar un producto (frontend debería manejarlo). Esto acelera el retiro
-        // progresivo del modelo legacy de carts post–pago.
-        if (!SUPPLIER_PARTS_ENABLED) {
-          try { await supabase.from('carts').insert({ user_id: buyerId, status: 'active' }); } catch(_) {}
-        }
+        } catch(invMarkErr) { console.error('⚠️ No se pudo marcar inventory_processed_at', invMarkErr); }
+        // NO se crea nuevo cart activo automáticamente (simplificación post-refactor).
       }
     } catch(materializeErr) {
       console.error('❌ Error materializando (dual/split):', materializeErr);

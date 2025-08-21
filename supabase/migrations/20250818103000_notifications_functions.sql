@@ -34,7 +34,7 @@ begin
     raise exception 'p_title requerido';
   end if;
 
-  -- Dedupe within last 120 seconds
+  -- Dedupe within last 30 seconds
   select * into v_row
   from public.notifications
   where user_id = p_user_id
@@ -42,7 +42,7 @@ begin
     and coalesce(product_id, '00000000-0000-0000-0000-000000000000') = coalesce(p_product_id, '00000000-0000-0000-0000-000000000000')
     and type = p_type
     and coalesce(order_status,'') = coalesce(p_order_status,'')
-    and created_at > v_now - interval '120 seconds'
+    and created_at > v_now - interval '30 seconds'
   order by created_at desc
   limit 1;
 

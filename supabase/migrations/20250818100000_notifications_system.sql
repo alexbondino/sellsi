@@ -43,8 +43,8 @@ begin
     where user_id = new.user_id
     order by is_read asc, created_at asc  -- read first, then oldest
     offset 100
-  ) old
-  where n.id = old.id;
+  ) old_rows
+  where n.id = old_rows.id;
   return new;
 end;
 $$ language plpgsql security definer;

@@ -37,7 +37,7 @@ serve(req => withMetrics('create-payment-khipu', req, async () => {
 
     // 1. Leer los datos dinámicos que envía el frontend (khipuService.js)
     // Ahora esperamos también order_id (ID de la fila ya creada en orders)
-    const { amount, subject, currency, buyer_id, cart_items, cart_id, order_id } = await req.json();
+  const { amount, subject, currency, buyer_id, cart_items, cart_id, order_id, shipping_address, billing_address } = await req.json();
 
   if (!order_id) {
     throw new Error('Falta order_id: la función ahora requiere el ID existente de la orden.');
@@ -265,6 +265,9 @@ serve(req => withMetrics('create-payment-khipu', req, async () => {
           status: 'pending',
           payment_method: 'khipu',
           payment_status: 'pending',
+          // ✔ Insertar direcciones si vienen en el payload (evita pérdida en fallback)
+          shipping_address: shipping_address ? JSON.stringify(shipping_address) : null,
+          billing_address: billing_address ? JSON.stringify(billing_address) : null,
           khipu_payment_id: (normalized as any).payment_id || null,
           khipu_payment_url: (normalized as any).payment_url || null,
           khipu_expires_at: expiresAt,
@@ -295,6 +298,13 @@ serve(req => withMetrics('create-payment-khipu', req, async () => {
           // items OMITIDOS para preservar hash sellado
           updated_at: new Date().toISOString(),
         };
+        // ✔ Solo actualizar direcciones si se enviaron explícitamente (preserva existentes)
+        if (typeof shipping_address !== 'undefined') {
+          updateData.shipping_address = shipping_address ? JSON.stringify(shipping_address) : null;
+        }
+        if (typeof billing_address !== 'undefined') {
+          updateData.billing_address = billing_address ? JSON.stringify(billing_address) : null;
+        }
         if (preservePaid) {
           console.log('[create-payment-khipu] Orden ya estaba pagada; se preserva payment_status=paid y no se degrada a pending');
         }
