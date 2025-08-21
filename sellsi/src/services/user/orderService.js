@@ -175,22 +175,29 @@ class OrderService {
    */
   async updateSupplierPartStatus(orderId, supplierId, newStatus, opts = {}) {
     if (!orderId || !supplierId || !newStatus) throw new Error('orderId, supplierId y newStatus requeridos');
-  const baseFnUrl = import.meta.env?.VITE_SUPABASE_FUNCTIONS_URL || import.meta.env?.VITE_SUPABASE_EDGE_URL || '';
-  if (!baseFnUrl) throw new Error('Faltan vars: VITE_SUPABASE_FUNCTIONS_URL o VITE_SUPABASE_EDGE_URL');
-  const url = `${baseFnUrl.replace(/\/$/, '')}/update-supplier-part-status`;
-    const token = (await supabase.auth.getSession()).data?.session?.access_token;
-    if (!token) throw new Error('No autenticado');
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify({ order_id: orderId, supplier_id: supplierId, new_status: newStatus, ...opts })
-    });
-    const json = await res.json().catch(()=>({}));
-    if (!res.ok || json.error) throw new Error(json.error || 'Error actualizando parte');
-    return json;
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('update-supplier-part-status', {
+        body: { 
+          order_id: orderId, 
+          supplier_id: supplierId, 
+          new_status: newStatus, 
+          ...opts 
+        }
+      });
+
+      if (error) {
+        throw new Error(`Error al invocar la función: ${error.message}`);
+      }
+      
+      if (data?.error) {
+        throw new Error(data.error);
+      }
+      
+      return data;
+    } catch (error) {
+      throw new Error(`Error actualizando parte: ${error.message}`);
+    }
   }
 
   /**
