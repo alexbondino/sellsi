@@ -57,6 +57,35 @@ const MyOrdersPage = () => {
     selectedOrder: null,
   });
 
+  // Helpers para manejo de fechas en formato local YYYY-MM-DD (evita shifts UTC)
+  const pad = (n) => String(n).padStart(2, '0');
+  const toLocalYYYYMMDD = (value) => {
+    if (!value) return null;
+    try {
+      const d = new Date(value);
+      if (!Number.isNaN(d.getTime())) {
+        return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+      }
+      // Fallback: try to extract YYYY-MM-DD substring
+      const m = String(value).match(/\d{4}-\d{2}-\d{2}/);
+      return m ? m[0] : null;
+    } catch (_) {
+      return null;
+    }
+  };
+
+  const parseYMD = (s) => {
+    if (!s) return null;
+    const parts = String(s).split('-').map(n => Number(n));
+    if (parts.length !== 3 || parts.some(p => Number.isNaN(p))) return null;
+    return new Date(parts[0], parts[1] - 1, parts[2]);
+  };
+
+  const todayLocalISO = () => {
+    const d = new Date();
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  };
+
   // ID del proveedor desde Supabase Auth (no chequea rol, solo sesión)
   const [supplierId, setSupplierId] = useState(null);
   const [authResolved, setAuthResolved] = useState(false);
@@ -198,6 +227,9 @@ const MyOrdersPage = () => {
         case 'dispatch': {
           // Permitir fecha ingresada o autocalcular (+3 días) si no se ingresó
           let deliveryDate = formData.deliveryDate;
+          const maxDeadlineRaw = modalState.selectedOrder?.estimated_delivery_date || null;
+          const maxDeadline = maxDeadlineRaw ? toLocalYYYYMMDD(maxDeadlineRaw) : null;
+          const todayISO = todayLocalISO();
           if (!deliveryDate) {
             const auto = new Date();
             auto.setDate(auto.getDate() + 3);
@@ -207,6 +239,21 @@ const MyOrdersPage = () => {
               severity: 'info',
               duration: 4000,
             });
+          }
+
+          // Validar rango permitido: >= hoy y <= fecha límite (si existe)
+          // Compare as Date objects parsed from local YYYY-MM-DD to avoid TZ rounding
+          const parsedDelivery = parseYMD(deliveryDate);
+          const parsedToday = parseYMD(todayISO);
+          if (!parsedDelivery) throw new Error('Fecha inválida');
+          if (parsedDelivery < parsedToday) {
+            throw new Error('La fecha estimada no puede ser anterior a hoy.');
+          }
+          if (maxDeadline) {
+            const parsedMax = parseYMD(maxDeadline);
+            if (parsedMax && parsedDelivery > parsedMax) {
+              throw new Error('La fecha estimada no puede superar la Fecha Entrega Límite.');
+            }
           }
 
           // Subida opcional / requerida de documento tributario (migrada desde 'accept')
@@ -349,13 +396,36 @@ const MyOrdersPage = () => {
         isFormModal: true,
         children: (
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <TextField
-              name="deliveryDate"
-              label="Fecha estimada de entrega"
-              type="date"
-              fullWidth
-              InputLabelProps={{ shrink: true }}
-            />
+            {(() => {
+              const pickerMin = todayLocalISO();
+              const pickerMax = modalState.selectedOrder?.estimated_delivery_date ? toLocalYYYYMMDD(modalState.selectedOrder.estimated_delivery_date) : undefined;
+              return (
+                <TextField
+                  name="deliveryDate"
+                  label="Fecha estimada de entrega"
+                  type="date"
+                  fullWidth
+                  InputLabelProps={{ shrink: true }}
+                  inputProps={{
+                    min: pickerMin,
+                    max: pickerMax,
+                    onChange: (e) => {
+                      try {
+                        const val = e.target.value;
+                        if (!val || !pickerMax) return;
+                        const pd = parseYMD(val);
+                        const pm = parseYMD(pickerMax);
+                        if (pd && pm && pd > pm) {
+                          e.target.value = pickerMax;
+                          try { showBanner({ message: 'La fecha no puede superar la Fecha Entrega Límite. Se ajustó al máximo permitido.', severity: 'warning', duration: 3000 }); } catch(_) {}
+                        }
+                      } catch (_) {}
+                    }
+                  }}
+                  helperText={pickerMax ? `Hasta ${pickerMax}` : 'Selecciona una fecha futura'}
+                />
+              );
+            })()}
             {showTaxUpload && (
               <TextField
                 name="taxDocument"

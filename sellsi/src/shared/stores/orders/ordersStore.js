@@ -71,6 +71,7 @@ export const useOrdersStore = create((set, get) => ({
           isLate: calculateIsLate(order),
           deliveryAddress: normalizedAddr,
           requestedDate: { start: order.created_at, end: order.created_at },
+          accepted_at: order.accepted_at || null,
           products
         };
       });

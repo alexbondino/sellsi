@@ -72,7 +72,8 @@ class OrderService {
       const limit = Number(filters.limit) || 100;
       const { data: recent, error: recErr } = await supabase
         .from('orders')
-        .select('id, items, status, payment_status, estimated_delivery_date, created_at, updated_at, shipping, total, subtotal, shipping_address, supplier_parts_meta')
+  // Se agrega accepted_at para recalcular SLA (Fecha Entrega Límite = accepted_at + días hábiles)
+  .select('id, items, status, payment_status, estimated_delivery_date, created_at, accepted_at, updated_at, shipping, total, subtotal, shipping_address, supplier_parts_meta')
         .eq('payment_status', 'paid')
         .contains('supplier_ids', [supplierId]) // nuevo filtro server-side (B1)
         .order('created_at', { ascending: false })
@@ -121,19 +122,25 @@ class OrderService {
         const derived = splitOrderBySupplier({ ...row, id: row.id });
         for (const p of derived) {
           if (p.supplier_id === supplierId) {
-            // Calcular fecha estimada solo si falta y tenemos items
-            let est = row.estimated_delivery_date || p.estimated_delivery_date || null;
-            if (!est) {
-              try {
-                // Buscar region del comprador dentro de la dirección si existe
-                const buyerRegion = (row.shipping_address && (row.shipping_address.shipping_region || row.shipping_address.region)) || null;
-                est = calculateEstimatedDeliveryDate(row.created_at, p.items, buyerRegion, (pid)=> null);
-              } catch(_) {}
-            }
+            // Nueva lógica SLA: siempre que exista accepted_at y el pedido esté en estado >= accepted,
+            // recalculamos Fecha Entrega Límite = accepted_at + días hábiles (máx de los productos para región del comprador).
+            // Si aún no está aceptado, NO se muestra una fecha límite (est permanece null salvo que backend ya tenga una distinta).
+            let est = null;
+            try {
+              const buyerRegion = (row.shipping_address && (row.shipping_address.shipping_region || row.shipping_address.region)) || null;
+              const statusNorm = (row.status || '').toLowerCase();
+              const isAcceptedOrLater = ['accepted','in_transit','delivered','cancelled','rejected'].includes(statusNorm);
+              if (row.accepted_at && isAcceptedOrLater) {
+                est = calculateEstimatedDeliveryDate(row.accepted_at, p.items, buyerRegion, (pid)=> null);
+              }
+            } catch(_) {}
+            // Fallback: si no pudimos calcular (sin accepted_at aún) usamos el valor que venga desde backend, si existe.
+            if (!est) est = row.estimated_delivery_date || p.estimated_delivery_date || null;
             parts.push({
               ...p,
               order_id: row.id,
               parent_order_id: row.id,
+              accepted_at: row.accepted_at || null,
               estimated_delivery_date: est,
               total_amount: p.subtotal,
               final_amount: p.final_amount || p.subtotal + (p.shipping_amount || 0),
