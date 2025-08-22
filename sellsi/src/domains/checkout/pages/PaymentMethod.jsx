@@ -25,7 +25,7 @@ import { useCheckout } from '../hooks'
 import { calculateRealShippingCost } from '../../../utils/shippingCalculation'
 
 // Servicios
-import { getUserProfile } from '../../../services/user/profileService'
+import { getUserProfileData } from '../../../services/user/profileService'
 
 // ============================================================================
 // COMPONENTE PRINCIPAL
@@ -87,30 +87,50 @@ const PaymentMethod = () => {
       
       if (userId) {
         try {
-          const profile = await getUserProfile(userId)
-          
-          // Capturar dirección de envío
-          if (profile.shipping_address) {
-            shippingAddress = {
+          const profile = await getUserProfileData(userId)
+
+          // Construcción parcial: si hay al menos UN campo de shipping rellenado, generamos objeto.
+          const hasAnyShipping = [
+            profile.shipping_region,
+            profile.shipping_commune,
+            profile.shipping_address,
+            profile.shipping_number,
+            profile.shipping_dept
+          ].some(v => v && String(v).trim() !== '')
+
+          if (hasAnyShipping) {
+            const addr = {
               region: profile.shipping_region || '',
               commune: profile.shipping_commune || '',
               address: profile.shipping_address || '',
               number: profile.shipping_number || '',
               department: profile.shipping_dept || ''
             }
+            // Flag incomplete si falta address principal (o comuna / region)
+            const requiredFilled = addr.address.trim() !== '' && addr.region.trim() !== '' && addr.commune.trim() !== ''
+            if (!requiredFilled) addr.incomplete = true
+            shippingAddress = addr
           }
-          
-          // Capturar dirección de facturación
-          if (profile.billing_address || profile.business_name) {
-            billingAddress = {
+
+          // Facturación parcial: si hay business_name o billing_address o rut
+          const hasAnyBilling = [
+            profile.business_name,
+            profile.billing_address,
+            profile.billing_rut
+          ].some(v => v && String(v).trim() !== '')
+
+          if (hasAnyBilling) {
+            const baddr = {
               business_name: profile.business_name || '',
               billing_rut: profile.billing_rut || '',
               billing_address: profile.billing_address || ''
             }
+            const requiredBilling = baddr.business_name.trim() !== '' && baddr.billing_address.trim() !== ''
+            if (!requiredBilling) baddr.incomplete = true
+            billingAddress = baddr
           }
         } catch (error) {
           console.error('[PaymentMethod] Error obteniendo perfil del usuario:', error)
-          // Continuar sin direcciones - el usuario puede agregarlas después
         }
       }
       

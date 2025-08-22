@@ -19,6 +19,37 @@ class CheckoutService {
    */
   async createOrder(orderData) {
     try {
+      // ===== HOTFIX DEFENSIVO DIRECCIONES =====
+      // Si el caller no adjuntó shipping/billing pero el usuario podría tenerlas en perfil,
+      // hacemos un fetch rápido antes del insert para no nacer NULL.
+      if (orderData?.userId && (!orderData.shippingAddress || !orderData.shippingAddress.address)) {
+        try {
+          const { getUserProfile } = await import('../../../services/user/profileService');
+          const profResp = await getUserProfile(orderData.userId);
+          const prof = profResp?.data || profResp || {};
+          if (!orderData.shippingAddress && prof.shipping_address && String(prof.shipping_address).trim() !== '') {
+            orderData.shippingAddress = {
+              address: prof.shipping_address,
+              region: prof.shipping_region || '',
+              commune: prof.shipping_commune || '',
+              number: prof.shipping_number || '',
+              department: prof.shipping_dept || ''
+            };
+          }
+          if (!orderData.billingAddress && (prof.billing_address || prof.business_name)) {
+            if ((prof.billing_address && String(prof.billing_address).trim() !== '') || (prof.business_name && String(prof.business_name).trim() !== '')) {
+              orderData.billingAddress = {
+                business_name: prof.business_name || '',
+                billing_rut: prof.billing_rut || '',
+                billing_address: prof.billing_address || ''
+              };
+            }
+          }
+        } catch (pfErr) {
+          console.warn('[CheckoutService] No se pudo recuperar perfil para enriquecer direcciones:', pfErr?.message);
+        }
+      }
+      // =========================================
       // ✅ VALIDAR que haya dirección de envío
       if (!orderData.shippingAddress || !orderData.shippingAddress.address) {
         console.warn('[CheckoutService] Sin dirección de envío - creando orden sin direcciones');
