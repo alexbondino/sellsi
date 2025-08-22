@@ -14,7 +14,8 @@ try {
   process.exit(1);
 }
 
-const repoRoot = path.resolve(__dirname);
+// repoRoot should be the repository root (parent of the scripts folder)
+const repoRoot = path.resolve(__dirname, '..');
 const srcRoot = path.join(repoRoot, 'sellsi', 'src');
 const exts = ['.js','.jsx','.ts','.tsx','.mjs','.cjs'];
 
