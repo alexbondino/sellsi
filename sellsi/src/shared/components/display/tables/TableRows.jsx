@@ -197,6 +197,7 @@ const Rows = ({ order, onActionClick }) => {
 
   const getStatusChipProps = status => {
     const translatedStatus = translateStatus(status);
+    
     const statusConfig = {
       Pendiente: { color: 'warning', label: 'Pendiente' },
       Aceptado: { color: 'info', label: 'Aceptado' },
@@ -206,7 +207,8 @@ const Rows = ({ order, onActionClick }) => {
       Rechazado: { color: 'error', label: 'Rechazado' },
     };
 
-    return statusConfig[translatedStatus] || { color: 'default', label: translatedStatus };
+    const result = statusConfig[translatedStatus] || { color: 'default', label: translatedStatus };
+    return result;
   };
 
   // Compute aggregated document types for this order's items

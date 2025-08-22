@@ -267,7 +267,7 @@ const BuyerOrders = () => {
 
   // Función para obtener los chips de estado (4 etapas incluyendo Pago Confirmado)
   const getStatusChips = (status, paymentStatus, order = null) => {
-    // 🔧 FIX: Verificar cancelled_at además de status para determinar cancelación real
+    // � FIX: Verificar cancelled_at además de status para determinar cancelación real
     const isCancelled = status === 'cancelled' || (order && order.cancelled_at);
     const isRejected = status === 'rejected' || isCancelled;
     if (isRejected) {
@@ -323,8 +323,6 @@ const BuyerOrders = () => {
       activeKey = 'en_transito';
     } else if (status === 'accepted') {
       activeKey = 'aceptado';
-    } else if (status === 'rejected') {
-      activeKey = 'rechazado';
     } else if (paymentStatus === 'paid' || paymentStatus === 'pending' || paymentStatus === 'expired') {
       activeKey = 'pago';
     }
@@ -339,11 +337,11 @@ const BuyerOrders = () => {
             ? 'Pago Expirado' 
             : 'Procesando Pago',
         active: activeKey === 'pago',
-        color: paymentStatus === 'paid' 
-          ? 'success' 
-          : paymentStatus === 'expired' 
-            ? 'error' 
-            : 'warning',
+        // 🔧 IMPROVEMENT: Si ya hemos avanzado más allá del pago, mostrar como completado
+        color: (activeKey === 'pago') 
+          ? (paymentStatus === 'paid' ? 'success' : paymentStatus === 'expired' ? 'error' : 'warning')
+          : (paymentStatus === 'paid' && ['aceptado', 'en_transito', 'entregado'].includes(activeKey)) 
+            ? 'success' : 'default',
         tooltip: paymentStatus === 'paid'
           ? 'Pago confirmado. La orden quedará pendiente de aceptación por el proveedor.'
           : paymentStatus === 'expired'
@@ -491,7 +489,7 @@ const BuyerOrders = () => {
                       // Para partes de proveedor (supplier part) usamos su propio status parcial
                       const productStatus = order.is_supplier_part
                         ? order.status
-                        : (order.is_payment_order ? 'pending' : getProductStatus(item, order.created_at, order.status));
+                        : (order.is_payment_order ? order.status : getProductStatus(item, order.created_at, order.status));
                       const statusChips = getStatusChips(productStatus, order.payment_status, order);
                       
                       // Crear key única y robusta combinando múltiples identificadores
@@ -620,7 +618,24 @@ const BuyerOrders = () => {
                                   }
 
                                   const isPagoChip = chip.key === 'pago';
-                                  const highlight = isPagoChip && order.payment_status === 'paid' && recentlyPaid.has(order.order_id);
+                                  // 🔧 FIX: No mostrar highlight en chip de pago si ya avanzamos a un status superior
+                                  const hasAdvancedStatus = ['accepted', 'in_transit', 'delivered'].includes(order.status);
+                                  const highlight = isPagoChip && order.payment_status === 'paid' && recentlyPaid.has(order.order_id) && !hasAdvancedStatus;
+                                  
+                                  // ✨ GLOW EFFECT: Agregar glow a todos los chips activos con colores específicos
+                                  const getGlowColor = (chipKey, chipColor) => {
+                                    const glowColors = {
+                                      'pago': 'rgba(76,175,80,0.6)', // Verde para pago
+                                      'aceptado': 'rgba(33,150,243,0.6)', // Azul para aceptado
+                                      'en_transito': 'rgba(156,39,176,0.6)', // Púrpura para en tránsito
+                                      'entregado': 'rgba(76,175,80,0.6)', // Verde para entregado
+                                      'rechazado': 'rgba(244,67,54,0.6)' // Rojo para rechazado
+                                    };
+                                    return glowColors[chipKey] || 'rgba(158,158,158,0.6)'; // Gris por defecto
+                                  };
+                                  
+                                  const shouldGlow = highlight || (chip.active && chip.key !== 'pago');
+                                  const glowColor = getGlowColor(chip.key, chip.color);
                                   return (
                                     <Tooltip key={chip.key} title={computedTooltip} arrow placement="left">
                                       <Chip
@@ -631,14 +646,23 @@ const BuyerOrders = () => {
                                         sx={{
                                           fontSize: '0.70rem',
                                           opacity: (chip.active || highlight) ? 1 : 0.45,
-                                          ...(highlight ? {
+                                          ...(shouldGlow ? {
                                             position: 'relative',
-                                            boxShadow: theme => `0 0 0 0 rgba(76,175,80,0.6)`,
-                                            animation: 'pulsePaid 1.2s ease-in-out 4',
-                                            '@keyframes pulsePaid': {
-                                              '0%': { boxShadow: '0 0 0 0 rgba(76,175,80,0.6)' },
-                                              '70%': { boxShadow: '0 0 0 12px rgba(76,175,80,0)' },
-                                              '100%': { boxShadow: '0 0 0 0 rgba(76,175,80,0)' }
+                                            boxShadow: `0 0 0 0 ${glowColor}`,
+                                            animation: `pulse${chip.key} 1.5s ease-in-out infinite`,
+                                            [`@keyframes pulse${chip.key}`]: {
+                                              '0%': { 
+                                                boxShadow: `0 0 0 0 ${glowColor}`,
+                                                transform: 'scale(1)'
+                                              },
+                                              '50%': { 
+                                                boxShadow: `0 0 0 8px ${glowColor.replace('0.6', '0')}`,
+                                                transform: 'scale(1.02)'
+                                              },
+                                              '100%': { 
+                                                boxShadow: `0 0 0 0 ${glowColor.replace('0.6', '0')}`,
+                                                transform: 'scale(1)'
+                                              }
                                             }
                                           } : {})
                                         }}

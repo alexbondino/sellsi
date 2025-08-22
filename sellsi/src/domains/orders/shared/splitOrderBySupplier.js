@@ -4,17 +4,21 @@
 
 import { parseOrderItems } from './parsing';
 
-// Helper to convert backend status to display format
-function getStatusDisplayName(status) {
-  const statusMap = {
-    'pending': 'Pendiente',
-    'accepted': 'Aceptado', 
-    'rejected': 'Rechazado',
-    'in_transit': 'En Transito',
-    'delivered': 'Entregado',
-    'cancelled': 'Cancelado'
-  };
-  return statusMap[status] || status;
+// Prioridad para comparar avance de estados (sin traducir)
+const STATUS_PRIORITY = {
+  pending: 0,
+  accepted: 1,
+  in_transit: 2,
+  delivered: 3,
+  rejected: 4,     // terminal
+  cancelled: 4     // terminal
+};
+function pickMoreAdvanced(baseStatus, overlayStatus) {
+  if (!overlayStatus) return baseStatus;
+  const b = STATUS_PRIORITY[baseStatus] ?? -1;
+  const o = STATUS_PRIORITY[overlayStatus] ?? -1;
+  // Solo avanzar, nunca retroceder
+  return o > b ? overlayStatus : baseStatus;
 }
 
 // Deterministic short code generator (base36 over first 10 hex chars)
@@ -29,7 +33,9 @@ export function shortCode(uuid, prefix = '') {
 
 export function splitOrderBySupplier(order) {
   if (!order) return [];
+  
   const supplierMeta = order.supplier_parts_meta || order.supplierPartsMeta || null; // JSONB column overlay (Option A 2.0)
+  
   const parentDisplayCode = shortCode(order.id, 'K');
   const items = parseOrderItems(order.items);
   if (!Array.isArray(items) || items.length === 0) {
@@ -59,7 +65,7 @@ export function splitOrderBySupplier(order) {
     if (supplierMeta && typeof supplierMeta === 'object' && Object.keys(supplierMeta).length === 1) {
       const onlyKey = Object.keys(supplierMeta)[0];
       const node = supplierMeta[onlyKey] || {};
-      if (node.status) singlePart.status = getStatusDisplayName(node.status); // normalize status
+  if (node.status) singlePart.status = pickMoreAdvanced(singlePart.status, node.status);
       if (node.estimated_delivery_date) singlePart.estimated_delivery_date = node.estimated_delivery_date;
     }
     return [singlePart];
@@ -114,7 +120,7 @@ export function splitOrderBySupplier(order) {
     if (supplierMeta && typeof supplierMeta === 'object') {
       const node = supplierId ? supplierMeta[supplierId] : null;
       if (node) {
-        if (node.status) part.status = getStatusDisplayName(node.status); // normalize status
+  if (node.status) part.status = pickMoreAdvanced(part.status, node.status);
         if (node.estimated_delivery_date) part.estimated_delivery_date = node.estimated_delivery_date;
       }
     }
@@ -156,7 +162,7 @@ export function splitOrderBySupplier(order) {
     // Overlay estado/ETA desde meta si existe
     if (supplierMeta && supplierMeta[entry.sid]) {
       const node = supplierMeta[entry.sid];
-      if (node.status) part.status = getStatusDisplayName(node.status); // normalize status
+  if (node.status) part.status = pickMoreAdvanced(part.status, node.status);
       if (node.estimated_delivery_date) part.estimated_delivery_date = node.estimated_delivery_date;
     }
     parts.push(part);
