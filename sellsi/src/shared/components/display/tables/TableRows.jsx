@@ -182,7 +182,21 @@ const Rows = ({ order, onActionClick }) => {
   };
 
   // Obtener color del chip según estado
+  const translateStatus = (status) => {
+    const statusMap = {
+      'pending': 'Pendiente',
+      'accepted': 'Aceptado', 
+      'in_transit': 'En Transito',
+      'delivered': 'Entregado',
+      'paid': 'Pagado',
+      'rejected': 'Rechazado',
+      'cancelled': 'Rechazado'
+    };
+    return statusMap[status] || status;
+  };
+
   const getStatusChipProps = status => {
+    const translatedStatus = translateStatus(status);
     const statusConfig = {
       Pendiente: { color: 'warning', label: 'Pendiente' },
       Aceptado: { color: 'info', label: 'Aceptado' },
@@ -192,7 +206,7 @@ const Rows = ({ order, onActionClick }) => {
       Rechazado: { color: 'error', label: 'Rechazado' },
     };
 
-    return statusConfig[status] || { color: 'default', label: status };
+    return statusConfig[translatedStatus] || { color: 'default', label: translatedStatus };
   };
 
   // Compute aggregated document types for this order's items

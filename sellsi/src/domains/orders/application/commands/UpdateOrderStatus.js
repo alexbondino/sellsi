@@ -82,6 +82,46 @@ export async function UpdateOrderStatus(orderId, newStatus, additionalData = {})
     .single();
 
   if (!orderError && orderData) {
+    // 🔧 SYNC supplier_parts_meta para mono-supplier (consistencia de datos)
+    try {
+      const supplierIds = orderData.supplier_ids;
+      if (Array.isArray(supplierIds) && supplierIds.length === 1) {
+        // Solo para mono-supplier: sincronizar supplier_parts_meta
+        const supplierId = supplierIds[0];
+        const currentMeta = orderData.supplier_parts_meta || {};
+        
+        if (currentMeta[supplierId]) {
+          const now = new Date().toISOString();
+          const updatedMeta = {
+            ...currentMeta,
+            [supplierId]: {
+              ...currentMeta[supplierId],
+              status: normalizedStatus,
+              history: [
+                ...(currentMeta[supplierId].history || []),
+                {
+                  at: now,
+                  from: currentStatus,
+                  to: normalizedStatus
+                }
+              ]
+            }
+          };
+          
+          // Actualizar supplier_parts_meta en la base de datos
+          await supabase
+            .from('orders')
+            .update({ supplier_parts_meta: updatedMeta })
+            .eq('id', orderId);
+            
+          console.log(`✅ Sincronizado supplier_parts_meta para mono-supplier ${orderId}: ${normalizedStatus}`);
+        }
+      }
+    } catch (syncError) {
+      console.warn(`⚠️ Error sincronizando supplier_parts_meta:`, syncError);
+      // No fallar el comando principal por error de sincronización
+    }
+    
     try { await notificationService.notifyStatusChange(orderData, normalizedStatus); } catch (_) {}
     return {
       success: true,

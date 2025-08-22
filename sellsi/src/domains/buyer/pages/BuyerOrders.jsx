@@ -323,6 +323,8 @@ const BuyerOrders = () => {
       activeKey = 'en_transito';
     } else if (status === 'accepted') {
       activeKey = 'aceptado';
+    } else if (status === 'rejected') {
+      activeKey = 'rechazado';
     } else if (paymentStatus === 'paid' || paymentStatus === 'pending' || paymentStatus === 'expired') {
       activeKey = 'pago';
     }
