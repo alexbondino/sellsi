@@ -540,7 +540,7 @@ const BuyerOrders = () => {
                                     : 0;
                                 const lineTotal = unit * (item.quantity || 0);
                                 return (
-                                  <Typography variant="body1" fontWeight="medium" color="primary.main">
+                                  <Typography variant="body1" fontWeight="medium" color="#000000fa">
                                     {item.quantity} uds a {formatCurrency(unit)} c/u = {formatCurrency(lineTotal)}
                                   </Typography>
                                 );
