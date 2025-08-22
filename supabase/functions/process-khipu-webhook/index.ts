@@ -207,7 +207,7 @@ serve((req: Request) => withMetrics('process-khipu-webhook', req, async () => {
     // Intento obtener estado actual incluyendo inventory_processed_at y supplier_parts_meta para decidir idempotencia
     const { data: preOrder, error: preErr } = await supabase
       .from('orders')
-      .select('id, payment_status, inventory_processed_at, supplier_parts_meta, items')
+      .select('id, payment_status, inventory_processed_at, supplier_parts_meta, items, cancelled_at, status')
       .eq('id', orderId)
       .maybeSingle();
     if (preErr) {
@@ -256,7 +256,26 @@ serve((req: Request) => withMetrics('process-khipu-webhook', req, async () => {
       console.error('⚠️ Error inicializando supplier_parts_meta', metaInitEx);
     }
 
+    // 🔧 FIX: Verificar que la orden NO esté cancelada antes de procesar el pago
     if (preOrder && preOrder.payment_status !== 'paid') {
+      // Verificar si la orden fue cancelada
+      if (preOrder.cancelled_at || preOrder.status === 'cancelled') {
+        console.error('❌ No se puede procesar pago: orden fue cancelada', {
+          orderId,
+          cancelled_at: preOrder.cancelled_at,
+          status: preOrder.status,
+          payment_id: paymentIdFromPayload
+        });
+        return new Response(JSON.stringify({ 
+          error: 'Order was cancelled', 
+          orderId, 
+          cancelled_at: preOrder.cancelled_at 
+        }), {
+          status: 409, // Conflict
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+
       const { error: payUpdErr } = await supabase
         .from('orders')
         .update({
@@ -265,7 +284,8 @@ serve((req: Request) => withMetrics('process-khipu-webhook', req, async () => {
           paid_at: paidAt,
           updated_at: new Date().toISOString(),
         })
-        .eq('id', orderId);
+        .eq('id', orderId)
+        .is('cancelled_at', null); // 🔧 Condición adicional de seguridad
       if (payUpdErr) console.error('❌ Error marcando pago:', payUpdErr); else console.log('✅ Orden marcada pagada');
     }
     // Si inventario ya procesado, salimos (meta ya habría sido inicializada arriba si faltaba)

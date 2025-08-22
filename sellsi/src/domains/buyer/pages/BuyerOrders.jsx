@@ -266,42 +266,87 @@ const BuyerOrders = () => {
   };
 
   // Función para obtener los chips de estado (4 etapas incluyendo Pago Confirmado)
-  const getStatusChips = (status, paymentStatus) => {
-    // Caso rechazado/cancelado: sólo Rechazado activo
-    const isRejected = status === 'rejected' || status === 'cancelled';
+  const getStatusChips = (status, paymentStatus, order = null) => {
+    // 🔧 FIX: Verificar cancelled_at además de status para determinar cancelación real
+    const isCancelled = status === 'cancelled' || (order && order.cancelled_at);
+    const isRejected = status === 'rejected' || isCancelled;
     if (isRejected) {
+      // Determinar label y color del chip de pago según payment_status
+      const getPaymentChipInfo = (paymentStatus) => {
+        switch (paymentStatus) {
+          case 'paid':
+            return {
+              label: 'Pago Confirmado',
+              color: 'success',
+              tooltip: 'Pago confirmado.'
+            };
+          case 'expired':
+            return {
+              label: 'Pago Expirado',
+              color: 'error',
+              tooltip: 'El tiempo para completar el pago se agotó (20 minutos).'
+            };
+          case 'pending':
+          default:
+            return {
+              label: 'Procesando Pago',
+              color: 'warning',
+              tooltip: 'Pago en proceso.'
+            };
+        }
+      };
+
+      const paymentInfo = getPaymentChipInfo(paymentStatus);
       return [
-        // Un único chip de pago que evoluciona de "Procesando Pago" a "Pago Confirmado"
+        // Un único chip de pago que evoluciona según payment_status
         {
           key: 'pago',
-          label: paymentStatus === 'paid' ? 'Pago Confirmado' : 'Procesando Pago',
-          active: paymentStatus === 'paid' || paymentStatus === 'pending',
-          color: paymentStatus === 'paid' ? 'success' : 'warning',
-          tooltip: paymentStatus === 'paid' ? 'Pago confirmado.' : 'Pago en proceso.'
+          label: paymentInfo.label,
+          active: paymentStatus === 'paid' || paymentStatus === 'pending' || paymentStatus === 'expired',
+          color: paymentInfo.color,
+          tooltip: paymentInfo.tooltip
         },
-        { key: 'rechazado', label: 'Rechazado', active: true, color: 'error', tooltip: 'Tu pedido fue rechazado por el proveedor.' },
+        { key: 'rechazado', label: isCancelled ? 'Cancelado' : 'Rechazado', active: true, color: 'error', tooltip: isCancelled ? 'Tu pedido fue cancelado.' : 'Tu pedido fue rechazado por el proveedor.' },
         { key: 'en_transito', label: 'En Transito', active: false, color: 'default', tooltip: 'Pendiente de despacho por el proveedor.' },
         { key: 'entregado', label: 'Entregado', active: false, color: 'default', tooltip: 'Aún no se ha entregado.' }
       ];
     }
 
     // Determinar clave activa única
-  let activeKey = null;
-    if (status === 'delivered') activeKey = 'entregado';
-    else if (status === 'in_transit') activeKey = 'en_transito';
-    else if (status === 'accepted') activeKey = 'aceptado';
-  else if (paymentStatus === 'paid' || paymentStatus === 'pending') activeKey = 'pago';
+    let activeKey = null;
+    // 🔧 FIX: Si hay cancelled_at, la orden está cancelada independientemente del status
+    if (order && order.cancelled_at) {
+      activeKey = 'rechazado'; // Mostrar como cancelado
+    } else if (status === 'delivered') {
+      activeKey = 'entregado';
+    } else if (status === 'in_transit') {
+      activeKey = 'en_transito';
+    } else if (status === 'accepted') {
+      activeKey = 'aceptado';
+    } else if (paymentStatus === 'paid' || paymentStatus === 'pending' || paymentStatus === 'expired') {
+      activeKey = 'pago';
+    }
 
     const chips = [
       // Un único chip de pago. La etiqueta y el estilo se deciden por el estado de pago.
       {
         key: 'pago',
-        label: paymentStatus === 'paid' ? 'Pago Confirmado' : 'Procesando Pago',
+        label: paymentStatus === 'paid' 
+          ? 'Pago Confirmado' 
+          : paymentStatus === 'expired' 
+            ? 'Pago Expirado' 
+            : 'Procesando Pago',
         active: activeKey === 'pago',
-        color: paymentStatus === 'paid' ? 'success' : 'warning',
+        color: paymentStatus === 'paid' 
+          ? 'success' 
+          : paymentStatus === 'expired' 
+            ? 'error' 
+            : 'warning',
         tooltip: paymentStatus === 'paid'
           ? 'Pago confirmado. La orden quedará pendiente de aceptación por el proveedor.'
-          : 'Estamos verificando tu pago.'
+          : paymentStatus === 'expired'
+            ? 'El tiempo para completar el pago se agotó (20 minutos).'
+            : 'Estamos verificando tu pago.'
       },
       {
         key: 'aceptado',
@@ -445,7 +490,7 @@ const BuyerOrders = () => {
                       const productStatus = order.is_supplier_part
                         ? order.status
                         : (order.is_payment_order ? 'pending' : getProductStatus(item, order.created_at, order.status));
-                      const statusChips = getStatusChips(productStatus);
+                      const statusChips = getStatusChips(productStatus, order.payment_status, order);
                       
                       // Crear key única y robusta combinando múltiples identificadores
                       const itemKey = item.cart_items_id || 
@@ -537,19 +582,23 @@ const BuyerOrders = () => {
                             
                             {/* Chips de estado (incluye Pago Confirmado) */}
                             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, minWidth: 140 }}>
-                              {getStatusChips(productStatus, order.payment_status).map((chip, chipIndex) => {
+                              {getStatusChips(productStatus, order.payment_status, order).map((chip, chipIndex) => {
                                   // Determine whether each stage was reached historically
                                   const pagoConfirmadoReached = order.payment_status === 'paid' || ['accepted', 'in_transit', 'delivered'].includes(order.status);
-                                  const aceptadoReached = ['accepted', 'in_transit', 'delivered'].includes(order.status);
-                                  const enTransitoReached = ['in_transit', 'delivered'].includes(order.status);
-                                  const entregadoReached = order.status === 'delivered';
-                                  const rechazadoReached = ['rejected', 'cancelled'].includes(order.status);
+                                  const aceptadoReached = ['accepted', 'in_transit', 'delivered'].includes(order.status) && !order.cancelled_at;
+                                  const enTransitoReached = ['in_transit', 'delivered'].includes(order.status) && !order.cancelled_at;
+                                  const entregadoReached = order.status === 'delivered' && !order.cancelled_at;
+                                  const rechazadoReached = ['rejected', 'cancelled'].includes(order.status) || order.cancelled_at;
 
                                   let computedTooltip = chip.tooltip || '';
                                   if (chip.key === 'pago') {
-                                    computedTooltip = pagoConfirmadoReached
-                                      ? 'Pago confirmado. La orden quedará pendiente de aceptación por el proveedor.'
-                                      : 'Pago aún no confirmado.';
+                                    if (order.payment_status === 'paid') {
+                                      computedTooltip = 'Pago confirmado. La orden quedará pendiente de aceptación por el proveedor.';
+                                    } else if (order.payment_status === 'expired') {
+                                      computedTooltip = 'El tiempo para completar el pago se agotó (20 minutos).';
+                                    } else {
+                                      computedTooltip = 'Pago aún no confirmado.';
+                                    }
                                   } else if (chip.key === 'aceptado') {
                                     computedTooltip = aceptadoReached
                                       ? 'El proveedor aceptó tu pedido.'
@@ -564,7 +613,7 @@ const BuyerOrders = () => {
                                       : 'Aún no se ha entregado.';
                                   } else if (chip.key === 'rechazado') {
                                     computedTooltip = rechazadoReached
-                                      ? 'Tu pedido fue rechazado por el proveedor.'
+                                      ? (order.cancelled_at ? 'Tu pedido fue cancelado.' : 'Tu pedido fue rechazado por el proveedor.')
                                       : 'Pedido no rechazado.';
                                   }
 
