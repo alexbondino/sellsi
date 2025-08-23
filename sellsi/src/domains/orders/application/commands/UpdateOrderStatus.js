@@ -14,9 +14,7 @@ export async function UpdateOrderStatus(orderId, newStatus, additionalData = {})
   if (normalizedStatus === 'in_transit' && additionalData.estimated_delivery_date) {
     updateData.estimated_delivery_date = additionalData.estimated_delivery_date;
   }
-  if (additionalData.tax_document_path) {
-    updateData.tax_document_path = additionalData.tax_document_path; // will be ignored if column not present
-  }
+  // tax_document_path deprecado: invoices_meta es la fuente de verdad
 
   // Guardia pago (solo orders)
   if (ADVANCE_STATUSES.has(normalizedStatus)) {

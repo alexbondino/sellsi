@@ -21,6 +21,9 @@ import { SPACING_BOTTOM_MAIN } from '../../../styles/layoutSpacing';
 import { useBuyerOrders } from '../hooks';
 import { createSignedInvoiceUrl } from '../../../services/storage/invoiceStorageService';
 import { CheckoutSummaryImage } from '../../../components/UniversalProductImage';
+// Unificar formateo de fechas con TableRows (usa marketplace/utils/formatters)
+import { formatDate as formatDateUnified } from '../../marketplace/utils/formatters';
+import ContactModal from '../../../shared/components/modals/ContactModal';
 
 const BuyerOrders = () => {
   // ============================================================================
@@ -37,7 +40,7 @@ const BuyerOrders = () => {
     getProductImage,
     getStatusDisplayName,
     getStatusColor,
-    formatDate,
+  formatDate: formatDateHook,
     formatCurrency
   } = useBuyerOrders(buyerId);
 
@@ -68,6 +71,11 @@ const BuyerOrders = () => {
     });
     prevPaidRef.current = nextPrev;
   }, [orders]);
+
+  // Contact modal state (abre desde varios lugares, aquí para el buyer orders)
+  const [openContactModal, setOpenContactModal] = React.useState(false);
+  const openContact = React.useCallback(() => setOpenContactModal(true), []);
+  const closeContact = React.useCallback(() => setOpenContactModal(false), []);
 
   // Mark related notifications as read on mount
   const { markContext } = (typeof useNotificationsContext === 'function' ? require('../../notifications/components/NotificationProvider') : { useNotificationsContext: null }).useNotificationsContext?.() || {};
@@ -441,6 +449,25 @@ const BuyerOrders = () => {
                         <Typography variant="h6" fontWeight="bold">
                           Pedido {formatOrderNumber(order.parent_order_id || order.order_id)}
                         </Typography>
+                        {/* Mensaje de contacto junto al número de pedido */}
+                        <Typography variant="body2" color="text.secondary" sx={{ ml: 1, display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                          - ¿Tienes algún problema con tu pedido? No dudes en
+                          <Button
+                            variant="text"
+                            size="small"
+                            onClick={openContact}
+                            sx={{
+                              color: 'primary.main',
+                              textTransform: 'none',
+                              fontWeight: 600,
+                              p: 0,
+                              minWidth: 'auto',
+                              ml: 0.5,
+                            }}
+                          >
+                            Contactarnos
+                          </Button>
+                        </Typography>
                         {(order.is_virtual_split || order.is_supplier_part) && (
                           <Chip size="small" color="primary" label={order.supplier_name ? `Proveedor: ${order.supplier_name}` : 'Parte de Pedido'} />
                         )}
@@ -464,24 +491,79 @@ const BuyerOrders = () => {
                       </Box>
                     </Box>
                     <Typography variant="body2" color="text.secondary">
-                      Fecha de compra: {formatDate(order.created_at)}
+                      Fecha de compra: {formatDateUnified(order.created_at)}
                     </Typography>
 
-                    {/* Fecha estimada / fecha de entrega real */}
-                    {order.estimated_delivery_date && (
+                    {/* Fecha estimada de entrega (ETA): mostrar solo si status in_transit o delivered */}
+                    {order.estimated_delivery_date && (order.status === 'in_transit' || order.status === 'delivered') && (
                       <Typography variant="body2" color="text.secondary">
-                        {order.status === 'accepted' ? 'Fecha estimada prevista:' : 'Fecha estimada de entrega:'} {formatDate(order.estimated_delivery_date)}
+                        {(() => {
+                          let eta = order.estimated_delivery_date;
+                          let formatted;
+                          try {
+                            if (eta) {
+                              const d = new Date(eta);
+                              // Forzar fecha en UTC y formato '23 de agosto de 2025'
+                                formatted = d.toLocaleDateString('es-CL', { timeZone: 'UTC', day: 'numeric', month: 'long', year: 'numeric' });
+                            }
+                          } catch(_) {
+                            formatted = formatDateUnified(eta);
+                          }
+                          if (!formatted) formatted = formatDateUnified(eta);
+                          return `Entrega estimada: ${formatted}`;
+                        })()}
                       </Typography>
                     )}
 
                     {order.status === 'delivered' && (order.delivered_at || order.deliveredAt || order.delivered) && (
                       <Typography variant="body2" color="text.secondary">
-                        Pedido entregado con fecha: {formatDate(order.delivered_at || order.deliveredAt || order.delivered)}
+                        Pedido entregado con fecha: {formatDateUnified(order.delivered_at || order.deliveredAt || order.delivered)}
                       </Typography>
                     )}
                   </Box>
 
                   <Divider sx={{ mb: 2 }} />
+
+                  {/* =============================================
+                      DOCUMENTOS TRIBUTARIOS (DEDUPED POR SUPPLIER)
+                     ============================================= */}
+                  {(() => {
+                    // Construir un mapa supplier -> invoice (1 por supplier)
+                    const supplierInvoiceMap = {};
+                    (order.items || []).forEach(it => {
+                      const invoicePath = it.invoice_path || it.invoice || null;
+                      if (!invoicePath) return;
+                      const supplierId = it.product?.supplier?.id || it.product?.supplier_id || it.supplier_id || it.product?.supplierId || 'unknown';
+                      if (!supplierInvoiceMap[supplierId]) {
+                        const rawDt = (it.document_type || it.documentType || '').toLowerCase();
+                        const documentType = rawDt === 'factura' || rawDt === 'boleta' ? rawDt : 'documento';
+                        supplierInvoiceMap[supplierId] = {
+                          supplierName: it.product?.supplier?.name || it.supplier_name || it.product?.proveedor || 'Proveedor',
+                          invoicePath,
+                          documentType
+                        };
+                      }
+                    });
+                    const invoices = Object.values(supplierInvoiceMap);
+                    if (!invoices.length) return null;
+                    return (
+                      <Box sx={{ mb: 2 }}>
+                        <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
+                          Documentos Tributarios
+                        </Typography>
+                        <Stack spacing={1}>
+                          {invoices.map(inv => (
+                            <InvoiceDownload
+                              key={inv.invoicePath}
+                              invoicePath={inv.invoicePath}
+                              documentType={inv.documentType}
+                              orderId={order.order_id}
+                            />
+                          ))}
+                        </Stack>
+                      </Box>
+                    );
+                  })()}
 
                   {/* Subtarjetas de productos */}
                   <Stack spacing={2}>
@@ -511,8 +593,8 @@ const BuyerOrders = () => {
                             {/* Imagen del producto */}
                             <CheckoutSummaryImage
                               product={item.product}
-                              width={40}
-                              height={40}
+                              width={70}
+                              height={70}
                               sx={{
                                 borderRadius: '50%',
                                 flexShrink: 0
@@ -549,7 +631,9 @@ const BuyerOrders = () => {
                               {(() => {
                                 const dt = (item.document_type || item.documentType || '').toLowerCase();
                                 const norm = dt === 'boleta' || dt === 'factura' ? dt : 'ninguno';
-                                const invoicePath = item.tax_document_path || item.invoice_path || item.invoice || null;
+                                // invoice_path ahora proviene del enrichment de invoices_meta (hook useBuyerOrders)
+                                // Ya no mostramos botón por ítem: se agrupa por supplier a nivel de la orden (dedupe)
+                                const hasInvoice = !!(item.invoice_path || item.invoice);
 
                                 return (
                                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
@@ -561,19 +645,12 @@ const BuyerOrders = () => {
                                     />
                                     {/* Mensaje y botón condicionales */}
                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                      {order.status === 'accepted' && !invoicePath && (norm === 'boleta' || norm === 'factura') && (
+                                      {order.status === 'accepted' && !hasInvoice && (norm === 'boleta' || norm === 'factura') && (
                                         <Typography variant="caption" color="text.secondary">
-                                          Aquí podrás descargar tu {norm === 'boleta' ? 'Boleta' : 'Factura'} una vez el proveedor la cargue al sistema.
+                                          El proveedor aún no ha subido tu {norm === 'boleta' ? 'Boleta' : 'Factura'}.
                                         </Typography>
                                       )}
-
-                                      {invoicePath && (
-                                        <InvoiceDownload
-                                          invoicePath={invoicePath}
-                                          documentType={norm}
-                                          orderId={order.order_id}
-                                        />
-                                      )}
+                                      {/* Texto extra al tener factura deduplicada removido por solicitud del usuario */}
                                     </Box>
                                   </Box>
                                 );
@@ -678,6 +755,9 @@ const BuyerOrders = () => {
                   </Stack>
                 </Paper>
               ))}
+      
+  {/* Contact modal global para esta página */}
+  <ContactModal open={openContactModal} onClose={closeContact} />
             </Box>
               {/* Paginación inferior */}
               {Pagination}
@@ -765,9 +845,23 @@ const InvoiceDownload = ({ invoicePath, documentType = 'documento', orderId }) =
   return (
     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
       <Typography variant="caption" color="text.secondary">
-        Tu Documento Tributario {documentType === 'boleta' ? '(Boleta)' : documentType === 'factura' ? '(Factura)' : ''} está listo para ser descargado.
+        Tu {documentType === 'boleta' ? 'Boleta' : documentType === 'factura' ? 'Factura' : ''} está lista para ser descargada.
       </Typography>
-      <Button size="small" variant="outlined" onClick={handleDownload} disabled={loading}>
+      <Button
+        size="small"
+        variant="text"
+        onClick={handleDownload}
+        disabled={loading}
+        sx={{
+          border: 'none',
+          boxShadow: 'none',
+          textTransform: 'none',
+          color: 'primary.main',
+          p: 0,
+          minWidth: 'auto',
+          '&:hover': { backgroundColor: 'transparent', textDecoration: 'underline' }
+        }}
+      >
         {loading ? 'Generando...' : 'Descargar'}
       </Button>
     </Box>

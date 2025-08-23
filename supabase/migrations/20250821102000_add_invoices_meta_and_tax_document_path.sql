@@ -1,4 +1,5 @@
--- Add invoices_meta table (idempotent) and tax_document_path column to orders if missing
+-- Migration originally added invoices_meta and (deprecated) tax_document_path.
+-- Updated: retain only invoices_meta creation; tax_document_path removed (handled by later drop migration).
 BEGIN;
 
 -- invoices_meta table (only create if not exists)
@@ -17,15 +18,6 @@ CREATE TABLE IF NOT EXISTS public.invoices_meta (
 -- Unique index to avoid duplicates for same order/path
 CREATE UNIQUE INDEX IF NOT EXISTS invoices_meta_order_path_uidx ON public.invoices_meta(order_id, path);
 
--- Add tax_document_path to orders if not exists
-DO $$
-BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM information_schema.columns
-    WHERE table_schema = 'public' AND table_name = 'orders' AND column_name = 'tax_document_path'
-  ) THEN
-    ALTER TABLE public.orders ADD COLUMN tax_document_path text;
-  END IF;
-END;$$;
+-- (Removed) tax_document_path addition block.
 
 COMMIT;

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { orderService } from '../../../../services/user';
+import { supabase } from '../../../../services/supabase';
 import { isUUID } from '../../../orders/shared/validation';
 import { splitOrderBySupplier } from '../../../orders/shared/splitOrderBySupplier';
 
@@ -13,10 +14,12 @@ export const useBuyerOrders = buyerId => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const DEBUG_BUYER_ORDERS = false; // activar para ver logs diagnósticos
+  const DEBUG_BUYER_ORDERS = false; // activar para ver logs diagnósticos (temporal para tracing ETA)
   const POLL_INTERVAL_MS = 15000;
   const pollRef = useRef(null);
   const lastRealtimeRef = useRef(Date.now());
+  const ordersChannelRef = useRef(null);
+  const invoicesChannelRef = useRef(null);
 
   const mergeAndSplit = useCallback((payment) => {
     // 1. Ordenar por fecha
@@ -48,11 +51,45 @@ export const useBuyerOrders = buyerId => {
     try {
       setLoading(true);
       setError(null);
-      const payment = await orderService.getPaymentOrdersForBuyer(buyerId, filters).catch(e => {
+  const payment = await orderService.getPaymentOrdersForBuyer(buyerId, filters).catch(e => {
           console.error('[buyerOrders][paymentOrders] error', e);
           setError(prev => prev || e.message || 'Error cargando payment orders');
           return [];
         });
+      if (DEBUG_BUYER_ORDERS) {
+          console.log('[buyerOrders][raw payment orders]', payment.map(p => ({ id: p.order_id, status: p.status, eta: p.estimated_delivery_date })));
+        }
+  // Mapa rápido de payment orders para fallback de ETA en parts
+  const paymentMap = new Map(payment.map(p => [p.order_id || p.id, p]));
+      // === Enriquecer con facturas (invoices_meta) ===
+      let invoiceMap = Object.create(null); // { order_id: { supplier_id: path } }
+      try {
+        const orderIds = Array.from(new Set(payment.map(o => o.order_id || o.id).filter(Boolean)));
+        if (orderIds.length) {
+          const { data: invoiceRows, error: invErr } = await supabase
+            .from('invoices_meta')
+            .select('order_id,supplier_id,path,created_at')
+            .in('order_id', orderIds);
+          if (!invErr && Array.isArray(invoiceRows)) {
+            for (const row of invoiceRows) {
+              if (!row?.order_id || !row?.supplier_id || !row?.path) continue;
+              const oId = row.order_id; const sId = row.supplier_id; const pth = row.path;
+              if (!invoiceMap[oId]) invoiceMap[oId] = Object.create(null);
+              // Mantener la última (por created_at) – si llega duplicada, reemplazar sólo si nueva fecha > anterior
+              if (!invoiceMap[oId][sId]) {
+                invoiceMap[oId][sId] = { path: pth, created_at: row.created_at }; 
+              } else {
+                const prev = invoiceMap[oId][sId];
+                if ((new Date(row.created_at || 0)) > (new Date(prev.created_at || 0))) {
+                  invoiceMap[oId][sId] = { path: pth, created_at: row.created_at };
+                }
+              }
+            }
+          }
+        }
+      } catch (invE) {
+        console.warn('[buyerOrders] invoices_meta enrichment falló:', invE?.message || invE);
+      }
       // Diagnóstico precios 0 (sobre payment orders)
       payment.forEach(o => {
         (o.items||[]).forEach(it => {
@@ -63,7 +100,32 @@ export const useBuyerOrders = buyerId => {
         });
       });
       const split = mergeAndSplit(payment);
-      setOrders(split);
+      if (DEBUG_BUYER_ORDERS) {
+        console.log('[buyerOrders][after split]', split.map(p => ({ id: p.order_id, supplier: p.supplier_id, status: p.status, partEta: p.estimated_delivery_date })));
+      }
+      const enriched = split.map(part => {
+        try {
+          const oId = part.order_id;
+          const sId = part.supplier_id;
+          const maybe = invoiceMap[oId]?.[sId];
+          // Fallback ETA: si la part no trae estimated_delivery_date y la order base sí, propagar
+          if (!part.estimated_delivery_date) {
+            const base = paymentMap.get(oId);
+            if (base?.estimated_delivery_date) part.estimated_delivery_date = base.estimated_delivery_date;
+          }
+          if (maybe?.path && Array.isArray(part.items)) {
+            return {
+              ...part,
+              items: part.items.map(it => ({ ...it, invoice_path: it.invoice_path || maybe.path }))
+            };
+          }
+        } catch(_) {}
+        return part;
+      });
+      if (DEBUG_BUYER_ORDERS) {
+        console.log('[buyerOrders][final enriched]', enriched.map(p => ({ id: p.order_id, supplier: p.supplier_id, status: p.status, eta: p.estimated_delivery_date })));
+      }
+      setOrders(enriched);
       if (split.length === 0 && !error) {
         // Pista diagnóstica rápida en consola.
         console.warn('[buyerOrders] Resultado vacío tras merge. Verificar flags, RLS o errores previos en consola.');
@@ -81,7 +143,9 @@ export const useBuyerOrders = buyerId => {
   // Realtime subscription for payment orders (payment_status updates)
   useEffect(() => {
     if (!buyerId || !isUUID(buyerId)) return;
-    const unsubscribe = orderService.subscribeToBuyerPaymentOrders(buyerId, payload => {
+    // Evitar resuscribir si ya hay canal (React StrictMode dobles mounts en dev)
+    if (!ordersChannelRef.current) {
+      ordersChannelRef.current = orderService.subscribeToBuyerPaymentOrders(buyerId, payload => {
       lastRealtimeRef.current = Date.now();
       if (payload.eventType === 'UPDATE') {
         const row = payload.new;
@@ -90,8 +154,37 @@ export const useBuyerOrders = buyerId => {
         // Podría ser nueva payment order: refetch ligero
         fetchOrders();
       }
-    });
-    return () => { try { unsubscribe(); } catch(_) {} };
+      });
+    }
+    if (!invoicesChannelRef.current) {
+      invoicesChannelRef.current = supabase
+        .channel(`invoices_meta_buyer_${buyerId}`)
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'invoices_meta' }, (payload) => {
+          try {
+            const row = payload.new;
+            if (!row?.order_id || !row?.supplier_id || !row?.path) return;
+            setOrders(prev => prev.map(p => {
+              if (p.order_id !== row.order_id || p.supplier_id !== row.supplier_id) return p;
+              if (!Array.isArray(p.items)) return p;
+              const already = p.items.some(it => it.invoice_path === row.path);
+              if (already) return p;
+              return {
+                ...p,
+                items: p.items.map(it => ({ ...it, invoice_path: it.invoice_path || row.path }))
+              };
+            }));
+          } catch (_) {}
+        })
+        .subscribe();
+    }
+    return () => {
+      try {
+        if (ordersChannelRef.current) { ordersChannelRef.current(); ordersChannelRef.current = null; }
+      } catch(_) {}
+      try {
+        if (invoicesChannelRef.current) { supabase.removeChannel(invoicesChannelRef.current); invoicesChannelRef.current = null; }
+      } catch(_) {}
+    };
   }, [buyerId, fetchOrders]);
 
   // Poll fallback if realtime silent and there are pending payments
