@@ -10,9 +10,11 @@ import {
 } from '@mui/material';
 import LoadingButton from '@mui/lab/LoadingButton';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
-import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../../services/supabase';
 import { PasswordRequirements } from '../../../shared/components';
+
+// 🔒 URL fija de staging
+const STAGING_HOME = 'https://staging.tusitio.com/';
 
 export default function ResetPassword() {
   const [password, setPassword] = useState('');
@@ -23,7 +25,6 @@ export default function ResetPassword() {
   const [error, setError] = useState('');
   const [ok, setOk] = useState(false);
   const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
 
   // ✅ mismos requisitos que en el registro
   const requisitos = [
@@ -51,13 +52,21 @@ export default function ResetPassword() {
 
     try {
       setLoading(true);
+
+      // 🔐 Actualizar contraseña
       const { error: upErr } = await supabase.auth.updateUser({ password });
       if (upErr) throw upErr;
 
       setOk(true);
 
+      // 👋 Cerrar sesión local para evitar inconsistencias
       await supabase.auth.signOut();
-      navigate('/auth/login?reset=success', { replace: true });
+
+      // 🚀 Redirigir SIEMPRE a staging con banner
+      const url = new URL(STAGING_HOME);
+      url.searchParams.set('banner', 'reset_success');
+      // replace: no deja "historial" intermedio
+      window.location.replace(url.toString());
     } catch (err) {
       setError(err?.message ?? 'Ocurrió un error al cambiar la contraseña.');
     } finally {
@@ -143,7 +152,7 @@ export default function ResetPassword() {
           )}
           {ok && (
             <Typography color="success.main" variant="body2" sx={{ mt: 1 }}>
-              ¡Contraseña actualizada! Redirigiendo al login…
+              ¡Contraseña actualizada! Redirigiendo…
             </Typography>
           )}
 
