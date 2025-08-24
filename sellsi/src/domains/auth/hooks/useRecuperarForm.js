@@ -1,150 +1,204 @@
-import { useState, useRef, useEffect } from 'react'
+// 📁 domains/auth/hooks/useRecuperarForm.js
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { supabase } from '../../../services/supabase';
 
+/**
+ * Hook de recuperación de contraseña basado en Supabase Auth.
+ * Supabase envía un ENLACE de recuperación (no código).
+ *
+ * Estados conservados por compatibilidad:
+ * - codigo, timer, showCodigoEnviado, fadeIn, nuevaContrasena, repiteContrasena,
+ *   showPassword, showRepeatPassword, cambioExitoso
+ *   (no se usan en el flujo con enlace, pero se exponen para no romper imports).
+ */
 export const useRecuperarForm = () => {
-  // Estados principales
-  const [paso, setPaso] = useState('correo')
-  const [correo, setCorreo] = useState('')
-  const [error, setError] = useState('')
-  const [mensaje, setMensaje] = useState('')
+  // Paso del flujo: 'correo' | 'enviado'
+  const [paso, setPaso] = useState('correo');
 
-  // Código de verificación
-  const [codigo, setCodigo] = useState(['', '', '', '', ''])
-  const [timer, setTimer] = useState(300)
-  const timerRef = useRef()
+  // Core
+  const [correo, setCorreo] = useState('');
+  const [error, setError] = useState('');
+  const [mensaje, setMensaje] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  // Restablecer contraseña
-  const [nuevaContrasena, setNuevaContrasena] = useState('')
-  const [repiteContrasena, setRepiteContrasena] = useState('')
-  const [showPassword, setShowPassword] = useState(false)
-  const [showRepeatPassword, setShowRepeatPassword] = useState(false)
-  const [cambioExitoso, setCambioExitoso] = useState(false)
+  // ---- Compatibilidad (no usados en flujo por enlace) -----------------------
+  const [codigo, setCodigo] = useState(['', '', '', '', '']); // deprecado
+  const [timer, setTimer] = useState(300); // deprecado
+  const timerRef = useRef(); // deprecado
 
-  // Mensaje reenviado
-  const [showCodigoEnviado, setShowCodigoEnviado] = useState(false)
-  const [fadeIn, setFadeIn] = useState(false)
-  const fadeTimeout = useRef()
+  const [nuevaContrasena, setNuevaContrasena] = useState(''); // deprecado
+  const [repiteContrasena, setRepiteContrasena] = useState(''); // deprecado
+  const [showPassword, setShowPassword] = useState(false); // deprecado
+  const [showRepeatPassword, setShowRepeatPassword] = useState(false); // deprecado
+  const [cambioExitoso, setCambioExitoso] = useState(false); // deprecado
 
-  // Timer para código
+  const [showCodigoEnviado, setShowCodigoEnviado] = useState(false); // deprecado
+  const [fadeIn, setFadeIn] = useState(false); // deprecado
+  const fadeTimeout = useRef(); // deprecado
+  // --------------------------------------------------------------------------
+
+  // (Compat) Desactiva cualquier timer que hubiera
   useEffect(() => {
-    if (paso === 'codigo') {
-      setTimer(300)
-      setCodigo(['', '', '', '', ''])
-      timerRef.current = setInterval(() => {
-        setTimer((prev) => prev - 1)
-      }, 1000)
-    }
-    return () => clearInterval(timerRef.current)
-  }, [paso])
+    return () => clearInterval(timerRef.current);
+  }, []);
 
-  useEffect(() => {
-    if (timer === 0) {
-      clearInterval(timerRef.current)
-    }
-  }, [timer])
-
-  // Fade para mensaje reenviado
+  // (Compat) Fade dummy para showCodigoEnviado
   useEffect(() => {
     if (showCodigoEnviado) {
-      setFadeIn(true)
+      setFadeIn(true);
       fadeTimeout.current = setTimeout(() => {
-        setFadeIn(false)
-        setTimeout(() => setShowCodigoEnviado(false), 400)
-      }, 15000)
+        setFadeIn(false);
+        setTimeout(() => setShowCodigoEnviado(false), 400);
+      }, 15000);
     }
-    return () => clearTimeout(fadeTimeout.current)
-  }, [showCodigoEnviado])
+    return () => clearTimeout(fadeTimeout.current);
+  }, [showCodigoEnviado]);
 
-  // Reset total de todos los estados
-  const resetAllStates = () => {
-    setCorreo('')
-    setError('')
-    setCodigo(['', '', '', '', ''])
-    setMensaje('')
-    setTimer(300)
-    setPaso('correo')
-    setNuevaContrasena('')
-    setRepiteContrasena('')
-    setShowPassword(false)
-    setShowRepeatPassword(false)
-    setCambioExitoso(false)
-    setShowCodigoEnviado(false)
-    setFadeIn(false)
-    clearInterval(timerRef.current)
-  }
-  // Validación mejorada de correo electrónico
-  const validarCorreo = (email) => {
-    // Regex más completa para validación de email
+  // Validación de email
+  const validarCorreo = email => {
     const regexCompleto =
-      /^[a-zA-Z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-zA-Z0-9!#$%&'*+/=?^_`{|}~-]+)*@[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?)*$/
+      /^[a-zA-Z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-zA-Z0-9!#$%&'*+/=?^_`{|}~-]+)*@[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?)*$/;
 
-    // Verificaciones básicas
-    if (!email) return false
-    if (email.length > 254) return false // RFC 5321 límite
-    if (email.includes('..')) return false // No permitir puntos consecutivos
-    if (email.startsWith('.') || email.endsWith('.')) return false
-    if (email.includes('@.') || email.includes('.@')) return false
+    if (!email) return false;
+    if (email.length > 254) return false;
+    if (email.includes('..')) return false;
+    if (email.startsWith('.') || email.endsWith('.')) return false;
+    if (email.includes('@.') || email.includes('.@')) return false;
 
-    // Validar estructura general
-    const parts = email.split('@')
-    if (parts.length !== 2) return false
+    const parts = email.split('@');
+    if (parts.length !== 2) return false;
 
-    const [localPart, domain] = parts
+    const [localPart, domain] = parts;
+    if (localPart.length === 0 || localPart.length > 64) return false;
 
-    // Validar parte local (antes del @)
-    if (localPart.length === 0 || localPart.length > 64) return false
+    if (domain.length === 0 || domain.length > 253) return false;
+    if (domain.includes('..')) return false;
+    if (!domain.includes('.')) return false;
 
-    // Validar dominio
-    if (domain.length === 0 || domain.length > 253) return false
-    if (domain.includes('..')) return false
-    if (!domain.includes('.')) return false
+    const domainParts = domain.split('.');
+    if (domainParts.length < 2) return false;
+    const lastPart = domainParts[domainParts.length - 1];
+    if (lastPart.length < 2) return false;
 
-    // Verificar que el dominio tenga al menos un punto y una extensión válida
-    const domainParts = domain.split('.')
-    if (domainParts.length < 2) return false
-    const lastPart = domainParts[domainParts.length - 1]
-    if (lastPart.length < 2) return false
+    return regexCompleto.test(email);
+  };
 
-    return regexCompleto.test(email)
-  }
-  // Handlers de pasos
-  const handleBuscar = (e) => {
-    e.preventDefault()
-    if (!correo) {
-      setError('Por favor, rellena este campo.')
-      return
+  // Enviar mail de recuperación
+  const handleBuscar = useCallback(
+    async e => {
+      e?.preventDefault?.();
+
+      if (!correo) {
+        setError('Por favor, rellena este campo.');
+        return;
+      }
+      if (!validarCorreo(correo)) {
+        setError('Correo inválido. Ejemplo: usuario@dominio.com');
+        return;
+      }
+
+      setError('');
+      setMensaje('');
+      setLoading(true);
+
+      try {
+        const { error: sbError } = await supabase.auth.resetPasswordForEmail(
+          correo.trim(),
+          { redirectTo: `${window.location.origin}/auth/reset-password` }
+        );
+        if (sbError) throw sbError;
+
+        setPaso('enviado');
+        setMensaje(
+          'Te enviamos un enlace para restablecer tu contraseña. Revisa tu bandeja de entrada y el spam.'
+        );
+      } catch (err) {
+        setError(
+          err?.message || 'No pudimos enviar el correo. Intenta nuevamente.'
+        );
+      } finally {
+        setLoading(false);
+      }
+    },
+    [correo]
+  );
+
+  // Reenviar mail
+  const handleResendCode = useCallback(async () => {
+    if (!correo || !validarCorreo(correo)) {
+      setError('Correo inválido o vacío. Verifícalo e intenta otra vez.');
+      return;
     }
-    if (!validarCorreo(correo)) {
-      setError('Correo inválido. Ejemplo: usuario@dominio.com')
-      return
-    }
-    setError('')
-    setMensaje('Revisa el código que fue enviado a tu correo.')
-    setPaso('codigo')
-  }
 
+    setError('');
+    setMensaje('');
+    setLoading(true);
+
+    try {
+      const { error: sbError } = await supabase.auth.resetPasswordForEmail(
+        correo.trim(),
+        { redirectTo: `${window.location.origin}/auth/reset-password` }
+      );
+      if (sbError) throw sbError;
+
+      // (Compat) activar mini “reenviado”
+      setShowCodigoEnviado(false);
+      setTimeout(() => setShowCodigoEnviado(true), 10);
+
+      setPaso('enviado'); // ya estaba enviado, reafirma
+      setMensaje(
+        'Reenviamos el enlace a tu correo. Revisa también tu carpeta de spam.'
+      );
+    } catch (err) {
+      setError(
+        err?.message || 'No pudimos reenviar el correo. Intenta nuevamente.'
+      );
+    } finally {
+      setLoading(false);
+    }
+  }, [correo]);
+
+  // (Compat) Ya no hay código que verificar
   const handleVerificarCodigo = () => {
-    // Aquí deberías verificar el código con backend
-    setPaso('restablecer')
-  }
+    // Mantener por compatibilidad: en flujo por enlace NO se usa.
+    // Podrías redirigir a 'enviado' o no hacer nada.
+    setPaso('enviado');
+  };
 
+  // (Compat) Cambio de contraseña se hace en /auth/reset-password
   const handleCambiarContrasena = () => {
-    setCambioExitoso(true)
-    setPaso('exito')
-  }
+    setCambioExitoso(true);
+    // En este flujo, el cambio real ocurre en la pantalla ResetPassword.jsx
+  };
 
-  const handleResendCode = () => {
-    setShowCodigoEnviado(false)
-    setTimeout(() => setShowCodigoEnviado(true), 10)
-    setTimer(300)
-    setMensaje('El código fue reenviado a tu correo.')
-  }
+  // Resetear todo
+  const resetAllStates = () => {
+    setCorreo('');
+    setError('');
+    setCodigo(['', '', '', '', '']); // compat
+    setMensaje('');
+    setTimer(300); // compat
+    setPaso('correo');
+    setNuevaContrasena(''); // compat
+    setRepiteContrasena(''); // compat
+    setShowPassword(false); // compat
+    setShowRepeatPassword(false); // compat
+    setCambioExitoso(false); // compat
+    setShowCodigoEnviado(false); // compat
+    setFadeIn(false); // compat
+    setLoading(false);
+    clearInterval(timerRef.current);
+  };
 
   return {
-    // Estados
+    // Estados principales
     paso,
     correo,
     error,
     mensaje,
+    loading,
+
+    // Compat
     codigo,
     timer,
     nuevaContrasena,
@@ -156,7 +210,7 @@ export const useRecuperarForm = () => {
     fadeIn,
 
     // Setters
-    setPaso, // ✅ AGREGAR ESTE SETTER
+    setPaso,
     setCorreo,
     setError,
     setMensaje,
@@ -172,13 +226,13 @@ export const useRecuperarForm = () => {
 
     // Métodos
     resetAllStates,
-    handleBuscar,
-    handleVerificarCodigo,
-    handleCambiarContrasena,
-    handleResendCode,
+    handleBuscar, // envía el mail
+    handleVerificarCodigo, // compat (no usado)
+    handleCambiarContrasena, // compat (no usado; se hace en ResetPassword.jsx)
+    handleResendCode, // reenvía el mail
 
-    // Refs
+    // Refs (compat)
     timerRef,
     fadeTimeout,
-  }
-}
+  };
+};
