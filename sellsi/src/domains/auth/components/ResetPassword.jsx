@@ -25,7 +25,7 @@ export default function ResetPassword() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  // ✅ Mismos requisitos que en el registro
+  // ✅ mismos requisitos que en el registro
   const requisitos = [
     { label: 'Al menos 8 caracteres', valid: password.length >= 8 },
     { label: 'Letras minúsculas (a-z)', valid: /[a-z]/.test(password) },
@@ -40,7 +40,6 @@ export default function ResetPassword() {
     e.preventDefault();
     setError('');
 
-    // Validación explícita (coincide con la UI)
     if (!cumpleMinimos) {
       return setError(
         'La contraseña debe tener al menos 8 caracteres, incluir mayúsculas, minúsculas y números.'
@@ -57,9 +56,7 @@ export default function ResetPassword() {
 
       setOk(true);
 
-      // 🔐 Invalida la sesión temporal creada por el link de recuperación
       await supabase.auth.signOut();
-
       navigate('/auth/login?reset=success', { replace: true });
     } catch (err) {
       setError(err?.message ?? 'Ocurrió un error al cambiar la contraseña.');
@@ -81,6 +78,7 @@ export default function ResetPassword() {
         </Typography>
 
         <Box component="form" onSubmit={handleSubmit}>
+          {/* Primer campo */}
           <TextField
             type={showPwd ? 'text' : 'password'}
             label="Nueva contraseña"
@@ -105,9 +103,7 @@ export default function ResetPassword() {
             }}
           />
 
-          {/* 📋 Checklist de requisitos igual al registro */}
-          <PasswordRequirements password={password} size="normal" />
-
+          {/* Segundo campo */}
           <TextField
             type={showConfirm ? 'text' : 'password'}
             label="Confirmar contraseña"
@@ -136,6 +132,9 @@ export default function ResetPassword() {
               ),
             }}
           />
+
+          {/* 📋 Checklist ahora debajo del segundo campo */}
+          <PasswordRequirements password={password} size="normal" />
 
           {error && (
             <Typography color="error" variant="body2" sx={{ mt: 1 }}>
