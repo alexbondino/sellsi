@@ -13,9 +13,6 @@ import { Visibility, VisibilityOff } from '@mui/icons-material';
 import { supabase } from '../../../services/supabase';
 import { PasswordRequirements } from '../../../shared/components';
 
-// 🔒 URL fija de staging
-const STAGING_HOME = 'https://staging.tusitio.com/';
-
 export default function ResetPassword() {
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
@@ -59,13 +56,13 @@ export default function ResetPassword() {
 
       setOk(true);
 
-      // 👋 Cerrar sesión local para evitar inconsistencias
+      // 👋 Cerrar sesión local
       await supabase.auth.signOut();
 
-      // 🚀 Redirigir SIEMPRE a staging con banner
-      const url = new URL(STAGING_HOME);
+      // 🌍 Redirigir al mismo host (staging o producción)
+      const base = window.location.origin;
+      const url = new URL(base);
       url.searchParams.set('banner', 'reset_success');
-      // replace: no deja "historial" intermedio
       window.location.replace(url.toString());
     } catch (err) {
       setError(err?.message ?? 'Ocurrió un error al cambiar la contraseña.');
