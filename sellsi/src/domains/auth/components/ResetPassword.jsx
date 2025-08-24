@@ -1,121 +1,143 @@
-// 📁 domains/auth/wizard/Step1Email.jsx
-import React, { useState, useEffect } from 'react';
-import { Box, TextField, Typography, Button } from '@mui/material';
+import React, { useEffect, useState } from 'react';
+import { Paper, TextField, Button, Typography, Alert } from '@mui/material';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { supabase } from '../../../services/supabase';
 
-const Step1Email = ({
-  correo,
-  setCorreo,
-  error,
-  mensaje,
-  onSubmit,
-  onCancel,
-  loading = false,
-}) => {
-  const [localError, setLocalError] = useState('');
-  const [touched, setTouched] = useState(false);
+export default function ResetPassword() {
+  const location = useLocation();
+  const navigate = useNavigate();
 
-  const validarCorreo = email => {
-    const regexCompleto =
-      /^[a-zA-Z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-zA-Z0-9!#$%&'*+/=?^_`{|}~-]+)*@[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?)*$/;
+  const [ready, setReady] = useState(false);
+  const [pwd, setPwd] = useState('');
+  const [pwd2, setPwd2] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [okMsg, setOkMsg] = useState('');
+  const [errMsg, setErrMsg] = useState('');
 
-    if (!email) return false;
-    if (email.length > 254) return false;
-    if (email.includes('..')) return false;
-    if (email.startsWith('.') || email.endsWith('.')) return false;
-    if (email.includes('@.') || email.includes('.@')) return false;
-
-    const parts = email.split('@');
-    if (parts.length !== 2) return false;
-
-    const [localPart, domain] = parts;
-
-    if (localPart.length === 0 || localPart.length > 64) return false;
-    if (domain.length === 0 || domain.length > 253) return false;
-    if (domain.includes('..')) return false;
-    if (!domain.includes('.')) return false;
-
-    const domainParts = domain.split('.');
-    if (domainParts.length < 2) return false;
-    const lastPart = domainParts[domainParts.length - 1];
-    if (lastPart.length < 2) return false;
-
-    return regexCompleto.test(email);
-  };
-
+  // ✅ Maneja tanto hash tokens como query code
   useEffect(() => {
-    if (touched && correo) {
-      if (!validarCorreo(correo)) setLocalError('');
-      else setLocalError('');
-    } else if (touched && !correo) {
-      setLocalError('Por favor, rellena este campo.');
-    } else {
-      setLocalError('');
+    (async () => {
+      try {
+        // --- HASH tokens ---
+        const hash = window.location.hash || '';
+        const hasHashTokens =
+          hash.startsWith('#') &&
+          (hash.includes('access_token') || hash.includes('refresh_token'));
+
+        if (hasHashTokens) {
+          const params = new URLSearchParams(hash.slice(1));
+          const access_token = params.get('access_token');
+          const refresh_token = params.get('refresh_token');
+
+          if (access_token && refresh_token) {
+            const { error } = await supabase.auth.setSession({
+              access_token,
+              refresh_token,
+            });
+            if (error) throw error;
+            setReady(true);
+            return;
+          }
+        }
+
+        // --- QUERY code (?code=...&type=recovery) ---
+        const search = new URLSearchParams(location.search);
+        const code = search.get('code');
+        const type = search.get('type');
+        if (code && type === 'recovery') {
+          const { error } = await supabase.auth.exchangeCodeForSession(code);
+          if (error) throw error;
+          setReady(true);
+          return;
+        }
+
+        // Ningún token encontrado
+        if (!hasHashTokens && !code) {
+          setErrMsg(
+            'Enlace inválido o expirado. Solicita un nuevo correo de recuperación.'
+          );
+        }
+      } catch (e) {
+        setErrMsg(e?.message || 'No pudimos validar tu enlace.');
+      } finally {
+        setReady(true);
+      }
+    })();
+  }, [location.search]);
+
+  const valid = pwd.length >= 8 && pwd === pwd2;
+
+  const handleUpdate = async e => {
+    e.preventDefault();
+    if (!valid) return;
+
+    setLoading(true);
+    setErrMsg('');
+    setOkMsg('');
+
+    try {
+      const { error } = await supabase.auth.updateUser({ password: pwd });
+      if (error) throw error;
+
+      setOkMsg('¡Tu contraseña se actualizó correctamente!');
+      // Opcional: redirigir al login después de un tiempo
+      setTimeout(() => navigate('/login'), 1500);
+    } catch (e) {
+      setErrMsg(e?.message || 'No pudimos actualizar tu contraseña.');
+    } finally {
+      setLoading(false);
     }
-  }, [correo, touched]);
-
-  const handleEmailChange = e => {
-    setCorreo(e.target.value);
-    if (!touched) setTouched(true);
   };
-
-  const handleBlur = () => setTouched(true);
-  const displayError = error || localError;
 
   return (
-    <Box sx={{ textAlign: 'center', pt: 2 }}>
-      <Typography variant="h6" sx={{ mb: 3, fontWeight: 700, fontSize: 20 }}>
-        Recuperar Contraseña
+    <Paper sx={{ p: 3, maxWidth: 460, mx: 'auto', mt: 6 }}>
+      <Typography variant="h6" sx={{ fontWeight: 700, mb: 2 }}>
+        Restablecer contraseña
       </Typography>
 
-      <Typography variant="body2" sx={{ mb: 3, color: '#666', fontSize: 14 }}>
-        Ingresa tu correo y te enviaremos <b>un enlace</b> para restablecer tu
-        contraseña.
-      </Typography>
+      {!ready && <Typography>Validando enlace…</Typography>}
+      {ready && (
+        <>
+          {errMsg && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {errMsg}
+            </Alert>
+          )}
+          {okMsg && (
+            <Alert severity="success" sx={{ mb: 2 }}>
+              {okMsg}
+            </Alert>
+          )}
 
-      <form onSubmit={onSubmit}>
-        <TextField
-          fullWidth
-          size="small"
-          label="Correo electrónico"
-          variant="outlined"
-          value={correo}
-          onChange={handleEmailChange}
-          onBlur={handleBlur}
-          error={!!displayError}
-          helperText={displayError}
-          sx={{ mb: 2 }}
-        />
-
-        <Button
-          type="submit"
-          variant="contained"
-          color="primary"
-          disabled={loading || !correo || !validarCorreo(correo)}
-          sx={{
-            borderRadius: 2,
-            textTransform: 'none',
-            fontWeight: 700,
-            fontSize: 16,
-            width: '100%',
-            height: 42,
-            boxShadow: 'none',
-            mb: 0.5,
-          }}
-        >
-          {loading ? 'Enviando…' : 'Enviar Mail'}
-        </Button>
-
-        <Button
-          variant="text"
-          color="primary"
-          onClick={onCancel}
-          sx={{ fontWeight: 700, fontSize: 14, width: '100%', mt: 0.5 }}
-        >
-          Volver
-        </Button>
-      </form>
-    </Box>
+          <form onSubmit={handleUpdate}>
+            <TextField
+              type="password"
+              label="Nueva contraseña"
+              fullWidth
+              value={pwd}
+              onChange={e => setPwd(e.target.value)}
+              sx={{ mb: 2 }}
+              helperText="Mínimo 8 caracteres"
+            />
+            <TextField
+              type="password"
+              label="Repetir contraseña"
+              fullWidth
+              value={pwd2}
+              onChange={e => setPwd2(e.target.value)}
+              sx={{ mb: 2 }}
+            />
+            <Button
+              type="submit"
+              variant="contained"
+              disabled={!valid || loading}
+              fullWidth
+            >
+              {loading ? 'Guardando…' : 'Guardar nueva contraseña'}
+            </Button>
+          </form>
+        </>
+      )}
+    </Paper>
   );
-};
-
-export default Step1Email;
+}
