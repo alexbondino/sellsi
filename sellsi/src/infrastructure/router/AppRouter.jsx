@@ -15,10 +15,18 @@ const MarketplaceBuyer = React.lazy(() =>
 const Marketplace = React.lazy(() =>
   import('../../domains/marketplace/pages/Marketplace')
 );
-const BuyerCart = React.lazy(() => import('../../domains/buyer/pages/BuyerCart'));
-const PaymentMethod = React.lazy(() => import('../../domains/checkout/pages/PaymentMethod'));
-const CheckoutSuccess = React.lazy(() => import('../../domains/checkout/pages/CheckoutSuccess'));
-const CheckoutCancel = React.lazy(() => import('../../domains/checkout/pages/CheckoutCancel'));
+const BuyerCart = React.lazy(() =>
+  import('../../domains/buyer/pages/BuyerCart')
+);
+const PaymentMethod = React.lazy(() =>
+  import('../../domains/checkout/pages/PaymentMethod')
+);
+const CheckoutSuccess = React.lazy(() =>
+  import('../../domains/checkout/pages/CheckoutSuccess')
+);
+const CheckoutCancel = React.lazy(() =>
+  import('../../domains/checkout/pages/CheckoutCancel')
+);
 
 // 📦 SUPPLIER DASHBOARD - LAZY LOADING
 const ProviderHome = React.lazy(() =>
@@ -38,12 +46,12 @@ const MarketplaceSupplier = React.lazy(() =>
 );
 
 // 📦 PROFILE PAGES - LAZY LOADING
-const Profile = React.lazy(() =>
-  import('../../domains/profile/pages/Profile')
-);
+const Profile = React.lazy(() => import('../../domains/profile/pages/Profile'));
 
 // 📦 RUTAS SECUNDARIAS - LAZY LOADING
-const BuyerOrders = React.lazy(() => import('../../domains/buyer/pages/BuyerOrders'));
+const BuyerOrders = React.lazy(() =>
+  import('../../domains/buyer/pages/BuyerOrders')
+);
 const BuyerPerformance = React.lazy(() =>
   import('../../domains/buyer/pages/BuyerPerformance')
 );
@@ -58,44 +66,81 @@ const ProductPageWrapper = React.lazy(() =>
 );
 
 // 📦 AUTH & ONBOARDING - LAZY LOADING
-const Login = React.lazy(() => import('../../domains/auth').then(module => ({ default: module.Login })));
-const Register = React.lazy(() => import('../../domains/auth').then(module => ({ default: module.Register })));
-const Onboarding = React.lazy(() => import('../../app/pages/onboarding/Onboarding'));
+const Login = React.lazy(() =>
+  import('../../domains/auth').then(module => ({ default: module.Login }))
+);
+const Register = React.lazy(() =>
+  import('../../domains/auth').then(module => ({ default: module.Register }))
+);
+const Onboarding = React.lazy(() =>
+  import('../../app/pages/onboarding/Onboarding')
+);
+const ResetPassword = React.lazy(() =>
+  import('../../domains/auth/components/ResetPassword')
+);
 
 // 📦 ERROR PAGES - LAZY LOADING
-const NotFound = React.lazy(() => import('../../shared/components/layout/NotFound'));
+const NotFound = React.lazy(() =>
+  import('../../shared/components/layout/NotFound')
+);
 
 // 📦 BAN PAGE - LAZY LOADING
-const BannedPage = React.lazy(() => import('../../domains/ban/pages/BanPageView'));
+const BannedPage = React.lazy(() =>
+  import('../../domains/ban/pages/BanPageView')
+);
 
 // 📦 TERMS AND PRIVACY PAGES - LAZY LOADING
-const TermsAndConditionsPage = React.lazy(() => import('../../app/pages/legal/TermsAndConditionsPage'));
-const PrivacyPolicyPage = React.lazy(() => import('../../app/pages/legal/PrivacyPolicyPage'));
+const TermsAndConditionsPage = React.lazy(() =>
+  import('../../app/pages/legal/TermsAndConditionsPage')
+);
+const PrivacyPolicyPage = React.lazy(() =>
+  import('../../app/pages/legal/PrivacyPolicyPage')
+);
 
 // 📦 ADMIN PAGES - LAZY LOADING
-const AdminLogin = React.lazy(() => import('../../domains/admin').then(module => ({ default: module.AdminLogin })));
-const AdminDashboard = React.lazy(() => import('../../domains/admin').then(module => ({ default: module.AdminDashboard })));
-const AdminPanelHome = React.lazy(() => import('../../domains/admin').then(module => ({ default: module.AdminPanelHome })));
-const AdminMetrics = React.lazy(() => import('../../domains/admin').then(module => ({ default: module.AdminMetrics })));
+const AdminLogin = React.lazy(() =>
+  import('../../domains/admin').then(module => ({ default: module.AdminLogin }))
+);
+const AdminDashboard = React.lazy(() =>
+  import('../../domains/admin').then(module => ({
+    default: module.AdminDashboard,
+  }))
+);
+const AdminPanelHome = React.lazy(() =>
+  import('../../domains/admin').then(module => ({
+    default: module.AdminPanelHome,
+  }))
+);
+const AdminMetrics = React.lazy(() =>
+  import('../../domains/admin').then(module => ({
+    default: module.AdminMetrics,
+  }))
+);
 
 // 📦 AUTH CALLBACK - LAZY LOADING
 // AuthCallback también se importa directo para mantener el barrel público mínimo
-const AuthCallback = React.lazy(() => import('../../domains/auth/components/AuthCallback'));
+const AuthCallback = React.lazy(() =>
+  import('../../domains/auth/components/AuthCallback')
+);
 
 export const AppRouter = ({ scrollTargets }) => {
-  const { session, needsOnboarding, loadingUserStatus, refreshUserProfile } = useAuth();
+  const { session, needsOnboarding, loadingUserStatus, refreshUserProfile } =
+    useAuth();
 
   return (
     <Suspense fallback={<SuspenseLoader />}>
       <Routes>
         {/* Rutas Públicas / Generales */}
-        <Route
-          path="/"
-          element={<Home scrollTargets={scrollTargets} />}
-        />
+        <Route path="/" element={<Home scrollTargets={scrollTargets} />} />
         <Route path="/marketplace" element={<Marketplace />} />
-        <Route path="/marketplace/product/:id" element={<ProductPageWrapper isLoggedIn={!!session} />} />
-        <Route path="/marketplace/product/:id/:slug" element={<ProductPageWrapper isLoggedIn={!!session} />} />
+        <Route
+          path="/marketplace/product/:id"
+          element={<ProductPageWrapper isLoggedIn={!!session} />}
+        />
+        <Route
+          path="/marketplace/product/:id/:slug"
+          element={<ProductPageWrapper isLoggedIn={!!session} />}
+        />
 
         {/* TechnicalSpecs puede ser accedido sin iniciar sesión, si es contenido común */}
         <Route
@@ -104,16 +149,20 @@ export const AppRouter = ({ scrollTargets }) => {
         />
         <Route path="/login" element={<Login />} />
         <Route path="/crear-cuenta" element={<Register />} />
+        <Route path="/auth/reset-password" element={<ResetPassword />} />
 
         {/* RUTAS DE TÉRMINOS Y POLÍTICAS */}
-        <Route path="/terms-and-conditions" element={<TermsAndConditionsPage />} />
+        <Route
+          path="/terms-and-conditions"
+          element={<TermsAndConditionsPage />}
+        />
         <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
 
         {/* RUTAS ADMINISTRATIVAS - ACCESO VISUAL PARA TESTING */}
         <Route path="/admin-login" element={<AdminLogin />} />
         <Route path="/admin-panel" element={<AdminPanelHome />} />
         <Route path="/admin-panel/dashboard" element={<AdminDashboard />} />
-  <Route path="/admin-panel/metrics" element={<AdminMetrics />} />
+        <Route path="/admin-panel/metrics" element={<AdminMetrics />} />
 
         {/* Ruta para página de ban (acceso directo para testing) */}
         <Route path="/banned" element={<BannedPage />} />
