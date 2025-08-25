@@ -110,7 +110,6 @@ const Home = ({ scrollTargets }) => {
       <Box
         sx={{
           width: '100%',
-          minHeight: 'min(120vh, 1800px)',
           background: `url('/Landing Page/BackgroundHome.svg') center top / cover no-repeat, linear-gradient(135deg, #f7f8fa 0%, #e3e6ec 100%)`,
           position: 'relative',
           zIndex: 0,

@@ -48,7 +48,7 @@ export default function AboutUsSection({
   return (
     <Box ref={quienesSomosRef} component="section">
       {/* ===================== Bloque 1: Compradores ===================== */}
-      <Grid container spacing={{ xs: 3, md: 6 }} alignItems="center">
+      <Grid container spacing={{ xs: 3, md: 6 }}>
         {/* Imagen izquierda */}
         <Grid item xs={12} md={6} mr={10}>
           <YouTubeEmbed
