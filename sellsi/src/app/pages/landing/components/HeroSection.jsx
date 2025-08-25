@@ -18,7 +18,7 @@ export default function HeroSection({
   // Padding simétrico por lado (considera safe areas)
   const pl = {
     xs: 'max(25px, env(safe-area-inset-left))',
-    sm: '30px, env(safe-area-inset-right))',
+    sm: 'max(30px, env(safe-area-inset-right))',
     md: '180px', // MacBook Air M1
     mac: '180px',
     lg: '250px',
@@ -26,7 +26,7 @@ export default function HeroSection({
   };
   const pr = {
     xs: 'max(25px, env(safe-area-inset-right))',
-    sm: '30px, env(safe-area-inset-right))',
+    sm: 'max(30px, env(safe-area-inset-right))',
     md: '180px', // MacBook Air M1
     lg: '250px',
     xl: '250px',
@@ -50,7 +50,20 @@ export default function HeroSection({
       }}
     >
       {/* Columna izquierda: texto + imagen (en móvil) + CTAs */}
-      <Box sx={{ maxWidth: 660, zIndex: 1 }}>
+      <Box
+        sx={{
+          maxWidth: {
+            xs: '100%', // Telefonos Chicos
+            sm: '100%', // Telefonos grandes
+            mini: 576, // Tablets
+            md: 768, // ??
+            mac: 580, //  Mac M1
+            lg: 660, // 1080p
+            xl: 2160, // 2K
+          },
+          zIndex: 1,
+        }}
+      >
         {/* Título */}
         <Typography
           variant="h1"
@@ -142,6 +155,7 @@ export default function HeroSection({
                 xs: '100%', // 👈 full-width en móvil
                 sm: '100%',
                 md: 270, // MacBook Air M1
+                mac: 260,
                 lg: 295,
               },
               fontWeight: 700,
@@ -163,7 +177,7 @@ export default function HeroSection({
               fontWeight: 700,
               borderRadius: 2,
               height: 59,
-              width: { xs: '100%', sm: '100%', mini: 295, md: 295 }, // 👈 full-width en móvil
+              width: { xs: '100%', sm: '100%', md: 295, mac: 260, lg: 295 }, // 👈 full-width en móvil
               bgcolor: '#F59E0B',
               color: '#fff',
               '&:hover': { bgcolor: '#FFA000' },

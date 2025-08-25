@@ -32,19 +32,6 @@ export default function ServicesSection({
     </Box>
   );
 
-  // Estilos comunes de imagen (mockup)
-  const imageSx = {
-    width: { xs: '100%', md: 640, lg: 640 },
-    height: { xs: 'auto', md: 370, lg: 370 },
-    objectFit: 'cover',
-    borderRadius: 2,
-    border: '1px solid',
-    borderColor: 'divider',
-    boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
-    backgroundColor: '#fff',
-    display: 'block',
-  };
-
   return (
     <Box ref={quienesSomosRef} component="section">
       {/* ===================== Bloque 1: Compradores ===================== */}

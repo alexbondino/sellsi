@@ -113,7 +113,14 @@ const Home = ({ scrollTargets }) => {
           position: 'relative',
           zIndex: 0,
           overflow: 'hidden',
-          px: '250px',
+          px: {
+            xs: 0, // Telefonos Chicos
+            sm: 0, // Telefonos grandes
+            mini: 0, // Tablets
+            mac: '180px', //  Mac M1
+            lg: '250px', // 1080p
+            xl: '250px', // 2K
+          },
           py: '50px', // Padding lateral global para todas las secciones
         }}
       >
