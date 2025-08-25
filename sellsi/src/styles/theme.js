@@ -48,7 +48,7 @@ const theme = createTheme({
     // 🎯 Nuevo variant para bullets
     bullet: {
       fontFamily: 'Inter, sans-serif',
-      fontSize: '25px', // ~20px
+      fontSize: '20px', // ~20px
       lineHeight: 1.4,
       color: '#1A1A1A',
     },
@@ -60,7 +60,7 @@ const theme = createTheme({
           props: { variant: 'bullet' },
           style: {
             fontFamily: 'Inter, sans-serif',
-            fontSize: '25px',
+            fontSize: '20px',
             lineHeight: 1.4,
             color: '#1A1A1A',
           },

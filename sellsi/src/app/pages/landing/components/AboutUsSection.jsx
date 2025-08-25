@@ -7,7 +7,7 @@ import {
   Button, // para CTA azul
 } from '@mui/material';
 import ChevronRightRoundedIcon from '@mui/icons-material/ChevronRightRounded';
-import PrimaryButton from '../../../../shared/components/forms/PrimaryButton/PrimaryButton';
+import YouTubeEmbed from '../../../../shared/components/YouTubeEmbed';
 
 export default function AboutUsSection({
   quienesSomosRef,
@@ -51,13 +51,9 @@ export default function AboutUsSection({
       <Grid container spacing={{ xs: 3, md: 6 }} alignItems="center">
         {/* Imagen izquierda */}
         <Grid item xs={12} md={6} mr={10}>
-          <Box
-            component="img"
-            src={buyerImgSrc}
-            alt="Vista del marketplace para compradores"
-            loading="lazy"
-            decoding="async"
-            sx={imageSx}
+          <YouTubeEmbed
+            src="https://www.youtube.com/embed/dQw4w9WgXcQ"
+            title="Compradores - Demo"
           />
         </Grid>
 
@@ -74,7 +70,7 @@ export default function AboutUsSection({
             Simplifica y agiliza tus compras B2B en un solo lugar
           </Typography>
 
-          <Box sx={{ display: 'grid', gap: 1.25, mb: 3 }}>
+          <Box sx={{ display: 'grid', gap: 1.25, mb: 3, mt: 5 }}>
             <Bullet color="#2E52B2">
               Encuentra proveedores verificados y confiables en minutos.
             </Bullet>
@@ -88,7 +84,7 @@ export default function AboutUsSection({
             </Bullet>
           </Box>
 
-          <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+          <Box sx={{ display: 'flex', justifyContent: 'center', mt: 5 }}>
             <Button
               variant="contained"
               color="primary"
@@ -132,7 +128,7 @@ export default function AboutUsSection({
             Llega a nuevos clientes y aumenta tus ventas
           </Typography>
 
-          <Box sx={{ display: 'grid', gap: 1.25, mb: 3 }}>
+          <Box sx={{ display: 'grid', gap: 1.25, mb: 3, mt: 5 }}>
             <Bullet color="#F59E0B">
               Accede a una red creciente de empresas compradoras en Chile.
             </Bullet>
@@ -146,7 +142,7 @@ export default function AboutUsSection({
           </Box>
 
           {/* Bloque 2 */}
-          <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+          <Box sx={{ display: 'flex', justifyContent: 'center', mt: 5 }}>
             <Button
               variant="contained"
               color="primary"
@@ -170,13 +166,9 @@ export default function AboutUsSection({
 
         {/* Imagen derecha */}
         <Grid item xs={12} md={6} order={{ xs: 1, md: 2 }}>
-          <Box
-            component="img"
-            src={buyerImgSrc}
-            alt="Vista de pedidos para proveedores"
-            loading="lazy"
-            decoding="async"
-            sx={imageSx}
+          <YouTubeEmbed
+            src="https://www.youtube.com/embed/dQw4w9WgXcQ"
+            title="Compradores - Demo"
           />
         </Grid>
       </Grid>
