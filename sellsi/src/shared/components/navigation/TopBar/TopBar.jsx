@@ -233,7 +233,13 @@ export default function TopBar({
   let desktopNavLinks = null;
   let desktopRightContent = null;
   let mobileMenuItems = [];
-  let paddingX = { xs: 2, md: '250px', mac: 18, lg: '250px' }; // Default padding for logged out
+  let paddingX = {
+    xs: 'max(25px, env(safe-area-inset-left))',
+    sm: 'max(30px, env(safe-area-inset-left))',
+    md: '250px',
+    mac: '180px',
+    lg: '250px',
+  }; // Default padding for logged out
 
   // Avatar con fade-in
   const [avatarLoaded, setAvatarLoaded] = useState(false);
