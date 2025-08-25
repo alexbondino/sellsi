@@ -1,3 +1,4 @@
+// 📁 theme.js
 import { createTheme } from '@mui/material/styles';
 
 const theme = createTheme({
@@ -28,21 +29,44 @@ const theme = createTheme({
       'Lato, "Proxima Nova", -apple-system, "Helvetica Neue", helvetica, roboto, arial, sans-serif',
 
     h1: {
-      fontFamily: 'Inter, sans-serif', // ✅ fuente Inter
+      fontFamily: 'Inter, sans-serif',
       fontWeight: 'bold',
       fontSize: '45px',
       lineHeight: 1.2,
     },
     h2: {
-      fontFamily: 'Inter, sans-serif', // ✅ fuente Inter
-      fontSize: '25px', // ✅ tamaño 25px
+      fontFamily: 'Inter, sans-serif',
+      fontSize: '40px',
+      fontWeight: 'bold',
     },
     h3: {
-      fontWeight: 600,
-      fontSize: '1.75rem',
+      fontSize: '25px',
     },
     body1: { fontSize: '1rem' },
     button: { textTransform: 'none', fontWeight: 'bold' },
+
+    // 🎯 Nuevo variant para bullets
+    bullet: {
+      fontFamily: 'Inter, sans-serif',
+      fontSize: '25px', // ~20px
+      lineHeight: 1.4,
+      color: '#1A1A1A',
+    },
+  },
+  components: {
+    MuiTypography: {
+      variants: [
+        {
+          props: { variant: 'bullet' },
+          style: {
+            fontFamily: 'Inter, sans-serif',
+            fontSize: '25px',
+            lineHeight: 1.4,
+            color: '#1A1A1A',
+          },
+        },
+      ],
+    },
   },
 });
 

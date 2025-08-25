@@ -54,7 +54,7 @@ export default function HeroSection({
 
         {/* Subtítulo / descripción */}
         <Typography
-          variant="h2" // ✅ usa h2 definido en el theme
+          variant="h3"
           sx={{
             mt: 2.5,
             color: '#FFFFFF',

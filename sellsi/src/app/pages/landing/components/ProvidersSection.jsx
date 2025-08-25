@@ -100,6 +100,7 @@ const ProvidersSection = ({ statistics }) => {
             [DEBUG] statistics vacío o no definido
           </Typography>
         )}
+        {/*}
         <Button
           variant="contained"
           sx={{
@@ -129,7 +130,7 @@ const ProvidersSection = ({ statistics }) => {
         >
           Ir a marketplace
         </Button>
-        {/*}
+
         <Box
           sx={{
             display: 'flex',
