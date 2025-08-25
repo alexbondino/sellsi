@@ -65,9 +65,23 @@ export async function uploadInvoicePDF({ file, supplierId, orderId, userId }) {
 }
 
 export async function createSignedInvoiceUrl(path, expiresIn = 300) {
-  const { data, error } = await supabase.storage.from('invoices').createSignedUrl(path, expiresIn)
-  if (error) throw new Error(error.message || 'Error creando URL segura')
-  return data.signedUrl
+  // Normalizar y validar path básico (no debe ser carpeta vacía)
+  if (!path || typeof path !== 'string') {
+    return { data: null, error: new Error('Ruta de factura inválida') };
+  }
+  // Protección: si el path parece sólo carpeta (sin punto), avisar (subida debería incluir timestamp_nombre.pdf)
+  if (!path.includes('.')) {
+    return { data: null, error: new Error('Ruta apunta a carpeta, falta nombre del archivo PDF') };
+  }
+  try {
+    const { data, error } = await supabase.storage.from('invoices').createSignedUrl(path, expiresIn);
+    if (error || !data?.signedUrl) {
+      return { data: null, error: new Error(error?.message || 'No se pudo generar URL firmada') };
+    }
+    return { data, error: null };
+  } catch (e) {
+    return { data: null, error: new Error(e?.message || 'Fallo inesperado creando URL firmada') };
+  }
 }
 
 export default { uploadInvoicePDF, createSignedInvoiceUrl }

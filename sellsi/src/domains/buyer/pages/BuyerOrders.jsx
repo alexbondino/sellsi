@@ -534,7 +534,7 @@ const BuyerOrders = () => {
                     // Construir un mapa supplier -> invoice (1 por supplier)
                     const supplierInvoiceMap = {};
                     (order.items || []).forEach(it => {
-                      const invoicePath = it.invoice_path || it.invoice || null;
+                      const invoicePath = it.invoice_path || it.invoice || null; // prefer invoice_path enriched
                       if (!invoicePath) return;
                       const supplierId = it.product?.supplier?.id || it.product?.supplier_id || it.supplier_id || it.product?.supplierId || 'unknown';
                       if (!supplierInvoiceMap[supplierId]) {
@@ -843,13 +843,34 @@ const InvoiceDownload = ({ invoicePath, documentType = 'documento', orderId }) =
 
     setLoading(true);
     try {
-      const { data, error } = await createSignedInvoiceUrl(invoicePath, 60);
-      if (error || !data?.signedUrl) {
-        alert('No se pudo generar la URL de descarga. Intenta más tarde.');
+      const res = await createSignedInvoiceUrl(invoicePath, 60); // { data: { signedUrl }, error }
+      const signedUrl = res?.data?.signedUrl;
+      if (res?.error || !signedUrl) {
+        alert(res?.error?.message || 'No se pudo generar la URL de descarga. Intenta más tarde.');
         return;
       }
       recordDownload();
-      window.open(data.signedUrl, '_blank');
+      // Intento 1: descarga directa creando un blob
+      try {
+        const resp = await fetch(signedUrl);
+        if (!resp.ok) throw new Error('HTTP ' + resp.status);
+        const blob = await resp.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        // Derivar nombre de archivo desde el path original
+        const filename = (invoicePath.split('/')?.pop() || 'factura.pdf').replace(/\?.*$/, '');
+        a.href = url;
+        a.download = filename.endsWith('.pdf') ? filename : filename + '.pdf';
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => {
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+        }, 250);
+      } catch (e) {
+        // Fallback: abrir en nueva pestaña para que el navegador gestione la vista previa
+        window.open(signedUrl, '_blank');
+      }
     } catch (e) {
       console.error('Error generando URL firmada:', e);
       alert('Error al generar descarga.');
