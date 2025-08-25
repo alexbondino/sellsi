@@ -111,8 +111,8 @@ CREATE TABLE public.control_panel (
   created_at timestamp with time zone NOT NULL DEFAULT now(),
   updated_at timestamp with time zone NOT NULL DEFAULT now(),
   CONSTRAINT control_panel_pkey PRIMARY KEY (id),
-  CONSTRAINT control_panel_procesado_por_fkey FOREIGN KEY (procesado_por) REFERENCES public.control_panel_users(id),
-  CONSTRAINT control_panel_request_id_fkey FOREIGN KEY (request_id) REFERENCES public.requests(request_id)
+  CONSTRAINT control_panel_request_id_fkey FOREIGN KEY (request_id) REFERENCES public.requests(request_id),
+  CONSTRAINT control_panel_procesado_por_fkey FOREIGN KEY (procesado_por) REFERENCES public.control_panel_users(id)
 );
 CREATE TABLE public.control_panel_users (
   usuario text NOT NULL UNIQUE,
@@ -192,8 +192,8 @@ CREATE TABLE public.image_thumbnail_jobs (
   duration_ms integer,
   error_code text,
   CONSTRAINT image_thumbnail_jobs_pkey PRIMARY KEY (id),
-  CONSTRAINT image_thumbnail_jobs_product_image_id_fkey FOREIGN KEY (product_image_id) REFERENCES public.product_images(id),
-  CONSTRAINT image_thumbnail_jobs_product_id_fkey FOREIGN KEY (product_id) REFERENCES public.products(productid)
+  CONSTRAINT image_thumbnail_jobs_product_id_fkey FOREIGN KEY (product_id) REFERENCES public.products(productid),
+  CONSTRAINT image_thumbnail_jobs_product_image_id_fkey FOREIGN KEY (product_image_id) REFERENCES public.product_images(id)
 );
 CREATE TABLE public.invoices_meta (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
@@ -206,9 +206,9 @@ CREATE TABLE public.invoices_meta (
   content_type text,
   created_at timestamp with time zone NOT NULL DEFAULT now(),
   CONSTRAINT invoices_meta_pkey PRIMARY KEY (id),
-  CONSTRAINT invoices_meta_order_id_fkey FOREIGN KEY (order_id) REFERENCES public.orders(id),
+  CONSTRAINT invoices_meta_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(user_id),
   CONSTRAINT invoices_meta_supplier_id_fkey FOREIGN KEY (supplier_id) REFERENCES public.users(user_id),
-  CONSTRAINT invoices_meta_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(user_id)
+  CONSTRAINT invoices_meta_order_id_fkey FOREIGN KEY (order_id) REFERENCES public.orders(id)
 );
 CREATE TABLE public.khipu_webhook_logs (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
@@ -244,10 +244,10 @@ CREATE TABLE public.notifications (
   created_at timestamp with time zone NOT NULL DEFAULT now(),
   read_at timestamp with time zone,
   CONSTRAINT notifications_pkey PRIMARY KEY (id),
-  CONSTRAINT notifications_order_id_fkey FOREIGN KEY (order_id) REFERENCES public.orders(id),
   CONSTRAINT notifications_product_id_fkey FOREIGN KEY (product_id) REFERENCES public.products(productid),
   CONSTRAINT notifications_supplier_id_fkey FOREIGN KEY (supplier_id) REFERENCES public.users(user_id),
-  CONSTRAINT notifications_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(user_id)
+  CONSTRAINT notifications_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(user_id),
+  CONSTRAINT notifications_order_id_fkey FOREIGN KEY (order_id) REFERENCES public.orders(id)
 );
 CREATE TABLE public.orders (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
@@ -284,7 +284,6 @@ CREATE TABLE public.orders (
   items_hash text,
   inventory_processed_at timestamp with time zone,
   supplier_ids ARRAY,
-  tax_document_path text,
   supplier_parts_meta jsonb,
   CONSTRAINT orders_pkey PRIMARY KEY (id),
   CONSTRAINT orders_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(user_id)
@@ -345,9 +344,9 @@ CREATE TABLE public.product_sales (
   trx_date timestamp with time zone NOT NULL DEFAULT now(),
   order_id uuid,
   CONSTRAINT product_sales_pkey PRIMARY KEY (id),
-  CONSTRAINT product_sales_supplier_id_fkey FOREIGN KEY (supplier_id) REFERENCES public.users(user_id),
   CONSTRAINT product_sales_order_id_fkey FOREIGN KEY (order_id) REFERENCES public.orders(id),
-  CONSTRAINT product_sales_product_id_fkey FOREIGN KEY (product_id) REFERENCES public.products(productid)
+  CONSTRAINT product_sales_product_id_fkey FOREIGN KEY (product_id) REFERENCES public.products(productid),
+  CONSTRAINT product_sales_supplier_id_fkey FOREIGN KEY (supplier_id) REFERENCES public.users(user_id)
 );
 CREATE TABLE public.products (
   productnm text NOT NULL,
@@ -440,8 +439,8 @@ CREATE TABLE public.supplier_order_items (
   document_type text CHECK ((document_type = ANY (ARRAY['boleta'::text, 'factura'::text, 'ninguno'::text])) OR document_type IS NULL),
   created_at timestamp with time zone NOT NULL DEFAULT now(),
   CONSTRAINT supplier_order_items_pkey PRIMARY KEY (id),
-  CONSTRAINT supplier_order_items_supplier_order_id_fkey FOREIGN KEY (supplier_order_id) REFERENCES public.supplier_orders(id),
-  CONSTRAINT supplier_order_items_product_id_fkey FOREIGN KEY (product_id) REFERENCES public.products(productid)
+  CONSTRAINT supplier_order_items_product_id_fkey FOREIGN KEY (product_id) REFERENCES public.products(productid),
+  CONSTRAINT supplier_order_items_supplier_order_id_fkey FOREIGN KEY (supplier_order_id) REFERENCES public.supplier_orders(id)
 );
 CREATE TABLE public.supplier_orders (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
@@ -457,8 +456,8 @@ CREATE TABLE public.supplier_orders (
   updated_at timestamp with time zone NOT NULL DEFAULT now(),
   delivered_at timestamp with time zone,
   CONSTRAINT supplier_orders_pkey PRIMARY KEY (id),
-  CONSTRAINT supplier_orders_supplier_id_fkey FOREIGN KEY (supplier_id) REFERENCES public.users(user_id),
-  CONSTRAINT supplier_orders_parent_order_id_fkey FOREIGN KEY (parent_order_id) REFERENCES public.orders(id)
+  CONSTRAINT supplier_orders_parent_order_id_fkey FOREIGN KEY (parent_order_id) REFERENCES public.orders(id),
+  CONSTRAINT supplier_orders_supplier_id_fkey FOREIGN KEY (supplier_id) REFERENCES public.users(user_id)
 );
 CREATE TABLE public.users (
   rut character varying,

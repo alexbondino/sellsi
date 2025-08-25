@@ -472,6 +472,8 @@ const ProductHeader = React.memo(({
 
   // Diagnostic log (only once per product to avoid noisy logs on re-renders)
   const _loggedProductsRef = React.useRef(new Set())
+  // Track whether we've already synced the initial main image selection for this product
+  const _initialImageSyncRef = React.useRef(false)
   try {
     const pid = product?.productid
     if (pid && !_loggedProductsRef.current.has(pid)) {
@@ -492,8 +494,14 @@ const ProductHeader = React.memo(({
   // when DB order changes or arrays are reshaped by other layers.
   // Effect: ensure parent selection points to server-defined main image.
   // Dependencies intentionally include orderedImages (content & order), selectedImageIndex, callback & resolver.
+  // Sync parent selection to the server-defined main image ONCE when the product's
+  // orderedImages are available. We intentionally avoid re-running this when
+  // `selectedImageIndex` changes so we don't override user interactions (clicks).
+  // This prevents the 'flash' where a user click is immediately reverted.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   React.useEffect(() => {
     if (!orderedImages.length || !onImageSelect) return
+    if (_initialImageSyncRef.current) return
     try {
       const resolved = orderedImages.map(resolveImageSrc)
       const mainUrl = resolveImageSrc(mainImageRecord || imagen || orderedImages[0])
@@ -502,7 +510,8 @@ const ProductHeader = React.memo(({
         onImageSelect(mainIdx)
       }
     } catch (_) {}
-  }, [orderedImages, selectedImageIndex, onImageSelect, resolveImageSrc, mainImageRecord, imagen])
+    _initialImageSyncRef.current = true
+  }, [orderedImages, onImageSelect, resolveImageSrc, mainImageRecord, imagen])
 
   return (
     // MUIV2 GRID - CONTENEDOR PRINCIPAL (MuiGrid-container)
