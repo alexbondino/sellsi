@@ -4,10 +4,9 @@ import { Banner } from '../../../shared/components/display/banners'; // Componen
 // Importación de la lógica de la página de inicio
 import useHomeLogic from './hooks/useHomeLogic.jsx'; // Lógica de la página de inicio
 import HeroSection from './components/HeroSection.jsx'; //Carrusel supererio (Somos Sellsi...)
-import ProvidersSection from './components/ProvidersSection.jsx'; //Seccion de conocenos a nuestros proveedores
 import AboutUsSection from './components/AboutUsSection.jsx'; //Sección ¿Quiénes somos?
-import ServicesSection from './components/ServicesSection.jsx'; //Sección Nuestros Servicios (Carrusel de servicios)
-
+import ServicesSection from './components/ServicesSection.jsx'; //Sección Nuestros Servicios (Carrusel de servicios
+import ContactSection from './components/ContactSection.jsx';
 /**
  * ============================================================================
  * HOME - PÁGINA PRINCIPAL/LANDING PAGE
@@ -50,7 +49,7 @@ const Home = ({ scrollTargets }) => {
     // Referencias para scroll
     serviciosRef,
     quienesSomosRef,
-    contactanosRef,
+    contactRef,
 
     // Carrusel promocional
     currentPromoSlide,
@@ -135,6 +134,10 @@ const Home = ({ scrollTargets }) => {
       <Box>
         {/* Sección ¿Quiénes somos? */}
         <AboutUsSection quienesSomosRef={quienesSomosRef} />
+      </Box>
+      <Box>
+        {/* Sección Contactanos */}
+        <ContactSection contactRef={contactRef} />
       </Box>
     </Box>
   );
