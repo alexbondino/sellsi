@@ -19,7 +19,7 @@ import { ThemeProvider } from '@mui/material/styles';
 import { dashboardThemeCore } from '../../../styles/dashboardThemeCore';
 import { SPACING_BOTTOM_MAIN } from '../../../styles/layoutSpacing';
 import { useBuyerOrders } from '../hooks';
-import { createSignedInvoiceUrl } from '../../../services/storage/invoiceStorageService';
+import { createSignedInvoiceUrl } from '../../../services/storage/invoiceStorageService'; // legacy fallback
 import { CheckoutSummaryImage } from '../../../components/UniversalProductImage';
 // Unificar formateo de fechas con TableRows (usa marketplace/utils/formatters)
 import { formatDate as formatDateUnified } from '../../marketplace/utils/formatters';
@@ -843,10 +843,44 @@ const InvoiceDownload = ({ invoicePath, documentType = 'documento', orderId }) =
 
     setLoading(true);
     try {
-      const res = await createSignedInvoiceUrl(invoicePath, 60); // { data: { signedUrl }, error }
-      const signedUrl = res?.data?.signedUrl;
-      if (res?.error || !signedUrl) {
-        alert(res?.error?.message || 'No se pudo generar la URL de descarga. Intenta más tarde.');
+      // QUICK WIN: usar edge function segura para validar ownership antes de generar URL
+      const token = localStorage.getItem('sb:token') || localStorage.getItem('access_token') || localStorage.getItem('sb-access-token');
+      const endpoint = `${import.meta.env.VITE_SUPABASE_URL || ''}/functions/v1/get-invoice-url`;
+  let signedUrl = null;
+      try {
+        const resp = await fetch(endpoint, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {})
+          },
+          body: JSON.stringify({ path: invoicePath })
+        });
+        if (resp.ok) {
+          const json = await resp.json();
+            signedUrl = json.url || null;
+        } else {
+          // Fallback a método antiguo sólo si 404/403 para no romper UX (se puede retirar luego)
+          if (resp.status === 404 || resp.status === 403) {
+            // no fallback para seguridad estricta; mostrar error
+            const errJson = await resp.json().catch(()=>({}));
+            alert(errJson.error || 'No autorizado para descargar esta factura.');
+            return;
+          } else {
+            // fallback legacy
+            const legacy = await createSignedInvoiceUrl(invoicePath, 60);
+            signedUrl = legacy?.data?.signedUrl || null;
+          }
+        }
+      } catch (edgeErr) {
+        // fallback legacy en caso de fallo de red a función
+        try {
+          const legacy = await createSignedInvoiceUrl(invoicePath, 60);
+          signedUrl = legacy?.data?.signedUrl || null;
+        } catch (_) {}
+      }
+      if (!signedUrl) {
+        alert('No se pudo generar la URL de descarga. Intenta más tarde.');
         return;
       }
       recordDownload();
