@@ -40,6 +40,9 @@ const Rows = ({ order, onActionClick }) => {
   const [addrAnchor, setAddrAnchor] = useState(null);
   const [addrCopied, setAddrCopied] = useState(false);
   const addrCopyTimerRef = useRef(null);
+  const [billingAnchor, setBillingAnchor] = useState(null);
+  const [billingCopied, setBillingCopied] = useState(false);
+  const billingCopyTimerRef = useRef(null);
   const [isContactOpen, setIsContactOpen] = useState(false);
 
   const openContact = () => setIsContactOpen(true);
@@ -77,6 +80,17 @@ const Rows = ({ order, onActionClick }) => {
     setAddrCopied(false);
   };
   const openAddr = Boolean(addrAnchor);
+
+  const handleOpenBilling = event => setBillingAnchor(event.currentTarget);
+  const handleCloseBilling = () => {
+    setBillingAnchor(null);
+    if (billingCopyTimerRef.current) {
+      clearTimeout(billingCopyTimerRef.current);
+      billingCopyTimerRef.current = null;
+    }
+    setBillingCopied(false);
+  };
+  const openBilling = Boolean(billingAnchor);
 
   const handleCopyId = async () => {
     try {
@@ -150,7 +164,22 @@ const Rows = ({ order, onActionClick }) => {
   // Obtener fecha de solicitud (solo una fecha)
   const getRequestedDate = () => {
     const d = order?.requestedDate?.start || order?.created_at;
-    return d ? formatDate(d) : '—';
+    return d || null;
+  };
+
+  // Formatear fecha a dd-mm-aaaa (seguro y tolerante a distintos inputs)
+  const formatDateDMY = (input) => {
+    if (!input) return '—';
+    try {
+      const d = input instanceof Date ? input : new Date(input);
+      if (Number.isNaN(d.getTime())) return '—';
+      const day = String(d.getDate()).padStart(2, '0');
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const year = d.getFullYear();
+      return `${day}-${month}-${year}`;
+    } catch (_) {
+      return '—';
+    }
   };
 
   // Construir texto profesional para copiar dirección
@@ -171,6 +200,62 @@ const Rows = ({ order, onActionClick }) => {
   return `Región: ${region || '—'}\nComuna: ${commune || '—'}\nDirección: ${streetLine || '—'}`;
   };
 
+  // Normalizar billing_address que puede venir como string JSON o como objeto
+  const getBillingObject = () => {
+    const b = order?.billingAddress || order?.billing_address || order?.billing || null;
+    if (!b) return null;
+    if (typeof b === 'string') {
+      try {
+        const parsed = JSON.parse(b);
+        if (!(parsed && typeof parsed === 'object')) return null;
+        // Normalizar keys comunes a la forma que usa el UI
+        const normalized = {
+          ...parsed,
+          // map billing_address -> address
+          address: parsed.address || parsed.billing_address || parsed.shipping_address || null,
+          number: parsed.number || parsed.shipping_number || null,
+          department: parsed.department || parsed.shipping_dept || null,
+          region: parsed.region || parsed.shipping_region || parsed.billing_region || null,
+          commune: parsed.commune || parsed.shipping_commune || parsed.billing_commune || null,
+          business_name: parsed.business_name || parsed.company || null,
+          billing_rut: parsed.billing_rut || parsed.rut || null,
+        };
+        return normalized;
+      } catch (_) {
+        return null;
+      }
+    }
+    // Si ya viene objeto, normalizar keys similares a lo anterior
+    if (typeof b === 'object') {
+      return {
+        ...b,
+        address: b.address || b.billing_address || b.shipping_address || null,
+        number: b.number || b.shipping_number || null,
+        department: b.department || b.shipping_dept || null,
+        region: b.region || b.shipping_region || b.billing_region || null,
+        commune: b.commune || b.shipping_commune || b.billing_commune || null,
+        business_name: b.business_name || b.company || null,
+        billing_rut: b.billing_rut || b.rut || null,
+      };
+    }
+    return null;
+  };
+
+  const buildBillingCopy = (b) => {
+    if (!b) return '';
+    const clean = v => (v ? String(v).trim() : '');
+    const lines = [];
+    if (clean(b.business_name)) lines.push(`Empresa: ${clean(b.business_name)}`);
+    if (clean(b.billing_rut)) lines.push(`RUT: ${clean(b.billing_rut)}`);
+    const street = [clean(b.address), clean(b.number), clean(b.department)].filter(Boolean).join(' ');
+    lines.push(`Dirección: ${street || '—'}`);
+    const region = clean(b.region) || '—';
+    const commune = clean(b.commune) || '—';
+    lines.push(`Región: ${region}`);
+    lines.push(`Comuna: ${commune}`);
+    return lines.join('\n');
+  };
+
   const handleCopyAddress = async () => {
     try {
       const text = buildAddressCopy(order?.deliveryAddress);
@@ -178,6 +263,17 @@ const Rows = ({ order, onActionClick }) => {
       setAddrCopied(true);
       if (addrCopyTimerRef.current) clearTimeout(addrCopyTimerRef.current);
       addrCopyTimerRef.current = setTimeout(() => setAddrCopied(false), 3000);
+    } catch (_) {}
+  };
+
+  const handleCopyBilling = async () => {
+    try {
+  const billing = getBillingObject() || {};
+  const text = buildBillingCopy(billing);
+      await navigator.clipboard.writeText(text);
+      setBillingCopied(true);
+      if (billingCopyTimerRef.current) clearTimeout(billingCopyTimerRef.current);
+      billingCopyTimerRef.current = setTimeout(() => setBillingCopied(false), 3000);
     } catch (_) {}
   };
 
@@ -600,19 +696,101 @@ const Rows = ({ order, onActionClick }) => {
         </Box>
       </TableCell>
 
-      {/* Columna Fecha Solicitada (solo una fecha) */}
+      {/* Columna Fecha: mostrar Solicitud y Entrega Límite en dd-mm-aaaa */}
       <TableCell>
-        <Typography variant="body2">{getRequestedDate()}</Typography>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+          <Typography variant="body2" color="text.primary">
+            <strong>Solicitud:</strong>{' '}
+            {formatDateDMY(getRequestedDate())}
+          </Typography>
+          <Typography variant="body2" color="text.primary">
+            <strong>Entrega Límite:</strong>{' '}
+            {formatDateDMY(order?.estimated_delivery_date)}
+          </Typography>
+        </Box>
       </TableCell>
 
-      {/* Columna Fecha Entrega Límite (siempre una fecha si existe) */}
+      {/* Columna Documento Tributario */}
       <TableCell>
-        <Typography variant="body2">
-          {order.estimated_delivery_date
-            ? formatDate(order.estimated_delivery_date)
-            : '—'}
-        </Typography>
+        {(() => {
+          // document type may come at order level or per-item; prefer order.document_type
+          const doc = (order?.document_type || order?.documentType || docTypeSummary) || null;
+          if (!doc || doc === 'ninguno') return (<Typography variant="body2">—</Typography>);
+          if (doc === 'boleta') return (<Typography variant="body2">Boleta</Typography>);
+          if (doc === 'factura') {
+            return (
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.25 }}>
+                <Typography variant="body2">Factura</Typography>
+                <Typography
+                  variant="body2"
+                  sx={{ color: 'primary.main', cursor: 'pointer', textDecoration: 'underline' }}
+                  onClick={handleOpenBilling}
+                >
+                  Ver detalle
+                </Typography>
+                <Popover
+                  open={openBilling}
+                  anchorEl={billingAnchor}
+                  onClose={handleCloseBilling}
+                  anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+                  transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+                  PaperProps={{ sx: { p: 2, width: 460, maxWidth: '95vw' } }}
+                  disableScrollLock
+                >
+                  <Typography variant="subtitle2" gutterBottom>
+                    Dirección de facturación
+                  </Typography>
+                          {(() => {
+                            const billingObj = getBillingObject();
+                            // Mostrar campos de factura si existen (empresa, RUT)
+                            return (
+                              <Box sx={{ display: 'grid', gridTemplateColumns: '120px 1fr', rowGap: 1, columnGap: 1 }}>
+                                {billingObj?.business_name ? (
+                                  <>
+                                    <Typography variant="body2" color="text.secondary">Empresa:</Typography>
+                                    <Typography variant="body2">{billingObj.business_name}</Typography>
+                                  </>
+                                ) : null}
+                                {billingObj?.billing_rut ? (
+                                  <>
+                                    <Typography variant="body2" color="text.secondary">RUT:</Typography>
+                                    <Typography variant="body2">{billingObj.billing_rut}</Typography>
+                                  </>
+                                ) : null}
+                                <Typography variant="body2" color="text.secondary">Dirección:</Typography>
+                                <Typography variant="body2">
+                                  {[billingObj?.address, billingObj?.number, billingObj?.department]
+                                    .filter(Boolean)
+                                    .join(' ') || '—'}
+                                </Typography>
+                                <Typography variant="body2" color="text.secondary">Región:</Typography>
+                                <Typography variant="body2">{billingObj?.region ? getRegionDisplay(billingObj.region, { withPrefix: true }) : '—'}</Typography>
+                                <Typography variant="body2" color="text.secondary">Comuna:</Typography>
+                                <Typography variant="body2">{billingObj?.commune ? getCommuneDisplay(billingObj.commune) : '—'}</Typography>
+                              </Box>
+                            )
+                          })()}
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 1 }}>
+                    <Typography variant="caption" color="text.secondary">
+                      Selecciona o usa el botón para copiar
+                    </Typography>
+                    {billingCopied ? (
+                      <Button size="small" color="success" variant="contained" startIcon={<CheckCircleOutlineIcon sx={{ fontSize: 18 }} />} disableElevation>
+                        Copiado
+                      </Button>
+                    ) : (
+                      <Button onClick={handleCopyBilling} size="small">Copiar</Button>
+                    )}
+                  </Box>
+                </Popover>
+              </Box>
+            )
+          }
+          return (<Typography variant="body2">—</Typography>);
+        })()}
       </TableCell>
+
+  {/* Column "Fecha Entrega Limite" removed - date now shown inside Fecha column */}
 
       {/* Columna Venta y Envío */}
       <TableCell align="right">

@@ -70,10 +70,11 @@ class OrderService {
     try {
       if (!supplierId) return [];
       const limit = Number(filters.limit) || 100;
-      const { data: recent, error: recErr } = await supabase
-        .from('orders')
+  const { data: recent, error: recErr } = await supabase
+    .from('orders')
   // Se agrega accepted_at para recalcular SLA (Fecha Entrega Límite = accepted_at + días hábiles)
-  .select('id, items, status, payment_status, estimated_delivery_date, created_at, accepted_at, updated_at, shipping, total, subtotal, shipping_address, supplier_parts_meta')
+  // Incluir billing_address para que el frontend pueda mostrar datos de facturación
+  .select('id, items, status, payment_status, estimated_delivery_date, created_at, accepted_at, updated_at, shipping, total, subtotal, shipping_address, billing_address, supplier_parts_meta')
         .eq('payment_status', 'paid')
         .contains('supplier_ids', [supplierId]) // nuevo filtro server-side (B1)
         .order('created_at', { ascending: false })
@@ -100,7 +101,7 @@ class OrderService {
           .in('productid', ids);
         if (Array.isArray(prodRows)) productMap = new Map(prodRows.map(r => [r.productid, r]));
       }
-      for (const row of recent) {
+  for (const row of recent) {
         if (typeof row.items === 'string') { try { row.items = JSON.parse(row.items); } catch { row.items = []; } }
         if (!Array.isArray(row.items)) row.items = [];
         for (const it of row.items) {
@@ -120,6 +121,15 @@ class OrderService {
       const parts = [];
       for (const row of recent) {
         const derived = splitOrderBySupplier({ ...row, id: row.id });
+        // Normalizar billing_address si viene stringificado (defensivo)
+        let parsedBilling = null;
+        try {
+          if (typeof row.billing_address === 'string' && row.billing_address.trim() !== '') {
+            parsedBilling = JSON.parse(row.billing_address);
+          } else if (row.billing_address && typeof row.billing_address === 'object') {
+            parsedBilling = row.billing_address;
+          }
+        } catch (_) { parsedBilling = null }
         for (const p of derived) {
           if (p.supplier_id === supplierId) {
             // Nueva lógica SLA: siempre que exista accepted_at y el pedido esté en estado >= accepted,
@@ -146,7 +156,9 @@ class OrderService {
               final_amount: p.final_amount || p.subtotal + (p.shipping_amount || 0),
               is_supplier_part: true,
               is_payment_order: true,
-              is_virtual_part: true
+              is_virtual_part: true,
+              // Propagar billing_address al part para que el store y la UI lo consuman
+              billing_address: parsedBilling || null,
             });
           }
         }
