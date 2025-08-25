@@ -43,7 +43,13 @@ export default function ContactSection({ contactRef, onSubmit }) {
     <Box
       ref={contactRef}
       sx={{
-        px: '250px',
+        px: {
+          xs: 'max(25px, env(safe-area-inset-left))', // Telefonos Chicos
+          sm: 'max(30px, env(safe-area-inset-left))', // Telefonos grandes
+          mac: '180px', //  Mac M1
+          lg: '250px', // 1080p
+          xl: '250px', // 2K
+        },
         width: '100%',
         boxSizing: 'border-box',
         py: { xs: 6, sm: 7, md: 8, mac: 6, lg: 9, xl: 9 },
