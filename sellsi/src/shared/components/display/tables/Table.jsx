@@ -38,8 +38,8 @@ const Table = ({ orders, onActionClick }) => {
             <TableCell>Unidades</TableCell>
             <TableCell>ID Venta</TableCell>
             <TableCell>Dirección Entrega</TableCell>
-            <TableCell>Fecha Solicitud</TableCell>
-            <TableCell>Fecha Entrega Limite</TableCell>
+            <TableCell>Fechas</TableCell>
+            <TableCell>Documento Tributario</TableCell>
             <TableCell align="right">Venta y Envío (IVA inc.)</TableCell>
             <TableCell>Estado</TableCell>
             <TableCell>
