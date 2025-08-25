@@ -1,15 +1,16 @@
 // 📁 theme.js
-import { createTheme } from '@mui/material/styles';
+import { createTheme, responsiveFontSizes } from '@mui/material/styles';
 
-const theme = createTheme({
+let theme = createTheme({
   breakpoints: {
     values: {
-      xs: 0, // 0 – 411px → Teléfonos muy pequeños
-      sm: 412, // 412 – 767px → Teléfonos grandes
-      md: 768, // 768 – 1919px → Tablets y laptops pequeñas/medianas
-      mac: 1280,
-      lg: 1700, // Full HD
-      xl: 2160, // 1200p y resoluciones superiores
+      xs: 0, // Telefonos Chicos
+      sm: 412, // Telefonos grandes
+      mini: 576, // Tablets
+      md: 768, // ??
+      mac: 1280, //  Mac M1
+      lg: 1700, // 1080p
+      xl: 2160, // 2K
     },
   },
   palette: {
@@ -19,10 +20,7 @@ const theme = createTheme({
     background: { default: '#f9f9f9' },
     box_backgroud: { primary: '#E7E7E7', secondary: 'white' },
     text: { primary: '#1A1A1A', secondary: '#7A7A7A' },
-    common: {
-      white: '#ffffff',
-      black: '#000000',
-    },
+    common: { white: '#ffffff', black: '#000000' },
   },
   typography: {
     fontFamily:
@@ -31,24 +29,26 @@ const theme = createTheme({
     h1: {
       fontFamily: 'Inter, sans-serif',
       fontWeight: 'bold',
-      fontSize: '45px',
-      lineHeight: 1.2,
+      fontSize: 45, // tamaño base; RFS lo ajustará por breakpoints
+      lineHeight: 1.2, // unitless para mejor alineación con RFS
     },
     h2: {
       fontFamily: 'Inter, sans-serif',
-      fontSize: '40px',
+      fontSize: 40,
       fontWeight: 'bold',
+      lineHeight: 1.25,
     },
     h3: {
-      fontSize: '25px',
+      fontSize: 25,
+      lineHeight: 1.3,
     },
-    body1: { fontSize: '1rem' },
-    button: { textTransform: 'none', fontWeight: 'bold' },
+    body1: { fontSize: 16, lineHeight: 1.6 },
+    button: { textTransform: 'none', fontWeight: 'bold', lineHeight: 1.2 },
 
     // 🎯 Nuevo variant para bullets
     bullet: {
       fontFamily: 'Inter, sans-serif',
-      fontSize: '20px', // ~20px
+      fontSize: 20,
       lineHeight: 1.4,
       color: '#1A1A1A',
     },
@@ -60,7 +60,7 @@ const theme = createTheme({
           props: { variant: 'bullet' },
           style: {
             fontFamily: 'Inter, sans-serif',
-            fontSize: '20px',
+            fontSize: 20,
             lineHeight: 1.4,
             color: '#1A1A1A',
           },
@@ -68,6 +68,18 @@ const theme = createTheme({
       ],
     },
   },
+});
+
+// 🔮 Aplica escalado tipográfico responsivo (incluye tu breakpoint "mac")
+theme = responsiveFontSizes(theme, {
+  // orden de breakpoints donde se generarán los ajustes
+  breakpoints: ['sm', 'md', 'mac', 'lg', 'xl'],
+  // >1: cuanto mayor, MENOR diferencia entre tamaños (más suave)
+  factor: 2,
+  // mantener alineación a grilla de 4px (mejor con lineHeight unitless)
+  disableAlign: false,
+  // incluye tu variante personalizada "bullet"
+  variants: ['h1', 'h2', 'h3', 'body1', 'button', 'bullet'],
 });
 
 export default theme;
