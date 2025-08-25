@@ -114,9 +114,8 @@ const Home = ({ scrollTargets }) => {
           zIndex: 0,
           overflow: 'hidden',
           px: {
-            xs: 0, // Telefonos Chicos
-            sm: 0, // Telefonos grandes
-            mini: 0, // Tablets
+            xs: 'max(25px, env(safe-area-inset-left))', // Telefonos Chicos
+            sm: 'max(35px, env(safe-area-inset-left))', // Telefonos grandes
             mac: '180px', //  Mac M1
             lg: '250px', // 1080p
             xl: '250px', // 2K

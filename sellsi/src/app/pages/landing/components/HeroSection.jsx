@@ -37,7 +37,7 @@ export default function HeroSection({
       component="section"
       sx={{
         width: '100%',
-        minHeight: { xs: 810, sm: 900, md: 500, lg: 500 },
+        minHeight: { xs: 850, sm: 900, md: 500, lg: 500 },
         display: 'grid',
         gridTemplateColumns: { xs: '1fr', md: '1.1fr 1fr' },
         alignItems: 'center',

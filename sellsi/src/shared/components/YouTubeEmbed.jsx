@@ -7,7 +7,7 @@ const YouTubeEmbed = ({ src, title = 'Video de YouTube' }) => {
     <Box
       sx={{
         width: { xs: '100%', md: 640, mac: 550, lg: 640 },
-        height: { xs: 'auto', md: 370, mac: 320, lg: 370 },
+        height: { xs: 220, sm: 220, md: 370, mac: 320, lg: 370 },
         borderRadius: 2,
         overflow: 'hidden',
         border: '1px solid',
