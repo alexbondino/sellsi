@@ -115,7 +115,7 @@ const Home = ({ scrollTargets }) => {
           overflow: 'hidden',
           px: {
             xs: 'max(25px, env(safe-area-inset-left))', // Telefonos Chicos
-            sm: 'max(35px, env(safe-area-inset-left))', // Telefonos grandes
+            sm: 'max(30px, env(safe-area-inset-left))', // Telefonos grandes
             mac: '180px', //  Mac M1
             lg: '250px', // 1080p
             xl: '250px', // 2K

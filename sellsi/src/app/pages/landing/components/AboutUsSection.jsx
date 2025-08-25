@@ -9,7 +9,13 @@ const AboutUsSection = ({ serviciosRef }) => {
       sx={{
         width: '100%',
         boxSizing: 'border-box',
-        px: '250px',
+        px: {
+          xs: 'max(25px, env(safe-area-inset-left))', // Telefonos Chicos
+          sm: 'max(30px, env(safe-area-inset-left))', // Telefonos grandes
+          mac: '180px', //  Mac M1
+          lg: '250px', // 1080p
+          xl: '250px', // 2K
+        },
         py: { xs: 6, sm: 7, md: 8, mac: 6, lg: 9, xl: 9 },
         backgroundColor: 'rgba(46,82,178,0.08)', // fondo claro tipo el ejemplo
         borderRadius: { xs: 0, md: 2 },
