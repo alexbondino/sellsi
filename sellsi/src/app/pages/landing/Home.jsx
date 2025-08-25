@@ -1,12 +1,12 @@
-import React, { useEffect } from 'react'
-import { Box } from '@mui/material' // Importación de componentes y estilos de Material UI
+import React, { useEffect } from 'react';
+import { Box } from '@mui/material'; // Importación de componentes y estilos de Material UI
 import { Banner } from '../../../shared/components/display/banners'; // Componente de banner reutilizable
 // Importación de la lógica de la página de inicio
-import useHomeLogic from './hooks/useHomeLogic.jsx' // Lógica de la página de inicio
-import HeroSection from './components/HeroSection.jsx' //Carrusel supererio (Somos Sellsi...)
-import ProvidersSection from './components/ProvidersSection.jsx' //Seccion de conocenos a nuestros proveedores
-import AboutUsSection from './components/AboutUsSection.jsx' //Sección ¿Quiénes somos?
-import ServicesSection from './components/ServicesSection.jsx' //Sección Nuestros Servicios (Carrusel de servicios)
+import useHomeLogic from './hooks/useHomeLogic.jsx'; // Lógica de la página de inicio
+import HeroSection from './components/HeroSection.jsx'; //Carrusel supererio (Somos Sellsi...)
+import ProvidersSection from './components/ProvidersSection.jsx'; //Seccion de conocenos a nuestros proveedores
+import AboutUsSection from './components/AboutUsSection.jsx'; //Sección ¿Quiénes somos?
+import ServicesSection from './components/ServicesSection.jsx'; //Sección Nuestros Servicios (Carrusel de servicios)
 
 /**
  * ============================================================================
@@ -40,7 +40,7 @@ import ServicesSection from './components/ServicesSection.jsx' //Sección Nuestr
  * - State Management: Local state con hooks especializados
  * - Performance: Memoización y lazy loading donde corresponde
  */
-import { useLocation } from 'react-router-dom'
+import { useLocation } from 'react-router-dom';
 
 const Home = ({ scrollTargets }) => {
   // ===== USAR CUSTOM HOOK PARA TODA LA LÓGICA =====
@@ -85,7 +85,10 @@ const Home = ({ scrollTargets }) => {
       const targetRef = refMap[scrollTo];
       if (targetRef && targetRef.current) {
         setTimeout(() => {
-          targetRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          targetRef.current.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start',
+          });
         }, 100); // Espera breve para asegurar render
       }
     }
@@ -116,6 +119,7 @@ const Home = ({ scrollTargets }) => {
         }}
       >
         {/* Sección Conoce a nuestros proveedores */}
+
         <Box>
           <ProvidersSection statistics={statistics} />
         </Box>
@@ -131,7 +135,7 @@ const Home = ({ scrollTargets }) => {
       {/* Sección Nuestros Servicios */}
       <ServicesSection serviciosRef={serviciosRef} services={services} />
     </Box>
-  )
-}
+  );
+};
 
-export default Home
+export default Home;

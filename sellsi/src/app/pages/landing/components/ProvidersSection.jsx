@@ -129,6 +129,7 @@ const ProvidersSection = ({ statistics }) => {
         >
           Ir a marketplace
         </Button>
+        {/*}
         <Box
           sx={{
             display: 'flex',
@@ -156,9 +157,11 @@ const ProvidersSection = ({ statistics }) => {
             <StatisticCard key={index} stat={stat} />
           ))}
         </Box>
+        */}
       </Box>
 
       {/* Grid Flex: Título + Proveedores */}
+      {/*}
       <Box
         sx={{
           display: 'flex',
@@ -181,8 +184,9 @@ const ProvidersSection = ({ statistics }) => {
           gap: { xs: 3, sm: 4, md: 5, mac: 4, lg: 2, xl: 8 },
           width: '100%',
         }}
-      >
-        {/* COLUMNA 1: Título */}
+      > */}
+      {/* COLUMNA 1: Título */}
+      {/*
         <Box
           sx={{
             flex: {
@@ -239,8 +243,10 @@ const ProvidersSection = ({ statistics }) => {
             Nuestros proveedores
           </Typography>
         </Box>
+        */}
 
-        {/* COLUMNA 2: Grid de Proveedores */}
+      {/* COLUMNA 2: Grid de Proveedores */}
+      {/*
         <Box
           sx={{
             flex: {
@@ -292,6 +298,7 @@ const ProvidersSection = ({ statistics }) => {
           </Grid>
         </Box>
       </Box>
+      */}
     </Box>
   );
 };
