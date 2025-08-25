@@ -13,8 +13,8 @@ const theme = createTheme({
     },
   },
   palette: {
-    primary: { main: '#1565c0' }, // Azul Sellsi
-    secondary: { main: '#2e2e2e' },
+    primary: { main: '#2E52B2' }, // Azul Sellsi
+    secondary: { main: '#2e2e2e', borderColor: '#FFFFFF' },
     bars: { main: '#2e2e2e' },
     background: { default: '#f9f9f9' },
     box_backgroud: { primary: '#E7E7E7', secondary: 'white' },

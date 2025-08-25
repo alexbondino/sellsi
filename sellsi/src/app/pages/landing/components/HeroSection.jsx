@@ -42,12 +42,12 @@ export default function HeroSection({
           }}
         >
           Software que conecta{' '}
-          <Box component="span" sx={{ color: '#F59E0B' }}>
+          <Box component="span" sx={{ color: '#3f6ce9ff' }}>
             Compradores
           </Box>{' '}
           con{' '}
           <Box component="span" sx={{ color: '#F59E0B' }}>
-            Vendedores
+            Proveedores
           </Box>{' '}
           de todo Chile
         </Typography>

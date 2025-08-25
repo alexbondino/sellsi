@@ -24,14 +24,21 @@ import { Modal, MODAL_TYPES } from '../../feedback';
 import { useRole } from '../../../../infrastructure/providers/RoleProvider';
 // Lazy imports directos de componentes de auth (ruta específica, evitando barrel auth para no ampliar fan-out)
 // No reintroduce ciclo porque el barrel shared ya no re-exporta TopBar.
-const Login = React.lazy(() => import('../../../../domains/auth/components/Login'));
-const Register = React.lazy(() => import('../../../../domains/auth/components/Register'));
+const Login = React.lazy(() =>
+  import('../../../../domains/auth/components/Login')
+);
+const Register = React.lazy(() =>
+  import('../../../../domains/auth/components/Register')
+);
 import { setSkipScrollToTopOnce } from '../ScrollToTop/ScrollToTop';
 
 // Importa el nuevo componente reutilizable y ahora verdaderamente controlado
 import { Switch } from '../'; // Ajusta la ruta si es diferente
 import { useNotificationsContext } from '../../../../domains/notifications/components/NotificationProvider';
-import { NotificationBell, NotificationListPanel } from '../../../../domains/notifications';
+import {
+  NotificationBell,
+  NotificationListPanel,
+} from '../../../../domains/notifications';
 import { Popover, Dialog, DialogContent } from '@mui/material';
 
 export default function TopBar({
@@ -73,7 +80,9 @@ export default function TopBar({
 
     // ✅ ROBUSTEZ: Listeners con opciones para mejor control
     window.addEventListener('openLogin', handleOpenLogin, { passive: true });
-    window.addEventListener('openRegister', handleOpenRegister, { passive: true });
+    window.addEventListener('openRegister', handleOpenRegister, {
+      passive: true,
+    });
 
     return () => {
       window.removeEventListener('openLogin', handleOpenLogin);
@@ -93,17 +102,17 @@ export default function TopBar({
   // ✅ NUEVO: Determinar el rol basado en la ruta actual
   const getRoleFromCurrentRoute = () => {
     const currentPath = location.pathname;
-    
+
     // Rutas que son específicamente de supplier
     const supplierRoutes = [
       '/supplier/home',
       '/supplier/myproducts',
-      '/supplier/addproduct', 
+      '/supplier/addproduct',
       '/supplier/my-orders',
       '/supplier/profile',
-      '/supplier/marketplace'
+      '/supplier/marketplace',
     ];
-    
+
     // Rutas que son específicamente de buyer
     const buyerRoutes = [
       '/buyer/marketplace',
@@ -111,27 +120,29 @@ export default function TopBar({
       '/buyer/performance',
       '/buyer/cart',
       '/buyer/paymentmethod',
-      '/buyer/profile'
+      '/buyer/profile',
     ];
-    
+
     // Verificar si está en una ruta específica de supplier
     if (supplierRoutes.some(route => currentPath.startsWith(route))) {
       return 'supplier';
     }
-    
+
     // Verificar si está en una ruta específica de buyer
     if (buyerRoutes.some(route => currentPath.startsWith(route))) {
       return 'buyer';
     }
-    
+
     // Para rutas neutrales, usar el rol del perfil del usuario
     return isBuyer ? 'buyer' : 'supplier';
   };
 
   // ✅ CAMBIO: El switch se adapta automáticamente a la ruta actual
-  const currentRole = isRoleLoading 
+  const currentRole = isRoleLoading
     ? null // No mostrar rol durante loading para evitar parpadeo
-    : (typeof isBuyer === 'boolean' ? getRoleFromCurrentRoute() : 'buyer');
+    : typeof isBuyer === 'boolean'
+    ? getRoleFromCurrentRoute()
+    : 'buyer';
 
   const isLoggedIn = !!session;
 
@@ -184,7 +195,11 @@ export default function TopBar({
         return;
       }
       // Si es un anchor de la home, navega a / con scrollTo
-      if (ref === 'quienesSomosRef' || ref === 'serviciosRef' || ref === 'trabajaConNosotrosRef') {
+      if (
+        ref === 'quienesSomosRef' ||
+        ref === 'serviciosRef' ||
+        ref === 'trabajaConNosotrosRef'
+      ) {
         setSkipScrollToTopOnce();
         navigate(`/?scrollTo=${ref}`);
         return;
@@ -217,7 +232,7 @@ export default function TopBar({
   let desktopNavLinks = null;
   let desktopRightContent = null;
   let mobileMenuItems = [];
-  let paddingX = { xs: 2, md: 18, mac: 18, lg: 18 }; // Default padding for logged out
+  let paddingX = { xs: 2, md: '250px', mac: 18, lg: '250px' }; // Default padding for logged out
 
   // Avatar con fade-in
   const [avatarLoaded, setAvatarLoaded] = useState(false);
@@ -226,7 +241,10 @@ export default function TopBar({
   }, [logoUrl]);
 
   const profileMenuButton = (
-    <IconButton onClick={handleOpenProfileMenu} sx={{ color: 'white', p: 0, display: { xs: 'none', md: 'inline-flex' } }}>
+    <IconButton
+      onClick={handleOpenProfileMenu}
+      sx={{ color: 'white', p: 0, display: { xs: 'none', md: 'inline-flex' } }}
+    >
       {logoUrl && typeof logoUrl === 'string' && logoUrl.trim() !== '' ? (
         <Avatar
           src={logoUrl}
@@ -239,11 +257,16 @@ export default function TopBar({
           imgProps={{
             onLoad: () => setAvatarLoaded(true),
             onError: () => setAvatarLoaded(true),
-            style: { transition: 'opacity 0.5s', opacity: avatarLoaded ? 1 : 0 }
+            style: {
+              transition: 'opacity 0.5s',
+              opacity: avatarLoaded ? 1 : 0,
+            },
           }}
         />
       ) : (
-        <Avatar sx={{ background: '#fff !important', color: '#111 !important' }}>
+        <Avatar
+          sx={{ background: '#fff !important', color: '#111 !important' }}
+        >
           <PersonIcon sx={{ color: '#111 !important', fontSize: 32 }} />
         </Avatar>
       )}
@@ -255,26 +278,34 @@ export default function TopBar({
   const notifCtx = useNotificationsContext?.() || null;
   const [notifAnchor, setNotifAnchor] = useState(null);
   const [notifModalOpen, setNotifModalOpen] = useState(false);
-  const handleOpenNotif = (e) => setNotifAnchor(e.currentTarget);
+  const handleOpenNotif = e => setNotifAnchor(e.currentTarget);
   const handleCloseNotif = () => setNotifAnchor(null);
-  const handleViewAllNotif = () => { setNotifModalOpen(true); handleCloseNotif(); };
+  const handleViewAllNotif = () => {
+    setNotifModalOpen(true);
+    handleCloseNotif();
+  };
   const handleCloseNotifModal = () => setNotifModalOpen(false);
-  const handleNotifItemClick = (n) => {
+  const handleNotifItemClick = n => {
     // Navigate based on context_section
-    if (n.context_section === 'supplier_orders') navigate('/supplier/my-orders');
+    if (n.context_section === 'supplier_orders')
+      navigate('/supplier/my-orders');
     else if (n.context_section === 'buyer_orders') navigate('/buyer/orders');
-    else if (n.order_status && currentRole === 'buyer') navigate('/buyer/orders');
-    else if (n.order_status && currentRole === 'supplier') navigate('/supplier/my-orders');
+    else if (n.order_status && currentRole === 'buyer')
+      navigate('/buyer/orders');
+    else if (n.order_status && currentRole === 'supplier')
+      navigate('/supplier/my-orders');
     // Mark read locally
-    try { notifCtx?.markAsRead?.([n.id]); } catch(_) {}
+    try {
+      notifCtx?.markAsRead?.([n.id]);
+    } catch (_) {}
     handleCloseNotif();
   };
 
   if (!isLoggedIn) {
     // Botones públicos, pero el de "Trabaja con Nosotros" ahora abre modal
     const publicNavButtons = [
-      { label: 'Quiénes Somos', ref: 'quienesSomosRef' },
       { label: 'Servicios', ref: 'serviciosRef' },
+      { label: 'Quiénes Somos', ref: 'quienesSomosRef' },
       { label: 'Trabaja con Nosotros', ref: 'trabajaConNosotrosRef' },
       { label: 'Contáctanos', ref: 'contactModal' },
     ];
@@ -293,7 +324,11 @@ export default function TopBar({
               boxShadow: 'none',
               border: 'none',
               '&:focus': { outline: 'none', boxShadow: 'none', border: 'none' },
-              '&:active': { outline: 'none', boxShadow: 'none', border: 'none' },
+              '&:active': {
+                outline: 'none',
+                boxShadow: 'none',
+                border: 'none',
+              },
               '&:hover': { outline: 'none', boxShadow: 'none', border: 'none' },
             }}
             disableFocusRipple
@@ -310,7 +345,7 @@ export default function TopBar({
           sx={{
             color: 'white',
             textTransform: 'none',
-            fontSize: 16,
+            fontSize: 20,
             outline: 'none',
             boxShadow: 'none',
             border: 'none',
@@ -336,6 +371,7 @@ export default function TopBar({
             outline: 'none',
             boxShadow: 'none',
             border: 'none',
+            mr: 1,
             '&:focus': { outline: 'none', boxShadow: 'none', border: 'none' },
             '&:active': { outline: 'none', boxShadow: 'none', border: 'none' },
             '&:hover': { outline: 'none', boxShadow: 'none', border: 'none' },
@@ -350,13 +386,16 @@ export default function TopBar({
           variant="outlined"
           sx={{
             color: 'white',
-            borderColor: 'white',
+            borderColor: 'white', // 👈 borde blanco
+            borderWidth: 1, // 👈 grosor más notorio
             outline: 'none',
             boxShadow: 'none',
-            border: 'none',
-            '&:focus': { outline: 'none', boxShadow: 'none', border: 'none' },
-            '&:active': { outline: 'none', boxShadow: 'none', border: 'none' },
-            '&:hover': { outline: 'none', boxShadow: 'none', border: 'none' },
+            '&:focus': { outline: 'none', boxShadow: 'none' },
+            '&:active': { outline: 'none', boxShadow: 'none' },
+            '&:hover': {
+              borderColor: 'white', // mantiene borde blanco al hover
+              backgroundColor: 'rgba(255,255,255,0.1)', // opcional
+            },
           }}
           disableFocusRipple
           disableRipple
@@ -420,7 +459,7 @@ export default function TopBar({
             disabled={isRoleLoading} // ✅ Deshabilitar mientras se carga el rol
             // Los estilos base del switch ya están en Switch,
             // pero puedes agregarle más aquí si necesitas un ajuste específico para el desktop
-            sx={{ 
+            sx={{
               mr: 2,
               opacity: isRoleLoading ? 0.6 : 1, // ✅ Indicador visual de loading
             }}
@@ -485,8 +524,8 @@ export default function TopBar({
             value={currentRole} // Le pasamos el rol determinado
             onChange={handleRoleToggleChange} // Le pasamos el manejador de cambios
             disabled={isRoleLoading} // ✅ Deshabilitar mientras se carga el rol
-            sx={{ 
-              width: '100%', 
+            sx={{
+              width: '100%',
               mr: 0,
               opacity: isRoleLoading ? 0.6 : 1, // ✅ Indicador visual de loading
             }} // Estilos específicos para el móvil, anula el mr del desktop
@@ -524,7 +563,7 @@ export default function TopBar({
           position: 'fixed',
           top: 0,
           zIndex: 1100,
-          height: { xs: 45, md: 64 }, // Altura reducida en mobile
+          height: { xs: 45, md: '80px' }, // Altura reducida en mobile
           borderBottom: '1px solid white',
         }}
       >
@@ -549,7 +588,7 @@ export default function TopBar({
               sx={{
                 height: { xs: 38, sm: 38, md: 50 },
                 width: { xs: 90, sm: 90, md: 140 }, // Mobile: fill width
-                maxWidth: { xs: 90 , sm: 90, md: 140 },
+                maxWidth: { xs: 90, sm: 90, md: 140 },
                 display: 'flex',
                 alignItems: 'center',
                 cursor: 'pointer',
@@ -577,8 +616,8 @@ export default function TopBar({
                 src="/logodark.svg"
                 alt="Sellsi Logo"
                 sx={{
-                  height: { xs: 380, sm: 380, md: 450 },
-                  width: { xs: 90, sm: 90, md: 140 }, // Mobile: fill width
+                  height: { xs: 110, sm: 110, md: 110 },
+                  width: { xs: 116, sm: 116, md: 140 }, // Mobile: fill width
                   maxWidth: { xs: 90, sm: 90, md: 140 },
                   display: 'block',
                   objectFit: { xs: 'contain', sm: 'contain', md: 'contain' },
@@ -641,11 +680,11 @@ export default function TopBar({
               color: '#FFFFFF',
               borderColor: 'rgba(255, 255, 255, 0.3)',
               '&.Mui-selected': {
-                backgroundColor: (theme) => theme.palette.primary.main,
+                backgroundColor: theme => theme.palette.primary.main,
                 color: '#FFFFFF',
               },
               '&.Mui-selected:hover': {
-                backgroundColor: (theme) => theme.palette.primary.dark,
+                backgroundColor: theme => theme.palette.primary.dark,
               },
               '&:hover': {
                 backgroundColor: 'rgba(255, 255, 255, 0.05)',
@@ -682,7 +721,9 @@ export default function TopBar({
       >
         <MenuItem
           onClick={() => {
-            const profileRoute = isBuyer ? '/buyer/profile' : '/supplier/profile';
+            const profileRoute = isBuyer
+              ? '/buyer/profile'
+              : '/supplier/profile';
             navigate(profileRoute);
             handleCloseProfileMenu();
           }}
@@ -692,24 +733,24 @@ export default function TopBar({
         <MenuItem onClick={handleLogout}>Cerrar sesión</MenuItem>
       </Menu>
 
-  {/* Modales de autenticación (lazy) */}
-  {openLoginModal && (
-    <Suspense fallback={null}>
-      <Login
-        open={openLoginModal}
-        onClose={() => setOpenLoginModal(false)}
-        onOpenRegister={handleLoginToRegisterTransition}
-      />
-    </Suspense>
-  )}
-  {openRegisterModal && (
-    <Suspense fallback={null}>
-      <Register
-        open={openRegisterModal}
-        onClose={() => setOpenRegisterModal(false)}
-      />
-    </Suspense>
-  )}
+      {/* Modales de autenticación (lazy) */}
+      {openLoginModal && (
+        <Suspense fallback={null}>
+          <Login
+            open={openLoginModal}
+            onClose={() => setOpenLoginModal(false)}
+            onOpenRegister={handleLoginToRegisterTransition}
+          />
+        </Suspense>
+      )}
+      {openRegisterModal && (
+        <Suspense fallback={null}>
+          <Register
+            open={openRegisterModal}
+            onClose={() => setOpenRegisterModal(false)}
+          />
+        </Suspense>
+      )}
       {openContactModal && (
         <ContactModal
           open={openContactModal}
@@ -727,23 +768,30 @@ export default function TopBar({
         disableScrollLock={true}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
         transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-        PaperProps={{ sx: { mt: 1, boxShadow: 6, borderRadius: 2, overflow: 'hidden' } }}
+        PaperProps={{
+          sx: { mt: 1, boxShadow: 6, borderRadius: 2, overflow: 'hidden' },
+        }}
       >
         <NotificationListPanel
           notifications={notifCtx?.notifications || []}
           activeTab={notifCtx?.activeTab || 'all'}
-          onTabChange={(t)=>notifCtx?.setActiveTab?.(t)}
+          onTabChange={t => notifCtx?.setActiveTab?.(t)}
           onItemClick={handleNotifItemClick}
           onViewAll={handleViewAllNotif}
           compact
         />
       </Popover>
-      <Dialog open={notifModalOpen} onClose={handleCloseNotifModal} fullWidth maxWidth="sm">
-        <DialogContent sx={{ p:0 }}>
+      <Dialog
+        open={notifModalOpen}
+        onClose={handleCloseNotifModal}
+        fullWidth
+        maxWidth="sm"
+      >
+        <DialogContent sx={{ p: 0 }}>
           <NotificationListPanel
             notifications={notifCtx?.notifications || []}
             activeTab={notifCtx?.activeTab || 'all'}
-            onTabChange={(t)=>notifCtx?.setActiveTab?.(t)}
+            onTabChange={t => notifCtx?.setActiveTab?.(t)}
             onItemClick={handleNotifItemClick}
             onViewAll={handleCloseNotifModal}
             compact={false}
