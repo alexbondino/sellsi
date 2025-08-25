@@ -194,14 +194,15 @@ export default function TopBar({
         setOpenContactModal(true);
         return;
       }
-      // Si es un anchor de la home, navega a / con scrollTo
       if (
         ref === 'quienesSomosRef' ||
         ref === 'serviciosRef' ||
         ref === 'trabajaConNosotrosRef'
       ) {
         setSkipScrollToTopOnce();
-        navigate(`/?scrollTo=${ref}`);
+        // Forzar cambio de URL incluso si ya estás en / añadiendo un timestamp
+        const search = `?scrollTo=${encodeURIComponent(ref)}&t=${Date.now()}`;
+        navigate(`/${search}`);
         return;
       }
       if (onNavigate) {

@@ -48,8 +48,8 @@ const Home = ({ scrollTargets }) => {
   const location = useLocation();
   const {
     // Referencias para scroll
-    quienesSomosRef,
     serviciosRef,
+    quienesSomosRef,
     contactanosRef,
 
     // Carrusel promocional
@@ -127,14 +127,15 @@ const Home = ({ scrollTargets }) => {
         {/* Banner Component */}
         <Box>
           <Banner />
-        </Box>
-        {/* Sección ¿Quiénes somos? */}
-        <Box>
-          <AboutUsSection quienesSomosRef={quienesSomosRef} />
+          {/* Sección Nuestros Servicios */}
+          <ServicesSection serviciosRef={serviciosRef} services={services} />
         </Box>
       </Box>
-      {/* Sección Nuestros Servicios */}
-      <ServicesSection serviciosRef={serviciosRef} services={services} />
+
+      <Box>
+        {/* Sección ¿Quiénes somos? */}
+        <AboutUsSection quienesSomosRef={quienesSomosRef} />
+      </Box>
     </Box>
   );
 };
