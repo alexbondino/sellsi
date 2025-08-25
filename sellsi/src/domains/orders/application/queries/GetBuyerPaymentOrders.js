@@ -69,14 +69,33 @@ export async function GetBuyerPaymentOrders(buyerId, { limit, offset } = {}) {
         pricing_warning = true;
         price_at_addition = 1;
       }
+      // Extraer shipping price por item para asignación exacta multi-supplier
+      let shipping_price = 0;
+      try {
+        if (it.envio && typeof it.envio === 'object' && Number.isFinite(Number(it.envio.precio))) {
+          shipping_price = Number(it.envio.precio);
+        } else {
+          const arr = it.shippingRegions || it.shipping_regions || it.delivery_regions || [];
+          if (Array.isArray(arr) && arr.length) {
+            const first = arr[0];
+            if (first && Number.isFinite(Number(first.price))) shipping_price = Number(first.price);
+          }
+        }
+      } catch(_) {}
       return {
         cart_items_id: it.cart_items_id || it.id || `${row.id}-itm-${idx}`,
         product_id: it.product_id || it.productid || it.id || null,
         quantity: it.quantity || 1,
         price_at_addition,
+        priceAtAddition: price_at_addition, // alias para capas que esperan camelCase
         price_tiers: it.price_tiers || null,
         document_type: normalizeDocumentType(it.document_type || it.documentType),
         pricing_warning,
+        envio: it.envio || null,
+        shippingRegions: it.shippingRegions || it.shipping_regions || null,
+        shipping_regions: it.shipping_regions || null,
+        delivery_regions: it.delivery_regions || null,
+        shipping_price,
         product: {
           id: it.product_id || it.productid || it.id || null,
           productid: it.product_id || it.productid || null,

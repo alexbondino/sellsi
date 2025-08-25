@@ -19,7 +19,13 @@ function mapItem(raw, fallbackOrderId, idx = 0) {
     quantity: raw.quantity || 1,
     priceAtAddition: raw.price_at_addition || raw.price || 0,
     document_type: normalizeDocumentType(raw.document_type || raw.documentType),
-    product: raw.product || raw.products || raw.product_data || {}
+  product: raw.product || raw.products || raw.product_data || {},
+  // Propagar campos necesarios para asignación de shipping exacto en splitOrderBySupplier
+  shipping_price: raw.shipping_price || 0,
+  envio: raw.envio || null,
+  shippingRegions: raw.shippingRegions || raw.shipping_regions || null,
+  shipping_regions: raw.shipping_regions || null,
+  delivery_regions: raw.delivery_regions || null
   };
 }
 
@@ -47,6 +53,7 @@ export function mapSupplierOrderFromServiceObject(o) {
     shipping: o.shipping || 0,
     shipping_amount: o.shipping_amount || 0,
     shipping_cost: o.shipping_cost || 0,
+  supplier_parts_meta: o.supplier_parts_meta || null,
     deliveryAddress: o.delivery_address || o.deliveryAddress || null
   };
 }

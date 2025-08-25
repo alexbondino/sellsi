@@ -198,6 +198,9 @@ const BuyerOrders = () => {
     );
   }, [orders, ORDERS_PER_PAGE, currentPage, totalPages, handlePageChange]);
 
+  // DEBUG DIAGNOSTICS disabled for production
+  const DEBUG_BUYER_ORDERS_UI = false;
+
   // ============================================================================
   // RENDERIZADO CONDICIONAL
   // ============================================================================
@@ -570,9 +573,22 @@ const BuyerOrders = () => {
                     {order.items.map((item, index) => {
                       // Para partes de proveedor (supplier part) usamos su propio status parcial
                       const productStatus = order.is_supplier_part
-                        ? order.status
+                        ? order.status // ya viene overlay aplicado en hook
                         : (order.is_payment_order ? order.status : getProductStatus(item, order.created_at, order.status));
                       const statusChips = getStatusChips(productStatus, order.payment_status, order);
+                      if (DEBUG_BUYER_ORDERS_UI) {
+                        try {
+                          console.log('[BuyerOrders][DEBUG] item render', {
+                            order_id: order.order_id,
+                            supplier_id: order.supplier_id,
+                            product_id: item.product_id || item.id,
+                            computed_status: productStatus,
+                            payment_status: order.payment_status,
+                            chip_active: statusChips.find(c=>c.active)?.key,
+                            chip_labels: statusChips.map(c=>`${c.key}:${c.active?'ON':'off'}`)
+                          });
+                        } catch(_) {}
+                      }
                       
                       // Crear key única y robusta combinando múltiples identificadores
                       const itemKey = item.cart_items_id || 

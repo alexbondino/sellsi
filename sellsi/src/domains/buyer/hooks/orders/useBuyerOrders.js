@@ -25,10 +25,26 @@ export const useBuyerOrders = buyerId => {
     // 1. Ordenar por fecha
     const ordered = payment.sort((a,b)=> new Date(b.created_at) - new Date(a.created_at));
     // 2. Para cada payment order aplicar split derivado.
-    const parts = ordered.flatMap(o => splitOrderBySupplier({
-      ...o,
-      id: o.order_id || o.id // asegurar campo id para util
-    }));
+    const parts = ordered.flatMap(o => {
+      // Parse supplier meta early to allow split to pick up statuses; fallback overlay after
+      let meta = o.supplier_parts_meta || o.supplierPartsMeta || null;
+      if (typeof meta === 'string') { try { meta = JSON.parse(meta); } catch { meta = null; } }
+      const generated = splitOrderBySupplier({
+        ...o,
+        supplier_parts_meta: meta,
+        id: o.order_id || o.id
+      });
+      // Ensure each part status reflects supplier meta even if split missed
+      if (meta && typeof meta === 'object') {
+        generated.forEach(p => {
+          const node = meta[p.supplier_id];
+          if (node && node.status && p.status !== node.status) {
+            p.status = node.status; // override
+          }
+        });
+      }
+      return generated;
+    });
     // 3. Rule: Si sólo hay una parte para la order, dejamos esa (sin synthetic flag is_supplier_part=false)
     // splitOrderBySupplier ya maneja esto.
     // 4. Dedupe defensivo (por si llega duplicada la order completa). Clave: parent_order_id+supplier_id (o solo parent).

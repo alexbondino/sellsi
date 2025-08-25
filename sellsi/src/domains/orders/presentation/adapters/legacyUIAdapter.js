@@ -31,6 +31,7 @@ export function toSupplierUIOrder(domainOrder, { includeAliases = true } = {}) {
     shipping_cost: o.shipping_cost || 0,
     // ✅ FIX: NO recalcular final_amount, usar el que viene del domain (ya incluye shipping)
     final_amount: o.totals?.final || o.final_amount || (o.totals?.amount || o.total_amount || 0),
+  supplier_parts_meta: o.supplier_parts_meta || null,
     source: o.source || 'orders'
   };
   if (includeAliases && FLAGS.ORDERS_EMIT_LEGACY_ALIASES) {

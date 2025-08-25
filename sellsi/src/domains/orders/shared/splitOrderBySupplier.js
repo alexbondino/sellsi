@@ -4,6 +4,10 @@
 
 import { parseOrderItems } from './parsing';
 
+// Debug flag (disabled for production)
+// IMPORTANT: activar solo en entorno local para trazas puntuales.
+const DEBUG_SPLIT_SUPPLIERS = false;
+
 // Prioridad para comparar avance de estados (sin traducir)
 const STATUS_PRIORITY = {
   pending: 0,
@@ -33,8 +37,12 @@ export function shortCode(uuid, prefix = '') {
 
 export function splitOrderBySupplier(order) {
   if (!order) return [];
-  
-  const supplierMeta = order.supplier_parts_meta || order.supplierPartsMeta || null; // JSONB column overlay (Option A 2.0)
+  // Parse supplier meta (may arrive as JSON string)
+  let supplierMeta = order.supplier_parts_meta || order.supplierPartsMeta || null; // JSONB column overlay (Option A 2.0)
+  if (typeof supplierMeta === 'string') {
+    try { supplierMeta = JSON.parse(supplierMeta); } catch { supplierMeta = null; }
+  }
+  // debug disabled in production
   
   const parentDisplayCode = shortCode(order.id, 'K');
   const items = parseOrderItems(order.items);
@@ -124,20 +132,91 @@ export function splitOrderBySupplier(order) {
         if (node.estimated_delivery_date) part.estimated_delivery_date = node.estimated_delivery_date;
       }
     }
+    if (DEBUG_SPLIT_SUPPLIERS) {
+      // eslint-disable-next-line no-console
+      console.log('[splitOrderBySupplier][single-or-no-supplier] part', {
+        order_id: part.order_id,
+        supplierId,
+        subtotal: part.subtotal,
+        shipping_amount: part.shipping_amount,
+        final_amount: part.final_amount,
+        status: part.status,
+        payment_status: part.payment_status
+      });
+    }
     return [part];
   }
   // Multi-supplier: allocate shipping prorata on subtotal (last part absorbs rounding diff)
   const shippingTotal = Number(order.shipping || order.shipping_amount || 0);
+  // debug disabled in production
   const parts = [];
-  const entries = Array.from(groups.entries()).map(([sid, arr]) => ({ sid, arr, subtotal: arr.reduce((s,i)=> s + Number(i.price_at_addition || i.price || 0) * (i.quantity || 0),0) }));
+  const entries = Array.from(groups.entries()).map(([sid, arr]) => ({
+    sid,
+    arr,
+    subtotal: arr.reduce((s,i)=> {
+      const unit = Number(
+        (i.price_at_addition != null ? i.price_at_addition : undefined) ??
+        (i.priceAtAddition != null ? i.priceAtAddition : undefined) ??
+        (i.price != null ? i.price : 0)
+      );
+      const qty = Number(i.quantity || i.qty || 0);
+      return s + (Number.isFinite(unit) ? unit : 0) * (Number.isFinite(qty) ? qty : 0);
+    },0)
+  }));
   const totalSubtotal = entries.reduce((s,x)=> s + x.subtotal, 0) || 1;
+
+  // New: Attempt precise shipping allocation using per-item shipping data (envio / shippingRegions)
+  // We inspect each item for explicit shipping price; if sum matches shippingTotal we use those exact values.
+  function extractItemShippingPrice(it, targetRegion) {
+  if (Number.isFinite(Number(it.shipping_price))) return Number(it.shipping_price);
+    // 1) Direct 'envio' object from legacy shape
+    if (it.envio && typeof it.envio === 'object' && Number.isFinite(Number(it.envio.precio))) return Number(it.envio.precio);
+    // 2) Arrays of shipping regions
+    const candidates = it.shippingRegions || it.shipping_regions || it.delivery_regions || [];
+    if (Array.isArray(candidates) && candidates.length) {
+      const byRegion = candidates.find(r => (r.region || '').toLowerCase() === (targetRegion || '').toLowerCase());
+      const picked = byRegion || candidates[0];
+      if (picked && Number.isFinite(Number(picked.price))) return Number(picked.price);
+    }
+    return 0;
+  }
+  let shippingBySupplier = Object.create(null);
+  let sumExplicitShipping = 0;
+  let targetRegion = undefined;
+  try {
+    if (order.shipping_address) {
+      const addr = typeof order.shipping_address === 'string' ? JSON.parse(order.shipping_address) : order.shipping_address;
+      targetRegion = (addr?.region || addr?.shipping_region || '').toLowerCase();
+    }
+  } catch { /* ignore */ }
+  entries.forEach(entry => {
+    const supplierShip = entry.arr.reduce((s,it)=> {
+      const v = extractItemShippingPrice(it, targetRegion);
+  // debug disabled in production
+      return s + v;
+    }, 0);
+    shippingBySupplier[entry.sid] = supplierShip;
+    sumExplicitShipping += supplierShip;
+  });
+  // Estrategia: si coincide exacto usamos explicit; si shippingTotal es 0 pero hay explícitos, también; si la diferencia es pequeña (<2 CLP o <2%), usamos explicit.
+  let useExplicit = false;
+  if (sumExplicitShipping > 0) {
+    if (shippingTotal === 0) useExplicit = true;
+    else if (sumExplicitShipping === shippingTotal) useExplicit = true;
+    else if (Math.abs(sumExplicitShipping - shippingTotal) <= Math.max(2, Math.round(shippingTotal * 0.02))) useExplicit = true;
+  }
+  // debug disabled in production
+
   let accShip = 0;
   entries.forEach((entry, idx) => {
     let shipAlloc = 0;
-    if (shippingTotal > 0) {
+    if (useExplicit) {
+      shipAlloc = shippingBySupplier[entry.sid] || 0;
+    } else if (shippingTotal > 0) {
       if (idx === entries.length - 1) shipAlloc = Math.max(0, shippingTotal - accShip);
       else { shipAlloc = Math.round(shippingTotal * (entry.subtotal / totalSubtotal)); accShip += shipAlloc; }
     }
+    const finalAmount = entry.subtotal + shipAlloc;
     const part = {
       synthetic_id: `${order.id}-${entry.sid}`,
       order_id: order.id,
@@ -148,7 +227,7 @@ export function splitOrderBySupplier(order) {
       shipping_amount: shipAlloc,
       shipping: shipAlloc,
       total_amount: entry.subtotal,
-      final_amount: entry.subtotal + shipAlloc,
+      final_amount: finalAmount,
       status: order.status,
       payment_status: order.payment_status,
       is_supplier_part: true,
@@ -165,6 +244,7 @@ export function splitOrderBySupplier(order) {
   if (node.status) part.status = pickMoreAdvanced(part.status, node.status);
       if (node.estimated_delivery_date) part.estimated_delivery_date = node.estimated_delivery_date;
     }
+  // debug disabled in production
     parts.push(part);
   });
   return parts;

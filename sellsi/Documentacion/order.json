@@ -1,87 +1,81 @@
-{
-  "id": "cdd77b21-83e4-487d-8d36-682d0faa91c8",
-  "user_id": "ae9be238-f13e-4edd-ac30-ec5854dae54f",
-  "status": "pending",
-  "payment_method": "khipu",
-  "payment_status": "paid",
-  "created_at": "2025-08-25 22:26:26.562428+00",
-  "updated_at": "2025-08-25 22:28:10.337+00",
-  "paid_at": "2025-08-25 22:27:10.325+00",
-  "estimated_delivery_date": "2025-09-03 00:00:00+00",
-  "subtotal": 45396,
-  "tax": 8625,
-  "shipping": 28222,
-  "total": 73618,
-  "currency": "CLP",
-  "shipping_address": {
-    "number": "412",
-    "region": "metropolitana",
-    "address": "ojiiigin",
-    "commune": "conchali",
-    "department": "104"
-  },
-  "billing_address": {
-    "billing_rut": "91.239.123-9",
-    "business_name": "Pene",
-    "billing_address": "12312ASDASD"
-  },
-  "khipu": {
-    "payment_id": "lhcelyefsncg",
-    "payment_url": "https://khipu.com/payment/info/lhcelyefsncg",
-    "transaction_id": null,
-    "expires_at": null
-  },
-  "items": [
-    {
-      "id": "80d22611-0182-4eac-aa47-cf982912fca5",
-      "nombre": "ULTIMA PRUEBATHEBEST  TT",
-      "descripcion": "TDTUDDHYHDTYHHTTHDGDRFHDRFTGH",
-      "categoria": "Alcoholes",
-      "proveedor": "jromeroy",
-      "proveedorVerificado": false,
-      "stock": 3586,
-      "cantidad": 1,
-      "precio_aplicado": 14990,
-      "precio_tiers": [
-        {
-          "min_quantity": 1,
-          "max_quantity": 3000,
-          "price": 14990
-        },
-        {
-          "min_quantity": 3001,
-          "max_quantity": null,
-          "price": 13999
-        }
-      ],
-      "documento": "boleta",
-      "compra_minima": 1,
-      "envio": {
-        "precio": 4990,
-        "region": "metropolitana",
-        "dias": 5
-      },
-      "imagen": "https://clbngnjetipglkikondm.supabase.co/storage/v1/object/public/product-images/771c0da4-19f7-4d44-a29d-3f347621b893/80d22611-0182-4eac-aa47-cf982912fca5/1755834755347.png"
-    },
-    {
-      "id": "d5901d8c-4e93-406f-ad55-972a0811a82c",
-      "nombre": "ALTO KOMANDO KARKAROFF",
-      "descripcion": "ALTO KOMANDO KARKAROFFALTO KOMANDO KARKAROFFALTO KOMANDO KARKAROFF",
-      "categoria": "Alcoholes",
-      "proveedor": "The Lich King",
-      "proveedorVerificado": true,
-      "stock": 11540,
-      "cantidad": 23,
-      "precio_aplicado": 1322,
-      "precio_tiers": [],
-      "documento": "factura",
-      "compra_minima": 23,
-      "envio": {
-        "precio": 23232,
-        "region": "metropolitana",
-        "dias": 2
-      },
-      "imagen": "https://clbngnjetipglkikondm.supabase.co/storage/v1/object/public/product-images/20e7a348-66b6-4824-b059-2c67c5e6a49c/d5901d8c-4e93-406f-ad55-972a0811a82c/1755384837779.jpg"
-    }
-  ]
-}
+[
+  {
+    "idx": 0,
+    "id": "cdd77b21-83e4-487d-8d36-682d0faa91c8",
+    "user_id": "ae9be238-f13e-4edd-ac30-ec5854dae54f",
+    "items": "[{\"id\": \"80d22611-0182-4eac-aa47-cf982912fca5\", \"name\": \"ULTIMA PRUEBATHEBEST  TT\", \"image\": \"https://clbngnjetipglkikondm.supabase.co/storage/v1/object/public/product-images/771c0da4-19f7-4d44-a29d-3f347621b893/80d22611-0182-4eac-aa47-cf982912fca5/1755834755347.png\", \"price\": 0, \"stock\": 3586, \"imagen\": \"https://clbngnjetipglkikondm.supabase.co/storage/v1/object/public/product-images/771c0da4-19f7-4d44-a29d-3f347621b893/80d22611-0182-4eac-aa47-cf982912fca5/1755834755347.png\", \"nombre\": \"ULTIMA PRUEBATHEBEST  TT\", \"precio\": 0, \"added_at\": \"2025-08-25T22:26:19.333474+00:00\", \"category\": \"Alcoholes\", \"maxStock\": 3586, \"quantity\": 1, \"supplier\": \"jromeroy\", \"verified\": false, \"basePrice\": 0, \"image_url\": \"https://clbngnjetipglkikondm.supabase.co/storage/v1/object/public/product-images/771c0da4-19f7-4d44-a29d-3f347621b893/80d22611-0182-4eac-aa47-cf982912fca5/1755834755347.png\", \"productid\": \"80d22611-0182-4eac-aa47-cf982912fca5\", \"productnm\": \"ULTIMA PRUEBATHEBEST  TT\", \"proveedor\": \"jromeroy\", \"negotiable\": false, \"product_id\": \"80d22611-0182-4eac-aa47-cf982912fca5\", \"updated_at\": \"2025-08-25T22:26:19.333474+00:00\", \"description\": \"TDTUDDHYHDTYHHTTHDGDRFHDRFTGH\", \"price_tiers\": [{\"price\": 14990, \"product_id\": \"80d22611-0182-4eac-aa47-cf982912fca5\", \"max_quantity\": 3000, \"min_quantity\": 1, \"product_qty_id\": \"1a44b91a-d087-4b60-9ce4-c3bf659690e4\"}, {\"price\": 13999, \"product_id\": \"80d22611-0182-4eac-aa47-cf982912fca5\", \"max_quantity\": null, \"min_quantity\": 3001, \"product_qty_id\": \"e67520c1-039a-4720-8405-8b5fa9ca96a3\"}], \"supplier_id\": \"771c0da4-19f7-4d44-a29d-3f347621b893\", \"compraMinima\": 1, \"documentType\": \"boleta\", \"cart_items_id\": \"8b8537c8-afbd-444b-abce-3ca4a68b326e\", \"document_type\": \"boleta\", \"originalPrice\": 0, \"precioOriginal\": 0, \"tier_band_used\": \"range:1-3000\", \"shippingRegions\": [{\"id\": \"650033ad-5991-411d-be65-327102ee87cc\", \"price\": 4990, \"region\": \"metropolitana\", \"delivery_days\": 5}], \"delivery_regions\": [{\"id\": \"650033ad-5991-411d-be65-327102ee87cc\", \"price\": 4990, \"region\": \"metropolitana\", \"delivery_days\": 5}], \"minimum_purchase\": 1, \"shipping_regions\": [{\"id\": \"650033ad-5991-411d-be65-327102ee87cc\", \"price\": 4990, \"region\": \"metropolitana\", \"delivery_days\": 5}], \"price_at_addition\": 14990, \"supplier_verified\": false, \"proveedorVerificado\": false, \"unit_price_original\": 14990, \"unit_price_effective\": 14990}, {\"id\": \"d5901d8c-4e93-406f-ad55-972a0811a82c\", \"name\": \"ALTO KOMANDO KARKAROFF\", \"image\": \"https://clbngnjetipglkikondm.supabase.co/storage/v1/object/public/product-images/20e7a348-66b6-4824-b059-2c67c5e6a49c/d5901d8c-4e93-406f-ad55-972a0811a82c/1755384837779.jpg\", \"price\": 1322, \"stock\": 11540, \"imagen\": \"https://clbngnjetipglkikondm.supabase.co/storage/v1/object/public/product-images/20e7a348-66b6-4824-b059-2c67c5e6a49c/d5901d8c-4e93-406f-ad55-972a0811a82c/1755384837779.jpg\", \"nombre\": \"ALTO KOMANDO KARKAROFF\", \"precio\": 1322, \"added_at\": \"2025-08-25T22:26:09.571541+00:00\", \"category\": \"Alcoholes\", \"maxStock\": 11540, \"quantity\": 23, \"supplier\": \"The Lich King\", \"verified\": true, \"basePrice\": 1322, \"image_url\": \"https://clbngnjetipglkikondm.supabase.co/storage/v1/object/public/product-images/20e7a348-66b6-4824-b059-2c67c5e6a49c/d5901d8c-4e93-406f-ad55-972a0811a82c/1755384837779.jpg\", \"productid\": \"d5901d8c-4e93-406f-ad55-972a0811a82c\", \"productnm\": \"ALTO KOMANDO KARKAROFF\", \"proveedor\": \"The Lich King\", \"negotiable\": false, \"product_id\": \"d5901d8c-4e93-406f-ad55-972a0811a82c\", \"updated_at\": \"2025-08-25T22:26:09.571541+00:00\", \"description\": \"ALTO KOMANDO KARKAROFFALTO KOMANDO KARKAROFFALTO KOMANDO KARKAROFF\", \"price_tiers\": [], \"supplier_id\": \"20e7a348-66b6-4824-b059-2c67c5e6a49c\", \"compraMinima\": 23, \"documentType\": \"factura\", \"cart_items_id\": \"e5dae7a5-0fcc-4104-89a7-8e0eeddb3113\", \"document_type\": \"factura\", \"originalPrice\": 1322, \"precioOriginal\": 1322, \"tier_band_used\": \"base\", \"shippingRegions\": [{\"id\": \"65ac6f95-3ce0-4490-961e-ea083397b5a0\", \"price\": 23232, \"region\": \"metropolitana\", \"delivery_days\": 2}], \"delivery_regions\": [{\"id\": \"65ac6f95-3ce0-4490-961e-ea083397b5a0\", \"price\": 23232, \"region\": \"metropolitana\", \"delivery_days\": 2}], \"minimum_purchase\": 23, \"shipping_regions\": [{\"id\": \"65ac6f95-3ce0-4490-961e-ea083397b5a0\", \"price\": 23232, \"region\": \"metropolitana\", \"delivery_days\": 2}], \"price_at_addition\": 1322, \"supplier_verified\": true, \"proveedorVerificado\": true, \"unit_price_original\": 1322, \"unit_price_effective\": 1322}]",
+    "subtotal": "45396",
+    "tax": "8625",
+    "shipping": "28222",
+    "total": "73618",
+    "currency": "CLP",
+    "status": "pending",
+    "payment_method": "khipu",
+    "payment_status": "paid",
+    "shipping_address": "{\"number\": \"412\", \"region\": \"metropolitana\", \"address\": \"ojiiigin\", \"commune\": \"conchali\", \"department\": \"104\"}",
+    "billing_address": "{\"billing_rut\": \"91.239.123-9\", \"business_name\": \"Pene\", \"billing_address\": \"12312ASDASD\"}",
+    "created_at": "2025-08-25 22:26:26.562428+00",
+    "updated_at": "2025-08-25 22:28:10.337+00",
+    "khipu_payment_id": "lhcelyefsncg",
+    "khipu_transaction_id": null,
+    "khipu_payment_url": "https://khipu.com/payment/info/lhcelyefsncg",
+    "khipu_expires_at": null,
+    "paid_at": "2025-08-25 22:27:10.325+00",
+    "fulfillment_status": null,
+    "accepted_at": null,
+    "dispatched_at": null,
+    "delivered_at": null,
+    "cancelled_at": null,
+    "rejection_reason": null,
+    "cancellation_reason": null,
+    "cart_id": null,
+    "estimated_delivery_date": "2025-09-03 00:00:00+00",
+    "split_status": "not_split",
+    "pricing_verified_at": "2025-08-25 22:26:27.919916+00",
+    "items_hash": "2a04235a5611dfddea2054f3f96c8405946f52063897539daf034e9432ca84ae",
+    "inventory_processed_at": "2025-08-25 22:27:15.585+00",
+    "supplier_ids": [
+      "20e7a348-66b6-4824-b059-2c67c5e6a49c",
+      "771c0da4-19f7-4d44-a29d-3f347621b893"
+    ],
+    "supplier_parts_meta": "{\"20e7a348-66b6-4824-b059-2c67c5e6a49c\": {\"status\": \"accepted\", \"history\": [{\"at\": \"2025-08-25T22:27:10.769Z\", \"to\": \"pending\", \"from\": null}, {\"at\": \"2025-08-25T22:28:10.337Z\", \"to\": \"accepted\", \"from\": \"pending\"}]}, \"771c0da4-19f7-4d44-a29d-3f347621b893\": {\"status\": \"pending\", \"history\": [{\"at\": \"2025-08-25T22:27:10.769Z\", \"to\": \"pending\", \"from\": null}]}}"
+  }
+]
+
+
+
+Lo que deberia verse:
+
+ULTIMA PRUEBATHEBEST TT
+Precio: $14.990 CLP
+Envío: $4.990 · Metropolitana · 5 días
+Proveedor: jromeroy (No verificado) · Estado proveedor: pending
+Precio total arriba del texto Incluye envío: $19.980 CLP
+Chips: Pago Confirmado = ON · Pedido Aceptado = OFF · En Tránsito = OFF · Entregado = OFF
+
+ALTO KOMANDO KARKAROFF
+Precio: $30.406 CLP (unidad) · Cantidad: 23 · Subtotal item: $30.406 CLP
+Envío: $23.232 · Metropolitana · 2 días
+Precio total arriba del texto Incluye envío: $53.638 CLP
+Proveedor: The Lich King (Verificado) · Estado proveedor: accepted
+Chips: Pago Confirmado = OFF · Pedido Aceptado = ON · En Tránsito = OFF · Entregado = OFF
+
+Lo que actualmente se ve:
+
+ULTIMA PRUEBATHEBEST TT
+Precio: $14.990 CLP
+Envío: $9.319 · Metropolitana · 5 días
+Proveedor: jromeroy (No verificado) · Estado proveedor: pending
+Precio total arriba del texto Incluye envío: $24.309 CLP
+Chips: Pago Confirmado = ON · Pedido Aceptado = OFF · En Tránsito = OFF · Entregado = OFF
+
+ALTO KOMANDO KARKAROFF
+Precio: $1.322 CLP (unidad) · Cantidad: 23 · Subtotal item: $30.406 CLP
+Envío: $18.903 · Metropolitana · 2 días
+Precio total arriba del texto Incluye envío: $49.309 CLP
+Proveedor: The Lich King (Verificado) · Estado proveedor: accepted
+Chips: Pago Confirmado = ON · Pedido Aceptado = OFF · En Tránsito = OFF · Entregado = OFF
+
+Tenemos discrepancias serias en:
+*Precio total arriba del texto Incluye envío:
+*Chips
