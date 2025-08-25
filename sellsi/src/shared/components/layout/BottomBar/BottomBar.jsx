@@ -36,15 +36,20 @@ const BottomBar = () => {
       >
         <Box
           sx={{
-            maxWidth: 1400,
-            mx: 'auto',
+            maxWidth: '100%',
+            mx: {
+              xs: 'max(25px, env(safe-area-inset-left))', // Telefonos Chicos
+              sm: 'max(30px, env(safe-area-inset-left))', // Telefonos grandes
+              mac: '180px', //  Mac M1
+              lg: '250px', // 1080p
+              xl: '250px', // 2K
+            },
             display: 'grid',
             gridTemplateColumns: {
               xs: '1fr',
               md: '1fr auto auto',
             },
             alignItems: 'center',
-            gap: { xs: 3, md: 6 },
           }}
         >
           {/* IZQUIERDA: logo + eslogan (en línea como tu imagen) */}
@@ -59,7 +64,14 @@ const BottomBar = () => {
             {/* Caja del logo (mantiene altura y “bloque” visual del mock) */}
             <Box
               sx={{
-                height: { xs: 250, md: 250 },
+                height: {
+                  xs: 'max(100px, env(safe-area-inset-left))',
+                  sm: 'max(100px, env(safe-area-inset-left))',
+                  md: 250,
+                  mac: 180,
+                  lg: 250,
+                  xl: 250,
+                },
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -117,17 +129,18 @@ const BottomBar = () => {
             </Box>
           </Box>
 
-          {/* DERECHA: redes + teléfono (alineado a la derecha en desktop) */}
+          {/* DERECHA: redes + teléfono */}
           <Box
             sx={{
               display: 'flex',
               flexDirection: 'column',
-              alignItems: { xs: 'flex-start', md: 'flex-end' },
+              alignItems: { xs: 'center', md: 'flex-end' }, // 👉 centrado en mobile
               gap: 2,
+              mt: { xs: 5, sm: 5, md: 0 }, // 👉 separa más en mobile
             }}
           >
             {/* Íconos sociales */}
-            <Box sx={{ display: 'flex', gap: 1.5 }}>
+            <Box sx={{ display: 'flex', gap: 2, mx: { xs: 0, md: 5 } }}>
               <SocialIcon
                 href="https://www.whatsapp.com/"
                 icon={<WhatsappIcon />}
