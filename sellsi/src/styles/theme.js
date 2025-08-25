@@ -43,7 +43,12 @@ let theme = createTheme({
       lineHeight: 1.3,
     },
     body1: { fontSize: 16, lineHeight: 1.6 },
-    button: { textTransform: 'none', fontWeight: 'bold', lineHeight: 1.2 },
+    button: {
+      textTransform: 'none',
+      fontWeight: 'bold',
+      lineHeight: 1.2,
+      height: '40px',
+    },
 
     // 🎯 Nuevo variant para bullets
     bullet: {

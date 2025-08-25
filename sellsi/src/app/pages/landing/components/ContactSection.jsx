@@ -164,7 +164,12 @@ export default function ContactSection({ contactRef, onSubmit }) {
           variant="contained"
           color="primary"
           disabled={!isFormValid || loading}
-          sx={{ minWidth: 160, fontWeight: 700 }}
+          sx={{
+            minWidth: 160,
+            fontWeight: 700,
+            width: '100%',
+            height: '50px',
+          }}
         >
           {loading ? 'Enviando...' : 'Enviar'}
         </Button>
