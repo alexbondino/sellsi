@@ -430,6 +430,7 @@ const MyOrdersPage = () => {
                 label={`Documento Tributario ${docLabelSuffix}`}
                 type="file"
                 fullWidth
+                sx={{ mt: 1 }}
                 InputLabelProps={{ shrink: true }}
                 inputProps={{ accept: 'application/pdf' }}
                 helperText={

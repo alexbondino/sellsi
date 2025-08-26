@@ -196,7 +196,7 @@ const ProductRegions = ({
               onClick={handleSavePreset}
               sx={{ textTransform: 'none', fontWeight:600 }}
             >
-              Guardar Configuración
+              Guardar
             </Button>
           </span>
         </Tooltip>

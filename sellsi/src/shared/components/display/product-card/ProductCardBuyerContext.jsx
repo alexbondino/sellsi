@@ -115,8 +115,8 @@ const ProductCardBuyerContext = React.memo(
     }, [loadingTiers, errorTiers, price_tiers, precio, precioOriginal]);
 
     return (
-      <>
-        <CardContent sx={{ flexGrow: 1, p: 2, pb: 1, display: 'flex', flexDirection: 'column' }}>
+      <Box sx={{ height: '100%' }}>
+        <CardContent sx={{ flexGrow: 1, p: 2, pb: { xs: 6, md: 9 }, display: 'flex', flexDirection: 'column' }}>
           {/* Product name always at the top */}
           <Box sx={{ mb: { xs: 0.5, md: 1 } }}>
             <Typography
@@ -344,10 +344,15 @@ const ProductCardBuyerContext = React.memo(
         </CardContent>
         <CardActions
           sx={{
-            p: 1.5,
-            pt: 0.5,
-            // Empuja el bloque del botón ligeramente hacia arriba en pantallas grandes (no aplicar en xl)
-            mt: { xs: 0.5,sm: 1, lg: -0.5, xl: 1 },
+            // Position absolute so the button keeps a fixed distance from the bottom of the card
+            position: 'absolute',
+            left: '16px',
+            right: '16px',
+            bottom: '10px',
+            // Remove internal padding to avoid extra height
+            p: 0,
+            pt: 0,
+            display: 'flex',
           }}
         >
           <AddToCart
@@ -375,7 +380,7 @@ const ProductCardBuyerContext = React.memo(
             AGREGAR
           </AddToCart>
         </CardActions>
-      </>
+      </Box>
     );
   }
 );
