@@ -9,10 +9,9 @@ const Banner = () => {
   const { bannerState, hideBanner } = useBanner();
   const { show, message, severity, duration } = bannerState;
   const location = useLocation();
+  // Hooks must be called in the same order every render.
+  // Declare state and effects before any conditional return.
   const [isVisible, setIsVisible] = useState(false);
-
-  // Mostrar SOLO en la home
-  if (location.pathname !== '/') return null;
 
   useEffect(() => {
     if (show) {
@@ -27,6 +26,10 @@ const Banner = () => {
     }
   }, [show, duration, hideBanner]);
 
+  // Mostrar SOLO en la home
+  if (location.pathname !== '/') return null;
+
+  // Si no hay banner activo, no renderizar (pero tras haber llamado hooks)
   if (!show) return null;
 
   return (

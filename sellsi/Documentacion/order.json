@@ -74,8 +74,16 @@ Precio: $1.322 CLP (unidad) · Cantidad: 23 · Subtotal item: $30.406 CLP
 Envío: $18.903 · Metropolitana · 2 días
 Precio total arriba del texto Incluye envío: $49.309 CLP
 Proveedor: The Lich King (Verificado) · Estado proveedor: accepted
-Chips: Pago Confirmado = ON · Pedido Aceptado = OFF · En Tránsito = OFF · Entregado = OFF
+Chips: Pago Confirmado = OFF · Pedido Aceptado = ON · En Tránsito = OFF · Entregado = OFF
 
 Tenemos discrepancias serias en:
 *Precio total arriba del texto Incluye envío:
-*Chips
+Precisamente en los valores de envío.
+
+Por ejemplo si reviso el caso de AlTO KOMANDO KARKAROFF, en TableRows.jsx ahi me muestra: 
+Venta y Envío (IVA inc.)
+$53.638
+Venta: $30.406 · Envío: $23.232
+lo cual es correcto!, pero en BuyerOrders.jsx se muestra:
+$49.309
+Venta: $30.406 · Envío: $18.903
