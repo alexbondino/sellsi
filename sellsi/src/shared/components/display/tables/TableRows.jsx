@@ -741,7 +741,7 @@ const Rows = ({ order, onActionClick }) => {
                   disableScrollLock
                 >
                   <Typography variant="subtitle2" gutterBottom>
-                    Dirección de facturación
+                    Información de Facturación
                   </Typography>
                           {(() => {
                             const billingObj = getBillingObject();

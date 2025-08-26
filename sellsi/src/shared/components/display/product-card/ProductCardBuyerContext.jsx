@@ -342,7 +342,14 @@ const ProductCardBuyerContext = React.memo(
           </Box>
           */}
         </CardContent>
-        <CardActions sx={{ p: 1.5, pt: 0.5 }}>
+        <CardActions
+          sx={{
+            p: 1.5,
+            pt: 0.5,
+            // Empuja el bloque del botón ligeramente hacia arriba en pantallas grandes (no aplicar en xl)
+            mt: { xs: 0.5,sm: 1, lg: -0.5, xl: 1 },
+          }}
+        >
           <AddToCart
             product={product}
             variant="button"

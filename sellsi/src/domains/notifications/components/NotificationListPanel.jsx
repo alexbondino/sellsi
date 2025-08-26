@@ -26,10 +26,10 @@ export const NotificationListPanel = ({
         {slice.map(n => (
           <ListItemButton key={n.id} onClick={()=>onItemClick(n)} sx={(theme) => ({ bgcolor: n.is_read ? 'transparent' : alpha(theme.palette.primary.light, 0.15), alignItems: 'flex-start' })}>
             <ListItemText
-              primary={<Typography variant="subtitle2" fontWeight={n.is_read?500:700}>{n.title}</Typography>}
+              primary={<Typography component="span" variant="subtitle2" fontWeight={n.is_read?500:700}>{n.title}</Typography>}
               secondary={<>
-                <Typography variant="body2" color="text.secondary">{n.body}</Typography>
-                <Typography variant="caption" color="text.disabled">{n.time_ago}</Typography>
+                <Typography component="span" variant="body2" color="text.secondary">{n.body}</Typography>
+                <Typography component="span" variant="caption" color="text.disabled" sx={{ display: 'block' }}>{n.time_ago}</Typography>
               </>}
             />
           </ListItemButton>

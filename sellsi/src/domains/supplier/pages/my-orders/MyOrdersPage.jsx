@@ -340,7 +340,11 @@ const MyOrdersPage = () => {
 
     const configs = {
       accept: {
-        title: 'Aceptar Pedido',
+        title: (
+          <Typography variant="h6" align="center" fontWeight={700}>
+            Aceptar Pedido
+          </Typography>
+        ),
         submitButtonText: 'Confirmar',
         submitButtonColor: 'primary',
         showWarningIconHeader: false,
@@ -348,19 +352,16 @@ const MyOrdersPage = () => {
         isFormModal: true,
         children: (
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <TextField
-              name="message"
-              label="Mensaje (opcional)"
-              multiline
-              rows={3}
-              fullWidth
-              variant="outlined"
-            />
+            {/* No inputs required for accept action */}
           </Box>
         ),
       },
       reject: {
-        title: 'Rechazar Pedido',
+        title: (
+          <Typography variant="h6" align="center" fontWeight={700}>
+            Rechazar Pedido
+          </Typography>
+        ),
         submitButtonText: 'Rechazar',
         submitButtonColor: 'error',
         showWarningIconHeader: false,
@@ -376,19 +377,15 @@ const MyOrdersPage = () => {
               fullWidth
               variant="outlined"
             />
-            <TextField
-              name="message"
-              label="Mensaje (opcional)"
-              multiline
-              rows={2}
-              fullWidth
-              variant="outlined"
-            />
           </Box>
         ),
       },
       dispatch: {
-        title: 'Despachar Pedido',
+        title: (
+          <Typography variant="h6" align="center" fontWeight={700}>
+            Despachar Pedido
+          </Typography>
+        ),
         submitButtonText: 'Despachar',
         submitButtonColor: 'primary',
         showWarningIconHeader: false,
@@ -462,19 +459,16 @@ const MyOrdersPage = () => {
                 }}
               />
             )}
-            <TextField
-              name="message"
-              label="Mensaje (opcional)"
-              multiline
-              rows={3}
-              fullWidth
-              variant="outlined"
-            />
+            {/* No optional message for dispatch action */}
           </Box>
         ),
       },
       deliver: {
-        title: 'Confirmar Entrega',
+        title: (
+          <Typography variant="h6" align="center" fontWeight={700}>
+            Confirmar Entrega
+          </Typography>
+        ),
         submitButtonText: 'Confirmar',
         submitButtonColor: 'primary',
         showWarningIconHeader: false,

@@ -52,7 +52,7 @@ const BottomBar = () => {
             alignItems: 'center',
           }}
         >
-          {/* IZQUIERDA: logo + eslogan (en línea como tu imagen) */}
+          {/* IZQUIERDA: logo + eslogan (eslogan debajo del logo) */}
           <Box
             sx={{
               display: 'flex',
@@ -61,41 +61,46 @@ const BottomBar = () => {
               minWidth: 0,
             }}
           >
-            {/* Caja del logo (mantiene altura y “bloque” visual del mock) */}
-            <Box
-              sx={{
-                height: {
-                  xs: 'max(100px, env(safe-area-inset-left))',
-                  sm: 'max(100px, env(safe-area-inset-left))',
-                  md: 250,
-                  mac: 180,
-                  lg: 250,
-                  xl: 250,
-                },
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                overflow: 'hidden',
-              }}
-            >
-              <img
-                src="/logodark.svg"
-                alt="SELLSI"
-                style={{ height: '100%', display: 'block' }}
-              />
-            </Box>
+            {/* Wrapper columna para apilar logo + texto */}
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: { xs: 'center', md: 'flex-start' } }}>
+              {/* Caja del logo (mantiene altura y “bloque” visual del mock) */}
+              <Box
+                sx={{
+                  height: {
+                    xs: 'max(100px, env(safe-area-inset-left))',
+                    sm: 'max(100px, env(safe-area-inset-left))',
+                    md: 250,
+                    mac: 180,
+                    lg: 250,
+                    xl: 250,
+                  },
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  overflow: 'hidden',
+                }}
+              >
+                <img
+                  src="/logodark.svg"
+                  alt="SELLSI"
+                  style={{ height: '100%', display: 'block' }}
+                />
+              </Box>
 
-            {/* Eslogan */}
-            <Typography
-              variant="h6"
-              sx={{
-                fontWeight: 700,
-                fontSize: { xs: '1rem', md: '1.25rem' },
-                whiteSpace: 'nowrap',
-              }}
-            >
-              Crece. Conecta. Vende.
-            </Typography>
+              {/* Eslogan debajo del logo */}
+              <Typography
+                variant="subtitle1"
+                sx={{
+                  fontWeight: 600,
+                  fontSize: { xs: '0.95rem', md: '1.2rem' },
+                  mt: -10,
+                  ml: 2.5,
+                  textAlign: { xs: 'center', md: 'center' }
+                }}
+              >
+                Conecta, vende, crece
+              </Typography>
+            </Box>
           </Box>
 
           {/* CENTRO: Soporte */}
