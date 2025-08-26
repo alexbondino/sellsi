@@ -219,6 +219,7 @@ const Rows = ({ order, onActionClick }) => {
           commune: parsed.commune || parsed.shipping_commune || parsed.billing_commune || null,
           business_name: parsed.business_name || parsed.company || null,
           billing_rut: parsed.billing_rut || parsed.rut || null,
+          business_line: parsed.business_line || parsed.giro || parsed.businessLine || null,
         };
         return normalized;
       } catch (_) {
@@ -236,6 +237,7 @@ const Rows = ({ order, onActionClick }) => {
         commune: b.commune || b.shipping_commune || b.billing_commune || null,
         business_name: b.business_name || b.company || null,
         billing_rut: b.billing_rut || b.rut || null,
+        business_line: b.business_line || b.giro || b.businessLine || null,
       };
     }
     return null;
@@ -245,8 +247,9 @@ const Rows = ({ order, onActionClick }) => {
     if (!b) return '';
     const clean = v => (v ? String(v).trim() : '');
     const lines = [];
-    if (clean(b.business_name)) lines.push(`Empresa: ${clean(b.business_name)}`);
+  if (clean(b.business_name)) lines.push(`Razón Social: ${clean(b.business_name)}`);
     if (clean(b.billing_rut)) lines.push(`RUT: ${clean(b.billing_rut)}`);
+  if (clean(b.business_line)) lines.push(`Giro: ${clean(b.business_line)}`);
     const street = [clean(b.address), clean(b.number), clean(b.department)].filter(Boolean).join(' ');
     lines.push(`Dirección: ${street || '—'}`);
     const region = clean(b.region) || '—';
@@ -747,7 +750,7 @@ const Rows = ({ order, onActionClick }) => {
                               <Box sx={{ display: 'grid', gridTemplateColumns: '120px 1fr', rowGap: 1, columnGap: 1 }}>
                                 {billingObj?.business_name ? (
                                   <>
-                                    <Typography variant="body2" color="text.secondary">Empresa:</Typography>
+                                    <Typography variant="body2" color="text.secondary">Razón Social:</Typography>
                                     <Typography variant="body2">{billingObj.business_name}</Typography>
                                   </>
                                 ) : null}
@@ -755,6 +758,12 @@ const Rows = ({ order, onActionClick }) => {
                                   <>
                                     <Typography variant="body2" color="text.secondary">RUT:</Typography>
                                     <Typography variant="body2">{billingObj.billing_rut}</Typography>
+                                  </>
+                                ) : null}
+                                {billingObj?.business_line ? (
+                                  <>
+                                    <Typography variant="body2" color="text.secondary">Giro:</Typography>
+                                    <Typography variant="body2">{billingObj.business_line}</Typography>
                                   </>
                                 ) : null}
                                 <Typography variant="body2" color="text.secondary">Dirección:</Typography>

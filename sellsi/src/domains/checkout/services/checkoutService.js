@@ -36,13 +36,24 @@ class CheckoutService {
               department: prof.shipping_dept || ''
             };
           }
-          if (!orderData.billingAddress && (prof.billing_address || prof.business_name)) {
-            if ((prof.billing_address && String(prof.billing_address).trim() !== '') || (prof.business_name && String(prof.business_name).trim() !== '')) {
+          if (!orderData.billingAddress && (prof.billing_address || prof.business_name || prof.business_line)) {
+            if ([prof.billing_address, prof.business_name, prof.business_line, prof.billing_region, prof.billing_commune]
+              .some(v => v && String(v).trim() !== '')) {
               orderData.billingAddress = {
                 business_name: prof.business_name || '',
                 billing_rut: prof.billing_rut || '',
-                billing_address: prof.billing_address || ''
+                business_line: prof.business_line || '',
+                giro: prof.business_line || '', // alias
+                billing_address: prof.billing_address || '',
+                billing_region: prof.billing_region || '',
+                billing_commune: prof.billing_commune || '',
+                // aliases normalizados
+                address: prof.billing_address || '',
+                region: prof.billing_region || '',
+                commune: prof.billing_commune || ''
               };
+              const requiredBilling = orderData.billingAddress.business_name.trim() !== '' && orderData.billingAddress.billing_address.trim() !== '';
+              if (!requiredBilling) orderData.billingAddress.incomplete = true;
             }
           }
         } catch (pfErr) {

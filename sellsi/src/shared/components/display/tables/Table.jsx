@@ -31,20 +31,20 @@ const Table = ({ orders, onActionClick }) => {
       <MuiTable sx={{ minWidth: 650 }} aria-label="tabla de pedidos">
         <TableHead>
           <TableRow>
-            <TableCell align="center" sx={{ width: '50px' }}>
+            <TableCell align="center" sx={{ width: '50px', fontWeight: 600 }}>
               {/* Columna para icono de advertencia */}
             </TableCell>
-            <TableCell sx={{ pl: 0 }}>Producto</TableCell>
-            <TableCell>Unidades</TableCell>
-            <TableCell>ID Venta</TableCell>
-            <TableCell>Dirección Entrega</TableCell>
-            <TableCell>Fechas</TableCell>
-            <TableCell>Documento Tributario</TableCell>
-            <TableCell align="right">Venta y Envío (IVA inc.)</TableCell>
-            <TableCell>Estado</TableCell>
-            <TableCell>
+            <TableCell sx={{ pl: 0, fontWeight: 600 }}>Producto</TableCell>
+            <TableCell sx={{ fontWeight: 600 }}>Unidades</TableCell>
+            <TableCell sx={{ fontWeight: 600 }}>ID Venta</TableCell>
+            <TableCell sx={{ fontWeight: 600 }}>Dirección Entrega</TableCell>
+            <TableCell sx={{ fontWeight: 600 }}>Fechas</TableCell>
+            <TableCell sx={{ fontWeight: 600 }}>Documento Tributario</TableCell>
+            <TableCell align="right" sx={{ fontWeight: 600 }}>Venta y Envío (IVA inc.)</TableCell>
+            <TableCell sx={{ fontWeight: 600 }}>Estado</TableCell>
+            <TableCell sx={{ fontWeight: 600 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                <span>Acciones</span>
+                <span style={{ fontWeight: 600 }}>Acciones</span>
                 <Tooltip
                   placement="right"
                   componentsProps={{

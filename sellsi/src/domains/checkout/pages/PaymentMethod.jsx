@@ -112,19 +112,33 @@ const PaymentMethod = () => {
             shippingAddress = addr
           }
 
-          // Facturación parcial: si hay business_name o billing_address o rut
+          // Facturación parcial: considerar cualquier campo de facturación relevante
           const hasAnyBilling = [
             profile.business_name,
             profile.billing_address,
-            profile.billing_rut
+            profile.billing_rut,
+            profile.business_line,
+            profile.billing_region,
+            profile.billing_commune
           ].some(v => v && String(v).trim() !== '')
 
           if (hasAnyBilling) {
             const baddr = {
+              // Campos principales
               business_name: profile.business_name || '',
               billing_rut: profile.billing_rut || '',
-              billing_address: profile.billing_address || ''
+              business_line: profile.business_line || '', // Giro
+              giro: profile.business_line || '', // alias para retrocompatibilidad potencial
+              billing_address: profile.billing_address || '',
+              // Localización de facturación
+              billing_region: profile.billing_region || '',
+              billing_commune: profile.billing_commune || '',
+              // Aliases normalizados usados por normalizadores de UI
+              address: profile.billing_address || '',
+              region: profile.billing_region || '',
+              commune: profile.billing_commune || ''
             }
+            // Reglas mínimas de "completitud" conservan criterio previo (nombre + dirección)
             const requiredBilling = baddr.business_name.trim() !== '' && baddr.billing_address.trim() !== ''
             if (!requiredBilling) baddr.incomplete = true
             billingAddress = baddr
