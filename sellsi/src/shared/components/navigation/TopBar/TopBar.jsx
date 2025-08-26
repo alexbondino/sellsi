@@ -245,7 +245,7 @@ export default function TopBar({
   const navButtonStyle = {
     color: 'white',
     textTransform: 'none',
-    fontSize: 20,
+  fontSize: 16,
     outline: 'none',
     boxShadow: 'none',
     border: 'none',
@@ -382,14 +382,13 @@ export default function TopBar({
           variant="outlined"
           sx={{
             color: 'white',
-            borderColor: 'white', // 👈 borde blanco
-            borderWidth: 1, // 👈 grosor más notorio
+            border: 'none', // quitar borde blanco
             outline: 'none',
             boxShadow: 'none',
             '&:focus': { outline: 'none', boxShadow: 'none' },
             '&:active': { outline: 'none', boxShadow: 'none' },
             '&:hover': {
-              borderColor: 'white', // mantiene borde blanco al hover
+              border: 'none',
               backgroundColor: 'rgba(255,255,255,0.1)', // opcional
             },
           }}
@@ -411,14 +410,14 @@ export default function TopBar({
                 setOpenComingSoonModal(true);
                 handleCloseMobileMenu();
               }}
-              sx={{ fontSize: 20 }}
+              sx={{ fontSize: 16 }}
             >
               {label}
             </MenuItem>
           );
         }
         return (
-          <MenuItem key={label} onClick={() => handleNavigate(ref)} sx={{ fontSize: 20 }}>
+          <MenuItem key={label} onClick={() => handleNavigate(ref)} sx={{ fontSize: 16 }}>
             {label}
           </MenuItem>
         );
@@ -560,7 +559,7 @@ export default function TopBar({
           position: 'fixed',
           top: 0,
           zIndex: 1100,
-          height: { xs: 45, md: '80px' }, // Altura reducida en mobile
+          height: { xs: 45, md: '64px' }, // Altura reducida en mobile
           borderBottom: '1px solid white',
         }}
       >

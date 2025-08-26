@@ -15,9 +15,9 @@ const BottomBar = () => {
 
   return (
     <>
-      {/* Línea separadora superior (fina, blanca) */}
+      {/* Línea separadora superior (igual que TopBar) */}
       <Box sx={{ width: '100%', px: { xs: 2 }, bgcolor: '#000' }}>
-        <Divider sx={{ borderColor: 'rgba(255,255,255,0.2)' }} />
+        <Divider sx={{ borderColor: '#ffffff' }} />
       </Box>
 
       <Box
@@ -30,7 +30,7 @@ const BottomBar = () => {
           width: '100%',
           px: { xs: 2, md: 6 },
           py: { xs: 3, md: 4 },
-          borderTop: '1px solid rgba(255,255,255,0.2)',
+          borderTop: '1px solid #ffffff',
           zIndex: 1301,
         }}
       >
@@ -144,16 +144,19 @@ const BottomBar = () => {
               <SocialIcon
                 href="https://www.whatsapp.com/"
                 icon={<WhatsappIcon />}
+                hoverColor="#25d366"
                 label="Whatsapp"
               />
               <SocialIcon
                 href="https://www.instagram.com/"
                 icon={<InstagramIcon />}
+                hoverColor="#e4405f"
                 label="Instagram"
               />
               <SocialIcon
                 href="https://www.linkedin.com/company/sellsi/"
                 icon={<LinkedInIcon />}
+                hoverColor="#0077b5"
                 label="LinkedIn"
               />
             </Box>
@@ -184,7 +187,7 @@ const BottomBar = () => {
                   '&:hover': { color: '#fff', textDecoration: 'underline' },
                 }}
               >
-                (+569) 97206896
+                (+569) 63109664
               </Typography>
             </Box>
           </Box>
@@ -219,7 +222,7 @@ const phoneIconStyle = {
   },
 };
 
-const SocialIcon = ({ href, icon, label }) => (
+const SocialIcon = ({ href, icon, hoverColor = '#fff', label }) => (
   <IconButton
     href={href}
     target="_blank"
@@ -228,7 +231,7 @@ const SocialIcon = ({ href, icon, label }) => (
     sx={{
       color: 'rgba(255,255,255,0.6)',
       '&:hover': {
-        color: '#fff',
+        color: hoverColor,
         backgroundColor: 'rgba(255,255,255,0.08)',
       },
       transition: 'all 0.25s ease',
