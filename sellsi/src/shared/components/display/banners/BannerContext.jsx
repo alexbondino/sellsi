@@ -24,13 +24,27 @@ export const BannerProvider = ({ children }) => {
     duration: 6000,
   });
 
-  const showBanner = ({ message, severity = 'success', duration = 6000 }) => {
-    setBannerState({
-      show: true,
-      message,
-      severity,
-      duration,
-    });
+  /**
+   * Muestra un banner.
+   * Firmas soportadas (para retro-compatibilidad):
+   *  - showBanner({ message, severity?, duration? })
+   *  - showBanner(messageString, severity?, duration?)  (LEGACY)
+   */
+  const showBanner = (cfg, legacySeverity, legacyDuration) => {
+    if (typeof cfg === 'string') {
+      // Firma legacy: (message, severity?, duration?)
+      const message = cfg;
+      const severity = legacySeverity || 'success';
+      const duration = typeof legacyDuration === 'number' ? legacyDuration : 6000;
+      setBannerState({ show: true, message, severity, duration });
+      return;
+    }
+    if (cfg && typeof cfg === 'object') {
+      const { message = '', severity = 'success', duration = 6000 } = cfg;
+      setBannerState({ show: true, message, severity, duration });
+      return;
+    }
+    // Entrada inválida: no cambia estado, opcionalmente podríamos loggear
   };
 
   const hideBanner = () => {

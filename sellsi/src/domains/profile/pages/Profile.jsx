@@ -376,7 +376,7 @@ const Profile = ({ userProfile: initialUserProfile, onUpdateProfile: externalUpd
           updateInitialData();
         }
       } catch (error) {
-        showBanner('Error al actualizar el nombre', 'error');
+  showBanner({ message: 'Error al actualizar el nombre', severity: 'error' });
       } finally {
         setLoading(false);
       }
@@ -397,7 +397,7 @@ const Profile = ({ userProfile: initialUserProfile, onUpdateProfile: externalUpd
           updateInitialData();
         }
       } catch (error) {
-        showBanner('Error al actualizar el nombre', 'error');
+  showBanner({ message: 'Error al actualizar el nombre', severity: 'error' });
       }
     }
     setIsEditingName(false);
@@ -447,7 +447,7 @@ const Profile = ({ userProfile: initialUserProfile, onUpdateProfile: externalUpd
         setLoadedProfile(updatedProfile.data);
       }
       
-      showBanner('Imagen actualizada correctamente', 'success');
+  showBanner({ message: 'Imagen actualizada correctamente', severity: 'success' });
     } catch (error) {
       throw new Error(error.message || 'Error al guardar la imagen');
     }
@@ -509,7 +509,7 @@ const Profile = ({ userProfile: initialUserProfile, onUpdateProfile: externalUpd
         await updateUserProfile(user.id, { logo_url: null });
         clearPendingImage();
         updateInitialData();
-        showBanner('Imagen eliminada correctamente', 'success');
+  showBanner({ message: 'Imagen eliminada correctamente', severity: 'success' });
       } else {
         // Subir nueva imagen
         const { url, error } = await uploadProfileImage(user.id, imageFile);
@@ -520,7 +520,7 @@ const Profile = ({ userProfile: initialUserProfile, onUpdateProfile: externalUpd
         await updateUserProfile(user.id, { logo_url: url });
         clearPendingImage();
         updateInitialData();
-        showBanner('Imagen actualizada correctamente', 'success');
+  showBanner({ message: 'Imagen actualizada correctamente', severity: 'success' });
       }
       
       // Refrescar el perfil
