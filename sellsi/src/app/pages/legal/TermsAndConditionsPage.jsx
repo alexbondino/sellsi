@@ -36,7 +36,7 @@ const TermsAndConditionsPage = () => {
               variant="h4"
               sx={{
                 fontWeight: 700,
-                color: '#1565C0',
+                color: '#2E52B2',
                 fontSize: { xs: '1.5rem', md: '2rem' },
               }}
             >

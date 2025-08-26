@@ -69,7 +69,7 @@ const NotFound = () => {
             sx={{
               fontSize: { xs: '6rem', md: '8rem' },
               fontWeight: 'bold',
-              background: '#1565c0',
+              background: '#2E52B2',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
               lineHeight: 1,

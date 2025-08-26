@@ -47,7 +47,7 @@ export const generateQuotationPDF = async ({
       title: {
         fontSize: 20,
         fontWeight: 'bold',
-        color: '#1565c0',
+        color: '#2E52B2',
         marginBottom: 8,
       },
       subtitle: {
@@ -230,7 +230,7 @@ export const generateQuotationPDF = async ({
             React.createElement(Text, { style: { fontSize: 12, color: '#000' } }, 'Atentamente,')
           ),
           React.createElement(View, { style: { textAlign: 'right', marginTop: 5 } },
-            React.createElement(Text, { style: { fontSize: 12, fontWeight: 'bold', color: '#1565c0' } }, 'Equipo Sellsi')
+            React.createElement(Text, { style: { fontSize: 12, fontWeight: 'bold', color: '#2E52B2' } }, 'Equipo Sellsi')
           ),
           React.createElement(View, { style: { textAlign: 'right', marginTop: 3 } },
             React.createElement(Text, { style: { fontSize: 10, color: '#000' } }, '+569 6310 9665')
@@ -366,7 +366,7 @@ const showHTMLPreview = async ({ product, quantity, unitPrice, tiers }) => {
         .quotation-title {
           font-size: 20px;
           font-weight: bold;
-          color: #1565c0;
+          color: #2E52B2;
           margin-bottom: 8px;
         }
         
@@ -382,7 +382,7 @@ const showHTMLPreview = async ({ product, quantity, unitPrice, tiers }) => {
         }
         
         .header-separator {
-          border-bottom: 2px solid #1565c0;
+          border-bottom: 2px solid #2E52B2;
           margin-bottom: 20px;
         }
         
@@ -493,7 +493,7 @@ const showHTMLPreview = async ({ product, quantity, unitPrice, tiers }) => {
         .signature-company {
           font-size: 12px;
           font-weight: bold;
-          color: #1565c0;
+          color: #2E52B2;
           text-align: right;
           margin-top: 5px;
         }

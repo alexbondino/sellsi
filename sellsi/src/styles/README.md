@@ -21,7 +21,7 @@ El módulo `styles` centraliza los temas, paletas de colores, configuraciones vi
 Styles Architecture
 ├── theme.js (tema base de la aplicación)
 │   ├── Breakpoints personalizados (xs: 0, sm: 412, md: 768, mac: 1280, lg: 1700, xl: 2160)
-│   ├── Paleta de colores principal (#1565c0, #2e2e2e, #f9f9f9)
+│   ├── Paleta de colores principal (#2E52B2, #2e2e2e, #f9f9f9)
 │   └── Tipografía base (Lato, Proxima Nova)
 ├── dashboardThemeCore.js (tema especializado)
 │   ├── Extiende configuración base
@@ -42,7 +42,7 @@ Styles Architecture
 | Propiedad | Tipo | Descripción | Valores |
 |-----------|------|-------------|---------|
 | `breakpoints.values` | Object | Breakpoints responsivos personalizados | xs: 0, sm: 412, md: 768, mac: 1280, lg: 1700, xl: 2160 |
-| `palette.primary.main` | String | Color principal de la marca | '#1565c0' (azul corporativo) |
+| `palette.primary.main` | String | Color principal de la marca | '#2E52B2' (azul corporativo) |
 | `palette.secondary.main` | String | Color secundario | '#2e2e2e' (gris oscuro) |
 | `palette.background.default` | String | Fondo por defecto | '#f9f9f9' (gris claro) |
 | `typography.fontFamily` | String | Familia tipográfica principal | 'Lato, "Proxima Nova", sans-serif' |
@@ -59,7 +59,7 @@ Styles Architecture
 **Configuración especializada:**
 | Propiedad | Tipo | Descripción | Valores |
 |-----------|------|-------------|---------|
-| `palette.primary.main` | String | Color principal (consistente con marketplace) | '#1565c0' |
+| `palette.primary.main` | String | Color principal (consistente con marketplace) | '#2E52B2' |
 | `palette.primary.light` | String | Color hover | '#42a5f5' |
 | `components.MuiButton.styleOverrides` | Object | Overrides para botones | textTransform: 'none', borderRadius: 8px |
 

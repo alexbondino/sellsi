@@ -73,13 +73,20 @@ export const AppShell = ({ children }) => {
           bgcolor: 'background.default',
         }}
       >
-        {/* Banner */}
+        {/* Banner: place slightly below the TopBar using topOffset (responsive) */}
         <Banner
           message={bannerState.message}
           severity={bannerState.severity}
           duration={bannerState.duration}
           show={bannerState.show}
           onClose={hideBanner}
+          topOffset={
+            // topBarHeight is responsive: { xs: '45px', md: '64px' }
+            // add 8px gap so banner appears slightly below the TopBar
+            typeof topBarHeight === 'object'
+              ? { xs: `calc(${topBarHeight.xs} + 6px)`, md: `calc(${topBarHeight.md} + 6px)` }
+              : `calc(${topBarHeight} + 6px)`
+          }
         />
 
         {/* Contenedor principal para SideBar y Contenido (Main) */}

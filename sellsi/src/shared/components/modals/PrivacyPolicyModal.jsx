@@ -52,7 +52,7 @@ const PrivacyPolicyModal = ({ open, onClose }) => {
             variant="h5"
             sx={{
               fontWeight: 700,
-              color: '#1565C0',
+              color: '#2E52B2',
               fontSize: { xs: '1.3rem', md: '1.5rem' },
             }}
           >

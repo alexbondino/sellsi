@@ -349,7 +349,7 @@ const ContactModal = ({ open, onClose }) => {
                 boxShadow: '0 4px 14px rgba(25, 118, 210, 0.25)',
                 '&:hover': {
                   background:
-                    'linear-gradient(135deg, #1565c0 0%, #1976d2 100%)',
+                    'linear-gradient(135deg, #2E52B2 0%, #1976d2 100%)',
                   boxShadow: '0 6px 20px rgba(25, 118, 210, 0.35)',
                   transform: 'translateY(-1px)',
                 },

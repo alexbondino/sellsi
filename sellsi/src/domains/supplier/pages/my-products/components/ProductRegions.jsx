@@ -1,9 +1,13 @@
-import React, { useEffect, useState } from 'react';
-import { Box, Typography, Button } from '@mui/material';
+import React, { useEffect, useState, useMemo } from 'react';
+import { Box, Typography, Button, IconButton, TextField, Tooltip, Stack } from '@mui/material';
 import { Settings as SettingsIcon } from '@mui/icons-material';
+import EditIcon from '@mui/icons-material/Edit';
+import SaveIcon from '@mui/icons-material/Save';
+import CheckIcon from '@mui/icons-material/Check';
 import ShippingRegionsModal from '../../../../../shared/components/modals/ShippingRegionsModal';
 import { ShippingRegionsDisplay } from '../../../../../shared/components/display/ShippingRegionsDisplay';
 import { convertModalRegionsToDisplay, convertFormRegionsToDb } from '../../../../../utils/shippingRegionsUtils';
+import { useShippingRegionPresets } from '../../../hooks/useShippingRegionPresets';
 
 /**
  * Componente para la configuración de regiones de despacho
@@ -21,6 +25,24 @@ const ProductRegions = ({
   const [modalOpen, setModalOpen] = useState(false);
   // Snapshot interno para evitar parpadeos cuando props cambian durante un update
   const [displayRegions, setDisplayRegions] = useState(formData.shippingRegions || []);
+  const supplierId = typeof window !== 'undefined' ? localStorage.getItem('user_id') : null;
+  const { presets, loading: presetsLoading, saving: presetsSaving, savePreset, rename, getPresetByIndex } = useShippingRegionPresets(supplierId);
+  const [activePreset, setActivePreset] = useState(null); // 1..3
+  const [renamingIndex, setRenamingIndex] = useState(null);
+  const [tempName, setTempName] = useState('');
+  const [baselineHash, setBaselineHash] = useState(''); // Hash de la última aplicación/guardado del preset activo
+
+  // Utilidad: genera hash normalizado de regiones (ordenadas por region)
+  const computeRegionsHash = (regions = []) => {
+    if (!regions || regions.length === 0) return 'empty';
+    const norm = regions.map(r => {
+      const region = r.region || r.value;
+      const price = parseInt(r.price != null ? r.price : (r.shippingValue || 0), 10) || 0;
+      const days = parseInt(r.delivery_days != null ? r.delivery_days : (r.maxDeliveryDays || 0), 10) || 0;
+      return { region, price, days };
+    }).sort((a,b)=> a.region.localeCompare(b.region));
+    return norm.map(x => `${x.region}:${x.price}:${x.days}`).join('|');
+  };
 
   // Mantener el snapshot sincronizado solo cuando NO está congelado
   useEffect(() => {
@@ -58,6 +80,58 @@ const ProductRegions = ({
     return modalData;
   };
 
+  // Detectar si snapshot difiere del preset activo
+  // Dirty detection basada en hash vs baselineHash
+  const currentHash = useMemo(() => computeRegionsHash(displayRegions), [displayRegions]);
+  const presetDirty = useMemo(() => {
+    if (!activePreset) return false; // no hay preset activo -> no preguntamos
+    return currentHash !== baselineHash;
+  }, [activePreset, currentHash, baselineHash]);
+
+  const handleApplyPreset = (index) => {
+    const preset = getPresetByIndex(index);
+    if (preset) {
+      setDisplayRegions(preset.regionsDisplay || []);
+      onRegionChange(preset.regionsDisplay || []);
+      setActivePreset(index);
+      // Baseline hash se deriva del formato display aplicado
+      const newHash = computeRegionsHash(preset.regionsDisplay || []);
+      setBaselineHash(newHash);
+    } else {
+      setActivePreset(index);
+      setBaselineHash(computeRegionsHash(displayRegions)); // baseline actual
+    }
+  };
+
+  const handleSavePreset = async () => {
+    let idx = activePreset;
+    if (!idx) {
+      const used = presets.map(p=>p.index);
+      idx = [1,2,3].find(i => !used.includes(i)) || 1;
+      setActivePreset(idx);
+    }
+    const preset = getPresetByIndex(idx);
+    const name = preset?.name || `Config. ${idx}`;
+    await savePreset(idx, name, displayRegions);
+    // Actualizar baseline tras guardar
+    setBaselineHash(computeRegionsHash(displayRegions));
+  };
+
+  const startRenaming = (index) => {
+    const preset = getPresetByIndex(index);
+    setRenamingIndex(index);
+    setTempName(preset?.name || `Config. ${index}`);
+  };
+
+  const commitRename = async () => {
+    if (!renamingIndex) return;
+    const name = tempName.trim();
+    if (name) {
+      await rename(renamingIndex, name);
+    }
+    setRenamingIndex(null);
+  };
+
   return (
     <Box
       className="full-width"
@@ -72,17 +146,62 @@ const ProductRegions = ({
       }}
     >
       {!isMobile && (
-        <Typography
-          variant="h6"
-          gutterBottom
-          sx={{ fontWeight: 600, color: 'black', mb: 2, textAlign: 'left', width: '100%' }}
-        >
+        <Typography variant="h6" gutterBottom sx={{ fontWeight: 600, color: 'black', mb: 1, textAlign: 'left', width: '100%' }}>
           Despacho
         </Typography>
       )}
 
+      {/* Barra de Presets */}
+      <Box sx={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: 1, mb: 1 }}>
+        {[1,2,3].map(idx => {
+          const preset = getPresetByIndex(idx);
+          const isActive = activePreset === idx;
+          const isRenaming = renamingIndex === idx;
+          return (
+            <Box key={idx} sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              <Button
+                variant={isActive ? 'contained' : 'outlined'}
+                size="small"
+                onClick={() => handleApplyPreset(idx)}
+                disabled={freezeDisplay || presetsLoading || presetsSaving}
+                sx={{ textTransform: 'none', fontWeight: 500, minWidth: 96 }}
+              >
+                {isRenaming ? 'Renombrar' : (preset?.name || `Config. ${idx}`)}
+              </Button>
+              {preset && !isRenaming && (
+                <Tooltip title="Renombrar">
+                  <IconButton size="small" onClick={() => startRenaming(idx)} disabled={freezeDisplay || presetsSaving}>
+                    <EditIcon fontSize="inherit" />
+                  </IconButton>
+                </Tooltip>
+              )}
+              {isRenaming && (
+                <Stack direction="row" spacing={0.5} alignItems="center">
+                  <TextField size="small" value={tempName} autoFocus onChange={e=>setTempName(e.target.value)} onBlur={commitRename} onKeyDown={e=>{ if(e.key==='Enter'){ commitRename(); } if(e.key==='Escape'){ setRenamingIndex(null);} }} sx={{ width:140 }} />
+                  <IconButton size="small" onMouseDown={commitRename}><CheckIcon fontSize="inherit"/></IconButton>
+                </Stack>
+              )}
+            </Box>
+          );
+        })}
+        <Tooltip title={activePreset ? (presetDirty ? 'Guardar cambios en preset' : 'Sin cambios') : 'Guardar en un preset'}>
+          <span>
+            <Button
+              variant="outlined"
+              size="small"
+              startIcon={<SaveIcon />}
+              disabled={freezeDisplay || displayRegions.length===0 || presetsSaving || (!presetDirty && !!activePreset)}
+              onClick={handleSavePreset}
+              sx={{ textTransform: 'none', fontWeight:600 }}
+            >
+              Guardar Configuración
+            </Button>
+          </span>
+        </Tooltip>
+      </Box>
+
       {/* Botón para abrir el modal de configuración */}
-      <Button
+  <Button
         variant="outlined"
         startIcon={<SettingsIcon />}
         onClick={handleOpenModal}

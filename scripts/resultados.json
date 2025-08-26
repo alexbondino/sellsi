@@ -788,7 +788,7 @@
       "column": 11,
       "type": "Object literal",
       "kind": "object",
-      "value": "{\r\n        width: '100%',\r\n        background: 'linear-gradient(120deg, #000 80%, #1565c0 120%)',\r\n        height: { ...",
+      "value": "{\r\n        width: '100%',\r\n        background: 'linear-gradient(120deg, #000 80%, #2E52B2 120%)',\r\n        height: { ...",
       "severity": "high",
       "message": "Warning: literal inline crea nueva referencia en cada render."
     },
@@ -1016,7 +1016,7 @@
       "column": 19,
       "type": "Object literal",
       "kind": "object",
-      "value": "{\r\n                fontWeight: 700,\r\n                color: '#1565C0',\r\n                fontSize: { xs: '1.5rem', md:...",
+      "value": "{\r\n                fontWeight: 700,\r\n                color: '#2E52B2',\r\n                fontSize: { xs: '1.5rem', md:...",
       "severity": "high",
       "message": "Warning: literal inline crea nueva referencia en cada render."
     },
@@ -1076,7 +1076,7 @@
       "column": 19,
       "type": "Object literal",
       "kind": "object",
-      "value": "{\r\n                fontWeight: 700,\r\n                color: '#1565C0',\r\n                fontSize: { xs: '1.5rem', md:...",
+      "value": "{\r\n                fontWeight: 700,\r\n                color: '#2E52B2',\r\n                fontSize: { xs: '1.5rem', md:...",
       "severity": "high",
       "message": "Warning: literal inline crea nueva referencia en cada render."
     },
@@ -6356,7 +6356,7 @@
       "column": 11,
       "type": "Object literal",
       "kind": "object",
-      "value": "{\r\n        minHeight: '100vh',\r\n        background: '#1565c0',\r\n        display: 'flex',\r\n        alignItems: 'center...",
+      "value": "{\r\n        minHeight: '100vh',\r\n        background: '#2E52B2',\r\n        display: 'flex',\r\n        alignItems: 'center...",
       "severity": "high",
       "message": "Warning: literal inline crea nueva referencia en cada render."
     },
@@ -13328,7 +13328,7 @@
       "column": 17,
       "type": "Object literal",
       "kind": "object",
-      "value": "{\r\n              fontWeight: 700,\r\n              color: '#1565C0',\r\n              mb: 1.5,\r\n              mt: index =...",
+      "value": "{\r\n              fontWeight: 700,\r\n              color: '#2E52B2',\r\n              mb: 1.5,\r\n              mt: index =...",
       "severity": "high",
       "message": "Warning: literal inline crea nueva referencia en cada render."
     },
@@ -14984,7 +14984,7 @@
       "column": 17,
       "type": "Object literal",
       "kind": "object",
-      "value": "{ color: '#1565C0', textDecoration: 'underline', fontWeight: 600, fontSize: { xs: '0.75rem', sm: '0.85rem' }, p: 0, m...",
+      "value": "{ color: '#2E52B2', textDecoration: 'underline', fontWeight: 600, fontSize: { xs: '0.75rem', sm: '0.85rem' }, p: 0, m...",
       "severity": "high",
       "message": "Warning: literal inline crea nueva referencia en cada render."
     },
@@ -15416,7 +15416,7 @@
       "column": 17,
       "type": "Object literal",
       "kind": "object",
-      "value": "{\r\n              fontWeight: 700,\r\n              color: '#1565C0',\r\n              fontSize: { xs: '1.3rem', md: '1.5r...",
+      "value": "{\r\n              fontWeight: 700,\r\n              color: '#2E52B2',\r\n              fontSize: { xs: '1.3rem', md: '1.5r...",
       "severity": "high",
       "message": "Warning: literal inline crea nueva referencia en cada render."
     },
@@ -15740,7 +15740,7 @@
       "column": 17,
       "type": "Object literal",
       "kind": "object",
-      "value": "{\r\n              fontWeight: 700,\r\n              color: '#1565C0',\r\n              fontSize: { xs: '1.3rem', md: '1.5r...",
+      "value": "{\r\n              fontWeight: 700,\r\n              color: '#2E52B2',\r\n              fontSize: { xs: '1.3rem', md: '1.5r...",
       "severity": "high",
       "message": "Warning: literal inline crea nueva referencia en cada render."
     },

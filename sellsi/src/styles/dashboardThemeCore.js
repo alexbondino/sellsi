@@ -32,7 +32,7 @@ export const dashboardThemeCore = createTheme({
   palette: {
     mode: 'light',
     primary: {
-      main: '#1565c0', // ✅ Mismo color que el marketplace
+      main: '#2E52B2', // ✅ Mismo color que el marketplace
       light: '#42a5f5', // ✅ Mismo color de hover
       dark: '#0d47a1',
     },
@@ -64,7 +64,7 @@ export const dashboardThemeCore = createTheme({
         contained: {
           boxShadow: 'none',
           borderRadius: 8, // ✅ 8px para que sea igual al marketplace (2 × 4px)
-          backgroundColor: '#1565c0', // ✅ Mismo color que el marketplace
+          backgroundColor: '#2E52B2', // ✅ Mismo color que el marketplace
           color: 'white',
           '&:hover': {
             backgroundColor: '#42a5f5', // ✅ Mismo hover que el marketplace

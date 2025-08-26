@@ -68,19 +68,19 @@ html::-webkit-scrollbar, body::-webkit-scrollbar, #root::-webkit-scrollbar, *::-
   }
 }
 html::-webkit-scrollbar-thumb, body::-webkit-scrollbar-thumb, #root::-webkit-scrollbar-thumb, *::-webkit-scrollbar-thumb {
-  background: linear-gradient(120deg, #000 40%, #1565c0 60%, #00eaff 100%);
+  background: linear-gradient(120deg, #000 40%, #2E52B2 60%, #00eaff 100%);
   background-size: 200% 200%;
   border-radius: 8px;
-  box-shadow: 0 0 12px 2px #1565c0, 0 0 24px 4px #00eaff;
-  border: 2px solid #1565c0;
+  box-shadow: 0 0 12px 2px #2E52B2, 0 0 24px 4px #00eaff;
+  border: 2px solid #2E52B2;
   transition: box-shadow 0.3s, border 0.3s;
   animation: shimmer 2.5s linear infinite;
   cursor: pointer;
 }
 html::-webkit-scrollbar-thumb:hover, body::-webkit-scrollbar-thumb:hover, #root::-webkit-scrollbar-thumb:hover, *::-webkit-scrollbar-thumb:hover {
-  box-shadow: 0 0 32px 12px #00eaff, 0 0 48px 16px #1565c0;
+  box-shadow: 0 0 32px 12px #00eaff, 0 0 48px 16px #2E52B2;
   border: 2.5px solid #00eaff;
-  background: linear-gradient(120deg, #1565c0 20%, #00eaff 80%, #000 100%);
+  background: linear-gradient(120deg, #2E52B2 20%, #00eaff 80%, #000 100%);
   background-size: 200% 200%;
   animation: shimmer 1.2s linear infinite;
   cursor: pointer;
@@ -90,6 +90,6 @@ html::-webkit-scrollbar-track, body::-webkit-scrollbar-track, #root::-webkit-scr
 }
 
 html, body, #root, * {
-  scrollbar-color: #1565c0 #000;
+  scrollbar-color: #2E52B2 #000;
   scrollbar-width: thin;
 }

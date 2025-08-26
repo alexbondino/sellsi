@@ -24,7 +24,7 @@ const TextFormatter = ({ text, sx = {} }) => {
             variant="h6"
             sx={{
               fontWeight: 700,
-              color: '#1565C0',
+              color: '#2E52B2',
               mb: 1.5,
               mt: index === 0 ? 0 : 2,
               fontSize: { xs: '1.1rem', md: '1.25rem' },
