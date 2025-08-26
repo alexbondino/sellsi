@@ -62,26 +62,37 @@ const CartHeader = ({
   const [openDeleteModal, setOpenDeleteModal] = useState(false)
 
   return (
-    <Box sx={{ mb: 4, width: '100%' }}>
+    <Box
+      sx={{
+        mb: { xs: 3, md: 4 },
+        width: '100%',
+        display: 'flex',
+        flexDirection: 'column'
+      }}
+    >
       {' '}
       <Grid
         container
         columns={12}
-        spacing={3}
+        spacing={{ xs: 2, sm: 2.5, md: 3 }}
         alignItems="center"
         justifyContent="left"
+        sx={{
+          rowGap: { xs: 2.5, md: 0 }
+        }}
       >
         {/* Grid Item 1: Title and Chips */}
         <Grid
           xs={12}
           sm={8}
-          sx={
-            {
-              // ...otros estilos...
-            }
-          }
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: { xs: 'center', md: 'flex-start' },
+            gap: 1.5
+          }}
         >
-          <Box sx={{ textAlign: { xs: 'center', md: 'left' }, position: 'relative' }}>
+          <Box sx={{ textAlign: { xs: 'center', md: 'left' }, position: 'relative', width: '100%' }}>
             {' '}
             <Typography
               variant="h4"
@@ -89,7 +100,13 @@ const CartHeader = ({
               fontWeight={600}
               color="primary.main"
               gutterBottom
-              sx={{ mb: 4, display: 'flex', alignItems: 'center', gap: 1 }}
+              sx={{
+                mb: { xs: 1.5, md: 4 },
+                display: 'flex',
+                alignItems: 'center',
+                gap: { xs: 1, sm: 1.25 },
+                fontSize: { xs: '1.45rem', sm: '1.55rem', md: 'inherit' }
+              }}
             >
               {/* Flecha de volver - Estilo estándar */}
               {onBack && (
@@ -108,16 +125,23 @@ const CartHeader = ({
                 </Tooltip>
               )}
               {!isSelectionMode && (
-                <ShoppingCartIcon sx={{ fontSize: 40, color: '#1976d2', mr: 1 }} />
+                <ShoppingCartIcon
+                  sx={{
+                    fontSize: { xs: 32, md: 40 },
+                    color: '#1976d2',
+                    mr: 1
+                  }}
+                />
               )}
               {isSelectionMode ? 'Seleccionar Items' : 'Mi Carrito'}
             </Typography>
             <Box
               sx={{
                 display: 'flex',
-                gap: 2,
+                gap: { xs: 1, md: 2 },
                 flexWrap: 'wrap',
                 position: 'relative',
+                justifyContent: { xs: 'center', md: 'flex-start' }
               }}
             >
               {isSelectionMode ? (
@@ -157,15 +181,20 @@ const CartHeader = ({
           xs={12}
           sm={4}
           sx={{
-            // ml eliminado para unificar layout con supplier, ahora lo maneja App.jsx
-            // ...otros estilos...
+            display: 'flex',
+            justifyContent: { xs: 'center', sm: 'flex-end' }
           }}
         >
           <Stack
             direction="row"
             spacing={1}
             justifyContent={{ xs: 'center', sm: 'flex-end' }}
-            sx={{ mt: { xs: 2, sm: 0 } }}
+            sx={{
+              mt: { xs: 1, sm: 0 },
+              flexWrap: { xs: 'wrap', sm: 'nowrap' },
+              rowGap: { xs: 1.25 },
+              maxWidth: { xs: '100%' }
+            }}
           >
             {' '}
             {/* Botones de deshacer/rehacer eliminados */}
@@ -264,6 +293,7 @@ const CartHeader = ({
                 onClick={onToggleSelectionMode}
                 color="inherit"
                 startIcon={<DeleteIcon sx={{ color: 'grey.600' }} />}
+                size="small"
                 sx={{
                   fontWeight: 500,
                   color: 'text.secondary',
@@ -271,14 +301,17 @@ const CartHeader = ({
                   background: 'transparent',
                   '&:hover': {
                     background: 'rgba(158, 158, 158, 0.1)',
-                    transform: 'scale(1.05)',
+                    transform: 'scale(1.05)'
                   },
-                  pl: 1,
-                  pr: 2,
+                  pl: { xs: 1, sm: 1 },
+                  pr: { xs: 1.25, sm: 2 },
                   borderRadius: 2,
+                  fontSize: { xs: '0.72rem', sm: '0.8rem', md: '0.875rem' },
+                  lineHeight: 1.2
                 }}
               >
-                Eliminar productos
+                <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>Eliminar productos</Box>
+                <Box component="span" sx={{ display: { xs: 'inline', sm: 'none' } }}>Eliminar</Box>
               </Button>
             )}
           </Stack>{' '}

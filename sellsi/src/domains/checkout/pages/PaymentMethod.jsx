@@ -4,7 +4,7 @@
 
 import React, { useEffect } from 'react'
 import { ThemeProvider } from '@mui/material/styles'
-import { Box, Container } from '@mui/material'
+import { Box, Container, useMediaQuery, useTheme } from '@mui/material'
 import { useNavigate } from 'react-router-dom'
 
 // Layout y tema
@@ -33,6 +33,10 @@ import { getUserProfileData } from '../../../services/user/profileService'
 
 const PaymentMethod = () => {
   const navigate = useNavigate()
+  const theme = useTheme()
+  
+  // ===== DETECCIÓN DE MOBILE =====
+  const isMobile = useMediaQuery(theme.breakpoints.down('lg'))
   
   // Estados del carrito
   const { items, getSubtotal, getTotal } = useCartStore() // ✅ REMOVIDO: getShippingCost (no usar mock)
@@ -181,17 +185,27 @@ const PaymentMethod = () => {
           backgroundColor: 'background.default',
           minHeight: '100vh',
           pt: { xs: 4.5, md: 5 },
-          px: 3,
-          pb: SPACING_BOTTOM_MAIN,
+          // Eliminar padding horizontal en mobile para layout full-bleed
+          px: { xs: 0, md: 3 },
+          pb: isMobile ? 0 : SPACING_BOTTOM_MAIN,
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          // Mismo margen que BuyerCart
+          // Mismo margen que BuyerCart solo en desktop
           ml: { xs: 0, md: 8, lg: 24, xl: 34 },
           transition: 'margin-left 0.3s',
         }}
       >
-        <Container maxWidth="xl" disableGutters sx={{ px: { xs: 0, md: 2 } }}>
+        <Container 
+          maxWidth={isMobile ? false : "xl"} 
+          disableGutters 
+          sx={{ 
+            // Quitar límite de 480px y gutters en mobile para aprovechar toda la pantalla
+            px: { xs: 0, md: 2 },
+            width: '100%',
+            maxWidth: '100%'
+          }}
+        >
           <PaymentMethodSelector />
         </Container>
       </Box>

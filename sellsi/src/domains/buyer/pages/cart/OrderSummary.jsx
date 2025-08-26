@@ -81,19 +81,20 @@ const OrderSummary = ({
     <Paper
       elevation={3}
       sx={{
-        p: 3,
+        p: { xs: 2, sm: 2.25, md: 3 },
         borderRadius: 3,
         background: 'linear-gradient(135deg, #ffffff 0%, #f8f9ff 100%)',
         border: '1px solid rgba(102, 126, 234, 0.1)',
-        position: 'sticky',
-        top: 100,
+        position: { xs: 'static', md: 'sticky' },
+        top: { md: 100 },
         width: {
-          xs: '50%',
-          sm: '59%',
+          xs: '100%',
+          sm: '100%',
           md: '300px',
           lg: '360px',
           xl: '400px',
         },
+        boxShadow: { xs: 2, md: 3 },
       }}
     >
       <Stack spacing={3}>
@@ -101,6 +102,7 @@ const OrderSummary = ({
           variant="h6"
           sx={{
             fontWeight: 'bold',
+            fontSize: { xs: '1rem', sm: '1.05rem', md: '1.15rem' }
           }}
         >
           Resumen del Pedido
@@ -121,7 +123,7 @@ const OrderSummary = ({
         userRegion={userRegion}
       />
       {/* Botones de acción */}
-      <Stack spacing={2}>
+  <Stack spacing={{ xs: 1.5, md: 2 }}>
         <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
           <Button
             variant="contained"

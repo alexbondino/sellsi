@@ -108,32 +108,40 @@ export const AppShell = ({ children }) => {
 
           <Box
             component="main"
-            sx={theme => ({
-              flexGrow: 1,
-              pl: isDashboardRoute ? 3 : 0,
-              pr: isDashboardRoute ? 3 : 0,
-              pt: isDashboardRoute ? 3 : 0,
-              pb: isDashboardRoute ? { xs: session ? 10 : 3, md: 3 } : { xs: session ? 10 : 0, md: 0 },
-              width: isDashboardRoute
-                ? { xs: '100%', md: `calc(100% - ${currentSideBarWidth})` }
-                : '100%',
-              overflowX: 'hidden',
-              ml: isDashboardRoute ? { md: 14, lg: 14, xl: 0 } : 0,
-              // Animación robusta: solo en md y lg, nunca en xl
-              transition: [
-                theme.breakpoints.up('md') && theme.breakpoints.down('lg')
-                  ? 'transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94), margin-left 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94), width 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)'
-                  : 'margin-left 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94), width 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)'
-              ].join(','),
-              // Solo aplicar el shift animado en md y lg, nunca en xl
-              transform: {
-                xs: 'none',
-                sm: 'none',
-                md: isDashboardRoute && sideBarCollapsed ? 'translateX(-80px)' : 'none',
-                lg: isDashboardRoute && sideBarCollapsed ? 'translateX(-80px)' : 'none',
-                xl: 'none',
-              },
-            })}
+            sx={theme => {
+              const fullBleedRoutes = ['/buyer/cart', '/buyer/paymentmethod'];
+              const isFullBleed = fullBleedRoutes.includes(location.pathname);
+              return {
+                flexGrow: 1,
+                // Rutas full-bleed ahora recuperan un padding mínimo solo en mobile para legibilidad
+                pl: isFullBleed ? { xs: 0.75, sm: 1, md: 0 } : (isDashboardRoute ? 3 : 0),
+                pr: isFullBleed ? { xs: 0.75, sm: 1, md: 0 } : (isDashboardRoute ? 3 : 0),
+                pt: isDashboardRoute ? 3 : 0,
+                pb: isDashboardRoute ? { xs: session ? 10 : 3, md: 3 } : { xs: session ? 10 : 0, md: 0 },
+                width: isDashboardRoute
+                  ? { xs: '100%', md: `calc(100% - ${currentSideBarWidth})` }
+                  : '100%',
+                overflowX: 'hidden',
+                ml: isDashboardRoute ? { md: 14, lg: 14, xl: 0 } : 0,
+                // Para full-bleed garantizamos que no exista margin interno accidental
+                ...(isFullBleed && {
+                  '& > *': { maxWidth: '100%' }
+                }),
+                transition: [
+                  theme.breakpoints.up('md') && theme.breakpoints.down('lg')
+                    ? 'transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94), margin-left 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94), width 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)'
+                    : 'margin-left 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94), width 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)'
+                ].join(','),
+                transform: {
+                  xs: 'none',
+                  sm: 'none',
+                  md: isDashboardRoute && sideBarCollapsed ? 'translateX(-80px)' : 'none',
+                  lg: isDashboardRoute && sideBarCollapsed ? 'translateX(-80px)' : 'none',
+                  xl: 'none',
+                },
+              };
+            }}
+            data-layout="app-main"
           >
             {children}
           </Box>

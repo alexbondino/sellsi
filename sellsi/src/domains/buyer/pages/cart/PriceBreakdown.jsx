@@ -113,18 +113,18 @@ const PriceBreakdown = ({
   return (
     <>
       {/* Desglose de precios */}
-      <Box sx={{ mb: 3 }}>
+  <Box sx={{ mb: { xs: 2, md: 3 } }}>
         <Box
           sx={{
             display: 'flex',
-            justifyContent: 'space-between',
-            mb: 1,
+    justifyContent: 'space-between',
+    mb: { xs: 0.5, md: 1 },
           }}
         >
-          <Typography variant="body2">
+      <Typography variant="body2" sx={{ fontSize: { xs: '0.75rem', sm: '0.8rem', md: '0.875rem' } }}>
             Subtotal ({cartStats.totalQuantity} productos):
           </Typography>
-          <Typography variant="body2" fontWeight="medium">
+      <Typography variant="body2" fontWeight="medium" sx={{ fontSize: { xs: '0.75rem', sm: '0.8rem', md: '0.875rem' } }}>
             {formatPrice(subtotal)}
           </Typography>
         </Box>
@@ -137,10 +137,10 @@ const PriceBreakdown = ({
               mb: 1,
             }}
           >
-            <Typography variant="body2" color="success.main">
+            <Typography variant="body2" color="success.main" sx={{ fontSize: { xs: '0.72rem', sm: '0.78rem', md: '0.875rem' } }}>
               Descuentos aplicados:
             </Typography>
-            <Typography variant="body2" color="success.main" fontWeight="bold">
+            <Typography variant="body2" color="success.main" fontWeight="bold" sx={{ fontSize: { xs: '0.72rem', sm: '0.78rem', md: '0.875rem' } }}>
               -{formatPrice(discount)}
             </Typography>
           </Box>
@@ -153,11 +153,11 @@ const PriceBreakdown = ({
             mb: 1,
           }}
         >
-          <Typography variant="body2">Envío:</Typography>
+          <Typography variant="body2" sx={{ fontSize: { xs: '0.75rem', sm: '0.8rem', md: '0.875rem' } }}>Envío:</Typography>
           {shippingDisplayData.isLoading || isCalculatingShipping ? (
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <CircularProgress size={16} />
-              <Typography variant="body2" color="text.secondary">
+              <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem', md: '0.875rem' } }}>
                 Calculando envío...
               </Typography>
             </Box>
@@ -166,7 +166,7 @@ const PriceBreakdown = ({
               variant="body2"
               fontWeight="medium"
               color="warning.main"
-              sx={{ fontSize: '0.875rem' }}
+              sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem', md: '0.875rem' } }}
             >
               {shippingDisplayData.message}
             </Typography>
@@ -181,6 +181,7 @@ const PriceBreakdown = ({
                     ? 'success.main' 
                     : 'text.primary'
               }
+              sx={{ fontSize: { xs: '0.75rem', sm: '0.8rem', md: '0.875rem' } }}
             >
               {shippingDisplayData.status === 'unavailable' 
                 ? shippingDisplayData.message 
@@ -194,15 +195,17 @@ const PriceBreakdown = ({
 
         {/* ✅ NUEVO: Mensaje de advertencia más visible cuando no hay región configurada */}
         {shippingDisplayData.status === 'no_region_configured' && (
-          <Alert 
-            severity="warning" 
-            sx={{ 
-              mt: 1, 
-              mb: 2,
-              fontSize: '0.8rem',
+          <Alert
+            severity="warning"
+            sx={{
+              mt: 1,
+              mb: { xs: 1.5, md: 2 },
+              fontSize: { xs: '0.68rem', sm: '0.72rem', md: '0.8rem' },
               '& .MuiAlert-message': {
-                fontSize: '0.8rem'
-              }
+                fontSize: { xs: '0.68rem', sm: '0.72rem', md: '0.8rem' },
+                py: { xs: 0, sm: 0.25 }
+              },
+              py: { xs: 0.25, sm: 0.5 }
             }}
           >
             Para calcular el costo de envío, configure su región en el perfil
@@ -210,7 +213,7 @@ const PriceBreakdown = ({
         )}
       </Box>
 
-      <Divider sx={{ my: 2 }} />
+      <Divider sx={{ my: { xs: 1.5, md: 2 } }} />
 
       {/* Total */}
       <Box
@@ -220,7 +223,14 @@ const PriceBreakdown = ({
           mb: 3,
         }}
       >
-        <Typography variant="h5" fontWeight="bold" sx={{ mr: 2 }}>
+        <Typography
+          variant="h5"
+          fontWeight="bold"
+          sx={{
+            mr: 2,
+            fontSize: { xs: '1.15rem', sm: '1.25rem', md: 'inherit' }
+          }}
+        >
           Total:
         </Typography>
         <Typography
@@ -230,6 +240,7 @@ const PriceBreakdown = ({
             background: '#000000ff',
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
+            fontSize: { xs: '1.15rem', sm: '1.25rem', md: 'inherit' }
           }}
         >
           {formatPrice(subtotal - discount + shippingDisplayData.cost)}

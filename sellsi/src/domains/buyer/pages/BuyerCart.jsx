@@ -20,6 +20,8 @@ import {
   Backdrop,
   Paper,
   Tooltip,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material';
 import {
   ExpandMore as ExpandMoreIcon,
@@ -44,6 +46,7 @@ import {
   OrderSummary,
   EmptyCartState,
 } from './cart';
+import MobileCartLayout from './cart/components/MobileCartLayout';
 import useShippingValidation from './cart/hooks/useShippingValidation';
 import ShippingCompatibilityModal from './cart/components/ShippingCompatibilityModal';
 
@@ -355,6 +358,10 @@ const BuyerCart = () => {
 
   const navigate = useNavigate();
   const { currentAppRole } = useRole();
+  const theme = useTheme();
+
+  // ===== DETECCIÓN DE MOBILE =====
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
   const handleBack = useCallback(() => {
     // Si está en modo supplier, volver a supplier/home
@@ -508,8 +515,9 @@ const BuyerCart = () => {
           backgroundColor: 'background.default',
           minHeight: '100vh',
           pt: { xs: 9, md: 10 },
-          px: { xs: 2, sm: 3, md: 4 },
-          pb: SPACING_BOTTOM_MAIN,
+          // Remover padding horizontal en mobile para permitir edge-to-edge real
+          px: { xs: 0, sm: 0, md: 4 },
+          pb: isMobile ? 0 : SPACING_BOTTOM_MAIN,
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
@@ -517,185 +525,214 @@ const BuyerCart = () => {
           transition: 'margin-left 0.3s',
         }}
       >
-        {/* <Toaster position="top-right" toastOptions={{ style: { marginTop: 72 } }} /> */}
-        {/* ConfettiEffect eliminado */}
-        <Box
-          sx={{
-            backgroundColor: 'white',
-            width: '100%',
-            maxWidth: {
-              xs: 340,
-              sm: 480,
-              md: 1000,
-              lg: 1500,
-              xl: 1560,
-            },
-            mx: 'auto',
-            p: 3,
-            mb: 6,
-            border: '1.5px solid #e0e0e0',
-            boxShadow: 6,
-            borderRadius: 3,
-          }}
-        >
-          {/* Header con estadísticas */}{' '}
-          <motion.div
-            ref={ref}
-            variants={containerVariants}
-            initial="hidden"
-            animate={controls}
-          >
-            {/* Header con estadísticas */}{' '}
-            <CartHeader
+        {/* Layout condicional: móvil vs desktop */}
+        {isMobile ? (
+          <Box sx={{ width: '100%', maxWidth: '100%', px: 0, mx: 'auto' }}>
+            <MobileCartLayout
+              items={items}
+              calculations={{
+                subtotal: cartCalculations.subtotal,
+                shipping: productShippingCost,
+                total: finalTotal,
+                discount: 0
+              }}
               cartStats={cartStats}
-              formatPrice={formatPrice}
-              discount={0}
+              onCheckout={handleCheckout}
               onBack={handleBack}
-              onUndo={undo}
-              onRedo={redo}
-              onClearCart={clearCart}
-              undoInfo={getUndoInfo()}
-              redoInfo={getRedoInfo()}
-              historyInfo={getHistoryInfo()}
-              // Nuevas props para selección múltiple
-              isSelectionMode={isSelectionMode}
-              selectedItems={selectedItems}
-              onToggleSelectionMode={handleToggleSelectionMode}
-              onSelectAll={handleSelectAll}
-              onDeleteSelected={handleDeleteSelected}
-              totalItems={items.length}
+              onQuantityChange={handleQuantityChange}
+              onRemoveItem={handleRemoveWithAnimation}
+              formatPrice={formatPrice}
+              isCheckingOut={isCheckingOut}
             />
-            {/* Barra de progreso hacia envío gratis */}
-            {/* <ShippingProgressBar
-                subtotal={cartCalculations.subtotal}
+          </Box>
+        ) : (
+          /* Layout desktop ORIGINAL restaurado */
+          <Box
+            sx={{
+              backgroundColor: { xs: 'transparent', md: 'white' },
+              width: '100%',
+              maxWidth: {
+                xs: 500,
+                sm: 600,
+                md: 1000,
+                lg: 1500,
+                xl: 1560,
+              },
+              mx: 'auto',
+              p: { xs: 0, md: 3 },
+              mb: { xs: 3, md: 6 },
+              border: { xs: 'none', md: '1.5px solid #e0e0e0' },
+              boxShadow: { xs: 'none', md: 6 },
+              borderRadius: { xs: 0, md: 3 },
+            }}
+          >
+            <motion.div
+              ref={ref}
+              variants={containerVariants}
+              initial="hidden"
+              animate={controls}
+            >
+              {/* Header con estadísticas */}
+              <CartHeader
+                cartStats={cartStats}
                 formatPrice={formatPrice}
-                itemVariants={itemVariants}
-              /> */}
-            
-            <Grid container spacing={{ xs: 2, md: 2, lg: 2, xl: 3 }} sx={{ flexWrap: 'nowrap' }}>
-              {/* Lista de productos */}
+                discount={0}
+                onBack={handleBack}
+                onUndo={undo}
+                onRedo={redo}
+                onClearCart={clearCart}
+                undoInfo={getUndoInfo()}
+                redoInfo={getRedoInfo()}
+                historyInfo={getHistoryInfo()}
+                // Nuevas props para selección múltiple
+                isSelectionMode={isSelectionMode}
+                selectedItems={selectedItems}
+                onToggleSelectionMode={handleToggleSelectionMode}
+                onSelectAll={handleSelectAll}
+                onDeleteSelected={handleDeleteSelected}
+                totalItems={items.length}
+              />
+              
+              {/* Barra de progreso hacia envío gratis */}
+              {/* <ShippingProgressBar
+                  subtotal={cartCalculations.subtotal}
+                  formatPrice={formatPrice}
+                  itemVariants={itemVariants}
+                /> */}
+              
               <Grid
-                item
-                xs={12}
-                md={8}
-                lg={8}
-                xl={8}
+                container
+                spacing={{ xs: 2, md: 2, lg: 2, xl: 3 }}
                 sx={{
-                  width: {
-                    xs: '100%',
-                    md: '75%',
-                    lg: '75%',
-                    xl: '75%',
-                  },
+                  flexWrap: { xs: 'wrap', sm: 'wrap', md: 'nowrap' },
+                  alignItems: 'flex-start'
                 }}
               >
-                <AnimatePresence>
-                  {items.map((item, index) => (
-                    <CartItem
-                      key={
-                        item.id ||
-                        item.product_id ||
-                        item.cart_items_id ||
-                        `item-${index}`
-                      }
-                      item={item}
-                      formatPrice={formatPrice}
-                      updateQuantity={handleQuantityChange}
-                      handleRemoveWithAnimation={handleRemoveWithAnimation}
-                      itemVariants={itemVariants}
-                      onShippingChange={handleProductShippingChange}
-                      // Nuevas props para selección múltiple
-                      isSelectionMode={isSelectionMode}
-                      isSelected={selectedItems.includes(item.id)}
-                      onToggleSelection={handleToggleItemSelection}
-                      // Nuevas props para validación de envío
-                      shippingValidation={shippingValidation}
-                      isAdvancedShippingMode={isAdvancedShippingMode}
-                    />
-                  ))}
-                </AnimatePresence>
-                {/* Productos recomendados */}
-                {false && (
-                  <motion.div variants={itemVariants}>
-                    <Accordion sx={{ mt: 3, borderRadius: 2 }}>
-                      <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                          <RecommendIcon
-                            sx={{ mr: 1, color: 'primary.main' }}
-                          />
-                          <Typography variant="h6">
-                            Productos Recomendados para Ti
-                          </Typography>
-                        </Box>
-                      </AccordionSummary>
-                      <AccordionDetails>
-                        <Suspense fallback={<CircularProgress />}>
-                          {/* Aquí iría el componente de productos recomendados */}
-                          <Typography>
-                            Productos recomendados basados en tu carrito...
-                          </Typography>
-                        </Suspense>
-                      </AccordionDetails>
-                    </Accordion>
-                  </motion.div>
-                )}
-              </Grid>
-              {/* Panel lateral - Resumen y opciones */}
-              <Grid
-                item
-                xs={12}
-                md={4}
-                lg={4}
-                xl={4}
-                sx={{
-                  minWidth: '350px', // Asegurar ancho mínimo para OrderSummary
-                }}
-              >
-                <Box
-                  sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}
+                {/* Lista de productos */}
+                <Grid
+                  item
+                  xs={12}
+                  sm={12}
+                  md={8}
+                  lg={8}
+                  xl={8}
+                  sx={{
+                    width: {
+                      xs: '100%',
+                      md: '75%',
+                      lg: '75%',
+                      xl: '75%',
+                    },
+                    order: { xs: 1 },
+                  }}
                 >
-                  {/* Resumen del pedido modularizado (sin códigos de descuento) */}
-                  <motion.div variants={itemVariants}>
-                    <OrderSummary
-                      subtotal={cartCalculations.subtotal}
-                      discount={0}
-                      shippingCost={productShippingCost}
-                      total={finalTotal}
-                      cartStats={cartStats}
-                      deliveryDate={deliveryDate}
-                      isCheckingOut={isCheckingOut}
-                      // Shipping validation props
-                      shippingValidation={shippingValidation}
-                      isAdvancedShippingMode={isAdvancedShippingMode}
-                      onShippingCompatibilityError={() => setCompatibilityModalOpen(true)}
-                      // Shipping loading state
-                      isCalculatingShipping={isCalculatingShippingCombined}
-                      // ✅ NUEVA PROP para lógica de envío avanzada
-                      cartItems={items}
-                      userRegion={shippingValidation.userRegion}
-                      // Functions
-                      formatPrice={formatPrice}
-                      formatDate={formatDate}
-                      onCheckout={handleCheckout}
-                    />
-                  </motion.div>
-                  {/* Calculadora de ahorros modularizada */}
-                  {/*
-                    <motion.div variants={itemVariants}>
-                      <SavingsCalculator
-                        subtotal={cartCalculations.subtotal}
-                        discount={cartCalculations.discount}
-                        total={finalTotal}
+                  <AnimatePresence>
+                    {items.map((item, index) => (
+                      <CartItem
+                        key={
+                          item.id ||
+                          item.product_id ||
+                          item.cart_items_id ||
+                          `item-${index}`
+                        }
+                        item={item}
                         formatPrice={formatPrice}
+                        updateQuantity={handleQuantityChange}
+                        handleRemoveWithAnimation={handleRemoveWithAnimation}
+                        itemVariants={itemVariants}
+                        onShippingChange={handleProductShippingChange}
+                        // Nuevas props para selección múltiple
+                        isSelectionMode={isSelectionMode}
+                        isSelected={selectedItems.includes(item.id)}
+                        onToggleSelection={handleToggleItemSelection}
+                        // Nuevas props para validación de envío
+                        shippingValidation={shippingValidation}
+                        isAdvancedShippingMode={isAdvancedShippingMode}
+                      />
+                    ))}
+                  </AnimatePresence>
+                  {/* Productos recomendados */}
+                  {false && (
+                    <motion.div variants={itemVariants}>
+                      <Accordion sx={{ mt: 3, borderRadius: 2 }}>
+                        <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                            <RecommendIcon
+                              sx={{ mr: 1, color: 'primary.main' }}
+                            />
+                            <Typography variant="h6">
+                              Productos Recomendados para Ti
+                            </Typography>
+                          </Box>
+                        </AccordionSummary>
+                        <AccordionDetails>
+                          <Suspense fallback={<CircularProgress />}>
+                            {/* Aquí iría el componente de productos recomendados */}
+                            <Typography>
+                              Productos recomendados basados en tu carrito...
+                            </Typography>
+                          </Suspense>
+                        </AccordionDetails>
+                      </Accordion>
+                    </motion.div>
+                  )}
+                </Grid>
+                {/* Panel lateral - Resumen y opciones */}
+                <Grid
+                  item
+                  xs={12}
+                  sm={12}
+                  md={4}
+                  lg={4}
+                  xl={4}
+                  sx={{
+                    minWidth: { md: '350px' }, // Evitar forzar ancho mínimo en mobile
+                    order: { xs: 2 },
+                    mt: { xs: 2, sm: 2, md: 0 }
+                  }}
+                >
+                  <Box
+                    sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}
+                  >
+                    {/* Resumen del pedido modularizado (sin códigos de descuento) */}
+                    <motion.div variants={itemVariants}>
+                      <OrderSummary
+                        subtotal={cartCalculations.subtotal}
+                        discount={0}
+                        shippingCost={productShippingCost}
+                        total={finalTotal}
+                        cartStats={cartStats}
+                        deliveryDate={deliveryDate}
+                        isCheckingOut={isCheckingOut}
+                        shippingValidation={shippingValidation}
+                        isAdvancedShippingMode={isAdvancedShippingMode}
+                        onShippingCompatibilityError={() => setCompatibilityModalOpen(true)}
+                        isCalculatingShipping={isCalculatingShippingCombined}
+                        cartItems={items}
+                        userRegion={shippingValidation.userRegion}
+                        formatPrice={formatPrice}
+                        formatDate={formatDate}
+                        onCheckout={handleCheckout}
                       />
                     </motion.div>
-                    */}
-                </Box>
+                    {/* Calculadora de ahorros modularizada */}
+                    {/*
+                      <motion.div variants={itemVariants}>
+                        <SavingsCalculator
+                          subtotal={cartCalculations.subtotal}
+                          discount={cartCalculations.discount}
+                          total={finalTotal}
+                          formatPrice={formatPrice}
+                        />
+                      </motion.div>
+                      */}
+                  </Box>
+                </Grid>
               </Grid>
-            </Grid>
-          </motion.div>
-        </Box>
-        
+            </motion.div>
+          </Box>
+        )}
+
         {/* Modal de compatibilidad de envío */}
         <ShippingCompatibilityModal
           open={compatibilityModalOpen}

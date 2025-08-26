@@ -47,6 +47,8 @@ const CheckoutSummary = ({
   isCompleted = false,
   onViewOrders,
   onContinueShopping,
+  variant = 'default', // 'default' | 'compact'
+  hideActions = false,
 }) => {
   // Estado para navegación de productos
   const [currentPage, setCurrentPage] = useState(1);
@@ -119,23 +121,26 @@ const CheckoutSummary = ({
     if (typeof onContinue === 'function') onContinue();
   };
 
+  const isCompact = variant === 'compact'
+
   return (
     <Paper
-      elevation={3}
+      elevation={isCompact ? 1 : 3}
       sx={{
-        p: 3,
-        borderRadius: 3,
+        p: isCompact ? 2 : 3,
+        borderRadius: isCompact ? 2 : 3,
         background: 'linear-gradient(135deg, #ffffff 0%, #f8f9ff 100%)',
-        border: '1px solid rgba(102, 126, 234, 0.1)',
-        position: 'sticky',
-        top: 100,
+        border: '1px solid rgba(102, 126, 234, 0.08)',
+        position: isCompact ? 'static' : 'sticky',
+        top: isCompact ? 'auto' : 100,
+        boxShadow: isCompact ? '0 2px 6px rgba(0,0,0,0.05)' : undefined,
       }}
     >
       <Stack spacing={3}>
         {/* Header */}
         <Box>
-          <Typography variant="h6" fontWeight="bold" sx={{ mb: 1 }}>
-            Resumen del Pedido
+          <Typography variant={isCompact ? 'subtitle1' : 'h6'} fontWeight="bold" sx={{ mb: 1 }}>
+            {isCompact ? 'Resumen' : 'Resumen del Pedido'}
           </Typography>
           <Typography variant="body2" color="text.secondary">
             {orderData.items?.length || 0} producto
@@ -252,7 +257,7 @@ const CheckoutSummary = ({
 
         {/* Desglose de precios */}
         <Box>
-          <Stack spacing={2}>
+          <Stack spacing={1.5}>
             <Stack direction="row" justifyContent="space-between">
               <Typography variant="body2">Subtotal (IVA inc.)</Typography>
               <Typography variant="body2" fontWeight="medium">
@@ -288,22 +293,18 @@ const CheckoutSummary = ({
         <Divider />
 
         {/* Total */}
-        <Stack
-          direction="row"
-          justifyContent="space-between"
-          alignItems="center"
-        >
-          <Typography variant="h6" fontWeight="bold">
+        <Stack direction="row" justifyContent="space-between" alignItems="center">
+          <Typography variant={isCompact ? 'subtitle1' : 'h6'} fontWeight="bold">
             Total
           </Typography>
-          <Typography variant="h6" fontWeight="bold" color="#000000ff">
-            {/* <-- CORREGIDO: Muestra el total del pedido, sin comisiones adivinadas. */}
+          <Typography variant={isCompact ? 'subtitle1' : 'h6'} fontWeight="bold" color="#000000ff">
             {checkoutService.formatPrice(orderTotal)}
           </Typography>
         </Stack>
 
         {/* Botones de acción */}
-        <Stack spacing={2}>
+  {!hideActions && (
+  <Stack spacing={2}>
           {isCompleted ? (
             <>{/* ... botones de completado sin cambios ... */}</>
           ) : (
@@ -349,9 +350,10 @@ const CheckoutSummary = ({
               </Button>
             </>
           )}
-        </Stack>
+  </Stack>
+  )}
 
-        <SecurityBadge variant="compact" />
+  {!isCompact && <SecurityBadge variant="compact" />}
       </Stack>
     </Paper>
   );

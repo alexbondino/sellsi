@@ -133,10 +133,12 @@ const CartItem = ({
   }, [item.quantity, productData.price_tiers, productData.basePrice])
 
   // Memoizar opciones de envío - ahora calculado dinámicamente
-  const shippingData = React.useMemo(() => ({
-    price: 0,
-    label: 'Según región'
-  }), [selectedShipping])
+  const shippingData = React.useMemo(() => {
+    return {
+      price: 0, // Se calculará dinámicamente según región
+      label: 'Según región'
+    }
+  }, [selectedShipping])
 
   // Handler optimizado para cambio de cantidad
   const handleQuantityChange = React.useCallback((newQuantity) => {
