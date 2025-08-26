@@ -2,7 +2,7 @@
 // CHECKOUT PROGRESS STEPPER - COMPONENTE DE PROGRESO DEL CHECKOUT
 // ============================================================================
 
-import React from 'react'
+import React, { useMemo } from 'react'
 import {
   Box,
   Stepper,
@@ -118,6 +118,22 @@ const CheckoutProgressStepper = ({
     return currentStep?.id === step.id
   }
 
+  // Precrear componentes de ícono estables para cada paso
+  const stepIconComponents = useMemo(() => {
+    return steps.reduce((acc, s) => {
+      // MUI pasará props.active y props.completed; las reenviamos sin cerrar sobre valores potencialmente obsoletos
+      acc[s.id] = (iconProps) => (
+        <CustomStepIcon
+          active={iconProps.active}
+          completed={iconProps.completed}
+          icon={s.icon}
+          order={s.order}
+        />
+      )
+      return acc
+    }, {})
+  }, [steps])
+
   return (
     <Box sx={{ width: '100%', py: 2 }}>
       <Stepper
@@ -146,14 +162,7 @@ const CheckoutProgressStepper = ({
           return (
             <Step key={step.id} completed={isCompleted}>
               <StepLabel
-                StepIconComponent={(props) => (
-                  <CustomStepIcon
-                    active={isActive}
-                    completed={isCompleted}
-                    icon={step.icon}
-                    order={step.order}
-                  />
-                )}
+                StepIconComponent={stepIconComponents[step.id]}
                 sx={{
                   '& .MuiStepLabel-label': {
                     fontWeight: isActive ? 'bold' : 'normal',

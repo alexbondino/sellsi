@@ -24,6 +24,65 @@ const traverse = require('@babel/traverse').default;
 const exts = ['.js', '.jsx', '.ts', '.tsx'];
 let OUTPUT_JSON = false;
 let SHOW_SUMMARY = false;
+let ONLY_HIGH = false;
+let MIN_SEVERITY = null; // 'critical'|'high'|'medium'|'low' or null
+
+// Collect free variables inside an arbitrary AST node (used for object/array expressions)
+function collectFreeVariablesInNode(node) {
+  const free = new Set();
+  const locals = new Set();
+
+  function collectPatternNames(pattern, set) {
+    if (!pattern) return;
+    switch (pattern.type) {
+      case 'Identifier': set.add(pattern.name); break;
+      case 'ObjectPattern':
+        for (const prop of pattern.properties) {
+          if (prop.type === 'RestElement') collectPatternNames(prop.argument, set);
+          else collectPatternNames(prop.value || prop.key, set);
+        }
+        break;
+      case 'ArrayPattern':
+        for (const el of pattern.elements) if (el) collectPatternNames(el, set);
+        break;
+      case 'AssignmentPattern': collectPatternNames(pattern.left, set); break;
+      case 'RestElement': collectPatternNames(pattern.argument, set); break;
+    }
+  }
+
+  function walk(n, parent) {
+    if (!n || typeof n.type !== 'string') return;
+    switch (n.type) {
+      case 'Identifier':
+        // Ignore property keys and non-value identifiers
+        if (parent) {
+          if (parent.type === 'MemberExpression' && parent.property === n && !parent.computed) return;
+          if (['Property','ObjectProperty'].includes(parent.type) && parent.key === n && !parent.computed) return;
+        }
+        if (!locals.has(n.name) && !['undefined','NaN','Infinity'].includes(n.name)) free.add(n.name);
+        return;
+      case 'FunctionExpression':
+      case 'ArrowFunctionExpression':
+      case 'FunctionDeclaration':
+        // Do not descend into nested function bodies; treat them as black boxes
+        // but record their params as locals to avoid false positives
+        (n.params || []).forEach(p => collectPatternNames(p, locals));
+        return;
+      case 'VariableDeclarator':
+        collectPatternNames(n.id, locals);
+        if (n.init) walk(n.init, n);
+        return;
+    }
+    for (const k in n) {
+      if (k === 'parent') continue;
+      const v = n[k];
+      if (Array.isArray(v)) v.forEach(c => walk(c, n)); else if (v && typeof v.type === 'string') walk(v, n);
+    }
+  }
+
+  walk(node, null);
+  return [...free];
+}
 
 // Heurística de severidad configurable en el futuro
 function computeSeverity({ kind, size = 0, captureCount = 0, inMap = false }) {
@@ -194,53 +253,77 @@ function analyzeFile(file) {
         const expr = attr.value.expression;
         const baseType = classifyExpression(expr);
         if (baseType && baseType !== 'funcion') {
-          const size = baseType === 'objeto' ? expr.properties.length : baseType === 'array' ? expr.elements.length : 0;
-            const severity = computeSeverity({ kind: baseType, size, inMap });
-          findings.push({
-            file,
-            component: compName,
-            prop: propName,
-            kind: baseType,
-            size,
-            captureCount: 0,
-            inMap,
-            severity,
-            loc: expr.loc && { line: expr.loc.start.line, column: expr.loc.start.column }
-          });
+            const size = baseType === 'objeto' ? (expr.properties || []).length : baseType === 'array' ? (expr.elements || []).length : 0;
+            const freeVars = collectFreeVariablesInNode(expr);
+            const captureCount = freeVars.length;
+            // If there are no free variables, the literal can be hoisted out of the component
+            const hoistable = captureCount === 0;
+            const severity = computeSeverity({ kind: baseType, size, inMap, captureCount });
+            const suggestion = hoistable
+              ? 'Hoist this literal outside the component (pure literal, no captured variables).' 
+              : `Consider memoizing with useMemo(() => /* literal */, [${freeVars.join(', ')}])`;
+            findings.push({
+              file,
+              component: compName,
+              prop: propName,
+              kind: baseType,
+              size,
+              captureCount,
+              freeVars,
+              hoistable,
+              inMap,
+              severity,
+              suggestion,
+              loc: expr.loc && { line: expr.loc.start.line, column: expr.loc.start.column }
+            });
           continue;
         }
         if (baseType === 'funcion') {
-          const captures = collectFreeVariables(expr);
-          const size = expr.body && expr.body.type === 'BlockStatement' ? expr.body.body.length : 1;
-          const severity = computeSeverity({ kind: 'funcion', size, captureCount: captures.length, inMap });
-          findings.push({
-            file,
-            component: compName,
-            prop: propName,
-            kind: 'funcion',
-            size,
-            captureCount: captures.length,
-            inMap,
-            severity,
-            loc: expr.loc && { line: expr.loc.start.line, column: expr.loc.start.column }
-          });
+            const captures = collectFreeVariables(expr);
+            const size = expr.body && expr.body.type === 'BlockStatement' ? expr.body.body.length : 1;
+            const severity = computeSeverity({ kind: 'funcion', size, captureCount: captures.length, inMap });
+            const suggestion = captures.length === 0
+              ? 'Prefer defining the function outside the component or reuse a stable reference.'
+              : `Wrap with useCallback(fn, [${captures.join(', ')}]) to avoid recreating the function every render`;
+            findings.push({
+              file,
+              component: compName,
+              prop: propName,
+              kind: 'funcion',
+              size,
+              captureCount: captures.length,
+              captures,
+              inMap,
+              severity,
+              suggestion,
+              loc: expr.loc && { line: expr.loc.start.line, column: expr.loc.start.column }
+            });
           // Arrow concise returning object/array inline (funcion->objeto/array)
           if (expr.type === 'ArrowFunctionExpression' && expr.body && expr.body.type !== 'BlockStatement') {
             const retType = classifyExpression(expr.body);
             if (retType && retType !== 'funcion') {
               const rSize = retType === 'objeto' ? expr.body.properties.length : retType === 'array' ? expr.body.elements.length : 0;
-              const nestedSeverity = computeSeverity({ kind: 'funcion', size: rSize, captureCount: captures.length, inMap });
-              findings.push({
-                file,
-                component: compName,
-                prop: propName,
-                kind: 'funcion->'+retType,
-                size: rSize,
-                captureCount: captures.length,
-                inMap,
-                severity: nestedSeverity,
-                loc: expr.body.loc && { line: expr.body.loc.start.line, column: expr.body.loc.start.column }
-              });
+                const nestedSeverity = computeSeverity({ kind: 'funcion', size: rSize, captureCount: captures.length, inMap });
+                const nestedFreeVars = collectFreeVariablesInNode(expr.body);
+                const nestedHoistable = nestedFreeVars.length === 0;
+                const nestedSuggestion = nestedHoistable
+                  ? 'Hoist returned literal outside component or convert to static constant.'
+                  : `Memoize returned literal with useMemo(() => /* returned literal */, [${nestedFreeVars.join(', ')}])`;
+                findings.push({
+                  file,
+                  component: compName,
+                  prop: propName,
+                  kind: 'funcion->'+retType,
+                  size: rSize,
+                  captureCount: captures.length,
+                  captures,
+                  inMap,
+                  severity: nestedSeverity,
+                  freeVars: nestedFreeVars,
+                  hoistable: nestedHoistable,
+                  suggestion: nestedSuggestion,
+                  loc: expr.body.loc && { line: expr.body.loc.start.line, column: expr.body.loc.start.column }
+                });
             }
           }
         }
@@ -278,6 +361,8 @@ function main() {
     const a = rawArgs[i];
     if (a === '--json') { OUTPUT_JSON = true; continue; }
     if (a === '--summary') { SHOW_SUMMARY = true; continue; }
+    if (a === '--only-high') { ONLY_HIGH = true; continue; }
+    if (a === '--min-severity' && rawArgs[i+1]) { MIN_SEVERITY = rawArgs[++i]; continue; }
     targets.push(a);
   }
   const files = collectTargets(targets);
@@ -285,16 +370,25 @@ function main() {
   for (const f of files) {
     all.push(...analyzeFile(f));
   }
+  // Apply severity filtering if requested
+  const sevOrder = { critical: 3, high: 2, medium: 1, low: 0 };
+  let filtered = all;
+  if (ONLY_HIGH) {
+    filtered = all.filter(f => f.severity === 'high' || f.severity === 'critical');
+  } else if (MIN_SEVERITY && sevOrder[MIN_SEVERITY] != null) {
+    const minRank = sevOrder[MIN_SEVERITY];
+    filtered = all.filter(f => (sevOrder[f.severity] || 0) >= minRank);
+  }
 
   if (OUTPUT_JSON) {
-    console.log(JSON.stringify(all, null, 2));
+    console.log(JSON.stringify(filtered, null, 2));
   } else {
-    console.log(formatText(all));
+    console.log(formatText(filtered));
     if (SHOW_SUMMARY) {
       console.log('\nResumen:');
-      const porTipo = all.reduce((acc, f) => { acc[f.kind] = (acc[f.kind]||0)+1; return acc; }, {});
-      const porSev = all.reduce((acc, f) => { acc[f.severity] = (acc[f.severity]||0)+1; return acc; }, {});
-      console.log('Total hallazgos:', all.length);
+      const porTipo = filtered.reduce((acc, f) => { acc[f.kind] = (acc[f.kind]||0)+1; return acc; }, {});
+      const porSev = filtered.reduce((acc, f) => { acc[f.severity] = (acc[f.severity]||0)+1; return acc; }, {});
+      console.log('Total hallazgos:', filtered.length);
       Object.entries(porTipo).forEach(([k,v]) => console.log(`  ${k}: ${v}`));
       console.log('Severidades:');
       Object.entries(porSev).sort((a,b)=>{
