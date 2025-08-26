@@ -1,6 +1,8 @@
 import { supabase } from '../supabase';
 import { convertDbRegionsToForm, convertFormRegionsToDb } from '../../utils/shippingRegionsUtils';
 
+const MAX_NAME_LENGTH = 15;
+
 const TABLE = 'supplier_shipping_region_presets';
 
 function validateRegions(regions = []) {
@@ -35,12 +37,14 @@ export async function upsertPreset(supplierId, presetIndex, name, displayRegions
   if (![1,2,3].includes(presetIndex)) throw new Error('presetIndex inválido');
   const dbRegions = convertFormRegionsToDb(displayRegions || []);
   validateRegions(dbRegions);
+  const finalName = (name?.trim() || `Config. ${presetIndex}`).slice(0, MAX_NAME_LENGTH);
+  if (finalName.length > MAX_NAME_LENGTH) throw new Error(`El nombre no puede superar ${MAX_NAME_LENGTH} caracteres`);
   const { error } = await supabase
     .from(TABLE)
     .upsert({
       supplier_id: supplierId,
       preset_index: presetIndex,
-      name: name?.trim() || `Config. ${presetIndex}`,
+      name: finalName,
       regions: dbRegions
     }, { onConflict: 'supplier_id,preset_index' });
   if (error) throw error;
@@ -49,9 +53,11 @@ export async function upsertPreset(supplierId, presetIndex, name, displayRegions
 
 export async function renamePreset(supplierId, presetIndex, newName) {
   if (!newName?.trim()) throw new Error('Nombre inválido');
+  const finalName = newName.trim().slice(0, MAX_NAME_LENGTH);
+  if (finalName.length > MAX_NAME_LENGTH) throw new Error(`El nombre no puede superar ${MAX_NAME_LENGTH} caracteres`);
   const { error } = await supabase
     .from(TABLE)
-    .update({ name: newName.trim() })
+    .update({ name: finalName })
     .eq('supplier_id', supplierId)
     .eq('preset_index', presetIndex);
   if (error) throw error;

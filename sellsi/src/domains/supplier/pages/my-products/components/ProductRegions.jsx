@@ -117,10 +117,12 @@ const ProductRegions = ({
     setBaselineHash(computeRegionsHash(displayRegions));
   };
 
+  const MAX_NAME_LENGTH = 15;
+
   const startRenaming = (index) => {
     const preset = getPresetByIndex(index);
     setRenamingIndex(index);
-    setTempName(preset?.name || `Config. ${index}`);
+    setTempName((preset?.name || `Config. ${index}`).slice(0, MAX_NAME_LENGTH));
   };
 
   const commitRename = async () => {
@@ -177,7 +179,7 @@ const ProductRegions = ({
               )}
               {isRenaming && (
                 <Stack direction="row" spacing={0.5} alignItems="center">
-                  <TextField size="small" value={tempName} autoFocus onChange={e=>setTempName(e.target.value)} onBlur={commitRename} onKeyDown={e=>{ if(e.key==='Enter'){ commitRename(); } if(e.key==='Escape'){ setRenamingIndex(null);} }} sx={{ width:140 }} />
+                  <TextField size="small" value={tempName} autoFocus onChange={e=>setTempName(e.target.value.slice(0, MAX_NAME_LENGTH))} onBlur={commitRename} inputProps={{ maxLength: MAX_NAME_LENGTH }} onKeyDown={e=>{ if(e.key==='Enter'){ commitRename(); } if(e.key==='Escape'){ setRenamingIndex(null);} }} sx={{ width:140 }} />
                   <IconButton size="small" onMouseDown={commitRename}><CheckIcon fontSize="inherit"/></IconButton>
                 </Stack>
               )}
