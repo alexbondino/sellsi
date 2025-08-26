@@ -241,6 +241,19 @@ export default function TopBar({
     lg: '250px',
   }; // Default padding for logged out
 
+  // Estilo consistente para los botones de navegación principales
+  const navButtonStyle = {
+    color: 'white',
+    textTransform: 'none',
+    fontSize: 20,
+    outline: 'none',
+    boxShadow: 'none',
+    border: 'none',
+    '&:focus': { outline: 'none', boxShadow: 'none', border: 'none' },
+    '&:active': { outline: 'none', boxShadow: 'none', border: 'none' },
+    '&:hover': { outline: 'none', boxShadow: 'none', border: 'none' },
+  };
+
   // Avatar con fade-in
   const [avatarLoaded, setAvatarLoaded] = useState(false);
   useEffect(() => {
@@ -323,21 +336,7 @@ export default function TopBar({
           <Button
             key={label}
             onClick={() => setOpenComingSoonModal(true)}
-            sx={{
-              color: 'white',
-              textTransform: 'none',
-              fontSize: 16,
-              outline: 'none',
-              boxShadow: 'none',
-              border: 'none',
-              '&:focus': { outline: 'none', boxShadow: 'none', border: 'none' },
-              '&:active': {
-                outline: 'none',
-                boxShadow: 'none',
-                border: 'none',
-              },
-              '&:hover': { outline: 'none', boxShadow: 'none', border: 'none' },
-            }}
+            sx={navButtonStyle}
             disableFocusRipple
             disableRipple
           >
@@ -349,17 +348,7 @@ export default function TopBar({
         <Button
           key={label}
           onClick={() => handleNavigate(ref)}
-          sx={{
-            color: 'white',
-            textTransform: 'none',
-            fontSize: 20,
-            outline: 'none',
-            boxShadow: 'none',
-            border: 'none',
-            '&:focus': { outline: 'none', boxShadow: 'none', border: 'none' },
-            '&:active': { outline: 'none', boxShadow: 'none', border: 'none' },
-            '&:hover': { outline: 'none', boxShadow: 'none', border: 'none' },
-          }}
+          sx={navButtonStyle}
           disableFocusRipple
           disableRipple
         >
@@ -422,13 +411,14 @@ export default function TopBar({
                 setOpenComingSoonModal(true);
                 handleCloseMobileMenu();
               }}
+              sx={{ fontSize: 20 }}
             >
               {label}
             </MenuItem>
           );
         }
         return (
-          <MenuItem key={label} onClick={() => handleNavigate(ref)}>
+          <MenuItem key={label} onClick={() => handleNavigate(ref)} sx={{ fontSize: 20 }}>
             {label}
           </MenuItem>
         );

@@ -2,11 +2,13 @@
 import React from 'react';
 import { Box, Typography } from '@mui/material';
 
-const AboutUsSection = ({ serviciosRef }) => {
+const AboutUsSection = ({ quienesSomosRef }) => {
   return (
     <Box
-      ref={serviciosRef}
+      ref={quienesSomosRef}
       sx={{
+        // Dejar 40px por encima cuando se haga scrollIntoView desde el TopBar
+        scrollMarginTop: '40px',
         width: '100%',
         boxSizing: 'border-box',
         px: {
@@ -32,7 +34,7 @@ const AboutUsSection = ({ serviciosRef }) => {
           textAlign: { xs: 'center', md: 'left' },
         }}
       >
-        ¿Quienes Somos?
+        ¿Quiénes Somos?
       </Typography>
 
       {/* Párrafo 1 */}
