@@ -18,6 +18,7 @@ import { useResponsiveThumbnail, useMinithumb } from '../hooks/useResponsiveThum
 import { useThumbnailPhaseQuery, invalidateTransientThumbnailKeys } from '../hooks/thumbnails/useThumbnailPhaseQuery.js'
 import { useInViewport } from '../hooks/useInViewport.js'
 import { useQueryClient } from '@tanstack/react-query';
+import { getProductImageUrl } from '../utils/getProductImageUrl';
 
 const UniversalProductImage = ({
   product,
@@ -42,6 +43,8 @@ const UniversalProductImage = ({
   ...props
 }) => {
   const [imageError, setImageError] = useState(false);
+  const [attemptedFallback, setAttemptedFallback] = useState(false);
+  const [forceUseFallback, setForceUseFallback] = useState(false); // Nuevo estado para forzar uso de fallback
   const retryCountRef = React.useRef(0);
   const queryClient = useQueryClient();
   const [forceEager, setForceEager] = useState(false);
@@ -58,15 +61,24 @@ const UniversalProductImage = ({
   const [currentPhase, setCurrentPhase] = useState(
     (product?.thumbnail_url || product?.thumbnailUrl || product?.thumbnails) ? 'thumbnails_ready' : null
   )
-  // Actualizar fase inicial cuando cambie el producto
-  useEffect(() => {
-    if (product && (product.thumbnail_url || product.thumbnailUrl || product.thumbnails)) {
-      setCurrentPhase('thumbnails_ready')
-    }
-  }, [product?.id, product?.thumbnail_url, product?.thumbnailUrl, product?.thumbnails])
+  
   const { ref: viewportRef, inView } = useInViewport({ once: true, rootMargin: '200px' })
   const phaseQuery = useThumbnailPhaseQuery(productId, currentPhase, { enabled: !FeatureFlags.ENABLE_VIEWPORT_THUMBS || inView })
   const phaseDataThumbUrl = phaseQuery.data?.thumbnail_url
+
+  // ÚNICO PUNTO DE RESET: Solo cuando cambia realmente el producto
+  useEffect(() => {
+    setImageError(false);
+    setAttemptedFallback(false);
+    setForceUseFallback(false);
+    retryCountRef.current = 0;
+
+    if (product && (product.thumbnail_url || product.thumbnailUrl || product.thumbnails)) {
+      setCurrentPhase('thumbnails_ready')
+    } else {
+      setCurrentPhase(null)
+    }
+  }, [product?.id || product?.productid]);
 
   // Safety: if lazy loading is enabled but the observer never triggers, fall back to eager after a short timeout
   useEffect(() => {
@@ -85,50 +97,78 @@ const UniversalProductImage = ({
     return () => {
       if (t) clearTimeout(t);
     };
-  }, [lazy, priority, inView, observerTimeoutMs, productId]);
-
-  // Determinar la URL a usar basada en el tamaño solicitado
+  }, [lazy, priority, inView, observerTimeoutMs, productId]);  // Determinar la URL a usar basada en el tamaño solicitado
   const selectedThumbnail = React.useMemo(() => {
     if (!product) return '/placeholder-product.jpg';
 
-    const finalUrl = (() => {
-      switch (size) {
-        case 'minithumb':
-          // Para minithumb: minithumb específico → thumbnail responsivo → imagen original → placeholder
-  const chosen = minithumb || phaseDataThumbUrl || responsiveThumbnail || product?.imagen || product?.image || '/placeholder-product.jpg';
-  // choose=minithumb
-    return chosen;
-        case 'mobile': {
-          // Forzar siempre variante mobile independiente del viewport
-          // 1) thumbnails.mobile directo
-          let mobile = product?.thumbnails?.mobile;
-          // 2) Si phaseDataThumbUrl apunta a desktop/tablet construir mobile
-          const source = phaseDataThumbUrl || responsiveThumbnail || product?.thumbnail_url || product?.thumbnailUrl;
-          if (!mobile && source && typeof source === 'string') {
-            if (source.includes('_mobile_')) mobile = source; // Ya es mobile
-            else if (source.includes('_desktop_320x260')) mobile = source.replace('_desktop_320x260.jpg', '_mobile_190x153.jpg');
-            else if (source.includes('_tablet_300x230')) mobile = source.replace('_tablet_300x230.jpg', '_mobile_190x153.jpg');
-          }
-          // 3) Minithumb NUNCA sustituye a mobile aquí (diferente tamaño) -> ignorado
-          const chosenM = mobile || product?.imagen || product?.image || '/placeholder-product.jpg';
-          // choose=mobile
-          return chosenM;
+    // Si necesitamos forzar el uso del fallback, usar la imagen principal directamente
+    if (forceUseFallback || attemptedFallback) {
+      const fallbackImage = product?.imagen || product?.image;
+      if (fallbackImage && fallbackImage !== '/placeholder-product.jpg') {
+        // Debug log para entender qué está pasando
+  // development-only logging removed
+        
+        // Si fallbackImage ya es una URL completa, usarla directamente
+        if (typeof fallbackImage === 'string' && /^https?:\/\//.test(fallbackImage)) {
+          return fallbackImage;
         }
-        case 'responsive':
-        default:
-          // Para responsive: thumbnail responsivo → imagen original → placeholder
-          // responsiveThumbnail ya incluye el fallback a product.imagen internamente
-  const chosenR = phaseDataThumbUrl || responsiveThumbnail || product?.imagen || product?.image || '/placeholder-product.jpg';
-  // choose=responsive
-    return chosenR;
+        
+        // Si es un path relativo, construir la URL correctamente
+        if (typeof fallbackImage === 'string') {
+          // Usar la misma lógica que ProductImageGallery
+          const constructedUrl = getProductImageUrl(fallbackImage, product, false);
+          // development-only logging removed
+          return constructedUrl;
+        }
+        
+        return fallbackImage;
       }
-    })();
+      // Si no hay imagen principal válida, usar placeholder
+      return '/placeholder-product.jpg';
+    }
 
-    return finalUrl;
-  }, [product, size, minithumb, responsiveThumbnail, phaseDataThumbUrl]);
+    // Usar los hooks que ya manejan fallbacks internamente (solo si no estamos forzando fallback)
+    switch (size) {
+      case 'minithumb':
+        // useMinithumb ya incluye fallback a imagen principal
+        return minithumb || '/placeholder-product.jpg';
+      case 'mobile': {
+        // Intentar thumbnail mobile específico, luego fallback a imagen principal
+        let mobile = product?.thumbnails?.mobile;
+        const source = phaseDataThumbUrl || responsiveThumbnail || product?.thumbnail_url || product?.thumbnailUrl;
+        if (!mobile && source && typeof source === 'string') {
+          if (source.includes('_mobile_')) mobile = source;
+          else if (source.includes('_desktop_320x260')) mobile = source.replace('_desktop_320x260.jpg', '_mobile_190x153.jpg');
+          else if (source.includes('_tablet_300x230')) mobile = source.replace('_tablet_300x230.jpg', '_mobile_190x153.jpg');
+        }
+        // Si no hay mobile thumbnail, usar imagen principal
+        return mobile || product?.imagen || product?.image || '/placeholder-product.jpg';
+      }
+      case 'responsive':
+      default:
+        // useResponsiveThumbnail ya incluye fallback a imagen principal
+        return responsiveThumbnail || '/placeholder-product.jpg';
+    }
+  }, [product, size, minithumb, responsiveThumbnail, phaseDataThumbUrl, forceUseFallback, attemptedFallback]);
 
   // Manejar errores de carga de imagen
   const handleImageError = useCallback(() => {
+  // development-only logging removed
+
+    // Si no hemos intentado fallback aún y hay imagen principal disponible
+    if (!attemptedFallback && !forceUseFallback) {
+      const fallbackImage = product?.imagen || product?.image;
+      if (fallbackImage && fallbackImage !== '/placeholder-product.jpg' && fallbackImage !== selectedThumbnail) {
+        // Usar setTimeout para asegurar que el estado se actualiza en el próximo ciclo
+        // Esto evita conflictos con el useMemo que podría ejecutarse con valores previos
+        setTimeout(() => {
+          setForceUseFallback(true);
+          setAttemptedFallback(true);
+        }, 0);
+
+        return; // No marcar como error, intentar con fallback
+      }
+    }
 
     setImageError(true);
 
@@ -142,16 +182,9 @@ const UniversalProductImage = ({
         exact: false
       });
 
-      // También limpiar cache del navegador forzando reload
-      if (selectedThumbnail && selectedThumbnail !== '/placeholder-product.jpg') {
-        const img = new Image();
-        img.src = selectedThumbnail + '?cache-bust=' + Date.now();
-      }
-
-      // Reintentar después de un delay (máximo 2 reintentos)
-      if (retryCountRef.current < 2) {
+      // Solo reintentar si aún no hemos intentado fallback y tenemos menos de 2 reintentos
+      if (!attemptedFallback && retryCountRef.current < 1) {
         setTimeout(() => {
-          // actualizar contador sin provocar re-render
           retryCountRef.current = retryCountRef.current + 1;
           setImageError(false);
         }, 1000);
@@ -162,11 +195,12 @@ const UniversalProductImage = ({
     if (onError) {
       onError();
     }
-  }, [product, onError, selectedThumbnail, queryClient]);
+  }, [product, onError, selectedThumbnail, queryClient, attemptedFallback, forceUseFallback, productId]);
 
   // Manejar carga exitosa de imagen
   const handleImageLoad = useCallback(() => {
     setImageError(false);
+    // NO RESETEAR attemptedFallback y forceUseFallback aquí - solo cuando cambie el producto
     retryCountRef.current = 0; // Reset retry count cuando carga exitosamente
     if (onLoad) onLoad();
   }, [onLoad]);
@@ -197,6 +231,16 @@ const UniversalProductImage = ({
         queryClient.invalidateQueries({ queryKey: ['thumbnail', productId], exact: false })
         invalidateTransientThumbnailKeys(productId)
         setImageError(false)
+        // NO RESETEAR attemptedFallback y forceUseFallback automáticamente
+        // Solo si realmente hay nuevas imágenes válidas
+        const hasNewValidImages = phaseQuery.data?.thumbnail_url && 
+          phaseQuery.data.thumbnail_url !== selectedThumbnail;
+        
+        if (hasNewValidImages) {
+          setAttemptedFallback(false);
+          setForceUseFallback(false);
+        }
+        
         // reset without causing re-render
         retryCountRef.current = 0;
         setTimeout(() => {
@@ -210,33 +254,45 @@ const UniversalProductImage = ({
     return () => window.removeEventListener('productImagesReady', handleImagesReady)
   }, [productId, queryClient])
 
-  // Si hay error o no hay imagen válida, mostrar Avatar con icono CENTRADO
-  if (imageError || !selectedThumbnail || selectedThumbnail === '/placeholder-product.jpg') {
-    // Mostrar spinner durante los reintentos
-  if (imageError && retryCountRef.current < 2) {
-      let avatarSize = 64;
-      if (typeof baseStyles.width === 'number') avatarSize = baseStyles.width;
-      else if (typeof baseStyles.height === 'number') avatarSize = baseStyles.height;
-      else if (typeof width === 'number') avatarSize = width;
-      else if (typeof height === 'number') avatarSize = height;
-      return (
-        <Avatar
-          sx={{
-            ...baseStyles,
-            bgcolor: 'grey.100',
-            color: 'grey.400',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: '2rem'
-          }}
-          {...props}
-        >
-          <CircularProgress color="primary" size={avatarSize * 0.7} thickness={4} />
-        </Avatar>
-      );
-    }
-    // Mostrar icono de imagen rota solo si ya se acabaron los intentos
+  // Solo mostrar ícono roto si:
+  // 1. Hay error de imagen Y
+  // 2. Ya intentamos fallback a imagen principal Y  
+  // 3. Realmente no hay imagen válida que mostrar
+  const shouldShowBrokenIcon = imageError && attemptedFallback && (
+    !selectedThumbnail || 
+    selectedThumbnail === '/placeholder-product.jpg'
+  );
+
+  // Debug logging en desarrollo
+  // development-only debug logs removed
+  
+  // Mostrar spinner durante reintentos (incluyendo intento de fallback)
+  if (imageError && !attemptedFallback && retryCountRef.current < 1) {
+    let avatarSize = 64;
+    if (typeof baseStyles.width === 'number') avatarSize = baseStyles.width;
+    else if (typeof baseStyles.height === 'number') avatarSize = baseStyles.height;
+    else if (typeof width === 'number') avatarSize = width;
+    else if (typeof height === 'number') avatarSize = height;
+    return (
+      <Avatar
+        sx={{
+          ...baseStyles,
+          bgcolor: 'grey.100',
+          color: 'grey.400',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: '2rem'
+        }}
+        {...props}
+      >
+        <CircularProgress color="primary" size={avatarSize * 0.7} thickness={4} />
+      </Avatar>
+    );
+  }
+
+  // Mostrar icono de imagen rota solo cuando realmente no hay alternativas
+  if (shouldShowBrokenIcon) {
     const FallbackIcon = fallbackIcon;
     return (
       <Avatar
