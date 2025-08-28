@@ -296,7 +296,7 @@ const ProviderCatalog = () => {
             backgroundColor: 'background.default',
             minHeight: '100vh',
             pt: { xs: 2, md: 4 },
-            px: 3,
+            px: { xs: 0, md: 3 },
             pb: 12,
             width: '100%',
             display: 'flex',
@@ -318,7 +318,7 @@ const ProviderCatalog = () => {
             backgroundColor: 'background.default',
             minHeight: '100vh',
             pt: { xs: 2, md: 4 },
-            px: 3,
+            px: { xs: 0, md: 3 },
             pb: 12,
             width: '100%',
           }}
@@ -328,7 +328,7 @@ const ProviderCatalog = () => {
               backgroundColor: 'white',
               maxWidth: '1450px',
               mx: 'auto',
-              p: 3,
+              p: { xs: 1.5, md: 3 },
               mb: 6,
               border: '1.5px solid #e0e0e0',
               boxShadow: 6,
@@ -358,7 +358,7 @@ const ProviderCatalog = () => {
           backgroundColor: 'background.default',
           minHeight: '100vh',
           pt: { xs: 2, md: 4 },
-          px: 3,
+          px: { xs: 0, md: 3 },
           pb: SPACING_BOTTOM_MAIN,
           width: '100%',
           // Prevenir desplazamiento horizontal al abrir dropdowns
@@ -372,7 +372,7 @@ const ProviderCatalog = () => {
             backgroundColor: 'white',
             maxWidth: '1450px',
             mx: 'auto',
-            p: 3,
+            p: { xs: 1.5, md: 3 },
             mb: 6,
             border: '1.5px solid #e0e0e0',
             boxShadow: 6,
@@ -417,7 +417,7 @@ const ProviderCatalog = () => {
           <Paper
             elevation={2}
             sx={{
-              p: 4,
+              p: { xs: 2, md: 4 },
               mb: 4,
               borderRadius: 3,
               background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)',
@@ -480,7 +480,7 @@ const ProviderCatalog = () => {
           <Paper
             elevation={1}
             sx={{
-              p: 3,
+              p: { xs: 1.5, md: 3 },
               mb: 4,
               borderRadius: 2,
               border: '1px solid #e0e0e0',
@@ -653,7 +653,7 @@ const ProviderCatalog = () => {
               <Paper
                 elevation={1}
                 sx={{
-                  p: 4,
+                  p: { xs: 2, md: 4 },
                   textAlign: 'center',
                   borderRadius: 2,
                 }}

@@ -8,6 +8,8 @@ import {
   Container,
   TextField,
   ThemeProvider, // Necesario para aplicar el tema
+  useTheme,
+  useMediaQuery,
 } from '@mui/material';
 import { useOrdersStore } from '../../../../shared/stores/orders/ordersStore'; // Actualizado a nueva ubicación
 import { useSupplierPartActions } from '../../../supplier/hooks/useSupplierPartActions';
@@ -506,7 +508,7 @@ const MyOrdersPage = () => {
             backgroundColor: 'background.default',
             minHeight: '100vh',
             pt: { xs: 4.5, md: 5 },
-            px: 3,
+            px: { xs: 0, md: 3 },
             pb: 3,
             display: 'flex',
             justifyContent: 'center',
@@ -529,14 +531,14 @@ const MyOrdersPage = () => {
             backgroundColor: 'background.default',
             minHeight: '100vh',
             pt: { xs: 4.5, md: 5 },
-            px: 3,
+            px: { xs: 0, md: 3 },
             pb: 3,
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'center',
           }}
         >
-          <Container>
+          <Container maxWidth={false} disableGutters>
             <Alert severity="error" sx={{ mt: 2 }}>
               {error}
             </Alert>
@@ -562,12 +564,12 @@ const MyOrdersPage = () => {
           backgroundColor: 'background.default',
           minHeight: '100vh',
           pt: { xs: 4.5, md: 5 }, // Padding top para espacio con el header
-          px: 3, // Padding horizontal
+          px: { xs: 0, md: 3 }, // Padding horizontal
           pb: SPACING_BOTTOM_MAIN, // Padding bottom
           ml: { xs: 0, md: 10, lg: 14, xl: 24 },
         }}
       >
-        <Container maxWidth="xl" disableGutters>
+        <Container maxWidth={false} disableGutters>
           {/* Título de la página */}
           <Box sx={{ display: 'flex', alignItems: 'center', mb: 4 }}>
             <AssignmentIcon sx={{ color: 'primary.main', fontSize: 36, mr: 1 }} />

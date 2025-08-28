@@ -119,7 +119,7 @@ const ProductPageView = memo(({
           sx={{
             backgroundColor: 'background.default',
             pt: { xs: 1, md: 4 }, // Menos padding top en móvil
-            px: { xs: 0, md: 3 }, // Sin padding horizontal en móvil
+            px: { xs: 0.75, md: 3 }, // small mobile gutter
             pb: SPACING_BOTTOM_MAIN,
             width: '100%',
           }}
@@ -156,7 +156,7 @@ const ProductPageView = memo(({
               </Box>
               {/* Breadcrumbs responsivos */}
               <Box sx={{ 
-                px: { xs: 2, md: 0 }, 
+                px: { xs: 0.75, md: 0 }, 
                 mb: { xs: 1, md: 2 } 
               }}>
                 <Breadcrumbs sx={{ fontSize: '0.875rem', color: 'text.secondary' }}>
@@ -219,7 +219,7 @@ const ProductPageView = memo(({
         sx={{
           backgroundColor: 'background.default',
           pt: { xs: 1, md: 4 }, // Menos padding top en móvil
-          px: { xs: 0, md: 3 }, // Sin padding horizontal en móvil
+          px: { xs: 0.75, md: 3 }, // small mobile gutter
           pb: SPACING_BOTTOM_MAIN,
           width: '100%',
         }}
@@ -241,7 +241,7 @@ const ProductPageView = memo(({
         >
           {/* 1. Breadcrumbs responsivos */}
           <Box sx={{ 
-            px: { xs: 2, md: 0 }, 
+            px: { xs: 0.75, md: 0 }, 
             mb: { xs: 1, md: 2 },
             width: '100%' 
           }}>

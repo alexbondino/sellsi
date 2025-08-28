@@ -15,7 +15,8 @@ import {
 } from '@mui/material';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import VerifiedIcon from '@mui/icons-material/Verified';
-import { ThemeProvider } from '@mui/material/styles';
+import { ThemeProvider, useTheme } from '@mui/material/styles';
+import useMediaQuery from '@mui/material/useMediaQuery';
 import { dashboardThemeCore } from '../../../styles/dashboardThemeCore';
 import { SPACING_BOTTOM_MAIN } from '../../../styles/layoutSpacing';
 import { useBuyerOrders } from '../hooks';
@@ -26,6 +27,8 @@ import { formatDate as formatDateUnified } from '../../marketplace/utils/formatt
 import ContactModal from '../../../shared/components/modals/ContactModal';
 
 const BuyerOrders = () => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   // ============================================================================
   // HOOKS Y ESTADO
   // ============================================================================
@@ -215,7 +218,7 @@ const BuyerOrders = () => {
             minHeight: '100vh',
             pt: { xs: 4.5, md: 5 },
             ml: { xs: 0, md: 10, lg: 14, xl: 24 },
-            px: 3,
+            px: { xs: 0, md: 3 },
             pb: SPACING_BOTTOM_MAIN,
             display: 'flex',
             justifyContent: 'center',
@@ -238,11 +241,11 @@ const BuyerOrders = () => {
             minHeight: '100vh',
             pt: { xs: 4.5, md: 5 },
             ml: { xs: 0, md: 10, lg: 14, xl: 24 },
-            px: 3,
+            px: { xs: 0, md: 3 },
             pb: SPACING_BOTTOM_MAIN,
           }}
         >
-          <Container maxWidth="xl" disableGutters>
+          <Container maxWidth={isMobile ? false : "xl"} disableGutters={isMobile ? true : false}>
             <Alert severity="error" sx={{ mt: 2 }}>
               {error}
             </Alert>
@@ -404,11 +407,11 @@ const BuyerOrders = () => {
           minHeight: '100vh',
           pt: { xs: 4.5, md: 5 },
           ml: { xs: 0, md: 10, lg: 14, xl: 24 },
-          px: 3,
+          px: { xs: 0, md: 3 },
           pb: SPACING_BOTTOM_MAIN,
         }}
       >
-        <Container maxWidth="xl" disableGutters>
+        <Container maxWidth={isMobile ? false : "xl"} disableGutters={isMobile ? true : false}>
           {/* Título de la página */}
           <Box sx={{ display: 'flex', alignItems: 'center', mb: 4 }}>
             <AssignmentIcon sx={{ color: 'primary.main', fontSize: 36, mr: 1 }} />
@@ -427,12 +430,12 @@ const BuyerOrders = () => {
             <>
               {/* Paginación superior */}
               {Pagination}
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
         {visibleOrders.map(order => (
                 <Paper
           key={order.synthetic_id || order.order_id}
                   sx={{
-                    p: 3,
+        p: { xs: 1.5, md: 3 },
                     borderRadius: 2,
                     boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
                     transition: 'transform 0.2s ease',
@@ -780,7 +783,7 @@ const BuyerOrders = () => {
             </>
           ) : (
             // Estado vacío
-            <Paper sx={{ p: 4, textAlign: 'center' }}>
+            <Paper sx={{ p: { xs: 2, md: 4 }, textAlign: 'center' }}>
               <Typography variant="h6" color="text.secondary">
                 No tienes pedidos aún
               </Typography>

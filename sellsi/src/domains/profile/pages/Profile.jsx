@@ -11,6 +11,7 @@ import {
   CircularProgress,
   Button,
 } from '@mui/material';
+import { useTheme, useMediaQuery } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import CameraAltIcon from '@mui/icons-material/CameraAlt';
 import PersonIcon from '@mui/icons-material/Person';
@@ -57,6 +58,9 @@ import { invalidateTransferInfoCache } from '../../../shared/hooks/profile/useTr
 const Profile = ({ userProfile: initialUserProfile, onUpdateProfile: externalUpdateHandler }) => {
   const { showBanner } = useBanner();
   const location = useLocation(); // Para obtener parámetros de URL
+
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
   // Estado local para el perfil cargado y completo
   const [userProfile, setUserProfile] = useState(initialUserProfile);
@@ -561,7 +565,8 @@ const Profile = ({ userProfile: initialUserProfile, onUpdateProfile: externalUpd
           </Typography>
         </Box>
       ) : (
-        <Box sx={{ p: 3, maxWidth: 1200, mx: 'auto', pb: SPACING_BOTTOM_MAIN }}>
+        <Box sx={{ backgroundColor: 'background.default', minHeight: '100vh', pt: { xs: 2, md: 4 }, px: { xs: 0, md: 3 }, pb: SPACING_BOTTOM_MAIN, ml: { xs: 0, md: 10, lg: 14, xl: 24 } }}>
+          <Box sx={{ p: { xs: 0, md: 3 }, maxWidth: 1200, mx: 'auto', width: '100%', boxSizing: 'border-box' }}>
       {/* Header */}
       <Box sx={{ display: 'flex', alignItems: 'center', mb: 4 }}>
         {/* Avatar con hover clickeable */}
@@ -732,6 +737,7 @@ const Profile = ({ userProfile: initialUserProfile, onUpdateProfile: externalUpd
         userInitials={getInitials(getDisplayName())}
       />
         </Box>
+          </Box>
       )}
     </>
   );

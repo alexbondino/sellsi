@@ -118,8 +118,10 @@ export const AppShell = ({ children }) => {
                 flexGrow: 1,
                 // Rutas full-bleed (o cualquier ruta privada) usan padding reducido en mobile
                 // y mantienen el padding de dashboard en md/desktop cuando corresponda.
-                pl: isFullBleed ? { xs: 0.75, sm: 1, md: (isDashboardRoute ? 3 : 0) } : (isDashboardRoute ? 3 : 0),
-                pr: isFullBleed ? { xs: 0.75, sm: 1, md: (isDashboardRoute ? 3 : 0) } : (isDashboardRoute ? 3 : 0),
+                // treat xs and sm as mobile for full-bleed (theme.sm starts at 412px)
+                // keep a small lateral gutter on xs (0.75) as requested
+                pl: isFullBleed ? { xs: 1.75, sm: 0, md: (isDashboardRoute ? 3 : 0) } : (isDashboardRoute ? 3 : 0),
+                pr: isFullBleed ? { xs: 1.75, sm: 0, md: (isDashboardRoute ? 3 : 0) } : (isDashboardRoute ? 3 : 0),
                 pt: isDashboardRoute ? 3 : 0,
                 pb: isDashboardRoute ? { xs: session ? 10 : 3, md: 3 } : { xs: session ? 10 : 0, md: 0 },
                 width: isDashboardRoute

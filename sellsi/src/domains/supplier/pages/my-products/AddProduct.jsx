@@ -90,7 +90,7 @@ const MobileFormLayout = ({
       display: 'flex',
       flexDirection: 'column',
       gap: 0, // 🔧 Gap 0 para unir visualmente
-      px: 0.5, // 🔧 Padding ultra mínimo para llegar al 95%
+  px: 0, // 🔧 Sin padding horizontal en móvil para full-bleed
       pb: 16,
       width: '100%',
       mx: 0,
@@ -108,7 +108,7 @@ const MobileFormLayout = ({
       }}
     >
       {/* Información Básica */}
-      <Box sx={{ p: 3, borderBottom: '1px solid #f0f0f0' }}>
+  <Box sx={{ p: { xs: 1.5, md: 3 }, borderBottom: '1px solid #f0f0f0' }}>
         <Typography variant="h6" gutterBottom sx={{ color: 'primary.main', fontWeight: 700, mb: 2 }}>
           📝 Información Básica
         </Typography>
@@ -124,7 +124,7 @@ const MobileFormLayout = ({
       </Box>
       
       {/* Inventario y Condiciones */}
-      <Box sx={{ p: 3, borderBottom: '1px solid #f0f0f0' }}>
+  <Box sx={{ p: { xs: 1.5, md: 3 }, borderBottom: '1px solid #f0f0f0' }}>
         <Typography variant="h6" gutterBottom sx={{ color: 'primary.main', fontWeight: 700, mb: 2 }}>
           📦 Inventario y Condiciones
         </Typography>
@@ -142,7 +142,7 @@ const MobileFormLayout = ({
       </Box>
       
       {/* Configuración de Precios */}
-      <Box sx={{ p: 3, borderBottom: '1px solid #f0f0f0' }}>
+  <Box sx={{ p: { xs: 1.5, md: 3 }, borderBottom: '1px solid #f0f0f0' }}>
         <Typography variant="h6" gutterBottom sx={{ color: 'primary.main', fontWeight: 700, mb: 2 }}>
           💰 Configuración de Precios
         </Typography>
@@ -172,7 +172,7 @@ const MobileFormLayout = ({
       </Box>
       
       {/* Regiones de Despacho */}
-      <Box sx={{ p: 3, borderBottom: '1px solid #f0f0f0' }}>
+  <Box sx={{ p: { xs: 1.5, md: 3 }, borderBottom: '1px solid #f0f0f0' }}>
         <Typography variant="h6" gutterBottom sx={{ color: 'primary.main', fontWeight: 700, mb: 2 }}>
           🚚 Regiones de Despacho
         </Typography>
@@ -188,7 +188,7 @@ const MobileFormLayout = ({
       </Box>
       
       {/* Imágenes del Producto */}
-      <Box sx={{ p: 3 }}> {/* Sin border-bottom en la última sección */}
+  <Box sx={{ p: { xs: 1.5, md: 3 } }}> {/* Sin border-bottom en la última sección */}
         <Typography variant="h6" gutterBottom sx={{ color: 'primary.main', fontWeight: 700, mb: 2 }}>
           📸 Imágenes del Producto
         </Typography>
@@ -735,7 +735,7 @@ const AddProduct = () => {
           {/* Header */}
           <Box sx={{ 
             mb: { xs: 2, md: 4 },
-            px: { xs: 0.5, md: 0 }, // 🔧 Reducido aún más para maximizar width
+            px: { xs: 0, md: 0 }, // 🔧 Sin padding horizontal en móvil
           }}>
             {isMobile ? (
               // 📱 Header Móvil - Botón volver separado encima

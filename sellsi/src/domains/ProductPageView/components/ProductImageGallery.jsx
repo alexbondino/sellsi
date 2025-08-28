@@ -66,7 +66,7 @@ const ProductImageGallery = ({
         justifyContent: 'flex-start',
         width: '100%',
         maxWidth: '100%',
-        px: { xs: 0, sm: 2, md: 4 }, // Sin padding horizontal en móvil
+  px: { xs: 0, sm: 0, md: 4 }, // Sin padding horizontal en móvil
         pt: 0,
         pb: 2,
       }}

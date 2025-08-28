@@ -525,7 +525,7 @@ const ProductHeader = React.memo(({
         {/* En móvil: Mostrar nombre primero */}
         {isMobile && (
           <Box sx={{ 
-            px: 2, 
+            px: 0, 
             display: 'flex', 
             flexDirection: 'column',
             alignItems: 'center', 
@@ -582,7 +582,7 @@ const ProductHeader = React.memo(({
             flexDirection: 'column',
             alignItems: 'flex-start',
             textAlign: 'left',
-            px: { xs: 2, md: 1 },
+            px: { xs: 0, md: 1 },
             width: { xs: '100%', md: '80%' },
             maxWidth: { xs: 'none', md: 580 },
             mx: { xs: 0, md: 0 },

@@ -8,6 +8,8 @@ import {
   ThemeProvider,
   CircularProgress,
   Skeleton,
+  useTheme,
+  useMediaQuery,
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import AddIcon from '@mui/icons-material/Add';
@@ -44,6 +46,9 @@ const ChartFallback = () => (
 
 const ProviderHome = () => {
   const navigate = useNavigate();
+
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
   // Modal de validación bancaria
   const {
@@ -140,7 +145,7 @@ const ProviderHome = () => {
             backgroundColor: 'background.default',
             minHeight: '100vh',
             pt: { xs: 4.5, md: 5 },
-            px: 3,
+            px: { xs: 0, md: 3 },
             pb: SPACING_BOTTOM_MAIN,
             ml: { xs: 0, md: 10, lg: 14, xl: 24 },
           }}
@@ -149,7 +154,7 @@ const ProviderHome = () => {
           <Button variant="contained" onClick={() => funcionQueNoExiste()}>
             Presióname
           </Button>
-          <Container maxWidth="xl" disableGutters>
+          <Container maxWidth={isMobile ? false : "xl"} disableGutters={isMobile ? true : false}>
             <Grid container spacing={3}>
               <Grid size={12}>
                 <Box sx={{ mb: 4 }}>
