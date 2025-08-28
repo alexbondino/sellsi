@@ -174,6 +174,10 @@ const ProductMarketplaceTable = memo(() => {
   // Estado de selección múltiple
   const [selectedProducts, setSelectedProducts] = useState(new Set());
 
+  // PAGINACIÓN (100 productos por página)
+  const PRODUCTS_PER_PAGE = 100;
+  const [currentPage, setCurrentPage] = useState(1);
+
   // Modal de confirmación para eliminar
   const [deleteModal, setDeleteModal] = useState({
     open: false,
@@ -413,11 +417,30 @@ const ProductMarketplaceTable = memo(() => {
 
   const handleSelectAll = useCallback((isSelected) => {
     if (isSelected) {
-      setSelectedProducts(new Set(filteredProducts.map(product => product.product_id)));
+      // Seleccionar solo los productos visibles de la página actual
+      setSelectedProducts(new Set(visibleProducts.map(product => product.product_id)));
     } else {
       setSelectedProducts(new Set());
     }
   }, [filteredProducts]);
+
+  // PAGINACIÓN: calcular páginas y productos visibles
+  const totalPages = useMemo(() => Math.max(1, Math.ceil((filteredProducts?.length || 0) / PRODUCTS_PER_PAGE)), [filteredProducts]);
+
+  useEffect(() => {
+    if (currentPage > totalPages) setCurrentPage(totalPages);
+    if (currentPage < 1) setCurrentPage(1);
+  }, [currentPage, totalPages]);
+
+  const startIndex = (currentPage - 1) * PRODUCTS_PER_PAGE;
+  const endIndex = startIndex + PRODUCTS_PER_PAGE;
+  const visibleProducts = useMemo(() => (filteredProducts || []).slice(startIndex, endIndex), [filteredProducts, startIndex, endIndex]);
+
+  const handlePageChange = useCallback((page) => {
+    const safe = Math.min(Math.max(1, page), totalPages);
+    setCurrentPage(safe);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [totalPages]);
 
   const openDeleteModal = (product) => {
     setDeleteModal({
@@ -775,7 +798,7 @@ const ProductMarketplaceTable = memo(() => {
           </TableRow>
         </TableHead>
         <TableBody>
-          {filteredProducts.map((product) => {
+          {visibleProducts.map((product) => {
             const productStatus = getProductStatus(product);
             const isSelected = selectedProducts.has(product.product_id);
 
@@ -931,6 +954,24 @@ const ProductMarketplaceTable = memo(() => {
           <Typography variant="h6" color="text.secondary">
             No se encontraron productos
           </Typography>
+        </Box>
+      )}
+
+      {/* Pagination controls */}
+      {filteredProducts && filteredProducts.length > PRODUCTS_PER_PAGE && (
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 1, py: 2, flexWrap: 'wrap' }}>
+          <Button variant="outlined" disabled={currentPage === 1} onClick={() => handlePageChange(currentPage - 1)} sx={{ minWidth: 'auto', px: 2, fontSize: '0.875rem' }}>‹ Anterior</Button>
+
+          {Array.from({ length: Math.min(7, totalPages) }, (_, i) => {
+            const page = Math.min(totalPages, Math.max(1, currentPage - 3 + i));
+            return (
+              <Button key={page} variant={page === currentPage ? 'contained' : 'outlined'} onClick={() => handlePageChange(page)} sx={{ minWidth: 40, fontSize: '0.875rem' }}>{page}</Button>
+            );
+          })}
+
+          <Button variant="outlined" disabled={currentPage === totalPages} onClick={() => handlePageChange(currentPage + 1)} sx={{ minWidth: 'auto', px: 2, fontSize: '0.875rem' }}>Siguiente ›</Button>
+
+          <Typography variant="body2" color="text.secondary" sx={{ ml: 2 }}>Página {currentPage} de {totalPages}</Typography>
         </Box>
       )}
     </TableContainer>
