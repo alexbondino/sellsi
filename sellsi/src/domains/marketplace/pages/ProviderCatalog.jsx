@@ -364,8 +364,8 @@ const ProviderCatalog = () => {
           width: '100%',
           // Prevenir desplazamiento horizontal al abrir dropdowns
           overflowX: 'hidden',
-          // Mantener scrollbar vertical para evitar shifts
-          overflowY: 'scroll',
+          // Mostrar scrollbar vertical solo cuando sea necesario
+          overflowY: 'auto',
         }}
       >
         <Box
@@ -811,28 +811,17 @@ const ProviderCatalog = () => {
             </Typography>
             
             {filteredProducts.length === 0 ? (
-              <Paper
-                elevation={1}
-                sx={{
-                  p: { xs: 2, md: 4 },
-                  textAlign: 'center',
-                  borderRadius: 2,
-                }}
-              >
+              <Paper elevation={1} sx={{ p: { xs: 2, md: 4 }, textAlign: 'center', borderRadius: 2 }}>
                 <Typography variant="h6" color="text.secondary">
                   {searchTerm || categoryFilter !== 'all' || priceOrder !== 'none'
-                    ? 'No se encontraron productos que coincidan con los filtros' 
+                    ? 'No se encontraron productos que coincidan con los filtros'
                     : 'Este proveedor no tiene productos disponibles en este momento'
                   }
                 </Typography>
                 {(searchTerm || categoryFilter !== 'all' || priceOrder !== 'none') && (
                   <Button
                     variant="outlined"
-                    onClick={() => {
-                      setSearchTerm('');
-                      setCategoryFilter('all');
-                      setPriceOrder('none');
-                    }}
+                    onClick={() => { setSearchTerm(''); setCategoryFilter('all'); setPriceOrder('none'); }}
                     sx={{ mt: 2 }}
                   >
                     Limpiar filtros
@@ -840,32 +829,28 @@ const ProviderCatalog = () => {
                 )}
               </Paper>
             ) : (
-              // Use same CSS Grid as ProductsSection to keep layout identical to marketplace
               <Box
                 sx={{
                   display: 'grid',
                   gridTemplateColumns: {
                     xs: 'repeat(2, 1fr)', // Móvil: 2 columnas
                     sm: 'repeat(2, 1fr)', // Tablet: 2 columnas
-                    md: 'repeat(4, 1fr)', // Desktop: 4 columnas
+                    md: 'repeat(4, 1fr)', // Desktop: 4 columnas flexibles
                     lg: 'repeat(4, 1fr)',
-                    xl: 'repeat(5, 1fr)',
+                    xl: 'repeat(4, 1fr)',
                   },
-                  gap: { xs: 1, sm: 1, md: 2, lg: 6, xl: 6 },
+                  // Separar gap en columnGap (lateral) y rowGap (vertical) para controlar solo espacio horizontal
+                  columnGap: { xs: 1, sm: 1, md: 2, lg: 0, xl: 4 },
+                  rowGap: { xs: 1, sm: 1, md: 2, lg: 4, xl: 4 },
                   width: '100%',
                   justifyItems: 'center',
+                  // Ajuste fino: desplazar la grilla ligeramente a la izquierda en pantallas mayores
+                  ml: { xs: 0, sm: 0, md: -2, lg: -3, xl: -5 },
                 }}
               >
                 {filteredProducts.map(product => (
-                  <Box
-                    key={product.id}
-                    sx={{ width: '100%', maxWidth: '240px' }}
-                  >
-                    <ProductCard
-                      product={product}
-                      type="buyer"
-                      onAddToCart={handleAddToCart}
-                    />
+                  <Box key={product.id} sx={{ width: '100%', maxWidth: '240px' }}>
+                    <ProductCard product={product} type="buyer" onAddToCart={handleAddToCart} />
                   </Box>
                 ))}
               </Box>
