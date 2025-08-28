@@ -20,6 +20,7 @@ import {
   IconButton,
   Tooltip,
   TextField,
+  Popover,
   Select,
   MenuItem,
   FormControl,
@@ -195,6 +196,102 @@ const ProductMarketplaceTable = memo(() => {
   const [operationLoading, setOperationLoading] = useState(false);
 
   const { showBanner } = useBanner();
+
+  // Copiar ID: estado para popovers y feedback de copiado
+  const [idAnchor, setIdAnchor] = useState(null);
+  const [copiedId, setCopiedId] = useState(false);
+  const idCopyTimerRef = React.useRef(null);
+  const [idOpenProductId, setIdOpenProductId] = useState(null);
+  const [userAnchor, setUserAnchor] = useState(null);
+  const [copiedUser, setCopiedUser] = useState(false);
+  const userCopyTimerRef = React.useRef(null);
+  const [userOpenProductId, setUserOpenProductId] = useState(null);
+
+  const handleOpenId = (event, productId) => {
+    setIdAnchor(event.currentTarget);
+    setIdOpenProductId(productId);
+  };
+  const handleCloseId = () => {
+    setIdAnchor(null);
+    setIdOpenProductId(null);
+    if (idCopyTimerRef.current) {
+      clearTimeout(idCopyTimerRef.current);
+      idCopyTimerRef.current = null;
+    }
+    setCopiedId(false);
+  };
+
+  const handleOpenUser = (event, productId) => {
+    setUserAnchor(event.currentTarget);
+    setUserOpenProductId(productId);
+  };
+  const handleCloseUser = () => {
+    setUserAnchor(null);
+    setUserOpenProductId(null);
+    if (userCopyTimerRef.current) {
+      clearTimeout(userCopyTimerRef.current);
+      userCopyTimerRef.current = null;
+    }
+    setCopiedUser(false);
+  };
+
+  const handleCopyId = async (text) => {
+    try {
+      if (!text) return;
+      await navigator.clipboard.writeText(text);
+      setCopiedId(true);
+      if (idCopyTimerRef.current) clearTimeout(idCopyTimerRef.current);
+      idCopyTimerRef.current = setTimeout(() => setCopiedId(false), 3000);
+    } catch (_) {}
+  };
+
+  const handleCopyUser = async (text) => {
+    try {
+      if (!text) return;
+      await navigator.clipboard.writeText(text);
+      setCopiedUser(true);
+      if (userCopyTimerRef.current) clearTimeout(userCopyTimerRef.current);
+      userCopyTimerRef.current = setTimeout(() => setCopiedUser(false), 3000);
+    } catch (_) {}
+  };
+
+  // Helper para mostrar precio en la tabla: soporta priceTiers y precio base (SIN negrita)
+  const formatCLP = (amount) => `$${Math.round(amount).toLocaleString('es-CL')}`;
+
+  const renderProductPrice = (product) => {
+    const priceTiers = product.priceTiers || product.price_tiers || [];
+
+    if (Array.isArray(priceTiers) && priceTiers.length > 0) {
+      const normalized = priceTiers
+        .map(t => Number(t.price ?? t.precio ?? t.precio_unit ?? 0))
+        .filter(p => !isNaN(p) && p > 0);
+
+      if (normalized.length > 0) {
+        const minPrice = Math.min(...normalized);
+        const maxPrice = Math.max(...normalized);
+        if (minPrice !== maxPrice) {
+          return (
+            <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 400, fontSize: 12, lineHeight: 1.1 }}>
+              {formatCLP(minPrice)} - {formatCLP(maxPrice)}
+            </Typography>
+          );
+        }
+        return (
+          <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 400, fontSize: 12, lineHeight: 1.1 }}>
+            {formatCLP(maxPrice)}
+          </Typography>
+        );
+      }
+    }
+
+    // Fallback a precio base del producto
+    const basePrice = product.price || product.precio || 0;
+    return (
+      <Typography component="span" variant="caption" color="text.secondary" sx={{ display: 'block', fontWeight: 400 }}>
+        {formatCLP(basePrice)}
+      </Typography>
+    );
+  };
 
   // ========================================
   // 🔧 EFECTOS
@@ -702,17 +799,42 @@ const ProductMarketplaceTable = memo(() => {
                       <Typography component="span" variant="body2" fontWeight="medium">
                         {product.product_name || 'N/A'}
                       </Typography>
-                      <Typography component="span" variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-                        ${product.price || 0}
-                      </Typography>
+                        {renderProductPrice(product)}
                     </Box>
                   </Box>
                 </TableCell>
 
                 <TableCell>
-                  <Typography variant="body2" color="text.secondary" sx={{ fontFamily: 'monospace' }}>
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ fontFamily: 'monospace', cursor: 'pointer' }}
+                    onClick={(e) => handleOpenId(e, product.product_id)}
+                  >
                     {product.product_id?.slice(0, 8)}...
                   </Typography>
+
+                  <Popover
+                    open={Boolean(idAnchor) && idOpenProductId === product.product_id}
+                    anchorEl={idAnchor}
+                    onClose={handleCloseId}
+                    anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+                    disableScrollLock
+                  >
+                    <Box sx={{ p: 2, minWidth: 300 }}>
+                      <TextField
+                        fullWidth
+                        size="small"
+                        value={product.product_id || ''}
+                        InputProps={{ readOnly: true, sx: { fontFamily: 'monospace' } }}
+                      />
+                      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1 }}>
+                        <Button size="small" variant="contained" onClick={() => handleCopyId(product.product_id)}>
+                          {copiedId ? 'Copiado' : 'Copiar'}
+                        </Button>
+                      </Box>
+                    </Box>
+                  </Popover>
                 </TableCell>
 
                 <TableCell>
@@ -722,9 +844,36 @@ const ProductMarketplaceTable = memo(() => {
                 </TableCell>
 
                 <TableCell>
-                  <Typography variant="body2" color="text.secondary" sx={{ fontFamily: 'monospace' }}>
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ fontFamily: 'monospace', cursor: 'pointer' }}
+                    onClick={(e) => handleOpenUser(e, product.product_id)}
+                  >
                     {product.user_id?.slice(0, 8)}...
                   </Typography>
+
+                  <Popover
+                    open={Boolean(userAnchor) && userOpenProductId === product.product_id}
+                    anchorEl={userAnchor}
+                    onClose={handleCloseUser}
+                    anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+                    disableScrollLock
+                  >
+                    <Box sx={{ p: 2, minWidth: 300 }}>
+                      <TextField
+                        fullWidth
+                        size="small"
+                        value={product.user_id || ''}
+                        InputProps={{ readOnly: true, sx: { fontFamily: 'monospace' } }}
+                      />
+                      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1 }}>
+                        <Button size="small" variant="contained" onClick={() => handleCopyUser(product.user_id)}>
+                          {copiedUser ? 'Copiado' : 'Copiar'}
+                        </Button>
+                      </Box>
+                    </Box>
+                  </Popover>
                 </TableCell>
 
                 <TableCell>

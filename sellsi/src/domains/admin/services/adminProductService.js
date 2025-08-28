@@ -128,6 +128,30 @@ export const getMarketplaceProducts = async (filters = {}) => {
       }
     }
 
+    // Obtener tramos de precio para los productos en lote para evitar consultas por producto
+    const productIds = availableProducts.map(p => p.productid)
+    let tiersMap = {}
+    if (productIds.length > 0) {
+      try {
+        const { data: tiersData, error: tiersError } = await supabase
+          .from('product_quantity_ranges')
+          .select('*')
+          .in('product_id', productIds)
+
+        if (!tiersError && Array.isArray(tiersData)) {
+          tiersMap = tiersData.reduce((acc, t) => {
+            const pid = t.product_id
+            if (!acc[pid]) acc[pid] = []
+            acc[pid].push(t)
+            return acc
+          }, {})
+        }
+      } catch (err) {
+        // No detener carga por fallos en tramos — caemos a precio base
+        console.warn('No se pudieron cargar price tiers en batch:', err)
+      }
+    }
+
     // Formatear datos para el componente
     const formattedData = availableProducts.map(product => {
       // Obtener imagen principal
@@ -158,6 +182,9 @@ export const getMarketplaceProducts = async (filters = {}) => {
         imagen: imagenPrincipal,
         thumbnail_url: thumbnailUrl,
         thumbnails: thumbnails,
+  // Añadir tramos de precio si existen (compatibilidad con UI)
+  priceTiers: tiersMap[product.productid] || tiersMap[String(product.productid)] || [],
+  price_tiers: tiersMap[product.productid] || tiersMap[String(product.productid)] || [],
         created_at: product.createddt
       }
     })

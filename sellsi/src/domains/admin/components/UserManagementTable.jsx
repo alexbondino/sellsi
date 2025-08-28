@@ -20,6 +20,7 @@ import {
   IconButton,
   Tooltip,
   TextField,
+  Popover,
   Select,
   MenuItem,
   FormControl,
@@ -189,6 +190,12 @@ const UserManagementTable = memo(() => {
   // Estado de selección múltiple
   const [selectedUsers, setSelectedUsers] = useState(new Set());
 
+  // Copiar ID: estado para popover y feedback de copiado
+  const [idAnchor, setIdAnchor] = useState(null);
+  const [copiedId, setCopiedId] = useState(false);
+  const idCopyTimerRef = React.useRef(null);
+  const [idOpenUserId, setIdOpenUserId] = useState(null);
+
   // Modales
   const [banModal, setBanModal] = useState({
     open: false,
@@ -338,6 +345,30 @@ const UserManagementTable = memo(() => {
       return newSet;
     });
   }, []);
+
+  const handleOpenId = (event, userId) => {
+    setIdAnchor(event.currentTarget);
+    setIdOpenUserId(userId);
+  };
+  const handleCloseId = () => {
+    setIdAnchor(null);
+    setIdOpenUserId(null);
+    if (idCopyTimerRef.current) {
+      clearTimeout(idCopyTimerRef.current);
+      idCopyTimerRef.current = null;
+    }
+    setCopiedId(false);
+  };
+
+  const handleCopyId = async (text) => {
+    try {
+      if (!text) return;
+      await navigator.clipboard.writeText(text);
+      setCopiedId(true);
+      if (idCopyTimerRef.current) clearTimeout(idCopyTimerRef.current);
+      idCopyTimerRef.current = setTimeout(() => setCopiedId(false), 3000);
+    } catch (_) {}
+  };
 
   const handleSelectAll = useCallback((isSelected) => {
     if (isSelected) {
@@ -794,9 +825,36 @@ const UserManagementTable = memo(() => {
                 </TableCell>
 
                 <TableCell>
-                  <Typography variant="body2" color="text.secondary" sx={{ fontFamily: 'monospace' }}>
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ fontFamily: 'monospace', cursor: 'pointer' }}
+                    onClick={(e) => handleOpenId(e, user.user_id)}
+                  >
                     {user.user_id?.slice(0, 8)}...
                   </Typography>
+
+                  <Popover
+                    open={Boolean(idAnchor) && idOpenUserId === user.user_id}
+                    anchorEl={idAnchor}
+                    onClose={handleCloseId}
+                    anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+                    disableScrollLock
+                  >
+                    <Box sx={{ p: 2, minWidth: 300 }}>
+                      <TextField
+                        fullWidth
+                        size="small"
+                        value={user.user_id || ''}
+                        InputProps={{ readOnly: true, sx: { fontFamily: 'monospace' } }}
+                      />
+                      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1 }}>
+                        <Button size="small" variant="contained" onClick={() => handleCopyId(user.user_id)}>
+                          {copiedId ? 'Copiado' : 'Copiar'}
+                        </Button>
+                      </Box>
+                    </Box>
+                  </Popover>
                 </TableCell>
 
                 <TableCell>
