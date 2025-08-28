@@ -9,6 +9,7 @@ import { useTheme } from '@mui/material/styles';
 import { useMediaQuery } from '@mui/material';
 import { useThumbnailQuery } from './useThumbnailQueries';
 import { CACHE_CONFIGS } from '../utils/queryClient';
+import { getProductImageUrl } from '../utils/getProductImageUrl';
 
 /**
  * Hook optimizado para thumbnails con React Query
@@ -42,54 +43,64 @@ export const useResponsiveThumbnail = (product) => {
   const thumbnailUrl = useMemo(() => {
     if (!product) return '/placeholder-product.jpg';
 
+    let selectedUrl = null;
+
     // Prioridad 1: Thumbnails del producto
     if (product.thumbnails && typeof product.thumbnails === 'object') {
       if (isMobile && product.thumbnails.mobile) {
-        return product.thumbnails.mobile;
-      }
-      if (isTablet && product.thumbnails.tablet) {
-        return product.thumbnails.tablet;
-      }
-      if (isDesktop && product.thumbnails.desktop) {
-        return product.thumbnails.desktop;
+        selectedUrl = product.thumbnails.mobile;
+      } else if (isTablet && product.thumbnails.tablet) {
+        selectedUrl = product.thumbnails.tablet;
+      } else if (isDesktop && product.thumbnails.desktop) {
+        selectedUrl = product.thumbnails.desktop;
       }
     }
 
     // Prioridad 2: Thumbnails de la base de datos (React Query)
-    if (dbThumbnails?.thumbnails && typeof dbThumbnails.thumbnails === 'object') {
+    if (!selectedUrl && dbThumbnails?.thumbnails && typeof dbThumbnails.thumbnails === 'object') {
       const thumbs = dbThumbnails.thumbnails;
-      if (isMobile && thumbs.mobile) return thumbs.mobile;
-      if (isTablet && thumbs.tablet) return thumbs.tablet;
-      if (isDesktop && thumbs.desktop) return thumbs.desktop;
+      if (isMobile && thumbs.mobile) {
+        selectedUrl = thumbs.mobile;
+      } else if (isTablet && thumbs.tablet) {
+        selectedUrl = thumbs.tablet;
+      } else if (isDesktop && thumbs.desktop) {
+        selectedUrl = thumbs.desktop;
+      }
     }
 
     // Prioridad 3: Construir URL responsive desde thumbnail_url existente
-    if (dbThumbnails?.thumbnail_url || product.thumbnail_url || product.thumbnailUrl) {
+    if (!selectedUrl && (dbThumbnails?.thumbnail_url || product.thumbnail_url || product.thumbnailUrl)) {
       const baseUrl = dbThumbnails?.thumbnail_url || product.thumbnail_url || product.thumbnailUrl;
       
       // Construir URL responsive basándose en el patrón de nomenclatura
       if (baseUrl.includes('_desktop_320x260.jpg')) {
         if (isMobile) {
-          return baseUrl.replace('_desktop_320x260.jpg', '_mobile_190x153.jpg');
+          selectedUrl = baseUrl.replace('_desktop_320x260.jpg', '_mobile_190x153.jpg');
+        } else if (isTablet) {
+          selectedUrl = baseUrl.replace('_desktop_320x260.jpg', '_tablet_300x230.jpg');
+        } else if (isDesktop) {
+          selectedUrl = baseUrl; // Ya es desktop
         }
-        if (isTablet) {
-          return baseUrl.replace('_desktop_320x260.jpg', '_tablet_300x230.jpg');
-        }
-        if (isDesktop) {
-          return baseUrl; // Ya es desktop
-        }
+      } else {
+        // Si no coincide con el patrón esperado, usar como está
+        selectedUrl = baseUrl;
       }
-      
-      // Si no coincide con el patrón esperado, usar como está
-      return baseUrl;
     }
 
-    // Prioridad 4: Imagen original
-    if (product.imagen) {
-      return product.imagen;
+    // Prioridad 4: FALLBACK A IMAGEN PRINCIPAL - NUEVA FUNCIONALIDAD
+    if (!selectedUrl) {
+      const mainImage = product.imagen || product.image;
+      if (mainImage && mainImage !== '/placeholder-product.jpg') {
+        selectedUrl = getProductImageUrl(mainImage, product, false);
+      }
     }
 
-    return '/placeholder-product.jpg';
+    // Prioridad 5: Imagen original como último fallback
+    if (!selectedUrl && product.imagen) {
+      selectedUrl = product.imagen;
+    }
+
+    return selectedUrl || '/placeholder-product.jpg';
   }, [product, isMobile, isTablet, isDesktop, dbThumbnails]);
 
   return {
@@ -154,7 +165,12 @@ export const useMinithumb = (product) => {
     // Fallbacks
     if (product.thumbnailUrl) return product.thumbnailUrl;
     if (product.thumbnail_url) return product.thumbnail_url;
-    if (product.imagen) return product.imagen;
+    
+    // FALLBACK A IMAGEN PRINCIPAL - NUEVA FUNCIONALIDAD
+    const mainImage = product.imagen || product.image;
+    if (mainImage && mainImage !== '/placeholder-product.jpg') {
+      return getProductImageUrl(mainImage, product, false);
+    }
 
     return '/placeholder-product.jpg';
   }, [product, dbThumbnails]);

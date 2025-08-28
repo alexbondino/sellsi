@@ -10,7 +10,7 @@ function asBool(v, def = false) {
 }
 
 export const FeatureFlags = {
-  ENABLE_PHASED_THUMB_EVENTS: asBool(env.VITE_ENABLE_PHASED_THUMB_EVENTS, true),
+  ENABLE_PHASED_THUMB_EVENTS: asBool(env.VITE_ENABLE_PHASED_THUMB_EVENTS, false), // 🔥 HOTFIX: Cambiado de true a false para asegurar eventos de actualización
   ENABLE_SIGNATURE_COLUMN: asBool(env.VITE_ENABLE_SIGNATURE_COLUMN, false),
   ENABLE_SIGNATURE_ENFORCE: asBool(env.VITE_ENABLE_SIGNATURE_ENFORCE, false),
   ENABLE_DYNAMIC_THUMB_TTL: asBool(env.VITE_ENABLE_DYNAMIC_THUMB_TTL, false),

@@ -58,6 +58,7 @@ import { convertDbRegionsToForm, convertFormRegionsToDb } from '../../../../util
 import { useProductForm } from '../../hooks/useProductForm';
 import { useProductValidation } from './hooks/useProductValidation';
 import { useProductPricingLogic } from './hooks/useProductPricingLogic';
+import { useThumbnailStatus } from '../../hooks/useThumbnailStatus'; // 🔥 NUEVO: Status tracking para thumbnails
 import { calculateProductEarnings } from '../../utils/centralizedCalculations'; // 🔧 USANDO NOMBRE CORRECTO
 import { ProductValidator } from '../../validators/ProductValidator';
 import { dashboardThemeCore } from '../../../../styles/dashboardThemeCore';
@@ -393,6 +394,10 @@ const AddProduct = () => {
   // 🔧 FIX 2C: Estado adicional para indicar éxito y navegación pendiente
   const [isNavigating, setIsNavigating] = useState(false);
 
+  // 🔥 NUEVO: Status tracking para thumbnails
+  const [createdProductId, setCreatedProductId] = useState(null);
+  const thumbnailStatus = useThumbnailStatus(createdProductId);
+
   // Estado shippingRegions para mapeo con Supabase
   const [shippingRegions, setShippingRegions] = useState([]);
 
@@ -467,6 +472,19 @@ const AddProduct = () => {
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isEditMode, editProductId]);
+
+  // 🔥 NUEVO: Warm-up de Edge Function para reducir cold starts
+  useEffect(() => {
+    if (!isEditMode && location.pathname === '/supplier/addproduct') {
+      // Warm-up call silencioso para preparar Edge Function
+      import('../../../../shared/services/supabase').then(({ default: supabase }) => {
+        fetch(`${supabase.supabaseUrl}/functions/v1/generate-thumbnail`, {
+          method: 'HEAD',
+          headers: { 'Authorization': `Bearer ${supabase.supabaseKey}` }
+        }).catch(() => {}) // Silent fail - solo para warm-up
+      }).catch(() => {})
+    }
+  }, [location.pathname, isEditMode]);
 
   // Validación en tiempo real solo si el campo fue tocado o tras submit
   useEffect(() => {
@@ -612,6 +630,13 @@ const AddProduct = () => {
       } else {
         // Para productos nuevos, usar el ID del producto creado
         productId = result.data?.productid || result.product?.productid || result.productId;
+        
+        // 🔥 NUEVO: Configurar tracking de thumbnails para productos nuevos
+        if (productId && formData.imagenes?.length > 0) {
+          setCreatedProductId(productId);
+          thumbnailStatus.markAsProcessing();
+          console.info('🔄 [AddProduct] Iniciando tracking de thumbnails para producto:', productId);
+        }
       }
 
       if (productId && shippingRegions.length > 0) {
@@ -769,6 +794,33 @@ const AddProduct = () => {
               </Box>
             )}
           </Box>
+
+          {/* 🔥 NUEVO: Status de Thumbnails */}
+          {!isEditMode && createdProductId && (
+            <Box sx={{ mb: 2 }}>
+              {thumbnailStatus.isProcessing && (
+                <Paper sx={{ p: 2, backgroundColor: '#fff3cd', border: '1px solid #ffeaa7' }}>
+                  <Typography variant="body2" color="text.secondary">
+                    📸 Procesando thumbnails... Esto puede tomar unos segundos.
+                  </Typography>
+                </Paper>
+              )}
+              {thumbnailStatus.isReady && (
+                <Paper sx={{ p: 2, backgroundColor: '#d4edda', border: '1px solid #c3e6cb' }}>
+                  <Typography variant="body2" color="success.main">
+                    ✅ Thumbnails generados exitosamente
+                  </Typography>
+                </Paper>
+              )}
+              {thumbnailStatus.hasError && (
+                <Paper sx={{ p: 2, backgroundColor: '#f8d7da', border: '1px solid #f5c6cb' }}>
+                  <Typography variant="body2" color="error.main">
+                    ⚠️ Error generando thumbnails: {thumbnailStatus.error}
+                  </Typography>
+                </Paper>
+              )}
+            </Box>
+          )}
 
           {/* Form container condicional */}
           {isMobile ? (

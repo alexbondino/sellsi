@@ -658,13 +658,22 @@ export class UploadService {
         // Skip thumbnail generation for WebP images since Edge Function doesn't support them
         if (actualFile.type !== 'image/webp') {
           try {
-            const thumbnailResult = await this.generateThumbnail(publicUrlData.publicUrl, productId, supplierId)
+            // 🔥 MEJORA: Usar generateThumbnailWithRetry en lugar de generateThumbnail
+            const thumbnailResult = await this.generateThumbnailWithRetry(publicUrlData.publicUrl, productId, supplierId, { maxRetries: 2 })
             if (thumbnailResult.success) {
               thumbnailUrl = thumbnailResult.thumbnailUrl
-      // Iniciar grace period porque se generarán variantes
-      try { StorageCleanupService.markRecentGeneration(productId, 45000) } catch(_){}
+              // Iniciar grace period porque se generarán variantes
+              try { StorageCleanupService.markRecentGeneration(productId, 45000) } catch(_){}
+              
+              // Log si fue necesario retry
+              if (thumbnailResult.wasRetried) {
+                console.info(`✅ [uploadImageWithThumbnail] Thumbnail generado exitosamente después de ${thumbnailResult.attemptUsed} intentos`)
+              }
+            } else {
+              console.warn(`⚠️ [uploadImageWithThumbnail] Falló generación de thumbnail después de ${thumbnailResult.attemptUsed} intentos:`, thumbnailResult.error)
             }
           } catch (thumbnailError) {
+            console.error('❌ [uploadImageWithThumbnail] Error crítico en generación de thumbnail:', thumbnailError)
             // Continue without thumbnail if generation fails
           }
         }
@@ -708,7 +717,59 @@ export class UploadService {
   }
 
   /**
-   * ✅ NUEVO: Generar thumbnail usando Edge Function (solo para imagen principal)
+   * ✅ NUEVO: Generar thumbnail con retry logic para mayor robustez
+   * @param {string} imageUrl - URL de la imagen original
+   * @param {string} productId - ID del producto
+   * @param {string} supplierId - ID del proveedor
+   * @param {object} options - { force, maxRetries }
+   * @returns {Promise<{success: boolean, thumbnailUrl?: string, error?: string}>}
+   */
+  static async generateThumbnailWithRetry(imageUrl, productId, supplierId, options = {}) {
+    const { force = false, maxRetries = 2 } = options;
+    
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        const result = await this.generateThumbnail(imageUrl, productId, supplierId, { force })
+        if (result.success) {
+          return {
+            ...result,
+            attemptUsed: attempt,
+            wasRetried: attempt > 1
+          }
+        }
+        
+        // Si falló pero no es el último intento, esperar antes de reintentar
+        if (attempt < maxRetries) {
+          const delay = Math.min(1000 * Math.pow(2, attempt), 3000) // 2s, 3s max
+          console.warn(`🔄 [generateThumbnailWithRetry] Intento ${attempt} falló, reintentando en ${delay}ms...`)
+          await new Promise(resolve => setTimeout(resolve, delay))
+        }
+      } catch (error) {
+        console.error(`❌ [generateThumbnailWithRetry] Error en intento ${attempt}:`, error.message)
+        if (attempt === maxRetries) {
+          return { 
+            success: false, 
+            error: `Max retries (${maxRetries}) exceeded: ${error.message}`,
+            attemptUsed: attempt
+          }
+        }
+        // Esperar antes del siguiente intento
+        if (attempt < maxRetries) {
+          const delay = Math.min(1000 * Math.pow(2, attempt), 3000)
+          await new Promise(resolve => setTimeout(resolve, delay))
+        }
+      }
+    }
+    
+    return { 
+      success: false, 
+      error: 'Max retries exceeded without success',
+      attemptUsed: maxRetries
+    }
+  }
+
+  /**
+   * ✅ ORIGINAL: Generar thumbnail usando Edge Function (solo para imagen principal)
    * @param {string} imageUrl - URL de la imagen original
    * @param {string} productId - ID del producto
    * @param {string} supplierId - ID del proveedor
@@ -808,9 +869,9 @@ export class UploadService {
       if (status === 404) {
         recordMetric('generation_start', { productId, reason: 'auto_repair_404' })
         this._dispatchPhase(productId, 'repair', { reason: 'thumbnail_404_detected' })
-        // Forzar regeneración (force flag en Edge)
-  const regen = await this.generateThumbnail(row.image_url, productId, supplierId, { force: true })
-  recordMetric('generation_result', { productId, outcome: regen?.success ? 'repair_forced_success' : 'repair_forced_failed' })
+        // 🔥 MEJORA: Forzar regeneración con retry logic para auto-repair
+        const regen = await this.generateThumbnailWithRetry(row.image_url, productId, supplierId, { force: true, maxRetries: 2 })
+        recordMetric('generation_result', { productId, outcome: regen?.success ? 'repair_forced_success' : 'repair_forced_failed' })
       }
     } catch (_) { /* noop */ }
   }
@@ -847,7 +908,8 @@ export class UploadService {
         }
         const hasDesktop = !!(mainRow && mainRow.thumbnails && mainRow.thumbnails.desktop && mainRow.thumbnail_url)
         if (!hasDesktop) {
-          const gen = await this.generateThumbnail(mainImageUrl, productId, supplierId)
+          // 🔥 MEJORA: Usar generateThumbnailWithRetry para la garantía de generación
+          const gen = await this.generateThumbnailWithRetry(mainImageUrl, productId, supplierId, { maxRetries: 1 })
           if (!gen.success) recordMetric('generation_error', { productId, attempt, error: gen.error })
         }
         if (attempt < BACKOFFS.length) await new Promise(r => setTimeout(r, BACKOFFS[attempt - 1]))

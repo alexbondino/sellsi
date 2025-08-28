@@ -1,333 +1,379 @@
-# 🔍 ANÁLISIS EXTREMADAMENTE PROFUNDO: Por qué se activó `supplier_parts_meta` en lugar de `status` en caso MONO SUPPLIER
+# ANÁLISIS PROFUNDO: RACE CONDITIONS Y VULNERABILIDADES EN GENERACIÓN DE THUMBNAILS
 
-## 📊 Resumen Ejecutivo
-En el caso analizado (orden `96a6febc-a43c-4702-946a-8da236bf44c7`), a pesar de ser un caso **MONO SUPPLIER** (solo 1 proveedor), el sistema actualizó la columna `supplier_parts_meta` en lugar de la columna global `status`, contradiciendo la expectativa de negocio. Este análisis profundiza en las causas técnicas de este comportamiento.
+## 📋 RESUMEN EJECUTIVO
+
+**Problema identificado:** En 2 de 20 productos creados rápidamente, no se generaron thumbnails automáticamente.
+
+**Diagnóstico:** Existen múltiples puntos de race conditions y vulnerabilidades que pueden causar que la función `generate-thumbnail` nunca se invoque cuando se crean productos rápidamente.
 
 ---
 
-## 🎯 Hallazgos Clave del Análisis
+## 🔍 ANÁLISIS DETALLADO CORREGIDO Y AMPLIADO
 
-### 🚨 PROBLEMA PRINCIPAL: Ausencia de Lógica Condicional Mono vs Multi
-El sistema **NO DISTINGUE** entre casos mono y multi-supplier en la capa de acciones. Todos los casos pasan por el mismo flujo de "parts" independientemente del número de proveedores.
+### 1. FLUJO ACTUAL DE CREACIÓN DE PRODUCTOS (REVISADO)
 
-### 📈 Evidencia del Caso Analizado
-```json
-{
-  "id": "96a6febc-a43c-4702-946a-8da236bf44c7",
-  "supplier_ids": ["20e7a348-66b6-4824-b059-2c67c5e6a49c"], // ✅ Solo 1 proveedor
-  "status": "pending", // ❌ NO SE ACTUALIZÓ
-  "supplier_parts_meta": {
-    "20e7a348-66b6-4824-b059-2c67c5e6a49c": {
-      "status": "accepted", // ✅ SÍ SE ACTUALIZÓ
-      "history": [...]
+```
+Usuario → handleSubmit() → submitForm() → mapFormToProduct() → createCompleteProduct()
+                                                                       ↓
+                                           createBasicProduct() + processInBackground() [NO AWAIT]
+                                                  ↓                         ↓
+                                           Producto creado              uploadImages()
+                                           ÉXITO INMEDIATO                    ↓
+                                                                   replaceAllProductImages()
+                                                                              ↓
+                                                                  uploadImageWithThumbnail() 
+                                                                     (solo imagen principal)
+                                                                              ↓
+                                                                     generateThumbnail()
+```
+
+**HALLAZGO CRÍTICO:** Tras revisar el código, encontré que mi análisis inicial fue **PARCIALMENTE INCORRECTO**. El problema es más específico:
+
+### 2. RACE CONDITIONS IDENTIFICADAS (ANÁLISIS CORREGIDO)
+
+#### 🚨 **RC-01: Fire-and-Forget Background Processing**
+**Ubicación:** `useProductBackground.js:214-220`
+```javascript
+// 2. Procesar elementos complejos en background SIN ESPERAR
+if (productData.imagenes?.length > 0 || 
+    productData.specifications?.length > 0 || 
+    productData.priceTiers?.length > 0) {
+  
+  // NO esperar - procesar verdaderamente en background
+  get().processProductInBackground(productId, productData, hooks)
+    .catch(error => {
+      set({ error: `Error procesando en background: ${error.message}` })
+    })
+}
+```
+
+**VERDADERO PROBLEMA:** La función `createCompleteProduct()` retorna inmediatamente SIN ESPERAR que las imágenes se procesen. Esto es **por diseño** pero crea vulnerabilidades:
+
+1. **No hay garantía de ejecución**: Si el usuario navega rápidamente, el Promise puede quedar "huérfano"
+2. **Estados inconsistentes**: El UI muestra "producto creado" pero las imágenes aún se procesan
+3. **Error silencioso**: Los errores se capturan pero solo se guardan en Zustand, no se muestran al usuario
+
+#### 🚨 **RC-02: Atomic Image Processing con Vulnerabilidades**
+**Ubicación:** `useProductImages.js:71-85`
+```javascript
+uploadImages: async (files, productId, supplierId, options = {}) => {
+  const { replaceExisting = true } = options // 🔥 Por defecto reemplazo atómico
+  
+  if (replaceExisting) {
+    uploadResult = await UploadService.replaceAllProductImages(files, productId, supplierId, { cleanup: true })
+  } else {
+    uploadResult = await UploadService.uploadMultipleImagesWithThumbnails(...)
+  }
+}
+```
+
+**PROBLEMA REAL:** El sistema usa `replaceAllProductImages()` que es **ATÓMICO** pero vulnerable en escenarios de navegación rápida:
+
+1. **Timeout sin retry**: Si `generateThumbnail()` tarda >30s, falla definitivamente
+2. **Request cancellation**: Si el usuario navega, fetch() se cancela automáticamente
+3. **Edge Function cold start**: Primer request puede tardar 2-5s, causando timeouts concurrentes
+
+#### 🚨 **RC-03: Feature Flag Control de Event System**
+**Ubicación:** `useProductBackground.js:108-118`
+```javascript
+// 🔥 NUEVO: COMUNICACIÓN INTELIGENTE EN LUGAR DE REFRESH BLOQUEADO
+if (result.success && crudHook && crudHook.refreshProduct) {
+  // Con phased events activos no emitimos eventos legacy ni forcemos refresh inmediato.
+  if (!FeatureFlags.ENABLE_PHASED_THUMB_EVENTS) {
+    // Modo legacy: aún se permite un evento directo simple.
+    window.dispatchEvent(new CustomEvent('productImagesReady', {
+      detail: { productId, imageCount: productData.imagenes?.length || 0, timestamp: Date.now() }
+    }))
+  }
+  // Pequeño refresh diferido sólo en modo legacy para sincronizar uiProducts.
+  if (!FeatureFlags.ENABLE_PHASED_THUMB_EVENTS) {
+    setTimeout(async () => { await crudHook.refreshProduct(productId) }, 100)
+  }
+}
+```
+
+**REVELACIÓN IMPORTANTE:** El sistema tiene **DOS MODOS DE COMUNICACIÓN**:
+- **Legacy Mode** (`ENABLE_PHASED_THUMB_EVENTS = false`): Usa eventos `productImagesReady` + refreshProduct
+- **Phased Mode** (`ENABLE_PHASED_THUMB_EVENTS = true`): Sistema más avanzado de fases
+
+**Problema con Feature Flags:** Si `ENABLE_PHASED_THUMB_EVENTS = true` (valor por defecto), **NO SE EMITEN EVENTOS** cuando las imágenes se procesan, causando que el UI no se actualice.
+
+#### 🚨 **RC-04: Edge Function Timeout sin Retry**
+**Ubicación:** `generate-thumbnail/index.ts:720-735`
+```javascript
+// Fetch image with timeout
+const controller = new AbortController();
+const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+
+try {
+  const imageResponse = await fetch(imageUrl, { 
+    signal: controller.signal,
+    headers: {
+      'User-Agent': 'Supabase-Edge-Function/1.0'
     }
-  }
-}
-```
-
----
-
-## 🔬 ANÁLISIS TÉCNICO DETALLADO
-
-### 1. 🎯 Flujo de Inicialización (Webhook `process-khipu-webhook`)
-
-**Ubicación:** `supabase/functions/process-khipu-webhook/index.ts` (líneas 224-249)
-
-```typescript
-// ❌ PROBLEMA: No filtra por cantidad de suppliers
-if (supplierIds.length) { // Cualquier cantidad >= 1
-  const now = new Date().toISOString();
-  const metaObj: Record<string, any> = {};
-  for (const sid of supplierIds) {
-    metaObj[sid] = { status: 'pending', history: [{ at: now, from: null, to: 'pending' }] };
-  }
-  const { error: metaErr } = await supabase
-    .from('orders')
-    .update({ supplier_parts_meta: metaObj, updated_at: new Date().toISOString() })
-    .eq('id', orderId)
-    .is('supplier_parts_meta', null);
-  // Inicializa SIEMPRE supplier_parts_meta si es NULL
-}
-```
-
-**✅ Comportamiento CONFIRMADO:** El webhook inicializa `supplier_parts_meta` para **CUALQUIER** orden con suppliers (`length >= 1`), sin distinguir mono vs multi. El caso analizado tenía 1 supplier, por lo que se inicializó `supplier_parts_meta` con un solo nodo.
-
-### 2. 🎯 Hook de Acciones del Proveedor
-
-**Ubicación:** `src/domains/supplier/hooks/useSupplierPartActions.js`
-
-```javascript
-const transition = useCallback(async (part, newStatus, extra = {}) => {
-  if (!part) return;
-  setUpdating(true); setError(null);
-  try {
-    const orderId = part.parent_order_id || part.order_id;
-    // ❌ PROBLEMA CRÍTICO: SIEMPRE usa la función parcial
-    const res = await orderService.updateSupplierPartStatus(orderId, part.supplier_id, newStatus, extra);
-    setUpdating(false);
-    return res;
-  } catch (e) {
-    setError(e.message || 'Error');
-    setUpdating(false);
-    throw e;
-  }
-}, [supplierId]);
-```
-
-**✅ Comportamiento CONFIRMADO:** El hook **SIEMPRE** llama a `updateSupplierPartStatus` (edge function) sin condicional alguna sobre la cantidad de suppliers. No existe ninguna lógica que detecte casos mono-supplier para usar `UpdateOrderStatus`.
-
-### 3. 🎯 Servicio de Órdenes
-
-**Ubicación:** `src/services/user/orderService.js` (líneas 177-199)
-
-```javascript
-async updateSupplierPartStatus(orderId, supplierId, newStatus, opts = {}) {
-  // ❌ PROBLEMA: Directa a edge function, sin lógica condicional
-  const { data, error } = await supabase.functions.invoke('update-supplier-part-status', {
-    body: { order_id: orderId, supplier_id: supplierId, new_status: newStatus, ...opts }
   });
-  // ❌ NO VERIFICA supplier_ids.length antes de decidir qué flujo usar
+  clearTimeout(timeoutId);
+```
+
+**PROBLEMA CRÍTICO:** La Edge Function tiene timeout de 30s **SIN RETRY LOGIC**. En escenarios de multiple productos:
+- Múltiples requests concurrentes pueden saturar la función
+- Cold starts acumulativos
+- Network latency variable
+
+#### 🚨 **RC-05: Request Abortion por Navegación**
+**UBICACIÓN IMPLÍCITA:** Comportamiento del navegador
+
+Cuando el usuario navega rápidamente:
+1. **Navigation cancellation**: Fetch requests activos se cancelan automáticamente
+2. **Promise chain breaking**: `processProductInBackground()` queda inconcluso
+3. **Silent failure**: No hay mecanismo para reactivar processing interrumpido
+
+### 3. VULNERABILIDADES ESPECÍFICAS (ANÁLISIS PROFUNDIZADO)
+
+#### 🔥 **V-01: Lack of Idempotency Protection**
+```javascript
+// generateThumbnail ya tiene idempotencia en Edge Function
+const allVariantsExist = !!(mainImage.thumbnails &&
+  mainImage.thumbnails.desktop &&
+  mainImage.thumbnails.tablet &&
+  mainImage.thumbnails.mobile &&
+  mainImage.thumbnails.minithumb &&
+  mainImage.thumbnail_url);
+
+if (!force && allVariantsExist && (!signatureMismatch || !ENABLE_SIGNATURE_ENFORCE || cooldownActive)) {
+  return Response.json({success: true, status: 'ok', message: 'Todas las variantes de thumbnails ya existen (idempotente)'})
 }
 ```
 
-**✅ Comportamiento observado:** El método **SIEMPRE** invoca la edge function parcial, sin detectar si es caso mono para usar `UpdateOrderStatus` en su lugar.
+**HALLAZGO:** La Edge Function **SÍ TIENE** protección de idempotencia, pero a nivel frontend **NO HAY RETRY** si falla la primera vez.
 
-### 4. 🎯 Edge Function `update-supplier-part-status`
-
-**Ubicación:** `supabase/functions/update-supplier-part-status/index.ts`
-
-```typescript
-// ❌ PROBLEMA CRÍTICO: Solo actualiza JSON, JAMÁS orders.status
-const { error: updErr } = await supabase
-  .from('orders')
-  .update({ supplier_parts_meta: meta, updated_at: now })
-  .eq('id', order_id);
-// ❌ NO HAY CÓDIGO que también actualice orders.status en caso mono
+#### 🔥 **V-02: Inconsistent State Management entre Modos**
+**Ubicación:** `featureFlags.js:13`
+```javascript
+ENABLE_PHASED_THUMB_EVENTS: asBool(env.VITE_ENABLE_PHASED_THUMB_EVENTS, true),
 ```
 
-**✅ Comportamiento CONFIRMADO:** La edge function **EXCLUSIVAMENTE** actualiza `supplier_parts_meta` y **NUNCA** toca la columna global `status`. Línea 118-122 confirma que solo actualiza `supplier_parts_meta` y `updated_at`.
+**PROBLEMA REAL:** Por defecto está en modo `phased` pero la implementación está incompleta:
+- En modo `phased` no se emiten eventos de actualización
+- El UI no se entera cuando terminan los thumbnails
+- Cache no se invalida apropiadamente
 
-### 7. 🎯 Overlay Visual en `splitOrderBySupplier`
-
-**Ubicación:** `src/domains/orders/shared/splitOrderBySupplier.js` (líneas 58-63 para mono-supplier)
-
+#### 🔥 **V-03: Grace Period Conflicts**
+**Ubicación:** `uploadService.js:664-665` y otros
 ```javascript
-// ✅ ENMASCARAMIENTO CRÍTICO: Aplica overlay para casos mono
-if (supplierMeta && typeof supplierMeta === 'object' && Object.keys(supplierMeta).length === 1) {
-  const onlyKey = Object.keys(supplierMeta)[0];
-  const node = supplierMeta[onlyKey] || {};
-  if (node.status) singlePart.status = getStatusDisplayName(node.status); // ❌ Oculta la divergencia
-  if (node.estimated_delivery_date) singlePart.estimated_delivery_date = node.estimated_delivery_date;
+// Iniciar grace period porque se generarán variantes
+try { StorageCleanupService.markRecentGeneration(productId, 45000) } catch(_){}
+
+// En otro lugar:
+setTimeout(()=>this._autoRepairIf404(productId, supplierId), 2000) // 2s
+```
+
+**PROBLEMA:** Múltiples grace periods y timers pueden solaparse, causando cleanup prematuro o verificaciones incorrectas.
+
+### 4. ESCENARIOS DE FALLO (REVISADOS CON EVIDENCIA)
+
+#### 📱 **Escenario A: Navegación Rápida con Phased Events**
+```
+Usuario crea Producto A → Background inicia → Usuario navega a "Mis Productos"
+                          ↓
+                    processProductInBackground() continúa
+                          ↓
+                    uploadImages() completa exitosamente
+                          ↓
+                    ❌ NO se emite evento (phased mode)
+                          ↓
+                    UI nunca se actualiza, thumbnails "no existen"
+```
+
+#### 📱 **Escenario B: Edge Function Cold Start Cascade**
+```
+Usuario 1 crea producto → Edge Function cold start (3-5s)
+Usuario 2 crea producto → Timeout esperando Edge Function
+Usuario 3 crea producto → Request queue overflow
+                          ↓
+                    2 de 3 productos fallan silenciosamente
+```
+
+#### 📱 **Escenario C: Network Interruption**
+```
+Usuario inicia creación → uploadImages() comienza → Network glitch (500ms)
+                          ↓
+                    fetch() timeout (30s)
+                          ↓
+                    ❌ generateThumbnail() falla definitivamente
+                          ↓
+                    producto creado sin thumbnails
+```
+
+### 5. EVIDENCIA EN EL CÓDIGO (ANÁLISIS PROFUNDIZADO)
+
+#### 🔍 **Logging y Debugging**
+```javascript
+// Edge Function tiene logging condicional
+const DEBUG_MODE = (Deno.env.get('DEBUG_MODE') || 'false') === 'true'
+const TRACE_MODE = (Deno.env.get('THUMBS_TRACE') || 'false') === 'true'
+```
+**Problema:** Por defecto, el logging está **DESHABILITADO** en producción, dificultando el debugging de fallos silenciosos.
+
+#### 🔍 **Absence of Retry Logic in Frontend**
+```javascript
+// uploadService.js:661 - Sin retry si falla
+const thumbnailResult = await this.generateThumbnail(publicUrlData.publicUrl, productId, supplierId)
+```
+**Hallazgo Crítico:** El frontend **NO TIENE** retry logic para `generateThumbnail()`. Si falla una vez, no se reintenta.
+
+#### 🔍 **Edge Function SÍ tiene Auto-repair**
+```javascript
+// uploadService.js:734-740
+setTimeout(()=>this._autoRepairIf404(productId, supplierId), 2000)
+
+static async _autoRepairIf404(productId, supplierId) {
+  // HEAD check
+  const resp = await fetch(row.thumbnail_url, { method: 'HEAD', signal: controller.signal })
+  if (status === 404) {
+    const regen = await this.generateThumbnail(row.image_url, productId, supplierId, { force: true })
+  }
+}
+```
+**Descubrimiento:** El sistema **SÍ TIENE** auto-repair, pero solo se ejecuta **2 segundos después** del upload y solo verifica 404s.
+
+#### 🔍 **Feature Flag Critical Impact**
+```javascript
+// featureFlags.js - Por defecto TRUE
+ENABLE_PHASED_THUMB_EVENTS: asBool(env.VITE_ENABLE_PHASED_THUMB_EVENTS, true),
+
+// useProductBackground.js - Eventos deshabilitados por defecto
+if (!FeatureFlags.ENABLE_PHASED_THUMB_EVENTS) {
+  // Solo se emite evento si flag está FALSE
+  window.dispatchEvent(new CustomEvent('productImagesReady', {...}))
 }
 ```
 
-**✅ Comportamiento CONFIRMADO:** Este overlay hace que la UI muestre el status de `supplier_parts_meta` como si fuera el status global, **enmascarando completamente la divergencia**. El proveedor ve "Aceptado" porque `splitOrderBySupplier` toma el valor del JSON y lo convierte a display mediante `getStatusDisplayName()`.
+**HALLAZGO FUNDAMENTAL:** El problema principal es que **por defecto** no se emiten eventos de actualización porque `ENABLE_PHASED_THUMB_EVENTS = true`, pero la implementación del sistema "phased" está incompleta.
 
----
+### 6. ROOT CAUSE ANALYSIS
 
-## 🎯 CADENA CAUSAL COMPLETA
+#### 🎯 **Causa Raíz Principal**
+El problema de los "2 productos sin thumbnails" **NO ES** principalmente por race conditions de concurrencia, sino por:
 
-| Paso | Componente | Acción | Resultado |
-|------|------------|---------|-----------|
-| 1 | `process-khipu-webhook` | Inicializa `supplier_parts_meta` para cualquier orden con suppliers >= 1 | ✅ Meta inicializada en mono (CONFIRMADO en líneas 224-249) |
-| 2 | `useSupplierPartActions` | Proveedor hace clic en "Aceptar" | ❌ SIEMPRE llama `updateSupplierPartStatus` (CONFIRMADO línea 19) |
-| 3 | `orderService.updateSupplierPartStatus` | Invoca edge function | ❌ No detecta mono para usar `UpdateOrderStatus` (CONFIRMADO líneas 177-199) |
-| 4 | `update-supplier-part-status` | Actualiza solo JSON | ❌ `orders.status` queda en `pending` (CONFIRMADO líneas 118-122) |
-| 5 | `orderService.getOrdersForSupplier` | Obtiene órdenes para proveedor | ✅ Usa `splitOrderBySupplier` (CONFIRMADO líneas 113-140) |
-| 6 | `splitOrderBySupplier` | Aplica overlay visual | ✅ UI muestra "Aceptado" pero fuente real sigue `pending` (CONFIRMADO líneas 58-63) |
+1. **Feature Flag Misconfiguration**: `ENABLE_PHASED_THUMB_EVENTS = true` desactiva eventos de actualización
+2. **Incomplete Phased Implementation**: El modo "phased" no está completamente implementado
+3. **No Frontend Retry**: Si `generateThumbnail()` falla una vez, no se reintenta
+4. **Silent Background Failures**: Errores en background no se propagan al usuario
 
----
-
-## 🚨 PROBLEMAS ARQUITECTÓNICOS IDENTIFICADOS
-
-### 1. **Falta de Estrategia Condicional**
-- ❌ No existe lógica para detectar `supplier_ids.length === 1`
-- ❌ No hay rama que use `UpdateOrderStatus` para casos mono
-- ❌ El sistema trata todos los casos como multi-supplier
-
-### 2. **Divergencia de Fuentes de Verdad**
-- ❌ `orders.status = "pending"` (fuente real)
-- ✅ `supplier_parts_meta.status = "accepted"` (overlay que enmascare)
-- ❌ Dos estados contradictorios para la misma orden
-
-### 3. **Overlay Engañoso**
-- ✅ `splitOrderBySupplier` oculta el problema en UI
-- ❌ Reportes y queries directas a BD muestran `pending`
-- ❌ Inconsistencia silenciosa entre capas
-
-### 4. **Bypass de Validaciones Globales**
-- ❌ `OrderStatusService` no se aplica en flujo parcial
-- ❌ Transiciones globales no se validan
-- ❌ Notificaciones globales pueden fallar
-
----
-
-## 🎯 COMPARACIÓN: LO QUE DEBERÍA PASAR vs LO QUE PASA
-
-### ✅ **Comportamiento Esperado (Mono Supplier)**
-```javascript
-// Lógica condicional sugerida
-if (order.supplier_ids.length === 1) {
-  // Caso MONO: usar flujo global
-  await UpdateOrderStatus(orderId, newStatus);
-} else {
-  // Caso MULTI: usar flujo parcial
-  await updateSupplierPartStatus(orderId, supplierId, newStatus);
-}
+#### 🎯 **Escenario Más Probable**
+```
+Usuario crea producto → uploadImages() ejecuta correctamente
+                        ↓
+                  generateThumbnail() falla (timeout, cold start, network)
+                        ↓
+                  ❌ No hay retry en frontend
+                        ↓
+                  ❌ No se emite evento (phased mode)
+                        ↓
+                  Usuario ve producto "sin thumbnails"
+                        ↓
+                  Usuario reintenta → Edge Function idempotencia funciona → Thumbnails aparecen
 ```
 
-### ❌ **Comportamiento Actual**
+### 7. SOLUCIONES CORREGIDAS Y PRIORIZADAS
+
+#### ✅ **Solución 1: Fix Feature Flag Mode (CRÍTICO)**
 ```javascript
-// SIEMPRE usa flujo parcial
-await updateSupplierPartStatus(orderId, supplierId, newStatus);
-```
+// En featureFlags.js - Cambiar default temporalmente
+ENABLE_PHASED_THUMB_EVENTS: asBool(env.VITE_ENABLE_PHASED_THUMB_EVENTS, false), // era true
 
----
-
-## 🛠️ SOLUCIÓN RECOMENDADA
-
-### **Opción 1: Implementar Lógica Condicional en Hook de Acciones**
-
-**Ubicación:** `src/domains/supplier/hooks/useSupplierPartActions.js`
-
-```javascript
-const transition = useCallback(async (part, newStatus, extra = {}) => {
-  if (!part) return;
-  setUpdating(true); setError(null);
+// O completar implementación phased en useProductBackground.js
+if (result.success && crudHook && crudHook.refreshProduct) {
+  // Siempre emitir evento independiente del modo
+  window.dispatchEvent(new CustomEvent('productImagesReady', {
+    detail: { productId, imageCount: productData.imagenes?.length || 0, timestamp: Date.now() }
+  }))
   
-  try {
-    const orderId = part.parent_order_id || part.order_id;
-    
-    // 🔥 NUEVA LÓGICA: Detectar mono vs multi
-    const suppliers = part.supplier_ids || await getSupplierIds(orderId);
-    
-    if (suppliers.length === 1) {
-      // ✅ MONO: Usar flujo global
-      const { UpdateOrderStatus } = await import('../../orders/application/commands/UpdateOrderStatus');
-      const res = await UpdateOrderStatus(orderId, newStatus, extra);
+  if (!FeatureFlags.ENABLE_PHASED_THUMB_EVENTS) {
+    setTimeout(async () => { await crudHook.refreshProduct(productId) }, 100)
+  }
+}
+```
+
+#### ✅ **Solución 2: Frontend Retry Logic (ALTO)**
+```javascript
+// En uploadService.js
+static async generateThumbnailWithRetry(imageUrl, productId, supplierId, maxRetries = 2) {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const result = await this.generateThumbnail(imageUrl, productId, supplierId)
+      if (result.success) return result
       
-      // 📌 Opcional: Sincronizar meta para consistencia visual
-      if (part.supplier_parts_meta?.[part.supplier_id]) {
-        await orderService.updateSupplierPartStatus(orderId, part.supplier_id, newStatus, { 
-          ...extra, 
-          mirrorOnly: true 
-        });
+      if (attempt < maxRetries) {
+        const delay = Math.min(1000 * Math.pow(2, attempt), 3000) // 2s, 3s max
+        await new Promise(resolve => setTimeout(resolve, delay))
       }
-      
-      return res;
-    } else {
-      // ✅ MULTI: Usar flujo parcial (actual)
-      return await orderService.updateSupplierPartStatus(orderId, part.supplier_id, newStatus, extra);
+    } catch (error) {
+      if (attempt === maxRetries) throw error
     }
-  } catch (e) {
-    setError(e.message || 'Error');
-    setUpdating(false);
-    throw e;
   }
-}, [supplierId]);
-```
-
-### **Opción 2: Modificar `orderService.updateSupplierPartStatus`**
-
-```javascript
-async updateSupplierPartStatus(orderId, supplierId, newStatus, opts = {}) {
-  // 🔥 NUEVA LÓGICA: Detectar mono supplier
-  const { data: orderData } = await supabase
-    .from('orders')
-    .select('supplier_ids')
-    .eq('id', orderId)
-    .single();
-    
-  if (orderData?.supplier_ids?.length === 1) {
-    // ✅ MONO: Delegar a comando global
-    const { UpdateOrderStatus } = await import('../domains/orders/application/commands/UpdateOrderStatus');
-    return await UpdateOrderStatus(orderId, newStatus, opts);
-  }
-  
-  // ✅ MULTI: Flujo actual (edge function)
-  return await this.invokeSupplierPartEdgeFunction(orderId, supplierId, newStatus, opts);
+  return { success: false, error: 'Max retries exceeded' }
 }
 ```
 
----
+#### ✅ **Solución 3: Status Tracking and User Feedback (MEDIO)**
+```javascript
+// En AddProduct.jsx - Mostrar estado de thumbnails
+const [thumbnailStatus, setThumbnailStatus] = useState('pending')
 
-## 📊 IMPACTO Y VALIDACIÓN
+useEffect(() => {
+  const handleThumbnailReady = (event) => {
+    if (event.detail.productId === result.data.productid) {
+      setThumbnailStatus('ready')
+    }
+  }
+  
+  window.addEventListener('productImagesReady', handleThumbnailReady)
+  return () => window.removeEventListener('productImagesReady', handleThumbnailReady)
+}, [])
+```
 
-### **Casos de Prueba Requeridos**
-
-1. **✅ Mono Supplier - Aceptar**
-   - `orders.status` debe cambiar a `accepted`
-   - `supplier_parts_meta` opcional (consistente)
-
-2. **✅ Mono Supplier - Rechazar**
-   - `orders.status` debe cambiar a `rejected`
-   - No debe quedar divergencia
-
-3. **✅ Multi Supplier - Parcial**
-   - `orders.status` permanece `pending`
-   - Solo el nodo específico cambia
-
-4. **✅ Multi Supplier - Completo**
-   - Todos los nodos cambian
-   - `orders.status` potencialmente derivado
-
-### **Métricas de Éxito**
-- ❌ **Antes:** Divergencia status global vs meta
-- ✅ **Después:** Consistencia mono + flexibilidad multi
-- ✅ **Impacto:** Cero regresiones en casos multi existentes
-
----
-
-## 🎯 CONCLUSIÓN
-
-El problema es **arquitectónico, no técnico**. El sistema fue diseñado para manejar múltiples proveedores pero se aplica indiscriminadamente a casos mono-supplier, violando el principio de **fuente única de verdad**.
-
-La **solución mínima** es implementar lógica condicional en la capa de acciones para detectar casos mono y usar el flujo global (`UpdateOrderStatus`) preservando la infraestructura multi-supplier existente.
-
-**Este no es un bug aislado sino una consecuencia directa de la ausencia de una estrategia diferenciada mono vs multi en la arquitectura de estados de órdenes.**
+#### ✅ **Solución 4: Edge Function Warming (BAJO)**
+```javascript
+// Warm-up Edge Function durante navegación a AddProduct
+useEffect(() => {
+  if (location.pathname === '/supplier/addproduct') {
+    // Warm-up call
+    fetch('/functions/v1/generate-thumbnail', {
+      method: 'HEAD',
+      headers: { 'Authorization': `Bearer ${token}` }
+    }).catch(() => {}) // Silent fail
+  }
+}, [location.pathname])
+```
 
 ---
 
-## 🔍 VERIFICACIÓN EXHAUSTIVA COMPLETADA
+## 🎯 PRIORIDAD DE IMPLEMENTACIÓN (REVISADA)
 
-### ✅ **Confirmaciones de Análisis Realizadas**
+1. **CRÍTICO** (Fix inmediato): Corregir feature flag `ENABLE_PHASED_THUMB_EVENTS` o completar implementación phased
+2. **ALTO** (1-2 días): Implementar retry logic en frontend para `generateThumbnail()`  
+3. **MEDIO** (3-5 días): Agregar status tracking y feedback visual al usuario
+4. **BAJO** (1-2 semanas): Edge Function warming y métricas avanzadas
 
-1. **✅ Webhook Initialization:** Verificado en `process-khipu-webhook/index.ts` líneas 224-249
-   - Confirma inicialización universal de `supplier_parts_meta` para cualquier orden con suppliers ≥ 1
+---
 
-2. **✅ Hook Actions:** Verificado en `useSupplierPartActions.js` líneas 17-26  
-   - Confirma ausencia total de lógica condicional mono vs multi
+## 🔍 CONCLUSIÓN FINAL (ANÁLISIS CORREGIDO)
 
-3. **✅ Service Layer:** Verificado en `orderService.js` líneas 177-199
-   - Confirma llamada directa a edge function sin detección de cardinalidad
+Tras el análisis profundo, la **causa raíz más probable** de los 2 productos sin thumbnails **NO ES** principalmente race conditions de concurrencia, sino una **combinación de configuration issues y failure handling**:
 
-4. **✅ Edge Function:** Verificado en `update-supplier-part-status/index.ts` líneas 118-122
-   - Confirma actualización exclusiva de JSON, nunca `orders.status`
+### Factores Principales:
+1. **Feature Flag Issue**: `ENABLE_PHASED_THUMB_EVENTS = true` desactiva eventos de actualización, pero la implementación phased está incompleta
+2. **No Frontend Retry**: Si `generateThumbnail()` falla por timeout/cold start, no se reintenta automáticamente
+3. **Silent Background Processing**: Los errores en background no se comunican efectivamente al usuario
+4. **Timing Sensitivity**: Edge Function cold starts + network latency pueden causar timeouts ocasionales
 
-5. **✅ UI Data Flow:** Verificado en `orderService.getOrdersForSupplier` líneas 70-150
-   - Confirma uso de `splitOrderBySupplier` que aplica overlay visual
+### Escenario Más Probable:
+Los 2 productos fallaron porque:
+1. `generateThumbnail()` falló silenciosamente (timeout o cold start)
+2. No se emitieron eventos de actualización (phased mode incompleto)
+3. No hubo retry automático
+4. Cuando el usuario reintentó manualmente, la idempotencia de Edge Function funcionó correctamente
 
-6. **✅ Visual Overlay:** Verificado en `splitOrderBySupplier.js` líneas 58-63  
-   - Confirma enmascaramiento de divergencia en casos mono-supplier
-
-7. **✅ UI Actions:** Verificado en `MyOrdersPage.jsx` líneas 175-190
-   - Confirma uso exclusivo de `partActions` sin branching condicional
-
-### 🎯 **Validación del Caso Específico**
-
-**Orden:** `96a6febc-a43c-4702-946a-8da236bf44c7`
-- ✅ **Mono Supplier Confirmado:** `supplier_ids: ["20e7a348-66b6-4824-b059-2c67c5e6a49c"]` (1 proveedor)
-- ❌ **Status Global:** `"status": "pending"` (NO actualizado)  
-- ✅ **Status Parcial:** `"supplier_parts_meta": { "20e7a348...": { "status": "accepted" } }` (SÍ actualizado)
-- ✅ **Divergencia Confirmada:** Dos fuentes de verdad contradictorias
-
-### 📊 **Conclusión de Verificación**
-
-**El análisis es 100% CORRECTO.** El problema está exactamente donde se identificó: 
-
-1. **Arquitectura Universal:** Sistema trata todos los casos como multi-supplier
-2. **Ausencia de Branching:** No existe lógica condicional mono vs multi  
-3. **Overlay Engañoso:** `splitOrderBySupplier` enmascara la divergencia en UI
-4. **Fuentes Contradictorias:** `orders.status` vs `supplier_parts_meta.status`
-
-La **solución recomendada** de implementar lógica condicional en el hook de acciones es la correcta y mínimamente invasiva.
+**Recomendación inmediata:** Implementar **Solución 1** (feature flag fix) como hotfix temporal, seguido de **Solución 2** (retry logic) como fix permanente.

@@ -101,16 +101,14 @@ const useProductBackground = create((set, get) => ({
         
         
         
-        // 🔥 NUEVO: COMUNICACIÓN INTELIGENTE EN LUGAR DE REFRESH BLOQUEADO
+        // 🔥 MEJORA: COMUNICACIÓN ROBUSTA CON FALLBACK A EVENTOS LEGACY
         if (result.success && crudHook && crudHook.refreshProduct) {
-          // Con phased events activos no emitimos eventos legacy ni forcemos refresh inmediato.
-          if (!FeatureFlags.ENABLE_PHASED_THUMB_EVENTS) {
-            // Modo legacy: aún se permite un evento directo simple.
-            window.dispatchEvent(new CustomEvent('productImagesReady', {
-              detail: { productId, imageCount: productData.imagenes?.length || 0, timestamp: Date.now() }
-            }))
-          }
-          // Pequeño refresh diferido sólo en modo legacy para sincronizar uiProducts.
+          // SIEMPRE emitir evento independiente del modo (fix crítico)
+          window.dispatchEvent(new CustomEvent('productImagesReady', {
+            detail: { productId, imageCount: productData.imagenes?.length || 0, timestamp: Date.now() }
+          }))
+          
+          // Refresh diferido solo en modo legacy para mantener compatibilidad
           if (!FeatureFlags.ENABLE_PHASED_THUMB_EVENTS) {
             setTimeout(async () => { await crudHook.refreshProduct(productId) }, 100)
           }
@@ -209,7 +207,7 @@ const useProductBackground = create((set, get) => ({
 
       const productId = createResult.data.productid
 
-      // 2. Procesar elementos complejos en background SIN ESPERAR
+      // 2. Procesar elementos complejos en background SIN ESPERAR pero con mejor error handling
       if (productData.imagenes?.length > 0 || 
           productData.specifications?.length > 0 || 
           productData.priceTiers?.length > 0) {
@@ -217,7 +215,24 @@ const useProductBackground = create((set, get) => ({
         // NO esperar - procesar verdaderamente en background
         get().processProductInBackground(productId, productData, hooks)
           .catch(error => {
-            set({ error: `Error procesando en background: ${error.message}` })
+            console.error('🔥 [createCompleteProduct] Error crítico en background processing:', {
+              productId,
+              error: error.message,
+              stack: error.stack,
+              hasImages: !!productData.imagenes?.length,
+              hasSpecs: !!productData.specifications?.length,
+              hasTiers: !!productData.priceTiers?.length
+            })
+            // 🔥 MEJORA: Error más específico y emitir evento de error
+            const errorMsg = `Error procesando en background: ${error.message}`
+            set({ error: errorMsg })
+            
+            // Emitir evento de error para que el UI pueda mostrar feedback
+            if (typeof window !== 'undefined') {
+              window.dispatchEvent(new CustomEvent('productBackgroundError', {
+                detail: { productId, error: errorMsg, timestamp: Date.now() }
+              }))
+            }
           })
       }
 

@@ -193,6 +193,7 @@ class ThumbnailCacheService {
           if (exists) {
             return this.addCacheBuster(thumbnailUrl);
           } else {
+            // Si el thumbnail no existe, invalidar cache pero continuar con fallbacks
             this.invalidateProductCache(productId);
           }
         }
@@ -205,12 +206,13 @@ class ThumbnailCacheService {
         if (exists) {
           return this.addCacheBuster(thumbnailData[size]);
         } else {
+          // Si el thumbnail de BD no existe, invalidar cache pero continuar
           this.invalidateProductCache(productId);
         }
       }
 
-      // 3. Construir desde imagen original
-      if (product.imagen) {
+      // 3. Construir desde imagen original para minithumb
+      if (size === 'minithumb' && product.imagen) {
         const constructedUrl = this.buildMinithumbUrl(product.imagen);
         if (constructedUrl) {
           const exists = await this.verifyThumbnailExists(constructedUrl);
@@ -220,11 +222,19 @@ class ThumbnailCacheService {
         }
       }
 
-      // 4. Fallbacks
+      // 4. FALLBACK DIRECTO A IMAGEN PRINCIPAL - FUNCIONALIDAD PRINCIPAL NUEVA
+      const mainImage = product.imagen || product.image;
+      if (mainImage && mainImage !== '/placeholder-product.jpg') {
+        const exists = await this.verifyThumbnailExists(mainImage);
+        if (exists) {
+          return this.addCacheBuster(mainImage);
+        }
+      }
+
+      // 5. Fallbacks adicionales (thumbnail_url, etc.)
       const fallbacks = [
         product.thumbnail_url,
-        product.thumbnailUrl,
-        product.imagen
+        product.thumbnailUrl
       ].filter(Boolean);
 
       for (const fallbackUrl of fallbacks) {
@@ -233,9 +243,16 @@ class ThumbnailCacheService {
           return this.addCacheBuster(fallbackUrl);
         }
       }
+      
+      // 6. Último recurso: placeholder
       return '/placeholder-product.jpg';
 
     } catch (error) {
+      // En caso de error, intentar imagen principal como último recurso
+      const mainImage = product.imagen || product.image;
+      if (mainImage && mainImage !== '/placeholder-product.jpg') {
+        return this.addCacheBuster(mainImage);
+      }
       return '/placeholder-product.jpg';
     }
   }
