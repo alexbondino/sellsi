@@ -31,7 +31,8 @@ const BillingInfoSection = ({
   onFocusSensitive,
   onBlurSensitive,
   showBilling = true,  // Nueva prop para controlar visibilidad
-  showUpdateButton = true  // Nueva prop para controlar el botón
+  showUpdateButton = true,  // Nueva prop para controlar el botón
+  showErrors = false // Nuevo: mostrar errores cuando validación falle
 }) => {
   
   const handleRegionChange = (event) => {
@@ -43,6 +44,9 @@ const BillingInfoSection = ({
   if (!showBilling) {
     return null;
   }
+
+  const businessNameFilled = !!(formData.businessName && formData.businessName.trim() !== '');
+  const shouldShowError = (fieldValue) => showErrors && businessNameFilled && (!fieldValue || String(fieldValue).trim() === '');
 
   return (
     <Box sx={{ p: 3, height: 'fit-content' }}>
@@ -79,9 +83,8 @@ const BillingInfoSection = ({
           fullWidth
           variant="outlined"
           size="small"
-          error={!validateRut(formData.billingRut)}
-          helperText={!validateRut(formData.billingRut) ? 'Formato de RUT inválido' : ''}
-
+          error={(!validateRut(formData.billingRut)) || shouldShowError(formData.billingRut)}
+          helperText={!validateRut(formData.billingRut) ? 'Formato de RUT inválido' : (shouldShowError(formData.billingRut) ? 'Obligatorio' : '')}
         />
         
         <TextField
@@ -91,6 +94,8 @@ const BillingInfoSection = ({
           fullWidth
           variant="outlined"
           size="small"
+          error={shouldShowError(formData.businessLine)}
+          helperText={shouldShowError(formData.businessLine) ? 'Obligatorio' : ''}
         />
         
         <TextField
@@ -100,9 +105,11 @@ const BillingInfoSection = ({
           fullWidth
           variant="outlined"
           size="small"
+          error={shouldShowError(formData.billingAddress)}
+          helperText={shouldShowError(formData.billingAddress) ? 'Obligatorio' : ''}
         />
         
-        <FormControl fullWidth size="small">
+  <FormControl fullWidth size="small" error={shouldShowError(formData.billingRegion)}>
           <InputLabel>Región</InputLabel>
           <Select
             value={formData.billingRegion || ''}
@@ -134,9 +141,9 @@ const BillingInfoSection = ({
               </MenuItem>
             ))}
           </Select>
-        </FormControl>
+  </FormControl>
         
-        <FormControl fullWidth size="small" disabled={!formData.billingRegion}>
+  <FormControl fullWidth size="small" disabled={!formData.billingRegion} error={shouldShowError(formData.billingCommune)}>
           <InputLabel>Comuna</InputLabel>
           <Select
             value={formData.billingCommune || ''}
@@ -168,6 +175,9 @@ const BillingInfoSection = ({
               </MenuItem>
             ))}
           </Select>
+          {shouldShowError(formData.billingCommune) ? (
+              <Typography variant="caption" color="error">Obligatoria</Typography>
+            ) : null}
         </FormControl>
         
         {/* Botón Actualizar - Solo se muestra si showUpdateButton es true */}

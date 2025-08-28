@@ -269,12 +269,17 @@ const Profile = ({ userProfile: initialUserProfile, onUpdateProfile: externalUpd
 
   // Mostrar errores de shipping cuando el usuario intenta actualizar sin completar campos obligatorios
   const [showShippingErrors, setShowShippingErrors] = useState(false);
+  // Mostrar errores de billing (nueva lógica condicionada por businessName)
+  const [showBillingErrors, setShowBillingErrors] = useState(false);
 
   // Wrapper para updateField que limpia errores al editar campos de envío
   const handleFieldChange = (field, value) => {
     updateField(field, value);
     if (field.startsWith('shipping')) {
       setShowShippingErrors(false);
+    }
+    if (field.startsWith('billing') || field === 'businessName' || field === 'businessLine') {
+      setShowBillingErrors(false);
     }
   };
 
@@ -300,7 +305,7 @@ const Profile = ({ userProfile: initialUserProfile, onUpdateProfile: externalUpd
       delete dataToUpdate.logo_url;
 
       console.log('📤 Datos finales a enviar:', dataToUpdate);
-      // Validación adicional: si existe región, comuna y dirección son obligatorios
+      // Validación Shipping: si existe región, comuna y dirección son obligatorios
       const regionValue = formData?.shippingRegion;
       const communeValue = formData?.shippingCommune;
       const addressValue = formData?.shippingAddress;
@@ -313,6 +318,23 @@ const Profile = ({ userProfile: initialUserProfile, onUpdateProfile: externalUpd
         showBanner({ message: 'Por favor completa Comuna y Dirección de Envío para actualizar el perfil.', severity: 'error', duration: 6000 });
         setLoading(false);
         return;
+      }
+
+      // Validación Billing: si Razón Social (businessName) está rellenada, entonces TODOS los campos de facturación obligatorios deben estar presentes
+      const businessNameFilled = formData?.businessName && formData.businessName.trim() !== '';
+      if (businessNameFilled) {
+        const billingRut = formData?.billingRut;
+        const businessLine = formData?.businessLine;
+        const billingAddress = formData?.billingAddress;
+        const billingRegion = formData?.billingRegion;
+        const billingCommune = formData?.billingCommune;
+        const anyMissing = [billingRut, businessLine, billingAddress, billingRegion, billingCommune].some(v => !v || String(v).trim() === '');
+        if (anyMissing) {
+          setShowBillingErrors(true);
+          showBanner({ message: 'Completa todos los campos de Facturación para actualizar (RUT, Giro, Dirección, Región, Comuna).', severity: 'error', duration: 6000 });
+          setLoading(false);
+          return;
+        }
       }
       await handleUpdateProfile(dataToUpdate);
       updateInitialData(); // Actualizar datos iniciales en lugar de resetear
@@ -696,6 +718,7 @@ const Profile = ({ userProfile: initialUserProfile, onUpdateProfile: externalUpd
             onBlurSensitive={handleSensitiveBlur}
             showBilling={true}
             showUpdateButton={false}
+            showErrors={showBillingErrors}
           />
         </Box>
         {/* Botón Actualizar al fondo del Paper */}
