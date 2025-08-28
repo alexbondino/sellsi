@@ -14,7 +14,7 @@ const ProductInfo = ({ product, isMobile = false }) => {
       <Paper
         elevation={2}
         sx={{
-          // Reduce internal padding on mobile to make the paper more full-bleed
+          // Remove mobile internal padding: AppShell provides canonical gutter
           p: { xs: 1, md: 5 },
           borderRadius: 3,
           width: { xs: '100%', md: '70%' },

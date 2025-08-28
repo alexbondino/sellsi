@@ -105,7 +105,8 @@ const ProductImageGallery = ({
             objectFit: 'contain', // Mantener aspecto completo de la imagen
             display: 'block', // Evitar problemas de inline
             bgcolor: '#fff',
-            p: { xs: 1, md: 1.9 }, // Menos padding en móvil
+            // Remove mobile padding: let AppShell provide the gutter
+            p: { xs: 0, md: 1.9 },
             transition: 'transform 0.3s ease, transform-origin 0.1s ease',
             transformOrigin: isHovering && isDesktop 
               ? `${mousePosition.x}% ${mousePosition.y}%` 
@@ -197,7 +198,8 @@ const ProductImageGallery = ({
                 height: '100%',
                 objectFit: 'contain',
                 bgcolor: '#fff',
-                p: { xs: 0.3, md: 0.475 }, // Menos padding en móvil
+                // Remove mobile padding to avoid doubling gutter
+                p: { xs: 0, md: 0.475 },
               }}
             />
             </Box>

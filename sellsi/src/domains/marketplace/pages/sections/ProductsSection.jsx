@@ -22,6 +22,7 @@ import {
   useMediaQuery,
   Grid, // Asegúrate de que Grid está importado de @mui/material
 } from '@mui/material';
+import { dashboardThemeCore } from '../../../../styles/dashboardThemeCore';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ShoppingBagIcon from '@mui/icons-material/ShoppingBag';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
@@ -66,7 +67,7 @@ const ProductsSection = React.memo(
     // ✅ LAYOUT ESTÁTICO: Padding fijo para mejor performance
     const mainContainerStyles = React.useMemo(
       () => ({
-        pt:  { xs: 1, md:'90px'},
+        pt:  { xs: 3.5, md:'90px'},
         pb: SPACING_BOTTOM_MAIN, // Usar espaciado estándar global
         minHeight: '100vh',
         display: 'flex',
@@ -82,7 +83,8 @@ const ProductsSection = React.memo(
     // ✅ MEJORA DE RENDIMIENTO: Memoización de estilos del contenedor interno
     const innerContainerStyles = React.useMemo(
       () => ({
-        width: { xs: '96vw', sm: '96vw', md: '100%', lg: '100%', xl: '100%' },
+  // usar todo el ancho del viewport en mobile: AppShell controla el gutter ahora
+  width: { xs: '100vw', sm: '100vw', md: '100%', lg: '100%', xl: '100%' },
         maxWidth: {
           xs: '440px', // Más ancho en mobile
           sm: '600px', // Más ancho en sm

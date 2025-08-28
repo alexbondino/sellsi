@@ -114,12 +114,23 @@ export const AppShell = ({ children }) => {
               // Aplicar padding reducido en mobile para cualquier ruta privada.
               // También mantenemos las rutas explícitas como fallback cuando no hay sesión.
               const isFullBleed = !!session || fullBleedRoutes.includes(location.pathname);
+              // Si estamos en la sección marketplace, no añadir gutter lateral en xs/sm:
+              const isMarketplaceRoute = location.pathname.startsWith('/marketplace');
               return {
                 flexGrow: 1,
                 // Rutas full-bleed (o cualquier ruta privada) usan padding reducido en mobile
-                // y mantienen el padding de dashboard en md/desktop cuando corresponda.
-                pl: isFullBleed ? { xs: 1.75, sm: 1, md: (isDashboardRoute ? 3 : 0) } : (isDashboardRoute ? 3 : 0),
-                pr: isFullBleed ? { xs: 1.75, sm: 1, md: (isDashboardRoute ? 3 : 0) } : (isDashboardRoute ? 3 : 0),
+                // y mantenemos el padding de dashboard en md/desktop cuando corresponda.
+                // canonical mobile gutter for private/full-bleed routes: 0.75 * 8px = 6px
+                pl: isMarketplaceRoute
+                  ? { xs: 0, sm: 0, md: (isDashboardRoute ? 3 : 0) }
+                  : isFullBleed
+                  ? { xs: 0.75, sm: 1, md: (isDashboardRoute ? 3 : 0) }
+                  : (isDashboardRoute ? 3 : 0),
+                pr: isMarketplaceRoute
+                  ? { xs: 0, sm: 0, md: (isDashboardRoute ? 3 : 0) }
+                  : isFullBleed
+                  ? { xs: 0.25, sm: 0.25, md: (isDashboardRoute ? 3 : 0) }
+                  : (isDashboardRoute ? 3 : 0),
                 pt: isDashboardRoute ? 3 : 0,
                 pb: isDashboardRoute ? { xs: session ? 10 : 3, md: 3 } : { xs: session ? 10 : 0, md: 0 },
                 width: isDashboardRoute
