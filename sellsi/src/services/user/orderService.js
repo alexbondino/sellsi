@@ -70,15 +70,22 @@ class OrderService {
     try {
       if (!supplierId) return [];
       const limit = Number(filters.limit) || 100;
-  const { data: recent, error: recErr } = await supabase
+  const includePending = true; // HOTFIX: mostrar también pedidos con pago pendiente para coherencia con notificaciones
+  const paymentFilter = includePending
+    ? (q) => q.in('payment_status', ['paid','pending'])
+    : (q) => q.eq('payment_status','paid');
+
+  let baseQuery = supabase
     .from('orders')
-  // Se agrega accepted_at para recalcular SLA (Fecha Entrega Límite = accepted_at + días hábiles)
-  // Incluir billing_address para que el frontend pueda mostrar datos de facturación
-  .select('id, items, status, payment_status, estimated_delivery_date, created_at, accepted_at, updated_at, shipping, total, subtotal, shipping_address, billing_address, supplier_parts_meta')
-        .eq('payment_status', 'paid')
-        .contains('supplier_ids', [supplierId]) // nuevo filtro server-side (B1)
-        .order('created_at', { ascending: false })
-        .limit(limit);
+    // Se agrega accepted_at para recalcular SLA (Fecha Entrega Límite = accepted_at + días hábiles)
+    // Incluir billing_address para que el frontend pueda mostrar datos de facturación
+    .select('id, items, status, payment_status, estimated_delivery_date, created_at, accepted_at, updated_at, shipping, total, subtotal, shipping_address, billing_address, supplier_parts_meta')
+    .contains('supplier_ids', [supplierId]) // nuevo filtro server-side (B1)
+    .order('created_at', { ascending: false })
+    .limit(limit);
+
+  baseQuery = paymentFilter(baseQuery);
+  const { data: recent, error: recErr } = await baseQuery;
       if (recErr || !Array.isArray(recent)) return [];
       // === B3 ENRICHMENT: completar supplier_id en items legacy faltantes ===
       const missingProductIds = new Set();

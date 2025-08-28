@@ -31,6 +31,7 @@ export const useOrdersStore = create((set, get) => ({
   initializeWithSupplier: supplierId => {
     set({ supplierId });
     get().fetchOrders();
+  get().subscribeRealtime();
   },
 
   // === ACCIONES PRINCIPALES ===
@@ -322,4 +323,48 @@ export const useOrdersStore = create((set, get) => ({
 
     return diffMinutes < maxAgeMinutes;
   },
+
+  // Suscripción realtime (orders + supplier_orders) mínima
+  subscribeRealtime: () => {
+    const { supplierId } = get();
+    if (!supplierId) return;
+    // Evitar múltiples suscripciones: almacenar en window (simple)
+    if (typeof window !== 'undefined' && window.__ordersRealtimeSubscribed) return;
+    try {
+      const { supabase } = require('../../../services/supabase');
+      // Canal uno: cambios en orders donde supplier_ids contiene supplierId (no hay filtro server-side directo, usamos client filter en callback)
+      const channelOrders = supabase
+        .channel('rt_orders_supplier')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, (payload) => {
+          try {
+            const row = payload.new || payload.old;
+            if (!row) return;
+            const arr = row.supplier_ids || [];
+            if (Array.isArray(arr) && arr.includes(supplierId)) {
+              // refrescar con debounce simple
+              get().__debouncedRefresh();
+            }
+          } catch(_) {}
+        })
+        .subscribe();
+      // Canal dos: tabla supplier_orders (más específico)
+      const channelSupplierParts = supabase
+        .channel('rt_supplier_orders_parts')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'supplier_orders', filter: `supplier_id=eq.${supplierId}` }, () => {
+          get().__debouncedRefresh();
+        })
+        .subscribe();
+      // Guardar referencias y debounce
+      let t = null;
+      const debounced = () => {
+        if (t) clearTimeout(t);
+        t = setTimeout(() => { get().refreshOrders(); }, 1000);
+      };
+      // Exponer internamente
+      get().__debouncedRefresh = debounced;
+      if (typeof window !== 'undefined') window.__ordersRealtimeSubscribed = true;
+      // Limpieza (opcional) no implementada aún; se podría agregar método clearRealtime
+    } catch(_) {}
+  },
+  __debouncedRefresh: () => {},
 }));

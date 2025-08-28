@@ -18,6 +18,7 @@ import BusinessIcon from '@mui/icons-material/Business';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
 import { supabase } from '../../../services/supabase';
+import { useOptimizedUserShippingRegion } from '../../../hooks/useOptimizedUserShippingRegion';
 
 // Asumimos que estos componentes existen en tu proyecto y están bien estilizados.
 import PrimaryButton from '../../../shared/components/forms/PrimaryButton';
@@ -133,6 +134,8 @@ const Onboarding = () => {
   const [logoFile, setLogoFile] = useState(null);
   const [logoPreview, setLogoPreview] = useState(null);
   const [logoError, setLogoError] = useState('');
+  // Hook para primar caché de región inmediatamente al finalizar onboarding
+  const { primeUserRegionCache } = useOptimizedUserShippingRegion();
 
   useEffect(() => {
   }, [logoPreview]);
@@ -307,6 +310,12 @@ const Onboarding = () => {
       }
 
       console.log('¡Perfil actualizado con éxito!');
+      // Primar cache de región de shipping inmediatamente para evitar "loading" en primeras vistas
+      // Intentar obtener región de despacho desde billingRegion (si se ingresó) o desde algún campo futuro
+      const regionCandidate = updates.billing_region || updates.shipping_region || null;
+      if (regionCandidate) {
+        try { primeUserRegionCache(regionCandidate); } catch(e) { /* silencioso */ }
+      }
       window.location.reload();
     } catch (error) {
       console.error('❌ Error al actualizar el perfil:', error);

@@ -152,6 +152,15 @@ export const useOptimizedUserShippingRegion = () => {
       globalCache.userRegion = null;
       globalCache.timestamp = null;
       notifySubscribers();
+    },
+    // Nuevo: Primar/forzar valor inmediato de región (para usar justo después de Onboarding)
+    primeUserRegionCache: (newRegion) => {
+      if (!newRegion || typeof newRegion !== 'string') return;
+      // Normalizar (trim y lowercase) manteniendo compatibilidad con formato existente
+      const normalized = newRegion.trim();
+      globalCache.userRegion = normalized;
+      globalCache.timestamp = Date.now();
+      notifySubscribers();
     }
   };
 };

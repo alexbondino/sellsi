@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useRef } from 'react';
 import { useNotificationsStore } from '../store/notificationsStore';
 import { notificationService } from '../services/notificationService';
 import { timeAgo } from '../utils/timeAgo';
@@ -18,6 +18,22 @@ export function useNotifications(userId) {
     bulkMarkContext,
     setActiveTab,
   } = useNotificationsStore();
+  // Debounce control para refresh de pedidos supplier
+  const pendingRefreshRef = useRef(null);
+  const triggerOrdersRefresh = useCallback(() => {
+    try {
+      const { useOrdersStore } = require('../../../shared/stores/orders/ordersStore');
+      const { refreshOrders, supplierId } = useOrdersStore.getState();
+      if (!supplierId) return;
+      if (pendingRefreshRef.current) clearTimeout(pendingRefreshRef.current);
+      pendingRefreshRef.current = setTimeout(() => {
+        // triple intento escalonado para cubrir ventana de confirmación de pago
+        refreshOrders();
+        setTimeout(()=>refreshOrders(), 6000);
+        setTimeout(()=>refreshOrders(), 15000);
+      }, 1200); // pequeño delay para que fila orders se consolide
+    } catch(_) {}
+  }, []);
 
   // Initial load
   useEffect(() => {
@@ -27,6 +43,21 @@ export function useNotifications(userId) {
       try {
         const initial = await notificationService.fetchInitial(undefined, userId);
         if (mounted) bootstrap(initial);
+        // Reconciliar buffer local de leídos pendiente
+        try {
+          const LS_KEY = 'notifications_read_buffer';
+            const buffered = JSON.parse(localStorage.getItem(LS_KEY) || '[]');
+          if (Array.isArray(buffered) && buffered.length) {
+            const unreadIds = initial.filter(n=>buffered.includes(n.id) && !n.is_read).map(n=>n.id);
+            if (unreadIds.length) {
+              markAsRead(unreadIds);
+              try { await notificationService.markRead(unreadIds); } catch(_) {}
+              // limpiar buffer de los ya aplicados
+              const remaining = buffered.filter(id => !unreadIds.includes(id));
+              localStorage.setItem(LS_KEY, JSON.stringify(remaining));
+            }
+          }
+        } catch(_) {}
       } catch (e) { console.error('[useNotifications] fetchInitial error', e); }
     })();
     return () => { mounted = false; };
@@ -41,6 +72,11 @@ export function useNotifications(userId) {
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${userId}` }, payload => {
         lastRealtime = Date.now();
         add(payload.new);
+        // Hotfix: si es notificación de nuevo pedido para supplier, refrescar listado
+        const n = payload.new;
+        if (n?.type === 'order_new' && n?.role_context === 'supplier') {
+          triggerOrdersRefresh();
+        }
       })
       .subscribe();
     // Poll fallback if no realtime for >120s
@@ -54,7 +90,7 @@ export function useNotifications(userId) {
       }
     }, 30000);
     return () => { try { supabase.removeChannel(channel); } catch (_) {} };
-  }, [userId, add]);
+  }, [userId, add, triggerOrdersRefresh]);
 
   const loadMore = useCallback(async () => {
     if (!notifications.length) return;
