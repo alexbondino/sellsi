@@ -4,7 +4,7 @@ import { Box, Typography, Button } from '@mui/material';
 
 export default function HeroSection({
   // ✅ usa ruta pública absoluta (funciona en build)
-  illustrationSrc = '/assets/hero-illustration.png',
+  illustrationSrc = '/assets/hero-illustration.webp',
   illustrationAlt = 'Presentación de Sellsi',
   onExploreClick,
   onDemoClick,

@@ -109,13 +109,17 @@ export const AppShell = ({ children }) => {
           <Box
             component="main"
             sx={theme => {
+              // Rutas que originalmente eran full-bleed (fallback para no-auth)
               const fullBleedRoutes = ['/buyer/cart', '/buyer/paymentmethod'];
-              const isFullBleed = fullBleedRoutes.includes(location.pathname);
+              // Aplicar padding reducido en mobile para cualquier ruta privada.
+              // También mantenemos las rutas explícitas como fallback cuando no hay sesión.
+              const isFullBleed = !!session || fullBleedRoutes.includes(location.pathname);
               return {
                 flexGrow: 1,
-                // Rutas full-bleed ahora recuperan un padding mínimo solo en mobile para legibilidad
-                pl: isFullBleed ? { xs: 0.75, sm: 1, md: 0 } : (isDashboardRoute ? 3 : 0),
-                pr: isFullBleed ? { xs: 0.75, sm: 1, md: 0 } : (isDashboardRoute ? 3 : 0),
+                // Rutas full-bleed (o cualquier ruta privada) usan padding reducido en mobile
+                // y mantienen el padding de dashboard en md/desktop cuando corresponda.
+                pl: isFullBleed ? { xs: 0.75, sm: 1, md: (isDashboardRoute ? 3 : 0) } : (isDashboardRoute ? 3 : 0),
+                pr: isFullBleed ? { xs: 0.75, sm: 1, md: (isDashboardRoute ? 3 : 0) } : (isDashboardRoute ? 3 : 0),
                 pt: isDashboardRoute ? 3 : 0,
                 pb: isDashboardRoute ? { xs: session ? 10 : 3, md: 3 } : { xs: session ? 10 : 0, md: 0 },
                 width: isDashboardRoute
