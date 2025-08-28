@@ -770,6 +770,18 @@ const AddToCartModal = ({
     }
 
     if (shippingValidation.canShip) {
+      // Sanitize any trailing "- $<amount>" from messages before rendering
+      const rawMsg = shippingValidation.message || shippingValidation.shippingInfo?.message || '';
+      let sanitizedMsg = String(rawMsg)
+        .replace(/-\s*\$[\d.,\s]*$/g, '') // remove trailing "- $123" patterns
+        .replace(/-\s*\$$/g, '') // remove trailing "- $" if no amount
+        .trim();
+
+      // Normalize singular/plural for "día hábil(s)" if the message contains a numeric value
+      sanitizedMsg = sanitizedMsg.replace(/(\d+)\s*d[ií]as?\s*h[aá]biles/gi, (match, n) => {
+        return Number(n) === 1 ? '1 día hábil' : `${n} días hábiles`;
+      });
+
       return (
         <Alert 
           severity="success" 
@@ -779,9 +791,9 @@ const AddToCartModal = ({
           <Typography variant="body2" sx={{ fontWeight: 600 }}>
             Este producto tiene despacho hacia tu región: {getUserRegionName(effectiveUserRegion)}
           </Typography>
-          {shippingValidation.shippingInfo && (
+          {sanitizedMsg && (
             <Typography variant="caption" color="text.secondary">
-              {shippingValidation.message}
+              {sanitizedMsg}
             </Typography>
           )}
         </Alert>
