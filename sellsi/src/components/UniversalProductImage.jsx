@@ -395,25 +395,28 @@ export const ProductCardImage = ({ product, type = 'buyer', ...props }) => {
   };
 
   return (
-    <UniversalProductImage
-      product={product}
-      size="responsive"
-      height={getCardHeight()}
-      priority={true} // Forzar carga inmediata con la nueva API de prioridad
-      sx={{
-        maxWidth: '100%',
-        bgcolor: '#fff',
-        p: type === 'supplier' ? 
-          { xs: 0.5, sm: 0.8, md: 1, lg: 0 } : 
-          { xs: 1, sm: 1.2, md: 1.5, lg: 0},
-        display: 'block',
-        mx: 'auto',
-        mt: 0.5,
-        // debug temporal: borde ligero para ver el contenedor
-        border: process.env.NODE_ENV === 'development' ? '1px dashed rgba(0,0,0,0.1)' : undefined,
-      }}
-      {...props}
-    />
+    <Box sx={{ width: '100%', height: getCardHeight(), minHeight: getCardHeight(), boxSizing: 'border-box' }}>
+      <UniversalProductImage
+        product={product}
+        size="responsive"
+        // Fill the outer responsive container
+        height="100%"
+        priority={true} // Forzar carga inmediata con la nueva API de prioridad
+        sx={{
+          maxWidth: '100%',
+          bgcolor: '#fff',
+          p: type === 'supplier' ? 
+            { xs: 0.5, sm: 0.8, md: 1, lg: 0 } : 
+            { xs: 1, sm: 1.2, md: 1.5, lg: 0},
+          display: 'block',
+          mx: 'auto',
+          mt: 0.5,
+          // debug temporal: borde ligero para ver el contenedor
+          border: process.env.NODE_ENV === 'development' ? '1px dashed rgba(0,0,0,0.1)' : undefined,
+        }}
+        {...props}
+      />
+    </Box>
   );
 };
 
