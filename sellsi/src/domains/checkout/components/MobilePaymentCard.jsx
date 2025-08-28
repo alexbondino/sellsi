@@ -24,7 +24,7 @@ const MobilePaymentCard = ({
   const getMethodIcon = (methodId) => {
     switch(methodId) {
       case 'khipu':
-        return <PaymentIcon />;
+        return null; // handled specially to render SVG image
       case 'credit-card':
         return <CreditCardIcon />;
       case 'bank-transfer':
@@ -67,12 +67,16 @@ const MobilePaymentCard = ({
               transition: 'all 0.25s ease'
             }}
           >
-            {React.cloneElement(getMethodIcon(method.id), {
-              sx: { 
-                color: isSelected ? 'white' : 'text.secondary',
-                fontSize: 28
-              }
-            })}
+            {method.id === 'khipu' ? (
+              <Box component="img" src={method.icon || '/Checkout/khipu.svg'} alt="khipu" sx={{ width: 28, height: 28 }} />
+            ) : (
+              React.cloneElement(getMethodIcon(method.id), {
+                sx: { 
+                  color: isSelected ? 'white' : 'text.secondary',
+                  fontSize: 28
+                }
+              })
+            )}
           </Box>
           
           {/* Method Info */}
