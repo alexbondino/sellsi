@@ -1,23 +1,22 @@
 // 📁 shared/components/layout/BottomBar/BottomBar.jsx
-import React from 'react';
-import { Box, Typography, IconButton, Divider } from '@mui/material';
+import React, { useState } from 'react';
+import { Box, Typography, IconButton, Divider, Button, Collapse } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import LinkedInIcon from '@mui/icons-material/LinkedIn';
 import InstagramIcon from '@mui/icons-material/Instagram';
+import WhatsAppIcon from '@mui/icons-material/WhatsApp';
 import PhoneIcon from '@mui/icons-material/Phone';
-import WhatsappIcon from '@mui/icons-material/WhatsApp';
+import SupportIcon from '@mui/icons-material/Support';
 
 const BottomBar = () => {
   const navigate = useNavigate();
-
   const handleNavigateToTerms = () => navigate('/terms-and-conditions');
   const handleNavigateToPrivacy = () => navigate('/privacy-policy');
 
   return (
     <>
-      {/* Línea separadora superior (igual que TopBar) */}
-      <Box sx={{ width: '100%', px: { xs: 2 }, bgcolor: '#000' }}>
-        <Divider sx={{ borderColor: '#ffffff' }} />
+      <Box sx={{ width: '100%', px: { xs: 2.25 }, bgcolor: '#000' }}>
+        <Divider sx={{ borderColor: '#e0e0e0' }} />
       </Box>
 
       <Box
@@ -28,182 +27,99 @@ const BottomBar = () => {
           position: 'sticky',
           bottom: 0,
           width: '100%',
-          px: { xs: 2, md: 6 },
-          py: { xs: 3, md: 4 },
+          px: { xs: 2.25, md: 8 },
+          py: { xs: 2.5, md: 2 },
           borderTop: '1px solid #ffffff',
           zIndex: 1301,
         }}
       >
-        <Box
-          sx={{
-            maxWidth: '100%',
-            mx: {
-              xs: 'max(25px, env(safe-area-inset-left))', // Telefonos Chicos
-              sm: 'max(30px, env(safe-area-inset-left))', // Telefonos grandes
-              mac: '180px', //  Mac M1
-              lg: '250px', // 1080p
-              xl: '250px', // 2K
-            },
-            display: 'grid',
-            gridTemplateColumns: {
-              xs: '1fr',
-              md: '1fr auto auto',
-            },
-            alignItems: 'center',
-          }}
-        >
-          {/* IZQUIERDA: logo + eslogan (eslogan debajo del logo) */}
+        <Box sx={{ maxWidth: 700, mx: 'auto', color: '#fff' }}>
+
+          {/* Desktop layout */}
           <Box
             sx={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: { xs: 2, md: 3 },
-              minWidth: 0,
+              display: { xs: 'none', md: 'flex' },
+              flexDirection: 'row',
+              alignItems: 'flex-start',
+              gap: 6,
+              justifyContent: 'flex-start',
             }}
           >
-            {/* Wrapper columna para apilar logo + texto */}
-            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: { xs: 'center', md: 'flex-start' } }}>
-              {/* Caja del logo (mantiene altura y “bloque” visual del mock) */}
-              <Box
-                sx={{
-                  height: {
-                    xs: 'max(100px, env(safe-area-inset-left))',
-                    sm: 'max(100px, env(safe-area-inset-left))',
-                    md: 250,
-                    mac: 180,
-                    lg: 250,
-                    xl: 250,
-                  },
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  overflow: 'hidden',
-                }}
-              >
-                <img
-                  src="/logodark.svg"
-                  alt="SELLSI"
-                  style={{ height: '100%', display: 'block' }}
-                />
+            <Box sx={{ flex: '0 0 auto', maxWidth: 230, px: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minWidth: 120 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 0, height: 85, overflow: 'hidden' }}>
+                <img src="/logodark.svg" alt="SELLSI Logo" style={{ height: 230, maxWidth: '100%' }} />
+              </Box>
+              <Typography variant="h6" sx={{ fontWeight: 600, fontSize: '1rem', mt: 1, textAlign: 'center' }}>Crece. Conecta. Vende.</Typography>
+            </Box>
+
+            <Box sx={{ display: 'flex', flexDirection: 'row', gap: 4, justifyContent: 'flex-start', alignItems: 'flex-start', flex: 1 }}>
+              <Box sx={{ minWidth: 160 }}>
+                <Typography variant="h6" sx={sectionTitleStyle}>Soporte</Typography>
+                <Box sx={columnStyle}>
+                  <Typography variant="body2" sx={navItemStyle} onClick={handleNavigateToTerms}>Términos y Condiciones</Typography>
+                  <Typography variant="body2" sx={navItemStyle} onClick={handleNavigateToPrivacy}>Política de Privacidad</Typography>
+                </Box>
               </Box>
 
-              {/* Eslogan debajo del logo */}
-              <Typography
-                variant="subtitle1"
-                sx={{
-                  fontWeight: 600,
-                  fontSize: { xs: '0.95rem', md: '1.2rem' },
-                  mt: -10,
-                  ml: 2.5,
-                  textAlign: { xs: 'center', md: 'center' }
-                }}
-              >
-                Conecta, vende, crece
-              </Typography>
+              <Box sx={{ minWidth: 150, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <Typography variant="h6" sx={{ ...sectionTitleStyle, textAlign: 'center', width: '100%' }}>Síguenos</Typography>
+                <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', justifyContent: 'center', width: '100%' }}>
+                  <SocialIcon href="https://www.linkedin.com/company/sellsi/" icon={<LinkedInIcon />} hoverColor="#0077b5" label="LinkedIn" />
+                  <SocialIcon href="#" icon={<InstagramIcon />} hoverColor="#e4405f" label="Instagram" />
+                  <SocialIcon href="#" icon={<WhatsAppIcon />} hoverColor="#25d366" label="WhatsApp" />
+                </Box>
+
+                <Box sx={{ display: 'flex', alignItems: 'center', mt: 1, justifyContent: 'center' }}>
+                  <IconButton href="tel:+56963109664" sx={{ color: '#b0b0b0', mr: 1, p: 0.5, '&:hover': { color: '#25d366', backgroundColor: 'rgba(255,255,255,0.1)' } }} aria-label="Llamar">
+                    <PhoneIcon />
+                  </IconButton>
+                  <Typography variant="body2" component="a" href="tel:+56963109664" sx={{ color: '#b0b0b0', textDecoration: 'none', fontWeight: 500, '&:hover': { color: '#25d366', textDecoration: 'underline' } }}>+56 9 6310 9664</Typography>
+                </Box>
+              </Box>
             </Box>
           </Box>
 
-          {/* CENTRO: Soporte */}
-          <Box sx={{ textAlign: { xs: 'left', md: 'left' } }}>
-            <Typography
-              variant="h6"
-              sx={{
-                fontWeight: 700,
-                mb: 1,
-                fontSize: { xs: '1rem', md: '1.15rem' },
-              }}
-            >
-              Soporte
-            </Typography>
+          {/* Mobile layout: centered logo + collapsible Soporte (only Terms & Privacy) */}
+          <Box sx={{ display: { xs: 'flex', md: 'none' }, flexDirection: 'column', alignItems: 'center', gap: 3, mb: 6 }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 0, height: 60, overflow: 'hidden' }}>
+                <img src="/logodark.svg" alt="SELLSI Logo" style={{ height: 150, maxWidth: '100%', display: 'block' }} />
+              </Box>
+              <Typography variant="h6" sx={{ fontWeight: 600, fontSize: '1.1rem', mt: 1, textAlign: 'center' }}>Crece. Conecta. Vende.</Typography>
+            </Box>
 
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.25 }}>
-              <Typography
-                variant="body1"
-                onClick={handleNavigateToTerms}
-                sx={linkStyle}
-              >
-                Términos & Condiciones
-              </Typography>
-              <Typography
-                variant="body1"
-                onClick={handleNavigateToPrivacy}
-                sx={linkStyle}
-              >
-                Política de Privacidad
-              </Typography>
+            <Box sx={{ width: '100%', maxWidth: 420, mx: 'auto' }}>
+              <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', textAlign: 'left', ml: { xs: 10.5, md: 0 } }}>
+                <Typography variant="h6" sx={{ fontWeight: 700, mb: 1 }}>Soporte</Typography>
+                <Typography variant="body2" sx={{ ...navItemStyle, py: 0.5, width: '100%' }} onClick={handleNavigateToTerms}>Términos & Condiciones</Typography>
+                <Typography variant="body2" sx={{ ...navItemStyle, py: 0.5, width: '100%' }} onClick={handleNavigateToPrivacy}>Política de Privacidad</Typography>
+              </Box>
+            </Box>
+            
+            {/* Redes sociales + teléfono - Mobile */}
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, width: '100%' }}>
+              <Typography variant="h6" sx={{ ...sectionTitleStyle, textAlign: 'center', width: '100%' }}>Síguenos</Typography>
+              <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', width: '100%' }}>
+                <SocialIcon href="https://www.linkedin.com/company/sellsi/" icon={<LinkedInIcon />} hoverColor="#0077b5" label="LinkedIn" />
+                <SocialIcon href="#" icon={<InstagramIcon />} hoverColor="#e4405f" label="Instagram" />
+                <SocialIcon href="#" icon={<WhatsAppIcon />} hoverColor="#25d366" label="WhatsApp" />
+              </Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', mt: 0, justifyContent: 'center', width: '100%' }}>
+                <IconButton href="tel:+56963109664" sx={{ color: '#b0b0b0', mr: 1, p: 0, '&:hover': { color: '#25d366', backgroundColor: 'rgba(255,255,255,0.1)' } }} aria-label="Llamar">
+                  <PhoneIcon />
+                </IconButton>
+                <Typography variant="body2" component="a" href="tel:+56963109664" sx={{ color: '#b0b0b0', textDecoration: 'none', fontWeight: 500, '&:hover': { color: '#25d366', textDecoration: 'underline' } }}>+56 9 6310 9664</Typography>
+              </Box>
             </Box>
           </Box>
 
-          {/* DERECHA: redes + teléfono */}
-          <Box
-            sx={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: { xs: 'center', md: 'flex-end' }, // 👉 centrado en mobile
-              gap: 2,
-              mt: { xs: 5, sm: 5, md: 0 }, // 👉 separa más en mobile
-            }}
-          >
-            {/* Íconos sociales */}
-            <Box sx={{ display: 'flex', gap: 2, mx: { xs: 0, md: 5 } }}>
-              <SocialIcon
-                href="https://www.whatsapp.com/"
-                icon={<WhatsappIcon />}
-                hoverColor="#25d366"
-                label="Whatsapp"
-              />
-              <SocialIcon
-                href="https://www.instagram.com/"
-                icon={<InstagramIcon />}
-                hoverColor="#e4405f"
-                label="Instagram"
-              />
-              <SocialIcon
-                href="https://www.linkedin.com/company/sellsi/"
-                icon={<LinkedInIcon />}
-                hoverColor="#0077b5"
-                label="LinkedIn"
-              />
-            </Box>
-
-            {/* Teléfono */}
-            <Box
-              sx={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 1,
-                color: 'rgba(255,255,255,0.75)',
-              }}
-            >
-              <IconButton
-                href="tel:+56963109664"
-                aria-label="Llamar"
-                sx={phoneIconStyle}
-              >
-                <PhoneIcon />
-              </IconButton>
-              <Typography
-                component="a"
-                href="tel:+56997206896"
-                sx={{
-                  color: 'rgba(255,255,255,0.8)',
-                  textDecoration: 'none',
-                  fontWeight: 600,
-                  '&:hover': { color: '#fff', textDecoration: 'underline' },
-                }}
-              >
-                (+569) 63109664
-              </Typography>
+          {/* Copyright */}
+          <Box sx={{ mt: { xs: 0, md: 7 }, textAlign: 'center', width: '100%' }}>
+            <Divider sx={{ my: 0, borderColor: '#333', width: '100%' }} />
+            <Box sx={{ textAlign: 'center', width: '100%', mb: 5 }}>
+              <Typography variant="body2" sx={{ color: '#b0b0b0', fontSize: '0.9rem' }}>© 2025 SELLSI Todos los derechos reservados.</Typography>
             </Box>
           </Box>
-        </Box>
-
-        {/* Copyright */}
-        <Box sx={{ mt: { xs: 3, md: 2 }, textAlign: 'center' }}>
-          <Divider sx={{ borderColor: 'rgba(255,255,255,0.15)', mb: 1.5 }} />
-          <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.65)' }}>
-            © 2025 SELLSI Todos los derechos reservados.
-          </Typography>
         </Box>
       </Box>
     </>
@@ -211,37 +127,27 @@ const BottomBar = () => {
 };
 
 /* ---------- estilos reutilizables ---------- */
-const linkStyle = {
+const navItemStyle = {
+  color: '#b0b0b0',
   cursor: 'pointer',
-  color: 'rgba(255,255,255,0.85)',
-  fontWeight: 500,
-  '&:hover': { color: '#fff', textDecoration: 'underline' },
+  '&:hover': { color: '#fff' },
 };
 
-const phoneIconStyle = {
-  color: 'rgba(255,255,255,0.6)',
-  p: 0.5,
-  '&:hover': {
-    color: '#fff',
-    backgroundColor: 'rgba(255,255,255,0.08)',
-  },
+const sectionTitleStyle = {
+  fontWeight: 600,
+  mb: 1,
+  fontSize: '1rem',
+  color: '#fff',
+};
+
+const columnStyle = {
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 1,
 };
 
 const SocialIcon = ({ href, icon, hoverColor = '#fff', label }) => (
-  <IconButton
-    href={href}
-    target="_blank"
-    rel="noopener noreferrer"
-    aria-label={label}
-    sx={{
-      color: 'rgba(255,255,255,0.6)',
-      '&:hover': {
-        color: hoverColor,
-        backgroundColor: 'rgba(255,255,255,0.08)',
-      },
-      transition: 'all 0.25s ease',
-    }}
-  >
+  <IconButton href={href} target="_blank" rel="noopener noreferrer" sx={{ color: '#b0b0b0', '&:hover': { color: hoverColor, backgroundColor: 'rgba(255,255,255,0.1)' }, transition: 'all 0.3s ease' }} aria-label={label}>
     {icon}
   </IconButton>
 );
