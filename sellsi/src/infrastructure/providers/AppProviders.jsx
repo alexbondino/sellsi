@@ -20,6 +20,7 @@ import { RoleProvider } from './RoleProvider';
 import { RolePrefetchProvider } from '../prefetch/RolePrefetchProvider';
 import { LayoutProvider } from './LayoutProvider';
 import { NotificationsProvider } from '../../domains/notifications/components/NotificationProvider';
+import { MarketplaceSearchProvider } from '../../shared/contexts/MarketplaceSearchContext';
 import { TransferInfoManager } from '../../shared/components/managers';
 
 const globalStyles = {
@@ -53,11 +54,13 @@ export const AppProviders = ({ children }) => {
                   <RolePrefetchProvider>
                     <TransferInfoManager />
                     <NotificationsProvider>
-                      <LayoutProvider>
-                        <BanGuard>
-                          {children}
-                        </BanGuard>
-                      </LayoutProvider>
+                      <MarketplaceSearchProvider>
+                        <LayoutProvider>
+                          <BanGuard>
+                            {children}
+                          </BanGuard>
+                        </LayoutProvider>
+                      </MarketplaceSearchProvider>
                     </NotificationsProvider>
                   </RolePrefetchProvider>
                 </RoleProvider>

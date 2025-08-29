@@ -1,48 +1,35 @@
 // 📁 shared/components/navigation/TopBar/TopBar.jsx
-import React, { useState, useEffect, useRef, Suspense } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import {
-  Box,
-  Button,
-  IconButton,
-  Menu,
-  MenuItem,
-  useTheme,
-  Tooltip,
-  Badge,
-  Avatar,
-  Divider,
-} from '@mui/material';
+import { Box, Button, IconButton, MenuItem, useTheme, Tooltip, Badge, Divider, TextField, InputAdornment, Menu } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
-import PersonIcon from '@mui/icons-material/Person';
+// import PersonIcon from '@mui/icons-material/Person'; // Ya no se usa directamente en TopBar
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
-import NotificationsIcon from '@mui/icons-material/Notifications'; // fallback icon for mobile or loading
+// Removed unused NotificationsIcon import
 import { supabase } from '../../../services/supabase';
 import useCartStore from '../../../stores/cart/cartStore';
-import { Modal, MODAL_TYPES } from '../../feedback';
+// Removed unused Modal (Coming Soon) after refactor phase
 import { useRole } from '../../../../infrastructure/providers/RoleProvider';
-// Lazy imports directos de componentes de auth (ruta específica, evitando barrel auth para no ampliar fan-out)
-// No reintroduce ciclo porque el barrel shared ya no re-exporta TopBar.
-const Login = React.lazy(() =>
-  import('../../../../domains/auth/components/Login')
-);
-const Register = React.lazy(() =>
-  import('../../../../domains/auth/components/Register')
-);
+// Auth modals ahora encapsulados en componente AuthModals (lazy dentro)
 import { setSkipScrollToTopOnce } from '../ScrollToTop/ScrollToTop';
 
 // Importa el nuevo componente reutilizable y ahora verdaderamente controlado
-import { Switch } from '../'; // Ajusta la ruta si es diferente
 import { useNotificationsContext } from '../../../../domains/notifications/components/NotificationProvider';
-import {
-  NotificationBell,
-  NotificationListPanel,
-} from '../../../../domains/notifications';
-import { Popover, Dialog, DialogContent } from '@mui/material';
-import TextField from '@mui/material/TextField';
-import InputAdornment from '@mui/material/InputAdornment';
+import { NotificationBell } from '../../../../domains/notifications';
+// Consolidated MUI imports
 import SearchIcon from '@mui/icons-material/Search';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
+import { ProfileAvatarButton } from './components/ProfileAvatarButton';
+import { AuthModals } from './components/AuthModals';
+import { NotificationsMenu } from './components/NotificationsMenu';
+// import { PublicNavLinks } from './components/PublicNavLinks'; // Reemplazado por mapeo directo usando navButtonBase
+import { MobileMenu } from './components/MobileMenu';
+import { RoleSwitchControl } from './components/RoleSwitchControl';
+import { navButtonBase, iconButtonBase } from './topBar.styles';
+// Hooks Fase 2
+import { useRoleFromRoute } from './hooks/useRoleFromRoute';
+import { useAuthModalBus } from './hooks/useAuthModalBus';
+import { useMarketplaceSearch } from './hooks/useMarketplaceSearch';
 
 export default function TopBar({
   session,
@@ -60,92 +47,19 @@ export default function TopBar({
   const [mobileMenuAnchor, setMobileMenuAnchor] = useState(null);
   const [profileAnchor, setProfileAnchor] = useState(null);
 
-  const [openLoginModal, setOpenLoginModal] = useState(false);
-  const [openRegisterModal, setOpenRegisterModal] = useState(false);
-  // contact handled via SPA scroll on landing page
+  // Auth modal bus (reemplaza listeners window y timeout transición)
+  const {
+    loginOpen: openLoginModal,
+    registerOpen: openRegisterModal,
+    openLogin: openLoginModalOpen,
+    openRegister: openRegisterModalOpen,
+    closeLogin: closeLoginModal,
+    closeRegister: closeRegisterModal,
+    transitionLoginToRegister: handleLoginToRegisterTransition,
+  } = useAuthModalBus({ enableLegacyEventListeners: true });
 
-  // ✅ SISTEMA CENTRALIZADO DE AUTENTICACIÓN
-  // TopBar es el único responsable de manejar modales de auth para evitar duplicados
-  useEffect(() => {
-    const handleOpenLogin = () => {
-      // Verificar que no esté ya abierto para evitar duplicados
-      if (!openLoginModal) {
-        setOpenLoginModal(true);
-      }
-    };
-
-    const handleOpenRegister = () => {
-      // Verificar que no esté ya abierto para evitar duplicados
-      if (!openRegisterModal) {
-        setOpenRegisterModal(true);
-      }
-    };
-
-    // ✅ ROBUSTEZ: Listeners con opciones para mejor control
-    window.addEventListener('openLogin', handleOpenLogin, { passive: true });
-    window.addEventListener('openRegister', handleOpenRegister, {
-      passive: true,
-    });
-
-    return () => {
-      window.removeEventListener('openLogin', handleOpenLogin);
-      window.removeEventListener('openRegister', handleOpenRegister);
-    };
-  }, [openLoginModal, openRegisterModal]); // ✅ Dependencias para evitar duplicados
-
-  // ✅ HANDLER CENTRALIZADO PARA TRANSICIÓN LOGIN → REGISTER
-  const handleLoginToRegisterTransition = () => {
-    setOpenLoginModal(false);
-    // Usar setTimeout para asegurar que el modal se cierre antes de abrir el otro
-    setTimeout(() => {
-      setOpenRegisterModal(true);
-    }, 100);
-  };
-
-  // ✅ NUEVO: Determinar el rol basado en la ruta actual
-  const getRoleFromCurrentRoute = () => {
-    const currentPath = location.pathname;
-
-    // Rutas que son específicamente de supplier
-    const supplierRoutes = [
-      '/supplier/home',
-      '/supplier/myproducts',
-      '/supplier/addproduct',
-      '/supplier/my-orders',
-      '/supplier/profile',
-      '/supplier/marketplace',
-    ];
-
-    // Rutas que son específicamente de buyer
-    const buyerRoutes = [
-      '/buyer/marketplace',
-      '/buyer/orders',
-      '/buyer/performance',
-      '/buyer/cart',
-      '/buyer/paymentmethod',
-      '/buyer/profile',
-    ];
-
-    // Verificar si está en una ruta específica de supplier
-    if (supplierRoutes.some(route => currentPath.startsWith(route))) {
-      return 'supplier';
-    }
-
-    // Verificar si está en una ruta específica de buyer
-    if (buyerRoutes.some(route => currentPath.startsWith(route))) {
-      return 'buyer';
-    }
-
-    // Para rutas neutrales, usar el rol del perfil del usuario
-    return isBuyer ? 'buyer' : 'supplier';
-  };
-
-  // ✅ CAMBIO: El switch se adapta automáticamente a la ruta actual
-  const currentRole = isRoleLoading
-    ? null // No mostrar rol durante loading para evitar parpadeo
-    : typeof isBuyer === 'boolean'
-    ? getRoleFromCurrentRoute()
-    : 'buyer';
+  // Rol derivado vía hook
+  const { currentRole } = useRoleFromRoute({ pathname: location.pathname, isBuyerProp: isBuyer, isRoleLoading });
 
   const isLoggedIn = !!session;
 
@@ -246,60 +160,12 @@ export default function TopBar({
     mac: '180px',
     lg: '250px',
   }; // Default padding for logged out
+  // Helpers centralizados
+  const getProfileRoute = (flag) => (flag ? '/buyer/profile' : '/supplier/profile');
+  const goToProfile = () => navigate(getProfileRoute(isBuyer));
 
-  // Estilo consistente para los botones de navegación principales
-  const navButtonStyle = {
-    color: 'white',
-    textTransform: 'none',
-  fontSize: 16,
-    outline: 'none',
-    boxShadow: 'none',
-    border: 'none',
-    '&:focus': { outline: 'none', boxShadow: 'none', border: 'none' },
-    '&:active': { outline: 'none', boxShadow: 'none', border: 'none' },
-    '&:hover': { outline: 'none', boxShadow: 'none', border: 'none' },
-  };
-
-  // Avatar con fade-in
-  const [avatarLoaded, setAvatarLoaded] = useState(false);
-  useEffect(() => {
-    setAvatarLoaded(false); // Resetear cuando cambia el logo
-  }, [logoUrl]);
-
-  const profileMenuButton = (
-    <IconButton
-      onClick={handleOpenProfileMenu}
-      sx={{ color: 'white', p: 0, display: { xs: 'none', md: 'inline-flex' } }}
-    >
-      {logoUrl && typeof logoUrl === 'string' && logoUrl.trim() !== '' ? (
-        <Avatar
-          src={logoUrl}
-          key={logoUrl}
-          sx={{
-            transition: 'none !important',
-            opacity: avatarLoaded ? 1 : 0,
-            background: 'transparent !important',
-          }}
-          imgProps={{
-            onLoad: () => setAvatarLoaded(true),
-            onError: () => setAvatarLoaded(true),
-            style: {
-              transition: 'opacity 0.5s',
-              opacity: avatarLoaded ? 1 : 0,
-            },
-          }}
-        />
-      ) : (
-        <Avatar
-          sx={{ background: '#fff !important', color: '#111 !important' }}
-        >
-          <PersonIcon sx={{ color: '#111 !important', fontSize: 32 }} />
-        </Avatar>
-      )}
-    </IconButton>
-  );
-  // Estado para el modal de "Próximamente..."
-  const [openComingSoonModal, setOpenComingSoonModal] = useState(false);
+  // Avatar state handled inside ProfileAvatarButton now; removed local avatarLoaded.
+  const profileMenuButton = <ProfileAvatarButton logoUrl={logoUrl} onClick={handleOpenProfileMenu} />;
   // Notifications
   const notifCtx = useNotificationsContext?.() || null;
   const [notifAnchor, setNotifAnchor] = useState(null);
@@ -340,9 +206,9 @@ export default function TopBar({
       <Button
         key={label}
         onClick={() => handleNavigate(ref)}
-        sx={navButtonStyle}
-        disableFocusRipple
+        sx={navButtonBase}
         disableRipple
+        disableFocusRipple
       >
         {label}
       </Button>
@@ -351,7 +217,7 @@ export default function TopBar({
     desktopRightContent = (
       <>
         <Button
-          onClick={() => setOpenLoginModal(true)}
+          onClick={openLoginModalOpen}
           variant="contained"
           color="primary"
           sx={{
@@ -369,7 +235,7 @@ export default function TopBar({
           Iniciar sesión
         </Button>
         <Button
-          onClick={() => setOpenRegisterModal(true)}
+          onClick={openRegisterModalOpen}
           variant="outlined"
           sx={{
             color: 'white',
@@ -401,7 +267,7 @@ export default function TopBar({
       <MenuItem
         key="login"
         onClick={() => {
-          setOpenLoginModal(true);
+          openLoginModalOpen();
           handleCloseMobileMenu();
         }}
       >
@@ -410,7 +276,7 @@ export default function TopBar({
       <MenuItem
         key="register"
         onClick={() => {
-          setOpenRegisterModal(true);
+          openRegisterModalOpen();
           handleCloseMobileMenu();
         }}
       >
@@ -423,58 +289,30 @@ export default function TopBar({
     desktopRightContent = (
       <>
         {/* Usamos el componente Switch - Solo mostrar cuando el rol esté determinado */}
-        {currentRole && (
-          <Switch
-            value={currentRole} // Le pasamos el rol determinado
-            onChange={handleRoleToggleChange} // Le pasamos el manejador de cambios
-            disabled={isRoleLoading} // ✅ Deshabilitar mientras se carga el rol
-            // Los estilos base del switch ya están en Switch,
-            // pero puedes agregarle más aquí si necesitas un ajuste específico para el desktop
-            sx={{
-              mr: 2,
-              opacity: isRoleLoading ? 0.6 : 1, // ✅ Indicador visual de loading
-            }}
-          />
-        )}
+        <RoleSwitchControl
+          role={currentRole}
+          disabled={isRoleLoading}
+          onChange={handleRoleToggleChange}
+          sx={{ mr: 2, opacity: isRoleLoading ? 0.6 : 1 }}
+        />
 
-        <Tooltip title="Notificaciones" arrow>
-          <span>
-            <NotificationBell
-              count={notifCtx?.unreadCount || 0}
-              onClick={handleOpenNotif}
-            />
-          </span>
-        </Tooltip>
+        <NotificationsMenu
+          showBell
+          unreadCount={notifCtx?.unreadCount || 0}
+          notifications={notifCtx?.notifications || []}
+          activeTab={notifCtx?.activeTab || 'all'}
+          onTabChange={t => notifCtx?.setActiveTab?.(t)}
+          onItemClick={handleNotifItemClick}
+          onViewAll={handleViewAllNotif}
+          onCloseDialog={handleCloseNotifModal}
+          anchorEl={notifAnchor}
+          onOpen={handleOpenNotif}
+          onClose={handleCloseNotif}
+          dialogOpen={notifModalOpen}
+        />
 
         <Tooltip title="Carrito" arrow>
-          <IconButton
-            onClick={() => navigate('/buyer/cart')}
-            sx={{
-              color: 'white',
-              p: 0.4,
-              mr: 3, // aumentar separación del avatar
-              minWidth: 36,
-              minHeight: 36,
-              boxShadow: 'none',
-              outline: 'none',
-              border: 'none',
-              transition: 'background 0.2s',
-              '&:focus': { outline: 'none', border: 'none', boxShadow: 'none' },
-              '&:active': {
-                outline: 'none',
-                border: 'none',
-                boxShadow: 'none',
-              },
-              '&:hover': {
-                background: theme => theme.palette.primary.main,
-                boxShadow: 'none',
-                outline: 'none',
-                border: 'none',
-              },
-            }}
-            disableFocusRipple
-            disableRipple
-          >
+          <IconButton onClick={() => navigate('/buyer/cart')} sx={{ ...iconButtonBase, color: 'white', mr: 3 }} disableFocusRipple disableRipple>
             <Badge badgeContent={itemsInCart} color="error">
               <CustomShoppingCartIcon sx={{ lineHeight: 1 }} />
             </Badge>
@@ -490,28 +328,18 @@ export default function TopBar({
         sx={{ display: 'flex', justifyContent: 'center', py: 1 }}
       >
         {/* Usamos el componente Switch en el menú móvil - Solo mostrar cuando el rol esté determinado */}
-        {currentRole && (
-          <Switch
-            value={currentRole} // Le pasamos el rol determinado
-            onChange={handleRoleToggleChange} // Le pasamos el manejador de cambios
-            disabled={isRoleLoading} // ✅ Deshabilitar mientras se carga el rol
-            sx={{
-              width: '100%',
-              mr: 0,
-              opacity: isRoleLoading ? 0.6 : 1, // ✅ Indicador visual de loading
-            }} // Estilos específicos para el móvil, anula el mr del desktop
-          />
-        )}
+        <RoleSwitchControl
+          role={currentRole}
+          disabled={isRoleLoading}
+          onChange={handleRoleToggleChange}
+          sx={{ width: '100%', mr: 0, opacity: isRoleLoading ? 0.6 : 1 }}
+        />
       </MenuItem>,
       <Divider key="dividerMobileRole" />,
       // Eliminado el botón de carrito en mobileMenuItems
       <MenuItem
         key="profile"
-        onClick={() => {
-          const profileRoute = isBuyer ? '/buyer/profile' : '/supplier/profile';
-          navigate(profileRoute);
-          handleCloseMobileMenu();
-        }}
+        onClick={() => { goToProfile(); handleCloseMobileMenu(); }}
       >
         Mi Perfil
       </MenuItem>,
@@ -523,60 +351,30 @@ export default function TopBar({
 
   // ================== 🔍 MOBILE MARKETPLACE SEARCH (Buyer only) ==================
   const isBuyerRole = currentRole === 'buyer';
-  const isOnBuyerMarketplace = location.pathname.startsWith('/buyer/marketplace');
-  const [mobileSearch, setMobileSearch] = useState('');
+  const { term: mobileSearch, setTerm: setMobileSearch, isOnBuyerMarketplace, inputProps: mobileSearchInputProps, submit: submitMobileSearch } = useMarketplaceSearch({
+    enabled: !!session,
+    pathname: location.pathname,
+    isBuyerRole,
+    onReactive: (t) => {
+      // Reemplaza evento global: en lugar de dispatch se podría usar contexto; mantenemos evento por compat temporal
+      const evt = new CustomEvent('marketplaceSearch', { detail: { term: t } });
+      window.dispatchEvent(evt);
+    },
+    onNavigateOutside: (t) => {
+      navigate('/buyer/marketplace', { state: { initialSearch: t, fromTopBar: true } });
+    },
+  });
   const mobileSearchInputRef = useRef(null);
-
-  // Si entramos al marketplace, opcionalmente podríamos resetear la search local (no necesario guardar en global aquí)
-  useEffect(() => {
-    if (isOnBuyerMarketplace) {
-      setMobileSearch(prev => prev); // mantener
-    }
-  }, [isOnBuyerMarketplace]);
-
-  // En marketplace: enviar evento al cambiar (búsqueda reactiva) con debounce ligero
-  useEffect(() => {
-    if (!isBuyerRole) return;
-    if (!isOnBuyerMarketplace) return; // solo reactivo dentro de la página
-    const handler = setTimeout(() => {
-      const evt = new CustomEvent('marketplaceSearch', { detail: { term: mobileSearch } });
-      window.dispatchEvent(evt);
-    }, 300);
-    return () => clearTimeout(handler);
-  }, [mobileSearch, isBuyerRole, isOnBuyerMarketplace]);
-
-  const executeMarketplaceNavigation = (term) => {
-    // Navegar al marketplace si estamos fuera, pasando estado initialSearch
-    navigate('/buyer/marketplace', { state: { initialSearch: term, fromTopBar: true } });
-  };
-
-  const handleMobileSearchKeyDown = (e) => {
-    if (e.key === 'Enter') {
-      if (!isOnBuyerMarketplace) {
-        executeMarketplaceNavigation(mobileSearch.trim());
-      } else {
-        // Ya estamos dentro: forzar evento inmediato
-        const evt = new CustomEvent('marketplaceSearch', { detail: { term: mobileSearch } });
-        window.dispatchEvent(evt);
-      }
-    }
-  };
-
-  const handleMobileSearchButton = () => {
-    if (!isOnBuyerMarketplace) {
-      executeMarketplaceNavigation(mobileSearch.trim());
-    } else {
-      const evt = new CustomEvent('marketplaceSearch', { detail: { term: mobileSearch } });
-      window.dispatchEvent(evt);
-    }
-  };
+  const handleMobileSearchButton = () => submitMobileSearch();
 
   return (
     <>
       <Box
         sx={{
           backgroundColor: '#000000',
-          width: '100vw',
+          width: '100%',
+          left: 0,
+          right: 0,
           px: 0,
           py: { xs: 0, sm: 0, md: 1 }, // Sin padding vertical en mobile
           display: 'flex',
@@ -656,9 +454,9 @@ export default function TopBar({
               <Box data-component="TopBar.mobileSearch" sx={{ display: { xs: 'flex', md: 'none' }, alignItems: 'center', ml: { xs: 0.5, sm: 1 } }}>
                 <TextField
                   size="small"
-                  value={mobileSearch}
-                  onChange={e => setMobileSearch(e.target.value)}
-                  onKeyDown={handleMobileSearchKeyDown}
+                  value={mobileSearchInputProps.value}
+                  onChange={mobileSearchInputProps.onChange}
+                  onKeyDown={mobileSearchInputProps.onKeyDown}
                   placeholder="Buscar productos..."
                   inputRef={mobileSearchInputRef}
                   sx={{
@@ -722,45 +520,12 @@ export default function TopBar({
         </Box>
       </Box>
 
-      <Menu
+      <MobileMenu
         anchorEl={mobileMenuAnchor}
         open={Boolean(mobileMenuAnchor)}
         onClose={handleCloseMobileMenu}
-        PaperProps={{
-          sx: {
-            backgroundColor: '#2C2C2C',
-            color: '#FFFFFF',
-            '& .MuiMenuItem-root': {
-              color: '#FFFFFF',
-              '&:hover': {
-                backgroundColor: 'rgba(255, 255, 255, 0.1)',
-              },
-            },
-            '& .MuiSvgIcon-root': {
-              color: '#FFFFFF',
-            },
-            '& .MuiToggleButton-root': {
-              color: '#FFFFFF',
-              borderColor: 'rgba(255, 255, 255, 0.3)',
-              '&.Mui-selected': {
-                backgroundColor: theme => theme.palette.primary.main,
-                color: '#FFFFFF',
-              },
-              '&.Mui-selected:hover': {
-                backgroundColor: theme => theme.palette.primary.dark,
-              },
-              '&:hover': {
-                backgroundColor: 'rgba(255, 255, 255, 0.05)',
-              },
-            },
-            '& .MuiDivider-root': {
-              borderColor: 'rgba(255, 255, 255, 0.1)',
-            },
-          },
-        }}
-      >
-        {mobileMenuItems}
-      </Menu>
+        items={mobileMenuItems}
+      />
       <Menu
         anchorEl={profileAnchor}
         open={Boolean(profileAnchor)}
@@ -783,87 +548,21 @@ export default function TopBar({
         }}
       >
         <MenuItem
-          onClick={() => {
-            const profileRoute = isBuyer
-              ? '/buyer/profile'
-              : '/supplier/profile';
-            navigate(profileRoute);
-            handleCloseProfileMenu();
-          }}
+          onClick={() => { goToProfile(); handleCloseProfileMenu(); }}
         >
           Mi Perfil
         </MenuItem>
         <MenuItem onClick={handleLogout}>Cerrar sesión</MenuItem>
       </Menu>
 
-      {/* Modales de autenticación (lazy) */}
-      {openLoginModal && (
-        <Suspense fallback={null}>
-          <Login
-            open={openLoginModal}
-            onClose={() => setOpenLoginModal(false)}
-            onOpenRegister={handleLoginToRegisterTransition}
-          />
-        </Suspense>
-      )}
-      {openRegisterModal && (
-        <Suspense fallback={null}>
-          <Register
-            open={openRegisterModal}
-            onClose={() => setOpenRegisterModal(false)}
-          />
-        </Suspense>
-      )}
-  {/* Contact modal removed: contact is handled by landing page scroll */}
-      {/* Notifications Popover */}
-      <Popover
-        open={Boolean(notifAnchor)}
-        anchorEl={notifAnchor}
-        onClose={handleCloseNotif}
-        disableScrollLock={true}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-        PaperProps={{
-          sx: { mt: 1, boxShadow: 6, borderRadius: 2, overflow: 'hidden' },
-        }}
-      >
-        <NotificationListPanel
-          notifications={notifCtx?.notifications || []}
-          activeTab={notifCtx?.activeTab || 'all'}
-          onTabChange={t => notifCtx?.setActiveTab?.(t)}
-          onItemClick={handleNotifItemClick}
-          onViewAll={handleViewAllNotif}
-          compact
-        />
-      </Popover>
-      <Dialog
-        open={notifModalOpen}
-        onClose={handleCloseNotifModal}
-        fullWidth
-        maxWidth="sm"
-      >
-        <DialogContent sx={{ p: 0 }}>
-          <NotificationListPanel
-            notifications={notifCtx?.notifications || []}
-            activeTab={notifCtx?.activeTab || 'all'}
-            onTabChange={t => notifCtx?.setActiveTab?.(t)}
-            onItemClick={handleNotifItemClick}
-            onViewAll={handleCloseNotifModal}
-            compact={false}
-          />
-        </DialogContent>
-      </Dialog>
-      {/* Modal Proximamente */}
-      <Modal
-        isOpen={openComingSoonModal}
-        onClose={() => setOpenComingSoonModal(false)}
-        onSubmit={() => setOpenComingSoonModal(false)}
-        type={MODAL_TYPES.INFO}
-        title="Próximamente..."
-        showCancelButton={false}
-      >
-        Esta funcionalidad estará disponible pronto.
-      </Modal>
+  {/* Legacy inline auth modals removed; using AuthModals wrapper */}
+      <AuthModals
+        openLogin={openLoginModal}
+        openRegister={openRegisterModal}
+        onCloseLogin={() => setOpenLoginModal(false)}
+        onCloseRegister={() => setOpenRegisterModal(false)}
+        onLoginToRegister={handleLoginToRegisterTransition}
+      />
     </>
   );
 }

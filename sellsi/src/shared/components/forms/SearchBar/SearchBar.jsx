@@ -18,6 +18,7 @@ import {
   MenuItem,
   Badge,
   Switch,
+  Tooltip,
   FormControlLabel,
   Typography,
 } from '@mui/material';
@@ -249,12 +250,16 @@ const SearchBar = ({
         >
           <FormControlLabel
             control={
-              <Switch
-                checked={isProviderView}
-                onChange={onToggleProviderView}
-                size="small"
-                color="primary"
-              />
+              <Tooltip title="Alternar vista productos/proveedores" placement="right" arrow>
+                <span>
+                  <Switch
+                    checked={isProviderView}
+                    onChange={onToggleProviderView}
+                    size="small"
+                    color="primary"
+                  />
+                </span>
+              </Tooltip>
             }
             label={
               <Typography

@@ -20,7 +20,7 @@
         "severity": "alto"
       },
       {
-        "path": "sellsi/src/domains/marketplace/pages/sections/ProductsSection.jsx",
+        "path": "sellsi/src/domains/marketplace/pages/sections/ProductsSection.jsx", // REFACTOR LISTO DE ESTE COMPONENTE
         "loc": 754,
         "importCount": 17,
         "functionCount": 42,
@@ -33,7 +33,7 @@
         "severity": "alto"
       },
       {
-        "path": "sellsi/src/shared/components/navigation/TopBar/TopBar.jsx",
+        "path": "sellsi/src/shared/components/navigation/TopBar/TopBar.jsx", // REFACTOR LISTO DE ESTE COMPONENTE
         "loc": 823,
         "importCount": 18,
         "functionCount": 60,

@@ -17,6 +17,7 @@ import { useLocation } from 'react-router-dom';
 import { useMarketplaceState } from '../../../domains/marketplace/hooks/state/useMarketplaceState';
 import { useProductSorting } from '../../../domains/marketplace/hooks/products/useProductSorting';
 import { useScrollBehavior } from '../../../domains/marketplace/hooks/ui/useScrollBehavior';
+import { useMarketplaceSearchBus } from '../../contexts/MarketplaceSearchContext';
 
 /**
  * Hook centralizado que consolida toda la lógica de Marketplace
@@ -147,18 +148,13 @@ export const useMarketplaceLogic = (options = {}) => {
     }
   }, [location.state?.initialSearch, location.pathname, location.search, setBusqueda]);
 
-  // ✅ NUEVO: Listener global para integrar barra de búsqueda móvil en TopBar
+  // ✅ REEMPLAZO: Integración vía contexto (MarketPlaceSearchBus) en lugar de evento global
+  const searchBus = useMarketplaceSearchBus();
   useEffect(() => {
-    const handler = (e) => {
-      // Solo responder si estamos en marketplace buyer
-      if (location.pathname.startsWith('/buyer/marketplace')) {
-        const term = e.detail?.term ?? '';
-        setBusqueda(term);
-      }
-    };
-    window.addEventListener('marketplaceSearch', handler);
-    return () => window.removeEventListener('marketplaceSearch', handler);
-  }, [location.pathname, setBusqueda]);
+    if (!searchBus) return; // Si no hay provider (fallback) simplemente no hacemos nada
+    if (!location.pathname.startsWith('/buyer/marketplace')) return;
+    setBusqueda(searchBus.externalSearchTerm || '');
+  }, [searchBus?.externalSearchTerm, location.pathname, setBusqueda]);
 
   // ===== HANDLERS MEMOIZADOS =====
   const handleToggleFiltro = useCallback(() => {
