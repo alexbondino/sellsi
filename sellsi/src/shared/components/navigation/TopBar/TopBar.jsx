@@ -40,6 +40,10 @@ import {
   NotificationListPanel,
 } from '../../../../domains/notifications';
 import { Popover, Dialog, DialogContent } from '@mui/material';
+import TextField from '@mui/material/TextField';
+import InputAdornment from '@mui/material/InputAdornment';
+import SearchIcon from '@mui/icons-material/Search';
+import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 
 export default function TopBar({
   session,
@@ -546,6 +550,56 @@ export default function TopBar({
     ];
   }
 
+  // ================== 🔍 MOBILE MARKETPLACE SEARCH (Buyer only) ==================
+  const isBuyerRole = currentRole === 'buyer';
+  const isOnBuyerMarketplace = location.pathname.startsWith('/buyer/marketplace');
+  const [mobileSearch, setMobileSearch] = useState('');
+  const mobileSearchInputRef = useRef(null);
+
+  // Si entramos al marketplace, opcionalmente podríamos resetear la search local (no necesario guardar en global aquí)
+  useEffect(() => {
+    if (isOnBuyerMarketplace) {
+      setMobileSearch(prev => prev); // mantener
+    }
+  }, [isOnBuyerMarketplace]);
+
+  // En marketplace: enviar evento al cambiar (búsqueda reactiva) con debounce ligero
+  useEffect(() => {
+    if (!isBuyerRole) return;
+    if (!isOnBuyerMarketplace) return; // solo reactivo dentro de la página
+    const handler = setTimeout(() => {
+      const evt = new CustomEvent('marketplaceSearch', { detail: { term: mobileSearch } });
+      window.dispatchEvent(evt);
+    }, 300);
+    return () => clearTimeout(handler);
+  }, [mobileSearch, isBuyerRole, isOnBuyerMarketplace]);
+
+  const executeMarketplaceNavigation = (term) => {
+    // Navegar al marketplace si estamos fuera, pasando estado initialSearch
+    navigate('/buyer/marketplace', { state: { initialSearch: term, fromTopBar: true } });
+  };
+
+  const handleMobileSearchKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      if (!isOnBuyerMarketplace) {
+        executeMarketplaceNavigation(mobileSearch.trim());
+      } else {
+        // Ya estamos dentro: forzar evento inmediato
+        const evt = new CustomEvent('marketplaceSearch', { detail: { term: mobileSearch } });
+        window.dispatchEvent(evt);
+      }
+    }
+  };
+
+  const handleMobileSearchButton = () => {
+    if (!isOnBuyerMarketplace) {
+      executeMarketplaceNavigation(mobileSearch.trim());
+    } else {
+      const evt = new CustomEvent('marketplaceSearch', { detail: { term: mobileSearch } });
+      window.dispatchEvent(evt);
+    }
+  };
+
   return (
     <>
       <Box
@@ -626,6 +680,42 @@ export default function TopBar({
                 draggable={false}
               />
             </Box>
+            {/* Mobile search: placed right of logo for buyer role */}
+            {isLoggedIn && isBuyerRole && (
+              <Box data-component="TopBar.mobileSearch" sx={{ display: { xs: 'flex', md: 'none' }, alignItems: 'center', ml: 1 }}>
+                <TextField
+                  size="small"
+                  value={mobileSearch}
+                  onChange={e => setMobileSearch(e.target.value)}
+                  onKeyDown={handleMobileSearchKeyDown}
+                  placeholder="Buscar productos..."
+                  inputRef={mobileSearchInputRef}
+                  sx={{
+                    width: 180,
+                    '& .MuiOutlinedInput-root': {
+                      backgroundColor: 'white',
+                      height: 34,
+                      borderRadius: 1.5,
+                      fontSize: '0.75rem'
+                    }
+                  }}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <SearchIcon fontSize="small" />
+                      </InputAdornment>
+                    ),
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton size="small" onClick={handleMobileSearchButton}>
+                          <ArrowForwardIcon fontSize="small" />
+                        </IconButton>
+                      </InputAdornment>
+                    )
+                  }}
+                />
+              </Box>
+            )}
             <Box sx={{ display: { xs: 'none', md: 'flex' }, gap: 2 }}>
               {desktopNavLinks}
             </Box>
@@ -641,13 +731,19 @@ export default function TopBar({
             {desktopRightContent}
           </Box>
 
-          <Box sx={{ display: { xs: 'flex', md: 'none' } }}>
+          <Box sx={{ display: { xs: 'flex', md: 'none' }, alignItems: 'center', gap: 0, ml: 2 }}>
+            {/* Campana de notificaciones - móvil */}
             {isLoggedIn && (
-              <>
-                {/* Carrito eliminado en xs/sm, solo se muestra el profileMenuButton */}
-                {profileMenuButton}
-              </>
+              <Tooltip title="Notificaciones" arrow>
+                <span>
+                  <NotificationBell
+                    count={notifCtx?.unreadCount || 0}
+                    onClick={handleOpenNotif}
+                  />
+                </span>
+              </Tooltip>
             )}
+            {isLoggedIn && profileMenuButton}
             <IconButton onClick={handleOpenMobileMenu}>
               <MenuIcon sx={{ color: 'white' }} />
             </IconButton>

@@ -131,6 +131,35 @@ export const useMarketplaceLogic = (options = {}) => {
     }
   }, [location.state?.providerSwitchActive]);
 
+  // ✅ NUEVO: Effect para aplicar búsqueda inicial cuando se navega desde TopBar u otra sección
+  useEffect(() => {
+    if (location.state?.initialSearch !== undefined && location.state?.initialSearch !== null) {
+      const term = String(location.state.initialSearch).trim();
+      if (term !== '') {
+        setBusqueda(term);
+      } else {
+        setBusqueda('');
+      }
+      // Limpiar state para no re-aplicar en futuras navegaciones
+      try {
+        window.history.replaceState({}, document.title, location.pathname + location.search);
+      } catch (_) {}
+    }
+  }, [location.state?.initialSearch, location.pathname, location.search, setBusqueda]);
+
+  // ✅ NUEVO: Listener global para integrar barra de búsqueda móvil en TopBar
+  useEffect(() => {
+    const handler = (e) => {
+      // Solo responder si estamos en marketplace buyer
+      if (location.pathname.startsWith('/buyer/marketplace')) {
+        const term = e.detail?.term ?? '';
+        setBusqueda(term);
+      }
+    };
+    window.addEventListener('marketplaceSearch', handler);
+    return () => window.removeEventListener('marketplaceSearch', handler);
+  }, [location.pathname, setBusqueda]);
+
   // ===== HANDLERS MEMOIZADOS =====
   const handleToggleFiltro = useCallback(() => {
     // Para desktop: toggle del panel lateral

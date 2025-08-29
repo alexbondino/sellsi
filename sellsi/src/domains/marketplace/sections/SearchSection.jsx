@@ -9,7 +9,7 @@
 // - CategoryNavigation (botón categorías + chips + secciones)
 
 import React from 'react';
-import { Box } from '@mui/material';
+import { Box, useMediaQuery, useTheme } from '@mui/material';
 import ReactDOM from 'react-dom';
 import { SearchBar } from '../../../shared/components/forms'; // ✅ REFACTOR: Usar el SearchBar compartido con funcionalidad de switch
 import CategoryNavigation from '../pages/CategoryNavigation/CategoryNavigation';
@@ -85,12 +85,16 @@ const SearchSection = ({
       [mainContainerStyles, dynamicStyles]
     );
 
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const hideOnlyInput = isMobile && !searchBarProps?.isProviderView;
+
     // Usar portal para que SearchSection siempre esté pegada al viewport y no se mueva con el layout
     return ReactDOM.createPortal(
       <Box sx={finalContainerStyles}>
         <Box sx={innerContainerStyles}>
-          {/* ✅ USAR SearchBar EXISTENTE - Sin botón de filtros */}
-          <SearchBar {...searchBarProps} showFiltersButton={false} />
+          {/* ✅ Ocultar solo el input de texto en mobile vista productos */}
+          <SearchBar {...searchBarProps} hideTextInputOnMobile={hideOnlyInput} showFiltersButton={false} />
           {/* ✅ USAR CategoryNavigation EXISTENTE */}
           <CategoryNavigation {...categoryNavigationProps} />
         </Box>

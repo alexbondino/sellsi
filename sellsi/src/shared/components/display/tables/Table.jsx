@@ -81,6 +81,9 @@ const Table = ({ orders, onActionClick }) => {
                       <Typography variant="caption" sx={{ color: 'common.white', opacity: 0.9 }}>
                         * Despachar requiere Fecha estimada; mensajes/motivos son opcionales.
                       </Typography>
+                      <Typography variant="caption" sx={{ color: 'common.white', display: 'block', mt: 1 }}>
+                        Si tienes alguna duda o inquietud, contáctanos a través de la opción ‘Ayuda’
+                      </Typography>
                     </Box>
                   }
                 >

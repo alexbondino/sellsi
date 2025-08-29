@@ -67,7 +67,11 @@ const ProductsSection = React.memo(
     // ✅ LAYOUT ESTÁTICO: Padding fijo para mejor performance
     const mainContainerStyles = React.useMemo(
       () => ({
-        pt:  { xs: 3.5, md:'90px'},
+        // Padding-top general (no usar valores negativos en padding: son inválidos en CSS)
+        pt: { xs: 3.5, md: '90px' },
+        // Si queremos 'subir' el contenedor en mobile para la vista proveedores,
+        // usar margin-top (mt) negativo en vez de padding negativo.
+        mt: { xs: isProviderView ? -8 : 0, md: 0 },
         pb: SPACING_BOTTOM_MAIN, // Usar espaciado estándar global
         minHeight: '100vh',
         display: 'flex',
@@ -77,7 +81,8 @@ const ProductsSection = React.memo(
         boxSizing: 'border-box',
         width: '100%',
       }),
-      []
+      // Recalcular estilos cuando cambie isProviderView para que mt/pt se apliquen correctamente
+      [isProviderView]
     );
 
     // ✅ MEJORA DE RENDIMIENTO: Memoización de estilos del contenedor interno
