@@ -659,13 +659,11 @@ const AddProduct = () => {
       }
 
       // 3. Mostrar éxito y navegar
-      replaceLoadingWithSuccess(
-        'product-save',
-        isEditMode
-          ? 'Producto actualizado exitosamente!'
-          : 'Producto creado exitosamente!',
-        '🎉'
-      );
+      const successMessage = isEditMode
+        ? 'Producto actualizado exitosamente!'
+        : 'Producto creado exitosamente!';
+
+      replaceLoadingWithSuccess('product-save', successMessage, '🎉');
 
       // 🔧 FIX 2C: Marcar que estamos navegando (esto deshabilitará el botón permanentemente)
       setIsNavigating(true);
