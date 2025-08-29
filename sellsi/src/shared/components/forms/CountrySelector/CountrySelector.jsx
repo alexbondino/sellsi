@@ -11,8 +11,8 @@ import {
   useMediaQuery,
 } from '@mui/material'
 import { useCountrySelector } from './useCountrySelector'
-// Flags (SVG) via flag-icons
-import 'flag-icons/css/flag-icons.min.css'
+// Flags (SVG) via flag-icons - OPTIMIZADO: Solo países usados
+import './flag-icons-subset.css'
 
 /**
  * Componente UI puro para seleccionar países
@@ -91,11 +91,21 @@ const CountrySelector = ({
       sx={sx}
       {...props}
     >
+      {/* Hidden input to reduce browser autofill/autocomplete prompts when opening the selector */}
+      <input
+        type="text"
+        name="prevent_autofill"
+        autoComplete="new-password"
+        aria-hidden="true"
+        tabIndex={-1}
+        style={{ position: 'absolute', opacity: 0, height: 0, width: 0, border: 'none', padding: 0, margin: 0 }}
+      />
       <InputLabel required={required}>{label}</InputLabel>
       <Select
         value={selectedCountry}
         onChange={handleSelectChange}
         label={label}
+  inputProps={{ autoComplete: 'new-password', name: 'no_autocomplete_country' }}
         renderValue={(selected) => {
           if (selectedCountryData) {
             return (
@@ -122,6 +132,7 @@ const CountrySelector = ({
           <TextField
             size="small"
             autoFocus
+            autoComplete="new-password"
             placeholder="Buscar país..."
             fullWidth
             value={searchTerm}
@@ -130,6 +141,7 @@ const CountrySelector = ({
               style: { fontSize: 14 },
             }}
             sx={{ mb: 1 }}
+            inputProps={{ autoComplete: 'new-password', name: 'no_autocomplete_country_search' }}
             onKeyDown={(e) => {
               if (e.key !== 'Escape') {
                 e.stopPropagation()

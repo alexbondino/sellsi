@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "node scripts/generate-flag-subset.cjs && vite build",
     "build:analyze": "vite build --config ./analyze-bundle.js",
     "build:cdn": "vite build --config ./vite.config.cdn.js",
     "build:cdn-analyze": "vite build --config ./analyze-bundle.js && vite build --config ./vite.config.cdn.js",
@@ -15,7 +15,8 @@
   "optimize:cdn": "npm run lint && npm run build:cdn",
   "analyze:cycles": "node ../detect_cycles.js --format pretty --suggest-breaks",
   "analyze:cycles:md": "node ../detect_cycles.js --format md --suggest-breaks --output ./Documentacion/cycles/cycle-report.md",
-    "size-check": "npm run build && du -sh dist/*"
+    "size-check": "npm run build && du -sh dist/*",
+    "flags:generate": "node scripts/generate-flag-subset.cjs"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",

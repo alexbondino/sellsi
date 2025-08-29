@@ -106,7 +106,7 @@ const CompanyInfoSection = ({
         </Box>
 
   {/* País + Teléfono en una misma fila, CountrySelector a la izquierda */}
-        <Box sx={{ display: 'flex', gap: 1 }}>
+    <Box sx={{ display: 'flex', gap: 1 }} autoComplete="off">
           <Box sx={{ minWidth: 180 }}>
             <CountrySelector
               value={formData.country || ''}
@@ -127,6 +127,7 @@ const CompanyInfoSection = ({
             fullWidth
             variant="outlined"
             size="small"
+      name="phone_no_autocomplete"
             placeholder={formData.country === 'CL' || !formData.country ? '912345678' : 'Teléfono'}
             inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }}
             error={!validatePhone(formData.country || 'CL', formData.phone || '').isValid}

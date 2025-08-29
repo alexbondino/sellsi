@@ -1,0 +1,19 @@
+.fi{background-size:contain;background-position:50%;background-repeat:no-repeat}
+.fi{position:relative;display:inline-block;width:1.333333em;line-height:1em}
+.fi:before{content:" "}
+.fi-cl{background-image:url("/node_modules/flag-icons/flags/4x3/cl.svg")}
+.fi-ar{background-image:url("/node_modules/flag-icons/flags/4x3/ar.svg")}
+.fi-pe{background-image:url("/node_modules/flag-icons/flags/4x3/pe.svg")}
+.fi-co{background-image:url("/node_modules/flag-icons/flags/4x3/co.svg")}
+.fi-mx{background-image:url("/node_modules/flag-icons/flags/4x3/mx.svg")}
+.fi-es{background-image:url("/node_modules/flag-icons/flags/4x3/es.svg")}
+.fi-us{background-image:url("/node_modules/flag-icons/flags/4x3/us.svg")}
+.fi-ec{background-image:url("/node_modules/flag-icons/flags/4x3/ec.svg")}
+.fi-bo{background-image:url("/node_modules/flag-icons/flags/4x3/bo.svg")}
+.fi-uy{background-image:url("/node_modules/flag-icons/flags/4x3/uy.svg")}
+.fi-py{background-image:url("/node_modules/flag-icons/flags/4x3/py.svg")}
+.fi-ve{background-image:url("/node_modules/flag-icons/flags/4x3/ve.svg")}
+.fi-br{background-image:url("/node_modules/flag-icons/flags/4x3/br.svg")}
+.fi-gt{background-image:url("/node_modules/flag-icons/flags/4x3/gt.svg")}
+.fi-cr{background-image:url("/node_modules/flag-icons/flags/4x3/cr.svg")}
+.fi-pa{background-image:url("/node_modules/flag-icons/flags/4x3/pa.svg")}
