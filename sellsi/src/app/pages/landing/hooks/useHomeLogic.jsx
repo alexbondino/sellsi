@@ -15,7 +15,7 @@ const useHomeLogic = scrollTargets => {
   const quienesSomosRef = useRef(null);
   const serviciosRef = useRef(null);
   const estadisticasRef = useRef(null);
-  const contactanosRef = useRef(null);
+  const contactRef = useRef(null);
 
   // Configurar las referencias para scroll si se proporcionan
   if (scrollTargets) {
@@ -23,7 +23,7 @@ const useHomeLogic = scrollTargets => {
       quienesSomosRef,
       serviciosRef,
       estadisticasRef,
-      contactanosRef,
+      contactRef,
     };
   } // ===== CARRUSELES =====
   // Carrusel de promoción usando custom hook con autoplay cada 10 segundos
@@ -96,7 +96,7 @@ const useHomeLogic = scrollTargets => {
     quienesSomosRef,
     serviciosRef,
     estadisticasRef,
-    contactanosRef,
+  contactRef,
 
     // Carrusel promocional
     currentPromoSlide,

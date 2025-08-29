@@ -1,5 +1,6 @@
 // 📁 src/app/pages/landing/components/ServicesSection.jsx
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Typography,
@@ -10,17 +11,19 @@ import ChevronRightRoundedIcon from '@mui/icons-material/ChevronRightRounded';
 import YouTubeEmbed from '../../../../shared/components/YouTubeEmbed';
 
 export default function ServicesSection({
-  quienesSomosRef,
+  serviciosRef,
   onExploreClick,
   onBecomeSupplierClick,
 }) {
   const goExplore = () =>
     onExploreClick ? onExploreClick() : window.location.assign('/marketplace');
+  const navigate = useNavigate();
 
-  const goBecomeSupplier = () =>
-    onBecomeSupplierClick
-      ? onBecomeSupplierClick()
-      : window.location.assign('/contacto');
+  const goBecomeSupplier = () => {
+    if (onBecomeSupplierClick) return onBecomeSupplierClick();
+    const search = `?scrollTo=${encodeURIComponent('contactModal')}&t=${Date.now()}`;
+    navigate(`/${search}`);
+  };
 
   // ✅ Bullet usa variant="bullet" definido en theme.js
   const Bullet = ({ children, color = 'primary.main' }) => (
@@ -31,7 +34,11 @@ export default function ServicesSection({
   );
 
   return (
-    <Box ref={quienesSomosRef} component="section">
+    <Box
+      ref={serviciosRef}
+      component="section"
+      sx={{ pt: { xs: 2, md: '60px' } }}
+    >
       {/* ===================== Bloque 1: Compradores ===================== */}
       <Grid container spacing={{ xs: 3, md: 6 }}>
         {/* Columna izquierda (video en desktop) */}

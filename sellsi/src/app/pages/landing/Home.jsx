@@ -75,23 +75,30 @@ const Home = ({ scrollTargets }) => {
     const params = new URLSearchParams(location.search);
     const scrollTo = params.get('scrollTo');
     if (scrollTo) {
+      // refMap entries can be either a direct ref (legacy) or an object { ref, offset }
       const refMap = {
-        top: topRef,
-        quienesSomosRef,
-        serviciosRef,
-        trabajaConNosotrosRef: serviciosRef, // fallback, si tienes otro ref, cámbialo aquí
+        top: { ref: topRef, offset: 0 },
+        quienesSomosRef: { ref: quienesSomosRef, offset: 0 },
+        // Scroll a bit higher than the exact top so the section appears a few px above
+        serviciosRef: { ref: serviciosRef, offset: 60 },
+        contactModal: { ref: contactRef, offset: 0 },
+        trabajaConNosotrosRef: { ref: serviciosRef, offset: 0 }, // fallback
       };
-      const targetRef = refMap[scrollTo];
+
+      const entry = refMap[scrollTo];
+      const targetRef = entry?.ref || entry;
+      const offset = entry?.offset || 0;
+
       if (targetRef && targetRef.current) {
         setTimeout(() => {
-          targetRef.current.scrollIntoView({
-            behavior: 'smooth',
-            block: 'start',
-          });
-        }, 100); // Espera breve para asegurar render
+          // Compute exact scroll top with offset for precise positioning
+          const topPos = targetRef.current.getBoundingClientRect().top + window.scrollY - offset;
+          window.scrollTo({ top: Math.max(0, topPos), behavior: 'smooth' });
+        }, 100); // small delay to ensure the DOM is rendered
       }
     }
-  }, [location.search, quienesSomosRef, serviciosRef]);
+    // Include refs in deps so effect re-runs when they change
+  }, [location.search, quienesSomosRef, serviciosRef, contactRef]);
 
   return (
     <Box ref={topRef} sx={{ width: '100%', overflowX: 'hidden' }}>

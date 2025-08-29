@@ -101,6 +101,10 @@ export const AuthProvider = ({ children }) => {
                 localStorage.setItem('user_id', newSession.user.id); 
               } catch (e) {}
             }
+            // Invalidar cachés sensibles a usuario (shipping / transfer / billing)
+            try { window.invalidateUserShippingRegionCache?.(); } catch(e) {}
+            try { window.invalidateTransferInfoCache?.(); } catch(e) {}
+            try { window.invalidateBillingInfoCache?.(); } catch(e) {}
             // Forzar obtención del perfil incluso si el usuario ya estaba en sesión
             checkUserAndFetchProfile(newSession);
           } else if (event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED') {
@@ -112,6 +116,10 @@ export const AuthProvider = ({ children }) => {
             localStorage.removeItem('access_token');
             localStorage.removeItem('auth_token');
             setSession(newSession);
+            // Invalidar cachés al cerrar sesión o refrescar token (seguro)
+            try { window.invalidateUserShippingRegionCache?.(); } catch(e) {}
+            try { window.invalidateTransferInfoCache?.(); } catch(e) {}
+            try { window.invalidateBillingInfoCache?.(); } catch(e) {}
             checkUserAndFetchProfile(newSession);
           } else if (event === 'USER_UPDATED') {
             setSession(newSession);
@@ -121,6 +129,10 @@ export const AuthProvider = ({ children }) => {
                 localStorage.setItem('user_id', newSession.user.id); 
               } catch (e) {}
             }
+            // Invalidar por seguridad (posible cambio de datos asociados al usuario)
+            try { window.invalidateUserShippingRegionCache?.(); } catch(e) {}
+            try { window.invalidateTransferInfoCache?.(); } catch(e) {}
+            try { window.invalidateBillingInfoCache?.(); } catch(e) {}
           }
         }
       }

@@ -40,6 +40,7 @@ import { getUserProfile, updateUserProfile, uploadProfileImage, deleteAllUserIma
 import { supabase } from '../../../services/supabase';
 import { SPACING_BOTTOM_MAIN } from '../../../styles/layoutSpacing';
 import { invalidateTransferInfoCache } from '../../../shared/hooks/profile/useTransferInfoValidation'; // Para invalidar cache bancario
+import { invalidateBillingInfoCache } from '../../../shared/hooks/profile/useBillingInfoValidation'; // Invalidar cache facturación
 
 /**
  * 🎭 Profile - Orquestador Universal de Perfiles
@@ -164,7 +165,7 @@ const Profile = ({ userProfile: initialUserProfile, onUpdateProfile: externalUpd
       // Actualizar usando el servicio
       await updateUserProfile(user.id, profileData);
       
-      // ✅ INVALIDAR CACHE DE INFORMACIÓN BANCARIA si se actualizaron campos relacionados
+  // ✅ INVALIDAR CACHE DE INFORMACIÓN BANCARIA si se actualizaron campos relacionados
       // NOTA: Los campos que llegan aquí están en formato BD (snake_case)
       const transferFields = ['account_holder', 'bank', 'account_number', 'transfer_rut', 'confirmation_email'];
       const hasTransferFieldUpdate = transferFields.some(field => profileData.hasOwnProperty(field));
@@ -176,6 +177,14 @@ const Profile = ({ userProfile: initialUserProfile, onUpdateProfile: externalUpd
       if (hasTransferFieldUpdate || hasTransferFieldFormUpdate) {
         console.log('🏦 Invalidando cache de información bancaria por actualización de perfil');
         invalidateTransferInfoCache();
+      }
+
+      // ✅ INVALIDAR CACHE DE FACTURACIÓN si se actualizaron campos billing
+      const billingFields = ['business_name','billing_rut','business_line','billing_address','billing_region','billing_commune'];
+      const hasBillingUpdate = billingFields.some(field => profileData.hasOwnProperty(field));
+      if (hasBillingUpdate) {
+        console.log('🧾 Invalidando cache de facturación por actualización de perfil');
+        invalidateBillingInfoCache();
       }
       
       // Recargar perfil después de actualizar
@@ -336,12 +345,14 @@ const Profile = ({ userProfile: initialUserProfile, onUpdateProfile: externalUpd
           return;
         }
       }
-      await handleUpdateProfile(dataToUpdate);
+  await handleUpdateProfile(dataToUpdate);
       updateInitialData(); // Actualizar datos iniciales en lugar de resetear
 
-      // ✅ INVALIDAR CACHÉ DE SHIPPING si cambió la región
-      if (dataToUpdate.shipping_region || dataToUpdate.shippingRegion) {
+      // ✅ INVALIDAR / PRIMAR CACHÉ DE SHIPPING si cambió la región
+      const newRegion = dataToUpdate.shipping_region || dataToUpdate.shippingRegion;
+      if (newRegion) {
         invalidateUserCache();
+        try { window.primeUserShippingRegionCache?.(newRegion); } catch(e) {}
       }
 
       // Registrar IP del usuario al actualizar perfil (solo si tenemos perfil cargado)

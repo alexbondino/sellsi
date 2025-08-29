@@ -32,6 +32,7 @@ import { CheckoutSummaryImage } from '../../../components/UniversalProductImage'
 import { useUnifiedShippingValidation } from '../../hooks/shipping/useUnifiedShippingValidation';
 import { calculatePriceForQuantity, normalizePriceTiers } from '../../../utils/priceCalculation';
 import { supabase } from '../../../services/supabase';
+import { useBillingInfoValidation } from '../../hooks/profile/useBillingInfoValidation';
 import { useSupplierDocumentTypes } from '../../utils/supplierDocumentTypes';
 
 // ===============================================
@@ -206,7 +207,10 @@ const AddToCartModal = ({
   userRegion = null,
   isLoadingUserProfile = false, // Nuevo prop para indicar si el perfil del usuario está cargando
   isOwnProduct = false, // Nuevo: deshabilitar agregar si es producto propio
+  onRequireBillingInfo = null, // Nuevo: callback cuando falta billing info y se requiere factura
 }) => {
+  // Validación de Billing (solo interesa si usuario selecciona factura)
+  const { isComplete: isBillingComplete, isLoading: isLoadingBilling, missingFieldLabels: missingBillingLabels } = useBillingInfoValidation();
   // ============================================================================
   // ESTADOS LOCALES
   // ============================================================================
@@ -487,6 +491,19 @@ const AddToCartModal = ({
       return;
     }
 
+    // Bloqueo previo: si se selecciona factura y billing incompleto
+    if (documentType === 'factura') {
+      if (isLoadingBilling) return; // esperar
+      if (!isBillingComplete) {
+        // Cerrar modal actual y disparar callback para abrir modal de billing
+        if (onRequireBillingInfo) {
+          onClose();
+          onRequireBillingInfo({ missingFields: missingBillingLabels });
+        }
+        return; // No agregar
+      }
+    }
+
     setIsProcessing(true);
     
     try {
@@ -513,7 +530,11 @@ const AddToCartModal = ({
     currentPricing,
     activeTier,
     onAddToCart,
-    onClose
+    onClose,
+    isBillingComplete,
+    isLoadingBilling,
+    missingBillingLabels,
+    onRequireBillingInfo
   ]);
 
   const handleClose = useCallback(() => {
@@ -972,7 +993,7 @@ const AddToCartModal = ({
                 })()}
                 sx={{ py: 1.5 }}
               >
-                {isProcessing ? 'Agregando...' : 'Agregar al Carrito'}
+                {isProcessing ? 'Agregando...' : (documentType === 'factura' && !isBillingComplete ? 'Completar Facturación' : 'Agregar al Carrito')}
               </Button>
             </Box>
 

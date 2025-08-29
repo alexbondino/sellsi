@@ -19,7 +19,6 @@ import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import NotificationsIcon from '@mui/icons-material/Notifications'; // fallback icon for mobile or loading
 import { supabase } from '../../../services/supabase';
 import useCartStore from '../../../stores/cart/cartStore';
-import ContactModal from '../../modals/ContactModal';
 import { Modal, MODAL_TYPES } from '../../feedback';
 import { useRole } from '../../../../infrastructure/providers/RoleProvider';
 // Lazy imports directos de componentes de auth (ruta específica, evitando barrel auth para no ampliar fan-out)
@@ -63,7 +62,7 @@ export default function TopBar({
 
   const [openLoginModal, setOpenLoginModal] = useState(false);
   const [openRegisterModal, setOpenRegisterModal] = useState(false);
-  const [openContactModal, setOpenContactModal] = useState(false);
+  // contact handled via SPA scroll on landing page
 
   // ✅ SISTEMA CENTRALIZADO DE AUTENTICACIÓN
   // TopBar es el único responsable de manejar modales de auth para evitar duplicados
@@ -195,7 +194,10 @@ export default function TopBar({
     handleCloseMobileMenu();
     setTimeout(() => {
       if (ref === 'contactModal') {
-        setOpenContactModal(true);
+        // Navigate to landing and trigger scroll to contact section
+        setSkipScrollToTopOnce();
+        const search = `?scrollTo=${encodeURIComponent('contactModal')}&t=${Date.now()}`;
+        navigate(`/${search}`);
         return;
       }
       if (
@@ -327,39 +329,24 @@ export default function TopBar({
 
   if (!isLoggedIn) {
     // Botones públicos, pero el de "Trabaja con Nosotros" ahora abre modal
+    // Ocultar totalmente el botón "Trabaja con Nosotros" según requerimiento
     const publicNavButtons = [
       { label: 'Servicios', ref: 'serviciosRef' },
       { label: 'Quiénes Somos', ref: 'quienesSomosRef' },
-      { label: 'Trabaja con Nosotros', ref: 'trabajaConNosotrosRef' },
       { label: 'Contáctanos', ref: 'contactModal' },
     ];
 
-    desktopNavLinks = publicNavButtons.map(({ label, ref }) => {
-      if (ref === 'trabajaConNosotrosRef') {
-        return (
-          <Button
-            key={label}
-            onClick={() => setOpenComingSoonModal(true)}
-            sx={navButtonStyle}
-            disableFocusRipple
-            disableRipple
-          >
-            {label}
-          </Button>
-        );
-      }
-      return (
-        <Button
-          key={label}
-          onClick={() => handleNavigate(ref)}
-          sx={navButtonStyle}
-          disableFocusRipple
-          disableRipple
-        >
-          {label}
-        </Button>
-      );
-    });
+    desktopNavLinks = publicNavButtons.map(({ label, ref }) => (
+      <Button
+        key={label}
+        onClick={() => handleNavigate(ref)}
+        sx={navButtonStyle}
+        disableFocusRipple
+        disableRipple
+      >
+        {label}
+      </Button>
+    ));
 
     desktopRightContent = (
       <>
@@ -405,27 +392,11 @@ export default function TopBar({
     );
 
     mobileMenuItems = [
-      ...publicNavButtons.map(({ label, ref }) => {
-        if (ref === 'trabajaConNosotrosRef') {
-          return (
-            <MenuItem
-              key={label}
-              onClick={() => {
-                setOpenComingSoonModal(true);
-                handleCloseMobileMenu();
-              }}
-              sx={{ fontSize: 16 }}
-            >
-              {label}
-            </MenuItem>
-          );
-        }
-        return (
-          <MenuItem key={label} onClick={() => handleNavigate(ref)} sx={{ fontSize: 16 }}>
-            {label}
-          </MenuItem>
-        );
-      }),
+      ...publicNavButtons.map(({ label, ref }) => (
+        <MenuItem key={label} onClick={() => { handleNavigate(ref); handleCloseMobileMenu(); }} sx={{ fontSize: 16 }}>
+          {label}
+        </MenuItem>
+      )),
       <Divider key="divider1" />,
       <MenuItem
         key="login"
@@ -682,7 +653,7 @@ export default function TopBar({
             </Box>
             {/* Mobile search: placed right of logo for buyer role */}
             {isLoggedIn && isBuyerRole && (
-              <Box data-component="TopBar.mobileSearch" sx={{ display: { xs: 'flex', md: 'none' }, alignItems: 'center', ml: 1 }}>
+              <Box data-component="TopBar.mobileSearch" sx={{ display: { xs: 'flex', md: 'none' }, alignItems: 'center', ml: { xs: 0.5, sm: 1 } }}>
                 <TextField
                   size="small"
                   value={mobileSearch}
@@ -691,7 +662,7 @@ export default function TopBar({
                   placeholder="Buscar productos..."
                   inputRef={mobileSearchInputRef}
                   sx={{
-                    width: 180,
+                    width: { xs: 160, sm: 180 },
                     '& .MuiOutlinedInput-root': {
                       backgroundColor: 'white',
                       height: 34,
@@ -731,7 +702,7 @@ export default function TopBar({
             {desktopRightContent}
           </Box>
 
-          <Box sx={{ display: { xs: 'flex', md: 'none' }, alignItems: 'center', gap: 0, ml: 2 }}>
+          <Box sx={{ display: { xs: 'flex', md: 'none' }, alignItems: 'center', gap: 0, ml: { xs: 0.5, sm: 2 } }}>
             {/* Campana de notificaciones - móvil */}
             {isLoggedIn && (
               <Tooltip title="Notificaciones" arrow>
@@ -843,15 +814,7 @@ export default function TopBar({
           />
         </Suspense>
       )}
-      {openContactModal && (
-        <ContactModal
-          open={openContactModal}
-          onClose={() => {
-            setOpenContactModal(false);
-            // ...log eliminado...
-          }}
-        />
-      )}
+  {/* Contact modal removed: contact is handled by landing page scroll */}
       {/* Notifications Popover */}
       <Popover
         open={Boolean(notifAnchor)}

@@ -1,6 +1,7 @@
 // 📁 src/app/pages/landing/components/HeroSection.jsx
 import React from 'react';
 import { Box, Typography, Button } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
 
 export default function HeroSection({
   // ✅ usa ruta pública absoluta (funciona en build)
@@ -11,9 +12,14 @@ export default function HeroSection({
 }) {
   const handleExplore = () =>
     onExploreClick ? onExploreClick() : window.location.assign('/marketplace');
+  const navigate = useNavigate();
 
-  const handleDemo = () =>
-    onDemoClick ? onDemoClick() : window.location.assign('/contacto');
+  const handleDemo = () => {
+    if (onDemoClick) return onDemoClick();
+    // Navegar cliente-side a home con query para que Home haga scroll al contacto
+    const search = `?scrollTo=${encodeURIComponent('contactModal')}&t=${Date.now()}`;
+    navigate(`/${search}`);
+  };
 
   // Padding simétrico por lado (considera safe areas)
   const pl = {
