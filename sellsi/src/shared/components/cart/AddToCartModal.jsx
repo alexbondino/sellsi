@@ -341,7 +341,7 @@ const AddToCartModal = ({
   }), [enrichedProduct]);
 
   // Hook para validación de despacho optimizado - Solo bajo demanda
-  const { validateSingleProduct, validateProductShipping, getUserRegionName, userRegion: hookUserRegion } = useUnifiedShippingValidation();
+  const { validateSingleProduct, validateProductShipping, getUserRegionName, userRegion: hookUserRegion, isLoadingUserRegion } = useUnifiedShippingValidation();
 
   // Usar la región del hook o la prop (fallback)
   const effectiveUserRegion = hookUserRegion || userRegion;
@@ -943,17 +943,33 @@ const AddToCartModal = ({
               borderColor: 'divider',
               bgcolor: 'background.paper',
             }}>
+              {/**
+               * Reglas de deshabilitación del botón:
+               * - Producto propio
+               * - Procesando
+               * - Validación explícita indica que NO se puede despachar
+               * - Cantidad inválida
+               * - Región de usuario NO configurada (nuevo requisito)
+               *   Nota: Cuando la región no está configurada, shippingValidation permanece null
+               *   porque la validación on-demand se salta (early return). Antes esto dejaba el botón habilitado.
+               */}
               <Button
                 fullWidth
                 variant="contained"
                 size="large"
                 onClick={handleAddToCart}
-                disabled={
-                  isOwnProduct ||
-                  isProcessing || 
-                  (shippingValidation && !shippingValidation.canShip) ||
-                  !!quantityError
-                }
+                disabled={(() => {
+                  // Deshabilitar solo si la región NO está configurada y ya terminó la carga de perfil & región
+                  const noRegionConfigured = !effectiveUserRegion && !isLoadingUserProfile && !isLoadingUserRegion;
+                  const explicitIncompatible = shippingValidation && !shippingValidation.canShip;
+                  return (
+                    isOwnProduct ||
+                    isProcessing ||
+                    explicitIncompatible ||
+                    !!quantityError ||
+                    noRegionConfigured
+                  );
+                })()}
                 sx={{ py: 1.5 }}
               >
                 {isProcessing ? 'Agregando...' : 'Agregar al Carrito'}
