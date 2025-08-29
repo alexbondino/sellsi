@@ -71,7 +71,7 @@ const ProductsSection = React.memo(
         pt: { xs: 3.5, md: '90px' },
         // Si queremos 'subir' el contenedor en mobile para la vista proveedores,
         // usar margin-top (mt) negativo en vez de padding negativo.
-        mt: { xs: isProviderView ? -8 : 0, md: 0 },
+        mt: { xs: isProviderView ? -20 : 0, md: 0 },
         pb: SPACING_BOTTOM_MAIN, // Usar espaciado estándar global
         minHeight: '100vh',
         display: 'flex',
