@@ -3,6 +3,7 @@ import {
   Box,
   Button,
 } from '@mui/material'
+import { ShoppingCart as ShoppingCartIcon } from '@mui/icons-material'
 import { AddToCart } from '../../../shared/components'
 
 const PurchaseActions = ({
@@ -19,35 +20,44 @@ const PurchaseActions = ({
   <Box sx={{ display: 'flex', width: '100%', alignItems: 'center', columnGap: { xs: 2, md: 3 } }}>
       {isLoggedIn && (
         <Box sx={{ flex: 1, display: 'flex', justifyContent: 'flex-start' }}>
-          <Button
-            variant="outlined"
-            size="large"
-            disabled={stock === 0}
-            sx={{
-              minWidth: { xs: 140, sm: 160, md: 180 },
-              whiteSpace: 'nowrap',
-              py: 1.5,
-              fontSize: '1.1rem',
-              fontWeight: 700,
-              backgroundColor: '#fff',
-              color: 'primary.main',
-              borderColor: 'primary.main',
-              borderWidth: 1,
-              textTransform: 'none',
-              boxShadow: (isLoggedIn && stock > 0)
-                ? '0 3px 10px rgba(25, 118, 210, 0.3)'
-                : 'none',
-              '&:hover': {
+            <Button
+              variant="contained"
+              startIcon={<ShoppingCartIcon />}
+              size="large"
+              disabled={stock === 0}
+              onClick={() => { /* placeholder: oferta action */ }}
+              sx={(theme) => ({
+                minWidth: { xs: 140, sm: 160, md: 180 },
+                whiteSpace: 'nowrap',
+                py: 1.5,
+                fontSize: '1.1rem',
+                fontWeight: 700,
                 boxShadow: (isLoggedIn && stock > 0)
-                  ? '0 6px 20px rgba(25, 118, 210, 0.6)'
+                  ? '0 3px 10px rgba(25, 118, 210, 0.3)'
                   : 'none',
-                transform: (isLoggedIn && stock > 0) ? 'translateY(-2px)' : 'none',
+                textTransform: 'none',
                 backgroundColor: '#fff',
-              },
-            }}
-          >
-            Ofertar
-          </Button>
+                color: 'primary.main',
+                border: `1px solid ${theme.palette.primary.main}`,
+                '& .MuiButton-startIcon': {
+                  color: 'primary.main',
+                },
+                '&:hover': {
+                  boxShadow: (isLoggedIn && stock > 0)
+                    ? '0 6px 20px rgba(25, 118, 210, 0.6)'
+                    : 'none',
+                  transform: (isLoggedIn && stock > 0) ? 'translateY(-2px)' : 'none',
+                  backgroundColor: '#fff',
+                },
+                '&.Mui-disabled': {
+                  boxShadow: 'none',
+                  color: theme.palette.action.disabled,
+                  borderColor: theme.palette.action.disabledBackground || 'rgba(0,0,0,0.12)'
+                }
+              })}
+            >
+              Ofertar
+            </Button>
         </Box>
       )}
 
