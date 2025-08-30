@@ -254,12 +254,13 @@ Prioridad Alta (rápidas, seguras para auth inmediata):
 Prioridad Media:
 - [x] Subset & estrategia fuentes (Inter variable / latin subset + `font-display: swap|optional`).
 - [x] Unificar fetch perfil+rol (1 roundtrip) y cache (staleTime) para acelerar auth. (2025-08-30) Implementado refactor `UnifiedAuthProvider` fusionando Auth + Role; mantiene alias `useRole` para compatibilidad. Pendiente (futuro): evaluar introducción de staleTime con React Query si se amplían consumidores.
-- [ ] Re-run bundle analyzer; evaluar/eliminar `manualChunks`; comparar JS inicial y caching (experimento controlado).
+- [x] Re-run bundle analyzer; evaluar/eliminar `manualChunks`; comparar JS inicial y caching (experimento controlado). (Resultados documentados en sección "Resultados Experimento manualChunks 2025-08-30")
 - [ ] Revisión estrategia icons MUI (imports directos / tree-shake / posible sprite).
+ - [x] Revisión estrategia icons MUI (imports directos / tree-shake / posible sprite) — descartado por riesgo/beneficio.
 - [ ] Defer animaciones / confetti (intersection / user action).
 - [ ] Lazy `CountrySelector` si no aparece en above-the-fold inicial (ya subset aplicado).
 - [ ] FeatureShell diferido (NOTIFICACIONES / SEARCH / CHARTS) sin retrasar AuthShell (Auth permanece en shell base).
-- [ ] Configurar budget automático (size-limit / bundle stats) en CI (index gzip, total inicial, LCP image weight).
+
 
 ### Tarea | Impacto | Esfuerzo | Riesgo
 
@@ -307,4 +308,7 @@ Gate de aceptación de cada optimización: no incrementar latencia de restauraci
 
 ---
 Fin del Addendum Deep Dive (2025-08-29). Actualizar esta sección con métricas antes/después cuando se apliquen las fases.
+
+
+---
 

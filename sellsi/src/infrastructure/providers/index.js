@@ -3,4 +3,3 @@
 export { UnifiedAuthProvider, useAuth, useRole } from './UnifiedAuthProvider';
 
 export { LayoutProvider, useLayout } from './LayoutProvider';
-export { AppProviders } from './AppProviders';

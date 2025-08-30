@@ -1,0 +1,24 @@
+{
+  "label": "no-manual",
+  "timestamp": "2025-08-30T06:44:30.034Z",
+  "primaryEntry": "assets/index-CCbmAqmQ.js",
+  "initialChunks": [
+    {
+      "file": "assets/index-CCbmAqmQ.js",
+      "bytes": 1114727,
+      "gzip": 313649,
+      "hash": "5a586eb53b"
+    }
+  ],
+  "metrics": {
+    "initialChunkCount": 1,
+    "totalInitialGzip": 313649,
+    "largestChunkGzip": 313649,
+    "largestChunkPercent": 100,
+    "avgChunkGzip": 313649
+  },
+  "hashMap": {
+    "assets/index-CCbmAqmQ.js": "5a586eb53b"
+  },
+  "distFileCount": 156
+}

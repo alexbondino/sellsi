@@ -19,7 +19,7 @@ import { AuthPrefetchProvider } from '../prefetch/AuthPrefetchProvider';
 import { LayoutProvider } from './LayoutProvider';
 import { NotificationsProvider } from '../../domains/notifications/components/NotificationProvider';
 import { MarketplaceSearchProvider } from '../../shared/contexts/MarketplaceSearchContext';
-import { TransferInfoManager } from '../../shared/components/managers';
+import { TransferInfoManager } from '../managers/TransferInfoManager';
 
 const globalStyles = {
   html: { overflowX: 'hidden' },

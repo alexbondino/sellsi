@@ -14,6 +14,8 @@ export default defineConfig({
   build: {
     // Configuración de chunking optimizada y estable
     chunkSizeWarningLimit: 1000,
+  // Generar manifest para análisis comparativo de chunks
+  manifest: true,
     
     // Minificación optimizada
     minify: 'terser',
@@ -27,33 +29,16 @@ export default defineConfig({
     
     rollupOptions: {
       output: {
-        // Chunking mejorado pero estable
+        // Restaurado manualChunks tras experimento
         manualChunks: {
-          // React core
           'react-vendor': ['react', 'react-dom'],
-          
-          // Material-UI core
           'mui-core': ['@mui/material', '@emotion/react', '@emotion/styled'],
-          
-          // Material-UI iconos (separado por ser muy pesado)
           'mui-icons': ['@mui/icons-material'],
-          
-          // Material-UI extras
           'mui-extras': ['@mui/lab', '@mui/x-charts'],
-          
-          // Router
           'router': ['react-router-dom'],
-          
-          // Supabase
           'supabase': ['@supabase/supabase-js'],
-          
-          // Animaciones
           'animation': ['framer-motion', 'canvas-confetti', 'react-confetti'],
-          
-          // Charts - SEPARAR DE PDFs
           'charts': ['recharts'],
-          
-          // Utilidades pequeñas
           'utils': ['lodash.debounce', 'react-hot-toast', 'zustand', 'immer']
         },
         
@@ -68,8 +53,8 @@ export default defineConfig({
       }
     },
     
-    // Sin sourcemaps en producción
-    sourcemap: true,
+  // Sourcemaps (evalúa desactivar en prod pública)
+  sourcemap: true,
     
     // Target moderno para mejor optimización
     target: 'es2020'

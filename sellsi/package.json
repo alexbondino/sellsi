@@ -16,7 +16,9 @@
   "analyze:cycles": "node ../detect_cycles.js --format pretty --suggest-breaks",
   "analyze:cycles:md": "node ../detect_cycles.js --format md --suggest-breaks --output ./Documentacion/cycles/cycle-report.md",
     "size-check": "npm run build && du -sh dist/*",
-    "flags:generate": "node scripts/generate-flag-subset.cjs"
+  "flags:generate": "node scripts/generate-flag-subset.cjs",
+  "bundle:collect": "node scripts/bundle/compare-chunks.mjs collect --label",
+  "bundle:diff": "node scripts/bundle/compare-chunks.mjs diff"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
