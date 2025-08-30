@@ -55,7 +55,7 @@ export const AppShell = ({ children }) => {
       {/* TopBar - Solo se muestra si no es una ruta admin */}
       {showTopBar && (
         <TopBar
-          key={`${session?.user?.id || 'no-session'}-${logoUrl || 'default-topbar'}`}
+          /* key removido para evitar re-mount completo al cambiar session/logo (micro ahorro render) */
           session={session}
           isBuyer={isBuyer}
           logoUrl={logoUrl}
@@ -106,21 +106,16 @@ export const AppShell = ({ children }) => {
             />
           )}
 
+          {/** Memoized main layout styles to avoid recreating large object & function each render (micro optimization) */}
           <Box
             component="main"
-            sx={theme => {
-              // Rutas que originalmente eran full-bleed (fallback para no-auth)
+            sx={React.useMemo(() => {
+              // Dependencias que afectan layout
               const fullBleedRoutes = ['/buyer/cart', '/buyer/paymentmethod'];
-              // Aplicar padding reducido en mobile para cualquier ruta privada.
-              // También mantenemos las rutas explícitas como fallback cuando no hay sesión.
               const isFullBleed = !!session || fullBleedRoutes.includes(location.pathname);
-              // Si estamos en la sección marketplace, no añadir gutter lateral en xs/sm:
               const isMarketplaceRoute = location.pathname.startsWith('/marketplace');
-              return {
+              return theme => ({
                 flexGrow: 1,
-                // Rutas full-bleed (o cualquier ruta privada) usan padding reducido en mobile
-                // y mantenemos el padding de dashboard en md/desktop cuando corresponda.
-                // canonical mobile gutter for private/full-bleed routes: 0.75 * 8px = 6px
                 pl: isMarketplaceRoute
                   ? { xs: 0, sm: 0, md: (isDashboardRoute ? 3 : 0) }
                   : isFullBleed
@@ -138,10 +133,7 @@ export const AppShell = ({ children }) => {
                   : '100%',
                 overflowX: 'hidden',
                 ml: isDashboardRoute ? { md: 14, lg: 14, xl: 0 } : 0,
-                // Para full-bleed garantizamos que no exista margin interno accidental
-                ...(isFullBleed && {
-                  '& > *': { maxWidth: '100%' }
-                }),
+                ...(isFullBleed && { '& > *': { maxWidth: '100%' } }),
                 transition: [
                   theme.breakpoints.up('md') && theme.breakpoints.down('lg')
                     ? 'transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94), margin-left 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94), width 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)'
@@ -154,8 +146,8 @@ export const AppShell = ({ children }) => {
                   lg: isDashboardRoute && sideBarCollapsed ? 'translateX(-80px)' : 'none',
                   xl: 'none',
                 },
-              };
-            }}
+              });
+            }, [session, location.pathname, isDashboardRoute, sideBarCollapsed, currentSideBarWidth])}
             data-layout="app-main"
           >
             {children}

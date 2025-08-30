@@ -7,7 +7,7 @@ Branch: staging
 La primera carga es funcional pero más pesada de lo necesario. Se descargan y ejecutan ~350–380 kB gzip de JS inicial (≈1.6–1.8 MB sin comprimir) debido a preloads agresivos (supabase, mui-core, mui-icons) y montaje temprano de múltiples *providers* no críticos para un usuario anónimo. No hay ciclos ni bloqueos severos, pero existe **inflación de contexto** y oportunidad clara de diferir SDKs/packs pesados para mejorar Time To Interactive (TTI) y reducir parse/compile CPU.
 
 ### 2. Payload Inicial (Critical Path)
-Preloads actuales (`index.html`) incluyen:
+Situación verificada 2025-08-30: el `index.html` actual NO contiene `<link rel="modulepreload">` manuales; los siguientes chunks aparecen temprano por el grafo y manualChunks, no por preloads explícitos. Chunks iniciales relevantes incluyen:
 - `index-*.js` (entry) ~154 kB gzip
 - `mui-core` 132.8 kB gzip
 - `supabase` 29.9 kB gzip (no imprescindible antes de interacción)
@@ -19,7 +19,7 @@ Preloads actuales (`index.html`) incluyen:
 Otros chunks grandes existen pero se cargan on‑demand (lazy). CSS crítico pequeño (~1.9 kB) pero se arrastra un CSS enorme asociado a CountrySelector (421.6 kB / 84.7 kB gzip) cuando se usa.
 
 ### 3. Hallazgos Clave
-1. **Modulepreload excesivo**: Forzamos descarga temprana de supabase + mui-icons que podrían esperar a la primera interacción o detección de sesión.
+1. **Carga temprana de chunks grandes por manualChunks**: `supabase`, `mui-icons` y parte de `mui-core` se descargan temprano (sin preloads manuales) porque el bundle principal los referencia; pueden diferirse vía dynamic import / shell split.
 2. **Providers ansiosos**: Se montan Auth, Role, Prefetch, Notifications, MarketplaceSearch, Layout, TransferInfoManager, Banner, QueryClient antes de saber si el usuario lo necesita.
 3. **Supabase estático**: SDK (≈113 kB uncompressed) se parsea siempre, incluso para visitantes anónimos (puede hacerse dynamic import).
 4. **Sentry inicial**: Inicialización antes de render interactivo. Puede diferirse a `requestIdleCallback` o tras primer input.
@@ -60,6 +60,19 @@ LOW:
 10. Desactivar sourcemaps en prod pública (`sourcemap: false` + upload a Sentry con authToken).
 11. Memo/hoist de estructuras estáticas en TopBar/AppShell para micro ahorros.
 12. Performance marks (`performance.mark(...)`) para medir mejoras incrementalmente.
+
+### 6bis. Omisiones Detectadas tras Rebuild (2025-08-30)
+- Fuentes: aplicar `font-display: swap|optional`, considerar subset WOFF2 Inter (variable) para reducir blocking.
+- Imagen hero / LCP: añadir `fetchpriority="high"`, `decoding="async"`, evaluar AVIF/WebP y dimensiones explícitas.
+- Instrumentación base: integrar web-vitals (INP, CLS, LCP, TBT proxy) + envío analítico; marks ya definidos pero no implementados.
+- Speculative import Supabase: si existe token en storage, lanzar `import('@supabase/supabase-js')` en `visibilitychange` inicial o primer pointer.
+- Sentry diferido con cola (buffer de eventos) para no perder errores antes de init.
+- Budgets automáticos: size-limit o plugin que falle si `index` > objetivo gzip.
+- Estrategia icons MUI: revisar uso real y sustituir por imports directos / subset / SVG sprite.
+- Revisión de `manualChunks`: experimentar eliminar configuración para observar split más granular y comparar caché.
+- Preconnect Supabase aún ausente (añadir `<link rel="preconnect" href="https://<SUPABASE_HOST>" crossorigin>`).
+ - Preconnect Supabase IMPLEMENTADO 2025-08-30 (`<link rel="preconnect" href="https://clbngnjetipglkikondm.supabase.co" crossorigin>` + `dns-prefetch`). Medir latencia primer request auth vs baseline (esperado -60–120 ms p95 en móvil frío).
+- SideEffects audit: asegurar paquetes internos marcan `sideEffects: false` cuando seguro.
 
 ### 7. Plan de Implementación Iterativo
 Fase A (rápida, <1 día):
@@ -208,18 +221,66 @@ Measures:
 - Shell split: Asegurar boundaries de error (ErrorBoundary) para lazy shells.
 
 ### K. Checklist de Implementación (para issues)
-- [ ] Extraer `allCountries` top-level y generar subset CSS.
- - [x] Crear script `scripts/generate-flag-subset.cjs` y generar `flag-icons-subset.css` (guardado en `src/shared/components/forms/CountrySelector/flag-icons-subset.css`). Script integrado en `package.json` (`build` y `flags:generate`).
-- [ ] Convertir supabase a dynamic import con wrapper `getSupabase()`.
-- [ ] Añadir preconnect supabase host.
-- [ ] Reemplazar `modulepreload` supabase/mui-icons por estrategia condicional.
-- [ ] Quitar `key` de `<TopBar>` y memo estilos AppShell.
-- [ ] Condicionar `AuthPrefetchProvider` a `!session`.
-- [ ] Prefetch progresivo por rol (cola + idle).
-- [ ] deferred Sentry (idle / firstInteraction).
-- [ ] Introducir shells (PublicShell/AuthShell/FeatureShell).
-- [ ] Insert performance marks y medir.
-- [ ] Re-run bundle analyzer; ajustar manualChunks.
+Contexto: >70% de visitas ya autenticadas ⇒ priorizamos estado auth inmediato. Se descartan optimizaciones que añadan latencia a la restauración de sesión.
+
+Completado / Base:
+- [x] Subset banderas (script `generate-flag-subset.cjs` + `flag-icons-subset.css`).
+
+Prioridad Alta (rápidas, seguras para auth inmediata):
+- Tabla Impacto / Esfuerzo / Riesgo (1 = mínimo, 10 = máximo). Impacto mide mejora esperada en métricas clave (LCP, JS inicial, reducción trabajo innecesario); Esfuerzo es complejidad técnica + tiempo; Riesgo es probabilidad/impacto de regressions o efectos colaterales.
+
+| Tarea | Impacto | Esfuerzo | Riesgo |
+|-------|---------|----------|--------|
+| Preconnect Supabase | 4 | 1 | 1 |
+| Quitar key TopBar + memo/hoist estilos | 3 | 2 | 1 |
+| Condicionar AuthPrefetchProvider a !session (post-resolución auth) | 2 | 2 | 2 |
+| Deferred Sentry + cola eventos | 5 | 3 | 3 |
+| Performance marks + web-vitals telemetry | 7 | 3 | 1 |
+| Optimizar imagen LCP (formato+fetchpriority) | 9 | 4 | 2 |
+
+- [x] Añadir preconnect Supabase (`<link rel="preconnect" href="https://clbngnjetipglkikondm.supabase.co" crossorigin>`). (Fecha: 2025-08-30) Pendiente: registrar métrica `auth_first_byte` antes/después.
+- [x] Quitar `key` de `<TopBar>` y memo/hoist estilos AppShell. (2025-08-30)
+	- Cambios: removido `key` dinámico en `AppShell.jsx` (evita re-mount completo tras cambios de sesión/logo); memoizado objeto `sx` principal con `React.useMemo` para reducir recreación y GC menor. Impacto esperado: micro (<5 ms) en renders de transición auth / navegación; riesgo nulo.
+- [x] Condicionar `AuthPrefetchProvider` a `!session` (efectivo tras `loadingUserStatus === false`). (2025-08-30)
+	- Corrección: Se añadió espera a que `AuthProvider` termine la resolución inicial (`loadingUserStatus` false) antes de registrar rutas. El gating previo era inefectivo por carrera (session null transitorio) y podía registrar rutas también para usuarios ya autenticados.
+	- Impacto real: mínimo (2 imports lazy pequeños evitados). Se mantiene por coherencia y para evitar trabajo irrelevante en anónimos; prioridad baja respecto a métricas y LCP.
+	- Riesgo: bajo (operación idempotente sobre un Map interno). No afecta restauración de sesión.
+ - [x] Deferred Sentry (idle / firstInteraction) + cola de eventos antes de init. (2025-08-30)
+	 - Implementado: módulo `src/lib/sentryDeferred.js` con queue (MAX_QUEUE=50), handlers globales error/unhandledrejection y dynamic import `@sentry/react`.
+	 - Integración: `src/main.jsx` elimina import directo y llama `scheduleSentryInit()`.
+	 - Pendiente medición: comparar parse/compile y TTI vs baseline; registrar `getSentryQueueLength()` en consola pre y post init.
+- [x] Optimizar imagen LCP (formato WebP/AVIF, `fetchpriority="high"`, dimensiones explícitas, `decoding="async"`).
+
+Prioridad Media:
+- [ ] Subset & estrategia fuentes (Inter variable / latin subset + `font-display: swap|optional`).
+- [ ] Unificar fetch perfil+rol (1 roundtrip) y cache (staleTime) para acelerar auth.
+- [ ] Re-run bundle analyzer; evaluar/eliminar `manualChunks`; comparar JS inicial y caching (experimento controlado).
+- [ ] Revisión estrategia icons MUI (imports directos / tree-shake / posible sprite).
+- [ ] Defer animaciones / confetti (intersection / user action).
+- [ ] Lazy `CountrySelector` si no aparece en above-the-fold inicial (ya subset aplicado).
+- [ ] FeatureShell diferido (NOTIFICACIONES / SEARCH / CHARTS) sin retrasar AuthShell (Auth permanece en shell base).
+- [ ] Configurar budget automático (size-limit / bundle stats) en CI (index gzip, total inicial, LCP image weight).
+
+Prioridad Baja / Hardening:
+- [ ] Auditoría `sideEffects` en paquetes internos para mejorar tree-shaking.
+- [ ] Desactivar sourcemaps públicos en build prod (`sourcemap: false`) + upload privado a Sentry.
+- [ ] Memo adicional de objetos `sx` / estilos derivados frecuentes.
+
+Descartados (documentado):
+- [ ] Dynamic import Supabase (descartado: necesitamos auth inmediato; mantén import estático).
+- [ ] Speculative import Supabase (redundante sin import dinámico).
+- [ ] Shell split que difiera Auth (sólo diferimos FeatureShell no crítica).
+- [ ] Prefetch progresivo por rol (reemplazado por “unificar fetch perfil+rol”).
+- [ ] Reemplazar `modulepreload` supabase/mui-icons (obsoleto: no hay `<link rel="modulepreload">` actuales; enfoque ahora es tree-shake y diferir features).
+
+Métricas a capturar por cada entrega:
+- JS inicial gzip (entry + eagerly loaded chunks).
+- `time_to_hero`, `auth_restore`, LCP real (web-vitals), INP p75.
+- # requests iniciales hasta primer paint interactivo.
+- Variación TBT / scripting early (<3s). 
+
+Gate de aceptación de cada optimización: no incrementar latencia de restauración de sesión >20 ms p95.
+
 
 ---
 Fin del Addendum Deep Dive (2025-08-29). Actualizar esta sección con métricas antes/después cuando se apliquen las fases.

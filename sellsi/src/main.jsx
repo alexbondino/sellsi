@@ -1,27 +1,14 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { ThemeProvider, CssBaseline, createTheme } from '@mui/material';
-import * as Sentry from '@sentry/react';
+// Sentry deferred: removed direct import to keep SDK out of critical path
+import { scheduleSentryInit, captureException } from './lib/sentryDeferred.js';
 
 import App from './app/App.jsx';
 import './index.css';
 
-// 1. Inicializar Sentry (solo en producción y preview, como buena práctica)
-// La condición 'import.meta.env.PROD' es verdadera tanto para 'production' como para 'preview' en Vercel.
-if (import.meta.env.PROD) {
-  Sentry.init({
-    // CORRECCIÓN: Se utiliza la variable con prefijo VITE_ para que sea accesible en el navegador.
-    dsn: import.meta.env.VITE_SENTRY_DSN,
-
-    integrations: [
-      Sentry.browserTracingIntegration(),
-      Sentry.replayIntegration(),
-    ],
-    tracesSampleRate: 1.0,
-    replaysSessionSampleRate: 0.1,
-    replaysOnErrorSampleRate: 1.0,
-  });
-}
+// 1. Programar inicialización diferida de Sentry (idle / first interaction)
+scheduleSentryInit();
 
 // 2. Crear el tema de MUI
 const theme = createTheme({
@@ -45,3 +32,6 @@ root.render(
 if (import.meta.env.DEV) {
   import('./utils/cartEmergencyTools.js');
 }
+
+// Opcional: ejemplo de captura manual temprana (se eliminará si no se usa)
+// captureException(new Error('Sentry deferred test (remove in prod)'));
