@@ -4,8 +4,8 @@ import { motion } from 'framer-motion'
 import { Home as HomeIcon } from '@mui/icons-material'
 import { useNavigate } from 'react-router-dom'
 import { PrimaryButton } from '../forms'
-import { useAuth } from '../../../infrastructure/providers/AuthProvider'
-import { useRole } from '../../../infrastructure/providers/RoleProvider'
+import { useAuth } from '../../../infrastructure/providers'
+import { useRole } from '../../../infrastructure/providers'
 
 const NotFound = () => {
   const navigate = useNavigate()

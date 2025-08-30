@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { useAuth } from '../../infrastructure/providers/AuthProvider';
+import { useAuth } from '../../infrastructure/providers';
 import useCartStore from '../stores/cart/cartStore';
 
 export const useAppInitialization = () => {

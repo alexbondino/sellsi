@@ -1,6 +1,5 @@
 import React, { useEffect } from 'react';
-import { useAuth } from '../providers/AuthProvider';
-import { useRole } from '../providers/RoleProvider';
+import { useAuth, useRole } from '../providers';
 import { usePrefetch } from '../../hooks/usePrefetch';
 
 /**

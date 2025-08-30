@@ -23,8 +23,8 @@ import {
   InfoOutlined as InfoIcon,
 } from '@mui/icons-material';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { useRole } from '../../../../infrastructure/providers/RoleProvider';
-import { useAuth } from '../../../../infrastructure/providers/AuthProvider';
+import { useRole } from '../../../../infrastructure/providers';
+import { useAuth } from '../../../../infrastructure/providers';
 
 // Define los ítems de menú para cada rol directamente en este archivo con iconos
 const buyerMenuItems = [

@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { registerPrefetchRoute } from '../../hooks/usePrefetch';
-import { useAuth } from '../providers/AuthProvider';
+import { useAuth } from '../providers';
 
 /**
  * AuthPrefetchProvider

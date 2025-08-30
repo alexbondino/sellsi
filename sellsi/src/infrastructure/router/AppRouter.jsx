@@ -3,7 +3,7 @@ import { Routes, Route } from 'react-router-dom';
 import SuspenseLoader from '../../shared/components/layout/SuspenseLoader';
 // Import interno directo para evitar que PrivateRoute forme parte del contrato público de auth
 import PrivateRoute from '../../domains/auth/components/PrivateRoute';
-import { useAuth } from '../providers/AuthProvider';
+import { useAuth } from '../providers';
 
 // Landing Page (carga inmediata para primera impresión)
 import { Home } from '../../app/pages/landing';

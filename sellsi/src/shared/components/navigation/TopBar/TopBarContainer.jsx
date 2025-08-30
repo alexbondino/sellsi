@@ -5,7 +5,7 @@ import { Button, IconButton, Tooltip, Badge, Divider, MenuItem } from '@mui/mate
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import { supabase } from '../../../services/supabase';
 import useCartStore from '../../../stores/cart/cartStore';
-import { useRole } from '../../../../infrastructure/providers/RoleProvider';
+import { useRole } from '../../../../infrastructure/providers';
 import { setSkipScrollToTopOnce } from '../ScrollToTop/ScrollToTop';
 import { useNotificationsContext } from '../../../../domains/notifications/components/NotificationProvider';
 import { ProfileAvatarButton } from './components/ProfileAvatarButton';

@@ -9,7 +9,7 @@ import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import { supabase } from '../../../services/supabase';
 import useCartStore from '../../../stores/cart/cartStore';
 // Removed unused Modal (Coming Soon) after refactor phase
-import { useRole } from '../../../../infrastructure/providers/RoleProvider';
+import { useRole } from '../../../../infrastructure/providers';
 // Auth modals ahora encapsulados en componente AuthModals (lazy dentro)
 import { setSkipScrollToTopOnce } from '../ScrollToTop/ScrollToTop';
 

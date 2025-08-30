@@ -53,7 +53,7 @@ import ShippingCompatibilityModal from './cart/components/ShippingCompatibilityM
 // ============================================================================
 // ULTRA-PREMIUM BUYER CART COMPONENT - NIVEL 11/10
 import { useNavigate } from 'react-router-dom';
-import { useRole } from '../../../infrastructure/providers/RoleProvider';
+import { useRole } from '../../../infrastructure/providers';
 // ============================================================================
 
 // Lazy loading components para optimización

@@ -14,10 +14,8 @@ import { globalObserverPool } from '../../utils/observerPoolManager';
 import { BannerProvider } from '../../shared/components/display/banners/BannerContext';
 import ScrollToTop from '../../shared/components/navigation/ScrollToTop';
 import BanGuard from '../../components/BanGuard';
-import { AuthProvider } from './AuthProvider';
+import { UnifiedAuthProvider } from './UnifiedAuthProvider';
 import { AuthPrefetchProvider } from '../prefetch/AuthPrefetchProvider';
-import { RoleProvider } from './RoleProvider';
-import { RolePrefetchProvider } from '../prefetch/RolePrefetchProvider';
 import { LayoutProvider } from './LayoutProvider';
 import { NotificationsProvider } from '../../domains/notifications/components/NotificationProvider';
 import { MarketplaceSearchProvider } from '../../shared/contexts/MarketplaceSearchContext';
@@ -48,10 +46,8 @@ export const AppProviders = ({ children }) => {
         <BannerProvider>
           <BrowserRouter>
             <ScrollToTop />
-            <AuthProvider>
+            <UnifiedAuthProvider>
               <AuthPrefetchProvider>
-                <RoleProvider>
-                  <RolePrefetchProvider>
                     <TransferInfoManager />
                     <NotificationsProvider>
                       <MarketplaceSearchProvider>
@@ -62,10 +58,8 @@ export const AppProviders = ({ children }) => {
                         </LayoutProvider>
                       </MarketplaceSearchProvider>
                     </NotificationsProvider>
-                  </RolePrefetchProvider>
-                </RoleProvider>
               </AuthPrefetchProvider>
-            </AuthProvider>
+            </UnifiedAuthProvider>
           </BrowserRouter>
           
           <Toaster 

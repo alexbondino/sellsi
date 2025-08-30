@@ -252,14 +252,37 @@ Prioridad Alta (rápidas, seguras para auth inmediata):
 - [x] Optimizar imagen LCP (formato WebP/AVIF, `fetchpriority="high"`, dimensiones explícitas, `decoding="async"`).
 
 Prioridad Media:
-- [ ] Subset & estrategia fuentes (Inter variable / latin subset + `font-display: swap|optional`).
-- [ ] Unificar fetch perfil+rol (1 roundtrip) y cache (staleTime) para acelerar auth.
+- [x] Subset & estrategia fuentes (Inter variable / latin subset + `font-display: swap|optional`).
+- [x] Unificar fetch perfil+rol (1 roundtrip) y cache (staleTime) para acelerar auth. (2025-08-30) Implementado refactor `UnifiedAuthProvider` fusionando Auth + Role; mantiene alias `useRole` para compatibilidad. Pendiente (futuro): evaluar introducción de staleTime con React Query si se amplían consumidores.
 - [ ] Re-run bundle analyzer; evaluar/eliminar `manualChunks`; comparar JS inicial y caching (experimento controlado).
 - [ ] Revisión estrategia icons MUI (imports directos / tree-shake / posible sprite).
 - [ ] Defer animaciones / confetti (intersection / user action).
 - [ ] Lazy `CountrySelector` si no aparece en above-the-fold inicial (ya subset aplicado).
 - [ ] FeatureShell diferido (NOTIFICACIONES / SEARCH / CHARTS) sin retrasar AuthShell (Auth permanece en shell base).
 - [ ] Configurar budget automático (size-limit / bundle stats) en CI (index gzip, total inicial, LCP image weight).
+
+### Tarea | Impacto | Esfuerzo | Riesgo
+
+| Tarea | Impacto (1-10) | Esfuerzo (1-10) | Riesgo (1-10) |
+|---|---:|---:|---:|
+| Subset & estrategia fuentes (Inter variable / latin subset + `font-display`) | 5 | 3 | 1 |
+| Unificar fetch perfil+rol (1 roundtrip) y cache (staleTime) | 5 | 3 | 2 |
+| Re-run bundle analyzer; evaluar/eliminar `manualChunks` | 7 | 4 | 4 |
+| Revisión estrategia icons MUI (imports directos / tree‑shake / sprite) | 6 | 3 | 2 |
+| Defer animaciones / confetti (intersection / user action) | 3 | 2 | 1 |
+| Lazy `CountrySelector` (si no es above-the-fold) | 3 | 2 | 1 |
+| FeatureShell diferido (NOTIFS/SEARCH/CHARTS) sin retrasar AuthShell | 8 | 6 | 4 |
+| Configurar budget automático (size‑limit / bundle stats) en CI | 4 | 3 | 1 |
+
+Breve justificativo por entrada:
+- Subset fuentes: mejora FCP/LCP para páginas con tipografías heavy; implementación y testing de subset y `font-display` son de bajo esfuerzo y bajo riesgo.
+- Unificar perfil+rol: reduce RTTs en el flujo auth_restore; requiere un cambio backend/RPC o endpoint combinado y pruebas de contrato.
+- Bundle analyzer/manualChunks: alta palanca sobre JS inicial; probar múltiples estrategias y validar caché/TTL en staging antes de prod.
+- Icons MUI: reemplazar imports amplios por imports directos o sprite reduce bytes y parse; probar visualmente los íconos afectados.
+- Defer animaciones: ahorro inmediato en parse/CPU inicial; muy bajo esfuerzo y riesgo.
+- Lazy CountrySelector: ahorro adicional si el componente no aparece en above-the-fold; trivial si el CSS subset ya está integrado.
+- FeatureShell diferido: mayor reducción de JS inicial pero requiere coordinación UX y boundaries; planificar rollback y medidas de precarga.
+- Budget CI: protege contra regresiones de tamaño y permite alertas tempranas; configuración sencilla y alto valor preventivo.
 
 Prioridad Baja / Hardening:
 - [ ] Auditoría `sideEffects` en paquetes internos para mejorar tree-shaking.

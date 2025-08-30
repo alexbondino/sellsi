@@ -11,8 +11,8 @@ import Banner from '../display/banners/Banner';
 import WhatsAppWidget from '../../../components/WhatsAppWidget';
 import { useBanner } from '../display/banners/BannerContext';
 
-import { useAuth } from '../../../infrastructure/providers/AuthProvider';
-import { useRole } from '../../../infrastructure/providers/RoleProvider';
+import { useAuth } from '../../../infrastructure/providers';
+import { useRole } from '../../../infrastructure/providers';
 import { useLayout } from '../../../infrastructure/providers/LayoutProvider';
 import { useAppInitialization } from '../../hooks/useAppInitialization';
 

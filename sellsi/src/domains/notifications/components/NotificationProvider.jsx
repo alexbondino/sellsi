@@ -1,5 +1,5 @@
 import React, { createContext, useContext } from 'react';
-import { useAuth } from '../../../infrastructure/providers/AuthProvider';
+import { useAuth } from '../../../infrastructure/providers';
 import { supabase } from '../../../services/supabase';
 import { useNotifications } from '../hooks/useNotifications';
 

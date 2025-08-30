@@ -1,100 +1,31 @@
-notificationsStore.js:58  Uncaught (in promise) ReferenceError: require is not defined
-    at notificationsStore.js:58:41
-    at Object.markAsRead (notificationsStore.js:114:9)
-    at handleNotifItemClick (TopBar.jsx:319:17)
-    at onClick (NotificationListPanel.jsx:27:51)
-    at executeDispatch (react-dom-client.development.js:16368:9)
+AuthProvider.jsx:14  Uncaught Error: useAuth must be used within an AuthProvider
+    at useAuth (AuthProvider.jsx:14:11)
+    at useTransferInfoPreloader (useTransferInfoPreloader.js:25:42)
+    at TransferInfoManager (TransferInfoManager.jsx:20:3)
+    at react-stack-bottom-frame (react-dom-client.development.js:23863:20)
+    at renderWithHooks (react-dom-client.development.js:5529:22)
+    at updateFunctionComponent (react-dom-client.development.js:8897:19)
+    at beginWork (react-dom-client.development.js:10522:18)
     at runWithFiberInDEV (react-dom-client.development.js:1519:30)
-    at processDispatchQueue (react-dom-client.development.js:16418:19)
-    at react-dom-client.development.js:17016:9
-    at batchedUpdates$1 (react-dom-client.development.js:3262:40)
-    at dispatchEventForPluginEventSystem (react-dom-client.development.js:16572:7)
-(anonymous) @ notificationsStore.js:58
-markAsRead @ notificationsStore.js:114
-handleNotifItemClick @ TopBar.jsx:319
-onClick @ NotificationListPanel.jsx:27
-executeDispatch @ react-dom-client.development.js:16368
-runWithFiberInDEV @ react-dom-client.development.js:1519
-processDispatchQueue @ react-dom-client.development.js:16418
-(anonymous) @ react-dom-client.development.js:17016
-batchedUpdates$1 @ react-dom-client.development.js:3262
-dispatchEventForPluginEventSystem @ react-dom-client.development.js:16572
-dispatchEvent @ react-dom-client.development.js:20658
-dispatchDiscreteEvent @ react-dom-client.development.js:20626
-<div>
-exports.createElement @ react.development.js:1033
-(anonymous) @ emotion-styled-base.browser.development.esm.js:156
-MuiButtonBase-root @ emotion-element-489459f2.browser.development.esm.js:34
+    at performUnitOfWork (react-dom-client.development.js:15132:22)
+    at workLoopSync (react-dom-client.development.js:14956:41)
+useAuth @ AuthProvider.jsx:14
+useTransferInfoPreloader @ useTransferInfoPreloader.js:25
+TransferInfoManager @ TransferInfoManager.jsx:20
 react-stack-bottom-frame @ react-dom-client.development.js:23863
-renderWithHooksAgain @ react-dom-client.development.js:5629
-renderWithHooks @ react-dom-client.development.js:5541
-updateForwardRef @ react-dom-client.development.js:8645
-beginWork @ react-dom-client.development.js:10861
+renderWithHooks @ react-dom-client.development.js:5529
+updateFunctionComponent @ react-dom-client.development.js:8897
+beginWork @ react-dom-client.development.js:10522
 runWithFiberInDEV @ react-dom-client.development.js:1519
 performUnitOfWork @ react-dom-client.development.js:15132
 workLoopSync @ react-dom-client.development.js:14956
 renderRootSync @ react-dom-client.development.js:14936
-performWorkOnRoot @ react-dom-client.development.js:14419
-performSyncWorkOnRoot @ react-dom-client.development.js:16231
-flushSyncWorkAcrossRoots_impl @ react-dom-client.development.js:16079
-processRootScheduleInMicrotask @ react-dom-client.development.js:16116
-(anonymous) @ react-dom-client.development.js:16250
-<MuiButtonBaseRoot>
-exports.jsxs @ react-jsx-runtime.development.js:355
-ButtonBase2 @ ButtonBase.js:248
-react-stack-bottom-frame @ react-dom-client.development.js:23863
-renderWithHooksAgain @ react-dom-client.development.js:5629
-renderWithHooks @ react-dom-client.development.js:5541
-updateForwardRef @ react-dom-client.development.js:8645
-beginWork @ react-dom-client.development.js:10861
-runWithFiberInDEV @ react-dom-client.development.js:1519
-performUnitOfWork @ react-dom-client.development.js:15132
-workLoopSync @ react-dom-client.development.js:14956
-renderRootSync @ react-dom-client.development.js:14936
-performWorkOnRoot @ react-dom-client.development.js:14419
-performSyncWorkOnRoot @ react-dom-client.development.js:16231
-flushSyncWorkAcrossRoots_impl @ react-dom-client.development.js:16079
-processRootScheduleInMicrotask @ react-dom-client.development.js:16116
-(anonymous) @ react-dom-client.development.js:16250
-<ForwardRef(ButtonBase2)>
-exports.createElement @ react.development.js:1033
-(anonymous) @ emotion-styled-base.browser.development.esm.js:156
-MuiListItemButton-root @ emotion-element-489459f2.browser.development.esm.js:34
-react-stack-bottom-frame @ react-dom-client.development.js:23863
-renderWithHooksAgain @ react-dom-client.development.js:5629
-renderWithHooks @ react-dom-client.development.js:5541
-updateForwardRef @ react-dom-client.development.js:8645
-beginWork @ react-dom-client.development.js:10861
-runWithFiberInDEV @ react-dom-client.development.js:1519
-performUnitOfWork @ react-dom-client.development.js:15132
-workLoopSync @ react-dom-client.development.js:14956
-renderRootSync @ react-dom-client.development.js:14936
-performWorkOnRoot @ react-dom-client.development.js:14419
-performSyncWorkOnRoot @ react-dom-client.development.js:16231
-flushSyncWorkAcrossRoots_impl @ react-dom-client.development.js:16079
-processRootScheduleInMicrotask @ react-dom-client.development.js:16116
-(anonymous) @ react-dom-client.development.js:16250
-<MuiListItemButtonRoot>
-exports.jsx @ react-jsx-runtime.development.js:339
-ListItemButton2 @ ListItemButton.js:171
-react-stack-bottom-frame @ react-dom-client.development.js:23863
-renderWithHooksAgain @ react-dom-client.development.js:5629
-renderWithHooks @ react-dom-client.development.js:5541
-updateForwardRef @ react-dom-client.development.js:8645
-beginWork @ react-dom-client.development.js:10861
-runWithFiberInDEV @ react-dom-client.development.js:1519
-performUnitOfWork @ react-dom-client.development.js:15132
-workLoopSync @ react-dom-client.development.js:14956
-renderRootSync @ react-dom-client.development.js:14936
-performWorkOnRoot @ react-dom-client.development.js:14419
-performSyncWorkOnRoot @ react-dom-client.development.js:16231
-flushSyncWorkAcrossRoots_impl @ react-dom-client.development.js:16079
-processRootScheduleInMicrotask @ react-dom-client.development.js:16116
-(anonymous) @ react-dom-client.development.js:16250
-<ForwardRef(ListItemButton2)>
+performWorkOnRoot @ react-dom-client.development.js:14462
+performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:16216
+performWorkUntilDeadline @ scheduler.development.js:45
+<TransferInfoManager>
 exports.jsxDEV @ react-jsx-dev-runtime.development.js:346
-(anonymous) @ NotificationListPanel.jsx:27
-NotificationListPanel @ NotificationListPanel.jsx:26
+AppProviders @ AppProviders.jsx:53
 react-stack-bottom-frame @ react-dom-client.development.js:23863
 renderWithHooksAgain @ react-dom-client.development.js:5629
 renderWithHooks @ react-dom-client.development.js:5541
@@ -104,14 +35,12 @@ runWithFiberInDEV @ react-dom-client.development.js:1519
 performUnitOfWork @ react-dom-client.development.js:15132
 workLoopSync @ react-dom-client.development.js:14956
 renderRootSync @ react-dom-client.development.js:14936
-performWorkOnRoot @ react-dom-client.development.js:14419
-performSyncWorkOnRoot @ react-dom-client.development.js:16231
-flushSyncWorkAcrossRoots_impl @ react-dom-client.development.js:16079
-processRootScheduleInMicrotask @ react-dom-client.development.js:16116
-(anonymous) @ react-dom-client.development.js:16250
-<NotificationListPanel>
+performWorkOnRoot @ react-dom-client.development.js:14462
+performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:16216
+performWorkUntilDeadline @ scheduler.development.js:45
+<AppProviders>
 exports.jsxDEV @ react-jsx-dev-runtime.development.js:346
-TopBar @ TopBar.jsx:771
+App @ App.jsx:72
 react-stack-bottom-frame @ react-dom-client.development.js:23863
 renderWithHooksAgain @ react-dom-client.development.js:5629
 renderWithHooks @ react-dom-client.development.js:5541
@@ -121,108 +50,12 @@ runWithFiberInDEV @ react-dom-client.development.js:1519
 performUnitOfWork @ react-dom-client.development.js:15132
 workLoopSync @ react-dom-client.development.js:14956
 renderRootSync @ react-dom-client.development.js:14936
-performWorkOnRoot @ react-dom-client.development.js:14419
-performSyncWorkOnRoot @ react-dom-client.development.js:16231
-flushSyncWorkAcrossRoots_impl @ react-dom-client.development.js:16079
-processRootScheduleInMicrotask @ react-dom-client.development.js:16116
-(anonymous) @ react-dom-client.development.js:16250
-notificationsStore.js:58  Uncaught (in promise) ReferenceError: require is not defined
-    at notificationsStore.js:58:41
-    at Object.markAsRead (notificationsStore.js:114:9)
-    at handleNotifItemClick (TopBar.jsx:319:17)
-    at onClick (NotificationListPanel.jsx:27:51)
-    at executeDispatch (react-dom-client.development.js:16368:9)
-    at runWithFiberInDEV (react-dom-client.development.js:1519:30)
-    at processDispatchQueue (react-dom-client.development.js:16418:19)
-    at react-dom-client.development.js:17016:9
-    at batchedUpdates$1 (react-dom-client.development.js:3262:40)
-    at dispatchEventForPluginEventSystem (react-dom-client.development.js:16572:7)
-(anonymous) @ notificationsStore.js:58
-markAsRead @ notificationsStore.js:114
-handleNotifItemClick @ TopBar.jsx:319
-onClick @ NotificationListPanel.jsx:27
-executeDispatch @ react-dom-client.development.js:16368
-runWithFiberInDEV @ react-dom-client.development.js:1519
-processDispatchQueue @ react-dom-client.development.js:16418
-(anonymous) @ react-dom-client.development.js:17016
-batchedUpdates$1 @ react-dom-client.development.js:3262
-dispatchEventForPluginEventSystem @ react-dom-client.development.js:16572
-dispatchEvent @ react-dom-client.development.js:20658
-dispatchDiscreteEvent @ react-dom-client.development.js:20626
-<div>
-exports.createElement @ react.development.js:1033
-(anonymous) @ emotion-styled-base.browser.development.esm.js:156
-MuiButtonBase-root @ emotion-element-489459f2.browser.development.esm.js:34
-react-stack-bottom-frame @ react-dom-client.development.js:23863
-renderWithHooksAgain @ react-dom-client.development.js:5629
-renderWithHooks @ react-dom-client.development.js:5541
-updateForwardRef @ react-dom-client.development.js:8645
-beginWork @ react-dom-client.development.js:10861
-runWithFiberInDEV @ react-dom-client.development.js:1519
-performUnitOfWork @ react-dom-client.development.js:15132
-workLoopSync @ react-dom-client.development.js:14956
-renderRootSync @ react-dom-client.development.js:14936
-performWorkOnRoot @ react-dom-client.development.js:14419
-performSyncWorkOnRoot @ react-dom-client.development.js:16231
-flushSyncWorkAcrossRoots_impl @ react-dom-client.development.js:16079
-processRootScheduleInMicrotask @ react-dom-client.development.js:16116
-(anonymous) @ react-dom-client.development.js:16250
-<MuiButtonBaseRoot>
-exports.jsxs @ react-jsx-runtime.development.js:355
-ButtonBase2 @ ButtonBase.js:248
-react-stack-bottom-frame @ react-dom-client.development.js:23863
-renderWithHooksAgain @ react-dom-client.development.js:5629
-renderWithHooks @ react-dom-client.development.js:5541
-updateForwardRef @ react-dom-client.development.js:8645
-beginWork @ react-dom-client.development.js:10861
-runWithFiberInDEV @ react-dom-client.development.js:1519
-performUnitOfWork @ react-dom-client.development.js:15132
-workLoopSync @ react-dom-client.development.js:14956
-renderRootSync @ react-dom-client.development.js:14936
-performWorkOnRoot @ react-dom-client.development.js:14419
-performSyncWorkOnRoot @ react-dom-client.development.js:16231
-flushSyncWorkAcrossRoots_impl @ react-dom-client.development.js:16079
-processRootScheduleInMicrotask @ react-dom-client.development.js:16116
-(anonymous) @ react-dom-client.development.js:16250
-<ForwardRef(ButtonBase2)>
-exports.createElement @ react.development.js:1033
-(anonymous) @ emotion-styled-base.browser.development.esm.js:156
-MuiListItemButton-root @ emotion-element-489459f2.browser.development.esm.js:34
-react-stack-bottom-frame @ react-dom-client.development.js:23863
-renderWithHooksAgain @ react-dom-client.development.js:5629
-renderWithHooks @ react-dom-client.development.js:5541
-updateForwardRef @ react-dom-client.development.js:8645
-beginWork @ react-dom-client.development.js:10861
-runWithFiberInDEV @ react-dom-client.development.js:1519
-performUnitOfWork @ react-dom-client.development.js:15132
-workLoopSync @ react-dom-client.development.js:14956
-renderRootSync @ react-dom-client.development.js:14936
-performWorkOnRoot @ react-dom-client.development.js:14419
-performSyncWorkOnRoot @ react-dom-client.development.js:16231
-flushSyncWorkAcrossRoots_impl @ react-dom-client.development.js:16079
-processRootScheduleInMicrotask @ react-dom-client.development.js:16116
-(anonymous) @ react-dom-client.development.js:16250
-<MuiListItemButtonRoot>
-exports.jsx @ react-jsx-runtime.development.js:339
-ListItemButton2 @ ListItemButton.js:171
-react-stack-bottom-frame @ react-dom-client.development.js:23863
-renderWithHooksAgain @ react-dom-client.development.js:5629
-renderWithHooks @ react-dom-client.development.js:5541
-updateForwardRef @ react-dom-client.development.js:8645
-beginWork @ react-dom-client.development.js:10861
-runWithFiberInDEV @ react-dom-client.development.js:1519
-performUnitOfWork @ react-dom-client.development.js:15132
-workLoopSync @ react-dom-client.development.js:14956
-renderRootSync @ react-dom-client.development.js:14936
-performWorkOnRoot @ react-dom-client.development.js:14419
-performSyncWorkOnRoot @ react-dom-client.development.js:16231
-flushSyncWorkAcrossRoots_impl @ react-dom-client.development.js:16079
-processRootScheduleInMicrotask @ react-dom-client.development.js:16116
-(anonymous) @ react-dom-client.development.js:16250
-<ForwardRef(ListItemButton2)>
+performWorkOnRoot @ react-dom-client.development.js:14462
+performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:16216
+performWorkUntilDeadline @ scheduler.development.js:45
+<App>
 exports.jsxDEV @ react-jsx-dev-runtime.development.js:346
-(anonymous) @ NotificationListPanel.jsx:27
-NotificationListPanel @ NotificationListPanel.jsx:26
+AppWithWhatsApp @ App.jsx:80
 react-stack-bottom-frame @ react-dom-client.development.js:23863
 renderWithHooksAgain @ react-dom-client.development.js:5629
 renderWithHooks @ react-dom-client.development.js:5541
@@ -232,25 +65,6 @@ runWithFiberInDEV @ react-dom-client.development.js:1519
 performUnitOfWork @ react-dom-client.development.js:15132
 workLoopSync @ react-dom-client.development.js:14956
 renderRootSync @ react-dom-client.development.js:14936
-performWorkOnRoot @ react-dom-client.development.js:14419
-performSyncWorkOnRoot @ react-dom-client.development.js:16231
-flushSyncWorkAcrossRoots_impl @ react-dom-client.development.js:16079
-processRootScheduleInMicrotask @ react-dom-client.development.js:16116
-(anonymous) @ react-dom-client.development.js:16250
-<NotificationListPanel>
-exports.jsxDEV @ react-jsx-dev-runtime.development.js:346
-TopBar @ TopBar.jsx:771
-react-stack-bottom-frame @ react-dom-client.development.js:23863
-renderWithHooksAgain @ react-dom-client.development.js:5629
-renderWithHooks @ react-dom-client.development.js:5541
-updateFunctionComponent @ react-dom-client.development.js:8897
-beginWork @ react-dom-client.development.js:10522
-runWithFiberInDEV @ react-dom-client.development.js:1519
-performUnitOfWork @ react-dom-client.development.js:15132
-workLoopSync @ react-dom-client.development.js:14956
-renderRootSync @ react-dom-client.development.js:14936
-performWorkOnRoot @ react-dom-client.development.js:14419
-performSyncWorkOnRoot @ react-dom-client.development.js:16231
-flushSyncWorkAcrossRoots_impl @ react-dom-client.development.js:16079
-processRootScheduleInMicrotask @ react-dom-client.development.js:16116
-(anonymous) @ react-dom-client.development.js:16250
+performWorkOnRoot @ react-dom-client.development.js:14462
+performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:16216
+performWorkUntilDeadline @ scheduler.development.js:45
