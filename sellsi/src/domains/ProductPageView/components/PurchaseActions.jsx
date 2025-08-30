@@ -3,7 +3,7 @@ import {
   Box,
   Button,
 } from '@mui/material'
-import { ShoppingCart as ShoppingCartIcon } from '@mui/icons-material'
+import { Gavel as GavelIcon } from '@mui/icons-material'
 import { AddToCart } from '../../../shared/components'
 
 const PurchaseActions = ({
@@ -22,7 +22,7 @@ const PurchaseActions = ({
         <Box sx={{ flex: 1, display: 'flex', justifyContent: 'flex-start' }}>
             <Button
               variant="contained"
-              startIcon={<ShoppingCartIcon />}
+              startIcon={<GavelIcon />}
               size="large"
               disabled={stock === 0}
               onClick={() => { /* placeholder: oferta action */ }}

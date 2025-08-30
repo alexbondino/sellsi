@@ -104,7 +104,7 @@ export {
   trackUserAction,
   debugCurrentIP,
   trackRouteVisit
-} from './ipTrackingService'
+} from '../../../services/security/ipTrackingService'
 
 // ========================================
 // 🔧 SERVICIOS PRINCIPALES Y UTILIDADES
@@ -149,7 +149,7 @@ import * as productServices from './adminProductService'
 import * as requestServices from './adminRequestService'
 import * as fileServices from './adminFileService'
 import * as auditServices from './adminAuditService'
-import * as ipTrackingServices from './ipTrackingService'
+import * as ipTrackingServices from '../../../services/security/ipTrackingService'
 
 /**
  * @deprecated Use direct imports from domains/admin/services instead

@@ -2,7 +2,7 @@
 
 ## Resumen del Sistema
 
-El sistema de tracking de IP ha sido completamente profesionalizado y integrado en toda la aplicación para proporcionar capacidades de auditoría y seguridad avanzadas.
+El sistema de tracking de IP ha sido profesionalizado e incluye ahora mecanismos de reducción de ruido: batching de acciones, TTL cliente/servidor y envío oportunista en eventos de cierre de pestaña.
 
 ## Componentes Principales
 
@@ -10,13 +10,15 @@ El sistema de tracking de IP ha sido completamente profesionalizado y integrado 
 **Archivo:** `supabase/functions/update-lastip/index.ts`
 
 **Características:**
-- ✅ Profesionalizado con manejo de errores robusto
+- ✅ Manejo de errores robusto
 - ✅ Headers CORS configurados correctamente
 - ✅ Validación de IP desde múltiples fuentes (x-forwarded-for, cf-connecting-ip, etc.)
 - ✅ Verificación de IPs baneadas antes de actualización
 - ✅ Validación de usuario autenticado
 - ✅ Logging de auditoría completo
 - ✅ Manejo de errores granular
+- ✅ Guard server-side con TTL (`IP_UPDATE_MIN_INTERVAL_SEC`)
+- ✅ Reconoce batches (`actions_summary`) para auditoría sin spam de IP
 
 **Funcionalidades:**
 ```typescript
@@ -28,14 +30,28 @@ El sistema de tracking de IP ha sido completamente profesionalizado y integrado 
 ```
 
 ### 2. Servicio Frontend
-**Archivo:** `src/services/ipTrackingService.js`
+**Archivo:** `src/services/security/ipTrackingService.js`
 
-**Métodos implementados:**
-- `updateUserIP()` - Actualiza IP del usuario
-- `trackLoginIP()` - Registra IP en login
-- `trackUserAction(action)` - Registra IP en acciones específicas
-- `getCurrentUserIP()` - Obtiene IP actual del usuario
-- `checkIPBanStatus()` - Verifica si IP está baneada
+**Novedades (Batching & Throttling):**
+- Cola en memoria de acciones (`pendingActions`)
+- TTL configurable (`VITE_IP_UPDATE_MIN_INTERVAL_MS`, default 15 min)
+- Flush automático por:
+  - Expiración de TTL
+  - Acumulación ≥ 5 acciones
+  - Login (flush inmediato)
+  - `visibilitychange` (cuando la pestaña se oculta)
+  - `beforeunload` (con `sendBeacon` si disponible)
+- Batching genera `session_info.actions_summary` que el backend usa para auditoría sin forzar update de IP si no cambió
+ - Coordinación multi‑tab: BroadcastChannel + lock en localStorage (evita flush duplicados)
+
+**Métodos expuestos (sin romper interfaz):**
+- `updateUserIP(userId, sessionInfo?)`
+- `trackLoginIP(userId, method?)`
+- `trackUserAction(userId, action)` (ahora encola; retorna `{queued:true}`)
+- `trackRouteVisit(userId, route)` (usa la cola)
+- `getCurrentUserIP()`
+- `checkIPBanStatus(ip)`
+- `__flushIPTrackingQueue()` (interno/debug)
 
 ### 3. Integraciones Realizadas
 
@@ -79,7 +95,7 @@ El sistema de tracking de IP ha sido completamente profesionalizado y integrado 
 - `password_changed` - Cambio de contraseña
 - `profile_updated` - Actualización de perfil
 
-### Proceso de Compra
+### Proceso de Compra (se agrupa en batch salvo login / acciones críticas)
 - `payment_method_selected_{method}` - Selección de método de pago
 - `payment_process_started_{method}` - Inicio de proceso de pago
 - `payment_completed_{method}` - Pago completado
@@ -133,17 +149,18 @@ El sistema de tracking de IP ha sido completamente profesionalizado y integrado 
 - Verificación de seguridad
 ```
 
-### Servicio Frontend
+### Servicio Frontend (Batch Simplificado)
 ```javascript
-// Métodos disponibles
-const ipTrackingService = {
-  updateUserIP,
-  trackLoginIP,
-  trackUserAction,
-  getCurrentUserIP,
-  checkIPBanStatus
-}
+trackUserAction(userId, 'payment_process_started_tarjeta'); // encola
+// ... otras acciones
+// flush automático cuando TTL expira o se acumulan >=5
 ```
+
+### Variables de Entorno Relevantes
+| Variable | Lado | Descripción | Default |
+|----------|------|-------------|---------|
+| `VITE_IP_UPDATE_MIN_INTERVAL_MS` | Cliente | Intervalo mínimo entre flush reales | 900000 (15m) |
+| `IP_UPDATE_MIN_INTERVAL_SEC` | Edge | TTL server-side para omitir updates redundantes si IP no cambió | 600 (10m) |
 
 ### Integración en Componentes
 ```javascript
@@ -157,27 +174,27 @@ await trackUserAction('action_name')
 ## Estado del Sistema
 
 ### ✅ Completado
-- Edge Function profesionalizada
-- Servicio frontend completo
-- Integración en login
-- Integración en checkout
-- Integración en perfil
-- Visualización en admin panel
+- Edge Function con TTL server-side
+- Servicio frontend con batching y throttling
+- Integración en login / checkout / perfil / admin
+- SendBeacon en `beforeunload`
+- Documentación actualizada
 
 ### 🔄 En Progreso
-- Testing de integración
-- Optimizaciones de rendimiento
-- Documentación adicional
+- Métricas agregadas (posible consolidación en dashboard)
+- Validación multi-tab (BroadcastChannel pendiente)
 
 ### 📋 Pendiente
 - Dashboard de análisis de IPs
 - Alertas automáticas por IP
 - Geolocalización de IPs
 - Reportes de seguridad
+- Persistencia local cross-tab / BroadcastChannel
+ - Persistencia en IndexedDB de acciones en cola si se desea durabilidad superior
 
 ## Conclusión
 
-El sistema de tracking de IP está **completamente profesionalizado** y **funcionalmente integrado** en toda la aplicación. Proporciona:
+El sistema de tracking de IP está **profesionalizado**, **optimizado** (menos llamadas redundantes) y **funcionalmente integrado**. Proporciona:
 
 1. **Seguridad** - Prevención de acceso desde IPs baneadas
 2. **Auditoría** - Registro completo de acciones críticas
