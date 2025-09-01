@@ -217,8 +217,11 @@ export const UnifiedAuthProvider = ({ children }) => {
   const isDashboardRoute = useMemo(() => {
     const p = location.pathname;
     // Any authenticated buyer/supplier namespace route counts as dashboard layout
-    if (p.startsWith('/buyer/') || p.startsWith('/supplier/')) return true;
-    return false;
+  if (p.startsWith('/buyer/') || p.startsWith('/supplier/')) return true;
+  // Product detail pages under marketplace should also use the dashboard layout
+  // so the SideBar appears when viewing a product (this was previously shown)
+  if (p.startsWith('/marketplace/product')) return true;
+  return false;
   }, [location.pathname]);
 
   const value = useMemo(() => ({

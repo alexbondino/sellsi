@@ -5,6 +5,7 @@ import {
 } from '@mui/material'
 import { Gavel as GavelIcon } from '@mui/icons-material'
 import { AddToCart } from '../../../shared/components'
+import OfferModal from './OfferModal'
 
 const PurchaseActions = ({
   stock,
@@ -14,10 +15,22 @@ const PurchaseActions = ({
   userRegion = null,
   isLoadingUserProfile = false,
 }) => {
+  const [isOfferOpen, setIsOfferOpen] = React.useState(false)
+
+  const openOffer = () => setIsOfferOpen(true)
+  const closeOffer = () => setIsOfferOpen(false)
+
+  const handleOffer = ({ price, quantity }) => {
+    // TODO: conectar con la API para crear la oferta
+    // por ahora solo console.log
+    // eslint-disable-next-line no-console
+    console.log('Oferta enviada', { price, quantity, product })
+  }
   // No necesitamos manejar estado de cantidad local ya que AddToCart se encarga de todo
 
   return (
-  <Box sx={{ display: 'flex', width: '100%', alignItems: 'center', columnGap: { xs: 2, md: 3 } }}>
+    <>
+      <Box sx={{ display: 'flex', width: '100%', alignItems: 'center', columnGap: { xs: 2, md: 3 } }}>
       {isLoggedIn && (
         <Box sx={{ flex: 1, display: 'flex', justifyContent: 'flex-start' }}>
             <Button
@@ -25,7 +38,7 @@ const PurchaseActions = ({
               startIcon={<GavelIcon />}
               size="large"
               disabled={stock === 0}
-              onClick={() => { /* placeholder: oferta action */ }}
+              onClick={openOffer}
               sx={(theme) => ({
                 minWidth: { xs: 140, sm: 160, md: 180 },
                 whiteSpace: 'nowrap',
@@ -94,8 +107,10 @@ const PurchaseActions = ({
         </AddToCart>
       </Box>
 
-      <Box sx={{ flex: 1 }} />
-    </Box>
+        <Box sx={{ flex: 1 }} />
+      </Box>
+      <OfferModal open={isOfferOpen} onClose={closeOffer} onOffer={handleOffer} stock={stock} product={product} />
+    </>
   )
 }
 
