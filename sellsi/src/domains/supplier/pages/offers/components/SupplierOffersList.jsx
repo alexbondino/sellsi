@@ -100,7 +100,7 @@ const SupplierOffersList = ({ offers = [], setOffers }) => {
                         Acciones disponibles
                       </Typography>
                       <Typography variant="caption" sx={{ color: 'common.white' }} display="block">
-                        Acepta o rechaza ofertas pendientes. Cuando una oferta queda aceptada o rechazada puedes limpiarla (eliminarla) con el basurero.
+                        Acepta o rechaza ofertas pendientes. <br></br>Cuando una oferta queda aceptada o rechazada puedes limpiarla (eliminarla) con el basurero.
                       </Typography>
                     </Box>
                   }

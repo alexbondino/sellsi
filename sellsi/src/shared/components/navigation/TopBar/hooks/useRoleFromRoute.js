@@ -7,6 +7,7 @@ import { useMemo } from 'react';
 // Rutas específicas (podrían centralizarse luego en un map compartido)
 const SUPPLIER_ROUTES = [
   '/supplier/home',
+  '/supplier/offers',
   '/supplier/myproducts',
   '/supplier/addproduct',
   '/supplier/my-orders',
@@ -16,6 +17,7 @@ const SUPPLIER_ROUTES = [
 
 const BUYER_ROUTES = [
   '/buyer/marketplace',
+  '/buyer/offers',
   '/buyer/orders',
   '/buyer/performance',
   '/buyer/cart',
