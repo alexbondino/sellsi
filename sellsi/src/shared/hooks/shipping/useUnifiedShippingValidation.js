@@ -29,12 +29,21 @@ const globalShippingCache = {
   validations: new Map(),
   timestamp: Date.now(),
   CACHE_DURATION: 5 * 60 * 1000, // 5 minutos
+  // LRU cap: máximo de entradas en la caché para evitar crecimiento ilimitado
+  MAX_ENTRIES: 500,
   
   get: (productId, region) => {
     const key = `${productId}-${region}`;
     const cached = globalShippingCache.validations.get(key);
     
     if (cached && (Date.now() - cached.timestamp) < globalShippingCache.CACHE_DURATION) {
+      // Move entry to the end to mark it as recently used (LRU)
+      try {
+        globalShippingCache.validations.delete(key);
+        globalShippingCache.validations.set(key, cached);
+      } catch (err) {
+        // noop
+      }
       return cached.data;
     }
     return null;
@@ -42,12 +51,45 @@ const globalShippingCache = {
   
   set: (productId, region, validation) => {
     const key = `${productId}-${region}`;
+    // Si ya existe, remover antes para actualizar su posición (LRU)
+    if (globalShippingCache.validations.has(key)) {
+      globalShippingCache.validations.delete(key);
+    }
     globalShippingCache.validations.set(key, {
       data: validation,
       timestamp: Date.now()
     });
+
+    // Si excede el tamaño máximo, eliminar el entry menos recientemente usado (primero)
+    try {
+      while (globalShippingCache.validations.size > globalShippingCache.MAX_ENTRIES) {
+        const firstKey = globalShippingCache.validations.keys().next().value;
+        if (!firstKey) break;
+        globalShippingCache.validations.delete(firstKey);
+      }
+    } catch (err) {
+      // noop
+    }
   },
   
+  // Invalidate a specific productId and optional region; if region omitted, invalidates all entries for productId
+  invalidate: (productId, region = null) => {
+    if (!productId) return;
+    if (region) {
+      const key = `${productId}-${region}`;
+      globalShippingCache.validations.delete(key);
+      return;
+    }
+
+    // remove all keys that start with productId-
+    const prefix = `${productId}-`;
+    const keysToDelete = [];
+    for (const k of globalShippingCache.validations.keys()) {
+      if (k.startsWith(prefix)) keysToDelete.push(k);
+    }
+    keysToDelete.forEach(k => globalShippingCache.validations.delete(k));
+  },
+
   clear: () => {
     globalShippingCache.validations.clear();
   }
@@ -101,7 +143,7 @@ export const useUnifiedShippingValidation = (cartItems = [], isAdvancedMode = fa
     if (!effectiveUserRegion) {
       return {
         state: SHIPPING_STATES.NO_SHIPPING_INFO,
-        message: 'Configura tu región de envío en tu perfil',
+        message: 'Configura tu dirección de despacho en tu perfil',
         canShip: false
       };
     }
@@ -168,31 +210,35 @@ export const useUnifiedShippingValidation = (cartItems = [], isAdvancedMode = fa
   /**
    * Validación con caché inteligente (para uso general)
    */
-  const validateProductWithCache = useCallback((product) => {
-    if (!product?.id || !userRegion) {
-      return validateProductShipping(product);
-    }
-
-    // Verificar caché global primero
-    const cached = globalShippingCache.get(product.id, userRegion);
-    if (cached) {
-      return cached;
-    }
-
-    // Validar y guardar en caché
-    const validation = validateProductShipping(product, userRegion);
-    globalShippingCache.set(product.id, userRegion, validation);
-    
-    return validation;
-  }, [userRegion, validateProductShipping]);
+    // validateProductWithCache(product, options?) - options: { forceRefresh }
+    const validateProductWithCache = useCallback((product, options = {}) => {
+      const { forceRefresh = false } = options || {};
+  
+      if (!product?.id || !userRegion) {
+        return validateProductShipping(product);
+      }
+  
+      // Si no se fuerza refresh, intentar leer cache global
+      if (!forceRefresh) {
+        const cached = globalShippingCache.get(product.id, userRegion);
+        if (cached) return cached;
+      }
+  
+      // Validar y guardar en cache
+      const validation = validateProductShipping(product, userRegion);
+      globalShippingCache.set(product.id, userRegion, validation);
+  
+      return validation;
+    }, [userRegion, validateProductShipping]);
 
   /**
    * Validación de un producto específico (BAJO DEMANDA - para carrito)
    */
-  const validateSingleProduct = useCallback((product) => {
-    if (!product || !userRegion) return null;
-    return validateProductWithCache(product);
-  }, [userRegion, validateProductWithCache]);
+    // validateSingleProduct(product, options?) - options forwarded to validateProductWithCache
+    const validateSingleProduct = useCallback((product, options = {}) => {
+      if (!product || !userRegion) return null;
+      return validateProductWithCache(product, options);
+    }, [userRegion, validateProductWithCache]);
 
   /**
    * Obtener validación existente por ID
@@ -204,25 +250,27 @@ export const useUnifiedShippingValidation = (cartItems = [], isAdvancedMode = fa
   /**
    * Validación batch para múltiples productos
    */
-  const validateProductsBatch = useCallback((products) => {
-    if (!userRegion || !Array.isArray(products)) return [];
-
-    const results = products.map(product => ({
-      product,
-      validation: validateProductWithCache(product)
-    }));
-
-    // Actualizar estado local para compatibilidad con carrito
-    const newResults = new Map(validationResults);
-    results.forEach(({ product, validation }) => {
-      if (product?.id) {
-        newResults.set(product.id, validation);
-      }
-    });
-    setValidationResults(newResults);
-
-    return results;
-  }, [userRegion, validateProductWithCache, validationResults]);
+    // validateProductsBatch(products, options?) - options: { forceRefresh }
+    const validateProductsBatch = useCallback((products, options = {}) => {
+      const { forceRefresh = false } = options || {};
+      if (!userRegion || !Array.isArray(products)) return [];
+  
+      const results = products.map(product => ({
+        product,
+        validation: validateProductWithCache(product, { forceRefresh })
+      }));
+  
+      // Actualizar estado local para compatibilidad con carrito
+      const newResults = new Map(validationResults);
+      results.forEach(({ product, validation }) => {
+        if (product?.id) {
+          newResults.set(product.id, validation);
+        }
+      });
+      setValidationResults(newResults);
+  
+      return results;
+    }, [userRegion, validateProductWithCache, validationResults]);
 
   /**
    * Verificar si todos los productos son compatibles (para carrito)
@@ -263,6 +311,16 @@ export const useUnifiedShippingValidation = (cartItems = [], isAdvancedMode = fa
     }
   }, [userRegion]);
 
+    // Permite que consumidores limpien la cache global antes de forzar validaciones frescas
+    const clearGlobalShippingCache = useCallback(() => {
+      try {
+        globalShippingCache.clear();
+        setValidationResults(new Map());
+      } catch (err) {
+        // noop
+      }
+    }, []);
+
   return {
     // Estados principales
     userRegion,
@@ -291,8 +349,14 @@ export const useUnifiedShippingValidation = (cartItems = [], isAdvancedMode = fa
     // Métricas de cache
     cacheStats: {
       size: globalShippingCache.validations.size,
+    maxEntries: globalShippingCache.MAX_ENTRIES,
       validationCount: validationResults.size
     }
+  ,
+  // Utilities
+  clearGlobalShippingCache,
+  // Invalidation selectiva: invalidateGlobalCache(productId, region?)
+  invalidateGlobalCache: globalShippingCache.invalidate
   };
 };
 

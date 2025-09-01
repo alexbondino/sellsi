@@ -773,7 +773,7 @@ const AddToCartModal = ({
       return (
         <Alert severity="info" sx={{ mt: 2 }}>
           <Typography variant="body2">
-            Configura tu región en tu perfil para ver disponibilidad de despacho
+            Configura tu dirección de despacho en tu perfil para ver disponibilidad de despacho
           </Typography>
         </Alert>
       );

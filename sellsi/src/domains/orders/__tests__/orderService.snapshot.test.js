@@ -5,7 +5,9 @@ vi.mock('../../../services/supabase', () => {
   const selectImpl = vi.fn().mockReturnThis();
   const eqImpl = vi.fn().mockReturnThis();
   const inImpl = vi.fn().mockReturnThis();
+  const containsImpl = vi.fn().mockReturnThis();
   const orderImpl = vi.fn().mockReturnThis();
+  const limitImpl = vi.fn().mockReturnThis();
   const updateImpl = vi.fn().mockReturnThis();
   const maybeSingleImpl = vi.fn().mockResolvedValue({ data: null, error: null });
   const singleImpl = vi.fn().mockResolvedValue({ data: null, error: { message: 'not found' } });
@@ -14,7 +16,9 @@ vi.mock('../../../services/supabase', () => {
     select: selectImpl,
     eq: eqImpl,
     in: inImpl,
+    contains: containsImpl,
     order: orderImpl,
+  limit: limitImpl,
     update: updateImpl,
     maybeSingle: maybeSingleImpl,
     single: singleImpl

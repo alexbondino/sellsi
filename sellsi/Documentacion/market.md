@@ -1,4 +1,5 @@
 ## Auditoría Profunda Buyer / Marketplace (2025-08-30)
+Revisión corregida (v2) – Ajustes sobre la versión inicial: se matizan hallazgos, se corrigen inexactitudes sobre caching de tiers y se añaden omisiones relevantes (data fetch, complejidad de `UniversalProductImage`, accesibilidad, proyección SQL, etc.).
 
 Estado actual evaluado sobre branch `staging`.
 
@@ -7,8 +8,8 @@ El marketplace buyer tiene una base decente de optimizaciones (memoización, sep
 1. Ausencia de virtualización real para listas grandes (no se usa react-window / virtualization).
 2. Fragmentación de dominios marketplace (carpetas duplicadas) elevando riesgo de imports inconsistentes.
 3. Carga potencialmente excesiva de imágenes (falta de política clara de tamaños, formatos WebP / AVIF adaptativos y prioridad de LQIP / blur placeholders generalizada).
-4. Re-renderizaciones evitables por dependencias amplias y uso de objetos inline en estilos.
-5. Falta de límites / abort controllers en fetches encadenados (ej. tiers, thumbnails) → riesgo de race conditions y trabajo desperdiciado.
+4. Re-renderizaciones evitables (principalmente en componentes grandes como `CartItem`; en otros ya se usan `useMemo` y `React.memo`).
+5. Falta de límites / AbortController en fetch principal (`useProducts`) y ausencia de abort explícito en tiers (aunque hay caching de React Query) → riesgo de trabajo desperdiciado en navegación rápida.
 6. Estrategia híbrida de paginación/infinite scroll sin virtualización puede escalar mal >1–2K productos.
 7. Componente `CartItem` muy pesado (mucho JSX + lógica) renderizado N veces sin descomposición granular + sin React.memo.
 8. Falta de mediciones instrumentadas (no hay métricas Runtime CLS/FID/TTFB, ni profiling sistemático con marca de fases en consola/Sentry Performance).
@@ -23,7 +24,8 @@ El marketplace buyer tiene una base decente de optimizaciones (memoización, sep
 |---------------|----------|---------|-----------|--------------------|
 | Imágenes de producto (`ProductCardImage` / `UniversalProductImage`) | Falta estrategia de tamaños responsivos (`srcset`, `sizes`) y límite concurrente centralizado | Ancho de banda + LCP sub‑óptimo | `ProductCard.jsx` no usa `<picture>` ni `srcset` | Implementar pipeline: variantes + `srcset` + prioridad LCP + placeholder blur. |
 | `CartItem.jsx` | Monolítico, sin `React.memo`, estilos inline y lógica mezclada | Re-render cruzado y GC extra | 500+ líneas; dependencias amplias | Dividir en subcomponentes + memo + mover estilos a factory. |
-| Gestión de tiers (`useProductPriceTiers`) | No hay abort/cancel + falta de caching TTL | Over-fetch y race conditions | Hook invocado por cada card | Añadir `AbortController`, cache Map(time), dedupe por productId. |
+| Gestión de tiers (`useProductPriceTiers`) | Falta abort/cancel explícito; caching ya existe (React Query) pero sin control de concurrencia masiva ni TTL cross-tab | Latencia acumulada si muchas cards montan simultáneo; posibles race updates visuales | Hook invocado por cada card (queryKey por productId con `staleTime=5m`) | Añadir AbortController opcional, limitar solicitudes simultáneas, prefetch selectivo (primer viewport) y (si se requiere) cache in-memory adicional cross-sesión. |
+| `UniversalProductImage.jsx` (≈480 líneas) | Complejidad elevada + múltiples responsabilidades (selección, fallback, eventos, phase) sin tests | Riesgo de regresiones y dificultad de añadir `srcset` | Archivo grande sin separación lógica | Refactor: dividir en `resolveThumbnail()`, capa de fallbacks y renderer; añadir pruebas. |
 | Faltan métricas runtime | Optimización a ciegas | No hay instrumentation marks | Sin medición de LCP/CLS/TTI | Añadir `performance.mark/measure` + Sentry spans clave. |
 | Estado compuesto en `useMarketplaceLogic` | Demasiadas responsabilidades mezcladas | Mayor costo cognitivo y re-renders encadenados | Hook central >300 líneas | Segregar en 3 hooks (layout, viewMode, filters) + compose. |
 
@@ -40,10 +42,10 @@ Se mantiene como OPT-IN futuro solo si: (a) páginas > 800 productos simultáneo
 | Área | Problema | Impacto | Acción |
 |------|----------|---------|--------|
 | Duplicados estructura marketplace (`duplicados.md`) | Riesgo de importar versión equivocada (shadow modules) | Bugs sutiles / bundle inflado | Consolidar una sola jerarquía `domains/marketplace` + deprecación controlada. |
-| Estilos inline repetidos | Objetos recreados (aunque algunos memoizados) | GC churn y ruido para diffing | Centralizar tokens en theme + styled components ligeros. |
+| Estilos inline repetidos | Objetos recreados (principalmente en `CartItem`, no tanto en `ProductCard`) | GC churn y ruido para diffing en componentes pesados | Centralizar tokens en theme + variantes MUI + mover estilos a constantes. |
 | Faltan boundaries de Suspense/lazy segmentados | Grandes waterfalls en primera carga de vista | Percepción de lentitud | Introducir `React.lazy` sectorizado (FilterPanel, ProductGrid, AddToCart modal). |
-| AddToCart lógica dentro de `ProductCardBuyerContext` | Estado local abre modal bloqueando navegación | UX inconsistente | Mover control a un hook + delegar a contexto de Cart para batching. |
-| Falta de instrumentation (Sentry Performance parcial) | No hay feedback real para priorizar | Optimización a ciegas | Agregar marcadores `performance.mark/measure` + spans Sentry alrededor de fetch product list, render grid, imagen decode. |
+| AddToCart lógica dentro de `ProductCardBuyerContext` | Mezcla presentación + apertura modal + pricing | Aumenta superficie de re-renders y dificulta test | Extraer hook `useAddToCartFlow` y/o delegar a contexto de Cart (batch). |
+| Falta de instrumentation (Sentry Performance parcial) | No hay feedback real para priorizar | Optimización a ciegas | Agregar marcadores `performance.mark/measure`, Web Vitals (`web-vitals`), spans Sentry (fetch, filter, sort, image decode). |
 
 ### Hallazgos Medios
 | Área | Problema | Impacto | Acción |
@@ -51,7 +53,7 @@ Se mantiene como OPT-IN futuro solo si: (a) páginas > 800 productos simultáneo
 | `useMarketplaceLogic` | Mezcla responsabilidades (UI offsets + switching provider/products + filtros) | Dificulta escalado | Segregar en hooks: `useMarketplaceViewMode`, `useMarketplaceFilters`, `useMarketplaceLayoutConfig`. |
 | `ProductCard` altura/ancho hardcode con objetos responsive | Cambio de diseño complejo; inconsistencia futura | Parametrizar con design tokens (`card.size.variant`). |
 | Scroll listeners manuales (scrollToTop) | No throttling / passive explicit | Menor, pero puede agregar overhead | Añadir `{ passive: true }` + util throttle (requestAnimationFrame). |
-| Cálculo de price tiers en `ProductCardBuyerContext` | `Math.min/Math.max` sobre arrays cada render de tiers no cacheados | Micro overhead | Cache memo sobre stringified tier signature. |
+| Cálculo de price tiers en `ProductCardBuyerContext` | `Math.min/Math.max` sobre arrays cada render (inputs no hash memo) | Micro overhead | Memo adicional por hash de tiers o precálculo server. |
 | Shipping en carrito | Lógica mezclada con UI + múltiples condiciones | Riesgo de errores al agregar nuevos modos | Extraer `useCartItemShipping(itemId)` + map config-driven. |
 
 ### Hallazgos Bajos / Observaciones
@@ -62,11 +64,13 @@ Se mantiene como OPT-IN futuro solo si: (a) páginas > 800 productos simultáneo
 | Hook `useMarketplaceLogic` ya memoiza handlers | Buen patrón | Mantener y agregar pruebas. |
 
 ### Métricas Faltantes (Debe instrumentarse)
-- LCP (tiempo hasta imagen principal de primer fold del grid).
-- CLS (cambios de layout por carga tardía de imágenes sin dimensiones fijas).
-- Tiempo fetch -> first render de `ProductsSection`.
-- Cantidad de renders por `ProductCard` al cambiar filtros.
-- Throughput de scroll (fps) con 200 / 500 / 1000 productos mockeados.
+- LCP (p75) usando Web Vitals + envío a Sentry.
+- CLS (confirmar que contenedores con altura fija realmente mitigan).
+- TTFB y tiempo fetch -> first paint de grid (`products_fetch_total`, `grid_first_render_ms`).
+- Render count por `ProductCard` y `CartItem` (profiling + test de integración).
+- Throughput scroll (fps) con 200 / 500 / 1000 productos mock (script synthetic).
+- Bytes transferidos imágenes primer fold vs objetivo (<250KB).
+- Latencia media de queries de tiers y % de reuse de cache.
 
 ### Plan de Mejora Priorizado (0 = mayor prioridad) – SIN virtualización obligatoria
 | Prioridad | Tarea | Tipo | ETA |
@@ -74,12 +78,13 @@ Se mantiene como OPT-IN futuro solo si: (a) páginas > 800 productos simultáneo
 | 0 | Instrumentación (marks LCP, CLS, render_grid, fetch_products) + spans Sentry | Observabilidad | 0.5 d |
 | 0 | Política de imágenes: generación variantes + `srcset` + placeholder blur + `fetchpriority` | Perf | 1 d |
 | 1 | Refactor `CartItem` (subcomponentes + memo + hooks) | Perf / DX | 0.5–1 d |
-| 1 | Cache & abort en `useProductPriceTiers` + throttle peticiones | Robustez | 0.25 d |
+| 1 | Abort & limit concurrency en `useProducts` + prefetch tiers primer viewport | Robustez | 0.25 d |
 | 2 | Segregar `useMarketplaceLogic` en 3 hooks y exponer compose | DX | 1 d |
 | 2 | Consolidar carpetas duplicadas marketplace | DX | 0.5–1 d |
 | 2 | Implementar estilo centralizado de tarjetas (design tokens) | DX | 0.25 d |
 | 3 | Batching de montaje de ProductCards (IntersectionObserver + cola) | Perf | 0.5 d |
 | 3 | Scroll listeners pasivos + raf throttle | Perf menor | 0.1 d |
+| 3 | `content-visibility: auto` + `contain-intrinsic-size` en grid | Perf pintura | 0.1 d |
 | 4 | Pre-carga inteligente (prefetch al hacer hover/near viewport) | Perf percibida | 0.25 d |
 | OPT | Virtualización experimental detrás de flag | Investigación | 1–2 d |
 
@@ -119,36 +124,49 @@ function useProgressiveMount(items, { batchSize=12 }) {
 	- `ProductCard`: extraer `generateProductUrl` fuera (pure util) → no recrear callback.
 	- `ProductCardBuyerContext`: pasar sólo props primitivos derivados (p.ej. `tierPriceRange` pre-calculado) para simplificar memo.
 3. Imágenes
-	- Uso de `fetchpriority="high"` solo para 1–2 primeras imágenes (LCP candidates).
-	- Añadir `decoding="async"` y `loading="lazy"` default.
-	- Placeholder blur base64 (≤ 400B) en `style={{ backgroundImage: 'url(data:image/... )' }}` hasta `onLoad`.
+	- Uso de `fetchpriority="high"` solo para 1–2 LCP candidates (primer row visible).
+	- Añadir `decoding="async"` y `loading="lazy"` default fuera de `priority`.
+	- Placeholder blur base64 (≤400B) en background hasta `onLoad`.
+	- Refactor `UniversalProductImage` para permitir `srcset` / `sizes` sin aumentar complejidad.
+	- Agregar atributos `width` y `height` (o `aspect-ratio`) para mitigar CLS.
 4. Red de Datos
-	- Añadir cache in-memory para tiers: `Map(productId => { data, expires })` TTL 5 min.
-	- Agrupar peticiones de tiers en batch (si API lo permite) cada frame.
+	- Limitar columnas en `select` (evitar `*`).
+	- Paralelizar fetch de `products`, `product_quantity_ranges`, `users` (`Promise.all`).
+	- AbortController en fetch principal + cleanup en unmount.
+	- Prefetch tiers solo para productos del primer viewport (evitar stampede).
+	- (Opcional) TTL in-memory adicional para navegaciones rápidas inter-sección.
 5. JS / Bundle
-	- Code-split AddToCart modal pesado (si incluye lógica extra) usando `lazy(() => import(...))`.
-	- Revisión de dependencias MUI: evitar importar icon packs completos (ya parece tree-shakeado).
+	- Code split AddToCart modal (lazy) y cualquier modal pesado.
+	- Revisar bundle para confirmar tree-shaking de íconos MUI (sustituir imports amplios si aplica).
+	- Considerar aislar lógica de URL producto en util compartido (ya existe en parte) y remover duplicados.
 6. Estilos
-	- Reemplazar objetos sx repetitivos por variantes MUI (`components.MuiCard.variants`).
-	- Consolidar sombras y transiciones en theme.
+	- Variantes MUI (`components.MuiCard.variants`) + theme tokens (altura/ancho card → design tokens).
+	- Consolidar sombras y transiciones globales.
+	- Mover estilos voluminosos de `CartItem` a constantes + módulos.
 7. Accesibilidad / UX
-	- Garantizar `aria-busy` en contenedor grid durante carga incremental.
-	- Paginación: añadir `aria-current` (ya se aplica) y roles en botones.
+	- `aria-busy` y `aria-live="polite"` en contenedor resultados al aplicar filtros.
+	- `alt` descriptivo: incluir proveedor + nombre.
+	- Marcar íconos puramente decorativos con `aria-hidden="true"`.
 8. Rendimiento de Scroll
-	- Throttle listener a 1 por frame (raf) + `passive:true`.
+	- Throttle/raf + `passive:true` y medir antes/después (scroll FPS).
+	- Alternativa previa a virtualización: `content-visibility`.
 9. Memoria
 	- Evitar almacenar productos completos duplicados en múltiples estados (derivar en render directo). `productosOrdenados` ya suficiente; no duplicar `derivedItems` si solo re-map.
 10. Observabilidad
+	- Web Vitals → Sentry (LCP, CLS, FID / INP, TTFB).
 	- Spans Sentry: `products.fetch`, `products.render.batch`, `image.decode.lcpCandidate`.
+	- Marks: `products_fetch_start/end`, `grid_render_start/end`.
 
 ### Métricas Objetivo (Después de Mejora)
 | Métrica | Objetivo | Método Verificación |
 |---------|----------|---------------------|
-| LCP (desktop mediano) | < 2.5s (p75) | Web Vitals + Sentry | 
-| CLS | < 0.03 | Web Vitals | 
+| LCP (desktop mediano) | < 2.5s (p75) | Web Vitals + Sentry |
+| CLS | < 0.03 | Web Vitals |
 | Tiempo primer lote renderizado | < 600ms post data | Performance marks |
 | Re-renders promedio `ProductCard` al cambiar filtro | ≤ 1 | React Profiler |
+| Re-renders promedio `CartItem` en cambio global (no qty) | ≤ 0 | Profiler |
 | Bytes imágenes primer viewport | < 250KB | Network tab |
+| Tiers cache hit ratio | > 80% | React Query metrics |
 
 ### Riesgos / Mitigaciones sin Virtualización
 | Riesgo | Mitigación |
@@ -164,7 +182,7 @@ Si métricas exceden objetivos se puede activar flag `ENABLE_GRID_VIRTUALIZATION
 3. Integrar buffer `overscan` pequeño (1–2 filas) para suavizar.
 
 ### Conclusión Actualizada
-El foco inmediato debe ser optimización perceptual (imágenes, lotes, abort/caching, instrumentación) antes de introducir complejidad de virtualización. Con catálogos medios, el modelo incremental bien afinado ofrece equilibrio UX/performance.
+El foco inmediato sigue siendo optimización perceptual (imágenes, batching, instrumentación) y robustez de data fetch (abort, proyección y paralelización), complementado ahora con refactor de componentes grandes (`CartItem`, `UniversalProductImage`) para habilitar mejoras futuras (srcset, progressive mount) y reducir deuda antes de evaluar virtualización.
 
 ---
 Extensión de análisis agregada sin imponer virtualización obligatoria.
@@ -208,14 +226,14 @@ Sentry.addBreadcrumb({ category: 'perf', message: 'products_fetch ' + duration }
 - Dificultad para seguir acelerando nuevas features por deuda estructural.
 
 ### Conclusión
-La arquitectura avanza en dirección correcta (hooks centralizados, memos selectivos, carga progresiva), pero necesita una siguiente fase de optimización estructural (virtualización, imágenes, segmentación de lógica y componentes) y observabilidad para sostener crecimiento.
+La arquitectura avanza en dirección correcta (hooks centralizados, memos selectivos, carga progresiva). Los ajustes agregados corrigen sobre‑generalizaciones (caching de tiers) y priorizan la reducción de complejidad en imágenes y carrito, además de una capa de observabilidad robusta para guiar decisiones antes de introducir virtualización opcional.
 
 ---
 Documento generado automáticamente (AI audit). Actualizar tras aplicar las mejoras de prioridad 0–1.
 
 ---
 
-## Análisis Profundizado Adicional (Cobertura Extendida)
+## Análisis Profundizado Adicional (Cobertura Extendida) (Ajustado)
 
 Esta ampliación profundiza en capas NO detalladas previamente: datos, red, concurrencia, memoria, DX, seguridad básica, accesibilidad y arquitectura futura. No sustituye un code review línea a línea (≈ miles de LOC). Se incluyen heurísticas y patrones detectados en los archivos clave ya inspeccionados + muestreo dirigido de hooks/utilidades relacionados.
 
@@ -244,12 +262,11 @@ Observado en `useProducts.js`:
 - Batching thumbnails controlado por flag; falta métrica de tiempo medio hasta imagen visible (TTI imágenes). Instrumentar.
 
 ### 5. Imágenes (`UniversalProductImage.jsx`)
-- Sistema robusto de fallback y fase de thumbnails. Oportunidades:
-	- No hay `srcset` / `sizes` → ancho de banda excedente.
-	- Falta de compresión adaptativa (WebP/AVIF). Implementar generación server-side + detección soporte.
-	- Reintento único; si error transitorio 500 podría requerir jitter backoff.
-	- `priority={true}` usado de forma amplia (ProductCard + Cart) → pérdida de efecto de priorización. Limitar a top fold + item principal del carrito.
-	- No se fija `width` & `height` atributos → posible CLS residual (aunque se usa contenedor con height; verificar consistentemente en todos los contextos).
+- Fallbacks y fases implementados; falta `srcset` / `sizes` / control de prioridad selectiva.
+- No hay negociación AVIF/WebP server-side ni placeholders blur integrados.
+- Atributos `width`/`height` ausentes en `<img>` final (con contenedor fijo mitiga, pero añadir reduce CLS residual).
+- Uso amplio de `priority={true}` reduce eficacia de scheduling.
+- Refactor modular sugerido para introducir variantes sin aumentar complejidad.
 
 ### 6. Carrito (`CartItem.jsx`)
 - Lógica de shipping, quantity, subtotal dentro del mismo componente. Descomposición permitirá selective memo.
@@ -268,9 +285,10 @@ Observado en `useProducts.js`:
 - Duplicación potencial: `products` -> `productosFiltrados` -> `productosOrdenados` -> `derivedItems` -> `renderItems`. Todos arrays completos. Para reducir huella: mantener base `products` y solo arrays de índices para filtrado / orden / vista. Esto también ayuda a facilitar virtualización futura si se decide.
 
 ### 10. Accesibilidad (A11y)
-- Falta de `alt` específico en algunas variantes donde se delega a nombre genérico; incluir proveedor + nombre (ej: "Producto X de Proveedor Y").
-- Botones de paginación incluyen `aria-label` correcto; añadir `role="navigation"` (ya existe) y `aria-live="polite"` a contenedor de resultados para anunciar cambios de filtro.
-- Íconos decorativos podrían marcarse `aria-hidden="true"`.
+- `alt` más descriptivo (producto + proveedor).
+- `aria-live="polite"` + `aria-busy` en contenedor de resultados durante filtrado.
+- Marcar íconos decorativos con `aria-hidden`.
+- Evaluar contraste y tamaño mínimo de íconos de verificación.
 
 ### 11. Observabilidad / Métricas
 Agregar marks:
@@ -295,17 +313,65 @@ Spans Sentry sugeridos: `supabase.products.fetch`, `marketplace.filter.apply`, `
 - Formato de números manual (`toLocaleString('es-CL')`) correcto; centralizar en helper para evitar divergencias.
 - Preparar wrapper para currency (CLP) con fallback a formateador de Intl.NumberFormat.
 
-### 15. Roadmap Técnicamente Refinado
+### 15. Roadmap Técnicamente Refinado (Versión Definitiva)
+
+Fase 0 (Baseline e Instrumentación) – habilita decisiones posteriores
+- Observabilidad base: Web Vitals → Sentry (LCP, CLS, INP, TTFB) + `performance.mark/measure` (`products_fetch`, `grid_render`, `first_batch_paint`).
+- Contadores de render (dev) para `ProductCard` y `CartItem`.
+- Script baseline (200/500/1000 items mock) midiendo: filtrado ms, sort ms, FPS scroll, peso imágenes fold.
+- Snapshot inicial de métricas almacenado (para difs posteriores).
+
 | Fase | Objetivo | Entregables |
 |------|----------|-------------|
-| 1 | Observabilidad base | Marks + Sentry spans + logging estructurado (nivel perf) |
-| 1 | Imágenes eficientes | srcset + sizes + prioridad selectiva + placeholder blur |
-| 2 | Refactor CartItem | Subcomponentes + memo + pruebas render count |
-| 2 | Reducir arrays derivados | Índices y selectors para filtrado/orden |
-| 3 | Data pipeline paralela | Promise.all + abort + batching fetch tiers/users |
-| 3 | Hooks segregados | `useMarketplaceFilters`, `useMarketplaceViewMode`, `useMarketplaceLayout` |
-| 4 | Thumbnail pipeline avanzada | WebP/AVIF negotiation + quality adaptativa |
-| 5 | Optional virtualization flag | Solo si dataset y métricas justifican |
+| 1 | Imágenes eficientes (MVP) | Variantes 120/240/480/960 + `srcset`/`sizes` + placeholder blur + atributos width/height + limitar `fetchpriority` al primer fold |
+| 1 | Data fetch robusto | AbortController en `useProducts`, paralelizar (`Promise.all`), proyección columnas, prefetch tiers primer fold |
+| 1 | Refactor CartItem | Subcomponentes + memo + estilos externalizados + test render-count |
+| 2 | Segregar lógica marketplace | `useMarketplaceFilters`, `useMarketplaceViewMode`, `useMarketplaceLayout` + test integración |
+| 2 | Refactor UniversalProductImage | Extraer `resolveThumbnail`, renderer, fallbacks + preparar `buildSrcSet` + tests |
+| 2 | Design tokens cards | Tokens de dimensiones + variantes MUI (`components.MuiCard.variants`) |
+| 3 | Estructura datos escalable | Arrays de índices para filtrado/orden + benchmark antes/después |
+| 3 | Montaje progresivo | Hook `useProgressiveMount` + semáforo imágenes + métricas batch |
+| 3 | Scroll & Paint | raf throttle + `passive:true` + `content-visibility: auto` + `contain-intrinsic-size` |
+| 4 | Pipeline thumbnails avanzada | Negotiation WebP/AVIF + calidad adaptativa (DPR / conexión) + blur hash opcional |
+| 4 | AddToCart desacoplado | Hook `useAddToCartFlow` + modal code-split (lazy + Suspense local) |
+| 5 | Virtualización opcional | `<VirtualProductGrid>` behind flag activado por métricas (items > threshold o commit > 60ms) |
+
+Transversales (continuos)
+- Accesibilidad: `aria-live`, `aria-busy`, alt descriptivo (producto + proveedor), `aria-hidden` decorativos, contraste iconos verificación.
+- Seguridad / Hardening: sanitizar término de búsqueda antes de futuras llamadas backend; limitar campos seleccionados.
+- Observabilidad continua: alertas LCP/CLS (Sentry), ratio cache tiers (>80%), logs de fallbacks de imagen.
+- Limpieza: eliminar carpetas marketplace duplicadas; deduplicar campos producto (min/max vs calculados) cuando servidor provea.
+- QA Automatizada: tests para resoluciones de thumbnails, filtrado (performance budgets), snapshot de tokens de diseño.
+
+Criteria de activación Virtualización
+- Items visibles simultáneos > 1200 o commit time p75 > 60ms (profiling).
+- FPS scroll p75 < 45 con batching + content-visibility aplicado.
+
+Exit / KPIs (ver sección Métricas Objetivo) usados como Definition of Done incremental por fase.
+
+#### Matriz Impacto / Esfuerzo / Riesgo (Resumen Roadmap)
+Leyenda rápida: Impacto (Alto/Medio/Bajo sobre métricas objetivo: LCP, render, bytes), Esfuerzo (días hombre aproximados, rango si aplica), Riesgo (probabilidad + severidad de regresión / bloqueo: Bajo/Medio/Alto).
+
+| Ítem | Impacto | Esfuerzo | Riesgo | Notas Clave |
+|------|---------|----------|--------|-------------|
+| Instrumentación (Web Vitals + marks + spans) | Alto | 0.5 | Bajo | Habilita decisiones, código aislado, bajo alcance UI. |
+| Política imágenes MVP (variantes + srcset + blur + width/height) | Alto | 1 | Medio | Afecta LCP directo; riesgo layout si dimensiones erróneas. |
+| Refactor CartItem (subcomponentes + memo) | Alto | 0.5–1 | Medio | Posibles glitches en cálculo subtotal / shipping; requerir tests snapshot & render-count. |
+| Abort + paralelizar `useProducts` + prefetch tiers fold | Alto | 0.25 | Bajo | Cambios confinados a hook; probar navegación rápida/back. |
+| Segregar `useMarketplaceLogic` en 3 hooks | Medio | 1 | Medio | Riesgo de props/provider mal encadenados; cubrir con tests integración. |
+| Refactor `UniversalProductImage` modular | Alto | 1–1.5 | Alto | Maneja múltiples fallbacks; riesgo regresión placeholders/fallback order. |
+| Design tokens cards (dimensiones/variants) | Medio | 0.25 | Bajo | Cambios cosméticos controlados. |
+| Arrays de índices (filtrado/orden) | Medio | 0.75 | Medio | Riesgo desincronización indices-productos; requiere invariants tests. |
+| Montaje progresivo (`useProgressiveMount` + semáforo imágenes) | Alto (perceptual) | 0.5–0.75 | Medio | Debe evitar flash / reorder; validar con 1000 items mock. |
+| Scroll & Paint tweaks (raf throttle + passive + content-visibility) | Medio | 0.25 | Bajo | Fácil revertir; medir antes/después. |
+| Pipeline thumbnails avanzada (AVIF/WebP adaptativo) | Medio | 1 | Medio | Depende soporte infra/transform; fallback robusto esencial. |
+| AddToCart desacoplado (hook + lazy modal) | Medio | 0.5 | Bajo | Aísla lógica; riesgo mínimo si tests de flujo. |
+| Virtualización opcional (flag) | Variable (Alto en catálogos grandes) | 1–2 | Alto | Complejidad en grids responsive; sólo activar si criterios métricos. |
+| QA / Tests de performance (scripts 200/500/1000) | Alto (indirecto) | 0.5 | Bajo | Reduce riesgo futuras regresiones. |
+| Accesibilidad (aria-live, alt, aria-busy) | Medio | 0.25 | Bajo | Beneficio UX/A11y; cambios declarativos. |
+| Limpieza duplicados marketplace | Medio | 0.5 | Medio | Riesgo rutas rotas / imports huérfanos; requiere mapeo previo. |
+
+Priorizar siempre primero alto impacto + bajo riesgo (Instrumentación, Abort/parallel, Scroll tweaks) y luego alto impacto + riesgo medio con mitigaciones (Imágenes MVP, CartItem, Progressive Mount). Refactors altos riesgo (UniversalProductImage, Virtualización) después de contar con métricas y harness de pruebas.
 
 ### 16. Limitaciones de Esta Auditoría
 - No se leyó cada archivo del repositorio (tiempo & volumen); se enfocó en cadena crítica marketplace/buyer.

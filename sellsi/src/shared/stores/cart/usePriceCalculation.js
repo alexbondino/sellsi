@@ -14,6 +14,13 @@ import useCartStore from './cartStore'
 import useShipping from './useShipping'
 import { calculatePriceForQuantity } from '../../../utils/priceCalculation'
 import { calculateProductShippingCost } from '../../../utils/shippingCalculation'
+import {
+  sumSubtotal,
+  sumQuantity,
+  computeShippingFromStore,
+  computeAdvancedShipping,
+  finalizeTotals
+} from './priceCalculationUtils'
 
 /**
  * Hook principal para todos los cálculos de precio del carrito
@@ -41,19 +48,8 @@ export const usePriceCalculation = (items = null, options = {}) => {
 
   // ===== CÁLCULOS MEMOIZADOS =====
   const calculations = useMemo(() => {
-    // 1. SUBTOTAL - Con soporte para price tiers
-    const subtotal = finalItems.reduce((sum, item) => {
-      // Para productos con precio por tramos
-      if (item.price_tiers && item.price_tiers.length > 0) {
-        const price_tiers = item.price_tiers || []
-        const basePrice = item.originalPrice || item.precioOriginal || item.price || item.precio || 0
-        const calculatedPrice = calculatePriceForQuantity(item.quantity, price_tiers, basePrice)
-        return sum + calculatedPrice * item.quantity
-      }
-      
-      // Para productos sin precio por tramos
-      return sum + (item.price || 0) * item.quantity
-    }, 0)
+  // 1. SUBTOTAL - use pure util
+  const subtotal = sumSubtotal(finalItems)
 
     // 2. DESCUENTOS - Funcionalidad deshabilitada
     const discount = 0
@@ -72,44 +68,13 @@ export const usePriceCalculation = (items = null, options = {}) => {
         shipping = realShippingCost
       } else if (useAdvancedShipping) {
         // Modo avanzado: cálculo por producto usando datos reales
-        if (userRegion) {
-          // Con región del usuario: calcular normalmente
-          finalItems.forEach(item => {
-            const itemShipping = calculateProductShippingCost(item, userRegion)
-            shippingByProduct[item.id] = itemShipping
-            shipping += itemShipping
-          })
-        } else {
-          // Sin región del usuario: calcular lo que se pueda y marcar como calculando si es necesario
-          let hasProductsNeedingRegion = false
-          
-          finalItems.forEach(item => {
-            // Verificar si el producto tiene información de regiones de envío
-            const shippingRegions = item.shippingRegions || 
-                                   item.delivery_regions || 
-                                   item.shipping_regions || 
-                                   item.product_delivery_regions || 
-                                   [];
-            
-            if (!shippingRegions || shippingRegions.length === 0) {
-              // Sin Información de Despacho: costo 0
-              shippingByProduct[item.id] = 0
-              shipping += 0
-            } else {
-              // Tiene Información de Despacho pero no sabemos la región del usuario
-              hasProductsNeedingRegion = true
-              shippingByProduct[item.id] = 0 // Temporal hasta obtener región
-              shipping += 0
-            }
-          })
-          
-          // Solo mostrar "calculando" si hay productos que necesitan la región
-          isShippingCalculating = hasProductsNeedingRegion
-        }
+  const adv = computeAdvancedShipping(finalItems, userRegion, calculateProductShippingCost)
+  shipping = adv.shipping
+  shippingByProduct = adv.byProduct
+  isShippingCalculating = adv.isCalculating
       } else {
         // Modo simple: cálculo unificado
-        shipping = shippingStore.getShippingCost ? 
-          shippingStore.getShippingCost(subtotalAfterDiscount, []) : 0
+  shipping = computeShippingFromStore(subtotalAfterDiscount, shippingStore)
       }
     }
 
@@ -119,8 +84,8 @@ export const usePriceCalculation = (items = null, options = {}) => {
     // 6. ESTADÍSTICAS ADICIONALES
     const stats = {
       totalItems: finalItems.length,
-      totalQuantity: finalItems.reduce((count, item) => count + item.quantity, 0),
-      averagePrice: finalItems.length > 0 ? subtotal / finalItems.reduce((count, item) => count + item.quantity, 0) : 0,
+      totalQuantity: sumQuantity(finalItems),
+      averagePrice: finalItems.length > 0 ? subtotal / (sumQuantity(finalItems) || 1) : 0,
       isEmpty: finalItems.length === 0
     }
 

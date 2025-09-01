@@ -1,70 +1,15 @@
-AuthProvider.jsx:14  Uncaught Error: useAuth must be used within an AuthProvider
-    at useAuth (AuthProvider.jsx:14:11)
-    at useTransferInfoPreloader (useTransferInfoPreloader.js:25:42)
-    at TransferInfoManager (TransferInfoManager.jsx:20:3)
-    at react-stack-bottom-frame (react-dom-client.development.js:23863:20)
-    at renderWithHooks (react-dom-client.development.js:5529:22)
-    at updateFunctionComponent (react-dom-client.development.js:8897:19)
-    at beginWork (react-dom-client.development.js:10522:18)
-    at runWithFiberInDEV (react-dom-client.development.js:1519:30)
-    at performUnitOfWork (react-dom-client.development.js:15132:22)
-    at workLoopSync (react-dom-client.development.js:14956:41)
-useAuth @ AuthProvider.jsx:14
-useTransferInfoPreloader @ useTransferInfoPreloader.js:25
-TransferInfoManager @ TransferInfoManager.jsx:20
-react-stack-bottom-frame @ react-dom-client.development.js:23863
-renderWithHooks @ react-dom-client.development.js:5529
-updateFunctionComponent @ react-dom-client.development.js:8897
-beginWork @ react-dom-client.development.js:10522
+hook.js:608  Invalid DOM property `fetchpriority`. Did you mean `fetchPriority`?
+overrideMethod @ hook.js:608
+validateProperty @ react-dom-client.development.js:3000
+warnUnknownProperties @ react-dom-client.development.js:3154
+validatePropertiesInDevelopment @ react-dom-client.development.js:17117
+setInitialProperties @ react-dom-client.development.js:17741
+completeWork @ react-dom-client.development.js:11391
 runWithFiberInDEV @ react-dom-client.development.js:1519
-performUnitOfWork @ react-dom-client.development.js:15132
+completeUnitOfWork @ react-dom-client.development.js:15268
+performUnitOfWork @ react-dom-client.development.js:15149
 workLoopSync @ react-dom-client.development.js:14956
 renderRootSync @ react-dom-client.development.js:14936
-performWorkOnRoot @ react-dom-client.development.js:14462
-performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:16216
-performWorkUntilDeadline @ scheduler.development.js:45
-<TransferInfoManager>
-exports.jsxDEV @ react-jsx-dev-runtime.development.js:346
-AppProviders @ AppProviders.jsx:53
-react-stack-bottom-frame @ react-dom-client.development.js:23863
-renderWithHooksAgain @ react-dom-client.development.js:5629
-renderWithHooks @ react-dom-client.development.js:5541
-updateFunctionComponent @ react-dom-client.development.js:8897
-beginWork @ react-dom-client.development.js:10522
-runWithFiberInDEV @ react-dom-client.development.js:1519
-performUnitOfWork @ react-dom-client.development.js:15132
-workLoopSync @ react-dom-client.development.js:14956
-renderRootSync @ react-dom-client.development.js:14936
-performWorkOnRoot @ react-dom-client.development.js:14462
-performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:16216
-performWorkUntilDeadline @ scheduler.development.js:45
-<AppProviders>
-exports.jsxDEV @ react-jsx-dev-runtime.development.js:346
-App @ App.jsx:72
-react-stack-bottom-frame @ react-dom-client.development.js:23863
-renderWithHooksAgain @ react-dom-client.development.js:5629
-renderWithHooks @ react-dom-client.development.js:5541
-updateFunctionComponent @ react-dom-client.development.js:8897
-beginWork @ react-dom-client.development.js:10522
-runWithFiberInDEV @ react-dom-client.development.js:1519
-performUnitOfWork @ react-dom-client.development.js:15132
-workLoopSync @ react-dom-client.development.js:14956
-renderRootSync @ react-dom-client.development.js:14936
-performWorkOnRoot @ react-dom-client.development.js:14462
-performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:16216
-performWorkUntilDeadline @ scheduler.development.js:45
-<App>
-exports.jsxDEV @ react-jsx-dev-runtime.development.js:346
-AppWithWhatsApp @ App.jsx:80
-react-stack-bottom-frame @ react-dom-client.development.js:23863
-renderWithHooksAgain @ react-dom-client.development.js:5629
-renderWithHooks @ react-dom-client.development.js:5541
-updateFunctionComponent @ react-dom-client.development.js:8897
-beginWork @ react-dom-client.development.js:10522
-runWithFiberInDEV @ react-dom-client.development.js:1519
-performUnitOfWork @ react-dom-client.development.js:15132
-workLoopSync @ react-dom-client.development.js:14956
-renderRootSync @ react-dom-client.development.js:14936
-performWorkOnRoot @ react-dom-client.development.js:14462
+performWorkOnRoot @ react-dom-client.development.js:14419
 performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:16216
 performWorkUntilDeadline @ scheduler.development.js:45

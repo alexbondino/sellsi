@@ -76,6 +76,27 @@ const PaymentMethod = () => {
 
     // Inicializar checkout con datos del carrito
     const initializeCheckoutData = async () => {
+      // Forzar validación fresca antes de inicializar el checkout
+      try {
+        if (shippingValidation && typeof shippingValidation.clearGlobalShippingCache === 'function') {
+          // limpiar cache global para evitar staleness
+          shippingValidation.clearGlobalShippingCache();
+        }
+
+        if (shippingValidation && typeof shippingValidation.validateProductsBatch === 'function') {
+          const fresh = shippingValidation.validateProductsBatch(items, { forceRefresh: true });
+          // Si alguna validación indica no poder despachar, redirigir al carrito
+          const anyIncompatible = fresh.some(r => r.validation && !r.validation.canShip && r.validation.state !== shippingValidation.SHIPPING_STATES.NO_SHIPPING_INFO);
+          if (anyIncompatible) {
+            navigate('/buyer/cart', { replace: true });
+            return;
+          }
+        }
+      } catch (err) {
+        console.error('[PaymentMethod] Error forcing fresh shipping validation:', err);
+        // En caso de error, dejamos que el flujo continue y la validación server-side la confirme
+      }
+
       const subtotal = getSubtotal()
       const tax = Math.round(subtotal * 0.19) // IVA 19%
       const serviceFee = Math.round(subtotal * 0.03) // Comisión por servicio 3%
