@@ -135,7 +135,7 @@ const SupplierOffersList = ({ offers = [], setOffers }) => {
                     </Box>
                   }
                 >
-                  <IconButton size="small" aria-label="Información de acciones">
+                  <IconButton size="small" aria-label="Información de acciones" sx={{ '&.Mui-focusVisible': { outline: 'none', boxShadow: 'none' }, '&:focus': { outline: 'none', boxShadow: 'none' }, '&:focus-visible': { outline: 'none', boxShadow: 'none' } }}>
                     <InfoOutlinedIcon fontSize="small" />
                   </IconButton>
                 </Tooltip>
@@ -170,7 +170,7 @@ const SupplierOffersList = ({ offers = [], setOffers }) => {
                         aria-label="Aceptar Oferta"
                         onClick={() => openModal('accept', o)}
                         color="success"
-                        sx={{ ml: 1 }}
+                        sx={{ ml: 1, '&.Mui-focusVisible': { outline: 'none', boxShadow: 'none' }, '&:focus': { outline: 'none', boxShadow: 'none' }, '&:focus-visible': { outline: 'none', boxShadow: 'none' } }}
                       >
                         <CheckIcon />
                       </IconButton>
@@ -183,7 +183,7 @@ const SupplierOffersList = ({ offers = [], setOffers }) => {
                         aria-label="Rechazar Oferta"
                         onClick={() => openModal('reject', o)}
                         color="error"
-                        sx={{ ml: 1 }}
+                        sx={{ ml: 1, '&.Mui-focusVisible': { outline: 'none', boxShadow: 'none' }, '&:focus': { outline: 'none', boxShadow: 'none' }, '&:focus-visible': { outline: 'none', boxShadow: 'none' } }}
                       >
                         <BlockIcon fontSize="small" />
                       </IconButton>
@@ -195,7 +195,7 @@ const SupplierOffersList = ({ offers = [], setOffers }) => {
                         size="small"
                         aria-label="Limpiar Oferta"
                         onClick={() => openModal('cleanup', o)}
-                        sx={{ ml: 1 }}
+                        sx={{ ml: 1, '&.Mui-focusVisible': { outline: 'none', boxShadow: 'none' }, '&:focus': { outline: 'none', boxShadow: 'none' }, '&:focus-visible': { outline: 'none', boxShadow: 'none' } }}
                       >
                         <DeleteIcon fontSize="small" />
                       </IconButton>
