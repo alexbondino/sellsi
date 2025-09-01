@@ -15,3 +15,9 @@ export {
   BILLING_INFO_STATES 
 } from './useBillingInfoValidation';
 
+export {
+  useShippingInfoValidation,
+  invalidateShippingInfoCache,
+  SHIPPING_INFO_STATES
+} from './useShippingInfoValidation';
+

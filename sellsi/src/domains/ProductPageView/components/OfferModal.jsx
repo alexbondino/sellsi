@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from 'react'
+import React, { useMemo, useState, useEffect, useCallback } from 'react'
 import PropTypes from 'prop-types'
 import {
   Dialog,
@@ -12,6 +12,8 @@ import {
 } from '@mui/material'
 import { InfoOutlined as InfoIcon } from '@mui/icons-material'
 import { useBanner } from '../../../shared/components/display/banners/BannerContext'
+import { useUnifiedShippingValidation } from '../../../shared/hooks/shipping/useUnifiedShippingValidation'
+import ShippingInfoValidationModal, { useShippingInfoModal } from '../../../shared/components/validation/ShippingInfoValidationModal/ShippingInfoValidationModal'
 // document-type logic removed (reverted)
 
 const OfferModal = ({ open, onClose, onOffer, stock = 0, defaultPrice = '', product = null }) => {
@@ -55,8 +57,44 @@ const OfferModal = ({ open, onClose, onOffer, stock = 0, defaultPrice = '', prod
 
   const { showBanner } = useBanner()
 
+  // Shipping validation hooks
+  const { userRegion, validateProductShipping } = useUnifiedShippingValidation()
+  const { isOpen: isShippingModalOpen, setIsOpen: setShippingModalOpen, openIfIncomplete: openShippingIfNeeded, missingFieldLabels: shippingMissingLabels, handleConfigureShipping } = useShippingInfoModal()
+
+  // Estado para incompatibilidad de región
+  const [isRegionIncompatible, setIsRegionIncompatible] = useState(false)
+  const [incompatibleMessage, setIncompatibleMessage] = useState('')
+
+  useEffect(() => {
+    if (open) {
+      // reset shipping related flags when modal opens
+      setIsRegionIncompatible(false)
+      setIncompatibleMessage('')
+    }
+  }, [open])
+
+  const goToShippingSetup = useCallback(() => {
+    handleConfigureShipping()
+  }, [handleConfigureShipping])
+
   const handleOffer = async () => {
     if (!validate()) return
+
+    // 1. Verificar si dirección de despacho está configurada
+    if (!userRegion) {
+      openShippingIfNeeded()
+      return
+    }
+
+    // 2. Verificar compatibilidad de región con producto
+    if (product) {
+      const validation = validateProductShipping(product, userRegion)
+      if (validation && !validation.canShip) {
+        setIsRegionIncompatible(true)
+        setIncompatibleMessage('Lo sentimos, este producto no cuenta con despacho hacia tu región.')
+        return
+      }
+    }
     const p = parseFloat(price)
     const q = parseInt(quantity, 10)
 
@@ -108,14 +146,22 @@ const OfferModal = ({ open, onClose, onOffer, stock = 0, defaultPrice = '', prod
   // document type UI removed
 
   return (
-    <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm" disableScrollLock={true} disableRestoreFocus={true}>
+  <>
+  <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm" disableScrollLock={true} disableRestoreFocus={true}>
       <DialogTitle>
-        Ingresa Precio y Cantidad
+    {isRegionIncompatible ? 'Despacho no disponible' : 'Ingresa Precio y Cantidad'}
       </DialogTitle>
 
       {/* Form wrapper with autocomplete off to prevent browser saved data */}
       <form autoComplete="off" onSubmit={(e) => { e.preventDefault(); handleOffer(); }}>
         <DialogContent dividers>
+          {isRegionIncompatible && (
+            <Box sx={{ mb: 2 }}>
+              <Typography variant="body1" color="error" sx={{ fontWeight: 500 }}>
+                {incompatibleMessage}
+              </Typography>
+            </Box>
+          )}
           <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' }, alignItems: 'flex-start' }}>
             <TextField
               label="Precio"
@@ -157,10 +203,24 @@ const OfferModal = ({ open, onClose, onOffer, stock = 0, defaultPrice = '', prod
 
         <DialogActions sx={{ justifyContent: 'center', gap: 2, px: 3 }}>
           <Button type="button" onClick={onClose} color="inherit" sx={{ minWidth: 120 }}>Cancelar</Button>
-          <Button type="submit" variant="contained" sx={{ minWidth: 140 }} disabled={!price || !quantity || !!errors.price || !!errors.quantity}>Ofertar</Button>
+          <Button
+            type="submit"
+            variant="contained"
+            sx={{ minWidth: 140 }}
+            disabled={isRegionIncompatible || !price || !quantity || !!errors.price || !!errors.quantity}
+          >
+            {isRegionIncompatible ? 'No disponible' : 'Ofertar'}
+          </Button>
         </DialogActions>
       </form>
     </Dialog>
+    <ShippingInfoValidationModal
+      isOpen={isShippingModalOpen}
+      onClose={() => setShippingModalOpen(false)}
+      onGoToShipping={goToShippingSetup}
+      missingFieldLabels={shippingMissingLabels}
+    />
+    </>
   )
 }
 
