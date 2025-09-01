@@ -146,7 +146,7 @@ const OfferModal = ({ open, onClose, onOffer, stock = 0, defaultPrice = '', prod
 
           <Box sx={{ mt: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
             <InfoIcon fontSize="small" sx={{ color: 'text.secondary' }} />
-            <Typography variant="caption">El proveedor tendra un maximo de 48 horas para aceptar/rechazar tu oferta.</Typography>
+            <Typography variant="caption">El proveedor tendrá un máximo de 48 horas para aceptar/rechazar tu oferta.</Typography>
           </Box>
         </DialogContent>
 
