@@ -26,6 +26,15 @@ const MOCK_OFFERS = [
     quantity: 1,
     created_at: new Date().toISOString(),
   }
+  ,
+  {
+    id: 'o_4',
+    product: { id: 'p4', name: 'Cinta Adhesiva Industrial', thumbnail: '/public/minilogo.png' },
+    status: 'cancelled',
+    price: 2500,
+    quantity: 5,
+    created_at: new Date().toISOString(),
+  }
 ];
 
 export const useBuyerOffers = () => {
