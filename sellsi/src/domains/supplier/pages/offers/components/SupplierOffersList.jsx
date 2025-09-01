@@ -17,7 +17,9 @@ import {
   FormControl,
   InputLabel,
 } from '@mui/material';
+import { useBanner } from '../../../../../shared/components/display/banners/BannerContext';
 import { Check as CheckIcon } from '@mui/icons-material';
+import SupplierOfferActionModals from './SupplierOfferActionModals';
 import BlockIcon from '@mui/icons-material/Block';
 import DeleteIcon from '@mui/icons-material/Delete';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
@@ -39,18 +41,46 @@ const SafeChip = ({ onClick, ...rest }) => <Chip {...rest} onClick={typeof onCli
 
 const SupplierOffersList = ({ offers = [], setOffers }) => {
   const [statusFilter, setStatusFilter] = React.useState('all');
+  const [modalState, setModalState] = React.useState({ open: false, mode: null, offer: null });
+  const { showBanner } = useBanner();
+  const cleanupDebounceRef = React.useRef(false);
 
   const filtered = React.useMemo(() => {
     if (statusFilter === 'all') return offers;
     return offers.filter(o => o.status === statusFilter);
   }, [offers, statusFilter]);
 
-  const updateOfferStatus = (id, nextStatus) => {
-    setOffers(prev => prev.map(o => o.id === id ? { ...o, status: nextStatus } : o));
+  const updateOfferStatus = (id, nextStatus) => setOffers(prev => prev.map(o => o.id === id ? { ...o, status: nextStatus } : o));
+  const removeOffer = (id) => setOffers(prev => prev.filter(o => o.id !== id));
+
+  const openModal = (mode, offer) => setModalState({ open: true, mode, offer });
+  const closeModal = () => setModalState({ open: false, mode: null, offer: null });
+  const handleAccept = (offer) => {
+    updateOfferStatus(offer.id, 'approved');
+    closeModal();
+    try {
+      showBanner({ message: `✅ Oferta aceptada. Se reservó ${offer.quantity} uds de ${offer.product?.name}.`, severity: 'success', duration: 4000 });
+    } catch (_) {}
   };
 
-  const removeOffer = (id) => {
-    setOffers(prev => prev.filter(o => o.id !== id));
+  const handleReject = (offer) => {
+    updateOfferStatus(offer.id, 'rejected');
+    closeModal();
+    try {
+      showBanner({ message: `❌ Oferta rechazada. Se notificó al ofertante (${offer.buyer?.name}).`, severity: 'error', duration: 4000 });
+    } catch (_) {}
+  };
+
+  const handleCleanup = (offer) => {
+    removeOffer(offer.id);
+    closeModal();
+    // Debounce banner so many clicks show only one
+    if (cleanupDebounceRef.current) return;
+    cleanupDebounceRef.current = true;
+    try {
+      showBanner({ message: `Oferta eliminada de tus registros.`, severity: 'success', duration: 3000 });
+    } catch (_) {}
+    setTimeout(() => { cleanupDebounceRef.current = false; }, 1500);
   };
 
   return (
@@ -138,7 +168,7 @@ const SupplierOffersList = ({ offers = [], setOffers }) => {
                       <IconButton
                         size="small"
                         aria-label="Aceptar Oferta"
-                        onClick={() => updateOfferStatus(o.id, 'approved')}
+                        onClick={() => openModal('accept', o)}
                         color="success"
                         sx={{ ml: 1 }}
                       >
@@ -151,7 +181,7 @@ const SupplierOffersList = ({ offers = [], setOffers }) => {
                       <IconButton
                         size="small"
                         aria-label="Rechazar Oferta"
-                        onClick={() => updateOfferStatus(o.id, 'rejected')}
+                        onClick={() => openModal('reject', o)}
                         color="error"
                         sx={{ ml: 1 }}
                       >
@@ -164,7 +194,7 @@ const SupplierOffersList = ({ offers = [], setOffers }) => {
                       <IconButton
                         size="small"
                         aria-label="Limpiar Oferta"
-                        onClick={() => removeOffer(o.id)}
+                        onClick={() => openModal('cleanup', o)}
                         sx={{ ml: 1 }}
                       >
                         <DeleteIcon fontSize="small" />
@@ -177,6 +207,15 @@ const SupplierOffersList = ({ offers = [], setOffers }) => {
           })}
         </TableBody>
       </Table>
+      <SupplierOfferActionModals
+        open={modalState.open}
+        mode={modalState.mode}
+        offer={modalState.offer}
+        onClose={closeModal}
+        onAccept={handleAccept}
+        onReject={handleReject}
+        onCleanup={handleCleanup}
+      />
     </TableContainer>
   );
 };
