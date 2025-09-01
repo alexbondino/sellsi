@@ -11,6 +11,7 @@ import {
   IconButton,
   Tooltip,
   useTheme,
+  useMediaQuery,
 } from '@mui/material';
 import {
   MenuOpen as MenuOpenIcon,
@@ -21,6 +22,7 @@ import {
   Home as HomeIcon,
   Inventory as ProductsIcon,
   InfoOutlined as InfoIcon,
+  LocalOffer as OffersIcon,
 } from '@mui/icons-material';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useRole } from '../../../../infrastructure/providers';
@@ -29,12 +31,14 @@ import { useAuth } from '../../../../infrastructure/providers';
 // Define los ítems de menú para cada rol directamente en este archivo con iconos
 const buyerMenuItems = [
   { text: 'Marketplace', path: '/buyer/marketplace', icon: <MarketplaceIcon /> },
+  { text: 'Mis Ofertas', path: '/buyer/offers', icon: <OffersIcon /> },
   { text: 'Mis Pedidos', path: '/buyer/orders', icon: <OrdersIcon /> },
   // { text: 'Mi Performance', path: '/buyer/performance', icon: <PerformanceIcon /> }, // Eliminado
 ];
 
 const providerMenuItems = [
   { text: 'Inicio', path: '/supplier/home', icon: <HomeIcon /> },
+  { text: 'Mis Ofertas', path: '/supplier/offers', icon: <OffersIcon /> },
   { text: 'Mis Productos', path: '/supplier/myproducts', icon: <ProductsIcon /> },
   { text: 'Mis Pedidos', path: '/supplier/my-orders', icon: <OrdersIcon /> },
   // { text: 'Mi Performance', path: '/supplier/myperformance', icon: <PerformanceIcon /> }, // Eliminado
@@ -132,6 +136,21 @@ const SideBar = ({ role, width = '210px', onWidthChange }) => {
     menuItemsToDisplay = providerMenuItems;
   } else {
     // Si el rol no está definido o es nulo (ej. no logueado), no se mostrarán ítems de menú.
+  }
+
+  // Asegurarse que en desktop el botón "Mis Ofertas" se muestre al final de la lista
+  try {
+    const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
+    if (isDesktop && menuItemsToDisplay && menuItemsToDisplay.length > 0) {
+      const offersItems = menuItemsToDisplay.filter(item => item.path && item.path.includes('/offers'));
+      if (offersItems.length > 0) {
+        // Filtrar los items que no son ofertas y luego anexar las ofertas al final
+        menuItemsToDisplay = menuItemsToDisplay.filter(item => !(item.path && item.path.includes('/offers')));
+        menuItemsToDisplay = [...menuItemsToDisplay, ...offersItems];
+      }
+    }
+  } catch (e) {
+    // useMediaQuery puede fallar durante SSR; en ese caso no reordenamos y dejamos la lista como está.
   }
 
   // ✅ CAMBIO: Verificar rol efectivo en lugar del prop role
