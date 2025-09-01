@@ -67,6 +67,7 @@ const SideBar = ({ role, width = '210px', onWidthChange }) => {
     // Rutas que son específicamente de supplier
     const supplierRoutes = [
       '/supplier/home',
+  '/supplier/offers',
       '/supplier/myproducts',
       '/supplier/addproduct', 
       '/supplier/my-orders',

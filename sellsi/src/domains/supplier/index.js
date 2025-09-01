@@ -6,6 +6,7 @@ export { default as ProviderHome } from './pages/home/ProviderHome';
 export { default as MyProducts } from './pages/my-products/MyProducts';
 export { default as AddProduct } from './pages/my-products/AddProduct';
 export { default as MyOrdersPage } from './pages/my-orders/MyOrdersPage';
+export { default as SupplierOffers } from './pages/offers/SupplierOffers';
 export { default as MarketplaceSupplier } from './pages/MarketplaceSupplier';
 export { default as SupplierProfile } from './pages/SupplierProfile';
 

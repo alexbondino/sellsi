@@ -44,6 +44,9 @@ const MyOrdersPage = React.lazy(() =>
 const MarketplaceSupplier = React.lazy(() =>
   import('../../domains/supplier/pages/MarketplaceSupplier.jsx')
 );
+const SupplierOffers = React.lazy(() =>
+  import('../../domains/supplier/pages/offers/SupplierOffers')
+);
 
 // 📦 PROFILE PAGES - LAZY LOADING
 const Profile = React.lazy(() => import('../../domains/profile/pages/Profile'));
@@ -368,6 +371,19 @@ export const AppRouter = ({ scrollTargets }) => {
               redirectTo="/"
             >
               <MyOrdersPage />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/supplier/offers"
+          element={
+            <PrivateRoute
+              isAuthenticated={!!session}
+              needsOnboarding={needsOnboarding}
+              loading={loadingUserStatus}
+              redirectTo="/"
+            >
+              <SupplierOffers />
             </PrivateRoute>
           }
         />
