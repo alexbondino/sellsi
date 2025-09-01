@@ -9,15 +9,38 @@ import {
   Button,
   Box,
   Typography,
-  IconButton,
+  FormControl,
+  RadioGroup,
+  FormControlLabel,
+  Radio,
 } from '@mui/material'
 import { InfoOutlined as InfoIcon } from '@mui/icons-material'
 import { useBanner } from '../../../shared/components/display/banners/BannerContext'
+import { useSupplierDocumentTypes } from '../../../shared/utils/supplierDocumentTypes'
+import { useBillingInfoValidation } from '../../../shared/hooks/profile/useBillingInfoValidation'
 
 const OfferModal = ({ open, onClose, onOffer, stock = 0, defaultPrice = '', product = null }) => {
   const [price, setPrice] = useState(defaultPrice === '' ? '' : String(defaultPrice))
   const [quantity, setQuantity] = useState('')
   const [errors, setErrors] = useState({ price: '', quantity: '' })
+  const [documentType, setDocumentType] = useState('')
+
+  // Obtener supplierId desde el producto (compatibles distintos nombres)
+  const supplierId = product?.supplier_id || product?.supplierId || product?.supplier || null
+
+  // Hook para tipos de documento del proveedor
+  const {
+    availableOptions = [],
+    loading: loadingDocumentTypes,
+    error: documentTypesError,
+  } = useSupplierDocumentTypes(supplierId)
+
+  // Hook para validar información de facturación (solo relevante si el usuario elige factura)
+  const {
+    isComplete: isBillingComplete,
+    isLoading: isLoadingBilling,
+    missingFieldLabels = [],
+  } = useBillingInfoValidation()
 
   useEffect(() => {
     if (open) {
@@ -25,8 +48,30 @@ const OfferModal = ({ open, onClose, onOffer, stock = 0, defaultPrice = '', prod
       setPrice(defaultPrice === '' ? '' : String(defaultPrice))
       setQuantity('')
       setErrors({ price: '', quantity: '' })
+      // Reiniciar documentType cuando se abre: si ya hay opciones, escoger la primera válida
+      if (availableOptions && availableOptions.length > 0) {
+        // Preferir factura sobre boleta si ambas existen, si no la primera
+        const preferred = availableOptions.find(o => o.value === 'factura') || availableOptions[0]
+        setDocumentType(preferred.value)
+      } else {
+        setDocumentType('')
+      }
     }
-  }, [open, defaultPrice])
+  }, [open, defaultPrice, availableOptions])
+
+  // Si cambian las opciones (ej: al cargar) y el valor actual deja de ser válido, ajustarlo
+  useEffect(() => {
+    if (!documentType && availableOptions.length > 0) {
+      const preferred = availableOptions.find(o => o.value === 'factura') || availableOptions[0]
+      setDocumentType(preferred.value)
+    } else if (documentType && availableOptions.length > 0) {
+      const stillValid = availableOptions.some(o => o.value === documentType)
+      if (!stillValid) {
+        const fallback = availableOptions.find(o => o.value === 'factura') || availableOptions[0]
+        setDocumentType(fallback.value)
+      }
+    }
+  }, [availableOptions, documentType])
 
   const total = useMemo(() => {
     const p = parseFloat(price || 0) || 0
@@ -59,7 +104,8 @@ const OfferModal = ({ open, onClose, onOffer, stock = 0, defaultPrice = '', prod
     const q = parseInt(quantity, 10)
 
     try {
-      const res = onOffer ? onOffer({ price: p, quantity: q, product }) : null
+      const payload = { price: p, quantity: q, product, documentType: documentType || null }
+      const res = onOffer ? onOffer(payload) : null
       // if onOffer returns a Promise, wait for it
       if (res && typeof res.then === 'function') await res
 
@@ -103,6 +149,47 @@ const OfferModal = ({ open, onClose, onOffer, stock = 0, defaultPrice = '', prod
     ? `${formattedTotal.slice(0, 18)}...`
     : formattedTotal
 
+  const handleDocumentTypeChange = (e) => {
+    setDocumentType(e.target.value)
+  }
+
+  const renderDocumentTypeSection = () => {
+    return (
+      <Box sx={{ mt: 2 }}>
+        <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
+          Tipo de Documento
+        </Typography>
+        {loadingDocumentTypes && (
+          <Typography variant="body2" color="text.secondary">Cargando opciones...</Typography>
+        )}
+        {!loadingDocumentTypes && (documentTypesError || (!availableOptions || availableOptions.length === 0)) && (
+          <Typography variant="body2" color="text.secondary">No se pudieron cargar las opciones.</Typography>
+        )}
+        {!loadingDocumentTypes && availableOptions && availableOptions.length === 1 && availableOptions[0].value === 'ninguno' && (
+          <Typography variant="body2" color="text.secondary">Proveedor no ofrece documento tributario.</Typography>
+        )}
+        {!loadingDocumentTypes && availableOptions && availableOptions.length > 0 && !(availableOptions.length === 1 && availableOptions[0].value === 'ninguno') && (
+          <FormControl component="fieldset" size="small">
+            <RadioGroup
+              row
+              value={documentType}
+              onChange={handleDocumentTypeChange}
+            >
+              {availableOptions.map(opt => (
+                <FormControlLabel key={opt.value} value={opt.value} control={<Radio size="small" />} label={opt.label} />
+              ))}
+            </RadioGroup>
+          </FormControl>
+        )}
+        {documentType === 'factura' && !isLoadingBilling && !isBillingComplete && (
+          <Typography variant="caption" color="warning.main" sx={{ display: 'block', mt: 1 }}>
+            Debes completar tu información de facturación: {missingFieldLabels.join(', ')}.
+          </Typography>
+        )}
+      </Box>
+    )
+  }
+
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm" disableScrollLock={true} disableRestoreFocus={true}>
       <DialogTitle>
@@ -137,6 +224,8 @@ const OfferModal = ({ open, onClose, onOffer, stock = 0, defaultPrice = '', prod
           </Box>
 
           <Box sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 1 }}>
+            {renderDocumentTypeSection()}
+            {/* Sección de stock y total */}
             <Typography variant="body2">Stock disponible: {stock}</Typography>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <Typography variant="body2" component="div" sx={{ color: 'text.primary', fontWeight: 500, textAlign: 'left' }}>Total a pagar:</Typography>
@@ -152,7 +241,14 @@ const OfferModal = ({ open, onClose, onOffer, stock = 0, defaultPrice = '', prod
 
         <DialogActions sx={{ justifyContent: 'center', gap: 2, px: 3 }}>
           <Button type="button" onClick={onClose} color="inherit" sx={{ minWidth: 120 }}>Cancelar</Button>
-          <Button type="submit" variant="contained" sx={{ minWidth: 140 }} disabled={!price || !quantity || !!errors.price || !!errors.quantity}>Ofertar</Button>
+          <Button
+            type="submit"
+            variant="contained"
+            sx={{ minWidth: 140 }}
+            disabled={!price || !quantity || !!errors.price || !!errors.quantity || (documentType === 'factura' && !isBillingComplete)}
+          >
+            {(documentType === 'factura' && !isBillingComplete) ? 'Completar Facturación' : 'Ofertar'}
+          </Button>
         </DialogActions>
       </form>
     </Dialog>

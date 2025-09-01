@@ -55,6 +55,9 @@ const BuyerOrders = React.lazy(() =>
 const BuyerPerformance = React.lazy(() =>
   import('../../domains/buyer/pages/BuyerPerformance')
 );
+const BuyerOffers = React.lazy(() =>
+  import('../../domains/buyer/pages/offers/BuyerOffers')
+);
 const TechnicalSpecs = React.lazy(() =>
   import('../../domains/ProductPageView/pages/TechnicalSpecs')
 );
@@ -225,6 +228,19 @@ export const AppRouter = ({ scrollTargets }) => {
               redirectTo="/"
             >
               <BuyerPerformance />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/buyer/offers"
+          element={
+            <PrivateRoute
+              isAuthenticated={!!session}
+              needsOnboarding={needsOnboarding}
+              loading={loadingUserStatus}
+              redirectTo="/"
+            >
+              <BuyerOffers />
             </PrivateRoute>
           }
         />
