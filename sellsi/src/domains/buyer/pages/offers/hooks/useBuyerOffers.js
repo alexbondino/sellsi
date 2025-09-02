@@ -6,9 +6,11 @@ const MOCK_OFFERS = [
     id: 'o_1',
     product: { id: 'p1', name: 'Bomba de Agua 500L', thumbnail: null },
     status: 'pending', // pending | approved | rejected
-    price: 12000,
+  price: 12000,
     quantity: 2,
     created_at: new Date().toISOString(),
+  // expira en 48 horas desde ahora (valor inicial para pendientes)
+  expires_at: new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString(),
   },
   {
     id: 'o_2',
@@ -17,6 +19,8 @@ const MOCK_OFFERS = [
     price: 3000,
     quantity: 10,
     created_at: new Date().toISOString(),
+  // expira en 20 horas y 10 minutos (mock)
+  expires_at: new Date(Date.now() + (20 * 60 + 10) * 60 * 1000).toISOString(),
   },
   {
     id: 'o_3',

@@ -29,6 +29,7 @@ const STATUS_MAP = {
   pending: { label: 'Pendiente', color: 'warning' },
   approved: { label: 'Aceptada', color: 'success' },
   rejected: { label: 'Rechazada', color: 'error' },
+  expired: { label: 'Caducada', color: 'error' },
 };
 
 // Formatear CLP
@@ -56,7 +57,8 @@ const SupplierOffersList = ({ offers = [], setOffers }) => {
   const openModal = (mode, offer) => setModalState({ open: true, mode, offer });
   const closeModal = () => setModalState({ open: false, mode: null, offer: null });
   const handleAccept = (offer) => {
-    updateOfferStatus(offer.id, 'approved');
+  // set status to approved and reset expires_at to 24 hours from now
+  setOffers(prev => prev.map(o => o.id === offer.id ? { ...o, status: 'approved', expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() } : o));
     closeModal();
     try {
       showBanner({ message: `✅ Oferta aceptada. Se reservó ${offer.quantity} uds de ${offer.product?.name}.`, severity: 'success', duration: 4000 });
@@ -100,6 +102,7 @@ const SupplierOffersList = ({ offers = [], setOffers }) => {
               <MenuItem value="pending">Pendiente</MenuItem>
               <MenuItem value="approved">Aceptada</MenuItem>
               <MenuItem value="rejected">Rechazada</MenuItem>
+              <MenuItem value="expired">Caducada</MenuItem>
             </Select>
         </FormControl>
       </Box>
@@ -114,6 +117,9 @@ const SupplierOffersList = ({ offers = [], setOffers }) => {
             </TableCell>
             <TableCell>
               <Typography fontWeight={700}>Ofertante</Typography>
+            </TableCell>
+            <TableCell>
+              <Typography fontWeight={700}>Tiempo restante</Typography>
             </TableCell>
             <TableCell>
               <Typography fontWeight={700}>Estado</Typography>
@@ -146,6 +152,17 @@ const SupplierOffersList = ({ offers = [], setOffers }) => {
         <TableBody>
           {filtered.map(o => {
             const total = o.quantity * o.price;
+            // calcular tiempo restante si existe expires_at
+            const remainingMs = o.expires_at ? new Date(o.expires_at).getTime() - Date.now() : null;
+            const remainingHours = remainingMs ? remainingMs / (1000 * 60 * 60) : null;
+            const formatRemaining = () => {
+              if (!remainingMs) return null;
+              if (remainingMs <= 0) return 'Caducada';
+              const hrs = Math.floor(remainingMs / (1000 * 60 * 60));
+              const mins = Math.floor((remainingMs % (1000 * 60 * 60)) / (1000 * 60));
+              if (hrs >= 1) return `${hrs} h ${mins} m`;
+              return `${mins} m`;
+            };
             return (
               <TableRow key={o.id} sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
                 <TableCell>
@@ -158,6 +175,13 @@ const SupplierOffersList = ({ offers = [], setOffers }) => {
                 </TableCell>
                 <TableCell>
                   <Typography variant="body2">{o.buyer?.name}</Typography>
+                </TableCell>
+                <TableCell>
+                  {o.status === 'pending' && remainingHours != null && remainingHours < 48 ? (
+                    <Typography>{formatRemaining()}</Typography>
+                  ) : (
+                    <Typography color="text.secondary">-</Typography>
+                  )}
                 </TableCell>
                 <TableCell>
                   <SafeChip label={STATUS_MAP[o.status].label} color={STATUS_MAP[o.status].color} size="small" />
@@ -189,7 +213,7 @@ const SupplierOffersList = ({ offers = [], setOffers }) => {
                       </IconButton>
                     </Tooltip>
                   )}
-                  {(o.status === 'approved' || o.status === 'rejected') && (
+                  {(o.status === 'approved' || o.status === 'rejected' || o.status === 'expired') && (
                     <Tooltip title="Limpiar Oferta">
                       <IconButton
                         size="small"

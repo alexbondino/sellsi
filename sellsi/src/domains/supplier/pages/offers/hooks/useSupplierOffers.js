@@ -9,7 +9,9 @@ export const useSupplierOffers = () => {
       quantity: 10,
       price: 1250, // precio unitario ofertado
       buyer: { name: 'Comercial Andes SPA' },
-      status: 'pending',
+  status: 'pending',
+  // expira en 48 horas desde ahora (valor inicial para pendientes)
+  expires_at: new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString(),
     },
     {
       id: 'mock-2',
@@ -17,7 +19,7 @@ export const useSupplierOffers = () => {
       quantity: 5,
       price: 6890,
       buyer: { name: 'Distribuciones Sur Ltda.' },
-      status: 'approved',
+  status: 'approved',
     },
     {
       id: 'mock-3',
@@ -33,7 +35,9 @@ export const useSupplierOffers = () => {
       quantity: 20,
       price: 850,
       buyer: { name: 'Distribuidora Central' },
-      status: 'pending',
+  status: 'pending',
+  // expira en 48 horas desde ahora (valor inicial para pendientes)
+  expires_at: new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString(),
     },
   ]);
 

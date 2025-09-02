@@ -27,6 +27,7 @@ const STATUS_MAP = {
   pending: { label: 'Pendiente', color: 'warning' },
   approved: { label: 'Aprobada', color: 'success' },
   rejected: { label: 'Rechazada', color: 'error' },
+  expired: { label: 'Caducada', color: 'error' },
   cancelled: { label: 'Cancelada', color: 'error' },
 };
 
@@ -73,6 +74,7 @@ const OffersList = ({ offers = [], loading = false, error = null }) => {
             <MenuItem value="approved">Aprobada</MenuItem>
             <MenuItem value="cancelled">Cancelada</MenuItem>
             <MenuItem value="rejected">Rechazada</MenuItem>
+            <MenuItem value="expired">Caducada</MenuItem>
           </Select>
         </FormControl>
       </Box>
@@ -137,8 +139,29 @@ const OffersList = ({ offers = [], loading = false, error = null }) => {
                 <Typography variant="body2" color="text.secondary">{o.quantity} uds • {formatPrice(o.price)}</Typography>
               </TableCell>
               <TableCell>
-                {o.status === 'pending' && <Typography>Menos de 48 horas</Typography>}
-                {o.status === 'approved' && <Typography>Menos de 24 horas</Typography>}
+                {/* Mostrar tiempo restante para pendientes usando expires_at (si existe) */}
+                {(() => {
+                  const remainingMs = o.expires_at ? new Date(o.expires_at).getTime() - Date.now() : null;
+                  // Pendiente: mostrar sólo si expires_at existe y queda < 48h
+                  if (o.status === 'pending' && remainingMs != null && remainingMs < 48 * 60 * 60 * 1000) {
+                    if (remainingMs <= 0) return <Typography>Caducada</Typography>;
+                    const hrs = Math.floor(remainingMs / (1000 * 60 * 60));
+                    const mins = Math.floor((remainingMs % (1000 * 60 * 60)) / (1000 * 60));
+                    if (hrs >= 1) return <Typography>{`${hrs} h ${mins} m`}</Typography>;
+                    return <Typography>{`${mins} m`}</Typography>;
+                  }
+                  // Aceptada: límite = 24h. Si expires_at existe y queda <24h mostrar tiempo; si no, mostrar texto por defecto.
+                  if (o.status === 'approved') {
+                    if (remainingMs != null && remainingMs > 0 && remainingMs < 24 * 60 * 60 * 1000) {
+                      const hrs = Math.floor(remainingMs / (1000 * 60 * 60));
+                      const mins = Math.floor((remainingMs % (1000 * 60 * 60)) / (1000 * 60));
+                      if (hrs >= 1) return <Typography>{`${hrs} h ${mins} m`}</Typography>;
+                      return <Typography>{`${mins} m`}</Typography>;
+                    }
+                    return <Typography>Menos de 24 horas</Typography>;
+                  }
+                  return <Typography color="text.secondary">-</Typography>;
+                })()}
               </TableCell>
               <TableCell>
                 <SafeChip label={STATUS_MAP[o.status].label} color={STATUS_MAP[o.status].color} />
@@ -186,7 +209,7 @@ const OffersList = ({ offers = [], loading = false, error = null }) => {
                 )}
 
                 {/* Cleanup (delete) action for rejected or cancelled offers */}
-                {(o.status === 'rejected' || o.status === 'cancelled') && (
+                {(o.status === 'rejected' || o.status === 'cancelled' || o.status === 'expired') && (
                   <Tooltip title="Limpiar esta oferta">
                     <IconButton
                       size="small"
