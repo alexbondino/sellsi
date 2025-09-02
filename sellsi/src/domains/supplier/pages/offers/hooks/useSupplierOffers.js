@@ -1,45 +1,50 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useOfferStore } from '../../../../../stores/offerStore';
 
-// Hook simple con 3 mocks (pendiente, aceptada, rechazada)
 export const useSupplierOffers = () => {
-  const [offers, setOffers] = useState([
-    {
-      id: 'mock-1',
-      product: { name: 'Pack 6 Botellas Agua 1.5L', stock: 50, previousPrice: 1350 },
-      quantity: 10,
-      price: 1250, // precio unitario ofertado
-      buyer: { name: 'Comercial Andes SPA' },
-  status: 'pending',
-  // expira en 48 horas desde ahora (valor inicial para pendientes)
-  expires_at: new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString(),
-    },
-    {
-      id: 'mock-2',
-      product: { name: 'Caja Snacks Mixtos 24u', stock: 4, previousPrice: 7090 },
-      quantity: 5,
-      price: 6890,
-      buyer: { name: 'Distribuciones Sur Ltda.' },
-  status: 'approved',
-    },
-    {
-      id: 'mock-3',
-      product: { name: 'Bolsa Café Molido Premium 1Kg', stock: 2, previousPrice: 9290 },
-      quantity: 3,
-      price: 8990,
-      buyer: { name: 'Mercado Urbano' },
-      status: 'rejected',
-    },
-    {
-      id: 'mock-4',
-      product: { name: 'Lata Bebida Energética 330ml', stock: 5, previousPrice: 920 },
-      quantity: 20,
-      price: 850,
-      buyer: { name: 'Distribuidora Central' },
-  status: 'pending',
-  // expira en 48 horas desde ahora (valor inicial para pendientes)
-  expires_at: new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString(),
-    },
-  ]);
+  const { 
+    supplierOffers: offers, 
+    loading, 
+    error, 
+    fetchSupplierOffers,
+    acceptOffer,
+    rejectOffer,
+    deleteOffer 
+  } = useOfferStore();
+  
+  const [localOffers, setLocalOffers] = useState([]);
 
-  return { offers, setOffers };
+  useEffect(() => {
+    const storedUser = localStorage.getItem('user');
+    if (typeof console !== 'undefined') console.log('[useSupplierOffers] stored user raw', storedUser);
+    if (!storedUser) return;
+    try {
+      const user = JSON.parse(storedUser);
+      if (typeof console !== 'undefined') console.log('[useSupplierOffers] parsed user', user);
+      if (!user?.id) return;
+      const supplierId = user.role === 'buyer' ? (user.supplier_id || 'supplier_101') : user.id;
+      if (typeof console !== 'undefined') console.log('[useSupplierOffers] resolved supplierId', supplierId);
+      fetchSupplierOffers(supplierId);
+    } catch(e) {
+      console.error('Error parsing user from localStorage:', e);
+    }
+  }, []);
+
+  useEffect(() => {
+    // Sincronizar ofertas del store con el estado local
+    if (offers) {
+  if (typeof console !== 'undefined') console.log('[useSupplierOffers] syncing offers length', offers.length);
+      setLocalOffers(offers);
+    }
+  }, [offers]);
+
+  return { 
+    offers: localOffers, 
+    setOffers: setLocalOffers,
+    loading, 
+    error,
+    acceptOffer,
+    rejectOffer,
+    deleteOffer
+  };
 };

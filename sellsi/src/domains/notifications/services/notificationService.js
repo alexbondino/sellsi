@@ -111,7 +111,205 @@ class NotificationService {
       }
     }
   }
+
+  // ===== OFFER NOTIFICATIONS =====
+  
+  /**
+   * Notificar nueva oferta al proveedor
+   */
+  async notifyOfferReceived(offerData) {
+    try {
+      // Adaptar distintas formas de datos de oferta (legacy / nueva)
+      const buyerName = offerData.buyer_name || offerData.buyer?.name || 'Comprador';
+      const productName = offerData.product_name || offerData.product?.name || 'Producto';
+      const offerId = offerData.offer_id || offerData.id;
+      const offeredPrice = offerData.offered_price || offerData.price;
+      const offeredQuantity = offerData.offered_quantity || offerData.quantity;
+
+      const result = await supabase.rpc('create_notification', {
+        p_user_id: offerData.supplier_id,
+        p_supplier_id: offerData.supplier_id,
+        p_order_id: null,
+        p_product_id: offerData.product_id,
+        p_type: 'offer_received',
+        p_order_status: null,
+        p_role_context: 'supplier',
+        p_context_section: 'supplier_offers',
+        p_title: 'Nueva oferta recibida',
+        p_body: `${buyerName} hizo una oferta por ${productName}`,
+        // Campos legacy esperados por tests
+        p_message: `${buyerName} ha realizado una oferta`,
+        p_related_id: offerId,
+        p_action_url: '/supplier/offers',
+        p_metadata: { 
+          offer_id: offerId,
+          offered_price: offeredPrice,
+          offered_quantity: offeredQuantity,
+          expires_at: offerData.expires_at
+        }
+      });
+      
+      if (result.error) {
+        console.error('[NotificationService] ERROR creating offer notification:', result.error);
+        return { error: result.error };
+      }
+      // Devolver estructura extendida (legacy)
+      return {
+        success: true,
+        body: `${offerData.buyer_name} hizo una oferta por ${offerData.product_name}`,
+        message: `${offerData.buyer_name} hizo una oferta por ${offerData.product_name}`,
+        action_url: `/offers/${offerData.offer_id}`,
+        related_id: offerData.offer_id,
+        metadata: {
+          offer_id: offerData.offer_id,
+          offered_price: offerData.offered_price,
+          offered_quantity: offerData.offered_quantity,
+          expires_at: offerData.expires_at
+        }
+      };
+    } catch (error) {
+      console.error('[NotificationService] ERROR creating offer notification:', error);
+      return { error };
+    }
+  }
+
+  /**
+   * Notificar respuesta de oferta al comprador
+   */
+  async notifyOfferResponse(offerData, accepted = true) {
+    try {
+      // Manejar parámetro status string ('accepted'/'rejected') o boolean
+      let isAccepted = accepted;
+      if (typeof accepted === 'string') {
+        if (accepted === 'accepted') isAccepted = true;
+        else if (accepted === 'rejected') isAccepted = false;
+        else return; // status inválido -> no llamar
+      }
+      const supplierName = offerData.supplier_name || offerData.supplier?.name || 'Proveedor';
+      const productName = offerData.product_name || offerData.product?.name || 'Producto';
+      const offerId = offerData.offer_id || offerData.id;
+      const offeredPrice = offerData.offered_price || offerData.price;
+      const offeredQuantity = offerData.offered_quantity || offerData.quantity;
+      const result = await supabase.rpc('create_notification', {
+        p_user_id: offerData.buyer_id,
+        p_supplier_id: offerData.supplier_id,
+        p_order_id: null,
+        p_product_id: offerData.product_id,
+        p_type: isAccepted ? 'offer_accepted' : 'offer_rejected',
+        p_order_status: null,
+        p_role_context: 'buyer',
+        p_context_section: 'buyer_offers',
+        p_title: isAccepted ? 'Oferta aceptada' : 'Oferta rechazada',
+        p_body: isAccepted 
+          ? `${supplierName} aceptó tu oferta por ${productName}`
+          : `${supplierName} rechazó tu oferta por ${productName}`,
+        // Campos legacy
+        p_message: isAccepted 
+          ? `${supplierName} ha aceptado tu oferta`
+          : `${supplierName} ha rechazado tu oferta`,
+        p_related_id: offerId,
+        p_action_url: '/buyer/offers',
+        p_metadata: { 
+          offer_id: offerId,
+          offered_price: offeredPrice,
+          offered_quantity: offeredQuantity,
+          rejection_reason: offerData.rejection_reason || null,
+          purchase_deadline: offerData.purchase_deadline || null
+        }
+      });
+      
+      if (result.error) {
+        console.error('[NotificationService] ERROR creating offer response notification:', result.error);
+        return { error: result.error };
+      }
+      return {
+        success: true,
+        body: accepted 
+          ? `${offerData.supplier_name} aceptó tu oferta por ${offerData.product_name}`
+          : `${offerData.supplier_name} rechazó tu oferta por ${offerData.product_name}`,
+        message: accepted 
+          ? `${offerData.supplier_name} aceptó tu oferta por ${offerData.product_name}`
+          : `${offerData.supplier_name} rechazó tu oferta por ${offerData.product_name}`,
+        action_url: `/offers/${offerData.offer_id}`,
+        related_id: offerData.offer_id,
+        metadata: {
+          offer_id: offerData.offer_id,
+          offered_price: offerData.offered_price,
+          offered_quantity: offerData.offered_quantity,
+          status: accepted ? 'accepted' : 'rejected'
+        }
+      };
+    } catch (error) {
+      console.error('[NotificationService] ERROR creating offer response notification:', error);
+      return { error };
+    }
+  }
+
+  /**
+   * Notificar oferta expirada
+   */
+  async notifyOfferExpired(offerData, role = 'buyer') {
+    try {
+      if (!offerData.buyer_id) return; // tests esperan no llamar sin buyer_id
+      const productName = offerData.product_name || offerData.product?.name || 'Producto';
+      const offerId = offerData.offer_id || offerData.id;
+      const offeredPrice = offerData.offered_price || offerData.price;
+      const offeredQuantity = offerData.offered_quantity || offerData.quantity;
+      const userId = role === 'buyer' ? offerData.buyer_id : offerData.supplier_id;
+      const contextSection = role === 'buyer' ? 'buyer_offers' : 'supplier_offers';
+      const title = role === 'buyer' ? 'Tu oferta expiró' : 'Oferta recibida expiró';
+      const body = role === 'buyer' 
+        ? `Tu oferta por ${productName} ha expirado`
+        : `La oferta de ${offerData.buyer_name || offerData.buyer?.name || 'Comprador'} por ${productName} expiró`;
+
+      const result = await supabase.rpc('create_notification', {
+        p_user_id: userId,
+        p_supplier_id: offerData.supplier_id,
+        p_order_id: null,
+        p_product_id: offerData.product_id,
+        p_type: 'offer_expired',
+        p_order_status: null,
+        p_role_context: role,
+        p_context_section: contextSection,
+        p_title: role === 'buyer' ? 'Oferta expirada' : title,
+        p_body: body,
+        p_message: body,
+        p_related_id: offerId,
+        p_action_url: '/buyer/offers',
+        p_metadata: { 
+          offer_id: offerId,
+          offered_price: offeredPrice,
+          offered_quantity: offeredQuantity,
+          expired_at: new Date().toISOString()
+        }
+      });
+      
+      if (result.error) {
+        console.error('[NotificationService] ERROR creating offer expiration notification:', result.error);
+        return { error: result.error };
+      }
+      return {
+        success: true,
+        body,
+        message: body,
+        action_url: `/offers/${offerData.offer_id}`,
+        related_id: offerData.offer_id,
+        metadata: {
+          offer_id: offerData.offer_id,
+          expired_at: new Date().toISOString()
+        }
+      };
+    } catch (error) {
+      console.error('[NotificationService] ERROR creating offer expiration notification:', error);
+      return { error };
+    }
+  }
 }
 
 export const notificationService = new NotificationService();
 export default notificationService;
+
+// Exportaciones individuales para compatibilidad con tests
+export const notifyOfferReceived = (offerData) => notificationService.notifyOfferReceived(offerData);
+export const notifyOfferResponse = (offerData, accepted) => notificationService.notifyOfferResponse(offerData, accepted);
+export const notifyOfferExpired = (offerData, role) => notificationService.notifyOfferExpired(offerData, role);

@@ -46,7 +46,7 @@ const formatPrice = (value) => {
   return '$' + new Intl.NumberFormat('es-CL').format(Math.round(num));
 };
 
-const OffersList = ({ offers = [], loading = false, error = null }) => {
+const OffersList = ({ offers = [], loading = false, error = null, cancelOffer, deleteOffer, onCancelOffer, onDeleteOffer, onAddToCart }) => {
   const [statusFilter, setStatusFilter] = React.useState('all');
 
   const filtered = React.useMemo(() => {
@@ -54,6 +54,29 @@ const OffersList = ({ offers = [], loading = false, error = null }) => {
     if (statusFilter === 'all') return offers;
     return offers.filter(o => o.status === statusFilter);
   }, [offers, statusFilter]);
+
+  const handleCancelOffer = async (offerId) => {
+    try {
+      if (onCancelOffer) return onCancelOffer(offers.find(o=>o.id===offerId));
+      if (cancelOffer) return await cancelOffer(offerId);
+    } catch (error) {
+      console.error('Error canceling offer:', error);
+    }
+  };
+
+  const handleDeleteOffer = async (offerId) => {
+    try {
+      if (onDeleteOffer) return onDeleteOffer(offers.find(o=>o.id===offerId));
+      if (deleteOffer) return await deleteOffer(offerId);
+    } catch (error) {
+      console.error('Error deleting offer:', error);
+    }
+  };
+
+  const handleAddToCart = (offer) => {
+    if (onAddToCart) return onAddToCart(offer);
+    console.log('Add to cart:', offer);
+  };
 
   // Simple table similar to BuyerOrders but lightweight
   return (
@@ -124,18 +147,20 @@ const OffersList = ({ offers = [], loading = false, error = null }) => {
           </TableRow>
         </TableHead>
         <TableBody>
-          {filtered.map((o) => (
+          {filtered.map((o) => {
+            const product = o.product || { name: o.product_name || 'Producto', thumbnail: null };
+            return (
             <TableRow key={o.id} sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
               <TableCell sx={{ width: 100 }}>
                 <Avatar
                   variant="rounded"
-                  src={o.product.thumbnail || '/public/minilogo.png'}
-                  alt={o.product.name}
+                  src={product.thumbnail || '/public/minilogo.png'}
+                  alt={product.name}
                   sx={{ width: 80, height: 80 }}
                 />
               </TableCell>
               <TableCell>
-                <Typography variant="subtitle1" fontWeight={700}>{o.product.name}</Typography>
+                <Typography variant="subtitle1" fontWeight={700}>{product.name}</Typography>
                 <Typography variant="body2" color="text.secondary">{o.quantity} uds • {formatPrice(o.price)}</Typography>
               </TableCell>
               <TableCell>
@@ -173,6 +198,7 @@ const OffersList = ({ offers = [], loading = false, error = null }) => {
                     <IconButton
                       size="small"
                       aria-label="Agregar al carrito"
+                      onClick={() => handleAddToCart(o)}
                       sx={{
                         bgcolor: 'transparent',
                         p: 0.5,
@@ -193,6 +219,7 @@ const OffersList = ({ offers = [], loading = false, error = null }) => {
                     <IconButton
                       size="small"
                       aria-label="Cancelar Oferta"
+                      onClick={() => handleCancelOffer(o.id)}
                       sx={{
                         bgcolor: 'transparent',
                         p: 0.5,
@@ -213,6 +240,7 @@ const OffersList = ({ offers = [], loading = false, error = null }) => {
                   <Tooltip title="Limpiar esta oferta">
                     <IconButton
                       size="small"
+                      onClick={() => handleDeleteOffer(o.id)}
                       sx={{
                         bgcolor: 'transparent',
                         p: 0.5,
@@ -228,7 +256,8 @@ const OffersList = ({ offers = [], loading = false, error = null }) => {
                 )}
               </TableCell>
             </TableRow>
-          ))}
+            );
+          })}
         </TableBody>
       </Table>
     </TableContainer>
