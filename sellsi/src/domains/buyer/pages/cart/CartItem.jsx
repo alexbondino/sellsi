@@ -316,6 +316,12 @@ const CartItem = ({
                   />
                 )}
               </Box>{' '}
+              {/* Chip indicando que el item fue ofertado (desktop & mobile) */}
+              {(item.isOffered || item.metadata?.isOffered || item.offer_id || item.offered_price) && (
+                <Box sx={{ mt: 1 }}>
+                  <Chip data-testid="chip-ofertado" label="Ofertado" size="small" color="primary" />
+                </Box>
+              )}
               {/* Price - Usando precio dinámico basado en quantity y price_tiers */}
               <Box sx={{ mb: 2 }}>
                 <Typography variant="body2" sx={{ color: '#222', fontWeight: 500, mb: 0.5, fontsize: '0.9rem' }}>

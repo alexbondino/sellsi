@@ -26,9 +26,11 @@ jest.mock('../../domains/buyer/pages/offers/hooks/useBuyerOffers', () => ({
 }));
 
 // Mock del hook de media query
+// Debe declararse antes de jest.mock para evitar TDZ
+const mockUseMediaQuery = jest.fn(() => false); // desktop por defecto
 jest.mock('@mui/material/useMediaQuery', () => ({
   __esModule: true,
-  default: () => false // Simular desktop por defecto
+  default: (...args) => mockUseMediaQuery(...args)
 }));
 
 import BuyerOffers from '../../domains/buyer/pages/offers/BuyerOffers';
@@ -43,9 +45,10 @@ const TestWrapper = ({ children }) => (
   </div>
 );
 
-describe.skip('BuyerOffers Component', () => {
+describe('BuyerOffers Component', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+  mockUseMediaQuery.mockImplementation(() => false);
   });
 
   it('debería renderizar correctamente', () => {
@@ -90,8 +93,7 @@ describe.skip('BuyerOffers Component', () => {
 
   describe('Responsive Design', () => {
     it('debería aplicar estilos móviles cuando sea necesario', () => {
-      const useMediaQuery = require('@mui/material/useMediaQuery').default;
-      useMediaQuery.mockReturnValue(true); // Simular móvil
+  mockUseMediaQuery.mockReturnValue(true); // Simular móvil
       
       render(
         <TestWrapper>

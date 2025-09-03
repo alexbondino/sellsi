@@ -2,7 +2,7 @@
 
 // Placeholder: se activará cuando la UI muestre chip Ofertado
 
-describe.skip('BuyerOrders - separación items ofertados vs regulares', () => {
+describe('BuyerOrders - separación items ofertados vs regulares', () => {
   it('mantiene dos líneas con mismo product_id cuando uno es ofertado', () => {
     const items = [
       { product_id: 'p1', quantity: 1, price_at_addition: 1000 },

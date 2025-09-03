@@ -34,7 +34,8 @@ class NotificationService {
       const body = typeof bodyTemplate === 'function' ? bodyTemplate(it) : bodyTemplate;
       try {
         await supabase.rpc('create_notification', {
-          p_user_id: buyerId,
+          p_payload: {
+            p_user_id: buyerId,
             p_supplier_id: supplierId,
             p_order_id: orderRow.id || orderRow.order_id || orderRow.cart_id || null,
             p_product_id: productId,
@@ -50,6 +51,7 @@ class NotificationService {
               rejection_reason: it.rejection_reason || null,
               estimated_delivery: orderRow.estimated_delivery_date || orderRow.estimated_delivery || null
             }
+          }
         });
       } catch (_) {}
     }
@@ -64,17 +66,19 @@ class NotificationService {
     for (const it of items) {
       try {
         const result = await supabase.rpc('create_notification', {
-          p_user_id: buyerId,
-          p_supplier_id: it.supplier_id || null,
-          p_order_id: orderRow.id || orderRow.order_id || null,
-          p_product_id: it.product_id || null,
-          p_type: 'order_new',
-          p_order_status: 'pending',
-          p_role_context: 'buyer',
-          p_context_section: 'buyer_orders',
-          p_title: 'Se registró tu compra',
-          p_body: it.name ? `Producto: ${it.name}` : 'Nuevo producto comprado',
-          p_metadata: { quantity: it.quantity, price_at_addition: it.price_at_addition }
+          p_payload: {
+            p_user_id: buyerId,
+            p_supplier_id: it.supplier_id || null,
+            p_order_id: orderRow.id || orderRow.order_id || null,
+            p_product_id: it.product_id || null,
+            p_type: 'order_new',
+            p_order_status: 'pending',
+            p_role_context: 'buyer',
+            p_context_section: 'buyer_orders',
+            p_title: 'Se registró tu compra',
+            p_body: it.name ? `Producto: ${it.name}` : 'Nuevo producto comprado',
+            p_metadata: { quantity: it.quantity, price_at_addition: it.price_at_addition }
+          }
         });
       } catch (error) {
         console.error('[NotificationService] ERROR creating buyer notification:', error);
@@ -84,17 +88,19 @@ class NotificationService {
     for (const supplierId of supplierSet) {
       try {
         const result = await supabase.rpc('create_notification', {
-          p_user_id: supplierId,
-          p_supplier_id: supplierId,
-          p_order_id: orderRow.id || orderRow.order_id || null,
-          p_product_id: null,
-          p_type: 'order_new',
-          p_order_status: 'pending',
-          p_role_context: 'supplier',
-          p_context_section: 'supplier_orders',
-          p_title: 'Nuevo pedido pendiente',
-          p_body: 'Revisa y acepta o rechaza los productos.',
-          p_metadata: { buyer_id: buyerId }
+          p_payload: {
+            p_user_id: supplierId,
+            p_supplier_id: supplierId,
+            p_order_id: orderRow.id || orderRow.order_id || null,
+            p_product_id: null,
+            p_type: 'order_new',
+            p_order_status: 'pending',
+            p_role_context: 'supplier',
+            p_context_section: 'supplier_orders',
+            p_title: 'Nuevo pedido pendiente',
+            p_body: 'Revisa y acepta o rechaza los productos.',
+            p_metadata: { buyer_id: buyerId }
+          }
         });
       } catch (error) {
         console.error('[NotificationService] ERROR creating supplier notification:', error);

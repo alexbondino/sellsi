@@ -1,16 +1,41 @@
 // Mock de Supabase para testing
+// Estado interno para simular conteos en offer_limits tras refactor
+const __offerLimitsState = {
+  // key: buyer|product|month -> count
+  productCounts: new Map(),
+  // key: buyer|supplier|month -> count (aggregado proveedor)
+  supplierCounts: new Map(),
+  // registrar orden cronológico de inserts para testear race (debug)
+  log: []
+};
+
 export const mockSupabase = {
+  __offerLimitsState,
   rpc: jest.fn((fnName, args) => {
     switch (fnName) {
       case 'count_monthly_offers':
         return Promise.resolve({ data: 1, error: null });
-      case 'create_offer':
-        return Promise.resolve({ data: { success: true, offer_id: 'offer_test', expires_at: new Date(Date.now()+48*3600*1000).toISOString() }, error: null });
+      case 'create_offer': {
+        // Simular nueva lógica: incrementa conteos producto y proveedor (NULL) sin duplicar
+        const { p_buyer_id, p_supplier_id, p_product_id } = args || {};
+        const month = new Date().toISOString().slice(0,7); // YYYY-MM
+        const prodKey = `${p_buyer_id}|${p_product_id}|${month}`;
+        const suppKey = `${p_buyer_id}|${p_supplier_id}|${month}`;
+        const currentProd = __offerLimitsState.productCounts.get(prodKey) || 0;
+        const currentSupp = __offerLimitsState.supplierCounts.get(suppKey) || 0;
+        __offerLimitsState.productCounts.set(prodKey, currentProd + 1);
+        __offerLimitsState.supplierCounts.set(suppKey, currentSupp + 1);
+        __offerLimitsState.log.push({ t: Date.now(), prodKey, suppKey });
+        return Promise.resolve({ data: { success: true, offer_id: `offer_${currentProd+1}`, expires_at: new Date(Date.now()+48*3600*1000).toISOString() }, error: null });
+      }
       case 'get_buyer_offers':
       case 'get_supplier_offers':
         return Promise.resolve({ data: [], error: null });
-      case 'create_notification':
-        return Promise.resolve({ data: { id: 'notif_1' }, error: null });
+      case 'create_notification': {
+        // Ahora exige p_payload explícito (sin fallback legacy)
+        const payload = args?.p_payload || {};
+        return Promise.resolve({ data: { id: 'notif_1', user_id: payload.p_user_id, type: payload.p_type }, error: null });
+      }
       default:
         return Promise.resolve({ data: null, error: null });
     }

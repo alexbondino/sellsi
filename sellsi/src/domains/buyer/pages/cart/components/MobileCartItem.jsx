@@ -127,6 +127,16 @@ const MobileCartItem = ({
               >
                 {formatPrice(itemTotal)}
               </Typography>
+              {/* Chip indicando que el item fue ofertado (mobile) */}
+              {(item.isOffered || item.metadata?.isOffered || item.offer_id || item.offered_price) && (
+                <Chip
+                  data-testid="chip-ofertado"
+                  label="Ofertado"
+                  size="small"
+                  color="primary"
+                  sx={{ alignSelf: 'flex-start', mt: 0.5, height: 24 }}
+                />
+              )}
               
               {/* Info de envío */}
               {showShipping && item.shipping_info && (

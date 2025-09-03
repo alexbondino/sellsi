@@ -63,17 +63,19 @@ class NotificationService {
     for (const it of items) {
       try {
         const result = await supabase.rpc('create_notification', {
-          p_user_id: buyerId,
-          p_supplier_id: it.supplier_id || null,
-          p_order_id: orderRow.id || orderRow.order_id || null,
-          p_product_id: it.product_id || null,
-          p_type: 'order_new',
-          p_order_status: 'pending',
-          p_role_context: 'buyer',
-          p_context_section: 'buyer_orders',
-          p_title: 'Se registró tu compra',
-          p_body: it.name ? `Producto: ${it.name}` : 'Nuevo producto comprado',
-          p_metadata: { quantity: it.quantity, price_at_addition: it.price_at_addition }
+          p_payload: {
+            p_user_id: buyerId,
+            p_supplier_id: it.supplier_id || null,
+            p_order_id: orderRow.id || orderRow.order_id || null,
+            p_product_id: it.product_id || null,
+            p_type: 'order_new',
+            p_order_status: 'pending',
+            p_role_context: 'buyer',
+            p_context_section: 'buyer_orders',
+            p_title: 'Se registró tu compra',
+            p_body: it.name ? `Producto: ${it.name}` : 'Nuevo producto comprado',
+            p_metadata: { quantity: it.quantity, price_at_addition: it.price_at_addition }
+          }
         });
         
         if (result.error) {
@@ -90,17 +92,19 @@ class NotificationService {
     for (const supplierId of supplierSet) {
       try {
         const result = await supabase.rpc('create_notification', {
-          p_user_id: supplierId,
-          p_supplier_id: supplierId,
-          p_order_id: orderRow.id || orderRow.order_id || null,
-          p_product_id: null,
-          p_type: 'order_new',
-          p_order_status: 'pending',
-          p_role_context: 'supplier',
-          p_context_section: 'supplier_orders',
-          p_title: 'Nuevo pedido pendiente',
-          p_body: 'Revisa y acepta o rechaza los productos.',
-          p_metadata: { buyer_id: buyerId }
+          p_payload: {
+            p_user_id: supplierId,
+            p_supplier_id: supplierId,
+            p_order_id: orderRow.id || orderRow.order_id || null,
+            p_product_id: null,
+            p_type: 'order_new',
+            p_order_status: 'pending',
+            p_role_context: 'supplier',
+            p_context_section: 'supplier_orders',
+            p_title: 'Nuevo pedido pendiente',
+            p_body: 'Revisa y acepta o rechaza los productos.',
+            p_metadata: { buyer_id: buyerId }
+          }
         });
         
         if (result.error) {
@@ -127,25 +131,27 @@ class NotificationService {
       const offeredQuantity = offerData.offered_quantity || offerData.quantity;
 
       const result = await supabase.rpc('create_notification', {
-        p_user_id: offerData.supplier_id,
-        p_supplier_id: offerData.supplier_id,
-        p_order_id: null,
-        p_product_id: offerData.product_id,
-        p_type: 'offer_received',
-        p_order_status: null,
-        p_role_context: 'supplier',
-        p_context_section: 'supplier_offers',
-        p_title: 'Nueva oferta recibida',
-        p_body: `${buyerName} hizo una oferta por ${productName}`,
-        // Campos legacy esperados por tests
-        p_message: `${buyerName} ha realizado una oferta`,
-        p_related_id: offerId,
-        p_action_url: '/supplier/offers',
-        p_metadata: { 
-          offer_id: offerId,
-          offered_price: offeredPrice,
-          offered_quantity: offeredQuantity,
-          expires_at: offerData.expires_at
+        p_payload: {
+          p_user_id: offerData.supplier_id,
+          p_supplier_id: offerData.supplier_id,
+          p_order_id: null,
+          p_product_id: offerData.product_id,
+          p_type: 'offer_received',
+          p_order_status: null,
+          p_role_context: 'supplier',
+          p_context_section: 'supplier_offers',
+          p_title: 'Nueva oferta recibida',
+          p_body: `${buyerName} hizo una oferta por ${productName}`,
+          // Campos legacy
+          p_message: `${buyerName} ha realizado una oferta`,
+          p_related_id: offerId,
+          p_action_url: '/supplier/offers',
+          p_metadata: { 
+            offer_id: offerId,
+            offered_price: offeredPrice,
+            offered_quantity: offeredQuantity,
+            expires_at: offerData.expires_at
+          }
         }
       });
       
@@ -191,30 +197,32 @@ class NotificationService {
       const offeredPrice = offerData.offered_price || offerData.price;
       const offeredQuantity = offerData.offered_quantity || offerData.quantity;
       const result = await supabase.rpc('create_notification', {
-        p_user_id: offerData.buyer_id,
-        p_supplier_id: offerData.supplier_id,
-        p_order_id: null,
-        p_product_id: offerData.product_id,
-        p_type: isAccepted ? 'offer_accepted' : 'offer_rejected',
-        p_order_status: null,
-        p_role_context: 'buyer',
-        p_context_section: 'buyer_offers',
-        p_title: isAccepted ? 'Oferta aceptada' : 'Oferta rechazada',
-        p_body: isAccepted 
-          ? `${supplierName} aceptó tu oferta por ${productName}`
-          : `${supplierName} rechazó tu oferta por ${productName}`,
-        // Campos legacy
-        p_message: isAccepted 
-          ? `${supplierName} ha aceptado tu oferta`
-          : `${supplierName} ha rechazado tu oferta`,
-        p_related_id: offerId,
-        p_action_url: '/buyer/offers',
-        p_metadata: { 
-          offer_id: offerId,
-          offered_price: offeredPrice,
-          offered_quantity: offeredQuantity,
-          rejection_reason: offerData.rejection_reason || null,
-          purchase_deadline: offerData.purchase_deadline || null
+        p_payload: {
+          p_user_id: offerData.buyer_id,
+          p_supplier_id: offerData.supplier_id,
+          p_order_id: null,
+          p_product_id: offerData.product_id,
+          p_type: isAccepted ? 'offer_accepted' : 'offer_rejected',
+          p_order_status: null,
+          p_role_context: 'buyer',
+          p_context_section: 'buyer_offers',
+          p_title: isAccepted ? 'Oferta aceptada' : 'Oferta rechazada',
+          p_body: isAccepted 
+            ? `${supplierName} aceptó tu oferta por ${productName}`
+            : `${supplierName} rechazó tu oferta por ${productName}`,
+          // Campos legacy
+          p_message: isAccepted 
+            ? `${supplierName} ha aceptado tu oferta`
+            : `${supplierName} ha rechazado tu oferta`,
+          p_related_id: offerId,
+          p_action_url: '/buyer/offers',
+          p_metadata: { 
+            offer_id: offerId,
+            offered_price: offeredPrice,
+            offered_quantity: offeredQuantity,
+            rejection_reason: offerData.rejection_reason || null,
+            purchase_deadline: offerData.purchase_deadline || null
+          }
         }
       });
       
@@ -263,24 +271,26 @@ class NotificationService {
         : `La oferta de ${offerData.buyer_name || offerData.buyer?.name || 'Comprador'} por ${productName} expiró`;
 
       const result = await supabase.rpc('create_notification', {
-        p_user_id: userId,
-        p_supplier_id: offerData.supplier_id,
-        p_order_id: null,
-        p_product_id: offerData.product_id,
-        p_type: 'offer_expired',
-        p_order_status: null,
-        p_role_context: role,
-        p_context_section: contextSection,
-        p_title: role === 'buyer' ? 'Oferta expirada' : title,
-        p_body: body,
-        p_message: body,
-        p_related_id: offerId,
-        p_action_url: '/buyer/offers',
-        p_metadata: { 
-          offer_id: offerId,
-          offered_price: offeredPrice,
-          offered_quantity: offeredQuantity,
-          expired_at: new Date().toISOString()
+        p_payload: {
+          p_user_id: userId,
+          p_supplier_id: offerData.supplier_id,
+          p_order_id: null,
+          p_product_id: offerData.product_id,
+          p_type: 'offer_expired',
+          p_order_status: null,
+          p_role_context: role,
+          p_context_section: contextSection,
+          p_title: role === 'buyer' ? 'Oferta expirada' : title,
+          p_body: body,
+          p_message: body,
+          p_related_id: offerId,
+          p_action_url: '/buyer/offers',
+          p_metadata: { 
+            offer_id: offerId,
+            offered_price: offeredPrice,
+            offered_quantity: offeredQuantity,
+            expired_at: new Date().toISOString()
+          }
         }
       });
       
