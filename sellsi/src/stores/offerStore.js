@@ -136,13 +136,10 @@ export const useOfferStore = create((set, get) => ({
         offer_id: data?.offer_id || data?.id || 'offer_test',
         expires_at: data?.expires_at || new Date(Date.now() + 48*3600*1000).toISOString()
       };
-
-      // Notificación RPC adicional sólo fuera de entorno de test para no consumir mocks inesperadamente
-      if (!isTestEnv) {
-        try {
-          await supabase.rpc('create_notification', { p_offer_id: normalized.offer_id });
-        } catch (_) { /* ignorar errores */ }
-      }
+  // Eliminado segundo llamado a create_notification (incompleto) que provocaba 404 en producción
+  // porque la función real requiere parámetros obligatorios (p_user_id, p_type, p_title, ...).
+  // La notificación ya se envía arriba vía notificationService.notifyOfferReceived con parámetros completos.
+  // Mantener este bloque vacío para claridad y trazabilidad del cambio.
 
       // Insertar siempre (también en tests) para que SupplierOffers/BuyerOffers vean la oferta sin depender estrictamente del RPC
       set(state => ({
