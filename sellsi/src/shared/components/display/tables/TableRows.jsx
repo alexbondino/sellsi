@@ -529,6 +529,11 @@ const Rows = ({ order, onActionClick }) => {
   };
 
   const statusChipProps = getStatusChipProps(order.status);
+  // Detectar si hay al menos un item ofertado (para chip agregado en columna Producto)
+  const hasOfferedItem = React.useMemo(() => {
+    const items = order?.items || order?.products || [];
+    return items.some(it => it.isOffered || it.metadata?.isOffered || !!it.offer_id || !!it.offered_price);
+  }, [order]);
 
   return (
     <TableRow hover>
@@ -545,8 +550,17 @@ const Rows = ({ order, onActionClick }) => {
   <TableCell sx={{ verticalAlign: 'middle', pl: 0 }}>
     <Box sx={{ display: 'block', width: '100%' }}>
       <Tooltip title="Clic para ver y copiar" placement="top">
-        <Box sx={{ cursor: 'pointer', userSelect: 'none' }} onClick={handleOpenProducts}>
+        <Box sx={{ cursor: 'pointer', userSelect: 'none', display: 'flex', flexDirection: 'column', gap: 0.5 }} onClick={handleOpenProducts}>
           {renderProductNames()}
+          {hasOfferedItem && (
+            <Chip
+              label="Ofertado"
+              color="primary"
+              size="small"
+              sx={{ alignSelf: 'flex-start', fontSize: '0.6rem', height: 18 }}
+              data-testid="supplier-chip-ofertado"
+            />
+          )}
         </Box>
       </Tooltip>
       <Popover

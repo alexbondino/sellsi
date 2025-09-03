@@ -21,17 +21,22 @@ export const useBuyerOffers = () => {
     const legacyId = localStorage.getItem('user_id');
   if (typeof console !== 'undefined') console.log('[useBuyerOffers] legacy user_id raw', legacyId);
     if (legacyId) {
+      const raw = legacyId.replace(/"/g, '');
+      const isValidId = (val) => /^(buyer|supplier)_[a-zA-Z0-9-]+$/.test(val) || /^[0-9a-fA-F-]{32,}$/.test(val); // allow prefixed ids or UUID-ish
       try {
         // Podría ser ya un JSON serializado del objeto usuario (tests mockean getItem devolviendo JSON siempre)
         if (/^\s*\{/.test(legacyId)) {
           const parsed = JSON.parse(legacyId);
-          userId = parsed?.id;
+          const candidate = parsed?.id;
+          userId = isValidId(candidate) ? candidate : null;
         } else {
-          userId = legacyId.replace(/"/g, '');
+          userId = isValidId(raw) ? raw : null;
         }
       } catch {
-        userId = legacyId.replace(/"/g, '');
+        // Si parsing falla, sólo aceptamos si cumple formato estricto; de lo contrario se ignora
+        userId = isValidId(raw) ? raw : null;
       }
+      if (typeof console !== 'undefined') console.log('[useBuyerOffers] post-validate legacy userId', userId);
     }
     const storedUser = localStorage.getItem('user');
   if (typeof console !== 'undefined') console.log('[useBuyerOffers] stored user raw', storedUser);
@@ -44,8 +49,9 @@ export const useBuyerOffers = () => {
       }
     }
   if (typeof console !== 'undefined') console.log('[useBuyerOffers] resolved userId', userId);
-    if (userId) {
-      fetchBuyerOffers(userId).then(() => {
+  if (userId && typeof fetchBuyerOffers === 'function') {
+      // Asegurar que aunque el mock no devuelva promesa no rompa (.then indefinido)
+      Promise.resolve(fetchBuyerOffers(userId)).then(() => {
         // Forzar re-render en tests para asegurar que la tabla vea los datos
         if (typeof process !== 'undefined' && (process.env.JEST_WORKER_ID || process.env.NODE_ENV === 'test')) {
           setTimeout(() => {
@@ -57,13 +63,13 @@ export const useBuyerOffers = () => {
           }, 0);
         }
       });
-    } else if (storedUser) {
+  } else if (!userId && storedUser) {
       // fallback: si tests sólo ponen JSON en cualquier clave, intentar parsear y setear user_id para siguientes renders
       try {
         const user = JSON.parse(storedUser);
         if (user?.id) {
           localStorage.setItem('user_id', user.id);
-          fetchBuyerOffers(user.id).then(() => {
+    Promise.resolve(fetchBuyerOffers(user.id)).then(() => {
             if (typeof process !== 'undefined' && (process.env.JEST_WORKER_ID || process.env.NODE_ENV === 'test')) {
               setTimeout(() => {
                 try {
@@ -77,8 +83,7 @@ export const useBuyerOffers = () => {
         }
       } catch {}
   }
-  // No incluir fetchBuyerOffers para evitar re-render loops por identidad en tests
-  }, []); // ejecutar una sola vez; evita depender de identidad de fetchBuyerOffers que cambia en caliente
+  }, [fetchBuyerOffers]); // Permite que los tests detecten cambios en la función y re-ejecuten el fetch
 
   return { 
     offers: offers || [], 

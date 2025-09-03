@@ -22,6 +22,9 @@ configure({ testIdAttribute: 'data-testid' });
 
 // Mock global de console.error para evitar ruido en tests
 const originalError = console.error;
+const originalLog = console.log;
+const originalInfo = console.info;
+const originalDebug = console.debug;
 beforeAll(() => {
   console.error = (...args) => {
     if (
@@ -32,10 +35,17 @@ beforeAll(() => {
     }
     originalError.call(console, ...args);
   };
+  // Silenciar logs verbosos durante tests (se restauran en afterAll)
+  console.log = () => {};
+  console.info = () => {};
+  console.debug = () => {};
 });
 
 afterAll(() => {
   console.error = originalError;
+  console.log = originalLog;
+  console.info = originalInfo;
+  console.debug = originalDebug;
 });
 
 // Mock de IntersectionObserver

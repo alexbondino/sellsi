@@ -22,6 +22,7 @@ import { SPACING_BOTTOM_MAIN } from '../../../../styles/layoutSpacing';
 import { SupplierErrorBoundary } from '../../components/ErrorBoundary';
 import { supabase } from '../../../../services/supabase';
 import { uploadInvoicePDF } from '../../../../services/storage/invoiceStorageService';
+import { validateTaxPdf } from './validation/pdfValidation';
 
 // TODO: Implementar hook de autenticación
 // import { useAuth } from '../../auth/hooks/useAuth';
@@ -428,7 +429,6 @@ const MyOrdersPage = () => {
             {showTaxUpload && (
               <TextField
                 name="taxDocument"
-                // Label kept concise; size/format guidance moved to helperText to avoid duplication
                 label={`Documento Tributario ${docLabelSuffix}`}
                 type="file"
                 fullWidth
@@ -446,16 +446,9 @@ const MyOrdersPage = () => {
                 onChange={e => {
                   setTaxDocTouched(true);
                   const file = e.target.files?.[0];
-                  if (!file) {
-                    setTaxDocFileState({ file: null, error: 'Archivo PDF requerido' });
-                    return;
-                  }
-                  if (file.type !== 'application/pdf') {
-                    setTaxDocFileState({ file: null, error: 'Solo se permite PDF' });
-                    return;
-                  }
-                  if (file.size > 500 * 1024) {
-                    setTaxDocFileState({ file: null, error: 'Máximo 500KB' });
+                  const validation = validateTaxPdf(file);
+                  if(!validation.ok){
+                    setTaxDocFileState({ file: null, error: validation.error });
                     return;
                   }
                   setTaxDocFileState({ file, error: null });

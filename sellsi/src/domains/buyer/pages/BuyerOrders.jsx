@@ -624,6 +624,19 @@ const BuyerOrders = () => {
                             <Box sx={{ flex: 1 }}>
                               <Typography variant="h6" fontWeight="medium" gutterBottom>
                                 {item.product.name}
+                                {(() => {
+                                  const isOffered = item.isOffered || item.metadata?.isOffered || !!item.offer_id || !!item.offered_price;
+                                  if (!isOffered) return null;
+                                  return (
+                                    <Chip
+                                      size="small"
+                                      color="primary"
+                                      label="Ofertado"
+                                      sx={{ ml: 1, fontSize: '0.6rem', height: 18 }}
+                                      data-testid="chip-ofertado"
+                                    />
+                                  );
+                                })()}
                               </Typography>
                               <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                                 <Typography variant="body2" color="text.secondary" gutterBottom>
@@ -642,7 +655,11 @@ const BuyerOrders = () => {
                                 const lineTotal = unit * (item.quantity || 0);
                                 return (
                                   <Typography variant="body1" fontWeight="medium" color="#000000fa">
-                                    {item.quantity} uds a {formatCurrency(unit)} c/u = {formatCurrency(lineTotal)}
+                                    {item.quantity} uds a {formatCurrency(unit)} c/u = {formatCurrency(lineTotal)} {(() => {
+                                      const isOffered = item.isOffered || item.metadata?.isOffered || !!item.offer_id || !!item.offered_price;
+                                      if (!isOffered) return null;
+                                      return <Typography component="span" variant="caption" color="primary.main" sx={{ ml: 0.5 }}>Precio ofertado fijo</Typography>;
+                                    })()}
                                   </Typography>
                                 );
                               })()}

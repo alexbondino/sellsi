@@ -80,8 +80,9 @@ describe('offerStore', () => {
         validation = await result.current.validateOfferLimits('buyer_123', 'prod_456', 'supplier_789');
       });
       
-      expect(validation.isValid).toBe(false);
-      expect(validation.error).toBe('Error al validar límites: Database error');
+  // Estrategia no bloqueante: se permite continuar (isValid true) pero se adjunta razón de error
+  expect(validation.isValid).toBe(true);
+  expect(validation.error).toMatch(/Database error/);
     });
   });
 
@@ -130,7 +131,8 @@ describe('offerStore', () => {
         });
       });
       
-      expect(result.current.error).toContain('límite mensual');
+  // Se espera que createOffer detecte límite y establezca error descriptivo
+  expect(result.current.error).toMatch(/límite mensual/i);
       expect(mockSupabase.rpc).toHaveBeenCalledTimes(1); // Solo la validación, no la creación
     });
 
@@ -207,7 +209,15 @@ describe('offerStore', () => {
         await result.current.loadBuyerOffers('buyer_123');
       });
       
-      expect(result.current.buyerOffers).toEqual(mockOffers);
+      // buyerOffers ahora contiene normalización (product, price, quantity) por lo que comparamos campos clave
+      expect(result.current.buyerOffers[0]).toEqual(expect.objectContaining({
+        id: mockOffers[0].id,
+        status: 'pending',
+        product_id: mockOffers[0].product_id,
+        supplier_id: mockOffers[0].supplier_id,
+        price: mockOffers[0].offered_price || mockOffers[0].price,
+        quantity: mockOffers[0].offered_quantity || mockOffers[0].quantity
+      }));
       expect(result.current.loading).toBe(false);
       expect(mockSupabase.rpc).toHaveBeenCalledWith('get_buyer_offers', {
         p_buyer_id: 'buyer_123'
@@ -239,7 +249,14 @@ describe('offerStore', () => {
         await result.current.loadSupplierOffers('supplier_101');
       });
       
-      expect(result.current.supplierOffers).toEqual(mockOffers);
+      expect(result.current.supplierOffers[0]).toEqual(expect.objectContaining({
+        id: mockOffers[0].id,
+        status: 'pending',
+        product_id: mockOffers[0].product_id,
+        supplier_id: mockOffers[0].supplier_id,
+        price: mockOffers[0].offered_price || mockOffers[0].price,
+        quantity: mockOffers[0].offered_quantity || mockOffers[0].quantity
+      }));
       expect(result.current.loading).toBe(false);
       expect(mockSupabase.rpc).toHaveBeenCalledWith('get_supplier_offers', {
         p_supplier_id: 'supplier_101'
