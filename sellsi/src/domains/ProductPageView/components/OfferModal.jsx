@@ -88,10 +88,10 @@ const OfferModal = ({
   const validateForm = () => {
     const newErrors = {};
 
-    // Validar precio
-    const price = parseFloat(offeredPrice);
-    if (!offeredPrice || isNaN(price) || price <= 0) {
-      newErrors.price = 'Ingresa un precio válido mayor a 0';
+    // Validar precio (entero, mínimo 1)
+    const price = parseInt(offeredPrice, 10);
+    if (!offeredPrice || isNaN(price) || price < 1) {
+      newErrors.price = 'Ingresa un precio válido (mínimo $1)';
     } else if (price >= 1000000) {
       newErrors.price = 'El precio debe ser menor a $1.000.000';
     }
@@ -114,10 +114,10 @@ const OfferModal = ({
 
   // Función para determinar si el formulario es válido en tiempo real
   const isFormValid = () => {
-    const price = parseFloat(offeredPrice);
-    const quantity = parseInt(offeredQuantity);
+    const price = parseInt(offeredPrice, 10);
+    const quantity = parseInt(offeredQuantity, 10);
     
-  const isPriceValid = offeredPrice && !isNaN(price) && price > 0 && price < 1000000;
+  const isPriceValid = offeredPrice && !isNaN(price) && price >= 1 && price < 1000000;
   const isQuantityValid = offeredQuantity && !isNaN(quantity) && quantity > 0 && quantity <= effectiveStock;
   const areLimitsValid = !limitsValidation || limitsValidation.allowed;
     
@@ -126,17 +126,14 @@ const OfferModal = ({
 
   // Funciones de cambio con validación en tiempo real
   const handlePriceChange = (e) => {
-    // Permitir solo números y decimales
-    const raw = e.target.value.replace(/,/g, '.');
-    if (/^\d*(?:\.\d{0,2})?$/.test(raw) || raw === '') {
-      setOfferedPrice(raw);
-      
-      // Limpiar error de precio si ahora es válido
-      if (errors.price) {
-        const price = parseFloat(raw);
-        if (raw && !isNaN(price) && price > 0 && price < 1000000) {
-          setErrors(prev => ({ ...prev, price: '' }));
-        }
+    // Permitir solo números enteros (pesos)
+    const raw = e.target.value.replace(/[^0-9]/g, '');
+    setOfferedPrice(raw);
+    // Limpiar error de precio si ahora es válido
+    if (errors.price) {
+      const price = parseInt(raw, 10);
+      if (raw && !isNaN(price) && price >= 1 && price < 1000000) {
+        setErrors(prev => ({ ...prev, price: '' }));
       }
     }
   };
@@ -155,6 +152,27 @@ const OfferModal = ({
     }
   };
 
+  // Normalizar input al salir del campo: quitar ceros a la izquierda
+  const handlePriceBlur = () => {
+    if (!offeredPrice) return;
+    const parsed = parseInt(offeredPrice, 10);
+    if (isNaN(parsed)) {
+      setOfferedPrice('');
+    } else {
+      setOfferedPrice(String(parsed));
+    }
+  };
+
+  const handleQuantityBlur = () => {
+    if (!offeredQuantity) return;
+    const parsed = parseInt(offeredQuantity, 10);
+    if (isNaN(parsed)) {
+      setOfferedQuantity('');
+    } else {
+      setOfferedQuantity(String(parsed));
+    }
+  };
+
   const handleSubmit = async () => {
     if (!validateForm()) return;
     
@@ -169,7 +187,7 @@ const OfferModal = ({
       supplier_id: product.supplier_id || product.supplierId,
       product_id: product.id || product.productid,
       product_name: product.name || product.productnm || product.nombre,
-      offered_price: parseFloat(offeredPrice),
+      offered_price: parseInt(offeredPrice, 10),
       offered_quantity: parseInt(offeredQuantity),
       message: null
     };
@@ -199,7 +217,7 @@ const OfferModal = ({
     }
   };
 
-  const totalValue = (parseFloat(offeredPrice) || 0) * (parseInt(offeredQuantity) || 0);
+  const totalValue = (parseInt(offeredPrice, 10) || 0) * (parseInt(offeredQuantity, 10) || 0);
 
   // Formatear el total con truncado si es muy largo
   const formatTotal = (value) => {
@@ -313,13 +331,14 @@ const OfferModal = ({
               startAdornment: <Typography sx={{ mr: 1 }}>$</Typography>,
             }}
             inputProps={{
-              min: 0,
-              step: "0.01",
-              inputMode: 'decimal'
+              min: 1,
+              step: "1",
+              inputMode: 'numeric'
             }}
-            fullWidth
-            disabled={loading}
-          />
+            onBlur={handlePriceBlur}
+             fullWidth
+             disabled={loading}
+           />
 
           {/* Cantidad */}
           <TextField
@@ -327,6 +346,7 @@ const OfferModal = ({
             type="number"
             value={offeredQuantity}
             onChange={handleQuantityChange}
+            onBlur={handleQuantityBlur}
             error={!!errors.quantity}
             helperText={errors.quantity}
             autoComplete="off"

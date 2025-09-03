@@ -78,6 +78,24 @@ const OffersList = ({ offers = [], loading = false, error = null, cancelOffer, d
     console.log('Add to cart:', offer);
   };
 
+  // If there are no offers (and not loading/error), show friendly empty state like MyOrders
+  if (!loading && !error && (!filtered || filtered.length === 0)) {
+    return (
+      <Paper sx={{ p: { xs: 2, md: 4 }, textAlign: 'center' }}>
+        <Typography variant="h6" color="text.secondary">
+          No has enviado ofertas
+        </Typography>
+        <Typography
+          variant="body2"
+          color="text.secondary"
+          sx={{ mt: 1 }}
+        >
+          Envía ofertas a proveedores desde la ficha de producto. Aquí verás el estado de cada propuesta.
+        </Typography>
+      </Paper>
+    );
+  }
+
   // Simple table similar to BuyerOrders but lightweight
   return (
     <TableContainer component={Paper} sx={{ p: 0, scrollbarGutter: 'stable' }}>

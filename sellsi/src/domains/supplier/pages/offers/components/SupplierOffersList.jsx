@@ -104,6 +104,24 @@ const SupplierOffersList = ({ offers = [], setOffers, acceptOffer, rejectOffer, 
     }
   };
 
+  // If there are no offers and not loading/error, show friendly empty state matching MyOrders
+  if ((!filtered || filtered.length === 0)) {
+    return (
+      <Paper sx={{ p: { xs: 2, md: 4 }, textAlign: 'center' }}>
+        <Typography variant="h6" color="text.secondary">
+          Aún no tienes ofertas
+        </Typography>
+        <Typography
+          variant="body2"
+          color="text.secondary"
+          sx={{ mt: 1 }}
+        >
+          Cuando compradores te envíen propuestas, las verás aquí. Podrás aceptar o rechazar cada oferta.
+        </Typography>
+      </Paper>
+    );
+  }
+
   return (
     <TableContainer component={Paper} sx={{ p: 0 }}>
       <Box sx={{ display: 'flex', gap: 2, p: 2, alignItems: 'center' }}>

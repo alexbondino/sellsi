@@ -126,14 +126,9 @@ describe('OffersList Component', () => {
         <OffersList {...defaultProps} />
       </TestWrapper>
     );
-    
-    expect(screen.getByText('Filtrar por estado:')).toBeInTheDocument();
-    expect(screen.getByRole('combobox')).toBeInTheDocument();
-    expect(screen.getByText('Producto')).toBeInTheDocument();
-    expect(screen.getByText('Tiempo restante')).toBeInTheDocument();
-  // Múltiples coincidencias de "Estado" (label + legend + header). Validar al menos uno.
-  expect(screen.getAllByText('Estado').length).toBeGreaterThan(0);
-    expect(screen.getByText('Acciones')).toBeInTheDocument();
+  // Ahora mostramos un estado vacío amigable en vez de la cabecera de la tabla
+  expect(screen.getByText('No has enviado ofertas')).toBeInTheDocument();
+  expect(screen.getByText('Envía ofertas a proveedores desde la ficha de producto. Aquí verás el estado de cada propuesta.')).toBeInTheDocument();
   });
 
   it('debería renderizar ofertas cuando las hay', () => {
@@ -192,17 +187,22 @@ describe('OffersList Component', () => {
   });
 
   it('debería mostrar tooltip informativo', async () => {
+    // Render with at least one offer so the action tooltip is present
+    const offers = [
+      { ...mockOfferData.validOffer, id: 'info-1', status: 'pending', product: { name: 'Info Product' } }
+    ];
+
     render(
       <TestWrapper>
-        <OffersList {...defaultProps} />
+        <OffersList {...defaultProps} offers={offers} />
       </TestWrapper>
     );
-    
+
     const infoButton = screen.getByLabelText('Información de acciones');
     expect(infoButton).toBeInTheDocument();
-    
+
     fireEvent.mouseEnter(infoButton);
-    
+
     await waitFor(() => {
       expect(screen.getByText('Cómo usar Acciones')).toBeInTheDocument();
     });

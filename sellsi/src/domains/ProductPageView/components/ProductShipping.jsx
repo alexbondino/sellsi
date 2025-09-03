@@ -212,7 +212,7 @@ const ProductShipping = ({ product, isMobile = false, isLoggedIn = false }) => {
                       <Typography 
                         variant="body2" 
                         sx={{ 
-                          fontWeight: 600,
+                          fontWeight: 500,
                           fontSize: '1rem',
                           color: (region.shippingValue || region.price) === 0 ? 'success.main' : 'black'
                         }}
