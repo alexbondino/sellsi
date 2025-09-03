@@ -356,7 +356,7 @@ describe('Offer System Edge Cases', () => {
       const { result } = renderHook(() => useOfferStore());
       
       await act(async () => {
-        await result.current.validateOfferLimits('buyer_123', 'prod_456', 'supplier_789');
+  await result.current.validateOfferLimits({ buyerId: 'buyer_123', productId: 'prod_456', supplierId: 'supplier_789' });
       });
       
       // Debería funcionar correctamente independientemente de la zona horaria

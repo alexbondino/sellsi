@@ -32,11 +32,11 @@ const PurchaseActions = ({
     
     setCheckingLimits(true)
     try {
-      const limits = await validateOfferLimits(
-        userId,
-        product.supplier_id || product.supplierId,
-        product.id
-      )
+      const limits = await validateOfferLimits({
+        buyerId: userId,
+        productId: product.id,
+        supplierId: product.supplier_id || product.supplierId
+      })
       setLimitsValidation(limits)
     } catch (error) {
       console.error('Error checking offer limits:', error)

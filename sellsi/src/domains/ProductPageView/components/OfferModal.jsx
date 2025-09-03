@@ -71,11 +71,11 @@ const OfferModal = ({
     if (!userId || !product?.id) return;
     
     try {
-      const limits = await validateOfferLimits(
-        userId,
-        product.supplier_id || product.supplierId,
-        product.id
-      );
+      const limits = await validateOfferLimits({
+        buyerId: userId,
+        productId: product.id,
+        supplierId: product.supplier_id || product.supplierId
+      });
   if (typeof console !== 'undefined') console.log('[OfferModal] limits received', limits);
       setLimitsValidation(limits);
     } catch (error) {

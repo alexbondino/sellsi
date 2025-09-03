@@ -42,7 +42,7 @@ describe('offerStore', () => {
       
       let validation;
       await act(async () => {
-        validation = await result.current.validateOfferLimits('buyer_123', 'prod_456', 'supplier_789');
+  validation = await result.current.validateOfferLimits({ buyerId: 'buyer_123', productId: 'prod_456', supplierId: 'supplier_789' });
       });
       
       expect(validation.isValid).toBe(true);
@@ -62,7 +62,7 @@ describe('offerStore', () => {
       
       let validation;
       await act(async () => {
-        validation = await result.current.validateOfferLimits('buyer_123', 'prod_456', 'supplier_789');
+  validation = await result.current.validateOfferLimits({ buyerId: 'buyer_123', productId: 'prod_456', supplierId: 'supplier_789' });
       });
       
       expect(validation.isValid).toBe(false);
@@ -77,7 +77,7 @@ describe('offerStore', () => {
       
       let validation;
       await act(async () => {
-        validation = await result.current.validateOfferLimits('buyer_123', 'prod_456', 'supplier_789');
+  validation = await result.current.validateOfferLimits({ buyerId: 'buyer_123', productId: 'prod_456', supplierId: 'supplier_789' });
       });
       
   // Estrategia no bloqueante: se permite continuar (isValid true) pero se adjunta razón de error
@@ -117,11 +117,9 @@ describe('offerStore', () => {
     });
 
     it('debería fallar cuando se excede el límite de ofertas', async () => {
-      // Mock validación de límites fallida
+      // Primera RPC: count_monthly_offers devuelve 3 (límite alcanzado)
       mockSupabase.rpc.mockResolvedValueOnce({ data: 3, error: null });
-      
       const { result } = renderHook(() => useOfferStore());
-      
       await act(async () => {
         await result.current.createOffer({
           productId: 'prod_456',
@@ -130,10 +128,10 @@ describe('offerStore', () => {
           price: 1000
         });
       });
-      
-  // Se espera que createOffer detecte límite y establezca error descriptivo
-  expect(result.current.error).toMatch(/límite mensual/i);
-      expect(mockSupabase.rpc).toHaveBeenCalledTimes(1); // Solo la validación, no la creación
+      expect(result.current.error).toMatch(/límite mensual/i);
+      // Solo debe haberse llamado la RPC de conteo, no la creación
+      expect(mockSupabase.rpc).toHaveBeenCalledTimes(1);
+      expect(mockSupabase.rpc.mock.calls[0][0]).toBe('count_monthly_offers');
     });
 
     it('debería validar datos de entrada', async () => {
@@ -170,13 +168,10 @@ describe('offerStore', () => {
 
     it('debería manejar errores al aceptar oferta', async () => {
       mockSupabase.rpc.mockResolvedValueOnce({ data: null, error: { message: 'Offer not found' } });
-      
       const { result } = renderHook(() => useOfferStore());
-      
       await act(async () => {
         await result.current.acceptOffer('invalid_offer');
       });
-      
       expect(result.current.error).toBe('Error al aceptar oferta: Offer not found');
     });
   });

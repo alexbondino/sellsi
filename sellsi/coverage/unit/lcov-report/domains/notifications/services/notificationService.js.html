@@ -378,7 +378,17 @@
 <a name='L313'></a><a href='#L313'>313</a>
 <a name='L314'></a><a href='#L314'>314</a>
 <a name='L315'></a><a href='#L315'>315</a>
-<a name='L316'></a><a href='#L316'>316</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L316'></a><a href='#L316'>316</a>
+<a name='L317'></a><a href='#L317'>317</a>
+<a name='L318'></a><a href='#L318'>318</a>
+<a name='L319'></a><a href='#L319'>319</a>
+<a name='L320'></a><a href='#L320'>320</a>
+<a name='L321'></a><a href='#L321'>321</a>
+<a name='L322'></a><a href='#L322'>322</a>
+<a name='L323'></a><a href='#L323'>323</a>
+<a name='L324'></a><a href='#L324'>324</a>
+<a name='L325'></a><a href='#L325'>325</a>
+<a name='L326'></a><a href='#L326'>326</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -456,20 +466,24 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -507,6 +521,8 @@
 <span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -598,6 +614,8 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -643,6 +661,8 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -758,17 +778,19 @@ class NotificationService {
 <span class="cstat-no" title="statement not covered" >    for (const it of items) {</span>
 <span class="cstat-no" title="statement not covered" >      try {</span>
         const result = <span class="cstat-no" title="statement not covered" >await supabase.rpc('create_notification', {</span>
-          p_user_id: buyerId,
-          p_supplier_id: it.supplier_id || null,
-          p_order_id: orderRow.id || orderRow.order_id || null,
-          p_product_id: it.product_id || null,
-          p_type: 'order_new',
-          p_order_status: 'pending',
-          p_role_context: 'buyer',
-          p_context_section: 'buyer_orders',
-          p_title: 'Se registró tu compra',
-          p_body: it.name ? `Producto: ${it.name}` : 'Nuevo producto comprado',
-          p_metadata: { quantity: it.quantity, price_at_addition: it.price_at_addition }
+          p_payload: {
+            p_user_id: buyerId,
+            p_supplier_id: it.supplier_id || null,
+            p_order_id: orderRow.id || orderRow.order_id || null,
+            p_product_id: it.product_id || null,
+            p_type: 'order_new',
+            p_order_status: 'pending',
+            p_role_context: 'buyer',
+            p_context_section: 'buyer_orders',
+            p_title: 'Se registró tu compra',
+            p_body: it.name ? `Producto: ${it.name}` : 'Nuevo producto comprado',
+            p_metadata: { quantity: it.quantity, price_at_addition: it.price_at_addition }
+          }
         });
         
 <span class="cstat-no" title="statement not covered" >        if (result.error) {</span>
@@ -785,17 +807,19 @@ class NotificationService {
 <span class="cstat-no" title="statement not covered" >    for (const supplierId of supplierSet) {</span>
 <span class="cstat-no" title="statement not covered" >      try {</span>
         const result = <span class="cstat-no" title="statement not covered" >await supabase.rpc('create_notification', {</span>
-          p_user_id: supplierId,
-          p_supplier_id: supplierId,
-          p_order_id: orderRow.id || orderRow.order_id || null,
-          p_product_id: null,
-          p_type: 'order_new',
-          p_order_status: 'pending',
-          p_role_context: 'supplier',
-          p_context_section: 'supplier_orders',
-          p_title: 'Nuevo pedido pendiente',
-          p_body: 'Revisa y acepta o rechaza los productos.',
-          p_metadata: { buyer_id: buyerId }
+          p_payload: {
+            p_user_id: supplierId,
+            p_supplier_id: supplierId,
+            p_order_id: orderRow.id || orderRow.order_id || null,
+            p_product_id: null,
+            p_type: 'order_new',
+            p_order_status: 'pending',
+            p_role_context: 'supplier',
+            p_context_section: 'supplier_orders',
+            p_title: 'Nuevo pedido pendiente',
+            p_body: 'Revisa y acepta o rechaza los productos.',
+            p_metadata: { buyer_id: buyerId }
+          }
         });
         
 <span class="cstat-no" title="statement not covered" >        if (result.error) {</span>
@@ -822,25 +846,27 @@ class NotificationService {
       const offeredQuantity = offerData.offered_quantity || offerData.quantity;
 &nbsp;
       const result = await supabase.rpc('create_notification', {
-        p_user_id: offerData.supplier_id,
-        p_supplier_id: offerData.supplier_id,
-        p_order_id: null,
-        p_product_id: offerData.product_id,
-        p_type: 'offer_received',
-        p_order_status: null,
-        p_role_context: 'supplier',
-        p_context_section: 'supplier_offers',
-        p_title: 'Nueva oferta recibida',
-        p_body: `${buyerName} hizo una oferta por ${productName}`,
-        // Campos legacy esperados por tests
-        p_message: `${buyerName} ha realizado una oferta`,
-        p_related_id: offerId,
-        p_action_url: '/supplier/offers',
-        p_metadata: { 
-          offer_id: offerId,
-          offered_price: offeredPrice,
-          offered_quantity: offeredQuantity,
-          expires_at: offerData.expires_at
+        p_payload: {
+          p_user_id: offerData.supplier_id,
+          p_supplier_id: offerData.supplier_id,
+          p_order_id: null,
+          p_product_id: offerData.product_id,
+          p_type: 'offer_received',
+          p_order_status: null,
+          p_role_context: 'supplier',
+          p_context_section: 'supplier_offers',
+          p_title: 'Nueva oferta recibida',
+          p_body: `${buyerName} hizo una oferta por ${productName}`,
+          // Campos legacy
+          p_message: `${buyerName} ha realizado una oferta`,
+          p_related_id: offerId,
+          p_action_url: '/supplier/offers',
+          p_metadata: { 
+            offer_id: offerId,
+            offered_price: offeredPrice,
+            offered_quantity: offeredQuantity,
+            expires_at: offerData.expires_at
+          }
         }
       });
       
@@ -886,30 +912,32 @@ class NotificationService {
       const offeredPrice = offerData.offered_price || offerData.price;
       const offeredQuantity = offerData.offered_quantity || offerData.quantity;
       const result = await supabase.rpc('create_notification', {
-        p_user_id: offerData.buyer_id,
-        p_supplier_id: offerData.supplier_id,
-        p_order_id: null,
-        p_product_id: offerData.product_id,
-        p_type: isAccepted ? 'offer_accepted' : 'offer_rejected',
-        p_order_status: null,
-        p_role_context: 'buyer',
-        p_context_section: 'buyer_offers',
-        p_title: isAccepted ? 'Oferta aceptada' : 'Oferta rechazada',
-        p_body: isAccepted 
-          ? `${supplierName} aceptó tu oferta por ${productName}`
-          : `${supplierName} rechazó tu oferta por ${productName}`,
-        // Campos legacy
-        p_message: isAccepted 
-          ? `${supplierName} ha aceptado tu oferta`
-          : `${supplierName} ha rechazado tu oferta`,
-        p_related_id: offerId,
-        p_action_url: '/buyer/offers',
-        p_metadata: { 
-          offer_id: offerId,
-          offered_price: offeredPrice,
-          offered_quantity: offeredQuantity,
-          rejection_reason: offerData.rejection_reason || null,
-          purchase_deadline: offerData.purchase_deadline || null
+        p_payload: {
+          p_user_id: offerData.buyer_id,
+          p_supplier_id: offerData.supplier_id,
+          p_order_id: null,
+          p_product_id: offerData.product_id,
+          p_type: isAccepted ? 'offer_accepted' : 'offer_rejected',
+          p_order_status: null,
+          p_role_context: 'buyer',
+          p_context_section: 'buyer_offers',
+          p_title: isAccepted ? 'Oferta aceptada' : 'Oferta rechazada',
+          p_body: isAccepted 
+            ? `${supplierName} aceptó tu oferta por ${productName}`
+            : `${supplierName} rechazó tu oferta por ${productName}`,
+          // Campos legacy
+          p_message: isAccepted 
+            ? `${supplierName} ha aceptado tu oferta`
+            : `${supplierName} ha rechazado tu oferta`,
+          p_related_id: offerId,
+          p_action_url: '/buyer/offers',
+          p_metadata: { 
+            offer_id: offerId,
+            offered_price: offeredPrice,
+            offered_quantity: offeredQuantity,
+            rejection_reason: offerData.rejection_reason || null,
+            purchase_deadline: offerData.purchase_deadline || null
+          }
         }
       });
       
@@ -958,24 +986,26 @@ class NotificationService {
         : <span class="branch-1 cbranch-no" title="branch not covered" >`La oferta de ${offerData.buyer_name || offerData.buyer?.name || 'Comprador'} por ${productName} expiró`;</span>
 &nbsp;
       const result = await supabase.rpc('create_notification', {
-        p_user_id: userId,
-        p_supplier_id: offerData.supplier_id,
-        p_order_id: null,
-        p_product_id: offerData.product_id,
-        p_type: 'offer_expired',
-        p_order_status: null,
-        p_role_context: role,
-        p_context_section: contextSection,
-        p_title: role === 'buyer' ? 'Oferta expirada' : <span class="branch-1 cbranch-no" title="branch not covered" >title,</span>
-        p_body: body,
-        p_message: body,
-        p_related_id: offerId,
-        p_action_url: '/buyer/offers',
-        p_metadata: { 
-          offer_id: offerId,
-          offered_price: offeredPrice,
-          offered_quantity: offeredQuantity,
-          expired_at: new Date().toISOString()
+        p_payload: {
+          p_user_id: userId,
+          p_supplier_id: offerData.supplier_id,
+          p_order_id: null,
+          p_product_id: offerData.product_id,
+          p_type: 'offer_expired',
+          p_order_status: null,
+          p_role_context: role,
+          p_context_section: contextSection,
+          p_title: role === 'buyer' ? 'Oferta expirada' : <span class="branch-1 cbranch-no" title="branch not covered" >title,</span>
+          p_body: body,
+          p_message: body,
+          p_related_id: offerId,
+          p_action_url: '/buyer/offers',
+          p_metadata: { 
+            offer_id: offerId,
+            offered_price: offeredPrice,
+            offered_quantity: offeredQuantity,
+            expired_at: new Date().toISOString()
+          }
         }
       });
       
@@ -1015,7 +1045,7 @@ export const notifyOfferExpired = (offerData, role) =&gt; notificationService.no
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-09-03T04:02:06.405Z
+                at 2025-09-03T21:03:20.448Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>
