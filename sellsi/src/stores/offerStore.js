@@ -548,15 +548,21 @@ export const useOfferStore = create((set, get) => ({
   __logOfferDebug('validateOfferLimits returning', base);
       return base;
     } catch (e) {
+      // En caso de fallo en la validación (p. ej. RPC caído), no bloquear la acción
+      // en la UI porque el servidor seguirá aplicando las reglas. Registrar el
+      // error para diagnóstico y permitir que el usuario intente crear la oferta.
+      __logOfferDebug('validateOfferLimits error', e?.message || String(e));
+      try { if (typeof console !== 'undefined') console.warn('[offerStore] validateOfferLimits RPC error:', e?.message || e); } catch(_) {}
       return {
-        isValid: false,
+        isValid: true,
         currentCount: undefined,
         limit,
-        allowed: false,
+        allowed: true,
         product_count: undefined,
         supplier_count: 0,
-        reason: 'Error al validar límites',
-        error: 'Error al validar límites: ' + e.message
+        // Mantener información de error para que la UI pueda mostrar un aviso no bloqueante
+        reason: 'No se pudo validar límites',
+        error: 'Error al validar límites: ' + (e?.message || String(e))
       };
     }
   },
