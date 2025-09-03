@@ -16,7 +16,6 @@ import {
   IconButton,
   Button,
   Tooltip,
-  CircularProgress,
 } from '@mui/material'
 import { LocalShipping, Security, Assignment, Verified as VerifiedIcon } from '@mui/icons-material'
 import ContentCopyIcon from '@mui/icons-material/ContentCopy'
@@ -34,6 +33,11 @@ import { useOptimizedProductOwnership } from '../hooks/useOptimizedProductOwners
 import ProductImageGallery from './ProductImageGallery'
 import PurchaseActions from './PurchaseActions'
 import PriceDisplay from '../../marketplace/PriceDisplay/PriceDisplay'
+// Skeleton system imports
+import { PriceTiersSkeleton, SinglePriceSkeleton } from './skeletons/PriceSkeletons'
+import { PurchaseActionsSkeleton } from './skeletons/PurchaseActionsSkeleton'
+import { DocumentTypesChipsSkeleton } from './skeletons/DocumentTypesChipsSkeleton'
+import { useSmartSkeleton } from '../hooks/useSmartSkeleton'
 import StockIndicator from '../../marketplace/StockIndicator/StockIndicator'
 import QuotationModal from './QuotationModal'
 import { useProductPriceTiers } from '../../../shared/hooks/product/useProductPriceTiers';
@@ -182,15 +186,10 @@ const ProductHeader = React.memo(({
   }
 
   // Lógica para mostrar precios y tramos
+  const showPriceSkeleton = useSmartSkeleton(loadingTiers)
   let priceContent
-  if (loadingTiers) {
-    priceContent = (
-      <Box
-        sx={{ display: 'flex', alignItems: 'center', gap: 1, minHeight: 24 }}
-      >
-        <CircularProgress color="primary" size={18} />
-      </Box>
-    )
+  if (showPriceSkeleton) {
+    priceContent = <PriceTiersSkeleton rows={4} />
   } else if (errorTiers) {
     priceContent = (
       <Box
@@ -633,69 +632,63 @@ const ProductHeader = React.memo(({
               width: '100%',
               justifyContent: { xs: 'flex-start', md: 'flex-start' } // Alineación consistente
             }}>
-              {loadingDocumentTypes ? (
-                <Typography variant="body2" color="text.secondary">
-                  Cargando opciones...
-                </Typography>
-              ) : availableOptions && availableOptions.length > 0 ? (
-                // Si solo hay "ninguno", mostrar texto en negro con fuente de Stock
-                availableOptions.length === 1 && availableOptions[0].value === 'ninguno' ? (
-                  <Typography
-                    variant="body2"
-                    sx={{
-                      color: 'text.primary',fontWeight: 600,
-                    }}
-                  >
-                    Proveedor no ofrece documento tributario
-                  </Typography>
-                ) : (
-                  availableOptions
-                    .filter(option => option.value !== 'ninguno') // Excluir "ninguno" de los chips
-                    .map((option) => (
+              {(() => {
+                const showDocSkeleton = useSmartSkeleton(loadingDocumentTypes)
+                if (showDocSkeleton) return <DocumentTypesChipsSkeleton isMobile={isMobile} />
+                if (availableOptions && availableOptions.length > 0) {
+                  // Si solo hay "ninguno", mostrar texto en negro con fuente de Stock
+                  if (availableOptions.length === 1 && availableOptions[0].value === 'ninguno') {
+                    return (
+                      <Typography
+                        variant="body2"
+                        sx={{ color: 'text.primary', fontWeight: 600 }}
+                      >
+                        Proveedor no ofrece documento tributario
+                      </Typography>
+                    )
+                  }
+                  return availableOptions
+                    .filter(option => option.value !== 'ninguno')
+                    .map(option => (
                       <Chip
                         key={option.value}
                         label={option.label}
-                        size={isMobile ? "medium" : "small"}
+                        size={isMobile ? 'medium' : 'small'}
                         sx={{
                           backgroundColor: 'primary.main',
                           color: 'white',
                           fontSize: { xs: '0.8rem', md: '0.75rem' },
-                          '&:hover': {
-                            backgroundColor: 'primary.main',
-                          },
+                          '&:hover': { backgroundColor: 'primary.main' },
                         }}
                       />
                     ))
-                )
-              ) : (
+                }
                 // Fallback a opciones por defecto si hay error o no hay datos
-                <>
-                  <Chip
-                    label="Factura"
-                    size={isMobile ? "medium" : "small"}
-                    sx={{
-                      backgroundColor: 'primary.main',
-                      color: 'white',
-                      fontSize: { xs: '0.8rem', md: '0.75rem' },
-                      '&:hover': {
+                return (
+                  <>
+                    <Chip
+                      label="Factura"
+                      size={isMobile ? 'medium' : 'small'}
+                      sx={{
                         backgroundColor: 'primary.main',
-                      },
-                    }}
-                  />
-                  <Chip
-                    label="Boleta"
-                    size={isMobile ? "medium" : "small"}
-                    sx={{
-                      backgroundColor: 'primary.main',
-                      color: 'white',
-                      fontSize: { xs: '0.8rem', md: '0.75rem' },
-                      '&:hover': {
+                        color: 'white',
+                        fontSize: { xs: '0.8rem', md: '0.75rem' },
+                        '&:hover': { backgroundColor: 'primary.main' },
+                      }}
+                    />
+                    <Chip
+                      label="Boleta"
+                      size={isMobile ? 'medium' : 'small'}
+                      sx={{
                         backgroundColor: 'primary.main',
-                      },
-                    }}
-                  />
-                </>
-              )}
+                        color: 'white',
+                        fontSize: { xs: '0.8rem', md: '0.75rem' },
+                        '&:hover': { backgroundColor: 'primary.main' },
+                      }}
+                    />
+                  </>
+                )
+              })()}
             </Box>
             {/* Fila 2: Stock */}
             <Box sx={{ width: '100%' }}>
@@ -843,11 +836,7 @@ const ProductHeader = React.memo(({
           {(() => {
             // Si estamos verificando la propiedad del producto, mostrar loading
             if (checkingOwnership) {
-              return (
-                <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
-                  <CircularProgress size={24} />
-                </Box>
-              )
+              return <PurchaseActionsSkeleton withOffer={!isOwnProduct} />
             }
             
             // Verificar todas las condiciones para ocultar las purchase actions

@@ -252,7 +252,7 @@ CREATE TABLE public.notifications (
 CREATE TABLE public.offer_limits (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
   buyer_id uuid NOT NULL,
-  product_id uuid NOT NULL,
+  product_id uuid,
   supplier_id uuid NOT NULL,
   month_year text NOT NULL,
   product_offers_count integer DEFAULT 1 CHECK (product_offers_count >= 0),

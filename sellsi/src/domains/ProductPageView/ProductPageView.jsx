@@ -14,7 +14,7 @@ import {
   Chip,
   Divider,
   IconButton,
-  CircularProgress,
+  // CircularProgress eliminado para reemplazo por skeletons
   Breadcrumbs,
   Link,
   ThemeProvider,
@@ -61,6 +61,9 @@ const LoadingOverlay = React.lazy(() =>
 
 // Import regular para skeleton (necesario para fallback)
 import { ProductPageSkeleton } from './components/ProductPageSkeletons'
+import { ProductHeaderSkeleton } from './components/skeletons/ProductHeaderSkeleton'
+import { ProductInfoSkeleton } from './components/ProductPageSkeletons'
+import { ProductShippingSkeleton } from './components/skeletons/ProductShippingSkeleton'
 import { dashboardThemeCore } from '../../styles/dashboardThemeCore'
 import { SPACING_BOTTOM_MAIN } from '../../styles/layoutSpacing'
 
@@ -280,7 +283,7 @@ const ProductPageView = memo(({
 
           {/* 2. ProductHeader con prop de responsividad */}
           <Box sx={{ width: '100%' }}>
-            <Suspense fallback={<CircularProgress />}>
+            <Suspense fallback={<ProductHeaderSkeleton isMobile={isMobile} showTiers={!!(product?.priceTiers?.length)} showPurchaseActions={!product?.fromMyProducts && !product?.isFromSupplierMarketplace && !product?.isSupplier} />}>
               <ProductHeader
                 product={product}
                 selectedImageIndex={selectedImageIndex}
@@ -294,7 +297,7 @@ const ProductPageView = memo(({
           </Box>
 
           {/* 2.5. Descripción del Producto */}
-          <Suspense fallback={<CircularProgress />}>
+          <Suspense fallback={<ProductInfoSkeleton />}> 
             <ProductInfo
               product={product}
               isMobile={isMobile}
@@ -302,15 +305,17 @@ const ProductPageView = memo(({
           </Suspense>
 
           {/* 3. ProductShipping - Regiones de Despacho */}
-          <Box sx={{ width: '100%' }}>
-            <Suspense fallback={<CircularProgress />}>
-              <ProductShipping
-                product={product}
-                isMobile={isMobile}
-                isLoggedIn={isLoggedIn}
-              />
-            </Suspense>
-          </Box>
+          {isLoggedIn && (
+            <Box sx={{ width: '100%' }}>
+              <Suspense fallback={<ProductShippingSkeleton />}> 
+                <ProductShipping
+                  product={product}
+                  isMobile={isMobile}
+                  isLoggedIn={isLoggedIn}
+                />
+              </Suspense>
+            </Box>
+          )}
         </Box>
       </Box>
     </ThemeProvider>

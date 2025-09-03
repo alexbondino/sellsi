@@ -88,3 +88,64 @@ const localStorageMock = {
   clear: jest.fn(),
 };
 global.localStorage = localStorageMock;
+
+// ===== MOCK: featureFlags module =====
+// Some modules in the app use import.meta.env which Jest's CommonJS environment doesn't support.
+// Provide a simple manual mock for the flags module so tests that import it don't fail at parse time.
+jest.mock('../../src/shared/flags/featureFlags', () => ({
+  FeatureFlags: {},
+  ThumbTimings: {},
+}));
+
+// ===== MOCK: supabase client chain helper =====
+// Provide a minimal mock implementation that mirrors the `.from(...).select(...).eq(...).single()` chain
+// used by hooks such as useTechnicalSpecs. Tests can override behavior by spying on these functions.
+const createQueryMock = (result = { data: null, error: null }) => {
+  const chain = {
+    select: jest.fn(() => chain),
+    eq: jest.fn(() => chain),
+    single: jest.fn(() => Promise.resolve(result)),
+  };
+  return chain;
+};
+
+// Minimal inline mock for the supabase client chain used by the app.
+// Implemented entirely inside the factory to avoid referencing external variables (Jest rule).
+jest.mock('../../src/services/supabase', () => {
+  const createQuery = (result = { data: null, error: null }) => {
+    const chain = {
+      select: jest.fn(() => chain),
+      eq: jest.fn(() => chain),
+      single: jest.fn(() => Promise.resolve(result)),
+    };
+    return chain;
+  };
+
+  return {
+    supabase: {
+      from: jest.fn(() => createQuery()),
+    },
+  };
+});
+
+// ===== MOCK: user services =====
+// Some user/service modules use `import.meta.env`. Provide a safe stub so imports in tests don't parse import.meta.
+jest.mock('../../src/services/user', () => {
+  return {
+    // export commonly used methods as no-op or simple stubs
+    getUserProfile: jest.fn(() => Promise.resolve({ data: null, error: null })),
+    getUserById: jest.fn(() => Promise.resolve({ data: null, error: null })),
+    createOrder: jest.fn(() => Promise.resolve({ data: null, error: null })),
+    // spread any further exports as needed by tests; tests can override these mocks per-suite
+  };
+});
+
+// ===== MOCK: useProductPriceTiers hook =====
+// Prevent import.meta usage in the real hook from breaking Jest parsing.
+jest.mock('../../src/shared/hooks/product/useProductPriceTiers', () => ({
+  useProductPriceTiers: jest.fn(() => ({
+    tiers: [],
+    loading: false,
+    error: null,
+  })),
+}));

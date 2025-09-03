@@ -1,35 +1,9 @@
-fetch.ts:15   POST https://clbngnjetipglkikondm.supabase.co/rest/v1/rpc/create_notification 404 (Not Found)
-(anonymous) @ fetch.ts:15
-(anonymous) @ fetch.ts:46
-fulfilled @ fetch.ts:2
-Promise.then
-step @ fetch.ts:2
-(anonymous) @ fetch.ts:2
-__awaiter6 @ fetch.ts:2
-(anonymous) @ fetch.ts:34
-then @ PostgrestBuilder.ts:101
-notificationService.js:153  [NotificationService] ERROR creating offer notification: {code: 'PGRST202', details: 'Searched for the function public.create_notificati…r, but no matches were found in the schema cache.', hint: 'Perhaps you meant to call the function public.crea…ntext, p_supplier_id, p_title, p_type, p_user_id)', message: 'Could not find the function public.create_notifica…, p_title, p_type, p_user_id) in the schema cache'}
-overrideMethod @ hook.js:608
-notifyOfferReceived @ notificationService.js:153
-await in notifyOfferReceived
-createOffer @ offerStore.js:118
-await in createOffer
-handleSubmit @ OfferModal.jsx:178
-executeDispatch @ react-dom-client.development.js:16368
-runWithFiberInDEV @ react-dom-client.development.js:1519
-processDispatchQueue @ react-dom-client.development.js:16418
-(anonymous) @ react-dom-client.development.js:17016
-batchedUpdates$1 @ react-dom-client.development.js:3262
-dispatchEventForPluginEventSystem @ react-dom-client.development.js:16572
-dispatchEvent @ react-dom-client.development.js:20658
-dispatchDiscreteEvent @ react-dom-client.development.js:20626
-fetch.ts:15   POST https://clbngnjetipglkikondm.supabase.co/rest/v1/rpc/create_notification 404 (Not Found)
-(anonymous) @ fetch.ts:15
-(anonymous) @ fetch.ts:46
-fulfilled @ fetch.ts:2
-Promise.then
-step @ fetch.ts:2
-(anonymous) @ fetch.ts:2
-__awaiter6 @ fetch.ts:2
-(anonymous) @ fetch.ts:34
-then @ PostgrestBuilder.ts:101
+offerStore.js:15 [offerStoreDBG] validateOfferLimits input {buyerId: '20e7a348-66b6-4824-b059-2c67c5e6a49c', a: 'e9029faf-6c7a-44b9-80f2-e33bbef06948', b: '5a05b070-dee3-4d17-938e-73ce5649c70f'}
+offerStore.js:15 [offerStoreDBG] RPC count_monthly_offers params {buyerId: '20e7a348-66b6-4824-b059-2c67c5e6a49c', a: 'e9029faf-6c7a-44b9-80f2-e33bbef06948', b: '5a05b070-dee3-4d17-938e-73ce5649c70f'}
+offerStore.js:15 [offerStoreDBG] validateOfferLimits input {buyerId: '20e7a348-66b6-4824-b059-2c67c5e6a49c', a: 'e9029faf-6c7a-44b9-80f2-e33bbef06948', b: '5a05b070-dee3-4d17-938e-73ce5649c70f'}
+offerStore.js:15 [offerStoreDBG] RPC count_monthly_offers params {buyerId: '20e7a348-66b6-4824-b059-2c67c5e6a49c', a: 'e9029faf-6c7a-44b9-80f2-e33bbef06948', b: '5a05b070-dee3-4d17-938e-73ce5649c70f'}
+scheduler.development.js:14 [Violation] 'message' handler took 180ms
+offerStore.js:15 [offerStoreDBG] count_monthly_offers result 0 parsed 0 limit 3
+offerStore.js:15 [offerStoreDBG] validateOfferLimits returning {isValid: true, currentCount: 0, limit: 3, allowed: true, product_count: 0, …}
+offerStore.js:15 [offerStoreDBG] count_monthly_offers result 0 parsed 0 limit 3
+offerStore.js:15 [offerStoreDBG] validateOfferLimits returning {isValid: true, currentCount: 0, limit: 3, allowed: true, product_count: 0, …}
