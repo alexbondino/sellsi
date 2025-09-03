@@ -46,14 +46,25 @@ const formatPrice = (value) => {
   return '$' + new Intl.NumberFormat('es-CL').format(Math.round(num));
 };
 
+import { useThumbnailsBatch } from '../../../../../hooks/useThumbnailQueries';
+
 const OffersList = ({ offers = [], loading = false, error = null, cancelOffer, deleteOffer, onCancelOffer, onDeleteOffer, onAddToCart }) => {
   const [statusFilter, setStatusFilter] = React.useState('all');
+
+  // Preparar petición batch de thumbnails para los productos mostrados
+  const productIds = React.useMemo(() => (offers || []).map(o => (o.product?.id || o.product_id)).filter(Boolean), [offers]);
+  const thumbnailsQuery = useThumbnailsBatch(productIds);
+
+  // thumbnailsQuery is used below to resolve product thumbnails in batch
 
   const filtered = React.useMemo(() => {
     if (!offers) return [];
     if (statusFilter === 'all') return offers;
     return offers.filter(o => o.status === statusFilter);
   }, [offers, statusFilter]);
+
+  // Debugging: limit noisy logs by counting a few rows only
+  const debugCounterRef = React.useRef(0);
 
   const handleCancelOffer = async (offerId) => {
     try {
@@ -78,25 +89,19 @@ const OffersList = ({ offers = [], loading = false, error = null, cancelOffer, d
     console.log('Add to cart:', offer);
   };
 
-  // If there are no offers (and not loading/error), show friendly empty state like MyOrders
-  if (!loading && !error && (!filtered || filtered.length === 0)) {
+  const hasOffers = (offers && offers.length > 0);
+
+  if (!loading && !error && !hasOffers) {
     return (
       <Paper sx={{ p: { xs: 2, md: 4 }, textAlign: 'center' }}>
-        <Typography variant="h6" color="text.secondary">
-          No has enviado ofertas
-        </Typography>
-        <Typography
-          variant="body2"
-          color="text.secondary"
-          sx={{ mt: 1 }}
-        >
+        <Typography variant="h6" color="text.secondary">No has enviado ofertas</Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
           Envía ofertas a proveedores desde la ficha de producto. Aquí verás el estado de cada propuesta.
         </Typography>
       </Paper>
     );
   }
 
-  // Simple table similar to BuyerOrders but lightweight
   return (
     <TableContainer component={Paper} sx={{ p: 0, scrollbarGutter: 'stable' }}>
       <Box sx={{ display: 'flex', gap: 2, p: 2, alignItems: 'center' }}>
@@ -165,17 +170,39 @@ const OffersList = ({ offers = [], loading = false, error = null, cancelOffer, d
           </TableRow>
         </TableHead>
         <TableBody>
+          {filtered.length === 0 && (
+            <TableRow>
+              <TableCell colSpan={5} sx={{ textAlign: 'center', py: 6 }}>
+                <Typography variant="body2" color="text.secondary">No hay ofertas con este estado</Typography>
+              </TableCell>
+            </TableRow>
+          )}
           {filtered.map((o) => {
             const product = o.product || { name: o.product_name || 'Producto', thumbnail: null };
+            const pid = product.id || product.product_id;
+            const thumbRow = thumbnailsQuery.data && pid ? thumbnailsQuery.data[pid] : null;
+            // Prioridad: thumbnails.minithumb -> thumbnail_url transformed -> product.thumbnail -> product.imagen -> null
+            let avatarSrc = null;
+            if (thumbRow) {
+              try {
+                if (thumbRow.thumbnails && typeof thumbRow.thumbnails === 'object') avatarSrc = thumbRow.thumbnails.minithumb || null;
+                if (!avatarSrc && thumbRow.thumbnail_url) avatarSrc = thumbRow.thumbnail_url.replace('_desktop_320x260.jpg', '_minithumb_40x40.jpg');
+              } catch(_) {}
+            }
+            if (!avatarSrc) avatarSrc = product.thumbnail || product.imagen || product.image || null;
+
+            // no-op: avatarSrc calculated above
             return (
             <TableRow key={o.id} sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
               <TableCell sx={{ width: 100 }}>
                 <Avatar
                   variant="rounded"
-                  src={product.thumbnail || '/public/minilogo.png'}
+                  src={avatarSrc || undefined}
                   alt={product.name}
-                  sx={{ width: 80, height: 80 }}
-                />
+                  sx={{ width: 80, height: 80, bgcolor: avatarSrc ? 'transparent' : 'action.hover' }}
+                >
+                  {!avatarSrc && <ShoppingCartIcon />}
+                </Avatar>
               </TableCell>
               <TableCell>
                 <Typography variant="subtitle1" fontWeight={700}>{product.name}</Typography>

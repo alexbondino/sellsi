@@ -1,6 +1,7 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { ThemeProvider } from '@mui/material/styles';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { dashboardThemeCore } from '../../styles/dashboardThemeCore';
 import { mockOfferData } from '../mocks/supabaseMock';
 
@@ -36,14 +37,23 @@ jest.mock('@mui/material/useMediaQuery', () => ({
 import BuyerOffers from '../../domains/buyer/pages/offers/BuyerOffers';
 import OffersList from '../../domains/buyer/pages/offers/components/OffersList';
 
-// Wrapper para providers
-const TestWrapper = ({ children }) => (
-  <div data-testid="mock-router">
-    <ThemeProvider theme={dashboardThemeCore}>
-      {children}
-    </ThemeProvider>
-  </div>
-);
+// QueryClient por test para evitar estado compartido
+const createTestClient = () => new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } });
+
+// Wrapper para providers (incluye react-query)
+const TestWrapper = ({ children }) => {
+  const clientRef = React.useRef();
+  if (!clientRef.current) clientRef.current = createTestClient();
+  return (
+    <div data-testid="mock-router">
+      <QueryClientProvider client={clientRef.current}>
+        <ThemeProvider theme={dashboardThemeCore}>
+          {children}
+        </ThemeProvider>
+      </QueryClientProvider>
+    </div>
+  );
+};
 
 describe('BuyerOffers Component', () => {
   beforeEach(() => {
@@ -186,6 +196,30 @@ describe('OffersList Component', () => {
     });
   });
 
+  it('debería mostrar mensaje en la tabla cuando el filtro no devuelve resultados pero existen ofertas', async () => {
+    const offers = [
+      { ...mockOfferData.validOffer, id: '1', status: 'pending', product: { name: 'Product 1' } },
+      { ...mockOfferData.validOffer, id: '2', status: 'pending', product: { name: 'Product 2' } }
+    ];
+
+    render(
+      <TestWrapper>
+        <OffersList {...defaultProps} offers={offers} />
+      </TestWrapper>
+    );
+
+    // Cambiar a un estado que no existe (approved)
+    const select = screen.getByRole('combobox');
+    fireEvent.mouseDown(select);
+    const approvedOption = await screen.findAllByText('Aprobada');
+    fireEvent.click(approvedOption.find(el => el.getAttribute('role') === 'option') || approvedOption[0]);
+
+    // No debe mostrarse el mensaje global de "No has enviado ofertas" porque sí existen ofertas en otros estados
+    expect(screen.queryByText('No has enviado ofertas')).not.toBeInTheDocument();
+    // Debe mostrarse el mensaje contextual
+    expect(await screen.findByText('No hay ofertas con este estado')).toBeInTheDocument();
+  });
+
   it('debería mostrar tooltip informativo', async () => {
     // Render with at least one offer so the action tooltip is present
     const offers = [
@@ -300,8 +334,12 @@ describe('OffersList Component', () => {
       </TestWrapper>
     );
     
-    const avatar = screen.getByRole('img');
-    expect(avatar).toHaveAttribute('src', '/public/minilogo.png');
+  // Con la nueva lógica si no hay thumbnail se muestra un Avatar sin <img> y con el ícono de carrito
+  // Verificamos que NO exista imagen y que el ícono de fallback esté presente
+  const cartIcon = screen.getByTestId('ShoppingCartIcon');
+  expect(cartIcon).toBeInTheDocument();
+  const anyImg = document.querySelector('img');
+  expect(anyImg).toBeNull();
   });
 
   describe('Tiempo restante', () => {

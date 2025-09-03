@@ -104,18 +104,12 @@ const SupplierOffersList = ({ offers = [], setOffers, acceptOffer, rejectOffer, 
     }
   };
 
-  // If there are no offers and not loading/error, show friendly empty state matching MyOrders
-  if ((!filtered || filtered.length === 0)) {
+  const hasOffers = offers && offers.length > 0;
+  if (!hasOffers) {
     return (
       <Paper sx={{ p: { xs: 2, md: 4 }, textAlign: 'center' }}>
-        <Typography variant="h6" color="text.secondary">
-          Aún no tienes ofertas
-        </Typography>
-        <Typography
-          variant="body2"
-          color="text.secondary"
-          sx={{ mt: 1 }}
-        >
+        <Typography variant="h6" color="text.secondary">Aún no tienes ofertas</Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
           Cuando compradores te envíen propuestas, las verás aquí. Podrás aceptar o rechazar cada oferta.
         </Typography>
       </Paper>
@@ -187,6 +181,13 @@ const SupplierOffersList = ({ offers = [], setOffers, acceptOffer, rejectOffer, 
           </TableRow>
         </TableHead>
         <TableBody>
+          {filtered.length === 0 && (
+            <TableRow>
+              <TableCell colSpan={6} sx={{ textAlign: 'center', py: 6 }}>
+                <Typography variant="body2" color="text.secondary">No hay ofertas con este estado</Typography>
+              </TableCell>
+            </TableRow>
+          )}
           {filtered.map(o => {
             const total = o.quantity * o.price;
             // calcular tiempo restante si existe expires_at

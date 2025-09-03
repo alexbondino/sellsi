@@ -858,7 +858,8 @@
 <a name='L793'></a><a href='#L793'>793</a>
 <a name='L794'></a><a href='#L794'>794</a>
 <a name='L795'></a><a href='#L795'>795</a>
-<a name='L796'></a><a href='#L796'>796</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L796'></a><a href='#L796'>796</a>
+<a name='L797'></a><a href='#L797'>797</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -1081,6 +1082,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1003x</span>
 <span class="cline-any cline-yes">1003x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -1880,7 +1882,8 @@ export const useOfferStore = create((set, get) =&gt; ({
             status: computedStatus,
             price: o.price ?? <span class="branch-1 cbranch-no" title="branch not covered" >o.offered_price </span>?? <span class="branch-2 cbranch-no" title="branch not covered" >o.p_price,</span>
             quantity: o.quantity ?? <span class="branch-1 cbranch-no" title="branch not covered" >o.offered_quantity </span>?? <span class="branch-2 cbranch-no" title="branch not covered" >o.p_quantity,</span>
-            product: o.product || { name: o.product_name || 'Producto', thumbnail: o.product_thumbnail || null }
+            // Normalize product shape: ensure product.id/product_id exists for UI mapping
+            product: o.product || { name: o.product_name || 'Producto', thumbnail: o.product_thumbnail || null, id: o.product_id, product_id: o.product_id }
           };
         });
         // Fallback adicional para entorno de test: si no llegaron ofertas pero existen resultados mock con arrays
@@ -1898,7 +1901,7 @@ export const useOfferStore = create((set, get) =&gt; ({
                   status: (o.status === 'accepted' ? 'approved' : (o.status === 'pending' &amp;&amp; o.expires_at &amp;&amp; new Date(o.expires_at).getTime() &lt; Date.now()) ? 'expired' : o.status),
                   price: o.price ?? o.offered_price ?? o.p_price,
                   quantity: o.quantity ?? o.offered_quantity ?? o.p_quantity,
-                  product: o.product || { name: o.product_name || 'Producto', thumbnail: o.product_thumbnail || null }
+                  product: o.product || { name: o.product_name || 'Producto', thumbnail: o.product_thumbnail || null, id: o.product_id, product_id: o.product_id }
                 }));
 <span class="cstat-no" title="statement not covered" >                set({ buyerOffers: altNorm, loading: false, error: null });</span>
 <span class="cstat-no" title="statement not covered" >                return val.data;</span>
@@ -2004,7 +2007,7 @@ export const useOfferStore = create((set, get) =&gt; ({
         status: o.status === 'accepted' ? <span class="branch-0 cbranch-no" title="branch not covered" >'approved' </span>: o.status,
         price: o.price ?? <span class="branch-1 cbranch-no" title="branch not covered" >o.offered_price </span>?? <span class="branch-2 cbranch-no" title="branch not covered" >o.p_price,</span>
         quantity: o.quantity ?? <span class="branch-1 cbranch-no" title="branch not covered" >o.offered_quantity </span>?? <span class="branch-2 cbranch-no" title="branch not covered" >o.p_quantity,</span>
-  product: o.product || { name: o.product_name || 'Producto', thumbnail: o.product_thumbnail || null, stock: o.product?.stock ?? 999999 },
+        product: o.product || { name: o.product_name || 'Producto', thumbnail: o.product_thumbnail || null, stock: o.product?.stock ?? 999999, id: o.product_id, product_id: o.product_id },
         buyer: o.buyer || { name: o.buyer_name || 'Comprador' }
       }));
       // Fallback similar a buyerOffers para entorno de test
@@ -2017,12 +2020,12 @@ export const useOfferStore = create((set, get) =&gt; ({
             const val = <span class="cstat-no" title="statement not covered" >r.value &amp;&amp; (typeof r.value.then === 'function' ? null : r.value);</span>
 <span class="cstat-no" title="statement not covered" >            if (val &amp;&amp; Array.isArray(val.data) &amp;&amp; val.data.length &gt; 0) {</span>
 <span class="cstat-no" title="statement not covered" >              __logOfferDebug('supplierOffers fallback adopting mock result array length', val.data.length);</span>
-              const altNorm = <span class="cstat-no" title="statement not covered" >val.data.map(<span class="fstat-no" title="function not covered" >o </span>=&gt; (<span class="cstat-no" title="statement not covered" >{</span></span>
+                const altNorm = <span class="cstat-no" title="statement not covered" >val.data.map(<span class="fstat-no" title="function not covered" >o </span>=&gt; (<span class="cstat-no" title="statement not covered" >{</span></span>
                 ...o,
                 status: o.status === 'accepted' ? 'approved' : o.status,
                 price: o.price ?? o.offered_price ?? o.p_price,
                 quantity: o.quantity ?? o.offered_quantity ?? o.p_quantity,
-                product: o.product || { name: o.product_name || 'Producto', thumbnail: o.product_thumbnail || null },
+                product: o.product || { name: o.product_name || 'Producto', thumbnail: o.product_thumbnail || null, id: o.product_id, product_id: o.product_id },
                 buyer: o.buyer || { name: o.buyer_name || 'Comprador' }
               }));
 <span class="cstat-no" title="statement not covered" >              set({ supplierOffers: altNorm, loading: false });</span>
@@ -2455,7 +2458,7 @@ try {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-09-03T21:03:20.448Z
+                at 2025-09-03T21:25:41.233Z
             </div>
         <script src="../prettify.js"></script>
         <script>

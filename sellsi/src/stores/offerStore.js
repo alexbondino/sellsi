@@ -225,7 +225,8 @@ export const useOfferStore = create((set, get) => ({
             status: computedStatus,
             price: o.price ?? o.offered_price ?? o.p_price,
             quantity: o.quantity ?? o.offered_quantity ?? o.p_quantity,
-            product: o.product || { name: o.product_name || 'Producto', thumbnail: o.product_thumbnail || null }
+            // Normalize product shape: ensure product.id/product_id exists for UI mapping
+            product: o.product || { name: o.product_name || 'Producto', thumbnail: o.product_thumbnail || null, id: o.product_id, product_id: o.product_id }
           };
         });
         // Fallback adicional para entorno de test: si no llegaron ofertas pero existen resultados mock con arrays
@@ -243,7 +244,7 @@ export const useOfferStore = create((set, get) => ({
                   status: (o.status === 'accepted' ? 'approved' : (o.status === 'pending' && o.expires_at && new Date(o.expires_at).getTime() < Date.now()) ? 'expired' : o.status),
                   price: o.price ?? o.offered_price ?? o.p_price,
                   quantity: o.quantity ?? o.offered_quantity ?? o.p_quantity,
-                  product: o.product || { name: o.product_name || 'Producto', thumbnail: o.product_thumbnail || null }
+                  product: o.product || { name: o.product_name || 'Producto', thumbnail: o.product_thumbnail || null, id: o.product_id, product_id: o.product_id }
                 }));
                 set({ buyerOffers: altNorm, loading: false, error: null });
                 return val.data;
@@ -349,7 +350,7 @@ export const useOfferStore = create((set, get) => ({
         status: o.status === 'accepted' ? 'approved' : o.status,
         price: o.price ?? o.offered_price ?? o.p_price,
         quantity: o.quantity ?? o.offered_quantity ?? o.p_quantity,
-  product: o.product || { name: o.product_name || 'Producto', thumbnail: o.product_thumbnail || null, stock: o.product?.stock ?? 999999 },
+        product: o.product || { name: o.product_name || 'Producto', thumbnail: o.product_thumbnail || null, stock: o.product?.stock ?? 999999, id: o.product_id, product_id: o.product_id },
         buyer: o.buyer || { name: o.buyer_name || 'Comprador' }
       }));
       // Fallback similar a buyerOffers para entorno de test
@@ -362,12 +363,12 @@ export const useOfferStore = create((set, get) => ({
             const val = r.value && (typeof r.value.then === 'function' ? null : r.value);
             if (val && Array.isArray(val.data) && val.data.length > 0) {
               __logOfferDebug('supplierOffers fallback adopting mock result array length', val.data.length);
-              const altNorm = val.data.map(o => ({
+                const altNorm = val.data.map(o => ({
                 ...o,
                 status: o.status === 'accepted' ? 'approved' : o.status,
                 price: o.price ?? o.offered_price ?? o.p_price,
                 quantity: o.quantity ?? o.offered_quantity ?? o.p_quantity,
-                product: o.product || { name: o.product_name || 'Producto', thumbnail: o.product_thumbnail || null },
+                product: o.product || { name: o.product_name || 'Producto', thumbnail: o.product_thumbnail || null, id: o.product_id, product_id: o.product_id },
                 buyer: o.buyer || { name: o.buyer_name || 'Comprador' }
               }));
               set({ supplierOffers: altNorm, loading: false });
