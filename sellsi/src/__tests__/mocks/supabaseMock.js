@@ -15,6 +15,25 @@ export const mockSupabase = {
     switch (fnName) {
       case 'count_monthly_offers':
         return Promise.resolve({ data: 1, error: null });
+      case 'validate_offer_limits': {
+        const { p_buyer_id, p_supplier_id, p_product_id } = args || {};
+        const month = new Date().toISOString().slice(0,7);
+        const prodKey = `${p_buyer_id}|${p_product_id}|${month}`;
+        const suppKey = `${p_buyer_id}|${p_supplier_id}|${month}`;
+        const product_count = __offerLimitsState.productCounts.get(prodKey) || 0;
+        const supplier_count = __offerLimitsState.supplierCounts.get(suppKey) || 0;
+        const product_limit = 3;
+        const supplier_limit = 5;
+        const allowed = product_count < product_limit && supplier_count < supplier_limit;
+        return Promise.resolve({ data: {
+          allowed,
+          product_count,
+            supplier_count,
+            product_limit,
+            supplier_limit,
+            reason: allowed ? null : (product_count >= product_limit ? 'Se alcanzó el límite mensual de ofertas (producto)' : 'Se alcanzó el límite mensual de ofertas con este proveedor')
+        }, error: null });
+      }
       case 'create_offer': {
         // Simular nueva lógica: incrementa conteos producto y proveedor (NULL) sin duplicar
         const { p_buyer_id, p_supplier_id, p_product_id } = args || {};

@@ -32,8 +32,8 @@ describe('Offer System Edge Cases', () => {
 
     it('debería manejar precios con decimales', async () => {
       mockSupabase.rpc
-        .mockResolvedValueOnce({ data: 1, error: null }) // count_monthly_offers
-        .mockResolvedValueOnce({ data: { id: 'offer_123' }, error: null }); // create_offer
+        .mockResolvedValueOnce({ data: { allowed: true, product_count: 1, supplier_count: 0, product_limit: 3, supplier_limit: 5, reason: null }, error: null }) // validate_offer_limits
+        .mockResolvedValueOnce({ data: { success: true, offer_id: 'offer_123' }, error: null }); // create_offer
       
       const { result } = renderHook(() => useOfferStore());
       
@@ -87,9 +87,9 @@ describe('Offer System Edge Cases', () => {
     it('debería manejar múltiples ofertas simultáneas correctamente', async () => {
       // Mock: Primera oferta pasa validación, segunda no
       mockSupabase.rpc
-        .mockResolvedValueOnce({ data: 1, error: null }) // Primera validación OK
-        .mockResolvedValueOnce({ data: { id: 'offer_1' }, error: null }) // Primera creación OK
-        .mockResolvedValueOnce({ data: 3, error: null }); // Segunda validación FAIL (límite alcanzado)
+        .mockResolvedValueOnce({ data: { allowed: true, product_count: 1, supplier_count: 0, product_limit: 3, supplier_limit: 5, reason: null }, error: null }) // Primera validación OK
+        .mockResolvedValueOnce({ data: { success: true, offer_id: 'offer_1' }, error: null }) // Primera creación OK
+        .mockResolvedValueOnce({ data: { allowed: false, product_count: 3, supplier_count: 0, product_limit: 3, supplier_limit: 5, reason: 'Se alcanzó el límite mensual de ofertas (producto)' }, error: null }); // Segunda validación FAIL
       
       const { result } = renderHook(() => useOfferStore());
       
@@ -162,7 +162,7 @@ describe('Offer System Edge Cases', () => {
         product: { name: `Product ${i}` }
       }));
       
-      mockSupabase.rpc.mockResolvedValueOnce({ data: largeOfferList, error: null });
+  mockSupabase.rpc.mockResolvedValueOnce({ data: largeOfferList, error: null }); // get_buyer_offers
       
       const { result } = renderHook(() => useOfferStore());
       
@@ -250,8 +250,8 @@ describe('Offer System Edge Cases', () => {
 
     it('debería sanitizar datos de entrada', async () => {
       mockSupabase.rpc
-        .mockResolvedValueOnce({ data: 1, error: null })
-        .mockResolvedValueOnce({ data: { id: 'offer_123' }, error: null });
+        .mockResolvedValueOnce({ data: { allowed: true, product_count: 1, supplier_count: 0, product_limit: 3, supplier_limit: 5, reason: null }, error: null })
+        .mockResolvedValueOnce({ data: { success: true, offer_id: 'offer_123' }, error: null });
       
       const { result } = renderHook(() => useOfferStore());
       
@@ -278,8 +278,8 @@ describe('Offer System Edge Cases', () => {
   describe('Condiciones de carrera en UI', () => {
     it('debería prevenir doble submit de ofertas', async () => {
       mockSupabase.rpc
-        .mockResolvedValueOnce({ data: 1, error: null })
-        .mockImplementation(() => new Promise(resolve => setTimeout(() => resolve({ data: { id: 'offer_123' }, error: null }), 1000)));
+        .mockResolvedValueOnce({ data: { allowed: true, product_count: 1, supplier_count: 0, product_limit: 3, supplier_limit: 5, reason: null }, error: null })
+        .mockImplementation(() => new Promise(resolve => setTimeout(() => resolve({ data: { success: true, offer_id: 'offer_123' }, error: null }), 1000)));
       
       const { result } = renderHook(() => useOfferStore());
       
@@ -360,7 +360,7 @@ describe('Offer System Edge Cases', () => {
       });
       
       // Debería funcionar correctamente independientemente de la zona horaria
-      expect(mockSupabase.rpc).toHaveBeenCalledWith('count_monthly_offers', expect.any(Object));
+  expect(mockSupabase.rpc).toHaveBeenCalledWith('validate_offer_limits', expect.any(Object));
       
       // Restaurar Date original
       global.Date = originalDate;

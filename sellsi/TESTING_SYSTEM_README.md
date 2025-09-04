@@ -169,3 +169,47 @@ npm run test:e2e:ui
 ✅ **Listo para integración continua (CI/CD)**
 
 El sistema de ofertas ahora tiene **cobertura completa de testing** desde tests unitarios hasta E2E, garantizando calidad y confiabilidad en producción.
+
+---
+
+## 🆕 Actualizaciones (Sept 2025)
+
+### 1. Harness Directo para Acciones
+Para escenarios de integración (aceptar / cancelar) reemplazamos flujos largos de RPC encadenados por un Harness que inyecta `offers` directamente en `SupplierOffersList` u `OffersList`. Esto reduce dependencias en hooks asíncronos y hace las pruebas deterministas.
+
+### 2. Helper `renderWithProviders`
+Archivo: `src/__tests__/testUtils/renderWithProviders.js`
+Incluye Router + React Query + Theme. Úsalo en nuevos tests:
+```js
+import { renderWithProviders } from '../testUtils/renderWithProviders';
+renderWithProviders(<MyComponent />);
+```
+
+### 3. Nuevo RPC de Límites y Caso supplier_limit
+`validate_offer_limits` devuelve:
+```json
+{ "allowed": true, "product_count": 1, "supplier_count": 2, "product_limit": 3, "supplier_limit": 5, "reason": null }
+```
+Para simular límite del proveedor alcanzado (aunque el del producto no):
+```js
+mockSupabase.rpc.mockResolvedValueOnce({
+  data: { allowed: false, product_count: 2, supplier_count: 5, product_limit: 3, supplier_limit: 5, reason: 'Se alcanzó el límite mensual de ofertas (proveedor)' },
+  error: null
+});
+```
+
+### 4. Bloqueo de Oferta Duplicada en `OfferModal`
+Si el comprador ya tiene una oferta `pending` para el mismo `product_id`, el modal:
+* Muestra un `<Alert data-testid="pending-offer-block" />`
+* Deshabilita inputs y botón "Enviar Oferta"
+
+### 5. Nuevos Tests
+Archivo: `offerModal.restrictions.test.js`
+* Verifica bloqueo por oferta pendiente existente
+* Valida mensaje de límite alcanzado por supplier (`supplier_count == supplier_limit`)
+
+### 6. Recomendaciones de Uso
+* Preferir Harness para pruebas que sólo necesitan validar transición de estado UI + llamada RPC simple.
+* Usar el patrón de colas RPC (queue) sólo cuando se ejercen cadenas multi-fase (creación + refetch + transición de estado dependiente de backend).
+
+---

@@ -260,9 +260,9 @@ CREATE TABLE public.offer_limits (
   created_at timestamp with time zone DEFAULT now(),
   updated_at timestamp with time zone DEFAULT now(),
   CONSTRAINT offer_limits_pkey PRIMARY KEY (id),
+  CONSTRAINT offer_limits_supplier_id_fkey FOREIGN KEY (supplier_id) REFERENCES public.users(user_id),
   CONSTRAINT offer_limits_buyer_id_fkey FOREIGN KEY (buyer_id) REFERENCES public.users(user_id),
-  CONSTRAINT offer_limits_product_id_fkey FOREIGN KEY (product_id) REFERENCES public.products(productid),
-  CONSTRAINT offer_limits_supplier_id_fkey FOREIGN KEY (supplier_id) REFERENCES public.users(user_id)
+  CONSTRAINT offer_limits_product_id_fkey FOREIGN KEY (product_id) REFERENCES public.products(productid)
 );
 CREATE TABLE public.offers (
   id uuid NOT NULL DEFAULT gen_random_uuid(),

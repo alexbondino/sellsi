@@ -554,41 +554,55 @@ export const useOfferStore = create((set, get) => ({
       [buyerId, supplierId, productId] = args;
       try { if (typeof console !== 'undefined') console.warn('[offerStore] validateOfferLimits usando firma DEPRECATED. Actualiza a validateOfferLimits({ buyerId, productId, supplierId })'); } catch(_) {}
     }
-    const limit = 3; // Límite mensual fijo usado por tests de integración
     try {
       __logOfferDebug('validateOfferLimits input', { buyerId, productId, supplierId });
       if (!buyerId || !productId || !supplierId) {
         throw new Error('Parámetros inválidos para validateOfferLimits');
       }
-      const res = await supabase.rpc('count_monthly_offers', {
+      // Nueva lógica: llamar RPC validate_offer_limits que ya contempla límites product/supplier
+      const res = await supabase.rpc('validate_offer_limits', {
         p_buyer_id: buyerId,
-        p_product_id: productId,
-        p_supplier_id: supplierId
+        p_supplier_id: supplierId,
+        p_product_id: productId
       });
       if (res.error) throw new Error(res.error.message);
-      const current = typeof res.data === 'number' ? res.data : 0;
-      __logOfferDebug('count_monthly_offers result', res.data, 'parsed', current, 'limit', limit);
+      const data = res.data || {};
+      // backend retorna: allowed, product_count, supplier_count, product_limit, supplier_limit, reason
+      const productCount = Number(data.product_count) || 0;
+      const supplierCount = Number(data.supplier_count) || 0;
+      const productLimit = Number(data.product_limit) || 3;
+      const supplierLimit = Number(data.supplier_limit) || 5;
+      const allowed = !!data.allowed;
+      const reason = data.reason || (productCount >= productLimit
+        ? 'Se alcanzó el límite mensual de ofertas (producto)'
+        : (supplierCount >= supplierLimit ? 'Se alcanzó el límite mensual de ofertas con este proveedor' : undefined));
+
       const base = {
-        isValid: current < limit,
-        currentCount: current,
-        limit,
-        allowed: current < limit,
-        product_count: current,
-        supplier_count: 0,
-        reason: current >= limit ? 'Se alcanzó el límite mensual de ofertas (límite mensual)' : undefined
+        isValid: allowed,
+        allowed,
+        currentCount: productCount, // compat tests antiguos (interpretaban count principal)
+        product_count: productCount,
+        supplier_count: supplierCount,
+        limit: productLimit,       // compat (antes se usaba single limit)
+        product_limit: productLimit,
+        supplier_limit: supplierLimit,
+        reason
       };
-      __logOfferDebug('validateOfferLimits returning', base);
+      __logOfferDebug('validateOfferLimits returning (normalized)', base);
       return base;
     } catch (e) {
       __logOfferDebug('validateOfferLimits error', e?.message || String(e));
       try { if (typeof console !== 'undefined') console.warn('[offerStore] validateOfferLimits RPC error:', e?.message || e); } catch(_) {}
+      // fallback permisivo
       return {
         isValid: true,
-        currentCount: undefined,
-        limit,
         allowed: true,
+        currentCount: undefined,
         product_count: undefined,
-        supplier_count: 0,
+        supplier_count: undefined,
+        limit: 3,
+        product_limit: 3,
+        supplier_limit: 5,
         reason: 'No se pudo validar límites',
         error: 'Error al validar límites: ' + (e?.message || String(e))
       };

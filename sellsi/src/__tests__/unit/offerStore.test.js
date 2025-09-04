@@ -36,7 +36,14 @@ describe('offerStore', () => {
 
   describe('validateOfferLimits', () => {
     it('debería validar límites correctamente cuando no hay ofertas previas', async () => {
-      mockSupabase.rpc.mockResolvedValueOnce({ data: 0, error: null });
+      mockSupabase.rpc.mockResolvedValueOnce({ data: {
+        allowed: true,
+        product_count: 0,
+        supplier_count: 0,
+        product_limit: 3,
+        supplier_limit: 5,
+        reason: null
+      }, error: null });
       
       const { result } = renderHook(() => useOfferStore());
       
@@ -48,15 +55,22 @@ describe('offerStore', () => {
       expect(validation.isValid).toBe(true);
       expect(validation.currentCount).toBe(0);
       expect(validation.limit).toBe(3);
-      expect(mockSupabase.rpc).toHaveBeenCalledWith('count_monthly_offers', {
+      expect(mockSupabase.rpc).toHaveBeenCalledWith('validate_offer_limits', expect.objectContaining({
         p_buyer_id: 'buyer_123',
         p_product_id: 'prod_456',
         p_supplier_id: 'supplier_789'
-      });
+      }));
     });
 
     it('debería rechazar cuando se excede el límite mensual', async () => {
-      mockSupabase.rpc.mockResolvedValueOnce({ data: 3, error: null });
+      mockSupabase.rpc.mockResolvedValueOnce({ data: {
+        allowed: false,
+        product_count: 3,
+        supplier_count: 0,
+        product_limit: 3,
+        supplier_limit: 5,
+        reason: 'Se alcanzó el límite mensual de ofertas (producto)'
+      }, error: null });
       
       const { result } = renderHook(() => useOfferStore());
       
@@ -71,7 +85,7 @@ describe('offerStore', () => {
     });
 
     it('debería manejar errores de la base de datos', async () => {
-      mockSupabase.rpc.mockResolvedValueOnce({ data: null, error: { message: 'Database error' } });
+  mockSupabase.rpc.mockResolvedValueOnce({ data: null, error: { message: 'Database error' } });
       
       const { result } = renderHook(() => useOfferStore());
       
@@ -88,10 +102,10 @@ describe('offerStore', () => {
 
   describe('createOffer', () => {
     it('debería crear una oferta exitosamente', async () => {
-      // Mock validación de límites exitosa
-      mockSupabase.rpc.mockResolvedValueOnce({ data: 1, error: null });
-      // Mock creación de oferta exitosa
-      mockSupabase.rpc.mockResolvedValueOnce({ data: { id: 'new_offer_123' }, error: null });
+  // 1) validate_offer_limits
+  mockSupabase.rpc.mockResolvedValueOnce({ data: { allowed: true, product_count: 0, supplier_count: 0, product_limit: 3, supplier_limit: 5, reason: null }, error: null });
+  // 2) create_offer
+  mockSupabase.rpc.mockResolvedValueOnce({ data: { success: true, offer_id: 'new_offer_123' }, error: null });
       
       const { result } = renderHook(() => useOfferStore());
       
@@ -107,7 +121,7 @@ describe('offerStore', () => {
       
       expect(result.current.loading).toBe(false);
       expect(result.current.error).toBe(null);
-      expect(mockSupabase.rpc).toHaveBeenCalledWith('create_offer', expect.objectContaining({
+  expect(mockSupabase.rpc).toHaveBeenCalledWith('create_offer', expect.objectContaining({
         p_product_id: 'prod_456',
         p_supplier_id: 'supplier_789',
         p_quantity: 5,
@@ -117,8 +131,8 @@ describe('offerStore', () => {
     });
 
     it('debería fallar cuando se excede el límite de ofertas', async () => {
-      // Primera RPC: count_monthly_offers devuelve 3 (límite alcanzado)
-      mockSupabase.rpc.mockResolvedValueOnce({ data: 3, error: null });
+  // validate_offer_limits devuelve límite alcanzado
+  mockSupabase.rpc.mockResolvedValueOnce({ data: { allowed: false, product_count: 3, supplier_count: 0, product_limit: 3, supplier_limit: 5, reason: 'Se alcanzó el límite mensual de ofertas (producto)' }, error: null });
       const { result } = renderHook(() => useOfferStore());
       await act(async () => {
         await result.current.createOffer({
@@ -129,9 +143,9 @@ describe('offerStore', () => {
         });
       });
       expect(result.current.error).toMatch(/límite mensual/i);
-      // Solo debe haberse llamado la RPC de conteo, no la creación
-      expect(mockSupabase.rpc).toHaveBeenCalledTimes(1);
-      expect(mockSupabase.rpc.mock.calls[0][0]).toBe('count_monthly_offers');
+  // Solo validate_offer_limits
+  expect(mockSupabase.rpc).toHaveBeenCalledTimes(1);
+  expect(mockSupabase.rpc.mock.calls[0][0]).toBe('validate_offer_limits');
     });
 
     it('debería validar datos de entrada', async () => {

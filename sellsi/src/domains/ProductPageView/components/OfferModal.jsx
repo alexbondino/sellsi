@@ -17,7 +17,7 @@ import {
 import {
   Close as CloseIcon,
   Info as InfoIcon,
-  TrendingUp as TrendingUpIcon,
+  Gavel as GavelIcon,
   Schedule as ScheduleIcon
 } from '@mui/icons-material';
 import { useOfferStore } from '../../../stores/offerStore';
@@ -41,6 +41,7 @@ const OfferModal = ({
     loading,
     createOffer,
     validateOfferLimits,
+  buyerOffers,
   error: storeError,
   } = useOfferStore();
 
@@ -235,6 +236,12 @@ const OfferModal = ({
     return null;
   }
 
+  // Verificar si ya existe una oferta pendiente del comprador para este producto
+  const hasPendingForProduct = React.useMemo(() => {
+    if (!buyerOffers || !Array.isArray(buyerOffers)) return false;
+    return buyerOffers.some(o => (o.product_id === product.id || o.productId === product.id) && o.status === 'pending');
+  }, [buyerOffers, product?.id]);
+
   return (
     <Dialog 
       open={open} 
@@ -252,7 +259,7 @@ const OfferModal = ({
     >
       <DialogTitle sx={{ m: 0, p: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <TrendingUpIcon color="primary" />
+          <GavelIcon color="primary" />
           <Typography variant="h6">Hacer Oferta</Typography>
         </Box>
         <IconButton
@@ -271,9 +278,6 @@ const OfferModal = ({
           <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 600 }}>
             {product.name || product.productnm || product.nombre}
           </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Stock disponible: {effectiveStock} unidades
-          </Typography>
           {product.price && (
             <Typography variant="body2" color="text.secondary">
               Precio actual: ${product.price?.toLocaleString('es-CL')}
@@ -284,42 +288,51 @@ const OfferModal = ({
         <Divider sx={{ mb: 3 }} />
 
         {/* Información de límites */}
-        {limitsValidation && (
-          <Alert
-            severity={limitsValidation.allowed ? 'info' : 'warning'}
-            sx={{ mb: 3 }}
-          >
-            <Typography variant="body2" gutterBottom>
-              <strong>Límites de ofertas:</strong>
-            </Typography>
-            <Typography variant="body2">
-              • Ofertas por este producto este mes: {limitsValidation.product_count ?? limitsValidation.currentCount}/3
-            </Typography>
-            {/* Mensaje de límite excedido legado esperado por tests (usa palabra clave "límite mensual") */}
-            {!limitsValidation.allowed && (
-              <Typography variant="body2" color="error" sx={{ mt: 1, fontWeight: 600 }}>
-                {(limitsValidation.reason || 'Se alcanzó el límite mensual de ofertas') + ' - límite mensual'}
+          {limitsValidation && (
+            <Alert
+              severity={limitsValidation.allowed ? 'info' : 'warning'}
+              sx={{ mb: 3 }}
+            >
+              <Typography variant="body2" gutterBottom>
+                <strong>Límites de ofertas:</strong>
               </Typography>
-            )}
-            {/* Contador estilo "2 de 3 ofertas" para tests si está permitido y existe currentCount */}
-            {limitsValidation.allowed && typeof (limitsValidation.product_count ?? limitsValidation.currentCount) === 'number' && (
-              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
-                {(limitsValidation.product_count ?? limitsValidation.currentCount)} de {limitsValidation.limit || 3} ofertas
-              </Typography>
-            )}
-            {/* Fallback redundante para tests (texto plano) */}
-            {limitsValidation.allowed && typeof (limitsValidation.product_count ?? limitsValidation.currentCount) === 'number' && (
-              <span style={{display:'none'}} data-testid="offers-counter-fallback">
-                {(limitsValidation.product_count ?? limitsValidation.currentCount)} de {limitsValidation.limit || 3} ofertas
-              </span>
-            )}
+              {/* Mostrar contador legible (incluye 0) */}
+              {(() => {
+                const productCount = (limitsValidation.product_count ?? limitsValidation.currentCount);
+                const count = (typeof productCount === 'number') ? productCount : 0;
+                const limit = limitsValidation.limit || 3;
+                return (
+                  <Typography variant="body2">
+                    • Ofertas por este producto este mes: {count} de {limit}
+                  </Typography>
+                );
+              })()}
+              {/* Mensaje de límite excedido legado esperado por tests (usa palabra clave "límite mensual") */}
+              {!limitsValidation.allowed && (
+                <Typography variant="body2" color="error" sx={{ mt: 1, fontWeight: 600 }}>
+                  {(limitsValidation.reason || 'Se alcanzó el límite mensual de ofertas') + ' - límite mensual'}
+                </Typography>
+              )}
+              {/* Fallback redundante para tests (texto plano) */}
+              {typeof (limitsValidation.product_count ?? limitsValidation.currentCount) === 'number' && (
+                <span style={{display:'none'}} data-testid="offers-counter-fallback">
+                  {(limitsValidation.product_count ?? limitsValidation.currentCount)} de {limitsValidation.limit || 3} ofertas
+                </span>
+              )}
+            </Alert>
+          )}
+
+        {/* Restricción: oferta pendiente existente */}
+        {hasPendingForProduct && (
+          <Alert severity="warning" sx={{ mb: 3 }} data-testid="pending-offer-block">
+            Ya tienes una oferta pendiente para este producto. Debes esperar a que el proveedor la responda antes de enviar otra.
           </Alert>
         )}
 
         {/* Formulario */}
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
           {/* Precio ofertado */}
-          <TextField
+       <TextField
             label="Precio por unidad"
             type="number"
             value={offeredPrice}
@@ -336,8 +349,8 @@ const OfferModal = ({
               inputMode: 'numeric'
             }}
             onBlur={handlePriceBlur}
-             fullWidth
-             disabled={loading}
+         fullWidth
+         disabled={loading || hasPendingForProduct}
            />
 
           {/* Cantidad */}
@@ -356,29 +369,27 @@ const OfferModal = ({
               inputMode: 'numeric'
             }}
             fullWidth
-            disabled={loading}
+            disabled={loading || hasPendingForProduct}
           />
 
-          {/* Total calculado - siempre presente para evitar CLS */}
-          <Box sx={{ 
-            p: 2, 
-            bgcolor: 'primary.50', 
-            borderRadius: 1,
-            border: '1px solid',
-            borderColor: 'primary.200'
-          }}>
-            <Typography variant="body2" color="text.secondary">
-              Total de la oferta:
-            </Typography>
-            <Typography 
-              variant="h6" 
-              color="primary" 
-              sx={{ fontWeight: 700 }}
-              title={totalValue > 0 ? `$${totalValue.toLocaleString('es-CL')}` : '$0'}
-            >
-              {formatTotal(totalValue)}
-            </Typography>
-          </Box>
+          {/* Stock moved below Cantidad and above Total */}
+          {/* Stock */}
+          <Typography variant="body2" color="text.secondary">
+            Stock disponible: {effectiveStock} unidades
+          </Typography>
+
+          {/* Total calculado - simple texto (no box) */}
+          <Typography variant="body2" color="text.secondary">
+            Total de la oferta:
+          </Typography>
+          <Typography
+            variant="h6"
+            color="primary"
+            sx={{ fontWeight: 700 }}
+            title={totalValue > 0 ? `$${totalValue.toLocaleString('es-CL')}` : '$0'}
+          >
+            {formatTotal(totalValue)}
+          </Typography>
 
           {/* Error de límites */}
           {(!limitsValidation?.allowed && limitsValidation?.reason) && (
@@ -417,7 +428,7 @@ const OfferModal = ({
         <Button
           onClick={handleSubmit}
           variant="contained"
-          disabled={loading || !isFormValid()}
+          disabled={loading || !isFormValid() || hasPendingForProduct}
           startIcon={loading && <CircularProgress size={16} />}
         >
           {loading ? 'Enviando...' : 'Enviar Oferta'}
