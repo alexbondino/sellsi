@@ -29,6 +29,7 @@ import { supabase } from '../../../services/supabase';
 
 const AddToCart = ({
   product,
+  offer = null,
   variant = 'button', // 'button' | 'icon' | 'text'
   size = 'medium',
   fullWidth = false,
@@ -236,6 +237,7 @@ const AddToCart = ({
         onClose={handleCloseModal}
         onAddToCart={handleAddToCart}
         product={product}
+  offer={offer}
         initialQuantity={initialQuantity}
         userRegion={userRegion}
         isLoadingUserProfile={isLoadingUserProfile}

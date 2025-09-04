@@ -25,14 +25,20 @@ if (typeof process !== 'undefined' && (process.env.JEST_WORKER_ID || process.env
   } catch (_) {}
 }
 import { notificationService } from '../domains/notifications/services/notificationService';
+// Carga perezosa de cart store para eliminar items asociados a ofertas inválidas
+let useCartStoreRef = null;
+try {
+  useCartStoreRef = require('../shared/stores/cart/cartStore').default;
+} catch(_) {}
 
 // Estados de ofertas
 export const OFFER_STATES = {
   PENDING: 'pending',      // Esperando respuesta (48h)
-  ACCEPTED: 'accepted',    // Aceptada, 24h para comprar
+  ACCEPTED: 'accepted',    // Aceptada, 24h para pagar
+  RESERVED: 'reserved',    // Agregada al carrito (antes purchased)
+  PAID: 'paid',            // Pago confirmado
   REJECTED: 'rejected',    // Rechazada por proveedor
-  EXPIRED: 'expired',      // Expirada por tiempo
-  PURCHASED: 'purchased'   // Compra completada
+  EXPIRED: 'expired'       // Expirada por tiempo
 };
 
 export const useOfferStore = create((set, get) => ({
@@ -41,6 +47,28 @@ export const useOfferStore = create((set, get) => ({
   supplierOffers: [],
   loading: false,
   error: null,
+  // Limpia del carrito items cuyos offer_id correspondan a ofertas expiradas/rechazadas/canceladas
+  _pruneInvalidOfferCartItems: () => {
+    try {
+      if (!useCartStoreRef) return;
+      const cartState = useCartStoreRef.getState();
+      const cartItems = cartState?.items || [];
+      if (cartItems.length === 0) return;
+      const offers = get().buyerOffers || [];
+      const invalid = new Set(['expired', 'rejected', 'cancelled']);
+      const invalidOfferIds = new Set(offers.filter(o => invalid.has(o.status)).map(o => o.id));
+      if (invalidOfferIds.size === 0) return;
+      const remaining = cartItems.filter(ci => !ci.offer_id || !invalidOfferIds.has(ci.offer_id));
+      if (remaining.length !== cartItems.length) {
+        if (typeof cartState.setItems === 'function') {
+          cartState.setItems(remaining);
+        } else {
+          useCartStoreRef.setState({ items: remaining });
+        }
+        __logOfferDebug('Pruned cart items for invalid offers', { removed: cartItems.length - remaining.length, invalidOfferIds: Array.from(invalidOfferIds) });
+      }
+    } catch(e) { try { console.warn('[offerStore] prune cart failed', e?.message); } catch(_) {} }
+  },
   // Cache ligera (separada de image cache): mapas por clave (buyer|supplier) -> { ts, data }
   _cache: {
     buyer: new Map(),
@@ -282,6 +310,7 @@ export const useOfferStore = create((set, get) => ({
             computedStatus = 'expired';
           }
           if (computedStatus === 'accepted') computedStatus = 'approved';
+          if (computedStatus === 'purchased') computedStatus = 'reserved';
           return {
             ...o,
             status: computedStatus,
@@ -317,9 +346,9 @@ export const useOfferStore = create((set, get) => ({
         if (!opts.background) {
           set({ buyerOffers: normalized, loading: false, error: null });
         } else {
-          // background refresh: no sobreescribir loading=false redundante si ya era false
           set({ buyerOffers: normalized, error: null });
         }
+        try { get()._pruneInvalidOfferCartItems(); } catch(_) {}
   // Guardar en cache (aunque TTL sea 0 nos sirve para dedupe de solicitudes simultáneas futuras dentro del mismo tick)
   _cache.buyer.set(key, { ts: Date.now(), data: normalized });
   finish(data);
@@ -354,34 +383,35 @@ export const useOfferStore = create((set, get) => ({
   // Alias legacy para compatibilidad con hooks/tests antiguos
   fetchBuyerOffers: async (buyerId) => get().loadBuyerOffers(buyerId),
   
-  // Marcar oferta como comprada (cuando se agrega al carrito)
-  markOfferAsPurchased: async (offerId, orderId = null) => {
+  // Reservar oferta (antes markOfferAsPurchased)
+  reserveOffer: async (offerId, orderId = null) => {
     try {
-      const { data, error } = await supabase.rpc('mark_offer_as_purchased', {
-        p_offer_id: offerId,
-        p_order_id: orderId
-      });
-      
+      try {
+        const state = get();
+        const offer = state.buyerOffers.find(o => o.id === offerId);
+        if (offer && offer.purchase_deadline) {
+          const dl = new Date(offer.purchase_deadline).getTime();
+            if (!Number.isNaN(dl) && Date.now() > dl) {
+              set(state => ({
+                buyerOffers: state.buyerOffers.map(of => of.id === offerId ? { ...of, status: 'expired', expired_at: new Date().toISOString() } : of)
+              }));
+              return { success: false, error: 'La oferta caducó (24h vencidas)' };
+            }
+        }
+      } catch(_) {}
+      const { data, error } = await supabase.rpc('mark_offer_as_purchased', { p_offer_id: offerId, p_order_id: orderId });
       if (error) throw error;
-      
-      if (!data.success) {
-        throw new Error(data.error);
-      }
-      
-      // Actualizar estado local
+      if (!data.success) throw new Error(data.error);
       set(state => ({
         buyerOffers: state.buyerOffers.map(offer =>
-          offer.id === offerId 
-            ? { ...offer, status: OFFER_STATES.PURCHASED, purchased_at: new Date().toISOString() }
+          offer.id === offerId
+            ? { ...offer, status: OFFER_STATES.RESERVED, reserved_at: new Date().toISOString(), purchased_at: offer.purchased_at || new Date().toISOString() }
             : offer
         )
       }));
-      
+      try { get()._pruneInvalidOfferCartItems(); } catch(_) {}
       return data;
-      
-    } catch (error) {
-      throw error;
-    }
+    } catch (error) { throw error; }
   },
   
   // =====================================================
@@ -555,6 +585,8 @@ export const useOfferStore = create((set, get) => ({
                 status: 'approved',
                 accepted_at: new Date().toISOString(),
                 purchase_deadline: data.purchase_deadline,
+                // Sincronizar expires_at para que UI legacy (buyer) pueda mostrar countdown correcto
+                expires_at: data.purchase_deadline || offer.expires_at,
                 stock_reserved: true
               }
             : offer
@@ -582,6 +614,7 @@ export const useOfferStore = create((set, get) => ({
         buyerOffers: state.buyerOffers.map(o => o.id === offerId ? { ...o, status: 'cancelled', cancelled_at: new Date().toISOString() } : o),
         loading: false
       }));
+      try { get()._pruneInvalidOfferCartItems(); } catch(_) {}
       return data;
     } catch (err) {
       set({ error: 'Error al cancelar oferta: ' + err.message, loading: false });
@@ -650,6 +683,7 @@ export const useOfferStore = create((set, get) => ({
         ),
         loading: false
       }));
+      try { get()._pruneInvalidOfferCartItems(); } catch(_) {}
       
       return data;
       
@@ -800,6 +834,20 @@ export const useOfferStore = create((set, get) => ({
           description: 'Tienes 24h para agregar al carrito',
           actionable: true
         };
+      case OFFER_STATES.RESERVED:
+        return {
+          color: 'info',
+          label: 'Reservada',
+          description: 'Agregada al carrito (pendiente de pago)',
+          actionable: false
+        };
+      case OFFER_STATES.PAID:
+        return {
+          color: 'success',
+          label: 'Pagada',
+          description: 'Pago confirmado',
+          actionable: false
+        };
       case OFFER_STATES.REJECTED:
         return {
           color: 'error',
@@ -812,13 +860,6 @@ export const useOfferStore = create((set, get) => ({
           color: 'default',
           label: 'Caducada',
           description: 'La oferta ha expirado',
-          actionable: false
-        };
-      case OFFER_STATES.PURCHASED:
-        return {
-          color: 'info',
-          label: 'Compra Realizada',
-          description: 'Producto agregado al carrito y comprado',
           actionable: false
         };
       default:

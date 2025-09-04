@@ -269,7 +269,8 @@ const AddToCartModal = ({
     if (!productId) return [];
     
     try {
-      setIsLoadingRegions(true);
+    console.info('[AddToCartModal] loadProductShippingRegions start', { productId });
+    setIsLoadingRegions(true);
       const { data, error } = await supabase
         .from('product_delivery_regions')
         .select('id, region, price, delivery_days')
@@ -281,6 +282,7 @@ const AddToCartModal = ({
 
       return data || [];
     } catch (error) {
+      console.info('[AddToCartModal] loadProductShippingRegions error', error);
       return [];
     } finally {
       setIsLoadingRegions(false);
@@ -297,6 +299,7 @@ const AddToCartModal = ({
           product.delivery_regions?.length > 0 || 
           product.shipping_regions?.length > 0 ||
           product.product_delivery_regions?.length > 0) {
+        console.info('[AddToCartModal] enrichProductWithRegions - product already has regions', { productId: product.id, existingRegions: product.shippingRegions?.length || product.delivery_regions?.length || product.shipping_regions?.length });
         setEnrichedProduct(product);
         return;
       }
@@ -315,7 +318,8 @@ const AddToCartModal = ({
         product_delivery_regions: shippingRegions
       };
 
-      setEnrichedProduct(productWithRegions);
+  console.info('[AddToCartModal] enrichProductWithRegions - enriched product set', { productId: product.id, regionsLoaded: (productWithRegions.shippingRegions || []).length });
+  setEnrichedProduct(productWithRegions);
     };
 
     enrichProductWithRegions();
@@ -420,6 +424,11 @@ const AddToCartModal = ({
   // Estado para validación de shipping (solo cuando se necesite)
   const [shippingValidation, setShippingValidation] = useState(null);
   const [isValidatingShipping, setIsValidatingShipping] = useState(false);
+  // Pequeña ventana al abrir el modal para evitar decisiones instantáneas basadas en valores
+  // transitorios (por ejemplo HMR / hot-reload en desarrollo). Mientras `justOpened` sea
+  // true mostramos un estado de carga neutral en lugar del mensaje de "configura tu dirección".
+  const [justOpened, setJustOpened] = useState(false);
+  const justOpenedTimerRef = React.useRef(null);
 
   // Función para validar shipping solo cuando se abre el modal
   const validateShippingOnDemand = useCallback(async () => {
@@ -452,7 +461,9 @@ const AddToCartModal = ({
   useEffect(() => {
     if (open && !isLoadingRegions && !isLoadingUserProfile && effectiveUserRegion && enrichedProduct) {
       // ESPERAR UN TICK para asegurar que las regiones se hayan cargado completamente
+      console.info('[AddToCartModal] scheduling validateShippingOnDemand', { effectiveUserRegion, isLoadingRegions, isLoadingUserProfile, enrichedProductId: enrichedProduct?.id });
       const timer = setTimeout(() => {
+        console.info('[AddToCartModal] running validateShippingOnDemand', { effectiveUserRegion, enrichedProductId: enrichedProduct?.id });
         validateShippingOnDemand();
       }, 100); // Pequeño delay para asegurar sincronización
       
@@ -461,6 +472,34 @@ const AddToCartModal = ({
       setShippingValidation(null);
     }
   }, [open, isLoadingRegions, isLoadingUserProfile, effectiveUserRegion, enrichedProduct, validateShippingOnDemand]);
+
+  // Gestionar la ventana temporal `justOpened` para evitar flasheos al abrir rápido el modal.
+  useEffect(() => {
+    if (open) {
+      console.info('[AddToCartModal] open true - starting justOpened window');
+      setJustOpened(true);
+      // Limpiar timer previo si existe
+      if (justOpenedTimerRef.current) clearTimeout(justOpenedTimerRef.current);
+      justOpenedTimerRef.current = setTimeout(() => {
+        setJustOpened(false);
+        justOpenedTimerRef.current = null;
+        console.info('[AddToCartModal] justOpened window ended');
+      }, 300); // 300ms grace window
+    } else {
+      // Al cerrar, limpiar inmediatamente
+      setJustOpened(false);
+      if (justOpenedTimerRef.current) {
+        clearTimeout(justOpenedTimerRef.current);
+        justOpenedTimerRef.current = null;
+      }
+    }
+    return () => {
+      if (justOpenedTimerRef.current) {
+        clearTimeout(justOpenedTimerRef.current);
+        justOpenedTimerRef.current = null;
+      }
+    };
+  }, [open]);
 
   // ============================================================================
   // CÁLCULOS DE PRECIOS DINÁMICOS
@@ -725,17 +764,17 @@ const AddToCartModal = ({
           sx={{ 
             p: 2, 
             border: 2,
-            borderColor: 'success.main',
+            borderColor: 'common.black',
             bgcolor: 'success.50'
           }}
         >
-          <Stack spacing={2}>
+            <Stack spacing={2}>
             {/* Precio por unidad */}
             <Stack direction="row" justifyContent="space-between" alignItems="center">
               <Typography variant="body2" color="text.secondary">
                 Precio ofertado por unidad:
               </Typography>
-              <Typography variant="h6" color="success.main" sx={{ fontWeight: 700 }}>
+              <Typography variant="h6" color="text.primary" sx={{ fontWeight: 700 }}>
                 ${offerPrice.toLocaleString('es-CL')}
               </Typography>
             </Stack>
@@ -786,7 +825,7 @@ const AddToCartModal = ({
               <Typography variant="h6" sx={{ fontWeight: 700 }}>
                 Total de la oferta:
               </Typography>
-              <Typography variant="h5" color="success.main" sx={{ fontWeight: 800 }}>
+              <Typography variant="h5" color="text.primary" sx={{ fontWeight: 800 }}>
                 ${totalOfferValue.toLocaleString('es-CL')}
               </Typography>
             </Stack>
@@ -959,7 +998,16 @@ const AddToCartModal = ({
     }
 
     // Si no hay región del usuario después de cargar el perfil, mostrar mensaje de configuración
+    // Pero respetar la ventana `justOpened` para evitar mostrar esto de forma transitoria
     if (!effectiveUserRegion) {
+      if (justOpened) {
+        return (
+          <Alert severity="info" sx={{ mt: 2 }}>
+            <Typography variant="body2">Cargando información de despacho...</Typography>
+          </Alert>
+        );
+      }
+
       return (
         <Alert severity="info" sx={{ mt: 2 }}>
           <Typography variant="body2">
@@ -1173,7 +1221,8 @@ const AddToCartModal = ({
                 onClick={handleAddToCart}
                 disabled={(() => {
                   // Deshabilitar solo si la región NO está configurada y ya terminó la carga de perfil & región
-                  const noRegionConfigured = !effectiveUserRegion && !isLoadingUserProfile && !isLoadingUserRegion;
+                  // Evitar considerar "no región" como condición de bloqueo si el modal acaba de abrirse
+                  const noRegionConfigured = !effectiveUserRegion && !isLoadingUserProfile && !isLoadingUserRegion && !justOpened;
                   const explicitIncompatible = shippingValidation && !shippingValidation.canShip;
                   const hasQuantityError = !isOfferMode && !!quantityError; // Solo validar cantidad en modo normal
                   

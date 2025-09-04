@@ -1,28 +1,24 @@
-scheduler.development.js:14 [Violation] 'message' handler took 507ms
-useBuyerOffers.js:22 [useBuyerOffers] legacy user_id raw 20e7a348-66b6-4824-b059-2c67c5e6a49c
-useBuyerOffers.js:39 [useBuyerOffers] post-validate legacy userId 20e7a348-66b6-4824-b059-2c67c5e6a49c
-useBuyerOffers.js:42 [useBuyerOffers] stored user raw null
-useBuyerOffers.js:51 [useBuyerOffers] resolved userId 20e7a348-66b6-4824-b059-2c67c5e6a49c
-offerStore.js:15 [offerStoreDBG] loadBuyerOffers start buyerId= 20e7a348-66b6-4824-b059-2c67c5e6a49c
-offerStore.js:15 [offerStoreDBG] RPC get_buyer_offers attempt 1 buyerId= 20e7a348-66b6-4824-b059-2c67c5e6a49c mock calls= undefined results= undefined
-useBuyerOffers.js:22 [useBuyerOffers] legacy user_id raw 20e7a348-66b6-4824-b059-2c67c5e6a49c
-useBuyerOffers.js:39 [useBuyerOffers] post-validate legacy userId 20e7a348-66b6-4824-b059-2c67c5e6a49c
-useBuyerOffers.js:42 [useBuyerOffers] stored user raw null
-useBuyerOffers.js:51 [useBuyerOffers] resolved userId 20e7a348-66b6-4824-b059-2c67c5e6a49c
-offerStore.js:15 [offerStoreDBG] loadBuyerOffers start buyerId= 20e7a348-66b6-4824-b059-2c67c5e6a49c
-offerStore.js:15 [offerStoreDBG] RPC get_buyer_offers attempt 1 buyerId= 20e7a348-66b6-4824-b059-2c67c5e6a49c mock calls= undefined results= undefined
-offerStore.js:15 [offerStoreDBG] RPC get_buyer_offers raw response dataLen= 2
-offerStore.js:15 [offerStoreDBG] get_buyer_offers raw data length 2
-offerStore.js:15 [offerStoreDBG] loadBuyerOffers final offers (2) [{…}, {…}]
-OffersList.jsx:208 [OffersList debug] pid= 5a05b070-dee3-4d17-938e-73ce5649c70f thumbRow= null thumbRow_type= null thumbs_field_type= null thumbnail_url= null product= {name: 'Cerveza Importación', thumbnail: null, id: '5a05b070-dee3-4d17-938e-73ce5649c70f', product_id: '5a05b070-dee3-4d17-938e-73ce5649c70f'} thumbnailsQuery_status= pending thumbnailsQuery_keys= [] computedAvatar= null
-OffersList.jsx:208 [OffersList debug] pid= 5a05b070-dee3-4d17-938e-73ce5649c70f thumbRow= null thumbRow_type= null thumbs_field_type= null thumbnail_url= null product= {name: 'Cerveza Importación', thumbnail: null, id: '5a05b070-dee3-4d17-938e-73ce5649c70f', product_id: '5a05b070-dee3-4d17-938e-73ce5649c70f'} thumbnailsQuery_status= pending thumbnailsQuery_keys= [] computedAvatar= null
-OffersList.jsx:208 [OffersList debug] pid= 5a05b070-dee3-4d17-938e-73ce5649c70f thumbRow= null thumbRow_type= null thumbs_field_type= null thumbnail_url= null product= {name: 'Cerveza Importación', thumbnail: null, id: '5a05b070-dee3-4d17-938e-73ce5649c70f', product_id: '5a05b070-dee3-4d17-938e-73ce5649c70f'} thumbnailsQuery_status= pending thumbnailsQuery_keys= [] computedAvatar= null
-OffersList.jsx:208 [OffersList debug] pid= 5a05b070-dee3-4d17-938e-73ce5649c70f thumbRow= null thumbRow_type= null thumbs_field_type= null thumbnail_url= null product= {name: 'Cerveza Importación', thumbnail: null, id: '5a05b070-dee3-4d17-938e-73ce5649c70f', product_id: '5a05b070-dee3-4d17-938e-73ce5649c70f'} thumbnailsQuery_status= pending thumbnailsQuery_keys= [] computedAvatar= null
-offerStore.js:15 [offerStoreDBG] RPC get_buyer_offers raw response dataLen= 2
-offerStore.js:15 [offerStoreDBG] get_buyer_offers raw data length 2
-offerStore.js:15 [offerStoreDBG] loadBuyerOffers final offers (2) [{…}, {…}]
-OffersList.jsx:208 [OffersList debug] pid= 5a05b070-dee3-4d17-938e-73ce5649c70f thumbRow= null thumbRow_type= null thumbs_field_type= null thumbnail_url= null product= {name: 'Cerveza Importación', thumbnail: null, id: '5a05b070-dee3-4d17-938e-73ce5649c70f', product_id: '5a05b070-dee3-4d17-938e-73ce5649c70f'} thumbnailsQuery_status= pending thumbnailsQuery_keys= [] computedAvatar= null
-OffersList.jsx:208 [OffersList debug] pid= 5a05b070-dee3-4d17-938e-73ce5649c70f thumbRow= null thumbRow_type= null thumbs_field_type= null thumbnail_url= null product= {name: 'Cerveza Importación', thumbnail: null, id: '5a05b070-dee3-4d17-938e-73ce5649c70f', product_id: '5a05b070-dee3-4d17-938e-73ce5649c70f'} thumbnailsQuery_status= pending thumbnailsQuery_keys= [] computedAvatar= null
-OffersList.jsx:63 [OffersList thumbnails success] keys= ['5a05b070-dee3-4d17-938e-73ce5649c70f']
-OffersList.jsx:66 [OffersList thumbnails sample] 5a05b070-dee3-4d17-938e-73ce5649c70f {product_id: '5a05b070-dee3-4d17-938e-73ce5649c70f', thumbnails: {…}, thumbnail_url: 'https://clbngnjetipglkikondm.supabase.co/storage/v…8e-73ce5649c70f/1756402772272_desktop_320x260.jpg'}
-react-dom-client.development.js:16244 [Violation] 'setTimeout' handler took 76ms
+client:883 [vite] hot updated: /src/shared/components/display/product-card/ProductCardBuyerContext.jsx
+client:883 [vite] hot updated: /src/shared/components/cart/AddToCartModal.jsx
+client:883 [vite] hot updated: /src/shared/components/display/product-card/ProductCardBuyerContext.jsx
+client:883 [vite] hot updated: /src/shared/components/cart/AddToCartModal.jsx
+AddToCartModal.jsx:297 [AddToCartModal] enrichProductWithRegions start {productId: '22fdf577-fa5c-47c0-b7af-526ab8747c2c', hookUserRegion: 'metropolitana', userRegionProp: null, isLoadingUserRegion: false, isLoadingUserProfile: false, …}
+AddToCartModal.jsx:272 [AddToCartModal] loadProductShippingRegions start {productId: '22fdf577-fa5c-47c0-b7af-526ab8747c2c'}
+useOptimizedUserShippingRegion.js:47 [useOptimizedUserShippingRegion] fetchUserRegionCentralized start {currentUserId: '20e7a348-66b6-4824-b059-2c67c5e6a49c', cacheUserId: null, cacheHasRegion: false, cacheTimestamp: null}
+AddToCartModal.jsx:589 [AddToCartModal] scheduling validateShippingOnDemand {effectiveUserRegion: 'metropolitana', isLoadingRegions: false, isLoadingUserProfile: false, enrichedProductId: '22fdf577-fa5c-47c0-b7af-526ab8747c2c'}
+@react-refresh:584 [Violation] 'setTimeout' handler took 81ms
+useOptimizedUserShippingRegion.js:157 [useOptimizedUserShippingRegion] local state {userRegion: null, isLoadingUserRegion: true}
+useUnifiedShippingValidation.js:106 [useUnifiedShippingValidation] userRegion changed {userRegion: null, isLoadingUserRegion: true}
+scheduler.development.js:14 [Violation] 'message' handler took 236ms
+scheduler.development.js:14 [Violation] 'message' handler took 238ms
+AddToCartModal.jsx:330 [AddToCartModal] enrichProductWithRegions - enriched product set {productId: '22fdf577-fa5c-47c0-b7af-526ab8747c2c', regionsLoaded: 1}
+AddToCartModal.jsx:568 [AddToCartModal] scheduling region retry (effect) {attempt: 1, max: 5}
+AddToCartModal.jsx:568 [AddToCartModal] scheduling region retry (effect) {attempt: 2, max: 5}
+useOptimizedUserShippingRegion.js:96 [useOptimizedUserShippingRegion] fetch result {userRegion: 'metropolitana'}
+useOptimizedUserShippingRegion.js:109 [useOptimizedUserShippingRegion] fetchUserRegionCentralized end {currentUserId: '20e7a348-66b6-4824-b059-2c67c5e6a49c', cacheUserId: '20e7a348-66b6-4824-b059-2c67c5e6a49c', cacheHasRegion: true}
+useOptimizedUserShippingRegion.js:157 [useOptimizedUserShippingRegion] local state {userRegion: 'metropolitana', isLoadingUserRegion: false}
+useUnifiedShippingValidation.js:106 [useUnifiedShippingValidation] userRegion changed {userRegion: 'metropolitana', isLoadingUserRegion: false}
+AddToCartModal.jsx:536 [AddToCartModal] region available - clearing pending retries
+AddToCartModal.jsx:589 [AddToCartModal] scheduling validateShippingOnDemand {effectiveUserRegion: 'metropolitana', isLoadingRegions: false, isLoadingUserProfile: false, enrichedProductId: '22fdf577-fa5c-47c0-b7af-526ab8747c2c'}
+AddToCartModal.jsx:591 [AddToCartModal] running validateShippingOnDemand {effectiveUserRegion: 'metropolitana', enrichedProductId: '22fdf577-fa5c-47c0-b7af-526ab8747c2c'}
+AddToCartModal.jsx:499 [AddToCartModal] validateShippingOnDemand result {validation: {…}}

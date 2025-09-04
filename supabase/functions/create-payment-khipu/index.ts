@@ -37,7 +37,7 @@ serve(req => withMetrics('create-payment-khipu', req, async () => {
 
     // 1. Leer los datos dinámicos que envía el frontend (khipuService.js)
     // Ahora esperamos también order_id (ID de la fila ya creada en orders)
-  const { amount, subject, currency, buyer_id, cart_items, cart_id, order_id, shipping_address, billing_address } = await req.json();
+  const { amount, subject, currency, buyer_id, cart_items, cart_id, order_id, shipping_address, billing_address, offer_id, offer_ids } = await req.json();
 
   if (!order_id) {
     throw new Error('Falta order_id: la función ahora requiere el ID existente de la orden.');
@@ -82,10 +82,70 @@ serve(req => withMetrics('create-payment-khipu', req, async () => {
     // 3. Autoridad de Pricing (Server) – Recalcular y sellar antes de ir a Khipu
     // ================================================================
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+
+    // 3A. Validación temprana de ofertas asociadas (deadline / estado) + vinculación order
+    const offerIds: string[] = Array.isArray(offer_ids) ? offer_ids : (offer_id ? [offer_id] : []);
+    const offerWarnings: any[] = [];
+    const enforceDeadline = Deno.env.get('OFFERS_ENFORCE_DEADLINE') === '1';
+    if (offerIds.length) {
+      const { data: offersRows, error: offersErr } = await supabaseAdmin
+        .from('offers')
+        .select('id,status,purchase_deadline,order_id')
+        .in('id', offerIds);
+      if (offersErr) {
+        console.error('[create-payment-khipu] Error leyendo ofertas para validación:', offersErr);
+        return new Response(JSON.stringify({ error: 'OFFERS_FETCH_FAILED' }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 });
+      }
+      if (!offersRows || offersRows.length !== offerIds.length) {
+        return new Response(JSON.stringify({ error: 'OFFER_NOT_FOUND', expected: offerIds.length, found: offersRows?.length || 0 }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 404 });
+      }
+      const nowMs = Date.now();
+      for (const off of offersRows) {
+        const deadlineMs = off.purchase_deadline ? new Date(off.purchase_deadline).getTime() : null;
+        if (deadlineMs && deadlineMs < nowMs) {
+          const msg = { offer_id: off.id, issue: 'deadline_expired' };
+          if (enforceDeadline) {
+            console.warn('[create-payment-khipu] BLOQUEADO por deadline vencido', msg);
+            return new Response(JSON.stringify({ error: 'OFFER_DEADLINE_EXPIRED', offer_id: off.id }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 409 });
+          } else {
+            offerWarnings.push(msg);
+          }
+        }
+  if (!['accepted','reserved'].includes(off.status)) {
+          const msg = { offer_id: off.id, issue: 'invalid_state', state: off.status };
+            if (enforceDeadline) {
+              console.warn('[create-payment-khipu] BLOQUEADO por estado inválido', msg);
+              return new Response(JSON.stringify({ error: 'OFFER_INVALID_STATE', offer_id: off.id, state: off.status }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 409 });
+            } else {
+              offerWarnings.push(msg);
+            }
+        }
+        if (off.order_id && off.order_id !== order_id) {
+          const msg = { offer_id: off.id, issue: 'linked_to_other_order', existing_order_id: off.order_id };
+          console.warn('[create-payment-khipu] Oferta ya ligada a otra orden', msg);
+          return new Response(JSON.stringify({ error: 'OFFER_ALREADY_LINKED', offer_id: off.id, existing_order_id: off.order_id }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 409 });
+        }
+      }
+      // Vincular (idempotente) ofertas a la orden si aún no tienen order_id
+      try {
+        const { error: linkErr } = await supabaseAdmin
+          .from('offers')
+          .update({ order_id, updated_at: new Date().toISOString() })
+          .in('id', offerIds)
+          .is('order_id', null);
+        if (linkErr) {
+          console.warn('[create-payment-khipu] No se pudieron vincular algunas ofertas (continuando):', linkErr);
+          offerWarnings.push({ issue: 'link_partial_failure' });
+        }
+      } catch(linkEx) {
+        console.error('[create-payment-khipu] Excepción vinculando ofertas (continuando si no enforce):', linkEx);
+        offerWarnings.push({ issue: 'link_exception' });
+      }
+    }
     const PRICE_TOLERANCE_CLP = 5; // diferencia permitida entre monto front y monto sellado
     let sealedOrder: any = null;
   try {
-      const { data: sealed, error: sealErr } = await supabaseAdmin
+  const { data: sealed, error: sealErr } = await supabaseAdmin
         .rpc('finalize_order_pricing', { p_order_id: order_id });
       if (sealErr) {
         console.error('[create-payment-khipu] Error en finalize_order_pricing:', sealErr);
@@ -179,7 +239,7 @@ serve(req => withMetrics('create-payment-khipu', req, async () => {
     console.log('[create-payment-khipu] Respuesta de Khipu parseada:', JSON.stringify(responseData, null, 2));
 
     // 6. Normalizar salida para frontend
-    const normalized = {
+  const normalized = {
       // bandera de éxito para clientes que lo esperan
       success: true,
       // mapeo defensivo de campos posibles
@@ -199,6 +259,12 @@ serve(req => withMetrics('create-payment-khipu', req, async () => {
       // Devolvemos también el objeto crudo para depuración si fuera necesario en el cliente
       raw: responseData,
   } as Record<string, unknown>;
+    if (offerIds.length) {
+      (normalized as any).offer_ids = offerIds;
+    }
+    if (offerWarnings.length) {
+      (normalized as any).offer_warnings = offerWarnings;
+    }
 
     // ================================================================
     // Actualizar la orden existente (NO crear nueva fila)
