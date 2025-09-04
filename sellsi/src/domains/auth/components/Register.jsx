@@ -8,12 +8,10 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { Stepper } from '../../../shared/components/navigation/wizard';
 import PrimaryButton from '../../../shared/components/forms/PrimaryButton';
 import { Wizard, useWizard } from '../../../shared/components/navigation/wizard';
-import {
-  Step1Account,
-  // Step2AccountType, // Removed
-  // Step3Profile,     // Removed
-  Step4Verification,
-} from '../wizard';
+// Importes directos de pasos (el barrel público ya no los expone)
+// Lazy imports para evitar carga inicial y duplicación estática con steps.config
+const Step1Account = React.lazy(() => import('../wizard/Step1Account'));
+const Step4Verification = React.lazy(() => import('../wizard/Step4Verification'));
 import { useBanner } from '../../../shared/components/display/banners/BannerContext';
 
 export default function Register({ open, onClose }) {
@@ -295,11 +293,13 @@ export default function Register({ open, onClose }) {
         >
           <Stepper activeStep={currentStep + 1} steps={steps} />
           <Box sx={{ mt: 2 }}>
-            {renderStep(currentStep, steps[currentStep], {
-              nextStep,
-              // prevStep, // Not exposed to renderStep, goToStep is preferred for specific navigation
-              goToStep,
-            })}
+            <React.Suspense fallback={null}>
+              {renderStep(currentStep, steps[currentStep], {
+                nextStep,
+                // prevStep, // Not exposed to renderStep, goToStep is preferred for specific navigation
+                goToStep,
+              })}
+            </React.Suspense>
           </Box>
         </DialogContent>
       </Dialog>

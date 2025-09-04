@@ -12,6 +12,21 @@ import { supabase } from '../../../services/supabase.js';
 export class StorageCleanupService {
   static IMAGE_BUCKET = 'product-images';
   static THUMBNAIL_BUCKET = 'product-images-thumbnails';
+  // Mapa de producto -> timestamp (epoch ms) hasta el cual NO se debe ejecutar cleanup
+  static recentGenerationUntil = new Map();
+  static DEFAULT_GRACE_MS = 60000; // 60s por defecto
+
+  /**
+   * Marcar que un producto acaba de regenerar thumbnails; evita cleanup prematuro
+   * @param {string} productId
+   * @param {number} ms
+   */
+  static markRecentGeneration(productId, ms = this.DEFAULT_GRACE_MS) {
+    if (!productId) return;
+    const until = Date.now() + ms;
+    this.recentGenerationUntil.set(productId, until);
+    try { console.info('[StorageCleanupService] Grace period iniciado', { productId, until }); } catch(_){}
+  }
   
   /**
    * Verificar y limpiar archivos huérfanos de un producto específico
@@ -26,10 +41,22 @@ export class StorageCleanupService {
     };
 
     try {
+      // Guardar early si está dentro del grace period
+      const graceUntil = this.recentGenerationUntil.get(productId);
+      if (graceUntil && Date.now() < graceUntil) {
+        const remaining = graceUntil - Date.now();
+        try { console.info('[StorageCleanupService] Skip cleanup (grace period activo)', { productId, remaining }); } catch(_){}
+        // Reprogramar automáticamente después del periodo restante + pequeño buffer
+        setTimeout(() => {
+          this.cleanupProductOrphans(productId).catch(()=>{});
+        }, remaining + 500);
+        return results; // Nada limpiado (intencional)
+      }
       // 1. Obtener todas las URLs registradas en BD para este producto
+      // IMPORTANTE: incluir 'thumbnails' para no marcar como huérfanos los variants
       const { data: dbImages, error: dbError } = await supabase
         .from('product_images')
-        .select('image_url, thumbnail_url')
+        .select('image_url, thumbnail_url, thumbnails')
         .eq('product_id', productId);
 
       if (dbError) {
@@ -70,10 +97,10 @@ export class StorageCleanupService {
     const allFiles = [];
     
     try {
-      console.log(`🔍 [getProductFilesFromStorage] Buscando archivos para producto ${productId}`)
+      
       
       // 🔥 MEJORADO: Buscar en todos los directorios del bucket
-      console.log(`🔍 [getProductFilesFromStorage] Listando directorios raíz del bucket ${this.IMAGE_BUCKET}`)
+      
       const { data: allFolders, error: foldersError } = await supabase.storage
         .from(this.IMAGE_BUCKET)
         .list('', { limit: 1000 });
@@ -83,13 +110,13 @@ export class StorageCleanupService {
         return allFiles;
       }
 
-      console.log(`📂 [getProductFilesFromStorage] Encontrados ${allFolders?.length || 0} elementos en la raíz`)
+      
 
       // Buscar en cada directorio de supplier
       for (const folder of allFolders || []) {
         if (folder.name && folder.id === null) { // Es un directorio
           const supplierPath = folder.name;
-          console.log(`🔍 [getProductFilesFromStorage] Explorando directorio de supplier: ${supplierPath}`)
+          
           
           // Buscar archivos en este directorio de supplier
           const { data: supplierFiles, error: supplierError } = await supabase.storage
@@ -97,7 +124,7 @@ export class StorageCleanupService {
             .list(supplierPath, { limit: 1000 });
 
           if (!supplierError && supplierFiles) {
-            console.log(`📁 [getProductFilesFromStorage] Encontrados ${supplierFiles.length} elementos en ${supplierPath}`)
+            
             
             // Buscar subdirectorio del producto o archivos que contengan el productId
             for (const file of supplierFiles) {
@@ -105,14 +132,14 @@ export class StorageCleanupService {
               
               if (file.id === null) { // Es un subdirectorio
                 if (file.name === productId) {
-                  console.log(`🎯 [getProductFilesFromStorage] Encontrado directorio del producto: ${fullPath}`)
+                  
                   // Este es el directorio del producto, listar sus archivos
                   const { data: productFiles, error: productError } = await supabase.storage
                     .from(this.IMAGE_BUCKET)
                     .list(`${supplierPath}/${productId}`, { limit: 1000 });
 
                   if (!productError && productFiles) {
-                    console.log(`📄 [getProductFilesFromStorage] Encontrados ${productFiles.length} archivos en directorio del producto`)
+                    
                     allFiles.push(...productFiles.map(pFile => ({
                       bucket: this.IMAGE_BUCKET,
                       path: `${supplierPath}/${productId}/${pFile.name}`,
@@ -124,7 +151,6 @@ export class StorageCleanupService {
               } else {
                 // Es un archivo, verificar si pertenece al producto
                 if (file.name.includes(productId)) {
-                  console.log(`📄 [getProductFilesFromStorage] Encontrado archivo del producto: ${fullPath}`)
                   allFiles.push({
                     bucket: this.IMAGE_BUCKET,
                     path: fullPath,
@@ -135,7 +161,7 @@ export class StorageCleanupService {
               }
             }
           } else if (supplierError) {
-            console.warn(`⚠️ [getProductFilesFromStorage] Error listando ${supplierPath}:`, supplierError)
+            
           }
         }
       }
@@ -187,7 +213,7 @@ export class StorageCleanupService {
         }
       }
 
-      console.log(`✅ [getProductFilesFromStorage] Encontrados ${allFiles.length} archivos para producto ${productId}`)
+      
       return allFiles;
     } catch (error) {
       console.error(`❌ [getProductFilesFromStorage] Error:`, error);
@@ -203,8 +229,8 @@ export class StorageCleanupService {
    */
   static identifyOrphanFiles(dbImages, storageFiles) {
     const dbUrls = new Set();
-    
-    // Extraer paths de URLs de BD
+
+    // Extraer paths de URLs de BD (image_url, thumbnail_url y cada variant en thumbnails JSON)
     dbImages.forEach(img => {
       if (img.image_url) {
         const path = this.extractPathFromUrl(img.image_url);
@@ -214,10 +240,41 @@ export class StorageCleanupService {
         const path = this.extractPathFromUrl(img.thumbnail_url);
         if (path) dbUrls.add(path);
       }
+      if (img.thumbnails && typeof img.thumbnails === 'object') {
+        try {
+          // thumbnails puede venir como objeto ya parseado o string JSON
+          const thumbObj = Array.isArray(img.thumbnails) ? img.thumbnails : (typeof img.thumbnails === 'string' ? JSON.parse(img.thumbnails) : img.thumbnails);
+          // Si es array, iteramos; si es objeto simple {variant:url,...}
+          if (Array.isArray(thumbObj)) {
+            thumbObj.forEach(entry => {
+              if (!entry) return;
+              Object.values(entry).forEach(url => {
+                const p = this.extractPathFromUrl(url);
+                if (p) dbUrls.add(p);
+              });
+            });
+          } else if (thumbObj && typeof thumbObj === 'object') {
+            Object.values(thumbObj).forEach(url => {
+              const p = this.extractPathFromUrl(url);
+              if (p) dbUrls.add(p);
+            });
+          }
+        } catch (e) {
+          // Ignorar parse errors
+        }
+      }
     });
 
     // Identificar archivos en storage que no están en BD
-    return storageFiles.filter(file => !dbUrls.has(file.path));
+    const orphans = storageFiles.filter(file => !dbUrls.has(file.path));
+
+    // Instrumentación: log de candidatos a eliminación (solo en debug)
+    if (orphans.length > 0) {
+      try {
+        console.warn('[StorageCleanupService] Archivos huérfanos detectados (previo a eliminación):', orphans.map(o => o.path));
+      } catch(_){}
+    }
+    return orphans;
   }
 
   /**
@@ -256,7 +313,7 @@ export class StorageCleanupService {
     const thumbFiles = orphanFiles.filter(f => f.bucket === this.THUMBNAIL_BUCKET);
 
     // Eliminar imágenes huérfanas
-    if (imageFiles.length > 0) {
+  if (imageFiles.length > 0) {
       try {
         const { error } = await supabase.storage
           .from(this.IMAGE_BUCKET)
@@ -266,6 +323,7 @@ export class StorageCleanupService {
           result.errors.push(`Error eliminando imágenes: ${error.message}`);
         } else {
           result.cleaned += imageFiles.length;
+      try { console.info('[StorageCleanupService] Eliminadas imágenes huérfanas:', imageFiles.map(f => f.path)); } catch(_){}
         }
       } catch (error) {
         result.errors.push(`Error eliminando imágenes: ${error.message}`);
@@ -273,7 +331,7 @@ export class StorageCleanupService {
     }
 
     // Eliminar thumbnails huérfanos
-    if (thumbFiles.length > 0) {
+  if (thumbFiles.length > 0) {
       try {
         const { error } = await supabase.storage
           .from(this.THUMBNAIL_BUCKET)
@@ -283,6 +341,7 @@ export class StorageCleanupService {
           result.errors.push(`Error eliminando thumbnails: ${error.message}`);
         } else {
           result.cleaned += thumbFiles.length;
+      try { console.info('[StorageCleanupService] Eliminados thumbnails huérfanos:', thumbFiles.map(f => f.path)); } catch(_){}
         }
       } catch (error) {
         result.errors.push(`Error eliminando thumbnails: ${error.message}`);
@@ -412,10 +471,10 @@ export class StorageCleanupService {
     };
 
     try {
-      console.log(`🔥 [deleteAllProductImages] Eliminando TODAS las imágenes del producto ${productId}`)
+      
       
       // 1. Eliminar TODOS los registros de la BD para este producto
-      console.log(`🔍 [deleteAllProductImages] Paso 1: Eliminando registros de la BD`)
+      
       const { error: dbDeleteError, count: deletedCount } = await supabase
         .from('product_images')
         .delete({ count: 'exact' })
@@ -428,30 +487,30 @@ export class StorageCleanupService {
         return results;
       }
 
-      console.log(`🗑️ [deleteAllProductImages] Eliminados ${deletedCount || 0} registros de la BD`)
+      
 
       // 2. Obtener TODOS los archivos del producto desde storage
-      console.log(`🔍 [deleteAllProductImages] Paso 2: Buscando archivos en storage`)
+      
       const storageFiles = await this.getProductFilesFromStorage(productId);
-      console.log(`📂 [deleteAllProductImages] Encontrados ${storageFiles.length} archivos en storage:`, storageFiles.map(f => f.path))
+      
 
       // 3. Eliminar TODOS los archivos del storage
       if (storageFiles.length > 0) {
-        console.log(`🔍 [deleteAllProductImages] Paso 3: Eliminando ${storageFiles.length} archivos del storage`)
+        
         const deleteResult = await this.removeFiles(storageFiles);
         results.cleaned = deleteResult.cleaned;
         results.errors.push(...deleteResult.errors);
-        console.log(`🧹 [deleteAllProductImages] Eliminados ${deleteResult.cleaned} archivos del storage`)
+        
       } else {
-        console.log(`ℹ️ [deleteAllProductImages] No se encontraron archivos en storage para eliminar`)
+        
       }
 
-      console.log(`✅ [deleteAllProductImages] Proceso completado: ${results.cleaned} archivos eliminados`)
+      
       return results;
     } catch (error) {
       results.success = false;
       results.errors.push(`Error general eliminando producto: ${error.message}`);
-      console.error(`❌ [deleteAllProductImages] Error:`, error);
+      
       return results;
     }
   }
@@ -464,30 +523,30 @@ export class StorageCleanupService {
   static async removeFiles(files) {
     const results = { cleaned: 0, errors: [] };
 
-    console.log(`🔥 [removeFiles] Iniciando eliminación de ${files.length} archivos`)
+    
     
     for (const file of files) {
       try {
-        console.log(`🗑️ [removeFiles] Eliminando archivo: ${file.bucket}/${file.path}`)
+        
         
         const { error } = await supabase.storage
           .from(file.bucket)
           .remove([file.path]);
 
         if (error) {
-          console.error(`❌ [removeFiles] Error eliminando ${file.path}:`, error)
+          
           results.errors.push(`Error eliminando ${file.path}: ${error.message}`);
         } else {
           results.cleaned++;
-          console.log(`✅ [removeFiles] Eliminado exitosamente: ${file.bucket}/${file.path}`);
+          
         }
       } catch (error) {
-        console.error(`❌ [removeFiles] Error inesperado eliminando ${file.path}:`, error)
+        
         results.errors.push(`Error inesperado eliminando ${file.path}: ${error.message}`);
       }
     }
 
-    console.log(`📊 [removeFiles] Resultado final: ${results.cleaned} eliminados, ${results.errors.length} errores`)
+    
     return results;
   }
 }

@@ -15,7 +15,7 @@ const CompanyInfoSection = ({
 }) => {
   return (
     <Box sx={{ p: 3, height: 'fit-content' }}>
-      <Box sx={{ mb: 2 }}>
+      <Box sx={{ mb: 1.5 }}>
         <Typography variant="h6">Información General</Typography>
         <Typography variant="body2" sx={{ color: 'text.secondary' }}>
           Configura tu Perfil
@@ -62,7 +62,7 @@ const CompanyInfoSection = ({
             </ToggleButtonGroup>
           </Box>
         </Box>
-        <Box sx={{ display: 'flex', alignItems: 'center', mt: 0.5, ml: 0.5 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', mt: 0, ml: 0.5 }}>
           <InfoOutlinedIcon sx={{ fontSize: 16, color: 'primary.main', mr: 0.5 }} />
           <Typography variant="caption" sx={{ color: 'text.secondary' }}>
             Esta será tu vista predeterminada cuando inicies sesión.
@@ -106,7 +106,7 @@ const CompanyInfoSection = ({
         </Box>
 
   {/* País + Teléfono en una misma fila, CountrySelector a la izquierda */}
-        <Box sx={{ display: 'flex', gap: 1 }}>
+    <Box sx={{ display: 'flex', gap: 1 }} autoComplete="off">
           <Box sx={{ minWidth: 180 }}>
             <CountrySelector
               value={formData.country || ''}
@@ -127,6 +127,7 @@ const CompanyInfoSection = ({
             fullWidth
             variant="outlined"
             size="small"
+      name="phone_no_autocomplete"
             placeholder={formData.country === 'CL' || !formData.country ? '912345678' : 'Teléfono'}
             inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }}
             error={!validatePhone(formData.country || 'CL', formData.phone || '').isValid}
@@ -147,7 +148,7 @@ const CompanyInfoSection = ({
             showTitle={false}
             size="small"
           />
-          <Box sx={{ display: 'flex', alignItems: 'center', mt: 0.5, ml: 0.5 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', mt: 2, ml: 0.5 }}>
             <InfoOutlinedIcon sx={{ fontSize: 16, color: 'primary.main', mr: 0.5 }} />
             <Typography variant="caption" sx={{ color: 'text.secondary' }}>
               Estos serán los documentos tributarios que ofrecerás en el Marketplace al vender productos.

@@ -50,7 +50,7 @@ export const PROMO_SLIDES = [
     src: '/promotion.png',
     alt: 'Promoción 1',
     title:
-      'Somos <span style="color: #1565c0;">Sellsi</span>, el primer marketplace B2B y B2C de Chile',
+      'Somos <span style="color: #2E52B2;">Sellsi</span>, el primer marketplace B2B y B2C de Chile',
     subtitle: 'Únete a un ecosistema único en Chile que desarrollamos para ti.',
     type: 'standard',
   },
@@ -59,7 +59,7 @@ export const PROMO_SLIDES = [
     src: '/promotion.png',
     alt: 'Promoción 2',
     title:
-      '¡Termina este <span style="color: #1565c0;">2025</span> con todo! Diversifica tus canales de ventas con <span style="color: #1565c0;">Sellsi</span>',
+      '¡Termina este <span style="color: #2E52B2;">2025</span> con todo! Diversifica tus canales de ventas con <span style="color: #2E52B2;">Sellsi</span>',
     subtitle:
       'No te pierdas el lanzamiento de nuestro nuevo hub de negocios. <br> Suscríbete y sé parte de esta experiencia única.',
 
@@ -70,7 +70,7 @@ export const PROMO_SLIDES = [
     src: '/promotion.png',
     alt: 'Promoción 3',
     title:
-      'Con <span style="color: #1565c0; font-size: 1.3em;">Sellsi</span>, todos ganan',
+      'Con <span style="color: #2E52B2; font-size: 1.3em;">Sellsi</span>, todos ganan',
     subtitle: '',
     type: 'multi-section',
     sections: [

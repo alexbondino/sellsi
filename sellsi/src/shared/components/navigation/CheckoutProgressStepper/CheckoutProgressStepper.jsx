@@ -2,7 +2,7 @@
 // CHECKOUT PROGRESS STEPPER - COMPONENTE DE PROGRESO DEL CHECKOUT
 // ============================================================================
 
-import React from 'react'
+import React, { useMemo } from 'react'
 import {
   Box,
   Stepper,
@@ -105,18 +105,61 @@ const CheckoutProgressStepper = ({
   // Convertir a array de pasos
   const steps = Object.values(CHECKOUT_STEPS)
   
-  // Determinar paso activo
-  const activeStep = steps.findIndex(step => step.id === currentStep?.id)
+  // Determinar paso activo - manejar tanto objeto como string/ID
+  const currentStepId = React.useMemo(() => {
+    if (typeof currentStep === 'object' && currentStep?.id) {
+      return currentStep.id
+    }
+    return currentStep
+  }, [currentStep])
+  
+  // Normalizar completedSteps - asegurar que sean IDs
+  const completedStepIds = React.useMemo(() => {
+    return completedSteps.map(step => {
+      if (typeof step === 'object' && step?.id) {
+        return step.id
+      }
+      return step
+    }).filter(Boolean) // Filtrar valores nulos/undefined
+  }, [completedSteps])
+  
+  const activeStep = steps.findIndex(step => step.id === currentStepId)
   
   // Función para determinar si un paso está completado
   const isStepCompleted = (step) => {
-    return completedSteps.some(completedStep => completedStep.id === step.id)
+    return completedStepIds.includes(step.id)
   }
   
   // Función para determinar si un paso está activo
   const isStepActive = (step) => {
-    return currentStep?.id === step.id
+    return currentStepId === step.id
   }
+
+  // Validar que steps es un array válido
+  if (!Array.isArray(steps) || steps.length === 0) {
+    console.warn('CheckoutProgressStepper: No valid steps found')
+    return null
+  }
+
+  // Precrear componentes de ícono estables para cada paso
+  const stepIconComponents = useMemo(() => {
+    return steps.reduce((acc, s) => {
+      // Convertir todas las propiedades a primitivos para evitar objetos
+      const safeIcon = String(s?.icon || 'CheckCircle')
+      const safeOrder = Number(s?.order || 0)
+      
+      // MUI pasará props.active y props.completed; las reenviamos sin cerrar sobre valores potencialmente obsoletos
+      acc[s.id] = (iconProps) => (
+        <CustomStepIcon
+          active={Boolean(iconProps.active)}
+          completed={Boolean(iconProps.completed)}
+          icon={safeIcon}
+          order={safeOrder}
+        />
+      )
+      return acc
+    }, {})
+  }, [steps])
 
   return (
     <Box sx={{ width: '100%', py: 2 }}>
@@ -140,63 +183,29 @@ const CheckoutProgressStepper = ({
         }}
       >
         {steps.map((step, index) => {
+          // Validar que el step tiene las propiedades requeridas
+          if (!step || typeof step !== 'object' || !step.id || !step.name) {
+            console.warn('CheckoutProgressStepper: Invalid step at index', index, step)
+            return null
+          }
+          
+          // Extraer valores como primitivos para evitar renderizar objetos
+          const stepId = String(step.id || '')
+          const stepName = String(step.name || '')
+          
           const isCompleted = isStepCompleted(step)
           const isActive = isStepActive(step)
           
           return (
-            <Step key={step.id} completed={isCompleted}>
+            <Step key={stepId} completed={isCompleted}>
               <StepLabel
-                StepIconComponent={(props) => (
-                  <CustomStepIcon
-                    active={isActive}
-                    completed={isCompleted}
-                    icon={step.icon}
-                    order={step.order}
-                  />
-                )}
-                sx={{
-                  '& .MuiStepLabel-label': {
-                    fontWeight: isActive ? 'bold' : 'normal',
-                    color: isCompleted 
-                      ? theme.palette.success.main 
-                      : isActive 
-                        ? theme.palette.primary.main 
-                        : theme.palette.text.secondary,
-                    fontSize: isMobile ? '0.875rem' : '1rem'
-                  }
-                }}
+                StepIconComponent={stepIconComponents[step.id]}
               >
-                {showLabels && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.1 }}
-                  >
-                    <Typography
-                      variant={isMobile ? 'body2' : 'body1'}
-                      fontWeight={isActive ? 'bold' : 'normal'}
-                      color={
-                        isCompleted 
-                          ? 'success.main' 
-                          : isActive 
-                            ? 'primary.main' 
-                            : 'text.secondary'
-                      }
-                    >
-                      {step.name}
-                      {/* Mostrar indicador de procesamiento */}
-                      {isActive && step.icon === 'HourglassEmpty' && (
-                        <Box component="span" sx={{ ml: 1 }}>
-                          <CircularProgress size={12} sx={{ color: 'primary.main' }} />
-                        </Box>
-                      )}
-                    </Typography>
-                  </motion.div>
-                )}
+                {showLabels && stepName ? stepName : null}
               </StepLabel>
             </Step>
           )
-        })}
+        }).filter(Boolean)}
       </Stepper>
     </Box>
   )

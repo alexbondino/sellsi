@@ -4,12 +4,65 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/png" href="/minilogo.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <!-- Primary meta description for the site (used by search engines) -->
+      <meta name="description" content="Plataforma de abastecimiento empresarial que conecta compradores y proveedores, agiliza compras y asegura transacciones con proveedores verificados." />
+  <!-- Open Graph / Social preview -->
+  <meta property="og:title" content="Sellsi — El hub de negocios para mayoristas y minoristas de Chile" />
+  <meta property="og:description" content="Sellsi es el Marketplace que te permitirá conectar, cotizar, negociar y administrar tus compras y ventas en línea" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://sellsi.cl/" />
+  <meta property="og:image" content="/assets/social/twitter-card.png" />
+  <meta property="og:image:secure_url" content="/assets/social/twitter-card.png" />
+  <meta property="og:image:type" content="image/png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="628" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <!-- OPTIONAL: set your Twitter handle here (or remove) -->
+  <meta name="twitter:site" content="@tu_cuenta_twitter" />
+  <meta name="twitter:creator" content="@tu_cuenta_twitter" />
+  <meta name="twitter:title" content="Sellsi — El hub de negocios para mayoristas y minoristas de Chile" />
+  <meta name="twitter:description" content="Sellsi es el Marketplace que te permitirá conectar, cotizar, negociar y administrar tus compras y ventas en línea" />
+  <meta name="twitter:image" content="/assets/social/twitter-card.png" />
+  <meta name="twitter:image:alt" content="Logotipo de Sellsi con el lema 'Conecta. Vende. Crece.'" />
+      <link rel="canonical" href="https://sellsi.cl/" />
+  <!-- Performance: Preconnect to Supabase project to warm DNS, TCP & TLS (auth, rest, storage, realtime) -->
+  <link rel="preconnect" href="https://clbngnjetipglkikondm.supabase.co" crossorigin />
+  <link rel="dns-prefetch" href="//clbngnjetipglkikondm.supabase.co" />
+    <!-- Fonts: reduced Inter weights to only those actually used (400,600,700) -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap"
       rel="stylesheet"
     />
+      <!-- Structured data to help search engines find site navigation (increases chance of sitelinks) -->
+      <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "Sellsi",
+        "url": "https://sellsi.cl/",
+        "potentialAction": {
+          "@type": "SearchAction",
+          "target": "https://sellsi.cl/search?q={search_term_string}",
+          "query-input": "required name=search_term_string"
+        }
+      }
+      </script>
+      <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "SiteNavigationElement",
+        "name": "Main navigation",
+        "url": "https://sellsi.cl/",
+        "hasPart": [
+          { "@type": "SiteNavigationElement", "name": "Marketplace", "url": "https://sellsi.cl/marketplace" },
+          { "@type": "SiteNavigationElement", "name": "Proveedores", "url": "https://sellsi.cl/?scrollTo=serviciosRef" },
+          { "@type": "SiteNavigationElement", "name": "Compradores", "url": "https://sellsi.cl/?scrollTo=serviciosRef" },
+          { "@type": "SiteNavigationElement", "name": "Sobre Nosotros", "url": "https://sellsi.cl/?scrollTo=quienesSomosRef" }
+        ]
+      }
+      </script>
     <title>Sellsi</title>
   </head>
   <body>

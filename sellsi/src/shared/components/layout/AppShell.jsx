@@ -2,6 +2,7 @@ import React from 'react';
 import { Box } from '@mui/material';
 import { useLocation } from 'react-router-dom';
 
+// Import directo para evitar barrels que generen ciclos
 import { TopBar } from '../navigation/TopBar';
 import { BottomBar } from './BottomBar';
 import { MobileBar } from '../navigation/MobileBar';
@@ -10,8 +11,8 @@ import Banner from '../display/banners/Banner';
 import WhatsAppWidget from '../../../components/WhatsAppWidget';
 import { useBanner } from '../display/banners/BannerContext';
 
-import { useAuth } from '../../../infrastructure/providers/AuthProvider';
-import { useRole } from '../../../infrastructure/providers/RoleProvider';
+import { useAuth } from '../../../infrastructure/providers';
+import { useRole } from '../../../infrastructure/providers';
 import { useLayout } from '../../../infrastructure/providers/LayoutProvider';
 import { useAppInitialization } from '../../hooks/useAppInitialization';
 
@@ -54,7 +55,7 @@ export const AppShell = ({ children }) => {
       {/* TopBar - Solo se muestra si no es una ruta admin */}
       {showTopBar && (
         <TopBar
-          key={`${session?.user?.id || 'no-session'}-${logoUrl || 'default-topbar'}`}
+          /* key removido para evitar re-mount completo al cambiar session/logo (micro ahorro render) */
           session={session}
           isBuyer={isBuyer}
           logoUrl={logoUrl}
@@ -72,13 +73,20 @@ export const AppShell = ({ children }) => {
           bgcolor: 'background.default',
         }}
       >
-        {/* Banner */}
+        {/* Banner: place slightly below the TopBar using topOffset (responsive) */}
         <Banner
           message={bannerState.message}
           severity={bannerState.severity}
           duration={bannerState.duration}
           show={bannerState.show}
           onClose={hideBanner}
+          topOffset={
+            // topBarHeight is responsive: { xs: '45px', md: '64px' }
+            // add 8px gap so banner appears slightly below the TopBar
+            typeof topBarHeight === 'object'
+              ? { xs: `calc(${topBarHeight.xs} + 6px)`, md: `calc(${topBarHeight.md} + 6px)` }
+              : `calc(${topBarHeight} + 6px)`
+          }
         />
 
         {/* Contenedor principal para SideBar y Contenido (Main) */}
@@ -98,34 +106,49 @@ export const AppShell = ({ children }) => {
             />
           )}
 
+          {/** Memoized main layout styles to avoid recreating large object & function each render (micro optimization) */}
           <Box
             component="main"
-            sx={theme => ({
-              flexGrow: 1,
-              pl: isDashboardRoute ? 3 : 0,
-              pr: isDashboardRoute ? 3 : 0,
-              pt: isDashboardRoute ? 3 : 0,
-              pb: isDashboardRoute ? { xs: session ? 10 : 3, md: 3 } : { xs: session ? 10 : 0, md: 0 },
-              width: isDashboardRoute
-                ? { xs: '100%', md: `calc(100% - ${currentSideBarWidth})` }
-                : '100%',
-              overflowX: 'hidden',
-              ml: isDashboardRoute ? { md: 14, lg: 14, xl: 0 } : 0,
-              // Animación robusta: solo en md y lg, nunca en xl
-              transition: [
-                theme.breakpoints.up('md') && theme.breakpoints.down('lg')
-                  ? 'transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94), margin-left 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94), width 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)'
-                  : 'margin-left 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94), width 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)'
-              ].join(','),
-              // Solo aplicar el shift animado en md y lg, nunca en xl
-              transform: {
-                xs: 'none',
-                sm: 'none',
-                md: isDashboardRoute && sideBarCollapsed ? 'translateX(-80px)' : 'none',
-                lg: isDashboardRoute && sideBarCollapsed ? 'translateX(-80px)' : 'none',
-                xl: 'none',
-              },
-            })}
+            sx={React.useMemo(() => {
+              // Dependencias que afectan layout
+              const fullBleedRoutes = ['/buyer/cart', '/buyer/paymentmethod'];
+              const isFullBleed = !!session || fullBleedRoutes.includes(location.pathname);
+              const isMarketplaceRoute = location.pathname.startsWith('/marketplace');
+              return theme => ({
+                flexGrow: 1,
+                pl: isMarketplaceRoute
+                  ? { xs: 0, sm: 0, md: (isDashboardRoute ? 3 : 0) }
+                  : isFullBleed
+                  ? { xs: 0.75, sm: 1, md: (isDashboardRoute ? 3 : 0) }
+                  : (isDashboardRoute ? 3 : 0),
+                pr: isMarketplaceRoute
+                  ? { xs: 0, sm: 0, md: (isDashboardRoute ? 3 : 0) }
+                  : isFullBleed
+                  ? { xs: 0.25, sm: 0.25, md: (isDashboardRoute ? 3 : 0) }
+                  : (isDashboardRoute ? 3 : 0),
+                pt: isDashboardRoute ? 3 : 0,
+                pb: isDashboardRoute ? { xs: session ? 10 : 3, md: 3 } : { xs: session ? 10 : 0, md: 0 },
+                width: isDashboardRoute
+                  ? { xs: '100%', md: `calc(100% - ${currentSideBarWidth})` }
+                  : '100%',
+                overflowX: 'hidden',
+                ml: isDashboardRoute ? { md: 14, lg: 14, xl: 0 } : 0,
+                ...(isFullBleed && { '& > *': { maxWidth: '100%' } }),
+                transition: [
+                  theme.breakpoints.up('md') && theme.breakpoints.down('lg')
+                    ? 'transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94), margin-left 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94), width 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)'
+                    : 'margin-left 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94), width 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)'
+                ].join(','),
+                transform: {
+                  xs: 'none',
+                  sm: 'none',
+                  md: isDashboardRoute && sideBarCollapsed ? 'translateX(-80px)' : 'none',
+                  lg: isDashboardRoute && sideBarCollapsed ? 'translateX(-80px)' : 'none',
+                  xl: 'none',
+                },
+              });
+            }, [session, location.pathname, isDashboardRoute, sideBarCollapsed, currentSideBarWidth])}
+            data-layout="app-main"
           >
             {children}
           </Box>

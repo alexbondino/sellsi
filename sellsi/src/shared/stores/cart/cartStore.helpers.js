@@ -48,13 +48,24 @@ export const prepareCartItem = (product, quantity) => {
       
   const minimum_purchase = product.minimum_purchase || product.compraMinima || 1
 
+  // Normalizar document_type (solo para el flujo de compra del comprador)
+  const rawDoc = product.document_type || product.documentType || '';
+  const document_type = (() => {
+    const v = String(rawDoc).toLowerCase();
+    return v === 'boleta' || v === 'factura' ? v : 'ninguno';
+  })();
+
+  const price_at_addition = product.price_at_addition || basePrice;
+
   return {
     ...product,
+    document_type,
     image,
     supplier, // ✅ Asegurar que se use el nombre, no el ID
     quantity: safeQuantity,
     price_tiers,
     minimum_purchase,
+    price_at_addition,
     addedAt: new Date().toISOString(),
   }
 }

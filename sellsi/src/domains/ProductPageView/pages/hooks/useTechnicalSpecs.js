@@ -34,6 +34,7 @@ export const useTechnicalSpecs = () => {
   const location = useLocation()
   const [product, setProduct] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null) // 🆕 Agregar estado de error
   // 🔍 DETECTAR ORIGEN: Agregar detección de fromMyProducts
   const fromMyProducts = location.state?.from === '/supplier/myproducts'
   // Log de sesión/localStorage relevante
@@ -116,27 +117,43 @@ export const useTechnicalSpecs = () => {
       localStorage.setItem('marketplace_origin', location.state.from)
     }
 
-    // Log siempre al inicio del useEffect
-    // Debug log removed
-
     // Extraer el ID del producto del slug
     const fetchProduct = async () => {
-      // Debug log removed
+      // 🆕 Resetear estados al inicio
+      if (isMounted) {
+        setError(null)
+        setProduct(null)
+        setLoading(true)
+      }
+
       if (!productSlug) {
-        // Debug log removed
-        if (isMounted) setLoading(false)
+        if (isMounted) {
+          setError('No se proporcionó un slug de producto')
+          setLoading(false)
+        }
         return
       }
+
       const productId = extractProductIdFromSlug(productSlug)
-      // Debug log removed
+      
+      if (!productId) {
+        if (isMounted) {
+          setError('ID de producto inválido en la URL')
+          setLoading(false)
+        }
+        return
+      }
+
       // Buscar el producto por ID en los mocks
       let foundProduct = PRODUCTOS.find((p) => p.id.toString() === productId)
       if (foundProduct) {
-        // Debug log removed
-        if (isMounted) setProduct(foundProduct)
-        if (isMounted) setLoading(false)
+        if (isMounted) {
+          setProduct(foundProduct)
+          setLoading(false)
+        }
         return
       }
+
       // Buscar en Supabase (producto, priceTiers, imágenes, especificaciones)
       try {
         const [
@@ -161,8 +178,8 @@ export const useTechnicalSpecs = () => {
             .eq('product_id', productId),
           getProductSpecifications(productId),
         ])
-        // Debug log removed
-        if (product) {
+
+        if (product && !prodError) {
           // Obtener nombre del proveedor
           let proveedorNombre = product.supplier_id
           const { data: userData } = await supabase
@@ -207,24 +224,32 @@ export const useTechnicalSpecs = () => {
             specifications: specs || [],
             is_active: product.is_active,
           }
-          // Debug log removed
-          if (isMounted) setProduct(foundProduct)
-          if (isMounted) setLoading(false)
+          
+          if (isMounted) {
+            setProduct(foundProduct)
+            setLoading(false)
+          }
         } else {
-          // Debug log removed
-          if (isMounted) setProduct(null)
-          if (isMounted) setLoading(false)
-          setTimeout(() => {
-            if (isMounted) navigate(originRoute, { replace: true })
-          }, 1200)
+          if (isMounted) {
+            setError('Producto no encontrado o inactivo')
+            setLoading(false)
+            // 🆕 Delay opcional antes de navegar de vuelta
+            setTimeout(() => {
+              if (isMounted) navigate(originRoute, { replace: true })
+            }, 1200)
+          }
         }
       } catch (err) {
-        // Debug log removed
-        if (isMounted) setProduct(null)
-        if (isMounted) setLoading(false)
+        console.error('Error fetching product:', err)
+        if (isMounted) {
+          setError('Error al cargar el producto')
+          setLoading(false)
+        }
       }
     }
+    
     fetchProduct()
+    
     return () => {
       isMounted = false
     }
@@ -348,6 +373,7 @@ export const useTechnicalSpecs = () => {
     // Estado del producto
     product,
     loading,
+    error, // 🆕 Agregar estado de error
 
     // Información de navegación
     originRoute,

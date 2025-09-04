@@ -18,7 +18,7 @@ import {
 } from '@mui/icons-material'
 import { ThemeProvider } from '@mui/material/styles';
 import { dashboardThemeCore } from '../../../../styles/dashboardThemeCore';
-import { useRole } from '../../../../infrastructure/providers/RoleProvider';
+import { useRole } from '../../../../infrastructure/providers';
 
 // Mensajes aleatorios para el carrito vacío
 const EMPTY_CART_MESSAGES = [
@@ -141,7 +141,7 @@ const EmptyCartState = () => {
                 px: 4,
                 py: 1.5,
                 borderRadius: 3,
-                background: isSupplier ? '#1565c0' : '#1565c0',
+                background: isSupplier ? '#2E52B2' : '#2E52B2',
                 boxShadow: isSupplier 
                   ? '0 8px 16px rgba(46, 125, 50, 0.3)' 
                   : '0 8px 16px rgba(102, 126, 234, 0.3)',

@@ -41,7 +41,7 @@ const useSupplierProductsCRUD = create((set, get) => ({
         .from('products')
         .select(`
           *, 
-          product_images(image_url, thumbnail_url, thumbnails).order(image_order.asc), 
+          product_images(image_url, thumbnail_url, thumbnails, image_order).order(image_order.asc), 
           product_quantity_ranges(*), 
           product_delivery_regions(*)
         `)
@@ -50,14 +50,48 @@ const useSupplierProductsCRUD = create((set, get) => ({
 
       if (prodError) throw prodError
 
+      // Debug: log raw product_quantity_ranges counts
+      
+
       // Procesar productos para incluir relaciones
       const processedProducts =
-        products?.map((product) => ({
-          ...product,
-          priceTiers: product.product_quantity_ranges || [],
-          images: product.product_images || [],
-          delivery_regions: product.product_delivery_regions || [],
-        })) || []
+        products?.map((product) => {
+          const images = (product.product_images || []).slice().sort((a,b)=>(a.image_order||0)-(b.image_order||0))
+          const main = images.find(img => (img.image_order||0) === 0)
+          return {
+            ...product,
+            priceTiers: product.product_quantity_ranges || [],
+            images,
+            delivery_regions: product.product_delivery_regions || [],
+            // Exponer thumbnails en nivel superior para hooks que esperan product.thumbnails
+            thumbnails: main?.thumbnails || null,
+            thumbnail_url: main?.thumbnail_url || product.thumbnail_url || null,
+          }
+        }) || []
+
+      // Fallback: si TODOS los priceTiers están vacíos, intentar recuperar en un query separado (posible fallo de relación / RLS)
+      const allEmpty = processedProducts.length > 0 && processedProducts.every(p => !p.priceTiers || p.priceTiers.length === 0)
+  if (allEmpty) {
+        const productIds = processedProducts.map(p => p.productid)
+        const { data: standaloneRanges, error: rangesError } = await supabase
+          .from('product_quantity_ranges')
+          .select('*')
+          .in('product_id', productIds)
+          .order('min_quantity', { ascending: true })
+        if (!rangesError && Array.isArray(standaloneRanges) && standaloneRanges.length > 0) {
+          const grouped = standaloneRanges.reduce((acc, r) => {
+            (acc[r.product_id] = acc[r.product_id] || []).push(r)
+            return acc
+          }, {})
+          processedProducts.forEach(p => {
+            if (grouped[p.productid]) {
+              p.priceTiers = grouped[p.productid]
+            }
+          })
+          
+        }
+      }
+
 
       set({
         products: processedProducts,
@@ -125,7 +159,8 @@ const useSupplierProductsCRUD = create((set, get) => ({
         precio: product.price,
         stock: product.productqty,
         images: [],
-        priceTiers: [],
+        // Optimistic: si createBasicProduct recibió priceTiers (vía createCompleteProduct) conservarlos para que stats detecten tramos
+        priceTiers: Array.isArray(productData.priceTiers) ? productData.priceTiers : [],
         delivery_regions: [],
       }
 
@@ -204,6 +239,7 @@ const useSupplierProductsCRUD = create((set, get) => ({
    * Eliminar producto
    */
   deleteProduct: async (productId) => {
+    console.log('[CRUD deleteProduct] start', productId)
     set((state) => ({
       operationStates: {
         ...state.operationStates,
@@ -213,30 +249,41 @@ const useSupplierProductsCRUD = create((set, get) => ({
     }))
 
     try {
-      // 1. Limpiar archivos huérfanos ANTES de eliminar
-      const cleanupResult = await StorageCleanupService.cleanupProductOrphans(productId)
+      const supplierId = localStorage.getItem('user_id')
+      // Ejecutar RPC unificada
+      const { data: result, error: rpcError } = await supabase.rpc('request_delete_product_v1', {
+        p_product_id: productId,
+        p_supplier_id: supplierId
+      })
+      if (rpcError) throw rpcError
+      if (!result?.success) throw new Error(result?.error || 'Fallo eliminación')
 
-      // 2. Eliminar producto de BD
-      const { error } = await supabase
-        .from('products')
-        .delete()
-        .eq('productid', productId)
+      // Limpieza defensiva (huérfanos) sin bloquear
+      let cleaned = 0
+      try {
+        const cleanupResult = await StorageCleanupService.cleanupProductOrphans(productId)
+        cleaned = cleanupResult.cleaned || 0
+      } catch (_) {}
 
-      if (error) throw error
+      set((state) => {
+        let updated = state.products
+        if (result.action === 'deleted') {
+          updated = state.products.filter(p => p.productid !== productId)
+        } else {
+          updated = state.products.map(p => p.productid === productId ? { ...p, is_active: false, deletion_status: 'pending_delete' } : p)
+        }
+        return {
+          products: updated,
+          operationStates: {
+            ...state.operationStates,
+            deleting: { ...state.operationStates.deleting, [productId]: false },
+          },
+        }
+      })
 
-      // 3. Log de limpieza para auditoría
-      console.log(`Producto ${productId} eliminado. Archivos limpiados: ${cleanupResult.cleaned}`)
-
-      // Remover producto del estado
-      set((state) => ({
-        products: state.products.filter((product) => product.productid !== productId),
-        operationStates: {
-          ...state.operationStates,
-          deleting: { ...state.operationStates.deleting, [productId]: false },
-        },
-      }))
-
-      return { success: true, cleaned: cleanupResult.cleaned }
+      // Edge cleanup fire & forget
+      supabase.functions.invoke('cleanup-product', { body: { productId, action: result.action, supplierId } })
+      return { success: true, action: result.action, cleaned }
     } catch (error) {
       set((state) => ({
         operationStates: {
@@ -259,17 +306,27 @@ const useSupplierProductsCRUD = create((set, get) => ({
   clearError: () => set({ error: null }),
 
   /**
+   * Actualizar parcialmente un producto en memoria (optimista, sin I/O)
+   */
+  updateLocalProduct: (productId, partial) => {
+    set((state) => ({
+      products: state.products.map((p) =>
+        p.productid === productId ? { ...p, ...partial } : p
+      ),
+    }))
+  },
+
+  /**
    * Refrescar un producto específico
    */
   refreshProduct: async (productId) => {
-    try {
-      console.log('[DEBUG] Refreshing product from database:', productId)
+  try {
       
       const { data: product, error } = await supabase
         .from('products')
         .select(`
           *, 
-          product_images(image_url, thumbnail_url, thumbnails).order(image_order.asc), 
+          product_images(image_url, thumbnail_url, thumbnails, image_order).order(image_order.asc), 
           product_quantity_ranges(*), 
           product_delivery_regions(*)
         `)
@@ -278,30 +335,21 @@ const useSupplierProductsCRUD = create((set, get) => ({
 
       if (error) throw error
 
-      console.log('[DEBUG] Fresh product data from DB:', {
-        productId,
-        imagesCount: product.product_images?.length || 0,
-        images: product.product_images?.map(img => ({
-          url: img.image_url?.substring(img.image_url.lastIndexOf('/') + 1) || 'no-url',
-          thumbnail: img.thumbnail_url?.substring(img.thumbnail_url.lastIndexOf('/') + 1) || 'no-thumbnail',
-          fullUrl: img.image_url
-        }))
-      })
+      
 
+      const images = (product.product_images || []).slice().sort((a,b)=>(a.image_order||0)-(b.image_order||0))
+      const main = images.find(img => (img.image_order||0) === 0)
       const processedProduct = {
         ...product,
         priceTiers: product.product_quantity_ranges || [],
-        images: product.product_images || [],
+        images,
         delivery_regions: product.product_delivery_regions || [],
+        thumbnails: main?.thumbnails || null,
+        thumbnail_url: main?.thumbnail_url || product.thumbnail_url || null,
       }
 
       set((state) => {
-        const oldProduct = state.products.find(p => p.productid === productId)
-        console.log('[DEBUG] Replacing product in state:', {
-          productId,
-          oldImagesCount: oldProduct?.images?.length || 0,
-          newImagesCount: processedProduct.images?.length || 0
-        })
+  const oldProduct = state.products.find(p => p.productid === productId)
         
         return {
           products: state.products.map((p) =>
@@ -312,7 +360,7 @@ const useSupplierProductsCRUD = create((set, get) => ({
 
       return { success: true, data: processedProduct }
     } catch (error) {
-      console.error('[DEBUG] Error refreshing product:', error)
+      
       set({ error: `Error refrescando producto: ${error.message}` })
       return { success: false, error: error.message }
     }
@@ -320,3 +368,30 @@ const useSupplierProductsCRUD = create((set, get) => ({
 }))
 
 export default useSupplierProductsCRUD
+
+// Listener global para actualizar thumbnails tras edge function sin recargar lista completa
+let __CRUD_THUMBS_LISTENER_ATTACHED = false;
+try {
+  if (typeof window !== 'undefined' && !__CRUD_THUMBS_LISTENER_ATTACHED) {
+    window.addEventListener('productImagesReady', async (ev) => {
+      try {
+        const detail = ev?.detail;
+        if (!detail || !detail.productId) return;
+        // Si viene phase y NO es de thumbnails finales, ignorar. Si no hay phase (legacy), continuar.
+        if (detail.phase && !/^thumbnails_/.test(detail.phase)) return;
+        const productId = detail.productId;
+        const { data, error } = await supabase
+          .from('product_images')
+          .select('thumbnails, thumbnail_url')
+          .eq('product_id', productId)
+          .eq('image_order', 0)
+          .single();
+        if (error || !data || !data.thumbnails) return;
+        useSupplierProductsCRUD.setState((state) => ({
+          products: state.products.map(p => p.productid === productId ? { ...p, thumbnails: data.thumbnails, thumbnail_url: data.thumbnail_url } : p)
+        }));
+      } catch (_) { /* noop */ }
+    });
+    __CRUD_THUMBS_LISTENER_ATTACHED = true;
+  }
+} catch (_) { /* noop */ }

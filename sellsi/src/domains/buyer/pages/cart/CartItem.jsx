@@ -102,7 +102,7 @@ const CartItem = ({
   }, [navigate, item]);
   const [selectedShipping, setSelectedShipping] = useState('standard')
   const [openDeleteModal, setOpenDeleteModal] = useState(false)
-  
+
   // ===== CÁLCULOS DE PRECIOS OPTIMIZADOS (USAR priceCalculations MEMOIZADO) =====
   // Los precios se calculan en priceCalculations para evitar recálculos innecesarios
   // Función optimizada para manejar el cambio de envío y calcular el precio
@@ -133,18 +133,16 @@ const CartItem = ({
   }, [item.quantity, productData.price_tiers, productData.basePrice])
 
   // Memoizar opciones de envío - ahora calculado dinámicamente
-  const shippingData = React.useMemo(() => {
-    return {
-      price: 0, // Se calculará dinámicamente según región
-      label: 'Según región'
-    }
-  }, [selectedShipping])
+  const shippingData = React.useMemo(() => ({
+    price: 0,
+    label: 'Según región'
+  }), [selectedShipping])
 
   // Handler optimizado para cambio de cantidad
   const handleQuantityChange = React.useCallback((newQuantity) => {
     updateQuantity(item.id, newQuantity)
   }, [item.id, updateQuantity])
-  
+
   // Handler optimizado para eliminar item
   const handleDeleteItem = React.useCallback(() => {
     handleRemoveWithAnimation(item.id)
@@ -248,15 +246,17 @@ const CartItem = ({
               sx={{
                 position: 'relative',
                 width: '160px',
+                height: '160px',
               }}
             >
               <CartItemImage
                 product={item}
+                height={160}
                 sx={{
-                  height: 160,
                   width: '100%',
-                 
+                  height: '100%'
                 }}
+                // removed debug onLoad/onError logs
               />
             </Box>
           </Grid>{' '}          {/* Información del producto */}
@@ -316,6 +316,12 @@ const CartItem = ({
                   />
                 )}
               </Box>{' '}
+              {/* Chip indicando que el item fue ofertado (desktop & mobile) */}
+              {(item.isOffered || item.metadata?.isOffered || item.offer_id || item.offered_price) && (
+                <Box sx={{ mt: 1 }}>
+                  <Chip data-testid="chip-ofertado" label="Ofertado" size="small" color="primary" />
+                </Box>
+              )}
               {/* Price - Usando precio dinámico basado en quantity y price_tiers */}
               <Box sx={{ mb: 2 }}>
                 <Typography variant="body2" sx={{ color: '#222', fontWeight: 500, mb: 0.5, fontsize: '0.9rem' }}>

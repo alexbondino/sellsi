@@ -18,6 +18,7 @@ import {
   MenuItem,
   Badge,
   Switch,
+  Tooltip,
   FormControlLabel,
   Typography,
 } from '@mui/material';
@@ -48,6 +49,8 @@ const SearchBar = ({
   isProviderView = false,
   onToggleProviderView = () => {},
   hasSideBar = false, // Para determinar si mostrar el switch
+  // ✅ NUEVA PROP: Ocultar solo el input de texto en mobile (vista productos) manteniendo el resto
+  hideTextInputOnMobile = false,
 }) => {
   // ✅ SOLUCIÓN ROBUSTA: Solo usamos el estado global, debouncing manejado en useMarketplaceState
 
@@ -90,7 +93,7 @@ const SearchBar = ({
     () => ({
       // ✅ NUEVO: Se agranda 50% cuando está en vista de proveedores
       width: isProviderView 
-        ? { xs: '45%', sm: '45%', md: '360px' } // 50% más ancho en vista proveedores
+        ? { xs: '100%', sm: '100%', md: '360px' } // 50% más ancho en vista proveedores
         : { xs: '30%', sm: '30%', md: '240px' }, // Tamaño normal en vista productos
       minWidth: isProviderView
         ? { xs: 'auto', sm: 'auto', md: '750px' } // 50% más minWidth en vista proveedores  
@@ -110,7 +113,7 @@ const SearchBar = ({
       // ✅ AJUSTE: Se adapta al espacio restante cuando SearchBar se agranda en vista proveedores
       width: isProviderView 
         ? { xs: '32%', sm: '35%', md: 195 } // Más estrecho cuando SearchBar es más ancho
-        : { xs: '47%', sm: '50%', md: 245 }, // Tamaño normal cuando SearchBar es normal
+        : { xs: '67%', sm: '61%', md: 245 }, // Tamaño normal cuando SearchBar es normal
       minWidth: 'auto', // ✅ Sin minWidth en móviles
     }),
     [isProviderView] // ✅ Dependencia de isProviderView
@@ -193,17 +196,24 @@ const SearchBar = ({
   return (
     <Box sx={containerStyles}>
       {/* Barra de búsqueda - Más compacta */}
-      <TextField
-        size="small" // ✅ Hacer más pequeña
-        value={busqueda}
-        onChange={handleSearchChange}
-        placeholder={isProviderView ? "Buscar proveedores..." : "Buscar productos..."}
-        variant="outlined"
-        InputProps={inputProps}
-        sx={textFieldStyles}
-        autoComplete="off"
-        autoCorrect="off"
-      />
+      {/* Input de búsqueda (oculto en mobile si hideTextInputOnMobile y no provider view) */}
+      <Box
+        sx={{
+          display: hideTextInputOnMobile && !isProviderView ? { xs: 'none', sm: 'none', md: 'block' } : 'block'
+        }}
+      >
+        <TextField
+          size="small"
+            value={busqueda}
+            onChange={handleSearchChange}
+            placeholder={isProviderView ? "Buscar proveedores..." : "Buscar productos..."}
+            variant="outlined"
+            InputProps={inputProps}
+            sx={textFieldStyles}
+            autoComplete="off"
+            autoCorrect="off"
+          />
+      </Box>
       {/* Selector de ordenamiento - Más compacto - Oculto en vista de proveedores */}
       {!isProviderView && (
         <FormControl sx={formControlStyles}>
@@ -240,12 +250,16 @@ const SearchBar = ({
         >
           <FormControlLabel
             control={
-              <Switch
-                checked={isProviderView}
-                onChange={onToggleProviderView}
-                size="small"
-                color="primary"
-              />
+              <Tooltip title="Alternar vista productos/proveedores" placement="right" arrow>
+                <span>
+                  <Switch
+                    checked={isProviderView}
+                    onChange={onToggleProviderView}
+                    size="small"
+                    color="primary"
+                  />
+                </span>
+              </Tooltip>
             }
             label={
               <Typography

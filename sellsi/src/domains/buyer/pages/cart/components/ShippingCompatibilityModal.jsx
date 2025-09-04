@@ -8,6 +8,7 @@
  */
 
 import React from 'react';
+import { useTheme, useMediaQuery } from '@mui/material';
 import { 
   Dialog, 
   DialogTitle, 
@@ -46,39 +47,44 @@ const ShippingCompatibilityModal = ({
   getUserRegionName 
 }) => {
   const userRegionName = getUserRegionName ? getUserRegionName(userRegion) : userRegion;
+  const theme = useTheme();
+  // Fullscreen hasta 575px para mejor UX en teléfonos pequeños
+  const fullScreen = useMediaQuery('(max-width:575px)');
 
   return (
     <Dialog
       open={open}
       onClose={null} // No permitir cerrar con ESC o clic fuera
-      maxWidth="md"
-      fullWidth
+      maxWidth={fullScreen ? false : 'md'}
+      fullWidth={!fullScreen}
+      fullScreen={fullScreen}
       disableEscapeKeyDown
       PaperProps={{
         sx: {
-          borderRadius: 3,
-          boxShadow: '0 12px 40px rgba(0,0,0,0.15)',
+          borderRadius: fullScreen ? 0 : 3,
+            boxShadow: fullScreen ? 'none' : '0 12px 40px rgba(0,0,0,0.15)',
+            height: fullScreen ? '100dvh' : 'auto'
         }
       }}
     >
-      <DialogTitle sx={{ pb: 2 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+      <DialogTitle sx={{ pb: { xs: 1.5, md: 2 }, px: { xs: 2, md: 3 } }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1.5, md: 2 } }}>
           <Box
             sx={{
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              width: 48,
-              height: 48,
+              width: { xs: 40, md: 48 },
+              height: { xs: 40, md: 48 },
               borderRadius: '50%',
               bgcolor: 'error.main',
               color: 'white',
             }}
           >
-            <WarningIcon sx={{ fontSize: 24 }} />
+            <WarningIcon sx={{ fontSize: { xs: 20, md: 24 } }} />
           </Box>
           <Box sx={{ flexGrow: 1 }}>
-            <Typography variant="h5" sx={{ fontWeight: 'bold', color: 'error.main', mb: 0.5 }}>
+            <Typography variant={fullScreen ? 'h6' : 'h5'} sx={{ fontWeight: 'bold', color: 'error.main', mb: 0.5, fontSize: { xs: '1rem', md: '1.25rem' } }}>
               ❌ Error: Algunos productos no se pueden despachar a tu región
             </Typography>
             <Typography variant="body2" color="text.secondary">
@@ -90,26 +96,26 @@ const ShippingCompatibilityModal = ({
 
       <Divider />
 
-      <DialogContent sx={{ py: 3 }}>
-        <Typography variant="body1" sx={{ mb: 3 }}>
+      <DialogContent sx={{ py: { xs: 2, md: 3 }, px: { xs: 2, md: 3 } }}>
+        <Typography variant="body1" sx={{ mb: { xs: 2, md: 3 }, fontSize: { xs: '0.85rem', md: '1rem' } }}>
           Los siguientes productos no tienen despacho disponible para tu región:
         </Typography>
 
-        <List sx={{ bgcolor: 'grey.50', borderRadius: 2, py: 1 }}>
+        <List sx={{ bgcolor: 'grey.50', borderRadius: 2, py: { xs: 0.5, md: 1 } }}>
           {incompatibleProducts.map((product, index) => (
             <React.Fragment key={product.id}>
-              <ListItem sx={{ py: 1.5 }}>
+              <ListItem sx={{ py: { xs: 1, md: 1.5 } }}>
                 <Box sx={{ mr: 2 }}>
-                  <ShippingIcon sx={{ color: 'error.main', fontSize: 20 }} />
+                  <ShippingIcon sx={{ color: 'error.main', fontSize: { xs: 18, md: 20 } }} />
                 </Box>
                 <ListItemText
                   primary={
-                    <Typography variant="body1" sx={{ fontWeight: 'medium' }}>
+                    <Typography variant="body1" sx={{ fontWeight: 'medium', fontSize: { xs: '0.85rem', md: '1rem' } }}>
                       {product.name}
                     </Typography>
                   }
                   secondary={
-                    <Typography variant="body2" color="text.secondary">
+                    <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.7rem', md: '0.8rem' } }}>
                       Solo disponible en: {product.availableRegions?.join(', ') || 'Regiones no especificadas'}
                     </Typography>
                   }
@@ -120,18 +126,18 @@ const ShippingCompatibilityModal = ({
           ))}
         </List>
 
-        <Box sx={{ mt: 3, p: 2, bgcolor: 'info.50', borderRadius: 2, border: '1px solid', borderColor: 'info.200' }}>
-          <Typography variant="body2" color="info.main" sx={{ fontWeight: 'medium' }}>
+        <Box sx={{ mt: { xs: 2.5, md: 3 }, p: { xs: 1.5, md: 2 }, bgcolor: 'info.50', borderRadius: 2, border: '1px solid', borderColor: 'info.200' }}>
+          <Typography variant="body2" color="info.main" sx={{ fontWeight: 'medium', fontSize: { xs: '0.72rem', md: '0.8rem' } }}>
             💡 Para continuar con tu compra, tienes las siguientes opciones:
           </Typography>
           <Box component="ul" sx={{ mt: 1, pl: 2, m: 0 }}>
             <li>
-              <Typography variant="body2" color="info.main">
+              <Typography variant="body2" color="info.main" sx={{ fontSize: { xs: '0.68rem', md: '0.75rem' } }}>
                 Elimina estos productos del carrito
               </Typography>
             </li>
             <li>
-              <Typography variant="body2" color="info.main">
+              <Typography variant="body2" color="info.main" sx={{ fontSize: { xs: '0.68rem', md: '0.75rem' } }}>
                 Cambia tu dirección de envío a una región compatible
               </Typography>
             </li>
@@ -141,13 +147,13 @@ const ShippingCompatibilityModal = ({
 
       <Divider />
 
-      <DialogActions sx={{ p: 3, justifyContent: 'center' }}>
+  <DialogActions sx={{ p: { xs: 2, md: 3 }, justifyContent: 'center' }}>
         <Button
           variant="contained"
           onClick={onClose}
           sx={{
-            px: 4,
-            py: 1.5,
+    px: { xs: 3, md: 4 },
+    py: { xs: 1.25, md: 1.5 },
             fontWeight: 'bold',
             textTransform: 'none',
             borderRadius: 2,

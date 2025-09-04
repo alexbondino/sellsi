@@ -5,7 +5,7 @@ import Loader from '../components/Loader';
 import { AppProviders } from '../infrastructure/providers/AppProviders';
 import { AppRouter } from '../infrastructure/router/AppRouter';
 import { AppShell } from '../shared/components/layout/AppShell';
-import { useAuth } from '../infrastructure/providers/AuthProvider';
+import { useAuth } from '../infrastructure/providers';
 import { useLocation } from 'react-router-dom';
 
 // ============================================================================

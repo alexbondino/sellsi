@@ -2,19 +2,22 @@
 	"version": "2.0.0",
 	"tasks": [
 		{
-			"label": "Verificar Refactor Supplier Hooks",
+			"label": "Verificar Build",
 			"type": "shell",
 			"command": "npm run build",
 			"group": "build",
 			"isBackground": false,
+			"options": {
+				"cwd": "${workspaceFolder}/sellsi"
+			},
 			"problemMatcher": [
 				"$tsc"
 			]
 		},
 		{
-			"label": "Verificar Refactor Supplier Hooks",
+			"label": "Deploy Supabase Functions (changed)",
 			"type": "shell",
-			"command": "npm run build",
+			"command": "node ./scripts/deploy-supabase-changed.cjs clbngnjetipglkikondm",
 			"isBackground": false,
 			"group": "build"
 		}

@@ -14,10 +14,12 @@ import { globalObserverPool } from '../../utils/observerPoolManager';
 import { BannerProvider } from '../../shared/components/display/banners/BannerContext';
 import ScrollToTop from '../../shared/components/navigation/ScrollToTop';
 import BanGuard from '../../components/BanGuard';
-import { AuthProvider } from './AuthProvider';
-import { RoleProvider } from './RoleProvider';
+import { UnifiedAuthProvider } from './UnifiedAuthProvider';
+import { AuthPrefetchProvider } from '../prefetch/AuthPrefetchProvider';
 import { LayoutProvider } from './LayoutProvider';
-import { TransferInfoManager } from '../../shared/components/managers';
+import { NotificationsProvider } from '../../domains/notifications/components/NotificationProvider';
+import { MarketplaceSearchProvider } from '../../shared/contexts/MarketplaceSearchContext';
+import { TransferInfoManager } from '../managers/TransferInfoManager';
 
 const globalStyles = {
   html: { overflowX: 'hidden' },
@@ -44,16 +46,20 @@ export const AppProviders = ({ children }) => {
         <BannerProvider>
           <BrowserRouter>
             <ScrollToTop />
-            <AuthProvider>
-              <TransferInfoManager />
-              <RoleProvider>
-                <LayoutProvider>
-                  <BanGuard>
-                    {children}
-                  </BanGuard>
-                </LayoutProvider>
-              </RoleProvider>
-            </AuthProvider>
+            <UnifiedAuthProvider>
+              <AuthPrefetchProvider>
+                    <TransferInfoManager />
+                    <NotificationsProvider>
+                      <MarketplaceSearchProvider>
+                        <LayoutProvider>
+                          <BanGuard>
+                            {children}
+                          </BanGuard>
+                        </LayoutProvider>
+                      </MarketplaceSearchProvider>
+                    </NotificationsProvider>
+              </AuthPrefetchProvider>
+            </UnifiedAuthProvider>
           </BrowserRouter>
           
           <Toaster 

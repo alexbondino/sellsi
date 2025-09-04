@@ -6,6 +6,8 @@ import { supabase } from '../../../services/supabase';
 import { PAYMENT_STATUS } from '../constants/paymentMethods';
 import { trackUserAction } from '../../../services/security';
 import { default as khipuService } from './khipuService';
+// Notificaciones de nueva orden (per-item buyer + supplier aggregate)
+import { orderService } from '../../../services/user/orderService';
 
 class CheckoutService {
   // ===== ÓRDENES =====
@@ -17,10 +19,73 @@ class CheckoutService {
    */
   async createOrder(orderData) {
     try {
+      // ===== HOTFIX DEFENSIVO DIRECCIONES =====
+      // Si el caller no adjuntó shipping/billing pero el usuario podría tenerlas en perfil,
+      // hacemos un fetch rápido antes del insert para no nacer NULL.
+      if (orderData?.userId && (!orderData.shippingAddress || !orderData.shippingAddress.address)) {
+        try {
+          const { getUserProfile } = await import('../../../services/user/profileService');
+          const profResp = await getUserProfile(orderData.userId);
+          const prof = profResp?.data || profResp || {};
+          if (!orderData.shippingAddress && prof.shipping_address && String(prof.shipping_address).trim() !== '') {
+            orderData.shippingAddress = {
+              address: prof.shipping_address,
+              region: prof.shipping_region || '',
+              commune: prof.shipping_commune || '',
+              number: prof.shipping_number || '',
+              department: prof.shipping_dept || ''
+            };
+          }
+          if (!orderData.billingAddress && (prof.billing_address || prof.business_name || prof.business_line)) {
+            if ([prof.billing_address, prof.business_name, prof.business_line, prof.billing_region, prof.billing_commune]
+              .some(v => v && String(v).trim() !== '')) {
+              orderData.billingAddress = {
+                business_name: prof.business_name || '',
+                billing_rut: prof.billing_rut || '',
+                business_line: prof.business_line || '',
+                giro: prof.business_line || '', // alias
+                billing_address: prof.billing_address || '',
+                billing_region: prof.billing_region || '',
+                billing_commune: prof.billing_commune || '',
+                // aliases normalizados
+                address: prof.billing_address || '',
+                region: prof.billing_region || '',
+                commune: prof.billing_commune || ''
+              };
+              const requiredBilling = orderData.billingAddress.business_name.trim() !== '' && orderData.billingAddress.billing_address.trim() !== '';
+              if (!requiredBilling) orderData.billingAddress.incomplete = true;
+            }
+          }
+        } catch (pfErr) {
+          console.warn('[CheckoutService] No se pudo recuperar perfil para enriquecer direcciones:', pfErr?.message);
+        }
+      }
+      // =========================================
+      // ✅ VALIDAR que haya dirección de envío
+      if (!orderData.shippingAddress || !orderData.shippingAddress.address) {
+        console.warn('[CheckoutService] Sin dirección de envío - creando orden sin direcciones');
+        // No bloquear la orden, pero loggear para debugging
+      }
+
       // Registrar IP del usuario al crear la orden
-      await trackUserAction(
-        `order_created_${orderData.paymentMethod || 'unknown'}`
-      );
+      if (orderData?.userId) {
+        try {
+          await trackUserAction(
+            orderData.userId,
+            `order_created_${orderData.paymentMethod || 'unknown'}`
+          );
+        } catch (e) {
+          console.warn('[CheckoutService] trackUserAction fallo (createOrder) pero no bloquea flujo:', e?.message);
+        }
+      }
+
+      // ✅ Pasar objetos JSON directamente (Supabase cliente serializa a jsonb)
+      const shippingAddressObj = orderData.shippingAddress && typeof orderData.shippingAddress === 'object'
+        ? orderData.shippingAddress
+        : null;
+      const billingAddressObj = orderData.billingAddress && typeof orderData.billingAddress === 'object'
+        ? orderData.billingAddress
+        : null;
 
       const { data, error } = await supabase
         .from('orders')
@@ -35,13 +100,21 @@ class CheckoutService {
           status: 'pending',
           payment_method: orderData.paymentMethod,
           payment_status: 'pending',
-          shipping_address: orderData.shippingAddress,
-          billing_address: orderData.billingAddress,
+          shipping_address: shippingAddressObj,
+          billing_address: billingAddressObj,
         })
         .select()
         .single();
 
       if (error) throw error;
+
+      // Disparar notificaciones de creación (no bloquea el retorno)
+      try {
+        // Esperamos para asegurar consistencia inicial; si prefieres desvincular completamente, quitar await
+        await orderService.notifyNewOrder(data);
+      } catch (e) {
+        console.error('[CheckoutService] notifyNewOrder failed:', e);
+      }
 
       return data;
     } catch (error) {
@@ -102,6 +175,9 @@ class CheckoutService {
         total: paymentData.amount,
         currency: paymentData.currency || 'CLP',
         items: paymentData.items,
+  // ✔ Forward de direcciones
+  shippingAddress: paymentData.shippingAddress || null,
+  billingAddress: paymentData.billingAddress || null,
       });
 
       if (!khipuResponse.success) {

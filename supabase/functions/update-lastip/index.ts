@@ -9,6 +9,7 @@
  */
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { withMetrics } from '../_shared/metrics.ts'
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 // Headers CORS
@@ -23,7 +24,7 @@ const DEBUG_MODE = Deno.env.get('DEBUG_MODE') === 'true'
 const log = DEBUG_MODE ? console.log : () => {}
 const logError = DEBUG_MODE ? console.error : () => {}
 
-serve(async (req) => {
+serve((req) => withMetrics('update-lastip', req, async () => {
   // Manejar preflight requests
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
@@ -99,7 +100,7 @@ serve(async (req) => {
       );
     }
 
-    // Verificar si la IP está baneada
+  // Verificar si la IP está baneada
     const { data: bannedIp, error: banError } = await supabase
       .from('banned_ips')
       .select('ip, banned_reason')
@@ -124,8 +125,28 @@ serve(async (req) => {
       );
     }
 
-    // Actualizar last_ip solo si es diferente (evitar updates innecesarios)
+    // TTL server-side para evitar spam (env override IP_UPDATE_MIN_INTERVAL_SEC)
+    const MIN_INTERVAL_SEC = parseInt(Deno.env.get('IP_UPDATE_MIN_INTERVAL_SEC') || '600'); // 10 min default
+
+    // Usar tabla de auditoría ip_updates si existe para última actualización (fallback a updatedt)
+    let lastServerUpdate: Date | null = null;
+    if (existingUser.updatedt) {
+      try { lastServerUpdate = new Date(existingUser.updatedt); } catch (_) {}
+    }
+
+    const nowTs = new Date();
+    const elapsedSec = lastServerUpdate ? (nowTs.getTime() - lastServerUpdate.getTime()) / 1000 : Infinity;
+
+    // Procesar batch metadata si viene en sessionInfo.actions_summary
+    let actionsSummary: Record<string, number> | undefined;
+    if (sessionInfo && typeof sessionInfo === 'object' && sessionInfo.actions_summary) {
+      actionsSummary = sessionInfo.actions_summary;
+    }
+
+    let updated = false;
+    let skippedReason: string | undefined;
     if (existingUser.last_ip !== clientIp) {
+      // IP cambió: siempre actualizar ignorando TTL
       const { error: updateError } = await supabase
         .from("users")
         .update({ 
@@ -133,7 +154,6 @@ serve(async (req) => {
           updatedt: timestamp
         })
         .eq("user_id", user_id);
-
       if (updateError) {
         logError('Error actualizando last_ip:', updateError);
         return new Response(
@@ -141,25 +161,48 @@ serve(async (req) => {
           { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
+      updated = true;
+    } else if (elapsedSec < MIN_INTERVAL_SEC && !actionsSummary) {
+      // Misma IP y dentro de TTL y no es batch con summary => omitir
+      skippedReason = 'ttl';
+    } else {
+      // Misma IP pero TTL expiró o trae summary (auditoría de acciones): refrescar timestamp
+      const { error: touchError } = await supabase
+        .from('users')
+        .update({ updatedt: timestamp })
+        .eq('user_id', user_id);
+      if (touchError) {
+        logError('Error tocando updatedt:', touchError);
+      }
     }
 
     // Preparar respuesta con información de auditoría
-    const response = {
+    const response: any = {
       success: true,
       ip: clientIp,
       previous_ip: existingUser.last_ip,
-      updated: existingUser.last_ip !== clientIp,
+      updated,
       timestamp: timestamp,
       user_id: user_id,
-      ip_status: bannedIp ? 'banned' : 'clean'
+      ip_status: bannedIp ? 'banned' : 'clean',
+      skipped_reason: skippedReason,
+      server_ttl_sec: MIN_INTERVAL_SEC
     };
+    if (actionsSummary) {
+      response.actions_summary = actionsSummary;
+      response.total_actions = Object.values(actionsSummary).reduce((a: number, b: number) => a + (b as number), 0);
+    }
 
     // Log de auditoría para debugging
-    log('✅ IP actualizada:', {
+    log('✅ update-lastip:', {
       user_id: user_id,
       email: existingUser.email,
       old_ip: existingUser.last_ip,
       new_ip: clientIp,
+      updated,
+      skippedReason,
+      ttlSec: MIN_INTERVAL_SEC,
+      actions: actionsSummary,
       user_agent: userAgent,
       timestamp: timestamp
     });
@@ -176,4 +219,4 @@ serve(async (req) => {
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
-});
+}));

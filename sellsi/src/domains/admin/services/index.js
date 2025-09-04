@@ -22,7 +22,8 @@ export {
   generate2FASecret,
   disable2FA,
   mark2FAAsConfigured,
-  verifyAdminSession
+  verifyAdminSession,
+  checkTrustedDevice
 } from './adminAuthService'
 
 // ========================================
@@ -93,7 +94,8 @@ export {
 // ========================================
 // 🔒 SERVICIOS DE SEGURIDAD Y BANEOS
 // ========================================
-export { default as BanService } from './banService'
+// Exportar BanService desde la ubicación canonical en services/security
+export { default as BanService } from '../../../services/security/banService'
 export {
   updateUserIP,
   getCurrentUserIP,
@@ -102,7 +104,7 @@ export {
   trackUserAction,
   debugCurrentIP,
   trackRouteVisit
-} from './ipTrackingService'
+} from '../../../services/security/ipTrackingService'
 
 // ========================================
 // 🔧 SERVICIOS PRINCIPALES Y UTILIDADES
@@ -147,7 +149,7 @@ import * as productServices from './adminProductService'
 import * as requestServices from './adminRequestService'
 import * as fileServices from './adminFileService'
 import * as auditServices from './adminAuditService'
-import * as ipTrackingServices from './ipTrackingService'
+import * as ipTrackingServices from '../../../services/security/ipTrackingService'
 
 /**
  * @deprecated Use direct imports from domains/admin/services instead

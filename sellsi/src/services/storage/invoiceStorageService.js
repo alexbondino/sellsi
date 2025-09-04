@@ -1,0 +1,87 @@
+// ============================================================================
+// INVOICE STORAGE SERVICE - Upload de facturas (PDF) al bucket 'invoices'
+// ============================================================================
+import { supabase } from '../supabase'
+
+const MAX_BYTES = 500 * 1024 // 500KB
+const ALLOWED_TYPES = ['application/pdf', 'application/x-pdf']
+
+const sanitizeFilename = (name) => {
+  return name
+    .replace(/\s+/g, '_')
+    .replace(/[^a-zA-Z0-9_.-]/g, '')
+    .replace(/_+/g, '_')
+}
+
+export async function uploadInvoicePDF({ file, supplierId, orderId, userId }) {
+  if (!file) throw new Error('Archivo requerido')
+  if (!supplierId) throw new Error('supplierId requerido')
+  if (!orderId) throw new Error('orderId requerido')
+
+  if (file.size > MAX_BYTES) throw new Error('El archivo excede 500KB')
+  if (!ALLOWED_TYPES.includes(file.type)) throw new Error('Sólo se permiten PDF')
+
+  // Validar magic bytes (sin leer todo el archivo)
+  const firstChunk = await file.slice(0, 5).arrayBuffer()
+  const signature = new TextDecoder().decode(new Uint8Array(firstChunk))
+  if (!signature.startsWith('%PDF-')) throw new Error('Archivo no parece un PDF válido')
+
+  const safeName = sanitizeFilename(file.name || 'factura.pdf') || 'factura.pdf'
+  const ts = Date.now()
+  const path = `${supplierId}/${orderId}/${ts}_${safeName}`
+
+  const { data, error } = await supabase.storage
+    .from('invoices')
+    .upload(path, file, {
+      cacheControl: '3600',
+      upsert: false,
+      contentType: 'application/pdf'
+    })
+
+  if (error) throw new Error(error.message || 'Error subiendo factura')
+
+  // Intentar registrar metadata si existe tabla invoices_meta
+  // Manejar explícitamente el resultado para evitar que políticas RLS hagan throw y rompan la UX
+  try {
+    const { data: metaData, error: metaErr } = await supabase.from('invoices_meta').insert({
+      user_id: userId || supplierId,
+      supplier_id: supplierId,
+      order_id: orderId,
+      path: data.path,
+      filename: file.name,
+      size: file.size,
+      content_type: file.type
+    });
+    if (metaErr) {
+      // Loguear para diagnóstico pero no propagar al usuario
+      console.warn('[invoiceStorageService] invoices_meta insert error:', metaErr.message || metaErr);
+    }
+  } catch (e) {
+    // En caso de que supabase client lance (excepciones raras), loguear pero no propagar
+    console.warn('[invoiceStorageService] invoices_meta insert threw:', e?.message || e);
+  }
+
+  return { path: data.path }
+}
+
+export async function createSignedInvoiceUrl(path, expiresIn = 300) {
+  // Normalizar y validar path básico (no debe ser carpeta vacía)
+  if (!path || typeof path !== 'string') {
+    return { data: null, error: new Error('Ruta de factura inválida') };
+  }
+  // Protección: si el path parece sólo carpeta (sin punto), avisar (subida debería incluir timestamp_nombre.pdf)
+  if (!path.includes('.')) {
+    return { data: null, error: new Error('Ruta apunta a carpeta, falta nombre del archivo PDF') };
+  }
+  try {
+    const { data, error } = await supabase.storage.from('invoices').createSignedUrl(path, expiresIn);
+    if (error || !data?.signedUrl) {
+      return { data: null, error: new Error(error?.message || 'No se pudo generar URL firmada') };
+    }
+    return { data, error: null };
+  } catch (e) {
+    return { data: null, error: new Error(e?.message || 'Fallo inesperado creando URL firmada') };
+  }
+}
+
+export default { uploadInvoicePDF, createSignedInvoiceUrl }

@@ -18,7 +18,7 @@
 | Archivo | Tipo | LOC | Complejidad | Descripción funcional | Dependencias clave |
 |---------|------|-----|-------------|----------------------|-------------------|
 | Marketplace.jsx | Componente | ~118 | MEDIA | Orquestador principal del marketplace con layout responsive | React, Material-UI, useMarketplaceLogic |
-| useMarketplaceLogic.jsx | Hook | ~330 | ALTA | Lógica centralizada de estado, filtros, ordenamiento y navegación | React hooks, useMarketplaceState, useProductSorting |
+| useMarketplaceLogic (shared) | Hook | ~330 | ALTA | Lógica centralizada (shared/hooks/marketplace) de estado, filtros, ordenamiento y navegación | React hooks, useMarketplaceState, useProductSorting |
 | ProductPageWrapper.jsx | Componente | ~200 | MEDIA | Wrapper para carga de producto individual con routing dinámico | React Router, Supabase, useParams |
 | ProductPageView.jsx | Componente | ~367 | ALTA | Ficha técnica completa con galería, specs y acciones de compra | Material-UI, React lazy loading, toast |
 | hooks/useMarketplaceState.js | Hook | ~139 | ALTA | Estado global del marketplace con filtros complejos | useProducts, constants |

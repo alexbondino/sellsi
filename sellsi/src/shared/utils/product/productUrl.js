@@ -63,19 +63,30 @@ export const generateProductUrl = (product) => {
 
 /**
  * Extracts product ID from a product slug
- * @param {string} slug - The product slug (name-id)
+ * @param {string} slug - The product slug (name-id or id-name)
  * @returns {string|null} - The product ID (UUID) or null if invalid
  */
 export const extractProductIdFromSlug = (slug) => {
   if (!slug) return null;
-  // UUID v4 standard length is 36 characters
-  const uuidLength = 36;
-  if (slug.length < uuidLength) return null;
-  const candidate = slug.slice(0, uuidLength);
-  // Simple UUID v4 validation
-  if (/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(candidate)) {
-    return candidate;
+  
+  // UUID v4 pattern
+  const uuidPattern = /[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/;
+  
+  // Try to find UUID anywhere in the slug
+  const match = slug.match(uuidPattern);
+  if (match) {
+    return match[0];
   }
+  
+  // Fallback: try old logic (UUID at start) for backwards compatibility
+  const uuidLength = 36;
+  if (slug.length >= uuidLength) {
+    const candidate = slug.slice(0, uuidLength);
+    if (/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(candidate)) {
+      return candidate;
+    }
+  }
+  
   return null;
 }
 

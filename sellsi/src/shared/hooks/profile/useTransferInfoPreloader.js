@@ -14,7 +14,7 @@
  */
 
 import { useEffect, useRef } from 'react';
-import { useAuth } from '../../../infrastructure/providers/AuthProvider';
+import { useAuth } from '../../../infrastructure/providers';
 import { useTransferInfoValidation } from './useTransferInfoValidation';
 
 /**

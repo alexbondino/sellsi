@@ -1,0 +1,14 @@
+{
+  "name": "sellsi-monorepo-root",
+  "private": true,
+  "scripts": {
+    "analyze:cycles": "node detect_cycles.js --format pretty --suggest-breaks --max-len 12",
+    "analyze:cycles:md": "node detect_cycles.js --format md --suggest-breaks --output ./Documentacion/cycles/cycle-report.md --max-len 12",
+    "analyze:hooks": "node scripts/analyze_hooks_deps.js"
+  },
+  "dependencies": {
+    "@babel/parser": "^7.28.3",
+    "@babel/traverse": "^7.28.3",
+    "glob": "^11.0.3"
+  }
+}

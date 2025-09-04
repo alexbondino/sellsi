@@ -6,7 +6,7 @@ const ProductInfo = ({ product, isMobile = false }) => {
 
   return (
     <Box sx={{ 
-      px: { xs: 2, md: 0 }, 
+      px: { xs: 0, md: 0 }, 
       mt: { xs: 4, md: 6 }, 
       mb: 6,
       width: '100%' 
@@ -14,7 +14,8 @@ const ProductInfo = ({ product, isMobile = false }) => {
       <Paper
         elevation={2}
         sx={{
-          p: { xs: 3, sm: 4, md: 5 },
+          // Remove mobile internal padding: AppShell provides canonical gutter
+          p: { xs: 1, md: 5 },
           borderRadius: 3,
           width: { xs: '100%', md: '70%' },
           maxWidth: '900px',

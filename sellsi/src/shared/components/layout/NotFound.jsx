@@ -4,8 +4,7 @@ import { motion } from 'framer-motion'
 import { Home as HomeIcon } from '@mui/icons-material'
 import { useNavigate } from 'react-router-dom'
 import { PrimaryButton } from '../forms'
-import { useAuth } from '../../../infrastructure/providers/AuthProvider'
-import { useRole } from '../../../infrastructure/providers/RoleProvider'
+import { useAuth, useRole } from '../../../infrastructure/providers/UnifiedAuthProvider'
 
 const NotFound = () => {
   const navigate = useNavigate()
@@ -69,7 +68,7 @@ const NotFound = () => {
             sx={{
               fontSize: { xs: '6rem', md: '8rem' },
               fontWeight: 'bold',
-              background: '#1565c0',
+              background: '#2E52B2',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
               lineHeight: 1,

@@ -17,6 +17,7 @@ import { useLocation } from 'react-router-dom';
 import { useMarketplaceState } from '../../../domains/marketplace/hooks/state/useMarketplaceState';
 import { useProductSorting } from '../../../domains/marketplace/hooks/products/useProductSorting';
 import { useScrollBehavior } from '../../../domains/marketplace/hooks/ui/useScrollBehavior';
+import { useMarketplaceSearchBus } from '../../contexts/MarketplaceSearchContext';
 
 /**
  * Hook centralizado que consolida toda la lógica de Marketplace
@@ -28,6 +29,9 @@ export const useMarketplaceLogic = (options = {}) => {
     () => {
       const defaultConfig = {
         hasSideBar: false,
+  // 🚩 NUEVO FLAG: Permite que algunos consumidores (Marketplace público) limpien la búsqueda
+  // cuando se cambia entre vista de proveedores y productos.
+  clearSearchOnViewToggle: false,
         searchBarMarginLeft: {
           xs: 0,
           sm: 0,
@@ -62,6 +66,7 @@ export const useMarketplaceLogic = (options = {}) => {
     searchBarMarginLeft,
     categoryMarginLeft,
     titleMarginLeft,
+  clearSearchOnViewToggle,
   } = memoizedOptions;
 
   const theme = useTheme();
@@ -127,6 +132,30 @@ export const useMarketplaceLogic = (options = {}) => {
     }
   }, [location.state?.providerSwitchActive]);
 
+  // ✅ NUEVO: Effect para aplicar búsqueda inicial cuando se navega desde TopBar u otra sección
+  useEffect(() => {
+    if (location.state?.initialSearch !== undefined && location.state?.initialSearch !== null) {
+      const term = String(location.state.initialSearch).trim();
+      if (term !== '') {
+        setBusqueda(term);
+      } else {
+        setBusqueda('');
+      }
+      // Limpiar state para no re-aplicar en futuras navegaciones
+      try {
+        window.history.replaceState({}, document.title, location.pathname + location.search);
+      } catch (_) {}
+    }
+  }, [location.state?.initialSearch, location.pathname, location.search, setBusqueda]);
+
+  // ✅ REEMPLAZO: Integración vía contexto (MarketPlaceSearchBus) en lugar de evento global
+  const searchBus = useMarketplaceSearchBus();
+  useEffect(() => {
+    if (!searchBus) return; // Si no hay provider (fallback) simplemente no hacemos nada
+    if (!location.pathname.startsWith('/buyer/marketplace')) return;
+    setBusqueda(searchBus.externalSearchTerm || '');
+  }, [searchBus?.externalSearchTerm, location.pathname, setBusqueda]);
+
   // ===== HANDLERS MEMOIZADOS =====
   const handleToggleFiltro = useCallback(() => {
     // Para desktop: toggle del panel lateral
@@ -152,13 +181,14 @@ export const useMarketplaceLogic = (options = {}) => {
 
   // ✅ OPTIMIZACIÓN: Handler para el switch de vistas - memoizado estable
   const handleToggleProviderView = useCallback(() => {
-    setIsProviderView(prev => {
-      const newValue = !prev;
-      // Al cambiar la vista, resetea los filtros activos
-      resetFiltros();
-      return newValue;
-    });
-  }, [resetFiltros]);
+    // Opcionalmente limpiar búsqueda (comportamiento legacy de Marketplace público)
+    if (clearSearchOnViewToggle) {
+      setBusqueda('');
+    }
+    // Resetear filtros antes o después no afecta porque no depende de isProviderView interno
+    resetFiltros();
+    setIsProviderView(prev => !prev);
+  }, [clearSearchOnViewToggle, resetFiltros, setBusqueda]);
 
   // ✅ OPTIMIZACIÓN: Memoizar todos los handlers que se pasan como props
   const memoSetBusqueda = useCallback(v => setBusqueda(v), [setBusqueda]);

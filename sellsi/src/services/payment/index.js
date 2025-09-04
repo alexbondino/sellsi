@@ -4,6 +4,5 @@
  * Servicios de pago y procesamiento de transacciones
  */
 
-export * from './khipuService';
-
+// Eliminado khipuService legacy (uso real migra a domains/checkout/services/khipuService.js)
 export default {};

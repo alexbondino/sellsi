@@ -67,6 +67,7 @@ const LazyImage = ({
   errorFallback = null,
   onLoad = () => {},
   onError = () => {},
+  fallbackSrc = null, // Nueva prop para imagen de fallback
   className = '',
   sx = {},
   
@@ -83,22 +84,32 @@ const LazyImage = ({
   const [imageLoaded, setImageLoaded] = useState(false)
   const [imageError, setImageError] = useState(false)
   const [imageSrc, setImageSrc] = useState(src) // Track src changes
+  const [attemptedFallback, setAttemptedFallback] = useState(false)
 
   // Force reload when src changes
   useEffect(() => {
     if (src !== imageSrc) {
       setImageLoaded(false)
       setImageError(false)  
+      setAttemptedFallback(false)
       setImageSrc(src)
     }
   }, [src, imageSrc])
 
   const handleImageLoad = () => {
     setImageLoaded(true)
+    setAttemptedFallback(false) // Reset fallback state en caso de éxito
     onLoad()
   }
 
   const handleImageError = () => {
+    // Si hay fallbackSrc disponible y no hemos intentado usarlo aún
+    if (fallbackSrc && !attemptedFallback && fallbackSrc !== imageSrc) {
+      setAttemptedFallback(true)
+      setImageSrc(fallbackSrc)
+      return // No marcar como error aún, intentar con fallback
+    }
+    
     setImageError(true)
     onError()
   }
@@ -206,6 +217,11 @@ const LazyImage = ({
             transition: 'opacity 0.3s ease-in-out',
           }}
         />
+      )}
+      {process.env.NODE_ENV === 'development' && isVisible && imageSrc && (
+        <Box sx={{position:'absolute',bottom:0,left:0,right:0, bgcolor:'rgba(0,0,0,0.3)', color:'#fff', fontSize:8, p:0.3, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>
+          {imageSrc.split('/').pop()}
+        </Box>
       )}
     </Box>
   )

@@ -26,7 +26,7 @@ Gracias.`);
     <Box
       sx={{
         minHeight: '100vh',
-        background: '#1565c0',
+        background: '#2E52B2',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',

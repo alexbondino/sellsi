@@ -8,6 +8,7 @@ import {
   Assignment as AssignmentIcon,
 } from '@mui/icons-material';
 import { generateChartData } from './utils';
+import { formatNumber, formatCurrency } from '../../../../shared/utils/formatters';
 
 const SummaryCards = ({ products = [], totalSales = 0, outOfStock = 0, weeklyRequests = [], productsActive = 0 }) => {
   const chartData = {
@@ -20,7 +21,7 @@ const SummaryCards = ({ products = [], totalSales = 0, outOfStock = 0, weeklyReq
   const dashboardData = [
     {
       title: 'Productos Activos',
-      value: (productsActive ?? products.length).toLocaleString(),
+      value: formatNumber(productsActive ?? products.length),
       interval: 'Últimos 30 días',
       trend: 'up',
       data: chartData.products,
@@ -28,7 +29,7 @@ const SummaryCards = ({ products = [], totalSales = 0, outOfStock = 0, weeklyReq
     },
     {
       title: 'Ventas Este Mes',
-      value: `$${(totalSales || 0).toLocaleString()}`,
+      value: formatCurrency(totalSales || 0),
       interval: 'Últimos 30 días',
       trend: 'up',
       data: chartData.sales,

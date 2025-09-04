@@ -44,7 +44,9 @@ import {
 // Importar componentes UI existentes
 import { Widget } from '../../../shared/components/layout';
 import AdminStatCard from './AdminStatCard';
-import { getSolicitudes, getEstadisticas } from '../../../domains/admin';
+// Refactor anti-ciclos: importar servicios directamente
+import { getSolicitudes } from '../services/adminRequestService';
+import { getEstadisticas } from '../services';
 
 // Importar modales
 import ConfirmarPagoModal from '../modals/ConfirmarPagoModal';

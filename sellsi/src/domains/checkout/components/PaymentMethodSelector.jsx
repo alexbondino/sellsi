@@ -13,6 +13,8 @@ import {
   CircularProgress,
   IconButton,
   Tooltip,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material';
 import { 
   ArrowBack as ArrowBackIcon,
@@ -32,6 +34,7 @@ import { calculatePriceForQuantity } from '../../../utils/priceCalculation';
 import CheckoutSummary from './CheckoutSummary';
 import PaymentMethodCard from '../../../shared/components/modals/PaymentMethodCard';
 import { CheckoutProgressStepper } from '../../../shared/components/navigation';
+import MobilePaymentLayout from './MobilePaymentLayout';
 
 // ============================================================================
 // COMPONENTE PRINCIPAL
@@ -39,6 +42,10 @@ import { CheckoutProgressStepper } from '../../../shared/components/navigation';
 
 const PaymentMethodSelector = () => {
   const navigate = useNavigate();
+  const theme = useTheme();
+
+  // ===== DETECCIÓN DE MOBILE =====
+  const isMobile = useMediaQuery(theme.breakpoints.down('lg'));
 
   // Estados del checkout
   const {
@@ -55,6 +62,8 @@ const PaymentMethodSelector = () => {
     startPaymentProcessing,
     completePayment,
     failPayment,
+    currentStepId,
+    currentStepOrder
   } = useCheckout();
 
   // Estados de métodos de pago
@@ -174,9 +183,16 @@ const PaymentMethodSelector = () => {
         calculatedSubtotal + calculatedIva + shippingCost
       );
 
+      // Normalizar a un único campo document_type (alias legacy documentType eliminado en nuevos flujos)
+      const itemsWithDocType = (orderData.items || []).map(it => {
+        const raw = it.document_type || it.documentType;
+        const norm = raw && ['boleta','factura'].includes(String(raw).toLowerCase()) ? String(raw).toLowerCase() : 'ninguno';
+        return { ...it, document_type: norm };
+      });
+
       const order = await checkoutService.createOrder({
         userId: userId,
-        items: orderData.items,
+        items: itemsWithDocType,
         subtotal: orderData.subtotal,
         tax: orderData.tax,
         shipping: orderData.shipping,
@@ -197,7 +213,10 @@ const PaymentMethodSelector = () => {
           userEmail: userEmail || '',
           amount: orderTotal, // Usar el mismo valor mostrado
           currency: orderData.currency || 'CLP',
-          items: orderData.items,
+          items: itemsWithDocType,
+          // ✔ Propagar direcciones para que no se pierdan en el pipeline de pago
+          shippingAddress: orderData.shippingAddress || null,
+          billingAddress: orderData.billingAddress || null,
         });
 
         if (paymentResult.success && paymentResult.paymentUrl) {
@@ -250,134 +269,160 @@ const PaymentMethodSelector = () => {
 
   // ===== RENDERIZADO (COMPLETO) =====
 
+  // Derivar total para barra inferior (replicado del summary calculado allí) - simple fallback
+  const totalForBar = orderData.total || 0
+
   return (
     <motion.div variants={containerVariants} initial="hidden" animate="visible">
-      {/* Header */}
-      <Box sx={{ mb: 4, px: 3 }}>
-        <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 3 }}>
-          <Tooltip title="Volver" arrow>
-            <IconButton onClick={handleBack} sx={{ p: 1 }}>
-              <ArrowBackIcon />
-            </IconButton>
-          </Tooltip>
-          <CreditCardIcon sx={{ color: 'primary.main', fontSize: 32, mr: 1 }} />
-          <Typography variant="h4" fontWeight="bold">
-            <span style={{ color: '#1976d2' }}>Método de Pago</span>
-          </Typography>
-        </Stack>
-
-        {/* Stepper de progreso */}
-        <Box
-          sx={{
-            maxWidth: { xs: 340, sm: 480, md: 700, lg: 1360, xl: 1560 },
-            width: '100%',
-            display: 'flex',
-            justifyContent: 'flex-start',
-          }}
-        >
-          <CheckoutProgressStepper
-            currentStep={currentStep}
-            completedSteps={completedSteps}
-            orientation="horizontal"
-            showLabels={true}
+      {/* Layout condicional: móvil vs desktop */}
+      {isMobile ? (
+  <Box sx={{ width: '100%', maxWidth: '100%', px: 0, mx: 'auto' }}>
+          <MobilePaymentLayout
+            orderData={orderData}
+            availableMethods={availableMethods}
+            selectedMethodId={selectedMethodId}
+            onMethodSelect={handleMethodSelect}
+            onBack={handleBack}
+            onContinue={handleContinue}
+            isProcessing={isProcessing}
+            formatPrice={checkoutService.formatPrice}
+            // Pasar número de orden seguro al layout móvil
+            currentStep={currentStepOrder ? currentStepOrder() : (currentStep?.order || 2)}
+            totalSteps={3}
           />
         </Box>
-      </Box>
+      ) : (
+        /* Layout desktop existente */
+        <>
+          {/* Header */}
+          <Box sx={{ mb: { xs: 2.5, md: 4 }, px: { xs: 2, md: 3 } }}>
+            <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 3 }}>
+              <Tooltip title="Volver" arrow>
+                <IconButton onClick={handleBack} sx={{ p: 1 }}>
+                  <ArrowBackIcon />
+                </IconButton>
+              </Tooltip>
+              <CreditCardIcon sx={{ color: 'primary.main', fontSize: { xs: 26, md: 32 }, mr: 1 }} />
+              <Typography variant={"h4"} fontWeight="bold" sx={{ fontSize: { xs: '1.45rem', sm: '1.55rem', md: '2.125rem' } }}>
+                <span style={{ color: '#1976d2' }}>Método de Pago</span>
+              </Typography>
+            </Stack>
 
-      {/* Contenido principal */}
-      <Box sx={{ px: 3 }}>
-        <Stack direction={{ xs: 'column', lg: 'row' }} spacing={4}>
-          {/* Panel izquierdo - Métodos de pago */}
-          <Box sx={{ width: { xs: '100%', md: '68%', lg: '65%', xl: '65%' } }}>
-            <motion.div variants={itemVariants}>
-              <Paper
-                elevation={3}
-                sx={{
-                  p: 4,
-                  borderRadius: 3,
-                  background:
-                    'linear-gradient(135deg, #ffffff 0%, #f8f9ff 100%)',
-                  border: '1px solid rgba(102, 126, 234, 0.1)',
-                }}
-              >
-                <Typography variant="h5" fontWeight="bold" sx={{ mb: 3 }}>
-                  {isCompleted
-                    ? '¡Pago Completado!'
-                    : 'Selecciona tu método de pago'}
-                </Typography>
-
-                {isCompleted && (
-                  <Alert severity="success" sx={{ mb: 3 }}>
-                    <Typography variant="body1" fontWeight="bold">
-                      ¡Tu pago ha sido procesado exitosamente!
-                    </Typography>
-                    <Typography variant="body2">
-                      Puedes ver el estado de tu pedido en la sección "Mis
-                      Pedidos" o continuar comprando.
-                    </Typography>
-                  </Alert>
-                )}
-
-                {/* Métodos de pago disponibles */}
-                <Stack spacing={2}>
-                  <AnimatePresence>
-                    {availableMethods.map(method => {
-                      const isSelected = selectedMethodId === method.id;
-                      const fees = getMethodFees(method.id, orderData.total);
-                      return (
-                        <PaymentMethodCard
-                          key={method.id}
-                          method={method}
-                          isSelected={isSelected}
-                          onSelect={handleMethodSelect}
-                          fees={fees}
-                          formatPrice={checkoutService.formatPrice}
-                        />
-                      );
-                    })}
-                  </AnimatePresence>
-                </Stack>
-
-                {/* Errores de validación */}
-                {Object.keys(validationErrors).length > 0 && (
-                  <Alert severity="error" sx={{ mt: 3 }}>
-                    {Object.values(validationErrors).join('. ')}
-                  </Alert>
-                )}
-
-                {/* Error general */}
-                {error && (
-                  <Alert severity="error" sx={{ mt: 3 }}>
-                    {error}
-                  </Alert>
-                )}
-              </Paper>
-            </motion.div>
-          </Box>
-
-          {/* Panel derecho - Resumen */}
-          <Box sx={{ width: { xs: '100%', lg: '400px' } }}>
-            <motion.div variants={itemVariants}>
-              <CheckoutSummary
-                orderData={orderData}
-                selectedMethod={selectedMethod}
-                onContinue={handleContinue}
-                onBack={handleBack}
-                isProcessing={isProcessing}
-                canContinue={
-                  !!selectedMethodId &&
-                  !!selectedMethod &&
-                  !isValidating &&
-                  Object.keys(validationErrors).length === 0
-                }
-                isCompleted={isCompleted}
-                onViewOrders={handleViewOrders}
-                onContinueShopping={handleContinueShopping}
+            {/* Stepper de progreso */}
+            <Box
+              sx={{
+                maxWidth: { xs: 340, sm: 480, md: 700, lg: 1360, xl: 1560 },
+                width: '100%',
+                display: 'flex',
+                justifyContent: 'flex-start',
+              }}
+            >
+              <CheckoutProgressStepper
+                currentStep={currentStep}
+                completedSteps={completedSteps}
+                orientation="horizontal"
+                showLabels={true}
               />
-            </motion.div>
+            </Box>
           </Box>
-        </Stack>
-      </Box>
+
+          {/* Contenido principal */}
+          <Box sx={{ px: { xs: 2, md: 3 }, pb: { xs: 10, md: 0 } }}>
+            <Stack direction={{ xs: 'column', lg: 'row' }} spacing={{ xs: 3, md: 4 }}>
+              {/* Panel izquierdo - Métodos de pago */}
+              <Box sx={{ width: { xs: '100%', md: '68%', lg: '65%', xl: '65%' } }}>
+                <motion.div variants={itemVariants}>
+                  <Paper
+                    elevation={3}
+                    sx={{
+                      p: { xs: 2, sm: 3, md: 4 },
+                      borderRadius: { xs: 2, md: 3 },
+                      background:
+                        'linear-gradient(135deg, #ffffff 0%, #f8f9ff 100%)',
+                      border: '1px solid rgba(102, 126, 234, 0.1)',
+                    }}
+                  >
+                    <Typography variant="h5" fontWeight="bold" sx={{ mb: 3, fontSize: { xs: '1.15rem', sm: '1.25rem', md: '1.5rem' } }}>
+                      {isCompleted
+                        ? '¡Pago Completado!'
+                        : 'Selecciona tu método de pago'}
+                    </Typography>
+
+                    {isCompleted && (
+                      <Alert severity="success" sx={{ mb: 3 }}>
+                        <Typography variant="body1" fontWeight="bold">
+                          ¡Tu pago ha sido procesado exitosamente!
+                        </Typography>
+                        <Typography variant="body2">
+                          Puedes ver el estado de tu pedido en la sección "Mis
+                          Pedidos" o continuar comprando.
+                        </Typography>
+                      </Alert>
+                    )}
+
+                    {/* Métodos de pago disponibles */}
+                    <Stack spacing={2}>
+                      <AnimatePresence>
+                        {availableMethods.map(method => {
+                          const isSelected = selectedMethodId === method.id;
+                          const fees = getMethodFees(method.id, orderData.total);
+                          return (
+                            <PaymentMethodCard
+                              key={method.id}
+                              method={method}
+                              isSelected={isSelected}
+                              onSelect={handleMethodSelect}
+                              fees={fees}
+                              formatPrice={checkoutService.formatPrice}
+                            />
+                          );
+                        })}
+                      </AnimatePresence>
+                    </Stack>
+
+                    {/* Errores de validación */}
+                    {Object.keys(validationErrors).length > 0 && (
+                      <Alert severity="error" sx={{ mt: 3 }}>
+                        {Object.values(validationErrors).join('. ')}
+                      </Alert>
+                    )}
+
+                    {/* Error general */}
+                    {error && (
+                      <Alert severity="error" sx={{ mt: 3 }}>
+                        {error}
+                      </Alert>
+                    )}
+                  </Paper>
+                </motion.div>
+              </Box>
+
+              {/* Panel derecho - Resumen */}
+              <Box sx={{ width: { xs: '100%', lg: '400px' } }}>
+                <motion.div variants={itemVariants}>
+                  <CheckoutSummary
+                    orderData={orderData}
+                    selectedMethod={selectedMethod}
+                    onContinue={handleContinue}
+                    onBack={handleBack}
+                    isProcessing={isProcessing}
+                    canContinue={
+                      !!selectedMethodId &&
+                      !!selectedMethod &&
+                      !isValidating &&
+                      Object.keys(validationErrors).length === 0
+                    }
+                    isCompleted={isCompleted}
+                    onViewOrders={handleViewOrders}
+                    onContinueShopping={handleContinueShopping}
+                    variant="default"
+                  />
+                </motion.div>
+              </Box>
+            </Stack>
+          </Box>
+        </>
+      )}
     </motion.div>
   );
 };

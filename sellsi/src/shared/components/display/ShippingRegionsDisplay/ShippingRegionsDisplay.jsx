@@ -88,10 +88,10 @@ const ShippingRegionsDisplay = ({ regions = [] }) => {
               Región
             </TableCell>
             <TableCell sx={{ fontWeight: 600, py: 1.5 }}>
-              Valor de Despacho
+              Valor
             </TableCell>
             <TableCell sx={{ fontWeight: 600, py: 1.5 }}>
-              Tiempo Máximo
+              Tiempo
             </TableCell>
           </TableRow>
         </TableHead>

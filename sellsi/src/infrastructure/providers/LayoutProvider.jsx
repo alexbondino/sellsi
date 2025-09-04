@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import { useAuth } from './AuthProvider';
+import { useAuth } from './UnifiedAuthProvider';
 
 const LayoutContext = createContext();
 

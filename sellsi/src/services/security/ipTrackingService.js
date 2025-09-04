@@ -10,6 +10,180 @@
 
 import { supabase } from '../supabase';
 
+/**
+ * Orquestador de batching & throttling
+ * - Consolida múltiples acciones en un solo update (session_info.actions_summary)
+ * - TTL mínimo entre actualizaciones para reducir llamadas repetitivas
+ * - Mantiene compatibilidad de firma en trackLoginIP y trackUserAction
+ */
+const MIN_INTERVAL_DEFAULT = 15 * 60 * 1000; // 15 minutos
+const MAX_ACTIONS_BEFORE_FORCE = 5; // Fuerza flush si se acumulan muchas acciones
+const ENV_INTERVAL = parseInt(import.meta.env?.VITE_IP_UPDATE_MIN_INTERVAL_MS || '', 10);
+const MIN_UPDATE_INTERVAL_MS = Number.isFinite(ENV_INTERVAL) && ENV_INTERVAL > 0 ? ENV_INTERVAL : MIN_INTERVAL_DEFAULT;
+
+let lastUpdateTs = 0;
+let pendingActions = [];
+let flushTimer = null;
+let flushingPromise = null; // evitar flush simultáneos
+
+// --- Coordinación multi-tab: BroadcastChannel + localStorage lock ---
+const instanceId = Math.random().toString(36).slice(2);
+const CHANNEL_NAME = 'ip-tracking';
+const FLUSH_LOCK_KEY = 'IP_TRACKING_FLUSH_LOCK';
+const FLUSH_LOCK_TTL_MS = 10000; // 10s
+let bc = null;
+try { if (typeof BroadcastChannel !== 'undefined') bc = new BroadcastChannel(CHANNEL_NAME); } catch (_) {}
+
+function acquireFlushLock() {
+  if (typeof localStorage === 'undefined') return true;
+  const nowMs = Date.now();
+  const raw = localStorage.getItem(FLUSH_LOCK_KEY);
+  if (raw) {
+    const [owner, tsStr] = raw.split(':');
+    const ts = parseInt(tsStr, 10) || 0;
+    if (owner && ts && (nowMs - ts) < FLUSH_LOCK_TTL_MS) {
+      return owner === instanceId; // true si ya soy dueño, false si otro
+    }
+  }
+  try { localStorage.setItem(FLUSH_LOCK_KEY, instanceId + ':' + nowMs); } catch (_) {}
+  return true;
+}
+
+function releaseFlushLock() {
+  if (typeof localStorage === 'undefined') return;
+  try {
+    const raw = localStorage.getItem(FLUSH_LOCK_KEY);
+    if (raw && raw.startsWith(instanceId + ':')) localStorage.removeItem(FLUSH_LOCK_KEY);
+  } catch (_) {}
+}
+
+function broadcast(message) {
+  if (bc) {
+    try { bc.postMessage({ ...message, _from: instanceId }); } catch (_) {}
+  } else if (typeof localStorage !== 'undefined') {
+    try { localStorage.setItem('IP_TRACKING_EVT', JSON.stringify({ ...message, _from: instanceId, ts: Date.now() })); } catch (_) {}
+  }
+}
+
+function handleIncoming(msg) {
+  if (!msg || msg._from === instanceId) return;
+  switch (msg.type) {
+    case 'enqueue':
+      pendingActions.push({ userId: msg.userId, action: msg.action, ts: msg.ts || Date.now() });
+      break;
+    case 'flushed':
+      if (typeof msg.lastUpdateTs === 'number' && msg.lastUpdateTs > lastUpdateTs) {
+        lastUpdateTs = msg.lastUpdateTs;
+        const cutoff = msg.flushStartedAt || msg.lastUpdateTs;
+        pendingActions = pendingActions.filter(a => a.ts > cutoff);
+      }
+      break;
+    case 'request_state':
+      broadcast({ type: 'state', lastUpdateTs, pendingCount: pendingActions.length });
+      break;
+    default:
+      break;
+  }
+}
+
+if (bc) {
+  bc.onmessage = ev => handleIncoming(ev.data);
+} else if (typeof window !== 'undefined') {
+  window.addEventListener('storage', e => {
+    if (e.key === 'IP_TRACKING_EVT' && e.newValue) {
+      try { handleIncoming(JSON.parse(e.newValue)); } catch (_) {}
+    }
+  });
+}
+
+const now = () => Date.now();
+
+function scheduleFlush(delayMs) {
+  if (flushTimer) return;
+  flushTimer = setTimeout(() => {
+    flushTimer = null;
+    flushPending(false);
+  }, delayMs);
+}
+
+async function flushPending(force = false) {
+  if (flushingPromise) return flushingPromise;
+  if (!pendingActions.length && !force) return { success: true, skipped: true, reason: 'empty_queue' };
+
+  const elapsed = now() - lastUpdateTs;
+  if (!force && elapsed < MIN_UPDATE_INTERVAL_MS) {
+    // Aún dentro de la ventana: reprogramar si no hay timer
+    scheduleFlush(MIN_UPDATE_INTERVAL_MS - elapsed + 50);
+    return { success: true, skipped: true, reason: 'ttl_active' };
+  }
+
+  // Consolidar acciones
+  const batch = pendingActions.slice();
+  pendingActions = [];
+  const actions_summary = batch.reduce((acc, a) => {
+    acc[a.action] = (acc[a.action] || 0) + 1;
+    return acc;
+  }, {});
+
+  const sessionInfo = {
+    event: 'batch_actions',
+    actions_summary,
+    total_actions: batch.length,
+    first_ts: batch[0]?.ts,
+    last_ts: batch[batch.length - 1]?.ts,
+    user_agent: typeof navigator !== 'undefined' ? navigator.userAgent : 'unknown'
+  };
+
+  // Necesitamos cualquier userId presente (todas entradas deberían compartir userId)
+  const userId = batch[0]?.userId || sessionInfo.user_id_override;
+  if (!userId) return { success: true, skipped: true, reason: 'no_user' };
+
+  if (!acquireFlushLock()) {
+    // Otro tab hará el flush, reinsertar batch y reintentar
+    pendingActions = batch.concat(pendingActions);
+    scheduleFlush(500);
+    return { success: true, skipped: true, reason: 'lock_busy', requeued: batch.length };
+  }
+
+  const flushStartedAt = now();
+  broadcast({ type: 'flushed', lastUpdateTs, flushStartedAt, status: 'starting', batchSize: batch.length });
+
+  flushingPromise = updateUserIP(userId, sessionInfo)
+    .then(res => {
+      if (!res.skipped) {
+        lastUpdateTs = now();
+      }
+      broadcast({ type: 'flushed', lastUpdateTs, flushStartedAt, status: 'done', updated: !res.skipped, batchSize: batch.length });
+      return { ...res, batched: true };
+    })
+    .catch(e => ({ success: true, skipped: true, error: e?.message, batched: true }))
+    .finally(() => { flushingPromise = null; releaseFlushLock(); });
+
+  return flushingPromise;
+}
+
+// Flush en eventos de cierre/ocultación de pestaña
+if (typeof window !== 'undefined') {
+  const visibilityHandler = () => {
+    if (document.hidden && pendingActions.length) {
+      flushPending(true);
+    }
+  };
+  window.addEventListener('visibilitychange', visibilityHandler);
+  window.addEventListener('beforeunload', () => {
+    if (!pendingActions.length) return;
+    try {
+      // Enviar síncrono usando navigator.sendBeacon si está disponible
+      const userId = pendingActions[0]?.userId;
+      const actions_summary = pendingActions.reduce((acc, a) => { acc[a.action] = (acc[a.action] || 0) + 1; return acc; }, {});
+      const payload = JSON.stringify({ user_id: userId, session_info: { event: 'batch_actions_unload', actions_summary } });
+      if (navigator.sendBeacon) {
+        navigator.sendBeacon(`${SUPABASE_URL}/functions/v1/update-lastip`, payload);
+      }
+    } catch (_) { /* silencioso */ }
+  });
+}
+
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 
 /**
@@ -127,10 +301,12 @@ export const trackLoginIP = async (userId, loginMethod = 'email') => {
     event: 'login',
     method: loginMethod,
     timestamp: new Date().toISOString(),
-    user_agent: navigator.userAgent
+    user_agent: typeof navigator !== 'undefined' ? navigator.userAgent : 'unknown'
   };
-
-  return await updateUserIP(userId, sessionInfo);
+  // Login se considera crítico: forzar aunque TTL no haya expirado
+  const res = await updateUserIP(userId, sessionInfo);
+  if (!res.skipped) lastUpdateTs = now();
+  return res;
 };
 
 /**
@@ -140,14 +316,25 @@ export const trackLoginIP = async (userId, loginMethod = 'email') => {
  * @returns {Promise<{success: boolean, ip?: string, error?: string}>}
  */
 export const trackUserAction = async (userId, action) => {
-  const sessionInfo = {
-    event: 'user_action',
-    action: action,
-    timestamp: new Date().toISOString(),
-    user_agent: navigator.userAgent
-  };
+  // Encolar acción y decidir flush
+  pendingActions.push({ userId, action, ts: now() });
+  broadcast({ type: 'enqueue', userId, action, ts: now() });
 
-  return await updateUserIP(userId, sessionInfo);
+  // Criterios para flush inmediato:
+  // 1. Demasiadas acciones acumuladas
+  // 2. TTL expirado
+  const elapsed = now() - lastUpdateTs;
+  const ttlExpired = elapsed >= MIN_UPDATE_INTERVAL_MS;
+  if (pendingActions.length >= MAX_ACTIONS_BEFORE_FORCE || ttlExpired) {
+    return await flushPending(true);
+  }
+
+  // Programar flush si no existe timer
+  if (!flushTimer) {
+    scheduleFlush(MIN_UPDATE_INTERVAL_MS - elapsed + 50);
+  }
+
+  return { success: true, queued: true, pending: pendingActions.length };
 };
 
 /**
@@ -179,7 +366,7 @@ export const trackRouteVisit = async (userId, route) => {
   ];
 
   if (importantRoutes.some(r => route.startsWith(r))) {
-    return await trackUserAction(userId, `route_visit:${route}`);
+  return await trackUserAction(userId, `route_visit:${route}`);
   }
 
   return { success: true, skipped: true };
@@ -192,5 +379,7 @@ export default {
   trackLoginIP,
   trackUserAction,
   debugCurrentIP,
-  trackRouteVisit
+  trackRouteVisit,
+  // util opcional para forzar flush manual (no documentado públicamente aún)
+  __flushIPTrackingQueue: () => flushPending(true)
 };

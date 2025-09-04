@@ -9,11 +9,8 @@ import {
   Box,
   Avatar,
 } from '@mui/material';
-import {
-  Handshake as HandshakeIcon,
-  Visibility as VisibilityIcon,
-  Verified as VerifiedIcon,
-} from '@mui/icons-material';
+import { Visibility as VisibilityIcon, Verified as VerifiedIcon } from '@mui/icons-material';
+import { PRODUCTS_TEXTS } from '../../../constants/productsTexts';
 
 /**
  * ProductCardProviderContext - Renders the specific content and actions for a provider's product card.
@@ -24,7 +21,18 @@ const ProductCardProviderContext = React.memo(
   ({ product }) => {
     const navigate = useNavigate();
     // Desestructurar fuera del bloque comentado
-    const { supplier_id, user_nm, proveedor, logo_url, product_count, descripcion_proveedor, verified } = product || {};
+  const { supplier_id, user_nm, proveedor, logo_url, product_count, descripcion_proveedor, verified } = product || {};
+
+    // Evitar que accidentalmente se pase un producto normal (con imagen de producto) reutilizando este contexto
+    // Si detectamos campos típicos de producto (precio, imagen), ignoramos esas imágenes para que no contaminen el logo
+    const safeLogoUrl = React.useMemo(() => {
+      if (!logo_url) return '/LOGO-removebg-preview.webp';
+      // Si la URL contiene rutas de imagen de producto (heurística), no usarla como logo
+      if (typeof logo_url === 'string' && /product-images\//i.test(logo_url) && !/supplier|logo/i.test(logo_url)) {
+        return '/LOGO-removebg-preview.webp';
+      }
+      return logo_url;
+    }, [logo_url]);
 
     // Memoizar nombre del proveedor - usar datos reales
     const providerName = React.useMemo(() => 
@@ -50,7 +58,7 @@ const ProductCardProviderContext = React.memo(
           overflow: 'hidden',
         }}>
           <Avatar
-            src={logo_url}
+            src={safeLogoUrl}
             alt={providerName}
             variant="square"
             sx={{
@@ -78,7 +86,7 @@ const ProductCardProviderContext = React.memo(
             }}
           >
             {/* Fallback: mostrar inicial del nombre si no hay imagen */}
-            {!logo_url && providerName ? providerName.charAt(0).toUpperCase() : '🏢'}
+            {!safeLogoUrl && providerName ? providerName.charAt(0).toUpperCase() : '🏢'}
           </Avatar>
         </Box>
 
@@ -145,7 +153,7 @@ const ProductCardProviderContext = React.memo(
           >
             {descripcion_proveedor && descripcion_proveedor.trim().length > 0
               ? descripcion_proveedor
-              : 'Proveedor sin descripción.'}
+              : PRODUCTS_TEXTS.providerNoDescription}
           </Typography>
         </CardContent>
 

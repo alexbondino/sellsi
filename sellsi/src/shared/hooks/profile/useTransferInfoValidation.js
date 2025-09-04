@@ -36,32 +36,46 @@ const globalTransferInfoCache = {
   data: null,
   timestamp: null,
   isLoading: false,
+  cachedUserId: null,
   CACHE_DURATION: 20 * 60 * 1000, // 20 minutos
-  
+
   get: () => {
+    // Si no hay datos base, salir rápido
     if (!globalTransferInfoCache.data || !globalTransferInfoCache.timestamp) {
       return null;
     }
-    
+
+    // Blindaje por expiración
     const isExpired = (Date.now() - globalTransferInfoCache.timestamp) > globalTransferInfoCache.CACHE_DURATION;
     if (isExpired) {
       globalTransferInfoCache.clear();
       return null;
     }
-    
+
+    // Blindaje por cambio de usuario (multi login / cambio rápido de cuenta)
+    let currentUserId = null;
+    try { currentUserId = localStorage.getItem('user_id'); } catch (e) {}
+    if (currentUserId && globalTransferInfoCache.cachedUserId && currentUserId !== globalTransferInfoCache.cachedUserId) {
+      // Usuario cambió: invalidar para evitar contaminación cruzada
+      globalTransferInfoCache.clear();
+      return null;
+    }
+
     return globalTransferInfoCache.data;
   },
-  
+
   set: (transferInfo) => {
     globalTransferInfoCache.data = transferInfo;
     globalTransferInfoCache.timestamp = Date.now();
+    try { globalTransferInfoCache.cachedUserId = localStorage.getItem('user_id') || null; } catch (e) { globalTransferInfoCache.cachedUserId = null; }
   },
-  
+
   clear: () => {
     globalTransferInfoCache.data = null;
     globalTransferInfoCache.timestamp = null;
+    globalTransferInfoCache.cachedUserId = null;
   },
-  
+
   invalidate: () => {
     globalTransferInfoCache.clear();
   }
@@ -341,5 +355,12 @@ export const useTransferInfoCheck = () => {
 export const invalidateTransferInfoCache = () => {
   globalTransferInfoCache.invalidate();
 };
+
+// Exponer invalidador global (similar a shipping) para eventos de auth
+try {
+  if (typeof window !== 'undefined' && !window.invalidateTransferInfoCache) {
+    window.invalidateTransferInfoCache = () => globalTransferInfoCache.invalidate();
+  }
+} catch (e) {}
 
 export default useTransferInfoValidation;

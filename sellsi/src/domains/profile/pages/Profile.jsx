@@ -11,6 +11,7 @@ import {
   CircularProgress,
   Button,
 } from '@mui/material';
+import { useTheme, useMediaQuery } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import CameraAltIcon from '@mui/icons-material/CameraAlt';
 import PersonIcon from '@mui/icons-material/Person';
@@ -39,6 +40,7 @@ import { getUserProfile, updateUserProfile, uploadProfileImage, deleteAllUserIma
 import { supabase } from '../../../services/supabase';
 import { SPACING_BOTTOM_MAIN } from '../../../styles/layoutSpacing';
 import { invalidateTransferInfoCache } from '../../../shared/hooks/profile/useTransferInfoValidation'; // Para invalidar cache bancario
+import { invalidateBillingInfoCache } from '../../../shared/hooks/profile/useBillingInfoValidation'; // Invalidar cache facturación
 
 /**
  * 🎭 Profile - Orquestador Universal de Perfiles
@@ -57,6 +59,9 @@ import { invalidateTransferInfoCache } from '../../../shared/hooks/profile/useTr
 const Profile = ({ userProfile: initialUserProfile, onUpdateProfile: externalUpdateHandler }) => {
   const { showBanner } = useBanner();
   const location = useLocation(); // Para obtener parámetros de URL
+
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
   // Estado local para el perfil cargado y completo
   const [userProfile, setUserProfile] = useState(initialUserProfile);
@@ -160,7 +165,7 @@ const Profile = ({ userProfile: initialUserProfile, onUpdateProfile: externalUpd
       // Actualizar usando el servicio
       await updateUserProfile(user.id, profileData);
       
-      // ✅ INVALIDAR CACHE DE INFORMACIÓN BANCARIA si se actualizaron campos relacionados
+  // ✅ INVALIDAR CACHE DE INFORMACIÓN BANCARIA si se actualizaron campos relacionados
       // NOTA: Los campos que llegan aquí están en formato BD (snake_case)
       const transferFields = ['account_holder', 'bank', 'account_number', 'transfer_rut', 'confirmation_email'];
       const hasTransferFieldUpdate = transferFields.some(field => profileData.hasOwnProperty(field));
@@ -172,6 +177,14 @@ const Profile = ({ userProfile: initialUserProfile, onUpdateProfile: externalUpd
       if (hasTransferFieldUpdate || hasTransferFieldFormUpdate) {
         console.log('🏦 Invalidando cache de información bancaria por actualización de perfil');
         invalidateTransferInfoCache();
+      }
+
+      // ✅ INVALIDAR CACHE DE FACTURACIÓN si se actualizaron campos billing
+      const billingFields = ['business_name','billing_rut','business_line','billing_address','billing_region','billing_commune'];
+      const hasBillingUpdate = billingFields.some(field => profileData.hasOwnProperty(field));
+      if (hasBillingUpdate) {
+        console.log('🧾 Invalidando cache de facturación por actualización de perfil');
+        invalidateBillingInfoCache();
       }
       
       // Recargar perfil después de actualizar
@@ -263,11 +276,28 @@ const Profile = ({ userProfile: initialUserProfile, onUpdateProfile: externalUpd
     updateField(comunaField, ''); // Reset comuna
   };
 
+  // Mostrar errores de shipping cuando el usuario intenta actualizar sin completar campos obligatorios
+  const [showShippingErrors, setShowShippingErrors] = useState(false);
+  // Mostrar errores de billing (nueva lógica condicionada por businessName)
+  const [showBillingErrors, setShowBillingErrors] = useState(false);
+
+  // Wrapper para updateField que limpia errores al editar campos de envío
+  const handleFieldChange = (field, value) => {
+    updateField(field, value);
+    if (field.startsWith('shipping')) {
+      setShowShippingErrors(false);
+    }
+    if (field.startsWith('billing') || field === 'businessName' || field === 'businessLine') {
+      setShowBillingErrors(false);
+    }
+  };
+
   const handleUpdate = async () => {
     // Verificar si hay cambios en formulario (excluyendo imagen y nombre que se guardan automáticamente)
     const hasFormChanges = hasChanges;
 
     if (!hasFormChanges) {
+      showBanner({ message: 'No hay cambios para actualizar', severity: 'info', duration: 3000 });
       return;
     }
 
@@ -284,12 +314,45 @@ const Profile = ({ userProfile: initialUserProfile, onUpdateProfile: externalUpd
       delete dataToUpdate.logo_url;
 
       console.log('📤 Datos finales a enviar:', dataToUpdate);
-      await handleUpdateProfile(dataToUpdate);
+      // Validación Shipping: si existe región, comuna y dirección son obligatorios
+      const regionValue = formData?.shippingRegion;
+      const communeValue = formData?.shippingCommune;
+      const addressValue = formData?.shippingAddress;
+      const regionSelected = regionValue !== undefined && regionValue !== null && String(regionValue).trim() !== '';
+      const communeFilled = communeValue !== undefined && communeValue !== null && String(communeValue).trim() !== '';
+      const addressFilled = addressValue !== undefined && addressValue !== null && String(addressValue).trim() !== '';
+      if (regionSelected && (!communeFilled || !addressFilled)) {
+        // Mostrar errores inline en los campos en vez de deshabilitar botón
+        setShowShippingErrors(true);
+        showBanner({ message: 'Por favor completa Comuna y Dirección de Envío para actualizar el perfil.', severity: 'error', duration: 6000 });
+        setLoading(false);
+        return;
+      }
+
+      // Validación Billing: si Razón Social (businessName) está rellenada, entonces TODOS los campos de facturación obligatorios deben estar presentes
+      const businessNameFilled = formData?.businessName && formData.businessName.trim() !== '';
+      if (businessNameFilled) {
+        const billingRut = formData?.billingRut;
+        const businessLine = formData?.businessLine;
+        const billingAddress = formData?.billingAddress;
+        const billingRegion = formData?.billingRegion;
+        const billingCommune = formData?.billingCommune;
+        const anyMissing = [billingRut, businessLine, billingAddress, billingRegion, billingCommune].some(v => !v || String(v).trim() === '');
+        if (anyMissing) {
+          setShowBillingErrors(true);
+          showBanner({ message: 'Completa todos los campos de Facturación para actualizar (RUT, Giro, Dirección, Región, Comuna).', severity: 'error', duration: 6000 });
+          setLoading(false);
+          return;
+        }
+      }
+  await handleUpdateProfile(dataToUpdate);
       updateInitialData(); // Actualizar datos iniciales en lugar de resetear
 
-      // ✅ INVALIDAR CACHÉ DE SHIPPING si cambió la región
-      if (dataToUpdate.shipping_region || dataToUpdate.shippingRegion) {
+      // ✅ INVALIDAR / PRIMAR CACHÉ DE SHIPPING si cambió la región
+      const newRegion = dataToUpdate.shipping_region || dataToUpdate.shippingRegion;
+      if (newRegion) {
         invalidateUserCache();
+        try { window.primeUserShippingRegionCache?.(newRegion); } catch(e) {}
       }
 
       // Registrar IP del usuario al actualizar perfil (solo si tenemos perfil cargado)
@@ -350,7 +413,7 @@ const Profile = ({ userProfile: initialUserProfile, onUpdateProfile: externalUpd
           updateInitialData();
         }
       } catch (error) {
-        showBanner('Error al actualizar el nombre', 'error');
+  showBanner({ message: 'Error al actualizar el nombre', severity: 'error' });
       } finally {
         setLoading(false);
       }
@@ -371,7 +434,7 @@ const Profile = ({ userProfile: initialUserProfile, onUpdateProfile: externalUpd
           updateInitialData();
         }
       } catch (error) {
-        showBanner('Error al actualizar el nombre', 'error');
+  showBanner({ message: 'Error al actualizar el nombre', severity: 'error' });
       }
     }
     setIsEditingName(false);
@@ -421,7 +484,7 @@ const Profile = ({ userProfile: initialUserProfile, onUpdateProfile: externalUpd
         setLoadedProfile(updatedProfile.data);
       }
       
-      showBanner('Imagen actualizada correctamente', 'success');
+  showBanner({ message: 'Imagen actualizada correctamente', severity: 'success' });
     } catch (error) {
       throw new Error(error.message || 'Error al guardar la imagen');
     }
@@ -483,7 +546,7 @@ const Profile = ({ userProfile: initialUserProfile, onUpdateProfile: externalUpd
         await updateUserProfile(user.id, { logo_url: null });
         clearPendingImage();
         updateInitialData();
-        showBanner('Imagen eliminada correctamente', 'success');
+  showBanner({ message: 'Imagen eliminada correctamente', severity: 'success' });
       } else {
         // Subir nueva imagen
         const { url, error } = await uploadProfileImage(user.id, imageFile);
@@ -494,7 +557,7 @@ const Profile = ({ userProfile: initialUserProfile, onUpdateProfile: externalUpd
         await updateUserProfile(user.id, { logo_url: url });
         clearPendingImage();
         updateInitialData();
-        showBanner('Imagen actualizada correctamente', 'success');
+  showBanner({ message: 'Imagen actualizada correctamente', severity: 'success' });
       }
       
       // Refrescar el perfil
@@ -535,7 +598,8 @@ const Profile = ({ userProfile: initialUserProfile, onUpdateProfile: externalUpd
           </Typography>
         </Box>
       ) : (
-        <Box sx={{ p: 3, maxWidth: 1200, mx: 'auto', pb: SPACING_BOTTOM_MAIN }}>
+        <Box sx={{ backgroundColor: 'background.default', minHeight: '100vh', pt: { xs: 2, md: 4 }, px: { xs: 0, md: 3 }, pb: SPACING_BOTTOM_MAIN, ml: { xs: 0, md: 10, lg: 14, xl: 24 } }}>
+          <Box sx={{ p: { xs: 0, md: 3 }, maxWidth: 1200, mx: 'auto', width: '100%', boxSizing: 'border-box' }}>
       {/* Header */}
       <Box sx={{ display: 'flex', alignItems: 'center', mb: 4 }}>
         {/* Avatar con hover clickeable */}
@@ -647,8 +711,9 @@ const Profile = ({ userProfile: initialUserProfile, onUpdateProfile: externalUpd
           {/* Segunda fila - Primera columna: Dirección de Despacho */}
           <ShippingInfoSection 
             formData={formData}
-            onFieldChange={updateField}
-            onRegionChange={handleRegionChange}
+            onFieldChange={handleFieldChange}
+            onRegionChange={(type, regionField, comunaField, value) => { handleRegionChange(type, regionField, comunaField, value); }}
+            showErrors={showShippingErrors}
           />
 
           {/* Segunda fila - Segunda columna: Facturación (independiente) */}
@@ -664,6 +729,7 @@ const Profile = ({ userProfile: initialUserProfile, onUpdateProfile: externalUpd
             onBlurSensitive={handleSensitiveBlur}
             showBilling={true}
             showUpdateButton={false}
+            showErrors={showBillingErrors}
           />
         </Box>
         {/* Botón Actualizar al fondo del Paper */}
@@ -671,7 +737,7 @@ const Profile = ({ userProfile: initialUserProfile, onUpdateProfile: externalUpd
           <Button 
             variant="contained"
             onClick={handleUpdate}
-            disabled={!hasPendingChanges || loading}
+            disabled={loading}
             sx={{ bgcolor: 'primary.main', '&:hover': { bgcolor: 'primary.dark' } }}
           >
             {loading ? 'Actualizando...' : 'Actualizar'}
@@ -705,6 +771,7 @@ const Profile = ({ userProfile: initialUserProfile, onUpdateProfile: externalUpd
         userInitials={getInitials(getDisplayName())}
       />
         </Box>
+          </Box>
       )}
     </>
   );

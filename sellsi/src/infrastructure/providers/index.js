@@ -1,5 +1,5 @@
-// Infrastructure Providers Exports
-export { AuthProvider, useAuth } from './AuthProvider';
-export { RoleProvider, useRole } from './RoleProvider';
+// Unified Infrastructure Providers Exports
+// Auth + Role unified
+export { UnifiedAuthProvider, useAuth, useRole } from './UnifiedAuthProvider';
+
 export { LayoutProvider, useLayout } from './LayoutProvider';
-export { AppProviders } from './AppProviders';

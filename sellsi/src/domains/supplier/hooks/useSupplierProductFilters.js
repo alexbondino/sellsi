@@ -105,7 +105,10 @@ const useSupplierProductFilters = create((set, get) => ({
       sortOrder,
     } = get()
 
-    let filtered = [...products]
+  let filtered = [...products]
+
+  // Excluir productos marcados para eliminación (soft_deleted / archived) por defecto
+  filtered = filtered.filter(p => !p.deletion_status || p.deletion_status === 'active')
 
     // Filtro de búsqueda
     if (searchTerm) {
@@ -180,6 +183,22 @@ const useSupplierProductFilters = create((set, get) => ({
 
     // Aplicar ordenamiento
     filtered.sort((a, b) => {
+      // Ordenamiento especial para 'pausedStatus':
+      // 1) Productos inactivos (is_active=false) primero (alfabético por nombre)
+      // 2) Luego productos activos (alfabético por nombre)
+      if (sortBy === 'pausedStatus') {
+        const aInactive = a.is_active === false
+        const bInactive = b.is_active === false
+        if (aInactive && !bInactive) return -1
+        if (!aInactive && bInactive) return 1
+        // Ambos mismo grupo: comparar nombre (productnm) A-Z siempre
+        const nameA = (a.productnm || '').toLowerCase()
+        const nameB = (b.productnm || '').toLowerCase()
+        if (nameA < nameB) return -1
+        if (nameA > nameB) return 1
+        return 0
+      }
+
       let valueA = a[sortBy]
       let valueB = b[sortBy]
 

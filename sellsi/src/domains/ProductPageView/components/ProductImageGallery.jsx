@@ -10,6 +10,7 @@ const ProductImageGallery = ({
   onImageSelect,
   productName,
   isMobile = false, // Nuevo prop
+  imagesRaw = [], // raw objects with image_order and image_url for debugging
 }) => {
   const theme = useTheme()
   const isDesktop = useMediaQuery(theme.breakpoints.up('md')) // Solo en md y superiores
@@ -23,8 +24,10 @@ const ProductImageGallery = ({
     images.length > 0
       ? images.map(getProductImageUrl)
       : ['/placeholder-product.jpg']
+  // Diagnostic removed: gallery images debug logs eliminated
   // Precargar las primeras 3 imágenes para mejor UX
   const { preloadedImages, isPreloading } = useImagePreloader(galleryImages)
+  // Diagnostic removed: preloadedImages debug logs eliminated
   // Manejar el movimiento del mouse sobre la imagen
   const handleMouseMove = (e) => {
     if (!isDesktop) return
@@ -63,7 +66,7 @@ const ProductImageGallery = ({
         justifyContent: 'flex-start',
         width: '100%',
         maxWidth: '100%',
-        px: { xs: 0, sm: 2, md: 4 }, // Sin padding horizontal en móvil
+  px: { xs: 0, sm: 0, md: 4 }, // Sin padding horizontal en móvil
         pt: 0,
         pb: 2,
       }}
@@ -102,7 +105,8 @@ const ProductImageGallery = ({
             objectFit: 'contain', // Mantener aspecto completo de la imagen
             display: 'block', // Evitar problemas de inline
             bgcolor: '#fff',
-            p: { xs: 1, md: 1.9 }, // Menos padding en móvil
+            // Remove mobile padding: let AppShell provide the gutter
+            p: { xs: 0, md: 1.9 },
             transition: 'transform 0.3s ease, transform-origin 0.1s ease',
             transformOrigin: isHovering && isDesktop 
               ? `${mousePosition.x}% ${mousePosition.y}%` 
@@ -160,7 +164,7 @@ const ProductImageGallery = ({
           px: { xs: 2, md: 0 }, // Padding en móvil para evitar bordes
         }}
       >
-        {galleryImages.map((image, index) => (
+  {galleryImages.map((image, index) => (
           <Card
             key={index}
             elevation={selectedIndex === index ? 3 : 1}
@@ -183,7 +187,9 @@ const ProductImageGallery = ({
             }}
             onClick={() => onImageSelect && onImageSelect(index)}
           >
-            <CardMedia
+            <Box sx={{ position: 'relative' }}>
+              {/* imagesRaw debug badge removed to avoid exposing filenames in UI */}
+              <CardMedia
               component="img"
               image={image}
               alt={`${productName} ${index + 1}`}
@@ -192,9 +198,11 @@ const ProductImageGallery = ({
                 height: '100%',
                 objectFit: 'contain',
                 bgcolor: '#fff',
-                p: { xs: 0.3, md: 0.475 }, // Menos padding en móvil
+                // Remove mobile padding to avoid doubling gutter
+                p: { xs: 0, md: 0.475 },
               }}
             />
+            </Box>
           </Card>
         ))}
       </Box>

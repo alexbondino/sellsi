@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import {
   Box,
@@ -55,10 +55,10 @@ import { fetchProductRegions, saveProductRegions } from '../../../../services/ma
 import { convertDbRegionsToForm, convertFormRegionsToDb } from '../../../../utils/shippingRegionsUtils';
 
 // Hooks y utilidades
-import { useSupplierProducts } from '../../hooks/useSupplierProducts';
 import { useProductForm } from '../../hooks/useProductForm';
 import { useProductValidation } from './hooks/useProductValidation';
 import { useProductPricingLogic } from './hooks/useProductPricingLogic';
+import { useThumbnailStatus } from '../../hooks/useThumbnailStatus'; // 🔥 NUEVO: Status tracking para thumbnails
 import { calculateProductEarnings } from '../../utils/centralizedCalculations'; // 🔧 USANDO NOMBRE CORRECTO
 import { ProductValidator } from '../../validators/ProductValidator';
 import { dashboardThemeCore } from '../../../../styles/dashboardThemeCore';
@@ -82,14 +82,15 @@ const MobileFormLayout = ({
   handleRegionChange, 
   imageError, 
   handleImagesChange, 
-  handleImageError 
+  handleImageError,
+  freezeDisplay = false,
 }) => (
   <Box
     sx={{
       display: 'flex',
       flexDirection: 'column',
       gap: 0, // 🔧 Gap 0 para unir visualmente
-      px: 0.5, // 🔧 Padding ultra mínimo para llegar al 95%
+  px: 0, // 🔧 Sin padding horizontal en móvil para full-bleed
       pb: 16,
       width: '100%',
       mx: 0,
@@ -107,7 +108,7 @@ const MobileFormLayout = ({
       }}
     >
       {/* Información Básica */}
-      <Box sx={{ p: 3, borderBottom: '1px solid #f0f0f0' }}>
+  <Box sx={{ p: { xs: 1.5, md: 3 }, borderBottom: '1px solid #f0f0f0' }}>
         <Typography variant="h6" gutterBottom sx={{ color: 'primary.main', fontWeight: 700, mb: 2 }}>
           📝 Información Básica
         </Typography>
@@ -123,7 +124,7 @@ const MobileFormLayout = ({
       </Box>
       
       {/* Inventario y Condiciones */}
-      <Box sx={{ p: 3, borderBottom: '1px solid #f0f0f0' }}>
+  <Box sx={{ p: { xs: 1.5, md: 3 }, borderBottom: '1px solid #f0f0f0' }}>
         <Typography variant="h6" gutterBottom sx={{ color: 'primary.main', fontWeight: 700, mb: 2 }}>
           📦 Inventario y Condiciones
         </Typography>
@@ -141,7 +142,7 @@ const MobileFormLayout = ({
       </Box>
       
       {/* Configuración de Precios */}
-      <Box sx={{ p: 3, borderBottom: '1px solid #f0f0f0' }}>
+  <Box sx={{ p: { xs: 1.5, md: 3 }, borderBottom: '1px solid #f0f0f0' }}>
         <Typography variant="h6" gutterBottom sx={{ color: 'primary.main', fontWeight: 700, mb: 2 }}>
           💰 Configuración de Precios
         </Typography>
@@ -171,7 +172,7 @@ const MobileFormLayout = ({
       </Box>
       
       {/* Regiones de Despacho */}
-      <Box sx={{ p: 3, borderBottom: '1px solid #f0f0f0' }}>
+  <Box sx={{ p: { xs: 1.5, md: 3 }, borderBottom: '1px solid #f0f0f0' }}>
         <Typography variant="h6" gutterBottom sx={{ color: 'primary.main', fontWeight: 700, mb: 2 }}>
           🚚 Regiones de Despacho
         </Typography>
@@ -181,12 +182,13 @@ const MobileFormLayout = ({
           errors={errors}
           localErrors={localErrors}
           triedSubmit={triedSubmit}
+          freezeDisplay={freezeDisplay}
           isMobile={true}
         />
       </Box>
       
       {/* Imágenes del Producto */}
-      <Box sx={{ p: 3 }}> {/* Sin border-bottom en la última sección */}
+  <Box sx={{ p: { xs: 1.5, md: 3 } }}> {/* Sin border-bottom en la última sección */}
         <Typography variant="h6" gutterBottom sx={{ color: 'primary.main', fontWeight: 700, mb: 2 }}>
           📸 Imágenes del Producto
         </Typography>
@@ -223,7 +225,8 @@ const DesktopFormLayout = ({
   handleRegionChange, 
   imageError, 
   handleImagesChange, 
-  handleImageError 
+  handleImageError,
+  freezeDisplay = false,
 }) => (
   <Grid container spacing={3}>
     <Grid size={{ xs: 12, lg: 8 }}>
@@ -278,6 +281,7 @@ const DesktopFormLayout = ({
               errors={errors}
               localErrors={localErrors}
               triedSubmit={triedSubmit}
+              freezeDisplay={freezeDisplay}
             />
           </Box>
 
@@ -339,7 +343,6 @@ const AddProduct = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const theme = useTheme();
-  const { createProduct, loadProducts } = useSupplierProducts();
 
   // 🔧 Hook para responsividad móvil - SOLO xs y sm
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -362,6 +365,7 @@ const AddProduct = () => {
     handlePricingTypeChange,
     submitForm,
     resetForm,
+  markImagesTouched,
   } = useProductForm(editProductId);
 
   const {
@@ -390,6 +394,10 @@ const AddProduct = () => {
   // 🔧 FIX 2C: Estado adicional para indicar éxito y navegación pendiente
   const [isNavigating, setIsNavigating] = useState(false);
 
+  // 🔥 NUEVO: Status tracking para thumbnails
+  const [createdProductId, setCreatedProductId] = useState(null);
+  const thumbnailStatus = useThumbnailStatus(createdProductId);
+
   // Estado shippingRegions para mapeo con Supabase
   const [shippingRegions, setShippingRegions] = useState([]);
 
@@ -404,12 +412,7 @@ const AddProduct = () => {
   ]);
 
 
-  // Cargar productos al montar el componente
-  useEffect(() => {
-    if (supplierId) {
-      loadProducts(supplierId);
-    }
-  }, [supplierId, loadProducts]);
+  // (Eliminado) Carga duplicada de productos que causaba rerenders con estado antiguo
 
   // Componente Portal para el panel de resultados
   const ResultsPanelPortal = ({ children }) => {
@@ -447,24 +450,41 @@ const AddProduct = () => {
     );
   };
 
-  // Cargar regiones de entrega si editando
+  // Cargar regiones de entrega si editando (una sola vez, sin sobreescribir ediciones locales)
+  const hasLoadedRegionsRef = useRef(false);
   useEffect(() => {
-    if (isEditMode && editProductId) {
+    if (!isEditMode || !editProductId) return;
+    if (hasLoadedRegionsRef.current) return;
 
-      fetchProductRegions(editProductId)
-        .then(regions => {
+    fetchProductRegions(editProductId)
+      .then(regions => {
+        const formattedRegions = convertDbRegionsToForm(regions);
 
-          const formattedRegions = convertDbRegionsToForm(regions);
+        // Solo hidratar si aún no hay regiones definidas localmente
+        setShippingRegions(prev => (prev && prev.length > 0 ? prev : formattedRegions));
+        if (!formData?.shippingRegions || formData.shippingRegions.length === 0) {
+          updateField('shippingRegions', formattedRegions); // Sincroniza con formData solo si estaba vacío
+        }
+        hasLoadedRegionsRef.current = true;
+      })
+      .catch(error => {
+        console.error('[AddProduct] useEffect - Error cargando regiones:', error);
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isEditMode, editProductId]);
 
-          setShippingRegions(formattedRegions);
-          updateField('shippingRegions', formattedRegions); // Sincroniza con formData
-
-        })
-        .catch(error => {
-          console.error('[AddProduct] useEffect - Error cargando regiones:', error);
-        });
+  // 🔥 NUEVO: Warm-up de Edge Function para reducir cold starts
+  useEffect(() => {
+    if (!isEditMode && location.pathname === '/supplier/addproduct') {
+      // Warm-up call silencioso para preparar Edge Function
+      import('../../../../shared/services/supabase').then(({ default: supabase }) => {
+        fetch(`${supabase.supabaseUrl}/functions/v1/generate-thumbnail`, {
+          method: 'HEAD',
+          headers: { 'Authorization': `Bearer ${supabase.supabaseKey}` }
+        }).catch(() => {}) // Silent fail - solo para warm-up
+      }).catch(() => {})
     }
-  }, [isEditMode, editProductId, updateField]);
+  }, [location.pathname, isEditMode]);
 
   // Validación en tiempo real solo si el campo fue tocado o tras submit
   useEffect(() => {
@@ -507,6 +527,8 @@ const AddProduct = () => {
   }
 
   const handleImagesChange = images => {
+    // Marcar que el usuario interactuó manualmente con las imágenes antes de actualizar
+    markImagesTouched?.();
     setImageError('');
     updateField('imagenes', images);
   };
@@ -608,6 +630,13 @@ const AddProduct = () => {
       } else {
         // Para productos nuevos, usar el ID del producto creado
         productId = result.data?.productid || result.product?.productid || result.productId;
+        
+        // 🔥 NUEVO: Configurar tracking de thumbnails para productos nuevos
+        if (productId && formData.imagenes?.length > 0) {
+          setCreatedProductId(productId);
+          thumbnailStatus.markAsProcessing();
+          console.info('🔄 [AddProduct] Iniciando tracking de thumbnails para producto:', productId);
+        }
       }
 
       if (productId && shippingRegions.length > 0) {
@@ -630,13 +659,11 @@ const AddProduct = () => {
       }
 
       // 3. Mostrar éxito y navegar
-      replaceLoadingWithSuccess(
-        'product-save',
-        isEditMode
-          ? 'Producto actualizado exitosamente!'
-          : 'Producto creado exitosamente!',
-        '🎉'
-      );
+      const successMessage = isEditMode
+        ? 'Producto actualizado exitosamente!'
+        : 'Producto creado exitosamente!';
+
+      replaceLoadingWithSuccess('product-save', successMessage, '🎉');
 
       // 🔧 FIX 2C: Marcar que estamos navegando (esto deshabilitará el botón permanentemente)
       setIsNavigating(true);
@@ -706,7 +733,7 @@ const AddProduct = () => {
           {/* Header */}
           <Box sx={{ 
             mb: { xs: 2, md: 4 },
-            px: { xs: 0.5, md: 0 }, // 🔧 Reducido aún más para maximizar width
+            px: { xs: 0, md: 0 }, // 🔧 Sin padding horizontal en móvil
           }}>
             {isMobile ? (
               // 📱 Header Móvil - Botón volver separado encima
@@ -766,6 +793,33 @@ const AddProduct = () => {
             )}
           </Box>
 
+          {/* 🔥 NUEVO: Status de Thumbnails */}
+          {!isEditMode && createdProductId && (
+            <Box sx={{ mb: 2 }}>
+              {thumbnailStatus.isProcessing && (
+                <Paper sx={{ p: 2, backgroundColor: '#fff3cd', border: '1px solid #ffeaa7' }}>
+                  <Typography variant="body2" color="text.secondary">
+                    📸 Procesando thumbnails... Esto puede tomar unos segundos.
+                  </Typography>
+                </Paper>
+              )}
+              {thumbnailStatus.isReady && (
+                <Paper sx={{ p: 2, backgroundColor: '#d4edda', border: '1px solid #c3e6cb' }}>
+                  <Typography variant="body2" color="success.main">
+                    ✅ Thumbnails generados exitosamente
+                  </Typography>
+                </Paper>
+              )}
+              {thumbnailStatus.hasError && (
+                <Paper sx={{ p: 2, backgroundColor: '#f8d7da', border: '1px solid #f5c6cb' }}>
+                  <Typography variant="body2" color="error.main">
+                    ⚠️ Error generando thumbnails: {thumbnailStatus.error}
+                  </Typography>
+                </Paper>
+              )}
+            </Box>
+          )}
+
           {/* Form container condicional */}
           {isMobile ? (
             <Box sx={{ px: 0, width: '100%' }}> {/* 🔧 Eliminado px: '1%' */}
@@ -786,6 +840,7 @@ const AddProduct = () => {
                 imageError={imageError}
                 handleImagesChange={handleImagesChange}
                 handleImageError={handleImageError}
+                freezeDisplay={isLoading || isSubmitting || isNavigating}
               />
             </Box>
           ) : (
@@ -806,6 +861,7 @@ const AddProduct = () => {
               imageError={imageError}
               handleImagesChange={handleImagesChange}
               handleImageError={handleImageError}
+              freezeDisplay={isLoading || isSubmitting || isNavigating}
             />
           )}
         </Container>

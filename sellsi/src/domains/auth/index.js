@@ -1,19 +1,20 @@
 // 📁 domains/auth/index.js
 // Barrel exports para el dominio de autenticación
 
-// Componentes principales
+// Componentes principales mínimos (evitar re-export masivo)
 export { default as Login } from './components/Login';
 export { default as Register } from './components/Register';
-export { default as AuthCallback } from './components/AuthCallback';
-export { default as PrivateRoute } from './components/PrivateRoute';
-export { default as AccountRecovery } from './components/AccountRecovery';
+// Otros componentes deben importarse directamente para reducir fan-out.
+// Intencionalmente NO se exportan: AuthCallback, PrivateRoute, AccountRecovery, OnboardingForm, Timer, VerificationCodeInput
+// Si algún módulo externo los necesita, debe reevaluarse el contrato público antes de exponerlos.
 
-// Hooks de autenticación
-export * from './hooks';
+// Wizard API (config / loader)
+export { authWizardSteps, recoveryWizardSteps, loadWizardStep } from './wizard/steps.config';
 
-// Services de autenticación
-export * from './services';
-
-// Tipos y constantes
+// Hooks / services / tipos específicos (sin wildcard)
+export { useLoginForm } from './hooks/useLoginForm';
+export { useRecuperarForm } from './hooks/useRecuperarForm';
+export { default as useTermsModal } from './hooks/useTermsModal';
+export { default as authService } from './services/authService.js';
 export * from './types';
 export * from './constants';

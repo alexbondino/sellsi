@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { Button, IconButton } from '@mui/material';
 import { ShoppingCart as ShoppingCartIcon } from '@mui/icons-material';
 
@@ -48,7 +48,31 @@ const AddToCart = ({
   // ============================================================================
   
   const [modalOpen, setModalOpen] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState(null);
   const addItem = useCartStore(state => state.addItem);
+
+  // Obtener sesión inicial para poder deshabilitar si es producto propio
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (mounted) {
+          setCurrentUserId(session?.user?.id || null);
+        }
+      } catch (e) {
+        if (mounted) setCurrentUserId(null);
+      }
+    })();
+    return () => { mounted = false; };
+  }, []);
+
+  const isOwnProduct = useMemo(() => {
+    if (!product) return false;
+    const supplierId = product.supplier_id || product.supplierId || product.supplierID;
+    if (!supplierId || !currentUserId) return false;
+    return supplierId === currentUserId;
+  }, [product, currentUserId]);
 
   // ============================================================================
   // HANDLERS
@@ -105,7 +129,11 @@ const AddToCart = ({
       // Agregar información adicional del modal
       const finalProduct = {
         ...formattedProduct,
-        documentType: cartItem.documentType,
+        // Unificar a document_type para el flujo de compra (distinto del doc de perfil proveedor)
+        document_type: (() => {
+          const v = String(cartItem.documentType || cartItem.document_type || '').toLowerCase();
+          return v === 'boleta' || v === 'factura' ? v : 'ninguno';
+        })(),
         selectedTier: cartItem.selectedTier,
         unitPrice: cartItem.unitPrice,
         totalPrice: cartItem.totalPrice,
@@ -211,6 +239,7 @@ const AddToCart = ({
         initialQuantity={initialQuantity}
         userRegion={userRegion}
         isLoadingUserProfile={isLoadingUserProfile}
+  isOwnProduct={isOwnProduct}
       />
     </>
   );

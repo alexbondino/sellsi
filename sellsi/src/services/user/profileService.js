@@ -133,6 +133,17 @@ export const getUserProfile = async (userId) => {
 };
 
 /**
+ * Wrapper conveniente que retorna directamente el objeto de perfil (sin envoltorio {data,error}).
+ * Lanza excepción si hay error para simplificar uso en componentes.
+ * Uso previsto: const profile = await getUserProfileData(userId)
+ */
+export const getUserProfileData = async (userId) => {
+  const { data, error } = await getUserProfile(userId);
+  if (error) throw error;
+  return data || {};
+};
+
+/**
  * Actualiza el perfil completo del usuario en múltiples tablas
  * @param {string} userId - ID del usuario
  * @param {object} profileData - Datos del perfil a actualizar

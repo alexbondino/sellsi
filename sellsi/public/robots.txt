@@ -1,0 +1,10 @@
+# robots.txt para Sellsi (producción)
+# Esta variante es la recomendada para producción: permite indexación.
+# Si alguna vez necesitas bloquear un entorno (p.ej. staging), sirve un archivo
+# con "User-agent: *" y "Disallow: /" en ese entorno.
+
+User-agent: *
+Disallow:
+
+# URL del sitemap (ajusta si tu sitemap está en otra ubicación)
+Sitemap: https://sellsi.cl/sitemap.xml

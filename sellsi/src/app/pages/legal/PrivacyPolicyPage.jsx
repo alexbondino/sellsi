@@ -11,7 +11,7 @@ const PrivacyPolicyPage = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4, pb: SPACING_BOTTOM_MAIN }}>
+  <Container maxWidth="lg" sx={{ py: 4, pb: SPACING_BOTTOM_MAIN, px: { xs: 0, md: 3 } }}>
       <Paper
         elevation={3}
         sx={{
@@ -27,7 +27,8 @@ const PrivacyPolicyPage = () => {
           sx={{
             bgcolor: '#f8f9fa',
             borderBottom: '2px solid #41B6E6',
-            p: { xs: 2, md: 3 },
+            // avoid adding extra lateral padding on mobile — AppShell/Container provide gutter
+            p: { xs: 0.5, md: 3 },
           }}
         >
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
@@ -36,7 +37,7 @@ const PrivacyPolicyPage = () => {
               variant="h4"
               sx={{
                 fontWeight: 700,
-                color: '#1565C0',
+                color: '#2E52B2',
                 fontSize: { xs: '1.5rem', md: '2rem' },
               }}
             >
@@ -48,7 +49,8 @@ const PrivacyPolicyPage = () => {
         {/* Content */}
         <Box
           sx={{
-            p: { xs: 2, md: 4 },
+            // content should not add mobile padding so gutter stays at 0.75
+            p: { xs: 0.5, md: 4 },
             bgcolor: '#fff',
             minHeight: '60vh',
           }}

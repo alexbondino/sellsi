@@ -2,7 +2,7 @@
 // CHECKOUT SUCCESS - PÁGINA DE ÉXITO DESPUÉS DEL PAGO
 // ============================================================================
 
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react';
 import {
   Box,
   Container,
@@ -12,52 +12,58 @@ import {
   Stack,
   Alert,
   CircularProgress,
-  Chip
-} from '@mui/material'
+  Chip,
+} from '@mui/material';
 import {
   CheckCircle as CheckCircleIcon,
   ShoppingCart as ShoppingCartIcon,
-  Receipt as ReceiptIcon
-} from '@mui/icons-material'
-import { motion } from 'framer-motion'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+  Receipt as ReceiptIcon,
+} from '@mui/icons-material';
+import { motion } from 'framer-motion';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 
 // Servicios
-import { checkoutService } from '../services'
-import useCartStore from '../../../shared/stores/cart/cartStore.js'
+import { checkoutService } from '../services';
+import useCartStore from '../../../shared/stores/cart/cartStore.js';
 
 // ============================================================================
 // COMPONENTE PRINCIPAL
 // ============================================================================
 
 const CheckoutSuccess = () => {
-  const navigate = useNavigate()
-  const [searchParams] = useSearchParams()
-  const { clearCart } = useCartStore()
-  
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const { clearLocal, clearCart } = useCartStore();
+
   // Estados
-  const [isVerifying, setIsVerifying] = useState(true)
-  const [verificationError, setVerificationError] = useState(null)
-  const [paymentData, setPaymentData] = useState(null)
+  const [isVerifying, setIsVerifying] = useState(true);
+  const [verificationError, setVerificationError] = useState(null);
+  const [paymentData, setPaymentData] = useState(null);
+  const [redirectTimeout, setRedirectTimeout] = useState(null);
 
   // Obtener parámetros de la URL de retorno de Khipu
-  const paymentId = searchParams.get('payment_id')
-  const transactionId = searchParams.get('transaction_id')
+  const paymentId = searchParams.get('payment_id');
+  const transactionId = searchParams.get('transaction_id');
 
   useEffect(() => {
     const verifyPayment = async () => {
       try {
         if (!paymentId) {
-          throw new Error('ID de pago no encontrado')
+          throw new Error('ID de pago no encontrado');
         }
 
-        console.log('[CheckoutSuccess] Verificando pago:', { paymentId, transactionId })
+        console.log('[CheckoutSuccess] Verificando pago:', {
+          paymentId,
+          transactionId,
+        });
 
         // Verificar estado del pago con Khipu
-        const verification = await checkoutService.verifyKhipuPaymentStatus(paymentId)
+        const verification = await checkoutService.verifyKhipuPaymentStatus(
+          paymentId
+        );
 
         if (!verification.success) {
-          throw new Error('Error al verificar el pago')
+          throw new Error('Error al verificar el pago');
         }
 
         if (verification.status === 'done') {
@@ -68,51 +74,65 @@ const CheckoutSuccess = () => {
             amount: verification.amount,
             currency: verification.currency,
             paidAt: verification.paidAt,
-            status: 'completed'
-          })
+            status: 'completed',
+          });
 
-          // Limpiar carrito ya que el pago fue exitoso
-          clearCart()
-          
-          toast.success('¡Pago completado exitosamente!')
-          
+          // Limpiar el carrito correctamente (estado + persistencia)
+          try {
+            await clearCart(); // intenta limpiar (maneja backend si aplica)
+          } catch (e) {
+            // fallback local si falla backend
+            clearLocal();
+          }
+          clearLocal(); // asegurar localStorage limpio
+
+          toast.success('¡Pago completado exitosamente!');
+
+          // Redirigir automáticamente a Mis Pedidos después de 3 segundos
+          const timeout = setTimeout(() => {
+            navigate('/buyer/orders');
+          }, 3000);
+          setRedirectTimeout(timeout);
         } else if (verification.status === 'pending') {
           // Pago aún pendiente
           setPaymentData({
             paymentId: verification.paymentId,
             transactionId: verification.transactionId,
-            status: 'pending'
-          })
-          
-          toast.info('Tu pago está siendo procesado...')
-          
+            status: 'pending',
+          });
+
+          toast.info('Tu pago está siendo procesado...');
         } else {
-          throw new Error('El pago no fue completado')
+          throw new Error('El pago no fue completado');
         }
-
       } catch (error) {
-        console.error('[CheckoutSuccess] Error verificando pago:', error)
-        setVerificationError(error.message)
-        toast.error(error.message)
+        console.error('[CheckoutSuccess] Error verificando pago:', error);
+        setVerificationError(error.message);
+        toast.error(error.message);
       } finally {
-        setIsVerifying(false)
+        setIsVerifying(false);
       }
-    }
+    };
 
-    verifyPayment()
-  }, [paymentId, transactionId, clearCart])
+    verifyPayment();
+
+    // Limpiar timeout si el componente se desmonta
+    return () => {
+      if (redirectTimeout) clearTimeout(redirectTimeout);
+    };
+  }, [paymentId, transactionId, clearCart, clearLocal, navigate]);
 
   const handleViewOrders = () => {
-    navigate('/buyer/orders')
-  }
+    navigate('/buyer/orders');
+  };
 
   const handleContinueShopping = () => {
-    navigate('/buyer/marketplace')
-  }
+    navigate('/buyer/marketplace');
+  };
 
   const handleGoHome = () => {
-    navigate('/buyer/marketplace')
-  }
+    navigate('/buyer/marketplace');
+  };
 
   // ===== RENDERIZADO =====
 
@@ -125,7 +145,7 @@ const CheckoutSuccess = () => {
             p: 4,
             borderRadius: 3,
             textAlign: 'center',
-            background: 'linear-gradient(135deg, #ffffff 0%, #f8f9ff 100%)'
+            background: 'linear-gradient(135deg, #ffffff 0%, #f8f9ff 100%)',
           }}
         >
           <CircularProgress size={60} sx={{ mb: 3, color: 'primary.main' }} />
@@ -137,7 +157,7 @@ const CheckoutSuccess = () => {
           </Typography>
         </Paper>
       </Container>
-    )
+    );
   }
 
   if (verificationError) {
@@ -149,18 +169,16 @@ const CheckoutSuccess = () => {
             p: 4,
             borderRadius: 3,
             textAlign: 'center',
-            background: 'linear-gradient(135deg, #ffffff 0%, #ffebee 100%)'
+            background: 'linear-gradient(135deg, #ffffff 0%, #ffebee 100%)',
           }}
         >
           <Alert severity="error" sx={{ mb: 3 }}>
             <Typography variant="body1" fontWeight="bold">
               Error al verificar el pago
             </Typography>
-            <Typography variant="body2">
-              {verificationError}
-            </Typography>
+            <Typography variant="body2">{verificationError}</Typography>
           </Alert>
-          
+
           <Stack spacing={2}>
             <Button
               variant="contained"
@@ -169,7 +187,7 @@ const CheckoutSuccess = () => {
             >
               Volver al Inicio
             </Button>
-            
+
             <Button
               variant="outlined"
               onClick={() => navigate('/buyer/cart')}
@@ -180,7 +198,7 @@ const CheckoutSuccess = () => {
           </Stack>
         </Paper>
       </Container>
-    )
+    );
   }
 
   return (
@@ -196,17 +214,16 @@ const CheckoutSuccess = () => {
             p: 4,
             borderRadius: 3,
             textAlign: 'center',
-            background: paymentData?.status === 'completed' 
-              ? 'linear-gradient(135deg, #ffffff 0%, #e8f5e8 100%)'
-              : 'linear-gradient(135deg, #ffffff 0%, #fff3e0 100%)'
+            background:
+              paymentData?.status === 'completed'
+                ? 'linear-gradient(135deg, #ffffff 0%, #e8f5e8 100%)'
+                : 'linear-gradient(135deg, #ffffff 0%, #fff3e0 100%)',
           }}
         >
           {/* Icono de estado */}
           <Box sx={{ mb: 3 }}>
             {paymentData?.status === 'completed' ? (
-              <CheckCircleIcon 
-                sx={{ fontSize: 80, color: 'success.main' }} 
-              />
+              <CheckCircleIcon sx={{ fontSize: 80, color: 'success.main' }} />
             ) : (
               <CircularProgress size={60} sx={{ color: 'warning.main' }} />
             )}
@@ -214,24 +231,25 @@ const CheckoutSuccess = () => {
 
           {/* Título */}
           <Typography variant="h4" fontWeight="bold" sx={{ mb: 2 }}>
-            {paymentData?.status === 'completed' 
-              ? '¡Pago Completado!' 
-              : 'Pago en Proceso'
-            }
+            {paymentData?.status === 'completed'
+              ? '¡Pago Completado!'
+              : 'Pago en Proceso'}
           </Typography>
 
           {/* Descripción */}
           <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
-            {paymentData?.status === 'completed' 
+            {paymentData?.status === 'completed'
               ? 'Tu pago ha sido procesado exitosamente. Recibirás un email de confirmación en breve.'
-              : 'Tu pago está siendo procesado. Te notificaremos cuando se complete.'
-            }
+              : 'Tu pago está siendo procesado. Te notificaremos cuando se complete.'}
           </Typography>
 
           {/* Información del pago */}
           {paymentData && (
             <Box sx={{ mb: 3 }}>
-              <Stack spacing={2} sx={{ textAlign: 'left', maxWidth: 400, mx: 'auto' }}>
+              <Stack
+                spacing={2}
+                sx={{ textAlign: 'left', maxWidth: 400, mx: 'auto' }}
+              >
                 <Box>
                   <Typography variant="caption" color="text.secondary">
                     ID de Pago
@@ -240,7 +258,7 @@ const CheckoutSuccess = () => {
                     {paymentData.paymentId}
                   </Typography>
                 </Box>
-                
+
                 {paymentData.transactionId && (
                   <Box>
                     <Typography variant="caption" color="text.secondary">
@@ -251,14 +269,17 @@ const CheckoutSuccess = () => {
                     </Typography>
                   </Box>
                 )}
-                
+
                 {paymentData.amount && (
                   <Box>
                     <Typography variant="caption" color="text.secondary">
                       Monto Pagado
                     </Typography>
                     <Typography variant="body2" fontWeight="bold">
-                      {checkoutService.formatPrice(paymentData.amount, paymentData.currency)}
+                      {checkoutService.formatPrice(
+                        paymentData.amount,
+                        paymentData.currency
+                      )}
                     </Typography>
                   </Box>
                 )}
@@ -269,8 +290,16 @@ const CheckoutSuccess = () => {
                   </Typography>
                   <Box sx={{ mt: 0.5 }}>
                     <Chip
-                      label={paymentData.status === 'completed' ? 'Completado' : 'Pendiente'}
-                      color={paymentData.status === 'completed' ? 'success' : 'warning'}
+                      label={
+                        paymentData.status === 'completed'
+                          ? 'Completado'
+                          : 'Pendiente'
+                      }
+                      color={
+                        paymentData.status === 'completed'
+                          ? 'success'
+                          : 'warning'
+                      }
                       size="small"
                     />
                   </Box>
@@ -290,13 +319,13 @@ const CheckoutSuccess = () => {
                   py: 1.5,
                   borderRadius: 2,
                   fontWeight: 'bold',
-                  textTransform: 'none'
+                  textTransform: 'none',
                 }}
               >
                 Ver Mis Pedidos
               </Button>
             )}
-            
+
             <Button
               variant="outlined"
               onClick={handleContinueShopping}
@@ -304,7 +333,7 @@ const CheckoutSuccess = () => {
               sx={{
                 py: 1.5,
                 borderRadius: 2,
-                textTransform: 'none'
+                textTransform: 'none',
               }}
             >
               Continuar Comprando
@@ -313,7 +342,7 @@ const CheckoutSuccess = () => {
         </Paper>
       </motion.div>
     </Container>
-  )
-}
+  );
+};
 
-export default CheckoutSuccess
+export default CheckoutSuccess;

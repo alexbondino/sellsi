@@ -51,11 +51,8 @@ import {
 
 import { PrimaryButton } from '../../../shared/components/forms';
 import AdminAccountCreator from './AdminAccountCreator';
-import { 
-  getAdminAccounts, 
-  updateAdminStatus,
-  deleteAdminAccount
-} from '../../../domains/admin';
+// Refactor anti-ciclos: uso de servicios directos (se evita barrel '../../../domains/admin')
+import { getAdminAccounts, updateAdminStatus, deleteAdminAccount } from '../services/adminAccountService';
 
 // ✅ CONFIGURACIÓN DE ROLES
 const ROLE_CONFIG = {

@@ -26,7 +26,8 @@ const BanGuard = ({ children, userId = null }) => {
           backgroundColor: '#ffffff',
         }}
       >
-        <Loader size={80} logoSize={48} />
+        {/* Usa Loader por defecto para consistencia global */}
+        <Loader />
       </Box>
     );
   }

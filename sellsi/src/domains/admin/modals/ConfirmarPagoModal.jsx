@@ -26,7 +26,9 @@ import { CheckCircle, Receipt, Notifications } from '@mui/icons-material';
 
 // Importar componentes UI existentes
 import { PrimaryButton, FileUploader } from '../../../shared/components/forms';
-import { confirmarPago, subirComprobante, enviarNotificacion } from '../../../domains/admin';
+// Refactor anti-ciclos: importaciones directas de servicios
+import { confirmarPago, rechazarPago, devolverPago, enviarNotificacion } from '../services/adminRequestService';
+import { subirComprobante } from '../services/adminFileService';
 
 // ✅ COMMON STYLES
 const commonStyles = {

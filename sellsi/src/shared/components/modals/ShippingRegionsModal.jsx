@@ -40,6 +40,7 @@ const ShippingRegionsModal = ({
 }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isExtraSmall = useMediaQuery(theme.breakpoints.down('xs'));
 
   // Estado local para las regiones y sus configuraciones
   const [regionsConfig, setRegionsConfig] = useState([]);
@@ -268,8 +269,8 @@ const ShippingRegionsModal = ({
     <Dialog
       open={isOpen}
       onClose={loading ? null : onClose}
-      maxWidth="md"
-      fullWidth
+      maxWidth={isMobile ? false : "md"}
+      fullWidth={!isMobile}
       fullScreen={isMobile}
       disableScrollLock={false}
       disableEnforceFocus={false}
@@ -280,7 +281,7 @@ const ShippingRegionsModal = ({
         sx: {
           borderRadius: isMobile ? 0 : 3,
           overflow: 'hidden',
-          maxHeight: '90vh',
+          maxHeight: isMobile ? '100vh' : '90vh',
           zIndex: 2000,
           position: isMobile ? 'fixed' : 'relative',
           top: isMobile ? 0 : 'auto',
@@ -289,6 +290,8 @@ const ShippingRegionsModal = ({
           bottom: isMobile ? 0 : 'auto',
           width: isMobile ? '100vw' : 'auto',
           height: isMobile ? '100vh' : 'auto',
+          margin: isMobile ? 0 : 'auto',
+          maxWidth: isMobile ? '100vw' : 'auto',
         },
       }}
       BackdropProps={{
@@ -301,41 +304,75 @@ const ShippingRegionsModal = ({
         zIndex: 2000,
         '& .MuiDialog-container': {
           zIndex: 2000,
+          alignItems: isMobile ? 'stretch' : 'center',
+          justifyContent: isMobile ? 'stretch' : 'center',
+        },
+        '& .MuiDialog-paper': {
+          margin: isMobile ? 0 : 'auto',
+          maxWidth: isMobile ? '100vw' : 'auto',
+          width: isMobile ? '100vw' : 'auto',
+          height: isMobile ? '100vh' : 'auto',
         },
       }}
     >
-      <DialogTitle sx={{ pb: 1 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+      <DialogTitle sx={{ pb: 1, px: isMobile ? 2 : 3, pt: isMobile ? 2 : 3 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: isMobile ? 1.5 : 2 }}>
           <Box
             sx={{
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              width: 40,
-              height: 40,
+              width: isMobile ? 32 : 40,
+              height: isMobile ? 32 : 40,
               borderRadius: '50%',
               bgcolor: 'primary.main',
               color: 'white',
             }}
           >
-            <LocalShippingIcon />
+            <LocalShippingIcon sx={{ fontSize: isMobile ? 18 : 24 }} />
           </Box>
           
-          <Box sx={{ flexGrow: 1 }}>
-            <Typography variant="h6" sx={{ fontWeight: 600 }}>
-              Configurar Regiones de Despacho
+          <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+            <Typography 
+              variant={isMobile ? "subtitle1" : "h6"} 
+              sx={{ 
+                fontWeight: 600,
+                lineHeight: 1.2,
+                wordBreak: 'break-word'
+              }}
+            >
+              {isMobile ? "Regiones de Despacho" : "Configurar Regiones de Despacho"}
             </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Selecciona las regiones donde realizas despachos y configura precios y tiempos
-            </Typography>
+            {!isExtraSmall && (
+              <Typography 
+                variant="body2" 
+                color="text.secondary"
+                sx={{ 
+                  lineHeight: 1.3,
+                  mt: 0.5,
+                  display: '-webkit-box',
+                  WebkitLineClamp: isMobile ? 2 : 3,
+                  WebkitBoxOrient: 'vertical',
+                  overflow: 'hidden'
+                }}
+              >
+                {isMobile 
+                  ? "Configura precios y tiempos de entrega" 
+                  : "Selecciona las regiones donde realizas despachos. Configura precios y tiempos."
+                }
+              </Typography>
+            )}
           </Box>
 
           {!loading && (
             <IconButton
               onClick={onClose}
-              sx={{ color: 'grey.500' }}
+              sx={{ 
+                color: 'grey.500',
+                p: isMobile ? 0.5 : 1
+              }}
             >
-              <CloseIcon />
+              <CloseIcon sx={{ fontSize: isMobile ? 20 : 24 }} />
             </IconButton>
           )}
         </Box>
@@ -343,13 +380,46 @@ const ShippingRegionsModal = ({
 
       <Divider />
 
-      <DialogContent sx={{ p: 0 }}>
-        <TableContainer component={Paper} elevation={0}>
-          <Table stickyHeader>
+      <DialogContent sx={{ p: 0, overflow: 'hidden' }}>
+        <TableContainer 
+          component={Paper} 
+          elevation={0}
+          sx={{ 
+            maxHeight: isMobile ? 'calc(100vh - 200px)' : '60vh',
+            overflow: 'auto',
+            // Scroll horizontal más visible en móviles
+            '&::-webkit-scrollbar': {
+              height: isMobile ? 8 : 6,
+              width: isMobile ? 8 : 6,
+            },
+            '&::-webkit-scrollbar-thumb': {
+              backgroundColor: 'rgba(0,0,0,0.3)',
+              borderRadius: 4,
+            },
+            '&::-webkit-scrollbar-track': {
+              backgroundColor: 'rgba(0,0,0,0.1)',
+            },
+          }}
+        >
+          <Table 
+            stickyHeader 
+            sx={{ 
+              minWidth: isMobile ? 480 : 650,
+              tableLayout: 'fixed'
+            }}
+          >
             <TableHead>
               <TableRow>
-                <TableCell sx={{ fontWeight: 600, bgcolor: 'grey.50' }}>
+                <TableCell 
+                  sx={{ 
+                    fontWeight: 600, 
+                    bgcolor: 'grey.50',
+                    width: isMobile ? 50 : 60,
+                    p: isMobile ? 1 : 2
+                  }}
+                >
                   <Checkbox 
+                    size={isMobile ? "small" : "medium"}
                     checked={regionsConfig.length > 0 && regionsConfig.every(config => config.enabled)}
                     indeterminate={regionsConfig.some(config => config.enabled) && !regionsConfig.every(config => config.enabled)}
                     onChange={(e) => {
@@ -365,49 +435,96 @@ const ShippingRegionsModal = ({
                     }}
                   />
                 </TableCell>
-                <TableCell sx={{ fontWeight: 600, bgcolor: 'grey.50' }}>
-                  Región
+                <TableCell 
+                  sx={{ 
+                    fontWeight: 600, 
+                    bgcolor: 'grey.50',
+                    width: isMobile ? 140 : 200,
+                    p: isMobile ? 1 : 2
+                  }}
+                >
+                  <Typography variant={isMobile ? "caption" : "body2"} sx={{ fontWeight: 600 }}>
+                    Región
+                  </Typography>
                 </TableCell>
-                <TableCell sx={{ fontWeight: 600, bgcolor: 'grey.50' }}>
-                  Valor Despacho (CLP)
+                <TableCell 
+                  sx={{ 
+                    fontWeight: 600, 
+                    bgcolor: 'grey.50',
+                    width: isMobile ? 140 : 180,
+                    p: isMobile ? 1 : 2
+                  }}
+                >
+                  <Typography variant={isMobile ? "caption" : "body2"} sx={{ fontWeight: 600 }}>
+                    {isMobile ? "Valor (CLP)" : "Valor Despacho (CLP)"}
+                  </Typography>
                 </TableCell>
-                <TableCell sx={{ fontWeight: 600, bgcolor: 'grey.50' }}>
-                  Tiempo Máximo (días hábiles)
+                <TableCell 
+                  sx={{ 
+                    fontWeight: 600, 
+                    bgcolor: 'grey.50',
+                    width: isMobile ? 130 : 160,
+                    p: isMobile ? 1 : 2
+                  }}
+                >
+                  <Typography variant={isMobile ? "caption" : "body2"} sx={{ fontWeight: 600 }}>
+                    {isMobile ? "Días" : "Tiempo Máximo (días hábiles)"}
+                  </Typography>
                 </TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {regionsConfig.map((config) => (
                 <TableRow key={config.region}>
-                  <TableCell>
+                  <TableCell sx={{ p: isMobile ? 1 : 2 }}>
                     <Checkbox
+                      size={isMobile ? "small" : "medium"}
                       checked={config.enabled}
                       onChange={(e) => handleCheckboxChange(config.region, e.target.checked)}
                     />
                   </TableCell>
-                  <TableCell>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <TableCell sx={{ p: isMobile ? 1 : 2 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: isMobile ? 0.5 : 1 }}>
                       <Typography 
-                        variant="body2" 
+                        variant={isMobile ? "caption" : "body2"}
                         sx={{ 
                           fontWeight: 700,
                           color: 'primary.main',
-                          minWidth: '32px',
-                          textAlign: 'center'
+                          minWidth: isMobile ? '24px' : '32px',
+                          textAlign: 'center',
+                          fontSize: isMobile ? '0.7rem' : '0.875rem'
                         }}
                       >
                         {getRegionRomanNumber(config.region)}
                       </Typography>
-                      <Typography variant="body2" sx={{ fontWeight: config.enabled ? 600 : 400 }}>
+                      <Typography 
+                        variant={isMobile ? "caption" : "body2"} 
+                        sx={{ 
+                          fontWeight: config.enabled ? 600 : 400,
+                          lineHeight: 1.2,
+                          fontSize: isMobile ? '0.75rem' : '0.875rem',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: isMobile ? 'nowrap' : 'normal'
+                        }}
+                      >
                         {config.regionLabel}
                       </Typography>
                     </Box>
                   </TableCell>
-                  <TableCell>
+                  <TableCell sx={{ p: isMobile ? 1 : 2 }}>
                     <TextField
                       size="small"
                       type="tel"
-                      inputProps={{ inputMode: 'numeric', pattern: '[0-9]*', maxLength: 9 }}
+                      inputProps={{ 
+                        inputMode: 'numeric', 
+                        pattern: '[0-9]*', 
+                        maxLength: 9,
+                        style: { 
+                          fontSize: isMobile ? '0.8rem' : '0.875rem',
+                          padding: isMobile ? '6px 8px' : '8px 12px'
+                        }
+                      }}
                       placeholder="$0"
                       value={config.shippingValue}
                       onChange={(e) => handleFieldChange(config.region, 'shippingValue', e.target.value)}
@@ -415,10 +532,16 @@ const ShippingRegionsModal = ({
                       onBlur={(e) => handleShippingValueBlur(config.region, e.target.value)}
                       disabled={!config.enabled}
                       error={config.enabled && (!config.shippingValue || isNaN(extractNumericValue(config.shippingValue)) || parseFloat(extractNumericValue(config.shippingValue)) < 0)}
-                      sx={{ minWidth: 120 }}
+                      sx={{ 
+                        width: '100%',
+                        maxWidth: isMobile ? 120 : 140,
+                        '& .MuiInputBase-input': {
+                          fontSize: isMobile ? '0.8rem' : '0.875rem'
+                        }
+                      }}
                     />
                   </TableCell>
-                  <TableCell>
+                  <TableCell sx={{ p: isMobile ? 1 : 2 }}>
                     <TextField
                       size="small"
                       type="number"
@@ -438,9 +561,19 @@ const ShippingRegionsModal = ({
                         max: 365,
                         step: 1,
                         pattern: "[0-9]*",
-                        inputMode: "numeric"
+                        inputMode: "numeric",
+                        style: { 
+                          fontSize: isMobile ? '0.8rem' : '0.875rem',
+                          padding: isMobile ? '6px 8px' : '8px 12px'
+                        }
                       }}
-                      sx={{ minWidth: 80 }}
+                      sx={{ 
+                        width: '100%',
+                        maxWidth: isMobile ? 100 : 120,
+                        '& .MuiInputBase-input': {
+                          fontSize: isMobile ? '0.8rem' : '0.875rem'
+                        }
+                      }}
                     />
                   </TableCell>
                 </TableRow>
@@ -452,12 +585,27 @@ const ShippingRegionsModal = ({
 
       <Divider />
 
-      <DialogActions sx={{ p: 3, gap: 2 }}>
+      <DialogActions 
+        sx={{ 
+          p: isMobile ? 2 : 3, 
+          gap: isMobile ? 1 : 2,
+          flexDirection: isMobile ? 'column' : 'row',
+          '& > button': {
+            width: isMobile ? '100%' : 'auto',
+            minWidth: isMobile ? 0 : 100
+          }
+        }}
+      >
         <Button
           onClick={onClose}
           disabled={loading}
           variant="outlined"
-          sx={{ textTransform: 'none', fontWeight: 500 }}
+          sx={{ 
+            textTransform: 'none', 
+            fontWeight: 500,
+            order: isMobile ? 2 : 1,
+            py: isMobile ? 1.5 : 1
+          }}
         >
           Cancelar
         </Button>
@@ -466,9 +614,14 @@ const ShippingRegionsModal = ({
           onClick={handleSave}
           disabled={loading || !isValid}
           variant="contained"
-          sx={{ textTransform: 'none', fontWeight: 600 }}
+          sx={{ 
+            textTransform: 'none', 
+            fontWeight: 600,
+            order: isMobile ? 1 : 2,
+            py: isMobile ? 1.5 : 1
+          }}
         >
-          {loading ? 'Guardando...' : 'Guardar Configuración'}
+          {loading ? 'Guardando...' : (isMobile ? 'Guardar' : 'Guardar Configuración')}
         </Button>
       </DialogActions>
     </Dialog>

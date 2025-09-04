@@ -1,33 +1,35 @@
 // 📁 shared/components/navigation/TopBar/TopBar.jsx
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import {
-  Box,
-  Button,
-  IconButton,
-  Menu,
-  MenuItem,
-  useTheme,
-  Tooltip,
-  Badge,
-  Avatar,
-  Divider,
-} from '@mui/material';
+import { Box, Button, IconButton, MenuItem, useTheme, Tooltip, Badge, Divider, TextField, InputAdornment, Menu } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
-import PersonIcon from '@mui/icons-material/Person';
+// import PersonIcon from '@mui/icons-material/Person'; // Ya no se usa directamente en TopBar
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
+// Removed unused NotificationsIcon import
 import { supabase } from '../../../services/supabase';
 import useCartStore from '../../../stores/cart/cartStore';
-import ContactModal from '../../modals/ContactModal';
-import { Modal, MODAL_TYPES } from '../../feedback';
-import { useRole } from '../../../../infrastructure/providers/RoleProvider';
-// Lazy imports para evitar bundling mixto
-const Login = React.lazy(() => import('../../../../domains/auth').then(module => ({ default: module.Login })));
-const Register = React.lazy(() => import('../../../../domains/auth').then(module => ({ default: module.Register })));
+// Removed unused Modal (Coming Soon) after refactor phase
+import { useRole } from '../../../../infrastructure/providers';
+// Auth modals ahora encapsulados en componente AuthModals (lazy dentro)
 import { setSkipScrollToTopOnce } from '../ScrollToTop/ScrollToTop';
 
 // Importa el nuevo componente reutilizable y ahora verdaderamente controlado
-import { Switch } from '../'; // Ajusta la ruta si es diferente
+import { useNotificationsContext } from '../../../../domains/notifications/components/NotificationProvider';
+import { NotificationBell } from '../../../../domains/notifications';
+// Consolidated MUI imports
+import SearchIcon from '@mui/icons-material/Search';
+import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
+import { ProfileAvatarButton } from './components/ProfileAvatarButton';
+import { AuthModals } from './components/AuthModals';
+import { NotificationsMenu } from './components/NotificationsMenu';
+// import { PublicNavLinks } from './components/PublicNavLinks'; // Reemplazado por mapeo directo usando navButtonBase
+import { MobileMenu } from './components/MobileMenu';
+import { RoleSwitchControl } from './components/RoleSwitchControl';
+import { navButtonBase, iconButtonBase } from './topBar.styles';
+// Hooks Fase 2
+import { useRoleFromRoute } from './hooks/useRoleFromRoute';
+import { useAuthModalBus } from './hooks/useAuthModalBus';
+import { useMarketplaceSearch } from './hooks/useMarketplaceSearch';
 
 export default function TopBar({
   session,
@@ -45,88 +47,19 @@ export default function TopBar({
   const [mobileMenuAnchor, setMobileMenuAnchor] = useState(null);
   const [profileAnchor, setProfileAnchor] = useState(null);
 
-  const [openLoginModal, setOpenLoginModal] = useState(false);
-  const [openRegisterModal, setOpenRegisterModal] = useState(false);
-  const [openContactModal, setOpenContactModal] = useState(false);
+  // Auth modal bus (reemplaza listeners window y timeout transición)
+  const {
+    loginOpen: openLoginModal,
+    registerOpen: openRegisterModal,
+    openLogin: openLoginModalOpen,
+    openRegister: openRegisterModalOpen,
+    closeLogin: closeLoginModal,
+    closeRegister: closeRegisterModal,
+    transitionLoginToRegister: handleLoginToRegisterTransition,
+  } = useAuthModalBus({ enableLegacyEventListeners: true });
 
-  // ✅ SISTEMA CENTRALIZADO DE AUTENTICACIÓN
-  // TopBar es el único responsable de manejar modales de auth para evitar duplicados
-  useEffect(() => {
-    const handleOpenLogin = () => {
-      // Verificar que no esté ya abierto para evitar duplicados
-      if (!openLoginModal) {
-        setOpenLoginModal(true);
-      }
-    };
-
-    const handleOpenRegister = () => {
-      // Verificar que no esté ya abierto para evitar duplicados
-      if (!openRegisterModal) {
-        setOpenRegisterModal(true);
-      }
-    };
-
-    // ✅ ROBUSTEZ: Listeners con opciones para mejor control
-    window.addEventListener('openLogin', handleOpenLogin, { passive: true });
-    window.addEventListener('openRegister', handleOpenRegister, { passive: true });
-
-    return () => {
-      window.removeEventListener('openLogin', handleOpenLogin);
-      window.removeEventListener('openRegister', handleOpenRegister);
-    };
-  }, [openLoginModal, openRegisterModal]); // ✅ Dependencias para evitar duplicados
-
-  // ✅ HANDLER CENTRALIZADO PARA TRANSICIÓN LOGIN → REGISTER
-  const handleLoginToRegisterTransition = () => {
-    setOpenLoginModal(false);
-    // Usar setTimeout para asegurar que el modal se cierre antes de abrir el otro
-    setTimeout(() => {
-      setOpenRegisterModal(true);
-    }, 100);
-  };
-
-  // ✅ NUEVO: Determinar el rol basado en la ruta actual
-  const getRoleFromCurrentRoute = () => {
-    const currentPath = location.pathname;
-    
-    // Rutas que son específicamente de supplier
-    const supplierRoutes = [
-      '/supplier/home',
-      '/supplier/myproducts',
-      '/supplier/addproduct', 
-      '/supplier/my-orders',
-      '/supplier/profile',
-      '/supplier/marketplace'
-    ];
-    
-    // Rutas que son específicamente de buyer
-    const buyerRoutes = [
-      '/buyer/marketplace',
-      '/buyer/orders',
-      '/buyer/performance',
-      '/buyer/cart',
-      '/buyer/paymentmethod',
-      '/buyer/profile'
-    ];
-    
-    // Verificar si está en una ruta específica de supplier
-    if (supplierRoutes.some(route => currentPath.startsWith(route))) {
-      return 'supplier';
-    }
-    
-    // Verificar si está en una ruta específica de buyer
-    if (buyerRoutes.some(route => currentPath.startsWith(route))) {
-      return 'buyer';
-    }
-    
-    // Para rutas neutrales, usar el rol del perfil del usuario
-    return isBuyer ? 'buyer' : 'supplier';
-  };
-
-  // ✅ CAMBIO: El switch se adapta automáticamente a la ruta actual
-  const currentRole = isRoleLoading 
-    ? null // No mostrar rol durante loading para evitar parpadeo
-    : (typeof isBuyer === 'boolean' ? getRoleFromCurrentRoute() : 'buyer');
+  // Rol derivado vía hook
+  const { currentRole } = useRoleFromRoute({ pathname: location.pathname, isBuyerProp: isBuyer, isRoleLoading });
 
   const isLoggedIn = !!session;
 
@@ -175,13 +108,21 @@ export default function TopBar({
     handleCloseMobileMenu();
     setTimeout(() => {
       if (ref === 'contactModal') {
-        setOpenContactModal(true);
+        // Navigate to landing and trigger scroll to contact section
+        setSkipScrollToTopOnce();
+        const search = `?scrollTo=${encodeURIComponent('contactModal')}&t=${Date.now()}`;
+        navigate(`/${search}`);
         return;
       }
-      // Si es un anchor de la home, navega a / con scrollTo
-      if (ref === 'quienesSomosRef' || ref === 'serviciosRef' || ref === 'trabajaConNosotrosRef') {
+      if (
+        ref === 'quienesSomosRef' ||
+        ref === 'serviciosRef' ||
+        ref === 'trabajaConNosotrosRef'
+      ) {
         setSkipScrollToTopOnce();
-        navigate(`/?scrollTo=${ref}`);
+        // Forzar cambio de URL incluso si ya estás en / añadiendo un timestamp
+        const search = `?scrollTo=${encodeURIComponent(ref)}&t=${Date.now()}`;
+        navigate(`/${search}`);
         return;
       }
       if (onNavigate) {
@@ -212,107 +153,83 @@ export default function TopBar({
   let desktopNavLinks = null;
   let desktopRightContent = null;
   let mobileMenuItems = [];
-  let paddingX = { xs: 2, md: 18, mac: 18, lg: 18 }; // Default padding for logged out
+  let paddingX = {
+    xs: 'max(25px, env(safe-area-inset-left))',
+    sm: 'max(30px, env(safe-area-inset-left))',
+    md: '250px',
+    mac: '180px',
+    lg: '250px',
+  }; // Default padding for logged out
+  // Helpers centralizados
+  const getProfileRoute = (flag) => (flag ? '/buyer/profile' : '/supplier/profile');
+  const goToProfile = () => navigate(getProfileRoute(isBuyer));
 
-  // Avatar con fade-in
-  const [avatarLoaded, setAvatarLoaded] = useState(false);
-  useEffect(() => {
-    setAvatarLoaded(false); // Resetear cuando cambia el logo
-  }, [logoUrl]);
-
-  const profileMenuButton = (
-    <IconButton onClick={handleOpenProfileMenu} sx={{ color: 'white', p: 0, display: { xs: 'none', md: 'inline-flex' } }}>
-      {logoUrl && typeof logoUrl === 'string' && logoUrl.trim() !== '' ? (
-        <Avatar
-          src={logoUrl}
-          key={logoUrl}
-          sx={{
-            transition: 'none !important',
-            opacity: avatarLoaded ? 1 : 0,
-            background: 'transparent !important',
-          }}
-          imgProps={{
-            onLoad: () => setAvatarLoaded(true),
-            onError: () => setAvatarLoaded(true),
-            style: { transition: 'opacity 0.5s', opacity: avatarLoaded ? 1 : 0 }
-          }}
-        />
-      ) : (
-        <Avatar sx={{ background: '#fff !important', color: '#111 !important' }}>
-          <PersonIcon sx={{ color: '#111 !important', fontSize: 32 }} />
-        </Avatar>
-      )}
-    </IconButton>
-  );
-  // Estado para el modal de "Próximamente..."
-  const [openComingSoonModal, setOpenComingSoonModal] = useState(false);
+  // Avatar state handled inside ProfileAvatarButton now; removed local avatarLoaded.
+  const profileMenuButton = <ProfileAvatarButton logoUrl={logoUrl} onClick={handleOpenProfileMenu} />;
+  // Notifications
+  const notifCtx = useNotificationsContext?.() || null;
+  const [notifAnchor, setNotifAnchor] = useState(null);
+  const [notifModalOpen, setNotifModalOpen] = useState(false);
+  const handleOpenNotif = e => setNotifAnchor(e.currentTarget);
+  const handleCloseNotif = () => setNotifAnchor(null);
+  const handleViewAllNotif = () => {
+    setNotifModalOpen(true);
+    handleCloseNotif();
+  };
+  const handleCloseNotifModal = () => setNotifModalOpen(false);
+  const handleNotifItemClick = n => {
+    // Navigate based on context_section
+    if (n.context_section === 'supplier_orders')
+      navigate('/supplier/my-orders');
+    else if (n.context_section === 'buyer_orders') 
+      navigate('/buyer/orders');
+    else if (n.context_section === 'supplier_offers')
+      navigate('/supplier/offers');
+    else if (n.context_section === 'buyer_offers')
+      navigate('/buyer/offers');
+    else if (n.order_status && currentRole === 'buyer')
+      navigate('/buyer/orders');
+    else if (n.order_status && currentRole === 'supplier')
+      navigate('/supplier/my-orders');
+    // Mark read locally
+    try {
+      notifCtx?.markAsRead?.([n.id]);
+    } catch (_) {}
+    handleCloseNotif();
+  };
 
   if (!isLoggedIn) {
     // Botones públicos, pero el de "Trabaja con Nosotros" ahora abre modal
+    // Ocultar totalmente el botón "Trabaja con Nosotros" según requerimiento
     const publicNavButtons = [
-      { label: 'Quiénes Somos', ref: 'quienesSomosRef' },
       { label: 'Servicios', ref: 'serviciosRef' },
-      { label: 'Trabaja con Nosotros', ref: 'trabajaConNosotrosRef' },
+      { label: 'Quiénes Somos', ref: 'quienesSomosRef' },
       { label: 'Contáctanos', ref: 'contactModal' },
     ];
 
-    desktopNavLinks = publicNavButtons.map(({ label, ref }) => {
-      if (ref === 'trabajaConNosotrosRef') {
-        return (
-          <Button
-            key={label}
-            onClick={() => setOpenComingSoonModal(true)}
-            sx={{
-              color: 'white',
-              textTransform: 'none',
-              fontSize: 16,
-              outline: 'none',
-              boxShadow: 'none',
-              border: 'none',
-              '&:focus': { outline: 'none', boxShadow: 'none', border: 'none' },
-              '&:active': { outline: 'none', boxShadow: 'none', border: 'none' },
-              '&:hover': { outline: 'none', boxShadow: 'none', border: 'none' },
-            }}
-            disableFocusRipple
-            disableRipple
-          >
-            {label}
-          </Button>
-        );
-      }
-      return (
-        <Button
-          key={label}
-          onClick={() => handleNavigate(ref)}
-          sx={{
-            color: 'white',
-            textTransform: 'none',
-            fontSize: 16,
-            outline: 'none',
-            boxShadow: 'none',
-            border: 'none',
-            '&:focus': { outline: 'none', boxShadow: 'none', border: 'none' },
-            '&:active': { outline: 'none', boxShadow: 'none', border: 'none' },
-            '&:hover': { outline: 'none', boxShadow: 'none', border: 'none' },
-          }}
-          disableFocusRipple
-          disableRipple
-        >
-          {label}
-        </Button>
-      );
-    });
+    desktopNavLinks = publicNavButtons.map(({ label, ref }) => (
+      <Button
+        key={label}
+        onClick={() => handleNavigate(ref)}
+        sx={navButtonBase}
+        disableRipple
+        disableFocusRipple
+      >
+        {label}
+      </Button>
+    ));
 
     desktopRightContent = (
       <>
         <Button
-          onClick={() => setOpenLoginModal(true)}
+          onClick={openLoginModalOpen}
           variant="contained"
           color="primary"
           sx={{
             outline: 'none',
             boxShadow: 'none',
             border: 'none',
+            mr: 1,
             '&:focus': { outline: 'none', boxShadow: 'none', border: 'none' },
             '&:active': { outline: 'none', boxShadow: 'none', border: 'none' },
             '&:hover': { outline: 'none', boxShadow: 'none', border: 'none' },
@@ -323,17 +240,19 @@ export default function TopBar({
           Iniciar sesión
         </Button>
         <Button
-          onClick={() => setOpenRegisterModal(true)}
+          onClick={openRegisterModalOpen}
           variant="outlined"
           sx={{
             color: 'white',
-            borderColor: 'white',
+            border: 'none', // quitar borde blanco
             outline: 'none',
             boxShadow: 'none',
-            border: 'none',
-            '&:focus': { outline: 'none', boxShadow: 'none', border: 'none' },
-            '&:active': { outline: 'none', boxShadow: 'none', border: 'none' },
-            '&:hover': { outline: 'none', boxShadow: 'none', border: 'none' },
+            '&:focus': { outline: 'none', boxShadow: 'none' },
+            '&:active': { outline: 'none', boxShadow: 'none' },
+            '&:hover': {
+              border: 'none',
+              backgroundColor: 'rgba(255,255,255,0.1)', // opcional
+            },
           }}
           disableFocusRipple
           disableRipple
@@ -344,31 +263,16 @@ export default function TopBar({
     );
 
     mobileMenuItems = [
-      ...publicNavButtons.map(({ label, ref }) => {
-        if (ref === 'trabajaConNosotrosRef') {
-          return (
-            <MenuItem
-              key={label}
-              onClick={() => {
-                setOpenComingSoonModal(true);
-                handleCloseMobileMenu();
-              }}
-            >
-              {label}
-            </MenuItem>
-          );
-        }
-        return (
-          <MenuItem key={label} onClick={() => handleNavigate(ref)}>
-            {label}
-          </MenuItem>
-        );
-      }),
+      ...publicNavButtons.map(({ label, ref }) => (
+        <MenuItem key={label} onClick={() => { handleNavigate(ref); handleCloseMobileMenu(); }} sx={{ fontSize: 16 }}>
+          {label}
+        </MenuItem>
+      )),
       <Divider key="divider1" />,
       <MenuItem
         key="login"
         onClick={() => {
-          setOpenLoginModal(true);
+          openLoginModalOpen();
           handleCloseMobileMenu();
         }}
       >
@@ -377,7 +281,7 @@ export default function TopBar({
       <MenuItem
         key="register"
         onClick={() => {
-          setOpenRegisterModal(true);
+          openRegisterModalOpen();
           handleCloseMobileMenu();
         }}
       >
@@ -390,48 +294,32 @@ export default function TopBar({
     desktopRightContent = (
       <>
         {/* Usamos el componente Switch - Solo mostrar cuando el rol esté determinado */}
-        {currentRole && (
-          <Switch
-            value={currentRole} // Le pasamos el rol determinado
-            onChange={handleRoleToggleChange} // Le pasamos el manejador de cambios
-            disabled={isRoleLoading} // ✅ Deshabilitar mientras se carga el rol
-            // Los estilos base del switch ya están en Switch,
-            // pero puedes agregarle más aquí si necesitas un ajuste específico para el desktop
-            sx={{ 
-              mr: 2,
-              opacity: isRoleLoading ? 0.6 : 1, // ✅ Indicador visual de loading
-            }}
-          />
-        )}
+        <RoleSwitchControl
+          role={currentRole}
+          disabled={isRoleLoading}
+          onChange={handleRoleToggleChange}
+          sx={{ mr: 2, opacity: isRoleLoading ? 0.6 : 1 }}
+        />
+
+        <NotificationsMenu
+          showBell
+          unreadCount={notifCtx?.unreadCount || 0}
+          notifications={notifCtx?.notifications || []}
+          activeTab={notifCtx?.activeTab || 'all'}
+          onTabChange={t => notifCtx?.setActiveTab?.(t)}
+          onItemClick={handleNotifItemClick}
+          onViewAll={handleViewAllNotif}
+          onCloseDialog={handleCloseNotifModal}
+          anchorEl={notifAnchor}
+          onOpen={handleOpenNotif}
+          onClose={handleCloseNotif}
+          dialogOpen={notifModalOpen}
+        />
 
         <Tooltip title="Carrito" arrow>
-          <IconButton
-            onClick={() => navigate('/buyer/cart')}
-            sx={{
-              color: 'white',
-              mr: 2.5,
-              boxShadow: 'none',
-              outline: 'none',
-              border: 'none',
-              transition: 'background 0.2s',
-              '&:focus': { outline: 'none', border: 'none', boxShadow: 'none' },
-              '&:active': {
-                outline: 'none',
-                border: 'none',
-                boxShadow: 'none',
-              },
-              '&:hover': {
-                background: theme => theme.palette.primary.main,
-                boxShadow: 'none',
-                outline: 'none',
-                border: 'none',
-              },
-            }}
-            disableFocusRipple
-            disableRipple
-          >
+          <IconButton onClick={() => navigate('/buyer/cart')} sx={{ ...iconButtonBase, color: 'white', mr: 3 }} disableFocusRipple disableRipple>
             <Badge badgeContent={itemsInCart} color="error">
-              <CustomShoppingCartIcon />
+              <CustomShoppingCartIcon sx={{ lineHeight: 1 }} />
             </Badge>
           </IconButton>
         </Tooltip>
@@ -445,28 +333,18 @@ export default function TopBar({
         sx={{ display: 'flex', justifyContent: 'center', py: 1 }}
       >
         {/* Usamos el componente Switch en el menú móvil - Solo mostrar cuando el rol esté determinado */}
-        {currentRole && (
-          <Switch
-            value={currentRole} // Le pasamos el rol determinado
-            onChange={handleRoleToggleChange} // Le pasamos el manejador de cambios
-            disabled={isRoleLoading} // ✅ Deshabilitar mientras se carga el rol
-            sx={{ 
-              width: '100%', 
-              mr: 0,
-              opacity: isRoleLoading ? 0.6 : 1, // ✅ Indicador visual de loading
-            }} // Estilos específicos para el móvil, anula el mr del desktop
-          />
-        )}
+        <RoleSwitchControl
+          role={currentRole}
+          disabled={isRoleLoading}
+          onChange={handleRoleToggleChange}
+          sx={{ width: '100%', mr: 0, opacity: isRoleLoading ? 0.6 : 1 }}
+        />
       </MenuItem>,
       <Divider key="dividerMobileRole" />,
       // Eliminado el botón de carrito en mobileMenuItems
       <MenuItem
         key="profile"
-        onClick={() => {
-          const profileRoute = isBuyer ? '/buyer/profile' : '/supplier/profile';
-          navigate(profileRoute);
-          handleCloseMobileMenu();
-        }}
+        onClick={() => { goToProfile(); handleCloseMobileMenu(); }}
       >
         Mi Perfil
       </MenuItem>,
@@ -476,12 +354,32 @@ export default function TopBar({
     ];
   }
 
+  // ================== 🔍 MOBILE MARKETPLACE SEARCH (Buyer only) ==================
+  const isBuyerRole = currentRole === 'buyer';
+  const { term: mobileSearch, setTerm: setMobileSearch, isOnBuyerMarketplace, inputProps: mobileSearchInputProps, submit: submitMobileSearch } = useMarketplaceSearch({
+    enabled: !!session,
+    pathname: location.pathname,
+    isBuyerRole,
+    onReactive: (t) => {
+      // Reemplaza evento global: en lugar de dispatch se podría usar contexto; mantenemos evento por compat temporal
+      const evt = new CustomEvent('marketplaceSearch', { detail: { term: t } });
+      window.dispatchEvent(evt);
+    },
+    onNavigateOutside: (t) => {
+      navigate('/buyer/marketplace', { state: { initialSearch: t, fromTopBar: true } });
+    },
+  });
+  const mobileSearchInputRef = useRef(null);
+  const handleMobileSearchButton = () => submitMobileSearch();
+
   return (
     <>
       <Box
         sx={{
           backgroundColor: '#000000',
-          width: '100vw',
+          width: '100%',
+          left: 0,
+          right: 0,
           px: 0,
           py: { xs: 0, sm: 0, md: 1 }, // Sin padding vertical en mobile
           display: 'flex',
@@ -489,7 +387,7 @@ export default function TopBar({
           position: 'fixed',
           top: 0,
           zIndex: 1100,
-          height: { xs: 45, md: 64 }, // Altura reducida en mobile
+          height: { xs: 45, md: '64px' }, // Altura reducida en mobile
           borderBottom: '1px solid white',
         }}
       >
@@ -514,7 +412,7 @@ export default function TopBar({
               sx={{
                 height: { xs: 38, sm: 38, md: 50 },
                 width: { xs: 90, sm: 90, md: 140 }, // Mobile: fill width
-                maxWidth: { xs: 90 , sm: 90, md: 140 },
+                maxWidth: { xs: 90, sm: 90, md: 140 },
                 display: 'flex',
                 alignItems: 'center',
                 cursor: 'pointer',
@@ -542,8 +440,8 @@ export default function TopBar({
                 src="/logodark.svg"
                 alt="Sellsi Logo"
                 sx={{
-                  height: { xs: 380, sm: 380, md: 450 },
-                  width: { xs: 90, sm: 90, md: 140 }, // Mobile: fill width
+                  height: { xs: 110, sm: 110, md: 110 },
+                  width: { xs: 116, sm: 116, md: 140 }, // Mobile: fill width
                   maxWidth: { xs: 90, sm: 90, md: 140 },
                   display: 'block',
                   objectFit: { xs: 'contain', sm: 'contain', md: 'contain' },
@@ -556,6 +454,42 @@ export default function TopBar({
                 draggable={false}
               />
             </Box>
+            {/* Mobile search: placed right of logo for buyer role */}
+            {isLoggedIn && isBuyerRole && (
+              <Box data-component="TopBar.mobileSearch" sx={{ display: { xs: 'flex', md: 'none' }, alignItems: 'center', ml: { xs: 0.5, sm: 1 } }}>
+                <TextField
+                  size="small"
+                  value={mobileSearchInputProps.value}
+                  onChange={mobileSearchInputProps.onChange}
+                  onKeyDown={mobileSearchInputProps.onKeyDown}
+                  placeholder="Buscar productos..."
+                  inputRef={mobileSearchInputRef}
+                  sx={{
+                    width: { xs: 160, sm: 180 },
+                    '& .MuiOutlinedInput-root': {
+                      backgroundColor: 'white',
+                      height: 34,
+                      borderRadius: 1.5,
+                      fontSize: '0.75rem'
+                    }
+                  }}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <SearchIcon fontSize="small" />
+                      </InputAdornment>
+                    ),
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton size="small" onClick={handleMobileSearchButton}>
+                          <ArrowForwardIcon fontSize="small" />
+                        </IconButton>
+                      </InputAdornment>
+                    )
+                  }}
+                />
+              </Box>
+            )}
             <Box sx={{ display: { xs: 'none', md: 'flex' }, gap: 2 }}>
               {desktopNavLinks}
             </Box>
@@ -565,19 +499,25 @@ export default function TopBar({
             sx={{
               display: { xs: 'none', md: 'flex' },
               alignItems: 'center',
-              gap: 2,
+              gap: 0.5,
             }}
           >
             {desktopRightContent}
           </Box>
 
-          <Box sx={{ display: { xs: 'flex', md: 'none' } }}>
+          <Box sx={{ display: { xs: 'flex', md: 'none' }, alignItems: 'center', gap: 0, ml: { xs: 0.5, sm: 2 } }}>
+            {/* Campana de notificaciones - móvil */}
             {isLoggedIn && (
-              <>
-                {/* Carrito eliminado en xs/sm, solo se muestra el profileMenuButton */}
-                {profileMenuButton}
-              </>
+              <Tooltip title="Notificaciones" arrow>
+                <span>
+                  <NotificationBell
+                    count={notifCtx?.unreadCount || 0}
+                    onClick={handleOpenNotif}
+                  />
+                </span>
+              </Tooltip>
             )}
+            {isLoggedIn && profileMenuButton}
             <IconButton onClick={handleOpenMobileMenu}>
               <MenuIcon sx={{ color: 'white' }} />
             </IconButton>
@@ -585,45 +525,12 @@ export default function TopBar({
         </Box>
       </Box>
 
-      <Menu
+      <MobileMenu
         anchorEl={mobileMenuAnchor}
         open={Boolean(mobileMenuAnchor)}
         onClose={handleCloseMobileMenu}
-        PaperProps={{
-          sx: {
-            backgroundColor: '#2C2C2C',
-            color: '#FFFFFF',
-            '& .MuiMenuItem-root': {
-              color: '#FFFFFF',
-              '&:hover': {
-                backgroundColor: 'rgba(255, 255, 255, 0.1)',
-              },
-            },
-            '& .MuiSvgIcon-root': {
-              color: '#FFFFFF',
-            },
-            '& .MuiToggleButton-root': {
-              color: '#FFFFFF',
-              borderColor: 'rgba(255, 255, 255, 0.3)',
-              '&.Mui-selected': {
-                backgroundColor: (theme) => theme.palette.primary.main,
-                color: '#FFFFFF',
-              },
-              '&.Mui-selected:hover': {
-                backgroundColor: (theme) => theme.palette.primary.dark,
-              },
-              '&:hover': {
-                backgroundColor: 'rgba(255, 255, 255, 0.05)',
-              },
-            },
-            '& .MuiDivider-root': {
-              borderColor: 'rgba(255, 255, 255, 0.1)',
-            },
-          },
-        }}
-      >
-        {mobileMenuItems}
-      </Menu>
+        items={mobileMenuItems}
+      />
       <Menu
         anchorEl={profileAnchor}
         open={Boolean(profileAnchor)}
@@ -646,50 +553,21 @@ export default function TopBar({
         }}
       >
         <MenuItem
-          onClick={() => {
-            const profileRoute = isBuyer ? '/buyer/profile' : '/supplier/profile';
-            navigate(profileRoute);
-            handleCloseProfileMenu();
-          }}
+          onClick={() => { goToProfile(); handleCloseProfileMenu(); }}
         >
           Mi Perfil
         </MenuItem>
         <MenuItem onClick={handleLogout}>Cerrar sesión</MenuItem>
       </Menu>
 
-      {openLoginModal && (
-        <Login
-          open={openLoginModal}
-          onClose={() => setOpenLoginModal(false)}
-          onOpenRegister={handleLoginToRegisterTransition}
-        />
-      )}
-      {openRegisterModal && (
-        <Register
-          open={openRegisterModal}
-          onClose={() => setOpenRegisterModal(false)}
-        />
-      )}
-      {openContactModal && (
-        <ContactModal
-          open={openContactModal}
-          onClose={() => {
-            setOpenContactModal(false);
-            // ...log eliminado...
-          }}
-        />
-      )}
-      {/* Modal Proximamente */}
-      <Modal
-        isOpen={openComingSoonModal}
-        onClose={() => setOpenComingSoonModal(false)}
-        onSubmit={() => setOpenComingSoonModal(false)}
-        type={MODAL_TYPES.INFO}
-        title="Próximamente..."
-        showCancelButton={false}
-      >
-        Esta funcionalidad estará disponible pronto.
-      </Modal>
+  {/* Legacy inline auth modals removed; using AuthModals wrapper */}
+      <AuthModals
+        openLogin={openLoginModal}
+        openRegister={openRegisterModal}
+        onCloseLogin={() => setOpenLoginModal(false)}
+        onCloseRegister={() => setOpenRegisterModal(false)}
+        onLoginToRegister={handleLoginToRegisterTransition}
+      />
     </>
   );
 }

@@ -1,4 +1,4 @@
-import React, { useState, useMemo, memo } from 'react'
+import React, { useState, useMemo, useCallback, memo } from 'react'
 import {
   Box,
   Typography,
@@ -16,7 +16,6 @@ import {
   IconButton,
   Button,
   Tooltip,
-  CircularProgress,
 } from '@mui/material'
 import { LocalShipping, Security, Assignment, Verified as VerifiedIcon } from '@mui/icons-material'
 import ContentCopyIcon from '@mui/icons-material/ContentCopy'
@@ -34,6 +33,11 @@ import { useOptimizedProductOwnership } from '../hooks/useOptimizedProductOwners
 import ProductImageGallery from './ProductImageGallery'
 import PurchaseActions from './PurchaseActions'
 import PriceDisplay from '../../marketplace/PriceDisplay/PriceDisplay'
+// Skeleton system imports
+import { PriceTiersSkeleton, SinglePriceSkeleton } from './skeletons/PriceSkeletons'
+import { PurchaseActionsSkeleton } from './skeletons/PurchaseActionsSkeleton'
+import { DocumentTypesChipsSkeleton } from './skeletons/DocumentTypesChipsSkeleton'
+import { useSmartSkeleton } from '../hooks/useSmartSkeleton'
 import StockIndicator from '../../marketplace/StockIndicator/StockIndicator'
 import QuotationModal from './QuotationModal'
 import { useProductPriceTiers } from '../../../shared/hooks/product/useProductPriceTiers';
@@ -56,6 +60,7 @@ const ProductHeader = React.memo(({
     proveedor,
     imagen,
     imagenes = [],
+    images = [], // prefer server-ordered images when available
     precio,
     stock,
     compraMinima,
@@ -92,14 +97,7 @@ const ProductHeader = React.memo(({
     error: documentTypesError 
   } = useSupplierDocumentTypes(supplierId);
 
-  // Debug logs
-  console.log('🔍 [ProductHeader] Debug supplier document types:', {
-    supplierId,
-    supplierDocumentTypes,
-    availableOptions,
-    loadingDocumentTypes,
-    documentTypesError
-  });
+  // Debug logs removed
 
   const [copied, setCopied] = useState({ name: false, price: false })
   // ✅ NUEVO: Estado para el modal de cotización
@@ -188,15 +186,10 @@ const ProductHeader = React.memo(({
   }
 
   // Lógica para mostrar precios y tramos
+  const showPriceSkeleton = useSmartSkeleton(loadingTiers)
   let priceContent
-  if (loadingTiers) {
-    priceContent = (
-      <Box
-        sx={{ display: 'flex', alignItems: 'center', gap: 1, minHeight: 24 }}
-      >
-        <CircularProgress color="primary" size={18} />
-      </Box>
-    )
+  if (showPriceSkeleton) {
+    priceContent = <PriceTiersSkeleton rows={4} />
   } else if (errorTiers) {
     priceContent = (
       <Box
@@ -444,39 +437,81 @@ const ProductHeader = React.memo(({
     )
   }
 
-  function resolveImageSrc(image) {
-    const SUPABASE_PUBLIC_URL =
-      'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v1/object/public/product-images/'
-    
+  // Memoized image resolver so effect deps remain stable.
+  const resolveImageSrc = useCallback((image) => {
+    const SUPABASE_PUBLIC_URL = 'https://pvtmkfckdaeiqrfjskrq.supabase.co/storage/v1/object/public/product-images/'
     if (!image) return mainImageThumbnail || '/placeholder-product.jpg'
-    
     if (typeof image === 'string') {
       if (image.startsWith(SUPABASE_PUBLIC_URL)) return image
       if (image.startsWith('/')) return image
       if (/^https?:\/\//.test(image)) return image
       return getProductImageUrl(image)
     }
-    
     if (typeof image === 'object' && image !== null) {
-      if (typeof image === 'string') {
-        try {
-          image = JSON.parse(image)
-        } catch (e) {
-          return mainImageThumbnail || '/placeholder-product.jpg'
-        }
-      }
       if (
-        image.url &&
-        typeof image.url === 'string' &&
-        image.url.startsWith(SUPABASE_PUBLIC_URL)
-      ) {
-        return image.url
-      }
+        image.url && typeof image.url === 'string' && image.url.startsWith(SUPABASE_PUBLIC_URL)
+      ) return image.url
       if (image.image_url) return getProductImageUrl(image.image_url)
     }
-    
     return mainImageThumbnail || '/placeholder-product.jpg'
+  }, [mainImageThumbnail])
+
+  // Ensure we always pass a server-ordered array to the gallery (memoized for stable reference).
+  const orderedImages = useMemo(() => {
+    if (Array.isArray(images) && images.length > 0) {
+      return images.slice().sort((a, b) => ((a && a.image_order) || 0) - ((b && b.image_order) || 0))
+    }
+    return Array.isArray(imagenes) ? imagenes.slice() : []
+  }, [images, imagenes])
+
+  // Main image record (first with image_order 0 else first) memoized.
+  const mainImageRecord = useMemo(() => {
+    return orderedImages.find(img => img && img.image_order === 0) || orderedImages[0] || null
+  }, [orderedImages])
+
+  // Diagnostic log (only once per product to avoid noisy logs on re-renders)
+  const _loggedProductsRef = React.useRef(new Set())
+  // Track whether we've already synced the initial main image selection for this product
+  const _initialImageSyncRef = React.useRef(false)
+  try {
+    const pid = product?.productid
+    if (pid && !_loggedProductsRef.current.has(pid)) {
+      const diagnostic = (orderedImages || []).map((img, idx) => {
+        const url = typeof img === 'string' ? img : (img?.image_url || img?.url || '')
+        const name = url ? url.split('/').pop() : (typeof img === 'object' && img?.name) || ''
+        return { index: idx, name, url, image_order: img?.image_order }
+      })
+  // diagnostic removed
+      _loggedProductsRef.current.add(pid)
+    }
+  } catch (e) {
+    // ignore logging errors
   }
+
+  // If the parent passed selectedIndex but it doesn't point to the server main image,
+  // prefer the server main (image_order === 0). This keeps gallery selection in sync
+  // when DB order changes or arrays are reshaped by other layers.
+  // Effect: ensure parent selection points to server-defined main image.
+  // Dependencies intentionally include orderedImages (content & order), selectedImageIndex, callback & resolver.
+  // Sync parent selection to the server-defined main image ONCE when the product's
+  // orderedImages are available. We intentionally avoid re-running this when
+  // `selectedImageIndex` changes so we don't override user interactions (clicks).
+  // This prevents the 'flash' where a user click is immediately reverted.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  React.useEffect(() => {
+    if (!orderedImages.length || !onImageSelect) return
+    if (_initialImageSyncRef.current) return
+    try {
+      const resolved = orderedImages.map(resolveImageSrc)
+      const mainUrl = resolveImageSrc(mainImageRecord || imagen || orderedImages[0])
+      const mainIdx = resolved.findIndex(u => u === mainUrl)
+      if (mainIdx >= 0 && selectedImageIndex !== mainIdx) {
+        onImageSelect(mainIdx)
+      }
+    } catch (_) {}
+    _initialImageSyncRef.current = true
+  }, [orderedImages, onImageSelect, resolveImageSrc, mainImageRecord, imagen])
+
   return (
     // MUIV2 GRID - CONTENEDOR PRINCIPAL (MuiGrid-container)
     <Box sx={{ width: '100%', maxWidth: '100%' }}>
@@ -489,7 +524,7 @@ const ProductHeader = React.memo(({
         {/* En móvil: Mostrar nombre primero */}
         {isMobile && (
           <Box sx={{ 
-            px: 2, 
+            px: 0, 
             display: 'flex', 
             flexDirection: 'column',
             alignItems: 'center', 
@@ -527,8 +562,9 @@ const ProductHeader = React.memo(({
           px: 0,
         }}>
           <ProductImageGallery
-            images={imagenes.map(resolveImageSrc)}
-            mainImage={mainImageThumbnail || resolveImageSrc(imagen)}
+            images={orderedImages.map(resolveImageSrc)}
+            imagesRaw={orderedImages}
+            mainImage={mainImageThumbnail || resolveImageSrc(imagen || (mainImageRecord && (mainImageRecord.image_url || mainImageRecord)) || imagenes[0])}
             selectedIndex={selectedImageIndex}
             onImageSelect={onImageSelect}
             productName={nombre}
@@ -545,7 +581,7 @@ const ProductHeader = React.memo(({
             flexDirection: 'column',
             alignItems: 'flex-start',
             textAlign: 'left',
-            px: { xs: 2, md: 1 },
+            px: { xs: 0, md: 1 },
             width: { xs: '100%', md: '80%' },
             maxWidth: { xs: 'none', md: 580 },
             mx: { xs: 0, md: 0 },
@@ -596,69 +632,63 @@ const ProductHeader = React.memo(({
               width: '100%',
               justifyContent: { xs: 'flex-start', md: 'flex-start' } // Alineación consistente
             }}>
-              {loadingDocumentTypes ? (
-                <Typography variant="body2" color="text.secondary">
-                  Cargando opciones...
-                </Typography>
-              ) : availableOptions && availableOptions.length > 0 ? (
-                // Si solo hay "ninguno", mostrar texto en negro con fuente de Stock
-                availableOptions.length === 1 && availableOptions[0].value === 'ninguno' ? (
-                  <Typography
-                    variant="body2"
-                    sx={{
-                      color: 'text.primary',fontWeight: 600,
-                    }}
-                  >
-                    Proveedor no ofrece documento tributario
-                  </Typography>
-                ) : (
-                  availableOptions
-                    .filter(option => option.value !== 'ninguno') // Excluir "ninguno" de los chips
-                    .map((option) => (
+              {(() => {
+                const showDocSkeleton = useSmartSkeleton(loadingDocumentTypes)
+                if (showDocSkeleton) return <DocumentTypesChipsSkeleton isMobile={isMobile} />
+                if (availableOptions && availableOptions.length > 0) {
+                  // Si solo hay "ninguno", mostrar texto en negro con fuente de Stock
+                  if (availableOptions.length === 1 && availableOptions[0].value === 'ninguno') {
+                    return (
+                      <Typography
+                        variant="body2"
+                        sx={{ color: 'text.primary', fontWeight: 600 }}
+                      >
+                        Proveedor no ofrece documento tributario
+                      </Typography>
+                    )
+                  }
+                  return availableOptions
+                    .filter(option => option.value !== 'ninguno')
+                    .map(option => (
                       <Chip
                         key={option.value}
                         label={option.label}
-                        size={isMobile ? "medium" : "small"}
+                        size={isMobile ? 'medium' : 'small'}
                         sx={{
                           backgroundColor: 'primary.main',
                           color: 'white',
                           fontSize: { xs: '0.8rem', md: '0.75rem' },
-                          '&:hover': {
-                            backgroundColor: 'primary.main',
-                          },
+                          '&:hover': { backgroundColor: 'primary.main' },
                         }}
                       />
                     ))
-                )
-              ) : (
+                }
                 // Fallback a opciones por defecto si hay error o no hay datos
-                <>
-                  <Chip
-                    label="Factura"
-                    size={isMobile ? "medium" : "small"}
-                    sx={{
-                      backgroundColor: 'primary.main',
-                      color: 'white',
-                      fontSize: { xs: '0.8rem', md: '0.75rem' },
-                      '&:hover': {
+                return (
+                  <>
+                    <Chip
+                      label="Factura"
+                      size={isMobile ? 'medium' : 'small'}
+                      sx={{
                         backgroundColor: 'primary.main',
-                      },
-                    }}
-                  />
-                  <Chip
-                    label="Boleta"
-                    size={isMobile ? "medium" : "small"}
-                    sx={{
-                      backgroundColor: 'primary.main',
-                      color: 'white',
-                      fontSize: { xs: '0.8rem', md: '0.75rem' },
-                      '&:hover': {
+                        color: 'white',
+                        fontSize: { xs: '0.8rem', md: '0.75rem' },
+                        '&:hover': { backgroundColor: 'primary.main' },
+                      }}
+                    />
+                    <Chip
+                      label="Boleta"
+                      size={isMobile ? 'medium' : 'small'}
+                      sx={{
                         backgroundColor: 'primary.main',
-                      },
-                    }}
-                  />
-                </>
-              )}
+                        color: 'white',
+                        fontSize: { xs: '0.8rem', md: '0.75rem' },
+                        '&:hover': { backgroundColor: 'primary.main' },
+                      }}
+                    />
+                  </>
+                )
+              })()}
             </Box>
             {/* Fila 2: Stock */}
             <Box sx={{ width: '100%' }}>
@@ -806,11 +836,7 @@ const ProductHeader = React.memo(({
           {(() => {
             // Si estamos verificando la propiedad del producto, mostrar loading
             if (checkingOwnership) {
-              return (
-                <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
-                  <CircularProgress size={24} />
-                </Box>
-              )
+              return <PurchaseActionsSkeleton withOffer={!isOwnProduct} />
             }
             
             // Verificar todas las condiciones para ocultar las purchase actions

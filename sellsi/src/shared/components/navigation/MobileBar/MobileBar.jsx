@@ -17,6 +17,7 @@ import {
   Inventory as ProductsIcon,
   ShoppingCart as CartIcon,
   Person as PersonIcon,
+  LocalOffer as OffersIcon,
 } from '@mui/icons-material';
 import { useLocation, useNavigate } from 'react-router-dom';
 import useCartStore from '../../../stores/cart/cartStore';
@@ -24,12 +25,14 @@ import useCartStore from '../../../stores/cart/cartStore';
 // Define los ítems de menú para cada rol
 const buyerMenuItems = [
   { text: 'Marketplace', path: '/buyer/marketplace', icon: <MarketplaceIcon /> },
+  { text: 'Mis Ofertas', path: '/buyer/offers', icon: <OffersIcon /> },
   { text: 'Mis Pedidos', path: '/buyer/orders', icon: <OrdersIcon /> },
   // { text: 'Mi Performance', path: '/buyer/performance', icon: <PerformanceIcon /> }, // Eliminado
 ];
 
 const providerMenuItems = [
   { text: 'Inicio', path: '/supplier/home', icon: <HomeIcon /> },
+  { text: 'Mis Ofertas', path: '/supplier/offers', icon: <OffersIcon /> },
   { text: 'Mis Productos', path: '/supplier/myproducts', icon: <ProductsIcon /> },
   { text: 'Mis Pedidos', path: '/supplier/my-orders', icon: <OrdersIcon /> },
   // { text: 'Mi Performance', path: '/supplier/myperformance', icon: <PerformanceIcon /> }, // Eliminado

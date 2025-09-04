@@ -9,14 +9,13 @@ import {
   LinearProgress,
   Backdrop,
 } from '@mui/material';
-import {
-  Edit as EditIcon,
-  Delete as DeleteIcon,
-  Visibility as VisibilityIcon,
-  TrendingUp as TrendingUpIcon,
-  Inventory as InventoryIcon,
-  CloudUpload as CloudUploadIcon,
-} from '@mui/icons-material';
+// Iconos
+import EditIcon from '@mui/icons-material/Edit';
+import PauseCircleOutlineIcon from '@mui/icons-material/PauseCircleOutline';
+import DeleteIcon from '@mui/icons-material/Delete';
+import CloudUploadIcon from '@mui/icons-material/CloudUpload';
+import InventoryIcon from '@mui/icons-material/Inventory2';
+import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 
 // Utility imports (updated paths for shared location)
 import { formatPrice } from '../../../utils/formatters';
@@ -46,7 +45,7 @@ const ProductCardSupplierContext = React.memo(
       descuento,
       categoria,
       stock,
-      ventas = 0,
+  ventas = 0,
       updatedAt,
       negociable,
       tramoMin,
@@ -55,6 +54,7 @@ const ProductCardSupplierContext = React.memo(
       tramoPrecioMax,
       priceTiers = [], // Ensure priceTiers is available for conditional rendering
       processingStartTime,
+  activo, // estado actual (is_active mapeado a activo en uiProducts)
     } = product;
 
     // Unify source of price_tiers: prefer product's, if not, from hook (same logic as BuyerContext)
@@ -67,29 +67,34 @@ const ProductCardSupplierContext = React.memo(
     }, [product.priceTiers, tiers]);
 
     // Configure menu actions
+    // Reemplazamos VisibilityIcon por ícono de pausa y mantenemos label
     const menuActions = useMemo(
-      () => [
-        {
-          icon: <EditIcon />,
-          label: 'Editar producto',
-          onClick: () => onEdit?.(product),
-          disabled: isUpdating || isProcessing,
-        },
-        {
-          icon: <VisibilityIcon />,
-          label: 'Ver estadísticas',
-          onClick: () => onViewStats?.(product),
-          disabled: isProcessing,
-        },
-        {
-          icon: <DeleteIcon />,
-          label: 'Eliminar producto',
-          onClick: () => onDelete?.(product),
-          disabled: isDeleting || isProcessing,
-          color: 'error',
-        },
-      ],
-      [product, onEdit, onViewStats, onDelete, isUpdating, isDeleting, isProcessing]
+      () => {
+        const pauseLabel = activo ? 'Pausar producto' : 'Reactivar producto';
+        const pauseIcon = <PauseCircleOutlineIcon />; // Podríamos cambiar a PlayArrow cuando esté pausado
+        return [
+          {
+            icon: <EditIcon />,
+            label: 'Editar producto',
+            onClick: () => onEdit?.(product),
+            disabled: isUpdating || isProcessing,
+          },
+          {
+            icon: pauseIcon,
+            label: pauseLabel,
+            onClick: () => onViewStats?.(product), // handler de toggle activo
+            disabled: isProcessing,
+          },
+          {
+            icon: <DeleteIcon />,
+            label: 'Eliminar producto',
+            onClick: () => onDelete?.(product),
+            disabled: isDeleting || isProcessing,
+            color: 'error',
+          },
+        ];
+      },
+      [product, onEdit, onViewStats, onDelete, isUpdating, isDeleting, isProcessing, activo]
     );
 
     // Configure product badges
@@ -97,28 +102,20 @@ const ProductCardSupplierContext = React.memo(
       const badges = [];
       const isNew = () => {
         if (!updatedAt) return false;
-        const daysDiff =
-          (new Date() - new Date(updatedAt)) / (1000 * 60 * 60 * 24);
+        const daysDiff = (Date.now() - new Date(updatedAt).getTime()) / 86400000;
         return daysDiff < 7;
       };
 
-      if (isNew()) {
-        badges.push({
-          label: 'Nuevo',
-          color: 'primary',
-          condition: true,
-        });
+      // Mostrar 'Nuevo' solo si el producto está activo
+      if (activo && isNew()) {
+        badges.push({ label: 'Nuevo', color: 'primary', condition: true });
       }
 
       if (descuento > 0) {
-        badges.push({
-          label: `-${descuento}%`,
-          color: 'error',
-          condition: true,
-        });
+        badges.push({ label: `-${descuento}%`, color: 'error', condition: true });
       }
       return badges;
-    }, [updatedAt, descuento]);
+    }, [updatedAt, descuento, activo]);
 
     return (
       <>
@@ -168,6 +165,16 @@ const ProductCardSupplierContext = React.memo(
 
         {/* Badges del producto */}
         <ProductBadges badges={productBadges} position="top-left" />
+        {!activo && !isProcessing && (
+          <Box sx={{ position: 'absolute', top: 8, left: 8, zIndex: 3 }}>
+            <Chip
+              label="Pausado"
+              color="warning"
+              size="small"
+              sx={{ fontSize: '0.78rem', height: 22, px: 0.75, fontWeight: 600 }}
+            />
+          </Box>
+        )}
         {/* Menú de acciones */}
         <Box sx={{ position: 'absolute', top: 8, right: 8, zIndex: 2 }}>
           <ActionMenu

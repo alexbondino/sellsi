@@ -1,12 +1,13 @@
 import { create } from 'zustand';
 import { orderService } from '../../../services/user';
+import { buildDeliveryAddress } from '../../../domains/orders/shared/parsing';
 
-// Función para calcular si un pedido está atrasado
+// Función para calcular si un pedido está atrasado (requiere SLA real)
 const calculateIsLate = order => {
+  if (!order.estimated_delivery_date) return false; // B5 guard: sólo marcar atraso con SLA real
   const currentDate = new Date();
-  const endDate = new Date(order.estimated_delivery_date || order.created_at);
+  const endDate = new Date(order.estimated_delivery_date);
   const excludedStatuses = ['delivered', 'cancelled', 'rejected'];
-
   return currentDate > endDate && !excludedStatuses.includes(order.status);
 };
 
@@ -30,6 +31,7 @@ export const useOrdersStore = create((set, get) => ({
   initializeWithSupplier: supplierId => {
     set({ supplierId });
     get().fetchOrders();
+  get().subscribeRealtime();
   },
 
   // === ACCIONES PRINCIPALES ===
@@ -46,47 +48,48 @@ export const useOrdersStore = create((set, get) => ({
     set({ loading: true, error: null });
 
     try {
-      // Obtener pedidos desde el backend
-      const backendOrders = await orderService.getOrdersForSupplier(
-        supplierId,
-        filters
-      );
+  // Obtener pedidos derivados dinámicamente (ya son payment parts virtuales)
+  const visibilityFiltered = await orderService.getOrdersForSupplier(supplierId, filters);
 
       // Procesar y enriquecer los datos
-      const processedOrders = backendOrders.map(order => ({
-        ...order,
-        // Convertir status del backend al formato de UI
-        status: orderService.getStatusDisplayName(order.status),
-        // Calcular si está atrasado
-        isLate: calculateIsLate(order),
-        // Usar la dirección de entrega desde shipping_info
-        deliveryAddress: order.delivery_address || {
-          street: 'Dirección no especificada',
-          city: 'Ciudad no especificada',
-          region: 'Región no especificada',
-        },
-        // Usar la fecha de entrega calculada desde product_delivery_regions
-        requestedDate: {
-          start: order.created_at,
-          end: order.estimated_delivery_date || order.created_at,
-        },
-        // Mapear productos al formato esperado por la UI
-        products:
-          order.items?.map(item => ({
-            name: item.product.name,
-            quantity: item.quantity,
-            price: item.price_at_addition,
-          })) || [],
-      }));
+      const processedOrders = visibilityFiltered.map(order => {
+        // Derivar dirección: preferir campos shipping_*, luego delivery_*
+  const rawAddr = order.shipping_address || order.shippingAddress || order.delivery_address || order.deliveryAddress || order.shippingAddressJson || null;
+        const normalizedAddr = buildDeliveryAddress(rawAddr || {});
+        // B7 suavizar placeholders
+        if (/no especificad/i.test(normalizedAddr.region)) normalizedAddr.region = '';
+        if (/no especificad/i.test(normalizedAddr.commune)) normalizedAddr.commune = '';
+        // Derivar productos: usar múltiples fallbacks y aceptar items sin product anidado
+        const products = (order.items || []).map(item => ({
+          name: item.product?.name || item.name || item.productnm || item.title || item.product?.productnm || 'Producto',
+          quantity: item.quantity || 0,
+          price: Number(item.price_at_addition || item.product?.price || 0)
+        }));
+        return {
+          ...order,
+          shipping: order.shipping || order.shipping_amount || 0, // B2 alias asegurado
+          status: orderService.getStatusDisplayName(order.status),
+          isLate: calculateIsLate(order),
+          deliveryAddress: normalizedAddr,
+          requestedDate: { start: order.created_at, end: order.created_at },
+          accepted_at: order.accepted_at || null,
+          products
+        };
+      });
 
+      const sorted = [...processedOrders].sort((a, b) => {
+        const da = new Date(a.created_at || a.requestedDate?.start || 0).getTime();
+        const db = new Date(b.created_at || b.requestedDate?.start || 0).getTime();
+        return db - da; // descendente
+      });
       set({
-        orders: processedOrders,
+        orders: sorted,
         loading: false,
         lastFetch: new Date().toISOString(),
       });
 
-      // Obtener estadísticas también
-      get().fetchStats();
+  // Estadísticas simplificadas: omitir por ahora (se pueden derivar luego). Mantener llamada existente.
+  get().fetchStats();
     } catch (error) {
       set({
         error: `Error al cargar los pedidos: ${error.message}`,
@@ -119,19 +122,34 @@ export const useOrdersStore = create((set, get) => ({
   // Actualizar estado de pedido con backend
   updateOrderStatus: async (orderId, newStatus, additionalData = {}) => {
     try {
+      // Convertir el estado de backend a display antes del optimistic update
+      const getDisplayStatus = (backendStatus) => {
+        const displayMap = {
+          'pending': 'Pendiente',
+          'accepted': 'Aceptado',
+          'rejected': 'Rechazado',
+          'in_transit': 'En Transito',
+          'delivered': 'Entregado',
+          'cancelled': 'Cancelado'
+        };
+        return displayMap[backendStatus] || backendStatus;
+      };
+
+      const displayStatus = getDisplayStatus(newStatus);
+
       // Optimistic update - actualizar UI inmediatamente
       set(state => {
         const updatedOrders = state.orders.map(order => {
           if (order.order_id === orderId) {
             const updatedOrder = {
               ...order,
-              status: newStatus,
+              status: displayStatus, // Usar el status de display
               ...additionalData,
             };
 
-            // Si el nuevo status es 'En Ruta', actualizar estimated_delivery_date
+            // Si el nuevo status es 'in_transit', actualizar estimated_delivery_date
             if (
-              newStatus === 'En Ruta' &&
+              newStatus === 'in_transit' &&
               additionalData.estimated_delivery_date
             ) {
               updatedOrder.estimated_delivery_date =
@@ -196,12 +214,22 @@ export const useOrdersStore = create((set, get) => ({
         supplierId,
         searchText.trim()
       );
+      // Aplicar mismo filtro de visibilidad tras búsqueda.
+      const visibilityFiltered = searchResults.filter(o => (
+        o.payment_status === undefined || o.payment_status === null || o.payment_status === 'paid'
+      ));
+      const processed = visibilityFiltered.map(order => ({
+        ...order,
+        status: orderService.getStatusDisplayName(order.status),
+        isLate: calculateIsLate(order),
+      }));
+      const sorted = processed.sort((a, b) => {
+        const da = new Date(a.created_at || a.requestedDate?.start || 0).getTime();
+        const db = new Date(b.created_at || b.requestedDate?.start || 0).getTime();
+        return db - da;
+      });
       set({
-        orders: searchResults.map(order => ({
-          ...order,
-          status: orderService.getStatusDisplayName(order.status),
-          isLate: calculateIsLate(order),
-        })),
+        orders: sorted,
         loading: false,
       });
     } catch (error) {
@@ -218,12 +246,13 @@ export const useOrdersStore = create((set, get) => ({
   getFilteredOrders: () => {
     const { orders, statusFilter } = get();
 
+    const sorted = [...orders]; // ya deberían estar ordenadas, pero copiamos por seguridad
     if (statusFilter === 'Todos') {
-      return orders;
+      return sorted;
     }
 
     if (statusFilter === 'Atrasado') {
-      return orders.filter(order => order.isLate);
+      return sorted.filter(order => order.isLate);
     }
 
     // Mapear filtros de UI a estados de backend
@@ -231,18 +260,20 @@ export const useOrdersStore = create((set, get) => ({
       Pendiente: 'pending',
       Aceptado: 'accepted',
       Rechazado: 'rejected',
-      'En Ruta': 'in_transit',
+      'En Transito': 'in_transit',
       Entregado: 'delivered',
       Cancelado: 'cancelled',
     };
 
+    // Convertir el filtro de UI a estado de backend
     const backendStatus = statusMap[statusFilter] || statusFilter;
 
-    return orders.filter(order => {
-      const orderBackendStatus =
-        Object.keys(statusMap).find(key => statusMap[key] === order.status) ||
-        order.status;
-      return orderBackendStatus === statusFilter;
+    // Filtrar órdenes por estado de backend directamente
+  return sorted.filter(order => {
+      // order.status ya debe estar en formato de display ('Pendiente', 'En Transito', etc.)
+      // Necesitamos convertirlo a backend status para comparar
+      const orderBackendStatus = statusMap[order.status] || order.status;
+      return orderBackendStatus === backendStatus;
     });
   },
 
@@ -261,7 +292,7 @@ export const useOrdersStore = create((set, get) => ({
       pendiente: orders.filter(o => o.status === 'Pendiente').length,
       aceptado: orders.filter(o => o.status === 'Aceptado').length,
       rechazado: orders.filter(o => o.status === 'Rechazado').length,
-      en_ruta: orders.filter(o => o.status === 'En Ruta').length,
+  en_ruta: orders.filter(o => o.status === 'En Transito').length,
       entregado: orders.filter(o => o.status === 'Entregado').length,
       atrasado: orders.filter(o => o.isLate).length,
     };
@@ -292,4 +323,48 @@ export const useOrdersStore = create((set, get) => ({
 
     return diffMinutes < maxAgeMinutes;
   },
+
+  // Suscripción realtime (orders + supplier_orders) mínima
+  subscribeRealtime: () => {
+    const { supplierId } = get();
+    if (!supplierId) return;
+    // Evitar múltiples suscripciones: almacenar en window (simple)
+    if (typeof window !== 'undefined' && window.__ordersRealtimeSubscribed) return;
+    try {
+      const { supabase } = require('../../../services/supabase');
+      // Canal uno: cambios en orders donde supplier_ids contiene supplierId (no hay filtro server-side directo, usamos client filter en callback)
+      const channelOrders = supabase
+        .channel('rt_orders_supplier')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, (payload) => {
+          try {
+            const row = payload.new || payload.old;
+            if (!row) return;
+            const arr = row.supplier_ids || [];
+            if (Array.isArray(arr) && arr.includes(supplierId)) {
+              // refrescar con debounce simple
+              get().__debouncedRefresh();
+            }
+          } catch(_) {}
+        })
+        .subscribe();
+      // Canal dos: tabla supplier_orders (más específico)
+      const channelSupplierParts = supabase
+        .channel('rt_supplier_orders_parts')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'supplier_orders', filter: `supplier_id=eq.${supplierId}` }, () => {
+          get().__debouncedRefresh();
+        })
+        .subscribe();
+      // Guardar referencias y debounce
+      let t = null;
+      const debounced = () => {
+        if (t) clearTimeout(t);
+        t = setTimeout(() => { get().refreshOrders(); }, 1000);
+      };
+      // Exponer internamente
+      get().__debouncedRefresh = debounced;
+      if (typeof window !== 'undefined') window.__ordersRealtimeSubscribed = true;
+      // Limpieza (opcional) no implementada aún; se podría agregar método clearRealtime
+    } catch(_) {}
+  },
+  __debouncedRefresh: () => {},
 }));

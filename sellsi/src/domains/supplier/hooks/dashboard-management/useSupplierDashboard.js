@@ -17,8 +17,28 @@
 
 import { useEffect, useState } from 'react'
 import { supabase } from '../../../../services/supabase'
+import { smartMetricCache } from '../../../../utils/smartMetricCache'
 
 export const useSupplierDashboard = () => {
+  // Intentar precargar revenue mensual desde localStorage para evitar flicker inicial
+  const preloadMonthlyRevenue = () => {
+    if (typeof window === 'undefined') return 0
+    try {
+      const raw = localStorage.getItem('supplier:lastMonthlyRevenue')
+      if (!raw) return 0
+      const parsed = JSON.parse(raw)
+      if (!parsed || typeof parsed.value !== 'number') return 0
+      const now = new Date()
+      const currentMonth = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`
+      if (parsed.month !== currentMonth) return 0
+      // TTL coherente con cache (5m)
+      if (Date.now() - (parsed.ts || 0) > 5 * 60 * 1000) return 0
+      return parsed.value
+    } catch (_) {
+      return 0
+    }
+  }
+  const initialRevenue = preloadMonthlyRevenue()
   // ============================================================================
   // ESTADO ESPECIALIZADO EN DASHBOARD
   // ============================================================================
@@ -27,7 +47,7 @@ export const useSupplierDashboard = () => {
       totalProducts: 0,
       activeProducts: 0,
       totalSales: 0,
-      totalRevenue: 0,
+      totalRevenue: initialRevenue,
       averageRating: 0,
       totalOrders: 0
     },
@@ -96,9 +116,29 @@ export const useSupplierDashboard = () => {
 
       if (prodError) throw prodError
 
-      // NOTE: Orders table doesn't have supplier_id column directly
-      // For now, we'll skip order metrics and focus on product metrics
-      // TODO: Implement proper order-to-supplier mapping through items jsonb
+      // Calcular ingresos del MES desde la tabla 'product_sales' por supplier_id
+      const now = new Date()
+      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
+      const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1).toISOString()
+      // Monthly revenue cache (5 min TTL) via SmartMetricCache
+  const { data: monthlyRevenue } = await smartMetricCache.ensure(
+        'monthlyRevenue',
+        { supplierId, month: monthStart.substring(0,7) },
+        async () => {
+          const { data: psRows, error: psErr } = await supabase
+            .from('product_sales')
+            .select('amount, trx_date')
+            .eq('supplier_id', supplierId)
+            .gte('trx_date', monthStart)
+            .lt('trx_date', nextMonth)
+          if (psErr) {
+    const prev = smartMetricCache.get('monthlyRevenue', { supplierId, month: monthStart.substring(0,7) })
+    return prev?.data ?? 0
+          }
+            return (psRows || []).reduce((sum, r) => sum + (Number(r.amount) || 0), 0)
+        },
+        5 * 60 * 1000
+      )
       const orderMetrics = []
 
       // Obtener solicitudes que incluyen productos del proveedor
@@ -121,13 +161,11 @@ export const useSupplierDashboard = () => {
       if (quoteError) throw quoteError
 
       // Calcular métricas
-      const metrics = {
+  const metrics = {
         totalProducts: productMetrics.length,
         activeProducts: productMetrics.filter(p => p.is_active).length,
         totalSales: orderMetrics.filter(o => o.status === 'completed').length,
-        totalRevenue: orderMetrics
-          .filter(o => o.status === 'completed')
-          .reduce((sum, o) => sum + (o.total_amount || 0), 0),
+  totalRevenue: monthlyRevenue,
         averageRating: 0, // Se puede agregar después
         totalOrders: orderMetrics.length
       }
@@ -152,6 +190,16 @@ export const useSupplierDashboard = () => {
         charts,
         trends
       })
+      // Persistir revenue mensual para próxima carga instantánea
+      try {
+        const nowMonth = metrics ? new Date().toISOString().substring(0,7) : null
+        localStorage.setItem('supplier:lastMonthlyRevenue', JSON.stringify({
+          supplierId,
+          month: nowMonth,
+          value: metrics.totalRevenue,
+          ts: Date.now()
+        }))
+      } catch (_) {}
       setLastUpdated(new Date().toISOString())
 
       return { success: true, data: { metrics, charts, trends } }
@@ -262,12 +310,35 @@ export const useSupplierDashboard = () => {
         const { data: { session } } = await supabase.auth.getSession()
         
         if (session?.user?.id) {
+          // Seed rápido desde cache para evitar parpadeo en 0
+          try {
+            const now = new Date()
+            const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
+            const cachedRev = smartMetricCache.get('monthlyRevenue', { supplierId: session.user.id, month: monthStart.substring(0,7) })
+            if (cachedRev && typeof cachedRev.data === 'number') {
+              setDashboardData(prev => ({
+                ...prev,
+                metrics: { ...prev.metrics, totalRevenue: cachedRev.data }
+              }))
+            }
+          } catch (_) {}
           await loadDashboardMetrics(session.user.id)
         } else {
           // Si no hay sesión inmediatamente, intentar de nuevo después de un breve delay
           setTimeout(async () => {
             const { data: { session: retrySession } } = await supabase.auth.getSession()
             if (retrySession?.user?.id) {
+              try {
+                const now = new Date()
+                const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
+                const cachedRev = smartMetricCache.get('monthlyRevenue', { supplierId: retrySession.user.id, month: monthStart.substring(0,7) })
+                if (cachedRev && typeof cachedRev.data === 'number') {
+                  setDashboardData(prev => ({
+                    ...prev,
+                    metrics: { ...prev.metrics, totalRevenue: cachedRev.data }
+                  }))
+                }
+              } catch (_) {}
               await loadDashboardMetrics(retrySession.user.id)
             } else {
               setError('No hay sesión activa')
@@ -308,6 +379,14 @@ export const useSupplierDashboard = () => {
         return await loadDashboardMetrics(session.user.id)
       }
       return { success: false, error: 'No hay sesión activa' }
+    },
+    refreshMonthlyRevenue: async (force = false) => {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.user?.id) return { success: false, error: 'No hay sesión activa' }
+      const now = new Date()
+      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
+      smartMetricCache.invalidate('monthlyRevenue', { supplierId: session.user.id, month: monthStart.substring(0,7) })
+      return await loadDashboardMetrics(session.user.id)
     },
     clearError: () => setError(null),
 

@@ -8,6 +8,7 @@
  */
 
 import { create } from 'zustand'
+import { FeatureFlags } from '../../../../shared/flags/featureFlags.js'
 
 const useProductBackground = create((set, get) => ({
   // ============================================================================
@@ -81,13 +82,14 @@ const useProductBackground = create((set, get) => ({
       // 🔥 NUEVO: Procesar imágenes si están definidas (incluso si está vacío para limpiar)
       if (productData.imagenes !== undefined && imagesHook && typeof imagesHook.uploadImages === 'function') {
         updateProgress('images', 'processing')
-        console.log(`🔥 [processProductInBackground] Procesando imágenes: ${productData.imagenes?.length || 0} archivos`)
         
+        
+        const supplierId = productData.supplier_id || localStorage.getItem('user_id')
         const result = await imagesHook.uploadImages(
           productData.imagenes || [], 
           productId, 
-          productData.supplier_id,
-          { replaceExisting: true } // 🔥 Siempre reemplazar para evitar acumulación
+          supplierId,
+          { replaceExisting: true } // ahora internamente hace replaceAllProductImages atómico
         )
         
         updateProgress('images', result.success ? 'completed' : 'failed')
@@ -97,30 +99,19 @@ const useProductBackground = create((set, get) => ({
           throw new Error(`Error procesando imágenes: ${errorMsg}`)
         }
         
-        console.log(`✅ [processProductInBackground] Imágenes procesadas exitosamente`)
         
-        // 🔥 NUEVO: COMUNICACIÓN INTELIGENTE EN LUGAR DE REFRESH BLOQUEADO
+        
+        // 🔥 MEJORA: COMUNICACIÓN ROBUSTA CON FALLBACK A EVENTOS LEGACY
         if (result.success && crudHook && crudHook.refreshProduct) {
-          // En lugar de refresh que causa conflicto, usar comunicación por eventos
-          
-          // 1. Notificar a componentes que las imágenes están disponibles
+          // SIEMPRE emitir evento independiente del modo (fix crítico)
           window.dispatchEvent(new CustomEvent('productImagesReady', {
-            detail: { 
-              productId,
-              imageCount: productData.imagenes?.length || 0,
-              timestamp: Date.now()
-            }
+            detail: { productId, imageCount: productData.imagenes?.length || 0, timestamp: Date.now() }
           }))
           
-          // 2. Solo actualizar el estado de Zustand SIN refrescar React Query
-          setTimeout(async () => {
-            if (crudHook.refreshProduct) {
-              const refreshResult = await crudHook.refreshProduct(productId)
-              if (refreshResult.success) {
-                //
-              }
-            }
-          }, 100) // Delay mínimo para no interferir con React Query
+          // Refresh diferido solo en modo legacy para mantener compatibilidad
+          if (!FeatureFlags.ENABLE_PHASED_THUMB_EVENTS) {
+            setTimeout(async () => { await crudHook.refreshProduct(productId) }, 100)
+          }
         }
       }
 
@@ -216,7 +207,7 @@ const useProductBackground = create((set, get) => ({
 
       const productId = createResult.data.productid
 
-      // 2. Procesar elementos complejos en background SIN ESPERAR
+      // 2. Procesar elementos complejos en background SIN ESPERAR pero con mejor error handling
       if (productData.imagenes?.length > 0 || 
           productData.specifications?.length > 0 || 
           productData.priceTiers?.length > 0) {
@@ -224,7 +215,24 @@ const useProductBackground = create((set, get) => ({
         // NO esperar - procesar verdaderamente en background
         get().processProductInBackground(productId, productData, hooks)
           .catch(error => {
-            set({ error: `Error procesando en background: ${error.message}` })
+            console.error('🔥 [createCompleteProduct] Error crítico en background processing:', {
+              productId,
+              error: error.message,
+              stack: error.stack,
+              hasImages: !!productData.imagenes?.length,
+              hasSpecs: !!productData.specifications?.length,
+              hasTiers: !!productData.priceTiers?.length
+            })
+            // 🔥 MEJORA: Error más específico y emitir evento de error
+            const errorMsg = `Error procesando en background: ${error.message}`
+            set({ error: errorMsg })
+            
+            // Emitir evento de error para que el UI pueda mostrar feedback
+            if (typeof window !== 'undefined') {
+              window.dispatchEvent(new CustomEvent('productBackgroundError', {
+                detail: { productId, error: errorMsg, timestamp: Date.now() }
+              }))
+            }
           })
       }
 
@@ -239,7 +247,7 @@ const useProductBackground = create((set, get) => ({
    * Actualizar producto completo (CRUD + Background processing)
    */
   updateCompleteProduct: async (productId, updates, hooks = {}) => {
-    const { crudHook, priceTiersHook } = hooks
+  const { crudHook, priceTiersHook } = hooks
 
     try {
       // 1. Actualizar campos básicos primero
@@ -252,31 +260,44 @@ const useProductBackground = create((set, get) => ({
         }
       }
 
-      // 2. CRÍTICO: Procesar priceTiers SINCRÓNICAMENTE cuando hay cambio de pricing
+      // 2. CRÍTICO: Optimismo + procesar priceTiers SINCRÓNICAMENTE cuando hay cambio de pricing
       if (updates.priceTiers !== undefined && priceTiersHook) {
+        // Optimistic update en memoria para evitar flash de mapeo antiguo
+        try {
+          if (crudHook && typeof crudHook.updateLocalProduct === 'function') {
+            // Adaptar nombres si vienen en formato de formulario
+            const normalizedTiers = (updates.priceTiers || []).map(t => ({
+              min_quantity: t.min_quantity ?? t.min ?? null,
+              max_quantity: t.max_quantity ?? t.max ?? null,
+              price: t.price ?? t.precio ?? 0,
+            }))
+            crudHook.updateLocalProduct(productId, { priceTiers: normalizedTiers })
+          }
+        } catch (_) { /* noop */ }
+
         const priceTierResult = await priceTiersHook.processPriceTiers(productId, updates.priceTiers)
         
         if (!priceTierResult.success) {
           const errorMsg = priceTierResult.error || priceTierResult.errors?.join(', ') || 'Error desconocido procesando tramos de precio'
           throw new Error(`Error procesando priceTiers: ${errorMsg}`)
         }
+        // 🔄 Refrescar producto para que product_quantity_ranges se refleje en products[] inmediatamente
+        if (crudHook && crudHook.refreshProduct) {
+          try { await crudHook.refreshProduct(productId) } catch (e) { /* ignore */ }
+        }
       }
 
       // 3. 🔧 FIX CRÍTICO: Procesar imágenes SIEMPRE en modo edición (array vacío también)
-      console.log('🔄 [updateCompleteProduct] Verificando si procesar imágenes:', {
-        hasImages: updates.imagenes !== undefined,
-        imageCount: updates.imagenes?.length || 0,
-        hasSpecs: updates.specifications?.length > 0
-      })
+          
       
       if (updates.imagenes !== undefined || updates.specifications?.length > 0) {
-        console.log('📸 [updateCompleteProduct] Procesando imágenes/specs en background')
+        
         // ESPERAR el procesamiento para asegurar que se complete
         try {
           await get().processProductInBackground(productId, updates, hooks)
-          console.log('✅ [updateCompleteProduct] Procesamiento background completado')
+          
         } catch (error) {
-          console.error('❌ [updateCompleteProduct] Error en procesamiento background:', error)
+          
           set({ error: `Error procesando en background: ${error.message}` })
           return { success: false, error: error.message }
         }

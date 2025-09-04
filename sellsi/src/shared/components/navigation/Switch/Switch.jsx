@@ -3,6 +3,7 @@ import React from 'react';
 import { useTheme } from '@mui/material';
 import ToggleButton from '@mui/material/ToggleButton';
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
+import Tooltip from '@mui/material/Tooltip';
 
 /* Pasar argumentos como proveedor y comprador en vez de hardcodearlos */
 
@@ -25,6 +26,9 @@ export default function Switch({ value, onChange, disabled = false, sx }) {
       onChange(event, newValue);
     }
   };
+
+  const supplierTooltip = value === 'supplier' ? 'Te encuentras en vista proveedor' : 'Cambiar a vista proveedor';
+  const buyerTooltip = value === 'buyer' ? 'Te encuentras en vista comprador' : 'Cambiar a vista comprador';
 
   return (
     <ToggleButtonGroup
@@ -60,12 +64,20 @@ export default function Switch({ value, onChange, disabled = false, sx }) {
       }}
     >
       {/* Proveedor primero, luego Comprador */}
-      <ToggleButton value="supplier" aria-label="proveedor">
-        Proveedor
-      </ToggleButton>
-      <ToggleButton value="buyer" aria-label="comprador">
-        Comprador
-      </ToggleButton>
+  <Tooltip title={supplierTooltip} arrow>
+        <span>
+          <ToggleButton value="supplier" aria-label="proveedor">
+            Proveedor
+          </ToggleButton>
+        </span>
+      </Tooltip>
+  <Tooltip title={buyerTooltip} arrow>
+        <span>
+          <ToggleButton value="buyer" aria-label="comprador">
+            Comprador
+          </ToggleButton>
+        </span>
+      </Tooltip>
     </ToggleButtonGroup>
   );
 }

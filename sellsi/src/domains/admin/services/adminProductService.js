@@ -128,6 +128,30 @@ export const getMarketplaceProducts = async (filters = {}) => {
       }
     }
 
+    // Obtener tramos de precio para los productos en lote para evitar consultas por producto
+    const productIds = availableProducts.map(p => p.productid)
+    let tiersMap = {}
+    if (productIds.length > 0) {
+      try {
+        const { data: tiersData, error: tiersError } = await supabase
+          .from('product_quantity_ranges')
+          .select('*')
+          .in('product_id', productIds)
+
+        if (!tiersError && Array.isArray(tiersData)) {
+          tiersMap = tiersData.reduce((acc, t) => {
+            const pid = t.product_id
+            if (!acc[pid]) acc[pid] = []
+            acc[pid].push(t)
+            return acc
+          }, {})
+        }
+      } catch (err) {
+        // No detener carga por fallos en tramos — caemos a precio base
+        console.warn('No se pudieron cargar price tiers en batch:', err)
+      }
+    }
+
     // Formatear datos para el componente
     const formattedData = availableProducts.map(product => {
       // Obtener imagen principal
@@ -136,9 +160,15 @@ export const getMarketplaceProducts = async (filters = {}) => {
       let thumbnails = null
       
       if (product.product_images && Array.isArray(product.product_images) && product.product_images.length > 0) {
-        imagenPrincipal = product.product_images[0].image_url
-        thumbnailUrl = product.product_images[0].thumbnail_url
-        thumbnails = product.product_images[0].thumbnails
+        const pi = product.product_images[0];
+        imagenPrincipal = pi.image_url || null;
+        thumbnailUrl = pi.thumbnail_url || null;
+        // Normalizar thumbnails: si viene como string parsear a objeto
+        let t = pi.thumbnails || null;
+        if (t && typeof t === 'string') {
+          try { t = JSON.parse(t); } catch (_) { t = null; }
+        }
+        thumbnails = t || null;
       }
 
       return {
@@ -152,6 +182,9 @@ export const getMarketplaceProducts = async (filters = {}) => {
         imagen: imagenPrincipal,
         thumbnail_url: thumbnailUrl,
         thumbnails: thumbnails,
+  // Añadir tramos de precio si existen (compatibilidad con UI)
+  priceTiers: tiersMap[product.productid] || tiersMap[String(product.productid)] || [],
+  price_tiers: tiersMap[product.productid] || tiersMap[String(product.productid)] || [],
         created_at: product.createddt
       }
     })
@@ -254,55 +287,49 @@ export const getProductStats = async () => {
  */
 export const deleteProduct = async (productId, adminId) => {
   return AdminApiService.executeQuery(async () => {
-    if (!productId) {
-      throw new Error('ID del producto es requerido')
-    }
+    if (!productId) throw new Error('ID del producto es requerido')
 
-    // 1. Auditoría admin
-    console.log(`Admin ${adminId} eliminando producto ${productId}`)
-
-    // 2. Obtener información del producto para auditoría
-    const { data: product, error: productError } = await supabase
+    // Obtener metadata básica (supplier + nombre) para auditoría
+    const { data: product, error: metaErr } = await supabase
       .from('products')
-      .select('supplier_id, productnm')
+      .select('supplier_id, productnm, deletion_status, is_active')
       .eq('productid', productId)
       .single()
+    if (metaErr) throw new Error('Producto no encontrado')
 
-    if (productError) {
-      throw new Error('Error al obtener información del producto')
-    }
+    // Ejecutar RPC unificada (reutiliza misma lógica que proveedor)
+    const { data: rpcResult, error: rpcErr } = await supabase.rpc('request_delete_product_v1', {
+      p_product_id: productId,
+      p_supplier_id: product.supplier_id
+    })
+    if (rpcErr) throw new Error(rpcErr.message || 'Error RPC eliminación')
+    if (!rpcResult?.success) throw new Error(rpcResult?.error || 'Fallo eliminación')
 
-    // 3. Limpiar archivos huérfanos ANTES de eliminar
-    const cleanupResult = await StorageCleanupService.cleanupProductOrphans(productId)
+    // Si acción fue deleted ya no existen imágenes; si soft_deleted, imágenes fueron purgadas dentro de la RPC
+    // (cleanup de huérfanos defensivo igualmente)
+    let cleaned = 0
+    try {
+      const cleanupResult = await StorageCleanupService.cleanupProductOrphans(productId)
+      cleaned = cleanupResult.cleaned || 0
+    } catch (_) {}
 
-    // 4. Eliminar producto de la BD
-    const { error } = await supabase
-      .from('products')
-      .delete()
-      .eq('productid', productId)
-
-    if (error) {
-      throw new Error('Error al eliminar producto')
-    }
-
-    // 5. Invalidación proactiva de caché
+    // Invalidar caches UI
     invalidateProductCache(productId)
 
-    // 6. Registrar acción en auditoría
+    // Auditoría
     if (adminId) {
       await AdminApiService.logAuditAction(adminId, AUDIT_ACTIONS.DELETE_PRODUCT, productId, {
         product_name: product.productnm,
         supplier_id: product.supplier_id,
-        files_removed: cleanupResult.cleaned
+        action: rpcResult.action,
+        files_removed: cleaned
       })
     }
 
-    // 7. Log de auditoría detallado
-    console.log(`Producto ${productId} eliminado por admin. Archivos limpiados: ${cleanupResult.cleaned}`)
-
-    return { 
-      deleted: true, 
-      cleaned: cleanupResult.cleaned,
+    return {
+      deleted: true,
+      action: rpcResult.action, // 'deleted' o 'soft_deleted'
+      cleaned,
       productName: product.productnm
     }
   }, 'Error al eliminar producto')

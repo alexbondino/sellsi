@@ -20,6 +20,7 @@ import {
   IconButton,
   Tooltip,
   TextField,
+  Popover,
   Select,
   MenuItem,
   FormControl,
@@ -59,10 +60,11 @@ import {
 import AdminStatCard from './AdminStatCard';
 import EditProductNameModal from '../../../shared/components/modals/EditProductNameModal';
 import DeleteMultipleProductsModal from '../../../shared/components/modals/DeleteMultipleProductsModal';
-import { getMarketplaceProducts, deleteProduct, getProductStats, deleteMultipleProducts, updateProductName } from '../../../domains/admin';
+// 🔍 Reemplazo de import desde barrel '../../../domains/admin' para reducir ciclos
+import { getMarketplaceProducts, deleteProduct, getProductStats, deleteMultipleProducts, updateProductName } from '../services/adminProductService';
 import { useBanner } from '../../../shared/components/display/banners/BannerContext';
 import { useResponsiveThumbnail } from '../../../hooks/useResponsiveThumbnail';
-import { AdminTableImage } from '../../../components/UniversalProductImage';
+import { AdminTableImage } from '../../../components/UniversalProductImage'; // Incluye gating viewport interno vía useInViewport
 
 // ✅ CONSTANTS
 const PRODUCT_STATUS = {
@@ -172,6 +174,10 @@ const ProductMarketplaceTable = memo(() => {
   // Estado de selección múltiple
   const [selectedProducts, setSelectedProducts] = useState(new Set());
 
+  // PAGINACIÓN (100 productos por página)
+  const PRODUCTS_PER_PAGE = 100;
+  const [currentPage, setCurrentPage] = useState(1);
+
   // Modal de confirmación para eliminar
   const [deleteModal, setDeleteModal] = useState({
     open: false,
@@ -194,6 +200,102 @@ const ProductMarketplaceTable = memo(() => {
   const [operationLoading, setOperationLoading] = useState(false);
 
   const { showBanner } = useBanner();
+
+  // Copiar ID: estado para popovers y feedback de copiado
+  const [idAnchor, setIdAnchor] = useState(null);
+  const [copiedId, setCopiedId] = useState(false);
+  const idCopyTimerRef = React.useRef(null);
+  const [idOpenProductId, setIdOpenProductId] = useState(null);
+  const [userAnchor, setUserAnchor] = useState(null);
+  const [copiedUser, setCopiedUser] = useState(false);
+  const userCopyTimerRef = React.useRef(null);
+  const [userOpenProductId, setUserOpenProductId] = useState(null);
+
+  const handleOpenId = (event, productId) => {
+    setIdAnchor(event.currentTarget);
+    setIdOpenProductId(productId);
+  };
+  const handleCloseId = () => {
+    setIdAnchor(null);
+    setIdOpenProductId(null);
+    if (idCopyTimerRef.current) {
+      clearTimeout(idCopyTimerRef.current);
+      idCopyTimerRef.current = null;
+    }
+    setCopiedId(false);
+  };
+
+  const handleOpenUser = (event, productId) => {
+    setUserAnchor(event.currentTarget);
+    setUserOpenProductId(productId);
+  };
+  const handleCloseUser = () => {
+    setUserAnchor(null);
+    setUserOpenProductId(null);
+    if (userCopyTimerRef.current) {
+      clearTimeout(userCopyTimerRef.current);
+      userCopyTimerRef.current = null;
+    }
+    setCopiedUser(false);
+  };
+
+  const handleCopyId = async (text) => {
+    try {
+      if (!text) return;
+      await navigator.clipboard.writeText(text);
+      setCopiedId(true);
+      if (idCopyTimerRef.current) clearTimeout(idCopyTimerRef.current);
+      idCopyTimerRef.current = setTimeout(() => setCopiedId(false), 3000);
+    } catch (_) {}
+  };
+
+  const handleCopyUser = async (text) => {
+    try {
+      if (!text) return;
+      await navigator.clipboard.writeText(text);
+      setCopiedUser(true);
+      if (userCopyTimerRef.current) clearTimeout(userCopyTimerRef.current);
+      userCopyTimerRef.current = setTimeout(() => setCopiedUser(false), 3000);
+    } catch (_) {}
+  };
+
+  // Helper para mostrar precio en la tabla: soporta priceTiers y precio base (SIN negrita)
+  const formatCLP = (amount) => `$${Math.round(amount).toLocaleString('es-CL')}`;
+
+  const renderProductPrice = (product) => {
+    const priceTiers = product.priceTiers || product.price_tiers || [];
+
+    if (Array.isArray(priceTiers) && priceTiers.length > 0) {
+      const normalized = priceTiers
+        .map(t => Number(t.price ?? t.precio ?? t.precio_unit ?? 0))
+        .filter(p => !isNaN(p) && p > 0);
+
+      if (normalized.length > 0) {
+        const minPrice = Math.min(...normalized);
+        const maxPrice = Math.max(...normalized);
+        if (minPrice !== maxPrice) {
+          return (
+            <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 400, fontSize: 12, lineHeight: 1.1 }}>
+              {formatCLP(minPrice)} - {formatCLP(maxPrice)}
+            </Typography>
+          );
+        }
+        return (
+          <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 400, fontSize: 12, lineHeight: 1.1 }}>
+            {formatCLP(maxPrice)}
+          </Typography>
+        );
+      }
+    }
+
+    // Fallback a precio base del producto
+    const basePrice = product.price || product.precio || 0;
+    return (
+      <Typography component="span" variant="caption" color="text.secondary" sx={{ display: 'block', fontWeight: 400 }}>
+        {formatCLP(basePrice)}
+      </Typography>
+    );
+  };
 
   // ========================================
   // 🔧 EFECTOS
@@ -315,11 +417,30 @@ const ProductMarketplaceTable = memo(() => {
 
   const handleSelectAll = useCallback((isSelected) => {
     if (isSelected) {
-      setSelectedProducts(new Set(filteredProducts.map(product => product.product_id)));
+      // Seleccionar solo los productos visibles de la página actual
+      setSelectedProducts(new Set(visibleProducts.map(product => product.product_id)));
     } else {
       setSelectedProducts(new Set());
     }
   }, [filteredProducts]);
+
+  // PAGINACIÓN: calcular páginas y productos visibles
+  const totalPages = useMemo(() => Math.max(1, Math.ceil((filteredProducts?.length || 0) / PRODUCTS_PER_PAGE)), [filteredProducts]);
+
+  useEffect(() => {
+    if (currentPage > totalPages) setCurrentPage(totalPages);
+    if (currentPage < 1) setCurrentPage(1);
+  }, [currentPage, totalPages]);
+
+  const startIndex = (currentPage - 1) * PRODUCTS_PER_PAGE;
+  const endIndex = startIndex + PRODUCTS_PER_PAGE;
+  const visibleProducts = useMemo(() => (filteredProducts || []).slice(startIndex, endIndex), [filteredProducts, startIndex, endIndex]);
+
+  const handlePageChange = useCallback((page) => {
+    const safe = Math.min(Math.max(1, page), totalPages);
+    setCurrentPage(safe);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [totalPages]);
 
   const openDeleteModal = (product) => {
     setDeleteModal({
@@ -359,15 +480,10 @@ const ProductMarketplaceTable = memo(() => {
   };
 
   // Handlers para eliminar múltiples productos
-  const openDeleteMultipleModal = () => {
-    const selectedProductsArray = filteredProducts.filter(product => 
-      selectedProducts.has(product.product_id)
-    );
-    setDeleteMultipleModal({
-      open: true,
-      products: selectedProductsArray
-    });
-  };
+  const openDeleteMultipleModal = useCallback(() => {
+    const selectedProductsArray = filteredProducts.filter(product => selectedProducts.has(product.product_id));
+    setDeleteMultipleModal({ open: true, products: selectedProductsArray });
+  }, [filteredProducts, selectedProducts]);
 
   const closeDeleteMultipleModal = () => {
     setDeleteMultipleModal({
@@ -682,7 +798,7 @@ const ProductMarketplaceTable = memo(() => {
           </TableRow>
         </TableHead>
         <TableBody>
-          {filteredProducts.map((product) => {
+          {visibleProducts.map((product) => {
             const productStatus = getProductStatus(product);
             const isSelected = selectedProducts.has(product.product_id);
 
@@ -701,22 +817,47 @@ const ProductMarketplaceTable = memo(() => {
 
                 <TableCell>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                    <AdminTableImage product={product} />
+                    <AdminTableImage product={product} priority={true} fallbackIcon={() => (<ShoppingCartIcon />)} />
                     <Box>
                       <Typography component="span" variant="body2" fontWeight="medium">
                         {product.product_name || 'N/A'}
                       </Typography>
-                      <Typography component="span" variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-                        ${product.price || 0}
-                      </Typography>
+                        {renderProductPrice(product)}
                     </Box>
                   </Box>
                 </TableCell>
 
                 <TableCell>
-                  <Typography variant="body2" color="text.secondary" sx={{ fontFamily: 'monospace' }}>
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ fontFamily: 'monospace', cursor: 'pointer' }}
+                    onClick={(e) => handleOpenId(e, product.product_id)}
+                  >
                     {product.product_id?.slice(0, 8)}...
                   </Typography>
+
+                  <Popover
+                    open={Boolean(idAnchor) && idOpenProductId === product.product_id}
+                    anchorEl={idAnchor}
+                    onClose={handleCloseId}
+                    anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+                    disableScrollLock
+                  >
+                    <Box sx={{ p: 2, minWidth: 300 }}>
+                      <TextField
+                        fullWidth
+                        size="small"
+                        value={product.product_id || ''}
+                        InputProps={{ readOnly: true, sx: { fontFamily: 'monospace' } }}
+                      />
+                      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1 }}>
+                        <Button size="small" variant="contained" onClick={() => handleCopyId(product.product_id)}>
+                          {copiedId ? 'Copiado' : 'Copiar'}
+                        </Button>
+                      </Box>
+                    </Box>
+                  </Popover>
                 </TableCell>
 
                 <TableCell>
@@ -726,9 +867,36 @@ const ProductMarketplaceTable = memo(() => {
                 </TableCell>
 
                 <TableCell>
-                  <Typography variant="body2" color="text.secondary" sx={{ fontFamily: 'monospace' }}>
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ fontFamily: 'monospace', cursor: 'pointer' }}
+                    onClick={(e) => handleOpenUser(e, product.product_id)}
+                  >
                     {product.user_id?.slice(0, 8)}...
                   </Typography>
+
+                  <Popover
+                    open={Boolean(userAnchor) && userOpenProductId === product.product_id}
+                    anchorEl={userAnchor}
+                    onClose={handleCloseUser}
+                    anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+                    disableScrollLock
+                  >
+                    <Box sx={{ p: 2, minWidth: 300 }}>
+                      <TextField
+                        fullWidth
+                        size="small"
+                        value={product.user_id || ''}
+                        InputProps={{ readOnly: true, sx: { fontFamily: 'monospace' } }}
+                      />
+                      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1 }}>
+                        <Button size="small" variant="contained" onClick={() => handleCopyUser(product.user_id)}>
+                          {copiedUser ? 'Copiado' : 'Copiar'}
+                        </Button>
+                      </Box>
+                    </Box>
+                  </Popover>
                 </TableCell>
 
                 <TableCell>
@@ -786,6 +954,24 @@ const ProductMarketplaceTable = memo(() => {
           <Typography variant="h6" color="text.secondary">
             No se encontraron productos
           </Typography>
+        </Box>
+      )}
+
+      {/* Pagination controls */}
+      {filteredProducts && filteredProducts.length > PRODUCTS_PER_PAGE && (
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 1, py: 2, flexWrap: 'wrap' }}>
+          <Button variant="outlined" disabled={currentPage === 1} onClick={() => handlePageChange(currentPage - 1)} sx={{ minWidth: 'auto', px: 2, fontSize: '0.875rem' }}>‹ Anterior</Button>
+
+          {Array.from({ length: Math.min(7, totalPages) }, (_, i) => {
+            const page = Math.min(totalPages, Math.max(1, currentPage - 3 + i));
+            return (
+              <Button key={page} variant={page === currentPage ? 'contained' : 'outlined'} onClick={() => handlePageChange(page)} sx={{ minWidth: 40, fontSize: '0.875rem' }}>{page}</Button>
+            );
+          })}
+
+          <Button variant="outlined" disabled={currentPage === totalPages} onClick={() => handlePageChange(currentPage + 1)} sx={{ minWidth: 'auto', px: 2, fontSize: '0.875rem' }}>Siguiente ›</Button>
+
+          <Typography variant="body2" color="text.secondary" sx={{ ml: 2 }}>Página {currentPage} de {totalPages}</Typography>
         </Box>
       )}
     </TableContainer>

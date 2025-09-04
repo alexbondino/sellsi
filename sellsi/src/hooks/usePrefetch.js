@@ -19,38 +19,53 @@ import { useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 
 // ============================================================================
-// MAPEO DE RUTAS Y SUS COMPONENTES LAZY
+// REGISTRO MUTABLE DE RUTAS → IMPORT DINÁMICO (permite desacoplar dominios)
 // ============================================================================
-const ROUTE_COMPONENTS = {
-  '/marketplace': () => import('../domains/marketplace/pages/Marketplace'),
-  '/buyer/marketplace': () => import('../domains/buyer/pages/MarketplaceBuyer'),
-  '/buyer/cart': () => import('../domains/buyer/pages/BuyerCart'),
-  '/buyer/orders': () => import('../domains/buyer/pages/BuyerOrders'),
-  '/buyer/performance': () => import('../domains/buyer/pages/BuyerPerformance'),
-  '/supplier/home': () => import('../domains/supplier/pages/home/ProviderHome'),
-  '/supplier/myproducts': () =>
-    import('../domains/supplier/pages/my-products/MyProducts'),
-  '/supplier/addproduct': () =>
-    import('../domains/supplier/pages/my-products/AddProduct'),
-  '/login': () => import('../domains/auth').then(module => module.Login),
-  '/crear-cuenta': () => import('../domains/auth').then(module => module.Register),
+// NOTA: Se removieron rutas de auth (/login y /crear-cuenta) para eliminar
+// dependencia circular con el dominio auth. Esas rutas podrán re-registrarse
+// más adelante desde un provider específico (AuthPrefetchProvider) sin que este
+// hook conozca el dominio.
+const ROUTE_COMPONENTS = new Map([
+  ['/marketplace', () => import('../domains/marketplace/pages/Marketplace')],
+  ['/buyer/marketplace', () => import('../domains/buyer/pages/MarketplaceBuyer')],
+  ['/buyer/cart', () => import('../domains/buyer/pages/BuyerCart')],
+  ['/buyer/orders', () => import('../domains/buyer/pages/BuyerOrders')],
+  ['/buyer/performance', () => import('../domains/buyer/pages/BuyerPerformance')],
+  ['/supplier/home', () => import('../domains/supplier/pages/home/ProviderHome')],
+  ['/supplier/myproducts', () => import('../domains/supplier/pages/my-products/MyProducts')],
+  ['/supplier/addproduct', () => import('../domains/supplier/pages/my-products/AddProduct')],
+]);
+
+export const registerPrefetchRoute = (routePath, importerFn) => {
+  if (typeof routePath === 'string' && typeof importerFn === 'function') {
+    ROUTE_COMPONENTS.set(routePath, importerFn);
+  }
+};
+
+export const unregisterPrefetchRoute = routePath => {
+  ROUTE_COMPONENTS.delete(routePath);
 };
 
 // ============================================================================
 // RUTAS RELACIONADAS POR CONTEXTO
 // ============================================================================
-const RELATED_ROUTES = {
-  '/': ['/marketplace', '/login', '/crear-cuenta'],
-  '/marketplace': ['/login', '/buyer/marketplace'],
-  '/buyer/marketplace': ['/buyer/cart', '/buyer/orders'],
-  '/buyer/cart': ['/buyer/orders', '/buyer/marketplace'],
-  '/buyer/orders': ['/buyer/marketplace', '/buyer/performance'],
-  '/buyer/performance': ['/buyer/marketplace', '/buyer/orders'],
-  '/supplier/home': ['/supplier/myproducts', '/supplier/addproduct'],
-  '/supplier/myproducts': ['/supplier/addproduct', '/supplier/home'],
-  '/supplier/addproduct': ['/supplier/myproducts', '/supplier/home'],
-  '/login': ['/marketplace', '/buyer/marketplace'],
-  '/crear-cuenta': ['/marketplace', '/buyer/marketplace'],
+// Tabla mutable de rutas relacionadas
+const RELATED_ROUTES = new Map([
+  ['/', ['/marketplace']],
+  ['/marketplace', ['/buyer/marketplace']],
+  ['/buyer/marketplace', ['/buyer/cart', '/buyer/orders']],
+  ['/buyer/cart', ['/buyer/orders', '/buyer/marketplace']],
+  ['/buyer/orders', ['/buyer/marketplace', '/buyer/performance']],
+  ['/buyer/performance', ['/buyer/marketplace', '/buyer/orders']],
+  ['/supplier/home', ['/supplier/myproducts', '/supplier/addproduct']],
+  ['/supplier/myproducts', ['/supplier/addproduct', '/supplier/home']],
+  ['/supplier/addproduct', ['/supplier/myproducts', '/supplier/home']],
+]);
+
+export const registerRelatedRoutes = (baseRoute, relatedArray) => {
+  if (typeof baseRoute === 'string' && Array.isArray(relatedArray)) {
+    RELATED_ROUTES.set(baseRoute, relatedArray);
+  }
 };
 
 /**
@@ -69,7 +84,7 @@ export const usePrefetch = () => {
       return; // Ya está prefetched
     }
 
-    const importFunction = ROUTE_COMPONENTS[routePath];
+  const importFunction = ROUTE_COMPONENTS.get(routePath);
     if (importFunction) {
       // Marcar como prefetched antes de iniciar la importación
       prefetchedRoutes.current.add(routePath);
@@ -117,7 +132,7 @@ export const usePrefetch = () => {
    */
   const prefetchRelatedRoutes = () => {
     const currentPath = location.pathname;
-    const relatedRoutes = RELATED_ROUTES[currentPath] || [];
+  const relatedRoutes = RELATED_ROUTES.get(currentPath) || [];
 
     // Delay para no interferir con la carga de la página actual
     setTimeout(() => {

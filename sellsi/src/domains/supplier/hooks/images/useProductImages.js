@@ -59,25 +59,11 @@ const useProductImages = create((set, get) => ({
       const cacheIntegrity = await state.cacheService.verifyImageCacheIntegrity(productId)
       
       if (!cacheIntegrity.isHealthy) {
-        try {
-          if (updatedImages && updatedImages.length > 0) {
-            // Actualizar cache con las nuevas imágenes restantes
-            const newThumbnailData = {
-              thumbnails: updatedImages[0]?.thumbnails || null,
-              thumbnail_url: updatedImages[0]?.thumbnail_url || null
-            };
-            
-            queryClient.setQueryData(QUERY_KEYS.THUMBNAIL(productId), newThumbnailData);
-          } else {
-            // Si no quedan imágenes, limpiar el cache
-            queryClient.setQueryData(QUERY_KEYS.THUMBNAIL(productId), null);
-          }
-        } catch (cacheError) {
-          // Error limpiando cache, continuar
-        }
+        // Si el cache está corrupto, forzar refetch eliminando datos actuales
+        try { queryClient.removeQueries({ queryKey: QUERY_KEYS.THUMBNAIL(productId) }) } catch(_) {}
       }
 
-      return { success: true }
+  return { success: true, cacheHealthy: cacheIntegrity.isHealthy }
     } catch (error) {
       set({ error: `Error eliminando imágenes: ${error.message}` })
       return { success: false, error: error.message }
@@ -113,7 +99,7 @@ const useProductImages = create((set, get) => ({
    * Subir múltiples imágenes
    */
   uploadImages: async (files, productId, supplierId, options = {}) => {
-    const { replaceExisting = true } = options // 🔥 Por defecto siempre reemplazar para evitar acumulación
+  const { replaceExisting = true } = options // 🔥 Por defecto reemplazo atómico
     
     set((state) => ({
       processingImages: { ...state.processingImages, [productId]: true },
@@ -121,13 +107,18 @@ const useProductImages = create((set, get) => ({
     }))
 
     try {
-      console.log(`🔥 [useProductImages.uploadImages] Llamando UploadService con replaceExisting: ${replaceExisting}`)
-      const uploadResult = await UploadService.uploadMultipleImagesWithThumbnails(
-        files, 
-        productId, 
-        supplierId, 
-        { replaceExisting }
-      )
+      console.log(`🔥 [useProductImages.uploadImages] Inicio flujo imágenes (replaceExisting=${replaceExisting}) total=${files.length}`)
+      let uploadResult
+      if (replaceExisting) {
+        uploadResult = await UploadService.replaceAllProductImages(files, productId, supplierId, { cleanup: true })
+      } else {
+        uploadResult = await UploadService.uploadMultipleImagesWithThumbnails(
+          files,
+          productId,
+          supplierId,
+          { replaceExisting: false }
+        )
+      }
       
       set((state) => ({
         processingImages: { ...state.processingImages, [productId]: false },

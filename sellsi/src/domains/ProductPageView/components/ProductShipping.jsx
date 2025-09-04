@@ -73,7 +73,7 @@ const ProductShipping = ({ product, isMobile = false, isLoggedIn = false }) => {
 
   return (
     <Box sx={{ 
-      px: { xs: 2, md: 0 }, 
+      px: { xs: 0, md: 0 }, 
       mt: { xs: 4, md: 6 }, 
       mb: 6,
       width: '100%' 
@@ -81,7 +81,8 @@ const ProductShipping = ({ product, isMobile = false, isLoggedIn = false }) => {
       <Paper
         elevation={2}
         sx={{
-          p: { xs: 3, sm: 4, md: 5 },
+          // Reduce internal padding on mobile to reduce lateral spacing
+          p: { xs: 0,md: 5 },
           borderRadius: 3,
           width: { xs: '100%', md: '70%' },
           maxWidth: '900px',
@@ -211,7 +212,7 @@ const ProductShipping = ({ product, isMobile = false, isLoggedIn = false }) => {
                       <Typography 
                         variant="body2" 
                         sx={{ 
-                          fontWeight: 600,
+                          fontWeight: 500,
                           fontSize: '1rem',
                           color: (region.shippingValue || region.price) === 0 ? 'success.main' : 'black'
                         }}

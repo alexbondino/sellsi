@@ -10,6 +10,7 @@
 import { create } from 'zustand'
 import { supabase } from '../../../services/supabase'
 import { updateProductSpecifications } from '../../../services/marketplace'
+import { queryClient, QUERY_KEYS } from '../../../utils/queryClient'
 import { UploadService } from '../../../shared/services/upload'
 
 const useSupplierProductsBase = create((set, get) => ({
@@ -38,20 +39,26 @@ const useSupplierProductsBase = create((set, get) => ({
   loadProducts: async (supplierId) => {
     set({ loading: true, error: null })
 
-    try {      const { data: products, error: prodError } = await supabase
-        .from('products')
-        .select('*, product_images(*), product_quantity_ranges(*), product_delivery_regions(*)')
+  try {      const { data: products, error: prodError } = await supabase
+    .from('products')
+    .select('*, product_images(image_url,thumbnail_url,thumbnails,image_order), product_quantity_ranges(*), product_delivery_regions(*)')
         .eq('supplier_id', supplierId)
         .order('updateddt', { ascending: false })
 
       if (prodError) throw prodError      // Procesar productos para incluir tramos de precio y regiones de despacho
       const processedProducts =
-        products?.map((product) => ({
-          ...product,
-          priceTiers: product.product_quantity_ranges || [],
-          images: product.product_images || [],
-          delivery_regions: product.product_delivery_regions || [],
-        })) || []
+        products?.map((product) => {
+          const images = (product.product_images || []).slice().sort((a, b) => (a.image_order || 0) - (b.image_order || 0))
+          const main = images.find(img => (img.image_order||0) === 0)
+          return {
+            ...product,
+            priceTiers: product.product_quantity_ranges || [],
+            images,
+            delivery_regions: product.product_delivery_regions || [],
+            thumbnails: main?.thumbnails || null,
+            thumbnail_url: main?.thumbnail_url || product.thumbnail_url || null,
+          }
+        }) || []
 
       set((state) => ({
         products: processedProducts,
@@ -149,6 +156,15 @@ const useSupplierProductsBase = create((set, get) => ({
       // 3. Procesar imágenes, especificaciones y tramos EN BACKGROUND
       get().processProductInBackground(product.productid, productData)
 
+      // 4. Invalidar caches iniciales (lista de productos del supplier)
+      try {
+        const supplierId = localStorage.getItem('user_id')
+        if (supplierId) {
+          queryClient.invalidateQueries({ queryKey: QUERY_KEYS.PRODUCTS_BY_SUPPLIER(supplierId) })
+        }
+        queryClient.invalidateQueries({ queryKey: ['productPriceTiers', product.productid] })
+      } catch (_) {}
+
       return { success: true, product: tempProduct }
     } catch (error) {
       set((state) => ({
@@ -168,10 +184,10 @@ const useSupplierProductsBase = create((set, get) => ({
   processProductInBackground: async (productId, productData) => {
     try {
 
-      // Procesar imágenes si existen
+      // Procesar imágenes si existen (reemplazo atómico completo)
       if (productData.imagenes?.length > 0) {
-
-        await get().processProductImages(productId, productData.imagenes)
+        const supplierId = localStorage.getItem('user_id')
+        await UploadService.replaceAllProductImages(productData.imagenes, productId, supplierId, { cleanup: true })
       }
 
       // Procesar especificaciones si existen
@@ -270,12 +286,23 @@ const useSupplierProductsBase = create((set, get) => ({
       console.log('🔍 [updateProduct] tipo de imagenes:', typeof imagenes)
       console.log('🔍 [updateProduct] es array:', Array.isArray(imagenes))
       
-      // 🚨 SIEMPRE procesar imágenes en modo edición (CRÍTICO)
-      if (imagenes !== undefined) { // Solo verificar que no sea undefined
-        console.log(`📸 [updateProduct] Procesando ${imagenes?.length || 0} imágenes`)
-        await get().processProductImages(productId, imagenes)
-      } else {
-        console.log('⚠️ [updateProduct] imagenes es undefined, no se procesarán imágenes')
+      // 🚨 SIEMPRE procesar imágenes (reemplazo atómico) si el caller envía el array (aunque vacío)
+      if (imagenes !== undefined) {
+        console.log(`📸 [updateProduct] Reemplazo atómico de imágenes, total=${imagenes?.length || 0}`)
+        const supplierId = localStorage.getItem('user_id')
+        const replaceResult = await UploadService.replaceAllProductImages(imagenes || [], productId, supplierId, { cleanup: true })
+        // Sincronizar inmediatamente el estado local para evitar flicker / duplicados
+        if (replaceResult?.success) {
+          set((state) => ({
+            products: state.products.map(p => p.productid === productId ? {
+              ...p,
+              product_images: (replaceResult.data || []).slice().sort((a,b)=> (a.image_order||0)-(b.image_order||0)),
+              images: (replaceResult.data || []).slice().sort((a,b)=> (a.image_order||0)-(b.image_order||0))
+            } : p)
+          }))
+        } else if (replaceResult?.error) {
+          console.warn('[updateProduct] Error en replaceAllProductImages:', replaceResult.error)
+        }
       }
 
       // Procesar especificaciones si existen
@@ -290,6 +317,15 @@ const useSupplierProductsBase = create((set, get) => ({
         await get().processPriceTiers(productId, priceTiers)
       }
 
+      // Invalidar caches relacionados al producto (datos base + tramos + imágenes)
+      try {
+        queryClient.invalidateQueries({ queryKey: QUERY_KEYS.PRODUCT(productId) })
+        queryClient.invalidateQueries({ queryKey: ['productPriceTiers', productId] })
+        const supplierId = localStorage.getItem('user_id')
+        if (supplierId) {
+          queryClient.invalidateQueries({ queryKey: QUERY_KEYS.PRODUCTS_BY_SUPPLIER(supplierId) })
+        }
+      } catch (_) {}
       return { success: true, data }
     } catch (error) {
       set((state) => ({
@@ -307,6 +343,7 @@ const useSupplierProductsBase = create((set, get) => ({
    * Eliminar producto
    */
   deleteProduct: async (productId) => {
+  console.log('[deleteProduct] INIT v2 path productId=', productId)
     set((state) => ({
       operationStates: {
         ...state.operationStates,
@@ -316,23 +353,24 @@ const useSupplierProductsBase = create((set, get) => ({
     }))
 
     try {
-      // 1. Obtener URLs de las imágenes antes de eliminar
-      const { data: imageRecords, error: fetchError } = await supabase
-        .from('product_images')
-        .select('image_url, thumbnail_url')
-        .eq('product_id', productId)
+      const supplierId = localStorage.getItem('user_id')
+      // Ejecutar RPC robusta
+  const { data: result, error: rpcError } = await supabase.rpc('request_delete_product_v1', {
+        p_product_id: productId,
+        p_supplier_id: supplierId,
+      })
+      if (rpcError) throw rpcError
+      if (!result?.success) throw new Error(result?.error || 'Fallo eliminación')
 
-      // 2. Eliminar producto de la base de datos
-      const { error } = await supabase
-        .from('products')
-        .delete()
-        .eq('productid', productId)
-
-      if (error) throw error
-
-      // 3. Actualizar store inmediatamente (UI responde rápido)
+      // Actualizar estado según acción (pero UI siempre mostrará 'Producto eliminado')
       const { products } = get()
-      const updatedProducts = products.filter((p) => p.productid !== productId)
+      let updatedProducts = products
+      if (result.action === 'deleted') {
+        updatedProducts = products.filter(p => p.productid !== productId)
+      } else {
+        // soft_deleted u otros futuros
+        updatedProducts = products.map(p => p.productid === productId ? { ...p, is_active: false, deletion_status: 'pending_delete' } : p)
+      }
 
       set((state) => ({
         products: updatedProducts,
@@ -342,15 +380,16 @@ const useSupplierProductsBase = create((set, get) => ({
         },
       }))
 
-      // 4. Limpiar imágenes en background usando URLs obtenidas previamente
-      if (imageRecords?.length > 0) {
-        get().cleanupImagesFromUrls(imageRecords).catch(error => {
-          console.error('Error limpiando imágenes:', error)
-        })
-      }
+      // Fire & forget edge function
+  console.log('[deleteProduct] invoking edge cleanup-product')
+  supabase.functions.invoke('cleanup-product', {
+        body: { productId, action: result.action, supplierId },
+      })
 
-      return { success: true }
+  console.log('[deleteProduct] completed with normalized action deleted')
+  return { success: true, action: 'deleted' } // Normalizamos para la capa de UI
     } catch (error) {
+  console.error('[deleteProduct] ERROR', error)
       set((state) => ({
         operationStates: {
           ...state.operationStates,
@@ -365,127 +404,6 @@ const useSupplierProductsBase = create((set, get) => ({
   // ============================================================================
   // HELPERS INTERNOS
   // ============================================================================
-  /**
-   * Procesar imágenes del producto (versión SIMPLIFICADA y ROBUSTA)
-   * Esta versión REEMPLAZA completamente todas las imágenes existentes
-   */
-  processProductImages: async (productId, images) => {
-    console.log(`🔄 [processProductImages] INICIO - producto: ${productId}`)
-    console.log(`🔄 [processProductImages] images recibidas:`, images)
-    console.log(`🔄 [processProductImages] tipo:`, typeof images)
-    console.log(`� [processProductImages] es array:`, Array.isArray(images))
-    
-    // Normalizar images - si es undefined/null, tratar como array vacío
-    const normalizedImages = images || [];
-    
-    if (!Array.isArray(normalizedImages)) {
-      console.error('❌ [processProductImages] images no es un array válido:', normalizedImages)
-      return;
-    }
-
-    const supplierId = localStorage.getItem('user_id')
-    console.log(`🔄 [processProductImages] Iniciando procesamiento para producto ${productId} con ${normalizedImages.length} imágenes`)
-
-    try {
-      // 1. 🧹 LIMPIAR TODAS las imágenes existentes PRIMERO (storage + BD)
-      console.log('🧹 [processProductImages] Paso 1: Limpiando imágenes existentes')
-      
-      // Obtener URLs existentes ANTES de eliminar
-      const { data: existingImages, error: fetchError } = await supabase
-        .from('product_images')
-        .select('image_url, thumbnail_url')
-        .eq('product_id', productId);
-      
-      if (!fetchError && existingImages?.length > 0) {
-        console.log(`🗑️ [processProductImages] Eliminando ${existingImages.length} imágenes existentes del storage`)
-        // Limpiar archivos del storage
-        await get().cleanupImagesFromUrls(existingImages);
-      }
-      
-      // Eliminar TODOS los registros de la BD
-      const { error: deleteError } = await supabase.from('product_images').delete().eq('product_id', productId);
-      if (deleteError) {
-        console.error('❌ [processProductImages] Error eliminando registros de BD:', deleteError);
-      }
-      console.log('✅ [processProductImages] Limpieza completada')
-
-      // 2. 📸 PROCESAR nuevas imágenes
-      if (normalizedImages.length === 0) {
-        console.log('📊 [processProductImages] No hay nuevas imágenes para procesar - producto quedará sin imágenes')
-        return;
-      }
-
-      console.log(`📸 [processProductImages] Paso 2: Procesando ${normalizedImages.length} nuevas imágenes`)
-      const finalImageData = [];
-
-      // Separar archivos nuevos de URLs existentes
-      const newFiles = [];
-      const existingUrls = [];
-
-      for (const img of normalizedImages) {
-        if (img && img.file instanceof File) {
-          newFiles.push(img.file);
-        } else if (img instanceof File) {
-          newFiles.push(img);
-        } else if (typeof img === 'string') {
-          existingUrls.push(img);
-        } else if (img && typeof img.url === 'string') {
-          existingUrls.push(img.url);
-        }
-      }
-
-      // Procesar URLs existentes (mantener)
-      for (const url of existingUrls) {
-        finalImageData.push({
-          image_url: url,
-          thumbnail_url: null // Las URLs existentes no tienen thumbnail automático
-        });
-      }
-
-      // Subir archivos nuevos
-      if (newFiles.length > 0) {
-        console.log(`⬆️ [processProductImages] Subiendo ${newFiles.length} archivos nuevos`)
-        const uploadResult = await UploadService.uploadMultipleImagesWithThumbnails(newFiles, productId, supplierId);
-        
-        if (uploadResult.success && uploadResult.data) {
-          for (const imageData of uploadResult.data) {
-            finalImageData.push({
-              image_url: imageData.publicUrl,
-              thumbnail_url: imageData.thumbnailUrl || null
-            });
-          }
-          console.log(`✅ [processProductImages] Subidos ${uploadResult.data.length} archivos correctamente`)
-        } else {
-          console.error('❌ [processProductImages] Error subiendo archivos:', uploadResult.error || uploadResult.errors);
-        }
-      }
-
-      // 3. 💾 INSERTAR todas las nuevas imágenes
-      if (finalImageData.length > 0) {
-        console.log(`💾 [processProductImages] Paso 3: Insertando ${finalImageData.length} registros en BD`)
-        
-        const imagesToInsert = finalImageData.map((imageData, index) => ({
-          product_id: productId,
-          image_url: imageData.image_url,
-          thumbnail_url: imageData.thumbnail_url,
-          image_order: index
-        }));
-
-        const { error: insertError } = await supabase.from('product_images').insert(imagesToInsert);
-        
-        if (insertError) {
-          console.error('❌ [processProductImages] Error insertando imágenes:', insertError);
-          throw insertError;
-        }
-
-        console.log(`✅ [processProductImages] Procesamiento completado exitosamente para producto ${productId}`)
-      }
-      
-    } catch (error) {
-      console.error('❌ [processProductImages] Error en procesamiento:', error);
-      throw error;
-    }
-  },
   /**
    * Procesar tramos de precio
    */
@@ -535,6 +453,10 @@ const useSupplierProductsBase = create((set, get) => ({
       }
 
       console.log('✅ [processPriceTiers] Tramos de precio procesados exitosamente')
+      try {
+        queryClient.invalidateQueries({ queryKey: ['productPriceTiers', productId] })
+        queryClient.invalidateQueries({ queryKey: QUERY_KEYS.PRODUCT(productId) })
+      } catch (_) {}
     } catch (error) {
       console.error('🔥 [processPriceTiers] Error procesando tramos:', error)
       throw error
@@ -916,3 +838,29 @@ const useSupplierProductsBase = create((set, get) => ({
 }))
 
 export default useSupplierProductsBase
+
+// Listener global para hidratar thumbnails en este store también
+let __BASE_THUMBS_LISTENER_ATTACHED = false;
+try {
+  if (typeof window !== 'undefined' && !__BASE_THUMBS_LISTENER_ATTACHED) {
+    window.addEventListener('productImagesReady', async (ev) => {
+      try {
+        const detail = ev?.detail;
+        if (!detail || !detail.productId) return;
+        if (detail.phase && !/^thumbnails_/.test(detail.phase)) return;
+        const productId = detail.productId;
+        const { data, error } = await supabase
+          .from('product_images')
+          .select('thumbnails, thumbnail_url')
+          .eq('product_id', productId)
+          .eq('image_order', 0)
+          .single();
+        if (error || !data || !data.thumbnails) return;
+        useSupplierProductsBase.setState((state) => ({
+          products: state.products.map(p => p.productid === productId ? { ...p, thumbnails: data.thumbnails, thumbnail_url: data.thumbnail_url } : p)
+        }));
+      } catch (_) { /* noop */ }
+    });
+    __BASE_THUMBS_LISTENER_ATTACHED = true;
+  }
+} catch (_) { /* noop */ }

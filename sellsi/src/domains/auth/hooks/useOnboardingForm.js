@@ -83,7 +83,7 @@ export const useOnboardingForm = (onClose) => {
     e.preventDefault();
     
     if (!isFormValid()) {
-      showBanner('Por favor completa todos los campos requeridos', 'error');
+  showBanner({ message: 'Por favor completa todos los campos requeridos', severity: 'error' });
       return;
     }
 
@@ -131,7 +131,7 @@ export const useOnboardingForm = (onClose) => {
         throw new Error(`Error al guardar el perfil: ${error.message}`);
       }
 
-      showBanner('¡Perfil completado exitosamente!', 'success');
+  showBanner({ message: '¡Perfil completado exitosamente!', severity: 'success' });
       
       // Recargar para reflejar cambios
       setTimeout(() => {
@@ -142,7 +142,7 @@ export const useOnboardingForm = (onClose) => {
 
     } catch (error) {
       console.error('Error en onboarding:', error);
-      showBanner(error.message || 'Error al completar el onboarding', 'error');
+  showBanner({ message: error.message || 'Error al completar el onboarding', severity: 'error' });
     } finally {
       setLoading(false);
     }

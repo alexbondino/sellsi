@@ -8,6 +8,8 @@ import {
   ThemeProvider,
   CircularProgress,
   Skeleton,
+  useTheme,
+  useMediaQuery,
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import AddIcon from '@mui/icons-material/Add';
@@ -44,6 +46,9 @@ const ChartFallback = () => (
 
 const ProviderHome = () => {
   const navigate = useNavigate();
+
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
   // Modal de validación bancaria
   const {
@@ -107,31 +112,24 @@ const ProviderHome = () => {
    * Si después de 3 segundos no hay datos y no está cargando, intentar recargar
    */
   useEffect(() => {
-    const checkAndRetryLoad = setTimeout(async () => {
+    // Reintento condicional: si tras 3s seguimos sin datos y no hay error.
+    const timer = setTimeout(async () => {
       if (!loading && products.length === 0 && !error) {
-        console.log(
-          'Datos vacíos detectados después del montaje inicial, reintentando carga...'
-        );
         try {
-          const {
-            data: { session },
-          } = await supabase.auth.getSession();
-
+          const { data: { session } } = await supabase.auth.getSession();
           if (session?.user?.id) {
-            // Refrescar dashboard y productos en paralelo
             await Promise.all([
-              refreshDashboard(),
-              loadProducts(session.user.id),
+              refreshDashboard?.(),
+              loadProducts?.(session.user.id)
             ]);
           }
-        } catch (error) {
-          console.error('Error refreshing data:', error);
+        } catch (e) {
+          console.error('[ProviderHome] Retry load failed', e);
         }
       }
-    }, 3000); // Esperar 3 segundos antes de verificar
-
-    return () => clearTimeout(checkAndRetryLoad);
-  }, []); // Solo ejecutar una vez después del montaje
+    }, 3000);
+    return () => clearTimeout(timer);
+  }, [loading, products.length, error, refreshDashboard, loadProducts]);
 
   const handleRetry = () => {
     // Reload dashboard data
@@ -147,7 +145,7 @@ const ProviderHome = () => {
             backgroundColor: 'background.default',
             minHeight: '100vh',
             pt: { xs: 4.5, md: 5 },
-            px: 3,
+            px: { xs: 0, md: 3 },
             pb: SPACING_BOTTOM_MAIN,
             ml: { xs: 0, md: 10, lg: 14, xl: 24 },
           }}
@@ -156,7 +154,7 @@ const ProviderHome = () => {
           <Button variant="contained" onClick={() => funcionQueNoExiste()}>
             Presióname
           </Button>
-          <Container maxWidth="xl" disableGutters>
+          <Container maxWidth={isMobile ? false : "xl"} disableGutters={isMobile ? true : false}>
             <Grid container spacing={3}>
               <Grid size={12}>
                 <Box sx={{ mb: 4 }}>

@@ -67,7 +67,7 @@ export const useShippingValidation = (cartItems = [], isAdvancedMode = false) =>
       if (!userRegion) {
         return {
           state: SHIPPING_STATES.NO_SHIPPING_INFO,
-          message: 'Configura tu región de envío en tu perfil',
+          message: 'Configura tu dirección de despacho en tu perfil',
           canShip: false
         };
       }

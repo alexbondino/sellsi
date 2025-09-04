@@ -7,7 +7,7 @@
  * en el manejo de productos por unidad y por tramos.
  */
 
-import React, { useState, useCallback, useEffect } from 'react'
+import React, { useState, useCallback, useEffect, useRef } from 'react'
 import { useSupplierProducts } from './useSupplierProducts'
 import { convertDbRegionsToForm } from '../../../utils/shippingRegionsUtils'
 import { 
@@ -99,6 +99,8 @@ export const useProductForm = (productId = null) => {
   const [errors, setErrors] = useState({})
   const [touched, setTouched] = useState({})
   const [isDirty, setIsDirty] = useState(false)
+  const [userHasTouchedImages, setUserHasTouchedImages] = useState(false)
+  const [lastThumbSignature, setLastThumbSignature] = useState(null)
 
   // 🔧 FIX EDIT: Estado original para detectar cambios reales en modo edición
   const [originalFormData, setOriginalFormData] = useState(() => {
@@ -119,6 +121,40 @@ export const useProductForm = (productId = null) => {
     const validationResult = ProductValidator.validateProduct(formData);
     return validationResult.isValid;
   }, [formData]);
+
+  // Selective rehydration listener for thumbnail updates
+  useEffect(() => {
+    if (!productId) return
+    function handleImagesPhase(e) {
+      if (!e?.detail) return
+      const { productId: evtProductId, phase, previousSignature, newSignature } = e.detail
+      if (evtProductId !== productId) return
+      if (!['thumbnails_ready','thumbnails_skipped_webp','thumbnails_partial'].includes(phase)) return
+      if (userHasTouchedImages) return // respeto interacción del usuario
+      // Reconsultar fila principal para obtener thumbnail_url y signature
+      const supabase = window?.supabase || window?.supabaseClient
+      if (!supabase) return
+      supabase.from('product_images')
+        .select('thumbnail_url,thumbnail_signature,image_url')
+        .eq('product_id', productId)
+        .eq('image_order', 0)
+        .maybeSingle()
+        .then(({ data }) => {
+          if (!data) return
+          const mainImage = formData.imagenes[0]
+          // Actualizar sólo si antes estaba vacío el thumbnail y ahora existe
+            if (mainImage && !mainImage.thumbnail_url && data.thumbnail_url) {
+              setFormData(prev => ({
+                ...prev,
+                imagenes: prev.imagenes.map((img, idx) => idx === 0 ? { ...img, thumbnail_url: data.thumbnail_url } : img)
+              }))
+              setLastThumbSignature(data.thumbnail_signature || newSignature || previousSignature || null)
+            }
+        })
+    }
+    window.addEventListener('productImagesReady', handleImagesPhase)
+    return () => window.removeEventListener('productImagesReady', handleImagesPhase)
+  }, [productId, formData.imagenes, userHasTouchedImages])
 
   // 🔧 FIX EDIT: Función para comparar profundamente los datos del formulario
   const hasActualChanges = React.useMemo(() => {
@@ -200,6 +236,8 @@ export const useProductForm = (productId = null) => {
     const pricingType = hasPriceTiers ? PRICING_TYPES.TIER : PRICING_TYPES.UNIT
 
     return {
+      // Preservar referencia al producto para controles internos
+      productid: product.productid,
       nombre: product.nombre || '',
       descripcion: product.descripcion || '',
       categoria: product.categoria || '',
@@ -243,6 +281,10 @@ export const useProductForm = (productId = null) => {
       activo: product.activo !== false,
       shippingRegions: convertDbRegionsToForm(product.delivery_regions || []),
     }
+  }
+
+  const markImagesTouched = () => {
+    if (!userHasTouchedImages) setUserHasTouchedImages(true)
   }
 
   /**
@@ -402,6 +444,7 @@ export const useProductForm = (productId = null) => {
   const handlePricingTypeChange = useCallback((newType) => {
     setFormData(prev => {
       const newFormData = { ...prev, pricingType: newType }
+  // (Eliminado) Llamada accidental a markImagesTouched aquí causaba error de sintaxis.
       
       if (newType === PRICING_TYPES.UNIT) {
         // Cambio a pricing por unidad - limpiar tramos
@@ -570,24 +613,23 @@ export const useProductForm = (productId = null) => {
     setIsDirty(false)
   }, [isEditMode, productId, uiProducts])
 
-  // Cargar producto cuando esté disponible
+  // Cargar producto cuando uiProducts lo provea (hidratar una sola vez)
+  const hasHydratedRef = useRef(false)
   useEffect(() => {
-    if (isEditMode && productId && uiProducts.length > 0) {
-      const product = uiProducts.find(
-        (p) => p.productid?.toString() === productId?.toString()
-      )
-      if (product) {
-        // Solo cargar si el formulario está vacío o es un producto diferente
-        const currentProductId = formData.productid || formData.id
-        if (!currentProductId || currentProductId.toString() !== productId.toString()) {
-          const mappedProduct = mapProductToForm(product)
-          setFormData(mappedProduct)
-          // 🔧 FIX: Actualizar también originalFormData para detectar cambios correctamente
-          setOriginalFormData(mappedProduct)
-        }
-      }
-    }
-  }, [isEditMode, productId]) // REMOVIDO: uiProducts, formData.productid, formData.id
+    if (!isEditMode || !productId) return
+    if (hasHydratedRef.current) return
+    if (!uiProducts || uiProducts.length === 0) return
+
+    const product = uiProducts.find(
+      (p) => p.productid?.toString() === productId?.toString()
+    )
+    if (!product) return
+
+    const mappedProduct = mapProductToForm(product)
+    setFormData(mappedProduct)
+    setOriginalFormData(mappedProduct)
+    hasHydratedRef.current = true
+  }, [isEditMode, productId, uiProducts])
 
   // 🔧 NUEVO: Efecto para sincronizar compra mínima con primer tramo cuando es pricing por volumen
   useEffect(() => {
@@ -622,6 +664,8 @@ export const useProductForm = (productId = null) => {
     submitForm,
     resetForm,
     validateForm,
+  // Exponer para que la UI marque interacción con imágenes y bloquee rehidratación automática
+  markImagesTouched,
     
     // Utilidades
     hasErrors: Object.values(errors).some((v) => !!v),

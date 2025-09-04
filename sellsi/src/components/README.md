@@ -36,10 +36,10 @@ WhatsAppWidget
 | userId   | string  | No        | ID de usuario para verificación de ban      |
 
 ### Loader
-| Prop     | Tipo    | Requerido | Descripción                                 |
-|----------|---------|-----------|---------------------------------------------|
-| size     | number  | No        | Tamaño del loader                           |
-| logoSize | number  | No        | Tamaño del logo dentro del loader           |
+| Prop     | Tipo    | Requerido | Descripción                                 | Default |
+|----------|---------|-----------|---------------------------------------------|---------|
+| size     | number  | No        | Tamaño del loader (diámetro del círculo)    | 80      |
+| logoSize | number  | No        | Tamaño del logo central                     | 48      |
 
 ## 5. Hooks personalizados
 ### useBanStatus(userId, checkIp)
@@ -80,13 +80,17 @@ const { banStatus, isLoading, error } = useBanStatus(userId, true);
 
 ### Loader
 ```jsx
-<Loader size={80} logoSize={48} />
+// Uso básico (usa defaults centralizados)
+<Loader />
+
+// Override puntual
+<Loader size={150} logoSize={40} />
 ```
 
 ## 10. Rendimiento y optimización
 - Uso de React.lazy y Suspense para cargar BanPageView bajo demanda.
-- Loader optimizado para mostrar animaciones ligeras.
+- Loader optimizado: imagen WebP liviana y constantes exportadas (`LOADER_DEFAULT_SIZE=80`, `LOADER_DEFAULT_LOGO_SIZE=48`) para consistencia global.
 
 ## 11. Actualización
 - Creado: 18/07/2025
-- Última actualización: 18/07/2025
+- Última actualización: 30/08/2025

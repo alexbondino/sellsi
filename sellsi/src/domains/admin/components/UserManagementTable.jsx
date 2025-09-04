@@ -11,15 +11,15 @@
  * @date 10 de Julio de 2025
  */
 
-import React, { useState, useEffect, useMemo, memo, useCallback } from 'react';
+import React, { useState, useMemo, memo, useCallback, useRef } from 'react';
 import {
   Box,
   Paper,
   Typography,
-  Chip,
   IconButton,
   Tooltip,
   TextField,
+  Popover,
   Select,
   MenuItem,
   FormControl,
@@ -36,7 +36,8 @@ import {
   Checkbox,
   Avatar,
   Switch,
-  Button
+  Button,
+  Chip
 } from '@mui/material';
 import {
   Block as BlockIcon,
@@ -44,7 +45,6 @@ import {
   Visibility as ViewIcon,
   Person as PersonIcon,
   Store as StoreIcon,
-  Refresh as RefreshIcon,
   Search as SearchIcon,
   FilterList as FilterIcon,
   Info as InfoIcon,
@@ -52,50 +52,31 @@ import {
   Cancel as UnverifiedIcon,
   Delete as DeleteIcon
 } from '@mui/icons-material';
+import { Refresh as RefreshIcon } from '@mui/icons-material';
 
 // Importar componentes UI existentes
 import { Modal } from '../../../shared/components/feedback';
 import AdminStatCard from './AdminStatCard';
-import { getUsers, getUserStats, banUser, unbanUser, verifyUser, unverifyUser, deleteUser, deleteMultipleUsers } from '../../../domains/admin';
+// 🔍 Reemplazo de import desde barrel '../../../domains/admin' para reducir ciclos
+import { banUser, unbanUser, verifyUser, unverifyUser, deleteUser, deleteMultipleUsers } from '../services/adminUserService';
+// Extracted logic
+import { USER_STATUS, USER_FILTERS } from '../components/userManagementTable/constants/userConstants';
+import { getUserStatus, getUserActiveProducts, getCurrentAdminId } from '../components/userManagementTable/utils/userUtils';
+import { useAdminUsersData } from '../components/userManagementTable/hooks/useAdminUsersData';
+import { useUserFilters } from '../components/userManagementTable/hooks/useUserFilters';
+import { useUserSelection } from '../components/userManagementTable/hooks/useUserSelection';
+import { useUserModals } from '../components/userManagementTable/hooks/useUserModals';
+import { useUserActions } from '../components/userManagementTable/hooks/useUserActions';
 
 // Importar modales
+// (UserStatsHeader, UserFiltersBar, UsersTable) removidos por ahora; se usa implementación inline tras refactor.
 import UserBanModal from '../modals/UserBanModal';
 import UserDetailsModal from '../modals/UserDetailsModal';
 import UserVerificationModal from '../modals/UserVerificationModal';
 import UserDeleteModal from '../modals/UserDeleteModal';
 import UserDeleteMultipleModal from '../modals/UserDeleteMultipleModal';
 
-// ✅ CONSTANTS
-const USER_STATUS = {
-  active: { color: 'success', icon: '✅', label: 'Activo' },
-  banned: { color: 'error', icon: '🚫', label: 'Baneado' },
-  inactive: { color: 'warning', icon: '⏸️', label: 'Inactivo' }
-};
-
-const USER_FILTERS = [
-  { value: 'all', label: 'Todos los usuarios' },
-  { value: 'active', label: 'Usuarios activos' },
-  { value: 'banned', label: 'Usuarios baneados' },
-  { value: 'inactive', label: 'Usuarios inactivos' },
-  { value: 'suppliers', label: 'Solo proveedores' },
-  { value: 'buyers', label: 'Solo compradores' },
-  { value: 'verified', label: 'Solo verificados' }
-];
-
-// ✅ UTILITY FUNCTIONS
-const getCurrentAdminId = () => {
-  try {
-    const adminUser = localStorage.getItem('adminUser');
-    if (adminUser) {
-      const user = JSON.parse(adminUser);
-      return user.id;
-    }
-    return null;
-  } catch (error) {
-    console.error('Error getting admin ID:', error);
-    return null;
-  }
-};
+// constants & utils moved out (see imports)
 
 // ✅ COMMON STYLES
 const commonStyles = {
@@ -112,9 +93,6 @@ const commonStyles = {
     borderRadius: 2,
     backgroundColor: '#f8f9fa',
     overflowX: 'hidden' // Previene scroll horizontal en filtros
-  },
-  tableContainer: {
-    mb: 3
   },
   tableHeader: {
     backgroundColor: '#1976d2',
@@ -151,70 +129,24 @@ const UserManagementTable = memo(() => {
   // 🔧 ESTADO
   // ========================================
   
-  const [users, setUsers] = useState([]);
-  const [stats, setStats] = useState({});
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [initialLoadComplete, setInitialLoadComplete] = useState(false);
-  
-  // Filtros
-  const [filters, setFilters] = useState({
-    status: 'all',
-    search: '',
-    userType: 'all'
-  });
+  const { users, stats, loading, error, setError, initialLoadComplete, loadData } = useAdminUsersData();
+  const { filters, handleFilterChange, searchTerm, debouncedSearchTerm, filteredUsers } = useUserFilters(users);
+  const { selectedUsers, handleUserSelect, handleSelectAll, clearSelection } = useUserSelection(filteredUsers);
 
-  // Estado para búsqueda con debounce
-  const [searchTerm, setSearchTerm] = useState('');
-  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
-
-  // Debounce para el campo de búsqueda
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearchTerm(searchTerm);
-    }, 150); // Reducido a 150ms para mejor responsividad
-
-    return () => clearTimeout(timer);
-  }, [searchTerm]);
-
-  // Actualizar el filtro cuando cambie el término de búsqueda con debounce
-  useEffect(() => {
-    setFilters(prev => ({
-      ...prev,
-      search: debouncedSearchTerm
-    }));
-  }, [debouncedSearchTerm]);
-
-  // Estado de selección múltiple
-  const [selectedUsers, setSelectedUsers] = useState(new Set());
+  // Copiar ID: estado para popover y feedback de copiado
+  const [idAnchor, setIdAnchor] = useState(null);
+  const [copiedId, setCopiedId] = useState(false);
+  const idCopyTimerRef = useRef(null);
+  const [idOpenUserId, setIdOpenUserId] = useState(null);
 
   // Modales
-  const [banModal, setBanModal] = useState({
-    open: false,
-    user: null,
-    action: 'ban' // 'ban' | 'unban'
-  });
-
-  const [detailsModal, setDetailsModal] = useState({
-    open: false,
-    user: null
-  });
-
-  const [verificationModal, setVerificationModal] = useState({
-    open: false,
-    user: null,
-    action: 'verify' // 'verify' | 'unverify'
-  });
-
-  const [deleteModal, setDeleteModal] = useState({
-    open: false,
-    user: null
-  });
-
-  const [deleteMultipleModal, setDeleteMultipleModal] = useState({
-    open: false,
-    users: []
-  });
+  const {
+    banModal, openBanModal, closeBanModal,
+    detailsModal, openDetailsModal, closeDetailsModal,
+    verificationModal, openVerificationModal, closeVerificationModal,
+    deleteModal, openDeleteModal, closeDeleteModal,
+    deleteMultipleModal, openDeleteMultipleModal, closeDeleteMultipleModal
+  } = useUserModals();
 
   // Estado para evitar foco no deseado en el campo de búsqueda
   const [preventSearchFocus, setPreventSearchFocus] = useState(false);
@@ -223,311 +155,52 @@ const UserManagementTable = memo(() => {
   // 🔧 EFECTOS
   // ========================================
 
-  // Cargar datos solo una vez al iniciar
-  useEffect(() => {
-    loadData();
-  }, []);
+  // filtering/selection logic moved to hooks
 
-  // ========================================
-  // 🔧 HELPER FUNCTIONS
-  // ========================================
-
-  const getUserStatus = (user) => {
-    // Verificar si el usuario está baneado
-    if (user.banned === true) return 'banned';
-    // Verificar si el usuario está inactivo
-    if (user.is_active === false) return 'inactive';
-    // Por defecto, usuario activo
-    return 'active';
+  const handleOpenId = (event, userId) => {
+    setIdAnchor(event.currentTarget);
+    setIdOpenUserId(userId);
+  };
+  const handleCloseId = () => {
+    setIdAnchor(null);
+    setIdOpenUserId(null);
+    if (idCopyTimerRef.current) {
+      clearTimeout(idCopyTimerRef.current);
+      idCopyTimerRef.current = null;
+    }
+    setCopiedId(false);
   };
 
-  const getUserActiveProducts = (user) => {
-    // Retorna el conteo de productos activos del usuario
-    return user.active_products_count || 0;
-  };
-
-  // ========================================
-  // 🔧 MEMOIZED VALUES - FILTRADO LOCAL
-  // ========================================
-
-  // Filtrado en memoria - no hace consultas a la API
-  const filteredUsers = useMemo(() => {
-    if (!users.length) return [];
-
-    return users.filter(user => {
-      // Filtro por estado
-      if (filters.status !== 'all') {
-        const userStatus = getUserStatus(user);
-        if (filters.status === 'suppliers' && !user.main_supplier) return false;
-        if (filters.status === 'buyers' && user.main_supplier) return false;
-        if (filters.status === 'verified' && !user.verified) return false;
-        if (filters.status !== 'suppliers' && filters.status !== 'buyers' && filters.status !== 'verified' && userStatus !== filters.status) return false;
-      }
-
-      // Filtro por tipo de usuario
-      if (filters.userType === 'suppliers' && !user.main_supplier) return false;
-      if (filters.userType === 'buyers' && user.main_supplier) return false;
-
-      // Filtro por búsqueda - busca en nombre, email e ID
-      if (filters.search) {
-        const searchTerm = filters.search.toLowerCase();
-        return (
-          user.user_nm?.toLowerCase().includes(searchTerm) ||
-          user.email?.toLowerCase().includes(searchTerm) ||
-          user.user_id?.toLowerCase().includes(searchTerm)
-        );
-      }
-
-      return true;
-    });
-  }, [users, filters]);
-
-  // ========================================
-  // 🔧 HANDLERS
-  // ========================================
-
-  const loadData = async () => {
-    setLoading(true);
-    setError('');
-
+  const handleCopyId = async (text) => {
     try {
-      // Cargar todos los usuarios sin filtros (filtrado local)
-      const [usersResult, statsResult] = await Promise.all([
-        getUsers({}), // Sin filtros - cargar todos
-        getUserStats()
-      ]);
-
-      if (usersResult.success) {
-        setUsers(usersResult.data || []);
-        setInitialLoadComplete(true);
-      } else {
-        setError(usersResult.error || 'Error cargando usuarios');
-      }
-
-      if (statsResult.success) {
-        setStats(statsResult.stats || {});
-      }
-    } catch (error) {
-      console.error('Error cargando datos:', error);
-      setError('Error interno del servidor');
-    } finally {
-      setLoading(false);
-    }
+      if (!text) return;
+      await navigator.clipboard.writeText(text);
+      setCopiedId(true);
+      if (idCopyTimerRef.current) clearTimeout(idCopyTimerRef.current);
+      idCopyTimerRef.current = setTimeout(() => setCopiedId(false), 3000);
+    } catch (_) {}
   };
 
-  const handleFilterChange = useCallback((field, value) => {
-    if (field === 'search') {
-      setSearchTerm(value);
-    } else {
-      setFilters(prev => ({
-        ...prev,
-        [field]: value
-      }));
-    }
-  }, []);
+  // select all handled in hook (handleSelectAll)
 
-  const handleUserSelect = useCallback((userId, isSelected) => {
-    setSelectedUsers(prev => {
-      const newSet = new Set(prev);
-      if (isSelected) {
-        newSet.add(userId);
-      } else {
-        newSet.delete(userId);
-      }
-      return newSet;
-    });
-  }, []);
-
-  const handleSelectAll = useCallback((isSelected) => {
-    if (isSelected) {
-      setSelectedUsers(new Set(filteredUsers.map(user => user.user_id)));
-    } else {
-      setSelectedUsers(new Set());
-    }
-  }, [filteredUsers]);
-
-  const openBanModal = useCallback((user, action) => {
-    setBanModal({
-      open: true,
-      user,
-      action
-    });
-  }, []);
-
-  const closeBanModal = useCallback(() => {
-    setBanModal({
-      open: false,
-      user: null,
-      action: 'ban'
-    });
-  }, []);
-
-  const openDetailsModal = useCallback((user) => {
-    setDetailsModal({
-      open: true,
-      user
-    });
-  }, []);
-
-  const closeDetailsModal = useCallback(() => {
-    setDetailsModal({
-      open: false,
-      user: null
-    });
-  }, []);
-
-  const openVerificationModal = useCallback((user, action) => {
-    setVerificationModal({
-      open: true,
-      user,
-      action
-    });
-  }, []);
-
-  const closeVerificationModal = useCallback(() => {
-    setVerificationModal({
-      open: false,
-      user: null,
-      action: 'verify'
-    });
-  }, []);
-
-  const openDeleteModal = useCallback((user) => {
+  const openDeleteModalWrapped = useCallback((user) => { setPreventSearchFocus(true); openDeleteModal(user); }, [openDeleteModal]);
+  const closeDeleteModalWrapped = useCallback(() => { closeDeleteModal(); setTimeout(() => setPreventSearchFocus(false), 100); }, [closeDeleteModal]);
+  const openDeleteMultipleModalWrapped = useCallback(() => {
     setPreventSearchFocus(true);
-    setDeleteModal({
-      open: true,
-      user
-    });
-  }, []);
+    const selectedUsersArray = filteredUsers.filter(u => selectedUsers.has(u.user_id));
+    openDeleteMultipleModal(selectedUsersArray);
+  }, [filteredUsers, selectedUsers, openDeleteMultipleModal]);
+  const closeDeleteMultipleModalWrapped = useCallback(() => { closeDeleteMultipleModal(); setTimeout(() => setPreventSearchFocus(false), 100); }, [closeDeleteMultipleModal]);
 
-  const closeDeleteModal = useCallback(() => {
-    setDeleteModal({
-      open: false,
-      user: null
-    });
-    setTimeout(() => setPreventSearchFocus(false), 100);
-  }, []);
-
-  const openDeleteMultipleModal = useCallback(() => {
-    setPreventSearchFocus(true);
-    const selectedUsersArray = filteredUsers.filter(user => 
-      selectedUsers.has(user.user_id)
-    );
-    setDeleteMultipleModal({
-      open: true,
-      users: selectedUsersArray
-    });
-  }, [filteredUsers, selectedUsers]);
-
-  const closeDeleteMultipleModal = useCallback(() => {
-    setDeleteMultipleModal({
-      open: false,
-      users: []
-    });
-    setTimeout(() => setPreventSearchFocus(false), 100);
-  }, []);
-
-  const handleBanConfirm = useCallback(async (reason) => {
-    const { user, action } = banModal;
-    try {
-      const adminId = getCurrentAdminId();
-      if (!adminId) {
-        setError('No hay sesión administrativa activa');
-        return;
-      }
-
-      const result = action === 'ban' 
-        ? await banUser(user.user_id, reason, adminId)
-        : await unbanUser(user.user_id, reason, adminId);
-
-      if (result.success) {
-        await loadData();
-        closeBanModal();
-        // TODO: Mostrar notificación de éxito
-      } else {
-        setError(result.error || `Error al ${action === 'ban' ? 'banear' : 'desbanear'} usuario`);
-      }
-    } catch (error) {
-      console.error(`Error en ${action}:`, error);
-      setError('Error interno del servidor');
-    }
-  }, [banModal, closeBanModal]);
-
-  const handleVerificationConfirm = useCallback(async (reason) => {
-    const { user, action } = verificationModal;
-    try {
-      const adminId = getCurrentAdminId();
-      if (!adminId) {
-        setError('No hay sesión administrativa activa');
-        return;
-      }
-
-      const result = action === 'verify' 
-        ? await verifyUser(user.user_id, reason, adminId)
-        : await unverifyUser(user.user_id, reason, adminId);
-
-      if (result.success) {
-        await loadData();
-        closeVerificationModal();
-        // TODO: Mostrar notificación de éxito
-      } else {
-        setError(result.error || `Error al ${action === 'verify' ? 'verificar' : 'desverificar'} usuario`);
-      }
-    } catch (error) {
-      console.error(`Error en ${action}:`, error);
-      setError('Error interno del servidor');
-    }
-  }, [verificationModal, closeVerificationModal]);
-
-  const handleDeleteConfirm = useCallback(async (userId) => {
-    try {
-      const adminId = getCurrentAdminId();
-      if (!adminId) {
-        setError('No hay sesión administrativa activa');
-        return;
-      }
-
-      const result = await deleteUser(userId, adminId);
-      if (result.success) {
-        await loadData();
-        closeDeleteModal();
-        // TODO: Mostrar notificación de éxito
-      } else {
-        setError(result.error || 'Error al eliminar usuario');
-      }
-    } catch (error) {
-      console.error('Error eliminando usuario:', error);
-      setError('Error interno del servidor');
-    }
-  }, []);
-
-  const handleDeleteMultipleConfirm = useCallback(async (userIds) => {
-    try {
-      const adminId = getCurrentAdminId();
-      if (!adminId) {
-        setError('No hay sesión administrativa activa');
-        return;
-      }
-
-      const result = await deleteMultipleUsers(userIds, adminId);
-      if (result.success) {
-        await loadData();
-        setSelectedUsers(new Set()); // Limpiar selección
-        closeDeleteMultipleModal();
-        
-        if (result.errors.length > 0) {
-          setError(`Se eliminaron ${result.deleted} de ${userIds.length} usuarios. Algunos usuarios tuvieron errores.`);
-        } else {
-          // TODO: Mostrar notificación de éxito
-        }
-      } else {
-        setError(result.error || 'Error al eliminar usuarios');
-      }
-    } catch (error) {
-      console.error('Error eliminando usuarios:', error);
-      setError('Error interno del servidor');
-    }
-  }, []);
+  const { handleBanConfirm, handleVerificationConfirm, handleDeleteConfirm, handleDeleteMultipleConfirm } = useUserActions({
+    loadData,
+    setError,
+    closeBanModal,
+    closeVerificationModal,
+    closeDeleteModal: closeDeleteModalWrapped,
+    closeDeleteMultipleModal: closeDeleteMultipleModalWrapped,
+    clearSelection
+  });
 
   // ========================================
   // 🎨 RENDER COMPONENTS
@@ -579,42 +252,16 @@ const UserManagementTable = memo(() => {
     </Grid>
   ), [stats]);
 
-  const menuPropsEstado = useMemo(() => ({
-    disableScrollLock: true,
-    PaperProps: {
-      style: {
-        maxHeight: 300,
-        minWidth: 200
-      }
-    },
-    anchorOrigin: {
-      vertical: 'bottom',
-      horizontal: 'left'
-    },
-    transformOrigin: {
-      vertical: 'top',
-      horizontal: 'left'
-    }
-  }), []);
-  const menuPropsTipo = menuPropsEstado;
-  const sxEstado = useMemo(() => ({ '& .MuiSelect-select': { minHeight: 'auto' }, maxWidth: '100%' }), []);
-  const sxTipo = useMemo(() => ({ minWidth: 200, maxWidth: 260, width: '260px', '& .MuiSelect-select': { minHeight: 'auto' } }), []);
-
   const renderFilters = useCallback(() => (
     <Paper sx={commonStyles.filtersSection}>
       <Grid container spacing={3} alignItems="center">
         <Grid item xs={12} sm={6} md={3}>
-          <FormControl 
-            fullWidth 
-            size="medium" 
-            sx={sxEstado}
-          >
+          <FormControl fullWidth size="medium">
             <InputLabel>Estado</InputLabel>
             <Select
               value={filters.status}
               onChange={(e) => handleFilterChange('status', e.target.value)}
               label="Estado"
-              MenuProps={menuPropsEstado}
             >
               {USER_FILTERS.map(filter => (
                 <MenuItem key={filter.value} value={filter.value}>
@@ -625,17 +272,12 @@ const UserManagementTable = memo(() => {
           </FormControl>
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
-          <FormControl 
-            fullWidth 
-            size="medium" 
-            sx={sxTipo}
-          >
+          <FormControl fullWidth size="medium">
             <InputLabel>Tipo de Usuario</InputLabel>
             <Select
               value={filters.userType}
               onChange={(e) => handleFilterChange('userType', e.target.value)}
               label="Tipo de Usuario"
-              MenuProps={menuPropsTipo}
             >
               <MenuItem value="all">Todos</MenuItem>
               <MenuItem value="suppliers">Solo Proveedores</MenuItem>
@@ -683,7 +325,7 @@ const UserManagementTable = memo(() => {
                 variant="contained"
                 color="error"
                 startIcon={<DeleteIcon />}
-                onClick={openDeleteMultipleModal}
+                onClick={openDeleteMultipleModalWrapped}
               >
                 Eliminar {selectedUsers.size} usuario{selectedUsers.size !== 1 ? 's' : ''} seleccionado{selectedUsers.size !== 1 ? 's' : ''}
               </Button>
@@ -692,10 +334,10 @@ const UserManagementTable = memo(() => {
         )}
       </Grid>
     </Paper>
-  ), [filters, handleFilterChange, searchTerm, debouncedSearchTerm, initialLoadComplete, filteredUsers.length, users.length, selectedUsers.size, openDeleteMultipleModal, preventSearchFocus, menuPropsEstado, menuPropsTipo, sxEstado, sxTipo]);
+  ), [filters, handleFilterChange, searchTerm, debouncedSearchTerm, initialLoadComplete, filteredUsers.length, users.length, selectedUsers.size, openDeleteMultipleModalWrapped, preventSearchFocus]);
 
   const renderUsersTable = () => (
-    <TableContainer component={Paper} sx={commonStyles.tableContainer}>
+  <TableContainer component={Paper} sx={{ mb: 3 }}>
       <Table>
         <TableHead>
           <TableRow sx={commonStyles.tableHeader}>
@@ -793,9 +435,36 @@ const UserManagementTable = memo(() => {
                 </TableCell>
 
                 <TableCell>
-                  <Typography variant="body2" color="text.secondary" sx={{ fontFamily: 'monospace' }}>
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ fontFamily: 'monospace', cursor: 'pointer' }}
+                    onClick={(e) => handleOpenId(e, user.user_id)}
+                  >
                     {user.user_id?.slice(0, 8)}...
                   </Typography>
+
+                  <Popover
+                    open={Boolean(idAnchor) && idOpenUserId === user.user_id}
+                    anchorEl={idAnchor}
+                    onClose={handleCloseId}
+                    anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+                    disableScrollLock
+                  >
+                    <Box sx={{ p: 2, minWidth: 300 }}>
+                      <TextField
+                        fullWidth
+                        size="small"
+                        value={user.user_id || ''}
+                        InputProps={{ readOnly: true, sx: { fontFamily: 'monospace' } }}
+                      />
+                      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1 }}>
+                        <Button size="small" variant="contained" onClick={() => handleCopyId(user.user_id)}>
+                          {copiedId ? 'Copiado' : 'Copiar'}
+                        </Button>
+                      </Box>
+                    </Box>
+                  </Popover>
                 </TableCell>
 
                 <TableCell>
@@ -816,6 +485,8 @@ const UserManagementTable = memo(() => {
                     size="small"
                     color={activeProducts > 0 ? 'success' : 'default'}
                     variant="outlined"
+                    clickable={false}
+                    onClick={() => {}}
                   />
                 </TableCell>
 
@@ -825,6 +496,8 @@ const UserManagementTable = memo(() => {
                     size="small"
                     color={USER_STATUS[userStatus].color}
                     sx={commonStyles.statusChip}
+                    clickable={false}
+                    onClick={() => {}}
                   />
                 </TableCell>
 
@@ -834,6 +507,8 @@ const UserManagementTable = memo(() => {
                     size="small"
                     color={user.main_supplier ? 'primary' : 'secondary'}
                     variant="outlined"
+                    clickable={false}
+                    onClick={() => {}}
                   />
                 </TableCell>
 
@@ -844,6 +519,8 @@ const UserManagementTable = memo(() => {
                     color={user.verified ? 'primary' : 'default'}
                     icon={user.verified ? <VerifiedIcon /> : <UnverifiedIcon />}
                     sx={{ minWidth: 120 }}
+                    clickable={false}
+                    onClick={() => {}}
                   />
                 </TableCell>
 
@@ -924,7 +601,7 @@ const UserManagementTable = memo(() => {
                         size="small" 
                         sx={commonStyles.actionButton}
                         color="error"
-                        onClick={() => openDeleteModal(user)}
+                        onClick={() => openDeleteModalWrapped(user)}
                       >
                         <DeleteIcon fontSize="small" />
                       </IconButton>
@@ -1028,7 +705,7 @@ const UserManagementTable = memo(() => {
         open={deleteModal.open}
         user={deleteModal.user}
         onConfirm={handleDeleteConfirm}
-        onClose={closeDeleteModal}
+        onClose={closeDeleteModalWrapped}
       />
 
       {/* Modal de eliminación múltiple de usuarios */}
@@ -1036,7 +713,7 @@ const UserManagementTable = memo(() => {
         open={deleteMultipleModal.open}
         users={deleteMultipleModal.users}
         onConfirm={handleDeleteMultipleConfirm}
-        onClose={closeDeleteMultipleModal}
+        onClose={closeDeleteMultipleModalWrapped}
       />
     </Box>
   );

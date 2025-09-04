@@ -1,21 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { 
-  Box, 
-  Container, 
-  Typography, 
-  Button, 
-  Paper, 
-  Breadcrumbs, 
-  Link,
-  CircularProgress
-} from '@mui/material';
-import { 
-  ArrowBack, 
-  Home, 
-  StorefrontOutlined, 
-  Inventory2Outlined 
-} from '@mui/icons-material';
+import { Box, Container, Typography, Button, Paper } from '@mui/material';
+import { StorefrontOutlined } from '@mui/icons-material';
 import ProductPageView from './ProductPageView';
 import { supabase } from '../../services/supabase';
 import useCartStore from '../../shared/stores/cart/cartStore';
@@ -23,16 +9,13 @@ import { extractProductIdFromSlug } from '../marketplace/utils/productUrl';
 import { convertDbRegionsToForm } from '../../utils/shippingRegionsUtils';
 
 const ProductPageWrapper = ({ isLoggedIn }) => {
-  // Obtener el tipo de vista desde App.jsx vía window o prop global
-  // window.currentAppRole debe ser seteado en App.jsx (temporal/hack) o pásalo por contexto/prop
   let isSupplier = false;
   if (window.currentAppRole) {
     isSupplier = window.currentAppRole === 'supplier';
   } else if (typeof currentAppRole !== 'undefined') {
     isSupplier = currentAppRole === 'supplier';
   }
-  // ...logs eliminados...
-  // Soportar tanto /marketplace/product/:id como /supplier/myproducts/product/:productSlug
+
   const { id, productSlug } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
@@ -41,59 +24,36 @@ const ProductPageWrapper = ({ isLoggedIn }) => {
   const [error, setError] = useState(null);
   const addToCart = useCartStore(state => state.addItem);
 
-  // Detectar de dónde viene el usuario
   const fromValue = location.state?.from;
   const fromMyProducts = fromValue === '/supplier/myproducts';
   const isFromBuyer = fromValue === '/buyer/marketplace';
   const isFromSupplierMarketplace = !fromMyProducts && fromValue === '/supplier/marketplace';
 
-  // ...existing code...
-
   useEffect(() => {
     const fetchProduct = async () => {
-      // Soportar ambos casos: id directo o productSlug (formato: uuid-nombre)
       let productId = id;
-      if (!productId && productSlug) {
-        productId = extractProductIdFromSlug(productSlug);
-      }
-      if (!productId) {
-        setError('ID de producto no válido');
-        setLoading(false);
-        return;
-      }
-
+      if (!productId && productSlug) productId = extractProductIdFromSlug(productSlug);
+      if (!productId) { setError('ID de producto no válido'); setLoading(false); return; }
       try {
         setLoading(true);
-        // Buscar el producto en Supabase
         const { data, error } = await supabase
           .from('products')
-          .select(`
-            *,
-            product_images (*),
-            product_quantity_ranges (*),
-            product_delivery_regions (*),
-            users!products_supplier_id_fkey (
-              user_nm,
-              logo_url,
-              verified
-            )
-          `)
+          .select(`*, product_images (*), product_quantity_ranges (*), product_delivery_regions (*), users!products_supplier_id_fkey (user_nm, logo_url, verified) `)
           .eq('productid', productId)
           .eq('is_active', true)
           .single();
-
         if (error) {
-          console.error('Error fetching product:', error);
           setError('Producto no encontrado');
         } else {
-          // Transformar los datos al formato esperado por ProductPageView
-          const product = {
+          const orderedImages = (data.product_images || []).slice().sort((a,b)=>((a?.image_order||0)-(b?.image_order||0)));
+          const mainImageRecord = orderedImages.find(img=>img && img.image_order===0) || orderedImages[0] || null;
+          setProduct({
             id: data.productid,
             productid: data.productid,
             supplier_id: data.supplier_id,
             nombre: data.productnm,
-            imagen: data.product_images?.[0]?.image_url || '/placeholder-product.jpg',
-            thumbnail_url: data.product_images?.[0]?.thumbnail_url || null, // ✅ NUEVO: Agregar thumbnail_url
+            imagen: (mainImageRecord && mainImageRecord.image_url) || '/placeholder-product.jpg',
+            thumbnail_url: (mainImageRecord && mainImageRecord.thumbnail_url) || null,
             precio: data.price,
             stock: data.productqty,
             categoria: data.category,
@@ -103,103 +63,91 @@ const ProductPageWrapper = ({ isLoggedIn }) => {
             tipo: data.product_type,
             activo: data.is_active,
             proveedor: data.users?.user_nm || 'Proveedor',
-            logo_url: data.users?.logo_url || null, // ✅ NUEVO: Agregar logo del proveedor
-            proveedorVerificado: data.users?.verified || false, // ✅ NUEVO: Agregar estado de verificación
-            verified: data.users?.verified || false, // ✅ NUEVO: Agregar estado de verificación (alternativo)
+            logo_url: data.users?.logo_url || null,
+            proveedorVerificado: data.users?.verified || false,
+            verified: data.users?.verified || false,
             priceTiers: data.product_quantity_ranges || [],
-            imagenes: data.product_images || [],
-            // Regiones de despacho mapeadas al formato correcto
+            imagenes: orderedImages,
+            images: orderedImages,
             shippingRegions: convertDbRegionsToForm(data.product_delivery_regions || []),
             delivery_regions: data.product_delivery_regions || [],
             shipping_regions: data.product_delivery_regions || [],
             product_delivery_regions: data.product_delivery_regions || [],
-            rating: 4.5, // Default rating
-            ventas: Math.floor(Math.random() * 100), // Mock ventas
-            // Flags para controlar visibilidad de acciones de compra
+            rating: 4.5,
+            ventas: Math.floor(Math.random() * 100),
             fromMyProducts,
             isFromSupplierMarketplace,
             isSupplier,
-          };
-          setProduct(product);
+          });
         }
-      } catch (err) {
-        console.error('Error:', err);
+      } catch(e){
         setError('Error al cargar el producto');
       } finally {
         setLoading(false);
       }
     };
-
     fetchProduct();
-  }, [id, productSlug]);
+  }, [id, productSlug, fromMyProducts, isFromSupplierMarketplace, isSupplier]);
+
+  const productWithContext = useMemo(()=>{
+    if(!product) return product;
+    return { ...product, fromMyProducts, isFromSupplierMarketplace, isSupplier };
+  }, [product, fromMyProducts, isFromSupplierMarketplace, isSupplier]);
 
   const handleClose = () => {
-    if (fromMyProducts) {
-      navigate('/supplier/myproducts');
-    } else if (isFromSupplierMarketplace) {
-      navigate('/supplier/marketplace');
-    } else if (isFromBuyer) {
-      navigate('/buyer/marketplace');
-    } else {
-      navigate('/marketplace');
-    }
+    if (fromMyProducts) navigate('/supplier/myproducts');
+    else if (isFromSupplierMarketplace) navigate('/supplier/marketplace');
+    else if (isFromBuyer) navigate('/buyer/marketplace');
+    else navigate('/marketplace');
   };
-
-  const handleGoHome = () => {
-    navigate('/');
-  };
-
-  const handleGoToMarketplace = () => {
-    if (fromMyProducts) {
-      navigate('/supplier/myproducts');
-    } else if (isFromSupplierMarketplace) {
-      navigate('/supplier/marketplace');
-    } else if (isFromBuyer) {
-      navigate('/buyer/marketplace');
-    } else {
-      navigate('/marketplace');
-    }
-  };
+  const handleGoHome = () => navigate('/');
+  const handleGoToMarketplace = () => handleClose();
 
   const handleAddToCart = (cartProduct) => {
-    // Si no viene cantidad, agregar 1 por defecto
     let productToAdd = { ...cartProduct };
-    if (!productToAdd.quantity) {
-      productToAdd.quantity = 1;
-    } else {
-      const quantity = parseInt(productToAdd.quantity);
-      if (isNaN(quantity) || quantity <= 0 || quantity > 15000) {
-        console.error('[Cart] Cantidad inválida detectada:', productToAdd.quantity);
-        return;
-      }
-      productToAdd.quantity = Math.max(1, Math.min(quantity, 15000));
+    if (!productToAdd.quantity) productToAdd.quantity = 1;
+    else {
+      const q = parseInt(productToAdd.quantity);
+      if (isNaN(q) || q <= 0 || q > 15000) return;
+      productToAdd.quantity = Math.max(1, Math.min(q, 15000));
     }
-    // Agregar al carrito real
-    if (addToCart && productToAdd) {
-      addToCart(productToAdd, productToAdd.quantity);
-    } else {
-      console.error('[Cart] addToCart function or productToAdd missing', { addToCart, productToAdd });
-    }
+    if (addToCart && productToAdd) addToCart(productToAdd, productToAdd.quantity);
   };
 
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: 'grey.50' }}>
-      {/* Content area - Condicional según el estado (igual que TechnicalSpecs) */}
       <Box sx={{ pt: 0 }}>
         {loading ? (
-          // Loading state
-          <Box
-            sx={{
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center',
-              minHeight: '50vh',
-            }}
-          >
-            <CircularProgress color="primary" size={48} />
-          </Box>
+          // 🆕 Mostrar loading mientras carga
+          <Container maxWidth="md" sx={{ py: 4 }}>
+            <Box sx={{ 
+              display: 'flex', 
+              justifyContent: 'center', 
+              alignItems: 'center', 
+              minHeight: '50vh' 
+            }}>
+              <Box sx={{ textAlign: 'center' }}>
+                <Typography variant="h6" color="text.secondary" sx={{ mb: 2 }}>
+                  Cargando producto...
+                </Typography>
+                <Box sx={{ 
+                  width: 40, 
+                  height: 40, 
+                  border: '3px solid #f3f3f3', 
+                  borderTop: '3px solid #1976d2', 
+                  borderRadius: '50%', 
+                  animation: 'spin 1s linear infinite',
+                  mx: 'auto',
+                  '@keyframes spin': {
+                    '0%': { transform: 'rotate(0deg)' },
+                    '100%': { transform: 'rotate(360deg)' },
+                  }
+                }} />
+              </Box>
+            </Box>
+          </Container>
         ) : error || !product ? (
-          // Error state - Sin duplicar header ni breadcrumbs
+          // 🆕 Solo mostrar error después de terminar de cargar
           <Container maxWidth="md" sx={{ py: 4 }}>
             <Paper elevation={2} sx={{ p: 4, textAlign: 'center' }}>
               <Typography variant="h5" color="error" gutterBottom>
@@ -208,23 +156,14 @@ const ProductPageWrapper = ({ isLoggedIn }) => {
               <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
                 El producto que buscas no existe o ha sido removido.
               </Typography>
-              <Button
-                variant="contained"
-                startIcon={<StorefrontOutlined />}
-                onClick={handleGoToMarketplace}
-              >
-                {fromMyProducts
-                  ? 'Volver a Mis Productos'
-                  : isFromSupplierMarketplace
-                    ? 'Volver a Marketplace'
-                    : 'Volver al Marketplace'}
+              <Button variant="contained" startIcon={<StorefrontOutlined />} onClick={handleGoToMarketplace}>
+                {fromMyProducts ? 'Volver a Mis Productos' : 'Volver al Marketplace'}
               </Button>
             </Paper>
           </Container>
         ) : (
-          // Product view - Sin duplicar header ni breadcrumbs
           <ProductPageView
-            product={product}
+            product={productWithContext}
             onClose={handleClose}
             onAddToCart={handleAddToCart}
             isPageView={true}
@@ -233,7 +172,6 @@ const ProductPageWrapper = ({ isLoggedIn }) => {
             fromMyProducts={fromMyProducts}
             isFromSupplierMarketplace={isFromSupplierMarketplace}
             isSupplier={isSupplier}
-            // Pasar handlers para breadcrumbs
             onGoHome={handleGoHome}
             onGoToMarketplace={handleGoToMarketplace}
           />

@@ -35,16 +35,16 @@ const ProviderLogo = React.memo(({ provider }) => (
       background: 'transparent',
       border: '2px solid #f0f4f8',
       transition: 'all 0.3s ease',
-      cursor: 'pointer',
+      cursor: 'default',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
       boxShadow: '0 4px 15px rgba(0,0,0,0.2)',
       '&:hover': {
-        transform: 'translateY(-2px)',
-        boxShadow: '0 6px 20px rgba(0,0,0,0.25)',
-        borderColor: '#ffffff',
-        background: 'transparent',
+  transform: 'translateY(-2px)',
+  boxShadow: '0 6px 20px rgba(0,0,0,0.25)',
+  borderColor: '#ffffff',
+  background: 'transparent',
       },
     }}
   >

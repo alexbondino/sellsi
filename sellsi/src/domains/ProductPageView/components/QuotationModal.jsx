@@ -11,11 +11,15 @@ const QuotationModal = ({ open, onClose, product, quantity: initialQuantity, uni
   const [selectedQuantity, setSelectedQuantity] = useState(initialQuantity || 1)
 
   // Calcular datos del producto (similar a AddToCartModal)
-  const productData = useMemo(() => ({
-    stock: product?.stock || product?.maxStock || product?.productqty || 50,
-    maxPurchase: product?.max_purchase || product?.maxPurchase || 999,
-    minimumPurchase: product?.minimum_purchase || product?.compraMinima || initialQuantity || 1,
-  }), [product, initialQuantity]);
+  const productData = useMemo(() => {
+    const stock = product?.stock || product?.maxStock || product?.productqty || 50;
+    const minimumPurchase = product?.minimum_purchase || product?.compraMinima || initialQuantity || 1;
+    return {
+      stock,
+      maxPurchase: stock, // máximo permitido = stock disponible
+      minimumPurchase,
+    };
+  }, [product, initialQuantity]);
 
   // Calcular máximo efectivo (igual que AddToCartModal)
   const maxQuantity = useMemo(() => {
@@ -88,8 +92,8 @@ const QuotationModal = ({ open, onClose, product, quantity: initialQuantity, uni
         
         {/* Nota sobre precios */}
         <Box sx={{ mb: 2 }}>
-          <Typography variant="body2" component="div" sx={{ color: 'text.disabled', fontStyle: 'italic', textAlign: 'center' }}>
-            Los precios están expresados en pesos chilenos (CLP).
+          <Typography variant="body2" component="div" sx={{ color: 'text.disabled', fontStyle: 'italic', textAlign: 'center', fontSize: 12 }}>
+           Valores expresados en pesos chilenos (CLP).
           </Typography>
         </Box>
         

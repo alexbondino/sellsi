@@ -22,7 +22,7 @@ export class StorageHealthMonitor {
    * @returns {Promise<{success: boolean, report: Object, error?: string}>}
    */
   static async runDailyCleanup() {
-    console.log('🧹 [StorageHealthMonitor] Iniciando limpieza diaria...')
+    
     
     try {
       const startTime = Date.now()
@@ -37,7 +37,7 @@ export class StorageHealthMonitor {
       }
 
       const activeProductIds = activeProducts.map(p => p.productid)
-      console.log(`📊 [StorageHealthMonitor] Productos activos encontrados: ${activeProductIds.length}`)
+      
 
       // 2. Ejecutar limpieza masiva
       const cleanupResult = await StorageCleanupService.bulkCleanup(activeProductIds)
@@ -67,7 +67,7 @@ export class StorageHealthMonitor {
         }
       }
 
-      console.log('✅ [StorageHealthMonitor] Limpieza diaria completada:', report)
+      
 
       // 6. Guardar reporte en la base de datos (opcional)
       await this.saveCleanupReport(report)
@@ -97,7 +97,7 @@ export class StorageHealthMonitor {
    * @returns {Promise<Array>} Array de productos huérfanos
    */
   static async detectOrphanProducts() {
-    console.log('🔍 [StorageHealthMonitor] Detectando productos huérfanos...')
+      
     
     try {
       // Obtener productos con imágenes registradas
@@ -124,7 +124,7 @@ export class StorageHealthMonitor {
         !productsWithImagesSet.has(product.productid)
       )
 
-      console.log(`📊 [StorageHealthMonitor] Productos huérfanos detectados: ${orphanProducts.length}`)
+      
 
       return orphanProducts
 
@@ -139,7 +139,7 @@ export class StorageHealthMonitor {
    * @returns {Promise<{success: boolean, report: Object}>}
    */
   static async generateWeeklyReport() {
-    console.log('📊 [StorageHealthMonitor] Generando reporte semanal...')
+    
 
     try {
       // 1. Obtener estadísticas de productos
@@ -174,7 +174,7 @@ export class StorageHealthMonitor {
         orphanProducts: orphanProducts.slice(0, 10) // Primeros 10 para el reporte
       }
 
-      console.log('✅ [StorageHealthMonitor] Reporte semanal generado:', weeklyReport)
+      
       return { success: true, report: weeklyReport }
 
     } catch (error) {
@@ -269,7 +269,7 @@ export class StorageHealthMonitor {
     try {
       // Opcional: Guardar reportes en una tabla dedicada
       // await supabase.from('storage_cleanup_reports').insert(report)
-      console.log('💾 [StorageHealthMonitor] Reporte guardado (simulado)')
+      
     } catch (error) {
       console.warn('⚠️ [StorageHealthMonitor] Error guardando reporte:', error.message)
     }
@@ -280,13 +280,13 @@ export class StorageHealthMonitor {
    * @returns {Promise<{success: boolean, cleaned: number}>}
    */
   static async cleanupOrphanProducts() {
-    console.log('🧹 [StorageHealthMonitor] Limpiando productos huérfanos...')
+    
 
     try {
       const orphanProducts = await this.detectOrphanProducts()
       
       if (orphanProducts.length === 0) {
-        console.log('✅ [StorageHealthMonitor] No hay productos huérfanos para limpiar')
+        
         return { success: true, cleaned: 0 }
       }
 
@@ -301,7 +301,7 @@ export class StorageHealthMonitor {
         }
       }
 
-      console.log(`✅ [StorageHealthMonitor] Limpieza de huérfanos completada: ${totalCleaned} archivos`)
+      
       return { success: true, cleaned: totalCleaned }
 
     } catch (error) {

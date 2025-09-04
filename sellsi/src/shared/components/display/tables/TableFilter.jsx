@@ -6,7 +6,7 @@ const Filter = ({ statusFilter, setStatusFilter }) => {
     'Todos',
     'Pendiente',
     'Aceptado',
-    'En Ruta',
+  'En Transito',
     'Entregado',
     'Pagado',
     'Rechazado',

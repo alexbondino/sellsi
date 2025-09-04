@@ -30,9 +30,181 @@ import QuantitySelector from '../forms/QuantitySelector/QuantitySelector';
 import PriceDisplay from '../display/price/PriceDisplay';
 import { CheckoutSummaryImage } from '../../../components/UniversalProductImage'; // Imagen universal con fallbacks
 import { useUnifiedShippingValidation } from '../../hooks/shipping/useUnifiedShippingValidation';
-import { calculatePriceForQuantity } from '../../../utils/priceCalculation';
+import { calculatePriceForQuantity, normalizePriceTiers } from '../../../utils/priceCalculation';
 import { supabase } from '../../../services/supabase';
+import { useBillingInfoValidation } from '../../hooks/profile/useBillingInfoValidation';
 import { useSupplierDocumentTypes } from '../../utils/supplierDocumentTypes';
+
+// ===============================================
+// Estilos extraídos (optimizan recreación de objetos sx)
+// ===============================================
+const drawerPaperBaseSx = {
+  width: { xs: '100%', sm: 460, md: 518 },
+  maxWidth: '90vw',
+  zIndex: 9999,
+};
+
+const drawerHeaderSx = {
+  p: 2,
+  borderBottom: 1,
+  borderColor: 'primary.dark',
+  bgcolor: 'primary.main',
+  color: 'common.white',
+  position: 'sticky',
+  top: 0,
+  zIndex: 1,
+};
+
+const layoutRootSx = {
+  height: '100%',
+  display: 'flex',
+  flexDirection: 'column',
+};
+
+// Factory para estilos dependientes de estado
+const tierPaperSx = (isActive) => ({
+  p: 2,
+  border: isActive ? 2 : 1,
+  borderColor: isActive ? 'primary.main' : 'grey.300',
+  bgcolor: isActive ? 'primary.50' : 'transparent',
+  cursor: 'default',
+});
+
+// Estilos del contenedor de tiers (antes inline medium, ahora factory por posible dependencia futura)
+const tiersContainerSx = {
+  // Mantener literal: no depende de props/estado actualmente
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 2,
+  // Si se vuelve dinámico (e.g. responsive condicional) convertir en función
+};
+
+// PaperProps del Drawer (objeto grande extraído para evitar recreación inline)
+const drawerPaperProps = {
+  component: motion.div,
+  initial: { x: '100%' },
+  animate: { x: 0 },
+  exit: { x: '100%' },
+  transition: { type: 'tween', duration: 0.3, ease: 'easeInOut' },
+  sx: drawerPaperBaseSx,
+};
+
+// Sx estable para imagen resumen (evita re-render por nuevo objeto)
+const checkoutSummaryImageSx = {
+  width: 50,
+  height: 50,
+  objectFit: 'contain',
+  pointerEvents: 'none',
+};
+
+// ============================================================================
+// COMPONENTE EXTRAÍDO: ProductSummary
+// Motivo: Evitar recreación de la definición en cada render del modal que
+// provocaba remount del subtree (incluyendo la imagen) e impedía que React.memo
+// en CheckoutSummaryImage hiciera efecto. Al extraerlo a nivel de módulo y
+// memoizarlo, los cambios de cantidad ya no fuerzan re-render de la imagen.
+// ============================================================================
+const ProductSummary = React.memo(function ProductSummary({
+  productData,
+  quantity,
+  onQuantityChange,
+  quantityError,
+  minQuantity,
+  maxQuantity,
+  isOfferMode = false,
+  offer = null,
+}) {
+  return (
+    <Paper
+      variant="outlined"
+      sx={{ p: 2 }}
+      onClick={(e) => { e.stopPropagation(); }}
+      onMouseDown={(e) => { e.stopPropagation(); }}
+    >
+      <Stack direction="row" spacing={2} alignItems="center">
+        <Box sx={{ width: 50, height: 50, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <CheckoutSummaryImage
+            product={productData}
+            sx={checkoutSummaryImageSx}
+          />
+        </Box>
+        <Box sx={{ flex: 1 }}>
+          <Stack direction="row" justifyContent="space-between" alignItems="flex-start" sx={{ mb: 0.5 }}>
+            <Typography variant="body1" sx={{ fontWeight: 600, flex: 1, pointerEvents: 'none' }}>
+              {productData.name}
+            </Typography>
+            
+            {/* Mostrar selector de cantidad solo si NO es modo oferta */}
+            {!isOfferMode && (
+              <Box sx={{ ml: 2, pointerEvents: 'auto', position: 'relative' }}>
+                <QuantitySelector
+                  value={quantity}
+                  onChange={onQuantityChange}
+                  min={minQuantity}
+                  max={maxQuantity}
+                  size="small"
+                  orientation="horizontal"
+                  label="Cantidad:"
+                  sx={{
+                    '& .MuiFormHelperText-root': { display: 'none' },
+                  }}
+                />
+                {quantityError && (
+                  <Box
+                    sx={{
+                      position: 'absolute',
+                      top: '100%',
+                      right: 0,
+                      mt: 0.5,
+                      zIndex: 10,
+                      minWidth: 200,
+                    }}
+                  >
+                    <Alert severity="error" variant="filled" sx={{ fontSize: '0.75rem', py: 0.5 }}>
+                      {quantityError}
+                    </Alert>
+                  </Box>
+                )}
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  sx={{
+                    display: 'block',
+                    mt: 0.5,
+                    fontSize: '0.75rem',
+                    pointerEvents: 'none'
+                  }}
+                >
+                  Stock: {productData.stock.toLocaleString('es-CL')}
+                </Typography>
+              </Box>
+            )}
+
+            {/* Mostrar información de cantidad fija si ES modo oferta */}
+            {isOfferMode && offer && (
+              <Box sx={{ ml: 2, textAlign: 'right' }}>
+                <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                  Cantidad fija: {offer.offered_quantity}
+                </Typography>
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  sx={{
+                    display: 'block',
+                    mt: 0.5,
+                    fontSize: '0.75rem',
+                  }}
+                >
+                  (No modificable)
+                </Typography>
+              </Box>
+            )}
+          </Stack>
+        </Box>
+      </Stack>
+    </Paper>
+  );
+});
 
 /**
  * ============================================================================
@@ -56,11 +228,17 @@ const AddToCartModal = ({
   open,
   onClose,
   onAddToCart,
+  onSuccess, // Nuevo: callback específico para ofertas
   product,
+  offer = null, // Nuevo: datos de la oferta si es un producto ofertado
   initialQuantity = 1,
   userRegion = null,
   isLoadingUserProfile = false, // Nuevo prop para indicar si el perfil del usuario está cargando
+  isOwnProduct = false, // Nuevo: deshabilitar agregar si es producto propio
+  onRequireBillingInfo = null, // Nuevo: callback cuando falta billing info y se requiere factura
 }) => {
+  // Validación de Billing (solo interesa si usuario selecciona factura)
+  const { isComplete: isBillingComplete, isLoading: isLoadingBilling, missingFieldLabels: missingBillingLabels } = useBillingInfoValidation();
   // ============================================================================
   // ESTADOS LOCALES
   // ============================================================================
@@ -71,6 +249,9 @@ const AddToCartModal = ({
   const [quantityError, setQuantityError] = useState('');
   const [enrichedProduct, setEnrichedProduct] = useState(product);
   const [isLoadingRegions, setIsLoadingRegions] = useState(false);
+
+  // Determinar si es un producto ofertado
+  const isOfferMode = Boolean(offer);
 
   // Hook para obtener tipos de documentos permitidos por el proveedor
   const supplierId = enrichedProduct?.supplier_id || enrichedProduct?.supplierId;
@@ -125,6 +306,9 @@ const AddToCartModal = ({
 
       const productWithRegions = {
         ...product,
+        // Clonar arrays de tiers si existen para evitar mutaciones compartidas
+        priceTiers: product?.priceTiers ? product.priceTiers.map(t => ({ ...t })) : product?.priceTiers,
+        price_tiers: product?.price_tiers ? product.price_tiers.map(t => ({ ...t })) : product?.price_tiers,
         shippingRegions,
         delivery_regions: shippingRegions,
         shipping_regions: shippingRegions,
@@ -140,20 +324,25 @@ const AddToCartModal = ({
   // Sincronizar cantidad inicial cuando se abre el modal
   useEffect(() => {
     if (open) {
-      // Calcular cantidad mínima efectiva
-      let effectiveMinimum = enrichedProduct?.minimum_purchase || enrichedProduct?.compraMinima || 1;
-      
-      // Si hay price tiers, usar el primer tramo como mínimo
-      const priceTiers = enrichedProduct?.priceTiers || enrichedProduct?.price_tiers || [];
-      if (priceTiers.length > 0) {
-        const sortedTiers = [...priceTiers].sort((a, b) => (a.min_quantity || 1) - (b.min_quantity || 1));
-        effectiveMinimum = sortedTiers[0]?.min_quantity || 1;
+      if (isOfferMode && offer) {
+        // En modo oferta, usar la cantidad exacta de la oferta
+        setQuantity(offer.offered_quantity);
+      } else {
+        // Modo normal: calcular cantidad mínima efectiva
+        let effectiveMinimum = enrichedProduct?.minimum_purchase || enrichedProduct?.compraMinima || 1;
+        
+        // Si hay price tiers, usar el primer tramo como mínimo
+        const priceTiers = enrichedProduct?.priceTiers || enrichedProduct?.price_tiers || [];
+        if (priceTiers.length > 0) {
+          const sortedTiers = [...priceTiers].sort((a, b) => (a.min_quantity || 1) - (b.min_quantity || 1));
+          effectiveMinimum = sortedTiers[0]?.min_quantity || 1;
+        }
+        
+        setQuantity(Math.max(initialQuantity, effectiveMinimum));
       }
-      
-      setQuantity(Math.max(initialQuantity, effectiveMinimum));
       setQuantityError(''); // Limpiar errores al abrir
     }
-  }, [open, initialQuantity, enrichedProduct]);
+  }, [open, initialQuantity, enrichedProduct, isOfferMode, offer]);
 
   // Establecer tipo de documento inicial basándose en opciones disponibles del proveedor
   useEffect(() => {
@@ -171,28 +360,59 @@ const AddToCartModal = ({
   // ============================================================================
 
   // Extraer datos del producto con fallbacks
-  const productData = useMemo(() => ({
-    id: enrichedProduct?.id,
-    name: enrichedProduct?.nombre || enrichedProduct?.name || 'Producto sin nombre',
-    basePrice: enrichedProduct?.precio || enrichedProduct?.price || 0,
-    originalPrice: enrichedProduct?.precioOriginal || enrichedProduct?.originalPrice,
-    priceTiers: enrichedProduct?.priceTiers || enrichedProduct?.price_tiers || [],
-    // Mapeo completo de propiedades de imagen para CheckoutSummaryImage
-    thumbnail: enrichedProduct?.thumbnail || enrichedProduct?.image_url,
-    thumbnailUrl: enrichedProduct?.thumbnailUrl || enrichedProduct?.thumbnail_url,
-    thumbnail_url: enrichedProduct?.thumbnail_url,
-    imagen: enrichedProduct?.imagen || enrichedProduct?.image_url,
-    image_url: enrichedProduct?.image_url,
-    thumbnails: enrichedProduct?.thumbnails,
-    supplier: enrichedProduct?.proveedor || enrichedProduct?.supplier || 'Proveedor no encontrado',
-    minimumPurchase: enrichedProduct?.minimum_purchase || enrichedProduct?.compraMinima || 1,
-    maxPurchase: enrichedProduct?.max_purchase || enrichedProduct?.maxPurchase || 999,
-    stock: enrichedProduct?.stock || enrichedProduct?.maxStock || enrichedProduct?.productqty || 50,
-    shippingRegions: enrichedProduct?.shippingRegions || enrichedProduct?.delivery_regions || [],
-  }), [enrichedProduct]);
+  const productData = useMemo(() => {
+    // Si es modo oferta, usar datos de la oferta
+    if (isOfferMode && offer) {
+      return {
+        id: offer.product_id || enrichedProduct?.id,
+        name: offer.product_name || enrichedProduct?.nombre || enrichedProduct?.name || 'Producto sin nombre',
+        basePrice: offer.offered_price, // Usar precio ofertado
+        originalPrice: enrichedProduct?.precio || enrichedProduct?.price, // Precio original para comparación
+        priceTiers: [], // Las ofertas no tienen tramos de precios
+        thumbnail: offer.product_image || enrichedProduct?.thumbnail || enrichedProduct?.image_url,
+        thumbnailUrl: offer.product_image || enrichedProduct?.thumbnailUrl || enrichedProduct?.thumbnail_url,
+        thumbnail_url: offer.product_image || enrichedProduct?.thumbnail_url,
+        imagen: offer.product_image || enrichedProduct?.imagen || enrichedProduct?.image_url,
+        image_url: offer.product_image || enrichedProduct?.image_url,
+        thumbnails: enrichedProduct?.thumbnails,
+        supplier: offer.supplier_name || enrichedProduct?.proveedor || enrichedProduct?.supplier || 'Proveedor no encontrado',
+        minimumPurchase: offer.offered_quantity, // Cantidad exacta de la oferta
+        maxPurchase: offer.offered_quantity, // Cantidad exacta de la oferta
+        stock: offer.offered_quantity, // Cantidad disponible en la oferta
+        shippingRegions: enrichedProduct?.shippingRegions || enrichedProduct?.delivery_regions || [],
+        // Campos específicos de la oferta
+        offer_id: offer.id,
+        offer_deadline: offer.purchase_deadline,
+        offer_status: offer.status,
+        isOfferProduct: true,
+      };
+    }
+
+    // Modo normal (producto regular)
+    return {
+      id: enrichedProduct?.id,
+      name: enrichedProduct?.nombre || enrichedProduct?.name || 'Producto sin nombre',
+      basePrice: enrichedProduct?.precio || enrichedProduct?.price || 0,
+      originalPrice: enrichedProduct?.precioOriginal || enrichedProduct?.originalPrice,
+      priceTiers: enrichedProduct?.priceTiers || enrichedProduct?.price_tiers || [],
+      // Mapeo completo de propiedades de imagen para CheckoutSummaryImage
+      thumbnail: enrichedProduct?.thumbnail || enrichedProduct?.image_url,
+      thumbnailUrl: enrichedProduct?.thumbnailUrl || enrichedProduct?.thumbnail_url,
+      thumbnail_url: enrichedProduct?.thumbnail_url,
+      imagen: enrichedProduct?.imagen || enrichedProduct?.image_url,
+      image_url: enrichedProduct?.image_url,
+      thumbnails: enrichedProduct?.thumbnails,
+      supplier: enrichedProduct?.proveedor || enrichedProduct?.supplier || 'Proveedor no encontrado',
+      minimumPurchase: enrichedProduct?.minimum_purchase || enrichedProduct?.compraMinima || 1,
+      maxPurchase: enrichedProduct?.max_purchase || enrichedProduct?.maxPurchase || 999,
+      stock: enrichedProduct?.stock || enrichedProduct?.maxStock || enrichedProduct?.productqty || 50,
+      shippingRegions: enrichedProduct?.shippingRegions || enrichedProduct?.delivery_regions || [],
+      isOfferProduct: false,
+    };
+  }, [enrichedProduct, offer, isOfferMode]);
 
   // Hook para validación de despacho optimizado - Solo bajo demanda
-  const { validateSingleProduct, getUserRegionName, userRegion: hookUserRegion } = useUnifiedShippingValidation();
+  const { validateSingleProduct, validateProductShipping, getUserRegionName, userRegion: hookUserRegion, isLoadingUserRegion } = useUnifiedShippingValidation();
 
   // Usar la región del hook o la prop (fallback)
   const effectiveUserRegion = hookUserRegion || userRegion;
@@ -210,7 +430,15 @@ const AddToCartModal = ({
 
     setIsValidatingShipping(true);
     try {
-      const validation = validateSingleProduct(enrichedProduct);
+      let validation = null;
+      // Si el hook ya resolvió la región del usuario, usar la versión cacheada;
+      // si no, usar la función pura pasando la región efectiva (fallback desde props)
+      if (hookUserRegion) {
+        validation = validateSingleProduct(enrichedProduct);
+      } else {
+        validation = validateProductShipping(enrichedProduct, effectiveUserRegion);
+      }
+
       setShippingValidation(validation);
     } catch (error) {
       console.error('Error validating shipping:', error);
@@ -238,7 +466,10 @@ const AddToCartModal = ({
   // CÁLCULOS DE PRECIOS DINÁMICOS
   // ============================================================================
 
-  // Calcular precio actual basado en cantidad y tramos
+  // Normalizar tiers para UI (precio DESC estable). Solo recalcula cuando cambia la referencia original
+  const displayPriceTiers = useMemo(() => normalizePriceTiers(productData.priceTiers, 'price_desc'), [productData.priceTiers]);
+
+  // Calcular precio actual basado en cantidad y tramos (usar tiers originales para consistencia de cálculo)
   const currentPricing = useMemo(() => {
     const { priceTiers, basePrice } = productData;
     
@@ -260,20 +491,12 @@ const AddToCartModal = ({
 
   // Encontrar el tramo activo para resaltado (SOLO el que corresponde a la cantidad actual)
   const activeTier = useMemo(() => {
-    const { priceTiers } = productData;
-    if (priceTiers.length === 0) return null;
-    
-    // Buscar el tramo que corresponde exactamente a la cantidad actual
-    for (const tier of priceTiers) {
+    if (!productData.priceTiers || productData.priceTiers.length === 0) return null;
+    return productData.priceTiers.find(tier => {
       const minQty = tier.min_quantity || 1;
       const maxQty = tier.max_quantity;
-      
-      if (quantity >= minQty && (maxQty === null || quantity <= maxQty)) {
-        return tier;
-      }
-    }
-    
-    return null;
+      return quantity >= minQty && (maxQty == null || quantity <= maxQty);
+    }) || null;
   }, [quantity, productData.priceTiers]);
 
   // ============================================================================
@@ -281,6 +504,11 @@ const AddToCartModal = ({
   // ============================================================================
 
   const handleQuantityChange = useCallback((newQuantity) => {
+    // En modo oferta, no permitir cambios de cantidad
+    if (isOfferMode) {
+      return;
+    }
+
     setQuantity(newQuantity);
     
     // Para productos con price tiers, usar el primer tramo como mínimo
@@ -305,14 +533,28 @@ const AddToCartModal = ({
     else {
       setQuantityError('');
     }
-  }, [productData.minimumPurchase, productData.priceTiers, productData.maxPurchase, productData.stock]);
+  }, [productData.minimumPurchase, productData.priceTiers, productData.maxPurchase, productData.stock, isOfferMode]);
 
   const handleDocumentTypeChange = useCallback((event) => {
     setDocumentType(event.target.value);
   }, []);
 
   const handleAddToCart = useCallback(async () => {
-    // Calcular cantidad mínima efectiva basada en si hay price tiers
+    // Si es modo oferta, usar el callback específico para ofertas
+    if (isOfferMode && onSuccess) {
+      setIsProcessing(true);
+      try {
+        await onSuccess();
+        return; // onSuccess debe manejar el cierre del modal
+      } catch (error) {
+        console.error('❌ [AddToCartModal] Error al procesar oferta:', error);
+      } finally {
+        setIsProcessing(false);
+      }
+      return;
+    }
+
+    // Modo normal: validaciones de cantidad
     const { priceTiers, stock } = productData;
     let effectiveMinimum = productData.minimumPurchase;
     let effectiveMaximum = Math.min(productData.maxPurchase, stock);
@@ -335,6 +577,19 @@ const AddToCartModal = ({
       return;
     }
 
+    // Bloqueo previo: si se selecciona factura y billing incompleto
+    if (documentType === 'factura') {
+      if (isLoadingBilling) return; // esperar
+      if (!isBillingComplete) {
+        // Cerrar modal actual y disparar callback para abrir modal de billing
+        if (onRequireBillingInfo) {
+          onClose();
+          onRequireBillingInfo({ missingFields: missingBillingLabels });
+        }
+        return; // No agregar
+      }
+    }
+
     setIsProcessing(true);
     
     try {
@@ -355,13 +610,19 @@ const AddToCartModal = ({
       setIsProcessing(false);
     }
   }, [
+    isOfferMode,
+    onSuccess,
     quantity,
     productData,
     documentType,
     currentPricing,
     activeTier,
     onAddToCart,
-    onClose
+    onClose,
+    isBillingComplete,
+    isLoadingBilling,
+    missingBillingLabels,
+    onRequireBillingInfo
   ]);
 
   const handleClose = useCallback(() => {
@@ -375,9 +636,8 @@ const AddToCartModal = ({
   // ============================================================================
 
   const PriceTiersDisplay = () => {
-    const { priceTiers } = productData;
-    
-    if (priceTiers.length === 0) {
+  const priceTiers = displayPriceTiers;
+  if (priceTiers.length === 0) {
       return (
         <Paper variant="outlined" sx={{ p: 2, textAlign: 'center' }}>
           <Typography variant="h6" color="text.primary" sx={{ fontWeight: 700 }}>
@@ -398,30 +658,12 @@ const AddToCartModal = ({
         <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 600 }}>
           Precio antes de envío
         </Typography>
-        <Stack spacing={1}>
+  <Stack spacing={1} sx={tiersContainerSx}>
           {priceTiers.map((tier, index) => {
             const minQty = tier.min_quantity || 1;
             const maxQty = tier.max_quantity;
-            
-            // LÓGICA CORREGIDA: Solo activar EL tramo que contiene exactamente la cantidad
-            let isActive = false;
-            
-            if (maxQty === null || maxQty === undefined) {
-              // Último tramo (sin máximo): activo si quantity >= minQty Y no hay tramos posteriores que apliquen
-              isActive = quantity >= minQty;
-              // Verificar que no hay tramos posteriores que también apliquen
-              for (let i = index + 1; i < priceTiers.length; i++) {
-                const laterTier = priceTiers[i];
-                const laterMinQty = laterTier.min_quantity || 1;
-                if (quantity >= laterMinQty) {
-                  isActive = false; // Hay un tramo posterior que aplica
-                  break;
-                }
-              }
-            } else {
-              // Tramo con rango definido: activo SOLO si está exactamente en el rango
-              isActive = quantity >= minQty && quantity <= maxQty;
-            }
+            // Highlight independiente del orden: solo evaluar rango
+            const isActive = quantity >= minQty && (maxQty == null || quantity <= maxQty);
             
             const rangeText = maxQty 
               ? `${minQty} - ${maxQty}` 
@@ -434,13 +676,7 @@ const AddToCartModal = ({
                 onClick={(e) => {
                   e.stopPropagation();
                 }}
-                sx={{
-                  p: 2,
-                  border: isActive ? 2 : 1,
-                  borderColor: isActive ? 'primary.main' : 'grey.300',
-                  bgcolor: isActive ? 'primary.50' : 'transparent',
-                  cursor: 'default',
-                }}
+                sx={tierPaperSx(isActive)}
               >
                 <Stack direction="row" justifyContent="space-between" alignItems="center">
                   <Box>
@@ -468,98 +704,119 @@ const AddToCartModal = ({
     );
   };
 
-  const QuantityErrorDisplay = () => {
-    if (!quantityError) return null;
+  const OfferPriceDisplay = () => {
+    if (!isOfferMode || !offer) return null;
+
+    const originalPrice = productData.originalPrice;
+    const offerPrice = offer.offered_price;
+    const totalOfferValue = offerPrice * offer.offered_quantity;
+    const originalTotalValue = originalPrice ? originalPrice * offer.offered_quantity : null;
+    const savings = originalTotalValue ? originalTotalValue - totalOfferValue : null;
+    const savingsPercentage = originalTotalValue ? ((savings / originalTotalValue) * 100) : null;
 
     return (
-      <Box
-        sx={{
-          position: 'absolute',
-          top: '100%',
-          right: 0,
-          mt: 0.5,
-          zIndex: 10,
-          minWidth: 200,
-        }}
-      >
-        <Alert severity="error" variant="filled" sx={{ fontSize: '0.75rem', py: 0.5 }}>
-          {quantityError}
-        </Alert>
+      <Box>
+        <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 600 }}>
+          Precio de oferta aceptada
+        </Typography>
+        
+        <Paper 
+          variant="outlined" 
+          sx={{ 
+            p: 2, 
+            border: 2,
+            borderColor: 'success.main',
+            bgcolor: 'success.50'
+          }}
+        >
+          <Stack spacing={2}>
+            {/* Precio por unidad */}
+            <Stack direction="row" justifyContent="space-between" alignItems="center">
+              <Typography variant="body2" color="text.secondary">
+                Precio ofertado por unidad:
+              </Typography>
+              <Typography variant="h6" color="success.main" sx={{ fontWeight: 700 }}>
+                ${offerPrice.toLocaleString('es-CL')}
+              </Typography>
+            </Stack>
+
+            {/* Comparación con precio original */}
+            {originalPrice && originalPrice > offerPrice && (
+              <Stack direction="row" justifyContent="space-between" alignItems="center">
+                <Typography variant="body2" color="text.secondary">
+                  Precio original:
+                </Typography>
+                <Typography 
+                  variant="body2" 
+                  sx={{ 
+                    textDecoration: 'line-through',
+                    color: 'text.secondary'
+                  }}
+                >
+                  ${originalPrice.toLocaleString('es-CL')}
+                </Typography>
+              </Stack>
+            )}
+
+            {/* Cantidad fija */}
+            <Stack direction="row" justifyContent="space-between" alignItems="center">
+              <Typography variant="body2" color="text.secondary">
+                Cantidad acordada:
+              </Typography>
+              <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                {offer.offered_quantity} unidades
+              </Typography>
+            </Stack>
+
+            {/* Ahorro si aplica */}
+            {savings && savingsPercentage && (
+              <Stack direction="row" justifyContent="space-between" alignItems="center">
+                <Typography variant="body2" color="success.main" sx={{ fontWeight: 600 }}>
+                  Tu ahorro:
+                </Typography>
+                <Typography variant="body2" color="success.main" sx={{ fontWeight: 700 }}>
+                  ${savings.toLocaleString('es-CL')} ({savingsPercentage.toFixed(1)}%)
+                </Typography>
+              </Stack>
+            )}
+
+            {/* Total destacado */}
+            <Divider />
+            <Stack direction="row" justifyContent="space-between" alignItems="center">
+              <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                Total de la oferta:
+              </Typography>
+              <Typography variant="h5" color="success.main" sx={{ fontWeight: 800 }}>
+                ${totalOfferValue.toLocaleString('es-CL')}
+              </Typography>
+            </Stack>
+          </Stack>
+        </Paper>
+
+        {/* Tiempo límite para comprar */}
+        {offer.purchase_deadline && (
+          <Alert severity="warning" sx={{ mt: 2 }}>
+            <Typography variant="body2">
+              <strong>Tiempo límite:</strong> Tienes hasta el{' '}
+              {new Date(offer.purchase_deadline).toLocaleString('es-CL')} para agregar este producto al carrito.
+            </Typography>
+          </Alert>
+        )}
       </Box>
     );
   };
 
-  const ProductSummary = () => (
-    <Paper 
-      variant="outlined" 
-      sx={{ p: 2 }}
-      onClick={(e) => {
-        e.stopPropagation();
-      }}
-      onMouseDown={(e) => {
-        e.stopPropagation();
-      }}
-    >
-      <Stack direction="row" spacing={2} alignItems="center">
-        <Box sx={{ width: 50, height: 50, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <CheckoutSummaryImage
-            product={productData}
-            sx={{ 
-              width: 50,
-              height: 50,
-              objectFit: 'contain',
-              pointerEvents: 'none',
-            }}
-          />
-        </Box>
-        <Box sx={{ flex: 1 }}>
-          <Stack direction="row" justifyContent="space-between" alignItems="flex-start" sx={{ mb: 0.5 }}>
-            <Typography variant="body1" sx={{ fontWeight: 600, flex: 1, pointerEvents: 'none' }}>
-              {productData.name}
-            </Typography>
-            <Box sx={{ ml: 2, pointerEvents: 'auto', position: 'relative' }}>
-              <QuantitySelector
-                value={quantity}
-                onChange={handleQuantityChange}
-                min={(() => {
-                  // Calcular cantidad mínima efectiva para el QuantitySelector
-                  const { priceTiers } = productData;
-                  if (priceTiers.length > 0) {
-                    const sortedTiers = [...priceTiers].sort((a, b) => (a.min_quantity || 1) - (b.min_quantity || 1));
-                    return sortedTiers[0]?.min_quantity || 1;
-                  }
-                  return productData.minimumPurchase;
-                })()}
-                max={Math.min(productData.maxPurchase, productData.stock)}
-                size="small"
-                orientation="horizontal"
-                label="Cantidad:"
-                sx={{
-                  '& .MuiFormHelperText-root': {
-                    display: 'none', // Ocultar mensajes de error para evitar desacople del layout
-                  },
-                }}
-              />
-              <QuantityErrorDisplay />
-              {/* Mostrar stock disponible */}
-              <Typography 
-                variant="caption" 
-                color="text.secondary" 
-                sx={{ 
-                  display: 'block',
-                  mt: 0.5,
-                  fontSize: '0.75rem',
-                  pointerEvents: 'none'
-                }}
-              >
-                Stock: {productData.stock.toLocaleString('es-CL')}
-              </Typography>
-            </Box>
-          </Stack>
-        </Box>
-      </Stack>
-    </Paper>
-  );
+  // Cantidades mínima y máxima memorizadas para pasar props primitivas estables
+  const quantityBounds = useMemo(() => {
+    const { priceTiers } = productData;
+    let minQ = productData.minimumPurchase;
+    if (priceTiers.length > 0) {
+      const sortedTiers = [...priceTiers].sort((a, b) => (a.min_quantity || 1) - (b.min_quantity || 1));
+      minQ = sortedTiers[0]?.min_quantity || 1;
+    }
+    const maxQ = Math.min(productData.maxPurchase, productData.stock);
+    return { minQ, maxQ };
+  }, [productData]);
 
   const DocumentTypeSelector = () => {
     // Si está cargando los tipos de documentos del proveedor
@@ -706,7 +963,7 @@ const AddToCartModal = ({
       return (
         <Alert severity="info" sx={{ mt: 2 }}>
           <Typography variant="body2">
-            Configura tu región en tu perfil para ver disponibilidad de despacho
+            Configura tu dirección de despacho en tu perfil para ver disponibilidad de despacho
           </Typography>
         </Alert>
       );
@@ -724,6 +981,18 @@ const AddToCartModal = ({
     }
 
     if (shippingValidation.canShip) {
+      // Sanitize any trailing "- $<amount>" from messages before rendering
+      const rawMsg = shippingValidation.message || shippingValidation.shippingInfo?.message || '';
+      let sanitizedMsg = String(rawMsg)
+        .replace(/-\s*\$[\d.,\s]*$/g, '') // remove trailing "- $123" patterns
+        .replace(/-\s*\$$/g, '') // remove trailing "- $" if no amount
+        .trim();
+
+      // Normalize singular/plural for "día hábil(s)" if the message contains a numeric value
+      sanitizedMsg = sanitizedMsg.replace(/(\d+)\s*d[ií]as?\s*h[aá]biles/gi, (match, n) => {
+        return Number(n) === 1 ? '1 día hábil' : `${n} días hábiles`;
+      });
+
       return (
         <Alert 
           severity="success" 
@@ -733,9 +1002,9 @@ const AddToCartModal = ({
           <Typography variant="body2" sx={{ fontWeight: 600 }}>
             Este producto tiene despacho hacia tu región: {getUserRegionName(effectiveUserRegion)}
           </Typography>
-          {shippingValidation.shippingInfo && (
+          {sanitizedMsg && (
             <Typography variant="caption" color="text.secondary">
-              {shippingValidation.message}
+              {sanitizedMsg}
             </Typography>
           )}
         </Alert>
@@ -788,6 +1057,18 @@ const AddToCartModal = ({
           )}
         </Box>
       </Stack>
+
+      {/* Línea separada para el costo de envío: etiqueta izquierda, precio derecha (igual que Subtotal) */}
+      {shippingValidation?.canShip && shippingValidation?.shippingInfo?.cost != null && (
+        <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mt: 1 }}>
+          <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+            Envío
+          </Typography>
+          <Typography variant="h6" sx={{ fontWeight: 700 }}>
+            ${shippingValidation.shippingInfo.cost.toLocaleString('es-CL')}
+          </Typography>
+        </Stack>
+      )}
     </Paper>
   );
 
@@ -804,18 +1085,7 @@ const AddToCartModal = ({
           onClose={handleClose} // Permitir cierre normal con X
           hideBackdrop={false}
           disableEscapeKeyDown={false} // Permitir cerrar con Escape
-          PaperProps={{
-            component: motion.div,
-            initial: { x: '100%' },
-            animate: { x: 0 },
-            exit: { x: '100%' },
-            transition: { type: 'tween', duration: 0.3, ease: 'easeInOut' },
-            sx: {
-              width: { xs: '100%', sm: 460, md: 518 }, // 15% más ancho: 400*1.15=460, 450*1.15=518
-              maxWidth: '90vw',
-              zIndex: 9999, // Mayor z-index que FAB y WhatsApp
-            },
-          }}
+          PaperProps={drawerPaperProps}
           ModalProps={{
             keepMounted: false,
             BackdropProps: {
@@ -830,24 +1100,16 @@ const AddToCartModal = ({
           }}
         >
           <Box 
-            sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}
+            sx={layoutRootSx}
           >
             
             {/* Header */}
-            <Box sx={{ 
-              p: 2, 
-              borderBottom: 1, 
-              borderColor: 'divider',
-              bgcolor: 'background.paper',
-              position: 'sticky',
-              top: 0,
-              zIndex: 1,
-            }}>
-            <Stack direction="row" justifyContent="space-between" alignItems="center">
-                <Typography variant="h6" sx={{ fontWeight: 700 }}>
-                  Resumen del Pedido
+            <Box sx={drawerHeaderSx}>
+              <Stack direction="row" justifyContent="space-between" alignItems="center">
+                <Typography variant="h6" sx={{ fontWeight: 700, color: 'common.white' }}>
+                  {isOfferMode ? 'Confirmar Oferta Aceptada' : 'Resumen del Pedido'}
                 </Typography>
-                <IconButton onClick={handleClose} size="small">
+                <IconButton onClick={handleClose} size="small" sx={{ color: 'common.white' }}>
                   <CloseIcon />
                 </IconButton>
               </Stack>
@@ -857,14 +1119,23 @@ const AddToCartModal = ({
             <Box sx={{ flex: 1, p: 2, overflow: 'auto' }}>
               <Stack spacing={3}>
                 
-                {/* 1. Precios */}
-                <PriceTiersDisplay />
+                {/* 1. Precios (ofertas o regulares) */}
+                {isOfferMode ? <OfferPriceDisplay /> : <PriceTiersDisplay />}
 
-                {/* 2. Resumen del producto con selector de cantidad */}
-                <ProductSummary />
+                {/* 2. Resumen del producto con selector de cantidad (memoizado) */}
+                <ProductSummary
+                  productData={productData}
+                  quantity={quantity}
+                  onQuantityChange={handleQuantityChange}
+                  quantityError={quantityError}
+                  minQuantity={quantityBounds.minQ}
+                  maxQuantity={quantityBounds.maxQ}
+                  isOfferMode={isOfferMode}
+                  offer={offer}
+                />
 
-                {/* 3. Tipo de documento */}
-                <DocumentTypeSelector />
+                {/* 3. Tipo de documento (solo si no es oferta o si el proveedor lo permite) */}
+                {(!isOfferMode || availableOptions?.length > 0) && <DocumentTypeSelector />}
 
                 {/* 4. Estado de despacho */}
                 <ShippingStatus />
@@ -885,19 +1156,44 @@ const AddToCartModal = ({
               borderColor: 'divider',
               bgcolor: 'background.paper',
             }}>
+              {/**
+               * Reglas de deshabilitación del botón:
+               * - Producto propio
+               * - Procesando
+               * - Validación explícita indica que NO se puede despachar
+               * - Cantidad inválida (solo para productos normales)
+               * - Región de usuario NO configurada (nuevo requisito)
+               *   Nota: Cuando la región no está configurada, shippingValidation permanece null
+               *   porque la validación on-demand se salta (early return). Antes esto dejaba el botón habilitado.
+               */}
               <Button
                 fullWidth
                 variant="contained"
                 size="large"
                 onClick={handleAddToCart}
-                disabled={
-                  isProcessing || 
-                  (shippingValidation && !shippingValidation.canShip) ||
-                  !!quantityError
-                }
+                disabled={(() => {
+                  // Deshabilitar solo si la región NO está configurada y ya terminó la carga de perfil & región
+                  const noRegionConfigured = !effectiveUserRegion && !isLoadingUserProfile && !isLoadingUserRegion;
+                  const explicitIncompatible = shippingValidation && !shippingValidation.canShip;
+                  const hasQuantityError = !isOfferMode && !!quantityError; // Solo validar cantidad en modo normal
+                  
+                  return (
+                    isOwnProduct ||
+                    isProcessing ||
+                    explicitIncompatible ||
+                    hasQuantityError ||
+                    noRegionConfigured
+                  );
+                })()}
                 sx={{ py: 1.5 }}
               >
-                {isProcessing ? 'Agregando...' : 'Agregar al Carrito'}
+                {isProcessing ? 
+                  (isOfferMode ? 'Procesando oferta...' : 'Agregando...') : 
+                  (isOfferMode ? 
+                    'Confirmar Oferta' : 
+                    (documentType === 'factura' && !isBillingComplete ? 'Completar Facturación' : 'Agregar al Carrito')
+                  )
+                }
               </Button>
             </Box>
 

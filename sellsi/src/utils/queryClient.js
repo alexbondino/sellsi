@@ -71,3 +71,13 @@ export const CACHE_CONFIGS = {
     cacheTime: 5 * 60 * 1000,  // 5 minutos
   },
 };
+
+// Helper dinámico para thumbnails según phase (usado fuera si se activa ENABLE_DYNAMIC_THUMB_TTL)
+export function getThumbnailQueryOptionsForPhase(phase, { dynamic = false } = {}) {
+  if (!dynamic) return { staleTime: CACHE_CONFIGS.THUMBNAILS.staleTime, cacheTime: CACHE_CONFIGS.THUMBNAILS.cacheTime }
+  if (!phase || phase === 'thumbnails_ready' || phase === 'thumbnails_skipped_webp') {
+    return { staleTime: 5 * 60 * 1000, cacheTime: 15 * 60 * 1000 }
+  }
+  // Fases transitorias: stale inmediato y polling frecuente corto
+  return { staleTime: 0, cacheTime: 5 * 60 * 1000, refetchInterval: 1000 }
+}

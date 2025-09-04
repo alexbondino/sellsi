@@ -35,7 +35,7 @@ import { AddToCart } from '../../cart';
  * This component is an internal part of the main ProductCard.
  */
 const ProductCardBuyerContext = React.memo(
-  ({ product, onAddToCart, handleProductClick, onModalStateChange }) => {
+  ({ product, /* onAddToCart (REMOVED to prevent double add) */ handleProductClick, onModalStateChange }) => {
     const navigate = useNavigate();
 
     // ✅ OPTIMIZADO: Usar hook optimizado con caché global
@@ -115,8 +115,8 @@ const ProductCardBuyerContext = React.memo(
     }, [loadingTiers, errorTiers, price_tiers, precio, precioOriginal]);
 
     return (
-      <>
-        <CardContent sx={{ flexGrow: 1, p: 2, pb: 1, display: 'flex', flexDirection: 'column' }}>
+      <Box sx={{ height: '100%' }}>
+        <CardContent sx={{ flexGrow: 1, p: 2, pb: { xs: 6, md: 9 }, display: 'flex', flexDirection: 'column' }}>
           {/* Product name always at the top */}
           <Box sx={{ mb: { xs: 0.5, md: 1 } }}>
             <Typography
@@ -342,7 +342,19 @@ const ProductCardBuyerContext = React.memo(
           </Box>
           */}
         </CardContent>
-        <CardActions sx={{ p: 1.5, pt: 0.5 }}>
+        <CardActions
+          sx={{
+            // Position absolute so the button keeps a fixed distance from the bottom of the card
+            position: 'absolute',
+            left: '16px',
+            right: '16px',
+            bottom: '10px',
+            // Remove internal padding to avoid extra height
+            p: 0,
+            pt: 0,
+            display: 'flex',
+          }}
+        >
           <AddToCart
             product={product}
             variant="button"
@@ -351,7 +363,6 @@ const ProductCardBuyerContext = React.memo(
             initialQuantity={minimumPurchase}
             userRegion={userRegion}
             isLoadingUserProfile={isLoadingUserRegion}
-            onSuccess={onAddToCart}
             onModalStateChange={onModalStateChange}
             sx={{
               textTransform: 'none',
@@ -369,7 +380,7 @@ const ProductCardBuyerContext = React.memo(
             AGREGAR
           </AddToCart>
         </CardActions>
-      </>
+      </Box>
     );
   }
 );

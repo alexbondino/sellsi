@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Card, Box, alpha } from '@mui/material';
 
 // Common Utility Imports
-import { ProductCardImage } from '../../../../components/UniversalProductImage'; // Nueva imagen universal
+import { ProductCardImage } from '../../../../components/UniversalProductImage'; // Nueva imagen universal (incluye gating viewport interno)
 
 // Sub-components
 import ProductCardBuyerContext from './ProductCardBuyerContext';
@@ -50,16 +50,23 @@ const ProductCard = React.memo(
     const { id, nombre, imagen } = product;
 
     // --- Memoized common elements ---
-    const memoizedImage = useMemo(
-      () => (
+    const memoizedImage = useMemo(() => {
+      // Fallback: si es provider y no hay imagen base pero sí logo_url, usarlo como imagen
+      let productForImage = product
+      if (type === 'provider') {
+        const hasAnyImage = product.imagen || product.image_url || product.thumbnail_url || (product.thumbnails && Object.keys(product.thumbnails).length > 0)
+        if (!hasAnyImage && product.logo_url) {
+          productForImage = { ...product, imagen: product.logo_url }
+        }
+      }
+      return (
         <ProductCardImage
-          product={product}
+          product={productForImage}
           type={type}
           alt={nombre}
         />
-      ),
-      [product, type, nombre]
-    );
+      )
+    }, [product, type, nombre])
 
     // --- Common Card Styles (can be adjusted per type if needed) ---
     const cardStyles = useMemo(
@@ -70,8 +77,8 @@ const ProductCard = React.memo(
           { xs: 380, sm: 400, md: 357.5, lg: 487.5, xl: 520 },
         // 🎯 ANCHO RESPONSIVE ÚNICO DE LA TARJETA
         width: type === 'supplier'
-          ? { xs: 175, sm: 190, md: 220, lg: 370, xl: 360 }
-          : { xs: 175, sm: 190, md: 220, lg: 300, xl: 320 }, // buyer y provider usan las mismas dimensiones
+          ? { xs: 180, sm: 195, md: 220, lg: 370, xl: 360 }
+          : { xs: 180, sm: 195, md: 220, lg: 300, xl: 320 }, // buyer y provider usan las mismas dimensiones
         display: 'flex',
         flexDirection: 'column',
         position: 'relative',
@@ -184,8 +191,8 @@ const ProductCard = React.memo(
         onClick={handleProductClick}
         sx={cardStyles}
       >
-        {/* ✅ Solo mostrar imagen del producto para tipos 'supplier' y 'buyer', no para 'provider' */}
-        {type !== 'provider' && memoizedImage}
+  {/* ✅ Ocultar imagen de producto en tarjetas de proveedor (Option A) */}
+  {type !== 'provider' && memoizedImage}
         {type === 'supplier' && (
           <ProductCardSupplierContext
             product={product}
@@ -200,9 +207,8 @@ const ProductCard = React.memo(
         {type === 'buyer' && (
           <ProductCardBuyerContext
             product={product}
-            onAddToCart={onAddToCart}
-            handleProductClick={handleProductClick} // Pass down if buyer context needs to know about this
-            onModalStateChange={setIsModalOpen} // Callback para manejar el estado del modal
+            handleProductClick={handleProductClick}
+            onModalStateChange={setIsModalOpen}
           />
         )}
         {type === 'provider' && (

@@ -15,14 +15,18 @@
  * ✅ CORREGIDO: Validación de variables de entorno
  */
 
+import "jsr:@supabase/functions-js/edge-runtime.d.ts"
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { withMetrics } from '../_shared/metrics.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+declare const Deno: any;
 
 // ============================================================================
 // VALIDACIÓN DE VARIABLES DE ENTORNO (CORREGIDO PUNTO 7)
 // ============================================================================
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')
-const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || Deno.env.get('SERVICE_ROLE_KEY')
 const CLEANUP_SECRET_TOKEN = Deno.env.get('CLEANUP_SECRET_TOKEN') // Token secreto
 
 if (!SUPABASE_URL) {
@@ -30,14 +34,15 @@ if (!SUPABASE_URL) {
 }
 
 if (!SUPABASE_SERVICE_ROLE_KEY) {
-  throw new Error('❌ Variable de entorno SUPABASE_SERVICE_ROLE_KEY no definida')
+  // Fallback: intentará funcionar sin service role (probablemente fallarán operaciones de escritura si no hay GRANT).
+  console.warn('⚠️ daily-cleanup: SERVICE ROLE key no definida. Añadir SUPABASE_SERVICE_ROLE_KEY o SERVICE_ROLE_KEY para funcionamiento completo con RLS.')
 }
 
 if (!CLEANUP_SECRET_TOKEN) {
   throw new Error('❌ Variable de entorno CLEANUP_SECRET_TOKEN no definida')
 }
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY || Deno.env.get('SUPABASE_ANON_KEY') || '')
 
 // ============================================================================
 // INTERFACES Y TIPOS
@@ -57,6 +62,7 @@ interface CleanupResult {
     errors: string[]
     executionTimeMs: number
     successRate: number
+  stagedCandidates?: number
   }
   details: {
     processedProducts: string[]
@@ -225,7 +231,8 @@ async function performRobustCleanup(options: CleanupRequestBody): Promise<Cleanu
       filesRemoved: 0,
       errors: [],
       executionTimeMs: 0,
-      successRate: 0
+  successRate: 0,
+  stagedCandidates: 0
     },
     details: {
       processedProducts: [],
@@ -264,20 +271,44 @@ async function performRobustCleanup(options: CleanupRequestBody): Promise<Cleanu
     console.log(`📊 Archivos encontrados - Imágenes: ${imageFiles.length}, Thumbnails: ${thumbnailFiles.length}`)
     
     // 3. Obtener todas las referencias de BD
+    // INCLUYE thumbnails JSON para no marcar variantes válidas como huérfanas.
+    // Antes sólo se consultaban image_url y thumbnail_url, lo que causaba que las
+    // variantes (mobile/tablet/minithumb) guardadas únicamente dentro de thumbnails
+    // fueran tratadas como orphans y se insertaran en image_orphan_candidates.
     const { data: dbImages } = await supabase
       .from('product_images')
-      .select('product_id, image_url, thumbnail_url')
+      .select('product_id, image_url, thumbnail_url, thumbnails')
       .in('product_id', productIds)
     
     const dbUrls = new Set<string>()
     dbImages?.forEach(img => {
+      // Imagen original principal
       if (img.image_url) {
-        const path = extractPathFromUrl(img.image_url)
-        if (path) dbUrls.add(path)
+        const p = extractPathFromUrl(img.image_url)
+        if (p) dbUrls.add(p)
       }
+      // Variante primaria (desktop u otra) almacenada en thumbnail_url
       if (img.thumbnail_url) {
-        const path = extractPathFromUrl(img.thumbnail_url)
-        if (path) dbUrls.add(path)
+        const p = extractPathFromUrl(img.thumbnail_url)
+        if (p) dbUrls.add(p)
+      }
+      // TODAS las variantes dentro del objeto thumbnails
+      if (img.thumbnails) {
+        try {
+          // thumbnails puede ser objeto ya parseado o string JSON; manejar ambos
+          let thumbsObj: any = img.thumbnails;
+          if (typeof thumbsObj === 'string') {
+            try { thumbsObj = JSON.parse(thumbsObj); } catch(_) { thumbsObj = null; }
+          }
+          if (thumbsObj && typeof thumbsObj === 'object') {
+            Object.values(thumbsObj).forEach(val => {
+              if (typeof val === 'string' && val) {
+                const p = extractPathFromUrl(val)
+                if (p) dbUrls.add(p)
+              }
+            })
+          }
+        } catch (_) { /* noop */ }
       }
     })
     
@@ -301,37 +332,23 @@ async function performRobustCleanup(options: CleanupRequestBody): Promise<Cleanu
           continue
         }
         
-        // Eliminar archivos huérfanos
-        let removedCount = 0
-        
-        if (orphanImages.length > 0) {
-          const { error: imageError } = await supabase.storage
-            .from('product-images')
-            .remove(orphanImages.map(f => f.path))
-          
-          if (imageError) {
-            throw new Error(`Error eliminando imágenes: ${imageError.message}`)
+        // STAGING: en lugar de borrar, insertar candidatos en image_orphan_candidates
+        const stagingRows = [
+          ...orphanImages.map(f => ({ path: f.path, bucket: 'product-images' })),
+          ...orphanThumbnails.map(f => ({ path: f.path, bucket: 'product-images-thumbnails' }))
+        ]
+        if (stagingRows.length > 0) {
+          const { error: stagingError } = await supabase
+            .from('image_orphan_candidates')
+            .upsert(stagingRows, { onConflict: 'path' })
+          if (stagingError) {
+            throw new Error(`Error registrando orphans en staging: ${stagingError.message}`)
           }
-          
-          removedCount += orphanImages.length
+          result.summary.stagedCandidates = (result.summary.stagedCandidates || 0) + stagingRows.length
         }
-        
-        if (orphanThumbnails.length > 0) {
-          const { error: thumbError } = await supabase.storage
-            .from('product-images-thumbnails')
-            .remove(orphanThumbnails.map(f => f.path))
-          
-          if (thumbError) {
-            throw new Error(`Error eliminando thumbnails: ${thumbError.message}`)
-          }
-          
-          removedCount += orphanThumbnails.length
-        }
-        
-        result.summary.filesRemoved += removedCount
         result.details.processedProducts.push(productId)
         
-        console.log(`✅ Producto ${productId}: ${removedCount} archivos limpiados`)
+        console.log(`✅ Producto ${productId}: ${stagingRows.length} archivos staged (0 eliminados ahora)`)        
         
       } catch (error) {
         const errorMsg = `Producto ${productId}: ${error.message}`
@@ -371,7 +388,7 @@ async function performRobustCleanup(options: CleanupRequestBody): Promise<Cleanu
 /**
  * Handler principal de la Edge Function con todas las correcciones aplicadas
  */
-serve(async (req: Request) => {
+serve((req: Request) => withMetrics('daily-cleanup', req, async () => {
   // Validar método HTTP
   if (req.method !== 'POST') {
     return new Response(
@@ -436,7 +453,42 @@ serve(async (req: Request) => {
       console.warn('⚠️ Error guardando log:', logError)
       // No fallar por errores de log
     }
+
+    // =============================================================
+    // MÉTRICAS: Retención automática (pruning) de invocaciones edge
+    // =============================================================
+    // Configuración vía variables de entorno (todas opcionales):
+    // METRICS_RETENTION_MODE: 'weekly' (default) | 'daily' | 'off'
+    // METRICS_RETENTION_DAYS: número de días a conservar (default 30)
+    // METRICS_RETENTION_WEEKDAY: 0..6 (UTC) día para prune en modo weekly (default 0 = domingo)
+    try {
+      const retentionMode = (Deno.env.get('METRICS_RETENTION_MODE') || 'weekly').toLowerCase()
+      const retentionDays = parseInt(Deno.env.get('METRICS_RETENTION_DAYS') || '30', 10)
+      const retentionWeekday = parseInt(Deno.env.get('METRICS_RETENTION_WEEKDAY') || '0', 10)
+      const todayUtc = new Date()
+      const weekdayUtc = todayUtc.getUTCDay()
+
+      let runPrune = false
+      if (retentionMode === 'daily') runPrune = true
+      else if (retentionMode === 'weekly' && weekdayUtc === retentionWeekday) runPrune = true
+
+      if (retentionMode !== 'off' && runPrune) {
+        console.log(`🧹 Ejecutando prune_edge_function_invocations (mode=${retentionMode}, days=${retentionDays})`)
+        // Llamada RPC (la función es SECURITY DEFINER a nivel DB; si no, requiere service role)
+        const { error: pruneError } = await supabase.rpc('prune_edge_function_invocations', {
+          p_days: retentionDays,
+          p_batch: 50000
+        })
+        if (pruneError) {
+          console.warn('⚠️ Error en prune_edge_function_invocations:', pruneError)
+        }
+      }
+    } catch (pruneCatch) {
+      console.warn('⚠️ Fallo inesperado en lógica de retención de métricas:', pruneCatch)
+    }
     
+    // Nota: Durante la fase de transición a borrado diferido, filesRemoved permanecerá en 0 y stagedCandidates
+    // reflejará el número de archivos candidatos registrados para purga posterior.
     return new Response(
       JSON.stringify(result),
       { 
@@ -459,4 +511,4 @@ serve(async (req: Request) => {
       }
     )
   }
-})
+}))

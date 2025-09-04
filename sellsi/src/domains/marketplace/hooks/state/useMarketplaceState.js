@@ -43,8 +43,12 @@ export const useMarketplaceState = () => {
       if (seccionActiva === 'topVentas' && producto.tipo !== 'top') return false
 
       // Filtrar por búsqueda (usando valor debounced)
-      if (debouncedBusqueda && !producto.nombre?.toLowerCase().includes(debouncedBusqueda.toLowerCase())) {
-        return false
+      if (debouncedBusqueda) {
+        const query = debouncedBusqueda.toLowerCase()
+        const nombreMatch = producto.nombre?.toLowerCase().includes(query)
+        // ✅ NUEVO: Permitir búsqueda por nombre de proveedor (proveedor | user_nm)
+        const proveedorMatch = producto.proveedor?.toLowerCase().includes(query) || producto.user_nm?.toLowerCase().includes(query)
+        if (!nombreMatch && !proveedorMatch) return false
       }
 
       // Filtrar por categoría

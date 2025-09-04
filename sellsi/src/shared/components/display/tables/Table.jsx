@@ -8,7 +8,11 @@ import {
   TableRow,
   Paper,
   Typography,
+  Box,
+  Tooltip,
+  IconButton,
 } from '@mui/material';
+import { InfoOutlined as InfoOutlinedIcon } from '@mui/icons-material';
 import Rows from './TableRows';
 
 const Table = ({ orders, onActionClick }) => {
@@ -27,17 +31,68 @@ const Table = ({ orders, onActionClick }) => {
       <MuiTable sx={{ minWidth: 650 }} aria-label="tabla de pedidos">
         <TableHead>
           <TableRow>
-            <TableCell align="center" sx={{ width: '50px' }}>
+            <TableCell align="center" sx={{ width: '50px', fontWeight: 600 }}>
               {/* Columna para icono de advertencia */}
             </TableCell>
-            <TableCell>Productos</TableCell>
-            <TableCell>ID Venta</TableCell>
-            <TableCell>Dirección Entrega</TableCell>
-            <TableCell>Fecha Solicitada</TableCell>
-            <TableCell>Fecha Entrega</TableCell>
-            <TableCell align="right">Venta</TableCell>
-            <TableCell>Estado</TableCell>
-            <TableCell>Acciones</TableCell>
+            <TableCell sx={{ pl: 0, fontWeight: 600 }}>Producto</TableCell>
+            <TableCell sx={{ fontWeight: 600 }}>Unidades</TableCell>
+            <TableCell sx={{ fontWeight: 600 }}>ID Venta</TableCell>
+            <TableCell sx={{ fontWeight: 600 }}>Dirección Entrega</TableCell>
+            <TableCell sx={{ fontWeight: 600 }}>Fechas</TableCell>
+            <TableCell sx={{ fontWeight: 600 }}>Documento Tributario</TableCell>
+            <TableCell align="right" sx={{ fontWeight: 600 }}>Venta y Envío (IVA inc.)</TableCell>
+            <TableCell sx={{ fontWeight: 600 }}>Estado</TableCell>
+            <TableCell sx={{ fontWeight: 600 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                <span style={{ fontWeight: 600 }}>Acciones</span>
+                <Tooltip
+                  placement="right"
+                  componentsProps={{
+                    tooltip: {
+                      sx: {
+                        maxWidth: 320,
+                        p: 1.25,
+                      },
+                    },
+                  }}
+                  title={
+                    <Box>
+                      <Typography variant="subtitle2" sx={{ color: 'common.white' }} gutterBottom>
+                        Guía rápida
+                      </Typography>
+                      <Typography variant="caption" sx={{ color: 'common.white' }} display="block">
+                        Flujo principal: Pendiente → Aceptado → En Transito → Entregado · Rechazado cierra el pedido.
+                      </Typography>
+                      <Typography variant="caption" sx={{ color: 'common.white' }} display="block" gutterBottom>
+                        Usa Chat para coordinar en cualquier estado.
+                      </Typography>
+                      <Typography variant="caption" sx={{ color: 'common.white' }} display="block">
+                        • Pendiente: Aceptar (continúa) · Rechazar (finaliza)
+                      </Typography>
+                      <Typography variant="caption" sx={{ color: 'common.white' }} display="block">
+                        • Aceptado: Despachar* (pasa a En Transito) · Rechazar
+                      </Typography>
+                      <Typography variant="caption" sx={{ color: 'common.white' }} display="block">
+                        • En Transito: Confirmar Entrega (finaliza)
+                      </Typography>
+                      <Typography variant="caption" sx={{ color: 'common.white' }} display="block" gutterBottom>
+                        • Entregado: Solo Chat postventa
+                      </Typography>
+                      <Typography variant="caption" sx={{ color: 'common.white', opacity: 0.9 }}>
+                        * Despachar requiere Fecha estimada; mensajes/motivos son opcionales.
+                      </Typography>
+                      <Typography variant="caption" sx={{ color: 'common.white', display: 'block', mt: 1 }}>
+                        Si tienes alguna duda o inquietud, contáctanos a través de la opción ‘Ayuda’
+                      </Typography>
+                    </Box>
+                  }
+                >
+                  <IconButton size="small" aria-label="Información de acciones">
+                    <InfoOutlinedIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+              </Box>
+            </TableCell>
           </TableRow>
         </TableHead>
         <TableBody>

@@ -1,4 +1,14 @@
 import { supabase } from '../supabase';
+import { normalizeStatus, getStatusDisplayName } from '../../domains/orders/shared/constants';
+import { isUUID } from '../../domains/orders/shared/validation';
+import { ordersRepository } from '../../domains/orders/infra/repositories/OrdersRepository';
+import { notificationService } from '../../domains/notifications/services/notificationService';
+
+// Normalizador único para document_type -> 'boleta' | 'factura' | 'ninguno'
+// (Se removió helper local normalizeDocumentType; ahora todo se resuelve en los use cases)
+
+// DEBUG deshabilitado (se removieron los console.logs); cambiar a true y reintroducir prints manualmente si se necesita diagnóstico.
+const DEBUG_ORDERS = false; // Mantener bandera por compatibilidad futura
 
 /**
  * OrderService - Servicio para manejar todas las operaciones de pedidos con Supabase
@@ -11,269 +21,208 @@ import { supabase } from '../supabase';
  */
 
 class OrderService {
+  // TODO: Implementar flujo de payment orders para supplier si aplica. Placeholder para compatibilidad.
+  async getPaymentOrdersForSupplier(supplierId, opts = {}) { return []; }
+  async getPaymentOrdersForBuyer(buyerId, { limit, offset } = {}) {
+    if (!buyerId) throw new Error('ID de comprador es requerido');
+    if (!isUUID(buyerId)) throw new Error('ID de comprador no tiene formato UUID válido');
+    try {
+      const { GetBuyerPaymentOrders } = await import('../../domains/orders/application/queries/GetBuyerPaymentOrders');
+      return await GetBuyerPaymentOrders(buyerId, { limit, offset });
+    } catch (error) {
+      throw new Error(`No se pudieron obtener payment orders: ${error.message}`);
+    }
+  }
+
+  /**
+   * Suscripción realtime a cambios en 'orders' para un comprador.
+   * Llama al callback con payload Supabase.
+   * Retorna función para desuscribir.
+   */
+  subscribeToBuyerPaymentOrders(buyerId, onChange) {
+    if (!buyerId) return () => {};
+    const channel = supabase
+      .channel(`orders_changes_${buyerId}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders', filter: `user_id=eq.${buyerId}` }, (payload) => {
+        try { onChange && onChange(payload); } catch (_) {}
+      })
+      .subscribe();
+    return () => { try { supabase.removeChannel(channel); } catch (_) {} };
+  }
+
+  /**
+   * Obtiene solo estados mínimos de orders para un comprador (para polling liviano)
+   */
+  async getPaymentStatusesForBuyer(buyerId) {
+    if (!buyerId) throw new Error('ID de comprador es requerido');
+  if (!isUUID(buyerId)) throw new Error('ID de comprador no tiene formato UUID válido');
+  const { data, error } = await ordersRepository.getMinimalStatuses(buyerId);
+    if (error) throw error;
+    return data || [];
+  }
   /**
    * Obtiene todos los pedidos para un proveedor específico
    * @param {string} supplierId - ID del proveedor
    * @param {Object} filters - Filtros opcionales (status, fechas, etc.)
    * @returns {Array} Lista de pedidos con sus items
-   */  async getOrdersForSupplier(supplierId, filters = {}) {
+  */
+  async getOrdersForSupplier(supplierId, filters = {}) {
     try {
-      // Validate supplierId is a valid UUID
-      if (!supplierId) {
-        throw new Error('ID de proveedor es requerido');
+      if (!supplierId) return [];
+      const limit = Number(filters.limit) || 100;
+  const includePending = true; // HOTFIX: mostrar también pedidos con pago pendiente para coherencia con notificaciones
+  const paymentFilter = includePending
+    ? (q) => q.in('payment_status', ['paid','pending'])
+    : (q) => q.eq('payment_status','paid');
+
+  let baseQuery = supabase
+    .from('orders')
+    // Se agrega accepted_at para recalcular SLA (Fecha Entrega Límite = accepted_at + días hábiles)
+    // Incluir billing_address para que el frontend pueda mostrar datos de facturación
+    .select('id, items, status, payment_status, estimated_delivery_date, created_at, accepted_at, updated_at, shipping, total, subtotal, shipping_address, billing_address, supplier_parts_meta')
+    .contains('supplier_ids', [supplierId]) // nuevo filtro server-side (B1)
+    .order('created_at', { ascending: false })
+    .limit(limit);
+
+  baseQuery = paymentFilter(baseQuery);
+  const { data: recent, error: recErr } = await baseQuery;
+      if (recErr || !Array.isArray(recent)) return [];
+      // === B3 ENRICHMENT: completar supplier_id en items legacy faltantes ===
+      const missingProductIds = new Set();
+      for (const row of recent) {
+        let itemsRaw = row.items;
+        if (typeof itemsRaw === 'string') { try { itemsRaw = JSON.parse(itemsRaw); } catch { itemsRaw = []; } }
+        if (!Array.isArray(itemsRaw)) continue;
+        for (const it of itemsRaw) {
+          const hasSupplier = !!(it?.supplier_id || it?.supplierId || it?.product?.supplier_id || it?.product?.supplierId);
+          const pid = it?.product_id || it?.productid || it?.id || it?.product?.productid;
+            if (!hasSupplier && pid) missingProductIds.add(pid);
+        }
       }
-      
-      // Basic UUID format validation
-      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-      if (!uuidRegex.test(supplierId)) {
-        throw new Error('ID de proveedor no tiene formato UUID válido');
+      let productMap = new Map();
+      if (missingProductIds.size > 0) {
+        const ids = Array.from(missingProductIds);
+        const { data: prodRows } = await supabase
+          .from('products')
+          .select('productid, supplier_id')
+          .in('productid', ids);
+        if (Array.isArray(prodRows)) productMap = new Map(prodRows.map(r => [r.productid, r]));
       }
-
-      // First, get the products for this supplier to filter carts
-      const { data: supplierProducts, error: productsError } = await supabase
-        .from('products')
-        .select('productid')
-        .eq('supplier_id', supplierId);
-
-      if (productsError) {
-        throw new Error(`Error obteniendo productos del proveedor: ${productsError.message}`);
-      }
-
-      if (!supplierProducts || supplierProducts.length === 0) {
-        // No products for this supplier, return empty array
-        return [];
-      }
-
-      const productIds = supplierProducts.map(p => p.productid);      // Now get carts that contain items from this supplier's products
-      let query = supabase
-        .from('carts')
-        .select(`
-          cart_id,
-          user_id,
-          status,
-          created_at,
-          updated_at,
-          users!carts_user_id_fkey (
-            user_id,
-            user_nm,
-            email,
-            phone_nbr,
-            shipping_info (
-              shipping_region,
-              shipping_commune,
-              shipping_address,
-              shipping_number,
-              shipping_dept
-            )
-          ),
-          cart_items!inner (
-            cart_items_id,
-            product_id,
-            quantity,
-            price_at_addition,
-            price_tiers,
-            added_at,
-            updated_at,
-            products!inner (
-              productid,
-              productnm,
-              price,
-              category,
-              description,
-              supplier_id,
-              product_images (image_url, thumbnail_url),
-              product_delivery_regions (
-                region,
-                price,
-                delivery_days
-              )
-            )
-          )
-        `)
-        .neq('status', 'active') // Solo pedidos (no carritos activos)
-        .in('cart_items.product_id', productIds)
-        .order('created_at', { ascending: false });
-
-      // Aplicar filtros de estado
-      if (filters.status && filters.status !== 'all') {
-        query = query.eq('status', filters.status);
-      }
-
-      // Aplicar filtros de fecha
-      if (filters.dateFrom) {
-        query = query.gte('created_at', filters.dateFrom);
-      }
-      if (filters.dateTo) {
-        query = query.lte('created_at', filters.dateTo);
-      }
-
-      const { data, error } = await query;      if (error) {
-        throw error;
-      }
-
-      // Handle case where no data is returned
-      if (!data || data.length === 0) {
-        return [];
-      }
-
-      // Transformar los datos para el formato esperado por MyOrders
-      const orders = data
-        .filter(cart => cart.cart_items && cart.cart_items.length > 0) // Solo carritos con items del proveedor
-        .map(cart => {
-          // Filter items that belong to this supplier
-          const supplierItems = cart.cart_items.filter(item => 
-            item.products && item.products.supplier_id === supplierId
-          );
-
-          // Skip carts that don't have items for this supplier
-          if (supplierItems.length === 0) return null;
-
-          // Obtener Dirección de Despacho del comprador
-          const shippingInfo = cart.users?.shipping_info?.[0] || {};
-          const deliveryAddress = {
-            region: shippingInfo.shipping_region || 'Región no especificada',
-            commune: shippingInfo.shipping_commune || 'Comuna no especificada',
-            address: shippingInfo.shipping_address || 'Dirección no especificada',
-            number: shippingInfo.shipping_number || '',
-            department: shippingInfo.shipping_dept || '',
-            fullAddress: `${shippingInfo.shipping_address || 'Dirección no especificada'} ${shippingInfo.shipping_number || ''} ${shippingInfo.shipping_dept || ''}`.trim()
-          };
-
-          // Calcular fecha de entrega basada en product_delivery_regions
-          const calculateDeliveryDate = (items, buyerRegion) => {
-            let maxDeliveryDays = 0;
-            
-            items.forEach(item => {
-              const deliveryRegions = item.products?.product_delivery_regions || [];
-              const regionMatch = deliveryRegions.find(dr => dr.region === buyerRegion);
-              
-              if (regionMatch && regionMatch.delivery_days > maxDeliveryDays) {
-                maxDeliveryDays = regionMatch.delivery_days;
-              }
-            });
-            
-            // Si no hay match, usar 7 días por defecto
-            if (maxDeliveryDays === 0) {
-              maxDeliveryDays = 7;
+  for (const row of recent) {
+        if (typeof row.items === 'string') { try { row.items = JSON.parse(row.items); } catch { row.items = []; } }
+        if (!Array.isArray(row.items)) row.items = [];
+        for (const it of row.items) {
+          const pid = it?.product_id || it?.productid || it?.id;
+          const hasSupplier = !!(it?.supplier_id || it?.supplierId || it?.product?.supplier_id || it?.product?.supplierId);
+          if (!hasSupplier && pid) {
+            const info = productMap.get(pid);
+            if (info?.supplier_id) {
+              if (!it.product) it.product = {};
+              it.product.supplier_id = info.supplier_id; // no sobreescribe existente
             }
-            
-            const deliveryDate = new Date();
-            deliveryDate.setDate(deliveryDate.getDate() + maxDeliveryDays);
-            return deliveryDate.toISOString().split('T')[0]; // Format YYYY-MM-DD
-          };
-
-          const estimatedDeliveryDate = calculateDeliveryDate(supplierItems, deliveryAddress.region);
-
-          return {
-            order_id: cart.cart_id,
-            cart_id: cart.cart_id,
-            buyer_id: cart.user_id,
-            status: cart.status,
-            created_at: cart.created_at,
-            updated_at: cart.updated_at,
-            estimated_delivery_date: estimatedDeliveryDate,
-            
-            // Información del comprador
-            buyer: {
-              user_id: cart.users?.user_id || cart.user_id,
-              name: cart.users?.user_nm || 'Usuario desconocido',
-              email: cart.users?.email || 'Email no disponible',
-              phone: cart.users?.phone_nbr || 'Teléfono no disponible'
-            },
-
-            // Dirección de Despacho
-            delivery_address: deliveryAddress,
-
-            // Items del pedido (solo los del proveedor)
-            items: supplierItems.map(item => ({
-              cart_items_id: item.cart_items_id,
-              product_id: item.product_id,
-              quantity: item.quantity,
-              price_at_addition: item.price_at_addition,
-              price_tiers: item.price_tiers,
-              
-              // Información del producto
-              product: {
-                productid: item.products.productid,
-                name: item.products.productnm,
-                price: item.products.price,
-                category: item.products.category,
-                description: item.products.description,
-                image_url: item.products.product_images?.[0]?.image_url,
-                thumbnail_url: item.products.product_images?.[0]?.thumbnail_url,
-                delivery_regions: item.products.product_delivery_regions || []
+          }
+        }
+      }
+      const { splitOrderBySupplier } = await import('../../domains/orders/shared/splitOrderBySupplier');
+      const { calculateEstimatedDeliveryDate } = await import('../../domains/orders/shared/delivery');
+      const parts = [];
+      for (const row of recent) {
+        const derived = splitOrderBySupplier({ ...row, id: row.id });
+        // Normalizar billing_address si viene stringificado (defensivo)
+        let parsedBilling = null;
+        try {
+          if (typeof row.billing_address === 'string' && row.billing_address.trim() !== '') {
+            parsedBilling = JSON.parse(row.billing_address);
+          } else if (row.billing_address && typeof row.billing_address === 'object') {
+            parsedBilling = row.billing_address;
+          }
+        } catch (_) { parsedBilling = null }
+        for (const p of derived) {
+          if (p.supplier_id === supplierId) {
+            // Nueva lógica SLA: siempre que exista accepted_at y el pedido esté en estado >= accepted,
+            // recalculamos Fecha Entrega Límite = accepted_at + días hábiles (máx de los productos para región del comprador).
+            // Si aún no está aceptado, NO se muestra una fecha límite (est permanece null salvo que backend ya tenga una distinta).
+            let est = null;
+            try {
+              const buyerRegion = (row.shipping_address && (row.shipping_address.shipping_region || row.shipping_address.region)) || null;
+              const statusNorm = (row.status || '').toLowerCase();
+              const isAcceptedOrLater = ['accepted','in_transit','delivered','cancelled','rejected'].includes(statusNorm);
+              if (row.accepted_at && isAcceptedOrLater) {
+                est = calculateEstimatedDeliveryDate(row.accepted_at, p.items, buyerRegion, (pid)=> null);
               }
-            })),
-
-            // Cálculos del pedido
-            total_items: supplierItems.length,
-            total_quantity: supplierItems.reduce((sum, item) => sum + item.quantity, 0),
-            total_amount: supplierItems.reduce((sum, item) => sum + (item.price_at_addition * item.quantity), 0)
-          };
-        })
-        .filter(order => order !== null) // Remove null entries
-        .filter(order => order.items.length > 0); // Solo órdenes con items del proveedor
-
-      return orders;
-
+            } catch(_) {}
+            // Fallback: si no pudimos calcular (sin accepted_at aún) usamos el valor que venga desde backend, si existe.
+            if (!est) est = row.estimated_delivery_date || p.estimated_delivery_date || null;
+            parts.push({
+              ...p,
+              order_id: row.id,
+              parent_order_id: row.id,
+              accepted_at: row.accepted_at || null,
+              estimated_delivery_date: est,
+              total_amount: p.subtotal,
+              final_amount: p.final_amount || p.subtotal + (p.shipping_amount || 0),
+              is_supplier_part: true,
+              is_payment_order: true,
+              is_virtual_part: true,
+              // Propagar billing_address al part para que el store y la UI lo consuman
+              billing_address: parsedBilling || null,
+            });
+          }
+        }
+      }
+      return parts.sort((a,b)=> new Date(b.created_at) - new Date(a.created_at));
     } catch (error) {
       throw new Error(`No se pudieron obtener los pedidos: ${error.message}`);
     }
   }
 
   /**
-   * Actualiza el estado de un pedido
-   * @param {string} orderId - ID del pedido (cart_id)
+   * Actualiza el estado de un pedido - maneja tanto órdenes legacy (carts) como nuevas (orders)
+   * @param {string} orderId - ID del pedido
    * @param {string} newStatus - Nuevo estado del pedido
    * @param {Object} additionalData - Datos adicionales (mensajes, fechas, etc.)
    * @returns {Object} Pedido actualizado
    */
   async updateOrderStatus(orderId, newStatus, additionalData = {}) {
     try {
-      // Validar estados permitidos
-      const validStatuses = [
-        'pending',     // Pendiente (recién creado)
-        'accepted',    // Aceptado por proveedor
-        'rejected',    // Rechazado por proveedor
-        'in_transit',  // En tránsito / despachado
-        'delivered',   // Entregado
-        'cancelled'    // Cancelado
-      ];
-
-      const normalizedStatus = this.normalizeStatus(newStatus);
-      
-      if (!validStatuses.includes(normalizedStatus)) {
-        throw new Error(`Estado no válido: ${newStatus}`);
-      }
-
-      // Preparar datos para actualizar
-      const updateData = {
-        status: normalizedStatus,
-        updated_at: new Date().toISOString(),
-        ...additionalData
-      };
-
-      // Actualizar en la base de datos
-      const { data, error } = await supabase
-        .from('carts')
-        .update(updateData)
-        .eq('cart_id', orderId)
-        .select('*')
-        .single();
-
-      if (error) throw error;
-
-      // Registrar la acción en logs (opcional - para auditoria futura)
-      await this.logOrderAction(orderId, newStatus, additionalData);
-
-      return {
-        success: true,
-        order: data,
-        message: `Pedido ${this.getStatusDisplayName(normalizedStatus)} correctamente`
-      };
-
+      const { UpdateOrderStatus } = await import('../../domains/orders/application/commands/UpdateOrderStatus');
+      return await UpdateOrderStatus(orderId, newStatus, additionalData);
     } catch (error) {
       throw new Error(`No se pudo actualizar el estado del pedido: ${error.message}`);
+    }
+  }
+
+  /**
+   * Actualiza estado parcial por supplier (Opción A 2.0) contra edge function.
+   * @param {string} orderId
+   * @param {string} supplierId
+   * @param {string} newStatus
+   * @param {object} opts { estimated_delivery_date?, rejected_reason? }
+   */
+  async updateSupplierPartStatus(orderId, supplierId, newStatus, opts = {}) {
+    if (!orderId || !supplierId || !newStatus) throw new Error('orderId, supplierId y newStatus requeridos');
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('update-supplier-part-status', {
+        body: { 
+          order_id: orderId, 
+          supplier_id: supplierId, 
+          new_status: newStatus, 
+          ...opts 
+        }
+      });
+
+      if (error) {
+        throw new Error(`Error al invocar la función: ${error.message}`);
+      }
+      
+      if (data?.error) {
+        throw new Error(data.error);
+      }
+      
+      return data;
+    } catch (error) {
+      throw new Error(`Error actualizando parte: ${error.message}`);
     }
   }
 
@@ -282,43 +231,14 @@ class OrderService {
    * @param {string} status - Estado en español o formato UI
    * @returns {string} Estado normalizado para BD
    */
-  normalizeStatus(status) {
-    const statusMap = {
-      'Pendiente': 'pending',
-      'Aceptado': 'accepted',
-      'Rechazado': 'rejected',
-      'En Ruta': 'in_transit',
-      'Entregado': 'delivered',
-      'Cancelado': 'cancelled',
-      // También manejar estados en inglés
-      'pending': 'pending',
-      'accepted': 'accepted',
-      'rejected': 'rejected',
-      'in_transit': 'in_transit',
-      'delivered': 'delivered',
-      'cancelled': 'cancelled'
-    };
-
-    return statusMap[status] || status.toLowerCase();
-  }
+  normalizeStatus(status) { return normalizeStatus(status); }
 
   /**
    * Obtiene el nombre de visualización del estado
    * @param {string} status - Estado de la BD
    * @returns {string} Nombre para mostrar
    */
-  getStatusDisplayName(status) {
-    const displayMap = {
-      'pending': 'Pendiente',
-      'accepted': 'Aceptado',
-      'rejected': 'Rechazado',
-      'in_transit': 'En Ruta',
-      'delivered': 'Entregado',
-      'cancelled': 'Cancelado'
-    };
-
-    return displayMap[status] || status;
-  }
+  getStatusDisplayName(status) { return getStatusDisplayName(status); }
 
   /**
    * Obtiene estadísticas de pedidos para el proveedor
@@ -328,63 +248,15 @@ class OrderService {
    */
   async getOrderStats(supplierId, period = {}) {
     try {
-      let query = supabase
-        .from('carts')
-        .select(`
-          status,
-          created_at,
-          cart_items!inner (
-            quantity,
-            price_at_addition,
-            products!inner (
-              supplier_id
-            )
-          )
-        `)
-        .neq('status', 'active')
-        .eq('cart_items.products.supplier_id', supplierId);
-
-      // Aplicar filtros de período
-      if (period.from) {
-        query = query.gte('created_at', period.from);
+      const SUPPLIER_PARTS_ENABLED = (import.meta.env?.VITE_SUPPLIER_PARTS_ENABLED || '').toLowerCase() === 'true';
+      if (SUPPLIER_PARTS_ENABLED) {
+        try {
+          const { GetSupplierPartStats } = await import('../../domains/orders/application/queries/GetSupplierPartStats');
+          return await GetSupplierPartStats(supplierId, period);
+        } catch (e) { /* fallback abajo */ }
       }
-      if (period.to) {
-        query = query.lte('created_at', period.to);
-      }
-
-      const { data, error } = await query;
-
-      if (error) throw error;
-
-      // Calcular estadísticas
-      const stats = {
-        total_orders: data.length,
-        pending: data.filter(order => order.status === 'pending').length,
-        accepted: data.filter(order => order.status === 'accepted').length,
-        rejected: data.filter(order => order.status === 'rejected').length,
-        in_transit: data.filter(order => order.status === 'in_transit').length,
-        delivered: data.filter(order => order.status === 'delivered').length,
-        cancelled: data.filter(order => order.status === 'cancelled').length,
-        
-        total_revenue: data
-          .filter(order => ['accepted', 'in_transit', 'delivered'].includes(order.status))
-          .reduce((sum, order) => {
-            return sum + order.cart_items.reduce((itemSum, item) => {
-              return itemSum + (item.price_at_addition * item.quantity);
-            }, 0);
-          }, 0),
-
-        total_items_sold: data
-          .filter(order => ['delivered'].includes(order.status))
-          .reduce((sum, order) => {
-            return sum + order.cart_items.reduce((itemSum, item) => {
-              return itemSum + item.quantity;
-            }, 0);
-          }, 0)
-      };
-
-      return stats;
-
+  // Legacy stats eliminadas; sin parts activos devolvemos estructura vacía.
+  return { total_orders: 0, pending:0, accepted:0, rejected:0, in_transit:0, delivered:0, cancelled:0, total_revenue:0, total_items_sold:0 };
     } catch (error) {
       throw new Error(`No se pudieron obtener las estadísticas: ${error.message}`);
     }
@@ -424,37 +296,15 @@ class OrderService {
    */
   async searchOrders(supplierId, searchText) {
     try {
-      const { data, error } = await supabase
-        .from('carts')
-        .select(`
-          cart_id,
-          user_id,
-          status,
-          created_at,
-          updated_at,
-          users!carts_user_id_fkey (
-            user_nm,
-            email
-          ),
-          cart_items (
-            products (
-              supplier_id,
-              productnm
-            )
-          )
-        `)
-        .neq('status', 'active')
-        .eq('cart_items.products.supplier_id', supplierId)
-        .or(`
-          cart_id.ilike.%${searchText}%,
-          users.user_nm.ilike.%${searchText}%,
-          users.email.ilike.%${searchText}%
-        `);
-
-      if (error) throw error;
-
-      return data || [];
-
+      const SUPPLIER_PARTS_ENABLED = (import.meta.env?.VITE_SUPPLIER_PARTS_ENABLED || '').toLowerCase() === 'true';
+      if (SUPPLIER_PARTS_ENABLED) {
+        try {
+          const { SearchSupplierParts } = await import('../../domains/orders/application/queries/SearchSupplierParts');
+          return await SearchSupplierParts(supplierId, searchText);
+        } catch (e) { /* fallback abajo */ }
+      }
+  // Legacy search eliminada; sin parts activos retornamos []
+  return [];
     } catch (error) {
       throw new Error(`Error en la búsqueda: ${error.message}`);
     }
@@ -468,168 +318,35 @@ class OrderService {
    */
   async getOrdersForBuyer(buyerId, filters = {}) {
     try {
-      // Validate buyerId is a valid UUID
-      if (!buyerId) {
-        throw new Error('ID de comprador es requerido');
-      }
-      
-      // Basic UUID format validation
-      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-      if (!uuidRegex.test(buyerId)) {
-        throw new Error('ID de comprador no tiene formato UUID válido');
-      }
-
-      // Get carts for this buyer that are not active (completed orders)
-      let query = supabase
-        .from('carts')
-        .select(`
-          cart_id,
-          user_id,
-          status,
-          created_at,
-          updated_at,
-          users!carts_user_id_fkey (
-            user_id,
-            user_nm,
-            email,
-            phone_nbr,
-            shipping_info (
-              shipping_region,
-              shipping_commune,
-              shipping_address,
-              shipping_number,
-              shipping_dept
-            )
-          ),
-          cart_items (
-            cart_items_id,
-            product_id,
-            quantity,
-            price_at_addition,
-            price_tiers,
-            added_at,
-            updated_at,
-            products (
-              productid,
-              productnm,
-              price,
-              category,
-              description,
-              supplier_id,
-              product_images (
-                image_url,
-                thumbnail_url,
-                thumbnails
-              ),
-              users!products_supplier_id_fkey (
-                user_nm,
-                email
-              )
-            )
-          )
-        `)
-        .eq('user_id', buyerId)
-        .neq('status', 'active') // Solo pedidos completados (no carritos activos)
-        .order('created_at', { ascending: false });
-
-      // Aplicar filtros de estado
-      if (filters.status && filters.status !== 'all') {
-        query = query.eq('status', filters.status);
-      }
-
-      // Aplicar filtros de fecha
-      if (filters.dateFrom) {
-        query = query.gte('created_at', filters.dateFrom);
-      }
-      if (filters.dateTo) {
-        query = query.lte('created_at', filters.dateTo);
-      }
-
-      const { data, error } = await query;
-
-      if (error) {
-        throw error;
-      }
-
-      // Handle case where no data is returned
-      if (!data || data.length === 0) {
-        return [];
-      }
-
-      // Transformar los datos para el formato esperado por BuyerOrders
-      const orders = data
-        .filter(cart => cart.cart_items && cart.cart_items.length > 0)
-        .map(cart => {
-          // Obtener Dirección de Despacho del comprador
-          const shippingInfo = cart.users?.shipping_info?.[0] || {};
-          const deliveryAddress = {
-            region: shippingInfo.shipping_region || 'Región no especificada',
-            commune: shippingInfo.shipping_commune || 'Comuna no especificada',
-            address: shippingInfo.shipping_address || 'Dirección no especificada',
-            number: shippingInfo.shipping_number || '',
-            department: shippingInfo.shipping_dept || '',
-            fullAddress: `${shippingInfo.shipping_address || 'Dirección no especificada'} ${shippingInfo.shipping_number || ''} ${shippingInfo.shipping_dept || ''}`.trim()
-          };
-
-          return {
-            order_id: cart.cart_id,
-            cart_id: cart.cart_id,
-            buyer_id: cart.user_id,
-            status: cart.status,
-            created_at: cart.created_at,
-            updated_at: cart.updated_at,
-            
-            // Información del comprador
-            buyer: {
-              user_id: cart.users?.user_id || cart.user_id,
-              name: cart.users?.user_nm || 'Usuario desconocido',
-              email: cart.users?.email || 'Email no disponible',
-              phone: cart.users?.phone_nbr || 'Teléfono no disponible'
-            },
-
-            // Dirección de Despacho
-            delivery_address: deliveryAddress,
-
-            // Items del pedido
-            items: cart.cart_items.map(item => ({
-              cart_items_id: item.cart_items_id,
-              product_id: item.product_id,
-              quantity: item.quantity,
-              price_at_addition: item.price_at_addition,
-              price_tiers: item.price_tiers,
-              
-              // Información del producto
-              product: {
-                productid: item.products.productid,
-                name: item.products.productnm,
-                price: item.products.price,
-                category: item.products.category,
-                description: item.products.description,
-                supplier_id: item.products.supplier_id,
-                image_url: item.products.product_images?.[0]?.image_url,
-                thumbnail_url: item.products.product_images?.[0]?.thumbnail_url,
-                thumbnails: item.products.product_images?.[0]?.thumbnails,
-                
-                // Información del proveedor
-                supplier: {
-                  name: item.products.users?.user_nm || 'Proveedor desconocido',
-                  email: item.products.users?.email || 'Email no disponible'
-                }
-              }
-            })),
-
-            // Cálculos del pedido
-            total_items: cart.cart_items.length,
-            total_quantity: cart.cart_items.reduce((sum, item) => sum + item.quantity, 0),
-            total_amount: cart.cart_items.reduce((sum, item) => sum + (item.price_at_addition * item.quantity), 0)
-          };
-        });
-
-      return orders;
-
+  // Legacy buyer carts removidos: retornamos siempre [] (buyer UI usa payment orders + supplier_parts)
+  return [];
     } catch (error) {
       throw new Error(`No se pudieron obtener los pedidos: ${error.message}`);
     }
+  }
+
+  /**
+   * Crea notificaciones de cambio de estado para el comprador (por item) usando RPC create_notification.
+   * @param {Object} orderRow - Datos del pedido (orders o carts row)
+   * @param {string} status - Estado normalizado
+   * @private
+   */
+  async _notifyOrderStatusChange() { /* deprecated - use notificationService */ }
+
+  /**
+   * Crear notificaciones de nuevo pedido para supplier y buyer (por item) tras checkout.
+   * Llamar desde el flujo de creación de order.
+   */
+  async notifyNewOrder(orderRow) {
+    try {
+      // Prefer command if available (encapsula dominio); fallback directa.
+      try {
+        const { NotifyNewOrder } = await import('../../domains/orders/application/commands/NotifyNewOrder');
+        return await NotifyNewOrder(orderRow);
+      } catch (e) {
+        await notificationService.notifyNewOrder(orderRow);
+      }
+    } catch (_) {}
   }
 }
 

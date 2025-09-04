@@ -206,7 +206,7 @@ const BannedPageUI = ({ onContactClick, banStatus = null }) => {
           <Button
             variant="text"
             onClick={() => setOpenTerms(true)}
-            sx={{ color: '#1565C0', textDecoration: 'underline', fontWeight: 600, fontSize: { xs: '0.75rem', sm: '0.85rem' }, p: 0, minWidth: 'unset' }}
+            sx={{ color: '#2E52B2', textDecoration: 'underline', fontWeight: 600, fontSize: { xs: '0.75rem', sm: '0.85rem' }, p: 0, minWidth: 'unset' }}
           >
             Términos y Condiciones
           </Button>
