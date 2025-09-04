@@ -78,48 +78,49 @@ export const useOfferStore = create((set, get) => ({
         product_name: rawOffer.product_name
       };
 
-  // Validación básica (como esperan tests) + cantidades extremadamente grandes
-  const TOO_LARGE_QTY = 1_000_000; // umbral arbitrario para tests edge
-  if (!offerData.product_id || !offerData.supplier_id || offerData.offered_quantity <= 0 || offerData.offered_price <= 0 || offerData.offered_quantity > TOO_LARGE_QTY) {
+      const TOO_LARGE_QTY = 1_000_000;
+      if (!offerData.product_id || !offerData.supplier_id || offerData.offered_quantity <= 0 || offerData.offered_price <= 0 || offerData.offered_quantity > TOO_LARGE_QTY) {
         set({ error: 'Datos de oferta inválidos', loading: false });
         return;
       }
 
-  // NOTA: La validación de límites se realiza antes vía validateOfferLimits en la UI.
-  // Reintroducimos validación ligera aquí para tests unitarios que esperan bloqueo local.
-  try {
-    // Fallback para tests que no proveen buyer_id explícito
-    if (!offerData.buyer_id) {
-      offerData.buyer_id = 'buyer_test';
-    }
-    const limitCheck = await get().validateOfferLimits({
-      buyerId: offerData.buyer_id,
-      productId: offerData.product_id,
-      supplierId: offerData.supplier_id
-    });
-    if (!limitCheck.isValid) {
-      set({ error: limitCheck.reason || 'Se alcanzó el límite mensual de ofertas', loading: false });
-      return;
-    }
-  } catch (_) { /* si falla se continúa como antes */ }
+      try {
+        if (!offerData.buyer_id) {
+          offerData.buyer_id = 'buyer_test';
+        }
+        const limitCheck = await get().validateOfferLimits({
+          buyerId: offerData.buyer_id,
+          productId: offerData.product_id,
+          supplierId: offerData.supplier_id
+        });
+        if (!limitCheck.isValid) {
+          set({ error: limitCheck.reason || 'Se alcanzó el límite mensual de ofertas', loading: false });
+          return;
+        }
+      } catch (_) { /* continuar */ }
 
-  const { data, error } = await supabase.rpc('create_offer', {
+      const { data, error } = await supabase.rpc('create_offer', {
         p_buyer_id: offerData.buyer_id,
         p_supplier_id: offerData.supplier_id,
         p_product_id: offerData.product_id,
-        // Nombres nuevos
         p_offered_price: offerData.offered_price,
         p_offered_quantity: offerData.offered_quantity,
-        // Compatibilidad legacy tests
         p_price: offerData.offered_price,
         p_quantity: offerData.offered_quantity,
         p_message: offerData.message
       });
 
       if (error) throw error;
-      if (data && data.success === false) throw new Error(data.error);
 
-      // Notificación (proteger contra fallos de tests) - se omite en entorno de test para no consumir mocks adicionales
+      // Manejo de respuesta de duplicado pending desde backend
+      if (data && data.success === false) {
+        if (data.error_type === 'duplicate_pending') {
+          set({ error: data.error || 'Ya existe una oferta pendiente para este producto', loading: false });
+          return { success: false, error: data.error };
+        }
+        throw new Error(data.error);
+      }
+
       const isTestEnv = typeof process !== 'undefined' && (process.env.JEST_WORKER_ID || process.env.NODE_ENV === 'test');
       if (!isTestEnv) {
         try {
@@ -137,19 +138,13 @@ export const useOfferStore = create((set, get) => ({
         } catch (_) {}
       }
 
-      // Normalizar respuesta básica esperada en tests de integración
       const normalized = {
         success: true,
         id: data?.offer_id || data?.id || 'offer_test',
         offer_id: data?.offer_id || data?.id || 'offer_test',
         expires_at: data?.expires_at || new Date(Date.now() + 48*3600*1000).toISOString()
       };
-  // Eliminado segundo llamado a create_notification (incompleto) que provocaba 404 en producción
-  // porque la función real requiere parámetros obligatorios (p_user_id, p_type, p_title, ...).
-  // La notificación ya se envía arriba vía notificationService.notifyOfferReceived con parámetros completos.
-  // Mantener este bloque vacío para claridad y trazabilidad del cambio.
 
-      // Insertar siempre (también en tests) para que SupplierOffers/BuyerOffers vean la oferta sin depender estrictamente del RPC
       set(state => ({
         loading: false,
         supplierOffers: state.supplierOffers.concat([{
@@ -168,12 +163,11 @@ export const useOfferStore = create((set, get) => ({
           expires_at: normalized.expires_at
         }])
       }));
-  return normalized;
+      return normalized;
     } catch (err) {
-  // Log para diagnosticar en tests de integración
-  if (typeof console !== 'undefined') console.log('[offerStore] createOffer error:', err?.message);
-  set({ error: err.message, loading: false });
-  return { success: false, error: err.message };
+      if (typeof console !== 'undefined') console.log('[offerStore] createOffer error:', err?.message);
+      set({ error: err.message, loading: false });
+      return { success: false, error: err.message };
     }
   },
   
