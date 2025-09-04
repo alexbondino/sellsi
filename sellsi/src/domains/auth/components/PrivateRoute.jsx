@@ -1,18 +1,8 @@
 // 📁 domains/auth/components/PrivateRoute.jsx
-// Migrado de features/auth/PrivateRoute.jsx
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { Box, CircularProgress, Typography } from '@mui/material';
 
-/**
- * Ruta protegida: solo actúa como guard visual.
- * Recibe el estado de sesión y onboarding ya validado desde App.jsx o AuthContext.
- * @param {React.ReactNode} children - Componentes a renderizar si está autenticado y con onboarding completo
- * @param {boolean} isAuthenticated - ¿El usuario está autenticado?
- * @param {boolean} needsOnboarding - ¿El usuario necesita completar onboarding?
- * @param {boolean} loading - ¿Está cargando la validación?
- * @param {string} redirectTo - Ruta a la que redirigir si no está autenticado (default: '/login')
- */
 const PrivateRoute = ({
   children,
   isAuthenticated,
@@ -21,6 +11,8 @@ const PrivateRoute = ({
   redirectTo = '/login',
 }) => {
   const location = useLocation();
+  const isOnboardingRoute = location.pathname === '/onboarding';
+
   // Loading visual centralizado
   if (loading) {
     return (
@@ -47,17 +39,24 @@ const PrivateRoute = ({
     );
   }
 
+  // 1) Si no está autenticado -> a login
   if (!isAuthenticated) {
     return <Navigate to={redirectTo} replace />;
   }
 
-  if (needsOnboarding) {
-    if (location.pathname === '/onboarding') {
-      return children;
-    }
+  // 2) Si está autenticado y YA completó el onboarding:
+  //    - Si intenta entrar a /onboarding -> mándalo al home
+  if (!needsOnboarding && isOnboardingRoute) {
+    return <Navigate to="/" replace />;
+  }
+
+  // 3) Si está autenticado y AÚN NO completa el onboarding:
+  //    - Si NO está en /onboarding -> forzar a /onboarding
+  if (needsOnboarding && !isOnboardingRoute) {
     return <Navigate to="/onboarding" replace />;
   }
 
+  // 4) En cualquier otro caso, renderiza el children
   return children;
 };
 
