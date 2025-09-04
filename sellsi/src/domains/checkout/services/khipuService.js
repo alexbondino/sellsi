@@ -19,6 +19,11 @@ class KhipuService {
         return { ...it, __effective_price: effective };
       }) : [];
 
+      // Extraer offer_ids distintos de los items (si existen)
+      const offerIdsDistinct = Array.from(new Set((normalizedItems || [])
+        .map(it => it.offer_id || it.offerId || (it.metadata && it.metadata.offer_id))
+        .filter(Boolean)));
+
       const paymentPayload = {
         amount: Math.round(total),
         currency: currency || 'CLP',
@@ -26,6 +31,8 @@ class KhipuService {
         buyer_id: userId || null,
         cart_id: orderId || null,
         order_id: orderId,
+        // Pasar lista de ofertas explícitamente para que el Edge Function pueda validar y aplicar descuentos
+        offer_ids: offerIdsDistinct.length ? offerIdsDistinct : undefined,
         cart_items: normalizedItems.map(it => {
               const priceBase = it.__effective_price || it.price || it.price_at_addition || it.unitPrice || 0;
               return {
@@ -34,6 +41,7 @@ class KhipuService {
                 price: priceBase,
                 price_at_addition: priceBase,
                 supplier_id: it.supplier_id || it.supplierId || (it.product && (it.product.supplier_id || it.product.supplierId)) || null,
+                offer_id: it.offer_id || it.offerId || (it.metadata && it.metadata.offer_id) || null,
                 document_type: (() => {
                   const raw = it.document_type || it.documentType || (it.product && (it.product.document_type || it.product.documentType)) || '';
                   const v = String(raw).toLowerCase();
