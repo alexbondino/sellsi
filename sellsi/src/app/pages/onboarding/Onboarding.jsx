@@ -4,11 +4,9 @@ import {
   Typography,
   Container,
   Paper,
-  Button,
   TextField,
   CircularProgress,
   Avatar,
-  Grid,
   Divider,
   Card,
   CardActionArea,
@@ -30,6 +28,10 @@ import {
 } from '../../../shared/components';
 import { Collapse } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
+
+// Si usas Grid v6 (Grid2), mantén "size={{ xs: 12 }}".
+// Si usas Grid v5, cambia a item xs={12}.
+import Grid from '@mui/material/Grid';
 
 // ==================================================================
 // COMPONENTE HELPER: Uploader de logos (estilo mejorado)
@@ -124,10 +126,10 @@ const Onboarding = () => {
     codigoPais: '', // Default to Chile
     descripcionProveedor: '',
 
-    // Campos de Documento Tributario
+    // Documento Tributario
     documentTypes: [],
 
-    // Campos de Facturación
+    // Facturación
     businessName: '',
     billingRut: '',
     businessLine: '',
@@ -139,8 +141,13 @@ const Onboarding = () => {
   const [logoFile, setLogoFile] = useState(null);
   const [logoPreview, setLogoPreview] = useState(null);
   const [logoError, setLogoError] = useState('');
+
   // Hook para primar caché de región inmediatamente al finalizar onboarding
   const { primeUserRegionCache } = useOptimizedUserShippingRegion();
+
+  // (Opcional) Si tienes un contexto que expone refetchProfile, úsalo:
+  // const { refetchProfile } = useAuthContext() || {};
+  const refetchProfile = undefined; // dejar undefined si no existe
 
   useEffect(() => {}, [logoPreview]);
 
@@ -189,6 +196,7 @@ const Onboarding = () => {
   }, [logoPreview]);
 
   const handleFinishOnboarding = async () => {
+    // Validaciones mínimas
     if (!formData.accountType) {
       console.error('Por favor, elige un tipo de cuenta.');
       return;
@@ -198,19 +206,20 @@ const Onboarding = () => {
       return;
     }
 
-    // Validar campos de facturación si es proveedor y seleccionó factura
+    // Validar facturación si corresponde
     if (
       formData.accountType === 'proveedor' &&
       formData.documentTypes?.includes('factura')
     ) {
-      if (
-        !formData.businessName ||
-        !formData.billingRut ||
-        !formData.businessLine ||
-        !formData.billingAddress ||
-        !formData.billingRegion ||
-        !formData.billingCommune
-      ) {
+      const hasBillingInfo =
+        formData.businessName &&
+        formData.billingRut &&
+        formData.businessLine &&
+        formData.billingAddress &&
+        formData.billingRegion &&
+        formData.billingCommune;
+
+      if (!hasBillingInfo) {
         console.error('Por favor completa todos los campos de Facturación.');
         return;
       }
@@ -227,23 +236,25 @@ const Onboarding = () => {
     try {
       const {
         data: { user },
+        error: getUserError,
       } = await supabase.auth.getUser();
+
+      if (getUserError) {
+        throw new Error(getUserError.message || 'Error al obtener usuario.');
+      }
       if (!user) {
         throw new Error(
           'Usuario no encontrado. Por favor, inicia sesión de nuevo.'
         );
       }
 
-      // ✅ INICIO DE LA CORRECCIÓN: Validar y añadir el email
-      // Esta validación es crucial si la columna 'email' es NOT NULL en tu tabla 'users'
       if (!user.email) {
-        // Lanza un error si el email no está disponible, para evitar el error de la base de datos
         throw new Error(
           'El correo electrónico del usuario no está disponible para guardar el perfil. Intenta iniciar sesión nuevamente o contacta a soporte.'
         );
       }
-      // ✅ FIN DE LA CORRECCIÓN: Validar y añadir el email
 
+      // Perfil existente (para posibles limpiezas de logo)
       const { data: existingProfile, error: existingProfileError } =
         await supabase
           .from('users')
@@ -258,15 +269,14 @@ const Onboarding = () => {
         );
       }
 
+      // Manejo de logo
       if (logoFile) {
         const fileExt = logoFile.name.split('.').pop();
-        const staticFilePath = `${user.id}/logo.${fileExt}`; // Consistent path for overwrite
+        const staticFilePath = `${user.id}/logo.${fileExt}`;
 
         const { error: uploadError } = await supabase.storage
           .from('user-logos')
-          .upload(staticFilePath, logoFile, {
-            upsert: true,
-          });
+          .upload(staticFilePath, logoFile, { upsert: true });
 
         if (uploadError) {
           console.error('Supabase Upload Error:', uploadError);
@@ -278,6 +288,7 @@ const Onboarding = () => {
           .getPublicUrl(staticFilePath);
         logoPublicUrl = urlData.publicUrl;
       } else if (existingProfile?.logo_url && !logoPreview) {
+        // Si antes tenía logo y ahora no, lo eliminamos
         const oldLogoPathToDelete =
           existingProfile.logo_url.split('user-logos/')[1];
         if (oldLogoPathToDelete) {
@@ -288,7 +299,9 @@ const Onboarding = () => {
         }
       }
 
+      // Payload de actualización
       const updates = {
+        user_id: user.id,
         user_nm: formData.nombreEmpresa,
         main_supplier: formData.accountType === 'proveedor',
         phone_nbr: normalizePhone(
@@ -297,13 +310,10 @@ const Onboarding = () => {
         ),
         country: formData.codigoPais,
         logo_url: logoPublicUrl,
-        email: user.email, // ✅ ¡LA CORRECCIÓN CLAVE AQUÍ! Se añade el email.
-        // Añadir descripción solo si es proveedor
+        email: user.email, // 🔑 corrección clave
         ...(formData.accountType === 'proveedor' && {
           descripcion_proveedor: formData.descripcionProveedor,
-          // Campos de documento tributario
           document_types: formData.documentTypes || [],
-          // Campos de facturación si seleccionó factura
           ...(formData.documentTypes?.includes('factura') && {
             business_name: formData.businessName,
             billing_rut: formData.billingRut,
@@ -315,27 +325,36 @@ const Onboarding = () => {
         }),
       };
 
+      // Upsert
       const { error: upsertError } = await supabase
         .from('users')
-        .upsert({ user_id: user.id, ...updates }, { onConflict: 'user_id' });
+        .upsert(updates, { onConflict: 'user_id' });
 
       if (upsertError) {
         console.error('Supabase Upsert Error:', upsertError);
         throw new Error(`Error al guardar tu perfil: ${upsertError.message}`);
       }
 
-      console.log('¡Perfil actualizado con éxito!');
-      // Primar cache de región de shipping inmediatamente para evitar "loading" en primeras vistas
-      // Intentar obtener región de despacho desde billingRegion (si se ingresó) o desde algún campo futuro
+      // 🔒 Evita el bucle del guard:
+      // 1) Refresca sesión (opcional pero recomendado)
+      await supabase.auth.refreshSession().catch(() => {});
+      // 2) Marca que ya completaste el onboarding (bypass one-shot)
+      sessionStorage.setItem('onboardingDone', '1');
+      // 3) Si tienes refetchProfile del contexto, úsalo para que el guard ya te “vea” completo
+      await (refetchProfile?.() ?? Promise.resolve());
+
+      // Prime de región (si aplica)
       const regionCandidate =
         updates.billing_region || updates.shipping_region || null;
       if (regionCandidate) {
         try {
           primeUserRegionCache(regionCandidate);
-        } catch (e) {
+        } catch {
           /* silencioso */
         }
       }
+
+      // Navega a la home
       navigate('/', { replace: true });
     } catch (error) {
       console.error('❌ Error al actualizar el perfil:', error);
@@ -348,7 +367,6 @@ const Onboarding = () => {
   const isFormValid = () => {
     const hasBasicInfo = formData.accountType && formData.nombreEmpresa.trim();
 
-    // Si es proveedor y seleccionó factura, validar campos de facturación
     if (
       formData.accountType === 'proveedor' &&
       formData.documentTypes?.includes('factura')
@@ -360,31 +378,20 @@ const Onboarding = () => {
         formData.billingAddress &&
         formData.billingRegion &&
         formData.billingCommune;
-
       return hasBasicInfo && hasBillingInfo;
     }
-
     return hasBasicInfo;
   };
 
   return (
     <>
-      <div
-        style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          zIndex: 9999,
-          background: '#fff',
-          color: '#000',
-        }}
-      >
+      {/* Debug opcional */}
+      {/* <div style={{ position: 'fixed', top: 0, left: 0, zIndex: 9999, background: '#fff', color: '#000' }}>
         Onboarding debug
-      </div>
+      </div> */}
+
       <Container
         component="main"
-        // Se mantiene el maxWidth del Container como lo proporcionaste en tu último mensaje.
-        // Esto significa maxWidth: '1100px' si esa era la intención.
         sx={{ maxWidth: '1100px', my: { xs: 4, md: 8 } }}
       >
         <Paper
@@ -397,7 +404,7 @@ const Onboarding = () => {
             boxShadow: `0px 10px 30px rgba(0, 0, 0, 0.1)`,
           }}
         >
-          {/* --- Header Section --- */}
+          {/* Header */}
           <Box sx={{ textAlign: 'center', mb: 5 }}>
             <Typography
               component="h1"
@@ -422,17 +429,18 @@ const Onboarding = () => {
 
           <Divider sx={{ mb: 5 }} />
 
-          {/* --- SECCIÓN 1: TIPO DE CUENTA --- */}
+          {/* Paso 1: Tipo de cuenta */}
           <Box sx={{ mb: 5, textAlign: 'center' }}>
             <Typography
               variant="h5"
               sx={{ fontWeight: 600, mb: 3, color: theme.palette.text.primary }}
             >
               Paso 1: Elige tu rol principal
-            </Typography>{' '}
+            </Typography>
+
             <Grid container spacing={3} justifyContent="center">
-              {/* Proveedor Card */}
-              <Grid size={{ xs: 12, sm: 6 }}>
+              {/* Proveedor */}
+              <Grid item xs={12} sm={6}>
                 <Card
                   variant="outlined"
                   sx={{
@@ -485,9 +493,10 @@ const Onboarding = () => {
                     </Typography>
                   </CardActionArea>
                 </Card>
-              </Grid>{' '}
-              {/* Comprador Card */}
-              <Grid size={{ xs: 12, sm: 6 }}>
+              </Grid>
+
+              {/* Comprador */}
+              <Grid item xs={12} sm={6}>
                 <Card
                   variant="outlined"
                   sx={{
@@ -542,6 +551,7 @@ const Onboarding = () => {
                 </Card>
               </Grid>
             </Grid>
+
             <Typography
               variant="caption"
               sx={{
@@ -557,7 +567,7 @@ const Onboarding = () => {
 
           <Divider sx={{ mb: 5 }} />
 
-          {/* --- SECCIÓN 2: DATOS DEL PERFIL --- */}
+          {/* Paso 2: Datos de perfil */}
           <Box sx={{ mb: 5 }}>
             <Typography
               variant="h5"
@@ -571,25 +581,18 @@ const Onboarding = () => {
               Paso 2: Completa los datos de tu perfil
             </Typography>
 
-            {/* Se mantiene el maxWidth del Grid container como lo proporcionaste en tu último mensaje. */}
             <Grid
               container
               spacing={5}
               alignItems="flex-start"
-              justifyContent="center" // Centra el contenido horizontalmente
+              justifyContent="center"
               sx={{
-                // Este maxWidth es solo para este Grid, no para el Container principal
-                maxWidth: {
-                  xs: '100%',
-                  md: '800px', // Un ancho máximo para pantallas medianas, más pequeño que el Container.
-                  lg: '950px', // Un ancho máximo para pantallas grandes, aún contenido.
-                },
-                mx: 'auto', // Auto margins para centrar el Grid si tiene un maxWidth
+                maxWidth: { xs: '100%', md: '800px', lg: '950px' },
+                mx: 'auto',
               }}
             >
-              {' '}
-              {/* Columna Izquierda: Campos de Texto */}
-              <Grid size={{ xs: 12, md: 7 }}>
+              {/* Columna Izquierda */}
+              <Grid item xs={12} md={7}>
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
                   <TextField
                     label="Nombre de Empresa o Personal *"
@@ -604,6 +607,7 @@ const Onboarding = () => {
                     helperText={`Este será tu nombre público en la plataforma (ej. Tu Empresa S.A., o Juan Pérez). (${formData.nombreEmpresa.length}/35)`}
                     sx={{ '.MuiOutlinedInput-root': { borderRadius: 2 } }}
                   />
+
                   <Box sx={{ display: 'flex', gap: 1 }}>
                     <Box sx={{ minWidth: 180 }}>
                       <CountrySelector
@@ -617,6 +621,7 @@ const Onboarding = () => {
                         sx={{ '.MuiOutlinedInput-root': { borderRadius: 2 } }}
                       />
                     </Box>
+
                     <TextField
                       fullWidth
                       size="small"
@@ -636,7 +641,6 @@ const Onboarding = () => {
                       }}
                       placeholder="Ej: 912345678"
                       type="tel"
-                      // 👇 Eliminamos la marca en rojo si está vacío
                       error={
                         formData.telefonoContacto.length > 0 &&
                         !validatePhone(
@@ -645,9 +649,7 @@ const Onboarding = () => {
                         ).isValid
                       }
                       helperText={() => {
-                        if (!formData.telefonoContacto) {
-                          return 'Opcional'; // 👈 Se muestra como texto aclaratorio
-                        }
+                        if (!formData.telefonoContacto) return 'Opcional';
                         const res = validatePhone(
                           formData.codigoPais || 'CL',
                           formData.telefonoContacto || ''
@@ -659,7 +661,8 @@ const Onboarding = () => {
                       sx={{ '.MuiOutlinedInput-root': { borderRadius: 2 } }}
                     />
                   </Box>
-                  {/* Campo de descripción solo para proveedores */}
+
+                  {/* Descripción para proveedores */}
                   {formData.accountType === 'proveedor' && (
                     <TextField
                       label="Descripción breve del proveedor"
@@ -675,14 +678,15 @@ const Onboarding = () => {
                         }
                       }}
                       placeholder="Una descripción resumida del tipo de productos que comercializas..."
-                      helperText={`Una descripción resumida del tipo de productos que comercializas. Esta información ayudará a los compradores a identificar rápidamente tu oferta. (${formData.descripcionProveedor.length}/200)`}
+                      helperText={`Ayuda a los compradores a identificar tu oferta. (${formData.descripcionProveedor.length}/200)`}
                       sx={{ '.MuiOutlinedInput-root': { borderRadius: 2 } }}
                     />
                   )}
                 </Box>
-              </Grid>{' '}
-              {/* Columna Derecha: Uploader de Logo */}
-              <Grid size={{ xs: 12, md: 5 }}>
+              </Grid>
+
+              {/* Columna Derecha: Uploader */}
+              <Grid item xs={12} md={5}>
                 <Paper
                   variant="outlined"
                   sx={{
@@ -725,8 +729,7 @@ const Onboarding = () => {
               </Grid>
             </Grid>
 
-            {/* Sección específica para proveedores - Documento Tributario e Facturación */}
-            {/* Esta sección está FUERA del Grid principal para que ocupe todo el ancho disponible */}
+            {/* Configuración Tributaria (solo proveedores) */}
             <Collapse in={formData.accountType === 'proveedor'}>
               {formData.accountType === 'proveedor' && (
                 <Box
@@ -742,22 +745,21 @@ const Onboarding = () => {
                     </Typography>
                   </Divider>
 
-                  {/* Grid para layout horizontal */}
                   <Grid container spacing={3}>
-                    {/* Columna izquierda: Selector de tipo de documento */}
-                    <Grid size={{ xs: 12, md: 6 }}>
+                    {/* Tipo de documento */}
+                    <Grid item xs={12} md={6}>
                       <TaxDocumentSelector
                         documentTypes={formData.documentTypes}
                         onDocumentTypesChange={types =>
                           handleFieldChange('documentTypes', types)
                         }
-                        showTitle={true}
+                        showTitle
                         size="medium"
                       />
                     </Grid>
 
-                    {/* Columna derecha: Facturación (solo si selecciona factura) */}
-                    <Grid size={{ xs: 12, md: 6 }}>
+                    {/* Facturación (si selecciona factura) */}
+                    <Grid item xs={12} md={6}>
                       <Collapse
                         in={formData.documentTypes?.includes('factura')}
                       >
@@ -776,7 +778,7 @@ const Onboarding = () => {
                             <BillingInfoForm
                               formData={formData}
                               onFieldChange={handleFieldChange}
-                              showTitle={true}
+                              showTitle
                               size="small"
                             />
                           </Box>
@@ -789,11 +791,12 @@ const Onboarding = () => {
             </Collapse>
           </Box>
 
-          {/* --- SECCIÓN 3: BOTÓN DE ACCIÓN FINAL --- */}
+          {/* Botón Final */}
           <Box sx={{ mt: 6, display: 'flex', justifyContent: 'center' }}>
             <PrimaryButton
+              type="button"
               onClick={handleFinishOnboarding}
-              disabled={isLoading || !isFormValid()} // 'disabled' prop ya controla el estado
+              disabled={isLoading || !isFormValid()}
               sx={{
                 py: 1.8,
                 px: 8,
@@ -801,7 +804,6 @@ const Onboarding = () => {
                 fontWeight: 700,
                 borderRadius: 3,
                 boxShadow: theme.shadows[8],
-                // Estilos cuando el botón está HABILITADO (por defecto)
                 background: `linear-gradient(45deg, ${theme.palette.primary.dark} 30%, ${theme.palette.primary.main} 90%)`,
                 color: 'white',
                 '&:hover': {
@@ -810,18 +812,13 @@ const Onboarding = () => {
                   transform: 'translateY(-2px)',
                 },
                 transition: 'all 0.3s ease-in-out',
-                // Estilos cuando el botón está DESHABILITADO
                 '&.Mui-disabled': {
-                  // Selector de Material-UI para el estado deshabilitado
-                  background: theme.palette.grey[400], // Fondo gris
-                  color: 'white', // Letra blanca
-                  boxShadow: 'none', // Sin sombra cuando deshabilitado
-                  cursor: 'not-allowed', // Cambia el cursor
-                  transform: 'none', // Elimina la transformación
-                  '&:hover': {
-                    // También limpia el hover en estado deshabilitado
-                    background: theme.palette.grey[400],
-                  },
+                  background: theme.palette.grey[400],
+                  color: 'white',
+                  boxShadow: 'none',
+                  cursor: 'not-allowed',
+                  transform: 'none',
+                  '&:hover': { background: theme.palette.grey[400] },
                 },
               }}
             >
