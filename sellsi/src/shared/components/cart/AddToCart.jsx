@@ -120,39 +120,92 @@ const AddToCart = ({
     try {
       console.log('🛒 [AddToCart] Datos recibidos del modal:', cartItem);
       
-      // Formatear el producto para el carrito con los parámetros correctos
-      const formattedProduct = formatProductForCart(
-        product, // producto base
-        cartItem.quantity, // cantidad seleccionada
-        cartItem.priceTiers || product.priceTiers || product.price_tiers || [] // tramos de precios
-      );
+      // Detectar si el flujo proviene de una OFERTA (modal pasa banderas y offer_id)
+      const isOffered = !!(cartItem.isOfferProduct || cartItem.offer_id || cartItem.offered_price);
 
-      // Agregar información adicional del modal
-      const finalProduct = {
-        ...formattedProduct,
-        // Unificar a document_type para el flujo de compra (distinto del doc de perfil proveedor)
-        document_type: (() => {
-          const v = String(cartItem.documentType || cartItem.document_type || '').toLowerCase();
-          return v === 'boleta' || v === 'factura' ? v : 'ninguno';
-        })(),
-        selectedTier: cartItem.selectedTier,
-        unitPrice: cartItem.unitPrice,
-        totalPrice: cartItem.totalPrice,
-      };
+      let finalProduct;
+      if (isOffered) {
+        // Construir un item especial que conserve la semántica de la oferta.
+        // IMPORTANTÍSIMO: usar un id único distinto del product.id base para que
+        // no se fusione con la línea regular del mismo producto.
+        const offerId = cartItem.offer_id || cartItem.offerId || `offer-${cartItem.id || product.id}`;
+        const compositeId = `${product.id}::offer::${offerId}`;
 
-      console.log('📦 [AddToCart] Producto final para carrito:', finalProduct);
+        finalProduct = {
+          // Identificadores
+          id: compositeId,
+          // productid is the actual base product identifier expected by backend
+          productid: product.id,
+          product_id: product.id,
+          offer_id: offerId,
+          // Nombres / visual
+            name: cartItem.name || product.name || product.nombre,
+          proveedor: product.proveedor || product.supplier || cartItem.supplier_name || 'Proveedor no especificado',
+          // Precios (precio ofertado fijo)
+          price: cartItem.unitPrice, // usado por CartItem
+          precio: cartItem.unitPrice,
+          offered_price: cartItem.unitPrice,
+          price_at_addition: cartItem.unitPrice,
+          // Cantidades fijas de la oferta
+          quantity: cartItem.quantity,
+          offered_quantity: cartItem.quantity,
+          minimum_purchase: cartItem.quantity,
+          maxStock: cartItem.quantity,
+          stock: cartItem.quantity,
+          // Evitar recalculo de tiers (un solo tramo fijo)
+          price_tiers: [{ min_quantity: 1, price: cartItem.unitPrice }],
+          // Flags de UI
+          isOffered: true,
+          isOfferProduct: true,
+          metadata: { ...(product.metadata || {}), isOffered: true, offer_id: offerId },
+          // Imagenes (mantener las que ya existan)
+          image: product.image || product.imagen || cartItem.thumbnail || cartItem.thumbnail_url || '/placeholder-product.jpg',
+          imagen: product.imagen || product.image,
+          thumbnail_url: product.thumbnail_url || cartItem.thumbnail_url,
+          // Documento
+          document_type: (() => {
+            const v = String(cartItem.documentType || cartItem.document_type || '').toLowerCase();
+            return v === 'boleta' || v === 'factura' ? v : 'ninguno';
+          })(),
+          // Datos auxiliares usados en UI/tests
+          cantidadSeleccionada: cartItem.quantity,
+          precioUnitario: cartItem.unitPrice,
+          precioTotal: cartItem.totalPrice,
+          selectedTier: null,
+          addedAt: new Date().toISOString(),
+        };
 
-      // Agregar al store del carrito usando addItem(product, quantity)
-      await addItem(finalProduct, cartItem.quantity);
+        console.log('📦 [AddToCart] Producto OFERTADO final para carrito:', finalProduct);
+        await addItem(finalProduct, cartItem.quantity);
+      } else {
+        // Flujo normal (sin oferta) mantiene lógica existente
+        const formattedProduct = formatProductForCart(
+          product,
+          cartItem.quantity,
+          cartItem.priceTiers || product.priceTiers || product.price_tiers || []
+        );
+        finalProduct = {
+          ...formattedProduct,
+          document_type: (() => {
+            const v = String(cartItem.documentType || cartItem.document_type || '').toLowerCase();
+            return v === 'boleta' || v === 'factura' ? v : 'ninguno';
+          })(),
+          selectedTier: cartItem.selectedTier,
+          unitPrice: cartItem.unitPrice,
+          totalPrice: cartItem.totalPrice,
+        };
+        console.log('📦 [AddToCart] Producto REGULAR final para carrito:', finalProduct);
+        await addItem(finalProduct, cartItem.quantity);
+      }
 
       // Mostrar notificación de éxito
       showCartSuccess(
-        `Agregado al carrito: ${finalProduct.name} (${cartItem.quantity} unidades)`
+        `Agregado al carrito: ${finalProduct.name} (${cartItem.quantity} unidades${isOffered ? ' - OFERTA' : ''})`
       );
 
       // Callback de éxito personalizado
       if (onSuccess) {
-        onSuccess(formattedProduct);
+        onSuccess(finalProduct);
       }
 
     } catch (error) {

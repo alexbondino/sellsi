@@ -11,7 +11,8 @@ import {
   ListItem,
   ListItemText,
   Avatar,
-  Chip
+  Chip,
+  Tooltip
 } from '@mui/material';
 import {
   ExpandMore as ExpandMoreIcon,
@@ -86,9 +87,18 @@ const CompactCheckoutSummary = ({
                     display: '-webkit-box',
                     WebkitLineClamp: 1,
                     WebkitBoxOrient: 'vertical',
-                    overflow: 'hidden'
+                    overflow: 'hidden',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1
                   }}>
-                    {item.name} x{item.quantity}
+                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</span>
+                    {(item.isOffered || item.metadata?.isOffered || item.offer_id || item.offered_price) && (
+                      <Tooltip title="Este produco es ofertado" arrow>
+                        <Box component="span" sx={{ color: 'success.main', fontSize: 14, ml: 0.5 }}>●</Box>
+                      </Tooltip>
+                    )}
+                    <span style={{ marginLeft: 6 }}>x{item.quantity}</span>
                   </Typography>
                   <Typography variant="caption" fontWeight={600}>
                     {formatPrice((item.price || 0) * (item.quantity || 1))}

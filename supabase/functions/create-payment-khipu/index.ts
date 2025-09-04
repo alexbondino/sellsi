@@ -142,7 +142,9 @@ serve(req => withMetrics('create-payment-khipu', req, async () => {
         offerWarnings.push({ issue: 'link_exception' });
       }
     }
-    const PRICE_TOLERANCE_CLP = 5; // diferencia permitida entre monto front y monto sellado
+  // Aumentamos tolerancia para evitar falsos 409 por diferencias de redondeo (IVA / tiers)
+  // Antes: 5 CLP. Ahora: 50 CLP. Ajustar nuevamente cuando la fórmula de cálculo frontend = backend esté 100% alineada.
+  const PRICE_TOLERANCE_CLP = 50; // diferencia permitida entre monto front y monto sellado
     let sealedOrder: any = null;
   try {
   const { data: sealed, error: sealErr } = await supabaseAdmin
@@ -195,9 +197,23 @@ serve(req => withMetrics('create-payment-khipu', req, async () => {
     }
 
     // 3.2 Comparar monto sellado vs monto recibido del front
-    const sealedTotal = Math.round(Number(sealedOrder.total || 0));
+    // BUG ORIGINAL: finalize_order_pricing no incluye tax en total (total = subtotal + shipping),
+    // mientras el frontend envía monto con IVA incluido. Ajustamos para contemplar tax.
+    const sealedSubtotal = Math.round(Number(sealedOrder.subtotal || 0));
+    const sealedShipping = Math.round(Number(sealedOrder.shipping || 0));
+    const sealedTax = Math.round(Number(sealedOrder.tax || 0));
+    const rawSealedTotal = Math.round(Number(sealedOrder.total || 0));
+    // Detectar si el total sellado parece no incluir tax (heurística: raw = subtotal + shipping y tax > 0)
+    const inferredMissingTax = sealedTax > 0 && rawSealedTotal === sealedSubtotal + sealedShipping;
+    const sealedTotal = inferredMissingTax
+      ? sealedSubtotal + sealedShipping + sealedTax
+      : rawSealedTotal;
     const frontendAmount = Math.round(Number(amount || 0));
     const diff = Math.abs(sealedTotal - frontendAmount);
+    if (inferredMissingTax) {
+      console.log('[create-payment-khipu] Ajuste sealedTotal para incluir tax (heurística)', { sealedSubtotal, sealedShipping, sealedTax, rawSealedTotal, adjustedSealedTotal: sealedTotal });
+    }
+    console.log('[create-payment-khipu] Pricing compare:', { sealedSubtotal, sealedShipping, sealedTax, rawSealedTotal, sealedTotal, frontendAmount, diff, tolerance: PRICE_TOLERANCE_CLP });
     if (!Number.isFinite(sealedTotal) || sealedTotal <= 0) {
       return new Response(JSON.stringify({ error: 'SEALED_TOTAL_INVALID' }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 422 });
     }

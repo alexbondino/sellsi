@@ -46,11 +46,23 @@ export const initializeCartWithUser = async (userId, set, get) => {
 
     // Si hay items locales, migrarlos al backend
     if (localItems.length > 0) {
+      // DEBUG: ver qué se migrará
+      try {
+        // eslint-disable-next-line no-console
+        console.log('[cartStore.backend] migrateLocalCart payload:', { userId, localItems })
+      } catch (e) {}
+
       await cartService.migrateLocalCart(userId, localItems)
       
       // Obtener solo los items actualizados, no todo el carrito nuevamente
       const updatedItems = await cartService.getCartItems(backendCart.cart_id)
       
+      // DEBUG: registrar items devueltos por backend tras migración
+      try {
+        // eslint-disable-next-line no-console
+        console.log('[cartStore.backend] updatedItems after migrate:', { cartId: backendCart.cart_id, updatedItems })
+      } catch (e) {}
+
       set({
         items: updatedItems || [],
         cartId: backendCart.cart_id,
@@ -61,6 +73,12 @@ export const initializeCartWithUser = async (userId, set, get) => {
       })
     } else {
       // Solo cargar el carrito del backend
+      // DEBUG: registrar items cargados desde backend cuando no hay migración
+      try {
+        // eslint-disable-next-line no-console
+        console.log('[cartStore.backend] initialize from backendCart:', { cartId: backendCart.cart_id, items: backendCart.items })
+      } catch (e) {}
+
       set({
         items: backendCart.items || [],
         cartId: backendCart.cart_id,
@@ -146,6 +164,12 @@ export const addItemWithBackend = async (product, quantity, set, get, historySto
   try {
     set({ isSyncing: true })
     
+    // DEBUG: registrar payload enviado al backend
+    try {
+      // eslint-disable-next-line no-console
+      console.log('[cartStore.backend] addItemWithBackend payload:', { cartId: state.cartId, product, quantity })
+    } catch (e) {}
+
     // Agregar al backend
     const result = await cartService.addItemToCart(state.cartId, product, quantity)
 

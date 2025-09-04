@@ -5,7 +5,6 @@ import {
   Box,
   Typography,
   Avatar,
-  Chip,
   Stack,
   IconButton,
   TextField,
@@ -131,6 +130,15 @@ const CartItem = ({
     const subtotal = unitPrice * item.quantity
     return { unitPrice, subtotal }
   }, [item.quantity, productData.price_tiers, productData.basePrice])
+
+  // Debug flag to force-show offer badge when visiting URL with ?debugShowOffers=1
+  const showOfferDebug = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('debugShowOffers') === '1';
+
+  const isOfferedFlag = !!(item.isOffered || item.metadata?.isOffered || item.offer_id || item.offered_price);
+  if (process.env.NODE_ENV !== 'production') {
+    // eslint-disable-next-line no-console
+    console.log('[CartItem debug] id:', item.id, 'isOffered:', isOfferedFlag, 'showOfferDebug:', showOfferDebug, 'product_id:', item.product_id || item.productid || item.id);
+  }
 
   // Memoizar opciones de envío - ahora calculado dinámicamente
   const shippingData = React.useMemo(() => ({
@@ -273,18 +281,44 @@ const CartItem = ({
               {/* ========== TÍTULO DEL PRODUCTO ========== */}
               {/* Este Typography contiene el título/nombre del producto */}
               {/* IMPORTANTE: Aquí está el título que debe tener el margin-top removido */}
-              <Typography
-                variant="h6"
-                sx={{
-                  fontWeight: 'bold',
-                  background: 'linear-gradient(45deg, #333, #666)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  mb: 2,
-                }}
-              >
-                {productData.name}
-              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                <Typography
+                  variant="h6"
+                  sx={{
+                    fontWeight: 'bold',
+                    background: 'linear-gradient(45deg, #333, #666)',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    flex: 1,
+                    mb: 0,
+                    minWidth: 0,
+                  }}
+                >
+                  {productData.name}
+                </Typography>
+                {((item.isOffered || item.metadata?.isOffered || item.offer_id || item.offered_price) || showOfferDebug) && (
+                  <Typography
+                    data-testid="chip-ofertado-text"
+                    variant="subtitle2"
+                    sx={{
+                      color: 'success.main',
+                      fontWeight: 800,
+                      ml: 0.5,
+                      fontSize: '0.95rem',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      px: 1,
+                      py: '3px',
+                      borderRadius: '6px',
+                      border: '1px solid',
+                      borderColor: 'success.main',
+                      bgcolor: 'rgba(76, 175, 80, 0.06)'
+                    }}
+                  >
+                    OFERTADO
+                  </Typography>
+                )}
+              </Box>
               {/* ========== INFORMACIÓN DEL PROVEEDOR ========== */}
               {/* Box contenedor del nombre y verificación del proveedor */}
               <Box
@@ -316,12 +350,7 @@ const CartItem = ({
                   />
                 )}
               </Box>{' '}
-              {/* Chip indicando que el item fue ofertado (desktop & mobile) */}
-              {(item.isOffered || item.metadata?.isOffered || item.offer_id || item.offered_price) && (
-                <Box sx={{ mt: 1 }}>
-                  <Chip data-testid="chip-ofertado" label="Ofertado" size="small" color="primary" />
-                </Box>
-              )}
+              {/* (El Chip visual de 'Ofertado' fue removido; se mantiene el texto "OFERTADO") */}
               {/* Price - Usando precio dinámico basado en quantity y price_tiers */}
               <Box sx={{ mb: 2 }}>
                 <Typography variant="body2" sx={{ color: '#222', fontWeight: 500, mb: 0.5, fontsize: '0.9rem' }}>

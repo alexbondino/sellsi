@@ -5,7 +5,7 @@
  * originada del lado buyer / sistema), tras un refresh el store supplier refleja
  * el display status 'Cancelado' y puede ser filtrado.
  */
-import { act } from 'react-dom/test-utils';
+import { act } from 'react';
 import { useOrdersStore } from '../../../shared/stores/orders/ordersStore';
 
 // === Mock orderService (similar patrón a updateOrderStatus tests) ===

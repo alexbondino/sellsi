@@ -52,11 +52,17 @@ class KhipuService {
       }
 
       // <-- CAMBIO 2: Invocamos la función pasándole el 'body' con los datos dinámicos.
+      console.log('[khipuService] Invocando create-payment-khipu con payload:', JSON.stringify(paymentPayload));
       const { data: khipuResponse, error } = await supabase.functions.invoke('create-payment-khipu', {
         body: paymentPayload,
       });
 
+      if (error && error.context) {
+        console.warn('[khipuService] Error context (posible body función):', error.context);
+      }
+
       if (error) {
+        console.error('[khipuService] Error bruto supabase.functions.invoke:', error);
         throw new Error(
           `Error al invocar la función de Supabase: ${error.message}`
         );

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<coverage generated="1757016397621" clover="3.2.0">
-  <project timestamp="1757016397621" name="All files">
-    <metrics statements="5300" coveredstatements="636" conditionals="5197" coveredconditionals="654" methods="1340" coveredmethods="117" elements="11837" coveredelements="1407" complexity="0" loc="5300" ncloc="5300" packages="31" files="119" classes="119"/>
+<coverage generated="1757018478530" clover="3.2.0">
+  <project timestamp="1757018478530" name="All files">
+    <metrics statements="5300" coveredstatements="636" conditionals="5202" coveredconditionals="654" methods="1340" coveredmethods="117" elements="11842" coveredelements="1407" complexity="0" loc="5300" ncloc="5300" packages="31" files="119" classes="119"/>
     <package name="domains.ProductPageView.components">
       <metrics statements="370" coveredstatements="77" conditionals="531" coveredconditionals="90" methods="85" coveredmethods="13"/>
       <file name="OfferModal.jsx" path="C:\Users\klaus\OneDrive\Documentos\sellsi\sellsi\src\domains\ProductPageView\components\OfferModal.jsx">
@@ -2634,7 +2634,7 @@
       </file>
     </package>
     <package name="domains.buyer.pages.cart.components">
-      <metrics statements="58" coveredstatements="0" conditionals="163" coveredconditionals="0" methods="19" coveredmethods="0"/>
+      <metrics statements="58" coveredstatements="0" conditionals="168" coveredconditionals="0" methods="19" coveredmethods="0"/>
       <file name="CollapsibleSummary.jsx" path="C:\Users\klaus\OneDrive\Documentos\sellsi\sellsi\src\domains\buyer\pages\cart\components\CollapsibleSummary.jsx">
         <metrics statements="4" coveredstatements="0" conditionals="40" coveredconditionals="0" methods="2" coveredmethods="0"/>
         <line num="17" count="0" type="stmt"/>
@@ -2648,7 +2648,7 @@
         <line num="19" count="0" type="stmt"/>
       </file>
       <file name="MobileCartItem.jsx" path="C:\Users\klaus\OneDrive\Documentos\sellsi\sellsi\src\domains\buyer\pages\cart\components\MobileCartItem.jsx">
-        <metrics statements="10" coveredstatements="0" conditionals="41" coveredconditionals="0" methods="3" coveredmethods="0"/>
+        <metrics statements="10" coveredstatements="0" conditionals="46" coveredconditionals="0" methods="3" coveredmethods="0"/>
         <line num="19" count="0" type="stmt"/>
         <line num="27" count="0" type="cond" truecount="0" falsecount="2"/>
         <line num="28" count="0" type="cond" truecount="0" falsecount="4"/>
@@ -2657,8 +2657,8 @@
         <line num="35" count="0" type="stmt"/>
         <line num="38" count="0" type="cond" truecount="0" falsecount="4"/>
         <line num="40" count="0" type="stmt"/>
-        <line num="163" count="0" type="stmt"/>
-        <line num="172" count="0" type="stmt"/>
+        <line num="181" count="0" type="stmt"/>
+        <line num="190" count="0" type="stmt"/>
       </file>
       <file name="MobileCartLayout.jsx" path="C:\Users\klaus\OneDrive\Documentos\sellsi\sellsi\src\domains\buyer\pages\cart\components\MobileCartLayout.jsx">
         <metrics statements="5" coveredstatements="0" conditionals="9" coveredconditionals="0" methods="3" coveredmethods="0"/>

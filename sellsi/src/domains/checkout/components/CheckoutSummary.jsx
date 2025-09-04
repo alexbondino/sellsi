@@ -15,6 +15,7 @@ import {
   ListItem,
   ListItemText,
   IconButton,
+  Tooltip,
   CircularProgress,
 } from '@mui/material';
 import {
@@ -22,6 +23,7 @@ import {
   LocalShipping as LocalShippingIcon,
   ArrowBack as ArrowBackIcon,
   ArrowForward as ArrowForwardIcon,
+  LocalOffer as LocalOfferIcon,
 } from '@mui/icons-material';
 import { motion } from 'framer-motion';
 
@@ -210,11 +212,21 @@ const CheckoutSummary = ({
                 <ListItem key={`${currentPage}-${index}`} sx={{ px: 2 }}>
                   <CheckoutSummaryImage product={item} />
                   <ListItemText
-                    primary={item.name || item.nombre}
+                    primary={
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
+                          {item.name || item.nombre}
+                        </Typography>
+                        {(item.isOffered || item.metadata?.isOffered || item.offer_id || item.offered_price) && (
+                          <Tooltip title="Este produco es ofertado" arrow>
+                            <LocalOfferIcon sx={{ color: 'success.main', fontSize: 18 }} />
+                          </Tooltip>
+                        )}
+                      </Box>
+                    }
                     secondary={`Cantidad: ${item.quantity}`}
                     primaryTypographyProps={{
-                      variant: 'body2',
-                      fontWeight: 'medium',
+                      component: 'div'
                     }}
                     secondaryTypographyProps={{ variant: 'caption' }}
                   />

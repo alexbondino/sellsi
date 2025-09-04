@@ -207,11 +207,16 @@ const PaymentMethodSelector = () => {
 
       if (selectedMethod.id === 'khipu') {
         console.log('[PaymentMethodSelector] Procesando pago con Khipu...');
+        // Usar el total que quedó persistido en la fila (server authoritative) si existe
+        const authoritativeTotal = (order && typeof order.total === 'number') ? Math.round(order.total) : orderTotal;
+        if (authoritativeTotal !== orderTotal) {
+          console.log('[PaymentMethodSelector] Diferencia entre order.total y orderTotal calculado front:', { authoritativeTotal, frontComputed: orderTotal });
+        }
         const paymentResult = await checkoutService.processKhipuPayment({
           orderId: order.id,
           userId: userId,
           userEmail: userEmail || '',
-          amount: orderTotal, // Usar el mismo valor mostrado
+          amount: authoritativeTotal, // usar monto sellado persistido si está
           currency: orderData.currency || 'CLP',
           items: itemsWithDocType,
           // ✔ Propagar direcciones para que no se pierdan en el pipeline de pago

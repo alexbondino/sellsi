@@ -1,4 +1,4 @@
-import { act } from 'react-dom/test-utils';
+import { act } from 'react';
 
 // Mock temprano del módulo que importa supabase indirectamente para evitar `import.meta.env` en Jest
 jest.mock('../../../services/user', () => {
