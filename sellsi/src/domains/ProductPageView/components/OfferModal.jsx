@@ -43,7 +43,10 @@ const OfferModal = ({
     validateOfferLimits,
   buyerOffers,
   error: storeError,
+  loadBuyerOffers,
   } = useOfferStore();
+
+  // Exponer loader para asegurarnos de obtener las ofertas del comprador al abrir el modal
 
   const userId = localStorage.getItem('user_id');
   const userNm = localStorage.getItem('user_nm') || localStorage.getItem('user_email');
@@ -58,7 +61,7 @@ const OfferModal = ({
       setLimitsValidation(null);
       ranInitialLimitsRef.current = false;
     }
-  }, [open, defaultPrice, product?.id]);
+  }, [open, defaultPrice, product?.id, product?.productid]);
 
   // Validar límites sólo una vez por apertura
   useEffect(() => {
@@ -66,15 +69,38 @@ const OfferModal = ({
       ranInitialLimitsRef.current = true;
       checkLimits();
     }
-  }, [open, product?.id, userId]);
+  }, [open, product?.id, product?.productid, userId]);
+
+  // Al abrir el modal, asegurarnos de tener las ofertas del comprador cargadas
+  const buyerOffersRequestedRef = React.useRef(false);
+  useEffect(() => {
+    if (!open) {
+      // reset for next open
+      buyerOffersRequestedRef.current = false;
+      return;
+    }
+    const prodKey = product?.id ?? product?.productid ?? product?.product_id;
+    if (!prodKey) return;
+    // Only request once per modal open
+    if (buyerOffersRequestedRef.current) return;
+    buyerOffersRequestedRef.current = true;
+    try {
+      const uid = userId;
+      if (uid && loadBuyerOffers) {
+        // fire-and-forget; loadBuyerOffers will update the store when ready
+        loadBuyerOffers(uid).catch(() => {});
+      }
+    } catch (_) {}
+  }, [open, product?.id, product?.productid, product?.product_id, loadBuyerOffers, userId]);
 
   const checkLimits = async () => {
-    if (!userId || !product?.id) return;
+    const prodKey = product?.id ?? product?.productid ?? product?.product_id;
+    if (!userId || !prodKey) return;
     
     try {
       const limits = await validateOfferLimits({
         buyerId: userId,
-        productId: product.id,
+        productId: prodKey,
         supplierId: product.supplier_id || product.supplierId
       });
   if (typeof console !== 'undefined') console.log('[OfferModal] limits received', limits);
@@ -182,6 +208,12 @@ const OfferModal = ({
       return;
     }
 
+    // Extra guard: si localmente detectamos oferta pendiente, evitar llamada al backend
+    if (hasPendingForProduct) {
+      toast.error('Ya existe una oferta pendiente para este producto');
+      return;
+    }
+
     const offerData = {
       buyer_id: userId,
       buyer_name: userNm || userEmail,
@@ -239,8 +271,14 @@ const OfferModal = ({
   // Verificar si ya existe una oferta pendiente del comprador para este producto
   const hasPendingForProduct = React.useMemo(() => {
     if (!buyerOffers || !Array.isArray(buyerOffers)) return false;
-    return buyerOffers.some(o => (o.product_id === product.id || o.productId === product.id) && o.status === 'pending');
-  }, [buyerOffers, product?.id]);
+    const prodKey = product?.id ?? product?.productid ?? product?.product_id;
+    if (!prodKey) return false;
+    return buyerOffers.some(o => {
+      const oKeys = [o.product_id, o.productId, o.product?.productid, o.product?.product_id, o.product?.id];
+    const status = (o.status || '').toString().toLowerCase();
+    return status === 'pending' && oKeys.some(k => k != null && String(k) === String(prodKey));
+    });
+  }, [buyerOffers, product?.id, product?.productid, product?.product_id]);
 
   return (
     <Dialog 

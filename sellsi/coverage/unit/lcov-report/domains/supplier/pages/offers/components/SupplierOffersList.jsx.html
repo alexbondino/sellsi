@@ -23,16 +23,16 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">38.82% </span>
+                <span class="strong">34.73% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>33/85</span>
+                <span class='fraction'>33/95</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">48% </span>
+                <span class="strong">31.16% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>24/50</span>
+                <span class='fraction'>24/77</span>
             </div>
         
             
@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">45.45% </span>
+                <span class="strong">38.96% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>30/66</span>
+                <span class='fraction'>30/77</span>
             </div>
         
             
@@ -348,7 +348,29 @@
 <a name='L283'></a><a href='#L283'>283</a>
 <a name='L284'></a><a href='#L284'>284</a>
 <a name='L285'></a><a href='#L285'>285</a>
-<a name='L286'></a><a href='#L286'>286</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L286'></a><a href='#L286'>286</a>
+<a name='L287'></a><a href='#L287'>287</a>
+<a name='L288'></a><a href='#L288'>288</a>
+<a name='L289'></a><a href='#L289'>289</a>
+<a name='L290'></a><a href='#L290'>290</a>
+<a name='L291'></a><a href='#L291'>291</a>
+<a name='L292'></a><a href='#L292'>292</a>
+<a name='L293'></a><a href='#L293'>293</a>
+<a name='L294'></a><a href='#L294'>294</a>
+<a name='L295'></a><a href='#L295'>295</a>
+<a name='L296'></a><a href='#L296'>296</a>
+<a name='L297'></a><a href='#L297'>297</a>
+<a name='L298'></a><a href='#L298'>298</a>
+<a name='L299'></a><a href='#L299'>299</a>
+<a name='L300'></a><a href='#L300'>300</a>
+<a name='L301'></a><a href='#L301'>301</a>
+<a name='L302'></a><a href='#L302'>302</a>
+<a name='L303'></a><a href='#L303'>303</a>
+<a name='L304'></a><a href='#L304'>304</a>
+<a name='L305'></a><a href='#L305'>305</a>
+<a name='L306'></a><a href='#L306'>306</a>
+<a name='L307'></a><a href='#L307'>307</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -405,6 +427,26 @@
 <span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">3x</span>
@@ -655,6 +697,7 @@ import {
 import { useBanner } from '../../../../../shared/components/display/banners/BannerContext';
 import { Check as CheckIcon } from '@mui/icons-material';
 import SupplierOfferActionModals from './SupplierOfferActionModals';
+import { supabase } from '../../../../../services/supabase';
 import BlockIcon from '@mui/icons-material/Block';
 import DeleteIcon from '@mui/icons-material/Delete';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
@@ -689,7 +732,27 @@ const SupplierOffersList = ({ offers = <span class="branch-0 cbranch-no" title="
   const updateOfferStatus = <span class="fstat-no" title="function not covered" >(i</span>d, nextStatus) =&gt; <span class="cstat-no" title="statement not covered" >setOffers(<span class="fstat-no" title="function not covered" >pr</span>ev =&gt; <span class="cstat-no" title="statement not covered" >prev.map(<span class="fstat-no" title="function not covered" >o </span>=&gt; <span class="cstat-no" title="statement not covered" >o.id === id ? { ...o, status: nextStatus } : o)</span>)</span>;</span>
   const removeOffer = <span class="fstat-no" title="function not covered" >(i</span>d) =&gt; <span class="cstat-no" title="statement not covered" >setOffers(<span class="fstat-no" title="function not covered" >pr</span>ev =&gt; <span class="cstat-no" title="statement not covered" >prev.filter(<span class="fstat-no" title="function not covered" >o </span>=&gt; <span class="cstat-no" title="statement not covered" >o.id !== id)</span>)</span>;</span>
 &nbsp;
-  const openModal = <span class="fstat-no" title="function not covered" >(m</span>ode, offer) =&gt; <span class="cstat-no" title="statement not covered" >setModalState({ open: true, mode, offer });</span>
+  const openModal = <span class="fstat-no" title="function not covered" >(m</span>ode, offer) =&gt; {
+    // 1. Enriquecimiento rápido sin llamadas externas (sin capturar offered price como original)
+    let enriched = <span class="cstat-no" title="statement not covered" >offer;</span>
+<span class="cstat-no" title="statement not covered" >    try {</span>
+      const p = <span class="cstat-no" title="statement not covered" >offer?.product || {};</span>
+<span class="cstat-no" title="statement not covered" >      if (p &amp;&amp; p.previousPrice == null) {</span>
+        const tiers = <span class="cstat-no" title="statement not covered" >Array.isArray(p.price_tiers) ? p.price_tiers : [];</span>
+        // Preferir snapshots proporcionados por la fila de la oferta / vista offers_with_details
+        const baseFromOffer = <span class="cstat-no" title="statement not covered" >offer.base_price_at_offer ?? offer.tier_price_at_offer ?? offer.current_product_price ?? null;</span>
+        const baseLocal = <span class="cstat-no" title="statement not covered" >baseFromOffer ?? p.base_price ?? p.price ?? p.precio ?? (tiers[0]?.price || tiers[0]?.precio) ?? null;</span>
+        const stockFromOffer = <span class="cstat-no" title="statement not covered" >offer.current_stock ?? null;</span>
+        const stockLocal = <span class="cstat-no" title="statement not covered" >stockFromOffer ?? (p.stock != null ? p.stock : (p.productqty != null ? p.productqty : null));</span>
+<span class="cstat-no" title="statement not covered" >        enriched = { ...offer, product: { ...p, previousPrice: baseLocal, stock: stockLocal } };</span>
+      }
+    } catch(_) {}
+<span class="cstat-no" title="statement not covered" >    setModalState({ open: true, mode, offer: enriched });</span>
+&nbsp;
+  // 2. No hacemos fetch adicional: la vista RPC `offers_with_details` ya provee
+  //    snapshot (base_price_at_offer, tier_price_at_offer, current_product_price, current_stock).
+  //    Mantener la modal enriquecida desde el objeto de la oferta.
+  };
   const closeModal = <span class="fstat-no" title="function not covered" >()</span> =&gt; <span class="cstat-no" title="statement not covered" >setModalState({ open: false, mode: null, offer: null });</span>
   
   const handleAccept = <span class="fstat-no" title="function not covered" >as</span>ync (offer) =&gt; {
@@ -925,7 +988,7 @@ export default SupplierOffersList;
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-09-04T04:35:18.845Z
+                at 2025-09-04T15:50:40.094Z
             </div>
         <script src="../../../../../prettify.js"></script>
         <script>

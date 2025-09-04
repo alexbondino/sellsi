@@ -344,7 +344,18 @@ export const useOfferStore = create((set, get) => ({
         status: o.status === 'accepted' ? 'approved' : o.status,
         price: o.price ?? o.offered_price ?? o.p_price,
         quantity: o.quantity ?? o.offered_quantity ?? o.p_quantity,
-        product: o.product || { name: o.product_name || 'Producto', thumbnail: o.product_thumbnail || null, stock: o.product?.stock ?? 999999, id: o.product_id, product_id: o.product_id },
+        // Preferir snapshot fields proporcionados por offers_with_details
+        product: o.product || {
+          name: o.product_name || 'Producto',
+          thumbnail: o.product_thumbnail || null,
+          // Mapear stock/previousPrice desde columnas snapshot si están presentes
+          stock: (o.current_stock != null) ? o.current_stock : ((o.product && o.product.stock != null) ? o.product.stock : null),
+          productqty: (o.product && o.product.productqty != null) ? o.product.productqty : (o.productqty ?? null),
+          previousPrice: (o.base_price_at_offer != null) ? Number(o.base_price_at_offer) : (o.current_product_price != null ? Number(o.current_product_price) : null),
+          id: o.product_id,
+          product_id: o.product_id,
+          price_tiers: o.price_tiers
+        },
         buyer: o.buyer || { name: o.buyer_name || 'Comprador' }
       }));
       // Fallback similar a buyerOffers para entorno de test

@@ -20,6 +20,7 @@ import {
 import { useBanner } from '../../../../../shared/components/display/banners/BannerContext';
 import { Check as CheckIcon } from '@mui/icons-material';
 import SupplierOfferActionModals from './SupplierOfferActionModals';
+import { supabase } from '../../../../../services/supabase';
 import BlockIcon from '@mui/icons-material/Block';
 import DeleteIcon from '@mui/icons-material/Delete';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
@@ -54,7 +55,27 @@ const SupplierOffersList = ({ offers = [], setOffers, acceptOffer, rejectOffer, 
   const updateOfferStatus = (id, nextStatus) => setOffers(prev => prev.map(o => o.id === id ? { ...o, status: nextStatus } : o));
   const removeOffer = (id) => setOffers(prev => prev.filter(o => o.id !== id));
 
-  const openModal = (mode, offer) => setModalState({ open: true, mode, offer });
+  const openModal = (mode, offer) => {
+    // 1. Enriquecimiento rápido sin llamadas externas (sin capturar offered price como original)
+    let enriched = offer;
+    try {
+      const p = offer?.product || {};
+      if (p && p.previousPrice == null) {
+        const tiers = Array.isArray(p.price_tiers) ? p.price_tiers : [];
+        // Preferir snapshots proporcionados por la fila de la oferta / vista offers_with_details
+        const baseFromOffer = offer.base_price_at_offer ?? offer.tier_price_at_offer ?? offer.current_product_price ?? null;
+        const baseLocal = baseFromOffer ?? p.base_price ?? p.price ?? p.precio ?? (tiers[0]?.price || tiers[0]?.precio) ?? null;
+        const stockFromOffer = offer.current_stock ?? null;
+        const stockLocal = stockFromOffer ?? (p.stock != null ? p.stock : (p.productqty != null ? p.productqty : null));
+        enriched = { ...offer, product: { ...p, previousPrice: baseLocal, stock: stockLocal } };
+      }
+    } catch(_) {}
+    setModalState({ open: true, mode, offer: enriched });
+
+  // 2. No hacemos fetch adicional: la vista RPC `offers_with_details` ya provee
+  //    snapshot (base_price_at_offer, tier_price_at_offer, current_product_price, current_stock).
+  //    Mantener la modal enriquecida desde el objeto de la oferta.
+  };
   const closeModal = () => setModalState({ open: false, mode: null, offer: null });
   
   const handleAccept = async (offer) => {
