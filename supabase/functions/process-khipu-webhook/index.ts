@@ -214,6 +214,46 @@ serve((req: Request) => withMetrics('process-khipu-webhook', req, async () => {
       console.error('❌ Error obteniendo orden previa:', preErr);
     }
 
+    // ================================================================
+    // Validación de ofertas vinculadas (deadline / estado) antes de marcar pago
+    // ================================================================
+    const enforceLate = Deno.env.get('OFFERS_ENFORCE_LATE_BLOCK') === '1';
+    const offerDeadlineWarnings: any[] = [];
+    try {
+      const { data: linkedOffers, error: linkedErr } = await supabase
+        .from('offers')
+        .select('id,status,purchase_deadline,order_id')
+        .eq('order_id', orderId);
+      if (linkedErr) {
+        console.warn('⚠️ No se pudieron leer ofertas vinculadas para validación:', linkedErr);
+      } else if (linkedOffers && linkedOffers.length) {
+        const nowMs = Date.now();
+        for (const off of linkedOffers) {
+          const deadlineMs = off.purchase_deadline ? new Date(off.purchase_deadline).getTime() : null;
+            if (deadlineMs && deadlineMs < nowMs) {
+              const item = { offer_id: off.id, issue: 'deadline_expired' };
+              if (enforceLate && preOrder?.payment_status !== 'paid') {
+                console.warn('❌ Pago bloqueado: oferta vencida', item);
+                return new Response(JSON.stringify({ error: 'OFFER_DEADLINE_EXPIRED', late: true, offer_id: off.id }), { status: 409, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+              } else {
+                offerDeadlineWarnings.push(item);
+              }
+            }
+            if (!['accepted','reserved','paid'].includes(off.status)) {
+              const item = { offer_id: off.id, issue: 'invalid_state', state: off.status };
+              if (enforceLate && preOrder?.payment_status !== 'paid') {
+                console.warn('❌ Pago bloqueado: estado inválido oferta', item);
+                return new Response(JSON.stringify({ error: 'OFFER_INVALID_STATE', offer_id: off.id, state: off.status }), { status: 409, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+              } else {
+                offerDeadlineWarnings.push(item);
+              }
+            }
+        }
+      }
+    } catch (offValEx) {
+      console.error('⚠️ Excepción validando ofertas vinculadas (continuando):', offValEx);
+    }
+
     let alreadyProcessedInventory = false;
     if (preOrder?.inventory_processed_at) {
       console.log('ℹ️ Webhook idempotente (inventory ya procesado)');
@@ -257,7 +297,7 @@ serve((req: Request) => withMetrics('process-khipu-webhook', req, async () => {
     }
 
     // 🔧 FIX: Verificar que la orden NO esté cancelada antes de procesar el pago
-    if (preOrder && preOrder.payment_status !== 'paid') {
+  if (preOrder && preOrder.payment_status !== 'paid') {
       // Verificar si la orden fue cancelada
       if (preOrder.cancelled_at || preOrder.status === 'cancelled') {
         console.error('❌ No se puede procesar pago: orden fue cancelada', {
@@ -287,10 +327,32 @@ serve((req: Request) => withMetrics('process-khipu-webhook', req, async () => {
         .eq('id', orderId)
         .is('cancelled_at', null); // 🔧 Condición adicional de seguridad
       if (payUpdErr) console.error('❌ Error marcando pago:', payUpdErr); else console.log('✅ Orden marcada pagada');
+
+      // Promover ofertas vinculadas a estado paid (idempotente)
+      try {
+        const { data: linkedForPay, error: lErr } = await supabase
+          .from('offers')
+          .select('id,status')
+          .eq('order_id', orderId);
+        if (lErr) {
+          console.warn('⚠️ No se pudieron leer ofertas para promover a paid', lErr);
+        } else if (linkedForPay && linkedForPay.length) {
+          const promoteIds = linkedForPay.filter(o => ['reserved','accepted'].includes(o.status)).map(o => o.id);
+          if (promoteIds.length) {
+            const { error: upOffErr } = await supabase
+              .from('offers')
+              .update({ status: 'paid', paid_at: paidAt, updated_at: new Date().toISOString() })
+              .in('id', promoteIds);
+            if (upOffErr) console.error('⚠️ Error actualizando ofertas a paid', upOffErr); else console.log('✅ Ofertas promovidas a paid', promoteIds.length);
+          }
+        }
+      } catch (promEx) {
+        console.error('⚠️ Excepción promoviendo ofertas a paid', promEx);
+      }
     }
     // Si inventario ya procesado, salimos (meta ya habría sido inicializada arriba si faltaba)
     if (alreadyProcessedInventory) {
-      return new Response(JSON.stringify({ success: true, orderId, idempotent: true }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 });
+  return new Response(JSON.stringify({ success: true, orderId, idempotent: true, offer_deadline_warnings: offerDeadlineWarnings }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 });
     }
 
   // ========================================================================
@@ -423,7 +485,7 @@ serve((req: Request) => withMetrics('process-khipu-webhook', req, async () => {
       console.error('❌ Error materializando (dual/split):', materializeErr);
     }
 
-    return new Response(JSON.stringify({ success: true, orderId }), {
+  return new Response(JSON.stringify({ success: true, orderId, offer_deadline_warnings: offerDeadlineWarnings }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,
     });

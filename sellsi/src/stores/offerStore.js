@@ -25,14 +25,20 @@ if (typeof process !== 'undefined' && (process.env.JEST_WORKER_ID || process.env
   } catch (_) {}
 }
 import { notificationService } from '../domains/notifications/services/notificationService';
+// Carga perezosa de cart store para eliminar items asociados a ofertas inválidas
+let useCartStoreRef = null;
+try {
+  useCartStoreRef = require('../shared/stores/cart/cartStore').default;
+} catch(_) {}
 
 // Estados de ofertas
 export const OFFER_STATES = {
   PENDING: 'pending',      // Esperando respuesta (48h)
-  ACCEPTED: 'accepted',    // Aceptada, 24h para comprar
+  ACCEPTED: 'accepted',    // Aceptada, 24h para pagar
+  RESERVED: 'reserved',    // Agregada al carrito (antes purchased)
+  PAID: 'paid',            // Pago confirmado
   REJECTED: 'rejected',    // Rechazada por proveedor
-  EXPIRED: 'expired',      // Expirada por tiempo
-  PURCHASED: 'purchased'   // Compra completada
+  EXPIRED: 'expired'       // Expirada por tiempo
 };
 
 export const useOfferStore = create((set, get) => ({
@@ -41,6 +47,49 @@ export const useOfferStore = create((set, get) => ({
   supplierOffers: [],
   loading: false,
   error: null,
+  // Limpia del carrito items cuyos offer_id correspondan a ofertas expiradas/rechazadas/canceladas
+  _pruneInvalidOfferCartItems: () => {
+    try {
+      if (!useCartStoreRef) return;
+      const cartState = useCartStoreRef.getState();
+      const cartItems = cartState?.items || [];
+      if (cartItems.length === 0) return;
+      const offers = get().buyerOffers || [];
+      const invalid = new Set(['expired', 'rejected', 'cancelled']);
+      const invalidOfferIds = new Set(offers.filter(o => invalid.has(o.status)).map(o => o.id));
+      if (invalidOfferIds.size === 0) return;
+      const remaining = cartItems.filter(ci => !ci.offer_id || !invalidOfferIds.has(ci.offer_id));
+      if (remaining.length !== cartItems.length) {
+        if (typeof cartState.setItems === 'function') {
+          cartState.setItems(remaining);
+        } else {
+          useCartStoreRef.setState({ items: remaining });
+        }
+        __logOfferDebug('Pruned cart items for invalid offers', { removed: cartItems.length - remaining.length, invalidOfferIds: Array.from(invalidOfferIds) });
+      }
+    } catch(e) { try { console.warn('[offerStore] prune cart failed', e?.message); } catch(_) {} }
+  },
+  // Cache ligera (separada de image cache): mapas por clave (buyer|supplier) -> { ts, data }
+  _cache: {
+    buyer: new Map(),
+    supplier: new Map()
+  },
+  // In-flight promises para dedupe concurrente
+  _inFlight: {
+    buyer: new Map(),
+    supplier: new Map()
+  },
+  // TTL configurable (ms). Por defecto 0 = deshabilitado para no alterar tests existentes
+  _cacheTTL: (() => {
+    const raw = (typeof process !== 'undefined' && process.env.OFFERS_CACHE_TTL) ? Number(process.env.OFFERS_CACHE_TTL) : 0;
+    return Number.isFinite(raw) ? raw : 0;
+  })(),
+  // SWR habilitable: si ON sirve datos expirados y dispara revalidación en background
+  _swrEnabled: (() => (typeof process !== 'undefined' && (process.env.OFFERS_CACHE_SWR === '1' || process.env.OFFERS_CACHE_SWR === 'true')))(),
+  // Utilidades públicas opcionales
+  clearOffersCache: () => set(state => { state._cache?.buyer?.clear?.(); state._cache?.supplier?.clear?.(); return { }; }),
+  forceRefreshBuyerOffers: (buyerId) => get().loadBuyerOffers(buyerId, { forceNetwork: true }),
+  forceRefreshSupplierOffers: (supplierId) => get().loadSupplierOffers(supplierId, { forceNetwork: true }),
   
   // Limpiar errores
   clearError: () => set({ error: null }),
@@ -172,10 +221,57 @@ export const useOfferStore = create((set, get) => ({
   },
   
   // Cargar ofertas del comprador (usa RPC si tests lo esperan)
-  loadBuyerOffers: async (buyerId) => {
-  // Limpia ofertas previas para evitar que tests vean datos de otros escenarios
+  loadBuyerOffers: async (buyerId, opts = {}) => {
   __logOfferDebug('loadBuyerOffers start buyerId=', buyerId);
-  set({ loading: true, error: null, buyerOffers: [] });
+    const state = get();
+    const { _cache, _inFlight, _cacheTTL, _swrEnabled } = state;
+    const key = buyerId || 'anonymous';
+    const now = Date.now();
+
+    const cached = _cache.buyer.get(key);
+    if (!opts.forceNetwork && cached) {
+      const age = now - cached.ts;
+      const fresh = _cacheTTL > 0 && age < _cacheTTL;
+      if (fresh) {
+        __logOfferDebug('loadBuyerOffers cache fresh hit', key, 'age=', age);
+        set({ buyerOffers: cached.data, loading: false, error: null });
+        return cached.data;
+      }
+      if (_swrEnabled) {
+        __logOfferDebug('loadBuyerOffers cache stale (SWR)', key, 'age=', age);
+        // servir datos stale inmediatamente y revalidar en background si no hay in-flight
+        set({ buyerOffers: cached.data, loading: false, error: null });
+        if (!_inFlight.buyer.has(key)) {
+          // Programar revalidación asincrónica
+          setTimeout(() => {
+            try { get().loadBuyerOffers(buyerId, { forceNetwork: true, background: true }); } catch(_) {}
+          }, 0);
+        }
+        return cached.data;
+      }
+    }
+
+    // 2) In-flight dedupe
+    if (_inFlight.buyer.has(key)) {
+      __logOfferDebug('loadBuyerOffers join in-flight', key);
+      try {
+        const data = await _inFlight.buyer.get(key);
+        return data;
+      } catch (e) {
+        // Si la original falló, continuamos a un nuevo intento (caerá debajo)
+      }
+    }
+
+    // 3) Preparar nueva llamada: limpiar sólo si NO hay cache previa (evitar flicker)
+    if (!opts.background) {
+      // No limpiar buyerOffers (preserva detección de pending); sólo marcar loading
+      set({ loading: true, error: null });
+    }
+
+  let resolver;
+  const p = new Promise((resolve) => { resolver = { resolve }; });
+    _inFlight.buyer.set(key, p);
+  const finish = (value) => { _inFlight.buyer.delete(key); resolver.resolve(value); };
     const MAX_ATTEMPTS = 3;
     let attempt = 0;
   while (attempt < MAX_ATTEMPTS) {
@@ -214,6 +310,7 @@ export const useOfferStore = create((set, get) => ({
             computedStatus = 'expired';
           }
           if (computedStatus === 'accepted') computedStatus = 'approved';
+          if (computedStatus === 'purchased') computedStatus = 'reserved';
           return {
             ...o,
             status: computedStatus,
@@ -246,7 +343,15 @@ export const useOfferStore = create((set, get) => ({
             }
           } catch(_) {}
         }
-        set({ buyerOffers: normalized, loading: false, error: null });
+        if (!opts.background) {
+          set({ buyerOffers: normalized, loading: false, error: null });
+        } else {
+          set({ buyerOffers: normalized, error: null });
+        }
+        try { get()._pruneInvalidOfferCartItems(); } catch(_) {}
+  // Guardar en cache (aunque TTL sea 0 nos sirve para dedupe de solicitudes simultáneas futuras dentro del mismo tick)
+  _cache.buyer.set(key, { ts: Date.now(), data: normalized });
+  finish(data);
   __logOfferDebug('loadBuyerOffers final offers', normalized.map(o=>({id:o.id,status:o.status,product:o.product?.name})));
         return data;
       } catch (err) {
@@ -254,16 +359,19 @@ export const useOfferStore = create((set, get) => ({
         attempt++;
         // Si el test espera un único intento con error (p.ej. Database error) no reintentar
         if (err && /Database error/i.test(err.message)) {
-          set({ error: 'Error al obtener ofertas: ' + err.message, loading: false, buyerOffers: [] });
+          if (!opts.background) set({ error: 'Error al obtener ofertas: ' + err.message, loading: false, buyerOffers: [] });
+          finish(undefined);
           return;
         }
         // Para Network error: exponer error y no reintentar en esta primera llamada (tests esperan segundo llamado manual)
         if (/Network error/i.test(err.message)) {
-          set({ error: 'Error al obtener ofertas: ' + err.message, loading: false, buyerOffers: [] });
+          if (!opts.background) set({ error: 'Error al obtener ofertas: ' + err.message, loading: false, buyerOffers: [] });
+          finish(undefined);
           return;
         }
         if (attempt >= MAX_ATTEMPTS) {
-          set({ error: 'Error al obtener ofertas: ' + err.message, loading: false, buyerOffers: [] });
+          if (!opts.background) set({ error: 'Error al obtener ofertas: ' + err.message, loading: false, buyerOffers: [] });
+          finish(undefined);
           return;
         }
         // Backoff exponencial corto para tests
@@ -275,34 +383,35 @@ export const useOfferStore = create((set, get) => ({
   // Alias legacy para compatibilidad con hooks/tests antiguos
   fetchBuyerOffers: async (buyerId) => get().loadBuyerOffers(buyerId),
   
-  // Marcar oferta como comprada (cuando se agrega al carrito)
-  markOfferAsPurchased: async (offerId, orderId = null) => {
+  // Reservar oferta (antes markOfferAsPurchased)
+  reserveOffer: async (offerId, orderId = null) => {
     try {
-      const { data, error } = await supabase.rpc('mark_offer_as_purchased', {
-        p_offer_id: offerId,
-        p_order_id: orderId
-      });
-      
+      try {
+        const state = get();
+        const offer = state.buyerOffers.find(o => o.id === offerId);
+        if (offer && offer.purchase_deadline) {
+          const dl = new Date(offer.purchase_deadline).getTime();
+            if (!Number.isNaN(dl) && Date.now() > dl) {
+              set(state => ({
+                buyerOffers: state.buyerOffers.map(of => of.id === offerId ? { ...of, status: 'expired', expired_at: new Date().toISOString() } : of)
+              }));
+              return { success: false, error: 'La oferta caducó (24h vencidas)' };
+            }
+        }
+      } catch(_) {}
+      const { data, error } = await supabase.rpc('mark_offer_as_purchased', { p_offer_id: offerId, p_order_id: orderId });
       if (error) throw error;
-      
-      if (!data.success) {
-        throw new Error(data.error);
-      }
-      
-      // Actualizar estado local
+      if (!data.success) throw new Error(data.error);
       set(state => ({
         buyerOffers: state.buyerOffers.map(offer =>
-          offer.id === offerId 
-            ? { ...offer, status: OFFER_STATES.PURCHASED, purchased_at: new Date().toISOString() }
+          offer.id === offerId
+            ? { ...offer, status: OFFER_STATES.RESERVED, reserved_at: new Date().toISOString(), purchased_at: offer.purchased_at || new Date().toISOString() }
             : offer
         )
       }));
-      
+      try { get()._pruneInvalidOfferCartItems(); } catch(_) {}
       return data;
-      
-    } catch (error) {
-      throw error;
-    }
+    } catch (error) { throw error; }
   },
   
   // =====================================================
@@ -310,10 +419,40 @@ export const useOfferStore = create((set, get) => ({
   // =====================================================
   
   // Cargar ofertas del proveedor (RPC compat)
-  loadSupplierOffers: async (supplierId) => {
-  // Limpiar previo para evitar que queden ofertas de otros tests
+  loadSupplierOffers: async (supplierId, opts = {}) => {
   __logOfferDebug('loadSupplierOffers start supplierId=', supplierId);
-  set({ loading: true, error: null, supplierOffers: [] });
+    const state = get();
+    const { _cache, _inFlight, _cacheTTL, _swrEnabled } = state;
+    const key = supplierId || 'anonymous';
+    const now = Date.now();
+
+    const cached = _cache.supplier.get(key);
+    if (!opts.forceNetwork && cached) {
+      const age = now - cached.ts;
+      const fresh = _cacheTTL > 0 && age < _cacheTTL;
+      if (fresh) {
+        __logOfferDebug('loadSupplierOffers cache fresh hit', key, 'age=', age);
+        set({ supplierOffers: cached.data, loading: false, error: null });
+        return cached.data;
+      }
+      if (_swrEnabled) {
+        __logOfferDebug('loadSupplierOffers cache stale (SWR)', key, 'age=', age);
+        set({ supplierOffers: cached.data, loading: false, error: null });
+        if (!_inFlight.supplier.has(key)) {
+          setTimeout(() => { try { get().loadSupplierOffers(supplierId, { forceNetwork: true, background: true }); } catch(_) {}; }, 0);
+        }
+        return cached.data;
+      }
+    }
+    if (_inFlight.supplier.has(key)) {
+      __logOfferDebug('loadSupplierOffers join in-flight', key);
+      try { return await _inFlight.supplier.get(key); } catch(_) { /* retry fresh */ }
+    }
+  if (!opts.background) set({ loading: true, error: null });
+  let resolver;
+  const p = new Promise((resolve) => { resolver = { resolve }; });
+    _inFlight.supplier.set(key, p);
+  const finish = (value) => { _inFlight.supplier.delete(key); resolver.resolve(value); };
     try {
       let data, error;
       if (supabase.rpc) {
@@ -382,11 +521,18 @@ export const useOfferStore = create((set, get) => ({
           }
         } catch(_) {}
       }
-  set({ supplierOffers: normalized, loading: false });
+  if (!opts.background) {
+        set({ supplierOffers: normalized, loading: false });
+      } else {
+        set({ supplierOffers: normalized });
+      }
+  _cache.supplier.set(key, { ts: Date.now(), data: normalized });
+  finish(data);
   __logOfferDebug('loadSupplierOffers final offers', normalized.map(o=>({id:o.id,status:o.status,product:o.product?.name})));
       return data;
     } catch (err) {
-  set({ error: 'Error al obtener ofertas: ' + err.message, loading: false, supplierOffers: [] });
+  if (!opts.background) set({ error: 'Error al obtener ofertas: ' + err.message, loading: false, supplierOffers: [] });
+      finish(undefined);
     }
   },
 
@@ -439,6 +585,8 @@ export const useOfferStore = create((set, get) => ({
                 status: 'approved',
                 accepted_at: new Date().toISOString(),
                 purchase_deadline: data.purchase_deadline,
+                // Sincronizar expires_at para que UI legacy (buyer) pueda mostrar countdown correcto
+                expires_at: data.purchase_deadline || offer.expires_at,
                 stock_reserved: true
               }
             : offer
@@ -466,6 +614,7 @@ export const useOfferStore = create((set, get) => ({
         buyerOffers: state.buyerOffers.map(o => o.id === offerId ? { ...o, status: 'cancelled', cancelled_at: new Date().toISOString() } : o),
         loading: false
       }));
+      try { get()._pruneInvalidOfferCartItems(); } catch(_) {}
       return data;
     } catch (err) {
       set({ error: 'Error al cancelar oferta: ' + err.message, loading: false });
@@ -534,6 +683,7 @@ export const useOfferStore = create((set, get) => ({
         ),
         loading: false
       }));
+      try { get()._pruneInvalidOfferCartItems(); } catch(_) {}
       
       return data;
       
@@ -684,6 +834,20 @@ export const useOfferStore = create((set, get) => ({
           description: 'Tienes 24h para agregar al carrito',
           actionable: true
         };
+      case OFFER_STATES.RESERVED:
+        return {
+          color: 'info',
+          label: 'Reservada',
+          description: 'Agregada al carrito (pendiente de pago)',
+          actionable: false
+        };
+      case OFFER_STATES.PAID:
+        return {
+          color: 'success',
+          label: 'Pagada',
+          description: 'Pago confirmado',
+          actionable: false
+        };
       case OFFER_STATES.REJECTED:
         return {
           color: 'error',
@@ -696,13 +860,6 @@ export const useOfferStore = create((set, get) => ({
           color: 'default',
           label: 'Caducada',
           description: 'La oferta ha expirado',
-          actionable: false
-        };
-      case OFFER_STATES.PURCHASED:
-        return {
-          color: 'info',
-          label: 'Compra Realizada',
-          description: 'Producto agregado al carrito y comprado',
           actionable: false
         };
       default:
@@ -732,8 +889,8 @@ export const useOfferStore = create((set, get) => ({
         }, 
         (payload) => {
           console.log('Buyer offer change:', payload);
-          // Recargar ofertas cuando hay cambios
-          get().loadBuyerOffers(buyerId);
+          // Forzar network para evitar servir cache fresco que oculte cambios externos
+          get().loadBuyerOffers(buyerId, { forceNetwork: true });
         }
       )
       .subscribe();
@@ -757,8 +914,8 @@ export const useOfferStore = create((set, get) => ({
         }, 
         (payload) => {
           console.log('Supplier offer change:', payload);
-          // Recargar ofertas cuando hay cambios
-          get().loadSupplierOffers(supplierId);
+          // Forzar network para evitar servir cache fresco que oculte cambios externos
+          get().loadSupplierOffers(supplierId, { forceNetwork: true });
         }
       )
       .subscribe();

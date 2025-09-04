@@ -3,7 +3,6 @@ import React, { useEffect, useState } from 'react';
 import {
   Box,
   Typography,
-  CircularProgress,
   Alert,
   Container,
   TextField,
@@ -22,6 +21,7 @@ import { SPACING_BOTTOM_MAIN } from '../../../../styles/layoutSpacing';
 import { SupplierErrorBoundary } from '../../components/ErrorBoundary';
 import { supabase } from '../../../../services/supabase';
 import { uploadInvoicePDF } from '../../../../services/storage/invoiceStorageService';
+import TableSkeleton from '../../../../shared/components/display/skeletons/TableSkeleton';
 import { validateTaxPdf } from './validation/pdfValidation';
 
 // TODO: Implementar hook de autenticación
@@ -497,18 +497,22 @@ const MyOrdersPage = () => {
       <ThemeProvider theme={dashboardThemeCore}>
         <Box
           sx={{
-            // marginLeft: '210px', // Eliminado para ocupar todo el ancho
             backgroundColor: 'background.default',
             minHeight: '100vh',
             pt: { xs: 4.5, md: 5 },
             px: { xs: 0, md: 3 },
             pb: 3,
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
+            ml: { xs: 0, md: 10, lg: 14, xl: 24 },
           }}
         >
-          <CircularProgress />
+          <Container maxWidth={false} disableGutters>
+            <Box sx={{ mb: 4, display: 'flex', alignItems: 'center' }}>
+              <Typography variant="h4" fontWeight={600} color="primary.main" gutterBottom>
+                Mis Pedidos
+              </Typography>
+            </Box>
+            <TableSkeleton rows={7} columns={6} />
+          </Container>
         </Box>
       </ThemeProvider>
     );
