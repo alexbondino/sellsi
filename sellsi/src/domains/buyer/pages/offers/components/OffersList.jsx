@@ -47,6 +47,7 @@ const formatPrice = (value) => {
 };
 
 import { useThumbnailsBatch } from '../../../../../hooks/useThumbnailQueries';
+import TableSkeleton from '../../../../../shared/components/display/skeletons/TableSkeleton';
 
 const OffersList = ({ offers = [], loading = false, error = null, cancelOffer, deleteOffer, onCancelOffer, onDeleteOffer, onAddToCart }) => {
   const [statusFilter, setStatusFilter] = React.useState('all');
@@ -91,19 +92,29 @@ const OffersList = ({ offers = [], loading = false, error = null, cancelOffer, d
 
   const hasOffers = (offers && offers.length > 0);
 
-  if (!loading && !error && !hasOffers) {
-    return (
-      <Paper sx={{ p: { xs: 2, md: 4 }, textAlign: 'center' }}>
-        <Typography variant="h6" color="text.secondary">No has enviado ofertas</Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-          Envía ofertas a proveedores desde la ficha de producto. Aquí verás el estado de cada propuesta.
-        </Typography>
-      </Paper>
-    );
+  if (!hasOffers) {
+    if (loading) return <TableSkeleton rows={6} columns={4} withAvatar />;
+    if (!error) {
+      return (
+        <Paper sx={{ p: { xs: 2, md: 4 }, textAlign: 'center' }}>
+          <Typography variant="h6" color="text.secondary">No has enviado ofertas</Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+            Envía ofertas a proveedores desde la ficha de producto. Aquí verás el estado de cada propuesta.
+          </Typography>
+        </Paper>
+      );
+    }
   }
 
   return (
-    <TableContainer component={Paper} sx={{ p: 0, scrollbarGutter: 'stable' }}>
+    <TableContainer component={Paper} sx={{ p: 0, position: 'relative', scrollbarGutter: 'stable' }}>
+      {loading && hasOffers && (
+        <Box sx={{ position: 'absolute', inset: 0, bgcolor: 'rgba(255,255,255,0.55)', zIndex: 2 }}>
+          <Box sx={{ position: 'absolute', top: 8, right: 12 }}>
+            <Typography variant="caption" color="text.secondary">Actualizando…</Typography>
+          </Box>
+        </Box>
+      )}
       <Box sx={{ display: 'flex', gap: 2, p: 2, alignItems: 'center' }}>
         <Typography fontWeight={600}>Filtrar por estado:</Typography>
         <FormControl size="small" sx={{ minWidth: 180 }}>

@@ -11,7 +11,7 @@ import { useSupplierOffers } from './hooks/useSupplierOffers';
 // Muy similar a BuyerOffers pero adaptada al proveedor y columnas solicitadas.
 const SupplierOffers = () => {
   const isMobile = useMediaQuery(dashboardThemeCore.breakpoints.down('md'));
-  const { offers, setOffers, acceptOffer, rejectOffer, deleteOffer } = useSupplierOffers();
+  const { offers, setOffers, acceptOffer, rejectOffer, deleteOffer, loading, initializing } = useSupplierOffers();
 
   return (
     <ThemeProvider theme={dashboardThemeCore}>
@@ -39,6 +39,8 @@ const SupplierOffers = () => {
             acceptOffer={acceptOffer}
             rejectOffer={rejectOffer}
             deleteOffer={deleteOffer}
+            loading={loading}
+            initializing={initializing}
           />
         </Container>
       </Box>

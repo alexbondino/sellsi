@@ -41,6 +41,27 @@ export const useOfferStore = create((set, get) => ({
   supplierOffers: [],
   loading: false,
   error: null,
+  // Cache ligera (separada de image cache): mapas por clave (buyer|supplier) -> { ts, data }
+  _cache: {
+    buyer: new Map(),
+    supplier: new Map()
+  },
+  // In-flight promises para dedupe concurrente
+  _inFlight: {
+    buyer: new Map(),
+    supplier: new Map()
+  },
+  // TTL configurable (ms). Por defecto 0 = deshabilitado para no alterar tests existentes
+  _cacheTTL: (() => {
+    const raw = (typeof process !== 'undefined' && process.env.OFFERS_CACHE_TTL) ? Number(process.env.OFFERS_CACHE_TTL) : 0;
+    return Number.isFinite(raw) ? raw : 0;
+  })(),
+  // SWR habilitable: si ON sirve datos expirados y dispara revalidación en background
+  _swrEnabled: (() => (typeof process !== 'undefined' && (process.env.OFFERS_CACHE_SWR === '1' || process.env.OFFERS_CACHE_SWR === 'true')))(),
+  // Utilidades públicas opcionales
+  clearOffersCache: () => set(state => { state._cache?.buyer?.clear?.(); state._cache?.supplier?.clear?.(); return { }; }),
+  forceRefreshBuyerOffers: (buyerId) => get().loadBuyerOffers(buyerId, { forceNetwork: true }),
+  forceRefreshSupplierOffers: (supplierId) => get().loadSupplierOffers(supplierId, { forceNetwork: true }),
   
   // Limpiar errores
   clearError: () => set({ error: null }),
@@ -172,10 +193,57 @@ export const useOfferStore = create((set, get) => ({
   },
   
   // Cargar ofertas del comprador (usa RPC si tests lo esperan)
-  loadBuyerOffers: async (buyerId) => {
-  // Limpia ofertas previas para evitar que tests vean datos de otros escenarios
+  loadBuyerOffers: async (buyerId, opts = {}) => {
   __logOfferDebug('loadBuyerOffers start buyerId=', buyerId);
-  set({ loading: true, error: null, buyerOffers: [] });
+    const state = get();
+    const { _cache, _inFlight, _cacheTTL, _swrEnabled } = state;
+    const key = buyerId || 'anonymous';
+    const now = Date.now();
+
+    const cached = _cache.buyer.get(key);
+    if (!opts.forceNetwork && cached) {
+      const age = now - cached.ts;
+      const fresh = _cacheTTL > 0 && age < _cacheTTL;
+      if (fresh) {
+        __logOfferDebug('loadBuyerOffers cache fresh hit', key, 'age=', age);
+        set({ buyerOffers: cached.data, loading: false, error: null });
+        return cached.data;
+      }
+      if (_swrEnabled) {
+        __logOfferDebug('loadBuyerOffers cache stale (SWR)', key, 'age=', age);
+        // servir datos stale inmediatamente y revalidar en background si no hay in-flight
+        set({ buyerOffers: cached.data, loading: false, error: null });
+        if (!_inFlight.buyer.has(key)) {
+          // Programar revalidación asincrónica
+          setTimeout(() => {
+            try { get().loadBuyerOffers(buyerId, { forceNetwork: true, background: true }); } catch(_) {}
+          }, 0);
+        }
+        return cached.data;
+      }
+    }
+
+    // 2) In-flight dedupe
+    if (_inFlight.buyer.has(key)) {
+      __logOfferDebug('loadBuyerOffers join in-flight', key);
+      try {
+        const data = await _inFlight.buyer.get(key);
+        return data;
+      } catch (e) {
+        // Si la original falló, continuamos a un nuevo intento (caerá debajo)
+      }
+    }
+
+    // 3) Preparar nueva llamada: limpiar sólo si NO hay cache previa (evitar flicker)
+    if (!opts.background) {
+      // No limpiar buyerOffers (preserva detección de pending); sólo marcar loading
+      set({ loading: true, error: null });
+    }
+
+  let resolver;
+  const p = new Promise((resolve) => { resolver = { resolve }; });
+    _inFlight.buyer.set(key, p);
+  const finish = (value) => { _inFlight.buyer.delete(key); resolver.resolve(value); };
     const MAX_ATTEMPTS = 3;
     let attempt = 0;
   while (attempt < MAX_ATTEMPTS) {
@@ -246,7 +314,15 @@ export const useOfferStore = create((set, get) => ({
             }
           } catch(_) {}
         }
-        set({ buyerOffers: normalized, loading: false, error: null });
+        if (!opts.background) {
+          set({ buyerOffers: normalized, loading: false, error: null });
+        } else {
+          // background refresh: no sobreescribir loading=false redundante si ya era false
+          set({ buyerOffers: normalized, error: null });
+        }
+  // Guardar en cache (aunque TTL sea 0 nos sirve para dedupe de solicitudes simultáneas futuras dentro del mismo tick)
+  _cache.buyer.set(key, { ts: Date.now(), data: normalized });
+  finish(data);
   __logOfferDebug('loadBuyerOffers final offers', normalized.map(o=>({id:o.id,status:o.status,product:o.product?.name})));
         return data;
       } catch (err) {
@@ -254,16 +330,19 @@ export const useOfferStore = create((set, get) => ({
         attempt++;
         // Si el test espera un único intento con error (p.ej. Database error) no reintentar
         if (err && /Database error/i.test(err.message)) {
-          set({ error: 'Error al obtener ofertas: ' + err.message, loading: false, buyerOffers: [] });
+          if (!opts.background) set({ error: 'Error al obtener ofertas: ' + err.message, loading: false, buyerOffers: [] });
+          finish(undefined);
           return;
         }
         // Para Network error: exponer error y no reintentar en esta primera llamada (tests esperan segundo llamado manual)
         if (/Network error/i.test(err.message)) {
-          set({ error: 'Error al obtener ofertas: ' + err.message, loading: false, buyerOffers: [] });
+          if (!opts.background) set({ error: 'Error al obtener ofertas: ' + err.message, loading: false, buyerOffers: [] });
+          finish(undefined);
           return;
         }
         if (attempt >= MAX_ATTEMPTS) {
-          set({ error: 'Error al obtener ofertas: ' + err.message, loading: false, buyerOffers: [] });
+          if (!opts.background) set({ error: 'Error al obtener ofertas: ' + err.message, loading: false, buyerOffers: [] });
+          finish(undefined);
           return;
         }
         // Backoff exponencial corto para tests
@@ -310,10 +389,40 @@ export const useOfferStore = create((set, get) => ({
   // =====================================================
   
   // Cargar ofertas del proveedor (RPC compat)
-  loadSupplierOffers: async (supplierId) => {
-  // Limpiar previo para evitar que queden ofertas de otros tests
+  loadSupplierOffers: async (supplierId, opts = {}) => {
   __logOfferDebug('loadSupplierOffers start supplierId=', supplierId);
-  set({ loading: true, error: null, supplierOffers: [] });
+    const state = get();
+    const { _cache, _inFlight, _cacheTTL, _swrEnabled } = state;
+    const key = supplierId || 'anonymous';
+    const now = Date.now();
+
+    const cached = _cache.supplier.get(key);
+    if (!opts.forceNetwork && cached) {
+      const age = now - cached.ts;
+      const fresh = _cacheTTL > 0 && age < _cacheTTL;
+      if (fresh) {
+        __logOfferDebug('loadSupplierOffers cache fresh hit', key, 'age=', age);
+        set({ supplierOffers: cached.data, loading: false, error: null });
+        return cached.data;
+      }
+      if (_swrEnabled) {
+        __logOfferDebug('loadSupplierOffers cache stale (SWR)', key, 'age=', age);
+        set({ supplierOffers: cached.data, loading: false, error: null });
+        if (!_inFlight.supplier.has(key)) {
+          setTimeout(() => { try { get().loadSupplierOffers(supplierId, { forceNetwork: true, background: true }); } catch(_) {}; }, 0);
+        }
+        return cached.data;
+      }
+    }
+    if (_inFlight.supplier.has(key)) {
+      __logOfferDebug('loadSupplierOffers join in-flight', key);
+      try { return await _inFlight.supplier.get(key); } catch(_) { /* retry fresh */ }
+    }
+  if (!opts.background) set({ loading: true, error: null });
+  let resolver;
+  const p = new Promise((resolve) => { resolver = { resolve }; });
+    _inFlight.supplier.set(key, p);
+  const finish = (value) => { _inFlight.supplier.delete(key); resolver.resolve(value); };
     try {
       let data, error;
       if (supabase.rpc) {
@@ -382,11 +491,18 @@ export const useOfferStore = create((set, get) => ({
           }
         } catch(_) {}
       }
-  set({ supplierOffers: normalized, loading: false });
+  if (!opts.background) {
+        set({ supplierOffers: normalized, loading: false });
+      } else {
+        set({ supplierOffers: normalized });
+      }
+  _cache.supplier.set(key, { ts: Date.now(), data: normalized });
+  finish(data);
   __logOfferDebug('loadSupplierOffers final offers', normalized.map(o=>({id:o.id,status:o.status,product:o.product?.name})));
       return data;
     } catch (err) {
-  set({ error: 'Error al obtener ofertas: ' + err.message, loading: false, supplierOffers: [] });
+  if (!opts.background) set({ error: 'Error al obtener ofertas: ' + err.message, loading: false, supplierOffers: [] });
+      finish(undefined);
     }
   },
 
@@ -732,8 +848,8 @@ export const useOfferStore = create((set, get) => ({
         }, 
         (payload) => {
           console.log('Buyer offer change:', payload);
-          // Recargar ofertas cuando hay cambios
-          get().loadBuyerOffers(buyerId);
+          // Forzar network para evitar servir cache fresco que oculte cambios externos
+          get().loadBuyerOffers(buyerId, { forceNetwork: true });
         }
       )
       .subscribe();
@@ -757,8 +873,8 @@ export const useOfferStore = create((set, get) => ({
         }, 
         (payload) => {
           console.log('Supplier offer change:', payload);
-          // Recargar ofertas cuando hay cambios
-          get().loadSupplierOffers(supplierId);
+          // Forzar network para evitar servir cache fresco que oculte cambios externos
+          get().loadSupplierOffers(supplierId, { forceNetwork: true });
         }
       )
       .subscribe();

@@ -25,14 +25,14 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/11</span>
+                <span class='fraction'>0/12</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/9</span>
+                <span class='fraction'>0/13</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/11</span>
+                <span class='fraction'>0/12</span>
             </div>
         
             
@@ -126,18 +126,7 @@
 <a name='L61'></a><a href='#L61'>61</a>
 <a name='L62'></a><a href='#L62'>62</a>
 <a name='L63'></a><a href='#L63'>63</a>
-<a name='L64'></a><a href='#L64'>64</a>
-<a name='L65'></a><a href='#L65'>65</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L64'></a><a href='#L64'>64</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -150,9 +139,12 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -180,11 +172,17 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -192,20 +190,10 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">// 📁 domains/auth/components/PrivateRoute.jsx
-// Migrado de features/auth/PrivateRoute.jsx
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { Box, CircularProgress, Typography } from '@mui/material';
 &nbsp;
-/**
- * Ruta protegida: solo actúa como guard visual.
- * Recibe el estado de sesión y onboarding ya validado desde App.jsx o AuthContext.
- * @param {React.ReactNode} children - Componentes a renderizar si está autenticado y con onboarding completo
- * @param {boolean} isAuthenticated - ¿El usuario está autenticado?
- * @param {boolean} needsOnboarding - ¿El usuario necesita completar onboarding?
- * @param {boolean} loading - ¿Está cargando la validación?
- * @param {string} redirectTo - Ruta a la que redirigir si no está autenticado (default: '/login')
- */
 const PrivateRoute = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >({</span></span>
   children,
   isAuthenticated,
@@ -214,6 +202,8 @@ const PrivateRoute = <span class="cstat-no" title="statement not covered" ><span
   redirectTo = <span class="branch-0 cbranch-no" title="branch not covered" >'/login',</span>
 }) =&gt; {
   const location = <span class="cstat-no" title="statement not covered" >useLocation();</span>
+  const isOnboardingRoute = <span class="cstat-no" title="statement not covered" >location.pathname === '/onboarding';</span>
+&nbsp;
   // Loading visual centralizado
 <span class="cstat-no" title="statement not covered" >  if (loading) {</span>
 <span class="cstat-no" title="statement not covered" >    return (</span>
@@ -240,17 +230,24 @@ const PrivateRoute = <span class="cstat-no" title="statement not covered" ><span
     );
   }
 &nbsp;
+  // 1) Si no está autenticado -&gt; a login
 <span class="cstat-no" title="statement not covered" >  if (!isAuthenticated) {</span>
 <span class="cstat-no" title="statement not covered" >    return &lt;Navigate to={redirectTo} replace /&gt;;</span>
   }
 &nbsp;
-<span class="cstat-no" title="statement not covered" >  if (needsOnboarding) {</span>
-<span class="cstat-no" title="statement not covered" >    if (location.pathname === '/onboarding') {</span>
-<span class="cstat-no" title="statement not covered" >      return children;</span>
-    }
+  // 2) Si está autenticado y YA completó el onboarding:
+  //    - Si intenta entrar a /onboarding -&gt; mándalo al home
+<span class="cstat-no" title="statement not covered" >  if (!needsOnboarding &amp;&amp; isOnboardingRoute) {</span>
+<span class="cstat-no" title="statement not covered" >    return &lt;Navigate to="/" replace /&gt;;</span>
+  }
+&nbsp;
+  // 3) Si está autenticado y AÚN NO completa el onboarding:
+  //    - Si NO está en /onboarding -&gt; forzar a /onboarding
+<span class="cstat-no" title="statement not covered" >  if (needsOnboarding &amp;&amp; !isOnboardingRoute) {</span>
 <span class="cstat-no" title="statement not covered" >    return &lt;Navigate to="/onboarding" replace /&gt;;</span>
   }
 &nbsp;
+  // 4) En cualquier otro caso, renderiza el children
 <span class="cstat-no" title="statement not covered" >  return children;</span>
 };
 &nbsp;
@@ -262,7 +259,7 @@ export default PrivateRoute;
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-09-04T15:50:40.094Z
+                at 2025-09-04T16:22:42.242Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>

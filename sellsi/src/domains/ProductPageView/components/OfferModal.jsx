@@ -81,6 +81,13 @@ const OfferModal = ({
     }
     const prodKey = product?.id ?? product?.productid ?? product?.product_id;
     if (!prodKey) return;
+    // Si ya detectamos pending local, no sobreescribir buyerOffers con fetch (preserva alerta inmediata)
+    const alreadyPending = (Array.isArray(buyerOffers) && buyerOffers.some(o => {
+      const status = (o.status||'').toLowerCase();
+      const keys = [o.product_id, o.productId, o.product?.product_id, o.product?.productid, o.product?.id];
+      return status === 'pending' && keys.some(k => k != null && String(k) === String(prodKey));
+    }));
+    if (alreadyPending) return;
     // Only request once per modal open
     if (buyerOffersRequestedRef.current) return;
     buyerOffersRequestedRef.current = true;

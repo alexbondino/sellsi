@@ -21,6 +21,7 @@ import { useBanner } from '../../../../../shared/components/display/banners/Bann
 import { Check as CheckIcon } from '@mui/icons-material';
 import SupplierOfferActionModals from './SupplierOfferActionModals';
 import { supabase } from '../../../../../services/supabase';
+import TableSkeleton from '../../../../../shared/components/display/skeletons/TableSkeleton';
 import BlockIcon from '@mui/icons-material/Block';
 import DeleteIcon from '@mui/icons-material/Delete';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
@@ -41,7 +42,7 @@ const formatCLP = (num) => {
 
 const SafeChip = ({ onClick, ...rest }) => <Chip {...rest} onClick={typeof onClick === 'function' ? onClick : undefined} />;
 
-const SupplierOffersList = ({ offers = [], setOffers, acceptOffer, rejectOffer, deleteOffer }) => {
+const SupplierOffersList = ({ offers = [], setOffers, acceptOffer, rejectOffer, deleteOffer, loading, initializing = false }) => {
   const [statusFilter, setStatusFilter] = React.useState('all');
   const [modalState, setModalState] = React.useState({ open: false, mode: null, offer: null });
   const { showBanner } = useBanner();
@@ -127,6 +128,7 @@ const SupplierOffersList = ({ offers = [], setOffers, acceptOffer, rejectOffer, 
 
   const hasOffers = offers && offers.length > 0;
   if (!hasOffers) {
+    if (initializing || loading) return <TableSkeleton rows={6} columns={5} />;
     return (
       <Paper sx={{ p: { xs: 2, md: 4 }, textAlign: 'center' }}>
         <Typography variant="h6" color="text.secondary">Aún no tienes ofertas</Typography>
