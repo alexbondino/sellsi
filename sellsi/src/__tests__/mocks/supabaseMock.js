@@ -100,8 +100,8 @@ export const mockOfferData = {
     price: 1000,
     message: 'Test offer message',
     status: 'pending',
-    created_at: '2025-09-02T10:00:00Z',
-    expires_at: '2025-09-04T10:00:00Z'
+  created_at: new Date(Date.now() - 48 * 3600 * 1000).toISOString(),
+  expires_at: new Date(Date.now() + 48 * 3600 * 1000).toISOString()
   },
   validProduct: {
     id: 'prod_456',
