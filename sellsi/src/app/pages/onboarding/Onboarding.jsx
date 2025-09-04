@@ -24,8 +24,12 @@ import { useOptimizedUserShippingRegion } from '../../../hooks/useOptimizedUserS
 import PrimaryButton from '../../../shared/components/forms/PrimaryButton';
 import CountrySelector from '../../../shared/components/forms/CountrySelector';
 import { validatePhone, normalizePhone } from '../../../utils/validators';
-import { TaxDocumentSelector, BillingInfoForm } from '../../../shared/components';
+import {
+  TaxDocumentSelector,
+  BillingInfoForm,
+} from '../../../shared/components';
 import { Collapse } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
 
 // ==================================================================
 // COMPONENTE HELPER: Uploader de logos (estilo mejorado)
@@ -111,6 +115,7 @@ const LogoUploader = ({
 const Onboarding = () => {
   const [isLoading, setIsLoading] = useState(false);
   const theme = useTheme();
+  const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
     accountType: '',
@@ -118,17 +123,17 @@ const Onboarding = () => {
     telefonoContacto: '',
     codigoPais: '', // Default to Chile
     descripcionProveedor: '',
-    
+
     // Campos de Documento Tributario
     documentTypes: [],
-    
+
     // Campos de Facturación
     businessName: '',
     billingRut: '',
     businessLine: '',
     billingAddress: '',
     billingRegion: '',
-    billingCommune: ''
+    billingCommune: '',
   });
 
   const [logoFile, setLogoFile] = useState(null);
@@ -137,8 +142,7 @@ const Onboarding = () => {
   // Hook para primar caché de región inmediatamente al finalizar onboarding
   const { primeUserRegionCache } = useOptimizedUserShippingRegion();
 
-  useEffect(() => {
-  }, [logoPreview]);
+  useEffect(() => {}, [logoPreview]);
 
   const handleFieldChange = useCallback((field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -193,17 +197,25 @@ const Onboarding = () => {
       console.error('El nombre es obligatorio.');
       return;
     }
-    
+
     // Validar campos de facturación si es proveedor y seleccionó factura
-    if (formData.accountType === 'proveedor' && 
-        formData.documentTypes?.includes('factura')) {
-      if (!formData.businessName || !formData.billingRut || !formData.businessLine ||
-          !formData.billingAddress || !formData.billingRegion || !formData.billingCommune) {
+    if (
+      formData.accountType === 'proveedor' &&
+      formData.documentTypes?.includes('factura')
+    ) {
+      if (
+        !formData.businessName ||
+        !formData.billingRut ||
+        !formData.businessLine ||
+        !formData.billingAddress ||
+        !formData.billingRegion ||
+        !formData.billingCommune
+      ) {
         console.error('Por favor completa todos los campos de Facturación.');
         return;
       }
     }
-    
+
     if (logoError) {
       console.error('Corrige el error del logo antes de continuar.');
       return;
@@ -279,7 +291,10 @@ const Onboarding = () => {
       const updates = {
         user_nm: formData.nombreEmpresa,
         main_supplier: formData.accountType === 'proveedor',
-        phone_nbr: normalizePhone(formData.codigoPais || 'CL', formData.telefonoContacto || ''),
+        phone_nbr: normalizePhone(
+          formData.codigoPais || 'CL',
+          formData.telefonoContacto || ''
+        ),
         country: formData.codigoPais,
         logo_url: logoPublicUrl,
         email: user.email, // ✅ ¡LA CORRECCIÓN CLAVE AQUÍ! Se añade el email.
@@ -295,8 +310,8 @@ const Onboarding = () => {
             business_line: formData.businessLine,
             billing_address: formData.billingAddress,
             billing_region: formData.billingRegion,
-            billing_commune: formData.billingCommune
-          })
+            billing_commune: formData.billingCommune,
+          }),
         }),
       };
 
@@ -312,11 +327,16 @@ const Onboarding = () => {
       console.log('¡Perfil actualizado con éxito!');
       // Primar cache de región de shipping inmediatamente para evitar "loading" en primeras vistas
       // Intentar obtener región de despacho desde billingRegion (si se ingresó) o desde algún campo futuro
-      const regionCandidate = updates.billing_region || updates.shipping_region || null;
+      const regionCandidate =
+        updates.billing_region || updates.shipping_region || null;
       if (regionCandidate) {
-        try { primeUserRegionCache(regionCandidate); } catch(e) { /* silencioso */ }
+        try {
+          primeUserRegionCache(regionCandidate);
+        } catch (e) {
+          /* silencioso */
+        }
       }
-      window.location.reload();
+      navigate('/', { replace: true });
     } catch (error) {
       console.error('❌ Error al actualizar el perfil:', error);
       console.error(error.message || 'Hubo un error al guardar tu perfil.');
@@ -327,20 +347,23 @@ const Onboarding = () => {
 
   const isFormValid = () => {
     const hasBasicInfo = formData.accountType && formData.nombreEmpresa.trim();
-    
+
     // Si es proveedor y seleccionó factura, validar campos de facturación
-    if (formData.accountType === 'proveedor' && 
-        formData.documentTypes?.includes('factura')) {
-      const hasBillingInfo = formData.businessName && 
-        formData.billingRut && 
+    if (
+      formData.accountType === 'proveedor' &&
+      formData.documentTypes?.includes('factura')
+    ) {
+      const hasBillingInfo =
+        formData.businessName &&
+        formData.billingRut &&
         formData.businessLine &&
         formData.billingAddress &&
         formData.billingRegion &&
         formData.billingCommune;
-      
+
       return hasBasicInfo && hasBillingInfo;
     }
-    
+
     return hasBasicInfo;
   };
 
@@ -527,8 +550,8 @@ const Onboarding = () => {
                 display: 'block',
               }}
             >
-              *Este será tu rol por defecto, pero podrás cambiarlo más adelante en
-              tu perfil.
+              *Este será tu rol por defecto, pero podrás cambiarlo más adelante
+              en tu perfil.
             </Typography>
           </Box>
 
@@ -599,18 +622,40 @@ const Onboarding = () => {
                       size="small"
                       label="Teléfono de contacto"
                       value={formData.telefonoContacto}
-                      inputProps={{ maxLength: 15, inputMode: 'numeric', pattern: '[0-9]*' }}
+                      inputProps={{
+                        maxLength: 15,
+                        inputMode: 'numeric',
+                        pattern: '[0-9]*',
+                      }}
                       onChange={e => {
-                        const digits = (e.target.value || '').replace(/\D+/g, '');
+                        const digits = (e.target.value || '').replace(
+                          /\D+/g,
+                          ''
+                        );
                         handleFieldChange('telefonoContacto', digits);
                       }}
                       placeholder="Ej: 912345678"
                       type="tel"
-                      error={!validatePhone(formData.codigoPais || 'CL', formData.telefonoContacto || '').isValid}
-                      helperText={(() => {
-                        const res = validatePhone(formData.codigoPais || 'CL', formData.telefonoContacto || '');
-                        return res.isValid ? `${formData.telefonoContacto.length}/15` : res.reason;
-                      })()}
+                      // 👇 Eliminamos la marca en rojo si está vacío
+                      error={
+                        formData.telefonoContacto.length > 0 &&
+                        !validatePhone(
+                          formData.codigoPais || 'CL',
+                          formData.telefonoContacto || ''
+                        ).isValid
+                      }
+                      helperText={() => {
+                        if (!formData.telefonoContacto) {
+                          return 'Opcional'; // 👈 Se muestra como texto aclaratorio
+                        }
+                        const res = validatePhone(
+                          formData.codigoPais || 'CL',
+                          formData.telefonoContacto || ''
+                        );
+                        return res.isValid
+                          ? `${formData.telefonoContacto.length}/15`
+                          : res.reason;
+                      }}
                       sx={{ '.MuiOutlinedInput-root': { borderRadius: 2 } }}
                     />
                   </Box>
@@ -684,7 +729,13 @@ const Onboarding = () => {
             {/* Esta sección está FUERA del Grid principal para que ocupe todo el ancho disponible */}
             <Collapse in={formData.accountType === 'proveedor'}>
               {formData.accountType === 'proveedor' && (
-                <Box sx={{ mt: 4, maxWidth: { xs: '100%', md: '800px', lg: '950px' }, mx: 'auto' }}>
+                <Box
+                  sx={{
+                    mt: 4,
+                    maxWidth: { xs: '100%', md: '800px', lg: '950px' },
+                    mx: 'auto',
+                  }}
+                >
                   <Divider sx={{ mb: 3 }}>
                     <Typography variant="body2" color="text.secondary">
                       Configuración Tributaria
@@ -697,7 +748,7 @@ const Onboarding = () => {
                     <Grid size={{ xs: 12, md: 6 }}>
                       <TaxDocumentSelector
                         documentTypes={formData.documentTypes}
-                        onDocumentTypesChange={(types) => 
+                        onDocumentTypesChange={types =>
                           handleFieldChange('documentTypes', types)
                         }
                         showTitle={true}
@@ -707,17 +758,21 @@ const Onboarding = () => {
 
                     {/* Columna derecha: Facturación (solo si selecciona factura) */}
                     <Grid size={{ xs: 12, md: 6 }}>
-                      <Collapse in={formData.documentTypes?.includes('factura')}>
+                      <Collapse
+                        in={formData.documentTypes?.includes('factura')}
+                      >
                         {formData.documentTypes?.includes('factura') && (
-                          <Box sx={{ 
-                            border: 1, 
-                            borderColor: 'divider', 
-                            borderRadius: 2, 
-                            p: 3,
-                            mb: 5,
-                            bgcolor: 'grey.50',
-                            height: 'fit-content'
-                          }}>
+                          <Box
+                            sx={{
+                              border: 1,
+                              borderColor: 'divider',
+                              borderRadius: 2,
+                              p: 3,
+                              mb: 5,
+                              bgcolor: 'grey.50',
+                              height: 'fit-content',
+                            }}
+                          >
                             <BillingInfoForm
                               formData={formData}
                               onFieldChange={handleFieldChange}
