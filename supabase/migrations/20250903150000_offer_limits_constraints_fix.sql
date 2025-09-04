@@ -43,6 +43,14 @@ WHERE p.buyer_id = a.buyer_id
         AND r.rn = 1
     );
 
+WITH ranked_prod AS (
+  SELECT id, buyer_id, product_id, month_year, offers_count, updated_at, created_at,
+         ROW_NUMBER() OVER (
+           PARTITION BY buyer_id, product_id, month_year
+           ORDER BY updated_at DESC NULLS LAST, created_at DESC NULLS LAST, id
+         ) AS rn
+  FROM public.offer_limits_product
+)
 DELETE FROM public.offer_limits_product
 WHERE id IN (SELECT id FROM ranked_prod WHERE rn > 1);
 
@@ -74,6 +82,14 @@ WHERE s.buyer_id = a.buyer_id
         AND r.rn = 1
     );
 
+WITH ranked_supp AS (
+  SELECT id, buyer_id, supplier_id, month_year, offers_count, updated_at, created_at,
+         ROW_NUMBER() OVER (
+           PARTITION BY buyer_id, supplier_id, month_year
+           ORDER BY updated_at DESC NULLS LAST, created_at DESC NULLS LAST, id
+         ) AS rn
+  FROM public.offer_limits_supplier
+)
 DELETE FROM public.offer_limits_supplier
 WHERE id IN (SELECT id FROM ranked_supp WHERE rn > 1);
 
