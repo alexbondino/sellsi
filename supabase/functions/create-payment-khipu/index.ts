@@ -63,7 +63,7 @@ serve(req => withMetrics('create-payment-khipu', req, async () => {
         'El secreto KHIPU_API_KEY no está configurado en Supabase.'
       );
     }
-    if (!supabaseUrl) {
+    if (offerIds.length) {
       throw new Error(
         'La variable de entorno SUPABASE_URL no está disponible.'
       );
@@ -76,6 +76,7 @@ serve(req => withMetrics('create-payment-khipu', req, async () => {
     );
 
     // Construir la URL de notificación dinámicamente
+      const allowPending = Deno.env.get('OFFERS_ALLOW_PENDING') === '1';
     const notifyUrl = `${supabaseUrl}/functions/v1/process-khipu-webhook`;
 
     // ================================================================
@@ -87,7 +88,8 @@ serve(req => withMetrics('create-payment-khipu', req, async () => {
     const offerIds: string[] = Array.isArray(offer_ids) ? offer_ids : (offer_id ? [offer_id] : []);
     const offerWarnings: any[] = [];
     const enforceDeadline = Deno.env.get('OFFERS_ENFORCE_DEADLINE') === '1';
-    if (offerIds.length) {
+        const validStatuses = allowPending ? ['accepted','reserved','pending'] : ['accepted','reserved'];
+  if (!validStatuses.includes(off.status)) {
       const { data: offersRows, error: offersErr } = await supabaseAdmin
         .from('offers')
         .select('id,status,purchase_deadline,order_id')
@@ -211,8 +213,9 @@ serve(req => withMetrics('create-payment-khipu', req, async () => {
       return new Response(JSON.stringify({ error: 'SEALED_TOTAL_INVALID' }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 422 });
     }
     if (diff > PRICE_TOLERANCE_CLP) {
-      console.error('[create-payment-khipu] PRICING_MISMATCH', { sealedTotal, frontendAmount, diff });
-      return new Response(JSON.stringify({ error: 'PRICING_MISMATCH', sealed_total: sealedTotal, frontend_amount: frontendAmount, diff, sealedSubtotal, sealedShipping, sealedTax }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 409 });
+      const mismatchPayload = { sealed_total: sealedTotal, frontend_amount: frontendAmount, diff, sealedSubtotal, sealedShipping, sealedTax, offer_ids: offerIds, tolerance: PRICE_TOLERANCE_CLP };
+      console.error('[create-payment-khipu] PRICING_MISMATCH', mismatchPayload);
+      return new Response(JSON.stringify({ error: 'PRICING_MISMATCH', details: mismatchPayload }), { headers: { ...corsHeaders, 'Content-Type': 'application/json', 'x-error-code': 'PRICING_MISMATCH' }, status: 409 });
     }
 
     // 4. Preparar y enviar la petición a la API de Khipu usando el monto sellado

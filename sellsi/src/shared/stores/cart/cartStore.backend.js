@@ -8,6 +8,7 @@
  */
 
 import { cartService } from '../../../services/user'
+import { supabase } from '../../../services/supabase'
 import { cleanLocalCartItems } from './cartStore.helpers'
 import { isQuantityError } from '../../../utils/quantityValidation'
 
@@ -170,8 +171,36 @@ export const addItemWithBackend = async (product, quantity, set, get, historySto
       console.log('[cartStore.backend] addItemWithBackend payload:', { cartId: state.cartId, product, quantity })
     } catch (e) {}
 
-    // Agregar al backend
-    const result = await cartService.addItemToCart(state.cartId, product, quantity)
+    // Ensure we are using the correct cart_id for the authenticated user to satisfy RLS.
+    let userIdForRequest = state.userId
+    try {
+      const session = await supabase.auth.getUser?.()
+      const user = session?.data?.user
+      if (user) userIdForRequest = user.id
+      else {
+        // No session -> prompt login and abort
+        try { window.dispatchEvent(new CustomEvent('openLogin')) } catch (e) {}
+        set({ isSyncing: false, error: 'Necesitas iniciar sesión para agregar este producto al carrito' })
+        return false
+      }
+    } catch (e) {
+      // If auth API not available, fallback to existing state.userId
+    }
+
+    // Resolve or create the active cart for this user (server-side ownership enforced)
+    const backendCart = await cartService.getOrCreateActiveCart(userIdForRequest)
+    const cartIdToUse = backendCart?.cart_id || state.cartId
+
+    try {
+      // eslint-disable-next-line no-console
+      console.log('[cartStore.backend] addItemWithBackend authUid vs cartId', { authUid: userIdForRequest, stateCartId: state.cartId, resolvedCartId: cartIdToUse })
+    } catch (e) {}
+
+    // Persist resolved cartId into state so future ops use it
+    try { set({ cartId: cartIdToUse, userId: userIdForRequest }) } catch(e) {}
+
+    // Agregar al backend usando cartIdToUse
+    const result = await cartService.addItemToCart(cartIdToUse, product, quantity)
 
     // En lugar de recargar todo el carrito, solo obtener los items actualizados
     const updatedItems = await cartService.getCartItems(state.cartId)

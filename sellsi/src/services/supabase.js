@@ -56,3 +56,13 @@ export const testConnection = async () => {
     return { success: false, error: error.message }
   }
 }
+
+// Expose the supabase client on window in development for manual debugging
+if (import.meta.env && import.meta.env.DEV) {
+  try {
+    // eslint-disable-next-line no-undef
+    window.supabase = supabase
+  } catch (e) {
+    // ignore in environments where window is not available
+  }
+}

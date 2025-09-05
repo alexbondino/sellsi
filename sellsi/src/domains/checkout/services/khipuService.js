@@ -67,15 +67,28 @@ class KhipuService {
 
       if (error && error.context) {
         console.warn('[khipuService] Error context (posible body función):', error.context);
+        try {
+          // Supabase v2 Functions error suele traer el body en error.context.response o error.context.raw
+          const ctx = error.context;
+          const possible = ctx.response || ctx.body || ctx.raw || ctx;
+          if (typeof possible === 'string') {
+            console.warn('[khipuService] Error body (string):', possible);
+          } else if (possible && typeof possible === 'object') {
+            console.warn('[khipuService] Error body (json):', JSON.stringify(possible, null, 2));
+          }
+        } catch (parseCtxErr) {
+          console.warn('[khipuService] No se pudo parsear error.context:', parseCtxErr);
+        }
       }
 
       if (error) {
-        console.error('[khipuService] Error bruto supabase.functions.invoke:', error);
+        console.error('[khipuService] Error bruto supabase.functions.invoke (detalle completo):', JSON.stringify(error, null, 2));
         throw new Error(
           `Error al invocar la función de Supabase: ${error.message}`
         );
       }
       if (khipuResponse?.error) {
+        console.error('[khipuService] Edge Function returned error payload:', khipuResponse);
         throw new Error(
           `Error devuelto por la función de pago: ${khipuResponse.error}`
         );

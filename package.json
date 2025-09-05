@@ -9,6 +9,22 @@
   "dependencies": {
     "@babel/parser": "^7.28.3",
     "@babel/traverse": "^7.28.3",
+    "@supabase/supabase-js": "^2.57.0",
     "glob": "^11.0.3"
-  }
+  },
+  "version": "1.0.0",
+  "description": "",
+  "main": "detect-inline-literals.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/alexbondino/sellsi.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/alexbondino/sellsi/issues"
+  },
+  "homepage": "https://github.com/alexbondino/sellsi#readme"
 }

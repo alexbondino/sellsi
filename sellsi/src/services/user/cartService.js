@@ -272,6 +272,27 @@ class CartService {
         console.log('[cartService] addItemToCart cartId, productId, quantity:', cartId, productId, quantity);
       } catch (e) {}
 
+      // Fast-fail when there is no authenticated user session attached to the client.
+      // Row-Level Security on `cart_items` requires the request to come from the owner JWT
+      // (not from an anonymous client). This prevents attempts that will trigger PGRST/42501.
+      try {
+        // supabase.auth.getUser() returns { data: { user }, error }
+        const sessionCheck = await supabase.auth.getUser?.();
+        const user = sessionCheck?.data?.user;
+        if (!user) {
+          const err = new Error('USER_SESSION_REQUIRED');
+          // add a code so callers can detect this case specifically
+          err.code = 'USER_SESSION_REQUIRED';
+          throw err;
+        }
+      } catch (sessionErr) {
+        // If the client library does not expose auth.getUser or another error
+        // occurred, surface a clear message so higher layers can handle it.
+        if (sessionErr && sessionErr.code === 'USER_SESSION_REQUIRED') throw sessionErr;
+        // Non-fatal: log and continue — some environments (tests) may not have auth available
+        try { console.warn('[cartService] session check warning (continuing):', sessionErr?.message || sessionErr); } catch(e) {}
+      }
+
       // Determinar si el nuevo producto es versión ofertada
       const incomingIsOffered = !!(product.offer_id || product.offered_price || product.isOffered || product.metadata?.isOffered);
 
@@ -328,7 +349,13 @@ class CartService {
           .select()
           .single();
         if (insErr) {
+          // Map common RLS error to a clearer code/message for the UI
           try { console.error('[cartService] addItemToCart insert error:', insErr); } catch(e) {}
+          if (insErr.code === '42501') {
+            const rlsErr = new Error('RLS_INSERT_FORBIDDEN: missing authenticated user session or ownership');
+            rlsErr.code = 'RLS_INSERT_FORBIDDEN';
+            throw rlsErr;
+          }
           throw insErr;
         }
         result = inserted;
@@ -357,6 +384,22 @@ class CartService {
       if (safeQuantity <= 0) {
         return await this.removeItemFromCart(cartId, productOrLineId);
       }
+      // Fast-fail when there is no authenticated user session attached to the client.
+      // Row-Level Security on `cart_items` requires the request to come from the owner JWT
+      // (not from an anonymous client). This avoids cryptic 42501 errors.
+      try {
+        const sessionCheck = await supabase.auth.getUser?.();
+        const user = sessionCheck?.data?.user;
+        if (!user) {
+          const err = new Error('USER_SESSION_REQUIRED');
+          err.code = 'USER_SESSION_REQUIRED';
+          throw err;
+        }
+      } catch (sessionErr) {
+        if (sessionErr && sessionErr.code === 'USER_SESSION_REQUIRED') throw sessionErr;
+        try { console.warn('[cartService] session check warning (continuing):', sessionErr?.message || sessionErr); } catch(e) {}
+      }
+
       // Intentar primero como cart_items_id (línea específica)
       let { data, error } = await supabase
         .from('cart_items')
@@ -365,7 +408,15 @@ class CartService {
         .select()
         .maybeSingle();
 
-      if (error && error.code !== 'PGRST116') throw error;
+      if (error && error.code !== 'PGRST116') {
+        // Map RLS error to clearer code
+        if (error.code === '42501') {
+          const rlsErr = new Error('RLS_UPDATE_FORBIDDEN: missing authenticated user session or ownership');
+          rlsErr.code = 'RLS_UPDATE_FORBIDDEN';
+          throw rlsErr;
+        }
+        throw error;
+      }
 
       // Si no encontró por cart_items_id, actualizar por product_id + cart_id (modo legacy)
       if (!data) {
@@ -376,7 +427,14 @@ class CartService {
           .eq('product_id', productOrLineId)
           .select()
           .single();
-        if (res2.error) throw res2.error;
+        if (res2.error) {
+          if (res2.error.code === '42501') {
+            const rlsErr = new Error('RLS_UPDATE_FORBIDDEN: missing authenticated user session or ownership');
+            rlsErr.code = 'RLS_UPDATE_FORBIDDEN';
+            throw rlsErr;
+          }
+          throw res2.error;
+        }
         data = res2.data;
       }
 
@@ -392,6 +450,19 @@ class CartService {
 
   async removeItemFromCart(cartId, productOrLineId) {
     try {
+      // Fast-fail session check to avoid RLS failures
+      try {
+        const sessionCheck = await supabase.auth.getUser?.();
+        const user = sessionCheck?.data?.user;
+        if (!user) {
+          const err = new Error('USER_SESSION_REQUIRED');
+          err.code = 'USER_SESSION_REQUIRED';
+          throw err;
+        }
+      } catch (sessionErr) {
+        if (sessionErr && sessionErr.code === 'USER_SESSION_REQUIRED') throw sessionErr;
+        try { console.warn('[cartService] session check warning (continuing):', sessionErr?.message || sessionErr); } catch(e) {}
+      }
       // Intentar borrar por cart_items_id primero
       let { error } = await supabase
         .from('cart_items')
@@ -399,13 +470,25 @@ class CartService {
         .eq('cart_items_id', productOrLineId);
 
       if (error) {
+        if (error.code === '42501') {
+          const rlsErr = new Error('RLS_DELETE_FORBIDDEN: missing authenticated user session or ownership');
+          rlsErr.code = 'RLS_DELETE_FORBIDDEN';
+          throw rlsErr;
+        }
         // Si error de no encontrado o cero filas, intentar por product_id + cart_id
         const res2 = await supabase
           .from('cart_items')
           .delete()
           .eq('cart_id', cartId)
           .eq('product_id', productOrLineId);
-        if (res2.error) throw res2.error;
+        if (res2.error) {
+          if (res2.error.code === '42501') {
+            const rlsErr = new Error('RLS_DELETE_FORBIDDEN: missing authenticated user session or ownership');
+            rlsErr.code = 'RLS_DELETE_FORBIDDEN';
+            throw rlsErr;
+          }
+          throw res2.error;
+        }
       }
 
       await this.updateCartTimestamp(cartId);
@@ -418,12 +501,33 @@ class CartService {
 
   async clearCart(cartId) {
     try {
+      // Fast-fail session check to avoid silent RLS failures
+      try {
+        const sessionCheck = await supabase.auth.getUser?.();
+        const user = sessionCheck?.data?.user;
+        if (!user) {
+          const err = new Error('USER_SESSION_REQUIRED');
+          err.code = 'USER_SESSION_REQUIRED';
+          throw err;
+        }
+      } catch (sessionErr) {
+        if (sessionErr && sessionErr.code === 'USER_SESSION_REQUIRED') throw sessionErr;
+        try { console.warn('[cartService] session check warning (continuing):', sessionErr?.message || sessionErr); } catch(e) {}
+      }
+
       const { error } = await supabase
         .from('cart_items')
         .delete()
         .eq('cart_id', cartId);
 
-      if (error) throw error;
+      if (error) {
+        if (error.code === '42501') {
+          const rlsErr = new Error('RLS_DELETE_FORBIDDEN: missing authenticated user session or ownership');
+          rlsErr.code = 'RLS_DELETE_FORBIDDEN';
+          throw rlsErr;
+        }
+        throw error;
+      }
 
       await this.updateCartTimestamp(cartId);
 
