@@ -199,73 +199,20 @@ serve(req => withMetrics('create-payment-khipu', req, async () => {
     // 3.2 Comparar monto sellado vs monto recibido del front
     // BUG ORIGINAL: finalize_order_pricing no incluye tax en total (total = subtotal + shipping),
     // mientras el frontend envía monto con IVA incluido. Ajustamos para contemplar tax.
-  let sealedSubtotal = Math.round(Number(sealedOrder.subtotal || 0));
-  const sealedShipping = Math.round(Number(sealedOrder.shipping || 0));
-  const sealedTax = Math.round(Number(sealedOrder.tax || 0));
-    const rawSealedTotal = Math.round(Number(sealedOrder.total || 0));
-    // Aplicar descuentos de ofertas si corresponde (oferta aceptada/reserved) sobre sealedSubtotal antes de heurísticas de IVA.
-    // Recorremos items sellados y si hay oferta vinculada (offer_id presente en offerIds) recalculamos valor = offered_price * qty si es menor.
-    try {
-      if (Array.isArray(sealedOrder.items) && sealedOrder.items.length && offerIds.length) {
-        let adjustedSubtotal = 0;
-        for (const it of sealedOrder.items) {
-          const qty = Math.max(1, Number(it.quantity || 0));
-          let unitEffective = Number(it.unit_price_effective || it.price_at_addition || it.price || 0);
-          if (it.offer_id && offerIds.includes(it.offer_id)) {
-            // Buscar offered_price actual en tabla offers
-            try {
-              const { data: offerRow } = await supabaseAdmin
-                .from('offers')
-                .select('offered_price,status')
-                .eq('id', it.offer_id)
-                .maybeSingle();
-              const oPrice = Number(offerRow?.offered_price || 0);
-              if (oPrice > 0 && oPrice < unitEffective) {
-                unitEffective = oPrice;
-              }
-            } catch(_) {}
-          }
-          adjustedSubtotal += unitEffective * qty;
-        }
-        const roundedAdj = Math.round(adjustedSubtotal);
-        if (roundedAdj > 0 && Math.abs(roundedAdj - sealedSubtotal) > 1) {
-          console.log('[create-payment-khipu] Subtotal ajustado por ofertas', { original: sealedSubtotal, adjusted: roundedAdj });
-          sealedSubtotal = roundedAdj;
-        }
-      }
-    } catch(adjustErr) {
-      console.warn('[create-payment-khipu] Error ajustando subtotal por ofertas (continuando):', adjustErr?.message || adjustErr);
-    }
-    // Heurística 1: tax presente pero no sumado en total (tax > 0, total == subtotal+shipping)
-    const inferredMissingTax = sealedTax > 0 && rawSealedTotal === sealedSubtotal + sealedShipping;
-    let sealedTotal = inferredMissingTax
-      ? sealedSubtotal + sealedShipping + sealedTax
-      : rawSealedTotal;
+    // Ahora confiamos en que finalize_order_pricing ya aplicó: tiers, ofertas y tax.
+    const sealedSubtotal = Math.round(Number(sealedOrder.subtotal || 0));
+    const sealedShipping = Math.round(Number(sealedOrder.shipping || 0));
+    const sealedTax = Math.round(Number(sealedOrder.tax || 0));
+    const sealedTotal = Math.round(Number(sealedOrder.total || 0));
     const frontendAmount = Math.round(Number(amount || 0));
-    let diff = Math.abs(sealedTotal - frontendAmount);
-    if (inferredMissingTax) {
-      console.log('[create-payment-khipu] Ajuste sealedTotal para incluir tax (heurística #1)', { sealedSubtotal, sealedShipping, sealedTax, rawSealedTotal, adjustedSealedTotal: sealedTotal });
-    }
-    // Heurística 2: tax ausente (sealedTax == 0) pero diferencia ≈ 19% del subtotal -> frontend incluye IVA y server no
-    let inferredTaxApplied = false;
-    if (diff > PRICE_TOLERANCE_CLP && sealedTax === 0) {
-      const candidateTax = Math.round(sealedSubtotal * 0.19);
-      const hypotheticalTotal = rawSealedTotal + candidateTax; // rawSealedTotal normalmente = subtotal + shipping
-      const hypotheticalDiff = Math.abs(hypotheticalTotal - frontendAmount);
-      if (hypotheticalDiff <= PRICE_TOLERANCE_CLP) {
-        sealedTotal = hypotheticalTotal;
-        diff = hypotheticalDiff;
-        inferredTaxApplied = true;
-        console.log('[create-payment-khipu] Ajuste sealedTotal aplicando IVA inferido 19% (heurística #2)', { sealedSubtotal, candidateTax, previousSealedTotal: rawSealedTotal, adjustedSealedTotal: sealedTotal, frontendAmount, diff });
-      }
-    }
-    console.log('[create-payment-khipu] Pricing compare:', { sealedSubtotal, sealedShipping, sealedTax, rawSealedTotal, sealedTotal, frontendAmount, diff, tolerance: PRICE_TOLERANCE_CLP, inferredMissingTax, inferredTaxApplied });
+    const diff = Math.abs(sealedTotal - frontendAmount);
+    console.log('[create-payment-khipu] Pricing compare (authoritative SQL):', { sealedSubtotal, sealedShipping, sealedTax, sealedTotal, frontendAmount, diff, tolerance: PRICE_TOLERANCE_CLP });
     if (!Number.isFinite(sealedTotal) || sealedTotal <= 0) {
       return new Response(JSON.stringify({ error: 'SEALED_TOTAL_INVALID' }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 422 });
     }
     if (diff > PRICE_TOLERANCE_CLP) {
       console.error('[create-payment-khipu] PRICING_MISMATCH', { sealedTotal, frontendAmount, diff });
-      return new Response(JSON.stringify({ error: 'PRICING_MISMATCH', sealed_total: sealedTotal, frontend_amount: frontendAmount, diff, sealedSubtotal, sealedShipping, sealedTax, rawSealedTotal }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 409 });
+      return new Response(JSON.stringify({ error: 'PRICING_MISMATCH', sealed_total: sealedTotal, frontend_amount: frontendAmount, diff, sealedSubtotal, sealedShipping, sealedTax }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 409 });
     }
 
     // 4. Preparar y enviar la petición a la API de Khipu usando el monto sellado
