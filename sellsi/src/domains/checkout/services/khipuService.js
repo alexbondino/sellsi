@@ -93,6 +93,17 @@ class KhipuService {
           `Error devuelto por la función de pago: ${khipuResponse.error}`
         );
       }
+      // Log de valores sellados para diagnóstico de pricing
+      if (khipuResponse?.sealed_grand_total !== undefined) {
+        console.log('[khipuService] Sellado recibido:', {
+          sealed_grand_total: khipuResponse.sealed_grand_total,
+          sealed_total_base: khipuResponse.sealed_total_base,
+            sealed_payment_fee: khipuResponse.sealed_payment_fee,
+            frontend_amount: khipuResponse.frontend_amount,
+            pricing_diff: khipuResponse.pricing_diff,
+            request_id: khipuResponse.request_id
+        });
+      }
       if (!khipuResponse?.payment_url) {
         console.error('[khipuService] Respuesta inesperada de create-payment-khipu:', khipuResponse);
         const raw = khipuResponse?.raw ? ` Detalle: ${JSON.stringify(khipuResponse.raw)}` : '';
@@ -104,7 +115,9 @@ class KhipuService {
         paymentUrl: khipuResponse.payment_url,
         paymentId: khipuResponse.payment_id,
         transactionId: khipuResponse.transaction_id,
-        expiresAt: khipuResponse.expires_date,
+  expiresAt: khipuResponse.expires_date,
+  sealedGrandTotal: khipuResponse.sealed_grand_total,
+  requestId: khipuResponse.request_id,
       };
     } catch (err) {
       console.error('Error en khipuService.createPaymentOrder:', err);

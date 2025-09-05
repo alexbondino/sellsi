@@ -1,133 +1,20 @@
-fetch.ts:15   POST https://clbngnjetipglkikondm.supabase.co/rest/v1/cart_items?select=* 403 (Forbidden)
-(anonymous) @ fetch.ts:15
-(anonymous) @ fetch.ts:46
-fulfilled @ fetch.ts:2
-Promise.then
-step @ fetch.ts:2
-(anonymous) @ fetch.ts:2
-__awaiter6 @ fetch.ts:2
-(anonymous) @ fetch.ts:34
-then @ PostgrestBuilder.ts:101
-cartService.js:331  [cartService] addItemToCart insert error: {code: '42501', details: null, hint: null, message: 'new row violates row-level security policy for table "cart_items"'}
-overrideMethod @ hook.js:608
-addItemToCart @ cartService.js:331
-await in addItemToCart
-addItemWithBackend @ cartStore.backend.js:174
-addItem @ cartStore.facade.js:88
-(anonymous) @ AddToCart.jsx:179
-(anonymous) @ AddToCartModal.jsx:644
-executeDispatch @ react-dom-client.development.js:16368
-runWithFiberInDEV @ react-dom-client.development.js:1519
-processDispatchQueue @ react-dom-client.development.js:16418
-(anonymous) @ react-dom-client.development.js:17016
-batchedUpdates$1 @ react-dom-client.development.js:3262
-dispatchEventForPluginEventSystem @ react-dom-client.development.js:16572
-dispatchEvent @ react-dom-client.development.js:20658
-dispatchDiscreteEvent @ react-dom-client.development.js:20626
-<button>
-exports.createElement @ react.development.js:1033
-(anonymous) @ emotion-styled-base.browser.development.esm.js:156
-MuiButtonBase-root @ emotion-element-489459f2.browser.development.esm.js:34
-react-stack-bottom-frame @ react-dom-client.development.js:23863
-renderWithHooksAgain @ react-dom-client.development.js:5629
-renderWithHooks @ react-dom-client.development.js:5541
-updateForwardRef @ react-dom-client.development.js:8645
-beginWork @ react-dom-client.development.js:10861
-runWithFiberInDEV @ react-dom-client.development.js:1519
-performUnitOfWork @ react-dom-client.development.js:15132
-workLoopSync @ react-dom-client.development.js:14956
-renderRootSync @ react-dom-client.development.js:14936
-performWorkOnRoot @ react-dom-client.development.js:14419
-performSyncWorkOnRoot @ react-dom-client.development.js:16231
-flushSyncWorkAcrossRoots_impl @ react-dom-client.development.js:16079
-flushSpawnedWork @ react-dom-client.development.js:15677
-commitRoot @ react-dom-client.development.js:15403
-commitRootWhenReady @ react-dom-client.development.js:14652
-performWorkOnRoot @ react-dom-client.development.js:14575
-performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:16216
-performWorkUntilDeadline @ scheduler.development.js:45
-<MuiButtonBaseRoot>
-exports.jsxs @ react-jsx-runtime.development.js:355
-ButtonBase2 @ ButtonBase.js:248
-react-stack-bottom-frame @ react-dom-client.development.js:23863
-renderWithHooksAgain @ react-dom-client.development.js:5629
-renderWithHooks @ react-dom-client.development.js:5541
-updateForwardRef @ react-dom-client.development.js:8645
-beginWork @ react-dom-client.development.js:10861
-runWithFiberInDEV @ react-dom-client.development.js:1519
-performUnitOfWork @ react-dom-client.development.js:15132
-workLoopSync @ react-dom-client.development.js:14956
-renderRootSync @ react-dom-client.development.js:14936
-performWorkOnRoot @ react-dom-client.development.js:14419
-performSyncWorkOnRoot @ react-dom-client.development.js:16231
-flushSyncWorkAcrossRoots_impl @ react-dom-client.development.js:16079
-flushSpawnedWork @ react-dom-client.development.js:15677
-commitRoot @ react-dom-client.development.js:15403
-commitRootWhenReady @ react-dom-client.development.js:14652
-performWorkOnRoot @ react-dom-client.development.js:14575
-performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:16216
-performWorkUntilDeadline @ scheduler.development.js:45
-<ForwardRef(ButtonBase2)>
-exports.createElement @ react.development.js:1033
-(anonymous) @ emotion-styled-base.browser.development.esm.js:156
-MuiButton-root @ emotion-element-489459f2.browser.development.esm.js:34
-react-stack-bottom-frame @ react-dom-client.development.js:23863
-renderWithHooksAgain @ react-dom-client.development.js:5629
-renderWithHooks @ react-dom-client.development.js:5541
-updateForwardRef @ react-dom-client.development.js:8645
-beginWork @ react-dom-client.development.js:10861
-runWithFiberInDEV @ react-dom-client.development.js:1519
-performUnitOfWork @ react-dom-client.development.js:15132
-workLoopSync @ react-dom-client.development.js:14956
-renderRootSync @ react-dom-client.development.js:14936
-performWorkOnRoot @ react-dom-client.development.js:14419
-performSyncWorkOnRoot @ react-dom-client.development.js:16231
-flushSyncWorkAcrossRoots_impl @ react-dom-client.development.js:16079
-flushSpawnedWork @ react-dom-client.development.js:15677
-commitRoot @ react-dom-client.development.js:15403
-commitRootWhenReady @ react-dom-client.development.js:14652
-performWorkOnRoot @ react-dom-client.development.js:14575
-performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:16216
-performWorkUntilDeadline @ scheduler.development.js:45
-<MuiButtonRoot>
-exports.jsxs @ react-jsx-runtime.development.js:355
-Button2 @ Button.js:555
-react-stack-bottom-frame @ react-dom-client.development.js:23863
-renderWithHooksAgain @ react-dom-client.development.js:5629
-renderWithHooks @ react-dom-client.development.js:5541
-updateForwardRef @ react-dom-client.development.js:8645
-beginWork @ react-dom-client.development.js:10861
-runWithFiberInDEV @ react-dom-client.development.js:1519
-performUnitOfWork @ react-dom-client.development.js:15132
-workLoopSync @ react-dom-client.development.js:14956
-renderRootSync @ react-dom-client.development.js:14936
-performWorkOnRoot @ react-dom-client.development.js:14419
-performSyncWorkOnRoot @ react-dom-client.development.js:16231
-flushSyncWorkAcrossRoots_impl @ react-dom-client.development.js:16079
-flushSpawnedWork @ react-dom-client.development.js:15677
-commitRoot @ react-dom-client.development.js:15403
-commitRootWhenReady @ react-dom-client.development.js:14652
-performWorkOnRoot @ react-dom-client.development.js:14575
-performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:16216
-performWorkUntilDeadline @ scheduler.development.js:45
-<ForwardRef(Button2)>
-exports.jsxDEV @ react-jsx-dev-runtime.development.js:346
-AddToCartModal @ AddToCartModal.jsx:1217
-react-stack-bottom-frame @ react-dom-client.development.js:23863
-renderWithHooksAgain @ react-dom-client.development.js:5629
-renderWithHooks @ react-dom-client.development.js:5541
-updateFunctionComponent @ react-dom-client.development.js:8897
-beginWork @ react-dom-client.development.js:10522
-runWithFiberInDEV @ react-dom-client.development.js:1519
-performUnitOfWork @ react-dom-client.development.js:15132
-workLoopSync @ react-dom-client.development.js:14956
-renderRootSync @ react-dom-client.development.js:14936
-performWorkOnRoot @ react-dom-client.development.js:14419
-performSyncWorkOnRoot @ react-dom-client.development.js:16231
-flushSyncWorkAcrossRoots_impl @ react-dom-client.development.js:16079
-flushSpawnedWork @ react-dom-client.development.js:15677
-commitRoot @ react-dom-client.development.js:15403
-commitRootWhenReady @ react-dom-client.development.js:14652
-performWorkOnRoot @ react-dom-client.development.js:14575
-performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:16216
-performWorkUntilDeadline @ scheduler.development.js:45
+1.-Policies de cart_items:
+[
+  {
+    "policyname": "cart_items_insert_owner",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "qual": null,
+    "with_check": "((EXISTS ( SELECT 1\n   FROM carts c\n  WHERE ((c.cart_id = cart_items.cart_id) AND (c.user_id = auth.uid())))) OR (auth.role() = 'service_role'::text))"
+  },
+  {
+    "policyname": "cart_items_update_owner",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "qual": "((EXISTS ( SELECT 1\n   FROM carts c\n  WHERE ((c.cart_id = cart_items.cart_id) AND (c.user_id = auth.uid())))) OR (auth.role() = 'service_role'::text))",
+    "with_check": "((EXISTS ( SELECT 1\n   FROM carts c\n  WHERE ((c.cart_id = cart_items.cart_id) AND (c.user_id = auth.uid())))) OR (auth.role() = 'service_role'::text))"
+  }
+]
+
+2.-Policies de carts:
+Success. No rows returned

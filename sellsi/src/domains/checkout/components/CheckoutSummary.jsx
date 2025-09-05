@@ -90,7 +90,7 @@ const CheckoutSummary = ({
   };
 
   // ✅ CÁLCULO CENTRALIZADO Y CORRECTO
-  const { subtotalWithIva, orderTotal } = useMemo(() => {
+  const { subtotalWithIva, grandTotal, baseTotal, paymentFee } = useMemo(() => {
     if (!orderData.items || orderData.items.length === 0) {
       return { subtotalWithIva: 0, orderTotal: 0 };
     }
@@ -102,14 +102,17 @@ const CheckoutSummary = ({
     }, 0);
 
     // Khipu fee (fixed $500 when payment method is selected)
-    const khipuFee = selectedMethod ? 500 : 0;
+  const khipuFee = selectedMethod ? 500 : 0;
 
     // Total del pedido: Subtotal (con IVA incluido) + Envío + Khipu
-    const finalOrderTotal = Math.trunc(totalBruto) + shippingCost + khipuFee;
+  const baseTotal = Math.trunc(totalBruto) + shippingCost; // sin fee
+  const finalOrderTotal = baseTotal + khipuFee;
 
     return {
-      subtotalWithIva: Math.trunc(totalBruto),
-      orderTotal: finalOrderTotal,
+  subtotalWithIva: Math.trunc(totalBruto),
+  grandTotal: finalOrderTotal,
+  baseTotal,
+  paymentFee: khipuFee,
     };
   }, [orderData.items, shippingCost, selectedMethod]);
 
@@ -310,11 +313,11 @@ const CheckoutSummary = ({
             Total
           </Typography>
           <Typography variant={isCompact ? 'subtitle1' : 'h6'} fontWeight="bold" color="#000000ff">
-            {checkoutService.formatPrice(orderTotal)}
+            {checkoutService.formatPrice(grandTotal)}
           </Typography>
         </Stack>
 
-        {/* Botones de acción */}
+  {/* Botones de acción */}
   {!hideActions && (
   <Stack spacing={2}>
           {isCompleted ? (

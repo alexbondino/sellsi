@@ -179,6 +179,7 @@ const PaymentMethodSelector = () => {
       const calculatedIva = Math.trunc(totalBruto * 0.19);
       const calculatedSubtotal = Math.trunc(totalBruto) - calculatedIva;
       const shippingCost = orderData.shipping || 0;
+      // Total BASE (sin fee Khipu). La comisión se aplicará en finalize_order_pricing (payment_fee + grand_total)
       const orderTotal = Math.round(
         calculatedSubtotal + calculatedIva + shippingCost
       );
@@ -196,7 +197,7 @@ const PaymentMethodSelector = () => {
         subtotal: orderData.subtotal,
         tax: orderData.tax,
         shipping: orderData.shipping,
-        total: orderTotal, // Guardar el mismo total en la orden
+  total: orderTotal, // Guardar el total base (server añadirá payment_fee y grand_total)
         currency: orderData.currency || 'CLP',
         paymentMethod: selectedMethod.id,
         shippingAddress: orderData.shippingAddress,
@@ -208,7 +209,7 @@ const PaymentMethodSelector = () => {
       if (selectedMethod.id === 'khipu') {
         console.log('[PaymentMethodSelector] Procesando pago con Khipu...');
         // Usar el total que quedó persistido en la fila (server authoritative) si existe
-        const authoritativeTotal = (order && typeof order.total === 'number') ? Math.round(order.total) : orderTotal;
+  const authoritativeTotal = (order && typeof order.total === 'number') ? Math.round(order.total) : orderTotal; // sigue siendo base total
         if (authoritativeTotal !== orderTotal) {
           console.log('[PaymentMethodSelector] Diferencia entre order.total y orderTotal calculado front:', { authoritativeTotal, frontComputed: orderTotal });
         }
@@ -216,7 +217,7 @@ const PaymentMethodSelector = () => {
           orderId: order.id,
           userId: userId,
           userEmail: userEmail || '',
-          amount: authoritativeTotal, // usar monto sellado persistido si está
+          amount: authoritativeTotal, // monto base; Edge usará grand_total (incluye fee) para cobrar
           currency: orderData.currency || 'CLP',
           items: itemsWithDocType,
           // ✔ Propagar direcciones para que no se pierdan en el pipeline de pago
