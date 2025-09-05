@@ -85,9 +85,10 @@ describe('Cart pruning for invalid offer statuses', () => {
     // Ejecutar limpieza forzada
     useOfferStore.getState().forceCleanCartOffers();
     
-    // Solo debería quedar la oferta aprobada
-    expect(useCartStore.getState().items.length).toBe(1);
-    expect(useCartStore.getState().items[0].offer_id).toBe('off-approved');
+  // Solo debería quedar la oferta aprobada
+  expect(useCartStore.getState().items.length).toBe(1);
+  // El test usa 'off-app' como id creado arriba; verificar que el remaining coincide
+  expect(useCartStore.getState().items[0].offer_id).toBe('off-app');
   });
 
   test('does NOT remove unrelated cart items', () => {

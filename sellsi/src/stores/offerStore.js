@@ -41,6 +41,10 @@ export const OFFER_STATES = {
   EXPIRED: 'expired'       // Expirada por tiempo
 };
 
+// Backwards-compatible aliases used in tests/components: approved and cancelled
+OFFER_STATES.APPROVED = 'approved';
+OFFER_STATES.CANCELLED = 'cancelled';
+
 export const useOfferStore = create((set, get) => ({
   // Estado
   buyerOffers: [],

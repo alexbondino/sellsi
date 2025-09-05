@@ -289,10 +289,14 @@ class CartService {
       // Buscar candidato a merge SOLO si coincide la naturaleza ofertada/no ofertada
       const mergeCandidate = (existingItems || []).find(it => {
         const existingIsOffered = !!(it.offer_id || it.offered_price);
-        return existingIsOffered === incomingIsOffered && (
-          // Si es ofertado además validar mismo offer_id si existe
-          (!incomingIsOffered) || (product.offer_id ? it.offer_id === product.offer_id : true)
-        );
+        // Casos no ofertados: se permite merge (legacy) porque sólo depende de product_id
+        if (!incomingIsOffered && !existingIsOffered) return true;
+        // Casos ofertados: AHORA requerimos explícitamente offer_id en ambos y que coincidan
+        if (incomingIsOffered && existingIsOffered) {
+          return !!product.offer_id && !!it.offer_id && it.offer_id === product.offer_id;
+        }
+        // Diferente naturaleza (uno ofertado otro no) => no merge
+        return false;
       });
 
       let result;

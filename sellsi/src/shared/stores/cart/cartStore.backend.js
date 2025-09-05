@@ -199,6 +199,23 @@ export const addItemWithBackend = async (product, quantity, set, get, historySto
     // Persist resolved cartId into state so future ops use it
     try { set({ cartId: cartIdToUse, userId: userIdForRequest }) } catch(e) {}
 
+    // === NORMALIZACIÓN OFERTAS (hardening) ===
+    try {
+      const looksOffered = !!(product.isOffered || product.offer_id || product.offered_price || product.metadata?.isOffered);
+      if (looksOffered) {
+        // Si falta offer_id u offered_price, abortar para evitar merges ambiguos
+        if (!product.offer_id || !product.offered_price) {
+          console.warn('[cartStore.backend] Producto marcado como ofertado pero falta offer_id u offered_price. Abortando add.', { offer_id: product.offer_id, offered_price: product.offered_price });
+          set({ isSyncing: false, error: 'Oferta incompleta: faltan datos (offer_id / offered_price).' });
+          return false;
+        }
+        // Normalizar bandera isOffered consistente
+        product = { ...product, isOffered: true };
+      }
+    } catch (offerNormErr) {
+      try { console.warn('[cartStore.backend] error normalizando oferta:', offerNormErr?.message || offerNormErr); } catch(e) {}
+    }
+
     // Agregar al backend usando cartIdToUse
     const result = await cartService.addItemToCart(cartIdToUse, product, quantity)
 
