@@ -53,6 +53,43 @@ describe('Cart pruning for invalid offer statuses', () => {
     expect(useCartStore.getState().items.length).toBe(0);
   });
 
+  test('removes cart item when offer loads as paid', () => {
+    // Simular oferta pagada
+    const paidOffer = { id: 'off-paid', status: OFFER_STATES.PAID };
+    addCartItemForOffer('off-paid');
+    expect(useCartStore.getState().items.length).toBe(1);
+    // Inyectar oferta y disparar prune manual
+    useOfferStore.setState({ buyerOffers: [paidOffer] });
+    useOfferStore.getState()._pruneInvalidOfferCartItems();
+    expect(useCartStore.getState().items.length).toBe(0);
+  });
+
+  test('forceCleanCartOffers removes all finalized offers from cart', () => {
+    // Agregar múltiples items con diferentes estados
+    const offers = [
+      { id: 'off-paid', status: OFFER_STATES.PAID },
+      { id: 'off-exp', status: OFFER_STATES.EXPIRED },
+      { id: 'off-rej', status: OFFER_STATES.REJECTED },
+      { id: 'off-can', status: OFFER_STATES.CANCELLED },
+      { id: 'off-app', status: OFFER_STATES.APPROVED } // No debería eliminarse
+    ];
+    
+    offers.forEach(offer => {
+      addCartItemForOffer(offer.id);
+    });
+    
+    expect(useCartStore.getState().items.length).toBe(5);
+    
+    useOfferStore.setState({ buyerOffers: offers });
+    
+    // Ejecutar limpieza forzada
+    useOfferStore.getState().forceCleanCartOffers();
+    
+    // Solo debería quedar la oferta aprobada
+    expect(useCartStore.getState().items.length).toBe(1);
+    expect(useCartStore.getState().items[0].offer_id).toBe('off-approved');
+  });
+
   test('does NOT remove unrelated cart items', () => {
     useOfferStore.setState({ buyerOffers: [{ id: 'off-ok', status: OFFER_STATES.RESERVED }] });
     addCartItemForOffer('off-ok');

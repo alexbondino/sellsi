@@ -393,18 +393,27 @@ class CartService {
   async removeItemFromCart(cartId, productOrLineId) {
     try {
       // Intentar borrar por cart_items_id primero
-      let { error } = await supabase
+      const res = await supabase
         .from('cart_items')
         .delete()
-        .eq('cart_items_id', productOrLineId);
+        .eq('cart_items_id', productOrLineId)
+        .select();
 
-      if (error) {
-        // Si error de no encontrado o cero filas, intentar por product_id + cart_id
+      // Si la primera consulta devolvió un error, lanzar
+      if (res.error) {
+        throw res.error;
+      }
+
+      // Si la primera eliminación no afectó filas (p. ej. se pasó product_id en vez de cart_items_id),
+      // intentar fallback por cart_id + product_id
+      if (!res.data || (Array.isArray(res.data) && res.data.length === 0)) {
         const res2 = await supabase
           .from('cart_items')
           .delete()
           .eq('cart_id', cartId)
-          .eq('product_id', productOrLineId);
+          .eq('product_id', productOrLineId)
+          .select();
+
         if (res2.error) throw res2.error;
       }
 

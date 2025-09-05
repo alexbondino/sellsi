@@ -120,6 +120,21 @@ const CheckoutSummary = ({
 
   // Handler local que bloquea el botón permanentemente y delega al callback
   const handleContinue = () => {
+    // Log de depuración: mostrar los montos que el frontend enviará al backend
+    try {
+      console.log('[CheckoutSummary] Pay requested', {
+        orderId: orderData?.id || null,
+        itemsCount: orderData.items?.length || 0,
+        baseTotal,
+        paymentFee,
+        grandTotal,
+        shippingCost,
+        selectedMethod,
+      });
+    } catch (logEx) {
+      console.warn('[CheckoutSummary] Logging failed', logEx);
+    }
+
     // Bloqueo local inmediato: el botón quedará en "Procesando..." incluso si
     // la prop `isProcessing` cambia posteriormente.
     setLocalProcessing(true);

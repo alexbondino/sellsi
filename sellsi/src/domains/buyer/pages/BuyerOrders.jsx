@@ -282,8 +282,11 @@ const BuyerOrders = () => {
   // Función para obtener los chips de estado (4 etapas incluyendo Pago Confirmado)
   const getStatusChips = (status, paymentStatus, order = null) => {
     // � FIX: Verificar cancelled_at además de status para determinar cancelación real
-    const isCancelled = status === 'cancelled' || (order && order.cancelled_at);
-    const isRejected = status === 'rejected' || isCancelled;
+  const isPaymentExpired = paymentStatus === 'expired';
+  // Do not treat a payment expiration alone as a rejected/cancelled order for UI chips.
+  // If payment expired, avoid marking cancelled/rejected chips as active.
+  const isCancelled = (status === 'cancelled' || (order && order.cancelled_at)) && !isPaymentExpired;
+  const isRejected = (status === 'rejected' && !isPaymentExpired) || isCancelled;
     if (isRejected) {
       // Determinar label y color del chip de pago según payment_status
       const getPaymentChipInfo = (paymentStatus) => {
@@ -622,22 +625,49 @@ const BuyerOrders = () => {
                             
                             {/* Información del producto */}
                             <Box sx={{ flex: 1 }}>
-                              <Typography variant="h6" fontWeight="medium" gutterBottom>
-                                {item.product.name}
-                                {(() => {
-                                  const isOffered = item.isOffered || item.metadata?.isOffered || !!item.offer_id || !!item.offered_price;
-                                  if (!isOffered) return null;
-                                  return (
-                                    <Chip
-                                      size="small"
-                                      color="primary"
-                                      label="Ofertado"
-                                      sx={{ ml: 1, fontSize: '0.6rem', height: 18 }}
-                                      data-testid="chip-ofertado"
-                                    />
-                                  );
-                                })()}
-                              </Typography>
+                              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                                {/* Compact group: product name + small chip immediately to its right */}
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, minWidth: 0 }}>
+                                  <Typography
+                                    variant="h6"
+                                    fontWeight="medium"
+                                    sx={{
+                                      mb: 0,
+                                      whiteSpace: 'normal',
+                                      overflow: 'hidden',
+                                      textOverflow: 'ellipsis',
+                                      maxWidth: '40ch'
+                                    }}
+                                  >
+                                    {item.product.name}
+                                  </Typography>
+                                  {(() => {
+                                    const isOffered = item.isOffered || item.metadata?.isOffered || !!item.offer_id || !!item.offered_price;
+                                    if (!isOffered) return null;
+                                    return (
+                                      <Typography
+                                        data-testid="chip-ofertado"
+                                        variant="subtitle2"
+                                        sx={{
+                                          color: 'success.main',
+                                          fontWeight: 800,
+                                          fontSize: '0.75rem',
+                                          display: 'inline-flex',
+                                          alignItems: 'center',
+                                          px: 1,
+                                          py: '3px',
+                                          borderRadius: '6px',
+                                          border: '1px solid',
+                                          borderColor: 'success.main',
+                                          bgcolor: 'rgba(76, 175, 80, 0.06)'
+                                        }}
+                                      >
+                                        OFERTADO
+                                      </Typography>
+                                    );
+                                  })()}
+                                </Box>
+                              </Box>
                               <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                                 <Typography variant="body2" color="text.secondary" gutterBottom>
                                   Proveedor: {item.product?.supplier?.name || item.product?.proveedor || 'Proveedor desconocido'}
@@ -658,7 +688,7 @@ const BuyerOrders = () => {
                                     {item.quantity} uds a {formatCurrency(unit)} c/u = {formatCurrency(lineTotal)} {(() => {
                                       const isOffered = item.isOffered || item.metadata?.isOffered || !!item.offer_id || !!item.offered_price;
                                       if (!isOffered) return null;
-                                      return <Typography component="span" variant="caption" color="primary.main" sx={{ ml: 0.5 }}>Precio ofertado fijo</Typography>;
+                                      return <Typography component="span" variant="caption" color="primary.main" sx={{ ml: 0.5 }}>Precio OFERTADO fijo</Typography>;
                                     })()}
                                   </Typography>
                                 );

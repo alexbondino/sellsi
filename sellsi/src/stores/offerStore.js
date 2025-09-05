@@ -47,7 +47,7 @@ export const useOfferStore = create((set, get) => ({
   supplierOffers: [],
   loading: false,
   error: null,
-  // Limpia del carrito items cuyos offer_id correspondan a ofertas expiradas/rechazadas/canceladas
+  // Limpia del carrito items cuyos offer_id correspondan a ofertas expiradas/rechazadas/canceladas/pagadas
   _pruneInvalidOfferCartItems: () => {
     try {
       if (!useCartStoreRef) return;
@@ -55,7 +55,8 @@ export const useOfferStore = create((set, get) => ({
       const cartItems = cartState?.items || [];
       if (cartItems.length === 0) return;
       const offers = get().buyerOffers || [];
-      const invalid = new Set(['expired', 'rejected', 'cancelled']);
+      // Estados que requieren limpieza del carrito: ofertas finalizadas (inválidas o ya procesadas)
+      const invalid = new Set(['expired', 'rejected', 'cancelled', 'paid']);
       const invalidOfferIds = new Set(offers.filter(o => invalid.has(o.status)).map(o => o.id));
       if (invalidOfferIds.size === 0) return;
       const remaining = cartItems.filter(ci => !ci.offer_id || !invalidOfferIds.has(ci.offer_id));
@@ -90,6 +91,16 @@ export const useOfferStore = create((set, get) => ({
   clearOffersCache: () => set(state => { state._cache?.buyer?.clear?.(); state._cache?.supplier?.clear?.(); return { }; }),
   forceRefreshBuyerOffers: (buyerId) => get().loadBuyerOffers(buyerId, { forceNetwork: true }),
   forceRefreshSupplierOffers: (supplierId) => get().loadSupplierOffers(supplierId, { forceNetwork: true }),
+  
+  // Fuerza la limpieza del carrito para ofertas finalizadas/pagadas
+  forceCleanCartOffers: () => {
+    try {
+      get()._pruneInvalidOfferCartItems();
+      __logOfferDebug('Forced cart cleanup for finalized offers');
+    } catch(e) { 
+      try { console.warn('[offerStore] forceCleanCartOffers failed', e?.message); } catch(_) {} 
+    }
+  },
   
   // Limpiar errores
   clearError: () => set({ error: null }),

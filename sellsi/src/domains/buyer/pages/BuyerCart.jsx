@@ -69,6 +69,7 @@ const BuyerCart = () => {
   // ===== ZUSTAND STORE (SELECTORES MEMOIZADOS) =====
   const items = useCartStore(state => state.items);
   const isLoading = useCartStore(state => state.isLoading);
+  const isBackendSynced = useCartStore(state => state.isBackendSynced);
 
   // Acciones memoizadas del store
   const updateQuantity = useCartStore(state => state.updateQuantity);
@@ -298,17 +299,36 @@ const BuyerCart = () => {
   // Set para evitar múltiples toasts por item eliminado
   const deletedItemsRef = React.useRef(new Set());
   const handleRemoveWithAnimation = useCallback(
-    id => {
+    async (id) => {
       if (deletedItemsRef.current.has(id)) return; // Ya se eliminó, no mostrar otro toast
       deletedItemsRef.current.add(id);
       const item = items.find(item => item.id === id);
-      if (item) {
-        removeItem(id);
-        setLastAction({ type: 'remove', item });
-        showCartSuccess(`${item.name} eliminado del carrito`, '🗑️');
+      if (!item) return;
+
+      setLastAction({ type: 'remove', item });
+
+      try {
+        // If backend is synced, wait for actual deletion confirmation
+        if (isBackendSynced) {
+          const result = await removeItem(id);
+          if (result) {
+            showCartSuccess(`${item.name} eliminado del carrito`, '🗑️');
+          } else {
+            // Backend removal failed - show error and clear from deleted set so user can retry
+            deletedItemsRef.current.delete(id);
+            showCartError('No se pudo eliminar el producto. Intenta de nuevo.');
+          }
+        } else {
+          // Local removal - immediate UX
+          await removeItem(id);
+          showCartSuccess(`${item.name} eliminado del carrito`, '🗑️');
+        }
+      } catch (error) {
+        deletedItemsRef.current.delete(id);
+        showCartError('Error al eliminar el producto');
       }
     },
-    [items, removeItem]
+    [items, removeItem, isBackendSynced]
   );
 
   // Manejar cambios de envío por producto

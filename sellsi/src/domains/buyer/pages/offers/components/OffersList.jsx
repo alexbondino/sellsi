@@ -30,6 +30,8 @@ const STATUS_MAP = {
   rejected: { label: 'Rechazada', color: 'error' },
   expired: { label: 'Caducada', color: 'error' },
   cancelled: { label: 'Cancelada', color: 'error' },
+  reserved: { label: 'En Carrito', color: 'info' },
+  paid: { label: 'Pagada', color: 'success' },
 };
 
 // Wrapper that ensures onClick is a function before passing it to MUI Chip
@@ -133,6 +135,8 @@ const OffersList = ({ offers = [], loading = false, error = null, cancelOffer, d
             <MenuItem value="cancelled">Cancelada</MenuItem>
             <MenuItem value="rejected">Rechazada</MenuItem>
             <MenuItem value="expired">Caducada</MenuItem>
+            <MenuItem value="reserved">En Carrito</MenuItem>
+            <MenuItem value="paid">Pagada</MenuItem>
           </Select>
         </FormControl>
       </Box>
@@ -313,8 +317,8 @@ const OffersList = ({ offers = [], loading = false, error = null, cancelOffer, d
                     </Tooltip>
                   )}
 
-                  {/* Cleanup (delete) action for rejected or cancelled offers */}
-                  {(o.status === 'rejected' || o.status === 'cancelled' || o.status === 'expired') && (
+                  {/* Cleanup (delete) action for rejected, cancelled, expired, or paid offers */}
+                  {(o.status === 'rejected' || o.status === 'cancelled' || o.status === 'expired' || o.status === 'paid') && (
                     <Tooltip title="Limpiar esta oferta">
                       <IconButton
                         size="small"

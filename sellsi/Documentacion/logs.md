@@ -1,246 +1,40 @@
-ipTrackingService.js:201   POST https://clbngnjetipglkikondm.supabase.co/functions/v1/update-lastip 404 (Not Found)
-updateUserIP @ ipTrackingService.js:201
-flushPending @ ipTrackingService.js:151
-trackUserAction @ ipTrackingService.js:329
-handleMethodSelect @ PaymentMethodSelector.jsx:107
-await in handleMethodSelect
-onClick @ MobilePaymentCard.jsx:40
-executeDispatch @ react-dom-client.development.js:16368
-runWithFiberInDEV @ react-dom-client.development.js:1519
-processDispatchQueue @ react-dom-client.development.js:16418
-(anonymous) @ react-dom-client.development.js:17016
-batchedUpdates$1 @ react-dom-client.development.js:3262
-dispatchEventForPluginEventSystem @ react-dom-client.development.js:16572
-dispatchEvent @ react-dom-client.development.js:20658
-dispatchDiscreteEvent @ react-dom-client.development.js:20626
-<div>
-exports.createElement @ react.development.js:1033
-(anonymous) @ emotion-styled-base.browser.development.esm.js:156
-MuiPaper-root @ emotion-element-489459f2.browser.development.esm.js:34
-react-stack-bottom-frame @ react-dom-client.development.js:23863
-renderWithHooksAgain @ react-dom-client.development.js:5629
-renderWithHooks @ react-dom-client.development.js:5541
-updateForwardRef @ react-dom-client.development.js:8645
-beginWork @ react-dom-client.development.js:10861
-runWithFiberInDEV @ react-dom-client.development.js:1519
-performUnitOfWork @ react-dom-client.development.js:15132
-workLoopConcurrentByScheduler @ react-dom-client.development.js:15126
-renderRootConcurrent @ react-dom-client.development.js:15101
-performWorkOnRoot @ react-dom-client.development.js:14418
-performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:16216
-performWorkUntilDeadline @ scheduler.development.js:45
-<MuiPaperRoot>
-exports.jsx @ react-jsx-runtime.development.js:339
-Paper2 @ Paper.js:94
-react-stack-bottom-frame @ react-dom-client.development.js:23863
-renderWithHooksAgain @ react-dom-client.development.js:5629
-renderWithHooks @ react-dom-client.development.js:5541
-updateForwardRef @ react-dom-client.development.js:8645
-beginWork @ react-dom-client.development.js:10861
-runWithFiberInDEV @ react-dom-client.development.js:1519
-performUnitOfWork @ react-dom-client.development.js:15132
-workLoopConcurrentByScheduler @ react-dom-client.development.js:15126
-renderRootConcurrent @ react-dom-client.development.js:15101
-performWorkOnRoot @ react-dom-client.development.js:14418
-performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:16216
-performWorkUntilDeadline @ scheduler.development.js:45
-<ForwardRef(Paper2)>
-exports.createElement @ react.development.js:1033
-(anonymous) @ emotion-styled-base.browser.development.esm.js:156
-MuiCard-root @ emotion-element-489459f2.browser.development.esm.js:34
-react-stack-bottom-frame @ react-dom-client.development.js:23863
-renderWithHooksAgain @ react-dom-client.development.js:5629
-renderWithHooks @ react-dom-client.development.js:5541
-updateForwardRef @ react-dom-client.development.js:8645
-beginWork @ react-dom-client.development.js:10861
-runWithFiberInDEV @ react-dom-client.development.js:1519
-performUnitOfWork @ react-dom-client.development.js:15132
-workLoopConcurrentByScheduler @ react-dom-client.development.js:15126
-renderRootConcurrent @ react-dom-client.development.js:15101
-performWorkOnRoot @ react-dom-client.development.js:14418
-performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:16216
-performWorkUntilDeadline @ scheduler.development.js:45
-<MuiCardRoot>
-exports.jsx @ react-jsx-runtime.development.js:339
-Card2 @ Card.js:43
-react-stack-bottom-frame @ react-dom-client.development.js:23863
-renderWithHooksAgain @ react-dom-client.development.js:5629
-renderWithHooks @ react-dom-client.development.js:5541
-updateForwardRef @ react-dom-client.development.js:8645
-beginWork @ react-dom-client.development.js:10861
-runWithFiberInDEV @ react-dom-client.development.js:1519
-performUnitOfWork @ react-dom-client.development.js:15132
-workLoopConcurrentByScheduler @ react-dom-client.development.js:15126
-renderRootConcurrent @ react-dom-client.development.js:15101
-performWorkOnRoot @ react-dom-client.development.js:14418
-performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:16216
-performWorkUntilDeadline @ scheduler.development.js:45
-<ForwardRef(Card2)>
-exports.jsxDEV @ react-jsx-dev-runtime.development.js:346
-MobilePaymentCard @ MobilePaymentCard.jsx:38
-react-stack-bottom-frame @ react-dom-client.development.js:23863
-renderWithHooksAgain @ react-dom-client.development.js:5629
-renderWithHooks @ react-dom-client.development.js:5541
-updateFunctionComponent @ react-dom-client.development.js:8897
-beginWork @ react-dom-client.development.js:10522
-runWithFiberInDEV @ react-dom-client.development.js:1519
-performUnitOfWork @ react-dom-client.development.js:15132
-workLoopConcurrentByScheduler @ react-dom-client.development.js:15126
-renderRootConcurrent @ react-dom-client.development.js:15101
-performWorkOnRoot @ react-dom-client.development.js:14418
-performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:16216
-performWorkUntilDeadline @ scheduler.development.js:45
-<MobilePaymentCard>
-exports.jsxDEV @ react-jsx-dev-runtime.development.js:346
-(anonymous) @ MobilePaymentLayout.jsx:59
-MobilePaymentLayout @ MobilePaymentLayout.jsx:58
-react-stack-bottom-frame @ react-dom-client.development.js:23863
-renderWithHooksAgain @ react-dom-client.development.js:5629
-renderWithHooks @ react-dom-client.development.js:5541
-updateFunctionComponent @ react-dom-client.development.js:8897
-beginWork @ react-dom-client.development.js:10522
-runWithFiberInDEV @ react-dom-client.development.js:1519
-performUnitOfWork @ react-dom-client.development.js:15132
-workLoopConcurrentByScheduler @ react-dom-client.development.js:15126
-renderRootConcurrent @ react-dom-client.development.js:15101
-performWorkOnRoot @ react-dom-client.development.js:14418
-performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:16216
-performWorkUntilDeadline @ scheduler.development.js:45
-<MobilePaymentLayout>
-exports.jsxDEV @ react-jsx-dev-runtime.development.js:346
-PaymentMethodSelector @ PaymentMethodSelector.jsx:285
-react-stack-bottom-frame @ react-dom-client.development.js:23863
-renderWithHooksAgain @ react-dom-client.development.js:5629
-renderWithHooks @ react-dom-client.development.js:5541
-updateFunctionComponent @ react-dom-client.development.js:8897
-beginWork @ react-dom-client.development.js:10522
-runWithFiberInDEV @ react-dom-client.development.js:1519
-performUnitOfWork @ react-dom-client.development.js:15132
-workLoopConcurrentByScheduler @ react-dom-client.development.js:15126
-renderRootConcurrent @ react-dom-client.development.js:15101
-performWorkOnRoot @ react-dom-client.development.js:14418
-performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:16216
-performWorkUntilDeadline @ scheduler.development.js:45
-<PaymentMethodSelector>
-exports.jsxDEV @ react-jsx-dev-runtime.development.js:346
-PaymentMethod @ PaymentMethod.jsx:230
-react-stack-bottom-frame @ react-dom-client.development.js:23863
-renderWithHooksAgain @ react-dom-client.development.js:5629
-renderWithHooks @ react-dom-client.development.js:5541
-updateFunctionComponent @ react-dom-client.development.js:8897
-beginWork @ react-dom-client.development.js:10471
-runWithFiberInDEV @ react-dom-client.development.js:1519
-performUnitOfWork @ react-dom-client.development.js:15132
-workLoopConcurrentByScheduler @ react-dom-client.development.js:15126
-renderRootConcurrent @ react-dom-client.development.js:15101
-performWorkOnRoot @ react-dom-client.development.js:14418
-performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:16216
-performWorkUntilDeadline @ scheduler.development.js:45
-<...>
-exports.jsxDEV @ react-jsx-dev-runtime.development.js:346
-AppRouter @ AppRouter.jsx:274
-react-stack-bottom-frame @ react-dom-client.development.js:23863
-renderWithHooksAgain @ react-dom-client.development.js:5629
-renderWithHooks @ react-dom-client.development.js:5541
-updateFunctionComponent @ react-dom-client.development.js:8897
-beginWork @ react-dom-client.development.js:10522
-runWithFiberInDEV @ react-dom-client.development.js:1519
-performUnitOfWork @ react-dom-client.development.js:15132
-workLoopConcurrentByScheduler @ react-dom-client.development.js:15126
-renderRootConcurrent @ react-dom-client.development.js:15101
-performWorkOnRoot @ react-dom-client.development.js:14418
-performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:16216
-performWorkUntilDeadline @ scheduler.development.js:45
-khipuService.js:64   POST https://clbngnjetipglkikondm.supabase.co/functions/v1/create-payment-khipu 500 (Internal Server Error)
-(anonymous) @ fetch.ts:15
-(anonymous) @ fetch.ts:46
-fulfilled @ fetch.ts:2
-Promise.then
-step @ fetch.ts:2
-(anonymous) @ fetch.ts:2
-__awaiter6 @ fetch.ts:2
-(anonymous) @ fetch.ts:34
-(anonymous) @ helper.ts:13
-(anonymous) @ FunctionsClient.ts:91
-(anonymous) @ types.ts:44
-__awaiter @ types.ts:44
-invoke @ FunctionsClient.ts:51
-createPaymentOrder @ khipuService.js:64
-processKhipuPayment @ checkoutService.js:171
-handleContinue @ PaymentMethodSelector.jsx:215
-await in handleContinue
-executeDispatch @ react-dom-client.development.js:16368
-runWithFiberInDEV @ react-dom-client.development.js:1519
-processDispatchQueue @ react-dom-client.development.js:16418
-(anonymous) @ react-dom-client.development.js:17016
-batchedUpdates$1 @ react-dom-client.development.js:3262
-dispatchEventForPluginEventSystem @ react-dom-client.development.js:16572
-dispatchEvent @ react-dom-client.development.js:20658
-dispatchDiscreteEvent @ react-dom-client.development.js:20626
-khipuService.js:85  [khipuService] Error bruto supabase.functions.invoke (detalle completo): {
-  "name": "FunctionsHttpError",
-  "context": {}
-}
-overrideMethod @ hook.js:608
-createPaymentOrder @ khipuService.js:85
-await in createPaymentOrder
-processKhipuPayment @ checkoutService.js:171
-handleContinue @ PaymentMethodSelector.jsx:215
-await in handleContinue
-executeDispatch @ react-dom-client.development.js:16368
-runWithFiberInDEV @ react-dom-client.development.js:1519
-processDispatchQueue @ react-dom-client.development.js:16418
-(anonymous) @ react-dom-client.development.js:17016
-batchedUpdates$1 @ react-dom-client.development.js:3262
-dispatchEventForPluginEventSystem @ react-dom-client.development.js:16572
-dispatchEvent @ react-dom-client.development.js:20658
-dispatchDiscreteEvent @ react-dom-client.development.js:20626
-khipuService.js:110  Error en khipuService.createPaymentOrder: Error: Error al invocar la función de Supabase: Edge Function returned a non-2xx status code
-    at KhipuService.createPaymentOrder (khipuService.js:86:15)
-    at async CheckoutService.processKhipuPayment (checkoutService.js:171:29)
-    at async handleContinue (PaymentMethodSelector.jsx:215:31)
-overrideMethod @ hook.js:608
-createPaymentOrder @ khipuService.js:110
-await in createPaymentOrder
-processKhipuPayment @ checkoutService.js:171
-handleContinue @ PaymentMethodSelector.jsx:215
-await in handleContinue
-executeDispatch @ react-dom-client.development.js:16368
-runWithFiberInDEV @ react-dom-client.development.js:1519
-processDispatchQueue @ react-dom-client.development.js:16418
-(anonymous) @ react-dom-client.development.js:17016
-batchedUpdates$1 @ react-dom-client.development.js:3262
-dispatchEventForPluginEventSystem @ react-dom-client.development.js:16572
-dispatchEvent @ react-dom-client.development.js:20658
-dispatchDiscreteEvent @ react-dom-client.development.js:20626
-checkoutService.js:243  Error processing Khipu payment: Error: Error al invocar la función de Supabase: Edge Function returned a non-2xx status code
-    at KhipuService.createPaymentOrder (khipuService.js:86:15)
-    at async CheckoutService.processKhipuPayment (checkoutService.js:171:29)
-    at async handleContinue (PaymentMethodSelector.jsx:215:31)
-overrideMethod @ hook.js:608
-processKhipuPayment @ checkoutService.js:243
-await in processKhipuPayment
-handleContinue @ PaymentMethodSelector.jsx:215
-await in handleContinue
-executeDispatch @ react-dom-client.development.js:16368
-runWithFiberInDEV @ react-dom-client.development.js:1519
-processDispatchQueue @ react-dom-client.development.js:16418
-(anonymous) @ react-dom-client.development.js:17016
-batchedUpdates$1 @ react-dom-client.development.js:3262
-dispatchEventForPluginEventSystem @ react-dom-client.development.js:16572
-dispatchEvent @ react-dom-client.development.js:20658
-dispatchDiscreteEvent @ react-dom-client.development.js:20626
-PaymentMethodSelector.jsx:243  Error processing payment: Error: Error en el pago: Error al invocar la función de Supabase: Edge Function returned a non-2xx status code
-    at CheckoutService.processKhipuPayment (checkoutService.js:244:13)
-    at async handleContinue (PaymentMethodSelector.jsx:215:31)
-overrideMethod @ hook.js:608
-handleContinue @ PaymentMethodSelector.jsx:243
-await in handleContinue
-executeDispatch @ react-dom-client.development.js:16368
-runWithFiberInDEV @ react-dom-client.development.js:1519
-processDispatchQueue @ react-dom-client.development.js:16418
-(anonymous) @ react-dom-client.development.js:17016
-batchedUpdates$1 @ react-dom-client.development.js:3262
-dispatchEventForPluginEventSystem @ react-dom-client.development.js:16572
-dispatchEvent @ react-dom-client.development.js:20658
-dispatchDiscreteEvent @ react-dom-client.development.js:20626
+AddToCartModal.jsx:272 [AddToCartModal] loadProductShippingRegions start {productId: '22fdf577-fa5c-47c0-b7af-526ab8747c2c'}
+AddToCartModal.jsx:464 [AddToCartModal] scheduling validateShippingOnDemand {effectiveUserRegion: 'metropolitana', isLoadingRegions: false, isLoadingUserProfile: false, enrichedProductId: '22fdf577-fa5c-47c0-b7af-526ab8747c2c'}
+AddToCartModal.jsx:479 [AddToCartModal] open true - starting justOpened window
+AddToCartModal.jsx:486 [AddToCartModal] justOpened window ended
+AddToCartModal.jsx:321 [AddToCartModal] enrichProductWithRegions - enriched product set {productId: '22fdf577-fa5c-47c0-b7af-526ab8747c2c', regionsLoaded: 1}
+AddToCartModal.jsx:464 [AddToCartModal] scheduling validateShippingOnDemand {effectiveUserRegion: 'metropolitana', isLoadingRegions: false, isLoadingUserProfile: false, enrichedProductId: '22fdf577-fa5c-47c0-b7af-526ab8747c2c'}
+AddToCartModal.jsx:466 [AddToCartModal] running validateShippingOnDemand {effectiveUserRegion: 'metropolitana', enrichedProductId: '22fdf577-fa5c-47c0-b7af-526ab8747c2c'}
+AddToCart.jsx:121 🛒 [AddToCart] Datos recibidos del modal: {id: '22fdf577-fa5c-47c0-b7af-526ab8747c2c', name: 'KRAVCHENCO', basePrice: 20000, originalPrice: undefined, priceTiers: Array(0), …}
+AddToCart.jsx:178 📦 [AddToCart] Producto OFERTADO final para carrito: {id: '22fdf577-fa5c-47c0-b7af-526ab8747c2c::offer::e9b3f8e0-a24a-4388-9277-1d0313e939a8', productid: '22fdf577-fa5c-47c0-b7af-526ab8747c2c', product_id: '22fdf577-fa5c-47c0-b7af-526ab8747c2c', offer_id: 'e9b3f8e0-a24a-4388-9277-1d0313e939a8', name: 'KRAVCHENCO', …}
+cartStore.backend.js:171 [cartStore.backend] addItemWithBackend payload: {cartId: '125d1517-55b9-4a5e-8ddb-118459281956', product: {…}, quantity: 20}
+cartService.js:82 [cartService] getCartItems cartId: 125d1517-55b9-4a5e-8ddb-118459281956
+cartService.js:251 [cartService] getCartItems transformed count: 0
+cartStore.backend.js:196 [cartStore.backend] addItemWithBackend authUid vs cartId {authUid: '20e7a348-66b6-4824-b059-2c67c5e6a49c', stateCartId: '125d1517-55b9-4a5e-8ddb-118459281956', resolvedCartId: '125d1517-55b9-4a5e-8ddb-118459281956'}
+cartService.js:272 [cartService] addItemToCart cartId, productId, quantity: 125d1517-55b9-4a5e-8ddb-118459281956 22fdf577-fa5c-47c0-b7af-526ab8747c2c 20
+cartService.js:340 [cartService] addItemToCart result: {cart_id: '125d1517-55b9-4a5e-8ddb-118459281956', product_id: '22fdf577-fa5c-47c0-b7af-526ab8747c2c', quantity: 20, price_at_addition: 20000, price_tiers: Array(1), …}
+cartService.js:82 [cartService] getCartItems cartId: 125d1517-55b9-4a5e-8ddb-118459281956
+cartService.js:251 [cartService] getCartItems transformed count: 1
+CartItem.jsx:140 [CartItem debug] id: 6d8ea12e-836a-4f32-a03d-a3329cfc0dfb isOffered: true showOfferDebug: false product_id: 22fdf577-fa5c-47c0-b7af-526ab8747c2c
+CartItem.jsx:140 [CartItem debug] id: 6d8ea12e-836a-4f32-a03d-a3329cfc0dfb isOffered: true showOfferDebug: false product_id: 22fdf577-fa5c-47c0-b7af-526ab8747c2c
+CartItem.jsx:140 [CartItem debug] id: 6d8ea12e-836a-4f32-a03d-a3329cfc0dfb isOffered: true showOfferDebug: false product_id: 22fdf577-fa5c-47c0-b7af-526ab8747c2c
+CartItem.jsx:140 [CartItem debug] id: 6d8ea12e-836a-4f32-a03d-a3329cfc0dfb isOffered: true showOfferDebug: false product_id: 22fdf577-fa5c-47c0-b7af-526ab8747c2c
+useShippingValidation.js:83 📦 Product shipping data: {productId: '6d8ea12e-836a-4f32-a03d-a3329cfc0dfb', productName: 'KRAVCHENCO', shippingRegionsCount: 1, shippingRegions: Array(1), allProductKeys: Array(42), …}
+useShippingValidation.js:83 📦 Product shipping data: {productId: '6d8ea12e-836a-4f32-a03d-a3329cfc0dfb', productName: 'KRAVCHENCO', shippingRegionsCount: 1, shippingRegions: Array(1), allProductKeys: Array(42), …}
+CartItem.jsx:140 [CartItem debug] id: 6d8ea12e-836a-4f32-a03d-a3329cfc0dfb isOffered: true showOfferDebug: false product_id: 22fdf577-fa5c-47c0-b7af-526ab8747c2c
+CartItem.jsx:140 [CartItem debug] id: 6d8ea12e-836a-4f32-a03d-a3329cfc0dfb isOffered: true showOfferDebug: false product_id: 22fdf577-fa5c-47c0-b7af-526ab8747c2c
+CartItem.jsx:140 [CartItem debug] id: 6d8ea12e-836a-4f32-a03d-a3329cfc0dfb isOffered: true showOfferDebug: false product_id: 22fdf577-fa5c-47c0-b7af-526ab8747c2c
+CartItem.jsx:140 [CartItem debug] id: 6d8ea12e-836a-4f32-a03d-a3329cfc0dfb isOffered: true showOfferDebug: false product_id: 22fdf577-fa5c-47c0-b7af-526ab8747c2c
+CartItem.jsx:140 [CartItem debug] id: 6d8ea12e-836a-4f32-a03d-a3329cfc0dfb isOffered: true showOfferDebug: false product_id: 22fdf577-fa5c-47c0-b7af-526ab8747c2c
+CartItem.jsx:140 [CartItem debug] id: 6d8ea12e-836a-4f32-a03d-a3329cfc0dfb isOffered: true showOfferDebug: false product_id: 22fdf577-fa5c-47c0-b7af-526ab8747c2c
+CartItem.jsx:140 [CartItem debug] id: 6d8ea12e-836a-4f32-a03d-a3329cfc0dfb isOffered: true showOfferDebug: false product_id: 22fdf577-fa5c-47c0-b7af-526ab8747c2c
+CartItem.jsx:140 [CartItem debug] id: 6d8ea12e-836a-4f32-a03d-a3329cfc0dfb isOffered: true showOfferDebug: false product_id: 22fdf577-fa5c-47c0-b7af-526ab8747c2c
+CartItem.jsx:140 [CartItem debug] id: 6d8ea12e-836a-4f32-a03d-a3329cfc0dfb isOffered: true showOfferDebug: false product_id: 22fdf577-fa5c-47c0-b7af-526ab8747c2c
+CartItem.jsx:140 [CartItem debug] id: 6d8ea12e-836a-4f32-a03d-a3329cfc0dfb isOffered: true showOfferDebug: false product_id: 22fdf577-fa5c-47c0-b7af-526ab8747c2c
+useShippingValidation.js:83 📦 Product shipping data: {productId: '6d8ea12e-836a-4f32-a03d-a3329cfc0dfb', productName: 'KRAVCHENCO', shippingRegionsCount: 1, shippingRegions: Array(1), allProductKeys: Array(42), …}
+useShippingValidation.js:83 📦 Product shipping data: {productId: '6d8ea12e-836a-4f32-a03d-a3329cfc0dfb', productName: 'KRAVCHENCO', shippingRegionsCount: 1, shippingRegions: Array(1), allProductKeys: Array(42), …}
+PaymentMethodSelector.jsx:207 [PaymentMethodSelector] Orden creada: {id: '718a249c-9cc7-4c49-bcd2-227f58c9f738', user_id: '20e7a348-66b6-4824-b059-2c67c5e6a49c', items: Array(1), subtotal: 400000, tax: 76000, …}
+PaymentMethodSelector.jsx:210 [PaymentMethodSelector] Procesando pago con Khipu...
+checkoutService.js:162 [CheckoutService] Iniciando pago con Khipu - paymentData (pre-seal): {orderId: '718a249c-9cc7-4c49-bcd2-227f58c9f738', userId: '20e7a348-66b6-4824-b059-2c67c5e6a49c', userEmail: '', amount: 415000, currency: 'CLP', …}
+checkoutService.js:177 [CheckoutService] Sealed pricing received {sealedTotalBase: 491000, sealedPaymentFee: 500, sealedAmount: 491500, request_id: undefined}
+khipuService.js:63 [khipuService] Invocando create-payment-khipu con payload: {"amount":491500,"currency":"CLP","subject":"Pago de Orden #718a249c-9cc7-4c49-bcd2-227f58c9f738","buyer_id":"20e7a348-66b6-4824-b059-2c67c5e6a49c","cart_id":"718a249c-9cc7-4c49-bcd2-227f58c9f738","order_id":"718a249c-9cc7-4c49-bcd2-227f58c9f738","offer_ids":["e9b3f8e0-a24a-4388-9277-1d0313e939a8"],"cart_items":[{"product_id":"22fdf577-fa5c-47c0-b7af-526ab8747c2c","quantity":20,"price":20000,"price_at_addition":20000,"supplier_id":"ae9be238-f13e-4edd-ac30-ec5854dae54f","offer_id":"e9b3f8e0-a24a-4388-9277-1d0313e939a8","document_type":"ninguno"}],"shipping_address":{"region":"metropolitana","commune":"conchali","address":"ojiiigin","number":"12344","department":"445666"},"billing_address":{"business_name":"Pene","billing_rut":"91.239.123-9","business_line":"hoooossd","giro":"hoooossd","billing_address":"12312ASDASDs","billing_region":"antofagasta","billing_commune":"calama","address":"12312ASDASDs","region":"antofagasta","commune":"calama"}}

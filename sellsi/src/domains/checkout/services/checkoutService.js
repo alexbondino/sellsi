@@ -159,25 +159,44 @@ class CheckoutService {
    */
   async processKhipuPayment(paymentData) {
     try {
-      console.log('[CheckoutService] Iniciando pago con Khipu:', paymentData);
+      console.log('[CheckoutService] Iniciando pago con Khipu - paymentData (pre-seal):', paymentData);
 
-      // Validar monto
-      if (!khipuService.validateAmount(paymentData.amount)) {
-        console.log(paymentData.amount);
-        throw new Error('Monto fuera del rango permitido por Khipu');
+      // Seguridad: pedir al servidor que selle el pricing y use su grand_total
+      let sealedAmount = null;
+      try {
+        const { data: sealed, error: sealErr } = await supabase.rpc('finalize_order_pricing', { p_order_id: paymentData.orderId });
+        if (sealErr) {
+          console.error('[CheckoutService] finalize_order_pricing error:', sealErr);
+          throw sealErr;
+        }
+        // sealed puede venir como objeto o como array según supabase client; normalizar
+        const sealedOrder = Array.isArray(sealed) ? sealed[0] : sealed;
+        const sealedTotalBase = Math.round(Number(sealedOrder?.total || 0));
+        const sealedPaymentFee = Math.round(Number(sealedOrder?.payment_fee || 0));
+        sealedAmount = Math.round(Number(sealedOrder?.grand_total ?? (sealedTotalBase + sealedPaymentFee)));
+        console.log('[CheckoutService] Sealed pricing received', { sealedTotalBase, sealedPaymentFee, sealedAmount, request_id: sealedOrder?.request_id });
+      } catch (sealEx) {
+        console.error('[CheckoutService] No se pudo sellar el precio antes de invocar Khipu:', sealEx);
+        throw new Error('No se pudo verificar el precio sellado');
       }
 
-      // Crear orden de pago en Khipu
+      // Validar monto sellado
+      if (!khipuService.validateAmount(sealedAmount)) {
+        console.error('[CheckoutService] Monto sellado inválido:', sealedAmount);
+        throw new Error('Monto sellado inválido para Khipu');
+      }
+
+      // Crear orden de pago en Khipu usando monto sellado por el servidor
       const khipuResponse = await khipuService.createPaymentOrder({
         orderId: paymentData.orderId,
         userId: paymentData.userId,
         userEmail: paymentData.userEmail,
-        total: paymentData.amount,
+        total: sealedAmount,
         currency: paymentData.currency || 'CLP',
         items: paymentData.items,
-  // ✔ Forward de direcciones
-  shippingAddress: paymentData.shippingAddress || null,
-  billingAddress: paymentData.billingAddress || null,
+        // ✔ Forward de direcciones
+        shippingAddress: paymentData.shippingAddress || null,
+        billingAddress: paymentData.billingAddress || null,
       });
 
       if (!khipuResponse.success) {

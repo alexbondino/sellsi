@@ -356,6 +356,8 @@ CREATE TABLE public.orders (
   inventory_processed_at timestamp with time zone,
   supplier_ids ARRAY,
   supplier_parts_meta jsonb,
+  payment_fee numeric DEFAULT 0,
+  grand_total numeric,
   CONSTRAINT orders_pkey PRIMARY KEY (id),
   CONSTRAINT orders_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(user_id)
 );

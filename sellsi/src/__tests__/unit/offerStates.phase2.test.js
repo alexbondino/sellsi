@@ -1,4 +1,5 @@
 import { useOfferStore, OFFER_STATES } from '../../stores/offerStore';
+import useCartStore from '../../shared/stores/cart/cartStore';
 
 // Mock supabase
 jest.mock('../../services/supabase', () => {
@@ -47,5 +48,64 @@ describe('Offer Phase 2 States (reserved/paid)', () => {
     expect(reservedCfg.label.toLowerCase()).toContain('reserv');
     const paidCfg = getOfferStatusConfig({ status: OFFER_STATES.PAID });
     expect(paidCfg.label.toLowerCase()).toContain('pag');
+  });
+
+  test('_pruneInvalidOfferCartItems includes paid offers in cleanup', () => {
+    // Setup cart items for different offer states
+    const cartItems = [
+      { id: 'item1', offer_id: 'off-paid' },
+      { id: 'item2', offer_id: 'off-approved' },
+      { id: 'item3', offer_id: 'off-expired' },
+      { id: 'item4', offer_id: 'off-cancelled' }
+    ];
+    
+    const offers = [
+      { id: 'off-paid', status: OFFER_STATES.PAID },
+      { id: 'off-approved', status: OFFER_STATES.APPROVED },
+      { id: 'off-expired', status: OFFER_STATES.EXPIRED },
+      { id: 'off-cancelled', status: OFFER_STATES.CANCELLED }
+    ];
+
+    // Setup initial state
+    useCartStore.setState({ items: cartItems });
+    useOfferStore.setState({ buyerOffers: offers });
+
+    // Execute pruning - should remove paid, expired, cancelled; keep only approved
+    useOfferStore.getState()._pruneInvalidOfferCartItems();
+
+    // Only approved offer should remain in cart
+    const remainingItems = useCartStore.getState().items;
+    expect(remainingItems).toHaveLength(1);
+    expect(remainingItems[0].offer_id).toBe('off-approved');
+  });
+
+  test('forceCleanCartOffers removes all finalized offers regardless of source', () => {
+    const cartItems = [
+      { id: 'item1', offer_id: 'off-paid' },
+      { id: 'item2', offer_id: 'off-reserved' },
+      { id: 'item3', offer_id: 'off-pending' },
+      { id: 'item4' }, // No offer_id - regular item
+    ];
+
+    const offers = [
+      { id: 'off-paid', status: OFFER_STATES.PAID },
+      { id: 'off-reserved', status: OFFER_STATES.RESERVED },
+      { id: 'off-pending', status: OFFER_STATES.PENDING }
+    ];
+
+    useCartStore.setState({ items: cartItems });
+    useOfferStore.setState({ buyerOffers: offers });
+
+    // Execute force cleanup
+    useOfferStore.getState().forceCleanCartOffers();
+
+    const remainingItems = useCartStore.getState().items;
+    
+    // Should remove paid offers but keep reserved, pending, and regular items
+    expect(remainingItems).toHaveLength(3);
+    expect(remainingItems.find(item => item.offer_id === 'off-paid')).toBeUndefined();
+    expect(remainingItems.find(item => item.offer_id === 'off-reserved')).toBeDefined();
+    expect(remainingItems.find(item => item.offer_id === 'off-pending')).toBeDefined();
+    expect(remainingItems.find(item => !item.offer_id)).toBeDefined();
   });
 });
