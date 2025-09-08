@@ -2,8 +2,9 @@
 import { supabase } from '../supabase.js'
 
 // Use the public env vars to call the Edge Function from the client
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY
+// Use process.env during tests / Node. In Vite builds import.meta.env is replaced at build time.
+const SUPABASE_URL = process.env.VITE_SUPABASE_URL
+const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY
 
 /**
  * Servicio especializado para la gestión de thumbnails

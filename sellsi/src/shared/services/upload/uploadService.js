@@ -12,8 +12,8 @@ function thumbsLog(event, data) {
   } catch(_) {}
 }
 
-// Solo verificar en desarrollo
-if (import.meta.env.DEV && !supabase) {
+// Solo verificar en desarrollo (Node/Jest-safe check)
+if (typeof process !== 'undefined' && process.env && process.env.NODE_ENV === 'development' && !supabase) {
   console.error('❌ [UploadService] Objeto supabase no disponible!')
   throw new Error('Supabase client no inicializado')
 }

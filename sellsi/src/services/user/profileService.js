@@ -151,6 +151,15 @@ export const getUserProfileData = async (userId) => {
  */
 export const updateUserProfile = async (userId, profileData) => {
   try {
+    // Server-side validation: Ensure required groups of fields are complete.
+    // This mirrors the client-side rules implemented in the Profile component
+    // - If shipping region is provided, require commune and address
+    // - If business_name (billing) is provided, require full billing fields
+    const validation = validateProfileUpdate(profileData);
+    if (!validation.ok) {
+      return { success: false, error: new Error('Validation failed'), validationErrors: validation.errors };
+    }
+
     // 1. Actualizar tabla users (información básica)
     const userUpdateData = {
       // Aceptar tanto payload camelCase (legacy) como snake_case (nuevo mapeo)
@@ -768,6 +777,41 @@ const hasShippingData = (data) => {
 const hasBillingData = (data) => {
   return data.business_name || data.billing_rut || data.business_line || 
          data.billing_address || data.billing_region || data.billing_commune;
+};
+
+/**
+ * Validates a profile update payload for server-side parity with client rules.
+ * Returns { ok: boolean, errors: { field: message } }
+ */
+export const validateProfileUpdate = (payload = {}) => {
+  const errors = {};
+
+  // Shipping: if region provided (either snake_case or camelCase), require commune and address
+  const region = payload.shipping_region ?? payload.shippingRegion ?? payload.shipping_region;
+  const commune = payload.shipping_commune ?? payload.shippingCommune;
+  const address = payload.shipping_address ?? payload.shippingAddress;
+  const regionProvided = region !== undefined && region !== null && String(region).trim() !== '';
+  if (regionProvided && (!commune || String(commune).trim() === '' || !address || String(address).trim() === '')) {
+    errors.shipping = 'When shipping region is provided, shipping commune and address are required';
+  }
+
+  // Billing: if business_name provided (either camelCase or snake_case), require full billing fields
+  const businessName = payload.business_name ?? payload.businessName;
+  const billingRut = payload.billing_rut ?? payload.billingRut;
+  const businessLine = payload.business_line ?? payload.businessLine;
+  const billingAddress = payload.billing_address ?? payload.billingAddress;
+  const billingRegion = payload.billing_region ?? payload.billingRegion;
+  const billingCommune = payload.billing_commune ?? payload.billingCommune;
+
+  if (businessName && String(businessName).trim() !== '') {
+    const anyMissing = [billingRut, businessLine, billingAddress, billingRegion, billingCommune]
+      .some(v => v === undefined || v === null || String(v).trim() === '');
+    if (anyMissing) {
+      errors.billing = 'All billing fields are required when business name is present';
+    }
+  }
+
+  return { ok: Object.keys(errors).length === 0, errors };
 };
 
 // ============================================================================
