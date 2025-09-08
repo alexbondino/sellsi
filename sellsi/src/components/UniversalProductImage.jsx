@@ -33,6 +33,8 @@ const UniversalProductImage = ({
   lazy = true,
   // priority = eager (useful for cart / product card)
   priority = false,
+  // ✅ NUEVO: imagePriority separada para controlar solo fetchpriority
+  imagePriority = false,
   // rootMargin forwarded to LazyImage
   rootMargin = '150px',
   // safety timeout (ms) to fall back to eager if observer never fires
@@ -80,7 +82,8 @@ const UniversalProductImage = ({
     }
   }, [product?.id || product?.productid]);
 
-  // Safety: if lazy loading is enabled but the observer never triggers, fall back to eager after a short timeout
+  // ✅ SAFETY: if lazy loading is enabled but the observer never triggers, fall back to eager after a short timeout
+  // ✅ MEJORADO: Timeout más corto y forzar eager si priority=false para evitar imágenes que no cargan
   useEffect(() => {
     if (!lazy || priority) return undefined; // no timeout when not lazy or when priority forces eager
     if (inView) {
@@ -89,11 +92,13 @@ const UniversalProductImage = ({
       return undefined;
     }
     let t = null;
+    // ✅ TIMEOUT MÁS CORTO para imágenes con baja prioridad para evitar que no carguen nunca
+    const timeoutMs = priority ? observerTimeoutMs : 200; // Timeout más agresivo para low priority
     t = setTimeout(() => {
       setForceEager(true);
       // eslint-disable-next-line no-console
-    // observer timeout - falling back to eager
-    }, observerTimeoutMs);
+    // observer timeout - falling back to eager for reliability
+    }, timeoutMs);
     return () => {
       if (t) clearTimeout(t);
     };
@@ -313,8 +318,13 @@ const UniversalProductImage = ({
   }
 
   // Renderizar imagen lazy o normal según configuración
+  // ✅ MEJORADO: Ser más conservador con lazy loading para evitar imágenes que no cargan
   // Decide if we should render lazy or eager: priority overrides lazy; forceEager flips back to eager
   const shouldLazy = lazy && !priority && !forceEager;
+  
+  // ✅ Determinar fetchpriority basado en imagePriority (separado de eager/lazy)
+  const fetchPriority = imagePriority ? 'high' : 'auto';
+  
   if (shouldLazy) {
     return (
       <LazyImage
@@ -325,6 +335,7 @@ const UniversalProductImage = ({
         objectFit={objectFit}
         sx={baseStyles}
         ref={viewportRef}
+        fetchPriority={fetchPriority} // ✅ Añadir fetchpriority a LazyImage
         onError={() => {
           handleImageError();
         }}
@@ -342,6 +353,7 @@ const UniversalProductImage = ({
       component="img"
       src={selectedThumbnail}
       alt={imageAlt}
+      fetchPriority={fetchPriority} // ✅ Añadir fetchpriority a imagen normal
       sx={{
         ...baseStyles,
         objectFit,
@@ -380,8 +392,12 @@ export const MinithumbImage = ({ product, ...props }) => (
 
 /**
  * Componente para ProductCard - Usa thumbnail responsivo
+ * @param {Object} product - Datos del producto
+ * @param {string} type - Tipo de card ('buyer', 'provider', 'supplier')
+ * @param {boolean} priority - Si la imagen debe tener alta prioridad (fetchpriority="high")
+ * @param {Object} props - Props adicionales para UniversalProductImage
  */
-export const ProductCardImage = ({ product, type = 'buyer', ...props }) => {
+export const ProductCardImage = ({ product, type = 'buyer', priority = false, ...props }) => {
   // Diferentes alturas según el tipo de card
   const getCardHeight = () => {
     switch (type) {
@@ -401,7 +417,8 @@ export const ProductCardImage = ({ product, type = 'buyer', ...props }) => {
         size="responsive"
         // Fill the outer responsive container
         height="100%"
-        priority={true} // Forzar carga inmediata con la nueva API de prioridad
+        priority={true} // ✅ CONSERVADOR: Mantener eager loading para evitar problemas
+        imagePriority={priority} // ✅ NUEVO: Prop separada solo para fetchpriority
         sx={{
           maxWidth: '100%',
           bgcolor: '#fff',

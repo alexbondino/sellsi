@@ -23,8 +23,9 @@ import { globalObserverPool } from '../../../../utils/observerPoolManager';
 
 /**
  * Hook personalizado para lazy loading con Intersection Observer
+ * ✅ MEJORADO: Con timeout de seguridad para evitar imágenes que nunca cargan
  */
-const useLazyLoading = (rootMargin = '50px') => {
+const useLazyLoading = (rootMargin = '50px', timeoutMs = 300) => {
   const [isVisible, setIsVisible] = useState(false)
   const elementRef = useRef(null)
 
@@ -43,8 +44,16 @@ const useLazyLoading = (rootMargin = '50px') => {
       { rootMargin }
     );
 
-    return unobserveFunc;
-  }, [rootMargin])
+    // ✅ TIMEOUT DE SEGURIDAD: Si el observer no se dispara, forzar carga
+    const safetyTimeout = setTimeout(() => {
+      setIsVisible(true);
+    }, timeoutMs);
+
+    return () => {
+      unobserveFunc();
+      clearTimeout(safetyTimeout);
+    };
+  }, [rootMargin, timeoutMs])
 
   return [elementRef, isVisible]
 }
@@ -68,6 +77,7 @@ const LazyImage = ({
   onLoad = () => {},
   onError = () => {},
   fallbackSrc = null, // Nueva prop para imagen de fallback
+  fetchPriority = 'auto', // ✅ Nueva prop para fetchpriority
   className = '',
   sx = {},
   
@@ -80,7 +90,9 @@ const LazyImage = ({
   
   ...props
 }) => {
-  const [elementRef, isVisible] = useLazyLoading(rootMargin)
+  // ✅ TIMEOUT DE SEGURIDAD más corto para imágenes con baja prioridad
+  const safetyTimeoutMs = fetchPriority === 'high' ? 500 : 200;
+  const [elementRef, isVisible] = useLazyLoading(rootMargin, safetyTimeoutMs)
   const [imageLoaded, setImageLoaded] = useState(false)
   const [imageError, setImageError] = useState(false)
   const [imageSrc, setImageSrc] = useState(src) // Track src changes
@@ -201,6 +213,7 @@ const LazyImage = ({
           component="img"
           src={imageSrc}
           alt={alt}
+          fetchPriority={fetchPriority} // ✅ Añadir fetchpriority
           onLoad={handleImageLoad}
           onError={handleImageError}
           key={imageSrc} // Force re-render when src changes

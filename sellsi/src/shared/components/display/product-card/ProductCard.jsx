@@ -18,6 +18,7 @@ import ProductCardProviderContext from './ProductCardProviderContext';
  * @param {object} props - Component props
  * @param {object} props.product - The product data object.
  * @param {'supplier' | 'buyer' | 'provider'} props.type - The type of card to render.
+ * @param {boolean} [props.imagePriority=false] - Si la imagen debe tener alta prioridad (fetchpriority="high")
  * @param {function} [props.onEdit] - Callback for edit action (supplier type).
  * @param {function} [props.onDelete] - Callback for delete action (supplier type).
  * @param {function} [props.onViewStats] - Callback for view stats action (supplier type).
@@ -29,6 +30,7 @@ const ProductCard = React.memo(
   ({
     product,
     type,
+    imagePriority = false, // ✅ Nueva prop para controlar prioridad de imagen
     onEdit,
     onDelete,
     onViewStats,
@@ -63,10 +65,11 @@ const ProductCard = React.memo(
         <ProductCardImage
           product={productForImage}
           type={type}
+          priority={imagePriority} // ✅ Pasar prioridad dinámica a la imagen
           alt={nombre}
         />
       )
-    }, [product, type, nombre])
+    }, [product, type, nombre, imagePriority]) // ✅ Añadir imagePriority a dependencias
 
     // --- Common Card Styles (can be adjusted per type if needed) ---
     const cardStyles = useMemo(

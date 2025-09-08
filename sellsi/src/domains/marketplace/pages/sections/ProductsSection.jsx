@@ -20,6 +20,7 @@ import { productGridColumns, productGridGaps, paginationResponsiveConfig } from 
 import { PRODUCTS_TEXTS } from '../../../../shared/constants/productsTexts';
 import { useProductsDerivation } from '../../../../shared/hooks/useProductsDerivation';
 import { useProgressiveProducts } from '../../../../shared/hooks/useProgressiveProducts';
+import { useGridPriority } from '../../../../shared/utils/gridPriorityCalculator'; // ✅ Nuevo sistema de prioridades
 import { FeatureFlags } from '../../../../shared/flags/featureFlags';
 import { ProductCardSkeletonGrid } from '../../../../shared/components/display/product-card/ProductCardSkeleton';
 import ProductsSectionView from './ProductsSection/ProductsSectionView';
@@ -160,6 +161,22 @@ const ProductsSection = React.memo(({ seccionActiva, setSeccionActiva, totalProd
       isLoadingMore,
       paginationMeta: { startIndex, endIndex, PRODUCTS_PER_PAGE: PRODUCTS_PER_PAGE_META }
     } = progressive;
+
+    // ✅ NUEVO: Sistema de prioridades para imágenes (primeras 2 filas = fetchpriority="high")
+    const gridPriority = useGridPriority(renderItems, { isXs, isSm, isMd, isLg, isXl });
+    const { getPriority, debugInfo } = gridPriority;
+
+    // ✅ Debug info en development
+    React.useEffect(() => {
+      if (process.env.NODE_ENV === 'development' && debugInfo && renderItems.length > 0) {
+        console.group('🎯 Grid Priority Debug');
+        console.log('Breakpoint actual:', debugInfo.breakpoint);
+        console.log('Cálculo:', debugInfo.calculation);
+        console.log('Productos con alta prioridad:', debugInfo.highPriorityProductsCount);
+        console.log('Total productos renderizando:', renderItems.length);
+        console.groupEnd();
+      }
+    }, [debugInfo, renderItems.length]);
     // Componente de paginación responsivo
   const PaginationComponent = React.useMemo(() => {
       if (totalPages <= 1) return null;
@@ -293,7 +310,8 @@ const ProductsSection = React.memo(({ seccionActiva, setSeccionActiva, totalProd
   const data = {
     loading, error, isProviderView, totalProductos, providersCount, productosOrdenados,
     renderItems, PaginationComponent, isInfiniteScrollActive, isLoadingMore, currentPageProducts,
-    PRODUCTS_PER_PAGE_META, startIndex, endIndex, currentPage, totalPages, titleMarginLeft
+    PRODUCTS_PER_PAGE_META, startIndex, endIndex, currentPage, totalPages, titleMarginLeft,
+    getPriority // ✅ Función para determinar prioridad de imagen por índice
   };
   const components = {
     Loading: (

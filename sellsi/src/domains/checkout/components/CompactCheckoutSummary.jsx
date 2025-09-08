@@ -84,13 +84,10 @@ const CompactCheckoutSummary = ({
                     {(item.name || 'P').charAt(0)}
                   </Avatar>
                   <Typography variant="caption" flex={1} sx={{ 
-                    display: '-webkit-box',
-                    WebkitLineClamp: 1,
-                    WebkitBoxOrient: 'vertical',
-                    overflow: 'hidden',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: 1
+                    gap: 1,
+                    overflow: 'hidden'
                   }}>
                     <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</span>
                     {(item.isOffered || item.metadata?.isOffered || item.offer_id || item.offered_price) && (
