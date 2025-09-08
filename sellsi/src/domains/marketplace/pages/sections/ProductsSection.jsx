@@ -21,7 +21,7 @@ import { PRODUCTS_TEXTS } from '../../../../shared/constants/productsTexts';
 import { useProductsDerivation } from '../../../../shared/hooks/useProductsDerivation';
 import { useProgressiveProducts } from '../../../../shared/hooks/useProgressiveProducts';
 import { FeatureFlags } from '../../../../shared/flags/featureFlags';
-import { LoadingOverlay } from '../../../../shared/components/feedback';
+import { ProductCardSkeletonGrid } from '../../../../shared/components/display/product-card/ProductCardSkeleton';
 import ProductsSectionView from './ProductsSection/ProductsSectionView';
 
 /**
@@ -296,7 +296,16 @@ const ProductsSection = React.memo(({ seccionActiva, setSeccionActiva, totalProd
     PRODUCTS_PER_PAGE_META, startIndex, endIndex, currentPage, totalPages, titleMarginLeft
   };
   const components = {
-    Loading: <LoadingOverlay message={isProviderView ? PRODUCTS_TEXTS.loadingProviders : PRODUCTS_TEXTS.loadingProducts} height={300} />,
+    Loading: (
+      <Box sx={{ px: { xs: 0, sm: 0, md: 0 } }}>
+        <ProductCardSkeletonGrid
+          type={isProviderView ? 'provider' : 'buyer'}
+          count={Math.max(PRODUCTS_PER_PAGE_META || 8, 8)}
+          gridStyles={gridStyles}
+          cardContainerStyles={cardContainerStyles}
+        />
+      </Box>
+    ),
     Error: (err) => (
       <Paper sx={{ p: 6, textAlign: 'center', bgcolor: '#fff', borderRadius: 3, border: '1px solid #e2e8f0' }}>
         <Typography variant='h6' color='error' sx={{ mb: 2 }}>{PRODUCTS_TEXTS.errorTitle}</Typography>

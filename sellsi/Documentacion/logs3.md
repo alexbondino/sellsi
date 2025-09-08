@@ -1,0 +1,1 @@
+{"request_id":"af6784ba-bb23-4fbd-a818-7b97f41b4ae8","error_code":"OFFER_ALREADY_LINKED","error":"Oferta ligada a otra orden","offer_id":"e9b3f8e0-a24a-4388-9277-1d0313e939a8","existing_order_id":"cfcfa0e2-59d5-4013-92a3-7bc12e7c5259"}
