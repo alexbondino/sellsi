@@ -303,20 +303,42 @@ class CartService {
 
       if (mergeCandidate) {
         const newTotalQuantity = this.validateQuantity(mergeCandidate.quantity + safeQuantity);
-        // Actualizamos cantidad usando productId pero mantendremos filas separadas ya que id de línea es cart_items_id
-        // Para garantizar actualización correcta, directamente update por cart_items_id
-        const { data: updated, error: updErr } = await supabase
+        // Intento de actualización directa por cart_items_id; usar maybeSingle para evitar 406 si la fila ya no existe
+        const { data: updatedArr, error: updErr } = await supabase
           .from('cart_items')
           .update({ quantity: newTotalQuantity, updated_at: new Date().toISOString() })
           .eq('cart_items_id', mergeCandidate.cart_items_id)
-          .select()
-          .single();
+          .select();
         if (updErr) throw updErr;
-        result = updated;
+        const updated = Array.isArray(updatedArr) ? updatedArr[0] : updatedArr;
+        if (!updated) {
+          // Fila desapareció entre lectura y actualización (race). Insertar nueva línea como fallback seguro.
+          const { data: inserted, error: insErr } = await supabase
+            .from('cart_items')
+            .insert({
+              cart_id: cartId,
+              product_id: productId,
+              quantity: newTotalQuantity,
+              price_at_addition: product.price,
+              price_tiers: product.price_tiers || product.priceTiers || null,
+              document_type: normalizeDocumentType(product.documentType || product.document_type),
+              offer_id: product.offer_id || null,
+              offered_price: product.offered_price || null,
+              metadata: product.metadata || null
+            })
+            .select();
+          if (insErr) {
+            try { console.error('[cartService] addItemToCart fallback insert error:', insErr); } catch(e) {}
+            throw insErr;
+          }
+          result = Array.isArray(inserted) ? inserted[0] : inserted;
+        } else {
+          result = updated;
+        }
         await this.updateCartTimestamp(cartId);
       } else {
         // Insertar una nueva fila (regular u oferta independiente)
-        const { data: inserted, error: insErr } = await supabase
+        const { data: insertedArr, error: insErr } = await supabase
           .from('cart_items')
           .insert({
             cart_id: cartId,
@@ -329,13 +351,12 @@ class CartService {
             offered_price: product.offered_price || null,
             metadata: product.metadata || null
           })
-          .select()
-          .single();
+          .select();
         if (insErr) {
           try { console.error('[cartService] addItemToCart insert error:', insErr); } catch(e) {}
           throw insErr;
         }
-        result = inserted;
+        result = Array.isArray(insertedArr) ? insertedArr[0] : insertedArr;
         await this.updateCartTimestamp(cartId);
       }
 
@@ -366,22 +387,35 @@ class CartService {
         .from('cart_items')
         .update({ quantity: safeQuantity, updated_at: new Date().toISOString() })
         .eq('cart_items_id', productOrLineId)
-        .select()
-        .maybeSingle();
+        .select();
 
       if (error && error.code !== 'PGRST116') throw error;
 
       // Si no encontró por cart_items_id, actualizar por product_id + cart_id (modo legacy)
-      if (!data) {
+      if (!data || (Array.isArray(data) && data.length === 0)) {
         const res2 = await supabase
           .from('cart_items')
           .update({ quantity: safeQuantity, updated_at: new Date().toISOString() })
           .eq('cart_id', cartId)
           .eq('product_id', productOrLineId)
-          .select()
-          .single();
+          .select();
         if (res2.error) throw res2.error;
-        data = res2.data;
+        if (res2.data && (!Array.isArray(res2.data) || res2.data.length > 0)) {
+          data = Array.isArray(res2.data) ? res2.data[0] : res2.data;
+        } else {
+          // No existe fila por product_id: crearla para cumplir la intención del usuario (actualizar = establecer cantidad)
+          const { data: insertedArr, error: insErr } = await supabase
+            .from('cart_items')
+            .insert({
+              cart_id: cartId,
+              product_id: productOrLineId,
+              quantity: safeQuantity,
+              updated_at: new Date().toISOString()
+            })
+            .select();
+          if (insErr) throw insErr;
+          data = Array.isArray(insertedArr) ? insertedArr[0] : insertedArr;
+        }
       }
 
       if (error) throw error;
