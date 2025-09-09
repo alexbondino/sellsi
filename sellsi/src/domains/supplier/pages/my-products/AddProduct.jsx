@@ -84,6 +84,7 @@ const MobileFormLayout = ({
   handleImagesChange, 
   handleImageError,
   freezeDisplay = false,
+  supplierId,
 }) => (
   <Box
     sx={{
@@ -177,6 +178,7 @@ const MobileFormLayout = ({
           🚚 Regiones de Despacho
         </Typography>
         <ProductRegions
+          supplierId={supplierId}
           formData={formData}
           onRegionChange={handleRegionChange}
           errors={errors}
@@ -227,6 +229,7 @@ const DesktopFormLayout = ({
   handleImagesChange, 
   handleImageError,
   freezeDisplay = false,
+  supplierId,
 }) => (
   <Grid container spacing={3}>
     <Grid size={{ xs: 12, lg: 8 }}>
@@ -276,6 +279,7 @@ const DesktopFormLayout = ({
           {/* Regiones - Columna 2, Fila 3 (al lado de Condiciones de Venta) */}
           <Box sx={{ gridColumn: 2, gridRow: 3 }}>
             <ProductRegions
+              supplierId={supplierId}
               formData={formData}
               onRegionChange={handleRegionChange}
               errors={errors}
@@ -824,6 +828,7 @@ const AddProduct = () => {
           {isMobile ? (
             <Box sx={{ px: 0, width: '100%' }}> {/* 🔧 Eliminado px: '1%' */}
               <MobileFormLayout 
+                supplierId={supplierId}
                 formData={formData}
                 errors={errors}
                 localErrors={localErrors}
@@ -845,6 +850,7 @@ const AddProduct = () => {
             </Box>
           ) : (
             <DesktopFormLayout 
+              supplierId={supplierId}
               formData={formData}
               errors={errors}
               localErrors={localErrors}

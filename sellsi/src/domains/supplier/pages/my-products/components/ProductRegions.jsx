@@ -21,11 +21,12 @@ const ProductRegions = ({
   triedSubmit,
   isMobile = false, // 🔧 Nueva prop para móvil
   freezeDisplay = false, // 🔧 Nuevo: congelar UI durante submit/update
+  supplierId, // inyectado desde el contenedor para estabilidad
 }) => {
   const [modalOpen, setModalOpen] = useState(false);
   // Snapshot interno para evitar parpadeos cuando props cambian durante un update
   const [displayRegions, setDisplayRegions] = useState(formData.shippingRegions || []);
-  const supplierId = typeof window !== 'undefined' ? localStorage.getItem('user_id') : null;
+  // supplierId ahora llega por props (evita relecturas y facilita test)
   const { presets, loading: presetsLoading, saving: presetsSaving, savePreset, rename, getPresetByIndex } = useShippingRegionPresets(supplierId);
   const [activePreset, setActivePreset] = useState(null); // 1..3
   const [renamingIndex, setRenamingIndex] = useState(null);
