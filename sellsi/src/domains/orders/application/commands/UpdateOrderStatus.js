@@ -5,6 +5,7 @@ import { orderStatusService } from '../../domain/services/OrderStatusService';
 import { notificationService } from '../../../notifications/services/notificationService';
 import { ORDER_STATUSES, ADVANCE_STATUSES, normalizeStatus, getStatusDisplayName } from '../../shared/constants';
 import { supabase } from '../../../../services/supabase';
+import { cartService } from '../../../../services/user/cartService';
 
 export async function UpdateOrderStatus(orderId, newStatus, additionalData = {}) {
   const normalizedStatus = normalizeStatus(newStatus);
@@ -39,11 +40,7 @@ export async function UpdateOrderStatus(orderId, newStatus, additionalData = {})
     currentStatus = currentOrderMeta.status || null;
     currentPaymentStatus = currentOrderMeta.payment_status || null;
   } else {
-    const { data: cartStatusRow } = await supabase
-      .from('carts')
-      .select('status')
-      .eq('cart_id', orderId)
-      .maybeSingle();
+    const { data: cartStatusRow } = await cartService.fetchCartById(orderId, 'status');
     if (cartStatusRow) currentStatus = cartStatusRow.status;
   }
   const check = orderStatusService.canTransition(currentStatus || 'pending', normalizedStatus, { paymentStatus: currentPaymentStatus });

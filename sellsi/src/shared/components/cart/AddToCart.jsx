@@ -3,7 +3,7 @@ import { Button, IconButton } from '@mui/material';
 import { ShoppingCart as ShoppingCartIcon } from '@mui/icons-material';
 
 // Components
-import AddToCartModal from './AddToCartModal';
+import AddToCartModal from './AddToCartModal/AddToCartModal';
 
 // Hooks and services
 import { showCartSuccess, showCartError, showErrorToast } from '../../../utils/toastHelpers';

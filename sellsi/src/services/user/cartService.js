@@ -3,6 +3,10 @@ import { validateQuantity, sanitizeCartItems, isQuantityError } from '../../util
 
 // In-flight dedupe para getCartItems: evita múltiples GET idénticos concurrentes
 const __inFlightCartItems = new Map(); // cartId -> Promise
+// In-flight dedupe para selects por cart_id en la tabla `carts`
+const __inFlightCartsById = new Map(); // cartId -> Promise
+// In-flight/coalescing for cart timestamp updates: cartId -> Promise
+const __inFlightTimestampUpdates = new Map();
 
 // Normaliza el tipo de documento tributario a uno de: 'boleta' | 'factura' | 'ninguno'
 function normalizeDocumentType(val) {
@@ -308,7 +312,8 @@ class CartService {
   /**
    * Agrega un producto al carrito
    */
-  async addItemToCart(cartId, product, quantity) {
+  async addItemToCart(cartId, product, quantity, options = {}) {
+    const { skipTimestamp = false } = options;
     try {
       const productId = product.productid || product.id || product.product_id;
       if (!productId) throw new Error('Product ID not found in product object');
@@ -383,7 +388,7 @@ class CartService {
         } else {
           result = updated;
         }
-        await this.updateCartTimestamp(cartId);
+  if (!skipTimestamp) await this.updateCartTimestamp(cartId);
       } else {
         // Insertar una nueva fila (regular u oferta independiente)
         const { data: insertedArr, error: insErr } = await supabase
@@ -405,7 +410,7 @@ class CartService {
           throw insErr;
         }
         result = Array.isArray(insertedArr) ? insertedArr[0] : insertedArr;
-        await this.updateCartTimestamp(cartId);
+  if (!skipTimestamp) await this.updateCartTimestamp(cartId);
       }
 
       try {
@@ -423,7 +428,8 @@ class CartService {
     return validateQuantity(quantity);
   }
 
-  async updateItemQuantity(cartId, productOrLineId, newQuantity) {
+  async updateItemQuantity(cartId, productOrLineId, newQuantity, options = {}) {
+    const { skipTimestamp = false } = options;
     try {
       const safeQuantity = this.validateQuantity(newQuantity);
       if (safeQuantity <= 0) {
@@ -468,14 +474,15 @@ class CartService {
       }
 
       const row = Array.isArray(data) ? data[0] : data;
-      await this.updateCartTimestamp(cartId);
+  if (!skipTimestamp) await this.updateCartTimestamp(cartId);
       return row;
     } catch (error) {
       throw new Error(`No se pudo actualizar la cantidad: ${error.message}`);
     }
   }
 
-  async removeItemFromCart(cartId, productOrLineId) {
+  async removeItemFromCart(cartId, productOrLineId, options = {}) {
+    const { skipTimestamp = false } = options;
     try {
       // Intentar borrar por cart_items_id primero
       const res = await supabase
@@ -502,7 +509,7 @@ class CartService {
         if (res2.error) throw res2.error;
       }
 
-      await this.updateCartTimestamp(cartId);
+  if (!skipTimestamp) await this.updateCartTimestamp(cartId);
 
       return true;
     } catch (error) {
@@ -510,7 +517,8 @@ class CartService {
     }
   }
 
-  async clearCart(cartId) {
+  async clearCart(cartId, options = {}) {
+    const { skipTimestamp = false } = options;
     try {
       const { error } = await supabase
         .from('cart_items')
@@ -519,7 +527,7 @@ class CartService {
 
       if (error) throw error;
 
-      await this.updateCartTimestamp(cartId);
+  if (!skipTimestamp) await this.updateCartTimestamp(cartId);
 
       return true;
     } catch (error) {
@@ -546,8 +554,37 @@ class CartService {
 
   async updateCartTimestamp(cartId) {
     try {
-      await supabase.from('carts').update({ updated_at: new Date().toISOString() }).eq('cart_id', cartId);
-    } catch (error) {}
+      if (!cartId) return null;
+      // If there's already an in-flight or scheduled update for this cart, reuse it.
+      if (__inFlightTimestampUpdates.has(cartId)) {
+  try { console.debug('[cartService] updateCartTimestamp dedup (reusing in-flight)', { cartId }); } catch(_) {}
+        return await __inFlightTimestampUpdates.get(cartId)
+      }
+
+      // Create a promise that waits a short debounce window so multiple rapid
+      // callers are coalesced into a single PATCH request.
+      const p = (async () => {
+        // debounce window (ms) - tune as needed
+        const DEBOUNCE_MS = 150
+        await new Promise((resolve) => setTimeout(resolve, DEBOUNCE_MS))
+        try {
+          const payload = { updated_at: new Date().toISOString() }
+          const startedAt = Date.now();
+          const res = await supabase.from('carts').update(payload).eq('cart_id', cartId)
+          try { console.debug('[cartService] updateCartTimestamp PATCH executed', { cartId, latencyMs: Date.now()-startedAt, error: res.error }); } catch(_) {}
+          return res
+        } catch (error) {
+          return { error }
+        } finally {
+          __inFlightTimestampUpdates.delete(cartId)
+        }
+      })()
+
+      __inFlightTimestampUpdates.set(cartId, p)
+      return await p
+    } catch (error) {
+      return null
+    }
   }
 
   /**
@@ -638,6 +675,43 @@ class CartService {
     }
   }
 
+  /**
+   * Obtiene la fila de `carts` por cart_id con dedupe in-flight para evitar consultas idénticas concurrentes
+   * @param {string} cartId
+   * @param {string} [columns='*'] - columnas a seleccionar
+   * @returns {Promise<{data: any, error: any}>}
+   */
+  async fetchCartById(cartId, columns = '*') {
+    if (!cartId) return { data: null, error: new Error('cartId requerido') };
+    try {
+      if (__inFlightCartsById.has(cartId)) {
+        return await __inFlightCartsById.get(cartId);
+      }
+
+      const p = (async () => {
+        try {
+          const res = await supabase
+            .from('carts')
+            .select(columns)
+            .eq('cart_id', cartId)
+            .maybeSingle();
+          return res;
+        } catch (err) {
+          return { data: null, error: err };
+        }
+      })();
+
+      __inFlightCartsById.set(cartId, p);
+      try {
+        return await p;
+      } finally {
+        __inFlightCartsById.delete(cartId);
+      }
+    } catch (error) {
+      return { data: null, error };
+    }
+  }
+
   async migrateLocalCart(userId, localCartItems, options = {}) {
     const { existingCart = null, skipFinalFetch = false } = options;
     try {
@@ -658,20 +732,30 @@ class CartService {
       const sanitizationResult = sanitizeCartItems(localCartItems);
       const { validItems } = sanitizationResult;
 
+      let mutationCount = 0;
       for (const item of validItems) {
         const backendItem = backendItems[item.product_id || item.id];
         const localQty = item.quantity;
         const backendQty = backendItem ? backendItem.quantity : 0;
         const finalQty = Math.max(localQty, backendQty);
         try {
-          await this.updateItemQuantity(cart.cart_id, item.product_id || item.id, finalQty);
+          await this.updateItemQuantity(cart.cart_id, item.product_id || item.id, finalQty, { skipTimestamp: true });
+          mutationCount++;
         } catch (error) {
           if (isQuantityError(error)) {
             try {
-              await this.updateItemQuantity(cart.cart_id, item.product_id || item.id, 1);
+              await this.updateItemQuantity(cart.cart_id, item.product_id || item.id, 1, { skipTimestamp: true });
+              mutationCount++;
             } catch (retryError) {}
           }
         }
+      }
+
+      // Una sola actualización de timestamp al final si hubo mutaciones
+      if (mutationCount > 0) {
+        try {
+          await this.updateCartTimestamp(cart.cart_id);
+        } catch (_) {}
       }
 
       if (skipFinalFetch) {

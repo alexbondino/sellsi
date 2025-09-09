@@ -123,7 +123,7 @@ export default function HeroSection({
             alt={illustrationAlt}
             loading="eager"
             decoding="async"
-            fetchpriority="high"
+            fetchPriority="high"
             sx={{
               width: {
                 xs: 'min(90vw, 420px)', // 👈 ocupa bien el ancho en móvil
