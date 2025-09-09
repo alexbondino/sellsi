@@ -25,7 +25,12 @@ const AccountRecovery = forwardRef(function AccountRecovery(props, ref) {
 
   const handleCerrarTotal = () => {
     resetAllStates();
-    props.onClose?.();
+    // Prefer switching back to the Login view when parent provides the handler
+    if (typeof props.onVolverLogin === 'function') {
+      props.onVolverLogin();
+    } else {
+      props.onClose?.();
+    }
   };
 
   useEffect(() => {

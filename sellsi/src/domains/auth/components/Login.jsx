@@ -298,7 +298,7 @@ export default function Login({ open, onClose, onOpenRegister }) {
       {/* ✅ DIALOG RECUPERAR */}
       <Dialog
         open={state.openRecuperar}
-        onClose={handleRecuperarClose}
+        onClose={handleVolverLogin}
         maxWidth={false}
         disableScrollLock={true}
         disableRestoreFocus={true}

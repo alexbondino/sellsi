@@ -179,9 +179,7 @@ const Step2AccountType = ({ selectedType, onTypeSelect, onNext, onBack }) => {
                     >
                       •
                     </Box>
-                    <Box component="span">
-                      Recibir solicitudes de compradores
-                    </Box>
+                    <Box component="span">Recibir solicitudes de compradores</Box>
                   </Box>
                   <Box
                     component="li"

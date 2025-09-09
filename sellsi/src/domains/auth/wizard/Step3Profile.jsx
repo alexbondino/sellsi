@@ -72,7 +72,7 @@ const Step3Profile = ({
     );
 
     if (signUpError || !signUpData?.user?.id) {
-      console.error('❌ Error al crear cuenta Auth:', signUpError);
+      console.error('\u274c Error al crear cuenta Auth:', signUpError);
       return;
     }
 
@@ -134,11 +134,11 @@ const Step3Profile = ({
                 <CountrySelector
                   value={codigoPais}
                   onChange={e => onFieldChange('codigoPais', e.target.value)}
-                  countries={['Chile', 'Argentina', 'México']}
+                  countries={['Chile', 'Argentina', 'M\u00e9xico']}
                 />
                 <TextField
                   fullWidth
-                  label="Teléfono de contacto"
+                  label="Tel\u00e9fono de contacto"
                   value={telefonoContacto}
                   onChange={e => {
                     const digits = (e.target.value || '').replace(/\D+/g, '');
@@ -198,7 +198,7 @@ const Step3Profile = ({
               <Typography
                 sx={{ fontSize: 11, color: '#888', textAlign: 'center' }}
               >
-                Tamaño máximo del archivo: 300 KB.
+                Tama\u00f1o m\u00e1ximo del archivo: 300 KB.
               </Typography>
             </Box>
           </>
@@ -218,11 +218,11 @@ const Step3Profile = ({
               <CountrySelector
                 value={codigoPais}
                 onChange={e => onFieldChange('codigoPais', e.target.value)}
-                countries={['Chile', 'Argentina', 'México']}
+                countries={['Chile', 'Argentina', 'M\u00e9xico']}
               />
               <TextField
                 fullWidth
-                label="Teléfono de contacto"
+                label="Tel\u00e9fono de contacto"
                 value={telefonoContacto}
                 onChange={e => {
                   const digits = (e.target.value || '').replace(/\D+/g, '');

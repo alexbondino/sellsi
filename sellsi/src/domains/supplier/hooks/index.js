@@ -29,16 +29,20 @@ export { default as useSupplierProducts } from './useSupplierProducts'
 export { default as useSupplierProductsCRUD } from './crud'
 export { default as useProductImages } from './images'
 export { default as useProductSpecifications } from './specifications'
-export { default as useProductPriceTiers } from './pricing'
+// Re-export shared canonical pricing hook to avoid changing many relative imports
+// Re-export shared canonical pricing hook to avoid changing many relative imports
+export { default as useProductPriceTiers } from '../../../shared/hooks/product/useProductPriceTiers'
 export { default as useProductBackground } from './background'
 export { default as useProductCleanup } from './cleanup'
 
 // ========================================
 // 📋 HOOKS MANTENIDOS (Sin cambios)
 // ========================================
-export { default as useProductForm } from './useProductForm'
+// useProductForm exports named hooks (useProductForm, useAddProduct, useEditProduct)
+export { useProductForm, useAddProduct, useEditProduct } from './useProductForm'
 export { default as useSupplierProductFilters } from './useSupplierProductFilters'
-export { default as useLazyProducts } from './useLazyProducts'
+// useLazyProducts file exports named hooks
+export { useLazyProducts, useProductAnimations } from './useLazyProducts'
 
 // ========================================
 // 🏠 DASHBOARD MANAGEMENT

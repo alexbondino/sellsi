@@ -5,7 +5,7 @@ import { StorefrontOutlined } from '@mui/icons-material';
 import ProductPageView from './ProductPageView';
 import { supabase } from '../../services/supabase';
 import useCartStore from '../../shared/stores/cart/cartStore';
-import { extractProductIdFromSlug } from '../marketplace/utils/productUrl';
+import { extractProductIdFromSlug } from '../../shared/utils/product/productUrl';
 import { convertDbRegionsToForm } from '../../utils/shippingRegionsUtils';
 
 const ProductPageWrapper = ({ isLoggedIn }) => {

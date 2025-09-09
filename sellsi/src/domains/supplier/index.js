@@ -7,9 +7,10 @@ export { default as MyProducts } from './pages/my-products/MyProducts';
 export { default as AddProduct } from './pages/my-products/AddProduct';
 export { default as MyOrdersPage } from './pages/my-orders/MyOrdersPage';
 export { default as SupplierOffers } from './pages/offers/SupplierOffers';
-export { default as MarketplaceSupplier } from './pages/MarketplaceSupplier';
-export { default as SupplierProfile } from './pages/SupplierProfile';
-
+// Temporarily forward MarketplaceSupplier to the buyer implementation while we
+// remove the legacy supplier-specific page. This keeps the domain barrel stable
+// for consumers while we consolidate marketplace views.
+export { default as MarketplaceSupplier } from '../buyer/pages/MarketplaceBuyer';
 // Hooks - Re-export from hooks/index.js
 export * from './hooks';
 

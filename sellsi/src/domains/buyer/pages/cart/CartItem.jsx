@@ -30,7 +30,7 @@ import {
 } from '@mui/icons-material'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import PriceDisplay from '../../../marketplace/PriceDisplay/PriceDisplay'
+import PriceDisplay from '../../../../shared/components/display/price/PriceDisplay'
 import StockIndicator from '../../../marketplace/StockIndicator/StockIndicator'
 import QuantitySelector from '../../../../shared/components/forms/QuantitySelector'
 import LazyImage from '../../../../shared/components/display/LazyImage/LazyImage'
@@ -97,7 +97,8 @@ const CartItem = ({
   const handleViewFichaTecnica = React.useCallback(() => {
     const id = item.product_id || item.id;
     const slug = getProductSlug(item.name || item.nombre);
-    navigate(`/marketplace/product/${id}${slug ? `/${slug}` : ''}`);
+    // Cuando la navegación proviene del carrito, marcar el origen como buyer/marketplace
+    navigate(`/marketplace/product/${id}${slug ? `/${slug}` : ''}`, { state: { from: '/buyer/marketplace' } });
   }, [navigate, item]);
   const [selectedShipping, setSelectedShipping] = useState('standard')
   const [openDeleteModal, setOpenDeleteModal] = useState(false)

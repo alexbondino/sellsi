@@ -32,7 +32,7 @@ import { useOptimizedProductOwnership } from '../hooks/useOptimizedProductOwners
 
 import ProductImageGallery from './ProductImageGallery'
 import PurchaseActions from './PurchaseActions'
-import PriceDisplay from '../../marketplace/PriceDisplay/PriceDisplay'
+import PriceDisplay from '../../../shared/components/display/price/PriceDisplay'
 // Skeleton system imports
 import { PriceTiersSkeleton, SinglePriceSkeleton } from './skeletons/PriceSkeletons'
 import { PurchaseActionsSkeleton } from './skeletons/PurchaseActionsSkeleton'

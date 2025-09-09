@@ -57,9 +57,7 @@ import { useRole } from '../../../infrastructure/providers';
 // ============================================================================
 
 // Lazy loading components para optimización
-const RecommendedProducts = lazy(() =>
-  import('../../marketplace/pages/RecommendedProducts')
-);
+// RecommendedProducts removed (legacy); dynamic import deleted to avoid build error
 
 // ============================================================================
 // COMPONENTE PRINCIPAL ULTRA-PREMIUM

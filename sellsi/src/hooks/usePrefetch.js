@@ -30,7 +30,8 @@ const ROUTE_COMPONENTS = new Map([
   ['/buyer/marketplace', () => import('../domains/buyer/pages/MarketplaceBuyer')],
   ['/buyer/cart', () => import('../domains/buyer/pages/BuyerCart')],
   ['/buyer/orders', () => import('../domains/buyer/pages/BuyerOrders')],
-  ['/buyer/performance', () => import('../domains/buyer/pages/BuyerPerformance')],
+  // BuyerPerformance was removed; prefetch MarketplaceBuyer instead to keep behavior
+  ['/buyer/performance', () => import('../domains/buyer/pages/MarketplaceBuyer')],
   ['/supplier/home', () => import('../domains/supplier/pages/home/ProviderHome')],
   ['/supplier/myproducts', () => import('../domains/supplier/pages/my-products/MyProducts')],
   ['/supplier/addproduct', () => import('../domains/supplier/pages/my-products/AddProduct')],

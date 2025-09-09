@@ -256,7 +256,7 @@ describe('Offer System Integration Tests', () => {
       const mockAddToCart = jest.fn();
       
       // Mock del hook de carrito
-      jest.doMock('../../shared/stores/cartStore', () => ({
+  jest.doMock('../../shared/stores/cart/cartStore', () => ({
         useCartStore: () => ({ addToCart: mockAddToCart })
       }));
 

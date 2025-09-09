@@ -55,7 +55,7 @@ import {
 import { dashboardThemeCore } from '../../../../styles/dashboardThemeCore';
 import { SPACING_BOTTOM_MAIN } from '../../../../styles/layoutSpacing';
 import { formatPrice } from '../../../../shared/utils/formatters';
-import { generateProductUrl } from '../../../marketplace/utils/productUrl';
+import { generateProductUrl } from '../../../../shared/utils/product/productUrl';
 
 // Advanced Loading Components
 import {

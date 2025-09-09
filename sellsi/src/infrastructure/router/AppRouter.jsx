@@ -42,7 +42,7 @@ const MyOrdersPage = React.lazy(() =>
   import('../../domains/supplier/pages/my-orders/MyOrdersPage')
 );
 const MarketplaceSupplier = React.lazy(() =>
-  import('../../domains/supplier/pages/MarketplaceSupplier.jsx')
+  import('../../domains/supplier').then(module => ({ default: module.MarketplaceSupplier }))
 );
 const SupplierOffers = React.lazy(() =>
   import('../../domains/supplier/pages/offers/SupplierOffers')
@@ -55,9 +55,8 @@ const Profile = React.lazy(() => import('../../domains/profile/pages/Profile'));
 const BuyerOrders = React.lazy(() =>
   import('../../domains/buyer/pages/BuyerOrders')
 );
-const BuyerPerformance = React.lazy(() =>
-  import('../../domains/buyer/pages/BuyerPerformance')
-);
+// BuyerPerformance was removed; reuse MarketplaceBuyer for now to keep route functional
+const BuyerPerformance = MarketplaceBuyer
 const BuyerOffers = React.lazy(() =>
   import('../../domains/buyer/pages/offers/BuyerOffers')
 );

@@ -30,8 +30,9 @@ import StatusChip from './StatusChip';
 const ProductCardSupplierContext = React.memo(
   ({ product, onEdit, onDelete, onViewStats, isDeleting, isUpdating, isProcessing }) => {
   // Centralized deferred tiers (populated via useProducts). No per-product network hook.
-  const loadingTiers = product.tiersStatus === 'loading'
-  const errorTiers = product.tiersStatus === 'error'
+  const tiersStatus = product.tiersStatus
+  const loadingTiers = tiersStatus === 'loading'
+  const errorTiers = tiersStatus === 'error'
 
     // Product properties (already destructuring in main ProductCard, passed here)
     const {
@@ -55,6 +56,10 @@ const ProductCardSupplierContext = React.memo(
 
     // Unify source of price_tiers: prefer product's, if not, from hook (same logic as BuyerContext)
   const price_tiers = useMemo(() => product.priceTiers || [], [product.priceTiers]);
+  const effectiveMinPrice = product.minPrice ?? product.precio ?? product.price ?? null
+  const effectiveMaxPrice = product.maxPrice ?? product.precio ?? product.price ?? null
+  const hasValidBasePrice = (Number(effectiveMaxPrice) || 0) > 0 || (Number(effectiveMinPrice) || 0) > 0
+  const isPending = loadingTiers || (tiersStatus === 'idle' && !hasValidBasePrice)
 
     // Configure menu actions
     // Reemplazamos VisibilityIcon por ícono de pausa y mantenemos label
@@ -209,7 +214,7 @@ const ProductCardSupplierContext = React.memo(
           {/* Precios */}
           <Box sx={{ mb: 2 }}>
             {/* Mostrar loading de tramos */}
-            {loadingTiers && (
+            {isPending && (
               <Typography
                 variant="body2"
                 color="text.secondary"
@@ -218,7 +223,7 @@ const ProductCardSupplierContext = React.memo(
                 Cargando precios...
               </Typography>
             )}
-            
+
             {/* Mostrar error de tramos */}
             {errorTiers && (
               <Typography
@@ -231,7 +236,7 @@ const ProductCardSupplierContext = React.memo(
             )}
 
             {/* Mostrar tramos si existen (usando price_tiers unificado) */}
-            {!loadingTiers && !errorTiers && price_tiers && price_tiers.length > 0 ? (
+            {!isPending && !errorTiers && price_tiers && price_tiers.length > 0 ? (
               <Box>
                 <Typography
                   variant="body2"

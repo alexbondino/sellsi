@@ -1,0 +1,1142 @@
+{
+  "generatedAt": "2025-09-09T19:37:29.757Z",
+  "root": "C:\\Users\\klaus\\OneDrive\\Documentos\\sellsi",
+  "threshold": 0.4,
+  "excludeIndex": true,
+  "results": [
+    {
+      "a": "sellsi/src/domains/auth/wizard/Step1Email.jsx",
+      "b": "sellsi/src/domains/auth/wizard/recovery/Step1Email.jsx",
+      "similarity": 0.811,
+      "sizeA": 3571,
+      "sizeB": 3853,
+      "tokensA": 344,
+      "tokensB": 339
+    },
+    {
+      "a": "scripts/test_cart_insert_only_apikey.js",
+      "b": "scripts/test_cart_insert.js",
+      "similarity": 0.7057,
+      "sizeA": 1969,
+      "sizeB": 2320,
+      "tokensA": 241,
+      "tokensB": 281
+    },
+    {
+      "a": "sellsi/src/shared/utils/product/productUrl.js",
+      "b": "sellsi/src/domains/marketplace/pages/marketplace/productUrl.js",
+      "similarity": 0.6524,
+      "sizeA": 3466,
+      "sizeB": 2902,
+      "tokensA": 210,
+      "tokensB": 186
+    },
+    {
+      "a": "sellsi/src/shared/constants/checkout/checkoutSteps.js",
+      "b": "sellsi/src/domains/checkout/constants/checkoutSteps.js",
+      "similarity": 0.6014,
+      "sizeA": 1879,
+      "sizeB": 1261,
+      "tokensA": 160,
+      "tokensB": 93
+    },
+    {
+      "a": "sellsi/src/shared/components/modals/TermsAndConditionsModal.jsx",
+      "b": "sellsi/src/shared/components/modals/PrivacyPolicyModal.jsx",
+      "similarity": 0.5976,
+      "sizeA": 2803,
+      "sizeB": 2692,
+      "tokensA": 204,
+      "tokensB": 199
+    },
+    {
+      "a": "sellsi/src/domains/supplier/pages/MarketplaceSupplier.jsx",
+      "b": "sellsi/src/domains/buyer/pages/MarketplaceBuyer.jsx",
+      "similarity": 0.5806,
+      "sizeA": 1726,
+      "sizeB": 3677,
+      "tokensA": 120,
+      "tokensB": 108
+    },
+    {
+      "a": "sellsi/src/app/pages/legal/TermsAndConditionsPage.jsx",
+      "b": "sellsi/src/app/pages/legal/PrivacyPolicyPage.jsx",
+      "similarity": 0.5661,
+      "sizeA": 2102,
+      "sizeB": 2102,
+      "tokensA": 153,
+      "tokensB": 153
+    },
+    {
+      "a": "sellsi/src/shared/components/managers/TransferInfoManager.jsx",
+      "b": "sellsi/src/infrastructure/managers/TransferInfoManager.jsx",
+      "similarity": 0.5333,
+      "sizeA": 870,
+      "sizeB": 374,
+      "tokensA": 15,
+      "tokensB": 16
+    },
+    {
+      "a": "sellsi/src/domains/marketplace/utils/productUrl.js",
+      "b": "sellsi/src/domains/marketplace/pages/marketplace/productUrl.js",
+      "similarity": 0.5288,
+      "sizeA": 2513,
+      "sizeB": 2902,
+      "tokensA": 135,
+      "tokensB": 186
+    },
+    {
+      "a": "sellsi/src/shared/utils/validators/index.js",
+      "b": "sellsi/src/domains/checkout/styles/index.js",
+      "similarity": 0.5,
+      "sizeA": 61,
+      "sizeB": 235,
+      "tokensA": 3,
+      "tokensB": 3
+    },
+    {
+      "a": "sellsi/src/shared/utils/validators/index.js",
+      "b": "sellsi/src/domains/checkout/config/index.js",
+      "similarity": 0.5,
+      "sizeA": 61,
+      "sizeB": 235,
+      "tokensA": 3,
+      "tokensB": 3
+    },
+    {
+      "a": "sellsi/src/shared/utils/validators/index.js",
+      "b": "sellsi/src/domains/ban/index.js",
+      "similarity": 0.5,
+      "sizeA": 61,
+      "sizeB": 49,
+      "tokensA": 3,
+      "tokensB": 3
+    },
+    {
+      "a": "sellsi/src/shared/stores/cartStore.js",
+      "b": "sellsi/src/shared/components/navigation/Switch/index.js",
+      "similarity": 0.5,
+      "sizeA": 117,
+      "sizeB": 37,
+      "tokensA": 4,
+      "tokensB": 4
+    },
+    {
+      "a": "sellsi/src/shared/stores/cartStore.js",
+      "b": "sellsi/src/shared/components/navigation/CheckoutProgressStepper/index.js",
+      "similarity": 0.5,
+      "sizeA": 117,
+      "sizeB": 54,
+      "tokensA": 4,
+      "tokensB": 4
+    },
+    {
+      "a": "sellsi/src/shared/stores/cartStore.js",
+      "b": "sellsi/src/shared/components/layout/bannedpage/index.js",
+      "similarity": 0.5,
+      "sizeA": 117,
+      "sizeB": 43,
+      "tokensA": 4,
+      "tokensB": 4
+    },
+    {
+      "a": "sellsi/src/shared/stores/cartStore.js",
+      "b": "sellsi/src/shared/components/forms/SelectChip/index.js",
+      "similarity": 0.5,
+      "sizeA": 117,
+      "sizeB": 41,
+      "tokensA": 4,
+      "tokensB": 4
+    },
+    {
+      "a": "sellsi/src/shared/stores/cartStore.js",
+      "b": "sellsi/src/shared/components/forms/SearchBar/index.js",
+      "similarity": 0.5,
+      "sizeA": 117,
+      "sizeB": 40,
+      "tokensA": 4,
+      "tokensB": 4
+    },
+    {
+      "a": "sellsi/src/shared/stores/cartStore.js",
+      "b": "sellsi/src/shared/components/forms/PrimaryButton/index.js",
+      "similarity": 0.5,
+      "sizeA": 117,
+      "sizeB": 44,
+      "tokensA": 4,
+      "tokensB": 4
+    },
+    {
+      "a": "sellsi/src/shared/stores/cartStore.js",
+      "b": "sellsi/src/shared/components/forms/LogoUploader/index.js",
+      "similarity": 0.5,
+      "sizeA": 117,
+      "sizeB": 43,
+      "tokensA": 4,
+      "tokensB": 4
+    },
+    {
+      "a": "sellsi/src/shared/stores/cartStore.js",
+      "b": "sellsi/src/shared/components/forms/ImageUploader/index.js",
+      "similarity": 0.5,
+      "sizeA": 117,
+      "sizeB": 44,
+      "tokensA": 4,
+      "tokensB": 4
+    },
+    {
+      "a": "sellsi/src/shared/stores/cartStore.js",
+      "b": "sellsi/src/shared/components/forms/FileUploader/index.js",
+      "similarity": 0.5,
+      "sizeA": 117,
+      "sizeB": 43,
+      "tokensA": 4,
+      "tokensB": 4
+    },
+    {
+      "a": "sellsi/src/shared/stores/cartStore.js",
+      "b": "sellsi/src/shared/components/feedback/SecurityBadge/index.js",
+      "similarity": 0.5,
+      "sizeA": 117,
+      "sizeB": 44,
+      "tokensA": 4,
+      "tokensB": 4
+    },
+    {
+      "a": "sellsi/src/shared/stores/cartStore.js",
+      "b": "sellsi/src/shared/components/feedback/PasswordRequirements/index.js",
+      "similarity": 0.5,
+      "sizeA": 117,
+      "sizeB": 51,
+      "tokensA": 4,
+      "tokensB": 4
+    },
+    {
+      "a": "sellsi/src/shared/stores/cartStore.js",
+      "b": "sellsi/src/shared/components/feedback/LoadingOverlay/index.js",
+      "similarity": 0.5,
+      "sizeA": 117,
+      "sizeB": 45,
+      "tokensA": 4,
+      "tokensB": 4
+    },
+    {
+      "a": "sellsi/src/shared/stores/cartStore.js",
+      "b": "sellsi/src/domains/marketplace/StockIndicator/index.js",
+      "similarity": 0.5,
+      "sizeA": 117,
+      "sizeB": 44,
+      "tokensA": 4,
+      "tokensB": 4
+    },
+    {
+      "a": "sellsi/src/shared/stores/cartStore.js",
+      "b": "sellsi/src/domains/marketplace/PriceDisplay/index.js",
+      "similarity": 0.5,
+      "sizeA": 117,
+      "sizeB": 42,
+      "tokensA": 4,
+      "tokensB": 4
+    },
+    {
+      "a": "sellsi/src/shared/components/navigation/Switch/index.js",
+      "b": "sellsi/src/shared/components/navigation/CheckoutProgressStepper/index.js",
+      "similarity": 0.5,
+      "sizeA": 37,
+      "sizeB": 54,
+      "tokensA": 4,
+      "tokensB": 4
+    },
+    {
+      "a": "sellsi/src/shared/components/navigation/Switch/index.js",
+      "b": "sellsi/src/shared/components/layout/bannedpage/index.js",
+      "similarity": 0.5,
+      "sizeA": 37,
+      "sizeB": 43,
+      "tokensA": 4,
+      "tokensB": 4
+    },
+    {
+      "a": "sellsi/src/shared/components/navigation/Switch/index.js",
+      "b": "sellsi/src/shared/components/forms/SelectChip/index.js",
+      "similarity": 0.5,
+      "sizeA": 37,
+      "sizeB": 41,
+      "tokensA": 4,
+      "tokensB": 4
+    },
+    {
+      "a": "sellsi/src/shared/components/navigation/Switch/index.js",
+      "b": "sellsi/src/shared/components/forms/SearchBar/index.js",
+      "similarity": 0.5,
+      "sizeA": 37,
+      "sizeB": 40,
+      "tokensA": 4,
+      "tokensB": 4
+    },
+    {
+      "a": "sellsi/src/shared/components/navigation/Switch/index.js",
+      "b": "sellsi/src/shared/components/forms/PrimaryButton/index.js",
+      "similarity": 0.5,
+      "sizeA": 37,
+      "sizeB": 44,
+      "tokensA": 4,
+      "tokensB": 4
+    },
+    {
+      "a": "sellsi/src/shared/components/navigation/Switch/index.js",
+      "b": "sellsi/src/shared/components/forms/LogoUploader/index.js",
+      "similarity": 0.5,
+      "sizeA": 37,
+      "sizeB": 43,
+      "tokensA": 4,
+      "tokensB": 4
+    },
+    {
+      "a": "sellsi/src/shared/components/navigation/Switch/index.js",
+      "b": "sellsi/src/shared/components/forms/ImageUploader/index.js",
+      "similarity": 0.5,
+      "sizeA": 37,
+      "sizeB": 44,
+      "tokensA": 4,
+      "tokensB": 4
+    },
+    {
+      "a": "sellsi/src/shared/components/navigation/Switch/index.js",
+      "b": "sellsi/src/shared/components/forms/FileUploader/index.js",
+      "similarity": 0.5,
+      "sizeA": 37,
+      "sizeB": 43,
+      "tokensA": 4,
+      "tokensB": 4
+    },
+    {
+      "a": "sellsi/src/shared/components/navigation/Switch/index.js",
+      "b": "sellsi/src/shared/components/feedback/SecurityBadge/index.js",
+      "similarity": 0.5,
+      "sizeA": 37,
+      "sizeB": 44,
+      "tokensA": 4,
+      "tokensB": 4
+    },
+    {
+      "a": "sellsi/src/shared/components/navigation/Switch/index.js",
+      "b": "sellsi/src/shared/components/feedback/PasswordRequirements/index.js",
+      "similarity": 0.5,
+      "sizeA": 37,
+      "sizeB": 51,
+      "tokensA": 4,
+      "tokensB": 4
+    },
+    {
+      "a": "sellsi/src/shared/components/navigation/Switch/index.js",
+      "b": "sellsi/src/shared/components/feedback/LoadingOverlay/index.js",
+      "similarity": 0.5,
+      "sizeA": 37,
+      "sizeB": 45,
+      "tokensA": 4,
+      "tokensB": 4
+    },
+    {
+      "a": "sellsi/src/shared/components/navigation/Switch/index.js",
+      "b": "sellsi/src/domains/marketplace/StockIndicator/index.js",
+      "similarity": 0.5,
+      "sizeA": 37,
+      "sizeB": 44,
+      "tokensA": 4,
+      "tokensB": 4
+    },
+    {
+      "a": "sellsi/src/shared/components/navigation/Switch/index.js",
+      "b": "sellsi/src/domains/marketplace/PriceDisplay/index.js",
+      "similarity": 0.5,
+      "sizeA": 37,
+      "sizeB": 42,
+      "tokensA": 4,
+      "tokensB": 4
+    },
+    {
+      "a": "sellsi/src/shared/components/navigation/CheckoutProgressStepper/index.js",
+      "b": "sellsi/src/shared/components/layout/bannedpage/index.js",
+      "similarity": 0.5,
+      "sizeA": 54,
+      "sizeB": 43,
+      "tokensA": 4,
+      "tokensB": 4
+    },
+    {
+      "a": "sellsi/src/shared/components/navigation/CheckoutProgressStepper/index.js",
+      "b": "sellsi/src/shared/components/forms/SelectChip/index.js",
+      "similarity": 0.5,
+      "sizeA": 54,
+      "sizeB": 41,
+      "tokensA": 4,
+      "tokensB": 4
+    },
+    {
+      "a": "sellsi/src/shared/components/navigation/CheckoutProgressStepper/index.js",
+      "b": "sellsi/src/shared/components/forms/SearchBar/index.js",
+      "similarity": 0.5,
+      "sizeA": 54,
+      "sizeB": 40,
+      "tokensA": 4,
+      "tokensB": 4
+    },
+    {
+      "a": "sellsi/src/shared/components/navigation/CheckoutProgressStepper/index.js",
+      "b": "sellsi/src/shared/components/forms/PrimaryButton/index.js",
+      "similarity": 0.5,
+      "sizeA": 54,
+      "sizeB": 44,
+      "tokensA": 4,
+      "tokensB": 4
+    },
+    {
+      "a": "sellsi/src/shared/components/navigation/CheckoutProgressStepper/index.js",
+      "b": "sellsi/src/shared/components/forms/LogoUploader/index.js",
+      "similarity": 0.5,
+      "sizeA": 54,
+      "sizeB": 43,
+      "tokensA": 4,
+      "tokensB": 4
+    },
+    {
+      "a": "sellsi/src/shared/components/navigation/CheckoutProgressStepper/index.js",
+      "b": "sellsi/src/shared/components/forms/ImageUploader/index.js",
+      "similarity": 0.5,
+      "sizeA": 54,
+      "sizeB": 44,
+      "tokensA": 4,
+      "tokensB": 4
+    },
+    {
+      "a": "sellsi/src/shared/components/navigation/CheckoutProgressStepper/index.js",
+      "b": "sellsi/src/shared/components/forms/FileUploader/index.js",
+      "similarity": 0.5,
+      "sizeA": 54,
+      "sizeB": 43,
+      "tokensA": 4,
+      "tokensB": 4
+    },
+    {
+      "a": "sellsi/src/shared/components/navigation/CheckoutProgressStepper/index.js",
+      "b": "sellsi/src/shared/components/feedback/SecurityBadge/index.js",
+      "similarity": 0.5,
+      "sizeA": 54,
+      "sizeB": 44,
+      "tokensA": 4,
+      "tokensB": 4
+    },
+    {
+      "a": "sellsi/src/shared/components/navigation/CheckoutProgressStepper/index.js",
+      "b": "sellsi/src/shared/components/feedback/PasswordRequirements/index.js",
+      "similarity": 0.5,
+      "sizeA": 54,
+      "sizeB": 51,
+      "tokensA": 4,
+      "tokensB": 4
+    },
+    {
+      "a": "sellsi/src/shared/components/navigation/CheckoutProgressStepper/index.js",
+      "b": "sellsi/src/shared/components/feedback/LoadingOverlay/index.js",
+      "similarity": 0.5,
+      "sizeA": 54,
+      "sizeB": 45,
+      "tokensA": 4,
+      "tokensB": 4
+    },
+    {
+      "a": "sellsi/src/shared/components/navigation/CheckoutProgressStepper/index.js",
+      "b": "sellsi/src/domains/marketplace/StockIndicator/index.js",
+      "similarity": 0.5,
+      "sizeA": 54,
+      "sizeB": 44,
+      "tokensA": 4,
+      "tokensB": 4
+    },
+    {
+      "a": "sellsi/src/shared/components/navigation/CheckoutProgressStepper/index.js",
+      "b": "sellsi/src/domains/marketplace/PriceDisplay/index.js",
+      "similarity": 0.5,
+      "sizeA": 54,
+      "sizeB": 42,
+      "tokensA": 4,
+      "tokensB": 4
+    },
+    {
+      "a": "sellsi/src/shared/components/layout/bannedpage/index.js",
+      "b": "sellsi/src/shared/components/forms/SelectChip/index.js",
+      "similarity": 0.5,
+      "sizeA": 43,
+      "sizeB": 41,
+      "tokensA": 4,
+      "tokensB": 4
+    },
+    {
+      "a": "sellsi/src/shared/components/layout/bannedpage/index.js",
+      "b": "sellsi/src/shared/components/forms/SearchBar/index.js",
+      "similarity": 0.5,
+      "sizeA": 43,
+      "sizeB": 40,
+      "tokensA": 4,
+      "tokensB": 4
+    },
+    {
+      "a": "sellsi/src/shared/components/layout/bannedpage/index.js",
+      "b": "sellsi/src/shared/components/forms/PrimaryButton/index.js",
+      "similarity": 0.5,
+      "sizeA": 43,
+      "sizeB": 44,
+      "tokensA": 4,
+      "tokensB": 4
+    },
+    {
+      "a": "sellsi/src/shared/components/layout/bannedpage/index.js",
+      "b": "sellsi/src/shared/components/forms/LogoUploader/index.js",
+      "similarity": 0.5,
+      "sizeA": 43,
+      "sizeB": 43,
+      "tokensA": 4,
+      "tokensB": 4
+    },
+    {
+      "a": "sellsi/src/shared/components/layout/bannedpage/index.js",
+      "b": "sellsi/src/shared/components/forms/ImageUploader/index.js",
+      "similarity": 0.5,
+      "sizeA": 43,
+      "sizeB": 44,
+      "tokensA": 4,
+      "tokensB": 4
+    },
+    {
+      "a": "sellsi/src/shared/components/layout/bannedpage/index.js",
+      "b": "sellsi/src/shared/components/forms/FileUploader/index.js",
+      "similarity": 0.5,
+      "sizeA": 43,
+      "sizeB": 43,
+      "tokensA": 4,
+      "tokensB": 4
+    },
+    {
+      "a": "sellsi/src/shared/components/layout/bannedpage/index.js",
+      "b": "sellsi/src/shared/components/feedback/SecurityBadge/index.js",
+      "similarity": 0.5,
+      "sizeA": 43,
+      "sizeB": 44,
+      "tokensA": 4,
+      "tokensB": 4
+    },
+    {
+      "a": "sellsi/src/shared/components/layout/bannedpage/index.js",
+      "b": "sellsi/src/shared/components/feedback/PasswordRequirements/index.js",
+      "similarity": 0.5,
+      "sizeA": 43,
+      "sizeB": 51,
+      "tokensA": 4,
+      "tokensB": 4
+    },
+    {
+      "a": "sellsi/src/shared/components/layout/bannedpage/index.js",
+      "b": "sellsi/src/shared/components/feedback/LoadingOverlay/index.js",
+      "similarity": 0.5,
+      "sizeA": 43,
+      "sizeB": 45,
+      "tokensA": 4,
+      "tokensB": 4
+    },
+    {
+      "a": "sellsi/src/shared/components/layout/bannedpage/index.js",
+      "b": "sellsi/src/domains/marketplace/StockIndicator/index.js",
+      "similarity": 0.5,
+      "sizeA": 43,
+      "sizeB": 44,
+      "tokensA": 4,
+      "tokensB": 4
+    },
+    {
+      "a": "sellsi/src/shared/components/layout/bannedpage/index.js",
+      "b": "sellsi/src/domains/marketplace/PriceDisplay/index.js",
+      "similarity": 0.5,
+      "sizeA": 43,
+      "sizeB": 42,
+      "tokensA": 4,
+      "tokensB": 4
+    },
+    {
+      "a": "sellsi/src/shared/components/forms/SelectChip/index.js",
+      "b": "sellsi/src/shared/components/forms/SearchBar/index.js",
+      "similarity": 0.5,
+      "sizeA": 41,
+      "sizeB": 40,
+      "tokensA": 4,
+      "tokensB": 4
+    },
+    {
+      "a": "sellsi/src/shared/components/forms/SelectChip/index.js",
+      "b": "sellsi/src/shared/components/forms/PrimaryButton/index.js",
+      "similarity": 0.5,
+      "sizeA": 41,
+      "sizeB": 44,
+      "tokensA": 4,
+      "tokensB": 4
+    },
+    {
+      "a": "sellsi/src/shared/components/forms/SelectChip/index.js",
+      "b": "sellsi/src/shared/components/forms/LogoUploader/index.js",
+      "similarity": 0.5,
+      "sizeA": 41,
+      "sizeB": 43,
+      "tokensA": 4,
+      "tokensB": 4
+    },
+    {
+      "a": "sellsi/src/shared/components/forms/SelectChip/index.js",
+      "b": "sellsi/src/shared/components/forms/ImageUploader/index.js",
+      "similarity": 0.5,
+      "sizeA": 41,
+      "sizeB": 44,
+      "tokensA": 4,
+      "tokensB": 4
+    },
+    {
+      "a": "sellsi/src/shared/components/forms/SelectChip/index.js",
+      "b": "sellsi/src/shared/components/forms/FileUploader/index.js",
+      "similarity": 0.5,
+      "sizeA": 41,
+      "sizeB": 43,
+      "tokensA": 4,
+      "tokensB": 4
+    },
+    {
+      "a": "sellsi/src/shared/components/forms/SelectChip/index.js",
+      "b": "sellsi/src/shared/components/feedback/SecurityBadge/index.js",
+      "similarity": 0.5,
+      "sizeA": 41,
+      "sizeB": 44,
+      "tokensA": 4,
+      "tokensB": 4
+    },
+    {
+      "a": "sellsi/src/shared/components/forms/SelectChip/index.js",
+      "b": "sellsi/src/shared/components/feedback/PasswordRequirements/index.js",
+      "similarity": 0.5,
+      "sizeA": 41,
+      "sizeB": 51,
+      "tokensA": 4,
+      "tokensB": 4
+    },
+    {
+      "a": "sellsi/src/shared/components/forms/SelectChip/index.js",
+      "b": "sellsi/src/shared/components/feedback/LoadingOverlay/index.js",
+      "similarity": 0.5,
+      "sizeA": 41,
+      "sizeB": 45,
+      "tokensA": 4,
+      "tokensB": 4
+    },
+    {
+      "a": "sellsi/src/shared/components/forms/SelectChip/index.js",
+      "b": "sellsi/src/domains/marketplace/StockIndicator/index.js",
+      "similarity": 0.5,
+      "sizeA": 41,
+      "sizeB": 44,
+      "tokensA": 4,
+      "tokensB": 4
+    },
+    {
+      "a": "sellsi/src/shared/components/forms/SelectChip/index.js",
+      "b": "sellsi/src/domains/marketplace/PriceDisplay/index.js",
+      "similarity": 0.5,
+      "sizeA": 41,
+      "sizeB": 42,
+      "tokensA": 4,
+      "tokensB": 4
+    },
+    {
+      "a": "sellsi/src/shared/components/forms/SearchBar/index.js",
+      "b": "sellsi/src/shared/components/forms/PrimaryButton/index.js",
+      "similarity": 0.5,
+      "sizeA": 40,
+      "sizeB": 44,
+      "tokensA": 4,
+      "tokensB": 4
+    },
+    {
+      "a": "sellsi/src/shared/components/forms/SearchBar/index.js",
+      "b": "sellsi/src/shared/components/forms/LogoUploader/index.js",
+      "similarity": 0.5,
+      "sizeA": 40,
+      "sizeB": 43,
+      "tokensA": 4,
+      "tokensB": 4
+    },
+    {
+      "a": "sellsi/src/shared/components/forms/SearchBar/index.js",
+      "b": "sellsi/src/shared/components/forms/ImageUploader/index.js",
+      "similarity": 0.5,
+      "sizeA": 40,
+      "sizeB": 44,
+      "tokensA": 4,
+      "tokensB": 4
+    },
+    {
+      "a": "sellsi/src/shared/components/forms/SearchBar/index.js",
+      "b": "sellsi/src/shared/components/forms/FileUploader/index.js",
+      "similarity": 0.5,
+      "sizeA": 40,
+      "sizeB": 43,
+      "tokensA": 4,
+      "tokensB": 4
+    },
+    {
+      "a": "sellsi/src/shared/components/forms/SearchBar/index.js",
+      "b": "sellsi/src/shared/components/feedback/SecurityBadge/index.js",
+      "similarity": 0.5,
+      "sizeA": 40,
+      "sizeB": 44,
+      "tokensA": 4,
+      "tokensB": 4
+    },
+    {
+      "a": "sellsi/src/shared/components/forms/SearchBar/index.js",
+      "b": "sellsi/src/shared/components/feedback/PasswordRequirements/index.js",
+      "similarity": 0.5,
+      "sizeA": 40,
+      "sizeB": 51,
+      "tokensA": 4,
+      "tokensB": 4
+    },
+    {
+      "a": "sellsi/src/shared/components/forms/SearchBar/index.js",
+      "b": "sellsi/src/shared/components/feedback/LoadingOverlay/index.js",
+      "similarity": 0.5,
+      "sizeA": 40,
+      "sizeB": 45,
+      "tokensA": 4,
+      "tokensB": 4
+    },
+    {
+      "a": "sellsi/src/shared/components/forms/SearchBar/index.js",
+      "b": "sellsi/src/domains/marketplace/StockIndicator/index.js",
+      "similarity": 0.5,
+      "sizeA": 40,
+      "sizeB": 44,
+      "tokensA": 4,
+      "tokensB": 4
+    },
+    {
+      "a": "sellsi/src/shared/components/forms/SearchBar/index.js",
+      "b": "sellsi/src/domains/marketplace/PriceDisplay/index.js",
+      "similarity": 0.5,
+      "sizeA": 40,
+      "sizeB": 42,
+      "tokensA": 4,
+      "tokensB": 4
+    },
+    {
+      "a": "sellsi/src/shared/components/forms/PrimaryButton/index.js",
+      "b": "sellsi/src/shared/components/forms/LogoUploader/index.js",
+      "similarity": 0.5,
+      "sizeA": 44,
+      "sizeB": 43,
+      "tokensA": 4,
+      "tokensB": 4
+    },
+    {
+      "a": "sellsi/src/shared/components/forms/PrimaryButton/index.js",
+      "b": "sellsi/src/shared/components/forms/ImageUploader/index.js",
+      "similarity": 0.5,
+      "sizeA": 44,
+      "sizeB": 44,
+      "tokensA": 4,
+      "tokensB": 4
+    },
+    {
+      "a": "sellsi/src/shared/components/forms/PrimaryButton/index.js",
+      "b": "sellsi/src/shared/components/forms/FileUploader/index.js",
+      "similarity": 0.5,
+      "sizeA": 44,
+      "sizeB": 43,
+      "tokensA": 4,
+      "tokensB": 4
+    },
+    {
+      "a": "sellsi/src/shared/components/forms/PrimaryButton/index.js",
+      "b": "sellsi/src/shared/components/feedback/SecurityBadge/index.js",
+      "similarity": 0.5,
+      "sizeA": 44,
+      "sizeB": 44,
+      "tokensA": 4,
+      "tokensB": 4
+    },
+    {
+      "a": "sellsi/src/shared/components/forms/PrimaryButton/index.js",
+      "b": "sellsi/src/shared/components/feedback/PasswordRequirements/index.js",
+      "similarity": 0.5,
+      "sizeA": 44,
+      "sizeB": 51,
+      "tokensA": 4,
+      "tokensB": 4
+    },
+    {
+      "a": "sellsi/src/shared/components/forms/PrimaryButton/index.js",
+      "b": "sellsi/src/shared/components/feedback/LoadingOverlay/index.js",
+      "similarity": 0.5,
+      "sizeA": 44,
+      "sizeB": 45,
+      "tokensA": 4,
+      "tokensB": 4
+    },
+    {
+      "a": "sellsi/src/shared/components/forms/PrimaryButton/index.js",
+      "b": "sellsi/src/domains/marketplace/StockIndicator/index.js",
+      "similarity": 0.5,
+      "sizeA": 44,
+      "sizeB": 44,
+      "tokensA": 4,
+      "tokensB": 4
+    },
+    {
+      "a": "sellsi/src/shared/components/forms/PrimaryButton/index.js",
+      "b": "sellsi/src/domains/marketplace/PriceDisplay/index.js",
+      "similarity": 0.5,
+      "sizeA": 44,
+      "sizeB": 42,
+      "tokensA": 4,
+      "tokensB": 4
+    },
+    {
+      "a": "sellsi/src/shared/components/forms/LogoUploader/index.js",
+      "b": "sellsi/src/shared/components/forms/ImageUploader/index.js",
+      "similarity": 0.5,
+      "sizeA": 43,
+      "sizeB": 44,
+      "tokensA": 4,
+      "tokensB": 4
+    },
+    {
+      "a": "sellsi/src/shared/components/forms/LogoUploader/index.js",
+      "b": "sellsi/src/shared/components/forms/FileUploader/index.js",
+      "similarity": 0.5,
+      "sizeA": 43,
+      "sizeB": 43,
+      "tokensA": 4,
+      "tokensB": 4
+    },
+    {
+      "a": "sellsi/src/shared/components/forms/LogoUploader/index.js",
+      "b": "sellsi/src/shared/components/feedback/SecurityBadge/index.js",
+      "similarity": 0.5,
+      "sizeA": 43,
+      "sizeB": 44,
+      "tokensA": 4,
+      "tokensB": 4
+    },
+    {
+      "a": "sellsi/src/shared/components/forms/LogoUploader/index.js",
+      "b": "sellsi/src/shared/components/feedback/PasswordRequirements/index.js",
+      "similarity": 0.5,
+      "sizeA": 43,
+      "sizeB": 51,
+      "tokensA": 4,
+      "tokensB": 4
+    },
+    {
+      "a": "sellsi/src/shared/components/forms/LogoUploader/index.js",
+      "b": "sellsi/src/shared/components/feedback/LoadingOverlay/index.js",
+      "similarity": 0.5,
+      "sizeA": 43,
+      "sizeB": 45,
+      "tokensA": 4,
+      "tokensB": 4
+    },
+    {
+      "a": "sellsi/src/shared/components/forms/LogoUploader/index.js",
+      "b": "sellsi/src/domains/marketplace/StockIndicator/index.js",
+      "similarity": 0.5,
+      "sizeA": 43,
+      "sizeB": 44,
+      "tokensA": 4,
+      "tokensB": 4
+    },
+    {
+      "a": "sellsi/src/shared/components/forms/LogoUploader/index.js",
+      "b": "sellsi/src/domains/marketplace/PriceDisplay/index.js",
+      "similarity": 0.5,
+      "sizeA": 43,
+      "sizeB": 42,
+      "tokensA": 4,
+      "tokensB": 4
+    },
+    {
+      "a": "sellsi/src/shared/components/forms/ImageUploader/index.js",
+      "b": "sellsi/src/shared/components/forms/FileUploader/index.js",
+      "similarity": 0.5,
+      "sizeA": 44,
+      "sizeB": 43,
+      "tokensA": 4,
+      "tokensB": 4
+    },
+    {
+      "a": "sellsi/src/shared/components/forms/ImageUploader/index.js",
+      "b": "sellsi/src/shared/components/feedback/SecurityBadge/index.js",
+      "similarity": 0.5,
+      "sizeA": 44,
+      "sizeB": 44,
+      "tokensA": 4,
+      "tokensB": 4
+    },
+    {
+      "a": "sellsi/src/shared/components/forms/ImageUploader/index.js",
+      "b": "sellsi/src/shared/components/feedback/PasswordRequirements/index.js",
+      "similarity": 0.5,
+      "sizeA": 44,
+      "sizeB": 51,
+      "tokensA": 4,
+      "tokensB": 4
+    },
+    {
+      "a": "sellsi/src/shared/components/forms/ImageUploader/index.js",
+      "b": "sellsi/src/shared/components/feedback/LoadingOverlay/index.js",
+      "similarity": 0.5,
+      "sizeA": 44,
+      "sizeB": 45,
+      "tokensA": 4,
+      "tokensB": 4
+    },
+    {
+      "a": "sellsi/src/shared/components/forms/ImageUploader/index.js",
+      "b": "sellsi/src/domains/marketplace/StockIndicator/index.js",
+      "similarity": 0.5,
+      "sizeA": 44,
+      "sizeB": 44,
+      "tokensA": 4,
+      "tokensB": 4
+    },
+    {
+      "a": "sellsi/src/shared/components/forms/ImageUploader/index.js",
+      "b": "sellsi/src/domains/marketplace/PriceDisplay/index.js",
+      "similarity": 0.5,
+      "sizeA": 44,
+      "sizeB": 42,
+      "tokensA": 4,
+      "tokensB": 4
+    },
+    {
+      "a": "sellsi/src/shared/components/forms/FileUploader/index.js",
+      "b": "sellsi/src/shared/components/feedback/SecurityBadge/index.js",
+      "similarity": 0.5,
+      "sizeA": 43,
+      "sizeB": 44,
+      "tokensA": 4,
+      "tokensB": 4
+    },
+    {
+      "a": "sellsi/src/shared/components/forms/FileUploader/index.js",
+      "b": "sellsi/src/shared/components/feedback/PasswordRequirements/index.js",
+      "similarity": 0.5,
+      "sizeA": 43,
+      "sizeB": 51,
+      "tokensA": 4,
+      "tokensB": 4
+    },
+    {
+      "a": "sellsi/src/shared/components/forms/FileUploader/index.js",
+      "b": "sellsi/src/shared/components/feedback/LoadingOverlay/index.js",
+      "similarity": 0.5,
+      "sizeA": 43,
+      "sizeB": 45,
+      "tokensA": 4,
+      "tokensB": 4
+    },
+    {
+      "a": "sellsi/src/shared/components/forms/FileUploader/index.js",
+      "b": "sellsi/src/domains/marketplace/StockIndicator/index.js",
+      "similarity": 0.5,
+      "sizeA": 43,
+      "sizeB": 44,
+      "tokensA": 4,
+      "tokensB": 4
+    },
+    {
+      "a": "sellsi/src/shared/components/forms/FileUploader/index.js",
+      "b": "sellsi/src/domains/marketplace/PriceDisplay/index.js",
+      "similarity": 0.5,
+      "sizeA": 43,
+      "sizeB": 42,
+      "tokensA": 4,
+      "tokensB": 4
+    },
+    {
+      "a": "sellsi/src/shared/components/feedback/SecurityBadge/index.js",
+      "b": "sellsi/src/shared/components/feedback/PasswordRequirements/index.js",
+      "similarity": 0.5,
+      "sizeA": 44,
+      "sizeB": 51,
+      "tokensA": 4,
+      "tokensB": 4
+    },
+    {
+      "a": "sellsi/src/shared/components/feedback/SecurityBadge/index.js",
+      "b": "sellsi/src/shared/components/feedback/LoadingOverlay/index.js",
+      "similarity": 0.5,
+      "sizeA": 44,
+      "sizeB": 45,
+      "tokensA": 4,
+      "tokensB": 4
+    },
+    {
+      "a": "sellsi/src/shared/components/feedback/SecurityBadge/index.js",
+      "b": "sellsi/src/domains/marketplace/StockIndicator/index.js",
+      "similarity": 0.5,
+      "sizeA": 44,
+      "sizeB": 44,
+      "tokensA": 4,
+      "tokensB": 4
+    },
+    {
+      "a": "sellsi/src/shared/components/feedback/SecurityBadge/index.js",
+      "b": "sellsi/src/domains/marketplace/PriceDisplay/index.js",
+      "similarity": 0.5,
+      "sizeA": 44,
+      "sizeB": 42,
+      "tokensA": 4,
+      "tokensB": 4
+    },
+    {
+      "a": "sellsi/src/shared/components/feedback/PasswordRequirements/index.js",
+      "b": "sellsi/src/shared/components/feedback/LoadingOverlay/index.js",
+      "similarity": 0.5,
+      "sizeA": 51,
+      "sizeB": 45,
+      "tokensA": 4,
+      "tokensB": 4
+    },
+    {
+      "a": "sellsi/src/shared/components/feedback/PasswordRequirements/index.js",
+      "b": "sellsi/src/domains/marketplace/StockIndicator/index.js",
+      "similarity": 0.5,
+      "sizeA": 51,
+      "sizeB": 44,
+      "tokensA": 4,
+      "tokensB": 4
+    },
+    {
+      "a": "sellsi/src/shared/components/feedback/PasswordRequirements/index.js",
+      "b": "sellsi/src/domains/marketplace/PriceDisplay/index.js",
+      "similarity": 0.5,
+      "sizeA": 51,
+      "sizeB": 42,
+      "tokensA": 4,
+      "tokensB": 4
+    },
+    {
+      "a": "sellsi/src/shared/components/feedback/LoadingOverlay/index.js",
+      "b": "sellsi/src/domains/marketplace/StockIndicator/index.js",
+      "similarity": 0.5,
+      "sizeA": 45,
+      "sizeB": 44,
+      "tokensA": 4,
+      "tokensB": 4
+    },
+    {
+      "a": "sellsi/src/shared/components/feedback/LoadingOverlay/index.js",
+      "b": "sellsi/src/domains/marketplace/PriceDisplay/index.js",
+      "similarity": 0.5,
+      "sizeA": 45,
+      "sizeB": 42,
+      "tokensA": 4,
+      "tokensB": 4
+    },
+    {
+      "a": "sellsi/src/domains/marketplace/StockIndicator/index.js",
+      "b": "sellsi/src/domains/marketplace/PriceDisplay/index.js",
+      "similarity": 0.5,
+      "sizeA": 44,
+      "sizeB": 42,
+      "tokensA": 4,
+      "tokensB": 4
+    },
+    {
+      "a": "sellsi/src/domains/checkout/styles/index.js",
+      "b": "sellsi/src/domains/checkout/config/index.js",
+      "similarity": 0.5,
+      "sizeA": 235,
+      "sizeB": 235,
+      "tokensA": 3,
+      "tokensB": 3
+    },
+    {
+      "a": "sellsi/src/domains/checkout/styles/index.js",
+      "b": "sellsi/src/domains/ban/index.js",
+      "similarity": 0.5,
+      "sizeA": 235,
+      "sizeB": 49,
+      "tokensA": 3,
+      "tokensB": 3
+    },
+    {
+      "a": "sellsi/src/domains/checkout/config/index.js",
+      "b": "sellsi/src/domains/ban/index.js",
+      "similarity": 0.5,
+      "sizeA": 235,
+      "sizeB": 49,
+      "tokensA": 3,
+      "tokensB": 3
+    },
+    {
+      "a": "sellsi/src/shared/utils/product/productUrl.js",
+      "b": "sellsi/src/domains/marketplace/utils/productUrl.js",
+      "similarity": 0.4824,
+      "sizeA": 3466,
+      "sizeB": 2513,
+      "tokensA": 210,
+      "tokensB": 135
+    },
+    {
+      "a": "detect-inline-literals.js",
+      "b": "scripts/detect-inline-literals.js",
+      "similarity": 0.4734,
+      "sizeA": 10341,
+      "sizeB": 12511,
+      "tokensA": 1008,
+      "tokensB": 1234
+    },
+    {
+      "a": "sellsi/src/domains/admin/modals/UserDeleteMultipleModal.jsx",
+      "b": "sellsi/src/domains/admin/modals/UserDeleteModal.jsx",
+      "similarity": 0.4696,
+      "sizeA": 6878,
+      "sizeB": 5952,
+      "tokensA": 490,
+      "tokensB": 436
+    },
+    {
+      "a": "sellsi/src/shared/utils/formatters/dateFormatters.js",
+      "b": "sellsi/src/domains/marketplace/pages/utils/formatters.js",
+      "similarity": 0.4244,
+      "sizeA": 1548,
+      "sizeB": 2603,
+      "tokensA": 139,
+      "tokensB": 234
+    },
+    {
+      "a": "sellsi/src/shared/components/navigation/TopBar/TopBarContainer.jsx",
+      "b": "sellsi/src/shared/components/navigation/TopBar/TopBar.jsx",
+      "similarity": 0.415,
+      "sizeA": 10564,
+      "sizeB": 20468,
+      "tokensA": 794,
+      "tokensB": 1222
+    },
+    {
+      "a": "sellsi/src/domains/supplier/pages/offers/SupplierOffers.jsx",
+      "b": "sellsi/src/domains/buyer/pages/offers/BuyerOffers.jsx",
+      "similarity": 0.4131,
+      "sizeA": 2018,
+      "sizeB": 1745,
+      "tokensA": 157,
+      "tokensB": 152
+    }
+  ]
+}

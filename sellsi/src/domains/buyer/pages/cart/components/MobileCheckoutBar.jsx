@@ -31,10 +31,10 @@ const MobileCheckoutBar = ({
       elevation={8}
       sx={{
         position: 'fixed',
-        bottom: 88, // Posicionar justo encima de MobileBar con 4px de separación
+        bottom: 83, // Posicionar justo encima de MobileBar con 4px de separación
         left: 0,
         right: 0,
-        zIndex: 1300, // Menor que MobileBar para evitar superposición
+  zIndex: 1500, // Mayor que MobileBar (1400) para que la barra de checkout esté encima
         backgroundColor: 'background.paper',
         borderTop: '2px solid',
         borderColor: 'primary.main',
