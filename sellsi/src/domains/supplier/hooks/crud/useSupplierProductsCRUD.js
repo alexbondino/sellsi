@@ -36,22 +36,65 @@ const useSupplierProductsCRUD = create((set, get) => ({
   loadProducts: async (supplierId) => {
     set({ loading: true, error: null })
 
+    const fingerprint = (obj) => {
+      try {
+        const normalized = typeof obj === 'string' ? obj : JSON.stringify(obj, Object.keys(obj || {}).sort())
+        let hash = 5381
+        for (let i = 0; i < normalized.length; i++) {
+          hash = ((hash << 5) + hash) + normalized.charCodeAt(i)
+          hash = hash & hash
+        }
+        return `fp_${Math.abs(hash)}`
+      } catch (e) {
+        return `fp_${String(obj)}`
+      }
+    }
+
+    const inFlightMap = (typeof window !== 'undefined') ? (window.__inFlightSupabaseQueries = window.__inFlightSupabaseQueries || new Map()) : new Map()
+
+    const productsKey = fingerprint({ type: 'products', supplierId })
+
+    // Short TTL guard: avoid repeating a full products fetch within a small window
+    // This prevents immediate retry loops that cause UI flicker and duplicated calls.
     try {
-      const { data: products, error: prodError } = await supabase
-        .from('products')
-        .select(`
-          *, 
-          product_images(image_url, thumbnail_url, thumbnails, image_order).order(image_order.asc), 
-          product_quantity_ranges(*), 
-          product_delivery_regions(*)
-        `)
-        .eq('supplier_id', supplierId)
-        .order('updateddt', { ascending: false })
+      if (typeof window !== 'undefined') {
+        window.__inFlightSupabaseLastFetched = window.__inFlightSupabaseLastFetched || new Map()
+        const last = window.__inFlightSupabaseLastFetched.get(productsKey)
+        if (last && (Date.now() - last) < 3000) {
+          const currentProducts = get().products || []
+          set({ products: currentProducts, loading: false })
+          return { success: true, data: currentProducts }
+        }
+      }
+      let productsRes
+      if (inFlightMap.has(productsKey)) {
+        productsRes = await inFlightMap.get(productsKey)
+      } else {
+        const p = (async () => {
+          return await supabase
+            .from('products')
+            .select(`
+              *, 
+              product_images(image_url, thumbnail_url, thumbnails, image_order).order(image_order.asc), 
+              product_quantity_ranges(*), 
+              product_delivery_regions(*)
+            `)
+            .eq('supplier_id', supplierId)
+            .order('updateddt', { ascending: false })
+        })()
+        inFlightMap.set(productsKey, p)
+        try {
+          productsRes = await p
+          if (typeof window !== 'undefined') {
+            window.__inFlightSupabaseLastFetched = window.__inFlightSupabaseLastFetched || new Map()
+            window.__inFlightSupabaseLastFetched.set(productsKey, Date.now())
+          }
+        } finally {
+          inFlightMap.delete(productsKey)
+        }
+      }
 
-      if (prodError) throw prodError
-
-      // Debug: log raw product_quantity_ranges counts
-      
+      const products = productsRes?.data || []
 
       // Procesar productos para incluir relaciones
       const processedProducts =
@@ -71,14 +114,29 @@ const useSupplierProductsCRUD = create((set, get) => ({
 
       // Fallback: si TODOS los priceTiers están vacíos, intentar recuperar en un query separado (posible fallo de relación / RLS)
       const allEmpty = processedProducts.length > 0 && processedProducts.every(p => !p.priceTiers || p.priceTiers.length === 0)
-  if (allEmpty) {
+      if (allEmpty) {
         const productIds = processedProducts.map(p => p.productid)
-        const { data: standaloneRanges, error: rangesError } = await supabase
-          .from('product_quantity_ranges')
-          .select('*')
-          .in('product_id', productIds)
-          .order('min_quantity', { ascending: true })
-        if (!rangesError && Array.isArray(standaloneRanges) && standaloneRanges.length > 0) {
+        const rangesKey = fingerprint({ type: 'product_quantity_ranges', productIds: productIds.slice().sort() })
+        let rangesRes
+        if (inFlightMap.has(rangesKey)) {
+          rangesRes = await inFlightMap.get(rangesKey)
+        } else {
+          const r = (async () => {
+            return await supabase
+              .from('product_quantity_ranges')
+              .select('*')
+              .in('product_id', productIds)
+              .order('min_quantity', { ascending: true })
+          })()
+          inFlightMap.set(rangesKey, r)
+          try {
+            rangesRes = await r
+          } finally {
+            inFlightMap.delete(rangesKey)
+          }
+        }
+        const standaloneRanges = rangesRes?.data || []
+        if (Array.isArray(standaloneRanges) && standaloneRanges.length > 0) {
           const grouped = standaloneRanges.reduce((acc, r) => {
             (acc[r.product_id] = acc[r.product_id] || []).push(r)
             return acc
@@ -88,7 +146,6 @@ const useSupplierProductsCRUD = create((set, get) => ({
               p.priceTiers = grouped[p.productid]
             }
           })
-          
         }
       }
 

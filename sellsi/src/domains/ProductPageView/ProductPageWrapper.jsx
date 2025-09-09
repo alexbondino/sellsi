@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Box, Container, Typography, Button, Paper } from '@mui/material';
 import { StorefrontOutlined } from '@mui/icons-material';
@@ -29,12 +29,25 @@ const ProductPageWrapper = ({ isLoggedIn }) => {
   const isFromBuyer = fromValue === '/buyer/marketplace';
   const isFromSupplierMarketplace = !fromMyProducts && fromValue === '/supplier/marketplace';
 
+  const didFetchRef = useRef(null);
+  const lastProductIdRef = useRef(null);
+  const lastFetchTsRef = useRef(0);
+  const FETCH_TTL = 2500; // ms (suficiente para StrictMode remount y navegación inmediata)
+
   useEffect(() => {
     const fetchProduct = async () => {
       let productId = id;
       if (!productId && productSlug) productId = extractProductIdFromSlug(productSlug);
       if (!productId) { setError('ID de producto no válido'); setLoading(false); return; }
+      // Guard contra remount StrictMode / re-ejecución inmediata con mismo productId
+      const now = Date.now();
+      if (didFetchRef.current && lastProductIdRef.current === productId && (now - lastFetchTsRef.current) < FETCH_TTL) {
+        return; // saltar fetch redundante
+      }
       try {
+        didFetchRef.current = true;
+        lastProductIdRef.current = productId;
+        lastFetchTsRef.current = now;
         setLoading(true);
         const { data, error } = await supabase
           .from('products')

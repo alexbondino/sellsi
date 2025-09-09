@@ -1,6 +1,5 @@
-CUATRO DUPLICADOS DE:
-
-fetch("https://clbngnjetipglkikondm.supabase.co/rest/v1/cart_items?select=cart_items_id%2Cproduct_id%2Cquantity%2Cprice_at_addition%2Cprice_tiers%2Cdocument_type%2Coffer_id%2Coffered_price%2Cmetadata%2Cadded_at%2Cupdated_at%2Cproducts%28productid%2Cproductnm%2Cprice%2Ccategory%2Cminimum_purchase%2Cnegotiable%2Cdescription%2Csupplier_id%2Cproductqty%2Cproduct_images%28image_url%29%2Cproduct_delivery_regions%28id%2Cregion%2Cprice%2Cdelivery_days%29%2Cusers%21products_supplier_id_fkey%28user_nm%2Clogo_url%2Cverified%29%29&cart_id=eq.125d1517-55b9-4a5e-8ddb-118459281956&order=added_at.desc", {
+Duplicado 2 veces A:
+fetch("https://clbngnjetipglkikondm.supabase.co/rest/v1/requests?select=request_id%2Ccreated_dt%2Crequest_products%21inner%28product_id%2Cproducts%21inner%28supplier_id%29%29&request_products.products.supplier_id=eq.20e7a348-66b6-4824-b059-2c67c5e6a49c&created_dt=gte.2025-09-02T05%3A18%3A07.759Z", {
   "headers": {
     "accept": "*/*",
     "accept-language": "es,es-ES;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,es-CL;q=0.5,es-MX;q=0.4",
@@ -21,5 +20,6 @@ fetch("https://clbngnjetipglkikondm.supabase.co/rest/v1/cart_items?select=cart_i
   "method": "GET",
   "mode": "cors",
   "credentials": "include"
-  [{"cart_items_id":"c612dc5e-baa6-4670-8a28-48c207583261","product_id":"d677c35e-ef84-438c-87f7-680082073e46","quantity":5,"price_at_addition":10000,"price_tiers":[{"price": 10000, "min_quantity": 1}],"document_type":"ninguno","offer_id":"d8fec55e-7e17-4ee0-9800-783ca531122b","offered_price":10000,"metadata":{"offer_id": "d8fec55e-7e17-4ee0-9800-783ca531122b", "isOffered": true},"added_at":"2025-09-05T15:35:16.781996+00:00","updated_at":"2025-09-09T03:44:32.861+00:00","products":{"price": 150000, "users": {"user_nm": "COMPRADOR FRENETICO", "logo_url": null, "verified": false}, "category": "Ferretería y Construcción", "productid": "d677c35e-ef84-438c-87f7-680082073e46", "productnm": "TUCO SALAMANCA", "negotiable": false, "productqty": 8990, "description": "TUCO SALAMANCATUCO SALAMANCATUCO SALAMANCATUCO SALAMANCA", "supplier_id": "ae9be238-f13e-4edd-ac30-ec5854dae54f", "product_images": [{"image_url": "https://clbngnjetipglkikondm.supabase.co/storage/v1/object/public/product-images/ae9be238-f13e-4edd-ac30-ec5854dae54f/d677c35e-ef84-438c-87f7-680082073e46/1757086389541.jpg"}], "minimum_purchase": 10, "product_delivery_regions": [{"id": "44ce5a21-4ff8-4ddc-9bdc-b67435333634", "price": 5600, "region": "metropolitana", "delivery_days": 9}]}}]
+  []
 });
+

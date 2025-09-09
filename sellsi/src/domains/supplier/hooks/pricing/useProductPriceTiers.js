@@ -174,11 +174,41 @@ const useProductPriceTiers = create((set, get) => ({
    */
   calculatePriceForQuantity: async (productId, quantity) => {
     try {
-      const { data: tiers, error } = await supabase
-        .from('product_quantity_ranges')
-        .select('*')
-        .eq('product_id', productId)
-        .order('min_quantity', { ascending: true })
+      const fingerprint = (obj) => {
+        try {
+          const normalized = typeof obj === 'string' ? obj : JSON.stringify(obj, Object.keys(obj || {}).sort())
+          let hash = 5381
+          for (let i = 0; i < normalized.length; i++) {
+            hash = ((hash << 5) + hash) + normalized.charCodeAt(i)
+            hash = hash & hash
+          }
+          return `fp_${Math.abs(hash)}`
+        } catch (e) {
+          return `fp_${String(obj)}`
+        }
+      }
+
+      const inFlightMap = (typeof window !== 'undefined') ? (window.__inFlightSupabaseQueries = window.__inFlightSupabaseQueries || new Map()) : new Map()
+      const key = fingerprint({ type: 'product_quantity_ranges', productId })
+      let tiersRes
+      if (inFlightMap.has(key)) {
+        tiersRes = await inFlightMap.get(key)
+      } else {
+        const p = (async () => {
+          return await supabase
+            .from('product_quantity_ranges')
+            .select('*')
+            .eq('product_id', productId)
+            .order('min_quantity', { ascending: true })
+        })()
+        inFlightMap.set(key, p)
+        try {
+          tiersRes = await p
+        } finally {
+          inFlightMap.delete(key)
+        }
+      }
+      const { data: tiers, error } = tiersRes || { data: [], error: null }
 
       if (error) throw error
 
@@ -233,11 +263,40 @@ const useProductPriceTiers = create((set, get) => ({
    */
   getProductTiers: async (productId) => {
     try {
-      const { data: tiers, error } = await supabase
-        .from('product_quantity_ranges')
-        .select('*')
-        .eq('product_id', productId)
-        .order('min_quantity', { ascending: true })
+      const fingerprint = (obj) => {
+        try {
+          const normalized = typeof obj === 'string' ? obj : JSON.stringify(obj, Object.keys(obj || {}).sort())
+          let hash = 5381
+          for (let i = 0; i < normalized.length; i++) {
+            hash = ((hash << 5) + hash) + normalized.charCodeAt(i)
+            hash = hash & hash
+          }
+          return `fp_${Math.abs(hash)}`
+        } catch (e) {
+          return `fp_${String(obj)}`
+        }
+      }
+      const inFlightMap = (typeof window !== 'undefined') ? (window.__inFlightSupabaseQueries = window.__inFlightSupabaseQueries || new Map()) : new Map()
+      const key = fingerprint({ type: 'product_quantity_ranges', productId })
+      let tiersRes
+      if (inFlightMap.has(key)) {
+        tiersRes = await inFlightMap.get(key)
+      } else {
+        const p = (async () => {
+          return await supabase
+            .from('product_quantity_ranges')
+            .select('*')
+            .eq('product_id', productId)
+            .order('min_quantity', { ascending: true })
+        })()
+        inFlightMap.set(key, p)
+        try {
+          tiersRes = await p
+        } finally {
+          inFlightMap.delete(key)
+        }
+      }
+      const { data: tiers, error } = tiersRes || { data: [], error: null }
 
       if (error) throw error
 

@@ -151,10 +151,16 @@ export const useBuyerOrders = buyerId => {
     } finally {
       setLoading(false);
     }
-  }, [buyerId, mergeAndSplit, error]);
+  }, [buyerId, mergeAndSplit]);
 
-  // Initial load
-  useEffect(() => { fetchOrders(); }, [fetchOrders]);
+  // Initial load - guard contra doble invocación (React StrictMode monta dos veces en dev)
+  const didFetchRef = useRef(false);
+  useEffect(() => {
+    if (didFetchRef.current) return;
+    didFetchRef.current = true;
+    fetchOrders();
+    // Nota: no limpiamos didFetchRef porque queremos evitar refetch accidental en remounts cortos
+  }, [fetchOrders]);
 
   // Realtime subscription for payment orders (payment_status updates)
   useEffect(() => {

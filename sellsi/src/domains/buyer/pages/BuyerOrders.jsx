@@ -685,11 +685,7 @@ const BuyerOrders = () => {
                                 const lineTotal = unit * (item.quantity || 0);
                                 return (
                                   <Typography variant="body1" fontWeight="medium" color="#000000fa">
-                                    {item.quantity} uds a {formatCurrency(unit)} c/u = {formatCurrency(lineTotal)} {(() => {
-                                      const isOffered = item.isOffered || item.metadata?.isOffered || !!item.offer_id || !!item.offered_price;
-                                      if (!isOffered) return null;
-                                      return <Typography component="span" variant="caption" color="primary.main" sx={{ ml: 0.5 }}>Precio OFERTADO fijo</Typography>;
-                                    })()}
+                                    {item.quantity} uds a {formatCurrency(unit)} c/u = {formatCurrency(lineTotal)}
                                   </Typography>
                                 );
                               })()}

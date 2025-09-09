@@ -29,7 +29,8 @@ const OfferModal = ({
   onOffer, // Mantenemos para compatibilidad pero usaremos nuestro store
   product,
   stock = undefined,
-  defaultPrice = ''
+  defaultPrice = '',
+  initialLimits = null,
 }) => {
   const [offeredPrice, setOfferedPrice] = useState('');
   const [offeredQuantity, setOfferedQuantity] = useState('');
@@ -65,11 +66,17 @@ const OfferModal = ({
 
   // Validar límites sólo una vez por apertura
   useEffect(() => {
-    if (open && !ranInitialLimitsRef.current) {
+    if (!open) return;
+    if (initialLimits && !limitsValidation) {
+      setLimitsValidation(initialLimits);
+      ranInitialLimitsRef.current = true;
+      return;
+    }
+    if (!ranInitialLimitsRef.current) {
       ranInitialLimitsRef.current = true;
       checkLimits();
     }
-  }, [open, product?.id, product?.productid, userId]);
+  }, [open, product?.id, product?.productid, userId, initialLimits, limitsValidation]);
 
   // Al abrir el modal, asegurarnos de tener las ofertas del comprador cargadas
   const buyerOffersRequestedRef = React.useRef(false);

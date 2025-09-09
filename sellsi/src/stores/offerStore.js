@@ -729,41 +729,64 @@ export const useOfferStore = create((set, get) => ({
       if (!buyerId || !productId || !supplierId) {
         throw new Error('Parámetros inválidos para validateOfferLimits');
       }
-      // Nueva lógica: llamar RPC validate_offer_limits que ya contempla límites product/supplier
-      const res = await supabase.rpc('validate_offer_limits', {
-        p_buyer_id: buyerId,
-        p_supplier_id: supplierId,
-        p_product_id: productId
-      });
-      if (res.error) throw new Error(res.error.message);
-      const data = res.data || {};
-      // backend retorna: allowed, product_count, supplier_count, product_limit, supplier_limit, reason
-      const productCount = Number(data.product_count) || 0;
-      const supplierCount = Number(data.supplier_count) || 0;
-      const productLimit = Number(data.product_limit) || 3;
-      const supplierLimit = Number(data.supplier_limit) || 5;
-      const allowed = !!data.allowed;
-      const reason = data.reason || (productCount >= productLimit
-        ? 'Se alcanzó el límite mensual de ofertas (producto)'
-        : (supplierCount >= supplierLimit ? 'Se alcanzó el límite mensual de ofertas con este proveedor' : undefined));
+      // Infra de dedupe & microcache
+      const state = get();
+      state._validateCache = state._validateCache || new Map(); // key -> { ts, data }
+      state._validateInFlight = state._validateInFlight || new Map(); // key -> promise
+      const key = `${buyerId}:${supplierId}:${productId}`;
+      const now = Date.now();
+      const TTL = 3000; // 3s microcache para evitar duplicados en apertura modal / remount StrictMode
 
-      const base = {
-        isValid: allowed,
-        allowed,
-        currentCount: productCount, // compat tests antiguos (interpretaban count principal)
-        product_count: productCount,
-        supplier_count: supplierCount,
-        limit: productLimit,       // compat (antes se usaba single limit)
-        product_limit: productLimit,
-        supplier_limit: supplierLimit,
-        reason
-      };
-      __logOfferDebug('validateOfferLimits returning (normalized)', base);
-      return base;
+      const cached = state._validateCache.get(key);
+      if (cached && (now - cached.ts) < TTL) {
+        __logOfferDebug('validateOfferLimits cache hit', key);
+        return cached.data;
+      }
+      if (state._validateInFlight.has(key)) {
+        __logOfferDebug('validateOfferLimits join in-flight', key);
+        return await state._validateInFlight.get(key);
+      }
+      const p = (async () => {
+        const res = await supabase.rpc('validate_offer_limits', {
+          p_buyer_id: buyerId,
+          p_supplier_id: supplierId,
+          p_product_id: productId
+        });
+        if (res.error) throw new Error(res.error.message);
+        const data = res.data || {};
+        const productCount = Number(data.product_count) || 0;
+        const supplierCount = Number(data.supplier_count) || 0;
+        const productLimit = Number(data.product_limit) || 3;
+        const supplierLimit = Number(data.supplier_limit) || 5;
+        const allowed = !!data.allowed;
+        const reason = data.reason || (productCount >= productLimit
+          ? 'Se alcanzó el límite mensual de ofertas (producto)'
+          : (supplierCount >= supplierLimit ? 'Se alcanzó el límite mensual de ofertas con este proveedor' : undefined));
+        const base = {
+          isValid: allowed,
+          allowed,
+            currentCount: productCount,
+          product_count: productCount,
+          supplier_count: supplierCount,
+          limit: productLimit,
+          product_limit: productLimit,
+          supplier_limit: supplierLimit,
+          reason
+        };
+        state._validateCache.set(key, { ts: Date.now(), data: base });
+        return base;
+      })();
+      state._validateInFlight.set(key, p);
+      try {
+        const result = await p;
+        __logOfferDebug('validateOfferLimits returning (normalized)', result);
+        return result;
+      } finally {
+        state._validateInFlight.delete(key);
+      }
     } catch (e) {
       __logOfferDebug('validateOfferLimits error', e?.message || String(e));
       try { if (typeof console !== 'undefined') console.warn('[offerStore] validateOfferLimits RPC error:', e?.message || e); } catch(_) {}
-      // fallback permisivo
       return {
         isValid: true,
         allowed: true,

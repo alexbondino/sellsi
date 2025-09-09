@@ -118,9 +118,14 @@ const ProviderHome = () => {
         try {
           const { data: { session } } = await supabase.auth.getSession();
           if (session?.user?.id) {
+            // Respect global last-fetched TTL to avoid racing loads
+            const productsKey = `fp_products_supplier_${session.user.id}`
+            const lastMap = (typeof window !== 'undefined') ? (window.__inFlightSupabaseLastFetched = window.__inFlightSupabaseLastFetched || new Map()) : new Map()
+            const last = lastMap.get(productsKey)
+            const shouldLoad = !last || (Date.now() - last) > 3000
             await Promise.all([
               refreshDashboard?.(),
-              loadProducts?.(session.user.id)
+              shouldLoad ? loadProducts?.(session.user.id) : Promise.resolve()
             ]);
           }
         } catch (e) {

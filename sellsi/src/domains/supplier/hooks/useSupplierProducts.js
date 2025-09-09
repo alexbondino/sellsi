@@ -140,7 +140,12 @@ export const useSupplierProducts = (options = {}) => {
         if (session?.user?.id) {
           // Cargar productos si no están ya cargados Y no está cargando
           if (crud.products.length === 0 && !crud.loading) {
-            await crud.loadProducts(session.user.id)
+              const productsKey = `fp_products_supplier_${session.user.id}`
+              const lastMap = (typeof window !== 'undefined') ? (window.__inFlightSupabaseLastFetched = window.__inFlightSupabaseLastFetched || new Map()) : new Map()
+              const last = lastMap.get(productsKey)
+              if (!last || (Date.now() - last) > 3000) {
+                await crud.loadProducts(session.user.id)
+              }
           }
         }
       } catch (error) {

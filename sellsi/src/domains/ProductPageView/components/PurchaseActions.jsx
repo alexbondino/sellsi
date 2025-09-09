@@ -22,6 +22,8 @@ const PurchaseActions = ({
   const [checkingLimits, setCheckingLimits] = useState(false)
   
   const { validateOfferLimits } = useOfferStore()
+  // Prefetched limits for passing into OfferModal (avoid double RPC)
+  const prefetchedLimitsRef = React.useRef(null)
   const userId = localStorage.getItem('user_id')
   const userNm = localStorage.getItem('user_nm') || localStorage.getItem('user_email')
   const userEmail = localStorage.getItem('user_email')
@@ -32,12 +34,13 @@ const PurchaseActions = ({
     
     setCheckingLimits(true)
     try {
-      const limits = await validateOfferLimits({
+  const limits = await validateOfferLimits({
         buyerId: userId,
         productId: product.id,
         supplierId: product.supplier_id || product.supplierId
       })
       setLimitsValidation(limits)
+  prefetchedLimitsRef.current = limits
     } catch (error) {
       console.error('Error checking offer limits:', error)
       setLimitsValidation(null)
@@ -162,7 +165,14 @@ const PurchaseActions = ({
 
         <Box sx={{ flex: 1 }} />
       </Box>
-      <OfferModal open={isOfferOpen} onClose={closeOffer} onOffer={handleOffer} stock={stock} product={product} />
+      <OfferModal 
+        open={isOfferOpen}
+        onClose={closeOffer}
+        onOffer={handleOffer}
+        stock={stock}
+        product={product}
+        initialLimits={prefetchedLimitsRef.current}
+      />
     </>
   )
 }

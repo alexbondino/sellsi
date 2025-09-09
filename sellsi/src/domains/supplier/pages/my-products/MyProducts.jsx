@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -113,6 +113,8 @@ const MyProducts = () => {
   updateProduct,
   } = useSupplierProducts();
 
+  const didInitLoadRef = useRef(false)
+
   // Advanced lazy loading hooks
   const {
     displayedProducts,
@@ -166,10 +168,18 @@ const MyProducts = () => {
 
   // Cargar productos al montar el componente o cuando cambia el supplierId
   useEffect(() => {
-    if (supplierId) {
-      loadProducts(supplierId);
+    if (!supplierId) return
+    // Reset guard if supplierId changed (different supplier should re-trigger)
+    if (!didInitLoadRef.current && !loading && (!uiProducts || uiProducts.length === 0)) {
+      didInitLoadRef.current = true
+      loadProducts(supplierId)
     }
-  }, [supplierId, loadProducts]);
+  }, [supplierId, loadProducts, uiProducts?.length, loading]);
+
+  // Reset the init guard when supplierId changes so a new supplier can attempt load again
+  useEffect(() => {
+    didInitLoadRef.current = false
+  }, [supplierId])
 
   // Disparar animaciones cuando se muestran nuevos productos
   useEffect(() => {
