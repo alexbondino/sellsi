@@ -22,38 +22,73 @@ import { Image as ImageIcon } from '@mui/icons-material'
 import { globalObserverPool } from '../../../../utils/observerPoolManager';
 
 /**
- * Hook personalizado para lazy loading con Intersection Observer
- * ✅ MEJORADO: Con timeout de seguridad para evitar imágenes que nunca cargan
+ * Hook personalizado para lazy loading COORDINADO con ScrollManager
+ * ✅ ANTI-REBOTE: Se pausa durante scroll activo para evitar layout shifts
  */
 const useLazyLoading = (rootMargin = '50px', timeoutMs = 300) => {
   const [isVisible, setIsVisible] = useState(false)
+  const [isScrollPaused, setIsScrollPaused] = useState(false) // ✅ NUEVO
   const elementRef = useRef(null)
+  const observerCleanupRef = useRef(null)
 
   useEffect(() => {
     if (!elementRef.current) return;
 
+    // ✅ LISTENERS DEL SCROLL MANAGER
+    const handleScrollActive = () => {
+      setIsScrollPaused(true);
+      // Durante scroll activo, pausar observación para evitar bouncing
+    };
+
+    const handleScrollQuiet = () => {
+      setIsScrollPaused(false);
+      // Cuando scroll termina, reactivar observación si es necesario
+      if (!isVisible && elementRef.current) {
+        // Verificar manualmente si está en viewport
+        const rect = elementRef.current.getBoundingClientRect();
+        const margin = parseInt(rootMargin) || 50;
+        if (rect.bottom >= -margin && rect.top <= window.innerHeight + margin) {
+          setIsVisible(true);
+        }
+      }
+    };
+
+    // ✅ REGISTRAR LISTENERS DE COORDINACIÓN
+    window.addEventListener('scrollManagerActive', handleScrollActive);
+    window.addEventListener('scrollManagerQuiet', handleScrollQuiet);
+
     const handleIntersection = (entry) => {
-      if (entry.isIntersecting) {
+      // ✅ SOLO PROCESAR SI NO HAY SCROLL ACTIVO
+      if (!isScrollPaused && entry.isIntersecting) {
         setIsVisible(true);
       }
     };
 
-    const unobserveFunc = globalObserverPool.observe(
-      elementRef.current,
-      handleIntersection,
-      { rootMargin }
-    );
+    // ✅ OBSERVAR SOLO SI NO HAY SCROLL ACTIVO
+    if (!isScrollPaused) {
+      observerCleanupRef.current = globalObserverPool.observe(
+        elementRef.current,
+        handleIntersection,
+        { rootMargin }
+      );
+    }
 
-    // ✅ TIMEOUT DE SEGURIDAD: Si el observer no se dispara, forzar carga
+    // ✅ TIMEOUT DE SEGURIDAD más conservador
     const safetyTimeout = setTimeout(() => {
-      setIsVisible(true);
+      if (!isScrollPaused) {
+        setIsVisible(true);
+      }
     }, timeoutMs);
 
     return () => {
-      unobserveFunc();
+      if (observerCleanupRef.current) {
+        observerCleanupRef.current();
+      }
       clearTimeout(safetyTimeout);
+      window.removeEventListener('scrollManagerActive', handleScrollActive);
+      window.removeEventListener('scrollManagerQuiet', handleScrollQuiet);
     };
-  }, [rootMargin, timeoutMs])
+  }, [rootMargin, timeoutMs, isScrollPaused])
 
   return [elementRef, isVisible]
 }
@@ -90,8 +125,8 @@ const LazyImage = ({
   
   ...props
 }) => {
-  // ✅ TIMEOUT DE SEGURIDAD más corto para imágenes con baja prioridad
-  const safetyTimeoutMs = fetchPriority === 'high' ? 500 : 200;
+  // ✅ TIMEOUT CONSERVADOR: Más tiempo para que scroll se estabilice
+  const safetyTimeoutMs = fetchPriority === 'high' ? 800 : 1200; // ✅ AUMENTADO
   const [elementRef, isVisible] = useLazyLoading(rootMargin, safetyTimeoutMs)
   const [imageLoaded, setImageLoaded] = useState(false)
   const [imageError, setImageError] = useState(false)

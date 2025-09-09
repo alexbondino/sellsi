@@ -1,7 +1,9 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
+import { scrollManagerAntiRebote } from '../../../../shared/utils/scrollManagerAntiRebote'
 
 /**
  * Hook optimizado para manejar solo la visibilidad de la SearchBar
+ * ✅ MIGRADO: Usa ScrollManager unificado para eliminar conflictos
  * ✅ DESACOPLADO: No afecta al layout de otros componentes
  */
 export const useScrollBehavior = () => {
@@ -14,39 +16,6 @@ export const useScrollBehavior = () => {
   const prevScrollY = useRef(0)
   const lastMouseY = useRef(0)
   const mouseThrottleRef = useRef(false)
-  const scrollThrottleRef = useRef(false)
-
-  // Handler de scroll optimizado
-  const handleScroll = useCallback(() => {
-    if (scrollThrottleRef.current) return
-    
-    scrollThrottleRef.current = true
-    requestAnimationFrame(() => {
-      const currentScrollY = window.scrollY
-      const prevY = prevScrollY.current
-
-      // Lógica para móvil - solo afecta visibilidad de SearchBar
-      if (window.innerWidth < 768) {
-        if (currentScrollY > prevY && currentScrollY > 100) {
-          setShowSearchBar(false)
-        } else if (currentScrollY < prevY) {
-          setShowSearchBar(true)
-        }
-      } else {
-        // Lógica para desktop - solo afecta comportamiento sticky
-        const shouldBeSticky = currentScrollY > 150
-        if (shouldBeSticky !== isSearchBarSticky) {
-          setIsSearchBarSticky(shouldBeSticky)
-          if (!shouldBeSticky) {
-            setShowTopBarOnHover(false)
-          }
-        }
-      }
-      
-      prevScrollY.current = currentScrollY
-      scrollThrottleRef.current = false
-    })
-  }, [isSearchBarSticky])
 
   // Mouse handler para hover en desktop
   const handleMouseMove = useCallback((e) => {
@@ -73,14 +42,48 @@ export const useScrollBehavior = () => {
   }, [isSearchBarSticky])
 
   useEffect(() => {
-    window.addEventListener('scroll', handleScroll, { passive: true })
-    window.addEventListener('mousemove', handleMouseMove, { passive: true })
+    const listenerId = 'search-bar-behavior';
+    
+    // ✅ MIGRADO: Handler usando ScrollManager unificado
+    const handleScrollBehavior = (scrollData) => {
+      const currentScrollY = scrollData.scrollTop;
+      const prevY = prevScrollY.current;
+
+      // Lógica para móvil - solo afecta visibilidad de SearchBar
+      if (window.innerWidth < 768) {
+        if (currentScrollY > prevY && currentScrollY > 100) {
+          setShowSearchBar(false);
+        } else if (currentScrollY < prevY) {
+          setShowSearchBar(true);
+        }
+      } else {
+        // Lógica para desktop - solo afecta comportamiento sticky
+        const shouldBeSticky = currentScrollY > 150;
+        if (shouldBeSticky !== isSearchBarSticky) {
+          setIsSearchBarSticky(shouldBeSticky);
+          if (!shouldBeSticky) {
+            setShowTopBarOnHover(false);
+          }
+        }
+      }
+      
+      prevScrollY.current = currentScrollY;
+    };
+
+    // Registrar listener con ScrollManagerAntiRebote
+    const cleanupScroll = scrollManagerAntiRebote.addListener(listenerId, handleScrollBehavior, {
+      priority: 0, // Prioridad media para UI behavior
+      throttle: 100 // Throttling moderado
+    });
+
+    // Mouse handler sigue siendo independiente
+    window.addEventListener('mousemove', handleMouseMove, { passive: true });
 
     return () => {
-      window.removeEventListener('scroll', handleScroll)
-      window.removeEventListener('mousemove', handleMouseMove)
-    }
-  }, [handleScroll, handleMouseMove])
+      cleanupScroll();
+      window.removeEventListener('mousemove', handleMouseMove);
+    };
+  }, [isSearchBarSticky, handleMouseMove])
 
   // ✅ VALOR MEMOIZADO: Solo para la visibilidad de SearchBar
   const shouldShowSearchBar = useMemo(() => {

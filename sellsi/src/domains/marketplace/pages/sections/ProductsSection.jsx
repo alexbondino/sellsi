@@ -20,7 +20,8 @@ import { productGridColumns, productGridGaps, paginationResponsiveConfig } from 
 import { PRODUCTS_TEXTS } from '../../../../shared/constants/productsTexts';
 import { useProductsDerivation } from '../../../../shared/hooks/useProductsDerivation';
 import { useProgressiveProducts } from '../../../../shared/hooks/useProgressiveProducts';
-import { useGridPriority } from '../../../../shared/utils/gridPriorityCalculator'; // ✅ Nuevo sistema de prioridades
+import { useGridPriority } from '../../../../shared/utils/gridPriorityCalculator';
+import { scrollManagerAntiRebote } from '../../../../shared/utils/scrollManagerAntiRebote'; // ✅ Nuevo sistema anti-rebote
 import { FeatureFlags } from '../../../../shared/flags/featureFlags';
 import { ProductCardSkeletonGrid } from '../../../../shared/components/display/product-card/ProductCardSkeleton';
 import ProductsSectionView from './ProductsSection/ProductsSectionView';
@@ -114,7 +115,9 @@ const ProductsSection = React.memo(({ seccionActiva, setSeccionActiva, totalProd
     // (Movido arriba antes de cualquier uso para evitar ReferenceError por TDZ)
   // Derivación ahora a través del hook (fase2)
   const { items: derivedItems, providersCount } = useProductsDerivation(productosOrdenados, { providerView: isProviderView });
-  const memoizedProducts = derivedItems;
+  
+  // ✅ FIX: Memoizar correctamente derivedItems para evitar que useProgressiveProducts se ejecute infinitamente
+  const memoizedProducts = React.useMemo(() => derivedItems, [derivedItems]);
 
     // 🚀 BATCHING THUMBNAILS: limitar cantidad de ProductCard montadas simultáneamente para reducir ráfagas de fetch
   // batching ahora dentro del hook progressive
@@ -299,11 +302,20 @@ const ProductsSection = React.memo(({ seccionActiva, setSeccionActiva, totalProd
 
   const scrollToTop = React.useCallback(() => { window.scrollTo({ top: 0, behavior: 'smooth' }); }, []);
 
-    // ✅ SCROLL TO TOP: Mostrar/ocultar FAB basado en scroll
+    // ✅ SCROLL TO TOP: Mostrar/ocultar FAB usando ScrollManager unificado
   React.useEffect(() => {
-    const handleScroll = () => { setShowScrollTop(window.pageYOffset > 300); };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    const listenerId = 'products-section-fab';
+    
+    const handleFabScroll = (scrollData) => {
+      setShowScrollTop(scrollData.scrollTop > 300);
+    };
+
+    const cleanup = scrollManagerAntiRebote.addListener(listenerId, handleFabScroll, {
+      priority: -1, // Baja prioridad para FAB
+      throttle: 150 // Menos frecuente que infinite scroll
+    });
+
+    return cleanup;
   }, []);
   const ui = { mainContainerStyles, innerContainerStyles, gridStyles, cardContainerStyles, sectionTitle };
   const handlers = { handleBackClick, resetFiltros, scrollToTop, showScrollTop, seccionActiva };
