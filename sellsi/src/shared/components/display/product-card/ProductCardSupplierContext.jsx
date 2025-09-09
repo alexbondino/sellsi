@@ -22,7 +22,6 @@ import { formatPrice } from '../../../utils/formatters';
 import ActionMenu from './ActionMenu';
 import ProductBadges from './ProductBadges';
 import StatusChip from './StatusChip';
-import { useProductPriceTiers } from '../../../hooks/product/useProductPriceTiers';
 
 /**
  * ProductCardSupplierContext - Renders the specific content and actions for a supplier's product card.
@@ -30,12 +29,9 @@ import { useProductPriceTiers } from '../../../hooks/product/useProductPriceTier
  */
 const ProductCardSupplierContext = React.memo(
   ({ product, onEdit, onDelete, onViewStats, isDeleting, isUpdating, isProcessing }) => {
-    // Hook to get price tiers (same as BuyerContext)
-    const {
-      tiers,
-      loading: loadingTiers,
-      error: errorTiers,
-    } = useProductPriceTiers(product.id);
+  // Centralized deferred tiers (populated via useProducts). No per-product network hook.
+  const loadingTiers = product.tiersStatus === 'loading'
+  const errorTiers = product.tiersStatus === 'error'
 
     // Product properties (already destructuring in main ProductCard, passed here)
     const {
@@ -58,13 +54,7 @@ const ProductCardSupplierContext = React.memo(
     } = product;
 
     // Unify source of price_tiers: prefer product's, if not, from hook (same logic as BuyerContext)
-    const price_tiers = useMemo(() => {
-      return product.priceTiers && product.priceTiers.length > 0
-        ? product.priceTiers
-        : tiers && tiers.length > 0
-        ? tiers
-        : [];
-    }, [product.priceTiers, tiers]);
+  const price_tiers = useMemo(() => product.priceTiers || [], [product.priceTiers]);
 
     // Configure menu actions
     // Reemplazamos VisibilityIcon por ícono de pausa y mantenemos label

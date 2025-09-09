@@ -43,7 +43,8 @@ export const initializeCartWithUser = async (userId, set, get) => {
       }
 
     // Obtener o crear carrito en backend
-    const backendCart = await cartService.getOrCreateActiveCart(userId)
+  // Obtener carrito (incluyendo items sólo si no hay items locales que migrar) para minimizar una consulta
+  const backendCart = await cartService.getOrCreateActiveCart(userId, { includeItems: localItems.length === 0 })
 
     // Si hay items locales, migrarlos al backend
     if (localItems.length > 0) {
@@ -53,10 +54,9 @@ export const initializeCartWithUser = async (userId, set, get) => {
         console.log('[cartStore.backend] migrateLocalCart payload:', { userId, localItems })
       } catch (e) {}
 
-      await cartService.migrateLocalCart(userId, localItems)
-      
-      // Obtener solo los items actualizados, no todo el carrito nuevamente
-      const updatedItems = await cartService.getCartItems(backendCart.cart_id)
+  await cartService.migrateLocalCart(userId, localItems, { existingCart: backendCart, skipFinalFetch: true })
+  // Luego de migrar, una sola carga de items
+  const updatedItems = await cartService.getCartItems(backendCart.cart_id)
       
       // DEBUG: registrar items devueltos por backend tras migración
       try {
@@ -188,7 +188,7 @@ export const addItemWithBackend = async (product, quantity, set, get, historySto
     }
 
     // Resolve or create the active cart for this user (server-side ownership enforced)
-    const backendCart = await cartService.getOrCreateActiveCart(userIdForRequest)
+  const backendCart = await cartService.getOrCreateActiveCart(userIdForRequest, { includeItems: false })
     const cartIdToUse = backendCart?.cart_id || state.cartId
 
     try {
@@ -219,12 +219,35 @@ export const addItemWithBackend = async (product, quantity, set, get, historySto
     // Agregar al backend usando cartIdToUse
     const result = await cartService.addItemToCart(cartIdToUse, product, quantity)
 
-    // En lugar de recargar todo el carrito, solo obtener los items actualizados
-    const updatedItems = await cartService.getCartItems(state.cartId)
-    
-    set({
-      items: updatedItems || [],
-      isSyncing: false
+    // Obtener línea enriquecida (si existe) y fusionarla sin refetch total
+    let enriched = null
+    if (result && result.cart_items_id) {
+      enriched = await cartService.getCartItemEnriched(result.cart_items_id)
+    }
+
+    set(current => {
+      const items = Array.isArray(current.items) ? [...current.items] : []
+      if (result) {
+        // Buscar si ya existía (mergeCandidate) por cart_items_id
+        const idx = items.findIndex(i => i.cart_items_id === result.cart_items_id || i.id === result.cart_items_id)
+        if (idx !== -1) {
+          items[idx] = { ...items[idx], ...(enriched || result), quantity: (enriched?.quantity || result.quantity) }
+        } else if (enriched) {
+          items.unshift(enriched)
+        } else {
+          items.unshift({
+            id: result.cart_items_id,
+            cart_items_id: result.cart_items_id,
+            product_id: result.product_id,
+            quantity: result.quantity,
+            offer_id: result.offer_id,
+            offered_price: result.offered_price,
+            metadata: result.metadata || {},
+            document_type: result.document_type || 'ninguno'
+          })
+        }
+      }
+      return { items, isSyncing: false }
     })
 
     // Delegar al módulo de historial
@@ -367,11 +390,9 @@ export const removeItemWithBackend = async (itemId, set, get) => {
 
     // Remover del backend
     await cartService.removeItemFromCart(state.cartId, productId)
-
-    // Recargar carrito desde backend
-    const updatedCart = await cartService.getOrCreateActiveCart(state.userId)
+    // Actualización local sin refetch
     set({
-      items: updatedCart.items || [],
+      items: state.items.filter(i => i.id !== item.id && i.cart_items_id !== item.cart_items_id),
       isSyncing: false
     })
 

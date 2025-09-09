@@ -1,6 +1,9 @@
 import { supabase } from '../supabase';
 import { validateQuantity, sanitizeCartItems, isQuantityError } from '../../utils/quantityValidation';
 
+// In-flight dedupe para getCartItems: evita múltiples GET idénticos concurrentes
+const __inFlightCartItems = new Map(); // cartId -> Promise
+
 // Normaliza el tipo de documento tributario a uno de: 'boleta' | 'factura' | 'ninguno'
 function normalizeDocumentType(val) {
   if (!val) return 'ninguno';
@@ -18,10 +21,32 @@ class CartService {
   /**
    * Obtiene o crea un carrito activo para el usuario
    */
-  async getOrCreateActiveCart(userId) {
-    try {
-      let existingCart = null;
-      let searchError = null;
+  async getOrCreateActiveCart(userId, options = {}) {
+    const { includeItems = true } = options;
+    if (!userId) throw new Error('userId requerido');
+    // Dedupe in-flight de carts activos (evita múltiples selects simultáneos)
+    if (!this.__inFlightActive) this.__inFlightActive = new Map();
+    if (this.__inFlightActive.has(userId)) {
+      const shared = await this.__inFlightActive.get(userId);
+      // Si el consumidor pide items pero la versión compartida no los trae, forzar fetch de items ahora
+      if (includeItems && shared && !Array.isArray(shared.items)) {
+        const items = await this.getCartItems(shared.cart_id);
+        return { ...shared, items };
+      }
+      // Si el consumidor no necesita items podemos devolver lo existente incluso si incluye items.
+      if (!includeItems && shared) {
+        // Evitar devolver items pesados si no se requieren
+        if (shared.items) {
+          const { items, ...rest } = shared; // descartar items
+          return rest;
+        }
+      }
+      return shared;
+    }
+    const promise = (async () => {
+      try {
+        let existingCart = null;
+        let searchError = null;
 
       try {
         const { data, error } = await supabase
@@ -56,18 +81,28 @@ class CartService {
         cartData = newCart;
       }
 
-      const cartItems = await this.getCartItems(cartId);
+      let cartItems = undefined;
+      if (includeItems) {
+        cartItems = await this.getCartItems(cartId);
+      }
 
       return {
         cart_id: cartId,
         user_id: userId,
         status: 'active',
-        items: cartItems,
+        ...(includeItems ? { items: cartItems } : {}),
         created_at: cartData?.created_at || new Date().toISOString(),
         updated_at: cartData?.updated_at || new Date().toISOString()
       };
-    } catch (error) {
-      throw new Error(`No se pudo obtener el carrito: ${error.message}`);
+      } catch (error) {
+        throw new Error(`No se pudo obtener el carrito: ${error.message}`);
+      }
+    })();
+    this.__inFlightActive.set(userId, promise);
+    try {
+      return await promise;
+    } finally {
+      this.__inFlightActive.delete(userId);
     }
   }
 
@@ -76,6 +111,11 @@ class CartService {
    */
   async getCartItems(cartId) {
     try {
+      if (!cartId) return [];
+      if (__inFlightCartItems.has(cartId)) {
+        return await __inFlightCartItems.get(cartId);
+      }
+      const promise = (async () => {
       // Log diagnóstico mínimo
       try {
         // eslint-disable-next-line no-console
@@ -252,6 +292,14 @@ class CartService {
       } catch (e) {}
 
       return transformedData;
+      })();
+      __inFlightCartItems.set(cartId, promise);
+      try {
+        const result = await promise;
+        return result;
+      } finally {
+        __inFlightCartItems.delete(cartId);
+      }
     } catch (error) {
       return [];
     }
@@ -378,33 +426,34 @@ class CartService {
   async updateItemQuantity(cartId, productOrLineId, newQuantity) {
     try {
       const safeQuantity = this.validateQuantity(newQuantity);
-
       if (safeQuantity <= 0) {
         return await this.removeItemFromCart(cartId, productOrLineId);
       }
-      // Intentar primero como cart_items_id (línea específica)
-      let { data, error } = await supabase
+
+      // Heurística: la mayoría de llamadas pasan product_id (no cart_items_id). Intentar primero (cart_id + product_id)
+      let primary = await supabase
         .from('cart_items')
         .update({ quantity: safeQuantity, updated_at: new Date().toISOString() })
-        .eq('cart_items_id', productOrLineId)
+        .eq('cart_id', cartId)
+        .eq('product_id', productOrLineId)
         .select();
 
+      let data = primary.data;
+      let error = primary.error;
       if (error && error.code !== 'PGRST116') throw error;
 
-      // Si no encontró por cart_items_id, actualizar por product_id + cart_id (modo legacy)
       if (!data || (Array.isArray(data) && data.length === 0)) {
-        const res2 = await supabase
+        // Intentar por cart_items_id sólo si el primer camino no afectó filas
+        const secondary = await supabase
           .from('cart_items')
           .update({ quantity: safeQuantity, updated_at: new Date().toISOString() })
-          .eq('cart_id', cartId)
-          .eq('product_id', productOrLineId)
+          .eq('cart_items_id', productOrLineId)
           .select();
-        if (res2.error) throw res2.error;
-        if (res2.data && (!Array.isArray(res2.data) || res2.data.length > 0)) {
-          data = Array.isArray(res2.data) ? res2.data[0] : res2.data;
-        } else {
-          // No existe fila por product_id: crearla para cumplir la intención del usuario (actualizar = establecer cantidad)
-          const { data: insertedArr, error: insErr } = await supabase
+        if (secondary.error && secondary.error.code !== 'PGRST116') throw secondary.error;
+        data = secondary.data;
+        if (!data || (Array.isArray(data) && data.length === 0)) {
+          // Crear fila si no existe (comportamiento legacy de establecer cantidad)
+          const insertRes = await supabase
             .from('cart_items')
             .insert({
               cart_id: cartId,
@@ -413,16 +462,14 @@ class CartService {
               updated_at: new Date().toISOString()
             })
             .select();
-          if (insErr) throw insErr;
-          data = Array.isArray(insertedArr) ? insertedArr[0] : insertedArr;
+          if (insertRes.error) throw insertRes.error;
+          data = insertRes.data;
         }
       }
 
-      if (error) throw error;
-
+      const row = Array.isArray(data) ? data[0] : data;
       await this.updateCartTimestamp(cartId);
-
-      return data;
+      return row;
     } catch (error) {
       throw new Error(`No se pudo actualizar la cantidad: ${error.message}`);
     }
@@ -503,11 +550,105 @@ class CartService {
     } catch (error) {}
   }
 
-  async migrateLocalCart(userId, localCartItems) {
+  /**
+   * Obtiene una línea individual enriquecida (para evitar refetch completo tras add/update)
+   */
+  async getCartItemEnriched(cartItemsId) {
+    if (!cartItemsId) return null;
     try {
-      if (!localCartItems || localCartItems.length === 0) return await this.getOrCreateActiveCart(userId);
+      const { data, error } = await supabase
+        .from('cart_items')
+        .select(`
+          cart_items_id,
+          product_id,
+          quantity,
+          price_at_addition,
+          price_tiers,
+          document_type,
+          offer_id,
+          offered_price,
+          metadata,
+          added_at,
+          updated_at,
+          products (
+            productid,
+            productnm,
+            price,
+            category,
+            minimum_purchase,
+            negotiable,
+            description,
+            supplier_id,
+            productqty,
+            product_images (image_url, thumbnail_url),
+            product_delivery_regions (id, region, price, delivery_days),
+            users!products_supplier_id_fkey (user_nm, logo_url, verified)
+          )
+        `)
+        .eq('cart_items_id', cartItemsId)
+        .maybeSingle();
+      if (error) return null;
+      if (!data) return null;
+      return {
+        cart_items_id: data.cart_items_id,
+        product_id: data.product_id,
+        quantity: data.quantity,
+        price_at_addition: data.price_at_addition,
+        price_tiers: data.price_tiers,
+        offer_id: data.offer_id || null,
+        offered_price: data.offered_price || null,
+        metadata: data.metadata || {},
+        document_type: normalizeDocumentType(data.document_type),
+        documentType: normalizeDocumentType(data.document_type),
+        added_at: data.added_at,
+        updated_at: data.updated_at,
+        id: data.cart_items_id,
+        productid: data.products?.productid || data.product_id,
+        name: data.products?.productnm || null,
+        nombre: data.products?.productnm || null,
+        productnm: data.products?.productnm || null,
+        supplier: data.products?.users?.user_nm || 'Proveedor no encontrado',
+        proveedor: data.products?.users?.user_nm || 'Proveedor no encontrado',
+        proveedorVerificado: data.products?.users?.verified || false,
+        verified: data.products?.users?.verified || false,
+        supplier_verified: data.products?.users?.verified || false,
+        image: data.products?.product_images?.[0]?.image_url || null,
+        imagen: data.products?.product_images?.[0]?.image_url || null,
+        image_url: data.products?.product_images?.[0]?.image_url || null,
+        thumbnail_url: data.products?.product_images?.[0]?.thumbnail_url || null,
+        price: data.offered_price || data.products?.price || null,
+        precio: data.offered_price || data.products?.price || null,
+        originalPrice: data.products?.price || null,
+        precioOriginal: data.products?.price || null,
+        basePrice: data.products?.price || null,
+        stock: data.products?.productqty || 99,
+        maxStock: data.products?.productqty || 99,
+        shippingRegions: data.products?.product_delivery_regions || [],
+        delivery_regions: data.products?.product_delivery_regions || [],
+        shipping_regions: data.products?.product_delivery_regions || [],
+        category: data.products?.category,
+        minimum_purchase: data.products?.minimum_purchase,
+        compraMinima: data.products?.minimum_purchase,
+        negotiable: data.products?.negotiable,
+        description: data.products?.description,
+        supplier_id: data.products?.supplier_id
+      };
+    } catch (_) {
+      return null;
+    }
+  }
 
-      const cart = await this.getOrCreateActiveCart(userId);
+  async migrateLocalCart(userId, localCartItems, options = {}) {
+    const { existingCart = null, skipFinalFetch = false } = options;
+    try {
+      if (!localCartItems || localCartItems.length === 0) {
+        if (skipFinalFetch) {
+          return existingCart || (await this.getOrCreateActiveCart(userId));
+        }
+        return await this.getOrCreateActiveCart(userId);
+      }
+
+      const cart = existingCart || (await this.getOrCreateActiveCart(userId));
 
       const backendItems = (cart.items || []).reduce((acc, item) => {
         acc[item.product_id || item.id] = item;
@@ -533,6 +674,9 @@ class CartService {
         }
       }
 
+      if (skipFinalFetch) {
+        return { cart_id: cart.cart_id, user_id: userId };
+      }
       return await this.getOrCreateActiveCart(userId);
     } catch (error) {
       throw new Error(`No se pudo migrar el carrito local: ${error.message}`);

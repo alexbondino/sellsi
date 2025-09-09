@@ -41,6 +41,8 @@ export function ProductsSectionView({
     totalPages,
     titleMarginLeft,
     getPriority, // ✅ Función para determinar prioridad de imagen
+  getPriceTiers,
+  registerProductNode,
   } = data;
   const { handleBackClick, resetFiltros, scrollToTop, showScrollTop, seccionActiva } = handlers;
 
@@ -87,6 +89,8 @@ export function ProductsSectionView({
                       product={producto} 
                       type={isProviderView ? 'provider' : 'buyer'} 
                       imagePriority={getPriority ? getPriority(index) : false} // ✅ Prioridad dinámica por posición
+                      // Optional prefetch wiring from useProducts hook
+                      registerProductNode={registerProductNode}
                     />
                   </Box>
                 ))}

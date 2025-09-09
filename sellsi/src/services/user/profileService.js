@@ -6,6 +6,24 @@
 import { supabase } from '../supabase';
 import { BANKS } from '../../shared/constants/profile';
 
+// ============================================================================
+// PERF PROFILE CACHE (dedupe + TTL)
+// ============================================================================
+// Evita N llamadas simultáneas a getUserProfile (ownership, shippingRegion, shippingValidation etc.)
+// y reduce 3 fetch shipping_info => 1 usando embedding.
+
+const PROFILE_CACHE_TTL = 60_000; // 60s (ajustable). Mantener corto para minimizar stale.
+const profileCache = new Map(); // userId -> { data, ts }
+const inFlight = new Map(); // userId -> Promise
+
+export const invalidateUserProfileCache = (userId) => {
+  if (userId) {
+    profileCache.delete(userId);
+    return;
+  }
+  profileCache.clear();
+};
+
 /**
  * Limpia y valida el valor del banco
  * @param {string} bankValue - Valor del banco a validar
@@ -31,104 +49,129 @@ const cleanBankValue = (bankValue) => {
  * @param {string} userId - ID del usuario
  * @returns {object} - Perfil completo del usuario
  */
-export const getUserProfile = async (userId) => {
+export const getUserProfile = async (userId, options = {}) => {
+  const force = !!options.force;
+  if (!userId) return { data: null, error: new Error('userId requerido') };
+
+  // 1. Cache hit
+  const cached = profileCache.get(userId);
+  if (!force && cached && (Date.now() - cached.ts) < PROFILE_CACHE_TTL) {
+    return { data: cached.data, error: null, cached: true };
+  }
+
+  // 2. In-flight dedupe
+  if (!force && inFlight.has(userId)) {
+    try {
+      const data = await inFlight.get(userId);
+      return { data, error: null, deduped: true };
+    } catch (e) {
+      return { data: null, error: e };
+    }
+  }
+
+  // 3. Real fetch (embedding). Fallback a modo legacy si falla embedding.
+  const fetchPromise = (async () => {
+    try {
+      // Embebido: una sola llamada
+      const { data, error } = await supabase
+        .from('users')
+        .select('*, bank_info(*), shipping_info(*), billing_info(*)')
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      if (error) throw error;
+      if (!data) return null;
+
+      // Normalizar relaciones (pueden venir como array o null)
+      const bankRel = Array.isArray(data.bank_info) ? data.bank_info[0] : data.bank_info;
+      const shipRel = Array.isArray(data.shipping_info) ? data.shipping_info[0] : data.shipping_info;
+      const billRel = Array.isArray(data.billing_info) ? data.billing_info[0] : data.billing_info;
+
+      const completeProfile = {
+        ...data,
+        // Flatten bancario
+        account_holder: bankRel?.account_holder || '',
+        bank: cleanBankValue(bankRel?.bank),
+        account_number: bankRel?.account_number || '',
+        transfer_rut: bankRel?.transfer_rut || '',
+        confirmation_email: bankRel?.confirmation_email || '',
+        account_type: bankRel?.account_type || 'corriente',
+        // Flatten shipping
+        shipping_region: shipRel?.shipping_region || '',
+        shipping_commune: shipRel?.shipping_commune || '',
+        shipping_address: shipRel?.shipping_address || '',
+        shipping_number: shipRel?.shipping_number || '',
+        shipping_dept: shipRel?.shipping_dept || '',
+        // Flatten billing
+        business_name: billRel?.business_name || '',
+        billing_rut: billRel?.billing_rut || '',
+        business_line: billRel?.business_line || '',
+        billing_address: billRel?.billing_address || '',
+        billing_region: billRel?.billing_region || '',
+        billing_commune: billRel?.billing_commune || '',
+        // Defaults
+        descripcion_proveedor: data?.descripcion_proveedor || '',
+        document_types: data?.document_types || [],
+      };
+
+      profileCache.set(userId, { data: completeProfile, ts: Date.now() });
+      return completeProfile;
+    } catch (embedErr) {
+      // Fallback legacy (4 consultas) solo si embedding falla por RLS o relación no declarada
+      try {
+        const { data: userData, error: userError } = await supabase
+          .from('users')
+          .select('*')
+          .eq('user_id', userId)
+          .maybeSingle();
+        if (userError) throw userError;
+
+        const [bankRes, shipRes, billRes] = await Promise.allSettled([
+          supabase.from('bank_info').select('*').eq('user_id', userId).maybeSingle(),
+          supabase.from('shipping_info').select('*').eq('user_id', userId).maybeSingle(),
+          supabase.from('billing_info').select('*').eq('user_id', userId).maybeSingle(),
+        ]);
+        const bankData = bankRes.status === 'fulfilled' && !bankRes.value.error ? bankRes.value.data : null;
+        const shippingData = shipRes.status === 'fulfilled' && !shipRes.value.error ? shipRes.value.data : null;
+        const billingData = billRes.status === 'fulfilled' && !billRes.value.error ? billRes.value.data : null;
+        const completeProfile = {
+          ...userData,
+          account_holder: bankData?.account_holder || '',
+            bank: cleanBankValue(bankData?.bank),
+            account_number: bankData?.account_number || '',
+            transfer_rut: bankData?.transfer_rut || '',
+            confirmation_email: bankData?.confirmation_email || '',
+            account_type: bankData?.account_type || 'corriente',
+            shipping_region: shippingData?.shipping_region || '',
+            shipping_commune: shippingData?.shipping_commune || '',
+            shipping_address: shippingData?.shipping_address || '',
+            shipping_number: shippingData?.shipping_number || '',
+            shipping_dept: shippingData?.shipping_dept || '',
+            business_name: billingData?.business_name || '',
+            billing_rut: billingData?.billing_rut || '',
+            business_line: billingData?.business_line || '',
+            billing_address: billingData?.billing_address || '',
+            billing_region: billingData?.billing_region || '',
+            billing_commune: billingData?.billing_commune || '',
+            descripcion_proveedor: userData?.descripcion_proveedor || '',
+            document_types: userData?.document_types || [],
+        };
+        profileCache.set(userId, { data: completeProfile, ts: Date.now() });
+        return completeProfile;
+      } catch (legacyErr) {
+        throw embedErr || legacyErr;
+      }
+    }
+  })();
+
+  inFlight.set(userId, fetchPromise);
   try {
-    // Query principal para obtener datos del usuario
-
-    const { data: userData, error: userError } = await supabase
-      .from('users')
-      .select('*')
-      .eq('user_id', userId)
-      .maybeSingle();
-
-    if (userError) throw userError;
-
-    // Obtener información bancaria con manejo de errores
-    let bankData = null;
-    try {
-      const { data, error } = await supabase
-        .from('bank_info')
-        .select('*')
-        .eq('user_id', userId)
-        .maybeSingle();
-      
-      // Solo asignar datos si no hay error y hay datos válidos
-      if (!error && data) {
-        bankData = data;
-      }
-    } catch (bankError) {
-      // ...removed log...
-    }
-
-    // Obtener Dirección de Despacho con manejo de errores
-    let shippingData = null;
-    try {
-      const { data, error } = await supabase
-        .from('shipping_info')
-        .select('*')
-        .eq('user_id', userId)
-        .maybeSingle();
-      
-      if (!error && data) {
-        shippingData = data;
-      }
-    } catch (shippingError) {
-      // ...removed log...
-    }
-
-    // Obtener Facturación con manejo de errores
-    let billingData = null;
-    try {
-      const { data, error } = await supabase
-        .from('billing_info')
-        .select('*')
-        .eq('user_id', userId)
-        .maybeSingle();
-      
-      if (!error && data) {
-        billingData = data;
-      }
-    } catch (billingError) {
-      // ...removed log...
-    }
-
-    // Combinar todos los datos (las consultas adicionales pueden fallar si no existen registros)
-    const completeProfile = {
-      ...userData,
-      // Información bancaria (opcional)
-      account_holder: bankData?.account_holder || '',
-      bank: cleanBankValue(bankData?.bank), // ✅ LIMPIAR: Validar banco
-      account_number: bankData?.account_number || '',
-      transfer_rut: bankData?.transfer_rut || '',
-      confirmation_email: bankData?.confirmation_email || '',
-      account_type: bankData?.account_type || 'corriente',
-      
-      // Dirección de Despacho (opcional)
-      shipping_region: shippingData?.shipping_region || '',
-      shipping_commune: shippingData?.shipping_commune || '',
-      shipping_address: shippingData?.shipping_address || '',
-      shipping_number: shippingData?.shipping_number || '',
-      shipping_dept: shippingData?.shipping_dept || '',
-      
-      // Facturación (opcional)
-      business_name: billingData?.business_name || '',
-      billing_rut: billingData?.billing_rut || '',
-      business_line: billingData?.business_line || '',
-      billing_address: billingData?.billing_address || '',
-      billing_region: billingData?.billing_region || '',
-      billing_commune: billingData?.billing_commune || '',
-
-      // Descripción de proveedor
-      descripcion_proveedor: userData?.descripcion_proveedor || '',
-      
-      // ✅ AGREGAR: Tipos de documento tributario
-      document_types: userData?.document_types || [],
-    };
-
-    return { data: completeProfile, error: null };
+    const data = await fetchPromise;
+    return { data, error: null };
   } catch (error) {
-    // ...removed log...
     return { data: null, error };
+  } finally {
+    inFlight.delete(userId);
   }
 };
 
@@ -271,7 +314,9 @@ export const updateUserProfile = async (userId, profileData) => {
       }
     }
 
-    return { success: true, error: null };
+  // Invalidar cache tras actualización completa
+  invalidateUserProfileCache(userId);
+  return { success: true, error: null };
   } catch (error) {
     // ...removed log...
     return { success: false, error };
@@ -345,7 +390,9 @@ export const uploadProfileImage = async (userId, imageFile) => {
       }
     }
 
-    return { url: publicUrl, error: null };
+  // Invalidate cache para que profile refresque logo_url
+  invalidateUserProfileCache(userId);
+  return { url: publicUrl, error: null };
   } catch (error) {
     // ...removed log...
     return { url: null, error };

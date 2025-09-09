@@ -40,7 +40,6 @@ import { DocumentTypesChipsSkeleton } from './skeletons/DocumentTypesChipsSkelet
 import { useSmartSkeleton } from '../hooks/useSmartSkeleton'
 import StockIndicator from '../../marketplace/StockIndicator/StockIndicator'
 import QuotationModal from './QuotationModal'
-import { useProductPriceTiers } from '../../../shared/hooks/product/useProductPriceTiers';
 import ContactModal from '../../../shared/components/modals/ContactModal';
 import { useSupplierDocumentTypes } from '../../../shared/utils/supplierDocumentTypes';
 import { formatNumber } from '../../../shared/utils/formatters/numberFormatters';
@@ -66,14 +65,11 @@ const ProductHeader = React.memo(({
     compraMinima,
     descripcion = 'Producto de alta calidad con excelentes características y garantía de satisfacción.',
   } = product
-  const {
-    tiers,
-    loading: loadingTiers,
-    error: errorTiers,
-  } = useProductPriceTiers(product.id)
-
-  // Usar tramos del producto si existen, sino usar los del hook
-  const finalTiers = product.priceTiers || tiers || []
+  // Centralized deferred tiers from marketplace cache (no legacy per-product hook)
+  const loadingTiers = product.tiersStatus === 'loading'
+  const errorTiers = product.tiersStatus === 'error'
+  const tiers = product.priceTiers || []
+  const finalTiers = tiers
 
   // ✅ NUEVO: Hook para obtener thumbnail responsivo de la imagen principal
   const { thumbnailUrl: mainImageThumbnail, isLoading: thumbnailLoading } = useResponsiveThumbnail(product);

@@ -76,7 +76,11 @@ export const useMarketplaceLogic = (options = {}) => {
     resetFiltros,
     toggleCategoria,
     handleTipoVentaChange,
+  getPriceTiers,
+  registerProductNode,
   } = useMarketplaceState();
+  // Prefetch helpers provided by useMarketplaceState
+  // (included in the destructured return to avoid calling the hook twice)
 
   // Hook para opciones de ordenamiento
   const {
@@ -294,6 +298,9 @@ export const useMarketplaceLogic = (options = {}) => {
       loading,
       error,
       isProviderView, // Para cambiar el comportamiento en Vista 1
+  // Pasar funciones de nivel inferior para prefetch de tiers
+  getPriceTiers,
+  registerProductNode,
     }),
     [
       seccionActiva,

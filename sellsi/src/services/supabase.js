@@ -66,3 +66,60 @@ if (import.meta.env && import.meta.env.DEV) {
     // ignore in environments where window is not available
   }
 }
+
+// ============================================================================
+// AUTH getUser DEDUPE + CACHE (reduce 6 fetch -> 1)
+// ============================================================================
+// Muchos módulos llaman supabase.auth.getUser() simultáneamente tras F5.
+// Este wrapper añade:
+//  - Cache en memoria (TTL corto)
+//  - Promesa en vuelo compartida (inFlight) para deduplicar
+//  - Invalidation explícita
+// Mantiene la misma forma de retorno: { data: { user }, error }
+
+let __authUserCache = { user: null, ts: 0 }
+let __authInFlight = null
+const AUTH_USER_TTL = 60_000 // 60s; ajustar según necesidades
+
+const __originalGetUser = supabase.auth.getUser.bind(supabase.auth)
+
+export const invalidateAuthUserCache = () => {
+  __authUserCache = { user: null, ts: 0 }
+}
+
+supabase.auth.getUser = async (options = {}) => {
+  const force = !!options.force
+  if (force) invalidateAuthUserCache()
+
+  const now = Date.now()
+  if (!force && __authUserCache.user && (now - __authUserCache.ts) < AUTH_USER_TTL) {
+    if (import.meta.env.DEV) console.debug('[auth:getUser] cache hit')
+    return { data: { user: __authUserCache.user }, error: null }
+  }
+
+  if (__authInFlight) {
+    if (import.meta.env.DEV) console.debug('[auth:getUser] dedup -> waiting inFlight')
+    return __authInFlight
+  }
+
+  if (import.meta.env.DEV) console.debug('[auth:getUser] real fetch')
+  __authInFlight = (async () => {
+    try {
+      const { data, error } = await __originalGetUser()
+      if (!error) {
+        __authUserCache.user = data?.user || null
+        __authUserCache.ts = Date.now()
+      }
+      return { data, error }
+    } finally {
+      __authInFlight = null
+    }
+  })()
+
+  return __authInFlight
+}
+
+// Exponer invalidación en window (solo dev) para debugging manual
+if (import.meta.env && import.meta.env.DEV) {
+  try { window.invalidateAuthUserCache = invalidateAuthUserCache } catch (_) {}
+}

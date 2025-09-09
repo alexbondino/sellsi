@@ -38,6 +38,7 @@ export const UnifiedAuthProvider = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const lastSessionIdRef = useRef(null);
+  const fetchingUsersRef = useRef(new Set());
   const [isRoleSwitching, setIsRoleSwitching] = useState(false);
   const [lastMainSupplier, setLastMainSupplier] = useState(null);
 
@@ -51,33 +52,52 @@ export const UnifiedAuthProvider = ({ children }) => {
       return;
     }
 
-    lastSessionIdRef.current = currentSession.user.id;
-    try { localStorage.setItem('user_id', currentSession.user.id); } catch(e) {}
+    const userId = currentSession.user.id;
 
-    const { data: userData, error } = await supabase
-      .from('users')
-      .select('user_nm, main_supplier, logo_url')
-      .eq('user_id', currentSession.user.id)
-      .single();
-
-    if (error) {
-      setNeedsOnboarding(true);
-      setUserProfile(null);
+    // If another fetch for the same user is in flight, skip duplicate work
+    if (fetchingUsersRef.current.has(userId)) {
       setLoadingUserStatus(false);
-      try { localStorage.removeItem('user_id'); } catch(e) {}
       return;
     }
 
-    if (!userData || userData.user_nm?.toLowerCase() === USER_NAME_STATUS.PENDING) {
-      setNeedsOnboarding(true);
-      setUserProfile(null);
-      try { localStorage.removeItem('user_id'); } catch(e) {}
-    } else {
-      setNeedsOnboarding(false);
-      setUserProfile(userData);
-      setLastMainSupplier(userData.main_supplier);
+    // If we already loaded this user's profile for the same session id, skip
+    if (lastSessionIdRef.current === userId && userProfile) {
+      setLoadingUserStatus(false);
+      return;
     }
-    setLoadingUserStatus(false);
+
+    lastSessionIdRef.current = userId;
+    try { localStorage.setItem('user_id', userId); } catch(e) {}
+    fetchingUsersRef.current.add(userId);
+
+    try {
+      const { data: userData, error } = await supabase
+        .from('users')
+        .select('user_nm, main_supplier, logo_url')
+        .eq('user_id', userId)
+        .single();
+
+      if (error) {
+        setNeedsOnboarding(true);
+        setUserProfile(null);
+        setLoadingUserStatus(false);
+        try { localStorage.removeItem('user_id'); } catch(e) {}
+        return;
+      }
+
+      if (!userData || userData.user_nm?.toLowerCase() === USER_NAME_STATUS.PENDING) {
+        setNeedsOnboarding(true);
+        setUserProfile(null);
+        try { localStorage.removeItem('user_id'); } catch(e) {}
+      } else {
+        setNeedsOnboarding(false);
+        setUserProfile(userData);
+        setLastMainSupplier(userData.main_supplier);
+      }
+      setLoadingUserStatus(false);
+    } finally {
+      try { fetchingUsersRef.current.delete(userId); } catch (_) {}
+    }
   };
 
   // Initial session & listener

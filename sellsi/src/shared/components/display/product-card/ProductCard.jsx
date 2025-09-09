@@ -1,5 +1,5 @@
 // src/shared/components/display/product-card/ProductCard.jsx
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, Box, alpha } from '@mui/material';
 
@@ -38,8 +38,10 @@ const ProductCard = React.memo(
     isUpdating = false,
     isProcessing = false,
     onAddToCart,
+    registerProductNode,
   }) => {
     const navigate = useNavigate();
+    const rootRef = React.useRef(null);
     
     // Estado para controlar si el modal AddToCart está abierto
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -50,6 +52,22 @@ const ProductCard = React.memo(
     }
 
     const { id, nombre, imagen } = product;
+
+    // Register DOM node for prefetch when this card mounts (if provided)
+    useEffect(() => {
+      const el = rootRef.current;
+      if (!el) return;
+      try {
+        if (registerProductNode) registerProductNode(id, el);
+      } catch (_) {
+        // swallow registration errors
+      }
+      return () => {
+        // no-op for now; registerProductNode may support unregister in future
+      };
+      // We intentionally keep deps minimal; registerProductNode is expected to be stable.
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [id]);
 
     // --- Memoized common elements ---
     const memoizedImage = useMemo(() => {
@@ -122,78 +140,56 @@ const ProductCard = React.memo(
         .replace(/-+/g, '-')
         .replace(/^-|-$/g, '');
       const productSlug = `${productId}${productName ? `-${productName}` : ''}`;
-      const currentPath = window.location.pathname;
-      // Si estamos en el marketplace público, usar la ruta pública
-      if (currentPath === '/marketplace' || currentPath === '/') {
-        return `/technicalspecs/${productSlug}`;
-      }
-      // Si estamos en la lista de productos del supplier, mantener contexto supplier
-      if (currentPath === '/supplier/myproducts') {
-        return `/supplier/myproducts/product/${productSlug}`;
-      }
-      // Si estamos en el contexto de provider, usar rutas de provider
+      const currentPath = typeof window !== 'undefined' ? window.location.pathname : '';
       if (currentPath.includes('/provider/')) {
         return `/provider/marketplace/product/${productSlug}`;
       }
-      // Si estamos en dashboard buyer/supplier, usar la ruta privada por defecto
+      // Default public/private route
       return `/marketplace/product/${productId}${productName ? `/${productName}` : ''}`;
     }, []);
 
     // Function for card navigation (works for both buyer and supplier types)
-    const handleProductClick = useCallback(
-      e => {
-        // Si es tipo provider, no permitir navegación de la card
-        if (type === 'provider') {
-          return;
-        }
-        
-        // Si el modal AddToCart está abierto, no permitir navegación
-        if (isModalOpen) {
-          return;
-        }
-        
-        // This logic applies to both 'buyer' and 'supplier' types
-        // but prevent navigation if click originated from an interactive element
-        const target = e.target;
-        const clickedElement =
+    const handleProductClick = useCallback((e) => {
+      // Si el modal AddToCart está abierto, no permitir navegación
+      if (isModalOpen) return;
+
+      // Prevent navigation when clicking interactive elements inside the card
+      const target = e.target;
+      const clickedElement =
+        target.closest && (
           target.closest('button') ||
           target.closest('.MuiIconButton-root') ||
           target.closest('.MuiButton-root') ||
-          target.closest('[data-no-card-click]') ||
-          target.hasAttribute('data-no-card-click');
+          target.closest('[data-no-card-click]')
+        ) ||
+        target.hasAttribute && target.hasAttribute('data-no-card-click');
 
-        if (clickedElement) {
-          return;
-        }
+      if (clickedElement) return;
 
+      const currentPath = typeof window !== 'undefined' ? window.location.pathname : '';
+      let fromPath = '/marketplace';
+      if (currentPath.includes('/buyer/')) {
+        fromPath = '/buyer/marketplace';
+      } else if (currentPath === '/supplier/marketplace') {
+        fromPath = '/supplier/marketplace';
+      } else if (currentPath === '/supplier/myproducts') {
+        fromPath = '/supplier/myproducts';
+      } else if (currentPath.includes('/provider/')) {
+        fromPath = '/provider/marketplace';
+      }
 
-        const currentPath = window.location.pathname;
-        let fromPath = '/marketplace';
-
-        if (currentPath.includes('/buyer/')) {
-          fromPath = '/buyer/marketplace';
-        } else if (currentPath === '/supplier/marketplace') {
-          fromPath = '/supplier/marketplace';
-        } else if (currentPath === '/supplier/myproducts') {
-          fromPath = '/supplier/myproducts';
-        } else if (currentPath.includes('/provider/')) {
-          fromPath = '/provider/marketplace';
-        }
-
-        const productUrl = generateProductUrl(product);
-        navigate(productUrl, {
-          state: { from: fromPath },
-        });
-      },
-      [navigate, product, generateProductUrl, type, isModalOpen] // Updated dependencies
-    );
+      const productUrl = generateProductUrl(product);
+      navigate(productUrl, { state: { from: fromPath } });
+    }, [isModalOpen, navigate, product, generateProductUrl]);
 
     return (
       <Card
+        ref={rootRef}
         elevation={type === 'buyer' || type === 'provider' ? 2 : 0} // Buyer y Provider tienen elevation, Supplier no
         onClick={handleProductClick}
         sx={cardStyles}
       >
+    {/* registerProductNode effect handled by the useEffect above (no inline effects in JSX) */}
   {/* ✅ Ocultar imagen de producto en tarjetas de proveedor (Option A) */}
   {type !== 'provider' && memoizedImage}
         {type === 'supplier' && (

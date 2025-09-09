@@ -30,7 +30,7 @@ import ProductsSectionView from './ProductsSection/ProductsSectionView';
  * ✅ DESACOPLADO: Layout estático independiente del estado de SearchBar
  */
 // ✅ MEJORA DE RENDIMIENTO: Memoización del componente
-const ProductsSection = React.memo(({ seccionActiva, setSeccionActiva, totalProductos, productosOrdenados, resetFiltros, titleMarginLeft, loading, error, isProviderView = false }) => {
+const ProductsSection = React.memo(({ seccionActiva, setSeccionActiva, totalProductos, productosOrdenados, resetFiltros, titleMarginLeft, loading, error, isProviderView = false, getPriceTiers, registerProductNode }) => {
   // Layout styles
   const mainContainerStyles = React.useMemo(() => ({
     pt: { xs: 3.5, md: '90px' },
@@ -307,11 +307,14 @@ const ProductsSection = React.memo(({ seccionActiva, setSeccionActiva, totalProd
   }, []);
   const ui = { mainContainerStyles, innerContainerStyles, gridStyles, cardContainerStyles, sectionTitle };
   const handlers = { handleBackClick, resetFiltros, scrollToTop, showScrollTop, seccionActiva };
+  // getPriceTiers and registerProductNode are provided via productsSectionProps from useMarketplaceLogic
   const data = {
     loading, error, isProviderView, totalProductos, providersCount, productosOrdenados,
     renderItems, PaginationComponent, isInfiniteScrollActive, isLoadingMore, currentPageProducts,
     PRODUCTS_PER_PAGE_META, startIndex, endIndex, currentPage, totalPages, titleMarginLeft,
-    getPriority // ✅ Función para determinar prioridad de imagen por índice
+    getPriority, // ✅ Función para determinar prioridad de imagen por índice
+    getPriceTiers,
+    registerProductNode,
   };
   const components = {
     Loading: (

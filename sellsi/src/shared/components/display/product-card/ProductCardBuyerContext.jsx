@@ -23,7 +23,6 @@ import { useOptimizedUserShippingRegion } from '../../../../hooks/useOptimizedUs
 import { showErrorToast } from '../../../../utils/toastHelpers';
 import { generateProductUrl } from '../../../utils/product/productUrl';
 import PriceDisplay from '../price/PriceDisplay';
-import { useProductPriceTiers } from '../../../hooks/product/useProductPriceTiers';
 import {
   formatProductForCart,
   calculatePriceForQuantity,
@@ -53,21 +52,10 @@ const ProductCardBuyerContext = React.memo(
     const negociable = product.negociable || product.negotiable || false;
     const proveedorVerificado = product.verified || product.proveedorVerificado || product.supplierVerified || false;
 
-    // Hook to get price tiers (maintain for compatibility)
-    const {
-      tiers,
-      loading: loadingTiers,
-      error: errorTiers,
-    } = useProductPriceTiers(product.id);
-
-    // Unify source of price_tiers: prefer product's, if not, from hook
-    const price_tiers = useMemo(() => {
-      return product.priceTiers && product.priceTiers.length > 0
-        ? product.priceTiers
-        : tiers && tiers.length > 0
-        ? tiers
-        : [];
-    }, [product.priceTiers, tiers]);
+  // Centralized: product.priceTiers now populated (deferred) by useProducts batching logic
+  const price_tiers = product.priceTiers || [];
+  const loadingTiers = product.tiersStatus === 'loading';
+  const errorTiers = product.tiersStatus === 'error';
 
     const memoizedPriceContent = useMemo(() => {
       if (loadingTiers) {
@@ -112,7 +100,7 @@ const ProductCardBuyerContext = React.memo(
           />
         );
       }
-    }, [loadingTiers, errorTiers, price_tiers, precio, precioOriginal]);
+  }, [loadingTiers, errorTiers, price_tiers, precio, precioOriginal]);
 
     return (
       <Box sx={{ height: '100%' }}>

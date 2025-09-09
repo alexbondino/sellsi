@@ -171,11 +171,6 @@ jest.mock('../../src/services/user', () => {
 });
 
 // ===== MOCK: useProductPriceTiers hook =====
-// Prevent import.meta usage in the real hook from breaking Jest parsing.
-jest.mock('../../src/shared/hooks/product/useProductPriceTiers', () => ({
-  useProductPriceTiers: jest.fn(() => ({
-    tiers: [],
-    loading: false,
-    error: null,
-  })),
-}));
+// Deprecated: the shared hook was removed in favor of centralized tier caching.
+// Tests should mock higher-level modules or provide product fixtures with
+// `priceTiers` and `tiersStatus` fields instead of mocking this hook.
