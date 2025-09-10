@@ -342,14 +342,37 @@ export const useOfferStore = create((set, get) => ({
     }
   },
 
-  // Eliminar/Limpiar oferta (solo local + intento RPC opcional)
-  deleteOffer: async (offerId) => {
+  // Eliminar/Limpiar oferta: ahora soporta limpieza por rol ('buyer' | 'supplier').
+  // Lógica:
+  //  - Llama RPC opcional `mark_offer_hidden(p_offer_id, p_role)` que marca la oferta como oculta
+  //    para ese rol en el backend. Si el backend decide eliminarla definitivamente (ambos roles la
+  //    han ocultado), la RPC puede devolver deleted=true.
+  //  - Localmente actualiza el estado correspondiente (buyerOffers o supplierOffers) para
+  //    que la fila desaparezca inmediatamente de la UI.
+  deleteOffer: async (offerId, role = 'buyer') => {
     try {
-      // Intento RPC si existe función (ignoramos errores porque es acción de limpieza visual en tests)
-      try { await supabase.rpc('delete_offer', { p_offer_id: offerId }); } catch (_) {}
-      set(state => ({
-        buyerOffers: state.buyerOffers.filter(o => o.id !== offerId)
-      }));
+      // Intento RPC resiliente: no fallamos si la función no existe o lanza.
+      try {
+        await supabase.rpc('mark_offer_hidden', { p_offer_id: offerId, p_role: role });
+      } catch (_) {
+        // mantener compatibilidad: si no existe mark_offer_hidden, intentamos delete_offer (legacy)
+        try { await supabase.rpc('delete_offer', { p_offer_id: offerId }); } catch (_) {}
+      }
+
+      // Actualizar sólo la colección local asociada al rol invocante para evitar borrar la vista
+      // del otro actor. Esto garantiza que buyer y supplier pueden limpiar independientemente.
+      set(state => {
+        const next = {};
+        if (role === 'buyer') {
+          next.buyerOffers = state.buyerOffers.filter(o => o.id !== offerId);
+        } else if (role === 'supplier') {
+          next.supplierOffers = state.supplierOffers.filter(o => o.id !== offerId);
+        } else {
+          // fallback: eliminar de buyerOffers
+          next.buyerOffers = state.buyerOffers.filter(o => o.id !== offerId);
+        }
+        return next;
+      });
     } catch (_) {}
   },
   

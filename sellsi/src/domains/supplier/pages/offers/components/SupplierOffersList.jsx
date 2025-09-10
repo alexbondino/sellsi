@@ -111,7 +111,7 @@ const SupplierOffersList = ({ offers = [], setOffers, acceptOffer, rejectOffer, 
   const handleCleanup = async (offer) => {
     try {
       if (deleteOffer) {
-        await deleteOffer(offer.id);
+  await deleteOffer(offer.id, 'supplier');
       }
       removeOffer(offer.id);
       closeModal();

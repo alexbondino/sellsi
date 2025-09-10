@@ -82,7 +82,7 @@ const OffersList = ({ offers = [], loading = false, error = null, cancelOffer, d
   const handleDeleteOffer = async (offerId) => {
     try {
       if (onDeleteOffer) return onDeleteOffer(offers.find(o=>o.id===offerId));
-      if (deleteOffer) return await deleteOffer(offerId);
+      if (deleteOffer) return await deleteOffer(offerId, 'buyer');
     } catch (error) {
       console.error('Error deleting offer:', error);
     }
