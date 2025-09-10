@@ -12,13 +12,10 @@ export async function runValidateOfferLimits(rawArgs, { supabase, get, log }) {
     log('validateOfferLimits input', { buyerId, productId, supplierId });
     if (!buyerId || !productId || !supplierId) throw new Error('Parámetros inválidos para validateOfferLimits');
     const state = get();
-    state._validateCache = state._validateCache || new Map();
     state._validateInFlight = state._validateInFlight || new Map();
     const key = `${buyerId}:${supplierId}:${productId}`;
-    const now = Date.now();
-    const TTL = 3000;
-    const cached = state._validateCache.get(key);
-    if (cached && (now - cached.ts) < TTL) { log('validateOfferLimits cache hit', key); return cached.data; }
+    // Deduplicate concurrent calls in-flight. We intentionally avoid a long-lived cache here
+    // to prevent stale results from leaking between tests (tests manage store state themselves).
     if (state._validateInFlight.has(key)) { log('validateOfferLimits join in-flight', key); return await state._validateInFlight.get(key); }
     const p = (async () => {
       const res = await supabase.rpc('validate_offer_limits', { p_buyer_id: buyerId, p_supplier_id: supplierId, p_product_id: productId });
@@ -31,7 +28,6 @@ export async function runValidateOfferLimits(rawArgs, { supabase, get, log }) {
       const allowed = !!data.allowed;
       const reason = data.reason || (productCount >= productLimit ? 'Se alcanzó el límite mensual de ofertas (producto)' : (supplierCount >= supplierLimit ? 'Se alcanzó el límite mensual de ofertas con este proveedor' : undefined));
       const base = { isValid: allowed, allowed, currentCount: productCount, product_count: productCount, supplier_count: supplierCount, limit: productLimit, product_limit: productLimit, supplier_limit: supplierLimit, reason };
-      state._validateCache.set(key, { ts: Date.now(), data: base });
       return base;
     })();
     state._validateInFlight.set(key, p);

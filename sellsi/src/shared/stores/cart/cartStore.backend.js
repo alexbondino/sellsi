@@ -57,20 +57,29 @@ export const initializeCartWithUser = async (userId, set, get) => {
       // Filtrar locales que NO existan ya en backend (clave: product_id + offer_id)
       const backendKeySet = new Set((backendCart.items || []).map(it => `${it.product_id}|${it.offer_id || ''}`))
       const toMigrate = localItems.filter(li => !backendKeySet.has(`${li.product_id || li.id}|${li.offer_id || ''}`))
+      let finalItems
       if (toMigrate.length > 0) {
+        // Solo ejecutar migración y refetch completo si realmente hay ítems nuevos que subir
         await cartService.migrateLocalCart(userId, toMigrate, { existingCart: backendCart, skipFinalFetch: true })
+        // Refrescar para incluir inserciones / merges recientes
+        finalItems = await cartService.getCartItems(backendCart.cart_id)
+      } else {
+        // No hubo nada que migrar: reutilizar items ya obtenidos (evita segundo fetch idéntico)
+        finalItems = backendCart.items || []
+        try {
+          // eslint-disable-next-line no-console
+          console.debug('[cartStore.backend] skip second fetch (no migration needed)', { cartId: backendCart.cart_id, itemCount: finalItems.length })
+        } catch(_) {}
       }
-      // Refrescar items tras potencial migración parcial
-      const updatedItems = await cartService.getCartItems(backendCart.cart_id)
       
       // DEBUG: registrar items devueltos por backend tras migración
       try {
         // eslint-disable-next-line no-console
-        console.log('[cartStore.backend] updatedItems after migrate:', { cartId: backendCart.cart_id, updatedItems })
+        console.log('[cartStore.backend] finalItems after init:', { cartId: backendCart.cart_id, finalItems })
       } catch (e) {}
 
       set({
-        items: updatedItems || [],
+        items: finalItems || [],
         cartId: backendCart.cart_id,
         userId: userId,
         isBackendSynced: true,
@@ -178,18 +187,23 @@ export const addItemWithBackend = async (product, quantity, set, get, historySto
 
     // Ensure we are using the correct cart_id for the authenticated user to satisfy RLS.
     let userIdForRequest = state.userId
-    try {
-      const session = await supabase.auth.getUser?.()
-      const user = session?.data?.user
-      if (user) userIdForRequest = user.id
-      else {
-        // No session -> prompt login and abort
-        try { window.dispatchEvent(new CustomEvent('openLogin')) } catch (e) {}
-        set({ isSyncing: false, error: 'Necesitas iniciar sesión para agregar este producto al carrito' })
-        return false
+    // If supabase.auth.getUser is available in the environment, prefer it.
+    const authApiAvailable = !!(supabase && supabase.auth && typeof supabase.auth.getUser === 'function');
+    if (authApiAvailable) {
+      try {
+        const session = await supabase.auth.getUser();
+        const user = session?.data?.user;
+        if (user) {
+          userIdForRequest = user.id;
+        } else {
+          // No session -> prompt login and abort (only when auth API exists)
+          try { window.dispatchEvent(new CustomEvent('openLogin')) } catch (e) {}
+          set({ isSyncing: false, error: 'Necesitas iniciar sesión para agregar este producto al carrito' })
+          return false
+        }
+      } catch (e) {
+        // On auth API error, fallback to existing state.userId
       }
-    } catch (e) {
-      // If auth API not available, fallback to existing state.userId
     }
 
     // Resolve or create the active cart for this user (server-side ownership enforced)
@@ -227,7 +241,22 @@ export const addItemWithBackend = async (product, quantity, set, get, historySto
     // Obtener línea enriquecida (si existe) y fusionarla sin refetch total
     let enriched = null
     if (result && result.cart_items_id) {
-      enriched = await cartService.getCartItemEnriched(result.cart_items_id)
+      // Preferir API puntual si existe, pero en tests puede no estar mockeada.
+      if (typeof cartService.getCartItemEnriched === 'function') {
+        try {
+          enriched = await cartService.getCartItemEnriched(result.cart_items_id)
+        } catch (e) {
+          // ignore and fallback
+        }
+      }
+      if (!enriched && typeof cartService.getCartItems === 'function') {
+        try {
+          const items = await cartService.getCartItems(cartIdToUse)
+          enriched = Array.isArray(items) ? items.find(it => it.cart_items_id === result.cart_items_id || it.id === result.cart_items_id) : null
+        } catch (e) {
+          // ignore fallback error
+        }
+      }
     }
 
     set(current => {

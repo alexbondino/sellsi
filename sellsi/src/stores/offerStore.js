@@ -20,6 +20,9 @@ import {
   notifyOfferResponseSafe,
   pruneInvalidOfferCartItems
 } from './offers';
+
+// Re-export some constants for backwards compatibility with tests and legacy imports
+export { OFFER_STATES, INVALID_FOR_CART };
 // Helper de logging acumulativo para inspección en tests cuando la consola se trunca
 function __logOfferDebug(...args) {
   try {
@@ -38,7 +41,14 @@ function __logOfferDebug(...args) {
 // En entorno de test asegurar que usamos directamente el jest.fn para conservar métodos mockResolvedValueOnce
 if (typeof process !== 'undefined' && (process.env.JEST_WORKER_ID || process.env.NODE_ENV === 'test')) {
   try {
-    const { mockSupabase } = require('../__tests__/offers/mocks/supabaseMock');
+    // Tests place the shared supabase mock under src/__tests__/mocks/supabaseMock.js
+    // older layout kept under __tests__/offers/mocks - try both for compatibility
+    let mockPath = '../__tests__/mocks/supabaseMock';
+    let mockSupabaseModule;
+    try { mockSupabaseModule = require(mockPath); } catch (e) {
+      try { mockSupabaseModule = require('../__tests__/offers/mocks/supabaseMock'); } catch (_) { mockSupabaseModule = null }
+    }
+    const { mockSupabase } = mockSupabaseModule || {};
     if (mockSupabase?.rpc?.mock) {
       supabase.rpc = mockSupabase.rpc; // mantener referencia original (jest.fn)
     }

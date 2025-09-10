@@ -121,6 +121,16 @@ const TestApp = () => {
             <Route path="/technicalspecs/:productSlug" element={
               <TechnicalSpecs isLoggedIn={true} />
             } />
+            {/* Routes compatible with ProductCard.generateProductUrl (used in app) */}
+            <Route path="/marketplace/product/:productSlug" element={
+              <TechnicalSpecs isLoggedIn={true} />
+            } />
+            <Route path="/marketplace/product/:productId/:productName" element={
+              <TechnicalSpecs isLoggedIn={true} />
+            } />
+            <Route path="/marketplace/product/:productId" element={
+              <TechnicalSpecs isLoggedIn={true} />
+            } />
           </Routes>
         </ThemeProvider>
       </BrowserRouter>
