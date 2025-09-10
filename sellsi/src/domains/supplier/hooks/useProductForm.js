@@ -8,6 +8,8 @@
  */
 
 import React, { useState, useCallback, useEffect, useRef } from 'react'
+import { getOrFetchMainThumbnail } from '../../../services/phase1ETAGThumbnailService.js'
+import { FeatureFlags } from '../../../shared/flags/featureFlags.js'
 import { useSupplierProducts } from './useSupplierProducts'
 import { convertDbRegionsToForm } from '../../../utils/shippingRegionsUtils'
 import { 
@@ -132,25 +134,35 @@ export const useProductForm = (productId = null) => {
       if (!['thumbnails_ready','thumbnails_skipped_webp','thumbnails_partial'].includes(phase)) return
       if (userHasTouchedImages) return // respeto interacción del usuario
       // Reconsultar fila principal para obtener thumbnail_url y signature
-      const supabase = window?.supabase || window?.supabaseClient
-      if (!supabase) return
-      supabase.from('product_images')
-        .select('thumbnail_url,thumbnail_signature,image_url')
-        .eq('product_id', productId)
-        .eq('image_order', 0)
-        .maybeSingle()
-        .then(({ data }) => {
+      ;(async () => {
+        try {
+          let data = null
+          if (FeatureFlags?.FEATURE_PHASE1_THUMBS) {
+            data = await getOrFetchMainThumbnail(productId, { silent: true })
+          }
+          // Fallback legacy si servicio desactivado o no devolvió datos
+            if (!data) {
+              const supabase = window?.supabase || window?.supabaseClient
+              if (supabase) {
+                const { data: row } = await supabase.from('product_images')
+                  .select('thumbnail_url,thumbnail_signature,image_url')
+                  .eq('product_id', productId)
+                  .eq('image_order', 0)
+                  .maybeSingle()
+                data = row
+              }
+            }
           if (!data) return
           const mainImage = formData.imagenes[0]
-          // Actualizar sólo si antes estaba vacío el thumbnail y ahora existe
-            if (mainImage && !mainImage.thumbnail_url && data.thumbnail_url) {
-              setFormData(prev => ({
-                ...prev,
-                imagenes: prev.imagenes.map((img, idx) => idx === 0 ? { ...img, thumbnail_url: data.thumbnail_url } : img)
-              }))
-              setLastThumbSignature(data.thumbnail_signature || newSignature || previousSignature || null)
-            }
-        })
+          if (mainImage && !mainImage.thumbnail_url && data.thumbnail_url) {
+            setFormData(prev => ({
+              ...prev,
+              imagenes: prev.imagenes.map((img, idx) => idx === 0 ? { ...img, thumbnail_url: data.thumbnail_url } : img)
+            }))
+            setLastThumbSignature(data.thumbnail_signature || newSignature || previousSignature || null)
+          }
+        } catch(_) { /* noop */ }
+      })()
     }
     window.addEventListener('productImagesReady', handleImagesPhase)
     return () => window.removeEventListener('productImagesReady', handleImagesPhase)

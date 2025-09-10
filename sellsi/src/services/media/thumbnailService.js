@@ -1,5 +1,7 @@
 // thumbnailService.js - Servicio específico para gestión de thumbnails
 import { supabase } from '../supabase.js'
+import { getOrFetchMainThumbnail } from '../phase1ETAGThumbnailService.js'
+import { FeatureFlags } from '../../shared/flags/featureFlags.js'
 
 // Use the public env vars to call the Edge Function from the client
 // Use process.env during tests / Node. In Vite builds import.meta.env is replaced at build time.
@@ -163,7 +165,14 @@ export class ThumbnailService {
    * @returns {string} URL pública del thumbnail
    */
   static async getThumbnailUrl(productId, supplierId) {
-    // Prefer the thumbnail_url stored in DB for the main image (image_order=0)
+    // Intentar primero cache Phase1 (short-circuit) si flag activo
+    if (FeatureFlags?.FEATURE_PHASE1_THUMBS) {
+      try {
+        const cached = await getOrFetchMainThumbnail(productId, { silent: true });
+        if (cached?.thumbnail_url) return cached.thumbnail_url;
+      } catch (_) { /* fallback abajo */ }
+    }
+    // Legacy fallback directo a DB (único fetch si no estaba en cache)
     try {
       const { data: row, error } = await supabase
         .from('product_images')
@@ -172,25 +181,16 @@ export class ThumbnailService {
         .eq('image_order', 0)
         .limit(1)
         .maybeSingle();
-
-      if (error) {
-        // fallback to constructing a public url for a conventional filename
-        const thumbnailPath = `${supplierId}/${productId}/thumbnail.jpg`;
-        const { data } = supabase.storage
-          .from(this.THUMBNAIL_BUCKET)
-          .getPublicUrl(thumbnailPath);
-        return data?.publicUrl || null;
-      }
-
-      if (row && row.thumbnail_url) return row.thumbnail_url;
-
-      // Fallback: construct public URL for conventional filename
+      if (!error && row?.thumbnail_url) return row.thumbnail_url;
+    } catch (_) { /* ignore */ }
+    // Último fallback: construir URL pública convencional
+    try {
       const thumbnailPath = `${supplierId}/${productId}/thumbnail.jpg`;
       const { data } = supabase.storage
         .from(this.THUMBNAIL_BUCKET)
         .getPublicUrl(thumbnailPath);
       return data?.publicUrl || null;
-    } catch (err) {
+    } catch (_) {
       return null;
     }
   }

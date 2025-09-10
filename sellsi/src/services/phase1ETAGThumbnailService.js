@@ -30,10 +30,18 @@ export class Phase1ETAGThumbnailService {
   async fetchThumbnailWithETag(productId, { silent = false } = {}) {
     const startTime = Date.now();
     const cached = this.cache.get(productId);
-    
+    const now = Date.now();
+    // SHORT-CIRCUIT: si hay entrada válida por TTL, no tocar DB
+    if (cached && (now - cached.timestamp) < this.TTL) {
+      if (!silent && process.env.NODE_ENV !== 'production') {
+        console.log('[FASE1_ETAG] Cache HIT (short-circuit):', productId);
+      }
+      this.recordMetric('cache_hit', now - startTime);
+      return cached.data;
+    }
+
     try {
-      // Consulta con signature para validar cache (USA NUEVO ÍNDICE FASE 1)
-  const { data, error } = await supabase
+      const { data, error } = await supabase
         .from('product_images')
         .select('product_id,thumbnails,thumbnail_url,thumbnail_signature')
         .eq('product_id', productId)
@@ -41,39 +49,36 @@ export class Phase1ETAGThumbnailService {
         .single();
 
       if (error) {
-        console.warn('[FASE1_ETAG] DB Error:', error);
+        console.warn('[FASE1_ETAG] DB Error:', error?.message);
         this.recordMetric('error', Date.now() - startTime);
         return cached?.data || null;
       }
 
-      const currentSignature = data.thumbnail_signature;
-      
-      // CACHE HIT: signature matches
+      const currentSignature = data?.thumbnail_signature;
       if (cached && cached.signature === currentSignature) {
-        if (!silent) console.log('[FASE1_ETAG] Cache HIT:', productId, 'signature:', currentSignature);
+        // Firma igual: solo refrescar timestamp (refresh) => HIT lógico
+        cached.timestamp = Date.now();
+        if (!silent && process.env.NODE_ENV !== 'production') {
+          console.log('[FASE1_ETAG] Cache HIT (refresh signature match):', productId);
+        }
         this.recordMetric('cache_hit', Date.now() - startTime);
         return cached.data;
       }
 
-      // CACHE MISS: update cache with new data
-  if (!silent) console.log('[FASE1_ETAG] Cache MISS:', productId, 'new signature:', currentSignature);
-      
-      const cacheEntry = {
+      // MISS real (no existía o firma cambió)
+      if (!silent && process.env.NODE_ENV !== 'production') {
+        console.log('[FASE1_ETAG] Cache MISS DB fetch:', productId, 'signature:', currentSignature);
+      }
+      this.cache.set(productId, {
         data,
         signature: currentSignature,
         timestamp: Date.now()
-      };
-      
-      this.cache.set(productId, cacheEntry);
+      });
       this.recordMetric('cache_miss', Date.now() - startTime);
-      
       return data;
-
-    } catch (error) {
+    } catch (err) {
+      console.error('[FASE1_ETAG] Error fetchThumbnailWithETag:', err?.message || err);
       this.recordMetric('error', Date.now() - startTime);
-      console.error('[FASE1_ETAG] Error:', error);
-      
-      // Return cached data if available on error
       return cached?.data || null;
     }
   }
@@ -173,6 +178,64 @@ export class Phase1ETAGThumbnailService {
     console.log('[FASE1_ETAG] Cache cleared, removed:', size);
     return size;
   }
+
+  /**
+   * Batch fetch: pobla cache para múltiples productIds con una sola query.
+   * Respeta short-circuit para IDs ya válidos.
+   */
+  async fetchMany(productIds = [], { silent = true } = {}) {
+    const start = Date.now();
+    if (!Array.isArray(productIds) || productIds.length === 0) return {};
+    const now = Date.now();
+    const resultMap = {};
+
+    const need = [];
+    for (const id of productIds) {
+      const cached = this.cache.get(id);
+      if (cached && (now - cached.timestamp) < this.TTL) {
+        resultMap[id] = cached.data;
+      } else {
+        need.push(id);
+      }
+    }
+
+    if (!need.length) {
+      this.recordMetric('cache_hit', Date.now() - start); // todo fueron hits (lógico)
+      return resultMap;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('product_images')
+        .select('product_id,thumbnails,thumbnail_url,thumbnail_signature')
+        .in('product_id', need)
+        .eq('image_order', 0);
+      if (error) {
+        console.warn('[FASE1_ETAG] Batch DB Error:', error?.message);
+        this.recordMetric('error', Date.now() - start);
+        return resultMap; // devolver lo que había
+      }
+      const now2 = Date.now();
+      for (const row of data) {
+        this.cache.set(row.product_id, {
+          data: row,
+          signature: row.thumbnail_signature,
+          timestamp: now2
+        });
+        resultMap[row.product_id] = row;
+      }
+      // Para IDs sin fila (posible ausencia) dejar undefined explícito
+      this.recordMetric('cache_miss', Date.now() - start);
+      if (!silent && process.env.NODE_ENV !== 'production') {
+        console.log('[FASE1_ETAG] Batch fetch stored:', data.length, 'requested:', productIds.length);
+      }
+      return resultMap;
+    } catch (err) {
+      console.error('[FASE1_ETAG] Batch fetch error:', err?.message || err);
+      this.recordMetric('error', Date.now() - start);
+      return resultMap;
+    }
+  }
 }
 
 // Singleton instance (exported both as named and default for flexibility)
@@ -187,4 +250,8 @@ export const __PHASE1_ETAG_DIAG__ = 'ok';
 // Uso: getOrFetchMainThumbnail(productId)
 export async function getOrFetchMainThumbnail(productId, options = {}) {
   return phase1ETAGService.fetchThumbnailWithETag(productId, options);
+}
+
+export async function getOrFetchManyMainThumbnails(productIds = [], options = {}) {
+  return phase1ETAGService.fetchMany(productIds, options);
 }

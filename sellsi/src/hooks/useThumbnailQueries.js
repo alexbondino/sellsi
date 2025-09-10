@@ -5,12 +5,14 @@
  */
 
 import { useQuery, useQueries, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '../services/supabase';
+import { supabase } from '../services/supabase'; // keep for fallback if flag off
 import { QUERY_KEYS, CACHE_CONFIGS } from '../utils/queryClient';
 // Importar como named export para evitar problemas de detección de default export en build
 // Intento de import nombrado; si tree-shake falla, se hará fallback en runtime
 import * as Phase1ETAGModule from '../services/phase1ETAGThumbnailService.js';
 const phase1ETAGService = Phase1ETAGModule.phase1ETAGService || Phase1ETAGModule.default;
+import { getOrFetchManyMainThumbnails } from '../services/phase1ETAGThumbnailService.js';
+import { FeatureFlags } from '../shared/flags/featureFlags.js';
 
 /**
  * Query individual para thumbnails de un producto - FASE 1 OPTIMIZADO con ETag
@@ -48,25 +50,21 @@ export const useThumbnailsBatch = (productIds = [], options = {}) => {
     queryKey: QUERY_KEYS.THUMBNAIL_LIST(productIds),
     queryFn: async () => {
       if (!productIds.length) return {};
-
+      if (FeatureFlags.FEATURE_PHASE1_THUMBS) {
+        // Usar batch interno del servicio (short-circuit + 1 query)
+        return await getOrFetchManyMainThumbnails(productIds, { silent: true });
+      }
+      // Fallback legacy directo a DB (solo si flag off)
       const { data, error } = await supabase
         .from('product_images')
         .select('product_id, thumbnails, thumbnail_url, thumbnail_signature')
         .in('product_id', productIds)
-        .eq('image_order', 0) // Usar WHERE del nuevo índice
+        .eq('image_order', 0)
         .order('product_id');
-
       if (error) throw error;
-
-      // Agrupar por product_id
-      const thumbnailsMap = {};
-      data.forEach(row => {
-        if (!thumbnailsMap[row.product_id]) {
-          thumbnailsMap[row.product_id] = row;
-        }
-      });
-
-      return thumbnailsMap;
+      const map = {};
+      data.forEach(r => { if (!map[r.product_id]) map[r.product_id] = r; });
+      return map;
     },
     enabled: productIds.length > 0,
     ...CACHE_CONFIGS.THUMBNAILS,

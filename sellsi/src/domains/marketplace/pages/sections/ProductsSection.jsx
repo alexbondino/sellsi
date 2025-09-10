@@ -25,6 +25,7 @@ import { scrollManagerAntiRebote } from '../../../../shared/utils/scrollManagerA
 import { FeatureFlags } from '../../../../shared/flags/featureFlags';
 import { ProductCardSkeletonGrid } from '../../../../shared/components/display/product-card/ProductCardSkeleton';
 import ProductsSectionView from './ProductsSection/ProductsSectionView';
+import { getOrFetchManyMainThumbnails } from '../../../../services/phase1ETAGThumbnailService.js';
 
 /**
  * Componente que maneja la sección de productos, título y grid
@@ -363,11 +364,43 @@ const ProductsSection = React.memo(({ seccionActiva, setSeccionActiva, totalProd
     )
   };
 
+  // Prefetch Phase1 thumbnails: primeros N productos renderizados (una sola vez)
+  React.useEffect(() => {
+    if (!FeatureFlags.FEATURE_PHASE1_THUMBS) return;
+    if (!Array.isArray(renderItems) || !renderItems.length) return;
+    // Tomar primeros 24 (o menos) IDs con product_id disponible
+    const prefetchCount = 24;
+    const ids = renderItems.slice(0, prefetchCount).map(p => p?.id || p?.product_id).filter(Boolean);
+    if (!ids.length) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        await getOrFetchManyMainThumbnails(ids, { silent: true });
+      } catch (_) { /* noop */ }
+    })();
+    return () => { cancelled = true; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [renderItems && renderItems.length > 0]);
+
   return <ProductsSectionView ui={ui} data={data} handlers={handlers} components={components} />;
 });
 
 // ✅ MEJORA DE RENDIMIENTO: DisplayName para debugging
 ProductsSection.displayName = 'ProductsSection';
+
+// Prefetch inicial sencillo (warm thumbnails) – se hace fuera de render para no afectar SSR hipotético
+// NOTA: Simple guard to ensure side effect only in browser
+if (typeof window !== 'undefined' && FeatureFlags.FEATURE_PHASE1_THUMBS) {
+  // Micro cola para evitar saturar inmediatamente; se puede mejorar con observers
+  requestIdleCallback?.(() => {
+    try {
+      // Buscar un contenedor de productos ya montado (heurística simple)
+      // La lógica real ideal estaría dentro de un effect cuando se conocen los IDs iniciales.
+    } catch (e) {
+      // noop
+    }
+  });
+}
 
 // ✅ ROLLBACK TEMPORAL: Exportar directamente sin ShippingProvider hasta resolver issues
 export default ProductsSection;

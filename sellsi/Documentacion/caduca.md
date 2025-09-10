@@ -47,6 +47,47 @@ Paso 5: Prefetch posterior a cargar listado inicial (usar `fetchMany`).
 Paso 6: Añadir flag `FEATURE_PHASE1_THUMBS` (si no existe) para fallback rápido.
 Paso 7: Reducir verbosidad de logs en producción (condición NODE_ENV !== 'production').
 
+### 5.1 Pasos YA Implementados (Ejecución Real)
+| Paso | Descripción | Archivo(s) / Cambio | Estado |
+|------|-------------|---------------------|--------|
+| 1 | Short‑circuit en `fetchThumbnailWithETag` (no DB si TTL válido) | `src/services/phase1ETAGThumbnailService.js` | COMPLETO |
+| 2 | Nueva API `fetchMany(productIds)` con query IN y populate cache | `phase1ETAGThumbnailService.js` (método `fetchMany`) | COMPLETO |
+| 3 | Hook batch usa servicio (en lugar de query directa cuando flag ON) | `src/hooks/useThumbnailQueries.js` (`useThumbnailsBatch`) | COMPLETO |
+| 4 | Unificación lecturas: hooks principales (`useThumbnailQuery`, phase, batch) usan servicio | Hooks actualizados; directos fuera de hooks (otros servicios) pendientes revisión | PARCIAL |
+| 5 | Prefetch inicial primeros N (24) productos tras montaje | `ProductsSection.jsx` (useEffect con `getOrFetchManyMainThumbnails`) | BÁSICO (mejorable) |
+| 6 | Feature flag maestro `FEATURE_PHASE1_THUMBS` | `featureFlags.js` + fallback en batch | COMPLETO |
+| 7 | Reducir logs en producción (condicional en nuevos logs de HIT/MISS) | Condición `process.env.NODE_ENV !== 'production'` en servicio; `recordMetric` aún loggea siempre | PARCIAL |
+
+### 5.2 Detalle de Cambios Realizados
+- Servicio: añadido short‑circuit (ver bloque inicial del método) y batch `fetchMany`, más helper exportado `getOrFetchManyMainThumbnails`.
+- Hook batch: ahora elige servicio si `FeatureFlags.FEATURE_PHASE1_THUMBS` es true; fallback legacy preservado.
+- Flag: añadido `FEATURE_PHASE1_THUMBS` (default true) para rollback rápido sin tocar código.
+- Prefetch: efecto en `ProductsSection` toma primeros 24 IDs de `renderItems` y llama a batch (silencioso).
+- Logging: nuevos mensajes HIT/MISS suprimidos en producción; pendiente silenciar `recordMetric` o convertirlo en no‑op en prod si se desea.
+
+### 5.3 Pendiente / Próximos Ajustes para Cerrar Fase 1
+1. Revisar y migrar (solo lecturas de main thumbnail) llamadas residuales fuera de hooks: buscar `.from('product_images')` y filtrar las que solo leen `image_order=0` (excluir mutaciones y mantenimiento).
+2. (Opcional) Silenciar `recordMetric` en producción o agrupar logs en un solo resumen periódico.
+3. Añadir chunking en `fetchMany` si se detectan lotes > 500 IDs (hoy no crítico).
+4. Validar que el índice parcial se usa (EXPLAIN) y guardar captura en documentación.
+5. Micro-mejora prefetch: evitar re-prefetch si usuario cambia de página rápidamente (flag interna `prefetched` persistida con ref).
+
+### 5.4 Cómo Verificar Manualmente Ahora
+1. Cargar listado (primer render) – observar una sola query IN (batch) + algunas individuales (si hooks fuera de batch).  
+2. Scroll arriba/abajo: repetir acceso a mismos productos NO debe emitir nuevas queries (hit en memoria).  
+3. Forzar re-render ligero (ej: cambiar filtro menor sin invalidar thumbnails) – thumbnails deben aparecer instantáneos.  
+4. Desactivar flag (`VITE_FEATURE_PHASE1_THUMBS=false`) y comparar (debe volver a golpear DB en cada acceso).  
+
+### 5.5 Riesgos Abiertos
+- Algunas rutas de UI podrían seguir usando consultas directas aún no migradas (impacto: reducción de beneficio parcial).  
+- Logs de `recordMetric` todavía generan ruido si el volumen sube (evaluar gating).  
+- Prefetch actual es simple (no gestiona visibilidad ni abortos en navegación rápida).  
+
+### 5.6 Siguiente Commit Sugerido
+Una vez migradas lecturas restantes y ajustado logging:  
+`feat(etag-phase1): finalize unification of main thumbnail reads and quiet metrics in production`  
+
+
 ---
 ## 6. Detalles Clave de Implementación
 Short‑Circuit Pseudocódigo:

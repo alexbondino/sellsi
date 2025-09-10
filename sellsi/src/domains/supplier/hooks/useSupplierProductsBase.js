@@ -9,6 +9,8 @@
 
 import { create } from 'zustand'
 import { supabase } from '../../../services/supabase'
+import { getOrFetchMainThumbnail } from '../../../services/phase1ETAGThumbnailService.js'
+import { FeatureFlags } from '../../../shared/flags/featureFlags.js'
 import { updateProductSpecifications } from '../../../services/marketplace'
 import { queryClient, QUERY_KEYS } from '../../../utils/queryClient'
 import { UploadService } from '../../../shared/services/upload'
@@ -941,13 +943,20 @@ try {
         if (!detail || !detail.productId) return;
         if (detail.phase && !/^thumbnails_/.test(detail.phase)) return;
         const productId = detail.productId;
-        const { data, error } = await supabase
-          .from('product_images')
-          .select('thumbnails, thumbnail_url')
-          .eq('product_id', productId)
-          .eq('image_order', 0)
-          .single();
-        if (error || !data || !data.thumbnails) return;
+        let data = null;
+        if (FeatureFlags?.FEATURE_PHASE1_THUMBS) {
+          data = await getOrFetchMainThumbnail(productId, { silent: true });
+        }
+        if (!data) {
+          const { data: legacy } = await supabase
+            .from('product_images')
+            .select('thumbnails, thumbnail_url')
+            .eq('product_id', productId)
+            .eq('image_order', 0)
+            .single();
+          data = legacy;
+        }
+        if (!data || !data.thumbnails) return;
         useSupplierProductsBase.setState((state) => ({
           products: state.products.map(p => p.productid === productId ? { ...p, thumbnails: data.thumbnails, thumbnail_url: data.thumbnail_url } : p)
         }));

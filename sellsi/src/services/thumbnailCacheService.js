@@ -6,6 +6,8 @@
  */
 
 import { supabase } from './supabase';
+import { getOrFetchMainThumbnail, phase1ETAGService } from './phase1ETAGThumbnailService.js';
+import { FeatureFlags } from '../shared/flags/featureFlags.js';
 
 class ThumbnailCacheService {
   constructor() {
@@ -81,60 +83,42 @@ class ThumbnailCacheService {
     }
 
     try {
-      // Consultar base de datos
-      const { data, error } = await supabase
-        .from('product_images')
-        .select('thumbnails, thumbnail_url, image_url')
-        .eq('product_id', productId)
-        .order('image_order', { ascending: true })
-        .limit(1);
-
-      if (error) {
-        return null;
+      let firstRow = null;
+      if (FeatureFlags?.FEATURE_PHASE1_THUMBS && !forceRefresh) {
+        // Delegar al servicio Phase1 (short-circuit). Devuelve fila completa.
+        firstRow = await getOrFetchMainThumbnail(productId, { silent: true });
       }
-
-      const firstRow = data?.[0];
+      if (!firstRow) {
+        const { data, error } = await supabase
+          .from('product_images')
+          .select('thumbnails, thumbnail_url, image_url')
+          .eq('product_id', productId)
+          .order('image_order', { ascending: true })
+          .limit(1);
+        if (error) return null;
+        firstRow = data?.[0];
+      }
       let thumbnailData = null;
-
       if (firstRow) {
-        // Procesar thumbnails si existen
         if (firstRow.thumbnails) {
           try {
-            thumbnailData = typeof firstRow.thumbnails === 'string' 
+            thumbnailData = typeof firstRow.thumbnails === 'string'
               ? JSON.parse(firstRow.thumbnails)
               : firstRow.thumbnails;
-          } catch (e) {
-          }
+          } catch (_) { /* noop */ }
         }
-
-        // Si no hay thumbnails pero hay thumbnail_url, construir minithumb
         if (!thumbnailData && firstRow.thumbnail_url) {
-          const minithumbUrl = firstRow.thumbnail_url.replace(
-            '_desktop_320x260.jpg',
-            '_minithumb_40x40.jpg'
-          );
-          
+          const minithumbUrl = firstRow.thumbnail_url.replace('_desktop_320x260.jpg','_minithumb_40x40.jpg');
           if (minithumbUrl !== firstRow.thumbnail_url) {
-            thumbnailData = {
-              minithumb: minithumbUrl,
-              desktop: firstRow.thumbnail_url
-            };
+            thumbnailData = { minithumb: minithumbUrl, desktop: firstRow.thumbnail_url };
           }
         }
       }
-
-      // Guardar en cache
-      const cacheData = {
-        data: thumbnailData,
-        timestamp: Date.now(),
-        productId
-      };
-      
+      const cacheData = { data: thumbnailData, timestamp: Date.now(), productId };
       this.cache.set(cacheKey, cacheData);
       this.cleanupCache();
       return thumbnailData;
-
-    } catch (error) {
+    } catch (_) {
       return null;
     }
   }
@@ -279,13 +263,12 @@ class ThumbnailCacheService {
   invalidateProductCache(productId) {
     const cacheKey = this.generateCacheKey(productId);
     this.cache.delete(cacheKey);
-    
     // También limpiar cache de validación de URLs relacionadas
-    for (const [key, value] of this.urlValidationCache.entries()) {
-      if (key.includes(productId)) {
-        this.urlValidationCache.delete(key);
-      }
+    for (const [key] of this.urlValidationCache.entries()) {
+      if (key.includes(productId)) this.urlValidationCache.delete(key);
     }
+    // También invalidar fase1 para consistencia cross-cache
+    try { phase1ETAGService.invalidateProduct(productId); } catch(_) { /* noop */ }
   }
 
   /**
