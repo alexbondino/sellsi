@@ -42,13 +42,62 @@ export const initializeCartWithUser = async (userId, set, get) => {
     if (rawLocalItems.length !== localItems.length) {
       }
 
-    // Obtener o crear carrito en backend
-  // Obtener carrito (incluyendo items sólo si no hay items locales que migrar) para minimizar una consulta
-  // Siempre traer items del backend para comparar y evitar reinsertar líneas eliminadas
-  const backendCart = await cartService.getOrCreateActiveCart(userId, { includeItems: true })
+    // Obtener SIEMPRE carrito con items para evitar reinsertar líneas eliminadas en otro dispositivo
+    const backendCart = await cartService.getOrCreateActiveCart(userId, { includeItems: true })
 
-    // Si hay items locales, migrarlos al backend
-    if (localItems.length > 0) {
+    // ---------------------------------------------------------------------------
+    // HOTFIX ANTI-REINSERCIÓN (BACKEND AUTHORITATIVE STRATEGY)
+    // Si el backend YA tiene items, tratamos esos como la fuente de verdad y NO
+    // migramos los locales ausentes (posiblemente fueron borrados desde otro dispositivo).
+    // Sólo migraremos items locales cuando el backend esté vacío (carrito nuevo) para
+    // preservar experiencia offline inicial sin provocar "resurrección".
+    // ---------------------------------------------------------------------------
+    const backendHasItems = Array.isArray(backendCart.items) && backendCart.items.length > 0
+    if (backendHasItems) {
+      try {
+        // eslint-disable-next-line no-console
+        console.debug('[cartStore.backend] backend authoritative: ignorando', rawLocalItems.length, 'items locales; backend mantiene', backendCart.items.length)
+      } catch(_) {}
+      set({
+        items: backendCart.items || [],
+        cartId: backendCart.cart_id,
+        userId: userId,
+        isBackendSynced: true,
+        isLoading: false,
+        isSyncing: false
+      })
+      return true
+    }
+
+    // -------------------------------------------------------------
+    // ANTI-RESURRECCIÓN GUARD (backend vacío pero actualizado hace poco)
+    // Si el backend está vacío y se actualizó recientemente, asumimos que el usuario
+    // LIMPIÓ el carrito en otro dispositivo. En ese caso descartamos items locales
+    // para evitar reinsertarlos.
+    // -------------------------------------------------------------
+    const backendEmpty = !backendHasItems && Array.isArray(backendCart.items) && backendCart.items.length === 0
+    if (backendEmpty && localItems.length > 0) {
+      const WINDOW_MS = 10 * 60 * 1000 // 10 minutos
+      let backendUpdatedAtMs = 0
+      try { backendUpdatedAtMs = backendCart.updated_at ? new Date(backendCart.updated_at).getTime() : 0 } catch(_) {}
+      const now = Date.now()
+      const updatedRecently = backendUpdatedAtMs && (now - backendUpdatedAtMs) < WINDOW_MS
+      if (updatedRecently) {
+        try { console.debug('[cartStore.backend] backend vacío actualizado recientemente -> no migrar locales (evita resurrección)') } catch(_) {}
+        set({
+          items: backendCart.items || [], // vacío
+          cartId: backendCart.cart_id,
+          userId: userId,
+          isBackendSynced: true,
+          isLoading: false,
+          isSyncing: false
+        })
+        return true
+      }
+    }
+
+  // Si backend vacío y hay items locales => migración legítima (primer sync)
+  if (localItems.length > 0) {
       // DEBUG: ver qué se migrará
       try {
         // eslint-disable-next-line no-console

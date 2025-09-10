@@ -334,16 +334,23 @@ class CartService {
       if (searchError) {
       }
 
+      // NUEVA REGLA: si es un item ofertado y ya existe esa misma oferta en el carrito, BLOQUEAR re-add.
+      // Motivo negocio: una oferta debe aparecer solo una vez; ajustar cantidad se hace vía updateQuantity, no repitiendo add.
+      if (incomingIsOffered && product.offer_id) {
+        const duplicate = (existingItems || []).some(it => it.offer_id === product.offer_id);
+        if (duplicate) {
+          // Lanzamos un error específico para que capas superiores puedan mostrar mensaje adecuado.
+          // Código semántico: OFERTA_DUPLICADA_EN_CARRITO
+          throw new Error('OFERTA_DUPLICADA_EN_CARRITO');
+        }
+      }
+
       // Buscar candidato a merge SOLO si coincide la naturaleza ofertada/no ofertada
       const mergeCandidate = (existingItems || []).find(it => {
         const existingIsOffered = !!(it.offer_id || it.offered_price);
         // Casos no ofertados: se permite merge (legacy) porque sólo depende de product_id
         if (!incomingIsOffered && !existingIsOffered) return true;
-        // Casos ofertados: AHORA requerimos explícitamente offer_id en ambos y que coincidan
-        if (incomingIsOffered && existingIsOffered) {
-          return !!product.offer_id && !!it.offer_id && it.offer_id === product.offer_id;
-        }
-        // Diferente naturaleza (uno ofertado otro no) => no merge
+        // Casos ofertados: ya fueron bloqueados arriba si existían; nunca mergeamos para evitar incremento implícito.
         return false;
       });
 

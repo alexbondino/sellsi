@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
-import { Button, IconButton } from '@mui/material';
+import { Button, IconButton, Tooltip } from '@mui/material';
 import { ShoppingCart as ShoppingCartIcon } from '@mui/icons-material';
 
 // Components
@@ -47,10 +47,23 @@ const AddToCart = ({
   // ============================================================================
   // ESTADOS Y HOOKS
   // ============================================================================
-  
   const [modalOpen, setModalOpen] = useState(false);
   const [currentUserId, setCurrentUserId] = useState(null);
   const addItem = useCartStore(state => state.addItem);
+
+  // Detectar si la oferta ya está en el carrito para bloquear flujo UI
+  const offerId = offer?.id || offer?.offer_id || offer?.offerId || null;
+  const isOfferInCart = useCartStore(state => {
+    if (!offerId) return false;
+    return (state.items || []).some(it => it && (it.offer_id || it.offerId) && String(it.offer_id || it.offerId) === String(offerId));
+  });
+
+  const isOwnProduct = useMemo(() => {
+    if (!product) return false;
+    const supplierId = product.supplier_id || product.supplierId || product.supplierID;
+    if (!supplierId || !currentUserId) return false;
+    return supplierId === currentUserId;
+  }, [product, currentUserId]);
 
   // Obtener sesión inicial para poder deshabilitar si es producto propio
   useEffect(() => {
@@ -68,36 +81,21 @@ const AddToCart = ({
     return () => { mounted = false; };
   }, []);
 
-  const isOwnProduct = useMemo(() => {
-    if (!product) return false;
-    const supplierId = product.supplier_id || product.supplierId || product.supplierID;
-    if (!supplierId || !currentUserId) return false;
-    return supplierId === currentUserId;
-  }, [product, currentUserId]);
-
   // ============================================================================
   // HANDLERS
   // ============================================================================
 
   const handleOpenModal = useCallback(async () => {
+    // Si es una oferta y ya existe en el carrito, no abrir modal y avisar
+    if (offerId && isOfferInCart) {
+      showErrorToast('Esta oferta ya se encuentra en tu carrito');
+      return;
+    }
+
     if (!disabled && product) {
       // Verificar sesión antes de abrir el modal
       try {
         const { data: { session } } = await supabase.auth.getSession();
-        
-        if (!session?.user) {
-          // Usuario no logueado - mostrar error y disparar evento para abrir Login
-          showErrorToast('Debes iniciar sesión para agregar productos al carrito', {
-            icon: '🔒',
-          });
-          
-          // Disparar evento para abrir Login modal
-          const event = new CustomEvent('openLogin');
-          window.dispatchEvent(event);
-          return;
-        }
-        
-        // Usuario logueado - abrir modal
         setModalOpen(true);
         if (onModalStateChange) {
           onModalStateChange(true);
@@ -119,10 +117,7 @@ const AddToCart = ({
   const handleAddToCart = useCallback(async (cartItem) => {
     try {
       console.log('🛒 [AddToCart] Datos recibidos del modal:', cartItem);
-      
-      // Detectar si el flujo proviene de una OFERTA (modal pasa banderas y offer_id)
       const isOffered = !!(cartItem.isOfferProduct || cartItem.offer_id || cartItem.offered_price);
-
       let finalProduct;
       if (isOffered) {
         // Construir un item especial que conserve la semántica de la oferta.
@@ -198,6 +193,14 @@ const AddToCart = ({
         await addItem(finalProduct, cartItem.quantity);
       }
 
+      // Optimistic: emit event so offers list (if listening) can mark status=reserved immediately
+      try {
+        if (isOffered) {
+          const offerIdOptimistic = cartItem.offer_id || cartItem.offerId || cartItem.id;
+          window.dispatchEvent(new CustomEvent('offer-status-optimistic', { detail: { offer_id: offerIdOptimistic, status: 'reserved' } }));
+        }
+      } catch(_) {}
+
       // Mostrar notificación de éxito
       showCartSuccess(
         `Agregado al carrito: ${finalProduct.name} (${cartItem.quantity} unidades${isOffered ? ' - OFERTA' : ''})`
@@ -233,13 +236,22 @@ const AddToCart = ({
   // ============================================================================
   // RENDER VARIANTS
   // ============================================================================
-
   const renderButton = () => {
-    if (variant === 'icon') {
+    const disabledReason = isOfferInCart ? 'Esta oferta ya se encuentra en tu carrito' : null;
+    const wrapWithTooltip = (node) => {
+      if (!disabledReason) return node;
       return (
+        <Tooltip title={disabledReason} arrow>
+          <span style={{ display: 'inline-block' }}>{node}</span>
+        </Tooltip>
+      );
+    };
+
+    if (variant === 'icon') {
+      const el = (
         <IconButton
           onClick={handleOpenModal}
-          disabled={disabled}
+          disabled={disabled || isOfferInCart}
           size={size}
           sx={sx}
           {...buttonProps}
@@ -247,13 +259,14 @@ const AddToCart = ({
           <ShoppingCartIcon />
         </IconButton>
       );
+      return wrapWithTooltip(el);
     }
 
     if (variant === 'text') {
-      return (
+      const el = (
         <Button
           onClick={handleOpenModal}
-          disabled={disabled}
+          disabled={disabled || isOfferInCart}
           size={size}
           fullWidth={fullWidth}
           sx={sx}
@@ -262,14 +275,15 @@ const AddToCart = ({
           {children || 'Agregar al Carrito'}
         </Button>
       );
+      return wrapWithTooltip(el);
     }
 
     // Default: variant === 'button'
-    return (
+    const el = (
       <Button
         variant="contained"
         onClick={handleOpenModal}
-        disabled={disabled}
+        disabled={disabled || isOfferInCart}
         size={size}
         fullWidth={fullWidth}
         startIcon={<ShoppingCartIcon />}
@@ -279,6 +293,7 @@ const AddToCart = ({
         {children || 'Agregar al Carrito'}
       </Button>
     );
+    return wrapWithTooltip(el);
   };
 
   return (

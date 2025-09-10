@@ -24,6 +24,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import BlockIcon from '@mui/icons-material/Block';
 import { InfoOutlined as InfoOutlinedIcon } from '@mui/icons-material';
 
+// Mapa canónico de estados visuales
 const STATUS_MAP = {
   pending: { label: 'Pendiente', color: 'warning' },
   approved: { label: 'Aprobada', color: 'success' },
@@ -32,7 +33,17 @@ const STATUS_MAP = {
   cancelled: { label: 'Cancelada', color: 'error' },
   reserved: { label: 'En Carrito', color: 'info' },
   paid: { label: 'Pagada', color: 'success' },
-};
+}
+
+// Normalización (backend puede enviar "accepted" u otros legacy)
+const normalizeStatus = (raw) => {
+  if (!raw) return 'pending'
+  const s = String(raw).toLowerCase()
+  if (s === 'accepted') return 'approved'
+  if (s === 'success') return 'paid'
+  // fallback
+  return STATUS_MAP[s] ? s : 'pending'
+}
 
 // Wrapper that ensures onClick is a function before passing it to MUI Chip
 const SafeChip = (props) => {
@@ -54,6 +65,7 @@ import TableSkeleton from '../../../../../shared/components/display/skeletons/Ta
 
 const OffersList = ({ offers = [], loading = false, error = null, cancelOffer, deleteOffer, onCancelOffer, onDeleteOffer, onAddToCart }) => {
   const [statusFilter, setStatusFilter] = React.useState('all');
+  const [statusOverrides, setStatusOverrides] = React.useState({}); // { offer_id: 'reserved' | 'paid' | ... }
 
   // Preparar petición batch de thumbnails para los productos mostrados
   const productIds = React.useMemo(() => (offers || []).map(o => (o.product?.id || o.product_id)).filter(Boolean), [offers]);
@@ -62,10 +74,36 @@ const OffersList = ({ offers = [], loading = false, error = null, cancelOffer, d
   // thumbnailsQuery is used below to resolve product thumbnails in batch
 
   const filtered = React.useMemo(() => {
-    if (!offers) return [];
-    if (statusFilter === 'all') return offers;
-    return offers.filter(o => o.status === statusFilter);
-  }, [offers, statusFilter]);
+    if (!offers) return []
+    const normalized = offers.map(o => {
+      const override = statusOverrides[o.id];
+      const rawStatus = override || o.status;
+      return { ...o, status: normalizeStatus(rawStatus) };
+    })
+    if (statusFilter === 'all') return normalized
+    return normalized.filter(o => o.status === statusFilter)
+  }, [offers, statusFilter, statusOverrides])
+
+  // Listener para mutaciones optimistas emitidas desde AddToCart
+  React.useEffect(() => {
+    const handler = (ev) => {
+      try {
+        const detail = ev.detail || {};
+        if (!detail.offer_id || !detail.status) return;
+        // Sólo aplicar si la oferta está presente actualmente
+        const exists = (offers || []).some(o => String(o.id) === String(detail.offer_id));
+        if (!exists) return;
+        setStatusOverrides(prev => {
+          // Evitar override si ya está en un estado final (paid) y el nuevo no lo supera
+          const current = prev[detail.offer_id];
+            if (current === 'paid') return prev;
+          return { ...prev, [detail.offer_id]: detail.status };
+        });
+      } catch(_) {}
+    };
+    window.addEventListener('offer-status-optimistic', handler);
+    return () => window.removeEventListener('offer-status-optimistic', handler);
+  }, [offers]);
 
   // Debugging: limit noisy logs by counting a few rows only
   const debugCounterRef = React.useRef(0);
@@ -260,7 +298,7 @@ const OffersList = ({ offers = [], loading = false, error = null, cancelOffer, d
                 })()}
               </TableCell>
               <TableCell>
-                <SafeChip label={STATUS_MAP[o.status].label} color={STATUS_MAP[o.status].color} />
+                <SafeChip label={(STATUS_MAP[o.status] || STATUS_MAP.pending).label} color={(STATUS_MAP[o.status] || STATUS_MAP.pending).color} />
               </TableCell>
               <TableCell>
                 {/* Actions grouped so buttons stay on the same row and aligned */}

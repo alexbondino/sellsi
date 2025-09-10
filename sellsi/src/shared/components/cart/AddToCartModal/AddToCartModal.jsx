@@ -43,6 +43,7 @@ import { OfferPriceDisplay } from './components/OfferPriceDisplay';
 import { DocumentTypeSelector } from './components/DocumentTypeSelector';
 import { ShippingStatus } from './components/ShippingStatus';
 import { SubtotalSection } from './components/SubtotalSection';
+import useCartStore from '../../../stores/cart/cartStore';
 
 // ===============================================
 // Estilos extraídos (optimizan recreación de objetos sx)
@@ -259,6 +260,13 @@ const AddToCartModal = ({
 
   // Determinar si es un producto ofertado
   const isOfferMode = Boolean(offer);
+
+  // Defensive: comprobar si la oferta ya existe en el carrito
+  const offerId = offer?.id || offer?.offer_id || offer?.offerId || null;
+  const isOfferInCart = useCartStore(state => {
+    if (!offerId) return false;
+    return (state.items || []).some(it => it && (it.offer_id || it.offerId) && String(it.offer_id || it.offerId) === String(offerId));
+  });
 
   // Inicialización de la gestión de cantidad (hook personalizado). Se hace
   // después de declarar `enrichedProduct` e `isOfferMode` para evitar usar
@@ -602,7 +610,7 @@ const AddToCartModal = ({
                   isLoadingUserProfile,
                   isLoadingUserRegion,
                   justOpened,
-                })}
+                }) || (isOfferMode && isOfferInCart)}
                 sx={{ py: 1.5 }}
               >
                 {isProcessing ? 
