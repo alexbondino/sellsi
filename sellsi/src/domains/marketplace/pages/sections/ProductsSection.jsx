@@ -169,17 +169,7 @@ const ProductsSection = React.memo(({ seccionActiva, setSeccionActiva, totalProd
     const gridPriority = useGridPriority(renderItems, { isXs, isSm, isMd, isLg, isXl });
     const { getPriority, debugInfo } = gridPriority;
 
-    // ✅ Debug info en development
-    React.useEffect(() => {
-      if (process.env.NODE_ENV === 'development' && debugInfo && renderItems.length > 0) {
-        console.group('🎯 Grid Priority Debug');
-        console.log('Breakpoint actual:', debugInfo.breakpoint);
-        console.log('Cálculo:', debugInfo.calculation);
-        console.log('Productos con alta prioridad:', debugInfo.highPriorityProductsCount);
-        console.log('Total productos renderizando:', renderItems.length);
-        console.groupEnd();
-      }
-    }, [debugInfo, renderItems.length]);
+  // Debug info removed for production cleanliness
     // Componente de paginación responsivo
   const PaginationComponent = React.useMemo(() => {
       if (totalPages <= 1) return null;
