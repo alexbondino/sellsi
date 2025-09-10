@@ -20,14 +20,12 @@ import {
   IconButton,
   Tooltip,
   TextField,
-  Popover,
   Select,
   MenuItem,
   FormControl,
   InputLabel,
   Grid,
   Alert,
-  Fab,
   Table,
   TableBody,
   TableCell,
@@ -35,7 +33,6 @@ import {
   TableHead,
   TableRow,
   Checkbox,
-  Avatar,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -43,18 +40,6 @@ import {
   DialogActions,
   Button
 } from '@mui/material';
-import {
-  Delete as DeleteIcon,
-  Edit as EditIcon,
-  Store as StoreIcon,
-  Inventory as InventoryIcon,
-  Refresh as RefreshIcon,
-  Search as SearchIcon,
-  ShoppingCart as ShoppingCartIcon,
-  Info as InfoIcon,
-  ToggleOn as ToggleOnIcon,
-  ToggleOff as ToggleOffIcon
-} from '@mui/icons-material';
 
 // Importar componentes UI existentes
 import AdminStatCard from './AdminStatCard';

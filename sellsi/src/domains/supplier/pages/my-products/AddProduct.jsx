@@ -415,7 +415,6 @@ const AddProduct = () => {
     formData.pricingType,
   ]);
 
-
   // (Eliminado) Carga duplicada de productos que causaba rerenders con estado antiguo
 
   // Componente Portal para el panel de resultados
@@ -508,13 +507,11 @@ const AddProduct = () => {
     }
   };
 
-
   // Actualiza shippingRegions en formData y estado local
   const handleRegionChange = (regions) => {
 
     setShippingRegions(regions);
     updateField('shippingRegions', regions);
-
 
   };
 
@@ -523,16 +520,6 @@ const AddProduct = () => {
   // ========================================================================
   const handlePricingTypeChangeUI = (event, newValue) => {
     if (newValue === null) return
-    
-    console.log(`🔄 [AddProduct] Cambiando pricing type de "${formData.pricingType}" a "${newValue}"`)
-    
-    // Usar el método del hook que maneja todo el estado correctamente
-    handlePricingTypeChange(newValue)
-  }
-
-  const handleImagesChange = images => {
-    // Marcar que el usuario interactuó manualmente con las imágenes antes de actualizar
-    markImagesTouched?.();
     setImageError('');
     updateField('imagenes', images);
   };
@@ -565,59 +552,19 @@ const AddProduct = () => {
 
   // Handler para el submit
   const handleSubmit = async e => {
-    console.log('🔥 [AddProduct.handleSubmit] Iniciando submit')
-    e.preventDefault();
-
     // 🔧 FIX 2C: Prevenir múltiples clicks - considerar tanto isSubmitting como isNavigating
     if (isSubmitting || isNavigating) {
-      console.log('⚠️ [AddProduct.handleSubmit] Submit ya en progreso o navegando, ignorando...')
       return;
     }
 
     setIsSubmitting(true);
     markSubmitAttempt();
-
-    console.log('🔍 [AddProduct.handleSubmit] Validando formulario...')
-    const validationErrors = validateForm(formData);
-    console.log('📊 [AddProduct.handleSubmit] Errores de validación:', validationErrors)
-    console.log('🧪 [AddProduct.handleSubmit] Nombre del producto:', formData.nombre)
     
-    if (validationErrors && Object.keys(validationErrors).length > 0) {
-      console.log('❌ [AddProduct.handleSubmit] Validación falló, no continuando')
-      
-      // 🎯 Usar mensaje contextual centralizado desde ProductValidator
-      const contextualMessage = ProductValidator.generateContextualMessage(validationErrors);
-      console.log('📝 [AddProduct.handleSubmit] Mensaje contextual:', contextualMessage)
-      
-      showValidationError(contextualMessage);
-      
-      // Liberar el estado de submit
-      setIsSubmitting(false);
-      return;
-    }
-
-    console.log('✅ [AddProduct.handleSubmit] Validación pasó, continuando...')
-
-    // LOG: Estado de formData y shippingRegions antes de guardar
-
-
-
-    // Mostrar toast informativo
-    showSaveLoading(
-      isEditMode 
-        ? 'Actualizando producto...'
-        : 'Creando producto...',
-      'product-save'
-    );
-
     try {
-      console.log('💾 [AddProduct.handleSubmit] Llamando submitForm()...')
-      // 1. Guardar producto principal
+      // 1. Procesar y enviar formulario
       const result = await submitForm();
-      console.log('📋 [AddProduct.handleSubmit] Resultado de submitForm:', result)
-
+      
       if (!result.success) {
-        console.error('❌ Backend errors:', result.errors);
         if (result.errors && typeof result.errors === 'object') {
           Object.entries(result.errors).forEach(([key, value]) => {
             if (value) showErrorToast(`${key}: ${value}`);
@@ -639,7 +586,6 @@ const AddProduct = () => {
         if (productId && formData.imagenes?.length > 0) {
           setCreatedProductId(productId);
           thumbnailStatus.markAsProcessing();
-          console.info('🔄 [AddProduct] Iniciando tracking de thumbnails para producto:', productId);
         }
       }
 
@@ -655,7 +601,6 @@ const AddProduct = () => {
           showErrorToast('Producto guardado, pero hubo un error al guardar las regiones de entrega');
         }
       } else {
-        console.warn('[AddProduct] handleSubmit - No se guardaron shippingRegions. productId:', productId, 'shippingRegions:', shippingRegions);
         if (!productId) {
           console.error('[AddProduct] handleSubmit - ERROR: productId no disponible para guardar regiones');
           console.error('[AddProduct] handleSubmit - Estructura del result:', JSON.stringify(result, null, 2));
@@ -714,7 +659,6 @@ const AddProduct = () => {
     resetErrors();
     if (isEditMode && productId) {
       // Could reload product data here if needed
-      console.log('Retrying product edit form...');
     }
   };
 

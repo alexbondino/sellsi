@@ -123,7 +123,6 @@ class CartService {
       // Log diagnóstico mínimo
       try {
         // eslint-disable-next-line no-console
-        console.log('[cartService] getCartItems cartId:', cartId);
       } catch (e) {}
 
       // Intentar consulta extendida (con columnas de oferta). Si falla, hacer fallback
@@ -175,7 +174,6 @@ class CartService {
       } catch (queryErr) {
         try {
           // eslint-disable-next-line no-console
-          console.warn('[cartService] Extended getCartItems query failed, retrying fallback select:', queryErr?.message || queryErr);
         } catch (e) {}
 
         const res2 = await supabase
@@ -292,7 +290,6 @@ class CartService {
 
       try {
         // eslint-disable-next-line no-console
-        console.log('[cartService] getCartItems transformed count:', (transformedData || []).length);
       } catch (e) {}
 
       return transformedData;
@@ -322,7 +319,6 @@ class CartService {
 
       try {
         // eslint-disable-next-line no-console
-        console.log('[cartService] addItemToCart cartId, productId, quantity:', cartId, productId, quantity);
       } catch (e) {}
 
       // Determinar si el nuevo producto es versión ofertada
@@ -336,7 +332,6 @@ class CartService {
         .eq('product_id', productId);
 
       if (searchError) {
-        try { console.warn('[cartService] search existing items error:', searchError); } catch(e) {}
       }
 
       // Buscar candidato a merge SOLO si coincide la naturaleza ofertada/no ofertada
@@ -415,7 +410,6 @@ class CartService {
 
       try {
         // eslint-disable-next-line no-console
-        console.log('[cartService] addItemToCart result:', result);
       } catch (e) {}
 
       return result;

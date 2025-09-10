@@ -336,9 +336,6 @@ export class ProductValidator {
     }
 
     const errorKeys = Object.keys(validationErrors);
-    console.log('🔑 [ProductValidator.generateContextualMessage] Error keys:', errorKeys)
-    
-    const hasTramoErrors = errorKeys.includes('tramos');
     const hasBasicFieldErrors = errorKeys.some(key => 
       ['nombre', 'descripcion', 'categoria', 'stock', 'compraMinima', 'precioUnidad'].includes(key)
     );

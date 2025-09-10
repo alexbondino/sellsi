@@ -71,10 +71,8 @@ export async function initSentryDeferred(options = {}) {
     });
     await flushQueue();
     if (options?.debug) {
-      console.info('[sentryDeferred] Initialized. Flushed queued events.');
     }
   } catch (err) {
-    console.warn('[sentryDeferred] init failed', err);
   }
 }
 
