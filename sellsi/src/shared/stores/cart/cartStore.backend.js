@@ -44,7 +44,8 @@ export const initializeCartWithUser = async (userId, set, get) => {
 
     // Obtener o crear carrito en backend
   // Obtener carrito (incluyendo items sólo si no hay items locales que migrar) para minimizar una consulta
-  const backendCart = await cartService.getOrCreateActiveCart(userId, { includeItems: localItems.length === 0 })
+  // Siempre traer items del backend para comparar y evitar reinsertar líneas eliminadas
+  const backendCart = await cartService.getOrCreateActiveCart(userId, { includeItems: true })
 
     // Si hay items locales, migrarlos al backend
     if (localItems.length > 0) {
@@ -53,10 +54,14 @@ export const initializeCartWithUser = async (userId, set, get) => {
         // eslint-disable-next-line no-console
         console.log('[cartStore.backend] migrateLocalCart payload:', { userId, localItems })
       } catch (e) {}
-
-  await cartService.migrateLocalCart(userId, localItems, { existingCart: backendCart, skipFinalFetch: true })
-  // Luego de migrar, una sola carga de items
-  const updatedItems = await cartService.getCartItems(backendCart.cart_id)
+      // Filtrar locales que NO existan ya en backend (clave: product_id + offer_id)
+      const backendKeySet = new Set((backendCart.items || []).map(it => `${it.product_id}|${it.offer_id || ''}`))
+      const toMigrate = localItems.filter(li => !backendKeySet.has(`${li.product_id || li.id}|${li.offer_id || ''}`))
+      if (toMigrate.length > 0) {
+        await cartService.migrateLocalCart(userId, toMigrate, { existingCart: backendCart, skipFinalFetch: true })
+      }
+      // Refrescar items tras potencial migración parcial
+      const updatedItems = await cartService.getCartItems(backendCart.cart_id)
       
       // DEBUG: registrar items devueltos por backend tras migración
       try {
@@ -383,21 +388,43 @@ export const removeItemWithBackend = async (itemId, set, get) => {
     return false
   }
   
-  const productId = item.product_id || item.productid || item.id
-
+  // Usar siempre cart_items_id para evitar borrar líneas hermanas (ofertas vs regular)
+  const lineId = item.cart_items_id || item.id
   try {
     set({ isSyncing: true })
-
-    // Remover del backend
-    await cartService.removeItemFromCart(state.cartId, productId)
-    // Actualización local sin refetch
+    await cartService.removeLineFromCart(state.cartId, lineId)
     set({
-      items: state.items.filter(i => i.id !== item.id && i.cart_items_id !== item.cart_items_id),
+      items: state.items.filter(i => i.cart_items_id !== lineId && i.id !== lineId),
       isSyncing: false
     })
-
     return true
   } catch (error) {
+    set({ isSyncing: false })
+    return false
+  }
+}
+
+/**
+ * Elimina múltiples items (cart_items_id) en batch
+ */
+export const removeItemsBatchWithBackend = async (itemIds, set, get) => {
+  const state = get()
+  if (!state.userId || !state.cartId || !Array.isArray(itemIds) || itemIds.length === 0) return false
+  // Mapear a cart_items_id reales presentes
+  const lineIds = state.items
+    .filter(i => itemIds.includes(i.id) || itemIds.includes(i.cart_items_id))
+    .map(i => i.cart_items_id || i.id)
+  if (lineIds.length === 0) return false
+  try {
+    set({ isSyncing: true })
+    await cartService.removeItemsFromCart(state.cartId, lineIds)
+    const toRemove = new Set(lineIds)
+    set({
+      items: state.items.filter(i => !toRemove.has(i.cart_items_id) && !toRemove.has(i.id)),
+      isSyncing: false
+    })
+    return true
+  } catch (e) {
     set({ isSyncing: false })
     return false
   }

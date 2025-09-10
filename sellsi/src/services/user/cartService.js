@@ -517,6 +517,51 @@ class CartService {
     }
   }
 
+  /**
+   * Elimina una línea específica (por cart_items_id) sin fallback a product_id
+   * Use este método para evitar borrar múltiples líneas que compartan product_id.
+   */
+  async removeLineFromCart(cartId, cartItemsId, options = {}) {
+    const { skipTimestamp = false } = options;
+    try {
+      if (!cartId || !cartItemsId) return false;
+      const { error } = await supabase
+        .from('cart_items')
+        .delete()
+        .eq('cart_items_id', cartItemsId)
+        .eq('cart_id', cartId);
+      if (error) throw error;
+      if (!skipTimestamp) await this.updateCartTimestamp(cartId);
+      return true;
+    } catch (err) {
+      throw new Error(`No se pudo eliminar la línea del carrito: ${err.message}`);
+    }
+  }
+
+  /**
+   * Elimina múltiples líneas por sus cart_items_id en una sola operación.
+   * Realiza un único update de timestamp (debounced internamente) tras la eliminación.
+   */
+  async removeItemsFromCart(cartId, cartItemsIds = [], options = {}) {
+    const { skipTimestamp = false } = options;
+    try {
+      if (!cartId || !Array.isArray(cartItemsIds) || cartItemsIds.length === 0) return false;
+      const uniqueIds = [...new Set(cartItemsIds.filter(Boolean))];
+      if (uniqueIds.length === 0) return false;
+
+      const { error } = await supabase
+        .from('cart_items')
+        .delete()
+        .in('cart_items_id', uniqueIds)
+        .eq('cart_id', cartId);
+      if (error) throw error;
+      if (!skipTimestamp) await this.updateCartTimestamp(cartId);
+      return true;
+    } catch (err) {
+      throw new Error(`No se pudo eliminar múltiples líneas del carrito: ${err.message}`);
+    }
+  }
+
   async clearCart(cartId, options = {}) {
     const { skipTimestamp = false } = options;
     try {

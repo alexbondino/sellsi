@@ -25,14 +25,14 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/44</span>
+                <span class='fraction'>0/52</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/4</span>
+                <span class='fraction'>0/8</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/29</span>
+                <span class='fraction'>0/37</span>
             </div>
         
             
@@ -109,7 +109,17 @@
 <a name='L44'></a><a href='#L44'>44</a>
 <a name='L45'></a><a href='#L45'>45</a>
 <a name='L46'></a><a href='#L46'>46</a>
-<a name='L47'></a><a href='#L47'>47</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L47'></a><a href='#L47'>47</a>
+<a name='L48'></a><a href='#L48'>48</a>
+<a name='L49'></a><a href='#L49'>49</a>
+<a name='L50'></a><a href='#L50'>50</a>
+<a name='L51'></a><a href='#L51'>51</a>
+<a name='L52'></a><a href='#L52'>52</a>
+<a name='L53'></a><a href='#L53'>53</a>
+<a name='L54'></a><a href='#L54'>54</a>
+<a name='L55'></a><a href='#L55'>55</a>
+<a name='L56'></a><a href='#L56'>56</a>
+<a name='L57'></a><a href='#L57'>57</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -121,6 +131,16 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -155,7 +175,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import { useCallback, useEffect, useState } from 'react';
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import { useCallback, useEffect, useState, useRef } from 'react';
 import { getPresets, upsertPreset, renamePreset, deletePreset } from '../../../services/supplier/shippingRegionPresetsService';
 &nbsp;
 export function <span class="fstat-no" title="function not covered" >useShippingRegionPresets(</span>supplierId) {
@@ -164,8 +184,18 @@ export function <span class="fstat-no" title="function not covered" >useShipping
   const [saving, setSaving] = <span class="cstat-no" title="statement not covered" >useState(false);</span>
   const [error, setError] = <span class="cstat-no" title="statement not covered" >useState(null);</span>
 &nbsp;
+  const didLoadRef = <span class="cstat-no" title="statement not covered" >useRef(false);</span>
+  const lastLoadTsRef = <span class="cstat-no" title="statement not covered" >useRef(0);</span>
+  const LOCAL_TTL = <span class="cstat-no" title="statement not covered" >1500;</span> // 1.5s: evita ráfaga doble StrictMode + layout swap
+&nbsp;
   const load = <span class="cstat-no" title="statement not covered" >useCallback(<span class="fstat-no" title="function not covered" >as</span>ync () =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >    if (!supplierId) <span class="cstat-no" title="statement not covered" >return;</span></span>
+    const now = <span class="cstat-no" title="statement not covered" >Date.now();</span>
+<span class="cstat-no" title="statement not covered" >    if (didLoadRef.current &amp;&amp; (now - lastLoadTsRef.current) &lt; LOCAL_TTL) {</span>
+<span class="cstat-no" title="statement not covered" >      return; </span>// Guard redundante (micro‑TTL local)
+    }
+<span class="cstat-no" title="statement not covered" >    didLoadRef.current = true;</span>
+<span class="cstat-no" title="statement not covered" >    lastLoadTsRef.current = now;</span>
 <span class="cstat-no" title="statement not covered" >    setLoading(true); <span class="cstat-no" title="statement not covered" ></span>setError(null);</span>
 <span class="cstat-no" title="statement not covered" >    try {</span>
       const data = <span class="cstat-no" title="statement not covered" >await getPresets(supplierId);</span>
@@ -208,7 +238,7 @@ export function <span class="fstat-no" title="function not covered" >useShipping
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-09-04T20:41:18.094Z
+                at 2025-09-10T00:16:07.423Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>

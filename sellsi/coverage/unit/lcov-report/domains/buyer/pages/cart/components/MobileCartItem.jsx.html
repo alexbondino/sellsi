@@ -25,14 +25,14 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/10</span>
+                <span class='fraction'>0/14</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/46</span>
+                <span class='fraction'>0/56</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/10</span>
+                <span class='fraction'>0/14</span>
             </div>
         
             
@@ -296,7 +296,12 @@
 <a name='L231'></a><a href='#L231'>231</a>
 <a name='L232'></a><a href='#L232'>232</a>
 <a name='L233'></a><a href='#L233'>233</a>
-<a name='L234'></a><a href='#L234'>234</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L234'></a><a href='#L234'>234</a>
+<a name='L235'></a><a href='#L235'>235</a>
+<a name='L236'></a><a href='#L236'>236</a>
+<a name='L237'></a><a href='#L237'>237</a>
+<a name='L238'></a><a href='#L238'>238</a>
+<a name='L239'></a><a href='#L239'>239</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -334,9 +339,14 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -567,6 +577,12 @@ const MobileCartItem = <span class="cstat-no" title="statement not covered" ><sp
   
   // URL de imagen con fallback
   const imageUrl = <span class="cstat-no" title="statement not covered" >item.imageUrl || item.image_url || item.thumbnail_url || '/placeholder-product.png';</span>
+  const showOfferDebug = <span class="cstat-no" title="statement not covered" >typeof window !== 'undefined' &amp;&amp; new URLSearchParams(window.location.search).get('debugShowOffers') === '1';</span>
+  const isOfferedFlag = <span class="cstat-no" title="statement not covered" >!!(item.isOffered || item.metadata?.isOffered || item.offer_id || item.offered_price);</span>
+<span class="cstat-no" title="statement not covered" >  if (typeof process !== 'undefined' &amp;&amp; process.env &amp;&amp; process.env.NODE_ENV !== 'production') {</span>
+    // eslint-disable-next-line no-console
+<span class="cstat-no" title="statement not covered" >    console.log('[MobileCartItem debug] id:', item.id, 'isOffered:', isOfferedFlag, 'showOfferDebug:', showOfferDebug, 'product_id:', item.product_id || item.productid || item.id);</span>
+  }
   
 <span class="cstat-no" title="statement not covered" >  return (</span>
     &lt;motion.div
@@ -642,19 +658,27 @@ const MobileCartItem = <span class="cstat-no" title="statement not covered" ><sp
                 &gt;
                   {item.name || item.nombre}
                 &lt;/Typography&gt;
-                {(item.isOffered || item.metadata?.isOffered || item.offer_id || item.offered_price) &amp;&amp; (
-                  &lt;Chip
-                    label="OFERTADO"
-                    size="small"
+                {((item.isOffered || item.metadata?.isOffered || item.offer_id || item.offered_price) || showOfferDebug) &amp;&amp; (
+                  &lt;Typography
+                    data-testid="chip-ofertado-text"
+                    variant="subtitle2"
                     sx={{
-                      bgcolor: 'success.main',
-                      color: 'white',
-                      fontWeight: 700,
-                      height: 24,
-                      borderRadius: 1,
-                      px: 0.8,
+                      color: 'success.main',
+                      fontWeight: 800,
+                      ml: 0.5,
+                      fontSize: '0.95rem',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      px: 1,
+                      py: '3px',
+                      borderRadius: '6px',
+                      border: '1px solid',
+                      borderColor: 'success.main',
+                      bgcolor: 'rgba(76, 175, 80, 0.06)'
                     }}
-                  /&gt;
+                  &gt;
+                    OFERTADO
+                  &lt;/Typography&gt;
                 )}
               &lt;/Box&gt;
               
@@ -676,16 +700,7 @@ const MobileCartItem = <span class="cstat-no" title="statement not covered" ><sp
               &gt;
                 {formatPrice(itemTotal)}
               &lt;/Typography&gt;
-              {/* Chip indicando que el item fue ofertado (mobile) */}
-              {(item.isOffered || item.metadata?.isOffered || item.offer_id || item.offered_price) &amp;&amp; (
-                &lt;Chip
-                  data-testid="chip-ofertado"
-                  label="Ofertado"
-                  size="small"
-                  color="primary"
-                  sx={{ alignSelf: 'flex-start', mt: 0.5, height: 24 }}
-                /&gt;
-              )}
+              {/* El Chip visual para 'Ofertado' fue removido; se mantiene texto 'OFERTADO' arriba. */}
               
               {/* Info de envío */}
               {showShipping &amp;&amp; item.shipping_info &amp;&amp; (
@@ -769,7 +784,7 @@ export default MobileCartItem;
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-09-04T20:41:18.094Z
+                at 2025-09-10T00:16:07.423Z
             </div>
         <script src="../../../../../prettify.js"></script>
         <script>

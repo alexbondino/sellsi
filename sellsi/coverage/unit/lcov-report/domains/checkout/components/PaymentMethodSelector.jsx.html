@@ -25,14 +25,14 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/91</span>
+                <span class='fraction'>0/94</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/73</span>
+                <span class='fraction'>0/79</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/90</span>
+                <span class='fraction'>0/93</span>
             </div>
         
             
@@ -493,7 +493,13 @@
 <a name='L428'></a><a href='#L428'>428</a>
 <a name='L429'></a><a href='#L429'>429</a>
 <a name='L430'></a><a href='#L430'>430</a>
-<a name='L431'></a><a href='#L431'>431</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L431'></a><a href='#L431'>431</a>
+<a name='L432'></a><a href='#L432'>432</a>
+<a name='L433'></a><a href='#L433'>433</a>
+<a name='L434'></a><a href='#L434'>434</a>
+<a name='L435'></a><a href='#L435'>435</a>
+<a name='L436'></a><a href='#L436'>436</a>
+<a name='L437'></a><a href='#L437'>437</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -674,6 +680,7 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -697,11 +704,16 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -1104,6 +1116,7 @@ const PaymentMethodSelector = <span class="cstat-no" title="statement not covere
       const calculatedIva = <span class="cstat-no" title="statement not covered" >Math.trunc(totalBruto * 0.19);</span>
       const calculatedSubtotal = <span class="cstat-no" title="statement not covered" >Math.trunc(totalBruto) - calculatedIva;</span>
       const shippingCost = <span class="cstat-no" title="statement not covered" >orderData.shipping || 0;</span>
+      // Total BASE (sin fee Khipu). La comisión se aplicará en finalize_order_pricing (payment_fee + grand_total)
       const orderTotal = <span class="cstat-no" title="statement not covered" >Math.round(</span>
         calculatedSubtotal + calculatedIva + shippingCost
       );
@@ -1121,7 +1134,7 @@ const PaymentMethodSelector = <span class="cstat-no" title="statement not covere
         subtotal: orderData.subtotal,
         tax: orderData.tax,
         shipping: orderData.shipping,
-        total: orderTotal, // Guardar el mismo total en la orden
+  total: orderTotal, // Guardar el total base (server añadirá payment_fee y grand_total)
         currency: orderData.currency || 'CLP',
         paymentMethod: selectedMethod.id,
         shippingAddress: orderData.shippingAddress,
@@ -1132,11 +1145,16 @@ const PaymentMethodSelector = <span class="cstat-no" title="statement not covere
 &nbsp;
 <span class="cstat-no" title="statement not covered" >      if (selectedMethod.id === 'khipu') {</span>
 <span class="cstat-no" title="statement not covered" >        console.log('[PaymentMethodSelector] Procesando pago con Khipu...');</span>
+        // Usar el total que quedó persistido en la fila (server authoritative) si existe
+  const authoritativeTotal = <span class="cstat-no" title="statement not covered" >(order &amp;&amp; typeof order.total === 'number') ? Math.round(order.total) : orderTotal;</span> // sigue siendo base total
+<span class="cstat-no" title="statement not covered" >        if (authoritativeTotal !== orderTotal) {</span>
+<span class="cstat-no" title="statement not covered" >          console.log('[PaymentMethodSelector] Diferencia entre order.total y orderTotal calculado front:', { authoritativeTotal, frontComputed: orderTotal });</span>
+        }
         const paymentResult = <span class="cstat-no" title="statement not covered" >await checkoutService.processKhipuPayment({</span>
           orderId: order.id,
           userId: userId,
           userEmail: userEmail || '',
-          amount: orderTotal, // Usar el mismo valor mostrado
+          amount: authoritativeTotal, // monto base; Edge usará grand_total (incluye fee) para cobrar
           currency: orderData.currency || 'CLP',
           items: itemsWithDocType,
           // ✔ Propagar direcciones para que no se pierdan en el pipeline de pago
@@ -1360,7 +1378,7 @@ export default PaymentMethodSelector;
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-09-04T20:41:18.094Z
+                at 2025-09-10T00:16:07.423Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>

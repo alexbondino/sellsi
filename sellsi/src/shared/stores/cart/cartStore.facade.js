@@ -34,6 +34,7 @@ import {
   addItemWithBackend,
   updateQuantityWithBackend,
   removeItemWithBackend,
+  removeItemsBatchWithBackend,
   clearCartWithBackend,
   checkout
 } from './cartStore.backend'
@@ -127,6 +128,25 @@ export const createCartStoreFacade = () => {
             
             // Usar operación local
             return removeItemLocal(id, set, get, historyStore, debouncedSave)
+          },
+
+          /**
+           * Remueve múltiples items (batch). IDs son los item.id/cart_items_id conocidos por la UI.
+           */
+          removeItemsBatch: async (ids = []) => {
+            const state = get()
+            if (!Array.isArray(ids) || ids.length === 0) return false
+            if (state.userId && state.cartId && state.isBackendSynced) {
+              // Backend batch
+              return await removeItemsBatchWithBackend(ids, set, get)
+            }
+            // Fallback local: eliminar todos en un solo set para eficiencia
+            const idSet = new Set(ids)
+            set(current => ({
+              items: current.items.filter(i => !idSet.has(i.id)),
+            }))
+            debouncedSave()
+            return true
           },
 
           /**

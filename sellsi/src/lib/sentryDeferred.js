@@ -5,17 +5,36 @@ let SentryMod = null; // will hold imported module
 let initialized = false;
 const queue = [];
 const MAX_QUEUE = 50;
+// Symbol used to mark Error objects that were already captured to avoid duplicate captures
+const __SENTRY_CAPTURED = Symbol.for('__sentry_captured__');
 
 function enqueue(method, args) {
   if (initialized && SentryMod) {
     try { SentryMod[method](...args); } catch (_) {}
     return;
   }
+
+  // Simple dedupe for captureMessage: avoid queueing identical messages within 1s
+  try {
+    if (method === 'captureMessage' && args && args[0]) {
+      const last = queue.length ? queue[queue.length - 1] : null;
+      if (last && last.method === 'captureMessage' && last.args && last.args[0] === args[0] && (Date.now() - last.ts) < 1000) {
+        return; // skip duplicate message
+      }
+    }
+  } catch (_) {}
+
   if (queue.length >= MAX_QUEUE) queue.shift();
   queue.push({ method, args, ts: Date.now() });
 }
 
 export function captureException(error, context) {
+  try {
+    if (error && typeof error === 'object') {
+      if (error[__SENTRY_CAPTURED]) return;
+      try { error[__SENTRY_CAPTURED] = true; } catch (_) {}
+    }
+  } catch (_) {}
   enqueue('captureException', [error, context]);
 }
 export function captureMessage(message, level = 'info') {

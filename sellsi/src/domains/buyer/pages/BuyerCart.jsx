@@ -72,6 +72,7 @@ const BuyerCart = () => {
   // Acciones memoizadas del store
   const updateQuantity = useCartStore(state => state.updateQuantity);
   const removeItem = useCartStore(state => state.removeItem);
+  const removeItemsBatch = useCartStore(state => state.removeItemsBatch);
   const clearCart = useCartStore(state => state.clearCart);
   // const getSubtotal = useCartStore(state => state.getSubtotal); // ✅ REEMPLAZADO POR usePriceCalculation
   // const getDiscount = useCartStore(state => state.getDiscount); // ✅ REEMPLAZADO POR usePriceCalculation
@@ -445,25 +446,12 @@ const BuyerCart = () => {
     }
   }, [selectedItems.length, items]);
 
-  const handleDeleteSelected = useCallback(() => {
+  const handleDeleteSelected = useCallback(async () => {
     if (selectedItems.length === 0) return;
-
-    // Obtener los nombres de los productos seleccionados para el toast
-    const selectedItemsData = items.filter(item =>
-      selectedItems.includes(item.id)
-    );
-    const itemNames = selectedItemsData.map(item => item.name).join(', ');
-
-    // Eliminar todos los items seleccionados
-    selectedItems.forEach(itemId => {
-      removeItem(itemId);
-    });
-
-    // Limpiar selección y salir del modo selección
+    await removeItemsBatch(selectedItems);
     setSelectedItems([]);
     setIsSelectionMode(false);
-    // Confetti eliminado
-  }, [selectedItems, items, removeItem]);
+  }, [selectedItems, removeItemsBatch]);
 
   // Limpiar selecciones cuando cambie la lista de items
   useEffect(() => {

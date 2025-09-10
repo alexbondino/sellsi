@@ -25,7 +25,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/38</span>
+                <span class='fraction'>0/40</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/33</span>
+                <span class='fraction'>0/35</span>
             </div>
         
             
@@ -233,7 +233,17 @@
 <a name='L168'></a><a href='#L168'>168</a>
 <a name='L169'></a><a href='#L169'>169</a>
 <a name='L170'></a><a href='#L170'>170</a>
-<a name='L171'></a><a href='#L171'>171</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L171'></a><a href='#L171'>171</a>
+<a name='L172'></a><a href='#L172'>172</a>
+<a name='L173'></a><a href='#L173'>173</a>
+<a name='L174'></a><a href='#L174'>174</a>
+<a name='L175'></a><a href='#L175'>175</a>
+<a name='L176'></a><a href='#L176'>176</a>
+<a name='L177'></a><a href='#L177'>177</a>
+<a name='L178'></a><a href='#L178'>178</a>
+<a name='L179'></a><a href='#L179'>179</a>
+<a name='L180'></a><a href='#L180'>180</a>
+<a name='L181'></a><a href='#L181'>181</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -257,6 +267,8 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -273,19 +285,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -295,6 +295,19 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -326,6 +339,13 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -427,6 +447,8 @@ const PurchaseActions = <span class="cstat-no" title="statement not covered" ><s
   const [checkingLimits, setCheckingLimits] = <span class="cstat-no" title="statement not covered" >useState(false)</span>
   
   const { validateOfferLimits } = <span class="cstat-no" title="statement not covered" >useOfferStore()</span>
+  // Prefetched limits for passing into OfferModal (avoid double RPC)
+  const prefetchedLimitsRef = <span class="cstat-no" title="statement not covered" >React.useRef(null)</span>
   const userId = <span class="cstat-no" title="statement not covered" >localStorage.getItem('user_id')</span>
   const userNm = <span class="cstat-no" title="statement not covered" >localStorage.getItem('user_nm') || localStorage.getItem('user_email')</span>
   const userEmail = <span class="cstat-no" title="statement not covered" >localStorage.getItem('user_email')</span>
@@ -437,12 +459,13 @@ const PurchaseActions = <span class="cstat-no" title="statement not covered" ><s
     
 <span class="cstat-no" title="statement not covered" >    setCheckingLimits(true)</span>
 <span class="cstat-no" title="statement not covered" >    try {</span>
-      const limits = <span class="cstat-no" title="statement not covered" >await validateOfferLimits({</span>
+  const limits = <span class="cstat-no" title="statement not covered" >await validateOfferLimits({</span>
         buyerId: userId,
         productId: product.id,
         supplierId: product.supplier_id || product.supplierId
       })
 <span class="cstat-no" title="statement not covered" >      setLimitsValidation(limits)</span>
+<span class="cstat-no" title="statement not covered" >  prefetchedLimitsRef.current = limits</span>
     } catch (error) {
 <span class="cstat-no" title="statement not covered" >      console.error('Error checking offer limits:', error)</span>
 <span class="cstat-no" title="statement not covered" >      setLimitsValidation(null)</span>
@@ -567,7 +590,14 @@ const PurchaseActions = <span class="cstat-no" title="statement not covered" ><s
 &nbsp;
         &lt;Box sx={{ flex: 1 }} /&gt;
       &lt;/Box&gt;
-      &lt;OfferModal open={isOfferOpen} onClose={closeOffer} onOffer={handleOffer} stock={stock} product={product} /&gt;
+      &lt;OfferModal 
+        open={isOfferOpen}
+        onClose={closeOffer}
+        onOffer={handleOffer}
+        stock={stock}
+        product={product}
+        initialLimits={prefetchedLimitsRef.current}
+      /&gt;
     &lt;/&gt;
   )
 }
@@ -580,7 +610,7 @@ export default memo(PurchaseActions)
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-09-04T20:41:18.094Z
+                at 2025-09-10T00:16:07.423Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>
