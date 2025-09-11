@@ -1,7 +1,7 @@
 ## Análisis Profundo: Code Splitting (Rutas / Componentes Pesados) + Dynamic Import
 
 ### 1. Resumen Ejecutivo
-El build actual ya aplica una segmentación inicial mediante `manualChunks` (react-vendor, mui-core, mui-icons, mui-extras, router, supabase, charts, animation, utils, etc.). Sin embargo, los bundles dominantes siguen siendo grandes y algunos flujos poco frecuentes (onboarding, add product, charts, animaciones especiales) se entregan demasiado pronto. El anterior intento fallido de code splitting probablemente introdujo más solicitudes pequeñas sin estrategia de precarga ni agrupación lógica, generando peor LCP / TBT por: (a) cascadas de imports tardíos, (b) duplicación de estilos Emotion/MUI en múltiples chunks, (c) falta de `modulepreload` para los boundaries recién creados.
+El build actual ya aplica una segmentación inicial mediante `manualChunks` (react-vendor, mui-core, mui-icons, mui-extras, router, supabase, animation, utils, etc.). Nota: la dependencia `recharts` que originaba el chunk `charts` fue eliminada (sept 2025) y por tanto ya no forma parte del build. Sin embargo, los bundles dominantes siguen siendo grandes y algunos flujos poco frecuentes (onboarding, add product, animaciones especiales) se entregan demasiado pronto. El anterior intento fallido de code splitting probablemente introdujo más solicitudes pequeñas sin estrategia de precarga ni agrupación lógica, generando peor LCP / TBT por: (a) cascadas de imports tardíos, (b) duplicación de estilos Emotion/MUI en múltiples chunks, (c) falta de `modulepreload` para los boundaries recién creados.
 
 Objetivo: Reducir JS crítico inicial (parse + exec) y mejorar LCP / TTI sin crear sobre-fragmentación ni waterfall. Meta: -25–35% de JS inicial ejecutado antes de interacción primaria en `/buyer/marketplace` con ≤2 solicitudes adicionales en el camino crítico.
 
@@ -9,7 +9,7 @@ Objetivo: Reducir JS crítico inicial (parse + exec) y mejorar LCP / TTI sin cre
 Top tamaños (gzip entre paréntesis):
 - `index-CIi-kaZQ.js` 592 KB (159 KB gzip)
 - `mui-core` 472 KB (130 KB)
-- `charts` 312 KB (79 KB)
+- `charts` 312 KB (79 KB)  // ELIMINADO: recharts removido en sept 2025
 - `mui-extras` 269 KB (69 KB)
 - `HH7B3BHX-*` 221 KB (61 KB) (chunk genérico / posible agregación de lógicas)
 - `AddProduct` 173 KB (29 KB)
@@ -54,8 +54,8 @@ Observaciones:
 ### 6. Clasificación de Candidatos
 | Tipo | Componentes / Chunks | Acción |
 |------|----------------------|--------|
-| Rutas pesadas | AddProduct, Onboarding, Checkout, PaymentMethod, Profile, Charts dashboards | Lazy route import + modulepreload on navigation intent |
-| Grandes librerías secundarias | `charts`, `animation`, `mui-extras` | Cargar sólo en rutas que los requieren; dividir si posible (ej: separar `framer-motion` de confetti) |
+| Rutas pesadas | AddProduct, Onboarding, Checkout, PaymentMethod, Profile | Lazy route import + modulepreload on navigation intent |
+| Grandes librerías secundarias | `animation`, `mui-extras` | Cargar sólo en rutas que los requieren; dividir si posible (ej: separar `framer-motion` de confetti) |
 | Funcionalidad condicional | Contact / Modals avanzados / Terms modals | Dynamic import on open |
 | Admin / Provider flows | ProviderCatalog, SupplierOffers, MyProducts | Route-level lazy |
 | Media / Gallery | ProductImageGallery (≥5 KB + dependencias) | Lazy cuando el usuario entra a product page |
@@ -63,8 +63,8 @@ Observaciones:
 
 ### 7. Plan de Fases
 Fase 1 (Rápido, bajo riesgo):
-1. Lazy routes para: AddProduct, Onboarding, Checkout, PaymentMethod, Profile, Charts dashboards. 
-2. Extraer `animation` y `charts` fuera del bundle inicial mediante dynamic import con prefetch condicional. 
+1. Lazy routes para: AddProduct, Onboarding, Checkout, PaymentMethod, Profile. (Nota: Charts dashboards ya no usan `recharts` — dependencia eliminada en sept 2025.)
+2. Extraer `animation` fuera del bundle inicial mediante dynamic import con prefetch condicional. 
 3. `ProductImageGallery`: cargar al entrar a ruta `/marketplace/product/:id` (ya es otra ruta → lazy route boundary). 
 4. Preload estratégico: inyectar `<link rel="modulepreload" href="/assets/js/AddToCart-*.js">` solo cuando el botón cart entra en viewport.
 
@@ -103,13 +103,15 @@ async function openChartPanel() {
 }
 ```
 
-Prefetch por hover / near-view:
+Prefetch por hover / near-view (ejemplo conservado para referencia — en este repo la dependencia `recharts` fue eliminada):
 ```js
+// Nota: en este repositorio `recharts` fue eliminado (sept 2025). El ejemplo se mantiene
+// como patrón por si se introduce otra librería de gráficos en el futuro.
 let chartsPrefetched = false;
 function prefetchCharts() {
 	if (chartsPrefetched) return;
 	chartsPrefetched = true;
-	import('./ChartPanel'); // Prepare chunk
+	import('./ChartPanel'); // Prepare chunk (ejemplo)
 }
 <NavLink onMouseEnter={prefetchCharts} to="/dashboard/charts">Gráficos</NavLink>
 ```
@@ -202,6 +204,43 @@ Rutas / features a validar lazy (ya están en chunks separados según build actu
 
 ---
 
+### Estado actual (resumen corto — Sept 11, 2025)
+
+- Recharts / `charts` chunk: eliminado del `package.json` y del build; el chunk `charts-*` ya no aparece en la salida de `vite build`.
+- Prefetch Fase 1: implementado un prefetch conservador (hover + near-viewport) para las rutas listadas:
+	- `AddProduct`: IntersectionObserver en el botón "Agregar Producto" para prefetch cuando esté cerca (rootMargin 400px).
+	- `PaymentMethod` (Checkout): prefetch onMouseEnter en el botón "Continuar al pago".
+	- `Onboarding` y `Profile`: handlers de hover/focus en la navegación (`SideBar`) que disparan prefetch mapeado a imports concretos.
+- Implementación técnica: `src/infrastructure/prefetch/prefetch.js` (cache, network-aware, requestIdleCallback), cambios en `SideBar.jsx`, `MyProducts.jsx`, `OrderSummary.jsx`.
+- Build: producción compilada con éxito; no hay referencias al chunk `charts`.
+
+### Qué está hecho (rápido)
+
+- [x] Quitar `recharts` y eliminar `charts` chunk del build.
+- [x] Añadir utilitario de prefetch (network-aware, idle scheduling).
+- [x] Wire prefetch on hover en navegación (`SideBar`).
+- [x] Wire intersection prefetch para CTA AddProduct (`MyProducts`).
+- [x] Wire hover prefetch para continuar a pago (`OrderSummary`).
+
+### Qué falta / próximos pasos (priorizados)
+
+1. Medición: ejecutar Lighthouse (mobile, simulated) y capturar LCP/TBT y bytes/JS ejecutado antes/después. (Recomendado: automatizar y adjuntar en `analisisgpt.md`).
+2. Guard‑rail CI: script que falle si chunks críticos superan thresholds (ej. `AddProduct` > 190 KB, initial bundle > baseline +5%).
+3. Modulepreload opcional (Fase 1.5): usar `manifest.json` para añadir `<link rel="modulepreload">` cuando la heurística de intención lo indique.
+4. Reducir parse time de MUI: plan para dividir `mui-extras` / extraer `framer-motion` (Fase 2). Priorizar solo si las mediciones lo muestran necesario.
+5. UX polish: convertir Suspense global a micro‑fallbacks para minimizar jank en boundaries pequeñas.
+
+### Notas rápidas sobre impacto esperado
+
+- Eliminando `recharts` se reduce parse/exec en builds donde el dashboard era incluido; esto mejora TBT/LCP en esos flujos.
+- El prefetch conservador reduce la latencia percibida al entrar en AddProduct / Checkout sin aumentar significativamente el uso de red (usa delay, idle, y checks de conexión lenta).
+- La ganancia real debe medirse; implementar Lighthouse y RUM para validar objetivos (-25% JS ejecutado en Marketplace, LCP/TBT objetivos).
+
+
+Nota: En esta iteración se implementó un prefetch conservador (hover + near-viewport) para las rutas listadas en Fase 1: `AddProduct`, `Onboarding`, `PaymentMethod` (Checkout) y `Profile`. El chunk `charts` ya fue eliminado (recharts removido) y por tanto no se prefetchará automáticamente.
+
+---
+
 ### B. Estado Actual (Baseline Real Del Build)
 Captura de tamaños (bytes sin comprimir):
 
@@ -213,7 +252,7 @@ Captura de tamaños (bytes sin comprimir):
 | CheckoutSuccess  | 11,809  | 4–5 KB                   | Ligero                                   |
 | CheckoutCancel   | 6,592   | 3 KB                     | Muy ligero                               |
 | Profile          | 60,730  | 18–22 KB                 | Form perfil + hooks                       |
-| charts           | 312,097 | 80–95 KB                 | Muy pesado (librerías + componentes)     |
+| charts           | 312,097 | 80–95 KB                 | Muy pesado (librerías + componentes) — ELIMINADO (recharts removed Sept 2025)     |
 
 **Observación:** Ya están divididos como lazy (React.lazy en `AppRouter`). Beneficio pendiente principal: controlar cuándo y por qué se precargan, evitando coste si el usuario no visita la ruta.
 
@@ -229,7 +268,7 @@ Captura de tamaños (bytes sin comprimir):
 | Tema                     | Riesgo                                | Evidencia / Notas                          | Mitigación Propuesta                       |
 |--------------------------|--------------------------------------|-------------------------------------------|-------------------------------------------|
 | Suspense global único    | Bloquea con mismo fallback para rutas secundarias | UX poco diferenciada                       | Suspense por secciones críticas (fase 2)  |
-| charts cargado completo  | 312 KB para dashboards raros         | Gran parse si se accede temprano           | Sub-split charts (fase 2)                 |
+| charts chunk (removido)  | Antes 312 KB para dashboards raros; ahora eliminado         | Riesgo mitigado al eliminar dependencia           | No aplica (sub-split no necesario ahora)  |
 | Falta de prefetch heurístico | LAG al primer acceso a AddProduct / PaymentMethod | Retraso perceptible en navegación         | Hover/near-view prefetch                  |
 | Sin política de expiración de prefetch | Cache puede vencer antes de uso real | Offline parcial                            | Guardar timestamp y re-prefetch tras X min |
 | Loader genérico largo    | Percepción de lentitud               | `SuspenseLoader` quizá pesado              | Fallback micro (skeleton)                 |

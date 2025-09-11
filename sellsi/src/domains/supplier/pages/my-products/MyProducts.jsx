@@ -209,6 +209,20 @@ const MyProducts = () => {
     checkAndProceed('/supplier/addproduct');
   };
 
+  // Prefetch AddProduct chunk when the Add button is near viewport (400px)
+  useEffect(() => {
+    const selector = '[data-prefetch="add-product-btn"]';
+    const el = document.querySelector(selector);
+    if (!el || typeof IntersectionObserver === 'undefined') return;
+    const obs = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting) {
+        import('./AddProduct').catch(()=>{});
+        obs.disconnect();
+      }
+    }, { rootMargin: '400px' });
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
   const handleEditProduct = product => {
     // Para editar también verificar la información bancaria
     checkAndProceed(`/supplier/addproduct?edit=${product.id}`);
@@ -333,16 +347,17 @@ const MyProducts = () => {
                 size="large"
                 startIcon={<AddIcon />}
                 onClick={handleAddProduct}
-                sx={{
-                  minWidth: { xs: '100%', sm: 'auto' },
-                  borderRadius: 2,
-                  textTransform: 'none',
-                  fontWeight: 600,
-                  px: 3,
-                }}
-              >
-                Agregar Producto
-              </Button>
+                data-prefetch="add-product-btn"
+                 sx={{
+                   minWidth: { xs: '100%', sm: 'auto' },
+                   borderRadius: 2,
+                   textTransform: 'none',
+                   fontWeight: 600,
+                   px: 3,
+                 }}
+               >
+                 Agregar Producto
+               </Button>
             </Box>
 
             {/* Estadísticas del inventario */}

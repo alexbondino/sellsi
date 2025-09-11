@@ -11,6 +11,7 @@ import { CreditCard as CreditCardIcon } from '@mui/icons-material'
 import { motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import PriceBreakdown from './PriceBreakdown'
+import { prefetchForPath } from '../../../../infrastructure/prefetch/prefetch';
 
 const OrderSummary = ({
   // Data props
@@ -135,6 +136,7 @@ const OrderSummary = ({
               }
               handleCheckout();
             }}
+                onMouseEnter={() => prefetchForPath('/buyer/paymentmethod')}
             disabled={isButtonDisabled()}
             startIcon={
               isCheckingOut ? (

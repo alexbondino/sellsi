@@ -25,6 +25,7 @@ import {
   LocalOffer as OffersIcon,
 } from '@mui/icons-material';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { prefetchOnHover, prefetchForPath } from '../../../../infrastructure/prefetch/prefetch';
 import { useRole } from '../../../../infrastructure/providers';
 import { useAuth } from '../../../../infrastructure/providers';
 
@@ -287,6 +288,9 @@ const SideBar = ({ role, width = '210px', onWidthChange }) => {
           {menuItemsToDisplay.map((item, index) => {
             const isActive = location.pathname === item.path;
             const isFirstItem = index === 0;
+            // attach hover prefetch for known heavy routes (use mapping to concrete imports)
+            const hoverHandlers = prefetchOnHover(() => prefetchForPath(item.path), item.path);
+
             return (
               <ListItem
                 disablePadding
@@ -324,6 +328,9 @@ const SideBar = ({ role, width = '210px', onWidthChange }) => {
                         }, 100);
                       }
                     }}
+                    onMouseEnter={(e) => { hoverHandlers.onMouseEnter(e); }}
+                    onMouseLeave={(e) => hoverHandlers.onMouseLeave(e)}
+                    onFocus={(e) => hoverHandlers.onFocus(e)}
                     disabled={isActive}
                     sx={{
                       height: '48px',
