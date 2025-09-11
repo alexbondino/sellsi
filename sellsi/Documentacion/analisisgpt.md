@@ -128,9 +128,9 @@ window.addEventListener('beforeunload', () => {
 1. ✅ Preload + fetchpriority imagen LCP. (COMPLETADO)
 2. ✅ Dimensiones / aspect-ratio en imágenes iniciales. (COMPLETADO)
 3. ✅ Limpiar preconnect redundantes. (COMPLETADO)
-4. Headers de caché en `vercel.json`.
-5. Quitar lazy en imágenes above-the-fold.
-6. Critical CSS inline + diferir resto.
+4. ✅ Headers de caché en `vercel.json`.(COMPLETADO)
+5. ✅ Quitar lazy en imágenes above-the-fold. (COMPLETADO)
+6. ✅ Critical CSS inline + diferir resto. (COMPLETADO)
 7. Code splitting (rutas / componentes pesados) + dynamic import.
 8. Web Worker para tareas costosas (si identificadas >50 ms bloque). 
 9. RUM instrumentation.
