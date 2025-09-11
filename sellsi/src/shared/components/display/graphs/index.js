@@ -1,3 +1,3 @@
 // src/shared/components/display/graphs/index.js
-export { default as BarChart } from './BarChart';
+// BarChart removed (recharts) - kept file as stub, do not re-export
 export { default as PieChart } from './PieChart';

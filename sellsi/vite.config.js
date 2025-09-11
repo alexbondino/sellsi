@@ -38,7 +38,6 @@ export default defineConfig({
           'router': ['react-router-dom'],
           'supabase': ['@supabase/supabase-js'],
           'animation': ['framer-motion', 'react-confetti'],
-          'charts': ['recharts'],
           'utils': ['lodash.debounce', 'react-hot-toast', 'zustand', 'immer']
         },
         

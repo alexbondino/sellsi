@@ -21,13 +21,8 @@ import { supabase } from '../../../../services/supabase';
 import { SupplierErrorBoundary } from '../../components/ErrorBoundary';
 import { TransferInfoValidationModal, useTransferInfoModal } from '../../../../shared/components/validation'; // Modal de validación bancaria
 
-// Lazy imports para reducir el bundle inicial
-const DashboardSummary = React.lazy(() =>
-  import('../../components/dashboard-summary/DashboardSummary')
-);
-const MonthlySalesChart = React.lazy(() =>
-  import('../../../../shared/components/display/graphs/BarChart')
-);
+// Lazy import principal (se elimina gráfico para reducir peso: BarChart removido)
+const DashboardSummary = React.lazy(() => import('../../components/dashboard-summary/DashboardSummary'));
 
 // Loading fallbacks optimizados
 const DashboardSummaryFallback = () => (
@@ -62,7 +57,7 @@ const ProviderHome = () => {
 
   // Dashboard data (metrics, charts, analytics)
   const {
-    charts,
+    // charts,  // Eliminado: se deja de consumir data de gráficos
     metrics,
     loading: dashboardLoading,
     error: dashboardError,
@@ -77,11 +72,8 @@ const ProviderHome = () => {
     loadProducts,
   } = useSupplierProducts();
 
-  // Extract chart data safely
-  const sales = charts?.salesData || [];
-  const productStocks = charts?.productStocks || [];
-  const weeklyRequests = charts?.weeklyRequests || [];
-  const monthlyData = charts?.revenueData || [];
+  // Datos de gráficos eliminados (optimización: removido BarChart / recharts)
+  const weeklyRequests = []; // Mantener prop requerida por DashboardSummary
   const totalSales = metrics?.totalRevenue || 0;
 
   // Combine loading and error states
@@ -199,11 +191,7 @@ const ProviderHome = () => {
                   </Button>
                 </Box>
 
-                <Box>
-                  <Suspense fallback={<ChartFallback />}>
-                    <MonthlySalesChart data={monthlyData} />
-                  </Suspense>
-                </Box>
+                {/* Gráfico eliminado para reducir JS (recharts purgado) */}
               </Grid>
             </Grid>
           </Container>
