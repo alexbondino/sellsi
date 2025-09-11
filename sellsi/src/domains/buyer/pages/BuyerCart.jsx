@@ -31,7 +31,6 @@ import {
 import { motion, AnimatePresence, useAnimation } from 'framer-motion';
 import { showCartSuccess, showCartError } from '../../../utils/toastHelpers';
 import { useInView } from 'react-intersection-observer';
-// import confetti from 'canvas-confetti';
 import debounce from 'lodash.debounce';
 import { ThemeProvider } from '@mui/material/styles';
 import { dashboardThemeCore } from '../../../styles/dashboardThemeCore';
@@ -78,7 +77,7 @@ const BuyerCart = () => {
   // const getDiscount = useCartStore(state => state.getDiscount); // ✅ REEMPLAZADO POR usePriceCalculation
 
   // ===== ESTADOS LOCALES OPTIMIZADOS =====
-  // const [showConfetti, setShowConfetti] = useState(false);
+  
   const [lastAction, setLastAction] = useState(null);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [deliveryDate, setDeliveryDate] = useState(null);

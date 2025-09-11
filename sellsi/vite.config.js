@@ -37,7 +37,7 @@ export default defineConfig({
           'mui-extras': ['@mui/lab', '@mui/x-charts'],
           'router': ['react-router-dom'],
           'supabase': ['@supabase/supabase-js'],
-          'animation': ['framer-motion', 'canvas-confetti', 'react-confetti'],
+          'animation': ['framer-motion', 'react-confetti'],
           'charts': ['recharts'],
           'utils': ['lodash.debounce', 'react-hot-toast', 'zustand', 'immer']
         },
