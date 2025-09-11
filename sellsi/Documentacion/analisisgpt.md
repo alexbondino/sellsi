@@ -125,9 +125,9 @@ window.addEventListener('beforeunload', () => {
 ```
 
 ### 7. Checklist de Implementación (Orden Sugerido)
-1. ✅ Preload + fetchpriority imagen LCP. YA IMP
-2. ✅ Dimensiones / aspect-ratio en imágenes iniciales.
-3. Limpiar preconnect redundantes.
+1. ✅ Preload + fetchpriority imagen LCP. (COMPLETADO)
+2. ✅ Dimensiones / aspect-ratio en imágenes iniciales. (COMPLETADO)
+3. ✅ Limpiar preconnect redundantes. (COMPLETADO)
 4. Headers de caché en `vercel.json`.
 5. Quitar lazy en imágenes above-the-fold.
 6. Critical CSS inline + diferir resto.
