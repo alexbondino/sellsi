@@ -238,10 +238,10 @@ export const globalCacheManager = new CacheManager({
 
 // Cache específico para thumbnails con TTL más corto
 export const thumbnailCacheManager = new CacheManager({
-  maxSize: 500,
+  maxSize: 2000,               // 🚀 FIXED: 4x increase (500→2000)
   defaultTTL: 15 * 60 * 1000, // 15 minutos
-  cleanupInterval: 3 * 60 * 1000, // 3 minutos
-  maxMemoryMB: 20
+  cleanupInterval: 3 * 60 * 1000, // 3 minutos  
+  maxMemoryMB: 200             // 🚀 FIXED: 10x increase (20→200MB)
 });
 
 export default CacheManager;

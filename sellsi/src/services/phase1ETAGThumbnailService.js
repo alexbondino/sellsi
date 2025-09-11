@@ -108,8 +108,8 @@ export class Phase1ETAGThumbnailService {
       }
     }
     
-    // Limitar tamaño máximo (1000 entradas)
-    const maxSize = 1000;
+    // Limitar tamaño máximo (5000 entradas) - INCREASED for marketplace scale
+    const maxSize = 5000;
     if (this.cache.size > maxSize) {
       const entries = Array.from(this.cache.entries())
         .sort((a, b) => a[1].timestamp - b[1].timestamp); // más antiguos primero

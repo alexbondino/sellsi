@@ -24,5 +24,17 @@ if (import.meta.env.DEV) {
   import('./utils/cartEmergencyTools.js');
 }
 
+// 5. 🚨 EXPORT CACHE SERVICES GLOBALLY FOR FORCE REFRESH
+try {
+  import('./services/thumbnailCacheService.js').then(module => {
+    window.thumbnailCacheService = module.default;
+  });
+  import('./services/thumbnailInvalidationService.js').then(module => {
+    window.thumbnailInvalidationService = module.default;
+  });
+} catch (e) {
+  console.warn('⚠️ Could not export cache services globally:', e);
+}
+
 // Opcional: ejemplo de captura manual temprana (se eliminará si no se usa)
 // captureException(new Error('Sentry deferred test (remove in prod)'));

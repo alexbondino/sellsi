@@ -17,7 +17,7 @@ export const FeatureFlags = {
   ENABLE_DELAYED_CLEANUP: asBool(env.VITE_ENABLE_DELAYED_CLEANUP, true),
   ENABLE_VIEWPORT_THUMBS: asBool(env.VITE_ENABLE_VIEWPORT_THUMBS, false),
   FEATURE_PHASE1_THUMBS: asBool(env.VITE_FEATURE_PHASE1_THUMBS, true), // Flag maestro para capa Phase1 ETag
-  THUMB_MAX_CONCURRENT: Number(env.VITE_THUMB_MAX_CONCURRENT) || 12,
+  THUMB_MAX_CONCURRENT: Number(env.VITE_THUMB_MAX_CONCURRENT) || 6, // 🚀 REDUCED: Less aggressive concurrency
 }
 
 export const ThumbTimings = {

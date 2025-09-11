@@ -566,6 +566,22 @@ export class UploadService {
       }
 
   thumbsLog('REPLACE_DONE', { total: verifiedRows?.length, productId })
+      
+      // 🚨 FORCE CACHE INVALIDATION AFTER SUCCESSFUL IMAGE REPLACEMENT
+      try {
+        console.log(`🔥 Triggering cache invalidation for product ${productId} after image replacement`);
+        // Force immediate thumbnail cache refresh
+        if (window.thumbnailCacheService) {
+          window.thumbnailCacheService.forceImmediateRefresh(productId);
+        }
+        // Also try global invalidation service
+        if (window.thumbnailInvalidationService) {
+          window.thumbnailInvalidationService.invalidateProductThumbnails(productId);
+        }
+      } catch (invalidationError) {
+        console.warn('⚠️ Cache invalidation failed (non-critical):', invalidationError);
+      }
+
       return { success: true, data: verifiedRows }
     } catch (e) {
       return { success: false, error: e.message }

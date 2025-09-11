@@ -385,6 +385,16 @@ const useSupplierProductsBase = create((set, get) => ({
         console.log(`📸 [updateProduct] Reemplazo atómico de imágenes, total=${imagenes?.length || 0}`)
         const supplierId = localStorage.getItem('user_id')
         const replaceResult = await UploadService.replaceAllProductImages(imagenes || [], productId, supplierId, { cleanup: true })
+        
+        // 🚨 FORCE IMMEDIATE CACHE INVALIDATION AFTER IMAGE UPDATE
+        try {
+          const thumbnailInvalidationService = await import('../../../services/thumbnailInvalidationService');
+          thumbnailInvalidationService.default.manualInvalidation.onImageUploaded(productId);
+          console.log(`🔥 MANUAL invalidation triggered for product ${productId}`);
+        } catch (e) {
+          console.warn('⚠️ Manual invalidation failed:', e);
+        }
+        
         // Sincronizar inmediatamente el estado local para evitar flicker / duplicados
         if (replaceResult?.success) {
           set((state) => ({

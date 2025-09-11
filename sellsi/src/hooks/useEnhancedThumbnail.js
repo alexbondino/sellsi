@@ -4,12 +4,13 @@
  * ============================================================================
  */
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useTheme } from '@mui/material/styles';
 import { useMediaQuery } from '@mui/material';
 import { useThumbnailQuery } from './useThumbnailQueries';
 import { CACHE_CONFIGS } from '../utils/queryClient';
 import { getProductImageUrl } from '../utils/getProductImageUrl';
+import { useForceImageRefresh } from './useForceImageRefresh';
 
 /**
  * Hook mejorado para thumbnails con fallback automático a imagen principal
@@ -20,8 +21,16 @@ export const useEnhancedThumbnail = (product) => {
   const isTablet = useMediaQuery(theme.breakpoints.between('md', 'xl'));
   const isDesktop = useMediaQuery(theme.breakpoints.up('xl'));
 
+  // 🔧 QUICK FIX: State para forzar re-render cuando se invalida cache
+  const [forceRefreshKey, setForceRefreshKey] = useState(0);
+
   // Aceptar múltiples variantes de id para mayor compatibilidad
   const productId = product?.id || product?.productid || product?.product_id || product?.productId;
+
+  // 🔧 QUICK FIX: Listen for force refresh events
+  useForceImageRefresh(productId, () => {
+    setForceRefreshKey(prev => prev + 1);
+  });
 
   // Query si no hay objeto thumbnails cargado
   const hasLocalThumbnailsObject = !!(product && product.thumbnails && typeof product.thumbnails === 'object');
@@ -129,7 +138,7 @@ export const useEnhancedThumbnail = (product) => {
       fallbackUsed,
       source
     };
-  }, [product, isMobile, isTablet, isDesktop, dbThumbnails, isLoadingThumbnails, thumbnailError]);
+  }, [product, isMobile, isTablet, isDesktop, dbThumbnails, isLoadingThumbnails, thumbnailError, forceRefreshKey]);
 
   return thumbnailResult;
 };
@@ -138,7 +147,16 @@ export const useEnhancedThumbnail = (product) => {
  * Hook para minithumb con fallback a imagen principal
  */
 export const useEnhancedMinithumb = (product) => {
+  // 🔧 QUICK FIX: State para forzar re-render cuando se invalida cache
+  const [forceRefreshKey, setForceRefreshKey] = useState(0);
+  
   const productId = product?.id || product?.productid || product?.product_id || product?.productId;
+  
+  // 🔧 QUICK FIX: Listen for force refresh events
+  useForceImageRefresh(productId, () => {
+    setForceRefreshKey(prev => prev + 1);
+  });
+  
   const needsQuery = !!productId && !(product?.thumbnails?.minithumb);
   
   const { 
@@ -238,7 +256,7 @@ export const useEnhancedMinithumb = (product) => {
       fallbackUsed,
       source
     };
-  }, [product, dbThumbnails, isLoading]);
+  }, [product, dbThumbnails, isLoading, forceRefreshKey]);
 };
 
 /**
