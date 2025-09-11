@@ -28,7 +28,7 @@ const BottomBar = () => {
           bottom: 0,
           width: '100%',
           px: { xs: 2.25, md: 8 },
-          py: { xs: 2.5, md: 2 },
+          py: { xs: 2.5, md: 5 },
           borderTop: '1px solid #ffffff',
           zIndex: 1301,
         }}
