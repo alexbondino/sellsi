@@ -91,16 +91,23 @@ const ProductRegions = ({
 
   const handleApplyPreset = (index) => {
     const preset = getPresetByIndex(index);
-    if (preset) {
-      setDisplayRegions(preset.regionsDisplay || []);
-      onRegionChange(preset.regionsDisplay || []);
+    // Si el preset existe y contiene regiones, aplicarlas.
+    // Si no existe o no tiene regiones guardadas, limpiar las regiones mostradas
+    // para que no se muestre nada debajo (UX requirement).
+    if (preset && Array.isArray(preset.regionsDisplay) && preset.regionsDisplay.length > 0) {
+      setDisplayRegions(preset.regionsDisplay);
+      onRegionChange(preset.regionsDisplay);
       setActivePreset(index);
       // Baseline hash se deriva del formato display aplicado
-      const newHash = computeRegionsHash(preset.regionsDisplay || []);
+      const newHash = computeRegionsHash(preset.regionsDisplay);
       setBaselineHash(newHash);
     } else {
+      // Preset vacío o no guardado: limpiar snapshot y notificar al padre
+      setDisplayRegions([]);
+      onRegionChange([]);
       setActivePreset(index);
-      setBaselineHash(computeRegionsHash(displayRegions)); // baseline actual
+      // Baseline es vacio
+      setBaselineHash(computeRegionsHash([]));
     }
   };
 

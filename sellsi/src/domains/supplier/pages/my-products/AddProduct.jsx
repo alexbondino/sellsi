@@ -515,13 +515,24 @@ const AddProduct = () => {
 
   };
 
+  // Manejar cambios en imágenes: sincroniza con el hook del formulario
+  const handleImagesChange = (images) => {
+    // Marcar que el usuario tocó imágenes para evitar rehidratación automática
+    try { markImagesTouched(); } catch(e) { /* noop */ }
+    // Actualizar el campo de imagenes en el formulario
+    updateField('imagenes', images);
+    // Limpiar cualquier error previo de imágenes
+    setImageError('');
+  };
+
   // ========================================================================
   // HANDLER ROBUSTO PARA CAMBIO DE PRICING TYPE
   // ========================================================================
   const handlePricingTypeChangeUI = (event, newValue) => {
     if (newValue === null) return
     setImageError('');
-    updateField('imagenes', images);
+    // Delegar al hook central que maneja el cambio de tipo de pricing
+    handlePricingTypeChange(newValue);
   };
 
   const handleImageError = errorMessage => {

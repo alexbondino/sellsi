@@ -11,34 +11,64 @@ export const NotificationListPanel = ({
   compact = true,
 }) => {
   const theme = useTheme();
-  const isSm = useMediaQuery(theme.breakpoints.down('sm'));
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const filtered = activeTab === 'unread' ? notifications.filter(n=>!n.is_read) : notifications;
-  const slice = compact ? filtered.slice(0, 10) : filtered;
-  // Fixed desktop dimensions to avoid CLS: width 480px, height 870px when not compact
+  const slice = compact ? filtered.slice(0, 8) : filtered;
+  
+  // Responsive dimensions - NO viewport units en mobile
   let width, minWidth, maxWidth, minHeight, maxHeight;
-  if (compact) {
+  if (compact && !isMobile) {
+    // Desktop Popover
     width = 360;
     minWidth = 360;
-    maxWidth = '100%';
+    maxWidth = 360;
     minHeight = 320;
     maxHeight = 460;
-  } else if (isSm) {
-    // small screens: full width and adaptive height (fullScreen Dialog will handle height)
-    width = '100vw';
-    minWidth = '100vw';
-    maxWidth = '100vw';
+  } else if (compact && isMobile) {
+    // Mobile Dialog compact
+    width = '100%';
+    minWidth = '100%';
+    maxWidth = '100%';
     minHeight = '60vh';
-    maxHeight = '100vh';
+    maxHeight = '100%';
+  } else if (!compact && isMobile) {
+    // Mobile Dialog fullscreen
+    width = '100%';
+    minWidth = '100%';
+    maxWidth = '100%';
+    minHeight = '100%';
+    maxHeight = '100%';
   } else {
-    // desktop fixed size to prevent layout jumps
+    // Desktop Dialog
     width = 480;
     minWidth = 480;
     maxWidth = 480;
-    minHeight = 870;
-    maxHeight = 870;
+    minHeight = 700;
+    maxHeight = 700;
   }
+  // Text truncation for mobile - 2 lines max
+  const textClampStyle = isMobile ? {
+    display: '-webkit-box',
+    WebkitLineClamp: 2,
+    WebkitBoxOrient: 'vertical',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    wordBreak: 'break-word',
+    whiteSpace: 'normal',
+    lineHeight: 1.4,
+  } : {};
+
   return (
-    <Box sx={{ width, minWidth, maxWidth, minHeight, maxHeight, overflowY: 'auto' }}>
+    <Box sx={{ 
+      width, 
+      minWidth, 
+      maxWidth, 
+      minHeight, 
+      maxHeight, 
+      overflowY: 'auto',
+      overflowX: 'hidden',
+      boxSizing: 'border-box'
+    }}>
       <Tabs value={activeTab} onChange={(_,v)=>onTabChange(v)} variant="fullWidth" size="small">
         <Tab label={`Todas (${notifications.length})`} value="all" />
         <Tab label={`No Leídas (${notifications.filter(n=>!n.is_read).length})`} value="unread" />
@@ -49,18 +79,78 @@ export const NotificationListPanel = ({
           <Typography variant="body2" sx={{ p:2, color: 'text.secondary' }}>Sin notificaciones</Typography>
         )}
         {slice.map(n => (
-          <ListItemButton key={n.id} onClick={()=>onItemClick(n)} sx={(theme) => ({ bgcolor: n.is_read ? 'transparent' : alpha(theme.palette.primary.light, 0.15), alignItems: 'flex-start' })}>
+          <ListItemButton 
+            key={n.id} 
+            onClick={()=>onItemClick(n)} 
+            sx={{
+              bgcolor: n.is_read ? 'transparent' : alpha(theme.palette.primary.light, 0.15), 
+              alignItems: 'flex-start',
+              width: '100%',
+              maxWidth: '100%',
+              overflow: 'hidden',
+              boxSizing: 'border-box',
+              px: 2,
+              py: 1.5,
+            }}
+          >
             <ListItemText
-              primary={<Typography component="span" variant="subtitle2" fontWeight={n.is_read?500:700}>{n.title}</Typography>}
-              secondary={<>
-                <Typography component="span" variant="body2" color="text.secondary">{n.body}</Typography>
-                <Typography component="span" variant="caption" color="text.disabled" sx={{ display: 'block' }}>{n.time_ago}</Typography>
-              </>}
+              sx={{ 
+                width: '100%', 
+                maxWidth: '100%',
+                overflow: 'hidden',
+                boxSizing: 'border-box',
+              }}
+              primary={
+                <Typography 
+                  component="div" 
+                  variant="subtitle2" 
+                  fontWeight={n.is_read ? 500 : 700}
+                  sx={{
+                    ...textClampStyle,
+                    width: '100%',
+                    maxWidth: '100%',
+                    boxSizing: 'border-box',
+                  }}
+                >
+                  {n.title}
+                </Typography>
+              }
+              secondary={
+                <Box sx={{ width: '100%', maxWidth: '100%' }}>
+                  <Typography 
+                    component="div" 
+                    variant="body2" 
+                    color="text.secondary"
+                    sx={{
+                      ...textClampStyle,
+                      width: '100%',
+                      maxWidth: '100%',
+                      boxSizing: 'border-box',
+                      mb: 0.5,
+                    }}
+                  >
+                    {n.body}
+                  </Typography>
+                  <Typography 
+                    component="span" 
+                    variant="caption" 
+                    color="text.disabled"
+                    sx={{ 
+                      display: 'block',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {n.time_ago}
+                  </Typography>
+                </Box>
+              }
             />
           </ListItemButton>
         ))}
       </List>
-      {compact && filtered.length > 10 && (
+      {compact && filtered.length > 8 && (
         <Box sx={{ p:1, textAlign:'center' }}>
           <Button size="small" onClick={onViewAll}>Ver todas</Button>
         </Box>
