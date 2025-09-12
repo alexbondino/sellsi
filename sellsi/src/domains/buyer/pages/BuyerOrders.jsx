@@ -25,6 +25,7 @@ import { CheckoutSummaryImage } from '../../../components/UniversalProductImage'
 // Unificar formateo de fechas con TableRows (usa marketplace/pages/utils/formatters)
 import { formatDate as formatDateUnified } from '../../marketplace/pages/utils/formatters';
 import ContactModal from '../../../shared/components/modals/ContactModal';
+import BuyerOrdersSkeleton from '../../../shared/components/display/skeletons/BuyerOrdersSkeleton';
 
 const BuyerOrders = () => {
   const theme = useTheme();
@@ -208,7 +209,7 @@ const BuyerOrders = () => {
   // RENDERIZADO CONDICIONAL
   // ============================================================================
   
-  // Mostrar loading
+  // Mostrar loading: usar skeletons inteligentes en lugar de spinner
   if (loading) {
     return (
       <ThemeProvider theme={dashboardThemeCore}>
@@ -220,12 +221,25 @@ const BuyerOrders = () => {
             ml: { xs: 0, md: 10, lg: 14, xl: 24 },
             px: { xs: 0, md: 3 },
             pb: SPACING_BOTTOM_MAIN,
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
           }}
         >
-          <CircularProgress size={40} />
+          <Container maxWidth={isMobile ? false : "xl"} disableGutters={isMobile ? true : false}>
+            {/* Header: siempre visible, fuera del skeleton */}
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 4 }}>
+              <AssignmentIcon sx={{ color: 'primary.main', fontSize: 36, mr: 1 }} />
+              <Typography
+                variant="h4"
+                fontWeight={600}
+                color="primary.main"
+                gutterBottom
+              >
+                Mis Pedidos
+              </Typography>
+            </Box>
+
+            {/* Lista placeholder */}
+            <BuyerOrdersSkeleton rows={3} />
+          </Container>
         </Box>
       </ThemeProvider>
     );

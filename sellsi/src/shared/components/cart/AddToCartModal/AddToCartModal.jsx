@@ -351,6 +351,49 @@ const AddToCartModal = ({
     enrichProductWithRegions();
   }, [open, product, loadProductShippingRegions]);
 
+  // Controlar scroll del body cuando el modal está abierto (misma receta que ShippingRegionsModal)
+  useEffect(() => {
+    if (open) {
+      const scrollY = window.scrollY;
+
+      document.documentElement.style.position = 'fixed';
+      document.documentElement.style.top = `-${scrollY}px`;
+      document.documentElement.style.left = '0';
+      document.documentElement.style.right = '0';
+      document.documentElement.style.overflow = 'hidden';
+
+      document.body.style.position = 'fixed';
+      document.body.style.top = `-${scrollY}px`;
+      document.body.style.left = '0';
+      document.body.style.right = '0';
+      document.body.style.overflow = 'hidden';
+      document.body.style.touchAction = 'none';
+
+      document.body.dataset.scrollY = scrollY.toString();
+
+      return () => {
+        const savedScrollY = parseInt(document.body.dataset.scrollY || '0');
+
+        document.documentElement.style.position = '';
+        document.documentElement.style.top = '';
+        document.documentElement.style.left = '';
+        document.documentElement.style.right = '';
+        document.documentElement.style.overflow = '';
+
+        document.body.style.position = '';
+        document.body.style.top = '';
+        document.body.style.left = '';
+        document.body.style.right = '';
+        document.body.style.overflow = '';
+        document.body.style.touchAction = '';
+
+        window.scrollTo(0, savedScrollY);
+
+        delete document.body.dataset.scrollY;
+      };
+    }
+  }, [open]);
+
   // (inicialización de cantidad movida al hook useQuantityManagement)
 
   // Establecer tipo de documento inicial basándose en opciones disponibles del proveedor

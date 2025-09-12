@@ -52,13 +52,34 @@ const MyOrdersPage = () => {
 
   // Hook para mostrar notificaciones tipo banner
   const { showBanner } = useBanner();
-
-  // Estado local para controlar la visibilidad y el tipo de modal
   const [modalState, setModalState] = useState({
     isOpen: false,
     type: null, // 'accept', 'reject', 'dispatch', 'deliver', 'chat'
     selectedOrder: null,
   });
+
+  // ID del proveedor desde Supabase Auth (no chequea rol, solo sesión)
+  const [supplierId, setSupplierId] = useState(null);
+  const [authResolved, setAuthResolved] = useState(false);
+  const [supplierDocTypes, setSupplierDocTypes] = useState([]); // ['boleta','factura']
+  const [taxDocFileState, setTaxDocFileState] = useState({ file: null, error: null });
+  const [taxDocTouched, setTaxDocTouched] = useState(false);
+
+  // Notifications: mark supplier context notifications as read on mount once auth resolved and supplierId exists
+  useEffect(() => {
+    let mounted = true;
+    if (!authResolved || !supplierId) return undefined;
+    (async () => {
+      try {
+  const mod = await import('../../../../domains/notifications/components/NotificationProvider');
+        const notifCtx = mod.useNotificationsContext?.();
+        if (mounted) {
+          try { notifCtx?.markContext?.('supplier_orders'); } catch (_) {}
+        }
+      } catch (_) {}
+    })();
+    return () => { mounted = false; };
+  }, [authResolved, supplierId]);
 
   // Helpers para manejo de fechas en formato local YYYY-MM-DD (evita shifts UTC)
   const pad = (n) => String(n).padStart(2, '0');
@@ -89,24 +110,9 @@ const MyOrdersPage = () => {
     return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
   };
 
-  // ID del proveedor desde Supabase Auth (no chequea rol, solo sesión)
-  const [supplierId, setSupplierId] = useState(null);
-  const [authResolved, setAuthResolved] = useState(false);
-  const [supplierDocTypes, setSupplierDocTypes] = useState([]); // ['boleta','factura']
-  const [taxDocFileState, setTaxDocFileState] = useState({ file: null, error: null });
-  const [taxDocTouched, setTaxDocTouched] = useState(false);
 
   // Notifications: mark supplier context notifications as read on mount once auth resolved and supplierId exists
-  try {
-    // dynamic require to avoid circular issues if any
-    const { useNotificationsContext } = require('../../../../notifications/components/NotificationProvider');
-    const notifCtx = useNotificationsContext?.();
-    useEffect(() => {
-      if (authResolved && supplierId) {
-        try { notifCtx?.markContext?.('supplier_orders'); } catch(_) {}
-      }
-    }, [authResolved, supplierId]);
-  } catch(_) {}
+  // (replaced dynamic require) notifications handled in useEffect above
 
   // Resolver supplierId desde sesión autenticada; fallback a localStorage si no hay sesión
   useEffect(() => {

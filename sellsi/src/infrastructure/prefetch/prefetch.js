@@ -32,10 +32,15 @@ export function prefetch(importFn, key) {
   PREFETCH_CACHE.set(cacheKey, true);
   try {
     idle(() => {
-      // trigger dynamic import; ignore result
-      importFn().catch(() => {
-        // swallow errors, we don't want to interrupt UX
-      });
+      // trigger dynamic import; tolerate factories that don't return a Promise
+      try {
+        const res = importFn();
+        if (res && typeof res.catch === 'function') {
+          res.catch(() => {});
+        }
+      } catch (err) {
+        // swallow any synchronous errors
+      }
     });
   } catch (e) {
     // best-effort only
