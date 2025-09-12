@@ -37,7 +37,8 @@ const ImageUploader = ({
   onImagesChange,
   maxImages = 5,
   error,
-  acceptedTypes = 'image/*',
+  // Default to explicit whitelist to avoid accidental acceptance of animated GIFs
+  acceptedTypes = 'image/jpeg,image/png,image/webp',
   dropText = 'Arrastra y suelta imágenes aquí o haz clic para seleccionar',
   buttonText = 'Agregar imágenes',
   showPrimaryBadge = true,
@@ -65,13 +66,14 @@ const ImageUploader = ({
   const processFiles = (files) => {
     const maxFileSize = 2 * 1024 * 1024; // 2MB en bytes
     
+    const acceptedArray = acceptedTypes.split(',').map(t => t.trim()).filter(Boolean);
     const imageFiles = files.filter((file) => {
-      if (acceptedTypes === 'image/*') {
-        return file.type.startsWith('image/')
-      }
-      return acceptedTypes
-        .split(',')
-        .some((type) => file.type.includes(type.trim()))
+      // Exact match or wildcard match (e.g., image/*)
+      return acceptedArray.some(type => {
+        if (type === 'image/*') return file.type.startsWith('image/')
+        if (type.endsWith('/*')) return file.type.startsWith(type.split('/')[0] + '/')
+        return file.type === type
+      })
     })
 
     if (imageFiles.length === 0) {
@@ -192,7 +194,9 @@ const ImageUploader = ({
               {dropText}
             </Typography>
             <Typography variant="caption" color="text.secondary">
-              <b>Formatos soportados: jpeg, png, webp • Máximo {maxImages} archivos • 2MB por imagen</b>
+              <b>
+                {`Formatos soportados: ${acceptedTypes.split(',').map(s=>s.split('/')[1]||s).join(', ')} • Máximo ${maxImages} archivos • 2MB por imagen`}
+              </b>
             </Typography>
           </Box>
         </Paper>
