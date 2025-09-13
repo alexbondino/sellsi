@@ -10,6 +10,7 @@
 import React from 'react'
 import { Box, Typography, Button, Alert, AlertTitle } from '@mui/material'
 import { ErrorOutline, Refresh, BugReport } from '@mui/icons-material'
+import { captureExceptionSafe } from '../../../lib/sentryDeferred'
 
 class BaseErrorBoundary extends React.Component {
   constructor(props) {
@@ -51,20 +52,25 @@ class BaseErrorBoundary extends React.Component {
       // Simular reporte a servicio de logging
       const errorReport = {
         errorId: this.state.errorId,
-        message: error.message,
-        stack: error.stack,
-        componentStack: errorInfo.componentStack,
+        message: error?.message,
+        stack: error?.stack,
+        componentStack: errorInfo?.componentStack,
         context: this.props.context || 'Unknown',
-        userId: localStorage.getItem('user_id'),
+        userId: typeof localStorage !== 'undefined' ? localStorage.getItem('user_id') : null,
         timestamp: new Date().toISOString(),
-        userAgent: navigator.userAgent,
-        url: window.location.href,
+        userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'unknown',
+        url: typeof window !== 'undefined' ? window.location.href : 'unknown',
       }
 
-      // TODO: Enviar a servicio real
-      // Sentry.captureException(error, { extra: errorReport })
-    } catch (loggingError) {
+      // Use deferred safe capture to avoid throwing from Sentry itself
+      try {
+        captureExceptionSafe(error, { extra: errorReport })
+      } catch (_) {
+        // swallow: do not allow logging failures to crash the app
       }
+    } catch (loggingError) {
+      // If building the error report fails, don't rethrow
+    }
   }
 
   handleRetry = () => {

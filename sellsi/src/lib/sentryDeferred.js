@@ -5,6 +5,8 @@ let SentryMod = null; // will hold imported module
 let initialized = false;
 const queue = [];
 const MAX_QUEUE = 50;
+const CAPTURE_THROTTLE_MS = 1000; // minimum ms between captureException calls
+let lastCaptureTs = 0;
 // Symbol used to mark Error objects that were already captured to avoid duplicate captures
 const __SENTRY_CAPTURED = Symbol.for('__sentry_captured__');
 
@@ -35,6 +37,15 @@ export function captureException(error, context) {
       try { error[__SENTRY_CAPTURED] = true; } catch (_) {}
     }
   } catch (_) {}
+  const now = Date.now();
+  // simple throttle: avoid bursts of captureException that could cause 429
+  if (now - lastCaptureTs < CAPTURE_THROTTLE_MS) {
+    // If queue is already large, drop the event
+    if (queue.length > MAX_QUEUE / 2) return;
+  } else {
+    lastCaptureTs = now;
+  }
+
   enqueue('captureException', [error, context]);
 }
 export function captureMessage(message, level = 'info') {
@@ -73,6 +84,16 @@ export async function initSentryDeferred(options = {}) {
     if (options?.debug) {
     }
   } catch (err) {
+  }
+}
+
+// Safe wrapper that will not throw if Sentry is not available and will
+// attempt to enqueue the exception using the deferred queue.
+export function captureExceptionSafe(error, context) {
+  try {
+    captureException(error, context);
+  } catch (_) {
+    // swallow to avoid cascading errors in an ErrorBoundary
   }
 }
 
