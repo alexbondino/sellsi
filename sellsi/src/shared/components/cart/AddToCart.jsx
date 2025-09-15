@@ -4,6 +4,7 @@ import { ShoppingCart as ShoppingCartIcon } from '@mui/icons-material';
 
 // Components
 import AddToCartModal from './AddToCartModal/AddToCartModal';
+import ShippingInfoValidationModal, { useShippingInfoModal } from '../validation/ShippingInfoValidationModal/ShippingInfoValidationModal';
 
 // Hooks and services
 import { showCartSuccess, showCartError, showErrorToast } from '../../../utils/toastHelpers';
@@ -51,6 +52,16 @@ const AddToCart = ({
   const [currentUserId, setCurrentUserId] = useState(null);
   const addItem = useCartStore(state => state.addItem);
 
+  // Hook para controlar modal de validación de shipping (si falta configurar)
+  const {
+    isOpen: shippingIsOpen,
+    openIfIncomplete,
+    isLoading: shippingIsLoading,
+    missingFieldLabels,
+    handleConfigureShipping,
+    handleClose: handleCloseShipping,
+  } = useShippingInfoModal();
+
   // Detectar si la oferta ya está en el carrito para bloquear flujo UI
   const offerId = offer?.id || offer?.offer_id || offer?.offerId || null;
   const isOfferInCart = useCartStore(state => {
@@ -96,6 +107,15 @@ const AddToCart = ({
       // Verificar sesión antes de abrir el modal
       try {
         const { data: { session } } = await supabase.auth.getSession();
+        // Antes de abrir el modal de selección, verificar si el usuario tiene
+        // la información de despacho completa. Si no la tiene, abrir el
+        // modal de validación de shipping y NO abrir el AddToCartModal.
+        const didOpenShipping = openIfIncomplete();
+        if (didOpenShipping) {
+          if (onModalStateChange) onModalStateChange(true);
+          return;
+        }
+
         setModalOpen(true);
         if (onModalStateChange) {
           onModalStateChange(true);
@@ -310,6 +330,13 @@ const AddToCart = ({
         userRegion={userRegion}
         isLoadingUserProfile={isLoadingUserProfile}
   isOwnProduct={isOwnProduct}
+      />
+      <ShippingInfoValidationModal
+        isOpen={shippingIsOpen}
+        onClose={handleCloseShipping}
+        onGoToShipping={handleConfigureShipping}
+        loading={shippingIsLoading}
+        missingFieldLabels={missingFieldLabels}
       />
     </>
   );

@@ -422,6 +422,30 @@ const AddToCartModal = ({
     isLoadingUserProfile,
   });
 
+  // Mostrar aviso de restricción de edad para categorías específicas.
+  // Nota: `productData` es la forma normalizada para la UI y NO incluye
+  // el campo `categoria`/`category`. La fuente original del producto
+  // (prop `enrichedProduct` o `product`) es donde normalmente se guarda.
+  const isAgeRestrictedCategory = useMemo(() => {
+    const src = enrichedProduct || product;
+    if (!src) return false;
+    const candidates = [];
+    const pushVal = (v) => {
+      if (!v) return;
+      if (Array.isArray(v)) return v.forEach(x => pushVal(x));
+      if (typeof v === 'string') return candidates.push(v);
+      if (typeof v === 'object') return candidates.push(v.name || v.category || v.categoria || '');
+    };
+
+    // Campos comunes donde la categoría aparece en el producto original
+    ['categoria', 'category', 'category_nm', 'categoryName', 'category_name', 'categoria_nm', 'categoriaName'].forEach(k => pushVal(src[k]));
+    // También inspeccionar listas/arrays comunes
+    pushVal(src.categories);
+    pushVal(src.category);
+
+    return candidates.some(c => /tabaqueria|tabaquería|alcoholes?/i.test(String(c || '').trim()));
+  }, [enrichedProduct, product]);
+
   // ============================================================================
   // CÁLCULOS DE PRECIOS DINÁMICOS
   // ============================================================================
@@ -591,7 +615,14 @@ const AddToCartModal = ({
                   offer={offer}
                 />
 
-                {/* 3. Tipo de documento (solo si no es oferta o si el proveedor lo permite) */}
+                {/* 3. Aviso de edad para categorías restringidas */}
+                {isAgeRestrictedCategory && (
+                  <Alert severity="warning" icon={<WarningIcon />} sx={{ fontSize: '0.95rem' }}>
+                    Venta de alcohol y tabaco solo para mayores de 18 años.
+                  </Alert>
+                )}
+
+                {/* 4. Tipo de documento (solo si no es oferta o si el proveedor lo permite) */}
                 {(!isOfferMode || availableOptions?.length > 0) && (
                   <DocumentTypeSelector
                     loadingDocumentTypes={loadingDocumentTypes}

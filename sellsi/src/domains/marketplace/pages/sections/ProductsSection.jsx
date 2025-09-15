@@ -19,6 +19,7 @@ import { SPACING_BOTTOM_MAIN } from '../../../../styles/layoutSpacing';
 import { productGridColumns, productGridGaps, paginationResponsiveConfig } from '../../../../shared/constants/layoutTokens';
 import { PRODUCTS_TEXTS } from '../../../../shared/constants/productsTexts';
 import { useProductsDerivation } from '../../../../shared/hooks/useProductsDerivation';
+import { isNewDate } from '../../../../shared/utils/product/isNewDate';
 import { useProgressiveProducts } from '../../../../shared/hooks/useProgressiveProducts';
 import { useGridPriority } from '../../../../shared/utils/gridPriorityCalculator';
 import { scrollManagerAntiRebote } from '../../../../shared/utils/scrollManagerAntiRebote'; // ✅ Nuevo sistema anti-rebote
@@ -78,8 +79,8 @@ const ProductsSection = React.memo(({ seccionActiva, setSeccionActiva, totalProd
       if (isProviderView) {
         return (
           <>
-            <BusinessIcon sx={{ color: '#1976d2', verticalAlign: 'middle', fontSize: { xs: 24, md: 32 }, mr: 1 }} />
-            <span style={{ color: '#1976d2' }}>
+            <BusinessIcon sx={{ color: '#F59E0B', verticalAlign: 'middle', fontSize: { xs: 24, md: 32 }, mr: 1 }} />
+            <span style={{ color: '#F59E0B' }}>
               Proveedores Disponibles
             </span>
           </>
@@ -117,8 +118,21 @@ const ProductsSection = React.memo(({ seccionActiva, setSeccionActiva, totalProd
   // Derivación ahora a través del hook (fase2)
   const { items: derivedItems, providersCount } = useProductsDerivation(productosOrdenados, { providerView: isProviderView });
   
-  // ✅ FIX: Memoizar correctamente derivedItems para evitar que useProgressiveProducts se ejecute infinitamente
-  const memoizedProducts = React.useMemo(() => derivedItems, [derivedItems]);
+  // ✅ FIX: Memoizar correctamente derivedItems y aplicar filtro 'nuevos'
+  // Si la sección activa es 'nuevos' (buyer view), mostramos solo productos recientes según createdAt
+  const memoizedProducts = React.useMemo(() => {
+    if (!Array.isArray(derivedItems)) return derivedItems;
+    if (!isProviderView && seccionActiva === 'nuevos') {
+      return derivedItems.filter(p => {
+        try {
+          return isNewDate(p?.createdAt);
+        } catch (e) {
+          return false;
+        }
+      });
+    }
+    return derivedItems;
+  }, [derivedItems, seccionActiva, isProviderView]);
 
     // 🚀 BATCHING THUMBNAILS: limitar cantidad de ProductCard montadas simultáneamente para reducir ráfagas de fetch
   // batching ahora dentro del hook progressive

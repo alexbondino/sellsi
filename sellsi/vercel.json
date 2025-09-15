@@ -3,6 +3,13 @@
     { "source": "/robots.txt", "destination": "/robots.txt" },
     { "source": "/(.*)", "destination": "/index.html" }
   ],
+  "redirects": [
+    {
+      "source": "/technicalspecs/:slug*",
+      "destination": "/marketplace/product/:slug*",
+      "statusCode": 308
+    }
+  ],
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "installCommand": "npm install",

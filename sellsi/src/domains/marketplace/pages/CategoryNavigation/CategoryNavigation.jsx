@@ -23,6 +23,7 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import { SECTIONS, SECTION_LABELS } from '../marketplace/constants';
 import { categoryNavigationStyles as styles } from '../hooks/CategoryNavigation/CategoryNavigation.styles';
+import { regiones as REGION_OPTIONS } from '../../../../utils/chileData';
 
 // Categorías estandarizadas
 export const CATEGORIAS = [
@@ -38,6 +39,8 @@ const CategoryNavigation = React.memo(({
   categoriaSeleccionada,
   onSeccionChange,
   onCategoriaToggle,
+  onOpenShippingFilter,
+  selectedShippingRegions = [],
   categoryMarginLeft = {
     xs: 0,
     sm: 0,
@@ -49,10 +52,21 @@ const CategoryNavigation = React.memo(({
 }) => {
   // Estado local para el menú de categorías
   const [anchorElCategorias, setAnchorElCategorias] = useState(null);
+  // Estado local para el menú de despacho
+  const [anchorElDespacho, setAnchorElDespacho] = useState(null);
   const [sectionsExpanded, setSectionsExpanded] = useState(false);
   const theme = useTheme();
 
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+
+  // Resolver etiqueta legible de la región seleccionada
+  const selectedRegionLabels = React.useMemo(() => {
+    if (!Array.isArray(selectedShippingRegions) || selectedShippingRegions.length === 0) return [];
+    return selectedShippingRegions.map(val => {
+      const found = REGION_OPTIONS.find(r => r.value === val);
+      return { value: val, label: found ? found.label : val };
+    });
+  }, [selectedShippingRegions]);
 
   // Handlers locales para abrir/cerrar menú
   const handleOpenCategorias = (e) => {
@@ -60,6 +74,13 @@ const CategoryNavigation = React.memo(({
   };
   const handleCloseCategorias = () => {
     setAnchorElCategorias(null);
+  };
+
+  const handleOpenDespacho = (e) => {
+    setAnchorElDespacho(e.currentTarget);
+  };
+  const handleCloseDespacho = () => {
+    setAnchorElDespacho(null);
   };
 
   // ✅ MEJORA DE RENDIMIENTO: Memoización de handlers
@@ -120,6 +141,63 @@ const CategoryNavigation = React.memo(({
           >
             Categorías
           </Button>
+          {/* Botón 'Despacho' (misma UI que 'Categorías') - siempre visible en md+ */}
+          <Box sx={{ display: { xs: 'none', md: 'inline-flex' }, ml: 1 }}>
+            <Button
+              endIcon={<ArrowDropDownIcon />}
+              onClick={handleOpenDespacho}
+              sx={styles.categoriesButton}
+              aria-label={`Filtrar por Despacho: ${
+                (Array.isArray(selectedRegionLabels) && selectedRegionLabels.length > 0)
+                  ? selectedRegionLabels.map(s => s.label).join(', ')
+                  : 'Todas'
+              }`}
+              aria-controls={anchorElDespacho ? 'despacho-menu' : undefined}
+              aria-haspopup="true"
+            >
+              Despacho
+            </Button>
+
+            <Menu
+              id="despacho-menu"
+              anchorEl={anchorElDespacho}
+              open={Boolean(anchorElDespacho)}
+              onClose={handleCloseDespacho}
+              disableScrollLock={true}
+              PaperProps={{ sx: styles.categoriesMenu }}
+            >
+              <MenuItem
+                key="todas"
+                onClick={() => {
+                  if (onOpenShippingFilter) onOpenShippingFilter(null);
+                  handleCloseDespacho();
+                }}
+                sx={styles.menuItem(!Array.isArray(selectedShippingRegions) || selectedShippingRegions.length === 0)}
+              >
+                Todas
+                {(!Array.isArray(selectedShippingRegions) || selectedShippingRegions.length === 0) && (
+                  <Box sx={styles.selectedIndicator} />
+                )}
+              </MenuItem>
+
+              {REGION_OPTIONS.map(r => {
+                const isSelected = Array.isArray(selectedShippingRegions) && selectedShippingRegions.includes(r.value);
+                return (
+                  <MenuItem
+                    key={r.value}
+                    onClick={() => {
+                      if (onOpenShippingFilter) onOpenShippingFilter(r.value);
+                      handleCloseDespacho();
+                    }}
+                    sx={styles.menuItem(isSelected)}
+                  >
+                    {r.label}
+                    {/* Intentional: no tick icons in the dropdown; selection shown via chips / indicator */}
+                  </MenuItem>
+                )
+              })}
+            </Menu>
+          </Box>
           {/* Menu de categorías */}      <Menu
             anchorEl={anchorElCategorias}
             open={Boolean(anchorElCategorias)}
@@ -160,6 +238,8 @@ const CategoryNavigation = React.memo(({
                     key={value}
                     onClick={() => handleSectionClick(value)}
                     sx={styles.sectionButton(seccionActiva === value)}
+                    aria-pressed={seccionActiva === value}
+                    aria-current={seccionActiva === value ? 'true' : undefined}
                   >
                     {SECTION_LABELS[value]}
                   </Button>
@@ -214,6 +294,8 @@ const CategoryNavigation = React.memo(({
                           py: 1.5,
                           fontSize: '0.85rem',
                         }}
+                        aria-pressed={seccionActiva === value}
+                        aria-current={seccionActiva === value ? 'true' : undefined}
                       >
                         {SECTION_LABELS[value]}
                       </Button>
@@ -237,6 +319,26 @@ const CategoryNavigation = React.memo(({
                 sx={styles.categoryChip}
               />
             ))}
+
+          {/* Mostrar chips de regiones seleccionadas junto a chips de categoría (si aplica) */}
+          {Array.isArray(selectedRegionLabels) && selectedRegionLabels.length > 0 && (
+            selectedRegionLabels.slice(0, 3).map(({ value, label }) => (
+              <Chip
+                key={`shipping-${value}`}
+                label={label}
+                onDelete={() => { if (onOpenShippingFilter) onOpenShippingFilter(value); }}
+                size="small"
+                color="primary"
+                variant="outlined"
+                sx={styles.categoryChip}
+              />
+            ))
+          )}
+          {Array.isArray(selectedRegionLabels) && selectedRegionLabels.length > 3 && (
+            <Typography variant="caption" sx={styles.moreCategories}>
+              +{selectedRegionLabels.length - 3} más
+            </Typography>
+          )}
           {categoriaSeleccionada.filter(cat => cat !== 'Todas').length > 3 && (
             <Typography variant="caption" sx={styles.moreCategories}>
               +{categoriaSeleccionada.filter(cat => cat !== 'Todas').length - 3} más

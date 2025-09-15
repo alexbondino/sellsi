@@ -3,6 +3,32 @@
  * desde ProductCard hasta TechnicalSpecs sin parpadeo
  */
 
+// Mock UnifiedAuthProvider to provide useAuth without needing full provider
+jest.mock('../../infrastructure/providers/UnifiedAuthProvider', () => {
+  const React = require('react');
+  const value = {
+    session: null,
+    userProfile: null,
+    loadingUserStatus: false,
+    needsOnboarding: false,
+    refreshUserProfile: jest.fn(),
+    currentAppRole: 'buyer',
+    isBuyer: true,
+    isRoleLoading: false,
+    isRoleSwitching: false,
+    handleRoleChange: jest.fn(),
+    redirectToInitialHome: jest.fn(),
+    isDashboardRoute: false,
+    role: 'buyer'
+  };
+  return {
+    __esModule: true,
+    UnifiedAuthProvider: ({ children }) => React.createElement(React.Fragment, null, children),
+    useAuth: () => value,
+    useRole: () => value
+  };
+});
+
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { ThemeProvider, createTheme } from '@mui/material'

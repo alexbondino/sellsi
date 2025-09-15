@@ -469,7 +469,7 @@ const ProviderCatalog = () => {
               mb: { xs: 2, md: 3 }
             }}>
               <Avatar
-                src={provider?.logo_url}
+                src={provider?.logo_url || undefined}
                 alt={provider?.user_nm}
                 sx={{
                   width: { xs: 60, sm: 80, md: 120 },
@@ -621,13 +621,18 @@ const ProviderCatalog = () => {
               }}>
                 {/* Dropdown de ordenamiento por precio */}
                 <FormControl size="small" sx={{ 
-                  minWidth: { xs: 0, md: 180 },
-                  width: { xs: '100%', md: 180 },
+                  minWidth: { xs: 0, md: 193 },
+                  width: { xs: '100%', md: 193 },
                   flexShrink: 0 
                 }}>
                   <Select
                     value={priceOrder}
-                    onChange={(e) => setPriceOrder(e.target.value)}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      // Cuando el usuario selecciona orden por precio, aplicar en todas las categorías
+                      if (v === 'asc' || v === 'desc') setCategoryFilter('all');
+                      setPriceOrder(v);
+                    }}
                     displayEmpty
                     startAdornment={
                       <InputAdornment position="start">
@@ -679,8 +684,8 @@ const ProviderCatalog = () => {
 
                 {/* Dropdown de categorías */}
                 <FormControl size="small" sx={{ 
-                  minWidth: { xs: 0, md: 200 },
-                  width: { xs: '100%', md: 200 },
+                  minWidth: { xs: 0, md: 214 },
+                  width: { xs: '100%', md: 214 },
                   flexShrink: 0 
                 }}>
                   <Select

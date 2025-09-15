@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { supabase } from '../../../../services/supabase'
+import { useAuth } from '../../../../infrastructure/providers'
 import { getProductSpecifications } from '../../../../services/marketplace'
 import { extractProductIdFromSlug } from '../../../../shared/utils/product/productUrl'
 import useCartStore from '../../../../shared/stores/cart/cartStore'
@@ -49,6 +50,7 @@ export const useTechnicalSpecs = () => {
 
   // Hook del carrito
   const addItem = useCartStore((state) => state.addItem)
+  const { session, currentAppRole } = useAuth()
 
   // ============================================================================
   // LÓGICA DE NAVEGACIÓN INTELIGENTE
@@ -272,7 +274,10 @@ export const useTechnicalSpecs = () => {
    * Navega a la página de inicio
    */
   const handleGoHome = () => {
-    navigate('/')
+    // If not logged, go to public home. If logged, route by role.
+    if (!session) return navigate('/')
+    if (currentAppRole === 'supplier') return navigate('/supplier/home')
+    return navigate('/buyer/marketplace')
   }
 
   /**

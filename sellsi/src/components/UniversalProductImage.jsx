@@ -42,11 +42,14 @@ const UniversalProductImage = ({
   aspectRatio,
   objectFit = 'contain',
   borderRadius = 0,
+  // Static fallback image URL (e.g. Sellsi logo) to try when all image attempts fail
+  staticFallback,
   ...props
 }) => {
   const [imageError, setImageError] = useState(false);
   const [attemptedFallback, setAttemptedFallback] = useState(false);
   const [forceUseFallback, setForceUseFallback] = useState(false); // Nuevo estado para forzar uso de fallback
+  const [overrideSrc, setOverrideSrc] = useState(null); // when set, force this src (used for staticFallback)
   const retryCountRef = React.useRef(0);
   const queryClient = useQueryClient();
   const [forceEager, setForceEager] = useState(false);
@@ -73,6 +76,7 @@ const UniversalProductImage = ({
     setImageError(false);
     setAttemptedFallback(false);
     setForceUseFallback(false);
+    setOverrideSrc(null);
     retryCountRef.current = 0;
 
     if (product && (product.thumbnail_url || product.thumbnailUrl || product.thumbnails)) {
@@ -104,6 +108,8 @@ const UniversalProductImage = ({
     };
   }, [lazy, priority, inView, observerTimeoutMs, productId]);  // Determinar la URL a usar basada en el tamaño solicitado
   const selectedThumbnail = React.useMemo(() => {
+    // If an override src was set (e.g. staticFallback after an error), use it immediately
+    if (overrideSrc) return overrideSrc;
     if (!product) return '/placeholder-product.jpg';
 
     // Si necesitamos forzar el uso del fallback, usar la imagen principal directamente
@@ -176,6 +182,15 @@ const UniversalProductImage = ({
     }
 
     setImageError(true);
+
+    // If a static fallback is provided (e.g. Sellsi logo), try it once before showing broken icon
+    if (staticFallback && !overrideSrc) {
+      // avoid infinite loops: if staticFallback equals selectedThumbnail, skip
+      if (staticFallback !== selectedThumbnail) {
+        setOverrideSrc(staticFallback);
+        return; // try loading the static fallback first
+      }
+    }
 
     // FUNCIONALIDAD PRINCIPAL: Invalidar cache cuando hay error 404
     if (productId) {

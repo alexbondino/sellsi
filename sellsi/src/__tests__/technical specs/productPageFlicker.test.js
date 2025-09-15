@@ -9,6 +9,32 @@ import TechnicalSpecs from '../../domains/ProductPageView/pages/TechnicalSpecs'
 import ProductPageWrapper from '../../domains/ProductPageView/ProductPageWrapper'
 import { extractProductIdFromSlug } from '../../shared/utils/product/productUrl'
 
+// Mock UnifiedAuthProvider to provide useAuth hook for tests
+jest.mock('../../infrastructure/providers/UnifiedAuthProvider', () => {
+  const React = require('react');
+  const value = {
+    session: null,
+    userProfile: null,
+    loadingUserStatus: false,
+    needsOnboarding: false,
+    refreshUserProfile: jest.fn(),
+    currentAppRole: 'buyer',
+    isBuyer: true,
+    isRoleLoading: false,
+    isRoleSwitching: false,
+    handleRoleChange: jest.fn(),
+    redirectToInitialHome: jest.fn(),
+    isDashboardRoute: false,
+    role: 'buyer'
+  };
+  return {
+    __esModule: true,
+    UnifiedAuthProvider: ({ children }) => React.createElement(React.Fragment, null, children),
+    useAuth: () => value,
+    useRole: () => value
+  };
+});
+
 // Mock de Supabase
 jest.mock('../../services/supabase', () => ({
   supabase: {

@@ -73,6 +73,7 @@ export const applyAllFilters = (
   seccionActiva
 ) => {
   // Aplicar filtros en secuencia
+  let filtered = productos
   filtered = filterProductsBySection(filtered, seccionActiva)
   filtered = filterProductsBySearch(filtered, busqueda)
   filtered = filterProductsByCategory(filtered, categoriaSeleccionada)

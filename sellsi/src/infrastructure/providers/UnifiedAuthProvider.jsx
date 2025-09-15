@@ -205,7 +205,7 @@ export const UnifiedAuthProvider = ({ children }) => {
 
   // Redirect neutrals to dashboard after auth ready & profile available
   useEffect(() => {
-    const neutral = new Set(['/', '/marketplace', '/catalog', '/technicalspecs', '/terms-and-conditions', '/privacy-policy']);
+    const neutral = new Set(['/', '/marketplace', '/catalog', '/terms-and-conditions', '/privacy-policy']);
     if (!loadingUserStatus && session && !needsOnboarding && userProfile) {
       if (neutral.has(location.pathname) && !['/terms-and-conditions','/privacy-policy'].includes(location.pathname)) {
         const target = userProfile.main_supplier ? '/supplier/home' : '/buyer/marketplace';
@@ -225,7 +225,7 @@ export const UnifiedAuthProvider = ({ children }) => {
   useEffect(() => {
     if (!loadingUserStatus && !session) {
       const allowed = [ '/', '/marketplace', '/login', '/crear-cuenta', '/onboarding', '/terms-and-conditions', '/privacy-policy' ];
-      const isAllowed = allowed.some(r => location.pathname === r || location.pathname.startsWith('/technicalspecs'));
+      const isAllowed = allowed.some(r => location.pathname === r || location.pathname.startsWith('/marketplace/product'));
       if (!isAllowed) navigate('/', { replace: true });
     }
   }, [session, loadingUserStatus, location.pathname]);

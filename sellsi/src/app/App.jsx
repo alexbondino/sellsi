@@ -19,7 +19,6 @@ function AppContent() {
 
   // Loader global centrado SOLO para rutas privadas
   const isPublicRoute =
-    location.pathname.startsWith('/technicalspecs') ||
     location.pathname === '/' ||
     location.pathname.startsWith('/marketplace') ||
     location.pathname === '/login' ||

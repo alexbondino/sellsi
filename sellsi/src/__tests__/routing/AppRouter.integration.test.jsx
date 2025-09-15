@@ -246,9 +246,9 @@ describe('AppRouter integration (with mocked UnifiedAuthProvider via supabase)',
   await waitFor(() => {
     if (mockNavigateSpy.mock.calls.length > 0) {
       expect(mockNavigateSpy).toHaveBeenCalledWith('/supplier/home', { replace: true });
-    } else {
+      } else {
       // Accept either provider home rendered or the landing/home content (timing may vary)
-      expect(screen.queryByText('PROVIDER_HOME') || screen.queryByText('Software que conecta')).toBeTruthy();
+      expect(screen.queryByText(/PROVIDER_HOME|Software que conecta/)).toBeTruthy();
     }
   });
   });
@@ -415,12 +415,12 @@ describe('AppRouter integration (with mocked UnifiedAuthProvider via supabase)',
     }
 
   // Emulate provider reaction after logout: provider should navigate to '/' or render Home or (in some timing cases) provider home
-  await waitFor(() => {
+    await waitFor(() => {
     if (mockNavigateSpy.mock.calls.length > 0) {
       expect(mockNavigateSpy).toHaveBeenCalledWith('/', { replace: true });
     } else {
       // Accept landing page or provider home depending on timing
-      expect(screen.queryByText('Software que conecta') || screen.queryByText('PROVIDER_HOME')).toBeTruthy();
+      expect(screen.queryByText(/Software que conecta|PROVIDER_HOME/)).toBeTruthy();
     }
   });
   });
@@ -522,9 +522,9 @@ describe('AppRouter integration (with mocked UnifiedAuthProvider via supabase)',
   await waitFor(() => {
     if (mockNavigateSpy.mock.calls.length > 0) {
       expect(mockNavigateSpy).toHaveBeenCalledWith('/supplier/home', { replace: true });
-    } else {
+      } else {
       // Accept either provider home or marketplace buyer render as a sign the router resolved
-      expect(screen.queryByText('PROVIDER_HOME') || screen.queryByText('MARKETPLACE_BUYER')).toBeTruthy();
+      expect(screen.queryByText(/PROVIDER_HOME|MARKETPLACE_BUYER/)).toBeTruthy();
     }
   });
 

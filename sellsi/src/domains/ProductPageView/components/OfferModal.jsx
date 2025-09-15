@@ -210,7 +210,9 @@ const OfferModal = ({
     if (isNaN(parsed)) {
       setOfferedQuantity('');
     } else {
-      setOfferedQuantity(String(parsed));
+      // Clamp to available stock when leaving the field
+      const clamped = Math.min(parsed, effectiveStock);
+      setOfferedQuantity(String(clamped));
     }
   };
 
@@ -274,6 +276,14 @@ const OfferModal = ({
 
   const handleClose = () => {
     if (!loading) {
+      // Ensure quantity is clamped to stock before closing (exit edit mode)
+      if (offeredQuantity) {
+        const parsed = parseInt(offeredQuantity, 10);
+        if (!isNaN(parsed)) {
+          const clamped = Math.min(parsed, effectiveStock);
+          if (clamped !== parsed) setOfferedQuantity(String(clamped));
+        }
+      }
       onClose();
     }
   };
@@ -469,19 +479,31 @@ const OfferModal = ({
         </Box>
       </DialogContent>
 
-      <DialogActions sx={{ p: 2, gap: 1, justifyContent: 'center' }}>
-        <Button 
+      <DialogActions sx={{ flexDirection: { xs: 'column', sm: 'row' }, gap: 1, p: 3, pt: 1, justifyContent: 'center' }}>
+        <Button
           onClick={handleClose}
           disabled={loading}
-          color="inherit"
+          variant="outlined"
+          fullWidth={false}
+          sx={{
+            textTransform: 'none',
+            fontWeight: 500,
+            borderRadius: 2,
+          }}
         >
           Cancelar
         </Button>
+
         <Button
           onClick={handleSubmit}
           variant="contained"
           disabled={loading || !isFormValid() || hasPendingForProduct}
           startIcon={loading && <CircularProgress size={16} />}
+          sx={{
+            textTransform: 'none',
+            fontWeight: 600,
+            borderRadius: 2,
+          }}
         >
           {loading ? 'Enviando...' : 'Enviar Oferta'}
         </Button>

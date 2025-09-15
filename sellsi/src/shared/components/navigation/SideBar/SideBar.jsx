@@ -58,51 +58,50 @@ const SideBar = ({ role, width = '210px', onWidthChange }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const theme = useTheme();
-  const { userProfile } = useAuth();
+  const { userProfile, session } = useAuth();
   const [isCollapsed, setIsCollapsed] = useState(false);
 
-  // ✅ NUEVO: Determinar el rol basado en la ruta actual (adaptativo como el switch)
-  const getRoleFromCurrentRoute = () => {
-    const currentPath = location.pathname;
-    
-    // Rutas que son específicamente de supplier
-    const supplierRoutes = [
-      '/supplier/home',
-  '/supplier/offers',
-      '/supplier/myproducts',
-      '/supplier/addproduct', 
-      '/supplier/my-orders',
-      '/supplier/profile',
-      '/supplier/marketplace'
-    ];
-    
-    // Rutas que son específicamente de buyer
-    const buyerRoutes = [
-      '/buyer/marketplace',
-      '/buyer/orders',
-      '/buyer/performance',
-      '/buyer/cart',
-      '/buyer/paymentmethod',
-      '/buyer/profile'
-    ];
-    
-    // Verificar si está en una ruta específica de supplier
-    if (supplierRoutes.some(route => currentPath.startsWith(route))) {
-      return 'supplier';
+  // Never render sidebar if user is not authenticated
+  if (!session) return null;
+
+  // Determine role with a clear precedence to avoid unintended switches when
+  // navigating to neutral pages like product detail. Precedence:
+  // 1. `role` prop (AppShell/currentAppRole) - authoritative when provided
+  // 2. `location.state.from` - preserve sidebar based on navigation origin
+  // 3. Route-based detection (buyer/supplier/provider paths)
+  // 4. userProfile fallback
+  const determineEffectiveRole = () => {
+    // 1) prop from AppShell (most authoritative)
+    if (role === 'buyer' || role === 'supplier') return role;
+
+    // 2) preserve origin if navigator passed it (ProductCard/ProductPageWrapper set location.state.from)
+    try {
+      const fromState = location.state && location.state.from;
+      if (typeof fromState === 'string') {
+        if (fromState.startsWith('/supplier')) return 'supplier';
+        if (fromState.startsWith('/buyer')) return 'buyer';
+        if (fromState.startsWith('/provider')) return 'supplier';
+      }
+    } catch (e) {
+      // ignore malformed state
     }
-    
-    // Verificar si está en una ruta específica de buyer
-    if (buyerRoutes.some(route => currentPath.startsWith(route))) {
-      return 'buyer';
+
+    // 3) route-based detection (includes /provider and marketplace product paths)
+    const p = location.pathname;
+    if (p.startsWith('/supplier/') || p.startsWith('/provider/')) return 'supplier';
+    if (p.startsWith('/buyer/')) return 'buyer';
+    // product detail under marketplace should keep current profile role if available
+    if (p.startsWith('/marketplace/product')) {
+      // fallback to userProfile (below)
     }
-    
-    // Para rutas neutrales, usar el rol del perfil del usuario
-    const profileBasedRole = userProfile?.main_supplier ? 'supplier' : 'buyer';
-    return profileBasedRole;
+
+    // 4) user profile fallback
+    if (userProfile) return userProfile.main_supplier ? 'supplier' : 'buyer';
+
+    return null;
   };
 
-  // ✅ CAMBIO: Usar rol adaptativo basado en la ruta actual
-  const effectiveRole = getRoleFromCurrentRoute();
+  const effectiveRole = determineEffectiveRole();
 
   // Calcular el ancho colapsado (40% del ancho original)
   const expandedWidth = width;

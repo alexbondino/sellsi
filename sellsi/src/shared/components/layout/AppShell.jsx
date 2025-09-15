@@ -39,6 +39,9 @@ export const AppShell = ({ children }) => {
   // ✅ MOVER AQUÍ: Inicialización de la app donde todos los contextos están disponibles
   const { isInitialized } = useAppInitialization();
 
+  // Sidebar and dashboard layout must never appear without an active session
+  const isDashboardLayout = !!session && isDashboardRoute;
+
   const handleScrollTo = (refName, scrollTargets) => {
     const element = scrollTargets.current[refName]?.current;
     if (element) {
@@ -97,7 +100,7 @@ export const AppShell = ({ children }) => {
             mt: showTopBar ? topBarHeight : 0, // Solo aplicar margen si TopBar está visible
           }}
         >
-          {isDashboardRoute && (
+          {isDashboardLayout && (
             // Pasamos el currentAppRole a la SideBar para que sepa qué menú mostrar
             <SideBar 
               role={currentAppRole} 
@@ -117,22 +120,22 @@ export const AppShell = ({ children }) => {
               return theme => ({
                 flexGrow: 1,
                 pl: isMarketplaceRoute
-                  ? { xs: 0, sm: 0, md: (isDashboardRoute ? 3 : 0) }
+                  ? { xs: 0, sm: 0, md: (isDashboardLayout ? 3 : 0) }
                   : isFullBleed
-                  ? { xs: 0.75, sm: 1, md: (isDashboardRoute ? 3 : 0) }
-                  : (isDashboardRoute ? 3 : 0),
+                  ? { xs: 0.75, sm: 1, md: (isDashboardLayout ? 3 : 0) }
+                  : (isDashboardLayout ? 3 : 0),
                 pr: isMarketplaceRoute
-                  ? { xs: 0, sm: 0, md: (isDashboardRoute ? 3 : 0) }
+                  ? { xs: 0, sm: 0, md: (isDashboardLayout ? 3 : 0) }
                   : isFullBleed
-                  ? { xs: 0.25, sm: 0.25, md: (isDashboardRoute ? 3 : 0) }
-                  : (isDashboardRoute ? 3 : 0),
-                pt: isDashboardRoute ? 3 : 0,
-                pb: isDashboardRoute ? { xs: session ? 10 : 3, md: 3 } : { xs: session ? 10 : 0, md: 0 },
-                width: isDashboardRoute
+                  ? { xs: 0.25, sm: 0.25, md: (isDashboardLayout ? 3 : 0) }
+                  : (isDashboardLayout ? 3 : 0),
+                pt: isDashboardLayout ? 3 : 0,
+                pb: isDashboardLayout ? { xs: session ? 10 : 3, md: 3 } : { xs: session ? 10 : 0, md: 0 },
+                width: isDashboardLayout
                   ? { xs: '100%', md: `calc(100% - ${currentSideBarWidth})` }
                   : '100%',
                 overflowX: 'hidden',
-                ml: isDashboardRoute ? { md: 14, lg: 14, xl: 0 } : 0,
+                ml: isDashboardLayout ? { md: 14, lg: 14, xl: 0 } : 0,
                 ...(isFullBleed && { '& > *': { maxWidth: '100%' } }),
                 transition: [
                   theme.breakpoints.up('md') && theme.breakpoints.down('lg')
@@ -142,12 +145,12 @@ export const AppShell = ({ children }) => {
                 transform: {
                   xs: 'none',
                   sm: 'none',
-                  md: isDashboardRoute && sideBarCollapsed ? 'translateX(-80px)' : 'none',
-                  lg: isDashboardRoute && sideBarCollapsed ? 'translateX(-80px)' : 'none',
+                  md: isDashboardLayout && sideBarCollapsed ? 'translateX(-80px)' : 'none',
+                  lg: isDashboardLayout && sideBarCollapsed ? 'translateX(-80px)' : 'none',
                   xl: 'none',
                 },
               });
-            }, [session, location.pathname, isDashboardRoute, sideBarCollapsed, currentSideBarWidth])}
+            }, [session, location.pathname, isDashboardLayout, sideBarCollapsed, currentSideBarWidth])}
             data-layout="app-main"
           >
             {children}

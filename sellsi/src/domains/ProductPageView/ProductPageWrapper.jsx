@@ -4,16 +4,18 @@ import { Box, Container, Typography, Button, Paper } from '@mui/material';
 import { StorefrontOutlined } from '@mui/icons-material';
 import ProductPageView from './ProductPageView';
 import { supabase } from '../../services/supabase';
+import { useAuth } from '../../infrastructure/providers';
 import useCartStore from '../../shared/stores/cart/cartStore';
 import { extractProductIdFromSlug } from '../../shared/utils/product/productUrl';
 import { convertDbRegionsToForm } from '../../utils/shippingRegionsUtils';
 
 const ProductPageWrapper = ({ isLoggedIn }) => {
+  const { session, currentAppRole } = useAuth();
+
   let isSupplier = false;
-  if (window.currentAppRole) {
-    isSupplier = window.currentAppRole === 'supplier';
-  } else if (typeof currentAppRole !== 'undefined') {
-    isSupplier = currentAppRole === 'supplier';
+  const effectiveRole = currentAppRole || (typeof window !== 'undefined' && window.currentAppRole) || null;
+  if (effectiveRole) {
+    isSupplier = effectiveRole === 'supplier';
   }
 
   const { id, productSlug } = useParams();
@@ -36,8 +38,9 @@ const ProductPageWrapper = ({ isLoggedIn }) => {
 
   useEffect(() => {
     const fetchProduct = async () => {
-      let productId = id;
-      if (!productId && productSlug) productId = extractProductIdFromSlug(productSlug);
+  // Accept id or slug in either param; always extract UUID safely
+  const candidate = id || productSlug;
+  const productId = extractProductIdFromSlug(candidate);
       if (!productId) { setError('ID de producto no válido'); setLoading(false); return; }
       // Guard contra remount StrictMode / re-ejecución inmediata con mismo productId
       const now = Date.now();
@@ -86,6 +89,8 @@ const ProductPageWrapper = ({ isLoggedIn }) => {
             delivery_regions: data.product_delivery_regions || [],
             shipping_regions: data.product_delivery_regions || [],
             product_delivery_regions: data.product_delivery_regions || [],
+            createdAt: data.createddt || data.created_at || null,
+            updatedAt: data.updateddt || data.updated_at || null,
             rating: 4.5,
             ventas: Math.floor(Math.random() * 100),
             fromMyProducts,
@@ -113,7 +118,11 @@ const ProductPageWrapper = ({ isLoggedIn }) => {
     else if (isFromBuyer) navigate('/buyer/marketplace');
     else navigate('/marketplace');
   };
-  const handleGoHome = () => navigate('/');
+  const handleGoHome = () => {
+    if (!session) return navigate('/');
+    if (currentAppRole === 'supplier') return navigate('/supplier/home');
+    return navigate('/buyer/marketplace');
+  };
   const handleGoToMarketplace = () => handleClose();
 
   const handleAddToCart = (cartProduct) => {

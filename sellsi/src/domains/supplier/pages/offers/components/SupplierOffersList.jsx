@@ -30,6 +30,7 @@ import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 const STATUS_MAP = {
   pending: { label: 'Pendiente', color: 'warning' },
   approved: { label: 'Aceptada', color: 'success' },
+  paid: { label: 'Aceptada', color: 'success' },
   rejected: { label: 'Rechazada', color: 'error' },
   expired: { label: 'Caducada', color: 'error' },
 };
@@ -245,7 +246,10 @@ const SupplierOffersList = ({ offers = [], setOffers, acceptOffer, rejectOffer, 
                   )}
                 </TableCell>
                 <TableCell>
-                  <SafeChip label={STATUS_MAP[o.status].label} color={STATUS_MAP[o.status].color} size="small" />
+                  {(() => {
+                    const statusInfo = (o && o.status && STATUS_MAP[o.status]) ? STATUS_MAP[o.status] : { label: 'Desconocido', color: 'default' };
+                    return <SafeChip label={statusInfo.label} color={statusInfo.color} size="small" />;
+                  })()}
                 </TableCell>
                 <TableCell>
                   {o.status === 'pending' && (
@@ -274,7 +278,7 @@ const SupplierOffersList = ({ offers = [], setOffers, acceptOffer, rejectOffer, 
                       </IconButton>
                     </Tooltip>
                   )}
-                  {(o.status === 'approved' || o.status === 'rejected' || o.status === 'expired') && (
+                  {(o.status === 'approved' || o.status === 'paid' || o.status === 'rejected' || o.status === 'expired') && (
                     <Tooltip title="Limpiar Oferta">
                       <IconButton
                         size="small"

@@ -1,13 +1,16 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { Box, Typography, Button, IconButton, TextField, Tooltip, Stack } from '@mui/material';
 import { Settings as SettingsIcon } from '@mui/icons-material';
+import InfoIcon from '@mui/icons-material/Info';
 import EditIcon from '@mui/icons-material/Edit';
 import SaveIcon from '@mui/icons-material/Save';
 import CheckIcon from '@mui/icons-material/Check';
+import DeleteIcon from '@mui/icons-material/Delete';
 import ShippingRegionsModal from '../../../../../shared/components/modals/ShippingRegionsModal';
 import { ShippingRegionsDisplay } from '../../../../../shared/components/display/ShippingRegionsDisplay';
 import { convertModalRegionsToDisplay, convertFormRegionsToDb } from '../../../../../utils/shippingRegionsUtils';
 import { useShippingRegionPresets } from '../../../hooks/useShippingRegionPresets';
+import ConfirmDialog from '../../../../../shared/components/modals/ConfirmDialog';
 
 /**
  * Componente para la configuración de regiones de despacho
@@ -27,11 +30,12 @@ const ProductRegions = ({
   // Snapshot interno para evitar parpadeos cuando props cambian durante un update
   const [displayRegions, setDisplayRegions] = useState(formData.shippingRegions || []);
   // supplierId ahora llega por props (evita relecturas y facilita test)
-  const { presets, loading: presetsLoading, saving: presetsSaving, savePreset, rename, getPresetByIndex } = useShippingRegionPresets(supplierId);
+  const { presets, loading: presetsLoading, saving: presetsSaving, savePreset, rename, remove, getPresetByIndex } = useShippingRegionPresets(supplierId);
   const [activePreset, setActivePreset] = useState(null); // 1..3
   const [renamingIndex, setRenamingIndex] = useState(null);
   const [tempName, setTempName] = useState('');
   const [baselineHash, setBaselineHash] = useState(''); // Hash de la última aplicación/guardado del preset activo
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
 
   // Utilidad: genera hash normalizado de regiones (ordenadas por region)
   const computeRegionsHash = (regions = []) => {
@@ -125,6 +129,39 @@ const ProductRegions = ({
     setBaselineHash(computeRegionsHash(displayRegions));
   };
 
+  const handleRequestDeletePreset = () => {
+    // Abrir confirm dialog; usa el nombre del preset activo si existe
+    if (!activePreset) {
+      // Si no hay preset activo, sólo limpiar regiones
+      setConfirmDeleteOpen(true);
+    } else {
+      setConfirmDeleteOpen(true);
+    }
+  };
+
+  const handleConfirmDeletePreset = async () => {
+    try {
+      // Resetear regiones visibles y en el form
+      setDisplayRegions([]);
+      onRegionChange([]);
+      setBaselineHash(computeRegionsHash([]));
+      setRenamingIndex(null);
+      setTempName('');
+
+      // Si hay un preset activo, eliminar sus datos guardados y restaurar nombre por defecto
+      if (activePreset) {
+        try {
+          // `remove` eliminará el registro; al recargar, el botón mostrará `Config. N` (texto por defecto)
+          await remove(activePreset);
+        } catch (_) {}
+      }
+    } finally {
+      setConfirmDeleteOpen(false);
+    }
+  };
+
+  const handleCancelDeletePreset = () => setConfirmDeleteOpen(false);
+
   const MAX_NAME_LENGTH = 15;
 
   const startRenaming = (index) => {
@@ -156,14 +193,29 @@ const ProductRegions = ({
       }}
     >
       {!isMobile && (
-        <Typography variant="h6" gutterBottom sx={{ fontWeight: 600, color: 'black', mb: 1, textAlign: 'left', width: '100%' }}>
-          Despacho
-        </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+          <Typography variant="h6" gutterBottom sx={{ fontWeight: 600, color: 'black', textAlign: 'left', display: 'inline-flex', alignItems: 'center' }}>
+            Despacho
+            <Tooltip title={
+              <>
+                Configura precios y tiempos de despacho por región de Chile.
+                <br/>
+                Puedes guardar hasta 3 configuraciones reutilizables (Config. 1-3), renombrarlas y aplicarlas a nuevos productos.
+                <br/>
+                Ejemplo: Metropolitana $3.000 en 2 días, Aysén $8.000 en 7 días.
+              </>
+            }>
+              <IconButton size="small" sx={{ ml: 0.5, color: 'text.secondary' }} aria-label="Información despacho">
+                <InfoIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          </Typography>
+        </Box>
       )}
 
       {/* Barra de Presets */}
       <Box sx={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: 1, mb: 1 }}>
-        {[1,2,3].map(idx => {
+  {[1,2,3].map(idx => {
           const preset = getPresetByIndex(idx);
           const isActive = activePreset === idx;
           const isRenaming = renamingIndex === idx;
@@ -206,6 +258,26 @@ const ProductRegions = ({
             >
               Guardar
             </Button>
+          </span>
+        </Tooltip>
+        <Tooltip title={activePreset ? 'Eliminar esta configuración' : 'No hay configuración seleccionada'}>
+          <span>
+            <IconButton
+              size="small"
+              aria-label="Eliminar configuración"
+              onClick={handleRequestDeletePreset}
+              disabled={freezeDisplay || presetsSaving || !activePreset}
+              sx={{
+                ml: 0.5,
+                bgcolor: 'transparent',
+                p: 0.5,
+                '&:hover': { bgcolor: activePreset ? 'rgba(0,0,0,0.06)' : 'transparent' },
+                '&:focus': { boxShadow: 'none', outline: 'none' },
+                '&.Mui-focusVisible': { boxShadow: 'none', outline: 'none' },
+              }}
+            >
+              <DeleteIcon fontSize="small" />
+            </IconButton>
           </span>
         </Tooltip>
       </Box>
@@ -253,6 +325,17 @@ const ProductRegions = ({
         onClose={handleCloseModal}
         onSave={handleSaveRegions}
         initialData={prepareModalData()}
+      />
+
+      <ConfirmDialog
+        open={confirmDeleteOpen}
+        title="Eliminar configuración"
+        description={`¿Estás seguro de eliminar la configuración "${(activePreset && (getPresetByIndex(activePreset)?.name || `Config. ${activePreset}`)) || 'actual'}" de despacho?`}
+        cancelText="Cancelar"
+        confirmText="Confirmar"
+        onCancel={handleCancelDeletePreset}
+        onConfirm={handleConfirmDeletePreset}
+        disabled={presetsSaving}
       />
     </Box>
   );

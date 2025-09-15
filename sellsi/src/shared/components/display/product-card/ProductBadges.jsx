@@ -1,5 +1,6 @@
 import React from 'react';
 import { Box, Chip } from '@mui/material';
+import { isNewDate } from '../../../utils/product/isNewDate';
 
 /**
  * ProductBadges - Componente UI reutilizable para mostrar badges de productos
@@ -74,14 +75,8 @@ const ProductBadges = ({
 export const createProductBadges = product => {
   const badges = [];
 
-  // Badge de producto nuevo
-  const isNew = updatedAt => {
-    if (!updatedAt) return false;
-    const daysDiff = (new Date() - new Date(updatedAt)) / (1000 * 60 * 60 * 24);
-    return daysDiff < 7;
-  };
-
-  if (isNew(product.updatedAt)) {
+  // Badge de producto nuevo — usar createdAt (3 días) por convención
+  if (isNewDate(product.createdAt)) {
     badges.push({
       label: 'Nuevo',
       color: 'primary',

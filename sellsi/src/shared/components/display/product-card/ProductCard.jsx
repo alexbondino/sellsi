@@ -10,6 +10,7 @@ import { ProductCardImage } from '../../../../components/UniversalProductImage';
 import ProductCardBuyerContext from './ProductCardBuyerContext';
 import ProductCardSupplierContext from './ProductCardSupplierContext';
 import ProductCardProviderContext from './ProductCardProviderContext';
+import { generateProductUrl as generateUnifiedProductUrl } from '../../../../shared/utils/product/productUrl';
 
 /**
  * ProductCard - Componente de tarjeta de producto universal
@@ -134,18 +135,7 @@ const ProductCard = React.memo(
     // Function to generate product URL
     // Genera la URL pública o privada según el contexto
     const generateProductUrl = useCallback((product) => {
-      const productId = product.id || product.product_id;
-      const productName = (product.nombre || product.name || '').toLowerCase()
-        .replace(/[^a-z0-9]/g, '-')
-        .replace(/-+/g, '-')
-        .replace(/^-|-$/g, '');
-      const productSlug = `${productId}${productName ? `-${productName}` : ''}`;
-      const currentPath = typeof window !== 'undefined' ? window.location.pathname : '';
-      if (currentPath.includes('/provider/')) {
-        return `/provider/marketplace/product/${productSlug}`;
-      }
-      // Default public/private route
-      return `/marketplace/product/${productId}${productName ? `/${productName}` : ''}`;
+      return generateUnifiedProductUrl(product);
     }, []);
 
     // Function for card navigation (works for both buyer and supplier types)
@@ -186,7 +176,7 @@ const ProductCard = React.memo(
       <Card
         ref={rootRef}
         elevation={type === 'buyer' || type === 'provider' ? 2 : 0} // Buyer y Provider tienen elevation, Supplier no
-        onClick={handleProductClick}
+        onClick={type === 'provider' ? undefined : handleProductClick}
         sx={cardStyles}
       >
     {/* registerProductNode effect handled by the useEffect above (no inline effects in JSX) */}

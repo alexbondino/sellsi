@@ -22,6 +22,7 @@ import { formatPrice } from '../../../utils/formatters';
 import ActionMenu from './ActionMenu';
 import ProductBadges from './ProductBadges';
 import StatusChip from './StatusChip';
+import { isNewDate } from '../../../utils/product/isNewDate';
 
 /**
  * ProductCardSupplierContext - Renders the specific content and actions for a supplier's product card.
@@ -44,6 +45,7 @@ const ProductCardSupplierContext = React.memo(
       stock,
   ventas = 0,
       updatedAt,
+      createdAt,
       negociable,
       tramoMin,
       tramoMax,
@@ -95,14 +97,8 @@ const ProductCardSupplierContext = React.memo(
     // Configure product badges
     const productBadges = useMemo(() => {
       const badges = [];
-      const isNew = () => {
-        if (!updatedAt) return false;
-        const daysDiff = (Date.now() - new Date(updatedAt).getTime()) / 86400000;
-        return daysDiff < 7;
-      };
-
-      // Mostrar 'Nuevo' solo si el producto está activo
-      if (activo && isNew()) {
+      // Mostrar 'Nuevo' solo si el producto está activo. Usar createdAt (3 días).
+      if (activo && isNewDate(product.createdAt)) {
         badges.push({ label: 'Nuevo', color: 'primary', condition: true });
       }
 
@@ -110,7 +106,7 @@ const ProductCardSupplierContext = React.memo(
         badges.push({ label: `-${descuento}%`, color: 'error', condition: true });
       }
       return badges;
-    }, [updatedAt, descuento, activo]);
+  }, [createdAt, descuento, activo]);
 
     return (
       <>

@@ -1,5 +1,5 @@
 import React, { Suspense } from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate, useParams } from 'react-router-dom';
 import SuspenseLoader from '../../shared/components/layout/SuspenseLoader';
 // Import interno directo para evitar que PrivateRoute forme parte del contrato público de auth
 import PrivateRoute from '../../domains/auth/components/PrivateRoute';
@@ -60,9 +60,7 @@ const BuyerPerformance = MarketplaceBuyer
 const BuyerOffers = React.lazy(() =>
   import('../../domains/buyer/pages/offers/BuyerOffers')
 );
-const TechnicalSpecs = React.lazy(() =>
-  import('../../domains/ProductPageView/pages/TechnicalSpecs')
-);
+// Eliminado: TechnicalSpecs como página propia. Usaremos redirect desde /technicalspecs a la ruta unificada.
 const ProviderCatalog = React.lazy(() =>
   import('../../domains/marketplace/pages/ProviderCatalog')
 );
@@ -132,6 +130,23 @@ export const AppRouter = ({ scrollTargets }) => {
   const { session, needsOnboarding, loadingUserStatus, refreshUserProfile } =
     useAuth();
 
+  // Redirect component: legacy /technicalspecs/:productSlug -> /marketplace/product/:id
+  const RedirectTechnicalSpecs = () => {
+    const { productSlug } = useParams();
+    try {
+      const { extractProductIdFromSlug } = require('../../shared/utils/product/productUrl');
+      const id = extractProductIdFromSlug(productSlug);
+      if (id) {
+        // Try to derive name part after UUID for better SEO, else redirect with just id
+        const dashIdx = productSlug.indexOf(id) + id.length;
+        const rest = productSlug.slice(dashIdx).replace(/^[-\s\/]+/, '');
+        if (rest) return <Navigate to={`/marketplace/product/${id}/${rest}`} replace />;
+        return <Navigate to={`/marketplace/product/${id}`} replace />;
+      }
+    } catch (_) {}
+    return <Navigate to="/marketplace" replace />;
+  };
+
   return (
     <Suspense fallback={<SuspenseLoader />}>
       <Routes>
@@ -147,11 +162,8 @@ export const AppRouter = ({ scrollTargets }) => {
           element={<ProductPageWrapper isLoggedIn={!!session} />}
         />
 
-        {/* TechnicalSpecs puede ser accedido sin iniciar sesión, si es contenido común */}
-        <Route
-          path="/technicalspecs/:productSlug"
-          element={<TechnicalSpecs isLoggedIn={!!session} />}
-        />
+        {/* Redirect legacy technicalspecs to unified marketplace product route */}
+        <Route path="/technicalspecs/:productSlug" element={<RedirectTechnicalSpecs />} />
         <Route path="/login" element={<Login />} />
         <Route path="/crear-cuenta" element={<Register />} />
         <Route path="/auth/reset-password" element={<ResetPassword />} />

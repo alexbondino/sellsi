@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { supabase } from '../../../../services/supabase'
+import { regiones as CHILE_REGIONES } from '../../../../utils/chileData'
 import { filterActiveProducts } from '../../../../utils/productActiveStatus'
 
 // --- Parche mínimo anti redundancia (StrictMode + doble montaje) ---
@@ -81,7 +82,7 @@ export function useProducts() {
       productsCache.inFlight = (async () => {
         const { data, error } = await supabase
           .from('products')
-          .select('productid,supplier_id,productnm,price,category,product_type,productqty,minimum_purchase,negotiable,is_active,product_images(image_url,thumbnail_url,thumbnails)')
+          .select('productid,supplier_id,productnm,price,category,product_type,productqty,minimum_purchase,negotiable,is_active,product_images(image_url,thumbnail_url,thumbnails),product_delivery_regions(region)')
           .eq('is_active', true) // filtro directo para reducir payload
         if (error) throw new Error(error.message)
 
@@ -100,12 +101,23 @@ export function useProducts() {
           }
         }
 
+        const normalizeRegionValue = (raw) => {
+          if (!raw) return null
+          const key = String(raw).trim().toLowerCase()
+          const match = (CHILE_REGIONES || []).find(r => r?.value === key || String(r?.label || '').trim().toLowerCase() === key)
+          return match ? match.value : key
+        }
+
         const mapped = (data || []).map(p => {
           const firstImg = p.product_images && p.product_images.length > 0 ? p.product_images[0] : null
           const imagenPrincipal = firstImg?.image_url || '/placeholder-product.jpg'
           const thumbnailUrl = firstImg?.thumbnail_url || null
           const thumbnails = firstImg?.thumbnails ? (typeof firstImg.thumbnails === 'string' ? safeParseJSON(firstImg.thumbnails) : firstImg.thumbnails) : null
           const basePrice = p.price || 0
+          // Extraer regiones de despacho como slugs canónicos
+          const shippingRegions = Array.isArray(p.product_delivery_regions)
+            ? p.product_delivery_regions.map(r => normalizeRegionValue(r?.region)).filter(Boolean)
+            : []
           return {
             id: p.productid,
             productid: p.productid,
@@ -125,7 +137,7 @@ export function useProducts() {
             precioOriginal: p.price || null,
             descuento: 0,
             categoria: p.category,
-            tipo: p.product_type || 'nuevo',
+            tipo: p.product_type ?? 'normal',
             tipoVenta: 'directa',
             rating: 0,
             ventas: 0,
@@ -138,10 +150,16 @@ export function useProducts() {
             priceTiers: [],
             minPrice: basePrice,
             maxPrice: basePrice,
-            tiersStatus: 'idle'
+            tiersStatus: 'idle',
+            shippingRegions,
           }
         })
-        const active = filterActiveProducts(mapped) // por compatibilidad (debería ya estar filtrado)
+        // Añado createdAt/updatedAt para consistencia con otros mappers
+        const mappedWithDates = mapped.map(prod => {
+          const src = (data || []).find(d => String(d.productid) === String(prod.id)) || {}
+          return { ...prod, createdAt: src.createddt || null, updatedAt: src.updateddt || null }
+        })
+        const active = filterActiveProducts(mappedWithDates) // por compatibilidad (debería ya estar filtrado)
         return active
       })()
 
@@ -183,10 +201,14 @@ export function useProducts() {
       console.debug(`[useProducts] fetchPriceSummaries called (#${metricsRef.current.priceSummaryCalls}) ids=${ids.length}`, ids.slice(0,10))
     } catch (_) {}
     try {
+      // Only request summaries for product IDs that exist in current products state
+      const validIds = ids.filter(id => products.find(p => String(p.id) === id))
+      if (validIds.length === 0) return
+
       const { data, error } = await supabase
         .from('product_price_summary')
         .select('productid,min_price,max_price,tiers_count,has_variable_pricing')
-        .in('productid', ids)
+        .in('productid', validIds)
       if (error) throw error
       const byId = new Map((data || []).map(d => [String(d.productid), d]))
       setProducts(prev => prev.map(p => {
@@ -209,12 +231,14 @@ export function useProducts() {
     // Normalize incoming ids to strings and filter invalids (empty / 'NaN')
     const incoming = (productIds || []).map(id => (id == null ? '' : String(id).trim()))
     // If we already fetched price summaries, avoid requesting tiers for products that have 0 tiers
+    // Only request tiers for ids that correspond to known products in memory.
     const ids = incoming.filter(id => {
       if (!id || id.toLowerCase() === 'nan') return false
       if (tiersCacheRef.current.has(id) || pendingFetchRef.current.has(id)) return false
-      // Consult current products state for known tiers_count
+      // Only proceed if this id belongs to a product currently in state
       const prod = products.find(p => String(p.id) === id)
-      if (prod && prod.tiers_count === 0) return false // skip known empty
+      if (!prod) return false
+      if (prod.tiers_count === 0) return false // skip known empty
       return true
     })
     if (ids.length === 0) return
@@ -306,13 +330,12 @@ export function useProducts() {
     if (!node) return
     const obs = ensureObserver()
     if (!obs) return // sin soporte
-    // Evitar re-observar si ya cargado
+    // Evitar re-observar si no es un producto conocido
     const product = products.find(p => String(p.id) === String(productId))
-    if (product) {
-      if (product.tiersStatus === 'loaded' || product.tiersStatus === 'loading') return
-      // If we already know this product has zero tiers, no need to observe
-      if (product.tiers_count === 0) return
-    }
+    if (!product) return
+    if (product.tiersStatus === 'loaded' || product.tiersStatus === 'loading') return
+    // If we already know this product has zero tiers, no need to observe
+    if (product.tiers_count === 0) return
     node.setAttribute('data-product-id', String(productId))
     obs.observe(node)
   }, [ensureObserver, products])

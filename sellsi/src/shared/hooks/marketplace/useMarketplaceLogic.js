@@ -158,6 +158,37 @@ export const useMarketplaceLogic = (options = {}) => {
     }
   }, [handleToggleFiltro]);
 
+  // Handler para abrir/actualizar filtro de despacho desde CategoryNavigation
+  // Accepts:
+  // - null -> clear selection
+  // - single region value -> toggle membership
+  // - array of regions -> set explicitly
+  const handleOpenShippingFilter = useCallback((regions) => {
+    try {
+      let newSelection = [];
+
+      if (regions === null) {
+        newSelection = [];
+      } else if (Array.isArray(regions)) {
+        newSelection = regions;
+      } else if (typeof regions === 'string') {
+        const current = filtros?.shippingRegions || [];
+        // toggle
+        if (current.includes(regions)) {
+          newSelection = current.filter(r => r !== regions);
+        } else {
+          newSelection = [...current, regions];
+        }
+      }
+
+      updateFiltros({ shippingRegions: newSelection });
+      setFiltroVisible(true);
+      setFiltroModalOpen(true);
+    } catch (e) {
+      // ignore
+    }
+  }, [updateFiltros, setFiltroVisible, setFiltroModalOpen, filtros]);
+
   // ✅ OPTIMIZACIÓN: Handler para el switch de vistas - memoizado estable
   const handleToggleProviderView = useCallback(() => {
     // Opcionalmente limpiar búsqueda (comportamiento legacy de Marketplace público)
@@ -226,6 +257,8 @@ export const useMarketplaceLogic = (options = {}) => {
       categoriaSeleccionada,
   onSeccionChange: setSeccionActiva,
   onCategoriaToggle: toggleCategoria,
+      onOpenShippingFilter: handleOpenShippingFilter,
+      selectedShippingRegions: filtros?.shippingRegions || [],
       categoryMarginLeft,
       isProviderView, // Para ocultar elementos en Vista 1
     }),
@@ -234,8 +267,10 @@ export const useMarketplaceLogic = (options = {}) => {
       categoriaSeleccionada,
   setSeccionActiva,
   toggleCategoria,
+      handleOpenShippingFilter,
       categoryMarginLeft,
       isProviderView,
+      filtros,
     ]
   );
 

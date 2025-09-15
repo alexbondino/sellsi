@@ -13,6 +13,8 @@ import { Box, useMediaQuery, useTheme } from '@mui/material';
 import ReactDOM from 'react-dom';
 import { SearchBar } from '../../../../shared/components/forms'; // ✅ REFACTOR: Usar el SearchBar compartido con funcionalidad de switch
 import CategoryNavigation from '../CategoryNavigation/CategoryNavigation';
+import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
+import { Button } from '@mui/material';
 
 /**
  * Componente que encapsula la barra de búsqueda y navegación de categorías
@@ -96,7 +98,9 @@ const SearchSection = ({
           {/* ✅ USAR SearchBar EXISTENTE - Sin botón de filtros */}
       <SearchBar {...searchBarProps} hideTextInputOnMobile={hideOnlyInput} showFiltersButton={false} />
           {/* ✅ USAR CategoryNavigation EXISTENTE */}
-          <CategoryNavigation {...categoryNavigationProps} />
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <CategoryNavigation {...categoryNavigationProps} />
+          </Box>
         </Box>
       </Box>,
       typeof window !== 'undefined' ? document.body : null
