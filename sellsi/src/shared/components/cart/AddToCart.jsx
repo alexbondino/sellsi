@@ -49,6 +49,7 @@ const AddToCart = ({
   // ESTADOS Y HOOKS
   // ============================================================================
   const [modalOpen, setModalOpen] = useState(false);
+  const openingRef = React.useRef(false); // reentrancy guard
   const [currentUserId, setCurrentUserId] = useState(null);
   const addItem = useCartStore(state => state.addItem);
 
@@ -60,6 +61,8 @@ const AddToCart = ({
     missingFieldLabels,
     handleConfigureShipping,
     handleClose: handleCloseShipping,
+    refresh: refreshShippingValidation,
+    awaitValidation,
   } = useShippingInfoModal();
 
   // Detectar si la oferta ya está en el carrito para bloquear flujo UI
@@ -97,9 +100,12 @@ const AddToCart = ({
   // ============================================================================
 
   const handleOpenModal = useCallback(async () => {
+    if (openingRef.current) return; // prevent double entry
+    openingRef.current = true;
     // Si es una oferta y ya existe en el carrito, no abrir modal y avisar
     if (offerId && isOfferInCart) {
       showErrorToast('Esta oferta ya se encuentra en tu carrito');
+      openingRef.current = false;
       return;
     }
 
@@ -107,25 +113,36 @@ const AddToCart = ({
       // Verificar sesión antes de abrir el modal
       try {
         const { data: { session } } = await supabase.auth.getSession();
-        // Antes de abrir el modal de selección, verificar si el usuario tiene
-        // la información de despacho completa. Si no la tiene, abrir el
-        // modal de validación de shipping y NO abrir el AddToCartModal.
-        const didOpenShipping = openIfIncomplete();
-        if (didOpenShipping) {
+        // Antes de abrir el modal de selección, forzar/esperar resolución de validación shipping
+        // 1) Intento inmediato
+        let didOpenShipping = openIfIncomplete();
+        if (!didOpenShipping) {
+          // 2) Forzar refresh y esperar resolución determinística
+          try { refreshShippingValidation?.(); } catch(_) {}
+          const res = await awaitValidation?.(3500, 120);
+          // Si al terminar sigue incompleto, abrir modal shipping; si está completo, seguimos al AddToCart
+          const stillIncomplete = !shippingIsOpen && !res?.complete;
+          if (stillIncomplete) {
+            didOpenShipping = openIfIncomplete();
+          }
+        }
+        if (didOpenShipping || shippingIsOpen) {
           if (onModalStateChange) onModalStateChange(true);
+          openingRef.current = false;
           return;
         }
 
         setModalOpen(true);
-        if (onModalStateChange) {
-          onModalStateChange(true);
-        }
+        if (onModalStateChange) onModalStateChange(true);
       } catch (error) {
         console.error('Error al verificar sesión:', error);
         showErrorToast('Error al verificar sesión. Por favor, inténtalo de nuevo.');
+      } finally {
+        // liberar guard si no se abrió shipping; si se abrió, ya liberamos antes
+        if (!shippingIsOpen) openingRef.current = false;
       }
     }
-  }, [disabled, product, onModalStateChange]);
+  }, [disabled, product, onModalStateChange, shippingIsLoading, openIfIncomplete, refreshShippingValidation, awaitValidation, shippingIsOpen, offerId, isOfferInCart]);
 
   const handleCloseModal = useCallback(() => {
     setModalOpen(false);
@@ -133,6 +150,25 @@ const AddToCart = ({
       onModalStateChange(false);
     }
   }, [onModalStateChange]);
+
+  // Asegurar propagación de estado al cerrar el modal de shipping
+  const handleCloseShippingWrapped = useCallback(() => {
+    try { handleCloseShipping(); } catch(_) {}
+    if (onModalStateChange) onModalStateChange(false);
+  }, [handleCloseShipping, onModalStateChange]);
+
+  // Si el usuario decide configurar despacho, también consideramos el modal "cerrado" a efectos de bloqueo
+  const handleConfigureShippingWrapped = useCallback(() => {
+    try { handleConfigureShipping(); } catch(_) {}
+    if (onModalStateChange) onModalStateChange(false);
+  }, [handleConfigureShipping, onModalStateChange]);
+
+  // Mantener sincronizado el estado de apertura hacia el consumidor (card/grid) por si abre/cierra por otros caminos
+  useEffect(() => {
+    if (!onModalStateChange) return;
+    onModalStateChange(Boolean(shippingIsOpen || modalOpen));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [shippingIsOpen, modalOpen]);
 
   const handleAddToCart = useCallback(async (cartItem) => {
     try {
@@ -333,8 +369,8 @@ const AddToCart = ({
       />
       <ShippingInfoValidationModal
         isOpen={shippingIsOpen}
-        onClose={handleCloseShipping}
-        onGoToShipping={handleConfigureShipping}
+        onClose={handleCloseShippingWrapped}
+        onGoToShipping={handleConfigureShippingWrapped}
         loading={shippingIsLoading}
         missingFieldLabels={missingFieldLabels}
       />

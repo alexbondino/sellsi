@@ -70,6 +70,8 @@ const Profile = ({ userProfile: initialUserProfile, onUpdateProfile: externalUpd
 
   // ✅ NUEVO: Estado para highlight de campos bancarios
   const [shouldHighlightTransferFields, setShouldHighlightTransferFields] = useState(false);
+  // ✅ NUEVO: Estado para highlight de campos de despacho
+  const [shouldHighlightShippingFields, setShouldHighlightShippingFields] = useState(false);
 
   // ✅ NUEVO: Verificar parámetros de URL al montar y cuando cambie la location
   useEffect(() => {
@@ -86,6 +88,12 @@ const Profile = ({ userProfile: initialUserProfile, onUpdateProfile: externalUpd
         setShouldHighlightTransferFields(false);
       }, 10000);
       
+      return () => clearTimeout(timer);
+    }
+    if (section === 'shipping' && highlight === 'true') {
+      setShouldHighlightShippingFields(true);
+      console.log('🎯 Resaltando campos de dirección de despacho por redirección');
+      const timer = setTimeout(() => { setShouldHighlightShippingFields(false); }, 10000);
       return () => clearTimeout(timer);
     }
   }, [location.search]);
@@ -722,7 +730,7 @@ const Profile = ({ userProfile: initialUserProfile, onUpdateProfile: externalUpd
             formData={formData}
             onFieldChange={handleFieldChange}
             onRegionChange={(type, regionField, comunaField, value) => { handleRegionChange(type, regionField, comunaField, value); }}
-            showErrors={showShippingErrors}
+            showErrors={showShippingErrors || shouldHighlightShippingFields}
           />
 
           {/* Segunda fila - Segunda columna: Facturación (independiente) */}
