@@ -16,6 +16,7 @@ import {
   Grow,
   useTheme,
   useMediaQuery,
+  Tooltip,
 } from '@mui/material';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import KeyboardArrowRightIcon from '@mui/icons-material/KeyboardArrowRight';
@@ -304,46 +305,79 @@ const CategoryNavigation = React.memo(({
               </Grow>
             </Box>
           )}
-          {/* Chips de categorías seleccionadas */}
-          {categoriaSeleccionada
-            .filter(cat => cat !== 'Todas')
-            .slice(0, 3)
-            .map(cat => (
-              <Chip
-                key={cat}
-                label={cat}
-                onDelete={() => onCategoriaToggle(cat)}
-                size="small"
-                color="primary"
-                variant="outlined"
-                sx={styles.categoryChip}
-              />
-            ))}
+          {/* Chips de categorías seleccionadas (máx 4) */}
+          {(() => {
+            const cats = categoriaSeleccionada.filter(cat => cat !== 'Todas') || []
+            const visibleCats = cats.slice(0, 4)
+            const hiddenCats = cats.length > 4 ? cats.slice(4) : []
+            return (
+              <>
+                {visibleCats.map(cat => (
+                  <Chip
+                    key={cat}
+                    label={cat}
+                    onDelete={() => onCategoriaToggle(cat)}
+                    size="small"
+                    color="primary"
+                    variant="outlined"
+                    sx={styles.categoryChip}
+                  />
+                ))}
+                {hiddenCats.length > 0 && (
+                  <Tooltip
+                    title={`Categorías: ${hiddenCats.join(', ')}`}
+                    placement="top"
+                  >
+                    <Chip
+                      label={`+${hiddenCats.length}`}
+                      size="small"
+                      color="primary"
+                      variant="outlined"
+                      sx={styles.categoryChip}
+                      aria-label={`Más categorías: ${hiddenCats.join(', ')}`}
+                    />
+                  </Tooltip>
+                )}
+              </>
+            )
+          })()}
 
-          {/* Mostrar chips de regiones seleccionadas junto a chips de categoría (si aplica) */}
-          {Array.isArray(selectedRegionLabels) && selectedRegionLabels.length > 0 && (
-            selectedRegionLabels.slice(0, 3).map(({ value, label }) => (
-              <Chip
-                key={`shipping-${value}`}
-                label={label}
-                onDelete={() => { if (onOpenShippingFilter) onOpenShippingFilter(value); }}
-                size="small"
-                color="primary"
-                variant="outlined"
-                sx={styles.categoryChip}
-              />
-            ))
-          )}
-          {Array.isArray(selectedRegionLabels) && selectedRegionLabels.length > 3 && (
-            <Typography variant="caption" sx={styles.moreCategories}>
-              +{selectedRegionLabels.length - 3} más
-            </Typography>
-          )}
-          {categoriaSeleccionada.filter(cat => cat !== 'Todas').length > 3 && (
-            <Typography variant="caption" sx={styles.moreCategories}>
-              +{categoriaSeleccionada.filter(cat => cat !== 'Todas').length - 3} más
-            </Typography>
-          )}
+          {/* Mostrar chips de regiones seleccionadas junto a chips de categoría (máx 4) */}
+          {(() => {
+            const regs = Array.isArray(selectedRegionLabels) ? selectedRegionLabels : []
+            const visibleRegs = regs.slice(0, 4)
+            const hiddenRegs = regs.length > 4 ? regs.slice(4) : []
+            return (
+              <>
+                {visibleRegs.map(({ value, label }) => (
+                  <Chip
+                    key={`shipping-${value}`}
+                    label={label}
+                    onDelete={() => { if (onOpenShippingFilter) onOpenShippingFilter(value); }}
+                    size="small"
+                    color="primary"
+                    variant="outlined"
+                    sx={styles.categoryChip}
+                  />
+                ))}
+                {hiddenRegs.length > 0 && (
+                  <Tooltip
+                    title={`Despachos: ${hiddenRegs.map(r => r.label).join(', ')}`}
+                    placement="top"
+                  >
+                    <Chip
+                      label={`+${hiddenRegs.length}`}
+                      size="small"
+                      color="primary"
+                      variant="outlined"
+                      sx={styles.categoryChip}
+                      aria-label={`Más despachos: ${hiddenRegs.map(r => r.label).join(', ')}`}
+                    />
+                  </Tooltip>
+                )}
+              </>
+            )
+          })()}
         </>
       )}
     </Box>
