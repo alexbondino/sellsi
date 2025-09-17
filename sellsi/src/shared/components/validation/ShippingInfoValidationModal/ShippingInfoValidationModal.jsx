@@ -20,7 +20,23 @@ export const useShippingInfoModal = () => {
   const openIfIncomplete = () => {
     const loading = isLoadingRef.current;
     const complete = isCompleteRef.current;
-    if (!loading && !complete) {
+    
+    
+    // Si está cargando, esperar a que termine
+    if (loading) {
+      // Esperar hasta que termine de cargar y luego verificar
+      const checkAfterLoad = () => {
+        if (!isLoadingRef.current && !isCompleteRef.current) {
+          setIsOpen(true);
+        }
+      };
+      
+      // Usar un pequeño delay para permitir que el estado se actualice
+      setTimeout(checkAfterLoad, 100);
+      return false; // No abrir inmediatamente
+    }
+    
+    if (!complete) {
       setIsOpen(true);
       return true;
     }

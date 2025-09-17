@@ -119,17 +119,19 @@ export const UnifiedAuthProvider = ({ children }) => {
         try { window.invalidateUserShippingRegionCache?.(); } catch(e) {}
         try { window.invalidateTransferInfoCache?.(); } catch(e) {}
         try { window.invalidateBillingInfoCache?.(); } catch(e) {}
-        try { window.invalidateShippingInfoCache?.(); } catch(e) {}  // 🔥 FIX: Limpiar shipping info cache
+        try { window.invalidateShippingInfoCache?.(); } catch(e) {}
+        try { window.globalCache?.clear?.(); } catch(e) {}
+        // Dispatch custom event for user change
+        setTimeout(() => { window.dispatchEvent(new CustomEvent('user-changed', { detail: { userId: newSession?.user?.id } })); }, 100);
         fetchProfile(newSession);
       } else if (event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED') {
         setSession(newSession);
-        // Clear storage related to user & role
         ['user_id','account_type','supplierid','sellerid','access_token','auth_token','currentAppRole'].forEach(k=>{ try{localStorage.removeItem(k);}catch(e){} });
         try { window.invalidateUserShippingRegionCache?.(); } catch(e) {}
         try { window.invalidateTransferInfoCache?.(); } catch(e) {}
         try { window.invalidateBillingInfoCache?.(); } catch(e) {}
-        try { window.invalidateShippingInfoCache?.(); } catch(e) {}  // 🔥 FIX: Limpiar shipping info cache
-        // Reset manual override
+        try { window.invalidateShippingInfoCache?.(); } catch(e) {}
+        setTimeout(() => { window.dispatchEvent(new CustomEvent('user-changed', { detail: { userId: null } })); }, 100);
         setManualRoleOverride(null);
         fetchProfile(newSession);
       } else if (event === 'USER_UPDATED') {
@@ -140,7 +142,7 @@ export const UnifiedAuthProvider = ({ children }) => {
         try { window.invalidateUserShippingRegionCache?.(); } catch(e) {}
         try { window.invalidateTransferInfoCache?.(); } catch(e) {}
         try { window.invalidateBillingInfoCache?.(); } catch(e) {}
-        try { window.invalidateShippingInfoCache?.(); } catch(e) {}  // 🔥 FIX: Limpiar shipping info cache
+        try { window.invalidateShippingInfoCache?.(); } catch(e) {}  
       }
     });
     return () => { mounted = false; listener?.subscription?.unsubscribe(); };

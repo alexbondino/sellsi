@@ -295,7 +295,6 @@ const AddToCartModal = ({
     if (!productId) return [];
     
     try {
-  devLog('[AddToCartModal] loadProductShippingRegions start', { productId });
     setIsLoadingRegions(true);
       const { data, error } = await supabase
         .from('product_delivery_regions')
@@ -308,7 +307,6 @@ const AddToCartModal = ({
 
       return data || [];
     } catch (error) {
-  devLog('[AddToCartModal] loadProductShippingRegions error', error);
       return [];
     } finally {
       setIsLoadingRegions(false);
@@ -320,12 +318,14 @@ const AddToCartModal = ({
     const enrichProductWithRegions = async () => {
       if (!open || !product?.id) return;
 
-      // Si el producto ya tiene regiones, no necesitamos cargarlas
-      if (product.shippingRegions?.length > 0 || 
-          product.delivery_regions?.length > 0 || 
-          product.shipping_regions?.length > 0 ||
-          product.product_delivery_regions?.length > 0) {
-  devLog('[AddToCartModal] enrichProductWithRegions - product already has regions', { productId: product.id, existingRegions: product.shippingRegions?.length || product.delivery_regions?.length || product.shipping_regions?.length });
+      // Si el producto ya tiene regiones con delivery_days válidos, no recargar
+      const existing = product.shippingRegions || product.delivery_regions || product.shipping_regions || product.product_delivery_regions || [];
+      const hasValidDays = Array.isArray(existing) && existing.some(r => {
+        const d = typeof r === 'object' ? (r.delivery_days ?? r.maxDeliveryDays ?? r.days) : null;
+        const n = Number(d);
+        return Number.isFinite(n) && n > 0;
+      });
+      if (Array.isArray(existing) && existing.length > 0 && hasValidDays) {
         setEnrichedProduct(product);
         return;
       }
@@ -344,7 +344,6 @@ const AddToCartModal = ({
         product_delivery_regions: shippingRegions
       };
 
-  devLog('[AddToCartModal] enrichProductWithRegions - enriched product set', { productId: product.id, regionsLoaded: (productWithRegions.shippingRegions || []).length });
   setEnrichedProduct(productWithRegions);
     };
 

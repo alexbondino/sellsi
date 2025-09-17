@@ -139,12 +139,6 @@ export const useUnifiedShippingValidation = (cartItems = [], isAdvancedMode = fa
   const validateProductShipping = useCallback((product, targetUserRegion = null) => {
     const effectiveUserRegion = targetUserRegion || userRegion;
     
-    // 🔍 DEBUG: Log completo de la validación
-    console.group('🚚 [SHIPPING DEBUG] validateProductShipping');
-    console.log('📦 Producto ID:', product?.id || product?.productid);
-    console.log('👤 Usuario región (effective):', effectiveUserRegion);
-    console.log('👤 Usuario región (hook):', userRegion);
-    console.log('👤 Usuario región (prop):', targetUserRegion);
     
     // Si no hay región del usuario, no se puede validar
     if (!effectiveUserRegion) {
@@ -164,13 +158,7 @@ export const useUnifiedShippingValidation = (cartItems = [], isAdvancedMode = fa
                           product.product_delivery_regions ||
                           [];
 
-    // 🔍 DEBUG: Log de regiones del producto
-    console.log('🏭 Producto shippingRegions:', product.shippingRegions);
-    console.log('🏭 Producto delivery_regions:', product.delivery_regions);
-    console.log('🏭 Producto shipping_regions:', product.shipping_regions);
-    console.log('🏭 Producto product_delivery_regions:', product.product_delivery_regions);
-    console.log('📍 Regiones finales para validar:', shippingRegions);
-
+    
     // Si no hay regiones, mostrar mensaje específico
     if (!shippingRegions || shippingRegions.length === 0) {
       console.log('❌ PRODUCTO SIN REGIONES DE DESPACHO');
@@ -182,8 +170,7 @@ export const useUnifiedShippingValidation = (cartItems = [], isAdvancedMode = fa
       };
     }
 
-    // Buscar la región del usuario en las regiones del producto
-    console.log('🔍 COMPARANDO REGIONES:');
+  // Buscar la región del usuario en las regiones del producto
     const matchingRegion = shippingRegions.find(region => {
       // 🔥 FIX: Manejar tanto strings como objetos
       let regionValue;
@@ -193,11 +180,9 @@ export const useUnifiedShippingValidation = (cartItems = [], isAdvancedMode = fa
         regionValue = region.region || region.value;
       }
       const matches = regionValue === effectiveUserRegion;
-      console.log(`   "${regionValue}" === "${effectiveUserRegion}" ? ${matches}`);
       return matches;
     });
     
-    console.log('✅ Región coincidente encontrada:', matchingRegion);
 
     // Estado: Compatible
     if (matchingRegion) {
@@ -209,21 +194,17 @@ export const useUnifiedShippingValidation = (cartItems = [], isAdvancedMode = fa
         days = 'N/A';
         cost = 0;
       } else {
-        // Para objetos, extraer propiedades
-        days = matchingRegion.delivery_days || 
-               matchingRegion.maxDeliveryDays || 
-               matchingRegion.days || 
-               'N/A';
-        
-        cost = matchingRegion.price || 
-               matchingRegion.shippingValue || 
-               matchingRegion.cost || 
-               0;
+        // Para objetos, extraer y normalizar propiedades numéricas
+        const rawDays = matchingRegion.delivery_days ?? matchingRegion.maxDeliveryDays ?? matchingRegion.days;
+        const parsedDays = Number(rawDays);
+        days = Number.isFinite(parsedDays) && parsedDays > 0 ? parsedDays : 'N/A';
+
+        const rawCost = matchingRegion.price ?? matchingRegion.shippingValue ?? matchingRegion.cost;
+        const parsedCost = Number(rawCost);
+        cost = Number.isFinite(parsedCost) && parsedCost >= 0 ? parsedCost : 0;
       }
       
-      console.log('✅ PRODUCTO COMPATIBLE - canShip: true');
-      console.log(`   Días: ${days}, Costo: ${cost}`);
-      console.groupEnd();
+      
       
       return {
         state: SHIPPING_STATES.COMPATIBLE,
@@ -248,9 +229,7 @@ export const useUnifiedShippingValidation = (cartItems = [], isAdvancedMode = fa
       return getUserRegionName(regionValue);
     });
     
-    console.log('❌ PRODUCTO INCOMPATIBLE - canShip: false');
-    console.log('   Regiones disponibles:', availableRegions);
-    console.groupEnd();
+    
     
     return {
       state: SHIPPING_STATES.INCOMPATIBLE_REGION,

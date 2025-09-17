@@ -22,40 +22,24 @@ export function useProductShippingValidationOnOpen({
   const justOpenedTimerRef = useRef(null);
 
   const validateShippingOnDemand = useCallback(async () => {
-    console.group('🎯 [MODAL DEBUG] validateShippingOnDemand');
-    console.log('🔍 effectiveUserRegion:', effectiveUserRegion);
-    console.log('🔍 hookUserRegion:', hookUserRegion);
-    console.log('🔍 userRegionProp:', userRegionProp);
-    console.log('🔍 enrichedProduct:', enrichedProduct);
-    console.log('🔍 isLoadingRegions:', isLoadingRegions);
-    console.log('🔍 isLoadingUserProfile:', isLoadingUserProfile);
-    
     if (!effectiveUserRegion || !enrichedProduct || isLoadingRegions || isLoadingUserProfile) {
-      console.log('❌ SALTANDO VALIDACIÓN - Faltan datos o está cargando');
-      console.groupEnd();
       setShippingValidation(null);
       return;
     }
-    
-    console.log('✅ INICIANDO VALIDACIÓN');
     setIsValidatingShipping(true);
     try {
       let validation = null;
       if (hookUserRegion) {
-        console.log('🔄 Usando validateSingleProduct (con hookUserRegion)');
         validation = validateSingleProduct(enrichedProduct);
       } else {
-        console.log('🔄 Usando validateProductShipping (con userRegionProp)');
         validation = validateProductShipping(enrichedProduct, effectiveUserRegion);
       }
-      console.log('📊 RESULTADO DE VALIDACIÓN:', validation);
       setShippingValidation(validation);
     } catch (e) {
       console.error('[useProductShippingValidationOnOpen] error', e);
       setShippingValidation(null);
     } finally {
       setIsValidatingShipping(false);
-      console.groupEnd();
     }
   }, [effectiveUserRegion, enrichedProduct, hookUserRegion, isLoadingRegions, isLoadingUserProfile, validateProductShipping, validateSingleProduct]);
 
