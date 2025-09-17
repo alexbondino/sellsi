@@ -40,7 +40,7 @@ const ShippingInfoSection = ({
       </Box>
       
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-        <FormControl fullWidth size="small">
+        <FormControl fullWidth size="small" error={showErrors && !formData.shippingRegion}>
           <InputLabel>Región</InputLabel>
           <Select
             value={formData.shippingRegion || ''}
@@ -72,6 +72,9 @@ const ShippingInfoSection = ({
               </MenuItem>
             ))}
           </Select>
+          {showErrors && !formData.shippingRegion ? (
+            <Typography variant="caption" color="error">Región es obligatoria</Typography>
+          ) : null}
         </FormControl>
         
   <FormControl fullWidth size="small" disabled={!formData.shippingRegion} error={showErrors && !formData.shippingCommune}>
@@ -133,6 +136,8 @@ const ShippingInfoSection = ({
           variant="outlined"
           size="small"
           type="number"
+          error={showErrors && !formData.shippingNumber}
+          helperText={showErrors && !formData.shippingNumber ? 'Número de dirección es obligatorio' : ''}
         />
         
         <TextField

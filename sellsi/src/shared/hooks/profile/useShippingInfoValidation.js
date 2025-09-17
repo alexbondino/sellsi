@@ -34,7 +34,8 @@ const globalShippingInfoCache = {
     if (expired) { this.clear(); return null; }
     let currentUserId = null;
     try { currentUserId = localStorage.getItem('user_id'); } catch(e) {}
-    if (currentUserId && this.cachedUserId && currentUserId !== this.cachedUserId) {
+    // 🔥 FIX: Mejorar detección de cambio de usuario
+    if (this.cachedUserId !== currentUserId) {
       this.clear();
       return null;
     }
@@ -45,17 +46,27 @@ const globalShippingInfoCache = {
     this.timestamp = Date.now();
     try { this.cachedUserId = localStorage.getItem('user_id') || null; } catch(e) { this.cachedUserId = null; }
   },
-  clear() { this.data = null; this.timestamp = null; this.cachedUserId = null; },
-  invalidate() { this.clear(); }
+  clear() { 
+    this.data = null; 
+    this.timestamp = null; 
+    this.cachedUserId = null;
+    this.isLoading = false;  // 🔥 FIX: También limpiar flag de loading
+  },
+  invalidate() { 
+    this.clear(); 
+  }
 };
 
 export const invalidateShippingInfoCache = () => globalShippingInfoCache.invalidate();
 
-try {
-  if (typeof window !== 'undefined' && !window.invalidateShippingInfoCache) {
-    window.invalidateShippingInfoCache = () => globalShippingInfoCache.invalidate();
-  }
-} catch (e) {}
+// 🔥 FIX: Exponer función global para invalidación
+if (typeof window !== 'undefined') {
+  window.invalidateShippingInfoCache = () => {
+    globalShippingInfoCache.invalidate();
+    // También limpiar el caché de región por si están desincronizados
+    try { window.invalidateUserShippingRegionCache?.(); } catch(e) {}
+  };
+}
 
 export const useShippingInfoValidation = () => {
   const [state, setState] = useState(SHIPPING_INFO_STATES.LOADING);
@@ -139,6 +150,28 @@ export const useShippingInfoValidation = () => {
   }, [validateShippingInfo]);
 
   useEffect(() => { load(); }, [load]);
+
+  // 🔥 FIX: Escuchar cambios de usuario en localStorage
+  useEffect(() => {
+    const handleStorageChange = (e) => {
+      if (e.key === 'user_id') {
+        // Usuario cambió, invalidar cache y recargar
+        globalShippingInfoCache.invalidate();
+        if (e.newValue) {
+          // Hay nuevo usuario, forzar recarga
+          load(true);
+        } else {
+          // Logout, limpiar estado
+          setShippingInfo(null);
+          setMissingFields([]);
+          setState(SHIPPING_INFO_STATES.LOADING);
+        }
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, [load]);
 
   const refresh = useCallback(() => load(true), [load]);
   const invalidateCache = useCallback(() => globalShippingInfoCache.invalidate(), []);

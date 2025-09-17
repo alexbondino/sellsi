@@ -119,6 +119,7 @@ export const UnifiedAuthProvider = ({ children }) => {
         try { window.invalidateUserShippingRegionCache?.(); } catch(e) {}
         try { window.invalidateTransferInfoCache?.(); } catch(e) {}
         try { window.invalidateBillingInfoCache?.(); } catch(e) {}
+        try { window.invalidateShippingInfoCache?.(); } catch(e) {}  // 🔥 FIX: Limpiar shipping info cache
         fetchProfile(newSession);
       } else if (event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED') {
         setSession(newSession);
@@ -127,6 +128,7 @@ export const UnifiedAuthProvider = ({ children }) => {
         try { window.invalidateUserShippingRegionCache?.(); } catch(e) {}
         try { window.invalidateTransferInfoCache?.(); } catch(e) {}
         try { window.invalidateBillingInfoCache?.(); } catch(e) {}
+        try { window.invalidateShippingInfoCache?.(); } catch(e) {}  // 🔥 FIX: Limpiar shipping info cache
         // Reset manual override
         setManualRoleOverride(null);
         fetchProfile(newSession);
@@ -138,6 +140,7 @@ export const UnifiedAuthProvider = ({ children }) => {
         try { window.invalidateUserShippingRegionCache?.(); } catch(e) {}
         try { window.invalidateTransferInfoCache?.(); } catch(e) {}
         try { window.invalidateBillingInfoCache?.(); } catch(e) {}
+        try { window.invalidateShippingInfoCache?.(); } catch(e) {}  // 🔥 FIX: Limpiar shipping info cache
       }
     });
     return () => { mounted = false; listener?.subscription?.unsubscribe(); };
