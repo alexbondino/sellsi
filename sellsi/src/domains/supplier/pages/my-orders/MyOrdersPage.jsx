@@ -54,7 +54,7 @@ const MyOrdersPage = () => {
   const { showBanner } = useBanner();
   const [modalState, setModalState] = useState({
     isOpen: false,
-    type: null, // 'accept', 'reject', 'dispatch', 'deliver', 'chat'
+  type: null, // 'accept', 'reject', 'dispatch', 'deliver', 'cancel'
     selectedOrder: null,
   });
 
@@ -295,6 +295,11 @@ const MyOrdersPage = () => {
           messageToUser = '📦 La entrega fue confirmada con éxito.';
           break;
         }
+        case 'cancel': {
+          await partActions.cancel(selectedOrder, formData.cancelReason || '');
+          messageToUser = '⚠️ El pedido fue cancelado.';
+          break;
+        }
   // 'chat' action removed: contact modal now opened from the table row
         default:
           break;
@@ -389,7 +394,7 @@ const MyOrdersPage = () => {
           </Box>
         ),
       },
-      dispatch: {
+  dispatch: {
         title: (
           <Typography variant="h6" align="center" fontWeight={700}>
             Despachar Pedido
@@ -462,6 +467,30 @@ const MyOrdersPage = () => {
               />
             )}
             {/* No optional message for dispatch action */}
+          </Box>
+        ),
+      },
+      cancel: {
+        title: (
+          <Typography variant="h6" align="center" fontWeight={700}>
+            Cancelar Pedido
+          </Typography>
+        ),
+        submitButtonText: 'Cancelar pedido',
+        submitButtonColor: 'error',
+        showWarningIconHeader: true,
+        type: MODAL_TYPES.WARNING,
+        isFormModal: true,
+        children: (
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <TextField
+              name="cancelReason"
+              label="Motivo (opcional)"
+              multiline
+              rows={3}
+              fullWidth
+              variant="outlined"
+            />
           </Box>
         ),
       },

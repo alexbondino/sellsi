@@ -16,7 +16,8 @@ const corsHeaders = {
 
 const allowedTransitions: Record<string, Set<string>> = {
   pending: new Set(['accepted','rejected']),
-  accepted: new Set(['in_transit' /*,'rejected'*/]), // habilitar 'rejected' si negocio lo permite
+  // Permitimos cancelar una parte que ya fue aceptada pero aún no despachada
+  accepted: new Set(['in_transit', 'cancelled' /*,'rejected'*/]), // habilitar 'rejected' si negocio lo permite
   in_transit: new Set(['delivered','cancelled']),
   delivered: new Set(),
   rejected: new Set(),
@@ -45,7 +46,7 @@ serve(req => withMetrics('update-supplier-part-status', req, async () => {
     let body: any = null;
     try { body = await req.json(); } catch { return new Response(JSON.stringify({ error: 'Invalid JSON'}), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }}); }
 
-    const { order_id, supplier_id, new_status, estimated_delivery_date, rejected_reason } = body || {};
+  const { order_id, supplier_id, new_status, estimated_delivery_date, rejected_reason, cancel_reason } = body || {};
     if (!order_id || !supplier_id || !new_status) {
       return new Response(JSON.stringify({ error: 'order_id, supplier_id, new_status required'}), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }});
     }
@@ -111,6 +112,10 @@ serve(req => withMetrics('update-supplier-part-status', req, async () => {
     if (toStatus === 'in_transit' && !node.dispatched_at) node.dispatched_at = now;
     if (toStatus === 'delivered' && !node.delivered_at) node.delivered_at = now;
     if (toStatus === 'rejected' && rejected_reason) node.rejected_reason = String(rejected_reason).slice(0,500);
+    if (toStatus === 'cancelled' && (cancel_reason || rejected_reason)) {
+      // guardar motivo de cancelación si viene (aceptamos cancel_reason o reutilizamos rejected_reason)
+      node.cancel_reason = String(cancel_reason || rejected_reason || '').slice(0,500);
+    }
     if (estimated_delivery_date) node.estimated_delivery_date = estimated_delivery_date;
 
     meta[supplier_id] = node;

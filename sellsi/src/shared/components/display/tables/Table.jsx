@@ -70,10 +70,10 @@ const Table = ({ orders, onActionClick }) => {
                         • Pendiente: Aceptar (continúa) · Rechazar (finaliza)
                       </Typography>
                       <Typography variant="caption" sx={{ color: 'common.white' }} display="block">
-                        • Aceptado: Despachar* (pasa a En Transito) · Rechazar
+                        • Aceptado: Despachar* (pasa a En Transito) · Cancelar
                       </Typography>
                       <Typography variant="caption" sx={{ color: 'common.white' }} display="block">
-                        • En Transito: Confirmar Entrega (finaliza)
+                        • En Transito: Confirmar Entrega (finaliza) · Cancelar
                       </Typography>
                       <Typography variant="caption" sx={{ color: 'common.white' }} display="block" gutterBottom>
                         • Entregado: Solo Chat postventa

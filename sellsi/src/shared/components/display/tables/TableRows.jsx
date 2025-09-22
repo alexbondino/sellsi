@@ -423,10 +423,10 @@ const Rows = ({ order, onActionClick }) => {
               <LocalShippingIcon />
             </IconButton>
           </Tooltip>,
-          <Tooltip key="reject" title="Rechazar">
+          <Tooltip key="cancel" title="Cancelar">
             <IconButton
               color="error"
-              onClick={() => onActionClick(order, 'reject')}
+              onClick={() => onActionClick(order, 'cancel')}
             >
               <CloseIcon />
             </IconButton>
@@ -449,10 +449,10 @@ const Rows = ({ order, onActionClick }) => {
               <AssignmentTurnedInIcon />
             </IconButton>
           </Tooltip>,
-          <Tooltip key="reject" title="Rechazar">
+          <Tooltip key="cancel" title="Cancelar">
             <IconButton
               color="error"
-              onClick={() => onActionClick(order, 'reject')}
+              onClick={() => onActionClick(order, 'cancel')}
             >
               <CloseIcon />
             </IconButton>
