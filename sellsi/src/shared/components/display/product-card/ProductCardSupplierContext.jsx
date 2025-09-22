@@ -31,7 +31,9 @@ import { isNewDate } from '../../../utils/product/isNewDate';
 const ProductCardSupplierContext = React.memo(
   ({ product, onEdit, onDelete, onViewStats, isDeleting, isUpdating, isProcessing }) => {
   // Centralized deferred tiers (populated via useProducts). No per-product network hook.
-  const tiersStatus = product.tiersStatus
+  const rawTiersStatus = product.tiersStatus
+  const hasAnyTiers = Array.isArray(product.priceTiers) && product.priceTiers.length > 0
+  const tiersStatus = hasAnyTiers ? 'loaded' : (rawTiersStatus || 'idle')
   const loadingTiers = tiersStatus === 'loading'
   const errorTiers = tiersStatus === 'error'
 
@@ -57,11 +59,24 @@ const ProductCardSupplierContext = React.memo(
     } = product;
 
     // Unify source of price_tiers: prefer product's, if not, from hook (same logic as BuyerContext)
-  const price_tiers = useMemo(() => product.priceTiers || [], [product.priceTiers]);
+  const price_tiers = useMemo(() => {
+    const tiers = product.priceTiers || []
+    // Normalize potential shapes: {min,max,precio} or {min_quantity,max_quantity,price}
+    return tiers
+      .map(t => ({
+        min_quantity: t.min_quantity ?? t.min ?? null,
+        max_quantity: t.max_quantity ?? t.max ?? null,
+        price: Number(t.price ?? t.precio ?? 0) || 0,
+      }))
+      .filter(t => (t.min_quantity != null) && (t.price > 0))
+      .sort((a,b) => (Number(a.min_quantity)||0)-(Number(b.min_quantity)||0))
+  }, [product.priceTiers]);
   const effectiveMinPrice = product.minPrice ?? product.precio ?? product.price ?? null
   const effectiveMaxPrice = product.maxPrice ?? product.precio ?? product.price ?? null
   const hasValidBasePrice = (Number(effectiveMaxPrice) || 0) > 0 || (Number(effectiveMinPrice) || 0) > 0
-  const isPending = loadingTiers || (tiersStatus === 'idle' && !hasValidBasePrice)
+  const isTierProduct = (product.product_type === 'tier' || product.tipo === 'tier' || hasAnyTiers)
+  // Only show loading when explicitly marked as loading
+  const isPending = loadingTiers
 
     // Configure menu actions
     // Reemplazamos VisibilityIcon por ícono de pausa y mantenemos label
@@ -247,11 +262,13 @@ const ProductCardSupplierContext = React.memo(
                   sx={{ fontWeight: 700, fontSize: '1.1rem' }}
                 >
                   {(() => {
-                    const minPrice = Math.min(...price_tiers.map(t => t.price));
-                    const maxPrice = Math.max(...price_tiers.map(t => t.price));
-                    return minPrice !== maxPrice 
+                    const prices = price_tiers.map(t => Number(t.price) || 0).filter(n => n > 0)
+                    if (!prices.length) return formatPrice(precio || 0)
+                    const minPrice = Math.min(...prices)
+                    const maxPrice = Math.max(...prices)
+                    return minPrice !== maxPrice
                       ? `${formatPrice(minPrice)} - ${formatPrice(maxPrice)}`
-                      : formatPrice(minPrice);
+                      : formatPrice(minPrice)
                   })()}
                 </Typography>
                 <Typography
@@ -262,7 +279,7 @@ const ProductCardSupplierContext = React.memo(
                   Desde {price_tiers[0]?.min_quantity || 1} unidades
                 </Typography>
               </Box>
-            ) : !loadingTiers && !errorTiers ? (
+            ) : !loadingTiers && !errorTiers && !isTierProduct ? (
               <Box
                 sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}
               >
@@ -286,6 +303,14 @@ const ProductCardSupplierContext = React.memo(
                   </Typography>
                 )}
               </Box>
+            ) : (!loadingTiers && !errorTiers && isTierProduct && (!price_tiers || price_tiers.length === 0)) ? (
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                sx={{ fontWeight: 500 }}
+              >
+                Define los tramos de precio
+              </Typography>
             ) : null}
             
             {negociable && (

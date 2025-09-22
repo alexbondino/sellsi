@@ -79,6 +79,9 @@ const ActionMenu = ({
         open={open}
         onClose={handleMenuClose}
         onClick={e => e.stopPropagation()}
+        // Evitar que MUI aplique el bloqueo del scroll y provoque shift del layout
+        // (disableScrollLock evita que se añada padding-right al body)
+        disableScrollLock={true}
         transformOrigin={{ horizontal: 'right', vertical: 'top' }}
         anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
         PaperProps={{

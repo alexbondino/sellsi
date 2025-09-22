@@ -94,10 +94,10 @@ const useSupplierProductsCRUD = create((set, get) => ({
         }
       }
 
-      const products = productsRes?.data || []
+  const products = productsRes?.data || []
 
       // Procesar productos para incluir relaciones
-      const processedProducts =
+      let processedProducts =
         products?.map((product) => {
           const images = (product.product_images || []).slice().sort((a,b)=>(a.image_order||0)-(b.image_order||0))
           const main = images.find(img => (img.image_order||0) === 0)
@@ -149,6 +149,20 @@ const useSupplierProductsCRUD = create((set, get) => ({
         }
       }
 
+
+      // Merge defensively with existing in-memory products to preserve optimistic tiers
+      try {
+        const existing = get().products || []
+        if (Array.isArray(existing) && existing.length > 0) {
+          processedProducts = processedProducts.map(p => {
+            const ex = existing.find(e => e.productid === p.productid)
+            if (!ex) return p
+            const mergedTiers = (p.priceTiers && p.priceTiers.length > 0) ? p.priceTiers : (ex.priceTiers || [])
+            const mergedTierStatus = p.tiersStatus ?? ex.tiersStatus
+            return { ...p, priceTiers: mergedTiers, tiersStatus: mergedTierStatus }
+          })
+        }
+      } catch (_) { /* noop */ }
 
       set({
         products: processedProducts,
@@ -216,8 +230,27 @@ const useSupplierProductsCRUD = create((set, get) => ({
         precio: product.price,
         stock: product.productqty,
         images: [],
-        // Optimistic: si createBasicProduct recibió priceTiers (vía createCompleteProduct) conservarlos para que stats detecten tramos
-        priceTiers: Array.isArray(productData.priceTiers) ? productData.priceTiers : [],
+        // Optimistic: si createBasicProduct recibió priceTiers (vía createCompleteProduct), normalizarlos al shape de BD para que UI muestre rango inmediato
+        priceTiers: Array.isArray(productData.priceTiers)
+          ? productData.priceTiers.map(t => ({
+              min_quantity: t.min_quantity ?? t.min ?? null,
+              max_quantity: t.max_quantity ?? t.max ?? null,
+              price: t.price ?? t.precio ?? 0,
+            }))
+          : [],
+        // Mark tiers as loaded if we have optimistic tiers to avoid pending UI
+        tiersStatus: Array.isArray(productData.priceTiers) && productData.priceTiers.length > 0 ? 'loaded' : 'idle',
+        // Derive min/max price for convenience in UIs that show ranges
+        minPrice: (() => {
+          const arr = Array.isArray(productData.priceTiers) ? productData.priceTiers : []
+          const nums = arr.map(t => Number(t.price ?? t.precio ?? 0)).filter(n => n > 0)
+          return nums.length ? Math.min(...nums) : (product.price || 0)
+        })(),
+        maxPrice: (() => {
+          const arr = Array.isArray(productData.priceTiers) ? productData.priceTiers : []
+          const nums = arr.map(t => Number(t.price ?? t.precio ?? 0)).filter(n => n > 0)
+          return nums.length ? Math.max(...nums) : (product.price || 0)
+        })(),
         delivery_regions: [],
       }
 
@@ -406,11 +439,15 @@ const useSupplierProductsCRUD = create((set, get) => ({
       }
 
       set((state) => {
-  const oldProduct = state.products.find(p => p.productid === productId)
-        
+        const oldProduct = state.products.find(p => p.productid === productId) || {}
+        const hasDbTiers = Array.isArray(processedProduct.priceTiers) && processedProduct.priceTiers.length > 0
+        const mergedPriceTiers = hasDbTiers ? processedProduct.priceTiers : (oldProduct.priceTiers || [])
+        const mergedTiersStatus = hasDbTiers ? 'loaded' : (oldProduct.tiersStatus || 'idle')
+        const mergedProduct = { ...processedProduct, priceTiers: mergedPriceTiers, tiersStatus: mergedTiersStatus }
+
         return {
           products: state.products.map((p) =>
-            p.productid === productId ? processedProduct : p
+            p.productid === productId ? mergedProduct : p
           ),
         }
       })
