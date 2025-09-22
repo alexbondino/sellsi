@@ -10,12 +10,12 @@ import {
 import { generateChartData } from './utils';
 import { formatNumber, formatCurrency } from '../../../../shared/utils/formatters';
 
-const SummaryCards = ({ products = [], totalSales = 0, outOfStock = 0, weeklyRequests = [], productsActive = 0 }) => {
+const SummaryCards = ({ products = [], totalSales = 0, outOfStock = 0, weeklyRequestsCount = 0, productsActive = 0 }) => {
   const chartData = {
     products: generateChartData(productsActive ?? products.length, 'up'),
     sales: generateChartData(totalSales / 1000, 'up'),
     outOfStock: generateChartData(outOfStock, 'down'),
-    requests: generateChartData(weeklyRequests.length, 'neutral'),
+    requests: generateChartData(weeklyRequestsCount, 'neutral'),
   };
 
   const dashboardData = [
@@ -45,7 +45,7 @@ const SummaryCards = ({ products = [], totalSales = 0, outOfStock = 0, weeklyReq
     },
     {
       title: 'Solicitudes Semanales',
-      value: weeklyRequests.length.toString(),
+      value: Number(weeklyRequestsCount || 0).toString(),
       interval: 'Esta semana',
       trend: 'neutral',
       data: chartData.requests,

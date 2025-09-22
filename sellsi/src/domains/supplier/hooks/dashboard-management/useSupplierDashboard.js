@@ -73,6 +73,8 @@ export const useSupplierDashboard = () => {
   const [lastUpdated, setLastUpdated] = useState(null)
   // Evitar doble fetch en React.StrictMode u otros remounts accidentales
   const didFetchRef = useRef(false)
+  // Guardar order_ids recientes para evitar duplicar en realtime
+  const recentOrderIdsRef = useRef(new Set())
 
   // ============================================================================
   // UTILIDADES DE FECHAS
@@ -188,6 +190,25 @@ export const useSupplierDashboard = () => {
 
         const orderMetrics = []
 
+        // Contar solicitudes semanales (últimos 7 días) basado en órdenes pagadas (product_sales)
+        let weeklyRequestsCount = 0
+        try {
+          const last7 = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
+          const { data: psWindow, error: psWinErr } = await supabase
+            .from('product_sales')
+            .select('order_id, trx_date')
+            .eq('supplier_id', supplierId)
+            .gte('trx_date', last7)
+            .not('order_id', 'is', null)
+
+          if (!psWinErr && Array.isArray(psWindow)) {
+            const distinct = new Set(psWindow.map(r => r.order_id).filter(Boolean))
+            weeklyRequestsCount = distinct.size
+            // Seed recent orders set for realtime dedupe
+            recentOrderIdsRef.current = new Set(distinct)
+          }
+        } catch (_) { /* noop */ }
+
         // Obtener solicitudes que incluyen productos del proveedor
         // Usar join con request_products y products para filtrar por supplier_id
         const { data: quoteRequests, error: quoteError } = await supabase
@@ -214,7 +235,8 @@ export const useSupplierDashboard = () => {
           totalSales: orderMetrics.filter(o => o.status === 'completed').length,
           totalRevenue: monthlyRevenue,
           averageRating: 0, // Se puede agregar después
-          totalOrders: orderMetrics.length
+          totalOrders: orderMetrics.length,
+          weeklyRequestsCount
         }
 
         // Datos para gráficos

@@ -487,10 +487,6 @@ const MyProducts = () => {
                             </Typography>
                             <Typography variant="body2" color="text.secondary">
                               Valor del inventario
-                              {/* 🆕 INDICADOR DE RANGO: Mostrar % de variación si existe */}
-                              {stats.inventoryRange && stats.inventoryRange.min !== stats.inventoryRange.max && stats.inventoryRange.spreadPercentage > 0 && (
-                                ` (±${stats.inventoryRange.spreadPercentage}%)`
-                              )}
                             </Typography>
                           </Box>
                         </Box>

@@ -155,6 +155,45 @@ export const useSupplierProducts = (options = {}) => {
     loadInitialData()
   }, []) // Cambio: Solo ejecutar una vez al montar el hook
 
+  // Suscripción realtime: reflejar cambios de stock en productos del proveedor
+  useEffect(() => {
+    let channel
+    let isMounted = true
+    const attach = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        const supplierId = session?.user?.id
+        if (!supplierId) return
+        // Escuchar solo updates en products del proveedor actual
+        channel = supabase
+          .channel(`products_changes_supplier_${supplierId}`)
+          .on(
+            'postgres_changes',
+            { event: 'UPDATE', schema: 'public', table: 'products', filter: `supplier_id=eq.${supplierId}` },
+            (payload) => {
+              if (!isMounted) return
+              const rec = payload?.new || {}
+              const productId = rec.productid || rec.id
+              if (!productId) return
+              // Actualizar solo campos relevantes para stock/fecha
+              crud.updateLocalProduct(productId, {
+                productqty: rec.productqty,
+                updateddt: rec.updateddt,
+              })
+            }
+          )
+          .subscribe()
+      } catch (_) { /* noop */ }
+    }
+    attach()
+    return () => {
+      isMounted = false
+      try {
+        if (channel) supabase.removeChannel(channel)
+      } catch (_) { /* noop */ }
+    }
+  }, [crud])
+
   // Productos para UI (con formato mejorado)
   const [ventasByProduct, setVentasByProduct] = useState({})
   const uiProducts = useMemo(() => {

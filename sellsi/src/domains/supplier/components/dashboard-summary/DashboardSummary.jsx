@@ -8,7 +8,7 @@ const DashboardSummary = ({
   products,
   totalSales,
   outOfStock,
-  weeklyRequests,
+  weeklyRequestsCount,
   productsActive,
 }) => (
   <Box sx={{ width: '100%' }}>
@@ -28,7 +28,7 @@ const DashboardSummary = ({
         products={products}
         totalSales={totalSales}
         outOfStock={outOfStock}
-        weeklyRequests={weeklyRequests}
+        weeklyRequestsCount={weeklyRequestsCount}
         productsActive={productsActive}
       />
       {/* <RequestListWrapper weeklyRequests={weeklyRequests} /> */}

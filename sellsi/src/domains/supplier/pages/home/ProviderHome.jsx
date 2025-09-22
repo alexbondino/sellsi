@@ -72,8 +72,8 @@ const ProviderHome = () => {
     loadProducts,
   } = useSupplierProducts();
 
-  // Datos de gráficos eliminados (optimización: removido BarChart / recharts)
-  const weeklyRequests = []; // Mantener prop requerida por DashboardSummary
+  // Contador real de solicitudes semanales (órdenes pagadas últimos 7 días)
+  const weeklyRequestsCount = metrics?.weeklyRequestsCount ?? 0;
   const totalSales = metrics?.totalRevenue || 0;
 
   // Combine loading and error states
@@ -160,7 +160,7 @@ const ProviderHome = () => {
                       products={products}
                       totalSales={totalSales}
                       outOfStock={productsOutOfStock}
-                      weeklyRequests={weeklyRequests}
+                      weeklyRequestsCount={weeklyRequestsCount}
                       productsActive={productsActive}
                     />
                   </Suspense>
