@@ -70,9 +70,9 @@ serve(req => withMetrics('create-payment-khipu', req, async () => {
   const allowPending = Deno.env.get('OFFERS_ALLOW_PENDING') === '1';
     const notifyUrl = `${supabaseUrl}/functions/v1/process-khipu-webhook`;
 
-    // ================================================================
-    // 3. Autoridad de Pricing (Server) – Recalcular y sellar antes de ir a Khipu
-    // ================================================================
+  // ================================================================
+  // 3. Autoridad de Pricing (Server) – Marcar método y sellar antes de ir a Khipu
+  // ================================================================
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
     // 3A. Validación temprana de ofertas asociadas (deadline / estado) + vinculación order
@@ -128,6 +128,18 @@ serve(req => withMetrics('create-payment-khipu', req, async () => {
   // Antes: 5 CLP. Ahora: 50 CLP. Ajustar nuevamente cuando la fórmula de cálculo frontend = backend esté 100% alineada.
   const PRICE_TOLERANCE_CLP = 50; // diferencia permitida entre monto front y monto sellado
     let sealedOrder: any = null;
+    // Asegurar payment_method='khipu' ANTES del sellado para que calcule payment_fee
+    try {
+      const { error: methErr } = await supabaseAdmin
+        .from('orders')
+        .update({ payment_method: 'khipu', updated_at: new Date().toISOString() })
+        .eq('id', order_id);
+      if (methErr) {
+        console.warn('[create-payment-khipu] No se pudo setear payment_method antes del sellado', methErr);
+      }
+    } catch (methEx) {
+      console.warn('[create-payment-khipu] Excepción seteando payment_method', methEx);
+    }
   try {
   const { data: sealed, error: sealErr } = await supabaseAdmin
         .rpc('finalize_order_pricing', { p_order_id: order_id });

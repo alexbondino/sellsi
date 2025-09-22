@@ -542,6 +542,30 @@ export const clearCartWithBackend = async (set, get) => {
 }
 
 /**
+ * Limpia el carrito SOLO si la orden está pagada (payment_status='paid').
+ * Puede recibir un objeto `order` o directamente el string de estado.
+ */
+export const clearCartIfPaid = async (orderOrStatus, set, get) => {
+  try {
+    const state = get()
+    const isObject = orderOrStatus && typeof orderOrStatus === 'object'
+    const paymentStatus = isObject ? orderOrStatus.payment_status : orderOrStatus
+    const isPaid = paymentStatus === 'paid'
+    if (!isPaid) return false
+
+    // Si viene una orden, opcionalmente verificar correspondencia con el carrito actual
+    if (isObject) {
+      const matchesCart = !orderOrStatus.cart_id || orderOrStatus.cart_id === state.cartId
+      if (!matchesCart) return false
+    }
+
+    return await clearCartWithBackend(set, get)
+  } catch (_) {
+    return false
+  }
+}
+
+/**
  * Realiza el checkout del carrito
  * @param {Object} checkoutData - Datos del checkout
  * @param {Function} set - Función set de Zustand
@@ -561,16 +585,9 @@ export const checkout = async (checkoutData, set, get) => {
     // Realizar checkout en backend
     const order = await cartService.checkout(state.cartId, checkoutData)
 
-    // Crear nuevo carrito activo para futuras compras
-    const newCart = await cartService.getOrCreateActiveCart(state.userId)
-
-    // Actualizar estado local
-    set({
-      items: [],
-      cartId: newCart.cart_id,
-      isLoading: false
-    })
-
+    // Regla nueva: NO vaciar carrito en checkout.
+    // Se vaciará solo cuando payment_status sea 'paid'.
+    set({ isLoading: false, lastOrder: order })
     return order
   } catch (error) {
     set({ isLoading: false, error: 'Error en el checkout' })

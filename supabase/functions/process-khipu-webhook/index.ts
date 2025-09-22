@@ -202,7 +202,7 @@ serve((req: Request) => withMetrics('process-khipu-webhook', req, async () => {
     // ========================================================================
     // ACTUALIZAR EN SUPABASE + IDEMPOTENCIA INVENTARIO (inventory_processed_at)
     // ========================================================================
-    const paidAt = khipuPayload.paid_at || khipuPayload.paidAt || new Date().toISOString();
+  const paidAt = khipuPayload.paid_at || khipuPayload.paidAt || new Date().toISOString();
 
     // Intento obtener estado actual incluyendo inventory_processed_at y supplier_parts_meta para decidir idempotencia
     const { data: preOrder, error: preErr } = await supabase
@@ -254,7 +254,8 @@ serve((req: Request) => withMetrics('process-khipu-webhook', req, async () => {
       console.error('⚠️ Excepción validando ofertas vinculadas (continuando):', offValEx);
     }
 
-    let alreadyProcessedInventory = false;
+  let alreadyProcessedInventory = false;
+  let justMarkedPaid = false;
     if (preOrder?.inventory_processed_at) {
       console.log('ℹ️ Webhook idempotente (inventory ya procesado)');
       alreadyProcessedInventory = true;
@@ -326,7 +327,7 @@ serve((req: Request) => withMetrics('process-khipu-webhook', req, async () => {
         })
         .eq('id', orderId)
         .is('cancelled_at', null); // 🔧 Condición adicional de seguridad
-      if (payUpdErr) console.error('❌ Error marcando pago:', payUpdErr); else console.log('✅ Orden marcada pagada');
+  if (payUpdErr) console.error('❌ Error marcando pago:', payUpdErr); else { console.log('✅ Orden marcada pagada'); justMarkedPaid = true; }
 
       // Promover ofertas vinculadas a estado paid (idempotente)
       try {
@@ -369,6 +370,44 @@ serve((req: Request) => withMetrics('process-khipu-webhook', req, async () => {
       } else if (orderRows && orderRows.length > 0) {
         const ord = orderRows[0] as any;
         const buyerId: string = ord.user_id;
+        // Enviar notificaciones de compra confirmada al comprador solo al transicionar a paid
+        if (justMarkedPaid && buyerId) {
+          try {
+            // Reutilizar items normalizados para construir metadata básica
+            let rawItems: any[] = [];
+            try {
+              if (Array.isArray(ord.items)) rawItems = ord.items;
+              else if (typeof ord.items === 'string') rawItems = JSON.parse(ord.items);
+              else if (ord.items && typeof ord.items === 'object') rawItems = Array.isArray(ord.items.items) ? ord.items.items : [ord.items];
+            } catch(_) { rawItems = []; }
+            const normForNotify = rawItems.map((it) => ({
+              product_id: it.product_id || it.productid || it.id || null,
+              supplier_id: it.supplier_id || it.supplierId || it.product?.supplier_id || it.product?.supplierId || null,
+              quantity: Number(it.quantity || 1),
+              price_at_addition: Number(it.price_at_addition || it.price || 0)
+            })).filter(x => x.product_id);
+            for (const it of normForNotify) {
+              try {
+                const { error: notifyErr } = await supabase.rpc('create_notification', {
+                  p_payload: {
+                    p_user_id: buyerId,
+                    p_supplier_id: it.supplier_id || null,
+                    p_order_id: orderId,
+                    p_product_id: it.product_id || null,
+                    p_type: 'order_new',
+                    p_order_status: 'paid',
+                    p_role_context: 'buyer',
+                    p_context_section: 'buyer_orders',
+                    p_title: 'Se registró tu compra',
+                    p_body: 'Pago confirmado',
+                    p_metadata: { quantity: it.quantity, price_at_addition: it.price_at_addition }
+                  }
+                } as any);
+                if (notifyErr) console.error('⚠️ Error creando notificación de compra pagada:', notifyErr);
+              } catch (nEx) { console.error('⚠️ Excepción notificando compra pagada', nEx); }
+            }
+          } catch (notifEx) { console.error('⚠️ Error preparando notificaciones buyer paid', notifEx); }
+        }
         // Parse seguro
         let rawItems: any[] = [];
         try {

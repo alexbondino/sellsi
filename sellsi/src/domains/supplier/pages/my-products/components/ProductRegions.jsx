@@ -213,7 +213,30 @@ const ProductRegions = ({
         </Box>
       )}
 
-      {/* Barra de Presets */}
+      {/* Botón para abrir el modal de configuración (primero) */}
+      <Button
+        variant="outlined"
+        startIcon={<SettingsIcon />}
+        onClick={handleOpenModal}
+        sx={{
+          textTransform: 'none',
+          fontWeight: 500,
+          mb: 2,
+          borderRadius: 2,
+          borderColor: 'grey.400',
+          '&:hover': {
+            borderColor: 'grey.500',
+          },
+        }}
+        disabled={freezeDisplay}
+      >
+        Configurar Regiones de Despacho
+      </Button>
+
+      {/* Salto de línea visual antes de los presets */}
+      <Box sx={{ height: 8 }} />
+
+      {/* Barra de Presets (ahora debajo del botón principal) */}
       <Box sx={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: 1, mb: 1 }}>
   {[1,2,3].map(idx => {
           const preset = getPresetByIndex(idx);
@@ -281,26 +304,6 @@ const ProductRegions = ({
           </span>
         </Tooltip>
       </Box>
-
-      {/* Botón para abrir el modal de configuración */}
-  <Button
-        variant="outlined"
-        startIcon={<SettingsIcon />}
-        onClick={handleOpenModal}
-        sx={{
-          textTransform: 'none',
-          fontWeight: 500,
-          mb: 2,
-          borderRadius: 2,
-          borderColor: 'grey.400',
-          '&:hover': {
-            borderColor: 'grey.500',
-          },
-        }}
-        disabled={freezeDisplay}
-      >
-        Configurar Regiones de Despacho
-      </Button>
 
       {/* Mostrar las regiones configuradas */}
       <Box sx={{ width: '100%' }}>

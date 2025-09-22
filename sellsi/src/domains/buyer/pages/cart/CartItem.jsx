@@ -410,8 +410,8 @@ const CartItem = ({
               {/* Información de stock centrada */}
               <Box sx={{ width: '100%', display: 'flex', justifyContent: 'center' }}>
                 <StockIndicator
-                  stock={item.maxStock - item.quantity}
-                  lowStockThreshold={Math.round(item.maxStock * 0.2)}
+                  stock={productData.maxStock}
+                  lowStockThreshold={Math.round((productData.maxStock || 0) * 0.2)}
                   showUnits={true}
                   variant="caption"
                   sx={{
