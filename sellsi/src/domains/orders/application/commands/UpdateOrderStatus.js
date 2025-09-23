@@ -77,6 +77,16 @@ export async function UpdateOrderStatus(orderId, newStatus, additionalData = {})
     .single();
 
   if (!orderError && orderData) {
+    // 📊 Log específico para rechazos (para debugging de restauración de stock)
+    if (normalizedStatus === 'rejected' && orderData.payment_status === 'paid') {
+      console.log(`🔄 Order ${orderId} rejected after payment - stock restoration should be triggered automatically by database trigger`);
+      console.log(`📋 Order details:`, {
+        orderId,
+        paymentStatus: orderData.payment_status,
+        supplierIds: orderData.supplier_ids,
+        itemsCount: Array.isArray(orderData.items) ? orderData.items.length : 'N/A'
+      });
+    }
     // 🔧 SYNC supplier_parts_meta para mono-supplier (consistencia de datos)
     try {
       const supplierIds = orderData.supplier_ids;

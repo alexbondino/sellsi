@@ -129,6 +129,17 @@ serve(req => withMetrics('update-supplier-part-status', req, async () => {
       return new Response(JSON.stringify({ error: 'UPDATE_FAILED', details: updErr.message }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' }});
     }
 
+    // 📊 Log específico para rechazos parciales (debugging de restauración de stock)
+    if (toStatus === 'rejected' && orderRow.payment_status === 'paid') {
+      console.log(`🔄 Supplier ${supplier_id} rejected their part of order ${order_id} after payment - partial stock restoration should be triggered automatically`);
+      console.log(`📋 Rejection details:`, {
+        orderId: order_id,
+        supplierId: supplier_id,
+        paymentStatus: orderRow.payment_status,
+        rejectionReason: rejected_reason || 'No reason provided'
+      });
+    }
+
     // (Opc) Insertar notificación simple
     if (orderRow.user_id) {
       try {
