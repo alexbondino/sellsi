@@ -11,14 +11,14 @@ class BrowserManager:
         self.driver = None
 
     def start_browser(self):
-        """Inicia el navegador Chrome con la configuración adecuada."""
+        """Inicia el navegador Chrome con la configuración adecuada usando webdriver-manager."""
         from selenium import webdriver
         from selenium.webdriver.chrome.service import Service
+        from webdriver_manager.chrome import ChromeDriverManager
         import os
         try:
-            self.log("[Selenium] Iniciando Chrome...", level="INFO")
-            chromedriver_path = os.path.join(os.getcwd(), "chromedriver.exe")
-            service = Service(chromedriver_path)
+            self.log("[Selenium] Iniciando Chrome... (webdriver-manager)", level="INFO")
+            service = Service(ChromeDriverManager().install())
             options = webdriver.ChromeOptions()
             options.add_experimental_option('detach', True)
             # Configurar carpeta de descargas si se especifica

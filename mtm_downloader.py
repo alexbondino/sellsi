@@ -86,6 +86,80 @@ class MtMDownloaderApp(tk.Tk):
                 self.log(f"[ERROR Thread] {e}\n{tb}", level="ERROR")
         threading.Thread(target=run_automation, daemon=True).start()
 
+class ForwardCalculatorPlaceholder(tk.Tk):
+    def __init__(self):
+        super().__init__()
+        self.title("Calculadora de Forward")
+        self.geometry("480x240")
+        self.resizable(False, False)
+        self.configure(bg="white")
+        tk.Label(
+            self,
+            text="DISEÑAR MENU NUEVO",
+            font=("Arial", 16, "bold"),
+            bg="white",
+            fg="#007ACC"
+        ).pack(pady=30)
+        tk.Label(
+            self,
+            text="Esta vista es un placeholder para la futura Calculadora de Forward.",
+            font=("Arial", 11),
+            bg="white",
+            fg="gray",
+            wraplength=420
+        ).pack(pady=10)
+        crear_boton_secundario(
+            self,
+            "Volver al menú principal",
+            self.volver_menu_principal
+        ).pack(pady=20)
+
+    def volver_menu_principal(self):
+        self.destroy()
+        launch_start_menu()
+
+
+class StartMenuApp(tk.Tk):
+    def __init__(self):
+        super().__init__()
+        self.title("MtM Suite")
+        self.geometry("420x220")
+        self.resizable(False, False)
+        self.configure(bg="white")
+        tk.Label(
+            self,
+            text="Selecciona un módulo",
+            font=("Arial", 18, "bold"),
+            bg="white"
+        ).pack(pady=25)
+        crear_boton_primario(
+            self,
+            "Valorización MtM",
+            self.abrir_mtm_downloader,
+            width=22
+        ).pack(pady=10)
+        crear_boton_ejecutar(
+            self,
+            "Calculadora de Forward",
+            self.abrir_calculadora_forward,
+            width=20,
+            height=1
+        ).pack()
+
+    def abrir_mtm_downloader(self):
+        self.destroy()
+        app = MtMDownloaderApp()
+        app.mainloop()
+
+    def abrir_calculadora_forward(self):
+        self.destroy()
+        placeholder = ForwardCalculatorPlaceholder()
+        placeholder.mainloop()
+
+
+def launch_start_menu():
+    menu = StartMenuApp()
+    menu.mainloop()
+
 if __name__ == "__main__":
-    app = MtMDownloaderApp()
-    app.mainloop()
+    launch_start_menu()
