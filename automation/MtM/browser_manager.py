@@ -11,27 +11,44 @@ class BrowserManager:
         self.driver = None
 
     def start_browser(self):
-        """Inicia el navegador Chrome con la configuración adecuada usando webdriver-manager."""
+        """Inicia el navegador Chrome con configuración de descargas y logging de red."""
         from selenium import webdriver
         from selenium.webdriver.chrome.service import Service
         from webdriver_manager.chrome import ChromeDriverManager
-        import os
+        import pathlib
         try:
             self.log("[Selenium] Iniciando Chrome... (webdriver-manager)", level="INFO")
             service = Service(ChromeDriverManager().install())
             options = webdriver.ChromeOptions()
             options.add_experimental_option('detach', True)
-            # Configurar carpeta de descargas si se especifica
+            # Forzar perfil persistente para mantener cookies/sesión (mitiga problemas de token)
+            profile_dir = pathlib.Path('./chrome_profile').resolve()
+            profile_dir.mkdir(parents=True, exist_ok=True)
+            options.add_argument(f"--user-data-dir={profile_dir}")
+            # Configurar carpeta de descargas
             if self.download_dir:
+                dl_path = pathlib.Path(self.download_dir).resolve()
+                dl_path.mkdir(parents=True, exist_ok=True)
                 prefs = {
-                    "download.default_directory": self.download_dir,
+                    "download.default_directory": str(dl_path),
                     "download.prompt_for_download": False,
                     "download.directory_upgrade": True,
                     "safebrowsing.enabled": True
                 }
                 options.add_experimental_option("prefs", prefs)
-                self.log(f"[Selenium] Carpeta de descargas configurada: {self.download_dir}", level="INFO")
+                self.log(f"[Selenium] Carpeta de descargas configurada: {dl_path}", level="INFO")
+            # Logging performance / network (Selenium 4: usar set_capability)
+            options.set_capability('goog:loggingPrefs', {"performance": "ALL", "browser": "ALL"})
             self.driver = webdriver.Chrome(service=service, options=options)
+            # Habilitar descarga vía CDP (si permitido)
+            try:
+                self.driver.execute_cdp_cmd("Page.setDownloadBehavior", {
+                    "behavior": "allow",
+                    "downloadPath": str(pathlib.Path(self.download_dir).resolve()) if self.download_dir else str(profile_dir)
+                })
+                self.log("[Selenium] Page.setDownloadBehavior aplicado.", level="DEBUG")
+            except Exception as e:
+                self.log(f"[Selenium] No se pudo aplicar setDownloadBehavior: {e}", level="DEBUG")
             self.log("[Selenium] Navegando a https://app.xymmetry.com/#/", level="INFO")
             self.driver.get("https://app.xymmetry.com/#/")
         except Exception as e:

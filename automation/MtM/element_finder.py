@@ -13,19 +13,20 @@ class ElementFinder:
         """Busca un elemento usando múltiples selectores (XPATH o CSS)."""
         from selenium.webdriver.common.by import By
         from selenium.webdriver.support.ui import WebDriverWait
-        import time
         wait = WebDriverWait(self.driver, timeout)
+
         for selector in selectors:
             try:
                 if selector.startswith("//"):
                     elem = wait.until(lambda d: d.find_element(By.XPATH, selector))
                 else:
                     elem = wait.until(lambda d: d.find_element(By.CSS_SELECTOR, selector))
-                if elem.is_displayed() and elem.is_enabled():
+                if getattr(elem, "is_displayed", lambda: True)() and getattr(elem, "is_enabled", lambda: True)():
                     self.log(f"[ElementFinder] Elemento encontrado con selector: {selector}", level="DEBUG")
                     return elem
             except Exception:
                 continue
+
         self.log("[ElementFinder] No se encontró el elemento con los selectores dados.", level="ADVERTENCIA")
         return None
 
@@ -118,13 +119,11 @@ class ElementFinder:
     def wait_for_new_contracts_table(self, timeout=20):
         """Espera a que esté presente y visible el primer #dropdownMenuLink dentro de la tabla #gridTable tras 'Ver contratos'."""
         from selenium.webdriver.common.by import By
-        from selenium.webdriver.support.ui import WebDriverWait
-        from selenium.webdriver.support import expected_conditions as EC
         import time
+
         try:
             self.wait_for_spinner_to_disappear(timeout=timeout)
-            wait = WebDriverWait(self.driver, timeout)
-            self.log(f"[ElementFinder] Esperando aparición de menú de acciones (#dropdownMenuLink) en la tabla de contratos...", level="DEBUG")
+            self.log("[ElementFinder] Esperando aparición de menú de acciones (#dropdownMenuLink) en la tabla de contratos...", level="DEBUG")
             start = time.time()
             while time.time() - start < timeout:
                 try:
@@ -136,10 +135,11 @@ class ElementFinder:
                         self.log("[ElementFinder] Menú de acciones detectado en la tabla de contratos.")
                         self.log_first_row_cells()
                         return table
-                except Exception as e:
+                except Exception:
                     # No encontrado aún, seguir esperando
                     pass
                 time.sleep(0.5)
+
             self.log("[ElementFinder] Timeout esperando menú de acciones en la tabla de contratos tras 'Ver contratos'.", level="ADVERTENCIA")
             return None
         except Exception as e:

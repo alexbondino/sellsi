@@ -1,0 +1,19 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+
+# Virtual environment
+.venv/
+
+# Logs
+logs/
+
+# Chrome profile used for local testing
+chrome_profile/
+
+# IDE/editor
+.vscode/
+
+# Distribution / packaging
+/dist
+/build

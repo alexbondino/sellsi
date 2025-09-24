@@ -33,6 +33,7 @@ class NavigationHandler:
         """Navega a la sección 'Mi cartera' y cambia de pestaña si es necesario."""
         from selenium.webdriver.common.by import By
         import time
+
         try:
             self.log("[Automatización] Buscando botón 'Mi cartera' en sidebar...", level="INFO")
             mi_cartera_selectors = [

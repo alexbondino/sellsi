@@ -2,10 +2,8 @@ import tkinter as tk
 from tkinter import filedialog
 from tkcalendar import DateEntry
 import threading
-import time
-import os
 from components.consola_widget import ConsolaWidget
-from components.botones import crear_boton_primario, crear_boton_secundario, crear_boton_ejecutar, crear_boton_icono, ICONOS
+from components.botones import crear_boton_primario, crear_boton_secundario, crear_boton_ejecutar
 from components.mensajes import GestorMensajes
 
 class MtMDownloaderApp(tk.Tk):
@@ -75,7 +73,18 @@ class MtMDownloaderApp(tk.Tk):
         self.log(f"Carpeta: {self.selected_folder.get()}", level="INFO")
         def run_automation():
             try:
-                from automation.web_automator import WebAutomator
+                import sys, os, glob, traceback
+                base_dir = os.path.dirname(__file__)
+                if base_dir not in sys.path:
+                    sys.path.insert(0, base_dir)
+                self.log("[DEBUG IMPORT] Intentando importar automation.web_automator", level="DEBUG")
+                try:
+                    from automation.web_automator import WebAutomator
+                except ModuleNotFoundError as e1:
+                    auto_dir = os.path.join(base_dir, 'automation')
+                    existentes = [os.path.basename(f) for f in glob.glob(os.path.join(auto_dir, '*'))]
+                    self.log(f"[DEBUG IMPORT] Contenido automation/: {existentes}", level="DEBUG")
+                    raise
                 automator = WebAutomator(self.log)
                 carpeta = self.selected_folder.get().replace('Carpeta: ', '')
                 automator.start(download_dir=carpeta)

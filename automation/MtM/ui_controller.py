@@ -14,7 +14,6 @@ class UIController:
         from selenium.webdriver.common.by import By
         from selenium.webdriver.common.action_chains import ActionChains
         from selenium.webdriver.support.ui import WebDriverWait
-        from selenium.webdriver.support import expected_conditions as EC
         import time
         try:
             self.log(f"[UI] Buscando dropdown de valorización para seleccionar '{currency}'...", level="INFO")
@@ -235,7 +234,7 @@ class UIController:
                     time.sleep(0.5)
                     try:
                         btn.click()
-                    except:
+                    except Exception:
                         self.driver.execute_script("arguments[0].click();", btn)
                     self.log(f"[UI] Date picker abierto con selector: {selector}", level="INFO")
                     return True
