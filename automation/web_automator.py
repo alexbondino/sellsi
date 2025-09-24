@@ -1,10 +1,10 @@
 import time
-from automation.modules.browser_manager import BrowserManager
-from automation.modules.login_handler import LoginHandler
-from automation.modules.navigation_handler import NavigationHandler
-from automation.modules.ui_controller import UIController
-from automation.modules.downloader import FileDownloader
-from automation.modules.element_finder import ElementFinder
+from automation.MtM.browser_manager import BrowserManager
+from automation.shared.login_handler import LoginHandler
+from automation.MtM.navigation_handler import NavigationHandler
+from automation.MtM.ui_controller import UIController
+from automation.MtM.downloader import FileDownloader
+from automation.MtM.element_finder import ElementFinder
 
 class WebAutomator:
     def __init__(self, log_func):
