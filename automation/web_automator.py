@@ -7,6 +7,7 @@ from automation.MtM.ui_controller import UIController
 from automation.MtM.downloader import FileDownloader
 from automation.MtM.element_finder import ElementFinder
 
+
 class WebAutomator:
     def __init__(self, log_func):
         self.log = log_func
@@ -42,17 +43,17 @@ class WebAutomator:
 
     def _resolve_date(self) -> str:
         # Orden de resolución: método get_selected_date -> widget date_entry -> fallback
-        if hasattr(self, 'get_selected_date'):
+        if hasattr(self, "get_selected_date"):
             try:
-                return getattr(self, 'get_selected_date')()  # type: ignore[no-any-return]
+                return getattr(self, "get_selected_date")()  # type: ignore[no-any-return]
             except Exception:
                 pass
-        if self.date_entry and hasattr(self.date_entry, 'get'):
+        if self.date_entry and hasattr(self.date_entry, "get"):
             try:
                 return self.date_entry.get()
             except Exception:
                 pass
-        return '17-06-2025'
+        return "17-06-2025"
 
     def start(self, download_dir=None):
         self.browser = BrowserManager(self.log, download_dir)
@@ -77,13 +78,14 @@ class WebAutomator:
         login.perform_login()
         navigation.open_sidebar_menu()
         navigation.navigate_to_mi_cartera()
-        ui.select_currency('CLP')
+        ui.select_currency("CLP")
         fecha = self._resolve_date()
         self.log(f"[UI] Seleccionando fecha: {fecha}", level="INFO")
         ui.select_date(fecha)
         from selenium.webdriver.common.by import By
         from selenium.webdriver.support.ui import WebDriverWait
         from selenium.webdriver.support import expected_conditions as EC
+
         try:
             self.log("Esperando que la tabla de contratos esté visible y cargada...", level="INFO")
             wait = WebDriverWait(driver, 20)
@@ -99,9 +101,14 @@ class WebAutomator:
         self.log("Esperando nueva tabla de contratos tras 'Ver contratos'...", level="INFO")
         nueva_tabla = finder.wait_for_new_contracts_table(timeout=20)
         if not nueva_tabla:
-            self.log("No se detectó la nueva tabla de contratos. Abortando descarga.", level="ERROR")
+            self.log(
+                "No se detectó la nueva tabla de contratos. Abortando descarga.", level="ERROR"
+            )
             return
-        self.log("Nueva tabla de contratos lista. Procediendo a descargar Excel y archivos de contrato.", level="EXITO")
+        self.log(
+            "Nueva tabla de contratos lista. Procediendo a descargar Excel y archivos de contrato.",
+            level="EXITO",
+        )
         downloader.download_excel_file()
         downloader.download_contract_files()
         try:
@@ -137,9 +144,11 @@ class WebAutomator:
                             continue
                     except Exception:
                         continue
-                is_last_page = (max_page == 2)
-                downloader.download_contract_files(page_number=2, start_row=1, is_last_page=is_last_page)
-                for page in range(3, max_page+1):
+                is_last_page = max_page == 2
+                downloader.download_contract_files(
+                    page_number=2, start_row=1, is_last_page=is_last_page
+                )
+                for page in range(3, max_page + 1):
                     self.log(f"[UI] Avanzando a la página {page}...", level="INFO")
                     pag_btn = None
                     paginadores_n = driver.find_elements(By.CSS_SELECTOR, ".pagination li")
@@ -153,18 +162,153 @@ class WebAutomator:
                             continue
                     if pag_btn:
                         pag_btn.click()
-                        self.log(f"[UI] Esperando recarga de tabla para página {page}...", level="INFO")
+                        self.log(
+                            f"[UI] Esperando recarga de tabla para página {page}...", level="INFO"
+                        )
                         nueva_tabla_n = finder.wait_for_new_contracts_table(timeout=20)
                         if not nueva_tabla_n:
-                            self.log(f"[UI] No se detectó la tabla de la página {page}. Abortando.", level="ERROR")
+                            self.log(
+                                f"[UI] No se detectó la tabla de la página {page}. Abortando.",
+                                level="ERROR",
+                            )
                             return
-                        self.log(f"[UI] Tabla página {page} lista. Descargando archivos restantes...", level="INFO")
-                        is_last = (page == max_page)
-                        downloader.download_contract_files(page_number=page, start_row=1, is_last_page=is_last)
+                        self.log(
+                            f"[UI] Tabla página {page} lista. Descargando archivos restantes...",
+                            level="INFO",
+                        )
+                        is_last = page == max_page
+                        downloader.download_contract_files(
+                            page_number=page, start_row=1, is_last_page=is_last
+                        )
             else:
                 self.log("[UI] Solo una página de contratos.", level="INFO")
         except Exception as e:
             self.log(f"[UI] Error en la lógica de paginación: {e}", level="ERROR")
+
+        # 🔍 VALIDACIÓN POST-EJECUCIÓN Y RECOVERY
+        self._execute_post_validation_and_recovery()
+
+    def _execute_post_validation_and_recovery(self):
+        """
+        🔍 Sistema de validación post-ejecución y recovery inteligente
+
+        Se ejecuta al final del proceso para:
+        1. Validar que se descargaron los 13 archivos esperados
+        2. Identificar archivos faltantes específicos
+        3. Ejecutar estrategias de recovery si es necesario
+        4. Determinar si se puede proceder a la etapa 2
+        """
+
+        try:
+            from automation.MtM.post_execution_validator import (
+                PostExecutionValidator,
+                RecoveryDecisionEngine,
+            )
+            from automation.MtM.smart_recovery_system import SmartRecoverySystem
+
+            self.log(
+                "[Validación] 🔍 Iniciando validación post-ejecución de descargas...", level="INFO"
+            )
+
+            # 1. Crear validador y ejecutar análisis completo
+            validator = PostExecutionValidator(self.log)
+
+            # Obtener directorio de descargas del downloader
+            download_dir = None
+            if hasattr(self, "downloader") and self.downloader:
+                download_dir = self.downloader.download_root
+
+            # Validar con tracker y sistema de archivos
+            validation_report = validator.validate_complete_download(
+                self.downloader.tracker if self.downloader else None, download_dir
+            )
+
+            # 2. Si está completo, proceder directamente
+            if validation_report.is_complete:
+                self.log(
+                    "[Validación] 🎉 ¡PERFECTO! Todos los 13 archivos descargados correctamente",
+                    level="EXITO",
+                )
+                self.log(
+                    "[Validación] 🚀 Listo para proceder a la Etapa 2 - Procesamiento con Macros",
+                    level="EXITO",
+                )
+                return True
+
+            # 3. Decidir estrategia de recovery
+            decision_engine = RecoveryDecisionEngine(self.log)
+            recovery_plan = decision_engine.decide_recovery_strategy(validation_report)
+
+            self.log(
+                f"[Validación] 📋 Estrategia de recovery: {recovery_plan.strategy_name}",
+                level="INFO",
+            )
+            self.log(
+                f"[Validación] ⏱️ Tiempo estimado: {recovery_plan.estimated_time_minutes} minutos",
+                level="INFO",
+            )
+
+            # 4. Ejecutar recovery si es necesario
+            if recovery_plan.strategy_name != "none":
+                recovery_system = SmartRecoverySystem(self, self.log)
+                recovery_success = recovery_system.execute_recovery_plan(
+                    validation_report, recovery_plan
+                )
+
+                if recovery_success:
+                    self.log(
+                        "[Validación] ✅ Recovery exitoso - Validando nuevamente...", level="EXITO"
+                    )
+
+                    # Re-validar tras recovery
+                    final_validation = validator.validate_complete_download(
+                        self.downloader.tracker if self.downloader else None, download_dir
+                    )
+
+                    if final_validation.can_proceed_to_stage2:
+                        self.log(
+                            "[Validación] 🚀 Recovery completado - Listo para Etapa 2",
+                            level="EXITO",
+                        )
+                        return True
+                    else:
+                        self.log(
+                            "[Validación] ⚠️ Recovery parcial - Se requiere intervención adicional",
+                            level="ADVERTENCIA",
+                        )
+                        return False
+                else:
+                    self.log(
+                        "[Validación] ❌ Recovery falló - Se requiere intervención manual",
+                        level="ERROR",
+                    )
+                    return False
+
+            # 5. Si se puede proceder parcialmente
+            elif validation_report.can_proceed_to_stage2:
+                self.log(
+                    "[Validación] ⚠️ Proceeding with partial files available", level="ADVERTENCIA"
+                )
+                self.log(
+                    f"[Validación] 📊 Archivos: {validation_report.total_downloaded}/{validation_report.total_expected}",
+                    level="INFO",
+                )
+                return True
+
+            # 6. Fallo crítico
+            else:
+                self.log(
+                    "[Validación] 🚨 FALLO CRÍTICO - No se puede proceder a Etapa 2", level="ERROR"
+                )
+                self.log(
+                    "[Validación] 💡 Se requiere intervención manual para completar descargas",
+                    level="ERROR",
+                )
+                return False
+
+        except Exception as e:
+            self.log(f"[Validación] ❌ Error en validación post-ejecución: {e}", level="ERROR")
+            return False
 
     # Compatibilidad con código previo
     def execute_automation_flow(self):  # pragma: no cover - simple wrapper

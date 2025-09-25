@@ -5,7 +5,7 @@ import time
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, Iterable, List, Optional, Any, TypedDict, Union
+from typing import Dict, Iterable, List, Optional, TypedDict
 
 
 @dataclass
@@ -101,7 +101,9 @@ class ContentValidator:
                 with file_info.path.open("rb") as fh:
                     header = fh.read(max(len(m) for m in allowed_magic))
                 if not any(header.startswith(magic) for magic in allowed_magic):
-                    return ValidationResult(False, reason="magic", details={"header": header[:8].hex()})
+                    return ValidationResult(
+                        False, reason="magic", details={"header": header[:8].hex()}
+                    )
             except Exception as exc:  # pragma: no cover (I/O issues)
                 return ValidationResult(False, reason="io", details={"error": str(exc)})
 
@@ -121,7 +123,9 @@ class FileSystemMonitor:
                 files[path] = FileInfo.from_path(path)
         return files
 
-    def new_files(self, base: Dict[Path, FileInfo], current: Dict[Path, FileInfo], started_at: float) -> List[FileInfo]:
+    def new_files(
+        self, base: Dict[Path, FileInfo], current: Dict[Path, FileInfo], started_at: float
+    ) -> List[FileInfo]:
         results: List[FileInfo] = []
         for path, info in current.items():
             if path.suffix.lower() in {".tmp", ".crdownload"}:
@@ -135,7 +139,9 @@ class FileSystemMonitor:
 
 
 class DownloadTracker:
-    def __init__(self, download_dir: Path, log_func, config: Optional[DownloadConfig] = None) -> None:
+    def __init__(
+        self, download_dir: Path, log_func, config: Optional[DownloadConfig] = None
+    ) -> None:
         self.download_dir = download_dir
         self.log = log_func
         self.config = config or DownloadConfig()
@@ -145,7 +151,9 @@ class DownloadTracker:
         self.completed_sessions: List[DownloadSession] = []
         self._sequence = 0
 
-    def begin(self, download_type: str, metadata: Optional[Dict[str, str]] = None) -> Optional[DownloadSession]:
+    def begin(
+        self, download_type: str, metadata: Optional[Dict[str, str]] = None
+    ) -> Optional[DownloadSession]:
         if not self.download_dir.exists():
             try:
                 self.download_dir.mkdir(parents=True, exist_ok=True)
@@ -166,7 +174,9 @@ class DownloadTracker:
         self.log(f"[Tracker] Sesión {session_id} iniciada ({download_type}).", level="DEBUG")
         return session
 
-    def wait_for_file(self, session: DownloadSession, timeout: Optional[int] = None) -> Optional[DownloadResult]:
+    def wait_for_file(
+        self, session: DownloadSession, timeout: Optional[int] = None
+    ) -> Optional[DownloadResult]:
         if not session:
             return None
         timeout = timeout or self.config.timeout_seconds
@@ -186,25 +196,35 @@ class DownloadTracker:
                         session.completed_at = datetime.utcnow()
                         self.active_sessions.pop(session.session_id, None)
                         self.completed_sessions.append(session)
-                        self.log(f"[Tracker] Sesión {session.session_id}: archivo {file_info.path.name} detectado.", level="INFO")
+                        self.log(
+                            f"[Tracker] Sesión {session.session_id}: archivo {file_info.path.name} detectado.",
+                            level="INFO",
+                        )
                         return result
             last_snapshot = current_snapshot
             time.sleep(self.config.poll_interval)
 
         return None
 
-    def mark_manual_file(self, session: Optional[DownloadSession], file_path: Path, fallback_used: bool = False) -> None:
+    def mark_manual_file(
+        self, session: Optional[DownloadSession], file_path: Path, fallback_used: bool = False
+    ) -> None:
         if not session:
             return
         file_info = FileInfo.from_path(file_path)
         validation = self.validator.validate(file_info, session.download_type)
-        result = DownloadResult(file_info=file_info, validation=validation, fallback_used=fallback_used)
+        result = DownloadResult(
+            file_info=file_info, validation=validation, fallback_used=fallback_used
+        )
         session.result = result
         session.status = "success" if validation.passed else "invalid"
         session.completed_at = datetime.utcnow()
         self.active_sessions.pop(session.session_id, None)
         self.completed_sessions.append(session)
-        self.log(f"[Tracker] Sesión {session.session_id}: archivo manual {file_path.name} registrado.", level="DEBUG")
+        self.log(
+            f"[Tracker] Sesión {session.session_id}: archivo manual {file_path.name} registrado.",
+            level="DEBUG",
+        )
 
     def fail(self, session: Optional[DownloadSession], reason: str) -> None:
         if not session:
@@ -214,7 +234,9 @@ class DownloadTracker:
         session.completed_at = datetime.utcnow()
         self.active_sessions.pop(session.session_id, None)
         self.completed_sessions.append(session)
-        self.log(f"[Tracker] Sesión {session.session_id} marcada como fallida ({reason}).", level="ERROR")
+        self.log(
+            f"[Tracker] Sesión {session.session_id} marcada como fallida ({reason}).", level="ERROR"
+        )
 
     def export_report(self) -> Optional[Path]:
         if not self.completed_sessions:
