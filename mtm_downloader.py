@@ -11,6 +11,15 @@ from components.mensajes import GestorMensajes
 from components.excel_validator import ExcelValidator
 from components.timeline_component import TimelineComponent, integrate_timeline_with_automation
 
+# Importar validación de macros
+try:
+    from automation.shared.validacion.macro_config_popup import show_macro_config_popup
+    MACRO_VALIDATION_AVAILABLE = True
+    print("✅ [DEBUG] Popup de macros importado correctamente")
+except ImportError as e:
+    MACRO_VALIDATION_AVAILABLE = False
+    print(f"⚠️ [DEBUG] No se pudo importar popup de macros: {e}")
+
 
 class MtMDownloaderApp(tk.Tk):
     def __init__(self):
@@ -42,10 +51,6 @@ class MtMDownloaderApp(tk.Tk):
         
         # Configurar callbacks del timeline
         self.timeline_callbacks = integrate_timeline_with_automation(self.timeline)
-        
-        # Log DEBUG para troubleshooting (invisible para usuario)
-        self.log("[INIT] Timeline component initialized (832x768 layout)", level="DEBUG")
-        self.log(f"[INIT] Timeline callbacks configured: {bool(self.timeline_callbacks)}", level="DEBUG")
         
         # === HEADER PRINCIPAL ===
         tk.Label(self, text="MtM Downloader", font=("Arial", 20, "bold"), bg="white").place(
@@ -121,6 +126,10 @@ class MtMDownloaderApp(tk.Tk):
         # === CONSOLA ===
         self.consola = ConsolaWidget(self, width=int(55 * 1.2), height=12)
         self.consola.place(x=30, y=490)
+        
+        # Log DEBUG para troubleshooting (después de crear consola)
+        self.log("[INIT] Timeline component initialized (832x768 layout)", level="DEBUG")
+        self.log(f"[INIT] Timeline callbacks configured: {bool(self.timeline_callbacks)}", level="DEBUG")
 
         # Botón pequeño para limpiar mensajes corruptos (junto a la consola)
         crear_boton_secundario(self, "Limpiar", self._limpiar_mensajes_corruptos, width=8).place(
@@ -133,6 +142,9 @@ class MtMDownloaderApp(tk.Tk):
         # Botón ejecutar (ahora con validación)
         self.execute_button = crear_boton_ejecutar(self, "EJECUTAR", self.start_automation)
         self.execute_button.place(x=620, y=270)
+        
+        # Botón temporal Paso 2 para testing
+        crear_boton_secundario(self, "PASO 2", self.paso_2_handler).place(x=620, y=320)
 
         # === VERSIÓN ===
         self.version_label = tk.Label(
@@ -276,7 +288,119 @@ class MtMDownloaderApp(tk.Tk):
     def show_instructions(self):
         GestorMensajes.mostrar_instrucciones()
 
+    def paso_2_handler(self):
+        """
+        Handler para Paso 2: Seleccionar y abrir el archivo MtM Excel validado
+        """
+        self.log("🚀 Iniciando Paso 2...", level="INFO")
+        
+        # Validar que tenemos una carpeta seleccionada
+        if not GestorMensajes.validar_carpeta_seleccionada(self.selected_folder.get()):
+            self.log("❌ Selecciona primero una carpeta de descarga", level="ERROR")
+            return
+            
+        carpeta_descarga = self.selected_folder.get().replace("Carpeta: ", "")
+        
+        # Buscar archivo MtM Excel usando ExcelValidator
+        validator = ExcelValidator()
+        is_valid, found_files, messages = validator.validate_directory(carpeta_descarga)
+        
+        # Buscar específicamente el archivo MtM (con prioridad)
+        mtm_file = None
+        for file_type, file_info in found_files.items():
+            if 'mtm' in file_type.lower() or 'mtm' in file_info.filename.lower():
+                mtm_file = file_info.full_path
+                self.log(f"📂 Archivo MtM encontrado: {file_info.filename}", level="INFO")
+                break
+        
+        if not mtm_file:
+            self.log("❌ No se encontró archivo MtM Excel (MtM_v...)", level="ERROR")
+            self.log("� Asegúrate de que el directorio contiene un archivo MtM_v*.xlsm", level="INFO")
+            return
+        
+        # NUEVO FLUJO: Escribir I14 + Ejecutar Macro automáticamente
+        self.log(f"📂 Procesando archivo MtM con automatización completa...", level="INFO")
+        try:
+            import os
+            
+            if os.path.exists(mtm_file):
+                # Automatización completa usando módulo modular (Paso 1 + Paso 2)
+                self.log("⚡ Paso 2: Automatización Excel usando arquitectura modular...", level="INFO")
+                success = self._ejecutar_automatizacion_modular(mtm_file, carpeta_descarga)
+                
+                if success:
+                    self.log("🎉 ¡AUTOMATIZACIÓN COMPLETADA!", level="EXITO")
+                    self.log("✅ ✓ Carpeta configurada en I14", level="EXITO")
+                    self.log("✅ ✓ Tablas limpiadas automáticamente", level="EXITO")
+                    self.log("✅ ✓ Excel listo para trabajo manual", level="EXITO")
+                else:
+                    self.log("⚠️ Automatización incompleta - revisar logs", level="ADVERTENCIA")
+                
+                self.log("📋 IMPORTANTE: Habilita las macros si Excel te lo pregunta", level="INFO")
+                
+            else:
+                self.log(f"❌ El archivo no existe: {mtm_file}", level="ERROR")
+                return
+            
+            # Actualizar timeline a fase 2 si está disponible
+            if hasattr(self, 'timeline_callbacks') and self.timeline_callbacks:
+                self.timeline_callbacks['start_phase2']()
+                self.log("[TIMELINE] Iniciando fase de procesamiento Excel", level="DEBUG")
+                
+        except Exception as e:
+            self.log(f"❌ Error abriendo archivo MtM: {e}", level="ERROR")
+
+    def _ejecutar_automatizacion_modular(self, mtm_file_path: str, carpeta_descarga: str) -> bool:
+        """
+        Ejecuta la automatización Excel usando el módulo modular del Paso 2
+        
+        Args:
+            mtm_file_path: Ruta completa del archivo Excel MtM
+            carpeta_descarga: Carpeta de descarga a configurar
+            
+        Returns:
+            bool: True si la automatización fue exitosa
+        """
+        try:
+            # Importar módulo de automatización Excel (importación dinámica por espacios en nombre)
+            import sys
+            import os
+            
+            # Agregar el directorio al path temporalmente
+            paso2_dir = os.path.join(os.path.dirname(__file__), "automation", "MtM", "Paso 2")
+            if paso2_dir not in sys.path:
+                sys.path.insert(0, paso2_dir)
+            
+            import excel_automation  # type: ignore
+            ejecutar_automatizacion_excel = excel_automation.ejecutar_automatizacion_excel
+            
+            self.log("📦 Usando módulo modular: automation/MtM/Paso 2/excel_automation.py", level="DEBUG")
+            
+            # Ejecutar automatización completa
+            success = ejecutar_automatizacion_excel(
+                excel_file_path=mtm_file_path,
+                carpeta_descarga=carpeta_descarga,
+                log_callback=self.log
+            )
+            
+            return success
+            
+        except ImportError as e:
+            self.log(f"❌ Error importando módulo de automatización: {e}", level="ERROR")
+            self.log("🔄 Usando método de fallback...", level="INFO")
+            # Fallback: abrir Excel manualmente
+            import os
+            os.startfile(mtm_file_path)
+            return False
+        except Exception as e:
+            self.log(f"❌ Error en automatización modular: {e}", level="ERROR")
+            return False
+
+    # Métodos antiguos eliminados - funcionalidad movida a:
+    # automation/MtM/Paso 2/excel_automation.py (arquitectura modular)
+
     def start_automation(self):
+        
         # Validar carpeta de descarga
         if not GestorMensajes.validar_carpeta_seleccionada(self.selected_folder.get()):
             self.log("No se ha seleccionado una carpeta de descarga.", level="ADVERTENCIA")
@@ -443,6 +567,29 @@ class StartMenuApp(tk.Tk):
         ).pack()
 
     def abrir_mtm_downloader(self):
+        print("🔧 [DEBUG] Botón 'Valorización MtM' presionado")
+        print(f"🔧 [DEBUG] MACRO_VALIDATION_AVAILABLE = {MACRO_VALIDATION_AVAILABLE}")
+        
+        # Mostrar popup de configuración de macros ANTES de abrir Menu 1
+        if MACRO_VALIDATION_AVAILABLE:
+            print("🔧 [DEBUG] Intentando mostrar popup de configuración...")
+            try:
+                # Mostrar popup modal - el usuario debe confirmar la configuración
+                user_confirmed = show_macro_config_popup(parent_window=self)
+                print(f"🔧 [DEBUG] Resultado del popup: {user_confirmed}")
+                
+                if not user_confirmed:
+                    # Usuario canceló, no abrir MtM Downloader
+                    print("❌ [DEBUG] Usuario canceló, no abriendo MtM Downloader")
+                    return
+            except Exception as e:
+                print(f"❌ [ERROR] Error mostrando popup: {e}")
+                # Continuar sin popup en caso de error
+        else:
+            print("⚠️ [DEBUG] Validación de macros no disponible, saltando popup")
+        
+        # Si llegamos aquí, el usuario confirmó o no hay validación disponible
+        print("✅ [DEBUG] Abriendo MtM Downloader...")
         self.destroy()
         app = MtMDownloaderApp()
         app.mainloop()

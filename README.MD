@@ -582,29 +582,11 @@ Success rate: >95% en condiciones normales
 
 ---
 
-## 🔮 12. Roadmap y Mejoras Futuras
-
-### 12.1 Próximas Funcionalidades
-- [ ] **Dashboard Web**: Interface web alternativa a Tkinter
-- [ ] **Multi-platform Support**: Firefox, Edge compatibility  
-- [ ] **Cloud Storage**: Integration with Google Drive/OneDrive
-- [ ] **Scheduled Downloads**: Cron-job functionality
-- [ ] **Real-time Notifications**: Email/Slack alerts
-- [ ] **Advanced Analytics**: Download statistics and insights
-
-### 12.2 Mejoras Técnicas Pendientes
-- [ ] **Type Hints**: 100% coverage con mypy
-- [ ] **Unit Tests**: Test suite completa
-- [ ] **CI/CD Pipeline**: Automated testing y deployment
-- [ ] **Docker Support**: Containerized execution
-- [ ] **Config Management**: External configuration files
-- [ ] **Internationalization**: Multi-language support
-
 ---
 
-## 👥 13. Contribución y Desarrollo
+## 👥 12. Contribución y Desarrollo
 
-### 13.1 Standards de Código
+### 12.1 Standards de Código
 ```python
 # Naming conventions
 class PascalCase:        # Para clases
