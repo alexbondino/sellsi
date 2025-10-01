@@ -100,26 +100,6 @@ const PrivacyPolicyPage = React.lazy(() =>
   import('../../app/pages/legal/PrivacyPolicyPage')
 );
 
-// 📦 ADMIN PAGES - LAZY LOADING
-const AdminLogin = React.lazy(() =>
-  import('../../domains/admin').then(module => ({ default: module.AdminLogin }))
-);
-const AdminDashboard = React.lazy(() =>
-  import('../../domains/admin').then(module => ({
-    default: module.AdminDashboard,
-  }))
-);
-const AdminPanelHome = React.lazy(() =>
-  import('../../domains/admin').then(module => ({
-    default: module.AdminPanelHome,
-  }))
-);
-const AdminMetrics = React.lazy(() =>
-  import('../../domains/admin').then(module => ({
-    default: module.AdminMetrics,
-  }))
-);
-
 // 📦 AUTH CALLBACK - LAZY LOADING
 // AuthCallback también se importa directo para mantener el barrel público mínimo
 const AuthCallback = React.lazy(() =>
@@ -174,12 +154,6 @@ export const AppRouter = ({ scrollTargets }) => {
           element={<TermsAndConditionsPage />}
         />
         <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
-
-        {/* RUTAS ADMINISTRATIVAS - ACCESO VISUAL PARA TESTING */}
-        <Route path="/admin-login" element={<AdminLogin />} />
-        <Route path="/admin-panel" element={<AdminPanelHome />} />
-        <Route path="/admin-panel/dashboard" element={<AdminDashboard />} />
-        <Route path="/admin-panel/metrics" element={<AdminMetrics />} />
 
         {/* Ruta para página de ban (acceso directo para testing) */}
         <Route path="/banned" element={<BannedPage />} />
