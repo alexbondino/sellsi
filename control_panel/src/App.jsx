@@ -1,34 +1,103 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+﻿import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
+import { ThemeProvider, createTheme } from '@mui/material/styles'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import CssBaseline from '@mui/material/CssBaseline'
+import { Toaster } from 'react-hot-toast'
+
+// Importar componentes del panel admin
+import AdminLogin from './domains/admin/components/AdminLogin'
+import AdminGuard from './domains/admin/components/AdminGuard'
+import AdminPanelHome from './domains/admin/pages/AdminPanelHome'
+import AdminDashboard from './domains/admin/components/AdminDashboard'
+import AdminMetrics from './domains/admin/pages/AdminMetrics'
+import FirstAdminSetup from './domains/admin/components/FirstAdminSetup'
+
+const theme = createTheme({
+  palette: {
+    primary: {
+      main: '#1a237e',
+    },
+    secondary: {
+      main: '#3949ab',
+    },
+  },
+})
+
+// QueryClient para React Query
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      retry: 1,
+      staleTime: 30000,
+    },
+  },
+})
 
 function App() {
-  const [count, setCount] = useState(0)
-
+  console.log('🚀 App component rendering...');
+  
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        <Router>
+          <Routes>
+            {/* ========== RUTAS PÚBLICAS ========== */}
+            
+            {/* Login principal */}
+            <Route path="/login" element={<AdminLogin />} />
+            
+            {/* Setup inicial de primer administrador */}
+            <Route path="/setup" element={<FirstAdminSetup />} />
+            
+            {/* ========== RUTAS PROTEGIDAS ========== */}
+            
+            {/* Panel principal - muestra el home con menú lateral */}
+            <Route path="/admin" element={
+              <AdminGuard>
+                <AdminPanelHome />
+              </AdminGuard>
+            } />
+            
+            {/* Panel principal - muestra el home con menú lateral */}
+            <Route path="/admin-panel" element={
+              <AdminGuard>
+                <AdminPanelHome />
+              </AdminGuard>
+            } />
+            
+            {/* Dashboard administrativo */}
+            <Route path="/admin-panel/dashboard" element={
+              <AdminGuard>
+                <AdminDashboard />
+              </AdminGuard>
+            } />
+            
+            {/* Métricas administrativas */}
+            <Route path="/admin-panel/metrics" element={
+              <AdminGuard>
+                <AdminMetrics />
+              </AdminGuard>
+            } />
+            
+            {/* Alias para dashboard (legacy) */}
+            <Route path="/admin/dashboard" element={
+              <AdminGuard>
+                <AdminDashboard />
+              </AdminGuard>
+            } />
+            
+            {/* ========== REDIRECTS ========== */}
+            
+            {/* Redirect por defecto a login */}
+            <Route path="/" element={<Navigate to="/login" replace />} />
+          </Routes>
+        </Router>
+        
+        <Toaster position="top-right" />
+      </ThemeProvider>
+    </QueryClientProvider>
   )
 }
 

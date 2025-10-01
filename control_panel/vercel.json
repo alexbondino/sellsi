@@ -1,0 +1,9 @@
+{
+  "buildCommand": "cd control_panel && npm run build",
+  "outputDirectory": "control_panel/dist",
+  "installCommand": "cd control_panel && npm install",
+  "framework": "vite",
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}
