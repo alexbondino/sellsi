@@ -192,8 +192,8 @@ const MyProducts = () => {
   useEffect(() => {
     const handleImagesReady = (event) => {
       const { productId, imageCount } = event.detail
-      // Mostrar notificación al usuario que las imágenes están listas
-      showSuccessToast(`Imágenes del producto procesadas correctamente (${imageCount} imágenes)`)
+      // Evento de imágenes procesadas: mantener silencio por UX (registro para debugging)
+      // console.debug(`productImagesReady for ${productId}: ${imageCount} images processed`)
     }
     
     window.addEventListener('productImagesReady', handleImagesReady)
