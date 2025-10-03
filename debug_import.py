@@ -1,7 +1,7 @@
 import traceback
-
 try:
-    print("Imported automation.web_automator OK")
+    import web_automator
+    print('Imported automation.web_automator OK')
 except Exception as e:
     traceback.print_exc()
-    print("ERROR:", e)
+    print('ERROR:', e)

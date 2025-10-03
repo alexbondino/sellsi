@@ -1,6 +1,5 @@
 import tkinter as tk
 from tkinter import filedialog
-from tkcalendar import DateEntry
 import threading
 import sys
 import os
@@ -10,6 +9,7 @@ from components.botones import crear_boton_primario, crear_boton_secundario, cre
 from components.mensajes import GestorMensajes
 from components.excel_validator import ExcelValidator
 from components.timeline_component import TimelineComponent, integrate_timeline_with_automation
+from components.custom_date_picker import CustomDatePicker
 
 # Importar validación de macros
 try:
@@ -61,7 +61,7 @@ class MtMDownloaderApp(tk.Tk):
         tk.Label(self, text="Selecciona una fecha", font=("Arial", 13), bg="white").place(
             x=30, y=220
         )
-        self.date_entry = DateEntry(self, width=18, font=("Arial", 12), date_pattern="dd-mm-yyyy")
+        self.date_entry = CustomDatePicker(self, width=18)
         self.date_entry.place(x=30, y=250)
 
         # === VALIDACIÓN DE ARCHIVOS EXCEL (NUEVA SECCIÓN) ===
@@ -145,6 +145,18 @@ class MtMDownloaderApp(tk.Tk):
         
         # Botón temporal Paso 2 para testing
         crear_boton_secundario(self, "PASO 2", self.paso_2_handler).place(x=620, y=320)
+        
+        # Botón Volver al menú principal
+        tk.Button(
+            self,
+            text="Volver al menú principal",
+            font=("Arial", 10),
+            bg="#6c757d",
+            fg="white",
+            command=self.volver_menu,
+            width=20,
+            cursor="hand2"
+        ).place(x=620, y=370)
 
         # === VERSIÓN ===
         self.version_label = tk.Label(
@@ -287,6 +299,16 @@ class MtMDownloaderApp(tk.Tk):
 
     def show_instructions(self):
         GestorMensajes.mostrar_instrucciones()
+    
+    def volver_menu(self):
+        """Vuelve al menú principal"""
+        self.destroy()
+        # Lanzar menú principal
+        try:
+            launch_start_menu()
+        except Exception as e:
+            self.log(f"❌ Error volviendo al menú: {e}", level="ERROR")
+            self.destroy()
 
     def paso_2_handler(self):
         """
@@ -522,31 +544,7 @@ class MtMDownloaderApp(tk.Tk):
         threading.Thread(target=run_automation, daemon=True).start()
 
 
-class ForwardCalculatorPlaceholder(tk.Tk):
-    def __init__(self):
-        super().__init__()
-        self.title("Calculadora de Forward")
-        self.geometry("480x240")
-        self.resizable(False, False)
-        self.configure(bg="white")
-        tk.Label(
-            self, text="DISEÑAR MENU NUEVO", font=("Arial", 16, "bold"), bg="white", fg="#007ACC"
-        ).pack(pady=30)
-        tk.Label(
-            self,
-            text="Esta vista es un placeholder para la futura Calculadora de Forward.",
-            font=("Arial", 11),
-            bg="white",
-            fg="gray",
-            wraplength=420,
-        ).pack(pady=10)
-        crear_boton_secundario(self, "Volver al menú principal", self.volver_menu_principal).pack(
-            pady=20
-        )
-
-    def volver_menu_principal(self):
-        self.destroy()
-        launch_start_menu()
+# Clase ForwardCalculatorPlaceholder eliminada - ahora usa módulo automation/Forward/forward_calculator_ui.py
 
 
 class StartMenuApp(tk.Tk):
@@ -595,9 +593,29 @@ class StartMenuApp(tk.Tk):
         app.mainloop()
 
     def abrir_calculadora_forward(self):
-        self.destroy()
-        placeholder = ForwardCalculatorPlaceholder()
-        placeholder.mainloop()
+        """Abre la Calculadora de Forward usando el módulo modular"""
+        try:
+            self.destroy()
+            
+            # Importar módulo Forward
+            from automation.Forward.forward_calculator_ui import launch_forward_calculator
+            
+            # Lanzar calculadora
+            launch_forward_calculator()
+            
+        except ImportError as e:
+            print(f"❌ Error importando módulo Forward: {e}")
+            # Fallback: mostrar mensaje de error
+            import tkinter.messagebox as messagebox
+            messagebox.showerror(
+                "Error de Módulo",
+                f"No se pudo cargar el módulo de Calculadora Forward.\n\nError: {e}"
+            )
+            # Relanzar menú principal
+            launch_start_menu()
+        except Exception as e:
+            print(f"❌ Error general abriendo Forward: {e}")
+            launch_start_menu()
 
 
 def launch_start_menu():
