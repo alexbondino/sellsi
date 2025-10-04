@@ -751,34 +751,6 @@ const AddProduct = () => {
               </Box>
             )}
           </Box>
-
-          {/* 🔥 NUEVO: Status de Thumbnails */}
-          {!isEditMode && createdProductId && (
-            <Box sx={{ mb: 2 }}>
-              {thumbnailStatus.isProcessing && (
-                <Paper sx={{ p: 2, backgroundColor: '#fff3cd', border: '1px solid #ffeaa7' }}>
-                  <Typography variant="body2" color="text.secondary">
-                    📸 Procesando thumbnails... Esto puede tomar unos segundos.
-                  </Typography>
-                </Paper>
-              )}
-              {thumbnailStatus.isReady && (
-                <Paper sx={{ p: 2, backgroundColor: '#d4edda', border: '1px solid #c3e6cb' }}>
-                  <Typography variant="body2" color="success.main">
-                    ✅ Thumbnails generados exitosamente
-                  </Typography>
-                </Paper>
-              )}
-              {thumbnailStatus.hasError && (
-                <Paper sx={{ p: 2, backgroundColor: '#f8d7da', border: '1px solid #f5c6cb' }}>
-                  <Typography variant="body2" color="error.main">
-                    ⚠️ Error generando thumbnails: {thumbnailStatus.error}
-                  </Typography>
-                </Paper>
-              )}
-            </Box>
-          )}
-
           {/* Form container condicional */}
           {isMobile ? (
             <Box sx={{ px: 0, width: '100%' }}> {/* 🔧 Eliminado px: '1%' */}
