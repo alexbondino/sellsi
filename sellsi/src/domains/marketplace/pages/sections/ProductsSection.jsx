@@ -406,14 +406,17 @@ ProductsSection.displayName = 'ProductsSection';
 // NOTA: Simple guard to ensure side effect only in browser
 if (typeof window !== 'undefined' && FeatureFlags.FEATURE_PHASE1_THUMBS) {
   // Micro cola para evitar saturar inmediatamente; se puede mejorar con observers
-  requestIdleCallback?.(() => {
-    try {
-      // Buscar un contenedor de productos ya montado (heurística simple)
-      // La lógica real ideal estaría dentro de un effect cuando se conocen los IDs iniciales.
-    } catch (e) {
-      // noop
-    }
-  });
+  // 🛡️ SAFARI FIX: Usar window.requestIdleCallback para evitar ReferenceError
+  if (window.requestIdleCallback) {
+    window.requestIdleCallback(() => {
+      try {
+        // Buscar un contenedor de productos ya montado (heurística simple)
+        // La lógica real ideal estaría dentro de un effect cuando se conocen los IDs iniciales.
+      } catch (e) {
+        // noop
+      }
+    });
+  }
 }
 
 // ✅ ROLLBACK TEMPORAL: Exportar directamente sin ShippingProvider hasta resolver issues

@@ -73,7 +73,15 @@ export async function initSentryDeferred(options = {}) {
       dsn: import.meta.env.VITE_SENTRY_DSN,
       integrations: [
         mod.browserTracingIntegration(),
-        mod.replayIntegration(),
+        mod.replayIntegration({
+          // 🛡️ SAFARI FIX: Configuración para evitar errores cross-origin con iframes externos
+          // Safari es estricto con seguridad y bloquea acceso a contentWindow de YouTube
+          blockAllMedia: false,
+          maskAllText: false,
+          maskAllInputs: true,
+          // Bloquear grabación de iframes externos (YouTube, Vimeo, etc.)
+          blockSelector: 'iframe[src*="youtube.com"], iframe[src*="youtu.be"], iframe[src*="vimeo.com"]',
+        }),
       ],
       tracesSampleRate: 1.0,
       replaysSessionSampleRate: 0.1,
