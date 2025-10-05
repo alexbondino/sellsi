@@ -95,6 +95,7 @@ export function useProducts() {
               .from('users')
               .select('user_id, user_nm, logo_url, descripcion_proveedor, verified')
               .in('user_id', supplierIds.map(id => String(id)))
+              .eq('verified', true) // ✅ SOLO PROVEEDORES VERIFICADOS
             if (!usersError && usersData) {
               usersMap = Object.fromEntries(usersData.map(u => [u.user_id, { name: u.user_nm, logo_url: u.logo_url, descripcion_proveedor: u.descripcion_proveedor, verified: u.verified }]))
             }
@@ -108,7 +109,10 @@ export function useProducts() {
           return match ? match.value : key
         }
 
-        const mapped = (data || []).map(p => {
+        // ✅ FILTRAR: Solo productos con proveedor verificado (que existe en usersMap)
+        const mapped = (data || [])
+          .filter(p => p.supplier_id && usersMap[p.supplier_id]) // Solo productos de proveedores verificados
+          .map(p => {
           const firstImg = p.product_images && p.product_images.length > 0 ? p.product_images[0] : null
           const imagenPrincipal = firstImg?.image_url || '/placeholder-product.jpg'
           const thumbnailUrl = firstImg?.thumbnail_url || null

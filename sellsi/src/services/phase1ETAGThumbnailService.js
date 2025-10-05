@@ -41,12 +41,14 @@ export class Phase1ETAGThumbnailService {
     }
 
     try {
+      // 🛡️ FIX PGRST116: Usar .maybeSingle() en lugar de .single() para evitar
+      // error cuando no existe image_order=0 (producto eliminado o sin imágenes)
       const { data, error } = await supabase
         .from('product_images')
         .select('product_id,thumbnails,thumbnail_url,thumbnail_signature')
         .eq('product_id', productId)
         .eq('image_order', 0)
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.warn('[FASE1_ETAG] DB Error:', error?.message);
