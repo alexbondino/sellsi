@@ -192,8 +192,7 @@ const MyProducts = () => {
   useEffect(() => {
     const handleImagesReady = (event) => {
       const { productId, imageCount } = event.detail
-      // Evento de imágenes procesadas: mantener silencio por UX (registro para debugging)
-      // console.debug(`productImagesReady for ${productId}: ${imageCount} images processed`)
+      // Evento de imágenes procesadas: mantener silencio por UX (sin logs innecesarios)
     }
     
     window.addEventListener('productImagesReady', handleImagesReady)

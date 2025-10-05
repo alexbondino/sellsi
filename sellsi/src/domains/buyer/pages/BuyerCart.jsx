@@ -104,6 +104,24 @@ const BuyerCart = () => {
   const isAdvancedShippingMode = true;
   const shippingValidation = useShippingValidation(items, isAdvancedShippingMode);
 
+  // ⚡ FIX CRÍTICO: Mantener último valor conocido de userRegion para evitar
+  // pérdida de estado al minimizar/restaurar navegador
+  const [stableUserRegion, setStableUserRegion] = useState(null);
+  
+  React.useEffect(() => {
+    console.log('🔍 [BuyerCart] stableUserRegion effect:', {
+      hookValue: shippingValidation.userRegion,
+      currentStable: stableUserRegion,
+      willUpdate: shippingValidation.userRegion && shippingValidation.userRegion !== stableUserRegion
+    });
+    // Solo actualizar si hay un nuevo valor válido
+    if (shippingValidation.userRegion && shippingValidation.userRegion !== stableUserRegion) {
+      console.log('✅ [BuyerCart] Actualizando stableUserRegion a:', shippingValidation.userRegion);
+      setStableUserRegion(shippingValidation.userRegion);
+    }
+    // NO actualizar a null si ya teníamos un valor
+  }, [shippingValidation.userRegion, stableUserRegion]);
+
   // ===== DEBUGGING: Log para verificar que las regiones se están cargando =====
   React.useEffect(() => {
     if (isAdvancedShippingMode && items.length > 0) {
@@ -116,7 +134,7 @@ const BuyerCart = () => {
     items,
     productShipping,
     isAdvancedShippingMode ? null : realShippingCost,
-    shippingValidation.userRegion // Pasar región del usuario para cálculos reales
+    stableUserRegion // ⚡ Usar valor estable en lugar de directamente de shippingValidation
   );
 
   // Extraer valores para compatibilidad con código existente
@@ -714,7 +732,7 @@ const BuyerCart = () => {
                         onShippingCompatibilityError={() => setCompatibilityModalOpen(true)}
                         isCalculatingShipping={isCalculatingShippingCombined}
                         cartItems={items}
-                        userRegion={shippingValidation.userRegion}
+                        userRegion={stableUserRegion}
                         formatPrice={formatPrice}
                         formatDate={formatDate}
                         onCheckout={handleCheckout}
@@ -743,7 +761,7 @@ const BuyerCart = () => {
           open={compatibilityModalOpen}
           onClose={() => setCompatibilityModalOpen(false)}
           incompatibleProducts={shippingValidation.incompatibleProducts}
-          userRegion={shippingValidation.userRegion}
+          userRegion={stableUserRegion}
         />
       </Box>
     </ThemeProvider>

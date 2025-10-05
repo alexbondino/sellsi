@@ -89,11 +89,22 @@ const ProviderHome = () => {
     });
   };
 
-  // Ahora cuenta productos inactivos (is_active === false) con safety check
-  const productsOutOfStock = products.filter(p => p.is_active === false).length;
+  // ============================================================================
+  // CÁLCULO CORRECTO DE ESTADÍSTICAS
+  // ============================================================================
+  // 1. Filtrar productos realmente activos (excluir soft-deleted)
+  const activeProducts = products.filter(p => 
+    p.is_active === true && 
+    (!p.deletion_status || p.deletion_status === 'active')
+  );
 
-  // Ahora cuenta productos activos (is_active === true) con safety check
-  const productsActive = products.filter(p => p.is_active === true).length;
+  // 2. Productos activos (sin contar eliminados)
+  const productsActive = activeProducts.length;
+
+  // 3. Productos sin stock = activos con stock 0 (NO productos eliminados)
+  const productsOutOfStock = activeProducts.filter(p => 
+    (p.productqty === 0 || p.stock === 0)
+  ).length;
 
   // ============================================================================
   // EFECTOS - VALIDACIÓN Y RECARGA AUTOMÁTICA
@@ -157,7 +168,7 @@ const ProviderHome = () => {
                 <Box sx={{ mb: 4 }}>
                   <Suspense fallback={<DashboardSummaryFallback />}>
                     <DashboardSummary
-                      products={products}
+                      products={activeProducts}
                       totalSales={totalSales}
                       outOfStock={productsOutOfStock}
                       weeklyRequestsCount={weeklyRequestsCount}

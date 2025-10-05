@@ -15,11 +15,23 @@ export function useProductShippingValidationOnOpen({
 }) {
   const { validateSingleProduct, validateProductShipping, getUserRegionName, userRegion: hookUserRegion, isLoadingUserRegion } = useUnifiedShippingValidation();
 
-  const effectiveUserRegion = hookUserRegion || userRegionProp;
+  // ⚡ FIX CRÍTICO: Usar estado para mantener el último valor conocido
+  // NO recalcular en cada render para evitar pérdida temporal
+  const [effectiveUserRegion, setEffectiveUserRegion] = useState(() => hookUserRegion || userRegionProp);
   const [shippingValidation, setShippingValidation] = useState(null);
   const [isValidatingShipping, setIsValidatingShipping] = useState(false);
   const [justOpened, setJustOpened] = useState(false);
   const justOpenedTimerRef = useRef(null);
+
+  // Actualizar effectiveUserRegion solo cuando haya un valor válido nuevo
+  useEffect(() => {
+    const newRegion = hookUserRegion || userRegionProp;
+    if (newRegion && newRegion !== effectiveUserRegion) {
+      console.log('🔄 [useProductShippingValidationOnOpen] Actualizando effectiveUserRegion:', newRegion);
+      setEffectiveUserRegion(newRegion);
+    }
+    // NO actualizar a null si ya teníamos un valor
+  }, [hookUserRegion, userRegionProp, effectiveUserRegion]);
 
   const validateShippingOnDemand = useCallback(async () => {
     if (!effectiveUserRegion || !enrichedProduct || isLoadingRegions || isLoadingUserProfile) {

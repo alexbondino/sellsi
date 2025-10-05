@@ -31,6 +31,13 @@ export const useShippingValidation = (cartItems = [], isAdvancedMode = false) =>
   
   const [shippingStates, setShippingStates] = useState({});
   const [incompatibleProducts, setIncompatibleProducts] = useState([]);
+  
+  // ⚡ FIX CRÍTICO: Mantener último estado de compatibilidad conocido
+  // Para evitar que se deshabilite el botón cuando userRegion sea temporalmente null
+  const [stableCompatibilityState, setStableCompatibilityState] = useState({
+    isCompatible: false,
+    hasBeenValidated: false
+  });
 
   /**
    * Obtener nombre legible de la región - memoizado para evitar recreaciones
@@ -210,7 +217,14 @@ export const useShippingValidation = (cartItems = [], isAdvancedMode = false) =>
       return true;
     }
     
-    // Si no hay región del usuario, el carrito no es compatible
+    // ⚡ FIX CRÍTICO: Si ya validamos antes y no hay userRegion ahora (temporal),
+    // mantener el último estado compatible conocido
+    if (!optimizedUserRegion && stableCompatibilityState.hasBeenValidated) {
+      console.log('🔒 [useShippingValidation] Manteniendo compatibilidad estable (sin userRegion temporal):', stableCompatibilityState.isCompatible);
+      return stableCompatibilityState.isCompatible;
+    }
+    
+    // Si no hay región del usuario y nunca hemos validado, no es compatible
     if (!optimizedUserRegion) {
       return false;
     }
@@ -218,7 +232,7 @@ export const useShippingValidation = (cartItems = [], isAdvancedMode = false) =>
     // Si hay productos incompatibles, el carrito no es compatible
     const compatible = incompatibleProducts.length === 0;
     return compatible;
-  }, [isAdvancedMode, optimizedUserRegion, incompatibleProducts]);
+  }, [isAdvancedMode, optimizedUserRegion, incompatibleProducts, stableCompatibilityState]);
 
   /**
    * Verificar si la información de despacho está completa
@@ -264,11 +278,23 @@ export const useShippingValidation = (cartItems = [], isAdvancedMode = false) =>
 
       setShippingStates(newStates);
       setIncompatibleProducts(incompatible);
+      
+      // ⚡ FIX CRÍTICO: Guardar estado de compatibilidad estable
+      const isCompatible = incompatible.length === 0;
+      setStableCompatibilityState({
+        isCompatible,
+        hasBeenValidated: true
+      });
+      console.log('✅ [useShippingValidation] Compatibilidad estable actualizada:', isCompatible);
     } else if (!isAdvancedMode) {
       // Limpiar estados en modo simple
       setShippingStates({});
       setIncompatibleProducts([]);
+      setStableCompatibilityState({ isCompatible: false, hasBeenValidated: false });
     }
+    // ⚡ FIX CRÍTICO: NO limpiar estados si optimizedUserRegion es null temporalmente
+    // Esto previene pérdida de estado al minimizar/restaurar navegador
+    // El estado anterior se mantiene hasta que haya un nuevo userRegion válido
   }, [isAdvancedMode, cartItems.length, optimizedUserRegion]); // ✅ Solo dependencias primitivas
 
   return {

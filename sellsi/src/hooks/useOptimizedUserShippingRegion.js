@@ -12,22 +12,82 @@ import { getUserProfile } from '../services/user';
 
 // Cache global compartido entre todas las instancias
 // MEJORA: Ahora incluye cachedUserId para evitar contaminación entre cuentas.
+// FIX CRÍTICO: Persistencia en sessionStorage + optimistic updates para evitar
+// pérdida de estado al minimizar/restaurar navegador
 const globalCache = {
   userRegion: null,
   timestamp: null,
   isLoading: false,
   subscribers: new Set(),
-  CACHE_DURATION: 5 * 60 * 1000, // 5 minutos
+  CACHE_DURATION: 15 * 60 * 1000, // 15 minutos (extendido desde 5)
+  SESSION_CACHE_DURATION: 30 * 60 * 1000, // 30 minutos para sessionStorage
   cachedUserId: null, // Nuevo: userId asociado a userRegion
+  isStale: false, // Nuevo: indica si el cache necesita refresh pero mantiene valor
+  
+  // ⭐ NUEVO: Inicializar desde sessionStorage al cargar
+  init() {
+    if (typeof window === 'undefined' || typeof sessionStorage === 'undefined') return;
+    
+    try {
+      const cached = sessionStorage.getItem('user_shipping_region_cache');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        const age = Date.now() - parsed.timestamp;
+        
+        // Validar que no tenga más de 30 minutos
+        if (age < this.SESSION_CACHE_DURATION) {
+          this.userRegion = parsed.userRegion;
+          this.timestamp = parsed.timestamp;
+          this.cachedUserId = parsed.cachedUserId;
+          this.isStale = age > this.CACHE_DURATION; // Marcar como stale si > 15min pero < 30min
+          
+          console.log('✅ [useOptimizedUserShippingRegion] Cache restaurado desde sessionStorage:', {
+            userRegion: this.userRegion,
+            age: Math.round(age / 1000) + 's',
+            isStale: this.isStale
+          });
+        } else {
+          console.log('⚠️ [useOptimizedUserShippingRegion] Cache en sessionStorage expirado (>30min)');
+          sessionStorage.removeItem('user_shipping_region_cache');
+        }
+      }
+    } catch (e) {
+      console.warn('⚠️ [useOptimizedUserShippingRegion] Error al cargar cache:', e);
+    }
+  },
+  
+  // ⭐ NUEVO: Persistir en sessionStorage
+  persist() {
+    if (typeof window === 'undefined' || typeof sessionStorage === 'undefined') return;
+    
+    try {
+      if (this.userRegion) {
+        sessionStorage.setItem('user_shipping_region_cache', JSON.stringify({
+          userRegion: this.userRegion,
+          timestamp: this.timestamp,
+          cachedUserId: this.cachedUserId
+        }));
+      } else {
+        sessionStorage.removeItem('user_shipping_region_cache');
+      }
+    } catch (e) {
+      console.warn('⚠️ [useOptimizedUserShippingRegion] Error al persistir cache:', e);
+    }
+  }
 };
 
+// Inicializar cache desde sessionStorage al cargar el módulo
+globalCache.init();
+
 // Función para notificar a todos los subscribers
+// FIX: Ahora incluye flag isStale para optimistic updates
 const notifySubscribers = () => {
   globalCache.subscribers.forEach(callback => {
     try {
       callback({
         userRegion: globalCache.userRegion,
-        isLoading: globalCache.isLoading
+        isLoading: globalCache.isLoading,
+        isStale: globalCache.isStale // Indica si el valor es viejo pero válido
       });
     } catch (error) {
       console.error('Error notifying subscriber:', error);
@@ -45,10 +105,25 @@ const fetchUserRegionCentralized = async () => {
   })();
 
   // Si user cambió respecto al cache, invalidar inmediatamente
-  if (globalCache.cachedUserId && globalCache.cachedUserId !== currentUserId) {
+  // ⚡ FIX CRÍTICO: Solo invalidar si AMBOS existen y son DIFERENTES
+  // No invalidar si uno es null (puede ser timing issue de localStorage)
+  if (globalCache.cachedUserId && currentUserId && globalCache.cachedUserId !== currentUserId) {
+    console.log('🔄 [useOptimizedUserShippingRegion] Usuario cambió, invalidando cache:', {
+      cached: globalCache.cachedUserId,
+      current: currentUserId
+    });
     globalCache.userRegion = null;
     globalCache.timestamp = null;
-    globalCache.cachedUserId = currentUserId || null;
+    globalCache.cachedUserId = currentUserId;
+    globalCache.isStale = false;
+    globalCache.persist(); // Persistir cambios
+  } else if (!globalCache.cachedUserId && currentUserId) {
+    // Si no hay cachedUserId pero hay currentUserId, actualizar sin borrar
+    console.log('🔧 [useOptimizedUserShippingRegion] Sincronizando cachedUserId sin borrar región');
+    globalCache.cachedUserId = currentUserId;
+    if (globalCache.userRegion) {
+      globalCache.persist(); // Persistir con el userId actualizado
+    }
   }
 
   // Si ya está cargando, esperar a que termine
@@ -67,9 +142,50 @@ const fetchUserRegionCentralized = async () => {
   if (currentUserId &&
       globalCache.userRegion !== null &&
       globalCache.cachedUserId === currentUserId &&
-      globalCache.timestamp &&
-      Date.now() - globalCache.timestamp < globalCache.CACHE_DURATION) {
-    return globalCache.userRegion;
+      globalCache.timestamp) {
+    
+    const cacheAge = Date.now() - globalCache.timestamp;
+    
+    // ✅ Cache fresco: retornar inmediatamente
+    if (cacheAge < globalCache.CACHE_DURATION) {
+      globalCache.isStale = false;
+      return globalCache.userRegion;
+    }
+    
+    // ⚡ OPTIMISTIC UPDATE: Cache expirado pero válido (< 30min)
+    // Retornar el valor viejo MIENTRAS refrescamos en background
+    if (cacheAge < globalCache.SESSION_CACHE_DURATION) {
+      console.log('⚡ [useOptimizedUserShippingRegion] Cache stale, usando valor anterior mientras se refresca');
+      globalCache.isStale = true;
+      notifySubscribers(); // Notificar que tenemos valor stale
+      
+      // Refrescar en background (no bloqueante)
+      (async () => {
+        try {
+          globalCache.isLoading = true;
+          const { data: profile, error } = await getUserProfile(currentUserId);
+          
+          if (!error && profile?.shipping_region) {
+            globalCache.userRegion = profile.shipping_region;
+            globalCache.timestamp = Date.now();
+            globalCache.isStale = false;
+            globalCache.persist();
+            notifySubscribers();
+            console.log('✅ [useOptimizedUserShippingRegion] Cache refrescado en background');
+          }
+        } catch (err) {
+          console.error('⚠️ [useOptimizedUserShippingRegion] Error al refrescar en background:', err);
+        } finally {
+          globalCache.isLoading = false;
+        }
+      })();
+      
+      // Retornar el valor viejo inmediatamente (sin esperar)
+      return globalCache.userRegion;
+    }
+    
+    // Cache muy viejo (> 30min): forzar refresh bloqueante
+    console.log('⚠️ [useOptimizedUserShippingRegion] Cache muy viejo (>30min), refresh bloqueante');
   }
 
   // Si no hay usuario autenticado -> limpiar y salir
@@ -77,6 +193,8 @@ const fetchUserRegionCentralized = async () => {
     globalCache.userRegion = null;
     globalCache.timestamp = Date.now();
     globalCache.cachedUserId = null;
+    globalCache.isStale = false;
+    globalCache.persist();
     notifySubscribers();
     return null;
   }
@@ -88,18 +206,29 @@ const fetchUserRegionCentralized = async () => {
     const { data: profile, error } = await getUserProfile(currentUserId);
     if (error) {
       console.error('[useOptimizedUserShippingRegion] Error fetching profile:', error);
-      globalCache.userRegion = null;
+      // ⚡ OPTIMISTIC: NO borrar el valor anterior si hay error
+      // Solo mantener el timestamp viejo para intentar de nuevo más tarde
+      if (!globalCache.userRegion) {
+        globalCache.userRegion = null; // Solo si no había valor
+      }
+      globalCache.isStale = true; // Marcar como stale por error
     } else {
       globalCache.userRegion = profile?.shipping_region || null;
+      globalCache.timestamp = Date.now();
+      globalCache.isStale = false;
+      globalCache.persist(); // Persistir nuevo valor
     }
-    globalCache.timestamp = Date.now();
     globalCache.cachedUserId = currentUserId;
     return globalCache.userRegion;
   } catch (error) {
     console.error('[useOptimizedUserShippingRegion] Unexpected error:', error);
-    globalCache.userRegion = null;
+    // ⚡ OPTIMISTIC: Mantener valor anterior si existe
+    if (!globalCache.userRegion) {
+      globalCache.userRegion = null;
+    }
     globalCache.cachedUserId = currentUserId;
-    return null;
+    globalCache.isStale = true;
+    return globalCache.userRegion;
   } finally {
     globalCache.isLoading = false;
     notifySubscribers();
@@ -111,14 +240,19 @@ const fetchUserRegionCentralized = async () => {
  * Mantiene la misma interfaz pero usa caché global
  */
 export const useOptimizedUserShippingRegion = () => {
-  const [userRegion, setUserRegion] = useState(globalCache.userRegion);
+  const [userRegion, setUserRegion] = useState(() => {
+    console.log('🔧 [useOptimizedUserShippingRegion] Hook montándose, globalCache.userRegion:', globalCache.userRegion);
+    return globalCache.userRegion;
+  });
   const [isLoadingUserRegion, setIsLoadingUserRegion] = useState(globalCache.isLoading);
+  const [isStale, setIsStale] = useState(globalCache.isStale);
   const subscriberRef = useRef(null);
 
   // Función para actualizar el estado local cuando cambia el cache global
   const updateLocalState = useCallback((newState) => {
     setUserRegion(newState.userRegion);
     setIsLoadingUserRegion(newState.isLoading);
+    setIsStale(newState.isStale || false);
   }, []);
 
   // Función para refrescar manualmente
@@ -155,6 +289,8 @@ export const useOptimizedUserShippingRegion = () => {
         // Invalidar cache cuando cambia el usuario
         globalCache.userRegion = null;
         globalCache.timestamp = null;
+        globalCache.isStale = false;
+        globalCache.persist();
         fetchUserRegionCentralized();
       }
     };
@@ -163,14 +299,48 @@ export const useOptimizedUserShippingRegion = () => {
     return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
+  // ⭐ NUEVO: Page Visibility API - Detectar cuando se restaura la ventana
+  // Este es el FIX CLAVE para el bug de minimizar/restaurar
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        // Página restaurada desde background
+        console.log('👁️ [useOptimizedUserShippingRegion] Página restaurada, verificando cache...');
+        
+        // Si el cache está stale o expirado, refrescar suavemente
+        if (globalCache.timestamp) {
+          const cacheAge = Date.now() - globalCache.timestamp;
+          
+          if (cacheAge > globalCache.CACHE_DURATION) {
+            console.log('🔄 [useOptimizedUserShippingRegion] Cache expirado tras restaurar, refrescando...');
+            // El fetch ya maneja optimistic updates, no perderemos el valor
+            fetchUserRegionCentralized();
+          } else {
+            console.log('✅ [useOptimizedUserShippingRegion] Cache aún válido tras restaurar');
+          }
+        } else if (!globalCache.isLoading && !globalCache.userRegion) {
+          // Si no hay cache y no está cargando, inicializar
+          console.log('🔄 [useOptimizedUserShippingRegion] Sin cache tras restaurar, inicializando...');
+          fetchUserRegionCentralized();
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, []);
+
   return { 
     userRegion, 
     isLoadingUserRegion,
+    isStale, // Nuevo: indica si el valor es viejo pero aún válido
     refreshRegion,
     // Función para invalidar caché manualmente (para usar desde Profile)
     invalidateUserCache: () => {
       globalCache.userRegion = null;
       globalCache.timestamp = null;
+      globalCache.isStale = false;
+      globalCache.persist();
       // Mantener cachedUserId: se fuerza refetch para ese usuario
       notifySubscribers();
     },
@@ -181,6 +351,8 @@ export const useOptimizedUserShippingRegion = () => {
       const normalized = newRegion.trim();
       globalCache.userRegion = normalized;
       globalCache.timestamp = Date.now();
+      globalCache.isStale = false;
+      globalCache.persist();
       // Asignar userId actual al primar
       try { globalCache.cachedUserId = localStorage.getItem('user_id'); } catch (e) {}
       notifySubscribers();
@@ -193,6 +365,8 @@ if (typeof window !== 'undefined') {
   window.invalidateUserShippingRegionCache = () => {
     globalCache.userRegion = null;
     globalCache.timestamp = null;
+    globalCache.isStale = false;
+    globalCache.persist();
     // No borramos cachedUserId para que detecte mismatch si cambia user posteriormente
     notifySubscribers();
   };
@@ -200,6 +374,8 @@ if (typeof window !== 'undefined') {
     if (!region) return;
     globalCache.userRegion = region;
     globalCache.timestamp = Date.now();
+    globalCache.isStale = false;
+    globalCache.persist();
     try { globalCache.cachedUserId = localStorage.getItem('user_id'); } catch(e) {}
     notifySubscribers();
   };

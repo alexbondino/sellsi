@@ -151,7 +151,7 @@ export const useSupplierDashboard = () => {
           const p = (async () => {
             return await supabase
               .from('products')
-              .select('productid, price, productqty, is_active, createddt')
+              .select('productid, price, productqty, is_active, createddt, deletion_status')
               .eq('supplier_id', supplierId)
           })()
           __inFlightMap.set(productsKey, p)
@@ -228,10 +228,13 @@ export const useSupplierDashboard = () => {
 
         if (quoteError) throw quoteError
 
-        // Calcular métricas
+        // Calcular métricas (excluyendo productos soft-deleted)
+        const activeProductMetrics = productMetrics.filter(p => 
+          !p.deletion_status || p.deletion_status === 'active'
+        )
         const metrics = {
-          totalProducts: productMetrics.length,
-          activeProducts: productMetrics.filter(p => p.is_active).length,
+          totalProducts: activeProductMetrics.length,
+          activeProducts: activeProductMetrics.filter(p => p.is_active).length,
           totalSales: orderMetrics.filter(o => o.status === 'completed').length,
           totalRevenue: monthlyRevenue,
           averageRating: 0, // Se puede agregar después
@@ -333,15 +336,20 @@ export const useSupplierDashboard = () => {
       } else {
         const { data: fetched, error } = await supabase
           .from('products')
-          .select('category')
+          .select('category, deletion_status')
           .eq('supplier_id', supplierId)
 
         if (error) throw error
         data = fetched || []
       }
 
+      // ⚠️ Filtrar productos soft-deleted
+      const activeProducts = data.filter(p => 
+        !p.deletion_status || p.deletion_status === 'active'
+      )
+
       const categoryCount = {}
-      data.forEach(product => {
+      activeProducts.forEach(product => {
         const category = product.category || 'Sin categoría'
         categoryCount[category] = (categoryCount[category] || 0) + 1
       })

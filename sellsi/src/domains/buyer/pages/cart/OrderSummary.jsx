@@ -67,14 +67,35 @@ const OrderSummary = ({
 
   // Determinar si el botón debe estar deshabilitado
   const isButtonDisabled = () => {
+    const reasons = {
+      isCheckingOut,
+      noCartStats: !cartStats,
+      isEmpty: cartStats?.isEmpty,
+      isLoading: isAdvancedShippingMode && shippingValidation?.isLoading,
+      noUserRegion: isAdvancedShippingMode && !userRegion,
+      notCompatible: isAdvancedShippingMode && shippingValidation && !shippingValidation.isCartCompatible
+    };
+    
     const disabled = (
       isCheckingOut ||
       !cartStats ||
       cartStats.isEmpty ||
       (isAdvancedShippingMode && shippingValidation && shippingValidation.isLoading) || // ✅ NUEVO: deshabilitar si está validando
-      (isAdvancedShippingMode && shippingValidation && !shippingValidation.userRegion) || // ✅ NUEVO: deshabilitar si no hay userRegion
+      (isAdvancedShippingMode && !userRegion) || // ✅ CAMBIO: usar la prop userRegion (stableUserRegion) en lugar de shippingValidation.userRegion
       (isAdvancedShippingMode && shippingValidation && !shippingValidation.isCartCompatible)
     )
+    
+    console.log('🔘 [OrderSummary] Button disabled check:', {
+      disabled,
+      reasons,
+      userRegion,
+      shippingValidation: {
+        userRegion: shippingValidation?.userRegion,
+        isLoading: shippingValidation?.isLoading,
+        isCartCompatible: shippingValidation?.isCartCompatible
+      },
+      isAdvancedShippingMode
+    });
     
     return disabled
   }
@@ -160,7 +181,7 @@ const OrderSummary = ({
           >
             {isCheckingOut ? 'Procesando...' : 
              (isAdvancedShippingMode && shippingValidation && shippingValidation.isLoading) ? 'Validando envíos...' :
-             (isAdvancedShippingMode && shippingValidation && !shippingValidation.userRegion) ? 'Cargando perfil...' :
+             (isAdvancedShippingMode && !userRegion) ? 'Cargando perfil...' :
              'Continuar al pago'}
           </Button>
         </motion.div>

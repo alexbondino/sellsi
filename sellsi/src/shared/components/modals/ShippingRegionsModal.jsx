@@ -621,7 +621,7 @@ const ShippingRegionsModal = ({
             py: isMobile ? 1.5 : 1
           }}
         >
-          {loading ? 'Guardando...' : (isMobile ? 'Guardar' : 'Guardar Configuración')}
+          {loading ? 'Cargando...' : (isMobile ? 'Confirmar' : 'Confirmar')}
         </Button>
       </DialogActions>
     </Dialog>

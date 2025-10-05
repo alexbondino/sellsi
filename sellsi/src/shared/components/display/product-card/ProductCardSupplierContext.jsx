@@ -8,6 +8,8 @@ import {
   CircularProgress,
   LinearProgress,
   Backdrop,
+  useTheme,
+  useMediaQuery,
 } from '@mui/material';
 // Iconos
 import EditIcon from '@mui/icons-material/Edit';
@@ -58,7 +60,7 @@ const ProductCardSupplierContext = React.memo(
   activo, // estado actual (is_active mapeado a activo en uiProducts)
     } = product;
 
-    // Unify source of price_tiers: prefer product's, if not, from hook (same logic as BuyerContext)
+  // Unify source of price_tiers: prefer product's, if not, from hook (same logic as BuyerContext)
   const price_tiers = useMemo(() => {
     const tiers = product.priceTiers || []
     // Normalize potential shapes: {min,max,precio} or {min_quantity,max_quantity,price}
@@ -77,6 +79,18 @@ const ProductCardSupplierContext = React.memo(
   const isTierProduct = (product.product_type === 'tier' || product.tipo === 'tier' || hasAnyTiers)
   // Only show loading when explicitly marked as loading
   const isPending = loadingTiers
+
+    // Theme + breakpoints para truncado responsive del nombre
+    const theme = useTheme();
+    const isLg = useMediaQuery(theme.breakpoints.up('lg'));
+    const isMd = useMediaQuery(theme.breakpoints.between('md', 'lg'));
+
+    // Truncar longitud según breakpoint: lg -> 30, md -> 20, sm/xs -> 20
+    const truncatedName = useMemo(() => {
+      if (!nombre) return '';
+      const max = isLg ? 30 : 20;
+      return nombre.length > max ? nombre.slice(0, max - 1).trim() + '…' : nombre;
+    }, [nombre, isLg, isMd]);
 
     // Configure menu actions
     // Reemplazamos VisibilityIcon por ícono de pausa y mantenemos label
@@ -214,13 +228,15 @@ const ProductCardSupplierContext = React.memo(
               fontSize: '0.95rem',
               lineHeight: 1.3,
               display: '-webkit-box',
-              WebkitLineClamp: 2,
+              WebkitLineClamp: 1,
               WebkitBoxOrient: 'vertical',
               overflow: 'hidden',
-              minHeight: '2.6rem',
+              minHeight: '1.3rem',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'normal',
             }}
           >
-            {nombre}
+            {truncatedName}
           </Typography>
           {/* Precios */}
           <Box sx={{ mb: 2 }}>

@@ -306,7 +306,11 @@ export const useSupplierProducts = (options = {}) => {
 
   // 🔄 ESTADÍSTICAS (recalculadas DESPUÉS de construir uiProducts para asegurar que priceTiers estén presentes)
   const stats = useMemo(() => {
-    const sourceProducts = crud.products // productos crudos para estados básicos
+    // ⚠️ IMPORTANTE: Filtrar productos soft-deleted ANTES de calcular estadísticas
+    const activeSourceProducts = crud.products.filter(p => 
+      !p.deletion_status || p.deletion_status === 'active'
+    )
+    const sourceProducts = activeSourceProducts // productos crudos SIN eliminados
     const enrichedProducts = uiProducts   // productos enriquecidos (asegura priceTiers en memoria)
 
     const basicStats = {
