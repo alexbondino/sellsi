@@ -2,7 +2,6 @@
 // Barrel exports para el dominio de autenticación
 
 // Componentes principales mínimos (evitar re-export masivo)
-export { default as Login } from './components/Login';
 export { default as Register } from './components/Register';
 // Otros componentes deben importarse directamente para reducir fan-out.
 // Intencionalmente NO se exportan: AuthCallback, PrivateRoute, AccountRecovery, OnboardingForm, Timer, VerificationCodeInput
@@ -16,7 +15,7 @@ export {
 } from './wizard/steps.config';
 
 // Hooks / services / tipos específicos (sin wildcard)
-export { useLoginForm } from './hooks/useLoginForm';
+export { useLoginForm } from '../../auth/login/hooks/useLoginForm.js';
 export { default as useTermsModal } from './hooks/useTermsModal';
 export { default as authService } from './services/authService.js';
 export * from './types';
