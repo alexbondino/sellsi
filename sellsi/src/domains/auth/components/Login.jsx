@@ -17,9 +17,8 @@ import { Visibility, VisibilityOff } from '@mui/icons-material';
 
 import { PrimaryButton } from '../../../shared/components';
 import { useLoginForm } from '../hooks';
-import Recuperar from './AccountRecovery';
+import Recuperar from '../../../auth/account-recovery/components/AccountRecovery';
 import Register from './Register';
-import { supabase } from '../../../services/supabase';
 
 // ✅ CONSTANTS
 const CONSTANTS = {
