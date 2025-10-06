@@ -53,6 +53,8 @@ class NotificationService {
   // ===== CREATE OPERATIONS (Business logic) =====
   async notifyNewOrder(orderRow) {
     if (!orderRow) return;
+  const status = (orderRow.payment_status || orderRow.paymentStatus || orderRow.status || '').toLowerCase();
+  if (status !== 'paid') return;
     const buyerId = orderRow.user_id || orderRow.buyer_id || null;
     let items = [];
     if (orderRow.items) items = parseOrderItems(orderRow.items);
@@ -69,11 +71,11 @@ class NotificationService {
             p_order_id: orderRow.id || orderRow.order_id || null,
             p_product_id: it.product_id || null,
             p_type: 'order_new',
-            p_order_status: 'pending',
+            p_order_status: 'paid',
             p_role_context: 'buyer',
             p_context_section: 'buyer_orders',
             p_title: 'Se registró tu compra',
-            p_body: it.name ? `Producto: ${it.name}` : 'Nuevo producto comprado',
+            p_body: 'Pago confirmado',
             p_metadata: { quantity: it.quantity, price_at_addition: it.price_at_addition }
           }
         });
@@ -98,11 +100,11 @@ class NotificationService {
             p_order_id: orderRow.id || orderRow.order_id || null,
             p_product_id: null,
             p_type: 'order_new',
-            p_order_status: 'pending',
+            p_order_status: 'paid',
             p_role_context: 'supplier',
             p_context_section: 'supplier_orders',
-            p_title: 'Nuevo pedido pendiente',
-            p_body: 'Revisa y acepta o rechaza los productos.',
+            p_title: 'Nuevo pedido pagado',
+            p_body: 'Revisa y prepara el despacho.',
             p_metadata: { buyer_id: buyerId }
           }
         });

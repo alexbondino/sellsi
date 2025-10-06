@@ -386,6 +386,7 @@ serve((req: Request) => withMetrics('process-khipu-webhook', req, async () => {
               quantity: Number(it.quantity || 1),
               price_at_addition: Number(it.price_at_addition || it.price || 0)
             })).filter(x => x.product_id);
+            const supplierMeta = new Map<string, { supplier_id: string; buyer_id: string; products: string[] }>();
             for (const it of normForNotify) {
               try {
                 const { error: notifyErr } = await supabase.rpc('create_notification', {
@@ -405,6 +406,33 @@ serve((req: Request) => withMetrics('process-khipu-webhook', req, async () => {
                 } as any);
                 if (notifyErr) console.error('⚠️ Error creando notificación de compra pagada:', notifyErr);
               } catch (nEx) { console.error('⚠️ Excepción notificando compra pagada', nEx); }
+              if (it.supplier_id) {
+                const entry = supplierMeta.get(it.supplier_id) || { supplier_id: it.supplier_id, buyer_id: buyerId, products: [] };
+                if (it.product_id) entry.products.push(it.product_id);
+                supplierMeta.set(it.supplier_id, entry);
+              }
+            }
+            for (const meta of supplierMeta.values()) {
+              try {
+                const { error: notifySupplierErr } = await supabase.rpc('create_notification', {
+                  p_payload: {
+                    p_user_id: meta.supplier_id,
+                    p_supplier_id: meta.supplier_id,
+                    p_order_id: orderId,
+                    p_product_id: null,
+                    p_type: 'order_new',
+                    p_order_status: 'paid',
+                    p_role_context: 'supplier',
+                    p_context_section: 'supplier_orders',
+                    p_title: 'Nuevo pedido pagado',
+                    p_body: 'Tienes productos listos para despacho.',
+                    p_metadata: { buyer_id: meta.buyer_id, product_ids: meta.products }
+                  }
+                } as any);
+                if (notifySupplierErr) console.error('⚠️ Error creando notificación supplier paid:', notifySupplierErr);
+              } catch (supNotifEx) {
+                console.error('⚠️ Excepción notificando supplier paid', supNotifEx);
+              }
             }
           } catch (notifEx) { console.error('⚠️ Error preparando notificaciones buyer paid', notifEx); }
         }

@@ -474,7 +474,7 @@ const BuyerOrders = () => {
                         </Typography>
                         {/* Mensaje de contacto junto al número de pedido */}
                         <Typography variant="body2" color="text.secondary" sx={{ ml: 1, display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                          - ¿Tienes algún problema con tu pedido? No dudes en
+                            ¿Tienes algún problema con tu pedido? No dudes en
                           <Button
                             variant="text"
                             size="small"

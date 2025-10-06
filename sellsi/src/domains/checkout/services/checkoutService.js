@@ -6,8 +6,6 @@ import { supabase } from '../../../services/supabase';
 import { PAYMENT_STATUS } from '../constants/paymentMethods';
 import { trackUserAction } from '../../../services/security';
 import { default as khipuService } from './khipuService';
-// Notificaciones de nueva orden (per-item buyer + supplier aggregate)
-import { orderService } from '../../../services/user/orderService';
 
 class CheckoutService {
   // ===== ÓRDENES =====
@@ -107,14 +105,6 @@ class CheckoutService {
         .single();
 
       if (error) throw error;
-
-      // Disparar notificaciones de creación (no bloquea el retorno)
-      try {
-        // Esperamos para asegurar consistencia inicial; si prefieres desvincular completamente, quitar await
-        await orderService.notifyNewOrder(data);
-      } catch (e) {
-        console.error('[CheckoutService] notifyNewOrder failed:', e);
-      }
 
       return data;
     } catch (error) {
