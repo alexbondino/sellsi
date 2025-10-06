@@ -33,3 +33,5 @@ dist-ssr
 /Documentacion
 /scripts
 /sql supabase
+# Recovered folders
+/sql

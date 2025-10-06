@@ -1,3 +1,9 @@
 /scripts
 /sql supabase
 *.md
+
+# Recovered folders
+scripts/
+sellsi/Documentacion/
+sellsi/scripts/
+sellsi/sql/
