@@ -152,7 +152,7 @@ class CartService {
               description,
               supplier_id,
               productqty,
-              product_images (image_url),
+              product_images (image_url, thumbnail_url, thumbnails, thumbnail_signature),
               product_delivery_regions (
                 id,
                 region,
@@ -197,7 +197,7 @@ class CartService {
               description,
               supplier_id,
               productqty,
-              product_images (image_url),
+              product_images (image_url, thumbnail_url, thumbnails, thumbnail_signature),
               product_delivery_regions (
                 id,
                 region,
@@ -265,6 +265,16 @@ class CartService {
           imagen: item.products?.product_images?.[0]?.image_url || null,
           image_url: item.products?.product_images?.[0]?.image_url || null,
           thumbnail_url: item.products?.product_images?.[0]?.thumbnail_url || null,
+          thumbnailUrl: item.products?.product_images?.[0]?.thumbnail_url || null,
+          thumbnails: (() => {
+            const raw = item.products?.product_images?.[0]?.thumbnails;
+            if (!raw) return null;
+            if (typeof raw === 'string') {
+              try { return JSON.parse(raw); } catch { return null; }
+            }
+            return raw;
+          })(),
+          thumbnail_signature: item.products?.product_images?.[0]?.thumbnail_signature || null,
 
           price: item.offered_price || item.products?.price || null,
           precio: item.offered_price || item.products?.price || null,
@@ -663,7 +673,7 @@ class CartService {
             description,
             supplier_id,
             productqty,
-            product_images (image_url, thumbnail_url),
+            product_images (image_url, thumbnail_url, thumbnails, thumbnail_signature),
             product_delivery_regions (id, region, price, delivery_days),
             users!products_supplier_id_fkey (user_nm, logo_url, verified)
           )
@@ -699,6 +709,16 @@ class CartService {
         imagen: data.products?.product_images?.[0]?.image_url || null,
         image_url: data.products?.product_images?.[0]?.image_url || null,
         thumbnail_url: data.products?.product_images?.[0]?.thumbnail_url || null,
+        thumbnailUrl: data.products?.product_images?.[0]?.thumbnail_url || null,
+        thumbnails: (() => {
+          const raw = data.products?.product_images?.[0]?.thumbnails;
+          if (!raw) return null;
+          if (typeof raw === 'string') {
+            try { return JSON.parse(raw); } catch { return null; }
+          }
+          return raw;
+        })(),
+        thumbnail_signature: data.products?.product_images?.[0]?.thumbnail_signature || null,
         price: data.offered_price || data.products?.price || null,
         precio: data.offered_price || data.products?.price || null,
         originalPrice: data.products?.price || null,
