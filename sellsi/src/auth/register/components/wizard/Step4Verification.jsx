@@ -1,6 +1,6 @@
 import React from 'react';
 import { Box, Typography } from '@mui/material';
-import { PrimaryButton } from '../../../shared/components';
+import { PrimaryButton } from '../../../../shared/components';
 
 const Step4Verification = ({ email, onBack }) => {
   return (

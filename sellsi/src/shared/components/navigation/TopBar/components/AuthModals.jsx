@@ -6,7 +6,7 @@ const Login = React.lazy(() =>
   import('../../../../../auth/login/components/Login')
 );
 const Register = React.lazy(() =>
-  import('../../../../../domains/auth/components/Register')
+  import('../../../../../auth/register/components/Register')
 );
 
 /**

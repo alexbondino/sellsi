@@ -6,12 +6,16 @@ import { useTheme } from '@mui/material/styles';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 import { Stepper } from '../../../shared/components/navigation/wizard';
-import PrimaryButton from '../../../shared/components/forms/PrimaryButton';
-import { Wizard, useWizard } from '../../../shared/components/navigation/wizard';
+import {
+  Wizard,
+  useWizard,
+} from '../../../shared/components/navigation/wizard';
 // Importes directos de pasos (el barrel público ya no los expone)
 // Lazy imports para evitar carga inicial y duplicación estática con steps.config
-const Step1Account = React.lazy(() => import('../wizard/Step1Account'));
-const Step4Verification = React.lazy(() => import('../wizard/Step4Verification'));
+const Step1Account = React.lazy(() => import('./wizard/Step1Account'));
+const Step4Verification = React.lazy(() =>
+  import('./wizard/Step4Verification')
+);
 import { useBanner } from '../../../shared/components/display/banners/BannerContext';
 
 export default function Register({ open, onClose }) {

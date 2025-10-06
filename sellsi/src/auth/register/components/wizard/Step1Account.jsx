@@ -11,12 +11,18 @@ import {
 } from '@mui/material';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
-import { PasswordRequirements, PrimaryButton } from '../../../shared/components';
-import { supabase } from '../../../services/supabase';
+import {
+  PasswordRequirements,
+  PrimaryButton,
+} from '../../../../shared/components';
+import { supabase } from '../../../../services/supabase';
 // Importa useBanner para mostrar mensajes de error/éxito si es necesario
-import { useBanner } from '../../../shared/components/display/banners/BannerContext';
-import { TermsAndConditionsModal, PrivacyPolicyModal } from '../../../shared/components/modals';
-import { useTermsModal } from '../hooks/useTermsModal';
+import { useBanner } from '../../../../shared/components/display/banners/BannerContext';
+import {
+  TermsAndConditionsModal,
+  PrivacyPolicyModal,
+} from '../../../../shared/components/modals';
+import { useTermsModal } from '../../../../domains/auth/hooks/useTermsModal';
 
 const Step1Account = ({
   formData,
@@ -30,7 +36,14 @@ const Step1Account = ({
 }) => {
   const theme = useTheme();
   const { showBanner } = useBanner(); // Hook para mostrar banners
-  const { isTermsModalOpen, openTermsModal, closeTermsModal, isPrivacyModalOpen, openPrivacyModal, closePrivacyModal } = useTermsModal();
+  const {
+    isTermsModalOpen,
+    openTermsModal,
+    closeTermsModal,
+    isPrivacyModalOpen,
+    openPrivacyModal,
+    closePrivacyModal,
+  } = useTermsModal();
   const {
     correo,
     contrasena,
@@ -281,14 +294,14 @@ const Step1Account = ({
           label={
             <span style={{ fontSize: 15 }}>
               Acepto los{' '}
-              <Link 
+              <Link
                 component="button"
-                onClick={(e) => {
+                onClick={e => {
                   e.preventDefault();
                   openTermsModal();
                 }}
-                sx={{ 
-                  color: '#1976d2', 
+                sx={{
+                  color: '#1976d2',
                   fontWeight: 700,
                   textDecoration: 'underline',
                   cursor: 'pointer',
@@ -298,20 +311,20 @@ const Step1Account = ({
                   font: 'inherit',
                   '&:hover': {
                     color: '#41B6E6',
-                  }
+                  },
                 }}
               >
                 Términos y Condiciones
               </Link>{' '}
               y la{' '}
-              <Link 
+              <Link
                 component="button"
-                onClick={(e) => {
+                onClick={e => {
                   e.preventDefault();
                   openPrivacyModal();
                 }}
-                sx={{ 
-                  color: '#1976d2', 
+                sx={{
+                  color: '#1976d2',
                   fontWeight: 700,
                   textDecoration: 'underline',
                   cursor: 'pointer',
@@ -321,7 +334,7 @@ const Step1Account = ({
                   font: 'inherit',
                   '&:hover': {
                     color: '#41B6E6',
-                  }
+                  },
                 }}
               >
                 Política de Privacidad
@@ -377,13 +390,11 @@ const Step1Account = ({
           Volver
         </PrimaryButton>
       </form>
-
       {/* Modal de Términos y Condiciones */}
-      <TermsAndConditionsModal 
-        open={isTermsModalOpen} 
-        onClose={closeTermsModal} 
+      <TermsAndConditionsModal
+        open={isTermsModalOpen}
+        onClose={closeTermsModal}
       />
-      
       {/* Modal de Política de Privacidad */}
       <PrivacyPolicyModal
         open={isPrivacyModalOpen}
