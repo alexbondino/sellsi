@@ -6,7 +6,7 @@
  * Versión simplificada que mantiene solo las funcionalidades esenciales:
  * - Auth prefetch (login/register)
  * - Role prefetch (supplier/buyer routes)
- * 
+ *
  * ELIMINADO:
  * - Mapeo completo de rutas
  * - Hover prefetch
@@ -18,10 +18,16 @@ import { useEffect, useRef } from 'react';
 
 // Solo las rutas críticas para auth y navegación por roles
 const CRITICAL_ROUTES = new Map([
-  ['/login', () => import('../domains/auth/components/Login')],
+  ['/login', () => import('../auth/login/components/Login')],
   ['/crear-cuenta', () => import('../domains/auth/components/Register')],
-  ['/buyer/marketplace', () => import('../domains/buyer/pages/MarketplaceBuyer')],
-  ['/supplier/home', () => import('../domains/supplier/pages/home/ProviderHome')],
+  [
+    '/buyer/marketplace',
+    () => import('../domains/buyer/pages/MarketplaceBuyer'),
+  ],
+  [
+    '/supplier/home',
+    () => import('../domains/supplier/pages/home/ProviderHome'),
+  ],
 ]);
 
 export const registerPrefetchRoute = (routePath, importerFn) => {
