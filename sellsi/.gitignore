@@ -26,3 +26,10 @@ dist-ssr
 
 # Sentry Config File
 .env.sentry-build-plugin
+
+# files
+/bundle-analysis
+/coverage
+/Documentacion
+/scripts
+/sql supabase
