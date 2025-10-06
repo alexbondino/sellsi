@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-  "build": "node scripts/generate-flag-subset.cjs && vite build && node scripts/extract-critical-css.mjs && node scripts/inline-critical-css.mjs",
+    "build": "vite build",
     "build:analyze": "vite build --config ./analyze-bundle.js",
     "build:cdn": "vite build --config ./vite.config.cdn.js",
     "build:cdn-analyze": "vite build --config ./analyze-bundle.js && vite build --config ./vite.config.cdn.js",
@@ -43,7 +43,6 @@
     "@tanstack/react-query": "^5.83.0",
     "@tanstack/react-query-devtools": "^5.83.0",
     "bcryptjs": "^3.0.2",
-    
     "dotenv": "^16.5.0",
     "flag-icons": "^7.2.3",
     "framer-motion": "^12.16.0",
@@ -86,6 +85,7 @@
     "buffer": "^6.0.3",
     "cross-env": "^7.0.3",
     "crypto-browserify": "^3.12.1",
+    "critical": "^5.1.1",
     "eslint": "^9.25.0",
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.19",
@@ -100,7 +100,7 @@
     "url": "^0.11.4",
     "util": "^0.12.5",
     "vite": "^6.3.5",
-    "vitest": "^3.2.2"
-  ,"@emotion/server": "^11.11.0"
+    "vitest": "^3.2.2",
+    "@emotion/server": "^11.11.0"
   }
 }
