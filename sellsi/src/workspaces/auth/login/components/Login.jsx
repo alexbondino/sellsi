@@ -15,7 +15,7 @@ import {
 } from '@mui/material';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
 
-import { PrimaryButton } from '../../../shared/components';
+import { PrimaryButton } from '../../../../shared/components';
 import { useLoginForm } from '../hooks/useLoginForm';
 import Recuperar from '../../account-recovery/components/AccountRecovery';
 import Register from '../../register/components/Register';

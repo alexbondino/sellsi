@@ -18,8 +18,11 @@ import { useEffect, useRef } from 'react';
 
 // Solo las rutas críticas para auth y navegación por roles
 const CRITICAL_ROUTES = new Map([
-  ['/login', () => import('../auth/login/components/Login')],
-  ['/crear-cuenta', () => import('../auth/register/components/Register')],
+  ['/login', () => import('../workspaces/auth/login/components/Login')],
+  [
+    '/crear-cuenta',
+    () => import('../workspaces/auth/register/components/Register'),
+  ],
   [
     '/buyer/marketplace',
     () => import('../domains/buyer/pages/MarketplaceBuyer'),

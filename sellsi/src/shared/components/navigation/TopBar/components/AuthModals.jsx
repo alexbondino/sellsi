@@ -3,10 +3,10 @@ import React, { Suspense } from 'react';
 // Lazy imports (mantener mismas rutas para no cambiar behavior)
 // Este archivo está un nivel más profundo que TopBar.jsx, por lo que se requiere un '../' adicional
 const Login = React.lazy(() =>
-  import('../../../../../auth/login/components/Login')
+  import('../../../../../workspaces/auth/login/components/Login')
 );
 const Register = React.lazy(() =>
-  import('../../../../../auth/register/components/Register')
+  import('../../../../../workspaces/auth/register/components/Register')
 );
 
 /**

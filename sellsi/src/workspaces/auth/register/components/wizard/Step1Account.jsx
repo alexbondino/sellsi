@@ -14,15 +14,15 @@ import { useTheme } from '@mui/material/styles';
 import {
   PasswordRequirements,
   PrimaryButton,
-} from '../../../../shared/components';
-import { supabase } from '../../../../services/supabase';
+} from '../../../../../shared/components';
+import { supabase } from '../../../../../services/supabase';
 // Importa useBanner para mostrar mensajes de error/éxito si es necesario
-import { useBanner } from '../../../../shared/components/display/banners/BannerContext';
+import { useBanner } from '../../../../../shared/components/display/banners/BannerContext';
 import {
   TermsAndConditionsModal,
   PrivacyPolicyModal,
-} from '../../../../shared/components/modals';
-import { useTermsModal } from '../../../../domains/auth/hooks/useTermsModal';
+} from '../../../../../shared/components/modals';
+import { useTermsModal } from '../../../../../domains/auth/hooks/useTermsModal';
 
 const Step1Account = ({
   formData,
