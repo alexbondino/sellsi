@@ -18,8 +18,12 @@ export const AuthPrefetchProvider = ({ children }) => {
     // Solo registrar rutas de auth si finalmente NO hay sesión activa
     if (session) return;
 
-    registerPrefetchRoute('/login', () => import('../../domains/auth').then(m => m.Login));
-    registerPrefetchRoute('/crear-cuenta', () => import('../../domains/auth').then(m => m.Register));
+    registerPrefetchRoute('/login', () =>
+      import('../../domains/auth').then(m => m.Login)
+    );
+    registerPrefetchRoute('/crear-cuenta', () =>
+      import('../../domains/auth').then(m => m.Register)
+    );
 
     // Trigger prefetch for auth chunks. Use requestIdleCallback when available to avoid blocking.
     const doPrefetch = () => {
@@ -32,7 +36,9 @@ export const AuthPrefetchProvider = ({ children }) => {
     };
 
     if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
-      const id = window.requestIdleCallback(() => doPrefetch(), { timeout: 2000 });
+      const id = window.requestIdleCallback(() => doPrefetch(), {
+        timeout: 2000,
+      });
       return () => window.cancelIdleCallback?.(id);
     }
 

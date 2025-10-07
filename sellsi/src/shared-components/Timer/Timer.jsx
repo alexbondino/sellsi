@@ -10,7 +10,7 @@ const Timer = ({ initialSeconds, onComplete }) => {
     }
 
     const timer = setInterval(() => {
-      setSeconds((prev) => prev - 1);
+      setSeconds(prev => prev - 1);
     }, 1000);
 
     return () => clearInterval(timer);
