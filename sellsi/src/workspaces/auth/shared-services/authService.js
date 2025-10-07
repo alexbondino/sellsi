@@ -1,20 +1,20 @@
 // 📁 domains/auth/services/authService.js
 // Servicio central de autenticación
 import { supabase } from '../../../services/supabase';
-import { AUTH_ERRORS } from '../constants';
+import { AUTH_ERRORS } from '../shared-constants/constants';
 
 class AuthService {
   /**
    * Iniciar sesión con email y contraseña
-   * @param {string} email 
-   * @param {string} password 
+   * @param {string} email
+   * @param {string} password
    * @returns {Promise<{user, error}>}
    */
   async signIn(email, password) {
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
         email: email.trim().toLowerCase(),
-        password
+        password,
       });
 
       if (error) {
@@ -23,18 +23,18 @@ class AuthService {
 
       return { user: data.user, error: null };
     } catch (error) {
-      return { 
-        user: null, 
-        error: { type: AUTH_ERRORS.NETWORK_ERROR, message: error.message }
+      return {
+        user: null,
+        error: { type: AUTH_ERRORS.NETWORK_ERROR, message: error.message },
       };
     }
   }
 
   /**
    * Registrar nuevo usuario
-   * @param {string} email 
-   * @param {string} password 
-   * @param {Object} metadata 
+   * @param {string} email
+   * @param {string} password
+   * @param {Object} metadata
    * @returns {Promise<{user, error}>}
    */
   async signUp(email, password, metadata = {}) {
@@ -43,8 +43,8 @@ class AuthService {
         email: email.trim().toLowerCase(),
         password,
         options: {
-          data: metadata
-        }
+          data: metadata,
+        },
       });
 
       if (error) {
@@ -53,9 +53,9 @@ class AuthService {
 
       return { user: data.user, error: null };
     } catch (error) {
-      return { 
-        user: null, 
-        error: { type: AUTH_ERRORS.NETWORK_ERROR, message: error.message }
+      return {
+        user: null,
+        error: { type: AUTH_ERRORS.NETWORK_ERROR, message: error.message },
       };
     }
   }
@@ -69,7 +69,9 @@ class AuthService {
       const { error } = await supabase.auth.signOut();
       return { error };
     } catch (error) {
-      return { error: { type: AUTH_ERRORS.NETWORK_ERROR, message: error.message } };
+      return {
+        error: { type: AUTH_ERRORS.NETWORK_ERROR, message: error.message },
+      };
     }
   }
 
@@ -79,19 +81,22 @@ class AuthService {
    */
   async getCurrentUser() {
     try {
-      const { data: { user }, error } = await supabase.auth.getUser();
+      const {
+        data: { user },
+        error,
+      } = await supabase.auth.getUser();
       return { user, error };
     } catch (error) {
-      return { 
-        user: null, 
-        error: { type: AUTH_ERRORS.NETWORK_ERROR, message: error.message }
+      return {
+        user: null,
+        error: { type: AUTH_ERRORS.NETWORK_ERROR, message: error.message },
       };
     }
   }
 
   /**
    * Resetear contraseña
-   * @param {string} email 
+   * @param {string} email
    * @returns {Promise<{error}>}
    */
   async resetPassword(email) {
@@ -99,32 +104,34 @@ class AuthService {
       const { error } = await supabase.auth.resetPasswordForEmail(
         email.trim().toLowerCase(),
         {
-          redirectTo: `${window.location.origin}/reset-password`
+          redirectTo: `${window.location.origin}/reset-password`,
         }
       );
       return { error };
     } catch (error) {
-      return { error: { type: AUTH_ERRORS.NETWORK_ERROR, message: error.message } };
+      return {
+        error: { type: AUTH_ERRORS.NETWORK_ERROR, message: error.message },
+      };
     }
   }
 
   /**
    * Mapear errores de Supabase a errores internos
-   * @param {Object} error 
+   * @param {Object} error
    * @returns {Object}
    */
   mapAuthError(error) {
     const errorMap = {
-      'invalid_credentials': AUTH_ERRORS.INVALID_CREDENTIALS,
-      'user_not_found': AUTH_ERRORS.USER_NOT_FOUND,
-      'email_already_exists': AUTH_ERRORS.EMAIL_ALREADY_EXISTS,
-      'weak_password': AUTH_ERRORS.WEAK_PASSWORD
+      invalid_credentials: AUTH_ERRORS.INVALID_CREDENTIALS,
+      user_not_found: AUTH_ERRORS.USER_NOT_FOUND,
+      email_already_exists: AUTH_ERRORS.EMAIL_ALREADY_EXISTS,
+      weak_password: AUTH_ERRORS.WEAK_PASSWORD,
     };
 
     return {
       type: errorMap[error.message] || AUTH_ERRORS.NETWORK_ERROR,
       message: error.message,
-      originalError: error
+      originalError: error,
     };
   }
 }
