@@ -8,13 +8,10 @@ import {
   TextField,
   Button,
   Divider,
-  Collapse
+  Collapse,
 } from '@mui/material';
 import { useOnboardingForm } from '../hooks/useOnboardingForm';
-import { 
-  PrimaryButton, 
-  CountrySelector 
-} from '../../../shared/components';
+import { PrimaryButton, CountrySelector } from '../../../../shared/components';
 
 // Componente para los botones de selección de tipo de cuenta
 const AccountTypeSelector = ({ selectedType, onTypeSelect }) => (
@@ -78,7 +75,8 @@ const OnboardingForm = ({ open, user, onClose }) => {
   if (!user) return null;
 
   const isProvider = formData.tipoCuenta === 'proveedor';
-  const showBillingInfo = isProvider && formData.documentTypes?.includes('factura');
+  const showBillingInfo =
+    isProvider && formData.documentTypes?.includes('factura');
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
@@ -161,7 +159,7 @@ const OnboardingForm = ({ open, user, onClose }) => {
                 rows={3}
                 fullWidth
                 value={formData.description || ''}
-                onChange={(e) => handleFieldChange('description', e.target.value)}
+                onChange={e => handleFieldChange('description', e.target.value)}
                 sx={{ mt: 2 }}
                 placeholder="Describe brevemente tu negocio..."
               />
