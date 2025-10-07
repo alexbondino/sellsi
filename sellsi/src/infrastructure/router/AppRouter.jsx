@@ -2,7 +2,7 @@ import React, { Suspense } from 'react';
 import { Routes, Route, Navigate, useParams } from 'react-router-dom';
 import SuspenseLoader from '../../shared/components/layout/SuspenseLoader';
 // Import interno directo para evitar que PrivateRoute forme parte del contrato público de auth
-import PrivateRoute from '../../domains/auth/components/PrivateRoute';
+import PrivateRoute from '../../workspaces/auth/guards/components/PrivateRoute';
 import { useAuth } from '../providers';
 
 // Landing Page (carga inmediata para primera impresión)
@@ -42,7 +42,9 @@ const MyOrdersPage = React.lazy(() =>
   import('../../domains/supplier/pages/my-orders/MyOrdersPage')
 );
 const MarketplaceSupplier = React.lazy(() =>
-  import('../../domains/supplier').then(module => ({ default: module.MarketplaceSupplier }))
+  import('../../domains/supplier').then(module => ({
+    default: module.MarketplaceSupplier,
+  }))
 );
 const SupplierOffers = React.lazy(() =>
   import('../../domains/supplier/pages/offers/SupplierOffers')
@@ -56,7 +58,7 @@ const BuyerOrders = React.lazy(() =>
   import('../../domains/buyer/pages/BuyerOrders')
 );
 // BuyerPerformance was removed; reuse MarketplaceBuyer for now to keep route functional
-const BuyerPerformance = MarketplaceBuyer
+const BuyerPerformance = MarketplaceBuyer;
 const BuyerOffers = React.lazy(() =>
   import('../../domains/buyer/pages/offers/BuyerOffers')
 );
@@ -79,7 +81,7 @@ const Onboarding = React.lazy(() =>
   import('../../app/pages/onboarding/Onboarding')
 );
 const ResetPassword = React.lazy(() =>
-  import('../../domains/auth/components/ResetPassword')
+  import('../../workspaces/auth/register/components/ResetPassword')
 );
 
 // 📦 ERROR PAGES - LAZY LOADING
@@ -103,7 +105,7 @@ const PrivacyPolicyPage = React.lazy(() =>
 // 📦 AUTH CALLBACK - LAZY LOADING
 // AuthCallback también se importa directo para mantener el barrel público mínimo
 const AuthCallback = React.lazy(() =>
-  import('../../domains/auth/components/AuthCallback')
+  import('../../workspaces/auth/login/services/AuthCallback')
 );
 
 export const AppRouter = ({ scrollTargets }) => {
@@ -114,13 +116,16 @@ export const AppRouter = ({ scrollTargets }) => {
   const RedirectTechnicalSpecs = () => {
     const { productSlug } = useParams();
     try {
-      const { extractProductIdFromSlug } = require('../../shared/utils/product/productUrl');
+      const {
+        extractProductIdFromSlug,
+      } = require('../../shared/utils/product/productUrl');
       const id = extractProductIdFromSlug(productSlug);
       if (id) {
         // Try to derive name part after UUID for better SEO, else redirect with just id
         const dashIdx = productSlug.indexOf(id) + id.length;
         const rest = productSlug.slice(dashIdx).replace(/^[-\s\/]+/, '');
-        if (rest) return <Navigate to={`/marketplace/product/${id}/${rest}`} replace />;
+        if (rest)
+          return <Navigate to={`/marketplace/product/${id}/${rest}`} replace />;
         return <Navigate to={`/marketplace/product/${id}`} replace />;
       }
     } catch (_) {}
@@ -143,7 +148,10 @@ export const AppRouter = ({ scrollTargets }) => {
         />
 
         {/* Redirect legacy technicalspecs to unified marketplace product route */}
-        <Route path="/technicalspecs/:productSlug" element={<RedirectTechnicalSpecs />} />
+        <Route
+          path="/technicalspecs/:productSlug"
+          element={<RedirectTechnicalSpecs />}
+        />
         <Route path="/login" element={<Login />} />
         <Route path="/crear-cuenta" element={<Register />} />
         <Route path="/auth/reset-password" element={<ResetPassword />} />
