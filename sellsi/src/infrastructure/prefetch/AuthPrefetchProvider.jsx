@@ -19,10 +19,10 @@ export const AuthPrefetchProvider = ({ children }) => {
     if (session) return;
 
     registerPrefetchRoute('/login', () =>
-      import('../../domains/auth').then(m => m.Login)
+      import('../../workspaces/auth/login').then(m => m.Login)
     );
     registerPrefetchRoute('/crear-cuenta', () =>
-      import('../../domains/auth').then(m => m.Register)
+      import('../../workspaces/auth/register').then(m => m.Register)
     );
 
     // Trigger prefetch for auth chunks. Use requestIdleCallback when available to avoid blocking.
