@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { registerPrefetchRoute, usePrefetch } from '../../hooks/usePrefetch';
 import { useAuth } from '../providers';
+import { Timer } from '../../workspaces/auth';
 
 /**
  * AuthPrefetchProvider

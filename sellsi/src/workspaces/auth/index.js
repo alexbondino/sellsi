@@ -7,4 +7,4 @@ export * from './shared-constants/constants.js';
 export { default as AuthCallback } from './login/services/AuthCallback';
 export { default as PrivateRoute } from './guards/components/PrivateRoute';
 export { default as OnboardingForm } from './onboarding/components/OnboardingForm';
-export { default as Timer } from '../../domains/auth/components/Timer';
+export { default as Timer } from './components/Timer';
