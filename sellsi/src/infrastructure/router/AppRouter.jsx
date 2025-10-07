@@ -72,10 +72,10 @@ const ProductPageWrapper = React.lazy(() =>
 
 // 📦 AUTH & ONBOARDING - LAZY LOADING
 const Login = React.lazy(() =>
-  import('../../domains/auth').then(module => ({ default: module.Login }))
+  import('../../workspaces/auth').then(module => ({ default: module.Login }))
 );
 const Register = React.lazy(() =>
-  import('../../domains/auth').then(module => ({ default: module.Register }))
+  import('../../workspaces/auth').then(module => ({ default: module.Register }))
 );
 const Onboarding = React.lazy(() =>
   import('../../app/pages/onboarding/Onboarding')
