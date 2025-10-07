@@ -22,7 +22,7 @@ import {
   TermsAndConditionsModal,
   PrivacyPolicyModal,
 } from '../../../../../shared/components/modals';
-import { useTermsModal } from '../../../../../domains/auth/hooks/useTermsModal';
+import { useTermsModal } from '../../hooks/useTermsModal';
 
 const Step1Account = ({
   formData,

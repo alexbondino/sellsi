@@ -10,7 +10,7 @@ export { default as Register } from '../../workspaces/auth/register/components/R
 // Wizard API (config / loader)
 // Hooks / services / tipos específicos (sin wildcard)
 export { useLoginForm } from '../../workspaces/auth/login/hooks/useLoginForm.js';
-export { default as useTermsModal } from './hooks/useTermsModal';
+export { default as useTermsModal } from '../../workspaces/auth/register/hooks/useTermsModal.js';
 export { default as authService } from './services/authService.js';
 export * from './types';
 export * from './constants';
