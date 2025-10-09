@@ -1,148 +1,169 @@
-import { useState, useEffect } from 'react';
-import { supabase } from '@/services/supabase';
-import { useNavigate } from 'react-router-dom';
+// src/domains/auth/pages/ResetPassword.jsx
+import React, { useState } from 'react';
+import {
+  Box,
+  Paper,
+  TextField,
+  Typography,
+  InputAdornment,
+  IconButton,
+} from '@mui/material';
+import LoadingButton from '@mui/lab/LoadingButton';
+import { Visibility, VisibilityOff } from '@mui/icons-material';
+import { supabase } from '../../../services/supabase';
+import { PasswordRequirements } from '../../../shared/components';
 
-const ResetPassword = () => {
-  const navigate = useNavigate();
+export default function ResetPassword() {
   const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [confirm, setConfirm] = useState('');
+  const [showPwd, setShowPwd] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+
   const [error, setError] = useState('');
+  const [ok, setOk] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
-  const [hashProcessed, setHashProcessed] = useState(false);
 
-  useEffect(() => {
-    const handleHashChange = async () => {
-      try {
-        const { error } = await supabase.auth.getSession();
-        if (error) throw error;
-        setHashProcessed(true);
-      } catch (err) {
-        console.error('Error al procesar hash:', err);
-        setError('Link inválido o expirado');
-        setTimeout(() => navigate('/login'), 3000);
-      }
-    };
-
-    handleHashChange();
-  }, [navigate]);
-
-  const validatePassword = pass => {
-    if (pass.length < 8)
-      return 'La contraseña debe tener al menos 8 caracteres';
-    if (!/[A-Z]/.test(pass)) return 'Debe incluir al menos una mayúscula';
-    if (!/[a-z]/.test(pass)) return 'Debe incluir al menos una minúscula';
-    if (!/[0-9]/.test(pass)) return 'Debe incluir al menos un número';
-    return null;
-  };
+  // ✅ mismos requisitos que en el registro
+  const requisitos = [
+    { label: 'Al menos 8 caracteres', valid: password.length >= 8 },
+    { label: 'Letras minúsculas (a-z)', valid: /[a-z]/.test(password) },
+    { label: 'Letras mayúsculas (A-Z)', valid: /[A-Z]/.test(password) },
+    { label: 'Números (0-9)', valid: /\d/.test(password) },
+  ];
+  const cumpleMinimos = requisitos.every(r => r.valid);
+  const contrasenasCoinciden = confirm.length > 0 && password === confirm;
+  const canSubmit = cumpleMinimos && contrasenasCoinciden && !loading;
 
   const handleSubmit = async e => {
     e.preventDefault();
     setError('');
 
-    // Validaciones
-    const passwordError = validatePassword(password);
-    if (passwordError) {
-      setError(passwordError);
-      return;
+    if (!cumpleMinimos) {
+      return setError(
+        'La contraseña debe tener al menos 8 caracteres, incluir mayúsculas, minúsculas y números.'
+      );
     }
-
-    if (password !== confirmPassword) {
-      setError('Las contraseñas no coinciden');
-      return;
+    if (!contrasenasCoinciden) {
+      return setError('Las contraseñas no coinciden.');
     }
-
-    setLoading(true);
 
     try {
-      const { error: updateError } = await supabase.auth.updateUser({
-        password: password,
-      });
+      setLoading(true);
 
-      if (updateError) throw updateError;
+      // 🔐 Actualizar contraseña
+      const { error: upErr } = await supabase.auth.updateUser({ password });
+      if (upErr) throw upErr;
 
-      setSuccess(true);
-      setTimeout(() => {
-        navigate('/login');
-      }, 3000);
+      setOk(true);
+
+      // 👋 Cerrar sesión local
+      await supabase.auth.signOut();
+
+      // 🌍 Redirigir al mismo host (staging o producción)
+      const base = window.location.origin;
+      const url = new URL(base);
+      url.searchParams.set('banner', 'reset_success');
+      window.location.replace(url.toString());
     } catch (err) {
-      setError(err.message || 'Error al actualizar la contraseña');
+      setError(err?.message ?? 'Ocurrió un error al cambiar la contraseña.');
     } finally {
       setLoading(false);
     }
   };
 
-  // No mostrar el formulario hasta que se procese el hash
-  if (!hashProcessed) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="text-center">Verificando enlace...</div>
-      </div>
-    );
-  }
-
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-12 sm:px-6 lg:px-8">
-      <div className="w-full max-w-md space-y-8">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-bold tracking-tight text-gray-900">
-            Restablecer contraseña
-          </h2>
-        </div>
+    <Box
+      sx={{ minHeight: '80vh', display: 'grid', placeItems: 'center', p: 2 }}
+    >
+      <Paper sx={{ p: 3, width: '100%', maxWidth: 420 }}>
+        <Typography variant="h6" gutterBottom>
+          Restablecer contraseña
+        </Typography>
+        <Typography variant="body2" sx={{ mb: 2 }}>
+          Ingresa tu nueva contraseña para continuar.
+        </Typography>
 
-        {success ? (
-          <div className="rounded-md bg-green-50 p-4">
-            <div className="text-center text-sm font-medium text-green-800">
-              ¡Contraseña actualizada con éxito! Redirigiendo...
-            </div>
-          </div>
-        ) : (
-          <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-            <div className="-space-y-px rounded-md shadow-sm">
-              <div>
-                <input
-                  type="password"
-                  required
-                  className="relative block w-full rounded-t-md border px-3 py-2 text-gray-900 placeholder-gray-500 focus:z-10 focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
-                  placeholder="Nueva contraseña"
-                  value={password}
-                  onChange={e => setPassword(e.target.value)}
-                />
-              </div>
-              <div>
-                <input
-                  type="password"
-                  required
-                  className="relative block w-full rounded-b-md border px-3 py-2 text-gray-900 placeholder-gray-500 focus:z-10 focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
-                  placeholder="Confirmar contraseña"
-                  value={confirmPassword}
-                  onChange={e => setConfirmPassword(e.target.value)}
-                />
-              </div>
-            </div>
+        <Box component="form" onSubmit={handleSubmit}>
+          {/* Primer campo */}
+          <TextField
+            type={showPwd ? 'text' : 'password'}
+            label="Nueva contraseña"
+            fullWidth
+            margin="normal"
+            value={password}
+            onChange={e => setPassword(e.target.value)}
+            autoFocus
+            InputProps={{
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton
+                    onClick={() => setShowPwd(v => !v)}
+                    edge="end"
+                    size="small"
+                    tabIndex={-1}
+                  >
+                    {showPwd ? <Visibility /> : <VisibilityOff />}
+                  </IconButton>
+                </InputAdornment>
+              ),
+            }}
+          />
 
-            {error && (
-              <div className="rounded-md bg-red-50 p-4">
-                <div className="text-center text-sm font-medium text-red-800">
-                  {error}
-                </div>
-              </div>
-            )}
+          {/* Segundo campo */}
+          <TextField
+            type={showConfirm ? 'text' : 'password'}
+            label="Confirmar contraseña"
+            fullWidth
+            margin="normal"
+            value={confirm}
+            onChange={e => setConfirm(e.target.value)}
+            error={confirm.length > 0 && !contrasenasCoinciden}
+            helperText={
+              confirm.length > 0 && !contrasenasCoinciden
+                ? 'Las contraseñas no coinciden'
+                : ''
+            }
+            InputProps={{
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton
+                    onClick={() => setShowConfirm(v => !v)}
+                    edge="end"
+                    size="small"
+                    tabIndex={-1}
+                  >
+                    {showConfirm ? <Visibility /> : <VisibilityOff />}
+                  </IconButton>
+                </InputAdornment>
+              ),
+            }}
+          />
 
-            <div>
-              <button
-                type="submit"
-                disabled={loading}
-                className="group relative flex w-full justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-              >
-                {loading ? 'Actualizando...' : 'Actualizar contraseña'}
-              </button>
-            </div>
-          </form>
-        )}
-      </div>
-    </div>
+          {/* 📋 Checklist ahora debajo del segundo campo */}
+          <PasswordRequirements password={password} size="normal" />
+
+          {error && (
+            <Typography color="error" variant="body2" sx={{ mt: 1 }}>
+              {error}
+            </Typography>
+          )}
+          {ok && (
+            <Typography color="success.main" variant="body2" sx={{ mt: 1 }}>
+              ¡Contraseña actualizada! Redirigiendo…
+            </Typography>
+          )}
+
+          <LoadingButton
+            type="submit"
+            variant="contained"
+            loading={loading}
+            disabled={!canSubmit}
+            sx={{ mt: 2, width: '100%' }}
+          >
+            Guardar contraseña
+          </LoadingButton>
+        </Box>
+      </Paper>
+    </Box>
   );
-};
-
-export default ResetPassword;
+}
