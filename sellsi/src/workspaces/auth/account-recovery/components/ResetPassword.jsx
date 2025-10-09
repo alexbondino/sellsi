@@ -1,4 +1,3 @@
-// src/workspaces/auth/account-recovery/components/ResetPassword.jsx
 import React, { useState, useEffect } from 'react';
 import {
   Box,
@@ -24,7 +23,6 @@ export default function ResetPassword() {
   const [loading, setLoading] = useState(false);
   const [isVerifying, setIsVerifying] = useState(true);
 
-  // ✅ mismos requisitos que en el registro
   const requisitos = [
     { label: 'Al menos 8 caracteres', valid: password.length >= 8 },
     { label: 'Letras minúsculas (a-z)', valid: /[a-z]/.test(password) },
@@ -36,36 +34,61 @@ export default function ResetPassword() {
   const canSubmit = cumpleMinimos && contrasenasCoinciden && !loading;
 
   useEffect(() => {
-    const verifySession = async () => {
+    const init = async () => {
       try {
-        // Procesar hash de URL si existe
-        const hashFragment = window.location.hash;
-        if (hashFragment) {
-          await supabase.auth.verifyOtp({
-            token_hash: hashFragment.substring(1),
-            type: 'recovery',
+        // 1) Intentar recuperar sesión desde el hash de recovery
+        const hash = window.location.hash?.replace(/^#/, '');
+        const params = new URLSearchParams(hash);
+
+        if (params.get('type') === 'recovery') {
+          const access_token = params.get('access_token');
+          const refresh_token = params.get('refresh_token');
+
+          if (!access_token || !refresh_token) {
+            throw new Error(
+              'Enlace de recuperación inválido (tokens faltantes).'
+            );
+          }
+
+          // Establecer sesión con los tokens de recovery
+          const { data, error: setErr } = await supabase.auth.setSession({
+            access_token,
+            refresh_token,
           });
+          if (setErr) throw setErr;
+
+          // Limpia el hash para no re-procesar al recargar
+          window.history.replaceState(
+            {},
+            document.title,
+            window.location.pathname + window.location.search
+          );
         }
 
-        // Verificar sesión
+        // 2) Verificar que tengamos sesión
         const {
           data: { session },
         } = await supabase.auth.getSession();
         if (!session) {
-          throw new Error('No hay sesión activa');
+          // Sin sesión => no se puede resetear
+          throw new Error(
+            'No hay sesión activa para restablecer la contraseña.'
+          );
         }
 
         setIsVerifying(false);
       } catch (err) {
         console.error('Error de verificación:', err);
-        // Redirigir al login
+        // Evita quedarse colgado en loading
+        setIsVerifying(false);
+        // Redirige al login con error (o muestra un mensaje)
         window.location.replace(
           `${window.location.origin}/login?error=invalid_recovery_link`
         );
       }
     };
 
-    verifySession();
+    init();
   }, []);
 
   const handleSubmit = async e => {
@@ -84,16 +107,16 @@ export default function ResetPassword() {
     try {
       setLoading(true);
 
-      // 🔐 Actualizar contraseña
+      // Actualizar contraseña usando la sesión creada por el enlace de recovery
       const { error: upErr } = await supabase.auth.updateUser({ password });
       if (upErr) throw upErr;
 
       setOk(true);
 
-      // 👋 Cerrar sesión local
+      // Cerrar sesión local
       await supabase.auth.signOut();
 
-      // 🌍 Redirigir al mismo host (staging o producción)
+      // Redirigir al mismo host con banner
       const base = window.location.origin;
       const url = new URL(base);
       url.searchParams.set('banner', 'reset_success');
@@ -126,7 +149,6 @@ export default function ResetPassword() {
         </Typography>
 
         <Box component="form" onSubmit={handleSubmit}>
-          {/* Primer campo */}
           <TextField
             type={showPwd ? 'text' : 'password'}
             label="Nueva contraseña"
@@ -151,7 +173,6 @@ export default function ResetPassword() {
             }}
           />
 
-          {/* Segundo campo */}
           <TextField
             type={showConfirm ? 'text' : 'password'}
             label="Confirmar contraseña"
@@ -181,7 +202,6 @@ export default function ResetPassword() {
             }}
           />
 
-          {/* 📋 Checklist ahora debajo del segundo campo */}
           <PasswordRequirements password={password} size="normal" />
 
           {error && (
