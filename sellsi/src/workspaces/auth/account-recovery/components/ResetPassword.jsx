@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/services/supabase';
 import { useNavigate } from 'react-router-dom';
 
@@ -9,19 +9,37 @@ const ResetPassword = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [hashProcessed, setHashProcessed] = useState(false);
 
-  const validatePassword = (pass) => {
-    if (pass.length < 8) return 'La contraseña debe tener al menos 8 caracteres';
+  useEffect(() => {
+    const handleHashChange = async () => {
+      try {
+        const { error } = await supabase.auth.getSession();
+        if (error) throw error;
+        setHashProcessed(true);
+      } catch (err) {
+        console.error('Error al procesar hash:', err);
+        setError('Link inválido o expirado');
+        setTimeout(() => navigate('/login'), 3000);
+      }
+    };
+
+    handleHashChange();
+  }, [navigate]);
+
+  const validatePassword = pass => {
+    if (pass.length < 8)
+      return 'La contraseña debe tener al menos 8 caracteres';
     if (!/[A-Z]/.test(pass)) return 'Debe incluir al menos una mayúscula';
     if (!/[a-z]/.test(pass)) return 'Debe incluir al menos una minúscula';
     if (!/[0-9]/.test(pass)) return 'Debe incluir al menos un número';
     return null;
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async e => {
     e.preventDefault();
     setError('');
-    
+
     // Validaciones
     const passwordError = validatePassword(password);
     if (passwordError) {
@@ -38,7 +56,7 @@ const ResetPassword = () => {
 
     try {
       const { error: updateError } = await supabase.auth.updateUser({
-        password: password
+        password: password,
       });
 
       if (updateError) throw updateError;
@@ -47,13 +65,21 @@ const ResetPassword = () => {
       setTimeout(() => {
         navigate('/login');
       }, 3000);
-      
     } catch (err) {
       setError(err.message || 'Error al actualizar la contraseña');
     } finally {
       setLoading(false);
     }
   };
+
+  // No mostrar el formulario hasta que se procese el hash
+  if (!hashProcessed) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="text-center">Verificando enlace...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-12 sm:px-6 lg:px-8">
@@ -80,7 +106,7 @@ const ResetPassword = () => {
                   className="relative block w-full rounded-t-md border px-3 py-2 text-gray-900 placeholder-gray-500 focus:z-10 focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
                   placeholder="Nueva contraseña"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={e => setPassword(e.target.value)}
                 />
               </div>
               <div>
@@ -90,7 +116,7 @@ const ResetPassword = () => {
                   className="relative block w-full rounded-b-md border px-3 py-2 text-gray-900 placeholder-gray-500 focus:z-10 focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
                   placeholder="Confirmar contraseña"
                   value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  onChange={e => setConfirmPassword(e.target.value)}
                 />
               </div>
             </div>
