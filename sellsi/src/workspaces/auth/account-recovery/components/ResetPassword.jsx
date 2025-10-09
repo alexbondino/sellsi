@@ -1,4 +1,4 @@
-// src/domains/auth/pages/ResetPassword.jsx
+// src/workspaces/auth/account-recovery/components/ResetPassword.jsx
 import React, { useState } from 'react';
 import {
   Box,
@@ -10,8 +10,8 @@ import {
 } from '@mui/material';
 import LoadingButton from '@mui/lab/LoadingButton';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
-import { supabase } from '../../../services/supabase';
-import { PasswordRequirements } from '../../../shared/components';
+import { supabase } from '@/services/supabase';
+import { PasswordRequirements } from '@/shared/components';
 
 export default function ResetPassword() {
   const [password, setPassword] = useState('');
