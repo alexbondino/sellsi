@@ -104,7 +104,7 @@ export const useRecuperarForm = () => {
       try {
         const { error: sbError } = await supabase.auth.resetPasswordForEmail(
           correo.trim(),
-          { redirectTo: `${window.location.origin}/auth/reset-password` }
+          { redirectTo: `${window.location.origin}/account-recovery` }
         );
         if (sbError) throw sbError;
 
@@ -137,7 +137,7 @@ export const useRecuperarForm = () => {
     try {
       const { error: sbError } = await supabase.auth.resetPasswordForEmail(
         correo.trim(),
-        { redirectTo: `${window.location.origin}/auth/reset-password` }
+        { redirectTo: `${window.location.origin}/account-recovery` }
       );
       if (sbError) throw sbError;
 

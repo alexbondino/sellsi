@@ -3,7 +3,7 @@ import { ResetPassword } from '@/workspaces/auth';
 const routes = [
   // ...existing code...
   {
-    path: '/auth/reset-password',
+    path: '/account-recovery',
     element: <ResetPassword />,
   },
   // ...existing code...

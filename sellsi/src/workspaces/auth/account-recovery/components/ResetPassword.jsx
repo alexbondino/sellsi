@@ -1,5 +1,5 @@
 // src/workspaces/auth/account-recovery/components/ResetPassword.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Paper,
@@ -22,6 +22,7 @@ export default function ResetPassword() {
   const [error, setError] = useState('');
   const [ok, setOk] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(true);
 
   // ✅ mismos requisitos que en el registro
   const requisitos = [
@@ -33,6 +34,39 @@ export default function ResetPassword() {
   const cumpleMinimos = requisitos.every(r => r.valid);
   const contrasenasCoinciden = confirm.length > 0 && password === confirm;
   const canSubmit = cumpleMinimos && contrasenasCoinciden && !loading;
+
+  useEffect(() => {
+    const verifySession = async () => {
+      try {
+        // Procesar hash de URL si existe
+        const hashFragment = window.location.hash;
+        if (hashFragment) {
+          await supabase.auth.verifyOtp({
+            token_hash: hashFragment.substring(1),
+            type: 'recovery',
+          });
+        }
+
+        // Verificar sesión
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        if (!session) {
+          throw new Error('No hay sesión activa');
+        }
+
+        setIsVerifying(false);
+      } catch (err) {
+        console.error('Error de verificación:', err);
+        // Redirigir al login
+        window.location.replace(
+          `${window.location.origin}/login?error=invalid_recovery_link`
+        );
+      }
+    };
+
+    verifySession();
+  }, []);
 
   const handleSubmit = async e => {
     e.preventDefault();
@@ -70,6 +104,14 @@ export default function ResetPassword() {
       setLoading(false);
     }
   };
+
+  if (isVerifying) {
+    return (
+      <Box sx={{ minHeight: '80vh', display: 'grid', placeItems: 'center' }}>
+        <Typography>Verificando enlace...</Typography>
+      </Box>
+    );
+  }
 
   return (
     <Box
