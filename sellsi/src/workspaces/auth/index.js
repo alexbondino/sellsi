@@ -7,4 +7,4 @@ export * from './shared-constants/constants.js';
 export { default as AuthCallback } from './login/services/AuthCallback';
 export { default as PrivateRoute } from './guards/components/PrivateRoute';
 export { default as OnboardingForm } from './onboarding/components/OnboardingForm';
-export { default as ResetPassword } from './password-reset/components/ResetPassword';
+export { default as ResetPassword } from './account-recovery/components/ResetPassword.jsx';
