@@ -81,7 +81,7 @@ const Onboarding = React.lazy(() =>
   import('../../app/pages/onboarding/Onboarding')
 );
 const ResetPassword = React.lazy(() =>
-  import('../../workspaces/auth/register/components/ResetPassword')
+  import('../../workspaces/auth/account-recovery/components/ResetPassword')
 );
 
 // 📦 ERROR PAGES - LAZY LOADING
