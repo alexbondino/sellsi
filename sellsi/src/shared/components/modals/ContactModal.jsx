@@ -23,6 +23,7 @@ import {
   Send as SendIcon,
 } from '@mui/icons-material';
 import { useBanner } from '../display/banners/BannerContext';
+import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
 
 // ✅ 1. Definimos la URL de tu función de Supabase como una constante
 const supabaseFunctionUrl =
@@ -33,6 +34,9 @@ const ContactModal = ({ open, onClose }) => {
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const location = useLocation();
   const { showBanner } = useBanner();
+
+  // ✅ Bloquear scroll del body cuando el modal está abierto
+  useBodyScrollLock(open);
 
   const [formData, setFormData] = useState({
     nombre: '',

@@ -5,8 +5,12 @@ import { Box, Typography } from '@mui/material'
 import { generateQuotationPDF } from '../utils/quotationPDFGeneratorDynamic.js' // Versión con importación dinámica
 import QuantitySelector from '../../../shared/components/forms/QuantitySelector/QuantitySelector'
 import { calculatePriceForQuantity } from '../../../utils/priceCalculation'
+import { useBodyScrollLock } from '../../../shared/hooks/useBodyScrollLock'
 
 const QuotationModal = ({ open, onClose, product, quantity: initialQuantity, unitPrice: initialUnitPrice, tiers }) => {
+  // ✅ Bloquear scroll del body cuando el modal está abierto
+  useBodyScrollLock(open);
+
   // Estado local para la cantidad seleccionada
   const [selectedQuantity, setSelectedQuantity] = useState(initialQuantity || 1)
 

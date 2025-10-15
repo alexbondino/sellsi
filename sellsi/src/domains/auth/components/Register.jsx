@@ -13,11 +13,15 @@ import { Wizard, useWizard } from '../../../shared/components/navigation/wizard'
 const Step1Account = React.lazy(() => import('../wizard/Step1Account'));
 const Step4Verification = React.lazy(() => import('../wizard/Step4Verification'));
 import { useBanner } from '../../../shared/components/display/banners/BannerContext';
+import { useBodyScrollLock } from '../../../shared/hooks/useBodyScrollLock';
 
 export default function Register({ open, onClose }) {
   const theme = useTheme();
   const { showBanner } = useBanner();
   const navigate = useNavigate();
+
+  // ✅ Bloquear scroll del body cuando el modal está abierto
+  useBodyScrollLock(open);
 
   const [formData, setFormData] = useState({
     correo: '',
