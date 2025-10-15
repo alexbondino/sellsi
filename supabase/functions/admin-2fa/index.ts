@@ -2,7 +2,7 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { authenticator } from 'https://esm.sh/otplib@12.0.1'
-import { compareSync } from 'https://deno.land/x/bcrypt@v0.4.1/mod.ts'
+import { compareSync, hashSync } from 'https://deno.land/x/bcrypt@v0.4.1/mod.ts'
 import { withMetrics } from '../_shared/metrics.ts'
 
 const corsHeaders = {
@@ -81,7 +81,7 @@ serve((req) => withMetrics('admin-2fa', req, async () => {
     }
 
     // Actions that require adminId
-    const actionsRequiringAdminId = ['generate_secret', 'verify_token', 'disable_2fa'];
+    const actionsRequiringAdminId = ['generate_secret', 'verify_token', 'disable_2fa', 'verify_password', 'change_password'];
     if (actionsRequiringAdminId.includes(action) && !adminId) {
       return new Response(
         JSON.stringify({ success: false, error: 'adminId required' }),
@@ -323,6 +323,144 @@ serve((req) => withMetrics('admin-2fa', req, async () => {
           .eq('id', row.id);
         return new Response(
           JSON.stringify({ success: true, trusted: true }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+        )
+      }
+
+      case 'verify_password': {
+        // Nueva acción para verificar contraseñas con bcrypt
+        if (!password) {
+          return new Response(
+            JSON.stringify({ success: false, error: 'Password required' }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+          )
+        }
+        if (!adminRow?.password_hash) {
+          return new Response(
+            JSON.stringify({ success: false, error: 'Admin not found or no password set' }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 404 }
+          )
+        }
+        
+        // Verificar si es hash bcrypt o base64 legacy
+        const isBcrypt = adminRow.password_hash.startsWith('$2');
+        let passwordMatch = false;
+        
+        if (isBcrypt) {
+          // Hash bcrypt seguro
+          try {
+            passwordMatch = compareSync(password, adminRow.password_hash);
+          } catch (err) {
+            return new Response(
+              JSON.stringify({ success: false, error: 'Password verification failed' }),
+              { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+            )
+          }
+        } else {
+          // Legacy base64 (temporal - marcar para migración)
+          passwordMatch = adminRow.password_hash === btoa(password);
+          if (passwordMatch) {
+            // Marcar que necesita rehash en próximo cambio de contraseña
+            await supabase
+              .from('control_panel_users')
+              .update({ notes: (adminRow.notes || '') + ' [NEEDS_REHASH]' })
+              .eq('id', adminId);
+          }
+        }
+        
+        if (!passwordMatch) {
+          return new Response(
+            JSON.stringify({ success: false, error: 'Invalid password' }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
+          )
+        }
+        
+        return new Response(
+          JSON.stringify({ 
+            success: true, 
+            valid: true,
+            needs_rehash: !isBcrypt 
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+        )
+      }
+
+      case 'change_password': {
+        // Cambiar contraseña con bcrypt hash
+        const { old_password, new_password } = requestData;
+        
+        if (!old_password || !new_password) {
+          return new Response(
+            JSON.stringify({ success: false, error: 'Old and new password required' }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+          )
+        }
+        
+        if (new_password.length < 8) {
+          return new Response(
+            JSON.stringify({ success: false, error: 'New password must be at least 8 characters' }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+          )
+        }
+        
+        if (!adminRow?.password_hash) {
+          return new Response(
+            JSON.stringify({ success: false, error: 'Admin not found' }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 404 }
+          )
+        }
+        
+        // Verificar contraseña actual (soporta bcrypt y base64 legacy)
+        const isBcrypt = adminRow.password_hash.startsWith('$2');
+        let oldPasswordMatch = false;
+        
+        if (isBcrypt) {
+          try {
+            oldPasswordMatch = compareSync(old_password, adminRow.password_hash);
+          } catch (err) {
+            return new Response(
+              JSON.stringify({ success: false, error: 'Password verification failed' }),
+              { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+            )
+          }
+        } else {
+          // Legacy base64
+          oldPasswordMatch = adminRow.password_hash === btoa(old_password);
+        }
+        
+        if (!oldPasswordMatch) {
+          return new Response(
+            JSON.stringify({ success: false, error: 'Current password incorrect' }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
+          )
+        }
+        
+        // Generar nuevo hash bcrypt
+        let newPasswordHash;
+        try {
+          newPasswordHash = hashSync(new_password, 10); // 10 salt rounds
+        } catch (err) {
+          return new Response(
+            JSON.stringify({ success: false, error: 'Failed to hash password' }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+          )
+        }
+        
+        // Llamar a la función SQL para cambiar contraseña
+        const { error: rpcError } = await supabase.rpc('admin_change_password', {
+          p_admin_id: adminId,
+          p_new_password_hash: newPasswordHash
+        });
+        
+        if (rpcError) {
+          return new Response(
+            JSON.stringify({ success: false, error: 'Failed to update password' }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+          )
+        }
+        
+        return new Response(
+          JSON.stringify({ success: true, message: 'Password changed successfully' }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
         )
       }

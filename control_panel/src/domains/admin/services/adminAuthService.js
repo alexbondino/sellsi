@@ -42,10 +42,22 @@ export const loginAdmin = async (usuario, password) => {
       throw new Error('Usuario no encontrado o inactivo')
     }
     
-    // Verificar hash de contraseña (temporal con btoa, cambiar por bcrypt)
-    const passwordMatch = data.password_hash === btoa(password)
-    if (!passwordMatch) {
+    // ✅ SEGURIDAD: Verificar contraseña usando bcrypt en Edge Function
+    const { data: verifyResult, error: verifyError } = await supabase.functions.invoke('admin-2fa', {
+      body: {
+        action: 'verify_password',
+        adminId: data.id,
+        password: password
+      }
+    })
+    
+    if (verifyError || !verifyResult?.success) {
       throw new Error('Contraseña incorrecta')
+    }
+    
+    // Si la contraseña necesita rehash, marcar en el objeto usuario
+    if (verifyResult.needs_rehash) {
+      data.needs_password_change = true
     }
     
     // Actualizar última fecha de login
@@ -306,7 +318,7 @@ export const checkAdminPermissions = async (adminId, requiredRoles = [], action 
 }
 
 /**
- * Cambiar contraseña de administrador
+ * ✅ Cambiar contraseña de administrador con bcrypt
  * @param {string} adminId - ID del administrador
  * @param {string} currentPassword - Contraseña actual
  * @param {string} newPassword - Nueva contraseña
@@ -319,41 +331,29 @@ export const changeAdminPassword = async (adminId, currentPassword, newPassword)
       throw new Error('Todos los campos son requeridos')
     }
 
-    if (newPassword.length < 8) {
-      throw new Error('La nueva contraseña debe tener al menos 8 caracteres')
+    // Validar fortaleza de nueva contraseña
+    const validation = validatePasswordStrength(newPassword)
+    if (!validation.valid) {
+      throw new Error(`Contraseña no cumple requisitos: ${validation.errors.join(', ')}`)
     }
 
-    // Verificar contraseña actual
-    const { data: admin, error } = await supabase
-      .from('control_panel_users')
-      .select('password_hash')
-      .eq('id', adminId)
-      .single()
+    // Llamar a Edge Function para cambiar contraseña con bcrypt
+    const { data, error } = await supabase.functions.invoke('admin-2fa', {
+      body: {
+        action: 'change_password',
+        adminId: adminId,
+        old_password: currentPassword,
+        new_password: newPassword
+      }
+    })
 
-    if (error || !admin) {
-      throw new Error('Administrador no encontrado')
+    if (error || !data?.success) {
+      throw new Error(data?.error || 'Error al cambiar contraseña')
     }
 
-    if (admin.password_hash !== btoa(currentPassword)) {
-      throw new Error('Contraseña actual incorrecta')
-    }
-
-    // Actualizar contraseña
-    const { error: updateError } = await supabase
-      .from('control_panel_users')
-      .update({ 
-        password_hash: btoa(newPassword), // Temporal, cambiar por bcrypt
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', adminId)
-
-    if (updateError) {
-      throw new Error('Error actualizando contraseña')
-    }
-
-    // Registrar cambio de contraseña
-    await AdminApiService.logAuditAction(adminId, 'change_password', adminId, {
-      change_time: new Date().toISOString()
+    // Registrar cambio en auditoría
+    await AdminApiService.logAuditAction(adminId, 'password_changed', adminId, {
+      changed_at: new Date().toISOString()
     })
 
     return { passwordChanged: true }
