@@ -379,7 +379,7 @@ const MyOrdersPage = () => {
         submitButtonText: 'Rechazar',
         submitButtonColor: 'error',
         showWarningIconHeader: false,
-        type: MODAL_TYPES.WARNING,
+        type: MODAL_TYPES.ORDER_CHECK,
         isFormModal: true,
         children: (
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -478,8 +478,8 @@ const MyOrdersPage = () => {
         ),
         submitButtonText: 'Cancelar pedido',
         submitButtonColor: 'error',
-        showWarningIconHeader: true,
-        type: MODAL_TYPES.WARNING,
+        showWarningIconHeader: false,
+        type: MODAL_TYPES.ORDER_CANCEL,
         isFormModal: true,
         children: (
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>

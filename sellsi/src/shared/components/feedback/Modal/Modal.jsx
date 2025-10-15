@@ -176,6 +176,7 @@ const Modal = ({
               MODAL_TYPES.ORDER_CHECK,
               MODAL_TYPES.ORDER_TRUCK,
               MODAL_TYPES.ORDER_BRIEFCASE,
+              MODAL_TYPES.ORDER_CANCEL,
             ].includes(type) && (
               <IconComponent sx={{ fontSize: 24, color: config.iconColor }} />
             )}
