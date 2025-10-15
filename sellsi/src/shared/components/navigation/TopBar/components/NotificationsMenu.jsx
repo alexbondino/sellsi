@@ -3,6 +3,7 @@ import { Tooltip, Popover, Dialog, DialogContent, useMediaQuery, Box, IconButton
 import { useTheme } from '@mui/material/styles';
 import CloseIcon from '@mui/icons-material/Close';
 import { NotificationBell, NotificationListPanel } from '../../../../../domains/notifications';
+import { useBodyScrollLock } from '../../../../hooks/useBodyScrollLock';
 
 /**
  * NotificationsMenu - REMAKE OPTIMIZADO
@@ -33,6 +34,9 @@ function NotificationsMenuBase({
   // Mobile: Solo Dialog, Desktop: Popover + Dialog
   const shouldShowPopover = !isMobile && Boolean(anchorEl);
   const shouldShowMobileDialog = isMobile && Boolean(anchorEl);
+
+  // ✅ Bloquear scroll cuando el Popover o Dialog mobile está abierto
+  useBodyScrollLock(Boolean(anchorEl) || dialogOpen);
 
   return (
     <>

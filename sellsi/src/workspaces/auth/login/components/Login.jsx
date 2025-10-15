@@ -19,6 +19,7 @@ import { PrimaryButton } from '../../../../shared/components';
 import { useLoginForm } from '../hooks/useLoginForm';
 import Recuperar from '../../account-recovery/components/AccountRecovery';
 import Register from '../../register/components/Register';
+import { useBodyScrollLock } from '../../../../shared/hooks/useBodyScrollLock';
 
 // ✅ CONSTANTS
 const CONSTANTS = {
@@ -180,6 +181,9 @@ export default function Login({ open, onClose, onOpenRegister }) {
   const { state, dispatch, handleLogin, resetForm, reenviarCorreo } =
     useLoginForm();
   const location = useLocation();
+
+  // ✅ Bloquear scroll del body cuando el modal está abierto
+  useBodyScrollLock(open);
 
   useEffect(() => {
     if (!open) {

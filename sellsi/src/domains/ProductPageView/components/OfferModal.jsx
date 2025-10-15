@@ -22,6 +22,7 @@ import {
 } from '@mui/icons-material';
 import { useOfferStore } from '../../../stores/offerStore';
 import { toast } from 'react-hot-toast';
+import { useBodyScrollLock } from '../../../shared/hooks/useBodyScrollLock';
 
 const OfferModal = ({ 
   open, 
@@ -32,6 +33,8 @@ const OfferModal = ({
   defaultPrice = '',
   initialLimits = null,
 }) => {
+  // ✅ Bloquear scroll del body cuando el modal está abierto
+  useBodyScrollLock(open);
   const [offeredPrice, setOfferedPrice] = useState('');
   const [offeredQuantity, setOfferedQuantity] = useState('');
   const [errors, setErrors] = useState({});
