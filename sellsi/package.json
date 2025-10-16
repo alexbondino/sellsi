@@ -19,6 +19,8 @@
     "flags:generate": "node scripts/generate-flag-subset.cjs",
     "bundle:collect": "node scripts/bundle/compare-chunks.mjs collect --label",
     "bundle:diff": "node scripts/bundle/compare-chunks.mjs diff",
+    "generate:sitemap": "node scripts/generate-sitemap.js",
+    "prebuild": "npm run generate:sitemap",
     "test": "jest",
     "test:unit": "jest --testPathPatterns=\"unit\" --coverage --coverageDirectory=coverage/unit",
     "test:integration": "jest --testPathPatterns=\"integration\" --coverage --coverageDirectory=coverage/integration",
