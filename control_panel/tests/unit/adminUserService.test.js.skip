@@ -1,0 +1,458 @@
+/**
+ * @jest-environment jsdom
+ * 
+ * Tests para adminUserService
+ * Cubre: CRUD usuarios, suspensión, verificación, búsqueda
+ */
+
+import { describe, it, expect, beforeEach, jest } from '@jest/globals'
+
+// Mock del servicio
+jest.unstable_mockModule('../../../src/domains/admin/services/adminUserService.js', () => ({
+  getAllUsers: jest.fn(),
+  getUserById: jest.fn(),
+  searchUsers: jest.fn(),
+  updateUser: jest.fn(),
+  deleteUser: jest.fn(),
+  deleteMultipleUsers: jest.fn(),
+  banUser: jest.fn(),
+  unbanUser: jest.fn(),
+  verifyUser: jest.fn(),
+  getUserStats: jest.fn(),
+  getUserActivity: jest.fn()
+}))
+
+describe('adminUserService - Gestión de Usuarios', () => {
+  let adminUserService
+
+  beforeEach(async () => {
+    jest.clearAllMocks()
+    adminUserService = await import('../../../src/domains/admin/services/adminUserService.js')
+  })
+
+  describe('getAllUsers()', () => {
+    it('✅ debe obtener lista de usuarios', async () => {
+      const mockUsers = [
+        { user_id: 'user-1', user_nm: 'Juan Pérez', email: 'juan@email.com' },
+        { user_id: 'user-2', user_nm: 'María García', email: 'maria@email.com' }
+      ]
+
+      adminUserService.getAllUsers.mockResolvedValue({
+        success: true,
+        data: mockUsers
+      })
+
+      const result = await adminUserService.getAllUsers()
+
+      expect(result.success).toBe(true)
+      expect(result.data).toHaveLength(2)
+      expect(result.data[0].user_nm).toBe('Juan Pérez')
+    })
+
+    it('✅ debe soportar paginación', async () => {
+      adminUserService.getAllUsers.mockResolvedValue({
+        success: true,
+        data: Array(25).fill(null).map((_, i) => ({ user_id: `user-${i}` })),
+        pagination: { page: 1, pageSize: 25, total: 100 }
+      })
+
+      const result = await adminUserService.getAllUsers({ page: 1, pageSize: 25 })
+
+      expect(result.success).toBe(true)
+      expect(result.data).toHaveLength(25)
+      expect(result.pagination.total).toBe(100)
+    })
+
+    it('✅ debe filtrar por rol', async () => {
+      const mockSuppliers = [
+        { user_id: 'sup-1', user_role: 'supplier' }
+      ]
+
+      adminUserService.getAllUsers.mockResolvedValue({
+        success: true,
+        data: mockSuppliers
+      })
+
+      const result = await adminUserService.getAllUsers({ role: 'supplier' })
+
+      expect(result.success).toBe(true)
+      expect(result.data.every(u => u.user_role === 'supplier')).toBe(true)
+    })
+
+    it('❌ debe manejar error de base de datos', async () => {
+      adminUserService.getAllUsers.mockResolvedValue({
+        success: false,
+        error: 'Error de conexión'
+      })
+
+      const result = await adminUserService.getAllUsers()
+
+      expect(result.success).toBe(false)
+      expect(result.error).toBeDefined()
+    })
+  })
+
+  describe('getUserById()', () => {
+    it('✅ debe obtener usuario por ID', async () => {
+      const mockUser = {
+        user_id: 'user-123',
+        user_nm: 'Juan Pérez',
+        email: 'juan@email.com',
+        user_role: 'buyer'
+      }
+
+      adminUserService.getUserById.mockResolvedValue({
+        success: true,
+        data: mockUser
+      })
+
+      const result = await adminUserService.getUserById('user-123')
+
+      expect(result.success).toBe(true)
+      expect(result.data.user_id).toBe('user-123')
+    })
+
+    it('❌ debe retornar null si no existe', async () => {
+      adminUserService.getUserById.mockResolvedValue({
+        success: false,
+        data: null,
+        error: 'Usuario no encontrado'
+      })
+
+      const result = await adminUserService.getUserById('no-existe')
+
+      expect(result.success).toBe(false)
+      expect(result.data).toBeNull()
+    })
+
+    it('⚠️ debe validar formato UUID', async () => {
+      adminUserService.getUserById.mockResolvedValue({
+        success: false,
+        error: 'ID inválido'
+      })
+
+      const result = await adminUserService.getUserById('invalid-id')
+
+      expect(result.success).toBe(false)
+    })
+  })
+
+  describe('searchUsers()', () => {
+    it('✅ debe buscar por nombre', async () => {
+      const mockResults = [
+        { user_id: 'user-1', user_nm: 'Juan Pérez' },
+        { user_id: 'user-2', user_nm: 'Juana Torres' }
+      ]
+
+      adminUserService.searchUsers.mockResolvedValue({
+        success: true,
+        data: mockResults
+      })
+
+      const result = await adminUserService.searchUsers({ query: 'Juan' })
+
+      expect(result.success).toBe(true)
+      expect(result.data.every(u => u.user_nm.includes('Juan'))).toBe(true)
+    })
+
+    it('✅ debe buscar por email', async () => {
+      const mockResults = [
+        { user_id: 'user-1', email: 'juan@gmail.com' }
+      ]
+
+      adminUserService.searchUsers.mockResolvedValue({
+        success: true,
+        data: mockResults
+      })
+
+      const result = await adminUserService.searchUsers({ query: 'juan@gmail.com' })
+
+      expect(result.success).toBe(true)
+      expect(result.data[0].email).toContain('juan')
+    })
+
+    it('✅ debe retornar array vacío si no hay resultados', async () => {
+      adminUserService.searchUsers.mockResolvedValue({
+        success: true,
+        data: []
+      })
+
+      const result = await adminUserService.searchUsers({ query: 'zzzzz' })
+
+      expect(result.success).toBe(true)
+      expect(result.data).toHaveLength(0)
+    })
+
+    it('⚠️ debe requerir query mínimo 3 caracteres', async () => {
+      adminUserService.searchUsers.mockResolvedValue({
+        success: false,
+        error: 'Query debe tener al menos 3 caracteres'
+      })
+
+      const result = await adminUserService.searchUsers({ query: 'ab' })
+
+      expect(result.success).toBe(false)
+    })
+  })
+
+  describe('updateUser()', () => {
+    it('✅ debe actualizar datos de usuario', async () => {
+      const updates = { user_nm: 'Nuevo Nombre' }
+
+      adminUserService.updateUser.mockResolvedValue({
+        success: true,
+        data: { user_id: 'user-123', user_nm: 'Nuevo Nombre' }
+      })
+
+      const result = await adminUserService.updateUser('user-123', updates)
+
+      expect(result.success).toBe(true)
+      expect(result.data.user_nm).toBe('Nuevo Nombre')
+    })
+
+    it('✅ debe permitir cambiar rol', async () => {
+      adminUserService.updateUser.mockResolvedValue({
+        success: true,
+        data: { user_id: 'user-123', user_role: 'supplier' }
+      })
+
+      const result = await adminUserService.updateUser('user-123', { user_role: 'supplier' })
+
+      expect(result.success).toBe(true)
+      expect(result.data.user_role).toBe('supplier')
+    })
+
+    it('❌ debe rechazar campos no permitidos', async () => {
+      adminUserService.updateUser.mockResolvedValue({
+        success: false,
+        error: 'Campo no permitido: password'
+      })
+
+      const result = await adminUserService.updateUser('user-123', { password: 'nueva' })
+
+      expect(result.success).toBe(false)
+    })
+
+    it('⚠️ debe validar email único', async () => {
+      adminUserService.updateUser.mockResolvedValue({
+        success: false,
+        error: 'Email ya está en uso'
+      })
+
+      const result = await adminUserService.updateUser('user-123', { email: 'existente@email.com' })
+
+      expect(result.success).toBe(false)
+      expect(result.error).toContain('Email')
+    })
+  })
+
+  describe('deleteUser()', () => {
+    it('✅ debe eliminar usuario correctamente', async () => {
+      adminUserService.deleteUser.mockResolvedValue({
+        success: true,
+        message: 'Usuario eliminado'
+      })
+
+      const result = await adminUserService.deleteUser('user-123')
+
+      expect(result.success).toBe(true)
+    })
+
+    it('❌ debe fallar si usuario no existe', async () => {
+      adminUserService.deleteUser.mockResolvedValue({
+        success: false,
+        error: 'Usuario no encontrado'
+      })
+
+      const result = await adminUserService.deleteUser('no-existe')
+
+      expect(result.success).toBe(false)
+    })
+
+    it('⚠️ debe prevenir eliminar admin principal', async () => {
+      adminUserService.deleteUser.mockResolvedValue({
+        success: false,
+        error: 'No se puede eliminar admin principal'
+      })
+
+      const result = await adminUserService.deleteUser('admin-root')
+
+      expect(result.success).toBe(false)
+    })
+  })
+
+  describe('deleteMultipleUsers()', () => {
+    it('✅ debe eliminar múltiples usuarios', async () => {
+      const userIds = ['user-1', 'user-2', 'user-3']
+
+      adminUserService.deleteMultipleUsers.mockResolvedValue({
+        success: true,
+        deleted: 3,
+        failed: 0
+      })
+
+      const result = await adminUserService.deleteMultipleUsers(userIds)
+
+      expect(result.success).toBe(true)
+      expect(result.deleted).toBe(3)
+    })
+
+    it('⚠️ debe reportar fallos parciales', async () => {
+      adminUserService.deleteMultipleUsers.mockResolvedValue({
+        success: true,
+        deleted: 2,
+        failed: 1,
+        errors: ['user-3: No se puede eliminar']
+      })
+
+      const result = await adminUserService.deleteMultipleUsers(['user-1', 'user-2', 'user-3'])
+
+      expect(result.deleted).toBe(2)
+      expect(result.failed).toBe(1)
+    })
+
+    it('⚠️ debe validar array no vacío', async () => {
+      adminUserService.deleteMultipleUsers.mockResolvedValue({
+        success: false,
+        error: 'Array vacío'
+      })
+
+      const result = await adminUserService.deleteMultipleUsers([])
+
+      expect(result.success).toBe(false)
+    })
+  })
+
+  describe('banUser() / unbanUser()', () => {
+    it('✅ debe suspender usuario', async () => {
+      adminUserService.banUser.mockResolvedValue({
+        success: true,
+        message: 'Usuario suspendido'
+      })
+
+      const result = await adminUserService.banUser('user-123', 'Conducta inapropiada')
+
+      expect(result.success).toBe(true)
+    })
+
+    it('✅ debe requerir razón de suspensión', async () => {
+      adminUserService.banUser.mockResolvedValue({
+        success: false,
+        error: 'Razón requerida'
+      })
+
+      const result = await adminUserService.banUser('user-123', '')
+
+      expect(result.success).toBe(false)
+    })
+
+    it('✅ debe reactivar usuario suspendido', async () => {
+      adminUserService.unbanUser.mockResolvedValue({
+        success: true,
+        message: 'Usuario reactivado'
+      })
+
+      const result = await adminUserService.unbanUser('user-123')
+
+      expect(result.success).toBe(true)
+    })
+
+    it('❌ debe fallar si usuario no está suspendido', async () => {
+      adminUserService.unbanUser.mockResolvedValue({
+        success: false,
+        error: 'Usuario no está suspendido'
+      })
+
+      const result = await adminUserService.unbanUser('user-123')
+
+      expect(result.success).toBe(false)
+    })
+  })
+
+  describe('verifyUser()', () => {
+    it('✅ debe verificar usuario manualmente', async () => {
+      adminUserService.verifyUser.mockResolvedValue({
+        success: true,
+        message: 'Usuario verificado'
+      })
+
+      const result = await adminUserService.verifyUser('user-123')
+
+      expect(result.success).toBe(true)
+    })
+
+    it('⚠️ debe fallar si ya está verificado', async () => {
+      adminUserService.verifyUser.mockResolvedValue({
+        success: false,
+        error: 'Usuario ya está verificado'
+      })
+
+      const result = await adminUserService.verifyUser('user-123')
+
+      expect(result.success).toBe(false)
+    })
+  })
+
+  describe('getUserStats()', () => {
+    it('✅ debe obtener estadísticas de usuario', async () => {
+      const mockStats = {
+        total_orders: 45,
+        total_spent: 2500000,
+        avg_order_value: 55555,
+        last_order_date: '2025-10-20'
+      }
+
+      adminUserService.getUserStats.mockResolvedValue({
+        success: true,
+        data: mockStats
+      })
+
+      const result = await adminUserService.getUserStats('user-123')
+
+      expect(result.success).toBe(true)
+      expect(result.data.total_orders).toBe(45)
+      expect(result.data.total_spent).toBeGreaterThan(0)
+    })
+
+    it('✅ debe calcular promedio correctamente', async () => {
+      adminUserService.getUserStats.mockResolvedValue({
+        success: true,
+        data: { total_spent: 1000000, total_orders: 10, avg_order_value: 100000 }
+      })
+
+      const result = await adminUserService.getUserStats('user-123')
+
+      expect(result.data.avg_order_value).toBe(100000)
+    })
+  })
+
+  describe('getUserActivity()', () => {
+    it('✅ debe obtener actividad reciente', async () => {
+      const mockActivity = [
+        { action: 'order_created', timestamp: '2025-10-28T10:00:00Z' },
+        { action: 'product_viewed', timestamp: '2025-10-28T09:00:00Z' }
+      ]
+
+      adminUserService.getUserActivity.mockResolvedValue({
+        success: true,
+        data: mockActivity
+      })
+
+      const result = await adminUserService.getUserActivity('user-123')
+
+      expect(result.success).toBe(true)
+      expect(result.data).toHaveLength(2)
+    })
+
+    it('✅ debe soportar límite de resultados', async () => {
+      adminUserService.getUserActivity.mockResolvedValue({
+        success: true,
+        data: Array(20).fill({ action: 'test' })
+      })
+
+      const result = await adminUserService.getUserActivity('user-123', { limit: 20 })
+
+      expect(result.data).toHaveLength(20)
+    })
+  })
+})

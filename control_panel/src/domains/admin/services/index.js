@@ -75,6 +75,23 @@ export {
 } from './adminRequestService'
 
 // ========================================
+// 💰 SERVICIOS DE LIBERACIÓN DE PAGOS
+// ========================================
+export {
+  getPaymentReleases,
+  getPaymentReleaseDetails,
+  releasePayment,
+  cancelPaymentRelease,
+  getPaymentReleaseStats,
+  getPaymentReleasesReport,
+  formatCLP,
+  formatDate,
+  daysBetween,
+  validateReleaseData,
+  validateFilters
+} from './adminPaymentReleaseService'
+
+// ========================================
 // 📎 SERVICIOS DE GESTIÓN DE ARCHIVOS
 // ========================================
 export {

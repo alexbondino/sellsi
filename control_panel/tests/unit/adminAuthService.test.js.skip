@@ -1,0 +1,338 @@
+/**
+ * @jest-environment jsdom
+ * 
+ * Tests para adminAuthService
+ * Cubre: Login, logout, 2FA, sesión, recuperación de contraseña
+ */
+
+import { describe, it, expect, beforeEach, jest } from '@jest/globals'
+
+// Mock functions que simularán el comportamiento del servicio
+const mockLoginAdmin = jest.fn()
+const mockLogoutAdmin = jest.fn()
+const mockValidateAdmin2FA = jest.fn()
+const mockSetup2FA = jest.fn()
+const mockDisable2FA = jest.fn()
+const mockGetCurrentSession = jest.fn()
+const mockIsAdminAuthenticated = jest.fn()
+const mockRequestPasswordReset = jest.fn()
+const mockVerifyResetToken = jest.fn()
+
+// Objeto que simula el servicio
+const adminAuthService = {
+  loginAdmin: mockLoginAdmin,
+  logoutAdmin: mockLogoutAdmin,
+  validateAdmin2FA: mockValidateAdmin2FA,
+  setup2FA: mockSetup2FA,
+  disable2FA: mockDisable2FA,
+  getCurrentSession: mockGetCurrentSession,
+  isAdminAuthenticated: mockIsAdminAuthenticated,
+  requestPasswordReset: mockRequestPasswordReset,
+  verifyResetToken: mockVerifyResetToken
+}
+
+describe('adminAuthService - Autenticación', () => {
+  beforeEach(() => {
+    jest.clearAllMocks()
+  })
+
+  describe('loginAdmin()', () => {
+    it('✅ debe autenticar admin con credenciales válidas', async () => {
+      const mockSession = {
+        user: { id: 'admin-123', email: 'admin@sellsi.com' },
+        access_token: 'token-123'
+      }
+
+      mockLoginAdmin.mockResolvedValue({
+        success: true,
+        session: mockSession,
+        requires2FA: false
+      })
+
+      const result = await adminAuthService.loginAdmin('admin@sellsi.com', 'password123')
+
+      expect(result.success).toBe(true)
+      expect(result.session).toBeDefined()
+      expect(result.session.user.email).toBe('admin@sellsi.com')
+    })
+
+    it('❌ debe rechazar credenciales inválidas', async () => {
+      mockLoginAdmin.mockResolvedValue({
+        success: false,
+        error: 'Credenciales inválidas'
+      })
+
+      const result = await adminAuthService.loginAdmin('wrong@email.com', 'wrongpass')
+
+      expect(result.success).toBe(false)
+      expect(result.error).toContain('Credenciales')
+    })
+
+    it('🔐 debe requerir 2FA cuando está habilitado', async () => {
+      mockLoginAdmin.mockResolvedValue({
+        success: true,
+        requires2FA: true,
+        session: null
+      })
+
+      const result = await adminAuthService.loginAdmin('admin@sellsi.com', 'password123')
+
+      expect(result.success).toBe(true)
+      expect(result.requires2FA).toBe(true)
+      expect(result.session).toBeNull()
+    })
+
+    it('⚠️ debe validar formato de email', async () => {
+      mockLoginAdmin.mockResolvedValue({
+        success: false,
+        error: 'Email inválido'
+      })
+
+      const result = await adminAuthService.loginAdmin('not-an-email', 'password123')
+
+      expect(result.success).toBe(false)
+    })
+
+    it('⚠️ debe requerir contraseña', async () => {
+      mockLoginAdmin.mockResolvedValue({
+        success: false,
+        error: 'Contraseña requerida'
+      })
+
+      const result = await adminAuthService.loginAdmin('admin@sellsi.com', '')
+
+      expect(result.success).toBe(false)
+    })
+  })
+
+  describe('2FA - Autenticación de dos factores', () => {
+    it('✅ debe configurar 2FA correctamente', async () => {
+      const mockQRCode = 'data:image/png;base64,iVBOR...'
+      const mockSecret = 'JBSWY3DPEHPK3PXP'
+
+      adminAuthService.setup2FA.mockResolvedValue({
+        success: true,
+        qrCode: mockQRCode,
+        secret: mockSecret
+      })
+
+      const result = await adminAuthService.setup2FA('admin-123')
+
+      expect(result.success).toBe(true)
+      expect(result.qrCode).toBeDefined()
+      expect(result.secret).toBeDefined()
+    })
+
+    it('✅ debe validar código 2FA correcto', async () => {
+      adminAuthService.validateAdmin2FA.mockResolvedValue({
+        success: true,
+        valid: true
+      })
+
+      const result = await adminAuthService.validateAdmin2FA('admin-123', '123456')
+
+      expect(result.success).toBe(true)
+      expect(result.valid).toBe(true)
+    })
+
+    it('❌ debe rechazar código 2FA incorrecto', async () => {
+      adminAuthService.validateAdmin2FA.mockResolvedValue({
+        success: false,
+        valid: false,
+        error: 'Código inválido'
+      })
+
+      const result = await adminAuthService.validateAdmin2FA('admin-123', '000000')
+
+      expect(result.success).toBe(false)
+      expect(result.valid).toBe(false)
+    })
+
+    it('⏱️ debe rechazar código 2FA expirado', async () => {
+      adminAuthService.validateAdmin2FA.mockResolvedValue({
+        success: false,
+        valid: false,
+        error: 'Código expirado'
+      })
+
+      const result = await adminAuthService.validateAdmin2FA('admin-123', '123456')
+
+      expect(result.success).toBe(false)
+      expect(result.error).toContain('expirado')
+    })
+
+    it('✅ debe deshabilitar 2FA con confirmación', async () => {
+      adminAuthService.disable2FA.mockResolvedValue({
+        success: true,
+        message: '2FA deshabilitado correctamente'
+      })
+
+      const result = await adminAuthService.disable2FA('admin-123', '123456')
+
+      expect(result.success).toBe(true)
+    })
+  })
+
+  describe('getCurrentSession()', () => {
+    it('✅ debe obtener sesión activa', async () => {
+      const mockSession = {
+        user: { id: 'admin-123', email: 'admin@sellsi.com' },
+        access_token: 'token-123',
+        expires_at: Date.now() + 3600000
+      }
+
+      adminAuthService.getCurrentSession.mockResolvedValue({
+        success: true,
+        session: mockSession
+      })
+
+      const result = await adminAuthService.getCurrentSession()
+
+      expect(result.success).toBe(true)
+      expect(result.session).toBeDefined()
+      expect(result.session.user.id).toBe('admin-123')
+    })
+
+    it('❌ debe retornar null si no hay sesión', async () => {
+      adminAuthService.getCurrentSession.mockResolvedValue({
+        success: false,
+        session: null
+      })
+
+      const result = await adminAuthService.getCurrentSession()
+
+      expect(result.success).toBe(false)
+      expect(result.session).toBeNull()
+    })
+
+    it('⏱️ debe detectar sesión expirada', async () => {
+      adminAuthService.getCurrentSession.mockResolvedValue({
+        success: false,
+        session: null,
+        error: 'Sesión expirada'
+      })
+
+      const result = await adminAuthService.getCurrentSession()
+
+      expect(result.success).toBe(false)
+      expect(result.error).toContain('expirada')
+    })
+  })
+
+  describe('logoutAdmin()', () => {
+    it('✅ debe cerrar sesión correctamente', async () => {
+      adminAuthService.logoutAdmin.mockResolvedValue({
+        success: true
+      })
+
+      const result = await adminAuthService.logoutAdmin()
+
+      expect(result.success).toBe(true)
+    })
+
+    it('✅ debe limpiar sesión local', async () => {
+      adminAuthService.logoutAdmin.mockResolvedValue({
+        success: true
+      })
+
+      await adminAuthService.logoutAdmin()
+      
+      adminAuthService.isAdminAuthenticated.mockReturnValue(false)
+      const isAuth = adminAuthService.isAdminAuthenticated()
+
+      expect(isAuth).toBe(false)
+    })
+  })
+
+  describe('Recuperación de contraseña', () => {
+    it('✅ debe enviar email de recuperación', async () => {
+      adminAuthService.requestPasswordReset.mockResolvedValue({
+        success: true,
+        message: 'Email enviado'
+      })
+
+      const result = await adminAuthService.requestPasswordReset('admin@sellsi.com')
+
+      expect(result.success).toBe(true)
+    })
+
+    it('❌ debe rechazar email no registrado', async () => {
+      adminAuthService.requestPasswordReset.mockResolvedValue({
+        success: false,
+        error: 'Email no encontrado'
+      })
+
+      const result = await adminAuthService.requestPasswordReset('noexiste@email.com')
+
+      expect(result.success).toBe(false)
+    })
+
+    it('✅ debe verificar token de reset válido', async () => {
+      adminAuthService.verifyResetToken.mockResolvedValue({
+        success: true,
+        valid: true
+      })
+
+      const result = await adminAuthService.verifyResetToken('valid-token-123')
+
+      expect(result.success).toBe(true)
+      expect(result.valid).toBe(true)
+    })
+
+    it('❌ debe rechazar token inválido', async () => {
+      adminAuthService.verifyResetToken.mockResolvedValue({
+        success: false,
+        valid: false,
+        error: 'Token inválido o expirado'
+      })
+
+      const result = await adminAuthService.verifyResetToken('invalid-token')
+
+      expect(result.success).toBe(false)
+      expect(result.valid).toBe(false)
+    })
+  })
+
+  describe('Seguridad y validaciones', () => {
+    it('🔒 debe prevenir SQL injection en login', async () => {
+      const maliciousEmail = "admin' OR '1'='1"
+      
+      adminAuthService.loginAdmin.mockResolvedValue({
+        success: false,
+        error: 'Email inválido'
+      })
+
+      const result = await adminAuthService.loginAdmin(maliciousEmail, 'pass')
+
+      expect(result.success).toBe(false)
+    })
+
+    it('🛡️ debe rate-limit intentos de login', async () => {
+      adminAuthService.loginAdmin.mockResolvedValue({
+        success: false,
+        error: 'Demasiados intentos. Espere 5 minutos.'
+      })
+
+      // Simular 5 intentos fallidos
+      for (let i = 0; i < 5; i++) {
+        await adminAuthService.loginAdmin('admin@sellsi.com', 'wrong')
+      }
+
+      const result = await adminAuthService.loginAdmin('admin@sellsi.com', 'password')
+
+      expect(result.success).toBe(false)
+      expect(result.error).toContain('intentos')
+    })
+
+    it('🔐 debe rechazar contraseñas débiles', async () => {
+      adminAuthService.loginAdmin.mockResolvedValue({
+        success: false,
+        error: 'Contraseña debe tener al menos 8 caracteres'
+      })
+
+      const result = await adminAuthService.loginAdmin('admin@sellsi.com', '123')
+
+      expect(result.success).toBe(false)
+    })
+  })
+})

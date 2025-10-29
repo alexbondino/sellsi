@@ -2,12 +2,13 @@
  * 📊 Dashboard Principal del Panel Administrativo
  * 
  * Componente principal que contiene pestañas para diferentes funcionalidades:
- * - Gestión de Solicitudes de Pago
+ * - Liberación de Pagos (Principal)
  * - Gestión de Usuarios (Ban/Unban)
  * - Gestión de Productos Marketplace
+ * - Solicitudes de Pago (EN DESARROLLO - Sistema Legacy)
  * 
  * @author Panel Administrativo Sellsi
- * @date 10 de Julio de 2025
+ * @date 29 de Octubre de 2025
  */
 
 import React, { useState, memo } from 'react';
@@ -30,32 +31,37 @@ import {
   People as PeopleIcon,
   Inventory as InventoryIcon,
   Security as SecurityIcon,
-  ArrowBack as ArrowBackIcon
+  ArrowBack as ArrowBackIcon,
+  AttachMoney as AttachMoneyIcon
 } from '@mui/icons-material';
 
 // Importar componentes de pestañas
 import AdminPanelTable from './AdminPanelTable';
 import UserManagementTable from './UserManagementTable';
 import ProductMarketplaceTable from './ProductMarketplaceTable';
+import PaymentReleasesTable from './PaymentReleasesTable';
 
 // ✅ CONSTANTS
 const TAB_ICONS = {
-  solicitudes: <PaymentIcon />,
+  liberaciones: <AttachMoneyIcon />,
   usuarios: <PeopleIcon />,
-  productos: <InventoryIcon />
+  productos: <InventoryIcon />,
+  solicitudes: <PaymentIcon />
 };
 
 const TAB_LABELS = {
-  solicitudes: 'Solicitudes de Pago',
+  liberaciones: 'Liberación de Pagos',
   usuarios: 'Gestión de Usuarios',
-  productos: 'Productos Marketplace'
+  productos: 'Productos Marketplace',
+  solicitudes: 'Solicitudes de Pago (EN DESARROLLO)'
 };
 
 // ✅ STYLES
 const dashboardStyles = {
   container: {
-    maxWidth: 'none',
-    px: 2,
+    maxWidth: '80%',
+    width: '100%',
+    px: 3,
     py: 3
   },
   header: {
@@ -213,8 +219,8 @@ const AdminDashboard = memo(() => {
         indicatorColor="primary"
       >
         <Tab
-          icon={TAB_ICONS.solicitudes}
-          label={TAB_LABELS.solicitudes}
+          icon={TAB_ICONS.liberaciones}
+          label={TAB_LABELS.liberaciones}
           sx={dashboardStyles.tab}
           {...getTabProps(0)}
         />
@@ -230,15 +236,21 @@ const AdminDashboard = memo(() => {
           sx={dashboardStyles.tab}
           {...getTabProps(2)}
         />
+        <Tab
+          icon={TAB_ICONS.solicitudes}
+          label={TAB_LABELS.solicitudes}
+          sx={dashboardStyles.tab}
+          {...getTabProps(3)}
+        />
       </Tabs>
     </Paper>
   );
 
   const renderTabContent = () => (
     <>
-      {/* Pestaña de Solicitudes de Pago */}
+      {/* Pestaña de Liberación de Pagos */}
       <TabPanel value={currentTab} index={0}>
-        <AdminPanelTable />
+        <PaymentReleasesTable />
       </TabPanel>
 
       {/* Pestaña de Gestión de Usuarios */}
@@ -250,6 +262,11 @@ const AdminDashboard = memo(() => {
       <TabPanel value={currentTab} index={2}>
         <ProductMarketplaceTable />
       </TabPanel>
+
+      {/* Pestaña de Solicitudes de Pago (EN DESARROLLO) */}
+      <TabPanel value={currentTab} index={3}>
+        <AdminPanelTable />
+      </TabPanel>
     </>
   );
 
@@ -258,7 +275,7 @@ const AdminDashboard = memo(() => {
   // ========================================
 
   return (
-    <Container sx={dashboardStyles.container}>
+    <Container maxWidth={false} sx={dashboardStyles.container}>
       {/* Header del Dashboard */}
       {renderHeader()}
 
