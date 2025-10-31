@@ -281,7 +281,7 @@ BEGIN
     updated_at = now()
   WHERE id = p_release_id;
 
-  SELECT u.email, u.display_name, o.order_code
+  SELECT u.email, u.display_name, o.id as order_code  -- Usar o.id como order_code
   INTO v_supplier_email, v_supplier_name, v_order_code
   FROM users u
   CROSS JOIN orders o
@@ -381,7 +381,7 @@ $$;
 CREATE OR REPLACE VIEW public.payment_releases_with_details AS
 SELECT 
   pr.*,
-  o.order_code,
+  o.id as order_code,  -- Usar o.id como order_code ya que no existe columna order_code
   o.payment_status as order_payment_status,
   s.email as supplier_email,
   s.display_name as supplier_name,
