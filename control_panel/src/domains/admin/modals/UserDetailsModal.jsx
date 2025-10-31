@@ -9,7 +9,7 @@
  * - Acciones disponibles (banear/desbanear)
  * 
  * @author Panel Administrativo Sellsi
- * @date 16 de Julio de 2025
+ * @date 16 de Julio de 2025.
  */
 
 import React, { useState, useEffect } from 'react';
