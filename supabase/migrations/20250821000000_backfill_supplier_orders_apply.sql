@@ -127,9 +127,9 @@ WITH part_map AS (
     oi.document_type
   FROM order_items oi
   JOIN part_map pm ON pm.parent_order_id = oi.parent_order_id AND pm.supplier_id = oi.supplier_id
-  INNER JOIN public.products p ON p.id = oi.product_id  -- Only include products that exist
   LEFT JOIN public.supplier_order_items soi ON soi.supplier_order_id = pm.supplier_order_id AND soi.product_id = oi.product_id
   WHERE soi.id IS NULL
+    AND EXISTS (SELECT 1 FROM public.products WHERE id = oi.product_id)  -- Only include products that exist
 )
 INSERT INTO public.supplier_order_items (supplier_order_id, product_id, quantity, unit_price, price_at_addition, price_tiers, document_type)
 SELECT * FROM to_insert;
