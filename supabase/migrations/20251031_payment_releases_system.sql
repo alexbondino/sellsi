@@ -389,7 +389,6 @@ SELECT
   b.user_nm as buyer_name,     -- Usar user_nm en lugar de display_name
   a.email as admin_email,
   a.full_name as admin_name,   -- Usar full_name para control_panel_users
-  a.display_name as admin_name,
   EXTRACT(DAYS FROM (COALESCE(pr.released_at, now()) - pr.delivery_confirmed_at))::integer as days_since_delivery
 FROM payment_releases pr
 LEFT JOIN orders o ON pr.order_id = o.id
