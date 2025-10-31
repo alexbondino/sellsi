@@ -27,11 +27,14 @@ const originalInfo = console.info;
 const originalDebug = console.debug;
 beforeAll(() => {
   console.error = (...args) => {
-    if (
-      typeof args[0] === 'string' &&
-      args[0].includes('Warning: ReactDOM.render is no longer supported')
-    ) {
-      return;
+    if (typeof args[0] === 'string') {
+      const msg = args[0];
+      // Ignore legacy ReactDOM.render deprecation noise
+      if (msg.includes('Warning: ReactDOM.render is no longer supported')) return;
+      // Ignore invalid DOM prop coming from third-party libs (fetchpriority vs fetchPriority)
+      if (msg.toLowerCase().includes('fetchpriority') || msg.toLowerCase().includes('fetchpriority')) return;
+      // Ignore MUI Grid migration warnings that appear in tests
+      if (msg.includes('MUI Grid') || msg.includes('The `item` prop has been removed') || msg.includes('The `xs` prop has been removed')) return;
     }
     originalError.call(console, ...args);
   };
@@ -111,7 +114,11 @@ const createQueryMock = (result = { data: null, error: null }) => {
 
 // Minimal inline mock for the supabase client chain used by the app.
 // Implemented entirely inside the factory to avoid referencing external variables (Jest rule).
+// Provide a richer supabase mock that stores an auth state change callback so tests can trigger SIGNED_IN/SIGNED_OUT.
 jest.mock('../../src/services/supabase', () => {
+  let authCallback = null;
+  let currentSession = null;
+
   const createQuery = (result = { data: null, error: null }) => {
     const chain = {
       select: jest.fn(() => chain),
@@ -121,11 +128,34 @@ jest.mock('../../src/services/supabase', () => {
     return chain;
   };
 
-  return {
-    supabase: {
-      from: jest.fn(() => createQuery()),
+  const supabase = {
+    from: jest.fn(() => createQuery()),
+    auth: {
+      getSession: jest.fn(() => Promise.resolve({ data: { session: currentSession } })),
+      onAuthStateChange: jest.fn((cb) => {
+        authCallback = cb;
+        return { data: { subscription: { unsubscribe: jest.fn() } } };
+      }),
     },
   };
+
+  // Expose a test helper to trigger auth events from tests via globalThis
+  globalThis.__TEST_SUPABASE_TRIGGER_AUTH = (event, session) => {
+    currentSession = session;
+    // Call the internal listener if registered
+    if (typeof authCallback === 'function') {
+      try { authCallback(event, session); } catch (e) { /* ignore */ }
+    }
+    // Also call any globally registered test listeners (e.g., provider-level hooks)
+    if (Array.isArray(globalThis.__TEST_AUTH_LISTENERS)) {
+      globalThis.__TEST_AUTH_LISTENERS.forEach((l) => {
+        try { l(event, session); } catch (e) { /* ignore */ }
+      });
+    }
+  };
+
+  // Allow tests to override the .from mock by spying on supabase.from directly
+  return { supabase };
 });
 
 // ===== MOCK: user services =====
@@ -141,11 +171,6 @@ jest.mock('../../src/services/user', () => {
 });
 
 // ===== MOCK: useProductPriceTiers hook =====
-// Prevent import.meta usage in the real hook from breaking Jest parsing.
-jest.mock('../../src/shared/hooks/product/useProductPriceTiers', () => ({
-  useProductPriceTiers: jest.fn(() => ({
-    tiers: [],
-    loading: false,
-    error: null,
-  })),
-}));
+// Deprecated: the shared hook was removed in favor of centralized tier caching.
+// Tests should mock higher-level modules or provide product fixtures with
+// `priceTiers` and `tiersStatus` fields instead of mocking this hook.

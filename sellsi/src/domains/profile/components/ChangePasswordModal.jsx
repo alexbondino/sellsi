@@ -16,6 +16,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import { PasswordRequirements } from '../../../shared/components/feedback';
 import { supabase } from '../../../services/supabase';
 import { trackUserAction } from '../../../services/security';
+import { useBodyScrollLock } from '../../../shared/hooks/useBodyScrollLock';
 
 const ChangePasswordModal = ({ open, onClose, onPasswordChanged, showBanner }) => {
   const [formData, setFormData] = useState({
@@ -27,6 +28,9 @@ const ChangePasswordModal = ({ open, onClose, onPasswordChanged, showBanner }) =
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+
+  // ✅ Bloquear scroll del body cuando el modal está abierto
+  useBodyScrollLock(open);
 
   // Reset form when modal opens/closes
   useEffect(() => {

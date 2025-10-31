@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useRef } from 'react';
 import { getPresets, upsertPreset, renamePreset, deletePreset } from '../../../services/supplier/shippingRegionPresetsService';
 
 export function useShippingRegionPresets(supplierId) {
@@ -7,8 +7,18 @@ export function useShippingRegionPresets(supplierId) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
 
+  const didLoadRef = useRef(false);
+  const lastLoadTsRef = useRef(0);
+  const LOCAL_TTL = 1500; // 1.5s: evita ráfaga doble StrictMode + layout swap
+
   const load = useCallback(async () => {
     if (!supplierId) return;
+    const now = Date.now();
+    if (didLoadRef.current && (now - lastLoadTsRef.current) < LOCAL_TTL) {
+      return; // Guard redundante (micro‑TTL local)
+    }
+    didLoadRef.current = true;
+    lastLoadTsRef.current = now;
     setLoading(true); setError(null);
     try {
       const data = await getPresets(supplierId);

@@ -60,6 +60,6 @@ export function useSupplierPartActions(supplierId) {
     reject: (part, reason) => transition(part, 'rejected', { rejected_reason: reason }),
     dispatch: (part, eta) => transition(part, 'in_transit', eta ? { estimated_delivery_date: eta } : {}),
     deliver: (part) => transition(part, 'delivered'),
-    cancel: (part) => transition(part, 'cancelled'),
+    cancel: (part, reason) => transition(part, 'cancelled', reason ? { cancel_reason: reason } : {}),
   };
 }

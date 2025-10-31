@@ -1,8 +1,8 @@
 import React, { Suspense } from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate, useParams } from 'react-router-dom';
 import SuspenseLoader from '../../shared/components/layout/SuspenseLoader';
 // Import interno directo para evitar que PrivateRoute forme parte del contrato público de auth
-import PrivateRoute from '../../domains/auth/components/PrivateRoute';
+import PrivateRoute from '../../workspaces/auth/guards/components/PrivateRoute';
 import { useAuth } from '../providers';
 
 // Landing Page (carga inmediata para primera impresión)
@@ -42,7 +42,9 @@ const MyOrdersPage = React.lazy(() =>
   import('../../domains/supplier/pages/my-orders/MyOrdersPage')
 );
 const MarketplaceSupplier = React.lazy(() =>
-  import('../../domains/supplier/pages/MarketplaceSupplier.jsx')
+  import('../../domains/supplier').then(module => ({
+    default: module.MarketplaceSupplier,
+  }))
 );
 const SupplierOffers = React.lazy(() =>
   import('../../domains/supplier/pages/offers/SupplierOffers')
@@ -55,15 +57,12 @@ const Profile = React.lazy(() => import('../../domains/profile/pages/Profile'));
 const BuyerOrders = React.lazy(() =>
   import('../../domains/buyer/pages/BuyerOrders')
 );
-const BuyerPerformance = React.lazy(() =>
-  import('../../domains/buyer/pages/BuyerPerformance')
-);
+// BuyerPerformance was removed; reuse MarketplaceBuyer for now to keep route functional
+const BuyerPerformance = MarketplaceBuyer;
 const BuyerOffers = React.lazy(() =>
   import('../../domains/buyer/pages/offers/BuyerOffers')
 );
-const TechnicalSpecs = React.lazy(() =>
-  import('../../domains/ProductPageView/pages/TechnicalSpecs')
-);
+// Eliminado: TechnicalSpecs como página propia. Usaremos redirect desde /technicalspecs a la ruta unificada.
 const ProviderCatalog = React.lazy(() =>
   import('../../domains/marketplace/pages/ProviderCatalog')
 );
@@ -73,16 +72,16 @@ const ProductPageWrapper = React.lazy(() =>
 
 // 📦 AUTH & ONBOARDING - LAZY LOADING
 const Login = React.lazy(() =>
-  import('../../domains/auth').then(module => ({ default: module.Login }))
+  import('../../workspaces/auth').then(module => ({ default: module.Login }))
 );
 const Register = React.lazy(() =>
-  import('../../domains/auth').then(module => ({ default: module.Register }))
+  import('../../workspaces/auth').then(module => ({ default: module.Register }))
 );
 const Onboarding = React.lazy(() =>
   import('../../app/pages/onboarding/Onboarding')
 );
 const ResetPassword = React.lazy(() =>
-  import('../../domains/auth/components/ResetPassword')
+  import('../../workspaces/auth/account-recovery/components/ResetPassword')
 );
 
 // 📦 ERROR PAGES - LAZY LOADING
@@ -103,35 +102,35 @@ const PrivacyPolicyPage = React.lazy(() =>
   import('../../app/pages/legal/PrivacyPolicyPage')
 );
 
-// 📦 ADMIN PAGES - LAZY LOADING
-const AdminLogin = React.lazy(() =>
-  import('../../domains/admin').then(module => ({ default: module.AdminLogin }))
-);
-const AdminDashboard = React.lazy(() =>
-  import('../../domains/admin').then(module => ({
-    default: module.AdminDashboard,
-  }))
-);
-const AdminPanelHome = React.lazy(() =>
-  import('../../domains/admin').then(module => ({
-    default: module.AdminPanelHome,
-  }))
-);
-const AdminMetrics = React.lazy(() =>
-  import('../../domains/admin').then(module => ({
-    default: module.AdminMetrics,
-  }))
-);
-
 // 📦 AUTH CALLBACK - LAZY LOADING
 // AuthCallback también se importa directo para mantener el barrel público mínimo
 const AuthCallback = React.lazy(() =>
-  import('../../domains/auth/components/AuthCallback')
+  import('../../workspaces/auth/login/services/AuthCallback')
 );
 
 export const AppRouter = ({ scrollTargets }) => {
   const { session, needsOnboarding, loadingUserStatus, refreshUserProfile } =
     useAuth();
+
+  // Redirect component: legacy /technicalspecs/:productSlug -> /marketplace/product/:id
+  const RedirectTechnicalSpecs = () => {
+    const { productSlug } = useParams();
+    try {
+      const {
+        extractProductIdFromSlug,
+      } = require('../../shared/utils/product/productUrl');
+      const id = extractProductIdFromSlug(productSlug);
+      if (id) {
+        // Try to derive name part after UUID for better SEO, else redirect with just id
+        const dashIdx = productSlug.indexOf(id) + id.length;
+        const rest = productSlug.slice(dashIdx).replace(/^[-\s\/]+/, '');
+        if (rest)
+          return <Navigate to={`/marketplace/product/${id}/${rest}`} replace />;
+        return <Navigate to={`/marketplace/product/${id}`} replace />;
+      }
+    } catch (_) {}
+    return <Navigate to="/marketplace" replace />;
+  };
 
   return (
     <Suspense fallback={<SuspenseLoader />}>
@@ -148,10 +147,10 @@ export const AppRouter = ({ scrollTargets }) => {
           element={<ProductPageWrapper isLoggedIn={!!session} />}
         />
 
-        {/* TechnicalSpecs puede ser accedido sin iniciar sesión, si es contenido común */}
+        {/* Redirect legacy technicalspecs to unified marketplace product route */}
         <Route
           path="/technicalspecs/:productSlug"
-          element={<TechnicalSpecs isLoggedIn={!!session} />}
+          element={<RedirectTechnicalSpecs />}
         />
         <Route path="/login" element={<Login />} />
         <Route path="/crear-cuenta" element={<Register />} />
@@ -163,12 +162,6 @@ export const AppRouter = ({ scrollTargets }) => {
           element={<TermsAndConditionsPage />}
         />
         <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
-
-        {/* RUTAS ADMINISTRATIVAS - ACCESO VISUAL PARA TESTING */}
-        <Route path="/admin-login" element={<AdminLogin />} />
-        <Route path="/admin-panel" element={<AdminPanelHome />} />
-        <Route path="/admin-panel/dashboard" element={<AdminDashboard />} />
-        <Route path="/admin-panel/metrics" element={<AdminMetrics />} />
 
         {/* Ruta para página de ban (acceso directo para testing) */}
         <Route path="/banned" element={<BannedPage />} />

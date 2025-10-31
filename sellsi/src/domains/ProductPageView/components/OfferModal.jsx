@@ -22,6 +22,7 @@ import {
 } from '@mui/icons-material';
 import { useOfferStore } from '../../../stores/offerStore';
 import { toast } from 'react-hot-toast';
+import { useBodyScrollLock } from '../../../shared/hooks/useBodyScrollLock';
 
 const OfferModal = ({ 
   open, 
@@ -29,8 +30,11 @@ const OfferModal = ({
   onOffer, // Mantenemos para compatibilidad pero usaremos nuestro store
   product,
   stock = undefined,
-  defaultPrice = ''
+  defaultPrice = '',
+  initialLimits = null,
 }) => {
+  // ✅ Bloquear scroll del body cuando el modal está abierto
+  useBodyScrollLock(open);
   const [offeredPrice, setOfferedPrice] = useState('');
   const [offeredQuantity, setOfferedQuantity] = useState('');
   const [errors, setErrors] = useState({});
@@ -65,11 +69,17 @@ const OfferModal = ({
 
   // Validar límites sólo una vez por apertura
   useEffect(() => {
-    if (open && !ranInitialLimitsRef.current) {
+    if (!open) return;
+    if (initialLimits && !limitsValidation) {
+      setLimitsValidation(initialLimits);
+      ranInitialLimitsRef.current = true;
+      return;
+    }
+    if (!ranInitialLimitsRef.current) {
       ranInitialLimitsRef.current = true;
       checkLimits();
     }
-  }, [open, product?.id, product?.productid, userId]);
+  }, [open, product?.id, product?.productid, userId, initialLimits, limitsValidation]);
 
   // Al abrir el modal, asegurarnos de tener las ofertas del comprador cargadas
   const buyerOffersRequestedRef = React.useRef(false);
@@ -81,6 +91,13 @@ const OfferModal = ({
     }
     const prodKey = product?.id ?? product?.productid ?? product?.product_id;
     if (!prodKey) return;
+    // Si ya detectamos pending local, no sobreescribir buyerOffers con fetch (preserva alerta inmediata)
+    const alreadyPending = (Array.isArray(buyerOffers) && buyerOffers.some(o => {
+      const status = (o.status||'').toLowerCase();
+      const keys = [o.product_id, o.productId, o.product?.product_id, o.product?.productid, o.product?.id];
+      return status === 'pending' && keys.some(k => k != null && String(k) === String(prodKey));
+    }));
+    if (alreadyPending) return;
     // Only request once per modal open
     if (buyerOffersRequestedRef.current) return;
     buyerOffersRequestedRef.current = true;
@@ -196,7 +213,9 @@ const OfferModal = ({
     if (isNaN(parsed)) {
       setOfferedQuantity('');
     } else {
-      setOfferedQuantity(String(parsed));
+      // Clamp to available stock when leaving the field
+      const clamped = Math.min(parsed, effectiveStock);
+      setOfferedQuantity(String(clamped));
     }
   };
 
@@ -260,6 +279,14 @@ const OfferModal = ({
 
   const handleClose = () => {
     if (!loading) {
+      // Ensure quantity is clamped to stock before closing (exit edit mode)
+      if (offeredQuantity) {
+        const parsed = parseInt(offeredQuantity, 10);
+        if (!isNaN(parsed)) {
+          const clamped = Math.min(parsed, effectiveStock);
+          if (clamped !== parsed) setOfferedQuantity(String(clamped));
+        }
+      }
       onClose();
     }
   };
@@ -455,19 +482,31 @@ const OfferModal = ({
         </Box>
       </DialogContent>
 
-      <DialogActions sx={{ p: 2, gap: 1, justifyContent: 'center' }}>
-        <Button 
+      <DialogActions sx={{ flexDirection: { xs: 'column', sm: 'row' }, gap: 1, p: 3, pt: 1, justifyContent: 'center' }}>
+        <Button
           onClick={handleClose}
           disabled={loading}
-          color="inherit"
+          variant="outlined"
+          fullWidth={false}
+          sx={{
+            textTransform: 'none',
+            fontWeight: 500,
+            borderRadius: 2,
+          }}
         >
           Cancelar
         </Button>
+
         <Button
           onClick={handleSubmit}
           variant="contained"
           disabled={loading || !isFormValid() || hasPendingForProduct}
           startIcon={loading && <CircularProgress size={16} />}
+          sx={{
+            textTransform: 'none',
+            fontWeight: 600,
+            borderRadius: 2,
+          }}
         >
           {loading ? 'Enviando...' : 'Enviar Oferta'}
         </Button>

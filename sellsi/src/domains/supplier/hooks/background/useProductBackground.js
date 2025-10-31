@@ -149,7 +149,13 @@ const useProductBackground = create((set, get) => ({
         // Fallback para backward compatibility
         const supplierId = localStorage.getItem('user_id')
         if (supplierId) {
-          await crudHook.loadProducts(supplierId)
+          // Respect global last-fetched TTL
+          const productsKey = `fp_products_supplier_${supplierId}`
+          const lastMap = (typeof window !== 'undefined') ? (window.__inFlightSupabaseLastFetched = window.__inFlightSupabaseLastFetched || new Map()) : new Map()
+          const last = lastMap.get(productsKey)
+          if (!last || (Date.now() - last) > 3000) {
+            await crudHook.loadProducts(supplierId)
+          }
         }
       }
       updateProgress('reload', 'completed')

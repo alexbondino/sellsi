@@ -8,6 +8,8 @@ import {
   CircularProgress,
   LinearProgress,
   Backdrop,
+  useTheme,
+  useMediaQuery,
 } from '@mui/material';
 // Iconos
 import EditIcon from '@mui/icons-material/Edit';
@@ -22,7 +24,7 @@ import { formatPrice } from '../../../utils/formatters';
 import ActionMenu from './ActionMenu';
 import ProductBadges from './ProductBadges';
 import StatusChip from './StatusChip';
-import { useProductPriceTiers } from '../../../hooks/product/useProductPriceTiers';
+import { isNewDate } from '../../../utils/product/isNewDate';
 
 /**
  * ProductCardSupplierContext - Renders the specific content and actions for a supplier's product card.
@@ -30,12 +32,12 @@ import { useProductPriceTiers } from '../../../hooks/product/useProductPriceTier
  */
 const ProductCardSupplierContext = React.memo(
   ({ product, onEdit, onDelete, onViewStats, isDeleting, isUpdating, isProcessing }) => {
-    // Hook to get price tiers (same as BuyerContext)
-    const {
-      tiers,
-      loading: loadingTiers,
-      error: errorTiers,
-    } = useProductPriceTiers(product.id);
+  // Centralized deferred tiers (populated via useProducts). No per-product network hook.
+  const rawTiersStatus = product.tiersStatus
+  const hasAnyTiers = Array.isArray(product.priceTiers) && product.priceTiers.length > 0
+  const tiersStatus = hasAnyTiers ? 'loaded' : (rawTiersStatus || 'idle')
+  const loadingTiers = tiersStatus === 'loading'
+  const errorTiers = tiersStatus === 'error'
 
     // Product properties (already destructuring in main ProductCard, passed here)
     const {
@@ -47,6 +49,7 @@ const ProductCardSupplierContext = React.memo(
       stock,
   ventas = 0,
       updatedAt,
+      createdAt,
       negociable,
       tramoMin,
       tramoMax,
@@ -57,14 +60,37 @@ const ProductCardSupplierContext = React.memo(
   activo, // estado actual (is_active mapeado a activo en uiProducts)
     } = product;
 
-    // Unify source of price_tiers: prefer product's, if not, from hook (same logic as BuyerContext)
-    const price_tiers = useMemo(() => {
-      return product.priceTiers && product.priceTiers.length > 0
-        ? product.priceTiers
-        : tiers && tiers.length > 0
-        ? tiers
-        : [];
-    }, [product.priceTiers, tiers]);
+  // Unify source of price_tiers: prefer product's, if not, from hook (same logic as BuyerContext)
+  const price_tiers = useMemo(() => {
+    const tiers = product.priceTiers || []
+    // Normalize potential shapes: {min,max,precio} or {min_quantity,max_quantity,price}
+    return tiers
+      .map(t => ({
+        min_quantity: t.min_quantity ?? t.min ?? null,
+        max_quantity: t.max_quantity ?? t.max ?? null,
+        price: Number(t.price ?? t.precio ?? 0) || 0,
+      }))
+      .filter(t => (t.min_quantity != null) && (t.price > 0))
+      .sort((a,b) => (Number(a.min_quantity)||0)-(Number(b.min_quantity)||0))
+  }, [product.priceTiers]);
+  const effectiveMinPrice = product.minPrice ?? product.precio ?? product.price ?? null
+  const effectiveMaxPrice = product.maxPrice ?? product.precio ?? product.price ?? null
+  const hasValidBasePrice = (Number(effectiveMaxPrice) || 0) > 0 || (Number(effectiveMinPrice) || 0) > 0
+  const isTierProduct = (product.product_type === 'tier' || product.tipo === 'tier' || hasAnyTiers)
+  // Only show loading when explicitly marked as loading
+  const isPending = loadingTiers
+
+    // Theme + breakpoints para truncado responsive del nombre
+    const theme = useTheme();
+    const isLg = useMediaQuery(theme.breakpoints.up('lg'));
+    const isMd = useMediaQuery(theme.breakpoints.between('md', 'lg'));
+
+    // Truncar longitud según breakpoint: lg -> 30, md -> 20, sm/xs -> 20
+    const truncatedName = useMemo(() => {
+      if (!nombre) return '';
+      const max = isLg ? 30 : 20;
+      return nombre.length > max ? nombre.slice(0, max - 1).trim() + '…' : nombre;
+    }, [nombre, isLg, isMd]);
 
     // Configure menu actions
     // Reemplazamos VisibilityIcon por ícono de pausa y mantenemos label
@@ -100,14 +126,8 @@ const ProductCardSupplierContext = React.memo(
     // Configure product badges
     const productBadges = useMemo(() => {
       const badges = [];
-      const isNew = () => {
-        if (!updatedAt) return false;
-        const daysDiff = (Date.now() - new Date(updatedAt).getTime()) / 86400000;
-        return daysDiff < 7;
-      };
-
-      // Mostrar 'Nuevo' solo si el producto está activo
-      if (activo && isNew()) {
+      // Mostrar 'Nuevo' solo si el producto está activo. Usar createdAt (3 días).
+      if (activo && isNewDate(product.createdAt)) {
         badges.push({ label: 'Nuevo', color: 'primary', condition: true });
       }
 
@@ -115,7 +135,7 @@ const ProductCardSupplierContext = React.memo(
         badges.push({ label: `-${descuento}%`, color: 'error', condition: true });
       }
       return badges;
-    }, [updatedAt, descuento, activo]);
+  }, [createdAt, descuento, activo]);
 
     return (
       <>
@@ -208,18 +228,20 @@ const ProductCardSupplierContext = React.memo(
               fontSize: '0.95rem',
               lineHeight: 1.3,
               display: '-webkit-box',
-              WebkitLineClamp: 2,
+              WebkitLineClamp: 1,
               WebkitBoxOrient: 'vertical',
               overflow: 'hidden',
-              minHeight: '2.6rem',
+              minHeight: '1.3rem',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'normal',
             }}
           >
-            {nombre}
+            {truncatedName}
           </Typography>
           {/* Precios */}
           <Box sx={{ mb: 2 }}>
             {/* Mostrar loading de tramos */}
-            {loadingTiers && (
+            {isPending && (
               <Typography
                 variant="body2"
                 color="text.secondary"
@@ -228,7 +250,7 @@ const ProductCardSupplierContext = React.memo(
                 Cargando precios...
               </Typography>
             )}
-            
+
             {/* Mostrar error de tramos */}
             {errorTiers && (
               <Typography
@@ -241,7 +263,7 @@ const ProductCardSupplierContext = React.memo(
             )}
 
             {/* Mostrar tramos si existen (usando price_tiers unificado) */}
-            {!loadingTiers && !errorTiers && price_tiers && price_tiers.length > 0 ? (
+            {!isPending && !errorTiers && price_tiers && price_tiers.length > 0 ? (
               <Box>
                 <Typography
                   variant="body2"
@@ -256,11 +278,13 @@ const ProductCardSupplierContext = React.memo(
                   sx={{ fontWeight: 700, fontSize: '1.1rem' }}
                 >
                   {(() => {
-                    const minPrice = Math.min(...price_tiers.map(t => t.price));
-                    const maxPrice = Math.max(...price_tiers.map(t => t.price));
-                    return minPrice !== maxPrice 
+                    const prices = price_tiers.map(t => Number(t.price) || 0).filter(n => n > 0)
+                    if (!prices.length) return formatPrice(precio || 0)
+                    const minPrice = Math.min(...prices)
+                    const maxPrice = Math.max(...prices)
+                    return minPrice !== maxPrice
                       ? `${formatPrice(minPrice)} - ${formatPrice(maxPrice)}`
-                      : formatPrice(minPrice);
+                      : formatPrice(minPrice)
                   })()}
                 </Typography>
                 <Typography
@@ -271,7 +295,7 @@ const ProductCardSupplierContext = React.memo(
                   Desde {price_tiers[0]?.min_quantity || 1} unidades
                 </Typography>
               </Box>
-            ) : !loadingTiers && !errorTiers ? (
+            ) : !loadingTiers && !errorTiers && !isTierProduct ? (
               <Box
                 sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}
               >
@@ -295,6 +319,14 @@ const ProductCardSupplierContext = React.memo(
                   </Typography>
                 )}
               </Box>
+            ) : (!loadingTiers && !errorTiers && isTierProduct && (!price_tiers || price_tiers.length === 0)) ? (
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                sx={{ fontWeight: 500 }}
+              >
+                Define los tramos de precio
+              </Typography>
             ) : null}
             
             {negociable && (

@@ -151,10 +151,16 @@ export const useBuyerOrders = buyerId => {
     } finally {
       setLoading(false);
     }
-  }, [buyerId, mergeAndSplit, error]);
+  }, [buyerId, mergeAndSplit]);
 
-  // Initial load
-  useEffect(() => { fetchOrders(); }, [fetchOrders]);
+  // Initial load - guard contra doble invocación (React StrictMode monta dos veces en dev)
+  const didFetchRef = useRef(false);
+  useEffect(() => {
+    if (didFetchRef.current) return;
+    didFetchRef.current = true;
+    fetchOrders();
+    // Nota: no limpiamos didFetchRef porque queremos evitar refetch accidental en remounts cortos
+  }, [fetchOrders]);
 
   // Realtime subscription for payment orders (payment_status updates)
   useEffect(() => {
@@ -165,10 +171,23 @@ export const useBuyerOrders = buyerId => {
       lastRealtimeRef.current = Date.now();
       if (payload.eventType === 'UPDATE') {
         const row = payload.new;
-        setOrders(prev => prev.map(o => o.order_id === row.id ? { ...o, payment_status: row.payment_status, updated_at: row.updated_at } : o));
+        if ((row?.payment_status || '').toLowerCase() === 'paid') {
+          setOrders(prev => {
+            const exists = prev.some(o => o.order_id === row.id);
+            if (exists) {
+              return prev.map(o => o.order_id === row.id
+                ? { ...o, payment_status: row.payment_status, updated_at: row.updated_at }
+                : o);
+            }
+            // Nueva orden recién promovida a pagada -> refetch completo para incorporar items/splits
+            fetchOrders();
+            return prev;
+          });
+        }
       } else if (payload.eventType === 'INSERT') {
-        // Podría ser nueva payment order: refetch ligero
-        fetchOrders();
+        if ((payload.new?.payment_status || '').toLowerCase() === 'paid') {
+          fetchOrders();
+        }
       }
       });
     }

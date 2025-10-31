@@ -43,16 +43,36 @@ export function useProgressiveProducts(items, options) {
   const [thumbBatchSize] = React.useState(featureFlags.enableViewportThumbs ? 24 : 1000);
   const [visibleThumbCount, setVisibleThumbCount] = React.useState(thumbBatchSize);
 
-  // Reset when breakpoint changes or items list changes
+  // --- Stable change detection to avoid false resets (referential churn) ---
+  const itemsSignature = React.useMemo(() => {
+    if (!Array.isArray(items) || items.length === 0) return 'len:0';
+    // Sample first & last few ids (or stringify fallback) to detect meaningful changes without deep compare
+    const pickId = (o) => o?.id || o?.productId || o?.sku || o?.supplierId || JSON.stringify(o).slice(0,40);
+    const head = items.slice(0,3).map(pickId).join('|');
+    const tail = items.slice(-3).map(pickId).join('|');
+    return `len:${items.length}|h:${head}|t:${tail}`;
+  }, [items]);
+
+  const prevSignatureRef = React.useRef(null);
+
+  // Reset only when breakpoint initial window changes OR page changes explicitly
   React.useEffect(() => {
     setVisibleProductsCount(INITIAL_PRODUCTS);
   }, [INITIAL_PRODUCTS, page]);
 
+  // Reset for REAL item changes (signature diff) – avoids bouncing when array identity changes but contents don't
   React.useEffect(() => {
-    setPage(1);
+    if (prevSignatureRef.current === itemsSignature) return; // no meaningful change
+    prevSignatureRef.current = itemsSignature;
+    // Preserve current page if length shrink still covers it; otherwise clamp
+    setPage((p) => {
+      const totalPagesNext = Math.max(1, Math.ceil(items.length / PRODUCTS_PER_PAGE));
+      return p > totalPagesNext ? totalPagesNext : p; 
+    });
     setVisibleProductsCount(INITIAL_PRODUCTS);
     setVisibleThumbCount(thumbBatchSize);
-  }, [items, INITIAL_PRODUCTS, thumbBatchSize]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [itemsSignature, INITIAL_PRODUCTS, thumbBatchSize, PRODUCTS_PER_PAGE]);
 
   // Batching effect (original escalonado)
   React.useEffect(() => {

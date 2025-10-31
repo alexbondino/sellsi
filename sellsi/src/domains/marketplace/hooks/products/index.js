@@ -2,4 +2,5 @@
 export { useProducts } from './useProducts.js';
 export { useProductFilters } from './useProductFilters.js';
 export { useProductSorting } from './useProductSorting.js';
-export { useProductPriceTiers } from './useProductPriceTiers.js';
+// Re-export canonical implementation from shared
+export { default as useProductPriceTiers } from '../../../../shared/hooks/product/useProductPriceTiers';

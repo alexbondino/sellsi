@@ -40,6 +40,9 @@ export function ProductsSectionView({
     currentPage,
     totalPages,
     titleMarginLeft,
+    getPriority, // ✅ Función para determinar prioridad de imagen
+  getPriceTiers,
+  registerProductNode,
   } = data;
   const { handleBackClick, resetFiltros, scrollToTop, showScrollTop, seccionActiva } = handlers;
 
@@ -80,9 +83,15 @@ export function ProductsSectionView({
             <>
               {PaginationComponent}
               <Box sx={gridStyles} role="list" aria-label={sectionTitle || 'Lista de productos'}>
-                {renderItems.map(producto => (
+                {renderItems.map((producto, index) => (
                   <Box key={`product-${producto.id || producto.productid}`} sx={cardContainerStyles} role="listitem">
-                    <ProductCard product={producto} type={isProviderView ? 'provider' : 'buyer'} />
+                    <ProductCard 
+                      product={producto} 
+                      type={isProviderView ? 'provider' : 'buyer'} 
+                      imagePriority={getPriority ? getPriority(index) : false} // ✅ Prioridad dinámica por posición
+                      // Optional prefetch wiring from useProducts hook
+                      registerProductNode={registerProductNode}
+                    />
                   </Box>
                 ))}
               </Box>

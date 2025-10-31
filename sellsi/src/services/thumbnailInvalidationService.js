@@ -99,12 +99,27 @@ class ThumbnailInvalidationService {
     if (!productId) return;
 
     try {
-      // Invalidar en el servicio de cache
+      console.log(`🚨 INVALIDATING thumbnails for product ${productId}`);
+      
+      // Invalidar en el servicio de cache (incluye forceImmediateRefresh)
       thumbnailCacheService.invalidateProductCache(productId);
       
       // Emitir evento personalizado para componentes que lo necesiten
       this.emitInvalidationEvent(productId);
+
+      // 🔥 FORCE ADDITIONAL REFRESH ATTEMPTS
+      setTimeout(() => {
+        console.log(`🔄 RETRY refresh for product ${productId}`);
+        thumbnailCacheService.forceImmediateRefresh(productId);
+      }, 100);
+
+      setTimeout(() => {
+        console.log(`🔄 FINAL retry refresh for product ${productId}`);
+        thumbnailCacheService.forceImmediateRefresh(productId);
+      }, 500);
+      
     } catch (error) {
+      console.error('❌ Error invalidating thumbnails:', error);
     }
   }
 

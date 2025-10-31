@@ -26,6 +26,7 @@ export class OrdersRepository {
           supplier_parts_meta
         `)
       .eq('user_id', buyerId)
+      .eq('payment_status', 'paid')
       .order('created_at', { ascending: false });
     if (typeof limit === 'number') {
       if (typeof offset === 'number') {
@@ -52,6 +53,7 @@ export class OrdersRepository {
       .from('orders')
       .select('id, payment_status, status, updated_at')
       .eq('user_id', buyerId)
+      .eq('payment_status', 'paid')
       .order('updated_at', { ascending: false });
   }
 

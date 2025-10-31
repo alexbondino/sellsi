@@ -31,7 +31,6 @@ import {
 import { motion, AnimatePresence, useAnimation } from 'framer-motion';
 import { showCartSuccess, showCartError } from '../../../utils/toastHelpers';
 import { useInView } from 'react-intersection-observer';
-// import confetti from 'canvas-confetti';
 import debounce from 'lodash.debounce';
 import { ThemeProvider } from '@mui/material/styles';
 import { dashboardThemeCore } from '../../../styles/dashboardThemeCore';
@@ -57,9 +56,7 @@ import { useRole } from '../../../infrastructure/providers';
 // ============================================================================
 
 // Lazy loading components para optimización
-const RecommendedProducts = lazy(() =>
-  import('../../marketplace/pages/RecommendedProducts')
-);
+// RecommendedProducts removed (legacy); dynamic import deleted to avoid build error
 
 // ============================================================================
 // COMPONENTE PRINCIPAL ULTRA-PREMIUM
@@ -69,16 +66,18 @@ const BuyerCart = () => {
   // ===== ZUSTAND STORE (SELECTORES MEMOIZADOS) =====
   const items = useCartStore(state => state.items);
   const isLoading = useCartStore(state => state.isLoading);
+  const isBackendSynced = useCartStore(state => state.isBackendSynced);
 
   // Acciones memoizadas del store
   const updateQuantity = useCartStore(state => state.updateQuantity);
   const removeItem = useCartStore(state => state.removeItem);
+  const removeItemsBatch = useCartStore(state => state.removeItemsBatch);
   const clearCart = useCartStore(state => state.clearCart);
   // const getSubtotal = useCartStore(state => state.getSubtotal); // ✅ REEMPLAZADO POR usePriceCalculation
   // const getDiscount = useCartStore(state => state.getDiscount); // ✅ REEMPLAZADO POR usePriceCalculation
 
   // ===== ESTADOS LOCALES OPTIMIZADOS =====
-  // const [showConfetti, setShowConfetti] = useState(false);
+  
   const [lastAction, setLastAction] = useState(null);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [deliveryDate, setDeliveryDate] = useState(null);
@@ -105,6 +104,24 @@ const BuyerCart = () => {
   const isAdvancedShippingMode = true;
   const shippingValidation = useShippingValidation(items, isAdvancedShippingMode);
 
+  // ⚡ FIX CRÍTICO: Mantener último valor conocido de userRegion para evitar
+  // pérdida de estado al minimizar/restaurar navegador
+  const [stableUserRegion, setStableUserRegion] = useState(null);
+  
+  React.useEffect(() => {
+    console.log('🔍 [BuyerCart] stableUserRegion effect:', {
+      hookValue: shippingValidation.userRegion,
+      currentStable: stableUserRegion,
+      willUpdate: shippingValidation.userRegion && shippingValidation.userRegion !== stableUserRegion
+    });
+    // Solo actualizar si hay un nuevo valor válido
+    if (shippingValidation.userRegion && shippingValidation.userRegion !== stableUserRegion) {
+      console.log('✅ [BuyerCart] Actualizando stableUserRegion a:', shippingValidation.userRegion);
+      setStableUserRegion(shippingValidation.userRegion);
+    }
+    // NO actualizar a null si ya teníamos un valor
+  }, [shippingValidation.userRegion, stableUserRegion]);
+
   // ===== DEBUGGING: Log para verificar que las regiones se están cargando =====
   React.useEffect(() => {
     if (isAdvancedShippingMode && items.length > 0) {
@@ -117,7 +134,7 @@ const BuyerCart = () => {
     items,
     productShipping,
     isAdvancedShippingMode ? null : realShippingCost,
-    shippingValidation.userRegion // Pasar región del usuario para cálculos reales
+    stableUserRegion // ⚡ Usar valor estable en lugar de directamente de shippingValidation
   );
 
   // Extraer valores para compatibilidad con código existente
@@ -298,17 +315,36 @@ const BuyerCart = () => {
   // Set para evitar múltiples toasts por item eliminado
   const deletedItemsRef = React.useRef(new Set());
   const handleRemoveWithAnimation = useCallback(
-    id => {
+    async (id) => {
       if (deletedItemsRef.current.has(id)) return; // Ya se eliminó, no mostrar otro toast
       deletedItemsRef.current.add(id);
       const item = items.find(item => item.id === id);
-      if (item) {
-        removeItem(id);
-        setLastAction({ type: 'remove', item });
-        showCartSuccess(`${item.name} eliminado del carrito`, '🗑️');
+      if (!item) return;
+
+      setLastAction({ type: 'remove', item });
+
+      try {
+        // If backend is synced, wait for actual deletion confirmation
+        if (isBackendSynced) {
+          const result = await removeItem(id);
+          if (result) {
+            showCartSuccess(`${item.name} eliminado del carrito`, '🗑️');
+          } else {
+            // Backend removal failed - show error and clear from deleted set so user can retry
+            deletedItemsRef.current.delete(id);
+            showCartError('No se pudo eliminar el producto. Intenta de nuevo.');
+          }
+        } else {
+          // Local removal - immediate UX
+          await removeItem(id);
+          showCartSuccess(`${item.name} eliminado del carrito`, '🗑️');
+        }
+      } catch (error) {
+        deletedItemsRef.current.delete(id);
+        showCartError('Error al eliminar el producto');
       }
     },
-    [items, removeItem]
+    [items, removeItem, isBackendSynced]
   );
 
   // Manejar cambios de envío por producto
@@ -427,25 +463,12 @@ const BuyerCart = () => {
     }
   }, [selectedItems.length, items]);
 
-  const handleDeleteSelected = useCallback(() => {
+  const handleDeleteSelected = useCallback(async () => {
     if (selectedItems.length === 0) return;
-
-    // Obtener los nombres de los productos seleccionados para el toast
-    const selectedItemsData = items.filter(item =>
-      selectedItems.includes(item.id)
-    );
-    const itemNames = selectedItemsData.map(item => item.name).join(', ');
-
-    // Eliminar todos los items seleccionados
-    selectedItems.forEach(itemId => {
-      removeItem(itemId);
-    });
-
-    // Limpiar selección y salir del modo selección
+    await removeItemsBatch(selectedItems);
     setSelectedItems([]);
     setIsSelectionMode(false);
-    // Confetti eliminado
-  }, [selectedItems, items, removeItem]);
+  }, [selectedItems, removeItemsBatch]);
 
   // Limpiar selecciones cuando cambie la lista de items
   useEffect(() => {
@@ -709,7 +732,7 @@ const BuyerCart = () => {
                         onShippingCompatibilityError={() => setCompatibilityModalOpen(true)}
                         isCalculatingShipping={isCalculatingShippingCombined}
                         cartItems={items}
-                        userRegion={shippingValidation.userRegion}
+                        userRegion={stableUserRegion}
                         formatPrice={formatPrice}
                         formatDate={formatDate}
                         onCheckout={handleCheckout}
@@ -738,7 +761,7 @@ const BuyerCart = () => {
           open={compatibilityModalOpen}
           onClose={() => setCompatibilityModalOpen(false)}
           incompatibleProducts={shippingValidation.incompatibleProducts}
-          userRegion={shippingValidation.userRegion}
+          userRegion={stableUserRegion}
         />
       </Box>
     </ThemeProvider>

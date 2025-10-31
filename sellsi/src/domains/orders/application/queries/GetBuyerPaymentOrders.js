@@ -2,6 +2,7 @@
 import { ordersRepository } from '../../infra/repositories/OrdersRepository';
 import { supabase } from '../../../../services/supabase';
 import { parseOrderItems, normalizeDocumentType } from '../../shared/parsing';
+import { preserveOfferFields } from '../../shared/preserveOfferFields';
 import { mapBuyerOrderFromServiceObject } from '../../infra/mappers/orderMappers';
 import { toBuyerUIOrder } from '../../presentation/adapters/legacyUIAdapter';
 
@@ -82,7 +83,7 @@ export async function GetBuyerPaymentOrders(buyerId, { limit, offset } = {}) {
           }
         }
       } catch(_) {}
-      return {
+  return {
         cart_items_id: it.cart_items_id || it.id || `${row.id}-itm-${idx}`,
         product_id: it.product_id || it.productid || it.id || null,
         quantity: it.quantity || 1,
@@ -96,6 +97,8 @@ export async function GetBuyerPaymentOrders(buyerId, { limit, offset } = {}) {
         shipping_regions: it.shipping_regions || null,
         delivery_regions: it.delivery_regions || null,
         shipping_price,
+  // Preserve offer-related fields from raw item so downstream UI/components can detect offers
+  ...preserveOfferFields(it),
         product: {
           id: it.product_id || it.productid || it.id || null,
           productid: it.product_id || it.productid || null,

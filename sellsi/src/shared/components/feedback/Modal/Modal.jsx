@@ -18,6 +18,7 @@ import {
 } from '@mui/icons-material';
 
 import { MODAL_TYPES, getModalConfig, formatAddress, formatCurrency } from './modalConfig';
+import { useBodyScrollLock } from '../../../hooks/useBodyScrollLock';
 
 /**
  * Modal - Un componente de modal versátil y reutilizable.
@@ -56,6 +57,9 @@ const Modal = ({
 }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+
+  // ✅ Bloquear scroll del body cuando el modal está abierto
+  useBodyScrollLock(isOpen);
 
   const config = getModalConfig(type);
   const IconComponent = config.icon;
@@ -172,6 +176,7 @@ const Modal = ({
               MODAL_TYPES.ORDER_CHECK,
               MODAL_TYPES.ORDER_TRUCK,
               MODAL_TYPES.ORDER_BRIEFCASE,
+              MODAL_TYPES.ORDER_CANCEL,
             ].includes(type) && (
               <IconComponent sx={{ fontSize: 24, color: config.iconColor }} />
             )}

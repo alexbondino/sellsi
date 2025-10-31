@@ -101,7 +101,7 @@ export default function HeroSection({
             textAlign: 'left', // 👈 móvil a la izquierda
           }}
         >
-          Nuestro marketplace B2B simplifica el abastecimiento, conecta
+          Nuestro marketplace corporativo simplifica el abastecimiento, conecta
           compradores con proveedores confiables, impulsa las ventas y asegura
           transacciones rápidas y seguras. Todo, en un solo lugar.
         </Typography>
@@ -123,7 +123,7 @@ export default function HeroSection({
             alt={illustrationAlt}
             loading="eager"
             decoding="async"
-            fetchpriority="high"
+            fetchPriority="high"
             sx={{
               width: {
                 xs: 'min(90vw, 420px)', // 👈 ocupa bien el ancho en móvil

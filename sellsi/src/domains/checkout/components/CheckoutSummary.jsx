@@ -15,6 +15,7 @@ import {
   ListItem,
   ListItemText,
   IconButton,
+  Tooltip,
   CircularProgress,
 } from '@mui/material';
 import {
@@ -22,6 +23,7 @@ import {
   LocalShipping as LocalShippingIcon,
   ArrowBack as ArrowBackIcon,
   ArrowForward as ArrowForwardIcon,
+  LocalOffer as LocalOfferIcon,
 } from '@mui/icons-material';
 import { motion } from 'framer-motion';
 
@@ -88,7 +90,7 @@ const CheckoutSummary = ({
   };
 
   // ✅ CÁLCULO CENTRALIZADO Y CORRECTO
-  const { subtotalWithIva, orderTotal } = useMemo(() => {
+  const { subtotalWithIva, grandTotal, baseTotal, paymentFee } = useMemo(() => {
     if (!orderData.items || orderData.items.length === 0) {
       return { subtotalWithIva: 0, orderTotal: 0 };
     }
@@ -100,14 +102,17 @@ const CheckoutSummary = ({
     }, 0);
 
     // Khipu fee (fixed $500 when payment method is selected)
-    const khipuFee = selectedMethod ? 500 : 0;
+  const khipuFee = selectedMethod ? 500 : 0;
 
     // Total del pedido: Subtotal (con IVA incluido) + Envío + Khipu
-    const finalOrderTotal = Math.trunc(totalBruto) + shippingCost + khipuFee;
+  const baseTotal = Math.trunc(totalBruto) + shippingCost; // sin fee
+  const finalOrderTotal = baseTotal + khipuFee;
 
     return {
-      subtotalWithIva: Math.trunc(totalBruto),
-      orderTotal: finalOrderTotal,
+  subtotalWithIva: Math.trunc(totalBruto),
+  grandTotal: finalOrderTotal,
+  baseTotal,
+  paymentFee: khipuFee,
     };
   }, [orderData.items, shippingCost, selectedMethod]);
 
@@ -115,6 +120,21 @@ const CheckoutSummary = ({
 
   // Handler local que bloquea el botón permanentemente y delega al callback
   const handleContinue = () => {
+    // Log de depuración: mostrar los montos que el frontend enviará al backend
+    try {
+      console.log('[CheckoutSummary] Pay requested', {
+        orderId: orderData?.id || null,
+        itemsCount: orderData.items?.length || 0,
+        baseTotal,
+        paymentFee,
+        grandTotal,
+        shippingCost,
+        selectedMethod,
+      });
+    } catch (logEx) {
+      console.warn('[CheckoutSummary] Logging failed', logEx);
+    }
+
     // Bloqueo local inmediato: el botón quedará en "Procesando..." incluso si
     // la prop `isProcessing` cambia posteriormente.
     setLocalProcessing(true);
@@ -210,11 +230,21 @@ const CheckoutSummary = ({
                 <ListItem key={`${currentPage}-${index}`} sx={{ px: 2 }}>
                   <CheckoutSummaryImage product={item} />
                   <ListItemText
-                    primary={item.name || item.nombre}
+                    primary={
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
+                          {item.name || item.nombre}
+                        </Typography>
+                        {(item.isOffered || item.metadata?.isOffered || item.offer_id || item.offered_price) && (
+                          <Tooltip title="Este produco es ofertado" arrow>
+                            <LocalOfferIcon sx={{ color: 'success.main', fontSize: 18 }} />
+                          </Tooltip>
+                        )}
+                      </Box>
+                    }
                     secondary={`Cantidad: ${item.quantity}`}
                     primaryTypographyProps={{
-                      variant: 'body2',
-                      fontWeight: 'medium',
+                      component: 'div'
                     }}
                     secondaryTypographyProps={{ variant: 'caption' }}
                   />
@@ -298,11 +328,11 @@ const CheckoutSummary = ({
             Total
           </Typography>
           <Typography variant={isCompact ? 'subtitle1' : 'h6'} fontWeight="bold" color="#000000ff">
-            {checkoutService.formatPrice(orderTotal)}
+            {checkoutService.formatPrice(grandTotal)}
           </Typography>
         </Stack>
 
-        {/* Botones de acción */}
+  {/* Botones de acción */}
   {!hideActions && (
   <Stack spacing={2}>
           {isCompleted ? (

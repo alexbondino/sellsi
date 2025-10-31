@@ -20,7 +20,7 @@ import { useMemo, useEffect, useState } from 'react'
 import useSupplierProductsCRUD from './crud/useSupplierProductsCRUD'
 import useProductImages from './images/useProductImages'
 import useProductSpecifications from './specifications/useProductSpecifications'
-import useProductPriceTiers from './pricing/useProductPriceTiers'
+import useProductPriceTiers from '../../../shared/hooks/product/useProductPriceTiers'
 import useProductBackground from './background/useProductBackground'
 import useProductCleanup from './cleanup/useProductCleanup'
 import useSupplierProductFilters from './useSupplierProductFilters'
@@ -140,7 +140,12 @@ export const useSupplierProducts = (options = {}) => {
         if (session?.user?.id) {
           // Cargar productos si no están ya cargados Y no está cargando
           if (crud.products.length === 0 && !crud.loading) {
-            await crud.loadProducts(session.user.id)
+              const productsKey = `fp_products_supplier_${session.user.id}`
+              const lastMap = (typeof window !== 'undefined') ? (window.__inFlightSupabaseLastFetched = window.__inFlightSupabaseLastFetched || new Map()) : new Map()
+              const last = lastMap.get(productsKey)
+              if (!last || (Date.now() - last) > 3000) {
+                await crud.loadProducts(session.user.id)
+              }
           }
         }
       } catch (error) {
@@ -149,6 +154,45 @@ export const useSupplierProducts = (options = {}) => {
 
     loadInitialData()
   }, []) // Cambio: Solo ejecutar una vez al montar el hook
+
+  // Suscripción realtime: reflejar cambios de stock en productos del proveedor
+  useEffect(() => {
+    let channel
+    let isMounted = true
+    const attach = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        const supplierId = session?.user?.id
+        if (!supplierId) return
+        // Escuchar solo updates en products del proveedor actual
+        channel = supabase
+          .channel(`products_changes_supplier_${supplierId}`)
+          .on(
+            'postgres_changes',
+            { event: 'UPDATE', schema: 'public', table: 'products', filter: `supplier_id=eq.${supplierId}` },
+            (payload) => {
+              if (!isMounted) return
+              const rec = payload?.new || {}
+              const productId = rec.productid || rec.id
+              if (!productId) return
+              // Actualizar solo campos relevantes para stock/fecha
+              crud.updateLocalProduct(productId, {
+                productqty: rec.productqty,
+                updateddt: rec.updateddt,
+              })
+            }
+          )
+          .subscribe()
+      } catch (_) { /* noop */ }
+    }
+    attach()
+    return () => {
+      isMounted = false
+      try {
+        if (channel) supabase.removeChannel(channel)
+      } catch (_) { /* noop */ }
+    }
+  }, [crud])
 
   // Productos para UI (con formato mejorado)
   const [ventasByProduct, setVentasByProduct] = useState({})
@@ -220,6 +264,9 @@ export const useSupplierProducts = (options = {}) => {
         createdAt: product.createddt,
     updatedAt: product.updateddt,
         priceTiers: product.priceTiers || [],
+        tiersStatus: product.tiersStatus || 'idle',
+        minPrice: product.minPrice,
+        maxPrice: product.maxPrice,
         tramoMin,
         tramoMax,
         tramoPrecioMin,
@@ -259,7 +306,11 @@ export const useSupplierProducts = (options = {}) => {
 
   // 🔄 ESTADÍSTICAS (recalculadas DESPUÉS de construir uiProducts para asegurar que priceTiers estén presentes)
   const stats = useMemo(() => {
-    const sourceProducts = crud.products // productos crudos para estados básicos
+    // ⚠️ IMPORTANTE: Filtrar productos soft-deleted ANTES de calcular estadísticas
+    const activeSourceProducts = crud.products.filter(p => 
+      !p.deletion_status || p.deletion_status === 'active'
+    )
+    const sourceProducts = activeSourceProducts // productos crudos SIN eliminados
     const enrichedProducts = uiProducts   // productos enriquecidos (asegura priceTiers en memoria)
 
     const basicStats = {

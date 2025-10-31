@@ -3,7 +3,6 @@ import React, { useEffect, useState } from 'react';
 import {
   Box,
   Typography,
-  CircularProgress,
   Alert,
   Container,
   TextField,
@@ -22,6 +21,7 @@ import { SPACING_BOTTOM_MAIN } from '../../../../styles/layoutSpacing';
 import { SupplierErrorBoundary } from '../../components/ErrorBoundary';
 import { supabase } from '../../../../services/supabase';
 import { uploadInvoicePDF } from '../../../../services/storage/invoiceStorageService';
+import TableSkeleton from '../../../../shared/components/display/skeletons/TableSkeleton';
 import { validateTaxPdf } from './validation/pdfValidation';
 
 // TODO: Implementar hook de autenticación
@@ -52,13 +52,34 @@ const MyOrdersPage = () => {
 
   // Hook para mostrar notificaciones tipo banner
   const { showBanner } = useBanner();
-
-  // Estado local para controlar la visibilidad y el tipo de modal
   const [modalState, setModalState] = useState({
     isOpen: false,
-    type: null, // 'accept', 'reject', 'dispatch', 'deliver', 'chat'
+  type: null, // 'accept', 'reject', 'dispatch', 'deliver', 'cancel'
     selectedOrder: null,
   });
+
+  // ID del proveedor desde Supabase Auth (no chequea rol, solo sesión)
+  const [supplierId, setSupplierId] = useState(null);
+  const [authResolved, setAuthResolved] = useState(false);
+  const [supplierDocTypes, setSupplierDocTypes] = useState([]); // ['boleta','factura']
+  const [taxDocFileState, setTaxDocFileState] = useState({ file: null, error: null });
+  const [taxDocTouched, setTaxDocTouched] = useState(false);
+
+  // Notifications: mark supplier context notifications as read on mount once auth resolved and supplierId exists
+  useEffect(() => {
+    let mounted = true;
+    if (!authResolved || !supplierId) return undefined;
+    (async () => {
+      try {
+  const mod = await import('../../../../domains/notifications/components/NotificationProvider');
+        const notifCtx = mod.useNotificationsContext?.();
+        if (mounted) {
+          try { notifCtx?.markContext?.('supplier_orders'); } catch (_) {}
+        }
+      } catch (_) {}
+    })();
+    return () => { mounted = false; };
+  }, [authResolved, supplierId]);
 
   // Helpers para manejo de fechas en formato local YYYY-MM-DD (evita shifts UTC)
   const pad = (n) => String(n).padStart(2, '0');
@@ -89,24 +110,9 @@ const MyOrdersPage = () => {
     return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
   };
 
-  // ID del proveedor desde Supabase Auth (no chequea rol, solo sesión)
-  const [supplierId, setSupplierId] = useState(null);
-  const [authResolved, setAuthResolved] = useState(false);
-  const [supplierDocTypes, setSupplierDocTypes] = useState([]); // ['boleta','factura']
-  const [taxDocFileState, setTaxDocFileState] = useState({ file: null, error: null });
-  const [taxDocTouched, setTaxDocTouched] = useState(false);
 
   // Notifications: mark supplier context notifications as read on mount once auth resolved and supplierId exists
-  try {
-    // dynamic require to avoid circular issues if any
-    const { useNotificationsContext } = require('../../../../notifications/components/NotificationProvider');
-    const notifCtx = useNotificationsContext?.();
-    useEffect(() => {
-      if (authResolved && supplierId) {
-        try { notifCtx?.markContext?.('supplier_orders'); } catch(_) {}
-      }
-    }, [authResolved, supplierId]);
-  } catch(_) {}
+  // (replaced dynamic require) notifications handled in useEffect above
 
   // Resolver supplierId desde sesión autenticada; fallback a localStorage si no hay sesión
   useEffect(() => {
@@ -289,6 +295,11 @@ const MyOrdersPage = () => {
           messageToUser = '📦 La entrega fue confirmada con éxito.';
           break;
         }
+        case 'cancel': {
+          await partActions.cancel(selectedOrder, formData.cancelReason || '');
+          messageToUser = '⚠️ El pedido fue cancelado.';
+          break;
+        }
   // 'chat' action removed: contact modal now opened from the table row
         default:
           break;
@@ -368,7 +379,7 @@ const MyOrdersPage = () => {
         submitButtonText: 'Rechazar',
         submitButtonColor: 'error',
         showWarningIconHeader: false,
-        type: MODAL_TYPES.WARNING,
+        type: MODAL_TYPES.ORDER_CHECK,
         isFormModal: true,
         children: (
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -383,7 +394,7 @@ const MyOrdersPage = () => {
           </Box>
         ),
       },
-      dispatch: {
+  dispatch: {
         title: (
           <Typography variant="h6" align="center" fontWeight={700}>
             Despachar Pedido
@@ -459,6 +470,30 @@ const MyOrdersPage = () => {
           </Box>
         ),
       },
+      cancel: {
+        title: (
+          <Typography variant="h6" align="center" fontWeight={700}>
+            Cancelar Pedido
+          </Typography>
+        ),
+        submitButtonText: 'Cancelar pedido',
+        submitButtonColor: 'error',
+        showWarningIconHeader: false,
+        type: MODAL_TYPES.ORDER_CANCEL,
+        isFormModal: true,
+        children: (
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <TextField
+              name="cancelReason"
+              label="Motivo (opcional)"
+              multiline
+              rows={3}
+              fullWidth
+              variant="outlined"
+            />
+          </Box>
+        ),
+      },
       deliver: {
         title: (
           <Typography variant="h6" align="center" fontWeight={700}>
@@ -497,18 +532,22 @@ const MyOrdersPage = () => {
       <ThemeProvider theme={dashboardThemeCore}>
         <Box
           sx={{
-            // marginLeft: '210px', // Eliminado para ocupar todo el ancho
             backgroundColor: 'background.default',
             minHeight: '100vh',
             pt: { xs: 4.5, md: 5 },
             px: { xs: 0, md: 3 },
             pb: 3,
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
+            ml: { xs: 0, md: 10, lg: 14, xl: 24 },
           }}
         >
-          <CircularProgress />
+          <Container maxWidth={false} disableGutters>
+            <Box sx={{ mb: 4, display: 'flex', alignItems: 'center' }}>
+              <Typography variant="h4" fontWeight={600} color="primary.main" gutterBottom>
+                Mis Pedidos
+              </Typography>
+            </Box>
+            <TableSkeleton rows={7} columns={6} />
+          </Container>
         </Box>
       </ThemeProvider>
     );

@@ -36,6 +36,12 @@ const MobileCartItem = ({
   
   // URL de imagen con fallback
   const imageUrl = item.imageUrl || item.image_url || item.thumbnail_url || '/placeholder-product.png';
+  const showOfferDebug = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('debugShowOffers') === '1';
+  const isOfferedFlag = !!(item.isOffered || item.metadata?.isOffered || item.offer_id || item.offered_price);
+  if (typeof process !== 'undefined' && process.env && process.env.NODE_ENV !== 'production') {
+    // eslint-disable-next-line no-console
+    console.log('[MobileCartItem debug] id:', item.id, 'isOffered:', isOfferedFlag, 'showOfferDebug:', showOfferDebug, 'product_id:', item.product_id || item.productid || item.id);
+  }
   
   return (
     <motion.div
@@ -94,20 +100,46 @@ const MobileCartItem = ({
             {/* Info producto */}
             <Stack flex={1} spacing={1} sx={{ minWidth: 0 }}>
               {/* Nombre producto */}
-              <Typography 
-                variant="body2" 
-                fontWeight={600}
-                sx={{ 
-                  display: '-webkit-box',
-                  WebkitLineClamp: 2,
-                  WebkitBoxOrient: 'vertical',
-                  overflow: 'hidden',
-                  lineHeight: 1.3,
-                  mb: 0.5
-                }}
-              >
-                {item.name || item.nombre}
-              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Typography 
+                  variant="body2" 
+                  fontWeight={600}
+                  sx={{ 
+                    display: '-webkit-box',
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: 'vertical',
+                    overflow: 'hidden',
+                    lineHeight: 1.3,
+                    mb: 0.5,
+                    flex: 1,
+                    minWidth: 0
+                  }}
+                >
+                  {item.name || item.nombre}
+                </Typography>
+                {((item.isOffered || item.metadata?.isOffered || item.offer_id || item.offered_price) || showOfferDebug) && (
+                  <Typography
+                    data-testid="chip-ofertado-text"
+                    variant="subtitle2"
+                    sx={{
+                      color: 'success.main',
+                      fontWeight: 800,
+                      ml: 0.5,
+                      fontSize: '0.95rem',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      px: 1,
+                      py: '3px',
+                      borderRadius: '6px',
+                      border: '1px solid',
+                      borderColor: 'success.main',
+                      bgcolor: 'rgba(76, 175, 80, 0.06)'
+                    }}
+                  >
+                    OFERTADO
+                  </Typography>
+                )}
+              </Box>
               
               {/* Precio unitario */}
               <Typography 
@@ -127,16 +159,7 @@ const MobileCartItem = ({
               >
                 {formatPrice(itemTotal)}
               </Typography>
-              {/* Chip indicando que el item fue ofertado (mobile) */}
-              {(item.isOffered || item.metadata?.isOffered || item.offer_id || item.offered_price) && (
-                <Chip
-                  data-testid="chip-ofertado"
-                  label="Ofertado"
-                  size="small"
-                  color="primary"
-                  sx={{ alignSelf: 'flex-start', mt: 0.5, height: 24 }}
-                />
-              )}
+              {/* El Chip visual para 'Ofertado' fue removido; se mantiene texto 'OFERTADO' arriba. */}
               
               {/* Info de envío */}
               {showShipping && item.shipping_info && (

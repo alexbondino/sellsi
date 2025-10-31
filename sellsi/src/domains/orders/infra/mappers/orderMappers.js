@@ -1,6 +1,7 @@
 // Canonical mappers (DB/service objects -> Domain Order DTO)
 // Objetivo: centralizar normalización antes de pasar a adapters UI.
 import { normalizeDocumentType } from '../../shared/parsing';
+import { preserveOfferFields } from '../../shared/preserveOfferFields';
 
 /**
  * @typedef {Object} DomainOrderItem
@@ -20,12 +21,14 @@ function mapItem(raw, fallbackOrderId, idx = 0) {
     priceAtAddition: raw.price_at_addition || raw.price || 0,
     document_type: normalizeDocumentType(raw.document_type || raw.documentType),
   product: raw.product || raw.products || raw.product_data || {},
-  // Propagar campos necesarios para asignación de shipping exacto en splitOrderBySupplier
-  shipping_price: raw.shipping_price || 0,
+  // Propagar campos necesarios para asignacin de shipping exacto en splitOrderBySupplier
+  shipping_price: raw.shipping_price || raw.shippingPrice || 0,
   envio: raw.envio || null,
   shippingRegions: raw.shippingRegions || raw.shipping_regions || null,
   shipping_regions: raw.shipping_regions || null,
-  delivery_regions: raw.delivery_regions || null
+  delivery_regions: raw.delivery_regions || null,
+  // Propagar campos relacionados a ofertas para que la UI pueda detectarlas
+  ...preserveOfferFields(raw)
   };
 }
 

@@ -2,8 +2,14 @@ import { supabase } from '../supabase';
 import { convertDbRegionsToForm, convertFormRegionsToDb } from '../../utils/shippingRegionsUtils';
 
 const MAX_NAME_LENGTH = 15;
-
 const TABLE = 'supplier_shipping_region_presets';
+
+// Micro‑cache + in‑flight dedupe (por supplier)
+const _presetCache = new Map(); // supplierId -> { ts, data }
+const _presetInFlight = new Map(); // supplierId -> Promise
+const PRESET_TTL_MS = 3000; // 3s: suficiente para cubrir doble-mount StrictMode y ráfagas UI
+
+function now() { return Date.now(); }
 
 function validateRegions(regions = []) {
   if (!Array.isArray(regions)) throw new Error('regions debe ser un array');
@@ -16,20 +22,53 @@ function validateRegions(regions = []) {
   });
 }
 
-export async function getPresets(supplierId) {
-  if (!supplierId) return [];
-  const { data, error } = await supabase
-    .from(TABLE)
-    .select('preset_index, name, regions')
-    .eq('supplier_id', supplierId)
-    .order('preset_index', { ascending: true });
-  if (error) throw error;
+function _mapRows(data) {
   return (data || []).map(row => ({
     index: row.preset_index,
     name: row.name,
     regionsDb: row.regions || [],
     regionsDisplay: convertDbRegionsToForm(row.regions || [])
   }));
+}
+
+export async function getPresets(supplierId) {
+  if (!supplierId) return [];
+
+  // Cache válida
+  const cached = _presetCache.get(supplierId);
+  if (cached && (now() - cached.ts) < PRESET_TTL_MS) {
+    return cached.data;
+  }
+
+  // Promesa en vuelo
+  const inflight = _presetInFlight.get(supplierId);
+  if (inflight) {
+    return inflight;
+  }
+
+  const p = (async () => {
+    try {
+      const { data, error } = await supabase
+        .from(TABLE)
+        .select('preset_index, name, regions')
+        .eq('supplier_id', supplierId)
+        .order('preset_index', { ascending: true });
+      if (error) throw error;
+      const mapped = _mapRows(data);
+      _presetCache.set(supplierId, { ts: now(), data: mapped });
+      return mapped;
+    } finally {
+      _presetInFlight.delete(supplierId);
+    }
+  })();
+
+  _presetInFlight.set(supplierId, p);
+  return p;
+}
+
+function _invalidate(supplierId) {
+  _presetCache.delete(supplierId);
+  // No tocamos in-flight; se limpiará al resolver
 }
 
 export async function upsertPreset(supplierId, presetIndex, name, displayRegions) {
@@ -48,6 +87,7 @@ export async function upsertPreset(supplierId, presetIndex, name, displayRegions
       regions: dbRegions
     }, { onConflict: 'supplier_id,preset_index' });
   if (error) throw error;
+  _invalidate(supplierId);
   return true;
 }
 
@@ -61,6 +101,7 @@ export async function renamePreset(supplierId, presetIndex, newName) {
     .eq('supplier_id', supplierId)
     .eq('preset_index', presetIndex);
   if (error) throw error;
+  _invalidate(supplierId);
   return true;
 }
 
@@ -71,5 +112,6 @@ export async function deletePreset(supplierId, presetIndex) {
     .eq('supplier_id', supplierId)
     .eq('preset_index', presetIndex);
   if (error) throw error;
+  _invalidate(supplierId);
   return true;
 }

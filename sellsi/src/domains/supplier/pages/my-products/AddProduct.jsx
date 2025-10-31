@@ -84,6 +84,7 @@ const MobileFormLayout = ({
   handleImagesChange, 
   handleImageError,
   freezeDisplay = false,
+  supplierId,
 }) => (
   <Box
     sx={{
@@ -177,6 +178,7 @@ const MobileFormLayout = ({
           🚚 Regiones de Despacho
         </Typography>
         <ProductRegions
+          supplierId={supplierId}
           formData={formData}
           onRegionChange={handleRegionChange}
           errors={errors}
@@ -227,6 +229,7 @@ const DesktopFormLayout = ({
   handleImagesChange, 
   handleImageError,
   freezeDisplay = false,
+  supplierId,
 }) => (
   <Grid container spacing={3}>
     <Grid size={{ xs: 12, lg: 8 }}>
@@ -276,6 +279,7 @@ const DesktopFormLayout = ({
           {/* Regiones - Columna 2, Fila 3 (al lado de Condiciones de Venta) */}
           <Box sx={{ gridColumn: 2, gridRow: 3 }}>
             <ProductRegions
+              supplierId={supplierId}
               formData={formData}
               onRegionChange={handleRegionChange}
               errors={errors}
@@ -411,7 +415,6 @@ const AddProduct = () => {
     formData.pricingType,
   ]);
 
-
   // (Eliminado) Carga duplicada de productos que causaba rerenders con estado antiguo
 
   // Componente Portal para el panel de resultados
@@ -504,14 +507,22 @@ const AddProduct = () => {
     }
   };
 
-
   // Actualiza shippingRegions en formData y estado local
   const handleRegionChange = (regions) => {
 
     setShippingRegions(regions);
     updateField('shippingRegions', regions);
 
+  };
 
+  // Manejar cambios en imágenes: sincroniza con el hook del formulario
+  const handleImagesChange = (images) => {
+    // Marcar que el usuario tocó imágenes para evitar rehidratación automática
+    try { markImagesTouched(); } catch(e) { /* noop */ }
+    // Actualizar el campo de imagenes en el formulario
+    updateField('imagenes', images);
+    // Limpiar cualquier error previo de imágenes
+    setImageError('');
   };
 
   // ========================================================================
@@ -519,18 +530,9 @@ const AddProduct = () => {
   // ========================================================================
   const handlePricingTypeChangeUI = (event, newValue) => {
     if (newValue === null) return
-    
-    console.log(`🔄 [AddProduct] Cambiando pricing type de "${formData.pricingType}" a "${newValue}"`)
-    
-    // Usar el método del hook que maneja todo el estado correctamente
-    handlePricingTypeChange(newValue)
-  }
-
-  const handleImagesChange = images => {
-    // Marcar que el usuario interactuó manualmente con las imágenes antes de actualizar
-    markImagesTouched?.();
     setImageError('');
-    updateField('imagenes', images);
+    // Delegar al hook central que maneja el cambio de tipo de pricing
+    handlePricingTypeChange(newValue);
   };
 
   const handleImageError = errorMessage => {
@@ -561,59 +563,19 @@ const AddProduct = () => {
 
   // Handler para el submit
   const handleSubmit = async e => {
-    console.log('🔥 [AddProduct.handleSubmit] Iniciando submit')
-    e.preventDefault();
-
     // 🔧 FIX 2C: Prevenir múltiples clicks - considerar tanto isSubmitting como isNavigating
     if (isSubmitting || isNavigating) {
-      console.log('⚠️ [AddProduct.handleSubmit] Submit ya en progreso o navegando, ignorando...')
       return;
     }
 
     setIsSubmitting(true);
     markSubmitAttempt();
-
-    console.log('🔍 [AddProduct.handleSubmit] Validando formulario...')
-    const validationErrors = validateForm(formData);
-    console.log('📊 [AddProduct.handleSubmit] Errores de validación:', validationErrors)
-    console.log('🧪 [AddProduct.handleSubmit] Nombre del producto:', formData.nombre)
     
-    if (validationErrors && Object.keys(validationErrors).length > 0) {
-      console.log('❌ [AddProduct.handleSubmit] Validación falló, no continuando')
-      
-      // 🎯 Usar mensaje contextual centralizado desde ProductValidator
-      const contextualMessage = ProductValidator.generateContextualMessage(validationErrors);
-      console.log('📝 [AddProduct.handleSubmit] Mensaje contextual:', contextualMessage)
-      
-      showValidationError(contextualMessage);
-      
-      // Liberar el estado de submit
-      setIsSubmitting(false);
-      return;
-    }
-
-    console.log('✅ [AddProduct.handleSubmit] Validación pasó, continuando...')
-
-    // LOG: Estado de formData y shippingRegions antes de guardar
-
-
-
-    // Mostrar toast informativo
-    showSaveLoading(
-      isEditMode 
-        ? 'Actualizando producto...'
-        : 'Creando producto...',
-      'product-save'
-    );
-
     try {
-      console.log('💾 [AddProduct.handleSubmit] Llamando submitForm()...')
-      // 1. Guardar producto principal
+      // 1. Procesar y enviar formulario
       const result = await submitForm();
-      console.log('📋 [AddProduct.handleSubmit] Resultado de submitForm:', result)
-
+      
       if (!result.success) {
-        console.error('❌ Backend errors:', result.errors);
         if (result.errors && typeof result.errors === 'object') {
           Object.entries(result.errors).forEach(([key, value]) => {
             if (value) showErrorToast(`${key}: ${value}`);
@@ -635,7 +597,6 @@ const AddProduct = () => {
         if (productId && formData.imagenes?.length > 0) {
           setCreatedProductId(productId);
           thumbnailStatus.markAsProcessing();
-          console.info('🔄 [AddProduct] Iniciando tracking de thumbnails para producto:', productId);
         }
       }
 
@@ -651,7 +612,6 @@ const AddProduct = () => {
           showErrorToast('Producto guardado, pero hubo un error al guardar las regiones de entrega');
         }
       } else {
-        console.warn('[AddProduct] handleSubmit - No se guardaron shippingRegions. productId:', productId, 'shippingRegions:', shippingRegions);
         if (!productId) {
           console.error('[AddProduct] handleSubmit - ERROR: productId no disponible para guardar regiones');
           console.error('[AddProduct] handleSubmit - Estructura del result:', JSON.stringify(result, null, 2));
@@ -710,7 +670,6 @@ const AddProduct = () => {
     resetErrors();
     if (isEditMode && productId) {
       // Could reload product data here if needed
-      console.log('Retrying product edit form...');
     }
   };
 
@@ -792,38 +751,11 @@ const AddProduct = () => {
               </Box>
             )}
           </Box>
-
-          {/* 🔥 NUEVO: Status de Thumbnails */}
-          {!isEditMode && createdProductId && (
-            <Box sx={{ mb: 2 }}>
-              {thumbnailStatus.isProcessing && (
-                <Paper sx={{ p: 2, backgroundColor: '#fff3cd', border: '1px solid #ffeaa7' }}>
-                  <Typography variant="body2" color="text.secondary">
-                    📸 Procesando thumbnails... Esto puede tomar unos segundos.
-                  </Typography>
-                </Paper>
-              )}
-              {thumbnailStatus.isReady && (
-                <Paper sx={{ p: 2, backgroundColor: '#d4edda', border: '1px solid #c3e6cb' }}>
-                  <Typography variant="body2" color="success.main">
-                    ✅ Thumbnails generados exitosamente
-                  </Typography>
-                </Paper>
-              )}
-              {thumbnailStatus.hasError && (
-                <Paper sx={{ p: 2, backgroundColor: '#f8d7da', border: '1px solid #f5c6cb' }}>
-                  <Typography variant="body2" color="error.main">
-                    ⚠️ Error generando thumbnails: {thumbnailStatus.error}
-                  </Typography>
-                </Paper>
-              )}
-            </Box>
-          )}
-
           {/* Form container condicional */}
           {isMobile ? (
             <Box sx={{ px: 0, width: '100%' }}> {/* 🔧 Eliminado px: '1%' */}
               <MobileFormLayout 
+                supplierId={supplierId}
                 formData={formData}
                 errors={errors}
                 localErrors={localErrors}
@@ -845,6 +777,7 @@ const AddProduct = () => {
             </Box>
           ) : (
             <DesktopFormLayout 
+              supplierId={supplierId}
               formData={formData}
               errors={errors}
               localErrors={localErrors}

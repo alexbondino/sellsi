@@ -21,10 +21,12 @@ import {
 } from '@mui/icons-material';
 import { motion } from 'framer-motion';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { toast } from 'react-hot-toast';
 
 // Servicios
 import { checkoutService } from '../services';
 import useCartStore from '../../../shared/stores/cart/cartStore.js';
+import { useOfferStore } from '../../../stores/offerStore.js';
 
 // ============================================================================
 // COMPONENTE PRINCIPAL
@@ -34,6 +36,7 @@ const CheckoutSuccess = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { clearLocal, clearCart } = useCartStore();
+  const { forceCleanCartOffers } = useOfferStore();
 
   // Estados
   const [isVerifying, setIsVerifying] = useState(true);
@@ -85,6 +88,13 @@ const CheckoutSuccess = () => {
             clearLocal();
           }
           clearLocal(); // asegurar localStorage limpio
+          
+          // Limpiar ofertas finalizadas/pagadas del carrito (después de la limpieza general)
+          try {
+            forceCleanCartOffers();
+          } catch (e) {
+            console.warn('Error limpiando ofertas del carrito:', e);
+          }
 
           toast.success('¡Pago completado exitosamente!');
 

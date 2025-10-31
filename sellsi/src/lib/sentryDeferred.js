@@ -5,17 +5,47 @@ let SentryMod = null; // will hold imported module
 let initialized = false;
 const queue = [];
 const MAX_QUEUE = 50;
+const CAPTURE_THROTTLE_MS = 1000; // minimum ms between captureException calls
+let lastCaptureTs = 0;
+// Symbol used to mark Error objects that were already captured to avoid duplicate captures
+const __SENTRY_CAPTURED = Symbol.for('__sentry_captured__');
 
 function enqueue(method, args) {
   if (initialized && SentryMod) {
     try { SentryMod[method](...args); } catch (_) {}
     return;
   }
+
+  // Simple dedupe for captureMessage: avoid queueing identical messages within 1s
+  try {
+    if (method === 'captureMessage' && args && args[0]) {
+      const last = queue.length ? queue[queue.length - 1] : null;
+      if (last && last.method === 'captureMessage' && last.args && last.args[0] === args[0] && (Date.now() - last.ts) < 1000) {
+        return; // skip duplicate message
+      }
+    }
+  } catch (_) {}
+
   if (queue.length >= MAX_QUEUE) queue.shift();
   queue.push({ method, args, ts: Date.now() });
 }
 
 export function captureException(error, context) {
+  try {
+    if (error && typeof error === 'object') {
+      if (error[__SENTRY_CAPTURED]) return;
+      try { error[__SENTRY_CAPTURED] = true; } catch (_) {}
+    }
+  } catch (_) {}
+  const now = Date.now();
+  // simple throttle: avoid bursts of captureException that could cause 429
+  if (now - lastCaptureTs < CAPTURE_THROTTLE_MS) {
+    // If queue is already large, drop the event
+    if (queue.length > MAX_QUEUE / 2) return;
+  } else {
+    lastCaptureTs = now;
+  }
+
   enqueue('captureException', [error, context]);
 }
 export function captureMessage(message, level = 'info') {
@@ -43,7 +73,15 @@ export async function initSentryDeferred(options = {}) {
       dsn: import.meta.env.VITE_SENTRY_DSN,
       integrations: [
         mod.browserTracingIntegration(),
-        mod.replayIntegration(),
+        mod.replayIntegration({
+          // 🛡️ SAFARI FIX: Configuración para evitar errores cross-origin con iframes externos
+          // Safari es estricto con seguridad y bloquea acceso a contentWindow de YouTube
+          blockAllMedia: false,
+          maskAllText: false,
+          maskAllInputs: true,
+          // Bloquear grabación de iframes externos (YouTube, Vimeo, etc.)
+          blockSelector: 'iframe[src*="youtube.com"], iframe[src*="youtu.be"], iframe[src*="vimeo.com"]',
+        }),
       ],
       tracesSampleRate: 1.0,
       replaysSessionSampleRate: 0.1,
@@ -52,10 +90,18 @@ export async function initSentryDeferred(options = {}) {
     });
     await flushQueue();
     if (options?.debug) {
-      console.info('[sentryDeferred] Initialized. Flushed queued events.');
     }
   } catch (err) {
-    console.warn('[sentryDeferred] init failed', err);
+  }
+}
+
+// Safe wrapper that will not throw if Sentry is not available and will
+// attempt to enqueue the exception using the deferred queue.
+export function captureExceptionSafe(error, context) {
+  try {
+    captureException(error, context);
+  } catch (_) {
+    // swallow to avoid cascading errors in an ErrorBoundary
   }
 }
 

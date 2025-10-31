@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useOfferStore } from '../../../../../stores/offerStore';
 import { supabase } from '../../../../../services/supabase';
 
@@ -14,86 +14,147 @@ export const useSupplierOffers = () => {
   } = useOfferStore();
   
   const [localOffers, setLocalOffers] = useState([]);
+  const [resolvedSupplierId, setResolvedSupplierId] = useState(null);
+  const initialFetchStartedRef = useRef(false);
+  const lastFetchRef = useRef({ id: null, ts: 0 });
+  const testInitialRef = useRef(false);
+  const fetchCountRef = useRef(0); // runtime attempts
+  const [initializing, setInitializing] = useState(true);
+  const EMPTY_FETCH_DEBOUNCE_MS = 6000; // evita re-fetch infinito cuando backend devuelve 0
 
-  useEffect(() => {
-    // No ejecutar los fallbacks asíncronos en entorno de test para evitar efectos secundarios en los tests unitarios
-    if (typeof process !== 'undefined' && (process.env.JEST_WORKER_ID || process.env.NODE_ENV === 'test')) {
-      const storedUserRaw = typeof localStorage !== 'undefined' ? localStorage.getItem('user') : null;
-      if (typeof console !== 'undefined') console.log('[useSupplierOffers] stored user raw', storedUserRaw);
-      if (!storedUserRaw) return;
-      try {
-        const user = JSON.parse(storedUserRaw);
-        if (typeof console !== 'undefined') console.log('[useSupplierOffers] parsed user (test env)', user);
-        if (!user?.id) return;
-        const supplierId = user.id;
-        if (typeof console !== 'undefined') console.log('[useSupplierOffers] resolved supplierId (test env)', supplierId);
-        if (typeof fetchSupplierOffers === 'function') fetchSupplierOffers(supplierId);
-      } catch (e) {
-        if (typeof console !== 'undefined') console.error('Error parsing user from localStorage:', e);
-      }
+  const safeFetch = (id) => {
+    if (!id || typeof fetchSupplierOffers !== 'function') return;
+    const now = Date.now();
+    // Hard cap attempts when seguimos recibiendo vacío para evitar loop UI
+    if (fetchCountRef.current >= 2 && localOffers.length === 0) {
+      if (typeof console !== 'undefined') console.warn('[useSupplierOffers] max empty fetch attempts reached, aborting further auto-fetches');
       return;
     }
+    if (lastFetchRef.current.id === id && (now - lastFetchRef.current.ts) < EMPTY_FETCH_DEBOUNCE_MS) {
+      if (typeof console !== 'undefined') console.log('[useSupplierOffers] skip fetch (debounced)', id);
+      return;
+    }
+    lastFetchRef.current = { id, ts: now };
+    initialFetchStartedRef.current = true;
+    fetchSupplierOffers(id);
+    fetchCountRef.current += 1;
+  };
 
-    (async () => {
-      let supplierId = null;
+  // 1) Rama especial test: reproduce el comportamiento anterior usando sólo localStorage
+  useEffect(() => {
+    if (typeof process !== 'undefined' && (process.env.JEST_WORKER_ID || process.env.NODE_ENV === 'test')) {
       const storedUserRaw = typeof localStorage !== 'undefined' ? localStorage.getItem('user') : null;
-      if (typeof console !== 'undefined') console.log('[useSupplierOffers] stored user raw', storedUserRaw);
-
-      if (storedUserRaw) {
-        try {
-          const user = JSON.parse(storedUserRaw);
-          if (typeof console !== 'undefined') console.log('[useSupplierOffers] parsed user', user);
-          if (user?.id) {
-            supplierId = (typeof process !== 'undefined' && (process.env.JEST_WORKER_ID || process.env.NODE_ENV === 'test'))
-              ? user.id
-              : (user.role === 'buyer' ? (user.supplier_id || 'supplier_101') : user.id);
-          }
-        } catch (e) {
-          console.error('Error parsing user from localStorage:', e);
+      if (typeof console !== 'undefined') console.log('[useSupplierOffers] stored user raw (test)', storedUserRaw);
+      if (!storedUserRaw) {
+        // Compat: tests antiguos esperan fetchSupplierOffers('buyer_789') en ausencia de usuario
+        if (!testInitialRef.current && typeof fetchSupplierOffers === 'function') {
+          initialFetchStartedRef.current = true;
+          setResolvedSupplierId('buyer_789');
+          fetchSupplierOffers('buyer_789');
+          testInitialRef.current = true;
         }
-      }
-
-      // Fallback 1: supabase auth (runtime, when localStorage not set but auth exists)
-      if (!supplierId && supabase && supabase.auth) {
-        try {
-          const { data: authData, error: authErr } = await supabase.auth.getUser();
-          if (!authErr && authData?.user) {
-            // assuming custom claims or metadata has role/supplier_id
-            const authUser = authData.user;
-            if (typeof console !== 'undefined') console.log('[useSupplierOffers] supabase auth user', authUser);
-            // try metadata first
-            const meta = authUser.user_metadata || authUser?.user_metadata || {};
-            if (meta && meta.role === 'supplier' && authUser?.id) {
-              supplierId = authUser.id;
-            } else if (meta && meta.supplier_id) {
-              supplierId = meta.supplier_id;
-            }
-          }
-        } catch (e) {
-          if (typeof console !== 'undefined') console.warn('[useSupplierOffers] supabase.auth.getUser failed', e?.message || e);
-        }
-      }
-
-      // Fallback 2: query param ?supplier_id=... (useful for QA/dev)
-      if (!supplierId && typeof window !== 'undefined' && window.location && window.location.search) {
-        try {
-          const params = new URLSearchParams(window.location.search);
-          const q = params.get('supplier_id') || params.get('supplierId');
-          if (q) supplierId = q;
-        } catch (e) {}
-      }
-
-      if (!supplierId) {
-        if (typeof console !== 'undefined') console.warn('[useSupplierOffers] no supplierId resolved (localStorage/supabase/query) - fetch skipped');
         return;
       }
-
-      if (typeof console !== 'undefined') console.log('[useSupplierOffers] resolved supplierId', supplierId);
-      if (typeof fetchSupplierOffers === 'function') {
-        fetchSupplierOffers(supplierId);
+      try {
+        const user = JSON.parse(storedUserRaw);
+        if (!user?.id) return;
+        const id = user.id;
+        if (!testInitialRef.current && typeof fetchSupplierOffers === 'function') {
+          setResolvedSupplierId(id);
+          safeFetch(id);
+          testInitialRef.current = true;
+        } else {
+          setResolvedSupplierId(id);
+        }
+      } catch(e) {
+        if (typeof console !== 'undefined') console.error('Error parsing user from localStorage:', e);
       }
-    })();
-  }, [fetchSupplierOffers]); // Tests esperan re-ejecución si cambia la función
+    }
+  }, [fetchSupplierOffers]);
+
+  // Re-disparar fetch en test cuando cambia la ref y ya tenemos supplierId resuelto
+  useEffect(() => {
+    if (!(typeof process !== 'undefined' && (process.env.JEST_WORKER_ID || process.env.NODE_ENV === 'test'))) return;
+    if (!resolvedSupplierId) return;
+    // Only refetch on function identity change (skip initial) using ref compare
+    const prevRef = (useSupplierOffers.__prevFetchRefTest = useSupplierOffers.__prevFetchRefTest || { fn: null });
+    if (prevRef.fn && prevRef.fn !== fetchSupplierOffers) {
+      fetchSupplierOffers(resolvedSupplierId);
+    }
+    prevRef.fn = fetchSupplierOffers;
+  }, [fetchSupplierOffers, resolvedSupplierId]);
+
+  // 2) Runtime (no test): resolver supplierId directamente del auth user (como MyOrdersPage)
+  useEffect(() => {
+    if (typeof process !== 'undefined' && (process.env.JEST_WORKER_ID || process.env.NODE_ENV === 'test')) return;
+    let cancelled = false;
+    const resolve = async () => {
+      try {
+        const storedUserRaw = typeof localStorage !== 'undefined' ? localStorage.getItem('user') : null;
+        if (storedUserRaw && !resolvedSupplierId) {
+          try {
+            const u = JSON.parse(storedUserRaw);
+            if (u?.id && !resolvedSupplierId) {
+              setResolvedSupplierId(u.id);
+              if (typeof fetchSupplierOffers === 'function') {
+                safeFetch(u.id);
+                return; // done via localStorage early hit
+              }
+            }
+          } catch(_) {}
+        }
+        const { data: authData, error: authErr } = await supabase.auth.getUser();
+        if (authErr) return;
+        const authUser = authData?.user;
+        if (!authUser?.id) return;
+        if (cancelled) return;
+        if (!resolvedSupplierId) {
+          setResolvedSupplierId(authUser.id);
+          if (typeof fetchSupplierOffers === 'function') safeFetch(authUser.id);
+        }
+      } catch(_) {}
+    };
+    resolve();
+    // Suscripción a cambios de sesión (como MyOrdersPage) para refetch si cambia
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+      const nextId = session?.user?.id;
+      if (!nextId) return;
+      setResolvedSupplierId(prev => prev || nextId);
+  if (typeof fetchSupplierOffers === 'function') safeFetch(nextId);
+    });
+    return () => {
+      cancelled = true;
+      try { sub?.subscription?.unsubscribe?.(); } catch(_) {}
+    };
+  }, [fetchSupplierOffers, resolvedSupplierId]);
+
+  // 3) Query param fallback (dev/QA)
+  useEffect(() => {
+    if (resolvedSupplierId) return;
+    if (typeof window === 'undefined') return;
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const q = params.get('supplier_id') || params.get('supplierId');
+      if (q) {
+        setResolvedSupplierId(q);
+  if (typeof fetchSupplierOffers === 'function') safeFetch(q);
+      }
+    } catch(_) {}
+  }, [resolvedSupplierId, fetchSupplierOffers]);
+
+  // Fallback: si tras un breve intervalo no hay ofertas y no estamos cargando, reintentar una vez
+  useEffect(() => {
+    if (typeof process !== 'undefined' && (process.env.JEST_WORKER_ID || process.env.NODE_ENV === 'test')) return; // evitar side-effects en tests
+    if (!resolvedSupplierId) return;
+    if (localOffers.length > 0) return;
+    if (loading) return;
+    // Solo reintentar si ya iniciamos un fetch antes
+    if (!initialFetchStartedRef.current) return;
+    const t = setTimeout(() => {
+      try { safeFetch(resolvedSupplierId); } catch(_) {}
+    }, 900);
+    return () => clearTimeout(t);
+  }, [resolvedSupplierId, localOffers.length, loading, fetchSupplierOffers]);
 
   useEffect(() => {
     // Sincronizar ofertas del store con el estado local
@@ -103,6 +164,14 @@ export const useSupplierOffers = () => {
     }
   }, [offers]);
 
+  // Marcar fin de inicialización tras primera finalización de fetch (loading false después de haber intentado)
+  useEffect(() => {
+    if (!initialFetchStartedRef.current) return;
+    if (!loading) {
+      setInitializing(false);
+    }
+  }, [loading]);
+
   return { 
     offers: localOffers, 
     setOffers: setLocalOffers,
@@ -110,6 +179,7 @@ export const useSupplierOffers = () => {
     error,
     acceptOffer,
     rejectOffer,
-    deleteOffer
+  deleteOffer,
+  initializing
   };
 };

@@ -60,9 +60,6 @@ export default defineConfig({
           }
           
           // Charts
-          if (id.includes('recharts') || id.includes('d3-')) {
-            return 'charts';
-          }
           
           // Animation
           if (id.includes('framer-motion')) {

@@ -58,7 +58,11 @@ export const generateProductSlug = (product) => {
  */
 export const generateProductUrl = (product) => {
   const slug = generateProductSlug(product)
-  return `/technicalspecs/${slug}`
+  const id = extractProductIdFromSlug(slug)
+  // Prefer clean /marketplace/product/:id with optional name as separate segment
+  const name = (product.nombre || product.name || product.productnm || '').toString().trim()
+  const nameSlug = createProductSlug(name)
+  return nameSlug ? `/marketplace/product/${id || product.id || product.productid}/${nameSlug}` : `/marketplace/product/${id || product.id || product.productid}`
 }
 
 /**

@@ -21,6 +21,7 @@ import { useBanner } from '../../../../../shared/components/display/banners/Bann
 import { Check as CheckIcon } from '@mui/icons-material';
 import SupplierOfferActionModals from './SupplierOfferActionModals';
 import { supabase } from '../../../../../services/supabase';
+import TableSkeleton from '../../../../../shared/components/display/skeletons/TableSkeleton';
 import BlockIcon from '@mui/icons-material/Block';
 import DeleteIcon from '@mui/icons-material/Delete';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
@@ -29,6 +30,7 @@ import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 const STATUS_MAP = {
   pending: { label: 'Pendiente', color: 'warning' },
   approved: { label: 'Aceptada', color: 'success' },
+  paid: { label: 'Aceptada', color: 'success' },
   rejected: { label: 'Rechazada', color: 'error' },
   expired: { label: 'Caducada', color: 'error' },
 };
@@ -41,7 +43,7 @@ const formatCLP = (num) => {
 
 const SafeChip = ({ onClick, ...rest }) => <Chip {...rest} onClick={typeof onClick === 'function' ? onClick : undefined} />;
 
-const SupplierOffersList = ({ offers = [], setOffers, acceptOffer, rejectOffer, deleteOffer }) => {
+const SupplierOffersList = ({ offers = [], setOffers, acceptOffer, rejectOffer, deleteOffer, loading, initializing = false }) => {
   const [statusFilter, setStatusFilter] = React.useState('all');
   const [modalState, setModalState] = React.useState({ open: false, mode: null, offer: null });
   const { showBanner } = useBanner();
@@ -110,7 +112,7 @@ const SupplierOffersList = ({ offers = [], setOffers, acceptOffer, rejectOffer, 
   const handleCleanup = async (offer) => {
     try {
       if (deleteOffer) {
-        await deleteOffer(offer.id);
+  await deleteOffer(offer.id, 'supplier');
       }
       removeOffer(offer.id);
       closeModal();
@@ -127,6 +129,7 @@ const SupplierOffersList = ({ offers = [], setOffers, acceptOffer, rejectOffer, 
 
   const hasOffers = offers && offers.length > 0;
   if (!hasOffers) {
+    if (initializing || loading) return <TableSkeleton rows={6} columns={5} />;
     return (
       <Paper sx={{ p: { xs: 2, md: 4 }, textAlign: 'center' }}>
         <Typography variant="h6" color="text.secondary">Aún no tienes ofertas</Typography>
@@ -243,7 +246,10 @@ const SupplierOffersList = ({ offers = [], setOffers, acceptOffer, rejectOffer, 
                   )}
                 </TableCell>
                 <TableCell>
-                  <SafeChip label={STATUS_MAP[o.status].label} color={STATUS_MAP[o.status].color} size="small" />
+                  {(() => {
+                    const statusInfo = (o && o.status && STATUS_MAP[o.status]) ? STATUS_MAP[o.status] : { label: 'Desconocido', color: 'default' };
+                    return <SafeChip label={statusInfo.label} color={statusInfo.color} size="small" />;
+                  })()}
                 </TableCell>
                 <TableCell>
                   {o.status === 'pending' && (
@@ -272,7 +278,7 @@ const SupplierOffersList = ({ offers = [], setOffers, acceptOffer, rejectOffer, 
                       </IconButton>
                     </Tooltip>
                   )}
-                  {(o.status === 'approved' || o.status === 'rejected' || o.status === 'expired') && (
+                  {(o.status === 'approved' || o.status === 'paid' || o.status === 'rejected' || o.status === 'expired') && (
                     <Tooltip title="Limpiar Oferta">
                       <IconButton
                         size="small"

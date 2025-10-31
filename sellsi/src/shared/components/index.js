@@ -46,7 +46,7 @@ export {
   Table,
   TableRows,
   TableFilter,
-  BarChart,
+  // BarChart removed (recharts) - do not export
   PieChart,
   Banner,
   BannerProvider,

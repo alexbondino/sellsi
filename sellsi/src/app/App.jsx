@@ -1,6 +1,7 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { Box } from '@mui/material';
 import Loader from '../components/Loader';
+import KhipuButton from '../shared/components/payment/KhipuButton';
 
 import { AppProviders } from '../infrastructure/providers/AppProviders';
 import { AppRouter } from '../infrastructure/router/AppRouter';
@@ -18,7 +19,6 @@ function AppContent() {
 
   // Loader global centrado SOLO para rutas privadas
   const isPublicRoute =
-    location.pathname.startsWith('/technicalspecs') ||
     location.pathname === '/' ||
     location.pathname.startsWith('/marketplace') ||
     location.pathname === '/login' ||
@@ -41,8 +41,8 @@ function AppContent() {
           zIndex: 2000,
         }}
       >
-        <Loader />
-        <KhipuButton />
+  <Loader />
+  <KhipuButton />
       </Box>
     );
   }

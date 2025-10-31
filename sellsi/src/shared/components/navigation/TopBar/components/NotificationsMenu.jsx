@@ -1,29 +1,18 @@
 import React from 'react';
-import { Tooltip, IconButton, Popover, Dialog, DialogContent } from '@mui/material';
-// Ajuste de ruta: este archivo está en shared/components/navigation/TopBar/components
-// Para llegar a src/domains/notifications necesitamos subir 7 niveles relativos a src:
-// components -> TopBar -> navigation -> components -> shared -> src -> (root) -> domains
-// Simplificamos calculando: desde este archivo: ../../../..../../../../domains/notifications
-// Ruta corregida: TopBar.jsx usa '../../../../domains/notifications'. Este archivo está un nivel más profundo (components) ⇒ añadir un ../ adicional.
-// TopBar.jsx depth desde src: shared/components/navigation/TopBar (4 niveles) => ../../../../
-// Aquí: shared/components/navigation/TopBar/components (5 niveles) => ../../../../../
+import { Tooltip, Popover, Dialog, DialogContent, useMediaQuery, Box, IconButton as MuiIconButton, Typography } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
+import CloseIcon from '@mui/icons-material/Close';
 import { NotificationBell, NotificationListPanel } from '../../../../../domains/notifications';
+import { useBodyScrollLock } from '../../../../hooks/useBodyScrollLock';
 
 /**
- * NotificationsMenu
- * Encapsula campana, popover, y dialog de notificaciones.
- * Props:
- *  - unreadCount: number
- *  - notifications: array
- *  - activeTab: string
- *  - onTabChange: (tab) => void
- *  - onItemClick: (notif) => void
- *  - onViewAll: () => void (abre dialog)
- *  - onCloseDialog: () => void
- *  - anchorEl: HTMLElement | null
- *  - onOpen: (event) => void
- *  - onClose: () => void
- *  - dialogOpen: boolean
+ * NotificationsMenu - REMAKE OPTIMIZADO
+ * 
+ * ANÁLISIS PROFUNDO MÓVIL (XS/SM):
+ * - Popover en móvil = problemático (anclaje, viewport overflow, posicionamiento)
+ * - Solución: XS/SM = Solo Dialog fullScreen optimizado
+ * - MD+ = Popover + Dialog centrado
+ * - Content constraints: truncado 2 líneas, max-width estricto, overflow hidden
  */
 function NotificationsMenuBase({
   unreadCount,
@@ -39,6 +28,16 @@ function NotificationsMenuBase({
   dialogOpen,
   showBell = true,
 }) {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md')); // xs, sm = mobile
+  const mobileBarHeight = 95;
+  // Mobile: Solo Dialog, Desktop: Popover + Dialog
+  const shouldShowPopover = !isMobile && Boolean(anchorEl);
+  const shouldShowMobileDialog = isMobile && Boolean(anchorEl);
+
+  // ✅ Bloquear scroll cuando el Popover o Dialog mobile está abierto
+  useBodyScrollLock(Boolean(anchorEl) || dialogOpen);
+
   return (
     <>
       {showBell && (
@@ -51,36 +50,179 @@ function NotificationsMenuBase({
           </span>
         </Tooltip>
       )}
-      <Popover
-        open={Boolean(anchorEl)}
-        anchorEl={anchorEl}
-        onClose={onClose}
-        disableScrollLock={true}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-        PaperProps={{ sx: { mt: 1, boxShadow: 6, borderRadius: 2, overflow: 'hidden' } }}
-      >
-        <NotificationListPanel
-          notifications={notifications || []}
-          activeTab={activeTab || 'all'}
-          onTabChange={onTabChange}
-          onItemClick={onItemClick}
-          onViewAll={onViewAll}
-          compact
-        />
-      </Popover>
-      <Dialog open={dialogOpen} onClose={onCloseDialog} fullWidth maxWidth="sm">
-        <DialogContent sx={{ p: 0 }}>
+
+      {/* DESKTOP: Popover compacto */}
+      {shouldShowPopover && (
+        <Popover
+          open={true}
+          anchorEl={anchorEl}
+          onClose={onClose}
+          disableScrollLock={true}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+          transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+          container={document.body}
+          PaperProps={{
+            sx: {
+              mt: 1,
+              boxShadow: 6,
+              borderRadius: 2,
+              overflow: 'hidden',
+              minWidth: 360,
+              maxWidth: 480,
+              zIndex: theme.zIndex.modal + 100,
+            }
+          }}
+        >
           <NotificationListPanel
             notifications={notifications || []}
             activeTab={activeTab || 'all'}
             onTabChange={onTabChange}
             onItemClick={onItemClick}
-            onViewAll={onCloseDialog}
-            compact={false}
+            onViewAll={onViewAll}
+            compact
           />
-        </DialogContent>
-      </Dialog>
+        </Popover>
+      )}
+
+      {/* MOBILE XS/SM: Dialog directo (sin Popover) */}
+      {shouldShowMobileDialog && (
+        <Dialog
+          open={true}
+          onClose={onClose}
+          fullScreen={true}
+          disableScrollLock={true}
+          sx={{ zIndex: theme.zIndex.modal + 300 }}
+          PaperProps={{
+            sx: {
+              width: '100vw',
+              height: `calc(100vh - ${mobileBarHeight}px)`,
+              maxWidth: '100vw',
+              maxHeight: `calc(100vh - ${mobileBarHeight}px)`,
+              margin: 0,
+              borderRadius: 0,
+              overflow: 'hidden',
+              zIndex: theme.zIndex.modal + 301,
+            }
+          }}
+        >
+          <Box sx={{ 
+            height: `calc(100vh - ${mobileBarHeight}px)`, 
+            display: 'flex', 
+            flexDirection: 'column',
+          }}>
+            {/* Header con close */}
+            <Box sx={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'space-between', 
+              p: 2, 
+              borderBottom: 1, 
+              borderColor: 'divider' 
+            }}>
+              <Typography variant="h6">Notificaciones</Typography>
+              <MuiIconButton onClick={onClose} size="small">
+                <CloseIcon />
+              </MuiIconButton>
+            </Box>
+            {/* Content */}
+            <Box sx={{ flex: 1, overflow: 'hidden' }}>
+              <NotificationListPanel
+                notifications={notifications || []}
+                activeTab={activeTab || 'all'}
+                onTabChange={onTabChange}
+                onItemClick={onItemClick}
+                onViewAll={onClose}
+                compact={false}
+              />
+            </Box>
+          </Box>
+        </Dialog>
+      )}
+      {/* DESKTOP: Dialog "Ver todas" */}
+      {dialogOpen && !isMobile && (
+        <Dialog
+          open={true}
+          onClose={onCloseDialog}
+          maxWidth="sm"
+          fullWidth={false}
+          disableScrollLock={true}
+          container={document.body}
+          PaperProps={{
+            sx: {
+              width: 480,
+              maxWidth: 480,
+              height: 700,
+              maxHeight: '90vh',
+              borderRadius: 2,
+              overflow: 'hidden',
+              zIndex: theme.zIndex.modal + 200,
+            }
+          }}
+        >
+          <DialogContent sx={{ p: 0, height: '100%' }}>
+            <NotificationListPanel
+              notifications={notifications || []}
+              activeTab={activeTab || 'all'}
+              onTabChange={onTabChange}
+              onItemClick={onItemClick}
+              onViewAll={onCloseDialog}
+              compact={false}
+            />
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* MOBILE: Dialog "Ver todas" fullScreen */}
+      {dialogOpen && isMobile && (
+        <Dialog
+          open={true}
+          onClose={onCloseDialog}
+          fullScreen={true}
+          disableScrollLock={true}
+          sx={{ zIndex: theme.zIndex.modal + 300 }}
+          PaperProps={{
+            sx: {
+              width: '100vw',
+              height: `calc(100vh - ${mobileBarHeight}px)`,
+              maxWidth: '100vw',
+              maxHeight: `calc(100vh - ${mobileBarHeight}px)`,
+              margin: 0,
+              borderRadius: 0,
+              zIndex: theme.zIndex.modal + 301,
+            }
+          }}
+        >
+          <Box sx={{ 
+            height: `calc(100vh - ${mobileBarHeight}px)`, 
+            display: 'flex', 
+            flexDirection: 'column',
+          }}>
+            <Box sx={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'space-between', 
+              p: 2, 
+              borderBottom: 1, 
+              borderColor: 'divider' 
+            }}>
+              <Typography variant="h6">Todas las Notificaciones</Typography>
+              <MuiIconButton onClick={onCloseDialog} size="small">
+                <CloseIcon />
+              </MuiIconButton>
+            </Box>
+            <Box sx={{ flex: 1, overflow: 'hidden' }}>
+              <NotificationListPanel
+                notifications={notifications || []}
+                activeTab={activeTab || 'all'}
+                onTabChange={onTabChange}
+                onItemClick={onItemClick}
+                onViewAll={onCloseDialog}
+                compact={false}
+              />
+            </Box>
+          </Box>
+        </Dialog>
+      )}
     </>
   );
 }

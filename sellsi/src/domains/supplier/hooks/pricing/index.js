@@ -4,5 +4,6 @@
  * ============================================================================
  */
 
-export { default as useProductPriceTiers } from './useProductPriceTiers'
-export { default } from './useProductPriceTiers'
+// Re-export canonical implementation from shared to centralize the hook
+export { default as useProductPriceTiers } from '../../../../shared/hooks/product/useProductPriceTiers'
+export { default } from '../../../../shared/hooks/product/useProductPriceTiers'

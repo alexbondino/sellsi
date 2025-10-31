@@ -82,6 +82,12 @@ function detectImageType(buffer: ArrayBuffer): string {
       bytes[8] === 0x57 && bytes[9] === 0x45 && bytes[10] === 0x42 && bytes[11] === 0x50) {
     return 'webp';
   }
+
+  // GIF: 47 49 46 38 37 61 (GIF87a) or 47 49 46 38 39 61 (GIF89a)
+  if (bytes[0] === 0x47 && bytes[1] === 0x49 && bytes[2] === 0x46 && bytes[3] === 0x38 &&
+      (bytes[4] === 0x37 || bytes[4] === 0x39) && bytes[5] === 0x61) {
+    return 'gif';
+  }
   
   return 'unknown';
 }
@@ -326,6 +332,16 @@ serve((req) => withMetrics('generate-thumbnail', req, async () => {
       // Detectar tipo de imagen y respetar política: ignorar WebP
   const imageType = detectImageType(imageBuffer);
   thumbsLog('IMAGE_TYPE', { productId, imageType });
+      if (imageType === 'gif') {
+        // Reject GIFs explicitly (animated GIFs not supported by ImageScript pipeline)
+        if (jobTrackingEnabled) {
+          try { await dbClient.rpc('mark_thumbnail_job_error', { p_product_id: productId, p_error: 'unsupported_image_type_gif' }); } catch(_) {}
+        }
+        return new Response(JSON.stringify({ success: false, error: 'unsupported_image_type', reason: 'gif_not_supported' }), {
+          status: 422,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
       if (imageType === 'webp') {
         return new Response(JSON.stringify({ success: true, ignored: true, reason: 'webp_main_ignored' }), {
           status: 200,

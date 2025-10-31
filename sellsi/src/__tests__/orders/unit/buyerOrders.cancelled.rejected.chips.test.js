@@ -1,27 +1,27 @@
 // Test B-2: Chips cancelado vs rechazado (lógica aislada de getStatusChips en BuyerOrders)
 
 function getStatusChips(status, paymentStatus, order = null) {
-  const isCancelled = status === 'cancelled' || (order && order.cancelled_at);
-  const isRejected = status === 'rejected' || isCancelled;
+  const isPaymentExpired = paymentStatus === 'expired';
+  // If payment expired, we do not want to treat the order as cancelled/rejected for UI chips
+  const isCancelled = (status === 'cancelled' || (order && order.cancelled_at)) && !isPaymentExpired;
+  const isRejected = (status === 'rejected' && !isPaymentExpired) || isCancelled;
+  const getPaymentChipInfo = (ps) => {
+    switch (ps) {
+      case 'paid': return { label: 'Pago Confirmado', color: 'success' };
+      case 'expired': return { label: 'Pago Expirado', color: 'error' };
+      case 'pending':
+      default: return { label: 'Procesando Pago', color: 'warning' };
+    }
+  };
+  const paymentInfo = getPaymentChipInfo(paymentStatus);
+  // Always return at least the payment chip so payment_status is visible independently
+  const base = [{ key: 'pago', label: paymentInfo.label, color: paymentInfo.color, active: true }];
   if (isRejected) {
-    const getPaymentChipInfo = (ps) => {
-      switch (ps) {
-        case 'paid': return { label: 'Pago Confirmado', color: 'success' };
-        case 'expired': return { label: 'Pago Expirado', color: 'error' };
-        case 'pending':
-        default: return { label: 'Procesando Pago', color: 'warning' };
-      }
-    };
-    const paymentInfo = getPaymentChipInfo(paymentStatus);
-    return [
-      { key: 'pago', label: paymentInfo.label, color: paymentInfo.color, active: true },
-      { key: 'rechazado', label: isCancelled ? 'Cancelado' : 'Rechazado', active: true, color: 'error' },
-      { key: 'en_transito', label: 'En Transito', active: false, color: 'default' },
-      { key: 'entregado', label: 'Entregado', active: false, color: 'default' }
-    ];
+    base.push({ key: 'rechazado', label: isCancelled ? 'Cancelado' : 'Rechazado', active: true, color: 'error' });
+    base.push({ key: 'en_transito', label: 'En Transito', active: false, color: 'default' });
+    base.push({ key: 'entregado', label: 'Entregado', active: false, color: 'default' });
   }
-  // Simplificado para este test: solo necesitamos el path rechazo/cancelación
-  return [];
+  return base;
 }
 
 describe('B-2 chips cancelado vs rechazado', () => {
@@ -49,5 +49,13 @@ describe('B-2 chips cancelado vs rechazado', () => {
     const chips = getStatusChips('rejected', 'pending', { order_id: 'o5' });
     const pago = chips.find(c => c.key === 'pago');
     expect(pago.label).toBe('Procesando Pago');
+  });
+
+  it('si status=cancelled y payment_status=expired mostrar solo Pago Expirado (no Cancelado/Rechazado)', () => {
+    const chips = getStatusChips('cancelled', 'expired', { order_id: 'o6' });
+    const pago = chips.find(c => c.key === 'pago');
+    const rej = chips.find(c => c.key === 'rechazado');
+    expect(pago.label).toBe('Pago Expirado');
+    expect(rej).toBeUndefined();
   });
 });

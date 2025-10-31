@@ -36,25 +36,68 @@ const useSupplierProductsCRUD = create((set, get) => ({
   loadProducts: async (supplierId) => {
     set({ loading: true, error: null })
 
+    const fingerprint = (obj) => {
+      try {
+        const normalized = typeof obj === 'string' ? obj : JSON.stringify(obj, Object.keys(obj || {}).sort())
+        let hash = 5381
+        for (let i = 0; i < normalized.length; i++) {
+          hash = ((hash << 5) + hash) + normalized.charCodeAt(i)
+          hash = hash & hash
+        }
+        return `fp_${Math.abs(hash)}`
+      } catch (e) {
+        return `fp_${String(obj)}`
+      }
+    }
+
+    const inFlightMap = (typeof window !== 'undefined') ? (window.__inFlightSupabaseQueries = window.__inFlightSupabaseQueries || new Map()) : new Map()
+
+    const productsKey = fingerprint({ type: 'products', supplierId })
+
+    // Short TTL guard: avoid repeating a full products fetch within a small window
+    // This prevents immediate retry loops that cause UI flicker and duplicated calls.
     try {
-      const { data: products, error: prodError } = await supabase
-        .from('products')
-        .select(`
-          *, 
-          product_images(image_url, thumbnail_url, thumbnails, image_order).order(image_order.asc), 
-          product_quantity_ranges(*), 
-          product_delivery_regions(*)
-        `)
-        .eq('supplier_id', supplierId)
-        .order('updateddt', { ascending: false })
+      if (typeof window !== 'undefined') {
+        window.__inFlightSupabaseLastFetched = window.__inFlightSupabaseLastFetched || new Map()
+        const last = window.__inFlightSupabaseLastFetched.get(productsKey)
+        if (last && (Date.now() - last) < 3000) {
+          const currentProducts = get().products || []
+          set({ products: currentProducts, loading: false })
+          return { success: true, data: currentProducts }
+        }
+      }
+      let productsRes
+      if (inFlightMap.has(productsKey)) {
+        productsRes = await inFlightMap.get(productsKey)
+      } else {
+        const p = (async () => {
+          return await supabase
+            .from('products')
+            .select(`
+              *, 
+              product_images(image_url, thumbnail_url, thumbnails, image_order).order(image_order.asc), 
+              product_quantity_ranges(*), 
+              product_delivery_regions(*)
+            `)
+            .eq('supplier_id', supplierId)
+            .order('updateddt', { ascending: false })
+        })()
+        inFlightMap.set(productsKey, p)
+        try {
+          productsRes = await p
+          if (typeof window !== 'undefined') {
+            window.__inFlightSupabaseLastFetched = window.__inFlightSupabaseLastFetched || new Map()
+            window.__inFlightSupabaseLastFetched.set(productsKey, Date.now())
+          }
+        } finally {
+          inFlightMap.delete(productsKey)
+        }
+      }
 
-      if (prodError) throw prodError
-
-      // Debug: log raw product_quantity_ranges counts
-      
+  const products = productsRes?.data || []
 
       // Procesar productos para incluir relaciones
-      const processedProducts =
+      let processedProducts =
         products?.map((product) => {
           const images = (product.product_images || []).slice().sort((a,b)=>(a.image_order||0)-(b.image_order||0))
           const main = images.find(img => (img.image_order||0) === 0)
@@ -71,14 +114,29 @@ const useSupplierProductsCRUD = create((set, get) => ({
 
       // Fallback: si TODOS los priceTiers están vacíos, intentar recuperar en un query separado (posible fallo de relación / RLS)
       const allEmpty = processedProducts.length > 0 && processedProducts.every(p => !p.priceTiers || p.priceTiers.length === 0)
-  if (allEmpty) {
+      if (allEmpty) {
         const productIds = processedProducts.map(p => p.productid)
-        const { data: standaloneRanges, error: rangesError } = await supabase
-          .from('product_quantity_ranges')
-          .select('*')
-          .in('product_id', productIds)
-          .order('min_quantity', { ascending: true })
-        if (!rangesError && Array.isArray(standaloneRanges) && standaloneRanges.length > 0) {
+        const rangesKey = fingerprint({ type: 'product_quantity_ranges', productIds: productIds.slice().sort() })
+        let rangesRes
+        if (inFlightMap.has(rangesKey)) {
+          rangesRes = await inFlightMap.get(rangesKey)
+        } else {
+          const r = (async () => {
+            return await supabase
+              .from('product_quantity_ranges')
+              .select('*')
+              .in('product_id', productIds)
+              .order('min_quantity', { ascending: true })
+          })()
+          inFlightMap.set(rangesKey, r)
+          try {
+            rangesRes = await r
+          } finally {
+            inFlightMap.delete(rangesKey)
+          }
+        }
+        const standaloneRanges = rangesRes?.data || []
+        if (Array.isArray(standaloneRanges) && standaloneRanges.length > 0) {
           const grouped = standaloneRanges.reduce((acc, r) => {
             (acc[r.product_id] = acc[r.product_id] || []).push(r)
             return acc
@@ -88,10 +146,23 @@ const useSupplierProductsCRUD = create((set, get) => ({
               p.priceTiers = grouped[p.productid]
             }
           })
-          
         }
       }
 
+
+      // Merge defensively with existing in-memory products to preserve optimistic tiers
+      try {
+        const existing = get().products || []
+        if (Array.isArray(existing) && existing.length > 0) {
+          processedProducts = processedProducts.map(p => {
+            const ex = existing.find(e => e.productid === p.productid)
+            if (!ex) return p
+            const mergedTiers = (p.priceTiers && p.priceTiers.length > 0) ? p.priceTiers : (ex.priceTiers || [])
+            const mergedTierStatus = p.tiersStatus ?? ex.tiersStatus
+            return { ...p, priceTiers: mergedTiers, tiersStatus: mergedTierStatus }
+          })
+        }
+      } catch (_) { /* noop */ }
 
       set({
         products: processedProducts,
@@ -159,8 +230,27 @@ const useSupplierProductsCRUD = create((set, get) => ({
         precio: product.price,
         stock: product.productqty,
         images: [],
-        // Optimistic: si createBasicProduct recibió priceTiers (vía createCompleteProduct) conservarlos para que stats detecten tramos
-        priceTiers: Array.isArray(productData.priceTiers) ? productData.priceTiers : [],
+        // Optimistic: si createBasicProduct recibió priceTiers (vía createCompleteProduct), normalizarlos al shape de BD para que UI muestre rango inmediato
+        priceTiers: Array.isArray(productData.priceTiers)
+          ? productData.priceTiers.map(t => ({
+              min_quantity: t.min_quantity ?? t.min ?? null,
+              max_quantity: t.max_quantity ?? t.max ?? null,
+              price: t.price ?? t.precio ?? 0,
+            }))
+          : [],
+        // Mark tiers as loaded if we have optimistic tiers to avoid pending UI
+        tiersStatus: Array.isArray(productData.priceTiers) && productData.priceTiers.length > 0 ? 'loaded' : 'idle',
+        // Derive min/max price for convenience in UIs that show ranges
+        minPrice: (() => {
+          const arr = Array.isArray(productData.priceTiers) ? productData.priceTiers : []
+          const nums = arr.map(t => Number(t.price ?? t.precio ?? 0)).filter(n => n > 0)
+          return nums.length ? Math.min(...nums) : (product.price || 0)
+        })(),
+        maxPrice: (() => {
+          const arr = Array.isArray(productData.priceTiers) ? productData.priceTiers : []
+          const nums = arr.map(t => Number(t.price ?? t.precio ?? 0)).filter(n => n > 0)
+          return nums.length ? Math.max(...nums) : (product.price || 0)
+        })(),
         delivery_regions: [],
       }
 
@@ -349,11 +439,15 @@ const useSupplierProductsCRUD = create((set, get) => ({
       }
 
       set((state) => {
-  const oldProduct = state.products.find(p => p.productid === productId)
-        
+        const oldProduct = state.products.find(p => p.productid === productId) || {}
+        const hasDbTiers = Array.isArray(processedProduct.priceTiers) && processedProduct.priceTiers.length > 0
+        const mergedPriceTiers = hasDbTiers ? processedProduct.priceTiers : (oldProduct.priceTiers || [])
+        const mergedTiersStatus = hasDbTiers ? 'loaded' : (oldProduct.tiersStatus || 'idle')
+        const mergedProduct = { ...processedProduct, priceTiers: mergedPriceTiers, tiersStatus: mergedTiersStatus }
+
         return {
           products: state.products.map((p) =>
-            p.productid === productId ? processedProduct : p
+            p.productid === productId ? mergedProduct : p
           ),
         }
       })

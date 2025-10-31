@@ -1,0 +1,447 @@
+/**
+ * @jest-environment jsdom
+ * 
+ * Tests para adminAuditService
+ * Cubre: Registro de auditoría, consultas, filtros, seguridad
+ */
+
+import { describe, it, expect, beforeEach, jest } from '@jest/globals'
+
+jest.unstable_mockModule('../../../src/domains/admin/services/adminAuditService.js', () => ({
+  logAction: jest.fn(),
+  getAuditLogs: jest.fn(),
+  getAdminActions: jest.fn(),
+  searchAuditLogs: jest.fn(),
+  getAuditStats: jest.fn(),
+  exportAuditLogs: jest.fn()
+}))
+
+describe('adminAuditService - Auditoría', () => {
+  let adminAuditService
+
+  beforeEach(async () => {
+    jest.clearAllMocks()
+    adminAuditService = await import('../../../src/domains/admin/services/adminAuditService.js')
+  })
+
+  describe('logAction()', () => {
+    it('✅ debe registrar acción de admin', async () => {
+      adminAuditService.logAction.mockResolvedValue({
+        success: true,
+        log_id: 'log-123'
+      })
+
+      const result = await adminAuditService.logAction({
+        admin_id: 'admin-1',
+        action: 'USER_DELETED',
+        target_id: 'user-123',
+        details: { reason: 'Spam' }
+      })
+
+      expect(result.success).toBe(true)
+      expect(result.log_id).toBeDefined()
+    })
+
+    it('✅ debe incluir IP y user agent', async () => {
+      adminAuditService.logAction.mockResolvedValue({
+        success: true,
+        log_id: 'log-123',
+        ip_address: '192.168.1.100',
+        user_agent: 'Mozilla/5.0...'
+      })
+
+      const result = await adminAuditService.logAction({
+        admin_id: 'admin-1',
+        action: 'LOGIN_SUCCESS',
+        ip_address: '192.168.1.100'
+      })
+
+      expect(result.ip_address).toBeDefined()
+    })
+
+    it('✅ debe almacenar detalles como JSON', async () => {
+      const details = {
+        old_value: 'buyer',
+        new_value: 'supplier',
+        reason: 'Usuario migrado'
+      }
+
+      adminAuditService.logAction.mockResolvedValue({
+        success: true,
+        details: details
+      })
+
+      const result = await adminAuditService.logAction({
+        admin_id: 'admin-1',
+        action: 'USER_ROLE_CHANGED',
+        details
+      })
+
+      expect(result.details).toEqual(details)
+    })
+
+    it('⚠️ debe validar campos requeridos', async () => {
+      adminAuditService.logAction.mockResolvedValue({
+        success: false,
+        error: 'admin_id y action son requeridos'
+      })
+
+      const result = await adminAuditService.logAction({ action: 'TEST' })
+
+      expect(result.success).toBe(false)
+    })
+  })
+
+  describe('getAuditLogs()', () => {
+    it('✅ debe obtener logs paginados', async () => {
+      const mockLogs = Array(20).fill(null).map((_, i) => ({
+        id: `log-${i}`,
+        action: 'TEST_ACTION',
+        timestamp: new Date().toISOString()
+      }))
+
+      adminAuditService.getAuditLogs.mockResolvedValue({
+        success: true,
+        data: mockLogs,
+        pagination: { page: 1, pageSize: 20, total: 100 }
+      })
+
+      const result = await adminAuditService.getAuditLogs({ page: 1, pageSize: 20 })
+
+      expect(result.success).toBe(true)
+      expect(result.data).toHaveLength(20)
+      expect(result.pagination.total).toBe(100)
+    })
+
+    it('✅ debe filtrar por admin_id', async () => {
+      const mockLogs = [
+        { id: 'log-1', admin_id: 'admin-123', action: 'LOGIN' }
+      ]
+
+      adminAuditService.getAuditLogs.mockResolvedValue({
+        success: true,
+        data: mockLogs
+      })
+
+      const result = await adminAuditService.getAuditLogs({ admin_id: 'admin-123' })
+
+      expect(result.success).toBe(true)
+      expect(result.data.every(log => log.admin_id === 'admin-123')).toBe(true)
+    })
+
+    it('✅ debe filtrar por tipo de acción', async () => {
+      const mockLogs = [
+        { id: 'log-1', action: 'USER_DELETED' },
+        { id: 'log-2', action: 'USER_DELETED' }
+      ]
+
+      adminAuditService.getAuditLogs.mockResolvedValue({
+        success: true,
+        data: mockLogs
+      })
+
+      const result = await adminAuditService.getAuditLogs({ action: 'USER_DELETED' })
+
+      expect(result.data.every(log => log.action === 'USER_DELETED')).toBe(true)
+    })
+
+    it('✅ debe filtrar por rango de fechas', async () => {
+      const startDate = '2025-10-01'
+      const endDate = '2025-10-31'
+
+      adminAuditService.getAuditLogs.mockResolvedValue({
+        success: true,
+        data: [
+          { id: 'log-1', timestamp: '2025-10-15T10:00:00Z' },
+          { id: 'log-2', timestamp: '2025-10-20T10:00:00Z' }
+        ]
+      })
+
+      const result = await adminAuditService.getAuditLogs({
+        date_from: startDate,
+        date_to: endDate
+      })
+
+      expect(result.success).toBe(true)
+      expect(result.data).toHaveLength(2)
+    })
+
+    it('✅ debe ordenar por timestamp descendente', async () => {
+      adminAuditService.getAuditLogs.mockResolvedValue({
+        success: true,
+        data: [
+          { id: 'log-1', timestamp: '2025-10-28T10:00:00Z' },
+          { id: 'log-2', timestamp: '2025-10-27T10:00:00Z' },
+          { id: 'log-3', timestamp: '2025-10-26T10:00:00Z' }
+        ]
+      })
+
+      const result = await adminAuditService.getAuditLogs()
+
+      expect(result.data[0].timestamp > result.data[1].timestamp).toBe(true)
+      expect(result.data[1].timestamp > result.data[2].timestamp).toBe(true)
+    })
+  })
+
+  describe('getAdminActions()', () => {
+    it('✅ debe obtener acciones de un admin específico', async () => {
+      const mockActions = [
+        { action: 'USER_BANNED', count: 5 },
+        { action: 'PAYMENT_RELEASED', count: 23 },
+        { action: 'USER_VERIFIED', count: 12 }
+      ]
+
+      adminAuditService.getAdminActions.mockResolvedValue({
+        success: true,
+        data: mockActions
+      })
+
+      const result = await adminAuditService.getAdminActions('admin-123')
+
+      expect(result.success).toBe(true)
+      expect(result.data).toHaveLength(3)
+      expect(result.data[0].count).toBe(5)
+    })
+
+    it('✅ debe calcular total de acciones', async () => {
+      adminAuditService.getAdminActions.mockResolvedValue({
+        success: true,
+        data: [
+          { action: 'ACTION_1', count: 10 },
+          { action: 'ACTION_2', count: 20 }
+        ],
+        total_actions: 30
+      })
+
+      const result = await adminAuditService.getAdminActions('admin-123')
+
+      expect(result.total_actions).toBe(30)
+    })
+  })
+
+  describe('searchAuditLogs()', () => {
+    it('✅ debe buscar por término en detalles', async () => {
+      adminAuditService.searchAuditLogs.mockResolvedValue({
+        success: true,
+        data: [
+          {
+            id: 'log-1',
+            action: 'USER_UPDATED',
+            details: { field: 'email', old_value: 'old@email.com', new_value: 'new@email.com' }
+          }
+        ]
+      })
+
+      const result = await adminAuditService.searchAuditLogs({ query: 'email' })
+
+      expect(result.success).toBe(true)
+      expect(result.data[0].details.field).toBe('email')
+    })
+
+    it('✅ debe buscar por target_id', async () => {
+      adminAuditService.searchAuditLogs.mockResolvedValue({
+        success: true,
+        data: [
+          { id: 'log-1', target_id: 'user-123', action: 'USER_BANNED' },
+          { id: 'log-2', target_id: 'user-123', action: 'USER_VERIFIED' }
+        ]
+      })
+
+      const result = await adminAuditService.searchAuditLogs({ target_id: 'user-123' })
+
+      expect(result.data.every(log => log.target_id === 'user-123')).toBe(true)
+    })
+
+    it('⚠️ debe requerir mínimo 3 caracteres', async () => {
+      adminAuditService.searchAuditLogs.mockResolvedValue({
+        success: false,
+        error: 'Query debe tener al menos 3 caracteres'
+      })
+
+      const result = await adminAuditService.searchAuditLogs({ query: 'ab' })
+
+      expect(result.success).toBe(false)
+    })
+  })
+
+  describe('getAuditStats()', () => {
+    it('✅ debe obtener estadísticas generales', async () => {
+      const mockStats = {
+        total_logs: 1523,
+        total_admins: 5,
+        actions_last_24h: 87,
+        most_common_action: 'LOGIN_SUCCESS',
+        most_active_admin: 'admin-123'
+      }
+
+      adminAuditService.getAuditStats.mockResolvedValue({
+        success: true,
+        data: mockStats
+      })
+
+      const result = await adminAuditService.getAuditStats()
+
+      expect(result.success).toBe(true)
+      expect(result.data.total_logs).toBeGreaterThan(0)
+      expect(result.data.most_common_action).toBeDefined()
+    })
+
+    it('✅ debe agrupar por tipo de acción', async () => {
+      adminAuditService.getAuditStats.mockResolvedValue({
+        success: true,
+        data: {
+          actions_by_type: {
+            'USER_DELETED': 45,
+            'PAYMENT_RELEASED': 123,
+            'LOGIN_SUCCESS': 456
+          }
+        }
+      })
+
+      const result = await adminAuditService.getAuditStats()
+
+      expect(result.data.actions_by_type).toBeDefined()
+      expect(result.data.actions_by_type['PAYMENT_RELEASED']).toBe(123)
+    })
+
+    it('✅ debe calcular tendencias por día', async () => {
+      adminAuditService.getAuditStats.mockResolvedValue({
+        success: true,
+        data: {
+          daily_trend: [
+            { date: '2025-10-26', count: 23 },
+            { date: '2025-10-27', count: 45 },
+            { date: '2025-10-28', count: 67 }
+          ]
+        }
+      })
+
+      const result = await adminAuditService.getAuditStats({ days: 7 })
+
+      expect(result.data.daily_trend).toBeDefined()
+      expect(result.data.daily_trend).toHaveLength(3)
+    })
+  })
+
+  describe('exportAuditLogs()', () => {
+    it('✅ debe exportar logs a CSV', async () => {
+      const mockCSV = 'timestamp,admin,action,target\n2025-10-28,admin-1,USER_DELETED,user-123'
+
+      adminAuditService.exportAuditLogs.mockResolvedValue({
+        success: true,
+        format: 'csv',
+        data: mockCSV,
+        filename: 'audit_logs_20251028.csv'
+      })
+
+      const result = await adminAuditService.exportAuditLogs({ format: 'csv' })
+
+      expect(result.success).toBe(true)
+      expect(result.format).toBe('csv')
+      expect(result.data).toContain('timestamp')
+    })
+
+    it('✅ debe exportar logs a JSON', async () => {
+      const mockJSON = [
+        { timestamp: '2025-10-28T10:00:00Z', admin: 'admin-1', action: 'TEST' }
+      ]
+
+      adminAuditService.exportAuditLogs.mockResolvedValue({
+        success: true,
+        format: 'json',
+        data: mockJSON
+      })
+
+      const result = await adminAuditService.exportAuditLogs({ format: 'json' })
+
+      expect(result.format).toBe('json')
+      expect(Array.isArray(result.data)).toBe(true)
+    })
+
+    it('✅ debe aplicar filtros en exportación', async () => {
+      adminAuditService.exportAuditLogs.mockResolvedValue({
+        success: true,
+        data: 'filtered data',
+        filters_applied: {
+          date_from: '2025-10-01',
+          date_to: '2025-10-31',
+          admin_id: 'admin-123'
+        }
+      })
+
+      const result = await adminAuditService.exportAuditLogs({
+        date_from: '2025-10-01',
+        date_to: '2025-10-31',
+        admin_id: 'admin-123'
+      })
+
+      expect(result.filters_applied).toBeDefined()
+    })
+
+    it('⚠️ debe limitar tamaño de exportación', async () => {
+      adminAuditService.exportAuditLogs.mockResolvedValue({
+        success: false,
+        error: 'Exportación excede 10,000 registros. Use filtros.'
+      })
+
+      const result = await adminAuditService.exportAuditLogs({ limit: 20000 })
+
+      expect(result.success).toBe(false)
+      expect(result.error).toContain('excede')
+    })
+  })
+
+  describe('Seguridad y validaciones', () => {
+    it('🔒 debe prevenir modificación de logs', async () => {
+      adminAuditService.logAction.mockResolvedValue({
+        success: false,
+        error: 'Los logs no pueden ser modificados'
+      })
+
+      // Intentar actualizar un log existente (no debería ser posible)
+      const result = await adminAuditService.logAction({
+        id: 'existing-log',
+        action: 'MODIFIED'
+      })
+
+      expect(result.success).toBe(false)
+    })
+
+    it('🔒 debe prevenir eliminación de logs', async () => {
+      // No debería existir función deleteAuditLog
+      expect(adminAuditService.deleteAuditLog).toBeUndefined()
+    })
+
+    it('🛡️ debe sanitizar inputs en búsqueda', async () => {
+      const maliciousQuery = "'; DROP TABLE admin_audit_log; --"
+
+      adminAuditService.searchAuditLogs.mockResolvedValue({
+        success: false,
+        error: 'Query contiene caracteres inválidos'
+      })
+
+      const result = await adminAuditService.searchAuditLogs({ query: maliciousQuery })
+
+      expect(result.success).toBe(false)
+    })
+
+    it('⏱️ debe mantener logs por al menos 1 año', async () => {
+      const oneYearAgo = new Date()
+      oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1)
+
+      adminAuditService.getAuditLogs.mockResolvedValue({
+        success: true,
+        data: [
+          { id: 'old-log', timestamp: oneYearAgo.toISOString() }
+        ]
+      })
+
+      const result = await adminAuditService.getAuditLogs({
+        date_from: oneYearAgo.toISOString().split('T')[0]
+      })
+
+      expect(result.success).toBe(true)
+      expect(result.data.length).toBeGreaterThan(0)
+    })
+  })
+})

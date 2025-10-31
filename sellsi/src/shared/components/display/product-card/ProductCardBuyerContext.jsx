@@ -23,7 +23,6 @@ import { useOptimizedUserShippingRegion } from '../../../../hooks/useOptimizedUs
 import { showErrorToast } from '../../../../utils/toastHelpers';
 import { generateProductUrl } from '../../../utils/product/productUrl';
 import PriceDisplay from '../price/PriceDisplay';
-import { useProductPriceTiers } from '../../../hooks/product/useProductPriceTiers';
 import {
   formatProductForCart,
   calculatePriceForQuantity,
@@ -53,68 +52,66 @@ const ProductCardBuyerContext = React.memo(
     const negociable = product.negociable || product.negotiable || false;
     const proveedorVerificado = product.verified || product.proveedorVerificado || product.supplierVerified || false;
 
-    // Hook to get price tiers (maintain for compatibility)
-    const {
-      tiers,
-      loading: loadingTiers,
-      error: errorTiers,
-    } = useProductPriceTiers(product.id);
+  // Centralized: product.priceTiers now populated (deferred) by useProducts batching logic
+  const price_tiers = product.priceTiers || [];
+  const tiersStatus = product.tiersStatus; // 'idle' | 'loading' | 'loaded' | 'error'
+  const loadingTiers = tiersStatus === 'loading';
+  const errorTiers = tiersStatus === 'error';
 
-    // Unify source of price_tiers: prefer product's, if not, from hook
-    const price_tiers = useMemo(() => {
-      return product.priceTiers && product.priceTiers.length > 0
-        ? product.priceTiers
-        : tiers && tiers.length > 0
-        ? tiers
-        : [];
-    }, [product.priceTiers, tiers]);
+  // Prefer min/max if available; fallback to base price. If we have no valid price yet,
+  // consider the tiers as pending (show "Cargando precios...") instead of showing 0.
+  const effectiveMinPrice = product.minPrice ?? precio ?? product.price ?? null;
+  const effectiveMaxPrice = product.maxPrice ?? precio ?? product.price ?? null;
+  const hasValidBasePrice = (Number(effectiveMaxPrice) || 0) > 0 || (Number(effectiveMinPrice) || 0) > 0;
+  const isPending = loadingTiers || (tiersStatus === 'idle' && !hasValidBasePrice);
 
-    const memoizedPriceContent = useMemo(() => {
-      if (loadingTiers) {
-        return (
-          <Typography variant="body2" color="text.secondary">
-            Cargando precios...
-          </Typography>
-        );
-      }
+  const memoizedPriceContent = useMemo(() => {
+    if (isPending) {
+      return (
+        <Typography variant="body2" color="text.secondary">
+          Cargando precios...
+        </Typography>
+      );
+    }
 
-      if (errorTiers) {
-        return (
-          <Typography variant="body2" color="error.main">
-            Error al cargar precios
-          </Typography>
-        );
-      }
+    if (errorTiers) {
+      return (
+        <Typography variant="body2" color="error.main">
+          Error al cargar precios
+        </Typography>
+      );
+    }
 
-      if (price_tiers && price_tiers.length > 0) {
-        // Show price range by tiers
-        const minPrice = Math.min(...price_tiers.map(t => t.price));
-        const maxPrice = Math.max(...price_tiers.map(t => t.price));
-        return (
-          <PriceDisplay
-            price={maxPrice}
-            minPrice={minPrice}
-            showRange={minPrice !== maxPrice}
-            variant="h5"
-            color="#1976d2"
-            sx={{ lineHeight: 1.1, fontSize: { xs: 14, sm: 16, md: 22 } }}
-          />
-        );
-      } else {
-        // Single price (no tiers)
-        return (
-          <PriceDisplay
-            price={precio}
-            originalPrice={precioOriginal}
-            variant="h5"
-            color="#1976d2"
-            sx={{ lineHeight: 1.1, fontSize: { xs: 14, sm: 16, md: 22 } }}
-          />
-        );
-      }
-    }, [loadingTiers, errorTiers, price_tiers, precio, precioOriginal]);
+    if (price_tiers && price_tiers.length > 0) {
+      // Show price range by tiers
+      const minPrice = Math.min(...price_tiers.map(t => Number(t.price) || 0));
+      const maxPrice = Math.max(...price_tiers.map(t => Number(t.price) || 0));
+      return (
+        <PriceDisplay
+          price={maxPrice}
+          minPrice={minPrice}
+          showRange={minPrice !== maxPrice}
+          variant="h5"
+          color="#1976d2"
+          sx={{ lineHeight: 1.1, fontSize: { xs: 14, sm: 16, md: 22 } }}
+        />
+      );
+    }
 
+    // Single price (no tiers) - use effective fallback price rather than raw precio which may be 0
+    const displayPrice = hasValidBasePrice ? (effectiveMaxPrice ?? effectiveMinPrice ?? 0) : 0;
     return (
+      <PriceDisplay
+        price={displayPrice}
+        originalPrice={precioOriginal}
+        variant="h5"
+        color="#1976d2"
+        sx={{ lineHeight: 1.1, fontSize: { xs: 14, sm: 16, md: 22 } }}
+      />
+    );
+  }, [isPending, errorTiers, price_tiers, hasValidBasePrice, effectiveMaxPrice, effectiveMinPrice, precioOriginal]);
+ 
+  return (
       <Box sx={{ height: '100%' }}>
         <CardContent sx={{ flexGrow: 1, p: 2, pb: { xs: 6, md: 9 }, display: 'flex', flexDirection: 'column' }}>
           {/* Product name always at the top */}

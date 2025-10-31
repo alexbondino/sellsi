@@ -1,3 +1,6 @@
+// 🛡️ SAFARI FIX: Polyfill para requestIdleCallback (debe ir PRIMERO antes que cualquier otro import)
+import './lib/polyfills.js';
+
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 // Sentry deferred: removed direct import to keep SDK out of critical path
@@ -22,6 +25,18 @@ root.render(
 // 4. Cargar herramientas de emergencia solo en desarrollo
 if (import.meta.env.DEV) {
   import('./utils/cartEmergencyTools.js');
+}
+
+// 5. 🚨 EXPORT CACHE SERVICES GLOBALLY FOR FORCE REFRESH
+try {
+  import('./services/thumbnailCacheService.js').then(module => {
+    window.thumbnailCacheService = module.default;
+  });
+  import('./services/thumbnailInvalidationService.js').then(module => {
+    window.thumbnailInvalidationService = module.default;
+  });
+} catch (e) {
+  console.warn('⚠️ Could not export cache services globally:', e);
 }
 
 // Opcional: ejemplo de captura manual temprana (se eliminará si no se usa)

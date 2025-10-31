@@ -19,6 +19,11 @@ class KhipuService {
         return { ...it, __effective_price: effective };
       }) : [];
 
+      // Extraer offer_ids distintos de los items (si existen)
+      const offerIdsDistinct = Array.from(new Set((normalizedItems || [])
+        .map(it => it.offer_id || it.offerId || (it.metadata && it.metadata.offer_id))
+        .filter(Boolean)));
+
       const paymentPayload = {
         amount: Math.round(total),
         currency: currency || 'CLP',
@@ -26,6 +31,8 @@ class KhipuService {
         buyer_id: userId || null,
         cart_id: orderId || null,
         order_id: orderId,
+        // Pasar lista de ofertas explícitamente para que el Edge Function pueda validar y aplicar descuentos
+        offer_ids: offerIdsDistinct.length ? offerIdsDistinct : undefined,
         cart_items: normalizedItems.map(it => {
               const priceBase = it.__effective_price || it.price || it.price_at_addition || it.unitPrice || 0;
               return {
@@ -34,6 +41,7 @@ class KhipuService {
                 price: priceBase,
                 price_at_addition: priceBase,
                 supplier_id: it.supplier_id || it.supplierId || (it.product && (it.product.supplier_id || it.product.supplierId)) || null,
+                offer_id: it.offer_id || it.offerId || (it.metadata && it.metadata.offer_id) || null,
                 document_type: (() => {
                   const raw = it.document_type || it.documentType || (it.product && (it.product.document_type || it.product.documentType)) || '';
                   const v = String(raw).toLowerCase();
@@ -52,19 +60,49 @@ class KhipuService {
       }
 
       // <-- CAMBIO 2: Invocamos la función pasándole el 'body' con los datos dinámicos.
+      console.log('[khipuService] Invocando create-payment-khipu con payload:', JSON.stringify(paymentPayload));
       const { data: khipuResponse, error } = await supabase.functions.invoke('create-payment-khipu', {
         body: paymentPayload,
       });
 
+      if (error && error.context) {
+        console.warn('[khipuService] Error context (posible body función):', error.context);
+        try {
+          // Supabase v2 Functions error suele traer el body en error.context.response o error.context.raw
+          const ctx = error.context;
+          const possible = ctx.response || ctx.body || ctx.raw || ctx;
+          if (typeof possible === 'string') {
+            console.warn('[khipuService] Error body (string):', possible);
+          } else if (possible && typeof possible === 'object') {
+            console.warn('[khipuService] Error body (json):', JSON.stringify(possible, null, 2));
+          }
+        } catch (parseCtxErr) {
+          console.warn('[khipuService] No se pudo parsear error.context:', parseCtxErr);
+        }
+      }
+
       if (error) {
+        console.error('[khipuService] Error bruto supabase.functions.invoke (detalle completo):', JSON.stringify(error, null, 2));
         throw new Error(
           `Error al invocar la función de Supabase: ${error.message}`
         );
       }
       if (khipuResponse?.error) {
+        console.error('[khipuService] Edge Function returned error payload:', khipuResponse);
         throw new Error(
           `Error devuelto por la función de pago: ${khipuResponse.error}`
         );
+      }
+      // Log de valores sellados para diagnóstico de pricing
+      if (khipuResponse?.sealed_grand_total !== undefined) {
+        console.log('[khipuService] Sellado recibido:', {
+          sealed_grand_total: khipuResponse.sealed_grand_total,
+          sealed_total_base: khipuResponse.sealed_total_base,
+            sealed_payment_fee: khipuResponse.sealed_payment_fee,
+            frontend_amount: khipuResponse.frontend_amount,
+            pricing_diff: khipuResponse.pricing_diff,
+            request_id: khipuResponse.request_id
+        });
       }
       if (!khipuResponse?.payment_url) {
         console.error('[khipuService] Respuesta inesperada de create-payment-khipu:', khipuResponse);
@@ -77,7 +115,9 @@ class KhipuService {
         paymentUrl: khipuResponse.payment_url,
         paymentId: khipuResponse.payment_id,
         transactionId: khipuResponse.transaction_id,
-        expiresAt: khipuResponse.expires_date,
+  expiresAt: khipuResponse.expires_date,
+  sealedGrandTotal: khipuResponse.sealed_grand_total,
+  requestId: khipuResponse.request_id,
       };
     } catch (err) {
       console.error('Error en khipuService.createPaymentOrder:', err);

@@ -6,6 +6,7 @@ import {
   Check as CheckIcon,
   LocalShipping as LocalShippingIcon,
   Work as WorkIcon,
+  Close as CloseIcon,
 } from '@mui/icons-material';
 
 // --- Configuración de tipos de modal para flexibilidad ---
@@ -17,6 +18,7 @@ export const MODAL_TYPES = {
   ORDER_CHECK: 'orderCheck',
   ORDER_TRUCK: 'orderTruck',
   ORDER_BRIEFCASE: 'orderBriefcase',
+  ORDER_CANCEL: 'orderCancel',
 };
 
 export const getModalConfig = type => {
@@ -69,6 +71,14 @@ export const getModalConfig = type => {
         iconBgColor: null,
         confirmColor: 'primary',
         confirmText: 'Confirmar',
+      };
+    case MODAL_TYPES.ORDER_CANCEL:
+      return {
+        icon: CloseIcon,
+        iconColor: 'error.main',
+        iconBgColor: null,
+        confirmColor: 'error',
+        confirmText: 'Cancelar',
       };
     case MODAL_TYPES.INFO:
     default:

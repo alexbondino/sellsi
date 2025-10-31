@@ -2,8 +2,12 @@ import React, { Suspense } from 'react';
 
 // Lazy imports (mantener mismas rutas para no cambiar behavior)
 // Este archivo está un nivel más profundo que TopBar.jsx, por lo que se requiere un '../' adicional
-const Login = React.lazy(() => import('../../../../../domains/auth/components/Login'));
-const Register = React.lazy(() => import('../../../../../domains/auth/components/Register'));
+const Login = React.lazy(() =>
+  import('../../../../../workspaces/auth/login/components/Login')
+);
+const Register = React.lazy(() =>
+  import('../../../../../workspaces/auth/register/components/Register')
+);
 
 /**
  * AuthModals - wrapper para modales de autenticación.
@@ -14,7 +18,13 @@ const Register = React.lazy(() => import('../../../../../domains/auth/components
  *  - onCloseRegister: () => void
  *  - onLoginToRegister: () => void (transición)
  */
-export function AuthModals({ openLogin, openRegister, onCloseLogin, onCloseRegister, onLoginToRegister }) {
+export function AuthModals({
+  openLogin,
+  openRegister,
+  onCloseLogin,
+  onCloseRegister,
+  onLoginToRegister,
+}) {
   return (
     <>
       {openLogin && (
@@ -28,10 +38,7 @@ export function AuthModals({ openLogin, openRegister, onCloseLogin, onCloseRegis
       )}
       {openRegister && (
         <Suspense fallback={null}>
-          <Register
-            open={openRegister}
-            onClose={onCloseRegister}
-          />
+          <Register open={openRegister} onClose={onCloseRegister} />
         </Suspense>
       )}
     </>

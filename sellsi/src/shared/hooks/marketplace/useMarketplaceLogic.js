@@ -23,43 +23,20 @@ import { useMarketplaceSearchBus } from '../../contexts/MarketplaceSearchContext
  * Hook centralizado que consolida toda la lógica de Marketplace
  * ✅ OPTIMIZADO: Reduce re-renders innecesarios
  */
-export const useMarketplaceLogic = (options = {}) => {
-  // ✅ OPTIMIZACIÓN: Memoizar configuración estática con comparación profunda
-  const memoizedOptions = useMemo(
-    () => {
-      const defaultConfig = {
-        hasSideBar: false,
-  // 🚩 NUEVO FLAG: Permite que algunos consumidores (Marketplace público) limpien la búsqueda
-  // cuando se cambia entre vista de proveedores y productos.
+// 🌱 CONFIG ESTÁTICA: fuera del hook para no recrearse / mantener referencias estables
+const DEFAULT_MARKETPLACE_CONFIG = Object.freeze({
+  hasSideBar: false,
   clearSearchOnViewToggle: false,
-        searchBarMarginLeft: {
-          xs: 0,
-          sm: 0,
-          md: 2,
-          lg: 33.7,
-          xl: 41,
-        },
-        categoryMarginLeft: {
-          xs: 0,
-          sm: 0,
-          md: 3,
-          lg: 35.5,
-          xl: 40,
-        },
-        titleMarginLeft: {
-          xs: 0,
-          sm: 0,
-          md: 0,
-          lg: 0,
-          xl: 0,
-        },
-      };
+  searchBarMarginLeft: { xs: 0, sm: 0, md: 2, lg: 33.7, xl: 41 },
+  categoryMarginLeft: { xs: 0, sm: 0, md: 3, lg: 35.5, xl: 40 },
+  titleMarginLeft: { xs: 0, sm: 0, md: 0, lg: 0, xl: 0 },
+});
 
-      // ✅ OPTIMIZACIÓN: Solo mergear si las opciones han cambiado
-      return Object.keys(options).length > 0 ? { ...defaultConfig, ...options } : defaultConfig;
-    },
-    [options]
-  );
+export const useMarketplaceLogic = (options = {}) => {
+  // ✅ OPTIMIZACIÓN: Mezcla superficial de config sólo si se pasan overrides
+  const memoizedOptions = useMemo(() => (
+    Object.keys(options).length ? { ...DEFAULT_MARKETPLACE_CONFIG, ...options } : DEFAULT_MARKETPLACE_CONFIG
+  ), [options]);
 
   const {
     hasSideBar,
@@ -99,7 +76,11 @@ export const useMarketplaceLogic = (options = {}) => {
     resetFiltros,
     toggleCategoria,
     handleTipoVentaChange,
+  getPriceTiers,
+  registerProductNode,
   } = useMarketplaceState();
+  // Prefetch helpers provided by useMarketplaceState
+  // (included in the destructured return to avoid calling the hook twice)
 
   // Hook para opciones de ordenamiento
   const {
@@ -113,8 +94,6 @@ export const useMarketplaceLogic = (options = {}) => {
   const { shouldShowSearchBar } = useScrollBehavior();
 
   // ===== ESTADOS LOCALES PARA UI =====
-  const [anchorElCategorias, setAnchorElCategorias] = useState(null);
-  
   // ✅ NUEVO: Estado para manejar el modal móvil de filtros
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
   
@@ -179,6 +158,37 @@ export const useMarketplaceLogic = (options = {}) => {
     }
   }, [handleToggleFiltro]);
 
+  // Handler para abrir/actualizar filtro de despacho desde CategoryNavigation
+  // Accepts:
+  // - null -> clear selection
+  // - single region value -> toggle membership
+  // - array of regions -> set explicitly
+  const handleOpenShippingFilter = useCallback((regions) => {
+    try {
+      let newSelection = [];
+
+      if (regions === null) {
+        newSelection = [];
+      } else if (Array.isArray(regions)) {
+        newSelection = regions;
+      } else if (typeof regions === 'string') {
+        const current = filtros?.shippingRegions || [];
+        // toggle
+        if (current.includes(regions)) {
+          newSelection = current.filter(r => r !== regions);
+        } else {
+          newSelection = [...current, regions];
+        }
+      }
+
+      updateFiltros({ shippingRegions: newSelection });
+      setFiltroVisible(true);
+      setFiltroModalOpen(true);
+    } catch (e) {
+      // ignore
+    }
+  }, [updateFiltros, setFiltroVisible, setFiltroModalOpen, filtros]);
+
   // ✅ OPTIMIZACIÓN: Handler para el switch de vistas - memoizado estable
   const handleToggleProviderView = useCallback(() => {
     // Opcionalmente limpiar búsqueda (comportamiento legacy de Marketplace público)
@@ -190,30 +200,15 @@ export const useMarketplaceLogic = (options = {}) => {
     setIsProviderView(prev => !prev);
   }, [clearSearchOnViewToggle, resetFiltros, setBusqueda]);
 
-  // ✅ OPTIMIZACIÓN: Memoizar todos los handlers que se pasan como props
-  const memoSetBusqueda = useCallback(v => setBusqueda(v), [setBusqueda]);
-  const memoSetSeccionActiva = useCallback(
-    v => setSeccionActiva(v),
-    [setSeccionActiva]
-  );
-  const memoUpdateFiltros = useCallback(v => updateFiltros(v), [updateFiltros]);
-  const memoResetFiltros = useCallback(() => resetFiltros(), [resetFiltros]);
-  const memoToggleCategoria = useCallback(
-    v => toggleCategoria(v),
-    [toggleCategoria]
-  );
-  const memoSetCurrentOrdenamiento = useCallback(
-    v => setCurrentOrdenamiento(v),
-    [setCurrentOrdenamiento]
-  );
+  // Nota: los setters provenientes de useState y los callbacks memoizados desde
+  // `useMarketplaceState`/`useProductSorting` ya son estables; evitar envolverlos
+  // en passthroughs redunda en funciones extra y ruido en dependencias.
 
-  const handleOpenCategorias = useCallback(event => {
-    setAnchorElCategorias(event.currentTarget);
-  }, []);
-
-  const handleCloseCategorias = useCallback(() => {
-    setAnchorElCategorias(null);
-  }, []);
+  // 🔍 DEV RENDER COUNTER (sólo desarrollo) para diagnosticar si este hook se dispara en exceso
+  if (import.meta?.env?.MODE !== 'production') {
+    // eslint-disable-next-line no-underscore-dangle
+    window.__mpLogicHookRenders = (window.__mpLogicHookRenders || 0) + 1;
+  }
 
   // ===== PROPS ORGANIZADOS POR SECCIONES (MEMOIZADOS) =====
   
@@ -221,9 +216,9 @@ export const useMarketplaceLogic = (options = {}) => {
   const searchBarProps = useMemo(
     () => ({
       busqueda,
-      setBusqueda: memoSetBusqueda,
+  setBusqueda,
       ordenamiento: currentOrdenamiento,
-      setOrdenamiento: memoSetCurrentOrdenamiento,
+  setOrdenamiento: setCurrentOrdenamiento,
       sortOptions: currentSortOptions,
       onToggleFilters: handleUnifiedToggleFilters, // ✅ CAMBIADO: Usar handler unificado
       hayFiltrosActivos,
@@ -240,9 +235,7 @@ export const useMarketplaceLogic = (options = {}) => {
     }),
     [
       busqueda,
-      memoSetBusqueda,
       currentOrdenamiento,
-      memoSetCurrentOrdenamiento,
       currentSortOptions,
       handleUnifiedToggleFilters, // ✅ CAMBIADO
       hayFiltrosActivos,
@@ -262,18 +255,22 @@ export const useMarketplaceLogic = (options = {}) => {
     () => ({
       seccionActiva,
       categoriaSeleccionada,
-      onSeccionChange: memoSetSeccionActiva,
-      onCategoriaToggle: memoToggleCategoria,
+  onSeccionChange: setSeccionActiva,
+  onCategoriaToggle: toggleCategoria,
+      onOpenShippingFilter: handleOpenShippingFilter,
+      selectedShippingRegions: filtros?.shippingRegions || [],
       categoryMarginLeft,
       isProviderView, // Para ocultar elementos en Vista 1
     }),
     [
       seccionActiva,
       categoriaSeleccionada,
-      memoSetSeccionActiva,
-      memoToggleCategoria,
+  setSeccionActiva,
+  toggleCategoria,
+      handleOpenShippingFilter,
       categoryMarginLeft,
       isProviderView,
+      filtros,
     ]
   );
 
@@ -294,8 +291,8 @@ export const useMarketplaceLogic = (options = {}) => {
       filtros,
       categoriaSeleccionada,
       busqueda,
-      updateFiltros: memoUpdateFiltros,
-      resetFiltros: memoResetFiltros,
+  updateFiltros,
+  resetFiltros,
       totalProductos,
       filtrosAbiertos: filtroVisible,
     }),
@@ -303,8 +300,8 @@ export const useMarketplaceLogic = (options = {}) => {
       filtros,
       categoriaSeleccionada,
       busqueda,
-      memoUpdateFiltros,
-      memoResetFiltros,
+  updateFiltros,
+  resetFiltros,
       totalProductos,
       filtroVisible,
     ]
@@ -327,22 +324,25 @@ export const useMarketplaceLogic = (options = {}) => {
     () => ({
       // shouldShowSearchBar removido - layout estático ahora
       seccionActiva,
-      setSeccionActiva: memoSetSeccionActiva,
+  setSeccionActiva,
       totalProductos,
       productosOrdenados,
-      resetFiltros: memoResetFiltros,
+  resetFiltros,
       hasSideBar,
       titleMarginLeft,
       loading,
       error,
       isProviderView, // Para cambiar el comportamiento en Vista 1
+  // Pasar funciones de nivel inferior para prefetch de tiers
+  getPriceTiers,
+  registerProductNode,
     }),
     [
       seccionActiva,
-      memoSetSeccionActiva,
+  setSeccionActiva,
       totalProductos,
       productosOrdenados,
-      memoResetFiltros,
+  resetFiltros,
       hasSideBar,
       titleMarginLeft,
       loading,
@@ -359,6 +359,8 @@ export const useMarketplaceLogic = (options = {}) => {
     productsSectionProps,
     // Estados generales
     theme,
+  // 🔍 Exponer contador sólo en dev (no documentado en API pública)
+  ...(import.meta?.env?.MODE !== 'production' && { __devRenders: window.__mpLogicHookRenders }),
   };
 };
 

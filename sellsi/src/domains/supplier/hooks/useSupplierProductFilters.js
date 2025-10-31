@@ -172,7 +172,8 @@ const useSupplierProductFilters = create((set, get) => ({
     // Filtro de rango de fechas
     if (dateRange.start || dateRange.end) {
       filtered = filtered.filter((product) => {
-        const productDate = new Date(product.updateddt || product.createddt)
+        // Preferir fecha de creación (`createddt`) para filtros de rango
+        const productDate = new Date(product.createddt || product.updateddt)
         const start = dateRange.start
           ? new Date(dateRange.start)
           : new Date('1970-01-01')
@@ -320,10 +321,11 @@ const useSupplierProductFilters = create((set, get) => ({
         })
         break
       case 'new-products':
-        const weekAgo = new Date()
-        weekAgo.setDate(weekAgo.getDate() - 7)
+        // Mostrar productos creados en los últimos 3 días (usar createddt)
+        const recent = new Date()
+        recent.setDate(recent.getDate() - 3)
         set({
-          dateRange: { start: weekAgo.toISOString().split('T')[0], end: null },
+          dateRange: { start: recent.toISOString().split('T')[0], end: null },
           categoryFilter: 'all',
           statusFilter: 'active',
           searchTerm: '',

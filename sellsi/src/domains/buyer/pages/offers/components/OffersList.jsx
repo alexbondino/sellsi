@@ -18,18 +18,32 @@ import {
   FormControl,
   InputLabel,
 } from '@mui/material';
+import { AddToCart } from '../../../../../shared/components';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import DeleteIcon from '@mui/icons-material/Delete';
 import BlockIcon from '@mui/icons-material/Block';
 import { InfoOutlined as InfoOutlinedIcon } from '@mui/icons-material';
 
+// Mapa canónico de estados visuales
 const STATUS_MAP = {
   pending: { label: 'Pendiente', color: 'warning' },
   approved: { label: 'Aprobada', color: 'success' },
   rejected: { label: 'Rechazada', color: 'error' },
   expired: { label: 'Caducada', color: 'error' },
   cancelled: { label: 'Cancelada', color: 'error' },
-};
+  reserved: { label: 'En Carrito', color: 'info' },
+  paid: { label: 'Pagada', color: 'success' },
+}
+
+// Normalización (backend puede enviar "accepted" u otros legacy)
+const normalizeStatus = (raw) => {
+  if (!raw) return 'pending'
+  const s = String(raw).toLowerCase()
+  if (s === 'accepted') return 'approved'
+  if (s === 'success') return 'paid'
+  // fallback
+  return STATUS_MAP[s] ? s : 'pending'
+}
 
 // Wrapper that ensures onClick is a function before passing it to MUI Chip
 const SafeChip = (props) => {
@@ -47,9 +61,11 @@ const formatPrice = (value) => {
 };
 
 import { useThumbnailsBatch } from '../../../../../hooks/useThumbnailQueries';
+import TableSkeleton from '../../../../../shared/components/display/skeletons/TableSkeleton';
 
 const OffersList = ({ offers = [], loading = false, error = null, cancelOffer, deleteOffer, onCancelOffer, onDeleteOffer, onAddToCart }) => {
   const [statusFilter, setStatusFilter] = React.useState('all');
+  const [statusOverrides, setStatusOverrides] = React.useState({}); // { offer_id: 'reserved' | 'paid' | ... }
 
   // Preparar petición batch de thumbnails para los productos mostrados
   const productIds = React.useMemo(() => (offers || []).map(o => (o.product?.id || o.product_id)).filter(Boolean), [offers]);
@@ -58,10 +74,36 @@ const OffersList = ({ offers = [], loading = false, error = null, cancelOffer, d
   // thumbnailsQuery is used below to resolve product thumbnails in batch
 
   const filtered = React.useMemo(() => {
-    if (!offers) return [];
-    if (statusFilter === 'all') return offers;
-    return offers.filter(o => o.status === statusFilter);
-  }, [offers, statusFilter]);
+    if (!offers) return []
+    const normalized = offers.map(o => {
+      const override = statusOverrides[o.id];
+      const rawStatus = override || o.status;
+      return { ...o, status: normalizeStatus(rawStatus) };
+    })
+    if (statusFilter === 'all') return normalized
+    return normalized.filter(o => o.status === statusFilter)
+  }, [offers, statusFilter, statusOverrides])
+
+  // Listener para mutaciones optimistas emitidas desde AddToCart
+  React.useEffect(() => {
+    const handler = (ev) => {
+      try {
+        const detail = ev.detail || {};
+        if (!detail.offer_id || !detail.status) return;
+        // Sólo aplicar si la oferta está presente actualmente
+        const exists = (offers || []).some(o => String(o.id) === String(detail.offer_id));
+        if (!exists) return;
+        setStatusOverrides(prev => {
+          // Evitar override si ya está en un estado final (paid) y el nuevo no lo supera
+          const current = prev[detail.offer_id];
+            if (current === 'paid') return prev;
+          return { ...prev, [detail.offer_id]: detail.status };
+        });
+      } catch(_) {}
+    };
+    window.addEventListener('offer-status-optimistic', handler);
+    return () => window.removeEventListener('offer-status-optimistic', handler);
+  }, [offers]);
 
   // Debugging: limit noisy logs by counting a few rows only
   const debugCounterRef = React.useRef(0);
@@ -78,7 +120,7 @@ const OffersList = ({ offers = [], loading = false, error = null, cancelOffer, d
   const handleDeleteOffer = async (offerId) => {
     try {
       if (onDeleteOffer) return onDeleteOffer(offers.find(o=>o.id===offerId));
-      if (deleteOffer) return await deleteOffer(offerId);
+      if (deleteOffer) return await deleteOffer(offerId, 'buyer');
     } catch (error) {
       console.error('Error deleting offer:', error);
     }
@@ -91,19 +133,29 @@ const OffersList = ({ offers = [], loading = false, error = null, cancelOffer, d
 
   const hasOffers = (offers && offers.length > 0);
 
-  if (!loading && !error && !hasOffers) {
-    return (
-      <Paper sx={{ p: { xs: 2, md: 4 }, textAlign: 'center' }}>
-        <Typography variant="h6" color="text.secondary">No has enviado ofertas</Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-          Envía ofertas a proveedores desde la ficha de producto. Aquí verás el estado de cada propuesta.
-        </Typography>
-      </Paper>
-    );
+  if (!hasOffers) {
+    if (loading) return <TableSkeleton rows={6} columns={4} withAvatar />;
+    if (!error) {
+      return (
+        <Paper sx={{ p: { xs: 2, md: 4 }, textAlign: 'center' }}>
+          <Typography variant="h6" color="text.secondary">No has enviado ofertas</Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+            Envía ofertas a proveedores desde la ficha de producto. Aquí verás el estado de cada propuesta.
+          </Typography>
+        </Paper>
+      );
+    }
   }
 
   return (
-    <TableContainer component={Paper} sx={{ p: 0, scrollbarGutter: 'stable' }}>
+    <TableContainer component={Paper} sx={{ p: 0, position: 'relative', scrollbarGutter: 'stable' }}>
+      {loading && hasOffers && (
+        <Box sx={{ position: 'absolute', inset: 0, bgcolor: 'rgba(255,255,255,0.55)', zIndex: 2 }}>
+          <Box sx={{ position: 'absolute', top: 8, right: 12 }}>
+            <Typography variant="caption" color="text.secondary">Actualizando…</Typography>
+          </Box>
+        </Box>
+      )}
       <Box sx={{ display: 'flex', gap: 2, p: 2, alignItems: 'center' }}>
         <Typography fontWeight={600}>Filtrar por estado:</Typography>
         <FormControl size="small" sx={{ minWidth: 180 }}>
@@ -121,6 +173,8 @@ const OffersList = ({ offers = [], loading = false, error = null, cancelOffer, d
             <MenuItem value="cancelled">Cancelada</MenuItem>
             <MenuItem value="rejected">Rechazada</MenuItem>
             <MenuItem value="expired">Caducada</MenuItem>
+            <MenuItem value="reserved">En Carrito</MenuItem>
+            <MenuItem value="paid">Pagada</MenuItem>
           </Select>
         </FormControl>
       </Box>
@@ -211,20 +265,30 @@ const OffersList = ({ offers = [], loading = false, error = null, cancelOffer, d
               <TableCell>
                 {/* Mostrar tiempo restante para pendientes usando expires_at (si existe) */}
                 {(() => {
-                  const remainingMs = o.expires_at ? new Date(o.expires_at).getTime() - Date.now() : null;
-                  // Pendiente: mostrar sólo si expires_at existe y queda < 48h
-                  if (o.status === 'pending' && remainingMs != null && remainingMs < 48 * 60 * 60 * 1000) {
-                    if (remainingMs <= 0) return <Typography>Caducada</Typography>;
-                    const hrs = Math.floor(remainingMs / (1000 * 60 * 60));
-                    const mins = Math.floor((remainingMs % (1000 * 60 * 60)) / (1000 * 60));
-                    if (hrs >= 1) return <Typography>{`${hrs} h ${mins} m`}</Typography>;
-                    return <Typography>{`${mins} m`}</Typography>;
+                  // Fuente primaria para ventana post-aceptación: purchase_deadline
+                  const now = Date.now();
+                  const pdMs = o.purchase_deadline ? new Date(o.purchase_deadline).getTime() : null;
+                  const expMs = o.expires_at ? new Date(o.expires_at).getTime() : null;
+                  // Pending: usar expires_at (48h). Mostrar sólo si <48h (coherencia previa) y >0.
+                  if (o.status === 'pending' && expMs != null) {
+                    const remaining = expMs - now;
+                    if (remaining <= 0) return <Typography>Caducada</Typography>;
+                    if (remaining < 48 * 60 * 60 * 1000) {
+                      const hrs = Math.floor(remaining / 3600000);
+                      const mins = Math.floor((remaining % 3600000) / 60000);
+                      if (hrs >= 1) return <Typography>{`${hrs} h ${mins} m`}</Typography>;
+                      return <Typography>{`${mins} m`}</Typography>;
+                    }
+                    return <Typography color="text.secondary">-</Typography>;
                   }
-                  // Aceptada: límite = 24h. Si expires_at existe y queda <24h mostrar tiempo; si no, mostrar texto por defecto.
+                  // Approved: usar purchase_deadline; fallback expires_at si falta.
                   if (o.status === 'approved') {
-                    if (remainingMs != null && remainingMs > 0 && remainingMs < 24 * 60 * 60 * 1000) {
-                      const hrs = Math.floor(remainingMs / (1000 * 60 * 60));
-                      const mins = Math.floor((remainingMs % (1000 * 60 * 60)) / (1000 * 60));
+                    const target = pdMs || expMs;
+                    if (target != null) {
+                      const remaining = target - now;
+                      if (remaining <= 0) return <Typography>Caducada</Typography>;
+                      const hrs = Math.floor(remaining / 3600000);
+                      const mins = Math.floor((remaining % 3600000) / 60000);
                       if (hrs >= 1) return <Typography>{`${hrs} h ${mins} m`}</Typography>;
                       return <Typography>{`${mins} m`}</Typography>;
                     }
@@ -234,71 +298,82 @@ const OffersList = ({ offers = [], loading = false, error = null, cancelOffer, d
                 })()}
               </TableCell>
               <TableCell>
-                <SafeChip label={STATUS_MAP[o.status].label} color={STATUS_MAP[o.status].color} />
+                <SafeChip label={(STATUS_MAP[o.status] || STATUS_MAP.pending).label} color={(STATUS_MAP[o.status] || STATUS_MAP.pending).color} />
               </TableCell>
               <TableCell>
-                {/* Add to cart action for approved offers (left) */}
-                {o.status === 'approved' && (
-                  <Tooltip title="Agregar al carrito">
-                    <IconButton
-                      size="small"
-                      aria-label="Agregar al carrito"
-                      onClick={() => handleAddToCart(o)}
-                      sx={{
-                        bgcolor: 'transparent',
-                        p: 0.5,
-                        ml: 3,
-                        '&:hover': { bgcolor: 'rgba(0,0,0,0.06)' },
-                        '&:focus': { boxShadow: 'none', outline: 'none' },
-                        '&.Mui-focusVisible': { boxShadow: 'none', outline: 'none' },
-                      }}
-                    >
-                      <ShoppingCartIcon sx={{ color: 'primary.main' }} />
-                    </IconButton>
-                  </Tooltip>
-                )}
+                {/* Actions grouped so buttons stay on the same row and aligned */}
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  {/* Add to cart action for approved offers */}
+                  {o.status === 'approved' && (
+                    <Tooltip title="Agregar al carrito">
+                      {onAddToCart ? (
+                        <IconButton
+                          size="small"
+                          aria-label="Agregar al carrito"
+                          onClick={() => handleAddToCart(o)}
+                          sx={{
+                            bgcolor: 'transparent',
+                            p: 0.5,
+                            '&:hover': { bgcolor: 'rgba(0,0,0,0.06)' },
+                            '&:focus': { boxShadow: 'none', outline: 'none' },
+                            '&.Mui-focusVisible': { boxShadow: 'none', outline: 'none' },
+                          }}
+                        >
+                          <ShoppingCartIcon sx={{ color: 'primary.main' }} />
+                        </IconButton>
+                      ) : (
+                        <AddToCart
+                          product={o.product || { id: o.product_id, name: o.product_name, thumbnail: o.product_image }}
+                          variant="icon"
+                          size="small"
+                          color="primary"
+                          sx={{ p: 0.5 }}
+                          offer={o}
+                        />
+                      )}
+                    </Tooltip>
+                  )}
 
-                {/* Cancel action for pending or approved offers (right of add-to-cart) */}
-                {(o.status === 'pending' || o.status === 'approved') && (
-                  <Tooltip title="Cancelar Oferta">
-                    <IconButton
-                      size="small"
-                      aria-label="Cancelar Oferta"
-                      onClick={() => handleCancelOffer(o.id)}
-                      sx={{
-                        bgcolor: 'transparent',
-                        p: 0.5,
-                        ml: 3,
-                        color: 'error.main',
-                        '&:hover': { bgcolor: 'rgba(0,0,0,0.06)' },
-                        '&:focus': { boxShadow: 'none', outline: 'none' },
-                        '&.Mui-focusVisible': { boxShadow: 'none', outline: 'none' },
-                      }}
-                    >
-                      <BlockIcon />
-                    </IconButton>
-                  </Tooltip>
-                )}
+                  {/* Cancel action for pending or approved offers (next to add-to-cart) */}
+                  {(o.status === 'pending' || o.status === 'approved') && (
+                    <Tooltip title="Cancelar Oferta">
+                      <IconButton
+                        size="small"
+                        aria-label="Cancelar Oferta"
+                        onClick={() => handleCancelOffer(o.id)}
+                        sx={{
+                          bgcolor: 'transparent',
+                          p: 0.5,
+                          color: 'error.main',
+                          '&:hover': { bgcolor: 'rgba(0,0,0,0.06)' },
+                          '&:focus': { boxShadow: 'none', outline: 'none' },
+                          '&.Mui-focusVisible': { boxShadow: 'none', outline: 'none' },
+                        }}
+                      >
+                        <BlockIcon />
+                      </IconButton>
+                    </Tooltip>
+                  )}
 
-                {/* Cleanup (delete) action for rejected or cancelled offers */}
-                {(o.status === 'rejected' || o.status === 'cancelled' || o.status === 'expired') && (
-                  <Tooltip title="Limpiar esta oferta">
-                    <IconButton
-                      size="small"
-                      onClick={() => handleDeleteOffer(o.id)}
-                      sx={{
-                        bgcolor: 'transparent',
-                        p: 0.5,
-                        ml: 3,
-                        '&:hover': { bgcolor: 'rgba(0,0,0,0.06)' },
-                        '&:focus': { boxShadow: 'none', outline: 'none' },
-                        '&.Mui-focusVisible': { boxShadow: 'none', outline: 'none' },
-                      }}
-                    >
-                      <DeleteIcon />
-                    </IconButton>
-                  </Tooltip>
-                )}
+                  {/* Cleanup (delete) action for rejected, cancelled, expired, or paid offers */}
+                  {(o.status === 'rejected' || o.status === 'cancelled' || o.status === 'expired' || o.status === 'paid') && (
+                    <Tooltip title="Limpiar esta oferta">
+                      <IconButton
+                        size="small"
+                        onClick={() => handleDeleteOffer(o.id)}
+                        sx={{
+                          bgcolor: 'transparent',
+                          p: 0.5,
+                          '&:hover': { bgcolor: 'rgba(0,0,0,0.06)' },
+                          '&:focus': { boxShadow: 'none', outline: 'none' },
+                          '&.Mui-focusVisible': { boxShadow: 'none', outline: 'none' },
+                        }}
+                      >
+                        <DeleteIcon />
+                      </IconButton>
+                    </Tooltip>
+                  )}
+                </Box>
               </TableCell>
             </TableRow>
             );

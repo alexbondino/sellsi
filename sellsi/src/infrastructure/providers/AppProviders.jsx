@@ -28,6 +28,14 @@ const globalStyles = {
 };
 
 export const AppProviders = ({ children }) => {
+  // 🔧 QUICK FIX: Make queryClient globally available for cache invalidation
+  useEffect(() => {
+    window.queryClient = queryClient;
+    return () => {
+      delete window.queryClient;
+    };
+  }, []);
+
   // Inicializar servicios globales
   useEffect(() => {
     // Exponer cache manager globalmente para debugging

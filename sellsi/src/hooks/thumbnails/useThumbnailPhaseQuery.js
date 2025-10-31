@@ -2,6 +2,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { FeatureFlags } from '../../shared/flags/featureFlags.js'
 import { queryClient as globalQueryClient, QUERY_KEYS } from '../../utils/queryClient'
 import { scheduleThumbnailFetch } from '../../shared/thumbnail/thumbnailConcurrencyQueue.js'
+import { getOrFetchMainThumbnail } from '../../services/phase1ETAGThumbnailService.js'
 import { record as recordMetric } from '../../shared/thumbnail/thumbnailMetrics.js'
 
 function getPhaseQueryOptions(phase) {
@@ -15,18 +16,7 @@ function getPhaseQueryOptions(phase) {
 }
 
 async function fetchThumbnail(productId) {
-  return scheduleThumbnailFetch(async () => {
-    const supabase = window?.supabase || window?.supabaseClient
-    if (!supabase) throw new Error('Supabase client no disponible en window')
-    const { data, error } = await supabase
-      .from('product_images')
-      .select('product_id,image_order,thumbnails,thumbnail_url,thumbnail_signature')
-      .eq('product_id', productId)
-      .eq('image_order', 0)
-      .maybeSingle()
-    if (error) throw error
-    return data || null
-  })
+  return scheduleThumbnailFetch(async () => getOrFetchMainThumbnail(productId, { silent: true }))
 }
 
 export function useThumbnailPhaseQuery(productId, currentPhase, { enabled: externalEnabled = true } = {}) {

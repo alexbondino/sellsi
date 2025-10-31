@@ -164,7 +164,9 @@ describe('OffersList Component', () => {
     const offers = [
       { ...mockOfferData.validOffer, id: '1', status: 'pending', product: { name: 'Product 1' } },
       { ...mockOfferData.validOffer, id: '2', status: 'approved', product: { name: 'Product 2' } },
-      { ...mockOfferData.validOffer, id: '3', status: 'rejected', product: { name: 'Product 3' } }
+      { ...mockOfferData.validOffer, id: '3', status: 'rejected', product: { name: 'Product 3' } },
+      { ...mockOfferData.validOffer, id: '4', status: 'paid', product: { name: 'Product 4' } },
+      { ...mockOfferData.validOffer, id: '5', status: 'reserved', product: { name: 'Product 5' } }
     ];
     
     render(
@@ -177,22 +179,25 @@ describe('OffersList Component', () => {
     expect(screen.getByText('Product 1')).toBeInTheDocument();
     expect(screen.getByText('Product 2')).toBeInTheDocument();
     expect(screen.getByText('Product 3')).toBeInTheDocument();
+    expect(screen.getByText('Product 4')).toBeInTheDocument();
+    expect(screen.getByText('Product 5')).toBeInTheDocument();
     
-    // Filtrar por pendientes
+    // Filtrar por pagadas
     const select = screen.getByRole('combobox');
     fireEvent.mouseDown(select);
     
     await waitFor(() => {
-      // Seleccionar la opción del menú (rol option)
-      expect(screen.getAllByText('Pendiente').length).toBeGreaterThan(0);
+      expect(screen.getAllByText('Pagada').length).toBeGreaterThan(0);
     });
-    const pendingOption = screen.getAllByText('Pendiente').find(el => el.getAttribute('role') === 'option') || screen.getAllByText('Pendiente')[0];
-    fireEvent.click(pendingOption);
+    const paidOption = screen.getAllByText('Pagada').find(el => el.getAttribute('role') === 'option') || screen.getAllByText('Pagada')[0];
+    fireEvent.click(paidOption);
     
     await waitFor(() => {
-      expect(screen.getByText('Product 1')).toBeInTheDocument();
+      expect(screen.getByText('Product 4')).toBeInTheDocument();
+      expect(screen.queryByText('Product 1')).not.toBeInTheDocument();
       expect(screen.queryByText('Product 2')).not.toBeInTheDocument();
       expect(screen.queryByText('Product 3')).not.toBeInTheDocument();
+      expect(screen.queryByText('Product 5')).not.toBeInTheDocument();
     });
   });
 
@@ -246,7 +251,8 @@ describe('OffersList Component', () => {
     const offers = [
       { ...mockOfferData.validOffer, id: '1', status: 'pending', product: { name: 'Pending Product' } },
       { ...mockOfferData.validOffer, id: '2', status: 'approved', product: { name: 'Approved Product' } },
-      { ...mockOfferData.validOffer, id: '3', status: 'rejected', product: { name: 'Rejected Product' } }
+      { ...mockOfferData.validOffer, id: '3', status: 'rejected', product: { name: 'Rejected Product' } },
+      { ...mockOfferData.validOffer, id: '4', status: 'paid', product: { name: 'Paid Product' } }
     ];
     
     render(
@@ -263,9 +269,9 @@ describe('OffersList Component', () => {
     const cartButtons = screen.getAllByLabelText('Agregar al carrito');
     expect(cartButtons).toHaveLength(1); // solo approved
     
-    // Ofertas rechazadas deberían tener botón de limpiar
+    // Ofertas rechazadas y pagadas deberían tener botón de limpiar
     const deleteButtons = screen.getAllByLabelText('Limpiar esta oferta');
-    expect(deleteButtons).toHaveLength(1); // solo rejected
+    expect(deleteButtons).toHaveLength(2); // rejected y paid
   });
 
   it('debería llamar función correcta al hacer clic en acciones', () => {
@@ -317,6 +323,52 @@ describe('OffersList Component', () => {
     );
     
     expect(screen.getByText('5 uds • $1.500')).toBeInTheDocument();
+  });
+
+  it('debería incluir estado paid en STATUS_MAP con configuración correcta', () => {
+    const offers = [
+      {
+        ...mockOfferData.validOffer,
+        product: { name: 'Paid Product' },
+        status: 'paid'
+      }
+    ];
+    
+    render(
+      <TestWrapper>
+        <OffersList {...defaultProps} offers={offers} />
+      </TestWrapper>
+    );
+    
+    // Verificar que el chip "Pagada" esté presente
+    expect(screen.getByText('Pagada')).toBeInTheDocument();
+    
+    // Verificar que solo tenga acción de limpiar
+    const deleteButton = screen.getByLabelText('Limpiar esta oferta');
+    expect(deleteButton).toBeInTheDocument();
+    
+    // No debería tener botón de cancelar o agregar al carrito
+    expect(screen.queryByLabelText('Cancelar Oferta')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Agregar al carrito')).not.toBeInTheDocument();
+  });
+
+  it('debería incluir estado reserved en STATUS_MAP', () => {
+    const offers = [
+      {
+        ...mockOfferData.validOffer,
+        product: { name: 'Reserved Product' },
+        status: 'reserved'
+      }
+    ];
+    
+    render(
+      <TestWrapper>
+        <OffersList {...defaultProps} offers={offers} />
+      </TestWrapper>
+    );
+    
+    // Verificar que el chip "En Carrito" esté presente
+    expect(screen.getByText('En Carrito')).toBeInTheDocument();
   });
 
   it('debería manejar ofertas sin imagen', () => {

@@ -1,9 +1,10 @@
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
-import { Button, IconButton } from '@mui/material';
+import { Button, IconButton, Tooltip } from '@mui/material';
 import { ShoppingCart as ShoppingCartIcon } from '@mui/icons-material';
 
 // Components
-import AddToCartModal from './AddToCartModal';
+import AddToCartModal from './AddToCartModal/AddToCartModal';
+import ShippingInfoValidationModal, { useShippingInfoModal } from '../validation/ShippingInfoValidationModal/ShippingInfoValidationModal';
 
 // Hooks and services
 import { showCartSuccess, showCartError, showErrorToast } from '../../../utils/toastHelpers';
@@ -29,6 +30,7 @@ import { supabase } from '../../../services/supabase';
 
 const AddToCart = ({
   product,
+  offer = null,
   variant = 'button', // 'button' | 'icon' | 'text'
   size = 'medium',
   fullWidth = false,
@@ -46,10 +48,36 @@ const AddToCart = ({
   // ============================================================================
   // ESTADOS Y HOOKS
   // ============================================================================
-  
   const [modalOpen, setModalOpen] = useState(false);
+  const openingRef = React.useRef(false); // reentrancy guard
   const [currentUserId, setCurrentUserId] = useState(null);
   const addItem = useCartStore(state => state.addItem);
+
+  // Hook para controlar modal de validación de shipping (si falta configurar)
+  const {
+    isOpen: shippingIsOpen,
+    openIfIncomplete,
+    isLoading: shippingIsLoading,
+    missingFieldLabels,
+    handleConfigureShipping,
+    handleClose: handleCloseShipping,
+    refresh: refreshShippingValidation,
+    awaitValidation,
+  } = useShippingInfoModal();
+
+  // Detectar si la oferta ya está en el carrito para bloquear flujo UI
+  const offerId = offer?.id || offer?.offer_id || offer?.offerId || null;
+  const isOfferInCart = useCartStore(state => {
+    if (!offerId) return false;
+    return (state.items || []).some(it => it && (it.offer_id || it.offerId) && String(it.offer_id || it.offerId) === String(offerId));
+  });
+
+  const isOwnProduct = useMemo(() => {
+    if (!product) return false;
+    const supplierId = product.supplier_id || product.supplierId || product.supplierID;
+    if (!supplierId || !currentUserId) return false;
+    return supplierId === currentUserId;
+  }, [product, currentUserId]);
 
   // Obtener sesión inicial para poder deshabilitar si es producto propio
   useEffect(() => {
@@ -67,46 +95,54 @@ const AddToCart = ({
     return () => { mounted = false; };
   }, []);
 
-  const isOwnProduct = useMemo(() => {
-    if (!product) return false;
-    const supplierId = product.supplier_id || product.supplierId || product.supplierID;
-    if (!supplierId || !currentUserId) return false;
-    return supplierId === currentUserId;
-  }, [product, currentUserId]);
-
   // ============================================================================
   // HANDLERS
   // ============================================================================
 
   const handleOpenModal = useCallback(async () => {
+    if (openingRef.current) return; // prevent double entry
+    openingRef.current = true;
+    // Si es una oferta y ya existe en el carrito, no abrir modal y avisar
+    if (offerId && isOfferInCart) {
+      showErrorToast('Esta oferta ya se encuentra en tu carrito');
+      openingRef.current = false;
+      return;
+    }
+
     if (!disabled && product) {
       // Verificar sesión antes de abrir el modal
       try {
         const { data: { session } } = await supabase.auth.getSession();
-        
-        if (!session?.user) {
-          // Usuario no logueado - mostrar error y disparar evento para abrir Login
-          showErrorToast('Debes iniciar sesión para agregar productos al carrito', {
-            icon: '🔒',
-          });
-          
-          // Disparar evento para abrir Login modal
-          const event = new CustomEvent('openLogin');
-          window.dispatchEvent(event);
+        // Antes de abrir el modal de selección, forzar/esperar resolución de validación shipping
+        // 1) Intento inmediato
+        let didOpenShipping = openIfIncomplete();
+        if (!didOpenShipping) {
+          // 2) Forzar refresh y esperar resolución determinística
+          try { refreshShippingValidation?.(); } catch(_) {}
+          const res = await awaitValidation?.(3500, 120);
+          // Si al terminar sigue incompleto, abrir modal shipping; si está completo, seguimos al AddToCart
+          const stillIncomplete = !shippingIsOpen && !res?.complete;
+          if (stillIncomplete) {
+            didOpenShipping = openIfIncomplete();
+          }
+        }
+        if (didOpenShipping || shippingIsOpen) {
+          if (onModalStateChange) onModalStateChange(true);
+          openingRef.current = false;
           return;
         }
-        
-        // Usuario logueado - abrir modal
+
         setModalOpen(true);
-        if (onModalStateChange) {
-          onModalStateChange(true);
-        }
+        if (onModalStateChange) onModalStateChange(true);
       } catch (error) {
         console.error('Error al verificar sesión:', error);
         showErrorToast('Error al verificar sesión. Por favor, inténtalo de nuevo.');
+      } finally {
+        // liberar guard si no se abrió shipping; si se abrió, ya liberamos antes
+        if (!shippingIsOpen) openingRef.current = false;
       }
     }
-  }, [disabled, product, onModalStateChange]);
+  }, [disabled, product, onModalStateChange, shippingIsLoading, openIfIncomplete, refreshShippingValidation, awaitValidation, shippingIsOpen, offerId, isOfferInCart]);
 
   const handleCloseModal = useCallback(() => {
     setModalOpen(false);
@@ -115,43 +151,120 @@ const AddToCart = ({
     }
   }, [onModalStateChange]);
 
+  // Asegurar propagación de estado al cerrar el modal de shipping
+  const handleCloseShippingWrapped = useCallback(() => {
+    try { handleCloseShipping(); } catch(_) {}
+    if (onModalStateChange) onModalStateChange(false);
+  }, [handleCloseShipping, onModalStateChange]);
+
+  // Si el usuario decide configurar despacho, también consideramos el modal "cerrado" a efectos de bloqueo
+  const handleConfigureShippingWrapped = useCallback(() => {
+    try { handleConfigureShipping(); } catch(_) {}
+    if (onModalStateChange) onModalStateChange(false);
+  }, [handleConfigureShipping, onModalStateChange]);
+
+  // Mantener sincronizado el estado de apertura hacia el consumidor (card/grid) por si abre/cierra por otros caminos
+  useEffect(() => {
+    if (!onModalStateChange) return;
+    onModalStateChange(Boolean(shippingIsOpen || modalOpen));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [shippingIsOpen, modalOpen]);
+
   const handleAddToCart = useCallback(async (cartItem) => {
     try {
       console.log('🛒 [AddToCart] Datos recibidos del modal:', cartItem);
-      
-      // Formatear el producto para el carrito con los parámetros correctos
-      const formattedProduct = formatProductForCart(
-        product, // producto base
-        cartItem.quantity, // cantidad seleccionada
-        cartItem.priceTiers || product.priceTiers || product.price_tiers || [] // tramos de precios
-      );
+      const isOffered = !!(cartItem.isOfferProduct || cartItem.offer_id || cartItem.offered_price);
+      let finalProduct;
+      if (isOffered) {
+        // Construir un item especial que conserve la semántica de la oferta.
+        // IMPORTANTÍSIMO: usar un id único distinto del product.id base para que
+        // no se fusione con la línea regular del mismo producto.
+        const offerId = cartItem.offer_id || cartItem.offerId || `offer-${cartItem.id || product.id}`;
+        const compositeId = `${product.id}::offer::${offerId}`;
 
-      // Agregar información adicional del modal
-      const finalProduct = {
-        ...formattedProduct,
-        // Unificar a document_type para el flujo de compra (distinto del doc de perfil proveedor)
-        document_type: (() => {
-          const v = String(cartItem.documentType || cartItem.document_type || '').toLowerCase();
-          return v === 'boleta' || v === 'factura' ? v : 'ninguno';
-        })(),
-        selectedTier: cartItem.selectedTier,
-        unitPrice: cartItem.unitPrice,
-        totalPrice: cartItem.totalPrice,
-      };
+        finalProduct = {
+          // Identificadores
+          id: compositeId,
+          // productid is the actual base product identifier expected by backend
+          productid: product.id,
+          product_id: product.id,
+          offer_id: offerId,
+          // Nombres / visual
+            name: cartItem.name || product.name || product.nombre,
+          proveedor: product.proveedor || product.supplier || cartItem.supplier_name || 'Proveedor no especificado',
+          // Precios (precio ofertado fijo)
+          price: cartItem.unitPrice, // usado por CartItem
+          precio: cartItem.unitPrice,
+          offered_price: cartItem.unitPrice,
+          price_at_addition: cartItem.unitPrice,
+          // Cantidades fijas de la oferta
+          quantity: cartItem.quantity,
+          offered_quantity: cartItem.quantity,
+          minimum_purchase: cartItem.quantity,
+          maxStock: cartItem.quantity,
+          stock: cartItem.quantity,
+          // Evitar recalculo de tiers (un solo tramo fijo)
+          price_tiers: [{ min_quantity: 1, price: cartItem.unitPrice }],
+          // Flags de UI
+          isOffered: true,
+          isOfferProduct: true,
+          metadata: { ...(product.metadata || {}), isOffered: true, offer_id: offerId },
+          // Imagenes (mantener las que ya existan)
+          image: product.image || product.imagen || cartItem.thumbnail || cartItem.thumbnail_url || '/placeholder-product.jpg',
+          imagen: product.imagen || product.image,
+          thumbnail_url: product.thumbnail_url || cartItem.thumbnail_url,
+          // Documento
+          document_type: (() => {
+            const v = String(cartItem.documentType || cartItem.document_type || '').toLowerCase();
+            return v === 'boleta' || v === 'factura' ? v : 'ninguno';
+          })(),
+          // Datos auxiliares usados en UI/tests
+          cantidadSeleccionada: cartItem.quantity,
+          precioUnitario: cartItem.unitPrice,
+          precioTotal: cartItem.totalPrice,
+          selectedTier: null,
+          addedAt: new Date().toISOString(),
+        };
 
-      console.log('📦 [AddToCart] Producto final para carrito:', finalProduct);
+        console.log('📦 [AddToCart] Producto OFERTADO final para carrito:', finalProduct);
+        await addItem(finalProduct, cartItem.quantity);
+      } else {
+        // Flujo normal (sin oferta) mantiene lógica existente
+        const formattedProduct = formatProductForCart(
+          product,
+          cartItem.quantity,
+          cartItem.priceTiers || product.priceTiers || product.price_tiers || []
+        );
+        finalProduct = {
+          ...formattedProduct,
+          document_type: (() => {
+            const v = String(cartItem.documentType || cartItem.document_type || '').toLowerCase();
+            return v === 'boleta' || v === 'factura' ? v : 'ninguno';
+          })(),
+          selectedTier: cartItem.selectedTier,
+          unitPrice: cartItem.unitPrice,
+          totalPrice: cartItem.totalPrice,
+        };
+        console.log('📦 [AddToCart] Producto REGULAR final para carrito:', finalProduct);
+        await addItem(finalProduct, cartItem.quantity);
+      }
 
-      // Agregar al store del carrito usando addItem(product, quantity)
-      await addItem(finalProduct, cartItem.quantity);
+      // Optimistic: emit event so offers list (if listening) can mark status=reserved immediately
+      try {
+        if (isOffered) {
+          const offerIdOptimistic = cartItem.offer_id || cartItem.offerId || cartItem.id;
+          window.dispatchEvent(new CustomEvent('offer-status-optimistic', { detail: { offer_id: offerIdOptimistic, status: 'reserved' } }));
+        }
+      } catch(_) {}
 
       // Mostrar notificación de éxito
       showCartSuccess(
-        `Agregado al carrito: ${finalProduct.name} (${cartItem.quantity} unidades)`
+        `Agregado al carrito: ${finalProduct.name} (${cartItem.quantity} unidades${isOffered ? ' - OFERTA' : ''})`
       );
 
       // Callback de éxito personalizado
       if (onSuccess) {
-        onSuccess(formattedProduct);
+        onSuccess(finalProduct);
       }
 
     } catch (error) {
@@ -179,13 +292,22 @@ const AddToCart = ({
   // ============================================================================
   // RENDER VARIANTS
   // ============================================================================
-
   const renderButton = () => {
-    if (variant === 'icon') {
+    const disabledReason = isOfferInCart ? 'Esta oferta ya se encuentra en tu carrito' : null;
+    const wrapWithTooltip = (node) => {
+      if (!disabledReason) return node;
       return (
+        <Tooltip title={disabledReason} arrow>
+          <span style={{ display: 'inline-block' }}>{node}</span>
+        </Tooltip>
+      );
+    };
+
+    if (variant === 'icon') {
+      const el = (
         <IconButton
           onClick={handleOpenModal}
-          disabled={disabled}
+          disabled={disabled || isOfferInCart}
           size={size}
           sx={sx}
           {...buttonProps}
@@ -193,13 +315,14 @@ const AddToCart = ({
           <ShoppingCartIcon />
         </IconButton>
       );
+      return wrapWithTooltip(el);
     }
 
     if (variant === 'text') {
-      return (
+      const el = (
         <Button
           onClick={handleOpenModal}
-          disabled={disabled}
+          disabled={disabled || isOfferInCart}
           size={size}
           fullWidth={fullWidth}
           sx={sx}
@@ -208,14 +331,15 @@ const AddToCart = ({
           {children || 'Agregar al Carrito'}
         </Button>
       );
+      return wrapWithTooltip(el);
     }
 
     // Default: variant === 'button'
-    return (
+    const el = (
       <Button
         variant="contained"
         onClick={handleOpenModal}
-        disabled={disabled}
+        disabled={disabled || isOfferInCart}
         size={size}
         fullWidth={fullWidth}
         startIcon={<ShoppingCartIcon />}
@@ -225,6 +349,7 @@ const AddToCart = ({
         {children || 'Agregar al Carrito'}
       </Button>
     );
+    return wrapWithTooltip(el);
   };
 
   return (
@@ -236,10 +361,18 @@ const AddToCart = ({
         onClose={handleCloseModal}
         onAddToCart={handleAddToCart}
         product={product}
+  offer={offer}
         initialQuantity={initialQuantity}
         userRegion={userRegion}
         isLoadingUserProfile={isLoadingUserProfile}
   isOwnProduct={isOwnProduct}
+      />
+      <ShippingInfoValidationModal
+        isOpen={shippingIsOpen}
+        onClose={handleCloseShippingWrapped}
+        onGoToShipping={handleConfigureShippingWrapped}
+        loading={shippingIsLoading}
+        missingFieldLabels={missingFieldLabels}
       />
     </>
   );

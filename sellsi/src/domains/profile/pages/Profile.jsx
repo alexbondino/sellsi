@@ -70,6 +70,8 @@ const Profile = ({ userProfile: initialUserProfile, onUpdateProfile: externalUpd
 
   // ✅ NUEVO: Estado para highlight de campos bancarios
   const [shouldHighlightTransferFields, setShouldHighlightTransferFields] = useState(false);
+  // ✅ NUEVO: Estado para highlight de campos de despacho
+  const [shouldHighlightShippingFields, setShouldHighlightShippingFields] = useState(false);
 
   // ✅ NUEVO: Verificar parámetros de URL al montar y cuando cambie la location
   useEffect(() => {
@@ -86,6 +88,12 @@ const Profile = ({ userProfile: initialUserProfile, onUpdateProfile: externalUpd
         setShouldHighlightTransferFields(false);
       }, 10000);
       
+      return () => clearTimeout(timer);
+    }
+    if (section === 'shipping' && highlight === 'true') {
+      setShouldHighlightShippingFields(true);
+      console.log('🎯 Resaltando campos de dirección de despacho por redirección');
+      const timer = setTimeout(() => { setShouldHighlightShippingFields(false); }, 10000);
       return () => clearTimeout(timer);
     }
   }, [location.search]);
@@ -314,29 +322,38 @@ const Profile = ({ userProfile: initialUserProfile, onUpdateProfile: externalUpd
       delete dataToUpdate.logo_url;
 
       console.log('📤 Datos finales a enviar:', dataToUpdate);
-      // Validación Shipping: si existe región, comuna y dirección son obligatorios
+      // Strict validation: check both the raw formData and the already-mapped dataToUpdate.
+      // This prevents cases where mapping or missing properties would allow an update to proceed
+      // even though the user has partially filled required fields.
       const regionValue = formData?.shippingRegion;
       const communeValue = formData?.shippingCommune;
       const addressValue = formData?.shippingAddress;
       const regionSelected = regionValue !== undefined && regionValue !== null && String(regionValue).trim() !== '';
-      const communeFilled = communeValue !== undefined && communeValue !== null && String(communeValue).trim() !== '';
-      const addressFilled = addressValue !== undefined && addressValue !== null && String(addressValue).trim() !== '';
-      if (regionSelected && (!communeFilled || !addressFilled)) {
-        // Mostrar errores inline en los campos en vez de deshabilitar botón
+
+      // Also inspect mapped data (snake_case) because mapFormDataToUserProfile may materialize changes there
+      const finalRegion = dataToUpdate.shipping_region ?? dataToUpdate.shippingRegion ?? regionValue;
+      const finalCommune = dataToUpdate.shipping_commune ?? dataToUpdate.shippingCommune ?? communeValue;
+      const finalAddress = dataToUpdate.shipping_address ?? dataToUpdate.shippingAddress ?? addressValue;
+
+      const communeFilled = finalCommune !== undefined && finalCommune !== null && String(finalCommune).trim() !== '';
+      const addressFilled = finalAddress !== undefined && finalAddress !== null && String(finalAddress).trim() !== '';
+
+      if ((regionSelected || finalRegion) && (!communeFilled || !addressFilled)) {
+        // Mostrar errores inline en los campos y evitar enviar la petición
         setShowShippingErrors(true);
         showBanner({ message: 'Por favor completa Comuna y Dirección de Envío para actualizar el perfil.', severity: 'error', duration: 6000 });
         setLoading(false);
         return;
       }
 
-      // Validación Billing: si Razón Social (businessName) está rellenada, entonces TODOS los campos de facturación obligatorios deben estar presentes
-      const businessNameFilled = formData?.businessName && formData.businessName.trim() !== '';
+      // Billing: if business name exists in either form or mapped data, require full billing fields
+      const businessNameFilled = (formData?.businessName && formData.businessName.trim() !== '') || (dataToUpdate.business_name && String(dataToUpdate.business_name).trim() !== '');
       if (businessNameFilled) {
-        const billingRut = formData?.billingRut;
-        const businessLine = formData?.businessLine;
-        const billingAddress = formData?.billingAddress;
-        const billingRegion = formData?.billingRegion;
-        const billingCommune = formData?.billingCommune;
+        const billingRut = dataToUpdate.billing_rut ?? formData?.billingRut;
+        const businessLine = dataToUpdate.business_line ?? formData?.businessLine;
+        const billingAddress = dataToUpdate.billing_address ?? formData?.billingAddress;
+        const billingRegion = dataToUpdate.billing_region ?? formData?.billingRegion;
+        const billingCommune = dataToUpdate.billing_commune ?? formData?.billingCommune;
         const anyMissing = [billingRut, businessLine, billingAddress, billingRegion, billingCommune].some(v => !v || String(v).trim() === '');
         if (anyMissing) {
           setShowBillingErrors(true);
@@ -713,7 +730,7 @@ const Profile = ({ userProfile: initialUserProfile, onUpdateProfile: externalUpd
             formData={formData}
             onFieldChange={handleFieldChange}
             onRegionChange={(type, regionField, comunaField, value) => { handleRegionChange(type, regionField, comunaField, value); }}
-            showErrors={showShippingErrors}
+            showErrors={showShippingErrors || shouldHighlightShippingFields}
           />
 
           {/* Segunda fila - Segunda columna: Facturación (independiente) */}

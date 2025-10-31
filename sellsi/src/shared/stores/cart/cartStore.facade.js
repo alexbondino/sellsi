@@ -34,8 +34,10 @@ import {
   addItemWithBackend,
   updateQuantityWithBackend,
   removeItemWithBackend,
+  removeItemsBatchWithBackend,
   clearCartWithBackend,
-  checkout
+  checkout,
+  clearCartIfPaid
 } from './cartStore.backend'
 
 // Importar módulos especializados
@@ -62,6 +64,7 @@ export const createCartStoreFacade = () => {
           isLoading: false,
           error: null,
           notifications: [],
+          lastOrder: null,
           
           // Estado para integración con backend
           cartId: null,
@@ -127,6 +130,25 @@ export const createCartStoreFacade = () => {
             
             // Usar operación local
             return removeItemLocal(id, set, get, historyStore, debouncedSave)
+          },
+
+          /**
+           * Remueve múltiples items (batch). IDs son los item.id/cart_items_id conocidos por la UI.
+           */
+          removeItemsBatch: async (ids = []) => {
+            const state = get()
+            if (!Array.isArray(ids) || ids.length === 0) return false
+            if (state.userId && state.cartId && state.isBackendSynced) {
+              // Backend batch
+              return await removeItemsBatchWithBackend(ids, set, get)
+            }
+            // Fallback local: eliminar todos en un solo set para eficiencia
+            const idSet = new Set(ids)
+            set(current => ({
+              items: current.items.filter(i => !idSet.has(i.id)),
+            }))
+            debouncedSave()
+            return true
           },
 
           /**
@@ -226,6 +248,15 @@ export const createCartStoreFacade = () => {
            */
           checkout: async (checkoutData = {}) => {
             return await checkout(checkoutData, set, get)
+          },
+
+          /**
+           * Limpia el carrito solo si la orden está pagada (payment_status='paid').
+           * Puede recibir el objeto de orden o el string de estado.
+           */
+          clearCartIfPaid: async (orderOrStatus) => {
+            const cleared = await clearCartIfPaid(orderOrStatus, set, get)
+            return cleared
           },
 
           // === FUNCIONES DELEGADAS A MÓDULOS ===

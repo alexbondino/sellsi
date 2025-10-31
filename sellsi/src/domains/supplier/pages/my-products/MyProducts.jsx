@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -55,7 +55,7 @@ import {
 import { dashboardThemeCore } from '../../../../styles/dashboardThemeCore';
 import { SPACING_BOTTOM_MAIN } from '../../../../styles/layoutSpacing';
 import { formatPrice } from '../../../../shared/utils/formatters';
-import { generateProductUrl } from '../../../marketplace/utils/productUrl';
+import { generateProductUrl } from '../../../../shared/utils/product/productUrl';
 
 // Advanced Loading Components
 import {
@@ -113,6 +113,8 @@ const MyProducts = () => {
   updateProduct,
   } = useSupplierProducts();
 
+  const didInitLoadRef = useRef(false)
+
   // Advanced lazy loading hooks
   const {
     displayedProducts,
@@ -166,10 +168,18 @@ const MyProducts = () => {
 
   // Cargar productos al montar el componente o cuando cambia el supplierId
   useEffect(() => {
-    if (supplierId) {
-      loadProducts(supplierId);
+    if (!supplierId) return
+    // Reset guard if supplierId changed (different supplier should re-trigger)
+    if (!didInitLoadRef.current && !loading && (!uiProducts || uiProducts.length === 0)) {
+      didInitLoadRef.current = true
+      loadProducts(supplierId)
     }
-  }, [supplierId, loadProducts]);
+  }, [supplierId, loadProducts, uiProducts?.length, loading]);
+
+  // Reset the init guard when supplierId changes so a new supplier can attempt load again
+  useEffect(() => {
+    didInitLoadRef.current = false
+  }, [supplierId])
 
   // Disparar animaciones cuando se muestran nuevos productos
   useEffect(() => {
@@ -182,8 +192,7 @@ const MyProducts = () => {
   useEffect(() => {
     const handleImagesReady = (event) => {
       const { productId, imageCount } = event.detail
-      // Mostrar notificación al usuario que las imágenes están listas
-      showSuccessToast(`Imágenes del producto procesadas correctamente (${imageCount} imágenes)`)
+      // Evento de imágenes procesadas: mantener silencio por UX (sin logs innecesarios)
     }
     
     window.addEventListener('productImagesReady', handleImagesReady)
@@ -199,6 +208,20 @@ const MyProducts = () => {
     checkAndProceed('/supplier/addproduct');
   };
 
+  // Prefetch AddProduct chunk when the Add button is near viewport (400px)
+  useEffect(() => {
+    const selector = '[data-prefetch="add-product-btn"]';
+    const el = document.querySelector(selector);
+    if (!el || typeof IntersectionObserver === 'undefined') return;
+    const obs = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting) {
+        import('./AddProduct').catch(()=>{});
+        obs.disconnect();
+      }
+    }, { rootMargin: '400px' });
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
   const handleEditProduct = product => {
     // Para editar también verificar la información bancaria
     checkAndProceed(`/supplier/addproduct?edit=${product.id}`);
@@ -323,16 +346,17 @@ const MyProducts = () => {
                 size="large"
                 startIcon={<AddIcon />}
                 onClick={handleAddProduct}
-                sx={{
-                  minWidth: { xs: '100%', sm: 'auto' },
-                  borderRadius: 2,
-                  textTransform: 'none',
-                  fontWeight: 600,
-                  px: 3,
-                }}
-              >
-                Agregar Producto
-              </Button>
+                data-prefetch="add-product-btn"
+                 sx={{
+                   minWidth: { xs: '100%', sm: 'auto' },
+                   borderRadius: 2,
+                   textTransform: 'none',
+                   fontWeight: 600,
+                   px: 3,
+                 }}
+               >
+                 Agregar Producto
+               </Button>
             </Box>
 
             {/* Estadísticas del inventario */}
@@ -462,10 +486,6 @@ const MyProducts = () => {
                             </Typography>
                             <Typography variant="body2" color="text.secondary">
                               Valor del inventario
-                              {/* 🆕 INDICADOR DE RANGO: Mostrar % de variación si existe */}
-                              {stats.inventoryRange && stats.inventoryRange.min !== stats.inventoryRange.max && stats.inventoryRange.spreadPercentage > 0 && (
-                                ` (±${stats.inventoryRange.spreadPercentage}%)`
-                              )}
                             </Typography>
                           </Box>
                         </Box>

@@ -36,7 +36,9 @@ describe('CartItem Ofertado chip', () => {
         itemVariants={{}}
       />
     );
-    expect(screen.getByTestId('chip-ofertado')).toBeTruthy();
+    // The chip text is now rendered as a subtitle with data-testid="chip-ofertado-text"
+    expect(screen.getByTestId('chip-ofertado-text')).toBeTruthy();
+    expect(screen.getByText('OFERTADO')).toBeInTheDocument();
   });
 
 });

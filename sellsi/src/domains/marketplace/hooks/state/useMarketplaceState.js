@@ -20,7 +20,7 @@ const useDebounce = (value, delay) => {
 };
 
 export const useMarketplaceState = () => {
-  const { products, loading, error } = useProducts()
+  const { products, loading, error, getPriceTiers, registerProductNode } = useProducts()
   const [seccionActiva, setSeccionActiva] = useState('todos')
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState(['Todas'])
   const [filtroVisible, setFiltroVisible] = useState(false)
@@ -76,6 +76,20 @@ export const useMarketplaceState = () => {
         if (filtros.negociable === 'no' && producto.negociable) return false
       }
 
+      // Filtrar por regiones de despacho (shippingRegions) - support multi-select
+      if (Array.isArray(filtros.shippingRegions) && filtros.shippingRegions.length > 0) {
+        const selectedRegions = filtros.shippingRegions;
+        const shippingRegions = producto.shippingRegions || producto.delivery_regions || producto.shipping_regions || producto.product_delivery_regions || []
+
+        // Normalizar formato y verificar si al menos una región seleccionada coincide
+        const matchesAny = selectedRegions.some(sel => shippingRegions.some(r => {
+          const value = r.region || r.value || r
+          return value === sel
+        }))
+
+        if (!matchesAny) return false
+      }
+
       return true
     })
   }, [
@@ -105,6 +119,8 @@ export const useMarketplaceState = () => {
     setPrecioRango([0, 1000000])
     setCategoriaSeleccionada(['Todas'])
     setBusqueda('')
+    // Asegurar que la vista vuelva a 'Todos los Productos'
+    setSeccionActiva('todos')
   }, [])
 
   const updateFiltros = useCallback((newFilters) => {
@@ -147,6 +163,8 @@ export const useMarketplaceState = () => {
     precioRango,
     loading,
     error,
+  getPriceTiers,
+  registerProductNode,
 
     // Setters
     setSeccionActiva,

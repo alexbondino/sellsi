@@ -13,11 +13,11 @@
 export { default as MarketplaceBuyer } from './MarketplaceBuyer.jsx'
 export { default as BuyerCart } from './BuyerCart.jsx'
 export { default as BuyerOrders } from './BuyerOrders.jsx'
-export { default as BuyerPerformance } from './BuyerPerformance.jsx'
 export { default as BuyerOffers } from './offers/BuyerOffers.jsx'
 
 // Componentes reutilizables
-export { default as StatCard } from './components/StatCard.jsx'
+// BuyerPerformance removed (file not present)
+// StatCard domain-specific removed; use shared StatCard from `shared/components/display/statistics` instead
 
 // Hooks
 export { default as useCartStore } from '../../shared/stores/cart/cartStore.js'

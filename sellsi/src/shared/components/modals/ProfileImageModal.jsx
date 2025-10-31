@@ -21,6 +21,7 @@ import {
 } from '@mui/icons-material';
 
 import Tooltip from '@mui/material/Tooltip';
+import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
 
 /**
  * ProfileImageModal - Modal reutilizable para cambiar imagen de perfil
@@ -47,6 +48,9 @@ const ProfileImageModal = ({
   const [error, setError] = useState('');
   const [localImageUrl, setLocalImageUrl] = useState(currentImageUrl);
   const [loading, setLoading] = useState(false); // Estado de carga para guardado automático
+
+  // ✅ Bloquear scroll del body cuando el modal está abierto
+  useBodyScrollLock(open);
 
   const maxFileSize = 300 * 1024; // 300KB en bytes
 

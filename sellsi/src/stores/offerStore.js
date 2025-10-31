@@ -1,5 +1,28 @@
 import { create } from 'zustand';
 import { supabase } from '../services/supabase';
+// Refactor: extracción de constantes y normalizadores
+// Usamos barrel para centralizar imports del submódulo offers
+import {
+  OFFER_STATES,
+  INVALID_FOR_CART,
+  normalizeBuyerOffer,
+  normalizeSupplierOffer,
+  sanitizePotentiallyUnsafe,
+  calculateTimeRemaining,
+  formatTimeRemaining,
+  getOfferStatusConfig,
+  createBuyerSubscription,
+  createSupplierSubscription,
+  genericLoadOffers,
+  runValidateOfferLimits,
+  runValidateOfferPrice,
+  notifyOfferReceivedSafe,
+  notifyOfferResponseSafe,
+  pruneInvalidOfferCartItems
+} from './offers';
+
+// Re-export some constants for backwards compatibility with tests and legacy imports
+export { OFFER_STATES, INVALID_FOR_CART };
 // Helper de logging acumulativo para inspección en tests cuando la consola se trunca
 function __logOfferDebug(...args) {
   try {
@@ -18,22 +41,30 @@ function __logOfferDebug(...args) {
 // En entorno de test asegurar que usamos directamente el jest.fn para conservar métodos mockResolvedValueOnce
 if (typeof process !== 'undefined' && (process.env.JEST_WORKER_ID || process.env.NODE_ENV === 'test')) {
   try {
-    const { mockSupabase } = require('../__tests__/offers/mocks/supabaseMock');
+    // Tests place the shared supabase mock under src/__tests__/mocks/supabaseMock.js
+    // older layout kept under __tests__/offers/mocks - try both for compatibility
+    let mockPath = '../__tests__/mocks/supabaseMock';
+    let mockSupabaseModule;
+    try { mockSupabaseModule = require(mockPath); } catch (e) {
+      try { mockSupabaseModule = require('../__tests__/offers/mocks/supabaseMock'); } catch (_) { mockSupabaseModule = null }
+    }
+    const { mockSupabase } = mockSupabaseModule || {};
     if (mockSupabase?.rpc?.mock) {
       supabase.rpc = mockSupabase.rpc; // mantener referencia original (jest.fn)
     }
   } catch (_) {}
 }
 import { notificationService } from '../domains/notifications/services/notificationService';
+// Carga perezosa de cart store para eliminar items asociados a ofertas inválidas
+let useCartStoreRef = null;
+try {
+  useCartStoreRef = require('../shared/stores/cart/cartStore').default;
+} catch(_) {}
 
-// Estados de ofertas
-export const OFFER_STATES = {
-  PENDING: 'pending',      // Esperando respuesta (48h)
-  ACCEPTED: 'accepted',    // Aceptada, 24h para comprar
-  REJECTED: 'rejected',    // Rechazada por proveedor
-  EXPIRED: 'expired',      // Expirada por tiempo
-  PURCHASED: 'purchased'   // Compra completada
-};
+// (Constantes movidas a ./offers/constants.js)
+
+// =====================================================
+// Loader genérico movido a ./offers/loader.js (mantener firma de uso)
 
 export const useOfferStore = create((set, get) => ({
   // Estado
@@ -41,6 +72,39 @@ export const useOfferStore = create((set, get) => ({
   supplierOffers: [],
   loading: false,
   error: null,
+  // Limpia del carrito items cuyos offer_id correspondan a ofertas expiradas/rechazadas/canceladas/pagadas
+  _pruneInvalidOfferCartItems: () => pruneInvalidOfferCartItems({ cartStore: useCartStoreRef, offers: get().buyerOffers, log: __logOfferDebug }),
+  // Cache ligera (separada de image cache): mapas por clave (buyer|supplier) -> { ts, data }
+  _cache: {
+    buyer: new Map(),
+    supplier: new Map()
+  },
+  // In-flight promises para dedupe concurrente
+  _inFlight: {
+    buyer: new Map(),
+    supplier: new Map()
+  },
+  // TTL configurable (ms). Por defecto 0 = deshabilitado para no alterar tests existentes
+  _cacheTTL: (() => {
+    const raw = (typeof process !== 'undefined' && process.env.OFFERS_CACHE_TTL) ? Number(process.env.OFFERS_CACHE_TTL) : 0;
+    return Number.isFinite(raw) ? raw : 0;
+  })(),
+  // SWR habilitable: si ON sirve datos expirados y dispara revalidación en background
+  _swrEnabled: (() => (typeof process !== 'undefined' && (process.env.OFFERS_CACHE_SWR === '1' || process.env.OFFERS_CACHE_SWR === 'true')))(),
+  // Utilidades públicas opcionales
+  clearOffersCache: () => set(state => { state._cache?.buyer?.clear?.(); state._cache?.supplier?.clear?.(); return { }; }),
+  forceRefreshBuyerOffers: (buyerId) => get().loadBuyerOffers(buyerId, { forceNetwork: true }),
+  forceRefreshSupplierOffers: (supplierId) => get().loadSupplierOffers(supplierId, { forceNetwork: true }),
+  
+  // Fuerza la limpieza del carrito para ofertas finalizadas/pagadas
+  forceCleanCartOffers: () => {
+    try {
+      get()._pruneInvalidOfferCartItems();
+      __logOfferDebug('Forced cart cleanup for finalized offers');
+    } catch(e) { 
+      try { console.warn('[offerStore] forceCleanCartOffers failed', e?.message); } catch(_) {} 
+    }
+  },
   
   // Limpiar errores
   clearError: () => set({ error: null }),
@@ -56,14 +120,7 @@ export const useOfferStore = create((set, get) => ({
     if (loading) return;
     set({ loading: true, error: null });
 
-    const sanitize = (val) => {
-      if (typeof val === 'string') {
-        return val.replace(/<script[^>]*>([\s\S]*?)<\/script>/gi, '')
-                  .replace(/onerror\s*=\s*"[^"]*"/gi, '')
-                  .replace(/onload\s*=\s*"[^"]*"/gi, '');
-      }
-      return val;
-    };
+  const sanitize = sanitizePotentiallyUnsafe;
 
     try {
       // Aceptar ambas formas de keys (legacy y nueva)
@@ -123,19 +180,17 @@ export const useOfferStore = create((set, get) => ({
 
       const isTestEnv = typeof process !== 'undefined' && (process.env.JEST_WORKER_ID || process.env.NODE_ENV === 'test');
       if (!isTestEnv) {
-        try {
-          await notificationService.notifyOfferReceived({
-            offer_id: data?.offer_id || data?.id || 'offer_test',
-            buyer_id: offerData.buyer_id,
-            buyer_name: offerData.buyer_name || 'Test Buyer',
-            supplier_id: offerData.supplier_id,
-            product_id: offerData.product_id,
-            product_name: offerData.product_name || 'Test Product',
-            offered_price: offerData.offered_price,
-            offered_quantity: offerData.offered_quantity,
-            expires_at: data?.expires_at || new Date(Date.now() + 48*3600*1000).toISOString()
-          });
-        } catch (_) {}
+        await notifyOfferReceivedSafe(notificationService, {
+          offer_id: data?.offer_id || data?.id || 'offer_test',
+          buyer_id: offerData.buyer_id,
+          buyer_name: offerData.buyer_name || 'Test Buyer',
+          supplier_id: offerData.supplier_id,
+          product_id: offerData.product_id,
+          product_name: offerData.product_name || 'Test Product',
+          offered_price: offerData.offered_price,
+          offered_quantity: offerData.offered_quantity,
+          expires_at: data?.expires_at || new Date(Date.now() + 48*3600*1000).toISOString()
+        }, __logOfferDebug);
       }
 
       const normalized = {
@@ -172,137 +227,40 @@ export const useOfferStore = create((set, get) => ({
   },
   
   // Cargar ofertas del comprador (usa RPC si tests lo esperan)
-  loadBuyerOffers: async (buyerId) => {
-  // Limpia ofertas previas para evitar que tests vean datos de otros escenarios
-  __logOfferDebug('loadBuyerOffers start buyerId=', buyerId);
-  set({ loading: true, error: null, buyerOffers: [] });
-    const MAX_ATTEMPTS = 3;
-    let attempt = 0;
-  while (attempt < MAX_ATTEMPTS) {
-      try {
-        let data, error;
-        if (supabase.rpc) {
-          __logOfferDebug('RPC get_buyer_offers attempt', attempt+1, 'buyerId=', buyerId, 'mock calls=', supabase.rpc.mock?.calls?.length, 'results=', supabase.rpc.mock?.results?.length);
-          const res = await supabase.rpc('get_buyer_offers', { p_buyer_id: buyerId });
-          data = res.data; error = res.error;
-          __logOfferDebug('RPC get_buyer_offers raw response dataLen=', Array.isArray(res?.data)?res.data.length:'n/a');
-          // Fallback transparente si la función RPC no existe todavía (entorno sin migración aplicada)
-          if (error && /could not find the function|does not exist|not find the function/i.test(error.message)) {
-            __logOfferDebug('RPC get_buyer_offers missing, falling back to direct select offers_with_details');
-            ({ data, error } = await supabase
-              .from('offers_with_details')
-              .select('*')
-              .eq('buyer_id', buyerId)
-              .order('created_at', { ascending: false }));
-          }
-        } else {
-          ({ data, error } = await supabase
-            .from('offers_with_details')
-            .select('*')
-            .eq('buyer_id', buyerId)
-            .order('created_at', { ascending: false }));
-        }
-        if (error) throw error;
-        if (!Array.isArray(data)) data = [];
-  __logOfferDebug('get_buyer_offers raw data length', data.length);
-        // Normalizar ofertas para compatibilidad de componentes y tests
-        const normalized = data.map(o => {
-          const now = Date.now();
-          const expiresAtMs = o.expires_at ? new Date(o.expires_at).getTime() : null;
-          let computedStatus = o.status;
-          if (computedStatus === 'pending' && expiresAtMs != null && expiresAtMs < now) {
-            computedStatus = 'expired';
-          }
-          if (computedStatus === 'accepted') computedStatus = 'approved';
-          return {
-            ...o,
-            status: computedStatus,
-            price: o.price ?? o.offered_price ?? o.p_price,
-            quantity: o.quantity ?? o.offered_quantity ?? o.p_quantity,
-            // Normalize product shape: ensure product.id/product_id exists for UI mapping
-            product: o.product || { name: o.product_name || 'Producto', thumbnail: o.product_thumbnail || null, id: o.product_id, product_id: o.product_id }
-          };
-        });
-        // Fallback adicional para entorno de test: si no llegaron ofertas pero existen resultados mock con arrays
-        if (normalized.length === 0 && typeof process !== 'undefined' && (process.env.JEST_WORKER_ID || process.env.NODE_ENV === 'test')) {
-          try {
-            const { mockSupabase } = require('../__tests__/offers/mocks/supabaseMock');
-            const results = mockSupabase?.rpc?.mock?.results || [];
-            __logOfferDebug('buyerOffers fallback inspecting mock results length', results.length);
-            for (const r of results) {
-              const val = r.value && (typeof r.value.then === 'function' ? null : r.value); // evitar pending promises
-              if (val && Array.isArray(val.data) && val.data.length > 0) {
-                __logOfferDebug('buyerOffers fallback adopting mock result array length', val.data.length);
-                const altNorm = val.data.map(o => ({
-                  ...o,
-                  status: (o.status === 'accepted' ? 'approved' : (o.status === 'pending' && o.expires_at && new Date(o.expires_at).getTime() < Date.now()) ? 'expired' : o.status),
-                  price: o.price ?? o.offered_price ?? o.p_price,
-                  quantity: o.quantity ?? o.offered_quantity ?? o.p_quantity,
-                  product: o.product || { name: o.product_name || 'Producto', thumbnail: o.product_thumbnail || null, id: o.product_id, product_id: o.product_id }
-                }));
-                set({ buyerOffers: altNorm, loading: false, error: null });
-                return val.data;
-              }
-            }
-          } catch(_) {}
-        }
-        set({ buyerOffers: normalized, loading: false, error: null });
-  __logOfferDebug('loadBuyerOffers final offers', normalized.map(o=>({id:o.id,status:o.status,product:o.product?.name})));
-        return data;
-      } catch (err) {
-  __logOfferDebug('loadBuyerOffers error attempt', attempt+1, err.message);
-        attempt++;
-        // Si el test espera un único intento con error (p.ej. Database error) no reintentar
-        if (err && /Database error/i.test(err.message)) {
-          set({ error: 'Error al obtener ofertas: ' + err.message, loading: false, buyerOffers: [] });
-          return;
-        }
-        // Para Network error: exponer error y no reintentar en esta primera llamada (tests esperan segundo llamado manual)
-        if (/Network error/i.test(err.message)) {
-          set({ error: 'Error al obtener ofertas: ' + err.message, loading: false, buyerOffers: [] });
-          return;
-        }
-        if (attempt >= MAX_ATTEMPTS) {
-          set({ error: 'Error al obtener ofertas: ' + err.message, loading: false, buyerOffers: [] });
-          return;
-        }
-        // Backoff exponencial corto para tests
-        await new Promise(r => setTimeout(r, 10 * Math.pow(2, attempt - 1)));
-      }
-    }
-  },
+  loadBuyerOffers: async (buyerId, opts = {}) => genericLoadOffers({ get, set, id: buyerId, opts, kind: 'buyer', supabase, log: __logOfferDebug }),
 
   // Alias legacy para compatibilidad con hooks/tests antiguos
   fetchBuyerOffers: async (buyerId) => get().loadBuyerOffers(buyerId),
   
-  // Marcar oferta como comprada (cuando se agrega al carrito)
-  markOfferAsPurchased: async (offerId, orderId = null) => {
+  // Reservar oferta (antes markOfferAsPurchased)
+  reserveOffer: async (offerId, orderId = null) => {
     try {
-      const { data, error } = await supabase.rpc('mark_offer_as_purchased', {
-        p_offer_id: offerId,
-        p_order_id: orderId
-      });
-      
+      try {
+        const state = get();
+        const offer = state.buyerOffers.find(o => o.id === offerId);
+        if (offer && offer.purchase_deadline) {
+          const dl = new Date(offer.purchase_deadline).getTime();
+            if (!Number.isNaN(dl) && Date.now() > dl) {
+              set(state => ({
+                buyerOffers: state.buyerOffers.map(of => of.id === offerId ? { ...of, status: 'expired', expired_at: new Date().toISOString() } : of)
+              }));
+              return { success: false, error: 'La oferta caducó (24h vencidas)' };
+            }
+        }
+      } catch(_) {}
+      const { data, error } = await supabase.rpc('mark_offer_as_purchased', { p_offer_id: offerId, p_order_id: orderId });
       if (error) throw error;
-      
-      if (!data.success) {
-        throw new Error(data.error);
-      }
-      
-      // Actualizar estado local
+      if (!data.success) throw new Error(data.error);
       set(state => ({
         buyerOffers: state.buyerOffers.map(offer =>
-          offer.id === offerId 
-            ? { ...offer, status: OFFER_STATES.PURCHASED, purchased_at: new Date().toISOString() }
+          offer.id === offerId
+            ? { ...offer, status: OFFER_STATES.RESERVED, reserved_at: new Date().toISOString(), purchased_at: offer.purchased_at || new Date().toISOString() }
             : offer
         )
       }));
-      
+      try { get()._pruneInvalidOfferCartItems(); } catch(_) {}
       return data;
-      
-    } catch (error) {
-      throw error;
-    }
+    } catch (error) { throw error; }
   },
   
   // =====================================================
@@ -310,85 +268,7 @@ export const useOfferStore = create((set, get) => ({
   // =====================================================
   
   // Cargar ofertas del proveedor (RPC compat)
-  loadSupplierOffers: async (supplierId) => {
-  // Limpiar previo para evitar que queden ofertas de otros tests
-  __logOfferDebug('loadSupplierOffers start supplierId=', supplierId);
-  set({ loading: true, error: null, supplierOffers: [] });
-    try {
-      let data, error;
-      if (supabase.rpc) {
-  __logOfferDebug('RPC get_supplier_offers supplierId=', supplierId, 'mock calls=', supabase.rpc.mock?.calls?.length);
-        const res = await supabase.rpc('get_supplier_offers', { p_supplier_id: supplierId });
-        data = res.data; error = res.error;
-  __logOfferDebug('RPC get_supplier_offers raw response dataLen=', Array.isArray(res?.data)?res.data.length:'n/a');
-        if (error && /could not find the function|does not exist|not find the function/i.test(error.message)) {
-          __logOfferDebug('RPC get_supplier_offers missing, falling back to direct select offers_with_details');
-          ({ data, error } = await supabase
-            .from('offers_with_details')
-            .select('*')
-            .eq('supplier_id', supplierId)
-            .order('created_at', { ascending: false }));
-        }
-      } else {
-        ({ data, error } = await supabase
-          .from('offers_with_details')
-          .select('*')
-          .eq('supplier_id', supplierId)
-          .order('created_at', { ascending: false }));
-      }
-      if (error) throw error;
-      if (!Array.isArray(data)) data = [];
-  __logOfferDebug('get_supplier_offers raw data length', data.length);
-      const normalized = data.map(o => ({
-        ...o,
-        status: o.status === 'accepted' ? 'approved' : o.status,
-        price: o.price ?? o.offered_price ?? o.p_price,
-        quantity: o.quantity ?? o.offered_quantity ?? o.p_quantity,
-        // Preferir snapshot fields proporcionados por offers_with_details
-        product: o.product || {
-          name: o.product_name || 'Producto',
-          thumbnail: o.product_thumbnail || null,
-          // Mapear stock/previousPrice desde columnas snapshot si están presentes
-          stock: (o.current_stock != null) ? o.current_stock : ((o.product && o.product.stock != null) ? o.product.stock : null),
-          productqty: (o.product && o.product.productqty != null) ? o.product.productqty : (o.productqty ?? null),
-          previousPrice: (o.base_price_at_offer != null) ? Number(o.base_price_at_offer) : (o.current_product_price != null ? Number(o.current_product_price) : null),
-          id: o.product_id,
-          product_id: o.product_id,
-          price_tiers: o.price_tiers
-        },
-        buyer: o.buyer || { name: o.buyer_name || 'Comprador' }
-      }));
-      // Fallback similar a buyerOffers para entorno de test
-      if (normalized.length === 0 && typeof process !== 'undefined' && (process.env.JEST_WORKER_ID || process.env.NODE_ENV === 'test')) {
-        try {
-          const { mockSupabase } = require('../__tests__/offers/mocks/supabaseMock');
-          const results = mockSupabase?.rpc?.mock?.results || [];
-          __logOfferDebug('supplierOffers fallback inspecting mock results length', results.length);
-          for (const r of results) {
-            const val = r.value && (typeof r.value.then === 'function' ? null : r.value);
-            if (val && Array.isArray(val.data) && val.data.length > 0) {
-              __logOfferDebug('supplierOffers fallback adopting mock result array length', val.data.length);
-                const altNorm = val.data.map(o => ({
-                ...o,
-                status: o.status === 'accepted' ? 'approved' : o.status,
-                price: o.price ?? o.offered_price ?? o.p_price,
-                quantity: o.quantity ?? o.offered_quantity ?? o.p_quantity,
-                product: o.product || { name: o.product_name || 'Producto', thumbnail: o.product_thumbnail || null, id: o.product_id, product_id: o.product_id },
-                buyer: o.buyer || { name: o.buyer_name || 'Comprador' }
-              }));
-              set({ supplierOffers: altNorm, loading: false });
-              return val.data;
-            }
-          }
-        } catch(_) {}
-      }
-  set({ supplierOffers: normalized, loading: false });
-  __logOfferDebug('loadSupplierOffers final offers', normalized.map(o=>({id:o.id,status:o.status,product:o.product?.name})));
-      return data;
-    } catch (err) {
-  set({ error: 'Error al obtener ofertas: ' + err.message, loading: false, supplierOffers: [] });
-    }
-  },
+  loadSupplierOffers: async (supplierId, opts = {}) => genericLoadOffers({ get, set, id: supplierId, opts, kind: 'supplier', supabase, log: __logOfferDebug }),
 
   // Alias legacy
   fetchSupplierOffers: async (supplierId) => get().loadSupplierOffers(supplierId),
@@ -412,22 +292,18 @@ export const useOfferStore = create((set, get) => ({
       if (data && data.success === false) throw new Error(data.error || 'Error desconocido');
 
       // Crear notificación para el comprador
-      if (offerToAccept && notificationService?.notifyOfferResponse) {
-        try {
-          await notificationService.notifyOfferResponse({
-            offer_id: offerId,
-            buyer_id: offerToAccept.buyer_id,
-            supplier_id: offerToAccept.supplier_id,
-            supplier_name: offerToAccept.supplier_name || 'Proveedor',
-            product_id: offerToAccept.product_id,
-            product_name: offerToAccept.product_name || 'Producto',
-            offered_price: offerToAccept.offered_price,
-            offered_quantity: offerToAccept.offered_quantity,
-            purchase_deadline: data.purchase_deadline
-          }, true); // true = accepted
-        } catch (notifError) {
-          if (typeof console !== 'undefined') console.error('Error sending offer acceptance notification:', notifError);
-        }
+      if (offerToAccept) {
+        await notifyOfferResponseSafe(notificationService, {
+          offer_id: offerId,
+          buyer_id: offerToAccept.buyer_id,
+          supplier_id: offerToAccept.supplier_id,
+          supplier_name: offerToAccept.supplier_name || 'Proveedor',
+          product_id: offerToAccept.product_id,
+          product_name: offerToAccept.product_name || 'Producto',
+          offered_price: offerToAccept.offered_price,
+          offered_quantity: offerToAccept.offered_quantity,
+          purchase_deadline: data.purchase_deadline
+        }, true, __logOfferDebug);
       }
       
       // Actualizar estado local
@@ -439,6 +315,8 @@ export const useOfferStore = create((set, get) => ({
                 status: 'approved',
                 accepted_at: new Date().toISOString(),
                 purchase_deadline: data.purchase_deadline,
+                // Sincronizar expires_at para que UI legacy (buyer) pueda mostrar countdown correcto
+                expires_at: data.purchase_deadline || offer.expires_at,
                 stock_reserved: true
               }
             : offer
@@ -466,6 +344,7 @@ export const useOfferStore = create((set, get) => ({
         buyerOffers: state.buyerOffers.map(o => o.id === offerId ? { ...o, status: 'cancelled', cancelled_at: new Date().toISOString() } : o),
         loading: false
       }));
+      try { get()._pruneInvalidOfferCartItems(); } catch(_) {}
       return data;
     } catch (err) {
       set({ error: 'Error al cancelar oferta: ' + err.message, loading: false });
@@ -473,14 +352,37 @@ export const useOfferStore = create((set, get) => ({
     }
   },
 
-  // Eliminar/Limpiar oferta (solo local + intento RPC opcional)
-  deleteOffer: async (offerId) => {
+  // Eliminar/Limpiar oferta: ahora soporta limpieza por rol ('buyer' | 'supplier').
+  // Lógica:
+  //  - Llama RPC opcional `mark_offer_hidden(p_offer_id, p_role)` que marca la oferta como oculta
+  //    para ese rol en el backend. Si el backend decide eliminarla definitivamente (ambos roles la
+  //    han ocultado), la RPC puede devolver deleted=true.
+  //  - Localmente actualiza el estado correspondiente (buyerOffers o supplierOffers) para
+  //    que la fila desaparezca inmediatamente de la UI.
+  deleteOffer: async (offerId, role = 'buyer') => {
     try {
-      // Intento RPC si existe función (ignoramos errores porque es acción de limpieza visual en tests)
-      try { await supabase.rpc('delete_offer', { p_offer_id: offerId }); } catch (_) {}
-      set(state => ({
-        buyerOffers: state.buyerOffers.filter(o => o.id !== offerId)
-      }));
+      // Intento RPC resiliente: no fallamos si la función no existe o lanza.
+      try {
+        await supabase.rpc('mark_offer_hidden', { p_offer_id: offerId, p_role: role });
+      } catch (_) {
+        // mantener compatibilidad: si no existe mark_offer_hidden, intentamos delete_offer (legacy)
+        try { await supabase.rpc('delete_offer', { p_offer_id: offerId }); } catch (_) {}
+      }
+
+      // Actualizar sólo la colección local asociada al rol invocante para evitar borrar la vista
+      // del otro actor. Esto garantiza que buyer y supplier pueden limpiar independientemente.
+      set(state => {
+        const next = {};
+        if (role === 'buyer') {
+          next.buyerOffers = state.buyerOffers.filter(o => o.id !== offerId);
+        } else if (role === 'supplier') {
+          next.supplierOffers = state.supplierOffers.filter(o => o.id !== offerId);
+        } else {
+          // fallback: eliminar de buyerOffers
+          next.buyerOffers = state.buyerOffers.filter(o => o.id !== offerId);
+        }
+        return next;
+      });
     } catch (_) {}
   },
   
@@ -502,22 +404,18 @@ export const useOfferStore = create((set, get) => ({
   if (data && data.success === false) throw new Error(data.error || 'Error desconocido');
 
       // Crear notificación para el comprador
-      if (offerToReject && notificationService?.notifyOfferResponse) {
-        try {
-          await notificationService.notifyOfferResponse({
-            offer_id: offerId,
-            buyer_id: offerToReject.buyer_id,
-            supplier_id: offerToReject.supplier_id,
-            supplier_name: offerToReject.supplier_name || 'Proveedor',
-            product_id: offerToReject.product_id,
-            product_name: offerToReject.product_name || 'Producto',
-            offered_price: offerToReject.offered_price,
-            offered_quantity: offerToReject.offered_quantity,
-            rejection_reason: reason
-          }, false); // false = rejected
-        } catch (notifError) {
-          if (typeof console !== 'undefined') console.error('Error sending offer rejection notification:', notifError);
-        }
+      if (offerToReject) {
+        await notifyOfferResponseSafe(notificationService, {
+          offer_id: offerId,
+          buyer_id: offerToReject.buyer_id,
+          supplier_id: offerToReject.supplier_id,
+          supplier_name: offerToReject.supplier_name || 'Proveedor',
+          product_id: offerToReject.product_id,
+          product_name: offerToReject.product_name || 'Producto',
+          offered_price: offerToReject.offered_price,
+          offered_quantity: offerToReject.offered_quantity,
+          rejection_reason: reason
+        }, false, __logOfferDebug);
       }
       
       // Actualizar estado local
@@ -534,6 +432,7 @@ export const useOfferStore = create((set, get) => ({
         ),
         loading: false
       }));
+      try { get()._pruneInvalidOfferCartItems(); } catch(_) {}
       
       return data;
       
@@ -550,223 +449,33 @@ export const useOfferStore = create((set, get) => ({
   // Validar límites de ofertas
   // Nueva firma: validateOfferLimits({ buyerId, productId, supplierId })
   // Soporta firma antigua con parámetros posicionales y mostrará un warning.
-  validateOfferLimits: async (...args) => {
-    let buyerId, productId, supplierId;
-    if (args.length === 1 && typeof args[0] === 'object' && args[0] !== null) {
-      ({ buyerId, productId, supplierId } = args[0]);
-    } else {
-      // Firma antigua: (buyerId, a, b). Interpretar SIEMPRE como (buyer, supplier, product)
-      [buyerId, supplierId, productId] = args;
-      try { if (typeof console !== 'undefined') console.warn('[offerStore] validateOfferLimits usando firma DEPRECATED. Actualiza a validateOfferLimits({ buyerId, productId, supplierId })'); } catch(_) {}
-    }
-    try {
-      __logOfferDebug('validateOfferLimits input', { buyerId, productId, supplierId });
-      if (!buyerId || !productId || !supplierId) {
-        throw new Error('Parámetros inválidos para validateOfferLimits');
-      }
-      // Nueva lógica: llamar RPC validate_offer_limits que ya contempla límites product/supplier
-      const res = await supabase.rpc('validate_offer_limits', {
-        p_buyer_id: buyerId,
-        p_supplier_id: supplierId,
-        p_product_id: productId
-      });
-      if (res.error) throw new Error(res.error.message);
-      const data = res.data || {};
-      // backend retorna: allowed, product_count, supplier_count, product_limit, supplier_limit, reason
-      const productCount = Number(data.product_count) || 0;
-      const supplierCount = Number(data.supplier_count) || 0;
-      const productLimit = Number(data.product_limit) || 3;
-      const supplierLimit = Number(data.supplier_limit) || 5;
-      const allowed = !!data.allowed;
-      const reason = data.reason || (productCount >= productLimit
-        ? 'Se alcanzó el límite mensual de ofertas (producto)'
-        : (supplierCount >= supplierLimit ? 'Se alcanzó el límite mensual de ofertas con este proveedor' : undefined));
-
-      const base = {
-        isValid: allowed,
-        allowed,
-        currentCount: productCount, // compat tests antiguos (interpretaban count principal)
-        product_count: productCount,
-        supplier_count: supplierCount,
-        limit: productLimit,       // compat (antes se usaba single limit)
-        product_limit: productLimit,
-        supplier_limit: supplierLimit,
-        reason
-      };
-      __logOfferDebug('validateOfferLimits returning (normalized)', base);
-      return base;
-    } catch (e) {
-      __logOfferDebug('validateOfferLimits error', e?.message || String(e));
-      try { if (typeof console !== 'undefined') console.warn('[offerStore] validateOfferLimits RPC error:', e?.message || e); } catch(_) {}
-      // fallback permisivo
-      return {
-        isValid: true,
-        allowed: true,
-        currentCount: undefined,
-        product_count: undefined,
-        supplier_count: undefined,
-        limit: 3,
-        product_limit: 3,
-        supplier_limit: 5,
-        reason: 'No se pudo validar límites',
-        error: 'Error al validar límites: ' + (e?.message || String(e))
-      };
-    }
-  },
+  validateOfferLimits: async (...args) => runValidateOfferLimits(args, { supabase, get, log: __logOfferDebug }),
   
   // Validar precio contra price tiers
-  validateOfferPrice: async (productId, quantity, offeredPrice) => {
-    try {
-      const { data, error } = await supabase.rpc('validate_offer_against_tiers', {
-        p_product_id: productId,
-        p_offered_quantity: quantity,
-        p_offered_price: offeredPrice
-      });
-      
-      if (error) throw error;
-      return data;
-      
-    } catch (error) {
-      throw error;
-    }
-  },
+  validateOfferPrice: async (productId, quantity, offeredPrice) => runValidateOfferPrice(productId, quantity, offeredPrice, { supabase }),
   
   // =====================================================
   // FUNCIONES DE UTILIDAD
   // =====================================================
   
   // Calcular tiempo restante de una oferta
-  calculateTimeRemaining: (offer) => {
-    const now = new Date();
-    
-    if (offer.status === OFFER_STATES.PENDING) {
-      const expiresAt = new Date(offer.expires_at);
-      return Math.max(0, Math.floor((expiresAt - now) / 1000));
-    } else if (offer.status === OFFER_STATES.ACCEPTED) {
-      const deadline = new Date(offer.purchase_deadline);
-      return Math.max(0, Math.floor((deadline - now) / 1000));
-    }
-    
-    return 0;
-  },
+  calculateTimeRemaining: (offer) => calculateTimeRemaining(offer),
   
   // Formatear tiempo restante para display
-  formatTimeRemaining: (seconds) => {
-    if (seconds <= 0) return 'Expirado';
-    
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    const secs = seconds % 60;
-    
-    if (hours > 0) {
-      return `${hours}h ${minutes}m ${secs}s`;
-    } else if (minutes > 0) {
-      return `${minutes}m ${secs}s`;
-    } else {
-      return `${secs}s`;
-    }
-  },
+  formatTimeRemaining: (seconds) => formatTimeRemaining(seconds),
   
   // Obtener configuración de estado de oferta
-  getOfferStatusConfig: (offer) => {
-    switch (offer.status) {
-      case OFFER_STATES.PENDING:
-        return {
-          color: 'warning',
-          label: 'Pendiente',
-          description: 'Esperando respuesta del proveedor',
-          actionable: true
-        };
-      case OFFER_STATES.ACCEPTED:
-        return {
-          color: 'success',
-          label: 'Aceptada',
-          description: 'Tienes 24h para agregar al carrito',
-          actionable: true
-        };
-      case OFFER_STATES.REJECTED:
-        return {
-          color: 'error',
-          label: 'Rechazada',
-          description: offer.rejection_reason || 'Rechazada por el proveedor',
-          actionable: false
-        };
-      case OFFER_STATES.EXPIRED:
-        return {
-          color: 'default',
-          label: 'Caducada',
-          description: 'La oferta ha expirado',
-          actionable: false
-        };
-      case OFFER_STATES.PURCHASED:
-        return {
-          color: 'info',
-          label: 'Compra Realizada',
-          description: 'Producto agregado al carrito y comprado',
-          actionable: false
-        };
-      default:
-        return {
-          color: 'default',
-          label: 'Desconocido',
-          description: '',
-          actionable: false
-        };
-    }
-  },
+  getOfferStatusConfig: (offer) => getOfferStatusConfig(offer),
   
   // =====================================================
   // SUSCRIPCIONES REALTIME
   // =====================================================
   
   // Suscribirse a cambios en ofertas del comprador
-  subscribeToBuyerOffers: (buyerId) => {
-  const subscription = supabase
-      .channel('buyer-offers')
-      .on('postgres_changes', 
-        { 
-          event: '*', 
-          schema: 'public', 
-          table: 'offers',
-          filter: `buyer_id=eq.${buyerId}`
-        }, 
-        (payload) => {
-          console.log('Buyer offer change:', payload);
-          // Recargar ofertas cuando hay cambios
-          get().loadBuyerOffers(buyerId);
-        }
-      )
-      .subscribe();
-  // Registrar para cleanup en tests
-  const subs = get()._subscriptions || [];
-  subs.push(subscription);
-  set({ _subscriptions: subs });
-  return subscription;
-  },
+  subscribeToBuyerOffers: (buyerId) => createBuyerSubscription({ supabase, buyerId, get, set }),
   
   // Suscribirse a cambios en ofertas del proveedor
-  subscribeToSupplierOffers: (supplierId) => {
-  const subscription = supabase
-      .channel('supplier-offers')
-      .on('postgres_changes', 
-        { 
-          event: '*', 
-          schema: 'public', 
-          table: 'offers',
-          filter: `supplier_id=eq.${supplierId}`
-        }, 
-        (payload) => {
-          console.log('Supplier offer change:', payload);
-          // Recargar ofertas cuando hay cambios
-          get().loadSupplierOffers(supplierId);
-        }
-      )
-      .subscribe();
-  const subs = get()._subscriptions || [];
-  subs.push(subscription);
-  set({ _subscriptions: subs });
-  return subscription;
-  },
+  subscribeToSupplierOffers: (supplierId) => createSupplierSubscription({ supabase, supplierId, get, set }),
   
   // Cancelar suscripciones
   unsubscribeFromOffers: (subscription) => {

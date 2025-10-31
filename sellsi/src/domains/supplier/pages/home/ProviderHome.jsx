@@ -21,13 +21,8 @@ import { supabase } from '../../../../services/supabase';
 import { SupplierErrorBoundary } from '../../components/ErrorBoundary';
 import { TransferInfoValidationModal, useTransferInfoModal } from '../../../../shared/components/validation'; // Modal de validación bancaria
 
-// Lazy imports para reducir el bundle inicial
-const DashboardSummary = React.lazy(() =>
-  import('../../components/dashboard-summary/DashboardSummary')
-);
-const MonthlySalesChart = React.lazy(() =>
-  import('../../../../shared/components/display/graphs/BarChart')
-);
+// Lazy import principal (se elimina gráfico para reducir peso: BarChart removido)
+const DashboardSummary = React.lazy(() => import('../../components/dashboard-summary/DashboardSummary'));
 
 // Loading fallbacks optimizados
 const DashboardSummaryFallback = () => (
@@ -62,7 +57,7 @@ const ProviderHome = () => {
 
   // Dashboard data (metrics, charts, analytics)
   const {
-    charts,
+    // charts,  // Eliminado: se deja de consumir data de gráficos
     metrics,
     loading: dashboardLoading,
     error: dashboardError,
@@ -77,11 +72,8 @@ const ProviderHome = () => {
     loadProducts,
   } = useSupplierProducts();
 
-  // Extract chart data safely
-  const sales = charts?.salesData || [];
-  const productStocks = charts?.productStocks || [];
-  const weeklyRequests = charts?.weeklyRequests || [];
-  const monthlyData = charts?.revenueData || [];
+  // Contador real de solicitudes semanales (órdenes pagadas últimos 7 días)
+  const weeklyRequestsCount = metrics?.weeklyRequestsCount ?? 0;
   const totalSales = metrics?.totalRevenue || 0;
 
   // Combine loading and error states
@@ -97,11 +89,22 @@ const ProviderHome = () => {
     });
   };
 
-  // Ahora cuenta productos inactivos (is_active === false) con safety check
-  const productsOutOfStock = products.filter(p => p.is_active === false).length;
+  // ============================================================================
+  // CÁLCULO CORRECTO DE ESTADÍSTICAS
+  // ============================================================================
+  // 1. Filtrar productos realmente activos (excluir soft-deleted)
+  const activeProducts = products.filter(p => 
+    p.is_active === true && 
+    (!p.deletion_status || p.deletion_status === 'active')
+  );
 
-  // Ahora cuenta productos activos (is_active === true) con safety check
-  const productsActive = products.filter(p => p.is_active === true).length;
+  // 2. Productos activos (sin contar eliminados)
+  const productsActive = activeProducts.length;
+
+  // 3. Productos sin stock = activos con stock 0 (NO productos eliminados)
+  const productsOutOfStock = activeProducts.filter(p => 
+    (p.productqty === 0 || p.stock === 0)
+  ).length;
 
   // ============================================================================
   // EFECTOS - VALIDACIÓN Y RECARGA AUTOMÁTICA
@@ -118,9 +121,14 @@ const ProviderHome = () => {
         try {
           const { data: { session } } = await supabase.auth.getSession();
           if (session?.user?.id) {
+            // Respect global last-fetched TTL to avoid racing loads
+            const productsKey = `fp_products_supplier_${session.user.id}`
+            const lastMap = (typeof window !== 'undefined') ? (window.__inFlightSupabaseLastFetched = window.__inFlightSupabaseLastFetched || new Map()) : new Map()
+            const last = lastMap.get(productsKey)
+            const shouldLoad = !last || (Date.now() - last) > 3000
             await Promise.all([
               refreshDashboard?.(),
-              loadProducts?.(session.user.id)
+              shouldLoad ? loadProducts?.(session.user.id) : Promise.resolve()
             ]);
           }
         } catch (e) {
@@ -160,10 +168,10 @@ const ProviderHome = () => {
                 <Box sx={{ mb: 4 }}>
                   <Suspense fallback={<DashboardSummaryFallback />}>
                     <DashboardSummary
-                      products={products}
+                      products={activeProducts}
                       totalSales={totalSales}
                       outOfStock={productsOutOfStock}
-                      weeklyRequests={weeklyRequests}
+                      weeklyRequestsCount={weeklyRequestsCount}
                       productsActive={productsActive}
                     />
                   </Suspense>
@@ -194,11 +202,7 @@ const ProviderHome = () => {
                   </Button>
                 </Box>
 
-                <Box>
-                  <Suspense fallback={<ChartFallback />}>
-                    <MonthlySalesChart data={monthlyData} />
-                  </Suspense>
-                </Box>
+                {/* Gráfico eliminado para reducir JS (recharts purgado) */}
               </Grid>
             </Grid>
           </Container>

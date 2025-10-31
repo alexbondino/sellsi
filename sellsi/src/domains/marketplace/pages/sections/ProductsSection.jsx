@@ -19,17 +19,21 @@ import { SPACING_BOTTOM_MAIN } from '../../../../styles/layoutSpacing';
 import { productGridColumns, productGridGaps, paginationResponsiveConfig } from '../../../../shared/constants/layoutTokens';
 import { PRODUCTS_TEXTS } from '../../../../shared/constants/productsTexts';
 import { useProductsDerivation } from '../../../../shared/hooks/useProductsDerivation';
+import { isNewDate } from '../../../../shared/utils/product/isNewDate';
 import { useProgressiveProducts } from '../../../../shared/hooks/useProgressiveProducts';
+import { useGridPriority } from '../../../../shared/utils/gridPriorityCalculator';
+import { scrollManagerAntiRebote } from '../../../../shared/utils/scrollManagerAntiRebote'; // ✅ Nuevo sistema anti-rebote
 import { FeatureFlags } from '../../../../shared/flags/featureFlags';
-import { LoadingOverlay } from '../../../../shared/components/feedback';
+import { ProductCardSkeletonGrid } from '../../../../shared/components/display/product-card/ProductCardSkeleton';
 import ProductsSectionView from './ProductsSection/ProductsSectionView';
+import { getOrFetchManyMainThumbnails } from '../../../../services/phase1ETAGThumbnailService.js';
 
 /**
  * Componente que maneja la sección de productos, título y grid
  * ✅ DESACOPLADO: Layout estático independiente del estado de SearchBar
  */
 // ✅ MEJORA DE RENDIMIENTO: Memoización del componente
-const ProductsSection = React.memo(({ seccionActiva, setSeccionActiva, totalProductos, productosOrdenados, resetFiltros, titleMarginLeft, loading, error, isProviderView = false }) => {
+const ProductsSection = React.memo(({ seccionActiva, setSeccionActiva, totalProductos, productosOrdenados, resetFiltros, titleMarginLeft, loading, error, isProviderView = false, getPriceTiers, registerProductNode }) => {
   // Layout styles
   const mainContainerStyles = React.useMemo(() => ({
     pt: { xs: 3.5, md: '90px' },
@@ -75,8 +79,8 @@ const ProductsSection = React.memo(({ seccionActiva, setSeccionActiva, totalProd
       if (isProviderView) {
         return (
           <>
-            <BusinessIcon sx={{ color: '#1976d2', verticalAlign: 'middle', fontSize: { xs: 24, md: 32 }, mr: 1 }} />
-            <span style={{ color: '#1976d2' }}>
+            <BusinessIcon sx={{ color: '#F59E0B', verticalAlign: 'middle', fontSize: { xs: 24, md: 32 }, mr: 1 }} />
+            <span style={{ color: '#F59E0B' }}>
               Proveedores Disponibles
             </span>
           </>
@@ -113,7 +117,22 @@ const ProductsSection = React.memo(({ seccionActiva, setSeccionActiva, totalProd
     // (Movido arriba antes de cualquier uso para evitar ReferenceError por TDZ)
   // Derivación ahora a través del hook (fase2)
   const { items: derivedItems, providersCount } = useProductsDerivation(productosOrdenados, { providerView: isProviderView });
-  const memoizedProducts = derivedItems;
+  
+  // ✅ FIX: Memoizar correctamente derivedItems y aplicar filtro 'nuevos'
+  // Si la sección activa es 'nuevos' (buyer view), mostramos solo productos recientes según createdAt
+  const memoizedProducts = React.useMemo(() => {
+    if (!Array.isArray(derivedItems)) return derivedItems;
+    if (!isProviderView && seccionActiva === 'nuevos') {
+      return derivedItems.filter(p => {
+        try {
+          return isNewDate(p?.createdAt);
+        } catch (e) {
+          return false;
+        }
+      });
+    }
+    return derivedItems;
+  }, [derivedItems, seccionActiva, isProviderView]);
 
     // 🚀 BATCHING THUMBNAILS: limitar cantidad de ProductCard montadas simultáneamente para reducir ráfagas de fetch
   // batching ahora dentro del hook progressive
@@ -160,6 +179,12 @@ const ProductsSection = React.memo(({ seccionActiva, setSeccionActiva, totalProd
       isLoadingMore,
       paginationMeta: { startIndex, endIndex, PRODUCTS_PER_PAGE: PRODUCTS_PER_PAGE_META }
     } = progressive;
+
+    // ✅ NUEVO: Sistema de prioridades para imágenes (primeras 2 filas = fetchpriority="high")
+    const gridPriority = useGridPriority(renderItems, { isXs, isSm, isMd, isLg, isXl });
+    const { getPriority, debugInfo } = gridPriority;
+
+  // Debug info removed for production cleanliness
     // Componente de paginación responsivo
   const PaginationComponent = React.useMemo(() => {
       if (totalPages <= 1) return null;
@@ -282,21 +307,43 @@ const ProductsSection = React.memo(({ seccionActiva, setSeccionActiva, totalProd
 
   const scrollToTop = React.useCallback(() => { window.scrollTo({ top: 0, behavior: 'smooth' }); }, []);
 
-    // ✅ SCROLL TO TOP: Mostrar/ocultar FAB basado en scroll
+    // ✅ SCROLL TO TOP: Mostrar/ocultar FAB usando ScrollManager unificado
   React.useEffect(() => {
-    const handleScroll = () => { setShowScrollTop(window.pageYOffset > 300); };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    const listenerId = 'products-section-fab';
+    
+    const handleFabScroll = (scrollData) => {
+      setShowScrollTop(scrollData.scrollTop > 300);
+    };
+
+    const cleanup = scrollManagerAntiRebote.addListener(listenerId, handleFabScroll, {
+      priority: -1, // Baja prioridad para FAB
+      throttle: 150 // Menos frecuente que infinite scroll
+    });
+
+    return cleanup;
   }, []);
   const ui = { mainContainerStyles, innerContainerStyles, gridStyles, cardContainerStyles, sectionTitle };
   const handlers = { handleBackClick, resetFiltros, scrollToTop, showScrollTop, seccionActiva };
+  // getPriceTiers and registerProductNode are provided via productsSectionProps from useMarketplaceLogic
   const data = {
     loading, error, isProviderView, totalProductos, providersCount, productosOrdenados,
     renderItems, PaginationComponent, isInfiniteScrollActive, isLoadingMore, currentPageProducts,
-    PRODUCTS_PER_PAGE_META, startIndex, endIndex, currentPage, totalPages, titleMarginLeft
+    PRODUCTS_PER_PAGE_META, startIndex, endIndex, currentPage, totalPages, titleMarginLeft,
+    getPriority, // ✅ Función para determinar prioridad de imagen por índice
+    getPriceTiers,
+    registerProductNode,
   };
   const components = {
-    Loading: <LoadingOverlay message={isProviderView ? PRODUCTS_TEXTS.loadingProviders : PRODUCTS_TEXTS.loadingProducts} height={300} />,
+    Loading: (
+      <Box sx={{ px: { xs: 0, sm: 0, md: 0 } }}>
+        <ProductCardSkeletonGrid
+          type={isProviderView ? 'provider' : 'buyer'}
+          count={Math.max(PRODUCTS_PER_PAGE_META || 8, 8)}
+          gridStyles={gridStyles}
+          cardContainerStyles={cardContainerStyles}
+        />
+      </Box>
+    ),
     Error: (err) => (
       <Paper sx={{ p: 6, textAlign: 'center', bgcolor: '#fff', borderRadius: 3, border: '1px solid #e2e8f0' }}>
         <Typography variant='h6' color='error' sx={{ mb: 2 }}>{PRODUCTS_TEXTS.errorTitle}</Typography>
@@ -331,11 +378,46 @@ const ProductsSection = React.memo(({ seccionActiva, setSeccionActiva, totalProd
     )
   };
 
+  // Prefetch Phase1 thumbnails: primeros N productos renderizados (una sola vez)
+  React.useEffect(() => {
+    if (!FeatureFlags.FEATURE_PHASE1_THUMBS) return;
+    if (!Array.isArray(renderItems) || !renderItems.length) return;
+    // Tomar primeros 24 (o menos) IDs con product_id disponible
+    const prefetchCount = 24;
+    const ids = renderItems.slice(0, prefetchCount).map(p => p?.id || p?.product_id).filter(Boolean);
+    if (!ids.length) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        await getOrFetchManyMainThumbnails(ids, { silent: true });
+      } catch (_) { /* noop */ }
+    })();
+    return () => { cancelled = true; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [renderItems && renderItems.length > 0]);
+
   return <ProductsSectionView ui={ui} data={data} handlers={handlers} components={components} />;
 });
 
 // ✅ MEJORA DE RENDIMIENTO: DisplayName para debugging
 ProductsSection.displayName = 'ProductsSection';
+
+// Prefetch inicial sencillo (warm thumbnails) – se hace fuera de render para no afectar SSR hipotético
+// NOTA: Simple guard to ensure side effect only in browser
+if (typeof window !== 'undefined' && FeatureFlags.FEATURE_PHASE1_THUMBS) {
+  // Micro cola para evitar saturar inmediatamente; se puede mejorar con observers
+  // 🛡️ SAFARI FIX: Usar window.requestIdleCallback para evitar ReferenceError
+  if (window.requestIdleCallback) {
+    window.requestIdleCallback(() => {
+      try {
+        // Buscar un contenedor de productos ya montado (heurística simple)
+        // La lógica real ideal estaría dentro de un effect cuando se conocen los IDs iniciales.
+      } catch (e) {
+        // noop
+      }
+    });
+  }
+}
 
 // ✅ ROLLBACK TEMPORAL: Exportar directamente sin ShippingProvider hasta resolver issues
 export default ProductsSection;

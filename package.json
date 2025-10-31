@@ -4,11 +4,28 @@
   "scripts": {
     "analyze:cycles": "node detect_cycles.js --format pretty --suggest-breaks --max-len 12",
     "analyze:cycles:md": "node detect_cycles.js --format md --suggest-breaks --output ./Documentacion/cycles/cycle-report.md --max-len 12",
-    "analyze:hooks": "node scripts/analyze_hooks_deps.js"
+  "analyze:hooks": "node scripts/analyze_hooks_deps.js",
+  "detect:similar-files": "node scripts/detect_similar_files.js --threshold 0.9 --output ./Documentacion/similar-files-report.json"
   },
   "dependencies": {
     "@babel/parser": "^7.28.3",
     "@babel/traverse": "^7.28.3",
+    "@supabase/supabase-js": "^2.57.0",
     "glob": "^11.0.3"
-  }
+  },
+  "version": "1.0.0",
+  "description": "",
+  "main": "detect-inline-literals.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/alexbondino/sellsi.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/alexbondino/sellsi/issues"
+  },
+  "homepage": "https://github.com/alexbondino/sellsi#readme"
 }

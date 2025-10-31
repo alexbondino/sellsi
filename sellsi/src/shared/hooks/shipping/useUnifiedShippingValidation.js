@@ -139,8 +139,11 @@ export const useUnifiedShippingValidation = (cartItems = [], isAdvancedMode = fa
   const validateProductShipping = useCallback((product, targetUserRegion = null) => {
     const effectiveUserRegion = targetUserRegion || userRegion;
     
+    
     // Si no hay región del usuario, no se puede validar
     if (!effectiveUserRegion) {
+      console.log('❌ NO HAY REGIÓN DEL USUARIO');
+      console.groupEnd();
       return {
         state: SHIPPING_STATES.NO_SHIPPING_INFO,
         message: 'Configura tu dirección de despacho en tu perfil',
@@ -155,8 +158,11 @@ export const useUnifiedShippingValidation = (cartItems = [], isAdvancedMode = fa
                           product.product_delivery_regions ||
                           [];
 
+    
     // Si no hay regiones, mostrar mensaje específico
     if (!shippingRegions || shippingRegions.length === 0) {
+      console.log('❌ PRODUCTO SIN REGIONES DE DESPACHO');
+      console.groupEnd();
       return {
         state: SHIPPING_STATES.NO_SHIPPING_INFO,
         message: 'Este producto no cuenta con información de despacho',
@@ -164,23 +170,41 @@ export const useUnifiedShippingValidation = (cartItems = [], isAdvancedMode = fa
       };
     }
 
-    // Buscar la región del usuario en las regiones del producto
+  // Buscar la región del usuario en las regiones del producto
     const matchingRegion = shippingRegions.find(region => {
-      const regionValue = region.region || region.value;
-      return regionValue === effectiveUserRegion;
+      // 🔥 FIX: Manejar tanto strings como objetos
+      let regionValue;
+      if (typeof region === 'string') {
+        regionValue = region;
+      } else {
+        regionValue = region.region || region.value;
+      }
+      const matches = regionValue === effectiveUserRegion;
+      return matches;
     });
+    
 
     // Estado: Compatible
     if (matchingRegion) {
-      const days = matchingRegion.delivery_days || 
-                  matchingRegion.maxDeliveryDays || 
-                  matchingRegion.days || 
-                  'N/A';
+      // 🔥 FIX: Manejar tanto strings como objetos para obtener propiedades
+      let days, cost;
       
-      const cost = matchingRegion.price || 
-                  matchingRegion.shippingValue || 
-                  matchingRegion.cost || 
-                  0;
+      if (typeof matchingRegion === 'string') {
+        // Para strings simples, usar valores por defecto
+        days = 'N/A';
+        cost = 0;
+      } else {
+        // Para objetos, extraer y normalizar propiedades numéricas
+        const rawDays = matchingRegion.delivery_days ?? matchingRegion.maxDeliveryDays ?? matchingRegion.days;
+        const parsedDays = Number(rawDays);
+        days = Number.isFinite(parsedDays) && parsedDays > 0 ? parsedDays : 'N/A';
+
+        const rawCost = matchingRegion.price ?? matchingRegion.shippingValue ?? matchingRegion.cost;
+        const parsedCost = Number(rawCost);
+        cost = Number.isFinite(parsedCost) && parsedCost >= 0 ? parsedCost : 0;
+      }
+      
+      
       
       return {
         state: SHIPPING_STATES.COMPATIBLE,
@@ -195,9 +219,17 @@ export const useUnifiedShippingValidation = (cartItems = [], isAdvancedMode = fa
 
     // Estado: Incompatible por región
     const availableRegions = shippingRegions.map(region => {
-      const regionValue = region.region || region.value;
+      // 🔥 FIX: Manejar tanto strings como objetos
+      let regionValue;
+      if (typeof region === 'string') {
+        regionValue = region;
+      } else {
+        regionValue = region.region || region.value;
+      }
       return getUserRegionName(regionValue);
     });
+    
+    
     
     return {
       state: SHIPPING_STATES.INCOMPATIBLE_REGION,

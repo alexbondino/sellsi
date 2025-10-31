@@ -1,0 +1,521 @@
+/**
+ * @jest-environment jsdom
+ * 
+ * Tests de integración para AdminLogin
+ * Cubre: Autenticación, 2FA, errores, validaciones
+ */
+
+import { describe, it, expect, beforeEach, jest } from '@jest/globals'
+import { render, screen, waitFor, fireEvent } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import '@testing-library/jest-dom'
+
+// Mock de servicios
+jest.unstable_mockModule('../../../src/domains/admin/services/adminAuthService.js', () => ({
+  loginAdmin: jest.fn(),
+  validateAdmin2FA: jest.fn(),
+  requestPasswordReset: jest.fn()
+}))
+
+describe('AdminLogin - Integración', () => {
+  let AdminLogin
+  let adminAuthService
+  let user
+
+  beforeEach(async () => {
+    jest.clearAllMocks()
+    
+    AdminLogin = (await import('../../../src/domains/admin/components/AdminLogin.jsx')).default
+    adminAuthService = await import('../../../src/domains/admin/services/adminAuthService.js')
+    user = userEvent.setup()
+
+    // Reset mocks
+    adminAuthService.loginAdmin.mockReset()
+    adminAuthService.validateAdmin2FA.mockReset()
+  })
+
+  describe('Renderizado y UI', () => {
+    it('✅ debe renderizar formulario de login', () => {
+      render(<AdminLogin />)
+
+      expect(screen.getByLabelText(/email/i)).toBeInTheDocument()
+      expect(screen.getByLabelText(/contraseña/i)).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /iniciar sesión/i })).toBeInTheDocument()
+    })
+
+    it('✅ debe mostrar logo de Sellsi', () => {
+      render(<AdminLogin />)
+
+      const logo = screen.getByAltText(/sellsi/i) || screen.getByTestId('sellsi-logo')
+      expect(logo).toBeInTheDocument()
+    })
+
+    it('✅ debe mostrar título de panel de control', () => {
+      render(<AdminLogin />)
+
+      expect(screen.getByText(/panel de control/i)).toBeInTheDocument()
+    })
+
+    it('✅ debe mostrar link de recuperación de contraseña', () => {
+      render(<AdminLogin />)
+
+      expect(screen.getByText(/olvidaste tu contraseña/i)).toBeInTheDocument()
+    })
+
+    it('✅ debe mostrar checkbox de "Recordarme"', () => {
+      render(<AdminLogin />)
+
+      expect(screen.getByLabelText(/recordarme/i)).toBeInTheDocument()
+    })
+  })
+
+  describe('Validaciones de formulario', () => {
+    it('❌ debe mostrar error si email está vacío', async () => {
+      render(<AdminLogin />)
+
+      const submitButton = screen.getByRole('button', { name: /iniciar sesión/i })
+      await user.click(submitButton)
+
+      await waitFor(() => {
+        expect(screen.getByText(/email es requerido/i)).toBeInTheDocument()
+      })
+    })
+
+    it('❌ debe validar formato de email', async () => {
+      render(<AdminLogin />)
+
+      const emailInput = screen.getByLabelText(/email/i)
+      await user.type(emailInput, 'not-an-email')
+
+      const submitButton = screen.getByRole('button', { name: /iniciar sesión/i })
+      await user.click(submitButton)
+
+      await waitFor(() => {
+        expect(screen.getByText(/email inválido/i)).toBeInTheDocument()
+      })
+    })
+
+    it('❌ debe mostrar error si contraseña está vacía', async () => {
+      render(<AdminLogin />)
+
+      const emailInput = screen.getByLabelText(/email/i)
+      await user.type(emailInput, 'admin@sellsi.com')
+
+      const submitButton = screen.getByRole('button', { name: /iniciar sesión/i })
+      await user.click(submitButton)
+
+      await waitFor(() => {
+        expect(screen.getByText(/contraseña es requerida/i)).toBeInTheDocument()
+      })
+    })
+
+    it('✅ debe habilitar botón solo con campos válidos', async () => {
+      render(<AdminLogin />)
+
+      const submitButton = screen.getByRole('button', { name: /iniciar sesión/i })
+      expect(submitButton).toBeDisabled()
+
+      const emailInput = screen.getByLabelText(/email/i)
+      const passwordInput = screen.getByLabelText(/contraseña/i)
+
+      await user.type(emailInput, 'admin@sellsi.com')
+      await user.type(passwordInput, 'password123')
+
+      await waitFor(() => {
+        expect(submitButton).toBeEnabled()
+      })
+    })
+
+    it('🔒 debe ocultar contraseña por defecto', () => {
+      render(<AdminLogin />)
+
+      const passwordInput = screen.getByLabelText(/contraseña/i)
+      expect(passwordInput).toHaveAttribute('type', 'password')
+    })
+
+    it('👁️ debe mostrar/ocultar contraseña al hacer clic', async () => {
+      render(<AdminLogin />)
+
+      const passwordInput = screen.getByLabelText(/contraseña/i)
+      const toggleButton = screen.getByLabelText(/mostrar contraseña/i) || screen.getByTestId('toggle-password')
+
+      await user.click(toggleButton)
+      expect(passwordInput).toHaveAttribute('type', 'text')
+
+      await user.click(toggleButton)
+      expect(passwordInput).toHaveAttribute('type', 'password')
+    })
+  })
+
+  describe('Login exitoso', () => {
+    it('✅ debe autenticar con credenciales válidas', async () => {
+      adminAuthService.loginAdmin.mockResolvedValue({
+        success: true,
+        session: { user: { id: 'admin-123' } },
+        requires2FA: false
+      })
+
+      render(<AdminLogin />)
+
+      await user.type(screen.getByLabelText(/email/i), 'admin@sellsi.com')
+      await user.type(screen.getByLabelText(/contraseña/i), 'password123')
+      await user.click(screen.getByRole('button', { name: /iniciar sesión/i }))
+
+      await waitFor(() => {
+        expect(adminAuthService.loginAdmin).toHaveBeenCalledWith('admin@sellsi.com', 'password123')
+      })
+    })
+
+    it('✅ debe mostrar loading durante autenticación', async () => {
+      adminAuthService.loginAdmin.mockImplementation(
+        () => new Promise(resolve => setTimeout(() => resolve({
+          success: true,
+          session: { user: { id: 'admin-123' } }
+        }), 100))
+      )
+
+      render(<AdminLogin />)
+
+      await user.type(screen.getByLabelText(/email/i), 'admin@sellsi.com')
+      await user.type(screen.getByLabelText(/contraseña/i), 'password123')
+      await user.click(screen.getByRole('button', { name: /iniciar sesión/i }))
+
+      expect(screen.getByRole('progressbar') || screen.getByText(/iniciando/i)).toBeInTheDocument()
+
+      await waitFor(() => {
+        expect(screen.queryByRole('progressbar')).not.toBeInTheDocument()
+      }, { timeout: 200 })
+    })
+
+    it('✅ debe redirigir al dashboard después de login', async () => {
+      const mockNavigate = jest.fn()
+      // Mock de react-router
+      jest.mock('react-router-dom', () => ({
+        useNavigate: () => mockNavigate
+      }))
+
+      adminAuthService.loginAdmin.mockResolvedValue({
+        success: true,
+        session: { user: { id: 'admin-123' } },
+        requires2FA: false
+      })
+
+      render(<AdminLogin />)
+
+      await user.type(screen.getByLabelText(/email/i), 'admin@sellsi.com')
+      await user.type(screen.getByLabelText(/contraseña/i), 'password123')
+      await user.click(screen.getByRole('button', { name: /iniciar sesión/i }))
+
+      await waitFor(() => {
+        expect(mockNavigate).toHaveBeenCalledWith('/admin/dashboard')
+      })
+    })
+  })
+
+  describe('Login con 2FA', () => {
+    it('🔐 debe mostrar formulario 2FA si está habilitado', async () => {
+      adminAuthService.loginAdmin.mockResolvedValue({
+        success: true,
+        requires2FA: true,
+        session: null
+      })
+
+      render(<AdminLogin />)
+
+      await user.type(screen.getByLabelText(/email/i), 'admin@sellsi.com')
+      await user.type(screen.getByLabelText(/contraseña/i), 'password123')
+      await user.click(screen.getByRole('button', { name: /iniciar sesión/i }))
+
+      await waitFor(() => {
+        expect(screen.getByText(/código de verificación/i)).toBeInTheDocument()
+        expect(screen.getByLabelText(/código 2fa/i)).toBeInTheDocument()
+      })
+    })
+
+    it('✅ debe validar código 2FA correcto', async () => {
+      adminAuthService.loginAdmin.mockResolvedValue({
+        success: true,
+        requires2FA: true,
+        session: null
+      })
+
+      adminAuthService.validateAdmin2FA.mockResolvedValue({
+        success: true,
+        valid: true,
+        session: { user: { id: 'admin-123' } }
+      })
+
+      render(<AdminLogin />)
+
+      // Login inicial
+      await user.type(screen.getByLabelText(/email/i), 'admin@sellsi.com')
+      await user.type(screen.getByLabelText(/contraseña/i), 'password123')
+      await user.click(screen.getByRole('button', { name: /iniciar sesión/i }))
+
+      // Ingresar código 2FA
+      await waitFor(() => {
+        expect(screen.getByLabelText(/código 2fa/i)).toBeInTheDocument()
+      })
+
+      await user.type(screen.getByLabelText(/código 2fa/i), '123456')
+      await user.click(screen.getByRole('button', { name: /verificar/i }))
+
+      await waitFor(() => {
+        expect(adminAuthService.validateAdmin2FA).toHaveBeenCalledWith(expect.anything(), '123456')
+      })
+    })
+
+    it('❌ debe mostrar error si código 2FA es incorrecto', async () => {
+      adminAuthService.loginAdmin.mockResolvedValue({
+        success: true,
+        requires2FA: true,
+        session: null
+      })
+
+      adminAuthService.validateAdmin2FA.mockResolvedValue({
+        success: false,
+        valid: false,
+        error: 'Código inválido'
+      })
+
+      render(<AdminLogin />)
+
+      await user.type(screen.getByLabelText(/email/i), 'admin@sellsi.com')
+      await user.type(screen.getByLabelText(/contraseña/i), 'password123')
+      await user.click(screen.getByRole('button', { name: /iniciar sesión/i }))
+
+      await waitFor(() => {
+        expect(screen.getByLabelText(/código 2fa/i)).toBeInTheDocument()
+      })
+
+      await user.type(screen.getByLabelText(/código 2fa/i), '000000')
+      await user.click(screen.getByRole('button', { name: /verificar/i }))
+
+      await waitFor(() => {
+        expect(screen.getByText(/código inválido/i)).toBeInTheDocument()
+      })
+    })
+
+    it('✅ debe permitir volver atrás desde 2FA', async () => {
+      adminAuthService.loginAdmin.mockResolvedValue({
+        success: true,
+        requires2FA: true,
+        session: null
+      })
+
+      render(<AdminLogin />)
+
+      await user.type(screen.getByLabelText(/email/i), 'admin@sellsi.com')
+      await user.type(screen.getByLabelText(/contraseña/i), 'password123')
+      await user.click(screen.getByRole('button', { name: /iniciar sesión/i }))
+
+      await waitFor(() => {
+        expect(screen.getByText(/código de verificación/i)).toBeInTheDocument()
+      })
+
+      const backButton = screen.getByRole('button', { name: /volver/i })
+      await user.click(backButton)
+
+      await waitFor(() => {
+        expect(screen.getByLabelText(/email/i)).toBeInTheDocument()
+        expect(screen.getByLabelText(/contraseña/i)).toBeInTheDocument()
+      })
+    })
+  })
+
+  describe('Errores de autenticación', () => {
+    it('❌ debe mostrar error con credenciales incorrectas', async () => {
+      adminAuthService.loginAdmin.mockResolvedValue({
+        success: false,
+        error: 'Credenciales inválidas'
+      })
+
+      render(<AdminLogin />)
+
+      await user.type(screen.getByLabelText(/email/i), 'wrong@email.com')
+      await user.type(screen.getByLabelText(/contraseña/i), 'wrongpass')
+      await user.click(screen.getByRole('button', { name: /iniciar sesión/i }))
+
+      await waitFor(() => {
+        expect(screen.getByText(/credenciales inválidas/i)).toBeInTheDocument()
+      })
+    })
+
+    it('🔒 debe bloquear después de múltiples intentos fallidos', async () => {
+      adminAuthService.loginAdmin.mockResolvedValue({
+        success: false,
+        error: 'Demasiados intentos. Cuenta bloqueada por 15 minutos.'
+      })
+
+      render(<AdminLogin />)
+
+      // Simular 5 intentos fallidos
+      for (let i = 0; i < 5; i++) {
+        await user.clear(screen.getByLabelText(/email/i))
+        await user.clear(screen.getByLabelText(/contraseña/i))
+        await user.type(screen.getByLabelText(/email/i), 'admin@sellsi.com')
+        await user.type(screen.getByLabelText(/contraseña/i), 'wrong')
+        await user.click(screen.getByRole('button', { name: /iniciar sesión/i }))
+        await waitFor(() => screen.getByText(/credenciales inválidas/i))
+      }
+
+      await waitFor(() => {
+        expect(screen.getByText(/cuenta bloqueada/i)).toBeInTheDocument()
+      })
+    })
+
+    it('❌ debe manejar error de red', async () => {
+      adminAuthService.loginAdmin.mockRejectedValue(new Error('Network error'))
+
+      render(<AdminLogin />)
+
+      await user.type(screen.getByLabelText(/email/i), 'admin@sellsi.com')
+      await user.type(screen.getByLabelText(/contraseña/i), 'password123')
+      await user.click(screen.getByRole('button', { name: /iniciar sesión/i }))
+
+      await waitFor(() => {
+        expect(screen.getByText(/error de conexión/i)).toBeInTheDocument()
+      })
+    })
+  })
+
+  describe('Recuperación de contraseña', () => {
+    it('✅ debe mostrar formulario de recuperación', async () => {
+      render(<AdminLogin />)
+
+      const forgotPasswordLink = screen.getByText(/olvidaste tu contraseña/i)
+      await user.click(forgotPasswordLink)
+
+      await waitFor(() => {
+        expect(screen.getByText(/recuperar contraseña/i)).toBeInTheDocument()
+        expect(screen.getByLabelText(/email/i)).toBeInTheDocument()
+      })
+    })
+
+    it('✅ debe enviar email de recuperación', async () => {
+      adminAuthService.requestPasswordReset.mockResolvedValue({
+        success: true,
+        message: 'Email enviado'
+      })
+
+      render(<AdminLogin />)
+
+      await user.click(screen.getByText(/olvidaste tu contraseña/i))
+      await user.type(screen.getByLabelText(/email/i), 'admin@sellsi.com')
+      await user.click(screen.getByRole('button', { name: /enviar/i }))
+
+      await waitFor(() => {
+        expect(adminAuthService.requestPasswordReset).toHaveBeenCalledWith('admin@sellsi.com')
+        expect(screen.getByText(/email enviado/i)).toBeInTheDocument()
+      })
+    })
+
+    it('❌ debe mostrar error si email no existe', async () => {
+      adminAuthService.requestPasswordReset.mockResolvedValue({
+        success: false,
+        error: 'Email no encontrado'
+      })
+
+      render(<AdminLogin />)
+
+      await user.click(screen.getByText(/olvidaste tu contraseña/i))
+      await user.type(screen.getByLabelText(/email/i), 'noexiste@email.com')
+      await user.click(screen.getByRole('button', { name: /enviar/i }))
+
+      await waitFor(() => {
+        expect(screen.getByText(/email no encontrado/i)).toBeInTheDocument()
+      })
+    })
+  })
+
+  describe('Seguridad', () => {
+    it('🔒 debe sanitizar inputs', async () => {
+      const maliciousEmail = "<script>alert('xss')</script>@email.com"
+
+      render(<AdminLogin />)
+
+      await user.type(screen.getByLabelText(/email/i), maliciousEmail)
+      
+      const emailInput = screen.getByLabelText(/email/i)
+      expect(emailInput.value).not.toContain('<script>')
+    })
+
+    it('🛡️ debe usar HTTPS para login', async () => {
+      // Verificar que la URL de la API use HTTPS
+      adminAuthService.loginAdmin.mockImplementation((email, password) => {
+        expect(global.location.protocol).toBe('https:')
+        return Promise.resolve({ success: true })
+      })
+
+      render(<AdminLogin />)
+
+      await user.type(screen.getByLabelText(/email/i), 'admin@sellsi.com')
+      await user.type(screen.getByLabelText(/contraseña/i), 'password123')
+      await user.click(screen.getByRole('button', { name: /iniciar sesión/i }))
+
+      await waitFor(() => {
+        expect(adminAuthService.loginAdmin).toHaveBeenCalled()
+      })
+    })
+
+    it('🔐 debe limpiar formulario después de error', async () => {
+      adminAuthService.loginAdmin.mockResolvedValue({
+        success: false,
+        error: 'Credenciales inválidas'
+      })
+
+      render(<AdminLogin />)
+
+      const passwordInput = screen.getByLabelText(/contraseña/i)
+      
+      await user.type(screen.getByLabelText(/email/i), 'admin@sellsi.com')
+      await user.type(passwordInput, 'wrongpass')
+      await user.click(screen.getByRole('button', { name: /iniciar sesión/i }))
+
+      await waitFor(() => {
+        expect(screen.getByText(/credenciales inválidas/i)).toBeInTheDocument()
+        expect(passwordInput.value).toBe('') // Contraseña debe limpiarse
+      })
+    })
+  })
+
+  describe('Accesibilidad', () => {
+    it('♿ debe tener labels correctos', () => {
+      render(<AdminLogin />)
+
+      expect(screen.getByLabelText(/email/i)).toBeInTheDocument()
+      expect(screen.getByLabelText(/contraseña/i)).toBeInTheDocument()
+    })
+
+    it('⌨️ debe permitir navegación por teclado', async () => {
+      render(<AdminLogin />)
+
+      const emailInput = screen.getByLabelText(/email/i)
+      const passwordInput = screen.getByLabelText(/contraseña/i)
+      const submitButton = screen.getByRole('button', { name: /iniciar sesión/i })
+
+      emailInput.focus()
+      await user.keyboard('[Tab]')
+      expect(passwordInput).toHaveFocus()
+
+      await user.keyboard('[Tab]')
+      expect(submitButton).toHaveFocus()
+    })
+
+    it('✅ debe soportar Enter para submit', async () => {
+      adminAuthService.loginAdmin.mockResolvedValue({
+        success: true,
+        session: { user: { id: 'admin-123' } }
+      })
+
+      render(<AdminLogin />)
+
+      await user.type(screen.getByLabelText(/email/i), 'admin@sellsi.com')
+      await user.type(screen.getByLabelText(/contraseña/i), 'password123{Enter}')
+
+      await waitFor(() => {
+        expect(adminAuthService.loginAdmin).toHaveBeenCalled()
+      })
+    })
+  })
+})

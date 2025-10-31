@@ -33,59 +33,115 @@ serve(req => withMetrics('create-payment-khipu', req, async () => {
   }
 
   try {
-    console.log('[create-payment-khipu] Función iniciada.');
+    const requestId = crypto.randomUUID();
+    const startedAt = Date.now();
+    const log = (msg: string, extra: any = {}) => console.log(JSON.stringify({ tag: 'create-payment-khipu', request_id: requestId, msg, ...extra }));
+    const logErr = (msg: string, extra: any = {}) => console.error(JSON.stringify({ tag: 'create-payment-khipu', level: 'error', request_id: requestId, msg, ...extra }));
+    const respond = (status: number, body: any) => {
+      const enriched = { request_id: requestId, ...body };
+      return new Response(JSON.stringify(enriched), { headers: { ...corsHeaders, 'Content-Type': 'application/json', ...(body?.error_code ? { 'x-error-code': body.error_code } : {}) }, status });
+    };
+    log('func_start');
 
     // 1. Leer los datos dinámicos que envía el frontend (khipuService.js)
     // Ahora esperamos también order_id (ID de la fila ya creada en orders)
-  const { amount, subject, currency, buyer_id, cart_items, cart_id, order_id, shipping_address, billing_address } = await req.json();
+  const { amount, subject, currency, buyer_id, cart_items, cart_id, order_id, shipping_address, billing_address, offer_id, offer_ids } = await req.json();
 
   if (!order_id) {
-    throw new Error('Falta order_id: la función ahora requiere el ID existente de la orden.');
+    return respond(400, { error_code: 'MISSING_ORDER_ID', error: 'Falta order_id: la función requiere el ID existente de la orden.' });
   }
 
     // Validar que los datos necesarios fueron recibidos
     if (!amount || !subject || !currency) {
-      throw new Error(
-        'Payload inválido. Faltan datos requeridos: amount, subject, o currency.'
-      );
+      return respond(400, { error_code: 'INVALID_PAYLOAD', error: 'Faltan datos requeridos: amount, subject, currency.' });
     }
-    console.log(
-      `[create-payment-khipu] Datos recibidos: amount=${amount}, subject=${subject}`
-    );
+    log('payload_received', { amount, subject });
 
     // 2. Verificar que las variables de entorno necesarias estén configuradas
-    const apiKey = Deno.env.get('KHIPU_API_KEY');
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-    const supabaseUrl = Deno.env.get('SUPABASE_URL'); // Obtener la URL base de Supabase
-
-    if (!apiKey) {
-      throw new Error(
-        'El secreto KHIPU_API_KEY no está configurado en Supabase.'
-      );
-    }
-    if (!supabaseUrl) {
-      throw new Error(
-        'La variable de entorno SUPABASE_URL no está disponible.'
-      );
-    }
-    if (!supabaseServiceKey) {
-      throw new Error('SUPABASE_SERVICE_ROLE_KEY no configurada.');
-    }
-    console.log(
-      '[create-payment-khipu] Secretos y variables de entorno encontrados.'
-    );
+  const apiKey = Deno.env.get('KHIPU_API_KEY');
+  const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+  const supabaseUrl = Deno.env.get('SUPABASE_URL');
+  if (!apiKey) return respond(500, { error_code: 'MISSING_KHIPU_API_KEY', error: 'KHIPU_API_KEY no configurado.' });
+  if (!supabaseUrl) return respond(500, { error_code: 'MISSING_SUPABASE_URL', error: 'SUPABASE_URL no configurado.' });
+  if (!supabaseServiceKey) return respond(500, { error_code: 'MISSING_SERVICE_KEY', error: 'SUPABASE_SERVICE_ROLE_KEY no configurada.' });
+  log('env_ok');
 
     // Construir la URL de notificación dinámicamente
+  const allowPending = Deno.env.get('OFFERS_ALLOW_PENDING') === '1';
     const notifyUrl = `${supabaseUrl}/functions/v1/process-khipu-webhook`;
 
-    // ================================================================
-    // 3. Autoridad de Pricing (Server) – Recalcular y sellar antes de ir a Khipu
-    // ================================================================
+  // ================================================================
+  // 3. Autoridad de Pricing (Server) – Marcar método y sellar antes de ir a Khipu
+  // ================================================================
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
-    const PRICE_TOLERANCE_CLP = 5; // diferencia permitida entre monto front y monto sellado
+
+    // 3A. Validación temprana de ofertas asociadas (deadline / estado) + vinculación order
+    const offerIds: string[] = Array.isArray(offer_ids) ? offer_ids : (offer_id ? [offer_id] : []);
+    const offerWarnings: any[] = [];
+    const enforceDeadline = Deno.env.get('OFFERS_ENFORCE_DEADLINE') === '1';
+    const validStatuses = allowPending ? ['accepted','reserved','pending'] : ['accepted','reserved'];
+    if (offerIds.length) {
+      const { data: offersRows, error: offersErr } = await supabaseAdmin
+        .from('offers')
+        .select('id,status,purchase_deadline,order_id')
+        .in('id', offerIds);
+      if (offersErr) {
+        logErr('offers_fetch_failed', { err: offersErr });
+        return respond(500, { error_code: 'OFFERS_FETCH_FAILED', error: 'No se pudieron leer ofertas' });
+      }
+      if (!offersRows || offersRows.length !== offerIds.length) {
+        return respond(404, { error_code: 'OFFER_NOT_FOUND', error: 'Oferta(s) no encontrada(s)', expected: offerIds.length, found: offersRows?.length || 0 });
+      }
+      const nowMs = Date.now();
+      for (const off of offersRows) {
+        const deadlineMs = off.purchase_deadline ? new Date(off.purchase_deadline).getTime() : null;
+        if (deadlineMs && deadlineMs < nowMs) {
+          const msg = { offer_id: off.id, issue: 'deadline_expired' };
+          if (enforceDeadline) return respond(409, { error_code: 'OFFER_DEADLINE_EXPIRED', error: 'Oferta vencida', offer_id: off.id });
+          offerWarnings.push(msg);
+        }
+        if (!validStatuses.includes(off.status)) {
+          const msg = { offer_id: off.id, issue: 'invalid_state', state: off.status };
+          if (enforceDeadline) return respond(409, { error_code: 'OFFER_INVALID_STATE', error: 'Estado inválido oferta', offer_id: off.id, state: off.status });
+          offerWarnings.push(msg);
+        }
+        if (off.order_id && off.order_id !== order_id) {
+          return respond(409, { error_code: 'OFFER_ALREADY_LINKED', error: 'Oferta ligada a otra orden', offer_id: off.id, existing_order_id: off.order_id });
+        }
+      }
+      try {
+        const { error: linkErr } = await supabaseAdmin
+          .from('offers')
+          .update({ order_id, updated_at: new Date().toISOString() })
+          .in('id', offerIds)
+          .is('order_id', null);
+        if (linkErr) {
+          offerWarnings.push({ issue: 'link_partial_failure' });
+          logErr('offer_link_partial_failure', { linkErr });
+        }
+      } catch (linkEx) {
+        offerWarnings.push({ issue: 'link_exception' });
+        logErr('offer_link_exception', { linkEx });
+      }
+    }
+  // Aumentamos tolerancia para evitar falsos 409 por diferencias de redondeo (IVA / tiers)
+  // Antes: 5 CLP. Ahora: 50 CLP. Ajustar nuevamente cuando la fórmula de cálculo frontend = backend esté 100% alineada.
+  const PRICE_TOLERANCE_CLP = 50; // diferencia permitida entre monto front y monto sellado
     let sealedOrder: any = null;
+    // Asegurar payment_method='khipu' ANTES del sellado para que calcule payment_fee
+    try {
+      const { error: methErr } = await supabaseAdmin
+        .from('orders')
+        .update({ payment_method: 'khipu', updated_at: new Date().toISOString() })
+        .eq('id', order_id);
+      if (methErr) {
+        console.warn('[create-payment-khipu] No se pudo setear payment_method antes del sellado', methErr);
+      }
+    } catch (methEx) {
+      console.warn('[create-payment-khipu] Excepción seteando payment_method', methEx);
+    }
   try {
-      const { data: sealed, error: sealErr } = await supabaseAdmin
+  const { data: sealed, error: sealErr } = await supabaseAdmin
         .rpc('finalize_order_pricing', { p_order_id: order_id });
       if (sealErr) {
         console.error('[create-payment-khipu] Error en finalize_order_pricing:', sealErr);
@@ -135,28 +191,36 @@ serve(req => withMetrics('create-payment-khipu', req, async () => {
     }
 
     // 3.2 Comparar monto sellado vs monto recibido del front
-    const sealedTotal = Math.round(Number(sealedOrder.total || 0));
+    // BUG ORIGINAL: finalize_order_pricing no incluye tax en total (total = subtotal + shipping),
+    // mientras el frontend envía monto con IVA incluido. Ajustamos para contemplar tax.
+    // Ahora confiamos en que finalize_order_pricing ya aplicó: tiers, ofertas y tax.
+    const sealedSubtotal = Math.round(Number(sealedOrder.subtotal || 0));
+    const sealedShipping = Math.round(Number(sealedOrder.shipping || 0));
+    const sealedTax = Math.round(Number(sealedOrder.tax || 0));
+    const sealedPaymentFee = Math.round(Number(sealedOrder.payment_fee || 0));
+    const sealedTotalBase = Math.round(Number(sealedOrder.total || 0));
+    const sealedGrandTotal = Math.round(Number(sealedOrder.grand_total ?? (sealedTotalBase + sealedPaymentFee)));
     const frontendAmount = Math.round(Number(amount || 0));
-    const diff = Math.abs(sealedTotal - frontendAmount);
-    if (!Number.isFinite(sealedTotal) || sealedTotal <= 0) {
-      return new Response(JSON.stringify({ error: 'SEALED_TOTAL_INVALID' }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 422 });
+    const diff = Math.abs(sealedGrandTotal - frontendAmount);
+    log('pricing_compare', { sealedSubtotal, sealedShipping, sealedTax, sealedPaymentFee, sealedTotalBase, sealedGrandTotal, frontendAmount, diff, tolerance: PRICE_TOLERANCE_CLP });
+    if (!Number.isFinite(sealedGrandTotal) || sealedGrandTotal <= 0) {
+      return respond(422, { error_code: 'SEALED_TOTAL_INVALID', error: 'Total sellado inválido' });
     }
     if (diff > PRICE_TOLERANCE_CLP) {
-      console.error('[create-payment-khipu] PRICING_MISMATCH', { sealedTotal, frontendAmount, diff });
-      return new Response(JSON.stringify({ error: 'PRICING_MISMATCH', sealed_total: sealedTotal, frontend_amount: frontendAmount, diff }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 409 });
+      return respond(409, { error_code: 'PRICING_MISMATCH', error: 'Diferencia de monto', sealed_grand_total: sealedGrandTotal, frontend_amount: frontendAmount, diff, offer_ids: offerIds, tolerance: PRICE_TOLERANCE_CLP });
     }
 
     // 4. Preparar y enviar la petición a la API de Khipu usando el monto sellado
     const khipuApiUrl = 'https://payment-api.khipu.com/v3/payments';
     const body = JSON.stringify({
       subject,
-      amount: sealedTotal, // monto sellado authoritative
+      amount: sealedGrandTotal,
       currency,
       return_url: 'https://sellsi.cl/buyer/orders',
       notify_url: notifyUrl,
     });
 
-    console.log('[create-payment-khipu] Enviando petición a Khipu con body sellado:', body);
+  log('khipu_request', { body: JSON.parse(body) });
 
     const khipuResponse = await fetch(khipuApiUrl, {
       method: 'POST',
@@ -168,7 +232,7 @@ serve(req => withMetrics('create-payment-khipu', req, async () => {
       body,
     });
 
-    console.log(`[create-payment-khipu] Respuesta de Khipu recibida con estado: ${khipuResponse.status}`);
+  log('khipu_response_status', { status: khipuResponse.status });
 
     // 5. Procesar la respuesta de Khipu
     const responseData = await khipuResponse.json();
@@ -176,10 +240,10 @@ serve(req => withMetrics('create-payment-khipu', req, async () => {
       const errorMessage = responseData.message || 'Error desconocido de Khipu.';
       throw new Error(`Error de la API de Khipu: ${errorMessage}`);
     }
-    console.log('[create-payment-khipu] Respuesta de Khipu parseada:', JSON.stringify(responseData, null, 2));
+  log('khipu_response_body', { response: responseData });
 
     // 6. Normalizar salida para frontend
-    const normalized = {
+  const normalized = {
       // bandera de éxito para clientes que lo esperan
       success: true,
       // mapeo defensivo de campos posibles
@@ -199,6 +263,12 @@ serve(req => withMetrics('create-payment-khipu', req, async () => {
       // Devolvemos también el objeto crudo para depuración si fuera necesario en el cliente
       raw: responseData,
   } as Record<string, unknown>;
+    if (offerIds.length) {
+      (normalized as any).offer_ids = offerIds;
+    }
+    if (offerWarnings.length) {
+      (normalized as any).offer_warnings = offerWarnings;
+    }
 
     // ================================================================
     // Actualizar la orden existente (NO crear nueva fila)
@@ -352,22 +422,18 @@ serve(req => withMetrics('create-payment-khipu', req, async () => {
     }
 
     if (!normalized.payment_url) {
-      // Si por alguna razón Khipu no devolvió URL, informamos explícitamente
-      console.warn('[create-payment-khipu] Respuesta sin payment_url:', responseData);
+      log('warning_no_payment_url');
     }
-
-  (normalized as any).sealed_total = sealedTotal;
-  (normalized as any).frontend_amount = frontendAmount;
-  (normalized as any).pricing_diff = diff;
-  return new Response(JSON.stringify(normalized), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      status: 200,
-    });
+    (normalized as any).sealed_grand_total = sealedGrandTotal;
+    (normalized as any).sealed_total_base = sealedTotalBase;
+    (normalized as any).sealed_payment_fee = sealedPaymentFee;
+    (normalized as any).frontend_amount = frontendAmount;
+    (normalized as any).pricing_diff = diff;
+    (normalized as any).request_id = requestId;
+    log('success', { ms: Date.now() - startedAt });
+    return respond(200, normalized);
   } catch (error) {
     console.error('[create-payment-khipu] ERROR FATAL:', (error as any).message);
-    return new Response(JSON.stringify({ error: (error as any).message }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      status: 500,
-    });
+    return new Response(JSON.stringify({ error: (error as any).message, error_code: 'UNHANDLED_EXCEPTION' }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 });
   }
 }));
