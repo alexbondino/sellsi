@@ -281,7 +281,7 @@ BEGIN
     updated_at = now()
   WHERE id = p_release_id;
 
-  SELECT u.email, u.display_name, o.id as order_code  -- Usar o.id como order_code
+  SELECT u.email, u.user_nm, o.id as order_code  -- Usar user_nm en lugar de display_name
   INTO v_supplier_email, v_supplier_name, v_order_code
   FROM users u
   CROSS JOIN orders o
@@ -384,10 +384,11 @@ SELECT
   o.id as order_code,  -- Usar o.id como order_code ya que no existe columna order_code
   o.payment_status as order_payment_status,
   s.email as supplier_email,
-  s.display_name as supplier_name,
+  s.user_nm as supplier_name,  -- Usar user_nm en lugar de display_name
   b.email as buyer_email,
-  b.display_name as buyer_name,
+  b.user_nm as buyer_name,     -- Usar user_nm en lugar de display_name
   a.email as admin_email,
+  a.full_name as admin_name,   -- Usar full_name para control_panel_users
   a.display_name as admin_name,
   EXTRACT(DAYS FROM (COALESCE(pr.released_at, now()) - pr.delivery_confirmed_at))::integer as days_since_delivery
 FROM payment_releases pr
