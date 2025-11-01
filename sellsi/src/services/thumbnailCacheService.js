@@ -5,12 +5,11 @@
  * y verificación de existencia de URLs para evitar imágenes fantasma
  */
 
-import { supabase } from './supabase';
+import { supabase } from './supabase.js';
 import {
   getOrFetchMainThumbnail,
   phase1ETAGService,
 } from './phase1ETAGThumbnailService.js';
-import { supabase } from './supabase.js';
 import { queryClient, QUERY_KEYS } from '../utils/queryClient.js';
 
 // Use a deep import due to the way vite & testing handle module resolution
