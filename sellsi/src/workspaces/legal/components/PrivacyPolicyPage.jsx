@@ -1,17 +1,27 @@
-// 📁 app/pages/legal/TermsAndConditionsPage.jsx
+// 📁 workspaces/legal/components/PrivacyPolicyPage.jsx
 import React from 'react';
-import { Box, Typography, useTheme, useMediaQuery, Container, Paper } from '@mui/material';
-import { Gavel as GavelIcon } from '@mui/icons-material';
-import { termsContent } from '../../../shared/constants/content/termsContent';
+import {
+  Box,
+  Typography,
+  useTheme,
+  useMediaQuery,
+  Container,
+  Paper,
+} from '@mui/material';
+import { Security as SecurityIcon } from '@mui/icons-material';
+import { privacyContent } from '../../../shared/constants/content/privacyContent';
 import { TextFormatter } from '../../../shared/components/formatters';
 import { SPACING_BOTTOM_MAIN } from '../../../styles/layoutSpacing';
 
-const TermsAndConditionsPage = () => {
+const PrivacyPolicyPage = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
   return (
-  <Container maxWidth="lg" sx={{ py: 4, pb: SPACING_BOTTOM_MAIN, px: { xs: 0, md: 3 } }}>
+    <Container
+      maxWidth="lg"
+      sx={{ py: 4, pb: SPACING_BOTTOM_MAIN, px: { xs: 0, md: 3 } }}
+    >
       <Paper
         elevation={3}
         sx={{
@@ -32,7 +42,7 @@ const TermsAndConditionsPage = () => {
           }}
         >
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <GavelIcon sx={{ color: '#41B6E6', fontSize: '2rem' }} />
+            <SecurityIcon sx={{ color: '#41B6E6', fontSize: '2rem' }} />
             <Typography
               variant="h4"
               sx={{
@@ -41,7 +51,7 @@ const TermsAndConditionsPage = () => {
                 fontSize: { xs: '1.5rem', md: '2rem' },
               }}
             >
-              Términos y Condiciones
+              Política de Privacidad
             </Typography>
           </Box>
         </Box>
@@ -55,11 +65,11 @@ const TermsAndConditionsPage = () => {
             minHeight: '60vh',
           }}
         >
-          <TextFormatter text={termsContent} />
+          <TextFormatter text={privacyContent} />
         </Box>
       </Paper>
     </Container>
   );
 };
 
-export default TermsAndConditionsPage;
+export default PrivacyPolicyPage;

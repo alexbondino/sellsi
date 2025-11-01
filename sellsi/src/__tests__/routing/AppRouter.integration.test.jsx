@@ -273,10 +273,10 @@ jest.mock('../../shared/components/layout/NotFound', () =>
   mockDefault('NOT_FOUND')
 );
 jest.mock('../../domains/ban/pages/BanPageView', () => mockDefault('BANNED'));
-jest.mock('../../app/pages/legal/TermsAndConditionsPage', () =>
+jest.mock('../../workspaces/legal/components/TermsAndConditionsPage', () =>
   mockDefault('TERMS')
 );
-jest.mock('../../app/pages/legal/PrivacyPolicyPage', () =>
+jest.mock('../../workspaces/legal/components/PrivacyPolicyPage', () =>
   mockDefault('PRIVACY')
 );
 jest.mock('../../domains/auth/components/AuthCallback', () =>

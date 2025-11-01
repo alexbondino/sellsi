@@ -99,10 +99,14 @@ const BannedPage = React.lazy(() =>
 
 // 📦 TERMS AND PRIVACY PAGES - LAZY LOADING
 const TermsAndConditionsPage = React.lazy(() =>
-  import('../../app/pages/legal/TermsAndConditionsPage')
+  import('../../workspaces/legal').then(module => ({
+    default: module.TermsAndConditionsPage,
+  }))
 );
 const PrivacyPolicyPage = React.lazy(() =>
-  import('../../app/pages/legal/PrivacyPolicyPage')
+  import('../../workspaces/legal').then(module => ({
+    default: module.PrivacyPolicyPage,
+  }))
 );
 
 // 📦 AUTH CALLBACK - LAZY LOADING
