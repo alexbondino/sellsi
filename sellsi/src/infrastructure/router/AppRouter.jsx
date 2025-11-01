@@ -6,7 +6,7 @@ import PrivateRoute from '../../workspaces/auth/guards/components/PrivateRoute';
 import { useAuth } from '../providers';
 
 // Landing Page (carga inmediata para primera impresión)
-import { Home } from '../../app/pages/landing';
+import { Home } from '../../workspaces/landing';
 
 // 📦 RUTAS PRINCIPALES - LAZY LOADING
 const MarketplaceBuyer = React.lazy(() =>

@@ -1,4 +1,4 @@
-// 📁 src/app/pages/landing/components/ContactSection.jsx
+// 📁 workspaces/landing/components/ContactSection.jsx
 import React, { useState, useMemo } from 'react';
 import { Box, Typography, TextField, Button, Alert } from '@mui/material';
 

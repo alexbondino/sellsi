@@ -1,6 +1,6 @@
-import React from 'react'
-import { Card, CardContent } from '@mui/material'
-import { LazyImage } from '../../../../shared/components/display';
+import React from 'react';
+import { Card, CardContent } from '@mui/material';
+import { LazyImage } from '../../../shared/components/display';
 
 /**
  * ====================================================================================
@@ -41,10 +41,10 @@ const ProviderLogo = React.memo(({ provider }) => (
       justifyContent: 'center',
       boxShadow: '0 4px 15px rgba(0,0,0,0.2)',
       '&:hover': {
-  transform: 'translateY(-2px)',
-  boxShadow: '0 6px 20px rgba(0,0,0,0.25)',
-  borderColor: '#ffffff',
-  background: 'transparent',
+        transform: 'translateY(-2px)',
+        boxShadow: '0 6px 20px rgba(0,0,0,0.25)',
+        borderColor: '#ffffff',
+        background: 'transparent',
       },
     }}
   >

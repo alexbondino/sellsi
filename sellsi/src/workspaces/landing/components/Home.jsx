@@ -2,11 +2,11 @@ import React, { useEffect } from 'react';
 import { Box } from '@mui/material'; // Importación de componentes y estilos de Material UI
 import { Banner } from '../../../shared/components/display/banners'; // Componente de banner reutilizable
 // Importación de la lógica de la página de inicio
-import useHomeLogic from './hooks/useHomeLogic.jsx'; // Lógica de la página de inicio
-import HeroSection from './components/HeroSection.jsx'; //Carrusel supererio (Somos Sellsi...)
-import AboutUsSection from './components/AboutUsSection.jsx'; //Sección ¿Quiénes somos?
-import ServicesSection from './components/ServicesSection.jsx'; //Sección Nuestros Servicios (Carrusel de servicios
-import ContactSection from './components/ContactSection.jsx';
+import useHomeLogic from '../hooks/useHomeLogic.jsx'; // Lógica de la página de inicio
+import HeroSection from '../components/HeroSection.jsx'; //Carrusel supererio (Somos Sellsi...)
+import AboutUsSection from '../components/AboutUsSection.jsx'; //Sección ¿Quiénes somos?
+import ServicesSection from '../components/ServicesSection.jsx'; //Sección Nuestros Servicios (Carrusel de servicios
+import ContactSection from '../components/ContactSection.jsx';
 /**
  * ============================================================================
  * HOME - PÁGINA PRINCIPAL/LANDING PAGE
@@ -92,7 +92,10 @@ const Home = ({ scrollTargets }) => {
       if (targetRef && targetRef.current) {
         setTimeout(() => {
           // Compute exact scroll top with offset for precise positioning
-          const topPos = targetRef.current.getBoundingClientRect().top + window.scrollY - offset;
+          const topPos =
+            targetRef.current.getBoundingClientRect().top +
+            window.scrollY -
+            offset;
           window.scrollTo({ top: Math.max(0, topPos), behavior: 'smooth' });
         }, 100); // small delay to ensure the DOM is rendered
       }

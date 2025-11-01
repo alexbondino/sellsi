@@ -1,4 +1,4 @@
-// 📁 src/app/pages/landing/components/AboutUsSection.jsx
+// 📁 workspaces/landing/components/AboutUsSection.jsx
 import React from 'react';
 import { Box, Typography } from '@mui/material';
 

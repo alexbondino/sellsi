@@ -1,4 +1,4 @@
-// 📁 src/app/pages/landing/components/HeroSection.jsx
+// 📁 workspaces/landing/components/HeroSection.jsx
 import React from 'react';
 import { Box, Typography, Button } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
@@ -17,7 +17,9 @@ export default function HeroSection({
   const handleDemo = () => {
     if (onDemoClick) return onDemoClick();
     // Navegar cliente-side a home con query para que Home haga scroll al contacto
-    const search = `?scrollTo=${encodeURIComponent('contactModal')}&t=${Date.now()}`;
+    const search = `?scrollTo=${encodeURIComponent(
+      'contactModal'
+    )}&t=${Date.now()}`;
     navigate(`/${search}`);
   };
 

@@ -3,7 +3,11 @@ import React from 'react';
 import { Handshake, Business, BarChart } from '@mui/icons-material';
 import useCarousel from './useCarousel.js';
 import useCountUp from './useCountUp.js';
-import { PROMO_SLIDES, CAROUSEL_IMAGES, SERVICES_DATA } from '../constants.jsx';
+import {
+  PROMO_SLIDES,
+  CAROUSEL_IMAGES,
+  SERVICES_DATA,
+} from '../constants/constants.jsx';
 
 /**
  * Custom hook que maneja toda la lógica de estado y efectos de la página Home
@@ -96,7 +100,7 @@ const useHomeLogic = scrollTargets => {
     quienesSomosRef,
     serviciosRef,
     estadisticasRef,
-  contactRef,
+    contactRef,
 
     // Carrusel promocional
     currentPromoSlide,

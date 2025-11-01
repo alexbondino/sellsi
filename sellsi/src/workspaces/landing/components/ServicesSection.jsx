@@ -1,4 +1,4 @@
-// 📁 src/app/pages/landing/components/ServicesSection.jsx
+// 📁 workspaces/landing/components/ServicesSection.jsx
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -8,7 +8,7 @@ import {
   Button, // para CTA azul
 } from '@mui/material';
 import ChevronRightRoundedIcon from '@mui/icons-material/ChevronRightRounded';
-import YouTubeEmbed from '../../../../shared/components/YouTubeEmbed';
+import YouTubeEmbed from '../../../shared/components/YouTubeEmbed';
 
 export default function ServicesSection({
   serviciosRef,
@@ -21,7 +21,9 @@ export default function ServicesSection({
 
   const goBecomeSupplier = () => {
     if (onBecomeSupplierClick) return onBecomeSupplierClick();
-    const search = `?scrollTo=${encodeURIComponent('contactModal')}&t=${Date.now()}`;
+    const search = `?scrollTo=${encodeURIComponent(
+      'contactModal'
+    )}&t=${Date.now()}`;
     navigate(`/${search}`);
   };
 
