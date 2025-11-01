@@ -33,7 +33,7 @@ const ProviderHome = React.lazy(() =>
   import('../../workspaces/supplier/home/components/Home')
 );
 const MyProducts = React.lazy(() =>
-  import('../../domains/supplier/pages/my-products/MyProducts')
+  import('../../workspaces/supplier/my-products/components/MyProducts')
 );
 const AddProduct = React.lazy(() =>
   import('../../domains/supplier/pages/my-products/AddProduct')
