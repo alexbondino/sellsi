@@ -8,17 +8,17 @@
  */
 
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { getOrFetchMainThumbnail } from '../../../services/phase1ETAGThumbnailService.js';
-import { FeatureFlags } from '../../../workspaces/supplier/shared-utils/featureFlags.js';
-import { useSupplierProducts } from '../../../workspaces/supplier/shared-hooks/useSupplierProducts';
-import { convertDbRegionsToForm } from '../../../utils/shippingRegionsUtils.js';
+import { getOrFetchMainThumbnail } from '../../../../services/phase1ETAGThumbnailService.js';
+import { FeatureFlags } from '../../shared-utils/featureFlags.js';
+import { useSupplierProducts } from '../../shared-hooks/useSupplierProducts';
+import { convertDbRegionsToForm } from '../../../../utils/shippingRegionsUtils.js';
 import {
   PRICE_LIMITS,
   QUANTITY_LIMITS,
   PRICING_TYPES,
   PRODUCT_TYPES_DB,
-} from '../constants/productValidationConstants';
-import { ProductValidator } from '../validators/ProductValidator';
+} from '../../../../domains/supplier/constants/productValidationConstants';
+import { ProductValidator } from '../../../../domains/supplier/validators/ProductValidator';
 
 // ============================================================================
 // CONFIGURACIÓN INICIAL ROBUSTA

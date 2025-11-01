@@ -42,10 +42,13 @@ export {
   useProductForm,
   useAddProduct,
   useEditProduct,
-} from './useProductForm';
+} from '../../../workspaces/supplier/create-product/hooks/useProductForm';
 export { default as useSupplierProductFilters } from '../../../workspaces/supplier/shared-hooks/useSupplierProductFilters';
 // useLazyProducts file exports named hooks
-export { useLazyProducts, useProductAnimations } from './useLazyProducts';
+export {
+  useLazyProducts,
+  useProductAnimations,
+} from '../../../workspaces/supplier/my-products/hooks/useLazyProducts';
 
 // ========================================
 // 🏠 DASHBOARD MANAGEMENT
@@ -59,5 +62,5 @@ export {
 // 🔄 LEGACY/COMPATIBILIDAD
 // ========================================
 // MANTENER para compatibilidad, pero marcado como deprecated
-export { default as useSupplierProductsBase } from './useSupplierProductsBase';
+export { default as useSupplierProductsBase } from '../../../workspaces/supplier/shared-hooks/useSupplierProductsBase';
 export { useSupplierProductsStoreComposite as useSupplierProductsStore } from './dashboard-management';

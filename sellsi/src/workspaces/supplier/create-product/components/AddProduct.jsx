@@ -70,10 +70,10 @@ import {
 } from '../../../../utils/shippingRegionsUtils';
 
 // Hooks y utilidades
-import { useProductForm } from '../../../../domains/supplier/hooks/useProductForm';
+import { useProductForm } from '../hooks/useProductForm';
 import { useProductValidation } from '../../../../domains/supplier/pages/my-products/hooks/useProductValidation';
 import { useProductPricingLogic } from '../../../../domains/supplier/pages/my-products/hooks/useProductPricingLogic';
-import { useThumbnailStatus } from '../../../../domains/supplier/hooks/useThumbnailStatus'; // 🔥 NUEVO: Status tracking para thumbnails
+import { useThumbnailStatus } from '../hooks/useThumbnailStatus'; // 🔥 NUEVO: Status tracking para thumbnails
 import { calculateProductEarnings } from '../../shared-utils/centralizedCalculations'; // 🔧 USANDO NOMBRE CORRECTO
 import { ProductValidator } from '../../../../domains/supplier/validators/ProductValidator';
 import { dashboardThemeCore } from '../../home/styles/dashboardThemeCore';

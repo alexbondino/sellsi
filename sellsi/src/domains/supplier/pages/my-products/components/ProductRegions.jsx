@@ -1,5 +1,13 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { Box, Typography, Button, IconButton, TextField, Tooltip, Stack } from '@mui/material';
+import {
+  Box,
+  Typography,
+  Button,
+  IconButton,
+  TextField,
+  Tooltip,
+  Stack,
+} from '@mui/material';
 import { Settings as SettingsIcon } from '@mui/icons-material';
 import InfoIcon from '@mui/icons-material/Info';
 import EditIcon from '@mui/icons-material/Edit';
@@ -8,8 +16,11 @@ import CheckIcon from '@mui/icons-material/Check';
 import DeleteIcon from '@mui/icons-material/Delete';
 import ShippingRegionsModal from '../../../../../shared/components/modals/ShippingRegionsModal';
 import { ShippingRegionsDisplay } from '../../../../../shared/components/display/ShippingRegionsDisplay';
-import { convertModalRegionsToDisplay, convertFormRegionsToDb } from '../../../../../utils/shippingRegionsUtils';
-import { useShippingRegionPresets } from '../../../hooks/useShippingRegionPresets';
+import {
+  convertModalRegionsToDisplay,
+  convertFormRegionsToDb,
+} from '../../../../../utils/shippingRegionsUtils';
+import { useShippingRegionPresets } from '../../../../../workspaces/supplier/create-product/hooks/useShippingRegionPresets';
 import ConfirmDialog from '../../../../../shared/components/modals/ConfirmDialog';
 
 /**
@@ -28,9 +39,19 @@ const ProductRegions = ({
 }) => {
   const [modalOpen, setModalOpen] = useState(false);
   // Snapshot interno para evitar parpadeos cuando props cambian durante un update
-  const [displayRegions, setDisplayRegions] = useState(formData.shippingRegions || []);
+  const [displayRegions, setDisplayRegions] = useState(
+    formData.shippingRegions || []
+  );
   // supplierId ahora llega por props (evita relecturas y facilita test)
-  const { presets, loading: presetsLoading, saving: presetsSaving, savePreset, rename, remove, getPresetByIndex } = useShippingRegionPresets(supplierId);
+  const {
+    presets,
+    loading: presetsLoading,
+    saving: presetsSaving,
+    savePreset,
+    rename,
+    remove,
+    getPresetByIndex,
+  } = useShippingRegionPresets(supplierId);
   const [activePreset, setActivePreset] = useState(null); // 1..3
   const [renamingIndex, setRenamingIndex] = useState(null);
   const [tempName, setTempName] = useState('');
@@ -40,12 +61,19 @@ const ProductRegions = ({
   // Utilidad: genera hash normalizado de regiones (ordenadas por region)
   const computeRegionsHash = (regions = []) => {
     if (!regions || regions.length === 0) return 'empty';
-    const norm = regions.map(r => {
-      const region = r.region || r.value;
-      const price = parseInt(r.price != null ? r.price : (r.shippingValue || 0), 10) || 0;
-      const days = parseInt(r.delivery_days != null ? r.delivery_days : (r.maxDeliveryDays || 0), 10) || 0;
-      return { region, price, days };
-    }).sort((a,b)=> a.region.localeCompare(b.region));
+    const norm = regions
+      .map(r => {
+        const region = r.region || r.value;
+        const price =
+          parseInt(r.price != null ? r.price : r.shippingValue || 0, 10) || 0;
+        const days =
+          parseInt(
+            r.delivery_days != null ? r.delivery_days : r.maxDeliveryDays || 0,
+            10
+          ) || 0;
+        return { region, price, days };
+      })
+      .sort((a, b) => a.region.localeCompare(b.region));
     return norm.map(x => `${x.region}:${x.price}:${x.days}`).join('|');
   };
 
@@ -64,41 +92,57 @@ const ProductRegions = ({
     setModalOpen(false);
   };
 
-  const handleSaveRegions = (regions) => {
-    console.log('[ProductRegions] handleSaveRegions - Datos recibidos del modal:', regions);
-    
+  const handleSaveRegions = regions => {
+    console.log(
+      '[ProductRegions] handleSaveRegions - Datos recibidos del modal:',
+      regions
+    );
+
     // Convertir datos del modal al formato de display y formulario
     const displayRegions = convertModalRegionsToDisplay(regions);
-    console.log('[ProductRegions] handleSaveRegions - Datos convertidos para display:', displayRegions);
-    
-  // Actualizar snapshot local y formData con las nuevas regiones
-  setDisplayRegions(displayRegions);
-  onRegionChange(displayRegions);
-    console.log('[ProductRegions] handleSaveRegions - Datos enviados a onRegionChange:', displayRegions);
-    
+    console.log(
+      '[ProductRegions] handleSaveRegions - Datos convertidos para display:',
+      displayRegions
+    );
+
+    // Actualizar snapshot local y formData con las nuevas regiones
+    setDisplayRegions(displayRegions);
+    onRegionChange(displayRegions);
+    console.log(
+      '[ProductRegions] handleSaveRegions - Datos enviados a onRegionChange:',
+      displayRegions
+    );
+
     setModalOpen(false);
   };
 
   // Preparar datos para el modal (convertir de formato display a formato BD)
   const prepareModalData = () => {
-  const modalData = convertFormRegionsToDb(displayRegions);
+    const modalData = convertFormRegionsToDb(displayRegions);
     return modalData;
   };
 
   // Detectar si snapshot difiere del preset activo
   // Dirty detection basada en hash vs baselineHash
-  const currentHash = useMemo(() => computeRegionsHash(displayRegions), [displayRegions]);
+  const currentHash = useMemo(
+    () => computeRegionsHash(displayRegions),
+    [displayRegions]
+  );
   const presetDirty = useMemo(() => {
     if (!activePreset) return false; // no hay preset activo -> no preguntamos
     return currentHash !== baselineHash;
   }, [activePreset, currentHash, baselineHash]);
 
-  const handleApplyPreset = (index) => {
+  const handleApplyPreset = index => {
     const preset = getPresetByIndex(index);
     // Si el preset existe y contiene regiones, aplicarlas.
     // Si no existe o no tiene regiones guardadas, limpiar las regiones mostradas
     // para que no se muestre nada debajo (UX requirement).
-    if (preset && Array.isArray(preset.regionsDisplay) && preset.regionsDisplay.length > 0) {
+    if (
+      preset &&
+      Array.isArray(preset.regionsDisplay) &&
+      preset.regionsDisplay.length > 0
+    ) {
       setDisplayRegions(preset.regionsDisplay);
       onRegionChange(preset.regionsDisplay);
       setActivePreset(index);
@@ -118,8 +162,8 @@ const ProductRegions = ({
   const handleSavePreset = async () => {
     let idx = activePreset;
     if (!idx) {
-      const used = presets.map(p=>p.index);
-      idx = [1,2,3].find(i => !used.includes(i)) || 1;
+      const used = presets.map(p => p.index);
+      idx = [1, 2, 3].find(i => !used.includes(i)) || 1;
       setActivePreset(idx);
     }
     const preset = getPresetByIndex(idx);
@@ -164,7 +208,7 @@ const ProductRegions = ({
 
   const MAX_NAME_LENGTH = 15;
 
-  const startRenaming = (index) => {
+  const startRenaming = index => {
     const preset = getPresetByIndex(index);
     setRenamingIndex(index);
     setTempName((preset?.name || `Config. ${index}`).slice(0, MAX_NAME_LENGTH));
@@ -194,18 +238,36 @@ const ProductRegions = ({
     >
       {!isMobile && (
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-          <Typography variant="h6" gutterBottom sx={{ fontWeight: 600, color: 'black', textAlign: 'left', display: 'inline-flex', alignItems: 'center' }}>
+          <Typography
+            variant="h6"
+            gutterBottom
+            sx={{
+              fontWeight: 600,
+              color: 'black',
+              textAlign: 'left',
+              display: 'inline-flex',
+              alignItems: 'center',
+            }}
+          >
             Despacho
-            <Tooltip title={
-              <>
-                Configura precios y tiempos de despacho por región de Chile.
-                <br/>
-                Puedes guardar hasta 3 configuraciones reutilizables (Config. 1-3), renombrarlas y aplicarlas a nuevos productos.
-                <br/>
-                Ejemplo: Metropolitana $3.000 en 2 días, Aysén $8.000 en 7 días.
-              </>
-            }>
-              <IconButton size="small" sx={{ ml: 0.5, color: 'text.secondary' }} aria-label="Información despacho">
+            <Tooltip
+              title={
+                <>
+                  Configura precios y tiempos de despacho por región de Chile.
+                  <br />
+                  Puedes guardar hasta 3 configuraciones reutilizables (Config.
+                  1-3), renombrarlas y aplicarlas a nuevos productos.
+                  <br />
+                  Ejemplo: Metropolitana $3.000 en 2 días, Aysén $8.000 en 7
+                  días.
+                </>
+              }
+            >
+              <IconButton
+                size="small"
+                sx={{ ml: 0.5, color: 'text.secondary' }}
+                aria-label="Información despacho"
+              >
                 <InfoIcon fontSize="small" />
               </IconButton>
             </Tooltip>
@@ -237,13 +299,23 @@ const ProductRegions = ({
       <Box sx={{ height: 8 }} />
 
       {/* Barra de Presets (ahora debajo del botón principal) */}
-      <Box sx={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: 1, mb: 1 }}>
-  {[1,2,3].map(idx => {
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: isMobile ? 'column' : 'row',
+          gap: 1,
+          mb: 1,
+        }}
+      >
+        {[1, 2, 3].map(idx => {
           const preset = getPresetByIndex(idx);
           const isActive = activePreset === idx;
           const isRenaming = renamingIndex === idx;
           return (
-            <Box key={idx} sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            <Box
+              key={idx}
+              sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}
+            >
               <Button
                 variant={isActive ? 'contained' : 'outlined'}
                 size="small"
@@ -251,39 +323,82 @@ const ProductRegions = ({
                 disabled={freezeDisplay || presetsLoading || presetsSaving}
                 sx={{ textTransform: 'none', fontWeight: 500, minWidth: 96 }}
               >
-                {isRenaming ? 'Renombrar' : (preset?.name || `Config. ${idx}`)}
+                {isRenaming ? 'Renombrar' : preset?.name || `Config. ${idx}`}
               </Button>
               {preset && !isRenaming && (
                 <Tooltip title="Renombrar">
-                  <IconButton size="small" onClick={() => startRenaming(idx)} disabled={freezeDisplay || presetsSaving}>
+                  <IconButton
+                    size="small"
+                    onClick={() => startRenaming(idx)}
+                    disabled={freezeDisplay || presetsSaving}
+                  >
                     <EditIcon fontSize="inherit" />
                   </IconButton>
                 </Tooltip>
               )}
               {isRenaming && (
                 <Stack direction="row" spacing={0.5} alignItems="center">
-                  <TextField size="small" value={tempName} autoFocus onChange={e=>setTempName(e.target.value.slice(0, MAX_NAME_LENGTH))} onBlur={commitRename} inputProps={{ maxLength: MAX_NAME_LENGTH }} onKeyDown={e=>{ if(e.key==='Enter'){ commitRename(); } if(e.key==='Escape'){ setRenamingIndex(null);} }} sx={{ width:140 }} />
-                  <IconButton size="small" onMouseDown={commitRename}><CheckIcon fontSize="inherit"/></IconButton>
+                  <TextField
+                    size="small"
+                    value={tempName}
+                    autoFocus
+                    onChange={e =>
+                      setTempName(e.target.value.slice(0, MAX_NAME_LENGTH))
+                    }
+                    onBlur={commitRename}
+                    inputProps={{ maxLength: MAX_NAME_LENGTH }}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter') {
+                        commitRename();
+                      }
+                      if (e.key === 'Escape') {
+                        setRenamingIndex(null);
+                      }
+                    }}
+                    sx={{ width: 140 }}
+                  />
+                  <IconButton size="small" onMouseDown={commitRename}>
+                    <CheckIcon fontSize="inherit" />
+                  </IconButton>
                 </Stack>
               )}
             </Box>
           );
         })}
-        <Tooltip title={activePreset ? (presetDirty ? 'Guardar cambios en preset' : 'Sin cambios') : 'Guardar en un preset'}>
+        <Tooltip
+          title={
+            activePreset
+              ? presetDirty
+                ? 'Guardar cambios en preset'
+                : 'Sin cambios'
+              : 'Guardar en un preset'
+          }
+        >
           <span>
             <Button
               variant="outlined"
               size="small"
               startIcon={<SaveIcon />}
-              disabled={freezeDisplay || displayRegions.length===0 || presetsSaving || (!presetDirty && !!activePreset)}
+              disabled={
+                freezeDisplay ||
+                displayRegions.length === 0 ||
+                presetsSaving ||
+                (!presetDirty && !!activePreset)
+              }
               onClick={handleSavePreset}
-              sx={{ textTransform: 'none', fontWeight:600 }}
+              sx={{ textTransform: 'none', fontWeight: 600 }}
             >
               Guardar
             </Button>
           </span>
         </Tooltip>
-        <Tooltip title={activePreset ? 'Eliminar esta configuración' : 'No hay configuración seleccionada'}>
+        <Tooltip
+          title={
+            activePreset
+              ? 'Eliminar esta configuración'
+              : 'No hay configuración seleccionada'
+          }
+        >
           <span>
             <IconButton
               size="small"
@@ -294,7 +409,9 @@ const ProductRegions = ({
                 ml: 0.5,
                 bgcolor: 'transparent',
                 p: 0.5,
-                '&:hover': { bgcolor: activePreset ? 'rgba(0,0,0,0.06)' : 'transparent' },
+                '&:hover': {
+                  bgcolor: activePreset ? 'rgba(0,0,0,0.06)' : 'transparent',
+                },
                 '&:focus': { boxShadow: 'none', outline: 'none' },
                 '&.Mui-focusVisible': { boxShadow: 'none', outline: 'none' },
               }}
@@ -311,16 +428,17 @@ const ProductRegions = ({
       </Box>
 
       {/* Mostrar errores de validación */}
-      {(triedSubmit && (errors?.shippingRegions || localErrors?.shippingRegions)) && (
-        <Typography
-          variant="caption"
-          color="error"
-          display="block"
-          sx={{ mt: 1 }}
-        >
-          {errors?.shippingRegions || localErrors?.shippingRegions}
-        </Typography>
-      )}
+      {triedSubmit &&
+        (errors?.shippingRegions || localErrors?.shippingRegions) && (
+          <Typography
+            variant="caption"
+            color="error"
+            display="block"
+            sx={{ mt: 1 }}
+          >
+            {errors?.shippingRegions || localErrors?.shippingRegions}
+          </Typography>
+        )}
 
       {/* Modal para configurar regiones */}
       <ShippingRegionsModal
@@ -333,7 +451,12 @@ const ProductRegions = ({
       <ConfirmDialog
         open={confirmDeleteOpen}
         title="Eliminar configuración"
-        description={`¿Estás seguro de eliminar la configuración "${(activePreset && (getPresetByIndex(activePreset)?.name || `Config. ${activePreset}`)) || 'actual'}" de despacho?`}
+        description={`¿Estás seguro de eliminar la configuración "${
+          (activePreset &&
+            (getPresetByIndex(activePreset)?.name ||
+              `Config. ${activePreset}`)) ||
+          'actual'
+        }" de despacho?`}
         cancelText="Cancelar"
         confirmText="Confirmar"
         onCancel={handleCancelDeletePreset}

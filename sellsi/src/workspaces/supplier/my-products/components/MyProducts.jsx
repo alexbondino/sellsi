@@ -54,7 +54,7 @@ import { useSupplierProducts } from '../../shared-hooks/useSupplierProducts';
 import {
   useLazyProducts,
   useProductAnimations,
-} from '../../../../domains/supplier/hooks/useLazyProducts';
+} from '../hooks/useLazyProducts';
 import { dashboardThemeCore } from '../../home/styles/dashboardThemeCore';
 import { SPACING_BOTTOM_MAIN } from '../../shared-styles/layoutSpacing';
 import { formatPrice } from '../../../../shared/utils/formatters';
