@@ -39,7 +39,7 @@ const AddProduct = React.lazy(() =>
   import('../../workspaces/supplier/create-product/components/AddProduct')
 );
 const MyOrdersPage = React.lazy(() =>
-  import('../../domains/supplier/pages/my-orders/MyOrdersPage')
+  import('../../workspaces/supplier/my-requests/components/MyOrdersPage')
 );
 const MarketplaceSupplier = React.lazy(() =>
   import('../../domains/supplier').then(module => ({

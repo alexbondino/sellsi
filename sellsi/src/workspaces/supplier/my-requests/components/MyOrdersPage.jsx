@@ -11,18 +11,18 @@ import {
   useMediaQuery,
 } from '@mui/material';
 import { useOrdersStore } from '../../../../shared/stores/orders/ordersStore'; // Actualizado a nueva ubicación
-import { useSupplierPartActions } from '../../../../workspaces/supplier/my-requests/hooks/useSupplierPartActions';
+import { useSupplierPartActions } from '../hooks/useSupplierPartActions';
 import TableFilter from '../../../../shared/components/display/tables/TableFilter'; // Asegúrate que esta ruta sea correcta
 import Table from '../../../../shared/components/display/tables/Table'; // Asegúrate que esta ruta sea correcta
 import { Modal, MODAL_TYPES } from '../../../../shared/components/feedback'; // Componente Modal genérico y sus tipos
 import { useBanner } from '../../../../shared/components/display/banners/BannerContext'; // Contexto para mostrar banners
-import { dashboardThemeCore } from '../../../../styles/dashboardThemeCore'; // Tema de Material-UI para el dashboard
-import { SPACING_BOTTOM_MAIN } from '../../../../styles/layoutSpacing';
-import { SupplierErrorBoundary } from '../../../../workspaces/supplier/error-boundary';
+import { dashboardThemeCore } from '../../home/styles/dashboardThemeCore'; // Tema de Material-UI para el dashboard
+import { SPACING_BOTTOM_MAIN } from '../../shared-styles/layoutSpacing';
+import { SupplierErrorBoundary } from '../../error-boundary';
 import { supabase } from '../../../../services/supabase';
 import { uploadInvoicePDF } from '../../../../services/storage/invoiceStorageService';
 import TableSkeleton from '../../../../shared/components/display/skeletons/TableSkeleton';
-import { validateTaxPdf } from './validation/pdfValidation';
+import { validateTaxPdf } from '../utils/pdfValidation';
 
 // TODO: Implementar hook de autenticación
 // import { useAuth } from '../../auth/hooks/useAuth';

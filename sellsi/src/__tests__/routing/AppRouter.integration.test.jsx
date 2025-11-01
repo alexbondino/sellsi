@@ -234,7 +234,7 @@ jest.mock(
   '../../workspaces/supplier/create-product/components/AddProduct',
   () => mockDefault('ADD_PRODUCT')
 );
-jest.mock('../../domains/supplier/pages/my-orders/MyOrdersPage', () =>
+jest.mock('../../workspaces/supplier/my-requests/components/MyOrdersPage', () =>
   mockDefault('MY_ORDERS')
 );
 jest.mock('../../domains/supplier', () => ({
@@ -338,11 +338,9 @@ describe('AppRouter integration (with mocked UnifiedAuthProvider via supabase)',
       getSession: jest
         .fn()
         .mockResolvedValue({ data: { session: { user: { id: 'user-1' } } } }),
-      onAuthStateChange: jest
-        .fn()
-        .mockReturnValue({
-          data: { subscription: { unsubscribe: jest.fn() } },
-        }),
+      onAuthStateChange: jest.fn().mockReturnValue({
+        data: { subscription: { unsubscribe: jest.fn() } },
+      }),
     };
 
     // Mock users table returning a profile with main_supplier true
@@ -351,12 +349,10 @@ describe('AppRouter integration (with mocked UnifiedAuthProvider via supabase)',
         return {
           select: () => ({
             eq: () => ({
-              single: jest
-                .fn()
-                .mockResolvedValue({
-                  data: { user_nm: 'ACME', main_supplier: true, logo_url: '' },
-                  error: null,
-                }),
+              single: jest.fn().mockResolvedValue({
+                data: { user_nm: 'ACME', main_supplier: true, logo_url: '' },
+                error: null,
+              }),
             }),
           }),
         };
@@ -405,11 +401,9 @@ describe('AppRouter integration (with mocked UnifiedAuthProvider via supabase)',
       getSession: jest
         .fn()
         .mockResolvedValue({ data: { session: { user: { id: 'user-2' } } } }),
-      onAuthStateChange: jest
-        .fn()
-        .mockReturnValue({
-          data: { subscription: { unsubscribe: jest.fn() } },
-        }),
+      onAuthStateChange: jest.fn().mockReturnValue({
+        data: { subscription: { unsubscribe: jest.fn() } },
+      }),
     };
 
     // Return buyer profile (main_supplier false)
@@ -418,12 +412,10 @@ describe('AppRouter integration (with mocked UnifiedAuthProvider via supabase)',
         return {
           select: () => ({
             eq: () => ({
-              single: jest
-                .fn()
-                .mockResolvedValue({
-                  data: { user_nm: 'Buyer', main_supplier: false },
-                  error: null,
-                }),
+              single: jest.fn().mockResolvedValue({
+                data: { user_nm: 'Buyer', main_supplier: false },
+                error: null,
+              }),
             }),
           }),
         };
@@ -487,11 +479,9 @@ describe('AppRouter integration (with mocked UnifiedAuthProvider via supabase)',
 
     supabaseClient.auth = {
       getSession: jest.fn().mockResolvedValue({ data: { session: null } }),
-      onAuthStateChange: jest
-        .fn()
-        .mockReturnValue({
-          data: { subscription: { unsubscribe: jest.fn() } },
-        }),
+      onAuthStateChange: jest.fn().mockReturnValue({
+        data: { subscription: { unsubscribe: jest.fn() } },
+      }),
     };
 
     // users table returns null (not logged in)
@@ -528,11 +518,9 @@ describe('AppRouter integration (with mocked UnifiedAuthProvider via supabase)',
       getSession: jest
         .fn()
         .mockResolvedValue({ data: { session: { user: { id: 'user-3' } } } }),
-      onAuthStateChange: jest
-        .fn()
-        .mockReturnValue({
-          data: { subscription: { unsubscribe: jest.fn() } },
-        }),
+      onAuthStateChange: jest.fn().mockReturnValue({
+        data: { subscription: { unsubscribe: jest.fn() } },
+      }),
     };
 
     // Simulate profile fetch error from supabase
@@ -569,11 +557,9 @@ describe('AppRouter integration (with mocked UnifiedAuthProvider via supabase)',
       getSession: jest
         .fn()
         .mockResolvedValue({ data: { session: { user: { id: 'user-4' } } } }),
-      onAuthStateChange: jest
-        .fn()
-        .mockReturnValue({
-          data: { subscription: { unsubscribe: jest.fn() } },
-        }),
+      onAuthStateChange: jest.fn().mockReturnValue({
+        data: { subscription: { unsubscribe: jest.fn() } },
+      }),
     };
 
     setUsersResponse(mockAuthState.userProfile, null);
@@ -630,25 +616,21 @@ describe('AppRouter integration (with mocked UnifiedAuthProvider via supabase)',
       getSession: jest
         .fn()
         .mockResolvedValue({ data: { session: { user: { id: 'user-5' } } } }),
-      onAuthStateChange: jest
-        .fn()
-        .mockReturnValue({
-          data: { subscription: { unsubscribe: jest.fn() } },
-        }),
+      onAuthStateChange: jest.fn().mockReturnValue({
+        data: { subscription: { unsubscribe: jest.fn() } },
+      }),
     };
 
     // Simulate supabase returning error for profile
-    supabaseClient.from = jest
-      .fn()
-      .mockImplementation(() => ({
-        select: () => ({
-          eq: () => ({
-            single: jest
-              .fn()
-              .mockResolvedValue({ data: null, error: { message: 'db down' } }),
-          }),
+    supabaseClient.from = jest.fn().mockImplementation(() => ({
+      select: () => ({
+        eq: () => ({
+          single: jest
+            .fn()
+            .mockResolvedValue({ data: null, error: { message: 'db down' } }),
         }),
-      }));
+      }),
+    }));
 
     render(
       <MemoryRouter initialEntries={['/buyer/cart']}>
@@ -681,11 +663,9 @@ describe('AppRouter integration (with mocked UnifiedAuthProvider via supabase)',
       getSession: jest
         .fn()
         .mockResolvedValue({ data: { session: { user: { id: 'user-6' } } } }),
-      onAuthStateChange: jest
-        .fn()
-        .mockReturnValue({
-          data: { subscription: { unsubscribe: jest.fn() } },
-        }),
+      onAuthStateChange: jest.fn().mockReturnValue({
+        data: { subscription: { unsubscribe: jest.fn() } },
+      }),
     };
 
     setUsersResponse({ user_nm: 'pendiente' }, null);
@@ -724,11 +704,9 @@ describe('AppRouter integration (with mocked UnifiedAuthProvider via supabase)',
       getSession: jest
         .fn()
         .mockResolvedValue({ data: { session: { user: { id: 'user-7' } } } }),
-      onAuthStateChange: jest
-        .fn()
-        .mockReturnValue({
-          data: { subscription: { unsubscribe: jest.fn() } },
-        }),
+      onAuthStateChange: jest.fn().mockReturnValue({
+        data: { subscription: { unsubscribe: jest.fn() } },
+      }),
     };
 
     setUsersResponse(mockAuthState.userProfile, null);

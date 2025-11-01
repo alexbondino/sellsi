@@ -39,9 +39,6 @@ import {
 } from '../../../../utils/toastHelpers';
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 
-// Components
-import { PriceTiers } from '../../../../domains/supplier/pages/my-products/components';
-
 // Error Boundaries
 import {
   SupplierErrorBoundary,
@@ -56,8 +53,11 @@ import {
   ProductRegions,
   ProductResultsPanel,
   ProductPricing,
-  MobileExpandableBottomBar,
-} from '../../../../domains/supplier/pages/my-products/components';
+  PriceTiers,
+} from './form';
+
+// Componente de barra móvil
+import MobileExpandableBottomBar from './MobileExpandableBottomBar';
 
 // Servicio para regiones de entrega
 import {
@@ -71,8 +71,8 @@ import {
 
 // Hooks y utilidades
 import { useProductForm } from '../hooks/useProductForm';
-import { useProductValidation } from '../../../../domains/supplier/pages/my-products/hooks/useProductValidation';
-import { useProductPricingLogic } from '../../../../domains/supplier/pages/my-products/hooks/useProductPricingLogic';
+import { useProductValidation } from '../hooks/useProductValidation';
+import { useProductPricingLogic } from '../hooks/useProductPricingLogic';
 import { useThumbnailStatus } from '../hooks/useThumbnailStatus'; // 🔥 NUEVO: Status tracking para thumbnails
 import { calculateProductEarnings } from '../../shared-utils/centralizedCalculations'; // 🔧 USANDO NOMBRE CORRECTO
 import { ProductValidator } from '../../../../domains/supplier/validators/ProductValidator';

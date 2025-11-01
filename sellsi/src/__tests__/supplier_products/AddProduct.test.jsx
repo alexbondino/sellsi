@@ -49,7 +49,7 @@ jest.mock('@/workspaces/supplier/create-product/hooks/useProductForm', () => ({
   })),
 }));
 
-jest.mock('@/domains/supplier/pages/my-products/components', () => ({
+jest.mock('@/workspaces/supplier/create-product/components/form', () => ({
   // Render minimal placeholders that forward onSubmit to a test button
   ProductBasicInfo: () => <div data-testid="basic-info" />,
   ProductInventory: () => <div data-testid="inventory" />,
@@ -63,18 +63,24 @@ jest.mock('@/domains/supplier/pages/my-products/components', () => ({
     </div>
   ),
   ProductPricing: () => <div data-testid="pricing" />,
-  MobileExpandableBottomBar: ({ onSubmit }) => (
-    <div>
-      <button data-testid="mobile-submit" onClick={onSubmit}>
-        Submit (mobile)
-      </button>
-    </div>
-  ),
   PriceTiers: () => <div data-testid="pricetiers" />,
 }));
 
 jest.mock(
-  '@/domains/supplier/pages/my-products/hooks/useProductValidation',
+  '@/workspaces/supplier/create-product/components/MobileExpandableBottomBar',
+  () => {
+    return ({ onSubmit }) => (
+      <div>
+        <button data-testid="mobile-submit" onClick={onSubmit}>
+          Submit (mobile)
+        </button>
+      </div>
+    );
+  }
+);
+
+jest.mock(
+  '@/workspaces/supplier/create-product/hooks/useProductValidation',
   () => ({
     useProductValidation: () => ({
       localErrors: {},
@@ -151,7 +157,7 @@ describe('AddProduct - robust flows', () => {
     const validateMock = jest.fn(() => ({ nombre: 'required' }));
     // override validation mock
     jest.doMock(
-      '@/domains/supplier/pages/my-products/hooks/useProductValidation',
+      '@/workspaces/supplier/create-product/hooks/useProductValidation',
       () => ({
         useProductValidation: () => ({
           localErrors: {},
@@ -166,9 +172,9 @@ describe('AddProduct - robust flows', () => {
     // Build a small TestHost that reproduces only the submit flow using the mocked hooks.
     const TestHost = () => {
       const { formData, submitForm } =
-        require('@/domains/supplier/hooks/useProductForm').useProductForm();
+        require('@/workspaces/supplier/create-product/hooks/useProductForm').useProductForm();
       const { validateForm, markSubmitAttempt } =
-        require('@/domains/supplier/pages/my-products/hooks/useProductValidation').useProductValidation();
+        require('@/workspaces/supplier/create-product/hooks/useProductValidation').useProductValidation();
       const marketplace = require('@/services/marketplace');
       const toastHelpers = require('@/utils/toastHelpers');
 
@@ -227,31 +233,34 @@ describe('AddProduct - robust flows', () => {
     const submitMock = jest.fn(() =>
       Promise.resolve({ success: true, data: { productid: 'p-1' } })
     );
-    jest.doMock('@/domains/supplier/hooks/useProductForm', () => ({
-      useProductForm: () => ({
-        formData: {
-          nombre: 'Ok',
-          pricingType: 'Unidad',
-          tramos: [],
-          stock: 1,
-          imagenes: [{}, {}],
-        },
-        errors: {},
-        touched: {},
-        isLoading: false,
-        isValid: true,
-        hasActualChanges: false,
-        updateField: jest.fn(),
-        handleFieldBlur: jest.fn(),
-        handlePricingTypeChange: jest.fn(),
-        submitForm: submitMock,
-        resetForm: jest.fn(),
-        markImagesTouched: jest.fn(),
-      }),
-    }));
+    jest.doMock(
+      '@/workspaces/supplier/create-product/hooks/useProductForm',
+      () => ({
+        useProductForm: () => ({
+          formData: {
+            nombre: 'Ok',
+            pricingType: 'Unidad',
+            tramos: [],
+            stock: 1,
+            imagenes: [{}, {}],
+          },
+          errors: {},
+          touched: {},
+          isLoading: false,
+          isValid: true,
+          hasActualChanges: false,
+          updateField: jest.fn(),
+          handleFieldBlur: jest.fn(),
+          handlePricingTypeChange: jest.fn(),
+          submitForm: submitMock,
+          resetForm: jest.fn(),
+          markImagesTouched: jest.fn(),
+        }),
+      })
+    );
 
     jest.doMock(
-      '@/domains/supplier/pages/my-products/hooks/useProductValidation',
+      '@/workspaces/supplier/create-product/hooks/useProductValidation',
       () => ({
         useProductValidation: () => ({
           localErrors: {},
@@ -277,9 +286,9 @@ describe('AddProduct - robust flows', () => {
     // run the submit flow directly using the newly mocked modules
     const runSubmitFlow = async () => {
       const { formData, submitForm } =
-        require('@/domains/supplier/hooks/useProductForm').useProductForm();
+        require('@/workspaces/supplier/create-product/hooks/useProductForm').useProductForm();
       const { validateForm, markSubmitAttempt } =
-        require('@/domains/supplier/pages/my-products/hooks/useProductValidation').useProductValidation();
+        require('@/workspaces/supplier/create-product/hooks/useProductValidation').useProductValidation();
       const marketplace = require('@/services/marketplace');
       const toastHelpers = require('@/utils/toastHelpers');
 
@@ -353,31 +362,34 @@ describe('AddProduct - robust flows', () => {
         )
     );
 
-    jest.doMock('@/domains/supplier/hooks/useProductForm', () => ({
-      useProductForm: () => ({
-        formData: {
-          nombre: 'Ok',
-          pricingType: 'Unidad',
-          tramos: [],
-          stock: 1,
-          imagenes: [],
-        },
-        errors: {},
-        touched: {},
-        isLoading: false,
-        isValid: true,
-        hasActualChanges: false,
-        updateField: jest.fn(),
-        handleFieldBlur: jest.fn(),
-        handlePricingTypeChange: jest.fn(),
-        submitForm: submitMock,
-        resetForm: jest.fn(),
-        markImagesTouched: jest.fn(),
-      }),
-    }));
+    jest.doMock(
+      '@/workspaces/supplier/create-product/hooks/useProductForm',
+      () => ({
+        useProductForm: () => ({
+          formData: {
+            nombre: 'Ok',
+            pricingType: 'Unidad',
+            tramos: [],
+            stock: 1,
+            imagenes: [],
+          },
+          errors: {},
+          touched: {},
+          isLoading: false,
+          isValid: true,
+          hasActualChanges: false,
+          updateField: jest.fn(),
+          handleFieldBlur: jest.fn(),
+          handlePricingTypeChange: jest.fn(),
+          submitForm: submitMock,
+          resetForm: jest.fn(),
+          markImagesTouched: jest.fn(),
+        }),
+      })
+    );
 
     jest.doMock(
-      '@/domains/supplier/pages/my-products/hooks/useProductValidation',
+      '@/workspaces/supplier/create-product/hooks/useProductValidation',
       () => ({
         useProductValidation: () => ({
           localErrors: {},
@@ -391,11 +403,11 @@ describe('AddProduct - robust flows', () => {
 
     const {
       useProductForm,
-    } = require('@/domains/supplier/hooks/useProductForm');
+    } = require('@/workspaces/supplier/create-product/hooks/useProductForm');
     const { formData } = useProductForm();
     const {
       useProductValidation,
-    } = require('@/domains/supplier/pages/my-products/hooks/useProductValidation');
+    } = require('@/workspaces/supplier/create-product/hooks/useProductValidation');
     const { validateForm, markSubmitAttempt } = useProductValidation();
 
     let isSubmitting = false;

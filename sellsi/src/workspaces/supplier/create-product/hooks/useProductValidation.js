@@ -1,11 +1,11 @@
 import { useState, useCallback } from 'react';
-import { ProductValidator } from '../../../validators/ProductValidator';
+import { ProductValidator } from '../../../../domains/supplier/validators/ProductValidator';
 
 /**
  * ============================================================================
  * USE PRODUCT VALIDATION - HOOK PROFESIONAL DE VALIDACIÓN
  * ============================================================================
- * 
+ *
  * Hook refactorizado que utiliza el validador centralizado para
  * garantizar consistencia y robustez en todas las validaciones.
  */
@@ -17,7 +17,7 @@ export const useProductValidation = () => {
    * Valida todos los campos del formulario de producto
    * Utiliza el validador centralizado para máxima consistencia
    */
-  const validateForm = useCallback((formData) => {
+  const validateForm = useCallback(formData => {
     const validationResult = ProductValidator.validateProduct(formData);
     setLocalErrors(validationResult.errors);
     return validationResult.errors;
@@ -31,19 +31,19 @@ export const useProductValidation = () => {
     const tempFormData = { ...formData, [fieldName]: value };
     const validationResult = ProductValidator.validateProduct(tempFormData);
     const error = validationResult.errors[fieldName] || null;
-    
+
     setLocalErrors(prev => ({
       ...prev,
-      [fieldName]: error
+      [fieldName]: error,
     }));
-    
+
     return error;
   }, []);
 
   /**
    * Verifica si el producto está listo para ser guardado
    */
-  const isProductValid = useCallback((formData) => {
+  const isProductValid = useCallback(formData => {
     const validationResult = ProductValidator.validateProduct(formData);
     return validationResult.isValid;
   }, []);
@@ -71,7 +71,7 @@ export const useProductValidation = () => {
     return {
       hasErrors: errorCount > 0,
       errorCount,
-      errors: localErrors
+      errors: localErrors,
     };
   }, [localErrors]);
 
@@ -80,12 +80,12 @@ export const useProductValidation = () => {
     localErrors,
     triedSubmit,
     hasErrors: Object.keys(localErrors).length > 0,
-    
+
     // Métodos de validación
     validateForm,
     validateField,
     isProductValid,
-    
+
     // Utilidades
     resetErrors,
     markSubmitAttempt,
