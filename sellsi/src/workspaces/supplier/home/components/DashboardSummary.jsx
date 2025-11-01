@@ -1,7 +1,7 @@
 import React from 'react';
 import { Box, Typography } from '@mui/material';
 import AssessmentIcon from '@mui/icons-material/Assessment';
-import SummaryCards from './SummaryCards';
+import SummaryCards from '../../../../domains/supplier/components/dashboard-summary/SummaryCards';
 // import RequestListWrapper from './RequestListWrapper';
 
 const DashboardSummary = ({

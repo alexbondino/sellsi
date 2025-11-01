@@ -30,7 +30,7 @@ const CheckoutCancel = React.lazy(() =>
 
 // 📦 SUPPLIER DASHBOARD - LAZY LOADING
 const ProviderHome = React.lazy(() =>
-  import('../../domains/supplier/pages/home/ProviderHome')
+  import('../../workspaces/supplier/home/components/Home')
 );
 const MyProducts = React.lazy(() =>
   import('../../domains/supplier/pages/my-products/MyProducts')

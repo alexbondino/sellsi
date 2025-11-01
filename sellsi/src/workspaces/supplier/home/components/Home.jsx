@@ -13,16 +13,19 @@ import {
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import AddIcon from '@mui/icons-material/Add';
-import { useSupplierDashboard } from '../../hooks/dashboard-management/useSupplierDashboard';
-import { useSupplierProducts } from '../../hooks/useSupplierProducts';
-import { dashboardThemeCore } from '../../../../styles/dashboardThemeCore';
-import { SPACING_BOTTOM_MAIN } from '../../../../styles/layoutSpacing';
+import { useSupplierDashboard } from '../hooks/useSupplierDashboard';
+import { useSupplierProducts } from '../hooks/useSupplierProducts';
+import { dashboardThemeCore } from '../styles/dashboardThemeCore';
+import { SPACING_BOTTOM_MAIN } from '../styles/layoutSpacing';
 import { supabase } from '../../../../services/supabase';
-import { SupplierErrorBoundary } from '../../components/ErrorBoundary';
-import { TransferInfoValidationModal, useTransferInfoModal } from '../../../../shared/components/validation'; // Modal de validación bancaria
+import SupplierErrorBoundary from '../error-boundary/SupplierErrorBoundary';
+import {
+  TransferInfoValidationModal,
+  useTransferInfoModal,
+} from '../../../../shared/components/validation'; // Modal de validación bancaria
 
 // Lazy import principal (se elimina gráfico para reducir peso: BarChart removido)
-const DashboardSummary = React.lazy(() => import('../../components/dashboard-summary/DashboardSummary'));
+const DashboardSummary = React.lazy(() => import('./DashboardSummary'));
 
 // Loading fallbacks optimizados
 const DashboardSummaryFallback = () => (
@@ -52,7 +55,7 @@ const ProviderHome = () => {
     handleRegisterAccount,
     handleClose,
     loading: transferModalLoading,
-    missingFieldLabels
+    missingFieldLabels,
   } = useTransferInfoModal();
 
   // Dashboard data (metrics, charts, analytics)
@@ -93,17 +96,18 @@ const ProviderHome = () => {
   // CÁLCULO CORRECTO DE ESTADÍSTICAS
   // ============================================================================
   // 1. Filtrar productos realmente activos (excluir soft-deleted)
-  const activeProducts = products.filter(p => 
-    p.is_active === true && 
-    (!p.deletion_status || p.deletion_status === 'active')
+  const activeProducts = products.filter(
+    p =>
+      p.is_active === true &&
+      (!p.deletion_status || p.deletion_status === 'active')
   );
 
   // 2. Productos activos (sin contar eliminados)
   const productsActive = activeProducts.length;
 
   // 3. Productos sin stock = activos con stock 0 (NO productos eliminados)
-  const productsOutOfStock = activeProducts.filter(p => 
-    (p.productqty === 0 || p.stock === 0)
+  const productsOutOfStock = activeProducts.filter(
+    p => p.productqty === 0 || p.stock === 0
   ).length;
 
   // ============================================================================
@@ -119,16 +123,22 @@ const ProviderHome = () => {
     const timer = setTimeout(async () => {
       if (!loading && products.length === 0 && !error) {
         try {
-          const { data: { session } } = await supabase.auth.getSession();
+          const {
+            data: { session },
+          } = await supabase.auth.getSession();
           if (session?.user?.id) {
             // Respect global last-fetched TTL to avoid racing loads
-            const productsKey = `fp_products_supplier_${session.user.id}`
-            const lastMap = (typeof window !== 'undefined') ? (window.__inFlightSupabaseLastFetched = window.__inFlightSupabaseLastFetched || new Map()) : new Map()
-            const last = lastMap.get(productsKey)
-            const shouldLoad = !last || (Date.now() - last) > 3000
+            const productsKey = `fp_products_supplier_${session.user.id}`;
+            const lastMap =
+              typeof window !== 'undefined'
+                ? (window.__inFlightSupabaseLastFetched =
+                    window.__inFlightSupabaseLastFetched || new Map())
+                : new Map();
+            const last = lastMap.get(productsKey);
+            const shouldLoad = !last || Date.now() - last > 3000;
             await Promise.all([
               refreshDashboard?.(),
-              shouldLoad ? loadProducts?.(session.user.id) : Promise.resolve()
+              shouldLoad ? loadProducts?.(session.user.id) : Promise.resolve(),
             ]);
           }
         } catch (e) {
@@ -162,7 +172,10 @@ const ProviderHome = () => {
           <Button variant="contained" onClick={() => funcionQueNoExiste()}>
             Presióname
           </Button>
-          <Container maxWidth={isMobile ? false : "xl"} disableGutters={isMobile ? true : false}>
+          <Container
+            maxWidth={isMobile ? false : 'xl'}
+            disableGutters={isMobile ? true : false}
+          >
             <Grid container spacing={3}>
               <Grid size={12}>
                 <Box sx={{ mb: 4 }}>

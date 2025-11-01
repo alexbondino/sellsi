@@ -2,7 +2,7 @@
 // Exportaciones centrales del dominio supplier
 
 // Pages
-export { default as ProviderHome } from './pages/home/ProviderHome';
+export { default as ProviderHome } from '../../workspaces/supplier/home/components/Homee';
 export { default as MyProducts } from './pages/my-products/MyProducts';
 export { default as AddProduct } from './pages/my-products/AddProduct';
 export { default as MyOrdersPage } from './pages/my-orders/MyOrdersPage';
