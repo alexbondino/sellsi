@@ -18,7 +18,7 @@ import { useSupplierProducts } from '../../shared-hooks/useSupplierProducts';
 import { dashboardThemeCore } from '../styles/dashboardThemeCore';
 import { SPACING_BOTTOM_MAIN } from '../../shared-styles/layoutSpacing';
 import { supabase } from '../../../../services/supabase';
-import SupplierErrorBoundary from '../error-boundary/SupplierErrorBoundary';
+import SupplierErrorBoundary from '../../error-boundary/SupplierErrorBoundary';
 import {
   TransferInfoValidationModal,
   useTransferInfoModal,

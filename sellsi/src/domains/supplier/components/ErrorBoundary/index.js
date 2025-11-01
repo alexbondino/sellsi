@@ -10,7 +10,7 @@
 import { useCallback, useState } from 'react';
 
 // Error Boundaries específicos del dominio Supplier
-export { default as SupplierErrorBoundary } from '../../../../workspaces/supplier/home/error-boundary/SupplierErrorBoundary';
+export { default as SupplierErrorBoundary } from '../../../../workspaces/supplier/error-boundary/SupplierErrorBoundary';
 export { default as ProductFormErrorBoundary } from './ProductFormErrorBoundary';
 export { default as ImageUploadErrorBoundary } from './ImageUploadErrorBoundary';
 
