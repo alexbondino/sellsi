@@ -17,7 +17,7 @@ import { queryClient, QUERY_KEYS } from '../utils/queryClient.js';
 // Multiple variations available:
 // A) '../shared/flags/featureFlags.js' (shared version)
 // B) '../path/to/workspaces/.../featureFlags.js' (workspace specific)
-import { FeatureFlags } from '../workspaces/supplier/home/utils/featureFlags.js';
+import { FeatureFlags } from '../workspaces/supplier/shared-utils/featureFlags.js';
 
 class ThumbnailCacheService {
   constructor() {

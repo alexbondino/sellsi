@@ -8,7 +8,7 @@
  */
 
 import { create } from 'zustand';
-import { FeatureFlags } from '../utils/featureFlags.js';
+import { FeatureFlags } from '../shared-utils/featureFlags.js';
 
 const useProductBackground = create((set, get) => ({
   // ============================================================================

@@ -13,7 +13,7 @@ import * as Phase1ETAGModule from '../services/phase1ETAGThumbnailService.js';
 const phase1ETAGService =
   Phase1ETAGModule.phase1ETAGService || Phase1ETAGModule.default;
 import { getOrFetchManyMainThumbnails } from '../services/phase1ETAGThumbnailService.js';
-import { FeatureFlags } from '../workspaces/supplier/home/utils/featureFlags.js';
+import { FeatureFlags } from '../workspaces/supplier/shared-utils/featureFlags.js';
 
 /**
  * Query individual para thumbnails de un producto - FASE 1 OPTIMIZADO con ETag

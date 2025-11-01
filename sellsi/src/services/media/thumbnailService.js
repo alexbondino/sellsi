@@ -1,7 +1,7 @@
 // thumbnailService.js - Servicio específico para gestión de thumbnails
 import { supabase } from '../supabase.js';
 import { getOrFetchMainThumbnail } from '../phase1ETAGThumbnailService.js';
-import { FeatureFlags } from '../../workspaces/supplier/home/utils/featureFlags.js';
+import { FeatureFlags } from '../../workspaces/supplier/shared-utils/featureFlags.js';
 
 // Use the public env vars to call the Edge Function from the client
 // Use process.env during tests / Node. In Vite builds import.meta.env is replaced at build time.

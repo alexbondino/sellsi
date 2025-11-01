@@ -21,18 +21,18 @@
 // ========================================
 // 🎯 FACADE PRINCIPAL
 // ========================================
-export { useSupplierProducts } from '../../../workspaces/supplier/hooks/useSupplierProducts';
+export { useSupplierProducts } from '../../../workspaces/supplier/shared-hooks/useSupplierProducts';
 
 // ========================================
 // 🔧 HOOKS ESPECIALIZADOS (Nuevos)
 // ========================================
-export { default as useSupplierProductsCRUD } from '../../../workspaces/supplier/hooks/useSupplierProductsCRUD';
+export { default as useSupplierProductsCRUD } from '../../../workspaces/supplier/shared-hooks/useSupplierProductsCRUD';
 export { default as useProductImages } from './images';
 export { default as useProductSpecifications } from './specifications';
 // Re-export shared canonical pricing hook to avoid changing many relative imports
 export { default as useProductPriceTiers } from '../../../shared/hooks/product/useProductPriceTiers';
-export { default as useProductBackground } from '../../../workspaces/supplier/hooks/useProductBackground';
-export { default as useProductCleanup } from '../../../workspaces/supplier/hooks/useProductCleanup';
+export { default as useProductBackground } from '../../../workspaces/supplier/shared-hooks/useProductBackground';
+export { default as useProductCleanup } from '../../../workspaces/supplier/shared-hooks/useProductCleanup';
 
 // ========================================
 // 📋 HOOKS MANTENIDOS (Sin cambios)
@@ -43,7 +43,7 @@ export {
   useAddProduct,
   useEditProduct,
 } from './useProductForm';
-export { default as useSupplierProductFilters } from '../../../workspaces/supplier/hooks/useSupplierProductFilters';
+export { default as useSupplierProductFilters } from '../../../workspaces/supplier/shared-hooks/useSupplierProductFilters';
 // useLazyProducts file exports named hooks
 export { useLazyProducts, useProductAnimations } from './useLazyProducts';
 

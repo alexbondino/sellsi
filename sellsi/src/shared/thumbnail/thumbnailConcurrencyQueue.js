@@ -1,5 +1,5 @@
 // thumbnailConcurrencyQueue.js - simple in-memory gate to limit concurrent thumbnail fetches
-import { FeatureFlags } from '../../workspaces/supplier/home/utils/featureFlags.js';
+import { FeatureFlags } from '../../workspaces/supplier/shared-utils/featureFlags.js';
 
 const queue = [];
 let active = 0;

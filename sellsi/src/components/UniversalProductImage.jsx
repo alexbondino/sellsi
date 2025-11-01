@@ -13,7 +13,7 @@ import React, { useState, useCallback, useEffect } from 'react';
 import {
   FeatureFlags,
   ThumbTimings,
-} from '../workspaces/supplier/home/utils/featureFlags.js';
+} from '../workspaces/supplier/shared-utils/featureFlags.js';
 import { Avatar, Box, Skeleton, CircularProgress } from '@mui/material';
 import { BrokenImage as BrokenImageIcon } from '@mui/icons-material';
 import { LazyImage } from '../shared/components/display/LazyImage';

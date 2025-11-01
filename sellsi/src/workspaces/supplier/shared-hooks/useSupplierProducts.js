@@ -27,8 +27,8 @@ import useProductCleanup from './useProductCleanup.js';
 import useSupplierProductFilters from './useSupplierProductFilters.js';
 
 /* Utils */
-import { isProductActive } from '../home/utils/productActiveStatus.js';
-import { calculateInventoryStats } from '../home/utils/centralizedCalculations.js';
+import { isProductActive } from '../shared-utils/productActiveStatus.js';
+import { calculateInventoryStats } from '../shared-utils/centralizedCalculations.js';
 
 /* Services */
 import { supabase } from '../../../services/supabase.js';

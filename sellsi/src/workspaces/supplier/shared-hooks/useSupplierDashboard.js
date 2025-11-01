@@ -20,7 +20,7 @@
 
 import { useEffect, useState, useRef } from 'react';
 import { supabase } from '../../../services/supabase';
-import { smartMetricCache } from '../home/utils/smartMetricCache';
+import { smartMetricCache } from '../shared-utils/smartMetricCache';
 
 export const useSupplierDashboard = () => {
   // Intentar precargar revenue mensual desde localStorage para evitar flicker inicial

@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { FeatureFlags } from '../../workspaces/supplier/home/utils/featureFlags.js';
+import { FeatureFlags } from '../../workspaces/supplier/shared-utils/featureFlags.js';
 import {
   queryClient as globalQueryClient,
   QUERY_KEYS,

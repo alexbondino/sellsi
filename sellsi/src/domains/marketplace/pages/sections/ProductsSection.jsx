@@ -35,7 +35,7 @@ import { isNewDate } from '../../../../shared/utils/product/isNewDate';
 import { useProgressiveProducts } from '../../../../shared/hooks/useProgressiveProducts';
 import { useGridPriority } from '../../../../shared/utils/gridPriorityCalculator';
 import { scrollManagerAntiRebote } from '../../../../shared/utils/scrollManagerAntiRebote'; // ✅ Nuevo sistema anti-rebote
-import { FeatureFlags } from '../../../../workspaces/supplier/home/utils/featureFlags.js';
+import { FeatureFlags } from '../../../../workspaces/supplier/shared-utils/featureFlags.js';
 import { ProductCardSkeletonGrid } from '../../../../shared/components/display/product-card/ProductCardSkeleton';
 import ProductsSectionView from './ProductsSection/ProductsSectionView';
 import { getOrFetchManyMainThumbnails } from '../../../../services/phase1ETAGThumbnailService.js';

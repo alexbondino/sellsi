@@ -10,7 +10,7 @@
 import { create } from 'zustand';
 import { supabase } from '../../../services/supabase';
 import { getOrFetchMainThumbnail } from '../../../services/phase1ETAGThumbnailService.js';
-import { FeatureFlags } from '../../../workspaces/supplier/home/utils/featureFlags.js';
+import { FeatureFlags } from '../../../workspaces/supplier/shared-utils/featureFlags.js';
 import { updateProductSpecifications } from '../../../services/marketplace';
 import { queryClient, QUERY_KEYS } from '../../../utils/queryClient.js';
 import { UploadService } from '../../../shared/services/upload';

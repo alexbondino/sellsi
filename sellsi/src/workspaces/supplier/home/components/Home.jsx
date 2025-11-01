@@ -13,8 +13,8 @@ import {
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import AddIcon from '@mui/icons-material/Add';
-import { useSupplierDashboard } from '../../hooks/useSupplierDashboard';
-import { useSupplierProducts } from '../../hooks/useSupplierProducts';
+import { useSupplierDashboard } from '../../shared-hooks/useSupplierDashboard';
+import { useSupplierProducts } from '../../shared-hooks/useSupplierProducts';
 import { dashboardThemeCore } from '../styles/dashboardThemeCore';
 import { SPACING_BOTTOM_MAIN } from '../styles/layoutSpacing';
 import { supabase } from '../../../../services/supabase';
