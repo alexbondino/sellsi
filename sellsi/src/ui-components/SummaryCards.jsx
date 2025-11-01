@@ -1,6 +1,6 @@
 import React from 'react';
 import { Box } from '@mui/material';
-import StatCard from '../../../../shared/components/display/statistics/StatCard';
+import StatCard from '../shared/components/display/statistics/StatCard';
 import {
   Inventory as InventoryIcon,
   AttachMoney as AttachMoneyIcon,
@@ -8,9 +8,15 @@ import {
   Assignment as AssignmentIcon,
 } from '@mui/icons-material';
 import { generateChartData } from './utils';
-import { formatNumber, formatCurrency } from '../../../../shared/utils/formatters';
+import { formatNumber, formatCurrency } from '../shared/utils/formatters';
 
-const SummaryCards = ({ products = [], totalSales = 0, outOfStock = 0, weeklyRequestsCount = 0, productsActive = 0 }) => {
+const SummaryCards = ({
+  products = [],
+  totalSales = 0,
+  outOfStock = 0,
+  weeklyRequestsCount = 0,
+  productsActive = 0,
+}) => {
   const chartData = {
     products: generateChartData(productsActive ?? products.length, 'up'),
     sales: generateChartData(totalSales / 1000, 'up'),
