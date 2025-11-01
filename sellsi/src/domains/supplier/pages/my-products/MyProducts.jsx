@@ -56,7 +56,7 @@ import {
   useProductAnimations,
 } from '../../hooks/useLazyProducts';
 import { dashboardThemeCore } from '../../../../workspaces/supplier/home/styles/dashboardThemeCore';
-import { SPACING_BOTTOM_MAIN } from '../../../../workspaces/supplier/home/styles/layoutSpacing';
+import { SPACING_BOTTOM_MAIN } from '../../../../workspaces/supplier/shared-styles/layoutSpacing';
 import { formatPrice } from '../../../../shared/utils/formatters';
 import { generateProductUrl } from '../../../../shared/utils/product/productUrl';
 

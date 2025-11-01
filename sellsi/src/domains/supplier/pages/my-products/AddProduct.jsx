@@ -77,7 +77,7 @@ import { useThumbnailStatus } from '../../hooks/useThumbnailStatus'; // 🔥 NUE
 import { calculateProductEarnings } from '../../utils/centralizedCalculations'; // 🔧 USANDO NOMBRE CORRECTO
 import { ProductValidator } from '../../validators/ProductValidator';
 import { dashboardThemeCore } from '../../../../workspaces/supplier/home/styles/dashboardThemeCore';
-import { SPACING_BOTTOM_MAIN } from '../../../../workspaces/supplier/home/styles/layoutSpacing';
+import { SPACING_BOTTOM_MAIN } from '../../../../workspaces/supplier/shared-styles/layoutSpacing';
 import { formatPrice } from '../../../../shared/utils/formatters';
 
 // 📱 Mobile Form Layout Component - Separado para evitar re-renders
