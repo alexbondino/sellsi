@@ -47,14 +47,14 @@ import {
 } from '../../../../shared/components/validation'; // Modal de validación bancaria
 
 // Error Boundaries
-import { SupplierErrorBoundary } from '../../error-boundary';
+import { SupplierErrorBoundary } from '../../components/ErrorBoundary';
 
 // Hooks y stores
-import { useSupplierProducts } from '../../shared-hooks/useSupplierProducts';
+import { useSupplierProducts } from '../../hooks/useSupplierProducts';
 import {
   useLazyProducts,
   useProductAnimations,
-} from '../hooks/useLazyProducts';
+} from '../../hooks/useLazyProducts';
 import { dashboardThemeCore } from '../../../../styles/dashboardThemeCore';
 import { SPACING_BOTTOM_MAIN } from '../../../../styles/layoutSpacing';
 import { formatPrice } from '../../../../shared/utils/formatters';
@@ -223,7 +223,7 @@ const MyProducts = () => {
     const obs = new IntersectionObserver(
       entries => {
         if (entries[0].isIntersecting) {
-          import('../../create-product/components/AddProduct').catch(() => {});
+          import('./AddProduct').catch(() => {});
           obs.disconnect();
         }
       },

@@ -15,8 +15,8 @@ import { useNavigate } from 'react-router-dom';
 import AddIcon from '@mui/icons-material/Add';
 import { useSupplierDashboard } from '../../shared-hooks/useSupplierDashboard';
 import { useSupplierProducts } from '../../shared-hooks/useSupplierProducts';
-import { dashboardThemeCore } from '../styles/dashboardThemeCore';
-import { SPACING_BOTTOM_MAIN } from '../../shared-styles/layoutSpacing';
+import { dashboardThemeCore } from '../../../../styles/dashboardThemeCore';
+import { SPACING_BOTTOM_MAIN } from '../../../../styles/layoutSpacing';
 import { supabase } from '../../../../services/supabase';
 import SupplierErrorBoundary from '../../error-boundary/SupplierErrorBoundary';
 import {

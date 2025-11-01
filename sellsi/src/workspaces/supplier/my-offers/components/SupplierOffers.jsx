@@ -2,8 +2,8 @@ import React from 'react';
 import { Box, Typography, Container, ThemeProvider } from '@mui/material';
 import LocalOfferIcon from '@mui/icons-material/LocalOffer';
 import useMediaQuery from '@mui/material/useMediaQuery';
-import { dashboardThemeCore } from '../../home/styles/dashboardThemeCore';
-import { SPACING_BOTTOM_MAIN } from '../../shared-styles/layoutSpacing';
+import { dashboardThemeCore } from '../../../../styles/dashboardThemeCore';
+import { SPACING_BOTTOM_MAIN } from '../../../../styles/layoutSpacing';
 import SupplierOffersList from './SupplierOffersList';
 import { useSupplierOffers } from '../hooks/useSupplierOffers';
 

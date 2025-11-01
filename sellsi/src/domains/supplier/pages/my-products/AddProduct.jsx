@@ -39,11 +39,14 @@ import {
 } from '../../../../utils/toastHelpers';
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 
+// Components
+import { PriceTiers } from './components';
+
 // Error Boundaries
 import {
   SupplierErrorBoundary,
   ProductFormErrorBoundary,
-} from '../../error-boundary';
+} from '../../../../workspaces/supplier/error-boundary';
 
 // Subcomponentes modularizados
 import {
@@ -53,11 +56,8 @@ import {
   ProductRegions,
   ProductResultsPanel,
   ProductPricing,
-  PriceTiers,
-} from './form';
-
-// Componente de barra móvil
-import MobileExpandableBottomBar from './MobileExpandableBottomBar';
+  MobileExpandableBottomBar,
+} from './components';
 
 // Servicio para regiones de entrega
 import {
@@ -70,12 +70,12 @@ import {
 } from '../../../../utils/shippingRegionsUtils';
 
 // Hooks y utilidades
-import { useProductForm } from '../hooks/useProductForm';
-import { useProductValidation } from '../hooks/useProductValidation';
-import { useProductPricingLogic } from '../hooks/useProductPricingLogic';
-import { useThumbnailStatus } from '../hooks/useThumbnailStatus'; // 🔥 NUEVO: Status tracking para thumbnails
-import { calculateProductEarnings } from '../../shared-utils/centralizedCalculations'; // 🔧 USANDO NOMBRE CORRECTO
-import { ProductValidator } from '../utils/ProductValidator';
+import { useProductForm } from '../../hooks/useProductForm';
+import { useProductValidation } from './hooks/useProductValidation';
+import { useProductPricingLogic } from './hooks/useProductPricingLogic';
+import { useThumbnailStatus } from '../../hooks/useThumbnailStatus'; // 🔥 NUEVO: Status tracking para thumbnails
+import { calculateProductEarnings } from '../../../../workspaces/supplier/shared-utils/centralizedCalculations'; // 🔧 USANDO NOMBRE CORRECTO
+import { ProductValidator } from '../../validators/ProductValidator';
 import { dashboardThemeCore } from '../../../../styles/dashboardThemeCore';
 import { SPACING_BOTTOM_MAIN } from '../../../../styles/layoutSpacing';
 import { formatPrice } from '../../../../shared/utils/formatters';

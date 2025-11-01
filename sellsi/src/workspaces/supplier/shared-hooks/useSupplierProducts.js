@@ -27,7 +27,7 @@ import useProductCleanup from './useProductCleanup.js';
 import useSupplierProductFilters from './useSupplierProductFilters.js';
 
 /* Utils */
-import { isProductActive } from '../shared-utils/productActiveStatus.js';
+import { isProductActive } from '../../../utils/productActiveStatus.js';
 import { calculateInventoryStats } from '../shared-utils/centralizedCalculations.js';
 
 /* Services */
