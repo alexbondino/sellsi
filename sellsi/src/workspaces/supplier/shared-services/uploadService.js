@@ -1,8 +1,8 @@
 // uploadService.js - Servicio optimizado para uploads a Supabase Storage
-import { supabase } from '../../../../services/supabase.js';
-import { StorageCleanupService } from '../../../../shared/services/storage/storageCleanupService.js';
-import { FeatureFlags, ThumbTimings } from '../../shared-utils/featureFlags.js';
-import { record as recordMetric } from '../../../../shared/thumbnail/thumbnailMetrics.js';
+import { supabase } from '../../../services/supabase.js';
+import { StorageCleanupService } from '../../../shared/services/storage/storageCleanupService.js';
+import { FeatureFlags, ThumbTimings } from '../shared-utils/featureFlags.js';
+import { record as recordMetric } from '../../../shared/thumbnail/thumbnailMetrics.js';
 const THUMBS_LOG_PREFIX = '[THUMBS]';
 function thumbsLog(event, data) {
   try {
