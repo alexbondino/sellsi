@@ -46,7 +46,7 @@ import { PriceTiers } from './components';
 import {
   SupplierErrorBoundary,
   ProductFormErrorBoundary,
-} from '../../components/ErrorBoundary';
+} from '../../../../workspaces/supplier/error-boundary';
 
 // Subcomponentes modularizados
 import {
@@ -74,7 +74,7 @@ import { useProductForm } from '../../hooks/useProductForm';
 import { useProductValidation } from './hooks/useProductValidation';
 import { useProductPricingLogic } from './hooks/useProductPricingLogic';
 import { useThumbnailStatus } from '../../hooks/useThumbnailStatus'; // 🔥 NUEVO: Status tracking para thumbnails
-import { calculateProductEarnings } from '../../utils/centralizedCalculations'; // 🔧 USANDO NOMBRE CORRECTO
+import { calculateProductEarnings } from '../../../../workspaces/supplier/shared-utils/centralizedCalculations'; // 🔧 USANDO NOMBRE CORRECTO
 import { ProductValidator } from '../../validators/ProductValidator';
 import { dashboardThemeCore } from '../../../../workspaces/supplier/home/styles/dashboardThemeCore';
 import { SPACING_BOTTOM_MAIN } from '../../../../workspaces/supplier/shared-styles/layoutSpacing';

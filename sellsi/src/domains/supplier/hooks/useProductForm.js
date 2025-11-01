@@ -10,7 +10,7 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { getOrFetchMainThumbnail } from '../../../services/phase1ETAGThumbnailService.js';
 import { FeatureFlags } from '../../../workspaces/supplier/shared-utils/featureFlags.js';
-import { useSupplierProducts } from './useSupplierProducts';
+import { useSupplierProducts } from '../../../workspaces/supplier/shared-hooks/useSupplierProducts';
 import { convertDbRegionsToForm } from '../../../utils/shippingRegionsUtils.js';
 import {
   PRICE_LIMITS,

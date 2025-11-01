@@ -18,7 +18,7 @@ import { Modal, MODAL_TYPES } from '../../../../shared/components/feedback'; // 
 import { useBanner } from '../../../../shared/components/display/banners/BannerContext'; // Contexto para mostrar banners
 import { dashboardThemeCore } from '../../../../styles/dashboardThemeCore'; // Tema de Material-UI para el dashboard
 import { SPACING_BOTTOM_MAIN } from '../../../../styles/layoutSpacing';
-import { SupplierErrorBoundary } from '../../components/ErrorBoundary';
+import { SupplierErrorBoundary } from '../../../../workspaces/supplier/error-boundary';
 import { supabase } from '../../../../services/supabase';
 import { uploadInvoicePDF } from '../../../../services/storage/invoiceStorageService';
 import TableSkeleton from '../../../../shared/components/display/skeletons/TableSkeleton';
@@ -26,10 +26,10 @@ import { validateTaxPdf } from './validation/pdfValidation';
 
 // TODO: Implementar hook de autenticación
 // import { useAuth } from '../../auth/hooks/useAuth';
-// 
+//
 // Cuando se implemente el hook de autenticación, reemplazar la línea:
 // const supplierId = localStorage.getItem('user_id');
-// 
+//
 // Por:
 // const { user } = useAuth();
 // const supplierId = user?.user_id;
@@ -54,7 +54,7 @@ const MyOrdersPage = () => {
   const { showBanner } = useBanner();
   const [modalState, setModalState] = useState({
     isOpen: false,
-  type: null, // 'accept', 'reject', 'dispatch', 'deliver', 'cancel'
+    type: null, // 'accept', 'reject', 'dispatch', 'deliver', 'cancel'
     selectedOrder: null,
   });
 
@@ -62,7 +62,10 @@ const MyOrdersPage = () => {
   const [supplierId, setSupplierId] = useState(null);
   const [authResolved, setAuthResolved] = useState(false);
   const [supplierDocTypes, setSupplierDocTypes] = useState([]); // ['boleta','factura']
-  const [taxDocFileState, setTaxDocFileState] = useState({ file: null, error: null });
+  const [taxDocFileState, setTaxDocFileState] = useState({
+    file: null,
+    error: null,
+  });
   const [taxDocTouched, setTaxDocTouched] = useState(false);
 
   // Notifications: mark supplier context notifications as read on mount once auth resolved and supplierId exists
@@ -71,24 +74,32 @@ const MyOrdersPage = () => {
     if (!authResolved || !supplierId) return undefined;
     (async () => {
       try {
-  const mod = await import('../../../../domains/notifications/components/NotificationProvider');
+        const mod = await import(
+          '../../../../domains/notifications/components/NotificationProvider'
+        );
         const notifCtx = mod.useNotificationsContext?.();
         if (mounted) {
-          try { notifCtx?.markContext?.('supplier_orders'); } catch (_) {}
+          try {
+            notifCtx?.markContext?.('supplier_orders');
+          } catch (_) {}
         }
       } catch (_) {}
     })();
-    return () => { mounted = false; };
+    return () => {
+      mounted = false;
+    };
   }, [authResolved, supplierId]);
 
   // Helpers para manejo de fechas en formato local YYYY-MM-DD (evita shifts UTC)
-  const pad = (n) => String(n).padStart(2, '0');
-  const toLocalYYYYMMDD = (value) => {
+  const pad = n => String(n).padStart(2, '0');
+  const toLocalYYYYMMDD = value => {
     if (!value) return null;
     try {
       const d = new Date(value);
       if (!Number.isNaN(d.getTime())) {
-        return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+        return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(
+          d.getDate()
+        )}`;
       }
       // Fallback: try to extract YYYY-MM-DD substring
       const m = String(value).match(/\d{4}-\d{2}-\d{2}/);
@@ -98,9 +109,11 @@ const MyOrdersPage = () => {
     }
   };
 
-  const parseYMD = (s) => {
+  const parseYMD = s => {
     if (!s) return null;
-    const parts = String(s).split('-').map(n => Number(n));
+    const parts = String(s)
+      .split('-')
+      .map(n => Number(n));
     if (parts.length !== 3 || parts.some(p => Number.isNaN(p))) return null;
     return new Date(parts[0], parts[1] - 1, parts[2]);
   };
@@ -110,7 +123,6 @@ const MyOrdersPage = () => {
     return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
   };
 
-
   // Notifications: mark supplier context notifications as read on mount once auth resolved and supplierId exists
   // (replaced dynamic require) notifications handled in useEffect above
 
@@ -118,27 +130,27 @@ const MyOrdersPage = () => {
   useEffect(() => {
     let isMounted = true;
 
-  const resolveSupplierId = async () => {
+    const resolveSupplierId = async () => {
       try {
         const {
           data: { user },
         } = await supabase.auth.getUser();
-    const authUid = user?.id || null;
-    const chosen = authUid || null; // solo sesión auth, sin validar rol
+        const authUid = user?.id || null;
+        const chosen = authUid || null; // solo sesión auth, sin validar rol
         if (!isMounted) return;
         setSupplierId(chosen);
-    setAuthResolved(true);
+        setAuthResolved(true);
       } catch (e) {
         console.error('[MyOrders] Error obteniendo usuario Supabase:', e);
-    setSupplierId(null);
-    setAuthResolved(true);
+        setSupplierId(null);
+        setAuthResolved(true);
       }
     };
 
     resolveSupplierId();
 
     // Suscribirse a cambios de sesión para mantener supplierId sincronizado
-  const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
       const nextId = session?.user?.id || null;
       setSupplierId(nextId || null);
       setAuthResolved(true);
@@ -146,7 +158,9 @@ const MyOrdersPage = () => {
 
     return () => {
       isMounted = false;
-      try { sub?.subscription?.unsubscribe?.(); } catch (_) {}
+      try {
+        sub?.subscription?.unsubscribe?.();
+      } catch (_) {}
     };
   }, []);
 
@@ -162,13 +176,17 @@ const MyOrdersPage = () => {
           .eq('user_id', supplierId)
           .maybeSingle();
         if (!error && active) {
-          const arr = Array.isArray(data?.document_types) ? data.document_types.filter(t => t !== 'ninguno') : [];
+          const arr = Array.isArray(data?.document_types)
+            ? data.document_types.filter(t => t !== 'ninguno')
+            : [];
           setSupplierDocTypes(arr);
         }
       } catch (_) {}
     };
     fetchDocTypes();
-    return () => { active = false; };
+    return () => {
+      active = false;
+    };
   }, [supplierId]);
 
   // Obtener los pedidos filtrados utilizando un selector del store
@@ -205,8 +223,8 @@ const MyOrdersPage = () => {
       type: null,
       selectedOrder: null,
     });
-  setTaxDocFileState({ file: null, error: null });
-  setTaxDocTouched(false);
+    setTaxDocFileState({ file: null, error: null });
+    setTaxDocTouched(false);
   };
 
   // Maneja el envío de datos desde los formularios del modal
@@ -229,22 +247,29 @@ const MyOrdersPage = () => {
           break;
         }
         case 'reject': {
-          await partActions.reject(selectedOrder, formData.rejectionReason || '');
+          await partActions.reject(
+            selectedOrder,
+            formData.rejectionReason || ''
+          );
           messageToUser = '❌ El pedido fue rechazado.';
           break;
         }
         case 'dispatch': {
           // Permitir fecha ingresada o autocalcular (+3 días) si no se ingresó
           let deliveryDate = formData.deliveryDate;
-          const maxDeadlineRaw = modalState.selectedOrder?.estimated_delivery_date || null;
-          const maxDeadline = maxDeadlineRaw ? toLocalYYYYMMDD(maxDeadlineRaw) : null;
+          const maxDeadlineRaw =
+            modalState.selectedOrder?.estimated_delivery_date || null;
+          const maxDeadline = maxDeadlineRaw
+            ? toLocalYYYYMMDD(maxDeadlineRaw)
+            : null;
           const todayISO = todayLocalISO();
           if (!deliveryDate) {
             const auto = new Date();
             auto.setDate(auto.getDate() + 3);
-            deliveryDate = auto.toISOString().slice(0,10); // YYYY-MM-DD para input date
+            deliveryDate = auto.toISOString().slice(0, 10); // YYYY-MM-DD para input date
             showBanner({
-              message: 'No ingresaste fecha, se asignó automáticamente (+3 días).',
+              message:
+                'No ingresaste fecha, se asignó automáticamente (+3 días).',
               severity: 'info',
               duration: 4000,
             });
@@ -261,7 +286,9 @@ const MyOrdersPage = () => {
           if (maxDeadline) {
             const parsedMax = parseYMD(maxDeadline);
             if (parsedMax && parsedDelivery > parsedMax) {
-              throw new Error('La fecha estimada no puede superar la Fecha Entrega Límite.');
+              throw new Error(
+                'La fecha estimada no puede superar la Fecha Entrega Límite.'
+              );
             }
           }
 
@@ -277,17 +304,31 @@ const MyOrdersPage = () => {
               else if (Array.isArray(maybe)) file = maybe[0];
               else if (maybe && maybe.files) file = maybe.files[0];
               if (file) {
-                const up = await uploadInvoicePDF({ file, supplierId, orderId: selectedOrder.order_id, userId: supplierId });
+                const up = await uploadInvoicePDF({
+                  file,
+                  supplierId,
+                  orderId: selectedOrder.order_id,
+                  userId: supplierId,
+                });
                 taxDocPath = up.path;
               }
             } catch (errUp) {
-              console.error('[MyOrders] Error subiendo documento tributario:', errUp);
-              showBanner({ message: `⚠️ Documento tributario no subido: ${errUp.message}`, severity: 'warning', duration: 6000 });
+              console.error(
+                '[MyOrders] Error subiendo documento tributario:',
+                errUp
+              );
+              showBanner({
+                message: `⚠️ Documento tributario no subido: ${errUp.message}`,
+                severity: 'warning',
+                duration: 6000,
+              });
             }
           }
 
           await partActions.dispatch(selectedOrder, deliveryDate);
-          messageToUser = '🚚 El pedido fue despachado y está en tránsito.' + (taxDocPath ? ' (Documento subido)' : '');
+          messageToUser =
+            '🚚 El pedido fue despachado y está en tránsito.' +
+            (taxDocPath ? ' (Documento subido)' : '');
           break;
         }
         case 'deliver': {
@@ -300,7 +341,7 @@ const MyOrdersPage = () => {
           messageToUser = '⚠️ El pedido fue cancelado.';
           break;
         }
-  // 'chat' action removed: contact modal now opened from the table row
+        // 'chat' action removed: contact modal now opened from the table row
         default:
           break;
       }
@@ -331,26 +372,40 @@ const MyOrdersPage = () => {
   const getModalConfig = () => {
     const { type } = modalState;
 
-  // Prefer the buyer's requested document types (from the selected order items) if present;
-  // otherwise fall back to the supplier's offered document types.
-  const buyerRequestedTypes = (() => {
-    const items = modalState.selectedOrder?.items || [];
-    if (!Array.isArray(items)) return [];
-    return items
-      .map(i => (i.document_type || i.documentType || '').toString().toLowerCase())
-      .filter(Boolean)
-      .filter(t => ['boleta', 'factura'].includes(t));
-  })();
+    // Prefer the buyer's requested document types (from the selected order items) if present;
+    // otherwise fall back to the supplier's offered document types.
+    const buyerRequestedTypes = (() => {
+      const items = modalState.selectedOrder?.items || [];
+      if (!Array.isArray(items)) return [];
+      return items
+        .map(i =>
+          (i.document_type || i.documentType || '').toString().toLowerCase()
+        )
+        .filter(Boolean)
+        .filter(t => ['boleta', 'factura'].includes(t));
+    })();
 
-  const buyerSet = Array.from(new Set(buyerRequestedTypes));
-  let docLabelSuffix = '';
-  if (buyerSet.length > 0) {
-    docLabelSuffix = buyerSet.length === 2 ? '(Boleta/Factura)' : (buyerSet[0] === 'boleta' ? '(Boleta)' : '(Factura)');
-  } else {
-    docLabelSuffix = supplierDocTypes.length === 0 ? '' : supplierDocTypes.length === 2 ? '(Boleta/Factura)' : supplierDocTypes[0] === 'boleta' ? '(Boleta)' : '(Factura)';
-  }
+    const buyerSet = Array.from(new Set(buyerRequestedTypes));
+    let docLabelSuffix = '';
+    if (buyerSet.length > 0) {
+      docLabelSuffix =
+        buyerSet.length === 2
+          ? '(Boleta/Factura)'
+          : buyerSet[0] === 'boleta'
+          ? '(Boleta)'
+          : '(Factura)';
+    } else {
+      docLabelSuffix =
+        supplierDocTypes.length === 0
+          ? ''
+          : supplierDocTypes.length === 2
+          ? '(Boleta/Factura)'
+          : supplierDocTypes[0] === 'boleta'
+          ? '(Boleta)'
+          : '(Factura)';
+    }
 
-  const showTaxUpload = supplierDocTypes.length > 0 || buyerSet.length > 0;
+    const showTaxUpload = supplierDocTypes.length > 0 || buyerSet.length > 0;
 
     const configs = {
       accept: {
@@ -394,7 +449,7 @@ const MyOrdersPage = () => {
           </Box>
         ),
       },
-  dispatch: {
+      dispatch: {
         title: (
           <Typography variant="h6" align="center" fontWeight={700}>
             Despachar Pedido
@@ -409,7 +464,12 @@ const MyOrdersPage = () => {
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             {(() => {
               const pickerMin = todayLocalISO();
-              const pickerMax = modalState.selectedOrder?.estimated_delivery_date ? toLocalYYYYMMDD(modalState.selectedOrder.estimated_delivery_date) : undefined;
+              const pickerMax = modalState.selectedOrder
+                ?.estimated_delivery_date
+                ? toLocalYYYYMMDD(
+                    modalState.selectedOrder.estimated_delivery_date
+                  )
+                : undefined;
               return (
                 <TextField
                   name="deliveryDate"
@@ -420,7 +480,7 @@ const MyOrdersPage = () => {
                   inputProps={{
                     min: pickerMin,
                     max: pickerMax,
-                    onChange: (e) => {
+                    onChange: e => {
                       try {
                         const val = e.target.value;
                         if (!val || !pickerMax) return;
@@ -428,12 +488,23 @@ const MyOrdersPage = () => {
                         const pm = parseYMD(pickerMax);
                         if (pd && pm && pd > pm) {
                           e.target.value = pickerMax;
-                          try { showBanner({ message: 'La fecha no puede superar la Fecha Entrega Límite. Se ajustó al máximo permitido.', severity: 'warning', duration: 3000 }); } catch(_) {}
+                          try {
+                            showBanner({
+                              message:
+                                'La fecha no puede superar la Fecha Entrega Límite. Se ajustó al máximo permitido.',
+                              severity: 'warning',
+                              duration: 3000,
+                            });
+                          } catch (_) {}
                         }
                       } catch (_) {}
-                    }
+                    },
                   }}
-                  helperText={pickerMax ? `Hasta ${pickerMax}` : 'Selecciona una fecha futura'}
+                  helperText={
+                    pickerMax
+                      ? `Hasta ${pickerMax}`
+                      : 'Selecciona una fecha futura'
+                  }
                 />
               );
             })()}
@@ -453,12 +524,15 @@ const MyOrdersPage = () => {
                     ? taxDocFileState.file.name
                     : 'Formato: PDF. Máx 500KB.'
                 }
-                error={Boolean(taxDocFileState.error) || (taxDocTouched && !taxDocFileState.file)}
+                error={
+                  Boolean(taxDocFileState.error) ||
+                  (taxDocTouched && !taxDocFileState.file)
+                }
                 onChange={e => {
                   setTaxDocTouched(true);
                   const file = e.target.files?.[0];
                   const validation = validateTaxPdf(file);
-                  if(!validation.ok){
+                  if (!validation.ok) {
                     setTaxDocFileState({ file: null, error: validation.error });
                     return;
                   }
@@ -518,7 +592,7 @@ const MyOrdersPage = () => {
           </Box>
         ),
       },
-  // chat modal removed - use ContactModal from table rows for help/contact
+      // chat modal removed - use ContactModal from table rows for help/contact
     };
 
     return configs[type] || {};
@@ -542,7 +616,12 @@ const MyOrdersPage = () => {
         >
           <Container maxWidth={false} disableGutters>
             <Box sx={{ mb: 4, display: 'flex', alignItems: 'center' }}>
-              <Typography variant="h4" fontWeight={600} color="primary.main" gutterBottom>
+              <Typography
+                variant="h4"
+                fontWeight={600}
+                color="primary.main"
+                gutterBottom
+              >
                 Mis Pedidos
               </Typography>
             </Box>
@@ -582,10 +661,11 @@ const MyOrdersPage = () => {
 
   // Obtiene la configuración del modal basada en el estado actual
   const modalConfig = getModalConfig();
-  const submitDisabled = (
+  const submitDisabled =
     (modalState.type === 'accept' && false) || // accept no longer requires tax upload
-    (modalState.type === 'dispatch' && supplierDocTypes.length > 0 && (!taxDocFileState.file || !!taxDocFileState.error))
-  );
+    (modalState.type === 'dispatch' &&
+      supplierDocTypes.length > 0 &&
+      (!taxDocFileState.file || !!taxDocFileState.error));
 
   // --- Renderizado Principal de la Página ---
   return (
@@ -604,7 +684,9 @@ const MyOrdersPage = () => {
         <Container maxWidth={false} disableGutters>
           {/* Título de la página */}
           <Box sx={{ display: 'flex', alignItems: 'center', mb: 4 }}>
-            <AssignmentIcon sx={{ color: 'primary.main', fontSize: 36, mr: 1 }} />
+            <AssignmentIcon
+              sx={{ color: 'primary.main', fontSize: 36, mr: 1 }}
+            />
             <Typography
               variant="h4"
               fontWeight={600}
