@@ -36,7 +36,7 @@ const MyProducts = React.lazy(() =>
   import('../../workspaces/supplier/my-products/components/MyProducts')
 );
 const AddProduct = React.lazy(() =>
-  import('../../domains/supplier/pages/my-products/AddProduct')
+  import('../../workspaces/supplier/create-product/components/AddProduct')
 );
 const MyOrdersPage = React.lazy(() =>
   import('../../domains/supplier/pages/my-orders/MyOrdersPage')

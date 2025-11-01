@@ -40,13 +40,13 @@ import {
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 
 // Components
-import { PriceTiers } from './components';
+import { PriceTiers } from '../../../../domains/supplier/pages/my-products/components';
 
 // Error Boundaries
 import {
   SupplierErrorBoundary,
   ProductFormErrorBoundary,
-} from '../../../../workspaces/supplier/error-boundary';
+} from '../../error-boundary';
 
 // Subcomponentes modularizados
 import {
@@ -57,7 +57,7 @@ import {
   ProductResultsPanel,
   ProductPricing,
   MobileExpandableBottomBar,
-} from './components';
+} from '../../../../domains/supplier/pages/my-products/components';
 
 // Servicio para regiones de entrega
 import {
@@ -70,14 +70,14 @@ import {
 } from '../../../../utils/shippingRegionsUtils';
 
 // Hooks y utilidades
-import { useProductForm } from '../../hooks/useProductForm';
-import { useProductValidation } from './hooks/useProductValidation';
-import { useProductPricingLogic } from './hooks/useProductPricingLogic';
-import { useThumbnailStatus } from '../../hooks/useThumbnailStatus'; // 🔥 NUEVO: Status tracking para thumbnails
-import { calculateProductEarnings } from '../../../../workspaces/supplier/shared-utils/centralizedCalculations'; // 🔧 USANDO NOMBRE CORRECTO
-import { ProductValidator } from '../../validators/ProductValidator';
-import { dashboardThemeCore } from '../../../../workspaces/supplier/home/styles/dashboardThemeCore';
-import { SPACING_BOTTOM_MAIN } from '../../../../workspaces/supplier/shared-styles/layoutSpacing';
+import { useProductForm } from '../../../../domains/supplier/hooks/useProductForm';
+import { useProductValidation } from '../../../../domains/supplier/pages/my-products/hooks/useProductValidation';
+import { useProductPricingLogic } from '../../../../domains/supplier/pages/my-products/hooks/useProductPricingLogic';
+import { useThumbnailStatus } from '../../../../domains/supplier/hooks/useThumbnailStatus'; // 🔥 NUEVO: Status tracking para thumbnails
+import { calculateProductEarnings } from '../../shared-utils/centralizedCalculations'; // 🔧 USANDO NOMBRE CORRECTO
+import { ProductValidator } from '../../../../domains/supplier/validators/ProductValidator';
+import { dashboardThemeCore } from '../../home/styles/dashboardThemeCore';
+import { SPACING_BOTTOM_MAIN } from '../../shared-styles/layoutSpacing';
 import { formatPrice } from '../../../../shared/utils/formatters';
 
 // 📱 Mobile Form Layout Component - Separado para evitar re-renders

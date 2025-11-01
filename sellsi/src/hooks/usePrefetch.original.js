@@ -48,7 +48,7 @@ const ROUTE_COMPONENTS = new Map([
   ],
   [
     '/supplier/addproduct',
-    () => import('../domains/supplier/pages/my-products/AddProduct'),
+    () => import('../workspaces/supplier/create-product/components/AddProduct'),
   ],
 ]);
 

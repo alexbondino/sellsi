@@ -223,9 +223,7 @@ const MyProducts = () => {
     const obs = new IntersectionObserver(
       entries => {
         if (entries[0].isIntersecting) {
-          import(
-            '../../../../domains/supplier/pages/my-products/AddProduct'
-          ).catch(() => {});
+          import('../../create-product/components/AddProduct').catch(() => {});
           obs.disconnect();
         }
       },
