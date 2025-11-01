@@ -11,8 +11,8 @@ import { useCallback, useState } from 'react';
 
 // Error Boundaries específicos del dominio Supplier
 export { default as SupplierErrorBoundary } from '../../../../workspaces/supplier/error-boundary/SupplierErrorBoundary';
-export { default as ProductFormErrorBoundary } from './ProductFormErrorBoundary';
-export { default as ImageUploadErrorBoundary } from './ImageUploadErrorBoundary';
+export { default as ProductFormErrorBoundary } from '../../../../workspaces/supplier/error-boundary/ProductFormErrorBoundary';
+export { default as ImageUploadErrorBoundary } from '../../../../workspaces/supplier/error-boundary/ImageUploadErrorBoundary';
 
 /**
  * Hook de utilidad para manejo de errores en el dominio Supplier
