@@ -2,16 +2,24 @@ import React from 'react';
 import { Box, Typography, Container, ThemeProvider } from '@mui/material';
 import LocalOfferIcon from '@mui/icons-material/LocalOffer';
 import useMediaQuery from '@mui/material/useMediaQuery';
-import { dashboardThemeCore } from '../../../../styles/dashboardThemeCore';
-import { SPACING_BOTTOM_MAIN } from '../../../../styles/layoutSpacing';
-import SupplierOffersList from './components/SupplierOffersList';
-import { useSupplierOffers } from './hooks/useSupplierOffers';
+import { dashboardThemeCore } from '../../home/styles/dashboardThemeCore';
+import { SPACING_BOTTOM_MAIN } from '../../shared-styles/layoutSpacing';
+import SupplierOffersList from './SupplierOffersList';
+import { useSupplierOffers } from '../hooks/useSupplierOffers';
 
 // Vista: /supplier/offers
 // Muy similar a BuyerOffers pero adaptada al proveedor y columnas solicitadas.
 const SupplierOffers = () => {
   const isMobile = useMediaQuery(dashboardThemeCore.breakpoints.down('md'));
-  const { offers, setOffers, acceptOffer, rejectOffer, deleteOffer, loading, initializing } = useSupplierOffers();
+  const {
+    offers,
+    setOffers,
+    acceptOffer,
+    rejectOffer,
+    deleteOffer,
+    loading,
+    initializing,
+  } = useSupplierOffers();
 
   return (
     <ThemeProvider theme={dashboardThemeCore}>
@@ -25,16 +33,26 @@ const SupplierOffers = () => {
           pb: SPACING_BOTTOM_MAIN,
         }}
       >
-        <Container maxWidth={isMobile ? false : 'xl'} disableGutters={isMobile ? true : false}>
+        <Container
+          maxWidth={isMobile ? false : 'xl'}
+          disableGutters={isMobile ? true : false}
+        >
           <Box sx={{ display: 'flex', alignItems: 'center', mb: 4 }}>
-            <LocalOfferIcon sx={{ color: 'primary.main', mr: 1, fontSize: '1.75rem' }} />
-            <Typography variant="h4" fontWeight={600} color="primary.main" gutterBottom>
+            <LocalOfferIcon
+              sx={{ color: 'primary.main', mr: 1, fontSize: '1.75rem' }}
+            />
+            <Typography
+              variant="h4"
+              fontWeight={600}
+              color="primary.main"
+              gutterBottom
+            >
               Ofertas Recibidas
             </Typography>
           </Box>
 
-          <SupplierOffersList 
-            offers={offers} 
+          <SupplierOffersList
+            offers={offers}
             setOffers={setOffers}
             acceptOffer={acceptOffer}
             rejectOffer={rejectOffer}

@@ -47,7 +47,7 @@ const MarketplaceSupplier = React.lazy(() =>
   }))
 );
 const SupplierOffers = React.lazy(() =>
-  import('../../domains/supplier/pages/offers/SupplierOffers')
+  import('../../workspaces/supplier/my-offers/components/SupplierOffers')
 );
 
 // 📦 PROFILE PAGES - LAZY LOADING

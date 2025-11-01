@@ -241,7 +241,7 @@ jest.mock('../../domains/supplier', () => ({
   __esModule: true,
   MarketplaceSupplier: mockDefault('MARKETPLACE_SUPPLIER'),
 }));
-jest.mock('../../domains/supplier/pages/offers/SupplierOffers', () =>
+jest.mock('../../workspaces/supplier/my-offers/components/SupplierOffers', () =>
   mockDefault('SUPPLIER_OFFERS')
 );
 jest.mock('../../domains/profile/pages/Profile', () => mockDefault('PROFILE'));

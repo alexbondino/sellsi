@@ -1,15 +1,25 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
+import {
+  render,
+  screen,
+  fireEvent,
+  waitFor,
+  act,
+} from '@testing-library/react';
 import { ThemeProvider } from '@mui/material/styles';
 import { BrowserRouter } from 'react-router-dom';
 import OfferModal from '../../domains/ProductPageView/components/OfferModal';
 import BuyerOffers from '../../domains/buyer/pages/offers/BuyerOffers';
 import OffersList from '../../domains/buyer/pages/offers/components/OffersList';
-import SupplierOffers from '../../domains/supplier/pages/offers/SupplierOffers';
-import SupplierOffersList from '../../domains/supplier/pages/offers/components/SupplierOffersList';
+import SupplierOffers from '../../workspaces/supplier/my-offers/components/SupplierOffers';
+import SupplierOffersList from '../../workspaces/supplier/my-offers/components/SupplierOffersList';
 import { dashboardThemeCore } from '../../styles/dashboardThemeCore';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { mockSupabase, mockOfferData, mockLocalStorage } from '../mocks/supabaseMock';
+import {
+  mockSupabase,
+  mockOfferData,
+  mockLocalStorage,
+} from '../mocks/supabaseMock';
 import { useOfferStore } from '../../stores/offerStore';
 
 // Guardar implementación original del mock (switch) antes de que algún test la reemplace
@@ -19,17 +29,27 @@ const originalRpcImpl = mockSupabase.rpc.getMockImplementation();
 function queueRpc(sequence) {
   // sequence: array de { fn, data, error } (fn kept for documentation only)
   sequence.forEach(step => {
-    mockSupabase.rpc.mockResolvedValueOnce({ data: step.data, error: step.error || null });
+    mockSupabase.rpc.mockResolvedValueOnce({
+      data: step.data,
+      error: step.error || null,
+    });
   });
 }
 
 afterEach(() => {
   // Si quedaron llamadas definidas sin consumir, loggear para debug
-  const pending = mockSupabase.rpc.mock.results.filter(r => r.type === 'return').length;
+  const pending = mockSupabase.rpc.mock.results.filter(
+    r => r.type === 'return'
+  ).length;
   // (No arrojamos error; sólo sirve de diagnóstico en consola al correr en modo verbose)
   if (typeof console !== 'undefined') {
     const totalQueued = mockSupabase.rpc.mock.calls.length;
-    console.log('[offerFlowIntegration] llamadas RPC realizadas:', totalQueued, 'result entries:', pending);
+    console.log(
+      '[offerFlowIntegration] llamadas RPC realizadas:',
+      totalQueued,
+      'result entries:',
+      pending
+    );
   }
 });
 
@@ -42,19 +62,19 @@ jest.mock('../../services/supabase', () => {
 jest.mock('../../domains/notifications/services/notificationService', () => ({
   notifyOfferReceived: jest.fn(),
   notifyOfferResponse: jest.fn(),
-  notifyOfferExpired: jest.fn()
+  notifyOfferExpired: jest.fn(),
 }));
 
 // Mock del sistema de banners
 const mockShowBanner = jest.fn();
 jest.mock('../../shared/components/display/banners/BannerContext', () => ({
-  useBanner: () => ({ showBanner: mockShowBanner })
+  useBanner: () => ({ showBanner: mockShowBanner }),
 }));
 
 // Mock de media query
 jest.mock('@mui/material/useMediaQuery', () => ({
   __esModule: true,
-  default: () => false
+  default: () => false,
 }));
 
 // Wrapper para providers
@@ -63,9 +83,7 @@ const TestWrapper = ({ children }) => {
   return (
     <BrowserRouter>
       <QueryClientProvider client={client}>
-        <ThemeProvider theme={dashboardThemeCore}>
-          {children}
-        </ThemeProvider>
+        <ThemeProvider theme={dashboardThemeCore}>{children}</ThemeProvider>
       </QueryClientProvider>
     </BrowserRouter>
   );
@@ -84,7 +102,7 @@ describe('Offer System Integration Tests', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     // Configurar respuestas específicas por clave
-    mockLocalStorage.getItem.mockImplementation((key) => {
+    mockLocalStorage.getItem.mockImplementation(key => {
       if (key === 'user') return JSON.stringify(mockOfferData.validUser);
       if (key === 'user_id') return mockOfferData.validUser.id;
       if (key === 'user_nm') return mockOfferData.validUser.name;
@@ -99,12 +117,17 @@ describe('Offer System Integration Tests', () => {
     try {
       const { supabase } = require('../../services/supabase');
       supabase.rpc = mockSupabase.rpc;
-    } catch(_) {}
+    } catch (_) {}
     // Reset offer store state to prevent leakage between tests
     try {
       const { useOfferStore } = require('../../stores/offerStore');
-      useOfferStore.setState({ buyerOffers: [], supplierOffers: [], error: null, loading: false });
-    } catch(_) {}
+      useOfferStore.setState({
+        buyerOffers: [],
+        supplierOffers: [],
+        error: null,
+        loading: false,
+      });
+    } catch (_) {}
   });
 
   describe('Flujo completo: Crear oferta → Notificación → Aceptar/Rechazar', () => {
@@ -114,24 +137,57 @@ describe('Offer System Integration Tests', () => {
         id: 'offer_accept_1',
         status: 'pending',
         product: { name: 'Test Product', thumbnail: null },
-        buyer: { name: 'Test Buyer' }
+        buyer: { name: 'Test Buyer' },
       };
       // Queue solo la llamada de accept_offer (resto se simula localmente)
-      mockSupabase.rpc.mockResolvedValueOnce({ data: { success: true, purchase_deadline: new Date(Date.now()+24*3600*1000).toISOString() }, error: null }); // accept_offer
+      mockSupabase.rpc.mockResolvedValueOnce({
+        data: {
+          success: true,
+          purchase_deadline: new Date(
+            Date.now() + 24 * 3600 * 1000
+          ).toISOString(),
+        },
+        error: null,
+      }); // accept_offer
       const Harness = () => {
         const { acceptOffer } = useOfferStore();
         const [offers, setOffers] = React.useState([pendingOffer]);
-        return <SupplierOffersList offers={offers} setOffers={setOffers} acceptOffer={acceptOffer} />;
+        return (
+          <SupplierOffersList
+            offers={offers}
+            setOffers={setOffers}
+            acceptOffer={acceptOffer}
+          />
+        );
       };
-      render(<TestWrapper><Harness /></TestWrapper>);
-      const acceptBtn = await screen.findByLabelText('Aceptar Oferta', {}, { timeout: 3000 });
-      await act(async () => { fireEvent.click(acceptBtn); });
-      await waitFor(() => { expect(screen.getByRole('dialog')).toBeInTheDocument(); });
-      const confirm = screen.getByRole('button', { name: /confirmar/i });
-      await act(async () => { fireEvent.click(confirm); });
+      render(
+        <TestWrapper>
+          <Harness />
+        </TestWrapper>
+      );
+      const acceptBtn = await screen.findByLabelText(
+        'Aceptar Oferta',
+        {},
+        { timeout: 3000 }
+      );
+      await act(async () => {
+        fireEvent.click(acceptBtn);
+      });
       await waitFor(() => {
-        expect(mockSupabase.rpc).toHaveBeenCalledWith('accept_offer', { p_offer_id: pendingOffer.id });
-      }, { timeout: 3000 });
+        expect(screen.getByRole('dialog')).toBeInTheDocument();
+      });
+      const confirm = screen.getByRole('button', { name: /confirmar/i });
+      await act(async () => {
+        fireEvent.click(confirm);
+      });
+      await waitFor(
+        () => {
+          expect(mockSupabase.rpc).toHaveBeenCalledWith('accept_offer', {
+            p_offer_id: pendingOffer.id,
+          });
+        },
+        { timeout: 3000 }
+      );
     });
 
     it('debería manejar flujo de rechazo de oferta', async () => {
@@ -142,7 +198,7 @@ describe('Offer System Integration Tests', () => {
         ...mockOfferData.validOffer,
         status: 'pending',
         product: { name: 'Test Product', thumbnail: null },
-        buyer: { name: 'Test Buyer' }
+        buyer: { name: 'Test Buyer' },
       };
 
       const Harness = () => {
@@ -163,15 +219,28 @@ describe('Offer System Integration Tests', () => {
         </TestWrapper>
       );
 
-      const rejectBtn = await screen.findByLabelText('Rechazar Oferta', {}, { timeout: 3000 });
-      await act(async () => { fireEvent.click(rejectBtn); });
-
-      await waitFor(() => { expect(screen.getByRole('dialog')).toBeInTheDocument(); });
-      const confirm = screen.getByRole('button', { name: /confirmar/i });
-      await act(async () => { fireEvent.click(confirm); });
+      const rejectBtn = await screen.findByLabelText(
+        'Rechazar Oferta',
+        {},
+        { timeout: 3000 }
+      );
+      await act(async () => {
+        fireEvent.click(rejectBtn);
+      });
 
       await waitFor(() => {
-        expect(mockSupabase.rpc).toHaveBeenCalledWith('reject_offer', expect.objectContaining({ p_offer_id: pending.id }));
+        expect(screen.getByRole('dialog')).toBeInTheDocument();
+      });
+      const confirm = screen.getByRole('button', { name: /confirmar/i });
+      await act(async () => {
+        fireEvent.click(confirm);
+      });
+
+      await waitFor(() => {
+        expect(mockSupabase.rpc).toHaveBeenCalledWith(
+          'reject_offer',
+          expect.objectContaining({ p_offer_id: pending.id })
+        );
       });
     });
   });
@@ -179,10 +248,20 @@ describe('Offer System Integration Tests', () => {
   describe('Flujo de límites de ofertas', () => {
     it('debería prevenir crear oferta cuando se excede el límite', async () => {
       // Mock: Límite excedido
-  mockSupabase.rpc.mockResolvedValueOnce({ data: { allowed: false, product_count: 3, supplier_count: 0, product_limit: 3, supplier_limit: 5, reason: 'Se alcanzó el límite mensual de ofertas (producto)' }, error: null }); // validate_offer_limits
+      mockSupabase.rpc.mockResolvedValueOnce({
+        data: {
+          allowed: false,
+          product_count: 3,
+          supplier_count: 0,
+          product_limit: 3,
+          supplier_limit: 5,
+          reason: 'Se alcanzó el límite mensual de ofertas (producto)',
+        },
+        error: null,
+      }); // validate_offer_limits
 
       const mockProduct = mockOfferData.validProduct;
-      
+
       render(
         <TestWrapper>
           <OfferModal
@@ -197,25 +276,37 @@ describe('Offer System Integration Tests', () => {
       // Llenar formulario
       const quantityInput = screen.getByLabelText(/cantidad/i);
       const priceInput = screen.getByLabelText(/precio por unidad/i);
-      
+
       await act(async () => {
         fireEvent.change(quantityInput, { target: { value: '5' } });
         fireEvent.change(priceInput, { target: { value: '1000' } });
       });
 
-  // Puede haber más de un alert (warning + error). Verificar que alguno contenga la sección de límites.
-  const alerts = await screen.findAllByRole('alert', {}, { timeout: 4000 });
-  expect(alerts.length).toBeGreaterThan(0);
-  const hasLimits = alerts.some(a => a.textContent.toLowerCase().includes('límites de ofertas'));
-  expect(hasLimits).toBe(true);
+      // Puede haber más de un alert (warning + error). Verificar que alguno contenga la sección de límites.
+      const alerts = await screen.findAllByRole('alert', {}, { timeout: 4000 });
+      expect(alerts.length).toBeGreaterThan(0);
+      const hasLimits = alerts.some(a =>
+        a.textContent.toLowerCase().includes('límites de ofertas')
+      );
+      expect(hasLimits).toBe(true);
     });
 
-  it('debería mostrar contador de ofertas correctamente', async () => {
+    it('debería mostrar contador de ofertas correctamente', async () => {
       // Mock: 2 ofertas de 3 permitidas
-  mockSupabase.rpc.mockResolvedValueOnce({ data: { allowed: true, product_count: 2, supplier_count: 0, product_limit: 3, supplier_limit: 5, reason: null }, error: null }); // validate_offer_limits
+      mockSupabase.rpc.mockResolvedValueOnce({
+        data: {
+          allowed: true,
+          product_count: 2,
+          supplier_count: 0,
+          product_limit: 3,
+          supplier_limit: 5,
+          reason: null,
+        },
+        error: null,
+      }); // validate_offer_limits
 
       const mockProduct = mockOfferData.validProduct;
-      
+
       render(
         <TestWrapper>
           <OfferModal
@@ -227,8 +318,8 @@ describe('Offer System Integration Tests', () => {
         </TestWrapper>
       );
 
-  // Aserción mínima: bloque de límites visible
-  await screen.findByText(/Límites de ofertas/i, {}, { timeout: 4000 });
+      // Aserción mínima: bloque de límites visible
+      await screen.findByText(/Límites de ofertas/i, {}, { timeout: 4000 });
     });
   });
 
@@ -238,33 +329,49 @@ describe('Offer System Integration Tests', () => {
         ...mockOfferData.validOffer,
         id: 'offer_cancel_1',
         status: 'pending',
-        product: { name: 'Test Product', thumbnail: null }
+        product: { name: 'Test Product', thumbnail: null },
       };
       mockSupabase.rpc.mockResolvedValueOnce({ data: null, error: null }); // cancel_offer
       const CancelHarness = () => {
         const { cancelOffer } = useOfferStore();
         return <OffersList offers={[pendingBuyer]} cancelOffer={cancelOffer} />;
       };
-      render(<TestWrapper><CancelHarness /></TestWrapper>);
+      render(
+        <TestWrapper>
+          <CancelHarness />
+        </TestWrapper>
+      );
       await screen.findByText('Test Product');
       const cancelBtn = screen.getByLabelText('Cancelar Oferta');
-      await act(async () => { fireEvent.click(cancelBtn); });
-      await waitFor(() => { expect(mockSupabase.rpc).toHaveBeenCalledWith('cancel_offer', expect.any(Object)); }, { timeout: 3000 });
+      await act(async () => {
+        fireEvent.click(cancelBtn);
+      });
+      await waitFor(
+        () => {
+          expect(mockSupabase.rpc).toHaveBeenCalledWith(
+            'cancel_offer',
+            expect.any(Object)
+          );
+        },
+        { timeout: 3000 }
+      );
     });
 
-  it('debería permitir agregar oferta aceptada al carrito', async () => {
+    it('debería permitir agregar oferta aceptada al carrito', async () => {
       const mockAddToCart = jest.fn();
-      
+
       // Mock del hook de carrito
-  jest.doMock('../../shared/stores/cart/cartStore', () => ({
-        useCartStore: () => ({ addToCart: mockAddToCart })
+      jest.doMock('../../shared/stores/cart/cartStore', () => ({
+        useCartStore: () => ({ addToCart: mockAddToCart }),
       }));
 
-      const buyerOffers = [{
-        ...mockOfferData.validOffer,
-        status: 'approved',
-        product: { name: 'Test Product', thumbnail: null }
-      }];
+      const buyerOffers = [
+        {
+          ...mockOfferData.validOffer,
+          status: 'approved',
+          product: { name: 'Test Product', thumbnail: null },
+        },
+      ];
 
       mockSupabase.rpc
         .mockResolvedValueOnce({ data: buyerOffers, error: null }) // get_buyer_offers initial
@@ -280,7 +387,7 @@ describe('Offer System Integration Tests', () => {
 
       // Hacer clic en agregar al carrito
       const cartButton = screen.getByLabelText('Agregar al carrito');
-      
+
       await act(async () => {
         fireEvent.click(cartButton);
       });
@@ -295,12 +402,25 @@ describe('Offer System Integration Tests', () => {
     it('debería manejar error de red al crear oferta', async () => {
       // Mock: Error de red
       mockSupabase.rpc
-        .mockResolvedValueOnce({ data: { allowed: true, product_count: 1, supplier_count: 0, product_limit: 3, supplier_limit: 5, reason: null }, error: null }) // validate_offer_limits OK
-        .mockResolvedValueOnce({ data: null, error: { message: 'Network error' } }); // create_offer FAIL
+        .mockResolvedValueOnce({
+          data: {
+            allowed: true,
+            product_count: 1,
+            supplier_count: 0,
+            product_limit: 3,
+            supplier_limit: 5,
+            reason: null,
+          },
+          error: null,
+        }) // validate_offer_limits OK
+        .mockResolvedValueOnce({
+          data: null,
+          error: { message: 'Network error' },
+        }); // create_offer FAIL
 
       const mockProduct = mockOfferData.validProduct;
       const mockOnClose = jest.fn();
-      
+
       render(
         <TestWrapper>
           <OfferModal
@@ -315,14 +435,16 @@ describe('Offer System Integration Tests', () => {
       // Llenar y enviar formulario
       const quantityInput = screen.getByLabelText(/cantidad/i);
       const priceInput = screen.getByLabelText(/precio por unidad/i);
-      
+
       await act(async () => {
         fireEvent.change(quantityInput, { target: { value: '5' } });
         fireEvent.change(priceInput, { target: { value: '1000' } });
       });
 
-      const submitButton = screen.getByRole('button', { name: /enviar oferta/i });
-      
+      const submitButton = screen.getByRole('button', {
+        name: /enviar oferta/i,
+      });
+
       await act(async () => {
         fireEvent.click(submitButton);
       });
@@ -333,18 +455,22 @@ describe('Offer System Integration Tests', () => {
           useOfferStore.setState({ error: 'Network error' });
         });
       }
-      const errorNodes = await screen.findAllByText(/Network error/i, {}, { timeout: 4000 });
+      const errorNodes = await screen.findAllByText(
+        /Network error/i,
+        {},
+        { timeout: 4000 }
+      );
       expect(errorNodes.length).toBeGreaterThan(0);
 
-  // Aserción relajada: se mostró el error (independiente de cierre)
-  expect(errorNodes.length).toBeGreaterThan(0);
+      // Aserción relajada: se mostró el error (independiente de cierre)
+      expect(errorNodes.length).toBeGreaterThan(0);
     });
 
     it('debería manejar error al cargar ofertas', async () => {
       // Mock: Error al cargar ofertas
-      mockSupabase.rpc.mockResolvedValueOnce({ 
-        data: null, 
-        error: { message: 'Database connection failed' } 
+      mockSupabase.rpc.mockResolvedValueOnce({
+        data: null,
+        error: { message: 'Database connection failed' },
       });
 
       render(
@@ -362,40 +488,52 @@ describe('Offer System Integration Tests', () => {
   });
 
   describe('Flujo de expiración de ofertas', () => {
-  it('debería mostrar ofertas expiradas correctamente', async () => {
+    it('debería mostrar ofertas expiradas correctamente', async () => {
       const expiredOffer = {
         ...mockOfferData.validOffer,
         status: 'pending',
         expires_at: new Date(Date.now() - 60 * 60 * 1000).toISOString(), // 1 hora atrás
-  product: { name: 'Expired Product', thumbnail: null },
-  buyer: { name: 'Test Buyer' }
+        product: { name: 'Expired Product', thumbnail: null },
+        buyer: { name: 'Test Buyer' },
       };
 
-      mockSupabase.rpc.mockResolvedValueOnce({ data: [expiredOffer], error: null });
-  mockSupabase.rpc.mockResolvedValueOnce({ data: [expiredOffer], error: null });
+      mockSupabase.rpc.mockResolvedValueOnce({
+        data: [expiredOffer],
+        error: null,
+      });
+      mockSupabase.rpc.mockResolvedValueOnce({
+        data: [expiredOffer],
+        error: null,
+      });
 
       render(
         <TestWrapper>
-          <OffersList offers={[{...expiredOffer, status: 'expired'}]} />
+          <OffersList offers={[{ ...expiredOffer, status: 'expired' }]} />
         </TestWrapper>
       );
 
-  const expired = await screen.findByText('Expired Product');
-  expect(expired).toBeInTheDocument();
-  expect(screen.getByText(/Caducada/i)).toBeInTheDocument();
+      const expired = await screen.findByText('Expired Product');
+      expect(expired).toBeInTheDocument();
+      expect(screen.getByText(/Caducada/i)).toBeInTheDocument();
     });
 
-  it('debería calcular tiempo restante correctamente', async () => {
+    it('debería calcular tiempo restante correctamente', async () => {
       const futureOffer = {
         ...mockOfferData.validOffer,
         status: 'pending',
         expires_at: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(), // 2 horas en el futuro
-  product: { name: 'Future Product', thumbnail: null },
-  buyer: { name: 'Test Buyer' }
+        product: { name: 'Future Product', thumbnail: null },
+        buyer: { name: 'Test Buyer' },
       };
 
-      mockSupabase.rpc.mockResolvedValueOnce({ data: [futureOffer], error: null });
-  mockSupabase.rpc.mockResolvedValueOnce({ data: [futureOffer], error: null });
+      mockSupabase.rpc.mockResolvedValueOnce({
+        data: [futureOffer],
+        error: null,
+      });
+      mockSupabase.rpc.mockResolvedValueOnce({
+        data: [futureOffer],
+        error: null,
+      });
 
       render(
         <TestWrapper>
@@ -403,22 +541,33 @@ describe('Offer System Integration Tests', () => {
         </TestWrapper>
       );
 
-  const future = await screen.findByText('Future Product');
-  expect(future).toBeInTheDocument();
-  // Buscar tiempo restante en cualquiera de las celdas (regex de horas o minutos)
-  const timeRegex = /\b(\d+\s*h\b|\d+\s*m\b)/i;
-  const timeCell = Array.from(document.querySelectorAll('td, p, span')).some(el => timeRegex.test(el.textContent));
-  expect(timeCell).toBe(true);
+      const future = await screen.findByText('Future Product');
+      expect(future).toBeInTheDocument();
+      // Buscar tiempo restante en cualquiera de las celdas (regex de horas o minutos)
+      const timeRegex = /\b(\d+\s*h\b|\d+\s*m\b)/i;
+      const timeCell = Array.from(
+        document.querySelectorAll('td, p, span')
+      ).some(el => timeRegex.test(el.textContent));
+      expect(timeCell).toBe(true);
     });
   });
 
   afterAll(() => {
     // Volcar logs acumulados del store si existen
-    const logs = (global.__OFFER_LOGS || (typeof window !== 'undefined' ? window.__OFFER_LOGS : [])) || [];
+    const logs =
+      global.__OFFER_LOGS ||
+      (typeof window !== 'undefined' ? window.__OFFER_LOGS : []) ||
+      [];
     // Dividir en bloques para no saturar salida
     if (logs.length) {
-      console.log('\n===== OFFER STORE DEBUG LOGS (total', logs.length, ') =====');
-      logs.slice(-100).forEach((l,i) => console.log((logs.length-100)+i+1, l));
+      console.log(
+        '\n===== OFFER STORE DEBUG LOGS (total',
+        logs.length,
+        ') ====='
+      );
+      logs
+        .slice(-100)
+        .forEach((l, i) => console.log(logs.length - 100 + i + 1, l));
       console.log('===== END OFFER STORE DEBUG LOGS =====');
     } else {
       console.log('No __OFFER_LOGS collected');

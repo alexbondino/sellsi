@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import SupplierOfferActionModals from '../../domains/supplier/pages/offers/components/SupplierOfferActionModals';
+import SupplierOfferActionModals from '../../workspaces/supplier/my-offers/components/SupplierOfferActionModals';
 
 // Helper CLP
 const clp = v => '$' + new Intl.NumberFormat('es-CL').format(Math.round(v));
@@ -14,10 +14,27 @@ describe('SupplierOfferActionModals - Original vs Offered Price', () => {
       price: 18000, // precio ofertado inferior al original
       quantity: 10,
       buyer: baseBuyer,
-      product: { id: 'p1', name: 'Producto Demo', price: 25000, previousPrice: 25000, stock: 40 }
+      product: {
+        id: 'p1',
+        name: 'Producto Demo',
+        price: 25000,
+        previousPrice: 25000,
+        stock: 40,
+      },
     };
-    const offer = { ...def, ...partial, product: { ...def.product, ...(partial.product||{}) } };
-    render(<SupplierOfferActionModals open mode="accept" offer={offer} onClose={()=>{}} />);
+    const offer = {
+      ...def,
+      ...partial,
+      product: { ...def.product, ...(partial.product || {}) },
+    };
+    render(
+      <SupplierOfferActionModals
+        open
+        mode="accept"
+        offer={offer}
+        onClose={() => {}}
+      />
+    );
     return offer;
   };
 
