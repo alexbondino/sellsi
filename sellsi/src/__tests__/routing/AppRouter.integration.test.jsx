@@ -263,7 +263,7 @@ jest.mock('../../domains/marketplace/pages/ProviderCatalog', () =>
 jest.mock('../../domains/ProductPageView/ProductPageWrapper', () =>
   mockDefault('PRODUCT_PAGE')
 );
-jest.mock('../../app/pages/onboarding/Onboarding', () =>
+jest.mock('../../workspaces/auth/onboarding/components/Onboarding', () =>
   mockDefault('ONBOARDING')
 );
 jest.mock('../../domains/auth/components/ResetPassword', () =>

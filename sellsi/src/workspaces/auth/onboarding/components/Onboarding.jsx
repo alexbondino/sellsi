@@ -15,17 +15,17 @@ import {
 import BusinessIcon from '@mui/icons-material/Business';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
-import { supabase } from '../../../services/supabase';
-import { useOptimizedUserShippingRegion } from '../../../hooks/useOptimizedUserShippingRegion';
+import { supabase } from '../../../../services/supabase';
+import { useOptimizedUserShippingRegion } from '../../../../hooks/useOptimizedUserShippingRegion';
 
 // Asumimos que estos componentes existen en tu proyecto y están bien estilizados.
-import PrimaryButton from '../../../shared/components/forms/PrimaryButton';
-import CountrySelector from '../../../shared/components/forms/CountrySelector';
-import { validatePhone, normalizePhone } from '../../../utils/validators';
+import PrimaryButton from '../../../../shared/components/forms/PrimaryButton';
+import CountrySelector from '../../../../shared/components/forms/CountrySelector';
+import { validatePhone, normalizePhone } from '../../../../utils/validators';
 import {
   TaxDocumentSelector,
   BillingInfoForm,
-} from '../../../shared/components';
+} from '../../../../shared/components';
 import { Collapse } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 
@@ -340,7 +340,7 @@ const Onboarding = () => {
       await supabase.auth.refreshSession().catch(() => {});
       // 2) Marca que ya completaste el onboarding (bypass one-shot)
       sessionStorage.setItem('onboardingDone', '1');
-      // 3) Si tienes refetchProfile del contexto, úsalo para que el guard ya te “vea” completo
+      // 3) Si tienes refetchProfile del contexto, úsalo para que el guard ya te "vea" completo
       await (refetchProfile?.() ?? Promise.resolve());
 
       // Prime de región (si aplica)

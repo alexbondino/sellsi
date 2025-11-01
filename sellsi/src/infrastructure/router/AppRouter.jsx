@@ -79,7 +79,9 @@ const Register = React.lazy(() =>
   import('../../workspaces/auth').then(module => ({ default: module.Register }))
 );
 const Onboarding = React.lazy(() =>
-  import('../../app/pages/onboarding/Onboarding')
+  import('../../workspaces/auth/onboarding').then(module => ({
+    default: module.Onboarding,
+  }))
 );
 const ResetPassword = React.lazy(() =>
   import('../../workspaces/auth/account-recovery/components/ResetPassword')

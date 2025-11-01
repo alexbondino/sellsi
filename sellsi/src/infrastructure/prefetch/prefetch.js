@@ -71,7 +71,9 @@ export function importForPath(path) {
     case '/buyer/payment':
       return import('../../domains/checkout/pages/PaymentMethod');
     case '/onboarding':
-      return import('../../app/pages/onboarding/Onboarding');
+      return import('../../workspaces/auth/onboarding').then(
+        module => module.Onboarding
+      );
     case '/buyer/profile':
     case '/supplier/profile':
     case '/profile':
