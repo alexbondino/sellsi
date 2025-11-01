@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { ProductValidator } from '../../../../domains/supplier/validators/ProductValidator';
+import { ProductValidator } from '../utils/ProductValidator';
 
 /**
  * ============================================================================

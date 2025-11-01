@@ -123,9 +123,12 @@ jest.mock('@/services/marketplace', () => ({
   saveProductRegions: jest.fn(() => Promise.resolve()),
 }));
 
-jest.mock('@/domains/supplier/validators/ProductValidator', () => ({
-  ProductValidator: { generateContextualMessage: jest.fn(() => 'Invalid') },
-}));
+jest.mock(
+  '@/workspaces/supplier/create-product/utils/ProductValidator',
+  () => ({
+    ProductValidator: { generateContextualMessage: jest.fn(() => 'Invalid') },
+  })
+);
 
 // Provide a lightweight supabase mock for the warm-up effect (HEAD request)
 jest.mock('@/shared/services/supabase', () => ({

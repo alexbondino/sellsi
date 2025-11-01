@@ -17,8 +17,8 @@ import {
   QUANTITY_LIMITS,
   PRICING_TYPES,
   PRODUCT_TYPES_DB,
-} from '../../../../domains/supplier/constants/productValidationConstants';
-import { ProductValidator } from '../../../../domains/supplier/validators/ProductValidator';
+} from '../utils/productValidationConstants';
+import { ProductValidator } from '../utils/ProductValidator';
 
 // ============================================================================
 // CONFIGURACIÓN INICIAL ROBUSTA

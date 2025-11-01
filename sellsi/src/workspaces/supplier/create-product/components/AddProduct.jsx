@@ -75,7 +75,7 @@ import { useProductValidation } from '../hooks/useProductValidation';
 import { useProductPricingLogic } from '../hooks/useProductPricingLogic';
 import { useThumbnailStatus } from '../hooks/useThumbnailStatus'; // 🔥 NUEVO: Status tracking para thumbnails
 import { calculateProductEarnings } from '../../shared-utils/centralizedCalculations'; // 🔧 USANDO NOMBRE CORRECTO
-import { ProductValidator } from '../../../../domains/supplier/validators/ProductValidator';
+import { ProductValidator } from '../utils/ProductValidator';
 import { dashboardThemeCore } from '../../home/styles/dashboardThemeCore';
 import { SPACING_BOTTOM_MAIN } from '../../shared-styles/layoutSpacing';
 import { formatPrice } from '../../../../shared/utils/formatters';
