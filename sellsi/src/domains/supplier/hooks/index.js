@@ -2,7 +2,7 @@
  * ============================================================================
  * SUPPLIER HOOKS - ARQUITECTURA REFACTORIZADA
  * ============================================================================
- * 
+ *
  * NUEVOS HOOKS ESPECIALIZADOS (Post-refactor):
  * - useSupplierProducts: Facade principal
  * - useSupplierProductsCRUD: Solo CRUD básico
@@ -11,7 +11,7 @@
  * - useProductPriceTiers: Solo tramos de precio
  * - useProductBackground: Solo procesamiento async
  * - useProductCleanup: Solo limpieza de archivos
- * 
+ *
  * HOOKS MANTENIDOS:
  * - useSupplierProductFilters: Filtros (sin cambios)
  * - useProductForm: Formularios (sin cambios)
@@ -21,40 +21,43 @@
 // ========================================
 // 🎯 FACADE PRINCIPAL
 // ========================================
-export { default as useSupplierProducts } from './useSupplierProducts'
+export { useSupplierProducts } from '../../../workspaces/supplier/hooks/useSupplierProducts';
 
 // ========================================
 // 🔧 HOOKS ESPECIALIZADOS (Nuevos)
 // ========================================
-export { default as useSupplierProductsCRUD } from './crud'
-export { default as useProductImages } from './images'
-export { default as useProductSpecifications } from './specifications'
+export { default as useSupplierProductsCRUD } from '../../../workspaces/supplier/hooks/useSupplierProductsCRUD';
+export { default as useProductImages } from './images';
+export { default as useProductSpecifications } from './specifications';
 // Re-export shared canonical pricing hook to avoid changing many relative imports
-// Re-export shared canonical pricing hook to avoid changing many relative imports
-export { default as useProductPriceTiers } from '../../../shared/hooks/product/useProductPriceTiers'
-export { default as useProductBackground } from './background'
-export { default as useProductCleanup } from './cleanup'
+export { default as useProductPriceTiers } from '../../../shared/hooks/product/useProductPriceTiers';
+export { default as useProductBackground } from '../../../workspaces/supplier/hooks/useProductBackground';
+export { default as useProductCleanup } from '../../../workspaces/supplier/hooks/useProductCleanup';
 
 // ========================================
 // 📋 HOOKS MANTENIDOS (Sin cambios)
 // ========================================
 // useProductForm exports named hooks (useProductForm, useAddProduct, useEditProduct)
-export { useProductForm, useAddProduct, useEditProduct } from './useProductForm'
-export { default as useSupplierProductFilters } from './useSupplierProductFilters'
+export {
+  useProductForm,
+  useAddProduct,
+  useEditProduct,
+} from './useProductForm';
+export { default as useSupplierProductFilters } from '../../../workspaces/supplier/hooks/useSupplierProductFilters';
 // useLazyProducts file exports named hooks
-export { useLazyProducts, useProductAnimations } from './useLazyProducts'
+export { useLazyProducts, useProductAnimations } from './useLazyProducts';
 
 // ========================================
 // 🏠 DASHBOARD MANAGEMENT
 // ========================================
 export {
   useSupplierProductsStoreComposite,
-  useSupplierDashboard
-} from './dashboard-management'
+  useSupplierDashboard,
+} from './dashboard-management';
 
 // ========================================
 // 🔄 LEGACY/COMPATIBILIDAD
 // ========================================
 // MANTENER para compatibilidad, pero marcado como deprecated
-export { default as useSupplierProductsBase } from './useSupplierProductsBase'
-export { useSupplierProductsStoreComposite as useSupplierProductsStore } from './dashboard-management'
+export { default as useSupplierProductsBase } from './useSupplierProductsBase';
+export { useSupplierProductsStoreComposite as useSupplierProductsStore } from './dashboard-management';

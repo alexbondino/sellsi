@@ -9,7 +9,7 @@
  */
 
 import { create } from 'zustand';
-import { supabase } from '../../../../services/supabase';
+import { supabase } from '../../../services/supabase';
 
 const useProductPriceTiers = create((set, get) => ({
   // ============================================================================

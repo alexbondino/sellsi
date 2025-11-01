@@ -15,7 +15,10 @@ import { isProductActive } from '../../utils/productActiveStatus';
  * @param {{ providerView?: boolean }} options
  * @returns {{ items: Array, providersCount: number }}
  */
-export function useProductsDerivation(productosOrdenados, { providerView = false } = {}) {
+export function useProductsDerivation(
+  productosOrdenados,
+  { providerView = false } = {}
+) {
   return React.useMemo(() => {
     if (!Array.isArray(productosOrdenados) || productosOrdenados.length === 0) {
       return { items: [], providersCount: 0 };
@@ -46,14 +49,20 @@ export function useProductsDerivation(productosOrdenados, { providerView = false
         providers.get(p.supplierId).product_count += 1;
       }
     });
-    return { items: Array.from(providers.values()), providersCount: providers.size };
+    return {
+      items: Array.from(providers.values()),
+      providersCount: providers.size,
+    };
   }, [productosOrdenados, providerView]);
 }
 
 /**
  * Función pura (sin React) para pruebas unitarias directa si se requiere.
  */
-export function deriveProducts(productosOrdenados, { providerView = false } = {}) {
+export function deriveProducts(
+  productosOrdenados,
+  { providerView = false } = {}
+) {
   if (!Array.isArray(productosOrdenados) || productosOrdenados.length === 0) {
     return { items: [], providersCount: 0 };
   }
@@ -78,5 +87,8 @@ export function deriveProducts(productosOrdenados, { providerView = false } = {}
       providers.get(p.supplierId).product_count += 1;
     }
   });
-  return { items: Array.from(providers.values()), providersCount: providers.size };
+  return {
+    items: Array.from(providers.values()),
+    providersCount: providers.size,
+  };
 }

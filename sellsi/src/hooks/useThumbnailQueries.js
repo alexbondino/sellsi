@@ -6,7 +6,7 @@
 
 import { useQuery, useQueries, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../services/supabase'; // keep for fallback if flag off
-import { QUERY_KEYS, CACHE_CONFIGS } from '../utils/queryClient';
+import { QUERY_KEYS, CACHE_CONFIGS } from '../utils/queryClient.js';
 // Importar como named export para evitar problemas de detección de default export en build
 // Intento de import nombrado; si tree-shake falla, se hará fallback en runtime
 import * as Phase1ETAGModule from '../services/phase1ETAGThumbnailService.js';

@@ -11,7 +11,7 @@ import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { getOrFetchMainThumbnail } from '../../../services/phase1ETAGThumbnailService.js';
 import { FeatureFlags } from '../../../workspaces/supplier/home/utils/featureFlags.js';
 import { useSupplierProducts } from './useSupplierProducts';
-import { convertDbRegionsToForm } from '../../../utils/shippingRegionsUtils';
+import { convertDbRegionsToForm } from '../../../utils/shippingRegionsUtils.js';
 import {
   PRICE_LIMITS,
   QUANTITY_LIMITS,
@@ -144,9 +144,8 @@ export const useProductForm = (productId = null) => {
         ].includes(phase)
       )
         return;
-      if (userHasTouchedImages)
-        return; // respeto interacción del usuario
-        // Reconsultar fila principal para obtener thumbnail_url y signature
+      if (userHasTouchedImages) return; // respeto interacción del usuario
+      // Reconsultar fila principal para obtener thumbnail_url y signature
       (async () => {
         try {
           let data = null;

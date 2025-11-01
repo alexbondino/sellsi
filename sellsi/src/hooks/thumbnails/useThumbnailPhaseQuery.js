@@ -3,7 +3,7 @@ import { FeatureFlags } from '../../workspaces/supplier/home/utils/featureFlags.
 import {
   queryClient as globalQueryClient,
   QUERY_KEYS,
-} from '../../utils/queryClient';
+} from '../../utils/queryClient.js';
 import { scheduleThumbnailFetch } from '../../shared/thumbnail/thumbnailConcurrencyQueue.js';
 import { getOrFetchMainThumbnail } from '../../services/phase1ETAGThumbnailService.js';
 import { record as recordMetric } from '../../shared/thumbnail/thumbnailMetrics.js';

@@ -27,11 +27,11 @@ import useProductCleanup from './useProductCleanup.js';
 import useSupplierProductFilters from './useSupplierProductFilters.js';
 
 /* Utils */
-import { isProductActive } from '../utils/productActiveStatus.js';
-import { calculateInventoryStats } from '../utils/centralizedCalculations.js';
+import { isProductActive } from '../home/utils/productActiveStatus.js';
+import { calculateInventoryStats } from '../home/utils/centralizedCalculations.js';
 
 /* Services */
-import { supabase } from '../../../../services/supabase.js';
+import { supabase } from '../../../services/supabase.js';
 
 /**
  * Hook facade para gestión completa de productos del proveedor

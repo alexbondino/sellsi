@@ -7,9 +7,15 @@ export function productAdapter(raw) {
   return {
     id: raw.id ?? raw.productid ?? raw.productId ?? raw.ID ?? null,
     supplierId: raw.supplier_id ?? raw.supplierId ?? null,
-    supplierName: raw.proveedor ?? raw.supplier_name ?? raw.user_nm ?? 'Proveedor desconocido',
-  supplierLogo: raw.supplier_logo_url || raw.logo_url || '/LOGO-removebg-preview.webp', // fallback consistente
-    supplierDescription: raw.descripcion_proveedor || raw.supplier_description || null,
+    supplierName:
+      raw.proveedor ??
+      raw.supplier_name ??
+      raw.user_nm ??
+      'Proveedor desconocido',
+    supplierLogo:
+      raw.supplier_logo_url || raw.logo_url || '/LOGO-removebg-preview.webp', // fallback consistente
+    supplierDescription:
+      raw.descripcion_proveedor || raw.supplier_description || null,
     active: isProductActive(raw),
     // Referencia original para campos adicionales sin normalizar todavía.
     __raw: raw,

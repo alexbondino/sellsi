@@ -7,9 +7,9 @@
  * Extraídas del cartStore.js original para mejor organización.
  */
 
-import { validateCartQuantity, prepareCartItem } from './cartStore.helpers'
-import { calculatePriceForQuantity } from '../../../utils/priceCalculation'
-import { CART_CONFIG } from './cartStore.constants'
+import { validateCartQuantity, prepareCartItem } from './cartStore.helpers';
+import { calculatePriceForQuantity } from '../../../utils/priceCalculation';
+import { CART_CONFIG } from './cartStore.constants';
 
 /**
  * Agrega un item al carrito localmente
@@ -20,30 +20,42 @@ import { CART_CONFIG } from './cartStore.constants'
  * @param {Object} historyStore - Store de historial
  * @param {Function} debouncedSave - Función de guardado automático
  */
-export const addItemLocal = (product, quantity, set, get, historyStore, debouncedSave) => {
-  const item = prepareCartItem(product, quantity)
-  const currentState = get()
-  const existingItem = currentState.items.find((item) => item.id === product.id)
+export const addItemLocal = (
+  product,
+  quantity,
+  set,
+  get,
+  historyStore,
+  debouncedSave
+) => {
+  const item = prepareCartItem(product, quantity);
+  const currentState = get();
+  const existingItem = currentState.items.find(item => item.id === product.id);
 
   if (existingItem) {
     // Validar la nueva cantidad total
-    const newTotalQuantity = validateCartQuantity(existingItem.quantity + item.quantity)
-    const maxStock = Math.min(product.maxStock || CART_CONFIG.DEFAULT_STOCK, CART_CONFIG.DEFAULT_STOCK)
-    
+    const newTotalQuantity = validateCartQuantity(
+      existingItem.quantity + item.quantity
+    );
+    const maxStock = Math.min(
+      product.maxStock || CART_CONFIG.DEFAULT_STOCK,
+      CART_CONFIG.DEFAULT_STOCK
+    );
+
     if (newTotalQuantity <= maxStock) {
       set({
-        items: currentState.items.map((cartItem) =>
+        items: currentState.items.map(cartItem =>
           cartItem.id === product.id
             ? { ...cartItem, quantity: newTotalQuantity }
             : cartItem
         ),
-      })
+      });
     } else {
-      }
+    }
   } else {
     set({
       items: [...currentState.items, item],
-    })
+    });
   }
 
   // DEBUG: registrar el item que se agregó localmente para diagnosticar pérdida de metadata de oferta
@@ -53,7 +65,7 @@ export const addItemLocal = (product, quantity, set, get, historyStore, debounce
       incomingProduct: product,
       preparedItem: item,
       existingItem: !!existingItem,
-    })
+    });
   } catch (e) {}
 
   // Delegar al módulo de historial
@@ -62,12 +74,12 @@ export const addItemLocal = (product, quantity, set, get, historyStore, debounce
       productName: product.name,
       quantity: quantity,
       isExisting: !!existingItem,
-    })
-  }, 0)
+    });
+  }, 0);
 
   // Auto-guardar cambios
-  debouncedSave()
-}
+  debouncedSave();
+};
 
 /**
  * Actualiza la cantidad de un item en el carrito localmente
@@ -78,47 +90,68 @@ export const addItemLocal = (product, quantity, set, get, historyStore, debounce
  * @param {Object} historyStore - Store de historial
  * @param {Function} debouncedSave - Función de guardado automático
  */
-export const updateQuantityLocal = (id, quantity, set, get, historyStore, debouncedSave) => {
-  const safeInputQuantity = validateCartQuantity(quantity)
-  const currentState = get()
-  const item = currentState.items.find((item) => item.id === id)
-  
+export const updateQuantityLocal = (
+  id,
+  quantity,
+  set,
+  get,
+  historyStore,
+  debouncedSave
+) => {
+  const safeInputQuantity = validateCartQuantity(quantity);
+  const currentState = get();
+  const item = currentState.items.find(item => item.id === id);
+
   if (!item) {
-    return
+    return;
   }
-  
+
   // Forzar mínimo de compra y máximo de stock
-  const min = item.minimum_purchase || item.compraMinima || 1
-  const maxStock = Math.min(item.maxStock || CART_CONFIG.DEFAULT_STOCK, CART_CONFIG.DEFAULT_STOCK)
-  
-  let safeQuantity = validateCartQuantity(safeInputQuantity, min, maxStock)
-  
+  const min = item.minimum_purchase || item.compraMinima || 1;
+  const maxStock = Math.min(
+    item.maxStock || CART_CONFIG.DEFAULT_STOCK,
+    CART_CONFIG.DEFAULT_STOCK
+  );
+
+  let safeQuantity = validateCartQuantity(safeInputQuantity, min, maxStock);
+
   if (safeQuantity < min) {
-    safeQuantity = min
+    safeQuantity = min;
   }
   if (safeQuantity > maxStock) {
-    safeQuantity = maxStock
+    safeQuantity = maxStock;
   }
 
   // LOG: Mostrar tramos y tramo aplicado
   if (item.price_tiers && item.price_tiers.length > 0) {
-    const logTiers = item.price_tiers.map(t => `${t.min_quantity},${t.price}`).join('\n')
-    const tramo = item.price_tiers.find(t => safeQuantity >= t.min_quantity)
+    const logTiers = item.price_tiers
+      .map(t => `${t.min_quantity},${t.price}`)
+      .join('\n');
+    const tramo = item.price_tiers.find(t => safeQuantity >= t.min_quantity);
     if (tramo) {
       // Log interno
     }
   }
-  
+
   if (safeQuantity > 0 && safeQuantity <= item.maxStock) {
-    const oldQuantity = item.quantity
+    const oldQuantity = item.quantity;
     // Obtener price_tiers y precio base
-    const price_tiers = item.price_tiers || item.priceTiers || []
-    const basePrice = item.originalPrice || item.precioOriginal || item.price || item.precio || 0
+    const price_tiers = item.price_tiers || item.priceTiers || [];
+    const basePrice =
+      item.originalPrice ||
+      item.precioOriginal ||
+      item.price ||
+      item.precio ||
+      0;
     // Calcular nuevo precio unitario
-    const newUnitPrice = calculatePriceForQuantity(safeQuantity, price_tiers, basePrice)
-    
+    const newUnitPrice = calculatePriceForQuantity(
+      safeQuantity,
+      price_tiers,
+      basePrice
+    );
+
     set({
-      items: currentState.items.map((cartItem) =>
+      items: currentState.items.map(cartItem =>
         cartItem.id === id
           ? {
               ...cartItem,
@@ -130,7 +163,7 @@ export const updateQuantityLocal = (id, quantity, set, get, historyStore, deboun
             }
           : cartItem
       ),
-    })
+    });
 
     // Delegar al módulo de historial
     setTimeout(() => {
@@ -140,13 +173,13 @@ export const updateQuantityLocal = (id, quantity, set, get, historyStore, deboun
         newQuantity: safeQuantity,
         oldPrice: item.price,
         newPrice: newUnitPrice,
-      })
-    }, 0)
-    
+      });
+    }, 0);
+
     // Auto-guardar cambios
-    debouncedSave()
+    debouncedSave();
   }
-}
+};
 
 /**
  * Remueve un item del carrito localmente
@@ -157,25 +190,25 @@ export const updateQuantityLocal = (id, quantity, set, get, historyStore, deboun
  * @param {Function} debouncedSave - Función de guardado automático
  */
 export const removeItemLocal = (id, set, get, historyStore, debouncedSave) => {
-  const currentState = get()
-  const item = currentState.items.find((item) => item.id === id)
-  
+  const currentState = get();
+  const item = currentState.items.find(item => item.id === id);
+
   if (item) {
-    set({ items: currentState.items.filter((item) => item.id !== id) })
+    set({ items: currentState.items.filter(item => item.id !== id) });
   } else {
-    }
+  }
 
   // Delegar al módulo de historial
   setTimeout(() => {
     historyStore.saveToHistory(get(), 'removeItem', {
       productName: item?.name || 'Producto desconocido',
       quantity: item?.quantity || 0,
-    })
-  }, 0)
+    });
+  }, 0);
 
   // Auto-guardar cambios
-  debouncedSave()
-}
+  debouncedSave();
+};
 
 /**
  * Limpia el carrito localmente
@@ -186,23 +219,23 @@ export const removeItemLocal = (id, set, get, historyStore, debouncedSave) => {
  * @param {Function} debouncedSave - Función de guardado automático
  */
 export const clearCartLocal = (set, get, historyStore, debouncedSave) => {
-  const currentState = get()
-  const itemCount = currentState.items.length
-  
+  const currentState = get();
+  const itemCount = currentState.items.length;
+
   set({
     items: [],
-  })
+  });
 
   // Delegar al módulo de historial
   setTimeout(() => {
     historyStore.saveToHistory(get(), 'clearCart', {
       itemCount: itemCount,
-    })
-  }, 0)
+    });
+  }, 0);
 
   // Auto-guardar cambios
-  debouncedSave()
-}
+  debouncedSave();
+};
 
 /**
  * Establece items en el carrito (para operaciones de restauración)
@@ -211,6 +244,6 @@ export const clearCartLocal = (set, get, historyStore, debouncedSave) => {
  * @param {Function} debouncedSave - Función de guardado automático
  */
 export const setItemsLocal = (items, set, debouncedSave) => {
-  set({ items })
-  debouncedSave()
-}
+  set({ items });
+  debouncedSave();
+};

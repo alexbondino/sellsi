@@ -27,7 +27,7 @@ import {
 } from '../hooks/thumbnails/useThumbnailPhaseQuery.js';
 import { useInViewport } from '../hooks/useInViewport.js';
 import { useQueryClient } from '@tanstack/react-query';
-import { getProductImageUrl } from '../utils/getProductImageUrl';
+import { getProductImageUrl } from '../utils/getProductImageUrl.js';
 
 const UniversalProductImage = ({
   product,

@@ -1,5 +1,9 @@
 import { supabase } from '../supabase';
-import { validateQuantity, sanitizeCartItems, isQuantityError } from '../../utils/quantityValidation';
+import {
+  validateQuantity,
+  sanitizeCartItems,
+  isQuantityError,
+} from '../../utils/quantityValidation';
 
 // In-flight dedupe para getCartItems: evita múltiples GET idénticos concurrentes
 const __inFlightCartItems = new Map(); // cartId -> Promise
@@ -52,52 +56,52 @@ class CartService {
         let existingCart = null;
         let searchError = null;
 
-      try {
-        const { data, error } = await supabase
-          .from('carts')
-          .select('cart_id, status, created_at, updated_at')
-          .eq('user_id', userId)
-          .eq('status', 'active')
-          .maybeSingle();
+        try {
+          const { data, error } = await supabase
+            .from('carts')
+            .select('cart_id, status, created_at, updated_at')
+            .eq('user_id', userId)
+            .eq('status', 'active')
+            .maybeSingle();
 
-        existingCart = data;
-        searchError = error;
-      } catch (err) {
-        searchError = err;
-      }
+          existingCart = data;
+          searchError = error;
+        } catch (err) {
+          searchError = err;
+        }
 
-      let cartId;
-      let cartData;
+        let cartId;
+        let cartData;
 
-      if (existingCart && existingCart.cart_id) {
-        cartId = existingCart.cart_id;
-        cartData = existingCart;
-      } else {
-        const { data: newCart, error: createError } = await supabase
-          .from('carts')
-          .insert({ user_id: userId, status: 'active' })
-          .select('cart_id, status, created_at, updated_at')
-          .single();
+        if (existingCart && existingCart.cart_id) {
+          cartId = existingCart.cart_id;
+          cartData = existingCart;
+        } else {
+          const { data: newCart, error: createError } = await supabase
+            .from('carts')
+            .insert({ user_id: userId, status: 'active' })
+            .select('cart_id, status, created_at, updated_at')
+            .single();
 
-        if (createError) throw createError;
+          if (createError) throw createError;
 
-        cartId = newCart.cart_id;
-        cartData = newCart;
-      }
+          cartId = newCart.cart_id;
+          cartData = newCart;
+        }
 
-      let cartItems = undefined;
-      if (includeItems) {
-        cartItems = await this.getCartItems(cartId);
-      }
+        let cartItems = undefined;
+        if (includeItems) {
+          cartItems = await this.getCartItems(cartId);
+        }
 
-      return {
-        cart_id: cartId,
-        user_id: userId,
-        status: 'active',
-        ...(includeItems ? { items: cartItems } : {}),
-        created_at: cartData?.created_at || new Date().toISOString(),
-        updated_at: cartData?.updated_at || new Date().toISOString()
-      };
+        return {
+          cart_id: cartId,
+          user_id: userId,
+          status: 'active',
+          ...(includeItems ? { items: cartItems } : {}),
+          created_at: cartData?.created_at || new Date().toISOString(),
+          updated_at: cartData?.updated_at || new Date().toISOString(),
+        };
       } catch (error) {
         throw new Error(`No se pudo obtener el carrito: ${error.message}`);
       }
@@ -120,17 +124,18 @@ class CartService {
         return await __inFlightCartItems.get(cartId);
       }
       const promise = (async () => {
-      // Log diagnóstico mínimo
-      try {
-        // eslint-disable-next-line no-console
-      } catch (e) {}
+        // Log diagnóstico mínimo
+        try {
+          // eslint-disable-next-line no-console
+        } catch (e) {}
 
-      // Intentar consulta extendida (con columnas de oferta). Si falla, hacer fallback
-      let data, error;
-      try {
-        const res = await supabase
-          .from('cart_items')
-          .select(`
+        // Intentar consulta extendida (con columnas de oferta). Si falla, hacer fallback
+        let data, error;
+        try {
+          const res = await supabase
+            .from('cart_items')
+            .select(
+              `
             cart_items_id,
             product_id,
             quantity,
@@ -165,20 +170,22 @@ class CartService {
                 verified
               )
             )
-          `)
-          .eq('cart_id', cartId)
-          .order('added_at', { ascending: false });
+          `
+            )
+            .eq('cart_id', cartId)
+            .order('added_at', { ascending: false });
 
-        data = res.data;
-        error = res.error;
-      } catch (queryErr) {
-        try {
-          // eslint-disable-next-line no-console
-        } catch (e) {}
+          data = res.data;
+          error = res.error;
+        } catch (queryErr) {
+          try {
+            // eslint-disable-next-line no-console
+          } catch (e) {}
 
-        const res2 = await supabase
-          .from('cart_items')
-          .select(`
+          const res2 = await supabase
+            .from('cart_items')
+            .select(
+              `
             cart_items_id,
             product_id,
             quantity,
@@ -210,99 +217,109 @@ class CartService {
                 verified
               )
             )
-          `)
-          .eq('cart_id', cartId)
-          .order('added_at', { ascending: false });
+          `
+            )
+            .eq('cart_id', cartId)
+            .order('added_at', { ascending: false });
 
-        data = res2.data;
-        error = res2.error;
-      }
+          data = res2.data;
+          error = res2.error;
+        }
 
-      if (error) {
+        if (error) {
+          try {
+            // eslint-disable-next-line no-console
+            console.error('[cartService] getCartItems supabase error:', error);
+          } catch (e) {}
+          return [];
+        }
+
+        const transformedData = (data || []).map(item => {
+          const docType = normalizeDocumentType(item.document_type);
+
+          return {
+            cart_items_id: item.cart_items_id,
+            product_id: item.product_id,
+            quantity: item.quantity,
+            price_at_addition: item.price_at_addition,
+            price_tiers: item.price_tiers,
+
+            offer_id: item.offer_id || null,
+            offered_price: item.offered_price || null,
+            metadata: item.metadata || {},
+
+            document_type: docType,
+            documentType: docType,
+            added_at: item.added_at,
+            updated_at: item.updated_at,
+
+            // id único de línea para permitir múltiples filas mismo producto (oferta vs regular)
+            id: item.cart_items_id,
+            // Mantener productid para lógica de negocio (slug, navegación, etc.)
+            productid: item.products?.productid || item.product_id,
+
+            name: item.products?.productnm || null,
+            nombre: item.products?.productnm || null,
+            productnm: item.products?.productnm || null,
+
+            supplier:
+              item.products?.users?.user_nm || 'Proveedor no encontrado',
+            proveedor:
+              item.products?.users?.user_nm || 'Proveedor no encontrado',
+
+            proveedorVerificado: item.products?.users?.verified || false,
+            verified: item.products?.users?.verified || false,
+            supplier_verified: item.products?.users?.verified || false,
+
+            image: item.products?.product_images?.[0]?.image_url || null,
+            imagen: item.products?.product_images?.[0]?.image_url || null,
+            image_url: item.products?.product_images?.[0]?.image_url || null,
+            thumbnail_url:
+              item.products?.product_images?.[0]?.thumbnail_url || null,
+            thumbnailUrl:
+              item.products?.product_images?.[0]?.thumbnail_url || null,
+            thumbnails: (() => {
+              const raw = item.products?.product_images?.[0]?.thumbnails;
+              if (!raw) return null;
+              if (typeof raw === 'string') {
+                try {
+                  return JSON.parse(raw);
+                } catch {
+                  return null;
+                }
+              }
+              return raw;
+            })(),
+            thumbnail_signature:
+              item.products?.product_images?.[0]?.thumbnail_signature || null,
+
+            price: item.offered_price || item.products?.price || null,
+            precio: item.offered_price || item.products?.price || null,
+            originalPrice: item.products?.price || null,
+            precioOriginal: item.products?.price || null,
+            basePrice: item.products?.price || null,
+
+            stock: item.products?.productqty || 99,
+            maxStock: item.products?.productqty || 99,
+
+            shippingRegions: item.products?.product_delivery_regions || [],
+            delivery_regions: item.products?.product_delivery_regions || [],
+            shipping_regions: item.products?.product_delivery_regions || [],
+
+            category: item.products?.category,
+            minimum_purchase: item.products?.minimum_purchase,
+            compraMinima: item.products?.minimum_purchase,
+            negotiable: item.products?.negotiable,
+            description: item.products?.description,
+            supplier_id: item.products?.supplier_id,
+          };
+        });
+
         try {
           // eslint-disable-next-line no-console
-          console.error('[cartService] getCartItems supabase error:', error);
         } catch (e) {}
-        return [];
-      }
 
-  const transformedData = (data || []).map(item => {
-        const docType = normalizeDocumentType(item.document_type);
-
-        return {
-          cart_items_id: item.cart_items_id,
-          product_id: item.product_id,
-          quantity: item.quantity,
-          price_at_addition: item.price_at_addition,
-          price_tiers: item.price_tiers,
-
-          offer_id: item.offer_id || null,
-          offered_price: item.offered_price || null,
-          metadata: item.metadata || {},
-
-          document_type: docType,
-          documentType: docType,
-          added_at: item.added_at,
-          updated_at: item.updated_at,
-
-          // id único de línea para permitir múltiples filas mismo producto (oferta vs regular)
-          id: item.cart_items_id,
-          // Mantener productid para lógica de negocio (slug, navegación, etc.)
-          productid: item.products?.productid || item.product_id,
-
-          name: item.products?.productnm || null,
-          nombre: item.products?.productnm || null,
-          productnm: item.products?.productnm || null,
-
-          supplier: item.products?.users?.user_nm || 'Proveedor no encontrado',
-          proveedor: item.products?.users?.user_nm || 'Proveedor no encontrado',
-
-          proveedorVerificado: item.products?.users?.verified || false,
-          verified: item.products?.users?.verified || false,
-          supplier_verified: item.products?.users?.verified || false,
-
-          image: item.products?.product_images?.[0]?.image_url || null,
-          imagen: item.products?.product_images?.[0]?.image_url || null,
-          image_url: item.products?.product_images?.[0]?.image_url || null,
-          thumbnail_url: item.products?.product_images?.[0]?.thumbnail_url || null,
-          thumbnailUrl: item.products?.product_images?.[0]?.thumbnail_url || null,
-          thumbnails: (() => {
-            const raw = item.products?.product_images?.[0]?.thumbnails;
-            if (!raw) return null;
-            if (typeof raw === 'string') {
-              try { return JSON.parse(raw); } catch { return null; }
-            }
-            return raw;
-          })(),
-          thumbnail_signature: item.products?.product_images?.[0]?.thumbnail_signature || null,
-
-          price: item.offered_price || item.products?.price || null,
-          precio: item.offered_price || item.products?.price || null,
-          originalPrice: item.products?.price || null,
-          precioOriginal: item.products?.price || null,
-          basePrice: item.products?.price || null,
-
-          stock: item.products?.productqty || 99,
-          maxStock: item.products?.productqty || 99,
-
-          shippingRegions: item.products?.product_delivery_regions || [],
-          delivery_regions: item.products?.product_delivery_regions || [],
-          shipping_regions: item.products?.product_delivery_regions || [],
-
-          category: item.products?.category,
-          minimum_purchase: item.products?.minimum_purchase,
-          compraMinima: item.products?.minimum_purchase,
-          negotiable: item.products?.negotiable,
-          description: item.products?.description,
-          supplier_id: item.products?.supplier_id
-        };
-      });
-
-      try {
-        // eslint-disable-next-line no-console
-      } catch (e) {}
-
-      return transformedData;
+        return transformedData;
       })();
       __inFlightCartItems.set(cartId, promise);
       try {
@@ -332,7 +349,12 @@ class CartService {
       } catch (e) {}
 
       // Determinar si el nuevo producto es versión ofertada
-      const incomingIsOffered = !!(product.offer_id || product.offered_price || product.isOffered || product.metadata?.isOffered);
+      const incomingIsOffered = !!(
+        product.offer_id ||
+        product.offered_price ||
+        product.isOffered ||
+        product.metadata?.isOffered
+      );
 
       // Obtener todos los ítems existentes con mismo product_id (puede haber oferta y regular separados)
       const { data: existingItems, error: searchError } = await supabase
@@ -347,7 +369,9 @@ class CartService {
       // NUEVA REGLA: si es un item ofertado y ya existe esa misma oferta en el carrito, BLOQUEAR re-add.
       // Motivo negocio: una oferta debe aparecer solo una vez; ajustar cantidad se hace vía updateQuantity, no repitiendo add.
       if (incomingIsOffered && product.offer_id) {
-        const duplicate = (existingItems || []).some(it => it.offer_id === product.offer_id);
+        const duplicate = (existingItems || []).some(
+          it => it.offer_id === product.offer_id
+        );
         if (duplicate) {
           // Lanzamos un error específico para que capas superiores puedan mostrar mensaje adecuado.
           // Código semántico: OFERTA_DUPLICADA_EN_CARRITO
@@ -367,11 +391,16 @@ class CartService {
       let result;
 
       if (mergeCandidate) {
-        const newTotalQuantity = this.validateQuantity(mergeCandidate.quantity + safeQuantity);
+        const newTotalQuantity = this.validateQuantity(
+          mergeCandidate.quantity + safeQuantity
+        );
         // Intento de actualización directa por cart_items_id; usar maybeSingle para evitar 406 si la fila ya no existe
         const { data: updatedArr, error: updErr } = await supabase
           .from('cart_items')
-          .update({ quantity: newTotalQuantity, updated_at: new Date().toISOString() })
+          .update({
+            quantity: newTotalQuantity,
+            updated_at: new Date().toISOString(),
+          })
           .eq('cart_items_id', mergeCandidate.cart_items_id)
           .select();
         if (updErr) throw updErr;
@@ -386,21 +415,28 @@ class CartService {
               quantity: newTotalQuantity,
               price_at_addition: product.price,
               price_tiers: product.price_tiers || product.priceTiers || null,
-              document_type: normalizeDocumentType(product.documentType || product.document_type),
+              document_type: normalizeDocumentType(
+                product.documentType || product.document_type
+              ),
               offer_id: product.offer_id || null,
               offered_price: product.offered_price || null,
-              metadata: product.metadata || null
+              metadata: product.metadata || null,
             })
             .select();
           if (insErr) {
-            try { console.error('[cartService] addItemToCart fallback insert error:', insErr); } catch(e) {}
+            try {
+              console.error(
+                '[cartService] addItemToCart fallback insert error:',
+                insErr
+              );
+            } catch (e) {}
             throw insErr;
           }
           result = Array.isArray(inserted) ? inserted[0] : inserted;
         } else {
           result = updated;
         }
-  if (!skipTimestamp) await this.updateCartTimestamp(cartId);
+        if (!skipTimestamp) await this.updateCartTimestamp(cartId);
       } else {
         // Insertar una nueva fila (regular u oferta independiente)
         const { data: insertedArr, error: insErr } = await supabase
@@ -411,18 +447,22 @@ class CartService {
             quantity: safeQuantity,
             price_at_addition: product.price,
             price_tiers: product.price_tiers || product.priceTiers || null,
-            document_type: normalizeDocumentType(product.documentType || product.document_type),
+            document_type: normalizeDocumentType(
+              product.documentType || product.document_type
+            ),
             offer_id: product.offer_id || null,
             offered_price: product.offered_price || null,
-            metadata: product.metadata || null
+            metadata: product.metadata || null,
           })
           .select();
         if (insErr) {
-          try { console.error('[cartService] addItemToCart insert error:', insErr); } catch(e) {}
+          try {
+            console.error('[cartService] addItemToCart insert error:', insErr);
+          } catch (e) {}
           throw insErr;
         }
         result = Array.isArray(insertedArr) ? insertedArr[0] : insertedArr;
-  if (!skipTimestamp) await this.updateCartTimestamp(cartId);
+        if (!skipTimestamp) await this.updateCartTimestamp(cartId);
       }
 
       try {
@@ -431,7 +471,9 @@ class CartService {
 
       return result;
     } catch (error) {
-      throw new Error(`No se pudo agregar el producto al carrito: ${error.message}`);
+      throw new Error(
+        `No se pudo agregar el producto al carrito: ${error.message}`
+      );
     }
   }
 
@@ -450,7 +492,10 @@ class CartService {
       // Heurística: la mayoría de llamadas pasan product_id (no cart_items_id). Intentar primero (cart_id + product_id)
       let primary = await supabase
         .from('cart_items')
-        .update({ quantity: safeQuantity, updated_at: new Date().toISOString() })
+        .update({
+          quantity: safeQuantity,
+          updated_at: new Date().toISOString(),
+        })
         .eq('cart_id', cartId)
         .eq('product_id', productOrLineId)
         .select();
@@ -463,10 +508,14 @@ class CartService {
         // Intentar por cart_items_id sólo si el primer camino no afectó filas
         const secondary = await supabase
           .from('cart_items')
-          .update({ quantity: safeQuantity, updated_at: new Date().toISOString() })
+          .update({
+            quantity: safeQuantity,
+            updated_at: new Date().toISOString(),
+          })
           .eq('cart_items_id', productOrLineId)
           .select();
-        if (secondary.error && secondary.error.code !== 'PGRST116') throw secondary.error;
+        if (secondary.error && secondary.error.code !== 'PGRST116')
+          throw secondary.error;
         data = secondary.data;
         if (!data || (Array.isArray(data) && data.length === 0)) {
           // Crear fila si no existe (comportamiento legacy de establecer cantidad)
@@ -476,7 +525,7 @@ class CartService {
               cart_id: cartId,
               product_id: productOrLineId,
               quantity: safeQuantity,
-              updated_at: new Date().toISOString()
+              updated_at: new Date().toISOString(),
             })
             .select();
           if (insertRes.error) throw insertRes.error;
@@ -485,7 +534,7 @@ class CartService {
       }
 
       const row = Array.isArray(data) ? data[0] : data;
-  if (!skipTimestamp) await this.updateCartTimestamp(cartId);
+      if (!skipTimestamp) await this.updateCartTimestamp(cartId);
       return row;
     } catch (error) {
       throw new Error(`No se pudo actualizar la cantidad: ${error.message}`);
@@ -520,11 +569,13 @@ class CartService {
         if (res2.error) throw res2.error;
       }
 
-  if (!skipTimestamp) await this.updateCartTimestamp(cartId);
+      if (!skipTimestamp) await this.updateCartTimestamp(cartId);
 
       return true;
     } catch (error) {
-      throw new Error(`No se pudo eliminar el producto del carrito: ${error.message}`);
+      throw new Error(
+        `No se pudo eliminar el producto del carrito: ${error.message}`
+      );
     }
   }
 
@@ -545,7 +596,9 @@ class CartService {
       if (!skipTimestamp) await this.updateCartTimestamp(cartId);
       return true;
     } catch (err) {
-      throw new Error(`No se pudo eliminar la línea del carrito: ${err.message}`);
+      throw new Error(
+        `No se pudo eliminar la línea del carrito: ${err.message}`
+      );
     }
   }
 
@@ -556,7 +609,8 @@ class CartService {
   async removeItemsFromCart(cartId, cartItemsIds = [], options = {}) {
     const { skipTimestamp = false } = options;
     try {
-      if (!cartId || !Array.isArray(cartItemsIds) || cartItemsIds.length === 0) return false;
+      if (!cartId || !Array.isArray(cartItemsIds) || cartItemsIds.length === 0)
+        return false;
       const uniqueIds = [...new Set(cartItemsIds.filter(Boolean))];
       if (uniqueIds.length === 0) return false;
 
@@ -569,7 +623,9 @@ class CartService {
       if (!skipTimestamp) await this.updateCartTimestamp(cartId);
       return true;
     } catch (err) {
-      throw new Error(`No se pudo eliminar múltiples líneas del carrito: ${err.message}`);
+      throw new Error(
+        `No se pudo eliminar múltiples líneas del carrito: ${err.message}`
+      );
     }
   }
 
@@ -583,7 +639,7 @@ class CartService {
 
       if (error) throw error;
 
-  if (!skipTimestamp) await this.updateCartTimestamp(cartId);
+      if (!skipTimestamp) await this.updateCartTimestamp(cartId);
 
       return true;
     } catch (error) {
@@ -613,33 +669,47 @@ class CartService {
       if (!cartId) return null;
       // If there's already an in-flight or scheduled update for this cart, reuse it.
       if (__inFlightTimestampUpdates.has(cartId)) {
-  try { console.debug('[cartService] updateCartTimestamp dedup (reusing in-flight)', { cartId }); } catch(_) {}
-        return await __inFlightTimestampUpdates.get(cartId)
+        try {
+          console.debug(
+            '[cartService] updateCartTimestamp dedup (reusing in-flight)',
+            { cartId }
+          );
+        } catch (_) {}
+        return await __inFlightTimestampUpdates.get(cartId);
       }
 
       // Create a promise that waits a short debounce window so multiple rapid
       // callers are coalesced into a single PATCH request.
       const p = (async () => {
         // debounce window (ms) - tune as needed
-        const DEBOUNCE_MS = 150
-        await new Promise((resolve) => setTimeout(resolve, DEBOUNCE_MS))
+        const DEBOUNCE_MS = 150;
+        await new Promise(resolve => setTimeout(resolve, DEBOUNCE_MS));
         try {
-          const payload = { updated_at: new Date().toISOString() }
+          const payload = { updated_at: new Date().toISOString() };
           const startedAt = Date.now();
-          const res = await supabase.from('carts').update(payload).eq('cart_id', cartId)
-          try { console.debug('[cartService] updateCartTimestamp PATCH executed', { cartId, latencyMs: Date.now()-startedAt, error: res.error }); } catch(_) {}
-          return res
+          const res = await supabase
+            .from('carts')
+            .update(payload)
+            .eq('cart_id', cartId);
+          try {
+            console.debug('[cartService] updateCartTimestamp PATCH executed', {
+              cartId,
+              latencyMs: Date.now() - startedAt,
+              error: res.error,
+            });
+          } catch (_) {}
+          return res;
         } catch (error) {
-          return { error }
+          return { error };
         } finally {
-          __inFlightTimestampUpdates.delete(cartId)
+          __inFlightTimestampUpdates.delete(cartId);
         }
-      })()
+      })();
 
-      __inFlightTimestampUpdates.set(cartId, p)
-      return await p
+      __inFlightTimestampUpdates.set(cartId, p);
+      return await p;
     } catch (error) {
-      return null
+      return null;
     }
   }
 
@@ -651,7 +721,8 @@ class CartService {
     try {
       const { data, error } = await supabase
         .from('cart_items')
-        .select(`
+        .select(
+          `
           cart_items_id,
           product_id,
           quantity,
@@ -677,7 +748,8 @@ class CartService {
             product_delivery_regions (id, region, price, delivery_days),
             users!products_supplier_id_fkey (user_nm, logo_url, verified)
           )
-        `)
+        `
+        )
         .eq('cart_items_id', cartItemsId)
         .maybeSingle();
       if (error) return null;
@@ -708,17 +780,23 @@ class CartService {
         image: data.products?.product_images?.[0]?.image_url || null,
         imagen: data.products?.product_images?.[0]?.image_url || null,
         image_url: data.products?.product_images?.[0]?.image_url || null,
-        thumbnail_url: data.products?.product_images?.[0]?.thumbnail_url || null,
+        thumbnail_url:
+          data.products?.product_images?.[0]?.thumbnail_url || null,
         thumbnailUrl: data.products?.product_images?.[0]?.thumbnail_url || null,
         thumbnails: (() => {
           const raw = data.products?.product_images?.[0]?.thumbnails;
           if (!raw) return null;
           if (typeof raw === 'string') {
-            try { return JSON.parse(raw); } catch { return null; }
+            try {
+              return JSON.parse(raw);
+            } catch {
+              return null;
+            }
           }
           return raw;
         })(),
-        thumbnail_signature: data.products?.product_images?.[0]?.thumbnail_signature || null,
+        thumbnail_signature:
+          data.products?.product_images?.[0]?.thumbnail_signature || null,
         price: data.offered_price || data.products?.price || null,
         precio: data.offered_price || data.products?.price || null,
         originalPrice: data.products?.price || null,
@@ -734,7 +812,7 @@ class CartService {
         compraMinima: data.products?.minimum_purchase,
         negotiable: data.products?.negotiable,
         description: data.products?.description,
-        supplier_id: data.products?.supplier_id
+        supplier_id: data.products?.supplier_id,
       };
     } catch (_) {
       return null;
@@ -805,12 +883,22 @@ class CartService {
         const backendQty = backendItem ? backendItem.quantity : 0;
         const finalQty = Math.max(localQty, backendQty);
         try {
-          await this.updateItemQuantity(cart.cart_id, item.product_id || item.id, finalQty, { skipTimestamp: true });
+          await this.updateItemQuantity(
+            cart.cart_id,
+            item.product_id || item.id,
+            finalQty,
+            { skipTimestamp: true }
+          );
           mutationCount++;
         } catch (error) {
           if (isQuantityError(error)) {
             try {
-              await this.updateItemQuantity(cart.cart_id, item.product_id || item.id, 1, { skipTimestamp: true });
+              await this.updateItemQuantity(
+                cart.cart_id,
+                item.product_id || item.id,
+                1,
+                { skipTimestamp: true }
+              );
               mutationCount++;
             } catch (retryError) {}
           }
@@ -836,4 +924,3 @@ class CartService {
 
 export const cartService = new CartService();
 export default cartService;
-
