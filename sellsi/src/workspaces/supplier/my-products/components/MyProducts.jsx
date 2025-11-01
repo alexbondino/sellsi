@@ -36,29 +36,29 @@ import {
   showProductError,
   showSuccessToast,
   showErrorToast,
-} from '../../../../../utils/toastHelpers';
+} from '../../../../utils/toastHelpers';
 
 // Components
-import ProductCard from '../../../../../shared/components/display/product-card/ProductCard';
-import { Modal, MODAL_TYPES } from '../../../../../shared/components/feedback'; // <--- Importación del nuevo componente Modal
+import ProductCard from '../../../../shared/components/display/product-card/ProductCard';
+import { Modal, MODAL_TYPES } from '../../../../shared/components/feedback'; // <--- Importación del nuevo componente Modal
 import {
   TransferInfoValidationModal,
   useTransferInfoModal,
-} from '../../../../../shared/components/validation'; // Modal de validación bancaria
+} from '../../../../shared/components/validation'; // Modal de validación bancaria
 
 // Error Boundaries
-import { SupplierErrorBoundary } from '../../../error-boundary';
+import { SupplierErrorBoundary } from '../../error-boundary';
 
 // Hooks y stores
-import { useSupplierProducts } from '../../../../domains/supplier/hooks/useSupplierProducts';
+import { useSupplierProducts } from '../../shared-hooks/useSupplierProducts';
 import {
   useLazyProducts,
   useProductAnimations,
 } from '../../../../domains/supplier/hooks/useLazyProducts';
 import { dashboardThemeCore } from '../../home/styles/dashboardThemeCore';
 import { SPACING_BOTTOM_MAIN } from '../../shared-styles/layoutSpacing';
-import { formatPrice } from '../../../../../shared/utils/formatters';
-import { generateProductUrl } from '../../../../../shared/utils/product/productUrl';
+import { formatPrice } from '../../../../shared/utils/formatters';
+import { generateProductUrl } from '../../../../shared/utils/product/productUrl';
 
 // Advanced Loading Components
 import {
@@ -66,7 +66,7 @@ import {
   LoadMoreState,
   ScrollProgress,
   EmptyProductsState,
-} from '../../../../../shared/components/feedback/AdvancedLoading';
+} from '../../../../shared/components/feedback/AdvancedLoading';
 
 // Constantes
 const CATEGORIES = [
@@ -223,7 +223,9 @@ const MyProducts = () => {
     const obs = new IntersectionObserver(
       entries => {
         if (entries[0].isIntersecting) {
-          import('./AddProduct').catch(() => {});
+          import(
+            '../../../../domains/supplier/pages/my-products/AddProduct'
+          ).catch(() => {});
           obs.disconnect();
         }
       },
