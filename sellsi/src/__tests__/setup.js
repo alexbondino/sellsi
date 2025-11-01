@@ -106,7 +106,7 @@ global.localStorage = localStorageMock;
 // Some modules in the app use import.meta.env which Jest's CommonJS environment doesn't support.
 // Provide a simple manual mock for the flags module so tests that import it don't fail at parse time.
 // Cambiada ruta para apuntar al workspace centralizado
-jest.mock('../../src/workspaces/supplier/home/utils/featureFlags', () => ({
+jest.mock('../../src/workspaces/supplier/shared-utils/featureFlags', () => ({
   FeatureFlags: {},
   ThumbTimings: {},
 }));
