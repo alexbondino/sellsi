@@ -14,9 +14,8 @@
 
 import { create } from 'zustand';
 import { supabase } from '../../../../services/supabase';
-import { UploadService } from '../services/upload';
-import { queryClient } from '../../../../utils/queryClient';
-import { QUERY_KEYS } from '../../../../utils/queryClient';
+import { UploadService } from '../services/uploadService';
+import { queryClient, QUERY_KEYS } from '../../../../utils/queryClient';
 import { StorageCleanupService } from '../../../../shared/services/storage/storageCleanupService';
 import { CacheManagementService } from '../../../../shared/services/cache/cacheManagementService';
 

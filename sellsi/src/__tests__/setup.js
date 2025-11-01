@@ -12,9 +12,9 @@ global.import = {
   meta: {
     env: {
       VITE_SUPABASE_URL: 'http://localhost:54321',
-      VITE_SUPABASE_ANON_KEY: 'test-key'
-    }
-  }
+      VITE_SUPABASE_ANON_KEY: 'test-key',
+    },
+  },
 };
 
 // Configurar testing library
@@ -30,11 +30,21 @@ beforeAll(() => {
     if (typeof args[0] === 'string') {
       const msg = args[0];
       // Ignore legacy ReactDOM.render deprecation noise
-      if (msg.includes('Warning: ReactDOM.render is no longer supported')) return;
+      if (msg.includes('Warning: ReactDOM.render is no longer supported'))
+        return;
       // Ignore invalid DOM prop coming from third-party libs (fetchpriority vs fetchPriority)
-      if (msg.toLowerCase().includes('fetchpriority') || msg.toLowerCase().includes('fetchpriority')) return;
+      if (
+        msg.toLowerCase().includes('fetchpriority') ||
+        msg.toLowerCase().includes('fetchpriority')
+      )
+        return;
       // Ignore MUI Grid migration warnings that appear in tests
-      if (msg.includes('MUI Grid') || msg.includes('The `item` prop has been removed') || msg.includes('The `xs` prop has been removed')) return;
+      if (
+        msg.includes('MUI Grid') ||
+        msg.includes('The `item` prop has been removed') ||
+        msg.includes('The `xs` prop has been removed')
+      )
+        return;
     }
     originalError.call(console, ...args);
   };
@@ -54,15 +64,15 @@ afterAll(() => {
 // Mock de IntersectionObserver
 global.IntersectionObserver = class IntersectionObserver {
   constructor() {}
-  
+
   observe() {
     return null;
   }
-  
+
   disconnect() {
     return null;
   }
-  
+
   unobserve() {
     return null;
   }
@@ -95,7 +105,8 @@ global.localStorage = localStorageMock;
 // ===== MOCK: featureFlags module =====
 // Some modules in the app use import.meta.env which Jest's CommonJS environment doesn't support.
 // Provide a simple manual mock for the flags module so tests that import it don't fail at parse time.
-jest.mock('../../src/shared/flags/featureFlags', () => ({
+// Cambiada ruta para apuntar al workspace centralizado
+jest.mock('../../src/workspaces/supplier/home/utils/featureFlags', () => ({
   FeatureFlags: {},
   ThumbTimings: {},
 }));
@@ -131,8 +142,10 @@ jest.mock('../../src/services/supabase', () => {
   const supabase = {
     from: jest.fn(() => createQuery()),
     auth: {
-      getSession: jest.fn(() => Promise.resolve({ data: { session: currentSession } })),
-      onAuthStateChange: jest.fn((cb) => {
+      getSession: jest.fn(() =>
+        Promise.resolve({ data: { session: currentSession } })
+      ),
+      onAuthStateChange: jest.fn(cb => {
         authCallback = cb;
         return { data: { subscription: { unsubscribe: jest.fn() } } };
       }),
@@ -144,12 +157,20 @@ jest.mock('../../src/services/supabase', () => {
     currentSession = session;
     // Call the internal listener if registered
     if (typeof authCallback === 'function') {
-      try { authCallback(event, session); } catch (e) { /* ignore */ }
+      try {
+        authCallback(event, session);
+      } catch (e) {
+        /* ignore */
+      }
     }
     // Also call any globally registered test listeners (e.g., provider-level hooks)
     if (Array.isArray(globalThis.__TEST_AUTH_LISTENERS)) {
-      globalThis.__TEST_AUTH_LISTENERS.forEach((l) => {
-        try { l(event, session); } catch (e) { /* ignore */ }
+      globalThis.__TEST_AUTH_LISTENERS.forEach(l => {
+        try {
+          l(event, session);
+        } catch (e) {
+          /* ignore */
+        }
       });
     }
   };

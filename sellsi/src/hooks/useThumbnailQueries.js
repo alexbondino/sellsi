@@ -10,9 +10,10 @@ import { QUERY_KEYS, CACHE_CONFIGS } from '../utils/queryClient';
 // Importar como named export para evitar problemas de detección de default export en build
 // Intento de import nombrado; si tree-shake falla, se hará fallback en runtime
 import * as Phase1ETAGModule from '../services/phase1ETAGThumbnailService.js';
-const phase1ETAGService = Phase1ETAGModule.phase1ETAGService || Phase1ETAGModule.default;
+const phase1ETAGService =
+  Phase1ETAGModule.phase1ETAGService || Phase1ETAGModule.default;
 import { getOrFetchManyMainThumbnails } from '../services/phase1ETAGThumbnailService.js';
-import { FeatureFlags } from '../shared/flags/featureFlags.js';
+import { FeatureFlags } from '../workspaces/supplier/home/utils/featureFlags.js';
 
 /**
  * Query individual para thumbnails de un producto - FASE 1 OPTIMIZADO con ETag
@@ -24,15 +25,15 @@ export const useThumbnailQuery = (productId, options = {}) => {
       if (!productId) throw new Error('Product ID is required');
 
       const data = await phase1ETAGService.fetchThumbnailWithETag(productId);
-      
+
       if (!data) return null;
-      
+
       // Adaptar formato para compatibilidad con hooks existentes
       return {
         product_id: data.product_id,
         thumbnails: data.thumbnails,
         thumbnail_url: data.thumbnail_url,
-        thumbnail_signature: data.thumbnail_signature
+        thumbnail_signature: data.thumbnail_signature,
       };
     },
     enabled: !!productId,
@@ -63,7 +64,9 @@ export const useThumbnailsBatch = (productIds = [], options = {}) => {
         .order('product_id');
       if (error) throw error;
       const map = {};
-      data.forEach(r => { if (!map[r.product_id]) map[r.product_id] = r; });
+      data.forEach(r => {
+        if (!map[r.product_id]) map[r.product_id] = r;
+      });
       return map;
     },
     enabled: productIds.length > 0,
@@ -92,29 +95,29 @@ export const useThumbnailsIndependent = (productIds = []) => {
  */
 export const useInvalidateThumbnails = () => {
   const queryClient = useQueryClient();
-  
+
   return {
-    invalidateProduct: (productId) => {
-      queryClient.invalidateQueries({ 
-        queryKey: QUERY_KEYS.THUMBNAIL(productId) 
+    invalidateProduct: productId => {
+      queryClient.invalidateQueries({
+        queryKey: QUERY_KEYS.THUMBNAIL(productId),
       });
-      
+
       phase1ETAGService.invalidateProduct(productId);
     },
-    
+
     invalidateAll: () => {
-      queryClient.invalidateQueries({ 
-        queryKey: ['thumbnail'] 
+      queryClient.invalidateQueries({
+        queryKey: ['thumbnail'],
       });
-      
+
       phase1ETAGService.clearAll();
     },
-    
-    removeProduct: (productId) => {
-      queryClient.removeQueries({ 
-        queryKey: QUERY_KEYS.THUMBNAIL(productId) 
+
+    removeProduct: productId => {
+      queryClient.removeQueries({
+        queryKey: QUERY_KEYS.THUMBNAIL(productId),
       });
-      
+
       phase1ETAGService.invalidateProduct(productId);
     },
 

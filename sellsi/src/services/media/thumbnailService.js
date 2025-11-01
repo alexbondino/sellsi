@@ -1,20 +1,20 @@
 // thumbnailService.js - Servicio específico para gestión de thumbnails
-import { supabase } from '../supabase.js'
-import { getOrFetchMainThumbnail } from '../phase1ETAGThumbnailService.js'
-import { FeatureFlags } from '../../shared/flags/featureFlags.js'
+import { supabase } from '../supabase.js';
+import { getOrFetchMainThumbnail } from '../phase1ETAGThumbnailService.js';
+import { FeatureFlags } from '../../workspaces/supplier/home/utils/featureFlags.js';
 
 // Use the public env vars to call the Edge Function from the client
 // Use process.env during tests / Node. In Vite builds import.meta.env is replaced at build time.
-const SUPABASE_URL = process.env.VITE_SUPABASE_URL
-const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY
+const SUPABASE_URL = process.env.VITE_SUPABASE_URL;
+const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY;
 
 /**
  * Servicio especializado para la gestión de thumbnails
  * Maneja la generación, actualización y eliminación de thumbnails
  */
 export class ThumbnailService {
-  static THUMBNAIL_BUCKET = 'product-images-thumbnails'
-  static EDGE_FUNCTION_URL = `${SUPABASE_URL}/functions/v1/generate-thumbnail`
+  static THUMBNAIL_BUCKET = 'product-images-thumbnails';
+  static EDGE_FUNCTION_URL = `${SUPABASE_URL}/functions/v1/generate-thumbnail`;
 
   /**
    * Generar thumbnail para una imagen específica
@@ -31,39 +31,39 @@ export class ThumbnailService {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+          Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
         },
         body: JSON.stringify({
           imageUrl,
           productId,
           supplierId,
         }),
-      })
+      });
 
       if (!response.ok) {
-        const errorText = await response.text()
-        throw new Error(`Edge Function error: ${response.status} ${errorText}`)
+        const errorText = await response.text();
+        throw new Error(`Edge Function error: ${response.status} ${errorText}`);
       }
 
-      const result = await response.json()
-      
+      const result = await response.json();
+
       if (result.thumbnailUrl) {
         // Thumbnail generated successfully
         return {
           success: true,
           thumbnailUrl: result.thumbnailUrl,
-        }
+        };
       } else {
         return {
           success: false,
           error: 'No thumbnail URL returned from Edge Function',
-        }
+        };
       }
     } catch (error) {
       return {
         success: false,
         error: error.message,
-      }
+      };
     }
   }
 
@@ -79,15 +79,15 @@ export class ThumbnailService {
       // Regenerating thumbnail for image
 
       // Eliminar thumbnail anterior si existe
-      await this.deleteThumbnail(productId, supplierId)
+      await this.deleteThumbnail(productId, supplierId);
 
       // Generar nuevo thumbnail
-      return await this.generateThumbnail(imageUrl, productId, supplierId)
+      return await this.generateThumbnail(imageUrl, productId, supplierId);
     } catch (error) {
       return {
         success: false,
         error: error.message,
-      }
+      };
     }
   }
 
@@ -128,7 +128,7 @@ export class ThumbnailService {
         return { success: false, error: err.message };
       }
     } catch (error) {
-      return { success: false, error: error.message }
+      return { success: false, error: error.message };
     }
   }
 
@@ -145,16 +145,16 @@ export class ThumbnailService {
       const { error } = await supabase
         .from('product_images')
         .update({ thumbnail_url: thumbnailUrl })
-        .eq('id', productImageId)
+        .eq('id', productImageId);
 
       if (error) {
-        return { success: false, error: error.message }
+        return { success: false, error: error.message };
       }
 
       // Thumbnail URL updated in database successfully
-      return { success: true }
+      return { success: true };
     } catch (error) {
-      return { success: false, error: error.message }
+      return { success: false, error: error.message };
     }
   }
 
@@ -168,9 +168,13 @@ export class ThumbnailService {
     // Intentar primero cache Phase1 (short-circuit) si flag activo
     if (FeatureFlags?.FEATURE_PHASE1_THUMBS) {
       try {
-        const cached = await getOrFetchMainThumbnail(productId, { silent: true });
+        const cached = await getOrFetchMainThumbnail(productId, {
+          silent: true,
+        });
         if (cached?.thumbnail_url) return cached.thumbnail_url;
-      } catch (_) { /* fallback abajo */ }
+      } catch (_) {
+        /* fallback abajo */
+      }
     }
     // Legacy fallback directo a DB (único fetch si no estaba en cache)
     try {
@@ -182,7 +186,9 @@ export class ThumbnailService {
         .limit(1)
         .maybeSingle();
       if (!error && row?.thumbnail_url) return row.thumbnail_url;
-    } catch (_) { /* ignore */ }
+    } catch (_) {
+      /* ignore */
+    }
     // Último fallback: construir URL pública convencional
     try {
       const thumbnailPath = `${supplierId}/${productId}/thumbnail.jpg`;
@@ -211,9 +217,9 @@ export class ThumbnailService {
       if (error) return false;
       return data && data.length > 0;
     } catch (error) {
-      return false
+      return false;
     }
   }
 }
 
-export default ThumbnailService
+export default ThumbnailService;
