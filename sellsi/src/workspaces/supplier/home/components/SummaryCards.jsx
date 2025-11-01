@@ -1,14 +1,17 @@
 import React from 'react';
 import { Box } from '@mui/material';
-import StatCard from '../shared/components/display/statistics/StatCard';
+import { StatCard } from '../../../../ui-components';
 import {
   Inventory as InventoryIcon,
   AttachMoney as AttachMoneyIcon,
   Warning as WarningIcon,
   Assignment as AssignmentIcon,
 } from '@mui/icons-material';
-import { generateChartData } from './utils';
-import { formatNumber, formatCurrency } from '../shared/utils/formatters';
+import { generateChartData } from '../utils/utils';
+import {
+  formatNumber,
+  formatCurrency,
+} from '../../../../shared/utils/formatters';
 
 const SummaryCards = ({
   products = [],
