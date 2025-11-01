@@ -41,11 +41,12 @@ const AddProduct = React.lazy(() =>
 const MyOrdersPage = React.lazy(() =>
   import('../../workspaces/supplier/my-requests/components/MyOrdersPage')
 );
-const MarketplaceSupplier = React.lazy(() =>
-  import('../../domains/supplier').then(module => ({
-    default: module.MarketplaceSupplier,
-  }))
-);
+// TODO: MarketplaceSupplier component was removed during workspace reorganization
+// const MarketplaceSupplier = React.lazy(() =>
+//   import('../../domains/supplier').then(module => ({
+//     default: module.MarketplaceSupplier,
+//   }))
+// );
 const SupplierOffers = React.lazy(() =>
   import('../../workspaces/supplier/my-offers/components/SupplierOffers')
 );
@@ -393,8 +394,8 @@ export const AppRouter = ({ scrollTargets }) => {
             </PrivateRoute>
           }
         />
-        {/* Marketplace para el proveedor: igual que el del comprador pero con SideBar de proveedor */}
-        <Route
+        {/* TODO: MarketplaceSupplier route temporarily disabled - component was removed during workspace reorganization */}
+        {/* <Route
           path="/supplier/marketplace"
           element={
             <PrivateRoute
@@ -406,7 +407,7 @@ export const AppRouter = ({ scrollTargets }) => {
               <MarketplaceSupplier />
             </PrivateRoute>
           }
-        />
+        /> */}
         <Route
           path="/buyer/profile"
           element={
