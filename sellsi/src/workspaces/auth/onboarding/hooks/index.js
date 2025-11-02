@@ -1,1 +1,1 @@
-export { default as useOnboardingForm } from './useOnboardingForm';
+export { useOnboardingForm } from './useOnboardingForm';
