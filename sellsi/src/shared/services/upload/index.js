@@ -1,1 +1,1 @@
-export { UploadService } from './uploadService'
+export { UploadService } from '../../../workspaces/supplier/shared-services/uploadService';

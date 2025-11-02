@@ -29,7 +29,7 @@ const CRITICAL_ROUTES = new Map([
   ],
   [
     '/supplier/home',
-    () => import('../domains/supplier/pages/home/ProviderHome'),
+    () => import('../workspaces/supplier/home/components/Home'),
   ],
 ]);
 

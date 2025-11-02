@@ -1,3 +1,4 @@
+export { default as Login } from './login/components/Login.jsx';
 export { default as Register } from './register/components/Register.jsx';
 export { useLoginForm } from './login/hooks/useLoginForm.js';
 export { default as useTermsModal } from './register/hooks/useTermsModal.js';
@@ -7,4 +8,5 @@ export * from './shared-constants/constants.js';
 export { default as AuthCallback } from './login/services/AuthCallback';
 export { default as PrivateRoute } from './guards/components/PrivateRoute';
 export { default as OnboardingForm } from './onboarding/components/OnboardingForm';
+export { Onboarding } from './onboarding';
 export { default as ResetPassword } from './account-recovery/components/ResetPassword.jsx';

@@ -1,18 +1,25 @@
-import { validateTaxPdf, MAX_PDF_BYTES, PDF_MIME } from '../../../domains/supplier/pages/my-orders/validation/pdfValidation';
+import {
+  validateTaxPdf,
+  MAX_PDF_BYTES,
+  PDF_MIME,
+} from '../../../workspaces/supplier/my-requests/utils/pdfValidation';
 
-const fakeFile = (overrides={}) => ({
+const fakeFile = (overrides = {}) => ({
   type: PDF_MIME,
   size: 10_000,
   name: 'doc.pdf',
-  ...overrides
+  ...overrides,
 });
 
 describe('validateTaxPdf', () => {
   it('rechaza ausencia de archivo', () => {
-    expect(validateTaxPdf(null)).toEqual({ ok:false, error:'Archivo PDF requerido' });
+    expect(validateTaxPdf(null)).toEqual({
+      ok: false,
+      error: 'Archivo PDF requerido',
+    });
   });
   it('rechaza mime distinto a PDF', () => {
-    const res = validateTaxPdf(fakeFile({ type:'text/plain' }));
+    const res = validateTaxPdf(fakeFile({ type: 'text/plain' }));
     expect(res.ok).toBe(false);
     expect(res.error).toMatch(/PDF/);
   });
@@ -23,6 +30,6 @@ describe('validateTaxPdf', () => {
   });
   it('acepta PDF válido dentro de límite', () => {
     const res = validateTaxPdf(fakeFile({ size: MAX_PDF_BYTES }));
-    expect(res).toEqual({ ok:true });
+    expect(res).toEqual({ ok: true });
   });
 });

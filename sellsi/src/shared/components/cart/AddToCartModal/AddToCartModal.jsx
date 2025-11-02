@@ -24,7 +24,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 // Imports de componentes compartidos
 import QuantitySelector from '../../forms/QuantitySelector/QuantitySelector';
 // Helper de logging solo en desarrollo
-const devLog = (...args) => { if (process.env.NODE_ENV === 'development') console.info(...args); };
+const devLog = (...args) => {
+  if (process.env.NODE_ENV === 'development') console.info(...args);
+};
 import { CheckoutSummaryImage } from '../../../../components/UniversalProductImage'; // Imagen universal con fallbacks
 // useUnifiedShippingValidation reemplazado por hook especializado interno
 import { normalizePriceTiers } from '../../../../utils/priceCalculation';
@@ -32,7 +34,10 @@ import { supabase } from '../../../../services/supabase';
 import { useBillingInfoValidation } from '../../../hooks/profile/useBillingInfoValidation';
 import { useSupplierDocumentTypes } from '../../../utils/supplierDocumentTypes';
 // --- Lógica pura extraída (Phase 1) ---
-import { buildOfferProductData, buildRegularProductData } from './logic/productBuilders';
+import {
+  buildOfferProductData,
+  buildRegularProductData,
+} from './logic/productBuilders';
 import { computeQuantityBounds } from './logic/quantity';
 import { computePricing, findActiveTier } from './logic/pricing';
 import { shouldDisableButton } from './logic/disableButtonRules';
@@ -72,7 +77,7 @@ const layoutRootSx = {
 };
 
 // Factory para estilos dependientes de estado
-const tierPaperSx = (isActive) => ({
+const tierPaperSx = isActive => ({
   p: 2,
   border: isActive ? 2 : 1,
   borderColor: isActive ? 'primary.main' : 'grey.300',
@@ -128,22 +133,42 @@ const ProductSummary = React.memo(function ProductSummary({
     <Paper
       variant="outlined"
       sx={{ p: 2 }}
-      onClick={(e) => { e.stopPropagation(); }}
-      onMouseDown={(e) => { e.stopPropagation(); }}
+      onClick={e => {
+        e.stopPropagation();
+      }}
+      onMouseDown={e => {
+        e.stopPropagation();
+      }}
     >
       <Stack direction="row" spacing={2} alignItems="center">
-        <Box sx={{ width: 50, height: 50, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <Box
+          sx={{
+            width: 50,
+            height: 50,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
           <CheckoutSummaryImage
             product={productData}
             sx={checkoutSummaryImageSx}
           />
         </Box>
         <Box sx={{ flex: 1 }}>
-          <Stack direction="row" justifyContent="space-between" alignItems="flex-start" sx={{ mb: 0.5 }}>
-            <Typography variant="body1" sx={{ fontWeight: 600, flex: 1, pointerEvents: 'none' }}>
+          <Stack
+            direction="row"
+            justifyContent="space-between"
+            alignItems="flex-start"
+            sx={{ mb: 0.5 }}
+          >
+            <Typography
+              variant="body1"
+              sx={{ fontWeight: 600, flex: 1, pointerEvents: 'none' }}
+            >
               {productData.name}
             </Typography>
-            
+
             {/* Mostrar selector de cantidad solo si NO es modo oferta */}
             {!isOfferMode && (
               <Box sx={{ ml: 2, pointerEvents: 'auto', position: 'relative' }}>
@@ -170,7 +195,11 @@ const ProductSummary = React.memo(function ProductSummary({
                       minWidth: 200,
                     }}
                   >
-                    <Alert severity="error" variant="filled" sx={{ fontSize: '0.75rem', py: 0.5 }}>
+                    <Alert
+                      severity="error"
+                      variant="filled"
+                      sx={{ fontSize: '0.75rem', py: 0.5 }}
+                    >
                       {quantityError}
                     </Alert>
                   </Box>
@@ -182,7 +211,7 @@ const ProductSummary = React.memo(function ProductSummary({
                     display: 'block',
                     mt: 0.5,
                     fontSize: '0.75rem',
-                    pointerEvents: 'none'
+                    pointerEvents: 'none',
                   }}
                 >
                   Stock: {productData.stock.toLocaleString('es-CL')}
@@ -220,10 +249,10 @@ const ProductSummary = React.memo(function ProductSummary({
  * ============================================================================
  * MODAL AGREGAR AL CARRITO - COMPONENTE UNIVERSAL
  * ============================================================================
- * 
+ *
  * Modal deslizante que permite seleccionar cantidad, tipo de documento y
  * muestra información completa del producto antes de agregarlo al carrito.
- * 
+ *
  * CARACTERÍSTICAS:
  * - ✅ Animación slide desde la derecha
  * - ✅ Selector de cantidad integrado
@@ -248,7 +277,11 @@ const AddToCartModal = ({
   onRequireBillingInfo = null, // Nuevo: callback cuando falta billing info y se requiere factura
 }) => {
   // Validación de Billing (solo interesa si usuario selecciona factura)
-  const { isComplete: isBillingComplete, isLoading: isLoadingBilling, missingFieldLabels: missingBillingLabels } = useBillingInfoValidation();
+  const {
+    isComplete: isBillingComplete,
+    isLoading: isLoadingBilling,
+    missingFieldLabels: missingBillingLabels,
+  } = useBillingInfoValidation();
   // ============================================================================
   // ESTADOS LOCALES
   // ============================================================================
@@ -265,13 +298,24 @@ const AddToCartModal = ({
   const offerId = offer?.id || offer?.offer_id || offer?.offerId || null;
   const isOfferInCart = useCartStore(state => {
     if (!offerId) return false;
-    return (state.items || []).some(it => it && (it.offer_id || it.offerId) && String(it.offer_id || it.offerId) === String(offerId));
+    return (state.items || []).some(
+      it =>
+        it &&
+        (it.offer_id || it.offerId) &&
+        String(it.offer_id || it.offerId) === String(offerId)
+    );
   });
 
   // Inicialización de la gestión de cantidad (hook personalizado). Se hace
   // después de declarar `enrichedProduct` e `isOfferMode` para evitar usar
   // variables antes de su inicialización (evita ReferenceError).
-  const { quantity, setQuantity, quantityError, setQuantityError, handleQuantityChange: handleQuantityChangeHook } = useQuantityManagement({
+  const {
+    quantity,
+    setQuantity,
+    quantityError,
+    setQuantityError,
+    handleQuantityChange: handleQuantityChangeHook,
+  } = useQuantityManagement({
     open,
     isOfferMode,
     offer,
@@ -280,22 +324,21 @@ const AddToCartModal = ({
   });
 
   // Hook para obtener tipos de documentos permitidos por el proveedor
-  const supplierId = enrichedProduct?.supplier_id || enrichedProduct?.supplierId;
-  const { 
-    documentTypes: supplierDocumentTypes, 
-    availableOptions, 
+  const supplierId =
+    enrichedProduct?.supplier_id || enrichedProduct?.supplierId;
+  const {
+    documentTypes: supplierDocumentTypes,
+    availableOptions,
     loading: loadingDocumentTypes,
-    error: documentTypesError 
+    error: documentTypesError,
   } = useSupplierDocumentTypes(supplierId);
 
-
-
   // Función para cargar las regiones de despacho del producto
-  const loadProductShippingRegions = useCallback(async (productId) => {
+  const loadProductShippingRegions = useCallback(async productId => {
     if (!productId) return [];
-    
+
     try {
-    setIsLoadingRegions(true);
+      setIsLoadingRegions(true);
       const { data, error } = await supabase
         .from('product_delivery_regions')
         .select('id, region, price, delivery_days')
@@ -319,12 +362,22 @@ const AddToCartModal = ({
       if (!open || !product?.id) return;
 
       // Si el producto ya tiene regiones con delivery_days válidos, no recargar
-      const existing = product.shippingRegions || product.delivery_regions || product.shipping_regions || product.product_delivery_regions || [];
-      const hasValidDays = Array.isArray(existing) && existing.some(r => {
-        const d = typeof r === 'object' ? (r.delivery_days ?? r.maxDeliveryDays ?? r.days) : null;
-        const n = Number(d);
-        return Number.isFinite(n) && n > 0;
-      });
+      const existing =
+        product.shippingRegions ||
+        product.delivery_regions ||
+        product.shipping_regions ||
+        product.product_delivery_regions ||
+        [];
+      const hasValidDays =
+        Array.isArray(existing) &&
+        existing.some(r => {
+          const d =
+            typeof r === 'object'
+              ? r.delivery_days ?? r.maxDeliveryDays ?? r.days
+              : null;
+          const n = Number(d);
+          return Number.isFinite(n) && n > 0;
+        });
       if (Array.isArray(existing) && existing.length > 0 && hasValidDays) {
         setEnrichedProduct(product);
         return;
@@ -336,15 +389,19 @@ const AddToCartModal = ({
       const productWithRegions = {
         ...product,
         // Clonar arrays de tiers si existen para evitar mutaciones compartidas
-        priceTiers: product?.priceTiers ? product.priceTiers.map(t => ({ ...t })) : product?.priceTiers,
-        price_tiers: product?.price_tiers ? product.price_tiers.map(t => ({ ...t })) : product?.price_tiers,
+        priceTiers: product?.priceTiers
+          ? product.priceTiers.map(t => ({ ...t }))
+          : product?.priceTiers,
+        price_tiers: product?.price_tiers
+          ? product.price_tiers.map(t => ({ ...t }))
+          : product?.price_tiers,
         shippingRegions,
         delivery_regions: shippingRegions,
         shipping_regions: shippingRegions,
-        product_delivery_regions: shippingRegions
+        product_delivery_regions: shippingRegions,
       };
 
-  setEnrichedProduct(productWithRegions);
+      setEnrichedProduct(productWithRegions);
     };
 
     enrichProductWithRegions();
@@ -399,7 +456,9 @@ const AddToCartModal = ({
   useEffect(() => {
     if (open && availableOptions && availableOptions.length > 0) {
       // Si el tipo actual no está disponible para este proveedor, usar el primero disponible
-      const currentIsAvailable = availableOptions.some(option => option.value === documentType);
+      const currentIsAvailable = availableOptions.some(
+        option => option.value === documentType
+      );
       if (!currentIsAvailable) {
         setDocumentType(availableOptions[0].value);
       }
@@ -411,9 +470,22 @@ const AddToCartModal = ({
   // ============================================================================
 
   // Extraer datos del producto con fallbacks
-  const productData = useMemo(() => (isOfferMode && offer ? buildOfferProductData(offer, enrichedProduct) : buildRegularProductData(enrichedProduct)), [enrichedProduct, offer, isOfferMode]);
+  const productData = useMemo(
+    () =>
+      isOfferMode && offer
+        ? buildOfferProductData(offer, enrichedProduct)
+        : buildRegularProductData(enrichedProduct),
+    [enrichedProduct, offer, isOfferMode]
+  );
 
-  const { shippingValidation, isValidatingShipping, justOpened, effectiveUserRegion, getUserRegionName, isLoadingUserRegion } = useProductShippingValidationOnOpen({
+  const {
+    shippingValidation,
+    isValidatingShipping,
+    justOpened,
+    effectiveUserRegion,
+    getUserRegionName,
+    isLoadingUserRegion,
+  } = useProductShippingValidationOnOpen({
     open,
     enrichedProduct,
     userRegionProp: userRegion,
@@ -429,20 +501,31 @@ const AddToCartModal = ({
     const src = enrichedProduct || product;
     if (!src) return false;
     const candidates = [];
-    const pushVal = (v) => {
+    const pushVal = v => {
       if (!v) return;
       if (Array.isArray(v)) return v.forEach(x => pushVal(x));
       if (typeof v === 'string') return candidates.push(v);
-      if (typeof v === 'object') return candidates.push(v.name || v.category || v.categoria || '');
+      if (typeof v === 'object')
+        return candidates.push(v.name || v.category || v.categoria || '');
     };
 
     // Campos comunes donde la categoría aparece en el producto original
-    ['categoria', 'category', 'category_nm', 'categoryName', 'category_name', 'categoria_nm', 'categoriaName'].forEach(k => pushVal(src[k]));
+    [
+      'categoria',
+      'category',
+      'category_nm',
+      'categoryName',
+      'category_name',
+      'categoria_nm',
+      'categoriaName',
+    ].forEach(k => pushVal(src[k]));
     // También inspeccionar listas/arrays comunes
     pushVal(src.categories);
     pushVal(src.category);
 
-    return candidates.some(c => /tabaqueria|tabaquería|alcoholes?/i.test(String(c || '').trim()));
+    return candidates.some(c =>
+      /tabaqueria|tabaquería|alcoholes?/i.test(String(c || '').trim())
+    );
   }, [enrichedProduct, product]);
 
   // ============================================================================
@@ -450,21 +533,34 @@ const AddToCartModal = ({
   // ============================================================================
 
   // Normalizar tiers para UI (precio DESC estable). Solo recalcula cuando cambia la referencia original
-  const displayPriceTiers = useMemo(() => normalizePriceTiers(productData.priceTiers, 'price_desc'), [productData.priceTiers]);
+  const displayPriceTiers = useMemo(
+    () => normalizePriceTiers(productData.priceTiers, 'price_desc'),
+    [productData.priceTiers]
+  );
 
   // Calcular precio actual usando lógica pura extraída
-  const currentPricing = useMemo(() => computePricing(productData.priceTiers, productData.basePrice, quantity), [productData.priceTiers, productData.basePrice, quantity]);
+  const currentPricing = useMemo(
+    () =>
+      computePricing(productData.priceTiers, productData.basePrice, quantity),
+    [productData.priceTiers, productData.basePrice, quantity]
+  );
 
   // Encontrar el tramo activo para resaltado (SOLO el que corresponde a la cantidad actual)
-  const activeTier = useMemo(() => findActiveTier(productData.priceTiers, quantity), [productData.priceTiers, quantity]);
+  const activeTier = useMemo(
+    () => findActiveTier(productData.priceTiers, quantity),
+    [productData.priceTiers, quantity]
+  );
 
   // ============================================================================
   // HANDLERS DE EVENTOS
   // ============================================================================
 
-  const handleQuantityChange = useCallback((newQuantity) => handleQuantityChangeHook(newQuantity, productData), [handleQuantityChangeHook, productData]);
+  const handleQuantityChange = useCallback(
+    newQuantity => handleQuantityChangeHook(newQuantity, productData),
+    [handleQuantityChangeHook, productData]
+  );
 
-  const handleDocumentTypeChange = useCallback((event) => {
+  const handleDocumentTypeChange = useCallback(event => {
     setDocumentType(event.target.value);
   }, []);
 
@@ -484,9 +580,15 @@ const AddToCartModal = ({
     }
 
     // Modo normal: validaciones de cantidad
-  const { minQ, maxQ } = computeQuantityBounds(productData);
-  if (quantity < minQ) { setQuantityError(`La cantidad mínima de compra es ${minQ} unidades`); return; }
-  if (quantity > maxQ) { setQuantityError(`La cantidad máxima disponible es ${maxQ} unidades`); return; }
+    const { minQ, maxQ } = computeQuantityBounds(productData);
+    if (quantity < minQ) {
+      setQuantityError(`La cantidad mínima de compra es ${minQ} unidades`);
+      return;
+    }
+    if (quantity > maxQ) {
+      setQuantityError(`La cantidad máxima disponible es ${maxQ} unidades`);
+      return;
+    }
 
     // Bloqueo previo: si se selecciona factura y billing incompleto
     if (documentType === 'factura') {
@@ -502,7 +604,7 @@ const AddToCartModal = ({
     }
 
     setIsProcessing(true);
-    
+
     try {
       const cartItem = {
         ...productData,
@@ -512,11 +614,14 @@ const AddToCartModal = ({
         totalPrice: currentPricing.total,
         selectedTier: activeTier,
       };
-      
+
       await onAddToCart(cartItem);
       onClose();
     } catch (error) {
-      console.error('❌ [AddToCartModal] Error al agregar producto al carrito:', error);
+      console.error(
+        '❌ [AddToCartModal] Error al agregar producto al carrito:',
+        error
+      );
     } finally {
       setIsProcessing(false);
     }
@@ -533,7 +638,7 @@ const AddToCartModal = ({
     isBillingComplete,
     isLoadingBilling,
     missingBillingLabels,
-    onRequireBillingInfo
+    onRequireBillingInfo,
   ]);
 
   const handleClose = useCallback(() => {
@@ -546,7 +651,10 @@ const AddToCartModal = ({
   // COMPONENTES INTERNOS
   // ============================================================================
 
-  const quantityBounds = useMemo(() => computeQuantityBounds(productData), [productData]);
+  const quantityBounds = useMemo(
+    () => computeQuantityBounds(productData),
+    [productData]
+  );
 
   // ============================================================================
   // RENDER PRINCIPAL
@@ -568,24 +676,34 @@ const AddToCartModal = ({
               sx: {
                 zIndex: 9998, // Backdrop justo debajo del modal
                 backgroundColor: 'rgba(0, 0, 0, 0.5)', // Asegurar que sea visible
-              }
-            }
+              },
+            },
           }}
           sx={{
             zIndex: 9999, // También en el Drawer principal
           }}
         >
-          <Box 
-            sx={layoutRootSx}
-          >
-            
+          <Box sx={layoutRootSx}>
             {/* Header */}
             <Box sx={drawerHeaderSx}>
-              <Stack direction="row" justifyContent="space-between" alignItems="center">
-                <Typography variant="h6" sx={{ fontWeight: 700, color: 'common.white' }}>
-                  {isOfferMode ? 'Confirmar Oferta Aceptada' : 'Resumen del Pedido'}
+              <Stack
+                direction="row"
+                justifyContent="space-between"
+                alignItems="center"
+              >
+                <Typography
+                  variant="h6"
+                  sx={{ fontWeight: 700, color: 'common.white' }}
+                >
+                  {isOfferMode
+                    ? 'Confirmar Oferta Aceptada'
+                    : 'Resumen del Pedido'}
                 </Typography>
-                <IconButton onClick={handleClose} size="small" sx={{ color: 'common.white' }}>
+                <IconButton
+                  onClick={handleClose}
+                  size="small"
+                  sx={{ color: 'common.white' }}
+                >
                   <CloseIcon />
                 </IconButton>
               </Stack>
@@ -594,12 +712,19 @@ const AddToCartModal = ({
             {/* Content */}
             <Box sx={{ flex: 1, p: 2, overflow: 'auto' }}>
               <Stack spacing={3}>
-                
                 {/* 1. Precios (ofertas o regulares) */}
                 {isOfferMode ? (
-                  <OfferPriceDisplay offer={offer} productData={productData} isOfferMode={isOfferMode} />
+                  <OfferPriceDisplay
+                    offer={offer}
+                    productData={productData}
+                    isOfferMode={isOfferMode}
+                  />
                 ) : (
-                  <PriceTiersDisplay productData={productData} priceTiers={displayPriceTiers} quantity={quantity} />
+                  <PriceTiersDisplay
+                    productData={productData}
+                    priceTiers={displayPriceTiers}
+                    quantity={quantity}
+                  />
                 )}
 
                 {/* 2. Resumen del producto con selector de cantidad (memoizado) */}
@@ -616,7 +741,11 @@ const AddToCartModal = ({
 
                 {/* 3. Aviso de edad para categorías restringidas */}
                 {isAgeRestrictedCategory && (
-                  <Alert severity="warning" icon={<WarningIcon />} sx={{ fontSize: '0.95rem' }}>
+                  <Alert
+                    severity="warning"
+                    icon={<WarningIcon />}
+                    sx={{ fontSize: '0.95rem' }}
+                  >
                     Venta de alcohol y tabaco solo para mayores de 18 años.
                   </Alert>
                 )}
@@ -641,23 +770,27 @@ const AddToCartModal = ({
                   shippingValidation={shippingValidation}
                   getUserRegionName={getUserRegionName}
                 />
-
               </Stack>
             </Box>
 
             {/* Subtotal siempre al final */}
             <Box sx={{ p: 2, pt: 0 }}>
-              <SubtotalSection currentPricing={currentPricing} shippingValidation={shippingValidation} />
+              <SubtotalSection
+                currentPricing={currentPricing}
+                shippingValidation={shippingValidation}
+              />
             </Box>
 
             {/* Footer con botón */}
-            <Box sx={{ 
-              p: 2, 
-              pt: 1,
-              borderTop: 1, 
-              borderColor: 'divider',
-              bgcolor: 'background.paper',
-            }}>
+            <Box
+              sx={{
+                p: 2,
+                pt: 1,
+                borderTop: 1,
+                borderColor: 'divider',
+                bgcolor: 'background.paper',
+              }}
+            >
               {/**
                * Reglas de deshabilitación del botón:
                * - Producto propio
@@ -673,29 +806,33 @@ const AddToCartModal = ({
                 variant="contained"
                 size="large"
                 onClick={handleAddToCart}
-                disabled={shouldDisableButton({
-                  isOwnProduct,
-                  isProcessing,
-                  shippingValidation,
-                  isOfferMode,
-                  quantityError,
-                  effectiveUserRegion,
-                  isLoadingUserProfile,
-                  isLoadingUserRegion,
-                  justOpened,
-                }) || (isOfferMode && isOfferInCart)}
+                disabled={
+                  shouldDisableButton({
+                    isOwnProduct,
+                    isProcessing,
+                    shippingValidation,
+                    isOfferMode,
+                    quantityError,
+                    effectiveUserRegion,
+                    isLoadingUserProfile,
+                    isLoadingUserRegion,
+                    justOpened,
+                  }) ||
+                  (isOfferMode && isOfferInCart)
+                }
                 sx={{ py: 1.5 }}
               >
-                {isProcessing ? 
-                  (isOfferMode ? 'Procesando oferta...' : 'Agregando...') : 
-                  (isOfferMode ? 
-                    'Confirmar Oferta' : 
-                    (documentType === 'factura' && !isBillingComplete ? 'Completar Facturación' : 'Agregar al Carrito')
-                  )
-                }
+                {isProcessing
+                  ? isOfferMode
+                    ? 'Procesando oferta...'
+                    : 'Agregando...'
+                  : isOfferMode
+                  ? 'Confirmar Oferta'
+                  : documentType === 'factura' && !isBillingComplete
+                  ? 'Completar Facturación'
+                  : 'Agregar al Carrito'}
               </Button>
             </Box>
-
           </Box>
         </Drawer>
       )}

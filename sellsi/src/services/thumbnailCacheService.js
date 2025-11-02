@@ -1,28 +1,37 @@
 /**
  * SERVICIO CENTRAL DE CACHE DE THUMBNAILS
- * 
+ *
  * Maneja el cache inteligente de thumbnails con invalidación automática
  * y verificación de existencia de URLs para evitar imágenes fantasma
  */
 
-import { supabase } from './supabase';
-import { getOrFetchMainThumbnail, phase1ETAGService } from './phase1ETAGThumbnailService.js';
-import { FeatureFlags } from '../shared/flags/featureFlags.js';
+import { supabase } from './supabase.js';
+import {
+  getOrFetchMainThumbnail,
+  phase1ETAGService,
+} from './phase1ETAGThumbnailService.js';
+import { queryClient, QUERY_KEYS } from '../utils/queryClient.js';
+
+// Use a deep import due to the way vite & testing handle module resolution
+// Multiple variations available:
+// A) '../shared/flags/featureFlags.js' (shared version)
+// B) '../path/to/workspaces/.../featureFlags.js' (workspace specific)
+import { FeatureFlags } from '../workspaces/supplier/shared-utils/featureFlags.js';
 
 class ThumbnailCacheService {
   constructor() {
     // Cache en memoria con TTL (Time To Live)
     this.cache = new Map();
     this.urlValidationCache = new Map();
-    
+
     // Configuración - OPTIMIZED for marketplace scale
     this.TTL = 15 * 60 * 1000; // 🚀 INCREASED: 5min→15min (less cache churn)
-    this.MAX_CACHE_SIZE = 3000;  // 🚀 INCREASED: 1000→3000 (more thumbnails)
-    
+    this.MAX_CACHE_SIZE = 3000; // 🚀 INCREASED: 1000→3000 (more thumbnails)
+
     // 🚀 NEW: Request debouncing to prevent spam
     this.pendingRequests = new Map(); // productId → Promise
-    this.requestQueue = new Set();    // Track queued requests
-    
+    this.requestQueue = new Set(); // Track queued requests
+
     // Limpiar cache periódicamente
     this.startCleanupInterval();
   }
@@ -39,7 +48,7 @@ class ThumbnailCacheService {
    */
   async verifyThumbnailExists(url) {
     if (!url) return false;
-    
+
     // Revisar cache de validación primero
     const cacheKey = `url_${url}`;
     if (this.urlValidationCache.has(cacheKey)) {
@@ -53,21 +62,21 @@ class ThumbnailCacheService {
       // Hacer una petición HEAD para verificar existencia sin descargar
       const response = await fetch(url, { method: 'HEAD' });
       const exists = response.ok;
-      
+
       // Guardar resultado en cache
       this.urlValidationCache.set(cacheKey, {
         exists,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       });
-      
+
       return exists;
     } catch (error) {
       // Cachear como no existente en caso de error
       this.urlValidationCache.set(cacheKey, {
         exists: false,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       });
-      
+
       return false;
     }
   }
@@ -77,12 +86,12 @@ class ThumbnailCacheService {
    */
   async getThumbnails(productId, forceRefresh = false) {
     const cacheKey = this.generateCacheKey(productId);
-    
+
     // 🚀 NEW: Check if request is already pending (debouncing)
     if (!forceRefresh && this.pendingRequests.has(productId)) {
       return await this.pendingRequests.get(productId);
     }
-    
+
     // Revisar cache primero (a menos que se fuerce refresh)
     if (!forceRefresh && this.cache.has(cacheKey)) {
       const cached = this.cache.get(cacheKey);
@@ -113,19 +122,32 @@ class ThumbnailCacheService {
         if (firstRow) {
           if (firstRow.thumbnails) {
             try {
-              thumbnailData = typeof firstRow.thumbnails === 'string'
-                ? JSON.parse(firstRow.thumbnails)
-                : firstRow.thumbnails;
-            } catch (_) { /* noop */ }
+              thumbnailData =
+                typeof firstRow.thumbnails === 'string'
+                  ? JSON.parse(firstRow.thumbnails)
+                  : firstRow.thumbnails;
+            } catch (_) {
+              /* noop */
+            }
           }
           if (!thumbnailData && firstRow.thumbnail_url) {
-            const minithumbUrl = firstRow.thumbnail_url.replace('_desktop_320x260.jpg','_minithumb_40x40.jpg');
+            const minithumbUrl = firstRow.thumbnail_url.replace(
+              '_desktop_320x260.jpg',
+              '_minithumb_40x40.jpg'
+            );
             if (minithumbUrl !== firstRow.thumbnail_url) {
-              thumbnailData = { minithumb: minithumbUrl, desktop: firstRow.thumbnail_url };
+              thumbnailData = {
+                minithumb: minithumbUrl,
+                desktop: firstRow.thumbnail_url,
+              };
             }
           }
         }
-        const cacheData = { data: thumbnailData, timestamp: Date.now(), productId };
+        const cacheData = {
+          data: thumbnailData,
+          timestamp: Date.now(),
+          productId,
+        };
         this.cache.set(cacheKey, cacheData);
         this.cleanupCache();
         return thumbnailData;
@@ -140,7 +162,7 @@ class ThumbnailCacheService {
 
     // 🚀 NEW: Store pending request for debouncing
     this.pendingRequests.set(productId, fetchPromise);
-    
+
     return await fetchPromise;
   }
 
@@ -149,35 +171,34 @@ class ThumbnailCacheService {
    */
   buildMinithumbUrl(originalImageUrl) {
     if (!originalImageUrl) return null;
-    
+
     try {
       const url = new URL(originalImageUrl);
-      
+
       // Verificar si es URL de Supabase con bucket de imágenes
       if (url.pathname.includes('/storage/v1/object/public/product-images/')) {
         // Cambiar al bucket de thumbnails
         const thumbnailPath = url.pathname.replace(
-          '/storage/v1/object/public/product-images/', 
+          '/storage/v1/object/public/product-images/',
           '/storage/v1/object/public/product-images-thumbnails/'
         );
-        
+
         // Obtener nombre del archivo y extraer timestamp
         const pathParts = thumbnailPath.split('/');
         const fileName = pathParts[pathParts.length - 1];
         const timestampMatch = fileName.match(/^(\d+)_/);
-        
+
         if (timestampMatch) {
           const timestamp = timestampMatch[1];
           const minithumbFileName = `${timestamp}_minithumb_40x40.jpg`;
-          
+
           // Construir URL del minithumb
           pathParts[pathParts.length - 1] = minithumbFileName;
           return `${url.origin}${pathParts.join('/')}`;
         }
       }
-    } catch (error) {
-    }
-    
+    } catch (error) {}
+
     return null;
   }
 
@@ -188,7 +209,7 @@ class ThumbnailCacheService {
     if (!product) return '/placeholder-product.jpg';
 
     const productId = product.id || product.product_id;
-    
+
     try {
       // 1. Intentar desde thumbnails del producto
       if (product.thumbnails && typeof product.thumbnails === 'object') {
@@ -237,10 +258,9 @@ class ThumbnailCacheService {
       }
 
       // 5. Fallbacks adicionales (thumbnail_url, etc.)
-      const fallbacks = [
-        product.thumbnail_url,
-        product.thumbnailUrl
-      ].filter(Boolean);
+      const fallbacks = [product.thumbnail_url, product.thumbnailUrl].filter(
+        Boolean
+      );
 
       for (const fallbackUrl of fallbacks) {
         const exists = await this.verifyThumbnailExists(fallbackUrl);
@@ -248,10 +268,9 @@ class ThumbnailCacheService {
           return this.addCacheBuster(fallbackUrl);
         }
       }
-      
+
       // 6. Último recurso: placeholder
       return '/placeholder-product.jpg';
-
     } catch (error) {
       // En caso de error, intentar imagen principal como último recurso
       const mainImage = product.imagen || product.image;
@@ -267,7 +286,7 @@ class ThumbnailCacheService {
    */
   addCacheBuster(url) {
     if (!url || url === '/placeholder-product.jpg') return url;
-    
+
     try {
       const urlObj = new URL(url);
       urlObj.searchParams.set('t', Date.now());
@@ -289,8 +308,12 @@ class ThumbnailCacheService {
       if (key.includes(productId)) this.urlValidationCache.delete(key);
     }
     // También invalidar fase1 para consistencia cross-cache
-    try { phase1ETAGService.invalidateProduct(productId); } catch(_) { /* noop */ }
-    
+    try {
+      phase1ETAGService.invalidateProduct(productId);
+    } catch (_) {
+      /* noop */
+    }
+
     // � AGGRESSIVE INVALIDATION - Force immediate refresh
     this.forceImmediateRefresh(productId);
   }
@@ -303,17 +326,32 @@ class ThumbnailCacheService {
       // 1. Invalidate React Query AGGRESSIVELY
       if (window.queryClient) {
         // Invalidate ALL possible query combinations
-        window.queryClient.invalidateQueries({ queryKey: ['thumbnails'], exact: false });
-        window.queryClient.invalidateQueries({ queryKey: ['thumbnail'], exact: false });
-        window.queryClient.invalidateQueries({ queryKey: ['product'], exact: false });
-        
+        window.queryClient.invalidateQueries({
+          queryKey: ['thumbnails'],
+          exact: false,
+        });
+        window.queryClient.invalidateQueries({
+          queryKey: ['thumbnail'],
+          exact: false,
+        });
+        window.queryClient.invalidateQueries({
+          queryKey: ['product'],
+          exact: false,
+        });
+
         // Force refetch immediately
-        window.queryClient.refetchQueries({ queryKey: ['thumbnails', productId] });
-        window.queryClient.refetchQueries({ queryKey: ['thumbnail', productId] });
+        window.queryClient.refetchQueries({
+          queryKey: ['thumbnails', productId],
+        });
+        window.queryClient.refetchQueries({
+          queryKey: ['thumbnail', productId],
+        });
       }
 
       // 2. Force DOM image refresh with cache busting
-      const images = document.querySelectorAll(`img[data-product-id="${productId}"]`);
+      const images = document.querySelectorAll(
+        `img[data-product-id="${productId}"]`
+      );
       images.forEach(img => {
         const originalSrc = img.src;
         if (originalSrc && !originalSrc.includes('placeholder')) {
@@ -324,14 +362,19 @@ class ThumbnailCacheService {
       });
 
       // 3. Emit multiple events for different systems
-      ['forceImageRefresh', 'thumbnailInvalidated', 'productImageUpdated'].forEach(eventType => {
-        window.dispatchEvent(new CustomEvent(eventType, { 
-          detail: { productId, timestamp: Date.now(), force: true }
-        }));
+      [
+        'forceImageRefresh',
+        'thumbnailInvalidated',
+        'productImageUpdated',
+      ].forEach(eventType => {
+        window.dispatchEvent(
+          new CustomEvent(eventType, {
+            detail: { productId, timestamp: Date.now(), force: true },
+          })
+        );
       });
 
       console.log(`🔄 FORCED refresh for product ${productId}`);
-      
     } catch (error) {
       console.warn('⚠️ Error in forceImmediateRefresh:', error);
     }
@@ -344,7 +387,7 @@ class ThumbnailCacheService {
     const now = Date.now();
     let deletedByTTL = 0;
     let deletedBySize = 0;
-    
+
     // 1. Limpiar por TTL primero
     for (const [key, value] of this.cache.entries()) {
       if (now - value.timestamp > this.TTL) {
@@ -352,29 +395,32 @@ class ThumbnailCacheService {
         deletedByTTL++;
       }
     }
-    
+
     // 2. Limpiar por tamaño usando LRU (Least Recently Used)
     if (this.cache.size > this.MAX_CACHE_SIZE) {
-      const entries = Array.from(this.cache.entries())
-        .sort((a, b) => a[1].timestamp - b[1].timestamp); // más antiguos primero
-      
+      const entries = Array.from(this.cache.entries()).sort(
+        (a, b) => a[1].timestamp - b[1].timestamp
+      ); // más antiguos primero
+
       const toDelete = this.cache.size - this.MAX_CACHE_SIZE;
       for (let i = 0; i < toDelete; i++) {
         this.cache.delete(entries[i][0]);
         deletedBySize++;
       }
     }
-    
+
     // 3. También limpiar URL validation cache
     for (const [key, value] of this.urlValidationCache.entries()) {
       if (now - value.timestamp > this.TTL) {
         this.urlValidationCache.delete(key);
       }
     }
-    
+
     // 4. Log cleanup si es significativo
     if (deletedByTTL > 10 || deletedBySize > 5) {
-      console.log(`🧹 Thumbnail cache cleanup: TTL=${deletedByTTL}, Size=${deletedBySize}, Remaining=${this.cache.size}`);
+      console.log(
+        `🧹 Thumbnail cache cleanup: TTL=${deletedByTTL}, Size=${deletedBySize}, Remaining=${this.cache.size}`
+      );
     }
   }
 
@@ -401,25 +447,26 @@ class ThumbnailCacheService {
    */
   async getBestThumbnailsBatch(products) {
     if (!products || !products.length) return {};
-    
+
     const results = {};
     const needFetch = [];
-    
+
     // Check cache first
     products.forEach(product => {
-      const productId = product?.id || product?.productid || product?.product_id;
+      const productId =
+        product?.id || product?.productid || product?.product_id;
       if (!productId) return;
-      
+
       const cacheKey = this.generateCacheKey(productId);
       const cached = this.cache.get(cacheKey);
-      
+
       if (cached && Date.now() - cached.timestamp < this.TTL) {
         results[productId] = cached.data;
       } else {
         needFetch.push(productId);
       }
     });
-    
+
     // Batch fetch missing ones
     if (needFetch.length > 0) {
       try {
@@ -428,27 +475,26 @@ class ThumbnailCacheService {
           .select('product_id, thumbnails, thumbnail_url, thumbnail_signature')
           .in('product_id', needFetch)
           .eq('image_order', 0);
-          
+
         data?.forEach(item => {
           if (item) {
             const cacheKey = this.generateCacheKey(item.product_id);
             this.cache.set(cacheKey, {
               data: item.thumbnails || item.thumbnail_url,
               timestamp: Date.now(),
-              signature: item.thumbnail_signature
+              signature: item.thumbnail_signature,
             });
             results[item.product_id] = item.thumbnails || item.thumbnail_url;
           }
         });
-        
+
         // Cleanup if needed
         this.performCleanup();
-        
       } catch (error) {
         console.warn('🚨 Batch thumbnail fetch failed:', error);
       }
     }
-    
+
     return results;
   }
 
@@ -460,7 +506,7 @@ class ThumbnailCacheService {
       size: this.cache.size,
       urlValidationSize: this.urlValidationCache.size,
       maxSize: this.MAX_CACHE_SIZE,
-      ttl: this.TTL
+      ttl: this.TTL,
     };
   }
 }

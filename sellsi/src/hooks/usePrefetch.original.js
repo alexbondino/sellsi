@@ -27,14 +27,29 @@ import { useLocation } from 'react-router-dom';
 // hook conozca el dominio.
 const ROUTE_COMPONENTS = new Map([
   ['/marketplace', () => import('../domains/marketplace/pages/Marketplace')],
-  ['/buyer/marketplace', () => import('../domains/buyer/pages/MarketplaceBuyer')],
+  [
+    '/buyer/marketplace',
+    () => import('../domains/buyer/pages/MarketplaceBuyer'),
+  ],
   ['/buyer/cart', () => import('../domains/buyer/pages/BuyerCart')],
   ['/buyer/orders', () => import('../domains/buyer/pages/BuyerOrders')],
   // BuyerPerformance was removed; prefetch MarketplaceBuyer instead to keep behavior
-  ['/buyer/performance', () => import('../domains/buyer/pages/MarketplaceBuyer')],
-  ['/supplier/home', () => import('../domains/supplier/pages/home/ProviderHome')],
-  ['/supplier/myproducts', () => import('../domains/supplier/pages/my-products/MyProducts')],
-  ['/supplier/addproduct', () => import('../domains/supplier/pages/my-products/AddProduct')],
+  [
+    '/buyer/performance',
+    () => import('../domains/buyer/pages/MarketplaceBuyer'),
+  ],
+  [
+    '/supplier/home',
+    () => import('../domains/supplier/pages/home/ProviderHome'),
+  ],
+  [
+    '/supplier/myproducts',
+    () => import('../workspaces/supplier/my-products/components/MyProducts'),
+  ],
+  [
+    '/supplier/addproduct',
+    () => import('../workspaces/supplier/create-product/components/AddProduct'),
+  ],
 ]);
 
 export const registerPrefetchRoute = (routePath, importerFn) => {
@@ -85,7 +100,7 @@ export const usePrefetch = () => {
       return; // Ya está prefetched
     }
 
-  const importFunction = ROUTE_COMPONENTS.get(routePath);
+    const importFunction = ROUTE_COMPONENTS.get(routePath);
     if (importFunction) {
       // Marcar como prefetched antes de iniciar la importación
       prefetchedRoutes.current.add(routePath);
@@ -133,7 +148,7 @@ export const usePrefetch = () => {
    */
   const prefetchRelatedRoutes = () => {
     const currentPath = location.pathname;
-  const relatedRoutes = RELATED_ROUTES.get(currentPath) || [];
+    const relatedRoutes = RELATED_ROUTES.get(currentPath) || [];
 
     // Delay para no interferir con la carga de la página actual
     setTimeout(() => {

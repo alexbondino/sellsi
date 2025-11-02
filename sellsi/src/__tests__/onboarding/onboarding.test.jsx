@@ -13,7 +13,8 @@ jest.mock('../../hooks/useOptimizedUserShippingRegion', () => ({
 }));
 
 // Require the component after mocks so tests can safely adjust module-scoped mocks
-const Onboarding = require('../../app/pages/onboarding/Onboarding').default;
+const Onboarding =
+  require('../../workspaces/auth/onboarding/components/Onboarding').default;
 
 describe('Onboarding page - integration-ish tests', () => {
   const originalCreateObjectURL = URL.createObjectURL;
@@ -36,25 +37,36 @@ describe('Onboarding page - integration-ish tests', () => {
     jest.clearAllMocks();
     // default supabase spies - ensure objects exist before assigning
     if (supabase) {
-  if (!supabase.auth) supabase.auth = {};
-  supabase.auth.getUser = jest.fn().mockResolvedValue({ data: { user: { id: 'user-1', email: 'test@example.com' } }, error: null });
-  // refreshSession is called in the flow; ensure it's present
-  supabase.auth.refreshSession = jest.fn().mockResolvedValue(null);
+      if (!supabase.auth) supabase.auth = {};
+      supabase.auth.getUser = jest
+        .fn()
+        .mockResolvedValue({
+          data: { user: { id: 'user-1', email: 'test@example.com' } },
+          error: null,
+        });
+      // refreshSession is called in the flow; ensure it's present
+      supabase.auth.refreshSession = jest.fn().mockResolvedValue(null);
 
       if (!supabase.storage) supabase.storage = {};
       supabase.storage.from = jest.fn().mockReturnValue({
         upload: jest.fn().mockResolvedValue({ error: null }),
-        getPublicUrl: jest.fn().mockReturnValue({ data: { publicUrl: 'https://cdn.test/user-1/logo.png' } }),
+        getPublicUrl: jest
+          .fn()
+          .mockReturnValue({
+            data: { publicUrl: 'https://cdn.test/user-1/logo.png' },
+          }),
         remove: jest.fn().mockResolvedValue({ error: null }),
       });
 
       // mock table helpers
-      supabase.from = jest.fn().mockImplementation((table) => {
+      supabase.from = jest.fn().mockImplementation(table => {
         if (table === 'users') {
           return {
             select: jest.fn().mockReturnThis(),
             eq: jest.fn().mockReturnThis(),
-            single: jest.fn().mockResolvedValue({ data: null, error: { code: 'PGRST116' } }),
+            single: jest
+              .fn()
+              .mockResolvedValue({ data: null, error: { code: 'PGRST116' } }),
             upsert: jest.fn().mockResolvedValue({ error: null }),
           };
         }
@@ -85,15 +97,21 @@ describe('Onboarding page - integration-ish tests', () => {
     const { container, getByText } = renderWithProviders(<Onboarding />);
 
     const input = container.querySelector('#logo-upload');
-  const badFile = new File(['hello'], 'bad.txt', { type: 'text/plain' });
-  fireEvent.change(input, { target: { files: [badFile] } });
+    const badFile = new File(['hello'], 'bad.txt', { type: 'text/plain' });
+    fireEvent.change(input, { target: { files: [badFile] } });
 
-  // Relaxed matcher: MUI may split nodes or change accents when rendering
-  await waitFor(() => expect(document.body.textContent).toMatch(/Formato no válido|Usa JPG|PNG|WEBP|Máximo 300 KB/i));
+    // Relaxed matcher: MUI may split nodes or change accents when rendering
+    await waitFor(() =>
+      expect(document.body.textContent).toMatch(
+        /Formato no válido|Usa JPG|PNG|WEBP|Máximo 300 KB/i
+      )
+    );
   });
 
   test('happy path: provider without factura uploads logo and navigates home', async () => {
-  const { getByText, getByLabelText, container } = renderWithProviders(<Onboarding />);
+    const { getByText, getByLabelText, container } = renderWithProviders(
+      <Onboarding />
+    );
 
     // Select provider
     fireEvent.click(getByText(/Soy Proveedor/i));
@@ -104,7 +122,9 @@ describe('Onboarding page - integration-ish tests', () => {
 
     // Provide a valid small png file
     const input = container.querySelector('#logo-upload');
-    const goodFile = new File([new ArrayBuffer(100)], 'logo.png', { type: 'image/png' });
+    const goodFile = new File([new ArrayBuffer(100)], 'logo.png', {
+      type: 'image/png',
+    });
     Object.defineProperty(goodFile, 'size', { value: 1024 });
     fireEvent.change(input, { target: { files: [goodFile] } });
 
@@ -121,11 +141,15 @@ describe('Onboarding page - integration-ish tests', () => {
   }, 10000);
 
   test('handles missing supabase user (shows console error)', async () => {
-  // make getUser return no user
-  if (!supabase.auth) supabase.auth = {};
-  supabase.auth.getUser = jest.fn().mockResolvedValue({ data: { user: null }, error: null });
+    // make getUser return no user
+    if (!supabase.auth) supabase.auth = {};
+    supabase.auth.getUser = jest
+      .fn()
+      .mockResolvedValue({ data: { user: null }, error: null });
 
-    const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    const consoleSpy = jest
+      .spyOn(console, 'error')
+      .mockImplementation(() => {});
 
     const { getByText, getByLabelText } = renderWithProviders(<Onboarding />);
 
@@ -142,7 +166,9 @@ describe('Onboarding page - integration-ish tests', () => {
       expect(consoleSpy).toHaveBeenCalled();
       // At least one of the calls should mention 'Error al actualizar el perfil' or user not found
       const calls = consoleSpy.mock.calls.flat().join(' ');
-      expect(calls).toMatch(/Usuario no encontrado|Error al actualizar el perfil/i);
+      expect(calls).toMatch(
+        /Usuario no encontrado|Error al actualizar el perfil/i
+      );
     });
 
     consoleSpy.mockRestore();

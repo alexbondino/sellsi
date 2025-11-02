@@ -7,9 +7,9 @@
  * Incluye selección, cálculos de costos y validaciones.
  */
 
-import { create } from 'zustand'
-import { persist, createJSONStorage } from 'zustand/middleware'
-import { showSuccessToast, showErrorToast } from '../../../utils/toastHelpers'
+import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
+import { showSuccessToast, showErrorToast } from '../../../utils/toastHelpers';
 
 // Opciones de envío definidas localmente
 const SHIPPING_OPTIONS = [
@@ -19,7 +19,7 @@ const SHIPPING_OPTIONS = [
     price: 0, // Precio será calculado dinámicamente
     days: 'Según región',
     icon: '📦',
-  }
+  },
 ];
 
 /**
@@ -37,30 +37,32 @@ const useShipping = create(
        * Seleccionar opción de envío
        * @param {string} optionId - ID de la opción de envío
        */
-      setShippingOption: (optionId) => {
-        const state = get()
-        const currentShipping = state.selectedShipping
+      setShippingOption: optionId => {
+        const state = get();
+        const currentShipping = state.selectedShipping;
         const oldOption = SHIPPING_OPTIONS.find(
-          (opt) => opt.id === currentShipping
-        )
-        const newOption = SHIPPING_OPTIONS.find((opt) => opt.id === optionId)
+          opt => opt.id === currentShipping
+        );
+        const newOption = SHIPPING_OPTIONS.find(opt => opt.id === optionId);
 
         if (!newOption) {
-          showErrorToast('Opción de envío no válida', { icon: '❌' })
-          return false
+          showErrorToast('Opción de envío no válida', { icon: '❌' });
+          return false;
         }
 
         set({
           selectedShipping: optionId,
-        })
+        });
 
-        showSuccessToast(`Envío seleccionado: ${newOption.name}`, { icon: '🚚' })
+        showSuccessToast(`Envío seleccionado: ${newOption.name}`, {
+          icon: '🚚',
+        });
 
         return {
           oldOption,
           newOption,
           changed: currentShipping !== optionId,
-        }
+        };
       },
 
       /**
@@ -69,38 +71,38 @@ const useShipping = create(
        * @param {boolean} hasFreeShipping - Si hay cupones de envío gratis
        */
       getShippingCost: (subtotal = 0, hasFreeShipping = false) => {
-        const state = get()
+        const state = get();
         const selectedOption = SHIPPING_OPTIONS.find(
-          (opt) => opt.id === state.selectedShipping
-        )
+          opt => opt.id === state.selectedShipping
+        );
 
-        if (!selectedOption) return 0
+        if (!selectedOption) return 0;
 
         // Verificar cupones de envío gratis
-        if (hasFreeShipping) return 0
+        if (hasFreeShipping) return 0;
 
         // Envío gratis por compras sobre $100.000
-        if (subtotal >= 100000) return 0
+        if (subtotal >= 100000) return 0;
 
-        return selectedOption.price
+        return selectedOption.price;
       },
 
       /**
        * Obtener información completa de envío
        */
       getShippingInfo: () => {
-        const state = get()
-        return SHIPPING_OPTIONS.find((opt) => opt.id === state.selectedShipping)
+        const state = get();
+        return SHIPPING_OPTIONS.find(opt => opt.id === state.selectedShipping);
       },
 
       /**
        * Obtener todas las opciones de envío disponibles
        */
       getAvailableShippingOptions: () => {
-        return SHIPPING_OPTIONS.map((option) => ({
+        return SHIPPING_OPTIONS.map(option => ({
           ...option,
           selected: option.id === get().selectedShipping,
-        }))
+        }));
       },
 
       /**
@@ -108,7 +110,7 @@ const useShipping = create(
        * @param {number} subtotal - Subtotal del carrito
        */
       isEligibleForFreeShipping: (subtotal = 0) => {
-        return subtotal >= 100000
+        return subtotal >= 100000;
       },
 
       /**
@@ -116,15 +118,17 @@ const useShipping = create(
        * @param {Date} orderDate - Fecha de la orden (por defecto hoy)
        */
       getEstimatedDelivery: (orderDate = new Date()) => {
-        const state = get()
-        const shippingInfo = get().getShippingInfo()
+        const state = get();
+        const shippingInfo = get().getShippingInfo();
 
         if (!shippingInfo || !shippingInfo.deliveryDays) {
-          return null
+          return null;
         }
 
-        const deliveryDate = new Date(orderDate)
-        deliveryDate.setDate(deliveryDate.getDate() + shippingInfo.deliveryDays)
+        const deliveryDate = new Date(orderDate);
+        deliveryDate.setDate(
+          deliveryDate.getDate() + shippingInfo.deliveryDays
+        );
 
         return {
           option: shippingInfo,
@@ -137,7 +141,7 @@ const useShipping = create(
             month: 'long',
             day: 'numeric',
           }),
-        }
+        };
       },
 
       /**
@@ -146,17 +150,17 @@ const useShipping = create(
        * @param {boolean} hasFreeShipping - Si hay cupones de envío gratis
        */
       getShippingSummary: (subtotal = 0, hasFreeShipping = false) => {
-        const state = get()
-        const shippingInfo = get().getShippingInfo()
-        const cost = get().getShippingCost(subtotal, hasFreeShipping)
-        const isFree = cost === 0
+        const state = get();
+        const shippingInfo = get().getShippingInfo();
+        const cost = get().getShippingCost(subtotal, hasFreeShipping);
+        const isFree = cost === 0;
 
-        let freeReason = null
+        let freeReason = null;
         if (isFree) {
           if (hasFreeShipping) {
-            freeReason = 'Cupón de envío gratis aplicado'
+            freeReason = 'Cupón de envío gratis aplicado';
           } else if (subtotal >= 100000) {
-            freeReason = 'Envío gratis por compras sobre $100.000'
+            freeReason = 'Envío gratis por compras sobre $100.000';
           }
         }
 
@@ -168,29 +172,29 @@ const useShipping = create(
           originalCost: shippingInfo?.price || 0,
           savings: isFree ? shippingInfo?.price || 0 : 0,
           deliveryEstimate: get().getEstimatedDelivery(),
-        }
+        };
       },
 
       /**
        * Validar disponibilidad de envío para ubicación
        * @param {Object} location - Información de ubicación
        */
-      validateShippingLocation: (location) => {
+      validateShippingLocation: location => {
         // TODO: Implementar validación de ubicación cuando sea necesario
         // Por ahora, asumir que todas las ubicaciones son válidas
         return {
           valid: true,
           availableOptions: SHIPPING_OPTIONS,
           restrictions: [],
-        }
+        };
       },
 
       /**
        * Obtener estadísticas de envío
        */
       getShippingStats: () => {
-        const state = get()
-        const currentOption = get().getShippingInfo()
+        const state = get();
+        const currentOption = get().getShippingInfo();
 
         return {
           selectedOption: currentOption,
@@ -205,7 +209,7 @@ const useShipping = create(
               ? option
               : cheapest
           ),
-        }
+        };
       },
 
       /**
@@ -214,7 +218,7 @@ const useShipping = create(
       resetShipping: () => {
         set({
           selectedShipping: 'standard',
-        })
+        });
       },
 
       /**
@@ -226,14 +230,14 @@ const useShipping = create(
           prioritizeSpeed = false,
           prioritizeCost = true,
           subtotal = 0,
-        } = criteria
+        } = criteria;
 
         if (prioritizeSpeed) {
           return SHIPPING_OPTIONS.reduce((fastest, option) =>
             (option.deliveryDays || 999) < (fastest.deliveryDays || 999)
               ? option
               : fastest
-          )
+          );
         }
 
         if (prioritizeCost) {
@@ -243,7 +247,7 @@ const useShipping = create(
               (option.deliveryDays || 999) < (fastest.deliveryDays || 999)
                 ? option
                 : fastest
-            )
+            );
           }
 
           // Sino, recomendar la más barata
@@ -251,26 +255,26 @@ const useShipping = create(
             (option.price || 999999) < (cheapest.price || 999999)
               ? option
               : cheapest
-          )
+          );
         }
 
         // Por defecto, envío estándar
         return (
-          SHIPPING_OPTIONS.find((opt) => opt.id === 'standard') ||
+          SHIPPING_OPTIONS.find(opt => opt.id === 'standard') ||
           SHIPPING_OPTIONS[0]
-        )
+        );
       },
     }),
     {
       name: 'sellsi-shipping-v1',
       storage: createJSONStorage(() => localStorage),
-      partialize: (state) => ({
+      partialize: state => ({
         selectedShipping: state.selectedShipping,
         lastModified: Date.now(),
         version: '1.0',
       }),
     }
   )
-)
+);
 
-export default useShipping
+export default useShipping;

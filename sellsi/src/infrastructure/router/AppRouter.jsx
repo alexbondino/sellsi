@@ -6,7 +6,7 @@ import PrivateRoute from '../../workspaces/auth/guards/components/PrivateRoute';
 import { useAuth } from '../providers';
 
 // Landing Page (carga inmediata para primera impresión)
-import { Home } from '../../app/pages/landing';
+import { Home } from '../../workspaces/landing';
 
 // 📦 RUTAS PRINCIPALES - LAZY LOADING
 const MarketplaceBuyer = React.lazy(() =>
@@ -30,24 +30,25 @@ const CheckoutCancel = React.lazy(() =>
 
 // 📦 SUPPLIER DASHBOARD - LAZY LOADING
 const ProviderHome = React.lazy(() =>
-  import('../../domains/supplier/pages/home/ProviderHome')
+  import('../../workspaces/supplier/home/components/Home')
 );
 const MyProducts = React.lazy(() =>
-  import('../../domains/supplier/pages/my-products/MyProducts')
+  import('../../workspaces/supplier/my-products/components/MyProducts')
 );
 const AddProduct = React.lazy(() =>
-  import('../../domains/supplier/pages/my-products/AddProduct')
+  import('../../workspaces/supplier/create-product/components/AddProduct')
 );
 const MyOrdersPage = React.lazy(() =>
-  import('../../domains/supplier/pages/my-orders/MyOrdersPage')
+  import('../../workspaces/supplier/my-requests/components/MyOrdersPage')
 );
-const MarketplaceSupplier = React.lazy(() =>
-  import('../../domains/supplier').then(module => ({
-    default: module.MarketplaceSupplier,
-  }))
-);
+// TODO: MarketplaceSupplier component was removed during workspace reorganization
+// const MarketplaceSupplier = React.lazy(() =>
+//   import('../../domains/supplier').then(module => ({
+//     default: module.MarketplaceSupplier,
+//   }))
+// );
 const SupplierOffers = React.lazy(() =>
-  import('../../domains/supplier/pages/offers/SupplierOffers')
+  import('../../workspaces/supplier/my-offers/components/SupplierOffers')
 );
 
 // 📦 PROFILE PAGES - LAZY LOADING
@@ -78,7 +79,9 @@ const Register = React.lazy(() =>
   import('../../workspaces/auth').then(module => ({ default: module.Register }))
 );
 const Onboarding = React.lazy(() =>
-  import('../../app/pages/onboarding/Onboarding')
+  import('../../workspaces/auth/onboarding').then(module => ({
+    default: module.Onboarding,
+  }))
 );
 const ResetPassword = React.lazy(() =>
   import('../../workspaces/auth/account-recovery/components/ResetPassword')
@@ -96,10 +99,14 @@ const BannedPage = React.lazy(() =>
 
 // 📦 TERMS AND PRIVACY PAGES - LAZY LOADING
 const TermsAndConditionsPage = React.lazy(() =>
-  import('../../app/pages/legal/TermsAndConditionsPage')
+  import('../../workspaces/legal').then(module => ({
+    default: module.TermsAndConditionsPage,
+  }))
 );
 const PrivacyPolicyPage = React.lazy(() =>
-  import('../../app/pages/legal/PrivacyPolicyPage')
+  import('../../workspaces/legal').then(module => ({
+    default: module.PrivacyPolicyPage,
+  }))
 );
 
 // 📦 AUTH CALLBACK - LAZY LOADING
@@ -393,8 +400,8 @@ export const AppRouter = ({ scrollTargets }) => {
             </PrivateRoute>
           }
         />
-        {/* Marketplace para el proveedor: igual que el del comprador pero con SideBar de proveedor */}
-        <Route
+        {/* TODO: MarketplaceSupplier route temporarily disabled - component was removed during workspace reorganization */}
+        {/* <Route
           path="/supplier/marketplace"
           element={
             <PrivateRoute
@@ -406,7 +413,7 @@ export const AppRouter = ({ scrollTargets }) => {
               <MarketplaceSupplier />
             </PrivateRoute>
           }
-        />
+        /> */}
         <Route
           path="/buyer/profile"
           element={

@@ -1,32 +1,40 @@
 // thumbnailConcurrencyQueue.js - simple in-memory gate to limit concurrent thumbnail fetches
-import { FeatureFlags } from '../flags/featureFlags.js'
+import { FeatureFlags } from '../../workspaces/supplier/shared-utils/featureFlags.js';
 
-const queue = []
-let active = 0
+const queue = [];
+let active = 0;
 
 export function scheduleThumbnailFetch(fn) {
   return new Promise((resolve, reject) => {
-    queue.push({ fn, resolve, reject })
-    drain()
-  })
+    queue.push({ fn, resolve, reject });
+    drain();
+  });
 }
 
 function drain() {
   while (active < FeatureFlags.THUMB_MAX_CONCURRENT && queue.length) {
-    const { fn, resolve, reject } = queue.shift()
-    active++
+    const { fn, resolve, reject } = queue.shift();
+    active++;
     Promise.resolve()
       .then(fn)
       .then(res => resolve(res))
       .catch(err => reject(err))
       .finally(() => {
-        active--
-        drain()
-      })
+        active--;
+        drain();
+      });
   }
 }
 
-export function pendingThumbnailFetches() { return queue.length }
-export function activeThumbnailFetches() { return active }
+export function pendingThumbnailFetches() {
+  return queue.length;
+}
+export function activeThumbnailFetches() {
+  return active;
+}
 
-export default { scheduleThumbnailFetch, pendingThumbnailFetches, activeThumbnailFetches }
+export default {
+  scheduleThumbnailFetch,
+  pendingThumbnailFetches,
+  activeThumbnailFetches,
+};

@@ -14,7 +14,10 @@ function idle(fn) {
 function shouldPrefetch() {
   if (typeof navigator === 'undefined') return true;
   try {
-    const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+    const conn =
+      navigator.connection ||
+      navigator.mozConnection ||
+      navigator.webkitConnection;
     if (conn && typeof conn.downlink === 'number') {
       // skip heavy prefetch on very slow connections
       if (conn.downlink < 1.5) return false;
@@ -61,12 +64,16 @@ export function importForPath(path) {
   switch (p) {
     case '/supplier/addproduct':
     case '/supplier/add':
-      return import('../../domains/supplier/pages/my-products/AddProduct');
+      return import(
+        '../../workspaces/supplier/create-product/components/AddProduct'
+      );
     case '/buyer/paymentmethod':
     case '/buyer/payment':
       return import('../../domains/checkout/pages/PaymentMethod');
     case '/onboarding':
-      return import('../../app/pages/onboarding/Onboarding');
+      return import('../../workspaces/auth/onboarding').then(
+        module => module.Onboarding
+      );
     case '/buyer/profile':
     case '/supplier/profile':
     case '/profile':

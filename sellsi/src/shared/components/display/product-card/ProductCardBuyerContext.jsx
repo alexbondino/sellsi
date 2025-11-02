@@ -34,12 +34,17 @@ import { AddToCart } from '../../cart';
  * This component is an internal part of the main ProductCard.
  */
 const ProductCardBuyerContext = React.memo(
-  ({ product, /* onAddToCart (REMOVED to prevent double add) */ handleProductClick, onModalStateChange }) => {
+  ({
+    product,
+    /* onAddToCart (REMOVED to prevent double add) */ handleProductClick,
+    onModalStateChange,
+  }) => {
     const navigate = useNavigate();
 
     // ✅ OPTIMIZADO: Usar hook optimizado con caché global
-    const { userRegion, isLoadingUserRegion } = useOptimizedUserShippingRegion();
-    
+    const { userRegion, isLoadingUserRegion } =
+      useOptimizedUserShippingRegion();
+
     const minimumPurchase =
       product?.minimum_purchase || product?.compraMinima || 1;
 
@@ -50,70 +55,101 @@ const ProductCardBuyerContext = React.memo(
     const precioOriginal = product.precioOriginal || product.originalPrice;
     const stock = product.stock || product.maxStock || 50;
     const negociable = product.negociable || product.negotiable || false;
-    const proveedorVerificado = product.verified || product.proveedorVerificado || product.supplierVerified || false;
+    const proveedorVerificado =
+      product.verified ||
+      product.proveedorVerificado ||
+      product.supplierVerified ||
+      false;
 
-  // Centralized: product.priceTiers now populated (deferred) by useProducts batching logic
-  const price_tiers = product.priceTiers || [];
-  const tiersStatus = product.tiersStatus; // 'idle' | 'loading' | 'loaded' | 'error'
-  const loadingTiers = tiersStatus === 'loading';
-  const errorTiers = tiersStatus === 'error';
+    // Centralized: product.priceTiers now populated (deferred) by useProducts batching logic
+    const price_tiers = product.priceTiers || [];
+    const tiersStatus = product.tiersStatus; // 'idle' | 'loading' | 'loaded' | 'error'
+    const loadingTiers = tiersStatus === 'loading';
+    const errorTiers = tiersStatus === 'error';
 
-  // Prefer min/max if available; fallback to base price. If we have no valid price yet,
-  // consider the tiers as pending (show "Cargando precios...") instead of showing 0.
-  const effectiveMinPrice = product.minPrice ?? precio ?? product.price ?? null;
-  const effectiveMaxPrice = product.maxPrice ?? precio ?? product.price ?? null;
-  const hasValidBasePrice = (Number(effectiveMaxPrice) || 0) > 0 || (Number(effectiveMinPrice) || 0) > 0;
-  const isPending = loadingTiers || (tiersStatus === 'idle' && !hasValidBasePrice);
+    // Prefer min/max if available; fallback to base price. If we have no valid price yet,
+    // consider the tiers as pending (show "Cargando precios...") instead of showing 0.
+    const effectiveMinPrice =
+      product.minPrice ?? precio ?? product.price ?? null;
+    const effectiveMaxPrice =
+      product.maxPrice ?? precio ?? product.price ?? null;
+    const hasValidBasePrice =
+      (Number(effectiveMaxPrice) || 0) > 0 ||
+      (Number(effectiveMinPrice) || 0) > 0;
+    const isPending =
+      loadingTiers || (tiersStatus === 'idle' && !hasValidBasePrice);
 
-  const memoizedPriceContent = useMemo(() => {
-    if (isPending) {
-      return (
-        <Typography variant="body2" color="text.secondary">
-          Cargando precios...
-        </Typography>
-      );
-    }
+    const memoizedPriceContent = useMemo(() => {
+      if (isPending) {
+        return (
+          <Typography variant="body2" color="text.secondary">
+            Cargando precios...
+          </Typography>
+        );
+      }
 
-    if (errorTiers) {
-      return (
-        <Typography variant="body2" color="error.main">
-          Error al cargar precios
-        </Typography>
-      );
-    }
+      if (errorTiers) {
+        return (
+          <Typography variant="body2" color="error.main">
+            Error al cargar precios
+          </Typography>
+        );
+      }
 
-    if (price_tiers && price_tiers.length > 0) {
-      // Show price range by tiers
-      const minPrice = Math.min(...price_tiers.map(t => Number(t.price) || 0));
-      const maxPrice = Math.max(...price_tiers.map(t => Number(t.price) || 0));
+      if (price_tiers && price_tiers.length > 0) {
+        // Show price range by tiers
+        const minPrice = Math.min(
+          ...price_tiers.map(t => Number(t.price) || 0)
+        );
+        const maxPrice = Math.max(
+          ...price_tiers.map(t => Number(t.price) || 0)
+        );
+        return (
+          <PriceDisplay
+            price={maxPrice}
+            minPrice={minPrice}
+            showRange={minPrice !== maxPrice}
+            variant="h5"
+            color="#1976d2"
+            sx={{ lineHeight: 1.1, fontSize: { xs: 14, sm: 16, md: 22 } }}
+          />
+        );
+      }
+
+      // Single price (no tiers) - use effective fallback price rather than raw precio which may be 0
+      const displayPrice = hasValidBasePrice
+        ? effectiveMaxPrice ?? effectiveMinPrice ?? 0
+        : 0;
       return (
         <PriceDisplay
-          price={maxPrice}
-          minPrice={minPrice}
-          showRange={minPrice !== maxPrice}
+          price={displayPrice}
+          originalPrice={precioOriginal}
           variant="h5"
           color="#1976d2"
           sx={{ lineHeight: 1.1, fontSize: { xs: 14, sm: 16, md: 22 } }}
         />
       );
-    }
+    }, [
+      isPending,
+      errorTiers,
+      price_tiers,
+      hasValidBasePrice,
+      effectiveMaxPrice,
+      effectiveMinPrice,
+      precioOriginal,
+    ]);
 
-    // Single price (no tiers) - use effective fallback price rather than raw precio which may be 0
-    const displayPrice = hasValidBasePrice ? (effectiveMaxPrice ?? effectiveMinPrice ?? 0) : 0;
     return (
-      <PriceDisplay
-        price={displayPrice}
-        originalPrice={precioOriginal}
-        variant="h5"
-        color="#1976d2"
-        sx={{ lineHeight: 1.1, fontSize: { xs: 14, sm: 16, md: 22 } }}
-      />
-    );
-  }, [isPending, errorTiers, price_tiers, hasValidBasePrice, effectiveMaxPrice, effectiveMinPrice, precioOriginal]);
- 
-  return (
       <Box sx={{ height: '100%' }}>
-        <CardContent sx={{ flexGrow: 1, p: 2, pb: { xs: 6, md: 9 }, display: 'flex', flexDirection: 'column' }}>
+        <CardContent
+          sx={{
+            flexGrow: 1,
+            p: 2,
+            pb: { xs: 6, md: 9 },
+            display: 'flex',
+            flexDirection: 'column',
+          }}
+        >
           {/* Product name always at the top */}
           <Box sx={{ mb: { xs: 0.5, md: 1 } }}>
             <Typography
@@ -149,24 +185,34 @@ const ProductCardBuyerContext = React.memo(
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
               <Typography
                 variant="body2"
-                sx={{ fontSize: 12, fontWeight: 400, color: 'text.secondary', display: 'inline' }}
+                sx={{
+                  fontSize: 12,
+                  fontWeight: 400,
+                  color: 'text.secondary',
+                  display: 'inline',
+                }}
                 component="span"
               >
                 por{' '}
               </Typography>
               <Typography
                 variant="body2"
-                sx={{ fontSize: 12, fontWeight: 700, color: 'text.secondary', display: 'inline' }}
+                sx={{
+                  fontSize: 12,
+                  fontWeight: 700,
+                  color: 'text.secondary',
+                  display: 'inline',
+                }}
                 component="span"
               >
                 {proveedor}
               </Typography>
               {proveedorVerificado && (
-                <VerifiedIcon 
-                  sx={{ 
-                    fontSize: 16, 
-                    color: '#1976d2' 
-                  }} 
+                <VerifiedIcon
+                  sx={{
+                    fontSize: 16,
+                    color: '#1976d2',
+                  }}
                 />
               )}
             </Box>
@@ -192,7 +238,9 @@ const ProductCardBuyerContext = React.memo(
                 color={stock < 10 ? 'error.main' : 'text.secondary'}
                 sx={{ fontSize: 12, fontWeight: 600 }}
               >
-                {stock < 10 ? `¡Solo ${stock.toLocaleString('es-CL')} disponibles!` : `Stock: ${stock.toLocaleString('es-CL')}`}
+                {stock < 10
+                  ? `¡Solo ${stock.toLocaleString('es-CL')} disponibles!`
+                  : `Stock: ${stock.toLocaleString('es-CL')}`}
               </Typography>
             </Box>
           </Box>
@@ -214,24 +262,34 @@ const ProductCardBuyerContext = React.memo(
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
               <Typography
                 variant="body2"
-                sx={{ fontSize: 12, fontWeight: 400, color: 'text.secondary', display: 'inline' }}
+                sx={{
+                  fontSize: 12,
+                  fontWeight: 400,
+                  color: 'text.secondary',
+                  display: 'inline',
+                }}
                 component="span"
               >
                 por{' '}
               </Typography>
               <Typography
                 variant="body2"
-                sx={{ fontSize: 12, fontWeight: 700, color: 'text.secondary', display: 'inline' }}
+                sx={{
+                  fontSize: 12,
+                  fontWeight: 700,
+                  color: 'text.secondary',
+                  display: 'inline',
+                }}
                 component="span"
               >
                 {proveedor}
               </Typography>
               {proveedorVerificado && (
-                <VerifiedIcon 
-                  sx={{ 
-                    fontSize: 16, 
-                    color: '#1976d2' 
-                  }} 
+                <VerifiedIcon
+                  sx={{
+                    fontSize: 16,
+                    color: '#1976d2',
+                  }}
                 />
               )}
             </Box>
@@ -269,7 +327,9 @@ const ProductCardBuyerContext = React.memo(
                 color={stock < 10 ? 'error.main' : 'text.secondary'}
                 sx={{ fontSize: 12, fontWeight: 600 }}
               >
-                {stock < 10 ? `¡Solo ${stock.toLocaleString('es-CL')} disponibles!` : `Stock: ${stock.toLocaleString('es-CL')}`}
+                {stock < 10
+                  ? `¡Solo ${stock.toLocaleString('es-CL')} disponibles!`
+                  : `Stock: ${stock.toLocaleString('es-CL')}`}
               </Typography>
             </Box>
           </Box>

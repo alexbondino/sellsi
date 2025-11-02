@@ -1,6 +1,6 @@
 /**
  * COMPONENTE UNIVERSAL DE IMAGEN DE PRODUCTO
- * 
+ *
  * Componente que maneja todas las necesidades de imágenes de productos:
  * - Thumbnails responsivos verificados
  * - Detección automática de errores 404
@@ -10,15 +10,24 @@
  */
 
 import React, { useState, useCallback, useEffect } from 'react';
-import { FeatureFlags, ThumbTimings } from '../shared/flags/featureFlags';
+import {
+  FeatureFlags,
+  ThumbTimings,
+} from '../workspaces/supplier/shared-utils/featureFlags.js';
 import { Avatar, Box, Skeleton, CircularProgress } from '@mui/material';
 import { BrokenImage as BrokenImageIcon } from '@mui/icons-material';
 import { LazyImage } from '../shared/components/display/LazyImage';
-import { useResponsiveThumbnail, useMinithumb } from '../hooks/useResponsiveThumbnail';
-import { useThumbnailPhaseQuery, invalidateTransientThumbnailKeys } from '../hooks/thumbnails/useThumbnailPhaseQuery.js'
-import { useInViewport } from '../hooks/useInViewport.js'
+import {
+  useResponsiveThumbnail,
+  useMinithumb,
+} from '../hooks/useResponsiveThumbnail';
+import {
+  useThumbnailPhaseQuery,
+  invalidateTransientThumbnailKeys,
+} from '../hooks/thumbnails/useThumbnailPhaseQuery.js';
+import { useInViewport } from '../hooks/useInViewport.js';
 import { useQueryClient } from '@tanstack/react-query';
-import { getProductImageUrl } from '../utils/getProductImageUrl';
+import { getProductImageUrl } from '../utils/getProductImageUrl.js';
 
 const UniversalProductImage = ({
   product,
@@ -55,8 +64,13 @@ const UniversalProductImage = ({
   const [forceEager, setForceEager] = useState(false);
 
   // Hooks para obtener thumbnails
-  const { thumbnailUrl: responsiveThumbnail, isLoading: responsiveLoading } = useResponsiveThumbnail(product);
-  const productId = product?.id || product?.productid || product?.product_id || product?.productId;
+  const { thumbnailUrl: responsiveThumbnail, isLoading: responsiveLoading } =
+    useResponsiveThumbnail(product);
+  const productId =
+    product?.id ||
+    product?.productid ||
+    product?.product_id ||
+    product?.productId;
   const minithumb = useMinithumb(product);
 
   // Debug log removed to avoid noisy console output in dev.
@@ -64,12 +78,19 @@ const UniversalProductImage = ({
   // Phase-aware query state
   // Si el producto ya trae thumbnail_url o thumbnails, asumimos fase final lista
   const [currentPhase, setCurrentPhase] = useState(
-    (product?.thumbnail_url || product?.thumbnailUrl || product?.thumbnails) ? 'thumbnails_ready' : null
-  )
-  
-  const { ref: viewportRef, inView } = useInViewport({ once: true, rootMargin: '200px' })
-  const phaseQuery = useThumbnailPhaseQuery(productId, currentPhase, { enabled: !FeatureFlags.ENABLE_VIEWPORT_THUMBS || inView })
-  const phaseDataThumbUrl = phaseQuery.data?.thumbnail_url
+    product?.thumbnail_url || product?.thumbnailUrl || product?.thumbnails
+      ? 'thumbnails_ready'
+      : null
+  );
+
+  const { ref: viewportRef, inView } = useInViewport({
+    once: true,
+    rootMargin: '200px',
+  });
+  const phaseQuery = useThumbnailPhaseQuery(productId, currentPhase, {
+    enabled: !FeatureFlags.ENABLE_VIEWPORT_THUMBS || inView,
+  });
+  const phaseDataThumbUrl = phaseQuery.data?.thumbnail_url;
 
   // ÚNICO PUNTO DE RESET: Solo cuando cambia realmente el producto
   useEffect(() => {
@@ -79,10 +100,13 @@ const UniversalProductImage = ({
     setOverrideSrc(null);
     retryCountRef.current = 0;
 
-    if (product && (product.thumbnail_url || product.thumbnailUrl || product.thumbnails)) {
-      setCurrentPhase('thumbnails_ready')
+    if (
+      product &&
+      (product.thumbnail_url || product.thumbnailUrl || product.thumbnails)
+    ) {
+      setCurrentPhase('thumbnails_ready');
     } else {
-      setCurrentPhase(null)
+      setCurrentPhase(null);
     }
   }, [product?.id || product?.productid]);
 
@@ -101,12 +125,12 @@ const UniversalProductImage = ({
     t = setTimeout(() => {
       setForceEager(true);
       // eslint-disable-next-line no-console
-    // observer timeout - falling back to eager for reliability
+      // observer timeout - falling back to eager for reliability
     }, timeoutMs);
     return () => {
       if (t) clearTimeout(t);
     };
-  }, [lazy, priority, inView, observerTimeoutMs, productId]);  // Determinar la URL a usar basada en el tamaño solicitado
+  }, [lazy, priority, inView, observerTimeoutMs, productId]); // Determinar la URL a usar basada en el tamaño solicitado
   const selectedThumbnail = React.useMemo(() => {
     // If an override src was set (e.g. staticFallback after an error), use it immediately
     if (overrideSrc) return overrideSrc;
@@ -117,21 +141,28 @@ const UniversalProductImage = ({
       const fallbackImage = product?.imagen || product?.image;
       if (fallbackImage && fallbackImage !== '/placeholder-product.jpg') {
         // Debug log para entender qué está pasando
-  // development-only logging removed
-        
+        // development-only logging removed
+
         // Si fallbackImage ya es una URL completa, usarla directamente
-        if (typeof fallbackImage === 'string' && /^https?:\/\//.test(fallbackImage)) {
+        if (
+          typeof fallbackImage === 'string' &&
+          /^https?:\/\//.test(fallbackImage)
+        ) {
           return fallbackImage;
         }
-        
+
         // Si es un path relativo, construir la URL correctamente
         if (typeof fallbackImage === 'string') {
           // Usar la misma lógica que ProductImageGallery
-          const constructedUrl = getProductImageUrl(fallbackImage, product, false);
+          const constructedUrl = getProductImageUrl(
+            fallbackImage,
+            product,
+            false
+          );
           // development-only logging removed
           return constructedUrl;
         }
-        
+
         return fallbackImage;
       }
       // Si no hay imagen principal válida, usar placeholder
@@ -146,30 +177,59 @@ const UniversalProductImage = ({
       case 'mobile': {
         // Intentar thumbnail mobile específico, luego fallback a imagen principal
         let mobile = product?.thumbnails?.mobile;
-        const source = phaseDataThumbUrl || responsiveThumbnail || product?.thumbnail_url || product?.thumbnailUrl;
+        const source =
+          phaseDataThumbUrl ||
+          responsiveThumbnail ||
+          product?.thumbnail_url ||
+          product?.thumbnailUrl;
         if (!mobile && source && typeof source === 'string') {
           if (source.includes('_mobile_')) mobile = source;
-          else if (source.includes('_desktop_320x260')) mobile = source.replace('_desktop_320x260.jpg', '_mobile_190x153.jpg');
-          else if (source.includes('_tablet_300x230')) mobile = source.replace('_tablet_300x230.jpg', '_mobile_190x153.jpg');
+          else if (source.includes('_desktop_320x260'))
+            mobile = source.replace(
+              '_desktop_320x260.jpg',
+              '_mobile_190x153.jpg'
+            );
+          else if (source.includes('_tablet_300x230'))
+            mobile = source.replace(
+              '_tablet_300x230.jpg',
+              '_mobile_190x153.jpg'
+            );
         }
         // Si no hay mobile thumbnail, usar imagen principal
-        return mobile || product?.imagen || product?.image || '/placeholder-product.jpg';
+        return (
+          mobile ||
+          product?.imagen ||
+          product?.image ||
+          '/placeholder-product.jpg'
+        );
       }
       case 'responsive':
       default:
         // useResponsiveThumbnail ya incluye fallback a imagen principal
         return responsiveThumbnail || '/placeholder-product.jpg';
     }
-  }, [product, size, minithumb, responsiveThumbnail, phaseDataThumbUrl, forceUseFallback, attemptedFallback]);
+  }, [
+    product,
+    size,
+    minithumb,
+    responsiveThumbnail,
+    phaseDataThumbUrl,
+    forceUseFallback,
+    attemptedFallback,
+  ]);
 
   // Manejar errores de carga de imagen
   const handleImageError = useCallback(() => {
-  // development-only logging removed
+    // development-only logging removed
 
     // Si no hemos intentado fallback aún y hay imagen principal disponible
     if (!attemptedFallback && !forceUseFallback) {
       const fallbackImage = product?.imagen || product?.image;
-      if (fallbackImage && fallbackImage !== '/placeholder-product.jpg' && fallbackImage !== selectedThumbnail) {
+      if (
+        fallbackImage &&
+        fallbackImage !== '/placeholder-product.jpg' &&
+        fallbackImage !== selectedThumbnail
+      ) {
         // Usar setTimeout para asegurar que el estado se actualiza en el próximo ciclo
         // Esto evita conflictos con el useMemo que podría ejecutarse con valores previos
         setTimeout(() => {
@@ -199,7 +259,7 @@ const UniversalProductImage = ({
       // Invalidar cache de React Query para este producto
       queryClient.invalidateQueries({
         queryKey: cacheKey,
-        exact: false
+        exact: false,
       });
 
       // Solo reintentar si aún no hemos intentado fallback y tenemos menos de 2 reintentos
@@ -215,7 +275,15 @@ const UniversalProductImage = ({
     if (onError) {
       onError();
     }
-  }, [product, onError, selectedThumbnail, queryClient, attemptedFallback, forceUseFallback, productId]);
+  }, [
+    product,
+    onError,
+    selectedThumbnail,
+    queryClient,
+    attemptedFallback,
+    forceUseFallback,
+    productId,
+  ]);
 
   // Manejar carga exitosa de imagen
   const handleImageLoad = useCallback(() => {
@@ -233,64 +301,71 @@ const UniversalProductImage = ({
     width: width || '100%',
     height: height || 'auto',
     borderRadius,
-    ...sx
+    ...sx,
   };
 
   // Listener para imágenes procesadas en background (reubicado arriba para no quedar tras returns)
   useEffect(() => {
-    const timers = {}
-    const handleImagesReady = (event) => {
+    const timers = {};
+    const handleImagesReady = event => {
       const { productId: readyProductId, phase } = event.detail || {};
       if (!readyProductId || readyProductId !== productId) return;
       if (FeatureFlags.ENABLE_PHASED_THUMB_EVENTS) {
-        if (!['thumbnails_ready', 'thumbnails_skipped_webp'].includes(phase)) return
+        if (!['thumbnails_ready', 'thumbnails_skipped_webp'].includes(phase))
+          return;
       }
-      setCurrentPhase(phase)
-      if (timers[readyProductId]) clearTimeout(timers[readyProductId])
+      setCurrentPhase(phase);
+      if (timers[readyProductId]) clearTimeout(timers[readyProductId]);
       timers[readyProductId] = setTimeout(() => {
-        queryClient.invalidateQueries({ queryKey: ['thumbnail', productId], exact: false })
-        invalidateTransientThumbnailKeys(productId)
-        setImageError(false)
+        queryClient.invalidateQueries({
+          queryKey: ['thumbnail', productId],
+          exact: false,
+        });
+        invalidateTransientThumbnailKeys(productId);
+        setImageError(false);
         // NO RESETEAR attemptedFallback y forceUseFallback automáticamente
         // Solo si realmente hay nuevas imágenes válidas
-        const hasNewValidImages = phaseQuery.data?.thumbnail_url && 
+        const hasNewValidImages =
+          phaseQuery.data?.thumbnail_url &&
           phaseQuery.data.thumbnail_url !== selectedThumbnail;
-        
+
         if (hasNewValidImages) {
           setAttemptedFallback(false);
           setForceUseFallback(false);
         }
-        
+
         // reset without causing re-render
         retryCountRef.current = 0;
         setTimeout(() => {
           // touch ref to preserve previous behavior without state updates
           retryCountRef.current = retryCountRef.current + 1;
           retryCountRef.current = retryCountRef.current - 1;
-        }, 100)
-      }, ThumbTimings.PHASE_EVENT_DEBOUNCE_MS)
-    }
-    window.addEventListener('productImagesReady', handleImagesReady)
-    return () => window.removeEventListener('productImagesReady', handleImagesReady)
-  }, [productId, queryClient])
+        }, 100);
+      }, ThumbTimings.PHASE_EVENT_DEBOUNCE_MS);
+    };
+    window.addEventListener('productImagesReady', handleImagesReady);
+    return () =>
+      window.removeEventListener('productImagesReady', handleImagesReady);
+  }, [productId, queryClient]);
 
   // Solo mostrar ícono roto si:
   // 1. Hay error de imagen Y
-  // 2. Ya intentamos fallback a imagen principal Y  
+  // 2. Ya intentamos fallback a imagen principal Y
   // 3. Realmente no hay imagen válida que mostrar
-  const shouldShowBrokenIcon = imageError && attemptedFallback && (
-    !selectedThumbnail || 
-    selectedThumbnail === '/placeholder-product.jpg'
-  );
+  const shouldShowBrokenIcon =
+    imageError &&
+    attemptedFallback &&
+    (!selectedThumbnail || selectedThumbnail === '/placeholder-product.jpg');
 
   // Debug logging en desarrollo
   // development-only debug logs removed
-  
+
   // Mostrar spinner durante reintentos (incluyendo intento de fallback)
   if (imageError && !attemptedFallback && retryCountRef.current < 1) {
     let avatarSize = 64;
     if (typeof baseStyles.width === 'number') avatarSize = baseStyles.width;
-    else if (typeof baseStyles.height === 'number') avatarSize = baseStyles.height;
+    else if (typeof baseStyles.height === 'number')
+      avatarSize = baseStyles.height;
     else if (typeof width === 'number') avatarSize = width;
     else if (typeof height === 'number') avatarSize = height;
     return (
@@ -302,11 +377,15 @@ const UniversalProductImage = ({
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          fontSize: '2rem'
+          fontSize: '2rem',
         }}
         {...props}
       >
-        <CircularProgress color="primary" size={avatarSize * 0.7} thickness={4} />
+        <CircularProgress
+          color="primary"
+          size={avatarSize * 0.7}
+          thickness={4}
+        />
       </Avatar>
     );
   }
@@ -323,7 +402,7 @@ const UniversalProductImage = ({
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          fontSize: '2rem'
+          fontSize: '2rem',
         }}
         {...props}
       >
@@ -336,10 +415,10 @@ const UniversalProductImage = ({
   // ✅ MEJORADO: Ser más conservador con lazy loading para evitar imágenes que no cargan
   // Decide if we should render lazy or eager: priority overrides lazy; forceEager flips back to eager
   const shouldLazy = lazy && !priority && !forceEager;
-  
+
   // ✅ Determinar fetchpriority basado en imagePriority (separado de eager/lazy)
   const fetchPriority = imagePriority ? 'high' : 'auto';
-  
+
   if (shouldLazy) {
     return (
       <LazyImage
@@ -372,15 +451,13 @@ const UniversalProductImage = ({
       sx={{
         ...baseStyles,
         objectFit,
-        display: 'block'
+        display: 'block',
       }}
       ref={viewportRef}
       onError={() => {
-        
         handleImageError();
       }}
       onLoad={() => {
-        
         handleImageLoad();
       }}
       {...props}
@@ -412,7 +489,12 @@ export const MinithumbImage = ({ product, ...props }) => (
  * @param {boolean} priority - Si la imagen debe tener alta prioridad (fetchpriority="high")
  * @param {Object} props - Props adicionales para UniversalProductImage
  */
-export const ProductCardImage = ({ product, type = 'buyer', priority = false, ...props }) => {
+export const ProductCardImage = ({
+  product,
+  type = 'buyer',
+  priority = false,
+  ...props
+}) => {
   // Diferentes alturas según el tipo de card
   const getCardHeight = () => {
     switch (type) {
@@ -426,7 +508,14 @@ export const ProductCardImage = ({ product, type = 'buyer', priority = false, ..
   };
 
   return (
-    <Box sx={{ width: '100%', height: getCardHeight(), minHeight: getCardHeight(), boxSizing: 'border-box' }}>
+    <Box
+      sx={{
+        width: '100%',
+        height: getCardHeight(),
+        minHeight: getCardHeight(),
+        boxSizing: 'border-box',
+      }}
+    >
       <UniversalProductImage
         product={product}
         size="responsive"
@@ -437,14 +526,18 @@ export const ProductCardImage = ({ product, type = 'buyer', priority = false, ..
         sx={{
           maxWidth: '100%',
           bgcolor: '#fff',
-          p: type === 'supplier' ? 
-            { xs: 0.5, sm: 0.8, md: 1, lg: 0 } : 
-            { xs: 1, sm: 1.2, md: 1.5, lg: 0},
+          p:
+            type === 'supplier'
+              ? { xs: 0.5, sm: 0.8, md: 1, lg: 0 }
+              : { xs: 1, sm: 1.2, md: 1.5, lg: 0 },
           display: 'block',
           mx: 'auto',
           mt: 0.5,
           // debug temporal: borde ligero para ver el contenedor
-          border: process.env.NODE_ENV === 'development' ? '1px dashed rgba(0,0,0,0.1)' : undefined,
+          border:
+            process.env.NODE_ENV === 'development'
+              ? '1px dashed rgba(0,0,0,0.1)'
+              : undefined,
         }}
         {...props}
       />
@@ -466,7 +559,10 @@ export const CartItemImage = ({ product, ...props }) => (
     sx={{
       borderRadius: 1,
       bgcolor: '#fafafa',
-      border: process.env.NODE_ENV === 'development' ? '1px solid #e0e0e0' : undefined
+      border:
+        process.env.NODE_ENV === 'development'
+          ? '1px solid #e0e0e0'
+          : undefined,
     }}
     {...props}
   />
@@ -501,7 +597,7 @@ export const AdminTableImage = ({ product, ...props }) => (
     width={40}
     height={40}
     sx={{
-      borderRadius: 1
+      borderRadius: 1,
     }}
     {...props}
   />
