@@ -25,7 +25,7 @@ const CRITICAL_ROUTES = new Map([
   ],
   [
     '/buyer/marketplace',
-    () => import('../domains/buyer/pages/MarketplaceBuyer'),
+    () => import('../workspaces/buyer/marketplace'),
   ],
   [
     '/supplier/home',
