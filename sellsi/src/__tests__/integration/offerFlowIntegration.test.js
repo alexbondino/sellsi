@@ -9,8 +9,7 @@ import {
 import { ThemeProvider } from '@mui/material/styles';
 import { BrowserRouter } from 'react-router-dom';
 import OfferModal from '../../domains/ProductPageView/components/OfferModal';
-import BuyerOffers from '../../domains/buyer/pages/offers/BuyerOffers';
-import OffersList from '../../domains/buyer/pages/offers/components/OffersList';
+import { BuyerOffers, OffersList } from '../../workspaces/buyer/my-offers';
 import SupplierOffers from '../../workspaces/supplier/my-offers/components/SupplierOffers';
 import SupplierOffersList from '../../workspaces/supplier/my-offers/components/SupplierOffersList';
 import { dashboardThemeCore } from '../../styles/dashboardThemeCore';

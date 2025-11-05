@@ -13,7 +13,7 @@
 
 import React from 'react';
 import { render, waitFor, fireEvent } from '@testing-library/react';
-import { useBuyerOrders } from '../../../domains/buyer/hooks/orders/useBuyerOrders';
+import { useBuyerOrders } from '../../../workspaces/buyer/my-orders';
 
 // === Mocks ===
 const mockGetPaymentOrdersForBuyer = jest.fn();

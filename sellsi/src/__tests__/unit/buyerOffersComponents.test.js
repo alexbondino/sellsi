@@ -22,7 +22,7 @@ const mockUseBuyerOffers = {
   deleteOffer: jest.fn()
 };
 
-jest.mock('../../domains/buyer/pages/offers/hooks/useBuyerOffers', () => ({
+jest.mock('../../workspaces/buyer/my-offers', () => ({
   useBuyerOffers: () => mockUseBuyerOffers
 }));
 
@@ -34,8 +34,7 @@ jest.mock('@mui/material/useMediaQuery', () => ({
   default: (...args) => mockUseMediaQuery(...args)
 }));
 
-import BuyerOffers from '../../domains/buyer/pages/offers/BuyerOffers';
-import OffersList from '../../domains/buyer/pages/offers/components/OffersList';
+import { BuyerOffers, OffersList } from '../../workspaces/buyer/my-offers';
 
 // QueryClient por test para evitar estado compartido
 const createTestClient = () => new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } });
