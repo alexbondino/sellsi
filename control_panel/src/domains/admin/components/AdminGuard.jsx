@@ -18,20 +18,12 @@ import { verifyAdminSession } from '../services/adminAuthService';
 import { isDevelopment, canCreateAdminInDev, DEV_CONFIG } from '../config/devConfig';
 
 const AdminGuard = ({ children }) => {
-  // ✅ AdminGuard HABILITADO - Verifica autenticación administrativa
-  const TEMP_DISABLE_ADMIN_GUARD = false;
-  
   const [loading, setLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [error, setError] = useState('');
   const location = useLocation();
 
   useEffect(() => {
-    if (TEMP_DISABLE_ADMIN_GUARD) {
-      setIsAuthenticated(true);
-      setLoading(false);
-      return;
-    }
     checkAdminAuth();
   }, []);
 
