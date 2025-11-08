@@ -4,8 +4,8 @@ import { LocalOffer as OffersIcon } from '@mui/icons-material'
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { dashboardThemeCore } from '../../../../styles/dashboardThemeCore';
 import { SPACING_BOTTOM_MAIN } from '../../../../styles/layoutSpacing';
-import OffersList from './components/OffersList';
-import { useBuyerOffers } from './hooks/useBuyerOffers';
+import OffersList from './OffersList';
+import { useBuyerOffers } from '../hooks/useBuyerOffers';
 
 const BuyerOffers = () => {
   const isMobile = useMediaQuery(dashboardThemeCore.breakpoints.down('md'));

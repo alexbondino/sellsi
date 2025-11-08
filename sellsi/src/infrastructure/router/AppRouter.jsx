@@ -10,7 +10,9 @@ import { Home } from '../../workspaces/landing';
 
 // 📦 RUTAS PRINCIPALES - LAZY LOADING
 const MarketplaceBuyer = React.lazy(() =>
-  import('../../domains/buyer/pages/MarketplaceBuyer')
+  import('../../workspaces/buyer/marketplace').then(module => ({
+    default: module.MarketplaceBuyer,
+  }))
 );
 const Marketplace = React.lazy(() =>
   import('../../domains/marketplace/pages/Marketplace')
@@ -56,12 +58,16 @@ const Profile = React.lazy(() => import('../../domains/profile/pages/Profile'));
 
 // 📦 RUTAS SECUNDARIAS - LAZY LOADING
 const BuyerOrders = React.lazy(() =>
-  import('../../domains/buyer/pages/BuyerOrders')
+  import('../../workspaces/buyer/my-orders').then(module => ({
+    default: module.BuyerOrders,
+  }))
 );
 // BuyerPerformance was removed; reuse MarketplaceBuyer for now to keep route functional
 const BuyerPerformance = MarketplaceBuyer;
 const BuyerOffers = React.lazy(() =>
-  import('../../domains/buyer/pages/offers/BuyerOffers')
+  import('../../workspaces/buyer/my-offers').then(module => ({
+    default: module.BuyerOffers,
+  }))
 );
 // Eliminado: TechnicalSpecs como página propia. Usaremos redirect desde /technicalspecs a la ruta unificada.
 const ProviderCatalog = React.lazy(() =>

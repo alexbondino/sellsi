@@ -1,5 +1,5 @@
 import React from 'react';
-import { useOfferStore } from '../../../../../stores/offerStore';
+import { useOfferStore } from '../../../../stores/offerStore';
 
 export const useBuyerOffers = () => {
   const { 

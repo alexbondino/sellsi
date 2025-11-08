@@ -18,7 +18,7 @@ import {
   FormControl,
   InputLabel,
 } from '@mui/material';
-import { AddToCart } from '../../../../../shared/components';
+import { AddToCart } from '../../../../shared/components';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import DeleteIcon from '@mui/icons-material/Delete';
 import BlockIcon from '@mui/icons-material/Block';
@@ -60,8 +60,8 @@ const formatPrice = (value) => {
   return '$' + new Intl.NumberFormat('es-CL').format(Math.round(num));
 };
 
-import { useThumbnailsBatch } from '../../../../../hooks/useThumbnailQueries';
-import TableSkeleton from '../../../../../shared/components/display/skeletons/TableSkeleton';
+import { useThumbnailsBatch } from '../../../../hooks/useThumbnailQueries';
+import TableSkeleton from '../../../../shared/components/display/skeletons/TableSkeleton';
 
 const OffersList = ({ offers = [], loading = false, error = null, cancelOffer, deleteOffer, onCancelOffer, onDeleteOffer, onAddToCart }) => {
   const [statusFilter, setStatusFilter] = React.useState('all');

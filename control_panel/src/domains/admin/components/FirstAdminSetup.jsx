@@ -51,8 +51,7 @@ import { PrimaryButton } from '../../../shared/components/forms';
 import { createAdminAccount } from '../services/adminAccountService';
 import { 
   FIRST_ADMIN_CONFIG, 
-  isDevelopment, 
-  setProductionMode 
+  isDevelopment
 } from '../config/devConfig';
 
 const FirstAdminSetup = ({ onComplete }) => {

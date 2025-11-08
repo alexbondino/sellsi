@@ -1,5 +1,5 @@
 import { renderHook, act, waitFor } from '@testing-library/react';
-import { useBuyerOffers } from '../../domains/buyer/pages/offers/hooks/useBuyerOffers';
+import { useBuyerOffers } from '../../workspaces/buyer/my-offers';
 import { useSupplierOffers } from '../../workspaces/supplier/my-offers/hooks/useSupplierOffers';
 import { mockLocalStorage, mockOfferData } from '../mocks/supabaseMock';
 

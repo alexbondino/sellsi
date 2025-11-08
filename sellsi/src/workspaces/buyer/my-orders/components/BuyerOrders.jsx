@@ -17,15 +17,15 @@ import AssignmentIcon from '@mui/icons-material/Assignment';
 import VerifiedIcon from '@mui/icons-material/Verified';
 import { ThemeProvider, useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
-import { dashboardThemeCore } from '../../../styles/dashboardThemeCore';
-import { SPACING_BOTTOM_MAIN } from '../../../styles/layoutSpacing';
-import { useBuyerOrders } from '../hooks';
-import { createSignedInvoiceUrl } from '../../../services/storage/invoiceStorageService'; // legacy fallback
-import { CheckoutSummaryImage } from '../../../components/UniversalProductImage';
+import { dashboardThemeCore } from '../../../../styles/dashboardThemeCore';
+import { SPACING_BOTTOM_MAIN } from '../../../../styles/layoutSpacing';
+import { useBuyerOrders } from '../hooks/useBuyerOrders';
+import { createSignedInvoiceUrl } from '../../../../services/storage/invoiceStorageService'; // legacy fallback
+import { CheckoutSummaryImage } from '../../../../components/UniversalProductImage';
 // Unificar formateo de fechas con TableRows (usa marketplace/pages/utils/formatters)
-import { formatDate as formatDateUnified } from '../../marketplace/pages/utils/formatters';
-import ContactModal from '../../../shared/components/modals/ContactModal';
-import BuyerOrdersSkeleton from '../../../shared/components/display/skeletons/BuyerOrdersSkeleton';
+import { formatDate as formatDateUnified } from '../../../../domains/marketplace/pages/utils/formatters';
+import ContactModal from '../../../../shared/components/modals/ContactModal';
+import BuyerOrdersSkeleton from '../../../../shared/components/display/skeletons/BuyerOrdersSkeleton';
 
 const BuyerOrders = () => {
   const theme = useTheme();

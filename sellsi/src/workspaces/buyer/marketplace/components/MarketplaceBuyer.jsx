@@ -8,10 +8,10 @@ import React from 'react';
 import { Box } from '@mui/material';
 
 // Hook centralizado - MIGRADO A SHARED
-import { useMarketplaceLogic } from '../../../shared/hooks'; // ✅ MIGRADO: Era ../../marketplace/pages/useMarketplaceLogic.jsx
+import { useMarketplaceLogic } from '../../../../shared/hooks'; // ✅ MIGRADO: Era ../../marketplace/pages/useMarketplaceLogic.jsx
 
 // Componentes de secciones - MIGRADOS A SHARED
-import { SearchSection, ProductsSection } from '../../../shared/components/marketplace/sections';
+import { SearchSection, ProductsSection } from '../../../../shared/components/marketplace/sections';
 
 // ✅ MEJORA DE RENDIMIENTO: Memoización del componente principal
 const MarketplaceBuyer = React.memo(() => {

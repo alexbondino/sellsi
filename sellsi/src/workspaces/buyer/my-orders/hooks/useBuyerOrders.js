@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { orderService } from '../../../../services/user';
 import { supabase } from '../../../../services/supabase';
-import { isUUID } from '../../../orders/shared/validation';
-import { splitOrderBySupplier } from '../../../orders/shared/splitOrderBySupplier';
+import { isUUID } from '../../../../domains/orders/shared/validation';
+import { splitOrderBySupplier } from '../../../../domains/orders/shared/splitOrderBySupplier';
 
 /**
  * Hook para manejar los pedidos de un comprador.
