@@ -80,90 +80,108 @@ const Step1Account = ({
     setEmailEnUso(false); // Reiniciar el mensaje de error de correo en uso
 
     try {
-      // Paso 1: Verificar si el correo ya existe en tu tabla 'users' personalizada (opcional pero útil)
-      // Esto proporciona un mensaje más específico si el correo ya está en uso en tu base de datos.
+      // 🔧 FIX CRÍTICO Bug #3: Verificación COMPLETA de email duplicado
+      // Paso 1: Verificar si el email ya existe en nuestra tabla users
       const { data: existingUsers, error: checkError } = await supabase
         .from('users')
-        .select('email')
-        .eq('email', correo);
+        .select('email, user_id')
+        .eq('email', correo)
+        .limit(1);
 
       if (checkError) {
-        console.error(
-          'Error al verificar el correo en la DB:',
-          checkError.message
-        );
+        console.error('❌ Error al verificar email en DB:', checkError.message);
         showBanner({
-          message:
-            'Error al verificar el correo. Por favor, inténtalo de nuevo.',
+          message: 'Error al verificar el correo. Por favor, inténtalo de nuevo.',
           severity: 'error',
+          duration: 6000,
         });
         setLoading(false);
         return;
       }
 
-      if (existingUsers.length > 0) {
+      // Si ya existe en la tabla users, rechazar inmediatamente
+      if (existingUsers && existingUsers.length > 0) {
+        console.log('❌ Email ya existe en tabla users:', correo);
         setEmailEnUso(true);
+        showBanner({
+          message: 'Este correo electrónico ya está registrado. Por favor, inicia sesión o usa otro correo.',
+          severity: 'error',
+          duration: 6000,
+        });
         setLoading(false);
         return;
       }
 
-      // Paso 2: Crear la cuenta de usuario en Supabase Auth
-      // Esta es la llamada que activa el envío del correo de verificación.
+      // Paso 2: Intentar crear la cuenta en Supabase Auth
       const { data: signUpData, error: signUpError } =
         await supabase.auth.signUp({
           email: correo,
           password: contrasena,
           options: {
-            // Importante: Asegúrate de que esta URL esté en la lista blanca en Supabase
-            // (Authentication -> URL Configuration -> Redirect URLs)
             emailRedirectTo: `${window.location.origin}/auth/callback`,
-            // NOTA: No pasamos 'data' aquí para full_name, phone, etc.,
-            // ya que esos campos se llenarán en pasos posteriores si el flujo lo requiere.
           },
         });
 
       if (signUpError) {
         console.error('❌ Error al crear cuenta Auth:', signUpError.message);
-        if (signUpError.message.includes('User already registered')) {
-          setEmailEnUso(true); // Específico para este error de Supabase Auth
-        } else {
-          // Mostrar un banner para otros errores de registro
+        
+        // Manejar errores explícitos de Supabase
+        if (
+          signUpError.message.includes('User already registered') ||
+          signUpError.message.includes('already been registered') ||
+          signUpError.message.includes('duplicate')
+        ) {
+          setEmailEnUso(true);
           showBanner({
-            message: `Error de registro: ${signUpError.message}.`,
+            message: 'Este correo electrónico ya está registrado. Por favor, inicia sesión o usa otro correo.',
             severity: 'error',
+            duration: 6000,
+          });
+        } else {
+          showBanner({
+            message: `Error de registro: ${signUpError.message}`,
+            severity: 'error',
+            duration: 6000,
           });
         }
         setLoading(false);
         return;
       }
 
-      // Si signUpData.user es null, significa que el correo fue enviado y el usuario está pendiente de confirmación.
-      // Este es el comportamiento esperado para los flujos de verificación de correo.
-      if (!signUpData.user) {
+      // 🔧 PASO 3 CRÍTICO: Verificar la respuesta de signUp
+      // Supabase NO retorna error para emails duplicados cuando email confirmation está habilitado
+      // En su lugar, retorna el usuario existente con identities vacío
+      if (signUpData?.user?.identities && signUpData.user.identities.length === 0) {
+        console.log('❌ Usuario ya existe (detectado por identities vacío):', correo);
+        setEmailEnUso(true);
         showBanner({
-          message: `¡Gracias por registrarte! Hemos enviado un correo de verificación a ${correo}. Por favor, revisa tu bandeja de entrada (y spam).`,
-          severity: 'success',
-          duration: 8000,
+          message: 'Este correo electrónico ya está registrado. Por favor, inicia sesión o usa otro correo.',
+          severity: 'error',
+          duration: 6000,
         });
         setLoading(false);
-        onNext(); // Mover al siguiente paso (Step4Verification)
         return;
       }
 
-      // Si signUpData.user NO es null, significa que la auto-confirmación está habilitada en Supabase (menos común para email verification)
+      // Si llegamos aquí, el registro fue exitoso
+      console.log('✅ Registro exitoso - nuevo usuario creado:', correo);
+      
       showBanner({
-        message: '¡Registro completado! Bienvenido a Sellsi.',
+        message: `¡Gracias por registrarte! Hemos enviado un correo de verificación a ${correo}. Por favor, revisa tu bandeja de entrada (y spam).`,
         severity: 'success',
-        duration: 6000,
+        duration: 8000,
       });
+      
       setLoading(false);
       onNext(); // Mover al siguiente paso (Step4Verification)
+      
     } catch (error) {
-      console.error('Error inesperado durante el registro:', error);
+      console.error('❌ Error inesperado durante el registro:', error);
       showBanner({
         message:
           'Ocurrió un error inesperado durante el registro. Inténtalo de nuevo.',
         severity: 'error',
+        duration: 6000,
       });
       setLoading(false);
     }
@@ -221,7 +239,7 @@ const Step1Account = ({
           error={(correo.length > 0 && !correoValido) || emailEnUso}
           helperText={
             emailEnUso
-              ? 'Este correo ya está en uso. Intenta con otro.'
+              ? 'Este correo ya está registrado. Por favor, inicia sesión o usa otro correo.'
               : correo.length > 0 && !correoValido
               ? 'Correo inválido. Ejemplo: usuario@dominio.com'
               : ''

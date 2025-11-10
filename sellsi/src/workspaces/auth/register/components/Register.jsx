@@ -258,6 +258,10 @@ export default function Register({ open, onClose }) {
         fullWidth
         disableScrollLock={true}
         disableRestoreFocus={true}
+        // 🔧 FIX Bug #1: Asegurar z-index mayor que BottomBar (1301)
+        sx={{
+          zIndex: 1400,
+        }}
         PaperProps={{
           sx: {
             width: '90vw',
