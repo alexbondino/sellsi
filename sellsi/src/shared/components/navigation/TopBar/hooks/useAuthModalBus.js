@@ -5,7 +5,7 @@
 import { useEffect, useCallback, useState } from 'react';
 
 // Legacy layer (window openLogin/openRegister events) eliminado 2025-08-29
-export function useAuthModalBus({ enableGlobalBridge = true } = {}) {
+export function useAuthModalBus({ enableGlobalBridge = true, enableLegacyEventListeners = false } = {}) {
   const [loginOpen, setLoginOpen] = useState(false);
   const [registerOpen, setRegisterOpen] = useState(false);
 
@@ -38,7 +38,31 @@ export function useAuthModalBus({ enableGlobalBridge = true } = {}) {
     };
   }, [enableGlobalBridge, openLogin, openRegister, closeLogin, closeRegister, transitionLoginToRegister]);
 
-  // (Compat events removidos)
+  // Legacy event listeners (CustomEvent) para retrocompatibilidad
+  useEffect(() => {
+    if (!enableLegacyEventListeners) return;
+    
+    const handleOpenLogin = () => {
+      console.log('🔓 [useAuthModalBus] openLogin event received');
+      setLoginOpen(true);
+    };
+    
+    const handleOpenRegister = () => {
+      console.log('📝 [useAuthModalBus] openRegister event received');
+      setRegisterOpen(true);
+    };
+    
+    window.addEventListener('openLogin', handleOpenLogin);
+    window.addEventListener('openRegister', handleOpenRegister);
+    
+    console.log('🎧 [useAuthModalBus] Legacy event listeners registered');
+    
+    return () => {
+      window.removeEventListener('openLogin', handleOpenLogin);
+      window.removeEventListener('openRegister', handleOpenRegister);
+      console.log('🔇 [useAuthModalBus] Legacy event listeners removed');
+    };
+  }, [enableLegacyEventListeners]);
 
   return {
     loginOpen,

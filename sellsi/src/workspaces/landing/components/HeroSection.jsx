@@ -82,7 +82,7 @@ export default function HeroSection({
             textAlign: 'left', // 👈 móvil a la izquierda
           }}
         >
-          Software que conecta{' '}
+          Plataforma que conecta{' '}
           <Box component="span" sx={{ color: '#3f6ce9ff' }}>
             Compradores
           </Box>{' '}

@@ -126,11 +126,27 @@ const AddToCart = ({
     }
 
     if (!disabled && product) {
-      // Verificar sesión antes de abrir el modal
       try {
+        // 🔒 VERIFICAR SESIÓN PRIMERO (antes de validar shipping)
         const {
           data: { session },
         } = await supabase.auth.getSession();
+        
+        // Si NO hay sesión, mostrar modal de login
+        if (!session || !session.user) {
+          console.log('🔒 [AddToCart] No session detected, showing login modal');
+          showErrorToast('Debes iniciar sesión para agregar productos al carrito', {
+            icon: '🔒',
+          });
+          // Disparar evento para abrir Login modal
+          const event = new CustomEvent('openLogin');
+          window.dispatchEvent(event);
+          console.log('📤 [AddToCart] openLogin event dispatched');
+          openingRef.current = false;
+          return; // Salir inmediatamente - no validar shipping sin sesión
+        }
+
+        // ✅ Solo si hay sesión válida, validar shipping
         // Antes de abrir el modal de selección, forzar/esperar resolución de validación shipping
         // 1) Intento inmediato
         let didOpenShipping = openIfIncomplete();
@@ -159,6 +175,7 @@ const AddToCart = ({
         showErrorToast(
           'Error al verificar sesión. Por favor, inténtalo de nuevo.'
         );
+        openingRef.current = false;
       } finally {
         // liberar guard si no se abrió shipping; si se abrió, ya liberamos antes
         if (!shippingIsOpen) openingRef.current = false;

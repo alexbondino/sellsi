@@ -69,7 +69,7 @@ const MarketplaceBuyer = React.memo(() => {
       // Por ejemplo, si el App.jsx ya tiene `p:3`, no necesitas `pl` aquí.
       // Si `p:3` es insuficiente, podrías agregar `px: 3` (padding horizontal)
       // para un espaciado adicional.
-      px: { xs: 2, md: 0, xl:20 }, // Ejemplo: Un padding horizontal general para el contenido interno
+      px: { xs: 0, md: 0, xl: 20 }, // ✅ FIX: xs:0 para evitar offset lateral en mobile (unifica con Marketplace)
     }),
     []
   );

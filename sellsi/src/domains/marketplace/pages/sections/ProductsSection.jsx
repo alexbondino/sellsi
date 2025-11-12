@@ -62,7 +62,7 @@ const ProductsSection = React.memo(
     // Layout styles
     const mainContainerStyles = React.useMemo(
       () => ({
-        pt: { xs: 3.5, md: '90px' },
+        pt: { xs: 4.5, md: '90px' },
         mt: { xs: isProviderView ? -20 : 0, md: 0 },
         pb: SPACING_BOTTOM_MAIN,
         minHeight: '100vh',
