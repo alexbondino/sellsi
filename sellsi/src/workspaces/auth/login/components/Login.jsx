@@ -263,11 +263,30 @@ export default function Login({ open, onClose, onOpenRegister }) {
                 gutterBottom
                 textAlign="center"
               >
-                Esta cuenta no ha sido autenticada.
+                📧 Verificación de email pendiente
               </Typography>
               <Typography variant="body2" sx={{ mb: 2, textAlign: 'center' }}>
-                Hemos reenviado el correo de verificación. Revisa tu bandeja de
-                entrada.
+                Por favor, revisa tu correo electrónico 
+                {state.correo && (
+                  <>
+                    {' '}(<strong>{state.correo}</strong>)
+                  </>
+                )}{' '}
+                y haz clic en el enlace de confirmación que te enviamos.
+              </Typography>
+              <Typography 
+                variant="body2" 
+                color="text.secondary" 
+                sx={{ mb: 2, textAlign: 'center', fontSize: '0.875rem' }}
+              >
+                💡 Revisa también tu carpeta de spam o correo no deseado.
+              </Typography>
+              <Typography 
+                variant="caption" 
+                color="text.secondary" 
+                sx={{ mb: 3, textAlign: 'center' }}
+              >
+                Hemos reenviado el correo de verificación automáticamente.
               </Typography>
               <PrimaryButton
                 variant="outlined"

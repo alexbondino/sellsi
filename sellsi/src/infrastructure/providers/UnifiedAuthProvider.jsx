@@ -73,11 +73,46 @@ export const UnifiedAuthProvider = ({ children }) => {
     try {
       const { data: userData, error } = await supabase
         .from('users')
-        .select('user_nm, main_supplier, logo_url')
+        .select('user_nm, main_supplier, logo_url, email')
         .eq('user_id', userId)
         .single();
 
+      // 🔧 MEJORADO: Si el perfil no existe, crearlo automáticamente
       if (error) {
+        // Error PGRST116 = no rows found
+        if (error.code === 'PGRST116') {
+          console.log('📝 Perfil no encontrado, creando automáticamente...');
+          
+          const { data: newProfile, error: createError } = await supabase
+            .from('users')
+            .insert({
+              user_id: userId,
+              email: currentSession.user.email,
+              user_nm: USER_NAME_STATUS.PENDING,
+              main_supplier: true,
+              country: 'No especificado',
+            })
+            .select('user_nm, main_supplier, logo_url, email')
+            .single();
+
+          if (createError) {
+            console.error('❌ Error creando perfil automático:', createError);
+            setNeedsOnboarding(true);
+            setUserProfile(null);
+            setLoadingUserStatus(false);
+            try { localStorage.removeItem('user_id'); } catch(e) {}
+            return;
+          }
+
+          console.log('✅ Perfil creado automáticamente');
+          setNeedsOnboarding(true); // Nuevo perfil siempre necesita onboarding
+          setUserProfile(newProfile);
+          setLoadingUserStatus(false);
+          return;
+        }
+
+        // Otro tipo de error (red, permisos, etc.)
+        console.error('❌ Error fetching profile:', error);
         setNeedsOnboarding(true);
         setUserProfile(null);
         setLoadingUserStatus(false);
@@ -85,16 +120,22 @@ export const UnifiedAuthProvider = ({ children }) => {
         return;
       }
 
+      // Perfil encontrado exitosamente
       if (!userData || userData.user_nm?.toLowerCase() === USER_NAME_STATUS.PENDING) {
         setNeedsOnboarding(true);
-        setUserProfile(null);
-        try { localStorage.removeItem('user_id'); } catch(e) {}
+        setUserProfile(userData);
       } else {
         setNeedsOnboarding(false);
         setUserProfile(userData);
         setLastMainSupplier(userData.main_supplier);
       }
       setLoadingUserStatus(false);
+    } catch (unexpectedError) {
+      console.error('❌ Error inesperado en fetchProfile:', unexpectedError);
+      setNeedsOnboarding(true);
+      setUserProfile(null);
+      setLoadingUserStatus(false);
+      try { localStorage.removeItem('user_id'); } catch(e) {}
     } finally {
       try { fetchingUsersRef.current.delete(userId); } catch (_) {}
     }
