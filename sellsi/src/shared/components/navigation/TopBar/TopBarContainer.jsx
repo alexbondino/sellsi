@@ -35,7 +35,7 @@ export default function TopBarContainer({ session, isBuyer, logoUrl, onNavigate,
     closeLogin: closeLoginModal,
     closeRegister: closeRegisterModal,
     transitionLoginToRegister: handleLoginToRegisterTransition,
-  } = useAuthModalBus();
+  } = useAuthModalBus({ enableLegacyEventListeners: true }); // ✅ Habilitar eventos legacy
 
   const { currentRole } = useRoleFromRoute({ pathname: location.pathname, isBuyerProp: isBuyer, isRoleLoading });
   const isLoggedIn = !!session;
