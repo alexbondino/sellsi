@@ -36,54 +36,26 @@ export default function ResetPassword() {
   useEffect(() => {
     const init = async () => {
       try {
-        // 1) Intentar recuperar sesión desde el hash de recovery
-        const hash = window.location.hash?.replace(/^#/, '');
-        const params = new URLSearchParams(hash);
-
-        if (params.get('type') === 'recovery') {
-          const access_token = params.get('access_token');
-          const refresh_token = params.get('refresh_token');
-
-          if (!access_token || !refresh_token) {
-            throw new Error(
-              'Enlace de recuperación inválido (tokens faltantes).'
-            );
-          }
-
-          // Establecer sesión con los tokens de recovery
-          const { data, error: setErr } = await supabase.auth.setSession({
-            access_token,
-            refresh_token,
-          });
-          if (setErr) throw setErr;
-
-          // Limpia el hash para no re-procesar al recargar
-          window.history.replaceState(
-            {},
-            document.title,
-            window.location.pathname + window.location.search
-          );
-        }
-
-        // 2) Verificar que tengamos sesión
+        // AuthCallback ya verificó el token y estableció la sesión
+        // Solo verificamos que tengamos una sesión activa de recuperación
         const {
           data: { session },
+          error,
         } = await supabase.auth.getSession();
-        if (!session) {
-          // Sin sesión => no se puede resetear
+
+        if (!session || error) {
           throw new Error(
             'No hay sesión activa para restablecer la contraseña.'
           );
         }
 
+        console.log('✅ Sesión de recuperación activa');
         setIsVerifying(false);
       } catch (err) {
         console.error('Error de verificación:', err);
-        // Evita quedarse colgado en loading
         setIsVerifying(false);
-        // Redirige al login con error (o muestra un mensaje)
         window.location.replace(
-          `${window.location.origin}/login?error=invalid_recovery_link`
+          `${window.location.origin}/?error=invalid_recovery_link`
         );
       }
     };

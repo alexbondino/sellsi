@@ -54,10 +54,17 @@ export default function AuthCallback() {
             return;
           }
 
-          console.log('✅ Token verificado exitosamente');
+        console.log('✅ Token verificado exitosamente');
 
-          // Crear perfil temporal si no existe (para signup/invite)
-          if (data?.user && (type === 'signup' || type === 'invite')) {
+        // Manejar recuperación de contraseña - redirigir al formulario de reset
+        if (type === 'recovery') {
+          console.log('🔐 Token de recuperación verificado, redirigiendo a reset password...');
+          navigate('/auth/reset-password', { replace: true });
+          return;
+        }
+
+        // Crear perfil temporal si no existe (para signup/invite)
+        if (data?.user && (type === 'signup' || type === 'invite')) {
             console.log('📝 Verificando perfil de usuario...');
             
             const { data: existingProfile } = await supabase
