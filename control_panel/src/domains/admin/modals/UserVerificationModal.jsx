@@ -121,7 +121,7 @@ const UserVerificationModal = ({ open, user, action, onClose, onConfirm }) => {
     setError('');
 
     try {
-      await onConfirm(finalReason);
+      await onConfirm({ user, action, reason: finalReason });
       // El modal se cierra desde el componente padre
     } catch (error) {
       setError('Error al procesar la acción');

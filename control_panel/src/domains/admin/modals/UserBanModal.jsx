@@ -162,10 +162,7 @@ const UserBanModal = ({ open, user, action, onConfirm, onClose }) => {
 
     try {
       const finalReason = reason === 'other' ? customReason : reason;
-      console.log('About to call onConfirm with reason:', finalReason);
-      console.log('onConfirm type:', typeof onConfirm);
-      console.log('onConfirm value:', onConfirm);
-      await onConfirm(finalReason);
+      await onConfirm({ user, action, reason: finalReason });
       handleClose();
     } catch (error) {
       console.error('Error en confirmación:', error);
