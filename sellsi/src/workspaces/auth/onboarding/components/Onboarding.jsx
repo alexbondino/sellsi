@@ -17,6 +17,7 @@ import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
 import { supabase } from '../../../../services/supabase';
 import { useOptimizedUserShippingRegion } from '../../../../hooks/useOptimizedUserShippingRegion';
+import { useBanner } from '../../../../shared/components/display/banners/BannerContext';
 
 // Asumimos que estos componentes existen en tu proyecto y están bien estilizados.
 import PrimaryButton from '../../../../shared/components/forms/PrimaryButton';
@@ -118,6 +119,7 @@ const Onboarding = () => {
   const [isLoading, setIsLoading] = useState(false);
   const theme = useTheme();
   const navigate = useNavigate();
+  const { showBanner } = useBanner();
 
   const [formData, setFormData] = useState({
     accountType: '',
@@ -299,8 +301,8 @@ const Onboarding = () => {
         }
       }
 
-      // Payload de actualización
-      const updates = {
+      // 📝 Payload para tabla users (solo campos que existen)
+      const userUpdates = {
         user_id: user.id,
         user_nm: formData.nombreEmpresa,
         main_supplier: formData.accountType === 'proveedor',
@@ -310,29 +312,56 @@ const Onboarding = () => {
         ),
         country: formData.codigoPais,
         logo_url: logoPublicUrl,
-        email: user.email, // 🔑 corrección clave
+        email: user.email,
         ...(formData.accountType === 'proveedor' && {
           descripcion_proveedor: formData.descripcionProveedor,
           document_types: formData.documentTypes || [],
-          ...(formData.documentTypes?.includes('factura') && {
-            business_name: formData.businessName,
-            billing_rut: formData.billingRut,
-            business_line: formData.businessLine,
-            billing_address: formData.billingAddress,
-            billing_region: formData.billingRegion,
-            billing_commune: formData.billingCommune,
-          }),
         }),
       };
 
-      // Upsert
+      console.log('🔍 [ONBOARDING] Payload users:', JSON.stringify(userUpdates, null, 2));
+
+      // Upsert en tabla users
       const { error: upsertError } = await supabase
         .from('users')
-        .upsert(updates, { onConflict: 'user_id' });
+        .upsert(userUpdates, { onConflict: 'user_id' });
 
       if (upsertError) {
-        console.error('Supabase Upsert Error:', upsertError);
+        console.error('❌ [ONBOARDING] Supabase Upsert Error:', upsertError);
+        console.error('📦 Payload que falló:', userUpdates);
         throw new Error(`Error al guardar tu perfil: ${upsertError.message}`);
+      }
+
+      console.log('✅ [ONBOARDING] Usuario guardado exitosamente');
+
+      // 💰 Si es proveedor y seleccionó factura, guardar en billing_info
+      if (
+        formData.accountType === 'proveedor' &&
+        formData.documentTypes?.includes('factura')
+      ) {
+        const billingUpdates = {
+          user_id: user.id,
+          business_name: formData.businessName,
+          billing_rut: formData.billingRut,
+          business_line: formData.businessLine,
+          billing_address: formData.billingAddress,
+          billing_region: formData.billingRegion,
+          billing_commune: formData.billingCommune,
+        };
+
+        console.log('🔍 [ONBOARDING] Payload billing_info:', JSON.stringify(billingUpdates, null, 2));
+
+        const { error: billingError } = await supabase
+          .from('billing_info')
+          .upsert(billingUpdates, { onConflict: 'user_id' });
+
+        if (billingError) {
+          console.error('❌ [ONBOARDING] Billing Info Error:', billingError);
+          console.error('📦 Payload que falló:', billingUpdates);
+          throw new Error(`Error al guardar información de facturación: ${billingError.message}`);
+        }
+
+        console.log('✅ [ONBOARDING] Billing info guardada exitosamente');
       }
 
       // 🔒 Evita el bucle del guard:
@@ -343,9 +372,8 @@ const Onboarding = () => {
       // 3) Si tienes refetchProfile del contexto, úsalo para que el guard ya te "vea" completo
       await (refetchProfile?.() ?? Promise.resolve());
 
-      // Prime de región (si aplica)
-      const regionCandidate =
-        updates.billing_region || updates.shipping_region || null;
+      // Prime de región (si aplica) - ahora de formData ya que billing va a otra tabla
+      const regionCandidate = formData.billingRegion || formData.shippingRegion || null;
       if (regionCandidate) {
         try {
           primeUserRegionCache(regionCandidate);
@@ -354,11 +382,27 @@ const Onboarding = () => {
         }
       }
 
+      // ✅ Mostrar banner de éxito
+      showBanner({
+        message: '¡Bienvenido a Sellsi! Tu perfil fue configurado correctamente 🎉',
+        severity: 'success',
+        duration: 3000
+      });
+
+      // Esperar a que el banner sea visible antes de navegar
+      await new Promise(resolve => setTimeout(resolve, 1500));
+
       // Navega a la home
       navigate('/', { replace: true });
     } catch (error) {
       console.error('❌ Error al actualizar el perfil:', error);
-      console.error(error.message || 'Hubo un error al guardar tu perfil.');
+      
+      // ✅ Mostrar banner de error
+      showBanner({
+        message: error.message || 'Hubo un error al guardar tu perfil. Intenta nuevamente.',
+        severity: 'error',
+        duration: 6000
+      });
     } finally {
       setIsLoading(false);
     }
