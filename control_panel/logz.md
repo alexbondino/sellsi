@@ -1,69 +1,24 @@
-client:733 [vite] connecting...
-client:827 [vite] connected.
-App.jsx:37 🚀 App component rendering...
-App.jsx:37 🚀 App component rendering...
-App.jsx:44  No routes matched location "/admin-panel/metrics" 
+index-lfUCIJI1.js:180 UserBanModal props: {open: false, user: false, action: 'ban', onConfirm: 'function', onClose: 'function'}action: "ban"onClose: "function"onConfirm: "function"open: falseuser: false[[Prototype]]: Object
+index-lfUCIJI1.js:10 [Violation] 'click' handler took 168ms
+index-lfUCIJI1.js:180  TypeError: Cannot read properties of undefined (reading 'user_id')
+    at index-lfUCIJI1.js:180:298232
+    at s (index-lfUCIJI1.js:180:297830)
+    at handleVerificationConfirm (index-lfUCIJI1.js:180:298223)
+    at onClick (index-lfUCIJI1.js:180:321272)
+    at $u (index-lfUCIJI1.js:10:131954)
+    at index-lfUCIJI1.js:10:138024
+    at At (index-lfUCIJI1.js:10:19800)
+    at Vu (index-lfUCIJI1.js:10:133179)
+    at lh (index-lfUCIJI1.js:10:159296)
+    at ah (index-lfUCIJI1.js:10:159118)
 overrideMethod @ hook.js:608
-warning @ chunk-NISHYRIK.mjs:193
-useRoutesImpl @ chunk-NISHYRIK.mjs:5150
-useRoutes @ chunk-NISHYRIK.mjs:5103
-Routes @ chunk-NISHYRIK.mjs:6113
-react_stack_bottom_frame @ react-dom-client.development.js:23863
-renderWithHooks @ react-dom-client.development.js:5529
-updateFunctionComponent @ react-dom-client.development.js:8897
-beginWork @ react-dom-client.development.js:10522
-runWithFiberInDEV @ react-dom-client.development.js:1519
-performUnitOfWork @ react-dom-client.development.js:15132
-workLoopSync @ react-dom-client.development.js:14956
-renderRootSync @ react-dom-client.development.js:14936
-performWorkOnRoot @ react-dom-client.development.js:14419
-performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:16216
-performWorkUntilDeadline @ scheduler.development.js:45
-<Routes>
-exports.jsxDEV @ react-jsx-dev-runtime.development.js:346
-App @ App.jsx:44
-react_stack_bottom_frame @ react-dom-client.development.js:23863
-renderWithHooksAgain @ react-dom-client.development.js:5629
-renderWithHooks @ react-dom-client.development.js:5541
-updateFunctionComponent @ react-dom-client.development.js:8897
-beginWork @ react-dom-client.development.js:10522
-runWithFiberInDEV @ react-dom-client.development.js:1519
-performUnitOfWork @ react-dom-client.development.js:15132
-workLoopSync @ react-dom-client.development.js:14956
-renderRootSync @ react-dom-client.development.js:14936
-performWorkOnRoot @ react-dom-client.development.js:14419
-performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:16216
-performWorkUntilDeadline @ scheduler.development.js:45
-App.jsx:44  No routes matched location "/admin-panel/metrics" 
-overrideMethod @ hook.js:600
-warning @ chunk-NISHYRIK.mjs:193
-useRoutesImpl @ chunk-NISHYRIK.mjs:5150
-useRoutes @ chunk-NISHYRIK.mjs:5103
-Routes @ chunk-NISHYRIK.mjs:6113
-react_stack_bottom_frame @ react-dom-client.development.js:23863
-renderWithHooksAgain @ react-dom-client.development.js:5629
-renderWithHooks @ react-dom-client.development.js:5541
-updateFunctionComponent @ react-dom-client.development.js:8897
-beginWork @ react-dom-client.development.js:10522
-runWithFiberInDEV @ react-dom-client.development.js:1519
-performUnitOfWork @ react-dom-client.development.js:15132
-workLoopSync @ react-dom-client.development.js:14956
-renderRootSync @ react-dom-client.development.js:14936
-performWorkOnRoot @ react-dom-client.development.js:14419
-performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:16216
-performWorkUntilDeadline @ scheduler.development.js:45
-<Routes>
-exports.jsxDEV @ react-jsx-dev-runtime.development.js:346
-App @ App.jsx:44
-react_stack_bottom_frame @ react-dom-client.development.js:23863
-renderWithHooksAgain @ react-dom-client.development.js:5629
-renderWithHooks @ react-dom-client.development.js:5541
-updateFunctionComponent @ react-dom-client.development.js:8897
-beginWork @ react-dom-client.development.js:10522
-runWithFiberInDEV @ react-dom-client.development.js:1519
-performUnitOfWork @ react-dom-client.development.js:15132
-workLoopSync @ react-dom-client.development.js:14956
-renderRootSync @ react-dom-client.development.js:14936
-performWorkOnRoot @ react-dom-client.development.js:14419
-performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:16216
-performWorkUntilDeadline @ scheduler.development.js:45
+s @ index-lfUCIJI1.js:180
+handleVerificationConfirm @ index-lfUCIJI1.js:180
+onClick @ index-lfUCIJI1.js:180
+$u @ index-lfUCIJI1.js:10
+(anonymous) @ index-lfUCIJI1.js:10
+At @ index-lfUCIJI1.js:10
+Vu @ index-lfUCIJI1.js:10
+lh @ index-lfUCIJI1.js:10
+ah @ index-lfUCIJI1.js:10
+index-lfUCIJI1.js:180 UserBanModal props: {open: false, user: false, action: 'ban', onConfirm: 'function', onClose: 'function'}action: "ban"onClose: "function"onConfirm: "function"open: falseuser: false[[Prototype]]: Object
