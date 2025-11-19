@@ -303,16 +303,16 @@ const Profile = ({ userProfile: initialUserProfile, onUpdateProfile: externalUpd
     setLoading(true);
     try {
       // ✅ MAPEAR CORRECTAMENTE: FormData → BD format
-      console.log('📋 FormData antes del mapeo:', formData);
+      console.log('📋 FormData antes del mapeo (COMPLETO):', JSON.stringify(formData, null, 2));
       let dataToUpdate = mapFormDataToUserProfile(formData, loadedProfile);
-      console.log('🔄 Datos después del mapeo:', dataToUpdate);
+      console.log('🔄 Datos después del mapeo (COMPLETO):', JSON.stringify(dataToUpdate, null, 2));
       
       // Eliminar campos que se manejan automáticamente
       delete dataToUpdate.profileImage;
       delete dataToUpdate.user_nm;
       delete dataToUpdate.logo_url;
 
-      console.log('📤 Datos finales a enviar:', dataToUpdate);
+      console.log('📤 Datos finales a enviar (COMPLETO):', JSON.stringify(dataToUpdate, null, 2));
       // Strict validation: check both the raw formData and the already-mapped dataToUpdate.
       // This prevents cases where mapping or missing properties would allow an update to proceed
       // even though the user has partially filled required fields.
