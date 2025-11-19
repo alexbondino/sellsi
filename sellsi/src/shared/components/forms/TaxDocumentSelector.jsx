@@ -23,9 +23,12 @@ const TaxDocumentSelector = ({
   size = 'medium' // 'small' | 'medium' | 'large'
 }) => {
   
+  // ✅ DEFENSIVE: Asegurar que documentTypes sea siempre un array
+  const safeDocumentTypes = Array.isArray(documentTypes) ? documentTypes : [];
+  
   const handleDocumentTypeChange = (event) => {
     const value = event.target.value;
-    const currentSelection = documentTypes || [];
+    const currentSelection = safeDocumentTypes;
     
     // Si se selecciona "No ofrecer documento tributario", eliminar Boleta y Factura
     if (value.includes('ninguno') && !currentSelection.includes('ninguno')) {
@@ -45,12 +48,15 @@ const TaxDocumentSelector = ({
   };
 
   const renderValue = (selected) => {
-    if (selected.length === 0) {
+    // ✅ DEFENSIVE: Asegurar que selected sea siempre un array
+    const selectedArray = Array.isArray(selected) ? selected : [];
+    
+    if (selectedArray.length === 0) {
       return 'Seleccionar';
     }
     return (
       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-        {selected.map((value) => {
+        {selectedArray.map((value) => {
           const docType = DOCUMENT_TYPES.find(type => type.value === value);
           return (
             <Chip
@@ -97,7 +103,7 @@ const TaxDocumentSelector = ({
         <FormControl size={selectSize} sx={{ flexGrow: 1 }}>
           <Select
             multiple
-            value={documentTypes || []}
+            value={safeDocumentTypes}
             onChange={handleDocumentTypeChange}
             renderValue={renderValue}
             displayEmpty
@@ -122,7 +128,7 @@ const TaxDocumentSelector = ({
             }}
           >
             {DOCUMENT_TYPES.map((docType) => {
-              const isSelected = (documentTypes || []).includes(docType.value);
+              const isSelected = safeDocumentTypes.includes(docType.value);
               return (
                 <MenuItem 
                   key={docType.value} 
