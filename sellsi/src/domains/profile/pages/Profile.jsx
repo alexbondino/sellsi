@@ -34,7 +34,7 @@ import CompanyInfoSection from '../components/sections/CompanyInfoSection';
 // Documento Tributario eliminado
 
 // Utilidades
-import { getInitials, mapFormDataToUserProfile } from '../../../utils/profileHelpers';
+import { getInitials, mapFormDataToUserProfile, mapUserProfileToFormData } from '../../../utils/profileHelpers';
 import { trackUserAction } from '../../../services/security';
 import { getUserProfile, updateUserProfile, uploadProfileImage, deleteAllUserImages } from '../../../services/user';
 import { supabase } from '../../../services/supabase';
@@ -112,42 +112,33 @@ const Profile = ({ userProfile: initialUserProfile, onUpdateProfile: externalUpd
 
       // Usar el servicio para obtener el perfil completo
       const { data, error } = await getUserProfile(user.id);
+      
+      console.log('📞 [PROFILE DEBUG] Datos crudos de getUserProfile:', {
+        phone_nbr: data?.phone_nbr,
+        country: data?.country,
+        email: data?.email,
+        user_nm: data?.user_nm
+      });
+      
       if (error) {
         throw error;
       }
 
-      // Mapear campos de BD a Frontend (lógica antes duplicada en ambos profiles)
+      // ✅ Usar mapUserProfileToFormData para mapeo consistente (incluye derivación de NSN)
       const mappedProfile = {
         ...data,
         user_id: user.id,
         email: user.email,
-        phone: data.phone_nbr,
-        full_name: data.user_nm,
-        user_nm: data.user_nm,
-        role: data.main_supplier ? 'supplier' : 'buyer',
-        country: data.country,
-        rut: data.rut,
-        shipping_region: data.shipping_region,
-        shipping_commune: data.shipping_commune, // 🔧 CORREGIDO: shipping_commune (no shipping_comuna)
-        shipping_address: data.shipping_address,
-        shipping_number: data.shipping_number,
-        shipping_dept: data.shipping_dept,
-        account_holder: data.account_holder,
-        account_type: data.account_type,
-        bank: data.bank || '', // Asegurar que bank no sea null/undefined para evitar el error de MUI
-        account_number: data.account_number,
-        transfer_rut: data.transfer_rut,
-        confirmation_email: data.confirmation_email,
-        business_name: data.business_name,
-        billing_rut: data.billing_rut,
-        business_line: data.business_line,
-        billing_address: data.billing_address,
-        billing_region: data.billing_region,
-        billing_commune: data.billing_commune, // 🔧 CORREGIDO: billing_commune (no billing_comuna)
         logo_url: data.logo_url,
-        // ✅ AGREGAR: Mapear document_types desde la BD
-        documentTypes: data.document_types || [],
+        ...mapUserProfileToFormData(data), // Delegar mapeo a la función especializada
       };
+      
+      console.log('📞 [PROFILE DEBUG] Perfil mapeado:', {
+        phone: mappedProfile.phone,
+        phone_nbr_original: data.phone_nbr,
+        country: mappedProfile.country,
+        email: mappedProfile.email
+      });
 
       setUserProfile(mappedProfile);
       setLoadedProfile(mappedProfile);
@@ -312,16 +303,16 @@ const Profile = ({ userProfile: initialUserProfile, onUpdateProfile: externalUpd
     setLoading(true);
     try {
       // ✅ MAPEAR CORRECTAMENTE: FormData → BD format
-      console.log('📋 FormData antes del mapeo:', formData);
+      console.log('📋 FormData antes del mapeo (COMPLETO):', JSON.stringify(formData, null, 2));
       let dataToUpdate = mapFormDataToUserProfile(formData, loadedProfile);
-      console.log('🔄 Datos después del mapeo:', dataToUpdate);
+      console.log('🔄 Datos después del mapeo (COMPLETO):', JSON.stringify(dataToUpdate, null, 2));
       
       // Eliminar campos que se manejan automáticamente
       delete dataToUpdate.profileImage;
       delete dataToUpdate.user_nm;
       delete dataToUpdate.logo_url;
 
-      console.log('📤 Datos finales a enviar:', dataToUpdate);
+      console.log('📤 Datos finales a enviar (COMPLETO):', JSON.stringify(dataToUpdate, null, 2));
       // Strict validation: check both the raw formData and the already-mapped dataToUpdate.
       // This prevents cases where mapping or missing properties would allow an update to proceed
       // even though the user has partially filled required fields.

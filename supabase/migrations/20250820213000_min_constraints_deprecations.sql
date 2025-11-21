@@ -54,7 +54,7 @@ COMMENT ON TABLE admin_audit_log IS 'DEPRECATED admin legacy module.';
 COMMENT ON TABLE admin_sessions IS 'DEPRECATED admin legacy module.';
 COMMENT ON TABLE admin_trusted_devices IS 'DEPRECATED admin legacy module.';
 COMMENT ON TABLE ejemplo IS 'TO REMOVE: test table.';
-COMMENT ON TABLE ejemplo_prueba IS 'TO REMOVE: test table.';
+
 COMMENT ON TABLE banned_ips IS 'UNUSED? verify usage; mark deprecated if no active enforcement.';
 
 -- 7. (Optional) NOTE: Not adding format constraint on items_hash to keep migration minimal.

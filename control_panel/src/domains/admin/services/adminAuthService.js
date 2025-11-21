@@ -42,7 +42,7 @@ export const loginAdmin = async (usuario, password) => {
       throw new Error('Usuario no encontrado o inactivo')
     }
     
-    // ✅ SEGURIDAD: Verificar contraseña usando bcrypt en Edge Function
+    // Verificar contraseña usando Edge Function con bcrypt
     const { data: verifyResult, error: verifyError } = await supabase.functions.invoke('admin-2fa', {
       body: {
         action: 'verify_password',

@@ -31,7 +31,7 @@ jobs:
   deploy-production:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    environment: production # <-- CLAVE 1: Especifica el entorno de producciónA
+    environment: Production # <-- CLAVE 1: Especifica el entorno de producciónA
     env:
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
       SUPABASE_DB_PASSWORD: ${{ secrets.DB_PASSWORD }} # <-- CLAVE 2: Usa el secreto del ENTORNO

@@ -97,7 +97,7 @@ export const ShippingInfoValidationModal = ({
     >
       <Box sx={{ textAlign: 'center', py: 2 }}>
         <Typography variant="body1" sx={{ mb: 2 }}>
-          Configura tu dirección de despacho para poder ofertar este producto
+          Configura tu dirección de despacho para poder comprar este producto
         </Typography>
         {missingFieldLabels.length > 0 && (
           <Typography variant="body2" color="text.secondary">

@@ -83,7 +83,7 @@ export async function initSentryDeferred(options = {}) {
           blockSelector: 'iframe[src*="youtube.com"], iframe[src*="youtu.be"], iframe[src*="vimeo.com"]',
         }),
       ],
-      tracesSampleRate: 1.0,
+      tracesSampleRate: 0.2,
       replaysSessionSampleRate: 0.1,
       replaysOnErrorSampleRate: 1.0,
       ...options,
