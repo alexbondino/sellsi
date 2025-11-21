@@ -321,7 +321,7 @@ const ProductRegions = ({
                 size="small"
                 onClick={() => handleApplyPreset(idx)}
                 disabled={freezeDisplay || presetsLoading || presetsSaving}
-                sx={{ textTransform: 'none', fontWeight: 500, minWidth: 96 }}
+                sx={{ textTransform: 'none', fontWeight: 500 }}
               >
                 {isRenaming ? 'Renombrar' : preset?.name || `Config. ${idx}`}
               </Button>
@@ -355,7 +355,6 @@ const ProductRegions = ({
                         setRenamingIndex(null);
                       }
                     }}
-                    sx={{ width: 140 }}
                   />
                   <IconButton size="small" onMouseDown={commitRename}>
                     <CheckIcon fontSize="inherit" />

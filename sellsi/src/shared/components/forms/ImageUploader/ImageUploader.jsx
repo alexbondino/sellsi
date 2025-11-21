@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react'
+import React, { useRef, useState } from 'react';
 import {
   Box,
   Paper,
@@ -11,13 +11,13 @@ import {
   CardActions,
   alpha,
   useTheme,
-} from '@mui/material'
+} from '@mui/material';
 import {
   CloudUpload as CloudUploadIcon,
   Add as AddIcon,
   Delete as DeleteIcon,
   Image as ImageIcon,
-} from '@mui/icons-material'
+} from '@mui/icons-material';
 
 /**
  * ImageUploader - Componente UI reutilizable para subir y gestionar imágenes
@@ -44,105 +44,109 @@ const ImageUploader = ({
   showPrimaryBadge = true,
   onError,
 }) => {
-  const theme = useTheme()
-  const fileInputRef = useRef(null)
-  const [dragOver, setDragOver] = useState(false)
+  const theme = useTheme();
+  const fileInputRef = useRef(null);
+  const [dragOver, setDragOver] = useState(false);
 
   // Función para formatear tamaño de archivo
-  const formatFileSize = (bytes) => {
-    if (bytes === 0) return '0 Bytes'
-    const k = 1024
-    const sizes = ['Bytes', 'KB', 'MB', 'GB']
-    const i = Math.floor(Math.log(bytes) / Math.log(k))
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
-  }
-  const handleFileSelect = (event) => {
-    const files = Array.from(event.target.files)
-    processFiles(files)
+  const formatFileSize = bytes => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+  const handleFileSelect = event => {
+    const files = Array.from(event.target.files);
+    processFiles(files);
     // Reset input para permitir seleccionar el mismo archivo
-    event.target.value = ''
-  }
-  
-  const processFiles = (files) => {
+    event.target.value = '';
+  };
+
+  const processFiles = files => {
     const maxFileSize = 2 * 1024 * 1024; // 2MB en bytes
-    
-    const acceptedArray = acceptedTypes.split(',').map(t => t.trim()).filter(Boolean);
-    const imageFiles = files.filter((file) => {
+
+    const acceptedArray = acceptedTypes
+      .split(',')
+      .map(t => t.trim())
+      .filter(Boolean);
+    const imageFiles = files.filter(file => {
       // Exact match or wildcard match (e.g., image/*)
       return acceptedArray.some(type => {
-        if (type === 'image/*') return file.type.startsWith('image/')
-        if (type.endsWith('/*')) return file.type.startsWith(type.split('/')[0] + '/')
-        return file.type === type
-      })
-    })
+        if (type === 'image/*') return file.type.startsWith('image/');
+        if (type.endsWith('/*'))
+          return file.type.startsWith(type.split('/')[0] + '/');
+        return file.type === type;
+      });
+    });
 
     if (imageFiles.length === 0) {
-      onError?.('No se seleccionaron archivos válidos')
-      return
+      onError?.('No se seleccionaron archivos válidos');
+      return;
     }
 
     // Validar tamaño de archivos PRIMERO (antes de validar límite de imágenes)
-    const oversizedFiles = imageFiles.filter(file => file.size > maxFileSize)
+    const oversizedFiles = imageFiles.filter(file => file.size > maxFileSize);
     if (oversizedFiles.length > 0) {
-      const fileNames = oversizedFiles.map(f => f.name).join(', ')
+      const fileNames = oversizedFiles.map(f => f.name).join(', ');
       onError?.(
         `Las siguientes imágenes exceden el límite de 2MB: ${fileNames}`
-      )
-      return
+      );
+      return;
     }
 
     // Validar límite de imágenes
     if (images.length + imageFiles.length > maxImages) {
-      const errorMsg = `Solo puedes subir máximo ${maxImages} imágenes`
-      onError?.(errorMsg)
-      return
+      const errorMsg = `Solo puedes subir máximo ${maxImages} imágenes`;
+      onError?.(errorMsg);
+      return;
     }
 
     // Convertir archivos a URLs de objeto para preview
-    const newImages = imageFiles.map((file) => ({
+    const newImages = imageFiles.map(file => ({
       id: Date.now() + Math.random(),
       file,
       url: URL.createObjectURL(file),
       name: file.name,
       size: file.size,
-    }))
+    }));
 
-    onImagesChange([...images, ...newImages])
-  }
+    onImagesChange([...images, ...newImages]);
+  };
 
-  const handleDragOver = (event) => {
-    event.preventDefault()
-    setDragOver(true)
-  }
+  const handleDragOver = event => {
+    event.preventDefault();
+    setDragOver(true);
+  };
 
-  const handleDragLeave = (event) => {
-    event.preventDefault()
-    setDragOver(false)
-  }
+  const handleDragLeave = event => {
+    event.preventDefault();
+    setDragOver(false);
+  };
 
-  const handleDrop = (event) => {
-    event.preventDefault()
-    setDragOver(false)
+  const handleDrop = event => {
+    event.preventDefault();
+    setDragOver(false);
 
-    const files = Array.from(event.dataTransfer.files)
-    processFiles(files)
-  }
+    const files = Array.from(event.dataTransfer.files);
+    processFiles(files);
+  };
 
-  const removeImage = (imageId) => {
-    const updatedImages = images.filter((img) => img.id !== imageId)
+  const removeImage = imageId => {
+    const updatedImages = images.filter(img => img.id !== imageId);
     // Limpiar URL del objeto para evitar memory leaks
-    const imageToRemove = images.find((img) => img.id === imageId)
+    const imageToRemove = images.find(img => img.id === imageId);
     if (imageToRemove && imageToRemove.url) {
-      URL.revokeObjectURL(imageToRemove.url)
+      URL.revokeObjectURL(imageToRemove.url);
     }
-    onImagesChange(updatedImages)
-  }
+    onImagesChange(updatedImages);
+  };
 
   const openFileDialog = () => {
-    fileInputRef.current?.click()
-  }
+    fileInputRef.current?.click();
+  };
 
-  const canAddMore = images.length < maxImages
+  const canAddMore = images.length < maxImages;
 
   return (
     <Box>
@@ -195,7 +199,10 @@ const ImageUploader = ({
             </Typography>
             <Typography variant="caption" color="text.secondary">
               <b>
-                {`Formatos soportados: ${acceptedTypes.split(',').map(s=>s.split('/')[1]||s).join(', ')} • Máximo ${maxImages} archivos • 2MB por imagen`}
+                {`Formatos soportados: ${acceptedTypes
+                  .split(',')
+                  .map(s => s.split('/')[1] || s)
+                  .join(', ')} • Máximo ${maxImages} archivos • 2MB por imagen`}
               </b>
             </Typography>
           </Box>
@@ -219,11 +226,13 @@ const ImageUploader = ({
             Archivos seleccionados ({images.length}/{maxImages})
           </Typography>
 
-          <Grid container spacing={2}>            {images.map((image, index) => (
+          <Grid container spacing={2}>
+            {' '}
+            {images.map((image, index) => (
               <Grid
                 size={{ xs: 6, sm: 4, md: 3 }}
                 key={image.id}
-                sx={{ maxWidth: 160, minWidth: 140 }}
+                sx={{ maxWidth: 160 }}
               >
                 <Card
                   elevation={2}
@@ -234,7 +243,6 @@ const ImageUploader = ({
                     maxHeight: 140,
                     height: 140,
                     maxWidth: 160,
-                    minWidth: 140,
                     display: 'flex',
                     flexDirection: 'column',
                     justifyContent: 'center',
@@ -269,7 +277,6 @@ const ImageUploader = ({
                       }}
                     />
                   </Box>
-
                   {/* Badge de imagen principal */}
                   {showPrimaryBadge && index === 0 && (
                     <Box
@@ -289,7 +296,6 @@ const ImageUploader = ({
                       Principal
                     </Box>
                   )}
-
                   {/* Botón de eliminar */}
                   <IconButton
                     className="delete-button"
@@ -309,7 +315,14 @@ const ImageUploader = ({
                     size="small"
                   >
                     <DeleteIcon fontSize="small" />
-                  </IconButton>                  <CardActions sx={{ p: 1, flexDirection: 'column', alignItems: 'flex-start' }}>
+                  </IconButton>{' '}
+                  <CardActions
+                    sx={{
+                      p: 1,
+                      flexDirection: 'column',
+                      alignItems: 'flex-start',
+                    }}
+                  >
                     <Typography
                       variant="caption"
                       color="text.secondary"
@@ -329,7 +342,10 @@ const ImageUploader = ({
                         color="text.secondary"
                         sx={{
                           fontSize: '0.6rem',
-                          color: image.size > 2 * 1024 * 1024 ? 'error.main' : 'text.secondary',
+                          color:
+                            image.size > 2 * 1024 * 1024
+                              ? 'error.main'
+                              : 'text.secondary',
                         }}
                       >
                         {formatFileSize(image.size)}
@@ -381,7 +397,7 @@ const ImageUploader = ({
         </Box>
       )}
     </Box>
-  )
-}
+  );
+};
 
-export default ImageUploader
+export default ImageUploader;

@@ -27,45 +27,50 @@ const ProductInventory = ({
   onPricingTypeChange,
   isMobile = false, // 🔧 Nueva prop para móvil
 }) => {
-  
   // 🔧 NUEVA FUNCIÓN: Validar stock vs tramos
   const getStockValidationError = () => {
     // Solo validar si estamos en modo volumen y hay tramos configurados
-    if (formData.pricingType !== 'Volumen' || !formData.tramos || formData.tramos.length === 0) {
+    if (
+      formData.pricingType !== 'Volumen' ||
+      !formData.tramos ||
+      formData.tramos.length === 0
+    ) {
       return null;
     }
-    
+
     const stock = parseInt(formData.stock) || 0;
     if (stock <= 0) return null;
-    
+
     // Buscar tramos cuyas cantidades min o max excedan el stock
     const invalidTramos = formData.tramos.filter((tramo, index) => {
       const min = parseInt(tramo.min) || 0;
       const max = parseInt(tramo.max) || 0;
-      
+
       // Verificar MIN
       if (min > stock) return true;
-      
+
       // Verificar MAX solo si no es el último tramo (el último tiene MAX = stock automáticamente)
-      if (index < formData.tramos.length - 1 && max > 0 && max > stock) return true;
-      
+      if (index < formData.tramos.length - 1 && max > 0 && max > stock)
+        return true;
+
       return false;
     });
-    
+
     if (invalidTramos.length > 0) {
       return 'El stock no puede ser menor a las cantidades de los tramos configurados';
     }
-    
+
     return null;
   };
-  
+
   // Obtener error de validación de stock
   const stockValidationError = getStockValidationError();
-  
+
   // Combinar errores existentes con el nuevo error de validación
-  const finalStockError = (touched.stock || triedSubmit) 
-    ? (errors.stock || localErrors.stock || stockValidationError)
-    : stockValidationError;
+  const finalStockError =
+    touched.stock || triedSubmit
+      ? errors.stock || localErrors.stock || stockValidationError
+      : stockValidationError;
   return (
     <Box>
       {isMobile ? (
@@ -82,20 +87,23 @@ const ProductInventory = ({
               error={!!finalStockError}
               helperText={finalStockError || ''}
               type="number"
-              inputProps={{ 
-                min: 1, 
+              inputProps={{
+                min: 1,
                 max: 15000,
                 step: 1,
-                onInput: (e) => {
-                  if (e.target.value.includes('.') || e.target.value.includes('-')) {
+                onInput: e => {
+                  if (
+                    e.target.value.includes('.') ||
+                    e.target.value.includes('-')
+                  ) {
                     e.target.value = e.target.value.replace(/[.-]/g, '');
                   }
-                }
+                },
               }}
               autoComplete="off"
               size="medium"
             />
-            
+
             <Box>
               <Typography
                 variant="subtitle2"
@@ -109,24 +117,18 @@ const ProductInventory = ({
                   value={formData.pricingType}
                   exclusive
                   onChange={onPricingTypeChange}
-                  sx={{ 
+                  sx={{
                     flexShrink: 0,
                     '& .MuiToggleButton-root': {
                       fontSize: '0.875rem',
                       padding: '8px 12px',
-                    }
+                    },
                   }}
                 >
-                  <ToggleButton
-                    value="Unidad"
-                    sx={{ textTransform: 'none', minWidth: '80px' }}
-                  >
+                  <ToggleButton value="Unidad" sx={{ textTransform: 'none' }}>
                     Unidad
                   </ToggleButton>
-                  <ToggleButton
-                    value="Volumen"
-                    sx={{ textTransform: 'none', minWidth: '80px' }}
-                  >
+                  <ToggleButton value="Volumen" sx={{ textTransform: 'none' }}>
                     Volumen
                   </ToggleButton>
                 </ToggleButtonGroup>
@@ -135,10 +137,9 @@ const ProductInventory = ({
                     <>
                       <b>¿Qué son las ventas por Volumen?</b>
                       <br />
-                      Permite asignar hasta 5 precios según la
-                      cantidad que te compren. Por ejemplo: si te
-                      compran entre 1 y 9 unidades, pagan $100 por
-                      unidad; si te compran 10 o más, pagan $90.
+                      Permite asignar hasta 5 precios según la cantidad que te
+                      compren. Por ejemplo: si te compran entre 1 y 9 unidades,
+                      pagan $100 por unidad; si te compran 10 o más, pagan $90.
                     </>
                   }
                   placement="top"
@@ -200,15 +201,18 @@ const ProductInventory = ({
                 error={!!finalStockError}
                 helperText={finalStockError || ''}
                 type="number"
-                inputProps={{ 
-                  min: 1, 
+                inputProps={{
+                  min: 1,
                   max: 15000,
                   step: 1,
-                  onInput: (e) => {
-                    if (e.target.value.includes('.') || e.target.value.includes('-')) {
+                  onInput: e => {
+                    if (
+                      e.target.value.includes('.') ||
+                      e.target.value.includes('-')
+                    ) {
                       e.target.value = e.target.value.replace(/[.-]/g, '');
                     }
-                  }
+                  },
                 }}
                 autoComplete="off"
                 // Siempre habilitado
@@ -218,7 +222,7 @@ const ProductInventory = ({
             <Typography
               variant="subtitle2"
               gutterBottom
-              sx={{ fontWeight: 600 , mb: 2 }}
+              sx={{ fontWeight: 600, mb: 2 }}
             >
               Precio a cobrar por:
             </Typography>
@@ -230,13 +234,13 @@ const ProductInventory = ({
             >
               <ToggleButton
                 value="Unidad"
-                sx={{ textTransform: 'none', width: '103px' }}
+                sx={{ textTransform: 'none', width: 'auto' }}
               >
                 Unidad
               </ToggleButton>
               <ToggleButton
                 value="Volumen"
-                sx={{ textTransform: 'none', width: '103px' }}
+                sx={{ textTransform: 'none', width: 'auto' }}
               >
                 Volumen
               </ToggleButton>
@@ -245,10 +249,9 @@ const ProductInventory = ({
                   <>
                     <b>¿Qué son las ventas por Volumen?</b>
                     <br />
-                    Permite asignar hasta 5 precios según la
-                    cantidad que te compren. Por ejemplo: si te
-                    compran entre 1 y 9 unidades, pagan $100 por
-                    unidad; si te compran 10 o más, pagan $90.
+                    Permite asignar hasta 5 precios según la cantidad que te
+                    compren. Por ejemplo: si te compran entre 1 y 9 unidades,
+                    pagan $100 por unidad; si te compran 10 o más, pagan $90.
                   </>
                 }
                 placement="right"

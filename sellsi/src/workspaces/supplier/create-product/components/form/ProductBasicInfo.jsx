@@ -46,26 +46,21 @@ const ProductBasicInfo = ({
               value={formData.nombre}
               onChange={onInputChange('nombre')}
               onBlur={() => onFieldBlur('nombre')}
-              error={
-                !!(touched.nombre || triedSubmit) && !!errors.nombre
-              }
+              error={!!(touched.nombre || triedSubmit) && !!errors.nombre}
               helperText={
                 touched.nombre || triedSubmit
-                  ? errors.nombre ||
-                    `${formData.nombre.length}/40 caracteres`
+                  ? errors.nombre || `${formData.nombre.length}/40 caracteres`
                   : ''
               }
               inputProps={{ maxLength: 40 }}
               size="medium"
               autoComplete="off"
             />
-            
+
             <FormControl
               fullWidth
-              error={
-                !!(touched.categoria || triedSubmit) &&
-                !!errors.categoria
-              }
+              sx={{ width: '100%', min_width: 0 }}
+              error={!!(touched.categoria || triedSubmit) && !!errors.categoria}
               size="medium"
             >
               <InputLabel>Categoría</InputLabel>
@@ -82,13 +77,13 @@ const ProductBasicInfo = ({
                   PaperProps: {
                     sx: {
                       zIndex: 1500,
-                    }
+                    },
                   },
                   BackdropProps: {
                     sx: {
                       zIndex: 1499,
-                    }
-                  }
+                    },
+                  },
                 }}
               >
                 {CATEGORIES.map(category => (
@@ -97,18 +92,17 @@ const ProductBasicInfo = ({
                   </MenuItem>
                 ))}
               </Select>
-              {(touched.categoria || triedSubmit) &&
-                errors.categoria && (
-                  <Typography
-                    variant="caption"
-                    color="error"
-                    sx={{ mt: 0.5, ml: 1.5 }}
-                  >
-                    {errors.categoria}
-                  </Typography>
-                )}
+              {(touched.categoria || triedSubmit) && errors.categoria && (
+                <Typography
+                  variant="caption"
+                  color="error"
+                  sx={{ mt: 0.5, ml: 1.5 }}
+                >
+                  {errors.categoria}
+                </Typography>
+              )}
             </FormControl>
-            
+
             <TextField
               fullWidth
               multiline
@@ -119,8 +113,7 @@ const ProductBasicInfo = ({
               onChange={onInputChange('descripcion')}
               onBlur={() => onFieldBlur('descripcion')}
               error={
-                !!(touched.descripcion || triedSubmit) &&
-                !!errors.descripcion
+                !!(touched.descripcion || triedSubmit) && !!errors.descripcion
               }
               helperText={
                 touched.descripcion || triedSubmit
@@ -152,31 +145,27 @@ const ProductBasicInfo = ({
               value={formData.nombre}
               onChange={onInputChange('nombre')}
               onBlur={() => onFieldBlur('nombre')}
-              error={
-                !!(touched.nombre || triedSubmit) && !!errors.nombre
-              }
+              error={!!(touched.nombre || triedSubmit) && !!errors.nombre}
               helperText={
                 touched.nombre || triedSubmit
-                  ? errors.nombre ||
-                    `${formData.nombre.length}/40 caracteres`
+                  ? errors.nombre || `${formData.nombre.length}/40 caracteres`
                   : ''
               }
               inputProps={{ maxLength: 40 }}
               autoComplete="off"
             />
           </Box>
-          
+
           <Box sx={{ mt: 6 }}>
             {/* Eliminado título de Categoría; se agregó margen superior para alinear con el campo de Nombre Producto */}
             <FormControl
               fullWidth
-              error={
-                !!(touched.categoria || triedSubmit) &&
-                !!errors.categoria
-              }
+              error={!!(touched.categoria || triedSubmit) && !!errors.categoria}
             >
               <InputLabel>Categoría</InputLabel>
+
               <Select
+                fullWidth
                 value={formData.categoria}
                 onChange={onInputChange('categoria')}
                 onBlur={() => onFieldBlur('categoria')}
@@ -189,14 +178,14 @@ const ProductBasicInfo = ({
                   PaperProps: {
                     sx: {
                       zIndex: 1500, // z-index para el papel del dropdown
-                    }
+                    },
                   },
                   // Forzar el z-index del backdrop/modal
                   BackdropProps: {
                     sx: {
                       zIndex: 1499,
-                    }
-                  }
+                    },
+                  },
                 }}
               >
                 {CATEGORIES.map(category => (
@@ -205,16 +194,15 @@ const ProductBasicInfo = ({
                   </MenuItem>
                 ))}
               </Select>
-              {(touched.categoria || triedSubmit) &&
-                errors.categoria && (
-                  <Typography
-                    variant="caption"
-                    color="error"
-                    sx={{ mt: 0.5, ml: 1.5 }}
-                  >
-                    {errors.categoria}
-                  </Typography>
-                )}
+              {(touched.categoria || triedSubmit) && errors.categoria && (
+                <Typography
+                  variant="caption"
+                  color="error"
+                  sx={{ mt: 0.5, ml: 1.5 }}
+                >
+                  {errors.categoria}
+                </Typography>
+              )}
             </FormControl>
           </Box>
 
@@ -230,8 +218,7 @@ const ProductBasicInfo = ({
               onChange={onInputChange('descripcion')}
               onBlur={() => onFieldBlur('descripcion')}
               error={
-                !!(touched.descripcion || triedSubmit) &&
-                !!errors.descripcion
+                !!(touched.descripcion || triedSubmit) && !!errors.descripcion
               }
               helperText={
                 touched.descripcion || triedSubmit

@@ -273,7 +273,6 @@ const DesktopFormLayout = ({
       <Paper
         sx={{
           p: 3,
-          minWidth: '980px',
           maxWidth: '100%',
           width: '100%',
         }}
