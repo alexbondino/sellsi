@@ -1,4 +1,4 @@
-name: 🚀 Crear Jira Ticket en Merge a Staging
+name: '🚀 Crear Jira Ticket en Merge a Staging'
 
 on:
   push:
@@ -7,51 +7,49 @@ on:
 
 jobs:
   create-jira-issue-on-merge:
-    # Solo corre si el commit es un "Merge pull request ..."
     if: startsWith(github.event.head_commit.message, 'Merge pull request')
     runs-on: ubuntu-latest
 
     steps:
-      - name: 🏗️ Construir Contenido de Issue
-        id: build_content
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: 🏗️ Construir payload
+        id: build_payload
         run: |
-          # 🔧 CAMBIA ESTA URL POR TU STAGING REAL
+          PR_MERGE_MESSAGE="${GITHUB_EVENT_HEAD_COMMIT_MESSAGE:-${{ github.event.head_commit.message }}}"
+          REPO="${{ github.repository }}"
+          ACTOR="${{ github.actor }}"
+          COMMIT_SHA="${{ github.sha }}"
           STAGING_URL="https://staging.sellsi.cl"
 
-          # La descripción se puede escribir con Wiki Markup de Jira
-          DESCRIPTION_WIKI=$(cat <<EOF
-          {panel:title=Detalles del Despliegue a Staging|borderStyle=dashed|borderColor=#ccc}
-          *Repositorio*: {{github.repository}}
-          *Actor (quien hizo el merge)*: {{github.actor}}
-          *Commit SHA*: {{github.sha}}
+          SUMMARY="Deploy a STAGING - $REPO - $COMMIT_SHA"
 
-          *Mensaje de merge*:
-          bq. {{github.event.head_commit.message}}
+          DESCRIPTION="Deploy automático a STAGING desde GitHub Actions.\n\nRepositorio: $REPO\nActor: $ACTOR\nCommit SHA: $COMMIT_SHA\n\nMensaje de merge:\n$PR_MERGE_MESSAGE\n\nStaging URL:\n$STAGING_URL"
 
-          *URL Staging*:
-          [{{STAGING_URL}|{{STAGING_URL}}]
-          {panel}
-          EOF
-          )
+          echo "summary=$SUMMARY" >> $GITHUB_OUTPUT
+          echo "description=$DESCRIPTION" >> $GITHUB_OUTPUT
 
-          # Sustituir variables de shell
-          DESCRIPTION_WIKI="${DESCRIPTION_WIKI//\{\{github.repository\}\}/${{ github.repository }}}"
-          DESCRIPTION_WIKI="${DESCRIPTION_WIKI//\{\{github.actor\}\}/${{ github.actor }}}"
-          DESCRIPTION_WIKI="${DESCRIPTION_WIKI//\{\{github.sha\}\}/${{ github.sha }}}"
-          DESCRIPTION_WIKI="${DESCRIPTION_WIKI//\{\{STAGING_URL\}\}/$STAGING_URL}"
-          DESCRIPTION_WIKI="${DESCRIPTION_WIKI//\{\{github.event.head_commit.message\}\}/${{ github.event.head_commit.message }}}"
+      - name: 📝 Crear Jira Issue vía API
+        env:
+          JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
+          JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
+          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+          JIRA_PROJECT_KEY: ${{ secrets.JIRA_PROJECT_KEY }}
+          SUMMARY: ${{ steps.build_payload.outputs.summary }}
+          DESCRIPTION: ${{ steps.build_payload.outputs.description }}
+        run: |
+          echo "Creando issue en Jira..."
 
-          echo "summary=Deploy a STAGING - ${{ github.repository }} - ${{ github.sha }}" >> $GITHUB_OUTPUT
-          echo "description_wiki=$DESCRIPTION_WIKI" >> $GITHUB_OUTPUT
-
-      - name: 📝 Crear Jira Issue
-        uses: agile-ts/jira-action@v2
-        with:
-          jira-base-url: ${{ secrets.JIRA_BASE_URL }}
-          jira-api-token: ${{ secrets.JIRA_API_TOKEN }}
-          jira-user-email: ${{ secrets.JIRA_EMAIL }}
-          jira-project: ${{ secrets.JIRA_PROJECT_KEY }}
-          jira-issue-type: Task # O el tipo que necesites (Bug, Story, etc.)
-          jira-summary: ${{ steps.build_content.outputs.summary }}
-          # Usamos 'jira-description-wiki' para que use el formato Wiki Markup
-          jira-description-wiki: ${{ steps.build_content.outputs.description_wiki }}
+          curl -sS -X POST \
+            -H "Content-Type: application/json" \
+            -u "$JIRA_EMAIL:$JIRA_API_TOKEN" \
+            "$JIRA_BASE_URL/rest/api/3/issue" \
+            --data "{
+              \"fields\": {
+                \"project\": { \"key\": \"$JIRA_PROJECT_KEY\" },
+                \"summary\": \"$SUMMARY\",
+                \"issuetype\": { \"name\": \"Task\" },
+                \"description\": \"$DESCRIPTION\"
+              }
+            }"
