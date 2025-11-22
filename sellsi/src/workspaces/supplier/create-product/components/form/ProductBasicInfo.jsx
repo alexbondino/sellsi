@@ -38,7 +38,10 @@ const ProductBasicInfo = ({
       {isMobile ? (
         // 📱 Layout Móvil - Stack Vertical
         <Box>
-          <Stack spacing={2}>
+          <Stack
+            spacing={2}
+            sx={{ width: '100%', minWidth: 0, maxWidth: '100%' }}
+          >
             <TextField
               fullWidth
               label="Nombre Producto"
@@ -59,7 +62,7 @@ const ProductBasicInfo = ({
 
             <FormControl
               fullWidth
-              sx={{ width: '100%', min_width: 0 }}
+              sx={{ width: '100%', minWidth: 0, maxWidth: '100%' }}
               error={!!(touched.categoria || triedSubmit) && !!errors.categoria}
               size="medium"
             >
@@ -69,6 +72,8 @@ const ProductBasicInfo = ({
                 onChange={onInputChange('categoria')}
                 onBlur={() => onFieldBlur('categoria')}
                 label="Categoría"
+                fullWidth
+                sx={{ width: '100%', minWidth: 0, maxWidth: '100%' }}
                 MenuProps={{
                   disableScrollLock: true,
                   sx: {
@@ -77,6 +82,8 @@ const ProductBasicInfo = ({
                   PaperProps: {
                     sx: {
                       zIndex: 1500,
+                      minWidth: 0,
+                      maxWidth: '100vw',
                     },
                   },
                   BackdropProps: {
@@ -170,6 +177,7 @@ const ProductBasicInfo = ({
                 onChange={onInputChange('categoria')}
                 onBlur={() => onFieldBlur('categoria')}
                 label="Categoría"
+                sx={{ width: '100%', minWidth: 0, maxWidth: '100%' }}
                 MenuProps={{
                   disableScrollLock: true,
                   sx: {
@@ -178,6 +186,8 @@ const ProductBasicInfo = ({
                   PaperProps: {
                     sx: {
                       zIndex: 1500, // z-index para el papel del dropdown
+                      minWidth: 0,
+                      maxWidth: '100vw',
                     },
                   },
                   // Forzar el z-index del backdrop/modal
