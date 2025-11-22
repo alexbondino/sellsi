@@ -49,7 +49,7 @@ jobs:
         run: |
           echo "Creando issue en Jira (proyecto $JIRA_PROJECT_KEY)..."
 
-          # Construimos el JSON de forma segura con jq
+          # PAYLOAD en formato Atlassian Document Format (ADF) para description
           PAYLOAD=$(jq -n \
             --arg project "$JIRA_PROJECT_KEY" \
             --arg summary "$SUMMARY" \
@@ -59,7 +59,18 @@ jobs:
                 project: { key: $project },
                 summary: $summary,
                 issuetype: { name: "Submit a request or incident" },
-                description: $desc
+                description: {
+                  type: "doc",
+                  version: 1,
+                  content: [
+                    {
+                      type: "paragraph",
+                      content: [
+                        { "type": "text", "text": $desc }
+                      ]
+                    }
+                  ]
+                }
               }
             }')
 
