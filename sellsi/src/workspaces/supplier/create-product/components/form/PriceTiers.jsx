@@ -332,7 +332,7 @@ const PriceTiers = ({
                   : 'divider',
                 borderRadius: 2,
                 height: '100%',
-                width: '24%',
+                width: '20%',
                 minHeight: '192px',
                 backgroundColor: getCardBorderError(tramo, index)
                   ? 'error.50'
@@ -544,7 +544,7 @@ const PriceTiers = ({
                 borderColor: 'primary.main',
                 borderRadius: 2,
                 height: '100%',
-                width: '24%',
+                width: '20%',
                 minHeight: '192px',
                 display: 'flex',
                 alignItems: 'center',

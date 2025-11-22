@@ -50,44 +50,44 @@ const ShippingRegionsModal = ({
     if (isOpen) {
       // Guardar el scroll actual antes de bloquearlo
       const scrollY = window.scrollY;
-      
+
       // Aplicar estilos para bloquear scroll
       document.documentElement.style.position = 'fixed';
       document.documentElement.style.top = `-${scrollY}px`;
       document.documentElement.style.left = '0';
       document.documentElement.style.right = '0';
       document.documentElement.style.overflow = 'hidden';
-      
+
       document.body.style.position = 'fixed';
       document.body.style.top = `-${scrollY}px`;
       document.body.style.left = '0';
       document.body.style.right = '0';
       document.body.style.overflow = 'hidden';
       document.body.style.touchAction = 'none'; // Prevenir scroll en mobile
-      
+
       // Guardar posición para restaurar después
       document.body.dataset.scrollY = scrollY.toString();
-      
+
       return () => {
         // Restaurar scroll del body
         const savedScrollY = parseInt(document.body.dataset.scrollY || '0');
-        
+
         document.documentElement.style.position = '';
         document.documentElement.style.top = '';
         document.documentElement.style.left = '';
         document.documentElement.style.right = '';
         document.documentElement.style.overflow = '';
-        
+
         document.body.style.position = '';
         document.body.style.top = '';
         document.body.style.left = '';
         document.body.style.right = '';
         document.body.style.overflow = '';
         document.body.style.touchAction = '';
-        
+
         // Restaurar posición de scroll
         window.scrollTo(0, savedScrollY);
-        
+
         // Limpiar dataset
         delete document.body.dataset.scrollY;
       };
@@ -95,38 +95,38 @@ const ShippingRegionsModal = ({
   }, [isOpen]);
 
   // Función utilitaria para parsear valor de moneda
-  const parseCurrencyValue = (value) => {
+  const parseCurrencyValue = value => {
     if (!value || value === '') return '';
     const numericValue = parseFloat(value.toString().replace(/[^\d]/g, ''));
     if (isNaN(numericValue)) return '';
     return numericValue;
   };
 
-  const extractNumericValue = (value) => {
+  const extractNumericValue = value => {
     if (!value || value === '') return '';
     const numericString = value.toString().replace(/[^\d]/g, '');
     return numericString === '' ? '' : numericString;
   };
 
   // Mapeo de regiones a números romanos según el orden tradicional chileno
-  const getRegionRomanNumber = (regionValue) => {
+  const getRegionRomanNumber = regionValue => {
     const romanMap = {
       'arica-parinacota': 'XV',
-      'tarapaca': 'I',
-      'antofagasta': 'II',
-      'atacama': 'III',
-      'coquimbo': 'IV',
-      'valparaiso': 'V',
-      'metropolitana': 'RM',
-      'ohiggins': 'VI',
-      'maule': 'VII',
-      'nuble': 'XVI',
-      'biobio': 'VIII',
-      'araucania': 'IX',
+      tarapaca: 'I',
+      antofagasta: 'II',
+      atacama: 'III',
+      coquimbo: 'IV',
+      valparaiso: 'V',
+      metropolitana: 'RM',
+      ohiggins: 'VI',
+      maule: 'VII',
+      nuble: 'XVI',
+      biobio: 'VIII',
+      araucania: 'IX',
       'los-rios': 'XIV',
       'los-lagos': 'X',
-      'aysen': 'XI',
-      'magallanes': 'XII',
+      aysen: 'XI',
+      magallanes: 'XII',
     };
     return romanMap[regionValue] || '';
   };
@@ -134,23 +134,23 @@ const ShippingRegionsModal = ({
   // Inicializar estado cuando se abre el modal
   useEffect(() => {
     if (isOpen) {
-
-      
       // Crear configuración inicial con todas las regiones
       const initialConfig = regiones.map(region => {
         // Buscar configuración existente por region
-        const existingConfig = initialData.find(item => item.region === region.value);
+        const existingConfig = initialData.find(
+          item => item.region === region.value
+        );
 
-        
         return {
           region: region.value,
           regionLabel: region.label,
           enabled: !!existingConfig,
-          shippingValue: existingConfig ? formatCurrency(existingConfig.price) : '', // ✅ CORREGIDO: usar 'price' en lugar de 'shippingValue'
+          shippingValue: existingConfig
+            ? formatCurrency(existingConfig.price)
+            : '', // ✅ CORREGIDO: usar 'price' en lugar de 'shippingValue'
           maxDeliveryDays: existingConfig?.delivery_days || '', // ✅ CORREGIDO: usar 'delivery_days' en lugar de 'maxDeliveryDays'
         };
       });
-      
 
       setRegionsConfig(initialConfig);
     }
@@ -158,10 +158,15 @@ const ShippingRegionsModal = ({
 
   // Manejar cambio en checkbox
   const handleCheckboxChange = (regionValue, checked) => {
-    setRegionsConfig(prev => 
-      prev.map(config => 
-        config.region === regionValue 
-          ? { ...config, enabled: checked, shippingValue: checked ? config.shippingValue : '', maxDeliveryDays: checked ? config.maxDeliveryDays : '' }
+    setRegionsConfig(prev =>
+      prev.map(config =>
+        config.region === regionValue
+          ? {
+              ...config,
+              enabled: checked,
+              shippingValue: checked ? config.shippingValue : '',
+              maxDeliveryDays: checked ? config.maxDeliveryDays : '',
+            }
           : config
       )
     );
@@ -175,9 +180,9 @@ const ShippingRegionsModal = ({
       // Eliminar todo lo que no sea dígito
       newValue = value.replace(/[^0-9]/g, '');
     }
-    setRegionsConfig(prev => 
-      prev.map(config => 
-        config.region === regionValue 
+    setRegionsConfig(prev =>
+      prev.map(config =>
+        config.region === regionValue
           ? { ...config, [field]: newValue }
           : config
       )
@@ -187,13 +192,13 @@ const ShippingRegionsModal = ({
   // Manejar blur en campo de valor de despacho (formatear automáticamente)
   const handleShippingValueBlur = (regionValue, value) => {
     if (!value || value === '') return;
-    
+
     const numericValue = extractNumericValue(value);
     if (numericValue !== '') {
       const formattedValue = formatCurrency(numericValue);
-      setRegionsConfig(prev => 
-        prev.map(config => 
-          config.region === regionValue 
+      setRegionsConfig(prev =>
+        prev.map(config =>
+          config.region === regionValue
             ? { ...config, shippingValue: formattedValue }
             : config
         )
@@ -204,9 +209,9 @@ const ShippingRegionsModal = ({
   // Manejar focus en campo de valor de despacho (mostrar solo números)
   const handleShippingValueFocus = (regionValue, value) => {
     const numericValue = extractNumericValue(value);
-    setRegionsConfig(prev => 
-      prev.map(config => 
-        config.region === regionValue 
+    setRegionsConfig(prev =>
+      prev.map(config =>
+        config.region === regionValue
           ? { ...config, shippingValue: numericValue }
           : config
       )
@@ -216,40 +221,38 @@ const ShippingRegionsModal = ({
   // Validar que los campos requeridos estén completos
   const validateData = () => {
     const enabledRegions = regionsConfig.filter(config => config.enabled);
-    
+
     for (const config of enabledRegions) {
       if (!config.shippingValue || !config.maxDeliveryDays) {
         return false;
       }
-      
+
       // Extraer valor numérico para validación
       const numericShippingValue = extractNumericValue(config.shippingValue);
-      
+
       // Validar que sean números válidos
       if (isNaN(numericShippingValue) || isNaN(config.maxDeliveryDays)) {
         return false;
       }
-      
+
       // Validar que sean números positivos
-      if (parseFloat(numericShippingValue) < 0 || parseInt(config.maxDeliveryDays) < 1) {
+      if (
+        parseFloat(numericShippingValue) < 0 ||
+        parseInt(config.maxDeliveryDays) < 1
+      ) {
         return false;
       }
     }
-    
+
     return enabledRegions.length > 0;
   };
 
   // Manejar guardado
   const handleSave = () => {
-
-    
     if (!validateData()) {
-
       return;
     }
 
-
-    
     const enabledRegions = regionsConfig
       .filter(config => config.enabled)
       .map(config => ({
@@ -258,8 +261,6 @@ const ShippingRegionsModal = ({
         delivery_days: parseInt(config.maxDeliveryDays),
       }));
 
-
-    
     onSave(enabledRegions);
   };
 
@@ -269,7 +270,7 @@ const ShippingRegionsModal = ({
     <Dialog
       open={isOpen}
       onClose={loading ? null : onClose}
-      maxWidth={isMobile ? false : "md"}
+      maxWidth={isMobile ? false : 'md'}
       fullWidth={!isMobile}
       fullScreen={isMobile}
       disableScrollLock={false}
@@ -288,10 +289,11 @@ const ShippingRegionsModal = ({
           left: isMobile ? 0 : 'auto',
           right: isMobile ? 0 : 'auto',
           bottom: isMobile ? 0 : 'auto',
-          width: isMobile ? '100vw' : 'auto',
+          width: isMobile ? '100vw' : '100%',
           height: isMobile ? '100vh' : 'auto',
           margin: isMobile ? 0 : 'auto',
           maxWidth: isMobile ? '100vw' : 'auto',
+          minWidth: 0,
         },
       }}
       BackdropProps={{
@@ -310,13 +312,20 @@ const ShippingRegionsModal = ({
         '& .MuiDialog-paper': {
           margin: isMobile ? 0 : 'auto',
           maxWidth: isMobile ? '100vw' : 'auto',
-          width: isMobile ? '100vw' : 'auto',
+          width: isMobile ? '100vw' : '100%',
           height: isMobile ? '100vh' : 'auto',
+          minWidth: 0,
         },
       }}
     >
       <DialogTitle sx={{ pb: 1, px: isMobile ? 2 : 3, pt: isMobile ? 2 : 3 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: isMobile ? 1.5 : 2 }}>
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: isMobile ? 1.5 : 2,
+          }}
+        >
           <Box
             sx={{
               display: 'flex',
@@ -331,35 +340,36 @@ const ShippingRegionsModal = ({
           >
             <LocalShippingIcon sx={{ fontSize: isMobile ? 18 : 24 }} />
           </Box>
-          
+
           <Box sx={{ flexGrow: 1, minWidth: 0 }}>
-            <Typography 
-              variant={isMobile ? "subtitle1" : "h6"} 
-              sx={{ 
+            <Typography
+              variant={isMobile ? 'subtitle1' : 'h6'}
+              sx={{
                 fontWeight: 600,
                 lineHeight: 1.2,
-                wordBreak: 'break-word'
+                wordBreak: 'break-word',
               }}
             >
-              {isMobile ? "Regiones de Despacho" : "Configurar Regiones de Despacho"}
+              {isMobile
+                ? 'Regiones de Despacho'
+                : 'Configurar Regiones de Despacho'}
             </Typography>
             {!isExtraSmall && (
-              <Typography 
-                variant="body2" 
+              <Typography
+                variant="body2"
                 color="text.secondary"
-                sx={{ 
+                sx={{
                   lineHeight: 1.3,
                   mt: 0.5,
                   display: '-webkit-box',
                   WebkitLineClamp: isMobile ? 2 : 3,
                   WebkitBoxOrient: 'vertical',
-                  overflow: 'hidden'
+                  overflow: 'hidden',
                 }}
               >
-                {isMobile 
-                  ? "Configura precios y tiempos de entrega" 
-                  : "Selecciona las regiones donde realizas despachos. Configura precios y tiempos."
-                }
+                {isMobile
+                  ? 'Configura precios y tiempos de entrega'
+                  : 'Selecciona las regiones donde realizas despachos. Configura precios y tiempos.'}
               </Typography>
             )}
           </Box>
@@ -367,9 +377,9 @@ const ShippingRegionsModal = ({
           {!loading && (
             <IconButton
               onClick={onClose}
-              sx={{ 
+              sx={{
                 color: 'grey.500',
-                p: isMobile ? 0.5 : 1
+                p: isMobile ? 0.5 : 1,
               }}
             >
               <CloseIcon sx={{ fontSize: isMobile ? 20 : 24 }} />
@@ -380,14 +390,17 @@ const ShippingRegionsModal = ({
 
       <Divider />
 
-      <DialogContent sx={{ p: 0, overflow: 'hidden' }}>
-        <TableContainer 
-          component={Paper} 
+      <DialogContent sx={{ p: 0, overflow: 'hidden', minWidth: 0 }}>
+        <TableContainer
+          component={Paper}
           elevation={0}
-          sx={{ 
+          sx={{
             maxHeight: isMobile ? 'calc(100vh - 200px)' : '60vh',
-            overflow: 'auto',
-            // Scroll horizontal más visible en móviles
+            minWidth: 0,
+            overflowY: 'auto',
+            overflowX: 'hidden',
+            width: '100%',
+            // Scroll solo vertical
             '&::-webkit-scrollbar': {
               height: isMobile ? 8 : 6,
               width: isMobile ? 8 : 6,
@@ -401,111 +414,153 @@ const ShippingRegionsModal = ({
             },
           }}
         >
-          <Table 
-            stickyHeader 
-            sx={{ 
-              minWidth: isMobile ? 480 : 650,
-              tableLayout: 'fixed'
+          <Table
+            stickyHeader
+            sx={{
+              minWidth: 0,
+              width: '100%',
+              tableLayout: 'fixed',
             }}
           >
             <TableHead>
               <TableRow>
-                <TableCell 
-                  sx={{ 
-                    fontWeight: 600, 
+                <TableCell
+                  sx={{
+                    fontWeight: 600,
                     bgcolor: 'grey.50',
-                    width: isMobile ? 50 : 60,
-                    p: isMobile ? 1 : 2
+                    width: 50,
+                    minWidth: 40,
+                    maxWidth: 60,
+                    p: isMobile ? 1 : 2,
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
                   }}
                 >
-                  <Checkbox 
-                    size={isMobile ? "small" : "medium"}
-                    checked={regionsConfig.length > 0 && regionsConfig.every(config => config.enabled)}
-                    indeterminate={regionsConfig.some(config => config.enabled) && !regionsConfig.every(config => config.enabled)}
-                    onChange={(e) => {
+                  <Checkbox
+                    size={isMobile ? 'small' : 'medium'}
+                    checked={
+                      regionsConfig.length > 0 &&
+                      regionsConfig.every(config => config.enabled)
+                    }
+                    indeterminate={
+                      regionsConfig.some(config => config.enabled) &&
+                      !regionsConfig.every(config => config.enabled)
+                    }
+                    onChange={e => {
                       const checked = e.target.checked;
-                      setRegionsConfig(prev => 
-                        prev.map(config => ({ 
-                          ...config, 
+                      setRegionsConfig(prev =>
+                        prev.map(config => ({
+                          ...config,
                           enabled: checked,
                           shippingValue: checked ? config.shippingValue : '',
-                          maxDeliveryDays: checked ? config.maxDeliveryDays : ''
+                          maxDeliveryDays: checked
+                            ? config.maxDeliveryDays
+                            : '',
                         }))
                       );
                     }}
                   />
                 </TableCell>
-                <TableCell 
-                  sx={{ 
-                    fontWeight: 600, 
+                <TableCell
+                  sx={{
+                    fontWeight: 600,
                     bgcolor: 'grey.50',
-                    width: isMobile ? 140 : 200,
-                    p: isMobile ? 1 : 2
+                    width: '30%',
+                    minWidth: 80,
+                    maxWidth: 200,
+                    p: isMobile ? 1 : 2,
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
                   }}
                 >
-                  <Typography variant={isMobile ? "caption" : "body2"} sx={{ fontWeight: 600 }}>
+                  <Typography
+                    variant={isMobile ? 'caption' : 'body2'}
+                    sx={{ fontWeight: 600 }}
+                  >
                     Región
                   </Typography>
                 </TableCell>
-                <TableCell 
-                  sx={{ 
-                    fontWeight: 600, 
+                <TableCell
+                  sx={{
+                    fontWeight: 600,
                     bgcolor: 'grey.50',
-                    width: isMobile ? 140 : 180,
-                    p: isMobile ? 1 : 2
+                    width: '25%',
+                    minWidth: 80,
+                    maxWidth: 180,
+                    p: isMobile ? 1 : 2,
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
                   }}
                 >
-                  <Typography variant={isMobile ? "caption" : "body2"} sx={{ fontWeight: 600 }}>
-                    {isMobile ? "Valor (CLP)" : "Valor Despacho (CLP)"}
+                  <Typography
+                    variant={isMobile ? 'caption' : 'body2'}
+                    sx={{ fontWeight: 600 }}
+                  >
+                    {isMobile ? 'Valor (CLP)' : 'Valor Despacho (CLP)'}
                   </Typography>
                 </TableCell>
-                <TableCell 
-                  sx={{ 
-                    fontWeight: 600, 
+                <TableCell
+                  sx={{
+                    fontWeight: 600,
                     bgcolor: 'grey.50',
-                    width: isMobile ? 130 : 160,
-                    p: isMobile ? 1 : 2
+                    width: '20%',
+                    minWidth: 60,
+                    maxWidth: 160,
+                    p: isMobile ? 1 : 2,
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
                   }}
                 >
-                  <Typography variant={isMobile ? "caption" : "body2"} sx={{ fontWeight: 600 }}>
-                    {isMobile ? "Días" : "Tiempo Máximo (días hábiles)"}
+                  <Typography
+                    variant={isMobile ? 'caption' : 'body2'}
+                    sx={{ fontWeight: 600 }}
+                  >
+                    {isMobile ? 'Días' : 'Tiempo Máximo (días hábiles)'}
                   </Typography>
                 </TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {regionsConfig.map((config) => (
+              {regionsConfig.map(config => (
                 <TableRow key={config.region}>
                   <TableCell sx={{ p: isMobile ? 1 : 2 }}>
                     <Checkbox
-                      size={isMobile ? "small" : "medium"}
+                      size={isMobile ? 'small' : 'medium'}
                       checked={config.enabled}
-                      onChange={(e) => handleCheckboxChange(config.region, e.target.checked)}
+                      onChange={e =>
+                        handleCheckboxChange(config.region, e.target.checked)
+                      }
                     />
                   </TableCell>
                   <TableCell sx={{ p: isMobile ? 1 : 2 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: isMobile ? 0.5 : 1 }}>
-                      <Typography 
-                        variant={isMobile ? "caption" : "body2"}
-                        sx={{ 
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: isMobile ? 0.5 : 1,
+                      }}
+                    >
+                      <Typography
+                        variant={isMobile ? 'caption' : 'body2'}
+                        sx={{
                           fontWeight: 700,
                           color: 'primary.main',
                           minWidth: isMobile ? '24px' : '32px',
                           textAlign: 'center',
-                          fontSize: isMobile ? '0.7rem' : '0.875rem'
+                          fontSize: isMobile ? '0.7rem' : '0.875rem',
                         }}
                       >
                         {getRegionRomanNumber(config.region)}
                       </Typography>
-                      <Typography 
-                        variant={isMobile ? "caption" : "body2"} 
-                        sx={{ 
+                      <Typography
+                        variant={isMobile ? 'caption' : 'body2'}
+                        sx={{
                           fontWeight: config.enabled ? 600 : 400,
                           lineHeight: 1.2,
                           fontSize: isMobile ? '0.75rem' : '0.875rem',
                           overflow: 'hidden',
                           textOverflow: 'ellipsis',
-                          whiteSpace: isMobile ? 'nowrap' : 'normal'
+                          whiteSpace: isMobile ? 'nowrap' : 'normal',
                         }}
                       >
                         {config.regionLabel}
@@ -516,28 +571,45 @@ const ShippingRegionsModal = ({
                     <TextField
                       size="small"
                       type="tel"
-                      inputProps={{ 
-                        inputMode: 'numeric', 
-                        pattern: '[0-9]*', 
+                      inputProps={{
+                        inputMode: 'numeric',
+                        pattern: '[0-9]*',
                         maxLength: 9,
-                        style: { 
+                        style: {
                           fontSize: isMobile ? '0.8rem' : '0.875rem',
-                          padding: isMobile ? '6px 8px' : '8px 12px'
-                        }
+                          padding: isMobile ? '6px 8px' : '8px 12px',
+                        },
                       }}
                       placeholder="$0"
                       value={config.shippingValue}
-                      onChange={(e) => handleFieldChange(config.region, 'shippingValue', e.target.value)}
-                      onFocus={(e) => handleShippingValueFocus(config.region, e.target.value)}
-                      onBlur={(e) => handleShippingValueBlur(config.region, e.target.value)}
+                      onChange={e =>
+                        handleFieldChange(
+                          config.region,
+                          'shippingValue',
+                          e.target.value
+                        )
+                      }
+                      onFocus={e =>
+                        handleShippingValueFocus(config.region, e.target.value)
+                      }
+                      onBlur={e =>
+                        handleShippingValueBlur(config.region, e.target.value)
+                      }
                       disabled={!config.enabled}
-                      error={config.enabled && (!config.shippingValue || isNaN(extractNumericValue(config.shippingValue)) || parseFloat(extractNumericValue(config.shippingValue)) < 0)}
-                      sx={{ 
+                      error={
+                        config.enabled &&
+                        (!config.shippingValue ||
+                          isNaN(extractNumericValue(config.shippingValue)) ||
+                          parseFloat(
+                            extractNumericValue(config.shippingValue)
+                          ) < 0)
+                      }
+                      sx={{
                         width: '100%',
                         maxWidth: isMobile ? 120 : 140,
                         '& .MuiInputBase-input': {
-                          fontSize: isMobile ? '0.8rem' : '0.875rem'
-                        }
+                          fontSize: isMobile ? '0.8rem' : '0.875rem',
+                        },
                       }}
                     />
                   </TableCell>
@@ -547,32 +619,42 @@ const ShippingRegionsModal = ({
                       type="number"
                       placeholder="1"
                       value={config.maxDeliveryDays}
-                      onChange={(e) => {
+                      onChange={e => {
                         // Permitir solo enteros mayores a 0
                         const value = e.target.value;
                         if (/^\d*$/.test(value)) {
-                          handleFieldChange(config.region, 'maxDeliveryDays', value.replace(/^0+/, ''));
+                          handleFieldChange(
+                            config.region,
+                            'maxDeliveryDays',
+                            value.replace(/^0+/, '')
+                          );
                         }
                       }}
                       disabled={!config.enabled}
-                      error={config.enabled && (!config.maxDeliveryDays || isNaN(config.maxDeliveryDays) || parseInt(config.maxDeliveryDays) < 1 || !Number.isInteger(Number(config.maxDeliveryDays)))}
-                      inputProps={{ 
+                      error={
+                        config.enabled &&
+                        (!config.maxDeliveryDays ||
+                          isNaN(config.maxDeliveryDays) ||
+                          parseInt(config.maxDeliveryDays) < 1 ||
+                          !Number.isInteger(Number(config.maxDeliveryDays)))
+                      }
+                      inputProps={{
                         min: 1,
                         max: 365,
                         step: 1,
-                        pattern: "[0-9]*",
-                        inputMode: "numeric",
-                        style: { 
+                        pattern: '[0-9]*',
+                        inputMode: 'numeric',
+                        style: {
                           fontSize: isMobile ? '0.8rem' : '0.875rem',
-                          padding: isMobile ? '6px 8px' : '8px 12px'
-                        }
+                          padding: isMobile ? '6px 8px' : '8px 12px',
+                        },
                       }}
-                      sx={{ 
+                      sx={{
                         width: '100%',
                         maxWidth: isMobile ? 100 : 120,
                         '& .MuiInputBase-input': {
-                          fontSize: isMobile ? '0.8rem' : '0.875rem'
-                        }
+                          fontSize: isMobile ? '0.8rem' : '0.875rem',
+                        },
                       }}
                     />
                   </TableCell>
@@ -585,26 +667,26 @@ const ShippingRegionsModal = ({
 
       <Divider />
 
-      <DialogActions 
-        sx={{ 
-          p: isMobile ? 2 : 3, 
+      <DialogActions
+        sx={{
+          p: isMobile ? 2 : 3,
           gap: isMobile ? 1 : 2,
           flexDirection: isMobile ? 'column' : 'row',
           '& > button': {
             width: isMobile ? '100%' : 'auto',
-            minWidth: isMobile ? 0 : 100
-          }
+            minWidth: isMobile ? 0 : 100,
+          },
         }}
       >
         <Button
           onClick={onClose}
           disabled={loading}
           variant="outlined"
-          sx={{ 
-            textTransform: 'none', 
+          sx={{
+            textTransform: 'none',
             fontWeight: 500,
             order: isMobile ? 2 : 1,
-            py: isMobile ? 1.5 : 1
+            py: isMobile ? 1.5 : 1,
           }}
         >
           Cancelar
@@ -614,14 +696,14 @@ const ShippingRegionsModal = ({
           onClick={handleSave}
           disabled={loading || !isValid}
           variant="contained"
-          sx={{ 
-            textTransform: 'none', 
+          sx={{
+            textTransform: 'none',
             fontWeight: 600,
             order: isMobile ? 1 : 2,
-            py: isMobile ? 1.5 : 1
+            py: isMobile ? 1.5 : 1,
           }}
         >
-          {loading ? 'Cargando...' : (isMobile ? 'Confirmar' : 'Confirmar')}
+          {loading ? 'Cargando...' : isMobile ? 'Confirmar' : 'Confirmar'}
         </Button>
       </DialogActions>
     </Dialog>

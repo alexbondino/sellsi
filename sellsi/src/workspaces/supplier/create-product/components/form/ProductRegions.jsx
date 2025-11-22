@@ -285,6 +285,7 @@ const ProductRegions = ({
           fontWeight: 500,
           mb: 2,
           borderRadius: 2,
+          width: '100%',
           borderColor: 'grey.400',
           '&:hover': {
             borderColor: 'grey.500',
@@ -302,68 +303,92 @@ const ProductRegions = ({
       <Box
         sx={{
           display: 'flex',
-          flexDirection: isMobile ? 'column' : 'row',
+          flexDirection: 'row',
           gap: 1,
           mb: 1,
+          width: '100%',
         }}
       >
-        {[1, 2, 3].map(idx => {
-          const preset = getPresetByIndex(idx);
-          const isActive = activePreset === idx;
-          const isRenaming = renamingIndex === idx;
-          return (
-            <Box
-              key={idx}
-              sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}
-            >
-              <Button
-                variant={isActive ? 'contained' : 'outlined'}
-                size="small"
-                onClick={() => handleApplyPreset(idx)}
-                disabled={freezeDisplay || presetsLoading || presetsSaving}
-                sx={{ textTransform: 'none', fontWeight: 500, minWidth: 0 }}
+        {/* Botones de Config Preset */}
+        <Box sx={{ display: 'flex', flex: 1, gap: 1 }}>
+          {[1, 2, 3].map(idx => {
+            const preset = getPresetByIndex(idx);
+            const isActive = activePreset === idx;
+            const isRenaming = renamingIndex === idx;
+            return (
+              <Box
+                key={idx}
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 0.5,
+                  flex: 1,
+                  minWidth: 0,
+                }}
               >
-                {isRenaming ? 'Renombrar' : preset?.name || `Config. ${idx}`}
-              </Button>
-              {preset && !isRenaming && (
-                <Tooltip title="Renombrar">
-                  <IconButton
-                    size="small"
-                    onClick={() => startRenaming(idx)}
-                    disabled={freezeDisplay || presetsSaving}
-                  >
-                    <EditIcon fontSize="inherit" />
-                  </IconButton>
-                </Tooltip>
-              )}
-              {isRenaming && (
-                <Stack direction="row" spacing={0.5} alignItems="center">
-                  <TextField
-                    size="small"
-                    value={tempName}
-                    autoFocus
-                    onChange={e =>
-                      setTempName(e.target.value.slice(0, MAX_NAME_LENGTH))
-                    }
-                    onBlur={commitRename}
-                    inputProps={{ maxLength: MAX_NAME_LENGTH }}
-                    onKeyDown={e => {
-                      if (e.key === 'Enter') {
-                        commitRename();
+                <Button
+                  variant={isActive ? 'contained' : 'outlined'}
+                  size="small"
+                  onClick={() => handleApplyPreset(idx)}
+                  disabled={freezeDisplay || presetsLoading || presetsSaving}
+                  sx={{
+                    textTransform: 'none',
+                    fontWeight: 500,
+                    minWidth: 0,
+                    width: '100%',
+                    flex: 1,
+                    maxWidth: '100%',
+                  }}
+                >
+                  {isRenaming ? 'Renombrar' : preset?.name || `Config. ${idx}`}
+                </Button>
+                {preset && !isRenaming && (
+                  <Tooltip title="Renombrar">
+                    <IconButton
+                      size="small"
+                      onClick={() => startRenaming(idx)}
+                      disabled={freezeDisplay || presetsSaving}
+                      sx={{
+                        width: 32,
+                        minWidth: 32,
+                        maxWidth: 32,
+                        flex: 'none',
+                      }}
+                    >
+                      <EditIcon fontSize="inherit" />
+                    </IconButton>
+                  </Tooltip>
+                )}
+                {isRenaming && (
+                  <Stack direction="row" spacing={0.5} alignItems="center">
+                    <TextField
+                      size="small"
+                      value={tempName}
+                      autoFocus
+                      onChange={e =>
+                        setTempName(e.target.value.slice(0, MAX_NAME_LENGTH))
                       }
-                      if (e.key === 'Escape') {
-                        setRenamingIndex(null);
-                      }
-                    }}
-                  />
-                  <IconButton size="small" onMouseDown={commitRename}>
-                    <CheckIcon fontSize="inherit" />
-                  </IconButton>
-                </Stack>
-              )}
-            </Box>
-          );
-        })}
+                      onBlur={commitRename}
+                      inputProps={{ maxLength: MAX_NAME_LENGTH }}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter') {
+                          commitRename();
+                        }
+                        if (e.key === 'Escape') {
+                          setRenamingIndex(null);
+                        }
+                      }}
+                    />
+                    <IconButton size="small" onMouseDown={commitRename}>
+                      <CheckIcon fontSize="inherit" />
+                    </IconButton>
+                  </Stack>
+                )}
+              </Box>
+            );
+          })}
+        </Box>
+        {/* Botón Guardar */}
         <Tooltip
           title={
             activePreset
@@ -373,7 +398,7 @@ const ProductRegions = ({
               : 'Guardar en un preset'
           }
         >
-          <span>
+          <span style={{ display: 'flex', alignItems: 'center' }}>
             <IconButton
               size="small"
               onClick={handleSavePreset}
@@ -386,13 +411,18 @@ const ProductRegions = ({
               sx={{
                 border: '1px solid',
                 borderColor: 'divider',
-                borderRadius: 2, // más “botón” que círculo
+                borderRadius: 2,
+                width: 32,
+                minWidth: 32,
+                maxWidth: 32,
+                flex: 'none',
               }}
             >
               <SaveIcon fontSize="small" />
             </IconButton>
           </span>
         </Tooltip>
+        {/* Botón Eliminar */}
         <Tooltip
           title={
             activePreset
@@ -400,7 +430,7 @@ const ProductRegions = ({
               : 'No hay configuración seleccionada'
           }
         >
-          <span>
+          <span style={{ display: 'flex', alignItems: 'center' }}>
             <IconButton
               size="small"
               aria-label="Eliminar configuración"
@@ -410,6 +440,10 @@ const ProductRegions = ({
                 ml: 0.5,
                 bgcolor: 'transparent',
                 p: 0.5,
+                width: 32,
+                minWidth: 32,
+                maxWidth: 32,
+                flex: 'none',
                 '&:hover': {
                   bgcolor: activePreset ? 'rgba(0,0,0,0.06)' : 'transparent',
                 },
