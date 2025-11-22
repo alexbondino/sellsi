@@ -82,7 +82,7 @@ export default function StatCard({
             sx={{
               fontWeight: 800,
               // 🔥 escala más agresivamente para pantallas estrechas
-              fontSize: 'clamp(0.8rem, 3vw, 3rem)',
+              fontSize: 'clamp(2rem, 3vw, 6rem)',
               textAlign: 'center',
               lineHeight: 1,
               overflow: 'hidden',
