@@ -107,7 +107,7 @@ const MobileFormLayout = ({
       flexDirection: 'column',
       gap: 0, // 🔧 Gap 0 para unir visualmente
       px: 0, // 🔧 Sin padding horizontal en móvil para full-bleed
-      pb: 16,
+      pb: 2,
       width: '100%',
       mx: 0,
     }}
@@ -269,11 +269,10 @@ const DesktopFormLayout = ({
   supplierId,
 }) => (
   <Grid container spacing={3}>
-    <Grid size={{ xs: 12, lg: 8 }}>
+    <Grid size={{ xs: 12, lg: 40 }}>
       <Paper
         sx={{
           p: 3,
-          minWidth: '980px',
           maxWidth: '100%',
           width: '100%',
         }}
@@ -281,9 +280,15 @@ const DesktopFormLayout = ({
         <Box
           sx={{
             display: 'grid',
-            gridTemplateColumns: '1fr 1fr',
+            gridTemplateColumns: {
+              xs: '1fr',
+              md: 'minmax(0, 1fr) minmax(0, 1fr)', // 👈 permite que ambas columnas se achiquen igual
+            },
             gridTemplateRows: 'auto auto auto auto auto',
             gap: 3,
+            '& > *': {
+              minWidth: 0, // 👈 muy importante para que hijos puedan encogerse
+            },
             '& .full-width': {
               gridColumn: '1 / -1',
             },
@@ -452,41 +457,7 @@ const AddProduct = () => {
 
   // (Eliminado) Carga duplicada de productos que causaba rerenders con estado antiguo
 
-  // Componente Portal para el panel de resultados
-  const ResultsPanelPortal = ({ children }) => {
-    return createPortal(
-      <Box
-        sx={{
-          position: 'fixed',
-          top: {
-            xs: 80, // top menor en mobile
-            sm: 120, // sm
-            md: 180, // md
-            lg: 242, // lg
-            xl: 242, // xl
-          },
-          right: {
-            xs: 20, // mobile
-            sm: 40, // sm
-            md: 80, // md: volvemos a 80 porque el portal evita el problema
-            lg: 80, // lg: volvemos a 80 porque el portal evita el problema
-            xl: 80, // xl
-          },
-          zIndex: 1200,
-          width: {
-            xs: 'calc(100vw - 40px)', // mobile con padding
-            sm: 360, // sm: 360px
-            md: 420, // md: 420px
-            lg: 480, // lg: 480px
-            xl: 560, // xl: 560px
-          },
-        }}
-      >
-        {children}
-      </Box>,
-      document.body
-    );
-  };
+  // Eliminado ResultsPanelPortal: ahora el panel de resultados va al final del flujo normal
 
   // Cargar regiones de entrega si editando (una sola vez, sin sobreescribir ediciones locales)
   const hasLoadedRegionsRef = useRef(false);
@@ -741,10 +712,10 @@ const AddProduct = () => {
               backgroundColor: 'background.default',
               minHeight: '100vh',
               pt: { xs: 4, md: 10 },
-              px: { xs: 0, md: 3 }, // ✅ Correcto: sin padding horizontal en móvil
+              px: { xs: 0, md: 3 },
               pb: SPACING_BOTTOM_MAIN,
               ml: { xs: 0, md: 10, lg: 14, xl: 24 },
-              width: { xs: '100%', md: 'auto' }, // 🔧 Forzar 100% width en móvil
+              width: { xs: '100%', md: 'auto' },
             }}
           >
             <Container
@@ -755,15 +726,13 @@ const AddProduct = () => {
               <Box
                 sx={{
                   mb: { xs: 2, md: 4 },
-                  px: { xs: 0, md: 0 }, // 🔧 Sin padding horizontal en móvil
+                  px: { xs: 0, md: 0 },
                 }}
               >
                 {isMobile ? (
-                  // 📱 Header Móvil - Botón volver separado encima
                   <Box
                     sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}
                   >
-                    {/* Fila 1: Solo botón Volver */}
                     <Box sx={{ display: 'flex', justifyContent: 'flex-start' }}>
                       <Tooltip title="Volver" arrow>
                         <IconButton
@@ -779,8 +748,6 @@ const AddProduct = () => {
                         </IconButton>
                       </Tooltip>
                     </Box>
-
-                    {/* Fila 2: Título centrado */}
                     <Box
                       sx={{
                         display: 'flex',
@@ -804,7 +771,6 @@ const AddProduct = () => {
                     </Box>
                   </Box>
                 ) : (
-                  // 🖥️ Header Desktop - Mantener actual
                   <Box
                     sx={{
                       display: 'flex',
@@ -846,8 +812,6 @@ const AddProduct = () => {
               {/* Form container condicional */}
               {isMobile ? (
                 <Box sx={{ px: 0, width: '100%' }}>
-                  {' '}
-                  {/* 🔧 Eliminado px: '1%' */}
                   <MobileFormLayout
                     supplierId={supplierId}
                     formData={formData}
@@ -891,38 +855,34 @@ const AddProduct = () => {
                   freezeDisplay={isLoading || isSubmitting || isNavigating}
                 />
               )}
+              {/* Panel de resultados de venta: ahora siempre al final */}
+              <Box sx={{ mt: { xs: 1, md: 4 } }}>
+                <ProductResultsPanel
+                  calculations={calculations}
+                  isValid={isValid}
+                  hasActualChanges={hasActualChanges}
+                  isLoading={isLoading || isSubmitting || isNavigating}
+                  isEditMode={isEditMode}
+                  onBack={handleBack}
+                  onSubmit={handleSubmit}
+                />
+              </Box>
+              {/* Bottom Bar Expandible - SOLO MÓVIL */}
+              {isMobile && (
+                <MobileExpandableBottomBar
+                  calculations={calculations}
+                  formData={formData}
+                  isValid={isValid}
+                  hasActualChanges={hasActualChanges}
+                  isLoading={isLoading || isSubmitting || isNavigating}
+                  isEditMode={isEditMode}
+                  onSubmit={handleSubmit}
+                />
+              )}
             </Container>
           </Box>
         </ProductFormErrorBoundary>
       </ThemeProvider>
-
-      {/* Portal del panel de resultados - SOLO DESKTOP */}
-      {!isMobile && (
-        <ResultsPanelPortal>
-          <ProductResultsPanel
-            calculations={calculations}
-            isValid={isValid}
-            hasActualChanges={hasActualChanges} // 🔧 FIX EDIT: Pasar hasActualChanges
-            isLoading={isLoading || isSubmitting || isNavigating}
-            isEditMode={isEditMode}
-            onBack={handleBack}
-            onSubmit={handleSubmit}
-          />
-        </ResultsPanelPortal>
-      )}
-
-      {/* Bottom Bar Expandible - SOLO MÓVIL */}
-      {isMobile && (
-        <MobileExpandableBottomBar
-          calculations={calculations}
-          formData={formData}
-          isValid={isValid}
-          hasActualChanges={hasActualChanges} // 🔧 FIX EDIT: Pasar hasActualChanges
-          isLoading={isLoading || isSubmitting || isNavigating}
-          isEditMode={isEditMode}
-          onSubmit={handleSubmit}
-        />
-      )}
     </SupplierErrorBoundary>
   );
 };
