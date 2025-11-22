@@ -16,6 +16,7 @@ jobs:
 
       - name: 🏗️ Construir payload
         id: build_payload
+        shell: bash
         run: |
           PR_MERGE_MESSAGE="${GITHUB_EVENT_HEAD_COMMIT_MESSAGE:-${{ github.event.head_commit.message }}}"
           REPO="${{ github.repository }}"
@@ -27,8 +28,15 @@ jobs:
 
           DESCRIPTION="Deploy automático a STAGING desde GitHub Actions.\n\nRepositorio: $REPO\nActor: $ACTOR\nCommit SHA: $COMMIT_SHA\n\nMensaje de merge:\n$PR_MERGE_MESSAGE\n\nStaging URL:\n$STAGING_URL"
 
-          echo "summary=$SUMMARY" >> $GITHUB_OUTPUT
-          echo "description=$DESCRIPTION" >> $GITHUB_OUTPUT
+          # SUMMARY es una sola línea → formato simple
+          echo "summary=$SUMMARY" >> "$GITHUB_OUTPUT"
+
+          # DESCRIPTION es multi-línea → usar sintaxis <<EOF
+          {
+            echo "description<<EOF"
+            echo -e "$DESCRIPTION"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
 
       - name: 📝 Crear Jira Issue vía API
         env:
@@ -38,18 +46,29 @@ jobs:
           JIRA_PROJECT_KEY: ${{ secrets.JIRA_PROJECT_KEY }}
           SUMMARY: ${{ steps.build_payload.outputs.summary }}
           DESCRIPTION: ${{ steps.build_payload.outputs.description }}
+        shell: bash
         run: |
           echo "Creando issue en Jira..."
+
+          # Construimos el JSON de forma segura con jq para evitar problemas de comillas y saltos de línea
+          PAYLOAD=$(jq -n \
+            --arg project "$JIRA_PROJECT_KEY" \
+            --arg summary "$SUMMARY" \
+            --arg desc "$DESCRIPTION" \
+            '{
+              fields: {
+                project: { key: $project },
+                summary: $summary,
+                issuetype: { name: "Task" },
+                description: $desc
+              }
+            }')
+
+          echo "Payload a enviar a Jira:"
+          echo "$PAYLOAD"
 
           curl -sS -X POST \
             -H "Content-Type: application/json" \
             -u "$JIRA_EMAIL:$JIRA_API_TOKEN" \
-            "$JIRA_BASE_URL/rest/api/3/issue" \
-            --data "{
-              \"fields\": {
-                \"project\": { \"key\": \"$JIRA_PROJECT_KEY\" },
-                \"summary\": \"$SUMMARY\",
-                \"issuetype\": { \"name\": \"Task\" },
-                \"description\": \"$DESCRIPTION\"
-              }
-            }"
+            --data "$PAYLOAD" \
+            "$JIRA_BASE_URL/rest/api/3/issue"
