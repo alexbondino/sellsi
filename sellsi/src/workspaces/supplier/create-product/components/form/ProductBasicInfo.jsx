@@ -37,7 +37,7 @@ const ProductBasicInfo = ({
     <>
       {isMobile ? (
         // 📱 Layout Móvil - Stack Vertical
-        <Box>
+        <Box sx={{ minWidth: 0 }}>
           <Stack
             spacing={2}
             sx={{ width: '100%', minWidth: 0, maxWidth: '100%' }}
@@ -163,7 +163,7 @@ const ProductBasicInfo = ({
             />
           </Box>
 
-          <Box sx={{ mt: 6 }}>
+          <Box sx={{ mt: 6, minWidth: 0 }}>
             {/* Eliminado título de Categoría; se agregó margen superior para alinear con el campo de Nombre Producto */}
             <FormControl
               fullWidth

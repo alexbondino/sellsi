@@ -321,7 +321,7 @@ const ProductRegions = ({
                 size="small"
                 onClick={() => handleApplyPreset(idx)}
                 disabled={freezeDisplay || presetsLoading || presetsSaving}
-                sx={{ textTransform: 'none', fontWeight: 500 }}
+                sx={{ textTransform: 'none', fontWeight: 500, minWidth: 0 }}
               >
                 {isRenaming ? 'Renombrar' : preset?.name || `Config. ${idx}`}
               </Button>
@@ -374,21 +374,23 @@ const ProductRegions = ({
           }
         >
           <span>
-            <Button
-              variant="outlined"
+            <IconButton
               size="small"
-              startIcon={<SaveIcon />}
+              onClick={handleSavePreset}
               disabled={
                 freezeDisplay ||
                 displayRegions.length === 0 ||
                 presetsSaving ||
                 (!presetDirty && !!activePreset)
               }
-              onClick={handleSavePreset}
-              sx={{ textTransform: 'none', fontWeight: 600 }}
+              sx={{
+                border: '1px solid',
+                borderColor: 'divider',
+                borderRadius: 2, // más “botón” que círculo
+              }}
             >
-              Guardar
-            </Button>
+              <SaveIcon fontSize="small" />
+            </IconButton>
           </span>
         </Tooltip>
         <Tooltip

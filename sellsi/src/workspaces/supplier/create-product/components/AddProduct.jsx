@@ -280,9 +280,15 @@ const DesktopFormLayout = ({
         <Box
           sx={{
             display: 'grid',
-            gridTemplateColumns: '1fr 1fr',
+            gridTemplateColumns: {
+              xs: '1fr',
+              md: 'minmax(0, 1fr) minmax(0, 1fr)', // 👈 permite que ambas columnas se achiquen igual
+            },
             gridTemplateRows: 'auto auto auto auto auto',
             gap: 3,
+            '& > *': {
+              minWidth: 0, // 👈 muy importante para que hijos puedan encogerse
+            },
             '& .full-width': {
               gridColumn: '1 / -1',
             },
