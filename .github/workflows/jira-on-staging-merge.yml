@@ -7,6 +7,7 @@ on:
 
 jobs:
   create-jira-issue-on-merge:
+    # Solo corre si el commit es un "Merge pull request ..."
     if: startsWith(github.event.head_commit.message, 'Merge pull request')
     runs-on: ubuntu-latest
 
@@ -28,29 +29,27 @@ jobs:
 
           DESCRIPTION="Deploy automático a STAGING desde GitHub Actions.\n\nRepositorio: $REPO\nActor: $ACTOR\nCommit SHA: $COMMIT_SHA\n\nMensaje de merge:\n$PR_MERGE_MESSAGE\n\nStaging URL:\n$STAGING_URL"
 
-          # SUMMARY es una sola línea → formato simple
           echo "summary=$SUMMARY" >> "$GITHUB_OUTPUT"
 
-          # DESCRIPTION es multi-línea → usar sintaxis <<EOF
           {
             echo "description<<EOF"
             echo -e "$DESCRIPTION"
             echo "EOF"
           } >> "$GITHUB_OUTPUT"
 
-      - name: 📝 Crear Jira Issue vía API
+      - name: 📝 Crear Jira Issue vía API (Deployments)
         env:
           JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
           JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
           JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
-          JIRA_PROJECT_KEY: ${{ secrets.JIRA_PROJECT_KEY }}
+          JIRA_PROJECT_KEY: DEP
           SUMMARY: ${{ steps.build_payload.outputs.summary }}
           DESCRIPTION: ${{ steps.build_payload.outputs.description }}
         shell: bash
         run: |
-          echo "Creando issue en Jira..."
+          echo "Creando issue en Jira (proyecto $JIRA_PROJECT_KEY)..."
 
-          # Construimos el JSON de forma segura con jq para evitar problemas de comillas y saltos de línea
+          # Construimos el JSON de forma segura con jq
           PAYLOAD=$(jq -n \
             --arg project "$JIRA_PROJECT_KEY" \
             --arg summary "$SUMMARY" \
@@ -59,16 +58,34 @@ jobs:
               fields: {
                 project: { key: $project },
                 summary: $summary,
-                issuetype: { name: "Task" },
+                issuetype: { name: "Service request" },
                 description: $desc
               }
             }')
 
-          echo "Payload a enviar a Jira:"
+          echo "Payload a enviar:"
           echo "$PAYLOAD"
 
-          curl -sS -X POST \
+          RESPONSE=$(curl -sS -w "\n%{http_code}" -X POST \
             -H "Content-Type: application/json" \
             -u "$JIRA_EMAIL:$JIRA_API_TOKEN" \
             --data "$PAYLOAD" \
-            "$JIRA_BASE_URL/rest/api/3/issue"
+            "$JIRA_BASE_URL/rest/api/3/issue")
+
+          HTTP_BODY=$(echo "$RESPONSE" | sed '$d')
+          HTTP_STATUS=$(echo "$RESPONSE" | tail -n1)
+
+          echo "HTTP status: $HTTP_STATUS"
+          echo "Respuesta Jira:"
+          echo "$HTTP_BODY"
+
+          if [ "$HTTP_STATUS" -lt 200 ] || [ "$HTTP_STATUS" -ge 300 ]; then
+            echo "❌ Error creando issue en Jira"
+            exit 1
+          fi
+
+          ISSUE_KEY=$(echo "$HTTP_BODY" | jq -r '.key // empty')
+          if [ -n "$ISSUE_KEY" ]; then
+            echo "✅ Issue creado: $ISSUE_KEY"
+            echo "🔗 $JIRA_BASE_URL/browse/$ISSUE_KEY"
+          fi
