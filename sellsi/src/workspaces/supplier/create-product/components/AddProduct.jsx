@@ -105,8 +105,8 @@ const MobileFormLayout = ({
     sx={{
       display: 'flex',
       flexDirection: 'column',
-      gap: 0, // 🔧 Gap 0 para unir visualmente
-      px: 0, // 🔧 Sin padding horizontal en móvil para full-bleed
+      gap: 0,
+      px: 0,
       pb: 2,
       width: '100%',
       mx: 0,
@@ -119,7 +119,7 @@ const MobileFormLayout = ({
         width: '100%',
         mx: 0,
         borderRadius: 3,
-        overflow: 'hidden', // Para que los divisores internos se vean bien
+        overflow: 'hidden',
         background: 'linear-gradient(135deg, #fafafa 0%, #ffffff 100%)',
       }}
     >
@@ -222,8 +222,6 @@ const MobileFormLayout = ({
 
       {/* Imágenes del Producto */}
       <Box sx={{ p: { xs: 1.5, md: 3 } }}>
-        {' '}
-        {/* Sin border-bottom en la última sección */}
         <Typography
           variant="h6"
           gutterBottom
@@ -282,19 +280,19 @@ const DesktopFormLayout = ({
             display: 'grid',
             gridTemplateColumns: {
               xs: '1fr',
-              md: 'minmax(0, 1fr) minmax(0, 1fr)', // 👈 permite que ambas columnas se achiquen igual
+              md: 'minmax(0, 1fr) minmax(0, 1fr)', // 2 columnas flexibles en desktop
             },
             gridTemplateRows: 'auto auto auto auto auto',
             gap: 3,
             '& > *': {
-              minWidth: 0, // 👈 muy importante para que hijos puedan encogerse
+              minWidth: 0,
             },
             '& .full-width': {
-              gridColumn: '1 / -1',
+              gridColumn: '1 / -1', // ocupa ambas columnas
             },
           }}
         >
-          {/* Información Básica - Permite que ocupe naturalmente las posiciones del grid */}
+          {/* Información Básica */}
           <ProductBasicInfo
             formData={formData}
             errors={{ ...errors, ...localErrors }}
@@ -304,8 +302,8 @@ const DesktopFormLayout = ({
             onFieldBlur={handleFieldBlur}
           />
 
-          {/* Inventario y Precios - Columna 1, Fila 3 */}
-          <Box sx={{ gridColumn: 1, gridRow: 3 }}>
+          {/* Inventario y Condiciones - FULL WIDTH */}
+          <Box className="full-width">
             <ProductInventory
               formData={formData}
               errors={errors}
@@ -318,8 +316,40 @@ const DesktopFormLayout = ({
             />
           </Box>
 
-          {/* Regiones - Columna 2, Fila 3 (al lado de Condiciones de Venta) */}
-          <Box sx={{ gridColumn: 2, gridRow: 3 }}>
+          {/* Configuración de Precios - FULL WIDTH, ENTRE INVENTARIO Y DESPACHO */}
+          <Box className="full-width">
+            {formData.pricingType === 'Unidad' ? (
+              <ProductPricing
+                formData={formData}
+                errors={errors}
+                localErrors={localErrors}
+                touched={touched}
+                triedSubmit={triedSubmit}
+                onInputChange={handleInputChange}
+                onFieldBlur={handleFieldBlur}
+              />
+            ) : (
+              <Box
+                sx={{
+                  overflow: 'visible',
+                  mb: 3,
+                }}
+              >
+                <PriceTiers
+                  tramos={formData.tramos}
+                  onTramoChange={handleTramoChange}
+                  onTramoBlur={handleTramoBlur}
+                  onAddTramo={addTramo}
+                  onRemoveTramo={removeTramo}
+                  errors={localErrors.tramos}
+                  stockDisponible={formData.stock}
+                />
+              </Box>
+            )}
+          </Box>
+
+          {/* Regiones de Despacho - DEBAJO, FULL WIDTH */}
+          <Box className="full-width">
             <ProductRegions
               supplierId={supplierId}
               formData={formData}
@@ -331,48 +361,19 @@ const DesktopFormLayout = ({
             />
           </Box>
 
-          {/* Configuración de Precios */}
-          {formData.pricingType === 'Unidad' ? (
-            <ProductPricing
+          {/* Imágenes del Producto */}
+          <Box className="full-width">
+            <ProductImages
               formData={formData}
               errors={errors}
               localErrors={localErrors}
               touched={touched}
               triedSubmit={triedSubmit}
-              onInputChange={handleInputChange}
-              onFieldBlur={handleFieldBlur}
+              imageError={imageError}
+              onImagesChange={handleImagesChange}
+              onImageError={handleImageError}
             />
-          ) : (
-            <Box
-              className="full-width"
-              sx={{
-                overflow: 'visible',
-                mb: 3,
-              }}
-            >
-              <PriceTiers
-                tramos={formData.tramos}
-                onTramoChange={handleTramoChange}
-                onTramoBlur={handleTramoBlur}
-                onAddTramo={addTramo}
-                onRemoveTramo={removeTramo}
-                errors={localErrors.tramos}
-                stockDisponible={formData.stock}
-              />
-            </Box>
-          )}
-
-          {/* Imágenes del Producto */}
-          <ProductImages
-            formData={formData}
-            errors={errors}
-            localErrors={localErrors}
-            touched={touched}
-            triedSubmit={triedSubmit}
-            imageError={imageError}
-            onImagesChange={handleImagesChange}
-            onImageError={handleImageError}
-          />
+          </Box>
         </Box>
       </Paper>
     </Grid>
@@ -403,7 +404,7 @@ const AddProduct = () => {
     touched,
     isLoading,
     isValid,
-    hasActualChanges, // 🔧 FIX EDIT: Para detectar cambios reales en modo edición
+    hasActualChanges,
     updateField,
     handleFieldBlur,
     handlePricingTypeChange,
@@ -420,7 +421,7 @@ const AddProduct = () => {
     markSubmitAttempt,
   } = useProductValidation();
 
-  // Hook para lógica de manipulación de tramos (NUEVO)
+  // Hook para lógica de manipulación de tramos
   const {
     handleTramoChange,
     handleTramoBlur,
@@ -432,13 +433,13 @@ const AddProduct = () => {
   // Estado local para errores de imágenes
   const [imageError, setImageError] = useState('');
 
-  // 🔧 FIX 2: Estado para prevenir múltiples clicks del botón submit
+  // Estado para prevenir múltiples clicks del botón submit
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // 🔧 FIX 2C: Estado adicional para indicar éxito y navegación pendiente
+  // Estado adicional para indicar éxito y navegación pendiente
   const [isNavigating, setIsNavigating] = useState(false);
 
-  // 🔥 NUEVO: Status tracking para thumbnails
+  // Status tracking para thumbnails
   const [createdProductId, setCreatedProductId] = useState(null);
   const thumbnailStatus = useThumbnailStatus(createdProductId);
 
@@ -454,10 +455,6 @@ const AddProduct = () => {
     formData.tramos,
     formData.pricingType,
   ]);
-
-  // (Eliminado) Carga duplicada de productos que causaba rerenders con estado antiguo
-
-  // Eliminado ResultsPanelPortal: ahora el panel de resultados va al final del flujo normal
 
   // Cargar regiones de entrega si editando (una sola vez, sin sobreescribir ediciones locales)
   const hasLoadedRegionsRef = useRef(false);
@@ -477,7 +474,7 @@ const AddProduct = () => {
           !formData?.shippingRegions ||
           formData.shippingRegions.length === 0
         ) {
-          updateField('shippingRegions', formattedRegions); // Sincroniza con formData solo si estaba vacío
+          updateField('shippingRegions', formattedRegions);
         }
         hasLoadedRegionsRef.current = true;
       })
@@ -490,16 +487,15 @@ const AddProduct = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isEditMode, editProductId]);
 
-  // 🔥 NUEVO: Warm-up de Edge Function para reducir cold starts
+  // Warm-up de Edge Function para reducir cold starts
   useEffect(() => {
     if (!isEditMode && location.pathname === '/supplier/addproduct') {
-      // Warm-up call silencioso para preparar Edge Function
       import('../../../../shared/services/supabase')
         .then(({ default: supabase }) => {
           fetch(`${supabase.supabaseUrl}/functions/v1/generate-thumbnail`, {
             method: 'HEAD',
             headers: { Authorization: `Bearer ${supabase.supabaseKey}` },
-          }).catch(() => {}); // Silent fail - solo para warm-up
+          }).catch(() => {});
         })
         .catch(() => {});
     }
@@ -517,7 +513,7 @@ const AddProduct = () => {
     const value = event.target.value;
     updateField(field, value);
 
-    // Usar lógica centralizada para validación de stock vs tramos
+    // Validación de stock vs tramos
     if (field === 'stock') {
       validateStockConstraints(value);
     }
@@ -529,27 +525,21 @@ const AddProduct = () => {
     updateField('shippingRegions', regions);
   };
 
-  // Manejar cambios en imágenes: sincroniza con el hook del formulario
+  // Manejar cambios en imágenes
   const handleImagesChange = images => {
-    // Marcar que el usuario tocó imágenes para evitar rehidratación automática
     try {
       markImagesTouched();
     } catch (e) {
       /* noop */
     }
-    // Actualizar el campo de imagenes en el formulario
     updateField('imagenes', images);
-    // Limpiar cualquier error previo de imágenes
     setImageError('');
   };
 
-  // ========================================================================
-  // HANDLER ROBUSTO PARA CAMBIO DE PRICING TYPE
-  // ========================================================================
+  // Handler cambio de pricing type (Unidad / Tramos)
   const handlePricingTypeChangeUI = (event, newValue) => {
     if (newValue === null) return;
     setImageError('');
-    // Delegar al hook central que maneja el cambio de tipo de pricing
     handlePricingTypeChange(newValue);
   };
 
@@ -581,7 +571,6 @@ const AddProduct = () => {
 
   // Handler para el submit
   const handleSubmit = async e => {
-    // 🔧 FIX 2C: Prevenir múltiples clicks - considerar tanto isSubmitting como isNavigating
     if (isSubmitting || isNavigating) {
       return;
     }
@@ -608,13 +597,11 @@ const AddProduct = () => {
       if (isEditMode) {
         productId = editProductId;
       } else {
-        // Para productos nuevos, usar el ID del producto creado
         productId =
           result.data?.productid ||
           result.product?.productid ||
           result.productId;
 
-        // 🔥 NUEVO: Configurar tracking de thumbnails para productos nuevos
         if (productId && formData.imagenes?.length > 0) {
           setCreatedProductId(productId);
           thumbnailStatus.markAsProcessing();
@@ -622,7 +609,6 @@ const AddProduct = () => {
       }
 
       if (productId && shippingRegions.length > 0) {
-        // Convertir formato de display a formato BD antes de guardar
         const dbRegions = convertFormRegionsToDb(shippingRegions);
 
         try {
@@ -632,7 +618,6 @@ const AddProduct = () => {
             '[AddProduct] handleSubmit - Error guardando regiones:',
             regionError
           );
-          // No lanzar error aquí para que el producto se guarde aunque falle las regiones
           showErrorToast(
             'Producto guardado, pero hubo un error al guardar las regiones de entrega'
           );
@@ -656,18 +641,15 @@ const AddProduct = () => {
 
       replaceLoadingWithSuccess('product-save', successMessage, '🎉');
 
-      // 🔧 FIX 2C: Marcar que estamos navegando (esto deshabilitará el botón permanentemente)
       setIsNavigating(true);
 
       // 4. Navegar después de un breve delay
       setTimeout(() => {
         navigate('/supplier/myproducts');
-        // No es necesario liberar estados aquí porque el componente se desmontará
       }, 1500);
     } catch (error) {
       console.error('❌ Error en handleSubmit:', error);
 
-      // Manejar error específico de overflow numérico
       if (error.message && error.message.includes('numeric field overflow')) {
         replaceLoadingWithError(
           'product-save',
@@ -680,14 +662,11 @@ const AddProduct = () => {
         );
       }
 
-      // 🔧 FIX 2C: Solo liberar el estado en caso de error (no tocamos isNavigating)
       setIsSubmitting(false);
     }
-    // 🔧 FIX 2C: No hay finally - en caso de éxito, isNavigating permanece true hasta que el componente se desmonte
   };
 
   const handleBack = () => {
-    // Si venimos de /supplier/home, volver ahí; si no, a MyProducts
     if (location.state && location.state.fromHome) {
       navigate('/supplier/home');
     } else {
@@ -696,10 +675,9 @@ const AddProduct = () => {
   };
 
   const handleRetry = () => {
-    // Reset form errors and reload if needed
     resetErrors();
     if (isEditMode && productId) {
-      // Could reload product data here if needed
+      // Podrías recargar datos del producto aquí si quisieras
     }
   };
 
@@ -809,6 +787,7 @@ const AddProduct = () => {
                   </Box>
                 )}
               </Box>
+
               {/* Form container condicional */}
               {isMobile ? (
                 <Box sx={{ px: 0, width: '100%' }}>
@@ -855,6 +834,7 @@ const AddProduct = () => {
                   freezeDisplay={isLoading || isSubmitting || isNavigating}
                 />
               )}
+
               {/* Panel de resultados de venta: ahora siempre al final */}
               <Box sx={{ mt: { xs: 1, md: 4 } }}>
                 <ProductResultsPanel
@@ -867,6 +847,7 @@ const AddProduct = () => {
                   onSubmit={handleSubmit}
                 />
               </Box>
+
               {/* Bottom Bar Expandible - SOLO MÓVIL */}
               {isMobile && (
                 <MobileExpandableBottomBar
