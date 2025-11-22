@@ -39,7 +39,7 @@ jobs:
             exit 0
           fi
 
-          # Llamar a la API de GitHub para obtener el body del PR
+          # Llamar a la API de GitHub para obtener el body del PR (Markdown)
           PR_JSON=$(curl -sS \
             -H "Accept: application/vnd.github+json" \
             -H "Authorization: Bearer $GITHUB_TOKEN" \
@@ -60,11 +60,9 @@ jobs:
           PR_DESCRIPTION: ${{ steps.pr_data.outputs.pr_description }}
         run: |
           REPO="${{ github.repository }}"
-          ACTOR="${{ github.actor }}"
-          COMMIT_SHA="${{ github.sha }}"
           STAGING_URL="http://staging-sellsi.vercel.app"
 
-          SUMMARY="Deploy a STAGING - $REPO - $COMMIT_SHA"
+          SUMMARY="Deploy a STAGING - $REPO - ${{ github.sha }}"
 
           # 👇 SOLO lo que quieres: descripción del PR + URL de staging
           DESCRIPTION="Descripción del Pull Request:\n$PR_DESCRIPTION\n\nStaging URL:\n$STAGING_URL"
@@ -94,25 +92,69 @@ jobs:
             --arg project "$JIRA_PROJECT_KEY" \
             --arg summary "$SUMMARY" \
             --arg desc "$DESCRIPTION" \
-            '{
-              fields: {
-                project: { key: $project },
-                summary: $summary,
-                issuetype: { name: "Submit a request or incident" },
-                description: {
-                  type: "doc",
-                  version: 1,
-                  content: [
+            '
+              # Convierte texto plano + markdown simple (**, * ) a ADF
+              def to_adf($text):
+                ($text | split("\n")) as $lines |
+                [
+                  $lines[] |
+                  if . == "" then
+                    empty
+                  elif test("^\\* "; "m") then
+                    # Línea tipo "* item" -> bulletList con un ítem
+                    {
+                      type: "bulletList",
+                      content: [
+                        {
+                          type: "listItem",
+                          content: [
+                            {
+                              type: "paragraph",
+                              content: [
+                                { type: "text", text: (sub("^\\* "; "")) }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  elif test("^\\*\\*(.*)\\*\\*$") then
+                    # Línea entera en negrita: **texto**
                     {
                       type: "paragraph",
                       content: [
-                        { "type": "text", "text": $desc }
+                        {
+                          type: "text",
+                          text: (sub("^\\*\\*(.*)\\*\\*$"; "\\1")),
+                          marks: [{ type: "strong" }]
+                        }
                       ]
                     }
-                  ]
+                  else
+                    # Párrafo normal
+                    {
+                      type: "paragraph",
+                      content: [
+                        { type: "text", text: . }
+                      ]
+                    }
+                  end
+                ]
+              ;
+
+              {
+                fields: {
+                  project: { key: $project },
+                  summary: $summary,
+                  issuetype: { name: "Submit a request or incident" },
+                  description: {
+                    type: "doc",
+                    version: 1,
+                    content: to_adf($desc)
+                  }
                 }
               }
-            }')
+            ')
 
           echo "Payload a enviar:"
           echo "$PAYLOAD"
