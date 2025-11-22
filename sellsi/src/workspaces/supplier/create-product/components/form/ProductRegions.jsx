@@ -314,7 +314,11 @@ const ProductRegions = ({
           return (
             <Box
               key={idx}
-              sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 0.5,
+              }}
             >
               <Button
                 variant={isActive ? 'contained' : 'outlined'}

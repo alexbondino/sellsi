@@ -138,266 +138,155 @@ const PriceTiers = ({
       </Box>
 
       {isMobile ? (
-        // 📱 Layout Móvil - Scroll Horizontal Virtualizado
+        // 📱 Layout Móvil - Stack Vertical, sin scroll horizontal
         <>
-          <Box
-            ref={scrollContainerRef}
-            sx={{
-              overflowX: 'auto',
-              overflowY: 'hidden',
-              pb: 1,
-              mb: 2,
-              '&::-webkit-scrollbar': {
-                height: '6px',
-              },
-              '&::-webkit-scrollbar-track': {
-                backgroundColor: 'grey.200',
-                borderRadius: '3px',
-              },
-              '&::-webkit-scrollbar-thumb': {
-                backgroundColor: 'primary.main',
-                borderRadius: '3px',
-              },
-            }}
-          >
-            <Box
-              sx={{
-                display: 'flex',
-                gap: 2,
-                width: 'max-content',
-                minWidth: 0,
-              }}
-            >
-              {tramos.map((tramo, index) => (
-                <Paper
-                  key={index}
-                  elevation={1}
+          <Stack spacing={2} sx={{ width: '100%' }}>
+            {tramos.map((tramo, index) => (
+              <Paper
+                key={index}
+                elevation={1}
+                sx={{
+                  p: 2,
+                  border: '1px solid',
+                  borderColor: getCardBorderError(tramo, index)
+                    ? 'error.main'
+                    : 'divider',
+                  borderRadius: 2,
+                  minHeight: '200px',
+                  backgroundColor: getCardBorderError(tramo, index)
+                    ? 'error.50'
+                    : 'inherit',
+                  width: '100%',
+                }}
+              >
+                {/* Contenido igual que antes */}
+                <Box
                   sx={{
-                    p: 2,
-                    border: '1px solid',
-                    borderColor: getCardBorderError(tramo, index)
-                      ? 'error.main'
-                      : 'divider',
-                    borderRadius: 2,
-                    height: '100%',
-                    minHeight: '200px',
-                    backgroundColor: getCardBorderError(tramo, index)
-                      ? 'error.50'
-                      : 'inherit',
-                    flexShrink: 0, // Evitar que se compriman
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    mb: 0.5,
                   }}
                 >
-                  {/* Contenido de la card igual que desktop */}
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      mb: 0.5,
-                    }}
-                  >
-                    <Typography variant="subtitle2" fontWeight="600">
-                      Rango {index + 1}
+                  <Typography variant="subtitle2" fontWeight="600">
+                    Rango {index + 1}
+                  </Typography>
+                  {tramos.length > 2 && index >= 2 && (
+                    <IconButton
+                      onClick={() => onRemoveTramo(index)}
+                      color="error"
+                      size="small"
+                    >
+                      <DeleteIcon fontSize="small" />
+                    </IconButton>
+                  )}
+                </Box>
+                <Stack spacing={2}>
+                  <Box>
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                      sx={{ fontWeight: 500, mb: 1, display: 'block' }}
+                    >
+                      Cantidades:
                     </Typography>
-                    {tramos.length > 2 && index >= 2 && (
-                      <IconButton
-                        onClick={() => onRemoveTramo(index)}
-                        color="error"
-                        size="small"
-                      >
-                        <DeleteIcon fontSize="small" />
-                      </IconButton>
-                    )}
-                  </Box>
-                  <Stack spacing={2}>
-                    <Box>
-                      <Typography
-                        variant="caption"
-                        color="text.secondary"
-                        sx={{ fontWeight: 500, mb: 1, display: 'block' }}
-                      >
-                        Cantidades:
-                      </Typography>
-                      <Box sx={{ display: 'flex', gap: 1 }}>
-                        <TextField
-                          label="Min"
-                          placeholder="1"
-                          value={tramo.min || ''}
-                          onChange={e =>
-                            handleTramoChange(index, 'min', e.target.value)
-                          }
-                          onBlur={e =>
-                            handleTramoBlur(index, 'min', e.target.value)
-                          }
-                          type="number"
-                          size="small"
-                          autoComplete="off"
-                          disabled={index > 0}
-                          sx={{
-                            flex: 1,
-                            '& .MuiInputBase-input.Mui-disabled': {
-                              WebkitTextFillColor: 'text.secondary',
-                            },
-                          }}
-                          inputProps={{ min: 1, step: 1 }}
-                        />
-                        <TextField
-                          label="Max"
-                          placeholder={
-                            isLastRange(index) && stockDisponible
-                              ? stockDisponible
-                              : 'Ej: 10'
-                          }
-                          value={
-                            shouldShowStockInsteadOfMaxInput(index)
-                              ? stockDisponible
-                              : tramo.max || ''
-                          }
-                          onChange={e =>
-                            handleTramoChange(index, 'max', e.target.value)
-                          }
-                          onBlur={e =>
-                            handleTramoBlur(index, 'max', e.target.value)
-                          }
-                          type="number"
-                          size="small"
-                          autoComplete="off"
-                          disabled={shouldShowStockInsteadOfMaxInput(index)}
-                          sx={{
-                            flex: 1,
-                            '& .MuiInputBase-input.Mui-disabled': {
-                              WebkitTextFillColor: 'text.secondary',
-                            },
-                          }}
-                          inputProps={{ min: 1, step: 1 }}
-                        />
-                      </Box>
-                    </Box>
-                    <Box>
-                      <Typography
-                        variant="caption"
-                        color="text.secondary"
-                        sx={{ fontWeight: 500, mb: 1, display: 'block' }}
-                      >
-                        Precio unitario:
-                      </Typography>
+                    <Box sx={{ display: 'flex', gap: 1 }}>
                       <TextField
-                        fullWidth
-                        label="Precio"
-                        placeholder="Ej: 15000"
-                        value={tramo.precio || ''}
+                        label="Min"
+                        placeholder="1"
+                        value={tramo.min || ''}
                         onChange={e =>
-                          handleTramoChange(index, 'precio', e.target.value)
+                          handleTramoChange(index, 'min', e.target.value)
+                        }
+                        onBlur={e =>
+                          handleTramoBlur(index, 'min', e.target.value)
                         }
                         type="number"
                         size="small"
                         autoComplete="off"
-                        error={getPriceFieldError(tramo, index)}
-                        helperText={
-                          getPriceFieldError(tramo, index)
-                            ? 'Los precios deben ser descendentes'
-                            : ''
+                        disabled={index > 0}
+                        sx={{ flex: 1 }}
+                        inputProps={{ min: 1, step: 1 }}
+                      />
+                      <TextField
+                        label="Max"
+                        placeholder={
+                          isLastRange(index) && stockDisponible
+                            ? stockDisponible
+                            : 'Ej: 10'
                         }
-                        InputProps={{
-                          startAdornment: (
-                            <InputAdornment position="start">$</InputAdornment>
-                          ),
-                          inputProps: {
-                            min: 1,
-                            step: 1,
-                            onInput: e => {
-                              if (
-                                e.target.value.includes('.') ||
-                                e.target.value.includes('-')
-                              ) {
-                                e.target.value = e.target.value.replace(
-                                  /[.-]/g,
-                                  ''
-                                );
-                              }
-                            },
-                          },
-                        }}
-                        sx={{
-                          '& input[type=number]': {
-                            MozAppearance: 'textfield',
-                          },
-                          '& input[type=number]::-webkit-outer-spin-button': {
-                            WebkitAppearance: 'none',
-                            margin: 0,
-                          },
-                          '& input[type=number]::-webkit-inner-spin-button': {
-                            WebkitAppearance: 'none',
-                            margin: 0,
-                          },
-                          ...(getPriceFieldError(tramo, index) && {
-                            '& .MuiOutlinedInput-root': {
-                              backgroundColor: 'error.50',
-                            },
-                          }),
-                        }}
+                        value={
+                          shouldShowStockInsteadOfMaxInput(index)
+                            ? stockDisponible
+                            : tramo.max || ''
+                        }
+                        onChange={e =>
+                          handleTramoChange(index, 'max', e.target.value)
+                        }
+                        onBlur={e =>
+                          handleTramoBlur(index, 'max', e.target.value)
+                        }
+                        type="number"
+                        size="small"
+                        autoComplete="off"
+                        disabled={shouldShowStockInsteadOfMaxInput(index)}
+                        sx={{ flex: 1 }}
+                        inputProps={{ min: 1, step: 1 }}
                       />
                     </Box>
-                  </Stack>
-                </Paper>
-              ))}
-            </Box>
-          </Box>
-
-          {/* 📊 Indicadores visuales para móvil */}
-          <Box
-            sx={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              mb: 2,
-            }}
-          >
-            {/* Indicador de posición activa */}
-            <Box sx={{ display: 'flex', gap: 0.5 }}>
-              {tramos.map((_, index) => (
-                <Box
-                  key={index}
-                  sx={{
-                    height: 8,
-                    borderRadius: '50%',
-                    backgroundColor:
-                      index === activeTramoIndex ? 'primary.main' : 'grey.300',
-                    transition: 'backgroundColor 0.3s ease',
-                    cursor: 'pointer',
-                  }}
-                  onClick={() => {
-                    // 🔧 Scroll al tramo seleccionado
-                    if (scrollContainerRef.current) {
-                      const cardWidth = 280 + 16;
-                      scrollContainerRef.current.scrollTo({
-                        left: index * cardWidth,
-                        behavior: 'smooth',
-                      });
-                    }
-                  }}
-                />
-              ))}
-            </Box>
-
-            {/* Indicador de scroll */}
-            {tramos.length > 1 && (
-              <Typography
-                variant="caption"
-                color="text.secondary"
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 0.5,
-                  fontSize: '0.7rem',
-                }}
-              >
-                Desliza para ver más →
-              </Typography>
-            )}
-          </Box>
-
-          {/* Botón Agregar Tramo fuera de la virtualización */}
+                  </Box>
+                  <Box>
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                      sx={{ fontWeight: 500, mb: 1, display: 'block' }}
+                    >
+                      Precio unitario:
+                    </Typography>
+                    <TextField
+                      fullWidth
+                      label="Precio"
+                      placeholder="Ej: 15000"
+                      value={tramo.precio || ''}
+                      onChange={e =>
+                        handleTramoChange(index, 'precio', e.target.value)
+                      }
+                      type="number"
+                      size="small"
+                      autoComplete="off"
+                      error={getPriceFieldError(tramo, index)}
+                      helperText={
+                        getPriceFieldError(tramo, index)
+                          ? 'Los precios deben ser descendentes'
+                          : ''
+                      }
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">$</InputAdornment>
+                        ),
+                        inputProps: {
+                          min: 1,
+                          step: 1,
+                          onInput: e => {
+                            if (
+                              e.target.value.includes('.') ||
+                              e.target.value.includes('-')
+                            ) {
+                              e.target.value = e.target.value.replace(
+                                /[.-]/g,
+                                ''
+                              );
+                            }
+                          },
+                        },
+                      }}
+                    />
+                  </Box>
+                </Stack>
+              </Paper>
+            ))}
+          </Stack>
+          {/* Botón Agregar Tramo */}
           {tramos.length < 5 && (
             <Button
               variant="outlined"

@@ -117,25 +117,29 @@ const ProductInventory = ({
                 exclusive
                 onChange={onPricingTypeChange}
                 sx={{
+                  width: '100%',
                   '& .MuiToggleButton-root': {
                     fontSize: '0.875rem',
                     padding: '8px 12px',
                   },
                 }}
               >
-                <ToggleButton value="Unidad" sx={{ textTransform: 'none' }}>
+                <ToggleButton
+                  value="Unidad"
+                  sx={{ textTransform: 'none', width: '100%' }}
+                >
                   Unidad
                 </ToggleButton>
-                <ToggleButton value="Volumen" sx={{ textTransform: 'none' }}>
+                <ToggleButton
+                  value="Volumen"
+                  sx={{ textTransform: 'none', width: '100%' }}
+                >
                   Volumen
                 </ToggleButton>
               </ToggleButtonGroup>
 
               {showVolumeHelp && (
                 <Box sx={{ mt: 1.5 }}>
-                  <Typography variant="body2">
-                    <strong>¿Qué son las ventas por Volumen?</strong>
-                  </Typography>
                   <Typography variant="body2">
                     Permite asignar hasta 5 precios según la cantidad que te
                     compren. Por ejemplo: si te compran entre 1 y 9 unidades,
