@@ -40,7 +40,7 @@ const ProductPricing = ({
       >
         Define el valor unitario y la compra mínima
       </Typography>
-      
+
       {isMobile ? (
         // 📱 Layout Móvil - Stack Vertical
         <Stack spacing={2}>
@@ -57,21 +57,23 @@ const ProductPricing = ({
             }
             helperText={
               touched.precioUnidad || triedSubmit
-                ? errors.precioUnidad ||
-                  localErrors.precioUnidad
+                ? errors.precioUnidad || localErrors.precioUnidad
                 : ''
             }
             type="number"
             autoComplete="off"
             size="medium"
-            inputProps={{ 
-              min: 1, 
+            inputProps={{
+              min: 1,
               step: 1,
-              onInput: (e) => {
-                if (e.target.value.includes('.') || e.target.value.includes('-')) {
+              onInput: e => {
+                if (
+                  e.target.value.includes('.') ||
+                  e.target.value.includes('-')
+                ) {
                   e.target.value = e.target.value.replace(/[.-]/g, '');
                 }
-              }
+              },
             }}
           />
           <TextField
@@ -87,8 +89,7 @@ const ProductPricing = ({
             }
             helperText={
               touched.compraMinima || triedSubmit
-                ? errors.compraMinima ||
-                  localErrors.compraMinima
+                ? errors.compraMinima || localErrors.compraMinima
                 : ''
             }
             type="number"
@@ -101,7 +102,7 @@ const ProductPricing = ({
         // 🖥️ Layout Desktop - Mantener actual
         <Box sx={{ display: 'flex', gap: 2, alignItems: 'flex-start' }}>
           <TextField
-            sx={{ width: '17%' }}
+            sx={{ width: '50%' }}
             label="Precio de Venta"
             placeholder="Ej: 15000"
             value={formData.precioUnidad}
@@ -113,24 +114,26 @@ const ProductPricing = ({
             }
             helperText={
               touched.precioUnidad || triedSubmit
-                ? errors.precioUnidad ||
-                  localErrors.precioUnidad
+                ? errors.precioUnidad || localErrors.precioUnidad
                 : ''
             }
             type="number"
             autoComplete="off"
-            inputProps={{ 
-              min: 1, 
+            inputProps={{
+              min: 1,
               step: 1,
-              onInput: (e) => {
-                if (e.target.value.includes('.') || e.target.value.includes('-')) {
+              onInput: e => {
+                if (
+                  e.target.value.includes('.') ||
+                  e.target.value.includes('-')
+                ) {
                   e.target.value = e.target.value.replace(/[.-]/g, '');
                 }
-              }
+              },
             }}
           />
           <TextField
-            sx={{ width: '17%' }}
+            sx={{ width: '50%' }}
             label="Compra Mínima"
             placeholder="Ej: 1"
             value={formData.compraMinima}
@@ -142,8 +145,7 @@ const ProductPricing = ({
             }
             helperText={
               touched.compraMinima || triedSubmit
-                ? errors.compraMinima ||
-                  localErrors.compraMinima
+                ? errors.compraMinima || localErrors.compraMinima
                 : ''
             }
             type="number"

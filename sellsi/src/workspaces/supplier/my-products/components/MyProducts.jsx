@@ -232,6 +232,7 @@ const MyProducts = () => {
     obs.observe(el);
     return () => obs.disconnect();
   }, []);
+
   const handleEditProduct = product => {
     // Para editar también verificar la información bancaria
     checkAndProceed(`/supplier/addproduct?edit=${product.id}`);
@@ -300,6 +301,7 @@ const MyProducts = () => {
     scrollToTop(); // Desplazamiento suave hacia arriba al limpiar filtros
     showSuccessToast('Filtros limpiados', { icon: '🧹' });
   };
+
   const handleProductCardClick = product => {
     const url = generateProductUrl(product);
     navigate(url, { state: { from: '/supplier/myproducts' } });
@@ -315,7 +317,6 @@ const MyProducts = () => {
       <ThemeProvider theme={dashboardThemeCore}>
         <Box
           sx={{
-            // marginLeft: '210px', // Eliminado para ocupar todo el ancho
             backgroundColor: 'background.default',
             minHeight: '100vh',
             pt: { xs: 4.5, md: 5 },
@@ -363,7 +364,6 @@ const MyProducts = () => {
                   onClick={handleAddProduct}
                   data-prefetch="add-product-btn"
                   sx={{
-                    minWidth: { xs: '100%', sm: 'auto' },
                     borderRadius: 2,
                     textTransform: 'none',
                     fontWeight: 600,
@@ -377,7 +377,10 @@ const MyProducts = () => {
               {/* Estadísticas del inventario */}
               <Box sx={{ mb: 3 }}>
                 <Paper
-                  sx={{ overflow: 'hidden', width: '40%', minWidth: '400px' }}
+                  sx={{
+                    overflow: 'hidden',
+                    width: '100%',
+                  }}
                 >
                   <Box
                     sx={{
@@ -395,9 +398,15 @@ const MyProducts = () => {
                     </Typography>
                   </Box>
 
-                  <Box sx={{ p: 0 }}>
-                    <Grid container columns={12}>
-                      <Grid item xs={12} sm={4}>
+                  {/* 🔹 AQUÍ CAMBIA: centramos el grid de métricas */}
+                  <Box
+                    sx={{
+                      p: 0,
+                      mx: 'auto', // centra el bloque de métricas dentro del Paper
+                    }}
+                  >
+                    <Grid container columns={12} justifyContent="center">
+                      <Grid item xs={12} sm={4} width={'31%'}>
                         <Box
                           sx={{
                             p: 2,
@@ -416,13 +425,10 @@ const MyProducts = () => {
                           >
                             <InventoryIcon
                               color="primary"
-                              sx={{ fontSize: 20 }}
+                              sx={{ fontSize: 40 }}
                             />
                             <Box>
-                              <Typography
-                                variant="h6"
-                                sx={{ fontWeight: 600, lineHeight: 1.2 }}
-                              >
+                              <Typography variant="h6" sx={{ fontWeight: 600 }}>
                                 {stats.total}
                               </Typography>
                               <Typography
@@ -435,7 +441,8 @@ const MyProducts = () => {
                           </Box>
                         </Box>
                       </Grid>
-                      <Grid item xs={12} sm={4}>
+
+                      <Grid item xs={12} sm={4} width={'31%'}>
                         <Box
                           sx={{
                             p: 2,
@@ -448,14 +455,14 @@ const MyProducts = () => {
                           <Box
                             sx={{
                               display: 'flex',
-                              alignItems: 'center',
+
                               gap: 1.5,
                             }}
                           >
                             <Box
                               sx={{
                                 color: 'success.main',
-                                fontSize: 20,
+                                fontSize: 40,
                                 fontWeight: 'bold',
                                 display: 'flex',
                                 alignItems: 'center',
@@ -464,10 +471,7 @@ const MyProducts = () => {
                               ✓
                             </Box>
                             <Box>
-                              <Typography
-                                variant="h6"
-                                sx={{ fontWeight: 600, lineHeight: 1.2 }}
-                              >
+                              <Typography variant="h6" sx={{ fontWeight: 600 }}>
                                 {stats.active}
                               </Typography>
                               <Typography
@@ -480,8 +484,9 @@ const MyProducts = () => {
                           </Box>
                         </Box>
                       </Grid>
-                      <Grid item xs={12} sm={4}>
-                        <Box sx={{ p: 2 }}>
+
+                      <Grid item xs={12} sm={4} width={'31%'}>
+                        <Box sx={{ p: 2, width: '100%' }}>
                           <Box
                             sx={{
                               display: 'flex',
@@ -491,13 +496,10 @@ const MyProducts = () => {
                           >
                             <AttachMoneyIcon
                               color="success"
-                              sx={{ fontSize: 20 }}
+                              sx={{ fontSize: 40 }}
                             />
                             <Box>
-                              <Typography
-                                variant="h6"
-                                sx={{ fontWeight: 600, lineHeight: 1.2 }}
-                              >
+                              <Typography variant="h6" sx={{ fontWeight: 600 }}>
                                 {/* 🆕 MOSTRAR RANGO: Valor mínimo - máximo */}
                                 {stats.inventoryRange &&
                                 stats.inventoryRange.min !==
@@ -524,6 +526,7 @@ const MyProducts = () => {
                           </Box>
                         </Box>
                       </Grid>
+
                       {/* DEBUG: Mostrar datos de rango cuando hay tramos (eliminar luego) */}
                       {process.env.NODE_ENV === 'development' &&
                         stats.hasTieredProducts && (
@@ -583,10 +586,7 @@ const MyProducts = () => {
                       label="Categoría"
                       sx={{
                         borderRadius: 2,
-                        minWidth: '200px',
-                        '& .MuiSelect-select': {
-                          minWidth: '150px',
-                        },
+                        '& .MuiSelect-select': {},
                       }}
                       MenuProps={{
                         disableScrollLock: true,
@@ -611,10 +611,6 @@ const MyProducts = () => {
                       label="Ordenar por"
                       sx={{
                         borderRadius: 2,
-                        minWidth: '200px',
-                        '& .MuiSelect-select': {
-                          minWidth: '150px',
-                        },
                       }}
                       MenuProps={{
                         disableScrollLock: true,
@@ -635,7 +631,7 @@ const MyProducts = () => {
                     <Button
                       variant="outlined"
                       onClick={handleClearFilters}
-                      sx={{ borderRadius: 2, minWidth: 'auto', px: 2 }}
+                      sx={{ borderRadius: 2, px: 2 }}
                     >
                       <ClearIcon />
                     </Button>
@@ -824,9 +820,8 @@ const MyProducts = () => {
         {/* Modal de confirmación de eliminación - Ahora usando el componente Modal unificado */}
         <Modal
           isOpen={deleteModal.isOpen} // Usamos 'isOpen' para el estado del modal
-          onClose={
-            () =>
-              setDeleteModal({ isOpen: false, product: null, loading: false }) // Actualizamos 'isOpen'
+          onClose={() =>
+            setDeleteModal({ isOpen: false, product: null, loading: false })
           }
           onSubmit={confirmDelete} // Usamos 'onSubmit' para la acción de confirmar
           type={MODAL_TYPES.DELETE}
