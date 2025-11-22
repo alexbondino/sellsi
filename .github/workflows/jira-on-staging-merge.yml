@@ -1,0 +1,77 @@
+name: Create Jira ticket on staging merge
+
+on:
+  push:
+    branches:
+      - staging
+
+jobs:
+  create-jira-issue-on-merge:
+    # Solo corre si el commit es un "Merge pull request ..."
+    if: startsWith(github.event.head_commit.message, 'Merge pull request')
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Build Jira issue payload
+        id: build_payload
+        run: |
+          # Datos útiles del contexto de GitHub
+          PR_MERGE_MESSAGE="${{ github.event.head_commit.message }}"
+          REPO="${{ github.repository }}"
+          ACTOR="${{ github.actor }}"
+          COMMIT_SHA="${{ github.sha }}"
+          
+          # 🔧 CAMBIA ESTA URL POR TU STAGING REAL
+          STAGING_URL="https://staging.sellsi.cl"
+
+          SUMMARY="Deploy a STAGING - $REPO - $COMMIT_SHA"
+
+          DESCRIPTION=$(cat <<EOF
+Deploy en STAGING realizado automáticamente desde GitHub Actions.
+
+*Repositorio*: $REPO  
+*Actor (quien hizo el merge)*: $ACTOR  
+*Commit SHA*: $COMMIT_SHA  
+
+*Mensaje de merge*:
+$PR_MERGE_MESSAGE  
+
+*URL Staging*:
+$STAGING_URL
+EOF
+)
+
+          # Escapar saltos de línea para JSON
+          DESCRIPTION="${DESCRIPTION//$'\n'/\\n}"
+
+          echo "summary=$SUMMARY" >> $GITHUB_OUTPUT
+          echo "description=$DESCRIPTION" >> $GITHUB_OUTPUT
+
+      - name: Create Jira issue
+        env:
+          JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
+          JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
+          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+          JIRA_PROJECT_KEY: ${{ secrets.JIRA_PROJECT_KEY }}
+          SUMMARY: ${{ steps.build_payload.outputs.summary }}
+          DESCRIPTION: ${{ steps.build_payload.outputs.description }}
+        run: |
+          echo "Creating Jira issue in project $JIRA_PROJECT_KEY ..."
+
+          RESPONSE=$(curl -sS -X POST \
+            -H "Content-Type: application/json" \
+            -u "$JIRA_EMAIL:$JIRA_API_TOKEN" \
+            "$JIRA_BASE_URL/rest/api/3/issue" \
+            --data "{
+              \"fields\": {
+                \"project\": { \"key\": \"$JIRA_PROJECT_KEY\" },
+                \"summary\": \"$SUMMARY\",
+                \"issuetype\": { \"name\": \"Task\" },
+                \"description\": \"$DESCRIPTION\"
+              }
+            }")
+
+          echo "Jira response: $RESPONSE"
