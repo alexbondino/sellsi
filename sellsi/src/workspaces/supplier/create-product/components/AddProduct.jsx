@@ -107,7 +107,7 @@ const MobileFormLayout = ({
       flexDirection: 'column',
       gap: 0, // 🔧 Gap 0 para unir visualmente
       px: 0, // 🔧 Sin padding horizontal en móvil para full-bleed
-      pb: 16,
+      pb: 2,
       width: '100%',
       mx: 0,
     }}
@@ -850,7 +850,7 @@ const AddProduct = () => {
                 />
               )}
               {/* Panel de resultados de venta: ahora siempre al final */}
-              <Box sx={{ mt: 4 }}>
+              <Box sx={{ mt: { xs: 1, md: 4 } }}>
                 <ProductResultsPanel
                   calculations={calculations}
                   isValid={isValid}
