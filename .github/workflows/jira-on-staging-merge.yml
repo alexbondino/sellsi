@@ -58,7 +58,7 @@ jobs:
               fields: {
                 project: { key: $project },
                 summary: $summary,
-                issuetype: { name: "Service request" },
+                issuetype: { name: "Submit a request or incident" },
                 description: $desc
               }
             }')
