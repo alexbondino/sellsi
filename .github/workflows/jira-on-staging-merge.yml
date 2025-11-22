@@ -21,7 +21,7 @@ jobs:
           REPO="${{ github.repository }}"
           ACTOR="${{ github.actor }}"
           COMMIT_SHA="${{ github.sha }}"
-          STAGING_URL="https://staging.sellsi.cl"
+          STAGING_URL="http://staging-sellsi.vercel.app"
 
           SUMMARY="Deploy a STAGING - $REPO - $COMMIT_SHA"
 
