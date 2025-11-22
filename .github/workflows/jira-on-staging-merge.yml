@@ -59,7 +59,6 @@ jobs:
         env:
           PR_DESCRIPTION: ${{ steps.pr_data.outputs.pr_description }}
         run: |
-          PR_MERGE_MESSAGE="${GITHUB_EVENT_HEAD_COMMIT_MESSAGE:-${{ github.event.head_commit.message }}}"
           REPO="${{ github.repository }}"
           ACTOR="${{ github.actor }}"
           COMMIT_SHA="${{ github.sha }}"
@@ -67,7 +66,8 @@ jobs:
 
           SUMMARY="Deploy a STAGING - $REPO - $COMMIT_SHA"
 
-          DESCRIPTION="Deploy automático a STAGING desde GitHub Actions.\n\nRepositorio: $REPO\nActor: $ACTOR\nCommit SHA: $COMMIT_SHA\n\nDescripción del Pull Request:\n$PR_DESCRIPTION\n\nMensaje de merge:\n$PR_MERGE_MESSAGE\n\nStaging URL:\n$STAGING_URL"
+          # 👇 SOLO lo que quieres: descripción del PR + URL de staging
+          DESCRIPTION="Descripción del Pull Request:\n$PR_DESCRIPTION\n\nStaging URL:\n$STAGING_URL"
 
           echo "summary=$SUMMARY" >> "$GITHUB_OUTPUT"
 
