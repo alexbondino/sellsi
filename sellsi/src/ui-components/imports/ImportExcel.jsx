@@ -13,9 +13,10 @@ import { supabase } from '../../services/supabase';
  * ImportExcel
  * @param {string} table - Nombre de la tabla de Supabase a la que se suben los datos
  * @param {Array<string>} fields - Lista de campos/columnas a mapear desde el Excel
+ * @param {string} [userId] - user_id a asociar a cada fila importada
  * @param {function} [onSuccess] - Callback opcional al terminar
  */
-export default function ImportExcel({ table, fields, onSuccess }) {
+export default function ImportExcel({ table, fields, userId, onSuccess }) {
   const inputRef = useRef();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -32,12 +33,15 @@ export default function ImportExcel({ table, fields, onSuccess }) {
       const workbook = XLSX.read(data);
       const sheet = workbook.Sheets[workbook.SheetNames[0]];
       const json = XLSX.utils.sheet_to_json(sheet);
-      // Mapear solo los campos requeridos
+      // Mapear solo los campos requeridos y agregar userId si está presente
       const mapped = json.map(row => {
         const obj = {};
         fields.forEach(f => {
           obj[f] = row[f];
         });
+        if (userId) {
+          obj.user_id = userId;
+        }
         return obj;
       });
       // Subir a Supabase

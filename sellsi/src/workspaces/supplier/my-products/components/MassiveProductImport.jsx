@@ -40,6 +40,8 @@ const PRODUCT_IMPORT_FIELDS = [
 const MassiveProductImport = ({ open, onClose, onSuccess }) => {
   // Para el template y el import, solo se pasan los keys
   const fieldKeys = PRODUCT_IMPORT_FIELDS.map(f => f.key);
+  // Obtener el userId del localStorage
+  const userId = localStorage.getItem('user_id');
   return (
     <Box>
       <Box
@@ -62,6 +64,7 @@ const MassiveProductImport = ({ open, onClose, onSuccess }) => {
         <ImportExcel
           table="products"
           fields={fieldKeys}
+          userId={userId}
           onSuccess={onSuccess}
           buttonProps={{ variant: 'contained' }}
         />
