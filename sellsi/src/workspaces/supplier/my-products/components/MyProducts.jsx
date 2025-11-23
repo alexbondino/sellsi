@@ -1,8 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-import ImportExcel from '../../../../ui-components/imports/ImportExcel';
-import { downloadExcelTemplate } from '../../../../ui-components/templates/ExcelTemplateGenerator';
+import MassiveProductImport from './MassiveProductImport';
 
 import {
   Add as AddIcon,
@@ -842,38 +841,9 @@ const MyProducts = () => {
             type={MODAL_TYPES.INFO}
             hideActions
           >
-            <Box sx={{ mb: 2, display: 'flex', justifyContent: 'flex-end' }}>
-              <Button
-                variant="outlined"
-                onClick={() =>
-                  downloadExcelTemplate(
-                    [
-                      'productnm',
-                      'category',
-                      'description',
-                      'productqty',
-                      'price',
-                      'minimum_purchase',
-                      'product_type',
-                    ],
-                    'productos_template.xlsx'
-                  )
-                }
-              >
-                Descargar template
-              </Button>
-            </Box>
-            <ImportExcel
-              table="products"
-              fields={[
-                'productnm',
-                'category',
-                'description',
-                'productqty',
-                'price',
-                'minimum_purchase',
-                'product_type',
-              ]}
+            <MassiveProductImport
+              open={importModalOpen}
+              onClose={() => setImportModalOpen(false)}
               onSuccess={() => setImportModalOpen(false)}
             />
           </Modal>
