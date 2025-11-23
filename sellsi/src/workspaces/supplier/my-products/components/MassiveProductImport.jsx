@@ -37,9 +37,10 @@ const PRODUCT_IMPORT_FIELDS = [
   },
   {
     key: 'image_urls',
-    label: 'Lista de URLs',
+    label: 'URL de imagen (opcional)',
     description:
-      'URLs de las imágenes del producto, separadas por comas. La primera URL será la imagen principal.',
+      'URL directa de la imagen del producto. Si se provee, la imagen será descargada y subida al bucket de productos.',
+    optional: true,
   },
 ];
 
@@ -93,6 +94,9 @@ const MassiveProductImport = ({ open, onClose, onSuccess }) => {
               <span style={{ fontFamily: 'monospace', fontWeight: 600 }}>
                 {field.key}
               </span>
+              {field.optional ? (
+                <span style={{ color: '#888', marginLeft: 4 }}>(opcional)</span>
+              ) : null}
               {': '}
               <span style={{ fontWeight: 500 }}>{field.label}</span>
               <span style={{ color: '#888', marginLeft: 4 }}>
