@@ -33,14 +33,14 @@ export default function ImportExcel({ table, fields, userId, onSuccess }) {
       const workbook = XLSX.read(data);
       const sheet = workbook.Sheets[workbook.SheetNames[0]];
       const json = XLSX.utils.sheet_to_json(sheet);
-      // Mapear solo los campos requeridos y agregar userId si está presente
+      // Mapear solo los campos requeridos y agregar supplier_id si userId está presente
       const mapped = json.map(row => {
         const obj = {};
         fields.forEach(f => {
           obj[f] = row[f];
         });
         if (userId) {
-          obj.user_id = userId;
+          obj.supplier_id = userId;
         }
         return obj;
       });
