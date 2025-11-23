@@ -2,6 +2,7 @@ import React, { useRef, useState } from 'react';
 import { Button, Box, CircularProgress, Alert } from '@mui/material';
 import * as XLSX from 'xlsx';
 import { supabase } from '../../services/supabase';
+import { buildSafeFileNameFromUrl } from './uuidSafeFileName';
 
 // Utilidad para descargar una imagen desde una URL y devolver un Blob
 async function fetchImageAsBlob(url) {
@@ -13,7 +14,8 @@ async function fetchImageAsBlob(url) {
 // Utilidad para subir una imagen al bucket y devolver la URL pública
 async function uploadImageToBucket(blob, fileName, userId) {
   const bucket = 'product-images';
-  const path = `${userId || 'import'}/${Date.now()}_${fileName}`;
+  // El path debe ser solo `${userId}/${fileName}` donde fileName es UUID + extensión
+  const path = `${userId}/${fileName}`;
   const { error } = await supabase.storage
     .from(bucket)
     .upload(path, blob, { upsert: true });
@@ -95,8 +97,7 @@ export default function ImportExcel({ table, fields, userId, onSuccess }) {
         // Subir cada imagen al bucket
         for (const url of urlsToProcess) {
           try {
-            const fileName =
-              url.split('/').pop().split('?')[0] || `img_${Date.now()}`;
+            const fileName = buildSafeFileNameFromUrl(url);
             const blob = await fetchImageAsBlob(url);
 
             await uploadImageToBucket(blob, fileName, userId);
