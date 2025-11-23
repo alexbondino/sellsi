@@ -1,23 +1,11 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-
-import MassiveProductImport from './MassiveProductImport';
-
-import {
-  Add as AddIcon,
-  Search as SearchIcon,
-  Clear as ClearIcon,
-  Inventory as InventoryIcon,
-  AttachMoney as AttachMoneyIcon,
-  KeyboardArrowUp as KeyboardArrowUpIcon,
-  Storefront as StorefrontIcon,
-} from '@mui/icons-material';
-
-import { ThemeProvider } from '@mui/material/styles';
 import {
   Box,
   Container,
   Typography,
+  Button,
+  Grid,
   Paper,
   TextField,
   FormControl,
@@ -29,13 +17,20 @@ import {
   InputAdornment,
   Alert,
   Fab,
-  Grid,
-  Button,
   useTheme,
   useMediaQuery,
   Grow,
 } from '@mui/material';
-
+import {
+  Add as AddIcon,
+  Search as SearchIcon,
+  Clear as ClearIcon,
+  Inventory as InventoryIcon,
+  AttachMoney as AttachMoneyIcon,
+  KeyboardArrowUp as KeyboardArrowUpIcon,
+  Storefront as StorefrontIcon,
+} from '@mui/icons-material';
+import { ThemeProvider } from '@mui/material/styles';
 import {
   showProductSuccess,
   showProductError,
@@ -46,11 +41,13 @@ import {
 // Components
 import ProductCard from '../../../../shared/components/display/product-card/ProductCard';
 import { Modal, MODAL_TYPES } from '../../../../shared/components/feedback';
-import BigModal from '../../../../shared/components/modals/BigModal/BigModal';
 import {
   TransferInfoValidationModal,
   useTransferInfoModal,
 } from '../../../../shared/components/validation';
+
+// 🆕 Massive import
+import MassiveProductImport from '../components/MassiveProductImport';
 
 // Error Boundaries
 import { SupplierErrorBoundary } from '../../error-boundary';
@@ -61,7 +58,6 @@ import {
   useLazyProducts,
   useProductAnimations,
 } from '../hooks/useLazyProducts';
-
 import { dashboardThemeCore } from '../../../../styles/dashboardThemeCore';
 import { SPACING_BOTTOM_MAIN } from '../../../../styles/layoutSpacing';
 import { formatPrice } from '../../../../shared/utils/formatters';
@@ -96,13 +92,10 @@ const SORT_OPTIONS = [
 ];
 
 const MyProducts = () => {
-  // Estado para modal de importación Excel
-  const [importModalOpen, setImportModalOpen] = useState(false);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const navigate = useNavigate();
 
-  // Obtener el user_id real del usuario autenticado
   const supplierId = localStorage.getItem('user_id');
 
   const {
@@ -127,7 +120,6 @@ const MyProducts = () => {
 
   const didInitLoadRef = useRef(false);
 
-  // Advanced lazy loading hooks
   const {
     displayedProducts,
     isLoadingMore,
@@ -141,21 +133,21 @@ const MyProducts = () => {
 
   const { triggerAnimation } = useProductAnimations(displayedProducts.length);
 
-  // Estado local para el modal de eliminación
   const [deleteModal, setDeleteModal] = useState({
     isOpen: false,
     product: null,
     loading: false,
   });
 
-  // Modal para pausar producto
   const [pauseModal, setPauseModal] = useState({
     isOpen: false,
     product: null,
     loading: false,
   });
 
-  // Hook para validación de información bancaria
+  // 🆕 Estado para modal de Massive Import
+  const [massiveImportOpen, setMassiveImportOpen] = useState(false);
+
   const {
     checkAndProceed,
     handleRegisterAccount,
@@ -165,10 +157,8 @@ const MyProducts = () => {
     missingFieldLabels,
   } = useTransferInfoModal();
 
-  // Estado para el botón de scroll to top
   const [showScrollTop, setShowScrollTop] = useState(false);
 
-  // Manejar el scroll para el botón de ir arriba
   useEffect(() => {
     const handleScroll = () => {
       setShowScrollTop(window.pageYOffset > 400);
@@ -178,10 +168,8 @@ const MyProducts = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Cargar productos al montar el componente o cuando cambia el supplierId
   useEffect(() => {
     if (!supplierId) return;
-
     if (
       !didInitLoadRef.current &&
       !loading &&
@@ -192,23 +180,20 @@ const MyProducts = () => {
     }
   }, [supplierId, loadProducts, uiProducts?.length, loading]);
 
-  // Reset guard cuando cambia supplierId
   useEffect(() => {
     didInitLoadRef.current = false;
   }, [supplierId]);
 
-  // Disparar animaciones cuando se muestran nuevos productos
   useEffect(() => {
     if (displayedProducts.length > 0 && !loading) {
       triggerAnimation(0);
     }
   }, [displayedProducts.length, loading, triggerAnimation]);
 
-  // Monitorear eventos de imágenes procesadas en background
   useEffect(() => {
     const handleImagesReady = event => {
       const { productId, imageCount } = event.detail;
-      // Silencioso para UX
+      // silencio UX
     };
 
     window.addEventListener('productImagesReady', handleImagesReady);
@@ -219,17 +204,23 @@ const MyProducts = () => {
   }, []);
 
   // --- Handlers ---
-
   const handleAddProduct = () => {
     checkAndProceed('/supplier/addproduct');
   };
 
-  // Prefetch AddProduct chunk cuando el botón se acerca al viewport
+  // Botón Importar Excel -> abre modal MassiveProductImport
+  const handleOpenMassiveImport = () => {
+    setMassiveImportOpen(true);
+  };
+
+  const handleCloseMassiveImport = () => {
+    setMassiveImportOpen(false);
+  };
+
   useEffect(() => {
     const selector = '[data-prefetch="add-product-btn"]';
     const el = document.querySelector(selector);
     if (!el || typeof IntersectionObserver === 'undefined') return;
-
     const obs = new IntersectionObserver(
       entries => {
         if (entries[0].isIntersecting) {
@@ -239,7 +230,6 @@ const MyProducts = () => {
       },
       { rootMargin: '400px' }
     );
-
     obs.observe(el);
     return () => obs.disconnect();
   }, []);
@@ -274,28 +264,22 @@ const MyProducts = () => {
     }
   };
 
-  // Abrir modal de pausa
   const handlePauseProduct = product => {
     setPauseModal({ isOpen: true, product, loading: false });
   };
 
-  // Confirmar pausa / reactivación
   const confirmPause = async () => {
     if (!pauseModal.product) return;
-
     setPauseModal(prev => ({ ...prev, loading: true }));
-
     try {
       const newActive = !(pauseModal.product.activo === true);
       await updateProduct(pauseModal.product.id, { is_active: newActive });
-
       showProductSuccess(
         newActive
           ? `Producto "${pauseModal.product.nombre}" reactivado`
           : `Producto "${pauseModal.product.nombre}" pausado`,
         newActive ? '▶️' : '⏸️'
       );
-
       setPauseModal({ isOpen: false, product: null, loading: false });
     } catch (e) {
       showErrorToast(e.message || 'Error al pausar el producto');
@@ -328,236 +312,253 @@ const MyProducts = () => {
   return (
     <SupplierErrorBoundary onRetry={handleRetry}>
       <ThemeProvider theme={dashboardThemeCore}>
-        <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
-          <Container
-            maxWidth="xl"
-            sx={{
-              py: 3,
-              pb: SPACING_BOTTOM_MAIN,
-            }}
-          >
-            {/* Header principal */}
-            <Box
-              sx={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'flex-start',
-                flexDirection: { xs: 'column', sm: 'row' },
-                gap: 2,
-                mb: 3,
-              }}
-            >
-              <Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                  <StorefrontIcon
-                    sx={{ color: 'primary.main', fontSize: 36, mr: 1 }}
-                  />
-                  <Typography
-                    variant="h4"
-                    fontWeight="600"
-                    color="primary.main"
-                    gutterBottom
-                  >
-                    Mis Productos
-                  </Typography>
-                </Box>
-                <Typography variant="body1" color="text.secondary">
-                  Gestiona tu catálogo eficientemente
-                </Typography>
-              </Box>
-
-              <Box sx={{ display: 'flex', gap: 2 }}>
-                <Button
-                  variant="contained"
-                  size="large"
-                  startIcon={<AddIcon />}
-                  onClick={handleAddProduct}
-                  data-prefetch="add-product-btn"
-                  sx={{
-                    borderRadius: 2,
-                    textTransform: 'none',
-                    fontWeight: 600,
-                    px: 3,
-                  }}
-                >
-                  Agregar Producto
-                </Button>
-                <Button
-                  variant="outlined"
-                  size="large"
-                  onClick={() => setImportModalOpen(true)}
-                  sx={{ borderRadius: 2, fontWeight: 600, px: 3 }}
-                >
-                  Importar Excel
-                </Button>
-              </Box>
-            </Box>
-
-            {/* Estadísticas del inventario */}
-            <Box sx={{ mb: 3 }}>
-              <Paper
+        <Box
+          sx={{
+            backgroundColor: 'background.default',
+            minHeight: '100vh',
+            pt: { xs: 4.5, md: 5 },
+            px: 3,
+            pb: SPACING_BOTTOM_MAIN,
+            ml: { xs: 0, md: 10, lg: 14, xl: 24 },
+          }}
+        >
+          <Container maxWidth="xl" disableGutters>
+            {/* Header */}
+            <Box sx={{ mb: 4 }}>
+              <Box
                 sx={{
-                  overflow: 'hidden',
-                  width: '100%',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'flex-start',
+                  flexDirection: { xs: 'column', sm: 'row' },
+                  gap: 2,
+                  mb: 3,
                 }}
               >
-                <Box
-                  sx={{
-                    p: 2,
-                    bgcolor: 'grey.50',
-                    borderBottom: '1px solid',
-                    borderColor: 'divider',
-                  }}
-                >
-                  <Typography
-                    variant="h6"
-                    sx={{ fontWeight: 600, color: 'text.primary' }}
-                  >
-                    Resumen del Inventario
+                <Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                    <StorefrontIcon
+                      sx={{ color: 'primary.main', fontSize: 36, mr: 1 }}
+                    />
+                    <Typography
+                      variant="h4"
+                      fontWeight="600"
+                      color="primary.main"
+                      gutterBottom
+                    >
+                      Mis Productos
+                    </Typography>
+                  </Box>
+                  <Typography variant="body1" color="text.secondary">
+                    Gestiona tu catálogo eficientemente
                   </Typography>
                 </Box>
 
-                <Box sx={{ p: 0 }}>
-                  <Grid
-                    container
-                    spacing={0}
-                    justifyContent="center"
-                    sx={{ maxWidth: 960, mx: 'auto' }}
+                {/* Acciones: Agregar + Importar Excel (abre modal) */}
+                <Box
+                  sx={{
+                    display: 'flex',
+                    flexDirection: { xs: 'column', sm: 'row' },
+                    gap: 1,
+                  }}
+                >
+                  <Button
+                    variant="contained"
+                    size="large"
+                    startIcon={<AddIcon />}
+                    onClick={handleAddProduct}
+                    data-prefetch="add-product-btn"
+                    sx={{
+                      borderRadius: 2,
+                      textTransform: 'none',
+                      fontWeight: 600,
+                      px: 3,
+                    }}
                   >
-                    {/* Total productos */}
-                    <Grid item xs={12} sm={4}>
-                      <Box
-                        sx={{
-                          p: 2,
-                          borderRight: {
-                            sm: '1px solid',
-                          },
-                          borderColor: {
-                            sm: 'divider',
-                          },
-                          borderBottom: {
-                            xs: '1px solid',
-                            sm: 'none',
-                          },
-                          borderBottomColor: {
-                            xs: 'divider',
-                          },
-                          height: '100%',
-                        }}
-                      >
-                        <Box
-                          sx={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 1.5,
-                          }}
-                        >
-                          <InventoryIcon
-                            color="primary"
-                            sx={{ fontSize: 40 }}
-                          />
-                          <Box>
-                            <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                              {stats.total}
-                            </Typography>
-                            <Typography variant="body2" color="text.secondary">
-                              Total de productos
-                            </Typography>
-                          </Box>
-                        </Box>
-                      </Box>
-                    </Grid>
+                    Agregar Producto
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    size="large"
+                    onClick={handleOpenMassiveImport}
+                    sx={{
+                      borderRadius: 2,
+                      textTransform: 'none',
+                      fontWeight: 500,
+                      px: 3,
+                    }}
+                  >
+                    Importar Excel
+                  </Button>
+                </Box>
+              </Box>
 
-                    {/* Productos activos */}
-                    <Grid item xs={12} sm={4}>
-                      <Box
-                        sx={{
-                          p: 2,
-                          borderRight: {
-                            sm: '1px solid',
-                          },
-                          borderColor: {
-                            sm: 'divider',
-                          },
-                          borderBottom: {
-                            xs: '1px solid',
-                            sm: 'none',
-                          },
-                          borderBottomColor: {
-                            xs: 'divider',
-                          },
-                          height: '100%',
-                        }}
-                      >
+              {/* Estadísticas del inventario */}
+              <Box sx={{ mb: 3 }}>
+                <Paper
+                  sx={{
+                    overflow: 'hidden',
+                    width: '100%',
+                  }}
+                >
+                  <Box
+                    sx={{
+                      p: 2,
+                      bgcolor: 'grey.50',
+                      borderBottom: '1px solid',
+                      borderColor: 'divider',
+                    }}
+                  >
+                    <Typography
+                      variant="h6"
+                      sx={{ fontWeight: 600, color: 'text.primary' }}
+                    >
+                      Resumen del Inventario
+                    </Typography>
+                  </Box>
+
+                  <Box
+                    sx={{
+                      p: 0,
+                      mx: 'auto',
+                    }}
+                  >
+                    <Grid container columns={12} justifyContent="center">
+                      <Grid item xs={12} sm={4} width={'31%'}>
                         <Box
                           sx={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 1.5,
+                            p: 2,
+                            borderRight: { sm: '1px solid' },
+                            borderColor: { sm: 'divider' },
+                            borderBottom: { xs: '1px solid', sm: 'none' },
+                            borderBottomColor: { xs: 'divider' },
                           }}
                         >
                           <Box
                             sx={{
-                              color: 'success.main',
-                              fontSize: 40,
-                              fontWeight: 'bold',
                               display: 'flex',
                               alignItems: 'center',
+                              gap: 1.5,
                             }}
                           >
-                            ✓
-                          </Box>
-                          <Box>
-                            <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                              {stats.active}
-                            </Typography>
-                            <Typography variant="body2" color="text.secondary">
-                              Productos activos
-                            </Typography>
+                            <InventoryIcon
+                              color="primary"
+                              sx={{ fontSize: 40 }}
+                            />
+                            <Box>
+                              <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                                {stats.total}
+                              </Typography>
+                              <Typography
+                                variant="body2"
+                                color="text.secondary"
+                              >
+                                Total de productos
+                              </Typography>
+                            </Box>
                           </Box>
                         </Box>
-                      </Box>
-                    </Grid>
+                      </Grid>
 
-                    {/* Valor inventario */}
-                    <Grid item xs={12} sm={4}>
-                      <Box sx={{ p: 2, height: '100%' }}>
+                      <Grid item xs={12} sm={4} width={'31%'}>
                         <Box
                           sx={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 1.5,
+                            p: 2,
+                            borderRight: { sm: '1px solid' },
+                            borderColor: { sm: 'divider' },
+                            borderBottom: { xs: '1px solid', sm: 'none' },
+                            borderBottomColor: { xs: 'divider' },
                           }}
                         >
-                          <AttachMoneyIcon
-                            color="success"
-                            sx={{ fontSize: 40 }}
-                          />
-                          <Box>
-                            <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                              {stats.inventoryRange &&
-                              stats.inventoryRange.min !==
-                                stats.inventoryRange.max
-                                ? `${formatPrice(
-                                    stats.inventoryRange.min
-                                  )} - ${formatPrice(stats.inventoryRange.max)}`
-                                : stats.hasTieredProducts
-                                ? formatPrice(
-                                    stats.inventoryRange?.min ||
-                                      stats.totalValue
-                                  )
-                                : formatPrice(stats.totalValue)}
-                            </Typography>
-                            <Typography variant="body2" color="text.secondary">
-                              Valor del inventario
-                            </Typography>
+                          <Box
+                            sx={{
+                              display: 'flex',
+                              gap: 1.5,
+                            }}
+                          >
+                            <Box
+                              sx={{
+                                color: 'success.main',
+                                fontSize: 40,
+                                fontWeight: 'bold',
+                                display: 'flex',
+                                alignItems: 'center',
+                              }}
+                            >
+                              ✓
+                            </Box>
+                            <Box>
+                              <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                                {stats.active}
+                              </Typography>
+                              <Typography
+                                variant="body2"
+                                color="text.secondary"
+                              >
+                                Productos activos
+                              </Typography>
+                            </Box>
                           </Box>
                         </Box>
-                      </Box>
+                      </Grid>
+
+                      <Grid item xs={12} sm={4} width={'31%'}>
+                        <Box sx={{ p: 2, width: '100%' }}>
+                          <Box
+                            sx={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 1.5,
+                            }}
+                          >
+                            <AttachMoneyIcon
+                              color="success"
+                              sx={{ fontSize: 40 }}
+                            />
+                            <Box>
+                              <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                                {stats.inventoryRange &&
+                                stats.inventoryRange.min !==
+                                  stats.inventoryRange.max
+                                  ? `${formatPrice(
+                                      stats.inventoryRange.min
+                                    )} - ${formatPrice(
+                                      stats.inventoryRange.max
+                                    )}`
+                                  : stats.hasTieredProducts
+                                  ? formatPrice(
+                                      stats.inventoryRange?.min ||
+                                        stats.totalValue
+                                    )
+                                  : formatPrice(stats.totalValue)}
+                              </Typography>
+                              <Typography
+                                variant="body2"
+                                color="text.secondary"
+                              >
+                                Valor del inventario
+                              </Typography>
+                            </Box>
+                          </Box>
+                        </Box>
+                      </Grid>
+
+                      {process.env.NODE_ENV === 'development' &&
+                        stats.hasTieredProducts && (
+                          <Grid item xs={12}>
+                            <Box
+                              sx={{
+                                p: 2,
+                                borderTop: '1px dashed',
+                                borderColor: 'divider',
+                              }}
+                            ></Box>
+                          </Grid>
+                        )}
                     </Grid>
-                  </Grid>
-                </Box>
-              </Paper>
+                  </Box>
+                </Paper>
+              </Box>
             </Box>
 
             {/* Error Alert */}
@@ -570,7 +571,6 @@ const MyProducts = () => {
             {/* Filtros y búsqueda */}
             <Paper sx={{ p: 3, mb: 3 }}>
               <Grid container columns={12} spacing={2} alignItems="center">
-                {/* Búsqueda */}
                 <Grid item xs={12} sm={6} md={4}>
                   <TextField
                     fullWidth
@@ -590,7 +590,6 @@ const MyProducts = () => {
                   />
                 </Grid>
 
-                {/* Filtro por categoría */}
                 <Grid item xs={12} sm={6} md={3}>
                   <FormControl fullWidth>
                     <InputLabel>Categoría</InputLabel>
@@ -600,6 +599,7 @@ const MyProducts = () => {
                       label="Categoría"
                       sx={{
                         borderRadius: 2,
+                        '& .MuiSelect-select': {},
                       }}
                       MenuProps={{
                         disableScrollLock: true,
@@ -614,7 +614,6 @@ const MyProducts = () => {
                   </FormControl>
                 </Grid>
 
-                {/* Ordenamiento */}
                 <Grid item xs={12} sm={6} md={3}>
                   <FormControl fullWidth>
                     <InputLabel>Ordenar por</InputLabel>
@@ -638,7 +637,6 @@ const MyProducts = () => {
                   </FormControl>
                 </Grid>
 
-                {/* Acciones */}
                 <Grid item xs={12} sm={6} md={2}>
                   <Stack direction="row" spacing={1}>
                     <Button
@@ -652,7 +650,6 @@ const MyProducts = () => {
                 </Grid>
               </Grid>
 
-              {/* Filtros activos */}
               {(searchTerm || categoryFilter !== 'all') && (
                 <Box sx={{ mt: 2, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
                   {searchTerm && (
@@ -707,7 +704,6 @@ const MyProducts = () => {
                 />
               </Box>
 
-              {/* Advanced Loading States */}
               {loading ? (
                 <InitialLoadingState />
               ) : uiProducts.length === 0 ? (
@@ -727,7 +723,6 @@ const MyProducts = () => {
                 </Grid>
               ) : (
                 <>
-                  {/* Grid de productos */}
                   <Box
                     sx={{
                       display: 'grid',
@@ -768,14 +763,12 @@ const MyProducts = () => {
                     ))}
                   </Box>
 
-                  {/* Infinite Scroll Loading Trigger */}
                   {hasMore && (
                     <Box ref={loadingTriggerRef} sx={{ mt: 2 }}>
                       <LoadMoreState show={isLoadingMore} />
                     </Box>
                   )}
 
-                  {/* Scroll Progress Indicator */}
                   {totalCount > 12 && (
                     <ScrollProgress
                       progress={progress}
@@ -787,7 +780,6 @@ const MyProducts = () => {
               )}
             </Box>
 
-            {/* FAB para móvil */}
             {isMobile && (
               <Fab
                 color="primary"
@@ -803,7 +795,6 @@ const MyProducts = () => {
               </Fab>
             )}
 
-            {/* Scroll to Top FAB */}
             <Grow in={showScrollTop}>
               <Fab
                 color="secondary"
@@ -828,72 +819,77 @@ const MyProducts = () => {
               </Fab>
             </Grow>
           </Container>
-
-          {/* Modales globales */}
-          <BigModal
-            isOpen={importModalOpen}
-            onClose={() => setImportModalOpen(false)}
-            title="Importar productos desde Excel"
-            type={MODAL_TYPES.INFO}
-            hideActions
-          >
-            <MassiveProductImport
-              open={importModalOpen}
-              onClose={() => setImportModalOpen(false)}
-              onSuccess={() => setImportModalOpen(false)}
-            />
-          </BigModal>
-
-          {/* Modal de eliminación */}
-          <Modal
-            isOpen={deleteModal.isOpen}
-            onClose={() =>
-              setDeleteModal({ isOpen: false, product: null, loading: false })
-            }
-            onSubmit={confirmDelete}
-            type={MODAL_TYPES.DELETE}
-            title="Eliminar producto"
-            loading={deleteModal.loading}
-          >
-            {deleteModal.product
-              ? `¿Estás seguro de que deseas eliminar "${deleteModal.product.nombre}"? Esta acción no se puede deshacer.`
-              : ''}
-          </Modal>
-
-          {/* Modal de pausar / reactivar */}
-          <Modal
-            isOpen={pauseModal.isOpen}
-            onClose={() =>
-              setPauseModal({ isOpen: false, product: null, loading: false })
-            }
-            onSubmit={confirmPause}
-            type={
-              pauseModal.product?.activo
-                ? MODAL_TYPES.WARNING
-                : MODAL_TYPES.INFO
-            }
-            title={
-              pauseModal.product?.activo
-                ? 'Pausar producto'
-                : 'Reactivar producto'
-            }
-            loading={pauseModal.loading}
-          >
-            {pauseModal.product &&
-              (pauseModal.product.activo
-                ? `¿Seguro que deseas pausar "${pauseModal.product.nombre}"? Dejará de mostrarse en el Marketplace hasta que lo reactives.`
-                : `¿Deseas reactivar "${pauseModal.product.nombre}"? Volverá a mostrarse en el Marketplace.`)}
-          </Modal>
-
-          {/* Modal de validación bancaria */}
-          <TransferInfoValidationModal
-            isOpen={transferModalOpen}
-            onClose={handleCloseTransferModal}
-            onRegisterAccount={handleRegisterAccount}
-            loading={transferModalLoading}
-            missingFieldLabels={missingFieldLabels}
-          />
         </Box>
+
+        {/* Modal eliminar */}
+        <Modal
+          isOpen={deleteModal.isOpen}
+          onClose={() =>
+            setDeleteModal({ isOpen: false, product: null, loading: false })
+          }
+          onSubmit={confirmDelete}
+          type={MODAL_TYPES.DELETE}
+          title="Eliminar producto"
+          loading={deleteModal.loading}
+        >
+          {deleteModal.product
+            ? `¿Estás seguro de que deseas eliminar "${deleteModal.product.nombre}"? Esta acción no se puede deshacer.`
+            : ''}
+        </Modal>
+
+        {/* Modal pausar / reactivar */}
+        <Modal
+          isOpen={pauseModal.isOpen}
+          onClose={() =>
+            setPauseModal({ isOpen: false, product: null, loading: false })
+          }
+          onSubmit={confirmPause}
+          type={
+            pauseModal.product?.activo ? MODAL_TYPES.WARNING : MODAL_TYPES.INFO
+          }
+          title={
+            pauseModal.product?.activo
+              ? 'Pausar producto'
+              : 'Reactivar producto'
+          }
+          loading={pauseModal.loading}
+        >
+          {pauseModal.product &&
+            (pauseModal.product.activo
+              ? `¿Seguro que deseas pausar "${pauseModal.product.nombre}"? Dejará de mostrarse en el Marketplace hasta que lo reactives.`
+              : `¿Deseas reactivar "${pauseModal.product.nombre}"? Volverá a mostrarse en el Marketplace.`)}
+        </Modal>
+
+        {/* 🆕 Modal de Massive Import */}
+        <Modal
+          isOpen={massiveImportOpen}
+          onClose={handleCloseMassiveImport}
+          type={MODAL_TYPES.INFO}
+          title="Importar productos desde Excel"
+        >
+          <MassiveProductImport
+            open={massiveImportOpen}
+            onClose={handleCloseMassiveImport}
+            onSuccess={() => {
+              showSuccessToast('Productos importados correctamente', {
+                icon: '📥',
+              });
+              handleCloseMassiveImport();
+              if (supplierId) {
+                loadProducts(supplierId);
+              }
+            }}
+          />
+        </Modal>
+
+        {/* Modal validación bancaria */}
+        <TransferInfoValidationModal
+          isOpen={transferModalOpen}
+          onClose={handleCloseTransferModal}
+          onRegisterAccount={handleRegisterAccount}
+          loading={transferModalLoading}
+          missingFieldLabels={missingFieldLabels}
+        />
       </ThemeProvider>
     </SupplierErrorBoundary>
   );
