@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import ImportExcel from '../../../../ui-components/imports/ImportExcel';
 import {
   Box,
   Container,
@@ -89,6 +90,8 @@ const SORT_OPTIONS = [
 ];
 
 const MyProducts = () => {
+  // Estado para modal de importación Excel
+  const [importModalOpen, setImportModalOpen] = useState(false);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const navigate = useNavigate();
@@ -357,21 +360,45 @@ const MyProducts = () => {
                   </Typography>
                 </Box>
 
-                <Button
-                  variant="contained"
-                  size="large"
-                  startIcon={<AddIcon />}
-                  onClick={handleAddProduct}
-                  data-prefetch="add-product-btn"
-                  sx={{
-                    borderRadius: 2,
-                    textTransform: 'none',
-                    fontWeight: 600,
-                    px: 3,
-                  }}
+                <Box sx={{ display: 'flex', gap: 2 }}>
+                  <Button
+                    variant="contained"
+                    size="large"
+                    startIcon={<AddIcon />}
+                    onClick={handleAddProduct}
+                    data-prefetch="add-product-btn"
+                    sx={{
+                      borderRadius: 2,
+                      textTransform: 'none',
+                      fontWeight: 600,
+                      px: 3,
+                    }}
+                  >
+                    Agregar Producto
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    size="large"
+                    onClick={() => setImportModalOpen(true)}
+                    sx={{ borderRadius: 2, fontWeight: 600, px: 3 }}
+                  >
+                    Importar Excel
+                  </Button>
+                </Box>
+                {/* Modal para importar Excel */}
+                <Modal
+                  isOpen={importModalOpen}
+                  onClose={() => setImportModalOpen(false)}
+                  title="Importar productos desde Excel"
+                  type={MODAL_TYPES.INFO}
+                  hideActions
                 >
-                  Agregar Producto
-                </Button>
+                  <ImportExcel
+                    table="products" // Cambia esto por el nombre real de tu tabla
+                    fields={['nombre', 'precio', 'stock']} // Cambia por los campos requeridos
+                    onSuccess={() => setImportModalOpen(false)}
+                  />
+                </Modal>
               </Box>
 
               {/* Estadísticas del inventario */}
