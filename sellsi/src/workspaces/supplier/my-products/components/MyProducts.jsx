@@ -41,6 +41,7 @@ import {
 // Components
 import ProductCard from '../../../../shared/components/display/product-card/ProductCard';
 import { Modal, MODAL_TYPES } from '../../../../shared/components/feedback';
+import BigModal from '../../../../shared/components/modals/BigModal/BigModal';
 import {
   TransferInfoValidationModal,
   useTransferInfoModal,
@@ -860,11 +861,10 @@ const MyProducts = () => {
               : `¿Deseas reactivar "${pauseModal.product.nombre}"? Volverá a mostrarse en el Marketplace.`)}
         </Modal>
 
-        {/* 🆕 Modal de Massive Import */}
-        <Modal
+        {/* 🆕 Modal de Massive Import (ahora usando BigModal) */}
+        <BigModal
           isOpen={massiveImportOpen}
           onClose={handleCloseMassiveImport}
-          type={MODAL_TYPES.INFO}
           title="Importar productos desde Excel"
         >
           <MassiveProductImport
@@ -880,7 +880,7 @@ const MyProducts = () => {
               }
             }}
           />
-        </Modal>
+        </BigModal>
 
         {/* Modal validación bancaria */}
         <TransferInfoValidationModal
