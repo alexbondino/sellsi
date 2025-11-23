@@ -35,6 +35,12 @@ const PRODUCT_IMPORT_FIELDS = [
     label: 'Número Entero',
     description: 'Cantidad mínima que se puede comprar.',
   },
+  {
+    key: 'image_urls',
+    label: 'Lista de URLs',
+    description:
+      'URLs de las imágenes del producto, separadas por comas. La primera URL será la imagen principal.',
+  },
 ];
 
 const MassiveProductImport = ({ open, onClose, onSuccess }) => {

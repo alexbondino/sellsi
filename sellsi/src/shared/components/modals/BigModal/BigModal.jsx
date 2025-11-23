@@ -85,7 +85,7 @@ const BigModal = ({
           overflow: 'hidden',
           position: 'fixed',
           width: isMobile ? '100vw' : '35%',
-          height: isMobile ? '100vh' : '55%',
+          height: isMobile ? '100vh' : '65%',
         },
       }}
     >
