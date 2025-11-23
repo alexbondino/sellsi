@@ -74,9 +74,6 @@ export default function ImportExcel({ table, fields, onSuccess }) {
           ¡Importación exitosa!
         </Alert>
       )}
-      <Typography variant="body2" sx={{ mt: 1 }}>
-        Los campos requeridos en el Excel son: {fields.join(', ')}
-      </Typography>
     </Box>
   );
 }
