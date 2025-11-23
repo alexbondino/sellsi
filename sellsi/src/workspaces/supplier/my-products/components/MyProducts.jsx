@@ -46,6 +46,7 @@ import {
 // Components
 import ProductCard from '../../../../shared/components/display/product-card/ProductCard';
 import { Modal, MODAL_TYPES } from '../../../../shared/components/feedback';
+import BigModal from '../../../../shared/components/modals/BigModal/BigModal';
 import {
   TransferInfoValidationModal,
   useTransferInfoModal,
@@ -327,73 +328,68 @@ const MyProducts = () => {
   return (
     <SupplierErrorBoundary onRetry={handleRetry}>
       <ThemeProvider theme={dashboardThemeCore}>
-        <Box
-          sx={{
-            backgroundColor: 'background.default',
-            minHeight: '100vh',
-            pt: { xs: 4.5, md: 5 },
-            px: 3,
-            pb: SPACING_BOTTOM_MAIN,
-            ml: { xs: 0, md: 10, lg: 14, xl: 24 },
-          }}
-        >
-          <Container maxWidth="xl" disableGutters>
-            {/* Header */}
-            <Box sx={{ mb: 4 }}>
-              <Box
-                sx={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'flex-start',
-                  flexDirection: { xs: 'column', sm: 'row' },
-                  gap: 2,
-                  mb: 3,
-                }}
-              >
-                <Box>
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                    <StorefrontIcon
-                      sx={{ color: 'primary.main', fontSize: 36, mr: 1 }}
-                    />
-                    <Typography
-                      variant="h4"
-                      fontWeight="600"
-                      color="primary.main"
-                      gutterBottom
-                    >
-                      Mis Productos
-                    </Typography>
-                  </Box>
-                  <Typography variant="body1" color="text.secondary">
-                    Gestiona tu catálogo eficientemente
+        <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
+          <Container
+            maxWidth="xl"
+            sx={{
+              py: 3,
+              pb: SPACING_BOTTOM_MAIN,
+            }}
+          >
+            {/* Header principal */}
+            <Box
+              sx={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'flex-start',
+                flexDirection: { xs: 'column', sm: 'row' },
+                gap: 2,
+                mb: 3,
+              }}
+            >
+              <Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                  <StorefrontIcon
+                    sx={{ color: 'primary.main', fontSize: 36, mr: 1 }}
+                  />
+                  <Typography
+                    variant="h4"
+                    fontWeight="600"
+                    color="primary.main"
+                    gutterBottom
+                  >
+                    Mis Productos
                   </Typography>
                 </Box>
+                <Typography variant="body1" color="text.secondary">
+                  Gestiona tu catálogo eficientemente
+                </Typography>
+              </Box>
 
-                <Box sx={{ display: 'flex', gap: 2 }}>
-                  <Button
-                    variant="contained"
-                    size="large"
-                    startIcon={<AddIcon />}
-                    onClick={handleAddProduct}
-                    data-prefetch="add-product-btn"
-                    sx={{
-                      borderRadius: 2,
-                      textTransform: 'none',
-                      fontWeight: 600,
-                      px: 3,
-                    }}
-                  >
-                    Agregar Producto
-                  </Button>
-                  <Button
-                    variant="outlined"
-                    size="large"
-                    onClick={() => setImportModalOpen(true)}
-                    sx={{ borderRadius: 2, fontWeight: 600, px: 3 }}
-                  >
-                    Importar Excel
-                  </Button>
-                </Box>
+              <Box sx={{ display: 'flex', gap: 2 }}>
+                <Button
+                  variant="contained"
+                  size="large"
+                  startIcon={<AddIcon />}
+                  onClick={handleAddProduct}
+                  data-prefetch="add-product-btn"
+                  sx={{
+                    borderRadius: 2,
+                    textTransform: 'none',
+                    fontWeight: 600,
+                    px: 3,
+                  }}
+                >
+                  Agregar Producto
+                </Button>
+                <Button
+                  variant="outlined"
+                  size="large"
+                  onClick={() => setImportModalOpen(true)}
+                  sx={{ borderRadius: 2, fontWeight: 600, px: 3 }}
+                >
+                  Importar Excel
+                </Button>
               </Box>
             </Box>
 
@@ -834,7 +830,7 @@ const MyProducts = () => {
           </Container>
 
           {/* Modales globales */}
-          <Modal
+          <BigModal
             isOpen={importModalOpen}
             onClose={() => setImportModalOpen(false)}
             title="Importar productos desde Excel"
@@ -846,7 +842,7 @@ const MyProducts = () => {
               onClose={() => setImportModalOpen(false)}
               onSuccess={() => setImportModalOpen(false)}
             />
-          </Modal>
+          </BigModal>
 
           {/* Modal de eliminación */}
           <Modal
