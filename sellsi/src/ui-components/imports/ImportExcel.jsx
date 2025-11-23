@@ -5,6 +5,10 @@ import { v4 as uuidv4 } from 'uuid';
 import { supabase } from '../../services/supabase';
 import { buildSafeFileNameFromUrl } from './uuidSafeFileName';
 
+// --------- Constantes de storage / tablas ----------
+const IMAGE_BUCKET = 'product-images';
+const PRODUCT_IMAGES_TABLE = 'product_images';
+
 // Utilidad para descargar una imagen desde una URL y devolver un Blob
 async function fetchImageAsBlob(url) {
   const response = await fetch(url);
@@ -14,8 +18,6 @@ async function fetchImageAsBlob(url) {
 
 // Utilidad para subir una imagen al bucket y devolver la URL pública
 async function uploadImageToBucket(blob, fileName, userId, productId) {
-  const bucket = 'product-images';
-
   if (!userId) {
     throw new Error('Falta userId para construir la ruta del storage.');
   }
@@ -23,24 +25,26 @@ async function uploadImageToBucket(blob, fileName, userId, productId) {
     throw new Error('Falta productId para construir la ruta del storage.');
   }
 
-  // Ruta: /userId/productId/fileName
   const path = `${userId}/${productId}/${fileName}`;
 
   const { error } = await supabase.storage
-    .from(bucket)
+    .from(IMAGE_BUCKET)
     .upload(path, blob, { upsert: true });
 
   if (error) throw error;
 
-  const { data } = supabase.storage.from(bucket).getPublicUrl(path);
-  return data.publicUrl;
+  const { data } = supabase.storage.from(IMAGE_BUCKET).getPublicUrl(path);
+  return {
+    publicUrl: data.publicUrl,
+    path,
+  };
 }
 
 /**
  * ImportExcel
- * @param {string} table - Nombre de la tabla de Supabase a la que se suben los datos
+ * @param {string} table - Nombre de la tabla de Supabase a la que se suben los datos (ej: 'products')
  * @param {Array<string>} fields - Lista de campos/columnas a mapear desde el Excel
- * @param {string} [userId] - user_id a asociar a cada fila importada
+ * @param {string} [userId] - user_id / supplier_id a asociar a cada fila importada
  * @param {function} [onSuccess] - Callback opcional al terminar
  */
 export default function ImportExcel({ table, fields, userId, onSuccess }) {
@@ -69,8 +73,9 @@ export default function ImportExcel({ table, fields, userId, onSuccess }) {
       }
 
       const mapped = [];
+      const imagesByProduct = {}; // productId -> [urls]
 
-      // Recorremos cada fila del Excel
+      // 1) Recorremos cada fila del Excel y construimos los productos
       for (const row of json) {
         const obj = {};
 
@@ -89,6 +94,7 @@ export default function ImportExcel({ table, fields, userId, onSuccess }) {
         });
 
         if (userId) {
+          // Ajusta el nombre de columna si es distinto
           obj.supplier_id = userId;
         }
 
@@ -108,29 +114,14 @@ export default function ImportExcel({ table, fields, userId, onSuccess }) {
             .forEach(u => urlsToProcess.push(u));
         }
 
-        // Subir cada imagen al bucket usando SIEMPRE el mismo productId
-        for (const url of urlsToProcess) {
-          try {
-            const fileName = buildSafeFileNameFromUrl(url);
-            const blob = await fetchImageAsBlob(url);
-
-            await uploadImageToBucket(blob, fileName, userId, productId);
-
-            // Si quisieras guardar la URL pública:
-            // const publicUrl = await uploadImageToBucket(...);
-            // obj.image_url = publicUrl; // o manejar un array
-          } catch (imgErr) {
-            console.error(imgErr);
-            setError(`Error al procesar la imagen: ${url}. ${imgErr.message}`);
-            setLoading(false);
-            return;
-          }
+        if (urlsToProcess.length > 0) {
+          imagesByProduct[productId] = urlsToProcess;
         }
 
         mapped.push(obj);
       }
 
-      // Insertar todas las filas mapeadas en la tabla indicada
+      // 2) Insertar TODAS las filas mapeadas en la tabla indicada (productos)
       const { error: insertError } = await supabase.from(table).insert(mapped);
 
       if (insertError) {
@@ -140,7 +131,68 @@ export default function ImportExcel({ table, fields, userId, onSuccess }) {
         );
       }
 
-      setSuccess(true);
+      // 3) Subir imágenes y crear registros en product_images
+      const imageErrors = [];
+
+      for (const [productId, urls] of Object.entries(imagesByProduct)) {
+        let order = 0;
+        for (const url of urls) {
+          try {
+            const blob = await fetchImageAsBlob(url);
+            const fileName = buildSafeFileNameFromUrl(url);
+
+            const { publicUrl } = await uploadImageToBucket(
+              blob,
+              fileName,
+              userId,
+              productId
+            );
+
+            // Insertar registro usando función atómica (RLS)
+            const { error: imgInsertError } = await supabase.rpc(
+              'insert_image_with_order',
+              {
+                p_product_id: productId,
+                p_image_url: publicUrl,
+                p_supplier_id: userId, // aunque sea reservado, la función lo acepta
+              }
+            );
+
+            if (imgInsertError) {
+              console.error(
+                '[ImportExcel] Error insertando en product_images:',
+                imgInsertError
+              );
+              imageErrors.push(
+                `Producto ${productId} - imagen ${url}: ${imgInsertError.message}`
+              );
+            }
+
+            order += 1;
+          } catch (imgErr) {
+            console.error(
+              '[ImportExcel] Error procesando imagen:',
+              url,
+              imgErr
+            );
+            imageErrors.push(
+              `Producto ${productId} - imagen ${url}: ${imgErr.message}`
+            );
+          }
+        }
+      }
+
+      if (imageErrors.length > 0) {
+        // Productos creados pero algunas imágenes fallaron
+        setError(
+          `Productos importados, pero hubo errores con algunas imágenes:\n${imageErrors.join(
+            '\n'
+          )}`
+        );
+      } else {
+        setSuccess(true);
+      }
+
       if (onSuccess) onSuccess(mapped);
     } catch (err) {
       console.error(err);
@@ -167,12 +219,12 @@ export default function ImportExcel({ table, fields, userId, onSuccess }) {
       </Button>
 
       {error && (
-        <Alert severity="error" sx={{ mt: 2 }}>
+        <Alert severity="error" sx={{ mt: 2, whiteSpace: 'pre-line' }}>
           {error}
         </Alert>
       )}
 
-      {success && (
+      {success && !error && (
         <Alert severity="success" sx={{ mt: 2 }}>
           ¡Importación exitosa!
         </Alert>
