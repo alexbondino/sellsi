@@ -385,7 +385,7 @@ const MyProducts = () => {
                     sx={{
                       borderRadius: 2,
                       textTransform: 'none',
-                      fontWeight: 500,
+                      fontWeight: 'bold',
                       px: 3,
                     }}
                   >
