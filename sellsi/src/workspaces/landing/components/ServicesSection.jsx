@@ -30,7 +30,7 @@ export default function ServicesSection({
 
   // 🔥 IMÁGENES
   const IMAGE_1 = '/Landing Page/imagenuno.png';
-  const IMAGE_2 = '/Landing Page/imagenuno.png'; // cámbiala si quieres otra
+  const IMAGE_2 = '/Landing Page/supplierImage.png'; // cámbiala si quieres otra
 
   const Img = ({ src }) => (
     <Box
