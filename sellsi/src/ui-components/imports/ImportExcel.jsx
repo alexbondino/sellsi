@@ -23,7 +23,7 @@ async function uploadImageToBucket(blob, fileName, userId, productId) {
     throw new Error('Falta productId para construir la ruta del storage.');
   }
 
-  // 👇 ahora el path incluye la carpeta del producto
+  // Ruta: /userId/productId/fileName
   const path = `${userId}/${productId}/${fileName}`;
 
   const { error } = await supabase.storage
@@ -32,7 +32,6 @@ async function uploadImageToBucket(blob, fileName, userId, productId) {
 
   if (error) throw error;
 
-  // Obtener URL pública
   const { data } = supabase.storage.from(bucket).getPublicUrl(path);
   return data.publicUrl;
 }
@@ -75,16 +74,17 @@ export default function ImportExcel({ table, fields, userId, onSuccess }) {
       for (const row of json) {
         const obj = {};
 
-        // ⚠️ Generamos un UUID para este producto
-        // Asumo que tu tabla tiene columna "id" (UUID).
-        // Si se llama distinto (por ejemplo "product_id"), cámbialo aquí.
+        // ✅ Generamos un UUID para este producto
+        // Asegúrate de que tu tabla tenga una columna "productid" (uuid).
         const productId = uuidv4();
         obj.productid = productId;
 
         // Mapear solo los campos definidos en `fields`
         fields.forEach(f => {
-          // No incluir image_url ni image_urls en el objeto insertado
-          if (f === 'image_url' || f === 'image_urls') return;
+          // ❌ Nunca pisar productid, ni incluir columnas de imágenes crudas
+          if (f === 'image_url' || f === 'image_urls' || f === 'productid') {
+            return;
+          }
           obj[f] = row[f];
         });
 
@@ -92,9 +92,7 @@ export default function ImportExcel({ table, fields, userId, onSuccess }) {
           obj.supplier_id = userId;
         }
 
-        // Juntar todas las URLs de imagen a procesar:
-        // - image_url (una sola)
-        // - image_urls (por ejemplo: "url1,url2,url3")
+        // Construir lista de URLs a procesar
         const urlsToProcess = [];
 
         if (row.image_url) {
@@ -110,19 +108,17 @@ export default function ImportExcel({ table, fields, userId, onSuccess }) {
             .forEach(u => urlsToProcess.push(u));
         }
 
-        // Subir cada imagen al bucket
+        // Subir cada imagen al bucket usando SIEMPRE el mismo productId
         for (const url of urlsToProcess) {
           try {
             const fileName = buildSafeFileNameFromUrl(url);
             const blob = await fetchImageAsBlob(url);
 
-            // 👇 ahora pasamos también productId para que cree la carpeta
             await uploadImageToBucket(blob, fileName, userId, productId);
 
-            // Si quisieras guardar la URL pública en la tabla, podrías hacer:
-            // const publicUrl = await uploadImageToBucket(blob, fileName, userId, productId);
-            // obj.image_url = publicUrl;
-            // o manejar un array en image_urls_public, etc.
+            // Si quisieras guardar la URL pública:
+            // const publicUrl = await uploadImageToBucket(...);
+            // obj.image_url = publicUrl; // o manejar un array
           } catch (imgErr) {
             console.error(imgErr);
             setError(`Error al procesar la imagen: ${url}. ${imgErr.message}`);
@@ -151,7 +147,6 @@ export default function ImportExcel({ table, fields, userId, onSuccess }) {
       setError(err.message || 'Ocurrió un error al importar el archivo.');
     } finally {
       setLoading(false);
-      // Limpiar el input de archivo para permitir reimportar el mismo archivo si se quiere
       if (inputRef.current) {
         inputRef.current.value = '';
       }
