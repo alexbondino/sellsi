@@ -1,6 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { Button, Box, CircularProgress, Alert } from '@mui/material';
 import * as XLSX from 'xlsx';
+import { v4 as uuidv4 } from 'uuid';
 import { supabase } from '../../services/supabase';
 import { buildSafeFileNameFromUrl } from './uuidSafeFileName';
 
@@ -12,10 +13,19 @@ async function fetchImageAsBlob(url) {
 }
 
 // Utilidad para subir una imagen al bucket y devolver la URL pública
-async function uploadImageToBucket(blob, fileName, userId) {
+async function uploadImageToBucket(blob, fileName, userId, productId) {
   const bucket = 'product-images';
-  // El path debe ser solo `${userId}/${fileName}` donde fileName es UUID + extensión
-  const path = `${userId}/${fileName}`;
+
+  if (!userId) {
+    throw new Error('Falta userId para construir la ruta del storage.');
+  }
+  if (!productId) {
+    throw new Error('Falta productId para construir la ruta del storage.');
+  }
+
+  // 👇 ahora el path incluye la carpeta del producto
+  const path = `${userId}/${productId}/${fileName}`;
+
   const { error } = await supabase.storage
     .from(bucket)
     .upload(path, blob, { upsert: true });
@@ -65,6 +75,12 @@ export default function ImportExcel({ table, fields, userId, onSuccess }) {
       for (const row of json) {
         const obj = {};
 
+        // ⚠️ Generamos un UUID para este producto
+        // Asumo que tu tabla tiene columna "id" (UUID).
+        // Si se llama distinto (por ejemplo "product_id"), cámbialo aquí.
+        const productId = uuidv4();
+        obj.productid = productId;
+
         // Mapear solo los campos definidos en `fields`
         fields.forEach(f => {
           // No incluir image_url ni image_urls en el objeto insertado
@@ -100,10 +116,11 @@ export default function ImportExcel({ table, fields, userId, onSuccess }) {
             const fileName = buildSafeFileNameFromUrl(url);
             const blob = await fetchImageAsBlob(url);
 
-            await uploadImageToBucket(blob, fileName, userId);
+            // 👇 ahora pasamos también productId para que cree la carpeta
+            await uploadImageToBucket(blob, fileName, userId, productId);
 
             // Si quisieras guardar la URL pública en la tabla, podrías hacer:
-            // const publicUrl = await uploadImageToBucket(blob, fileName, userId);
+            // const publicUrl = await uploadImageToBucket(blob, fileName, userId, productId);
             // obj.image_url = publicUrl;
             // o manejar un array en image_urls_public, etc.
           } catch (imgErr) {
