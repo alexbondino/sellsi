@@ -254,13 +254,14 @@ jest.mock('../../domains/buyer/pages/BuyerPerformance', () =>
 jest.mock('../../domains/buyer/pages/offers/BuyerOffers', () =>
   mockDefault('BUYER_OFFERS')
 );
-jest.mock('../../domains/ProductPageView/pages/TechnicalSpecs', () =>
-  mockDefault('TECHNICAL_SPECS')
+jest.mock(
+  '../../workspaces/product/product-page-view/pages/TechnicalSpecs',
+  () => mockDefault('TECHNICAL_SPECS')
 );
 jest.mock('../../domains/marketplace/pages/ProviderCatalog', () =>
   mockDefault('PROVIDER_CATALOG')
 );
-jest.mock('../../domains/ProductPageView/ProductPageWrapper', () =>
+jest.mock('../../workspaces/product/product-page-view/ProductPageWrapper', () =>
   mockDefault('PRODUCT_PAGE')
 );
 jest.mock('../../workspaces/auth/onboarding/components/Onboarding', () =>

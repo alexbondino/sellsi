@@ -74,7 +74,7 @@ const ProviderCatalog = React.lazy(() =>
   import('../../domains/marketplace/pages/ProviderCatalog')
 );
 const ProductPageWrapper = React.lazy(() =>
-  import('../../domains/ProductPageView/ProductPageWrapper')
+  import('../../workspaces/product/product-page-view/ProductPageWrapper')
 );
 
 // 📦 AUTH & ONBOARDING - LAZY LOADING

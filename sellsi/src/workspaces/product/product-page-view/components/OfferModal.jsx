@@ -12,21 +12,21 @@ import {
   Alert,
   IconButton,
   CircularProgress,
-  Chip
+  Chip,
 } from '@mui/material';
 import {
   Close as CloseIcon,
   Info as InfoIcon,
   Gavel as GavelIcon,
-  Schedule as ScheduleIcon
+  Schedule as ScheduleIcon,
 } from '@mui/icons-material';
-import { useOfferStore } from '../../../stores/offerStore';
+import { useOfferStore } from '../../../../stores/offerStore';
 import { toast } from 'react-hot-toast';
-import { useBodyScrollLock } from '../../../shared/hooks/useBodyScrollLock';
+import { useBodyScrollLock } from '../../../../shared/hooks/useBodyScrollLock';
 
-const OfferModal = ({ 
-  open, 
-  onClose, 
+const OfferModal = ({
+  open,
+  onClose,
   onOffer, // Mantenemos para compatibilidad pero usaremos nuestro store
   product,
   stock = undefined,
@@ -45,15 +45,16 @@ const OfferModal = ({
     loading,
     createOffer,
     validateOfferLimits,
-  buyerOffers,
-  error: storeError,
-  loadBuyerOffers,
+    buyerOffers,
+    error: storeError,
+    loadBuyerOffers,
   } = useOfferStore();
 
   // Exponer loader para asegurarnos de obtener las ofertas del comprador al abrir el modal
 
   const userId = localStorage.getItem('user_id');
-  const userNm = localStorage.getItem('user_nm') || localStorage.getItem('user_email');
+  const userNm =
+    localStorage.getItem('user_nm') || localStorage.getItem('user_email');
   const userEmail = localStorage.getItem('user_email');
 
   // Limpiar formulario al abrir
@@ -79,7 +80,14 @@ const OfferModal = ({
       ranInitialLimitsRef.current = true;
       checkLimits();
     }
-  }, [open, product?.id, product?.productid, userId, initialLimits, limitsValidation]);
+  }, [
+    open,
+    product?.id,
+    product?.productid,
+    userId,
+    initialLimits,
+    limitsValidation,
+  ]);
 
   // Al abrir el modal, asegurarnos de tener las ofertas del comprador cargadas
   const buyerOffersRequestedRef = React.useRef(false);
@@ -92,11 +100,22 @@ const OfferModal = ({
     const prodKey = product?.id ?? product?.productid ?? product?.product_id;
     if (!prodKey) return;
     // Si ya detectamos pending local, no sobreescribir buyerOffers con fetch (preserva alerta inmediata)
-    const alreadyPending = (Array.isArray(buyerOffers) && buyerOffers.some(o => {
-      const status = (o.status||'').toLowerCase();
-      const keys = [o.product_id, o.productId, o.product?.product_id, o.product?.productid, o.product?.id];
-      return status === 'pending' && keys.some(k => k != null && String(k) === String(prodKey));
-    }));
+    const alreadyPending =
+      Array.isArray(buyerOffers) &&
+      buyerOffers.some(o => {
+        const status = (o.status || '').toLowerCase();
+        const keys = [
+          o.product_id,
+          o.productId,
+          o.product?.product_id,
+          o.product?.productid,
+          o.product?.id,
+        ];
+        return (
+          status === 'pending' &&
+          keys.some(k => k != null && String(k) === String(prodKey))
+        );
+      });
     if (alreadyPending) return;
     // Only request once per modal open
     if (buyerOffersRequestedRef.current) return;
@@ -108,26 +127,35 @@ const OfferModal = ({
         loadBuyerOffers(uid).catch(() => {});
       }
     } catch (_) {}
-  }, [open, product?.id, product?.productid, product?.product_id, loadBuyerOffers, userId]);
+  }, [
+    open,
+    product?.id,
+    product?.productid,
+    product?.product_id,
+    loadBuyerOffers,
+    userId,
+  ]);
 
   const checkLimits = async () => {
     const prodKey = product?.id ?? product?.productid ?? product?.product_id;
     if (!userId || !prodKey) return;
-    
+
     try {
       const limits = await validateOfferLimits({
         buyerId: userId,
         productId: prodKey,
-        supplierId: product.supplier_id || product.supplierId
+        supplierId: product.supplier_id || product.supplierId,
       });
-  if (typeof console !== 'undefined') console.log('[OfferModal] limits received', limits);
+      if (typeof console !== 'undefined')
+        console.log('[OfferModal] limits received', limits);
       setLimitsValidation(limits);
     } catch (error) {
       console.error('Error validating limits:', error);
     }
   };
 
-  const effectiveStock = typeof stock === 'number' ? stock : (product?.stock ?? 0);
+  const effectiveStock =
+    typeof stock === 'number' ? stock : product?.stock ?? 0;
 
   const validateForm = () => {
     const newErrors = {};
@@ -160,16 +188,21 @@ const OfferModal = ({
   const isFormValid = () => {
     const price = parseInt(offeredPrice, 10);
     const quantity = parseInt(offeredQuantity, 10);
-    
-  const isPriceValid = offeredPrice && !isNaN(price) && price >= 1 && price < 1000000;
-  const isQuantityValid = offeredQuantity && !isNaN(quantity) && quantity > 0 && quantity <= effectiveStock;
-  const areLimitsValid = !limitsValidation || limitsValidation.allowed;
-    
+
+    const isPriceValid =
+      offeredPrice && !isNaN(price) && price >= 1 && price < 1000000;
+    const isQuantityValid =
+      offeredQuantity &&
+      !isNaN(quantity) &&
+      quantity > 0 &&
+      quantity <= effectiveStock;
+    const areLimitsValid = !limitsValidation || limitsValidation.allowed;
+
     return isPriceValid && isQuantityValid && areLimitsValid;
   };
 
   // Funciones de cambio con validación en tiempo real
-  const handlePriceChange = (e) => {
+  const handlePriceChange = e => {
     // Permitir solo números enteros (pesos)
     const raw = e.target.value.replace(/[^0-9]/g, '');
     setOfferedPrice(raw);
@@ -182,15 +215,15 @@ const OfferModal = ({
     }
   };
 
-  const handleQuantityChange = (e) => {
+  const handleQuantityChange = e => {
     // Permitir solo números enteros
     const raw = e.target.value.replace(/[^0-9]/g, '');
     setOfferedQuantity(raw); // Mantener como string para permitir valores vacíos
-    
+
     // Limpiar error de cantidad si ahora es válido
     if (errors.quantity) {
       const value = parseInt(raw);
-  if (raw && !isNaN(value) && value > 0 && value <= effectiveStock) {
+      if (raw && !isNaN(value) && value > 0 && value <= effectiveStock) {
         setErrors(prev => ({ ...prev, quantity: '' }));
       }
     }
@@ -221,7 +254,7 @@ const OfferModal = ({
 
   const handleSubmit = async () => {
     if (!validateForm()) return;
-    
+
     if (!userId) {
       toast.error('Debes iniciar sesión para hacer ofertas');
       return;
@@ -241,24 +274,24 @@ const OfferModal = ({
       product_name: product.name || product.productnm || product.nombre,
       offered_price: parseInt(offeredPrice, 10),
       offered_quantity: parseInt(offeredQuantity),
-      message: null
+      message: null,
     };
 
     try {
       const result = await createOffer(offerData);
-      
+
       if (result.success) {
         toast.success('Oferta enviada correctamente');
-        
+
         // Llamar callback opcional para compatibilidad
         if (onOffer) {
           onOffer({
             price: offerData.offered_price,
             quantity: offerData.offered_quantity,
-            product
+            product,
           });
         }
-        
+
         onClose();
       } else {
         toast.error(result.error || 'Error al enviar la oferta');
@@ -269,10 +302,11 @@ const OfferModal = ({
     }
   };
 
-  const totalValue = (parseInt(offeredPrice, 10) || 0) * (parseInt(offeredQuantity, 10) || 0);
+  const totalValue =
+    (parseInt(offeredPrice, 10) || 0) * (parseInt(offeredQuantity, 10) || 0);
 
   // Formatear el total con truncado si es muy largo
-  const formatTotal = (value) => {
+  const formatTotal = value => {
     const formatted = value > 0 ? `$${value.toLocaleString('es-CL')}` : '$0';
     return formatted.length > 20 ? `${formatted.slice(0, 20)}...` : formatted;
   };
@@ -301,17 +335,26 @@ const OfferModal = ({
     const prodKey = product?.id ?? product?.productid ?? product?.product_id;
     if (!prodKey) return false;
     return buyerOffers.some(o => {
-      const oKeys = [o.product_id, o.productId, o.product?.productid, o.product?.product_id, o.product?.id];
-    const status = (o.status || '').toString().toLowerCase();
-    return status === 'pending' && oKeys.some(k => k != null && String(k) === String(prodKey));
+      const oKeys = [
+        o.product_id,
+        o.productId,
+        o.product?.productid,
+        o.product?.product_id,
+        o.product?.id,
+      ];
+      const status = (o.status || '').toString().toLowerCase();
+      return (
+        status === 'pending' &&
+        oKeys.some(k => k != null && String(k) === String(prodKey))
+      );
     });
   }, [buyerOffers, product?.id, product?.productid, product?.product_id]);
 
   return (
-    <Dialog 
-      open={open} 
+    <Dialog
+      open={open}
       onClose={handleClose}
-      maxWidth="sm" 
+      maxWidth="sm"
       fullWidth
       disableEscapeKeyDown={loading}
       disableScrollLock={true}
@@ -322,7 +365,16 @@ const OfferModal = ({
         },
       }}
     >
-      <DialogTitle sx={{ m: 0, p: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+      <DialogTitle
+        sx={{
+          m: 0,
+          p: 2,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          position: 'relative',
+        }}
+      >
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <GavelIcon color="primary" />
           <Typography variant="h6">Hacer Oferta</Typography>
@@ -353,51 +405,70 @@ const OfferModal = ({
         <Divider sx={{ mb: 3 }} />
 
         {/* Información de límites */}
-          {limitsValidation && (
-            <Alert
-              severity={limitsValidation.allowed ? 'info' : 'warning'}
-              sx={{ mb: 3 }}
-            >
-              <Typography variant="body2" gutterBottom>
-                <strong>Límites de ofertas:</strong>
-              </Typography>
-              {/* Mostrar contador legible (incluye 0) */}
-              {(() => {
-                const productCount = (limitsValidation.product_count ?? limitsValidation.currentCount);
-                const count = (typeof productCount === 'number') ? productCount : 0;
-                const limit = limitsValidation.limit || 3;
-                return (
-                  <Typography variant="body2">
-                    • Ofertas por este producto este mes: {count} de {limit}
-                  </Typography>
-                );
-              })()}
-              {/* Mensaje de límite excedido legado esperado por tests (usa palabra clave "límite mensual") */}
-              {!limitsValidation.allowed && (
-                <Typography variant="body2" color="error" sx={{ mt: 1, fontWeight: 600 }}>
-                  {(limitsValidation.reason || 'Se alcanzó el límite mensual de ofertas') + ' - límite mensual'}
+        {limitsValidation && (
+          <Alert
+            severity={limitsValidation.allowed ? 'info' : 'warning'}
+            sx={{ mb: 3 }}
+          >
+            <Typography variant="body2" gutterBottom>
+              <strong>Límites de ofertas:</strong>
+            </Typography>
+            {/* Mostrar contador legible (incluye 0) */}
+            {(() => {
+              const productCount =
+                limitsValidation.product_count ?? limitsValidation.currentCount;
+              const count = typeof productCount === 'number' ? productCount : 0;
+              const limit = limitsValidation.limit || 3;
+              return (
+                <Typography variant="body2">
+                  • Ofertas por este producto este mes: {count} de {limit}
                 </Typography>
-              )}
-              {/* Fallback redundante para tests (texto plano) */}
-              {typeof (limitsValidation.product_count ?? limitsValidation.currentCount) === 'number' && (
-                <span style={{display:'none'}} data-testid="offers-counter-fallback">
-                  {(limitsValidation.product_count ?? limitsValidation.currentCount)} de {limitsValidation.limit || 3} ofertas
-                </span>
-              )}
-            </Alert>
-          )}
+              );
+            })()}
+            {/* Mensaje de límite excedido legado esperado por tests (usa palabra clave "límite mensual") */}
+            {!limitsValidation.allowed && (
+              <Typography
+                variant="body2"
+                color="error"
+                sx={{ mt: 1, fontWeight: 600 }}
+              >
+                {(limitsValidation.reason ||
+                  'Se alcanzó el límite mensual de ofertas') +
+                  ' - límite mensual'}
+              </Typography>
+            )}
+            {/* Fallback redundante para tests (texto plano) */}
+            {typeof (
+              limitsValidation.product_count ?? limitsValidation.currentCount
+            ) === 'number' && (
+              <span
+                style={{ display: 'none' }}
+                data-testid="offers-counter-fallback"
+              >
+                {limitsValidation.product_count ??
+                  limitsValidation.currentCount}{' '}
+                de {limitsValidation.limit || 3} ofertas
+              </span>
+            )}
+          </Alert>
+        )}
 
         {/* Restricción: oferta pendiente existente */}
         {hasPendingForProduct && (
-          <Alert severity="warning" sx={{ mb: 3 }} data-testid="pending-offer-block">
-            Ya tienes una oferta pendiente para este producto. Debes esperar a que el proveedor la responda antes de enviar otra.
+          <Alert
+            severity="warning"
+            sx={{ mb: 3 }}
+            data-testid="pending-offer-block"
+          >
+            Ya tienes una oferta pendiente para este producto. Debes esperar a
+            que el proveedor la responda antes de enviar otra.
           </Alert>
         )}
 
         {/* Formulario */}
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
           {/* Precio ofertado */}
-       <TextField
+          <TextField
             label="Precio por unidad"
             type="number"
             value={offeredPrice}
@@ -410,13 +481,13 @@ const OfferModal = ({
             }}
             inputProps={{
               min: 1,
-              step: "1",
-              inputMode: 'numeric'
+              step: '1',
+              inputMode: 'numeric',
             }}
             onBlur={handlePriceBlur}
-         fullWidth
-         disabled={loading || hasPendingForProduct}
-           />
+            fullWidth
+            disabled={loading || hasPendingForProduct}
+          />
 
           {/* Cantidad */}
           <TextField
@@ -431,7 +502,7 @@ const OfferModal = ({
             inputProps={{
               min: 1,
               max: effectiveStock,
-              inputMode: 'numeric'
+              inputMode: 'numeric',
             }}
             fullWidth
             disabled={loading || hasPendingForProduct}
@@ -451,16 +522,16 @@ const OfferModal = ({
             variant="h6"
             color="primary"
             sx={{ fontWeight: 700 }}
-            title={totalValue > 0 ? `$${totalValue.toLocaleString('es-CL')}` : '$0'}
+            title={
+              totalValue > 0 ? `$${totalValue.toLocaleString('es-CL')}` : '$0'
+            }
           >
             {formatTotal(totalValue)}
           </Typography>
 
           {/* Error de límites */}
-          {(!limitsValidation?.allowed && limitsValidation?.reason) && (
-            <Alert severity="error">
-              {limitsValidation.reason}
-            </Alert>
+          {!limitsValidation?.allowed && limitsValidation?.reason && (
+            <Alert severity="error">{limitsValidation.reason}</Alert>
           )}
           {storeError && (
             <Alert severity="error" data-testid="offer-error" sx={{ mt: 1 }}>
@@ -469,7 +540,9 @@ const OfferModal = ({
           )}
           {/* Fallback adicional invisible accesible por texto para tests que buscan /error/i */}
           {storeError && (
-            <span style={{position:'absolute',left:-9999,top:-9999}}>error {storeError}</span>
+            <span style={{ position: 'absolute', left: -9999, top: -9999 }}>
+              error {storeError}
+            </span>
           )}
 
           {/* Información de tiempo */}
@@ -482,7 +555,15 @@ const OfferModal = ({
         </Box>
       </DialogContent>
 
-      <DialogActions sx={{ flexDirection: { xs: 'column', sm: 'row' }, gap: 1, p: 3, pt: 1, justifyContent: 'center' }}>
+      <DialogActions
+        sx={{
+          flexDirection: { xs: 'column', sm: 'row' },
+          gap: 1,
+          p: 3,
+          pt: 1,
+          justifyContent: 'center',
+        }}
+      >
         <Button
           onClick={handleClose}
           disabled={loading}

@@ -3,17 +3,20 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Box, Container, Typography, Button, Paper } from '@mui/material';
 import { StorefrontOutlined } from '@mui/icons-material';
 import ProductPageView from './ProductPageView';
-import { supabase } from '../../services/supabase';
-import { useAuth } from '../../infrastructure/providers';
-import useCartStore from '../../shared/stores/cart/cartStore';
-import { extractProductIdFromSlug } from '../../shared/utils/product/productUrl';
-import { convertDbRegionsToForm } from '../../utils/shippingRegionsUtils';
+import { supabase } from '../../../services/supabase';
+import { useAuth } from '../../../infrastructure/providers';
+import useCartStore from '../../../shared/stores/cart/cartStore';
+import { extractProductIdFromSlug } from '../../../shared/utils/product/productUrl';
+import { convertDbRegionsToForm } from '../../../utils/shippingRegionsUtils';
 
 const ProductPageWrapper = ({ isLoggedIn }) => {
   const { session, currentAppRole } = useAuth();
 
   let isSupplier = false;
-  const effectiveRole = currentAppRole || (typeof window !== 'undefined' && window.currentAppRole) || null;
+  const effectiveRole =
+    currentAppRole ||
+    (typeof window !== 'undefined' && window.currentAppRole) ||
+    null;
   if (effectiveRole) {
     isSupplier = effectiveRole === 'supplier';
   }
@@ -29,7 +32,8 @@ const ProductPageWrapper = ({ isLoggedIn }) => {
   const fromValue = location.state?.from;
   const fromMyProducts = fromValue === '/supplier/myproducts';
   const isFromBuyer = fromValue === '/buyer/marketplace';
-  const isFromSupplierMarketplace = !fromMyProducts && fromValue === '/supplier/marketplace';
+  const isFromSupplierMarketplace =
+    !fromMyProducts && fromValue === '/supplier/marketplace';
 
   const didFetchRef = useRef(null);
   const lastProductIdRef = useRef(null);
@@ -38,13 +42,21 @@ const ProductPageWrapper = ({ isLoggedIn }) => {
 
   useEffect(() => {
     const fetchProduct = async () => {
-  // Accept id or slug in either param; always extract UUID safely
-  const candidate = id || productSlug;
-  const productId = extractProductIdFromSlug(candidate);
-      if (!productId) { setError('ID de producto no válido'); setLoading(false); return; }
+      // Accept id or slug in either param; always extract UUID safely
+      const candidate = id || productSlug;
+      const productId = extractProductIdFromSlug(candidate);
+      if (!productId) {
+        setError('ID de producto no válido');
+        setLoading(false);
+        return;
+      }
       // Guard contra remount StrictMode / re-ejecución inmediata con mismo productId
       const now = Date.now();
-      if (didFetchRef.current && lastProductIdRef.current === productId && (now - lastFetchTsRef.current) < FETCH_TTL) {
+      if (
+        didFetchRef.current &&
+        lastProductIdRef.current === productId &&
+        now - lastFetchTsRef.current < FETCH_TTL
+      ) {
         return; // saltar fetch redundante
       }
       try {
@@ -54,22 +66,32 @@ const ProductPageWrapper = ({ isLoggedIn }) => {
         setLoading(true);
         const { data, error } = await supabase
           .from('products')
-          .select(`*, product_images (*), product_quantity_ranges (*), product_delivery_regions (*), users!products_supplier_id_fkey (user_nm, logo_url, verified) `)
+          .select(
+            `*, product_images (*), product_quantity_ranges (*), product_delivery_regions (*), users!products_supplier_id_fkey (user_nm, logo_url, verified) `
+          )
           .eq('productid', productId)
           .eq('is_active', true)
           .single();
         if (error) {
           setError('Producto no encontrado');
         } else {
-          const orderedImages = (data.product_images || []).slice().sort((a,b)=>((a?.image_order||0)-(b?.image_order||0)));
-          const mainImageRecord = orderedImages.find(img=>img && img.image_order===0) || orderedImages[0] || null;
+          const orderedImages = (data.product_images || [])
+            .slice()
+            .sort((a, b) => (a?.image_order || 0) - (b?.image_order || 0));
+          const mainImageRecord =
+            orderedImages.find(img => img && img.image_order === 0) ||
+            orderedImages[0] ||
+            null;
           setProduct({
             id: data.productid,
             productid: data.productid,
             supplier_id: data.supplier_id,
             nombre: data.productnm,
-            imagen: (mainImageRecord && mainImageRecord.image_url) || '/placeholder-product.jpg',
-            thumbnail_url: (mainImageRecord && mainImageRecord.thumbnail_url) || null,
+            imagen:
+              (mainImageRecord && mainImageRecord.image_url) ||
+              '/placeholder-product.jpg',
+            thumbnail_url:
+              (mainImageRecord && mainImageRecord.thumbnail_url) || null,
             precio: data.price,
             stock: data.productqty,
             categoria: data.category,
@@ -85,7 +107,9 @@ const ProductPageWrapper = ({ isLoggedIn }) => {
             priceTiers: data.product_quantity_ranges || [],
             imagenes: orderedImages,
             images: orderedImages,
-            shippingRegions: convertDbRegionsToForm(data.product_delivery_regions || []),
+            shippingRegions: convertDbRegionsToForm(
+              data.product_delivery_regions || []
+            ),
             delivery_regions: data.product_delivery_regions || [],
             shipping_regions: data.product_delivery_regions || [],
             product_delivery_regions: data.product_delivery_regions || [],
@@ -98,7 +122,7 @@ const ProductPageWrapper = ({ isLoggedIn }) => {
             isSupplier,
           });
         }
-      } catch(e){
+      } catch (e) {
         setError('Error al cargar el producto');
       } finally {
         setLoading(false);
@@ -107,9 +131,14 @@ const ProductPageWrapper = ({ isLoggedIn }) => {
     fetchProduct();
   }, [id, productSlug, fromMyProducts, isFromSupplierMarketplace, isSupplier]);
 
-  const productWithContext = useMemo(()=>{
-    if(!product) return product;
-    return { ...product, fromMyProducts, isFromSupplierMarketplace, isSupplier };
+  const productWithContext = useMemo(() => {
+    if (!product) return product;
+    return {
+      ...product,
+      fromMyProducts,
+      isFromSupplierMarketplace,
+      isSupplier,
+    };
   }, [product, fromMyProducts, isFromSupplierMarketplace, isSupplier]);
 
   const handleClose = () => {
@@ -125,7 +154,7 @@ const ProductPageWrapper = ({ isLoggedIn }) => {
   };
   const handleGoToMarketplace = () => handleClose();
 
-  const handleAddToCart = (cartProduct) => {
+  const handleAddToCart = cartProduct => {
     let productToAdd = { ...cartProduct };
     if (!productToAdd.quantity) productToAdd.quantity = 1;
     else {
@@ -133,7 +162,8 @@ const ProductPageWrapper = ({ isLoggedIn }) => {
       if (isNaN(q) || q <= 0 || q > 15000) return;
       productToAdd.quantity = Math.max(1, Math.min(q, 15000));
     }
-    if (addToCart && productToAdd) addToCart(productToAdd, productToAdd.quantity);
+    if (addToCart && productToAdd)
+      addToCart(productToAdd, productToAdd.quantity);
   };
 
   return (
@@ -142,29 +172,33 @@ const ProductPageWrapper = ({ isLoggedIn }) => {
         {loading ? (
           // 🆕 Mostrar loading mientras carga
           <Container maxWidth="md" sx={{ py: 4 }}>
-            <Box sx={{ 
-              display: 'flex', 
-              justifyContent: 'center', 
-              alignItems: 'center', 
-              minHeight: '50vh' 
-            }}>
+            <Box
+              sx={{
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                minHeight: '50vh',
+              }}
+            >
               <Box sx={{ textAlign: 'center' }}>
                 <Typography variant="h6" color="text.secondary" sx={{ mb: 2 }}>
                   Cargando producto...
                 </Typography>
-                <Box sx={{ 
-                  width: 40, 
-                  height: 40, 
-                  border: '3px solid #f3f3f3', 
-                  borderTop: '3px solid #1976d2', 
-                  borderRadius: '50%', 
-                  animation: 'spin 1s linear infinite',
-                  mx: 'auto',
-                  '@keyframes spin': {
-                    '0%': { transform: 'rotate(0deg)' },
-                    '100%': { transform: 'rotate(360deg)' },
-                  }
-                }} />
+                <Box
+                  sx={{
+                    width: 40,
+                    height: 40,
+                    border: '3px solid #f3f3f3',
+                    borderTop: '3px solid #1976d2',
+                    borderRadius: '50%',
+                    animation: 'spin 1s linear infinite',
+                    mx: 'auto',
+                    '@keyframes spin': {
+                      '0%': { transform: 'rotate(0deg)' },
+                      '100%': { transform: 'rotate(360deg)' },
+                    },
+                  }}
+                />
               </Box>
             </Box>
           </Container>
@@ -178,8 +212,14 @@ const ProductPageWrapper = ({ isLoggedIn }) => {
               <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
                 El producto que buscas no existe o ha sido removido.
               </Typography>
-              <Button variant="contained" startIcon={<StorefrontOutlined />} onClick={handleGoToMarketplace}>
-                {fromMyProducts ? 'Volver a Mis Productos' : 'Volver al Marketplace'}
+              <Button
+                variant="contained"
+                startIcon={<StorefrontOutlined />}
+                onClick={handleGoToMarketplace}
+              >
+                {fromMyProducts
+                  ? 'Volver a Mis Productos'
+                  : 'Volver al Marketplace'}
               </Button>
             </Paper>
           </Container>

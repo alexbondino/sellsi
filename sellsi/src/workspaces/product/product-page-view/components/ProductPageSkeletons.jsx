@@ -7,8 +7,8 @@
  * marketplaces profesionales como Amazon, MercadoLibre, etc.
  */
 
-import React from 'react'
-import { Box, Card, Grid, Skeleton, Paper, Fade, Grow } from '@mui/material'
+import React from 'react';
+import { Box, Card, Grid, Skeleton, Paper, Fade, Grow } from '@mui/material';
 
 /**
  * Skeleton para la galería de imágenes
@@ -79,7 +79,7 @@ export const ProductImageGallerySkeleton = () => (
       </Box>
     </Box>
   </Fade>
-)
+);
 
 /**
  * Skeleton para la información del producto
@@ -186,7 +186,7 @@ export const ProductInfoSkeleton = () => (
       </Box>
     </Box>
   </Grow>
-)
+);
 
 /**
  * Skeleton completo para ProductPageView
@@ -220,7 +220,7 @@ export const ProductPageSkeleton = () => (
       </Grid>
     </Grid>
   </Box>
-)
+);
 
 /**
  * ============================================================================
@@ -233,7 +233,7 @@ export const ProductPageSkeleton = () => (
 
 /*
 // Ejemplo: Usar StatusChip en skeleton loaders
-import { StatusChip } from '../../../../shared/components/display/product-card'
+import { StatusChip } from '../../../../../shared/components/display/product-card'
 
 export const ProductInfoSkeletonWithStatusChip = () => (
   <Grow in={true} timeout={800}>

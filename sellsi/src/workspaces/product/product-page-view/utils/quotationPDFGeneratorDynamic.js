@@ -3,21 +3,23 @@ export const generateQuotationPDF = async ({
   product,
   quantity,
   unitPrice,
-  tiers
+  tiers,
 }) => {
   // 🔧 MODO DESARROLLO: Mostrar preview HTML en lugar de PDF
   if (import.meta.env.DEV) {
-    showHTMLPreview({ product, quantity, unitPrice, tiers })
-    return true
+    showHTMLPreview({ product, quantity, unitPrice, tiers });
+    return true;
   }
 
   // 🚀 MODO PRODUCCIÓN: Generar PDF real
   try {
     // Importación dinámica de las dependencias PDF solo cuando se necesitan
-    const { pdf } = await import('@react-pdf/renderer')
-    const { Document, Page, Text, View, StyleSheet, Image } = await import('@react-pdf/renderer')
-    const React = await import('react')
-    const { supabase } = await import('../../../services/supabase')
+    const { pdf } = await import('@react-pdf/renderer');
+    const { Document, Page, Text, View, StyleSheet, Image } = await import(
+      '@react-pdf/renderer'
+    );
+    const React = await import('react');
+    const { supabase } = await import('../../../../services/supabase');
 
     // Definir estilos - ACTUALIZADOS PARA COINCIDIR CON HTML
     const styles = StyleSheet.create({
@@ -110,209 +112,385 @@ export const generateQuotationPDF = async ({
         borderTopColor: '#eee',
         paddingTop: 10,
       },
-    })
+    });
 
     // Datos del producto
-    const productName = product?.productnm || product?.name || 'Producto'
-    const supplier = product?.proveedor || product?.supplier || 'Proveedor'
-    
+    const productName = product?.productnm || product?.name || 'Producto';
+    const supplier = product?.proveedor || product?.supplier || 'Proveedor';
+
     // Cálculos
-    const totalBruto = quantity * unitPrice
-    const iva = Math.trunc(totalBruto * 0.19) // IVA truncado sin decimales
-    const totalNeto = Math.trunc(totalBruto) - iva // Total Neto es el total bruto truncado menos el IVA truncado
-    const totalFinal = totalBruto
+    const totalBruto = quantity * unitPrice;
+    const iva = Math.trunc(totalBruto * 0.19); // IVA truncado sin decimales
+    const totalNeto = Math.trunc(totalBruto) - iva; // Total Neto es el total bruto truncado menos el IVA truncado
+    const totalFinal = totalBruto;
 
     // Obtener información del usuario actual
-    let currentUserName = 'Usuario'
+    let currentUserName = 'Usuario';
     try {
-      const { data: { user } } = await supabase.auth.getUser()
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (user) {
         const { data: profile } = await supabase
           .from('users')
           .select('user_nm')
           .eq('user_id', user.id)
-          .single()
-        currentUserName = profile?.user_nm || 'Usuario'
+          .single();
+        currentUserName = profile?.user_nm || 'Usuario';
       }
     } catch (e) {
       // Si hay error, dejar 'Usuario'
-      console.log('No se pudo obtener el nombre del usuario:', e)
+      console.log('No se pudo obtener el nombre del usuario:', e);
     }
 
     // Componente del documento PDF - ESTRUCTURA IDÉNTICA A DEV HTML
-    const QuotationDocument = () => (
-      React.createElement(Document, null,
-        React.createElement(Page, { size: 'A4', style: styles.page },
+    const QuotationDocument = () =>
+      React.createElement(
+        Document,
+        null,
+        React.createElement(
+          Page,
+          { size: 'A4', style: styles.page },
           // Header con logo (replicando estructura HTML)
-          React.createElement(View, { style: styles.header },
-            React.createElement(Image, { 
-              style: styles.logo, 
-              src: `${window.location.origin}/pdf/logopdf.jpg` 
+          React.createElement(
+            View,
+            { style: styles.header },
+            React.createElement(Image, {
+              style: styles.logo,
+              src: `${window.location.origin}/pdf/logopdf.jpg`,
             }),
-            React.createElement(View, { style: styles.headerRight },
+            React.createElement(
+              View,
+              { style: styles.headerRight },
               React.createElement(Text, { style: styles.title }, 'Cotización'),
-              React.createElement(Text, { style: styles.subtitle }, `Fecha: ${new Date().toLocaleDateString('es-CL')}`),
-              React.createElement(Text, { style: styles.subtitle }, `Proveedor: ${supplier}`)
+              React.createElement(
+                Text,
+                { style: styles.subtitle },
+                `Fecha: ${new Date().toLocaleDateString('es-CL')}`
+              ),
+              React.createElement(
+                Text,
+                { style: styles.subtitle },
+                `Proveedor: ${supplier}`
+              )
             )
           ),
 
           // Información del cliente
-          React.createElement(View, { style: { marginBottom: 8 } },
-            React.createElement(Text, { style: { fontSize: 11, color: '#000' } }, `Estimado: ${currentUserName}`)
+          React.createElement(
+            View,
+            { style: { marginBottom: 8 } },
+            React.createElement(
+              Text,
+              { style: { fontSize: 11, color: '#000' } },
+              `Estimado: ${currentUserName}`
+            )
           ),
-          React.createElement(View, { style: { marginBottom: 15 } },
-            React.createElement(Text, { style: { fontSize: 11, color: '#000' } }, 
-              'Adjuntamos cotización para el siguiente producto adjunto:')
+          React.createElement(
+            View,
+            { style: { marginBottom: 15 } },
+            React.createElement(
+              Text,
+              { style: { fontSize: 11, color: '#000' } },
+              'Adjuntamos cotización para el siguiente producto adjunto:'
+            )
           ),
 
           // Tabla de productos (replicando estructura HTML)
-          React.createElement(View, { style: styles.table },
+          React.createElement(
+            View,
+            { style: styles.table },
             // Header de tabla
-            React.createElement(View, { style: styles.tableHeader },
-              React.createElement(View, { style: [styles.tableCell, { fontWeight: 'bold' }] },
-                React.createElement(Text, { style: { fontSize: 11, fontWeight: 'bold' } }, 'Ítem')
+            React.createElement(
+              View,
+              { style: styles.tableHeader },
+              React.createElement(
+                View,
+                { style: [styles.tableCell, { fontWeight: 'bold' }] },
+                React.createElement(
+                  Text,
+                  { style: { fontSize: 11, fontWeight: 'bold' } },
+                  'Ítem'
+                )
               ),
-              React.createElement(View, { style: [styles.tableCell, { fontWeight: 'bold' }] },
-                React.createElement(Text, { style: { fontSize: 11, fontWeight: 'bold' } }, 'Cantidad')
+              React.createElement(
+                View,
+                { style: [styles.tableCell, { fontWeight: 'bold' }] },
+                React.createElement(
+                  Text,
+                  { style: { fontSize: 11, fontWeight: 'bold' } },
+                  'Cantidad'
+                )
               ),
-              React.createElement(View, { style: [styles.tableCell, { fontWeight: 'bold' }] },
-                React.createElement(Text, { style: { fontSize: 11, fontWeight: 'bold' } }, 'Precio Unitario')
+              React.createElement(
+                View,
+                { style: [styles.tableCell, { fontWeight: 'bold' }] },
+                React.createElement(
+                  Text,
+                  { style: { fontSize: 11, fontWeight: 'bold' } },
+                  'Precio Unitario'
+                )
               ),
-              React.createElement(View, { style: [styles.tableCell, { fontWeight: 'bold' }] },
-                React.createElement(Text, { style: { fontSize: 11, fontWeight: 'bold' } }, 'Total')
+              React.createElement(
+                View,
+                { style: [styles.tableCell, { fontWeight: 'bold' }] },
+                React.createElement(
+                  Text,
+                  { style: { fontSize: 11, fontWeight: 'bold' } },
+                  'Total'
+                )
               )
             ),
             // Fila de datos
-            React.createElement(View, { style: styles.tableRow },
-              React.createElement(View, { style: styles.tableCell },
-                React.createElement(Text, { style: { fontSize: 10 } }, productName)
+            React.createElement(
+              View,
+              { style: styles.tableRow },
+              React.createElement(
+                View,
+                { style: styles.tableCell },
+                React.createElement(
+                  Text,
+                  { style: { fontSize: 10 } },
+                  productName
+                )
               ),
-              React.createElement(View, { style: styles.tableCell },
-                React.createElement(Text, { style: { fontSize: 10 } }, quantity?.toLocaleString('es-CL'))
+              React.createElement(
+                View,
+                { style: styles.tableCell },
+                React.createElement(
+                  Text,
+                  { style: { fontSize: 10 } },
+                  quantity?.toLocaleString('es-CL')
+                )
               ),
-              React.createElement(View, { style: styles.tableCell },
-                React.createElement(Text, { style: { fontSize: 10 } }, `$${Math.trunc(unitPrice).toLocaleString('es-CL')}`)
+              React.createElement(
+                View,
+                { style: styles.tableCell },
+                React.createElement(
+                  Text,
+                  { style: { fontSize: 10 } },
+                  `$${Math.trunc(unitPrice).toLocaleString('es-CL')}`
+                )
               ),
-              React.createElement(View, { style: styles.tableCell },
-                React.createElement(Text, { style: { fontSize: 10 } }, `$${Math.trunc(totalBruto).toLocaleString('es-CL')}`)
+              React.createElement(
+                View,
+                { style: styles.tableCell },
+                React.createElement(
+                  Text,
+                  { style: { fontSize: 10 } },
+                  `$${Math.trunc(totalBruto).toLocaleString('es-CL')}`
+                )
               )
             )
           ),
 
           // Totales (estructura idéntica a HTML)
-          React.createElement(View, { style: styles.totalsSection },
-            React.createElement(View, { style: styles.totalRow },
-              React.createElement(Text, { style: styles.totalLabel }, 'Total Neto'),
-              React.createElement(Text, { style: styles.totalValue }, `$${totalNeto.toLocaleString('es-CL')}`)
+          React.createElement(
+            View,
+            { style: styles.totalsSection },
+            React.createElement(
+              View,
+              { style: styles.totalRow },
+              React.createElement(
+                Text,
+                { style: styles.totalLabel },
+                'Total Neto'
+              ),
+              React.createElement(
+                Text,
+                { style: styles.totalValue },
+                `$${totalNeto.toLocaleString('es-CL')}`
+              )
             ),
-            React.createElement(View, { style: styles.totalRow },
-              React.createElement(Text, { style: styles.totalLabel }, 'IVA (19%)'),
-              React.createElement(Text, { style: styles.totalValue }, `$${iva.toLocaleString('es-CL')}`)
+            React.createElement(
+              View,
+              { style: styles.totalRow },
+              React.createElement(
+                Text,
+                { style: styles.totalLabel },
+                'IVA (19%)'
+              ),
+              React.createElement(
+                Text,
+                { style: styles.totalValue },
+                `$${iva.toLocaleString('es-CL')}`
+              )
             ),
-            React.createElement(View, { style: [styles.totalRow, { borderTopWidth: 1, borderTopColor: '#000', paddingTop: 5 }] },
-              React.createElement(Text, { style: [styles.totalLabel, { fontSize: 12, fontWeight: 'bold' }] }, 'Total:'),
-              React.createElement(Text, { style: [styles.totalValue, { fontSize: 12, fontWeight: 'bold' }] }, `$${Math.trunc(totalFinal).toLocaleString('es-CL')}`)
+            React.createElement(
+              View,
+              {
+                style: [
+                  styles.totalRow,
+                  { borderTopWidth: 1, borderTopColor: '#000', paddingTop: 5 },
+                ],
+              },
+              React.createElement(
+                Text,
+                {
+                  style: [
+                    styles.totalLabel,
+                    { fontSize: 12, fontWeight: 'bold' },
+                  ],
+                },
+                'Total:'
+              ),
+              React.createElement(
+                Text,
+                {
+                  style: [
+                    styles.totalValue,
+                    { fontSize: 12, fontWeight: 'bold' },
+                  ],
+                },
+                `$${Math.trunc(totalFinal).toLocaleString('es-CL')}`
+              )
             )
           ),
 
           // Notas (idénticas a HTML - 48 horas)
-          React.createElement(View, { style: { marginTop: 15 } },
-            React.createElement(Text, { style: { fontSize: 10, color: '#000', fontStyle: 'italic', marginBottom: 3 } }, 
-              '* La presente cotización tendrá una vigencia de 48 horas, y estará sujeta a la disponibilidad del proveedor.')
+          React.createElement(
+            View,
+            { style: { marginTop: 15 } },
+            React.createElement(
+              Text,
+              {
+                style: {
+                  fontSize: 10,
+                  color: '#000',
+                  fontStyle: 'italic',
+                  marginBottom: 3,
+                },
+              },
+              '* La presente cotización tendrá una vigencia de 48 horas, y estará sujeta a la disponibilidad del proveedor.'
+            )
           ),
-          React.createElement(View, { style: { marginBottom: 30 } },
-            React.createElement(Text, { style: { fontSize: 10, color: '#000', fontStyle: 'italic' } }, 
-              '* Valores expresados en pesos chilenos (CLP).')
+          React.createElement(
+            View,
+            { style: { marginBottom: 30 } },
+            React.createElement(
+              Text,
+              { style: { fontSize: 10, color: '#000', fontStyle: 'italic' } },
+              '* Valores expresados en pesos chilenos (CLP).'
+            )
           ),
 
           // Firma (idéntica a HTML)
-          React.createElement(View, { style: { textAlign: 'right', marginTop: 30 } },
-            React.createElement(Text, { style: { fontSize: 12, color: '#000' } }, 'Atentamente,')
+          React.createElement(
+            View,
+            { style: { textAlign: 'right', marginTop: 30 } },
+            React.createElement(
+              Text,
+              { style: { fontSize: 12, color: '#000' } },
+              'Atentamente,'
+            )
           ),
-          React.createElement(View, { style: { textAlign: 'right', marginTop: 5 } },
-            React.createElement(Text, { style: { fontSize: 12, fontWeight: 'bold', color: '#2E52B2' } }, 'Equipo Sellsi')
+          React.createElement(
+            View,
+            { style: { textAlign: 'right', marginTop: 5 } },
+            React.createElement(
+              Text,
+              { style: { fontSize: 12, fontWeight: 'bold', color: '#2E52B2' } },
+              'Equipo Sellsi'
+            )
           ),
-          React.createElement(View, { style: { textAlign: 'right', marginTop: 3 } },
-            React.createElement(Text, { style: { fontSize: 10, color: '#000' } }, '+569 6310 9665')
+          React.createElement(
+            View,
+            { style: { textAlign: 'right', marginTop: 3 } },
+            React.createElement(
+              Text,
+              { style: { fontSize: 10, color: '#000' } },
+              '+569 6310 9665'
+            )
           ),
-          React.createElement(View, { style: { textAlign: 'right', marginTop: 3 } },
-            React.createElement(Text, { style: { fontSize: 10, color: '#000' } }, 'contacto@sellsi.com')
+          React.createElement(
+            View,
+            { style: { textAlign: 'right', marginTop: 3 } },
+            React.createElement(
+              Text,
+              { style: { fontSize: 10, color: '#000' } },
+              'contacto@sellsi.com'
+            )
           )
         )
-      )
-    )
+      );
 
     // Generar y descargar el PDF
-    const blob = await pdf(React.createElement(QuotationDocument)).toBlob()
-    
+    const blob = await pdf(React.createElement(QuotationDocument)).toBlob();
+
     // Crear un enlace de descarga
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = url
-    link.download = `cotizacion-${productName.replace(/\s+/g, '-').toLowerCase()}-${Date.now()}.pdf`
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-    URL.revokeObjectURL(url)
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `cotizacion-${productName
+      .replace(/\s+/g, '-')
+      .toLowerCase()}-${Date.now()}.pdf`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
 
-    console.log('PDF generado y descargado exitosamente')
-    return true
-
+    console.log('PDF generado y descargado exitosamente');
+    return true;
   } catch (error) {
-    console.error('Error generando PDF:', error)
-    
+    console.error('Error generando PDF:', error);
+
     // Si estamos en desarrollo y hay error con base64-js o módulos ES, mostrar mensaje específico
-    if (import.meta.env.DEV && (
-        error.message?.includes('base64-js') || 
+    if (
+      import.meta.env.DEV &&
+      (error.message?.includes('base64-js') ||
         error.message?.includes('does not provide an export named') ||
-        error.message?.includes('module.mjs')
-      )) {
-      alert('⚠️ Generación de PDF no disponible en desarrollo\n\nEl PDF funcionará correctamente en producción (npm run build).\n\nEsto es un problema conocido de @react-pdf/renderer en modo desarrollo con Vite.')
-      return
+        error.message?.includes('module.mjs'))
+    ) {
+      alert(
+        '⚠️ Generación de PDF no disponible en desarrollo\n\nEl PDF funcionará correctamente en producción (npm run build).\n\nEsto es un problema conocido de @react-pdf/renderer en modo desarrollo con Vite.'
+      );
+      return;
     }
-    
-    throw new Error('Error al generar la cotización PDF: ' + error.message)
+
+    throw new Error('Error al generar la cotización PDF: ' + error.message);
   }
-}
+};
 
 // 🎨 FUNCIÓN PARA PREVIEW HTML EN DESARROLLO
 const showHTMLPreview = async ({ product, quantity, unitPrice, tiers }) => {
   const getCurrentDate = () => {
-    return new Date().toLocaleDateString('es-CL')
-  }
+    return new Date().toLocaleDateString('es-CL');
+  };
 
   const calculateTotals = () => {
-    const totalBruto = quantity * unitPrice
-    const iva = Math.trunc(totalBruto * 0.19) // IVA truncado sin decimales
-    const totalNeto = Math.trunc(totalBruto) - iva // Total Neto es el total bruto truncado menos el IVA truncado
-    const totalConIva = totalBruto
-    
+    const totalBruto = quantity * unitPrice;
+    const iva = Math.trunc(totalBruto * 0.19); // IVA truncado sin decimales
+    const totalNeto = Math.trunc(totalBruto) - iva; // Total Neto es el total bruto truncado menos el IVA truncado
+    const totalConIva = totalBruto;
+
     return {
       totalBruto,
       totalNeto,
       iva,
-      totalConIva
-    }
-  }
+      totalConIva,
+    };
+  };
 
   // Obtener nombre de usuario actual
-  let currentUserName = 'Usuario'
+  let currentUserName = 'Usuario';
   try {
-    const { supabase } = await import('../../../services/supabase')
-    const { data: { user } } = await supabase.auth.getUser()
+    const { supabase } = await import('../../../../services/supabase');
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     if (user) {
       const { data: profile } = await supabase
         .from('users')
         .select('user_nm')
         .eq('user_id', user.id)
-        .single()
-      currentUserName = profile?.user_nm || 'Usuario'
+        .single();
+      currentUserName = profile?.user_nm || 'Usuario';
     }
   } catch (e) {
     // Si hay error, dejar 'Usuario'
   }
 
-  const { totalBruto, totalNeto, iva, totalConIva } = calculateTotals()
+  const { totalBruto, totalNeto, iva, totalConIva } = calculateTotals();
 
   const htmlContent = `
     <!DOCTYPE html>
@@ -320,7 +498,9 @@ const showHTMLPreview = async ({ product, quantity, unitPrice, tiers }) => {
     <head>
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>Preview Cotización - ${product?.productnm || product?.nombre || 'Producto'}</title>
+      <title>Preview Cotización - ${
+        product?.productnm || product?.nombre || 'Producto'
+      }</title>
       <style>
         /* Estilos que replican exactamente el PDF original de staging */
         * {
@@ -547,7 +727,9 @@ const showHTMLPreview = async ({ product, quantity, unitPrice, tiers }) => {
           <div class="header-right">
             <div class="quotation-title">Cotización</div>
             <div class="header-date">Fecha: ${getCurrentDate()}</div>
-            <div class="header-supplier">Proveedor: ${product?.proveedor || 'Proveedor no especificado'}</div>
+            <div class="header-supplier">Proveedor: ${
+              product?.proveedor || 'Proveedor no especificado'
+            }</div>
           </div>
         </div>
 
@@ -570,7 +752,12 @@ const showHTMLPreview = async ({ product, quantity, unitPrice, tiers }) => {
           </div>
           <div class="table-row">
             <div class="table-cell">
-              ${product?.nombre || product?.productnm || product?.name || 'Producto'}
+              ${
+                product?.nombre ||
+                product?.productnm ||
+                product?.name ||
+                'Producto'
+              }
             </div>
             <div class="table-cell">
               ${quantity?.toLocaleString('es-CL')}
@@ -596,7 +783,9 @@ const showHTMLPreview = async ({ product, quantity, unitPrice, tiers }) => {
           </div>
           <div class="total-row final-total">
             <div class="total-label">Total:</div>
-            <div class="total-value">$${Math.trunc(totalConIva).toLocaleString('es-CL')}</div>
+            <div class="total-value">$${Math.trunc(totalConIva).toLocaleString(
+              'es-CL'
+            )}</div>
           </div>
         </div>
 
@@ -616,11 +805,15 @@ const showHTMLPreview = async ({ product, quantity, unitPrice, tiers }) => {
       </div>
     </body>
     </html>
-  `
+  `;
 
   // Abrir en nueva ventana
-  const newWindow = window.open('', '_blank', 'width=800,height=900,scrollbars=yes,resizable=yes')
-  newWindow.document.write(htmlContent)
-  newWindow.document.close()
-  newWindow.focus()
-}
+  const newWindow = window.open(
+    '',
+    '_blank',
+    'width=800,height=900,scrollbars=yes,resizable=yes'
+  );
+  newWindow.document.write(htmlContent);
+  newWindow.document.close();
+  newWindow.focus();
+};
