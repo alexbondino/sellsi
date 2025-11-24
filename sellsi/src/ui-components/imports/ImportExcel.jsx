@@ -1,3 +1,22 @@
+// Mapeo de regiones numéricas a texto
+const REGION_MAP = {
+  1: 'tarapaca',
+  2: 'antofagasta',
+  3: 'atacama',
+  4: 'coquimbo',
+  5: 'valparaiso',
+  6: 'ohiggins',
+  7: 'maule',
+  8: 'biobio',
+  9: 'araucania',
+  10: 'los-lagos',
+  11: 'aysen',
+  12: 'magallanes',
+  13: 'metropolitana',
+  14: 'lagos',
+  15: 'los-rios',
+  16: 'nuble',
+};
 // Mapeo de categorías numéricas a texto
 const CATEGORY_MAP = {
   1: 'Tabaquería',
@@ -223,12 +242,14 @@ export default function ImportExcel({
         }
 
         // -------- CAPTURAR REGIONES DE ENTREGA + VALIDACIÓN ROBUSTA ----------
-        const regions = row.regions
+        let regions = row.regions
           ? String(row.regions)
               .split(';')
               .map(r => r.trim())
               .filter(Boolean)
           : [];
+        // Mapear regiones numéricas a texto si corresponde
+        regions = regions.map(r => REGION_MAP[r] || r);
         const deliveryPrices = row.delivery_prices
           ? String(row.delivery_prices)
               .split(';')
