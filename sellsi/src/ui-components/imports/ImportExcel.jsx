@@ -143,6 +143,7 @@ export default function ImportExcel({
       let hasInvalidDeliveryRegions = false;
       let hasInvalidDeliveryLengths = false;
       let hasInvalidDeliveryValues = false;
+      let hasDuplicateDeliveryRegions = false; // NUEVO: regiones repetidas por fila
 
       // Verificar si existe la columna "category"
       const firstRow = json[0];
@@ -300,6 +301,15 @@ export default function ImportExcel({
           validatedRegions.push(REGION_MAP[num]);
         });
 
+        // 🔹 NUEVO: validar que no haya regiones repetidas en la misma fila
+        if (validatedRegions.length > 0) {
+          const uniqueRegions = new Set(validatedRegions);
+          if (uniqueRegions.size !== validatedRegions.length) {
+            hasDuplicateDeliveryRegions = true;
+            rowHasRegionError = true;
+          }
+        }
+
         // Si había valores en delivery_regions pero ninguna región válida
         if (deliveryRegionsRaw.length > 0 && validatedRegions.length === 0) {
           hasInvalidDeliveryRegions = true;
@@ -426,6 +436,11 @@ export default function ImportExcel({
       if (hasInvalidDeliveryValues) {
         genericErrors.push(
           'Hay filas donde "delivery_prices" o "delivery_days" contienen valores inválidos. Los precios deben ser numéricos mayores o iguales a 0 y los días deben ser enteros positivos.'
+        );
+      }
+      if (hasDuplicateDeliveryRegions) {
+        genericErrors.push(
+          'Hay filas donde "delivery_regions" contiene regiones repetidas. Cada región de entrega solo puede aparecer una vez por producto.'
         );
       }
 
