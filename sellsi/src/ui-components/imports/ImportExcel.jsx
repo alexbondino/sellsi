@@ -69,7 +69,7 @@ export default function ImportExcel({
 }) {
   const inputRef = useRef();
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState(null); // se usa para tenerlo interno, pero se muestra arriba en el padre
   const [success, setSuccess] = useState(false);
 
   const reportError = msg => {
@@ -106,6 +106,9 @@ export default function ImportExcel({
       let hasNonIntegerCategory = false;
       let hasUnknownCategory = false;
 
+      // 🔹 Flag para errores genéricos en numéricos positivos
+      let hasInvalidNumericField = false;
+
       // Verificar si existe la columna "category" en el archivo
       const firstRow = json[0];
       const hasCategoryColumn = Object.prototype.hasOwnProperty.call(
@@ -138,6 +141,35 @@ export default function ImportExcel({
             hasUnknownCategory = true;
           }
         }
+
+        // ✅ Validación de numéricos positivos:
+        // productqty, price, minimum_purchase
+        const numericFields = ['productqty', 'price', 'minimum_purchase'];
+
+        numericFields.forEach(fieldName => {
+          const val = row[fieldName];
+
+          // Consideramos cualquier cosa que no sea entero > 0 como inválida
+          if (val === undefined || val === null || val === '') {
+            hasInvalidNumericField = true;
+            return;
+          }
+
+          if (typeof val !== 'number') {
+            hasInvalidNumericField = true;
+            return;
+          }
+
+          if (!Number.isInteger(val)) {
+            hasInvalidNumericField = true;
+            return;
+          }
+
+          if (val <= 0) {
+            hasInvalidNumericField = true;
+            return;
+          }
+        });
 
         const obj = {};
 
@@ -192,7 +224,7 @@ export default function ImportExcel({
         mapped.push(obj);
       });
 
-      // ⛔ Construimos mensajes genéricos si hay problemas con category
+      // ⛔ Construimos mensajes genéricos si hay problemas con category o numéricos
       const genericErrors = [];
 
       if (missingCategoryColumn) {
@@ -216,7 +248,13 @@ export default function ImportExcel({
         );
       }
 
-      // Si hay cualquier error de categoría → no insertamos nada
+      if (hasInvalidNumericField) {
+        genericErrors.push(
+          'Las columnas "productqty", "price" y "minimum_purchase" deben contener solo números enteros positivos (por ejemplo: 1, 2, 3), sin texto, decimales ni valores menores o iguales a 0.'
+        );
+      }
+
+      // Si hay cualquier error de validación → no insertamos nada
       if (genericErrors.length > 0) {
         reportError(genericErrors.join('\n'));
         return;

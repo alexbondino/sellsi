@@ -12,7 +12,7 @@ const PRODUCT_IMPORT_FIELDS = [
   },
   {
     key: 'category',
-    label: 'Texto',
+    label: 'Número Entero',
     description: (
       <>
         Categoría a la que pertenece el producto.{' '}
@@ -123,7 +123,6 @@ const MassiveProductImport = ({ open, onClose, onSuccess }) => {
         sx={{
           color: 'text.secondary',
           fontSize: 16,
-          maxWidth: 500,
           mx: 'auto',
           mt: 2,
         }}
