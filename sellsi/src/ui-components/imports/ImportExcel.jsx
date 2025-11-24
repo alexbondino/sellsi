@@ -69,7 +69,6 @@ export default function ImportExcel({
 }) {
   const inputRef = useRef();
   const [loading, setLoading] = useState(false);
-  // Mantengo error/success interno por si los quisieras reutilizar luego
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
 
@@ -99,14 +98,30 @@ export default function ImportExcel({
 
       const mapped = [];
       const imagesByProduct = {}; // productId -> [urls]
-      const rowErrors = [];
+
+      // 🔹 Flags para errores genéricos de category
+      let missingCategoryColumn = false;
+      let hasEmptyCategory = false;
+      let hasNonNumberCategory = false;
+      let hasNonIntegerCategory = false;
+      let hasUnknownCategory = false;
+
+      // Verificar si existe la columna "category" en el archivo
+      const firstRow = json[0];
+      const hasCategoryColumn = Object.prototype.hasOwnProperty.call(
+        firstRow,
+        'category'
+      );
+      if (!hasCategoryColumn) {
+        missingCategoryColumn = true;
+      }
 
       // 1) Recorremos cada fila del Excel y construimos los productos
       json.forEach((row, index) => {
         const excelRowNumber = index + 2; // Fila real (1 = header)
 
-        // ✅ Validación estricta de category (si viene en el Excel)
-        if ('category' in row) {
+        // ✅ Validación de category SOLO si la columna existe
+        if (hasCategoryColumn) {
           const rawCategory = row.category;
 
           if (
@@ -114,21 +129,13 @@ export default function ImportExcel({
             rawCategory === null ||
             rawCategory === ''
           ) {
-            rowErrors.push(
-              `Fila ${excelRowNumber}: la columna "category" es obligatoria y no puede estar vacía.`
-            );
+            hasEmptyCategory = true;
           } else if (typeof rawCategory !== 'number') {
-            rowErrors.push(
-              `Fila ${excelRowNumber}: la columna "category" debe ser un número entero (no texto). Valor recibido: "${rawCategory}".`
-            );
+            hasNonNumberCategory = true;
           } else if (!Number.isInteger(rawCategory)) {
-            rowErrors.push(
-              `Fila ${excelRowNumber}: la columna "category" debe ser un número entero. Valor recibido: ${rawCategory}.`
-            );
+            hasNonIntegerCategory = true;
           } else if (!CATEGORY_MAP[String(rawCategory)]) {
-            rowErrors.push(
-              `Fila ${excelRowNumber}: la categoría "${rawCategory}" no existe en el diccionario de categorías.`
-            );
+            hasUnknownCategory = true;
           }
         }
 
@@ -147,6 +154,7 @@ export default function ImportExcel({
 
           if (f === 'category') {
             const val = row[f];
+            // Si el valor es válido y existe en el mapa, lo convertimos a texto
             if (val && CATEGORY_MAP[String(val)]) {
               obj[f] = CATEGORY_MAP[String(val)];
             } else {
@@ -184,9 +192,33 @@ export default function ImportExcel({
         mapped.push(obj);
       });
 
-      // ⛔ Si hubo errores de categorías, no insertamos nada
-      if (rowErrors.length > 0) {
-        reportError(rowErrors.join('\n'));
+      // ⛔ Construimos mensajes genéricos si hay problemas con category
+      const genericErrors = [];
+
+      if (missingCategoryColumn) {
+        genericErrors.push(
+          'El archivo no contiene la columna obligatoria "category".'
+        );
+      }
+      if (hasEmptyCategory) {
+        genericErrors.push(
+          'La columna "category" tiene filas vacías y es obligatoria en todas las filas.'
+        );
+      }
+      if (hasNonNumberCategory || hasNonIntegerCategory) {
+        genericErrors.push(
+          'La columna "category" debe contener solo números enteros (por ejemplo: 1, 2, 3) sin texto ni decimales.'
+        );
+      }
+      if (hasUnknownCategory) {
+        genericErrors.push(
+          'La columna "category" contiene valores que no pertenecen a ninguna categoría válida. Revisa el diccionario de categorías.'
+        );
+      }
+
+      // Si hay cualquier error de categoría → no insertamos nada
+      if (genericErrors.length > 0) {
+        reportError(genericErrors.join('\n'));
         return;
       }
 
@@ -291,7 +323,7 @@ export default function ImportExcel({
           onChange={handleFile}
         />
       </Button>
-      {/* 👇 ya no mostramos Alert acá, el error vive en MassiveProductImport */}
+      {/* El error se muestra en MassiveProductImport debajo de los botones */}
     </Box>
   );
 }
