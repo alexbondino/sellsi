@@ -48,7 +48,7 @@ import {
 } from '../../../../shared/components/validation';
 
 // 🆕 Massive import
-import MassiveProductImport from '../components/MassiveProductImport';
+import MassiveProductImport from '../../create-product/components/MassiveProductImport';
 
 // Error Boundaries
 import { SupplierErrorBoundary } from '../../error-boundary';
