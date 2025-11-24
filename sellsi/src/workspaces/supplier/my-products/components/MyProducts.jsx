@@ -40,11 +40,15 @@ import {
 
 // Components
 import ProductCard from '../../../../shared/components/display/product-card/ProductCard';
-import { Modal, MODAL_TYPES } from '../../../../shared/components/feedback'; // <--- Importación del nuevo componente Modal
+import { Modal, MODAL_TYPES } from '../../../../shared/components/feedback';
+import BigModal from '../../../../shared/components/modals/BigModal/BigModal';
 import {
   TransferInfoValidationModal,
   useTransferInfoModal,
-} from '../../../../shared/components/validation'; // Modal de validación bancaria
+} from '../../../../shared/components/validation';
+
+// 🆕 Massive import
+import MassiveProductImport from '../../create-product/components/MassiveProductImport';
 
 // Error Boundaries
 import { SupplierErrorBoundary } from '../../error-boundary';
@@ -85,7 +89,7 @@ const SORT_OPTIONS = [
   { value: 'precio', label: 'Precio: menor a mayor' },
   { value: 'stock', label: 'Stock disponible' },
   { value: 'ventas', label: 'Más vendidos' },
-  { value: 'pausedStatus', label: 'Pausados/Inactivos' }, // 🆕 Inactivos (pausados) primero A-Z, luego activos A-Z
+  { value: 'pausedStatus', label: 'Pausados/Inactivos' },
 ];
 
 const MyProducts = () => {
@@ -93,7 +97,6 @@ const MyProducts = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const navigate = useNavigate();
 
-  // Obtener el user_id real del usuario autenticado (asumiendo que está en localStorage)
   const supplierId = localStorage.getItem('user_id');
 
   const {
@@ -118,7 +121,6 @@ const MyProducts = () => {
 
   const didInitLoadRef = useRef(false);
 
-  // Advanced lazy loading hooks
   const {
     displayedProducts,
     isLoadingMore,
@@ -132,21 +134,21 @@ const MyProducts = () => {
 
   const { triggerAnimation } = useProductAnimations(displayedProducts.length);
 
-  // Estado local para el modal de eliminación
   const [deleteModal, setDeleteModal] = useState({
-    isOpen: false, // <--- Cambiado de 'open' a 'isOpen'
+    isOpen: false,
     product: null,
     loading: false,
   });
 
-  // Modal para pausar producto
   const [pauseModal, setPauseModal] = useState({
     isOpen: false,
     product: null,
     loading: false,
   });
 
-  // Hook para validación de información bancaria (reemplaza estado manual)
+  // 🆕 Estado para modal de Massive Import
+  const [massiveImportOpen, setMassiveImportOpen] = useState(false);
+
   const {
     checkAndProceed,
     handleRegisterAccount,
@@ -156,10 +158,8 @@ const MyProducts = () => {
     missingFieldLabels,
   } = useTransferInfoModal();
 
-  // Estado para el botón de scroll to top
   const [showScrollTop, setShowScrollTop] = useState(false);
 
-  // Manejar el scroll para el botón de ir arriba
   useEffect(() => {
     const handleScroll = () => {
       setShowScrollTop(window.pageYOffset > 400);
@@ -169,10 +169,8 @@ const MyProducts = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Cargar productos al montar el componente o cuando cambia el supplierId
   useEffect(() => {
     if (!supplierId) return;
-    // Reset guard if supplierId changed (different supplier should re-trigger)
     if (
       !didInitLoadRef.current &&
       !loading &&
@@ -183,23 +181,20 @@ const MyProducts = () => {
     }
   }, [supplierId, loadProducts, uiProducts?.length, loading]);
 
-  // Reset the init guard when supplierId changes so a new supplier can attempt load again
   useEffect(() => {
     didInitLoadRef.current = false;
   }, [supplierId]);
 
-  // Disparar animaciones cuando se muestran nuevos productos
   useEffect(() => {
     if (displayedProducts.length > 0 && !loading) {
       triggerAnimation(0);
     }
   }, [displayedProducts.length, loading, triggerAnimation]);
 
-  // NUEVO: Monitorear eventos de imágenes procesadas en background
   useEffect(() => {
     const handleImagesReady = event => {
       const { productId, imageCount } = event.detail;
-      // Evento de imágenes procesadas: mantener silencio por UX (sin logs innecesarios)
+      // silencio UX
     };
 
     window.addEventListener('productImagesReady', handleImagesReady);
@@ -211,11 +206,18 @@ const MyProducts = () => {
 
   // --- Handlers ---
   const handleAddProduct = () => {
-    // Usar el hook de validación que maneja automáticamente el modal
     checkAndProceed('/supplier/addproduct');
   };
 
-  // Prefetch AddProduct chunk when the Add button is near viewport (400px)
+  // Botón Importar Excel -> abre modal MassiveProductImport
+  const handleOpenMassiveImport = () => {
+    setMassiveImportOpen(true);
+  };
+
+  const handleCloseMassiveImport = () => {
+    setMassiveImportOpen(false);
+  };
+
   useEffect(() => {
     const selector = '[data-prefetch="add-product-btn"]';
     const el = document.querySelector(selector);
@@ -234,13 +236,12 @@ const MyProducts = () => {
   }, []);
 
   const handleEditProduct = product => {
-    // Para editar también verificar la información bancaria
     checkAndProceed(`/supplier/addproduct?edit=${product.id}`);
   };
 
   const handleDeleteProduct = product => {
     setDeleteModal({
-      isOpen: true, // <--- Cambiado de 'open' a 'isOpen'
+      isOpen: true,
       product,
       loading: false,
     });
@@ -257,24 +258,21 @@ const MyProducts = () => {
         `${deleteModal.product.nombre} eliminado correctamente`,
         '🗑️'
       );
-      setDeleteModal({ isOpen: false, product: null, loading: false }); // <--- Cambiado de 'open' a 'isOpen'
+      setDeleteModal({ isOpen: false, product: null, loading: false });
     } catch (error) {
       showProductError(error.message || 'Error al eliminar el producto');
       setDeleteModal(prev => ({ ...prev, loading: false }));
     }
   };
 
-  // Abrir modal de pausa
   const handlePauseProduct = product => {
     setPauseModal({ isOpen: true, product, loading: false });
   };
 
-  // Confirmar pausa del producto (toggle is_active=false)
   const confirmPause = async () => {
     if (!pauseModal.product) return;
     setPauseModal(prev => ({ ...prev, loading: true }));
     try {
-      // toggle: si está activo lo pausamos, si está pausado lo reactivamos
       const newActive = !(pauseModal.product.activo === true);
       await updateProduct(pauseModal.product.id, { is_active: newActive });
       showProductSuccess(
@@ -293,12 +291,12 @@ const MyProducts = () => {
   const handleSortChange = event => {
     const newSortBy = event.target.value;
     setSorting(newSortBy, sortOrder);
-    scrollToTop(); // Desplazamiento suave hacia arriba cuando cambia la ordenación
+    scrollToTop();
   };
 
   const handleClearFilters = () => {
     clearFilters();
-    scrollToTop(); // Desplazamiento suave hacia arriba al limpiar filtros
+    scrollToTop();
     showSuccessToast('Filtros limpiados', { icon: '🧹' });
   };
 
@@ -357,21 +355,43 @@ const MyProducts = () => {
                   </Typography>
                 </Box>
 
-                <Button
-                  variant="contained"
-                  size="large"
-                  startIcon={<AddIcon />}
-                  onClick={handleAddProduct}
-                  data-prefetch="add-product-btn"
+                {/* Acciones: Agregar + Importar Excel (abre modal) */}
+                <Box
                   sx={{
-                    borderRadius: 2,
-                    textTransform: 'none',
-                    fontWeight: 600,
-                    px: 3,
+                    display: 'flex',
+                    flexDirection: { xs: 'column', sm: 'row' },
+                    gap: 1,
                   }}
                 >
-                  Agregar Producto
-                </Button>
+                  <Button
+                    variant="contained"
+                    size="large"
+                    startIcon={<AddIcon />}
+                    onClick={handleAddProduct}
+                    data-prefetch="add-product-btn"
+                    sx={{
+                      borderRadius: 2,
+                      textTransform: 'none',
+                      fontWeight: 600,
+                      px: 3,
+                    }}
+                  >
+                    Agregar Producto
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    size="large"
+                    onClick={handleOpenMassiveImport}
+                    sx={{
+                      borderRadius: 2,
+                      textTransform: 'none',
+                      fontWeight: 'bold',
+                      px: 3,
+                    }}
+                  >
+                    Importar Excel
+                  </Button>
+                </Box>
               </Box>
 
               {/* Estadísticas del inventario */}
@@ -398,11 +418,10 @@ const MyProducts = () => {
                     </Typography>
                   </Box>
 
-                  {/* 🔹 AQUÍ CAMBIA: centramos el grid de métricas */}
                   <Box
                     sx={{
                       p: 0,
-                      mx: 'auto', // centra el bloque de métricas dentro del Paper
+                      mx: 'auto',
                     }}
                   >
                     <Grid container columns={12} justifyContent="center">
@@ -455,7 +474,6 @@ const MyProducts = () => {
                           <Box
                             sx={{
                               display: 'flex',
-
                               gap: 1.5,
                             }}
                           >
@@ -500,7 +518,6 @@ const MyProducts = () => {
                             />
                             <Box>
                               <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                                {/* 🆕 MOSTRAR RANGO: Valor mínimo - máximo */}
                                 {stats.inventoryRange &&
                                 stats.inventoryRange.min !==
                                   stats.inventoryRange.max
@@ -527,7 +544,6 @@ const MyProducts = () => {
                         </Box>
                       </Grid>
 
-                      {/* DEBUG: Mostrar datos de rango cuando hay tramos (eliminar luego) */}
                       {process.env.NODE_ENV === 'development' &&
                         stats.hasTieredProducts && (
                           <Grid item xs={12}>
@@ -556,7 +572,6 @@ const MyProducts = () => {
             {/* Filtros y búsqueda */}
             <Paper sx={{ p: 3, mb: 3 }}>
               <Grid container columns={12} spacing={2} alignItems="center">
-                {/* Búsqueda */}
                 <Grid item xs={12} sm={6} md={4}>
                   <TextField
                     fullWidth
@@ -576,7 +591,6 @@ const MyProducts = () => {
                   />
                 </Grid>
 
-                {/* Filtro por categoría */}
                 <Grid item xs={12} sm={6} md={3}>
                   <FormControl fullWidth>
                     <InputLabel>Categoría</InputLabel>
@@ -601,7 +615,6 @@ const MyProducts = () => {
                   </FormControl>
                 </Grid>
 
-                {/* Ordenamiento */}
                 <Grid item xs={12} sm={6} md={3}>
                   <FormControl fullWidth>
                     <InputLabel>Ordenar por</InputLabel>
@@ -625,7 +638,6 @@ const MyProducts = () => {
                   </FormControl>
                 </Grid>
 
-                {/* Acciones */}
                 <Grid item xs={12} sm={6} md={2}>
                   <Stack direction="row" spacing={1}>
                     <Button
@@ -639,7 +651,6 @@ const MyProducts = () => {
                 </Grid>
               </Grid>
 
-              {/* Filtros activos */}
               {(searchTerm || categoryFilter !== 'all') && (
                 <Box sx={{ mt: 2, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
                   {searchTerm && (
@@ -694,7 +705,6 @@ const MyProducts = () => {
                 />
               </Box>
 
-              {/* Advanced Loading States */}
               {loading ? (
                 <InitialLoadingState />
               ) : uiProducts.length === 0 ? (
@@ -714,7 +724,6 @@ const MyProducts = () => {
                 </Grid>
               ) : (
                 <>
-                  {/* Product Grid Traditional (sin virtualización por ahora) */}
                   <Box
                     sx={{
                       display: 'grid',
@@ -742,7 +751,7 @@ const MyProducts = () => {
                             type="supplier"
                             onEdit={handleEditProduct}
                             onDelete={handleDeleteProduct}
-                            onViewStats={handlePauseProduct} // reutilizamos prop existente para acción de pausa
+                            onViewStats={handlePauseProduct}
                             isDeleting={operationStates.deleting?.[product.id]}
                             isUpdating={operationStates.updating?.[product.id]}
                             isProcessing={
@@ -755,14 +764,12 @@ const MyProducts = () => {
                     ))}
                   </Box>
 
-                  {/* Infinite Scroll Loading Trigger */}
                   {hasMore && (
                     <Box ref={loadingTriggerRef} sx={{ mt: 2 }}>
                       <LoadMoreState show={isLoadingMore} />
                     </Box>
                   )}
 
-                  {/* Scroll Progress Indicator */}
                   {totalCount > 12 && (
                     <ScrollProgress
                       progress={progress}
@@ -774,7 +781,6 @@ const MyProducts = () => {
               )}
             </Box>
 
-            {/* FAB para móvil */}
             {isMobile && (
               <Fab
                 color="primary"
@@ -790,7 +796,6 @@ const MyProducts = () => {
               </Fab>
             )}
 
-            {/* Scroll to Top FAB */}
             <Grow in={showScrollTop}>
               <Fab
                 color="secondary"
@@ -817,24 +822,23 @@ const MyProducts = () => {
           </Container>
         </Box>
 
-        {/* Modal de confirmación de eliminación - Ahora usando el componente Modal unificado */}
+        {/* Modal eliminar */}
         <Modal
-          isOpen={deleteModal.isOpen} // Usamos 'isOpen' para el estado del modal
+          isOpen={deleteModal.isOpen}
           onClose={() =>
             setDeleteModal({ isOpen: false, product: null, loading: false })
           }
-          onSubmit={confirmDelete} // Usamos 'onSubmit' para la acción de confirmar
+          onSubmit={confirmDelete}
           type={MODAL_TYPES.DELETE}
           title="Eliminar producto"
           loading={deleteModal.loading}
         >
-          {/* El mensaje ahora es children del componente Modal */}
           {deleteModal.product
             ? `¿Estás seguro de que deseas eliminar "${deleteModal.product.nombre}"? Esta acción no se puede deshacer.`
             : ''}
         </Modal>
 
-        {/* Modal de pausar / reactivar producto */}
+        {/* Modal pausar / reactivar */}
         <Modal
           isOpen={pauseModal.isOpen}
           onClose={() =>
@@ -857,7 +861,28 @@ const MyProducts = () => {
               : `¿Deseas reactivar "${pauseModal.product.nombre}"? Volverá a mostrarse en el Marketplace.`)}
         </Modal>
 
-        {/* Modal de validación de información bancaria */}
+        {/* 🆕 Modal de Massive Import (ahora usando BigModal) */}
+        <BigModal
+          isOpen={massiveImportOpen}
+          onClose={handleCloseMassiveImport}
+          title="Importar productos desde Excel"
+        >
+          <MassiveProductImport
+            open={massiveImportOpen}
+            onClose={handleCloseMassiveImport}
+            onSuccess={() => {
+              showSuccessToast('Productos importados correctamente', {
+                icon: '📥',
+              });
+              handleCloseMassiveImport();
+              if (supplierId) {
+                loadProducts(supplierId);
+              }
+            }}
+          />
+        </BigModal>
+
+        {/* Modal validación bancaria */}
         <TransferInfoValidationModal
           isOpen={transferModalOpen}
           onClose={handleCloseTransferModal}

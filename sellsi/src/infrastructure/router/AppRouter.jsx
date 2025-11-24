@@ -1,4 +1,10 @@
 import React, { Suspense } from 'react';
+const CategoryDictionary = React.lazy(() =>
+  import('../../ui-components/imports/CategoryDictionary')
+);
+const RegionDictionary = React.lazy(() =>
+  import('../../ui-components/imports/RegionDictionary')
+);
 import { Routes, Route, Navigate, useParams } from 'react-router-dom';
 import SuspenseLoader from '../../shared/components/layout/SuspenseLoader';
 // Import interno directo para evitar que PrivateRoute forme parte del contrato público de auth
@@ -74,7 +80,7 @@ const ProviderCatalog = React.lazy(() =>
   import('../../domains/marketplace/pages/ProviderCatalog')
 );
 const ProductPageWrapper = React.lazy(() =>
-  import('../../domains/ProductPageView/ProductPageWrapper')
+  import('../../workspaces/product/product-page-view/ProductPageWrapper')
 );
 
 // 📦 AUTH & ONBOARDING - LAZY LOADING
@@ -148,6 +154,15 @@ export const AppRouter = ({ scrollTargets }) => {
   return (
     <Suspense fallback={<SuspenseLoader />}>
       <Routes>
+        {/* Diccionario de categorías (pública) */}
+        <Route
+          path="/ui-components/imports/category-dictionary"
+          element={<CategoryDictionary />}
+        />
+        <Route
+          path="/ui-components/imports/region-dictionary"
+          element={<RegionDictionary />}
+        />
         {/* Rutas Públicas / Generales */}
         <Route path="/" element={<Home scrollTargets={scrollTargets} />} />
         <Route path="/marketplace" element={<Marketplace />} />

@@ -8,7 +8,7 @@ import {
 } from '@testing-library/react';
 import { ThemeProvider } from '@mui/material/styles';
 import { BrowserRouter } from 'react-router-dom';
-import OfferModal from '../../domains/ProductPageView/components/OfferModal';
+import OfferModal from '../../workspaces/product/product-page-view/components/OfferModal';
 import { BuyerOffers, OffersList } from '../../workspaces/buyer/my-offers';
 import SupplierOffers from '../../workspaces/supplier/my-offers/components/SupplierOffers';
 import SupplierOffersList from '../../workspaces/supplier/my-offers/components/SupplierOffersList';
