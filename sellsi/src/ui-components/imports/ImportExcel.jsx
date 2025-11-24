@@ -17,6 +17,7 @@ const REGION_MAP = {
   15: 'arica-parinacota',
   16: 'nuble',
 };
+
 // Mapeo de categorías numéricas a texto
 const CATEGORY_MAP = {
   1: 'Tabaquería',
@@ -130,7 +131,7 @@ export default function ImportExcel({
       const imagesByProduct = {}; // productId -> [urls]
       const deliveryByProduct = {}; // productId -> [{ region, price, delivery_days }]
 
-      // 🔹 Flags de validación
+      // 🔹 Flags de validación generales
       let missingCategoryColumn = false;
       let hasEmptyCategory = false;
       let hasNonNumberCategory = false;
@@ -138,8 +139,10 @@ export default function ImportExcel({
       let hasUnknownCategory = false;
       let hasInvalidNumericField = false;
 
-      let hasInvalidDelivery = false;
-      const deliveryValidationMessages = [];
+      // 🔹 Flags específicos para envío
+      let hasInvalidDeliveryRegions = false;
+      let hasInvalidDeliveryLengths = false;
+      let hasInvalidDeliveryValues = false;
 
       // Verificar si existe la columna "category"
       const firstRow = json[0];
@@ -153,6 +156,8 @@ export default function ImportExcel({
 
       // 1) Recorrer filas
       json.forEach((row, rowIndex) => {
+        const rowNumber = rowIndex + 2; // considerando encabezado en fila 1
+
         // -------- VALIDACIÓN CATEGORY ----------
         if (hasCategoryColumn) {
           const raw = row.category;
@@ -242,33 +247,76 @@ export default function ImportExcel({
         }
 
         // -------- CAPTURAR REGIONES DE ENTREGA + VALIDACIÓN ROBUSTA ----------
-        let regions = row.regions
+
+        // Listas crudas desde el Excel, separadas por ";"
+        const regionsRaw = row.regions
           ? String(row.regions)
               .split(';')
               .map(r => r.trim())
               .filter(Boolean)
           : [];
-        // Mapear regiones numéricas a texto si corresponde
-        regions = regions.map(r => REGION_MAP[r] || r);
-        const deliveryPrices = row.delivery_prices
+        const deliveryPricesRaw = row.delivery_prices
           ? String(row.delivery_prices)
               .split(';')
               .map(p => p.trim())
               .filter(Boolean)
           : [];
-        const deliveryDays = row.delivery_days
+        const deliveryDaysRaw = row.delivery_days
           ? String(row.delivery_days)
               .split(';')
               .map(d => d.trim())
               .filter(Boolean)
           : [];
 
+        // Validar y mapear regiones numéricas a texto
+        const validatedRegions = [];
+        let rowHasRegionError = false;
+
+        regionsRaw.forEach(value => {
+          // debe ser número entero válido
+          if (isNaN(value)) {
+            rowHasRegionError = true;
+            hasInvalidDeliveryRegions = true;
+            return;
+          }
+
+          const num = Number(value);
+
+          if (!Number.isInteger(num)) {
+            rowHasRegionError = true;
+            hasInvalidDeliveryRegions = true;
+            return;
+          }
+
+          if (!REGION_MAP[num]) {
+            rowHasRegionError = true;
+            hasInvalidDeliveryRegions = true;
+            return;
+          }
+
+          validatedRegions.push(REGION_MAP[num]);
+        });
+
+        // Si había regiones pero ninguna válida → solo marcamos problema de regiones
+        if (regionsRaw.length > 0 && validatedRegions.length === 0) {
+          hasInvalidDeliveryRegions = true;
+          // No seguimos validando longitudes/valores para esta fila, porque ya está mal en regiones
+          mapped.push(obj);
+          return;
+        }
+
+        const regions = validatedRegions;
+        const deliveryPrices = deliveryPricesRaw;
+        const deliveryDays = deliveryDaysRaw;
+
+        // Si hay algún dato de envío en la fila, validamos coherencia y tipos
         if (
-          regions.length > 0 ||
-          deliveryPrices.length > 0 ||
-          deliveryDays.length > 0
+          !rowHasRegionError &&
+          (regions.length > 0 ||
+            deliveryPrices.length > 0 ||
+            deliveryDays.length > 0)
         ) {
-          // Si hay algún dato, todos deben estar completos y alineados
+          // Longitudes deben coincidir y no estar vacías
           if (
             regions.length === 0 ||
             deliveryPrices.length === 0 ||
@@ -276,40 +324,30 @@ export default function ImportExcel({
             regions.length !== deliveryPrices.length ||
             regions.length !== deliveryDays.length
           ) {
-            hasInvalidDelivery = true;
-            deliveryValidationMessages.push(
-              `Fila ${
-                rowIndex + 2
-              }: "regions", "delivery_prices" y "delivery_days" deben tener la misma cantidad de valores (y no estar vacíos).`
-            );
+            hasInvalidDeliveryLengths = true;
+            // No intentamos crear deliveries si ya hay error de longitudes
           } else {
             const deliveries = [];
+            let rowHasValueError = false;
 
-            regions.forEach((region, idx) => {
-              const rawPrice = deliveryPrices[idx];
-              const rawDays = deliveryDays[idx];
+            for (let i = 0; i < regions.length; i++) {
+              const region = regions[i];
+              const rawPrice = deliveryPrices[i];
+              const rawDays = deliveryDays[i];
 
               const priceNum = Number(rawPrice);
               const daysNum = Number(rawDays);
 
               if (!Number.isFinite(priceNum) || priceNum < 0) {
-                hasInvalidDelivery = true;
-                deliveryValidationMessages.push(
-                  `Fila ${
-                    rowIndex + 2
-                  }: el precio de entrega "${rawPrice}" para la región "${region}" no es un número válido ≥ 0.`
-                );
-                return;
+                rowHasValueError = true;
+                hasInvalidDeliveryValues = true;
+                break;
               }
 
               if (!Number.isInteger(daysNum) || daysNum <= 0) {
-                hasInvalidDelivery = true;
-                deliveryValidationMessages.push(
-                  `Fila ${
-                    rowIndex + 2
-                  }: los días de entrega "${rawDays}" para la región "${region}" deben ser un entero positivo.`
-                );
-                return;
+                rowHasValueError = true;
+                hasInvalidDeliveryValues = true;
+                break;
               }
 
               deliveries.push({
@@ -317,13 +355,15 @@ export default function ImportExcel({
                 price: priceNum,
                 delivery_days: daysNum,
               });
-            });
+            }
 
-            if (deliveries.length > 0) {
+            if (!rowHasValueError && deliveries.length > 0) {
               deliveryByProduct[productId] = deliveries;
             }
           }
         }
+
+        // -------- FIN REGIONES / ENVÍO --------
 
         mapped.push(obj);
       });
@@ -369,13 +409,22 @@ export default function ImportExcel({
           'Las columnas "productqty", "price" y "minimum_purchase" deben contener solo números enteros positivos (ej: 1, 2, 3), sin texto ni decimales.'
         );
       }
-      if (hasInvalidDelivery) {
+
+      // 🔹 Mensajes genéricos de envío
+      if (hasInvalidDeliveryRegions) {
         genericErrors.push(
-          'Hay problemas en las columnas de entrega ("regions", "delivery_prices", "delivery_days").'
+          'Hay problemas en las regiones de entrega. Asegúrate de que la columna "regions" use solo números de región válidos (1–16), separados por ";".'
         );
-        if (deliveryValidationMessages.length > 0) {
-          genericErrors.push(deliveryValidationMessages.join('\n'));
-        }
+      }
+      if (hasInvalidDeliveryLengths) {
+        genericErrors.push(
+          'Hay filas donde "regions", "delivery_prices" y "delivery_days" no tienen la misma cantidad de valores. Todas las listas deben estar completas y alineadas.'
+        );
+      }
+      if (hasInvalidDeliveryValues) {
+        genericErrors.push(
+          'Hay filas donde "delivery_prices" o "delivery_days" contienen valores inválidos. Los precios deben ser numéricos mayores o iguales a 0 y los días deben ser enteros positivos.'
+        );
       }
 
       if (genericErrors.length > 0) {
