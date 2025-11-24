@@ -13,8 +13,8 @@ const REGION_MAP = {
   11: 'aysen',
   12: 'magallanes',
   13: 'metropolitana',
-  14: 'lagos',
-  15: 'los-rios',
+  14: 'los-rios',
+  15: 'arica-parinacota',
   16: 'nuble',
 };
 // Mapeo de categorías numéricas a texto
