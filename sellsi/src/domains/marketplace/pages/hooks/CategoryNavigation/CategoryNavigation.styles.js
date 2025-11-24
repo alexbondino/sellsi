@@ -53,6 +53,10 @@ export const categoryNavigationStyles = {
     py: 1,
     borderRadius: 2,
     position: 'relative',
+    outline: 'none',
+    '&:focus': {
+      outline: 'none',
+    },
     '&:hover': {
       bgcolor: 'rgba(25, 118, 210, 0.08)',
       color: 'primary.main',

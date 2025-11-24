@@ -22,7 +22,7 @@ const useDebounce = (value, delay) => {
 export const useMarketplaceState = () => {
   const { products, loading, error, getPriceTiers, registerProductNode } = useProducts()
   const [seccionActiva, setSeccionActiva] = useState('todos')
-  const [categoriaSeleccionada, setCategoriaSeleccionada] = useState(['Todas'])
+  const [categoriaSeleccionada, setCategoriaSeleccionada] = useState('Todas')
   const [filtroVisible, setFiltroVisible] = useState(false)
   const [busqueda, setBusqueda] = useState('')
   const [filtros, setFiltros] = useState(INITIAL_FILTERS)
@@ -53,9 +53,9 @@ export const useMarketplaceState = () => {
 
       // Filtrar por categoría
       if (
-        categoriaSeleccionada.length > 0 &&
-        !categoriaSeleccionada.includes('Todas') &&
-        !categoriaSeleccionada.includes(producto.categoria)
+        categoriaSeleccionada &&
+        categoriaSeleccionada !== 'Todas' &&
+        categoriaSeleccionada !== producto.categoria
       ) {
         return false
       }
@@ -76,18 +76,17 @@ export const useMarketplaceState = () => {
         if (filtros.negociable === 'no' && producto.negociable) return false
       }
 
-      // Filtrar por regiones de despacho (shippingRegions) - support multi-select
-      if (Array.isArray(filtros.shippingRegions) && filtros.shippingRegions.length > 0) {
-        const selectedRegions = filtros.shippingRegions;
+      // Filtrar por regiones de despacho (shippingRegions) - single select
+      if (filtros.shippingRegions) {
         const shippingRegions = producto.shippingRegions || producto.delivery_regions || producto.shipping_regions || producto.product_delivery_regions || []
 
-        // Normalizar formato y verificar si al menos una región seleccionada coincide
-        const matchesAny = selectedRegions.some(sel => shippingRegions.some(r => {
+        // Verificar si la región seleccionada coincide
+        const matchesRegion = shippingRegions.some(r => {
           const value = r.region || r.value || r
-          return value === sel
-        }))
+          return value === filtros.shippingRegions
+        })
 
-        if (!matchesAny) return false
+        if (!matchesRegion) return false
       }
 
       return true
@@ -117,7 +116,7 @@ export const useMarketplaceState = () => {
   const resetFiltros = useCallback(() => {
     setFiltros(INITIAL_FILTERS)
     setPrecioRango([0, 1000000])
-    setCategoriaSeleccionada(['Todas'])
+    setCategoriaSeleccionada('Todas')
     setBusqueda('')
     // Asegurar que la vista vuelva a 'Todos los Productos'
     setSeccionActiva('todos')
@@ -128,20 +127,7 @@ export const useMarketplaceState = () => {
   }, [])
 
   const toggleCategoria = useCallback((categoria) => {
-    if (categoria === 'Todas') {
-      setCategoriaSeleccionada(['Todas'])
-    } else {
-      setCategoriaSeleccionada((prev) => {
-        const sinTodas = prev.filter((c) => c !== 'Todas')
-
-        if (sinTodas.includes(categoria)) {
-          const nuevaSeleccion = sinTodas.filter((c) => c !== categoria)
-          return nuevaSeleccion.length === 0 ? ['Todas'] : nuevaSeleccion
-        } else {
-          return [...sinTodas, categoria]
-        }
-      })
-    }
+    setCategoriaSeleccionada(categoria)
   }, [])
 
   // ✅ OPTIMIZACIÓN: Memoizar cálculo simple de total

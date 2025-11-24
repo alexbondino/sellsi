@@ -25,7 +25,7 @@ export const INITIAL_FILTERS = {
   precioMin: '',
   precioMax: '',
   soloConStock: false,
-  shippingRegions: [],
+  shippingRegions: null,
   ratingMin: 0,
   negociable: 'todos', // ✅ AGREGAR: Filtro de negociable ('todos', 'si', 'no')
 }

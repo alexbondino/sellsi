@@ -19,10 +19,12 @@ import {
   CircularProgress,
   Paper,
   Button,
+  Alert,
 } from '@mui/material';
 import ShoppingBagIcon from '@mui/icons-material/ShoppingBag';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import BusinessIcon from '@mui/icons-material/Business';
+import InfoIcon from '@mui/icons-material/Info';
 import { SPACING_BOTTOM_MAIN } from '../../../../styles/layoutSpacing';
 import {
   productGridColumns,
@@ -56,6 +58,9 @@ const ProductsSection = React.memo(
     loading,
     error,
     isProviderView = false,
+    filtros,
+    showNoProductsInRegionBanner = false,
+    userRegion,
     getPriceTiers,
     registerProductNode,
   }) => {
@@ -122,6 +127,47 @@ const ProductsSection = React.memo(
 
     // ✅ MEJORA DE RENDIMIENTO: Memoización del título de sección
     const sectionTitle = React.useMemo(() => {
+      // Si hay filtro de región activo, mostrar título dinámico
+      const activeRegion = filtros?.shippingRegions;
+      
+      if (activeRegion && !isProviderView) {
+        // Mapeo de regiones con números romanos
+        const regionLabels = {
+          'arica-parinacota': 'la XV Región',
+          'tarapaca': 'la I Región',
+          'antofagasta': 'la II Región',
+          'atacama': 'la III Región',
+          'coquimbo': 'la IV Región',
+          'valparaiso': 'la V Región',
+          'metropolitana': 'la Región Metropolitana',
+          'ohiggins': 'la VI Región',
+          'maule': 'la VII Región',
+          'nuble': 'la XVI Región',
+          'biobio': 'la VIII Región',
+          'araucania': 'la IX Región',
+          'los-rios': 'la XIV Región',
+          'los-lagos': 'la X Región',
+          'aysen': 'la XI Región',
+          'magallanes': 'la XII Región',
+        };
+        
+        const regionLabel = regionLabels[activeRegion] || activeRegion;
+        
+        return (
+          <>
+            <ShoppingBagIcon
+              sx={{
+                color: 'primary.main',
+                verticalAlign: 'middle',
+                fontSize: { xs: 24, md: 32 },
+                mr: 1,
+              }}
+            />
+            Productos disponibles en {regionLabel}
+          </>
+        );
+      }
+      
       if (isProviderView) {
         return (
           <>
@@ -171,7 +217,7 @@ const ProductsSection = React.memo(
             </>
           );
       }
-    }, [seccionActiva, isProviderView]);
+    }, [seccionActiva, isProviderView, filtros?.shippingRegions]);
 
     // ✅ CALCULAR PROVEEDORES ÚNICOS SI isProviderView
     // totalProveedores eliminado (reemplazado por providersCount del hook)
@@ -444,8 +490,52 @@ const ProductsSection = React.memo(
       getPriority, // ✅ Función para determinar prioridad de imagen por índice
       getPriceTiers,
       registerProductNode,
+      showNoProductsInRegionBanner,
+      userRegion,
     };
+    
+    // Mapeo de regiones para el banner
+    const getRegionLabel = (regionValue) => {
+      const regionLabels = {
+        'arica-parinacota': 'la XV Región',
+        'tarapaca': 'la I Región',
+        'antofagasta': 'la II Región',
+        'atacama': 'la III Región',
+        'coquimbo': 'la IV Región',
+        'valparaiso': 'la V Región',
+        'metropolitana': 'la Región Metropolitana',
+        'ohiggins': 'la VI Región',
+        'maule': 'la VII Región',
+        'nuble': 'la XVI Región',
+        'biobio': 'la VIII Región',
+        'araucania': 'la IX Región',
+        'los-rios': 'la XIV Región',
+        'los-lagos': 'la X Región',
+        'aysen': 'la XI Región',
+        'magallanes': 'la XII Región',
+      };
+      return regionLabels[regionValue] || regionValue;
+    };
+    
     const components = {
+      NoProductsInRegionBanner: showNoProductsInRegionBanner && userRegion ? (
+        <Alert 
+          severity="info" 
+          icon={<InfoIcon />}
+          sx={{ 
+            mb: 3,
+            borderRadius: 2,
+            '& .MuiAlert-message': {
+              width: '100%'
+            }
+          }}
+        >
+          <Typography variant="body2">
+            No hay productos disponibles para despacho en <strong>{getRegionLabel(userRegion)}</strong>. 
+            Mostrando todos los productos disponibles.
+          </Typography>
+        </Alert>
+      ) : null,
       Loading: (
         <Box sx={{ px: { xs: 0, sm: 0, md: 0 } }}>
           <ProductCardSkeletonGrid
