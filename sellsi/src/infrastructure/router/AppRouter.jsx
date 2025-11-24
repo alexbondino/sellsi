@@ -1,4 +1,7 @@
 import React, { Suspense } from 'react';
+const CategoryDictionary = React.lazy(() =>
+  import('../../ui-components/imports/CategoryDictionary')
+);
 import { Routes, Route, Navigate, useParams } from 'react-router-dom';
 import SuspenseLoader from '../../shared/components/layout/SuspenseLoader';
 // Import interno directo para evitar que PrivateRoute forme parte del contrato público de auth
@@ -148,6 +151,11 @@ export const AppRouter = ({ scrollTargets }) => {
   return (
     <Suspense fallback={<SuspenseLoader />}>
       <Routes>
+        {/* Diccionario de categorías (pública) */}
+        <Route
+          path="/ui-components/imports/category-dictionary"
+          element={<CategoryDictionary />}
+        />
         {/* Rutas Públicas / Generales */}
         <Route path="/" element={<Home scrollTargets={scrollTargets} />} />
         <Route path="/marketplace" element={<Marketplace />} />
