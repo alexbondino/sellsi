@@ -64,7 +64,23 @@ const PRODUCT_IMPORT_FIELDS = [
   {
     key: 'delivery_regions',
     label: 'Números Enteros (lista separada por ;)',
-    description: 'Regiones de despacho.',
+    description: (
+      <>
+        Regiones de despacho.{' '}
+        <a
+          href="/ui-components/imports/region-dictionary"
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            color: '#1976d2',
+            textDecoration: 'underline',
+            fontWeight: 500,
+          }}
+        >
+          [Diccionario de Regiones]
+        </a>
+      </>
+    ),
     optional: false,
   },
   {
