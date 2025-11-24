@@ -211,6 +211,27 @@ export const UnifiedAuthProvider = ({ children }) => {
     return userProfile.main_supplier ? 'supplier' : 'buyer';
   }, [manualRoleOverride, userProfile, session]);
 
+  // 🆕 AUTO-SYNC: Sincronizar derivedRole con pathname automáticamente
+  // Soluciona bug donde TopBar se actualiza pero Sidebar no al navegar con URL directa
+  useEffect(() => {
+    if (!session) return; // Solo para usuarios logueados
+    
+    const pathname = location.pathname;
+    
+    // Detectar navegación a workspace buyer
+    if (pathname.startsWith('/buyer/')) {
+      if (derivedRole !== 'buyer') {
+        setManualRoleOverride('buyer');
+      }
+    }
+    // Detectar navegación a workspace supplier
+    else if (pathname.startsWith('/supplier/') || pathname.startsWith('/provider/')) {
+      if (derivedRole !== 'supplier') {
+        setManualRoleOverride('supplier');
+      }
+    }
+  }, [location.pathname, derivedRole, session]);
+
   // Sync manual override to storage
   useEffect(() => {
     if (manualRoleOverride) {
