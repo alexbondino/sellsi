@@ -212,6 +212,7 @@ export default function ImportExcel({
             f === 'image_urls' ||
             f === 'productid' ||
             f === 'regions' ||
+            f === 'delivery_regions' ||
             f === 'delivery_prices' ||
             f === 'delivery_days'
           ) {
@@ -247,20 +248,22 @@ export default function ImportExcel({
         }
 
         // -------- CAPTURAR REGIONES DE ENTREGA + VALIDACIÓN ROBUSTA ----------
-
         // Listas crudas desde el Excel, separadas por ";"
-        const regionsRaw = row.regions
-          ? String(row.regions)
+        // 🔹 Ahora usamos delivery_regions en vez de regions
+        const deliveryRegionsRaw = row.delivery_regions
+          ? String(row.delivery_regions)
               .split(';')
               .map(r => r.trim())
               .filter(Boolean)
           : [];
+
         const deliveryPricesRaw = row.delivery_prices
           ? String(row.delivery_prices)
               .split(';')
               .map(p => p.trim())
               .filter(Boolean)
           : [];
+
         const deliveryDaysRaw = row.delivery_days
           ? String(row.delivery_days)
               .split(';')
@@ -272,7 +275,7 @@ export default function ImportExcel({
         const validatedRegions = [];
         let rowHasRegionError = false;
 
-        regionsRaw.forEach(value => {
+        deliveryRegionsRaw.forEach(value => {
           // debe ser número entero válido
           if (isNaN(value)) {
             rowHasRegionError = true;
@@ -297,10 +300,9 @@ export default function ImportExcel({
           validatedRegions.push(REGION_MAP[num]);
         });
 
-        // Si había regiones pero ninguna válida → solo marcamos problema de regiones
-        if (regionsRaw.length > 0 && validatedRegions.length === 0) {
+        // Si había valores en delivery_regions pero ninguna región válida
+        if (deliveryRegionsRaw.length > 0 && validatedRegions.length === 0) {
           hasInvalidDeliveryRegions = true;
-          // No seguimos validando longitudes/valores para esta fila, porque ya está mal en regiones
           mapped.push(obj);
           return;
         }
@@ -413,12 +415,12 @@ export default function ImportExcel({
       // 🔹 Mensajes genéricos de envío
       if (hasInvalidDeliveryRegions) {
         genericErrors.push(
-          'Hay problemas en las regiones de entrega. Asegúrate de que la columna "regions" use solo números de región válidos (1–16), separados por ";".'
+          'Hay problemas en las regiones de entrega. Asegúrate de que la columna "delivery_regions" use solo números de región válidos (1–16), separados por ";".'
         );
       }
       if (hasInvalidDeliveryLengths) {
         genericErrors.push(
-          'Hay filas donde "regions", "delivery_prices" y "delivery_days" no tienen la misma cantidad de valores. Todas las listas deben estar completas y alineadas.'
+          'Hay filas donde "delivery_regions", "delivery_prices" y "delivery_days" no tienen la misma cantidad de valores. Todas las listas deben estar completas y alineadas.'
         );
       }
       if (hasInvalidDeliveryValues) {
