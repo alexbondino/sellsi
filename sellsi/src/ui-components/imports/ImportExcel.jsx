@@ -17,12 +17,25 @@ import { buildSafeFileNameFromUrl } from './uuidSafeFileName';
 
 // --------- Constantes de storage / tablas ----------
 const IMAGE_BUCKET = 'product-images';
-const PRODUCT_IMAGES_TABLE = 'product_images';
+const PRODUCT_IMAGES_TABLE = 'product_images'; // si lo usas en otro lado
 
-// Utilidad para descargar una imagen desde una URL y devolver un Blob
+// Utilidad para descargar una imagen desde una URL y devolver un Blob (robusto)
 async function fetchImageAsBlob(url) {
   const response = await fetch(url);
-  if (!response.ok) throw new Error('No se pudo descargar la imagen');
+
+  if (!response.ok) {
+    throw new Error(
+      `No se pudo descargar la imagen (status: ${response.status})`
+    );
+  }
+
+  const contentType = response.headers.get('content-type') || '';
+  if (!contentType.startsWith('image/')) {
+    throw new Error(
+      `La URL no apunta directamente a una imagen (content-type: ${contentType}).`
+    );
+  }
+
   return await response.blob();
 }
 
@@ -96,15 +109,18 @@ export default function ImportExcel({
 
       const mapped = [];
       const imagesByProduct = {}; // productId -> [urls]
+      const deliveryByProduct = {}; // productId -> [{ region, price, delivery_days }]
 
-      // 🔹 Flags para errores genéricos
+      // 🔹 Flags de validación
       let missingCategoryColumn = false;
       let hasEmptyCategory = false;
       let hasNonNumberCategory = false;
       let hasNonIntegerCategory = false;
       let hasUnknownCategory = false;
-
       let hasInvalidNumericField = false;
+
+      let hasInvalidDelivery = false;
+      const deliveryValidationMessages = [];
 
       // Verificar si existe la columna "category"
       const firstRow = json[0];
@@ -117,7 +133,7 @@ export default function ImportExcel({
       }
 
       // 1) Recorrer filas
-      json.forEach(row => {
+      json.forEach((row, rowIndex) => {
         // -------- VALIDACIÓN CATEGORY ----------
         if (hasCategoryColumn) {
           const raw = row.category;
@@ -160,13 +176,21 @@ export default function ImportExcel({
           }
         });
 
-        // -------- MAPEO ----------
+        // -------- MAPEO PRODUCTO ----------
         const obj = {};
         const productId = uuidv4();
         obj.productid = productId;
 
         fields.forEach(f => {
-          if (f === 'image_url' || f === 'image_urls' || f === 'productid') {
+          // Excluir campos que no pertenecen a la tabla products
+          if (
+            f === 'image_url' ||
+            f === 'image_urls' ||
+            f === 'productid' ||
+            f === 'regions' ||
+            f === 'delivery_prices' ||
+            f === 'delivery_days'
+          ) {
             return;
           }
 
@@ -186,19 +210,98 @@ export default function ImportExcel({
 
         // -------- CAPTURAR IMÁGENES ----------
         const urls = [];
-
         if (row.image_url) urls.push(String(row.image_url).trim());
-
         if (row.image_urls) {
           String(row.image_urls)
-            .split(',')
+            .split(';')
             .map(u => u.trim())
             .filter(Boolean)
             .forEach(u => urls.push(u));
         }
-
         if (urls.length > 0) {
           imagesByProduct[productId] = urls;
+        }
+
+        // -------- CAPTURAR REGIONES DE ENTREGA + VALIDACIÓN ROBUSTA ----------
+        const regions = row.regions
+          ? String(row.regions)
+              .split(';')
+              .map(r => r.trim())
+              .filter(Boolean)
+          : [];
+        const deliveryPrices = row.delivery_prices
+          ? String(row.delivery_prices)
+              .split(';')
+              .map(p => p.trim())
+              .filter(Boolean)
+          : [];
+        const deliveryDays = row.delivery_days
+          ? String(row.delivery_days)
+              .split(';')
+              .map(d => d.trim())
+              .filter(Boolean)
+          : [];
+
+        if (
+          regions.length > 0 ||
+          deliveryPrices.length > 0 ||
+          deliveryDays.length > 0
+        ) {
+          // Si hay algún dato, todos deben estar completos y alineados
+          if (
+            regions.length === 0 ||
+            deliveryPrices.length === 0 ||
+            deliveryDays.length === 0 ||
+            regions.length !== deliveryPrices.length ||
+            regions.length !== deliveryDays.length
+          ) {
+            hasInvalidDelivery = true;
+            deliveryValidationMessages.push(
+              `Fila ${
+                rowIndex + 2
+              }: "regions", "delivery_prices" y "delivery_days" deben tener la misma cantidad de valores (y no estar vacíos).`
+            );
+          } else {
+            const deliveries = [];
+
+            regions.forEach((region, idx) => {
+              const rawPrice = deliveryPrices[idx];
+              const rawDays = deliveryDays[idx];
+
+              const priceNum = Number(rawPrice);
+              const daysNum = Number(rawDays);
+
+              if (!Number.isFinite(priceNum) || priceNum < 0) {
+                hasInvalidDelivery = true;
+                deliveryValidationMessages.push(
+                  `Fila ${
+                    rowIndex + 2
+                  }: el precio de entrega "${rawPrice}" para la región "${region}" no es un número válido ≥ 0.`
+                );
+                return;
+              }
+
+              if (!Number.isInteger(daysNum) || daysNum <= 0) {
+                hasInvalidDelivery = true;
+                deliveryValidationMessages.push(
+                  `Fila ${
+                    rowIndex + 2
+                  }: los días de entrega "${rawDays}" para la región "${region}" deben ser un entero positivo.`
+                );
+                return;
+              }
+
+              deliveries.push({
+                region,
+                price: priceNum,
+                delivery_days: daysNum,
+              });
+            });
+
+            if (deliveries.length > 0) {
+              deliveryByProduct[productId] = deliveries;
+            }
+          }
         }
 
         mapped.push(obj);
@@ -217,7 +320,7 @@ export default function ImportExcel({
         return;
       }
 
-      // -------- VALIDACIÓN: ERRORES CATEGORY / NUMÉRICOS ----------
+      // -------- VALIDACIÓN: ERRORES CATEGORY / NUMÉRICOS / DELIVERY ----------
       const genericErrors = [];
 
       if (missingCategoryColumn) {
@@ -245,6 +348,14 @@ export default function ImportExcel({
           'Las columnas "productqty", "price" y "minimum_purchase" deben contener solo números enteros positivos (ej: 1, 2, 3), sin texto ni decimales.'
         );
       }
+      if (hasInvalidDelivery) {
+        genericErrors.push(
+          'Hay problemas en las columnas de entrega ("regions", "delivery_prices", "delivery_days").'
+        );
+        if (deliveryValidationMessages.length > 0) {
+          genericErrors.push(deliveryValidationMessages.join('\n'));
+        }
+      }
 
       if (genericErrors.length > 0) {
         reportError(genericErrors.join('\n'));
@@ -262,13 +373,54 @@ export default function ImportExcel({
         );
       }
 
+      // -------- SUBIR REGIONES DE ENTREGA (product_delivery_regions) --------
+      const deliveryErrors = [];
+      let totalDeliveries = 0;
+      let successfulDeliveries = 0;
+
+      for (const [productId, deliveries] of Object.entries(deliveryByProduct)) {
+        for (const delivery of deliveries) {
+          totalDeliveries++;
+
+          const { error: deliveryError } = await supabase
+            .from('product_delivery_regions')
+            .insert({
+              product_id: productId,
+              region: delivery.region,
+              price: delivery.price,
+              delivery_days: delivery.delivery_days,
+              // Si tu tabla tiene supplier_id y RLS, descomenta:
+              // supplier_id: userId || null,
+            });
+
+          if (deliveryError) {
+            console.error(
+              'Error insertando región de entrega:',
+              productId,
+              delivery,
+              deliveryError
+            );
+            deliveryErrors.push(
+              `Producto ${productId} - región "${delivery.region}": ${deliveryError.message}`
+            );
+          } else {
+            successfulDeliveries++;
+          }
+        }
+      }
+
+      if (totalDeliveries > 0 && successfulDeliveries === 0) {
+        reportError(
+          'No se pudo registrar ninguna región de entrega. Verifica que la tabla "product_delivery_regions" tenga las columnas correctas y que las políticas de seguridad (RLS) permitan insertar.'
+        );
+        return;
+      }
+
       // -------- SUBIR IMÁGENES --------
       const imageErrors = [];
-      let successfulUploads = 0; // 👈 cuántas imágenes se subieron bien
+      let successfulUploads = 0;
 
       for (const [productId, urls] of Object.entries(imagesByProduct)) {
-        let order = 0;
-
         for (const url of urls) {
           try {
             const blob = await fetchImageAsBlob(url);
@@ -295,11 +447,10 @@ export default function ImportExcel({
                 `Producto ${productId} - imagen ${url}: ${imgInsertError.message}`
               );
             } else {
-              successfulUploads += 1; // ✅ imagen subida + registro creado
+              successfulUploads += 1;
             }
-
-            order++;
           } catch (err) {
+            console.error('Error al procesar imagen', url, err);
             imageErrors.push(
               `Producto ${productId} - imagen ${url}: ${err.message}`
             );
@@ -315,12 +466,27 @@ export default function ImportExcel({
         return;
       }
 
+      // -------- REPORTES FINALES --------
+      const finalMessages = [];
+
+      if (deliveryErrors.length > 0) {
+        finalMessages.push(
+          `Productos importados, pero algunas regiones de entrega fallaron:\n${deliveryErrors.join(
+            '\n'
+          )}`
+        );
+      }
+
       if (imageErrors.length > 0) {
-        reportError(
+        finalMessages.push(
           `Productos importados, pero algunas imágenes fallaron:\n${imageErrors.join(
             '\n'
           )}`
         );
+      }
+
+      if (finalMessages.length > 0) {
+        reportError(finalMessages.join('\n\n'));
       } else {
         reportError(null);
         setSuccess(true);
