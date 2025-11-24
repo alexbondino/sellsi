@@ -209,9 +209,11 @@ const MyProducts = () => {
     checkAndProceed('/supplier/addproduct');
   };
 
-  // Botón Importar Excel -> abre modal MassiveProductImport
+  // Botón Importar Excel -> validar info bancaria antes de abrir modal
   const handleOpenMassiveImport = () => {
-    setMassiveImportOpen(true);
+    checkAndProceed(null, () => {
+      setMassiveImportOpen(true);
+    });
   };
 
   const handleCloseMassiveImport = () => {

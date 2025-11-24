@@ -3,6 +3,7 @@ import { Box, Card, CardMedia, useTheme, useMediaQuery } from '@mui/material';
 import { ZoomIn } from '@mui/icons-material';
 import { getProductImageUrl } from '../../../../utils/getProductImageUrl';
 import { useImagePreloader } from '../../../../hooks/useLazyImage';
+import ImageZoomModal from './ImageZoomModal';
 
 const ProductImageGallery = ({
   images = [],
@@ -18,6 +19,8 @@ const ProductImageGallery = ({
   const [isHovering, setIsHovering] = useState(false);
   const [mousePosition, setMousePosition] = useState({ x: 50, y: 50 });
   const [cursorPosition, setCursorPosition] = useState({ x: 0, y: 0 });
+  // Estado para el modal de zoom en mobile
+  const [isZoomModalOpen, setIsZoomModalOpen] = useState(false);
 
   // Usar las imágenes reales del producto
   const galleryImages =
@@ -57,6 +60,18 @@ const ProductImageGallery = ({
     setIsHovering(false);
   };
 
+  // Manejar click en la imagen para abrir modal (mobile)
+  const handleImageClick = () => {
+    if (!isDesktop) {
+      setIsZoomModalOpen(true);
+    }
+  };
+
+  // Cerrar modal de zoom
+  const handleCloseZoomModal = () => {
+    setIsZoomModalOpen(false);
+  };
+
   return (
     <Box
       sx={{
@@ -84,7 +99,7 @@ const ProductImageGallery = ({
           justifyContent: 'center',
           mx: 'auto',
           position: 'relative',
-          cursor: isDesktop ? 'none' : 'default',
+          cursor: isDesktop ? 'none' : 'zoom-in',
           transition: 'box-shadow 0.3s ease',
           ...(isHovering &&
             isDesktop && {
@@ -94,6 +109,7 @@ const ProductImageGallery = ({
         onMouseMove={handleMouseMove}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
+        onClick={handleImageClick}
       >
         <CardMedia
           component="img"
@@ -145,6 +161,36 @@ const ProductImageGallery = ({
                 color: 'primary.main',
               }}
             />
+          </Box>
+        )}
+        {/* Indicador de zoom para mobile */}
+        {!isDesktop && (
+          <Box
+            sx={{
+              position: 'absolute',
+              bottom: 12,
+              right: 12,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: 'rgba(0, 0, 0, 0.5)',
+              borderRadius: 2,
+              padding: '4px 8px',
+              gap: 0.5,
+              zIndex: 10,
+            }}
+          >
+            <ZoomIn sx={{ fontSize: 16, color: 'white' }} />
+            <Box
+              component="span"
+              sx={{
+                fontSize: '0.7rem',
+                color: 'white',
+                fontWeight: 500,
+              }}
+            >
+              Toca para ampliar
+            </Box>
           </Box>
         )}
       </Card>{' '}
@@ -206,6 +252,15 @@ const ProductImageGallery = ({
           </Card>
         ))}
       </Box>
+
+      {/* Modal de zoom para mobile */}
+      <ImageZoomModal
+        open={isZoomModalOpen}
+        onClose={handleCloseZoomModal}
+        images={galleryImages}
+        initialIndex={selectedIndex}
+        productName={productName}
+      />
     </Box>
   );
 };
