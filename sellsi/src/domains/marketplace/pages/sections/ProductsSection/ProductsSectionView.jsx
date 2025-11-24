@@ -49,6 +49,9 @@ export function ProductsSectionView({
   return (
     <Box sx={mainContainerStyles}>
       <Box sx={innerContainerStyles}>
+        {/* Banner informativo cuando no hay productos en región del usuario */}
+        {components.NoProductsInRegionBanner}
+        
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: { xs: 2, md: 8 } }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, ml: titleMarginLeft, width: { xs: '100%', sm: '100%' }, flex: 1, minWidth: 0 }}>
             {seccionActiva !== 'todos' && (

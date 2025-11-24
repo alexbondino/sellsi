@@ -9,7 +9,7 @@
  * - domains/supplier/pages/MarketplaceSupplier.jsx
  */
 
-import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { useTheme } from '@mui/material';
 import { useLocation } from 'react-router-dom';
 
@@ -18,6 +18,8 @@ import { useMarketplaceState } from '../../../domains/marketplace/hooks/state/us
 import { useProductSorting } from '../../../domains/marketplace/hooks/products/useProductSorting';
 import { useScrollBehavior } from '../../../domains/marketplace/hooks/ui/useScrollBehavior';
 import { useMarketplaceSearchBus } from '../../contexts/MarketplaceSearchContext';
+import { useAuth } from '../../../infrastructure/providers/UnifiedAuthProvider';
+import { useOptimizedUserShippingRegion } from '../../../hooks/useOptimizedUserShippingRegion';
 
 /**
  * Hook centralizado que consolida toda la lógica de Marketplace
@@ -135,6 +137,63 @@ export const useMarketplaceLogic = (options = {}) => {
     setBusqueda(searchBus.externalSearchTerm || '');
   }, [searchBus?.externalSearchTerm, location.pathname, setBusqueda]);
 
+  // ===== AUTO-FILTRADO POR REGIÓN DEL USUARIO =====
+  const { session } = useAuth();
+  const { userRegion, isLoadingUserRegion } = useOptimizedUserShippingRegion();
+  const hasAppliedAutoFilter = useRef(false);
+  const [showNoProductsInRegionBanner, setShowNoProductsInRegionBanner] = useState(false);
+  
+  useEffect(() => {
+    // Solo ejecutar una vez al montar el componente
+    if (hasAppliedAutoFilter.current) return;
+    
+    // Solo aplicar en marketplace buyer (no en supplier)
+    if (!location.pathname.startsWith('/buyer/marketplace')) return;
+    
+    // Esperar a que todos los datos estén cargados
+    if (isLoadingUserRegion || loading) return;
+    
+    // No aplicar si ya hay productos filtrados cargándose
+    if (!productosFiltrados) return;
+    
+    // Condiciones para auto-filtrado:
+    // 1. Usuario debe estar logueado
+    // 2. Usuario debe tener región de despacho configurada
+    const isLoggedIn = !!session;
+    const hasShippingAddress = !!userRegion;
+    
+    if (!isLoggedIn || !hasShippingAddress) {
+      // No auto-filtrar, mostrar todos los productos
+      hasAppliedAutoFilter.current = true;
+      setShowNoProductsInRegionBanner(false);
+      return;
+    }
+    
+    // 3. Verificar si hay al menos 1 producto con despacho a la región del usuario
+    const productsInUserRegion = (productosFiltrados || []).filter(producto => {
+      const shippingRegions = producto.shippingRegions || 
+                             producto.delivery_regions || 
+                             producto.shipping_regions || 
+                             producto.product_delivery_regions || [];
+      
+      return shippingRegions.some(r => {
+        const value = r.region || r.value || r;
+        return value === userRegion;
+      });
+    });
+    
+    if (productsInUserRegion.length > 0) {
+      // Aplicar filtro de región automáticamente
+      updateFiltros({ shippingRegions: userRegion });
+      setShowNoProductsInRegionBanner(false);
+    } else {
+      // No hay productos en la región del usuario, mostrar todos y banner informativo
+      setShowNoProductsInRegionBanner(true);
+    }
+    
+    hasAppliedAutoFilter.current = true;
+  }, [session, userRegion, isLoadingUserRegion, loading, productosFiltrados, location.pathname, updateFiltros]);
+
   // ===== HANDLERS MEMOIZADOS =====
   const handleToggleFiltro = useCallback(() => {
     // Para desktop: toggle del panel lateral
@@ -161,33 +220,20 @@ export const useMarketplaceLogic = (options = {}) => {
   // Handler para abrir/actualizar filtro de despacho desde CategoryNavigation
   // Accepts:
   // - null -> clear selection
-  // - single region value -> toggle membership
-  // - array of regions -> set explicitly
-  const handleOpenShippingFilter = useCallback((regions) => {
+  // - single region value -> set as selected region
+  const handleOpenShippingFilter = useCallback((region) => {
     try {
-      let newSelection = [];
-
-      if (regions === null) {
-        newSelection = [];
-      } else if (Array.isArray(regions)) {
-        newSelection = regions;
-      } else if (typeof regions === 'string') {
-        const current = filtros?.shippingRegions || [];
-        // toggle
-        if (current.includes(regions)) {
-          newSelection = current.filter(r => r !== regions);
-        } else {
-          newSelection = [...current, regions];
-        }
+      if (region === null) {
+        updateFiltros({ shippingRegions: null });
+      } else {
+        updateFiltros({ shippingRegions: region });
       }
-
-      updateFiltros({ shippingRegions: newSelection });
       setFiltroVisible(true);
       setFiltroModalOpen(true);
     } catch (e) {
       // ignore
     }
-  }, [updateFiltros, setFiltroVisible, setFiltroModalOpen, filtros]);
+  }, [updateFiltros, setFiltroVisible, setFiltroModalOpen]);
 
   // ✅ OPTIMIZACIÓN: Handler para el switch de vistas - memoizado estable
   const handleToggleProviderView = useCallback(() => {
@@ -258,9 +304,10 @@ export const useMarketplaceLogic = (options = {}) => {
   onSeccionChange: setSeccionActiva,
   onCategoriaToggle: toggleCategoria,
       onOpenShippingFilter: handleOpenShippingFilter,
-      selectedShippingRegions: filtros?.shippingRegions || [],
+      selectedShippingRegions: filtros?.shippingRegions ? [filtros.shippingRegions] : [],
       categoryMarginLeft,
       isProviderView, // Para ocultar elementos en Vista 1
+      resetFiltros, // Para resetear todos los filtros al hacer clic en "Todos"
     }),
     [
       seccionActiva,
@@ -271,6 +318,7 @@ export const useMarketplaceLogic = (options = {}) => {
       categoryMarginLeft,
       isProviderView,
       filtros,
+      resetFiltros,
     ]
   );
 
@@ -333,6 +381,9 @@ export const useMarketplaceLogic = (options = {}) => {
       loading,
       error,
       isProviderView, // Para cambiar el comportamiento en Vista 1
+      filtros, // Pasar filtros para el título dinámico basado en región
+      showNoProductsInRegionBanner, // Banner informativo cuando no hay productos en región
+      userRegion, // Región del usuario para mostrar en el banner
   // Pasar funciones de nivel inferior para prefetch de tiers
   getPriceTiers,
   registerProductNode,
@@ -348,6 +399,9 @@ export const useMarketplaceLogic = (options = {}) => {
       loading,
       error,
       isProviderView,
+      filtros,
+      showNoProductsInRegionBanner,
+      userRegion,
     ]
   );
 

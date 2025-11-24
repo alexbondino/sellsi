@@ -138,6 +138,7 @@ export default function ImportExcel({
       let hasNonIntegerCategory = false;
       let hasUnknownCategory = false;
       let hasInvalidNumericField = false;
+      let hasMissingProductName = false;
 
       // 🔹 Flags específicos para envío
       let hasInvalidDeliveryRegions = false;
@@ -158,6 +159,11 @@ export default function ImportExcel({
       // 1) Recorrer filas
       json.forEach((row, rowIndex) => {
         const rowNumber = rowIndex + 2; // considerando encabezado en fila 1
+
+        // -------- VALIDACIÓN PRODUCTNM (OBLIGATORIO) ----------
+        if (!row.productnm || String(row.productnm).trim() === '') {
+          hasMissingProductName = true;
+        }
 
         // -------- VALIDACIÓN CATEGORY ----------
         if (hasCategoryColumn) {
@@ -396,6 +402,11 @@ export default function ImportExcel({
       // -------- VALIDACIÓN: ERRORES CATEGORY / NUMÉRICOS / DELIVERY ----------
       const genericErrors = [];
 
+      if (hasMissingProductName) {
+        genericErrors.push(
+          'Hay productos sin nombre. La columna "productnm" es obligatoria y no puede estar vacía en ninguna fila.'
+        );
+      }
       if (missingCategoryColumn) {
         genericErrors.push(
           'El archivo no contiene la columna obligatoria "category".'

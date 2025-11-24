@@ -50,6 +50,7 @@ const CategoryNavigation = React.memo(({
     xl: 43,
   }, // Valores por defecto para Marketplace normal
   isProviderView = false, // ✅ NUEVO: Prop para ocultar elementos en vista de proveedores
+  resetFiltros, // ✅ NUEVO: Para resetear todos los filtros
 }) => {
   // Estado local para el menú de categorías
   const [anchorElCategorias, setAnchorElCategorias] = useState(null);
@@ -98,14 +99,21 @@ const CategoryNavigation = React.memo(({
   const handleSectionClick = React.useCallback(
     value => {
       console.time('CategoryNavigation:handleSectionClick');
-      onSeccionChange(value);
+      
+      // Si se hace clic en "Todos los Productos", resetear todos los filtros
+      if (value === 'todos' && resetFiltros) {
+        resetFiltros();
+      } else {
+        onSeccionChange(value);
+      }
+      
       // Colapsar en móvil después de seleccionar
       if (isMobile) {
         setSectionsExpanded(false);
       }
       console.timeEnd('CategoryNavigation:handleSectionClick');
     },
-    [onSeccionChange, isMobile]
+    [onSeccionChange, isMobile, resetFiltros]
   );
 
   const toggleSectionsExpanded = React.useCallback(
@@ -142,8 +150,8 @@ const CategoryNavigation = React.memo(({
           >
             Categorías
           </Button>
-          {/* Botón 'Despacho' (misma UI que 'Categorías') - siempre visible en md+ */}
-          <Box sx={{ display: { xs: 'none', md: 'inline-flex' }, ml: 1 }}>
+          {/* Botón 'Despacho' (misma UI que 'Categorías') - visible en todas las pantallas */}
+          <Box sx={{ display: 'inline-flex', ml: 1 }}>
             <Button
               endIcon={<ArrowDropDownIcon />}
               onClick={handleOpenDespacho}
@@ -193,7 +201,9 @@ const CategoryNavigation = React.memo(({
                     sx={styles.menuItem(isSelected)}
                   >
                     {r.label}
-                    {/* Intentional: no tick icons in the dropdown; selection shown via chips / indicator */}
+                    {isSelected && (
+                      <Box sx={styles.selectedIndicator} />
+                    )}
                   </MenuItem>
                 )
               })}
@@ -207,7 +217,7 @@ const CategoryNavigation = React.memo(({
             PaperProps={{ sx: styles.categoriesMenu }}
           >
             {categoriesWithAll.map(categoria => {
-              const isSelected = categoriaSeleccionada.includes(categoria);
+              const isSelected = categoriaSeleccionada === categoria;
 
               return (
                 <MenuItem
@@ -219,7 +229,7 @@ const CategoryNavigation = React.memo(({
                   {categoria === 'Tecnología' && (
                     <KeyboardArrowRightIcon fontSize="small" sx={{ ml: 'auto' }} />
                   )}
-                  {categoria === 'Todas' && isSelected && (
+                  {isSelected && (
                     <Box sx={styles.selectedIndicator} />
                   )}
                 </MenuItem>
@@ -232,7 +242,7 @@ const CategoryNavigation = React.memo(({
             <>
               {Object.entries(SECTIONS)
                 .filter(([key, value]) =>
-                  !['OFERTAS', 'TOP_VENTAS'].includes(key)
+                  !['OFERTAS', 'TOP_VENTAS', 'NUEVOS'].includes(key)
                 )
                 .map(([key, value]) => (
                   <Button
@@ -282,7 +292,7 @@ const CategoryNavigation = React.memo(({
                 >
                   {Object.entries(SECTIONS)
                     .filter(([key, value]) =>
-                      !['OFERTAS', 'TOP_VENTAS'].includes(key)
+                      !['OFERTAS', 'TOP_VENTAS', 'NUEVOS'].includes(key)
                     )
                     .map(([key, value]) => (
                       <Button
@@ -305,79 +315,17 @@ const CategoryNavigation = React.memo(({
               </Grow>
             </Box>
           )}
-          {/* Chips de categorías seleccionadas (máx 4) */}
-          {(() => {
-            const cats = categoriaSeleccionada.filter(cat => cat !== 'Todas') || []
-            const visibleCats = cats.slice(0, 4)
-            const hiddenCats = cats.length > 4 ? cats.slice(4) : []
-            return (
-              <>
-                {visibleCats.map(cat => (
-                  <Chip
-                    key={cat}
-                    label={cat}
-                    onDelete={() => onCategoriaToggle(cat)}
-                    size="small"
-                    color="primary"
-                    variant="outlined"
-                    sx={styles.categoryChip}
-                  />
-                ))}
-                {hiddenCats.length > 0 && (
-                  <Tooltip
-                    title={`Categorías: ${hiddenCats.join(', ')}`}
-                    placement="top"
-                  >
-                    <Chip
-                      label={`+${hiddenCats.length}`}
-                      size="small"
-                      color="primary"
-                      variant="outlined"
-                      sx={styles.categoryChip}
-                      aria-label={`Más categorías: ${hiddenCats.join(', ')}`}
-                    />
-                  </Tooltip>
-                )}
-              </>
-            )
-          })()}
-
-          {/* Mostrar chips de regiones seleccionadas junto a chips de categoría (máx 4) */}
-          {(() => {
-            const regs = Array.isArray(selectedRegionLabels) ? selectedRegionLabels : []
-            const visibleRegs = regs.slice(0, 4)
-            const hiddenRegs = regs.length > 4 ? regs.slice(4) : []
-            return (
-              <>
-                {visibleRegs.map(({ value, label }) => (
-                  <Chip
-                    key={`shipping-${value}`}
-                    label={label}
-                    onDelete={() => { if (onOpenShippingFilter) onOpenShippingFilter(value); }}
-                    size="small"
-                    color="primary"
-                    variant="outlined"
-                    sx={styles.categoryChip}
-                  />
-                ))}
-                {hiddenRegs.length > 0 && (
-                  <Tooltip
-                    title={`Despachos: ${hiddenRegs.map(r => r.label).join(', ')}`}
-                    placement="top"
-                  >
-                    <Chip
-                      label={`+${hiddenRegs.length}`}
-                      size="small"
-                      color="primary"
-                      variant="outlined"
-                      sx={styles.categoryChip}
-                      aria-label={`Más despachos: ${hiddenRegs.map(r => r.label).join(', ')}`}
-                    />
-                  </Tooltip>
-                )}
-              </>
-            )
-          })()}
+          {/* Chip de categoría seleccionada */}
+          {categoriaSeleccionada && categoriaSeleccionada !== 'Todas' && (
+            <Chip
+              label={`Categoría: ${categoriaSeleccionada}`}
+              onDelete={() => onCategoriaToggle('Todas')}
+              size="small"
+              color="primary"
+              variant="outlined"
+              sx={styles.categoryChip}
+            />
+          )}
         </>
       )}
     </Box>
