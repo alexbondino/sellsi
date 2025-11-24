@@ -7,6 +7,7 @@ const CATEGORY_MAP = {
   5: 'Accesorios',
   // Agrega más según tu sistema
 };
+
 import React, { useRef, useState } from 'react';
 import { Button, Box, CircularProgress, Alert } from '@mui/material';
 import * as XLSX from 'xlsx';
@@ -83,13 +84,46 @@ export default function ImportExcel({ table, fields, userId, onSuccess }) {
 
       const mapped = [];
       const imagesByProduct = {}; // productId -> [urls]
+      const rowErrors = []; // 👈 acumulamos errores de categoría
 
       // 1) Recorremos cada fila del Excel y construimos los productos
-      for (const row of json) {
+      json.forEach((row, index) => {
+        const excelRowNumber = index + 2; // Fila real en Excel (1 = header)
+
+        // -----------------------------
+        // 🔍 VALIDACIÓN DE category
+        // -----------------------------
+        const rawCategory = row.category;
+
+        if (
+          rawCategory === undefined ||
+          rawCategory === null ||
+          rawCategory === ''
+        ) {
+          rowErrors.push(
+            `Fila ${excelRowNumber}: la columna "category" es obligatoria y no puede estar vacía.`
+          );
+        } else if (typeof rawCategory !== 'number') {
+          // XLSX deja como string si la celda es texto
+          rowErrors.push(
+            `Fila ${excelRowNumber}: la columna "category" debe ser un número entero (no texto). Valor recibido: "${rawCategory}".`
+          );
+        } else if (!Number.isInteger(rawCategory)) {
+          rowErrors.push(
+            `Fila ${excelRowNumber}: la columna "category" debe ser un número entero. Valor recibido: ${rawCategory}.`
+          );
+        } else if (!CATEGORY_MAP[String(rawCategory)]) {
+          rowErrors.push(
+            `Fila ${excelRowNumber}: la categoría "${rawCategory}" no existe en el diccionario de categorías.`
+          );
+        }
+
+        // -----------------------------
+        // Construcción del objeto fila
+        // -----------------------------
         const obj = {};
 
         // ✅ Generamos un UUID para este producto
-        // Asegúrate de que tu tabla tenga una columna "productid" (uuid).
         const productId = uuidv4();
         obj.productid = productId;
 
@@ -99,12 +133,15 @@ export default function ImportExcel({ table, fields, userId, onSuccess }) {
           if (f === 'image_url' || f === 'image_urls' || f === 'productid') {
             return;
           }
+
           if (f === 'category') {
-            let val = row[f];
-            // Si es número y está en el mapa, reemplazar
+            const val = row[f];
+            // En este punto, si pasó la validación, val es number y está en el mapa
             if (val && CATEGORY_MAP[String(val)]) {
               obj[f] = CATEGORY_MAP[String(val)];
             } else {
+              // Si hubo error de categoría igual guardamos el valor crudo,
+              // pero NO se insertará nada porque frenamos antes si hay errores.
               obj[f] = val;
             }
           } else {
@@ -138,6 +175,12 @@ export default function ImportExcel({ table, fields, userId, onSuccess }) {
         }
 
         mapped.push(obj);
+      });
+
+      // ⛔ Si hubo errores de categorías, no insertamos nada
+      if (rowErrors.length > 0) {
+        setError(rowErrors.join('\n'));
+        return;
       }
 
       // 2) Insertar TODAS las filas mapeadas en la tabla indicada (productos)
