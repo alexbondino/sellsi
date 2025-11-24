@@ -6,26 +6,6 @@ import { Box, Button, Alert } from '@mui/material';
 // Definición de los campos requeridos para el Excel con descripciones
 const PRODUCT_IMPORT_FIELDS = [
   {
-    key: 'regions',
-    label: 'Texto (lista separada por coma)',
-    description: 'Regiones de entrega. Ejemplo: CABA, GBA, Interior',
-    optional: false,
-  },
-  {
-    key: 'delivery_prices',
-    label: 'Números (lista separada por coma)',
-    description:
-      'Precios de entrega para cada región, en el mismo orden. Ejemplo: 1000, 1500, 2000',
-    optional: false,
-  },
-  {
-    key: 'delivery_days',
-    label: 'Números (lista separada por coma)',
-    description:
-      'Días de entrega para cada región, en el mismo orden. Ejemplo: 2, 3, 5',
-    optional: false,
-  },
-  {
     key: 'productnm',
     label: 'Texto',
     description: 'Nombre completo del producto.',
@@ -77,6 +57,26 @@ const PRODUCT_IMPORT_FIELDS = [
     description:
       'URL directa de la imagen del producto. Si se provee, la imagen será descargada y subida al bucket de productos.',
     optional: true,
+  },
+  {
+    key: 'delivery_regions',
+    label: 'Texto (lista separada por coma)',
+    description: 'Regiones de entrega. Ejemplo: CABA, GBA, Interior',
+    optional: false,
+  },
+  {
+    key: 'delivery_prices',
+    label: 'Números (lista separada por coma)',
+    description:
+      'Precios de entrega para cada región, en el mismo orden. Ejemplo: 1000, 1500, 2000',
+    optional: false,
+  },
+  {
+    key: 'delivery_days',
+    label: 'Números (lista separada por coma)',
+    description:
+      'Días de entrega para cada región, en el mismo orden. Ejemplo: 2, 3, 5',
+    optional: false,
   },
 ];
 
@@ -147,7 +147,7 @@ const MassiveProductImport = ({ open, onClose, onSuccess }) => {
           mt: 2,
         }}
       >
-        <div style={{ fontWeight: 500, marginBottom: 8 }}>
+        <div style={{ fontWeight: 500, marginBottom: 30, marginTop: 30 }}>
           Los campos requeridos en el Excel son:
         </div>
         <ul style={{ textAlign: 'left', paddingLeft: 24, margin: 0 }}>

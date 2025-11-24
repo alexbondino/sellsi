@@ -37,7 +37,7 @@ const BigModal = ({
   order = null,
   submitButtonText,
   submitButtonColor,
-  cancelButtonText = 'Cancelar',
+  cancelButtonText = 'Volver',
   showCancelButton = true,
   loading = false,
   showWarningIconHeader = false,
@@ -85,7 +85,7 @@ const BigModal = ({
           overflow: 'hidden',
           position: 'fixed',
           width: isMobile ? '100vw' : '50%',
-          height: isMobile ? '100vh' : '65%',
+          height: isMobile ? '100vh' : '85%',
         },
       }}
     >
@@ -269,7 +269,7 @@ const BigModal = ({
           gap: 1,
           p: 3,
           pt: 1,
-          justifyContent: 'center',
+          justifyContent: isMobile ? 'center' : 'flex-end', // 👉 derecha en desktop
         }}
       >
         {showCancelButton && (
@@ -280,30 +280,15 @@ const BigModal = ({
             fullWidth={isMobile}
             sx={{
               textTransform: 'none',
-              fontWeight: 500,
+              fontWeight: 'bold',
               borderRadius: 2,
+              width: isMobile ? '100%' : '120px', // 👈 AJUSTA EL ANCHO AQUÍ
+              alignSelf: isMobile ? 'stretch' : 'flex-end', // opcional, refuerza derecha
             }}
           >
             {cancelButtonText}
           </Button>
         )}
-
-        <Button
-          onClick={isFormModal ? undefined : handleSubmitInternal}
-          type={isFormModal ? 'submit' : 'button'}
-          disabled={loading || submitDisabled}
-          variant="contained"
-          color={currentSubmitButtonColor}
-          fullWidth={isMobile}
-          sx={{
-            textTransform: 'none',
-            fontWeight: 600,
-            borderRadius: 2,
-            order: isMobile ? -1 : 0,
-          }}
-        >
-          {loading ? 'Procesando...' : currentSubmitButtonText}
-        </Button>
       </DialogActions>
     </Dialog>
   );
