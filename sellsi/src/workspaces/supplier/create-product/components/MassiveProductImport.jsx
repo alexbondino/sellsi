@@ -26,7 +26,7 @@ const PRODUCT_IMPORT_FIELDS = [
             fontWeight: 500,
           }}
         >
-          ver diccionario de categorías
+          [Diccionario de Categorías]
         </a>
       </>
     ),
@@ -35,47 +35,50 @@ const PRODUCT_IMPORT_FIELDS = [
     key: 'description',
     label: 'Texto',
     description: 'Descripción breve del producto.',
+    optional: false,
   },
   {
     key: 'productqty',
     label: 'Número Entero',
     description: 'Cantidad disponible para la venta.',
+    optional: false,
   },
   {
     key: 'price',
     label: 'Número Entero',
     description: 'Precio unitario del producto.',
+    optional: false,
   },
   {
     key: 'minimum_purchase',
     label: 'Número Entero',
     description: 'Cantidad mínima que se puede comprar.',
+    optional: false,
   },
   {
     key: 'image_urls',
-    label: 'URL de imagen (opcional)',
-    description:
-      'URL directa de la imagen del producto. Si se provee, la imagen será descargada y subida al bucket de productos.',
-    optional: true,
+    label: 'URLs (lista separada por ;)',
+    description: 'URLs de las imágenes del producto.',
+    optional: false,
   },
   {
     key: 'delivery_regions',
-    label: 'Texto (lista separada por coma)',
-    description: 'Regiones de entrega. Ejemplo: CABA, GBA, Interior',
+    label: 'Números Enteros (lista separada por ;)',
+    description: 'Regiones de despacho.',
     optional: false,
   },
   {
     key: 'delivery_prices',
-    label: 'Números (lista separada por coma)',
+    label: 'Números Enteros (lista separada por ;)',
     description:
-      'Precios de entrega para cada región, en el mismo orden. Ejemplo: 1000, 1500, 2000',
+      'Precios de entrega para cada región, en el mismo orden que esta.',
     optional: false,
   },
   {
     key: 'delivery_days',
-    label: 'Números (lista separada por coma)',
+    label: 'Números Enteros(lista separada por ;)',
     description:
-      'Días de entrega para cada región, en el mismo orden. Ejemplo: 2, 3, 5',
+      'Días de entrega para cada región, en el mismo orden que esta.',
     optional: false,
   },
 ];
