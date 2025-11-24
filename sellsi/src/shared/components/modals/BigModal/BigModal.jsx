@@ -84,8 +84,8 @@ const BigModal = ({
           borderRadius: isMobile ? 0 : 3,
           overflow: 'hidden',
           position: 'fixed',
-          width: isMobile ? '100vw' : '50%',
-          height: isMobile ? '100vh' : '85%',
+          width: isMobile ? '100vw' : '60%',
+          height: isMobile ? '100vh' : '80%',
         },
       }}
     >
