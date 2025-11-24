@@ -214,7 +214,7 @@ export const useOrdersStore = create((set, get) => ({
         supplierId,
         searchText.trim()
       );
-      // Aplicar mismo filtro de visibilidad tras búsqueda.
+      // Supplier solo ve órdenes con pago confirmado (paid)
       const visibilityFiltered = searchResults.filter(o => (
         o.payment_status === undefined || o.payment_status === null || o.payment_status === 'paid'
       ));
