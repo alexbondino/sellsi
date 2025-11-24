@@ -69,11 +69,9 @@ export default function ImportExcel({
 }) {
   const inputRef = useRef();
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null); // se usa para tenerlo interno, pero se muestra arriba en el padre
   const [success, setSuccess] = useState(false);
 
   const reportError = msg => {
-    setError(msg);
     if (onErrorChange) onErrorChange(msg || null);
   };
 
@@ -99,17 +97,16 @@ export default function ImportExcel({
       const mapped = [];
       const imagesByProduct = {}; // productId -> [urls]
 
-      // 🔹 Flags para errores genéricos de category
+      // 🔹 Flags para errores genéricos
       let missingCategoryColumn = false;
       let hasEmptyCategory = false;
       let hasNonNumberCategory = false;
       let hasNonIntegerCategory = false;
       let hasUnknownCategory = false;
 
-      // 🔹 Flag para errores genéricos en numéricos positivos
       let hasInvalidNumericField = false;
 
-      // Verificar si existe la columna "category" en el archivo
+      // Verificar si existe la columna "category"
       const firstRow = json[0];
       const hasCategoryColumn = Object.prototype.hasOwnProperty.call(
         firstRow,
@@ -119,37 +116,29 @@ export default function ImportExcel({
         missingCategoryColumn = true;
       }
 
-      // 1) Recorremos cada fila del Excel y construimos los productos
-      json.forEach((row, index) => {
-        const excelRowNumber = index + 2; // Fila real (1 = header)
-
-        // ✅ Validación de category SOLO si la columna existe
+      // 1) Recorrer filas
+      json.forEach(row => {
+        // -------- VALIDACIÓN CATEGORY ----------
         if (hasCategoryColumn) {
-          const rawCategory = row.category;
+          const raw = row.category;
 
-          if (
-            rawCategory === undefined ||
-            rawCategory === null ||
-            rawCategory === ''
-          ) {
+          if (raw === undefined || raw === null || raw === '') {
             hasEmptyCategory = true;
-          } else if (typeof rawCategory !== 'number') {
+          } else if (typeof raw !== 'number') {
             hasNonNumberCategory = true;
-          } else if (!Number.isInteger(rawCategory)) {
+          } else if (!Number.isInteger(raw)) {
             hasNonIntegerCategory = true;
-          } else if (!CATEGORY_MAP[String(rawCategory)]) {
+          } else if (!CATEGORY_MAP[String(raw)]) {
             hasUnknownCategory = true;
           }
         }
 
-        // ✅ Validación de numéricos positivos:
-        // productqty, price, minimum_purchase
+        // -------- VALIDACIÓN NUMÉRICOS POSITIVOS ----------
         const numericFields = ['productqty', 'price', 'minimum_purchase'];
 
         numericFields.forEach(fieldName => {
           const val = row[fieldName];
 
-          // Consideramos cualquier cosa que no sea entero > 0 como inválida
           if (val === undefined || val === null || val === '') {
             hasInvalidNumericField = true;
             return;
@@ -171,22 +160,18 @@ export default function ImportExcel({
           }
         });
 
+        // -------- MAPEO ----------
         const obj = {};
-
-        // ✅ Generamos un UUID para este producto
         const productId = uuidv4();
         obj.productid = productId;
 
-        // Mapear solo los campos definidos en `fields`, con mapeo de categoría
         fields.forEach(f => {
-          // ❌ Nunca pisar productid, ni incluir columnas de imágenes crudas
           if (f === 'image_url' || f === 'image_urls' || f === 'productid') {
             return;
           }
 
           if (f === 'category') {
             const val = row[f];
-            // Si el valor es válido y existe en el mapa, lo convertimos a texto
             if (val && CATEGORY_MAP[String(val)]) {
               obj[f] = CATEGORY_MAP[String(val)];
             } else {
@@ -197,34 +182,42 @@ export default function ImportExcel({
           }
         });
 
-        if (userId) {
-          obj.supplier_id = userId;
-        }
+        if (userId) obj.supplier_id = userId;
 
-        // Construir lista de URLs a procesar
-        const urlsToProcess = [];
+        // -------- CAPTURAR IMÁGENES ----------
+        const urls = [];
 
-        if (row.image_url) {
-          urlsToProcess.push(String(row.image_url).trim());
-        }
+        if (row.image_url) urls.push(String(row.image_url).trim());
 
         if (row.image_urls) {
-          const raw = String(row.image_urls);
-          raw
+          String(row.image_urls)
             .split(',')
             .map(u => u.trim())
             .filter(Boolean)
-            .forEach(u => urlsToProcess.push(u));
+            .forEach(u => urls.push(u));
         }
 
-        if (urlsToProcess.length > 0) {
-          imagesByProduct[productId] = urlsToProcess;
+        if (urls.length > 0) {
+          imagesByProduct[productId] = urls;
         }
 
         mapped.push(obj);
       });
 
-      // ⛔ Construimos mensajes genéricos si hay problemas con category o numéricos
+      // -------- VALIDACIÓN: NINGUNA URL DE IMAGEN EN TODO EL ARCHIVO ----------
+      const totalImageUrls = Object.values(imagesByProduct).reduce(
+        (acc, urls) => acc + urls.length,
+        0
+      );
+
+      if (totalImageUrls === 0) {
+        reportError(
+          'Ningún producto contiene URLs de imágenes. Debes incluir al menos una URL de imagen en la columna "image_urls".'
+        );
+        return;
+      }
+
+      // -------- VALIDACIÓN: ERRORES CATEGORY / NUMÉRICOS ----------
       const genericErrors = [];
 
       if (missingCategoryColumn) {
@@ -239,42 +232,43 @@ export default function ImportExcel({
       }
       if (hasNonNumberCategory || hasNonIntegerCategory) {
         genericErrors.push(
-          'La columna "category" debe contener solo números enteros (por ejemplo: 1, 2, 3) sin texto ni decimales.'
+          'La columna "category" debe contener solo números enteros (por ejemplo: 1, 2, 3).'
         );
       }
       if (hasUnknownCategory) {
         genericErrors.push(
-          'La columna "category" contiene valores que no pertenecen a ninguna categoría válida. Revisa el diccionario de categorías.'
+          'La columna "category" contiene valores que no pertenecen a ninguna categoría válida.'
         );
       }
-
       if (hasInvalidNumericField) {
         genericErrors.push(
-          'Las columnas "productqty", "price" y "minimum_purchase" deben contener solo números enteros positivos (por ejemplo: 1, 2, 3), sin texto, decimales ni valores menores o iguales a 0.'
+          'Las columnas "productqty", "price" y "minimum_purchase" deben contener solo números enteros positivos (ej: 1, 2, 3), sin texto ni decimales.'
         );
       }
 
-      // Si hay cualquier error de validación → no insertamos nada
       if (genericErrors.length > 0) {
         reportError(genericErrors.join('\n'));
         return;
       }
 
-      // 2) Insertar TODAS las filas mapeadas en la tabla indicada (productos)
+      // -------- INSERTAR PRODUCTOS --------
       const { error: insertError } = await supabase.from(table).insert(mapped);
 
       if (insertError) {
         console.error(insertError);
         throw new Error(
-          insertError.message || 'Error al insertar en la base de datos.'
+          insertError.message ||
+            'Error al insertar los productos en la base de datos.'
         );
       }
 
-      // 3) Subir imágenes y crear registros en product_images
+      // -------- SUBIR IMÁGENES --------
       const imageErrors = [];
+      let successfulUploads = 0; // 👈 cuántas imágenes se subieron bien
 
       for (const [productId, urls] of Object.entries(imagesByProduct)) {
         let order = 0;
+
         for (const url of urls) {
           try {
             const blob = await fetchImageAsBlob(url);
@@ -287,7 +281,6 @@ export default function ImportExcel({
               productId
             );
 
-            // Insertar registro usando función atómica (RLS)
             const { error: imgInsertError } = await supabase.rpc(
               'insert_image_with_order',
               {
@@ -298,32 +291,33 @@ export default function ImportExcel({
             );
 
             if (imgInsertError) {
-              console.error(
-                '[ImportExcel] Error insertando en product_images:',
-                imgInsertError
-              );
               imageErrors.push(
                 `Producto ${productId} - imagen ${url}: ${imgInsertError.message}`
               );
+            } else {
+              successfulUploads += 1; // ✅ imagen subida + registro creado
             }
 
-            order += 1;
-          } catch (imgErr) {
-            console.error(
-              '[ImportExcel] Error procesando imagen:',
-              url,
-              imgErr
-            );
+            order++;
+          } catch (err) {
             imageErrors.push(
-              `Producto ${productId} - imagen ${url}: ${imgErr.message}`
+              `Producto ${productId} - imagen ${url}: ${err.message}`
             );
           }
         }
       }
 
+      // -------- VALIDACIÓN: ¿SE SUBIÓ AL MENOS UNA IMAGEN REALMENTE? --------
+      if (successfulUploads === 0) {
+        reportError(
+          'No se pudo subir ninguna imagen. Verifica que las URLs de imagen sean válidas, públicas y accesibles.'
+        );
+        return;
+      }
+
       if (imageErrors.length > 0) {
         reportError(
-          `Productos importados, pero hubo errores con algunas imágenes:\n${imageErrors.join(
+          `Productos importados, pero algunas imágenes fallaron:\n${imageErrors.join(
             '\n'
           )}`
         );
@@ -338,9 +332,7 @@ export default function ImportExcel({
       reportError(err.message || 'Ocurrió un error al importar el archivo.');
     } finally {
       setLoading(false);
-      if (inputRef.current) {
-        inputRef.current.value = '';
-      }
+      if (inputRef.current) inputRef.current.value = '';
     }
   };
 
@@ -361,7 +353,6 @@ export default function ImportExcel({
           onChange={handleFile}
         />
       </Button>
-      {/* El error se muestra en MassiveProductImport debajo de los botones */}
     </Box>
   );
 }
