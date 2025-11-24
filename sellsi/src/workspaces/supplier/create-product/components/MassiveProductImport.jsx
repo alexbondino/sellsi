@@ -143,6 +143,19 @@ const MassiveProductImport = ({ open, onClose, onSuccess }) => {
         />
       </Box>
 
+      {/* Info: Feature solo disponible para productos de venta por unidad */}
+      <div
+        style={{
+          color: '#d32f2f',
+          fontWeight: 600,
+          marginBottom: 12,
+          marginTop: 4,
+        }}
+      >
+        Feature solo disponible para productos de venta por unidad. Venta por
+        tramos disponible próximamente.
+      </div>
+
       {/* 🔴 Error justo debajo de los botones */}
       {importError && (
         <Alert
