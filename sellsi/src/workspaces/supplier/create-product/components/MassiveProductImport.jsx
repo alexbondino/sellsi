@@ -11,6 +11,12 @@ const PRODUCT_IMPORT_FIELDS = [
     description: 'Nombre completo del producto.',
   },
   {
+    key: 'description',
+    label: 'Texto',
+    description: 'Descripción breve del producto.',
+    optional: false,
+  },
+  {
     key: 'category',
     label: 'Número Entero',
     description: (
@@ -32,9 +38,9 @@ const PRODUCT_IMPORT_FIELDS = [
     ),
   },
   {
-    key: 'description',
-    label: 'Texto',
-    description: 'Descripción breve del producto.',
+    key: 'price',
+    label: 'Número Entero',
+    description: 'Precio unitario del producto.',
     optional: false,
   },
   {
@@ -44,21 +50,9 @@ const PRODUCT_IMPORT_FIELDS = [
     optional: false,
   },
   {
-    key: 'price',
-    label: 'Número Entero',
-    description: 'Precio unitario del producto.',
-    optional: false,
-  },
-  {
     key: 'minimum_purchase',
     label: 'Número Entero',
     description: 'Cantidad mínima que se puede comprar.',
-    optional: false,
-  },
-  {
-    key: 'image_urls',
-    label: 'URLs (lista separada por ;)',
-    description: 'URLs de las imágenes del producto.',
     optional: false,
   },
   {
@@ -95,6 +89,12 @@ const PRODUCT_IMPORT_FIELDS = [
     label: 'Números Enteros(lista separada por ;)',
     description:
       'Días de entrega para cada región, en el mismo orden que esta.',
+    optional: false,
+  },
+  {
+    key: 'image_urls',
+    label: 'URLs (lista separada por ;)',
+    description: 'URLs de las imágenes del producto.',
     optional: false,
   },
 ];
