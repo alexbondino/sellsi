@@ -1,3 +1,12 @@
+// Mapeo de categorías numéricas a texto
+const CATEGORY_MAP = {
+  1: 'Tabaquería',
+  2: 'Alcoholes',
+  3: 'Alimentos',
+  4: 'Bebidas',
+  5: 'Accesorios',
+  // Agrega más según tu sistema
+};
 import React, { useRef, useState } from 'react';
 import { Button, Box, CircularProgress, Alert } from '@mui/material';
 import * as XLSX from 'xlsx';
@@ -84,13 +93,23 @@ export default function ImportExcel({ table, fields, userId, onSuccess }) {
         const productId = uuidv4();
         obj.productid = productId;
 
-        // Mapear solo los campos definidos en `fields`
+        // Mapear solo los campos definidos en `fields`, con mapeo de categoría
         fields.forEach(f => {
           // ❌ Nunca pisar productid, ni incluir columnas de imágenes crudas
           if (f === 'image_url' || f === 'image_urls' || f === 'productid') {
             return;
           }
-          obj[f] = row[f];
+          if (f === 'category') {
+            let val = row[f];
+            // Si es número y está en el mapa, reemplazar
+            if (val && CATEGORY_MAP[String(val)]) {
+              obj[f] = CATEGORY_MAP[String(val)];
+            } else {
+              obj[f] = val;
+            }
+          } else {
+            obj[f] = row[f];
+          }
         });
 
         if (userId) {
