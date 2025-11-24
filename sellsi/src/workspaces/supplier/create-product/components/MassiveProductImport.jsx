@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import ImportExcel from '../../../../ui-components/imports/ImportExcel';
 import { downloadExcelTemplate } from '../../../../ui-components/templates/ExcelTemplateGenerator';
-import { Box, Button } from '@mui/material';
+import { Box, Button, Alert } from '@mui/material';
 
 // Definición de los campos requeridos para el Excel con descripciones
 const PRODUCT_IMPORT_FIELDS = [
@@ -61,12 +61,16 @@ const PRODUCT_IMPORT_FIELDS = [
 ];
 
 const MassiveProductImport = ({ open, onClose, onSuccess }) => {
+  const [importError, setImportError] = useState(null);
+
   // Para el template y el import, solo se pasan los keys
   const fieldKeys = PRODUCT_IMPORT_FIELDS.map(f => f.key);
   // Obtener el userId del localStorage
   const userId = localStorage.getItem('user_id');
+
   return (
     <Box>
+      {/* Fila de botones */}
       <Box
         sx={{
           mb: 2,
@@ -74,6 +78,7 @@ const MassiveProductImport = ({ open, onClose, onSuccess }) => {
           gap: 2,
           justifyContent: 'center',
           alignItems: 'center',
+          flexWrap: 'wrap',
         }}
       >
         <Button
@@ -84,14 +89,36 @@ const MassiveProductImport = ({ open, onClose, onSuccess }) => {
         >
           Descargar template
         </Button>
+
         <ImportExcel
           table="products"
           fields={fieldKeys}
           userId={userId}
-          onSuccess={onSuccess}
+          onSuccess={data => {
+            setImportError(null);
+            if (onSuccess) onSuccess(data);
+          }}
+          // ← recibe errores desde ImportExcel y los muestra debajo de los botones
+          onErrorChange={setImportError}
           buttonProps={{ variant: 'contained' }}
         />
       </Box>
+
+      {/* 🔴 Error justo debajo de los botones */}
+      {importError && (
+        <Alert
+          severity="error"
+          sx={{
+            mb: 2,
+            whiteSpace: 'pre-line',
+            textAlign: 'left',
+          }}
+        >
+          {importError}
+        </Alert>
+      )}
+
+      {/* Texto de ayuda / esquema de campos */}
       <Box
         sx={{
           color: 'text.secondary',

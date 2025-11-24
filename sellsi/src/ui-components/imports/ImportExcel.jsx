@@ -9,7 +9,7 @@ const CATEGORY_MAP = {
 };
 
 import React, { useRef, useState } from 'react';
-import { Button, Box, CircularProgress, Alert } from '@mui/material';
+import { Button, Box, CircularProgress } from '@mui/material';
 import * as XLSX from 'xlsx';
 import { v4 as uuidv4 } from 'uuid';
 import { supabase } from '../../services/supabase';
@@ -56,15 +56,30 @@ async function uploadImageToBucket(blob, fileName, userId, productId) {
  * @param {Array<string>} fields - Lista de campos/columnas a mapear desde el Excel
  * @param {string} [userId] - user_id / supplier_id a asociar a cada fila importada
  * @param {function} [onSuccess] - Callback opcional al terminar
+ * @param {function} [onErrorChange] - Callback para reportar errores al padre (MassiveProductImport)
+ * @param {object} [buttonProps] - Props opcionales para estilizar el botón
  */
-export default function ImportExcel({ table, fields, userId, onSuccess }) {
+export default function ImportExcel({
+  table,
+  fields,
+  userId,
+  onSuccess,
+  onErrorChange,
+  buttonProps = {},
+}) {
   const inputRef = useRef();
   const [loading, setLoading] = useState(false);
+  // Mantengo error/success interno por si los quisieras reutilizar luego
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
 
+  const reportError = msg => {
+    setError(msg);
+    if (onErrorChange) onErrorChange(msg || null);
+  };
+
   const handleFile = async e => {
-    setError(null);
+    reportError(null);
     setSuccess(false);
 
     const file = e.target.files[0];
@@ -84,43 +99,39 @@ export default function ImportExcel({ table, fields, userId, onSuccess }) {
 
       const mapped = [];
       const imagesByProduct = {}; // productId -> [urls]
-      const rowErrors = []; // 👈 acumulamos errores de categoría
+      const rowErrors = [];
 
       // 1) Recorremos cada fila del Excel y construimos los productos
       json.forEach((row, index) => {
-        const excelRowNumber = index + 2; // Fila real en Excel (1 = header)
+        const excelRowNumber = index + 2; // Fila real (1 = header)
 
-        // -----------------------------
-        // 🔍 VALIDACIÓN DE category
-        // -----------------------------
-        const rawCategory = row.category;
+        // ✅ Validación estricta de category (si viene en el Excel)
+        if ('category' in row) {
+          const rawCategory = row.category;
 
-        if (
-          rawCategory === undefined ||
-          rawCategory === null ||
-          rawCategory === ''
-        ) {
-          rowErrors.push(
-            `Fila ${excelRowNumber}: la columna "category" es obligatoria y no puede estar vacía.`
-          );
-        } else if (typeof rawCategory !== 'number') {
-          // XLSX deja como string si la celda es texto
-          rowErrors.push(
-            `Fila ${excelRowNumber}: la columna "category" debe ser un número entero (no texto). Valor recibido: "${rawCategory}".`
-          );
-        } else if (!Number.isInteger(rawCategory)) {
-          rowErrors.push(
-            `Fila ${excelRowNumber}: la columna "category" debe ser un número entero. Valor recibido: ${rawCategory}.`
-          );
-        } else if (!CATEGORY_MAP[String(rawCategory)]) {
-          rowErrors.push(
-            `Fila ${excelRowNumber}: la categoría "${rawCategory}" no existe en el diccionario de categorías.`
-          );
+          if (
+            rawCategory === undefined ||
+            rawCategory === null ||
+            rawCategory === ''
+          ) {
+            rowErrors.push(
+              `Fila ${excelRowNumber}: la columna "category" es obligatoria y no puede estar vacía.`
+            );
+          } else if (typeof rawCategory !== 'number') {
+            rowErrors.push(
+              `Fila ${excelRowNumber}: la columna "category" debe ser un número entero (no texto). Valor recibido: "${rawCategory}".`
+            );
+          } else if (!Number.isInteger(rawCategory)) {
+            rowErrors.push(
+              `Fila ${excelRowNumber}: la columna "category" debe ser un número entero. Valor recibido: ${rawCategory}.`
+            );
+          } else if (!CATEGORY_MAP[String(rawCategory)]) {
+            rowErrors.push(
+              `Fila ${excelRowNumber}: la categoría "${rawCategory}" no existe en el diccionario de categorías.`
+            );
+          }
         }
 
-        // -----------------------------
-        // Construcción del objeto fila
-        // -----------------------------
         const obj = {};
 
         // ✅ Generamos un UUID para este producto
@@ -136,12 +147,9 @@ export default function ImportExcel({ table, fields, userId, onSuccess }) {
 
           if (f === 'category') {
             const val = row[f];
-            // En este punto, si pasó la validación, val es number y está en el mapa
             if (val && CATEGORY_MAP[String(val)]) {
               obj[f] = CATEGORY_MAP[String(val)];
             } else {
-              // Si hubo error de categoría igual guardamos el valor crudo,
-              // pero NO se insertará nada porque frenamos antes si hay errores.
               obj[f] = val;
             }
           } else {
@@ -150,7 +158,6 @@ export default function ImportExcel({ table, fields, userId, onSuccess }) {
         });
 
         if (userId) {
-          // Ajusta el nombre de columna si es distinto
           obj.supplier_id = userId;
         }
 
@@ -179,7 +186,7 @@ export default function ImportExcel({ table, fields, userId, onSuccess }) {
 
       // ⛔ Si hubo errores de categorías, no insertamos nada
       if (rowErrors.length > 0) {
-        setError(rowErrors.join('\n'));
+        reportError(rowErrors.join('\n'));
         return;
       }
 
@@ -216,7 +223,7 @@ export default function ImportExcel({ table, fields, userId, onSuccess }) {
               {
                 p_product_id: productId,
                 p_image_url: publicUrl,
-                p_supplier_id: userId, // aunque sea reservado, la función lo acepta
+                p_supplier_id: userId,
               }
             );
 
@@ -245,20 +252,20 @@ export default function ImportExcel({ table, fields, userId, onSuccess }) {
       }
 
       if (imageErrors.length > 0) {
-        // Productos creados pero algunas imágenes fallaron
-        setError(
+        reportError(
           `Productos importados, pero hubo errores con algunas imágenes:\n${imageErrors.join(
             '\n'
           )}`
         );
       } else {
+        reportError(null);
         setSuccess(true);
       }
 
       if (onSuccess) onSuccess(mapped);
     } catch (err) {
       console.error(err);
-      setError(err.message || 'Ocurrió un error al importar el archivo.');
+      reportError(err.message || 'Ocurrió un error al importar el archivo.');
     } finally {
       setLoading(false);
       if (inputRef.current) {
@@ -269,7 +276,12 @@ export default function ImportExcel({ table, fields, userId, onSuccess }) {
 
   return (
     <Box>
-      <Button variant="contained" component="label" disabled={loading}>
+      <Button
+        variant="contained"
+        component="label"
+        disabled={loading}
+        {...buttonProps}
+      >
         {loading ? <CircularProgress size={24} /> : 'Importar Excel'}
         <input
           ref={inputRef}
@@ -279,18 +291,7 @@ export default function ImportExcel({ table, fields, userId, onSuccess }) {
           onChange={handleFile}
         />
       </Button>
-
-      {error && (
-        <Alert severity="error" sx={{ mt: 2, whiteSpace: 'pre-line' }}>
-          {error}
-        </Alert>
-      )}
-
-      {success && !error && (
-        <Alert severity="success" sx={{ mt: 2 }}>
-          ¡Importación exitosa!
-        </Alert>
-      )}
+      {/* 👇 ya no mostramos Alert acá, el error vive en MassiveProductImport */}
     </Box>
   );
 }
