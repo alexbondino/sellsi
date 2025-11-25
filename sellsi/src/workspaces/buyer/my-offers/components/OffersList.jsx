@@ -35,10 +35,52 @@ const STATUS_MAP = {
   paid: { label: 'Pagada', color: 'success' },
 }
 
+/**
+ * Helper para detectar si una oferta ha caducado temporalmente.
+ * Una oferta "approved" caduca si purchase_deadline (o expires_at como fallback) ya pasó.
+ * Una oferta "pending" caduca si expires_at ya pasó.
+ */
+const isOfferExpiredByDeadline = (offer) => {
+  if (!offer) return false;
+  const now = Date.now();
+  const status = String(offer.status || '').toLowerCase();
+  
+  // Para ofertas approved/accepted: verificar purchase_deadline (fallback expires_at)
+  if (status === 'approved' || status === 'accepted') {
+    const deadline = offer.purchase_deadline || offer.expires_at;
+    if (deadline) {
+      const deadlineMs = new Date(deadline).getTime();
+      if (!Number.isNaN(deadlineMs) && deadlineMs < now) {
+        return true;
+      }
+    }
+  }
+  
+  // Para ofertas pending: verificar expires_at
+  if (status === 'pending') {
+    const expiresAt = offer.expires_at;
+    if (expiresAt) {
+      const expiresMs = new Date(expiresAt).getTime();
+      if (!Number.isNaN(expiresMs) && expiresMs < now) {
+        return true;
+      }
+    }
+  }
+  
+  return false;
+};
+
 // Normalización (backend puede enviar "accepted" u otros legacy)
-const normalizeStatus = (raw) => {
+// AHORA también considera si la oferta caducó temporalmente
+const normalizeStatus = (raw, offer = null) => {
   if (!raw) return 'pending'
   const s = String(raw).toLowerCase()
+  
+  // Si la oferta está temporalmente caducada, retornar 'expired'
+  if (offer && isOfferExpiredByDeadline({ ...offer, status: s })) {
+    return 'expired';
+  }
+  
   if (s === 'accepted') return 'approved'
   if (s === 'success') return 'paid'
   // fallback
@@ -78,7 +120,8 @@ const OffersList = ({ offers = [], loading = false, error = null, cancelOffer, d
     const normalized = offers.map(o => {
       const override = statusOverrides[o.id];
       const rawStatus = override || o.status;
-      return { ...o, status: normalizeStatus(rawStatus) };
+      // Pasar el objeto completo para que normalizeStatus pueda validar expiración
+      return { ...o, status: normalizeStatus(rawStatus, o) };
     })
     if (statusFilter === 'all') return normalized
     return normalized.filter(o => o.status === statusFilter)

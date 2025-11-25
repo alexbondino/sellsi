@@ -121,6 +121,12 @@ export const ERROR_MESSAGES = {
   
   // Errores de regiones
   SHIPPING_REGIONS_REQUIRED: 'Debe configurar al menos una región de despacho',
+  
+  // Errores de despacho gratuito
+  FREE_SHIPPING_MIN_REQUIRED: 'La cantidad mínima para despacho gratuito es requerida',
+  FREE_SHIPPING_MIN_NOT_INTEGER: 'La cantidad debe ser un número entero positivo',
+  FREE_SHIPPING_MIN_BELOW_COMPRA_MINIMA: 'La cantidad debe ser igual o mayor a la Compra Mínima',
+  FREE_SHIPPING_MIN_EXCEEDS_STOCK: 'La cantidad no puede ser mayor al Stock disponible',
 }
 
 // ============================================================================

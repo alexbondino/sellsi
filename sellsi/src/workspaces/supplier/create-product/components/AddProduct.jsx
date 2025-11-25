@@ -95,6 +95,7 @@ const MobileFormLayout = ({
   addTramo,
   removeTramo,
   handleRegionChange,
+  handleFreeShippingChange,
   imageError,
   handleImagesChange,
   handleImageError,
@@ -212,6 +213,7 @@ const MobileFormLayout = ({
           supplierId={supplierId}
           formData={formData}
           onRegionChange={handleRegionChange}
+          onFreeShippingChange={handleFreeShippingChange}
           errors={errors}
           localErrors={localErrors}
           triedSubmit={triedSubmit}
@@ -260,6 +262,7 @@ const DesktopFormLayout = ({
   addTramo,
   removeTramo,
   handleRegionChange,
+  handleFreeShippingChange,
   imageError,
   handleImagesChange,
   handleImageError,
@@ -354,6 +357,7 @@ const DesktopFormLayout = ({
               supplierId={supplierId}
               formData={formData}
               onRegionChange={handleRegionChange}
+              onFreeShippingChange={handleFreeShippingChange}
               errors={errors}
               localErrors={localErrors}
               triedSubmit={triedSubmit}
@@ -523,6 +527,11 @@ const AddProduct = () => {
   const handleRegionChange = regions => {
     setShippingRegions(regions);
     updateField('shippingRegions', regions);
+  };
+
+  // Handler para cambios en campos de despacho gratuito
+  const handleFreeShippingChange = (field, value) => {
+    updateField(field, value);
   };
 
   // Manejar cambios en imágenes
@@ -806,6 +815,7 @@ const AddProduct = () => {
                     addTramo={addTramo}
                     removeTramo={removeTramo}
                     handleRegionChange={handleRegionChange}
+                    handleFreeShippingChange={handleFreeShippingChange}
                     imageError={imageError}
                     handleImagesChange={handleImagesChange}
                     handleImageError={handleImageError}
@@ -828,6 +838,7 @@ const AddProduct = () => {
                   addTramo={addTramo}
                   removeTramo={removeTramo}
                   handleRegionChange={handleRegionChange}
+                  handleFreeShippingChange={handleFreeShippingChange}
                   imageError={imageError}
                   handleImagesChange={handleImagesChange}
                   handleImageError={handleImageError}

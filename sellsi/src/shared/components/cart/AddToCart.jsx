@@ -126,6 +126,21 @@ const AddToCart = ({
       openingRef.current = false;
       return;
     }
+    
+    // 🕐 VALIDAR EXPIRACIÓN DE OFERTA antes de permitir agregar al carrito
+    if (offer) {
+      const deadline = offer.purchase_deadline || offer.expires_at;
+      if (deadline) {
+        const deadlineMs = new Date(deadline).getTime();
+        if (!Number.isNaN(deadlineMs) && deadlineMs < Date.now()) {
+          showErrorToast('Esta oferta ha caducado y no puede agregarse al carrito', {
+            icon: '⏰',
+          });
+          openingRef.current = false;
+          return;
+        }
+      }
+    }
 
     if (!disabled && product) {
       try {
