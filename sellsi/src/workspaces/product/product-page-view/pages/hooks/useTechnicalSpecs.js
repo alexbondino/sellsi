@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '../../../../../../services/supabase';
 import { useAuth } from '../../../../../infrastructure/providers';
-import { getProductSpecifications } from '../../../../../services/marketplace';
+import { getProductSpecifications } from '../../../../../workspaces/marketplace';
 import { extractProductIdFromSlug } from '../../../../../shared/utils/product/productUrl';
 import useCartStore from '../../../../../shared/stores/cart/cartStore';
 import { formatProductForCart } from '../../../../../utils/priceCalculation';

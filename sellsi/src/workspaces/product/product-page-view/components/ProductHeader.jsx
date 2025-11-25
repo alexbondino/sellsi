@@ -46,7 +46,7 @@ import {
 import { PurchaseActionsSkeleton } from './skeletons/PurchaseActionsSkeleton';
 import { DocumentTypesChipsSkeleton } from './skeletons/DocumentTypesChipsSkeleton';
 import { useSmartSkeleton } from '../hooks/useSmartSkeleton';
-import StockIndicator from '../../../../domains/marketplace/StockIndicator';
+import { StockIndicator } from '../../../../workspaces/marketplace';
 import QuotationModal from './QuotationModal';
 import ContactModal from '../../../../shared/components/modals/ContactModal';
 import { useSupplierDocumentTypes } from '../../../../shared/utils/supplierDocumentTypes';
@@ -827,6 +827,28 @@ const ProductHeader = React.memo(
                   <b>Compra mínima:</b> {formatNumber(compraMinima)} unidades
                 </Typography>
               </Box>
+              
+              {/* Fila 4: Badge de Despacho Gratuito (condicional) */}
+              {(product.free_shipping_enabled || product.freeShippingEnabled) && 
+               (product.free_shipping_min_quantity || product.freeShippingMinQuantity) && (
+                <Box sx={{ width: '100%', mt: 1 }}>
+                  <Chip
+                    icon={<LocalShipping sx={{ fontSize: 16 }} />}
+                    label={`Despacho gratis desde ${formatNumber(product.free_shipping_min_quantity || product.freeShippingMinQuantity)} uds`}
+                    size={isMobile ? 'medium' : 'small'}
+                    sx={{
+                      backgroundColor: 'success.main',
+                      color: 'white',
+                      fontWeight: 600,
+                      fontSize: { xs: '0.8rem', md: '0.75rem' },
+                      '& .MuiChip-icon': {
+                        color: 'white',
+                      },
+                      '&:hover': { backgroundColor: 'success.main' },
+                    }}
+                  />
+                </Box>
+              )}
             </Box>
             <Box
               sx={{ display: 'flex', alignItems: 'center', mb: 3, gap: 1.5 }}

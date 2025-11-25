@@ -2,7 +2,7 @@ import React from 'react'
 import { render } from '@testing-library/react'
 
 // ProductsSection renders ProductsSectionView; we mock the view to assert props
-jest.mock('../../domains/marketplace/pages/sections/ProductsSection/ProductsSectionView', () => {
+jest.mock('../../workspaces/marketplace/components/sections/ProductsSection/ProductsSectionView', () => {
   return function MockView({ ui, data, handlers, components }) {
     return (
       <div data-testid="products-section-view" data-ui={JSON.stringify(Object.keys(ui || {}))} data-data={JSON.stringify({ loading: data?.loading })}></div>
@@ -10,7 +10,7 @@ jest.mock('../../domains/marketplace/pages/sections/ProductsSection/ProductsSect
   }
 })
 
-import ProductsSection from '../../domains/marketplace/pages/sections/ProductsSection'
+import ProductsSection from '../../workspaces/marketplace/components/sections/ProductsSection'
 
 describe('ProductsSection', () => {
   beforeEach(() => {

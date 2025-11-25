@@ -22,8 +22,8 @@ import { SPACING_BOTTOM_MAIN } from '../../../../styles/layoutSpacing';
 import { useBuyerOrders } from '../hooks/useBuyerOrders';
 import { createSignedInvoiceUrl } from '../../../../services/storage/invoiceStorageService'; // legacy fallback
 import { CheckoutSummaryImage } from '../../../../components/UniversalProductImage';
-// Unificar formateo de fechas con TableRows (usa marketplace/pages/utils/formatters)
-import { formatDate as formatDateUnified } from '../../../../domains/marketplace/pages/utils/formatters';
+// Unificar formateo de fechas con TableRows (usa workspaces/marketplace/utils/formatters)
+import { formatDate as formatDateUnified } from '../../../../workspaces/marketplace';
 import ContactModal from '../../../../shared/components/modals/ContactModal';
 import BuyerOrdersSkeleton from '../../../../shared/components/display/skeletons/BuyerOrdersSkeleton';
 

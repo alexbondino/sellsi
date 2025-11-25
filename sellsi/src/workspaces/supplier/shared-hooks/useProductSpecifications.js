@@ -8,7 +8,7 @@
  */
 
 import { create } from 'zustand';
-import { updateProductSpecifications } from '../../../services/marketplace';
+import { updateProductSpecifications } from '../../../workspaces/marketplace';
 
 const useProductSpecifications = create((set, get) => ({
   // ============================================================================

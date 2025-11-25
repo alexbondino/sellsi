@@ -18,7 +18,8 @@ function normalizeProduct(o) {
 }
 
 export function normalizeBuyerOffer(o) {
-  const status = normalizeStatus(o.status, o.expires_at);
+  // Pasar purchase_deadline para validar ofertas approved que hayan caducado
+  const status = normalizeStatus(o.status, o.expires_at, o.purchase_deadline);
   return {
     ...o,
     status,

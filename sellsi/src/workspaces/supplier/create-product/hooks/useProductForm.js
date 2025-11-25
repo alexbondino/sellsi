@@ -42,6 +42,9 @@ const initialFormData = {
   negociable: false,
   activo: true,
   shippingRegions: [],
+  // Despacho gratuito
+  freeShippingEnabled: false,
+  freeShippingMinQuantity: '',
 };
 
 // Reglas de validación profesionales
@@ -332,6 +335,9 @@ export const useProductForm = (productId = null) => {
       negociable: product.negociable || false,
       activo: product.activo !== false,
       shippingRegions: convertDbRegionsToForm(product.delivery_regions || []),
+      // Despacho gratuito
+      freeShippingEnabled: product.free_shipping_enabled || false,
+      freeShippingMinQuantity: product.free_shipping_min_quantity?.toString() || '',
     };
   }
 
@@ -373,6 +379,11 @@ export const useProductForm = (productId = null) => {
       is_active: formData.activo,
       imagenes: formData.imagenes,
       specifications: formData.specifications.filter(s => s.key && s.value),
+      // Despacho gratuito
+      free_shipping_enabled: formData.freeShippingEnabled || false,
+      free_shipping_min_quantity: formData.freeShippingEnabled 
+        ? parseInt(formData.freeShippingMinQuantity) || null 
+        : null,
     };
 
     // ========================================================================
