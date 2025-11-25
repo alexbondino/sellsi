@@ -39,10 +39,12 @@ export default function ServicesSection({
       alt="Landing Media"
       sx={{
         width: '100%',
-        height: { xs: 220, sm: 260, md: 340, lg: 380 },
+        height: '100%',
         objectFit: 'cover',
         borderRadius: 2,
         boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+        minHeight: { xs: 220, sm: 260, md: 340, lg: 380 },
+        maxHeight: '100%',
       }}
     />
   );
@@ -66,16 +68,32 @@ export default function ServicesSection({
             xs: 'auto auto auto auto',
             md: 'auto auto',
           },
+          gridAutoRows: { xs: 'auto', md: '1fr' },
           gap: 6,
         }}
       >
         {/* (1,1) Imagen Compradores */}
-        <Box gridColumn="1" gridRow="1">
+        <Box
+          gridColumn="1"
+          gridRow="1"
+          height="100%"
+          sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}
+        >
           <Img src={IMAGE_1} />
         </Box>
 
         {/* (1,2) Texto Compradores */}
-        <Box gridColumn={{ xs: '1', md: '2' }} gridRow={{ xs: '2', md: '1' }}>
+        <Box
+          gridColumn={{ xs: '1', md: '2' }}
+          gridRow={{ xs: '2', md: '1' }}
+          height="100%"
+          sx={{
+            height: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
+          }}
+        >
           <Typography
             variant="h2"
             sx={{
@@ -124,7 +142,17 @@ export default function ServicesSection({
         </Box>
 
         {/* (2,1) Texto Proveedores */}
-        <Box gridColumn="1" gridRow={{ xs: '3', md: '2' }}>
+        <Box
+          gridColumn="1"
+          gridRow={{ xs: '3', md: '2' }}
+          height="100%"
+          sx={{
+            height: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
+          }}
+        >
           <Typography
             variant="h2"
             sx={{
@@ -173,7 +201,11 @@ export default function ServicesSection({
         </Box>
 
         {/* (2,2) Imagen Proveedores */}
-        <Box gridColumn={{ xs: '1', md: '2' }} gridRow={{ xs: '4', md: '2' }}>
+        <Box
+          gridColumn={{ xs: '1', md: '2' }}
+          gridRow={{ xs: '4', md: '2' }}
+          sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}
+        >
           <Img src={IMAGE_2} />
         </Box>
       </Grid>
