@@ -1,5 +1,11 @@
 // src/shared/components/display/product-card/ProductCard.jsx
-import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
+import React, {
+  useState,
+  useCallback,
+  useMemo,
+  useEffect,
+  useRef,
+} from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, Box, alpha } from '@mui/material';
 
@@ -43,7 +49,7 @@ const ProductCard = React.memo(
   }) => {
     const navigate = useNavigate();
     const rootRef = React.useRef(null);
-    
+
     // Estado para controlar si el modal AddToCart está abierto
     const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -73,11 +79,15 @@ const ProductCard = React.memo(
     // --- Memoized common elements ---
     const memoizedImage = useMemo(() => {
       // Fallback: si es provider y no hay imagen base pero sí logo_url, usarlo como imagen
-      let productForImage = product
+      let productForImage = product;
       if (type === 'provider') {
-        const hasAnyImage = product.imagen || product.image_url || product.thumbnail_url || (product.thumbnails && Object.keys(product.thumbnails).length > 0)
+        const hasAnyImage =
+          product.imagen ||
+          product.image_url ||
+          product.thumbnail_url ||
+          (product.thumbnails && Object.keys(product.thumbnails).length > 0);
         if (!hasAnyImage && product.logo_url) {
-          productForImage = { ...product, imagen: product.logo_url }
+          productForImage = { ...product, imagen: product.logo_url };
         }
       }
       return (
@@ -87,20 +97,21 @@ const ProductCard = React.memo(
           priority={imagePriority} // ✅ Pasar prioridad dinámica a la imagen
           alt={nombre}
         />
-      )
-    }, [product, type, nombre, imagePriority]) // ✅ Añadir imagePriority a dependencias
+      );
+    }, [product, type, nombre, imagePriority]); // ✅ Añadir imagePriority a dependencias
 
     // --- Common Card Styles (can be adjusted per type if needed) ---
     const cardStyles = useMemo(
       () => ({
-        // 🎯 ALTURA RESPONSIVE DE LA TARJETA
-        height: type === 'supplier' ? 
-          { xs: 380, sm: 400, md: 357.5, lg: 487.5, xl: 520 } : 
-          { xs: 380, sm: 400, md: 357.5, lg: 487.5, xl: 520 },
-        // 🎯 ANCHO RESPONSIVE ÚNICO DE LA TARJETA
-        width: type === 'supplier'
-          ? { xs: 180, sm: 195, md: 220, lg: 370, xl: 360 }
-          : { xs: 180, sm: 195, md: 220, lg: 300, xl: 320 }, // buyer y provider usan las mismas dimensiones
+        // Altura responsive igual que antes
+        height:
+          type === 'supplier'
+            ? { xs: 380, sm: 400, md: 357.5, lg: 487.5, xl: 520 }
+            : { xs: 380, sm: 400, md: 357.5, lg: 487.5, xl: 520 },
+        // Ancho: 100% del grid parent, con maxWidth para evitar tarjetas gigantes
+        width: '100%',
+        maxWidth: { xs: '100%', sm: 260, md: 300, lg: 340, xl: 360 },
+        minWidth: 0,
         display: 'flex',
         flexDirection: 'column',
         position: 'relative',
@@ -111,7 +122,8 @@ const ProductCard = React.memo(
         overflow: 'hidden',
         opacity: isDeleting ? 0.5 : 1,
         transform: isDeleting ? 'scale(0.95)' : 'scale(1)',
-        cursor: type === 'provider' ? 'default' : 'pointer', // Solo cursor pointer si no es provider
+        cursor: type === 'provider' ? 'default' : 'pointer',
+        boxSizing: 'border-box',
         '&:hover': {
           transform: isDeleting
             ? 'scale(0.95)'
@@ -126,7 +138,7 @@ const ProductCard = React.memo(
               0.15
             )}`,
           borderColor: type === 'supplier' ? 'primary.main' : 'primary.main',
-          cursor: type === 'provider' ? 'default' : 'pointer', // No pointer en hover para provider
+          cursor: type === 'provider' ? 'default' : 'pointer',
         },
       }),
       [type, isDeleting]
@@ -134,43 +146,46 @@ const ProductCard = React.memo(
 
     // Function to generate product URL
     // Genera la URL pública o privada según el contexto
-    const generateProductUrl = useCallback((product) => {
+    const generateProductUrl = useCallback(product => {
       return generateUnifiedProductUrl(product);
     }, []);
 
     // Function for card navigation (works for both buyer and supplier types)
-    const handleProductClick = useCallback((e) => {
-      // Si el modal AddToCart está abierto, no permitir navegación
-      if (isModalOpen) return;
+    const handleProductClick = useCallback(
+      e => {
+        // Si el modal AddToCart está abierto, no permitir navegación
+        if (isModalOpen) return;
 
-      // Prevent navigation when clicking interactive elements inside the card
-      const target = e.target;
-      const clickedElement =
-        target.closest && (
-          target.closest('button') ||
-          target.closest('.MuiIconButton-root') ||
-          target.closest('.MuiButton-root') ||
-          target.closest('[data-no-card-click]')
-        ) ||
-        target.hasAttribute && target.hasAttribute('data-no-card-click');
+        // Prevent navigation when clicking interactive elements inside the card
+        const target = e.target;
+        const clickedElement =
+          (target.closest &&
+            (target.closest('button') ||
+              target.closest('.MuiIconButton-root') ||
+              target.closest('.MuiButton-root') ||
+              target.closest('[data-no-card-click]'))) ||
+          (target.hasAttribute && target.hasAttribute('data-no-card-click'));
 
-      if (clickedElement) return;
+        if (clickedElement) return;
 
-      const currentPath = typeof window !== 'undefined' ? window.location.pathname : '';
-      let fromPath = '/marketplace';
-      if (currentPath.includes('/buyer/')) {
-        fromPath = '/buyer/marketplace';
-      } else if (currentPath === '/supplier/marketplace') {
-        fromPath = '/supplier/marketplace';
-      } else if (currentPath === '/supplier/myproducts') {
-        fromPath = '/supplier/myproducts';
-      } else if (currentPath.includes('/provider/')) {
-        fromPath = '/provider/marketplace';
-      }
+        const currentPath =
+          typeof window !== 'undefined' ? window.location.pathname : '';
+        let fromPath = '/marketplace';
+        if (currentPath.includes('/buyer/')) {
+          fromPath = '/buyer/marketplace';
+        } else if (currentPath === '/supplier/marketplace') {
+          fromPath = '/supplier/marketplace';
+        } else if (currentPath === '/supplier/myproducts') {
+          fromPath = '/supplier/myproducts';
+        } else if (currentPath.includes('/provider/')) {
+          fromPath = '/provider/marketplace';
+        }
 
-      const productUrl = generateProductUrl(product);
-      navigate(productUrl, { state: { from: fromPath } });
-    }, [isModalOpen, navigate, product, generateProductUrl]);
+        const productUrl = generateProductUrl(product);
+        navigate(productUrl, { state: { from: fromPath } });
+      },
+      [isModalOpen, navigate, product, generateProductUrl]
+    );
 
     return (
       <Card
@@ -179,9 +194,9 @@ const ProductCard = React.memo(
         onClick={type === 'provider' ? undefined : handleProductClick}
         sx={cardStyles}
       >
-    {/* registerProductNode effect handled by the useEffect above (no inline effects in JSX) */}
-  {/* ✅ Ocultar imagen de producto en tarjetas de proveedor (Option A) */}
-  {type !== 'provider' && memoizedImage}
+        {/* registerProductNode effect handled by the useEffect above (no inline effects in JSX) */}
+        {/* ✅ Ocultar imagen de producto en tarjetas de proveedor (Option A) */}
+        {type !== 'provider' && memoizedImage}
         {type === 'supplier' && (
           <ProductCardSupplierContext
             product={product}
@@ -201,9 +216,7 @@ const ProductCard = React.memo(
           />
         )}
         {type === 'provider' && (
-          <ProductCardProviderContext
-            product={product}
-          />
+          <ProductCardProviderContext product={product} />
         )}
       </Card>
     );
