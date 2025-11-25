@@ -630,8 +630,9 @@ class CartService {
   }
 
   async clearCart(cartId, options = {}) {
-    const { skipTimestamp = false } = options;
+    const { skipTimestamp = false, markCompleted = true } = options;
     try {
+      // 1. Borrar todos los items del carrito
       const { error } = await supabase
         .from('cart_items')
         .delete()
@@ -639,7 +640,23 @@ class CartService {
 
       if (error) throw error;
 
-      if (!skipTimestamp) await this.updateCartTimestamp(cartId);
+      // 2. Marcar el carrito como completado para evitar resurrección
+      if (markCompleted) {
+        const { error: statusError } = await supabase
+          .from('carts')
+          .update({ 
+            status: 'completed', 
+            updated_at: new Date().toISOString() 
+          })
+          .eq('cart_id', cartId);
+        
+        if (statusError) {
+          console.warn('[cartService] clearCart: No se pudo marcar carrito como completed:', statusError);
+          // No lanzamos error - la limpieza de items ya fue exitosa
+        }
+      } else if (!skipTimestamp) {
+        await this.updateCartTimestamp(cartId);
+      }
 
       return true;
     } catch (error) {

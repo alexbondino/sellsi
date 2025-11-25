@@ -29,6 +29,7 @@ import { useCheckout, usePaymentMethods } from '../hooks';
 import checkoutService from '../services/checkoutService'; // Corregido
 import { trackUserAction } from '../../../services/security';
 import { calculatePriceForQuantity } from '../../../utils/priceCalculation';
+import useCartStore from '../../../shared/stores/cart/cartStore';
 
 // Componentes UI
 import CheckoutSummary from './CheckoutSummary';
@@ -191,6 +192,9 @@ const PaymentMethodSelector = () => {
         return { ...it, document_type: norm };
       });
 
+      // Obtener cartId del store para vincular orden con carrito
+      const cartId = useCartStore.getState().cartId;
+
       const order = await checkoutService.createOrder({
         userId: userId,
         items: itemsWithDocType,
@@ -202,6 +206,7 @@ const PaymentMethodSelector = () => {
         paymentMethod: selectedMethod.id,
         shippingAddress: orderData.shippingAddress,
         billingAddress: orderData.billingAddress,
+        cartId: cartId, // ✅ Vincular orden con carrito para limpieza server-side
       });
 
       console.log('[PaymentMethodSelector] Orden creada:', order);

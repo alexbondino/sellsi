@@ -517,8 +517,8 @@ const BuyerOrders = () => {
                       Fecha de compra: {formatDateUnified(order.created_at)}
                     </Typography>
 
-                    {/* Fecha estimada de entrega (ETA): mostrar solo si status in_transit o delivered */}
-                    {order.estimated_delivery_date && (order.status === 'in_transit' || order.status === 'delivered') && (
+                    {/* Entrega estimada: solo mostrar si status es in_transit (NO delivered) */}
+                    {order.estimated_delivery_date && order.status === 'in_transit' && (
                       <Typography variant="body2" color="text.secondary">
                         {(() => {
                           let eta = order.estimated_delivery_date;
@@ -538,9 +538,10 @@ const BuyerOrders = () => {
                       </Typography>
                     )}
 
+                    {/* Fecha de entrega: mostrar cuando status es delivered con delivered_at */}
                     {order.status === 'delivered' && (order.delivered_at || order.deliveredAt || order.delivered) && (
                       <Typography variant="body2" color="text.secondary">
-                        Pedido entregado con fecha: {formatDateUnified(order.delivered_at || order.deliveredAt || order.delivered)}
+                        Fecha de entrega: {formatDateUnified(order.delivered_at || order.deliveredAt || order.delivered)}
                       </Typography>
                     )}
                   </Box>

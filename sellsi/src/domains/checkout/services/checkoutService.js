@@ -100,6 +100,7 @@ class CheckoutService {
           payment_status: 'pending',
           shipping_address: shippingAddressObj,
           billing_address: billingAddressObj,
+          cart_id: orderData.cartId || null, // ✅ Vincular con carrito para limpieza server-side
         })
         .select()
         .single();
