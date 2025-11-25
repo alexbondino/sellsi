@@ -46,7 +46,7 @@ import {
 import { PurchaseActionsSkeleton } from './skeletons/PurchaseActionsSkeleton';
 import { DocumentTypesChipsSkeleton } from './skeletons/DocumentTypesChipsSkeleton';
 import { useSmartSkeleton } from '../hooks/useSmartSkeleton';
-import StockIndicator from '../../../../domains/marketplace/StockIndicator';
+import { StockIndicator } from '../../../../workspaces/marketplace';
 import QuotationModal from './QuotationModal';
 import ContactModal from '../../../../shared/components/modals/ContactModal';
 import { useSupplierDocumentTypes } from '../../../../shared/utils/supplierDocumentTypes';

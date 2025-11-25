@@ -21,7 +21,9 @@ const MarketplaceBuyer = React.lazy(() =>
   }))
 );
 const Marketplace = React.lazy(() =>
-  import('../../domains/marketplace/pages/Marketplace')
+  import('../../workspaces/marketplace').then(module => ({
+    default: module.Marketplace,
+  }))
 );
 const BuyerCart = React.lazy(() =>
   import('../../domains/buyer/pages/BuyerCart')
@@ -77,7 +79,9 @@ const BuyerOffers = React.lazy(() =>
 );
 // Eliminado: TechnicalSpecs como página propia. Usaremos redirect desde /technicalspecs a la ruta unificada.
 const ProviderCatalog = React.lazy(() =>
-  import('../../domains/marketplace/pages/ProviderCatalog')
+  import('../../workspaces/marketplace').then(module => ({
+    default: module.ProviderCatalog,
+  }))
 );
 const ProductPageWrapper = React.lazy(() =>
   import('../../workspaces/product/product-page-view/ProductPageWrapper')

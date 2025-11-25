@@ -546,6 +546,54 @@ serve((req: Request) => withMetrics('process-khipu-webhook', req, async () => {
             .eq('id', orderId)
             .is('inventory_processed_at', null);
         } catch(invMarkErr) { console.error('⚠️ No se pudo marcar inventory_processed_at', invMarkErr); }
+
+        // ========================================================================
+        // LIMPIAR CARRITO (server-side) - Previene items huérfanos tras pago
+        // ========================================================================
+        try {
+          // Obtener cart_id de la orden
+          const { data: orderWithCart, error: cartLookupErr } = await supabase
+            .from('orders')
+            .select('cart_id')
+            .eq('id', orderId)
+            .maybeSingle();
+          
+          if (cartLookupErr) {
+            console.warn('⚠️ Error buscando cart_id de la orden:', cartLookupErr);
+          } else if (orderWithCart?.cart_id) {
+            const cartId = orderWithCart.cart_id;
+            console.log(`🛒 Limpiando carrito ${cartId} asociado a la orden`);
+            
+            // 1. Eliminar cart_items
+            const { error: deleteItemsErr } = await supabase
+              .from('cart_items')
+              .delete()
+              .eq('cart_id', cartId);
+            
+            if (deleteItemsErr) {
+              console.error('⚠️ Error eliminando cart_items:', deleteItemsErr);
+            } else {
+              console.log('✅ cart_items eliminados');
+            }
+            
+            // 2. Marcar carrito como 'completed' (evita que getOrCreateActiveCart lo encuentre)
+            const { error: updateCartErr } = await supabase
+              .from('carts')
+              .update({ status: 'completed', updated_at: new Date().toISOString() })
+              .eq('id', cartId);
+            
+            if (updateCartErr) {
+              console.error('⚠️ Error actualizando status del carrito:', updateCartErr);
+            } else {
+              console.log('✅ Carrito marcado como completed');
+            }
+          } else {
+            console.log('ℹ️ Orden sin cart_id asociado (posiblemente creada antes del fix)');
+          }
+        } catch (cartCleanupErr) {
+          console.error('⚠️ Error en limpieza de carrito (no crítico):', cartCleanupErr);
+        }
+
         // NO se crea nuevo cart activo automáticamente (simplificación post-refactor).
       }
     } catch(materializeErr) {

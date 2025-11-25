@@ -63,7 +63,7 @@ import MobileExpandableBottomBar from './MobileExpandableBottomBar';
 import {
   fetchProductRegions,
   saveProductRegions,
-} from '../../../../services/marketplace';
+} from '../../../../workspaces/marketplace';
 import {
   convertDbRegionsToForm,
   convertFormRegionsToDb,

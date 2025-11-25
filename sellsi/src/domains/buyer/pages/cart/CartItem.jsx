@@ -31,7 +31,7 @@ import {
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import PriceDisplay from '../../../../shared/components/display/price/PriceDisplay'
-import StockIndicator from '../../../marketplace/StockIndicator/StockIndicator'
+import { StockIndicator } from '../../../../workspaces/marketplace'
 import QuantitySelector from '../../../../shared/components/forms/QuantitySelector'
 import LazyImage from '../../../../shared/components/display/LazyImage/LazyImage'
 import {

@@ -13,10 +13,10 @@ import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { useTheme } from '@mui/material';
 import { useLocation } from 'react-router-dom';
 
-// Importar los hooks desde marketplace (mantenemos la referencia)
-import { useMarketplaceState } from '../../../domains/marketplace/hooks/state/useMarketplaceState';
-import { useProductSorting } from '../../../domains/marketplace/hooks/products/useProductSorting';
-import { useScrollBehavior } from '../../../domains/marketplace/hooks/ui/useScrollBehavior';
+// Importar los hooks desde marketplace workspace
+import { useMarketplaceState } from '../../../workspaces/marketplace/hooks/state/useMarketplaceState';
+import { useProductSorting } from '../../../workspaces/marketplace/hooks/products/useProductSorting';
+import { useScrollBehavior } from '../../../workspaces/marketplace/hooks/ui/useScrollBehavior';
 import { useMarketplaceSearchBus } from '../../contexts/MarketplaceSearchContext';
 import { useAuth } from '../../../infrastructure/providers/UnifiedAuthProvider';
 import { useOptimizedUserShippingRegion } from '../../../hooks/useOptimizedUserShippingRegion';

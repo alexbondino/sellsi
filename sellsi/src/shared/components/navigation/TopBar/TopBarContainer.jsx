@@ -109,6 +109,9 @@ export default function TopBarContainer({ session, isBuyer, logoUrl, onNavigate,
 
   // Handler logo (home / marketplace according a role / or landing)
   const handleLogoClick = () => {
+    // Siempre hacer scroll to top al hacer clic en el logo
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    
     if (isLoggedIn) {
       if (currentRole === 'supplier') navigate('/supplier/home');
       else if (currentRole === 'buyer') navigate('/buyer/marketplace');
