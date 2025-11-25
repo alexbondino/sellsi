@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button, IconButton, Tooltip } from '@mui/material';
 import { ShoppingCart as ShoppingCartIcon } from '@mui/icons-material';
 
@@ -54,6 +55,7 @@ const AddToCart = ({
   // ============================================================================
   // ESTADOS Y HOOKS
   // ============================================================================
+  const navigate = useNavigate();
   const [modalOpen, setModalOpen] = useState(false);
   const openingRef = React.useRef(false); // reentrancy guard
   const [currentUserId, setCurrentUserId] = useState(null);
@@ -216,6 +218,16 @@ const AddToCart = ({
     } catch (_) {}
     if (onModalStateChange) onModalStateChange(false);
   }, [handleConfigureShipping, onModalStateChange]);
+
+  // ✅ Handler para redirección directa a perfil/facturación cuando falta billing info
+  const handleRequireBillingInfo = useCallback(({ missingFields }) => {
+    console.log('📝 [AddToCart] Falta información de facturación:', missingFields);
+    // Cerrar cualquier modal abierto
+    setModalOpen(false);
+    if (onModalStateChange) onModalStateChange(false);
+    // Redirigir directamente al perfil con sección de facturación destacada
+    navigate('/buyer/profile?section=billing&highlight=true');
+  }, [navigate, onModalStateChange]);
 
   // Mantener sincronizado el estado de apertura hacia el consumidor (card/grid) por si abre/cierra por otros caminos
   useEffect(() => {
@@ -461,6 +473,7 @@ const AddToCart = ({
         userRegion={userRegion}
         isLoadingUserProfile={isLoadingUserProfile}
         isOwnProduct={isOwnProduct}
+        onRequireBillingInfo={handleRequireBillingInfo}
       />
       <ShippingInfoValidationModal
         isOpen={shippingIsOpen}

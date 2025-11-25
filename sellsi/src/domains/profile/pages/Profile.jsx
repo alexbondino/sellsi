@@ -72,6 +72,8 @@ const Profile = ({ userProfile: initialUserProfile, onUpdateProfile: externalUpd
   const [shouldHighlightTransferFields, setShouldHighlightTransferFields] = useState(false);
   // ✅ NUEVO: Estado para highlight de campos de despacho
   const [shouldHighlightShippingFields, setShouldHighlightShippingFields] = useState(false);
+  // ✅ NUEVO: Estado para highlight de campos de facturación
+  const [shouldHighlightBillingFields, setShouldHighlightBillingFields] = useState(false);
 
   // ✅ NUEVO: Verificar parámetros de URL al montar y cuando cambie la location
   useEffect(() => {
@@ -94,6 +96,19 @@ const Profile = ({ userProfile: initialUserProfile, onUpdateProfile: externalUpd
       setShouldHighlightShippingFields(true);
       console.log('🎯 Resaltando campos de dirección de despacho por redirección');
       const timer = setTimeout(() => { setShouldHighlightShippingFields(false); }, 10000);
+      return () => clearTimeout(timer);
+    }
+    if (section === 'billing' && highlight === 'true') {
+      setShouldHighlightBillingFields(true);
+      console.log('🎯 Resaltando campos de facturación por redirección');
+      // Scroll to billing section
+      setTimeout(() => {
+        const billingSection = document.getElementById('billing-info-section');
+        if (billingSection) {
+          billingSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 500);
+      const timer = setTimeout(() => { setShouldHighlightBillingFields(false); }, 10000);
       return () => clearTimeout(timer);
     }
   }, [location.search]);
@@ -726,6 +741,7 @@ const Profile = ({ userProfile: initialUserProfile, onUpdateProfile: externalUpd
 
           {/* Segunda fila - Segunda columna: Facturación (independiente) */}
           <BillingInfoSection
+            id="billing-info-section"
             formData={formData}
             onFieldChange={updateField}
             onRegionChange={handleRegionChange}
@@ -737,7 +753,7 @@ const Profile = ({ userProfile: initialUserProfile, onUpdateProfile: externalUpd
             onBlurSensitive={handleSensitiveBlur}
             showBilling={true}
             showUpdateButton={false}
-            showErrors={showBillingErrors}
+            showErrors={showBillingErrors || shouldHighlightBillingFields}
           />
         </Box>
         {/* Botón Actualizar al fondo del Paper */}
