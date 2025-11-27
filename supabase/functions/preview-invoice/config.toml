@@ -1,0 +1,4 @@
+# Configuración de la Edge Function preview-invoice
+# Permite acceso anónimo para previsualización de facturas simuladas
+[function.preview-invoice]
+verify_jwt = false

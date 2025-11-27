@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test Preview Factura - Invoicer</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .preview-frame {
+      width: 100%;
+      height: 800px;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      background: white;
+    }
+  </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+  <div class="container mx-auto py-8 px-4">
+    <h1 class="text-3xl font-bold text-gray-800 mb-2">🧪 Test Preview Factura</h1>
+    <p class="text-gray-600 mb-6">Ingresa los datos y genera una vista previa de factura simulada</p>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <!-- Formulario -->
+      <div class="bg-white rounded-lg shadow-md p-6">
+        <h2 class="text-xl font-semibold mb-4 text-gray-700">📝 Datos del Documento</h2>
+        
+        <!-- Tipo DTE -->
+        <div class="mb-4">
+          <label class="block text-sm font-medium text-gray-700 mb-1">Tipo de Documento</label>
+          <select id="tipoDte" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+            <option value="33">33 - Factura Electrónica</option>
+            <option value="34">34 - Factura No Afecta o Exenta</option>
+            <option value="39">39 - Boleta Electrónica</option>
+            <option value="41">41 - Boleta Exenta Electrónica</option>
+            <option value="52">52 - Guía de Despacho</option>
+            <option value="56">56 - Nota de Débito</option>
+            <option value="61">61 - Nota de Crédito</option>
+          </select>
+        </div>
+
+        <!-- Emisor -->
+        <fieldset class="border border-gray-200 rounded-md p-4 mb-4">
+          <legend class="text-sm font-medium text-gray-700 px-2">🏢 Datos del Emisor</legend>
+          <div class="grid grid-cols-2 gap-3">
+            <div class="col-span-2">
+              <label class="block text-xs text-gray-600">Razón Social</label>
+              <input type="text" id="emisorRazonSocial" value="MI EMPRESA DE PRUEBA LTDA." 
+                class="w-full border border-gray-300 rounded px-2 py-1 text-sm">
+            </div>
+            <div>
+              <label class="block text-xs text-gray-600">RUT</label>
+              <input type="text" id="emisorRut" value="76.123.456-7" 
+                class="w-full border border-gray-300 rounded px-2 py-1 text-sm">
+            </div>
+            <div>
+              <label class="block text-xs text-gray-600">Giro</label>
+              <input type="text" id="emisorGiro" value="Venta de productos varios" 
+                class="w-full border border-gray-300 rounded px-2 py-1 text-sm">
+            </div>
+            <div>
+              <label class="block text-xs text-gray-600">Dirección</label>
+              <input type="text" id="emisorDireccion" value="Av. Principal 1234" 
+                class="w-full border border-gray-300 rounded px-2 py-1 text-sm">
+            </div>
+            <div>
+              <label class="block text-xs text-gray-600">Comuna</label>
+              <input type="text" id="emisorComuna" value="Santiago" 
+                class="w-full border border-gray-300 rounded px-2 py-1 text-sm">
+            </div>
+          </div>
+        </fieldset>
+
+        <!-- Receptor -->
+        <fieldset class="border border-gray-200 rounded-md p-4 mb-4">
+          <legend class="text-sm font-medium text-gray-700 px-2">👤 Datos del Receptor</legend>
+          <div class="grid grid-cols-2 gap-3">
+            <div class="col-span-2">
+              <label class="block text-xs text-gray-600">Razón Social</label>
+              <input type="text" id="receptorRazonSocial" value="CLIENTE EJEMPLO S.A." 
+                class="w-full border border-gray-300 rounded px-2 py-1 text-sm">
+            </div>
+            <div>
+              <label class="block text-xs text-gray-600">RUT</label>
+              <input type="text" id="receptorRut" value="12.345.678-9" 
+                class="w-full border border-gray-300 rounded px-2 py-1 text-sm">
+            </div>
+            <div>
+              <label class="block text-xs text-gray-600">Giro</label>
+              <input type="text" id="receptorGiro" value="Comercio" 
+                class="w-full border border-gray-300 rounded px-2 py-1 text-sm">
+            </div>
+            <div class="col-span-2">
+              <label class="block text-xs text-gray-600">Dirección</label>
+              <input type="text" id="receptorDireccion" value="Calle Los Leones 987, Las Condes" 
+                class="w-full border border-gray-300 rounded px-2 py-1 text-sm">
+            </div>
+          </div>
+        </fieldset>
+
+        <!-- Items -->
+        <fieldset class="border border-gray-200 rounded-md p-4 mb-4">
+          <legend class="text-sm font-medium text-gray-700 px-2">📦 Detalle de Items</legend>
+          <div id="itemsContainer">
+            <!-- Items se agregan dinámicamente -->
+          </div>
+          <button type="button" onclick="addItem()" 
+            class="mt-2 text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1">
+            <span>➕</span> Agregar item
+          </button>
+        </fieldset>
+
+        <!-- Configuración -->
+        <fieldset class="border border-gray-200 rounded-md p-4 mb-4">
+          <legend class="text-sm font-medium text-gray-700 px-2">⚙️ Configuración</legend>
+          <div class="mb-3">
+            <label class="block text-xs text-gray-600 mb-1">URL Edge Function</label>
+            <input type="text" id="edgeFunctionUrl" 
+              value="https://clbngnjetipglkikondm.supabase.co/functions/v1/preview-invoice"
+              placeholder="https://tu-proyecto.supabase.co/functions/v1/preview-invoice"
+              class="w-full border border-gray-300 rounded px-2 py-1 text-sm font-mono">
+          </div>
+          <div class="mb-3">
+            <label class="block text-xs text-gray-600 mb-1">Anon Key (requerida)</label>
+            <input type="text" id="anonKey" 
+              value="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNsYm5nbmpldGlwZ2xraWtvbmRtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI2NzczNzEsImV4cCI6MjA2ODI1MzM3MX0.4EpHtBMJ_Lh8O77sAPat-oVvOqYv89qm5wg5KMmfaFc"
+              class="w-full border border-gray-300 rounded px-2 py-1 text-sm font-mono text-xs">
+          </div>
+          <div>
+            <label class="block text-xs text-gray-600 mb-1">Bearer Token (opcional - para usar datos reales del supplier)</label>
+            <input type="text" id="bearerToken" placeholder="eyJhbGciOiJIUzI1NiIs..." 
+              class="w-full border border-gray-300 rounded px-2 py-1 text-sm font-mono">
+          </div>
+        </fieldset>
+
+        <!-- Botones -->
+        <div class="flex gap-3">
+          <button onclick="generatePreview()" 
+            class="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 font-medium transition-colors">
+            🔄 Generar Vista Previa
+          </button>
+          <button onclick="openInNewTab()" 
+            class="bg-gray-600 text-white py-2 px-4 rounded-md hover:bg-gray-700 font-medium transition-colors">
+            🔗 Abrir en Nueva Pestaña
+          </button>
+        </div>
+
+        <!-- Status -->
+        <div id="status" class="mt-4 hidden">
+          <div class="p-3 rounded-md text-sm"></div>
+        </div>
+      </div>
+
+      <!-- Preview -->
+      <div class="bg-white rounded-lg shadow-md p-6">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-xl font-semibold text-gray-700">👁️ Vista Previa</h2>
+          <button onclick="printPreview()" class="text-sm text-gray-600 hover:text-gray-800">
+            🖨️ Imprimir
+          </button>
+        </div>
+        <iframe id="previewFrame" class="preview-frame"></iframe>
+      </div>
+    </div>
+
+    <!-- JSON Debug -->
+    <div class="mt-6 bg-white rounded-lg shadow-md p-6">
+      <h2 class="text-xl font-semibold text-gray-700 mb-4">🔧 JSON Request (Debug)</h2>
+      <pre id="jsonDebug" class="bg-gray-900 text-green-400 p-4 rounded-md text-sm overflow-x-auto font-mono"></pre>
+    </div>
+  </div>
+
+  <script>
+    let itemCount = 0;
+
+    // Inicializar con algunos items
+    document.addEventListener('DOMContentLoaded', () => {
+      addItem('Producto de ejemplo 1', 2, 15000);
+      addItem('Servicio de instalación', 1, 25000);
+      addItem('Accesorio premium', 3, 8500);
+      updateJsonDebug();
+    });
+
+    function addItem(nombre = '', cantidad = 1, precio = 0) {
+      itemCount++;
+      const container = document.getElementById('itemsContainer');
+      const itemHtml = `
+        <div class="item-row grid grid-cols-12 gap-2 mb-2 items-end" data-item="${itemCount}">
+          <div class="col-span-5">
+            ${itemCount === 1 ? '<label class="block text-xs text-gray-600">Nombre</label>' : ''}
+            <input type="text" class="item-nombre w-full border border-gray-300 rounded px-2 py-1 text-sm" 
+              value="${nombre}" placeholder="Nombre del producto">
+          </div>
+          <div class="col-span-2">
+            ${itemCount === 1 ? '<label class="block text-xs text-gray-600">Cant.</label>' : ''}
+            <input type="number" class="item-cantidad w-full border border-gray-300 rounded px-2 py-1 text-sm text-center" 
+              value="${cantidad}" min="1">
+          </div>
+          <div class="col-span-3">
+            ${itemCount === 1 ? '<label class="block text-xs text-gray-600">Precio Unit.</label>' : ''}
+            <input type="number" class="item-precio w-full border border-gray-300 rounded px-2 py-1 text-sm text-right" 
+              value="${precio}" min="0">
+          </div>
+          <div class="col-span-2">
+            ${itemCount === 1 ? '<label class="block text-xs text-gray-600">&nbsp;</label>' : ''}
+            <button type="button" onclick="removeItem(${itemCount})" 
+              class="w-full bg-red-100 text-red-600 rounded px-2 py-1 text-sm hover:bg-red-200">✕</button>
+          </div>
+        </div>
+      `;
+      container.insertAdjacentHTML('beforeend', itemHtml);
+      updateJsonDebug();
+    }
+
+    function removeItem(id) {
+      const row = document.querySelector(`[data-item="${id}"]`);
+      if (row) {
+        row.remove();
+        updateJsonDebug();
+      }
+    }
+
+    function getFormData() {
+      const items = [];
+      document.querySelectorAll('.item-row').forEach(row => {
+        const nombre = row.querySelector('.item-nombre').value;
+        const cantidad = parseInt(row.querySelector('.item-cantidad').value) || 1;
+        const precioUnitario = parseInt(row.querySelector('.item-precio').value) || 0;
+        if (nombre) {
+          items.push({ nombre, cantidad, precioUnitario, unidad: 'UN' });
+        }
+      });
+
+      return {
+        tipoDte: parseInt(document.getElementById('tipoDte').value),
+        emisor: {
+          razonSocial: document.getElementById('emisorRazonSocial').value,
+          rut: document.getElementById('emisorRut').value,
+          giro: document.getElementById('emisorGiro').value,
+          direccion: document.getElementById('emisorDireccion').value,
+          comuna: document.getElementById('emisorComuna').value,
+          ciudad: document.getElementById('emisorComuna').value,
+        },
+        receptor: {
+          razonSocial: document.getElementById('receptorRazonSocial').value,
+          rut: document.getElementById('receptorRut').value,
+          giro: document.getElementById('receptorGiro').value,
+          direccion: document.getElementById('receptorDireccion').value,
+          comuna: 'Santiago',
+        },
+        items: items,
+      };
+    }
+
+    function updateJsonDebug() {
+      const data = getFormData();
+      document.getElementById('jsonDebug').textContent = JSON.stringify(data, null, 2);
+    }
+
+    // Update JSON on any input change
+    document.addEventListener('input', updateJsonDebug);
+
+    function showStatus(message, isError = false) {
+      const status = document.getElementById('status');
+      const inner = status.querySelector('div');
+      status.classList.remove('hidden');
+      inner.className = `p-3 rounded-md text-sm ${isError ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`;
+      inner.textContent = message;
+    }
+
+    async function generatePreview() {
+      const url = document.getElementById('edgeFunctionUrl').value;
+      const anonKey = document.getElementById('anonKey').value;
+      const token = document.getElementById('bearerToken').value;
+      const data = getFormData();
+
+      if (!anonKey) {
+        showStatus('❌ La Anon Key es requerida', true);
+        return;
+      }
+
+      showStatus('⏳ Generando vista previa...');
+
+      try {
+        const headers = {
+          'Content-Type': 'application/json',
+          'apikey': anonKey,
+        };
+        if (token) {
+          headers['Authorization'] = `Bearer ${token}`;
+        }
+
+        const response = await fetch(url, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify(data),
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || `HTTP ${response.status}`);
+        }
+
+        const html = await response.text();
+        
+        // Cargar en iframe
+        const iframe = document.getElementById('previewFrame');
+        iframe.srcdoc = html;
+        
+        // Guardar para abrir en nueva pestaña
+        window.lastGeneratedHtml = html;
+
+        showStatus('✅ Vista previa generada correctamente');
+      } catch (error) {
+        console.error('Error:', error);
+        showStatus(`❌ Error: ${error.message}`, true);
+      }
+    }
+
+    function openInNewTab() {
+      if (window.lastGeneratedHtml) {
+        const blob = new Blob([window.lastGeneratedHtml], { type: 'text/html' });
+        const url = URL.createObjectURL(blob);
+        window.open(url, '_blank');
+      } else {
+        showStatus('⚠️ Primero genera una vista previa', true);
+      }
+    }
+
+    function printPreview() {
+      const iframe = document.getElementById('previewFrame');
+      if (iframe.srcdoc) {
+        iframe.contentWindow.print();
+      } else {
+        showStatus('⚠️ Primero genera una vista previa', true);
+      }
+    }
+  </script>
+</body>
+</html>
