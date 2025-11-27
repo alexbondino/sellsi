@@ -67,10 +67,8 @@ CREATE TABLE IF NOT EXISTS polling_logs (
 CREATE INDEX IF NOT EXISTS idx_polling_logs_created_at 
 ON polling_logs(created_at DESC);
 
--- Limpiar logs antiguos (más de 30 días)
-CREATE INDEX IF NOT EXISTS idx_polling_logs_cleanup 
-ON polling_logs(created_at) 
-WHERE created_at < NOW() - INTERVAL '30 days';
+-- Nota: No se crea índice parcial con NOW() porque no es inmutable.
+-- La limpieza de logs antiguos se hace via la función cleanup_old_polling_logs()
 
 COMMENT ON TABLE polling_logs IS 'Registro de ejecuciones del polling de estados DTE';
 
@@ -126,22 +124,20 @@ ON CONFLICT (function_name) DO UPDATE SET
 -- ============================================================
 
 -- Descomentar y ejecutar manualmente con valores reales:
-/*
-SELECT cron.schedule(
-    'poll-dte-status-job',           -- nombre único del job
-    '*/5 * * * *',                    -- cada 5 minutos
-    $$
-    SELECT net.http_post(
-        url := 'https://YOUR_PROJECT_REF.supabase.co/functions/v1/poll-dte-status',
-        headers := jsonb_build_object(
-            'Content-Type', 'application/json',
-            'Authorization', 'Bearer YOUR_SERVICE_ROLE_KEY'
-        ),
-        body := '{}'::jsonb
-    );
-    $$
-);
-*/
+-- SELECT cron.schedule(
+--     'poll-dte-status-job',           -- nombre único del job
+--     '*/5 * * * *',                    -- cada 5 minutos
+--     $$
+--     SELECT net.http_post(
+--         url := 'https://YOUR_PROJECT_REF.supabase.co/functions/v1/poll-dte-status',
+--         headers := jsonb_build_object(
+--             'Content-Type', 'application/json',
+--             'Authorization', 'Bearer YOUR_SERVICE_ROLE_KEY'
+--         ),
+--         body := '{}'::jsonb
+--     );
+--     $$
+-- );
 
 -- ============================================================
 -- COMANDOS ÚTILES PARA GESTIÓN DEL CRON
