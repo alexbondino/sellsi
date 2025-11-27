@@ -26,7 +26,10 @@ import {
 import {
   ArrowBack as ArrowBackIcon,
   Inventory2 as Inventory2Icon,
+  CloudUpload as CloudUploadIcon,
 } from '@mui/icons-material';
+import BigModal from '../../../../shared/components/modals/BigModal/BigModal';
+import MassiveProductImport from './MassiveProductImport';
 import { ThemeProvider } from '@mui/material/styles';
 import {
   showValidationError,
@@ -443,6 +446,9 @@ const AddProduct = () => {
   // Estado adicional para indicar éxito y navegación pendiente
   const [isNavigating, setIsNavigating] = useState(false);
 
+  // Estado para modal de carga masiva
+  const [massiveImportOpen, setMassiveImportOpen] = useState(false);
+
   // Status tracking para thumbnails
   const [createdProductId, setCreatedProductId] = useState(null);
   const thumbnailStatus = useThumbnailStatus(createdProductId);
@@ -683,6 +689,20 @@ const AddProduct = () => {
     }
   };
 
+  // Handlers para carga masiva
+  const handleOpenMassiveImport = () => {
+    setMassiveImportOpen(true);
+  };
+
+  const handleCloseMassiveImport = () => {
+    setMassiveImportOpen(false);
+  };
+
+  const handleMassiveImportSuccess = () => {
+    handleCloseMassiveImport();
+    navigate('/supplier/myproducts');
+  };
+
   const handleRetry = () => {
     resetErrors();
     if (isEditMode && productId) {
@@ -720,7 +740,7 @@ const AddProduct = () => {
                   <Box
                     sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}
                   >
-                    <Box sx={{ display: 'flex', justifyContent: 'flex-start' }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <Tooltip title="Volver" arrow>
                         <IconButton
                           onClick={handleBack}
@@ -734,6 +754,23 @@ const AddProduct = () => {
                           <ArrowBackIcon />
                         </IconButton>
                       </Tooltip>
+                      {/* Botón Carga Masiva móvil - solo en modo crear */}
+                      {!isEditMode && (
+                        <Tooltip title="Carga Masiva" arrow>
+                          <IconButton
+                            onClick={handleOpenMassiveImport}
+                            sx={{
+                              p: 1,
+                              color: 'primary.main',
+                              '&:hover': {
+                                backgroundColor: 'action.hover',
+                              },
+                            }}
+                          >
+                            <CloudUploadIcon />
+                          </IconButton>
+                        </Tooltip>
+                      )}
                     </Box>
                     <Box
                       sx={{
@@ -793,6 +830,18 @@ const AddProduct = () => {
                         {isEditMode ? 'Editar Producto' : 'Agregar Producto'}
                       </Typography>
                     </Box>
+                    {/* Botón Carga Masiva - solo en modo crear */}
+                    {!isEditMode && (
+                      <Button
+                        variant="outlined"
+                        color="primary"
+                        startIcon={<CloudUploadIcon />}
+                        onClick={handleOpenMassiveImport}
+                        sx={{ ml: 'auto' }}
+                      >
+                        Carga Masiva
+                      </Button>
+                    )}
                   </Box>
                 )}
               </Box>
@@ -874,6 +923,19 @@ const AddProduct = () => {
             </Container>
           </Box>
         </ProductFormErrorBoundary>
+
+        {/* Modal de Carga Masiva */}
+        <BigModal
+          isOpen={massiveImportOpen}
+          onClose={handleCloseMassiveImport}
+          title="Importar productos desde Excel"
+        >
+          <MassiveProductImport
+            open={massiveImportOpen}
+            onClose={handleCloseMassiveImport}
+            onSuccess={handleMassiveImportSuccess}
+          />
+        </BigModal>
       </ThemeProvider>
     </SupplierErrorBoundary>
   );

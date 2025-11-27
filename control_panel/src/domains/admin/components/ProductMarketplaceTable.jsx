@@ -72,7 +72,7 @@ const PRODUCT_STATUS = {
 
 const PRODUCT_FILTERS = [
   { value: 'all', label: 'Todos los productos' },
-  { value: 'available', label: 'Productos disponibles' },
+  { value: 'available', label: 'Productos' },
   { value: 'lowStock', label: 'Stock bajo' }
 ];
 

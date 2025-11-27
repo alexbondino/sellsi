@@ -391,7 +391,7 @@ const MyProducts = () => {
                       px: 3,
                     }}
                   >
-                    Importar Excel
+                    Carga Masiva
                   </Button>
                 </Box>
               </Box>

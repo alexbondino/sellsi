@@ -123,7 +123,10 @@ const ProductsSection = React.memo(
     };
 
     // ✅ MEJORA DE RENDIMIENTO: Memoización de estilos de las tarjetas
-    const cardContainerStyles = { width: '100%', maxWidth: '240px' };
+    // Valores alineados con ProductCardSkeleton para evitar CLS
+    const cardContainerStyles = {
+      width: { xs: 180, sm: 195, md: 220, lg: 300, xl: 320 },
+    };
 
     // ✅ MEJORA DE RENDIMIENTO: Memoización del título de sección
     const sectionTitle = React.useMemo(() => {
@@ -133,22 +136,22 @@ const ProductsSection = React.memo(
       if (activeRegion && !isProviderView) {
         // Mapeo de regiones con números romanos
         const regionLabels = {
-          'arica-parinacota': 'la XV Región',
-          'tarapaca': 'la I Región',
-          'antofagasta': 'la II Región',
-          'atacama': 'la III Región',
-          'coquimbo': 'la IV Región',
-          'valparaiso': 'la V Región',
-          'metropolitana': 'la Región Metropolitana',
-          'ohiggins': 'la VI Región',
-          'maule': 'la VII Región',
-          'nuble': 'la XVI Región',
-          'biobio': 'la VIII Región',
-          'araucania': 'la IX Región',
-          'los-rios': 'la XIV Región',
-          'los-lagos': 'la X Región',
-          'aysen': 'la XI Región',
-          'magallanes': 'la XII Región',
+          'arica-parinacota': 'XV Región',
+          'tarapaca': 'I Región',
+          'antofagasta': 'II Región',
+          'atacama': 'III Región',
+          'coquimbo': 'IV Región',
+          'valparaiso': 'V Región',
+          'metropolitana': 'Región Metropolitana',
+          'ohiggins': 'VI Región',
+          'maule': 'VII Región',
+          'nuble': 'XVI Región',
+          'biobio': 'VIII Región',
+          'araucania': 'IX Región',
+          'los-rios': 'XIV Región',
+          'los-lagos': 'X Región',
+          'aysen': 'XI Región',
+          'magallanes': 'XII Región',
         };
         
         const regionLabel = regionLabels[activeRegion] || activeRegion;
@@ -163,7 +166,7 @@ const ProductsSection = React.memo(
                 mr: 1,
               }}
             />
-            Productos disponibles en {regionLabel}
+            Productos {regionLabel}
           </>
         );
       }
