@@ -29,7 +29,7 @@ const MockBuyerOrders = () => {
 };
 
 // Mock hook useBuyerOrders para inyectar órdenes simuladas
-jest.mock('../../../domains/buyer/hooks', () => ({
+jest.mock('../../../workspaces/buyer/my-orders/hooks/useBuyerOrders', () => ({
   useBuyerOrders: () => ({
     orders: [
       {

@@ -82,7 +82,7 @@ export function useProducts() {
       productsCache.inFlight = (async () => {
         const { data, error } = await supabase
           .from('products')
-          .select('productid,supplier_id,productnm,price,category,product_type,productqty,minimum_purchase,negotiable,is_active,product_images(image_url,thumbnail_url,thumbnails),product_delivery_regions(region)')
+          .select('productid,supplier_id,productnm,price,category,product_type,productqty,minimum_purchase,negotiable,is_active,free_shipping_enabled,free_shipping_min_quantity,product_images(image_url,thumbnail_url,thumbnails),product_delivery_regions(region)')
           .eq('is_active', true) // filtro directo para reducir payload
         if (error) throw new Error(error.message)
 
@@ -151,6 +151,11 @@ export function useProducts() {
             // Conservamos nombre de propiedad "negociable" pero la columna real es 'negotiable'
             negociable: p.negotiable,
             is_active: p.is_active,
+            // ✅ FREE SHIPPING: Propagar campos de despacho gratuito
+            free_shipping_enabled: p.free_shipping_enabled || false,
+            free_shipping_min_quantity: p.free_shipping_min_quantity || null,
+            freeShippingEnabled: p.free_shipping_enabled || false,
+            freeShippingMinQuantity: p.free_shipping_min_quantity || null,
             priceTiers: [],
             minPrice: basePrice,
             maxPrice: basePrice,

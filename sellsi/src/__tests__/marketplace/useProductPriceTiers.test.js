@@ -26,7 +26,7 @@ jest.mock('../../services/supabase', () => ({
 }))
 
 // Load the hook after mocks and global window are set
-const useProductPriceTiers = require('../../shared/hooks/product/useProductPriceTiers').default
+const useProductPriceTiers = require('../../workspaces/supplier/shared-hooks/useProductPriceTiers').default
 
 describe('useProductPriceTiers store', () => {
   beforeEach(() => {

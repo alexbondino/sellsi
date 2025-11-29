@@ -107,7 +107,7 @@ jest.mock('../../services/supabase', () => ({
 }));
 
 // Mock de otros servicios
-jest.mock('../../services/marketplace', () => ({
+jest.mock('../../workspaces/marketplace/services', () => ({
   getProductSpecifications: jest.fn(() =>
     Promise.resolve([
       { spec_name: 'Procesador', spec_value: 'Intel i7' },

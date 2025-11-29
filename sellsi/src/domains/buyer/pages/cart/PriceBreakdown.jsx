@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react'
 import { Box, Typography, Divider, CircularProgress, Alert } from '@mui/material'
-import { calculateProductShippingCost } from '../../../../utils/shippingCalculation'
+import { calculateProductShippingCost, canShipToRegion, getShippingInfo } from '../../../../utils/shippingCalculation'
 
 const PriceBreakdown = ({
   subtotal,
@@ -51,17 +51,16 @@ const PriceBreakdown = ({
     const hasOnlyOneProduct = cartItems.length === 1;
     const singleProduct = hasOnlyOneProduct ? cartItems[0] : null;
 
-    // Verificar productos sin información de despacho o fecha (usando la función correcta)
+    // Verificar productos sin información de despacho usando canShipToRegion (no el costo)
+    // IMPORTANTE: cost=0 puede ser "envío gratis" o "no disponible", hay que diferenciar
     const productsWithoutShipping = cartItems.filter(item => {
-      // Usar la función calculateProductShippingCost para determinar si tiene envío disponible
-      const shippingCost = calculateProductShippingCost(item, userRegion);
-      return shippingCost === 0; // Si devuelve 0, no tiene envío disponible para esta región
+      // Usar canShipToRegion para determinar si tiene envío disponible (independiente del costo)
+      return !canShipToRegion(item, userRegion);
     });
 
     const productsWithShipping = cartItems.filter(item => {
-      // Usar la función calculateProductShippingCost para determinar si tiene envío disponible
-      const shippingCost = calculateProductShippingCost(item, userRegion);
-      return shippingCost > 0; // Si devuelve > 0, sí tiene envío disponible para esta región
+      // Usar canShipToRegion para determinar si tiene envío disponible
+      return canShipToRegion(item, userRegion);
     });
 
     // CASO 1: Único producto sin información de despacho
@@ -186,7 +185,7 @@ const PriceBreakdown = ({
               {shippingDisplayData.status === 'unavailable' 
                 ? shippingDisplayData.message 
                 : shippingDisplayData.cost === 0 
-                  ? '¡GRATIS!' 
+                  ? 'Gratis' 
                   : formatPrice(shippingDisplayData.cost)
               }
             </Typography>

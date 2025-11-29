@@ -93,7 +93,7 @@ jest.mock(
 );
 
 jest.mock(
-  '@/domains/supplier/pages/my-products/hooks/useProductPricingLogic',
+  '../../workspaces/supplier/create-product/hooks/useProductPricingLogic',
   () => ({
     useProductPricingLogic: () => ({
       handleTramoChange: jest.fn(),
@@ -118,7 +118,7 @@ jest.mock(
   })
 );
 
-jest.mock('@/services/marketplace', () => ({
+jest.mock('../../workspaces/marketplace/services', () => ({
   fetchProductRegions: jest.fn(() => Promise.resolve([])),
   saveProductRegions: jest.fn(() => Promise.resolve()),
 }));

@@ -6,7 +6,7 @@ const REGION_OPTIONS = [
 ]
 
 // Mock the real CategoryNavigation component to avoid needing Babel to transform JSX-heavy file.
-jest.mock('../../domains/marketplace/pages/CategoryNavigation/CategoryNavigation', () => {
+jest.mock('../../workspaces/marketplace/components/CategoryNavigation/CategoryNavigation', () => {
   const React = require('react')
   const REGION_OPTIONS_LOCAL = [
     { value: 'region-1', label: 'Región 1' },

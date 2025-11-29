@@ -11,5 +11,7 @@ module.exports = {
   ],
   plugins: [
     '@babel/plugin-transform-runtime',
+    // Transform import.meta to work with Jest
+    'babel-plugin-transform-import-meta',
   ],
 };

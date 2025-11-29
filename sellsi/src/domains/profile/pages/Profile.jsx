@@ -371,11 +371,18 @@ const Profile = ({ userProfile: initialUserProfile, onUpdateProfile: externalUpd
   await handleUpdateProfile(dataToUpdate);
       updateInitialData(); // Actualizar datos iniciales en lugar de resetear
 
-      // ✅ INVALIDAR / PRIMAR CACHÉ DE SHIPPING si cambió la región
+      // ✅ INVALIDAR / PRIMAR CACHÉ DE SHIPPING si cambió la región o campos de despacho
+      const shippingFields = ['shipping_region', 'shipping_commune', 'shipping_address', 'shipping_number'];
+      const hasShippingUpdate = shippingFields.some(field => dataToUpdate.hasOwnProperty(field));
       const newRegion = dataToUpdate.shipping_region || dataToUpdate.shippingRegion;
-      if (newRegion) {
+      
+      if (newRegion || hasShippingUpdate) {
         invalidateUserCache();
-        try { window.primeUserShippingRegionCache?.(newRegion); } catch(e) {}
+        if (newRegion) {
+          try { window.primeUserShippingRegionCache?.(newRegion); } catch(e) {}
+        }
+        // ✅ FIX: Invalidar cache de validación de shipping para que AddToCart lo reconozca
+        try { window.invalidateShippingInfoCache?.(); } catch(e) {}
       }
 
       // Registrar IP del usuario al actualizar perfil (solo si tenemos perfil cargado)

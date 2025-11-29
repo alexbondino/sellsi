@@ -157,6 +157,8 @@ class CartService {
               description,
               supplier_id,
               productqty,
+              free_shipping_enabled,
+              free_shipping_min_quantity,
               product_images (image_url, thumbnail_url, thumbnails, thumbnail_signature),
               product_delivery_regions (
                 id,
@@ -204,6 +206,8 @@ class CartService {
               description,
               supplier_id,
               productqty,
+              free_shipping_enabled,
+              free_shipping_min_quantity,
               product_images (image_url, thumbnail_url, thumbnails, thumbnail_signature),
               product_delivery_regions (
                 id,
@@ -305,6 +309,12 @@ class CartService {
             shippingRegions: item.products?.product_delivery_regions || [],
             delivery_regions: item.products?.product_delivery_regions || [],
             shipping_regions: item.products?.product_delivery_regions || [],
+
+            // Campos de envío gratis
+            free_shipping_enabled: item.products?.free_shipping_enabled || false,
+            free_shipping_min_quantity: item.products?.free_shipping_min_quantity || null,
+            freeShippingEnabled: item.products?.free_shipping_enabled || false,
+            freeShippingMinQuantity: item.products?.free_shipping_min_quantity || null,
 
             category: item.products?.category,
             minimum_purchase: item.products?.minimum_purchase,

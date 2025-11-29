@@ -155,12 +155,12 @@ const ShippingDisplay = ({
             variant="body1"
             sx={{
               mt: 1,
-              color: '#000000ff',
+              color: (validation.shippingInfo?.cost || 0) === 0 ? 'success.main' : '#000000ff',
               fontWeight: 'bold',
               fontSize: '0.9rem',
             }}
           >
-            {formatPrice(validation.shippingInfo?.cost || 0)}
+            {(validation.shippingInfo?.cost || 0) === 0 ? 'Gratis' : formatPrice(validation.shippingInfo?.cost || 0)}
           </Typography>
         </Box>
       );

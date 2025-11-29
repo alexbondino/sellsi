@@ -9,9 +9,9 @@ describe('productDeliveryRegionsService - robustness', () => {
   test('fetchProductRegions throws if supabase returns error', async () => {
     const chain = { select: jest.fn(() => chain), eq: jest.fn(() => Promise.resolve({ data: null, error: new Error('db fail') })) };
     const supabase = { from: jest.fn(() => chain) };
-    jest.doMock('@/services/supabase', () => ({ supabase }));
+    jest.doMock('../../services/supabase', () => ({ supabase }));
 
-    const svc = require('@/services/marketplace/productDeliveryRegionsService');
+    const svc = require('../../workspaces/marketplace/services/productDeliveryRegionsService');
     await expect(svc.fetchProductRegions('p-1')).rejects.toThrow('db fail');
   });
 
@@ -26,9 +26,9 @@ describe('productDeliveryRegionsService - robustness', () => {
       }))
     }
 
-    jest.doMock('@/services/supabase', () => ({ supabase: supabaseFactory }))
+    jest.doMock('../../services/supabase', () => ({ supabase: supabaseFactory }))
 
-    const svc = require('@/services/marketplace/productDeliveryRegionsService')
+    const svc = require('../../workspaces/marketplace/services/productDeliveryRegionsService')
 
     // preparar payload grande con valores inválidos y strings
     const bigPayload = Array.from({ length: 500 }, (_, i) => ({ region: `R${i}`, price: i % 7 === 0 ? 'NaN' : `${i}`, delivery_days: i % 5 === 0 ? null : `${i % 10}` }))
@@ -51,9 +51,9 @@ describe('productDeliveryRegionsService - robustness', () => {
         insert: insertMock,
       }))
     }
-    jest.doMock('@/services/supabase', () => ({ supabase: supabaseFactory }))
+    jest.doMock('../../services/supabase', () => ({ supabase: supabaseFactory }))
 
-    const svc = require('@/services/marketplace/productDeliveryRegionsService')
+    const svc = require('../../workspaces/marketplace/services/productDeliveryRegionsService')
 
     const p1 = svc.saveProductRegions('p-race', [{ region: 'r1', price: 10, delivery_days: 1 }])
     const p2 = svc.saveProductRegions('p-race', [{ region: 'r2', price: 20, delivery_days: 2 }])

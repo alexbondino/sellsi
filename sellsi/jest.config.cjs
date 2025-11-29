@@ -27,12 +27,6 @@ module.exports = {
   transformIgnorePatterns: [
     'node_modules/(?!(.*\\.mjs$|@testing-library|@mui))'
   ],
-  globals: {
-    'import.meta': {
-      env: {
-        VITE_SUPABASE_URL: 'http://localhost:54321',
-        VITE_SUPABASE_ANON_KEY: 'test-key'
-      }
-    }
-  }
+  // Set environment variables for tests (replacing import.meta.env)
+  setupFiles: ['<rootDir>/src/__tests__/setEnvVars.js'],
 }

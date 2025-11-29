@@ -20,7 +20,7 @@ jest.mock('../../utils/toastHelpers', () => ({
 }));
 
 // Mock hooks and components used by MyProducts
-jest.mock('@/domains/supplier/hooks/useSupplierProducts', () => ({
+jest.mock('../../workspaces/supplier/shared-hooks/useSupplierProducts', () => ({
   useSupplierProducts: () => ({
     uiProducts: [],
     stats: { total: 0, active: 0, totalValue: 0 },

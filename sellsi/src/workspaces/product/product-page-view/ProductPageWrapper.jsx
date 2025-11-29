@@ -113,6 +113,11 @@ const ProductPageWrapper = ({ isLoggedIn }) => {
             delivery_regions: data.product_delivery_regions || [],
             shipping_regions: data.product_delivery_regions || [],
             product_delivery_regions: data.product_delivery_regions || [],
+            // ✅ FREE SHIPPING: Propagar campos de despacho gratuito
+            free_shipping_enabled: data.free_shipping_enabled || false,
+            free_shipping_min_quantity: data.free_shipping_min_quantity || null,
+            freeShippingEnabled: data.free_shipping_enabled || false,
+            freeShippingMinQuantity: data.free_shipping_min_quantity || null,
             createdAt: data.createddt || data.created_at || null,
             updatedAt: data.updateddt || data.updated_at || null,
             rating: 4.5,

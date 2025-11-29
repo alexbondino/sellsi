@@ -3,7 +3,7 @@ import { render, screen } from '@testing-library/react';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 
 // Import the component under test
-import PrivateRoute from '../../domains/auth/components/PrivateRoute';
+import PrivateRoute from '../../workspaces/auth/guards/components/PrivateRoute';
 
 describe('PrivateRoute - routing rules and edge cases', () => {
   test('shows loading UI when loading=true', () => {

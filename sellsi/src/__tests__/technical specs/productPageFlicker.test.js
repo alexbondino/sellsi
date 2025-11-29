@@ -52,7 +52,7 @@ jest.mock('../../services/supabase', () => ({
 }));
 
 // Mock de servicios
-jest.mock('../../services/marketplace', () => ({
+jest.mock('../../workspaces/marketplace/services', () => ({
   getProductSpecifications: jest.fn(() => Promise.resolve([])),
 }));
 
