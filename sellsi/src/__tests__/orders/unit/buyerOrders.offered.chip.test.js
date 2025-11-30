@@ -7,7 +7,7 @@ import React from 'react';
 import { render, screen } from '@testing-library/react';
 // Instead of importing full BuyerOrders (which uses import.meta), mock a minimal version here.
 const MockBuyerOrders = () => {
-  const hook = require('../../../domains/buyer/hooks');
+  const hook = require('../../../workspaces/buyer/my-orders/hooks/useBuyerOrders');
   const { orders, formatCurrency } = hook.useBuyerOrders();
   return (
     <div>

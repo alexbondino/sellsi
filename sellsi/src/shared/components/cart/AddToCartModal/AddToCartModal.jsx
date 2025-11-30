@@ -281,7 +281,18 @@ const AddToCartModal = ({
     isComplete: isBillingComplete,
     isLoading: isLoadingBilling,
     missingFieldLabels: missingBillingLabels,
+    refreshIfStale, // ✅ MEJORA: Solo recarga si hubo invalidación (optimiza llamadas)
   } = useBillingInfoValidation();
+
+  // ✅ FIX: Refresh billing info cuando el modal se abre para evitar datos stale
+  // Usa refreshIfStale para evitar llamadas innecesarias si no hubo cambios
+  useEffect(() => {
+    if (open) {
+      // Solo recarga si hubo invalidación desde la última carga
+      refreshIfStale();
+    }
+  }, [open, refreshIfStale]);
+
   // ============================================================================
   // ESTADOS LOCALES
   // ============================================================================
@@ -711,7 +722,7 @@ const AddToCartModal = ({
 
             {/* Content */}
             <Box sx={{ flex: 1, p: 2, overflow: 'auto' }}>
-              <Stack spacing={3}>
+              <Stack spacing={2}>
                 {/* 1. Precios (ofertas o regulares) */}
                 {isOfferMode ? (
                   <OfferPriceDisplay

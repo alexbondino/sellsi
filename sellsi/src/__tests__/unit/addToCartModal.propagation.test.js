@@ -37,7 +37,9 @@ jest.mock('../../shared/hooks/profile/useBillingInfoValidation', () => ({
   useBillingInfoValidation: () => ({
     isComplete: true,
     isLoading: false,
-    missingFieldLabels: []
+    missingFieldLabels: [],
+    refresh: jest.fn(),
+    refreshIfStale: jest.fn() // ✅ Nueva función optimizada
   })
 }));
 

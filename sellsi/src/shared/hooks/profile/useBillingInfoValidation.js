@@ -31,6 +31,7 @@ const globalBillingInfoCache = {
   timestamp: null,
   isLoading: false,
   cachedUserId: null,
+  lastInvalidatedAt: 0, // ✅ Timestamp de última invalidación (elimina race condition)
   CACHE_DURATION: 20 * 60 * 1000,
   get() {
     if (!this.data || !this.timestamp) return null;
@@ -70,7 +71,16 @@ const globalBillingInfoCache = {
     this.cachedUserId = null;
   },
   invalidate() {
+    this.lastInvalidatedAt = Date.now(); // ✅ Marcar timestamp ANTES de limpiar
     this.clear();
+    // Emitir evento para que instancias montadas se enteren de la invalidación
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('billing-info-invalidated'));
+    }
+  },
+  // ✅ Verifica si hubo invalidación desde la última carga del hook
+  wasInvalidatedSince(hookMountTime) {
+    return this.lastInvalidatedAt > hookMountTime;
   },
 };
 
@@ -90,6 +100,9 @@ export const useBillingInfoValidation = () => {
   const [billingInfo, setBillingInfo] = useState(null);
   const [missingFields, setMissingFields] = useState([]);
   const [error, setError] = useState(null);
+  
+  // ✅ Timestamp de cuando el hook cargó datos por última vez
+  const [lastLoadedAt, setLastLoadedAt] = useState(0);
 
   const validateBillingInfo = useCallback(data => {
     if (!data) {
@@ -202,7 +215,7 @@ export const useBillingInfoValidation = () => {
           setMissingFields([]);
           return null;
         }
-        const profileResp = await getUserProfile(user.id);
+        const profileResp = await getUserProfile(user.id, { force });
         if (!profileResp?.data) throw new Error('Perfil no disponible');
         const formData = mapUserProfileToFormData(profileResp.data);
         const billingData = {
@@ -223,6 +236,7 @@ export const useBillingInfoValidation = () => {
         );
         const cachePayload = { data: billingData, validation };
         globalBillingInfoCache.set(cachePayload);
+        setLastLoadedAt(Date.now()); // ✅ Marcar cuándo cargamos
         return cachePayload;
       } catch (err) {
         console.error('[useBillingInfoValidation] Error:', err);
@@ -242,7 +256,31 @@ export const useBillingInfoValidation = () => {
     load();
   }, [load]);
 
+  // ✅ FIX: Escuchar evento de invalidación para recargar datos (Solución A del análisis)
+  // Esto cubre el caso donde AddToCartModal está siempre montado y Profile invalida el cache
+  useEffect(() => {
+    const handleInvalidation = () => {
+      load(true);
+    };
+    
+    window.addEventListener('billing-info-invalidated', handleInvalidation);
+    return () => {
+      window.removeEventListener('billing-info-invalidated', handleInvalidation);
+    };
+  }, [load]);
+
   const refresh = useCallback(() => load(true), [load]);
+  
+  // ✅ MEJORA: Solo recarga si hubo invalidación desde la última carga
+  // Evita llamadas innecesarias a DB cuando el modal se abre múltiples veces
+  const refreshIfStale = useCallback(() => {
+    if (globalBillingInfoCache.wasInvalidatedSince(lastLoadedAt)) {
+      return load(true);
+    }
+    // Si no hubo invalidación, los datos actuales son válidos
+    return Promise.resolve(null);
+  }, [load, lastLoadedAt]);
+  
   const invalidateCache = useCallback(
     () => globalBillingInfoCache.invalidate(),
     []
@@ -270,6 +308,7 @@ export const useBillingInfoValidation = () => {
     missingFields,
     missingFieldLabels,
     refresh,
+    refreshIfStale, // ✅ Nueva función optimizada para usar en modal
     invalidateCache,
     validateBillingInfo,
   };

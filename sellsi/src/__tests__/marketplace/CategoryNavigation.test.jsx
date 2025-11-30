@@ -48,7 +48,7 @@ jest.mock('../../workspaces/marketplace/components/CategoryNavigation/CategoryNa
   }
 })
 
-const CategoryNavigation = require('../../domains/marketplace/pages/CategoryNavigation/CategoryNavigation').default
+const CategoryNavigation = require('../../workspaces/marketplace/components/CategoryNavigation/CategoryNavigation').default
 
 describe('CategoryNavigation (tree-inspection)', () => {
   test('invokes onOpenShippingFilter and shows chips when selected', () => {

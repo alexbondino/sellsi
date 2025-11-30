@@ -2,6 +2,28 @@
  * Test suite para verificar que el problema del parpadeo "Producto no encontrado" esté resuelto
  */
 
+// Mock modules that use import.meta.env BEFORE any imports
+jest.mock('../../workspaces/marketplace/hooks/products/useProducts', () => ({
+  useProducts: () => ({
+    products: [],
+    loading: false,
+    error: null,
+    fetchProducts: jest.fn(),
+    fetchTiers: jest.fn().mockResolvedValue([]),
+  }),
+}));
+
+jest.mock('../../workspaces/marketplace/index', () => ({
+  ...jest.requireActual('../../workspaces/marketplace/index'),
+  useProducts: () => ({
+    products: [],
+    loading: false,
+    error: null,
+    fetchProducts: jest.fn(),
+    fetchTiers: jest.fn().mockResolvedValue([]),
+  }),
+}));
+
 import { render, screen, waitFor } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material';

@@ -3,6 +3,17 @@
  * desde ProductCard hasta TechnicalSpecs sin parpadeo
  */
 
+// Mock modules that use import.meta.env BEFORE any imports
+jest.mock('../../workspaces/marketplace/hooks/products/useProducts', () => ({
+  useProducts: () => ({
+    products: [],
+    loading: false,
+    error: null,
+    fetchProducts: jest.fn(),
+    fetchTiers: jest.fn().mockResolvedValue([]),
+  }),
+}));
+
 // Mock UnifiedAuthProvider to provide useAuth without needing full provider
 jest.mock('../../infrastructure/providers/UnifiedAuthProvider', () => {
   const React = require('react');

@@ -282,8 +282,8 @@ jest.mock('../../workspaces/auth/login/services/AuthCallback', () =>
   mockDefault('AUTH_CALLBACK')
 );
 
-// domains/auth barrel used for Login/Register/Admin exports
-jest.mock('../../domains/auth', () => ({
+// workspaces/auth barrel used for Login/Register exports
+jest.mock('../../workspaces/auth', () => ({
   Login: () => <div>LOGIN</div>,
   Register: () => <div>REGISTER</div>,
   AdminLogin: () => <div>ADMIN_LOGIN</div>,

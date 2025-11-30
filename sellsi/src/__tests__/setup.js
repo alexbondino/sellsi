@@ -7,15 +7,9 @@ import { TextEncoder, TextDecoder } from 'util';
 global.TextEncoder = TextEncoder;
 global.TextDecoder = TextDecoder;
 
-// Mock global de import.meta
-global.import = {
-  meta: {
-    env: {
-      VITE_SUPABASE_URL: 'http://localhost:54321',
-      VITE_SUPABASE_ANON_KEY: 'test-key',
-    },
-  },
-};
+// NOTE: import.meta.env is handled by babel-plugin-transform-import-meta
+// which transforms it to process.env at build time.
+// Environment variables are set in setEnvVars.js
 
 // Configurar testing library
 configure({ testIdAttribute: 'data-testid' });

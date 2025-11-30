@@ -2,7 +2,7 @@
 // PAYMENT METHOD SELECTOR - VERSIÓN FINAL
 // ============================================================================
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Box,
   Paper,
@@ -83,6 +83,10 @@ const PaymentMethodSelector = () => {
   const [selectedMethodId, setSelectedMethodId] = useState(null);
   const [isCompleted, setIsCompleted] = useState(false);
 
+  // Refs para bloqueo inmediato anti-doble-click
+  const isProcessingRef = useRef(false);
+  const paymentSuccessRef = useRef(false);
+
   // ===== EFECTOS =====
 
   useEffect(() => {
@@ -130,7 +134,15 @@ const PaymentMethodSelector = () => {
   };
 
   const handleContinue = async () => {
+    // Bloqueo inmediato con ref (no espera re-render de useState)
+    if (isProcessingRef.current || paymentSuccessRef.current) {
+      console.log('[PaymentMethodSelector] Click ignorado - ya procesando o redirigiendo');
+      return;
+    }
+    isProcessingRef.current = true;
+
     if (!selectedMethod) {
+      isProcessingRef.current = false;
       toast.error('Debe seleccionar un método de pago');
       return;
     }
@@ -231,6 +243,8 @@ const PaymentMethodSelector = () => {
         });
 
         if (paymentResult.success && paymentResult.paymentUrl) {
+          // Marcar éxito ANTES del redirect para evitar reset en finally
+          paymentSuccessRef.current = true;
           console.log(
             '[PaymentMethodSelector] Redirigiendo a Khipu:',
             paymentResult.paymentUrl
@@ -247,11 +261,29 @@ const PaymentMethodSelector = () => {
       }
     } catch (error) {
       console.error('Error processing payment:', error);
+      
+      // Detectar error de constraint duplicada por mensaje
+      // (error.code se pierde en checkoutService.createOrder)
+      const isDuplicateOrder = 
+        error.message?.includes('uniq_orders_cart_pending') ||
+        error.message?.includes('duplicate key');
+        
+      if (isDuplicateOrder) {
+        console.log('[PaymentMethodSelector] Orden duplicada detectada, redirigiendo a pedidos');
+        toast.info('Ya tienes un pago en proceso para este carrito. Revisa tus pedidos.');
+        navigate('/buyer/orders');
+        return;
+      }
+      
       setError(error.message);
       toast.error(error.message);
       failPayment(error.message);
     } finally {
       setIsProcessing(false);
+      // Solo resetear ref si NO hubo éxito (evita race condition con setTimeout del redirect)
+      if (!paymentSuccessRef.current) {
+        isProcessingRef.current = false;
+      }
     }
   };
 

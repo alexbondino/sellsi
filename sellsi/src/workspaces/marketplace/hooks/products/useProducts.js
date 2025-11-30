@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { supabase } from '../../../../services/supabase'
 import { regiones as CHILE_REGIONES } from '../../../../utils/chileData'
 import { filterActiveProducts } from '../../../../utils/productActiveStatus'
+import { ENV } from '../../../../utils/env'
 
 // --- Parche mínimo anti redundancia (StrictMode + doble montaje) ---
 // Cache in-memory muy simple con TTL + dedupe de petición en vuelo.
@@ -13,7 +14,8 @@ function isCacheFresh() {
   return productsCache.data && (Date.now() - productsCache.fetchedAt) < PRODUCTS_CACHE_TTL;
 }
 
-const USE_MOCKS = import.meta.env.VITE_USE_MOCKS === 'true'
+// Variable de entorno para usar mocks en desarrollo
+const USE_MOCKS = ENV.VITE_USE_MOCKS;
 
 /**
  * Hook para obtener productos del marketplace, usando mocks o backend según flag.
@@ -200,7 +202,7 @@ export function useProducts() {
 
   // --- Fetch summaries from backend view (min/max/tiers_count) ---
   // Per-id cache for price summaries (TTL)
-  const PRICE_SUMMARY_TTL = Number(import.meta.env.VITE_PRICE_SUMMARY_TTL_MS) || 3 * 60_000 // 3 minutes default
+  const PRICE_SUMMARY_TTL = Number(ENV.VITE_PRICE_SUMMARY_TTL_MS) || 3 * 60_000 // 3 minutes default
   const PRICE_SUMMARY_CHUNK = 100
   const summariesCacheRef = useRef(new Map()) // id -> { data: summaryObj, ts }
   const summariesInFlightRef = useRef(new Map()) // chunkKey -> promise
