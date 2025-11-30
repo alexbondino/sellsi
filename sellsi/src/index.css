@@ -1,29 +1,8 @@
 /* =============================================
-   Self-hosted Inter font (subset suggestion)
-   Files must exist at /public/fonts/
-   Weights: 400, 600, 700
+   Inter font via Google Fonts CDN
+   Fallback while self-hosted files are missing
    ============================================= */
-@font-face {
-  font-family: 'Inter';
-  font-style: normal;
-  font-weight: 400;
-  font-display: swap;
-  src: url('/fonts/inter-400.woff2') format('woff2');
-}
-@font-face {
-  font-family: 'Inter';
-  font-style: normal;
-  font-weight: 600;
-  font-display: swap;
-  src: url('/fonts/inter-600.woff2') format('woff2');
-}
-@font-face {
-  font-family: 'Inter';
-  font-style: normal;
-  font-weight: 700;
-  font-display: swap;
-  src: url('/fonts/inter-700.woff2') format('woff2');
-}
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
 
 :root {
   /* Self-hosted Inter (Option B). Falls back gracefully. */
