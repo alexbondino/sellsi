@@ -16,9 +16,9 @@ describe('productSpecificationsService - robust behavior', () => {
     };
 
     const supabase = { from: jest.fn(() => chain) };
-    jest.doMock('@/services/supabase', () => ({ supabase }));
+    jest.doMock('../../services/supabase', () => ({ supabase }));
 
-    const specs = require('@/services/marketplace/productSpecificationsService');
+    const specs = require('../../workspaces/marketplace/services/productSpecificationsService');
 
     const result = await specs.getProductSpecifications('p-x');
     expect(Array.isArray(result)).toBe(true);
@@ -32,9 +32,9 @@ describe('productSpecificationsService - robust behavior', () => {
     };
 
     const supabase = { from: jest.fn(() => chainUpdate) };
-    jest.doMock('@/services/supabase', () => ({ supabase }));
+    jest.doMock('../../services/supabase', () => ({ supabase }));
 
-    const specs = require('@/services/marketplace/productSpecificationsService');
+    const specs = require('../../workspaces/marketplace/services/productSpecificationsService');
 
     const ok = await specs.updateProductSpecifications('p-x', [{ key: 'k', value: 'v' }]);
     expect(ok).toBe(false);
@@ -52,9 +52,9 @@ describe('productSpecificationsService - robust behavior', () => {
     };
 
     const supabase = { from: jest.fn(() => chainUpdate) };
-    jest.doMock('@/services/supabase', () => ({ supabase }));
+    jest.doMock('../../services/supabase', () => ({ supabase }));
 
-    const specs = require('@/services/marketplace/productSpecificationsService');
+    const specs = require('../../workspaces/marketplace/services/productSpecificationsService');
 
     const p1 = specs.updateProductSpecifications('p-race', [{ key: 'a', value: '1' }]);
     const p2 = specs.updateProductSpecifications('p-race', [{ key: 'b', value: '2' }]);

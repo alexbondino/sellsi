@@ -7,7 +7,7 @@ import React from 'react';
 import { render, screen } from '@testing-library/react';
 // Instead of importing full BuyerOrders (which uses import.meta), mock a minimal version here.
 const MockBuyerOrders = () => {
-  const hook = require('../../../domains/buyer/hooks');
+  const hook = require('../../../workspaces/buyer/my-orders/hooks/useBuyerOrders');
   const { orders, formatCurrency } = hook.useBuyerOrders();
   return (
     <div>
@@ -29,7 +29,7 @@ const MockBuyerOrders = () => {
 };
 
 // Mock hook useBuyerOrders para inyectar órdenes simuladas
-jest.mock('../../../domains/buyer/hooks', () => ({
+jest.mock('../../../workspaces/buyer/my-orders/hooks/useBuyerOrders', () => ({
   useBuyerOrders: () => ({
     orders: [
       {

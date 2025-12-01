@@ -22,8 +22,8 @@ import { SPACING_BOTTOM_MAIN } from '../../../../styles/layoutSpacing';
 import { useBuyerOrders } from '../hooks/useBuyerOrders';
 import { createSignedInvoiceUrl } from '../../../../services/storage/invoiceStorageService'; // legacy fallback
 import { CheckoutSummaryImage } from '../../../../components/UniversalProductImage';
-// Unificar formateo de fechas con TableRows (usa marketplace/pages/utils/formatters)
-import { formatDate as formatDateUnified } from '../../../../domains/marketplace/pages/utils/formatters';
+// Unificar formateo de fechas con TableRows (usa workspaces/marketplace/utils/formatters)
+import { formatDate as formatDateUnified } from '../../../../workspaces/marketplace';
 import ContactModal from '../../../../shared/components/modals/ContactModal';
 import BuyerOrdersSkeleton from '../../../../shared/components/display/skeletons/BuyerOrdersSkeleton';
 
@@ -474,7 +474,7 @@ const BuyerOrders = () => {
                         </Typography>
                         {/* Mensaje de contacto junto al número de pedido */}
                         <Typography variant="body2" color="text.secondary" sx={{ ml: 1, display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                            ¿Tienes algún problema con tu pedido? No dudes en
+                            ¿Deseas solicitar alguna condición especial? No dudes en
                           <Button
                             variant="text"
                             size="small"
@@ -517,8 +517,8 @@ const BuyerOrders = () => {
                       Fecha de compra: {formatDateUnified(order.created_at)}
                     </Typography>
 
-                    {/* Fecha estimada de entrega (ETA): mostrar solo si status in_transit o delivered */}
-                    {order.estimated_delivery_date && (order.status === 'in_transit' || order.status === 'delivered') && (
+                    {/* Entrega estimada: solo mostrar si status es in_transit (NO delivered) */}
+                    {order.estimated_delivery_date && order.status === 'in_transit' && (
                       <Typography variant="body2" color="text.secondary">
                         {(() => {
                           let eta = order.estimated_delivery_date;
@@ -538,9 +538,10 @@ const BuyerOrders = () => {
                       </Typography>
                     )}
 
+                    {/* Fecha de entrega: mostrar cuando status es delivered con delivered_at */}
                     {order.status === 'delivered' && (order.delivered_at || order.deliveredAt || order.delivered) && (
                       <Typography variant="body2" color="text.secondary">
-                        Pedido entregado con fecha: {formatDateUnified(order.delivered_at || order.deliveredAt || order.delivered)}
+                        Fecha de entrega: {formatDateUnified(order.delivered_at || order.deliveredAt || order.delivered)}
                       </Typography>
                     )}
                   </Box>

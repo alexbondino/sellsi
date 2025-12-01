@@ -113,7 +113,7 @@ const Modal = ({
             MODAL_TYPES.DELETE,
           ].includes(type)
             ? 'center'
-            : 'left',
+            : 'center',
           pb: [
             MODAL_TYPES.INFO,
             MODAL_TYPES.SUCCESS,
@@ -121,7 +121,7 @@ const Modal = ({
             MODAL_TYPES.DELETE,
           ].includes(type)
             ? 1
-            : 3,
+            : 2,
           pt: [
             MODAL_TYPES.INFO,
             MODAL_TYPES.SUCCESS,
@@ -129,7 +129,17 @@ const Modal = ({
             MODAL_TYPES.DELETE,
           ].includes(type)
             ? 3
-            : 1,
+            : 2,
+          // Estilos Sellsi para modales ORDER_*
+          ...([
+            MODAL_TYPES.ORDER_CHECK,
+            MODAL_TYPES.ORDER_TRUCK,
+            MODAL_TYPES.ORDER_BRIEFCASE,
+            MODAL_TYPES.ORDER_CANCEL,
+          ].includes(type) && {
+            backgroundColor: '#2E52B2',
+            color: '#fff',
+          }),
         }}
       >
         <Box
@@ -178,7 +188,7 @@ const Modal = ({
               MODAL_TYPES.ORDER_BRIEFCASE,
               MODAL_TYPES.ORDER_CANCEL,
             ].includes(type) && (
-              <IconComponent sx={{ fontSize: 24, color: config.iconColor }} />
+              <IconComponent sx={{ fontSize: 24, color: '#fff' }} />
             )}
 
           {showWarningIconHeader && <WarningAmberIcon color="warning" />}
@@ -192,6 +202,10 @@ const Modal = ({
                 MODAL_TYPES.SUCCESS,
                 MODAL_TYPES.WARNING,
                 MODAL_TYPES.DELETE,
+                MODAL_TYPES.ORDER_CHECK,
+                MODAL_TYPES.ORDER_TRUCK,
+                MODAL_TYPES.ORDER_BRIEFCASE,
+                MODAL_TYPES.ORDER_CANCEL,
               ].includes(type)
                 ? '600'
                 : 'normal'
@@ -199,7 +213,12 @@ const Modal = ({
             sx={{
               flexGrow: 1,
               fontSize: { xs: '1.1rem', sm: '1.25rem' },
-              color: 'text.primary',
+              color: [
+                MODAL_TYPES.ORDER_CHECK,
+                MODAL_TYPES.ORDER_TRUCK,
+                MODAL_TYPES.ORDER_BRIEFCASE,
+                MODAL_TYPES.ORDER_CANCEL,
+              ].includes(type) ? '#fff' : 'text.primary',
             }}
           >
             {title}
@@ -212,7 +231,12 @@ const Modal = ({
                 position: 'absolute',
                 top: 8,
                 right: 8,
-                color: 'grey.500',
+                color: [
+                  MODAL_TYPES.ORDER_CHECK,
+                  MODAL_TYPES.ORDER_TRUCK,
+                  MODAL_TYPES.ORDER_BRIEFCASE,
+                  MODAL_TYPES.ORDER_CANCEL,
+                ].includes(type) ? '#fff' : 'grey.500',
               }}
             >
               <CloseIcon />
@@ -225,13 +249,13 @@ const Modal = ({
         dividers={isFormModal}
         sx={{
           textAlign: isFormModal ? 'left' : 'center',
-          pt: isFormModal ? 0 : 0,
+          pt: isFormModal ? 2 : 2,
           pb: isFormModal ? 2 : 2,
         }}
       >
         {order && isFormModal && (
           <Box sx={{ mb: 3 }}>
-            <Typography variant="subtitle2" gutterBottom>
+            <Typography variant="subtitle1" fontWeight={700} gutterBottom>
               Información del Pedido
             </Typography>
             <Box sx={{ mb: 2 }}>

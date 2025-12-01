@@ -104,12 +104,29 @@ const CheckoutSuccess = () => {
           }, 3000);
           setRedirectTimeout(timeout);
         } else if (verification.status === 'pending') {
-          // Pago aún pendiente
+          // Pago aún pendiente - TAMBIÉN limpiar carrito para prevenir compras duplicadas
+          // El webhook ya habrá procesado el pago cuando cambie a 'paid'
           setPaymentData({
             paymentId: verification.paymentId,
             transactionId: verification.transactionId,
             status: 'pending',
           });
+
+          // Limpiar el carrito incluso en pending para evitar que el usuario
+          // vuelva a comprar los mismos productos mientras el pago se procesa
+          try {
+            await clearCart();
+          } catch (e) {
+            clearLocal();
+          }
+          clearLocal();
+          
+          // Limpiar ofertas también
+          try {
+            forceCleanCartOffers();
+          } catch (e) {
+            console.warn('Error limpiando ofertas del carrito:', e);
+          }
 
           toast.info('Tu pago está siendo procesado...');
         } else {

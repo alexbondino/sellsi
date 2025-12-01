@@ -139,18 +139,40 @@ export const useShippingValidation = (cartItems = [], isAdvancedMode = false) =>
                     matchingRegion.days || 
                     'N/A';
         
-        const cost = matchingRegion.price || 
+        // Obtener costo base de envío
+        let baseCost = matchingRegion.price || 
                     matchingRegion.shippingValue || 
                     matchingRegion.cost || 
                     0;
         
+        // ✅ CHECK FREE SHIPPING: Verificar si aplica despacho gratuito por cantidad
+        const freeShippingEnabled = product.free_shipping_enabled || product.freeShippingEnabled;
+        const freeShippingMinQty = product.free_shipping_min_quantity || product.freeShippingMinQuantity;
+        const quantity = product.quantity || product.cantidad || 1;
+        
+        let finalCost = baseCost;
+        let isFreeShipping = false;
+        
+        if (freeShippingEnabled && freeShippingMinQty && quantity >= freeShippingMinQty) {
+          finalCost = 0;
+          isFreeShipping = true;
+        }
+        
+        // Construir mensaje según si es envío gratis o no
+        const costMessage = finalCost === 0 
+          ? 'Gratis' 
+          : `$${finalCost.toLocaleString('es-CL')}`;
+        
         return {
           state: SHIPPING_STATES.COMPATIBLE,
-          message: `${days} días hábiles - $${cost.toLocaleString('es-CL')}`,
+          message: `${days} días hábiles - ${costMessage}`,
           canShip: true,
           shippingInfo: {
             days: days,
-            cost: cost
+            cost: finalCost,
+            baseCost: baseCost,
+            isFreeShipping: isFreeShipping,
+            freeShippingMinQty: freeShippingMinQty
           }
         };
       }

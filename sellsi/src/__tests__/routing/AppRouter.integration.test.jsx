@@ -206,10 +206,10 @@ const mockDefault = id => ({
   default: () => <div>{id}</div>,
 });
 
-jest.mock('../../domains/buyer/pages/MarketplaceBuyer', () =>
+jest.mock('../../workspaces/buyer/marketplace/components/MarketplaceBuyer', () =>
   mockDefault('MARKETPLACE_BUYER')
 );
-jest.mock('../../domains/marketplace/pages/Marketplace', () =>
+jest.mock('../../workspaces/marketplace/pages/Marketplace', () =>
   mockDefault('MARKETPLACE')
 );
 jest.mock('../../domains/buyer/pages/BuyerCart', () =>
@@ -224,10 +224,10 @@ jest.mock('../../domains/checkout/pages/CheckoutSuccess', () =>
 jest.mock('../../domains/checkout/pages/CheckoutCancel', () =>
   mockDefault('CHECKOUT_CANCEL')
 );
-jest.mock('../../domains/supplier/pages/home/ProviderHome', () =>
+jest.mock('../../workspaces/supplier/home/components/Home', () =>
   mockDefault('PROVIDER_HOME')
 );
-jest.mock('../../domains/supplier/pages/my-products/MyProducts', () =>
+jest.mock('../../workspaces/supplier/my-products/components/MyProducts', () =>
   mockDefault('MY_PRODUCTS')
 );
 jest.mock(
@@ -237,36 +237,35 @@ jest.mock(
 jest.mock('../../workspaces/supplier/my-requests/components/MyOrdersPage', () =>
   mockDefault('MY_ORDERS')
 );
-jest.mock('../../domains/supplier', () => ({
-  __esModule: true,
-  MarketplaceSupplier: mockDefault('MARKETPLACE_SUPPLIER'),
-}));
+// Note: MarketplaceSupplier was removed during workspace reorganization
+// The route is temporarily disabled in AppRouter, so we skip this mock
 jest.mock('../../workspaces/supplier/my-offers/components/SupplierOffers', () =>
   mockDefault('SUPPLIER_OFFERS')
 );
 jest.mock('../../domains/profile/pages/Profile', () => mockDefault('PROFILE'));
-jest.mock('../../domains/buyer/pages/BuyerOrders', () =>
+jest.mock('../../workspaces/buyer/my-orders/components/BuyerOrders', () =>
   mockDefault('BUYER_ORDERS')
 );
 jest.mock('../../domains/buyer/pages/BuyerPerformance', () =>
   mockDefault('BUYER_PERFORMANCE')
 );
-jest.mock('../../domains/buyer/pages/offers/BuyerOffers', () =>
+jest.mock('../../workspaces/buyer/my-offers/components/BuyerOffers', () =>
   mockDefault('BUYER_OFFERS')
 );
-jest.mock('../../domains/ProductPageView/pages/TechnicalSpecs', () =>
-  mockDefault('TECHNICAL_SPECS')
+jest.mock(
+  '../../workspaces/product/product-page-view/pages/TechnicalSpecs',
+  () => mockDefault('TECHNICAL_SPECS')
 );
-jest.mock('../../domains/marketplace/pages/ProviderCatalog', () =>
+jest.mock('../../workspaces/marketplace/pages/ProviderCatalog', () =>
   mockDefault('PROVIDER_CATALOG')
 );
-jest.mock('../../domains/ProductPageView/ProductPageWrapper', () =>
+jest.mock('../../workspaces/product/product-page-view/ProductPageWrapper', () =>
   mockDefault('PRODUCT_PAGE')
 );
 jest.mock('../../workspaces/auth/onboarding/components/Onboarding', () =>
   mockDefault('ONBOARDING')
 );
-jest.mock('../../domains/auth/components/ResetPassword', () =>
+jest.mock('../../workspaces/auth/account-recovery/components/ResetPassword', () =>
   mockDefault('RESET_PASSWORD')
 );
 jest.mock('../../shared/components/layout/NotFound', () =>
@@ -279,12 +278,12 @@ jest.mock('../../workspaces/legal/components/TermsAndConditionsPage', () =>
 jest.mock('../../workspaces/legal/components/PrivacyPolicyPage', () =>
   mockDefault('PRIVACY')
 );
-jest.mock('../../domains/auth/components/AuthCallback', () =>
+jest.mock('../../workspaces/auth/login/services/AuthCallback', () =>
   mockDefault('AUTH_CALLBACK')
 );
 
-// domains/auth barrel used for Login/Register/Admin exports
-jest.mock('../../domains/auth', () => ({
+// workspaces/auth barrel used for Login/Register exports
+jest.mock('../../workspaces/auth', () => ({
   Login: () => <div>LOGIN</div>,
   Register: () => <div>REGISTER</div>,
   AdminLogin: () => <div>ADMIN_LOGIN</div>,

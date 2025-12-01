@@ -20,7 +20,7 @@ jest.mock('../../utils/toastHelpers', () => ({
 }));
 
 // Mock hooks and components used by MyProducts
-jest.mock('@/domains/supplier/hooks/useSupplierProducts', () => ({
+jest.mock('../../workspaces/supplier/shared-hooks/useSupplierProducts', () => ({
   useSupplierProducts: () => ({
     uiProducts: [],
     stats: { total: 0, active: 0, totalValue: 0 },
@@ -42,7 +42,7 @@ jest.mock('@/domains/supplier/hooks/useSupplierProducts', () => ({
   }),
 }));
 
-jest.mock('@/workspaces/supplier/my-products/hooks/useLazyProducts', () => ({
+jest.mock('../../workspaces/supplier/my-products/hooks/useLazyProducts', () => ({
   useLazyProducts: () => ({
     displayedProducts: [],
     isLoadingMore: false,
@@ -57,7 +57,7 @@ jest.mock('@/workspaces/supplier/my-products/hooks/useLazyProducts', () => ({
 }));
 
 // Mock validation modal + hook to avoid invoking real supabase/auth at render
-jest.mock('@/shared/components/validation', () => ({
+jest.mock('../../shared/components/validation', () => ({
   TransferInfoValidationModal: ({ isOpen }) =>
     isOpen ? <div data-testid="transfer-modal" /> : <div />,
   useTransferInfoModal: () => ({
@@ -70,11 +70,11 @@ jest.mock('@/shared/components/validation', () => ({
   }),
 }));
 
-jest.mock('@/domains/supplier/components/ErrorBoundary', () => ({
+jest.mock('../../workspaces/supplier/error-boundary', () => ({
   SupplierErrorBoundary: ({ children }) => <div>{children}</div>,
 }));
 
-jest.mock('@/shared/components/display/product-card/ProductCard', () => ({
+jest.mock('../../shared/components/display/product-card/ProductCard', () => ({
   __esModule: true,
   default: ({ product, onEdit, onDelete, onProductClick }) => (
     <div data-testid={`card-${product?.id || 'x'}`}>
@@ -100,7 +100,7 @@ jest.mock('@/shared/components/display/product-card/ProductCard', () => ({
   ),
 }));
 
-jest.mock('@/shared/components/feedback/AdvancedLoading', () => ({
+jest.mock('../../shared/components/feedback/AdvancedLoading', () => ({
   InitialLoadingState: () => <div data-testid="initial-loading" />,
   LoadMoreState: ({ show }) => (
     <div data-testid="load-more">{String(show)}</div>
@@ -131,7 +131,7 @@ describe('MyProducts - flows', () => {
       originalWarn(...args);
     };
     // Use an explicit waitFor timeout to avoid Jest-level flakiness
-    const hook = require('@/domains/supplier/hooks/useSupplierProducts');
+    const hook = require('../../workspaces/supplier/shared-hooks/useSupplierProducts');
     const loadProducts = jest.fn();
     hook.useSupplierProducts = jest.fn(() => ({
       uiProducts: [],
@@ -153,7 +153,7 @@ describe('MyProducts - flows', () => {
       updateProduct: jest.fn(),
     }));
     // ensure lazy hook uses same displayedProducts as uiProducts for rendering
-    const lazy = require('@/domains/supplier/hooks/useLazyProducts');
+    const lazy = require('../../workspaces/supplier/my-products/hooks/useLazyProducts');
     lazy.useLazyProducts = jest.fn(() => ({
       displayedProducts: [],
       isLoadingMore: false,
@@ -166,7 +166,7 @@ describe('MyProducts - flows', () => {
     }));
 
     const MyProducts =
-      require('@/domains/supplier/pages/my-products/MyProducts.jsx').default;
+      require('../../workspaces/supplier/my-products/components/MyProducts.jsx').default;
     render(<MyProducts />);
 
     await waitFor(
@@ -181,7 +181,7 @@ describe('MyProducts - flows', () => {
 
   test('delete flow opens modal and calls deleteProduct on confirm', async () => {
     const deleteProductMock = jest.fn(() => Promise.resolve());
-    const hook = require('@/domains/supplier/hooks/useSupplierProducts');
+    const hook = require('../../workspaces/supplier/shared-hooks/useSupplierProducts');
     const sampleProduct = { id: 'p1', nombre: 'P1' };
     hook.useSupplierProducts = jest.fn(() => ({
       uiProducts: [sampleProduct],
@@ -203,7 +203,7 @@ describe('MyProducts - flows', () => {
       updateProduct: jest.fn(),
     }));
 
-    const lazy = require('@/domains/supplier/hooks/useLazyProducts');
+    const lazy = require('../../workspaces/supplier/my-products/hooks/useLazyProducts');
     lazy.useLazyProducts = jest.fn(() => ({
       displayedProducts: [sampleProduct],
       isLoadingMore: false,
@@ -216,7 +216,7 @@ describe('MyProducts - flows', () => {
     }));
 
     const MyProducts =
-      require('@/domains/supplier/pages/my-products/MyProducts.jsx').default;
+      require('../../workspaces/supplier/my-products/components/MyProducts.jsx').default;
     render(<MyProducts />);
 
     // product card should render
@@ -244,7 +244,7 @@ describe('MyProducts - flows', () => {
   test('pause flow toggles active status and shows success', async () => {
     const updateProductMock = jest.fn(() => Promise.resolve());
     const sampleProduct = { id: 'p2', nombre: 'P2', activo: true };
-    const hook = require('@/domains/supplier/hooks/useSupplierProducts');
+    const hook = require('../../workspaces/supplier/shared-hooks/useSupplierProducts');
     hook.useSupplierProducts = jest.fn(() => ({
       uiProducts: [sampleProduct],
       stats: { total: 1, active: 1, totalValue: 100 },
@@ -265,7 +265,7 @@ describe('MyProducts - flows', () => {
       updateProduct: updateProductMock,
     }));
 
-    const lazy = require('@/domains/supplier/hooks/useLazyProducts');
+    const lazy = require('../../workspaces/supplier/my-products/hooks/useLazyProducts');
     lazy.useLazyProducts = jest.fn(() => ({
       displayedProducts: [sampleProduct],
       isLoadingMore: false,
@@ -278,7 +278,7 @@ describe('MyProducts - flows', () => {
     }));
 
     const MyProducts =
-      require('@/domains/supplier/pages/my-products/MyProducts.jsx').default;
+      require('../../workspaces/supplier/my-products/components/MyProducts.jsx').default;
     render(<MyProducts />);
 
     // click pause (reused prop) which opens pause modal

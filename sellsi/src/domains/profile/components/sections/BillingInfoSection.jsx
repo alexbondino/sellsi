@@ -32,7 +32,8 @@ const BillingInfoSection = ({
   onBlurSensitive,
   showBilling = true,  // Nueva prop para controlar visibilidad
   showUpdateButton = true,  // Nueva prop para controlar el botón
-  showErrors = false // Nuevo: mostrar errores cuando validación falle
+  showErrors = false, // Nuevo: mostrar errores cuando validación falle
+  id // Prop para identificar la sección (scroll/highlight)
 }) => {
   
   const handleRegionChange = (event) => {
@@ -49,7 +50,7 @@ const BillingInfoSection = ({
   const shouldShowError = (fieldValue) => showErrors && businessNameFilled && (!fieldValue || String(fieldValue).trim() === '');
 
   return (
-    <Box sx={{ p: 3, height: 'fit-content' }}>
+    <Box id={id} sx={{ p: 3, height: 'fit-content' }}>
       <Box sx={{ mb: 2 }}>
         <Typography variant="h6">Facturación</Typography>
         <Typography variant="body2" sx={{ color: 'text.secondary' }}>

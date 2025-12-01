@@ -157,6 +157,8 @@ class CartService {
               description,
               supplier_id,
               productqty,
+              free_shipping_enabled,
+              free_shipping_min_quantity,
               product_images (image_url, thumbnail_url, thumbnails, thumbnail_signature),
               product_delivery_regions (
                 id,
@@ -204,6 +206,8 @@ class CartService {
               description,
               supplier_id,
               productqty,
+              free_shipping_enabled,
+              free_shipping_min_quantity,
               product_images (image_url, thumbnail_url, thumbnails, thumbnail_signature),
               product_delivery_regions (
                 id,
@@ -305,6 +309,12 @@ class CartService {
             shippingRegions: item.products?.product_delivery_regions || [],
             delivery_regions: item.products?.product_delivery_regions || [],
             shipping_regions: item.products?.product_delivery_regions || [],
+
+            // Campos de envío gratis
+            free_shipping_enabled: item.products?.free_shipping_enabled || false,
+            free_shipping_min_quantity: item.products?.free_shipping_min_quantity || null,
+            freeShippingEnabled: item.products?.free_shipping_enabled || false,
+            freeShippingMinQuantity: item.products?.free_shipping_min_quantity || null,
 
             category: item.products?.category,
             minimum_purchase: item.products?.minimum_purchase,
@@ -630,8 +640,9 @@ class CartService {
   }
 
   async clearCart(cartId, options = {}) {
-    const { skipTimestamp = false } = options;
+    const { skipTimestamp = false, markCompleted = true } = options;
     try {
+      // 1. Borrar todos los items del carrito
       const { error } = await supabase
         .from('cart_items')
         .delete()
@@ -639,7 +650,23 @@ class CartService {
 
       if (error) throw error;
 
-      if (!skipTimestamp) await this.updateCartTimestamp(cartId);
+      // 2. Marcar el carrito como completado para evitar resurrección
+      if (markCompleted) {
+        const { error: statusError } = await supabase
+          .from('carts')
+          .update({ 
+            status: 'completed', 
+            updated_at: new Date().toISOString() 
+          })
+          .eq('cart_id', cartId);
+        
+        if (statusError) {
+          console.warn('[cartService] clearCart: No se pudo marcar carrito como completed:', statusError);
+          // No lanzamos error - la limpieza de items ya fue exitosa
+        }
+      } else if (!skipTimestamp) {
+        await this.updateCartTimestamp(cartId);
+      }
 
       return true;
     } catch (error) {

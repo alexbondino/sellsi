@@ -22,6 +22,9 @@ export function buildOfferProductData(offer, enrichedProduct) {
     offer_deadline: offer.purchase_deadline,
     offer_status: offer.status,
     isOfferProduct: true,
+    // Campos de envío gratis
+    free_shipping_enabled: enrichedProduct?.free_shipping_enabled || enrichedProduct?.freeShippingEnabled || false,
+    free_shipping_min_quantity: enrichedProduct?.free_shipping_min_quantity || enrichedProduct?.freeShippingMinQuantity || null,
   };
 }
 
@@ -44,5 +47,8 @@ export function buildRegularProductData(enrichedProduct) {
     stock: enrichedProduct?.stock || enrichedProduct?.maxStock || enrichedProduct?.productqty || 50,
     shippingRegions: enrichedProduct?.shippingRegions || enrichedProduct?.delivery_regions || [],
     isOfferProduct: false,
+    // Campos de envío gratis
+    free_shipping_enabled: enrichedProduct?.free_shipping_enabled || enrichedProduct?.freeShippingEnabled || false,
+    free_shipping_min_quantity: enrichedProduct?.free_shipping_min_quantity || enrichedProduct?.freeShippingMinQuantity || null,
   };
 }

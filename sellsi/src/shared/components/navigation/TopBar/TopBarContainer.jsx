@@ -109,6 +109,9 @@ export default function TopBarContainer({ session, isBuyer, logoUrl, onNavigate,
 
   // Handler logo (home / marketplace according a role / or landing)
   const handleLogoClick = () => {
+    // Siempre hacer scroll to top al hacer clic en el logo
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    
     if (isLoggedIn) {
       if (currentRole === 'supplier') navigate('/supplier/home');
       else if (currentRole === 'buyer') navigate('/buyer/marketplace');
@@ -127,6 +130,8 @@ export default function TopBarContainer({ session, isBuyer, logoUrl, onNavigate,
   const handleNotifItemClick = n => {
     if (n.context_section === 'supplier_orders') navigate('/supplier/my-orders');
     else if (n.context_section === 'buyer_orders') navigate('/buyer/orders');
+    else if (n.context_section === 'supplier_offers') navigate('/supplier/offers');
+    else if (n.context_section === 'buyer_offers') navigate('/buyer/offers');
     else if (n.order_status && currentRole === 'buyer') navigate('/buyer/orders');
     else if (n.order_status && currentRole === 'supplier') navigate('/supplier/my-orders');
     try { notifCtx?.markAsRead?.([n.id]); } catch(_){}

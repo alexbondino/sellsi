@@ -31,7 +31,7 @@ jest.mock('../../services/supabase', () => ({
 }))
 
 // Load the hook after mocking
-const useProductPriceTiers = require('../../shared/hooks/product/useProductPriceTiers').default
+const useProductPriceTiers = require('../../workspaces/supplier/shared-hooks/useProductPriceTiers').default
 
 function generateTiers(n) {
   const tiers = []

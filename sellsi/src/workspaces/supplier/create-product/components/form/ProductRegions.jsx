@@ -7,6 +7,8 @@ import {
   TextField,
   Tooltip,
   Stack,
+  Checkbox,
+  FormControlLabel,
 } from '@mui/material';
 import { Settings as SettingsIcon } from '@mui/icons-material';
 import InfoIcon from '@mui/icons-material/Info';
@@ -14,6 +16,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import SaveIcon from '@mui/icons-material/Save';
 import CheckIcon from '@mui/icons-material/Check';
 import DeleteIcon from '@mui/icons-material/Delete';
+import LocalShippingIcon from '@mui/icons-material/LocalShipping';
 import ShippingRegionsModal from '../../../../../shared/components/modals/ShippingRegionsModal';
 import { ShippingRegionsDisplay } from '../../../../../shared/components/display/ShippingRegionsDisplay';
 import {
@@ -30,6 +33,7 @@ import ConfirmDialog from '../../../../../shared/components/modals/ConfirmDialog
 const ProductRegions = ({
   formData,
   onRegionChange,
+  onFreeShippingChange, // Nueva prop para manejar cambios de free shipping
   errors,
   localErrors,
   triedSubmit,
@@ -474,6 +478,83 @@ const ProductRegions = ({
             {errors?.shippingRegions || localErrors?.shippingRegions}
           </Typography>
         )}
+
+      {/* ✅ SECCIÓN DE DESPACHO GRATUITO */}
+      <Box sx={{ mt: 3, width: '100%' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1 }}>
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={formData.freeShippingEnabled || false}
+                onChange={(e) => {
+                  if (onFreeShippingChange) {
+                    onFreeShippingChange('freeShippingEnabled', e.target.checked);
+                    // Si se desactiva, limpiar la cantidad mínima
+                    if (!e.target.checked) {
+                      onFreeShippingChange('freeShippingMinQuantity', '');
+                    }
+                  }
+                }}
+                disabled={freezeDisplay}
+              />
+            }
+            label={
+              <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                Ofrecer despacho gratuito
+              </Typography>
+            }
+            sx={{ mr: 0 }}
+          />
+          <Tooltip
+            title={
+              <>
+                Activa esta opción para ofrecer despacho gratuito cuando el comprador alcance una cantidad mínima de unidades.
+                <br /><br />
+                Ejemplo: Si configuras 100 unidades, el comprador obtiene despacho gratis al comprar 100 o más unidades de este producto.
+              </>
+            }
+          >
+            <IconButton
+              size="small"
+              sx={{ color: 'text.secondary' }}
+              aria-label="Información despacho gratuito"
+            >
+              <InfoIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        </Box>
+
+        {/* Campo condicional: Cantidad mínima para despacho gratuito */}
+        {formData.freeShippingEnabled && (
+          <Box sx={{ ml: 4, mt: 1 }}>
+            <TextField
+              label="Cantidad mínima para despacho gratuito"
+              type="number"
+              size="small"
+              value={formData.freeShippingMinQuantity || ''}
+              onChange={(e) => {
+                if (onFreeShippingChange) {
+                  // Solo permitir enteros positivos
+                  const value = e.target.value.replace(/[^0-9]/g, '');
+                  onFreeShippingChange('freeShippingMinQuantity', value);
+                }
+              }}
+              disabled={freezeDisplay}
+              error={triedSubmit && !!errors?.freeShippingMinQuantity}
+              helperText={
+                triedSubmit && errors?.freeShippingMinQuantity
+                  ? errors.freeShippingMinQuantity
+                  : `Debe ser ≥ Compra Mínima (${formData.compraMinima || 1}) y ≤ Stock (${formData.stock || 0})`
+              }
+              inputProps={{
+                min: 1,
+                step: 1,
+              }}
+              sx={{ width: '100%', maxWidth: 300 }}
+            />
+          </Box>
+        )}
+      </Box>
 
       {/* Modal para configurar regiones */}
       <ShippingRegionsModal

@@ -81,6 +81,15 @@ export const calculateRealShippingCost = async (items = [], userRegion = null) =
  * @returns {number} - Costo de envío del producto (fijo, independiente de cantidad)
  */
 export const calculateProductShippingCost = (product, userRegion) => {
+  // ✅ CHECK FREE SHIPPING: Si el producto ofrece despacho gratuito y la cantidad cumple el umbral
+  const freeShippingEnabled = product.free_shipping_enabled || product.freeShippingEnabled;
+  const freeShippingMinQty = product.free_shipping_min_quantity || product.freeShippingMinQuantity;
+  const quantity = product.quantity || product.cantidad || 1;
+  
+  if (freeShippingEnabled && freeShippingMinQty && quantity >= freeShippingMinQty) {
+    return 0; // Despacho gratuito aplicado
+  }
+
   // Obtener información de despacho del producto con múltiples fuentes
   const shippingRegions = product.shippingRegions || 
                          product.delivery_regions || 

@@ -1,4 +1,4 @@
-import useProductSpecifications from '@/domains/supplier/hooks/specifications/useProductSpecifications'
+import useProductSpecifications from '../../workspaces/supplier/shared-hooks/useProductSpecifications'
 
 describe('useProductSpecifications hook - robustness and race tests', () => {
   beforeEach(() => {
@@ -8,7 +8,7 @@ describe('useProductSpecifications hook - robustness and race tests', () => {
   });
 
   test('validateSpecifications removes invalid entries and reports errors', () => {
-    const hook = require('@/domains/supplier/hooks/specifications/useProductSpecifications').default;
+    const hook = require('../../workspaces/supplier/shared-hooks/useProductSpecifications').default;
     const input = [
       { nombre: '', valor: 'v' },
       { nombre: 'Good', valor: '' },
@@ -24,7 +24,7 @@ describe('useProductSpecifications hook - robustness and race tests', () => {
   });
 
   test('bulkValidateAndClean eliminates duplicates and reports duplicatesRemoved', () => {
-    const hook = require('@/domains/supplier/hooks/specifications/useProductSpecifications').default;
+    const hook = require('../../workspaces/supplier/shared-hooks/useProductSpecifications').default;
     const input = [
       { nombre: 'A', valor: '1' },
       { nombre: 'a', valor: '1' },
@@ -38,8 +38,8 @@ describe('useProductSpecifications hook - robustness and race tests', () => {
 
   test('processProductSpecifications sets processing flag and clears it after completion (race safety)', async () => {
     // Mock updateProductSpecifications to delay
-    jest.doMock('@/services/marketplace', () => ({ updateProductSpecifications: jest.fn(() => new Promise(res => setTimeout(() => res(true), 40))) }));
-    const hook = require('@/domains/supplier/hooks/specifications/useProductSpecifications').default;
+    jest.doMock('../../workspaces/marketplace/services', () => ({ updateProductSpecifications: jest.fn(() => new Promise(res => setTimeout(() => res(true), 40))) }));
+    const hook = require('../../workspaces/supplier/shared-hooks/useProductSpecifications').default;
 
     const p1 = hook.getState().processProductSpecifications('p-1', [{ nombre: 'X', valor: '1' }]);
     // Immediately check processing flag
@@ -51,8 +51,8 @@ describe('useProductSpecifications hook - robustness and race tests', () => {
   }, 10000);
 
   test('concurrent process calls for same product serialize processing flag correctly', async () => {
-    jest.doMock('@/services/marketplace', () => ({ updateProductSpecifications: jest.fn(() => new Promise(res => setTimeout(() => res(true), 30))) }));
-    const hook = require('@/domains/supplier/hooks/specifications/useProductSpecifications').default;
+    jest.doMock('../../workspaces/marketplace/services', () => ({ updateProductSpecifications: jest.fn(() => new Promise(res => setTimeout(() => res(true), 30))) }));
+    const hook = require('../../workspaces/supplier/shared-hooks/useProductSpecifications').default;
 
     const p1 = hook.getState().processProductSpecifications('p-2', [{ nombre: 'X', valor: '1' }]);
     const p2 = hook.getState().processProductSpecifications('p-2', [{ nombre: 'Y', valor: '2' }]);

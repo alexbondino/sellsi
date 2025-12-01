@@ -11,12 +11,113 @@ class CheckoutService {
   // ===== ÓRDENES =====
 
   /**
+   * Genera hash de items para comparación (solo product_id y quantity)
+   * @param {Array} items - Items del carrito/orden
+   * @returns {string} Hash string para comparación
+   */
+  _hashItems(items) {
+    return (items || [])
+      .map(it => `${it.product_id || it.productid || it.id}:${it.quantity}`)
+      .sort()
+      .join('|');
+  }
+
+  /**
+   * Busca orden pending existente para el cart_id.
+   * Si existe, válida y con items iguales → la reutiliza.
+   * Si existe pero expiró o items cambiaron → la marca expired.
+   * Patrón FAIL-OPEN: si hay error, retorna null para intentar INSERT normal.
+   * @param {string} cartId - ID del carrito
+   * @param {Array} currentItems - Items actuales del carrito
+   * @returns {Object|null} Orden existente o null para crear nueva
+   */
+  async getOrReuseExistingOrder(cartId, currentItems) {
+    if (!cartId) return null;
+
+    try {
+      const { data: existing, error } = await supabase
+        .from('orders')
+        .select('id, items, total, khipu_expires_at, payment_status, created_at')
+        .eq('cart_id', cartId)
+        .eq('payment_status', 'pending')
+        .maybeSingle();
+
+      // Si hay error de red/DB, fallar silenciosamente y dejar que el INSERT decida
+      if (error) {
+        console.warn('[CheckoutService] Error buscando orden existente (continuando con INSERT):', error.message);
+        return null;
+      }
+
+      if (!existing) return null;
+
+      // Verificar expiración por khipu_expires_at
+      const isKhipuExpired = existing.khipu_expires_at && 
+        new Date(existing.khipu_expires_at) <= new Date();
+      
+      // Caso especial: orden sin khipu_expires_at pero muy vieja (>5 min) = "zombie"
+      const ZOMBIE_THRESHOLD_MS = 5 * 60 * 1000;
+      const isZombie = !existing.khipu_expires_at && 
+        existing.created_at && 
+        (Date.now() - new Date(existing.created_at).getTime()) > ZOMBIE_THRESHOLD_MS;
+      
+      if (isKhipuExpired || isZombie) {
+        const reason = isKhipuExpired ? 'payment window expired (reuse check)' : 'zombie order (no khipu_expires_at after 5min)';
+        console.log('[CheckoutService] Orden existente expirada/zombie, marcando expired:', existing.id, reason);
+        try {
+          await supabase.from('orders')
+            .update({ payment_status: 'expired', status: 'cancelled', cancellation_reason: reason })
+            .eq('id', existing.id);
+        } catch (expireErr) {
+          console.warn('[CheckoutService] Error marcando orden expired (ignorando):', expireErr.message);
+        }
+        return null;
+      }
+
+      // Verificar que items coincidan
+      const existingHash = this._hashItems(existing.items);
+      const currentHash = this._hashItems(currentItems);
+
+      if (existingHash !== currentHash) {
+        console.log('[CheckoutService] Items cambiaron, expirando orden anterior:', existing.id);
+        try {
+          await supabase.from('orders')
+            .update({ payment_status: 'expired', status: 'cancelled', cancellation_reason: 'cart items changed' })
+            .eq('id', existing.id);
+        } catch (expireErr) {
+          console.warn('[CheckoutService] Error marcando orden expired por items (ignorando):', expireErr.message);
+        }
+        return null;
+      }
+
+      // Reutilizar orden existente
+      console.log('[CheckoutService] Reutilizando orden existente:', existing.id);
+      return existing;
+      
+    } catch (err) {
+      // Error general en la verificación - fail-open
+      console.warn('[CheckoutService] Error en getOrReuseExistingOrder (continuando con INSERT):', err.message);
+      return null;
+    }
+  }
+
+  /**
    * Crear orden de compra
    * @param {Object} orderData - Datos de la orden
    * @returns {Object} Orden creada
    */
   async createOrder(orderData) {
     try {
+      // ===== VERIFICAR SI EXISTE ORDEN PENDING REUTILIZABLE =====
+      const existingOrder = await this.getOrReuseExistingOrder(
+        orderData.cartId, 
+        orderData.items
+      );
+      
+      if (existingOrder) {
+        // Retornar orden existente (no crear nueva)
+        return existingOrder;
+      }
+
       // ===== HOTFIX DEFENSIVO DIRECCIONES =====
       // Si el caller no adjuntó shipping/billing pero el usuario podría tenerlas en perfil,
       // hacemos un fetch rápido antes del insert para no nacer NULL.
@@ -100,6 +201,7 @@ class CheckoutService {
           payment_status: 'pending',
           shipping_address: shippingAddressObj,
           billing_address: billingAddressObj,
+          cart_id: orderData.cartId || null, // ✅ Vincular con carrito para limpieza server-side
         })
         .select()
         .single();

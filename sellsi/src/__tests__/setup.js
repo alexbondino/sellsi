@@ -7,15 +7,9 @@ import { TextEncoder, TextDecoder } from 'util';
 global.TextEncoder = TextEncoder;
 global.TextDecoder = TextDecoder;
 
-// Mock global de import.meta
-global.import = {
-  meta: {
-    env: {
-      VITE_SUPABASE_URL: 'http://localhost:54321',
-      VITE_SUPABASE_ANON_KEY: 'test-key',
-    },
-  },
-};
+// NOTE: import.meta.env is handled by babel-plugin-transform-import-meta
+// which transforms it to process.env at build time.
+// Environment variables are set in setEnvVars.js
 
 // Configurar testing library
 configure({ testIdAttribute: 'data-testid' });
@@ -106,9 +100,38 @@ global.localStorage = localStorageMock;
 // Some modules in the app use import.meta.env which Jest's CommonJS environment doesn't support.
 // Provide a simple manual mock for the flags module so tests that import it don't fail at parse time.
 // Cambiada ruta para apuntar al workspace centralizado
-jest.mock('../../src/workspaces/supplier/shared-utils/featureFlags', () => ({
+jest.mock('../workspaces/supplier/shared-utils/featureFlags', () => ({
   FeatureFlags: {},
   ThumbTimings: {},
+}));
+
+// ===== MOCK: useMarketplaceLogic hook =====
+// This hook uses import.meta.env which Jest can't parse. Mock it globally.
+jest.mock('../shared/hooks/marketplace/useMarketplaceLogic', () => ({
+  useMarketplaceLogic: jest.fn(() => ({
+    busqueda: '',
+    setBusqueda: jest.fn(),
+    handleBusquedaChange: jest.fn(),
+    currentOrdenamiento: 'Más recientes',
+    currentSortOptions: [],
+    handleOrdenamiento: jest.fn(),
+    handleUnifiedToggleFilters: jest.fn(),
+    hayFiltrosActivos: false,
+    filtroVisible: false,
+    filtroModalOpen: false,
+    searchBarMarginLeft: 0,
+    isMobileFilterOpen: false,
+    onMobileFilterClose: jest.fn(),
+    isProviderView: false,
+    onToggleProviderView: jest.fn(),
+    hasSideBar: false,
+  })),
+}));
+
+// ===== MOCK: shared/hooks index barrel =====
+// The barrel exports useMarketplaceLogic which uses import.meta.env
+jest.mock('../shared/hooks', () => ({
+  useMarketplaceLogic: jest.fn(() => ({})),
 }));
 
 // ===== MOCK: supabase client chain helper =====
@@ -126,7 +149,7 @@ const createQueryMock = (result = { data: null, error: null }) => {
 // Minimal inline mock for the supabase client chain used by the app.
 // Implemented entirely inside the factory to avoid referencing external variables (Jest rule).
 // Provide a richer supabase mock that stores an auth state change callback so tests can trigger SIGNED_IN/SIGNED_OUT.
-jest.mock('../../src/services/supabase', () => {
+jest.mock('../services/supabase', () => {
   let authCallback = null;
   let currentSession = null;
 
@@ -181,7 +204,7 @@ jest.mock('../../src/services/supabase', () => {
 
 // ===== MOCK: user services =====
 // Some user/service modules use `import.meta.env`. Provide a safe stub so imports in tests don't parse import.meta.
-jest.mock('../../src/services/user', () => {
+jest.mock('../services/user', () => {
   return {
     // export commonly used methods as no-op or simple stubs
     getUserProfile: jest.fn(() => Promise.resolve({ data: null, error: null })),

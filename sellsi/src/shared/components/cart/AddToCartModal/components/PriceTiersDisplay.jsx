@@ -2,7 +2,7 @@ import React from 'react';
 import { Box, Typography, Paper, Stack } from '@mui/material';
 
 const tierPaperSx = (isActive) => ({
-  p: 2,
+  p: 1,
   border: isActive ? 2 : 1,
   borderColor: isActive ? 'primary.main' : 'grey.300',
   bgcolor: isActive ? 'primary.50' : 'transparent',
@@ -12,7 +12,7 @@ const tierPaperSx = (isActive) => ({
 const tiersContainerSx = {
   display: 'flex',
   flexDirection: 'column',
-  gap: 2,
+  gap: 0, // Stack spacing maneja el gap
 };
 
 export function PriceTiersDisplay({ productData, priceTiers, quantity }) {
@@ -37,7 +37,7 @@ export function PriceTiersDisplay({ productData, priceTiers, quantity }) {
       <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 600 }}>
         Precio antes de envío
       </Typography>
-      <Stack spacing={1} sx={tiersContainerSx}>
+      <Stack spacing={0.5} sx={tiersContainerSx}>
         {priceTiers.map((tier, index) => {
           const minQty = tier.min_quantity || 1;
           const maxQty = tier.max_quantity;

@@ -2,7 +2,7 @@ import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 
-import PrivateRoute from '../../domains/auth/components/PrivateRoute';
+import PrivateRoute from '../../workspaces/auth/guards/components/PrivateRoute';
 
 describe('PrivateRoute - extra edge cases', () => {
   test('respects custom redirectTo prop', () => {

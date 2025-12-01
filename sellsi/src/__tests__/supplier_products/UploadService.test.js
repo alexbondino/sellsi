@@ -11,7 +11,7 @@ describe('UploadService (robust flows)', () => {
 
   test('uploadImageWithThumbnail - happy path main image -> uploads, inserts order 0, generates thumbnail', async () => {
     // Mock supabase behavior
-    jest.doMock('@/services/supabase.js', () => ({
+    jest.doMock('../../services/supabase', () => ({
       supabase: {
         storage: {
           from: (bucket) => ({
@@ -26,7 +26,7 @@ describe('UploadService (robust flows)', () => {
       },
     }))
 
-    const { default: UploadService } = await import('@/shared/services/upload/uploadService')
+    const { default: UploadService } = await import('../../workspaces/supplier/shared-services/uploadService')
 
     // Spy and force thumbnail generation to succeed
     jest.spyOn(UploadService, 'generateThumbnailWithRetry').mockResolvedValue({ success: true, thumbnailUrl: 'https://cdn.test/thumb.jpg', wasRetried: false })
@@ -41,7 +41,7 @@ describe('UploadService (robust flows)', () => {
   })
 
   test('uploadImageWithThumbnail - rejects oversized file > 2MB', async () => {
-    const { default: UploadService } = await import('@/shared/services/upload/uploadService')
+    const { default: UploadService } = await import('../../workspaces/supplier/shared-services/uploadService')
 
     const bigFile = { name: 'big.jpg', type: 'image/jpeg', size: 3 * 1024 * 1024 }
     const res = await UploadService.uploadImageWithThumbnail(bigFile, 'prodX', 'supX', true)
@@ -52,7 +52,7 @@ describe('UploadService (robust flows)', () => {
 
   test('uploadMultipleImagesWithThumbnails - normal mode uploads first sequential then parallel and dispatches ready', async () => {
     // Mock supabase minimal behaviors used in this flow
-    jest.doMock('@/services/supabase.js', () => ({
+    jest.doMock('../../services/supabase', () => ({
       supabase: {
         from: (table) => ({
           select: async () => ({ data: [], error: null }),
@@ -62,7 +62,7 @@ describe('UploadService (robust flows)', () => {
       },
     }))
 
-    const { default: UploadService } = await import('@/shared/services/upload/uploadService')
+    const { default: UploadService } = await import('../../workspaces/supplier/shared-services/uploadService')
 
     // Spy on uploadImageWithThumbnail to simulate different timings/results
     const spyUpload = jest.spyOn(UploadService, 'uploadImageWithThumbnail').mockImplementation(async (file, p, s, isMain) => {
@@ -95,7 +95,7 @@ describe('UploadService (robust flows)', () => {
 
   test('uploadMultipleImagesWithThumbnails - replaceExisting recreates references and returns early when no new files', async () => {
     // Mock supabase insert for recreating references and StorageCleanupService
-    jest.doMock('@/services/supabase.js', () => ({
+    jest.doMock('../../services/supabase', () => ({
       supabase: {
         from: (table) => ({
           insert: async (obj) => ({ data: obj, error: null }),
@@ -105,13 +105,13 @@ describe('UploadService (robust flows)', () => {
       },
     }))
 
-    jest.doMock('@/shared/services/storage/storageCleanupService.js', () => ({
+    jest.doMock('../../shared/services/storage/storageCleanupService', () => ({
       StorageCleanupService: {
         deleteAllProductImages: jest.fn().mockResolvedValue({ success: true }),
       },
     }))
 
-    const { default: UploadService } = await import('@/shared/services/upload/uploadService')
+    const { default: UploadService } = await import('../../workspaces/supplier/shared-services/uploadService')
 
     const existingFiles = [{ isExisting: true, url: 'https://cdn.test/existing.jpg' }]
 
@@ -124,7 +124,7 @@ describe('UploadService (robust flows)', () => {
 
   test('replaceAllProductImages - empty files clears DB and returns success', async () => {
     jest.resetModules()
-    jest.doMock('@/services/supabase.js', () => ({
+    jest.doMock('../../services/supabase', () => ({
       supabase: {
         from: (table) => ({
           delete: () => ({
@@ -134,7 +134,7 @@ describe('UploadService (robust flows)', () => {
       },
     }))
 
-    const { default: UploadService } = await import('@/shared/services/upload/uploadService')
+    const { default: UploadService } = await import('../../workspaces/supplier/shared-services/uploadService')
 
     const res = await UploadService.replaceAllProductImages([], 'prodZ', 'supZ')
 
@@ -159,7 +159,7 @@ describe('UploadService (robust flows)', () => {
     const updateCalls = []
 
     // Mock supabase fully BEFORE importing UploadService
-    jest.doMock('@/services/supabase.js', () => ({
+    jest.doMock('../../services/supabase', () => ({
       supabase: {
         storage: {
           from: (bucket) => ({
@@ -186,7 +186,7 @@ describe('UploadService (robust flows)', () => {
     }))
 
 
-    const { default: UploadService2 } = await import('@/shared/services/upload/uploadService')
+    const { default: UploadService2 } = await import('../../workspaces/supplier/shared-services/uploadService')
 
     // Spy uploadImage to avoid relying on internal upload logic in this unit test.
     jest.spyOn(UploadService2, 'uploadImage').mockImplementation(async (file, productId, supplierId) => {
@@ -230,7 +230,7 @@ describe('UploadService (robust flows)', () => {
   test('replaceAllProductImages - RPC failure is reported', async () => {
     jest.resetModules()
 
-    jest.doMock('@/services/supabase.js', () => ({
+    jest.doMock('../../services/supabase', () => ({
       supabase: {
   storage: { from: () => ({ upload: async () => ({ data: null, error: null }), getPublicUrl: () => ({ data: { publicUrl: 'https://cdn.test/x' } }) }) },
   rpc: async () => ({ data: null, error: { message: 'rpc failed' } }),
@@ -238,7 +238,7 @@ describe('UploadService (robust flows)', () => {
       },
     }))
 
-    const { default: UploadService } = await import('@/shared/services/upload/uploadService')
+    const { default: UploadService } = await import('../../workspaces/supplier/shared-services/uploadService')
 
     // Ensure upload succeeds so the RPC error is what fails the flow
     jest.spyOn(UploadService, 'uploadImage').mockImplementation(async (file, productId, supplierId) => {
@@ -263,7 +263,7 @@ describe('UploadService (robust flows)', () => {
     ]
 
     // Mock supabase to return replacedRowsFinal for rpc and recheck
-    jest.doMock('@/services/supabase.js', () => ({
+    jest.doMock('../../services/supabase', () => ({
       supabase: {
         storage: { from: () => ({ upload: async () => ({ data: { id: 'id' }, error: null }), getPublicUrl: () => ({ data: { publicUrl: 'https://cdn.test/x' } }) }) },
         rpc: async () => ({ data: replacedRowsFinal, error: null }),
@@ -282,7 +282,7 @@ describe('UploadService (robust flows)', () => {
       },
     }))
 
-    const { default: UploadService3 } = await import('@/shared/services/upload/uploadService')
+    const { default: UploadService3 } = await import('../../workspaces/supplier/shared-services/uploadService')
 
     // Mock uploadImage to return predictable publicUrl values
     jest.spyOn(UploadService3, 'uploadImage').mockImplementation(async (file, productId, supplierId) => {
@@ -323,7 +323,7 @@ describe('UploadService (robust flows)', () => {
 
     // create a supabase mock that returns different rows across calls
     let call = 0
-    jest.doMock('@/services/supabase.js', () => ({
+    jest.doMock('../../services/supabase', () => ({
       supabase: {
         from: () => ({
           select: () => ({
@@ -346,7 +346,7 @@ describe('UploadService (robust flows)', () => {
     }))
 
     // mock generateThumbnailWithRetry to resolve quickly
-    const mod = await import('@/shared/services/upload/uploadService')
+    const mod = await import('../../workspaces/supplier/shared-services/uploadService')
     const UploadService = mod.default
     jest.spyOn(UploadService, 'generateThumbnailWithRetry').mockResolvedValue({ success: true })
 

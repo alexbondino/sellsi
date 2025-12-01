@@ -23,7 +23,10 @@ const mockUseBuyerOffers = {
 };
 
 jest.mock('../../workspaces/buyer/my-offers', () => ({
-  useBuyerOffers: () => mockUseBuyerOffers
+  useBuyerOffers: () => mockUseBuyerOffers,
+  // Re-exportar los componentes reales
+  BuyerOffers: jest.requireActual('../../workspaces/buyer/my-offers').BuyerOffers,
+  OffersList: jest.requireActual('../../workspaces/buyer/my-offers').OffersList,
 }));
 
 // Mock del hook de media query

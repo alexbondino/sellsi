@@ -36,16 +36,19 @@ jobs:
               echo ""
               echo "EOF"
             } >> "$GITHUB_OUTPUT"
+            # También dejamos título vacío por consistencia
+            echo "pr_title=" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
-          # Llamar a la API de GitHub para obtener el body del PR (Markdown)
+          # Llamar a la API de GitHub para obtener body y título del PR
           PR_JSON=$(curl -sS \
             -H "Accept: application/vnd.github+json" \
             -H "Authorization: Bearer $GITHUB_TOKEN" \
             "https://api.github.com/repos/${{ github.repository }}/pulls/$PR_NUMBER")
 
           PR_BODY=$(echo "$PR_JSON" | jq -r '.body // ""')
+          PR_TITLE=$(echo "$PR_JSON" | jq -r '.title // ""')
 
           {
             echo "pr_description<<EOF"
@@ -53,18 +56,27 @@ jobs:
             echo "EOF"
           } >> "$GITHUB_OUTPUT"
 
+          # ✅ Output con el título del PR
+          echo "pr_title=$PR_TITLE" >> "$GITHUB_OUTPUT"
+
       - name: 🏗️ Construir payload
         id: build_payload
         shell: bash
         env:
           PR_DESCRIPTION: ${{ steps.pr_data.outputs.pr_description }}
+          PR_TITLE: ${{ steps.pr_data.outputs.pr_title }}
         run: |
           REPO="${{ github.repository }}"
           STAGING_URL="http://staging-sellsi.vercel.app"
 
-          SUMMARY="Deploy a STAGING - $REPO - ${{ github.sha }}"
+          # ✅ Usar el título del PR como summary en Jira
+          # Si por alguna razón viniera vacío, cae al fallback anterior
+          if [ -n "$PR_TITLE" ]; then
+            SUMMARY="$PR_TITLE"
+          else
+            SUMMARY="Deploy a STAGING - $REPO - ${{ github.sha }}"
+          fi
 
-          # 👇 SOLO lo que quieres: descripción del PR + URL de staging
           DESCRIPTION="Descripción del Pull Request:\n$PR_DESCRIPTION\n\nStaging URL:\n$STAGING_URL"
 
           echo "summary=$SUMMARY" >> "$GITHUB_OUTPUT"
@@ -93,7 +105,6 @@ jobs:
             --arg summary "$SUMMARY" \
             --arg desc "$DESCRIPTION" \
             '
-              # Convierte texto plano + markdown simple (**, * ) a ADF
               def to_adf($text):
                 ($text | split("\n")) as $lines |
                 [
@@ -101,7 +112,6 @@ jobs:
                   if . == "" then
                     empty
                   elif test("^\\* "; "m") then
-                    # Línea tipo "* item" -> bulletList con un ítem
                     {
                       type: "bulletList",
                       content: [
@@ -119,7 +129,6 @@ jobs:
                       ]
                     }
                   elif test("^\\*\\*(.*)\\*\\*$") then
-                    # Línea entera en negrita: **texto**
                     {
                       type: "paragraph",
                       content: [
@@ -131,7 +140,6 @@ jobs:
                       ]
                     }
                   else
-                    # Párrafo normal
                     {
                       type: "paragraph",
                       content: [

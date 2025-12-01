@@ -9,6 +9,16 @@ jest.mock('../../components/UniversalProductImage', () => ({
 // Mock ShippingDisplay component to avoid importing shipping hooks/services that use import.meta
 jest.mock('../../domains/buyer/pages/cart/components/ShippingDisplay', () => () => null);
 
+// Mock workspaces/marketplace barrel that imports modules with import.meta
+jest.mock('../../workspaces/marketplace', () => ({
+  StockIndicator: () => null,
+}));
+
+// Mock shared hooks that use import.meta
+jest.mock('../../shared/hooks', () => ({
+  useMarketplaceLogic: () => ({}),
+}));
+
 import CartItem from '../../domains/buyer/pages/cart/CartItem';
 
 // Mock useNavigate used inside CartItem

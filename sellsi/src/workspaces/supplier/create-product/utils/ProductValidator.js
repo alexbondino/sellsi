@@ -32,6 +32,7 @@ export class ProductValidator {
     this._validatePricing(formData, errors);
     this._validateImages(formData, errors);
     this._validateOptionalFields(formData, errors);
+    this._validateFreeShipping(formData, errors);
 
     return {
       isValid: Object.keys(errors).length === 0,
@@ -268,6 +269,46 @@ export class ProductValidator {
       if (oversizedImages.length > 0) {
         errors.imagenes = ERROR_MESSAGES.IMAGE_TOO_LARGE;
       }
+    }
+  }
+
+  /**
+   * Validar configuración de despacho gratuito
+   */
+  static _validateFreeShipping(formData, errors) {
+    // Solo validar si el despacho gratuito está habilitado
+    if (!formData.freeShippingEnabled) {
+      return;
+    }
+
+    const minQuantity = formData.freeShippingMinQuantity;
+    const compraMinima = parseInt(formData.compraMinima) || 1;
+    const stock = parseInt(formData.stock) || 0;
+
+    // Validar que se haya ingresado una cantidad
+    if (!minQuantity || minQuantity === '') {
+      errors.freeShippingMinQuantity = ERROR_MESSAGES.FREE_SHIPPING_MIN_REQUIRED;
+      return;
+    }
+
+    const parsedQuantity = parseInt(minQuantity);
+
+    // Validar que sea un entero positivo
+    if (isNaN(parsedQuantity) || parsedQuantity < 1 || !Number.isInteger(parseFloat(minQuantity))) {
+      errors.freeShippingMinQuantity = ERROR_MESSAGES.FREE_SHIPPING_MIN_NOT_INTEGER;
+      return;
+    }
+
+    // Validar que sea >= compraMinima
+    if (parsedQuantity < compraMinima) {
+      errors.freeShippingMinQuantity = ERROR_MESSAGES.FREE_SHIPPING_MIN_BELOW_COMPRA_MINIMA;
+      return;
+    }
+
+    // Validar que sea <= stock
+    if (parsedQuantity > stock) {
+      errors.freeShippingMinQuantity = ERROR_MESSAGES.FREE_SHIPPING_MIN_EXCEEDS_STOCK;
+      return;
     }
   }
 

@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button, IconButton, Tooltip } from '@mui/material';
 import { ShoppingCart as ShoppingCartIcon } from '@mui/icons-material';
 
@@ -54,6 +55,7 @@ const AddToCart = ({
   // ============================================================================
   // ESTADOS Y HOOKS
   // ============================================================================
+  const navigate = useNavigate();
   const [modalOpen, setModalOpen] = useState(false);
   const openingRef = React.useRef(false); // reentrancy guard
   const [currentUserId, setCurrentUserId] = useState(null);
@@ -123,6 +125,21 @@ const AddToCart = ({
       showErrorToast('Esta oferta ya se encuentra en tu carrito');
       openingRef.current = false;
       return;
+    }
+    
+    // 🕐 VALIDAR EXPIRACIÓN DE OFERTA antes de permitir agregar al carrito
+    if (offer) {
+      const deadline = offer.purchase_deadline || offer.expires_at;
+      if (deadline) {
+        const deadlineMs = new Date(deadline).getTime();
+        if (!Number.isNaN(deadlineMs) && deadlineMs < Date.now()) {
+          showErrorToast('Esta oferta ha caducado y no puede agregarse al carrito', {
+            icon: '⏰',
+          });
+          openingRef.current = false;
+          return;
+        }
+      }
     }
 
     if (!disabled && product) {
@@ -216,6 +233,16 @@ const AddToCart = ({
     } catch (_) {}
     if (onModalStateChange) onModalStateChange(false);
   }, [handleConfigureShipping, onModalStateChange]);
+
+  // ✅ Handler para redirección directa a perfil/facturación cuando falta billing info
+  const handleRequireBillingInfo = useCallback(({ missingFields }) => {
+    console.log('📝 [AddToCart] Falta información de facturación:', missingFields);
+    // Cerrar cualquier modal abierto
+    setModalOpen(false);
+    if (onModalStateChange) onModalStateChange(false);
+    // Redirigir directamente al perfil con sección de facturación destacada
+    navigate('/buyer/profile?section=billing&highlight=true');
+  }, [navigate, onModalStateChange]);
 
   // Mantener sincronizado el estado de apertura hacia el consumidor (card/grid) por si abre/cierra por otros caminos
   useEffect(() => {
@@ -461,6 +488,7 @@ const AddToCart = ({
         userRegion={userRegion}
         isLoadingUserProfile={isLoadingUserProfile}
         isOwnProduct={isOwnProduct}
+        onRequireBillingInfo={handleRequireBillingInfo}
       />
       <ShippingInfoValidationModal
         isOpen={shippingIsOpen}

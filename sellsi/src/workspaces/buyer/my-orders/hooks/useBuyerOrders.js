@@ -6,7 +6,8 @@ import { splitOrderBySupplier } from '../../../../domains/orders/shared/splitOrd
 
 /**
  * Hook para manejar los pedidos de un comprador.
- * Este hook obtiene únicamente los pedidos que ya no están en estado 'pending'.
+ * Este hook obtiene todos los pedidos incluyendo los que tienen payment_status='pending' (procesando pago),
+ * 'paid' (pago confirmado) y 'expired' (pago expirado).
  * @param {string | null} buyerId - ID del comprador.
  * @returns {Object} El estado y las funciones para manejar los pedidos.
  */
@@ -171,21 +172,34 @@ export const useBuyerOrders = buyerId => {
       lastRealtimeRef.current = Date.now();
       if (payload.eventType === 'UPDATE') {
         const row = payload.new;
-        if ((row?.payment_status || '').toLowerCase() === 'paid') {
+        const newPaymentStatus = (row?.payment_status || '').toLowerCase();
+        
+        // Handle all relevant payment status transitions (pending, paid, expired)
+        if (['paid', 'pending', 'expired'].includes(newPaymentStatus)) {
           setOrders(prev => {
             const exists = prev.some(o => o.order_id === row.id);
             if (exists) {
+              // Update existing order with new payment_status and optionally status
               return prev.map(o => o.order_id === row.id
-                ? { ...o, payment_status: row.payment_status, updated_at: row.updated_at }
+                ? { 
+                    ...o, 
+                    payment_status: row.payment_status, 
+                    status: row.status || o.status,
+                    updated_at: row.updated_at 
+                  }
                 : o);
             }
             // Nueva orden recién promovida a pagada -> refetch completo para incorporar items/splits
-            fetchOrders();
+            if (newPaymentStatus === 'paid') {
+              fetchOrders();
+            }
             return prev;
           });
         }
       } else if (payload.eventType === 'INSERT') {
-        if ((payload.new?.payment_status || '').toLowerCase() === 'paid') {
+        // Refetch on new orders with paid OR pending payment status
+        const insertedStatus = (payload.new?.payment_status || '').toLowerCase();
+        if (insertedStatus === 'paid' || insertedStatus === 'pending') {
           fetchOrders();
         }
       }

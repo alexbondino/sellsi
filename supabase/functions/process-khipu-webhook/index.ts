@@ -109,14 +109,11 @@ serve((req: Request) => withMetrics('process-khipu-webhook', req, async () => {
         });
       }
     } else {
-      console.warn('⚠️ Tipo de contenido no soportado:', contentType);
       return new Response(
         JSON.stringify({ error: 'Unsupported content-type' }),
         { status: 400, headers: corsHeaders }
       );
     }
-
-    console.log('📦 Payload procesado:', khipuPayload);
 
     // ========================================================================
     // EXTRAER orderId DESDE subject
@@ -140,16 +137,12 @@ serve((req: Request) => withMetrics('process-khipu-webhook', req, async () => {
         .limit(1);
       if (!lookupErr && lookup && lookup.length) {
         orderId = lookup[0].id;
-        console.log('🔍 Order encontrada por khipu_payment_id fallback', orderId);
       }
     }
 
     if (!orderId) {
-      console.warn('⚠️ No se pudo asociar pago a una orden (sin UUID parseable ni fallback).');
       return new Response(JSON.stringify({ success: false, reason: 'order_not_found' }), { status: 200, headers: corsHeaders });
     }
-
-    console.log(`💰 Procesando pago exitoso (o idempotente) para la orden: ${orderId}`);
 
     // Verificación de integridad (items_hash) antes de mutar inventario / supplier_orders
     let integrityOk = true;
@@ -171,7 +164,6 @@ serve((req: Request) => withMetrics('process-khipu-webhook', req, async () => {
         const { data: hashCalc, error: hashFuncErr } = await supabaseHash.rpc('order_items_canonical_hash', { o: orderForHash });
         let hex = null;
         if (hashFuncErr) {
-          console.warn('⚠️ Falla order_items_canonical_hash, fallback a hashing JS', hashFuncErr);
           try {
             const itemsJson = orderForHash.items;
             const canonical = typeof itemsJson === 'string' ? itemsJson : JSON.stringify(itemsJson);
@@ -186,10 +178,6 @@ serve((req: Request) => withMetrics('process-khipu-webhook', req, async () => {
         if (hex && orderForHash.items_hash && orderForHash.items_hash !== hex) {
           integrityOk = false;
           console.error('❌ Mismatch items_hash detectado', { stored: orderForHash.items_hash, computed: hex });
-        } else if (hex) {
-          console.log('🛡️ Hash integridad OK');
-        } else {
-          console.warn('⚠️ No se pudo calcular hash para comparación');
         }
       }
     } catch (hashEx) {
@@ -225,7 +213,7 @@ serve((req: Request) => withMetrics('process-khipu-webhook', req, async () => {
         .select('id,status,purchase_deadline,order_id')
         .eq('order_id', orderId);
       if (linkedErr) {
-        console.warn('⚠️ No se pudieron leer ofertas vinculadas para validación:', linkedErr);
+        console.error('❌ No se pudieron leer ofertas vinculadas para validación:', linkedErr);
       } else if (linkedOffers && linkedOffers.length) {
         const nowMs = Date.now();
         for (const off of linkedOffers) {
@@ -233,7 +221,7 @@ serve((req: Request) => withMetrics('process-khipu-webhook', req, async () => {
             if (deadlineMs && deadlineMs < nowMs) {
               const item = { offer_id: off.id, issue: 'deadline_expired' };
               if (enforceLate && preOrder?.payment_status !== 'paid') {
-                console.warn('❌ Pago bloqueado: oferta vencida', item);
+                console.error('❌ Pago bloqueado: oferta vencida', item);
                 return new Response(JSON.stringify({ error: 'OFFER_DEADLINE_EXPIRED', late: true, offer_id: off.id }), { status: 409, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
               } else {
                 offerDeadlineWarnings.push(item);
@@ -242,7 +230,7 @@ serve((req: Request) => withMetrics('process-khipu-webhook', req, async () => {
             if (!['accepted','reserved','paid'].includes(off.status)) {
               const item = { offer_id: off.id, issue: 'invalid_state', state: off.status };
               if (enforceLate && preOrder?.payment_status !== 'paid') {
-                console.warn('❌ Pago bloqueado: estado inválido oferta', item);
+                console.error('❌ Pago bloqueado: estado inválido oferta', item);
                 return new Response(JSON.stringify({ error: 'OFFER_INVALID_STATE', offer_id: off.id, state: off.status }), { status: 409, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
               } else {
                 offerDeadlineWarnings.push(item);
@@ -257,7 +245,6 @@ serve((req: Request) => withMetrics('process-khipu-webhook', req, async () => {
   let alreadyProcessedInventory = false;
   let justMarkedPaid = false;
     if (preOrder?.inventory_processed_at) {
-      console.log('ℹ️ Webhook idempotente (inventory ya procesado)');
       alreadyProcessedInventory = true;
     }
 
@@ -287,9 +274,7 @@ serve((req: Request) => withMetrics('process-khipu-webhook', req, async () => {
               .update({ supplier_parts_meta: metaObj, updated_at: new Date().toISOString() })
               .eq('id', orderId)
               .is('supplier_parts_meta', null);
-            if (metaErr) console.error('⚠️ No se pudo inicializar supplier_parts_meta', metaErr); else console.log('✅ supplier_parts_meta inicializado (suppliers=', supplierIds.length, ')');
-          } else {
-            console.log('ℹ️ No se encontraron supplier_ids para inicializar meta');
+            if (metaErr) console.error('⚠️ No se pudo inicializar supplier_parts_meta', metaErr);
           }
         }
       }
@@ -327,7 +312,7 @@ serve((req: Request) => withMetrics('process-khipu-webhook', req, async () => {
         })
         .eq('id', orderId)
         .is('cancelled_at', null); // 🔧 Condición adicional de seguridad
-  if (payUpdErr) console.error('❌ Error marcando pago:', payUpdErr); else { console.log('✅ Orden marcada pagada'); justMarkedPaid = true; }
+  if (payUpdErr) console.error('❌ Error marcando pago:', payUpdErr); else { justMarkedPaid = true; }
 
       // Promover ofertas vinculadas a estado paid (idempotente)
       try {
@@ -336,7 +321,7 @@ serve((req: Request) => withMetrics('process-khipu-webhook', req, async () => {
           .select('id,status')
           .eq('order_id', orderId);
         if (lErr) {
-          console.warn('⚠️ No se pudieron leer ofertas para promover a paid', lErr);
+          console.error('❌ No se pudieron leer ofertas para promover a paid', lErr);
         } else if (linkedForPay && linkedForPay.length) {
           const promoteIds = linkedForPay.filter(o => ['reserved','accepted'].includes(o.status)).map(o => o.id);
           if (promoteIds.length) {
@@ -344,7 +329,7 @@ serve((req: Request) => withMetrics('process-khipu-webhook', req, async () => {
               .from('offers')
               .update({ status: 'paid', paid_at: paidAt, updated_at: new Date().toISOString() })
               .in('id', promoteIds);
-            if (upOffErr) console.error('⚠️ Error actualizando ofertas a paid', upOffErr); else console.log('✅ Ofertas promovidas a paid', promoteIds.length);
+            if (upOffErr) console.error('⚠️ Error actualizando ofertas a paid', upOffErr);
           }
         }
       } catch (promEx) {
@@ -404,8 +389,8 @@ serve((req: Request) => withMetrics('process-khipu-webhook', req, async () => {
                     p_metadata: { quantity: it.quantity, price_at_addition: it.price_at_addition }
                   }
                 } as any);
-                if (notifyErr) console.error('⚠️ Error creando notificación de compra pagada:', notifyErr);
-              } catch (nEx) { console.error('⚠️ Excepción notificando compra pagada', nEx); }
+                if (notifyErr) console.error('❌ Error creando notificación de compra pagada:', notifyErr);
+              } catch (nEx) { console.error('❌ Excepción notificando compra pagada', nEx); }
               if (it.supplier_id) {
                 const entry = supplierMeta.get(it.supplier_id) || { supplier_id: it.supplier_id, buyer_id: buyerId, products: [] };
                 if (it.product_id) entry.products.push(it.product_id);
@@ -450,7 +435,6 @@ serve((req: Request) => withMetrics('process-khipu-webhook', req, async () => {
           const quantity = Number(it.quantity || 1);
           const price_at_addition = Number(it.price_at_addition || it.price || 0);
           if (!product_id || !supplier_id || !Number.isFinite(quantity) || quantity <= 0 || !Number.isFinite(price_at_addition)) {
-            console.warn('⚠️ Item inválido descartado', { idx, product_id, supplier_id });
             return null;
           }
           const dtRaw = String(it.document_type || it.documentType || '').toLowerCase();
@@ -498,7 +482,7 @@ serve((req: Request) => withMetrics('process-khipu-webhook', req, async () => {
               .update({ estimated_delivery_date: isoDate, updated_at: new Date().toISOString() })
               .eq('id', orderId)
               .is('estimated_delivery_date', null);
-            if (slaErr) console.error('⚠️ No se pudo persistir SLA', slaErr); else console.log('✅ SLA persistido', isoDate);
+            if (slaErr) console.error('❌ No se pudo persistir SLA', slaErr);
           } catch(slaEx) {
             console.error('⚠️ Error calculando SLA', slaEx);
           }
@@ -546,6 +530,47 @@ serve((req: Request) => withMetrics('process-khipu-webhook', req, async () => {
             .eq('id', orderId)
             .is('inventory_processed_at', null);
         } catch(invMarkErr) { console.error('⚠️ No se pudo marcar inventory_processed_at', invMarkErr); }
+
+        // ========================================================================
+        // LIMPIAR CARRITO (server-side) - Previene items huérfanos tras pago
+        // ========================================================================
+        try {
+          // Obtener cart_id de la orden
+          const { data: orderWithCart, error: cartLookupErr } = await supabase
+            .from('orders')
+            .select('cart_id')
+            .eq('id', orderId)
+            .maybeSingle();
+          
+          if (cartLookupErr) {
+            console.error('❌ Error buscando cart_id de la orden:', cartLookupErr);
+          } else if (orderWithCart?.cart_id) {
+            const cartId = orderWithCart.cart_id;
+            
+            // 1. Eliminar cart_items
+            const { error: deleteItemsErr } = await supabase
+              .from('cart_items')
+              .delete()
+              .eq('cart_id', cartId);
+            
+            if (deleteItemsErr) {
+              console.error('❌ Error eliminando cart_items:', deleteItemsErr);
+            }
+            
+            // 2. Marcar carrito como 'completed' (evita que getOrCreateActiveCart lo encuentre)
+            const { error: updateCartErr } = await supabase
+              .from('carts')
+              .update({ status: 'completed', updated_at: new Date().toISOString() })
+              .eq('cart_id', cartId);
+            
+            if (updateCartErr) {
+              console.error('❌ Error actualizando status del carrito:', updateCartErr);
+            }
+          }
+        } catch (cartCleanupErr) {
+          console.error('⚠️ Error en limpieza de carrito (no crítico):', cartCleanupErr);
+        }
+
         // NO se crea nuevo cart activo automáticamente (simplificación post-refactor).
       }
     } catch(materializeErr) {

@@ -182,20 +182,20 @@ jest.mock('../../../styles/dashboardThemeCore', () => {
 });
 jest.mock('../../../styles/layoutSpacing', () => ({ SPACING_BOTTOM_MAIN: 0 }));
 // Evitar fallback del error boundary reemplazándolo por un passthrough
-jest.mock('../../../domains/supplier/components/ErrorBoundary', () => ({
+jest.mock('../../../workspaces/supplier/error-boundary/SupplierErrorBoundary', () => ({
   SupplierErrorBoundary: ({ children }) => <>{children}</>,
 }));
 
 import { orderService } from '../../../services/user/orderService';
 // Mock directo de la página para aislar solo flujo de acciones
-jest.mock('../../../domains/supplier/pages/my-orders/MyOrdersPage.jsx', () => {
+jest.mock('../../../workspaces/supplier/my-requests/components/MyOrdersPage.jsx', () => {
   const React = require('react');
   const {
     useOrdersStore,
   } = require('../../../shared/stores/orders/ordersStore');
   const {
     useSupplierPartActions,
-  } = require('../../../domains/supplier/hooks/useSupplierPartActions');
+  } = require('../../../workspaces/supplier/my-requests/hooks/useSupplierPartActions');
   const MyOrdersPageMock = () => {
     const { getFilteredOrders } = useOrdersStore();
     const actions = useSupplierPartActions('sup-1');
@@ -226,7 +226,7 @@ jest.mock('../../../domains/supplier/pages/my-orders/MyOrdersPage.jsx', () => {
   };
   return { __esModule: true, default: MyOrdersPageMock };
 });
-import MyOrdersPage from '../../../domains/supplier/pages/my-orders/MyOrdersPage.jsx';
+import MyOrdersPage from '../../../workspaces/supplier/my-requests/components/MyOrdersPage.jsx';
 
 describe('Supplier Lifecycle Integration (simplified)', () => {
   it('acepta y despacha orden mono supplier', async () => {

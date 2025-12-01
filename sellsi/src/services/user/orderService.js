@@ -70,10 +70,8 @@ class OrderService {
     try {
       if (!supplierId) return [];
       const limit = Number(filters.limit) || 100;
-  const includePending = true; // HOTFIX: mostrar también pedidos con pago pendiente para coherencia con notificaciones
-  const paymentFilter = includePending
-    ? (q) => q.in('payment_status', ['paid','pending'])
-    : (q) => q.eq('payment_status','paid');
+  // Supplier solo ve órdenes con pago confirmado (paid)
+  const paymentFilter = (q) => q.eq('payment_status', 'paid');
 
   let baseQuery = supabase
     .from('orders')
