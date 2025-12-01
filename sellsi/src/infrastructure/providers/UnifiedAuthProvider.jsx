@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useRef, useState, useMemo } from 'react';
 import { supabase } from '../../services/supabase';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { getUserProfile, invalidateUserProfileCache } from '../../services/user/profileService';
 
 // Unified Auth + Role Context
 const UnifiedAuthContext = createContext();
@@ -71,52 +72,48 @@ export const UnifiedAuthProvider = ({ children }) => {
     fetchingUsersRef.current.add(userId);
 
     try {
-      const { data: userData, error } = await supabase
-        .from('users')
-        .select('user_nm, main_supplier, logo_url, email')
-        .eq('user_id', userId)
-        .single();
+      // 🔧 OPTIMIZADO: Reutilizar profileService con cache (reduce queries duplicadas)
+      const { data: fullProfile, error } = await getUserProfile(userId);
 
-      // 🔧 MEJORADO: Si el perfil no existe, crearlo automáticamente
-      if (error) {
-        // Error PGRST116 = no rows found
-        if (error.code === 'PGRST116') {
-          console.log('📝 Perfil no encontrado, creando automáticamente...');
-          
-          const { data: newProfile, error: createError } = await supabase
-            .from('users')
-            .insert({
-              user_id: userId,
-              email: currentSession.user.email,
-              user_nm: USER_NAME_STATUS.PENDING,
-              main_supplier: true,
-              country: 'No especificado',
-            })
-            .select('user_nm, main_supplier, logo_url, email')
-            .single();
+      // Extraer solo los campos necesarios para auth state
+      const userData = fullProfile ? {
+        user_nm: fullProfile.user_nm,
+        main_supplier: fullProfile.main_supplier,
+        logo_url: fullProfile.logo_url,
+        email: fullProfile.email,
+      } : null;
 
-          if (createError) {
-            console.error('❌ Error creando perfil automático:', createError);
-            setNeedsOnboarding(true);
-            setUserProfile(null);
-            setLoadingUserStatus(false);
-            try { localStorage.removeItem('user_id'); } catch(e) {}
-            return;
-          }
+      // 🔧 Si el perfil no existe, crearlo automáticamente
+      if (error || !userData) {
+        console.log('📝 Perfil no encontrado, creando automáticamente...');
+        
+        const { data: newProfile, error: createError } = await supabase
+          .from('users')
+          .insert({
+            user_id: userId,
+            email: currentSession.user.email,
+            user_nm: USER_NAME_STATUS.PENDING,
+            main_supplier: true,
+            country: 'No especificado',
+          })
+          .select('user_nm, main_supplier, logo_url, email')
+          .single();
 
-          console.log('✅ Perfil creado automáticamente');
-          setNeedsOnboarding(true); // Nuevo perfil siempre necesita onboarding
-          setUserProfile(newProfile);
+        if (createError) {
+          console.error('❌ Error creando perfil automático:', createError);
+          setNeedsOnboarding(true);
+          setUserProfile(null);
           setLoadingUserStatus(false);
+          try { localStorage.removeItem('user_id'); } catch(e) {}
           return;
         }
 
-        // Otro tipo de error (red, permisos, etc.)
-        console.error('❌ Error fetching profile:', error);
-        setNeedsOnboarding(true);
-        setUserProfile(null);
+        console.log('✅ Perfil creado automáticamente');
+        // Invalidar cache para que próxima llamada obtenga el perfil nuevo
+        invalidateUserProfileCache(userId);
+        setNeedsOnboarding(true); // Nuevo perfil siempre necesita onboarding
+        setUserProfile(newProfile);
         setLoadingUserStatus(false);
-        try { localStorage.removeItem('user_id'); } catch(e) {}
         return;
       }
 
